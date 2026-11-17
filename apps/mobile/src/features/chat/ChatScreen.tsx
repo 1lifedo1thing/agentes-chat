@@ -456,7 +456,7 @@ function Chat({
   const convoDm = Boolean(dm) || thread.data?.channelKind === "dm";
   const dmAgentColor = dmAgent ? agentLook(dmAgent).color : undefined;
   const rowLook = useConversationLook(convoDm, dmAgentColor, channelId);
-  // Mine alone (Fundo): this conversation's background, behind the list, the clear bar and the composer.
+  // Mine alone: this conversation's background, behind the list, the clear bar and the composer.
   const backdrop = useConversationWallpaper(convoDm, channelId, dmAgentColor);
   const walled = rowLook.wallpaper === true;
   // The screen's size: the background and its band under the bar are one picture, cut to the same place.

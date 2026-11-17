@@ -2339,7 +2339,8 @@
     "header": {
       "pins": "Pesan yang disematkan",
       "showMembers": "Tampilkan anggota",
-      "hideMembers": "Sembunyikan anggota"
+      "hideMembers": "Sembunyikan anggota",
+      "more": "Opsi lainnya"
     },
     "membersButton_other": "Anggota kanal ({{count}})",
     "membersAgents": "Agen",
@@ -2544,6 +2545,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Butuh komputer",
+        "computerOnly": "Milik {{owner}}, masuk hanya di {{computer}}. Lodi berpikir dengan paket yang masuk sebagai akun.",
+        "noComputer": "Milik {{owner}}. Butuh komputer, dan workspace belum menghubungkan satu pun.",
+        "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
+        "connect": "Hubungkan komputer",
+        "plans": "Lihat paket"
+      }
+    },
     "label": "tangan kanan Anda",
     "labelCapitalized": "Tangan kanan Anda",
     "unusable": {
@@ -2816,16 +2827,6 @@
       "invite_roles_other": "Dengan peran {{roles}}.",
       "invite_people_sent_other": "Undangan terkirim ke <b>{{emails}}</b>.",
       "remove_ai_key": "Hapus kunci API \"{{name}}\"."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Butuh komputer",
-        "computerOnly": "Milik {{owner}}, masuk hanya di {{computer}}. Lodi berpikir dengan paket yang masuk sebagai akun.",
-        "noComputer": "Milik {{owner}}. Butuh komputer, dan workspace belum menghubungkan satu pun.",
-        "away": "Milik {{owner}}, di {{computer}}, yang sedang tidak aktif.",
-        "connect": "Hubungkan komputer",
-        "plans": "Lihat paket"
-      }
     }
   },
   "teamWeek": {
@@ -7465,6 +7466,9 @@
     }
   },
   "issues": {
+    "handedBy": "diserahkan oleh <0/>{{name}}",
+    "fromDm": "dari <0>DM kamu dengan {{name}}</0>",
+    "fromDmText": "dari DM kamu dengan {{name}}",
     "delete": {
       "action": "Hapus tugas",
       "title": "Hapus tugas #{{number}}?",
@@ -7667,6 +7671,9 @@
       "runningTitle_female": "{{name}} sedang mengerjakannya",
       "waitingTitle": "{{name}} sedang menunggumu",
       "waitingTitle_female": "{{name}} sedang menunggumu",
+      "finishedTitle": "{{name}} menyelesaikannya",
+      "finishedMeta": "{{when}} · diserahkan oleh {{name}}",
+      "answer": "Jawab",
       "stalledTitle": "{{name}} berhenti {{when}}",
       "stalledTitle_female": "{{name}} berhenti {{when}}",
       "stalledText": "Tugas ini masih dipegang {{name}}, tapi tidak ada proses yang berjalan.",
@@ -7685,10 +7692,7 @@
         "failed": "Proses terakhir gagal.",
         "canceled": "Seseorang menghentikan prosesnya.",
         "budget": "Anggaran bulanan agen sudah habis."
-      },
-      "finishedTitle": "{{name}} menyelesaikannya",
-      "finishedMeta": "{{when}} · diserahkan oleh {{name}}",
-      "answer": "Jawab"
+      }
     },
     "status": {
       "todo": "Akan dikerjakan",
@@ -7874,10 +7878,7 @@
       "criterion_checked": "mencentang kriteria \"{{text}}\"",
       "criterion_unchecked": "menghapus centang kriteria \"{{text}}\"",
       "agent_asked": "meminta {{name}} mengerjakannya"
-    },
-    "handedBy": "diserahkan oleh <0/>{{name}}",
-    "fromDm": "dari <0>DM kamu dengan {{name}}</0>",
-    "fromDmText": "dari DM kamu dengan {{name}}"
+    }
   },
   "routines": {
     "filters": "Saring rutinitas",
@@ -14196,6 +14197,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Foto itu bukan milikmu.",
+      "invalid": "Latar itu tidak ada.",
+      "tooLarge": "Ukuran foto maksimal 2 MB.",
+      "type": "Gunakan foto JPEG, PNG, atau WebP."
+    },
     "tooLarge": "Ini lebih besar dari yang diterima server.",
     "tooLargeMax": "Ini lebih besar dari yang diterima server: maksimal {{max}} MB.",
     "passwordLink": {
@@ -16093,6 +16100,51 @@
           "new3": "Tersisa 2, kutelepon besok.",
           "new4": "Laporan diperbarui di Drive.",
           "newCount": "4 baru"
+        },
+        "wallpaper": {
+          "title": "Latar",
+          "help": "Berubah hanya untukmu, di semua perangkatmu",
+          "rowHelp": "Di balik semua percakapan, hanya untukmu. Sebuah percakapan bisa punya latar sendiri lewat menunya.",
+          "rowSub": "Hanya untukmu, di semua percakapan",
+          "onlyHere": "Hanya di {{name}}, hanya untukmu",
+          "none": "Tanpa latar",
+          "sameAsOthers": "Sama seperti percakapan lain",
+          "sameShort": "Sama seperti yang lain",
+          "sky": "Langit",
+          "drawings": "Gambar",
+          "color": "Warna",
+          "photos": "Fotomu",
+          "choosePhoto": "Pilih foto",
+          "skyAutoHelp": "Yang pertama mengikuti percakapan: di pesan langsung, langit dengan warna agen; di kanal, langit ruang kerja.",
+          "skyAutoHelpDms": "Yang pertama adalah langit dengan warna agen.",
+          "skyAutoHelpChannels": "Yang pertama adalah langit ruang kerja.",
+          "neutral": {
+            "paper": "Kertas",
+            "mist": "Kabut",
+            "sand": "Pasir"
+          },
+          "name": {
+            "skyAuto": "Langit percakapan",
+            "skyAgent": "Langit agen",
+            "skyWorkspace": "Langit ruang kerja",
+            "sky": "Langit · {{color}}",
+            "drawingsAuto": "Gambar percakapan",
+            "drawingsAgent": "Gambar agen",
+            "drawingsWorkspace": "Gambar ruang kerja",
+            "drawings": "Gambar · {{color}}",
+            "crowd": "Agen",
+            "color": "Warna · {{color}}",
+            "photo": "Fotomu"
+          },
+          "choose": "Pilih…",
+          "menu": "Latar percakapan…",
+          "preview": "Pratinjau",
+          "usePhoto": "Gunakan foto ini",
+          "dragHint": "Seret foto untuk memilih bagian yang terlihat",
+          "dim": "Gelapkan di mode gelap",
+          "sending": "Mengirim foto…",
+          "failed": "Tidak bisa menyimpan latar. Coba lagi.",
+          "done": "Selesai"
         }
       },
       "agentStyle": "Cara agen berbicara denganmu",
@@ -16584,6 +16636,21 @@
     "tomorrowAt": "besok {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Diserahkan ke <0/>{{name}}",
+      "working": "sedang dikerjakan",
+      "done": "selesai dalam {{duration}}",
+      "waitingYou": "menunggu jawabanmu",
+      "waiting": "menunggu jawaban",
+      "waitingApprovalYou": "menunggu persetujuanmu",
+      "waitingApproval": "menunggu persetujuan",
+      "waitingComputer": "menunggu komputer",
+      "paused": "dijeda di batas paket",
+      "queued": "dalam antrean",
+      "failed": "tidak selesai",
+      "stopped": "dihentikan",
+      "step": "langkah {{current}} dari {{total}}"
+    },
     "duration": {
       "minutes_other": "{{count}} mnt",
       "hours_other": "{{count}} j",
@@ -16657,24 +16724,12 @@
       "failed": "Terhambat · tidak selesai",
       "failedWhy": "Terhambat · tidak selesai: {{why}}"
     },
-    "working": "Di latar belakang",
-    "handed": {
-      "lead": "Diserahkan ke <0/>{{name}}",
-      "working": "sedang dikerjakan",
-      "done": "selesai dalam {{duration}}",
-      "waitingYou": "menunggu jawabanmu",
-      "waiting": "menunggu jawaban",
-      "waitingApprovalYou": "menunggu persetujuanmu",
-      "waitingApproval": "menunggu persetujuan",
-      "waitingComputer": "menunggu komputer",
-      "paused": "dijeda di batas paket",
-      "queued": "dalam antrean",
-      "failed": "tidak selesai",
-      "stopped": "dihentikan",
-      "step": "langkah {{current}} dari {{total}}"
-    }
+    "working": "Di latar belakang"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} bertanya padamu"
+    },
     "speedFallback": {
       "text": "ChatGPT menolak kecepatan Cepat untuk akun atau model ini, jadi jawaban ini memakai kecepatan standar.",
       "action": "Buka agen"
@@ -17259,9 +17314,6 @@
       "interrupted": "Terputus karena server dimulai ulang. Minta lagi untuk melanjutkan.",
       "step_limit": "Langkahku habis sebelum selesai.",
       "stuck": "Aku macet dan berhenti sebelum selesai."
-    },
-    "request": {
-      "asksYou": "{{name}} bertanya padamu"
     }
   },
   "builtinTools": {

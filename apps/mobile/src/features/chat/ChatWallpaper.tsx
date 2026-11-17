@@ -1,16 +1,16 @@
 import { type Wallpaper, type WallpaperHue, wallpaperName } from "@agenteschat/client/lib/wallpaper";
 import { rgbOf } from "@agenteschat/ui/agent/engine";
 import {
-  TRAMA,
-  TRAMA_ICONS,
-  TRAMA_TILE,
-  TURMA,
-  TURMA_EYES,
-  TURMA_TILE,
-  tramaColors,
-  turmaAgents,
-  turmaShape,
-  turmaTones,
+  DRAWINGS,
+  DRAWING_ICONS,
+  DRAWINGS_TILE,
+  CROWD,
+  CROWD_EYES,
+  CROWD_TILE,
+  drawingsColors,
+  crowdAgents,
+  crowdShape,
+  crowdTones,
   WALLPAPER_PAGE,
   WALLPAPER_SKY_PIXEL,
   wallpaperFill,
@@ -50,7 +50,7 @@ import { AUTO_BANDS, photoCover, skyPixels, wallpaperKey } from "./wallpaper-log
 import { useWallpaperPhoto } from "./wallpaper-photo";
 
 /**
- * A conversation's background (Fundo), painted with Skia from the shared numbers (packages/ui/src/sky/wallpaper.ts):
+ * A conversation's background, painted with Skia from the shared numbers (packages/ui/src/sky/wallpaper.ts):
  * the sky as an image of sky pixels drawn nearest-neighbour, the drawings and the agents recorded once as a picture, a
  * flat color, or the person's photo covering the box with its point of interest on screen (darkened at night). Static:
  * it is recorded once per size, theme and choice and never redrawn while the conversation scrolls over it. `strength`
@@ -107,17 +107,17 @@ function paintSky(canvas: SkCanvas, hues: readonly WallpaperHue[], W: number, H:
 
 /* ---------- the drawings ---------- */
 
-let tramaPaths: (SkPath | null)[] | null = null;
-const tramaPathsOf = () => {
-  tramaPaths ??= TRAMA_ICONS.map((d) => Skia.Path.MakeFromSVGString(d));
-  return tramaPaths;
+let drawingsPaths: (SkPath | null)[] | null = null;
+const drawingsPathsOf = () => {
+  drawingsPaths ??= DRAWING_ICONS.map((d) => Skia.Path.MakeFromSVGString(d));
+  return drawingsPaths;
 };
 
-type TramaColor = Exclude<Extract<Wallpaper, { kind: "trama" }>["color"], "auto">;
+type DrawingsColor = Exclude<Extract<Wallpaper, { kind: "drawings" }>["color"], "auto">;
 
-function paintTrama(canvas: SkCanvas, color: TramaColor, W: number, H: number, dark: boolean, tile: boolean) {
-  const { bg, ink } = tramaColors(color, dark);
-  const spec = tile ? TRAMA_TILE : TRAMA;
+function paintDrawings(canvas: SkCanvas, color: DrawingsColor, W: number, H: number, dark: boolean, tile: boolean) {
+  const { bg, ink } = drawingsColors(color, dark);
+  const spec = tile ? DRAWINGS_TILE : DRAWINGS;
   const s = spec.size / 24;
   canvas.drawColor(Skia.Color(bg));
   const paint = Skia.Paint();
@@ -128,7 +128,7 @@ function paintTrama(canvas: SkCanvas, color: TramaColor, W: number, H: number, d
   // Drawn in the icons' 24-point box, scaled: the line is the drawing's own width once scaled.
   paint.setStrokeWidth(spec.stroke / s);
   paint.setColor(Skia.Color(ink));
-  const paths = tramaPathsOf();
+  const paths = drawingsPathsOf();
   for (const cell of wallpaperGrid(W, H, spec.cell, paths.length)) {
     const path = paths[cell.index];
     if (!path) continue;
@@ -142,12 +142,12 @@ function paintTrama(canvas: SkCanvas, color: TramaColor, W: number, H: number, d
 
 /* ---------- the agents ---------- */
 
-function paintTurma(canvas: SkCanvas, W: number, H: number, dark: boolean, tile: boolean) {
-  const spec = tile ? TURMA_TILE : TURMA;
+function paintCrowd(canvas: SkCanvas, W: number, H: number, dark: boolean, tile: boolean) {
+  const spec = tile ? CROWD_TILE : CROWD;
   canvas.drawColor(Skia.Color(pageOf(dark)));
-  const body = Skia.Path.MakeFromSVGString(turmaShape(0, 0, spec.size, "round").body);
-  const eyes = new Map<string, ReturnType<typeof turmaShape>["eyes"]>();
-  for (const style of TURMA_EYES) eyes.set(style, turmaShape(0, 0, spec.size, style).eyes);
+  const body = Skia.Path.MakeFromSVGString(crowdShape(0, 0, spec.size, "round").body);
+  const eyes = new Map<string, ReturnType<typeof crowdShape>["eyes"]>();
+  for (const style of CROWD_EYES) eyes.set(style, crowdShape(0, 0, spec.size, style).eyes);
   const fills = new Map<string, SkPaint>();
   const fill = (color: string) => {
     let p = fills.get(color);
@@ -160,8 +160,8 @@ function paintTurma(canvas: SkCanvas, W: number, H: number, dark: boolean, tile:
     }
     return p;
   };
-  for (const agent of turmaAgents(W, H, spec.cell, spec.size)) {
-    const tones = turmaTones(agent.color, dark);
+  for (const agent of crowdAgents(W, H, spec.cell, spec.size)) {
+    const tones = crowdTones(agent.color, dark);
     canvas.save();
     canvas.translate(agent.x, agent.y);
     if (body) canvas.drawPath(body, fill(tones.body));
@@ -194,9 +194,9 @@ function paint(canvas: SkCanvas, p: Painting) {
     case "sky":
       paintSky(canvas, w.color === "auto" ? p.bands : [w.color], W, H, dark, tile);
       break;
-    case "trama": {
+    case "drawings": {
       // "auto" with no one conversation to follow: a band of each color, side by side.
-      const colors: readonly TramaColor[] = w.color === "auto" ? p.bands : [w.color];
+      const colors: readonly DrawingsColor[] = w.color === "auto" ? p.bands : [w.color];
       for (let i = 0; i < colors.length; i++) {
         const color = colors[i];
         if (!color) continue;
@@ -204,13 +204,13 @@ function paint(canvas: SkCanvas, p: Painting) {
         const x1 = Math.round(((i + 1) * W) / colors.length);
         canvas.save();
         canvas.clipRect(rect(x0, 0, x1 - x0, H), ClipOp.Intersect, false);
-        paintTrama(canvas, color, W, H, dark, tile);
+        paintDrawings(canvas, color, W, H, dark, tile);
         canvas.restore();
       }
       break;
     }
-    case "turma":
-      paintTurma(canvas, W, H, dark, tile);
+    case "agents":
+      paintCrowd(canvas, W, H, dark, tile);
       break;
     case "color":
       canvas.drawColor(Skia.Color(wallpaperFill(w.color, dark)));
@@ -494,5 +494,5 @@ type Say = Parameters<typeof wallpaperName>[0];
 /** A background's name in the person's language, for a row's value ("Agent's sky", "Color · Sand"). */
 export function useWallpaperName() {
   const { t } = useTranslation();
-  return useCallback((w: Wallpaper, dm: boolean) => wallpaperName(t as unknown as Say, w, dm), [t]);
+  return useCallback((w: Wallpaper, dm: boolean | null) => wallpaperName(t as unknown as Say, w, dm), [t]);
 }

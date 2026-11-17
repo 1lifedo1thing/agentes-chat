@@ -1,6 +1,6 @@
 /**
- * A conversation's background (Fundo), mine alone: one for the channels and one for the DMs in `chatPrefs`, and, per
- * conversation, one that wins over them (`chatPrefs.wallpapers`, by channel id). Nothing chosen is no background, the
+ * A conversation's background, mine alone: one behind every conversation in `chatPrefs`, and, per
+ * conversation, one that wins over it (`chatPrefs.wallpapers`, by channel id). Nothing chosen is no background, the
  * app as it always was. Mirrored in packages/engine/src/chat-prefs.ts, which keeps only what it validates; how each one
  * is painted lives in packages/ui/src/sky/wallpaper.ts, shared by the web and the phone.
  */
@@ -8,17 +8,17 @@
 /** The agents' colors a background can take (the agent engine's presets). */
 export const WALLPAPER_HUES = ["sky", "indigo", "violet", "rose", "amber", "green", "teal", "graphite"] as const;
 export type WallpaperHue = (typeof WALLPAPER_HUES)[number];
-/** The three quiet colors of Trama and Cor: paper (warm white), mist (cool) and sand. */
+/** The three quiet colors of Drawings and Color: paper (warm white), mist (cool) and sand. */
 export const WALLPAPER_NEUTRALS = ["paper", "mist", "sand"] as const;
 export type WallpaperNeutral = (typeof WALLPAPER_NEUTRALS)[number];
 /** "auto": the conversation's own color, an agent's in a DM with it, the workspace's sky anywhere else. */
 export type WallpaperAuto = "auto";
 
 /**
- * - `sky` (Céu): the pixel sky in one color.
- * - `trama`: small line drawings in the app's icon style, tone on tone, on an even grid.
- * - `turma`: the agent symbol, many times over, faint.
- * - `color` (Cor): one flat color.
+ * - `sky`: the pixel sky in one color.
+ * - `drawings`: small line drawings in the app's icon style, tone on tone, on an even grid.
+ * - `crowd`: the agent symbol, many times over, faint.
+ * - `color`: one flat color.
  * - `photo`: a photo of mine (`PUT …/me/wallpaper-photo`), darkened in the dark theme by `dim`, its point of interest
  *   at `x`, `y` (0–1) kept on screen.
  * - `none`: no background; per conversation it says "none here", where no entry says "as the others".
@@ -26,8 +26,8 @@ export type WallpaperAuto = "auto";
 export type Wallpaper =
   | { kind: "none" }
   | { kind: "sky"; color: WallpaperAuto | WallpaperHue }
-  | { kind: "trama"; color: WallpaperAuto | WallpaperNeutral | WallpaperHue }
-  | { kind: "turma" }
+  | { kind: "drawings"; color: WallpaperAuto | WallpaperNeutral | WallpaperHue }
+  | { kind: "agents" }
   | { kind: "color"; color: WallpaperNeutral | WallpaperHue }
   | { kind: "photo"; url: string; dim: number; x: number; y: number };
 export type WallpaperKind = Wallpaper["kind"];
@@ -40,7 +40,7 @@ export const MAX_PHOTO_DIM = 0.8;
 /** The choices the picker shows, family by family, in order. */
 export const WALLPAPER_CHOICES = {
   sky: ["auto", ...WALLPAPER_HUES.filter((h) => h !== "graphite")] as const,
-  trama: ["auto", "paper", "sky", "violet", "rose", "green", "teal"] as const,
+  drawings: ["auto", "paper", "sky", "violet", "rose", "green", "teal"] as const,
   color: ["paper", "mist", "sand", "sky", "violet", "rose", "green", "teal"] as const,
 };
 
@@ -59,10 +59,10 @@ export function wallpaperOf(v: unknown): Wallpaper | undefined {
       return { kind: "none" };
     case "sky":
       return o.color === "auto" || isHue(o.color) ? { kind: "sky", color: o.color } : undefined;
-    case "trama":
-      return o.color === "auto" || isHue(o.color) || isNeutral(o.color) ? { kind: "trama", color: o.color } : undefined;
-    case "turma":
-      return { kind: "turma" };
+    case "drawings":
+      return o.color === "auto" || isHue(o.color) || isNeutral(o.color) ? { kind: "drawings", color: o.color } : undefined;
+    case "agents":
+      return { kind: "agents" };
     case "color":
       return isHue(o.color) || isNeutral(o.color) ? { kind: "color", color: o.color } : undefined;
     case "photo": {
@@ -90,33 +90,29 @@ export function sameWallpaper(a: Wallpaper | undefined, b: Wallpaper | undefined
 
 /** What the person chose, as far as backgrounds go (a slice of `ChatPrefs`). */
 export interface WallpaperPrefs {
-  channelWallpaper?: Wallpaper;
-  dmWallpaper?: Wallpaper;
+  wallpaper?: Wallpaper;
   wallpapers?: Record<string, Wallpaper>;
 }
 
-/** The background for the channels or for the DMs: what I chose there, else none (the owner's default). */
-export const defaultWallpaperOf = (prefs: WallpaperPrefs | undefined, dm: boolean): Wallpaper =>
-  (dm ? prefs?.dmWallpaper : prefs?.channelWallpaper) ?? NO_WALLPAPER;
+/** The background behind every conversation: what I chose, else none (the owner's default). */
+export const defaultWallpaperOf = (prefs: WallpaperPrefs | undefined): Wallpaper => prefs?.wallpaper ?? NO_WALLPAPER;
 
-/** This conversation's own choice, if it has one (it wins over the channels' or DMs'). */
+/** This conversation's own choice, if it has one (it wins over the one behind every conversation). */
 export const conversationWallpaperOf = (
   prefs: WallpaperPrefs | undefined,
   channelId: string | null | undefined,
 ): Wallpaper | undefined => (channelId ? prefs?.wallpapers?.[channelId] : undefined);
 
-/** The background a conversation shows: its own, or the one for its kind. */
-export const wallpaperFor = (
-  prefs: WallpaperPrefs | undefined,
-  conversation: { dm: boolean; channelId?: string | null },
-): Wallpaper => conversationWallpaperOf(prefs, conversation.channelId) ?? defaultWallpaperOf(prefs, conversation.dm);
+/** The background a conversation shows: its own, or the one behind every conversation. */
+export const wallpaperFor = (prefs: WallpaperPrefs | undefined, channelId: string | null | undefined): Wallpaper =>
+  conversationWallpaperOf(prefs, channelId) ?? defaultWallpaperOf(prefs);
 
 /**
  * A background with "auto" made this conversation's color: `own`, the agent's in a DM with an agent, else the
  * workspace's sky.
  */
 export function resolveWallpaper(w: Wallpaper, own: WallpaperHue | null | undefined): Wallpaper {
-  if ((w.kind === "sky" || w.kind === "trama") && w.color === "auto") return { ...w, color: own ?? "sky" };
+  if ((w.kind === "sky" || w.kind === "drawings") && w.color === "auto") return { ...w, color: own ?? "sky" };
   return w;
 }
 
@@ -127,10 +123,14 @@ export const wallpaperHueOf = (color: string | null | undefined): WallpaperHue |
 export const hasWallpaper = (w: Wallpaper | undefined): boolean => Boolean(w && w.kind !== "none");
 
 /**
- * A background's name for a row's value ("Céu do agente", "Cor · Areia"): `dm` says what "auto" means here (the
- * agent's color in the DMs, the workspace's elsewhere).
+ * A background's name for a row's value ("Agent's sky", "Color · Sand"): `dm` says what "auto" means here, the agent's
+ * color in a DM, the workspace's in a channel; null (the one behind every conversation): each conversation's own.
  */
-export function wallpaperName(t: (key: string, params?: Record<string, unknown>) => string, w: Wallpaper, dm: boolean) {
+export function wallpaperName(
+  t: (key: string, params?: Record<string, unknown>) => string,
+  w: Wallpaper,
+  dm: boolean | null,
+) {
   const base = "settings.account.chat.wallpaper";
   const colorName = (c: string) =>
     (WALLPAPER_NEUTRALS as readonly string[]).includes(c) ? t(`${base}.neutral.${c}`) : t(`look.colors.${c}`);
@@ -139,14 +139,14 @@ export function wallpaperName(t: (key: string, params?: Record<string, unknown>)
       return t(`${base}.none`);
     case "sky":
       return w.color === "auto"
-        ? t(`${base}.name.${dm ? "skyAgent" : "skyWorkspace"}`)
+        ? t(`${base}.name.${dm === null ? "skyAuto" : dm ? "skyAgent" : "skyWorkspace"}`)
         : t(`${base}.name.sky`, { color: colorName(w.color) });
-    case "trama":
+    case "drawings":
       return w.color === "auto"
-        ? t(`${base}.name.${dm ? "drawingsAgent" : "drawingsWorkspace"}`)
+        ? t(`${base}.name.${dm === null ? "drawingsAuto" : dm ? "drawingsAgent" : "drawingsWorkspace"}`)
         : t(`${base}.name.drawings`, { color: colorName(w.color) });
-    case "turma":
-      return t(`${base}.name.turma`);
+    case "agents":
+      return t(`${base}.name.crowd`);
     case "color":
       return t(`${base}.name.color`, { color: colorName(w.color) });
     case "photo":
@@ -154,12 +154,12 @@ export function wallpaperName(t: (key: string, params?: Record<string, unknown>)
   }
 }
 
-/** The tiles of the picker, family by family (Céu, Desenhos with the agents first, Cor), as backgrounds. */
+/** The tiles of the picker, family by family (Sky, Drawings with the agents first, Color), as backgrounds. */
 export const WALLPAPER_FAMILIES = {
   sky: WALLPAPER_CHOICES.sky.map((color) => ({ kind: "sky", color }) as Wallpaper),
   drawings: [
-    { kind: "turma" } as Wallpaper,
-    ...WALLPAPER_CHOICES.trama.map((color) => ({ kind: "trama", color }) as Wallpaper),
+    { kind: "agents" } as Wallpaper,
+    ...WALLPAPER_CHOICES.drawings.map((color) => ({ kind: "drawings", color }) as Wallpaper),
   ],
   color: WALLPAPER_CHOICES.color.map((color) => ({ kind: "color", color }) as Wallpaper),
 } as const;

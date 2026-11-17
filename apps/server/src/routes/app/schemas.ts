@@ -118,13 +118,13 @@ export const StartChoice = z
 
 const WallpaperHue = z.enum(WALLPAPER_HUES);
 const WallpaperNeutral = z.enum(WALLPAPER_NEUTRALS);
-/** A conversation's background (Fundo): packages/client/src/lib/wallpaper.ts says what each kind is. */
+/** A conversation's background: packages/client/src/lib/wallpaper.ts says what each kind is. */
 export const Wallpaper = z
   .discriminatedUnion("kind", [
     z.object({ kind: z.literal("none") }),
     z.object({ kind: z.literal("sky"), color: z.union([z.literal("auto"), WallpaperHue]) }),
-    z.object({ kind: z.literal("trama"), color: z.union([z.literal("auto"), WallpaperNeutral, WallpaperHue]) }),
-    z.object({ kind: z.literal("turma") }),
+    z.object({ kind: z.literal("drawings"), color: z.union([z.literal("auto"), WallpaperNeutral, WallpaperHue]) }),
+    z.object({ kind: z.literal("agents") }),
     z.object({ kind: z.literal("color"), color: z.union([WallpaperNeutral, WallpaperHue]) }),
     z.object({
       kind: z.literal("photo"),
@@ -157,8 +157,7 @@ export const ChatPrefs = z
       description:
         "Always send: a report an agent offers about the app goes with its reply, without asking; absent: it asks.",
     }),
-    channelWallpaper: Wallpaper.optional().openapi({ description: "The channels' background; absent: none." }),
-    dmWallpaper: Wallpaper.optional().openapi({ description: "The DMs' background; absent: none." }),
+    wallpaper: Wallpaper.optional().openapi({ description: "The background behind every conversation; absent: none." }),
     wallpapers: z.record(z.uuid(), Wallpaper).optional().openapi({
       description:
         "A conversation's own background, by channel id (`PUT`/`DELETE …/channels/{channelId}/wallpaper`); ignored in `PUT …/me/chat`.",

@@ -860,8 +860,7 @@ export async function setChatPrefs(db: Database, userId: string, orgId: string, 
   await requirePermission(db, userId, orgId, "read");
   // A conversation's own background changes one at a time (`setConversationWallpaper`): the map is never replaced.
   const { wallpapers: _one, ...known } = chatPrefsOf(patch);
-  assertOwnWallpaper(known.channelWallpaper, userId);
-  assertOwnWallpaper(known.dmWallpaper, userId);
+  assertOwnWallpaper(known.wallpaper, userId);
   const prefs = (await saveChatPrefs(db, orgId, userId, known)) ?? {};
   // My other devices take it at once (`chat.prefs` on my topic).
   await publishUserEvent(pubsub, orgId, userId, { type: "chat.prefs", chatPrefs: prefs });

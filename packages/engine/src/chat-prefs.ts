@@ -31,16 +31,14 @@ export interface ChatPrefs {
    * here because it is theirs alone, per workspace, on every device.
    */
   feedbackAuto?: boolean;
-  /** The channels' background; absent: none. */
-  channelWallpaper?: Wallpaper;
-  /** The DMs' background; absent: none. */
-  dmWallpaper?: Wallpaper;
+  /** The background behind every conversation; absent: none. */
+  wallpaper?: Wallpaper;
   /** A conversation's own background, by channel id (`saveConversationWallpaper`); absent: as the others. */
   wallpapers?: Record<string, Wallpaper>;
 }
 
 /**
- * A conversation's background (Fundo). Mirrored in packages/client/src/lib/wallpaper.ts, which documents each kind;
+ * A conversation's background. Mirrored in packages/client/src/lib/wallpaper.ts, which documents each kind;
  * how each is painted is in packages/ui/src/sky/wallpaper.ts.
  */
 export const WALLPAPER_HUES = ["sky", "indigo", "violet", "rose", "amber", "green", "teal", "graphite"] as const;
@@ -50,8 +48,8 @@ type Neutral = (typeof WALLPAPER_NEUTRALS)[number];
 export type Wallpaper =
   | { kind: "none" }
   | { kind: "sky"; color: "auto" | Hue }
-  | { kind: "trama"; color: "auto" | Neutral | Hue }
-  | { kind: "turma" }
+  | { kind: "drawings"; color: "auto" | Neutral | Hue }
+  | { kind: "agents" }
   | { kind: "color"; color: Neutral | Hue }
   | { kind: "photo"; url: string; dim: number; x: number; y: number };
 export const MAX_PHOTO_DIM = 0.8;
@@ -74,10 +72,10 @@ export function wallpaperOf(v: unknown): Wallpaper | undefined {
       return { kind: "none" };
     case "sky":
       return o.color === "auto" || isHue(o.color) ? { kind: "sky", color: o.color } : undefined;
-    case "trama":
-      return o.color === "auto" || isHue(o.color) || isNeutral(o.color) ? { kind: "trama", color: o.color } : undefined;
-    case "turma":
-      return { kind: "turma" };
+    case "drawings":
+      return o.color === "auto" || isHue(o.color) || isNeutral(o.color) ? { kind: "drawings", color: o.color } : undefined;
+    case "agents":
+      return { kind: "agents" };
     case "color":
       return isHue(o.color) || isNeutral(o.color) ? { kind: "color", color: o.color } : undefined;
     case "photo": {
@@ -128,8 +126,7 @@ export function chatPrefsOf(stored: unknown): ChatPrefs {
     textSize: oneOf(CHAT_TEXT_SIZES, o.textSize),
     fullMessages: typeof o.fullMessages === "boolean" ? o.fullMessages : undefined,
     feedbackAuto: typeof o.feedbackAuto === "boolean" ? o.feedbackAuto : undefined,
-    channelWallpaper: wallpaperOf(o.channelWallpaper),
-    dmWallpaper: wallpaperOf(o.dmWallpaper),
+    wallpaper: wallpaperOf(o.wallpaper),
     wallpapers: wallpapersOf(o.wallpapers),
   };
   return Object.fromEntries(Object.entries(picks).filter(([, v]) => v !== undefined));

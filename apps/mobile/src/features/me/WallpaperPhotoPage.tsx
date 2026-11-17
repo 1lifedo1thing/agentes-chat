@@ -37,7 +37,7 @@ import { agentLook } from "../shared/logic";
 import { PushedHeader } from "../shared/parts";
 import { ChatPreview, SAMPLE_HUE } from "./ChatLookPage";
 
-/** The dim slider's thumb, as Tamanho do texto's. */
+/** The dim slider's thumb, as Text size's. */
 const THUMB = 26;
 /** The dim's label and a screen reader's step: 5 points of darkness. */
 const DIM_STEPS = 20;
@@ -69,7 +69,7 @@ function DimSlider({ dim }: { dim: SharedValue<number> }) {
     dim.set((clamp(px - THUMB / 2, 0, room) / room) * MAX_PHOTO_DIM);
   };
   const pan = usePanGesture({
-    // Sideways only, as Tamanho do texto's: a drag that goes up or down isn't the slider's.
+    // Sideways only, as Text size's: a drag that goes up or down isn't the slider's.
     activeOffsetX: [-4, 4],
     failOffsetY: [-12, 12],
     maxPointers: 1,
@@ -137,7 +137,7 @@ function DimSlider({ dim }: { dim: SharedValue<number> }) {
 /**
  * A photo's preview, full screen (after the system's library): a conversation over it as it will look, the photo
  * dragged to choose the part that shows (its point of interest, kept on screen whatever the screen's size), and in the
- * dark theme how dark it goes. "Use this photo" sends it, saves it as the background and goes back to Fundo.
+ * dark theme how dark it goes. "Use this photo" sends it, saves it as the background and goes back to Background.
  */
 function PhotoPreview({ photo }: { photo: PickedPhoto }) {
   const { t, i18n } = useTranslation();
@@ -157,7 +157,7 @@ function PhotoPreview({ photo }: { photo: PickedPhoto }) {
   const { target } = photo;
   const one = "channelId" in target ? target.channelId : null;
   const dmRow = one ? dms.data?.find((d) => d.channelId === one) : undefined;
-  const dm = one ? Boolean(dmRow) : "kind" in target && target.kind === "dms";
+  const dm = one ? Boolean(dmRow) : true;
   const agent = dmRow?.with.type === "agent" ? dir.agentById.get(dmRow.with.id) : undefined;
   const color: AgentColorName = agent ? agentLook(agent).color : SAMPLE_HUE;
   const { style, tone } = chatLookOf(prefs, dm, isPersonal(org));
@@ -211,7 +211,7 @@ function PhotoPreview({ photo }: { photo: PickedPhoto }) {
       rememberWallpaperPhoto(url, photo.image);
       const wallpaper: Wallpaper = { kind: "photo", url, dim: unit(dim.get()), x: unit(fx.get()), y: unit(fy.get()) };
       if (one) await setOwn.mutateAsync({ channelId: one, wallpaper });
-      else await setPrefs.mutateAsync(dm ? { dmWallpaper: wallpaper } : { channelWallpaper: wallpaper });
+      else await setPrefs.mutateAsync({ wallpaper });
       haptics.success();
       goBack();
     } catch {
@@ -274,7 +274,7 @@ function PhotoPreview({ photo }: { photo: PickedPhoto }) {
   );
 }
 
-/** The photo picked on Fundo (`pickWallpaperPhoto`); with none (the app came back to this screen), back to Fundo. */
+/** The photo picked on Background (`pickWallpaperPhoto`); with none (the app came back to this screen), back to Background. */
 export function WallpaperPhotoPage() {
   const [photo] = useState(pickedWallpaperPhoto);
   useEffect(() => {

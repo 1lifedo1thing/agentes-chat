@@ -939,7 +939,7 @@ export function managementRoutes(deps: AppDeps) {
     tags: ["Members"],
     security,
     description:
-      'Yours alone, on every device: it wins over `channelWallpaper`/`dmWallpaper` in `chatPrefs` and comes back in `chatPrefs.wallpapers` (by channel id). `{ kind: "none" }` is no background here even where the others have one. A photo has to be one of yours (`PUT …/me/wallpaper-photo`): 400 `wallpaper.photo_not_yours`. Members only. Your other devices hear `chat.prefs`.',
+      'Yours alone, on every device: it wins over `wallpaper` in `chatPrefs` and comes back in `chatPrefs.wallpapers` (by channel id). `{ kind: "none" }` is no background here even where the others have one. A photo has to be one of yours (`PUT …/me/wallpaper-photo`): 400 `wallpaper.photo_not_yours`. Members only. Your other devices hear `chat.prefs`.',
     responses: { 200: json(ChatPrefs), ...errors },
   };
   app.openapi(

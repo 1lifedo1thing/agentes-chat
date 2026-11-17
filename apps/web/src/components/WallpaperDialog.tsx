@@ -16,7 +16,7 @@ import {
   wallpaperHueOf,
   wallpaperName,
 } from "@agenteschat/client/lib/wallpaper";
-import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
+import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import {
   type AgentColor,
   agentGradient,
@@ -28,7 +28,6 @@ import {
   Locked,
   MessageLookContext,
   OptionList,
-  Segmented,
   useDarkTheme,
   useUnsavedInDialog,
 } from "@agenteschat/ui";
@@ -69,7 +68,7 @@ interface Draft {
   img: HTMLImageElement | null;
 }
 
-/** One conversation, from its header's menu: its own background, over the channels' or the DMs'. */
+/** One conversation, from its header's menu: its own background, over the one behind every conversation. */
 export interface WallpaperConversation {
   channelId: string;
   dm: boolean;
@@ -82,7 +81,8 @@ export interface WallpaperConversation {
 /** A background's name (`wallpaperName`), with the web's `t`, which checks its keys. */
 export function useWallpaperName() {
   const { t } = useTranslation();
-  return (w: Wallpaper, dm: boolean) => wallpaperName((key, params) => String(t(key as never, params as never)), w, dm);
+  return (w: Wallpaper, dm: boolean | null) =>
+    wallpaperName((key, params) => String(t(key as never, params as never)), w, dm);
 }
 
 /** The base64 to send for a photo: a JPEG of at most `PHOTO_SIDE` and `PHOTO_BYTES`, else the file as it is. */
@@ -113,21 +113,18 @@ async function shrinkPhoto(file: File, img: HTMLImageElement | null) {
 
 /**
  * Background: what is behind a conversation, mine alone, on every device. With no `conversation` (Settings ›
- * Conversations) the channels' or the DMs', switched by Channels | DMs; from a conversation's menu, its own,
- * with Same as other conversations first. Each family is one row of tiles; a tile applies at once and the preview
+ * Conversations) the one behind every conversation; from a conversation's menu, its own, with Same as other
+ * conversations first. Each family is one row of tiles; a tile applies at once and the preview
  * beside them shows it on the conversation's own rows. A photo is framed in the preview (dragged to its point of
  * interest, darkened for the dark theme) and sent with Use this photo. Done only closes.
  */
 export function WallpaperDialog({
   open,
   onOpenChange,
-  initialKind = "channels",
   conversation,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Which of the two shows first (the page's own Channels | DMs). */
-  initialKind?: "channels" | "dms";
   conversation?: WallpaperConversation;
 }) {
   const { t } = useTranslation();
@@ -143,21 +140,19 @@ export function WallpaperDialog({
       width={820}
       className="wallpaper-dialog"
     >
-      <WallpaperPicker initialKind={initialKind} conversation={conversation} onDone={() => onOpenChange(false)} />
+      <WallpaperPicker conversation={conversation} onDone={() => onOpenChange(false)} />
     </Dialog>
   );
 }
 
 /**
- * The dialog's content, mounted while it is open: each opening starts on `initialKind` with nothing half framed. A
+ * The dialog's content, mounted while it is open: each opening starts with nothing half framed. A
  * photo being framed holds the dialog open against a press outside or Esc.
  */
 function WallpaperPicker({
-  initialKind,
   conversation,
   onDone,
 }: {
-  initialKind: "channels" | "dms";
   conversation?: WallpaperConversation;
   onDone: () => void;
 }) {
@@ -170,7 +165,6 @@ function WallpaperPicker({
   const setOwn = useSetConversationWallpaper(org.id);
   const upload = useUploadWallpaperPhoto(org.id);
   const ids = useId();
-  const [kind, setKind] = useState(initialKind);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [sending, setSending] = useState(false);
   const input = useRef<HTMLInputElement>(null);
@@ -188,13 +182,16 @@ function WallpaperPicker({
   );
 
   const prefs = org.chatPrefs;
-  const dm = conversation ? conversation.dm : kind === "dms";
-  const others = defaultWallpaperOf(prefs, dm);
+  // The preview is a DM with the samples' agent unless this is one conversation; names say what "auto" is here
+  // (null: each conversation's own).
+  const dm = conversation ? conversation.dm : true;
+  const scope = conversation ? conversation.dm : null;
+  const others = defaultWallpaperOf(prefs);
   // What is chosen here; undefined in a conversation: the same as the others.
   const chosen = conversation ? conversationWallpaperOf(prefs, conversation.channelId) : others;
-  const hue = conversation ? wallpaperHueOf(conversation.agentColor) : dm ? SAMPLE_HUE : null;
-  // The DMs' tiles show "auto" as every agent's color; the preview, as the samples' agent's.
-  const bands = conversation || !dm ? undefined : AUTO_BANDS;
+  const hue = conversation ? wallpaperHueOf(conversation.agentColor) : SAMPLE_HUE;
+  // For every conversation, the tiles show "auto" as every agent's color; the preview, as the samples' agent's.
+  const bands = conversation ? undefined : AUTO_BANDS;
   const tileOf = (w: Wallpaper) => (bands ? w : resolveWallpaper(w, hue));
   const { style, tone } = chatLookOf(prefs, dm, isPersonal(org));
   const page = WALLPAPER_PAGE[dark ? "dark" : "light"];
@@ -213,7 +210,7 @@ function WallpaperPicker({
       return;
     }
     const value = w ?? NO_WALLPAPER;
-    setPrefs.mutate(dm ? { dmWallpaper: value } : { channelWallpaper: value }, { onError: failed });
+    setPrefs.mutate({ wallpaper: value }, { onError: failed });
   };
   const pick = (w: Wallpaper | null) => {
     setDraft(null);
@@ -287,7 +284,7 @@ function WallpaperPicker({
       key={`${w.kind}:${"color" in w ? w.color : ""}`}
       wallpaper={tileOf(w)}
       bands={bands}
-      label={nameOf(w, dm)}
+      label={nameOf(w, scope)}
       mine={mineOn(w)}
       selected={chosen !== undefined && sameWallpaper(chosen, w)}
       onPick={onPick}
@@ -298,19 +295,6 @@ function WallpaperPicker({
     <>
       <Locked when={sending}>
         <DialogBody className="wallpaper-dialog__body" style={wallpaperVars(dark)}>
-          {!conversation && (
-            <Segmented
-              size="sm"
-              className="wallpaper-dialog__where"
-              label={t("settings.account.chat.where")}
-              value={kind}
-              onValueChange={setKind}
-              options={[
-                { value: "channels", label: t(modeKey(org, "settings.account.chat.channels")) },
-                { value: "dms", label: t("settings.account.chat.dms") },
-              ]}
-            />
-          )}
           <div className="wallpaper-dialog__cols">
             <div className="wallpaper-dialog__choices">
               <OptionList<"same" | "none" | "">
@@ -325,16 +309,14 @@ function WallpaperPicker({
                         {
                           value: "same" as const,
                           title: t("settings.account.chat.wallpaper.sameAsOthers"),
-                          description: nameOf(others, dm),
-                          leading: <WallpaperThumb wallpaper={resolveWallpaper(others, hue)} />,
+                          description: nameOf(others, scope),
+                          ...(hasWallpaper(others)
+                            ? { leading: <WallpaperThumb wallpaper={resolveWallpaper(others, hue)} /> }
+                            : {}),
                         },
                       ]
                     : []),
-                  {
-                    value: "none" as const,
-                    title: t("settings.account.chat.wallpaper.none"),
-                    leading: <WallpaperThumb wallpaper={NO_WALLPAPER} />,
-                  },
+                  { value: "none" as const, title: t("settings.account.chat.wallpaper.none") },
                 ]}
               />
               {/* Each tile says its family in its own name ("Sky · Rose"). */}
@@ -444,9 +426,11 @@ function WallpaperPicker({
               ) : (
                 <p className="wallpaper-dialog__note">
                   {t(
-                    dm
-                      ? "settings.account.chat.wallpaper.skyAutoHelpDms"
-                      : "settings.account.chat.wallpaper.skyAutoHelpChannels",
+                    !conversation
+                      ? "settings.account.chat.wallpaper.skyAutoHelp"
+                      : conversation.dm
+                        ? "settings.account.chat.wallpaper.skyAutoHelpDms"
+                        : "settings.account.chat.wallpaper.skyAutoHelpChannels",
                   )}
                 </p>
               )}

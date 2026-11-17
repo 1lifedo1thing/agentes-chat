@@ -2490,7 +2490,8 @@
     "header": {
       "pins": "Mensajes fijados",
       "showMembers": "Mostrar miembros",
-      "hideMembers": "Ocultar miembros"
+      "hideMembers": "Ocultar miembros",
+      "more": "Más opciones"
     },
     "membersButton_one": "Miembros del canal ({{count}})",
     "membersButton_many": "Miembros del canal ({{count}})",
@@ -2731,6 +2732,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Necesita un ordenador",
+        "computerOnly": "De {{owner}}, conectado solo en {{computer}}. Lodi piensa con un plan conectado como cuenta.",
+        "noComputer": "De {{owner}}. Necesita un ordenador y el espacio de trabajo no tiene ninguno conectado.",
+        "away": "De {{owner}}, en {{computer}}, que está ausente.",
+        "connect": "Conectar un ordenador",
+        "plans": "Ver planes"
+      }
+    },
     "label": "tu mano derecha",
     "labelCapitalized": "Tu mano derecha",
     "unusable": {
@@ -3023,16 +3034,6 @@
       "invite_people_sent_many": "Invitaciones enviadas a <b>{{emails}}</b>.",
       "invite_people_sent_other": "Invitaciones enviadas a <b>{{emails}}</b>.",
       "remove_ai_key": "Eliminar la clave de API «{{name}}»."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Necesita un ordenador",
-        "computerOnly": "De {{owner}}, conectado solo en {{computer}}. Lodi piensa con un plan conectado como cuenta.",
-        "noComputer": "De {{owner}}. Necesita un ordenador y el espacio de trabajo no tiene ninguno conectado.",
-        "away": "De {{owner}}, en {{computer}}, que está ausente.",
-        "connect": "Conectar un ordenador",
-        "plans": "Ver planes"
-      }
     }
   },
   "teamWeek": {
@@ -7935,6 +7936,9 @@
     }
   },
   "issues": {
+    "handedBy": "entregada por <0/>{{name}}",
+    "fromDm": "de <0>tu DM con {{name}}</0>",
+    "fromDmText": "de tu DM con {{name}}",
     "delete": {
       "action": "Eliminar tarea",
       "title": "¿Eliminar la tarea #{{number}}?",
@@ -8155,6 +8159,9 @@
       "runningTitle_female": "{{name}} está trabajando en ella",
       "waitingTitle": "{{name}} te está esperando",
       "waitingTitle_female": "{{name}} te está esperando",
+      "finishedTitle": "{{name}} la terminó",
+      "finishedMeta": "{{when}} · entregada por {{name}}",
+      "answer": "Responder",
       "stalledTitle": "{{name}} se detuvo {{when}}",
       "stalledTitle_female": "{{name}} se detuvo {{when}}",
       "stalledText": "La tarea sigue con {{name}}, pero no hay ninguna ejecución en curso.",
@@ -8173,10 +8180,7 @@
         "failed": "La última ejecución falló.",
         "canceled": "Alguien detuvo la ejecución.",
         "budget": "Se acabó el presupuesto mensual del agente."
-      },
-      "finishedTitle": "{{name}} la terminó",
-      "finishedMeta": "{{when}} · entregada por {{name}}",
-      "answer": "Responder"
+      }
     },
     "status": {
       "todo": "Por hacer",
@@ -8370,10 +8374,7 @@
       "criterion_checked": "marcó el criterio \"{{text}}\"",
       "criterion_unchecked": "desmarcó el criterio \"{{text}}\"",
       "agent_asked": "le pidió a {{name}} que lo hiciera"
-    },
-    "handedBy": "entregada por <0/>{{name}}",
-    "fromDm": "de <0>tu DM con {{name}}</0>",
-    "fromDmText": "de tu DM con {{name}}"
+    }
   },
   "routines": {
     "filters": "Filtrar rutinas",
@@ -15112,6 +15113,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Esa foto no es tuya.",
+      "invalid": "Ese fondo no existe.",
+      "tooLarge": "La foto puede pesar hasta 2 MB.",
+      "type": "Usa una foto JPEG, PNG o WebP."
+    },
     "tooLarge": "Esto es más grande de lo que acepta el servidor.",
     "tooLargeMax": "Esto es más grande de lo que acepta el servidor: hasta {{max}} MB.",
     "passwordLink": {
@@ -17047,6 +17054,51 @@
           "new3": "Faltan 2, llamo mañana.",
           "new4": "Informe actualizado en el Drive.",
           "newCount": "4 nuevos"
+        },
+        "wallpaper": {
+          "title": "Fondo",
+          "help": "Cambia solo para ti, en todos tus dispositivos",
+          "rowHelp": "Detrás de todas las conversaciones, solo para ti. Una conversación puede tener el suyo desde su menú.",
+          "rowSub": "Solo para ti, en todas las conversaciones",
+          "onlyHere": "Solo en {{name}}, solo para ti",
+          "none": "Sin fondo",
+          "sameAsOthers": "Igual que las demás conversaciones",
+          "sameShort": "Igual que las demás",
+          "sky": "Cielo",
+          "drawings": "Dibujos",
+          "color": "Color",
+          "photos": "Tus fotos",
+          "choosePhoto": "Elegir una foto",
+          "skyAutoHelp": "El primero cambia con la conversación: en un mensaje directo, un cielo del color del agente; en los canales, el del espacio de trabajo.",
+          "skyAutoHelpDms": "El primero es un cielo del color del agente.",
+          "skyAutoHelpChannels": "El primero es el cielo del espacio de trabajo.",
+          "neutral": {
+            "paper": "Papel",
+            "mist": "Niebla",
+            "sand": "Arena"
+          },
+          "name": {
+            "skyAuto": "Cielo de la conversación",
+            "skyAgent": "Cielo del agente",
+            "skyWorkspace": "Cielo del espacio de trabajo",
+            "sky": "Cielo · {{color}}",
+            "drawingsAuto": "Dibujos de la conversación",
+            "drawingsAgent": "Dibujos del agente",
+            "drawingsWorkspace": "Dibujos del espacio de trabajo",
+            "drawings": "Dibujos · {{color}}",
+            "crowd": "Agentes",
+            "color": "Color · {{color}}",
+            "photo": "Tu foto"
+          },
+          "choose": "Elegir…",
+          "menu": "Fondo de la conversación…",
+          "preview": "Vista previa",
+          "usePhoto": "Usar esta foto",
+          "dragHint": "Arrastra la foto para elegir la parte que se ve",
+          "dim": "Oscurecer en modo oscuro",
+          "sending": "Enviando la foto…",
+          "failed": "No se pudo guardar el fondo. Inténtalo de nuevo.",
+          "done": "Listo"
         }
       },
       "agentStyle": "Cómo te hablan los agentes",
@@ -17566,6 +17618,21 @@
     "tomorrowAt": "mañana {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Entregado a <0/>{{name}}",
+      "working": "trabajando en ello",
+      "done": "listo en {{duration}}",
+      "waitingYou": "esperando tu respuesta",
+      "waiting": "esperando una respuesta",
+      "waitingApprovalYou": "esperando tu aprobación",
+      "waitingApproval": "esperando aprobación",
+      "waitingComputer": "esperando el ordenador",
+      "paused": "en pausa en el límite del plan",
+      "queued": "en cola",
+      "failed": "no terminó",
+      "stopped": "detenido",
+      "step": "paso {{current}} de {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_many": "{{count}} min",
@@ -17643,24 +17710,12 @@
       "failed": "Bloqueado · no terminó",
       "failedWhy": "Bloqueado · no terminó: {{why}}"
     },
-    "working": "En segundo plano",
-    "handed": {
-      "lead": "Entregado a <0/>{{name}}",
-      "working": "trabajando en ello",
-      "done": "listo en {{duration}}",
-      "waitingYou": "esperando tu respuesta",
-      "waiting": "esperando una respuesta",
-      "waitingApprovalYou": "esperando tu aprobación",
-      "waitingApproval": "esperando aprobación",
-      "waitingComputer": "esperando el ordenador",
-      "paused": "en pausa en el límite del plan",
-      "queued": "en cola",
-      "failed": "no terminó",
-      "stopped": "detenido",
-      "step": "paso {{current}} de {{total}}"
-    }
+    "working": "En segundo plano"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} te pregunta"
+    },
     "speedFallback": {
       "text": "ChatGPT rechazó la velocidad Rápida en esta cuenta o modelo, así que esta respuesta salió en estándar.",
       "action": "Abrir agente"
@@ -18261,9 +18316,6 @@
       "interrupted": "Interrumpido por un reinicio del servidor. Vuelve a pedirlo para continuar.",
       "step_limit": "Me quedé sin pasos antes de terminar.",
       "stuck": "Me trabé y me detuve antes de terminar."
-    },
-    "request": {
-      "asksYou": "{{name}} te pregunta"
     }
   },
   "builtinTools": {

@@ -2414,7 +2414,8 @@
     "header": {
       "pins": "Vastgezette berichten",
       "showMembers": "Leden tonen",
-      "hideMembers": "Leden verbergen"
+      "hideMembers": "Leden verbergen",
+      "more": "Meer opties"
     },
     "membersButton_one": "Kanaalleden ({{count}})",
     "membersButton_other": "Kanaalleden ({{count}})",
@@ -2637,6 +2638,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Heeft een computer nodig",
+        "computerOnly": "Van {{owner}}, alleen aangemeld op {{computer}}. Lodi denkt met een plan dat als account is aangemeld.",
+        "noComputer": "Van {{owner}}. Er is een computer nodig, en de workspace heeft er geen verbonden.",
+        "away": "Van {{owner}}, op {{computer}}, die weg is.",
+        "connect": "Een computer verbinden",
+        "plans": "Plannen bekijken"
+      }
+    },
     "label": "je rechterhand",
     "labelCapitalized": "Je rechterhand",
     "unusable": {
@@ -2919,16 +2930,6 @@
       "invite_people_sent_one": "Uitnodiging verstuurd naar <b>{{emails}}</b>.",
       "invite_people_sent_other": "Uitnodigingen verstuurd naar <b>{{emails}}</b>.",
       "remove_ai_key": "API-sleutel \"{{name}}\" verwijderen."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Heeft een computer nodig",
-        "computerOnly": "Van {{owner}}, alleen aangemeld op {{computer}}. Lodi denkt met een plan dat als account is aangemeld.",
-        "noComputer": "Van {{owner}}. Er is een computer nodig, en de workspace heeft er geen verbonden.",
-        "away": "Van {{owner}}, op {{computer}}, die weg is.",
-        "connect": "Een computer verbinden",
-        "plans": "Plannen bekijken"
-      }
     }
   },
   "teamWeek": {
@@ -7757,6 +7758,9 @@
     }
   },
   "issues": {
+    "handedBy": "overgedragen door <0/>{{name}}",
+    "fromDm": "uit <0>je DM met {{name}}</0>",
+    "fromDmText": "uit je DM met {{name}}",
     "delete": {
       "action": "Taak verwijderen",
       "title": "Taak #{{number}} verwijderen?",
@@ -7968,6 +7972,9 @@
       "runningTitle_female": "{{name}} werkt eraan",
       "waitingTitle": "{{name}} wacht op jou",
       "waitingTitle_female": "{{name}} wacht op jou",
+      "finishedTitle": "{{name}} heeft het afgerond",
+      "finishedMeta": "{{when}} · overgedragen door {{name}}",
+      "answer": "Antwoorden",
       "stalledTitle": "{{name}} is gestopt {{when}}",
       "stalledTitle_female": "{{name}} is gestopt {{when}}",
       "stalledText": "De taak ligt nog bij {{name}}, maar er loopt geen run.",
@@ -7986,10 +7993,7 @@
         "failed": "De laatste run is mislukt.",
         "canceled": "Iemand heeft de run gestopt.",
         "budget": "Het maandbudget van de agent is op."
-      },
-      "finishedTitle": "{{name}} heeft het afgerond",
-      "finishedMeta": "{{when}} · overgedragen door {{name}}",
-      "answer": "Antwoorden"
+      }
     },
     "status": {
       "todo": "Te doen",
@@ -8179,10 +8183,7 @@
       "criterion_checked": "heeft het criterium \"{{text}}\" aangevinkt",
       "criterion_unchecked": "heeft het criterium \"{{text}}\" uitgevinkt",
       "agent_asked": "heeft {{name}} gevraagd het te doen"
-    },
-    "handedBy": "overgedragen door <0/>{{name}}",
-    "fromDm": "uit <0>je DM met {{name}}</0>",
-    "fromDmText": "uit je DM met {{name}}"
+    }
   },
   "routines": {
     "filters": "Routines filteren",
@@ -14745,6 +14746,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Die foto is niet van jou.",
+      "invalid": "Die achtergrond bestaat niet.",
+      "tooLarge": "De foto mag maximaal 2 MB zijn.",
+      "type": "Gebruik een JPEG-, PNG- of WebP-foto."
+    },
     "tooLarge": "Dit is groter dan de server aanneemt.",
     "tooLargeMax": "Dit is groter dan de server aanneemt: tot {{max}} MB.",
     "passwordLink": {
@@ -16661,6 +16668,51 @@
           "new3": "Nog 2, ik bel morgen.",
           "new4": "Rapport bijgewerkt in de Drive.",
           "newCount": "4 nieuwe"
+        },
+        "wallpaper": {
+          "title": "Achtergrond",
+          "help": "Verandert alleen voor jou, op al je apparaten",
+          "rowHelp": "Achter elk gesprek, alleen voor jou. Een gesprek kan via zijn menu een eigen achtergrond hebben.",
+          "rowSub": "Alleen voor jou, in elk gesprek",
+          "onlyHere": "Alleen in {{name}}, alleen voor jou",
+          "none": "Geen achtergrond",
+          "sameAsOthers": "Zoals de andere gesprekken",
+          "sameShort": "Zoals de andere",
+          "sky": "Lucht",
+          "drawings": "Tekeningen",
+          "color": "Kleur",
+          "photos": "Je foto's",
+          "choosePhoto": "Kies een foto",
+          "skyAutoHelp": "De eerste volgt het gesprek: in een direct bericht een lucht in de kleur van de agent, in kanalen die van de werkruimte.",
+          "skyAutoHelpDms": "De eerste is een lucht in de kleur van de agent.",
+          "skyAutoHelpChannels": "De eerste is de lucht van de werkruimte.",
+          "neutral": {
+            "paper": "Papier",
+            "mist": "Nevel",
+            "sand": "Zand"
+          },
+          "name": {
+            "skyAuto": "Lucht van het gesprek",
+            "skyAgent": "Lucht van de agent",
+            "skyWorkspace": "Lucht van de werkruimte",
+            "sky": "Lucht · {{color}}",
+            "drawingsAuto": "Tekeningen van het gesprek",
+            "drawingsAgent": "Tekeningen van de agent",
+            "drawingsWorkspace": "Tekeningen van de werkruimte",
+            "drawings": "Tekeningen · {{color}}",
+            "crowd": "Agents",
+            "color": "Kleur · {{color}}",
+            "photo": "Je foto"
+          },
+          "choose": "Kiezen…",
+          "menu": "Achtergrond van het gesprek…",
+          "preview": "Voorbeeld",
+          "usePhoto": "Deze foto gebruiken",
+          "dragHint": "Sleep de foto om te kiezen welk deel je ziet",
+          "dim": "Donkerder maken in donkere modus",
+          "sending": "Foto versturen…",
+          "failed": "Kon de achtergrond niet opslaan. Probeer het opnieuw.",
+          "done": "Klaar"
         }
       },
       "agentStyle": "Hoe agents met je praten",
@@ -17160,6 +17212,21 @@
     "tomorrowAt": "morgen {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Overgedragen aan <0/>{{name}}",
+      "working": "bezig",
+      "done": "klaar in {{duration}}",
+      "waitingYou": "wacht op jouw antwoord",
+      "waiting": "wacht op een antwoord",
+      "waitingApprovalYou": "wacht op jouw goedkeuring",
+      "waitingApproval": "wacht op goedkeuring",
+      "waitingComputer": "wacht op de computer",
+      "paused": "gepauzeerd op de limiet van het plan",
+      "queued": "in de wachtrij",
+      "failed": "niet afgemaakt",
+      "stopped": "gestopt",
+      "step": "stap {{current}} van {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_other": "{{count}} min",
@@ -17235,24 +17302,12 @@
       "failed": "Geblokkeerd · niet afgemaakt",
       "failedWhy": "Geblokkeerd · niet afgemaakt: {{why}}"
     },
-    "working": "Op de achtergrond",
-    "handed": {
-      "lead": "Overgedragen aan <0/>{{name}}",
-      "working": "bezig",
-      "done": "klaar in {{duration}}",
-      "waitingYou": "wacht op jouw antwoord",
-      "waiting": "wacht op een antwoord",
-      "waitingApprovalYou": "wacht op jouw goedkeuring",
-      "waitingApproval": "wacht op goedkeuring",
-      "waitingComputer": "wacht op de computer",
-      "paused": "gepauzeerd op de limiet van het plan",
-      "queued": "in de wachtrij",
-      "failed": "niet afgemaakt",
-      "stopped": "gestopt",
-      "step": "stap {{current}} van {{total}}"
-    }
+    "working": "Op de achtergrond"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} vraagt je"
+    },
     "speedFallback": {
       "text": "ChatGPT weigerde de snelheid Snel voor dit account of model, dus dit antwoord kwam op standaardsnelheid.",
       "action": "Agent openen"
@@ -17857,9 +17912,6 @@
       "interrupted": "Onderbroken door een herstart van de server. Vraag het opnieuw om verder te gaan.",
       "step_limit": "Mijn stappen waren op voordat ik klaar was.",
       "stuck": "Ik liep vast en stopte voordat ik klaar was."
-    },
-    "request": {
-      "asksYou": "{{name}} vraagt je"
     }
   },
   "builtinTools": {

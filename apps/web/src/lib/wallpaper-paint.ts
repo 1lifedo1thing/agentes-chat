@@ -7,15 +7,15 @@
 import type { Wallpaper, WallpaperHue, WallpaperNeutral } from "@agenteschat/client/lib/wallpaper";
 import { parseColor } from "@agenteschat/ui/sky/math";
 import {
-  TRAMA,
-  TRAMA_ICONS,
-  TRAMA_TILE,
-  TURMA,
-  TURMA_TILE,
-  tramaColors,
-  turmaAgents,
-  turmaShape,
-  turmaTones,
+  DRAWINGS,
+  DRAWING_ICONS,
+  DRAWINGS_TILE,
+  CROWD,
+  CROWD_TILE,
+  drawingsColors,
+  crowdAgents,
+  crowdShape,
+  crowdTones,
   WALLPAPER_GLINTS,
   WALLPAPER_LIFT,
   WALLPAPER_PAGE,
@@ -99,13 +99,13 @@ function paintSky(ctx: Ctx, w: number, h: number, colors: readonly WallpaperHue[
 }
 
 let icons: Path2D[] | null = null;
-const tramaIcons = () => {
-  icons ??= TRAMA_ICONS.map((d) => new Path2D(d));
+const drawingsIcons = () => {
+  icons ??= DRAWING_ICONS.map((d) => new Path2D(d));
   return icons;
 };
 
 /** The drawings, tone on tone, in points (the context is already scaled); one band per color. */
-function paintTrama(
+function paintDrawings(
   ctx: Ctx,
   w: number,
   h: number,
@@ -113,8 +113,8 @@ function paintTrama(
   dark: boolean,
   small: boolean,
 ) {
-  const spec = small ? TRAMA_TILE : TRAMA;
-  const paths = tramaIcons();
+  const spec = small ? DRAWINGS_TILE : DRAWINGS;
+  const paths = drawingsIcons();
   const cells = wallpaperGrid(w, h, spec.cell, paths.length);
   const s = spec.size / 24;
   ctx.lineCap = "round";
@@ -122,7 +122,7 @@ function paintTrama(
   colors.forEach((color, i) => {
     const x0 = Math.round((i * w) / colors.length);
     const x1 = Math.round(((i + 1) * w) / colors.length);
-    const { bg, ink } = tramaColors(color, dark);
+    const { bg, ink } = drawingsColors(color, dark);
     ctx.save();
     ctx.beginPath();
     ctx.rect(x0, 0, x1 - x0, h);
@@ -153,13 +153,13 @@ function pill(ctx: Ctx, x: number, y: number, w: number, h: number) {
 }
 
 /** Many agents, faint, on the page. */
-function paintTurma(ctx: Ctx, w: number, h: number, dark: boolean, small: boolean) {
-  const spec = small ? TURMA_TILE : TURMA;
+function paintCrowd(ctx: Ctx, w: number, h: number, dark: boolean, small: boolean) {
+  const spec = small ? CROWD_TILE : CROWD;
   ctx.fillStyle = WALLPAPER_PAGE[dark ? "dark" : "light"];
   ctx.fillRect(0, 0, w, h);
-  for (const agent of turmaAgents(w, h, spec.cell, spec.size)) {
-    const tones = turmaTones(agent.color, dark);
-    const shape = turmaShape(agent.x, agent.y, agent.size, agent.eyes);
+  for (const agent of crowdAgents(w, h, spec.cell, spec.size)) {
+    const tones = crowdTones(agent.color, dark);
+    const shape = crowdShape(agent.x, agent.y, agent.size, agent.eyes);
     ctx.fillStyle = tones.body;
     ctx.fill(new Path2D(shape.body));
     ctx.fillStyle = tones.eye;
@@ -201,8 +201,8 @@ export function paintWallpaper(
         paintSky(ctx, w, h, wallpaper.color === "auto" ? (o.bands ?? ["sky"]) : [wallpaper.color], o.dark, small);
         return;
       }
-      case "trama":
-      case "turma": {
+      case "drawings":
+      case "agents": {
         if (typeof Path2D === "undefined") {
           paintFlat(canvas, ctx, page);
           return;
@@ -211,10 +211,10 @@ export function paintWallpaper(
         canvas.width = Math.max(1, Math.round(width * ratio));
         canvas.height = Math.max(1, Math.round(height * ratio));
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-        if (wallpaper.kind === "turma") paintTurma(ctx, width, height, o.dark, small);
+        if (wallpaper.kind === "agents") paintCrowd(ctx, width, height, o.dark, small);
         else {
           const colors = wallpaper.color === "auto" ? (o.bands ?? ["sky"]) : [wallpaper.color];
-          paintTrama(ctx, width, height, colors, o.dark, small);
+          paintDrawings(ctx, width, height, colors, o.dark, small);
         }
         return;
       }

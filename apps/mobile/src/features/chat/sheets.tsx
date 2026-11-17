@@ -622,7 +622,7 @@ export function ChannelOptions({
   const categoryName = channel?.categoryId
     ? categories.data?.find((c) => c.id === channel.categoryId)?.name
     : undefined;
-  // This conversation's own background, mine alone (Fundo); none of its own: it follows the others.
+  // This conversation's own background, mine alone; none of its own: it follows the others.
   const { org } = useOrg();
   const dm = Boolean(useDms(orgId).data?.some((d) => d.channelId === channelId));
   const ownWallpaper = conversationWallpaperOf(org?.chatPrefs, channelId);

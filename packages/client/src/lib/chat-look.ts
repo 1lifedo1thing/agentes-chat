@@ -34,10 +34,8 @@ export interface ChatPrefs {
   fullMessages?: boolean;
   /** "Always send": a report an agent offers about the app goes with its reply, without asking me. */
   feedbackAuto?: boolean;
-  /** The channels' background (`./wallpaper.ts`); absent: none. */
-  channelWallpaper?: Wallpaper;
-  /** The DMs' background; absent: none. */
-  dmWallpaper?: Wallpaper;
+  /** The background behind every conversation (`./wallpaper.ts`); absent: none. */
+  wallpaper?: Wallpaper;
   /** A conversation's own background, by channel id, over the two above; absent: as the others. */
   wallpapers?: Record<string, Wallpaper>;
 }

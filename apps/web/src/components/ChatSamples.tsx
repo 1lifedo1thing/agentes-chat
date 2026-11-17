@@ -1,6 +1,6 @@
 import type { ChatStyle, ChatTextSize } from "@agenteschat/client/lib/chat-look";
-import { type AgentColor, Avatar, cx, Message, MessageText } from "@agenteschat/ui";
-import type { ReactNode } from "react";
+import { type AgentColor, Avatar, cx, Message, MessageLookContext, MessageText } from "@agenteschat/ui";
+import { type ReactNode, useContext } from "react";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 
@@ -29,6 +29,8 @@ export function SampleRows({
   children?: (line: SampleLine, row: ReactNode) => ReactNode;
 }) {
   const { me } = useOrg();
+  // A DM's two speakers need no name in the bubble: the conversation's own rows wrap it to hide it, so do these.
+  const names = useContext(MessageLookContext)?.names !== false;
   return lines.map((line) => {
     const agent = line.who === "agent";
     const run = line.run ?? "solo";
@@ -46,7 +48,9 @@ export function SampleRows({
             <Avatar kind="person" name={me.user.name} imageUrl={me.user.image ?? undefined} />
           )
         }
-        author={agent ? SAMPLE_AGENT.name : me.user.name}
+        author={
+          agent && !names ? <span className="ac-visually-hidden">{SAMPLE_AGENT.name}</span> : agent ? SAMPLE_AGENT.name : me.user.name
+        }
         time={line.time}
       >
         <MessageText>

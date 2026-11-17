@@ -1,5 +1,5 @@
 /**
- * How a conversation's background (Fundo, packages/client/src/lib/wallpaper.ts) is painted, DOM-free, so the web
+ * How a conversation's background (packages/client/src/lib/wallpaper.ts) is painted, DOM-free, so the web
  * (a canvas, `ChatWallpaper`) and the phone (Skia) paint the same thing from the same numbers. Every family sits behind
  * the messages at a strength the words can be read on: the sky is strong only at the top (behind the bar) and at the
  * horizon (behind the composer), the drawings are tone on tone, and the styles with no bubbles take it at half.
@@ -14,7 +14,7 @@ type Neutral = "paper" | "mist" | "sand";
 export const WALLPAPER_PAGE = { light: "#ffffff", dark: "#0f0f0e" } as const;
 const pageOf = (dark: boolean) => (dark ? WALLPAPER_PAGE.dark : WALLPAPER_PAGE.light);
 
-/** The quiet colors of Trama and Cor, light and dark. */
+/** The quiet colors of Drawings and Cor, light and dark. */
 export const WALLPAPER_NEUTRAL_TONES: Record<Neutral, { light: string; dark: string }> = {
   paper: { light: "#f4f2ed", dark: "#181816" },
   mist: { light: "#eef1f4", dark: "#141618" },
@@ -31,7 +31,7 @@ export const WALLPAPER_LIFT = { light: "#ffffff", dark: "#232322" } as const;
 export const WALLPAPER_NO_BUBBLES_STRENGTH = 0.5;
 export const wallpaperStrength = (bubbles: boolean) => (bubbles ? 1 : WALLPAPER_NO_BUBBLES_STRENGTH);
 
-/* ---------- Céu: the sky, dithered ---------- */
+/* ---------- Sky: dithered ---------- */
 
 /** Points per sky pixel on screen. */
 export const WALLPAPER_SKY_PIXEL = 3;
@@ -87,10 +87,10 @@ export const WALLPAPER_GLINTS: readonly (readonly [number, number, boolean])[] =
 export const wallpaperGlintTone = (dark: boolean) => (dark ? 4 : 3);
 export const WALLPAPER_STARS = 46;
 
-/* ---------- Trama: line drawings in the app's icon style ---------- */
+/* ---------- Drawings: line drawings in the app's icon style ---------- */
 
 /** The drawings, path data in a 24-point box, stroked (round caps and joins). */
-export const TRAMA_ICONS = [
+export const DRAWING_ICONS = [
   "M8.5 4h7A4.5 4.5 0 0 1 20 8.5v7a4.5 4.5 0 0 1-4.5 4.5H6.8L4 17.2V8.5A4.5 4.5 0 0 1 8.5 4zM10 10v3M14 10v3", // an agent
   "M12 4c.7 4.6 2.4 6.3 7 7-4.6.7-6.3 2.4-7 7-.7-4.6-2.4-6.3-7-7 4.6-.7 6.3-2.4 7-7z", // a glint
   "M7.5 18h9.5a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.6-1.2A4.1 4.1 0 0 0 7.5 18z", // a cloud
@@ -112,12 +112,12 @@ export const TRAMA_ICONS = [
   "M5 12.5l4.5 4.5L19 7.5", // a check
 ] as const;
 
-/** The trama's grid on a screen, and in a picker's tile. */
-export const TRAMA = { cell: 50, size: 21, stroke: 1.35 } as const;
-export const TRAMA_TILE = { cell: 22, size: 11, stroke: 1 } as const;
+/** The drawings's grid on a screen, and in a picker's tile. */
+export const DRAWINGS = { cell: 50, size: 21, stroke: 1.35 } as const;
+export const DRAWINGS_TILE = { cell: 22, size: 11, stroke: 1 } as const;
 
-/** The trama's page and its drawings' ink, tone on tone. */
-export function tramaColors(color: Neutral | Hue, dark: boolean): { bg: string; ink: string } {
+/** The drawings's page and its drawings' ink, tone on tone. */
+export function drawingsColors(color: Neutral | Hue, dark: boolean): { bg: string; ink: string } {
   if (isNeutral(color)) {
     const bg = WALLPAPER_NEUTRAL_TONES[color][dark ? "dark" : "light"];
     return { bg, ink: mix(bg, dark ? "#ffffff" : "#000000", 0.1) };
@@ -147,39 +147,39 @@ export function wallpaperGrid(w: number, h: number, cell: number, count: number,
   return out;
 }
 
-/* ---------- Turma: many agents, faint ---------- */
+/* ---------- Crowd: many agents, faint ---------- */
 
-/** The agents of the turma: every color, a few eye styles; all faint (a texture, never a crowd). */
-export const TURMA_HUES: readonly Hue[] = ["sky", "indigo", "violet", "rose", "amber", "green", "teal", "graphite"];
-export const TURMA_EYES = ["round", "dots", "wide"] as const;
-export const TURMA = { cell: 64, size: 26 } as const;
-export const TURMA_TILE = { cell: 26, size: 12 } as const;
+/** The agents of the crowd: every color, a few eye styles; all faint (a texture, never a crowd). */
+export const CROWD_HUES: readonly Hue[] = ["sky", "indigo", "violet", "rose", "amber", "green", "teal", "graphite"];
+export const CROWD_EYES = ["round", "dots", "wide"] as const;
+export const CROWD = { cell: 64, size: 26 } as const;
+export const CROWD_TILE = { cell: 26, size: 12 } as const;
 
-/** One agent of the turma: its body's tone (a faint tint of its color) and its eyes'. */
-export function turmaTones(color: Hue, dark: boolean): { body: string; eye: string } {
+/** One agent of the crowd: its body's tone (a faint tint of its color) and its eyes'. */
+export function crowdTones(color: Hue, dark: boolean): { body: string; eye: string } {
   const [top, deep] = gradientOf(color);
   const p = pageOf(dark);
   return dark ? { body: mix(p, deep, 0.13), eye: mix(p, "#ffffff", 0.07) } : { body: mix(p, top, 0.075), eye: p };
 }
 
-/** The turma's agents on a `w`×`h` screen: the top-left of each body, its side, color and eyes. */
-export function turmaAgents(w: number, h: number, cell: number, size: number) {
-  return wallpaperGrid(w, h, cell, TURMA_HUES.length, 0).map((g) => ({
+/** The crowd's agents on a `w`×`h` screen: the top-left of each body, its side, color and eyes. */
+export function crowdAgents(w: number, h: number, cell: number, size: number) {
+  return wallpaperGrid(w, h, cell, CROWD_HUES.length, 0).map((g) => ({
     x: Math.round(g.x - size / 2),
     y: Math.round(g.y - size / 2),
     size,
-    color: TURMA_HUES[(((g.row * 3 + g.col * 5) % TURMA_HUES.length) + TURMA_HUES.length) % TURMA_HUES.length] as Hue,
-    eyes: TURMA_EYES[(((g.row + g.col * 2) % TURMA_EYES.length) + TURMA_EYES.length) % TURMA_EYES.length] as string,
+    color: CROWD_HUES[(((g.row * 3 + g.col * 5) % CROWD_HUES.length) + CROWD_HUES.length) % CROWD_HUES.length] as Hue,
+    eyes: CROWD_EYES[(((g.row + g.col * 2) % CROWD_EYES.length) + CROWD_EYES.length) % CROWD_EYES.length] as string,
   }));
 }
 
 /** The body's outline and the eyes' boxes of an agent at (x, y), side `s` (the agent engine's shape). */
-export const turmaShape = (x: number, y: number, s: number, eyes: string) => ({
+export const crowdShape = (x: number, y: number, s: number, eyes: string) => ({
   body: bodyPath(x, y, s),
   eyes: eyeShapes(eyes).map((e) => ({ x: x + e.x * s, y: y + e.y * s, w: e.w * s, h: e.h * s })),
 });
 
-/* ---------- Cor ---------- */
+/* ---------- Color ---------- */
 
 /** One flat color: a neutral as it is, an agent's color as a light tint (light) or a deep one (dark). */
 export function wallpaperFill(color: Neutral | Hue, dark: boolean): string {
@@ -191,7 +191,7 @@ export function wallpaperFill(color: Neutral | Hue, dark: boolean): string {
 /** A tile's look before its picture paints, and what a background "is" at a glance (the sky's middle tone). */
 export function wallpaperSwatch(w: { kind: string; color?: string }, dark: boolean): string {
   if (w.kind === "sky") return wallpaperSkyTones((w.color as Hue) ?? "sky", dark)[1] as string;
-  if (w.kind === "trama") return tramaColors((w.color as Neutral | Hue) ?? "paper", dark).bg;
+  if (w.kind === "drawings") return drawingsColors((w.color as Neutral | Hue) ?? "paper", dark).bg;
   if (w.kind === "color") return wallpaperFill((w.color as Neutral | Hue) ?? "paper", dark);
   return pageOf(dark);
 }

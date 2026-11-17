@@ -2492,7 +2492,8 @@
     "header": {
       "pins": "Messages épinglés",
       "showMembers": "Afficher les membres",
-      "hideMembers": "Masquer les membres"
+      "hideMembers": "Masquer les membres",
+      "more": "Plus d'options"
     },
     "membersButton_one": "Membres du canal ({{count}})",
     "membersButton_many": "Membres du canal ({{count}})",
@@ -2736,6 +2737,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Besoin d'un ordinateur",
+        "computerOnly": "De {{owner}}, connecté seulement sur {{computer}}. Lodi réfléchit avec un forfait connecté en tant que compte.",
+        "noComputer": "De {{owner}}. Il faut un ordinateur, et l'espace de travail n'en a aucun de connecté.",
+        "away": "De {{owner}}, sur {{computer}}, qui est absent.",
+        "connect": "Connecter un ordinateur",
+        "plans": "Voir les forfaits"
+      }
+    },
     "label": "votre bras droit",
     "labelCapitalized": "Votre bras droit",
     "unusable": {
@@ -3028,16 +3039,6 @@
       "invite_people_sent_many": "Invitations envoyées à <b>{{emails}}</b>.",
       "invite_people_sent_other": "Invitations envoyées à <b>{{emails}}</b>.",
       "remove_ai_key": "Supprimer la clé API « {{name}} »."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Besoin d'un ordinateur",
-        "computerOnly": "De {{owner}}, connecté seulement sur {{computer}}. Lodi réfléchit avec un forfait connecté en tant que compte.",
-        "noComputer": "De {{owner}}. Il faut un ordinateur, et l'espace de travail n'en a aucun de connecté.",
-        "away": "De {{owner}}, sur {{computer}}, qui est absent.",
-        "connect": "Connecter un ordinateur",
-        "plans": "Voir les forfaits"
-      }
     }
   },
   "teamWeek": {
@@ -7987,6 +7988,9 @@
     }
   },
   "issues": {
+    "handedBy": "confiée par <0/>{{name}}",
+    "fromDm": "depuis <0>ta DM avec {{name}}</0>",
+    "fromDmText": "depuis ta DM avec {{name}}",
     "delete": {
       "action": "Supprimer la tâche",
       "title": "Supprimer la tâche #{{number}} ?",
@@ -8207,6 +8211,9 @@
       "runningTitle_female": "{{name}} y travaille",
       "waitingTitle": "{{name}} vous attend",
       "waitingTitle_female": "{{name}} vous attend",
+      "finishedTitle": "{{name}} l'a terminée",
+      "finishedMeta": "{{when}} · confiée par {{name}}",
+      "answer": "Répondre",
       "stalledTitle": "{{name}} s'est arrêté {{when}}",
       "stalledTitle_female": "{{name}} s'est arrêtée {{when}}",
       "stalledText": "La tâche est toujours confiée à {{name}}, mais aucune exécution n'est en cours.",
@@ -8225,10 +8232,7 @@
         "failed": "La dernière exécution a échoué.",
         "canceled": "Quelqu'un a arrêté l'exécution.",
         "budget": "Le budget mensuel de l'agent est épuisé."
-      },
-      "finishedTitle": "{{name}} l'a terminée",
-      "finishedMeta": "{{when}} · confiée par {{name}}",
-      "answer": "Répondre"
+      }
     },
     "status": {
       "todo": "À faire",
@@ -8422,10 +8426,7 @@
       "criterion_checked": "a coché le critère « {{text}} »",
       "criterion_unchecked": "a décoché le critère « {{text}} »",
       "agent_asked": "a demandé à {{name}} de la faire"
-    },
-    "handedBy": "confiée par <0/>{{name}}",
-    "fromDm": "depuis <0>ta DM avec {{name}}</0>",
-    "fromDmText": "depuis ta DM avec {{name}}"
+    }
   },
   "routines": {
     "filters": "Filtrer les routines",
@@ -15183,6 +15184,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Cette photo n'est pas à vous.",
+      "invalid": "Ce fond n'existe pas.",
+      "tooLarge": "La photo peut peser jusqu'à 2 Mo.",
+      "type": "Utilisez une photo JPEG, PNG ou WebP."
+    },
     "tooLarge": "C'est plus que ce que le serveur accepte.",
     "tooLargeMax": "C'est plus que ce que le serveur accepte : jusqu'à {{max}} Mo.",
     "passwordLink": {
@@ -17118,6 +17125,51 @@
           "new3": "Il en reste 2, j'appelle demain.",
           "new4": "Rapport mis à jour dans le Drive.",
           "newCount": "4 nouveaux"
+        },
+        "wallpaper": {
+          "title": "Fond",
+          "help": "Ne change que pour vous, sur tous vos appareils",
+          "rowHelp": "Derrière toutes les conversations, pour vous seul. Une conversation peut avoir le sien depuis son menu.",
+          "rowSub": "Pour vous seul, dans toutes les conversations",
+          "onlyHere": "Seulement dans {{name}}, pour vous seul",
+          "none": "Aucun fond",
+          "sameAsOthers": "Comme les autres conversations",
+          "sameShort": "Comme les autres",
+          "sky": "Ciel",
+          "drawings": "Dessins",
+          "color": "Couleur",
+          "photos": "Vos photos",
+          "choosePhoto": "Choisir une photo",
+          "skyAutoHelp": "Le premier suit la conversation : dans un message direct, un ciel de la couleur de l'agent ; dans les canaux, celui de l'espace de travail.",
+          "skyAutoHelpDms": "Le premier est un ciel de la couleur de l'agent.",
+          "skyAutoHelpChannels": "Le premier est le ciel de l'espace de travail.",
+          "neutral": {
+            "paper": "Papier",
+            "mist": "Brume",
+            "sand": "Sable"
+          },
+          "name": {
+            "skyAuto": "Ciel de la conversation",
+            "skyAgent": "Ciel de l'agent",
+            "skyWorkspace": "Ciel de l'espace de travail",
+            "sky": "Ciel · {{color}}",
+            "drawingsAuto": "Dessins de la conversation",
+            "drawingsAgent": "Dessins de l'agent",
+            "drawingsWorkspace": "Dessins de l'espace de travail",
+            "drawings": "Dessins · {{color}}",
+            "crowd": "Agents",
+            "color": "Couleur · {{color}}",
+            "photo": "Votre photo"
+          },
+          "choose": "Choisir…",
+          "menu": "Fond de la conversation…",
+          "preview": "Aperçu",
+          "usePhoto": "Utiliser cette photo",
+          "dragHint": "Faites glisser la photo pour choisir la partie visible",
+          "dim": "Assombrir en mode sombre",
+          "sending": "Envoi de la photo…",
+          "failed": "Impossible d'enregistrer le fond. Réessayez.",
+          "done": "Terminé"
         }
       },
       "agentStyle": "Comment les agents vous parlent",
@@ -17637,6 +17689,21 @@
     "tomorrowAt": "demain à {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Confié à <0/>{{name}}",
+      "working": "en cours",
+      "done": "terminé en {{duration}}",
+      "waitingYou": "attend ta réponse",
+      "waiting": "attend une réponse",
+      "waitingApprovalYou": "attend ton approbation",
+      "waitingApproval": "attend une approbation",
+      "waitingComputer": "attend l'ordinateur",
+      "paused": "en pause à la limite du forfait",
+      "queued": "en file d'attente",
+      "failed": "n'a pas abouti",
+      "stopped": "arrêté",
+      "step": "étape {{current}} sur {{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} min",
       "minutes_many": "{{count}} min",
@@ -17714,24 +17781,12 @@
       "failed": "Bloqué · pas terminé",
       "failedWhy": "Bloqué · pas terminé : {{why}}"
     },
-    "working": "En arrière-plan",
-    "handed": {
-      "lead": "Confié à <0/>{{name}}",
-      "working": "en cours",
-      "done": "terminé en {{duration}}",
-      "waitingYou": "attend ta réponse",
-      "waiting": "attend une réponse",
-      "waitingApprovalYou": "attend ton approbation",
-      "waitingApproval": "attend une approbation",
-      "waitingComputer": "attend l'ordinateur",
-      "paused": "en pause à la limite du forfait",
-      "queued": "en file d'attente",
-      "failed": "n'a pas abouti",
-      "stopped": "arrêté",
-      "step": "étape {{current}} sur {{total}}"
-    }
+    "working": "En arrière-plan"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} te demande"
+    },
     "speedFallback": {
       "text": "ChatGPT a refusé la vitesse Rapide pour ce compte ou ce modèle, cette réponse est donc arrivée en standard.",
       "action": "Ouvrir l'agent"
@@ -18344,9 +18399,6 @@
       "interrupted": "Interrompu par un redémarrage du serveur. Redemandez pour continuer.",
       "step_limit": "Je n'avais plus d'étapes avant de terminer.",
       "stuck": "J'ai été bloqué et je me suis arrêté avant de terminer."
-    },
-    "request": {
-      "asksYou": "{{name}} te demande"
     }
   },
   "builtinTools": {

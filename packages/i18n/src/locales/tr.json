@@ -2414,7 +2414,8 @@
     "header": {
       "pins": "Sabitlenen mesajlar",
       "showMembers": "Üyeleri göster",
-      "hideMembers": "Üyeleri gizle"
+      "hideMembers": "Üyeleri gizle",
+      "more": "Diğer seçenekler"
     },
     "membersButton_one": "Kanal üyeleri ({{count}})",
     "membersButton_other": "Kanal üyeleri ({{count}})",
@@ -2634,6 +2635,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "Bir bilgisayar gerekiyor",
+        "computerOnly": "{{owner}} kişisine ait, yalnızca {{computer}} üzerinde oturum açık. Lodi, hesap olarak oturum açılmış bir planla düşünür.",
+        "noComputer": "{{owner}} kişisine ait. Bir bilgisayar gerekiyor ve çalışma alanında bağlı hiç yok.",
+        "away": "{{owner}} kişisine ait, {{computer}} üzerinde, şu an ulaşılamıyor.",
+        "connect": "Bilgisayar bağla",
+        "plans": "Planları gör"
+      }
+    },
     "label": "sağ kolun",
     "labelCapitalized": "Sağ kolun",
     "unusable": {
@@ -2916,16 +2927,6 @@
       "invite_people_sent_one": "<b>{{emails}}</b> adresine davet gönderildi.",
       "invite_people_sent_other": "<b>{{emails}}</b> adreslerine davet gönderildi.",
       "remove_ai_key": "\"{{name}}\" API anahtarını sil."
-    },
-    "brain": {
-      "unusable": {
-        "title": "Bir bilgisayar gerekiyor",
-        "computerOnly": "{{owner}} kişisine ait, yalnızca {{computer}} üzerinde oturum açık. Lodi, hesap olarak oturum açılmış bir planla düşünür.",
-        "noComputer": "{{owner}} kişisine ait. Bir bilgisayar gerekiyor ve çalışma alanında bağlı hiç yok.",
-        "away": "{{owner}} kişisine ait, {{computer}} üzerinde, şu an ulaşılamıyor.",
-        "connect": "Bilgisayar bağla",
-        "plans": "Planları gör"
-      }
     }
   },
   "teamWeek": {
@@ -7677,6 +7678,9 @@
     }
   },
   "issues": {
+    "handedBy": "devreden: <0/>{{name}}",
+    "fromDm": "<0>{{name}} ile DM'inden</0>",
+    "fromDmText": "{{name}} ile DM'inden",
     "delete": {
       "action": "Görevi sil",
       "title": "#{{number}} görevi silinsin mi?",
@@ -7885,6 +7889,9 @@
       "label": "{{name}} çalışması",
       "runningTitle": "{{name}} bunun üzerinde çalışıyor",
       "waitingTitle": "{{name}} sizi bekliyor",
+      "finishedTitle": "{{name}} bitirdi",
+      "finishedMeta": "{{when}} · devreden: {{name}}",
+      "answer": "Yanıtla",
       "stalledTitle": "{{name}} durdu: {{when}}",
       "stalledText": "Görev hâlâ {{name}} üzerinde ama süren bir çalıştırma yok.",
       "started": "başladı: {{when}}",
@@ -7901,10 +7908,7 @@
         "failed": "Son çalıştırma başarısız oldu.",
         "canceled": "Biri çalıştırmayı durdurdu.",
         "budget": "Ajanın aylık bütçesi bitti."
-      },
-      "finishedTitle": "{{name}} bitirdi",
-      "finishedMeta": "{{when}} · devreden: {{name}}",
-      "answer": "Yanıtla"
+      }
     },
     "status": {
       "todo": "Yapılacak",
@@ -8090,10 +8094,7 @@
       "criterion_checked": "\"{{text}}\" kriterini işaretledi",
       "criterion_unchecked": "\"{{text}}\" kriterinin işaretini kaldırdı",
       "agent_asked": "{{name}} ajanından yapmasını istedi"
-    },
-    "handedBy": "devreden: <0/>{{name}}",
-    "fromDm": "<0>{{name}} ile DM'inden</0>",
-    "fromDmText": "{{name}} ile DM'inden"
+    }
   },
   "routines": {
     "filters": "Rutinleri filtrele",
@@ -14618,6 +14619,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Bu fotoğraf sizin değil.",
+      "invalid": "Böyle bir arka plan yok.",
+      "tooLarge": "Fotoğraf en fazla 2 MB olabilir.",
+      "type": "JPEG, PNG veya WebP bir fotoğraf kullanın."
+    },
     "tooLarge": "Bu, sunucunun kabul ettiğinden büyük.",
     "tooLargeMax": "Bu, sunucunun kabul ettiğinden büyük: en fazla {{max}} MB.",
     "passwordLink": {
@@ -16534,6 +16541,51 @@
           "new3": "2 kaldı, yarın ararım.",
           "new4": "Rapor Drive'da güncellendi.",
           "newCount": "4 yeni"
+        },
+        "wallpaper": {
+          "title": "Arka plan",
+          "help": "Yalnızca sizin için değişir, tüm cihazlarınızda",
+          "rowHelp": "Tüm sohbetlerin arkasında, yalnızca sizin için. Bir sohbet, menüsünden kendi arka planını alabilir.",
+          "rowSub": "Yalnızca sizin için, tüm sohbetlerde",
+          "onlyHere": "Yalnızca {{name}} içinde, yalnızca sizin için",
+          "none": "Arka plan yok",
+          "sameAsOthers": "Diğer sohbetlerle aynı",
+          "sameShort": "Diğerleriyle aynı",
+          "sky": "Gökyüzü",
+          "drawings": "Çizimler",
+          "color": "Renk",
+          "photos": "Fotoğraflarınız",
+          "choosePhoto": "Fotoğraf seçin",
+          "skyAutoHelp": "İlki sohbete göre değişir: doğrudan mesajda ajanın renginde bir gökyüzü, kanallarda çalışma alanının gökyüzü.",
+          "skyAutoHelpDms": "İlki ajanın renginde bir gökyüzü.",
+          "skyAutoHelpChannels": "İlki çalışma alanının gökyüzü.",
+          "neutral": {
+            "paper": "Kâğıt",
+            "mist": "Sis",
+            "sand": "Kum"
+          },
+          "name": {
+            "skyAuto": "Sohbetin gökyüzü",
+            "skyAgent": "Ajanın gökyüzü",
+            "skyWorkspace": "Çalışma alanının gökyüzü",
+            "sky": "Gökyüzü · {{color}}",
+            "drawingsAuto": "Sohbetin çizimleri",
+            "drawingsAgent": "Ajanın çizimleri",
+            "drawingsWorkspace": "Çalışma alanının çizimleri",
+            "drawings": "Çizimler · {{color}}",
+            "crowd": "Ajanlar",
+            "color": "Renk · {{color}}",
+            "photo": "Fotoğrafınız"
+          },
+          "choose": "Seçin…",
+          "menu": "Sohbet arka planı…",
+          "preview": "Önizleme",
+          "usePhoto": "Bu fotoğrafı kullan",
+          "dragHint": "Görünen kısmı seçmek için fotoğrafı sürükleyin",
+          "dim": "Karanlık modda koyulaştır",
+          "sending": "Fotoğraf gönderiliyor…",
+          "failed": "Arka plan kaydedilemedi. Tekrar deneyin.",
+          "done": "Bitti"
         }
       },
       "agentStyle": "Ajanların sizinle nasıl konuştuğu",
@@ -17033,6 +17085,21 @@
     "tomorrowAt": "yarın {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "Devredildi: <0/>{{name}}",
+      "working": "üzerinde çalışıyor",
+      "done": "{{duration}} içinde bitti",
+      "waitingYou": "yanıtını bekliyor",
+      "waiting": "bir yanıt bekliyor",
+      "waitingApprovalYou": "onayını bekliyor",
+      "waitingApproval": "onay bekliyor",
+      "waitingComputer": "bilgisayarı bekliyor",
+      "paused": "plan sınırında duraklatıldı",
+      "queued": "sırada",
+      "failed": "bitmedi",
+      "stopped": "durduruldu",
+      "step": "adım {{current}}/{{total}}"
+    },
     "duration": {
       "minutes_one": "{{count}} dk",
       "minutes_other": "{{count}} dk",
@@ -17108,24 +17175,12 @@
       "failed": "Engellendi · bitmedi",
       "failedWhy": "Engellendi · bitmedi: {{why}}"
     },
-    "working": "Arka planda",
-    "handed": {
-      "lead": "Devredildi: <0/>{{name}}",
-      "working": "üzerinde çalışıyor",
-      "done": "{{duration}} içinde bitti",
-      "waitingYou": "yanıtını bekliyor",
-      "waiting": "bir yanıt bekliyor",
-      "waitingApprovalYou": "onayını bekliyor",
-      "waitingApproval": "onay bekliyor",
-      "waitingComputer": "bilgisayarı bekliyor",
-      "paused": "plan sınırında duraklatıldı",
-      "queued": "sırada",
-      "failed": "bitmedi",
-      "stopped": "durduruldu",
-      "step": "adım {{current}}/{{total}}"
-    }
+    "working": "Arka planda"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}} soruyor"
+    },
     "speedFallback": {
       "text": "ChatGPT bu hesap veya model için Hızlı hızı reddetti, bu yüzden bu yanıt standart hızda geldi.",
       "action": "Ajanı aç"
@@ -17718,9 +17773,6 @@
       "interrupted": "Sunucu yeniden başlatıldığı için kesildi. Devam etmek için yeniden sorun.",
       "step_limit": "Bitirmeden adımlarım tükendi.",
       "stuck": "Takıldım ve bitirmeden durdum."
-    },
-    "request": {
-      "asksYou": "{{name}} soruyor"
     }
   },
   "builtinTools": {

@@ -90,17 +90,16 @@ describe("a conversation's background on the phone", () => {
     expect(shrunkSize(800, 600)).toEqual({ width: 800, height: 600 });
   });
 
-  test("Fundo for a kind or for one conversation, by its params", () => {
-    expect(wallpaperTargetOf({ kind: "dms" })).toEqual({ kind: "dms" });
-    expect(wallpaperTargetOf({})).toEqual({ kind: "channels" });
-    expect(wallpaperTargetOf({ kind: "dms", channelId: "c1" })).toEqual({ channelId: "c1" });
-    expect(wallpaperHrefs.choose({ kind: "dms" })).toBe("/me/chat-wallpaper?kind=dms");
+  test("Background for every conversation or for one, by its params", () => {
+    expect(wallpaperTargetOf({})).toEqual({ all: true });
+    expect(wallpaperTargetOf({ channelId: "c1" })).toEqual({ channelId: "c1" });
+    expect(wallpaperHrefs.choose({ all: true })).toBe("/me/chat-wallpaper");
     expect(wallpaperHrefs.choose({ channelId: "a b" })).toBe("/me/chat-wallpaper?channelId=a%20b");
   });
 
   test("the same choice paints the same thing; a moved photo paints another", () => {
     expect(wallpaperKey({ kind: "sky", color: "auto" })).toBe(wallpaperKey({ kind: "sky", color: "auto" }));
-    expect(wallpaperKey({ kind: "turma" })).not.toBe(wallpaperKey({ kind: "none" }));
+    expect(wallpaperKey({ kind: "agents" })).not.toBe(wallpaperKey({ kind: "none" }));
     const photo = {
       kind: "photo",
       url: "/api/app/wallpapers/u/0123456789abcdef.jpg",

@@ -2339,7 +2339,8 @@
     "header": {
       "pins": "고정된 메시지",
       "showMembers": "멤버 보기",
-      "hideMembers": "멤버 숨기기"
+      "hideMembers": "멤버 숨기기",
+      "more": "옵션 더보기"
     },
     "membersButton_other": "채널 멤버({{count}})",
     "membersAgents": "에이전트",
@@ -2544,6 +2545,16 @@
     }
   },
   "rightHand": {
+    "brain": {
+      "unusable": {
+        "title": "컴퓨터가 필요해요",
+        "computerOnly": "{{owner}}의 것, {{computer}}에서만 로그인됨. Lodi는 계정으로 로그인한 플랜으로 생각해요.",
+        "noComputer": "{{owner}}의 것. 컴퓨터가 필요한데 워크스페이스에 연결된 컴퓨터가 없어요.",
+        "away": "{{owner}}의 것, {{computer}}에 있지만 자리를 비웠어요.",
+        "connect": "컴퓨터 연결",
+        "plans": "플랜 보기"
+      }
+    },
     "label": "당신의 오른팔",
     "labelCapitalized": "당신의 오른팔",
     "unusable": {
@@ -2816,16 +2827,6 @@
       "invite_roles_other": "{{roles}} 역할로 초대해요.",
       "invite_people_sent_other": "<b>{{emails}}</b>에게 초대를 보냈어요.",
       "remove_ai_key": "API 키 \"{{name}}\"을(를) 삭제합니다."
-    },
-    "brain": {
-      "unusable": {
-        "title": "컴퓨터가 필요해요",
-        "computerOnly": "{{owner}}의 것, {{computer}}에서만 로그인됨. Lodi는 계정으로 로그인한 플랜으로 생각해요.",
-        "noComputer": "{{owner}}의 것. 컴퓨터가 필요한데 워크스페이스에 연결된 컴퓨터가 없어요.",
-        "away": "{{owner}}의 것, {{computer}}에 있지만 자리를 비웠어요.",
-        "connect": "컴퓨터 연결",
-        "plans": "플랜 보기"
-      }
     }
   },
   "teamWeek": {
@@ -7434,6 +7435,9 @@
     }
   },
   "issues": {
+    "handedBy": "<0/>{{name}}이(가) 넘김",
+    "fromDm": "<0>{{name}}와(과)의 DM</0>에서",
+    "fromDmText": "{{name}}와(과)의 DM에서",
     "delete": {
       "action": "작업 삭제",
       "title": "작업 #{{number}}을(를) 삭제할까요?",
@@ -7633,6 +7637,9 @@
       "label": "{{name}}의 작업",
       "runningTitle": "{{name}}이(가) 작업 중이에요",
       "waitingTitle": "{{name}}이(가) 나를 기다리고 있어요",
+      "finishedTitle": "{{name}}이(가) 마쳤어요",
+      "finishedMeta": "{{when}} · {{name}}이(가) 넘김",
+      "answer": "답하기",
       "stalledTitle": "{{name}}이(가) {{when}} 멈췄어요",
       "stalledText": "작업은 아직 {{name}}에게 있지만 진행 중인 실행이 없어요.",
       "started": "{{when}} 시작",
@@ -7649,10 +7656,7 @@
         "failed": "마지막 실행이 실패했어요.",
         "canceled": "누군가 실행을 중지했어요.",
         "budget": "에이전트의 월 예산이 떨어졌어요."
-      },
-      "finishedTitle": "{{name}}이(가) 마쳤어요",
-      "finishedMeta": "{{when}} · {{name}}이(가) 넘김",
-      "answer": "답하기"
+      }
     },
     "status": {
       "todo": "할 일",
@@ -7834,10 +7838,7 @@
       "criterion_checked": "조건 \"{{text}}\"을(를) 체크했어요",
       "criterion_unchecked": "조건 \"{{text}}\"의 체크를 해제했어요",
       "agent_asked": "{{name}}에게 맡겼어요"
-    },
-    "handedBy": "<0/>{{name}}이(가) 넘김",
-    "fromDm": "<0>{{name}}와(과)의 DM</0>에서",
-    "fromDmText": "{{name}}와(과)의 DM에서"
+    }
   },
   "routines": {
     "filters": "루틴 필터",
@@ -14136,6 +14137,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "내 사진이 아니에요.",
+      "invalid": "없는 배경이에요.",
+      "tooLarge": "사진은 최대 2MB까지 가능해요.",
+      "type": "JPEG, PNG 또는 WebP 사진을 사용하세요."
+    },
     "tooLarge": "서버가 받을 수 있는 크기보다 커요.",
     "tooLargeMax": "서버가 받을 수 있는 크기보다 커요. 최대 {{max}}MB예요.",
     "passwordLink": {
@@ -16031,6 +16038,51 @@
           "new3": "2곳 남았어요, 내일 전화할게요.",
           "new4": "Drive의 보고서를 업데이트했어요.",
           "newCount": "새 메시지 4개"
+        },
+        "wallpaper": {
+          "title": "배경",
+          "help": "나에게만 바뀌고, 모든 기기에 적용돼요",
+          "rowHelp": "모든 대화 뒤에 나에게만 보여요. 대화마다 메뉴에서 따로 고를 수도 있어요.",
+          "rowSub": "나에게만, 모든 대화에서",
+          "onlyHere": "{{name}}에서만, 나에게만",
+          "none": "배경 없음",
+          "sameAsOthers": "다른 대화와 같게",
+          "sameShort": "다른 대화와 같음",
+          "sky": "하늘",
+          "drawings": "그림",
+          "color": "색상",
+          "photos": "내 사진",
+          "choosePhoto": "사진 선택",
+          "skyAutoHelp": "첫 번째는 대화에 따라 바뀌어요. 다이렉트 메시지에서는 에이전트 색의 하늘, 채널에서는 워크스페이스의 하늘이에요.",
+          "skyAutoHelpDms": "첫 번째는 에이전트 색의 하늘이에요.",
+          "skyAutoHelpChannels": "첫 번째는 워크스페이스의 하늘이에요.",
+          "neutral": {
+            "paper": "종이",
+            "mist": "안개",
+            "sand": "모래"
+          },
+          "name": {
+            "skyAuto": "대화의 하늘",
+            "skyAgent": "에이전트의 하늘",
+            "skyWorkspace": "워크스페이스의 하늘",
+            "sky": "하늘 · {{color}}",
+            "drawingsAuto": "대화의 그림",
+            "drawingsAgent": "에이전트의 그림",
+            "drawingsWorkspace": "워크스페이스의 그림",
+            "drawings": "그림 · {{color}}",
+            "crowd": "에이전트",
+            "color": "색상 · {{color}}",
+            "photo": "내 사진"
+          },
+          "choose": "선택…",
+          "menu": "대화 배경…",
+          "preview": "미리보기",
+          "usePhoto": "이 사진 사용",
+          "dragHint": "사진을 끌어서 보이는 부분을 고르세요",
+          "dim": "다크 모드에서 어둡게",
+          "sending": "사진 보내는 중…",
+          "failed": "배경을 저장하지 못했어요. 다시 시도하세요.",
+          "done": "완료"
         }
       },
       "agentStyle": "에이전트가 말하는 방식",
@@ -16522,6 +16574,21 @@
     "tomorrowAt": "내일 {{time}}"
   },
   "work": {
+    "handed": {
+      "lead": "<0/>{{name}}에게 넘김",
+      "working": "작업 중",
+      "done": "{{duration}} 만에 끝남",
+      "waitingYou": "내 답변 대기 중",
+      "waiting": "답변 대기 중",
+      "waitingApprovalYou": "내 승인 대기 중",
+      "waitingApproval": "승인 대기 중",
+      "waitingComputer": "컴퓨터 대기 중",
+      "paused": "요금제 한도로 일시 중지",
+      "queued": "대기 중",
+      "failed": "끝내지 못했어요",
+      "stopped": "중지됨",
+      "step": "{{total}}단계 중 {{current}}단계"
+    },
     "duration": {
       "minutes_other": "{{count}}분",
       "hours_other": "{{count}}시간",
@@ -16595,24 +16662,12 @@
       "failed": "막힘 · 끝내지 못함",
       "failedWhy": "막힘 · 끝내지 못함: {{why}}"
     },
-    "working": "백그라운드",
-    "handed": {
-      "lead": "<0/>{{name}}에게 넘김",
-      "working": "작업 중",
-      "done": "{{duration}} 만에 끝남",
-      "waitingYou": "내 답변 대기 중",
-      "waiting": "답변 대기 중",
-      "waitingApprovalYou": "내 승인 대기 중",
-      "waitingApproval": "승인 대기 중",
-      "waitingComputer": "컴퓨터 대기 중",
-      "paused": "요금제 한도로 일시 중지",
-      "queued": "대기 중",
-      "failed": "끝내지 못했어요",
-      "stopped": "중지됨",
-      "step": "{{total}}단계 중 {{current}}단계"
-    }
+    "working": "백그라운드"
   },
   "chat": {
+    "request": {
+      "asksYou": "{{name}}의 질문"
+    },
     "speedFallback": {
       "text": "ChatGPT가 이 계정이나 모델에서 빠른 속도를 거부해서 이 답변은 표준 속도로 왔어요.",
       "action": "에이전트 열기"
@@ -17197,9 +17252,6 @@
       "interrupted": "서버 재시작으로 중단됐어요. 계속하려면 다시 요청하세요.",
       "step_limit": "끝내기 전에 단계를 모두 썼어요.",
       "stuck": "막혀서 끝내기 전에 멈췄어요."
-    },
-    "request": {
-      "asksYou": "{{name}}의 질문"
     }
   },
   "builtinTools": {

@@ -194,28 +194,22 @@ export function ChatLookSettings() {
             </div>
           </div>
         )}
-        {/* Background: what the channels and the DMs show behind a conversation, chosen in a dialog. */}
+        {/* Background: the one behind every conversation, mine alone, chosen in a dialog. */}
         <div className="settings-row ac-actrow">
           <span className="settings-row__text ac-actrow__text">
             <span className="settings-row__label">{t("settings.account.chat.wallpaper.title")}</span>
-            <span className="settings-row__status">
-              {t(modeKey(org, "settings.account.chat.wallpaper.summary"), {
-                channels: wallpaperName(defaultWallpaperOf(prefs, false), false),
-                dms: wallpaperName(defaultWallpaperOf(prefs, true), true),
-              })}
-            </span>
+            <span className="settings-row__status">{t("settings.account.chat.wallpaper.rowHelp")}</span>
           </span>
           <div className="settings-row__end wallpaper-row__end">
-            {/* The DMs' own, "auto" in the samples' agent's color. */}
-            <WallpaperThumb
-              wallpaper={resolveWallpaper(defaultWallpaperOf(prefs, true), wallpaperHueOf(SAMPLE_AGENT.color))}
-            />
+            {/* "auto" in the samples' agent's color. */}
+            <WallpaperThumb wallpaper={resolveWallpaper(defaultWallpaperOf(prefs), wallpaperHueOf(SAMPLE_AGENT.color))} />
+            <span className="wallpaper-row__name">{wallpaperName(defaultWallpaperOf(prefs), null)}</span>
             <Button size="sm" onClick={() => setChoosingWallpaper(true)}>
               {t("settings.account.chat.wallpaper.choose")}
             </Button>
           </div>
         </div>
-        <WallpaperDialog open={choosingWallpaper} onOpenChange={setChoosingWallpaper} initialKind={kind} />
+        <WallpaperDialog open={choosingWallpaper} onOpenChange={setChoosingWallpaper} />
         <div className="chat-look__group">
           <span className="settings-row__text ac-actrow__text">
             <span className="ac-hintline">

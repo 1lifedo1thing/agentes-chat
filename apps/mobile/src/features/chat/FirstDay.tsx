@@ -76,7 +76,7 @@ export function FirstDay({
   /** How much of the composer's bottom padding hides behind the open keyboard. */
   keyboardLift: number;
   onAsk: (text: string) => void;
-  /** The conversation: over its background (Fundo) the greeting's bubble is lifted off it, as a message's. */
+  /** The conversation: over its background the greeting's bubble is lifted off it, as a message's. */
   channelId?: string;
 }) {
   const { t } = useTranslation();

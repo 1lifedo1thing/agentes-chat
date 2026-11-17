@@ -537,7 +537,7 @@ function SizeSlider({
 
 /**
  * Conversa, as Sua conta has it on the web: how conversations look to me on every device. One preview on top shows
- * exactly what a conversation will look like; under it the background (Fundo, its own screen), the style (Canais
+ * exactly what a conversation will look like; under it the background (its own screen, Background), the style (Channels
  * and DMs each have their own, Bolhas its Clara or Forte), the size of the words, and where a conversation opens.
  */
 export function ChatLookPage() {
@@ -558,8 +558,8 @@ export function ChatLookPage() {
   }, [sizeDraft, textSize]);
   const shownSize = sizeDraft ?? textSize;
   const openAt = openAtOf(prefs);
-  // The background for this kind (Fundo), "auto" shown as the preview's agent in the DMs and the sky in the channels.
-  const wallpaper = defaultWallpaperOf(prefs, dm);
+  // The background behind every conversation, "auto" shown as the preview's agent in the DMs and the sky in the channels.
+  const wallpaper = defaultWallpaperOf(prefs);
   const shownWallpaper = resolveWallpaper(wallpaper, dm ? SAMPLE_HUE : null);
   const nameOf = useWallpaperName();
   const save = (patch: ChatPrefs) =>
@@ -614,10 +614,11 @@ export function ChatLookPage() {
       <GroupedList>
         <GroupedRow
           label={t("settings.account.chat.wallpaper.title")}
-          value={nameOf(wallpaper, dm)}
+          sub={t("settings.account.chat.wallpaper.rowSub")}
+          value={nameOf(wallpaper, null)}
           valueLeading={<WallpaperThumb wallpaper={shownWallpaper} />}
           chevron
-          onPress={() => router.push(wallpaperHrefs.choose({ kind }))}
+          onPress={() => router.push(wallpaperHrefs.choose({ all: true }))}
         />
       </GroupedList>
       <GroupedHeader

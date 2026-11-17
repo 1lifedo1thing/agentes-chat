@@ -58,7 +58,7 @@ export const useRowLook = () => useContext(RowLookContext);
 /**
  * The conversation's look. My bubbles take the color of the agent I talk to, and the workspace's sky elsewhere. In a
  * personal workspace every conversation opens in bubbles, as a DM does (ADR 0159); the person's own choice wins.
- * `channelId`: the conversation, whose background (its own, or the channels' or DMs') lifts its bubbles.
+ * `channelId`: the conversation, whose background (its own, or the one behind every conversation) lifts its bubbles.
  */
 export function useConversationLook(dm: boolean, agentColor?: AgentColorName, channelId?: string | null): RowLook {
   const { org } = useOrg();
@@ -66,7 +66,7 @@ export function useConversationLook(dm: boolean, agentColor?: AgentColorName, ch
   const { style, tone } = chatLookOf(org?.chatPrefs, dm, isPersonal(org));
   const text = CHAT_TEXT[textSizeOf(org?.chatPrefs)];
   const fill = bubbleFill(agentColor ?? "sky", tone, colors.bg, scheme === "dark");
-  const wallpaper = Boolean(channelId) && hasWallpaper(wallpaperFor(org?.chatPrefs, { dm, channelId }));
+  const wallpaper = Boolean(channelId) && hasWallpaper(wallpaperFor(org?.chatPrefs, channelId));
   return useMemo(
     () => ({ style, tone, fill, names: !dm, faces: facesShown(style, dm), text, wallpaper }),
     [style, tone, fill, dm, text, wallpaper],
@@ -74,7 +74,7 @@ export function useConversationLook(dm: boolean, agentColor?: AgentColorName, ch
 }
 
 /**
- * The background a conversation shows, mine alone (its own, else the channels' or the DMs'), "auto" made its color: the
+ * The background a conversation shows, mine alone (its own, else the one behind every conversation), "auto" made its color: the
  * agent's in a DM with one, the workspace's sky elsewhere; and how strong, in its look (half where there are no
  * bubbles). Stable while the choice stays the same, so what paints it never redraws for the conversation.
  */
@@ -85,7 +85,7 @@ export function useConversationWallpaper(
 ): { wallpaper: Wallpaper; strength: number } {
   const { org } = useOrg();
   const { style } = chatLookOf(org?.chatPrefs, dm, isPersonal(org));
-  const chosen = wallpaperFor(org?.chatPrefs, { dm, channelId });
+  const chosen = wallpaperFor(org?.chatPrefs, channelId);
   const own = dm ? wallpaperHueOf(agentColor) : null;
   const strength = wallpaperStrength(style === "bubbles");
   const key = wallpaperKey(chosen);

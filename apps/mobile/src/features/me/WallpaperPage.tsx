@@ -11,7 +11,7 @@ import {
   type WallpaperHue,
   wallpaperHueOf,
 } from "@agenteschat/client/lib/wallpaper";
-import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
+import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import type { AgentColorName } from "@agenteschat/ui/agent/engine";
 import { WALLPAPER_LIFT, WALLPAPER_PAGE } from "@agenteschat/ui/sky/wallpaper";
 import { useState } from "react";
@@ -106,7 +106,7 @@ function Tile({
 }
 
 /**
- * Fundo: the background for the channels or the DMs (from Você › Conversa), or for one conversation (from its
+ * Background: the one behind every conversation (from You › Conversations), or one conversation's own (from its
  * options, with "Same as other conversations" on top to undo it). A preview of the look on top, then every
  * background by family, each tile applying at once (the preview follows), and a photo from the phone's library last.
  * Mine alone, on every device.
@@ -127,19 +127,21 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
   const one = "channelId" in target ? target.channelId : null;
   const dmRow = one ? dms.data?.find((d) => d.channelId === one) : undefined;
   const channel = one ? channels.data?.find((c) => c.id === one) : undefined;
-  const dm = one ? Boolean(dmRow) : "kind" in target && target.kind === "dms";
+  // For every conversation the preview is a DM with the sample's agent; names say what "auto" is (null: each one's own).
+  const dm = one ? Boolean(dmRow) : true;
+  const scope = one ? dm : null;
   const agent = dmRow?.with.type === "agent" ? dir.agentById.get(dmRow.with.id) : undefined;
-  // The DM's agent, or the sample's on the DMs' page: my bubbles' color, and what "auto" takes.
+  // The DM's agent, or the sample's for every conversation: my bubbles' color, and what "auto" takes.
   const color: AgentColorName = agent ? agentLook(agent).color : SAMPLE_HUE;
   const sampleHue = one ? null : SAMPLE_HUE;
   const ownHue: WallpaperHue | null = !dm ? null : agent ? wallpaperHueOf(color) : sampleHue;
-  // On the DMs' page "auto" follows each DM: its tile shows a band of a few agents' colors.
-  const autoBands = !one && dm;
+  // For every conversation "auto" follows each one: its tile shows a band of a few agents' colors.
+  const autoBands = !one;
   const { style, tone } = chatLookOf(prefs, dm, isPersonal(org));
   const mine = bubbleFill(dm ? color : "sky", tone, colors.bg, scheme === "dark");
-  const others = defaultWallpaperOf(prefs, dm);
+  const others = defaultWallpaperOf(prefs);
   const own = one ? conversationWallpaperOf(prefs, one) : undefined;
-  // What is checked: this conversation's own choice (none: "Same as other conversations"), or the kind's.
+  // What is checked: this conversation's own choice (none: "Same as other conversations"), or the one for all.
   const chosen = one ? own : others;
   const shown = resolveWallpaper(own ?? others, ownHue);
   const [preparing, setPreparing] = useState(false);
@@ -147,7 +149,7 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
   const failed = () => toast({ title: t("settings.account.chat.wallpaper.failed"), icon: "x" });
   const apply = (w: Wallpaper | null) => {
     if (one) setOwn.mutate({ channelId: one, wallpaper: w }, { onError: failed });
-    else if (w) setPrefs.mutate(dm ? { dmWallpaper: w } : { channelWallpaper: w }, { onError: failed });
+    else if (w) setPrefs.mutate({ wallpaper: w }, { onError: failed });
   };
   const pick = (w: Wallpaper | null) => {
     if (w ? sameWallpaper(chosen, w) : chosen === undefined) return;
@@ -170,15 +172,13 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
   };
 
   const name = dmRow ? dmRow.with.name : channel ? `#${channel.name}` : "";
-  const title = one
-    ? t("settings.account.chat.wallpaper.title")
-    : dm
-      ? t("settings.account.chat.wallpaper.titleDms")
-      : t(modeKey(org, "settings.account.chat.wallpaper.titleChannels"));
+  const title = t("settings.account.chat.wallpaper.title");
   const sub = one ? t("settings.account.chat.wallpaper.onlyHere", { name }) : t("settings.account.chat.wallpaper.help");
-  const skyHelp = dm
-    ? t("settings.account.chat.wallpaper.skyAutoHelpDms")
-    : t("settings.account.chat.wallpaper.skyAutoHelpChannels");
+  const skyHelp = !one
+    ? t("settings.account.chat.wallpaper.skyAutoHelp")
+    : dm
+      ? t("settings.account.chat.wallpaper.skyAutoHelpDms")
+      : t("settings.account.chat.wallpaper.skyAutoHelpChannels");
   const tileWidth = Math.floor((screenWidth - SCREEN_X * 2 - GAP * 3) / 4);
   const photoOn = chosen?.kind === "photo" ? chosen : null;
   return (
@@ -194,7 +194,7 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
           {one ? (
             <GroupedRow
               label={t("settings.account.chat.wallpaper.sameAsOthers")}
-              value={nameOf(others, dm)}
+              value={nameOf(others, scope)}
               valueLeading={<WallpaperThumb wallpaper={resolveWallpaper(others, ownHue)} />}
               checked={own === undefined}
               onPress={() => pick(null)}
@@ -215,7 +215,7 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
                   key={wallpaperKey(w)}
                   shows={autoBands ? w : resolveWallpaper(w, ownHue)}
                   on={sameWallpaper(chosen, w)}
-                  label={nameOf(w, dm)}
+                  label={nameOf(w, scope)}
                   mine={mine}
                   width={tileWidth}
                   onPress={() => pick(w)}
@@ -230,7 +230,7 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
           <GroupedRow
             icon="image"
             label={t("settings.account.chat.wallpaper.choosePhoto")}
-            {...(photoOn ? { value: nameOf(photoOn, dm), valueLeading: <WallpaperThumb wallpaper={photoOn} /> } : {})}
+            {...(photoOn ? { value: nameOf(photoOn, scope), valueLeading: <WallpaperThumb wallpaper={photoOn} /> } : {})}
             chevron
             disabled={preparing}
             onPress={() => void choosePhoto()}

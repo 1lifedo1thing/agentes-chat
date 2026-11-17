@@ -462,7 +462,7 @@ function RowBody({
   const bubbled = look.style === "bubbles";
   const compact = look.style === "compact";
   const { scheme, shadows } = useTheme();
-  // Over a background (Fundo): someone else's bubble lifted off it, every bubble with the cards' light shadow.
+  // Over a background: someone else's bubble lifted off it, every bubble with the cards' light shadow.
   const lifted = look.wallpaper === true;
   const lift = WALLPAPER_LIFT[scheme === "dark" ? "dark" : "light"];
   const bubbleShadow = lifted ? { boxShadow: shadows.e1 } : null;

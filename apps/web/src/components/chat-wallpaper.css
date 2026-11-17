@@ -85,16 +85,18 @@
 .wallpaper-row__end {
   gap: var(--space-3);
 }
+.wallpaper-row__name {
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+}
 
 /* ── The picker (WallpaperDialog.tsx) ── */
 .wallpaper-dialog__body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-.wallpaper-dialog__where {
-  align-self: flex-start;
-  min-width: 220px;
 }
 .wallpaper-dialog__cols {
   display: grid;

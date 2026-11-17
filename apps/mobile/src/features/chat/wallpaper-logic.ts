@@ -114,21 +114,20 @@ export function shrunkSize(width: number, height: number, max = PHOTO_MAX_SIDE) 
 
 const clamp01 = (v: number) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.5);
 
-/** Whose background the Fundo screens change: the channels' or the DMs' (Você › Conversa), or one conversation's. */
-export type WallpaperTarget = { kind: "channels" | "dms" } | { channelId: string };
+/** Whose background the Background screens change: the one behind every conversation, or one conversation's. */
+export type WallpaperTarget = { all: true } | { channelId: string };
 
-/** The target from a screen's params: a conversation's id wins; else the kind (the channels' unless "dms"). */
-export function wallpaperTargetOf(params: { kind?: string; channelId?: string }): WallpaperTarget {
-  if (params.channelId) return { channelId: params.channelId };
-  return { kind: params.kind === "dms" ? "dms" : "channels" };
+/** The target from a screen's params: a conversation's id, else every conversation. */
+export function wallpaperTargetOf(params: { channelId?: string }): WallpaperTarget {
+  return params.channelId ? { channelId: params.channelId } : { all: true };
 }
 
 const query = (target: WallpaperTarget) =>
-  "channelId" in target ? `channelId=${encodeURIComponent(target.channelId)}` : `kind=${target.kind}`;
+  "channelId" in target ? `?channelId=${encodeURIComponent(target.channelId)}` : "";
 
-/** The pushed screens: Fundo, and a photo's preview over it (the photo, picked on Fundo, says whose it is). */
+/** The pushed screens: Background, and a photo's preview over it (the photo, picked on Background, says whose it is). */
 export const wallpaperHrefs = {
-  choose: (target: WallpaperTarget) => `/me/chat-wallpaper?${query(target)}` as const,
+  choose: (target: WallpaperTarget) => `/me/chat-wallpaper${query(target)}` as const,
   photo: "/me/chat-wallpaper-photo" as const,
 };
 
@@ -136,7 +135,7 @@ export const wallpaperHrefs = {
 export function wallpaperKey(w: Wallpaper): string {
   switch (w.kind) {
     case "none":
-    case "turma":
+    case "agents":
       return w.kind;
     case "photo":
       return `photo:${w.url}:${w.x.toFixed(3)}:${w.y.toFixed(3)}:${w.dim.toFixed(3)}`;

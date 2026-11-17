@@ -39,8 +39,7 @@ async function photosInUse(db: Database, userId: string): Promise<Set<string>> {
   };
   for (const row of rows) {
     const prefs = chatPrefsOf(row.chatPrefs);
-    add(prefs.channelWallpaper);
-    add(prefs.dmWallpaper);
+    add(prefs.wallpaper);
     for (const w of Object.values(prefs.wallpapers ?? {})) add(w);
   }
   return used;

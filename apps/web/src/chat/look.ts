@@ -34,10 +34,10 @@ export function useConversationLook(dm: boolean, agentColor?: AgentColor) {
 }
 
 /**
- * The background behind this conversation for me (packages/client/src/lib/wallpaper.ts): its own, or the DMs' or the
- * channels', "auto" made the color of the agent I talk to (`agentColor`), the workspace's sky elsewhere. With it, how
- * strongly it shows (half in the looks with no bubbles) and the variables what sits over it reads. Null: none, or no
- * `channelId` (a thread in the side panel keeps the plain page).
+ * The background behind this conversation for me (packages/client/src/lib/wallpaper.ts): its own, or the one behind
+ * every conversation, "auto" made the color of the agent I talk to (`agentColor`), the workspace's sky elsewhere.
+ * With it, how strongly it shows (half in the looks with no bubbles) and the variables what sits over it reads. Null:
+ * none, or no `channelId` (a thread in the side panel keeps the plain page).
  */
 export function useConversationWallpaper(dm: boolean, channelId: string | null, agentColor?: AgentColor) {
   const { org } = useOrg();
@@ -45,7 +45,7 @@ export function useConversationWallpaper(dm: boolean, channelId: string | null, 
   const dark = useDarkTheme();
   const inDm = dm || (around !== null && !around.names);
   const { style } = chatLookOf(org.chatPrefs, inDm, isPersonal(org));
-  const chosen = channelId ? wallpaperFor(org.chatPrefs, { dm: inDm, channelId }) : NO_WALLPAPER;
+  const chosen = channelId ? wallpaperFor(org.chatPrefs, channelId) : NO_WALLPAPER;
   const hue = wallpaperHueOf(agentColor);
   return useMemo(
     () =>
