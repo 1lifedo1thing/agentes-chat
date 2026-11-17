@@ -1,7 +1,11 @@
 import { afterEach, expect, test } from "bun:test";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { HumanAction, HumanCheck } from "@agenteschat/adapters";
 import { schema } from "@agenteschat/db";
 import { enableCaches, listHosts, putHost } from "@agenteschat/engine";
+import { createApp } from "../src/app";
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
 import { personUpgrade } from "../src/realtime/ws";
@@ -398,4 +402,33 @@ test("the operator's routes: auth, shapes, refusals, and the cache dropped on a 
   expect((await call("DELETE", `/hosts/${HOST}`)).status).toBe(204);
   expect(await look()).toBeNull();
   expect(await refusal(await call("DELETE", `/hosts/${HOST}`))).toEqual([404, "not_found"]);
+});
+
+test("the app's page says it is on a registered host, so its boot hides the product's mark", async () => {
+  const s = await server();
+  const index = readFileSync(join(import.meta.dir, "../../web/index.html"), "utf8");
+  expect(index).toContain("[data-host] .boot img { display: none; }");
+  const web = mkdtempSync(join(tmpdir(), "agentes-web-"));
+  try {
+    writeFileSync(join(web, "index.html"), index);
+    const app = createApp({
+      edition: "cloud",
+      version: "test",
+      modules: [],
+      pingDatabase: async () => {},
+      services: { db: s.db, auth: s.auth, config: s.config, adapters: s.adapters },
+      webDir: web,
+    });
+    const page = async (path: string, host: string) => {
+      const res = await app.request(path, { headers: { host } });
+      expect(res.status).toBe(200);
+      return res.text();
+    };
+    for (const path of ["/", "/login", "/invite/abc"]) {
+      expect(await page(path, HOST)).toStartWith('<!doctype html>\n<html data-host lang="en"');
+      expect(await page(path, "localhost:3000")).toBe(index);
+    }
+  } finally {
+    rmSync(web, { recursive: true, force: true });
+  }
 });

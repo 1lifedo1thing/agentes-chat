@@ -5,7 +5,7 @@
 - Extends: ADR 0056 (the operator API), ADR 0193 (a workspace's accent), `EXTRA_TRUSTED_ORIGINS`
 - Code: schema `packages/db/src/schema/hosts.ts` (migration 0291); engine `packages/engine/src/hosts.ts` (`hostLook`,
   `hostOrigin`, `baseUrlFor`, `putHost`, `deleteHost`), `net-guard.ts` (`normalizeHost`), `cache.ts` (`caches.hosts`);
-  server `apps/server/src/routes/app/context.ts` (`requestOriginAllowed`, `requestBaseUrl`), `realtime/ws.ts`
+  server `app.ts` (`data-host` on the page), `apps/server/src/routes/app/context.ts` (`requestOriginAllowed`, `requestBaseUrl`), `realtime/ws.ts`
   (`personUpgrade`), `auth.ts` (`trustedOrigins`, `SOCIAL_STARTS`, the reset and confirmation links, `authUiConfig`),
   `http/human-check.ts` (`humanCheckRefusal`), `routes/app/account.ts` (`GET /api/app/auth-config`'s `host`),
   `routes/instance.ts` (`GET /api/host-look/logo`), `operator/hosts.ts`; web `apps/web/src/components/AuthLayout.tsx`
@@ -86,7 +86,11 @@ stay exact and be written once.
    logo, or its name alone in the heading face, where the product's lockup is, set its accent's four tokens on the
    document while they show (the workspace shell does the same with the workspace's own accent; the screens in that look
    shown inside a workspace, such as a suspended one's, take no host accent, so the two never show at once), and end
-   with one quiet "Powered by agentes.chat" line linking to the product's site. The tab's title names the host where it
+   with one quiet "Powered by agentes.chat" line linking to the product's site. The sign-in steps' line naming the
+   server it signs in to (on a Cloud server, the product's hosted service, with a Change that opens the product's own
+   chooser) is not shown there. Before the app has asked who the host is, the server marks the page on a registered
+   host (`data-host` on its `<html>`, in the one place every page from `WEB_DIR` passes), and `index.html`'s boot rules
+   then hide the product's mark: the boot shows its sky alone. The tab's title names the host where it
    names the product, on every page of that host, and the tab's icon is its logo unless the browser picked another icon.
    The About screen and its license notice are unchanged.
 9. **Phone and desktop.** Nothing changes. The phone app is built for one address. The desktop app's server check

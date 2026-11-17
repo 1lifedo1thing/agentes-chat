@@ -39,6 +39,9 @@ describe("the sign-in page", () => {
     expect(powered.getAttribute("href")).toBe(PRODUCT_SITE_URL);
     expect(screen().queryByRole("button", { name: /Continuar com/ })).toBeNull();
     expect(agentVar()).toBe(accentPalette(NORTHWIND.accent).light.agent);
+    // On a Cloud server too: no line naming the product's service, no way to its chooser.
+    await settle(4);
+    expect(document.querySelector(".auth__place")).toBeNull();
   });
 
   test("on a registered host with no logo: its name alone in the lockup's place", async () => {
@@ -54,6 +57,8 @@ describe("the sign-in page", () => {
     expect(document.querySelector(".auth--host, .auth__powered")).toBeNull();
     expect(screen().getByRole("button", { name: /Continuar com GitHub/ })).toBeTruthy();
     expect(agentVar()).toBe("");
+    await settle(4);
+    expect(document.querySelector(".auth__place")?.textContent).toContain("Entrando no agentes.chat Cloud");
   });
 });
 
