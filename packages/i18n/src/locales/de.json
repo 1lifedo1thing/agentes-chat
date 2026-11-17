@@ -2629,7 +2629,8 @@
     "header": {
       "pins": "Angeheftete Nachrichten",
       "showMembers": "Mitglieder zeigen",
-      "hideMembers": "Mitglieder ausblenden"
+      "hideMembers": "Mitglieder ausblenden",
+      "more": "Weitere Optionen"
     },
     "membersButton_one": "Mitglieder des Kanals ({{count}})",
     "membersButton_other": "Mitglieder des Kanals ({{count}})",
@@ -3730,9 +3731,7 @@
     "dontRunForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann es abbrechen",
     "answerAnyway": "Trotzdem antworten",
     "answerAnywayHint": "Antwortet jetzt und liest alles, was seitdem geschrieben wurde",
-    "answerAnywayForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann darum bitten",
-    "extraTitle": "Längere Arbeit darf bezahlte Zusatznutzung verwenden",
-    "extraHint": "Mit eingeschalteter Zusatznutzung im Abo läuft längere Arbeit über 95 % hinaus weiter. Ausgeschaltet pausiert sie bei 95 % und geht weiter, wenn sich das Abo zurücksetzt."
+    "answerAnywayForbidden": "Nur wer gefragt hat, der Inhaber des Agenten oder ein Admin kann darum bitten"
   },
   "usageQueue": {
     "back": "{{agent}} ist {{when}} zurück",
@@ -3742,6 +3741,7 @@
     "shared_one": "{{agents}} nutzt dasselbe {{plan}}-Abo. Die Unterhaltungen beider kommen in dieselbe Warteschlange.",
     "shared_other": "{{agents}} nutzen dasselbe {{plan}}-Abo. Alle ihre Unterhaltungen kommen in dieselbe Warteschlange.",
     "about": "Über die Warteschlange",
+    "chain": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht.",
     "lists": "Unterhaltungen",
     "queuedTab": "In der Warteschlange",
     "skippedTab": "Übersprungen",
@@ -5732,11 +5732,12 @@
         "accountAlso": "Auch genutzt von {{agents}}",
         "accountOf": "Von {{name}}",
         "accountOthers": "Abos, die dem ganzen Workspace dienen, zeigen, wem sie gehören.",
+        "movesOn": "Macht am Limit mit dem nächsten Konto weiter",
+        "pinned": "Nur dieses Konto",
+        "pinnedHint": "Wartet am Limit, bis sich dieses Konto zurücksetzt, statt zum nächsten zu wechseln.",
         "addAccount": "Konto hinzufügen",
         "signInAgain": "Erneut anmelden",
         "connectPlan": "Weiteres Abo verbinden",
-        "fallbackTitle": "Wenn {{computer}} nicht mehr antwortet, über die API antworten",
-        "fallbackHint": "Die Antwort kommt dann über die API und zählt zum Budget von {{name}}. Sonst sagt {{name}} der Person, die gefragt hat, Bescheid und wartet, bis der Computer zurück ist.",
         "effort": "Aufwand",
         "efforts": {
           "auto": "Automatisch",
@@ -5797,8 +5798,7 @@
           "effort": "Aufwand: {{level}}",
           "speed": "Geschwindigkeit: schnell",
           "context": "Kontext: {{size}}",
-          "sharing": "Antwortet anderen Personen",
-          "waits": "Wartet auf den Computer"
+          "sharing": "Antwortet anderen Personen"
         },
         "copy": {
           "row": "Für andere Agenten verwenden",
@@ -5942,7 +5942,6 @@
           "wait": "Warten",
           "modelTitle": "Modell von {{name}}",
           "moreTitle": "Weitere Optionen für {{name}}",
-          "fallback": "Den API-Schlüssel nutzen, wenn das Abo stoppt",
           "computer": "Computer",
           "doneTitle": "Alles erledigt",
           "doneSub": "Was gerade lief, geht mit dem neuen Konto weiter.",
@@ -8994,7 +8993,7 @@
       "canceledToast": "Abgebrochen. Es läuft nicht, wenn das Limit zurückgesetzt ist.",
       "continuedToast": "Ausführung geht weiter.",
       "forbidden": "Nur wer die Routine erstellt hat, der Inhaber des Agenten oder ein Admin kann sie jetzt fortsetzen",
-      "extra_off": "Das Zeitfenster dieses Abos ist aufgebraucht und die längere Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung. Schalte sie in seinen KI-Einstellungen ein, um jetzt weiterzumachen, sonst geht es nach dem Zurücksetzen weiter",
+      "extra_off": "Das Zeitfenster dieses Abos ist aufgebraucht und die längere Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung des Abos. Sie geht nach dem Zurücksetzen weiter",
       "extra_used_up": "Das Zeitfenster dieses Abos ist aufgebraucht und seine bezahlte Zusatznutzung ist verbraucht oder nicht verfügbar. Es geht nach dem Zurücksetzen weiter"
     },
     "pausedRunningToast": "Routine pausiert. Die laufende Ausführung wurde auch gestoppt.",
@@ -11936,8 +11935,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, ohne API als Ersatz"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Modell",
@@ -14909,6 +14907,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "Dieses Foto gehört nicht dir.",
+      "invalid": "Diesen Hintergrund gibt es nicht.",
+      "tooLarge": "Das Foto darf höchstens 2 MB groß sein.",
+      "type": "Verwende ein JPEG-, PNG- oder WebP-Foto."
+    },
     "tooLarge": "Das ist größer, als der Server annimmt.",
     "tooLargeMax": "Das ist größer, als der Server annimmt: bis zu {{max}} MB.",
     "passwordLink": {
@@ -15153,7 +15157,7 @@
       "takeOverNoAccess": "Tritt der Unterhaltung der Routine bei, bevor du sie übernimmst.",
       "agentNotInChannel": "Füg den Agent zuerst zur Unterhaltung hinzu.",
       "webhookPaused": "Schalte die Routine ein, um sie zu testen.",
-      "continueExtraOff": "Das Zeitfenster dieses Abos ist aufgebraucht, und die lange Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung. Schalte sie in seinen KI-Einstellungen ein, um jetzt weiterzumachen, sonst geht es nach dem Zurücksetzen weiter.",
+      "continueExtraOff": "Das Zeitfenster dieses Abos ist aufgebraucht, und die lange Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung des Abos. Sie geht nach dem Zurücksetzen weiter.",
       "continueExtraUsedUp": "Das Zeitfenster dieses Abos ist aufgebraucht, und seine bezahlte Zusatznutzung ist aufgebraucht oder nicht verfügbar. Es geht nach dem Zurücksetzen weiter.",
       "actionsNeedApprover": "Nur der Inhaber des Agenten oder wer seine Aktionen genehmigt, kann eine Routine selbstständig handeln lassen.",
       "editorOnly": "Nur wer die Routine erstellt hat, der Inhaber des Agenten oder ein Admin kann sie ändern.",
@@ -15250,13 +15254,13 @@
     "agent": {
       "ownerOrAdmin": "Nur der Inhaber des Agenten oder ein Admin kann das tun.",
       "detailsHidden": "Nur wer mit {{agentName}} spricht, sieht, wie es funktioniert.",
-      "extraOwnerOnly": "Nur der Inhaber des Agenten schaltet die bezahlte Zusatznutzung des Abos ein oder aus.",
       "undoForbidden": "Nur die Person, für die der Agent gearbeitet hat, sein Inhaber oder ein Admin kann das rückgängig machen.",
       "undoSkillsAdmins": "Nur ein Admin kann eine Änderung an den Skills eines Agenten rückgängig machen oder wiederholen."
     },
     "account": {
       "notRestorable": "Dieses Konto kann nicht mehr wiederhergestellt werden.",
-      "notOwner": "Nur wer dieses Konto oder Abo verbunden hat, kann das tun."
+      "notOwner": "Nur wer dieses Konto oder Abo verbunden hat, kann das tun.",
+      "orderForbidden": "Nur wer dieses Konto verbunden hat oder ein Admin kann seinen Platz in der Reihenfolge ändern."
     },
     "channel": {
       "membersForbidden": "Nur wer den Kanal erstellt hat oder ein Admin kann Personen hinzufügen oder entfernen."
@@ -16825,6 +16829,51 @@
           "new3": "Noch 2, ich rufe morgen an.",
           "new4": "Bericht im Drive aktualisiert.",
           "newCount": "4 neu"
+        },
+        "wallpaper": {
+          "title": "Hintergrund",
+          "help": "Ändert sich nur für dich, auf all deinen Geräten",
+          "rowHelp": "Hinter jeder Unterhaltung, nur für dich. Eine Unterhaltung kann über ihr Menü einen eigenen haben.",
+          "rowSub": "Nur für dich, in jeder Unterhaltung",
+          "onlyHere": "Nur in {{name}}, nur für dich",
+          "none": "Kein Hintergrund",
+          "sameAsOthers": "Wie die anderen Unterhaltungen",
+          "sameShort": "Wie die anderen",
+          "sky": "Himmel",
+          "drawings": "Zeichnungen",
+          "color": "Farbe",
+          "photos": "Deine Fotos",
+          "choosePhoto": "Foto auswählen",
+          "skyAutoHelp": "Der erste richtet sich nach der Unterhaltung: in einer Direktnachricht ein Himmel in der Farbe des Agenten, in Kanälen der Himmel des Workspace.",
+          "skyAutoHelpDms": "Der erste ist ein Himmel in der Farbe des Agenten.",
+          "skyAutoHelpChannels": "Der erste ist der Himmel des Workspace.",
+          "neutral": {
+            "paper": "Papier",
+            "mist": "Nebel",
+            "sand": "Sand"
+          },
+          "name": {
+            "skyAuto": "Himmel der Unterhaltung",
+            "skyAgent": "Himmel des Agenten",
+            "skyWorkspace": "Himmel des Workspace",
+            "sky": "Himmel · {{color}}",
+            "drawingsAuto": "Zeichnungen der Unterhaltung",
+            "drawingsAgent": "Zeichnungen des Agenten",
+            "drawingsWorkspace": "Zeichnungen des Workspace",
+            "drawings": "Zeichnungen · {{color}}",
+            "crowd": "Agenten",
+            "color": "Farbe · {{color}}",
+            "photo": "Dein Foto"
+          },
+          "choose": "Auswählen…",
+          "menu": "Hintergrund der Unterhaltung…",
+          "preview": "Vorschau",
+          "usePhoto": "Dieses Foto verwenden",
+          "dragHint": "Ziehe das Foto, um den sichtbaren Ausschnitt zu wählen",
+          "dim": "Im dunklen Modus abdunkeln",
+          "sending": "Foto wird gesendet…",
+          "failed": "Der Hintergrund konnte nicht gespeichert werden. Versuch es noch einmal.",
+          "done": "Fertig"
         }
       },
       "agentStyle": "Wie die Agenten mit dir sprechen",
@@ -17226,6 +17275,14 @@
   "usageViews": {
     "signedOut": "Abgemeldet",
     "whose": "von {{name}}",
+    "order": {
+      "title": "{{plan}} · Nutzungsreihenfolge",
+      "hint": "Am Limit machen die Agenten mit dem nächsten Konto weiter, das noch Spielraum hat, und kehren zum ersten zurück, wenn es sich zurücksetzt.",
+      "terms": "Mehrere {{plan}}-Konten zu nutzen ist in den Bedingungen von {{plan}} eine Grauzone.",
+      "termsLabel": "die Bedingungen von {{plan}}",
+      "termsHint": "Ein Abo ist für eine Person gedacht, also prüfe die Bedingungen von {{plan}}, bevor sich deine Agenten auf mehrere verlassen.",
+      "move": "{{name}} verschieben, Nummer {{n}} in der Reihenfolge"
+    },
     "serves": {
       "everyone": "Alle nutzen es",
       "onlyYou": "Nur du nutzt es",
@@ -17294,7 +17351,7 @@
       "api": "API",
       "apiMain": "{{name}} denkt über die API",
       "apiMain_female": "{{name}} denkt über die API",
-      "apiFallback": "Außerhalb des Abos: schnelle Entscheidungen und wenn das Abo nicht antworten konnte",
+      "apiFallback": "Außerhalb des Abos: schnelle Entscheidungen",
       "removed": "Entferntes Konto",
       "removedSub": "Auf keinem Computer mehr",
       "old": "{{brand}}, aus der Zeit vor den Konten",
@@ -17925,6 +17982,7 @@
       "provider_wait_said": "{{provider}} hat mit einem Fehler geantwortet ({{detail}}). Ich versuche es erneut und antworte, sobald es klappt.",
       "provider_wait_ours": "Etwas auf unserer Seite blockiert meine KI, nicht dein Konto. Ich antworte, sobald es behoben ist.",
       "provider_back": "Meine KI ist wieder da.",
+      "confidential_removed": "Entfernt: Vertraulicher Text wird {{days}} Tage aufbewahrt.",
       "brain_busy": "Mein Computer ist gerade mit anderen Aufgaben beschäftigt. Ich antworte, sobald er frei ist.",
       "brain_queued": "Ich stehe noch in der Warteschlange des Computers. Ich antworte, sobald er freien Speicher hat.",
       "brain_interrupted": "{{brain}} hat aufgehört, bevor es fertig war. Schon erledigt, wird nicht wiederholt: {{tools}}.",
@@ -17932,6 +17990,11 @@
       "plan_limit_cut_unknown": "Ich habe am Limit des {{plan}}-Abos aufgehört. Ich mache dort weiter, wo ich war, sobald es sich zurücksetzt.",
       "plan_limit_wait": "Das {{plan}}-Abo hat sein Limit erreicht. Ich antworte {{when}}, wenn es sich zurücksetzt. Wird es in {{plan}} früher freigegeben, merke ich das und antworte sofort.",
       "plan_limit_wait_unknown": "Das {{plan}}-Abo hat sein Limit erreicht. Ich antworte, sobald es sich zurücksetzt.",
+      "plan_account_moved": "Das Konto {{from}} hat sein Limit erreicht. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_account_moved_line": "Das Konto {{from}} ist fast am Limit. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_account_moved_extra": "Das Konto {{from}} würde bezahlte Zusatznutzung verbrauchen. Ich mache mit dem Konto {{to}} weiter.",
+      "plan_limit_all_wait": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht. Ich antworte {{when}}, wenn sich das erste zurücksetzt.",
+      "plan_limit_all_wait_unknown": "Alle {{accounts}} {{plan}}-Konten haben ihr Limit erreicht. Ich antworte, sobald sich eines zurücksetzt.",
       "plan_model_limit_wait": "{{model}} hat sein eigenes Limit bei {{plan}} erreicht. Die anderen Modelle des Abos funktionieren weiter: Wechsle das Modell von {{agent}} oder warte, bis es sich {{when}} zurücksetzt.",
       "plan_model_limit_wait_unknown": "{{model}} hat sein eigenes Limit bei {{plan}} erreicht. Die anderen Modelle des Abos funktionieren weiter: Wechsle das Modell von {{agent}} oder warte, bis es sich zurücksetzt.",
       "plan_model_region_wait": "Dieses Modell ({{model}}) braucht die Global-Region in OpenCode (Settings › Privacy).",

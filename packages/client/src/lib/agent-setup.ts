@@ -35,7 +35,6 @@ export function setupOfBrain(view: AgentBrain): AgentSetup | null {
     effort: view.effort,
     ...(viewSpeedFits(view) ? { speed: view.speed } : {}),
     contextTokens: view.contextTokens,
-    fallback: view.fallback,
     onlyOwner: view.onlyOwner,
     ...(view.autonomy ? { autonomy: view.autonomy } : {}),
   };
@@ -187,7 +186,6 @@ export function newAgentStart(
       model: s.model,
       effort: s.effort ?? null,
       contextTokens: s.contextTokens,
-      fallback: s.fallback ?? true,
     },
     ...autonomy,
   };
@@ -221,13 +219,11 @@ export function newAgentStartText(
   const parts = advancedParts(t, language, {
     kind: start.brain,
     autoModel: isAuto(value),
-    apiKey: true,
     now: {
       effort: effortLevel(start.input.effort),
       speed: "standard",
       contextTokens: isContextLimit(start.input.contextTokens) ? start.input.contextTokens : null,
       onlyOwner: true,
-      fallback: start.input.fallback ?? true,
     },
   });
   const plan = planOfAccount({ kind: start.brain, provider: o.provider ?? null });

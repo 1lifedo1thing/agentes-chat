@@ -2533,7 +2533,8 @@
     "header": {
       "pins": "ピン留めしたメッセージ",
       "showMembers": "メンバーを表示",
-      "hideMembers": "メンバーを隠す"
+      "hideMembers": "メンバーを隠す",
+      "more": "その他のオプション"
     },
     "membersButton_other": "チャンネルのメンバー（{{count}}）",
     "membersAgents": "エージェント",
@@ -3582,9 +3583,7 @@
     "dontRunForbidden": "キャンセルできるのは、依頼した人、エージェントのオーナー、管理者だけです",
     "answerAnyway": "それでも返信する",
     "answerAnywayHint": "その後に書かれたことをすべて読んで、いま返信します",
-    "answerAnywayForbidden": "これを頼めるのは、依頼した人、エージェントのオーナー、管理者だけです",
-    "extraTitle": "長い作業で有料の追加使用量を使う場合があります",
-    "extraHint": "プランで追加使用量がオンの場合、長い作業は95%を超えても続きます。オフの場合は95%で一時停止し、プランのリセット後に再開します。"
+    "answerAnywayForbidden": "これを頼めるのは、依頼した人、エージェントのオーナー、管理者だけです"
   },
   "usageQueue": {
     "back": "{{agent}}は{{when}}に戻ります",
@@ -3593,6 +3592,7 @@
     "resuming": "{{agent}}が再開しています",
     "shared_other": "{{agents}}も同じ{{plan}}のプランを使っています。会話はすべて同じ順番待ちに入ります。",
     "about": "順番待ちについて",
+    "chain": "{{plan}} の {{accounts}} 個のアカウントがすべて上限に達しました。",
     "lists": "会話",
     "queuedTab": "順番待ち",
     "skippedTab": "スキップ済み",
@@ -5513,11 +5513,12 @@
         "accountAlso": "{{agents}}も使用中",
         "accountOf": "{{name}}のもの",
         "accountOthers": "workspace 全体で使えるプランには持ち主が表示されます。",
+        "movesOn": "上限に達したら次のアカウントで続けます",
+        "pinned": "このアカウントのみ",
+        "pinnedHint": "上限に達したら、次のアカウントに移らず、このアカウントのリセットを待ちます。",
         "addAccount": "アカウントを追加",
         "signInAgain": "もう一度ログイン",
         "connectPlan": "別のプランを接続",
-        "fallbackTitle": "{{computer}}が応答しなくなったら、API経由で返信する",
-        "fallbackHint": "API経由で返信し、{{name}}の予算から差し引かれます。オフにすると、{{name}}は依頼した人に知らせて、コンピューターが戻るのを待ちます。",
         "effort": "思考レベル",
         "efforts": {
           "auto": "自動",
@@ -5578,8 +5579,7 @@
           "effort": "思考レベル: {{level}}",
           "speed": "速度: 高速",
           "context": "コンテキスト: {{size}}",
-          "sharing": "他の人にも返信します",
-          "waits": "コンピューターを待ちます"
+          "sharing": "他の人にも返信します"
         },
         "copy": {
           "row": "他のエージェントにも使う",
@@ -5717,7 +5717,6 @@
           "wait": "待つ",
           "modelTitle": "{{name}}のモデル",
           "moreTitle": "{{name}}のその他のオプション",
-          "fallback": "プランが止まったらAPIキーを使う",
           "computer": "コンピューター",
           "doneTitle": "完了しました",
           "doneSub": "進行中だった作業は新しいアカウントで続きます。",
@@ -8669,7 +8668,7 @@
       "canceledToast": "キャンセルしました。上限がリセットされても実行されません。",
       "continuedToast": "実行を続けています。",
       "forbidden": "今すぐ続けられるのは、ルーティンの作成者、エージェントのオーナー、管理者だけです",
-      "extra_off": "このプランの利用枠を使い切りました。このエージェントの長い作業には有料の追加使用量が使われません。今すぐ続けるにはAI設定でオンにしてください。オフのままならリセット後に再開します",
+      "extra_off": "このプランの利用枠を使い切りました。このエージェントの長い作業にはプランの有料の追加使用量が使われません。リセット後に再開します",
       "extra_used_up": "このプランの利用枠を使い切り、有料の追加使用量も使い切ったか利用できません。リセット後に再開します"
     },
     "pausedRunningToast": "ルーティンを一時停止しました。実行中の処理も停止しました。",
@@ -11447,8 +11446,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}、APIへの切り替えなし"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "モデル",
@@ -14349,6 +14347,12 @@
     }
   },
   "errors": {
+    "wallpaper": {
+      "notYours": "その写真はあなたのものではありません。",
+      "invalid": "その背景はありません。",
+      "tooLarge": "写真は2 MBまでです。",
+      "type": "JPEG、PNG、WebPの写真を使ってください。"
+    },
     "tooLarge": "サーバーが受け付けるサイズを超えています。",
     "tooLargeMax": "サーバーが受け付けるサイズを超えています。上限は{{max}} MBです。",
     "passwordLink": {
@@ -14593,7 +14597,7 @@
       "takeOverNoAccess": "引き継ぐ前に、ルーティンの会話に参加してください。",
       "agentNotInChannel": "先にエージェントを会話に追加してください。",
       "webhookPaused": "テストするにはルーティンをオンにしてください。",
-      "continueExtraOff": "このプランの利用枠を使い切りました。このエージェントの長い作業には有料の追加利用が使われません。今すぐ続けるにはAI設定で有効にしてください。有効にしない場合は、リセット後に再開します。",
+      "continueExtraOff": "このプランの利用枠を使い切りました。このエージェントの長い作業にはプランの有料の追加利用が使われません。リセット後に再開します。",
       "continueExtraUsedUp": "このプランの利用枠を使い切り、有料の追加利用も使い切ったか利用できません。リセット後に再開します。",
       "actionsNeedApprover": "ルーティンに自動で実行させられるのは、エージェントのオーナーか、そのアクションを承認する人だけです。",
       "editorOnly": "変更できるのは、ルーティンを作成した人、エージェントのオーナー、または管理者だけです。",
@@ -14689,13 +14693,13 @@
     "agent": {
       "ownerOrAdmin": "これができるのは、エージェントのオーナーか管理者だけです。",
       "detailsHidden": "仕組みを見られるのは、{{agentName}} と話す人だけです。",
-      "extraOwnerOnly": "プランの有料の追加使用量をオンまたはオフにできるのは、エージェントのオーナーだけです。",
       "undoForbidden": "元に戻せるのは、エージェントが作業した相手、そのオーナー、または管理者だけです。",
       "undoSkillsAdmins": "エージェントのスキルの変更を元に戻したりやり直したりできるのは管理者だけです。"
     },
     "account": {
       "notRestorable": "このアカウントはもう復元できません。",
-      "notOwner": "これができるのは、このアカウントまたはプランを接続した人だけです。"
+      "notOwner": "これができるのは、このアカウントまたはプランを接続した人だけです。",
+      "orderForbidden": "順番の中での位置を変えられるのは、このアカウントを接続した人か管理者だけです。"
     },
     "channel": {
       "membersForbidden": "メンバーを追加または削除できるのは、チャンネルを作成した人か管理者だけです。"
@@ -16246,6 +16250,51 @@
           "new3": "あと2件、明日電話します。",
           "new4": "Driveのレポートを更新しました。",
           "newCount": "新着4件"
+        },
+        "wallpaper": {
+          "title": "背景",
+          "help": "あなただけに反映され、すべてのデバイスで同じになります",
+          "rowHelp": "すべての会話の背景で、あなただけに表示されます。会話ごとにメニューから別の背景も選べます。",
+          "rowSub": "あなただけ、すべての会話で",
+          "onlyHere": "{{name}} だけ、あなただけに",
+          "none": "背景なし",
+          "sameAsOthers": "ほかの会話と同じ",
+          "sameShort": "ほかと同じ",
+          "sky": "空",
+          "drawings": "イラスト",
+          "color": "カラー",
+          "photos": "あなたの写真",
+          "choosePhoto": "写真を選ぶ",
+          "skyAutoHelp": "最初のものは会話に合わせて変わります。ダイレクトメッセージではエージェントの色の空、チャンネルではワークスペースの空です。",
+          "skyAutoHelpDms": "最初のものはエージェントの色の空です。",
+          "skyAutoHelpChannels": "最初のものはワークスペースの空です。",
+          "neutral": {
+            "paper": "紙",
+            "mist": "霧",
+            "sand": "砂"
+          },
+          "name": {
+            "skyAuto": "会話の空",
+            "skyAgent": "エージェントの空",
+            "skyWorkspace": "ワークスペースの空",
+            "sky": "空 · {{color}}",
+            "drawingsAuto": "会話のイラスト",
+            "drawingsAgent": "エージェントのイラスト",
+            "drawingsWorkspace": "ワークスペースのイラスト",
+            "drawings": "イラスト · {{color}}",
+            "crowd": "エージェント",
+            "color": "カラー · {{color}}",
+            "photo": "あなたの写真"
+          },
+          "choose": "選ぶ…",
+          "menu": "会話の背景…",
+          "preview": "プレビュー",
+          "usePhoto": "この写真を使う",
+          "dragHint": "写真をドラッグして表示する部分を選びます",
+          "dim": "ダークモードで暗くする",
+          "sending": "写真を送信中…",
+          "failed": "背景を保存できませんでした。もう一度お試しください。",
+          "done": "完了"
         }
       },
       "agentStyle": "エージェントの話し方",
@@ -16637,6 +16686,14 @@
   "usageViews": {
     "signedOut": "ログアウト済み",
     "whose": "{{name}}の",
+    "order": {
+      "title": "{{plan}} · 使用順",
+      "hint": "上限に達すると、エージェントは余裕のある次のアカウントで続け、最初のアカウントがリセットされたら戻ります。",
+      "terms": "複数の{{plan}}アカウントを使うことは、{{plan}}の規約ではグレーゾーンです。",
+      "termsLabel": "{{plan}}の規約",
+      "termsHint": "プランは1人用なので、エージェントが複数のアカウントに頼る前に{{plan}}の規約を確認してください。",
+      "move": "{{name}}を移動（使用順{{n}}番目）"
+    },
     "serves": {
       "everyone": "全員が使う",
       "onlyYou": "あなただけが使う",
@@ -16703,7 +16760,7 @@
       "api": "API",
       "apiMain": "{{name}}はAPIで思考します",
       "apiMain_female": "{{name}}はAPIで思考します",
-      "apiFallback": "プラン外: 簡単な判断と、プランで回答できなかったとき",
+      "apiFallback": "プラン外: 簡単な判断",
       "removed": "削除されたアカウント",
       "removedSub": "どのコンピューターにもありません",
       "old": "{{brand}}（アカウント導入前）",
@@ -17325,6 +17382,7 @@
       "provider_wait_said": "{{provider}}がエラーを返しました（{{detail}}）。もう一度試して、動き次第すぐに返信します。",
       "provider_wait_ours": "あなたのアカウントではなく、こちら側の問題でAIが止まっています。解決し次第すぐに返信します。",
       "provider_back": "AIが戻りました。",
+      "confidential_removed": "削除済み：機密テキストの保存期間は{{days}}日です。",
       "brain_busy": "コンピューターが現在ほかのタスクで埋まっています。空き次第すぐに返信します。",
       "brain_queued": "まだコンピューターの待ち行列にいます。空きメモリができたらすぐに返信します。",
       "brain_interrupted": "{{brain}}が完了前に停止しました。完了済みで繰り返さないもの: {{tools}}。",
@@ -17332,6 +17390,11 @@
       "plan_limit_cut_unknown": "{{plan}}プランの上限で停止しました。リセットされ次第、続きから再開します。",
       "plan_limit_wait": "{{plan}}プランが上限に達しました。リセットされる{{when}}に返信します。{{plan}}側で先に解除されたら、気づいてすぐに返信します。",
       "plan_limit_wait_unknown": "{{plan}}プランが上限に達しました。リセットされ次第、返信します。",
+      "plan_account_moved": "{{from}} アカウントが上限に達しました。{{to}} アカウントで続けます。",
+      "plan_account_moved_line": "{{from}} アカウントが上限に近づいています。{{to}} アカウントで続けます。",
+      "plan_account_moved_extra": "{{from}} アカウントは有料の追加使用量に入ります。{{to}} アカウントで続けます。",
+      "plan_limit_all_wait": "{{plan}} の {{accounts}} 個のアカウントがすべて上限に達しました。最初の1つがリセットされる{{when}}に返信します。",
+      "plan_limit_all_wait_unknown": "{{plan}} の {{accounts}} 個のアカウントがすべて上限に達しました。どれかがリセットされ次第、返信します。",
       "plan_model_limit_wait": "{{model}}は{{plan}}でモデル自体の上限に達しました。プランのほかのモデルはそのまま使えます。{{agent}}のモデルを変えるか、{{when}}のリセットまでお待ちください。",
       "plan_model_limit_wait_unknown": "{{model}}は{{plan}}でモデル自体の上限に達しました。プランのほかのモデルはそのまま使えます。{{agent}}のモデルを変えるか、リセットまでお待ちください。",
       "plan_model_region_wait": "このモデル（{{model}}）を使うには、OpenCodeの「Settings › Privacy」でGlobalリージョンをオンにする必要があります。",

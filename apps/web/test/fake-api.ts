@@ -1842,6 +1842,18 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         org.chatPrefs = { ...org.chatPrefs, ...patch };
         return org.chatPrefs;
       },
+      setConversationWallpaper: async (orgId, channelId, wallpaper) => {
+        log("orgs.setConversationWallpaper", orgId, channelId, wallpaper);
+        const org = state.me?.organizations.find((o) => o.id === orgId);
+        if (!org) throw new ApiError(404, "not_found", "Organization not found");
+        const { [channelId]: _old, ...rest } = org.chatPrefs?.wallpapers ?? {};
+        org.chatPrefs = { ...org.chatPrefs, wallpapers: wallpaper ? { ...rest, [channelId]: wallpaper } : rest };
+        return org.chatPrefs;
+      },
+      uploadWallpaperPhoto: async (orgId, input) => {
+        log("orgs.uploadWallpaperPhoto", orgId, input.contentType);
+        return { url: "/api/app/wallpapers/me/0123456789abcdef.jpg" };
+      },
       sidebarItems: async () => structuredClone(state.sidebarItems ?? {}),
       setSidebarItem: async (orgId, item, place) => {
         log("orgs.setSidebarItem", orgId, item, place);
@@ -2893,7 +2905,6 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
           brain,
           model,
           effectiveModel: brain === "model" ? null : (model ?? option?.defaultModel ?? null),
-          fallback: input.fallback ?? b.fallback,
           // ADR 0041: another brain kind starts on the computer's own account.
           account: input.account !== undefined ? input.account : changed ? null : b.account,
           effort: input.effort !== undefined ? input.effort : b.effort,
@@ -4422,8 +4433,6 @@ export function fakeAgentBrain(agentId: string, patch: Partial<AgentBrain> = {})
     brain: "model",
     model: null,
     effectiveModel: null,
-    fallback: true,
-    extraUsage: true,
     computer: { machineId: "machine_1", name: "MacBook", online: true },
     options: [
       { kind: "model", available: true, models: [], defaultModel: null },
