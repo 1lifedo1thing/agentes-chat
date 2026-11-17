@@ -35,7 +35,7 @@ import { machineOnline } from "./machines";
 import { getMessage, insertMessage, type Message, type MessageView, withMessageDetails } from "./messages";
 import type { Notice } from "./notices";
 import { notifyAgentUnreached } from "./notification-producers";
-import { personRunsReadOutside, runReadOutsideById } from "./outside";
+import { runReadOutsideById } from "./outside";
 import { actingRoutineOfCall, personBehindCall, routineCreatorOf } from "./requester";
 import { isRoutineRoomKey } from "./routine-brief";
 import { stoppedToSend } from "./run-inbox";
@@ -267,6 +267,7 @@ export function createAskAgentToolSource(
             chain,
             expiresAt: new Date(Date.now() + CONSULTATION_TTL_MS),
             forUserId,
+            askerReadOutside: relays,
           })
           .returning();
         return row;
@@ -530,6 +531,7 @@ export async function sendNote(
   return db.transaction(async (tx) => {
     const channel = await openAgentDm(tx, input.orgId, input.agentId, input.targetAgentId);
     if (await sameNoteSent(tx, input, channel.id, input.body)) return null;
+    const relays = await runReadOutsideById(tx, input.orgId, input.runId);
     const message = await insertMessage(tx, {
       orgId: input.orgId,
       channelId: channel.id,
@@ -543,7 +545,7 @@ export async function sendNote(
           ...(input.headsUp ? { headsUp: true } : {}),
         },
         consultation: { id: consultationId },
-        ...((await runReadOutsideById(tx, input.orgId, input.runId)) ? { readOutside: true } : {}),
+        ...(relays ? { readOutside: true } : {}),
       },
     });
     // A run of the other agent at work in this DM for the same person takes it: the row waits on that run.
@@ -580,6 +582,7 @@ export async function sendNote(
       chain: input.chain,
       expiresAt: new Date(Date.now() + CONSULTATION_TTL_MS),
       forUserId: (await runAuthorityById(tx, input.orgId, input.runId)).personId,
+      askerReadOutside: relays,
     });
     return { message, consultationId };
   });
@@ -2393,11 +2396,11 @@ export interface HandedFor {
   kind: AgentConsultationRow["kind"];
   /** The handed work's state when its run became one (`agent_works.how = 'handed'`), else the note's or question's. */
   status: AgentConsultationRow["status"];
-  /** Null when the run that asked read outside content (its note relays it). */
+  /** Null when the run that asked had read outside content (its words relay it). */
   question: string | null;
   /** People's words of it (`answerForPeople`); null while open, when it ended otherwise, or with no words of its own. */
   answer: string | null;
-  /** The answer is left out: the run that gave it read outside content. */
+  /** The answer is left out: its run had read outside content when it wrote it, or left no reply that says. */
   answerHidden: boolean;
   /** Its handed work was stopped (by a person or the agent that handed it) before it finished. */
   stopped?: true;
@@ -2428,7 +2431,9 @@ export const agentsDmsOf = (db: Executor, agentId: string, options: { tasks?: bo
  * right hand handed it. That work happened away from its DM with that person, which never shows it:
  * without this, the agent asked about it there doesn't know what they mean. "For the person" is the row's
  * `forUserId`, the person behind the run that asked when it was made (a routine's work is nobody's). A heads-up is
- * news, not a request: left out. Two statements whatever the number of hand-offs: it runs on every DM turn.
+ * news, not a request: left out. One statement whatever the number of hand-offs, and no run's steps: it runs on every
+ * DM turn. Whether words relay outside content was settled when they were written: on the row for the request
+ * (`askerReadOutside`), on the reply or the report for the answer (`meta.readOutside`, as the executor posts it).
  */
 export async function handedFor(db: Executor, orgId: string, agentId: string, personId: string): Promise<HandedFor[]> {
   const rows = await db
@@ -2437,15 +2442,15 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
       status: agentConsultations.status,
       question: agentConsultations.question,
       answer: agentConsultations.answer,
-      askerRunId: agentConsultations.askerRunId,
+      askerReadOutside: agentConsultations.askerReadOutside,
       targetRunId: agentConsultations.targetRunId,
       createdAt: agentConsultations.createdAt,
       askerHandle: agents.handle,
-      // A person wrote into an asking run nobody was behind (`steeredBy`): that made it theirs, not the run that answers.
-      askerSteered: sql<boolean>`exists (select 1 from ${agentRuns} ar where ar.org_id = ${orgId}
-        and ar.id = ${agentConsultations.askerRunId} and ar.transcript -> 'steeredBy' is not null)`,
+      // The answering run's reply as it stands: null when the run left none.
+      replyOutside: sql<boolean | null>`(select coalesce(rm.meta ->> 'readOutside' = 'true', false)
+        from ${messages} rm where rm.org_id = ${orgId} and rm.id = ${agentRuns.replyMessageId})`,
       work: { status: agentWorks.status, finishedAt: agentWorks.finishedAt },
-      report: { body: messages.body, meta: messages.meta, runId: messages.agentRunId },
+      report: { body: messages.body, meta: messages.meta },
     })
     .from(agentConsultations)
     .innerJoin(agents, eq(agents.id, agentConsultations.askerAgentId))
@@ -2472,22 +2477,15 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
     )
     .orderBy(desc(agentConsultations.createdAt))
     .limit(HANDED_REMEMBERED);
-  const states = rows.map((r) => (r.work?.status ? handedWorkState(r.work, r.report) : noteState(r)));
-  // The asking runs work for that person, so no routine feeds them. So do the answering ones, unless the asking run was
-  // nobody's until the person wrote into it: then the answer may come from a run a routine feeds, and stays out.
-  const outside = await personRunsReadOutside(db, orgId, [
-    ...rows.map((r) => r.askerRunId),
-    ...states.flatMap((s) => (s.answeredBy ? [s.answeredBy] : [])),
-  ]);
-  return rows.map((r, i) => {
-    const { answeredBy, words, ...state } = states[i] as HandedState;
-    const answerHidden = !!answeredBy && (r.askerSteered || outside.has(answeredBy));
+  return rows.map((r) => {
+    const { words, relayed, ...state } = r.work?.status ? handedWorkState(r.work, r.report) : noteState(r);
+    const answerHidden = words !== null && relayed;
     return {
       kind: r.kind,
       ...state,
       answer: words && !answerHidden ? answerForPeople(words) : null,
       answerHidden,
-      question: outside.has(r.askerRunId) ? null : r.question,
+      question: r.askerReadOutside ? null : r.question,
       askerHandle: r.askerHandle,
       createdAt: r.createdAt,
     };
@@ -2495,12 +2493,18 @@ export async function handedFor(db: Executor, orgId: string, agentId: string, pe
 }
 
 /** How a hand-off went, and the words that answered it with the run that wrote them (hidden if it read outside). */
-type HandedState = Pick<HandedFor, "status" | "stopped"> & { words: string | null; answeredBy: string | null };
+/** `relayed`: the words come from a run that had read outside content, or whose reply is not there to say. */
+type HandedState = Pick<HandedFor, "status" | "stopped"> & { words: string | null; relayed: boolean };
 
-/** A hand-off no work came of: its own row says how it went. */
-function noteState(row: Pick<AgentConsultationRow, "status" | "answer" | "targetRunId">): HandedState {
+/**
+ * A hand-off no work came of: its own row says how it went. Its words are its run's reply, so that reply's mark says
+ * whether they relay outside content; with no run behind them they are the server's own.
+ */
+function noteState(
+  row: Pick<AgentConsultationRow, "status" | "answer" | "targetRunId"> & { replyOutside: boolean | null },
+): HandedState {
   const words = row.status === "answered" && row.answer ? row.answer : null;
-  return { status: row.status, words, answeredBy: words ? row.targetRunId : null };
+  return { status: row.status, words, relayed: row.targetRunId !== null && row.replyOutside !== false };
 }
 
 /**
@@ -2509,16 +2513,16 @@ function noteState(row: Pick<AgentConsultationRow, "status" | "answer" | "target
  */
 function handedWorkState(
   work: { status: string | null; finishedAt: Date | null },
-  report: { body: string; meta: Message["meta"]; runId: string | null } | null,
+  report: { body: string; meta: Message["meta"] } | null,
 ): HandedState {
-  if (!work.finishedAt) return { status: "open", words: null, answeredBy: null };
+  if (!work.finishedAt) return { status: "open", words: null, relayed: false };
   if (work.status !== "done")
     return {
       status: "failed",
       words: null,
-      answeredBy: null,
+      relayed: false,
       ...(work.status === "canceled" ? { stopped: true } : {}),
     };
   const words = report && !String(report.meta.bodyCode ?? "").startsWith("work_end_") ? report.body : null;
-  return { status: "answered", words, answeredBy: words ? (report?.runId ?? null) : null };
+  return { status: "answered", words, relayed: report?.meta.readOutside === true };
 }

@@ -5,7 +5,6 @@ import { systemText } from "@agenteschat/providers";
 import {
   type AgentRun,
   addChannelMember,
-  addRunStep,
   askAgentToImplement,
   buildRunContext,
   continueRun,
@@ -24,7 +23,7 @@ import {
   sendNote,
   type ToolContext,
 } from "../src";
-import { personRunsReadOutside, runReadOutsideById } from "../src/outside";
+import { runReadOutsideById } from "../src/outside";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
@@ -277,14 +276,18 @@ const runOf = async (id: string | null | undefined) => {
 
 const notes = () => f.db.select().from(schema.agentConsultations).orderBy(asc(schema.agentConsultations.createdAt));
 
-/** Ada's run ends with its report (`meta.workEnd`, as the executor posts it), then its hooks run. */
+/** What a run that read outside content posts carries the mark (the executor's `post`). */
+const outsideMark = async (run: AgentRun) =>
+  (await runReadOutsideById(f.db, f.org.id, run.id)) ? { readOutside: true } : {};
+
+/** Ada's run ends with its report (`meta.workEnd` and the outside mark, as the executor posts it), then its hooks run. */
 async function reports(run: AgentRun, body = "Pronto: está no Drive em Vendas/Outubro.") {
   const said = await insertMessage(f.db, {
     orgId: f.org.id,
     channelId: run.channelId,
     author: { type: "agent", agentId: run.agentId, runId: run.id, hop: run.hop },
     body,
-    meta: { workEnd: { id: run.workId, status: "done" } },
+    meta: { workEnd: { id: run.workId, status: "done" }, ...(await outsideMark(run)) },
   });
   await f.db
     .update(schema.agentRuns)
@@ -293,6 +296,18 @@ async function reports(run: AgentRun, body = "Pronto: está no Drive em Vendas/O
   const ended = await runOf(run.id);
   await endWork({ db: f.db, pubsub: f.pubsub }, ended, "done");
   await onConsultedRunFinished({ db: f.db, pubsub: f.pubsub }, ended, "done");
+}
+
+/** A run's reply in its conversation, as the executor posts and records it. */
+async function replies(run: AgentRun, body: string) {
+  const said = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId: run.channelId,
+    author: { type: "agent", agentId: run.agentId, runId: run.id, hop: run.hop },
+    body,
+    meta: await outsideMark(run),
+  });
+  await f.db.update(schema.agentRuns).set({ replyMessageId: said.id }).where(eq(schema.agentRuns.id, run.id));
 }
 
 /** The person stops Ada's run (its work and note close as canceled). */
@@ -554,6 +569,7 @@ describe("what it keeps, and what it leaves out", () => {
       .set({ status: "answered", answer: "Vendemos 40 mil.", answeredAt: new Date() })
       .where(eq(schema.agentConsultations.id, c?.id ?? ""));
     expect(await runReadOutsideById(f.db, f.org.id, c?.targetRunId ?? "")).toBe(true);
+    await replies(await runOf(c?.targetRunId), "Vendemos 40 mil.");
     const [h] = await handedFor(f.db, f.org.id, ada.id, f.owner.id);
     expect([h?.question, h?.answer, h?.answerHidden]).toEqual(["Quanto vendemos?", null, true]);
   });
@@ -701,6 +717,7 @@ describe("whose it is, and what it costs", () => {
     const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
     const dev = await devRun(f.general.id, "@dev pergunta pra Ada");
     const answering = await agentRun(ada.id, room.id, "responde");
+    await replies(answering, "Feito.");
     const cost = async () => (await countQueries(() => handedFor(f.db, f.org.id, ada.id, f.owner.id))).queries;
     const one = await cost();
     const at = Date.now() - 3600_000;
@@ -722,8 +739,11 @@ describe("whose it is, and what it costs", () => {
       "Faz o relatório de vendas de outubro.",
       ...[5, 4, 3, 2, 1].map((i) => `Coisa ${i}.`),
     ]);
-    expect([six, behind]).toEqual([one, one]);
-    expect(one).toBe(2);
+    expect((await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => h.answer)).toEqual([
+      "Pronto: está no Drive em Vendas/Outubro.",
+      ...[5, 4, 3, 2, 1].map(() => "Feito."),
+    ]);
+    expect([one, six, behind]).toEqual([1, 1, 1]);
   });
 
   test("a hand-off with nobody behind it is never anyone's", async () => {
@@ -785,69 +805,72 @@ describe("whose it is, and what it costs", () => {
     });
   });
 
-  test("the outside check of many runs at once agrees with the one-run check", async () => {
-    f = await setup();
-    const room = async (name: string) => {
-      const [c] = await f.db
-        .insert(schema.channels)
-        .values({ orgId: f.org.id, name, visibility: "public", kind: "channel" })
-        .returning();
-      if (!c) throw new Error("no channel");
-      return c.id;
-    };
-    const marked = (channelId: string, threadId?: string) =>
-      insertMessage(f.db, {
-        orgId: f.org.id,
-        channelId,
-        threadId,
-        author: { type: "person", userId: f.owner.id },
-        body: "Colado de uma página.",
-        meta: { readOutside: true },
-      });
-    const plain = await agentRun(f.agent.id, await room("a"), "nada");
-    const step = await agentRun(f.agent.id, await room("b"), "passo");
+  test("every hand-off records whether the run that made it had read outside content", async () => {
+    const { ada } = await handedToAda();
+    const read = await devRun(f.general.id, "@dev lê a página e pede pra Ada");
     await f.db
       .insert(schema.agentRunSteps)
-      .values({ orgId: f.org.id, runId: step.id, seq: 1, kind: "tool_result", data: { data: { outside: true } } });
-    const harness = await agentRun(f.agent.id, await room("c"), "busca");
-    await f.db
-      .update(schema.agentRuns)
-      .set({ transcript: { system: "", messages: [], harnessTried: ["WebFetch(https://example.com)"] } as never })
-      .where(eq(schema.agentRuns.id, harness.id));
-    const trigger = await agentRun(f.agent.id, await room("d"), "gatilho");
-    await f.db
-      .update(schema.messages)
-      .set({ meta: { readOutside: true } })
-      .where(eq(schema.messages.id, trigger.triggerMessageId));
-    const threadRoom = await room("e");
-    const root = await insertMessage(f.db, {
+      .values({ orgId: f.org.id, runId: read.id, seq: 1, kind: "tool_result", data: { data: { outside: true } } });
+    await invoke(read, "ask_agent", { agent: "@ada", question: "Quanto vendemos?" });
+    await sendNote(f.db, {
       orgId: f.org.id,
-      channelId: threadRoom,
-      author: { type: "person", userId: f.owner.id },
-      body: "Raiz.",
+      agentId: f.agent.id,
+      runId: read.id,
+      hop: 1,
+      targetAgentId: ada.id,
+      body: "Uma menção.",
+      chain: [],
+      fromMention: true,
+      deferStart: true,
     });
-    await marked(threadRoom, root.id);
-    const inThread = await agentRun(f.agent.id, threadRoom, "no fio", f.owner.id, { threadId: root.id });
-    const topRoom = await room("f");
-    await marked(topRoom);
-    const topLevel = await agentRun(f.agent.id, topRoom, "embaixo");
-    const goneRoom = await room("g");
-    const gone = await marked(goneRoom);
-    await f.db.update(schema.messages).set({ deletedAt: new Date() }).where(eq(schema.messages.id, gone.id));
-    const deleted = await agentRun(f.agent.id, goneRoom, "apagado");
-    const steered = await agentRun(f.agent.id, await room("h"), "no meio");
-    const forwarded = await marked(await room("i"));
-    await addRunStep(f.db, steered, "context", { steeredMessageIds: [forwarded.id] });
-    const steeredPlain = await agentRun(f.agent.id, await room("j"), "no meio, sem nada");
-    await addRunStep(f.db, steeredPlain, "context", { steeredMessageIds: [plain.triggerMessageId] });
-    const runs = [plain, step, harness, trigger, inThread, topLevel, deleted, steered, steeredPlain];
-    const one = await Promise.all(runs.map((r) => runReadOutsideById(f.db, f.org.id, r.id)));
-    expect(one).toEqual([false, true, true, true, true, true, false, true, false]);
-    const many = await personRunsReadOutside(
-      f.db,
-      f.org.id,
-      runs.map((r) => r.id),
+    const made = await createIssue({ db: f.db, pubsub: f.pubsub }, { type: "person", userId: f.owner.id }, f.org.id, {
+      title: "Relatório de vendas",
+    });
+    await askAgentToImplement({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, made.id, ada.id, {
+      agentId: f.agent.id,
+      runId: read.id,
+      hop: 1,
+    });
+    const task = `Work on task #${made.number}: Relatório de vendas`;
+    expect(Object.fromEntries((await notes()).map((c) => [c.question, c.askerReadOutside]))).toEqual({
+      "Faz o relatório de vendas de outubro.": false,
+      "Quanto vendemos?": true,
+      "Uma menção.": true,
+      [task]: true,
+    });
+    // The memory leaves those three requests' words out, the task's title among them.
+    const kept = (await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => h.question);
+    expect(kept.filter((q) => q !== null)).toEqual(["Faz o relatório de vendas de outubro."]);
+    expect(kept).toHaveLength(4);
+  });
+
+  test("an answer is shown by what its run's reply says: unmarked shown, marked or missing left out", async () => {
+    const { ada } = await handedToAda();
+    const room = await openAgentDm(f.db, f.org.id, f.agent.id, ada.id);
+    const dev = await devRun(f.general.id, "@dev pergunta pra Ada");
+    const answered = (targetRunId: string | null) => ({ status: "answered" as const, answer: "Feito.", targetRunId });
+    const at = Date.now() - 3600_000;
+    const clean = await agentRun(ada.id, room.id, "responde limpo");
+    await replies(clean, "Feito.");
+    await asked(room.id, dev, ada.id, "Resposta limpa.", new Date(at), answered(clean.id));
+    const read = await agentRun(ada.id, room.id, "responde depois de ler fora");
+    await f.db
+      .insert(schema.agentRunSteps)
+      .values({ orgId: f.org.id, runId: read.id, seq: 1, kind: "tool_result", data: { data: { outside: true } } });
+    await replies(read, "Feito.");
+    await asked(room.id, dev, ada.id, "Resposta de quem leu fora.", new Date(at + 1000), answered(read.id));
+    const silent = await agentRun(ada.id, room.id, "não respondeu");
+    await asked(room.id, dev, ada.id, "Sem resposta do run.", new Date(at + 2000), answered(silent.id));
+    // The server's own words (a note held because the agent is already on it): no run behind them.
+    await asked(room.id, dev, ada.id, "Palavras do servidor.", new Date(at + 3000), answered(null));
+    const shown = Object.fromEntries(
+      (await handedFor(f.db, f.org.id, ada.id, f.owner.id)).map((h) => [h.question, [h.answer, h.answerHidden]]),
     );
-    expect(runs.map((r) => many.has(r.id))).toEqual(one);
+    expect(shown).toMatchObject({
+      "Resposta limpa.": ["Feito.", false],
+      "Resposta de quem leu fora.": [null, true],
+      "Sem resposta do run.": [null, true],
+      "Palavras do servidor.": ["Feito.", false],
+    });
   });
 });

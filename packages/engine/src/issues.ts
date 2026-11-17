@@ -47,6 +47,7 @@ import { fileIdsOf, getMessage, insertMessage, type MessageView, messageView, po
 import { enqueueRunJob } from "./mission-runs";
 import { notifyIssueChanged } from "./notification-producers";
 import { can, getMembership, requireActiveMembership } from "./organizations";
+import { runReadOutsideById } from "./outside";
 import { membersWhoMaySql } from "./permissions";
 import { queueTaskCheck, queueTaskEnd, tellTaskEnd } from "./right-hand-follow";
 import { fireRoutineEvent } from "./routines";
@@ -1734,6 +1735,7 @@ export async function askAgentToImplement(
         chain: [by.agentId],
         expiresAt: new Date(Date.now() + TASK_HAND_OFF_TTL_MS),
         forUserId: (await runAuthorityById(tx, orgId, by.runId)).personId,
+        askerReadOutside: await runReadOutsideById(tx, orgId, by.runId),
       });
       // The right hand looks at it again a day later, for the person it handed it over for.
       await queueTaskCheck(tx, orgId, consultationId);
