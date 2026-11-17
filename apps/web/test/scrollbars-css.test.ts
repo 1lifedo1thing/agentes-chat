@@ -72,6 +72,11 @@ const SIDEWAYS: Record<string, "strip" | "content"> = {
   ".dk-orgpick": "strip",
   ".wiki-doc .wiki-editor__bar": "strip",
   ".nac-band__path": "strip",
+  ".cnv-dock": "strip",
+  ".sheet-tabs__strip": "strip",
+  ".sheet-tools": "strip",
+  ".sl-tools": "strip",
+  ".sl-rail__list": "strip",
   ".code-card__code": "content",
   ".code-card__preview": "content",
   ".level-matrix": "content",
@@ -85,6 +90,7 @@ const SIDEWAYS: Record<string, "strip" | "content"> = {
   ".mi-log": "content",
   ".mi-cmd__line": "content",
   ".ac-msg__text pre": "content",
+  ".sl-chartdlg__data": "content",
 };
 
 describe("our scrollbars, never the browser's", () => {

@@ -302,11 +302,6 @@
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-.sl-rail__list:hover {
-  scrollbar-color: var(--line-strong) transparent;
 }
 .sl-rail__item {
   display: grid;
@@ -635,6 +630,11 @@ html:not([data-pointer]) .sl-notes__head:focus-visible {
     padding: var(--space-2) var(--space-3);
     overflow-x: auto;
     overflow-y: hidden;
+    /* A strip swiped sideways on a narrow window: no scrollbar, as the kit's other strips. */
+    scrollbar-width: none;
+  }
+  .sl-rail__list::-webkit-scrollbar {
+    display: none;
   }
   .sl-rail__item {
     display: flex;
