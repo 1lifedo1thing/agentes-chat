@@ -18,7 +18,7 @@ import {
 } from "@/components/AccessLevels";
 import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { LoadingLine } from "@/components/Loading";
-import { PersonalChip, PersonalOf } from "@/components/OwnerScope";
+import { PersonalOf } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
 import { SkillPicker } from "@/components/Skills";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -98,7 +98,14 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
         changed={changed || (isGithub(r) && Boolean(changeOf("repos")))}
         tag={changed ? <ChangedTag changeKey={key} /> : undefined}
         // Under the name, where its lines start: a long name keeps its tile beside its own lines only.
-        meta={personalOf(r) ? <PersonalChip /> : undefined}
+        meta={
+          personalOf(r) ? (
+            <span className="level-row__owner ac-iconline">
+              <Icon name="lock" size={14} />
+              <span>{t("vault.tab.personal")}</span>
+            </span>
+          ) : undefined
+        }
         extra={changed ? <WasLine changeKey={key} /> : undefined}
         below={
           isGithub(r) && level(r) !== "none" ? (
