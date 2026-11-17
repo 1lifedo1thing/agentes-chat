@@ -246,12 +246,7 @@ export function ChatLookSettings() {
             }))}
           />
           <MessageLookContext.Provider value={lookOf(style)}>
-            <SampleMini
-              className="chat-look__mini--real"
-              look={style}
-              size={textSize}
-              faces={facesShown(style, dm)}
-            >
+            <SampleMini className="chat-look__mini--real" look={style} size={textSize} faces={facesShown(style, dm)}>
               <SampleRows lines={talk.slice(0, 2)} />
             </SampleMini>
           </MessageLookContext.Provider>
