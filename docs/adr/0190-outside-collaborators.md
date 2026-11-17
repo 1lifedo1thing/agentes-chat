@@ -1,6 +1,6 @@
 # 0190. Outside collaborators: people a workspace lets in who take no seat
 
-- Status: Accepted (built: the server and the shared client's types; the apps' label beside the name comes next)
+- Status: Accepted
 - Date: 2026-11-16
 - Extends: ADR 0068 (requests to join), ADR 0079 §4 (the `members` limit), ADR 0056 (the operator API and its events
   feed)
