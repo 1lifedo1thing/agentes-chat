@@ -1,6 +1,6 @@
 {
-  "id": "7b3d42f5-24de-4948-bb1d-6930b81e0719",
-  "prevId": "807aa834-3ba4-4cad-83d5-36c1c4fe9294",
+  "id": "8c2fbe6b-58f9-4b7b-812c-eacd256d20ba",
+  "prevId": "4362d416-a671-4661-9c46-168f777c6de8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -330,6 +330,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "brain_account_pinned": {
+          "name": "brain_account_pinned",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "brain_effort": {
           "name": "brain_effort",
@@ -10195,6 +10202,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'everyone'"
+        },
+        "use_order": {
+          "name": "use_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "auth_method": {
           "name": "auth_method",
@@ -23426,12 +23439,6 @@
         },
         "logo": {
           "name": "logo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "accent": {
-          "name": "accent",
           "type": "text",
           "primaryKey": false,
           "notNull": false

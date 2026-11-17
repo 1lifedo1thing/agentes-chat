@@ -3766,6 +3766,15 @@ export const ptBR = {
     onceHint: "Todos dividem os limites do seu plano.",
     use: "Usar {{label}}",
     another: "Outra conta",
+    /** A plain plan panel's list of the person's accounts of that plan, each by its email (or the name they gave it). */
+    which: {
+      title: "Qual conta do {{brand}} o {{name}} vai usar?",
+      title_female: "Qual conta do {{brand}} a {{name}} vai usar?",
+      titleAll: "Qual conta do {{brand}} eles vão usar?",
+      mine: "Suas contas do {{brand}} no {{computer}}",
+      /** The list's last line, and the title of its sign-in. */
+      other: "Entrar com outra conta do {{brand}}",
+    },
     /** Before a new sign-in, where the person already has an account of that plan on that computer (`reusableAccount`). */
     reuse: {
       active: "Você já tem {{label}} aqui. Entre de novo nela, ou use outra conta.",
@@ -3925,9 +3934,6 @@ export const ptBR = {
     answerAnyway: "Responder mesmo assim",
     answerAnywayHint: "Responde agora, lendo tudo o que veio depois",
     answerAnywayForbidden: "Só quem pediu, o dono do agente ou um admin pode pedir isso",
-    extraTitle: "Trabalho longo pode usar o uso extra pago",
-    extraHint:
-      "Com o uso extra ligado no plano, o trabalho longo segue depois de 95%. Desligado, ele pausa em 95% e retoma quando o plano renovar.",
   },
   /** An agent's line of work waiting on its plan or budget (ADR 0118): the web's dialog, the phone's sheet. */
   usageQueue: {
@@ -3938,6 +3944,7 @@ export const ptBR = {
     shared_one: "{{agents}} usa o mesmo plano do {{plan}}. As conversas dos dois entram na mesma fila.",
     shared_other: "{{agents}} usam o mesmo plano do {{plan}}. As conversas de todos entram na mesma fila.",
     about: "Sobre a fila",
+    chain: "As {{accounts}} contas do {{plan}} chegaram ao limite.",
     lists: "Conversas",
     queuedTab: "Na fila",
     skippedTab: "Puladas",
@@ -6033,15 +6040,12 @@ export const ptBR = {
         accountOf: "De {{name}}",
         /** Under the accounts when other people's plans are listed (`canUseOthersPlans`). */
         accountOthers: "Os planos que atendem o workspace todo mostram de quem são.",
+        movesOn: "Segue na próxima conta no limite",
+        pinned: "Só esta conta",
+        pinnedHint: "No limite, espera esta conta renovar em vez de seguir na próxima.",
         addAccount: "Adicionar conta",
         signInAgain: "Entrar de novo",
         connectPlan: "Conectar outro plano",
-        fallbackTitle: "Se o {{computer}} parar de responder, responder pela API",
-        /** The switch's ⓘ: the same in both states. */
-        fallbackHint:
-          "Responde pela API e conta no orçamento do {{name}}. Se não, o {{name}} avisa quem chamou e espera o computador voltar.",
-        fallbackHint_female:
-          "Responde pela API e conta no orçamento da {{name}}. Se não, a {{name}} avisa quem chamou e espera o computador voltar.",
         effort: "Esforço",
         efforts: {
           auto: "Automático",
@@ -6102,7 +6106,6 @@ export const ptBR = {
           speed: "Velocidade rápida",
           context: "Contexto de {{size}}",
           sharing: "Atende outras pessoas",
-          waits: "Espera o computador voltar",
         },
         /** "Usar em outros agentes" (ADR 0094): the same setup on the agents picked, each by its own rules. */
         copy: {
@@ -6290,8 +6293,6 @@ export const ptBR = {
           modelTitle_female: "Modelo da {{name}}",
           moreTitle: "Mais opções do {{name}}",
           moreTitle_female: "Mais opções da {{name}}",
-          /** A switch: its ⓘ is `fallbackHint`. */
-          fallback: "Usar a chave de API se o plano parar",
           /** A line under More options where several computers can run it. */
           computer: "Computador",
           doneTitle: "Pronto",
@@ -9409,7 +9410,7 @@ export const ptBR = {
       continuedToast: "Execução continuando.",
       forbidden: "Só quem criou a rotina, o dono do agente ou um admin pode continuar agora",
       extra_off:
-        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago. Ligue isso nas configurações de IA dele para continuar agora, ou ele retoma depois que o limite renovar",
+        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago do plano. Ele retoma depois que o limite renovar",
       extra_used_up:
         "A janela deste plano acabou e o uso extra pago dele acabou ou não está disponível. Ele retoma depois que o limite renovar",
     },
@@ -10849,6 +10850,14 @@ export const ptBR = {
     },
   },
   aiAccounts: {
+    /** An account of the viewer's that says no email and has no name of theirs yet (Claude's token for all agents). */
+    unnamed: "Conta sem nome",
+    /** The pencil after an account's title, and the field it opens in the row. */
+    rename: {
+      action: "Mudar o nome de {{label}}",
+      label: "Nome da conta",
+      placeholder: "Ex.: Trabalho, Pessoal",
+    },
     share: {
       /** Off by default: the agent answers only its owner while it thinks with their plan. */
       switch: "Atende outras pessoas",
@@ -12332,7 +12341,6 @@ export const ptBR = {
       grok: "Grok Build · {{model}}",
       antigravity: "Antigravity CLI · {{model}}",
       opencode: "OpenCode · {{model}}",
-      noFallback: "{{brain}}, sem reserva pela API",
     },
     mission: {
       modelLabel: "Modelo",
@@ -15368,7 +15376,7 @@ export const ptBR = {
       agentNotInChannel: "Adicione o agente à conversa antes.",
       webhookPaused: "Ligue a rotina para testar.",
       continueExtraOff:
-        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago. Ligue isso nas configurações de IA dele para continuar agora, ou ele retoma depois que o limite renovar.",
+        "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago do plano. Ele retoma depois que o limite renovar.",
       continueExtraUsedUp:
         "A janela deste plano acabou e o uso extra pago dele acabou ou não está disponível. Ele retoma depois que o limite renovar.",
       actionsNeedApprover: "Só o dono do agente ou quem aprova as ações dele pode deixar uma rotina agir sozinha.",
@@ -15474,13 +15482,14 @@ export const ptBR = {
     agent: {
       ownerOrAdmin: "Só o dono do agente ou um admin pode fazer isso.",
       detailsHidden: "Só quem conversa com {{agentName}} vê como funciona.",
-      extraOwnerOnly: "Só o dono do agente liga ou desliga o uso extra pago do plano.",
       undoForbidden: "Só a pessoa para quem o agente trabalhou, o dono dele ou um admin pode desfazer isso.",
       undoSkillsAdmins: "Só um admin desfaz ou refaz uma mudança nas skills de um agente.",
     },
     account: {
       notRestorable: "Esta conta não pode mais ser restaurada.",
       notOwner: "Só quem conectou esta conta ou plano pode fazer isso.",
+      /** `account.order_forbidden`: the order of use of a provider's accounts (ADR 0041 §6). */
+      orderForbidden: "Só quem conectou esta conta ou um admin pode mudar o lugar dela na ordem.",
     },
     channel: {
       membersForbidden: "Só quem criou o canal ou um admin pode adicionar ou remover pessoas.",
@@ -17515,6 +17524,16 @@ export const ptBR = {
   usageViews: {
     signedOut: "Saiu da conta",
     whose: "de {{name}}",
+    /** The order of use of a plan's accounts at a limit (ADR 0041 §6). */
+    order: {
+      title: "{{plan}} · Ordem de uso",
+      hint: "No limite, os agentes seguem na próxima conta com folga e voltam para a primeira quando ela renovar.",
+      terms: "Usar várias contas do {{plan}} é uma área cinzenta nos termos do {{plan}}.",
+      termsLabel: "os termos do {{plan}}",
+      termsHint:
+        "Um plano é de uma pessoa, então confira os termos do {{plan}} antes de os seus agentes contarem com várias contas.",
+      move: "Mover {{name}}, número {{n}} na ordem",
+    },
     /** Who uses a plan (ADR 0059 §3): its row's status, and the choice in its details for whoever connected it. */
     serves: {
       everyone: "Todos usam",
@@ -17594,7 +17613,7 @@ export const ptBR = {
       api: "API",
       apiMain: "O {{name}} pensa pela API",
       apiMain_female: "A {{name}} pensa pela API",
-      apiFallback: "Fora do plano: decisões rápidas e quando o plano não pôde responder",
+      apiFallback: "Fora do plano: decisões rápidas",
       removed: "Conta removida",
       removedSub: "Não está mais em nenhum computador",
       old: "{{brand}}, de antes das contas",
@@ -18316,6 +18335,17 @@ export const ptBR = {
       plan_limit_wait:
         "O plano do {{plan}} chegou ao limite. Respondo {{when}}, quando ele renovar. Se ele for liberado antes no {{plan}}, eu percebo e respondo na hora.",
       plan_limit_wait_unknown: "O plano do {{plan}} chegou ao limite. Respondo assim que ele renovar.",
+      /** The run went on with the next account of the order at its plan's limit (ADR 0041 §6). */
+      plan_account_moved: "A conta {{from}} chegou ao limite. Sigo na conta {{to}}.",
+      /** The same, for long work at the pause line (95%) of its account. */
+      plan_account_moved_line: "A conta {{from}} está perto do limite. Sigo na conta {{to}}.",
+      /** The same, for long work that would go on into its account's paid extra usage. */
+      plan_account_moved_extra: "A conta {{from}} entraria no uso extra pago. Sigo na conta {{to}}.",
+      /** Every account of the order at its limit: `accounts` of them, `when` the first resets. */
+      plan_limit_all_wait:
+        "As {{accounts}} contas do {{plan}} chegaram ao limite. Respondo {{when}}, quando a primeira renovar.",
+      plan_limit_all_wait_unknown:
+        "As {{accounts}} contas do {{plan}} chegaram ao limite. Respondo assim que uma renovar.",
       plan_model_limit_wait:
         "O {{model}} chegou ao limite dele no {{plan}}. Os outros modelos do plano seguem funcionando: troque o modelo de {{agent}} ou espere ele renovar {{when}}.",
       plan_model_limit_wait_unknown:

@@ -3438,6 +3438,13 @@
     "onceHint": "プランの上限はみんなで共有します。",
     "use": "{{label}}を使う",
     "another": "別のアカウント",
+    "which": {
+      "title": "{{name}} が使う {{brand}} アカウントは？",
+      "title_female": "{{name}} が使う {{brand}} アカウントは？",
+      "titleAll": "使う {{brand}} アカウントは？",
+      "mine": "{{computer}} にある {{brand}} アカウント",
+      "other": "別の {{brand}} アカウントでログイン"
+    },
     "reuse": {
       "active": "{{label}}はすでにここにあります。もう一度ログインするか、別のアカウントを使ってください。",
       "signedOut": "{{label}}はここでログアウトしています。もう一度ログインすると、エージェントはそのまま使えます。"
@@ -3576,9 +3583,7 @@
     "dontRunForbidden": "キャンセルできるのは、依頼した人、エージェントのオーナー、管理者だけです",
     "answerAnyway": "それでも返信する",
     "answerAnywayHint": "その後に書かれたことをすべて読んで、いま返信します",
-    "answerAnywayForbidden": "これを頼めるのは、依頼した人、エージェントのオーナー、管理者だけです",
-    "extraTitle": "長い作業で有料の追加使用量を使う場合があります",
-    "extraHint": "プランで追加使用量がオンの場合、長い作業は95%を超えても続きます。オフの場合は95%で一時停止し、プランのリセット後に再開します。"
+    "answerAnywayForbidden": "これを頼めるのは、依頼した人、エージェントのオーナー、管理者だけです"
   },
   "usageQueue": {
     "back": "{{agent}}は{{when}}に戻ります",
@@ -3587,6 +3592,7 @@
     "resuming": "{{agent}}が再開しています",
     "shared_other": "{{agents}}も同じ{{plan}}のプランを使っています。会話はすべて同じ順番待ちに入ります。",
     "about": "順番待ちについて",
+    "chain": "{{plan}} の {{accounts}} 個のアカウントがすべて上限に達しました。",
     "lists": "会話",
     "queuedTab": "順番待ち",
     "skippedTab": "スキップ済み",
@@ -5509,11 +5515,12 @@
         "accountAlso": "{{agents}}も使用中",
         "accountOf": "{{name}}のもの",
         "accountOthers": "workspace 全体で使えるプランには持ち主が表示されます。",
+        "movesOn": "上限に達したら次のアカウントで続けます",
+        "pinned": "このアカウントのみ",
+        "pinnedHint": "上限に達したら、次のアカウントに移らず、このアカウントのリセットを待ちます。",
         "addAccount": "アカウントを追加",
         "signInAgain": "もう一度ログイン",
         "connectPlan": "別のプランを接続",
-        "fallbackTitle": "{{computer}}が応答しなくなったら、API経由で返信する",
-        "fallbackHint": "API経由で返信し、{{name}}の予算から差し引かれます。オフにすると、{{name}}は依頼した人に知らせて、コンピューターが戻るのを待ちます。",
         "effort": "思考レベル",
         "efforts": {
           "auto": "自動",
@@ -5574,8 +5581,7 @@
           "effort": "思考レベル: {{level}}",
           "speed": "速度: 高速",
           "context": "コンテキスト: {{size}}",
-          "sharing": "他の人にも返信します",
-          "waits": "コンピューターを待ちます"
+          "sharing": "他の人にも返信します"
         },
         "copy": {
           "row": "他のエージェントにも使う",
@@ -5713,7 +5719,6 @@
           "wait": "待つ",
           "modelTitle": "{{name}}のモデル",
           "moreTitle": "{{name}}のその他のオプション",
-          "fallback": "プランが止まったらAPIキーを使う",
           "computer": "コンピューター",
           "doneTitle": "完了しました",
           "doneSub": "進行中だった作業は新しいアカウントで続きます。",
@@ -8671,7 +8676,7 @@
       "canceledToast": "キャンセルしました。上限がリセットされても実行されません。",
       "continuedToast": "実行を続けています。",
       "forbidden": "今すぐ続けられるのは、ルーティンの作成者、エージェントのオーナー、管理者だけです",
-      "extra_off": "このプランの利用枠を使い切りました。このエージェントの長い作業には有料の追加使用量が使われません。今すぐ続けるにはAI設定でオンにしてください。オフのままならリセット後に再開します",
+      "extra_off": "このプランの利用枠を使い切りました。このエージェントの長い作業にはプランの有料の追加使用量が使われません。リセット後に再開します",
       "extra_used_up": "このプランの利用枠を使い切り、有料の追加使用量も使い切ったか利用できません。リセット後に再開します"
     },
     "pausedRunningToast": "ルーティンを一時停止しました。実行中の処理も停止しました。",
@@ -10074,6 +10079,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "名前のないアカウント",
+    "rename": {
+      "action": "{{label}} の名前を変更",
+      "label": "アカウント名",
+      "placeholder": "例: 仕事、個人"
+    },
     "share": {
       "switch": "他の人にも返信する",
       "switchAll": "他の人にも返信する",
@@ -11454,8 +11465,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}、APIへの切り替えなし"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "モデル",
@@ -14607,7 +14617,7 @@
       "takeOverNoAccess": "引き継ぐ前に、ルーティンの会話に参加してください。",
       "agentNotInChannel": "先にエージェントを会話に追加してください。",
       "webhookPaused": "テストするにはルーティンをオンにしてください。",
-      "continueExtraOff": "このプランの利用枠を使い切りました。このエージェントの長い作業には有料の追加利用が使われません。今すぐ続けるにはAI設定で有効にしてください。有効にしない場合は、リセット後に再開します。",
+      "continueExtraOff": "このプランの利用枠を使い切りました。このエージェントの長い作業にはプランの有料の追加利用が使われません。リセット後に再開します。",
       "continueExtraUsedUp": "このプランの利用枠を使い切り、有料の追加利用も使い切ったか利用できません。リセット後に再開します。",
       "actionsNeedApprover": "ルーティンに自動で実行させられるのは、エージェントのオーナーか、そのアクションを承認する人だけです。",
       "editorOnly": "変更できるのは、ルーティンを作成した人、エージェントのオーナー、または管理者だけです。",
@@ -14703,13 +14713,13 @@
     "agent": {
       "ownerOrAdmin": "これができるのは、エージェントのオーナーか管理者だけです。",
       "detailsHidden": "仕組みを見られるのは、{{agentName}} と話す人だけです。",
-      "extraOwnerOnly": "プランの有料の追加使用量をオンまたはオフにできるのは、エージェントのオーナーだけです。",
       "undoForbidden": "元に戻せるのは、エージェントが作業した相手、そのオーナー、または管理者だけです。",
       "undoSkillsAdmins": "エージェントのスキルの変更を元に戻したりやり直したりできるのは管理者だけです。"
     },
     "account": {
       "notRestorable": "このアカウントはもう復元できません。",
-      "notOwner": "これができるのは、このアカウントまたはプランを接続した人だけです。"
+      "notOwner": "これができるのは、このアカウントまたはプランを接続した人だけです。",
+      "orderForbidden": "順番の中での位置を変えられるのは、このアカウントを接続した人か管理者だけです。"
     },
     "channel": {
       "membersForbidden": "メンバーを追加または削除できるのは、チャンネルを作成した人か管理者だけです。"
@@ -16702,6 +16712,14 @@
   "usageViews": {
     "signedOut": "ログアウト済み",
     "whose": "{{name}}の",
+    "order": {
+      "title": "{{plan}} · 使用順",
+      "hint": "上限に達すると、エージェントは余裕のある次のアカウントで続け、最初のアカウントがリセットされたら戻ります。",
+      "terms": "複数の{{plan}}アカウントを使うことは、{{plan}}の規約ではグレーゾーンです。",
+      "termsLabel": "{{plan}}の規約",
+      "termsHint": "プランは1人用なので、エージェントが複数のアカウントに頼る前に{{plan}}の規約を確認してください。",
+      "move": "{{name}}を移動（使用順{{n}}番目）"
+    },
     "serves": {
       "everyone": "全員が使う",
       "onlyYou": "あなただけが使う",
@@ -16768,7 +16786,7 @@
       "api": "API",
       "apiMain": "{{name}}はAPIで思考します",
       "apiMain_female": "{{name}}はAPIで思考します",
-      "apiFallback": "プラン外: 簡単な判断と、プランで回答できなかったとき",
+      "apiFallback": "プラン外: 簡単な判断",
       "removed": "削除されたアカウント",
       "removedSub": "どのコンピューターにもありません",
       "old": "{{brand}}（アカウント導入前）",
@@ -17398,6 +17416,11 @@
       "plan_limit_cut_unknown": "{{plan}}プランの上限で停止しました。リセットされ次第、続きから再開します。",
       "plan_limit_wait": "{{plan}}プランが上限に達しました。リセットされる{{when}}に返信します。{{plan}}側で先に解除されたら、気づいてすぐに返信します。",
       "plan_limit_wait_unknown": "{{plan}}プランが上限に達しました。リセットされ次第、返信します。",
+      "plan_account_moved": "{{from}} アカウントが上限に達しました。{{to}} アカウントで続けます。",
+      "plan_account_moved_line": "{{from}} アカウントが上限に近づいています。{{to}} アカウントで続けます。",
+      "plan_account_moved_extra": "{{from}} アカウントは有料の追加使用量に入ります。{{to}} アカウントで続けます。",
+      "plan_limit_all_wait": "{{plan}} の {{accounts}} 個のアカウントがすべて上限に達しました。最初の1つがリセットされる{{when}}に返信します。",
+      "plan_limit_all_wait_unknown": "{{plan}} の {{accounts}} 個のアカウントがすべて上限に達しました。どれかがリセットされ次第、返信します。",
       "plan_model_limit_wait": "{{model}}は{{plan}}でモデル自体の上限に達しました。プランのほかのモデルはそのまま使えます。{{agent}}のモデルを変えるか、{{when}}のリセットまでお待ちください。",
       "plan_model_limit_wait_unknown": "{{model}}は{{plan}}でモデル自体の上限に達しました。プランのほかのモデルはそのまま使えます。{{agent}}のモデルを変えるか、リセットまでお待ちください。",
       "plan_model_region_wait": "このモデル（{{model}}）を使うには、OpenCodeの「Settings › Privacy」でGlobalリージョンをオンにする必要があります。",

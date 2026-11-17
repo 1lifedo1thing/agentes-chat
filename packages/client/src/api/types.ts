@@ -4242,8 +4242,9 @@ export interface Routine {
   waitingFor: { machineId: string; machineName: string; since: string } | null;
   /**
    * Its run waits on its plan or budget (state `usage_paused`, ADR 0118): paused near the limit, or stopped at it
-   * (`limit`: nothing to continue). It picks up at `resetsAt` (null: not known yet); `plan` is the plan's name. `extraOff`: the plan's window is used up and the agent's long work may not use paid
-   * extra usage, so Continuar agora is refused; `extraUsedUp`: the same with the switch on but no extra usage left.
+   * (`limit`: nothing to continue). It picks up at `resetsAt` (null: not known yet); `plan` is the plan's name. `extraOff`: the plan's window is used up and the agent's long work never uses paid
+   * extra usage (a plan lent to it, the team's right hand), so Continuar agora is refused; `extraUsedUp`: the same with
+   * no extra usage left.
    * Who may press it: `canManage`.
    */
   usagePause?: {
@@ -5099,6 +5100,13 @@ export interface UsageQueue {
   resetsAt: string | null;
   /** A plan's line: when its plan was last read or asked about (absent: an older server). */
   checkedAt?: string | null;
+  /**
+   * A plan's line: the account it waits on, another than the agent's own when its run went on with the next account
+   * (ADR 0041 §6); null: the computer's own sign-in, or a budget (absent: an older server).
+   */
+  account?: { id: string; label: string } | null;
+  /** Every account of the order is at its limit: how many (`resetsAt`: when the first resets); null otherwise. */
+  chain?: number | null;
   /** Other agents in the same plan's line. */
   sharedWith: string[];
   rows: UsageQueueRow[];
@@ -5998,10 +6006,6 @@ export interface AgentBrain {
   /** As stored; null = the brain's default. */
   model: string | null;
   effectiveModel: string | null;
-  /** If the computer isn't available, answer through the API (counts against the budget). */
-  fallback: boolean;
-  /** Long work may go on into the plan's paid extra usage where the provider reports it on (ADR 0118). */
-  extraUsage: boolean;
   computer: { machineId: string; name: string; online: boolean } | null;
   options: BrainOption[];
   /** Every computer the caller may give the agent, with what each offers ("Vai para o Mac mini"). */
@@ -6009,6 +6013,11 @@ export interface AgentBrain {
   canEdit: boolean;
   /** ADR 0041: the account on the agent's computer it thinks with; null = "Conta deste computador". */
   account: string | null;
+  /**
+   * "Só esta conta" (ADR 0041 §6): at its plan's limit it waits for `account`. Off: the run goes on with the next
+   * account of the order (`accountChain`). Absent: an older server, which never moves.
+   */
+  accountPinned?: boolean;
   /** How much it thinks before answering; `auto` = picked per task; null = the brain's default. */
   effort: BrainEffortSetting | null;
   /** How fast it answers in conversations; kept whatever it thinks with, applied only where `speedFits`. */
@@ -6026,7 +6035,7 @@ export interface AgentBrain {
   accountsSupported: boolean;
   /** Nobody but the agent's owner talks to it ("Atende outras pessoas" off). */
   onlyOwner: boolean;
-  /** The viewer owns the agent: only they connect its plan and turn its paid extra usage on or off. */
+  /** The viewer owns the agent: only they connect its plan. */
   canUsePlans: boolean;
   /**
    * True since plans serve the whole workspace (ADR 0059 §3): `accounts` has every plan on its computer that serves
@@ -6060,6 +6069,8 @@ export interface MachineAccount {
   id: string;
   kind: MachineAccountKind;
   label: string;
+  /** Its owner gave it its name; false or absent (an older server): the automatic one ("Claude 2"), so the apps show the account by its email. */
+  named?: boolean;
   /** Only for its owner. */
   email: string | null;
   /** `pro`, `max`, `ultra`, `team`… from what the CLI says (`planWordOf` names it). */
@@ -6088,6 +6099,25 @@ export interface MachineAccount {
   providerOrgId?: string | null;
   /** Who it thinks for (ADR 0059 §3): everyone in the workspace, or only its owner (absent: an older server). */
   serves?: PlanServes;
+  /**
+   * Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6), 0 first; null: after the
+   * placed ones, oldest first (absent: an older server).
+   */
+  useOrder?: number | null;
+  /**
+   * A run at another account's limit may go on with it: Claude Code's or Codex's own sign-in (never a key), shared
+   * between agents and signed in. Only these have a place in the order of use (absent: an older server).
+   */
+  movable?: boolean;
+}
+
+/** `GET …/ai-accounts/order`: one computer's Claude or ChatGPT accounts in their order of use (ADR 0041 §6). */
+export interface AccountOrderGroup {
+  machineId: string;
+  computer: string;
+  kind: MachineAccountKind;
+  /** First to last. `canMove`: the viewer may move it (its owner or an admin). */
+  accounts: (MachineAccount & { canMove: boolean })[];
 }
 
 /** Who a plan thinks for (ADR 0059 §3): everyone in the workspace, or only the person who connected it. */
@@ -6170,9 +6200,6 @@ export interface AgentBrainInput {
   scope?: BrainScope;
   brain?: BrainKind;
   model?: string | null;
-  fallback?: boolean;
-  /** Off: long work pauses at 95% of the plan even with its paid extra usage on. */
-  extraUsage?: boolean;
   /**
    * "Atende outras pessoas" turned off: false lets in whoever its "who can talk" list allows (everyone with no list).
    */
@@ -6181,6 +6208,8 @@ export interface AgentBrainInput {
   account?: string | null;
   /** The account thinks for another agent: take it from that one. */
   moveAccount?: boolean;
+  /** "Só esta conta". Omitted = keep. */
+  accountPinned?: boolean;
   effort?: BrainEffortSetting | null;
   speed?: BrainSpeed;
   /** 200K, 400K or 1M tokens; null = the model's window; omitted = keep. */
@@ -6201,7 +6230,6 @@ export interface AgentSetup {
   /** Omitted = each agent keeps its own. */
   speed?: BrainSpeed;
   contextTokens?: number | null;
-  fallback?: boolean;
   /** "Atende outras pessoas" off, for the agents that move onto the plan. */
   onlyOwner?: boolean;
   /** Its Autonomia, wherever the caller may set it by hand, whatever the AI takes; omitted = each keeps its own. */
@@ -6244,11 +6272,20 @@ export interface NewAgentSetup {
   /** A computer brain: where it thinks. */
   computer?: { machineId: string; name: string };
   /** Its account there; null = that computer's own sign-in. */
-  account?: { id: string; label: string; provider: string | null; mine: boolean; free: boolean } | null;
+  account?: {
+    id: string;
+    label: string;
+    /** Its owner gave it its name; false or absent (an older server): shown by its email. */
+    named?: boolean;
+    email?: string | null;
+    plan?: string | null;
+    provider: string | null;
+    mine: boolean;
+    free: boolean;
+  } | null;
   /** The computer's own sign-in thinks for the caller's agents there (they connected it). */
   ownSignIn?: boolean;
   effort?: BrainEffortSetting | null;
-  fallback?: boolean;
   /** Its Autonomia; null or absent = the default. */
   autonomy?: CommandApproval | null;
 }
@@ -7819,6 +7856,8 @@ export interface PlanAccountInfo {
   /** Null: the computer's own sign-in ("Conta deste computador"). */
   accountId: string | null;
   label: string | null;
+  /** Its owner gave it its name; false or absent (an older server): the automatic one, shown by its email. */
+  named?: boolean;
   plan: string | null;
   /** A key account's coding plan (`zai`, `kimi`…). */
   provider: string | null;
