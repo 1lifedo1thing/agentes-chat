@@ -441,7 +441,7 @@ export function pickedAi(
  * nor for an account with no place.
  */
 export function orderMoves(
-  accounts: readonly { id: string; movable?: boolean }[],
+  accounts: readonly { id: string; sameAs?: string; movable?: boolean }[],
   account: { id: string; canMove: boolean },
 ) {
   if (!account.canMove) return [];

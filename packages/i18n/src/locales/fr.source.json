@@ -8395,9 +8395,6 @@
   "connectAi.have.title": {
     "value": "Already connected"
   },
-  "connectAi.have.titleFor": {
-    "value": "Already connected, for {{name}}"
-  },
   "connectAi.have.other": {
     "value": "Or connect another"
   },

@@ -3256,8 +3256,6 @@
     "titleFor_female": "为 {{name}} 连接 AI",
     "have": {
       "title": "已连接",
-      "titleFor": "已为 {{name}} 连接",
-      "titleFor_female": "已为 {{name}} 连接",
       "other": "或连接其他",
       "manageKeys": "管理或删除密钥",
       "pickLine": "选择一个已在这里连接的账号。{{name}} 会用它思考。",

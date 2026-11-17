@@ -2321,7 +2321,6 @@
     "planRowSub": "Accesso dal computer dell'agente, senza chiave",
     "keyRow": "Una chiave",
     "keyRowSub": "Paghi a consumo, direttamente al fornitore",
-    "already": "Già in {{org}}",
     "stepOf": "{{step}} di {{total}}"
   },
   "crash": {

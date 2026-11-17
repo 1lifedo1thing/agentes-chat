@@ -3675,7 +3675,6 @@ export const en = {
     /** What the person already has, before the new sign-ins: accounts on the agent's computer, the workspace's keys. */
     have: {
       title: "Already connected",
-      titleFor: "Already connected, for {{name}}",
       other: "Or connect another",
       manageKeys: "Manage or delete keys",
       /** Over the accounts already connected: what picking one does. */

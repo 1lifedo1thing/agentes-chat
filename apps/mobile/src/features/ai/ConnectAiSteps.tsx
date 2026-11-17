@@ -317,17 +317,20 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
   // A plan's page signs in what a row of the first page asked for, as it was when the page was pushed.
   const [login] = useState(() => (view.page === "plan" && flow.login?.choice === view.choice ? flow.login : null));
   const [busy, setBusy] = useState(false);
-  const have =
+  const lists =
     forAgent &&
     gates.view?.agentId === forAgent.id &&
     listsExisting(
       agentRows.data?.find((a) => a.id === forAgent.id),
       !hasAi(forAgent.id),
     )
-      ? existingRows(t, gates.view, credentials.data ?? [], forAgent.name, i18n.language)
-      : [];
-  const haveNotes =
-    forAgent && gates.view?.agentId === forAgent.id ? existingNotes(t, gates.view, credentials.data ?? []) : [];
+      ? { view: gates.view, name: forAgent.name }
+      : null;
+  const have = lists ? existingRows(t, lists.view, credentials.data ?? [], lists.name, i18n.language) : [];
+  const haveNotes = lists ? existingNotes(t, lists.view, credentials.data ?? []) : [];
+  // "Todas as contas" keeps the list it was picked from, the pick checked: once saved the agent lists none, and the
+  // next agent with no AI must not take its place under "Pronto".
+  const [picked, setPicked] = useState<{ key: string; have: typeof have }>();
   const shownGate = gates.gateOf(view.page === "plan" ? view.choice : "claude");
   const shown = shownGate.state;
   const asksAgain = agentId !== undefined && pollsPlan(shownGate, gates.edition);
@@ -350,10 +353,12 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
     label: string,
     run: () => Promise<unknown>,
     scope?: BrainScope,
+    saved?: () => void,
   ) => {
     setBusy(true);
     try {
       await run();
+      saved?.();
       for (const key of [
         keys.agentBrain(orgId, to.id),
         keys.agents(orgId),
@@ -374,6 +379,8 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
   const pickHave = (row: ExistingAi) => {
     if (!forAgent || !gates.view) return;
     const brain = gates.view.brain;
+    const key = have.find((h) => h.row === row)?.key;
+    const saved = () => key !== undefined && setPicked({ key, have });
     if (row.kind === "key") {
       const k = row.key;
       // The workspace's model on that key: the agent's model where the key runs it, else one the key does (an endpoint's
@@ -401,6 +408,7 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
           );
         },
         rightHand ? "workspace" : undefined,
+        saved,
       );
     }
     const a = row.choice.login;
@@ -416,6 +424,7 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
             ...(moveAccount ? { moveAccount } : {}),
           }),
         gates.view?.scope,
+        saved,
       );
     if (row.act === "use") return take(false);
     if (row.act === "move") {
@@ -474,7 +483,16 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
         onHave={pickHave}
       />
     );
-  if (view.page === "have") return <AllHave have={have} dims={dims} busy={busy} onHave={pickHave} />;
+  if (view.page === "have")
+    return (
+      <AllHave
+        have={picked?.have ?? have}
+        picked={picked?.key}
+        dims={dims}
+        busy={busy || picked !== undefined}
+        onHave={pickHave}
+      />
+    );
   if (view.page === "plans") return <Plans onPlan={toPlan} dims={dims} />;
   // The makers are a choice for the key's page under them: picking one goes back to it.
   if (view.page === "makers") return <Makers form={props.keyForm} onDone={() => goBack()} />;
@@ -615,16 +633,19 @@ function Home({
 /** Every account already connected for the agent ("Ver as N contas"), by whose it is, with a search: one tap uses it. */
 function AllHave({
   have,
+  picked,
   dims,
   busy,
   onHave,
 }: {
   have: ReturnType<typeof existingRows>;
+  picked: string | undefined;
   dims: (choice: PlanChoice) => boolean;
   busy: boolean;
   onHave: (row: ExistingAi) => void;
 }) {
   const { t } = useTranslation();
+  const [tapped, setTapped] = useState<string>();
   const rows = haveLayout(have, [], true).groups.flatMap((g) => g.rows);
   return (
     <PickList
@@ -634,13 +655,14 @@ function AllHave({
         group: r.group.label,
         mark: r.mark,
         off: r.off,
-        ...(r.sub ? { description: r.sub, subLines: 1 } : {}),
+        ...(r.sub || r.below ? { description: [r.below, r.sub].filter(Boolean).join(" · ") } : {}),
         keywords: `${r.label} ${r.group.label}`,
         disabled: busy || (r.row.kind === "account" && dims(planOfAccount(r.row.choice.login))),
       }))}
-      value={undefined}
+      value={picked ?? (busy ? tapped : undefined)}
       onPick={(o) => {
         const r = have.find((x) => x.key === o.value);
+        setTapped(o.value);
         if (r) onHave(r.row);
       }}
       placeholder={t("connectAi.chat.search")}

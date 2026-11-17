@@ -3389,7 +3389,6 @@
     "titleFor": "{{name}} için bir yapay zeka bağlayın",
     "have": {
       "title": "Zaten bağlı",
-      "titleFor": "Zaten bağlı, {{name}} için",
       "other": "Ya da başka birini bağlayın",
       "manageKeys": "Anahtarları yönet veya sil",
       "pickLine": "Burada zaten bağlı bir hesap seçin. {{name}} onunla düşünür.",

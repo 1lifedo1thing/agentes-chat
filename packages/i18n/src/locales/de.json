@@ -3399,7 +3399,6 @@
     "titleFor": "Eine KI für {{name}} verbinden",
     "have": {
       "title": "Bereits verbunden",
-      "titleFor": "Bereits verbunden, für {{name}}",
       "other": "Oder eine andere verbinden",
       "manageKeys": "Schlüssel verwalten oder löschen",
       "pickLine": "Wähle ein Konto, das hier schon verbunden ist. {{name}} denkt damit.",

@@ -3254,7 +3254,6 @@
     "titleFor": "{{name}}의 AI 연결",
     "have": {
       "title": "이미 연결됨",
-      "titleFor": "{{name}}에 이미 연결됨",
       "other": "또는 다른 것 연결",
       "manageKeys": "키 관리 또는 삭제",
       "pickLine": "여기에 이미 연결된 계정을 고르세요. {{name}}은(는) 그 계정으로 생각해요.",

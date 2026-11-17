@@ -2116,7 +2116,6 @@
     "planRowSub": "키 없이 에이전트의 컴퓨터에서 로그인해요",
     "keyRow": "키",
     "keyRowSub": "사용한 만큼 제공사에 직접 결제해요",
-    "already": "{{org}}에 이미 있는 AI",
     "stepOf": "{{step}}/{{total}}"
   },
   "crash": {

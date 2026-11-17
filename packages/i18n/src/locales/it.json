@@ -3536,8 +3536,6 @@
     "titleFor_female": "Collega un'IA per {{name}}",
     "have": {
       "title": "Già collegati",
-      "titleFor": "Già collegati, per {{name}}",
-      "titleFor_female": "Già collegati, per {{name}}",
       "other": "Oppure collegane un altro",
       "manageKeys": "Gestisci o elimina le chiavi",
       "pickLine": "Scegli un account già collegato qui. {{name}} ragiona con quello.",

@@ -195,12 +195,19 @@ function AiAccounts() {
           text: t("aiAccounts.page.disconnect"),
           style: "destructive",
           onPress: () =>
-            Promise.all(loginsOf(a).map((l) => api.machines.removeAccount(orgId, l.machineId, l.id))).then(() => {
-              successHaptic();
-              toast({ title: t("aiAccounts.page.disconnected", { label: a.label }), icon: "check" });
-              refetch();
-              void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
-            }, failed),
+            Promise.all(loginsOf(a).map((l) => api.machines.removeAccount(orgId, l.machineId, l.id))).then(
+              () => {
+                successHaptic();
+                toast({ title: t("aiAccounts.page.disconnected", { label: a.label }), icon: "check" });
+                refetch();
+                void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
+              },
+              () => {
+                // Some logins may be gone already: the list is read again either way.
+                failed();
+                refetch();
+              },
+            ),
         },
       ],
     );

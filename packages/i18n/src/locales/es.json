@@ -3530,8 +3530,6 @@
     "titleFor_female": "Conecta una IA para {{name}}",
     "have": {
       "title": "Ya conectadas",
-      "titleFor": "Ya conectadas, para {{name}}",
-      "titleFor_female": "Ya conectadas, para {{name}}",
       "other": "O conecta otra",
       "manageKeys": "Gestionar o eliminar claves",
       "pickLine": "Elige una cuenta ya conectada aquí. {{name}} piensa con ella.",

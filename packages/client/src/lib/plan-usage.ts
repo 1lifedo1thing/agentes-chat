@@ -12,7 +12,7 @@ import type {
   PlanUseKind,
   PlanWindowParts,
 } from "../api/types";
-import { accountTitle, groupPlans, ownSignInName, ownSignIns, ownSignInTitle } from "./ai-accounts";
+import { accountTitle, groupPlans, orderAccounts, ownSignInName, ownSignIns, ownSignInTitle } from "./ai-accounts";
 import {
   daysBetween,
   firstName,
@@ -631,8 +631,8 @@ export function usageOrderSections<R extends Pick<PlanAccountInfo, "machineId" |
 ): UsageOrderSection<R>[] {
   const place = new Map<string, { group: AccountOrderGroup; index: number }>();
   for (const group of groups ?? [])
-    group.accounts.forEach((a, index) => {
-      place.set(`${group.machineId}:${group.kind}:${a.id}`, { group, index });
+    orderAccounts(group.accounts).forEach((logins, index) => {
+      for (const a of logins) place.set(`${group.machineId}:${group.kind}:${a.id}`, { group, index });
     });
   const at = (r: R) => (r.accountId ? place.get(`${r.machineId}:${r.kind}:${r.accountId}`) : undefined);
   const count = new Map<AccountOrderGroup, number>();

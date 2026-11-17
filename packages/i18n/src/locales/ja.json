@@ -3256,7 +3256,6 @@
     "titleFor": "{{name}}のAIを接続",
     "have": {
       "title": "接続済み",
-      "titleFor": "接続済み（{{name}}用）",
       "other": "または別のものを接続",
       "manageKeys": "キーを管理または削除",
       "pickLine": "ここで接続済みのアカウントを選んでください。{{name}}はそのアカウントで考えます。",

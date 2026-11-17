@@ -2358,7 +2358,6 @@ export const featureKeysEn = {
     planRowSub: "Signs in on the agent's computer, no key",
     keyRow: "A key",
     keyRowSub: "You pay per use, straight to the maker",
-    already: "Already at {{org}}",
     stepOf: "{{step}} of {{total}}",
   },
   crash: {

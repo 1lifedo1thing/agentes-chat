@@ -2116,7 +2116,6 @@
     "planRowSub": "在智能体的电脑上登录，无需密钥",
     "keyRow": "密钥",
     "keyRowSub": "按用量付费，直接付给提供方",
-    "already": "{{org}} 已有的",
     "stepOf": "{{step}}/{{total}}"
   },
   "crash": {

@@ -3535,8 +3535,6 @@
     "titleFor_female": "Connecter une IA pour {{name}}",
     "have": {
       "title": "Déjà connecté",
-      "titleFor": "Déjà connecté, pour {{name}}",
-      "titleFor_female": "Déjà connecté, pour {{name}}",
       "other": "Ou en connecter un autre",
       "manageKeys": "Gérer ou supprimer les clés",
       "pickLine": "Choisissez un compte déjà connecté ici. {{name}} réfléchit avec.",

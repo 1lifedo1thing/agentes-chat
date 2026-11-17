@@ -2222,7 +2222,6 @@
     "planRowSub": "Meldet sich auf dem Computer des Agenten an, ohne Schlüssel",
     "keyRow": "Ein Schlüssel",
     "keyRowSub": "Du zahlst nach Nutzung, direkt an den Anbieter",
-    "already": "Schon bei {{org}}",
     "stepOf": "{{step}} von {{total}}"
   },
   "crash": {

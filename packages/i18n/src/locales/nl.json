@@ -3399,8 +3399,6 @@
     "titleFor_female": "Een AI koppelen voor {{name}}",
     "have": {
       "title": "Al gekoppeld",
-      "titleFor": "Al gekoppeld, voor {{name}}",
-      "titleFor_female": "Al gekoppeld, voor {{name}}",
       "other": "Of koppel een ander",
       "manageKeys": "Sleutels beheren of verwijderen",
       "pickLine": "Kies een account dat hier al verbonden is. {{name}} denkt ermee.",

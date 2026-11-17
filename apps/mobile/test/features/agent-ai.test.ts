@@ -566,7 +566,12 @@ describe("the agent's AI", () => {
     expect(makers).toContain("<PickList");
     expect(makers).toContain("...PROVIDERS.map(");
     expect(connect.slice(connect.indexOf("function KeyPage("))).toContain("onPress={onMakers}");
-    expect(connect).toContain("existingRows(t, gates.view, credentials.data ?? [], forAgent.name, i18n.language)");
+    expect(connect).toContain("existingRows(t, lists.view, credentials.data ?? [], lists.name, i18n.language)");
+    // An agent that already has an AI lists nothing there: no rows, and no line counting someone else's accounts.
+    expect(connect).toContain("const haveNotes = lists ? existingNotes(");
+    // "Todas as contas" after a pick: the list it was picked from with the pick checked, not the next agent's.
+    expect(connect).toContain("have={picked?.have ?? have}");
+    expect(connect).toContain("value={picked ?? (busy ? tapped : undefined)}");
     // The workspace's keys, for who may add them, on the flow's one screen: no sheet or inline variant is left.
     expect(connect).toContain("useCredentials(orgId, mayAddKey && forAgent !== undefined)");
     expect(connect).not.toContain("sheetTitle");

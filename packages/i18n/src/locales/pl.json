@@ -3671,7 +3671,6 @@
     "titleFor": "Połącz AI dla: {{name}}",
     "have": {
       "title": "Już połączone",
-      "titleFor": "Już połączone dla: {{name}}",
       "other": "Albo połącz inne",
       "manageKeys": "Zarządzaj kluczami lub je usuń",
       "pickLine": "Wybierz konto już tu połączone. {{name}} myśli z jego pomocą.",
