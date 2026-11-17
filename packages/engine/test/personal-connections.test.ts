@@ -1081,7 +1081,7 @@ describe("a person's own server by address", () => {
   });
 
   test("a name that kept its account goes by the service alone for anyone but its person", async () => {
-    const { walter } = await walterWithLinear();
+    const { walter, mine } = await walterWithLinear();
     const { connection } = await storeCustomConnection(depsOf(f), {
       orgId: f.org.id,
       actorId: walter.id,
@@ -1114,10 +1114,10 @@ describe("a person's own server by address", () => {
     // Its person still reads the whole name.
     const [his] = await listCustomServers(f.db, walter.id, f.org.id);
     expect(his?.label).toBe("CRM (walter@example.com)");
-    // Every audit line about it: its grants at connect, a rename's "from", taken off an agent, removed.
-    await renameConnection(f.db, walter.id, f.org.id, connection.id, "Sales CRM");
+    // Every audit line about one: its grants at connect, taken off an agent, removed, a rename's "from".
     await takeConnectionOffAgent(f.db, f.owner.id, f.org.id, connection.id, f.agent.id);
-    await revokeConnection(f.db, f.owner.id, f.org.id, connection.id);
+    await revokeConnection(f.db, f.owner.id, f.org.id, mine.id);
+    await renameConnection(f.db, walter.id, f.org.id, connection.id, "Sales CRM");
     const lines = (await listAudit(f.db, f.owner.id, f.org.id)).rows;
     expect(lines.map((r) => r.action)).toEqual(
       expect.arrayContaining(["agent.access_changed", "connector.renamed", "connector.disconnected"]),
