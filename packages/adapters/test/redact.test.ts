@@ -28,6 +28,30 @@ test("output full of spaces is read in linear time", () => {
   expect(performance.now() - started).toBeLessThan(1000);
 });
 
+test("text made of values that never end is masked in linear time", () => {
+  const filled = (piece: (n: number) => string) => {
+    let text = "";
+    for (let n = 1; text.length < 1_000_000; n++) text += piece(n);
+    return text;
+  };
+  // Each value opens with a quote written as no other is, so none ends another: one more backslash each time, one
+  // more `%25`, one more zero in an entity. And text with a credential on every line, for what a real megabyte costs.
+  const megabytes = [
+    filled((n) => `token=${"\\".repeat(n)}"x `),
+    filled((n) => `"token":${"\\".repeat(2 * n)}'x `),
+    filled((n) => `token%${"25".repeat(n)}22:%${"25".repeat(n)}22x `),
+    filled((n) => `token&#${"0".repeat(n)}34;:&#${"0".repeat(n)}34;x `),
+    filled(
+      (n) => `{"id":${n},"token":"fake-${n}","body":"{\\"password\\":\\"fake ${n}\\"}","env":"API_KEY=fake${n}"}\n`,
+    ),
+  ];
+  for (const text of megabytes) {
+    const started = performance.now();
+    expect(redactCommon(text)).not.toBe(text);
+    expect(performance.now() - started).toBeLessThan(250);
+  }
+});
+
 /** `text` written as a JSON string `times` over: each time doubles the backslashes before a quote and adds one. */
 const written = (text: string, times: number): string =>
   times === 0 ? text : written(JSON.stringify(text), times - 1);

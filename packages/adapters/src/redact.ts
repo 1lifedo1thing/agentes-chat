@@ -11,7 +11,8 @@ const CURSOR =
 const FIELD = `(?:${[
   "pass(?:word|wd|phrase)",
   "secret(?:[_-]?(?:access[_-]?)?key)?",
-  `(?<!(?:${CURSOR})[_-]?)token`,
+  // The cursor is looked for behind a `token` that is there, not at every place of the text.
+  `token(?<!(?:${CURSOR})[_-]?token)`,
   "api[_-]?key",
   "private[_-]?key",
   "authorization",
@@ -19,51 +20,160 @@ const FIELD = `(?:${[
 ].join("|")})`;
 const FIELD_NAME = new RegExp(`${FIELD}$`, "i");
 
+const BACKSLASH = 92;
+
+/** Where each quote of one kind is in a text, and how many backslashes are written right before it. */
+interface Quotes {
+  at: number[];
+  slashes: number[];
+  /** The first of them not yet passed: values are asked for from the text's start to its end. */
+  next: number;
+}
+
+function quotesOf(text: string, quote: string): Quotes {
+  const quotes: Quotes = { at: [], slashes: [], next: 0 };
+  for (let at = text.indexOf(quote); at >= 0; at = text.indexOf(quote, at + 1)) {
+    let run = at;
+    while (text.charCodeAt(run - 1) === BACKSLASH) run--;
+    quotes.at.push(at);
+    quotes.slashes.push(at - run);
+  }
+  return quotes;
+}
+
+/** An unquoted value: up to its first space, or to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`). */
+const UNQUOTED = /(?:[^\s\\]|\\+(?![nrt\\]))*/y;
+/** What a shell reads as one word with the quoted value before it (`TOKEN="abc"def`). */
+const GLUED = /[^\s"'\\,;&|<>()[\]{}]*/y;
+const NO_SPACE = /\S*/y;
+
+/** Where what `pattern` matches at `at` ends. `pattern` is sticky and matches the empty text too, so never fails. */
+function endAt(pattern: RegExp, text: string, at: number) {
+  pattern.lastIndex = at;
+  pattern.test(text);
+  return pattern.lastIndex;
+}
+
+/** For one text, where the value that starts at a place ends; a value of no length is left as it is. */
+type Ends = (at: number, opener: RegExpExecArray) => number;
+
 /**
  * A quoted value, whole, however many times the text it sits in was itself written as a JSON string: each time
  * doubles the backslashes before a quote and adds one. So the value ends at the quote with as many backslashes as
  * the one that opened it (or that many and escaped backslashes of its own), or with fewer: the string around it
  * ended first. One with no such end is masked as far as its next quote. An unquoted value goes up to its first
- * space, or to a line end or a tab as JSON writes them (`\n`, `\r`, `\t`): the next line's name and value are then
- * read on their own. `group` is the number of its first capturing group, `glued` what a quoted value takes with it.
+ * space, or to a line end or a tab as JSON writes them: the next line's name and value are then read on their own.
+ * `glued`: a quoted value takes with it what a shell reads as one word with it.
+ *
+ * The quotes are listed once, so a value with no end costs its quotes, never the rest of the text: a quote that does
+ * not end a value has more backslashes than the one that opened it, and the time stays linear in the text.
  */
-function valueAt(group: number, glued = "") {
-  const [slashes, quote] = [`\\${group}`, `\\${group + 1}`];
-  const quoted = String.raw`(\\*)(["'])[\s\S]*?(?<!\\)(?:${slashes}(?:${slashes}${slashes}\\\\)*|(?!${slashes})\\*)${quote}`;
-  return String.raw`(?:(?:${quoted}|"[^"]*"|'[^']*')${glued}|(?:[^\s\\]|\\+(?![nrt\\]))+)`;
+const valueEnds =
+  (glued = false) =>
+  (text: string): Ends => {
+    const kinds = new Map<string, Quotes>();
+    return (at) => {
+      let open = at;
+      while (text.charCodeAt(open) === BACKSLASH) open++;
+      const quote = text[open];
+      if (quote === '"' || quote === "'") {
+        const depth = open - at;
+        const quotes = kinds.get(quote) ?? quotesOf(text, quote);
+        kinds.set(quote, quotes);
+        while ((quotes.at[quotes.next] ?? Number.POSITIVE_INFINITY) <= open) quotes.next++;
+        let close = depth === 0 ? quotes.at[quotes.next] : undefined;
+        for (let i = quotes.next; i < quotes.at.length; i++) {
+          const slashes = quotes.slashes[i] ?? 0;
+          if (slashes < depth || (slashes - depth) % (2 * depth + 2) === 0) {
+            close = quotes.at[i];
+            break;
+          }
+        }
+        if (close !== undefined) return glued ? endAt(GLUED, text, close + 1) : close + 1;
+      }
+      return endAt(UNQUOTED, text, at);
+    };
+  };
+
+/** `text` with the value after each match of `opener` masked, as far as `endsOf` says it goes. */
+function maskAfter(text: string, opener: RegExp, endsOf: (text: string) => Ends): string {
+  let ends: Ends | undefined;
+  let masked = "";
+  let done = 0;
+  opener.lastIndex = 0;
+  for (let found = opener.exec(text); found; found = opener.exec(text)) {
+    const at = found.index + found[0].length;
+    ends ??= endsOf(text);
+    const end = ends(at, found);
+    if (end > at) {
+      masked += `${text.slice(done, at)}***`;
+      done = end;
+    }
+    opener.lastIndex = Math.max(end, found.index + 1);
+  }
+  return done ? masked + text.slice(done) : text;
 }
+
+/**
+ * `text` with the value after each match of `name` masked, read as `redactCommon` reads a value: a quoted one whole,
+ * at any depth of writing, an unquoted one up to its first space. `name` is a global pattern that ends where the
+ * value starts.
+ */
+export const maskValuesAfter = (text: string, name: RegExp) => maskAfter(text, name, valueEnds());
 
 /**
  * What stands between a name and its value: `=` or `:`, also as an address writes them (`%3D`) and `=` as a code
  * point (`\u003d`, as a JSON writer that escapes HTML writes it).
  */
 const IS = String.raw`(?:[=:]|%(?:25)*3[AD]|\\+u003d)`;
-/** What a shell reads as one word with the quoted value before it (`TOKEN="abc"def`). */
-const GLUED = String.raw`[^\s"'\\,;&|<>()[\]{}]*`;
 /**
- * `password=…`, `token: …`: the value up to its first space, or a quoted one whole. A name with nothing after it on
- * its line takes the next line as its value, unless that line names a credential of its own: masking that name
+ * `password=…`, `token: …`, before its value: up to its first space, or a quoted one whole. A name with nothing after
+ * it on its line takes the next line as its value, unless that line names a credential of its own: masking that name
  * would leave its value.
  */
-const NAMED_VALUE = new RegExp(
-  String.raw`((?:${NAME})\s*${IS}(?:[^\S\n]*(?=\S)|\s*(?![\w.-]*(?:${NAME})\s*${IS})))${valueAt(2, GLUED)}`,
+const NAMED = new RegExp(
+  String.raw`(?:${NAME})\s*${IS}(?:[^\S\n]*(?=\S)|\s*(?![\w.-]*(?:${NAME})\s*${IS})(?=\S))`,
   "gi",
 );
 /**
- * `"password": "…"`, as JSON, a Python dict or a Ruby hash writes a field: only a text, and never an empty one. A
- * number, `true`, `false` or `null` under such a name is no credential.
+ * `"password": `, as JSON, a Python dict or a Ruby hash writes a field, before its value: only a text, and never an
+ * empty one. A number, `true`, `false` or `null` under such a name is no credential.
  */
-const FIELD_VALUE = new RegExp(
-  String.raw`(${FIELD}\\*["']\s*(?:=>?|:)\s*)(?=\\*["'])(?!(\\*)(["'])\2\3)${valueAt(4)}`,
-  "gi",
-);
+const FIELD_NAMED = new RegExp(String.raw`${FIELD}\\*["']\s*(?:=>?|:)\s*(?=\\*["'])(?!(\\*)(["'])\1\2)`, "gi");
 /** The same field with its quotes written out: percent-encoded in an address, an HTML entity, a log's code point. */
 const WRITTEN_QUOTE = String.raw`%(?:25)*2[27]|&(?:amp;)*(?:quot|apos|#0*3[49]|#x0*2[27]);|\\+(?:u00|x)2[27]`;
 const WRITTEN_GAP = String.raw`(?:\s|\+|%(?:25)*20)*`;
-const WRITTEN_FIELD_VALUE = new RegExp(
-  String.raw`(${FIELD}(${WRITTEN_QUOTE})${WRITTEN_GAP}(?::|%(?:25)*3A)${WRITTEN_GAP})\2(?!\2)(?:[\s\S]*?(?<!\\|%(?:25)*5C)\2|\S*)`,
-  "gi",
-);
+const WRITTEN_FIELD_NAMED = new RegExp(`${FIELD}(${WRITTEN_QUOTE})${WRITTEN_GAP}(?::|%(?:25)*3A)${WRITTEN_GAP}`, "gi");
+/** A written quote that can end a value: none with a backslash before it, plain or as an address writes it. */
+const WRITTEN_END = new RegExp(String.raw`(?<!\\|%(?:25)*5C)(?:${WRITTEN_QUOTE})`, "gi");
+
+/**
+ * A value in written quotes: from the quote that opens it, which is written as the one around its field's name, to
+ * the next one written the same; with no such quote, up to its first space. The written quotes are listed once, by
+ * how each is written, for the same reason a text's quotes are.
+ */
+function writtenEnds(text: string): Ends {
+  let places: Map<string, { at: number[]; next: number }> | undefined;
+  return (at, opener) => {
+    const quote = (opener[1] ?? "").toLowerCase();
+    const written = (from: number) => text.slice(from, from + quote.length).toLowerCase() === quote;
+    const start = at + quote.length;
+    if (!written(at) || written(start)) return at;
+    if (!places) {
+      places = new Map();
+      for (const found of text.matchAll(WRITTEN_END)) {
+        const how = found[0].toLowerCase();
+        const same = places.get(how) ?? { at: [], next: 0 };
+        same.at.push(found.index);
+        places.set(how, same);
+      }
+    }
+    const same = places.get(quote);
+    while (same && (same.at[same.next] ?? Number.POSITIVE_INFINITY) < start) same.next++;
+    const close = same?.at[same.next];
+    return close === undefined ? endAt(NO_SPACE, text, start) : close + quote.length;
+  };
+}
 
 /**
  * Masks what looks like a credential in free text that leaves its place (the runner's diagnostics and
@@ -72,19 +182,16 @@ const WRITTEN_FIELD_VALUE = new RegExp(
  * depth of JSON inside a JSON string. The agent's own secrets are masked by their values (ADR 0027) before this.
  */
 export function redactCommon(text: string): string {
-  return (
-    text
-      .replace(/\bagm_[A-Za-z0-9_-]{6,}/g, "agm_***")
-      // A `/` may be written `\/`, as a JSON writer may.
-      .replace(/\b(Bearer|Basic)\s+(?:[A-Za-z0-9._~+/=-]|\\+\/){8,}/gi, "$1 ***")
-      .replace(/\b(sk-(?:ant-)?[A-Za-z0-9_-]{12,})/g, "sk-***")
-      .replace(/\b(gh[pousr]_[A-Za-z0-9._-]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "gh_***")
-      .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
-      .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***")
-      .replace(FIELD_VALUE, "$1***")
-      .replace(WRITTEN_FIELD_VALUE, "$1***")
-      .replace(NAMED_VALUE, "$1***")
-  );
+  const shaped = text
+    .replace(/\bagm_[A-Za-z0-9_-]{6,}/g, "agm_***")
+    // A `/` may be written `\/`, as a JSON writer may.
+    .replace(/\b(Bearer|Basic)\s+(?:[A-Za-z0-9._~+/=-]|\\+\/){8,}/gi, "$1 ***")
+    .replace(/\b(sk-(?:ant-)?[A-Za-z0-9_-]{12,})/g, "sk-***")
+    .replace(/\b(gh[pousr]_[A-Za-z0-9._-]{20,}|github_pat_[A-Za-z0-9_]{20,})/g, "gh_***")
+    .replace(/\b(xox[abposr]-[A-Za-z0-9-]{10,})/g, "xox-***")
+    .replace(/\b(AKIA[0-9A-Z]{16})\b/g, "AKIA***");
+  const fields = maskAfter(maskAfter(shaped, FIELD_NAMED, valueEnds()), WRITTEN_FIELD_NAMED, writtenEnds);
+  return maskAfter(fields, NAMED, valueEnds(true));
 }
 
 /** An option named for a secret, as one text of a list of arguments (`--password`, `-api-key`). */

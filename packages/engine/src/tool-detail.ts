@@ -3,6 +3,7 @@ import {
   commandWords,
   errorLineOf,
   KEY_SHAPES,
+  maskValuesAfter,
   normalizedCommand,
   PERMISSION_TOOL,
   PRIVATE_KEY,
@@ -247,8 +248,7 @@ const USERINFO = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@'"]+@/gi;
  * its quotes are written with backslashes: the option may open a quoted command (`sh -c "--token …"`), and a command
  * kept in JSON has its quotes written so.
  */
-const SECRET_OPTION =
-  /(?<![^\s"'])(--?[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*\s+)((\\*)(["'])[\s\S]*?(?<!\\)\3\4|[^\s"'-]\S*)/gi;
+const SECRET_OPTION = /(?<![^\s"'])--?[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*\s+(?=[^\s-])/gi;
 
 /**
  * `maskCredentials`, an address's user and password (`postgres://***@host`, first: `redactCommon` would read a
@@ -256,7 +256,7 @@ const SECRET_OPTION =
  * `token=` values) and the value after a secret-named option (`--password ***`): text that leaves its place.
  */
 export const redactCredentials = (text: string) =>
-  redactCommon(maskCredentials(text).replace(USERINFO, "$1***@")).replace(SECRET_OPTION, "$1***");
+  maskValuesAfter(redactCommon(maskCredentials(text).replace(USERINFO, "$1***@")), SECRET_OPTION);
 
 /** An absolute path two parts deep or more (`/home/ada/x.jsonl`, `~/x/y`, `C:\Users\x`), never a URL's. */
 const ABSOLUTE_PATH = /(?<![\w:/.~\\-])(?:~|[A-Za-z]:)?(?:[\\/][^\s\\/:"'()<>,;]+){2,}[\\/]?/g;
