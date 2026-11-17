@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { scrubSignIns } from "../src/tool-detail";
+import { redactCredentials, scrubSignIns } from "../src/tool-detail";
 
 const NOTE = "[removed]";
 const fake = (prefix: string, n = 24) => `${prefix}${"x".repeat(n)}`;
@@ -57,4 +57,14 @@ test("scrubbed twice it reads the same, and a value that only starts like the no
     expect(out.text).not.toContain("abcdefgh12345678");
     expect(out.found).toBe(1);
   }
+});
+
+test("an option with a long name is read in linear time", () => {
+  // One word of 200,000 characters, each `token` of it a place where the option's name could hold a secret's.
+  const option = `--${"token".repeat(40_000)}`;
+  const started = performance.now();
+  expect(redactCredentials(option)).toBe(option);
+  expect(redactCredentials(`${option} fake-value`)).toBe(`${option} ***`);
+  expect(redactCredentials(`${option}s 4096`)).toBe(`${option}s 4096`);
+  expect(performance.now() - started).toBeLessThan(250);
 });

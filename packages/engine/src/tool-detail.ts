@@ -248,9 +248,12 @@ const USERINFO = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@'"]+@/gi;
  * its quotes are written with backslashes: the option may open a quoted command (`sh -c "--token …"`), and a command
  * kept in JSON has its quotes written so. Never a number after a name in the plural, which sets a count
  * (`--max-tokens 4096`).
+ *
+ * The first lookahead lets an option through only where a value follows its name. Without it, in one long word after
+ * `--` every `token` is tried as the name's last and the rest of the word read again: the square of its length.
  */
 const SECRET_OPTION =
-  /(?<![^\s"'])--?(?![\w-]*s\s+\d+(?![^\s"'\\]))[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*\s+(?=[^\s-])/gi;
+  /(?<![^\s"'])(?=--?[\w-]+\s+[^\s-])--?(?![\w-]*s\s+\d+(?![^\s"'\\]))[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*\s+(?=[^\s-])/gi;
 
 /**
  * `maskCredentials`, an address's user and password (`postgres://***@host`, first: `redactCommon` would read a
