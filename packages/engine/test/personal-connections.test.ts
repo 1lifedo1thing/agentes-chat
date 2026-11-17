@@ -5,6 +5,7 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
+  acceptCustomSuggestion,
   accountDeletionPlan,
   addChannelMember,
   agentScopesFor,
@@ -387,6 +388,17 @@ describe("a personal connection serves only its own person, as a personal Vault 
     await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, ops.id));
     expect(await names(source, await runOf(ops.id, walter.id))).toEqual([]);
     expect(await names(source, await runOf(ops.id, bia.id))).toEqual([]);
+  });
+
+  test('the agent\'s tree never shows it as reached by "all tools"', async () => {
+    const { walter, mine } = await walterWithLinear();
+    await f.db.delete(schema.agentScopes).where(eq(schema.agentScopes.connectionId, mine.id));
+    await f.db
+      .insert(schema.agentScopes)
+      .values({ orgId: f.org.id, agentId: f.agent.id, connectionId: null, scope: "*" });
+    const tree = await getAgentAccess(f.db, walter.id, f.org.id, f.agent.id);
+    expect(tree.all).toBe(true);
+    expect(tree.connectors.find((c) => c.connectionId === mine.id)?.state).toBe("off");
   });
 
   test('its tools obey the agent\'s own grants on it: "all tools" and a read-only grant never give its writes', async () => {
@@ -894,6 +906,13 @@ describe("a person's own server by address", () => {
     // Its person still reads the whole name.
     const [his] = await listCustomServers(f.db, walter.id, f.org.id);
     expect(his?.label).toBe("CRM (walter@example.com)");
+  });
+
+  test("accepting its suggestions offers only its person's own agents", async () => {
+    const { walter, crm } = await walterWithCrm();
+    await f.db.delete(schema.agentScopes).where(eq(schema.agentScopes.connectionId, crm.id));
+    const { agentsWithoutAccess } = await acceptCustomSuggestion(depsOf(f), walter.id, f.org.id, crm.id);
+    expect(agentsWithoutAccess.map((a) => a.id)).toEqual([f.agent.id]);
   });
 
   test("Reconectar finds only its person's own", async () => {
