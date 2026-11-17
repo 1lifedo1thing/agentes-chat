@@ -6936,6 +6936,8 @@ export interface NotificationLatest {
   names?: string[];
   /** `join_request` from a member's suggestion (ADR 0090): who suggested. */
   suggestedBy?: string;
+  /** `join_request` for an outside collaborator (ADR 0189): who they work for, so a row of one says so. */
+  outsideOf?: string;
   /** `computer_disk_full`: the share of the disk in use (0 to 1) and the GB left. */
   diskUse?: number;
   diskFreeGb?: number;
