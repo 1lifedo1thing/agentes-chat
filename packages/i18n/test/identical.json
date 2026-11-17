@@ -1000,6 +1000,7 @@
       "onboarding.import.choose.routine",
       "onboarding.import.choose.step.image",
       "settings.account.chat.wallpaper.name.crowd",
+      "newAgentCard.proposal.routine.label",
       "orgAccent.sampleMention"
     ],
     "de": [
@@ -1466,6 +1467,8 @@
       "onboarding.import.choose.skill",
       "onboarding.import.choose.step.video",
       "settings.account.chat.wallpaper.neutral.sand",
+      "newAgentCard.proposal.routine.label",
+      "newAgentCard.proposal.routine.lead",
       "orgAccent.sampleMention"
     ],
     "it": [
@@ -1844,7 +1847,9 @@
       "storage.connect.provider.b2",
       "onboarding.import.choose.routine",
       "onboarding.import.choose.skill",
-      "onboarding.import.choose.step.video"
+      "onboarding.import.choose.step.video",
+      "newAgentCard.proposal.routine.label",
+      "newAgentCard.proposal.routine.lead"
     ],
     "nl": [
       "usage.kinds.routines",
@@ -2461,6 +2466,8 @@
       "onboarding.import.choose.skill",
       "onboarding.import.choose.step.video",
       "settings.account.chat.wallpaper.name.crowd",
+      "newAgentCard.proposal.routine.label",
+      "newAgentCard.proposal.routine.lead",
       "orgAccent.sampleMention"
     ],
     "ja": [
