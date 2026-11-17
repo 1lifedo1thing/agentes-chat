@@ -33,6 +33,7 @@ import {
   type ConnectorTriggerFilter,
   type ConnectorTriggerSource,
   checkConnectorTrigger,
+  connectorNotYours,
   isConnectorEvent,
   normalizeConnectorFilter,
   syncConnectorTrigger,
@@ -1447,7 +1448,22 @@ async function syncConnector(
   const hook = (await routineHookKeys(deps.db, [row.id])).get(row.id);
   if (!hook) return;
   const url = deps.hooks ? await liveHookUrl(deps.db, deps.hooks, hook) : null;
-  await syncConnectorTrigger(deps.db, deps.connectors, row, url, next);
+  // Registering is an action in the connection's account: never for a routine its person didn't make.
+  const registers = row.active && next && (await connectorRefusal(deps.db, row, next.connectionId)) === null;
+  await syncConnectorTrigger(deps.db, deps.connectors, { ...row, active: Boolean(registers) }, url, next);
+}
+
+/** Why `row`'s creator may not wait on the connection's events (`connectorNotYours`); null: they may. */
+async function connectorRefusal(
+  db: Database,
+  row: Pick<RoutineRow, "orgId" | "createdByUserId">,
+  connectionId: string,
+) {
+  const [connection] = await db
+    .select({ ownerUserId: schema.connectorConnections.ownerUserId })
+    .from(schema.connectorConnections)
+    .where(and(eq(schema.connectorConnections.id, connectionId), eq(schema.connectorConnections.orgId, row.orgId)));
+  return connection ? connectorNotYours(db, row.orgId, connection, row.createdByUserId) : null;
 }
 
 /** The addresses' config, which a webhook routine can't be made without (the server always passes it). */
@@ -1900,6 +1916,10 @@ export async function setRoutineActive(
 ): Promise<RoutineView> {
   const current = await loadRoutine(deps.db, orgId, id);
   await requireRoutineManager(deps.db, actorId, orgId, current.agentId);
+  // A routine waiting on a person's own connection stays off unless it is theirs.
+  const waitsOn = active ? await connectorOf(deps.db, current.id) : null;
+  const refusal = waitsOn ? await connectorRefusal(deps.db, current, waitsOn.connectionId) : null;
+  if (refusal) throw refusal;
   const nextRunAt = active && current.triggerType === "schedule" ? nextRoutineTime(current, new Date()) : null;
   const [row] = await deps.db
     .update(routines)

@@ -186,16 +186,32 @@ export async function checkConnectorTrigger(
   if (!connection || presetForServer(connection.serverUrl)?.id !== EVENTS[input.event].preset) {
     throw new ValidationError("Pick a connected service", "routine.connector_not_found");
   }
-  if (
-    !(await hasScope(db, orgId, agentId, connection.id, customScope(connection.id, "read"))) ||
-    (connection.ownerUserId && !(await creatorMayUse(db, orgId, connection.ownerUserId, creatorId)))
-  ) {
+  const notYours = await connectorNotYours(db, orgId, connection, creatorId);
+  if (notYours) throw notYours;
+  if (!(await hasScope(db, orgId, agentId, connection.id, customScope(connection.id, "read")))) {
     throw new ValidationError(
       "Let the agent read this connection before a routine can wait on it",
       "routine.connector_agent_cannot_read",
     );
   }
   return connection;
+}
+
+/**
+ * Why a routine made by `creatorId` may not wait on a person's own connection, or do anything in its account such as
+ * registering a webhook (ADR 0099 addendum): only that person's own routine, while they are a member. Null: it may.
+ */
+export async function connectorNotYours(
+  db: Database,
+  orgId: string,
+  connection: { ownerUserId: string | null },
+  creatorId: string | null,
+) {
+  if (!connection.ownerUserId || (await creatorMayUse(db, orgId, connection.ownerUserId, creatorId))) return null;
+  return new ValidationError(
+    "This connection is another person's own: only a routine of theirs can wait on its events",
+    "routine.connector_not_yours",
+  );
 }
 
 /**
