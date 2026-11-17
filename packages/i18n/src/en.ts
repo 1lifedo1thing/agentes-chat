@@ -15248,6 +15248,9 @@ export const en = {
       neverHappens: "This schedule never happens.",
       soleOwner:
         "You're the only owner of a workspace with other members. Make someone else an owner, or delete the workspace, first.",
+      /** The same, when everyone else there is an outside collaborator, who can't be an owner (ADR 0191). */
+      soleOwnerOutside:
+        "You're the only owner of a workspace whose other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete the workspace, first.",
       testFirst: "Test the connection with these settings before turning it on.",
       voiceLength: "The recording is too long or too short.",
       sendAgain: "The file didn't arrive whole. Send it again.",
@@ -15377,6 +15380,8 @@ export const en = {
       answered: "Someone already answered this request.",
       expired: "This request expired: nobody answered it in 14 days.",
       codeNeeded: "Verify your email first.",
+      /** Approving an outside collaborator's request (ADR 0191) whose account was blocked or is being deleted. */
+      outsideClosed: "This account was blocked or is being deleted, so it can't join. The request is closed.",
     },
     /** An emailed code refused: asking to join (ADR 0072) and deleting (ADR 0088) alike. */
     code: {
@@ -19563,6 +19568,9 @@ export const en = {
     serverOwner: "You set up this server. Its own settings will have no owner here, only in its environment.",
     blockers: "Before you can delete it",
     soleOwner: "You're the only owner of {{name}}. Make someone else an owner, or delete {{name}}.",
+    /** Everyone else in it is an outside collaborator, who can't be an owner (ADR 0191). */
+    soleOwnerOutside:
+      "You're the only owner of {{name}}, and its other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete {{name}}.",
     /** The same, for a workspace still in its onboarding: it has no People page yet. */
     soleOwnerSettingUp:
       "You're the only owner of {{name}}. Finish setting it up to make someone else an owner, or delete {{name}}.",

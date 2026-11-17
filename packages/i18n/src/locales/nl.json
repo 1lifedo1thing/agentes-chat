@@ -15089,6 +15089,7 @@
       "agentCantRead": "Laat de agent dit eerst lezen, bij de toegang van de agent.",
       "neverHappens": "Deze planning komt nooit voor.",
       "soleOwner": "Je bent de enige eigenaar van een werkruimte met andere leden. Maak eerst iemand anders eigenaar of verwijder de werkruimte.",
+      "soleOwnerOutside": "Je bent de enige eigenaar van een werkruimte waarvan de andere mensen externe medewerkers zijn, die geen eigenaar kunnen zijn. Nodig eerst een lid uit en maak die eigenaar, of verwijder de werkruimte.",
       "testFirst": "Test de verbinding met deze gegevens voordat je hem aanzet.",
       "voiceLength": "De opname is te lang of te kort.",
       "sendAgain": "Het bestand is niet heel aangekomen. Stuur het opnieuw.",
@@ -15198,7 +15199,8 @@
       "denied": "Je verzoek is niet goedgekeurd. Vraag iemand daar om je uit te nodigen.",
       "answered": "Iemand heeft dit verzoek al beantwoord.",
       "expired": "Dit verzoek is verlopen: niemand heeft het binnen 14 dagen beantwoord.",
-      "codeNeeded": "Bevestig eerst je e-mailadres."
+      "codeNeeded": "Bevestig eerst je e-mailadres.",
+      "outsideClosed": "Dit account is geblokkeerd of wordt verwijderd, dus het kan niet meedoen. Het verzoek is gesloten."
     },
     "code": {
       "wrong": "Verkeerde code. Probeer het opnieuw.",
@@ -19148,6 +19150,7 @@
     "serverOwner": "Jij hebt deze server opgezet. De eigen instellingen ervan hebben hier geen eigenaar meer, alleen in de omgeving van de server.",
     "blockers": "Voordat je het kunt verwijderen",
     "soleOwner": "Je bent de enige eigenaar van {{name}}. Maak iemand anders eigenaar, of verwijder {{name}}.",
+    "soleOwnerOutside": "Je bent de enige eigenaar van {{name}}, en de andere mensen daar zijn externe medewerkers, die geen eigenaar kunnen zijn. Nodig een lid uit en maak die eigenaar, of verwijder {{name}}.",
     "soleOwnerSettingUp": "Je bent de enige eigenaar van {{name}}. Rond de inrichting af om iemand anders eigenaar te maken, of verwijder {{name}}.",
     "openPeople": "Mensen openen",
     "finishSetup": "Inrichting afronden",

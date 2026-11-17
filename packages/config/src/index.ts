@@ -82,9 +82,11 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (Boolean(config.BILLING_URL) !== Boolean(config.BILLING_LINK_SECRET)) {
     throw new ConfigError(["BILLING_URL and BILLING_LINK_SECRET go together: set both or neither"]);
   }
-  // The referral service checks the link with the billing link's secret: without it no link could be signed.
-  if (config.REFERRALS_URL && !config.BILLING_LINK_SECRET) {
-    throw new ConfigError(["REFERRALS_URL needs BILLING_LINK_SECRET, which signs the link to the referral service"]);
+  // Without a secret no link to the referral service could be signed.
+  if (config.REFERRALS_URL && !referralsLinkSecret(config)) {
+    throw new ConfigError([
+      "REFERRALS_URL needs REFERRALS_LINK_SECRET (or BILLING_LINK_SECRET), which signs the link to the referral service",
+    ]);
   }
   // Only the billing service lifts that hold, through the operator API: without them a new workspace would wait forever.
   if (config.BILLING_HOLD_NEW_WORKSPACES && !(config.BILLING_URL && config.OPERATOR_API_TOKEN)) {
@@ -136,6 +138,10 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   }
   return config;
 }
+
+/** What signs the link to the referral service (ADR 0192): its own secret, else the billing link's. */
+export const referralsLinkSecret = (config: Pick<Config, "REFERRALS_LINK_SECRET" | "BILLING_LINK_SECRET">) =>
+  config.REFERRALS_LINK_SECRET ?? config.BILLING_LINK_SECRET;
 
 /** Returns a copy of the config safe to log: secret values are masked. */
 export function redactConfig(config: Config): Record<string, unknown> {

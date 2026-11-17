@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
-import { ConfigError, envVars, loadConfig, mcpCallerIdentity, redactConfig, testConfig } from "./index";
+import {
+  ConfigError,
+  envVars,
+  loadConfig,
+  mcpCallerIdentity,
+  redactConfig,
+  referralsLinkSecret,
+  testConfig,
+} from "./index";
 import { parseFirebaseServiceAccount, parsePemKey } from "./pem";
 
 const valid = {
@@ -238,14 +246,20 @@ describe("loadConfig", () => {
     expect(redactConfig(loadConfig(billing)).BILLING_LINK_SECRET).toBe("********");
   });
 
-  test("referrals: an https address, only with the link's secret", () => {
+  test("referrals: an https address, with its own secret or the billing link's", () => {
     expect(loadConfig(valid).REFERRALS_URL).toBeUndefined();
     const billing = { ...valid, BILLING_URL: "https://billing.example.com", BILLING_LINK_SECRET: "b".repeat(32) };
-    expect(loadConfig({ ...billing, REFERRALS_URL: "https://refer.example.com" }).REFERRALS_URL).toBe(
-      "https://refer.example.com",
-    );
+    const borrowed = loadConfig({ ...billing, REFERRALS_URL: "https://refer.example.com" });
+    expect(borrowed.REFERRALS_URL).toBe("https://refer.example.com");
+    expect(referralsLinkSecret(borrowed)).toBe("b".repeat(32));
+    // No billing service: its own secret is enough, and signs even beside the billing link's.
+    const own = { ...valid, REFERRALS_URL: "https://refer.example.com", REFERRALS_LINK_SECRET: "r".repeat(32) };
+    expect(referralsLinkSecret(loadConfig(own))).toBe("r".repeat(32));
+    expect(referralsLinkSecret(loadConfig({ ...billing, ...own }))).toBe("r".repeat(32));
+    expect(redactConfig(loadConfig(own)).REFERRALS_LINK_SECRET).toBe("********");
+    expect(() => loadConfig({ ...own, REFERRALS_LINK_SECRET: "short" })).toThrow(/REFERRALS_LINK_SECRET/);
     expect(() => loadConfig({ ...valid, REFERRALS_URL: "https://refer.example.com" })).toThrow(
-      /REFERRALS_URL needs BILLING_LINK_SECRET/,
+      /REFERRALS_URL needs REFERRALS_LINK_SECRET/,
     );
     expect(() => loadConfig({ ...billing, REFERRALS_URL: "http://refer.example.com" })).toThrow(/REFERRALS_URL/);
   });

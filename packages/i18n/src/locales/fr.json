@@ -15549,6 +15549,7 @@
       "agentCantRead": "Laissez d'abord l'agent lire ceci, dans ses accès.",
       "neverHappens": "Cette planification n'arrive jamais.",
       "soleOwner": "Vous êtes le seul propriétaire d'un espace de travail avec d'autres membres. Nommez un autre propriétaire ou supprimez l'espace de travail d'abord.",
+      "soleOwnerOutside": "Vous êtes le seul propriétaire d'un espace de travail dont les autres personnes sont des collaborateurs externes, qui ne peuvent pas être propriétaires. Invitez d'abord un membre et nommez-le propriétaire, ou supprimez l'espace de travail.",
       "testFirst": "Testez la connexion avec ces réglages avant de l'activer.",
       "voiceLength": "L'enregistrement est trop long ou trop court.",
       "sendAgain": "Le fichier n'est pas arrivé entier. Renvoyez-le.",
@@ -15658,7 +15659,8 @@
       "denied": "Votre demande n'a pas été approuvée. Demandez à quelqu'un sur place de vous inviter.",
       "answered": "Quelqu'un a déjà répondu à cette demande.",
       "expired": "Cette demande a expiré : personne n'y a répondu en 14 jours.",
-      "codeNeeded": "Vérifiez d'abord votre e-mail."
+      "codeNeeded": "Vérifiez d'abord votre e-mail.",
+      "outsideClosed": "Ce compte a été bloqué ou est en cours de suppression : il ne peut pas rejoindre. La demande est fermée."
     },
     "code": {
       "wrong": "Code incorrect. Réessayez.",
@@ -19664,6 +19666,7 @@
     "serverOwner": "Vous avez installé ce serveur. Ses propres paramètres n'auront plus de propriétaire ici, seulement dans son environnement.",
     "blockers": "Avant de pouvoir le supprimer",
     "soleOwner": "Vous êtes l'unique propriétaire de {{name}}. Nommez quelqu'un d'autre propriétaire, ou supprimez {{name}}.",
+    "soleOwnerOutside": "Vous êtes l'unique propriétaire de {{name}}, et les autres personnes y sont des collaborateurs externes, qui ne peuvent pas être propriétaires. Invitez un membre et nommez-le propriétaire, ou supprimez {{name}}.",
     "soleOwnerSettingUp": "Vous êtes l'unique propriétaire de {{name}}. Terminez sa configuration pour nommer quelqu'un d'autre propriétaire, ou supprimez {{name}}.",
     "openPeople": "Ouvrir Personnes",
     "finishSetup": "Terminer la configuration",
