@@ -616,7 +616,7 @@ export function ChatLookPage() {
           label={t("settings.account.chat.wallpaper.title")}
           sub={t("settings.account.chat.wallpaper.rowSub")}
           value={nameOf(wallpaper, null)}
-          valueLeading={<WallpaperThumb wallpaper={shownWallpaper} />}
+          {...(hasWallpaper(wallpaper) ? { valueLeading: <WallpaperThumb wallpaper={shownWallpaper} /> } : {})}
           chevron
           onPress={() => router.push(wallpaperHrefs.choose({ all: true }))}
         />

@@ -228,7 +228,7 @@ function PhotoPreview({ photo }: { photo: PickedPhoto }) {
       {focused ? <StatusBar style="light" /> : null}
       <PushedHeader
         title={
-          <Text variant="headline" style={styles.title}>
+          <Text variant="body" style={styles.title}>
             {t("settings.account.chat.wallpaper.preview")}
           </Text>
         }
@@ -287,7 +287,8 @@ export function WallpaperPhotoPage() {
 
 const styles = StyleSheet.create({
   fill: { flex: 1 },
-  title: { color: "#ffffff", textShadowColor: "rgba(0, 0, 0, 0.35)", textShadowRadius: 10 },
+  // The system bar's own title weight, legible on any photo.
+  title: { color: "#ffffff", fontWeight: "600", textShadowColor: "rgba(0, 0, 0, 0.35)", textShadowRadius: 10 },
   rows: { position: "absolute", left: 0, right: 0, justifyContent: "flex-end", gap: 14 },
   day: {
     alignSelf: "center",

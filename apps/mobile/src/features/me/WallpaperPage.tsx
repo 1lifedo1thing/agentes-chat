@@ -3,6 +3,7 @@ import { chatLookOf, textSizeOf } from "@agenteschat/client/lib/chat-look";
 import {
   conversationWallpaperOf,
   defaultWallpaperOf,
+  hasWallpaper,
   NO_WALLPAPER,
   resolveWallpaper,
   sameWallpaper,
@@ -195,7 +196,9 @@ export function WallpaperPage({ target }: { target: WallpaperTarget }) {
             <GroupedRow
               label={t("settings.account.chat.wallpaper.sameAsOthers")}
               value={nameOf(others, scope)}
-              valueLeading={<WallpaperThumb wallpaper={resolveWallpaper(others, ownHue)} />}
+              {...(hasWallpaper(others)
+                ? { valueLeading: <WallpaperThumb wallpaper={resolveWallpaper(others, ownHue)} /> }
+                : {})}
               checked={own === undefined}
               onPress={() => pick(null)}
             />

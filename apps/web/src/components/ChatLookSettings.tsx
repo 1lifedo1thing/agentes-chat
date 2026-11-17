@@ -12,7 +12,7 @@ import {
   openAtOf,
   textSizeOf,
 } from "@agenteschat/client/lib/chat-look";
-import { defaultWallpaperOf, resolveWallpaper, wallpaperHueOf } from "@agenteschat/client/lib/wallpaper";
+import { defaultWallpaperOf, hasWallpaper, resolveWallpaper, wallpaperHueOf } from "@agenteschat/client/lib/wallpaper";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import {
   agentGradient,
@@ -201,10 +201,12 @@ export function ChatLookSettings() {
             <span className="settings-row__status">{t("settings.account.chat.wallpaper.rowHelp")}</span>
           </span>
           <div className="settings-row__end wallpaper-row__end">
-            {/* "auto" in the samples' agent's color. */}
-            <WallpaperThumb
-              wallpaper={resolveWallpaper(defaultWallpaperOf(prefs), wallpaperHueOf(SAMPLE_AGENT.color))}
-            />
+            {/* "auto" in the samples' agent's color; none shows no thumbnail (a blank one reads as a checkbox). */}
+            {hasWallpaper(defaultWallpaperOf(prefs)) && (
+              <WallpaperThumb
+                wallpaper={resolveWallpaper(defaultWallpaperOf(prefs), wallpaperHueOf(SAMPLE_AGENT.color))}
+              />
+            )}
             <span className="wallpaper-row__name">{wallpaperName(defaultWallpaperOf(prefs), null)}</span>
             <Button size="sm" onClick={() => setChoosingWallpaper(true)}>
               {t("settings.account.chat.wallpaper.choose")}
