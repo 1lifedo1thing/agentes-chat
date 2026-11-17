@@ -1,6 +1,12 @@
-import { useCallback, useRef } from "react";
-import { type ScrollEvent, type ScrollViewInstance, StyleSheet } from "react-native";
-import Animated, { FadeIn, FadeOutUp, LayoutAnimationConfig, type SharedValue } from "react-native-reanimated";
+import { useCallback } from "react";
+import { type ScrollEvent, StyleSheet } from "react-native";
+import Animated, {
+  FadeIn,
+  FadeOutUp,
+  LayoutAnimationConfig,
+  type SharedValue,
+  useAnimatedRef,
+} from "react-native-reanimated";
 import { useCoverScroll, useScrollFade } from "./cover";
 import { SCREEN_X } from "./rhythm";
 import { Text } from "./Text";
@@ -23,7 +29,9 @@ const TITLE_OUT = FadeOutUp.duration(motion.fast).easing(motion.easeOut);
  */
 export function useLargeTitleScroll(rest: number, { snap = true }: { snap?: boolean } = {}) {
   const { y, onScroll } = useCoverScroll(rest);
-  const ref = useRef<ScrollViewInstance>(null);
+  // An animated ref: the screen can also read the list's own scroll events on the UI thread (`LargeTitleScreen`'s
+  // `pastEnd`).
+  const ref = useAnimatedRef<Animated.ScrollView>();
   const settle = useCallback(
     (e: ScrollEvent) => {
       if (!snap) return;
