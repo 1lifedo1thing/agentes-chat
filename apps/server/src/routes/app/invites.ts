@@ -553,6 +553,7 @@ export function inviteRoutes(deps: AppDeps) {
       // Before the link's count, so refused bots don't spend what everyone asking through it shares.
       const refused = await humanCheckRefusal(
         adapters.humanCheck,
+        db,
         c.req.raw.headers,
         "ask-code",
         config.TRUSTED_PROXIES,

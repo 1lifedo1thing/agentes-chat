@@ -499,6 +499,7 @@ export function accountRoutes(deps: AppDeps) {
       if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many requests. Try again later.");
       const refused = await humanCheckRefusal(
         deps.adapters.humanCheck,
+        db,
         c.req.raw.headers,
         "email-lookup",
         config.TRUSTED_PROXIES,

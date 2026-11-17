@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import type { HumanAction, HumanCheck } from "@agenteschat/adapters";
 import { schema } from "@agenteschat/db";
 import { enableCaches, putHost } from "@agenteschat/engine";
 import { createLogger } from "../src/logger";
@@ -9,11 +10,14 @@ import {
   type Browser,
   browser,
   createTestServer,
+  fakeCloudflare,
   GOOGLE_ENV,
   ORIGIN,
   seedOrg,
   signUp,
   type TestServer,
+  tokenMadeOn,
+  turnstileCheck,
 } from "./harness";
 
 /** ADR 0194: the same server on extra hostnames, each with its own look before sign-in. */
@@ -32,8 +36,8 @@ afterEach(async () => {
   t = undefined;
 });
 
-async function server(env: Record<string, string> = {}) {
-  t = await createTestServer({ env: { ALLOW_SIGNUP: "true", OPERATOR_API_TOKEN: TOKEN, ...env } });
+async function server(env: Record<string, string> = {}, humanCheck?: HumanCheck | null) {
+  t = await createTestServer({ env: { ALLOW_SIGNUP: "true", OPERATOR_API_TOKEN: TOKEN, ...env }, humanCheck });
   const s = t;
   const blobs = s.adapters.platformBlobs;
   const own = new Set<string>();
@@ -138,6 +142,42 @@ test("by email on a registered host: sign-up, the app's writes, sign-out and sig
   expect(signIn.status).toBe(200);
   for (const cookie of signIn.headers.getSetCookie()) expect(cookie.toLowerCase()).not.toContain("domain=");
   expect((await there("/api/app/me")).status).toBe(200);
+});
+
+test("the bot check takes a token made on the request's own registered host, on that host only", async () => {
+  const s = await server({}, turnstileCheck(fakeCloudflare().fetch));
+  const made = (host: string, action: HumanAction) => ({ "x-captcha-response": tokenMadeOn(host, action) });
+  const there = on(browser(s), HOST);
+  const account = { email: "ana@example.com", password: "correct horse battery" };
+  const up = await there("/api/auth/sign-up/email", {
+    json: { ...account, name: "Ana" },
+    headers: made(HOST, "sign-up"),
+  });
+  expect(up.status).toBe(200);
+  const lookup = await there("/api/app/sign-in-options", {
+    json: { email: account.email },
+    headers: made(HOST, "email-lookup"),
+  });
+  expect(lookup.status).toBe(200);
+  const reset = await there("/api/auth/request-password-reset", {
+    json: { email: account.email, redirectTo: "/reset-password" },
+    headers: made(HOST, "password-reset"),
+  });
+  expect(reset.status).toBe(200);
+  const signIn = (b: Browser) => b("/api/auth/sign-in/email", { json: account, headers: made(HOST, "sign-in") });
+  expect((await signIn(on(browser(s), HOST))).status).toBe(200);
+  // The same token on a request for another registered host or for the main address: refused.
+  for (const b of [on(browser(s), OTHER, HOST_ORIGIN), on(browser(s), OTHER), browser(s)]) {
+    const res = await signIn(b);
+    expect(res.status).toBe(403);
+    expect(((await res.json()) as { code?: string }).code).toBe("human_check");
+  }
+  // The main address's own tokens still count on a registered host.
+  const main = await on(browser(s), HOST)("/api/auth/sign-in/email", {
+    json: account,
+    headers: made("localhost", "sign-in"),
+  });
+  expect(main.status).toBe(200);
 });
 
 test("the WebSocket upgrade takes the same rule", async () => {

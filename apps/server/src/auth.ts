@@ -423,6 +423,7 @@ export function createAuth(deps: {
           const address = (ctx.body as { email?: unknown } | undefined)?.email;
           const refused = await humanCheckRefusal(
             deps.humanCheck,
+            db,
             ctx.headers,
             action,
             config.TRUSTED_PROXIES,
