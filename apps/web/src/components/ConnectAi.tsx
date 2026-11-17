@@ -9,7 +9,7 @@ import {
   useMachines,
   useModels,
 } from "@agenteschat/client";
-import { accountTitle, listsExisting } from "@agenteschat/client/lib/ai-accounts";
+import { accountInLine, listsExisting } from "@agenteschat/client/lib/ai-accounts";
 import { CUSTOM_PROVIDER } from "@agenteschat/client/lib/endpoints";
 import { errorCode, errorText, keyRefusal } from "@agenteschat/client/lib/errors";
 import { namesText, rosterText } from "@agenteschat/client/lib/format";
@@ -1150,7 +1150,7 @@ function ConnectAiDialog({
           ) : picking && selected && account ? (
             <DialogFooter>
               <Button variant="primary" onClick={() => pick(planOfAccount(account), account)}>
-                {t("connectAi.use", { label: accountTitle(t, account) })}
+                {t("connectAi.use", { label: accountInLine(t, account) })}
               </Button>
             </DialogFooter>
           ) : (
@@ -1404,7 +1404,7 @@ function ConnectAiDialog({
             >
               <Button variant="primary" loading={have.busy} disabled={have.busy} onClick={confirm}>
                 {t("connectAi.use", {
-                  label: account ? accountTitle(t, account) : selected.kind === "key" ? selected.key.label : "",
+                  label: account ? accountInLine(t, account) : selected.kind === "key" ? selected.key.label : "",
                 })}
               </Button>
             </DialogFooter>

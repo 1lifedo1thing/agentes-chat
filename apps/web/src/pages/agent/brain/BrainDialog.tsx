@@ -1100,6 +1100,8 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
     return null;
   };
 
+  /** A row in a button or a sentence: an unnamed account by its maker ("Trocar para Claude"), else its title. */
+  const rowSaid = (r: BrainRow) => (r.account ? accountInLine(t, r.account) : r.title);
   /** The footer, always the same: a quiet note at its start, the second action, the main one at its end. */
   const footer = (o: { note?: ReactNode; second?: ReactNode; main?: ReactNode }) => (
     <DialogFooter
@@ -1180,7 +1182,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
                 ? t(isPlanId(row.choice) ? "aiAccounts.page.newKey" : "agentPage.work.brain.signInAgain")
                 : row.act === "also"
                   ? t("connectAi.signInFor", g)
-                  : t("agentPage.work.brain.v2.switchTo", { label: row.title })}
+                  : t("agentPage.work.brain.v2.switchTo", { label: rowSaid(row) })}
           </Button>
         ),
       });
@@ -1198,7 +1200,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           >
             {teamToo
               ? t("agentPage.work.brain.v2.switchMany", { count: team.length })
-              : t("agentPage.work.brain.v2.switchTo", { label: aim?.title ?? "" })}
+              : t("agentPage.work.brain.v2.switchTo", { label: aim ? rowSaid(aim) : "" })}
           </Button>
         ),
       });
@@ -1208,7 +1210,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
         second: <Button onClick={onClose}>{t("agentPage.work.brain.v2.wait")}</Button>,
         main: limitSel && can("brain") && (
           <Button variant="primary" disabled={busy} loading={busy} onClick={() => confirm(limitSel)}>
-            {t("connectAi.use", { label: limitSel.title })}
+            {t("connectAi.use", { label: rowSaid(limitSel) })}
           </Button>
         ),
       });

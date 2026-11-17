@@ -1563,7 +1563,7 @@ function PlanSteps({
             picked &&
             createPortal(
               <Button variant="primary" onClick={() => void (everyone ? assignAll(picked) : assign(agent.id, picked))}>
-                <span className="ai-panel__use">{t("connectAi.use", { label: accountTitle(t, picked) })}</span>
+                <span className="ai-panel__use">{t("connectAi.use", { label: accountInLine(t, picked) })}</span>
               </Button>,
               actionsAt,
             )}

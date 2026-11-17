@@ -737,7 +737,7 @@ html:not([data-pointer]) .arrival-have__row[data-state="checked"]:has(.ac-radio:
   background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
 }
-.arrival-have__edit:focus-visible {
+html:not([data-pointer]) .arrival-have__edit:focus-visible {
   outline: none;
   box-shadow: var(--field-ring);
 }
