@@ -7779,6 +7779,55 @@ export const en = {
     otherSkill: "Another skill",
     namesLead: "How about",
     namesRoll: "Other names",
+    /**
+     * "Edit first" on an agent's proposal: the card filled in with the draft, and in the list's place the proposal
+     * (who proposed it and why, what the person changed, the first task, what is left for after it is created).
+     */
+    proposal: {
+      lead: "Adjust what {{name}} proposed. You can change everything later.",
+      leadNarrow: "{{name}}'s proposal: {{why}}",
+      side: "The proposal",
+      from: "Proposed by {{name}}",
+      changed: "What you changed",
+      changedNone: "Nothing yet. What you change on the card shows here, with Undo.",
+      undo: "Undo",
+      changes: {
+        changed: "changed",
+        added: "added",
+        removed: "removed",
+        how: "How it works",
+      },
+      firstTask: "First task",
+      firstTaskPlaceholder: "What to ask first (optional)",
+      firstTaskHint: "Ready in your chat with {{name}}. Just send it.",
+      firstTaskHintBlank: "Ready in your chat with it. Just send it.",
+      firstTaskNone: "With no task, the chat opens empty.",
+      after: "After it's created",
+      afterAi: "Connect an AI for {{name}} to think with",
+      afterAiBlank: "Connect an AI for it to think with",
+      afterApp: "Connect {{app}}",
+      afterNone: "Nothing. {{name}} starts working as soon as it's created.",
+      afterNoneBlank: "Nothing. It starts working as soon as it's created.",
+      discard: "Discard proposal",
+      otherChannel: "Another channel",
+      chooseChannels: "Choose channels",
+      channelsNone: "Only in its chat with you.",
+      channel: {
+        lead: "Where {{name}} will work.",
+        leadBlank: "Where it will work.",
+        does: "{{name}} answers when called in {{channel}} and reads what goes on there.",
+        doesBlank: "It answers when called in {{channel}} and reads what goes on there.",
+        remove: "Remove from {{channel}}",
+      },
+      routine: {
+        label: "Routine",
+        lead: "{{when}}, in {{channel}}.",
+        leadDm: "{{when}}, in its chat with you.",
+        starts: "Starts once {{name}} is created. Change its time and text in Routines.",
+        startsBlank: "Starts once it's created. Change its time and text in Routines.",
+        remove: "Remove the routine",
+      },
+    },
     /** One skill on the card. */
     skill: {
       opens: "{{name}} opens this manual when the topic comes up. You edit it in Skills.",
