@@ -11165,6 +11165,17 @@
     "saved": "Logo güncellendi.",
     "removed": "Logo kaldırıldı."
   },
+  "orgAccent": {
+    "label": "Vurgu rengi",
+    "change": "Rengi değiştir",
+    "useDefault": "Varsayılanı kullan",
+    "suggested": "Önerilen renkler",
+    "sampleMention": "@Ajan",
+    "sampleLink": "Bir bağlantı",
+    "save": "Rengi kaydet",
+    "saved": "Vurgu rengi güncellendi.",
+    "reset": "Varsayılan renge dönüldü."
+  },
   "look": {
     "previous": "Önceki",
     "next": "Sonraki",
@@ -16529,6 +16540,7 @@
     },
     "change": {
       "mergedWithoutAsking": "{{repo}} içinde sormadan birleştirdi",
+      "accentChanged": "Çalışma alanının vurgu rengini değiştirdi",
       "pattern": "{{verb}}: {{area}}",
       "approval": {
         "approved": "Bir isteği onayladı",
