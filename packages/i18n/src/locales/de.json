@@ -18969,6 +18969,10 @@
     "noLimit": "Kein Limit",
     "ownBucket": "In deinem eigenen Bucket, ohne Limit von uns"
   },
+  "referrals": {
+    "open": "Empfehlen und verdienen",
+    "failed": "Konnte gerade nicht geöffnet werden. Versuch es gleich noch einmal."
+  },
   "limits": {
     "members": {
       "full": "Dieser Workspace hat {{members}} von {{limit}} Personen.",

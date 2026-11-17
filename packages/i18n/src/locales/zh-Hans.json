@@ -18474,6 +18474,10 @@
     "noLimit": "无限制",
     "ownBucket": "在你自己的存储桶上，我们不设限制"
   },
+  "referrals": {
+    "open": "推荐有奖",
+    "failed": "暂时无法打开，请稍后再试。"
+  },
   "limits": {
     "members": {
       "full": "此工作区已有 {{members}} 人，上限 {{limit}} 人。",

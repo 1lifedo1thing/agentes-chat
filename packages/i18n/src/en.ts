@@ -19496,6 +19496,12 @@ export const en = {
     noLimit: "No limit",
     ownBucket: "On your own bucket, with no limit from us",
   },
+  /** The referral service (ADR 0192): this server knows nothing of the program, only the way there. */
+  referrals: {
+    /** In the person's own menu, under Settings. */
+    open: "Refer and earn",
+    failed: "Couldn't open it now. Try again in a moment.",
+  },
   /** A workspace's limits, set by the billing service (ADR 0079): people and files. */
   limits: {
     members: {
