@@ -18362,6 +18362,10 @@
     "noLimit": "제한 없음",
     "ownBucket": "자체 버킷 사용, 저희 쪽 제한 없음"
   },
+  "referrals": {
+    "open": "추천하고 혜택 받기",
+    "failed": "지금은 열 수 없어요. 잠시 후 다시 시도하세요."
+  },
   "limits": {
     "members": {
       "full": "이 워크스페이스에는 {{limit}}명 중 {{members}}명이 있어요.",
