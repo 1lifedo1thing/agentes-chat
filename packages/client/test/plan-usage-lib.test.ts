@@ -168,13 +168,13 @@ describe("your plans with their limits (Sua conta, the profile menu near a limit
     });
     const view = {
       computers: [computer({ claude_code: { plan: "max", usage: HOURS } })],
-      accounts: [account("a1"), account("a3", { label: "Trabalho" }), glm],
+      accounts: [account("a1"), account("a3", { label: "Trabalho", named: true }), glm],
     };
-    // Named as "Seus planos" names them: the plan once, after a name that doesn't say it.
+    // A computer's own sign-in by its maker and plan; an account by the name its owner gave it, else its email.
     expect(ownPlanLines(t, view, [onOwn()], ME)).toEqual([
       { key: "m1:claude_code", logo: "claude_code", name: "Claude · Max", usage: HOURS },
-      { key: "a1", logo: "claude_code", name: "Claude Team", usage: HOURS },
-      { key: "a3", logo: "claude_code", name: "Trabalho · Team", usage: HOURS },
+      { key: "a1", logo: "claude_code", name: "a1@acme.com", usage: HOURS },
+      { key: "a3", logo: "claude_code", name: "Trabalho", usage: HOURS },
       { key: "a2", logo: "zai", name: "GLM Coding", usage: HOURS },
     ]);
   });
@@ -229,7 +229,7 @@ describe("your plans with their limits (Sua conta, the profile menu near a limit
     expect(lines([onOwn("Ada", { kind: "codex" })])).toEqual(["a1"]);
   });
 
-  test("two plans of one name say which: their computers, or on the same computer an account's email", () => {
+  test("two plans of one name say which: their computers, or on the same computer the account's email and plan", () => {
     const names = (view: AiAccounts, agents: ReturnType<typeof onOwn>[]) =>
       ownPlanLines(t, view, agents, ME).map((p) => p.name);
     const max = { claude_code: { plan: "max", usage: HOURS } };
@@ -238,15 +238,20 @@ describe("your plans with their limits (Sua conta, the profile menu near a limit
     expect(names(own, agents)).toEqual(["Claude · Max on MacBook", "Claude · Max on iMac"]);
     expect(names({ ...own, computers: own.computers.slice(0, 1) }, agents)).toEqual(["Claude · Max"]);
 
-    // The MacBook's own sign-in on Max and an account named "Claude" on Max.
+    // The MacBook's own sign-in on Max and an account on Max: the account goes by its email, nothing to tell apart.
     const claude = account("a1", { label: "Claude", plan: "max", email: "ana@work.com" });
     const onMac = { computers: [computer(max)], accounts: [claude] };
-    expect(names(onMac, [onOwn()])).toEqual(["Claude · Max on MacBook", "Claude · Max · ana@work.com"]);
-    const onImac = { ...onMac, accounts: [{ ...claude, machineId: "m2", computer: "iMac" }] };
-    expect(names(onImac, [onOwn()])).toEqual(["Claude · Max on MacBook", "Claude · Max on iMac"]);
+    expect(names(onMac, [onOwn()])).toEqual(["Claude · Max", "ana@work.com"]);
+    // Two accounts on one computer that their owner named alike: their emails and plans say which.
+    const work = account("a1", { label: "Trabalho", named: true, plan: "max", email: "ana@work.com" });
+    const home = { ...work, id: "a2", email: "ana@home.com" };
+    expect(names({ computers: [], accounts: [work, home] }, [])).toEqual([
+      "Trabalho · ana@work.com · Max",
+      "Trabalho · ana@home.com · Max",
+    ]);
     // The same account signed in on both computers.
     const both = { computers: [], accounts: [claude, { ...claude, id: "a2", machineId: "m2", computer: "iMac" }] };
-    expect(names(both, [])).toEqual(["Claude · Max on MacBook", "Claude · Max on iMac"]);
+    expect(names(both, [])).toEqual(["ana@work.com on MacBook", "ana@work.com on iMac"]);
   });
 });
 
