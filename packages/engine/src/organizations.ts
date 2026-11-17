@@ -25,12 +25,19 @@ import { revokeMemberApps } from "./apps/revoke";
 import { recordAudit } from "./audit";
 import { caches } from "./cache";
 import { memberCardVia } from "./card-via";
-import { type ChatPrefs, chatPrefsOf, saveChatPrefs } from "./chat-prefs";
+import {
+  assertOwnWallpaper,
+  type ChatPrefs,
+  chatPrefsOf,
+  saveChatPrefs,
+  saveConversationWallpaper,
+  wallpaperOf,
+} from "./chat-prefs";
 import { invitationMailProof, invitationToken, inviteLinkToken, randomToken, safeEqual, sha256 } from "./crypto";
 import { restoreDms } from "./dms";
 import { earlyAccessLink, hasWorkspaceAllowance, recordFirstWorkspace, signupMode } from "./early-access";
-import { ConflictError, ForbiddenError, UnauthorizedError, ValidationError } from "./errors";
-import { publishOrgEvent } from "./events";
+import { ConflictError, ForbiddenError, NotFoundError, UnauthorizedError, ValidationError } from "./errors";
+import { publishOrgEvent, publishUserEvent } from "./events";
 import { deleteGifKey } from "./gif-key";
 import { deleteGitHubAppSettings } from "./git/github-app-settings";
 import {
@@ -849,9 +856,43 @@ export async function setAgentStyle(db: Database, userId: string, orgId: string,
 }
 
 /** How conversations look to the person in this workspace, on every device. Only the keys in `patch` change. */
-export async function setChatPrefs(db: Database, userId: string, orgId: string, patch: ChatPrefs) {
+export async function setChatPrefs(db: Database, userId: string, orgId: string, patch: ChatPrefs, pubsub?: PubSub) {
   await requirePermission(db, userId, orgId, "read");
-  return (await saveChatPrefs(db, orgId, userId, chatPrefsOf(patch))) ?? {};
+  // A conversation's own background changes one at a time (`setConversationWallpaper`): the map is never replaced.
+  const { wallpapers: _one, ...known } = chatPrefsOf(patch);
+  assertOwnWallpaper(known.wallpaper, userId);
+  const prefs = (await saveChatPrefs(db, orgId, userId, known)) ?? {};
+  // My other devices take it at once (`chat.prefs` on my topic).
+  await publishUserEvent(pubsub, orgId, userId, { type: "chat.prefs", chatPrefs: prefs });
+  return prefs;
+}
+
+/**
+ * Gives a conversation I'm in a background of its own, for me (null: back to the channels' or DMs'). My other devices
+ * hear `chat.prefs` with what I chose now.
+ */
+export async function setConversationWallpaper(
+  db: Database,
+  userId: string,
+  orgId: string,
+  channelId: string,
+  input: unknown,
+  pubsub?: PubSub,
+) {
+  await requirePermission(db, userId, orgId, "read");
+  const wallpaper = input === null ? null : wallpaperOf(input);
+  if (wallpaper === undefined) throw new ValidationError("That isn't a background", "wallpaper.invalid");
+  assertOwnWallpaper(wallpaper ?? undefined, userId);
+  const [member] = await db
+    .select({ id: channelMembers.id })
+    .from(channelMembers)
+    .where(
+      and(eq(channelMembers.orgId, orgId), eq(channelMembers.channelId, channelId), eq(channelMembers.userId, userId)),
+    );
+  if (!member) throw new NotFoundError("Channel not found");
+  const prefs = (await saveConversationWallpaper(db, orgId, userId, channelId, wallpaper)) ?? {};
+  await publishUserEvent(pubsub, orgId, userId, { type: "chat.prefs", chatPrefs: prefs });
+  return prefs;
 }
 
 /** The languages of the app (`users.locale`): emails and pushes are written in it. */
