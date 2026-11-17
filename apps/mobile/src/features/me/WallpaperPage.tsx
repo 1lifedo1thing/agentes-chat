@@ -252,7 +252,15 @@ const styles = StyleSheet.create({
   listGap: { height: 20 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP },
   tile: { borderRadius: 12, overflow: "hidden" },
-  edge: { ...StyleSheet.absoluteFillObject, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
+  edge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   // A message from each side, as the design's: theirs higher on the left, mine lower on the right.
   mini: { position: "absolute", height: 10, borderRadius: 5, boxShadow: "0px 0px 0px 0.5px rgba(0, 0, 0, 0.08)" },
   miniTheirs: { left: 7, bottom: 36, width: "58%" },

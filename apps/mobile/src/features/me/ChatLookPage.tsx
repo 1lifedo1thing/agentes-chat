@@ -706,7 +706,15 @@ const styles = StyleSheet.create({
   previewGap: { height: 16 },
   // The preview: the conversation's own page color on the grouped gray, a hairline round it.
   preview: { paddingVertical: 14, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
-  previewEdge: { ...StyleSheet.absoluteFillObject, borderRadius: 14, borderWidth: StyleSheet.hairlineWidth },
+  previewEdge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   row: { flexDirection: "row", gap: MSG_GAP, paddingLeft: MSG_INSET, paddingRight: 16 },
   slot: { width: MSG_AVATAR, alignItems: "center", paddingTop: 2 },
   body: { flex: 1, minWidth: 0 },

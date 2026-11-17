@@ -486,7 +486,15 @@ const THUMB = { width: 20, height: 30 } as const;
 const styles = StyleSheet.create({
   band: { position: "absolute", top: 0, left: 0, right: 0 },
   thumb: { width: THUMB.width, height: THUMB.height, borderRadius: 5, overflow: "hidden" },
-  thumbEdge: { ...StyleSheet.absoluteFillObject, borderRadius: 5, borderWidth: StyleSheet.hairlineWidth },
+  thumbEdge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 5,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
 });
 
 type Say = Parameters<typeof wallpaperName>[0];
