@@ -162,7 +162,9 @@
 .lf-cover--slides {
   display: grid;
   place-items: center;
-  padding: 8cqw;
+  /* A share of the cover's width (percent padding reads the box's width), so the slide sits the same in a Drive card
+     and in a message, which aren't size containers. */
+  padding: 8%;
   box-sizing: border-box;
   background: var(--surface-sunken);
 }
@@ -170,7 +172,7 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 1.6cqw;
+  border-radius: var(--radius-xs, 4px);
   box-shadow:
     0 0 0 1px var(--line),
     var(--e1);
