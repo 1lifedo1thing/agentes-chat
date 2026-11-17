@@ -4660,7 +4660,7 @@
           },
           "lastError": {
             "type": ["string", "null"],
-            "description": "Its first 300 characters; cleared 30 days after the job ended."
+            "description": "Its first 300 characters; cleared 30 days after the job ended. Null for a job of a run of a confidential thread."
           },
           "lastErrorStatus": {
             "type": ["integer", "null"],

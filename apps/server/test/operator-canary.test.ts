@@ -29,6 +29,7 @@ const READ = "operator-read-token-".padEnd(48, "x");
 const REVEAL = "operator-reveal-token-".padEnd(48, "x");
 const UNKNOWN = "0b0b0b0b-0b0b-4b0b-8b0b-0b0b0b0b0b0b";
 const WHY = "canary-why: the person asked for it and nothing else answers this.";
+const CONFIDENTIAL_JOB_ERROR = "canary-confidential-job: what the run was writing";
 
 /**
  * Stored text the reads return by design, as `table: columns` (`column.path` inside a JSON column): who and what
@@ -347,7 +348,7 @@ beforeAll(async () => {
     },
   });
   // A run of a confidential thread (ADR 0190) that failed on what it read: its error's words are not returned, nor
-  // what its steps hold.
+  // what its steps hold, nor its job's error.
   const confidentialRoot = crypto.randomUUID();
   await db.insert(schema.confidentialThreads).values({ orgId, channelId, rootMessageId: confidentialRoot });
   const [confidentialRun] = await db
@@ -379,6 +380,15 @@ beforeAll(async () => {
   });
   await addRunStep(db, confidentialRun, "model_call", { narration: "canary-confidential-narration" });
   await addRunStep(db, confidentialRun, "error", { reason: "transient", message: "canary-confidential-message" });
+  // Its job failed on a write: what a database answers then names the values the run was writing.
+  await db.insert(schema.outbox).values({
+    orgId,
+    kind: "agent_run.execute",
+    payload: { runId: confidentialRun.id },
+    status: "failed",
+    dedupeKey: `agent_run.execute:${confidentialRun.id}`,
+    lastError: CONFIDENTIAL_JOB_ERROR,
+  });
 
   // What the conversation didn't write, each with its canary.
   const [user] = await db
@@ -1119,6 +1129,11 @@ test("a confidential thread's run: what its steps and the task it started hold i
 
 test("no GET says anything else the database holds: a canary in every other text column, and none comes back", async () => {
   expect(await poison(t.db, KEPT)).toBeGreaterThan(500);
+  // A run's job is its run's by its name alone, and its name is text: the confidential run's job gets its own back.
+  await t.db
+    .update(schema.outbox)
+    .set({ dedupeKey: `agent_run.execute:${confidential.runId}` })
+    .where(eq(schema.outbox.lastError, CONFIDENTIAL_JOB_ERROR));
   expect(await unmarked()).toEqual([]);
   expect(await readEverything()).toEqual(NOTHING);
 });
