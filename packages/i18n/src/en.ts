@@ -13176,6 +13176,10 @@ export const en = {
       emptyTitle: "Connect your own accounts",
       emptyText: "Only you open these connections, and your agents use them only when you ask.",
       noApps: "Services you connect just for yourself show up here.",
+      /** Over the person's own mailboxes on Pessoal: their rule (ADR 0038), not the connections' one. */
+      mailTitle: "Your mailboxes",
+      mailNote:
+        "Agents you allowed use your mailboxes as you set, also for people who talk to them directly. When someone else asks for something that needs approval, you're the one who approves it.",
       others: "Others' personal connections",
       of: "Personal to {{name}}",
       seeAll: "See all {{count}}",
@@ -13196,7 +13200,8 @@ export const en = {
       turnOffName: "Turn off {{name}} for this agent",
       moveToTeam: "Move to the team",
       moveTitle: "Move {{name}} to the team?",
-      moveText: "Everyone in the workspace sees it. People who manage connectors choose which agents use it.",
+      moveText:
+        "Everyone in the workspace sees it. People who manage agents, and each agent's owner, choose which agents use it.",
       moved: "{{name}} now belongs to the team.",
     },
     addTitle: "Add connector",
@@ -15198,6 +15203,8 @@ export const en = {
       createRefused: "You can't create a workspace right now.",
       noAgentToRemind: "No agent in this conversation can remind you.",
       agentCantRead: "Let the agent read this first, in its access settings.",
+      /** A routine on someone else's own connection: only that person's own routine waits on its events. */
+      connectionNotYours: "This connection is someone else's own. Only a routine of theirs can wait on its events.",
       neverHappens: "This schedule never happens.",
       soleOwner:
         "You're the only owner of a workspace with other members. Make someone else an owner, or delete the workspace, first.",

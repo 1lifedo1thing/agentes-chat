@@ -5197,7 +5197,7 @@ html:not([data-pointer]) .catalog-tile:focus-visible {
   min-width: 0;
   white-space: nowrap;
 }
-/* Someone else's personal connection on an agent: whose it is, under its name at the row's width. */
+/* Someone else's personal connection on an agent: whose it is, on its own line under its name. */
 .level-row__owner {
   gap: var(--space-1);
 }

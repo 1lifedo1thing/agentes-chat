@@ -97,15 +97,9 @@ export function AccessTab({ part = "all" }: { part?: "all" | "basic" | "advanced
         onChange={editable ? (l) => setLevel(r.id, l) : undefined}
         changed={changed || (isGithub(r) && Boolean(changeOf("repos")))}
         tag={changed ? <ChangedTag changeKey={key} /> : undefined}
-        // Under the name, not beside it: a long name keeps its tile beside its own lines only.
-        extra={
-          personalOf(r) || changed ? (
-            <>
-              {personalOf(r) && <PersonalChip />}
-              {changed && <WasLine changeKey={key} />}
-            </>
-          ) : undefined
-        }
+        // Under the name, where its lines start: a long name keeps its tile beside its own lines only.
+        meta={personalOf(r) ? <PersonalChip /> : undefined}
+        extra={changed ? <WasLine changeKey={key} /> : undefined}
         below={
           isGithub(r) && level(r) !== "none" ? (
             <>
@@ -357,14 +351,12 @@ function OthersPersonalRows({
     const def = catalog.data?.connectors.find((d) => d.id === c.connector) ?? null;
     const owner = (c.ownerUserId && dir.memberById.get(c.ownerUserId)?.name) || t("channel.unknownPerson");
     return (
-      <li key={c.connectionId} className="level-row ac-mediarow">
+      <li key={c.connectionId} className="level-row level-row--meta ac-mediarow">
         <span className="ac-mediarow__face">
           <ConnectorIcon def={def} label={c.label} />
         </span>
         <span className="ac-mediarow__head">
           <span className="level-row__name">{c.label}</span>
-        </span>
-        <span className="ac-mediarow__body">
           <span className="ac-mediarow__meta level-row__owner ac-iconline">
             <Icon name="lock" size={14} />
             <PersonalOf name={owner} />

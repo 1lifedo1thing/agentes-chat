@@ -156,7 +156,8 @@ function Gallery() {
   const list = (catalog.data?.connectors ?? []).filter((d) => !personal || personalAllowed(d.id));
   const apps = items.filter((i) => !isMcpItem(i));
   const mcps = items.filter(isMcpItem);
-  const connectedCount = items.length + mailboxes.length;
+  const rowMail = personal ? [] : mailboxes;
+  const connectedCount = items.length + rowMail.length;
   const name = (d: ConnectorDef) => connectorName(t, d);
   const suggestions = useMemo(() => suggestionsOf(list, items, 2), [list, items]);
   const searching = q.trim().length > 0;
@@ -186,6 +187,18 @@ function Gallery() {
     sheet.open(<AddressSheet personal={personal} {...(isHttpsUrl(q.trim()) ? { url: q.trim() } : {})} />);
   // A connection opens its own screen (a server connected by an address we don't know included).
   const openItem = (item: ConnectedItem) => openConnection(item.id);
+  const mailTile = (a: (typeof mailboxes)[number]) => (
+    <MiniTile
+      key={a.id}
+      onPress={() => sheet.open(<MailboxSheet accountId={a.id} />)}
+      label={t("mobile.connectors.connectedCheck", { name: a.label })}
+    >
+      <ConnectorIcon def={MAIL_BRANDS[choiceOf(a)] ?? null} label={a.label} size={48} check />
+      <Text variant="caption" tone="muted" numberOfLines={1}>
+        {a.label}
+      </Text>
+    </MiniTile>
+  );
   // From an agent's card in the chat (`?connect=<catalog id>` or `?mcp=<address>`, `?mcp=` alone: any address): the
   // same sheet the gallery opens, once the catalog is in.
   const { connected, connect, mcp } = useLocalSearchParams<{ connected?: string; connect?: string; mcp?: string }>();
@@ -248,11 +261,6 @@ function Gallery() {
           />
         </View>
       ) : null}
-      {personal && connectedCount > 0 ? (
-        <View style={styles.personalNote}>
-          <Note icon="lock">{t("connectors.personal.note")}</Note>
-        </View>
-      ) : null}
       <View style={styles.search}>
         <SearchField
           value={q}
@@ -274,6 +282,23 @@ function Gallery() {
           {searching && mayAdd && isHttpsUrl(q.trim()) ? <AddressRow url={q.trim()} onPress={openAddress} /> : null}
           {searching ? null : (
             <>
+              {/* On Pessoal a person's mailboxes are a group of their own: they keep their own rule (ADR 0038). */}
+              {personal && mailboxes.length > 0 ? (
+                <>
+                  <SectionHeader title={t("connectors.personal.mailTitle")} count={mailboxes.length} />
+                  <View style={styles.personalNote}>
+                    <Note icon="mail">{t("connectors.personal.mailNote")}</Note>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+                    {mailboxes.map(mailTile)}
+                  </ScrollView>
+                </>
+              ) : null}
+              {personal && items.length > 0 ? (
+                <View style={styles.personalNote}>
+                  <Note icon="lock">{t("connectors.personal.note")}</Note>
+                </View>
+              ) : null}
               {mayAdd || connectedCount > 0 ? (
                 <>
                   <SectionHeader
@@ -284,18 +309,7 @@ function Gallery() {
                     {/* A connection made or removed while the row is in sight fades, and the others slide over. */}
                     <LayoutAnimationConfig skipEntering>
                       {/* Mailboxes first, as on the web, by their name ("Suporte"). */}
-                      {mailboxes.map((a) => (
-                        <MiniTile
-                          key={a.id}
-                          onPress={() => sheet.open(<MailboxSheet accountId={a.id} />)}
-                          label={t("mobile.connectors.connectedCheck", { name: a.label })}
-                        >
-                          <ConnectorIcon def={MAIL_BRANDS[choiceOf(a)] ?? null} label={a.label} size={48} check />
-                          <Text variant="caption" tone="muted" numberOfLines={1}>
-                            {a.label}
-                          </Text>
-                        </MiniTile>
-                      ))}
+                      {rowMail.map(mailTile)}
                       {/* Services, then servers connected by address (oldest first, as on the web). */}
                       {[...apps, ...mcps].map((item) => (
                         <ConnectedTile

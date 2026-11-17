@@ -13189,6 +13189,10 @@ export const ptBR = {
       emptyTitle: "Conecte suas próprias contas",
       emptyText: "Só você abre estas conexões, e seus agentes só usam quando você pede.",
       noApps: "Os serviços que você conectar só para você aparecem aqui.",
+      /** Over the person's own mailboxes on Pessoal: their rule (ADR 0038), not the connections' one. */
+      mailTitle: "Suas caixas de email",
+      mailNote:
+        "Os agentes que você deixou usam suas caixas como você permitiu, também para quem fala direto com eles. Quando outra pessoa pede algo que precisa de aprovação, quem aprova é você.",
       others: "Pessoais de outras pessoas",
       of: "Pessoal de {{name}}",
       seeAll: "Ver todas as {{count}}",
@@ -13209,7 +13213,8 @@ export const ptBR = {
       turnOffName: "Desligar {{name}} neste agente",
       moveToTeam: "Passar para a equipe",
       moveTitle: "Passar {{name}} para a equipe?",
-      moveText: "Todos do workspace passam a ver. Quem gerencia conectores escolhe quais agentes usam.",
+      moveText:
+        "Todos do workspace passam a ver. Quem gerencia agentes, e o dono de cada agente, escolhem quais agentes usam.",
       moved: "{{name}} agora é da equipe.",
     },
     addTitle: "Adicionar conector",
@@ -15167,6 +15172,8 @@ export const ptBR = {
       createRefused: "Você não pode criar um workspace agora.",
       noAgentToRemind: "Nenhum agente desta conversa pode lembrar você.",
       agentCantRead: "Deixe o agente ler isto primeiro, nos acessos dele.",
+      /** A routine on someone else's own connection: only that person's own routine waits on its events. */
+      connectionNotYours: "Esta conexão é pessoal de outra pessoa. Só uma rotina dela pode esperar pelos eventos dela.",
       neverHappens: "Este agendamento nunca acontece.",
       soleOwner:
         "Você é a única pessoa dona de um workspace com outros membros. Passe a posse a alguém, ou apague o workspace, antes.",

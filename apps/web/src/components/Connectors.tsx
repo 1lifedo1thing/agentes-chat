@@ -197,6 +197,8 @@ export function ConnectorsSection({
   const scope = tabs.tab;
   const personal = scope === "personal";
   const { items, mailboxes: accounts } = tabs;
+  // On Pessoal a person's mailboxes are a group of their own: they keep their own rule (ADR 0038), not the note's.
+  const listedMail = personal ? [] : accounts;
   // Databases are the team's.
   const dbList = personal ? [] : (databases.data ?? []);
   const mayAdd = admin || personal;
@@ -272,6 +274,19 @@ export function ConnectorsSection({
       onMove={() => setMoving(item)}
     />
   );
+  const mailRow = (account: (typeof accounts)[number]) => (
+    <MailRow
+      key={`mail-${account.id}`}
+      account={account}
+      agents={agentList}
+      admin={connectionActs(account, me.user.id, admin).change}
+      onTools={() => setMailFlow({ step: 1, account })}
+      onWho={() => setMailFlow({ step: 2, account })}
+      onAddresses={() => setAddressesOf(account)}
+      onReconnect={() => reconnect(account)}
+      onDisconnect={() => setRemovingMail(account)}
+    />
+  );
   const loaded = connections.isSuccess && servers.isSuccess;
   // Pessoal is one list across both cards: its empty state shows only when nothing at all is there.
   const noneYet =
@@ -300,7 +315,16 @@ export function ConnectorsSection({
           personal={tabs.mine}
         />
       )}
-      {personal && tabs.mine > 0 && (
+      {personal && accounts.length > 0 && (
+        <Card aria-labelledby="sec-own-mail">
+          <CardHeader id="sec-own-mail" icon="mail" title={t("connectors.personal.mailTitle")} />
+          <p className="small muted">{t("connectors.personal.mailNote")}</p>
+          <List className="connected-list" aria-label={t("connectors.personal.mailTitle")}>
+            {accounts.map(mailRow)}
+          </List>
+        </Card>
+      )}
+      {personal && items.length > 0 && (
         <p className="small muted ac-iconline connected-note">
           <Icon name="lock" size={14} />
           <span>{t("connectors.personal.note")}</span>
@@ -347,24 +371,12 @@ export function ConnectorsSection({
             {t(personal ? "connectors.personal.emptyText" : admin ? "connectors.none" : "access.noConnectorsViewer")}
           </EmptyState>
         )}
-        {personal && loaded && !noneYet && apps.length + accounts.length === 0 && (
+        {personal && loaded && !noneYet && apps.length === 0 && (
           <p className="small muted">{t("connectors.personal.noApps")}</p>
         )}
-        {apps.length + accounts.length + dbList.length > 0 && (
+        {apps.length + listedMail.length + dbList.length > 0 && (
           <List className="connected-list" aria-label={t("connectors.connectedList")}>
-            {accounts.map((account) => (
-              <MailRow
-                key={`mail-${account.id}`}
-                account={account}
-                agents={agentList}
-                admin={connectionActs(account, me.user.id, admin).change}
-                onTools={() => setMailFlow({ step: 1, account })}
-                onWho={() => setMailFlow({ step: 2, account })}
-                onAddresses={() => setAddressesOf(account)}
-                onReconnect={() => reconnect(account)}
-                onDisconnect={() => setRemovingMail(account)}
-              />
-            ))}
+            {listedMail.map(mailRow)}
             {dbList.map((connection) => (
               <DatabaseRow
                 key={`db-${connection.id}`}
@@ -879,9 +891,9 @@ function OthersPersonal({
       <List className="connected-list" aria-labelledby="connected-others">
         {all ? rows : rows.slice(0, OTHERS_INLINE)}
       </List>
-      {!all && total > OTHERS_INLINE && (
-        <Button variant="link" onClick={() => setAll(true)}>
-          {t("connectors.personal.seeAll", { count: total })}
+      {total > OTHERS_INLINE && (
+        <Button variant="link" aria-expanded={all} onClick={() => setAll(!all)}>
+          {all ? t("folded.less") : t("connectors.personal.seeAll", { count: total })}
         </Button>
       )}
     </section>

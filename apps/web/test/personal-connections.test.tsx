@@ -250,6 +250,51 @@ describe("Conectores: the split covers both cards", () => {
     expect(within(others).getAllByRole("button", { name: /^CRM \d do João/ })).toHaveLength(5);
     await click(within(others).getByRole("button", { name: "Ver todas as 7" }));
     expect(within(others).getAllByRole("button", { name: /^CRM \d do João/ })).toHaveLength(7);
+    // And folds back the way it opened.
+    await click(within(others).getByRole("button", { name: "Mostrar menos" }));
+    expect(within(others).getAllByRole("button", { name: /^CRM \d do João/ })).toHaveLength(5);
+  });
+
+  test("Pessoal: one's mailboxes are a group of their own with their own rule; the note is over the connections", async () => {
+    const state = seedState({ connections: [] });
+    asMember(state);
+    const api = createFakeApi(state);
+    const mail = fakeMailOf.get(api);
+    if (!mail) throw new Error("no mail fake");
+    mail.accounts = [
+      {
+        id: "mail-1",
+        provider: "imap",
+        via: "imap",
+        address: "walter@example.com",
+        offActions: [],
+        askActions: [],
+        aliases: [],
+        defaultFrom: null,
+        label: "Trabalho",
+        status: "active",
+        lastError: null,
+        preset: "icloud",
+        createdAt: NOW.toISOString(),
+        ownerUserId: state.me?.user.id ?? null,
+        agents: [],
+      },
+    ];
+    await openConnectors(api);
+    const box = screen().getByRole("region", { name: "Suas caixas de email" });
+    expect(box.textContent).toContain("Quando outra pessoa pede algo que precisa de aprovação, quem aprova é você.");
+    expect(box.textContent).toContain("Trabalho");
+    expect(section().textContent).not.toContain("Trabalho");
+    // Nothing but a mailbox: the connections' note has nothing under it, so it isn't there.
+    expect(document.body.textContent).not.toContain("Só você abre estas conexões.");
+    cleanup();
+    await personalServer(state, api, state.me?.user.id ?? "", "https://notes.example.com/mcp", "Minhas notas");
+    await openConnectors(api);
+    expect(document.body.textContent).toContain("Só você abre estas conexões.");
+    const note = document.querySelector(".connected-note");
+    const mailCard = screen().getByRole("region", { name: "Suas caixas de email" });
+    // The note comes after the mailboxes, right over the connections.
+    expect(note && mailCard.compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 

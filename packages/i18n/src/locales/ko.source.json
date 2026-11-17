@@ -31260,6 +31260,12 @@
   "connectors.personal.noApps": {
     "value": "Services you connect just for yourself show up here."
   },
+  "connectors.personal.mailTitle": {
+    "value": "Your mailboxes"
+  },
+  "connectors.personal.mailNote": {
+    "value": "Agents you allowed use your mailboxes as you set, also for people who talk to them directly. When someone else asks for something that needs approval, you're the one who approves it."
+  },
   "connectors.personal.others": {
     "value": "Others' personal connections"
   },
@@ -31321,7 +31327,7 @@
     "value": "Move {{name}} to the team?"
   },
   "connectors.personal.moveText": {
-    "value": "Everyone in the workspace sees it. People who manage connectors choose which agents use it."
+    "value": "Everyone in the workspace sees it. People who manage agents, and each agent's owner, choose which agents use it."
   },
   "connectors.personal.moved": {
     "value": "{{name}} now belongs to the team."
@@ -36851,6 +36857,9 @@
   },
   "errors.said.agentCantRead": {
     "value": "Let the agent read this first, in its access settings."
+  },
+  "errors.said.connectionNotYours": {
+    "value": "This connection is someone else's own. Only a routine of theirs can wait on its events."
   },
   "errors.said.neverHappens": {
     "value": "This schedule never happens."

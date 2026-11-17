@@ -135,6 +135,26 @@ describe("Conectores on the phone: Equipe | Pessoal as the web's (ADR 0099 adden
   });
 });
 
+describe("Pessoal on the phone: one's mailboxes keep their own rule", () => {
+  test("they are a group of their own, with their line, and the connections' note sits over the connections only", () => {
+    const screen = src("features/connectors/ConnectorsScreen.tsx");
+    expect(screen).toContain("const rowMail = personal ? [] : mailboxes;");
+    expect(screen).toContain('t("connectors.personal.mailTitle")');
+    expect(screen).toContain('t("connectors.personal.mailNote")');
+    const group = screen.indexOf('t("connectors.personal.mailNote")');
+    const note = screen.indexOf('t("connectors.personal.note")');
+    expect(group).toBeGreaterThan(0);
+    expect(note).toBeGreaterThan(group);
+    expect(screen).toContain("{personal && items.length > 0 ? (");
+  });
+
+  test("the words are true of the code: the mailbox rule, and who gives a team connection to agents", async () => {
+    const pt = await translator("pt-BR");
+    expect(pt("connectors.personal.mailNote")).toContain("também para quem fala direto com eles");
+    expect(pt("connectors.personal.moveText")).toContain("Quem gerencia agentes, e o dono de cada agente");
+  });
+});
+
 describe("Connecting on the phone: Para quem and the closing line", () => {
   test("a personal connection says so on every call; the team's sends nothing new", () => {
     const sheet = src("features/connectors/ConnectSheet.tsx");
