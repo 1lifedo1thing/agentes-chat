@@ -67,6 +67,8 @@ export default function MainStack() {
       // On the sign-in's ruler, its own sky (the scanner: the camera): a clear bar, the system's back over it.
       "me/team-server": cover,
       "me/scan": cover,
+      // A background photo's preview: the photo fills the screen, a clear bar and the back button over it.
+      "me/chat-wallpaper-photo": cover,
       "connectors/oauth": bare,
       // A bare link to a browser request: finds its conversation and replaces itself with it.
       "handoff/[id]": bare,
