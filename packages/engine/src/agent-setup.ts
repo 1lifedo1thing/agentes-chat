@@ -478,6 +478,11 @@ export interface NewAgentSetup {
   account?: {
     id: string;
     label: string;
+    /** Its owner gave it its name (`isDefaultAccountLabel`); else the apps show it by its email. */
+    named: boolean;
+    /** The caller's own's only. */
+    email: string | null;
+    plan: string | null;
     provider: string | null;
     /** The caller's own: a plan thinks only for its owner's agents. */
     mine: boolean;
@@ -538,6 +543,9 @@ export async function getNewAgentSetup(
       ? {
           id: listed.id,
           label: listed.label,
+          named: listed.named,
+          email: listed.email,
+          plan: listed.plan,
           provider: listed.provider,
           mine: listed.mine,
           free: listed.shared || listed.usedByIds.length === 0,

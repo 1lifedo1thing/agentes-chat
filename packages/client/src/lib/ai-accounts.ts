@@ -209,12 +209,46 @@ export const identityUnknown = (
 /**
  * An account by its name with its plan once ("Claude · Max", "Trabalho · Ultra"); a key account by its name. A name
  * that already says the plan stays as it is: servers before ADR 0059's 2026-10-30 amendment name accounts after it
- * ("Claude Max 2"), and the phone talks to those too.
+ * ("Claude Max 2"), and the phone talks to those too. How a computer's own sign-in, someone else's account and a key
+ * account read; the viewer's own accounts read by `accountTitle`.
  */
-export const accountTitle = (a: Pick<MachineAccount, "label" | "plan">) =>
+export const labelTitle = (a: Pick<MachineAccount, "label" | "plan">) =>
   a.plan && !a.label.toLowerCase().split(/\s+/).includes(a.plan.toLowerCase())
     ? `${a.label} · ${planName(a.plan)}`
     : a.label;
+
+type TitledAccount = Pick<MachineAccount, "label" | "plan" | "email" | "mine" | "named" | "keyHint" | "provider">;
+
+/** Read by its name (`labelTitle`), not its email: someone else's (whose email the viewer never gets), or a key account (its key's end tells it apart). */
+const byLabel = (a: Pick<TitledAccount, "mine" | "keyHint" | "provider">) =>
+  !a.mine || a.keyHint != null || isPlanId(a.provider);
+
+/**
+ * An account as every app titles it (web, desktop, phone): the name its owner gave it, else its email, else "Unnamed
+ * account" where its sign-in says no email (Claude's token for all agents, ADR 0059 §2), never the automatic
+ * "Claude 2". Someone else's account and a key account keep their name with the plan (`labelTitle`).
+ */
+export function accountTitle(t: TFunction, a: TitledAccount): string {
+  if (byLabel(a)) return labelTitle(a);
+  if (a.named === true) return a.label;
+  return a.email ?? t("aiAccounts.unnamed");
+}
+
+/** Whether the title is "Unnamed account": the viewer's own account with no name of theirs and no email. */
+export const unnamedAccount = (a: TitledAccount) => !byLabel(a) && a.named !== true && !a.email;
+
+/**
+ * What an account's line starts with, where its title doesn't say it: the email under a name its owner gave it, then
+ * its plan ("ana@acme.com · Max"). Nothing for an account read by its name (`labelTitle` says the plan).
+ */
+export function accountSub(a: TitledAccount): string | undefined {
+  if (byLabel(a)) return undefined;
+  return [a.named === true ? a.email : null, a.plan ? planName(a.plan) : null].filter(Boolean).join(" · ") || undefined;
+}
+
+/** `accountSub` before the rest of an account's line ("Max · Também usada por Infra"). */
+export const withSub = (a: TitledAccount, rest?: string | null) =>
+  [accountSub(a), rest].filter(Boolean).join(" · ") || undefined;
 
 /** Whether the accounts sit on more than one computer: only then does a row say on which ("no MacBook"). */
 export const onSeveralComputers = (accounts: readonly { machineId: string }[]) =>
@@ -223,10 +257,15 @@ export const onSeveralComputers = (accounts: readonly { machineId: string }[]) =
 /**
  * The line under an account in an agent's account choice (Quem pensa and Connect an AI, web and phone): whose it is
  * when it isn't the viewer's, the agents on it where choosing it signs this agent in to it too, signed out, the
- * agents it would be taken from (or those it thinks for too, made for all of its owner's agents), else its key's end
- * or its email. One the computer couldn't check says so, never signed out.
+ * agents it would be taken from (or those it thinks for too, made for all of its owner's agents), else its key's end.
+ * One the computer couldn't check says so, never signed out. After what the title leaves out of the viewer's own
+ * (`accountSub`: the email under a name they gave it, the plan).
  */
-export function accountAbout(
+export function accountAbout(t: TFunction, choice: AccountChoice<MachineAccount>, agentName: string): string | undefined {
+  return withSub(choice.login, aboutRest(t, choice, agentName));
+}
+
+function aboutRest(
   t: TFunction,
   { login: a, usedBy, also }: AccountChoice<MachineAccount>,
   agentName: string,
@@ -244,7 +283,7 @@ export function accountAbout(
     return t("agentPage.work.brain.accountAlso", { agents: joinNames(others, t) });
   }
   if (others.length) return t("agentPage.work.brain.accountMove", { agents: others.join(", ") });
-  return a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : (a.email ?? undefined);
+  return a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : undefined;
 }
 
 /**
@@ -349,7 +388,7 @@ export const planWordOf = (plan: string | null) =>
 
 /** A computer's own sign-in as "Seus planos" titles it: its CLI's maker and its plan ("Claude · Max"). */
 export const ownSignInTitle = (t: TFunction, o: Pick<OwnSignInRow, "kind" | "plan">) =>
-  accountTitle({ label: t(`aiAccounts.connect.${o.kind}`), plan: o.plan });
+  labelTitle({ label: t(`aiAccounts.connect.${o.kind}`), plan: o.plan });
 
 /**
  * A computer's own sign-in by name: on a computer the viewer connected, the account their agents there share; on

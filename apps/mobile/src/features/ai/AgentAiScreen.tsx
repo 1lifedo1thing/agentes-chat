@@ -62,7 +62,7 @@ import {
   thinkingUsage,
 } from "./logic";
 import { openConnectAi } from "./NoAiCard";
-import { AiRow, Note, PlanHoldNote, usePlanHold } from "./parts";
+import { AiRow, Note, openRenameAiAccount, PlanHoldNote, usePlanHold } from "./parts";
 import { useSaveBrain } from "./useSaveBrain";
 
 /*
@@ -229,6 +229,9 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                       row={accountRow(t, c, name, i18n.language)}
                       checked={c.login.id === account}
                       onPress={() => (c.also ? connect(c.login, true) : choose(c.login))}
+                      {...(c.login.mine && view.computer
+                        ? { onRename: () => view.computer && openRenameAiAccount(view.computer.machineId, c.login.id) }
+                        : {})}
                     />
                   ))}
                   {adds ? (

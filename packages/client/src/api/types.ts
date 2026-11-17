@@ -6046,6 +6046,8 @@ export interface MachineAccount {
   id: string;
   kind: MachineAccountKind;
   label: string;
+  /** Its owner gave it its name; false or absent (an older server): the automatic one ("Claude 2"), so the apps show the account by its email. */
+  named?: boolean;
   /** Only for its owner. */
   email: string | null;
   /** `pro`, `max`, `ultra`, `team`… from what the CLI says (`planWordOf` names it). */
@@ -6230,7 +6232,17 @@ export interface NewAgentSetup {
   /** A computer brain: where it thinks. */
   computer?: { machineId: string; name: string };
   /** Its account there; null = that computer's own sign-in. */
-  account?: { id: string; label: string; provider: string | null; mine: boolean; free: boolean } | null;
+  account?: {
+    id: string;
+    label: string;
+    /** Its owner gave it its name; false or absent (an older server): shown by its email. */
+    named?: boolean;
+    email?: string | null;
+    plan?: string | null;
+    provider: string | null;
+    mine: boolean;
+    free: boolean;
+  } | null;
   /** The computer's own sign-in thinks for the caller's agents there (they connected it). */
   ownSignIn?: boolean;
   effort?: BrainEffortSetting | null;
@@ -7801,6 +7813,8 @@ export interface PlanAccountInfo {
   /** Null: the computer's own sign-in ("Conta deste computador"). */
   accountId: string | null;
   label: string | null;
+  /** Its owner gave it its name; false or absent (an older server): the automatic one, shown by its email. */
+  named?: boolean;
   plan: string | null;
   /** A key account's coding plan (`zai`, `kimi`…). */
   provider: string | null;

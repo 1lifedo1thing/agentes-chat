@@ -2,7 +2,7 @@ import type { AgentBrain, AgentBrainInput, AgentSetup, BrainKind, MachineAccount
 import { keys, useAgents, useApi, useSetComputerTarget, useUpdateAgent } from "@agenteschat/client";
 import type { BrainScreen } from "@agenteschat/client/lib/agent-edit";
 import { autonomyWords, setupOutcome } from "@agenteschat/client/lib/agent-setup";
-import { signInPlan } from "@agenteschat/client/lib/ai-accounts";
+import { accountTitle, signInPlan } from "@agenteschat/client/lib/ai-accounts";
 import { EVERYONE_AUDIENCE, setupPlanQuestion } from "@agenteschat/client/lib/audience";
 import { thinksWith } from "@agenteschat/client/lib/brain";
 import {
@@ -725,7 +725,7 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
           </div>
           {arrived && (
             <SettingNote icon="check" live>
-              {t("agentPage.work.brain.add.done", { account: arrived.label, computer: s.computerName })}
+              {t("agentPage.work.brain.add.done", { account: accountTitle(t, arrived), computer: s.computerName })}
             </SettingNote>
           )}
           {s.kind !== "model" && !view.canUsePlans && ownerFirst && (

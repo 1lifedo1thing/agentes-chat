@@ -3863,6 +3863,15 @@ export const en = {
     /** An account of this plan the person already has on that computer, for all of their agents there. */
     use: "Use {{label}}",
     another: "Another account",
+    /** A plain plan panel's list of the person's accounts of that plan, each by its email (or the name they gave it). */
+    which: {
+      title: "Which {{brand}} account will {{name}} use?",
+      title_female: "Which {{brand}} account will {{name}} use?",
+      titleAll: "Which {{brand}} account will they use?",
+      mine: "Your {{brand}} accounts on {{computer}}",
+      /** The list's last line, and the title of its sign-in. */
+      other: "Sign in with another {{brand}} account",
+    },
     /** Before a new sign-in, where the person already has an account of that plan on that computer (`reusableAccount`). */
     reuse: {
       active: "You already have {{label}} here. Sign in to it again, or use another account.",
@@ -10844,6 +10853,14 @@ export const en = {
     },
   },
   aiAccounts: {
+    /** An account of the viewer's that says no email and has no name of theirs yet (Claude's token for all agents). */
+    unnamed: "Unnamed account",
+    /** The pencil after an account's title, and the field it opens in the row. */
+    rename: {
+      action: "Rename {{label}}",
+      label: "Account name",
+      placeholder: "E.g. Work, Personal",
+    },
     share: {
       switch: "Answers other people",
       switchAll: "Answer other people",

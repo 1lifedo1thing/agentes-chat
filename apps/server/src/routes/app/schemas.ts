@@ -1024,6 +1024,10 @@ export const MachineAccount = z
     id: z.uuid(),
     kind: AccountKind,
     label: z.string(),
+    named: z.boolean().openapi({
+      description:
+        "Its owner gave it its name; false: the name is the automatic one (\"Claude 2\"), and the apps show the account by its email.",
+    }),
     email: z.string().nullable().openapi({ description: "Only for its owner." }),
     plan: z
       .string()
@@ -1234,6 +1238,9 @@ export const NewAgentSetup = z
       .object({
         id: z.uuid(),
         label: z.string(),
+        named: z.boolean().openapi({ description: "Its owner gave it its name; false: shown by its email." }),
+        email: z.string().nullable().openapi({ description: "Only for its owner." }),
+        plan: z.string().nullable(),
         provider: z.string().nullable(),
         mine: z.boolean(),
         free: z.boolean().openapi({

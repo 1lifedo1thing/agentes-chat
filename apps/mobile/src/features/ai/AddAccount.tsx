@@ -102,7 +102,7 @@ export function AddAccount(props: AddAccountProps) {
   // Whether there is an account to sign in again first: the steps' shape until it's known.
   if (reuse === undefined) return <SkeletonList rows={2} />;
   const chosen = reuse ? (pick ?? (signInOf(reuse) === "signed_out" ? "again" : undefined)) : "new";
-  const label = reuse ? accountTitle(reuse) : "";
+  const label = reuse ? accountTitle(t, reuse) : "";
   const another = (
     <Button size="sm" variant="secondary" label={t("connectAi.another")} onPress={() => setPick("new")} />
   );
@@ -381,7 +381,9 @@ function AddAccountFlow({
           ? plan
             ? t("aiAccounts.add.duplicateKey", { account: result.duplicate.label })
             : t(`agentPage.work.brain.add.duplicate.${kind}`, {
-                account: result.duplicate.account?.email ?? result.duplicate.label,
+                account: result.duplicate.account
+                  ? accountTitle(t, result.duplicate.account)
+                  : result.duplicate.label,
               })
           : notShared
             ? t("agentPage.work.brain.add.geminiNotShared", { computer })

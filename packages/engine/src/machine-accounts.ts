@@ -131,6 +131,8 @@ export interface MachineAccountView {
   id: string;
   kind: AccountKind;
   label: string;
+  /** Its owner gave it its name (`isDefaultAccountLabel`): else the apps show it by its email. */
+  named: boolean;
   /** Its owner's eyes only. */
   email: string | null;
   plan: string | null;
@@ -212,6 +214,22 @@ export function defaultAccountLabel(kind: AccountKind, taken: readonly string[] 
   for (let n = 2; ; n++) if (!taken.includes(`${base} ${n}`)) return `${base} ${n}`;
 }
 
+/** Words older automatic names carried: the plan, before ADR 0059's 2026-10-30 amendment ("Claude Max 2"), or "Code". */
+const OLD_LABEL_WORDS = /^(code|pro\+?|max|ultra|team|teams|enterprise|plus|business|free)$/i;
+
+/**
+ * Whether a name is still one `defaultAccountLabel` gives ("Claude", "Claude 2", an older "Claude Max 2"), so the apps
+ * show the account by its email (or as unnamed, where its sign-in says no email), never as "Claude 2". Any other name
+ * is its owner's.
+ */
+export function isDefaultAccountLabel(kind: AccountKind, label: string, provider?: string | null): boolean {
+  const base = planOf(provider)?.label ?? BRAIN_PLAN_NAMES[kind];
+  if (!label.startsWith(base)) return false;
+  const rest = label.slice(base.length).trim().split(/\s+/).filter(Boolean);
+  if (rest.length > 0 && /^\d+$/.test(rest[rest.length - 1] ?? "")) rest.pop();
+  return rest.length === 0 || (rest.length === 1 && OLD_LABEL_WORDS.test(rest[0] ?? "") && label[base.length] === " ");
+}
+
 /** The names of an owner's accounts in the organization (`exceptId`'s aside). */
 async function takenLabels(db: Executor, orgId: string, ownerId: string | null, exceptId: string) {
   const rows = await db
@@ -241,6 +259,7 @@ function accountView(
     id: row.id,
     kind: kindOf(row),
     label: row.label,
+    named: !isDefaultAccountLabel(kindOf(row), row.label, row.provider),
     email: mine ? row.email : null,
     plan: row.plan,
     status: statusOf(row.status),

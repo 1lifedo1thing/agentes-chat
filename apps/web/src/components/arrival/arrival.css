@@ -708,6 +708,53 @@ html:not([data-pointer]) .arrival-have__row[data-state="checked"]:has(.ac-radio:
   font-size: 13px;
   line-height: 18px;
 }
+/* The title and, after it, the pencil that names the account (ADR 0059 §4): one line. */
+.arrival-have__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+/* "Unnamed account": quieter than a name or an email, until its owner names it. */
+.arrival-have__title[data-unnamed] {
+  color: var(--ink-muted);
+}
+.arrival-have__edit {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-block: -2px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.arrival-have__edit:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+.arrival-have__edit:focus-visible {
+  outline: none;
+  box-shadow: var(--field-ring);
+}
+/* The row while its name changes: the field and Save where the title stood. */
+.arrival-have__row[data-renaming] {
+  cursor: default;
+}
+.arrival-have__rename {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.arrival-have__rename > :first-child {
+  flex: 1;
+  min-width: 0;
+}
 /* The state is the words; the colour only follows them. */
 .arrival-have__line[data-plan="almost"] {
   color: var(--attention);

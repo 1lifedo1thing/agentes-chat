@@ -3761,6 +3761,15 @@ export const ptBR = {
     onceHint: "Todos dividem os limites do seu plano.",
     use: "Usar {{label}}",
     another: "Outra conta",
+    /** A plain plan panel's list of the person's accounts of that plan, each by its email (or the name they gave it). */
+    which: {
+      title: "Qual conta do {{brand}} o {{name}} vai usar?",
+      title_female: "Qual conta do {{brand}} a {{name}} vai usar?",
+      titleAll: "Qual conta do {{brand}} eles vão usar?",
+      mine: "Suas contas do {{brand}} no {{computer}}",
+      /** The list's last line, and the title of its sign-in. */
+      other: "Entrar com outra conta do {{brand}}",
+    },
     /** Before a new sign-in, where the person already has an account of that plan on that computer (`reusableAccount`). */
     reuse: {
       active: "Você já tem {{label}} aqui. Entre de novo nela, ou use outra conta.",
@@ -10835,6 +10844,14 @@ export const ptBR = {
     },
   },
   aiAccounts: {
+    /** An account of the viewer's that says no email and has no name of theirs yet (Claude's token for all agents). */
+    unnamed: "Conta sem nome",
+    /** The pencil after an account's title, and the field it opens in the row. */
+    rename: {
+      action: "Mudar o nome de {{label}}",
+      label: "Nome da conta",
+      placeholder: "Ex.: Trabalho, Pessoal",
+    },
     share: {
       /** Off by default: the agent answers only its owner while it thinks with their plan. */
       switch: "Atende outras pessoas",

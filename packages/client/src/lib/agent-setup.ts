@@ -6,6 +6,7 @@ import type {
   AgentSetupResult,
   BrainMachine,
   CommandApproval,
+  MachineAccount,
   Model,
   NewAgentSetup,
 } from "../api/types";
@@ -130,7 +131,8 @@ export type NewAgentStart = (
       brain: "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
       machineId: string;
       computer: string;
-      account: { id: string; label: string } | null;
+      /** Its title is `accountTitle`'s, as everywhere. */
+      account: Pick<MachineAccount, "id" | "label" | "named" | "email" | "plan" | "mine" | "keyHint" | "provider"> | null;
       /** Saved as its "Quem pensa" once the agent exists. */
       input: AgentBrainInput;
     }
@@ -163,7 +165,18 @@ export function newAgentStart(
     brain: s.brain,
     machineId: s.computer.machineId,
     computer: s.computer.name,
-    account: s.account ? { id: s.account.id, label: s.account.label } : null,
+    account: s.account
+      ? {
+          id: s.account.id,
+          label: s.account.label,
+          named: s.account.named,
+          email: s.account.email ?? null,
+          plan: s.account.plan ?? null,
+          mine: s.account.mine,
+          keyHint: null,
+          provider: s.account.provider,
+        }
+      : null,
     input: {
       brain: s.brain,
       account: s.account?.id ?? null,

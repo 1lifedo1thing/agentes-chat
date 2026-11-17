@@ -11,7 +11,7 @@ import type {
   PlanUseKind,
   PlanWindowParts,
 } from "../api/types";
-import { accountTitle, groupPlans, ownSignInName, ownSignIns, ownSignInTitle } from "./ai-accounts";
+import { accountSub, accountTitle, groupPlans, ownSignInName, ownSignIns, ownSignInTitle } from "./ai-accounts";
 import {
   daysBetween,
   firstName,
@@ -363,10 +363,10 @@ export function ownPlanLines(
           {
             key,
             logo: a.provider ?? a.kind,
-            name: accountTitle(a),
+            name: accountTitle(t, a),
             usage,
             computer: a.computer,
-            detail: a.email ?? (a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : null),
+            detail: accountSub(a) ?? (a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : null),
           },
         ]
       : [];
@@ -512,6 +512,13 @@ export const accountOwner = (t: TFunction, a: Pick<PlanAccountInfo, "ownerName">
   a.ownerName ? t("usageViews.whose", { name: firstName(a.ownerName) }) : null;
 
 /**
+ * Whose an account is, under its name (`accountName`): its email where the name is one its owner gave it, nothing
+ * where the email is already the name, else its owner.
+ */
+export const accountWhose = (t: TFunction, a: Pick<PlanAccountInfo, "ownerName" | "email" | "named">) =>
+  a.email ? (a.named === true ? a.email : null) : accountOwner(t, a);
+
+/**
  * Who uses a plan (ADR 0059 §3), in a few words for its row: "Todos usam", "Só você usa", "Só Ana usa". Null for the
  * computer's own sign-in, which thinks for its pairer's agents, or an older server that doesn't say.
  */
@@ -606,9 +613,17 @@ export function groupUsageAccounts(
   return out;
 }
 
-/** What people call a plan account: its label, or the computer's own sign-in's name (`ownSignInName`). */
-export const accountName = (t: TFunction, a: Pick<PlanAccountInfo, "label" | "machineName" | "mine" | "kind">) =>
-  a.label ?? ownSignInName(t, a.mine, a.machineName, a.kind);
+/**
+ * What people call a plan account: as every app titles it (`accountTitle`: a name its owner gave it, else its email),
+ * or the computer's own sign-in's name (`ownSignInName`).
+ */
+export const accountName = (
+  t: TFunction,
+  a: Pick<PlanAccountInfo, "label" | "named" | "email" | "plan" | "provider" | "machineName" | "mine" | "kind">,
+) =>
+  a.label === null
+    ? ownSignInName(t, a.mine, a.machineName, a.kind)
+    : accountTitle(t, { ...a, label: a.label, keyHint: null });
 
 /** Who makes what an account thinks with: a coding plan's maker, else Claude Code or Codex. */
 export const brandOf = (a: Pick<PlanAccountInfo, "kind" | "provider">) =>

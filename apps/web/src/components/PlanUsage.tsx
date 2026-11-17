@@ -46,6 +46,7 @@ import {
   accountName,
   accountOwner,
   accountShares,
+  accountWhose,
   brandOf,
   groupUsageAccounts,
   loginsText,
@@ -73,7 +74,7 @@ const WIDE_SPACE = "\u2002";
 /** An account's head: the maker's mark, its name and plan, its maker and whose it is. */
 export function AccountHead({ account, extra }: { account: PlanAccountInfo; extra?: string | null }) {
   const { t } = useTranslation();
-  const whose = account.email ?? accountOwner(t, account);
+  const whose = accountWhose(t, account);
   return (
     <div className="plan-acct ac-mediarow ac-mediarow--row">
       <span className="ac-mediarow__face">

@@ -19,6 +19,8 @@ import {
   ownSignInName,
   ownSignInTitle,
   signInOf,
+  unnamedAccount,
+  withSub,
 } from "@agenteschat/client/lib/ai-accounts";
 import { advancedContents, effortOf, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
 import { computerNameOf, setupView } from "@agenteschat/client/lib/computer";
@@ -51,7 +53,8 @@ import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { Icon, type IconName, ProviderLogo, planState } from "@agenteschat/ui";
 import { useTranslation } from "react-i18next";
 import { modelOptions as apiModelOptions, DEFAULT_KEY } from "@/components/AgentFields";
-import type { HaveItem } from "@/components/arrival/ConnectHave";
+import { type HaveItem, renameOf } from "@/components/arrival/ConnectHave";
+import { useRenameAccount } from "@/hooks/useRenameAccount";
 import { useOrg } from "@/components/org-context";
 import { useComputerEdition } from "@/components/WorkspaceComputer";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -95,6 +98,7 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
   const { org } = useOrg();
   const { agent, g, saved, can, ownerFirst } = useAgentEdit();
   const work = useWork();
+  const rename = useRenameAccount();
   const dir = useDirectory(org.id);
   const edition = useComputerEdition(org.id);
   const setupQ = useComputerSetup(org.id);
@@ -229,7 +233,7 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
       : t("agentPage.work.brain.accountOf", { name: firstName(a.ownerName ?? "") });
     const alsoUsed =
       others.length > 0 && a.shared === true
-        ? t("agentPage.work.brain.accountAlso", { agents: namesText(t, others, 2) })
+        ? withSub(a, t("agentPage.work.brain.accountAlso", { agents: namesText(t, others, 2) }))
         : undefined;
     return {
       id: `account:${a.id}`,
@@ -239,7 +243,10 @@ export function useBrainState(view: AgentBrain, opts: { added: readonly MachineA
       account: a,
       act,
       current,
-      title: accountTitle(a),
+      title: accountTitle(t, a),
+      unnamed: unnamedAccount(a),
+      // The accounts listed here are on the agent's computer.
+      rename: renameOf(t, a, view.computer?.machineId, rename),
       // Under its owner's name the group says whose it is; the one in use says it on its own line.
       about: !a.mine && !current ? undefined : (alsoUsed ?? accountAbout(t, c, agent.name)),
       whose,

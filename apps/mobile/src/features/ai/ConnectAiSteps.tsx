@@ -19,6 +19,8 @@ import {
   listsExisting,
   planWordOf,
   signInPlan,
+  unnamedAccount,
+  withSub,
 } from "@agenteschat/client/lib/ai-accounts";
 import { computerEdition, computerName, managedNamed, setupView } from "@agenteschat/client/lib/computer";
 import { CUSTOM_PROVIDER } from "@agenteschat/client/lib/endpoints";
@@ -109,6 +111,7 @@ import {
   alertKeyRefused,
   Note,
   OpenPage,
+  openRenameAiAccount,
   PasteField,
   PlanHoldNote,
   PlanReplies,
@@ -397,7 +400,7 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
     const take = (moveAccount: boolean) =>
       void save(
         forAgent,
-        a.label,
+        accountTitle(t, a),
         () =>
           api.agents.setBrain(orgId, forAgent.id, {
             brain: a.kind,
@@ -410,7 +413,7 @@ export function ConnectAiPage(props: ConnectAiFlowProps) {
     if (row.act === "move") {
       // One account thinks for one agent: picking another agent's takes it from that one.
       return Alert.alert(
-        a.label,
+        accountTitle(t, a),
         t("agentPage.work.brain.accountMove", { agents: takenFrom(a, forAgent.name).join(", ") }),
         [
           { text: t("common.cancel"), style: "cancel" },
@@ -932,7 +935,11 @@ function PlanPage(
             onDone={(account) => {
               // The flow stays on that agent; another plan moves on to the next one with no AI.
               onAgent(agent.id);
-              setDone({ agentId: agent.id, agent: agent.name, label: account?.label ?? planLabel(t, choice) });
+              setDone({
+                agentId: agent.id,
+                agent: agent.name,
+                label: account ? accountTitle(t, account) : planLabel(t, choice),
+              });
               props.onPlanDone(agent.id);
             }}
           />
@@ -1234,18 +1241,42 @@ function PlanSteps({
               onPress={() => void saveOwn()}
             />
           ) : null}
-          {existing.map((a) => (
-            <GroupedRow
-              key={a.id}
-              label={t("connectAi.use", { label: accountTitle(a) })}
-              {...(a.usedBy.length > 0
-                ? { sub: t("agentPage.work.brain.accountAlso", { agents: joinNames(a.usedBy, t) }) }
-                : {})}
-              onPress={() => void assign(a)}
-            />
-          ))}
+          {existing.map((a) => {
+            // Each by its email (or the name its owner gave it), its plan and who else uses it under it; the pencil
+            // opens its name.
+            const sub = withSub(
+              a,
+              a.usedBy.length > 0 ? t("agentPage.work.brain.accountAlso", { agents: joinNames(a.usedBy, t) }) : null,
+            );
+            const machineId = view?.computer?.machineId;
+            return (
+              <GroupedRow
+                key={a.id}
+                leading={<ProviderLogo id={a.provider ?? a.kind} size="sm" />}
+                label={accountTitle(t, a)}
+                faint={unnamedAccount(a)}
+                {...(sub ? { sub } : {})}
+                {...(machineId && a.mine
+                  ? {
+                      buttons: [
+                        {
+                          icon: "pen" as const,
+                          label: t("aiAccounts.rename.action", { label: accountTitle(t, a) }),
+                          onPress: () => openRenameAiAccount(machineId, a.id),
+                        },
+                      ],
+                    }
+                  : {})}
+                onPress={() => void assign(a)}
+              />
+            );
+          })}
           <GroupedRow
-            label={ownable ? t("connectAi.own.one", agentGrammar(agentName)) : t("connectAi.another")}
+            label={
+              ownable
+                ? t("connectAi.own.one", agentGrammar(agentName))
+                : t("connectAi.which.other", { brand: planLabel(t, choice) })
+            }
             checked={other}
             onPress={() => setOther(true)}
           />

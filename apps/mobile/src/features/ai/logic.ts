@@ -19,6 +19,7 @@ import {
   lendable,
   ownSignInLower,
   signInOf,
+  unnamedAccount,
 } from "@agenteschat/client/lib/ai-accounts";
 import { thinksWith } from "@agenteschat/client/lib/brain";
 import { type Advanced, advancedDefaults, advancedParts } from "@agenteschat/client/lib/brain-advanced";
@@ -182,7 +183,7 @@ export function accountSaved(
   const g = agentGrammar(agentName);
   if ("model" in input) return t("agentPage.work.saved.brain", { ...g, brain: thinksNow(t, saved) ?? "" });
   return a
-    ? t("agentPage.work.saved.account", { ...g, account: a.label })
+    ? t("agentPage.work.saved.account", { ...g, account: accountTitle(t, a) })
     : t("aiAccounts.done.savedAgent", { agent: agentName, label: ownSignInLower(t, saved.brain) });
 }
 
@@ -194,7 +195,8 @@ export const accountRow = (t: TFunction, choice: AccountChoice<MachineAccount>, 
   const usage = choice.login.usage;
   const word = planWord(t, locale, usage ? planState(usage, Date.now()) : null);
   return {
-    label: accountTitle(choice.login),
+    label: accountTitle(t, choice.login),
+    unnamed: unnamedAccount(choice.login),
     sub: accountAbout(t, choice, agentName),
     ...(word ? { below: word } : {}),
     mark: choice.login.provider ?? choice.login.kind,
