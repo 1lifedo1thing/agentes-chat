@@ -20,6 +20,7 @@ import {
   endsOnClaude,
   identityUnknown,
   keyRemovalText,
+  newestUsage,
   offersSignInAgain,
   onSeveralComputers,
   orderAccounts,
@@ -402,6 +403,7 @@ function AiAccounts() {
               const mine = rows.find((r) => r.id === a.id);
               if (mine) return accountRow(mine, g, n);
               const them = moves(g, a);
+              const usage = newestUsage(block);
               return (
                 <GroupedRow
                   key={a.id}
@@ -417,9 +419,9 @@ function AiAccounts() {
                   disabled={move.isPending}
                   {...(them.length > 0 ? { onPress: () => choose(accountTitle(t, a), them, t("common.cancel")) } : {})}
                   below={
-                    a.usage ? (
+                    usage ? (
                       <View style={styles.below}>
-                        <PlanMeter usage={a.usage} compact />
+                        <PlanMeter usage={usage} compact />
                       </View>
                     ) : undefined
                   }

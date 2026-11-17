@@ -21,6 +21,7 @@ import {
   listsExisting,
   lockedByOwner,
   lockedText,
+  newestUsage,
   offersSignInAgain,
   orderAccounts,
   orderDrop,
@@ -871,4 +872,11 @@ describe("an account's sign-ins, read from every login of it", () => {
     expect(signInNote(t, fine, false)).toBeNull();
     expect(againLogin(fine)?.id).toBe("d1");
   });
+});
+
+test("an order row of an account signed in once per agent shows its newest reading, not its first login's", () => {
+  const old = usage("2026-11-01T10:00:00Z", 90);
+  const fresh = usage("2026-11-02T10:00:00Z", 20);
+  expect(newestUsage([{ usage: old }, { usage: null }, { usage: fresh }])).toBe(fresh);
+  expect(newestUsage([{ usage: null }])).toBeNull();
 });

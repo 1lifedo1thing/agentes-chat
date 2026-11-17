@@ -1483,6 +1483,8 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(accounts).toContain("const note = signInNote(t, ownOf(a), Boolean(plan));");
     expect(accounts).toContain("onPress: () => signInAgain(againLogin(ownOf(a)) ?? a),");
     expect(accounts).toContain("loginsOf(a).some(offersSignInAgain)");
+    // Someone else's account in an order reads its newest usage, as the viewer's own rows do.
+    expect(accounts).toContain("const usage = newestUsage(block);");
     expect(accounts).toContain("disabled={g !== undefined && move.isPending}");
     expect(ai).toContain("const offers = waits && kind && view ?");
     expect(ai).toContain('chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null');
