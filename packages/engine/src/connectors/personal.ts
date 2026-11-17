@@ -50,14 +50,14 @@ export const othersPersonal = (c: Pick<ConnectorConnection, "ownerUserId">, acto
 /**
  * Someone else's own connection's name as others read it: one that kept its default form, the service and the account
  * its sign-in reached ("CRM (walter@example.com)"), goes by the service alone, as a mailbox's name that holds its
- * address does.
+ * address does. A number `freeLabel` added stays ("CRM (walter@example.com) 2" reads "CRM 2"), so two rows stay apart.
  */
 export function othersLabel(label: string, account: string | null | undefined) {
-  const named = account ? /^(.+) \((.+)\)$/.exec(label) : null;
+  const named = account ? /^(.+) \((.+)\)( \d+)?$/.exec(label) : null;
   if (!account || !named) return label;
-  const [, service = label, inside = ""] = named;
+  const [, service = label, inside = "", number = ""] = named;
   const flat = account.replace(/\s+/g, " ").trim().toLowerCase();
-  return flat.startsWith(inside.replace(/…$/, "").toLowerCase()) ? service : label;
+  return flat.startsWith(inside.replace(/…$/, "").toLowerCase()) ? `${service}${number}` : label;
 }
 
 /** A connection's name as an audit line keeps it: every reader of the log is "someone else" to a personal one. */

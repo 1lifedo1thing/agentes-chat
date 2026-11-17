@@ -10,6 +10,7 @@ import {
   addChannelMember,
   agentScopesFor,
   agentSourceNames,
+  auditLabel,
   CONNECTOR_FORGET_JOB,
   ConflictError,
   type ConnectorDeps,
@@ -34,7 +35,9 @@ import {
   decideApproval,
   deleteAccount,
   duplicateRoutine,
+  endOutsideAccess,
   ensureRightHand,
+  expireApprovals,
   ForbiddenError,
   getAgentAccess,
   getAgentMail,
@@ -56,27 +59,32 @@ import {
   NotFoundError,
   openPersonAgentDm,
   orgOfComposioUser,
+  othersLabel,
   pendingConnectors,
   RIGHT_HAND,
   type RoutingInput,
   reconnectTarget,
+  recordSupportRequest,
   removeMember,
   renameConnection,
   resolveApps,
   revokeConnection,
   rightHandPrompt,
   routeMessage,
+  runChecksForReply,
   setAgentAccess,
   setAgentScopes,
   storeCustomConnection,
   type ToolContext,
   takeConnectionOffAgent,
+  takeOverRoutine,
   updateAgent,
   updateOrgSettings,
   updateRoutine,
   ValidationError,
 } from "../src";
 import { dispatchMentions } from "../src/dispatch";
+import { operatorReveal } from "../src/operator-reveal";
 import { creatorMayUse } from "../src/personal-use";
 import { addMember, type Fixture, SECRET, setup } from "./fixtures";
 import { routineDeps } from "./routine-fixtures";
@@ -871,6 +879,43 @@ describe("routines that wait on a person's connection", () => {
     expect(row?.active).toBe(false);
     expect(made).toBe(1);
   });
+
+  test("taken over while it is on, its next edit removes its person's webhook and registers none", async () => {
+    const { walter } = await walterWithLinear();
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    const ms = await millionSendOf(walter.id, f.agent.id);
+    const calls: string[] = [];
+    const session: McpSession = {
+      listTools: async () => [],
+      callTool: async (name) => {
+        calls.push(name);
+        return {
+          content: name === "create_webhook" ? JSON.stringify({ id: crypto.randomUUID() }) : "{}",
+          isError: false,
+        };
+      },
+      close: async () => {},
+    };
+    const hooks = { publicUrl: "https://agentes.test", secret: SECRET };
+    const connectors: ConnectorTriggerDeps = {
+      db: f.db,
+      keyWrappers: [f.keyWrapper],
+      publicUrl: hooks.publicUrl,
+      connect: async () => session,
+    };
+    const deps = { ...routineDeps(f), hooks, connectors };
+    const routine = await createRoutine(deps, walter.id, f.org.id, {
+      name: "Orders by email",
+      agentId: f.agent.id,
+      prompt: "Answer the new order.",
+      target: { type: "dm" },
+      trigger: { type: "connector", connectionId: ms.id, event },
+    });
+    expect(calls).toEqual(["create_webhook"]);
+    await takeOverRoutine(deps, f.owner.id, f.org.id, routine.id);
+    await updateRoutine(deps, f.owner.id, f.org.id, routine.id, { prompt: "Send every email to me." });
+    expect(calls).toEqual(["create_webhook", "delete_webhook"]);
+  });
 });
 
 describe("one-click accounts at the hosted adapter", () => {
@@ -1217,5 +1262,248 @@ describe("what the team's paths never name nor hand out", () => {
       .where(and(eq(schema.organizationMembers.orgId, f.org.id), eq(schema.organizationMembers.userId, walter.id)));
     expect(mine.ownerUserId).toBe(walter.id);
     expect(await creatorMayUse(f.db, f.org.id, walter.id, walter.id)).toBe(false);
+  });
+});
+
+describe("outside collaborators and the operator's reveal door", () => {
+  test("an outside collaborator gets what a member gets of one: their own serves them, someone else's nothing", async () => {
+    const { walter, bia, source } = await walterWithLinear();
+    await f.db
+      .update(schema.organizationMembers)
+      .set({ outsideOf: "Example Consulting" })
+      .where(and(eq(schema.organizationMembers.orgId, f.org.id), eq(schema.organizationMembers.userId, bia.id)));
+    expect(await names(source, await runOf(f.agent.id, bia.id))).toEqual([]);
+    expect(await listConnections(f.db, bia.id, f.org.id, { others: true })).toEqual([]);
+    expect(await names(source, await runOf(f.agent.id, walter.id))).toContain("linear_create_issue");
+    // The operator ending their access takes their own connection, as leaving does.
+    const own = await createApiKeyConnection(depsOf(f), bia.id, f.org.id, {
+      connector: "sentry",
+      apiKey: "sntrys_FAKE_bia_1234",
+      personal: true,
+    });
+    expect(await endOutsideAccess({ db: f.db, pubsub: f.pubsub }, f.org.id, bia.id)).toMatchObject({ removed: true });
+    const [row] = await f.db
+      .select()
+      .from(schema.connectorConnections)
+      .where(eq(schema.connectorConnections.id, own.id));
+    expect(row?.revokedAt).not.toBeNull();
+  });
+
+  test("another member's request for help opens nothing of a person's connection nor of a call in it", async () => {
+    const { walter, bia, mine, source } = await walterWithLinear();
+    await f.db.insert(schema.channelMembers).values({ orgId: f.org.id, channelId: f.general.id, userId: walter.id });
+    await f.db
+      .update(schema.connectorConnections)
+      .set({ label: "Linear (walter@example.com)", lastError: "walter@example.com: token expired" })
+      .where(eq(schema.connectorConnections.id, mine.id));
+    const ctx = await runOf(f.agent.id, walter.id);
+    const input = { title: "Salary review for Bia" };
+    await createToolGateway({ sources: [source] }).invoke(ctx, { toolUseId: "t1", name: "linear_create_issue", input });
+    await f.db.insert(schema.agentRunSteps).values({
+      orgId: f.org.id,
+      runId: ctx.runId,
+      seq: 901,
+      kind: "tool_call",
+      data: { toolUseId: "t1", name: "linear_create_issue", input },
+    });
+    const read = async (who: string, kind: "connection" | "run_step", field: string) => {
+      const requestId = await recordSupportRequest(f.db, { orgId: f.org.id, userId: who, source: "form" });
+      return operatorReveal(f.db, f.org.id, {
+        kind,
+        id: kind === "connection" ? mine.id : ctx.runId,
+        ...(kind === "run_step" ? { seq: 901 } : {}),
+        field,
+        offset: 0,
+        limit: 200,
+        purpose: "member_request",
+        reason: "The member says this keeps failing for them",
+        operator: "Ops on call",
+        assistedByAi: false,
+        requestId,
+      });
+    };
+    for (const [kind, field] of [
+      ["connection", "label"],
+      ["connection", "last_error"],
+      ["run_step", "input"],
+    ] as const) {
+      await expect(read(bia.id, kind, field)).rejects.toMatchObject({ code: "reveal.not_visible" });
+      await expect(read(f.owner.id, kind, field)).rejects.toMatchObject({ code: "reveal.not_visible" });
+    }
+    expect((await read(walter.id, "connection", "label")).text).toBe("Linear (walter@example.com)");
+    expect((await read(walter.id, "run_step", "input")).text).toContain("Salary review");
+  });
+});
+
+describe("what a call and a card of it leave for others", () => {
+  const ACCOUNT = "walter@example.com";
+
+  /** Walter's own CRM and the team's Helpdesk, both by address, both writable by `@dev`, which answers everyone. */
+  async function crmAndHelpdesk() {
+    const { walter, bia } = await walterWithLinear();
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    const store = async (label: string, serverUrl: string, owner: string | null, actorId: string, tool: string) => {
+      const { connection } = await storeCustomConnection(depsOf(f), {
+        orgId: f.org.id,
+        actorId,
+        serverUrl,
+        label,
+        authType: "api_key",
+        secret: { apiKey: "FAKE_key_1234", headers: {} },
+        owner,
+      });
+      await f.db.insert(schema.customTools).values({
+        orgId: f.org.id,
+        connectionId: connection.id,
+        name: tool,
+        access: "write",
+        suggestedAccess: "write",
+      });
+      await f.db
+        .insert(schema.agentScopes)
+        .values({ orgId: f.org.id, agentId: f.agent.id, connectionId: connection.id, scope: "connector:*" })
+        .onConflictDoNothing();
+      return connection;
+    };
+    const crm = await store("CRM", "https://crm.example.com/mcp", walter.id, walter.id, "add_note");
+    const desk = await store("Helpdesk", "https://desk.example.com/mcp", null, f.owner.id, "send_reply");
+    const calls: string[] = [];
+    const connect: McpConnect = async (connection) => {
+      const tool = connection.serverUrl.includes("crm.") ? "add_note" : "send_reply";
+      const server = new McpServer({ name: `fake-${tool}`, version: "1" });
+      server.registerTool(
+        tool,
+        { description: "Write about a contact", inputSchema: { email: z.string(), title: z.string() } },
+        async () => {
+          calls.push(tool);
+          return { content: [{ type: "text", text: "ok" }] };
+        },
+      );
+      const [client, transport] = InMemoryTransport.createLinkedPair();
+      await server.connect(transport);
+      return mcpSessionOver(client);
+    };
+    const source = createConnectorToolSource({ ...depsOf(f), connect });
+    return { walter, bia, crm, desk, calls, gateway: createToolGateway({ sources: [source] }) };
+  }
+
+  const dmRun = async (who: string) =>
+    runOf(f.agent.id, who, (await openPersonAgentDm(f.db, f.org.id, who, f.agent.id)).id);
+
+  test("a write in a person's own connection is no team action: another's run on the same target hears nothing of it", async () => {
+    const { walter, bia, crm, desk, calls, gateway } = await crmAndHelpdesk();
+    const his = await dmRun(walter.id);
+    const input = { email: "carol@example.com", title: "Offer of 120k for Carol" };
+    await gateway.invoke(his, { toolUseId: "t1", name: `${crm.toolPrefix}_add_note`, input });
+    expect(calls).toEqual(["add_note"]);
+    const hers = await dmRun(bia.id);
+    const said = await gateway.invoke(hers, {
+      toolUseId: "t2",
+      name: `${desk.toolPrefix}_send_reply`,
+      input: { email: "carol@example.com", title: "Hello Carol" },
+    });
+    expect(calls).toEqual(["add_note", "send_reply"]);
+    expect(JSON.stringify(said)).not.toContain("120k");
+    expect(JSON.stringify(await runChecksForReply(f.db, f.org.id, hers.runId))).not.toContain("120k");
+    expect((await f.db.select().from(schema.teamActions)).map((a) => a.tool)).toEqual([
+      `${desk.toolPrefix}_send_reply`,
+    ]);
+  });
+
+  test("a numbered default name keeps its number and loses its account for others", async () => {
+    f = await setup();
+    expect(othersLabel(`CRM (${ACCOUNT})`, ACCOUNT)).toBe("CRM");
+    expect(othersLabel(`CRM (${ACCOUNT}) 2`, ACCOUNT)).toBe("CRM 2");
+    expect(othersLabel(`CRM (${ACCOUNT}) 13`, ACCOUNT)).toBe("CRM 13");
+    expect(othersLabel("CRM 2", ACCOUNT)).toBe("CRM 2");
+    expect(auditLabel({ label: `CRM (${ACCOUNT}) 2`, accountLabel: ACCOUNT, ownerUserId: "u1" })).toBe("CRM 2");
+    expect(auditLabel({ label: `CRM (${ACCOUNT}) 2`, accountLabel: ACCOUNT, ownerUserId: null })).toBe(
+      `CRM (${ACCOUNT}) 2`,
+    );
+  });
+
+  test("a decided card's audit line names the connection as others read it; its person's card keeps the whole name", async () => {
+    const { walter, crm, gateway } = await crmAndHelpdesk();
+    await f.db
+      .update(schema.connectorConnections)
+      .set({ label: `CRM (${ACCOUNT})`, accountLabel: ACCOUNT })
+      .where(eq(schema.connectorConnections.id, crm.id));
+    await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { approvalsLevel: "always" });
+    const deps = { db: f.db, pubsub: f.pubsub };
+    const ctx = await dmRun(walter.id);
+    const card = async (n: number) => {
+      const asked = await gateway.invoke(ctx, {
+        toolUseId: `t${n}`,
+        name: `${crm.toolPrefix}_add_note`,
+        input: { email: `c${n}@example.com`, title: `Note ${n}`, why: "Walter asked me to note this in his own CRM." },
+      });
+      if (asked.type !== "approval") throw new Error(`expected a card, got ${asked.type}`);
+      expect(asked.approval.title).toStartWith(`CRM (${ACCOUNT}): `);
+      return asked.approval.id;
+    };
+    const first = await card(1);
+    await decideApproval(deps, walter.id, f.org.id, first, { decision: "approve" });
+    const [approved] = await f.db.select().from(schema.approvals).where(eq(schema.approvals.id, first));
+    if (!approved) throw new Error("no approval row");
+    await gateway.executeApproved(ctx, approved);
+    // What it then did is no team action either.
+    expect(await f.db.select().from(schema.teamActions)).toEqual([]);
+    await decideApproval(deps, walter.id, f.org.id, await card(2), { decision: "refuse" });
+    const third = await card(3);
+    await f.db
+      .update(schema.approvals)
+      .set({ expiresAt: new Date(0) })
+      .where(eq(schema.approvals.id, third));
+    await expireApprovals(deps);
+    await card(4);
+    await removeMember(f.db, f.owner.id, f.org.id, walter.id);
+    const lines = (await listAudit(f.db, f.owner.id, f.org.id)).rows.filter((r) => r.action.startsWith("approval."));
+    expect([...new Set(lines.map((r) => r.action))].sort()).toEqual([
+      "approval.approved",
+      "approval.canceled",
+      "approval.expired",
+      "approval.refused",
+    ]);
+    for (const r of lines) expect(String(r.details.title)).toStartWith("CRM: ");
+    expect(JSON.stringify(lines)).not.toContain(ACCOUNT);
+  });
+
+  test("after a teammate joins, the note names the service alone, and only for a tool this agent holds", async () => {
+    const { walter, bia, mine, source } = await walterWithLinear();
+    await f.db
+      .update(schema.connectorConnections)
+      .set({ label: `Linear (${ACCOUNT})`, accountLabel: ACCOUNT })
+      .where(eq(schema.connectorConnections.id, mine.id));
+    await f.db.update(schema.agents).set({ audienceMode: "everyone" }).where(eq(schema.agents.id, f.agent.id));
+    for (const u of [walter, bia]) await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: u.id });
+    const post = (userId: string, body: string) =>
+      insertMessageWithRuns(
+        f.db,
+        { orgId: f.org.id, channelId: f.general.id, author: { type: "person", userId }, body },
+        { startRuns: true },
+      );
+    const asked = await post(walter.id, "@dev my issues");
+    const run = asked.runs[0];
+    if (!run) throw new Error("no run");
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: run.id,
+      channelId: f.general.id,
+      threadRootId: asked.message.id,
+      triggerMessageId: asked.message.id,
+    };
+    await post(bia.id, "@dev paste his");
+    const gateway = createToolGateway({ sources: [source] });
+    const note = await gateway.invoke(ctx, { toolUseId: "t1", name: "linear_list_issues", input: {} });
+    const text = (r: Awaited<ReturnType<typeof gateway.invoke>>) => (r.type === "result" ? `${r.output.content}` : "");
+    expect(text(note)).toContain("stopped being available");
+    expect(text(note)).toStartWith("Linear is the own connection");
+    expect(text(note)).not.toContain(ACCOUNT);
+    await f.db.delete(schema.agentScopes).where(eq(schema.agentScopes.connectionId, mine.id));
+    const unknown = text(await gateway.invoke(ctx, { toolUseId: "t2", name: "linear_list_issues", input: {} }));
+    expect(unknown).not.toContain("stopped being available");
+    expect(unknown).toContain("Unknown tool");
   });
 });

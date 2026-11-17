@@ -27,6 +27,7 @@ import { CONNECTOR_CATALOG } from "./connectors/catalog";
 import { toolPrefixOfConnection } from "./connectors/connections";
 import { isCustom } from "./connectors/custom";
 import { exposedToolName } from "./connectors/mcp";
+import { auditLabel } from "./connectors/personal";
 import { learnFromRefusal } from "./context/feedback";
 import type { MemoryJudging } from "./context/items";
 import { ConflictError, ForbiddenError, NotFoundError } from "./errors";
@@ -736,8 +737,8 @@ export async function repointApprovals(
 
 /**
  * `userId` left the workspace: the actions in their mailboxes and personal connections that may still run (waiting
- * for a person, or approved and not run) never run, and a run waiting on one hears it. In the transaction that removes them; then `publishApproval`
- * each row returned.
+ * for a person, or approved and not run) never run, and a run waiting on one hears it. In the transaction that
+ * removes them; then `publishApproval` each row returned.
  */
 export async function cancelMailboxApprovals(tx: Executor, orgId: string, userId: string, actorId: string) {
   const mailboxes = await tx
@@ -1097,15 +1098,30 @@ export async function decideApprovals(
 
 /**
  * An approval's ending in the audit log: the person who approved or refused it, or the system when it
- * expired unanswered. The action it then ran is the agent's own row (`tool.call`, agent-audit.ts).
+ * expired unanswered. The action it then ran is the agent's own row (`tool.call`, agent-audit.ts). A card of a
+ * person's own connection opens with its name as its person reads it: the line names it as others do (`auditLabel`).
  */
-function auditDecision(
+async function auditDecision(
   tx: Executor,
   row: Approval,
   personId: string | null,
   always: (RememberedKind & { connectionId: string | null }) | null = null,
   via: string | null = null,
 ) {
+  const [c] = row.connectionId
+    ? await tx
+        .select({
+          label: connectorConnections.label,
+          accountLabel: connectorConnections.accountLabel,
+          ownerUserId: connectorConnections.ownerUserId,
+        })
+        .from(connectorConnections)
+        .where(eq(connectorConnections.id, row.connectionId))
+    : [];
+  const title =
+    c?.ownerUserId && row.title.startsWith(`${c.label}: `)
+      ? auditLabel(c) + row.title.slice(c.label.length)
+      : row.title;
   return recordAudit(tx, {
     orgId: row.orgId,
     actor: personId ? { type: "person", id: personId } : { type: "system", id: null },
@@ -1114,7 +1130,7 @@ function auditDecision(
     details: {
       tool: row.tool,
       agentId: row.agentId,
-      title: row.title,
+      title,
       ...(row.reason ? { reason: row.reason } : {}),
       ...(always ? { always } : {}),
       ...(via ? { via } : {}),

@@ -1,8 +1,9 @@
-import { and, type Database, eq, inArray, isNull, ne, schema } from "@agenteschat/db";
+import { and, type Database, eq, inArray, isNull, like, ne, not, schema } from "@agenteschat/db";
 import { getAgent } from "./agents";
 import { namesLabel, namesOf } from "./approvals";
 import { canTalkTo, speakerFor } from "./audience";
 import { accountablePerson, type RunAuthority, runChain, steeredByOthers } from "./authority";
+import { auditLabel } from "./connectors/personal";
 import { getMembership } from "./organizations";
 import { routineCreatorOf } from "./requester";
 import { isRightHandId, rightHandReader } from "./right-hand";
@@ -92,9 +93,23 @@ export const ownerOnlyPerson = async (ctx: RunRef) => (await ownerOnlyUse(ctx)).
 export async function personalLostNote(ctx: RunRef, toolName: string): Promise<string | null> {
   const { joined } = await ownerOnlyUse(ctx);
   if (!joined) return null;
+  // Only a connection this agent holds: any other name gets the gateway's ordinary answer.
   const own = await ctx.db
-    .select({ label: schema.connectorConnections.label, prefix: schema.connectorConnections.toolPrefix })
+    .selectDistinct({
+      label: schema.connectorConnections.label,
+      accountLabel: schema.connectorConnections.accountLabel,
+      ownerUserId: schema.connectorConnections.ownerUserId,
+      prefix: schema.connectorConnections.toolPrefix,
+    })
     .from(schema.connectorConnections)
+    .innerJoin(
+      schema.agentScopes,
+      and(
+        eq(schema.agentScopes.connectionId, schema.connectorConnections.id),
+        eq(schema.agentScopes.agentId, ctx.agentId),
+        not(like(schema.agentScopes.scope, "deny:%")),
+      ),
+    )
     .where(
       and(
         eq(schema.connectorConnections.orgId, ctx.orgId),
@@ -104,7 +119,7 @@ export async function personalLostNote(ctx: RunRef, toolName: string): Promise<s
     );
   const hit = own.find((c) => toolName.startsWith(`${c.prefix}_`));
   if (!hit) return null;
-  return `${hit.label} is the own connection of the person who asked you. It stopped being available in this run when someone else wrote into it, because it serves only its person's own requests. Tell them that plainly: they can ask again on their own after this reply. Do not use it, or anything you read from it, for anyone else.`;
+  return `${auditLabel(hit)} is the own connection of the person who asked you. It stopped being available in this run when someone else wrote into it, because it serves only its person's own requests. Tell them that plainly: they can ask again on their own after this reply. Do not use it, or anything you read from it, for anyone else.`;
 }
 
 /**

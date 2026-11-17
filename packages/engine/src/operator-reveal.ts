@@ -1,4 +1,5 @@
 import { and, type Database, eq, gt, isNull, rowsOf, schema, sql } from "@agenteschat/db";
+import { othersPersonalTools } from "./agent-audit";
 import { requireAgentDetails } from "./audience";
 import { recordAudit } from "./audit";
 import { readableChannelIds, requireChannelAccess } from "./channels";
@@ -245,11 +246,12 @@ const findStep: Find = async (db, orgId, { id, seq, field }) => {
     channel_id: string;
     direct: boolean;
     kind: string;
+    name: string | null;
     failed: boolean;
     result_failed: boolean;
     narrated: boolean;
   }>(
-    await db.execute(sql`select r.agent_id, r.channel_id, s.kind,
+    await db.execute(sql`select r.agent_id, r.channel_id, s.kind, s.data->>'name' as name,
         ${directOf("r.channel_id", "r.trigger_message_id")} as direct,
         (s.kind = 'error' or (s.kind = 'tool_result' and s.data->'isError' = 'true'::jsonb)) as failed,
         (s.kind = 'tool_call' and exists (select 1 from ${agentRunSteps} o where o.run_id = s.run_id
@@ -266,7 +268,10 @@ const findStep: Find = async (db, orgId, { id, seq, field }) => {
     direct: s.direct,
     has: has ?? s.failed,
     failure: field === "error" ? s.failed : field === "input" && s.result_failed,
-    seenBy: (userId) => readsRunsOf(db, orgId, userId, s.agent_id, s.channel_id),
+    // A call in someone else's own connection shows them its name alone (`getRun`).
+    seenBy: async (userId) =>
+      (await readsRunsOf(db, orgId, userId, s.agent_id, s.channel_id)) &&
+      !(s.name && (await othersPersonalTools(db, orgId, id, userId)).has(s.name)),
     ofRun: (run) => id === run.id,
     text: async () => {
       const [step] = await db
@@ -394,7 +399,7 @@ const findConnection: Find = async (db, orgId, { id, field }) => {
   if (!column) return null;
   const where = and(eq(cc.id, id), eq(cc.orgId, orgId), isNull(cc.revokedAt));
   const [c] = await db
-    .select({ has: filled(column) })
+    .select({ has: filled(column), owner: cc.ownerUserId })
     .from(cc)
     .where(where);
   if (!c) return null;
@@ -402,7 +407,9 @@ const findConnection: Find = async (db, orgId, { id, field }) => {
     direct: false,
     has: c.has,
     failure: false,
-    seenBy: (userId) => passes(() => requirePermission(db, userId, orgId, "read")),
+    // A person's own connection is opened by that person alone (ADR 0099 addendum).
+    seenBy: async (userId) =>
+      c.owner ? c.owner === userId : passes(() => requirePermission(db, userId, orgId, "read")),
     ofRun: () => false,
     text: async () => {
       const text = (await db.select({ text: column }).from(cc).where(where))[0]?.text ?? null;

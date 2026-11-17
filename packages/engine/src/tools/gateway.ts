@@ -1204,8 +1204,9 @@ export function createToolGateway(deps: {
       }
       outside = readsOutsideText(tool, output);
       // Team actions (ADR 0064): what a person approved and went out is the team's too. Not a call of a confidential
-      // thread (ADR 0190): its arguments would be kept for good and searched by every agent.
-      if (isOutsideTool(tool) && !output.isError && !locked) {
+      // thread (ADR 0190): its arguments would be kept for good and searched by every agent. Nor of a person's own
+      // connection: the record is told to anyone's run on the agent.
+      if (isOutsideTool(tool) && !output.isError && !locked && !tool.ownerUserId) {
         await recordTeamAction(ctx.db, {
           orgId: ctx.orgId,
           agentId: ctx.agentId,
@@ -1819,7 +1820,8 @@ export function createToolGateway(deps: {
       }
       const merged = mergeAlone ?? (tool.whyAsks ? (output.data?.merge as MergeDone | undefined) : null);
       if (merged && !output.isError) await recordMergeDone(ctx, merged, tool.name).catch(() => {});
-      if (teamKnows && outside && !output.isError) {
+      // A person's own connection's call is theirs alone: the record is told to anyone's run on the agent.
+      if (teamKnows && outside && !output.isError && !tool.ownerUserId) {
         await recordAction({
           source: "tool",
           tool: tool.name,
