@@ -56,7 +56,7 @@ export const WALLPAPER_CLOUDS: readonly (readonly [number, number, number, numbe
 
 /** The sky's field at (u, v), fractions of the screen: strong at the top, almost the page in the middle, a horizon. */
 export function wallpaperSkyField(u: number, v: number, dark: boolean): number {
-  let f = (dark ? 2.7 : 2.45) * (Math.max(0, 1 - v / 0.46) ** 1.25);
+  let f = (dark ? 2.7 : 2.45) * Math.max(0, 1 - v / 0.46) ** 1.25;
   const t = (v - 0.72) / 0.28;
   f += 1.7 * (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
   for (const [cx, cy, rx, ry, a] of WALLPAPER_CLOUDS) {
@@ -189,10 +189,7 @@ export function wallpaperFill(color: Neutral | Hue, dark: boolean): string {
 }
 
 /** A tile's look before its picture paints, and what a background "is" at a glance (the sky's middle tone). */
-export function wallpaperSwatch(
-  w: { kind: string; color?: string },
-  dark: boolean,
-): string {
+export function wallpaperSwatch(w: { kind: string; color?: string }, dark: boolean): string {
   if (w.kind === "sky") return wallpaperSkyTones((w.color as Hue) ?? "sky", dark)[1] as string;
   if (w.kind === "trama") return tramaColors((w.color as Neutral | Hue) ?? "paper", dark).bg;
   if (w.kind === "color") return wallpaperFill((w.color as Neutral | Hue) ?? "paper", dark);

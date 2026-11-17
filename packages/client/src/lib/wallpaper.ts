@@ -159,9 +159,7 @@ export const WALLPAPER_FAMILIES = {
   sky: WALLPAPER_CHOICES.sky.map((color) => ({ kind: "sky", color }) as Wallpaper),
   drawings: [
     { kind: "turma" } as Wallpaper,
-    ...WALLPAPER_CHOICES.trama.map(
-      (color) => ({ kind: "trama", color }) as Wallpaper,
-    ),
+    ...WALLPAPER_CHOICES.trama.map((color) => ({ kind: "trama", color }) as Wallpaper),
   ],
   color: WALLPAPER_CHOICES.color.map((color) => ({ kind: "color", color }) as Wallpaper),
 } as const;

@@ -939,7 +939,7 @@ export function managementRoutes(deps: AppDeps) {
     tags: ["Members"],
     security,
     description:
-      "Yours alone, on every device: it wins over `channelWallpaper`/`dmWallpaper` in `chatPrefs` and comes back in `chatPrefs.wallpapers` (by channel id). `{ kind: \"none\" }` is no background here even where the others have one. A photo has to be one of yours (`PUT …/me/wallpaper-photo`): 400 `wallpaper.photo_not_yours`. Members only. Your other devices hear `chat.prefs`.",
+      'Yours alone, on every device: it wins over `channelWallpaper`/`dmWallpaper` in `chatPrefs` and comes back in `chatPrefs.wallpapers` (by channel id). `{ kind: "none" }` is no background here even where the others have one. A photo has to be one of yours (`PUT …/me/wallpaper-photo`): 400 `wallpaper.photo_not_yours`. Members only. Your other devices hear `chat.prefs`.',
     responses: { 200: json(ChatPrefs), ...errors },
   };
   app.openapi(
@@ -973,34 +973,6 @@ export function managementRoutes(deps: AppDeps) {
       return c.json(await setConversationWallpaper(db, c.get("user").id, orgId, channelId, null, adapters.pubsub), 200);
     },
   );
-
-  app.openapi(
-      createRoute({
-        method,
-        path: "/organizations/{orgId}/channels/{channelId}/wallpaper",
-        tags: ["Members"],
-        security,
-        summary: clear
-          ? "Let a conversation follow your channels' or DMs' background again"
-          : "Give a conversation you're in a background of its own, for you",
-        description:
-          "Yours alone, on every device: it wins over `channelWallpaper`/`dmWallpaper` in `chatPrefs` and comes back in `chatPrefs.wallpapers` (by channel id). `{ kind: \"none\" }` is no background here even where the others have one. A photo has to be one of yours (`PUT …/me/wallpaper-photo`): 400 `wallpaper.photo_not_yours`. Your other devices hear `chat.prefs`.",
-        request: {
-          params: OrgParams.extend({ channelId: z.uuid() }),
-          ...(clear ? {} : { body: body(z.object({ wallpaper: Wallpaper })) }),
-        },
-        responses: { 200: json(ChatPrefs), ...errors },
-      }),
-      async (c) => {
-        const { orgId, channelId } = c.req.valid("param");
-        const wallpaper = clear ? null : (c.req.valid("json" as never) as { wallpaper: unknown }).wallpaper;
-        return c.json(
-          await setConversationWallpaper(db, c.get("user").id, orgId, channelId, wallpaper, adapters.pubsub),
-          200,
-        );
-      },
-    );
-  }
 
   app.openapi(
     createRoute({

@@ -60,8 +60,8 @@ import {
   setMyLocale,
   setMyWorkArea,
   setOrgLogo,
-  setWallpaperPhoto,
   settleJoinRequests,
+  setWallpaperPhoto,
   signInOptions,
   soleOwnerRefusal,
   toldReason,
@@ -1245,7 +1245,7 @@ export function accountRoutes(deps: AppDeps) {
       security,
       summary: "Send a photo for a conversation's background (JPEG, PNG or WebP up to 2 MB; metadata is removed)",
       description:
-        "Only you see it. The answer's `url` goes into a background (`{ kind: \"photo\", url, dim, x, y }`) with `PUT …/me/chat` or `PUT …/channels/{channelId}/wallpaper`; photos none of your backgrounds shows any more are removed when you send one. The apps shrink it first.",
+        'Only you see it. The answer\'s `url` goes into a background (`{ kind: "photo", url, dim, x, y }`) with `PUT …/me/chat` or `PUT …/channels/{channelId}/wallpaper`; photos none of your backgrounds shows any more are removed when you send one. The apps shrink it first.',
       request: {
         params: OrgParams,
         body: body(
@@ -1270,7 +1270,10 @@ export function accountRoutes(deps: AppDeps) {
       await requirePermission(db, user.id, c.req.valid("param").orgId, "read");
       const limit = await deps.adapters.rateLimiter.consume(`wallpaper:${user.id}`, { limit: 20, windowMs: 3600_000 });
       if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many photos. Try again later.");
-      return c.json(await setWallpaperPhoto({ db, blobs: deps.adapters.platformBlobs }, user.id, c.req.valid("json")), 200);
+      return c.json(
+        await setWallpaperPhoto({ db, blobs: deps.adapters.platformBlobs }, user.id, c.req.valid("json")),
+        200,
+      );
     },
   );
 
