@@ -1,5 +1,5 @@
 {
-  "id": "807aa834-3ba4-4cad-83d5-36c1c4fe9294",
+  "id": "4362d416-a671-4661-9c46-168f777c6de8",
   "prevId": "75d2e078-9fdd-4699-80fa-8a0277af1d68",
   "version": "7",
   "dialect": "postgresql",
@@ -330,6 +330,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "brain_account_pinned": {
+          "name": "brain_account_pinned",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "brain_effort": {
           "name": "brain_effort",
@@ -10195,6 +10202,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'everyone'"
+        },
+        "use_order": {
+          "name": "use_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "auth_method": {
           "name": "auth_method",
@@ -22922,12 +22935,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "outside_of": {
-          "name": "outside_of",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "expires_at": {
           "name": "expires_at",
           "type": "timestamp with time zone",
@@ -23305,12 +23312,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
-        },
-        "outside_of": {
-          "name": "outside_of",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",

@@ -3580,7 +3580,7 @@
                 },
                 "model": {
                   "type": "string",
-                  "description": "The API's model: what `model` thinks with, and a CLI's fallback."
+                  "description": "The API's model: what `model` thinks with."
                 },
                 "brainModel": {
                   "type": ["string", "null"],
@@ -3692,7 +3692,7 @@
           },
           "model": {
             "type": "string",
-            "description": "The API's model: what `model` thinks with, and a CLI's fallback."
+            "description": "The API's model: what `model` thinks with."
           },
           "brainModel": {
             "type": ["string", "null"],
@@ -3752,7 +3752,9 @@
           },
           "fallback": {
             "type": "boolean",
-            "description": "When its CLI can't answer, it answers through the API."
+            "enum": [false],
+            "deprecated": true,
+            "description": "Always false: the API never answers for a computer brain (ADR 0032's 2026-11-15 addendum). Kept for v1 callers."
           },
           "provider": {
             "type": ["string", "null"],
@@ -4028,7 +4030,7 @@
           },
           "waitResetsAt": {
             "type": ["string", "null"],
-            "description": "When the limit it waits on resets, when known."
+            "description": "When the limit it waits on resets, when known. With every account of the order at its limit, the first of them."
           },
           "waitAccountId": {
             "type": ["string", "null"],
@@ -4039,6 +4041,11 @@
             "type": ["string", "null"],
             "format": "uuid",
             "description": "The computer that sign-in is on. With `waitAccountId` null and this set: that computer's own sign-in is the plan it waits on."
+          },
+          "accountId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "description": "The AI account it went on with at its plan's limit (ADR 0041 §6): its plan waits and usage are that account's. Null: its agent's own (`accountId` on the agent)."
           },
           "waitingMachineId": {
             "type": ["string", "null"],
@@ -4141,6 +4148,7 @@
           "waitResetsAt",
           "waitAccountId",
           "waitAccountMachineId",
+          "accountId",
           "waitingMachineId",
           "canceled",
           "errorCode",
@@ -5112,7 +5120,7 @@
                     },
                     "waitResetsAt": {
                       "type": ["string", "null"],
-                      "description": "When the limit it waits on resets, when known."
+                      "description": "When the limit it waits on resets, when known. With every account of the order at its limit, the first of them."
                     },
                     "waitAccountId": {
                       "type": ["string", "null"],
@@ -5123,6 +5131,11 @@
                       "type": ["string", "null"],
                       "format": "uuid",
                       "description": "The computer that sign-in is on. With `waitAccountId` null and this set: that computer's own sign-in is the plan it waits on."
+                    },
+                    "accountId": {
+                      "type": ["string", "null"],
+                      "format": "uuid",
+                      "description": "The AI account it went on with at its plan's limit (ADR 0041 §6): its plan waits and usage are that account's. Null: its agent's own (`accountId` on the agent)."
                     },
                     "waitingMachineId": {
                       "type": ["string", "null"],
@@ -5227,6 +5240,7 @@
                     "waitResetsAt",
                     "waitAccountId",
                     "waitAccountMachineId",
+                    "accountId",
                     "waitingMachineId",
                     "canceled",
                     "errorCode",

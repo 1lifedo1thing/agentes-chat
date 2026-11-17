@@ -3727,6 +3727,13 @@
     "onceHint": "Tutti condividono i limiti del tuo piano.",
     "use": "Usa {{label}}",
     "another": "Un altro account",
+    "which": {
+      "title": "Quale account {{brand}} userà {{name}}?",
+      "title_female": "Quale account {{brand}} userà {{name}}?",
+      "titleAll": "Quale account {{brand}} useranno?",
+      "mine": "I tuoi account {{brand}} su {{computer}}",
+      "other": "Accedi con un altro account {{brand}}"
+    },
     "reuse": {
       "active": "Hai già {{label}} qui. Accedi di nuovo a questo account, oppure usane un altro.",
       "signedOut": "{{label}} è disconnesso qui. Accedi di nuovo e i suoi agenti continuano a usarlo."
@@ -3868,9 +3875,7 @@
     "dontRunForbidden": "Solo chi l'ha chiesto, il proprietario dell'agente o un admin può annullarlo",
     "answerAnyway": "Rispondi comunque",
     "answerAnywayHint": "Risponde ora, leggendo tutto quello che è stato scritto dopo",
-    "answerAnywayForbidden": "Solo chi l'ha chiesto, il proprietario dell'agente o un admin può chiederlo",
-    "extraTitle": "Il lavoro lungo può usare l'utilizzo extra a pagamento",
-    "extraHint": "Con l'utilizzo extra attivo nel piano, il lavoro lungo va avanti oltre il 95%. Se è disattivato, si mette in pausa al 95% e riprende quando il piano si rinnova."
+    "answerAnywayForbidden": "Solo chi l'ha chiesto, il proprietario dell'agente o un admin può chiederlo"
   },
   "usageQueue": {
     "back": "{{agent}} torna {{when}}",
@@ -3881,6 +3886,7 @@
     "shared_many": "{{agents}} usano lo stesso piano {{plan}}. Tutte le loro conversazioni finiscono nella stessa coda.",
     "shared_other": "{{agents}} usano lo stesso piano {{plan}}. Tutte le loro conversazioni finiscono nella stessa coda.",
     "about": "Informazioni sulla coda",
+    "chain": "Tutti i {{accounts}} account {{plan}} hanno raggiunto il limite.",
     "lists": "Conversazioni",
     "queuedTab": "In coda",
     "skippedTab": "Saltate",
@@ -5941,12 +5947,12 @@
         "accountAlso": "Usato anche da {{agents}}",
         "accountOf": "Di {{name}}",
         "accountOthers": "I piani che servono tutto il workspace mostrano di chi sono.",
+        "movesOn": "Continua con l'account successivo al limite",
+        "pinned": "Solo questo account",
+        "pinnedHint": "Al limite, aspetta che questo account si azzeri invece di passare al successivo.",
         "addAccount": "Aggiungi account",
         "signInAgain": "Accedi di nuovo",
         "connectPlan": "Collega un altro piano",
-        "fallbackTitle": "Se {{computer}} smette di rispondere, rispondi tramite l'API",
-        "fallbackHint": "Risponde tramite l'API e rientra nel budget di {{name}}. Altrimenti {{name}} avvisa chi ha chiesto e aspetta che il computer torni disponibile.",
-        "fallbackHint_female": "Risponde tramite l'API e rientra nel budget di {{name}}. Altrimenti {{name}} avvisa chi ha chiesto e aspetta che il computer torni disponibile.",
         "effort": "Impegno",
         "efforts": {
           "auto": "Automatico",
@@ -6007,8 +6013,7 @@
           "effort": "Impegno: {{level}}",
           "speed": "Velocità: rapida",
           "context": "Contesto: {{size}}",
-          "sharing": "Risponde ad altre persone",
-          "waits": "Aspetta il computer"
+          "sharing": "Risponde ad altre persone"
         },
         "copy": {
           "row": "Usa su altri agenti",
@@ -6158,7 +6163,6 @@
           "wait": "Aspetta",
           "modelTitle": "Modello di {{name}}",
           "moreTitle": "Altre opzioni per {{name}}",
-          "fallback": "Usa la chiave API se il piano si ferma",
           "computer": "Computer",
           "doneTitle": "Tutto pronto",
           "doneSub": "Quello che era in corso continua con il nuovo account.",
@@ -9324,7 +9328,7 @@
       "canceledToast": "Annullato. Non partirà quando il limite si rinnova.",
       "continuedToast": "L'esecuzione continua.",
       "forbidden": "Solo chi ha creato la routine, il proprietario dell'agente o un admin può farla continuare ora",
-      "extra_off": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento. Attivalo nelle impostazioni IA dell'agente per continuare ora, altrimenti riprende dopo il rinnovo",
+      "extra_off": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento del piano. Riprende dopo il rinnovo",
       "extra_used_up": "La finestra di questo piano è esaurita e l'utilizzo extra a pagamento è esaurito o non disponibile. Riprende dopo il rinnovo"
     },
     "pausedRunningToast": "Routine in pausa. Anche l'esecuzione in corso si è fermata.",
@@ -10918,6 +10922,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Account senza nome",
+    "rename": {
+      "action": "Rinomina {{label}}",
+      "label": "Nome dell'account",
+      "placeholder": "Es.: Lavoro, Personale"
+    },
     "share": {
       "switch": "Risponde ad altre persone",
       "switchAll": "Rispondono ad altre persone",
@@ -12407,8 +12417,7 @@
       "cursor": "Cursor · {{model}}",
       "grok": "Grok Build · {{model}}",
       "antigravity": "Antigravity CLI · {{model}}",
-      "opencode": "OpenCode · {{model}}",
-      "noFallback": "{{brain}}, senza riserva tramite API"
+      "opencode": "OpenCode · {{model}}"
     },
     "mission": {
       "modelLabel": "Modello",
@@ -15691,7 +15700,7 @@
       "takeOverNoAccess": "Entra nella conversazione della routine prima di prenderla in carico.",
       "agentNotInChannel": "Prima aggiungi l'agente alla conversazione.",
       "webhookPaused": "Attiva la routine per testarla.",
-      "continueExtraOff": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento. Attivalo nelle sue impostazioni IA per continuare ora, altrimenti riprende dopo il reset.",
+      "continueExtraOff": "La finestra di questo piano è esaurita e il lavoro lungo di questo agente non usa l'utilizzo extra a pagamento del piano. Riprende dopo il reset.",
       "continueExtraUsedUp": "La finestra di questo piano è esaurita e il suo utilizzo extra a pagamento è esaurito o non disponibile. Riprende dopo il reset.",
       "actionsNeedApprover": "Solo il responsabile dell'agente o chi approva le sue azioni può lasciare che una routine agisca da sola.",
       "editorOnly": "Solo chi ha creato la routine, il responsabile dell'agente o un admin può modificarla.",
@@ -15789,13 +15798,13 @@
     "agent": {
       "ownerOrAdmin": "Solo il responsabile dell'agente o un admin può farlo.",
       "detailsHidden": "Solo chi parla con {{agentName}} vede come funziona.",
-      "extraOwnerOnly": "Solo il responsabile dell'agente attiva o disattiva l'utilizzo extra a pagamento del piano.",
       "undoForbidden": "Solo la persona per cui l'agente ha lavorato, il suo responsabile o un admin può annullarlo.",
       "undoSkillsAdmins": "Solo un admin può annullare o ripetere una modifica alle skill di un agente."
     },
     "account": {
       "notRestorable": "Questo account non si può più ripristinare.",
-      "notOwner": "Solo chi ha collegato questo account o piano può farlo."
+      "notOwner": "Solo chi ha collegato questo account o piano può farlo.",
+      "orderForbidden": "Solo chi ha collegato questo account o un admin può cambiarne il posto nell'ordine."
     },
     "channel": {
       "membersForbidden": "Solo chi ha creato il canale o un admin può aggiungere o rimuovere persone."
@@ -17843,6 +17852,14 @@
   "usageViews": {
     "signedOut": "Disconnesso",
     "whose": "di {{name}}",
+    "order": {
+      "title": "{{plan}} · Ordine di utilizzo",
+      "hint": "Al limite, gli agenti continuano con l'account successivo che ha margine e tornano al primo quando si azzera.",
+      "terms": "Usare più account {{plan}} è una zona grigia nei termini di {{plan}}.",
+      "termsLabel": "termini di {{plan}}",
+      "termsHint": "Un piano è pensato per una persona, quindi controlla i termini di {{plan}} prima che i tuoi agenti contino su più account.",
+      "move": "Sposta {{name}}, numero {{n}} nell'ordine"
+    },
     "serves": {
       "everyone": "Lo usano tutti",
       "onlyYou": "Lo usi solo tu",
@@ -17907,7 +17924,7 @@
       "nowTag": "ora",
       "api": "API",
       "apiMain": "{{name}} pensa tramite API",
-      "apiFallback": "Fuori dal piano: decisioni rapide, e quando il piano non poteva rispondere",
+      "apiFallback": "Fuori dal piano: decisioni rapide",
       "removed": "Account rimosso",
       "removedSub": "Non è più su nessun computer",
       "old": "{{brand}}, da prima degli account",
@@ -18567,6 +18584,11 @@
       "plan_limit_cut_unknown": "Mi sono fermato al limite del piano {{plan}}. Riprenderò da dove ho lasciato appena si azzera.",
       "plan_limit_wait": "Il piano {{plan}} ha raggiunto il limite. Risponderò {{when}}, quando si azzera. Se viene sbloccato prima in {{plan}}, me ne accorgo e rispondo subito.",
       "plan_limit_wait_unknown": "Il piano {{plan}} ha raggiunto il limite. Risponderò appena si azzera.",
+      "plan_account_moved": "L'account {{from}} ha raggiunto il limite. Continuo con l'account {{to}}.",
+      "plan_account_moved_line": "L'account {{from}} è vicino al limite. Continuo con l'account {{to}}.",
+      "plan_account_moved_extra": "L'account {{from}} passerebbe all'uso extra a pagamento. Continuo con l'account {{to}}.",
+      "plan_limit_all_wait": "Tutti i {{accounts}} account {{plan}} hanno raggiunto il limite. Risponderò {{when}}, quando si azzera il primo.",
+      "plan_limit_all_wait_unknown": "Tutti i {{accounts}} account {{plan}} hanno raggiunto il limite. Risponderò appena uno si azzera.",
       "plan_model_limit_wait": "{{model}} ha raggiunto il suo limite su {{plan}}. Gli altri modelli del piano continuano a funzionare: cambia il modello di {{agent}} o aspetta che si azzeri {{when}}.",
       "plan_model_limit_wait_unknown": "{{model}} ha raggiunto il suo limite su {{plan}}. Gli altri modelli del piano continuano a funzionare: cambia il modello di {{agent}} o aspetta che si azzeri.",
       "plan_model_region_wait": "Questo modello ({{model}}) ha bisogno della regione Global attiva in OpenCode (Settings › Privacy).",

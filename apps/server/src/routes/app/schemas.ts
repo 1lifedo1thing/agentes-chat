@@ -1061,6 +1061,10 @@ export const MachineAccount = z
     id: z.uuid(),
     kind: AccountKind,
     label: z.string(),
+    named: z.boolean().openapi({
+      description:
+        'Its owner gave it its name; false: the name is the automatic one ("Claude 2"), and the apps show the account by its email.',
+    }),
     email: z.string().nullable().openapi({ description: "Only for its owner." }),
     plan: z
       .string()
@@ -1094,6 +1098,14 @@ export const MachineAccount = z
     serves: z.enum(["everyone", "owner"]).openapi({
       description:
         "Who it thinks for (ADR 0059 §3): everyone in the workspace (the default), or only its owner. Only its owner changes it.",
+    }),
+    useOrder: z.number().int().nullable().openapi({
+      description:
+        "Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6), 0 first; null: after the placed ones, oldest first. A run at its plan's limit goes on with its agent's owner's next account, then the others that serve everyone.",
+    }),
+    movable: z.boolean().openapi({
+      description:
+        "A run at another account's limit may go on with it: Claude Code's or Codex's own sign-in (never a key), shared between agents and signed in (ADR 0041 §6). Only these have a place in the order of use.",
     }),
   })
   .openapi("MachineAccount", {
@@ -1134,12 +1146,14 @@ export const AgentBrain = z
       description:
         'What a computer brain runs with (`model` or its default). Null for the `model` brain, which is not "no model": read the agent\'s `model` and `credentialId`.',
     }),
-    fallback: z
-      .boolean()
-      .openapi({ description: "When the computer can't answer, answer through the API (agent's budget)." }),
+    fallback: z.literal(false).openapi({
+      deprecated: true,
+      description: "Always false: the API never answers for a computer brain. Older phone builds still draw it.",
+    }),
     extraUsage: z.boolean().openapi({
+      deprecated: true,
       description:
-        "Long work may go on into the plan's paid extra usage where the provider reports it on (ADR 0118); false: it pauses at 95%.",
+        "Read-only: long work may go on into the plan's paid extra usage where the plan reports it (ADR 0118), never on a plan lent to the agent nor for the right hand. Older phone builds still draw it.",
     }),
     computer: z.object({ machineId: z.uuid(), name: z.string(), online: z.boolean() }).nullable(),
     options: z.array(BrainOption),
@@ -1152,6 +1166,10 @@ export const AgentBrain = z
       .uuid()
       .nullable()
       .openapi({ description: "The account its computer brain runs with (ADR 0041); null = the computer's own." }),
+    accountPinned: z.boolean().openapi({
+      description:
+        "\"Só esta conta\" (ADR 0041 §6): at its plan's limit it waits for `account` to reset. Off (the default): the run goes on with the next account of the order (`GET …/ai-accounts/order`), its owner's first, and the next run starts on `account` again.",
+    }),
     effort: BrainEffortSetting.nullable().openapi({ description: "`auto` = per run; null = the CLI's default." }),
     speed: BrainSpeed,
     contextTokens: ContextLimit.nullable().openapi({
@@ -1215,7 +1233,6 @@ export const AgentSetup = z
     effort: BrainEffortSetting.nullable().optional(),
     speed: BrainSpeed.optional().openapi({ description: "Omitted = each agent keeps its own." }),
     contextTokens: ContextLimit.nullable().optional(),
-    fallback: z.boolean().optional(),
     onlyOwner: z.boolean().optional().openapi({
       description:
         '"Atende outras pessoas" off, for the agents that move onto the plan (only the plan\'s owner turns it on).',
@@ -1271,6 +1288,9 @@ export const NewAgentSetup = z
       .object({
         id: z.uuid(),
         label: z.string(),
+        named: z.boolean().openapi({ description: "Its owner gave it its name; false: shown by its email." }),
+        email: z.string().nullable().openapi({ description: "Only for its owner." }),
+        plan: z.string().nullable(),
         provider: z.string().nullable(),
         mine: z.boolean(),
         free: z.boolean().openapi({
@@ -1284,7 +1304,6 @@ export const NewAgentSetup = z
       .optional()
       .openapi({ description: "The computer's own sign-in thinks for the caller's agents (they connected it)." }),
     effort: BrainEffortSetting.nullable().optional(),
-    fallback: z.boolean().optional(),
     autonomy: CommandApproval.nullable().openapi({
       description:
         "Its Autonomia; null = the default. `POST …/agents` takes it only from an admin or the new agent's owner.",
