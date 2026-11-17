@@ -1,5 +1,5 @@
 import { type HostLook, useAuthConfig } from "@agenteschat/client";
-import { PRODUCT_SITE_URL } from "@agenteschat/client/lib/about";
+import { DOCS_SITE } from "@agenteschat/i18n/docs";
 import { Logo } from "@agenteschat/ui";
 import { type ReactNode, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -33,7 +33,7 @@ export function AuthShell({ children, languages = true }: { children: ReactNode;
         {children}
         {host && (
           <p className="auth__powered">
-            <a className="ac-link" href={PRODUCT_SITE_URL}>
+            <a className="ac-link" href={DOCS_SITE}>
               {t("auth.poweredBy")}
             </a>
           </p>

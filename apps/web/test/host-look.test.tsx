@@ -4,7 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import type { HostLook } from "@agenteschat/client";
-import { PRODUCT_SITE_URL } from "@agenteschat/client/lib/about";
+import { DOCS_SITE } from "@agenteschat/i18n/docs";
 import { accentPalette } from "@agenteschat/ui";
 import { act, cleanup } from "@testing-library/react";
 import { brandTabTitle, createI18n, translateTabTitle } from "@/i18n";
@@ -36,7 +36,7 @@ describe("the sign-in page", () => {
     expect(document.querySelector(".auth--host")).not.toBeNull();
     expect(screen().queryByRole("img", { name: "agentes" })).toBeNull();
     const powered = screen().getByRole("link", { name: "Feito com agentes.chat" });
-    expect(powered.getAttribute("href")).toBe(PRODUCT_SITE_URL);
+    expect(powered.getAttribute("href")).toBe(DOCS_SITE);
     expect(screen().queryByRole("button", { name: /Continuar com/ })).toBeNull();
     expect(agentVar()).toBe(accentPalette(NORTHWIND.accent).light.agent);
     // On a Cloud server too: no line naming the product's service, no way to its chooser.
