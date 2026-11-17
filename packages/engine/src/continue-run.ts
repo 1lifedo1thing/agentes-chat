@@ -5,7 +5,6 @@ import { runBrainOf } from "./brains/select";
 import { canceledBy, mayStopRun, runRequester } from "./cancel";
 import { catchUpText } from "./catch-up";
 import { ANSWER_ANYWAY_MS, type ClosedNote } from "./catch-up-triage";
-import { settleHandedWorkTrace } from "./consultations";
 import { ConflictError, ForbiddenError, NotFoundError } from "./errors";
 import { publishChannelEvent } from "./events";
 import { continuedTranscript, type Transcript } from "./executor";
@@ -205,7 +204,6 @@ export async function continueRun(
   if (!created) throw notContinuable();
   if (work) {
     if (work.issueId) await setWorkIssueState(deps, work, {}).catch(() => null);
-    await settleHandedWorkTrace(deps, work).catch(() => {});
     await announceWork(deps.pubsub, db, orgId, work.id).catch(() => {});
   }
 

@@ -435,8 +435,7 @@ p {
 }
 /* A phone's line has room for the names, the count and the time only: the subject would be a letter and its "…". */
 @container (max-width: 420px) {
-  /* Except another agent's request in this agent's DM: nothing else there says what was asked. */
-  .consult-pair__row:not(.consult-pair__row--handed) .consult-pair__subject {
+  .consult-pair__subject {
     display: none;
   }
 }
@@ -488,12 +487,6 @@ html:not([data-pointer]) .consult-pair__row:focus-visible {
   height: 15px;
   margin-inline: 6px;
   vertical-align: calc(var(--cap-top) - var(--cap-mid) - 7.5px);
-}
-/* Another agent's request in this agent's DM: the words in the arrows' place ("Atlas pediu à Ada"), as quiet. */
-.consult-pair__asked {
-  margin-inline: 6px;
-  color: var(--faint);
-  white-space: nowrap;
 }
 /* Cut out of what is under them: the open row's blue too (the page's ring drew gray circles on it in dark). */
 .consult-pair__faces > .ac-avatar {

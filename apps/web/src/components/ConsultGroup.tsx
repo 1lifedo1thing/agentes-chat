@@ -170,19 +170,7 @@ export function useConsultById(channelId: string, id: string | undefined): RunCo
  * same row stands for an answer whose reply is farther up or not here, and for a hand-off by direct message on a
  * reach line.
  */
-export function ConsultPairRow({
-  askerId,
-  items,
-  handed = false,
-}: {
-  askerId: string;
-  items: readonly ConsultPairItem[];
-  /**
-   * Another agent's request in the DM of the agent it went to (`handOffOf`): "Atlas pediu à Ada" in place of ⇄, and
-   * nothing about its state until it ends (the agent's working line already says it).
-   */
-  handed?: boolean;
-}) {
+export function ConsultPairRow({ askerId, items }: { askerId: string; items: readonly ConsultPairItem[] }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const dir = useDirectory(org.id);
@@ -197,9 +185,8 @@ export function ConsultPairRow({
   const asks = usePendingAsks();
   const only = items.length === 1 && items[0]?.status === "open" ? items[0] : undefined;
   const mine = only ? askOf(asks, only.consultedAgentId, only.consultedRunId) : null;
-  const found = consultPair(items, now, askerId, handed ? null : (mine?.on ?? null));
-  if (!found) return null;
-  const pair = handed && live ? { ...found, word: null, seconds: null, tone: null } : found;
+  const pair = consultPair(items, now, askerId, mine?.on ?? null);
+  if (!pair) return null;
   // An old reply's question with no id of its own has no conversation to open: it opens in place.
   const openConsultation = openableConsultation(pair.opens) ? dialog : undefined;
   const seeCard = mine && actions?.seeRequest ? () => actions.seeRequest?.(mine.ask.id) : undefined;
@@ -220,13 +207,9 @@ export function ConsultPairRow({
       <Tip button look="ac-msg__tip tm-tip" tip={rowTip(title, question ? [question] : [])}>
         <button
           type="button"
-          className={cx(
-            "consult-pair__row",
-            pair.tone && `consult-pair__row--${pair.tone}`,
-            handed && "consult-pair__row--handed",
-          )}
+          className={cx("consult-pair__row", pair.tone && `consult-pair__row--${pair.tone}`)}
           aria-description={question || undefined}
-          {...(seeCard && !handed
+          {...(seeCard
             ? { onClick: seeCard }
             : openConsultation
               ? {
@@ -240,11 +223,7 @@ export function ConsultPairRow({
               <AgentAvatar agentId={askerId} size="xs" name={from} state="idle" />
               <span className="consult-pair__name">{from}</span>
             </span>
-            {handed ? (
-              <span className="consult-pair__asked">
-                {t("chat.consultPair.askedHere", { context: agentGrammar(names[0] ?? "").context })}
-              </span>
-            ) : pair.tone === "you" ? (
+            {pair.tone === "you" ? (
               <span className="consult-pair__swap consult-pair__wait">
                 <WaitMark />
               </span>

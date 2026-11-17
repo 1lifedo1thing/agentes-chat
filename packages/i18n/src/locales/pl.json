@@ -18675,8 +18675,7 @@
       "noAnswer": "nie odpowiedział",
       "notFinished": "nie skończył",
       "someAnswered": "odpowiedziało {{done}} z {{total}}",
-      "labelMany": "Rozmowy {{from}} z {{to}}",
-      "askedHere": "→"
+      "labelMany": "Rozmowy {{from}} z {{to}}"
     },
     "consultPanel": {
       "label": "Rozmowa między {{from}} a {{to}}",
@@ -18710,7 +18709,6 @@
       "consultReplyAnon": "Odpowiedź od innego agenta",
       "agentNote": "Notatka od: {{from}}",
       "agentNoteAnon": "Notatka od innego agenta",
-      "handOff": "Prośba od {{from}} do {{to}}",
       "waitResult": "Dotarło to, na co czeka {{name}}",
       "other": "Powiadomienie dla: {{name}}",
       "wakeSkipped": "Wzmianka od {{name}} nie dotarła do: {{agents}}",

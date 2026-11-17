@@ -17474,8 +17474,7 @@
       "noAnswer": "yanıt vermedi",
       "notFinished": "bitiremedi",
       "someAnswered": "{{total}} ajandan {{done}} tanesi yanıt verdi",
-      "labelMany": "{{from}} ile {{to}} arasındaki konuşmalar",
-      "askedHere": "→"
+      "labelMany": "{{from}} ile {{to}} arasındaki konuşmalar"
     },
     "consultPanel": {
       "label": "{{from}} ile {{to}} arasındaki konuşma",
@@ -17504,7 +17503,6 @@
       "consultReplyAnon": "Başka bir ajan yanıtladı",
       "agentNote": "{{from}} ajanından not",
       "agentNoteAnon": "Başka bir ajandan not",
-      "handOff": "{{from}} → {{to}} isteği",
       "waitResult": "{{name}} ajanının beklediği şey geldi",
       "other": "{{name}} için bildirim",
       "wakeSkipped": "{{name}} ajanının bahsetmesi {{agents}} ajanına ulaşmadı",

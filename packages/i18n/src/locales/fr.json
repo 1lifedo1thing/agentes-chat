@@ -18110,8 +18110,7 @@
       "noAnswer": "n’a pas répondu",
       "notFinished": "n’a pas terminé",
       "someAnswered": "{{done}} sur {{total}} ont répondu",
-      "labelMany": "Échanges de {{from}} avec {{to}}",
-      "askedHere": "a demandé à"
+      "labelMany": "Échanges de {{from}} avec {{to}}"
     },
     "consultPanel": {
       "label": "Conversation entre {{from}} et {{to}}",
@@ -18144,7 +18143,6 @@
       "consultReplyAnon": "Un autre agent a répondu",
       "agentNote": "Note de {{from}}",
       "agentNoteAnon": "Note d'un autre agent",
-      "handOff": "{{from}} a fait une demande à {{to}}",
       "waitResult": "Ce que {{name}} attendait est arrivé",
       "other": "Avis pour {{name}}",
       "wakeSkipped": "La mention de {{name}} n'a pas atteint {{agents}}",
