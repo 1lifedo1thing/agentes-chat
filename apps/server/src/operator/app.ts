@@ -1,4 +1,4 @@
-import type { HumanCheck, PubSub } from "@agenteschat/adapters";
+import type { BlobStore, HumanCheck, PubSub } from "@agenteschat/adapters";
 import type { Config } from "@agenteschat/config";
 import type { Database } from "@agenteschat/db";
 import { type MachineHub, type SessionScreening, safeEqual } from "@agenteschat/engine";
@@ -14,6 +14,7 @@ import { registerOperatorLimits } from "./limits";
 import { registerOperatorLookups } from "./lookups";
 import { registerOperatorMachines } from "./machines";
 import { registerOperatorOrgs } from "./orgs";
+import { registerOperatorOutsideAccess } from "./outside-access";
 import { registerOperatorPeople } from "./people";
 import { registerOperatorRuns } from "./runs";
 import { registerOperatorStanding } from "./standing";
@@ -29,6 +30,8 @@ export interface OperatorDeps {
   log: Logger;
   /** Tells a workspace's members and admins of a change of standing (absent: nobody hears it live). */
   pubsub?: PubSub;
+  /** The platform's bucket, where a workspace's logo is kept (`PUT /orgs/{orgId}/look`). */
+  blobs?: BlobStore;
   /** Stops a suspended workspace's tasks on its computers. */
   hub?: MachineHub;
   /**
@@ -75,6 +78,7 @@ export function createOperatorApp(deps: OperatorDeps, token: string, readToken?:
   registerOperatorOrgs(api, deps);
   registerOperatorStanding(api, deps);
   registerOperatorLimits(api, deps);
+  registerOperatorOutsideAccess(api, deps);
   registerOperatorEvents(api, deps);
   registerOperatorMachines(api, deps);
   registerOperatorAccess(api, deps);
@@ -91,7 +95,7 @@ export function createOperatorApp(deps: OperatorDeps, token: string, readToken?:
       title: "agentes.chat operator API",
       version: deps.version,
       description:
-        "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056).",
+        "Workspace and account lookups, what a run did and why a message started one or none, what a workspace connected, recorded, asked and scheduled, what a person was notified of and reaches, the messages no run answered, the job queue, the emails queued to an address and what model calls spent, workspace standing, billing holds and limits (ADR 0079), a workspace's logo and accent color (ADR 0193), outside collaborators (ADR 0191), the events feed and review blocks, the workspaces' computers from an external provisioner, who may sign up (the waiting list and early-access invitations, ADR 0078), how new Claude sign-ins for all agents are made (ADR 0150), and how connectors are used (ADR 0103), for the people who run this instance (ADR 0056).",
     },
     servers: [{ url: OPERATOR_API_PREFIX }],
     security: [{ operator: [] }],

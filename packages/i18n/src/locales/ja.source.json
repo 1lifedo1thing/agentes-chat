@@ -8818,6 +8818,19 @@
   "connectAi.another": {
     "value": "Another account"
   },
+  "connectAi.which.title": {
+    "value": "Which {{brand}} account will {{name}} use?",
+    "female": "Which {{brand}} account will {{name}} use?"
+  },
+  "connectAi.which.titleAll": {
+    "value": "Which {{brand}} account will they use?"
+  },
+  "connectAi.which.mine": {
+    "value": "Your {{brand}} accounts on {{computer}}"
+  },
+  "connectAi.which.other": {
+    "value": "Sign in with another {{brand}} account"
+  },
   "connectAi.reuse.active": {
     "value": "You already have {{label}} here. Sign in to it again, or use another account."
   },
@@ -12819,6 +12832,9 @@
   "notifications.wait.joinSuggestion": {
     "value": "{{by}} suggested {{name}}"
   },
+  "notifications.wait.joinOutside": {
+    "value": "{{name}} asks to join as an outside collaborator for {{outsideOf}}, taking no seat"
+  },
   "notifications.wait.doing.merge": {
     "value": "merge"
   },
@@ -12992,6 +13008,9 @@
   },
   "notifications.what.joinSuggestion": {
     "value": "<b>{{by}}</b> suggested <b>{{name}}</b>"
+  },
+  "notifications.what.joinOutside": {
+    "value": "<b>{{name}}</b> asks to join as an outside collaborator for <b>{{outsideOf}}</b>, taking no seat"
   },
   "notifications.what.changeRequest": {
     "value": "<b>{{name}}</b> asks for a change to <b>{{agent}}</b>"
@@ -17986,6 +18005,12 @@
   "members.moreOf": {
     "value": "More for {{name}}"
   },
+  "members.outside.chip": {
+    "value": "Outside"
+  },
+  "members.outside.title": {
+    "value": "Outside collaborator"
+  },
   "members.passwordLink.item": {
     "value": "Make a new-password link"
   },
@@ -18537,6 +18562,12 @@
   },
   "members.requests.suggestedLabel": {
     "value": "{{by}} suggested {{name}}"
+  },
+  "members.requests.outside": {
+    "value": "Asked {{when}} to join as an outside collaborator for {{outsideOf}}"
+  },
+  "members.requests.outsideSeat": {
+    "value": "Outside collaborators don't count toward your plan's people, and you can remove them at any time."
   },
   "members.requests.asked": {
     "value": "Asked {{ago}}"
@@ -25561,6 +25592,18 @@
   "jev.remove.text": {
     "value": "Agents keep working without it."
   },
+  "aiAccounts.unnamed": {
+    "value": "Unnamed account"
+  },
+  "aiAccounts.rename.action": {
+    "value": "Rename {{label}}"
+  },
+  "aiAccounts.rename.label": {
+    "value": "Account name"
+  },
+  "aiAccounts.rename.placeholder": {
+    "value": "E.g. Work, Personal"
+  },
   "aiAccounts.share.switch": {
     "value": "Answers other people"
   },
@@ -27318,6 +27361,33 @@
   },
   "orgLogo.removed": {
     "value": "Logo removed."
+  },
+  "orgAccent.label": {
+    "value": "Accent color"
+  },
+  "orgAccent.change": {
+    "value": "Change color"
+  },
+  "orgAccent.useDefault": {
+    "value": "Use the default"
+  },
+  "orgAccent.suggested": {
+    "value": "Suggested colors"
+  },
+  "orgAccent.sampleMention": {
+    "value": "@Agent"
+  },
+  "orgAccent.sampleLink": {
+    "value": "A link"
+  },
+  "orgAccent.save": {
+    "value": "Save color"
+  },
+  "orgAccent.saved": {
+    "value": "Accent color updated."
+  },
+  "orgAccent.reset": {
+    "value": "Back to the default color."
   },
   "look.previous": {
     "value": "Previous"
@@ -36959,6 +37029,9 @@
   "errors.role.orderIncomplete": {
     "value": "The roles changed while you were moving them. Reload and try again."
   },
+  "errors.role.outsideOwner": {
+    "value": "An outside collaborator can't be an owner."
+  },
   "errors.teamProposal.undoExpired": {
     "value": "It is more than a day since this team was created, so it can't be undone here. Archive its agents on their pages."
   },
@@ -40732,6 +40805,9 @@
   "audit.change.mergedWithoutAsking": {
     "value": "Merged in {{repo}} without asking"
   },
+  "audit.change.accentChanged": {
+    "value": "Changed the workspace's accent color"
+  },
   "audit.change.pattern": {
     "value": "{{verb}} {{area}}"
   },
@@ -40755,6 +40831,15 @@
   },
   "audit.change.member.password_link": {
     "value": "Made a new-password link for a member"
+  },
+  "audit.change.outside.approved": {
+    "value": "Let in an outside collaborator for {{outsideOf}}"
+  },
+  "audit.change.outside.removed": {
+    "value": "Removed an outside collaborator for {{outsideOf}}"
+  },
+  "audit.change.outside.left": {
+    "value": "Left the workspace, an outside collaborator for {{outsideOf}}"
   },
   "audit.change.role.permission_set": {
     "value": "Changed who can {{short}}"
@@ -46557,6 +46642,12 @@
   },
   "billing.ownBucket": {
     "value": "On your own bucket, with no limit from us"
+  },
+  "referrals.open": {
+    "value": "Refer and earn"
+  },
+  "referrals.failed": {
+    "value": "Couldn't open it now. Try again in a moment."
   },
   "limits.members.full": {
     "value": "This workspace has {{members}} of {{limit}} people."

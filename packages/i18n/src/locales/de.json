@@ -3590,6 +3590,13 @@
     "onceHint": "Alle teilen sich die Limits deines Abos.",
     "use": "{{label}} nutzen",
     "another": "Anderes Konto",
+    "which": {
+      "title": "Welches {{brand}}-Konto nutzt {{name}}?",
+      "title_female": "Welches {{brand}}-Konto nutzt {{name}}?",
+      "titleAll": "Welches {{brand}}-Konto nutzen sie?",
+      "mine": "Deine {{brand}}-Konten auf {{computer}}",
+      "other": "Mit einem anderen {{brand}}-Konto anmelden"
+    },
     "reuse": {
       "active": "Du hast {{label}} hier schon. Melde dich erneut an oder nimm ein anderes Konto.",
       "signedOut": "{{label}} ist hier abgemeldet. Melde dich erneut an, und seine Agenten behalten es."
@@ -5244,6 +5251,7 @@
       "joinRequest_other": "{{name}} und andere möchten beitreten",
       "joinRequestNames": "{{names}} möchten beitreten",
       "joinSuggestion": "{{by}} hat {{name}} vorgeschlagen",
+      "joinOutside": "{{name}} möchte als externe Person für {{outsideOf}} beitreten, ohne einen Platz zu belegen",
       "doing": {
         "merge": "mergen",
         "deploy": "deployen",
@@ -5307,6 +5315,7 @@
       "joinRequest": "<b>{{name}}</b> möchte beitreten",
       "joinRequestMany": "<b>{{names}}</b> möchten beitreten",
       "joinSuggestion": "<b>{{by}}</b> hat <b>{{name}}</b> vorgeschlagen",
+      "joinOutside": "<b>{{name}}</b> möchte als externe Person für <b>{{outsideOf}}</b> beitreten, ohne einen Platz zu belegen",
       "changeRequest": "<b>{{name}}</b> bittet um eine Änderung an <b>{{agent}}</b>",
       "proposalWaiting": "Verbesserungsvorschläge von <b>{{names}}</b>",
       "changeRequestAgent": "<b>{{name}}</b> bittet um einen neuen Agenten: <b>{{agent}}</b>",
@@ -7365,6 +7374,10 @@
     "rolesAdd": "Rolle hinzufügen",
     "rolesChange": "Rollen ändern",
     "moreOf": "Mehr zu {{name}}",
+    "outside": {
+      "chip": "Extern",
+      "title": "Externe Person"
+    },
     "passwordLink": {
       "item": "Link für neues Passwort erstellen",
       "hint": "Wenn die Person ihr Passwort vergessen hat",
@@ -7578,6 +7591,8 @@
       "viaLink": "Über den Link angefragt {{when}}",
       "suggested": "Vorgeschlagen von {{name}} {{when}}",
       "suggestedLabel": "{{by}} hat {{name}} vorgeschlagen",
+      "outside": "Hat {{when}} angefragt, als externe Person für {{outsideOf}} beizutreten",
+      "outsideSeat": "Externe Personen zählen nicht zu den Personen deines Tarifs, und du kannst sie jederzeit entfernen.",
       "asked": "Angefragt {{ago}}",
       "askedNow": "Gerade eben angefragt",
       "askedOn": "Angefragt am {{date}}",
@@ -10496,6 +10511,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "Konto ohne Namen",
+    "rename": {
+      "action": "{{label}} umbenennen",
+      "label": "Kontoname",
+      "placeholder": "z. B. Arbeit, Privat"
+    },
     "share": {
       "switch": "Antwortet anderen Personen",
       "switchAll": "Anderen Personen antworten",
@@ -11205,6 +11226,17 @@
     "remove": "Logo entfernen",
     "saved": "Logo aktualisiert.",
     "removed": "Logo entfernt."
+  },
+  "orgAccent": {
+    "label": "Akzentfarbe",
+    "change": "Farbe ändern",
+    "useDefault": "Standard verwenden",
+    "suggested": "Vorgeschlagene Farben",
+    "sampleMention": "@Agent",
+    "sampleLink": "Ein Link",
+    "save": "Farbe speichern",
+    "saved": "Akzentfarbe aktualisiert.",
+    "reset": "Wieder die Standardfarbe."
   },
   "look": {
     "previous": "Zurück",
@@ -15031,7 +15063,8 @@
       "aboveYou": "Nur jemand über dieser Rolle kann sie ändern.",
       "base": "Jeder Workspace behält die Rolle „Alle“.",
       "unknown": "Diese Rolle gibt es nicht mehr.",
-      "orderIncomplete": "Die Rollen haben sich geändert, während du sie verschoben hast. Lad neu und versuch es noch einmal."
+      "orderIncomplete": "Die Rollen haben sich geändert, während du sie verschoben hast. Lad neu und versuch es noch einmal.",
+      "outsideOwner": "Eine externe Person kann nicht Inhaber sein."
     },
     "teamProposal": {
       "undoExpired": "Seit der Erstellung dieses Teams ist mehr als ein Tag vergangen, daher lässt es sich hier nicht rückgängig machen. Archiviere die Agenten auf ihren Seiten."
@@ -16547,6 +16580,7 @@
     "removed": "Entfernt",
     "change": {
       "mergedWithoutAsking": "In {{repo}} ohne Nachfrage gemergt",
+      "accentChanged": "Hat die Akzentfarbe des Workspace geändert",
       "pattern": "{{verb}}: {{area}}",
       "approval": {
         "approved": "Hat eine Anfrage freigegeben",
@@ -16558,6 +16592,11 @@
         "left": "Hat den Workspace verlassen",
         "role_changed": "Hat die Rolle eines Mitglieds geändert",
         "password_link": "Hat einen Link für ein neues Passwort für ein Mitglied erstellt"
+      },
+      "outside": {
+        "approved": "Hat eine externe Person für {{outsideOf}} hereingelassen",
+        "removed": "Hat eine externe Person für {{outsideOf}} entfernt",
+        "left": "Hat den Workspace verlassen, als externe Person für {{outsideOf}}"
       },
       "role": {
         "permission_set": "Hat geändert, wer {{short}} darf",
@@ -18946,6 +18985,10 @@
     "seatsPaid_other": "{{count}} bezahlte Plätze",
     "noLimit": "Kein Limit",
     "ownBucket": "In deinem eigenen Bucket, ohne Limit von uns"
+  },
+  "referrals": {
+    "open": "Empfehlen und verdienen",
+    "failed": "Konnte gerade nicht geöffnet werden. Versuch es gleich noch einmal."
   },
   "limits": {
     "members": {

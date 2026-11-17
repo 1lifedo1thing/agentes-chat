@@ -3441,6 +3441,13 @@
     "onceHint": "プランの上限はみんなで共有します。",
     "use": "{{label}}を使う",
     "another": "別のアカウント",
+    "which": {
+      "title": "{{name}} が使う {{brand}} アカウントは？",
+      "title_female": "{{name}} が使う {{brand}} アカウントは？",
+      "titleAll": "使う {{brand}} アカウントは？",
+      "mine": "{{computer}} にある {{brand}} アカウント",
+      "other": "別の {{brand}} アカウントでログイン"
+    },
     "reuse": {
       "active": "{{label}}はすでにここにあります。もう一度ログインするか、別のアカウントを使ってください。",
       "signedOut": "{{label}}はここでログアウトしています。もう一度ログインすると、エージェントはそのまま使えます。"
@@ -5043,6 +5050,7 @@
       "joinRequest_other": "{{name}}たちが参加をリクエストしています",
       "joinRequestNames": "{{names}}が参加をリクエストしています",
       "joinSuggestion": "{{by}}が{{name}}を提案しました",
+      "joinOutside": "{{name}}が{{outsideOf}}の外部協力者として参加をリクエストしました。プランの席は使いません",
       "doing": {
         "merge": "マージ",
         "deploy": "デプロイ",
@@ -5099,6 +5107,7 @@
       "joinRequest": "<b>{{name}}</b>が参加をリクエストしています",
       "joinRequestMany": "<b>{{names}}</b>が参加をリクエストしています",
       "joinSuggestion": "<b>{{by}}</b>が<b>{{name}}</b>を提案しました",
+      "joinOutside": "<b>{{name}}</b>が<b>{{outsideOf}}</b>の外部協力者として参加をリクエストしました。プランの席は使いません",
       "changeRequest": "<b>{{name}}</b>が<b>{{agent}}</b>の変更を依頼しています",
       "proposalWaiting": "<b>{{names}}</b> からの改善提案",
       "changeRequestAgent": "<b>{{name}}</b>が新しいエージェントを依頼しています：<b>{{agent}}</b>",
@@ -7088,6 +7097,10 @@
     "rolesAdd": "ロールを追加",
     "rolesChange": "ロールを変更",
     "moreOf": "{{name}} のその他の操作",
+    "outside": {
+      "chip": "外部",
+      "title": "外部協力者"
+    },
     "passwordLink": {
       "item": "新しいパスワードのリンクを作成",
       "hint": "パスワードを忘れたときに",
@@ -7285,6 +7298,8 @@
       "viaLink": "{{when}}にリンクからリクエスト",
       "suggested": "{{when}}に{{name}}が提案",
       "suggestedLabel": "{{by}}が{{name}}を提案",
+      "outside": "{{when}}に{{outsideOf}}の外部協力者として参加をリクエスト",
+      "outsideSeat": "外部協力者はプランの人数に含まれず、いつでも削除できます。",
       "asked": "{{ago}}にリクエスト",
       "askedNow": "たった今リクエスト",
       "askedOn": "{{date}}にリクエスト",
@@ -10067,6 +10082,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "名前のないアカウント",
+    "rename": {
+      "action": "{{label}} の名前を変更",
+      "label": "アカウント名",
+      "placeholder": "例: 仕事、個人"
+    },
     "share": {
       "switch": "他の人にも返信する",
       "switchAll": "他の人にも返信する",
@@ -10760,6 +10781,17 @@
     "remove": "ロゴを削除",
     "saved": "ロゴを更新しました。",
     "removed": "ロゴを削除しました。"
+  },
+  "orgAccent": {
+    "label": "アクセントカラー",
+    "change": "色を変更",
+    "useDefault": "デフォルトに戻す",
+    "suggested": "おすすめの色",
+    "sampleMention": "@エージェント",
+    "sampleLink": "リンク",
+    "save": "色を保存",
+    "saved": "アクセントカラーを更新しました。",
+    "reset": "デフォルトの色に戻しました。"
   },
   "look": {
     "previous": "前へ",
@@ -14469,7 +14501,8 @@
       "aboveYou": "このロールを変更できるのは、それより上のロールの人だけです。",
       "base": "どのワークスペースにも「全員」ロールは必ずあります。",
       "unknown": "そのロールはもうありません。",
-      "orderIncomplete": "移動中にロールが変更されました。再読み込みしてもう一度お試しください。"
+      "orderIncomplete": "移動中にロールが変更されました。再読み込みしてもう一度お試しください。",
+      "outsideOwner": "外部協力者はオーナーになれません。"
     },
     "teamProposal": {
       "undoExpired": "このチームの作成から1日以上たったため、ここでは取り消せません。各エージェントのページでアーカイブしてください。"
@@ -15966,6 +15999,7 @@
     "removed": "削除済み",
     "change": {
       "mergedWithoutAsking": "{{repo}}で確認なしでマージしました",
+      "accentChanged": "ワークスペースのアクセントカラーを変更",
       "pattern": "{{verb}}: {{area}}",
       "approval": {
         "approved": "リクエストを承認",
@@ -15977,6 +16011,11 @@
         "left": "ワークスペースから退出",
         "role_changed": "メンバーのロールを変更",
         "password_link": "メンバーの新しいパスワードのリンクを作成しました"
+      },
+      "outside": {
+        "approved": "{{outsideOf}}の外部協力者の参加を承認",
+        "removed": "{{outsideOf}}の外部協力者を削除",
+        "left": "{{outsideOf}}の外部協力者としてワークスペースから退出"
       },
       "role": {
         "permission_set": "「{{short}}」ができる人を変更",
@@ -18333,6 +18372,10 @@
     "seatsPaid_other": "支払い済み {{count}}席",
     "noLimit": "上限なし",
     "ownBucket": "自前のバケットを使用、こちらの上限はありません"
+  },
+  "referrals": {
+    "open": "紹介して特典を獲得",
+    "failed": "今は開けませんでした。少し待ってからもう一度お試しください。"
   },
   "limits": {
     "members": {

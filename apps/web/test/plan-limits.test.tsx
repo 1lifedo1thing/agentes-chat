@@ -36,6 +36,7 @@ const MAC: AiComputer = {
   keys: true,
   brains: { claude_code: true, codex: true },
 };
+/** Walter's Claude Team account, with the automatic name: it goes by its email. */
 const TEAM: AiAccounts["accounts"][number] = {
   id: "acct_team",
   kind: "claude_code",
@@ -105,9 +106,9 @@ describe("Sua conta: your plans' limits", () => {
   test("each plan your agents think with: its mark, its name and its compact line, opening Uso", async () => {
     const { router } = await go("settings/account", onPlans());
     const card = screen().getByRole("region", { name: "Limites dos seus planos" });
-    const plan = within(card).getByRole("button", { name: /^Claude Team/ });
+    const plan = within(card).getByRole("button", { name: /^walt@acme\.com/ });
     expect(plan.querySelector(".settings-row__icon .ac-brand")?.getAttribute("data-mark")).toBeTruthy();
-    expect(plan.querySelector(".settings-row__label")?.textContent).toBe("Claude Team");
+    expect(plan.querySelector(".settings-row__label")?.textContent).toBe("walt@acme.com");
     // Its tightest windows and one bar for the fullest: the line the agents' facts and AI accounts draw.
     expect(plan.querySelector(".ac-planmeter__line")?.textContent).toBe("semana 40% · 5h 12%");
     expect(
@@ -240,13 +241,13 @@ describe("the account menu: a plan near its limit", () => {
     const { router } = await go("settings", onPlans(), [{ ...TEAM, usage: used(86, 40) }]);
     const menu = await openMenu();
     expect(names(menu)).toEqual([
-      "Claude TeamQuase no limite",
+      "walt@acme.comQuase no limite",
       "Definir status",
       "Editar perfil",
       "Configurações",
       "Sair",
     ]);
-    const plan = within(menu).getByRole("menuitem", { name: /^Claude Team/ });
+    const plan = within(menu).getByRole("menuitem", { name: /^walt@acme\.com/ });
     expect(plan.querySelector(".ac-menu__leading .ac-brand--xs")).toBeTruthy();
     expect(plan.querySelector(".ac-menu__hint")?.textContent).toBe("Quase no limite");
     // Under you, before the menu's first separator.
@@ -267,11 +268,11 @@ describe("the account menu: a plan near its limit", () => {
     };
     await go("settings", onPlans(), [{ ...TEAM, usage: used(95, 40) }, work]);
     const menu = await openMenu();
-    expect(names(menu)[0]).toBe("Trabalho · TeamNo limite");
-    expect(names(menu).filter((n) => n?.startsWith("Claude Team"))).toEqual([]);
+    expect(names(menu)[0]).toBe("TrabalhoNo limite");
+    expect(names(menu).filter((n) => n?.startsWith("walt@acme.com"))).toEqual([]);
     cleanup();
     await go("settings", onPlans(), [{ ...TEAM, usage: used(100, 40) }]);
-    expect(names(await openMenu())[0]).toMatch(/^Claude TeamNo limite até /);
+    expect(names(await openMenu())[0]).toMatch(/^walt@acme\.comNo limite até /);
   });
 });
 
@@ -442,7 +443,8 @@ describe("IA e uso › Contas: the order of use at a limit (ADR 0041 §6)", () =
     expect(grips).toEqual(["Mover Trabalho, número 1 na ordem", "Mover Pessoal, número 2 na ordem"]);
     // ChatGPT has one account: a row like any other, no place, no heading.
     expect(plans().querySelectorAll(".plan-order")).toHaveLength(1);
-    const codex = [...plans().querySelectorAll(".plan-row")].find((r) => r.textContent?.includes("ChatGPT Plus"));
+    // Its automatic name ("ChatGPT Plus") says nothing: the row goes by its email.
+    const codex = [...plans().querySelectorAll(".plan-row")].find((r) => r.textContent?.includes("acct_x@example.com"));
     expect(codex?.querySelector(".plan-row__place")).toBeNull();
   });
 

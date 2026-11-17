@@ -12,7 +12,7 @@ import type {
   PlanUseKind,
   PlanWindowParts,
 } from "../api/types";
-import { accountTitle, groupPlans, orderAccounts, ownSignInName, ownSignIns, ownSignInTitle } from "./ai-accounts";
+import { accountSub, accountTitle, groupPlans, orderAccounts, ownSignInName, ownSignIns, ownSignInTitle } from "./ai-accounts";
 import {
   daysBetween,
   firstName,
@@ -23,7 +23,7 @@ import {
   relativeTime,
 } from "./format";
 import { brainName } from "./outages";
-import { modelLimitOf, ownLimitsModel, planOf, planReplies } from "./plans";
+import { isPlanId, modelLimitOf, ownLimitsModel, planOf, planReplies } from "./plans";
 
 /**
  * The words of the plan usage views (ADR 0063), shared by the web and the phone: a plan meter's text, an
@@ -372,10 +372,10 @@ export function ownPlanLines(
           {
             key,
             logo: a.provider ?? a.kind,
-            name: accountTitle(a),
+            name: accountTitle(t, a),
             usage,
             computer: a.computer,
-            detail: a.email ?? (a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : null),
+            detail: accountSub(a) ?? (a.keyHint ? t("aiAccounts.page.keyEnds", { hint: a.keyHint }) : null),
           },
         ]
       : [];
@@ -521,6 +521,13 @@ export const accountOwner = (t: TFunction, a: Pick<PlanAccountInfo, "ownerName">
   a.ownerName ? t("usageViews.whose", { name: firstName(a.ownerName) }) : null;
 
 /**
+ * Whose an account is, under its name (`accountName`): its email where the name is one its owner gave it, nothing
+ * where the email is already the name, else its owner.
+ */
+export const accountWhose = (t: TFunction, a: Pick<PlanAccountInfo, "ownerName" | "email" | "named">) =>
+  a.email ? (a.named === true ? a.email : null) : accountOwner(t, a);
+
+/**
  * Who uses a plan (ADR 0059 §3), in a few words for its row: "Todos usam", "Só você usa", "Só Ana usa". Null for the
  * computer's own sign-in, which thinks for its pairer's agents, or an older server that doesn't say.
  */
@@ -652,9 +659,21 @@ export function usageOrderSections<R extends Pick<PlanAccountInfo, "machineId" |
   return out;
 }
 
-/** What people call a plan account: its label, or the computer's own sign-in's name (`ownSignInName`). */
-export const accountName = (t: TFunction, a: Pick<PlanAccountInfo, "label" | "machineName" | "mine" | "kind">) =>
-  a.label ?? ownSignInName(t, a.mine, a.machineName, a.kind);
+/**
+ * What people call a plan account: as every app titles it (`accountTitle`: a name its owner gave it, else its email),
+ * or the computer's own sign-in's name (`ownSignInName`).
+ */
+export const accountName = (
+  t: TFunction,
+  a: Pick<PlanAccountInfo, "label" | "named" | "email" | "plan" | "provider" | "machineName" | "mine" | "kind">,
+) =>
+  a.label === null
+    ? ownSignInName(t, a.mine, a.machineName, a.kind)
+    : // Someone else's and a key account (an OpenCode one is too: the usage views carry no key's end) by their name
+      // alone, as before: the row's chip says the plan.
+      a.mine && a.kind !== "opencode" && !isPlanId(a.provider)
+      ? accountTitle(t, { ...a, label: a.label, keyHint: null })
+      : a.label;
 
 /** Who makes what an account thinks with: a coding plan's maker, else Claude Code or Codex. */
 export const brandOf = (a: Pick<PlanAccountInfo, "kind" | "provider">) =>

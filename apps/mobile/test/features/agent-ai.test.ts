@@ -382,7 +382,9 @@ describe("the agent's AI", () => {
     expect(settings).not.toMatch(/Alert\.prompt|Platform\.OS/);
     // Renaming is pushed (screens, not sheets), its field waiting for a tap and Save in the bar.
     expect(settings).not.toContain("<PromptForm");
-    expect(settings).toContain('router.push({ pathname: "/ai-account-rename", params: { machineId, accountId } });');
+    // Its opener is shared: every list that shows an account (its pencil) pushes the same screen.
+    const parts = await Bun.file(new URL("../../src/features/ai/parts.tsx", import.meta.url).pathname).text();
+    expect(parts).toContain('router.push({ pathname: "/ai-account-rename", params: { machineId, accountId } });');
     expect(settings).toContain('action={{ label: t("common.save"), disabled: !ready, onPress: () => void save() }}');
     expect(settings).not.toContain("autoFocus");
     expect(settings).toMatch(/sheet\.open\(\s*<KeyPrompt\s+title=\{t\("settings\.rotateTitle"/);
@@ -487,7 +489,7 @@ describe("the agent's AI", () => {
     const t = await translator("pt-BR");
     const theo = account("t", { usedBy: ["Theo"] });
     expect(accountRow(t, { login: theo, usedBy: ["Theo", "Lia"], also: true }, "Ada", "pt-BR").sub).toBe(
-      "Também usada por Theo e Lia",
+      "Max · Também usada por Theo e Lia",
     );
   });
 
@@ -518,7 +520,7 @@ describe("the agent's AI", () => {
     const view = {
       account: "ada",
       accounts: [
-        account("pessoal", { label: "Claude Pessoal", email: "walter@acme.com.br", usedBy: ["Atlas"] }),
+        account("pessoal", { label: "Claude Pessoal", named: true, email: "walter@acme.com.br", usedBy: ["Atlas"] }),
         account("plus", {
           kind: "codex",
           label: "ChatGPT Plus",
@@ -536,9 +538,10 @@ describe("the agent's AI", () => {
     expect(
       rows.map((r) => [r.row.kind === "key" ? "key" : r.row.act, r.label, r.sub, "below" in r ? r.below : null]),
     ).toEqual([
-      ["use", "Claude Team", "team@example.com", null],
-      ["also", "Claude Pessoal · Max", "Também usada por Atlas", null],
-      ["also", "ChatGPT Plus", "Também usada por Atlas", null],
+      // Each by the name its owner gave it, else its email; the email under a given name, then the plan.
+      ["use", "team@example.com", "Team", null],
+      ["also", "Claude Pessoal", "walter@acme.com.br · Max · Também usada por Atlas", null],
+      ["also", "walt@gmail.com", "Plus · Também usada por Atlas", null],
       ["key", "Claude da Acme", "Claude · termina em 7f2a", "Pago por uso. Conta no orçamento da Ada."],
     ]);
     expect(existingNotes(t, view, [])).toEqual([
@@ -702,19 +705,23 @@ describe("the agent's AI", () => {
     }
   });
 
-  test("an account says its plan once, after its name, and Claude's plans go by Anthropic's names", async () => {
-    expect(accountTitle(account("Claude", { plan: "ultra" }))).toBe("Claude · Ultra");
-    expect(accountTitle(account("Claude 2"))).toBe("Claude 2 · Max");
-    expect(accountTitle(account("GLM Coding", { plan: null, provider: "zai" }))).toBe("GLM Coding");
+  test("an account reads by its email or the name its owner gave it, and a computer's own sign-in by its maker", async () => {
+    const pt = await translator("pt-BR");
+    expect(accountTitle(pt, account("Claude 2", { email: "ana@acme.com" }))).toBe("ana@acme.com");
+    expect(accountTitle(pt, account("Trabalho", { named: true, email: "ana@acme.com" }))).toBe("Trabalho");
+    expect(accountTitle(pt, account("Claude"))).toBe("Conta sem nome");
+    expect(accountTitle(pt, account("GLM Coding", { plan: null, provider: "zai", keyHint: "MnOp" }))).toBe(
+      "GLM Coding",
+    );
     // The agent's AI and Connect an AI (their rows), Contas de IA and Você name accounts so, and a computer's own
     // sign-in by its maker the same way ("Claude · Max").
     expect(ownSignInTitle(await translator("pt-BR"), { kind: "claude_code", plan: "max" })).toBe("Claude · Max");
     const read = (file: string) => Bun.file(new URL(`../../src/features/${file}`, import.meta.url).pathname).text();
-    expect(await read("ai/logic.ts")).toContain("label: accountTitle(choice.login),");
+    expect(await read("ai/logic.ts")).toContain("label: accountTitle(t, choice.login),");
     // AI accounts' grouped rows take a `label`, the Me page's rows a `title`.
     for (const [screen, row, prop] of [["ai/AiAccountsScreen.tsx", "a", "label"]]) {
       const source = await read(screen);
-      expect(source).toContain(`${prop}={accountTitle(${row})}`);
+      expect(source).toContain(`${prop}={accountTitle(t, ${row})}`);
       expect(source).toContain(`${prop}={ownSignInTitle(t, o)}`);
       expect(source).not.toContain("planWordOf(o.plan)");
     }
@@ -887,7 +894,7 @@ describe("the agent's AI", () => {
       },
     ];
     const opencode = account("oc", { provider: "opencode", label: "Plano", keyHint: "Ex2b" });
-    const work = account("cl2", { label: "Trabalho" });
+    const work = account("cl2", { label: "Trabalho", named: true });
     const opus = {
       brain: "claude_code" as const,
       effectiveModel: "opus",

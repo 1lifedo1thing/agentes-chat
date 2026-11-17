@@ -14,6 +14,7 @@ import {
   type AccountChoice,
   accountAbout,
   accountChain,
+  accountInLine,
   accountTitle,
   chainHasRoom,
   type ExistingAi,
@@ -28,6 +29,7 @@ import {
   ownSignInLower,
   pickable,
   signInOf,
+  unnamedAccount,
 } from "@agenteschat/client/lib/ai-accounts";
 import { thinksWith } from "@agenteschat/client/lib/brain";
 import { type Advanced, advancedDefaults, advancedParts } from "@agenteschat/client/lib/brain-advanced";
@@ -207,14 +209,14 @@ export function accountSaved(
   t: TFunction,
   _language: string,
   agentName: string,
-  a: Pick<MachineAccount, "label"> | null,
+  a: Pick<MachineAccount, "kind" | "label" | "plan" | "email" | "mine" | "named" | "keyHint" | "provider"> | null,
   input: Pick<AgentBrainInput, "model">,
   saved: ThinkingView,
 ): string {
   const g = agentGrammar(agentName);
   if ("model" in input) return t("agentPage.work.saved.brain", { ...g, brain: thinksNow(t, saved) ?? "" });
   return a
-    ? t("agentPage.work.saved.account", { ...g, account: a.label })
+    ? t("agentPage.work.saved.account", { ...g, account: accountInLine(t, a) })
     : t("aiAccounts.done.savedAgent", { agent: agentName, label: ownSignInLower(t, saved.brain) });
 }
 
@@ -226,7 +228,8 @@ export const accountRow = (t: TFunction, choice: AccountChoice<MachineAccount>, 
   const usage = choice.login.usage;
   const word = planWord(t, locale, usage ? planState(usage, Date.now()) : null);
   return {
-    label: accountTitle(choice.login),
+    label: accountTitle(t, choice.login),
+    unnamed: unnamedAccount(choice.login),
     sub: accountAbout(t, choice, agentName),
     ...(word ? { below: word } : {}),
     mark: choice.login.provider ?? choice.login.kind,
@@ -270,7 +273,8 @@ export function existingRows(
       key: a.id,
       row,
       group,
-      label: accountTitle(a),
+      label: accountTitle(t, a),
+      unnamed: unnamedAccount(a),
       sub: haveAbout(t, row, agentName),
       ...(word ? { below: word } : {}),
       mark: a.provider ?? a.kind,

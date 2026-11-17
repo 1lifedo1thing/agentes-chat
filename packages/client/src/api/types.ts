@@ -165,6 +165,8 @@ export interface AuthConfig {
   workspaceComputer?: boolean;
   /** The billing service (ADR 0079): owners and admins open a workspace's plan there; null or absent: no billing. */
   billingUrl?: string | null;
+  /** The referral service (ADR 0192): "Refer and earn" opens it (`account.referralsLink`); null or absent: none. */
+  referralsUrl?: string | null;
   /** One of agentes.chat's own servers (`Instance.cloud`); absent: a self-hosted server too old to say. */
   cloud?: boolean;
   /** The bot check's site key (Cloudflare Turnstile, ADR 0075); null or absent: no check, nothing from Cloudflare. */
@@ -312,6 +314,8 @@ export interface OrgSummary {
   rank?: number | null;
   /** The workspace logo (`/api/app/org-logos/…`); null or absent = the agent mark. */
   logo?: string | null;
+  /** The workspace's accent "#rrggbb" (ADR 0193): the apps paint the agent colors from it. Null or absent: the default. */
+  accent?: string | null;
   /** From `GET /me`: when it was made. Absent from older servers. */
   createdAt?: string;
   /** From `GET /me`; absent from older servers (active). Changes come as `org.standing` events. */
@@ -449,6 +453,11 @@ export interface Member {
   /** Their roles (`OrgRole` ids), not `everyone`. */
   roleIds?: string[];
   joinedAt: string;
+  /**
+   * Who the person works for, when they come from outside the workspace (ADR 0191): shown beside their name, and they
+   * never count toward its limit of people. Null (absent on a server from before it) for everyone else.
+   */
+  outsideOf?: string | null;
   /** `@ana`: unique in the organization; mentions resolve by it. */
   handle: string;
   /** IANA zone (the organization's if the person didn't pick one). */
@@ -708,6 +717,11 @@ export interface JoinRequest {
   confirmed: boolean;
   /** The member who suggested this person (their name, ADR 0090): it came through no link. */
   suggestedBy?: string | null;
+  /**
+   * Who the person works for, on a request the server's operator filed for an outside collaborator (ADR 0191):
+   * approving lets them in at once, even into a full workspace.
+   */
+  outsideOf?: string | null;
   /**
    * The link it came through (ADR 0184): who made it, and the cargos, channels and agents an approval starts on.
    * `full`: it took all its people, so approving is refused (`join.link_full_approval`) until its maximum grows.
@@ -2549,6 +2563,8 @@ export interface Person {
   roleIds?: string[];
   joinedAt: string;
   lastSeenAt: string | null;
+  /** Who an outside collaborator works for (ADR 0191), as on `Member`. */
+  outsideOf?: string | null;
   /** Seen as connected: `presence` is online, away or busy. */
   online: boolean;
   /** `hidden` only for yourself; everyone else sees a hidden person as `offline` (ADR 0084). */
@@ -6055,6 +6071,8 @@ export interface MachineAccount {
   id: string;
   kind: MachineAccountKind;
   label: string;
+  /** Its owner gave it its name; false or absent (an older server): the automatic one ("Claude 2"), so the apps show the account by its email. */
+  named?: boolean;
   /** Only for its owner. */
   email: string | null;
   /** `pro`, `max`, `ultra`, `team`… from what the CLI says (`planWordOf` names it). */
@@ -6261,7 +6279,17 @@ export interface NewAgentSetup {
   /** A computer brain: where it thinks. */
   computer?: { machineId: string; name: string };
   /** Its account there; null = that computer's own sign-in. */
-  account?: { id: string; label: string; provider: string | null; mine: boolean; free: boolean } | null;
+  account?: {
+    id: string;
+    label: string;
+    /** Its owner gave it its name; false or absent (an older server): shown by its email. */
+    named?: boolean;
+    email?: string | null;
+    plan?: string | null;
+    provider: string | null;
+    mine: boolean;
+    free: boolean;
+  } | null;
   /** The computer's own sign-in thinks for the caller's agents there (they connected it). */
   ownSignIn?: boolean;
   effort?: BrainEffortSetting | null;
@@ -6954,6 +6982,8 @@ export interface NotificationLatest {
   names?: string[];
   /** `join_request` from a member's suggestion (ADR 0090): who suggested. */
   suggestedBy?: string;
+  /** `join_request` for an outside collaborator (ADR 0191): who they work for, so a row of one says so. */
+  outsideOf?: string;
   /** `computer_disk_full`: the share of the disk in use (0 to 1) and the GB left. */
   diskUse?: number;
   diskFreeGb?: number;
@@ -7833,6 +7863,8 @@ export interface PlanAccountInfo {
   /** Null: the computer's own sign-in ("Conta deste computador"). */
   accountId: string | null;
   label: string | null;
+  /** Its owner gave it its name; false or absent (an older server): the automatic one, shown by its email. */
+  named?: boolean;
   plan: string | null;
   /** A key account's coding plan (`zai`, `kimi`…). */
   provider: string | null;

@@ -3442,6 +3442,13 @@
     "onceHint": "它们共享你套餐的用量上限。",
     "use": "使用 {{label}}",
     "another": "其他账号",
+    "which": {
+      "title": "{{name}} 要用哪个 {{brand}} 账号？",
+      "title_female": "{{name}} 要用哪个 {{brand}} 账号？",
+      "titleAll": "他们要用哪个 {{brand}} 账号？",
+      "mine": "你在 {{computer}} 上的 {{brand}} 账号",
+      "other": "用另一个 {{brand}} 账号登录"
+    },
     "reuse": {
       "active": "你在这里已经有 {{label}}。重新登录它，或使用其他账号。",
       "signedOut": "{{label}} 在这里已退出登录。重新登录后，它的智能体会继续使用它。"
@@ -5045,6 +5052,7 @@
       "joinRequest_other": "{{name}} 等人申请加入",
       "joinRequestNames": "{{names}} 申请加入",
       "joinSuggestion": "{{by}} 推荐了 {{name}}",
+      "joinOutside": "{{name}} 申请以 {{outsideOf}} 外部协作者身份加入，不占用席位",
       "doing": {
         "merge": "合并",
         "deploy": "部署",
@@ -5101,6 +5109,7 @@
       "joinRequest": "<b>{{name}}</b> 申请加入",
       "joinRequestMany": "<b>{{names}}</b> 申请加入",
       "joinSuggestion": "<b>{{by}}</b> 推荐了 <b>{{name}}</b>",
+      "joinOutside": "<b>{{name}}</b> 申请以 <b>{{outsideOf}}</b> 外部协作者身份加入，不占用席位",
       "changeRequest": "<b>{{name}}</b> 请求更改 <b>{{agent}}</b>",
       "proposalWaiting": "来自 <b>{{names}}</b> 的改进提议",
       "changeRequestAgent": "<b>{{name}}</b> 请求新的智能体：<b>{{agent}}</b>",
@@ -7125,6 +7134,10 @@
     "rolesAdd": "添加角色",
     "rolesChange": "更改角色",
     "moreOf": "{{name}} 的更多操作",
+    "outside": {
+      "chip": "外部",
+      "title": "外部协作者"
+    },
     "passwordLink": {
       "item": "生成新密码链接",
       "hint": "在对方忘记密码时使用",
@@ -7322,6 +7335,8 @@
       "viaLink": "{{when}}通过链接申请",
       "suggested": "由 {{name}} 于{{when}}推荐",
       "suggestedLabel": "{{by}} 推荐了 {{name}}",
+      "outside": "{{when}}申请以 {{outsideOf}} 外部协作者身份加入",
+      "outsideSeat": "外部协作者不计入你套餐的人数，你可以随时移除他们。",
       "asked": "{{ago}}申请",
       "askedNow": "刚刚申请",
       "askedOn": "于 {{date}} 申请",
@@ -10110,6 +10125,12 @@
     }
   },
   "aiAccounts": {
+    "unnamed": "未命名账号",
+    "rename": {
+      "action": "重命名 {{label}}",
+      "label": "账号名称",
+      "placeholder": "例如：工作、个人"
+    },
     "share": {
       "switch": "回复其他成员",
       "switchAll": "回复其他成员",
@@ -10825,6 +10846,17 @@
     "remove": "移除徽标",
     "saved": "徽标已更新。",
     "removed": "徽标已移除。"
+  },
+  "orgAccent": {
+    "label": "强调色",
+    "change": "更改颜色",
+    "useDefault": "使用默认颜色",
+    "suggested": "推荐颜色",
+    "sampleMention": "@智能体",
+    "sampleLink": "一个链接",
+    "save": "保存颜色",
+    "saved": "强调色已更新。",
+    "reset": "已恢复默认颜色。"
   },
   "look": {
     "previous": "上一个",
@@ -14531,7 +14563,8 @@
       "aboveYou": "只有比这个角色级别更高的人才能修改它。",
       "base": "每个工作区都保留“所有人”角色。",
       "unknown": "这个角色已不存在。",
-      "orderIncomplete": "你移动时角色发生了变化。请刷新后重试。"
+      "orderIncomplete": "你移动时角色发生了变化。请刷新后重试。",
+      "outsideOwner": "外部协作者不能成为所有者。"
     },
     "teamProposal": {
       "undoExpired": "这个团队创建已超过一天，无法在这里撤销。请在各智能体的页面上归档它们。"
@@ -16028,6 +16061,7 @@
     "removed": "已移除",
     "change": {
       "mergedWithoutAsking": "未经询问在 {{repo}} 中合并",
+      "accentChanged": "更改了工作区的强调色",
       "pattern": "{{verb}}{{area}}",
       "approval": {
         "approved": "批准了一个请求",
@@ -16039,6 +16073,11 @@
         "left": "离开了工作区",
         "role_changed": "更改了一位成员的角色",
         "password_link": "为成员生成了新密码链接"
+      },
+      "outside": {
+        "approved": "让 {{outsideOf}} 的外部协作者加入了",
+        "removed": "移除了 {{outsideOf}} 的外部协作者",
+        "left": "以 {{outsideOf}} 外部协作者身份离开了工作区"
       },
       "role": {
         "permission_set": "更改了谁可以{{short}}",
@@ -18448,6 +18487,10 @@
     "seatsPaid_other": "已付费 {{count}} 个席位",
     "noLimit": "无限制",
     "ownBucket": "在你自己的存储桶上，我们不设限制"
+  },
+  "referrals": {
+    "open": "推荐有奖",
+    "failed": "暂时无法打开，请稍后再试。"
   },
   "limits": {
     "members": {

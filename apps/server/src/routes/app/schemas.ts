@@ -101,6 +101,16 @@ const Rank = z.number().int().nullable().openapi({
   description: "Their highest role's position (0 the top), null with none. They manage roles and people below it.",
 });
 const RoleIds = z.array(z.string()).openapi({ description: "Their roles (`org_roles` ids), not `everyone`." });
+export const OutsideOf = z.string().nullable().optional().openapi({
+  description:
+    "Who the person works for, when they come from outside the workspace (ADR 0191): shown beside their name, and they never count toward its limit of people. Null for everyone else.",
+});
+
+/** A "#rrggbb" color, any case (stored in lower case). */
+export const AccentColor = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/)
+  .openapi("AccentColor", { description: "A `#rrggbb` color.", example: "#7c3aed" });
 
 export const ProviderId = z.enum(PROVIDER_IDS).openapi("ProviderId");
 
@@ -181,6 +191,9 @@ export const Organization = z
       .nullable()
       .optional()
       .openapi({ description: "The workspace logo (`/api/app/org-logos/…`); null = the agent mark." }),
+    accent: AccentColor.nullable()
+      .optional()
+      .openapi({ description: "The workspace's accent color (ADR 0193); null = the default." }),
     createdAt: z
       .string()
       .optional()
@@ -256,6 +269,7 @@ export const Member = z
     role: Role,
     roleIds: RoleIds,
     joinedAt: z.string(),
+    outsideOf: OutsideOf,
     handle: z.string(),
     timezone: z.string(),
   })
@@ -1056,6 +1070,10 @@ export const MachineAccount = z
     id: z.uuid(),
     kind: AccountKind,
     label: z.string(),
+    named: z.boolean().openapi({
+      description:
+        'Its owner gave it its name; false: the name is the automatic one ("Claude 2"), and the apps show the account by its email.',
+    }),
     email: z.string().nullable().openapi({ description: "Only for its owner." }),
     plan: z
       .string()
@@ -1283,6 +1301,9 @@ export const NewAgentSetup = z
       .object({
         id: z.uuid(),
         label: z.string(),
+        named: z.boolean().openapi({ description: "Its owner gave it its name; false: shown by its email." }),
+        email: z.string().nullable().openapi({ description: "Only for its owner." }),
+        plan: z.string().nullable(),
         provider: z.string().nullable(),
         mine: z.boolean(),
         free: z.boolean().openapi({

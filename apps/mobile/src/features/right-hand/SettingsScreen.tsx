@@ -449,7 +449,7 @@ function WorkspaceAi({ agent, dir }: { agent: Agent; dir: Directory }) {
                 <GroupedRow
                   key={u.id}
                   leading={<ProviderLogo id={u.account.provider ?? u.account.kind} size="sm" />}
-                  label={accountTitle(u.account)}
+                  label={accountTitle(t, u.account)}
                   sub={
                     owner
                       ? t("rightHand.unusable.away", { owner, computer: u.account.computer })

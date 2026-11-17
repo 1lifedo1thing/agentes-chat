@@ -126,7 +126,7 @@ import { createMockCustomConnectors } from "./fakes/custom-connectors";
 import { createFakeDashboards, type FakeDashboards } from "./fakes/dashboards";
 import { createFakeDatabases, type FakeDatabases } from "./fakes/databases";
 import { createFakeDevices, type FakeDevices } from "./fakes/devices";
-import { createFakeMachines, type FakeMachines } from "./fakes/machines";
+import { createFakeMachines, type FakeMachines, withNamed } from "./fakes/machines";
 import { createFakeMail, type FakeMail } from "./fakes/mail";
 import { createFakeMissions } from "./fakes/missions";
 import { createFakeNotifications } from "./fakes/notifications";
@@ -363,8 +363,12 @@ export interface FakeState {
   failPosts?: boolean | ApiError;
   /** `chat.post` waits for this (to see the pending state). */
   holdPosts?: Promise<void>;
+  /** `orgs.setAccent` waits for this (to see the pending state). */
+  setAccentGate?: Promise<void>;
   /** What `orgs.billingLink` throws (default: a link on billing.example.com). */
   billingLinkError?: ApiError;
+  /** What `account.referralsLink` throws (default: a link on refer.example.com). */
+  referralsLinkError?: ApiError;
   /** A new workspace's standing (`orgs.create`): agentes.chat Cloud starts it waiting for its first plan. */
   newWorkspaceStanding?: OrgStanding;
   /** `orgs.limits` (ADR 0079); unset = no limits, the members counted from `members`. */
@@ -1547,6 +1551,11 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         firstRun: false,
         ...state.authConfig,
       }),
+      referralsLink: async (returnTo) => {
+        log("account.referralsLink", returnTo);
+        if (state.referralsLinkError) throw state.referralsLinkError;
+        return { url: "https://refer.example.com/link?t=v1", expiresAt: NOW.toISOString() };
+      },
       signInOptions: async (input, humanCheck) => {
         if (humanCheck !== undefined) state.calls.push({ method: "account.signInOptions", args: [input, humanCheck] });
         return state.signInOptions ?? { account: false, password: false, providers: [], canSignUp: true };
@@ -1920,6 +1929,18 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
       removeLogo: async (orgId) => {
         log("orgs.removeLogo", orgId);
         setOrgLogo(orgId, null);
+      },
+      setAccent: async (orgId, accent) => {
+        log("orgs.setAccent", orgId, accent);
+        if (state.setAccentGate) await state.setAccentGate;
+        if (state.me) {
+          const next = accent?.toLowerCase() ?? null;
+          state.me = {
+            ...state.me,
+            organizations: state.me.organizations.map((o) => (o.id === orgId ? { ...o, accent: next } : o)),
+          };
+        }
+        return { accent: accent?.toLowerCase() ?? null };
       },
       billingLink: async (orgId, from, _returnTo, plan) => {
         log("orgs.billingLink", orgId, from, ...(plan ? [plan] : []));
@@ -2849,7 +2870,8 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         const agent = state.agents.find((a) => a.id === agentId);
         if (me.organizations[0]?.role === "member" && agent?.ownerUserId !== me.user.id && !agent?.builtin)
           throw new ApiError(403, "agent.not_owner", "Only an admin or the agent's owner");
-        return structuredClone(brainOf(agentId));
+        const view = structuredClone(brainOf(agentId));
+        return { ...view, accounts: view.accounts.map(withNamed) };
       },
       brainMachines: async (orgId) => {
         log("agents.brainMachines", orgId);
@@ -4395,6 +4417,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
           kind: a.kind,
           accountId: a.id,
           label: a.label,
+          ...(a.named !== undefined ? { named: a.named } : {}),
           plan: a.plan,
           provider: a.provider,
           ownerName: a.ownerName,
@@ -4468,6 +4491,8 @@ export function fakeAgentBrain(agentId: string, patch: Partial<AgentBrain> = {})
     ownUsage: {},
     ...patch,
   };
+  // Its accounts as the server sends them: whether each name is the automatic one.
+  brain.accounts = brain.accounts.map(withNamed);
   // The computers the person may give the agent: the MacBook, with what it offers.
   if (patch.machines) return brain;
   const computer = brain.computer ?? { machineId: "machine_1", name: "MacBook", online: true };
