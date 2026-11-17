@@ -134,6 +134,7 @@ import Animated, {
   FadeOut,
   Keyframe,
   LayoutAnimationConfig,
+  useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -209,6 +210,7 @@ import { AskBar, AskProbes, AskStoreProvider, useAskWatch, useAwayAsk, WaitingHe
 import { ChannelHello } from "./ChannelHello";
 import { ChannelPicker } from "./ChannelPicker";
 import { ChannelWelcome } from "./ChannelWelcome";
+import { ChatPeek, usePullPastEnd } from "./ChatPeek";
 import { ChatSkeleton } from "./ChatSkeleton";
 import { type OpenedMessages, OpenedMessagesContext } from "./ClippedMessage";
 import { ConversationSwitcher } from "./ConversationSwitcher";
@@ -251,6 +253,7 @@ import { NoAiBanner } from "./NoAiBanner";
 import { newMissionHref } from "./new-mission";
 import { endsOnNoAiCard, noAiBanner } from "./no-ai-banner";
 import { PinnedLines, PinsSheet } from "./PinsSheet";
+import { peekAgentOf } from "./peek";
 import { QuoteBar } from "./QuoteLine";
 import { AgentLocked, UnavailableLines } from "./ReachLines";
 import { ReturnLine, ReturnsSheet, useReturnsHere } from "./Returns";
@@ -350,6 +353,11 @@ const COMPOSER_INPUT_ID = "chat-composer";
 const HOLD_MS = 900;
 /** Holding a message opens the system's menu where there is one (iOS); elsewhere, the app's sheet. */
 const NATIVE_MENU = Platform.OS === "ios";
+/**
+ * The agent peeking past the conversation's end (`ChatPeek`) where the list reports a pull there: iOS bounces past its
+ * end; Android's list stops at it (its stretch is drawn, never in the offset).
+ */
+const PEEK = Platform.OS === "ios";
 /** The notifications line was shown and answered here: it doesn't come back on this screen. */
 const OFFER_DONE = "done";
 /** How long the list keeps ignoring the keyboard after what covered it closed (its closing animation, ms). */
@@ -2561,6 +2569,11 @@ function Chat({
     const state = listRef.current?.getState();
     if (state) setFar(screenAboveEnd(state.distanceFromEnd, state.scrollLength));
   }, [watchList]);
+  // The conversation's agent peeks up from behind the dock as the person pulls past the last message (`ChatPeek`), read
+  // from the list's scroll view on the UI thread: the keyboard's list lends it through `refScrollView`, next to its own.
+  const listScroll = useAnimatedRef<Animated.ScrollView>();
+  const peekAgentId = useMemo(() => (PEEK ? peekAgentOf(dmAgentId, shownMessages) : null), [dmAgentId, shownMessages]);
+  const pull = usePullPastEnd(listScroll, peekAgentId !== null);
 
   // The list shows once it sits where it opens, at the end or at the "Novas" line (no frame of it placing itself), as
   // Bluesky's and Expensify's do; from a little opacity, not none, so the glass inside rows keeps drawing.
@@ -2881,6 +2894,7 @@ function Chat({
                               <OpenedMessagesContext.Provider value={openedMessages}>
                                 <ConversationList
                                   ref={listRef}
+                                  refScrollView={listScroll}
                                   style={styles.grow}
                                   data={shownRows}
                                   keyExtractor={rowKey}
@@ -3031,6 +3045,8 @@ function Chat({
           ) : null}
           {peeking ? null : (
             <KeyboardStickyView offset={{ opened: lift }} style={styles.composerDock} pointerEvents="box-none">
+              {/* First in the dock, so everything in it draws over the face. */}
+              {peekAgentId && showList ? <ChatPeek agentId={peekAgentId} pull={pull} dock={endInset} /> : null}
               {/* Right above the composer and its working line, in the same dock: it rides the keyboard with them and
                   moves with the box in the same frame when the field grows a line (placed from the box's measured
                   height it came a render later). */}
