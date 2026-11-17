@@ -4,12 +4,14 @@ import type { AiComputer, Credential, MachineAccount, PlanUsage } from "../src/a
 import {
   accountAbout,
   accountChoices,
+  accountSub,
   accountTitle,
   agentsToGive,
   endsOnClaude,
   existingAi,
   groupPlans,
   identityUnknown,
+  labelTitle,
   lendable,
   listsExisting,
   offersSignInAgain,
@@ -23,7 +25,9 @@ import {
   reusableAccount,
   signInOf,
   signInPlan,
+  unnamedAccount,
   unusedCopies,
+  withSub,
 } from "../src/lib/ai-accounts";
 import { accountName, usageSourcePart } from "../src/lib/plan-usage";
 
@@ -337,15 +341,47 @@ describe("the computers' own sign-ins", () => {
     expect(planWordOf(null)).toBeNull();
   });
 
-  test("an account's title says its plan once, after its name", () => {
-    expect(accountTitle({ label: "Claude", plan: "max" })).toBe("Claude · Max");
-    expect(accountTitle({ label: "Claude 2", plan: "ultra" })).toBe("Claude 2 · Ultra");
-    expect(accountTitle({ label: "GLM Coding", plan: null })).toBe("GLM Coding");
+  test("an account read by its name says its plan once, after it", () => {
+    expect(labelTitle({ label: "Claude", plan: "max" })).toBe("Claude · Max");
+    expect(labelTitle({ label: "Claude 2", plan: "ultra" })).toBe("Claude 2 · Ultra");
+    expect(labelTitle({ label: "GLM Coding", plan: null })).toBe("GLM Coding");
     // A server that still names accounts after their plan ("Claude Max 2"): the plan isn't said twice.
-    expect(accountTitle({ label: "Claude Max 2", plan: "max" })).toBe("Claude Max 2");
-    expect(accountTitle({ label: "claude team", plan: "team" })).toBe("claude team");
-    expect(accountTitle({ label: "Claude Max", plan: "ultra" })).toBe("Claude Max · Ultra");
-    expect(accountTitle({ label: "Maxwell", plan: "max" })).toBe("Maxwell · Max");
+    expect(labelTitle({ label: "Claude Max 2", plan: "max" })).toBe("Claude Max 2");
+    expect(labelTitle({ label: "claude team", plan: "team" })).toBe("claude team");
+    expect(labelTitle({ label: "Claude Max", plan: "ultra" })).toBe("Claude Max · Ultra");
+    expect(labelTitle({ label: "Maxwell", plan: "max" })).toBe("Maxwell · Max");
+  });
+
+  test("the viewer's own account reads by the name they gave it, else its email, else as unnamed", () => {
+    const t = ((key: string) => key) as unknown as TFunction;
+    const own = {
+      label: "Claude 2",
+      plan: "team",
+      email: "ana@acme.com",
+      mine: true,
+      named: false,
+      keyHint: null,
+      provider: null,
+    };
+    // The automatic name says nothing: the email is the title, the plan goes under it.
+    expect(accountTitle(t, own)).toBe("ana@acme.com");
+    expect(accountSub(own)).toBe("Team");
+    expect(withSub(own, "Também usada por Infra")).toBe("Team · Também usada por Infra");
+    // A name its owner gave it stands above its email.
+    const named = { ...own, label: "Trabalho", named: true };
+    expect(accountTitle(t, named)).toBe("Trabalho");
+    expect(accountSub(named)).toBe("ana@acme.com · Team");
+    // A sign-in that says no email (Claude's token for all agents) and no name of theirs: unnamed.
+    expect(accountTitle(t, { ...own, email: null })).toBe("aiAccounts.unnamed");
+    expect(unnamedAccount({ ...own, email: null })).toBe(true);
+    expect(unnamedAccount(own)).toBe(false);
+    // An older server that doesn't say: the automatic name, read as such.
+    expect(accountTitle(t, { ...own, named: undefined })).toBe("ana@acme.com");
+    // Someone else's (no email for the viewer) and a key account keep their name with the plan.
+    expect(accountTitle(t, { ...own, mine: false, email: null })).toBe("Claude 2 · Team");
+    expect(accountSub({ ...own, mine: false, email: null })).toBeUndefined();
+    const key = { ...own, label: "GLM Coding", plan: null, provider: "zai", keyHint: "MnOp", email: null };
+    expect(accountTitle(t, key)).toBe("GLM Coding");
   });
 
   test("the plan an agent's sign-in is on: its account's, or with none its computer's own sign-in's", () => {
@@ -372,10 +408,21 @@ describe("the computer's own sign-in by name", () => {
   test("the viewer's own computer: the account their agents share; someone else's: that computer's", () => {
     expect(ownSignInName(t, true, "MacBook")).toBe("The account your agents share");
     expect(ownSignInName(t, false, "MacBook")).toBe("MacBook's account");
-    const own = { label: null, machineName: "MacBook", mine: true, kind: "claude_code" as const };
+    const own = {
+      label: null,
+      named: false,
+      email: null,
+      plan: null,
+      provider: null,
+      machineName: "MacBook",
+      mine: true,
+      kind: "claude_code" as const,
+    };
     expect(accountName(t, own)).toBe("The account your agents share");
     expect(accountName(t, { ...own, mine: false })).toBe("MacBook's account");
-    expect(accountName(t, { ...own, label: "Trabalho" })).toBe("Trabalho");
+    expect(accountName(t, { ...own, label: "Trabalho", named: true })).toBe("Trabalho");
+    // An account with the automatic name: its email.
+    expect(accountName(t, { ...own, label: "Claude 2", email: "ana@acme.com" })).toBe("ana@acme.com");
     const source = (mine: boolean) =>
       ({
         key: "m1:claude_code:computer",

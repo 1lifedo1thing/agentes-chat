@@ -57,6 +57,7 @@ import {
   ValidationError,
 } from "../src";
 import { addMember, addUser, type Fixture, setup } from "./fixtures";
+import { isDefaultAccountLabel } from "../src/machine-accounts";
 import { pairMachine } from "./machine-fixtures";
 
 /**
@@ -462,6 +463,7 @@ test("signing in: the person who connected the computer; the code is sealed to i
       id: login.loginId,
       kind: "claude_code",
       label: "Claude",
+      named: false,
       email: "ana@example.com",
       plan: "max",
       status: "active",
@@ -2276,4 +2278,17 @@ test("hello keeps what a new Claude sign-in for all agents can use on the comput
   // An older runner says nothing: nothing of a newer one's stays.
   await runner.hello([], CLAUDE_AUTH_PROTOCOL - 1, { executors: { claude: { version: "2.1.304" } } });
   expect((await executors())?.claudeLoginMethods).toBeUndefined();
+});
+
+test("a name is the automatic one only as the server gives it; any other is its owner's", () => {
+  expect(isDefaultAccountLabel("claude_code", "Claude")).toBe(true);
+  expect(isDefaultAccountLabel("claude_code", "Claude 2")).toBe(true);
+  // Servers before ADR 0059's 2026-10-30 amendment put the plan in it.
+  expect(isDefaultAccountLabel("claude_code", "Claude Max 2")).toBe(true);
+  expect(isDefaultAccountLabel("codex", "ChatGPT 3")).toBe(true);
+  expect(isDefaultAccountLabel("claude_code", "GLM Coding 2", "zai")).toBe(true);
+  expect(isDefaultAccountLabel("claude_code", "Trabalho")).toBe(false);
+  expect(isDefaultAccountLabel("claude_code", "Claude pessoal")).toBe(false);
+  expect(isDefaultAccountLabel("claude_code", "Claudette")).toBe(false);
+  expect(isDefaultAccountLabel("claude_code", "ana@acme.com")).toBe(false);
 });

@@ -682,19 +682,23 @@ describe("the agent's AI", () => {
     }
   });
 
-  test("an account says its plan once, after its name, and Claude's plans go by Anthropic's names", async () => {
-    expect(accountTitle(account("Claude", { plan: "ultra" }))).toBe("Claude · Ultra");
-    expect(accountTitle(account("Claude 2"))).toBe("Claude 2 · Max");
-    expect(accountTitle(account("GLM Coding", { plan: null, provider: "zai" }))).toBe("GLM Coding");
+  test("an account reads by its email or the name its owner gave it, and a computer's own sign-in by its maker", async () => {
+    const pt = await translator("pt-BR");
+    expect(accountTitle(pt, account("Claude 2", { email: "ana@acme.com" }))).toBe("ana@acme.com");
+    expect(accountTitle(pt, account("Trabalho", { named: true, email: "ana@acme.com" }))).toBe("Trabalho");
+    expect(accountTitle(pt, account("Claude"))).toBe("Conta sem nome");
+    expect(accountTitle(pt, account("GLM Coding", { plan: null, provider: "zai", keyHint: "MnOp" }))).toBe(
+      "GLM Coding",
+    );
     // The agent's AI and Connect an AI (their rows), Contas de IA and Você name accounts so, and a computer's own
     // sign-in by its maker the same way ("Claude · Max").
     expect(ownSignInTitle(await translator("pt-BR"), { kind: "claude_code", plan: "max" })).toBe("Claude · Max");
     const read = (file: string) => Bun.file(new URL(`../../src/features/${file}`, import.meta.url).pathname).text();
-    expect(await read("ai/logic.ts")).toContain("label: accountTitle(choice.login),");
+    expect(await read("ai/logic.ts")).toContain("label: accountTitle(t, choice.login),");
     // AI accounts' grouped rows take a `label`, the Me page's rows a `title`.
     for (const [screen, row, prop] of [["ai/AiAccountsScreen.tsx", "a", "label"]]) {
       const source = await read(screen);
-      expect(source).toContain(`${prop}={accountTitle(${row})}`);
+      expect(source).toContain(`${prop}={accountTitle(t, ${row})}`);
       expect(source).toContain(`${prop}={ownSignInTitle(t, o)}`);
       expect(source).not.toContain("planWordOf(o.plan)");
     }
