@@ -3,7 +3,7 @@ import { accentPalette } from "@agenteschat/tokens/accent";
 import { contrastRatio } from "../src/lib/nav";
 import { appColors, sheetColors, withAccent } from "../src/ui/palette";
 
-describe("a workspace's accent on the phone (ADR 0192)", () => {
+describe("a workspace's accent on the phone (ADR 0193)", () => {
   test("its agent colors take the place of the theme's, in both themes, and nothing else moves", () => {
     for (const scheme of ["light", "dark"] as const) {
       const base = appColors(scheme);

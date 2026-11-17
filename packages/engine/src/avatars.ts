@@ -201,7 +201,7 @@ const LOGO_PATH = /^\/api\/app\/org-logos\/([^/]+)\/([0-9a-f]{16}\.(jpg|png|webp
 
 /**
  * Who changes a workspace's look: a person, who needs `configure`, or null for the server's operator (the operator
- * API, ADR 0192), recorded as the system. Returns the logo before the change.
+ * API, ADR 0193), recorded as the system. Returns the logo before the change.
  */
 async function lookBefore(db: Database, actorId: string | null, orgId: string) {
   if (actorId) await requirePermission(db, actorId, orgId, "configure");
@@ -270,7 +270,7 @@ export async function removeOrgLogo(
 
 /**
  * Sets the workspace's accent (`PUT …/organizations/{orgId}/accent`, or the operator's look), a "#rrggbb" stored in
- * lower case, or null for the default (ADR 0192). Same who-may as the logo. Audited with the old and new values when
+ * lower case, or null for the default (ADR 0193). Same who-may as the logo. Audited with the old and new values when
  * it changes.
  */
 export async function setOrgAccent(

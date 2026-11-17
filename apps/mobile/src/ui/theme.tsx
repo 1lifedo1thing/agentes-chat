@@ -122,7 +122,7 @@ export function ThemeColorsOverride({ colors, children }: { colors: AppColors; c
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
-/** The active workspace's accent (ADR 0192) on the agent colors of everything under it; none: the theme's own. */
+/** The active workspace's accent (ADR 0193) on the agent colors of everything under it; none: the theme's own. */
 export function AccentProvider({ accent, children }: { accent: string | null | undefined; children: ReactNode }) {
   const theme = useTheme();
   const value = useMemo(() => ({ ...theme, colors: withAccent(theme.colors, theme.scheme, accent) }), [theme, accent]);

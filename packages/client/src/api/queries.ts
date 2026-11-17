@@ -522,7 +522,7 @@ export function useUpdateOrganization(orgId: string) {
 
 // ── Organization ────────────────────────────────────────────────────────────
 
-/** The workspace's accent color (admins, ADR 0192): `GET /me` carries it to every app, this one at once. */
+/** The workspace's accent color (admins, ADR 0193): `GET /me` carries it to every app, this one at once. */
 export function useSetOrgAccent(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();

@@ -4522,7 +4522,7 @@ html:not([data-pointer]) .settings__link:focus-visible {
   padding: var(--row-py) var(--card-pad);
   border-top: 1px solid var(--line);
 }
-/* The workspace's accent (ADR 0192): the color it shows now, in the agent's shape, then its popover: the suggestions
+/* The workspace's accent (ADR 0193): the color it shows now, in the agent's shape, then its popover: the suggestions
    (eight across the picker's width), the kit's picker, and a mention and a link in the color on the page's own
    background, the one its contrast is worked out against. */
 .settings-accent__control {

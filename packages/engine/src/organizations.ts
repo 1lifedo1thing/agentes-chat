@@ -117,7 +117,7 @@ export interface Membership {
   roleIds: string[];
   /** The workspace logo URL, when one was uploaded (listMemberships). */
   orgLogo?: string | null;
-  /** The workspace's accent "#rrggbb" (listMemberships, ADR 0192); null = the default. */
+  /** The workspace's accent "#rrggbb" (listMemberships, ADR 0193); null = the default. */
   orgAccent?: string | null;
   /** When the workspace was made (listMemberships): tells apart two with the same name. */
   orgCreatedAt?: Date;

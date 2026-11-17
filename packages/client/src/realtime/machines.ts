@@ -500,7 +500,7 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
     return true;
   }
   if (event.type === "org.look") {
-    // The workspace's logo or accent changed (ADR 0192): every member's apps repaint with it.
+    // The workspace's logo or accent changed (ADR 0193): every member's apps repaint with it.
     void qc.invalidateQueries({ queryKey: keys.me });
     void qc.invalidateQueries({ queryKey: [...keys.org(orgId), "detail"], exact: true });
     return true;

@@ -1344,7 +1344,7 @@ export function accountRoutes(deps: AppDeps) {
     },
   );
 
-  // The workspace's accent (ADR 0192): an admin picks it; every member's apps paint with it.
+  // The workspace's accent (ADR 0193): an admin picks it; every member's apps paint with it.
   app.openapi(
     createRoute({
       method: "put",

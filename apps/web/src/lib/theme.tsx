@@ -71,7 +71,7 @@ export const ACCENT_VARS: Record<keyof AccentTokens, string> = {
 };
 
 /**
- * Paints the workspace's accent (ADR 0192) for the current theme, on <html> so dialogs and menus portaled out of the
+ * Paints the workspace's accent (ADR 0193) for the current theme, on <html> so dialogs and menus portaled out of the
  * shell carry it too. Called by the workspace shell alone: leaving it takes the colors away, and no accent sets
  * nothing, so tokens.css's own blue shows.
  */

@@ -1,5 +1,5 @@
 /**
- * A workspace's accent (ADR 0192): the agent color family (`--agent`, `--agent2`, `--agent-soft`, `--on-agent`)
+ * A workspace's accent (ADR 0193): the agent color family (`--agent`, `--agent2`, `--agent-soft`, `--on-agent`)
  * derived from one picked "#rrggbb", for the light and the dark theme. Shared by the web and the phone.
  */
 import { dark, light } from "./index";

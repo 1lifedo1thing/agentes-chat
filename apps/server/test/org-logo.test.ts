@@ -214,7 +214,7 @@ test("the logo for a connected computer: machine token, ETag/304, 404 without on
   expect((await fetchLogo()).status).toBe(401);
 });
 
-test("workspace accent (ADR 0192): admins set and clear it; it rides /me and the organization; audited; announced", async () => {
+test("workspace accent (ADR 0193): admins set and clear it; it rides /me and the organization; audited; announced", async () => {
   const owner = browser(t);
   await signUp(owner, "owner@example.com");
   const { orgId } = await seedOrg(owner);

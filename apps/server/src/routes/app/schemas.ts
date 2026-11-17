@@ -193,7 +193,7 @@ export const Organization = z
       .openapi({ description: "The workspace logo (`/api/app/org-logos/…`); null = the agent mark." }),
     accent: AccentColor.nullable()
       .optional()
-      .openapi({ description: "The workspace's accent color (ADR 0192); null = the default." }),
+      .openapi({ description: "The workspace's accent color (ADR 0193); null = the default." }),
     createdAt: z
       .string()
       .optional()

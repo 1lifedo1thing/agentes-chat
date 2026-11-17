@@ -287,7 +287,7 @@ export function registerOperatorOrgs(api: OpenAPIHono, { db, version, humanCheck
       method: "put",
       path: "/orgs/{orgId}/look",
       tags,
-      summary: "Set a workspace's logo and accent color (ADR 0192)",
+      summary: "Set a workspace's logo and accent color (ADR 0193)",
       description:
         "What its members see in their apps, at once: a hosted service can give several workspaces one look. Recorded in the workspace's audit as done by the system, as when its admins change them in Settings, who can still change them afterwards. A logo that isn't a JPEG, PNG or WebP of up to 2 MB is refused (`logo.type`, `logo.too_large`, `logo.not_base64`, `logo.empty`) and nothing changes.",
       request: { params: OrgParams, body: body(Look) },

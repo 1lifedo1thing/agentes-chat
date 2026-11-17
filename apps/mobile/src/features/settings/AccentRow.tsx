@@ -14,7 +14,7 @@ import { chooseAction } from "./parts";
 const SWATCH = 22;
 
 /**
- * Settings › General › "Accent color" (ADR 0192), as on the web: the color shown now, and for who configures the
+ * Settings › General › "Accent color" (ADR 0193), as on the web: the color shown now, and for who configures the
  * workspace the kit's color sheet to change it, or the default back.
  */
 export function AccentRow({ editable }: { editable: boolean }) {

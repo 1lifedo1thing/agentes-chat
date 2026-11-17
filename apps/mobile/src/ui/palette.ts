@@ -86,7 +86,7 @@ export function appColors(scheme: Scheme): AppColors {
   };
 }
 
-/** The workspace's accent (ADR 0192) in place of the agent colors; the theme's own without one. */
+/** The workspace's accent (ADR 0193) in place of the agent colors; the theme's own without one. */
 export function withAccent(colors: AppColors, scheme: Scheme, accent: string | null | undefined): AppColors {
   return isAccentHex(accent) ? { ...colors, ...accentPalette(accent)[scheme] } : colors;
 }

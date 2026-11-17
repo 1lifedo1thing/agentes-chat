@@ -18,7 +18,7 @@ const paint = (tokens: AccentTokens) =>
   ) as CSSProperties;
 
 /**
- * Settings › Workspace › "Accent color" (ADR 0192): the color the agents' frames, mentions, links and selected states
+ * Settings › Workspace › "Accent color" (ADR 0193): the color the agents' frames, mentions, links and selected states
  * take for everyone here. Admins pick it in the kit's picker or from the suggestions, see a mention and a link in it
  * before saving, and can go back to the default.
  */

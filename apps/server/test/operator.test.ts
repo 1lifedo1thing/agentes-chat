@@ -1411,7 +1411,7 @@ test("work analytics: fleet-wide and one workspace's; 401 without the token, 400
   expect([after.input - before.input, after.output - before.output]).toEqual([40, 2]);
 });
 
-test("a workspace's look (ADR 0192): logo and accent set, kept or cleared, as the system, seen by its members", async () => {
+test("a workspace's look (ADR 0193): logo and accent set, kept or cleared, as the system, seen by its members", async () => {
   const READ = "operator-read-token-".padEnd(48, "x");
   const app = createOperatorApp(deps, TOKEN, READ);
   const call = (json: unknown, orgId = acme.orgId, authorization: string | null = BEARER) =>
