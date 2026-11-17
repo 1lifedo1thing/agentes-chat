@@ -19,7 +19,9 @@ import {
   type DeletionDeps,
   deriveSecret,
   getOrganization,
+  HOST_LOGO_PATH,
   hasPassword,
+  hostLook,
   INVITE_CHOICES_MAX,
   invitationLogoFile,
   invitationState,
@@ -112,6 +114,7 @@ import {
   json,
   noContent,
   OrgParams,
+  requestBaseUrl,
   requireSession,
   security,
 } from "./context";
@@ -398,6 +401,20 @@ export function accountRoutes(deps: AppDeps) {
                 description:
                   "The same for the phone app (`SENTRY_MOBILE_DSN`, else `SENTRY_WEB_DSN`); `release` is the server's, the app files its reports under its own.",
               }),
+            host: z
+              .object({
+                name: z.string(),
+                accent: z.string().nullable().openapi({ description: "`#rrggbb`; null: the default." }),
+                logoUrl: z
+                  .string()
+                  .nullable()
+                  .openapi({ description: "Its logo (`GET /api/host-look/logo`); null: none." }),
+              })
+              .nullable()
+              .openapi({
+                description:
+                  "This request's host is one the server's operator registered (ADR 0194): the pages before sign-in show its look, and sign-in is by email alone (`socialProviders` all off). Null on any other host.",
+              }),
           }),
         ),
       },
@@ -408,9 +425,10 @@ export function accountRoutes(deps: AppDeps) {
       const ownerWaits = users === 0 && signupPolicy(config).ownerByLink;
       const reportsTo = (dsn: string | undefined) =>
         dsn ? { dsn, environment: config.SENTRY_ENVIRONMENT, release: releaseOf(config) } : null;
+      const look = await hostLook(db, c.req.header("host"));
       return c.json(
         {
-          ...authUiConfig(config),
+          ...authUiConfig(config, Boolean(look)),
           signupOpen: await signupOpen(db, config, users),
           firstRun: users === 0 && !ownerWaits,
           ownerClaim: users === 0 && Boolean(config.OWNER_CLAIM_SHA256),
@@ -421,6 +439,11 @@ export function accountRoutes(deps: AppDeps) {
           turnstileSiteKey: deps.adapters.humanCheck?.siteKey ?? null,
           errorReports: reportsTo(config.SENTRY_WEB_DSN),
           mobileErrorReports: reportsTo(config.SENTRY_MOBILE_DSN ?? config.SENTRY_WEB_DSN),
+          host: look && {
+            name: look.name,
+            accent: look.accent,
+            logoUrl: look.logo ? `${HOST_LOGO_PATH}?v=${look.logo.split("/").pop()}` : null,
+          },
         },
         200,
       );
@@ -1850,7 +1873,7 @@ export function accountRoutes(deps: AppDeps) {
         ...c.req.valid("json"),
         secret: config.AGENTES_SECRET,
       });
-      const url = `${config.PUBLIC_URL.replace(/\/$/, "")}/invite/${token}`;
+      const url = `${await requestBaseUrl(deps, c.req.raw.headers)}/invite/${token}`;
       await queueInvitationEmail(db, {
         orgId: invitation.orgId,
         invitationId: invitation.id,
