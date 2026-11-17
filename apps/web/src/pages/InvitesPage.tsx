@@ -271,7 +271,7 @@ export function InviteActions() {
  * Esperando você (ADR 0068, 0090, 0184): who asked through a link and whom members suggested, oldest first, each
  * approved with its cargos (starting on the link's the approver may give) or turned down with a reason. Approving
  * gives the link's channels and agents too, as far as the approver may give them. An outside collaborator's request
- * (ADR 0190) says who they work for, and takes no seat: a full workspace still approves it. `focus` (from the admins'
+ * (ADR 0191) says who they work for, and takes no seat: a full workspace still approves it. `focus` (from the admins'
  * email): that request in view with Aprovar focused, which the admin still presses, or its Recusar dialog open.
  */
 function WaitingRequests({

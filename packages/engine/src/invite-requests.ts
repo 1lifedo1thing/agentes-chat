@@ -114,7 +114,7 @@ export const JOIN_REQUEST_KEEP_DAYS = 90;
 export const JOIN_NAME_MAX = 80;
 export const JOIN_NOTE_MAX = 200;
 export const JOIN_REASON_MAX = 300;
-/** Who an outside collaborator works for (ADR 0190), shown beside their name. */
+/** Who an outside collaborator works for (ADR 0191), shown beside their name. */
 export const OUTSIDE_OF_MAX = 80;
 
 /** The outbox job that files a request whose address isn't proven (`fileJoinRequest`). */
@@ -517,7 +517,7 @@ export async function fileJoinRequest(deps: Deps, payload: Record<string, unknow
 /**
  * Who to tell of a new request: the people who may answer it, as a notice merged per workspace. A suggestion names
  * who suggested it (ADR 0090), so a row of one reads "Carla suggested …", not "… asks to join"; an outside
- * collaborator's request (ADR 0190) who they work for.
+ * collaborator's request (ADR 0191) who they work for.
  */
 async function noticeAdmins(
   deps: Deps,
@@ -764,7 +764,7 @@ export async function joinStatus(db: Database, user: { id: string }, token: stri
  * `confirmed` (read by phone builds from before `verified`): approving lets an account in at once, as
  * `approveJoinRequest` decides. `suggestedBy`: the member who suggested the person (ADR 0090), whose request came
  * through no link. `link`: the link it came through, who made it, what an approval starts on (ADR 0184) and whether
- * it is `full`, which refuses the approval. `outsideOf`: who an outside collaborator works for (ADR 0190); null on
+ * it is `full`, which refuses the approval. `outsideOf`: who an outside collaborator works for (ADR 0191); null on
  * every other request.
  */
 export async function listWaitingJoinRequests(db: Database, actorId: string, orgId: string, now = new Date()) {
@@ -899,7 +899,7 @@ export type JoinApproval = { outcome: "joined" } | { outcome: "invited"; url: st
  * suggestion gets the invitation email itself, since nobody at that address asked (ADR 0090). The channels and agents
  * they start with (ADR 0184): `start`'s, checked as an invitation's, else the link's, as far as the approver may give
  * them at that moment. A link that took all its people takes no more approvals (`join.link_full_approval`). An
- * outside collaborator's request (ADR 0190) lets in the account it names at once, even into a full workspace.
+ * outside collaborator's request (ADR 0191) lets in the account it names at once, even into a full workspace.
  */
 export async function approveJoinRequest(
   /** `secret`: `AGENTES_SECRET`, so an invitation an approval sends has a link that can be copied again. */
@@ -936,7 +936,7 @@ export async function approveJoinRequest(
       chosen.channelIds ?? (await stillInvitableChannelIds(tx, actorId, orgId, link?.channelIds ?? [], given));
     const agentIds = chosen.agentIds ?? (await stillInvitableAgentIds(tx, actorId, orgId, link?.agentIds ?? [], given));
     let context = await answerContext(tx, orgId, actorId, row);
-    // An outside collaborator (ADR 0190): the account the operator named, whatever its address is now.
+    // An outside collaborator (ADR 0191): the account the operator named, whatever its address is now.
     const outside =
       row.outsideOf !== null && row.userId !== null ? { userId: row.userId, outsideOf: row.outsideOf } : null;
     // Someone with this address got in meanwhile: nothing to send.
@@ -1502,7 +1502,7 @@ export async function cancelSuggestion(deps: Deps, actorId: string, orgId: strin
 }
 
 /**
- * The operator API asks to let an account in as an outside collaborator (ADR 0190): someone working for the workspace
+ * The operator API asks to let an account in as an outside collaborator (ADR 0191): someone working for the workspace
  * from outside it (`outsideOf`: who they work for), who takes no seat. It files a request the people who may invite
  * answer as any other, and tells them the way `askToJoin` does. Asking again while it waits returns the request as it
  * is. Refused for someone already in (`join.member`), and while another request waits for their address
@@ -1583,7 +1583,7 @@ export async function requestOutsideAccess(
 }
 
 /**
- * The operator API ends an account's outside access to a workspace (ADR 0190): its request still waiting closes, and
+ * The operator API ends an account's outside access to a workspace (ADR 0191): its request still waiting closes, and
  * an outside collaborator is taken out as anyone removed is (`removeOutsideMember`). Never an ordinary member
  * (`outside_access.member`). With neither, nothing changes.
  */
@@ -1612,7 +1612,7 @@ export async function endOutsideAccess(deps: Deps, orgId: string, userId: string
 }
 
 /**
- * A workspace's outside collaborators (ADR 0190), for the operator API: the requests still waiting for an answer, then
+ * A workspace's outside collaborators (ADR 0191), for the operator API: the requests still waiting for an answer, then
  * the people in, each oldest first. Null: no such workspace.
  */
 export async function listOutsideAccess(db: Database, orgId: string, now = new Date()) {

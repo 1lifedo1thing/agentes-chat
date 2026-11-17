@@ -105,7 +105,7 @@ const Org = z
       members: z
         .number()
         .int()
-        .openapi({ description: "The people its `members` limit counts: no outside collaborators (ADR 0190)." }),
+        .openapi({ description: "The people its `members` limit counts: no outside collaborators (ADR 0191)." }),
       agents: z.number().int().openapi({ description: "Not archived." }),
       channels: z.number().int().openapi({ description: "Channels, not archived; no direct messages." }),
       machines: z.number().int().openapi({ description: "Connected computers." }),

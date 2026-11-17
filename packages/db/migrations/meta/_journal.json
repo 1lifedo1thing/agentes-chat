@@ -1972,8 +1972,22 @@
     {
       "idx": 283,
       "version": "7",
-      "when": 1794881463414,
-      "tag": "0286_outside_collaborators",
+      "when": 1794867197842,
+      "tag": "0286_confidential_threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 284,
+      "version": "7",
+      "when": 1794867198842,
+      "tag": "0287_confidential_thread_ai",
+      "breakpoints": true
+    },
+    {
+      "idx": 285,
+      "version": "7",
+      "when": 1794902434568,
+      "tag": "0288_outside_collaborators",
       "breakpoints": true
     }
   ]

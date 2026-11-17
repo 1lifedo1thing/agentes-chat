@@ -190,7 +190,7 @@ describe("members", () => {
     ).toBeString();
   });
 
-  test("an outside collaborator takes no seat: a full workspace lets them in and stays exactly full (ADR 0190)", async () => {
+  test("an outside collaborator takes no seat: a full workspace lets them in and stays exactly full (ADR 0191)", async () => {
     f = await setup();
     await limit({ members: 1 });
     const full = { code: "org.members_full", params: { members: 1, limit: 1 } };

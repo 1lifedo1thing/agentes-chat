@@ -1,4 +1,4 @@
-# 0190. Outside collaborators: people a workspace lets in who take no seat
+# 0191. Outside collaborators: people a workspace lets in who take no seat
 
 - Status: Accepted
 - Date: 2026-11-16

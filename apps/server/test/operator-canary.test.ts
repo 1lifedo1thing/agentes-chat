@@ -46,7 +46,7 @@ const KEPT: Record<string, string[]> = {
     "deletion_hold_reason",
   ],
   // `role` never comes back as stored: the reads work a member's role out from it. `outside_of`, here and on a join
-  // request, is who an outside collaborator works for: only this API writes it, never the workspace (ADR 0190).
+  // request, is who an outside collaborator works for: only this API writes it, never the workspace (ADR 0191).
   organization_members: ["handle", "role", "outside_of"],
   // Not returned either: the database holds both to three words, which decide who may talk to an agent.
   channel_permission_overrides: ["allow", "deny"],
@@ -394,6 +394,20 @@ beforeAll(async () => {
       },
     },
   });
+  // A run of a confidential thread (ADR 0190) that failed on what it read: its error's words are not returned.
+  const confidentialRoot = crypto.randomUUID();
+  await db.insert(schema.confidentialThreads).values({ orgId, channelId, rootMessageId: confidentialRoot });
+  await db.insert(schema.agentRuns).values({
+    orgId,
+    agentId,
+    channelId,
+    threadRootId: confidentialRoot,
+    triggerMessageId: confidentialRoot,
+    trigger: "mention",
+    hop: 1,
+    status: "failed",
+    error: "canary-confidential: what the run read",
+  });
 
   // What the conversation didn't write, each with its canary.
   const [user] = await db
@@ -540,7 +554,7 @@ beforeAll(async () => {
     claimHash: "canary-claim-hash",
     expiresAt: soon,
   });
-  // Outside collaborators (ADR 0190): one waiting for an answer, one in.
+  // Outside collaborators (ADR 0191): one waiting for an answer, one in.
   await db.insert(schema.organizationJoinRequests).values({
     orgId,
     userId: ownerId,

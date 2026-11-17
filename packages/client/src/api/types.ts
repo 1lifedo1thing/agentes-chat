@@ -450,7 +450,7 @@ export interface Member {
   roleIds?: string[];
   joinedAt: string;
   /**
-   * Who the person works for, when they come from outside the workspace (ADR 0190): shown beside their name, and they
+   * Who the person works for, when they come from outside the workspace (ADR 0191): shown beside their name, and they
    * never count toward its limit of people. Null (absent on a server from before it) for everyone else.
    */
   outsideOf?: string | null;
@@ -714,7 +714,7 @@ export interface JoinRequest {
   /** The member who suggested this person (their name, ADR 0090): it came through no link. */
   suggestedBy?: string | null;
   /**
-   * Who the person works for, on a request the server's operator filed for an outside collaborator (ADR 0190):
+   * Who the person works for, on a request the server's operator filed for an outside collaborator (ADR 0191):
    * approving lets them in at once, even into a full workspace.
    */
   outsideOf?: string | null;
@@ -2559,7 +2559,7 @@ export interface Person {
   roleIds?: string[];
   joinedAt: string;
   lastSeenAt: string | null;
-  /** Who an outside collaborator works for (ADR 0190), as on `Member`. */
+  /** Who an outside collaborator works for (ADR 0191), as on `Member`. */
   outsideOf?: string | null;
   /** Seen as connected: `presence` is online, away or busy. */
   online: boolean;
@@ -6936,7 +6936,7 @@ export interface NotificationLatest {
   names?: string[];
   /** `join_request` from a member's suggestion (ADR 0090): who suggested. */
   suggestedBy?: string;
-  /** `join_request` for an outside collaborator (ADR 0190): who they work for, so a row of one says so. */
+  /** `join_request` for an outside collaborator (ADR 0191): who they work for, so a row of one says so. */
   outsideOf?: string;
   /** `computer_disk_full`: the share of the disk in use (0 to 1) and the GB left. */
   diskUse?: number;

@@ -52,7 +52,7 @@ export function whenWords(t: TFunction, locale: string, iso: string, now = new D
  * email, or a request typed before codes), then when it was asked. A server from before codes sends only
  * `confirmed`, which meant the same there. A member's suggestion says who made it instead: nobody at that address
  * asked, and approving it sends the email invitation, so its address has nothing to prove here (ADR 0090 §7). An
- * outside collaborator's request says who they work for (ADR 0190).
+ * outside collaborator's request says who they work for (ADR 0191).
  */
 export function requestChips(
   t: TFunction,
@@ -129,7 +129,7 @@ export function memberLine(
   return `${handle}${roleLine(t, person, roles) ?? t("roles.member")} · ${lowerFirst(seen, locale)}`;
 }
 
-/** An outside collaborator's line on Membros (ADR 0190): "Outside · Northwind"; null for anyone else. */
+/** An outside collaborator's line on Membros (ADR 0191): "Outside · Northwind"; null for anyone else. */
 export const outsideLine = (t: TFunction, person: Pick<Person, "outsideOf">) =>
   person.outsideOf ? `${t("members.outside.chip")} · ${person.outsideOf}` : null;
 

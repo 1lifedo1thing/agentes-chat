@@ -1,5 +1,5 @@
 {
-  "id": "f890042c-0bf8-4fa7-9d71-68cbbb91a742",
+  "id": "5519dbfa-b59f-4f6b-bea3-7971b9856f88",
   "prevId": "126e2bab-f67f-44d6-998c-e7c1bba9243e",
   "version": "7",
   "dialect": "postgresql",
@@ -3633,6 +3633,91 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.confidential_threads": {
+      "name": "confidential_threads",
+      "schema": "",
+      "columns": {
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "root_message_id": {
+          "name": "root_message_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "connection_ids": {
+          "name": "connection_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
+        },
+        "marked_at": {
+          "name": "marked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "confidential_threads_marked_at_index": {
+          "name": "confidential_threads_marked_at_index",
+          "columns": [
+            {
+              "expression": "marked_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "confidential_threads_org_id_channel_id_channels_org_id_id_fk": {
+          "name": "confidential_threads_org_id_channel_id_channels_org_id_id_fk",
+          "tableFrom": "confidential_threads",
+          "tableTo": "channels",
+          "columnsFrom": [
+            "org_id",
+            "channel_id"
+          ],
+          "columnsTo": [
+            "org_id",
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "confidential_threads_org_id_root_message_id_pk": {
+          "name": "confidential_threads_org_id_root_message_id_pk",
+          "columns": [
+            "org_id",
+            "root_message_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -22831,12 +22916,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "outside_of": {
-          "name": "outside_of",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "expires_at": {
           "name": "expires_at",
           "type": "timestamp with time zone",
@@ -23214,12 +23293,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
-        },
-        "outside_of": {
-          "name": "outside_of",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",

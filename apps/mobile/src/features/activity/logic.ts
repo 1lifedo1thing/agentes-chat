@@ -144,7 +144,7 @@ export function joinRequestLine(
   n: Pick<AppNotification, "count" | "latest">,
 ): { text: string; faces: string[] } {
   const asked = askersOf(n);
-  // A suggestion says who suggested it (ADR 0090); an outside collaborator's request, who they work for (ADR 0190).
+  // A suggestion says who suggested it (ADR 0090); an outside collaborator's request, who they work for (ADR 0191).
   const text =
     asked.total > 1
       ? t("notifications.wait.joinRequestNames", { names: namesText(t, asked.names, 2, asked.total) })

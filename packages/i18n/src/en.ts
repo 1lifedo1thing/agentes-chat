@@ -5632,7 +5632,7 @@ export const en = {
       joinRequest_other: "{{name}} and others ask to join",
       joinRequestNames: "{{names}} ask to join",
       joinSuggestion: "{{by}} suggested {{name}}",
-      /** A request the server's operator filed for someone working for `outsideOf` (ADR 0190). */
+      /** A request the server's operator filed for someone working for `outsideOf` (ADR 0191). */
       joinOutside: "{{name}} asks to join as an outside collaborator for {{outsideOf}}, taking no seat",
       doing: {
         merge: "merge",
@@ -5700,7 +5700,7 @@ export const en = {
       joinRequest: "<b>{{name}}</b> asks to join",
       joinRequestMany: "<b>{{names}}</b> ask to join",
       joinSuggestion: "<b>{{by}}</b> suggested <b>{{name}}</b>",
-      /** A request the server's operator filed for someone working for `outsideOf` (ADR 0190). */
+      /** A request the server's operator filed for someone working for `outsideOf` (ADR 0191). */
       joinOutside: "<b>{{name}}</b> asks to join as an outside collaborator for <b>{{outsideOf}}</b>, taking no seat",
       /** ADR 0137: someone sent a change they can't make to the people who may ("Pedir a um admin"). */
       changeRequest: "<b>{{name}}</b> asks for a change to <b>{{agent}}</b>",
@@ -7818,7 +7818,7 @@ export const en = {
     rolesChange: "Change roles",
     moreOf: "More for {{name}}",
     /**
-     * Someone working for the workspace from outside it (ADR 0190): `chip` beside their name, `title` as the fact on
+     * Someone working for the workspace from outside it (ADR 0191): `chip` beside their name, `title` as the fact on
      * their profile card, with who they work for.
      */
     outside: {
@@ -8060,7 +8060,7 @@ export const en = {
       viaLink: "Asked through the link {{when}}",
       suggested: "Suggested by {{name}} {{when}}",
       suggestedLabel: "{{by}} suggested {{name}}",
-      /** A request for an outside collaborator (ADR 0190): `outsideOf`, who they work for. */
+      /** A request for an outside collaborator (ADR 0191): `outsideOf`, who they work for. */
       outside: "Asked {{when}} to join as an outside collaborator for {{outsideOf}}",
       /** Before the answer to an outside collaborator's request: approving works even when the workspace is full. */
       outsideSeat: "Outside collaborators don't count toward your plan's people, and you can remove them at any time.",
@@ -16903,7 +16903,7 @@ export const en = {
         role_changed: "Changed a member's role",
         password_link: "Made a new-password link for a member",
       },
-      /** An approval, removal or leaving of someone working for `outsideOf` (ADR 0190). */
+      /** An approval, removal or leaving of someone working for `outsideOf` (ADR 0191). */
       outside: {
         approved: "Let in an outside collaborator for {{outsideOf}}",
         removed: "Removed an outside collaborator for {{outsideOf}}",
@@ -18404,6 +18404,7 @@ export const en = {
       provider_wait_ours:
         "Something on our side is blocking my AI, not your account. I'll answer as soon as it's fixed.",
       provider_back: "My AI is back.",
+      confidential_removed: "Removed: confidential text is kept for {{days}} days.",
       brain_busy: "My computer is busy with other tasks right now. I'll answer as soon as it's free.",
       brain_queued: "Still in line for the computer. I'll answer as soon as it has free memory.",
       brain_interrupted: "{{brain}} stopped before finishing. Already done, not repeated: {{tools}}.",

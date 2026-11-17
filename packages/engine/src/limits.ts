@@ -13,7 +13,7 @@ import { monthStartUtc } from "./usage";
  * without knowing any plan. Null is no limit, all a self-hosted server ever has.
  *
  * - `members`: membership rows, blocked accounts included; agents, invitations, requests to join and outside
- *   collaborators (rows with `outside_of`, ADR 0190) never count.
+ *   collaborators (rows with `outside_of`, ADR 0191) never count.
  * - `membersMax`: the most people the plan takes with seats added (`members` up to it); null: the service sets none.
  * - `payerUserId`: not a limit, the person who pays for the plan, the only one the billing service lets add seats or
  *   change plans; null: not said.

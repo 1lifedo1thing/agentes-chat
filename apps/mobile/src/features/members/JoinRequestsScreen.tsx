@@ -55,7 +55,7 @@ const REASON_LIMIT = { max: JOIN_REASON_MAX };
  * if need be, each on its pushed choice over this screen; a suggestion starts on nothing past Todos), or denied with a
  * reason the person reads in the email. On a server that sends no email, approving hands the approver the invitation's
  * link to share. `focus`: the request tapped on Convites, on top. With no room left nobody can be approved, as on the
- * web, but an outside collaborator, who takes no seat (ADR 0190). A pull reads the requests again.
+ * web, but an outside collaborator, who takes no seat (ADR 0191). A pull reads the requests again.
  */
 export function JoinRequestsScreen({ focus }: { focus?: string | undefined }) {
   const { t } = useTranslation();
