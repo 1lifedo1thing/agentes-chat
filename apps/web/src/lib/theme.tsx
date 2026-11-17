@@ -1,5 +1,14 @@
-import { switchTheme } from "@agenteschat/ui";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { type AccentTokens, accentPalette, isAccentHex, switchTheme } from "@agenteschat/ui";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 import { STORAGE_KEYS, storage } from "./storage";
 
 export type ThemePreference = "light" | "dark" | "system";
@@ -51,4 +60,31 @@ export function useTheme() {
   const value = useContext(ThemeContext);
   if (!value) throw new Error("useTheme must be used inside ThemeProvider");
   return value;
+}
+
+/** The CSS custom properties a workspace's accent sets (tokens.css's agent family). */
+export const ACCENT_VARS: Record<keyof AccentTokens, string> = {
+  agent: "--agent",
+  agent2: "--agent2",
+  agentSoft: "--agent-soft",
+  onAgent: "--on-agent",
+};
+
+/**
+ * Paints the workspace's accent (ADR 0192) for the current theme, on <html> so dialogs and menus portaled out of the
+ * shell carry it too. Called by the workspace shell alone: leaving it takes the colors away, and no accent sets
+ * nothing, so tokens.css's own blue shows.
+ */
+export function useWorkspaceAccent(accent: string | null | undefined) {
+  const { resolved } = useTheme();
+  const color = isAccentHex(accent) ? accent.toLowerCase() : null;
+  useLayoutEffect(() => {
+    if (!color) return;
+    const style = document.documentElement.style;
+    const tokens = accentPalette(color)[resolved];
+    for (const [key, name] of Object.entries(ACCENT_VARS)) style.setProperty(name, tokens[key as keyof AccentTokens]);
+    return () => {
+      for (const name of Object.values(ACCENT_VARS)) style.removeProperty(name);
+    };
+  }, [color, resolved]);
 }
