@@ -1989,6 +1989,13 @@
       "when": 1794902434568,
       "tag": "0288_outside_collaborators",
       "breakpoints": true
+    },
+    {
+      "idx": 286,
+      "version": "7",
+      "when": 1794903122824,
+      "tag": "0289_workspace_accent",
+      "breakpoints": true
     }
   ]
 }
