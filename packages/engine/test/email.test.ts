@@ -546,18 +546,18 @@ describe("the picture over the headline", () => {
     const linked = EMAIL_SAMPLES["surface_linked.en"] as Extract<EmailTemplate, { kind: "surface_linked" }>;
     const unlinked = EMAIL_SAMPLES["surface_unlinked.en"] as Extract<EmailTemplate, { kind: "surface_unlinked" }>;
     const assistant = "agent-teal-happy-headset.png 36×46";
-    const [theoWhole = "", adaWhole = ""] = ONBOARDING;
+    const [theoWhole = "", , liaWhole = ""] = ONBOARDING;
     expect(scene(linked)).toEqual([
       theoWhole,
       assistant,
       "phone.png 58×84 Your assistant, now on your phone too",
-      adaWhole,
+      liaWhole,
     ]);
     expect(scene(unlinked)).toEqual([
       theoWhole,
       assistant,
       "phone-off.png 58×84 Your assistant, no longer on your phone",
-      adaWhole,
+      liaWhole,
     ]);
     expect(scene({ ...linked, locale: "pt-BR" })).toContain(
       "phone.png 58×84 Seu assistente, agora também no seu celular",

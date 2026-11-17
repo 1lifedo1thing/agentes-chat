@@ -434,8 +434,9 @@ export async function emailAssistant(db: Executor, orgId: string | null): Promis
 
 /** The surface emails' stage: the assistant beside the phone, between two of the onboarding's agents. */
 const surfaceCrew = (assistant: Look | undefined): Look[] => {
-  const [theo, ada] = ONBOARDING_CREW;
-  return [theo, assistant ?? ASSISTANT_LOOK, ada];
+  // Lia, not Ada: Ada's green and headphones read as the teal, headset assistant's twin beside it.
+  const [theo, , lia] = ONBOARDING_CREW;
+  return [theo, assistant ?? ASSISTANT_LOOK, lia];
 };
 
 /** How many agents a picture shows: two on each side of the computer still fit a 320 px phone. */
