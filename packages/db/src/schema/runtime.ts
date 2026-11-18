@@ -552,6 +552,11 @@ export interface ApprovalApprovers {
   requesterDecides: boolean;
   /** Only `userIds` decide it, admins too: someone else asked to act in that person's own mailbox. */
   required?: boolean;
+  /**
+   * An action in one person's own connection: listed only to `userIds` and to who is in its conversation, never to
+   * admins or the agent's owner for being them (ADR 0099 addendum).
+   */
+  personal?: boolean;
 }
 
 /**
