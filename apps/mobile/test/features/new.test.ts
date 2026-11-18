@@ -70,7 +70,7 @@ describe("New: what its Create list offers", () => {
   const all = ["create_agents", "create_channels", "post", "manage_routines", "edit_wiki", "invite_people"] as const;
 
   test("everything, in order, for who may do it all", () => {
-    expect(createItems({ permissions: all }, { ownsAgent: false })).toEqual([
+    expect(createItems({ permissions: all }, { managesRoutines: true })).toEqual([
       "agent",
       "channel",
       "task",
@@ -81,17 +81,25 @@ describe("New: what its Create list offers", () => {
   });
 
   test("nothing without its permission (a conversation starts from the search, not from this list)", () => {
-    expect(createItems({ permissions: [] }, { ownsAgent: false })).toEqual([]);
-    expect(createItems(null, { ownsAgent: false })).toEqual([]);
+    expect(createItems({ permissions: [] }, { managesRoutines: false })).toEqual([]);
+    expect(createItems(null, { managesRoutines: false })).toEqual([]);
   });
 
-  test("a routine also for the owner of an agent", () => {
-    expect(createItems({ permissions: ["post"] }, { ownsAgent: true })).toEqual(["task", "routine"]);
+  test("a routine for who sets up some agent's routines (its owner's too), never for the permission alone", () => {
+    expect(createItems({ permissions: ["post"] }, { managesRoutines: true })).toEqual(["task", "routine"]);
+    // "Create routines" reaches only the agents whose audience takes the person (ADR 0085 addendum of 2026-11-17).
+    expect(createItems({ permissions: all }, { managesRoutines: false })).toEqual([
+      "agent",
+      "channel",
+      "task",
+      "wiki",
+      "invite",
+    ]);
   });
 
   test("no new agent in a workspace being deleted, as on the web", () => {
     const deletion = { dueAt: null, requestedAt: null, requestedBy: null };
-    expect(createItems({ permissions: all, deletion }, { ownsAgent: false })).not.toContain("agent");
+    expect(createItems({ permissions: all, deletion }, { managesRoutines: true })).not.toContain("agent");
   });
 });
 

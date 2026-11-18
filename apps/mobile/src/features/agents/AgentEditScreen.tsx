@@ -43,6 +43,7 @@ import { overLimit, TextArea } from "../shared/TextArea";
 import { BrakesSection } from "./BrakesSection";
 import { BudgetSection } from "./BudgetSection";
 import { openAgentDelete } from "./DeleteAgentScreen";
+import { EditorsSection } from "./EditorsSection";
 import { type AgentDraft, agentChanges, editableFields, fullLook } from "./edit";
 import { ErrorLine, HandleInput } from "./HandleInput";
 import { LookList } from "./LookPicker";
@@ -278,6 +279,9 @@ export function AgentEditScreen({ id }: { id: string }) {
           </GroupedFooter>
         </>
       ) : null}
+
+      {/* Who edits how it works, after who talks to it, as on the web (ADR 0085 addendum of 2026-11-17). */}
+      <EditorsSection agent={agent} />
 
       {rightHand ? (
         <>

@@ -228,7 +228,8 @@ describe("a teammate's settings, on the right hand's card", () => {
       "Propõe uma mudança",
       "Preciso da skill excel",
       "Ada · Configurações",
-      "Só admins mudam as skills de um agente",
+      // Its skills are whoever can edit it (ADR 0085 addendum of 2026-11-17).
+      "Só quem pode editar um agente muda as skills dele",
     ])
       expect(c.textContent).toContain(shown);
     const lines = [...c.querySelectorAll(".rq__setting")].map((l) =>

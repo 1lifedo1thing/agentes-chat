@@ -591,7 +591,11 @@ async function requireMayUndo(db: Database, userId: string, a: Row) {
   const membership = await getMembership(db, userId, a.orgId);
   if (!membership) throw new NotFoundError("Action not found", "action.not_found");
   assertActiveMembership(membership);
-  const agent = await getAgent(db, a.orgId, a.agentId);
+  // A settings change is on its target (the right hand's card changes another agent's): rights are that agent's, not
+  // those of the agent that wrote the card (ADR 0085 addendum of 2026-11-17).
+  const subjectId =
+    a.kind === "agent.settings_changed" && a.targetType === "agent" && a.targetId ? a.targetId : a.agentId;
+  const agent = await getAgent(db, a.orgId, subjectId);
   if (agent ? managesAgent(agent, userId, membership) : can(membership, "manage_agents")) return;
   // Which skills it has is who edits it (`SETTING_GROUP`), as `setAgentSkills` takes.
   const fields = (a.params as { fields?: unknown }).fields;

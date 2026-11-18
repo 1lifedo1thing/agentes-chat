@@ -6,6 +6,7 @@ import {
   cancelRun,
   continuePausedRuns,
   createAgent,
+  createRoutine,
   drainOutbox,
   ForbiddenError,
   insertMessage,
@@ -380,20 +381,31 @@ describe("why a task waits", () => {
     expect(await continuePausedRuns({ db: f.db }, f.owner.id, f.org.id, [runId])).toEqual({ continued: 0 });
   });
 
-  test("managing routines is no way past the rule for a run that isn't a routine's", async () => {
+  test("managing routines is no way past the rule for a run that isn't a routine's, nor for a private agent's", async () => {
     f = await setup();
     await ask("@dev resume a semana");
     const [run] = await runs();
-    const membership = { permissions: new Set(["manage_routines"]) } as unknown as Membership;
+    const routine = await createRoutine({ db: f.db, pubsub: f.pubsub, context: f.context }, f.owner.id, f.org.id, {
+      name: "Resumo",
+      agentId: f.agent.id,
+      prompt: "Resume a semana.",
+      target: { type: "channel", channelId: f.general.id },
+      trigger: { type: "schedule", phrase: "todo dia às 8h" },
+    });
+    const membership = { permissions: new Set(["manage_routines"]), roleIds: [] } as unknown as Membership;
     const row = {
-      run: { orgId: f.org.id, triggerMessageId: run?.triggerMessageId ?? "" },
+      run: { orgId: f.org.id, agentId: f.agent.id, triggerMessageId: run?.triggerMessageId ?? "" },
       requester: null,
       ownerUserId: null,
       routineCreatorId: null,
     };
     const other = await addMember(f.db, f.org.id, "member", "caio");
     expect(await mayContinuePause(f.db, other.id, membership, { ...row, routineId: null })).toBe(false);
-    expect(await mayContinuePause(f.db, other.id, membership, { ...row, routineId: "a-routine" })).toBe(true);
+    // "Create routines" reaches the routines of an agent whose audience takes them (ADR 0085 addendum of 2026-11-17),
+    // never a private agent's.
+    expect(await mayContinuePause(f.db, other.id, membership, { ...row, routineId: routine.id })).toBe(true);
+    await f.db.update(schema.agents).set({ audienceMode: "owner" }).where(eq(schema.agents.id, f.agent.id));
+    expect(await mayContinuePause(f.db, other.id, membership, { ...row, routineId: routine.id })).toBe(false);
   });
 
   test("Continuar agora on several says so on a run's card, as pressing the card does", async () => {
