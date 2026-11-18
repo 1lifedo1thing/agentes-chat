@@ -638,7 +638,11 @@ describe("an agent's skills on the card, as on its page", () => {
     await decideProposal(f.db, caio.id, f.org.id, rows[0]?.id ?? "", "accept", { pubsub: f.pubsub });
     expect(await skillsOf(f)).toEqual(["pdf"]);
     const [receipt] = (await actionsFor(f.db, f.org.id, [card.id])).get(card.id) ?? [];
-    expect(receipt).toMatchObject({ kind: "agent.settings_changed", agentId: ctx.agentId, targetId: f.agent.id });
+    expect(receipt).toMatchObject({
+      kind: "agent.settings_changed",
+      agentId: ctx.agentId,
+      target: { type: "agent", id: f.agent.id },
+    });
     const undo = { db: f.db, pubsub: f.pubsub };
     const bruno = await addMember(f.db, f.org.id, "member", "Bruno Lima");
     await expect(undoAgentAction(undo, bruno.id, f.org.id, receipt?.id ?? "")).rejects.toMatchObject({

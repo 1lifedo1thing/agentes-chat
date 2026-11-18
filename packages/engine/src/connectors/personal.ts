@@ -78,11 +78,8 @@ export const auditLabel = (c: Pick<ConnectorConnection, "label" | "accountLabel"
  * connectors, who manages this agent (`managesAgent`: "Editar agentes" where it reaches, ADR 0085 addendum of
  * 2026-11-17), and the agent's owner. Never its details.
  */
-export const seesOthersOnAgent = (
-  membership: Membership,
-  agent: Parameters<typeof managesAgent>[0],
-  actorId: string,
-) => can(membership, "manage_connectors") || managesAgent(agent, actorId, membership) || agent.ownerUserId === actorId;
+export const seesOthersOnAgent = (membership: Membership, agent: Parameters<typeof managesAgent>[0], actorId: string) =>
+  can(membership, "manage_connectors") || managesAgent(agent, actorId, membership) || agent.ownerUserId === actorId;
 
 /**
  * Who may connect for whom: a personal connection (`personal`) any member makes, a team one who manages connectors.
