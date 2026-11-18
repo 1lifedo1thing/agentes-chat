@@ -222,7 +222,81 @@ const VOID_TAGS = new Set([
 ]);
 
 const ATTR = /([^\s=/"'>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
-const TAG = /<(\/?)([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^'">])*)>/g;
+
+const SLASH = 47;
+const DOUBLE_QUOTE = 34;
+const SINGLE_QUOTE = 39;
+const GREATER = 62;
+const isAsciiLetter = (c: number) => (c >= 65 && c <= 90) || (c >= 97 && c <= 122);
+/** `[\w:-]`: an ASCII letter or digit, `_`, `:` or `-`. */
+const isNameChar = (c: number) => isAsciiLetter(c) || (c >= 48 && c <= 57) || c === 95 || c === 58 || c === 45;
+
+/**
+ * For each index of `html`, the `>` that closes a tag's attributes read from there, a quoted value (`"…"` or `'…'`)
+ * skipped whole with any `>` in it, or -1 when none does (a quote never closed, or the end of the page). Filled
+ * from the end, so the page is read once however many tags it leaves open.
+ */
+function attributeEnds(html: string): Int32Array {
+  const ends = new Int32Array(html.length + 1);
+  ends[html.length] = -1;
+  let nextDouble = -1;
+  let nextSingle = -1;
+  for (let at = html.length - 1; at >= 0; at--) {
+    const c = html.charCodeAt(at);
+    if (c === GREATER) ends[at] = at;
+    else if (c === DOUBLE_QUOTE) {
+      ends[at] = nextDouble < 0 ? -1 : (ends[nextDouble + 1] ?? -1);
+      nextDouble = at;
+    } else if (c === SINGLE_QUOTE) {
+      ends[at] = nextSingle < 0 ? -1 : (ends[nextSingle + 1] ?? -1);
+      nextSingle = at;
+    } else ends[at] = ends[at + 1] ?? -1;
+  }
+  return ends;
+}
+
+interface Tag {
+  /** Index of the `<`. */
+  start: number;
+  /** Index just past the `>`. */
+  end: number;
+  closing: boolean;
+  name: string;
+  /** What is between the name and the `>`. */
+  raw: string;
+}
+
+/**
+ * The page's tags in order, exactly as `/<(\/?)([a-zA-Z][\w:-]*)((?:"[^"]*"|'[^']*'|[^'">])*)>/g` finds them, read
+ * by index: run on a page, that pattern reads the rest of it again from each `<` that nothing closes, quadratic in
+ * the page's length. A name that fails at its longest fails at every shorter length too (the letters it gives up
+ * are read as attributes up to the same `>`), so the longest is the only one to try.
+ */
+function* tags(html: string): Generator<Tag> {
+  let ends: Int32Array | undefined;
+  for (let at = html.indexOf("<"); at >= 0; ) {
+    const closing = html.charCodeAt(at + 1) === SLASH;
+    const nameAt = at + (closing ? 2 : 1);
+    if (isAsciiLetter(html.charCodeAt(nameAt))) {
+      let nameEnd = nameAt + 1;
+      while (isNameChar(html.charCodeAt(nameEnd))) nameEnd++;
+      ends ??= attributeEnds(html);
+      const close = ends[nameEnd] ?? -1;
+      if (close >= 0) {
+        yield {
+          start: at,
+          end: close + 1,
+          closing,
+          name: html.slice(nameAt, nameEnd),
+          raw: html.slice(nameEnd, close),
+        };
+        at = html.indexOf("<", close + 1);
+        continue;
+      }
+    }
+    at = html.indexOf("<", at + 1);
+  }
+}
 
 function attributes(raw: string): Map<string, string> {
   const out = new Map<string, string>();
@@ -286,25 +360,22 @@ export function dropHidden(html: string): string {
   let out = "";
   let last = 0;
   let skip: { name: string; depth: number } | null = null;
-  for (const m of html.matchAll(TAG)) {
-    const closing = m[1] === "/";
-    const name = (m[2] ?? "").toLowerCase();
-    const raw = m[3] ?? "";
-    const end = (m.index ?? 0) + m[0].length;
-    const selfClosing = VOID_TAGS.has(name) || raw.trimEnd().endsWith("/");
+  for (const tag of tags(html)) {
+    const name = tag.name.toLowerCase();
+    const selfClosing = VOID_TAGS.has(name) || tag.raw.trimEnd().endsWith("/");
     if (skip) {
       if (name !== skip.name) continue;
-      if (closing) skip.depth--;
+      if (tag.closing) skip.depth--;
       else if (!selfClosing) skip.depth++;
       if (skip.depth === 0) {
         skip = null;
-        last = end;
+        last = tag.end;
       }
       continue;
     }
-    if (closing || !hiddenElement(name, raw)) continue;
-    out += html.slice(last, m.index);
-    last = end;
+    if (tag.closing || !hiddenElement(name, tag.raw)) continue;
+    out += html.slice(last, tag.start);
+    last = tag.end;
     if (!selfClosing) skip = { name, depth: 1 };
   }
   // An unclosed hidden element hides the rest of the page, as in a browser.

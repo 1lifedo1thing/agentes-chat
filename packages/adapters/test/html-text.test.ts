@@ -135,3 +135,14 @@ test("doctype declarations go in any case, and many without a closing > read in 
   htmlToText("<!doctype".repeat(60_000));
   expect(performance.now() - started).toBeLessThan(1000);
 });
+
+test("a tag's quoted values are read whole, and tags that never close read in linear time", () => {
+  expect(dropHidden(`a<div title="x>y" hidden>b</div>c`)).toBe("ac");
+  expect(dropHidden(`a<div title='<i hidden>'>b</div>c`)).toBe(`a<div title='<i hidden>'>b</div>c`);
+  expect(dropHidden(`a<A-b:c_1 hidden/>d`)).toBe("ad");
+  const started = performance.now();
+  for (const open of [`<A${"-".repeat(100_000)}`, `<A"${'"<A"'.repeat(50_000)}`, `<A'${"'<A'".repeat(50_000)}`]) {
+    expect(dropHidden(open)).toBe(open);
+  }
+  expect(performance.now() - started).toBeLessThan(1000);
+});
