@@ -128,12 +128,17 @@ export function BarSpot({
   );
 }
 
+/** The size tag's height (`.cnv-sizetag`: a 16 px line and 1 px above and below). */
+const SIZE_TAG_H = 18;
+
 /** "1024 × 1024" under the selection: its box in world units (a picture: the pixels it shows). */
 export function SizeTag({ anchor, stage, w, h }: { anchor: Anchor; stage: Size; w: number; h: number }) {
   const { i18n } = useTranslation();
   const x = Math.max(48, Math.min(anchor.x, stage.w - 48));
+  // Under the selection, or held inside the plane when that would run past its bottom.
+  const top = Math.max(EDGE, Math.min(anchor.bottom + EDGE, stage.h - SIZE_TAG_H - EDGE));
   return (
-    <span className="cnv-sizetag tabular" style={{ left: x, top: anchor.bottom + EDGE }}>
+    <span className="cnv-sizetag tabular" style={{ left: x, top }}>
       {`${formatInt(i18n.language, w)} × ${formatInt(i18n.language, h)}`}
     </span>
   );

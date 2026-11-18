@@ -1,7 +1,17 @@
 import type { Artifact, ArtifactVersion, LiveRoom } from "@agenteschat/client";
 import { useArtifactVersions } from "@agenteschat/client";
 import { dayLabel, formatTime } from "@agenteschat/client/lib/format";
-import { Button, cx, Dialog, DialogFooter, Field, Input, SkeletonGroup, SkeletonRow } from "@agenteschat/ui";
+import {
+  Button,
+  cx,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Field,
+  Input,
+  SkeletonGroup,
+  SkeletonRow,
+} from "@agenteschat/ui";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthorName } from "@/components/artifacts/ArtifactViewer";
@@ -171,15 +181,17 @@ export function SaveVersionDialog({
           onSave(name.trim());
         }}
       >
-        <Field label={t("live.shell.versions.name")} id="lf-version-name">
-          <Input
-            ref={field}
-            value={name}
-            maxLength={500}
-            placeholder={t("live.shell.versions.namePlaceholder")}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Field>
+        <DialogBody>
+          <Field label={t("live.shell.versions.name")} id="lf-version-name">
+            <Input
+              ref={field}
+              value={name}
+              maxLength={500}
+              placeholder={t("live.shell.versions.namePlaceholder")}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+        </DialogBody>
         <DialogFooter>
           <Button type="button" onClick={onClose}>
             {t("common.cancel")}

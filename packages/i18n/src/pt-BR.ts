@@ -22353,7 +22353,7 @@ export const ptBR = {
         delete: "Excluir",
         copyName: "{{name}} (cópia)",
         deleteTitle: "Excluir {{name}}?",
-        deleteBody: "Tudo o que está nesta aba vai junto. Fórmulas de outras abas que usam ela passam a mostrar #REF!.",
+        deleteBody: "Tudo o que está nesta aba vai junto. Fórmulas de outras abas que usam ela passam a dar erro de referência.",
         deleteConfirm: "Excluir aba",
       },
       /** Why a change was refused, in a toast (the edit's reason). */

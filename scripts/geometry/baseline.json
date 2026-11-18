@@ -105,6 +105,7 @@
   "clipped@320 span.newag__sel-value in div.ac-select.agp-brainsel",
   "clipped@390 button.ac-tab in div.tabs-bar",
   "clipped@390 span in p.nac__hi",
+  "clipped@390 span.cnv-sizetag.tabular in div.cnv__main",
   "edge@1280 button.ac-btn.ac-btn--primary.ac-btn--sm in span.brw-mf__over",
   "edge@320 button.ac-btn.ac-btn--primary.ac-btn--sm in section.ac-card.wg.wg--fixed",
   "edge@320 button.ac-btn.ac-btn--primary.ac-btn--sm in span.brw-mf__over",

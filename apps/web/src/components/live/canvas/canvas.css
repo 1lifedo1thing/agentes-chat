@@ -133,10 +133,12 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
   object-fit: cover;
   pointer-events: none;
 }
+/* Its icon and line keep the icon-line primitive's alignment; the line itself sits in the middle of the picture. */
 .cnv-img__failed {
   display: flex;
   height: 100%;
-  align-items: center;
+  flex-wrap: wrap;
+  align-content: center;
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-4);
@@ -354,7 +356,6 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
 }
 .cnv-pending__state {
   display: inline-flex;
-  align-items: center;
   gap: var(--space-2);
   color: var(--ink);
   font-weight: 600;
@@ -908,6 +909,11 @@ html:not([data-pointer]) .cnv__plane:focus-visible {
   padding: var(--space-1);
   border-radius: 14px;
   white-space: nowrap;
+}
+/* A bar with a plated action (the crop's Aplicar) keeps it a full step from the bar's edge. */
+.cnv-bar:has(> .ac-btn:not(.ac-btn--ghost)) {
+  height: auto;
+  padding: var(--space-2);
 }
 .cnv-bar__swatches,
 .cnv-bar__sizes {

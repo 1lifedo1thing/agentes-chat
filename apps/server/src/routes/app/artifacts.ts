@@ -254,12 +254,10 @@ export const Artifact = z
       description:
         "I may change its sharing: it lives in a conversation not everyone reads, and I read it there; or it is a file of the Drive itself, and I made it or I'm an administrator.",
     }),
-    conversation: FileConversation.nullable()
-      .optional()
-      .openapi({
-        description:
-          "A live file's conversation (ADR 0199), once someone opened or wrote in it; null until then and for other kinds.",
-      }),
+    conversation: FileConversation.nullable().optional().openapi({
+      description:
+        "A live file's conversation (ADR 0199), once someone opened or wrote in it; null until then and for other kinds.",
+    }),
   })
   .openapi("Artifact");
 
@@ -578,7 +576,8 @@ export function artifactRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/artifacts/{artifactId}/conversation",
       tags,
       security,
-      summary: "Open a live file's conversation (made on first use): its channel and thread root, for the chat's routes",
+      summary:
+        "Open a live file's conversation (made on first use): its channel and thread root, for the chat's routes",
       description:
         "Whoever reads the file reads and writes there (ADR 0199). 404 for a file you don't read or in the trash, 400 `artifact.no_conversation` for a kind without one.",
       request: { params: ArtifactParams },

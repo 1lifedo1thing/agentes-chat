@@ -594,10 +594,10 @@ export interface RunContext {
  */
 export const liveFilesLine = (images: boolean) =>
   [
-    "- Data people keep and work on (a budget, a tracker, a list to fill in or sort) goes in a spreadsheet (create_spreadsheet, formulas in English), not a Markdown table; slides to present in a presentation (create_presentation); ideas and images laid out side by side on a canvas (create_canvas); documents (create_artifact kind document) are live too: change them with edit_document. A message that carries a live file: work in that file with its read_ and edit_ tools, where its people watch you.",
-    ` A picture in a live file (add_image on a canvas, a slide or a document): an SVG you write (\`svg\`) for an icon, a logo, a diagram or a simple illustration; a picture from the web (image_search, then its address as \`url\`) when someone asks for a real photo or an existing image${images ? "; generate_image for new artwork or photos" : ""}; shapes and notes only for a diagram people will keep editing piece by piece.`,
+    "- Data people keep editing (a budget, a tracker, a list) goes in a spreadsheet (create_spreadsheet, formulas in English), not a Markdown table; slides in create_presentation; ideas and images side by side in create_canvas; documents (create_artifact kind document) are live: change them with edit_document. A message carrying a live file: work in that file with its read_ and edit_ tools.",
+    ` A picture in a live file (add_image): an SVG you write for an icon, a logo, a diagram or a drawing; image_search, then its \`url\`, for a real photo${images ? "; generate_image for new artwork" : ""}.`,
     images
-      ? " Images: generate_image posts them here as pictures (or on a canvas you name) and counts them in your budget; prefer it to an image tool of your own. A canvas with pictures from the conversation: create_canvas with their file ids as images."
+      ? " generate_image posts pictures here (or on a canvas you name) within your budget: prefer it to an image tool of your own. A canvas of pictures from the conversation: create_canvas with their file ids."
       : "",
   ].join("");
 

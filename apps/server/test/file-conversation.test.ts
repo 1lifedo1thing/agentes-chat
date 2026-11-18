@@ -1,13 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import {
-  type Browser,
-  browser,
-  createTestServer,
-  joinByInvitation,
-  seedOrg,
-  signUp,
-  type TestServer,
-} from "./harness";
+import { type Browser, browser, createTestServer, joinByInvitation, seedOrg, signUp, type TestServer } from "./harness";
 
 /**
  * A live file's conversation over HTTP (ADR 0199): opened on first use by whoever reads the file, written with the

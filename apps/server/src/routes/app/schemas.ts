@@ -41,7 +41,11 @@ export const LiveSelection = z
       .object({ x: z.number(), y: z.number() })
       .optional()
       .openapi({ description: "A comment pinned on a canvas, in its world units." }),
-    text: z.string().max(400).optional().openapi({ description: "A document's quoted words (kept to 200 characters)." }),
+    text: z
+      .string()
+      .max(400)
+      .optional()
+      .openapi({ description: "A document's quoted words (kept to 200 characters)." }),
     block: z.string().max(64).optional().openapi({ description: "A document's block id." }),
   })
   .openapi("LiveSelection");

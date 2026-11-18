@@ -459,7 +459,7 @@ const GROUP_LABELS: Record<string, string> = {
   drive: "Files (Drive)",
   [DASHBOARD_GROUP]: "Dashboards and widgets (numbers and charts kept up to date, boards to share)",
   [LIVE_FILES_GROUP]:
-    "Spreadsheets, presentations (slides), canvases and documents made, read and edited live with people; pictures in them: SVGs drawn, pictures found on the web, images generated",
+    "Live spreadsheets, slides, canvases and documents, and pictures in them",
   issues: "Issues",
   calendar: "Calendar",
   schedule: "Schedule, reminders and routines",

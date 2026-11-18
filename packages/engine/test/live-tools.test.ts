@@ -167,7 +167,7 @@ describe("the tools and their group", () => {
     const system = systemText(f.provider.calls[0]?.request.system ?? "");
     expect(system).toContain(liveFilesLine(false));
     expect(system).not.toContain("generate_image");
-    expect(liveFilesLine(true)).toContain("generate_image posts them here as pictures");
+    expect(liveFilesLine(true)).toContain("generate_image posts pictures here");
   });
 
   test("a message carries a live file when it was asked from one, or one is attached", async () => {
