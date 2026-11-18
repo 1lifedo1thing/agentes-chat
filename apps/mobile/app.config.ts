@@ -252,6 +252,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         enableBackgroundPlayback: false,
       },
     ],
+    // The agents at work in the Dynamic Island and on the Lock Screen (ADR 0201): a widget extension
+    // (`<bundle id>.ExpoWidgetsTarget`, in the app group `group.<bundle id>`) for the Live Activity the server starts,
+    // updates and ends by push; `frequentUpdates` lets those pushes come as often as an agent moves on.
+    ["expo-widgets", { enablePushNotifications: true, frequentUpdates: true }],
     // The share extension reads as the app in the share sheet. Before expo-share-intent, so it runs once the
     // extension's files are written (a project's changes run from the last plugin to the first).
     "./plugins/with-share-extension-name",
