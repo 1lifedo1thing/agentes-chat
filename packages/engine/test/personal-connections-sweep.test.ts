@@ -104,6 +104,8 @@ async function walterUsedHisCrm() {
       .values({ orgId: f.org.id, connectionId: crm.id, name, access, suggestedAccess: access });
   // His own save of the agent's access: the line names his tools apart.
   await setAgentAccess(f.db, walter.id, f.org.id, f.agent.id, {
+    all: false,
+    scopes: [],
     connectors: { [crm.id]: true },
     tools: { allow: [{ connectionId: crm.id, name: `${crm.toolPrefix}_add_note` }], deny: [] },
   });
