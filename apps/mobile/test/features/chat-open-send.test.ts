@@ -38,7 +38,12 @@ test("a message sent slides up into view in one motion and is there at once, who
   // Going to the end glides the list's own follow of its end for a moment, instead of a jump and a second scroll.
   expect(chat).toContain("const GLIDE = { animated: true } as const;");
   expect(chat).toMatch(/setAtEnd\(true\);\s*setGlide\(\(n\) => n \+ 1\);/);
-  expect(chat).toContain("maintainScrollAtEnd={readHold ? false : glide > 0 ? GLIDE : true}");
+  // Every follow of the end glides: a reply's next line too, never a jump.
+  expect(chat).toContain("maintainScrollAtEnd={readHold ? false : GLIDE}");
+  // The dock growing or shrinking moves the list's end with a short ease, not at once.
+  expect(src("features/chat/list-end.ts")).toContain(
+    "end.set(previous === null ? next : withTiming(next, END_FOLLOW));",
+  );
   // Meanwhile the keyboard list's instant shift for the growing dock is held, and a cover keeps its own hold.
   expect(chat).toMatch(
     /if \(glide === 0\) return;\s*if \(!covered\.current\) freeze\.value = true;\s*const timer = setTimeout\(\(\) => \{\s*setGlide\(0\);\s*if \(!covered\.current\) freeze\.value = false;\s*\}, GLIDE_MS\);/,

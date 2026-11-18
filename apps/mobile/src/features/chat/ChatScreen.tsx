@@ -341,7 +341,10 @@ const BACK_ONLINE_MS = 1600;
  */
 const ENTER = RISE_IN;
 const FRESH_MS = 800;
-/** The list's follow of its end, gliding (`maintainScrollAtEnd`): after a send, the round button. */
+/**
+ * The list's follow of its end, always gliding (`maintainScrollAtEnd`): a message sent or arriving, a reply's next line,
+ * the dock growing under them slide the conversation up in one motion, never a jump.
+ */
 const GLIDE = { animated: true } as const;
 /** How long the follow glides after going to the end: the scroll to the message and its last settling (ms). */
 const GLIDE_MS = 700;
@@ -2663,7 +2666,7 @@ function Chat({
     if (revealing.current) return;
     revealing.current = true;
     const show = () => {
-      listShown.value = withTiming(1, { duration: 160 });
+      listShown.value = withTiming(1, { duration: 120 });
       listPlaced.current = true;
       setPlaced(true);
       watchList();
@@ -3052,7 +3055,7 @@ function Chat({
                                   alignItemsAtEnd
                                   // New messages, a reply growing word by word and the working line keep the end in view,
                                   // but only while the person is near it.
-                                  maintainScrollAtEnd={readHold ? false : glide > 0 ? GLIDE : true}
+                                  maintainScrollAtEnd={readHold ? false : GLIDE}
                                   maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
                                   // Older pages above and rows changing size keep what is on screen still.
                                   maintainVisibleContentPosition

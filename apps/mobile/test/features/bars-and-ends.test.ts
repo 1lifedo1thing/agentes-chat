@@ -77,7 +77,9 @@ test("the list follows the dock when the keys' top moves with no notification, a
   expect(end).toMatch(
     /if \(dragging\.get\(\)\) \{\s*keysDragged\.set\(true\);\s*return;\s*\}[\s\S]{0,200}gap\.set\(composerLift\(-e\.height, e\.progress, lift\) - room\.get\(\)\);/,
   );
-  expect(end).toMatch(/\(\) => box\.get\(\) \+ gap\.get\(\),\s*\(next\) => \{\s*end\.set\(next\);/);
+  expect(end).toMatch(
+    /\(\) => box\.get\(\) \+ gap\.get\(\),\s*\(next, previous\) => \{\s*end\.set\(previous === null \? next : withTiming\(next, END_FOLLOW\)\);/,
+  );
   // The system saying the keyboard is gone puts the dock down (zeros only), unless it comes back at once.
   expect(end).toMatch(/if \(back\) return;\s*if \(keyboard\.height\.get\(\) !== 0\) keyboard\.height\.set\(0\);/);
   expect(end).not.toMatch(/keyboard\.height\.set\((?!0\))/);

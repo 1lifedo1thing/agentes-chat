@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { Keyboard, Platform } from "react-native";
 import { useKeyboardHandler } from "react-native-keyboard-controller";
-import { type SharedValue, useAnimatedReaction, useSharedValue } from "react-native-reanimated";
+import { Easing, type SharedValue, useAnimatedReaction, useSharedValue, withTiming } from "react-native-reanimated";
 import { composerLift, listKeyboardRoom } from "./dock-height";
 
 /** iOS, where the composer and the list hear the keyboard's height along different paths (`useListEnd`). */
@@ -11,6 +11,11 @@ const IOS = Platform.OS === "ios";
  * keyboard coming back at once (a tap on the field as it left) says so first.
  */
 const HIDDEN_SETTLE_MS = 100;
+/**
+ * The list's end following the dock (who is working coming and going, a field growing a line): a short ease-out, so the
+ * conversation slides with it instead of jumping (the keyboard list follows an animated room frame by frame).
+ */
+const END_FOLLOW = { duration: 200, easing: Easing.out(Easing.cubic) };
 
 /** The keyboard library's values as `useReanimatedKeyboardAnimation` hands them (the height is negative while open). */
 export interface KeyboardValues {
@@ -144,8 +149,8 @@ export function useListEnd({
   const end = useSharedValue(box.get());
   useAnimatedReaction(
     () => box.get() + gap.get(),
-    (next) => {
-      end.set(next);
+    (next, previous) => {
+      end.set(previous === null ? next : withTiming(next, END_FOLLOW));
     },
   );
   const dragStarted = useCallback(() => {
