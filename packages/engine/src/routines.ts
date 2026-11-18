@@ -812,7 +812,8 @@ function billedTo(
 /**
  * Routines as `viewerId` sees them (see `viewerRights`), with their state, last week's health and usage; a webhook
  * routine's address only for who manages it, and only with `hooks`. In a workspace closed to work (suspended, or
- * being deleted) none has a next run: its slots pass.
+ * being deleted) none has a next run: its slots pass. `model`: read by the model of a run `viewerId` is behind, which
+ * may say it where others read: someone else's own connection's service is not given to it.
  */
 async function views(
   db: Database,
@@ -820,6 +821,7 @@ async function views(
   viewerId: string | null,
   hooks?: RoutineHookConfig,
   now = new Date(),
+  model = false,
 ): Promise<RoutineView[]> {
   const first = rows[0];
   if (!first) return [];
@@ -1038,7 +1040,7 @@ async function views(
     const personal = source ? personalOf.get(source.connectionId) : undefined;
     const theirs = !personal || personal === viewerId;
     const blank = source && !(personal ? theirs : right.reads);
-    const hidden = source && !theirs && !right.readsServices;
+    const hidden = source && !theirs && (model || !right.readsServices);
     return {
       id: r.id,
       name: r.name,
@@ -1581,7 +1583,7 @@ export async function listOrgRoutines(
       ),
     )
     .orderBy(routines.createdAt);
-  return views(db, rows, options.viewerId ?? null);
+  return views(db, rows, options.viewerId ?? null, undefined, undefined, true);
 }
 
 async function loadRoutine(db: Database, orgId: string, id: string, options: { deleted?: boolean } = {}) {

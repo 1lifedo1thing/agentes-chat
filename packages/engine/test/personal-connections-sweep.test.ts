@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { orgTopic } from "@agenteschat/adapters";
 import { and, eq, schema } from "@agenteschat/db";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -7,11 +8,15 @@ import {
   addChannelMember,
   agentScopeNames,
   agentStatuses,
+  commentIssue,
   connectionViewFor,
   createAgentRuns,
   createChannel,
   createConnectorToolSource,
+  createContextToolSource,
   createDashboard,
+  createIssue,
+  createScheduleToolSource,
   createToolGateway,
   DEFAULT_ROUTER_POLICY,
   DIRECTORY_MAX_TOOLS,
@@ -20,6 +25,7 @@ import {
   executeRoutineRun,
   followWork,
   getAgentAccess,
+  getIssueDetail,
   getRun,
   getWidget,
   insertMessage,
@@ -29,6 +35,7 @@ import {
   listAudit,
   listConnections,
   listCustomServers,
+  listIssues,
   listMessages,
   listNotifications,
   listRoutines,
@@ -304,7 +311,10 @@ describe("what a person's own connection leaves for everyone else", () => {
       .select()
       .from(schema.agentRunSteps)
       .where(and(eq(schema.agentRunSteps.kind, "tool_call")));
-    expect(steps.filter((r) => String(r.data.name).endsWith("_add_note")).length).toBeGreaterThanOrEqual(3);
+    const calls = steps.filter((r) => String(r.data.name).endsWith("_add_note"));
+    expect(calls.length).toBeGreaterThanOrEqual(3);
+    // The gateway marks each call in his own connection as his: the readers below go by that mark.
+    for (const call of calls) expect(call.data.personal).toBe(true);
     // What everyone who may talk to the agent reads of its work.
     expect(JSON.stringify(s.candidates)).not.toContain("CRM");
     expect(JSON.stringify(s.chips)).not.toContain(ACCOUNT);
@@ -449,6 +459,33 @@ describe("what a person's own connection leaves for everyone else", () => {
     }
     expect(await triggerFor(s.walter.id)).toContain(ACCOUNT);
     expect(await triggerFor(s.walter.id)).toContain("boss@example.com");
+    // The agent's own list, in a run the workspace's owner asked in a shared channel: what the channel may hear.
+    const listedFor = async (userId: string) => {
+      const asked = await insertMessage(f.db, {
+        orgId: f.org.id,
+        channelId: f.general.id,
+        author: { type: "person", userId },
+        body: "@dev what are your routines?",
+      });
+      const [run] = await f.db.transaction((tx) => createAgentRuns(tx, asked, [f.agent.id], "mention"));
+      if (!run) throw new Error("no run");
+      const ctx: ToolContext = {
+        db: f.db,
+        orgId: f.org.id,
+        agentId: f.agent.id,
+        runId: run.id,
+        channelId: f.general.id,
+        threadRootId: asked.id,
+        triggerMessageId: asked.id,
+      };
+      const tools = await createScheduleToolSource({ pubsub: f.pubsub, context: f.context }).tools(ctx);
+      const list = tools.find((t) => t.name === "list_routines");
+      return String((await list?.execute({ id: routine.id }, ctx))?.content ?? "");
+    };
+    const ownersRun = await listedFor(f.owner.id);
+    expect(ownersRun).toContain("Mail");
+    expect(ownersRun.toLowerCase()).not.toContain("millionsend");
+    expect(await listedFor(s.walter.id)).toContain("MillionSend");
     // Only he changes what it waits for: anyone else would save it blank.
     for (const who of [f.owner.id, dora.id])
       await expect(
@@ -535,6 +572,66 @@ describe("what a person's own connection leaves for everyone else", () => {
     }
   });
 
+  test("a workspace task his DM run worked on lists none of his own calls among its work steps", async () => {
+    const s = await walterUsedHisCrm();
+    const [dmRun] = await f.db
+      .select({ id: schema.agentRuns.id })
+      .from(schema.agentRuns)
+      .innerJoin(schema.messages, eq(schema.messages.id, schema.agentRuns.triggerMessageId))
+      .where(and(eq(schema.messages.channelId, s.dm.id), eq(schema.agentRuns.background, false)));
+    if (!dmRun) throw new Error("no DM run");
+    const dora = await addMember(f.db, f.org.id, "member", "dora");
+    await f.db.update(schema.agents).set({ ownerUserId: dora.id }).where(eq(schema.agents.id, f.agent.id));
+    const published: unknown[] = [];
+    f.pubsub.subscribe(orgTopic(f.org.id), (e) => published.push(e));
+    const deps = { db: f.db, pubsub: f.pubsub };
+    const issue = await createIssue(deps, { type: "person", userId: s.walter.id }, f.org.id, {
+      title: "Follow up the leads",
+      assignees: [{ type: "agent", id: f.agent.id }],
+    });
+    // The agent touches the task from his DM's run: the run becomes the task's work.
+    await commentIssue(
+      deps,
+      { type: "agent", agentId: f.agent.id, channelId: s.dm.id, runId: dmRun.id },
+      f.org.id,
+      issue.id,
+      "Done",
+    );
+    for (const who of [s.caio.id, f.owner.id, dora.id, s.walter.id]) {
+      const actor = { type: "person" as const, userId: who };
+      const detail = await getIssueDetail(f.db, actor, f.org.id, { id: issue.id });
+      expect(detail.work?.runId).toBe(dmRun.id);
+      const read = JSON.stringify([detail, await listIssues(f.db, actor, f.org.id)]);
+      expect(read).not.toContain("_add_note");
+      expect(read.toLowerCase()).not.toContain("crm");
+    }
+    expect(JSON.stringify(published)).not.toContain("_add_note");
+  });
+
+  test("another person's run never reads his own calls among the agent's earlier steps", async () => {
+    const s = await walterUsedHisCrm();
+    const asked = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: s.deals.id,
+      author: { type: "person", userId: s.bia.id },
+      body: "@dev how did you note Carol's call back?",
+    });
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: crypto.randomUUID(),
+      channelId: s.deals.id,
+      threadRootId: asked.id,
+      triggerMessageId: asked.id,
+    };
+    const search = (await createContextToolSource(f.context).tools(ctx)).find((t) => t.name === "search_context");
+    if (!search) throw new Error("no search_context");
+    const found = await search.execute({ query: "carol call back" }, ctx);
+    expect(found.content).not.toContain("_add_note");
+    expect(found.content).not.toContain("carol@example.com");
+  });
+
   test("a widget refreshing through his own connection reads plain refreshing to anyone else", async () => {
     const s = await walterUsedHisCrm();
     const dash = routineDeps(f);
@@ -559,21 +656,75 @@ describe("what a person's own connection leaves for everyone else", () => {
     if (!queued) throw new Error("slot taken");
     await executeRoutineRun(routineDeps(f), queued.id);
     const runId = (await routineRunRow(f, queued.id)).agentRunId ?? "";
+    const [run] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.id, runId));
+    if (!run) throw new Error("no refresh run");
+    await f.db
+      .update(schema.agentRuns)
+      .set({ status: "running", startedAt: new Date(), heartbeatAt: new Date() })
+      .where(eq(schema.agentRuns.id, runId));
     await f.db
       .update(schema.dashboardWidgets)
       .set({ status: "updating" })
       .where(eq(schema.dashboardWidgets.id, widget.id));
-    await f.db.insert(schema.agentRunSteps).values({
-      orgId: f.org.id,
-      runId,
-      seq: 900,
-      kind: "tool_call",
-      data: { name: s.addNote.name, input: {}, connector: "CRM", personal: true },
+    // The refresh's call into his CRM, held open while everyone looks at the widget.
+    let answer = () => {};
+    const held = new Promise<void>((resolve) => {
+      answer = resolve;
     });
+    // A refresh only reads.
+    await f.db.insert(schema.customTools).values({
+      orgId: f.org.id,
+      connectionId: s.crm.id,
+      name: "count_notes",
+      access: "read",
+      suggestedAccess: "read",
+    });
+    const slow: McpConnect = async () => {
+      const server = new McpServer({ name: "slow-crm", version: "1" });
+      server.registerTool(
+        "count_notes",
+        { description: "Counts the notes of a contact", inputSchema: { email: z.string() } },
+        async () => {
+          await held;
+          return { content: [{ type: "text", text: "ok" }] };
+        },
+      );
+      const [client, transport] = InMemoryTransport.createLinkedPair();
+      await server.connect(transport);
+      return mcpSessionOver(client);
+    };
+    const gateway = createToolGateway({ sources: [createConnectorToolSource({ ...depsOf(), connect: slow })] });
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId,
+      channelId: run.channelId,
+      threadRootId: run.threadRootId,
+      triggerMessageId: run.triggerMessageId,
+    };
+    const call = gateway.invoke(ctx, {
+      toolUseId: "refresh",
+      name: `${s.crm.toolPrefix}_count_notes`,
+      input: { email: "carol@example.com" },
+    });
+    for (let i = 0; i < 100; i++) {
+      const [step] = await f.db
+        .select({ id: schema.agentRunSteps.id })
+        .from(schema.agentRunSteps)
+        .where(and(eq(schema.agentRunSteps.runId, runId), eq(schema.agentRunSteps.kind, "tool_call")));
+      if (step) break;
+      await new Promise((r) => setTimeout(r, 20));
+    }
     const dora = await addMember(f.db, f.org.id, "member", "dora");
     await f.db.update(schema.agents).set({ ownerUserId: dora.id }).where(eq(schema.agents.id, f.agent.id));
-    for (const who of [s.bia.id, s.caio.id, f.owner.id, dora.id])
-      expect((await getWidget(dash, who, f.org.id, widget.id)).step).toBeNull();
-    expect((await getWidget(dash, s.walter.id, f.org.id, widget.id)).step).toMatchObject({ connector: "CRM" });
+    try {
+      for (const who of [s.bia.id, s.caio.id, f.owner.id, dora.id])
+        expect((await getWidget(dash, who, f.org.id, widget.id)).step).toBeNull();
+      expect((await getWidget(dash, s.walter.id, f.org.id, widget.id)).step).toMatchObject({ connector: "CRM" });
+    } finally {
+      answer();
+      await call;
+    }
   });
 });
