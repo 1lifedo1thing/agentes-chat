@@ -353,7 +353,7 @@ const WORK_EVENTS = ["run.finished", "task.finished"];
 export function productDaysQuery(db: Database, r: Range) {
   const e = operatorEvents;
   // Rows per day, type and workspace first, so the distinct counts below sort a few thousand groups, not the
-  // range. The day must stay this exact expression: the statistics `operator_events_day_type_org` (migration 0296)
+  // range. The day must stay this exact expression: the statistics `operator_events_day_type_org` (migration 0297)
   // give the planner its real group count, so it hashes these groups instead of sorting every row of the range.
   const g = db
     .select({

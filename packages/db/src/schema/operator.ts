@@ -31,7 +31,7 @@ export const operatorEvents = pgTable(
   (t) => [
     index().on(t.xactId, t.id),
     index().on(t.createdAt),
-    // The analytics' product days read their range from this index. Migration 0296 also
+    // The analytics' product days read their range from this index. Migration 0297 also
     // creates the statistics `operator_events_day_type_org`, which Drizzle can't declare.
     index("operator_events_created_at_type_org").on(t.createdAt, t.type, t.orgId),
   ],

@@ -1,5 +1,5 @@
 {
-  "id": "f4b929e9-8dfe-4d23-ac5a-29b77aaf3b1f",
+  "id": "6f281c15-2cf9-4f79-bc10-4be4eefd2aee",
   "prevId": "f24af517-0ac8-49a4-ab0c-9d809c6f4035",
   "version": "7",
   "dialect": "postgresql",
@@ -14594,33 +14594,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "operator_events_created_at_type_org": {
-          "name": "operator_events_created_at_type_org",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "org_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {},
@@ -16040,6 +16013,12 @@
         },
         "transcript": {
           "name": "transcript",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profiles": {
+          "name": "profiles",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
