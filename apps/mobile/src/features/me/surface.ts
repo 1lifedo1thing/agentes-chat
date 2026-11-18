@@ -48,12 +48,15 @@ export const surfaceSenderText = (link: Pick<SurfaceLink, "display" | "profileNa
   profileName: link.profileName,
 });
 
-/** What the row says beside the surface's name. */
+/**
+ * What the row says beside the surface's name: a state under it (`sub`, `below`), what linking does behind its ⓘ
+ * (`hint`).
+ */
 export function surfaceRowText(
   t: TFunction,
   row: Exclude<SurfaceRow, { kind: "hidden" }>,
   assistant: string | null,
-): { sub?: string; below?: string; value?: string } {
+): { sub?: string; below?: string; hint?: string; value?: string } {
   if (row.kind === "pending") return { sub: t("surface.row.pending") };
   if (row.kind === "active") {
     const { display, profileName } = row.link;
@@ -63,7 +66,7 @@ export function surfaceRowText(
       value: t("mobile.surface.on"),
     };
   }
-  return { ...(assistant ? { sub: t("surface.row.none", { assistant }) } : {}), value: t("surface.row.link") };
+  return { ...(assistant ? { hint: t("surface.row.none", { assistant }) } : {}), value: t("surface.row.link") };
 }
 
 /**

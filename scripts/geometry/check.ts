@@ -314,6 +314,7 @@ export const SELF_TESTED = [
   "stampover",
   "msgaside",
   "tileglyph",
+  "endline",
 ];
 
 /** Rules about a desktop layout only (panes floating beside the conversation, a toolbar's one row): a phone has none. */

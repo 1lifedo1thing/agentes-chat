@@ -53,7 +53,7 @@ describe("the row in Notificações", () => {
     const t = await translator("en");
     const none = surfaceRowOf(links([]), NOW);
     if (none.kind === "hidden") throw new Error("hidden");
-    expect(surfaceRowText(t, none, "Lodi")).toEqual({ sub: "Lodi can message you there", value: "Link" });
+    expect(surfaceRowText(t, none, "Lodi")).toEqual({ hint: "Lodi can message you there", value: "Link" });
     expect(surfaceRowText(t, none, null)).toEqual({ value: "Link" });
 
     const pending = surfaceRowOf(links([link()]), NOW);
@@ -95,6 +95,8 @@ describe("the row in Notificações", () => {
     const src = readFileSync(join(import.meta.dir, "../../src/features/me/SurfaceLink.tsx"), "utf8");
     expect(src).toContain("labelLines={0}");
     expect(src).toContain("subLines: 0");
+    // What linking does is the ⓘ's beside the name, as on the phone switch's row above it.
+    expect(src).toContain('hint: { name: t("common.about", { label: row.surface }), text: text.hint }');
     expect(src).toContain("confirmAction({");
     const page = readFileSync(join(import.meta.dir, "../../src/features/me/PreferencePages.tsx"), "utf8");
     expect(page).toContain("<SurfaceLinkRow />");
@@ -261,8 +263,9 @@ describe("the surface's logo beside the line icons", () => {
     // The row hands the logo to its tile, which draws it where the symbol goes: same box, same color.
     expect(read("ui/Grouped.tsx")).toContain("<IconTile icon={icon} danger={danger} mark={mark ?? null} />");
     const tile = read("ui/IconTile.tsx");
-    expect(tile).toContain("<MarkIcon uri={mark} fallback={icon} size={glyph} color={ON_TILE} />");
-    expect(tile).toContain("<Icon name={icon} size={glyph} color={ON_TILE} filled />");
+    expect(tile).toContain(
+      "<MarkIcon uri={mark} fallback={icon} size={Math.round(size * (IOS ? 0.73 : 0.6))} color={ON_TILE} />",
+    );
     expect(read("features/me/SurfaceLink.tsx")).toMatch(
       /icon="chat"\s+mark=\{iconUri\(serverUrl\(\), surfaceMarkUrl\(row\.surface\)\)\}/,
     );

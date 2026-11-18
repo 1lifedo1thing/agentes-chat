@@ -25,7 +25,6 @@ export function IconTile({
   mark?: string | null;
 }) {
   const { colors } = useTheme();
-  const glyph = Math.round(size * (IOS ? 0.73 : 0.6));
   return (
     <View
       style={[
@@ -39,9 +38,9 @@ export function IconTile({
       ]}
     >
       {mark ? (
-        <MarkIcon uri={mark} fallback={icon} size={glyph} color={ON_TILE} />
+        <MarkIcon uri={mark} fallback={icon} size={Math.round(size * (IOS ? 0.73 : 0.6))} color={ON_TILE} />
       ) : (
-        <Icon name={icon} size={glyph} color={ON_TILE} filled />
+        <Icon name={icon} size={Math.round(size * (IOS ? 0.73 : 0.6))} color={ON_TILE} filled />
       )}
     </View>
   );

@@ -82,6 +82,7 @@ export function SurfaceLinkRow() {
           labelLines={0}
           {...(text.sub ? { sub: text.sub, subLines: 0 } : {})}
           {...(text.below ? { belowText: text.below } : {})}
+          {...(text.hint ? { hint: { name: t("common.about", { label: row.surface }), text: text.hint } } : {})}
           {...(text.value ? { value: text.value } : {})}
           disabled={remove.isPending}
           {...(row.kind === "active"

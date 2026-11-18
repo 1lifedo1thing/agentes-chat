@@ -70,9 +70,13 @@ describe("the outside chat app's row in Notificações", () => {
     const { state, app, row } = await notifications({ name: "Example Chat", links: [] });
     const r = row() as HTMLElement;
     expect(r.querySelector(".settings-row__label")?.textContent).toBe("Example Chat");
-    expect(document.getElementById("notice-surface-status")?.textContent).toBe(
+    // What linking does is the ⓘ's, as on the rows beside it; nothing under the name while nothing is linked, and the
+    // button keeps the name's line.
+    expect(document.getElementById("notice-surface-help")?.textContent).toBe(
       "Seu braço direito pode mandar mensagens para você lá",
     );
+    expect(document.getElementById("notice-surface-status")).toBeNull();
+    expect(r.classList.contains("settings-row--button")).toBe(true);
     await click(within(r).getByRole("button", { name: "Vincular" }));
     expect(app.router.state.location.search).toMatchObject({ link: 1 });
     expect(calls(state, "surfaces.mintCode")).toEqual([[ORG_ID]]);
@@ -298,7 +302,7 @@ describe("the outside chat app's row in Notificações", () => {
       await settle(4);
       const glyphOf = (id: string) =>
         document.getElementById(id)?.closest(".settings-row")?.querySelector<SVGElement>(".settings-row__icon > svg");
-      const mark = glyphOf("notice-surface-status");
+      const mark = glyphOf("notice-surface-help");
       const beside = glyphOf("notice-mac-help");
       expect(mark?.querySelector("image")?.getAttribute("href")).toBe("/connectors/examplechat.svg");
       expect(mark?.querySelector("rect")?.getAttribute("fill")).toBe("currentColor");
@@ -309,8 +313,8 @@ describe("the outside chat app's row in Notificações", () => {
       cleanup();
       await notifications({ name: "Example Chat", links: [] });
       await settle(4);
-      expect(glyphOf("notice-surface-status")?.querySelector("image")).toBeNull();
-      expect(glyphOf("notice-surface-status")?.style.width).toBe(beside?.style.width ?? "");
+      expect(glyphOf("notice-surface-help")?.querySelector("image")).toBeNull();
+      expect(glyphOf("notice-surface-help")?.style.width).toBe(beside?.style.width ?? "");
     } finally {
       globalThis.Image = RealImage;
     }
@@ -333,6 +337,31 @@ describe("the outside chat app's row in Notificações", () => {
       expect(dialog.querySelectorAll(".dv-step__text")).toHaveLength(1);
       for (const step of dialog.querySelectorAll(".dv-step")) expect(step.textContent).not.toContain(LONG_SURFACE);
       expect(open.textContent).toContain(LONG_SURFACE);
+    }
+  });
+
+  // The worst case for CI's geometry check (the capture keeps each language's list): the longest name with its long
+  // word, the longest sender, every language's words on the buttons. Each row's one button is on its name's line at the
+  // row's end, or under the name at the end when the name's longest word and it can't share the line (`endline`).
+  test("in every language, the list's buttons end their names' lines: the help behind the ⓘ, a state under the name", async () => {
+    for (const links of [
+      [],
+      [link({ status: "active", display: LONG_DISPLAY, profileName: LONG_PROFILE, expiresAt: null })],
+    ]) {
+      const { app, row } = await notifications({ name: LONG_SURFACE, links });
+      for (const lang of LOCALE_CODES) {
+        await showIn(app.services, lang);
+        const phone = document.getElementById("notice-phone-help")?.closest(".settings-row");
+        for (const r of [phone, row()]) {
+          expect(r?.classList.contains("settings-row--button")).toBe(true);
+          expect(r?.querySelector(".settings-row__end > .ac-btn:last-child")).toBeTruthy();
+        }
+        expect(document.getElementById("notice-phone-status")).toBeNull();
+        expect(document.getElementById("notice-surface-status")?.textContent ?? null).toBe(
+          links.length ? `${LONG_DISPLAY} · ${LONG_PROFILE}` : null,
+        );
+      }
+      cleanup();
     }
   });
 });
