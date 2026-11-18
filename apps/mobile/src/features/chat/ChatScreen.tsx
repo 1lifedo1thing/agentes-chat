@@ -1,5 +1,6 @@
 import {
   type Agent,
+  ApiError,
   type ArtifactDetail,
   type ArtifactRef,
   type BrowserHandoff,
@@ -8,10 +9,12 @@ import {
   channelsQuery,
   type DirectMessage,
   dmsQuery,
+  fileConversationOf,
   heldTakeoversHere,
   inMainTimeline,
   keys,
   type LiveConsult,
+  type LiveKind,
   type LiveRun,
   MESSAGES_PAGE,
   type Message,
@@ -30,6 +33,7 @@ import {
   useAgentsBrowserHandoffs,
   useAiStatus,
   useApi,
+  useArtifact,
   useChannelThreads,
   useConsultations,
   useCreateMission,
@@ -54,7 +58,7 @@ import {
 } from "@agenteschat/client";
 import { activityVerb, consultDetails, lineStep, listNames } from "@agenteschat/client/lib/activity";
 import { handoffAsk } from "@agenteschat/client/lib/agent-work";
-import { canTalk } from "@agenteschat/client/lib/audience";
+import { canTalk, managesAgent } from "@agenteschat/client/lib/audience";
 import { runPosition, screenAboveEnd } from "@agenteschat/client/lib/chat";
 import { CHAT_RHYTHM, firstUnreadId, opensAtLastRead, unreadThreadRootId } from "@agenteschat/client/lib/chat-look";
 import { type ConversationWait, conversationWaits } from "@agenteschat/client/lib/computer-queue";
@@ -67,7 +71,7 @@ import {
 import { errorText, sendFailureOf, sendNeedsEdit } from "@agenteschat/client/lib/errors";
 import { mentionsReader, offersEveryone } from "@agenteschat/client/lib/everyone";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@agenteschat/client/lib/files";
-import { capitalize } from "@agenteschat/client/lib/format";
+import { capitalize, joinNames } from "@agenteschat/client/lib/format";
 import { issueTakenOf, issueWorkOf, taskConversationOf } from "@agenteschat/client/lib/issues";
 import { workIsOver } from "@agenteschat/client/lib/long-work";
 import { supersededBrainNotices } from "@agenteschat/client/lib/machine-outages";
@@ -184,6 +188,8 @@ import { isLocalMedia, LOCAL_FILES, type LocalFile, localFilesOf } from "../file
 import { rememberLocalCopy } from "../files/source";
 import { uploadPart } from "../files/upload-part";
 import { chatHref, consultationHref, notificationHref } from "../links/logic";
+import { FileOrigin, LiveQuoteBar } from "../live-files/talk/AboutLine";
+import { dropTalkAbout, useTalkAbout } from "../live-files/talk/store";
 import { MissionCardView } from "../missions/cards";
 import { isOpenMission } from "../missions/logic";
 import { PushOfferLine } from "../push/PushOfferLine";
@@ -303,6 +309,8 @@ type Row =
       newTurn?: boolean;
     })
   | { kind: "marker"; key: string; text: string }
+  /** A live file's conversation (ADR 0199): where the file was made, at its top. */
+  | { kind: "origin"; key: string; artifactId: string; fileKind: LiveKind }
   /** A run in line for its computer (`conversationWaits`): no live row of its own, this one for all its messages. */
   | { kind: "wait"; key: string; wait: ConversationWait }
   /** An agent's browser card: its live run in the browser, or (no run row) a take over held here. */
@@ -390,8 +398,8 @@ const ROWS_WAIT_MS = 200;
  * sees. Once placed it reaches a screen's height (`drawDistance`).
  */
 const OPEN_DRAW_DISTANCE = 250;
-/** Going to a pinned message: at most this many older pages loaded looking for it. */
-const SEEK_MAX_PAGES = 10;
+/** Going to a message: the page read around it (the server's largest). */
+const SEEK_PAGE = 200;
 /** How long the message gone to stays lit. */
 const FLASH_MS = 1600;
 /** How long a photo or file picker takes to cover the screen as it opens (ms). */
@@ -523,7 +531,7 @@ function Chat({
   }, [walled]);
   const rhythm = CHAT_RHYTHM[rowLook.style];
   const quiet = quietInset(rowLook);
-  // The right hand (ADR 0137): its own line and composer hint, no computer, and its greeting on top.
+  // The right hand (ADR 0137): its own line and composer hint, and its greeting on top. Its computer opens as any agent's.
   const rightHand = isRightHand(dmAgent) && !isThread;
   // A new agent's setup checklist (ADR 0155 §2) for whoever sets it up: its greeting and the checklist on top.
   const setupIntro = useSetupSteps(dmAgent).length > 0 && !rightHand && !isThread;
@@ -569,6 +577,9 @@ function Chat({
   );
   const [older, setOlder] = useState<Message[]>([]);
   const [olderDone, setOlderDone] = useState(false);
+  // Going to a message far back shows the page around it on its own (`older`), apart from the latest page: newer
+  // pages come as the person scrolls down, until they reach it.
+  const [gap, setGap] = useState(false);
   // Something is pinned here: its lines wait above the first message (`PinnedLines`). Older pages take their pins from
   // it (`pinnedAsListed`): no cache update reaches them.
   const pinsData = usePins(orgId, channelId, member).data;
@@ -579,8 +590,8 @@ function Chat({
       const mine = (top.data ?? []).filter((m) => m.local && m.threadId === threadId);
       return mergeTimeline(threadMessages.data ?? [], [mine]);
     }
-    return mergeTimeline([...olderPinned, ...(top.data ?? [])], []);
-  }, [isThread, threadId, top.data, threadMessages.data, olderPinned]);
+    return mergeTimeline(gap ? olderPinned : [...olderPinned, ...(top.data ?? [])], []);
+  }, [isThread, threadId, top.data, threadMessages.data, olderPinned, gap]);
   // Messages said in the channel itself: a "thinking" row the app guessed hangs off one of them.
   const topIds = useMemo(() => new Set(list.flatMap((m) => (m.threadId ? [] : [m.id]))), [list]);
   // A DM with a person: their face beside my latest message once they read it (live: `channel.read`).
@@ -616,18 +627,18 @@ function Chat({
     [live.consults, isThread, threadId, topIds],
   );
 
-  // "Parar" in the working line (as on the web): who manages agents, the agent's owner, or who started it.
+  // "Parar" in the working line (as on the web): who manages the agent (the server's `canManage`), its owner, or who
+  // started it.
   const { org } = useOrg();
-  const manageAgents = can(org, "manage_agents");
   const canStop = useCallback(
     (r: LiveRun) =>
       mayStopRun(r, {
         meId,
-        manageAgents,
+        manageAgents: managesAgent(dir.agentById.get(r.agentId)),
         agentOwnerId: dir.agentById.get(r.agentId)?.ownerUserId,
         messages: list,
       }),
-    [meId, manageAgents, dir.agentById, list],
+    [meId, dir.agentById, list],
   );
   const { stop } = live;
   const stopRun = useCallback(
@@ -744,9 +755,12 @@ function Chat({
     if (isThread && threadId) {
       const root = list.find((m) => m.id === threadId);
       const replies = list.filter((m) => m.id !== threadId);
-      // A task's conversation (ADR 0145): its root stands for the task, one screen back; only the replies show.
-      const head: Row[] =
-        root && !taskConversationOf(root.meta)
+      // A task's conversation (ADR 0145): its root stands for the task, one screen back; only the replies show. A
+      // live file's (ADR 0199) the same, under where the file was made.
+      const file = root ? fileConversationOf(root.meta) : null;
+      const head: Row[] = file
+        ? [{ kind: "origin", key: "origin", artifactId: file.artifactId, fileKind: file.kind }]
+        : root && !taskConversationOf(root.meta)
           ? [
               { kind: "marker", key: "started", text: startedText },
               // The root as it started the thread (its mission card is pinned above already).
@@ -979,6 +993,12 @@ function Chat({
     return shownRef.current;
   }, [rows, dividerKey]);
   const toEnd = useCallback(() => {
+    // Away from the latest page: back to it.
+    if (gap) {
+      setGap(false);
+      setOlder([]);
+      setOlderDone(false);
+    }
     letGo();
     // Going to the end (a send, the round button) leaves nothing waiting to be read from the top: the room may have
     // shrunk since (the dock grew), and a reply that fit would be taken for a tall one as my message lands.
@@ -987,7 +1007,7 @@ function Chat({
     setAtEnd(true);
     setGlide((n) => n + 1);
     requestAnimationFrame(() => void listRef.current?.scrollToEnd({ animated: true }));
-  }, [letGo]);
+  }, [letGo, gap]);
 
   // The person is at the end of what they were reading (they scrolled there, or the list landed there): the list
   // follows again, and the round button, with nothing below to go to, goes.
@@ -1096,6 +1116,42 @@ function Chat({
   const loadOlder = useCallback(() => {
     if (!olderFailed && !loadingOlder) fetchOlder();
   }, [olderFailed, loadingOlder, fetchOlder]);
+  /** Shows the page around a message: joined to the latest page when they meet, apart (`gap`) when not. */
+  const showAround = useCallback(
+    (page: Message[]) => {
+      const start = top.data?.[0]?.createdAt;
+      const joins = !start || (page.at(-1)?.createdAt ?? "") >= start;
+      setOlder(joins && start ? page.filter((m) => m.createdAt < start) : page);
+      setGap(!joins);
+      setOlderDone(false);
+      setOlderFailed(false);
+    },
+    [top.data],
+  );
+  const fetchingNewer = useRef(false);
+  const loadNewer = useCallback(() => {
+    const newest = older.at(-1);
+    if (!gap || fetchingNewer.current || !newest) return;
+    fetchingNewer.current = true;
+    api.chat
+      .messages(orgId, channelId, { after: newest.createdAt, limit: MESSAGES_PAGE })
+      .then((page) => {
+        const known = new Set(older.map((m) => m.id));
+        const next = [...older, ...page.filter((m) => !known.has(m.id))];
+        const start = top.data?.[0]?.createdAt;
+        const met = page.length < MESSAGES_PAGE || (start !== undefined && (page.at(-1)?.createdAt ?? "") >= start);
+        if (!met) {
+          setOlder(next);
+          return;
+        }
+        showAround(next);
+        setGap(false);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        fetchingNewer.current = false;
+      });
+  }, [api, orgId, channelId, gap, older, top.data, showAround]);
 
   // ── Sending ──
   // Without a connection (no internet, or the server restarting) a message isn't "failed": it waits with a
@@ -1161,10 +1217,19 @@ function Chat({
     setQuote(m);
     setReplyAt(Date.now());
   }, []);
+  // In a live file's conversation (ADR 0199), what the person had selected in the file (the quote over the field)
+  // rides on the next message as `meta.liveRef`, once.
+  const about = useTalkAbout(isThread ? channelId : "");
+  const takeAbout = (): Record<string, unknown> => {
+    if (!about) return {};
+    dropTalkAbout(channelId);
+    return { liveRef: about };
+  };
   const takeQuote = (files: ArtifactRef[] = []) => {
-    if (!quote) return files.length > 0 ? localMeta(null, "", files) : undefined;
+    const liveRef = takeAbout();
+    if (!quote) return files.length > 0 ? { ...localMeta(null, "", files), ...liveRef } : about ? liveRef : undefined;
     setQuote(null);
-    return localMeta(quote, dir.nameOf(quote.author), files);
+    return { ...localMeta(quote, dir.nameOf(quote.author), files), ...liveRef };
   };
   const qc = useQueryClient();
   const voiceRefused = useCallback(
@@ -1483,6 +1548,7 @@ function Chat({
     if (files.length === 0) return;
     const replyTo = quote;
     if (replyTo) setQuote(null);
+    const liveRef = takeAbout();
     const clientId = newClientId();
     const local: Message = {
       id: `local-${clientId}`,
@@ -1494,6 +1560,7 @@ function Chat({
       agentRunId: null,
       meta: {
         ...localMeta(replyTo, replyTo ? dir.nameOf(replyTo.author) : "", []),
+        ...liveRef,
         [LOCAL_FILES]: files.map(
           (f): LocalFile => ({
             uri: f.uri,
@@ -1691,12 +1758,12 @@ function Chat({
 
   // ── Pins ──
   const rowsRef = useRef<Row[]>([]);
-  // Going to a message (a pin, `?m=`): found among the rows, or older pages loaded until it is (at most
-  // `SEEK_MAX_PAGES`); then scrolled to and lit for a moment.
+  // Going to a message (a pin, `?m=`): found among the rows, or the page around it read from the server at any
+  // distance; then scrolled to and lit for a moment.
   const [seek, setSeek] = useState<string | null>(focusId);
   const [flashId, setFlashId] = useState<string | null>(null);
-  const seekPages = useRef(0);
-  const seekPressed = useRef(false);
+  // The target whose page was asked for, and whether it came.
+  const [around, setAround] = useState<{ id: string; done: boolean } | null>(null);
   const seekReady = isThread ? threadMessages.isSuccess && !threadMessages.isPlaceholderData : top.isSuccess;
   const seekRefreshing = isThread ? threadMessages.isFetching : top.isFetching;
   useEffect(() => {
@@ -1704,40 +1771,43 @@ function Chat({
     const index = shownRows.findIndex((r) => r.kind === "message" && r.message.id === seek);
     if (index >= 0) {
       setSeek(null);
-      seekPressed.current = false;
       letGo();
       void listRef.current?.scrollToIndex({ index, animated: true, ...aimAt(index, 0.4, "start") });
       setFlashId(seek);
       return;
     }
-    // A page that failed before this search is asked for again (the search is an explicit ask); one that fails while
-    // it looks ends it.
-    const pageFailed = olderFailed && seekPages.current > 0;
-    if (isThread || olderDone || pageFailed || seekPages.current >= SEEK_MAX_PAGES) {
-      // A cached page refreshing may still bring it.
-      if (seekRefreshing) return;
+    const missing = (error?: unknown) => {
       setSeek(null);
       // A page that didn't come says so: the message may well be there.
-      if (pageFailed) toast({ title: t("common.loadFailed"), icon: "x" });
-      else if (seekPressed.current) toast({ title: t("channel.jumpTooFar") });
-      else toast({ title: t("channel.jumpMissing"), icon: "x" });
-      seekPressed.current = false;
+      const gone = error === undefined || (error instanceof ApiError && error.status === 404);
+      toast({ title: gone ? t("channel.jumpMissing") : t("common.loadFailed"), icon: "x" });
+    };
+    // A thread holds all it can show; a page read around it that still doesn't show it: deleted or not visible.
+    if (isThread || (around?.id === seek && around.done)) {
+      // A cached page refreshing may still bring it.
+      if (!seekRefreshing) missing();
       return;
     }
-    if (!loadingOlder) {
-      seekPages.current += 1;
-      fetchOlder();
-    }
+    if (around?.id === seek) return;
+    setAround({ id: seek, done: false });
+    api.chat
+      .messages(orgId, channelId, { around: seek, limit: SEEK_PAGE })
+      .then((page) => {
+        showAround(page);
+        setAround({ id: seek, done: true });
+      })
+      .catch(missing);
   }, [
     seek,
     seekReady,
     seekRefreshing,
     shownRows,
     isThread,
-    olderDone,
-    olderFailed,
-    loadingOlder,
-    fetchOlder,
+    around,
+    api,
+    orgId,
+    channelId,
+    showAround,
     letGo,
     aimAt,
     t,
@@ -1755,8 +1825,7 @@ function Chat({
         router.push(chatHref(channelId, reply.threadId, reply.messageId));
         return;
       }
-      seekPages.current = 0;
-      seekPressed.current = true;
+      setAround(null);
       setSeek(reply.messageId);
     },
     [isThread, channelId],
@@ -1768,7 +1837,7 @@ function Chat({
       router.push(chatHref(channelId, target.threadId, target.messageId));
       return;
     }
-    seekPages.current = 0;
+    setAround(null);
     setSeek(target.messageId);
   };
   // From the conversation's options, the next page of that sheet.
@@ -1777,7 +1846,7 @@ function Chat({
   // sheet behind it; a row goes to the reply that said it.
   const goToReturn = (messageId: string) => {
     sheet.close();
-    seekPages.current = 0;
+    setAround(null);
     setSeek(messageId);
   };
   const openReturns = useLatest(() =>
@@ -1805,7 +1874,7 @@ function Chat({
       router.push(target.href);
       return;
     }
-    seekPages.current = 0;
+    setAround(null);
     setSeek(target.messageId);
   };
   const openSearch = () =>
@@ -1839,15 +1908,22 @@ function Chat({
   const rootWork = issueWorkOf(root?.meta);
   // A task's conversation (ADR 0145): "Conversa da tarefa", the task under it.
   const rootTask = taskConversationOf(root?.meta);
+  // A live file's (ADR 0199): "Canvas conversation", who took part under it (the file's name until someone writes).
+  const rootFile = fileConversationOf(root?.meta);
+  const fileTalk = useArtifact(orgId, rootFile?.artifactId ?? null).data?.conversation;
   const title = isThread
     ? rootTask
       ? t("issues.conversation.title")
-      : rootWork
-        ? t("issues.open", { number: rootWork.number, title: rootWork.title })
-        : info
-          ? // A thread on a GIF or a sticker has no words of its own to title it (ADR 0091).
-            threadTitle(info) || previewOf(root ? textOrMedia(t, root.body, root.meta) : "") || t("mobile.chat.thread")
-          : ""
+      : rootFile
+        ? t(`live.conversation.title.${rootFile.kind}`)
+        : rootWork
+          ? t("issues.open", { number: rootWork.number, title: rootWork.title })
+          : info
+            ? // A thread on a GIF or a sticker has no words of its own to title it (ADR 0091).
+              threadTitle(info) ||
+              previewOf(root ? textOrMedia(t, root.body, root.meta) : "") ||
+              t("mobile.chat.thread")
+            : ""
     : dm
       ? dm.with.name
       : channel
@@ -1857,28 +1933,32 @@ function Chat({
   const subtitle = isThread
     ? rootTask
       ? `#${rootTask.number} · ${rootTask.title}`
-      : info
-        ? info.channelKind === "dm"
-          ? // A DM's channel name is internal ("dm-…"): the thread says who it is with.
-            t(
-              mission
-                ? "mobile.chat.missionWith"
-                : info.state === "closed"
-                  ? "mobile.chat.closedThreadWith"
-                  : "mobile.chat.threadWith",
-              { name: dm?.with.name ?? "" },
-            )
-          : t(
-              mission
-                ? "mobile.chat.missionIn"
-                : info.state === "closed"
-                  ? "mobile.chat.closedThreadIn"
-                  : "mobile.chat.threadIn",
-              {
-                channel: info.channelName,
-              },
-            )
-        : undefined
+      : rootFile
+        ? fileTalk?.participants.length
+          ? joinNames(fileTalk.participants.map(dir.nameOf).filter(Boolean), t)
+          : rootFile.title || undefined
+        : info
+          ? info.channelKind === "dm"
+            ? // A DM's channel name is internal ("dm-…"): the thread says who it is with.
+              t(
+                mission
+                  ? "mobile.chat.missionWith"
+                  : info.state === "closed"
+                    ? "mobile.chat.closedThreadWith"
+                    : "mobile.chat.threadWith",
+                { name: dm?.with.name ?? "" },
+              )
+            : t(
+                mission
+                  ? "mobile.chat.missionIn"
+                  : info.state === "closed"
+                    ? "mobile.chat.closedThreadIn"
+                    : "mobile.chat.threadIn",
+                {
+                  channel: info.channelName,
+                },
+              )
+          : undefined
     : dmAgentId
       ? rightHand
         ? `${t("rightHand.label")} · ${t("rightHand.actsAsYou")}`
@@ -2114,7 +2194,7 @@ function Chat({
   const tasksInBar = Boolean(dmAgentId && agentTasks);
   const [leadWidth, setLeadWidth] = useState(0);
   const leadRoom = queueInBar || tasksInBar ? leadWidth : 0;
-  const computerInBar = Boolean(dmAgentId && !isThread && !rightHand && computerWords && !queueInBar);
+  const computerInBar = Boolean(dmAgentId && !isThread && computerWords && !queueInBar);
   const dmExtra = computerInBar ? 1 : 0;
   const channelExtra = searchPlace ? 1 : 0;
   // The channel's sky in the pill, as an agent's DM: the color of the first agent in it.
@@ -2205,7 +2285,7 @@ function Chat({
   // An agent's DM also opens its tasks while it has some (ADR 0128), pushed like a thread, and its computer (as the
   // web's DM header) for whoever may watch it: one entry, the line while turns wait for the computer (the way on to
   // it inside), else the computer.
-  const dmComputer = dmAgentId && !isThread && !rightHand ? { agentId: dmAgentId, onOpen: leavePlace } : undefined;
+  const dmComputer = dmAgentId && !isThread ? { agentId: dmAgentId, onOpen: leavePlace } : undefined;
   // The bar's buttons: one group on every platform, whatever shows. First our own counted views, which have no system
   // button (the agent's tasks, the computer's line; `lead`), then the system's own buttons (the computer, search, "…";
   // our icon buttons in the same capsule on Android). Never two ways of drawing it: a bar that switched to our views
@@ -2267,7 +2347,9 @@ function Chat({
     ? rootTask
       ? // One line on the phone: the tip after "·" in the web's placeholder doesn't fit.
         t("issues.comment")
-      : t("mobile.chat.reply")
+      : rootFile
+        ? t(`mobile.live.talk.placeholder.${rootFile.kind}`)
+        : t("mobile.chat.reply")
     : dm
       ? // One line on the phone: the right hand's "nada muda sem você" doesn't fit beside its name.
         t("mobile.chat.messageTo", { name: dm.with.name })
@@ -2393,6 +2475,8 @@ function Chat({
           return dayLine(when.day(item.iso));
         case "marker":
           return dayLine(item.text);
+        case "origin":
+          return <FileOrigin artifactId={item.artifactId} kind={item.fileKind} />;
         case "wait":
           return <QueueWaitRow channelId={channelId} wait={item.wait} />;
         case "unseen":
@@ -2509,10 +2593,16 @@ function Chat({
   const cancelQuote = useCallback(() => setQuote(null), []);
   const quoteName = quote ? dir.nameOf(quote.author) : null;
   const canAttach = pending.length < MAX_PENDING;
-  // Whom it answers, over the field.
+  const dropAbout = useCallback(() => dropTalkAbout(channelId), [channelId]);
+  // Whom it answers, over the field; in a live file's conversation, else what the person had selected in the file.
   const composerBanner = useMemo(
-    () => (quoteName !== null ? <QuoteBar name={quoteName} onCancel={cancelQuote} /> : undefined),
-    [quoteName, cancelQuote],
+    () =>
+      quoteName !== null ? (
+        <QuoteBar name={quoteName} onCancel={cancelQuote} />
+      ) : about ? (
+        <LiveQuoteBar liveRef={about} onDrop={dropAbout} />
+      ) : undefined,
+    [quoteName, cancelQuote, about, dropAbout],
   );
   // Photos and files waiting to go, inside the field over their caption.
   const composerAttachments = useMemo(
@@ -2876,8 +2966,7 @@ function Chat({
       meId,
     );
     if (!root) return;
-    seekPages.current = 0;
-    seekPressed.current = true;
+    setAround(null);
     setSeek(root);
   }, [
     showList,
@@ -3104,8 +3193,9 @@ function Chat({
                                     alignItemsAtEnd
                                     // New messages, a reply growing word by word and the working line (the footer,
                                     // whose size the list follows too) keep the end in view, but only while the person
-                                    // is near it.
-                                    maintainScrollAtEnd={readHold ? false : GLIDE}
+                                    // is near it, and never while newer messages wait to load under one opened far up
+                                    // (`gap`).
+                                    maintainScrollAtEnd={readHold || gap ? false : GLIDE}
                                     maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
                                     // Older pages above and rows changing size keep what is on screen still.
                                     maintainVisibleContentPosition
@@ -3119,6 +3209,7 @@ function Chat({
                                     freeze={freeze}
                                     onReady={onListReady}
                                     onStartReached={loadOlder}
+                                    onEndReached={gap ? loadNewer : undefined}
                                     // A look at the waiting requests' cards and the live rows, once a frame and only
                                     // while there is one.
                                     onScroll={onListScroll}
@@ -3265,7 +3356,7 @@ function Chat({
                 <FarGate
                   far={far}
                   away={!atEnd}
-                  shown={readHold || (!atEnd && (unseen.messages > 0 || unseen.working.length > 0))}
+                  shown={gap || readHold || (!atEnd && (unseen.messages > 0 || unseen.working.length > 0))}
                 >
                   <View style={styles.jumpAt} pointerEvents="box-none">
                     <ToLatest unseen={unseen} onPress={toEnd} />

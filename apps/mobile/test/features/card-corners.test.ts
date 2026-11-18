@@ -58,6 +58,7 @@ test("every card in a message takes the message card's corners, last over its ow
     "features/blocks/PollCard.tsx",
     "features/blocks/ChoicesCard.tsx",
     "features/blocks/LiveBlock.tsx",
+    "features/live-files/LiveFileCard.tsx",
     "features/missions/cards.tsx",
   ];
   for (const file of cards) {
