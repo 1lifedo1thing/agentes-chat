@@ -355,7 +355,10 @@ export function liveActivityFace(widgetsDir: string, agentId: string): string | 
   if (!dir) return null;
   if (dir.startsWith("file://")) return new URL(`faces/${agentId}.png`, dir.endsWith("/") ? dir : `${dir}/`).href;
   if (!dir.startsWith("/")) return null;
-  return pathToFileURL(`${dir.replace(/\/+$/, "")}/faces/${agentId}.png`).href;
+  // The trailing slashes off by hand: a regular expression on the app's input could be made to run slow.
+  let end = dir.length;
+  while (end > 1 && dir.charCodeAt(end - 1) === 47) end--;
+  return pathToFileURL(`${dir.slice(0, end)}/faces/${agentId}.png`).href;
 }
 
 /** Where a tap on the activity goes: the app's own link to the conversation (ADR 0201 §5). */
