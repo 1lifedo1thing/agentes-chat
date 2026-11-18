@@ -32,6 +32,7 @@ import { assertStorageRoom } from "./limits";
 import { assertPublicHttpsUrl, outboundFetch, type ResolveHost } from "./net-guard";
 import { requirePermission } from "./organizations";
 import { enqueue } from "./outbox";
+import { withoutTrailingSlashes } from "./url-text";
 
 const { storageConfigs, storageMigrations, artifacts, artifactVersions, skillFiles, voiceClips, liveAssets, liveDocs } =
   schema;
@@ -106,7 +107,11 @@ const TEST_VALID_MS = 30 * 60_000;
 const aadFor = (orgId: string, id: string) => `storage:${orgId}:${id}`;
 const hint = (s: string) => (s.length <= 4 ? "••••" : `••••${s.slice(-4)}`);
 const keyPrefix = (prefix: string | null | undefined) => {
-  const p = (prefix ?? "").trim().replace(/^\/+|\/+$/g, "");
+  const typed = (prefix ?? "").trim();
+  // Slashes out from both ends by index, not by `/^\/+|\/+$/g`, which rescans each inner run of them.
+  let start = 0;
+  while (typed.charAt(start) === "/") start++;
+  const p = withoutTrailingSlashes(typed.slice(start));
   return p ? `${p}/` : "";
 };
 
@@ -219,7 +224,7 @@ export function storageErrorText(error: unknown): string {
 
 /** Settings plus keys (the stored ones when the input leaves them empty). */
 async function resolveInput(deps: StorageDeps, orgId: string, input: S3Input) {
-  const endpoint = input.endpoint.trim().replace(/\/+$/, "");
+  const endpoint = withoutTrailingSlashes(input.endpoint.trim());
   const bucket = input.bucket.trim();
   const region = input.region.trim() || "auto";
   if (!bucket || !/^[a-z0-9][a-z0-9.-]{1,62}$/.test(bucket))

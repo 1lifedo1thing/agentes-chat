@@ -311,6 +311,115 @@ export function dropHidden(html: string): string {
   return skip ? out : out + html.slice(last);
 }
 
+// The page's comments, unread elements and tags are taken out by index below, exactly as these patterns take them:
+//   /<!--[\s\S]*?-->/g
+//   /<(head|style|script|title|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi
+//   /<[^>]*>/g
+// Run on a page, those read the rest of it again from each `<!--`, `<script` or `<` that nothing closes: quadratic in
+// the page's length.
+
+/** `html` without its comments, each from a `<!--` to the first `-->` after it; one left open stays. */
+function withoutComments(html: string): string {
+  let out = "";
+  let from = 0;
+  for (let at = html.indexOf("<!--"); at >= 0; at = html.indexOf("<!--", from)) {
+    const end = html.indexOf("-->", at + 4);
+    // No `-->` after this `<!--`: none after a later one either.
+    if (end < 0) break;
+    out += html.slice(from, at);
+    from = end + 3;
+  }
+  return out + html.slice(from);
+}
+
+/** Elements a reader never sees as text, taken out with all they hold. */
+const UNREAD_ELEMENTS = ["head", "style", "script", "title", "noscript"];
+
+const isSpace = (ch: string) => /\s/.test(ch);
+const isWordChar = (ch: string) => /\w/.test(ch);
+/** Whether `text` has `name` (lowercase ASCII) at `at`, in any case of its ASCII letters. */
+function nameAt(text: string, at: number, name: string): boolean {
+  if (at + name.length > text.length) return false;
+  for (let i = 0; i < name.length; i++) {
+    const ch = text.charAt(at + i);
+    if ((ch >= "A" && ch <= "Z" ? ch.toLowerCase() : ch) !== name.charAt(i)) return false;
+  }
+  return true;
+}
+
+/**
+ * `html` without its unread elements: from `<script` (or another of `UNREAD_ELEMENTS`, in any case, not followed by
+ * a letter, digit or `_`) through its tag's `>` to the first `</script>` after it, spaces allowed before that `>`.
+ * One never closed stays. Each search goes on from where the last one for the same thing stopped, so the page is read
+ * a few times at most.
+ */
+function withoutUnreadElements(html: string): string {
+  let gtFrom = Number.POSITIVE_INFINITY;
+  let gtAt = -1;
+  /** The first `>` at or after `from`, or -1. */
+  const nextGt = (from: number) => {
+    if (from < gtFrom || (gtAt >= 0 && from > gtAt)) {
+      gtFrom = from;
+      gtAt = html.indexOf(">", from);
+    }
+    return gtAt;
+  };
+  const closes = new Map<string, { from: number; at: number; end: number }>();
+  /** Where the first `</name>` at or after `from` ends, or -1. */
+  const closeEnd = (name: string, from: number) => {
+    const seen = closes.get(name);
+    if (seen && from >= seen.from && (seen.at < 0 || from <= seen.at)) return seen.end;
+    let at = html.indexOf("</", from);
+    let end = -1;
+    for (; at >= 0; at = html.indexOf("</", at + 1)) {
+      if (!nameAt(html, at + 2, name)) continue;
+      let gt = at + 2 + name.length;
+      while (gt < html.length && isSpace(html.charAt(gt))) gt++;
+      if (html.charAt(gt) === ">") {
+        end = gt + 1;
+        break;
+      }
+    }
+    closes.set(name, { from, at, end });
+    return end;
+  };
+  let out = "";
+  let from = 0;
+  let at = html.indexOf("<");
+  while (at >= 0) {
+    const name = UNREAD_ELEMENTS.find((n) => nameAt(html, at + 1, n));
+    const afterName = at + 1 + (name?.length ?? 0);
+    if (name && !isWordChar(html.charAt(afterName))) {
+      const tagEnd = nextGt(afterName);
+      // No `>` after this tag's name: none after a later one either.
+      if (tagEnd < 0) break;
+      const end = closeEnd(name, tagEnd + 1);
+      if (end >= 0) {
+        out += html.slice(from, at);
+        from = end;
+        at = html.indexOf("<", end);
+        continue;
+      }
+    }
+    at = html.indexOf("<", at + 1);
+  }
+  return out + html.slice(from);
+}
+
+/** `html` without its tags, each from a `<` to the first `>` after it; a `<` left open stays. */
+function withoutTags(html: string): string {
+  let out = "";
+  let from = 0;
+  for (let at = html.indexOf("<"); at >= 0; at = html.indexOf("<", from)) {
+    const end = html.indexOf(">", at + 1);
+    // No `>` after this `<`: none after a later one either.
+    if (end < 0) break;
+    out += html.slice(from, at);
+    from = end + 1;
+  }
+  return out + html.slice(from);
+}
+
 /**
  * HTML to readable plain text: drops head/style/script and comments and every element a person can't see
  * (`dropHidden`), turns blocks and `<br>` into line breaks, list items into "- ", table cells into tabs,
@@ -318,18 +427,12 @@ export function dropHidden(html: string): string {
  * result goes through `cleanOutside`.
  */
 export function htmlToText(html: string): string {
-  let text = html
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<(head|style|script|title|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, "")
-    .replace(/<!doctype[^>]*>/gi, "");
+  let text = withoutUnreadElements(withoutComments(html)).replace(/<!doctype[^>]*>/gi, "");
   text = dropHidden(text);
   text = text.replace(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi, (_match, attrs: string, inner: string) => {
     const href = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
     const url = decodeEntities((href?.[1] ?? href?.[2] ?? href?.[3] ?? "").trim());
-    const label = inner
-      .replace(/<[^>]*>/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    const label = withoutTags(inner).replace(/\s+/g, " ").trim();
     const labelText = decodeEntities(label);
     if (!url || /^(javascript|data):/i.test(url) || url.startsWith("#")) return label;
     const shownUrl = url.replace(/^mailto:/i, "");
@@ -340,13 +443,14 @@ export function htmlToText(html: string): string {
     const alt = (a ?? b ?? "").trim();
     return alt ? `[${alt}]` : "";
   });
-  text = text
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<li\b[^>]*>/gi, "\n- ")
-    .replace(/<\/(td|th)\s*>/gi, "\t")
-    .replace(new RegExp(`</?(${BLOCK_TAGS})\\b[^>]*>`, "gi"), "\n")
-    .replace(/<\/li\s*>/gi, "")
-    .replace(/<[^>]*>/g, "");
+  text = withoutTags(
+    text
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<li\b[^>]*>/gi, "\n- ")
+      .replace(/<\/(td|th)\s*>/gi, "\t")
+      .replace(new RegExp(`</?(${BLOCK_TAGS})\\b[^>]*>`, "gi"), "\n")
+      .replace(/<\/li\s*>/gi, ""),
+  );
   text = decodeEntities(text).replace(/ /g, " ");
   return cleanOutside(text)
     .split("\n")

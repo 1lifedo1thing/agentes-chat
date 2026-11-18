@@ -272,10 +272,21 @@ export const ASK_APPROVALS_TOGETHER =
  * since… \n\nNO_REPLY"): the last line decides, since the word means stay quiet wherever it lands.
  */
 export const isNoReply = (text: string) =>
-  (text.trim().split("\n").at(-1) ?? "")
-    .trim()
-    .replace(/^[`*]+|[`*]+$/g, "")
-    .replace(/\.$/, "") === ROUTINE_NO_REPLY;
+  withoutMarksAround((text.trim().split("\n").at(-1) ?? "").trim()).replace(/\.$/, "") === ROUTINE_NO_REPLY;
+
+const isMark = (ch: string) => ch === "`" || ch === "*";
+
+/**
+ * `line` without the backticks and asterisks at its ends, read by index: `/[`*]+$/` reads a run of them again from
+ * each of its marks when the run doesn't end the line, quadratic in its length (a model writes this text).
+ */
+function withoutMarksAround(line: string): string {
+  let start = 0;
+  let end = line.length;
+  while (start < end && isMark(line.charAt(start))) start++;
+  while (end > start && isMark(line.charAt(end - 1))) end--;
+  return line.slice(start, end);
+}
 
 /** "reagi", "reacted", "リアクション": a word for having reacted, in the app's languages. */
 const REACTED_WORD =

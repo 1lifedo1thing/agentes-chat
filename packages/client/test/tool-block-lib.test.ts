@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { TFunction } from "i18next";
 import type { LiveRun, LiveWork } from "../src/index";
 import { applyChannelEvent, emptyStreams, isQuiet, QUIET_AFTER_MS } from "../src/index";
-import { type Activity, barEntries, toolActivity } from "../src/lib/activity";
+import { type Activity, barEntries, serviceKey, toolActivity } from "../src/lib/activity";
 import {
   callLogo,
   foldSteps,
@@ -636,6 +636,18 @@ describe("each call's service and its logo", () => {
     const [second] = lines(toolItemsLive([call("1", "linear_2_list_issues", { connector: "Linear (Acme) 2" })]));
     expect(logo(second)).toMatchObject({ kind: "service", def: { iconUrl: "/connectors/linear.svg" } });
     expect(second?.hint).toBe("list issues");
+  });
+
+  test("a connection's service by its name, each run of spaces or parentheses read once", () => {
+    expect(serviceKey("Google Drive (ana@acme.com) 2")).toBe("google_drive");
+    expect(serviceKey("Notion  3")).toBe("notion");
+    expect(serviceKey("A (b) (c)")).toBe("a_(b)");
+    expect(serviceKey("A (b)) 2")).toBe("a_(b))");
+    const started = performance.now();
+    expect(serviceKey(`a${" ".repeat(100_000)}b`)).toBe("a_b");
+    expect(serviceKey(`a${"(".repeat(100_000)}`)).toBe(`a${"(".repeat(100_000)}`);
+    expect(serviceKey(`a${" (".repeat(50_000)}x)`)).toBe("a");
+    expect(performance.now() - started).toBeLessThan(1000);
   });
 
   test("the block's logos: each service once, in order of first use, four at most", () => {

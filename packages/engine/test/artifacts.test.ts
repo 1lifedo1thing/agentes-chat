@@ -190,6 +190,18 @@ describe("artifacts made by agents", () => {
     expect(asked.messages.filter((m) => m.role === "assistant" && contentOf(m).includes("attached"))).toEqual([]);
   });
 
+  test("a page's search text has its tags as spaces, read once however many `<` are never closed", async () => {
+    f = await setup();
+    const started = performance.now();
+    const page = await createArtifact(f.artifactDeps, person(f.owner.id), f.org.id, {
+      title: "Página",
+      content: { kind: "html", html: `<h1>Oi</h1><p>mundo</p><>x${"<".repeat(100_000)}` },
+    });
+    expect(performance.now() - started).toBeLessThan(2000);
+    const [row] = await f.db.select().from(schema.artifacts).where(eq(schema.artifacts.id, page.id));
+    expect(row?.excerpt.startsWith("Oi mundo <>x<<<")).toBe(true);
+  });
+
   test("html is stored as is and flagged untrusted", async () => {
     f = await setup({ artifactTools: true, reply: driveAgent() });
     await grantScopes(f.db, f.org.id, f.agent.id, DRIVE);

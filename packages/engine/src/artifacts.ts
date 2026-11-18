@@ -719,7 +719,7 @@ function excerptOf(content: ArtifactContent): string {
       : content.kind === "block" && content.spec
         ? blockSpecText(content.spec)
         : content.kind === "html" || content.kind === "block"
-          ? (content.html ?? "").replace(/<[^>]+>/g, " ")
+          ? tagsAsSpaces(content.html ?? "")
           : content.kind === "poll"
             ? [content.question, ...content.options].join("\n")
             : content.kind === "choices"
@@ -730,6 +730,30 @@ function excerptOf(content: ArtifactContent): string {
                   ? [content.columns.join(" "), ...content.rows.map((r) => r.join(" "))].join("\n")
                   : content.files.map((f) => f.path).join("\n");
   return s.replace(/\s+/g, " ").trim().slice(0, 20_000);
+}
+
+/**
+ * `html` with each tag (a `<`, at least one character, then the first `>`) as a space, as `/<[^>]+>/g` makes it. By
+ * index: that pattern reads the rest of the text again from each `<` that no `>` follows, quadratic in its length.
+ */
+function tagsAsSpaces(html: string): string {
+  let out = "";
+  let from = 0;
+  let at = html.indexOf("<");
+  while (at >= 0) {
+    const end = html.indexOf(">", at + 1);
+    // No `>` after this `<`: none after a later one either.
+    if (end < 0) break;
+    if (end === at + 1) {
+      // `<>` is no tag.
+      at = html.indexOf("<", end);
+      continue;
+    }
+    out += `${html.slice(from, at)} `;
+    from = end + 1;
+    at = html.indexOf("<", from);
+  }
+  return out + html.slice(from);
 }
 
 /** A Markdown table (for PDF export of tables). */

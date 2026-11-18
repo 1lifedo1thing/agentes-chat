@@ -3,7 +3,7 @@ import type { ChatPrefs } from "../lib/chat-look";
 import { humanCheckHeaders } from "../lib/human-check";
 import type { OnboardingStepId } from "../lib/onboarding";
 import { type LodiPrefs, lodiPrefsOf } from "../lib/right-hand-prefs";
-import { CLOUD_SERVER } from "../lib/server";
+import { CLOUD_SERVER, withoutTrailingSlashes } from "../lib/server";
 import { createLiveApi } from "../live/api";
 import { consultSeeds } from "../realtime/consults";
 import { steerStore } from "../realtime/steer";
@@ -331,7 +331,7 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
   // agentes.chat itself, for its public answers (the desktop app's newest build): another origin, no cookie.
   const cloud = createRequester({ baseUrl: CLOUD_SERVER, ...(options.fetch ? { fetch: options.fetch } : {}) });
   /** Prefix for URLs the platform opens itself (file links); "" on the web. */
-  const base = (options.baseUrl ?? "").replace(/\/+$/, "");
+  const base = withoutTrailingSlashes(options.baseUrl ?? "");
   const nullOn = async <T>(status: number, run: () => Promise<T>): Promise<T | null> => {
     try {
       return await run();

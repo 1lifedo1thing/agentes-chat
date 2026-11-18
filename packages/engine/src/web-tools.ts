@@ -6,6 +6,7 @@ import { fetchWebPicture } from "./live/web-pictures";
 import { assertPublicHttpsUrl, outboundFetch, type ResolveHost } from "./net-guard";
 import { outboundRefusal } from "./outbound";
 import type { ToolContext, ToolDefinition, ToolSource } from "./tools/types";
+import { withoutTrailingSlashes } from "./url-text";
 
 /** The usage rows of web calls (no tokens, no model): readers of model calls leave them out. */
 export const WEB_USAGE_PROVIDER = "web";
@@ -94,17 +95,82 @@ export function parseDuckDuckGoHtml(html: string): SearchResult[] {
   const out: SearchResult[] = [];
   const blocks = html.split(/class="result\s/).slice(1);
   for (const block of blocks) {
-    const link = /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/.exec(block);
+    const link = resultLink(block);
     if (!link) continue;
-    let url = decodeEntities(link[1] ?? "");
+    let url = decodeEntities(link.href);
     const target = /[?&]uddg=([^&]+)/.exec(url);
     if (target?.[1]) url = decodeURIComponent(target[1]);
     if (url.startsWith("//")) url = `https:${url}`;
     if (!/^https?:\/\//.test(url) || /duckduckgo\.com\/y\.js/.test(url)) continue;
-    const snippet = /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/.exec(block)?.[1] ?? "";
-    out.push({ title: htmlToText(link[2] ?? ""), url, snippet: htmlToText(snippet) });
+    const snippet = resultSnippet(block) ?? "";
+    out.push({ title: htmlToText(link.html), url, snippet: htmlToText(snippet) });
   }
   return out;
+}
+
+// A result's link and snippet are read by index, as these patterns read them:
+//   /class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/
+//   /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/
+// Run on the page, they retry the rest of the block from each class, `href` and `>` that no `</a>` follows: quadratic
+// in the block's length.
+
+const LINK_CLASS = 'class="result__a"';
+const SNIPPET_CLASS = 'class="result__snippet"';
+const HREF = 'href="';
+
+/**
+ * `text.indexOf(needle, from)` for searches whose `from` only grows: each needle's last answer is given again while
+ * `from` hasn't passed it, so the searches read the text about once per needle. Any `from` gets the right answer.
+ */
+function forwardFinder(text: string) {
+  const last = new Map<string, { from: number; at: number }>();
+  return (needle: string, from: number) => {
+    const seen = last.get(needle);
+    if (seen && from >= seen.from && (seen.at < 0 || from <= seen.at)) return seen.at;
+    const at = text.indexOf(needle, from);
+    last.set(needle, { from, at });
+    return at;
+  };
+}
+
+/**
+ * The first `class="result__a"` tag that leads to a link: its last non-empty `href="…"` that a `>` and then a `</a>`
+ * follow (the pattern's `[^>]*` gives back from the tag's end), with the HTML from that `>` to the first `</a>`.
+ */
+function resultLink(block: string): { href: string; html: string } | null {
+  const after = forwardFinder(block);
+  for (let at = block.indexOf(LINK_CLASS); at >= 0; ) {
+    const attrs = at + LINK_CLASS.length;
+    const tagEnd = after(">", attrs);
+    // No `>` past this class: no tag here or after it ever ends.
+    if (tagEnd < 0) return null;
+    const hrefs: number[] = [];
+    for (let h = after(HREF, attrs); h >= 0 && h < tagEnd; h = after(HREF, h + 1)) hrefs.push(h);
+    for (let i = hrefs.length - 1; i >= 0; i--) {
+      const value = (hrefs[i] as number) + HREF.length;
+      const quote = block.indexOf('"', value);
+      if (quote <= value) continue;
+      // A quote inside the tag is followed by the tag's own `>`; one past it, by the next `>` after it.
+      const gt = quote < tagEnd ? tagEnd : after(">", quote + 1);
+      const close = gt < 0 ? -1 : after("</a>", gt + 1);
+      if (close >= 0) return { href: block.slice(value, quote), html: block.slice(gt + 1, close) };
+    }
+    // A class before this tag's `>` sees the same `href`s or fewer, so it fails too: the next try is past the tag.
+    at = block.indexOf(LINK_CLASS, tagEnd + 1);
+  }
+  return null;
+}
+
+/**
+ * The HTML from the first `class="result__snippet"` tag's `>` to the first `</a>` after it. A later class only finds
+ * its `>` and `</a>` later, so when the first one has none, none has.
+ */
+function resultSnippet(block: string): string | null {
+  const at = block.indexOf(SNIPPET_CLASS);
+  if (at < 0) return null;
+  const gt = block.indexOf(">", at + SNIPPET_CLASS.length);
+  const close = gt < 0 ? -1 : block.indexOf("</a>", gt + 1);
+  return close < 0 ? null : block.slice(gt + 1, close);
 }
 
 type Found = { results: SearchResult[] } | { page: string; url: string | null };
@@ -133,7 +199,7 @@ export function createWebToolSource(deps: WebToolDeps = {}): ToolSource {
     });
   }
   if (deps.searxngUrl) {
-    const base = deps.searxngUrl.replace(/\/+$/, "");
+    const base = withoutTrailingSlashes(deps.searxngUrl);
     providers.push({
       id: "searxng",
       async search(query, _limit, ctx) {
@@ -480,14 +546,7 @@ const absolute = (v: unknown, base?: string) => {
 };
 
 // What a search service answers is read by index below: a regex that tries the rest of the text again from each
-// `<` left open, each digit of a long number or each slash of a long run takes quadratic time in its length.
-
-/** An address without the slashes it ends with. */
-function withoutTrailingSlashes(address: string): string {
-  let end = address.length;
-  while (end > 0 && address.charAt(end - 1) === "/") end--;
-  return address.slice(0, end);
-}
+// `<` left open or each digit of a long number takes quadratic time in its length.
 
 /** HTML with each tag (from a `<` to the first `>` after it) as a space; a `<` left open stays. */
 function tagsAsSpaces(html: string): string {

@@ -2,6 +2,7 @@ import type { Peer, PeerUser } from "@agenteschat/live/awareness";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type * as Y from "yjs";
 import { useApi } from "../api/context";
+import { withoutTrailingSlashes } from "../lib/server";
 import type { SocketBase, SocketFactory } from "../realtime/connection";
 import { loadLiveState } from "./api";
 import { type LiveConnectionState, liveSocketUrl } from "./connection";
@@ -68,10 +69,7 @@ const zero = () => 0;
 /** The server part of a room's key: the same file on another server is another room. */
 function serverOf(base: SocketBase): string {
   if (typeof base !== "string") return `${base.protocol}//${base.host}`;
-  // Its trailing slashes out by index: `/\/+$/` rescans each run of slashes (quadratic in the address's length).
-  let end = base.length;
-  while (end > 0 && base.charAt(end - 1) === "/") end--;
-  return base.slice(0, end);
+  return withoutTrailingSlashes(base);
 }
 
 /**

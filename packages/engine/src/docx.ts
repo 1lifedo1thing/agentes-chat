@@ -52,11 +52,9 @@ interface Inline {
 /** Inline Markdown: **bold**, *italic* / _italic_, `code`, [text](url). */
 function inline(text: string, links: string[]): Inline[] {
   const out: Inline[] = [];
-  const re = /(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|_[^_\s][^_]*_|\[[^\]]+\]\([^)\s]+\))/g;
   let last = 0;
-  for (const m of text.matchAll(re)) {
-    const token = m[0];
-    const at = m.index ?? 0;
+  for (const [at, end] of inlineMarks(text)) {
+    const token = text.slice(at, end);
     if (at > last) out.push({ text: text.slice(last, at) });
     if (token.startsWith("**")) out.push({ text: token.slice(2, -2), bold: true });
     else if (token.startsWith("`")) out.push({ text: token.slice(1, -1), code: true });
@@ -68,10 +66,88 @@ function inline(text: string, links: string[]): Inline[] {
         out.push({ text: link[1] ?? "", link: links.length });
       } else out.push({ text: token });
     } else out.push({ text: token.slice(1, -1), italic: true });
-    last = at + token.length;
+    last = end;
   }
   if (last < text.length) out.push({ text: text.slice(last) });
   return out;
+}
+
+const isSpace = (ch: string) => /\s/.test(ch);
+
+/**
+ * The first index at or after `from` whose character `stops`, or the text's length. Searches whose `from` only grows
+ * reuse the last answer while `from` hasn't passed it, so together they read the text once; any `from` still gets the
+ * right answer.
+ */
+function scanner(text: string, stops: (ch: string) => boolean) {
+  let lastFrom = Number.POSITIVE_INFINITY;
+  let lastAt = 0;
+  return (from: number) => {
+    if (from >= lastFrom && from <= lastAt) return lastAt;
+    let at = from;
+    while (at < text.length && !stops(text.charAt(at))) at++;
+    lastFrom = from;
+    lastAt = at;
+    return at;
+  };
+}
+
+/**
+ * The inline marks of `text` as `[start, end)`, where this pattern finds them, the first of its forms that fits at
+ * each place, then on past it:
+ *   /\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*|_[^_\s][^_]*_|\[[^\]]+\]\([^)\s]+\)/g
+ * By index, each closing character looked for from a place that only moves forward: the pattern reads the rest of
+ * the text again from each `[`, `*`, `` ` `` or `_` that nothing closes, quadratic in the text's length.
+ */
+function inlineMarks(text: string): [number, number][] {
+  const star = scanner(text, (ch) => ch === "*");
+  const tick = scanner(text, (ch) => ch === "`");
+  const underscore = scanner(text, (ch) => ch === "_");
+  const bracket = scanner(text, (ch) => ch === "]");
+  const urlEnd = scanner(text, (ch) => ch === ")" || isSpace(ch));
+  const n = text.length;
+  /** Where a mark that starts at `p` ends, or -1. */
+  const markEnd = (p: number): number => {
+    const ch = text.charAt(p);
+    const next = text.charAt(p + 1);
+    // `next` opens an emphasis: there, not a space and not the mark itself.
+    const opens = (mark: string) => next !== "" && next !== mark && !isSpace(next);
+    if (ch === "*") {
+      if (next === "*") {
+        const close = star(p + 2);
+        if (close > p + 2 && text.charAt(close + 1) === "*") return close + 2;
+      }
+      if (!opens("*")) return -1;
+      const close = star(p + 2);
+      return close < n ? close + 1 : -1;
+    }
+    if (ch === "`") {
+      const close = tick(p + 1);
+      return close > p + 1 && close < n ? close + 1 : -1;
+    }
+    if (ch === "_") {
+      if (!opens("_")) return -1;
+      const close = underscore(p + 2);
+      return close < n ? close + 1 : -1;
+    }
+    if (ch === "[") {
+      const close = bracket(p + 1);
+      if (close <= p + 1 || text.charAt(close + 1) !== "(") return -1;
+      const end = urlEnd(close + 2);
+      return end > close + 2 && text.charAt(end) === ")" ? end + 1 : -1;
+    }
+    return -1;
+  };
+  const marks: [number, number][] = [];
+  for (let p = 0; p < n; ) {
+    const end = markEnd(p);
+    if (end < 0) p++;
+    else {
+      marks.push([p, end]);
+      p = end;
+    }
+  }
+  return marks;
 }
 
 function run(r: Inline, extra = "") {
