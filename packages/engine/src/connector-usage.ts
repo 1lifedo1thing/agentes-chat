@@ -347,16 +347,17 @@ async function accountCounts(db: Database, r: Range, byOrg: boolean) {
 const WORK_EVENTS = ["run.finished", "task.finished"];
 
 /**
- * The product's numbers per UTC day from the operator's events feed (kept `OPERATOR_EVENTS_KEEP_DAYS`), and its
- * active workspaces.
+ * The product's numbers per UTC day from the operator's events feed, with the empty grouping set's row (day null)
+ * for the whole range: its active workspaces.
  */
-async function productDays(db: Database, r: Range) {
+export function productDaysQuery(db: Database, r: Range) {
   const e = operatorEvents;
-  // Rows per day, type and workspace first: a few thousand groups, so the distinct counts below sort no spill to
-  // disk, and the range is read once, from the (created_at, type, org_id) index alone.
+  // Rows per day, type and workspace first, so the distinct counts below sort a few thousand groups, not the
+  // range. The day must stay this exact expression: the statistics `operator_events_day_type_org` (migration 0296)
+  // give the planner its real group count, so it hashes these groups instead of sorting every row of the range.
   const g = db
     .select({
-      day: sql<string>`to_char(${e.createdAt} at time zone 'utc', 'YYYY-MM-DD')`.as("day"),
+      day: sql<string>`(${e.createdAt} at time zone 'utc')::date`.as("day"),
       type: e.type,
       orgId: e.orgId,
       n: sql<number>`count(*)`.as("n"),
@@ -372,10 +373,9 @@ async function productDays(db: Database, r: Range) {
     .groupBy(sql`1`, e.type, e.orgId)
     .as("g");
   const of = (type: string) => sql<number>`coalesce(sum(${g.n}) filter (where ${g.type} = ${type}), 0)`.mapWith(Number);
-  // The empty grouping set adds the row of the whole range (day null): its active workspaces.
-  const rows = await db
+  return db
     .select({
-      day: g.day,
+      day: sql<string | null>`to_char(${g.day}, 'YYYY-MM-DD')`,
       runs: of("run.finished"),
       tasks: of("task.finished"),
       activeWorkspaces: howMany(inArray(g.type, WORK_EVENTS), g.orgId),
@@ -385,7 +385,12 @@ async function productDays(db: Database, r: Range) {
     .from(g)
     .groupBy(sql`grouping sets ((${g.day}), ())`)
     .orderBy(g.day);
-  const days = rows.filter((d) => d.day !== null);
+}
+
+/** The product's days (kept `OPERATOR_EVENTS_KEEP_DAYS`) and the range's active workspaces. */
+async function productDays(db: Database, r: Range) {
+  const rows = await productDaysQuery(db, r);
+  const days = rows.filter((d): d is typeof d & { day: string } => d.day !== null);
   const all = rows.find((d) => d.day === null);
   return { days, activeWorkspaces: all?.activeWorkspaces ?? 0, keptDays: OPERATOR_EVENTS_KEEP_DAYS };
 }

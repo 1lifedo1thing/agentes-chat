@@ -31,8 +31,8 @@ export const operatorEvents = pgTable(
   (t) => [
     index().on(t.xactId, t.id),
     index().on(t.createdAt),
-    // The analytics' product days read a range from this index alone (the table is append-only, so its pages stay
-    // all-visible), never the jsonb-wide heap.
+    // The analytics' product days read their range from this index. Migration 0296 also
+    // creates the statistics `operator_events_day_type_org`, which Drizzle can't declare.
     index("operator_events_created_at_type_org").on(t.createdAt, t.type, t.orgId),
   ],
 );

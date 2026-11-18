@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { gt, schema, sql } from "@agenteschat/db";
+import { gt, rowsOf, schema, sql } from "@agenteschat/db";
 import {
   analyticsRange,
   composioUsageHook,
@@ -17,6 +17,7 @@ import {
   operatorConnectorAnalytics,
   orgOfComposioUser,
   postPersonMessage,
+  productDaysQuery,
   type ToolContext,
   type ToolDefinition,
   ValidationError,
@@ -645,6 +646,22 @@ describe("the operator's reads", () => {
     });
     const empty = await operatorAnalytics(f.db, { from: "2001-01-01", to: "2001-01-02" });
     expect(empty.product).toEqual({ days: [], activeWorkspaces: 0, keptDays: OPERATOR_EVENTS_KEEP_DAYS });
+  });
+
+  test("the product's days hash their groups: the day expression matches the statistics, so no sort of the range", async () => {
+    f = await setup();
+    // 30 days of events, 4 types and 50 workspaces: about 6,000 groups among 60,000 rows.
+    await f.db.execute(sql`insert into operator_events (id, type, org_id, created_at)
+      select gen_random_uuid(), (array['run.finished','task.finished','organization.created','user.signed_up'])[1 + i % 4],
+        orgs.ids[1 + (i * 7919) % 50], timestamptz '2001-01-01' + i * interval '43 seconds'
+      from generate_series(1, 60000) i, (select array_agg(gen_random_uuid()) ids from generate_series(1, 50)) orgs`);
+    await f.db.execute(sql`analyze operator_events`);
+    const plan = rowsOf<{ "QUERY PLAN": string }>(
+      await f.db.execute(sql`explain ${productDaysQuery(f.db, analyticsRange("2001-01-01", "2001-01-30"))}`),
+    )
+      .map((r) => r["QUERY PLAN"])
+      .join("\n");
+    expect(plan).toContain("HashAggregate");
   });
 
   test("at most 500 connectors and 500 workspaces, then `more`", async () => {
