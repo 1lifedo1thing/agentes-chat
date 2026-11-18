@@ -128,3 +128,10 @@ describe("IMAP: the HTML part is the body when there is one", () => {
     expect(message.text).not.toContain("nothing to do");
   });
 });
+
+test("doctype declarations go in any case, and many without a closing > read in linear time", () => {
+  expect(htmlToText("<!DOCTYPE html><p>Oi</p><!doctype x>fim")).toBe(htmlToText("<p>Oi</p>fim"));
+  const started = performance.now();
+  htmlToText("<!doctype".repeat(60_000));
+  expect(performance.now() - started).toBeLessThan(1000);
+});

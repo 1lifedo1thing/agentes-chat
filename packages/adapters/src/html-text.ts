@@ -420,6 +420,40 @@ function withoutTags(html: string): string {
   return out + html.slice(from);
 }
 
+/** Whether `text` has `doctype` at `at`, in any case of its ASCII letters (as `/doctype/i` reads it). */
+function doctypeAt(text: string, at: number): boolean {
+  const word = "doctype";
+  for (let k = 0; k < word.length; k++) {
+    const c = text.charCodeAt(at + k);
+    const w = word.charCodeAt(k);
+    if (c !== w && c !== w - 32) return false;
+  }
+  return true;
+}
+
+/**
+ * `html` without its `<!doctype …>` declarations, read by index. Not by `/<!doctype[^>]*>/gi`: on outside HTML with
+ * many `<!doctype` and no `>`, that pattern reads the rest of the text again from each of them (quadratic).
+ */
+function withoutDoctypes(html: string): string {
+  let out = "";
+  let from = 0;
+  let at = html.indexOf("<!", from);
+  while (at >= 0) {
+    if (!doctypeAt(html, at + 2)) {
+      at = html.indexOf("<!", at + 2);
+      continue;
+    }
+    const end = html.indexOf(">", at + 9);
+    // No `>` after this one: none after a later one either, so nothing more is a declaration.
+    if (end < 0) break;
+    out += html.slice(from, at);
+    from = end + 1;
+    at = html.indexOf("<!", from);
+  }
+  return out + html.slice(from);
+}
+
 /**
  * HTML to readable plain text: drops head/style/script and comments and every element a person can't see
  * (`dropHidden`), turns blocks and `<br>` into line breaks, list items into "- ", table cells into tabs,
@@ -427,7 +461,7 @@ function withoutTags(html: string): string {
  * result goes through `cleanOutside`.
  */
 export function htmlToText(html: string): string {
-  let text = withoutUnreadElements(withoutComments(html)).replace(/<!doctype[^>]*>/gi, "");
+  let text = withoutDoctypes(withoutUnreadElements(withoutComments(html)));
   text = dropHidden(text);
   text = text.replace(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi, (_match, attrs: string, inner: string) => {
     const href = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(attrs);
