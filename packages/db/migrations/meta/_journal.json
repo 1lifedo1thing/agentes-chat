@@ -2098,8 +2098,15 @@
     {
       "idx": 301,
       "version": "7",
-      "when": 1795035576604,
-      "tag": "0304_file_access",
+      "when": 1795028809526,
+      "tag": "0304_claude_auth_percent",
+      "breakpoints": true
+    },
+    {
+      "idx": 302,
+      "version": "7",
+      "when": 1795038809526,
+      "tag": "0305_file_access",
       "breakpoints": true
     }
   ]
