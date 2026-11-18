@@ -66,9 +66,12 @@ export function useLiveActivity(
         .liveActivity({ installId: id, widgetsDir: widgetsDirectory, locale, ...target, ...fields })
         .catch(() => undefined);
     };
-    // Every running activity's token, and its next one when iOS changes it.
+    // Every running activity's token, and its next one when iOS changes it. One at a time: a second (a start the
+    // server sent again while the first one's token hadn't reached it) ends, the newest staying.
     const sync = async () => {
-      for (const activity of AgentsActivity.getInstances()) {
+      const running = AgentsActivity.getInstances();
+      for (const extra of running.slice(0, -1)) await extra.end("immediate").catch(() => undefined);
+      for (const activity of running.slice(-1)) {
         const activityId = activity.getId();
         if (!watched.has(activityId)) {
           watched.add(activityId);
