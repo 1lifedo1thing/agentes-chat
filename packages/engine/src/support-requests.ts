@@ -181,15 +181,20 @@ export async function operatorRecordSupportRequest(
 }
 
 /**
+ * How far back the daily sweep looks for a reply's finished job: the sweep runs once a day and a job ends within
+ * hours of being made, so two days reach every job the sweep before ran too early for.
+ */
+const REPLY_SWEEP_DAYS = 2;
+
+/**
  * The operator's own words in a reply to a request (`operatorReply`) leave the reply's email job once the email is
  * sent or given up: the job keeps whom it went to and how it ended, as any email's does, never what it said. With no
- * `job`: every finished one of the last 31 days (after that a finished job keeps no payload at all), for a job whose
- * worker died before it got here.
+ * `job`: every finished one made in the last `REPLY_SWEEP_DAYS`, for a job whose worker died before it got here.
  */
 export async function forgetReplyWords(db: Executor, job?: OutboxJob, now = new Date()) {
   if (job && (job.payload.template as { kind?: unknown } | undefined)?.kind !== "support_reply") return;
-  // ponytail: without a job, one daily read of a month of jobs by their time index; an index on the email's kind if
-  // that month grows too long to scan.
+  // ponytail: without a job, one daily read of those days' jobs by their time index; an index on the email's kind if
+  // they grow too long to scan.
   await db
     .update(outbox)
     .set({ payload: sql`${outbox.payload} #- '{template,text}'` })
@@ -199,7 +204,7 @@ export async function forgetReplyWords(db: Executor, job?: OutboxJob, now = new 
           ? eq(outbox.id, job.id)
           : and(
               inArray(outbox.status, ["done", "failed"]),
-              gt(outbox.createdAt, new Date(now.getTime() - 31 * 86_400_000)),
+              gt(outbox.createdAt, new Date(now.getTime() - REPLY_SWEEP_DAYS * 86_400_000)),
             ),
         eq(outbox.kind, "email.send"),
         sql`${outbox.payload}#>>'{template,kind}' = 'support_reply'`,
