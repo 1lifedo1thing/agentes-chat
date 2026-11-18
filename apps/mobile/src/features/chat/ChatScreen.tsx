@@ -362,6 +362,8 @@ const END_SLACK = 2;
 const KEYBOARD_GAP = 8;
 /** The dock with a one-line field and nothing over it, above its bottom padding (the box's 6 and the field's 49). */
 const DOCK_LINE = 55;
+/** The composer's capsule from the screen's sides; what lines up with it (the "@" picker, who is working) too. */
+const DOCK_SIDE = 16;
 const COMPOSER_INPUT_ID = "chat-composer";
 /** How long the conversation is held in place after something opens over it and after it closes (ms). */
 const HOLD_MS = 900;
@@ -2619,7 +2621,7 @@ function Chat({
   // message and scrolling with it (the list's footer, `WORK_FOOTER`), as a reply on its way. Pinned above the composer,
   // it stayed over the words being read and moved the conversation's end each time an agent started or finished.
   // Above the composer only while there is no conversation to end with. The composer's edges, a turn's gap above it.
-  const lineInList = useMemo(() => ({ paddingHorizontal: 10, paddingTop: rhythm.turn }), [rhythm.turn]);
+  const lineInList = useMemo(() => ({ paddingHorizontal: DOCK_SIDE, paddingTop: rhythm.turn }), [rhythm.turn]);
   const listReturns = useMemo(
     () => <HereReturns channelId={channelId} threadId={threadId} onOpen={openReturns} style={lineInList} />,
     [channelId, threadId, openReturns, lineInList],
@@ -4159,13 +4161,14 @@ const styles = StyleSheet.create({
   dayOn: { textAlign: "center", fontWeight: "600" },
   wallpaper: { position: "absolute", top: 0, left: 0 },
   listPad: { paddingTop: 8, paddingBottom: 8 },
-  composer: { paddingHorizontal: 10, paddingTop: 6 },
+  composer: { paddingHorizontal: DOCK_SIDE, paddingTop: 6 },
   readOnly: { textAlign: "center", paddingHorizontal: 16, paddingVertical: 12 },
   composerDock: { position: "absolute", left: 0, right: 0, bottom: 0 },
-  // Over the list, at the dock's top right; the list under the rest of its row still takes the touches.
-  jumpAt: { alignSelf: "flex-end", marginRight: 14, marginBottom: 10 },
+  // Over the list, at the dock's top right, centered over the capsule's last button (its 6 inset and half its 36)
+  // under it; the list under the rest of its row still takes the touches.
+  jumpAt: { alignSelf: "flex-end", marginRight: DOCK_SIDE + 4, marginBottom: 10 },
   // The composer's side inset, so the picker and the pills line up with the field under them.
-  float: { paddingHorizontal: 10 },
+  float: { paddingHorizontal: DOCK_SIDE },
   older: { height: OLDER_ROW, alignItems: "center", justifyContent: "center" },
   jump: { width: 40, height: 40, borderRadius: 20 },
   jumpIcon: { flex: 1, alignItems: "center", justifyContent: "center" },

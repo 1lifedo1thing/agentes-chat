@@ -163,7 +163,7 @@ test("who is working is the conversation's last line, scrolling with it: above t
   expect(chat).toContain("{member && !awayAsk && !waitingFirst && !showList ? (");
   // The composer's edges and a turn's gap above it, only while the line says something (a return at rest too).
   expect(chat).toContain(
-    "const lineInList = useMemo(() => ({ paddingHorizontal: 10, paddingTop: rhythm.turn }), [rhythm.turn]);",
+    "const lineInList = useMemo(() => ({ paddingHorizontal: DOCK_SIDE, paddingTop: rhythm.turn }), [rhythm.turn]);",
   );
   expect(chat).toContain("onOpen={openReturns} style={lineInList} />");
   expect(src("features/chat/LiveRows.tsx")).toContain("<View style={[styles.dock, style]}>");
