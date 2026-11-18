@@ -18100,7 +18100,7 @@
         "wallpaper": {
           "title": "Tło",
           "help": "Zmienia się tylko dla ciebie, na wszystkich twoich urządzeniach",
-          "rowHelp": "Za każdą rozmową, tylko dla ciebie. Rozmowa może mieć własne tło w swoim menu.",
+          "rowHelp": "Za każdą rozmową, tylko dla ciebie, chyba że rozmowa ma własne tło ustawione w swoim menu.",
           "rowSub": "Tylko dla ciebie, w każdej rozmowie",
           "onlyHere": "Tylko w {{name}}, tylko dla ciebie",
           "none": "Bez tła",

@@ -2472,18 +2472,37 @@
     /**
      * A settings row's one button (its end's last element) sits on the row's name's line, its middle within that line's
      * box, and ends at the row's end, within 1px. Under the name only when the name's longest word, the gap and the
-     * end can't share the line, and then still at the row's end.
+     * end can't share the line, and then still at the row's end. In a button row (`.settings-row--button`), the state
+     * line under the name starts where the name's words do, within 1px, never under the row's icon.
      */
     endline(out) {
+      const firstLine = (el) => {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        return [...range.getClientRects()].find((r) => r.width > 0);
+      };
       for (const row of document.body.querySelectorAll(".settings-row:not(.settings-row--acts)")) {
+        const label = row.querySelector(".settings-row__label");
+        if (!label || !seen(row)) continue;
+        const line = firstLine(label);
+        if (!line) continue;
+        const status = row.matches(".settings-row--button")
+          ? row.querySelector(":scope > .settings-row__text > .settings-row__status")
+          : null;
+        const from = status && seen(status) ? firstLine(status) : null;
+        if (from && Math.abs(from.left - line.left) > 1)
+          out.push({
+            rule: "endline",
+            node: status,
+            el: sig(status),
+            box: sig(row),
+            text: words(label),
+            side: "status",
+            px: +(from.left - line.left).toFixed(1),
+          });
         const end = [...row.children].find((c) => c.matches(".settings-row__end"));
         const btn = end?.lastElementChild;
-        const label = row.querySelector(".settings-row__label");
-        if (!btn?.matches(".ac-btn") || !label || !seen(row) || !seen(btn)) continue;
-        const range = document.createRange();
-        range.selectNodeContents(label);
-        const line = [...range.getClientRects()].find((r) => r.width > 0);
-        if (!line) continue;
+        if (!btn?.matches(".ac-btn") || !seen(btn)) continue;
         const s = style(row);
         const r = row.getBoundingClientRect();
         const right = r.right - parseFloat(s.borderRightWidth) - parseFloat(s.paddingRight);

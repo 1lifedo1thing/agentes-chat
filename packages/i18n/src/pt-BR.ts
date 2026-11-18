@@ -17270,7 +17270,7 @@ export const ptBR = {
         wallpaper: {
           title: "Fundo",
           help: "Muda só para você, em todos os seus aparelhos",
-          rowHelp: "Atrás de todas as conversas, só para você. Uma conversa pode ter o seu pelo menu dela.",
+          rowHelp: "Atrás de todas as conversas, só para você, a não ser que uma conversa tenha o seu pelo menu dela.",
           rowSub: "Só para você, em todas as conversas",
           onlyHere: "Só em {{name}}, só para você",
           none: "Sem fundo",

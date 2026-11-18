@@ -17394,7 +17394,7 @@ export const en = {
         wallpaper: {
           title: "Background",
           help: "Changes only for you, on all your devices",
-          rowHelp: "Behind every conversation, only for you. A conversation can have its own from its menu.",
+          rowHelp: "Behind every conversation, only for you, unless a conversation has its own from its menu.",
           rowSub: "Only for you, in every conversation",
           onlyHere: "Only in {{name}}, only for you",
           none: "No background",

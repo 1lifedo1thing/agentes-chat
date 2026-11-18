@@ -41868,7 +41868,7 @@
     "value": "Changes only for you, on all your devices"
   },
   "settings.account.chat.wallpaper.rowHelp": {
-    "value": "Behind every conversation, only for you. A conversation can have its own from its menu."
+    "value": "Behind every conversation, only for you, unless a conversation has its own from its menu."
   },
   "settings.account.chat.wallpaper.rowSub": {
     "value": "Only for you, in every conversation"

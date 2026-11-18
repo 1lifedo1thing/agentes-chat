@@ -15003,6 +15003,10 @@ html:not([data-pointer]) .rh-set__face-edit:focus-visible {
     padding-left: 44px;
     translate: none;
   }
+  /* A button row's state line starts at the name's words: past the icon and this panel's 14px column gap. */
+  .agp-card .settings-row--lead.settings-row--button > .settings-row__text > .settings-row__status {
+    padding-left: calc(28px + 14px);
+  }
 }
 /* A row that ends in one button (PrefRow's `settings-row--button`: Link, Open on your phone, Decline), at every width:
    the button on the name's line at the row's end, centred on that line, never under a sentence. What is true now

@@ -16935,7 +16935,7 @@
         "wallpaper": {
           "title": "Arka plan",
           "help": "Yalnızca sizin için değişir, tüm cihazlarınızda",
-          "rowHelp": "Tüm sohbetlerin arkasında, yalnızca sizin için. Bir sohbet, menüsünden kendi arka planını alabilir.",
+          "rowHelp": "Tüm sohbetlerin arkasında, yalnızca sizin için, menüsünden kendi arka planını seçen sohbetler hariç.",
           "rowSub": "Yalnızca sizin için, tüm sohbetlerde",
           "onlyHere": "Yalnızca {{name}} içinde, yalnızca sizin için",
           "none": "Arka plan yok",

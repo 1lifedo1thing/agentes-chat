@@ -17060,7 +17060,7 @@
         "wallpaper": {
           "title": "Achtergrond",
           "help": "Verandert alleen voor jou, op al je apparaten",
-          "rowHelp": "Achter elk gesprek, alleen voor jou. Een gesprek kan via zijn menu een eigen achtergrond hebben.",
+          "rowHelp": "Achter elk gesprek, alleen voor jou, tenzij een gesprek via zijn menu een eigen achtergrond heeft.",
           "rowSub": "Alleen voor jou, in elk gesprek",
           "onlyHere": "Alleen in {{name}}, alleen voor jou",
           "none": "Geen achtergrond",
