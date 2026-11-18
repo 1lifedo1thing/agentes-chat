@@ -74,12 +74,19 @@ export const LIVE_PRESENCE_BATCH = 100;
 const org = (orgId: string) => `/api/app/organizations/${enc(orgId)}`;
 const file = (orgId: string, fileId: string) => `${org(orgId)}/artifacts/${enc(fileId)}`;
 
+/** An address without the slashes it ends with, by index (`/\/+$/` rescans each run of slashes: quadratic). */
+function withoutTrailingSlashes(address: string): string {
+  let end = address.length;
+  while (end > 0 && address.charAt(end - 1) === "/") end--;
+  return address.slice(0, end);
+}
+
 /**
  * The live routes over `request` (JSON) and `upload` (multipart, for pictures). `base` prefixes addresses the
  * platform loads itself (pictures): "" on the web (same origin), the server's address on the phone.
  */
 export function createLiveApi(request: Requester, options: { upload?: LiveUpload; base?: string } = {}): LiveApi {
-  const base = (options.base ?? "").replace(/\/+$/, "");
+  const base = withoutTrailingSlashes(options.base ?? "");
   const upload: LiveUpload =
     options.upload ??
     (() => Promise.reject(new Error("This client can't upload pictures: give createLiveApi an upload")));

@@ -295,6 +295,38 @@ describe("image_search", () => {
     ]);
   });
 
+  test("parsers read long numbers and tags left open in linear time", () => {
+    const started = performance.now();
+    const searx = (resolution: string) =>
+      parseSearxngImages(
+        { results: [{ img_src: "https://cdn.example.com/a.png", resolution }] },
+        "https://searx.example.com",
+      )[0];
+    expect(searx("640×480")).toMatchObject({ width: 640, height: 480 });
+    expect(searx("about 800x 600 pixels")).toMatchObject({ width: 800, height: 600 });
+    expect(searx("12 by 9, 3 x")).toMatchObject({ width: null, height: null });
+    expect(searx(`${"9".repeat(200_000)} y`)).toMatchObject({ width: null, height: null });
+    const artist = `<b>Ada</b> ${"<".repeat(200_000)}`;
+    const [commons] = parseCommonsImages({
+      query: {
+        pages: [
+          {
+            title: "File:A.png",
+            imageinfo: [
+              {
+                url: "https://upload.wikimedia.org/a.png",
+                mime: "image/png",
+                extmetadata: { Artist: { value: artist } },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(commons?.credit?.startsWith("by Ada <<<")).toBe(true);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   test("with no key, Wikimedia Commons: the picture's address, page and credit; one usage row per search", async () => {
     const t = imageTool({ "https://commons.wikimedia.org/w/api.php": () => Response.json(COMMONS) });
     const out = await t.run({ query: "sky" });

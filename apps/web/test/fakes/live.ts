@@ -360,7 +360,7 @@ export function createFakeLive(
           const made = await artifacts.create(orgId, {
             title,
             channelId: source.channelId,
-            content: { kind: "document", markdown: preview.html.replace(/<[^>]+>/g, "").trim() },
+            content: { kind: "document", markdown: previewWords(preview.html) },
           });
           const { content: _c, shownVersion: _s, versioned: _v, ...artifact } = made;
           return artifact as Artifact;
@@ -445,6 +445,21 @@ export function createFakeLive(
     },
   };
   return fake;
+}
+
+/**
+ * A document preview's words, as the fake's Markdown: each tag out (from a `<` to the first `>` after it), and the
+ * rest after a `<` left open too, so no markup is ever left (one pass, by index, instead of a tag regex).
+ */
+function previewWords(html: string): string {
+  let out = "";
+  let from = 0;
+  for (let at = html.indexOf("<"); at >= 0; at = html.indexOf("<", from)) {
+    const end = html.indexOf(">", at + 1);
+    out += html.slice(from, at);
+    from = end < 0 ? html.length : end + 1;
+  }
+  return (out + html.slice(from)).trim();
 }
 
 function resultOf(request: FakeImageRequest): ImageRequestResult {

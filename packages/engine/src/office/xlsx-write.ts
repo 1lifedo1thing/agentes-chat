@@ -38,10 +38,12 @@ function sheetNames(sheets: readonly SheetData[]): string[] {
     const raw = [...(sheet.name ?? "")]
       .map((ch) => (ch.charCodeAt(0) < 32 || NOT_IN_SHEET_NAMES.includes(ch) ? " " : ch))
       .join("");
-    let base = raw
-      .replace(/^'+|'+$/g, "")
-      .trim()
-      .slice(0, 31);
+    // Outer apostrophes out by index: `/'+$/` rescans each run of them (quadratic in the name's length).
+    let start = 0;
+    let end = raw.length;
+    while (start < end && raw.charAt(start) === "'") start++;
+    while (end > start && raw.charAt(end - 1) === "'") end--;
+    let base = raw.slice(start, end).trim().slice(0, 31);
     if (!base || base.toLowerCase() === "history") base = `Sheet${i + 1}`;
     let name = base;
     for (let n = 2; seen.has(name.toLowerCase()); n++) {

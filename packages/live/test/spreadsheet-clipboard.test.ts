@@ -570,6 +570,19 @@ describe("pasting from other apps", () => {
       ["d", "e"],
     ]);
   });
+
+  test("a page written to be slow to read: comments, selectors and <style>s left open take linear time", () => {
+    // Each of these took a regex quadratic time in the page's length.
+    const html =
+      `<style>${"/*a".repeat(60_000)}</style>` +
+      "<style><!--td.blue {color:#0b6bcb} /* a note */--></style>" +
+      "<style>".repeat(60_000) +
+      '<table><tr><td class="blue">Ada</td></tr></table>';
+    const started = performance.now();
+    const grid = parseHtmlTable(html, EN);
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(grid?.[0]?.[0]).toMatchObject({ display: "Ada", s: { fc: "#0b6bcb" } });
+  });
 });
 
 describe("cutting and pasting", () => {

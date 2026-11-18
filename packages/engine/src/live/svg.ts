@@ -306,8 +306,6 @@ const ATTRIBUTES = new Set([
 
 /** A reference inside the picture: `#id`. */
 const LOCAL_REF = /^#[A-Za-z_][\w.:-]{0,200}$/;
-/** Every `url(…)` in a value; each must be `url(#id)`. */
-const URL_CALL = /url\s*\(([^)]*)\)/gi;
 const LOCAL_URL = /^\s*(['"]?)#[A-Za-z_][\w.:-]{0,200}\1\s*$/;
 /** Schemes that run or carry something, whatever the spacing. */
 const SCHEME = /(?:java\s*script|vb\s*script|data|livescript)\s*:/i;
@@ -326,16 +324,128 @@ export interface CleanSvg {
 
 const refuse = (why: string) => new ValidationError(`This SVG can't be used: ${why}`, "live.svg_invalid");
 
+// The text an agent or a web page wrote is read below by index, never by a regex that can try the rest of the text
+// again from each `<!--`, `<!DOCTYPE`, `/*` or `url(` left open: that is quadratic (or exponential, for repeated
+// comments) in the text's length, and the text is up to `SVG_LIMITS.bytes` long.
+
+const isSpace = (ch: string) => ch !== "" && /\s/.test(ch);
+
+function skipSpaces(text: string, i: number): number {
+  let j = i;
+  while (isSpace(text.charAt(j))) j++;
+  return j;
+}
+
+/** Whether `text` has `word` (lowercase ASCII) at `i`, in any case: what a regex's `i` flag matches for ASCII. */
+function wordAt(text: string, i: number, word: string): boolean {
+  if (i < 0 || i + word.length > text.length) return false;
+  for (let k = 0; k < word.length; k++) {
+    const c = text.charCodeAt(i + k);
+    const w = word.charCodeAt(k);
+    if (c !== w && !(w >= 97 && w <= 122 && c === w - 32)) return false;
+  }
+  return true;
+}
+
+/** Where `word` (lowercase ASCII, starting with `<`) next is in `text` from `from`, in any case; -1 when nowhere. */
+function indexOfWord(text: string, word: string, from: number): number {
+  for (let at = text.indexOf("<", from); at >= 0; at = text.indexOf("<", at + 1)) {
+    if (wordAt(text, at, word)) return at;
+  }
+  return -1;
+}
+
 /**
- * How an SVG's text starts: an XML declaration, comments and a document type (with declarations too, so the sanitizer
- * says why it refuses one) at most before `<svg`.
+ * Whether a text starts as an SVG's does: an XML declaration, comments and a document type (with declarations too, so
+ * the sanitizer says why it refuses one) at most before `<svg`. A comment ends at its first `-->`, as XML reads it.
  */
-const SVG_START =
-  /^\s*(?:<\?xml[^>]*\?>\s*)?(?:<!--[\s\S]*?-->\s*)*(?:<!DOCTYPE[^>[]*(?:\[[\s\S]*?\])?\s*>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>/:]/i;
+function startsAsSvg(text: string): boolean {
+  let i = skipSpaces(text, 0);
+  if (wordAt(text, i, "<?xml")) {
+    // `<?xml … ?>`: the declaration ends at its first `>`, which must follow a `?` of its own.
+    const close = text.indexOf(">", i + 5);
+    if (close < i + 6 || text.charAt(close - 1) !== "?") return false;
+    i = skipSpaces(text, close + 1);
+  }
+  const comments = (): boolean => {
+    while (text.startsWith("<!--", i)) {
+      const end = text.indexOf("-->", i + 4);
+      if (end < 0) return false;
+      i = skipSpaces(text, end + 3);
+    }
+    return true;
+  };
+  if (!comments()) return false;
+  if (wordAt(text, i, "<!doctype")) {
+    let j = i + 9;
+    while (j < text.length && text.charAt(j) !== ">" && text.charAt(j) !== "[") j++;
+    if (text.charAt(j) === "[") {
+      // Its declarations: they end at the first `]` that only spaces separate from a `>`.
+      let close = text.indexOf("]", j + 1);
+      while (close >= 0 && text.charAt(skipSpaces(text, close + 1)) !== ">") close = text.indexOf("]", close + 1);
+      if (close < 0) return false;
+      j = skipSpaces(text, close + 1);
+    }
+    if (text.charAt(j) !== ">") return false;
+    i = skipSpaces(text, j + 1);
+    if (!comments()) return false;
+  }
+  const after = text.charAt(i + 4);
+  return wordAt(text, i, "<svg") && (isSpace(after) || after === ">" || after === "/" || after === ":");
+}
 
 /** Whether bytes are an SVG's text by how they start (the sanitizer is what decides). */
 export function looksLikeSvg(bytes: Uint8Array): boolean {
-  return SVG_START.test(new TextDecoder().decode(bytes.subarray(0, 4096)).replace(/^\uFEFF/, ""));
+  return startsAsSvg(new TextDecoder().decode(bytes.subarray(0, 4096)).replace(/^\uFEFF/, ""));
+}
+
+/**
+ * The text without its bare document types (`<!DOCTYPE svg PUBLIC …>`, as editors write), refused when one declares
+ * things (`<!DOCTYPE x [ … ]>`): entities are how a few bytes become gigabytes, and how outside files get in. One left
+ * open stays, and the parser refuses the text.
+ */
+function withoutDoctypes(text: string): string {
+  let out = "";
+  let from = 0;
+  for (let at = indexOfWord(text, "<!doctype", 0); at >= 0; at = indexOfWord(text, "<!doctype", from)) {
+    let end = at + 9;
+    while (end < text.length && text.charAt(end) !== ">" && text.charAt(end) !== "[") end++;
+    if (text.charAt(end) === "[") throw refuse("its document type declares things");
+    if (end >= text.length) break;
+    out += text.slice(from, at);
+    from = end + 1;
+  }
+  return out + text.slice(from);
+}
+
+/** CSS without its comments, each from a slash-star to the first star-slash after it; one left open stays. */
+function withoutCssComments(css: string): string {
+  let out = "";
+  let from = 0;
+  for (let at = css.indexOf("/*"); at >= 0; at = css.indexOf("/*", from)) {
+    const end = css.indexOf("*/", at + 2);
+    if (end < 0) break;
+    out += css.slice(from, at);
+    from = end + 2;
+  }
+  return out + css.slice(from);
+}
+
+/**
+ * What every `url(…)` in a value holds, each up to its first `)` (each must be `url(#id)`). One left open holds the
+ * rest of the value: CSS reads an unclosed `url(` at the end as an address too.
+ */
+function urlArguments(value: string): string[] {
+  const out: string[] = [];
+  const open = /url\s*\(/gi;
+  for (let m = open.exec(value); m; m = open.exec(value)) {
+    const start = m.index + m[0].length;
+    const close = value.indexOf(")", start);
+    out.push(value.slice(start, close < 0 ? value.length : close));
+    if (close < 0) break;
+    open.lastIndex = close + 1;
+  }
+  return out;
 }
 
 interface SvgNode {
@@ -351,7 +461,7 @@ function cssProblem(css: string): string | null {
   if (css.includes("<")) return "markup in CSS";
   if (/expression\s*\(|-moz-binding|behavior\s*:|image-set\s*\(|\bsrc\s*\(/i.test(css)) return "CSS that loads or runs";
   if (SCHEME.test(css)) return "addresses in CSS";
-  for (const m of css.matchAll(URL_CALL)) if (!LOCAL_URL.test(m[1] ?? "")) return "outside references in CSS";
+  for (const arg of urlArguments(css)) if (!LOCAL_URL.test(arg)) return "outside references in CSS";
   return null;
 }
 
@@ -359,7 +469,7 @@ function cssProblem(css: string): string | null {
 function valueProblem(value: string): string | null {
   if (SCHEME.test(value)) return "script or data addresses";
   if (/expression\s*\(/i.test(value)) return "CSS that runs";
-  for (const m of value.matchAll(URL_CALL)) if (!LOCAL_URL.test(m[1] ?? "")) return "outside references";
+  for (const arg of urlArguments(value)) if (!LOCAL_URL.test(arg)) return "outside references";
   return null;
 }
 
@@ -371,7 +481,7 @@ function cleanStyleAttr(style: string, removed: Set<string>): string | null {
     return null;
   }
   const kept: string[] = [];
-  for (const declaration of style.replace(/\/\*[\s\S]*?\*\//g, "").split(";")) {
+  for (const declaration of withoutCssComments(style).split(";")) {
     const colon = declaration.indexOf(":");
     if (colon < 0) continue;
     const prop = declaration.slice(0, colon).trim().toLowerCase();
@@ -386,7 +496,8 @@ function cleanStyleAttr(style: string, removed: Set<string>): string | null {
 /** A length as user units (px), when it is absolute: `24`, `24px`, `10mm`; null for `%`, `em` and the like. */
 function lengthPx(raw: string | null): number | null {
   if (raw === null) return null;
-  const m = /^\s*([+]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?)\s*(px|pt|pc|mm|cm|in)?\s*$/i.exec(raw);
+  // Each part reads one way only: `\d+\.?\d*` or `\s*(px)?\s*` could split a long run many ways (quadratic).
+  const m = /^\s*([+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?)\s*(?:(px|pt|pc|mm|cm|in)\s*)?$/i.exec(raw);
   if (!m) return null;
   const n = Number(m[1]);
   const unit = (m[2] ?? "px").toLowerCase();
@@ -431,9 +542,7 @@ export function sanitizeSvg(input: string | Uint8Array): CleanSvg {
   // Entities are how a few bytes become gigabytes (and how outside files get in): a document type with declarations
   // is refused; a bare one (`<!DOCTYPE svg PUBLIC …>`, as editors write) is only dropped.
   if (/<!ENTITY/i.test(text)) throw refuse("it declares entities");
-  const doctype = /<!DOCTYPE[^>[]*(\[)?/i.exec(text);
-  if (doctype?.[1]) throw refuse("its document type declares things");
-  text = text.replace(/<!DOCTYPE[^>[]*>/gi, "");
+  text = withoutDoctypes(text);
   const entity = /&(?!(?:lt|gt|amp|quot|apos|#\d{1,7}|#x[0-9a-fA-F]{1,6});)[^\s;]{0,32};?/.exec(text);
   if (entity) throw refuse(`it uses an undefined entity (${entity[0].slice(0, 20)})`);
   let tags = 0;

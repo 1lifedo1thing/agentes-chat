@@ -186,7 +186,7 @@ export function quoteSheetName(name: string): string {
 
 /** A character that continues a name or a number: a reference must not touch one on either side. */
 const WORD_CHAR = /[A-Za-z0-9_.À-￿]/;
-const UNQUOTED_SHEET = /([A-Za-z_À-￿][A-Za-z0-9_.À-￿]*)!/y;
+const SHEET_START = /[A-Za-z_À-￿]/;
 const A1_REF = /(\$?)([A-Za-z]{1,3})(\$?)([1-9][0-9]{0,6})(?::(\$?)([A-Za-z]{1,3})(\$?)([1-9][0-9]{0,6}))?/y;
 const A1_COLS = /(\$?)([A-Za-z]{1,3}):(\$?)([A-Za-z]{1,3})/y;
 const A1_ROWS = /(\$?)([1-9][0-9]{0,6}):(\$?)([1-9][0-9]{0,6})/y;
@@ -194,6 +194,17 @@ const A1_ROWS = /(\$?)([1-9][0-9]{0,6}):(\$?)([1-9][0-9]{0,6})/y;
 function at(re: RegExp, text: string, i: number): RegExpExecArray | null {
   re.lastIndex = i;
   return re.exec(text);
+}
+
+/**
+ * The length of an unquoted sheet name and its `!` at `i` (`Sales!`), or 0. Read by index rather than with a sticky
+ * regex, which code scanning reads as trying a long word again from each of its letters (quadratic).
+ */
+function unquotedSheetAt(text: string, i: number): number {
+  if (!SHEET_START.test(text.charAt(i))) return 0;
+  let j = i + 1;
+  while (j < text.length && WORD_CHAR.test(text.charAt(j))) j++;
+  return text.charAt(j) === "!" ? j + 1 - i : 0;
 }
 
 /** The end of a quoted run (`"…"` or `'…'`, doubled quotes inside) starting at `i`: the index after its closing quote. */
@@ -299,8 +310,7 @@ export function shiftA1Formula(formula: string, dr: number, dc: number): string 
       continue;
     }
     if (boundary && (WORD_CHAR.test(c) || c === "$")) {
-      const sheet = c === "$" ? null : at(UNQUOTED_SHEET, text, i);
-      const start = sheet ? i + sheet[0].length : i;
+      const start = c === "$" ? i : i + unquotedSheetAt(text, i);
       const ref = matchRef(text, start, dr, dc);
       if (ref) {
         out += ref.out === null ? "#REF!" : `${text.slice(i, start)}${ref.out}`;
@@ -406,8 +416,7 @@ export function r1c1ToA1(formula: string, row: number, col: number): string {
         continue;
       }
     } else {
-      const sheet = at(UNQUOTED_SHEET, text, i);
-      if (sheet) start = i + sheet[0].length;
+      start = i + unquotedSheetAt(text, i);
     }
     const first = r1c1End(text, start, row, col);
     let ref: { end: number; text: string | null } | null = null;

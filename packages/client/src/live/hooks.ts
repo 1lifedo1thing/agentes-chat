@@ -67,7 +67,11 @@ const zero = () => 0;
 
 /** The server part of a room's key: the same file on another server is another room. */
 function serverOf(base: SocketBase): string {
-  return typeof base === "string" ? base.replace(/\/+$/, "") : `${base.protocol}//${base.host}`;
+  if (typeof base !== "string") return `${base.protocol}//${base.host}`;
+  // Its trailing slashes out by index: `/\/+$/` rescans each run of slashes (quadratic in the address's length).
+  let end = base.length;
+  while (end > 0 && base.charAt(end - 1) === "/") end--;
+  return base.slice(0, end);
 }
 
 /**

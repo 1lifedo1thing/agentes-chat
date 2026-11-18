@@ -217,8 +217,9 @@ function timeCode(t: TimeRead): string {
 }
 
 const ISO = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](.+))?$/;
-const NUMERIC_DATE = /^(\d{1,4})([/.-])(\d{1,2})\2(\d{1,4})(?:\s+(.+))?$/;
-const SHORT_DATE = /^(\d{1,2})\/(\d{1,2})(?:\s+(.+))?$/;
+// The time after a date starts at its first non-space: `\s+(.+)` could split a run of spaces many ways (quadratic).
+const NUMERIC_DATE = /^(\d{1,4})([/.-])(\d{1,2})\2(\d{1,4})(?:\s+(\S.*))?$/;
+const SHORT_DATE = /^(\d{1,2})\/(\d{1,2})(?:\s+(\S.*))?$/;
 const DAY_NAME =
   /^(\d{1,2})(?:\s+de\s+|[\s./-]+)([^\d\s./,-]{3,}\.?)(?:(?:\s+de\s+|[\s./,-]+)(\d{2}|\d{4}))?(?:\s+(\d.*))?$/i;
 const NAME_DAY = /^([^\d\s./,-]{3,}\.?)[\s./-]+(\d{1,2})(?:,?\s+(\d{4}))?(?:\s+(\d.*))?$/i;

@@ -444,13 +444,16 @@ const FORBIDDEN_IN_NAMES = new Set(["[", "]", ":", "*", "?", "/", "\\"]);
 export function cleanSheetName(name: string): string {
   let spaced = "";
   for (const c of name) spaced += FORBIDDEN_IN_NAMES.has(c) || c.charCodeAt(0) < 32 ? " " : c;
-  return spaced
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^'+|'+$/g, "")
-    .trim()
-    .slice(0, SHEET_NAME_MAX)
-    .trim();
+  return withoutOuterApostrophes(spaced.replace(/\s+/g, " ").trim()).trim().slice(0, SHEET_NAME_MAX).trim();
+}
+
+/** `text` without the apostrophes it starts and ends with, by index (`/'+$/` rescans each run of them: quadratic). */
+function withoutOuterApostrophes(text: string): string {
+  let start = 0;
+  let end = text.length;
+  while (start < end && text.charAt(start) === "'") start++;
+  while (end > start && text.charAt(end - 1) === "'") end--;
+  return text.slice(start, end);
 }
 
 /** `name`, or `name (2)`, `name (3)`… when another sheet has it (case-insensitively). */

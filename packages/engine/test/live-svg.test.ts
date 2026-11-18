@@ -207,6 +207,72 @@ describe("sanitizeSvg: what is refused", () => {
   });
 });
 
+/** How long `fn` takes, in milliseconds. */
+function elapsed(fn: () => void): number {
+  const started = performance.now();
+  fn();
+  return performance.now() - started;
+}
+
+const bytesOf = (text: string) => new TextEncoder().encode(text);
+
+describe("SVG text written to be slow to read", () => {
+  test("looksLikeSvg: a declaration, comments and a document type at most before <svg", () => {
+    const yes = [
+      '<svg viewBox="0 0 1 1"/>',
+      '\uFEFF  <?xml version="1.0"?>\n<!-- a --> <!-- b -->\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "x.dtd">\n<!-- c --><svg>',
+      '<!doctype svg [ <!ENTITY a "b"> ] >\n<SVG:svg xmlns:SVG="http://www.w3.org/2000/svg">',
+      "<?xml?><svg\n>",
+    ];
+    const no = [
+      '<?xml version="1.0">\n<svg>',
+      "<!-- left open <svg>",
+      "<!DOCTYPE svg [ <svg>",
+      "<svgx>",
+      "<html><svg>",
+      "text<svg>",
+    ];
+    for (const text of yes) expect(looksLikeSvg(bytesOf(text))).toBe(true);
+    for (const text of no) expect(looksLikeSvg(bytesOf(text))).toBe(false);
+  });
+
+  test("comments, document types, CSS comments, url( and lengths left open are read in linear time", () => {
+    // Each of these took a regex quadratic (or, for the comments, exponential) time in the text's length.
+    expect(elapsed(() => expect(looksLikeSvg(bytesOf(`<!--${"--><!--".repeat(600)}`))).toBe(false))).toBeLessThan(500);
+    expect(elapsed(() => refusedWith("<!doctype".repeat(100_000), /over 10000 elements/))).toBeLessThan(1000);
+    expect(
+      elapsed(() => {
+        const out = clean(svg(`<rect width="1" height="1" style="${"/*a".repeat(90_000)}"/>`));
+        expect(out.svg).not.toContain("style=");
+      }),
+    ).toBeLessThan(1000);
+    expect(
+      elapsed(() => {
+        const out = clean(
+          svg(`<rect width="1" height="1" style="fill:${"url(".repeat(70_000)}" stroke="${"url(".repeat(70_000)}"/>`),
+        );
+        expect(out.svg).not.toContain("url(");
+        expect(out.removed).toEqual(expect.arrayContaining(["outside references in CSS", "outside references"]));
+      }),
+    ).toBeLessThan(1000);
+    expect(
+      elapsed(() => {
+        const out = clean(
+          svg("<rect/>", `viewBox="0 0 24 12" width="${"1".repeat(200_000)}x" height="1${" ".repeat(200_000)}x"`),
+        );
+        expect([out.width, out.height]).toEqual([512, 256]);
+      }),
+    ).toBeLessThan(1000);
+  });
+
+  test("a url( left open is an outside reference too: CSS reads it to the end", () => {
+    const out = clean(svg('<rect width="1" height="1" style="fill:url(https://example.com/x.png" stroke="url(#ok"/>'));
+    expect(out.svg).not.toContain("example.com");
+    expect(out.svg).toContain('stroke="url(#ok"');
+    expect(out.removed).toContain("outside references in CSS");
+  });
+});
+
 describe("rasterPicture", () => {
   test("a raster picture as it is; an SVG only through the server's rasterizer, else left out", async () => {
     const png = fakeImagePng("sky");

@@ -339,7 +339,7 @@ export function createWebToolSource(deps: WebToolDeps = {}): ToolSource {
     });
   }
   if (deps.searxngUrl) {
-    const base = deps.searxngUrl.replace(/\/+$/, "");
+    const base = withoutTrailingSlashes(deps.searxngUrl);
     imageProviders.push({
       id: "searxng",
       async search(query, _limit, ctx) {
@@ -479,6 +479,55 @@ const absolute = (v: unknown, base?: string) => {
   }
 };
 
+// What a search service answers is read by index below: a regex that tries the rest of the text again from each
+// `<` left open, each digit of a long number or each slash of a long run takes quadratic time in its length.
+
+/** An address without the slashes it ends with. */
+function withoutTrailingSlashes(address: string): string {
+  let end = address.length;
+  while (end > 0 && address.charAt(end - 1) === "/") end--;
+  return address.slice(0, end);
+}
+
+/** HTML with each tag (from a `<` to the first `>` after it) as a space; a `<` left open stays. */
+function tagsAsSpaces(html: string): string {
+  let out = "";
+  let from = 0;
+  for (let at = html.indexOf("<"); at >= 0; at = html.indexOf("<", from)) {
+    const end = html.indexOf(">", at + 1);
+    if (end < 0) break;
+    out += `${html.slice(from, at)} `;
+    from = end + 1;
+  }
+  return out + html.slice(from);
+}
+
+const isDigit = (ch: string) => ch >= "0" && ch <= "9";
+
+/** A size written "W x H" (or "W×H", spaced or not): the first two numbers with an `x` between them. */
+function sizeOf(value: string): [string, string] | null {
+  let i = 0;
+  while (i < value.length) {
+    if (!isDigit(value.charAt(i))) {
+      i++;
+      continue;
+    }
+    let end = i;
+    while (isDigit(value.charAt(end))) end++;
+    let k = end;
+    while (/\s/.test(value.charAt(k))) k++;
+    if (value.charAt(k) === "x" || value.charAt(k) === "×") {
+      k++;
+      while (/\s/.test(value.charAt(k))) k++;
+      let last = k;
+      while (isDigit(value.charAt(last))) last++;
+      if (last > k) return [value.slice(i, end), value.slice(k, last)];
+    }
+    i = end;
+  }
+  return null;
+}
+
 /** Brave's image results: the picture in `properties.url`, its page in `url`, a thumbnail of its own. */
 export function parseBraveImages(data: Record<string, unknown>): ImageSearchResult[] {
   const list = Array.isArray(data.results) ? (data.results as unknown[]) : [];
@@ -503,14 +552,14 @@ export function parseSearxngImages(data: Record<string, unknown>, base: string):
   const list = Array.isArray(data.results) ? (data.results as unknown[]) : [];
   return list.map((raw) => {
     const r = obj(raw);
-    const size = /(\d+)\s*[x×]\s*(\d+)/.exec(text(r.resolution));
+    const size = sizeOf(text(r.resolution));
     const source = text(r.source) || text(r.engine);
     return {
       title: htmlToText(text(r.title)),
       url: absolute(r.img_src, base),
       thumbnail: absolute(r.thumbnail_src, base) || null,
-      width: whole(size?.[1]),
-      height: whole(size?.[2]),
+      width: whole(size?.[0]),
+      height: whole(size?.[1]),
       page: absolute(r.url) || null,
       credit: source ? htmlToText(source) : null,
     };
@@ -529,7 +578,7 @@ export function parseCommonsImages(data: Record<string, unknown>): ImageSearchRe
       const meta = obj(info.extmetadata);
       // Its fields are HTML (an author's name in a link): their words only.
       const field = (name: string) =>
-        decodeEntities(text(obj(meta[name]).value).replace(/<[^>]*>/g, " "))
+        decodeEntities(tagsAsSpaces(text(obj(meta[name]).value)))
           .replace(/\s+/g, " ")
           .trim();
       const picture = absolute(info.thumburl) || absolute(info.url);

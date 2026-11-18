@@ -452,18 +452,66 @@ interface CssRule {
   decls: Decls;
 }
 
+// The page's CSS is read by index: a regex that tries the rest of the text again from each `/*` left open, or from
+// each character of a selector no `{` follows, takes quadratic time on a pasted page written to be slow.
+
+/**
+ * CSS without its comments (each from a slash-star to the first star-slash after it; one left open stays) nor the
+ * `<!--` and `-->` that wrap a page's CSS for old browsers, which CSS reads as nothing. What is left is only read for
+ * styles, never shown.
+ */
+function cssWithoutComments(text: string): string {
+  let css = "";
+  let from = 0;
+  for (let at = text.indexOf("/*"); at >= 0; at = text.indexOf("/*", from)) {
+    const end = text.indexOf("*/", at + 2);
+    if (end < 0) break;
+    css += text.slice(from, at);
+    from = end + 2;
+  }
+  css += text.slice(from);
+  let out = "";
+  from = 0;
+  for (let i = 0; i < css.length; i++) {
+    const skip = css.startsWith("<!--", i) ? 4 : css.startsWith("-->", i) ? 3 : 0;
+    if (skip === 0) continue;
+    out += css.slice(from, i);
+    from = i + skip;
+    i = from - 1;
+  }
+  return out + css.slice(from);
+}
+
+const CSS_SELECTOR_ENDS = new Set(["{", "}", "@"]);
+
 function parseCss(text: string): CssRule[] {
-  const clean = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/<!--|-->/g, "");
+  const clean = cssWithoutComments(text);
   const rules: CssRule[] = [];
-  const re = /([^{}@]+)\{([^{}]*)\}/g;
-  for (let m = re.exec(clean); m; m = re.exec(clean)) {
-    const decls = parseDecls(m[2] ?? "");
-    for (const raw of (m[1] ?? "").split(",")) {
+  // Each `selectors { declarations }`: selectors without `{`, `}` or `@`, declarations without braces.
+  let i = 0;
+  while (i < clean.length) {
+    while (i < clean.length && CSS_SELECTOR_ENDS.has(clean.charAt(i))) i++;
+    let open = i;
+    while (open < clean.length && !CSS_SELECTOR_ENDS.has(clean.charAt(open))) open++;
+    if (open >= clean.length) break;
+    if (clean.charAt(open) !== "{") {
+      i = open + 1;
+      continue;
+    }
+    let close = open + 1;
+    while (close < clean.length && clean.charAt(close) !== "{" && clean.charAt(close) !== "}") close++;
+    if (clean.charAt(close) !== "}") {
+      i = open + 1;
+      continue;
+    }
+    const decls = parseDecls(clean.slice(open + 1, close));
+    for (const raw of clean.slice(i, open).split(",")) {
       const selector = raw.trim().toLowerCase();
       const sm = /^([a-z][a-z0-9]*)?(?:\.([a-z0-9_-]+))?$/.exec(selector);
       if (!sm || (!sm[1] && !sm[2])) continue;
       rules.push({ tag: sm[1] ?? null, cls: sm[2] ?? null, decls });
     }
+    i = close + 1;
   }
   return rules;
 }
@@ -799,6 +847,26 @@ function calcValue(
 }
 
 /**
+ * What each `<style …>…</style>` of a page holds, found by index: a regex tries the rest of the page again from each
+ * `<style` left open (quadratic on a pasted page written to be slow).
+ */
+function styleBlocks(html: string): string[] {
+  const out: string[] = [];
+  const open = /<style/gi;
+  const close = /<\/style>/gi;
+  for (let m = open.exec(html); m; m = open.exec(html)) {
+    const body = html.indexOf(">", m.index + m[0].length);
+    if (body < 0) break;
+    close.lastIndex = body + 1;
+    const end = close.exec(html);
+    if (!end) break;
+    out.push(html.slice(body + 1, end.index));
+    open.lastIndex = end.index + end[0].length;
+  }
+  return out;
+}
+
+/**
  * The first table of clipboard HTML as a grid of cells (spanned positions marked covered), with values from Excel's
  * (`x:num`, `x:str`, `x:bool`, `x:err`), Google Sheets' (`data-sheets-value`, `-numberformat`, `-formula`) and
  * LibreOffice's (`sdval`, `sdnum`) attributes when present, else the text to read as typed; styles from the page's
@@ -808,8 +876,7 @@ export function parseHtmlTable(html: string, locale: SheetLocale): ClipCell[][] 
   const tableAt = html.search(/<table[\s>]/i);
   if (tableAt < 0) return null;
   const rules: CssRule[] = [];
-  const styleRe = /<style[^>]*>([\s\S]*?)<\/style>/gi;
-  for (let m = styleRe.exec(html); m; m = styleRe.exec(html)) rules.push(...parseCss(m[1] ?? ""));
+  for (const css of styleBlocks(html)) rules.push(...parseCss(css));
   const rows: OpenCell[][] = [];
   let tableAttrs: Map<string, string | true> | null = null;
   let depth = 0;

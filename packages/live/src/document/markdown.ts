@@ -694,11 +694,17 @@ export function runsToMarkdown(runs: readonly DocRun[], breakAs = "\\\n"): strin
     : safeStart(text);
 }
 
+/**
+ * A cell's Markdown, its pipes escaped so they don't split the row. Its backslashes stay as they are: they are already
+ * Markdown's escapes (`escapeText`), and a table reads `\|` as a pipe before anything else (`tableCells`), so escaping
+ * them again would show them doubled.
+ */
 const cellMarkdown = (cell: DocCell) =>
   cell.blocks
     .map((p) => runsToMarkdown(p.runs, "<br>"))
     .join("<br>")
-    .replace(/\|/g, "\\|");
+    .split("|")
+    .join("\\|");
 
 /** One block as Markdown (a list item with its marker; `counter` numbers an ordered one). */
 function blockMarkdown(block: DocBlock, counter: number): string {

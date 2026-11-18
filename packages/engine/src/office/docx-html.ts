@@ -562,8 +562,10 @@ function blocksMd(blocks: readonly Block[]): string[] {
     listing = false;
     if (block.kind === "table") {
       const width = Math.max(1, ...block.rows.map((r) => r.reduce((n, c) => n + c.colspan, 0)));
+      // Pipes escaped so they don't split the row; backslashes stay, as they are already Markdown's escapes
+      // (`escapeMd`) and a table reads `\|` as a pipe before anything else: escaping them again would double them.
       const cellText = (cell: Cell) =>
-        blocksMd(cell.blocks).join(" ").replace(/\s+/g, " ").replace(/\|/g, "\\|").trim();
+        blocksMd(cell.blocks).join(" ").replace(/\s+/g, " ").split("|").join("\\|").trim();
       // Rows below a cell that spans down keep its columns empty, so every cell stays under its header.
       const below: number[] = [];
       const rows = block.rows.map((row) => {

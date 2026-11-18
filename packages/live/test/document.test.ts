@@ -459,6 +459,8 @@ describe("Markdown", () => {
         rows: [
           [cell("a|b"), cell("c")],
           [{ blocks: [{ type: "paragraph", runs: [{ text: "x\ny" }] }] }, cell("")],
+          // Backslashes next to pipes: escaped once, by the text, never again by the cell.
+          [cell("back\\ and \\|"), { blocks: [{ type: "paragraph", runs: [{ text: "c\\|d", code: true }] }] }],
         ],
       },
     ]);
