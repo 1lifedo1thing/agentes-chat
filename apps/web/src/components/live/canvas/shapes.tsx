@@ -315,7 +315,7 @@ function PendingShape({ shape }: { shape: ShapeView }) {
           </Tip>
         )}
         {by && (
-          <span className="cnv-pending__who">
+          <span className="cnv-pending__who ac-iconline">
             {by.kind === "agent" ? (
               <AgentAvatar agentId={by.id} name={name} size="xs" state={failed ? "idle" : "thinking"} />
             ) : (

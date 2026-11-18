@@ -8,6 +8,7 @@ import {
   DialogBody,
   DialogFooter,
   Field,
+  GroupHeading,
   Input,
   SkeletonGroup,
   SkeletonRow,
@@ -100,7 +101,7 @@ export function VersionsPanel({
         )}
         {groups.map((g) => (
           <section key={g.day} className="lf-versions__day" aria-label={g.day}>
-            <h3 className="lf-versions__dayname">{g.day}</h3>
+            <GroupHeading level={3} title={g.day} />
             <ol className="lf-versions__list">
               {g.items.map((v) => (
                 <li key={v.version}>
@@ -130,7 +131,7 @@ function VersionRow({ version, current, onPick }: { version: ArtifactVersion; cu
   return (
     <button
       type="button"
-      className={cx("lf-version", current && "is-current")}
+      className={cx("lf-version ac-iconline", current && "is-current")}
       aria-current={current ? "true" : undefined}
       onClick={onPick}
     >

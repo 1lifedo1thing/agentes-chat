@@ -179,15 +179,18 @@ export function FormulaAssist({
                 role="option"
                 aria-selected={i === highlight}
                 tabIndex={-1}
-                className={cx("sheet-assist__item", i === highlight && "is-on")}
+                data-active={i === highlight || undefined}
+                className="ac-menu__item"
                 onPointerDown={(e) => {
                   // The field keeps the focus and the caret.
                   e.preventDefault();
                   onPick(option);
                 }}
               >
-                <span className="sheet-assist__name">{option.name}</span>
-                {words && <span className="sheet-assist__desc">{words}</span>}
+                <span className="ac-menu__label">
+                  <span className="sheet-assist__name">{option.name}</span>
+                  {words && <span className="ac-menu__desc">{words}</span>}
+                </span>
               </div>
             );
           })}

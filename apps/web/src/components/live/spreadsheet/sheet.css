@@ -28,6 +28,8 @@
   border-bottom: 1px solid var(--line);
   background: var(--surface);
   overflow-x: auto;
+  /* Sideways only: a finger's target past a button's 32 (the kit's touch rule) would scroll it by a sliver. */
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
 }
@@ -616,20 +618,20 @@ html:not([data-pointer]) .sheet-colors__auto:focus-visible {
 
 /* ── Formula help ───────────────────────────────────────────────────────────────────────────────────────────────── */
 
-/* Under the field being typed in: functions to pick, the signature with the current argument, or what is wrong. */
+/* Under the field being typed in: functions to pick, the signature with the current argument, or what is wrong. The
+   functions are the kit's menu rows (a name over its description), `--menu-pad` from the list's edge. */
 .sheet-assist {
   position: fixed;
   z-index: var(--z-floating);
   min-width: 260px;
   max-width: min(420px, calc(100vw - 2 * var(--space-4)));
-  padding: var(--space-1);
   border-radius: var(--radius-md);
   box-shadow: var(--e3);
 }
 .sheet-assist__sig,
 .sheet-assist__problem {
   margin: 0;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
   font-size: var(--text-sm);
   line-height: 1.5;
 }
@@ -647,29 +649,10 @@ html:not([data-pointer]) .sheet-colors__auto:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-.sheet-assist__item {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: var(--control-h-sm);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-item);
-  cursor: pointer;
-}
-.sheet-assist__item.is-on {
-  background: var(--chosen-bg);
-  box-shadow: var(--chosen-shadow);
+  padding: var(--menu-pad);
 }
 .sheet-assist__name {
-  color: var(--ink);
-  font-size: var(--text-sm);
   font-weight: 600;
-}
-.sheet-assist__desc {
-  color: var(--ink-muted);
-  font-size: var(--text-xs);
-  line-height: 1.4;
 }
 
 /* ── Loading ────────────────────────────────────────────────────────────────────────────────────────────────────── */

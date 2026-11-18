@@ -3,7 +3,9 @@
  * sizes of the cover's width (the cover is a size container, `.lf-cover`), fading at its foot.
  */
 
-.lf-cover--doc {
+/* Over the cover's own ground (`.lf-cover` in covers.css, another sheet): the two classes win in any order the build
+   links the sheets in. */
+.lf-cover.lf-cover--doc {
   background: var(--surface-sunken);
 }
 .lf-doc-mini {
@@ -87,6 +89,7 @@
   font-size: 2.8cqw;
   white-space: pre;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 .lf-doc-mini__rule {
   display: block;

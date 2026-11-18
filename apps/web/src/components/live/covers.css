@@ -213,7 +213,8 @@
   height: auto;
   justify-content: center;
 }
-/* What the file is, and its editable copy: the quiet line the spreadsheet's read-only view has over its grid. */
+/* What the file is, and its editable copy: the quiet line the spreadsheet's read-only view has over its grid. Its
+   plated button a full step from the bar's edges. */
 .lf-office__bar {
   flex: none;
   display: flex;
@@ -222,7 +223,7 @@
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
   min-height: var(--control-h-md);
-  padding: var(--space-1) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   box-sizing: border-box;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
@@ -238,13 +239,15 @@
 .lf-office__kind .ac-icon {
   flex: none;
 }
-/* The spreadsheet's own view fills the box; its quiet line holds the bar's words and button. */
+/* The spreadsheet's own view fills the box; its quiet line holds the bar's words and button, a full step from its
+   edges as the bar's. */
 .lf-office__sheet {
   flex: 1 1 auto;
   min-height: 0;
 }
-.lf-office__sheet .sheet-quiet {
+.lf-office .sheet-quiet {
   justify-content: space-between;
+  padding-block: var(--space-2);
 }
 .lf-office__view {
   position: relative;

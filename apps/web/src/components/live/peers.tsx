@@ -242,7 +242,7 @@ export function PresenceStack({
           const look = looks(p.user);
           const followed = followingId === p.clientId;
           return (
-            <li key={p.clientId} className="lf-people__row">
+            <li key={p.clientId} className="lf-people__row ac-iconline">
               <PeerFace user={p.user} name={look.name} color={look.color} working={peerWorking(p)} />
               <span className="lf-people__who">
                 <span className="lf-people__name">

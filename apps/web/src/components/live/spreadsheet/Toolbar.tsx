@@ -428,9 +428,11 @@ function ColorButton({
       onOpenChange={setOpen}
       className="sheet-colors"
       trigger={
+        // Square as every glyph-only button of the bar: its glyph and the color's bar under it.
         <Button
           size="sm"
           variant="ghost"
+          iconOnly
           className="sheet-tools__color"
           aria-label={name}
           title={name}

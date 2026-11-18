@@ -59,11 +59,13 @@
   min-height: 36px;
 }
 /* One line, as the Wiki's top: the Drive stays whole, the conversation's name ("Mensagem direta entre Ana, Bruno e
-   Atlas") ends in an ellipsis when the actions need the room (its whole name in its tooltip). */
+   Atlas") ends in an ellipsis when the actions need the room (its whole name in its tooltip). A link's hover plate
+   reaches 4 past its words: 8 between them keeps the "/" clear of it. */
 .wiki-crumbs.lf-crumbs {
   flex: 1;
   min-width: 0;
   flex-wrap: nowrap;
+  gap: var(--space-2);
   margin: 0;
   white-space: nowrap;
 }
@@ -83,10 +85,7 @@
   gap: var(--space-2);
 }
 /* Narrow (a phone, or the conversation open beside a small window): Present and the conversation's toggle keep
-   their glyphs (the toggle its count too), Share goes into ⋯, the quiet status gives way. */
-.lf-page[data-compact] .lf-top__acts {
-  gap: var(--space-1);
-}
+   their glyphs (the toggle its count too), still 8 apart, Share goes into ⋯, the quiet status gives way. */
 .lf-page[data-compact] .lf-top__status {
   display: none;
 }
@@ -201,9 +200,13 @@
 
 /* ── The file's conversation beside it (ADR 0199) ─────────────────────────────────────────────────────────────────── */
 
-/* The work area keeps the conversation's width on its right: the page's card ends 8 before it, never under it. */
-.shell__work:has(> .shell__pages .lf-page[data-talk]) {
-  padding-right: calc(var(--lf-talk-w) + var(--space-4));
+/* The work area keeps the conversation's width on its right: the page's card ends 8 before it, never under it. Only
+   as wide as the conversation docks (`LIVE_TALK_DOCKED`): narrower, it is the task's panel over the page, and the page
+   keeps the whole width. */
+@media (min-width: 1100px) {
+  .shell__work:has(> .shell__pages .lf-page[data-talk]) {
+    padding-right: calc(var(--lf-talk-w) + var(--space-4));
+  }
 }
 .shell__work {
   /* The task's panel's width on a wide window, a little less on a narrow one so the file keeps room. */
@@ -474,14 +477,16 @@ html:not([data-pointer]) .lf-stack:focus-visible {
   flex-direction: column;
   gap: 2px;
 }
-/* A row with a 24 face: 40 high. */
+/* A row with a 24 face (`.ac-iconline`: on the name's capitals): 40 high on one line, and the name as far from the
+   row's top over what they are doing. */
 .lf-people__row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: var(--control-h-md);
-  padding: var(--space-1) var(--space-2);
+  padding: 9px var(--space-2);
   box-sizing: border-box;
+}
+@supports (top: 1lh) {
+  .lf-people__row {
+    padding-block: calc((var(--control-h-md) - 1lh) / 2);
+  }
 }
 .lf-people__who {
   flex: 1 1 auto;
@@ -688,11 +693,8 @@ html:not([data-pointer]) .lf-stack:focus-visible {
   align-items: flex-start;
   gap: var(--space-2);
 }
-.lf-versions__dayname {
-  margin: var(--space-2) var(--space-2) var(--space-1);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--ink-muted);
+.lf-versions__day {
+  margin-top: var(--space-2);
 }
 .lf-versions__list {
   list-style: none;
@@ -722,6 +724,17 @@ html:not([data-pointer]) .lf-stack:focus-visible {
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+/* A saved version: who made it on its first line's capitals (`.ac-iconline`), that line as far from the row's top on
+   one line as over its name. */
+.lf-version.ac-iconline {
+  align-items: flex-start;
+  padding-block: 9px;
+}
+@supports (top: 1lh) {
+  .lf-version.ac-iconline {
+    padding-block: calc((var(--control-h-md) - 1lh) / 2);
+  }
 }
 .lf-version:hover {
   background: var(--plate-soft);
