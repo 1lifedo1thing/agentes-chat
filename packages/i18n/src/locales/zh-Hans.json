@@ -16193,6 +16193,10 @@
       "fault": "为诊断一次失败或卡住的运行",
       "ai": "使用了 AI 助手"
     },
+    "operatorReply": {
+      "sentence": "{{who}}通过邮件回复了",
+      "request": "{{name}} 的支持请求"
+    },
     "change": {
       "mergedWithoutAsking": "未经询问在 {{repo}} 中合并",
       "accentChanged": "更改了工作区的强调色",

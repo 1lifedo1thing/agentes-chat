@@ -17088,6 +17088,13 @@ export const en = {
       fault: "to diagnose a failed or stuck run",
       ai: "with an AI assistant",
     },
+    /** Whoever runs the server answered a member's support request, by email to their account's address. */
+    operatorReply: {
+      /** `who`: one of `operatorRead.who.*`. */
+      sentence: "{{who}} answered by email",
+      /** Under the sentence, before `operatorRead.ai`, and after "Reason:" in the entry's panel. `name`: the member. */
+      request: "support request from {{name}}",
+    },
     change: {
       mergedWithoutAsking: "Merged in {{repo}} without asking",
       accentChanged: "Changed the workspace's accent color",

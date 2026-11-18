@@ -41126,6 +41126,12 @@
   "audit.operatorRead.ai": {
     "value": "with an AI assistant"
   },
+  "audit.operatorReply.sentence": {
+    "value": "{{who}} answered by email"
+  },
+  "audit.operatorReply.request": {
+    "value": "support request from {{name}}"
+  },
   "audit.change.mergedWithoutAsking": {
     "value": "Merged in {{repo}} without asking"
   },

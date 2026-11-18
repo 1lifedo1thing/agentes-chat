@@ -16774,6 +16774,10 @@
       "fault": "om een mislukte of vastgelopen run te onderzoeken",
       "ai": "met een AI-assistent"
     },
+    "operatorReply": {
+      "sentence": "{{who}} antwoordde per e-mail",
+      "request": "supportverzoek van {{name}}"
+    },
     "change": {
       "mergedWithoutAsking": "Gemerged in {{repo}} zonder te vragen",
       "accentChanged": "Heeft de accentkleur van de werkruimte gewijzigd",

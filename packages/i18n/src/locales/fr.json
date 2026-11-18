@@ -17255,6 +17255,10 @@
       "fault": "pour diagnostiquer une exécution en échec ou bloquée",
       "ai": "avec un assistant IA"
     },
+    "operatorReply": {
+      "sentence": "{{who}} a répondu par e-mail",
+      "request": "demande d'assistance de {{name}}"
+    },
     "change": {
       "mergedWithoutAsking": "A mergé dans {{repo}} sans demander",
       "accentChanged": "A changé la couleur d’accent de l’espace de travail",
