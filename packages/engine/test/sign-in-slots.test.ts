@@ -69,7 +69,7 @@ const waiting = (machineId: string, key: string, extra: Record<string, unknown> 
   });
 
 const newcomer = () => ({ id: Bun.randomUUIDv7(), orgId: f.org.id });
-/** A person's turn arriving now: taken at each call, never at load (a slow file would put it ahead of older waits). */
+/** A person's turn arriving now: `since` must be read per call, or it falls behind runs set up later. */
 const person = () => ({ rank: 0, since: Date.now() }) as const;
 const kicks = async () =>
   (await f.db.select().from(outbox))

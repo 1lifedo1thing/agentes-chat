@@ -86,6 +86,7 @@ const KNOWN = {
   "artifact.sharing_empty": "errors.artifact.sharingEmpty",
   "artifact.sharing_too_many": "errors.artifact.sharingTooMany",
   "artifact.not_in_drive": "errors.artifact.notInDrive",
+  "drive.folder_into_itself": "errors.drive.folderIntoItself",
   // Who edits (ADR 0201): a change from someone whose access lets them only view the file, an access that doesn't read.
   "artifact.view_only": "errors.artifact.viewOnly",
   "artifact.access_invalid": "errors.artifact.accessInvalid",
