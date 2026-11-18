@@ -88,14 +88,14 @@ export function SwipeSlide({
 /**
  * Someone else's message in a bubble: it stays where it is while the times come in, unless its bubble is too wide
  * for them; then the row gives way, only as far as they need. `onArea` measures the width the bubble may take and
- * `onBubble` its own: the difference is the room at its right, which the pull fills first.
+ * `onBubble` its own: the difference (and `spare`, see `giveWay`) is the room at its right, which the pull fills first.
  */
-export function useGiveWay() {
+export function useGiveWay(spare: number) {
   const pull = useContext(SwipeTimeContext);
   const area = useSharedValue(0);
   const bubble = useSharedValue(0);
   const style = useAnimatedStyle(() => ({
-    transform: [{ translateX: -giveWay(pull.value, area.value, bubble.value) }],
+    transform: [{ translateX: -giveWay(pull.value, area.value, bubble.value, spare) }],
   }));
   const onArea = useCallback(
     (e: LayoutChangeEvent) => {

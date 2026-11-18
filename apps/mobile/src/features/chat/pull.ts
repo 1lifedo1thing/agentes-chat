@@ -27,10 +27,11 @@ export function timeShown(pull: number) {
 }
 
 /**
- * How far someone else's row gives way at a pull: not at all while the room at its bubble's right (the width it may
- * take, `area`, less its own) holds the pull; past that, point for point.
+ * How far someone else's row gives way at a pull: not at all while the room at its bubble's right holds the pull;
+ * past that, point for point. The room is the width the bubble may take (`area`) less its own, plus `spare`: how much
+ * sooner than mine its bubbles end at the screen's edge, so at the full pull it stands where mine do.
  */
-export function giveWay(pull: number, area: number, bubble: number) {
+export function giveWay(pull: number, area: number, bubble: number, spare = 0) {
   "worklet";
-  return Math.max(0, pull - Math.max(0, area - bubble));
+  return Math.max(0, pull - Math.max(0, area - bubble) - spare);
 }

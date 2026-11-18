@@ -150,6 +150,7 @@ import {
   missionPlanOf,
   nameInk,
   questionOf,
+  ROW_BODY_INSET,
   reactionPills,
   rowFrame,
   workStepsOf,
@@ -558,8 +559,9 @@ function RowBody({
       ) : null}
     </>
   );
-  // Someone else's bubble gives way to the times only when it is too wide for them (`useGiveWay`).
-  const giveWay = useGiveWay();
+  // Someone else's bubble gives way to the times only when it is too wide for them (`useGiveWay`): its bubbles end
+  // sooner than mine at the screen's edge, so that much room is there before it moves.
+  const giveWay = useGiveWay(ROW_BODY_INSET.bubbles.right - ME_END);
 
   if (onRight) {
     // In bubbles the time and what became of the message are never in it (a mark coming in or swapping changed the
@@ -1538,6 +1540,8 @@ const OTHER_RUN: Record<RunPosition, { borderTopLeftRadius?: number; borderBotto
 
 /** Words and time on my solid bubble. */
 const ON_SOLID = "#ffffff";
+/** How far my rows end from the screen's edge. */
+const ME_END = 16;
 
 const styles = StyleSheet.create({
   // Readable turns: more room between turns, a quieter name and time.
@@ -1566,7 +1570,7 @@ const styles = StyleSheet.create({
   retry: { fontWeight: "600", textDecorationLine: "underline" },
   compactLine: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: 6 },
   name: { fontWeight: "600", fontSize: 14, lineHeight: 19, flexShrink: 1 },
-  me: { paddingLeft: 64, paddingRight: 16, alignItems: "flex-end" },
+  me: { paddingLeft: 64, paddingRight: ME_END, alignItems: "flex-end" },
   meParts: { alignSelf: "stretch" },
   // What slides with a pull to the left (`SwipeSlide`): the row's whole width, as its parts were.
   meSlide: { alignSelf: "stretch" },
