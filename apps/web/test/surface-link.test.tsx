@@ -339,6 +339,31 @@ describe("the outside chat app's row in Notificações", () => {
       expect(open.textContent).toContain(LONG_SURFACE);
     }
   });
+
+  // The worst case for CI's geometry check (the capture keeps each language's list): the longest name with its long
+  // word, the longest sender, every language's words on the buttons. Each row's one button is on its name's line at the
+  // row's end, or under the name at the end when the name's longest word and it can't share the line (`endline`).
+  test("in every language, the list's buttons end their names' lines: the help behind the ⓘ, a state under the name", async () => {
+    for (const links of [
+      [],
+      [link({ status: "active", display: LONG_DISPLAY, profileName: LONG_PROFILE, expiresAt: null })],
+    ]) {
+      const { app, row } = await notifications({ name: LONG_SURFACE, links });
+      for (const lang of LOCALE_CODES) {
+        await showIn(app.services, lang);
+        const phone = document.getElementById("notice-phone-help")?.closest(".settings-row");
+        for (const r of [phone, row()]) {
+          expect(r?.classList.contains("settings-row--button")).toBe(true);
+          expect(r?.querySelector(".settings-row__end > .ac-btn:last-child")).toBeTruthy();
+        }
+        expect(document.getElementById("notice-phone-status")).toBeNull();
+        expect(document.getElementById("notice-surface-status")?.textContent ?? null).toBe(
+          links.length ? `${LONG_DISPLAY} · ${LONG_PROFILE}` : null,
+        );
+      }
+      cleanup();
+    }
+  });
 });
 
 describe("a message written on the outside chat app", () => {

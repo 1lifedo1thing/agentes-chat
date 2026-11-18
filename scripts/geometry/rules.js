@@ -2469,6 +2469,51 @@
         });
       }
     },
+    /**
+     * A settings row's one button (its end's last element) sits on the row's name's line, its middle within that line's
+     * box, and ends at the row's end, within 1px. Under the name only when the name's longest word, the gap and the
+     * end can't share the line, and then still at the row's end.
+     */
+    endline(out) {
+      for (const row of document.body.querySelectorAll(".settings-row:not(.settings-row--acts)")) {
+        const end = [...row.children].find((c) => c.matches(".settings-row__end"));
+        const btn = end?.lastElementChild;
+        const label = row.querySelector(".settings-row__label");
+        if (!btn?.matches(".ac-btn") || !label || !seen(row) || !seen(btn)) continue;
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        const line = [...range.getClientRects()].find((r) => r.width > 0);
+        if (!line) continue;
+        const s = style(row);
+        const r = row.getBoundingClientRect();
+        const right = r.right - parseFloat(s.borderRightWidth) - parseFloat(s.paddingRight);
+        const b = btn.getBoundingClientRect();
+        // What ends the row: from the end's first element (a value before the button) to the button.
+        const group = b.right - end.firstElementChild.getBoundingClientRect().left;
+        const mid = (b.top + b.bottom) / 2;
+        const base = { rule: "endline", node: btn, el: sig(btn), box: sig(row), text: words(label) };
+        const short = right - parseFloat(style(end).paddingRight) - b.right;
+        if (Math.abs(short) > 1) {
+          out.push({ ...base, side: "end", px: +short.toFixed(1) });
+          continue;
+        }
+        if (mid >= line.top - 1 && mid <= line.bottom + 1) continue;
+        // The name's narrowest: its longest word, and the room its ⓘ keeps after it.
+        const name = label.closest(".ac-hintline") ?? label;
+        let word = 0;
+        const walk = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
+        for (let node = walk.nextNode(); node; node = walk.nextNode())
+          for (const m of node.data.matchAll(/\S+/g)) {
+            const w = document.createRange();
+            w.setStart(node, m.index);
+            w.setEnd(node, m.index + m[0].length);
+            word = Math.max(word, w.getBoundingClientRect().width);
+          }
+        const need = word + parseFloat(style(name).paddingRight) + parseFloat(s.columnGap) + group;
+        if (right - name.getBoundingClientRect().left >= need + 1)
+          out.push({ ...base, side: "under", px: +(mid - line.bottom).toFixed(1) });
+      }
+    },
   };
 
   /**
