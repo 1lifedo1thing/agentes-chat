@@ -145,6 +145,7 @@ import Animated, {
   LayoutAnimationConfig,
   useAnimatedRef,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
@@ -373,6 +374,15 @@ const KEYBOARD_GAP = 8;
 const DOCK_LINE = 55;
 /** The composer's capsule from the screen's sides; what lines up with it (the "@" picker, who is working) too. */
 const DOCK_SIDE = 16;
+/**
+ * At rest (no keyboard) the capsule floats this much narrower on each side, and opens to `DOCK_SIDE` with the keyboard,
+ * frame by frame on its progress (so dragging the keyboard down closes it back too).
+ */
+const DOCK_REST = 16;
+/** Air under the conversation's last message, before the composer's box. */
+const LIST_END_AIR = 22;
+/** A time line's extra air above and under it (bubbles: "Today 15:35"). */
+const TIME_LINE_AIR = 6;
 const COMPOSER_INPUT_ID = "chat-composer";
 /** How long the conversation is held in place after something opens over it and after it closes (ms). */
 const HOLD_MS = 900;
@@ -477,6 +487,12 @@ function Chat({
   const insets = useSafeAreaInsets();
   // Where the keyboard is, as the keyboard library says: the composer rides it, and nothing else writes it.
   const keyboardAt = useReanimatedKeyboardAnimation();
+  // The capsule at rest floats narrower and opens to the dock's sides with the keyboard (`DOCK_REST`); the picker over
+  // it and the way back to the latest messages (over its last button) move with it.
+  const restSide = useDerivedValue(() => DOCK_REST * (1 - keyboardAt.progress.get()));
+  const capsuleRest = useAnimatedStyle(() => ({ marginHorizontal: restSide.get() }));
+  const floatRest = useAnimatedStyle(() => ({ paddingHorizontal: DOCK_SIDE + restSide.get() }));
+  const jumpRest = useAnimatedStyle(() => ({ marginRight: DOCK_SIDE + 4 + restSide.get() }));
   const when = useWhen();
   // The requests waiting here and which messages are on screen: the line above the composer says when one
   // waits out of view (waiting beats working).
@@ -740,6 +756,8 @@ function Chat({
       : t("mobile.chat.startedIn", { channel: thread.data?.channelName ?? channel?.name ?? "" })
     : "";
   const replyCount = thread.data?.replyCount;
+  // In bubbles the messages show no time (a pull does): a line says when the conversation picks up again (`PAUSE_MS`).
+  const timeLines = rowLook.style === "bubbles";
   // The messages' rows, built again only when the messages (or the thread's head) change: an agent's run events, many a
   // second while it works, touch only the live rows after them.
   const messageRows = useMemo<Row[]>(() => {
@@ -768,12 +786,12 @@ function Chat({
               },
             ]
           : [];
-      return [...head, ...buildRows(replies, (m) => superseded.has(m.id))];
+      return [...head, ...buildRows(replies, (m) => superseded.has(m.id), timeLines)];
     }
     // A thread's replies live in the thread; the channel shows its link.
     const hidden = (m: Message) => superseded.has(m.id) || Boolean(m.threadId);
-    return buildRows(list, hidden);
-  }, [isThread, threadId, list, startedText, replyCount, superseded, t]);
+    return buildRows(list, hidden, timeLines);
+  }, [isThread, threadId, list, startedText, replyCount, superseded, timeLines, t]);
   // What agents do here now, after the messages: browser cards, a picture on its way, turns waiting for a computer.
   const liveRows = useMemo<Row[]>(
     () => [
@@ -2447,18 +2465,21 @@ function Chat({
 
   // A day's line in the list: faint words, or over a background a glass plate they read on (as the floating date's).
   const dayLine = useCallback(
-    (words: string) =>
-      walled ? (
-        <View style={[styles.dayPlate, { marginTop: rhythm.turn, backgroundColor: c.glass, borderColor: c.line2 }]}>
-          <Text variant="footnote" tone="muted" style={styles.dayOn}>
+    (words: string, at = false) => {
+      // A time line (bubbles, `at`): the page's regular weight, with a little more air above and under it.
+      const room = { marginTop: rhythm.turn + (at ? TIME_LINE_AIR : 0), marginBottom: at ? TIME_LINE_AIR : 0 };
+      return walled ? (
+        <View style={[styles.dayPlate, room, { backgroundColor: c.glass, borderColor: c.line2 }]}>
+          <Text variant="footnote" tone="muted" style={[styles.dayOn, at && styles.dayAt]}>
             {words}
           </Text>
         </View>
       ) : (
-        <Text variant="footnote" tone="faint" style={[styles.day, { marginTop: rhythm.turn }]}>
+        <Text variant="footnote" tone="faint" style={[styles.day, room, at && styles.dayAt]}>
           {words}
         </Text>
-      ),
+      );
+    },
     [walled, rhythm.turn, c.glass, c.line2],
   );
 
@@ -2466,7 +2487,9 @@ function Chat({
     ({ item }: { item: Row }) => {
       switch (item.kind) {
         case "day":
-          return dayLine(when.day(item.iso));
+          return item.at
+            ? dayLine(t("mobile.chat.dayAt", { day: when.day(item.iso), time: when.time(item.iso) }), true)
+            : dayLine(when.day(item.iso));
         case "marker":
           return dayLine(item.text);
         case "origin":
@@ -2535,6 +2558,7 @@ function Chat({
       }
     },
     [
+      t,
       when,
       rhythm,
       quiet,
@@ -3355,16 +3379,16 @@ function Chat({
                   away={!atEnd}
                   shown={gap || readHold || (!atEnd && (unseen.messages > 0 || unseen.working.length > 0))}
                 >
-                  <View style={styles.jumpAt} pointerEvents="box-none">
+                  <Animated.View style={[styles.jumpAt, jumpRest]} pointerEvents="box-none">
                     <ToLatest unseen={unseen} onPress={toEnd} />
-                  </View>
+                  </Animated.View>
                 </FarGate>
               ) : null}
               {/* The "@" picker, right above the box and outside it: the box's height insets the list, and the picker
                   comes and goes with each key typed. */}
-              <View style={styles.float} pointerEvents="box-none">
+              <Animated.View style={[styles.float, floatRest]} pointerEvents="box-none">
                 <ComposerFloat slot={composerFloat} />
-              </View>
+              </Animated.View>
               <View
                 ref={composerRef}
                 onLayout={onComposerBoxLayout}
@@ -3440,37 +3464,39 @@ function Chat({
                     {t("channel.perms.readOnlyComposer")}
                   </Text>
                 ) : member ? (
-                  <ChatComposer
-                    placeholder={placeholder}
-                    onSend={sendFromField}
-                    working={working}
-                    // GIFs and stickers live in the "+", with the photos: the field only sends.
-                    onPlus={plusFromField}
-                    draftKey={threadId ? `${channelId}:${threadId}` : channelId}
-                    inputNativeID={COMPOSER_INPUT_ID}
-                    float={composerFloat}
-                    mentionAt={refQuery}
-                    insertMention={insertRef}
-                    prefill={prefill ?? captionBack}
-                    focusAt={replyAt}
-                    banner={composerBanner}
-                    attachments={composerAttachments}
-                    sendEmpty={pending.length > 0}
-                    {...(canAttach ? { onLongAsFile: longFromField } : {})}
-                    mention={mentionCard}
-                    onType={onType}
-                    orgId={orgId}
-                    channelId={channelId}
-                    threadId={threadId}
-                    agentId={dmAgentId}
-                    replyTo={quote?.id ?? null}
-                    authorId={meId ?? ""}
-                    voiceOn={voiceOn}
-                    onVoiceSent={afterVoice}
-                    prepareVoice={voiceFromField}
-                    voiceTakeBack={voiceTakeBack}
-                    onRecording={onRecording}
-                  />
+                  <Animated.View style={capsuleRest}>
+                    <ChatComposer
+                      placeholder={placeholder}
+                      onSend={sendFromField}
+                      working={working}
+                      // GIFs and stickers live in the "+", with the photos: the field only sends.
+                      onPlus={plusFromField}
+                      draftKey={threadId ? `${channelId}:${threadId}` : channelId}
+                      inputNativeID={COMPOSER_INPUT_ID}
+                      float={composerFloat}
+                      mentionAt={refQuery}
+                      insertMention={insertRef}
+                      prefill={prefill ?? captionBack}
+                      focusAt={replyAt}
+                      banner={composerBanner}
+                      attachments={composerAttachments}
+                      sendEmpty={pending.length > 0}
+                      {...(canAttach ? { onLongAsFile: longFromField } : {})}
+                      mention={mentionCard}
+                      onType={onType}
+                      orgId={orgId}
+                      channelId={channelId}
+                      threadId={threadId}
+                      agentId={dmAgentId}
+                      replyTo={quote?.id ?? null}
+                      authorId={meId ?? ""}
+                      voiceOn={voiceOn}
+                      onVoiceSent={afterVoice}
+                      prepareVoice={voiceFromField}
+                      voiceTakeBack={voiceTakeBack}
+                      onRecording={onRecording}
+                    />
+                  </Animated.View>
                 ) : (
                   <>
                     {admin ? (
@@ -4238,6 +4264,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   pin: { paddingHorizontal: 12, paddingBottom: 10 },
   day: { alignSelf: "center", textAlign: "center", fontWeight: "600" },
+  dayAt: { fontWeight: "400" },
   // A day's line over a background: a small glass plate (as the design's).
   dayPlate: {
     alignSelf: "center",
@@ -4248,7 +4275,8 @@ const styles = StyleSheet.create({
   },
   dayOn: { textAlign: "center", fontWeight: "600" },
   wallpaper: { position: "absolute", top: 0, left: 0 },
-  listPad: { paddingTop: 8, paddingBottom: 8 },
+  // Under the last message, air before the composer (its box adds its own 6).
+  listPad: { paddingTop: 8, paddingBottom: LIST_END_AIR },
   composer: { paddingHorizontal: DOCK_SIDE, paddingTop: 6 },
   readOnly: { textAlign: "center", paddingHorizontal: 16, paddingVertical: 12 },
   composerDock: { position: "absolute", left: 0, right: 0, bottom: 0 },

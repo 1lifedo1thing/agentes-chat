@@ -24,7 +24,7 @@ import { appShadows, type Scheme } from "@/ui/palette";
 import { type Corners, RADIUS } from "@/ui/radius";
 import { BUBBLE_PART_CORNERS, MESSAGE_CARD_CORNERS, useBubblePart } from "../shared/bubble-part";
 import { keepSize, keptSize } from "./kept-sizes";
-import { BUBBLES_INSET, bubbleFill, CHAT_TEXT, quietInset } from "./logic";
+import { BUBBLES_EDGE, BUBBLES_END, BUBBLES_INSET, bubbleFill, CHAT_TEXT, quietInset } from "./logic";
 import { wallpaperKey } from "./wallpaper-logic";
 
 /** How this conversation's rows are drawn (`chatLookOf`, as on the web's `MessageLook`). */
@@ -175,16 +175,19 @@ export function liftedEdge(scheme: Scheme): ViewStyle | null {
 
 /** The rows' frames per style. */
 export const lookRows = StyleSheet.create({
-  bubblesRow: { paddingLeft: BUBBLES_INSET, paddingRight: 44, gap: 8 },
+  bubblesRow: { paddingLeft: BUBBLES_INSET, paddingRight: BUBBLES_END, gap: 8 },
+  // A row with no face column (a DM): its bubble as far from the edge as mine.
+  bubblesBare: { paddingLeft: BUBBLES_EDGE },
   bubblesSlot: { width: 30, paddingTop: 0 },
   compactRow: { paddingLeft: 10, paddingRight: 12, gap: 6 },
   compactSlot: { width: 18, paddingTop: 1 },
   compactClock: { width: 34, textAlign: "right", lineHeight: 20, fontVariant: ["tabular-nums"] },
+  // One line is 40 tall: its 24 and 8 above and under.
   bubble: {
     alignSelf: "flex-start",
     maxWidth: "100%",
-    paddingVertical: 7,
-    paddingHorizontal: 13,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: RADIUS.xl,
   },
 });

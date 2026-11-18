@@ -343,6 +343,7 @@
     "replies_other": "{{count}} antwoorden",
     "repliesWord_one": "antwoord",
     "repliesWord_other": "antwoorden",
+    "dayAt": "{{day}} {{time}}",
     "thread": "Thread",
     "closed": "gesloten",
     "options": "Opties",

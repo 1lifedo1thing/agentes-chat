@@ -40,12 +40,13 @@ describe("a pull to the left shows the times", () => {
     // Not measured yet (or measured wrong): never less room than none.
     expect(giveWay(TIME_REVEAL, 0, 0)).toBe(TIME_REVEAL);
     expect(giveWay(TIME_REVEAL, 280, 300)).toBe(TIME_REVEAL);
-    // Its bubbles end 28 sooner than mine: as wide as it may be, it moves only the rest, to where mine stand.
-    expect(giveWay(TIME_REVEAL, 320, 320, 28)).toBe(TIME_REVEAL - 28);
-    expect(giveWay(20, 320, 320, 28)).toBe(0);
+    // Its bubbles end 44 sooner than mine (60 from the edge, mine 16): as wide as it may be, it moves only the rest,
+    // to where mine stand.
+    expect(giveWay(TIME_REVEAL, 320, 320, 44)).toBe(TIME_REVEAL - 44);
+    expect(giveWay(40, 320, 320, 44)).toBe(0);
     const row = src("features/chat/MessageRow.tsx");
-    expect(row).toContain("const giveWay = useGiveWay(ROW_BODY_INSET.bubbles.right - ME_END);");
-    expect(row).toContain('me: { paddingLeft: 64, paddingRight: ME_END, alignItems: "flex-end" },');
+    expect(row).toContain("const giveWay = useGiveWay(ROW_BODY_INSET.bubbles.right - BUBBLES_EDGE);");
+    expect(row).toContain('me: { paddingLeft: 64, paddingRight: BUBBLES_EDGE, alignItems: "flex-end" },');
   });
 
   test("bubbles hold no time and no mark: the pull shows them, beside every bubble", () => {

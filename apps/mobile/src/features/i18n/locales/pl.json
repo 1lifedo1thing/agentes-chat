@@ -369,6 +369,7 @@
     "repliesWord_few": "odpowiedzi",
     "repliesWord_many": "odpowiedzi",
     "repliesWord_other": "odpowiedzi",
+    "dayAt": "{{day}} {{time}}",
     "thread": "Wątek",
     "closed": "zamknięty",
     "options": "Opcje",

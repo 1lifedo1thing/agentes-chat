@@ -122,7 +122,7 @@ describe("the conversation's rows", () => {
     expect(messages).not.toContain("browsing");
     expect(messages).not.toContain("waits");
     // Nor the DM and channel lists, read again with each message: only the thread head's words and count.
-    expect(messages).toContain("}, [isThread, threadId, list, startedText, replyCount, superseded, t]);");
+    expect(messages).toContain("}, [isThread, threadId, list, startedText, replyCount, superseded, timeLines, t]);");
     expect(chat).toContain("[browsing, held, making, waits],");
     expect(chat).toContain('() => messageRows.flatMap((r) => (r.kind === "message" ? [r.message] : [])),');
     expect(chat).toContain("shownRef.current = keepSameRows(shownRef.current, next);");

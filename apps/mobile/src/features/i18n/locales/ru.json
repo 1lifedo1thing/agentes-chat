@@ -369,6 +369,7 @@
     "repliesWord_few": "ответа",
     "repliesWord_many": "ответов",
     "repliesWord_other": "ответа",
+    "dayAt": "{{day}} {{time}}",
     "thread": "Ветка",
     "closed": "закрыта",
     "options": "Параметры",

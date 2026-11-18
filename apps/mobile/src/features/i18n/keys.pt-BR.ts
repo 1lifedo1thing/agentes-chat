@@ -362,6 +362,8 @@ export const featureKeysPtBR = {
     replies_other: "{{count}} respostas",
     repliesWord_one: "resposta",
     repliesWord_other: "respostas",
+    /** A conversation of bubbles says when it picks up again: "Today 15:35". */
+    dayAt: "{{day}} {{time}}",
     thread: "Thread",
     closed: "fechada",
     options: "Opções",

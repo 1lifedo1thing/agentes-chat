@@ -330,6 +330,7 @@
     "startedWith": "始于与 {{name}} 的对话",
     "replies_other": "{{count}} 条回复",
     "repliesWord_other": "回复",
+    "dayAt": "{{day}} {{time}}",
     "thread": "话题",
     "closed": "已关闭",
     "options": "选项",

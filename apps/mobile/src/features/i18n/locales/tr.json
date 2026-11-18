@@ -343,6 +343,7 @@
     "replies_other": "{{count}} yanıt",
     "repliesWord_one": "yanıt",
     "repliesWord_other": "yanıt",
+    "dayAt": "{{day}} {{time}}",
     "thread": "İleti dizisi",
     "closed": "kapalı",
     "options": "Seçenekler",

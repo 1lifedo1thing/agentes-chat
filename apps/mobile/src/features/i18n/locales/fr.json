@@ -356,6 +356,7 @@
     "repliesWord_one": "réponse",
     "repliesWord_many": "réponses",
     "repliesWord_other": "réponses",
+    "dayAt": "{{day}} {{time}}",
     "thread": "Fil",
     "closed": "fermé",
     "options": "Options",

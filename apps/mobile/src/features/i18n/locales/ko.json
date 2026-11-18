@@ -330,6 +330,7 @@
     "startedWith": "{{name}}와(과)의 대화에서 시작됨",
     "replies_other": "답장 {{count}}개",
     "repliesWord_other": "답장",
+    "dayAt": "{{day}} {{time}}",
     "thread": "스레드",
     "closed": "닫힘",
     "options": "옵션",

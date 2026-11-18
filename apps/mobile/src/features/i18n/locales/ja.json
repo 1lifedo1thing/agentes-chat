@@ -330,6 +330,7 @@
     "startedWith": "{{name}}との会話で開始",
     "replies_other": "{{count}}件の返信",
     "repliesWord_other": "返信",
+    "dayAt": "{{day}} {{time}}",
     "thread": "スレッド",
     "closed": "終了",
     "options": "オプション",
