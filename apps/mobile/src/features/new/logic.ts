@@ -54,16 +54,36 @@ export function chatMatches<P extends { userId: string; name: string }>(
  * What "New" offers to start, in its order; `invite` is a list of its own at the end. A conversation is not here:
  * the search on top already starts one.
  */
-export type CreateItem = "agent" | "channel" | "task" | "routine" | "wiki" | "invite";
+export type CreateItem =
+  | "agent"
+  | "channel"
+  | "task"
+  | "routine"
+  | "wiki"
+  | "spreadsheet"
+  | "slides"
+  | "canvas"
+  | "invite";
 
-const CREATE_ORDER: readonly CreateItem[] = ["agent", "channel", "task", "routine", "wiki", "invite"];
+const CREATE_ORDER: readonly CreateItem[] = [
+  "agent",
+  "channel",
+  "task",
+  "routine",
+  "wiki",
+  "spreadsheet",
+  "slides",
+  "canvas",
+  "invite",
+];
 
 /**
  * Whether this person may start `item`, as the server checks it (ADR 0085): an agent (`create_agents`, and none while
  * the workspace is being deleted, as on the web), a channel (`create_channels`), a task (`post`), a routine (some agent
  * they may make one for, `createsRoutines`: the agents' `createsRoutinesFor`, who set up its routines, which "Create
  * routines" gives only where it reaches, and whom it answers, since a routine asks it on its creator's behalf; ADR 0085
- * addendum of 2026-11-17), a wiki page (`edit_wiki`) and invitations (`invite_people`).
+ * addendum of 2026-11-17), a wiki page (`edit_wiki`), a spreadsheet, a presentation or a canvas in the Drive
+ * (`upload_files`, as any file there, ADR 0196) and invitations (`invite_people`).
  */
 export function mayCreate(
   org: { permissions?: readonly string[]; deletion?: unknown } | null | undefined,
@@ -76,6 +96,9 @@ export function mayCreate(
     task: can(org, "post"),
     routine: createsRoutines,
     wiki: can(org, "edit_wiki"),
+    spreadsheet: can(org, "upload_files"),
+    slides: can(org, "upload_files"),
+    canvas: can(org, "upload_files"),
     invite: can(org, "invite_people"),
   };
   return allowed[item];

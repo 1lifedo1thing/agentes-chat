@@ -576,7 +576,7 @@ export interface PendingReturn {
   messageId: string;
   agentId: string;
   channelId: string;
-  channelKind: "channel" | "dm" | "task";
+  channelKind: "channel" | "dm" | "task" | "file";
   /** A channel's name; null for a DM or a task's conversation. */
   channelName: string | null;
   /** Null: the conversation's main timeline. */
@@ -601,7 +601,7 @@ export interface CanceledReturn {
   messageId: string;
   agentId: string;
   channelId: string;
-  channelKind: "channel" | "dm" | "task";
+  channelKind: "channel" | "dm" | "task" | "file";
   channelName: string | null;
   threadId: string | null;
   at: string;
@@ -618,7 +618,7 @@ type ReturnRow = {
   id: string;
   agent_id: string;
   channel_id: string;
-  channel_kind: "channel" | "dm" | "task";
+  channel_kind: "channel" | "dm" | "task" | "file";
   channel_name: string | null;
   thread_id: string | null;
   refs: Record<string, string> | string | null;

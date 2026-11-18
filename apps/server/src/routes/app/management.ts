@@ -473,7 +473,7 @@ const ManagedTask = z
         from: z
           .object({
             channelId: z.uuid(),
-            channelKind: z.enum(["channel", "dm", "task"]),
+            channelKind: z.enum(["channel", "dm", "task", "file"]),
             channelName: z.string().nullable(),
             threadId: z.uuid().nullable(),
             messageId: z.uuid().nullable(),
@@ -1989,7 +1989,7 @@ export function managementRoutes(deps: AppDeps) {
               .openapi({ description: "Calls the server pays for (Jev), not in the total." }),
             byKind: z.array(
               z.object({
-                kind: z.enum(["agent", "router", "embedding", "summary"]),
+                kind: z.enum(["agent", "router", "embedding", "summary", "image"]),
                 calls: z.number(),
                 partialCalls: z.number(),
                 inputTokens: z.number(),
