@@ -27,7 +27,7 @@ stay exact and be written once.
 1. **A table of hosts, kept by the operator.** `hosts`: `host` (the primary key: lower case, a hostname only, no
    scheme, port, path or trailing dot, at most 253 characters and at least one dot), `name` (1 to 60), `accent`
    (`#rrggbb` or null), `logo` (a stored file's key in the platform's bucket, as a workspace's logo is kept, or null),
-   `powered_by` (true unless turned off, see 8; migration 0296) and the times. It is the server's, not a tenant's: no `org_id`. Only the operator API writes it:
+   `powered_by` (true unless turned off, see 8; migration 0298) and the times. It is the server's, not a tenant's: no `org_id`. Only the operator API writes it:
    `GET /hosts`, `PUT /hosts/{host}` (creates or replaces; `accent`, `logo` and `poweredBy` left out are left as they
    are, null clears `accent` and `logo`; the logo takes a workspace logo's checks) and `DELETE /hosts/{host}` (also deletes its logo).
    Refusals: `host.invalid` (not a hostname), `host.own` (`PUBLIC_URL`'s host or one of `EXTRA_TRUSTED_ORIGINS`'),

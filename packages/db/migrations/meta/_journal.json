@@ -2042,8 +2042,22 @@
     {
       "idx": 293,
       "version": "7",
-      "when": 1794961847226,
-      "tag": "0296_host_powered_by",
+      "when": 1794963495178,
+      "tag": "0296_run_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 294,
+      "version": "7",
+      "when": 1794964106130,
+      "tag": "0297_operator_events_covering",
+      "breakpoints": true
+    },
+    {
+      "idx": 295,
+      "version": "7",
+      "when": 1794984191596,
+      "tag": "0298_host_powered_by",
       "breakpoints": true
     }
   ]

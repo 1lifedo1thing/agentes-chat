@@ -1,5 +1,5 @@
 {
-  "id": "bd16f801-2801-4d55-89a4-7bf2f49d8dfd",
+  "id": "6f281c15-2cf9-4f79-bc10-4be4eefd2aee",
   "prevId": "f24af517-0ac8-49a4-ab0c-9d809c6f4035",
   "version": "7",
   "dialect": "postgresql",
@@ -9831,13 +9831,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "powered_by": {
-          "name": "powered_by",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -16020,6 +16013,12 @@
         },
         "transcript": {
           "name": "transcript",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profiles": {
+          "name": "profiles",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
