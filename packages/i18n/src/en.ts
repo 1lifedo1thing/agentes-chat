@@ -13341,7 +13341,7 @@ export const en = {
       forWhom: "Who it's for",
       teamLocked: "Only people who manage connectors add the team's.",
       mailLocked: "A mailbox always belongs to whoever connects it.",
-      done: "Your agents use it when you ask, in your own conversation with them.",
+      done: "Your agents use it only when you ask.",
       worksWhenAsked: "Works only when you ask.",
       remove: "Remove",
       removeName: "Remove {{name}}",

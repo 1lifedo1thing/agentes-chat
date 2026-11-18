@@ -12420,7 +12420,7 @@
       "forWhom": "Untuk siapa",
       "teamLocked": "Hanya orang yang mengelola konektor yang menambahkan milik tim.",
       "mailLocked": "Kotak surat selalu milik orang yang menghubungkannya.",
-      "done": "Agenmu memakainya saat kamu meminta, di percakapanmu sendiri dengan mereka.",
+      "done": "Agenmu hanya memakainya saat kamu meminta.",
       "worksWhenAsked": "Hanya berfungsi saat kamu meminta.",
       "remove": "Hapus",
       "removeName": "Hapus {{name}}",

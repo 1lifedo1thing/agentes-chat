@@ -13340,7 +13340,7 @@ export const ptBR = {
       forWhom: "Para quem",
       teamLocked: "Só quem gerencia conectores adiciona os da equipe.",
       mailLocked: "Uma caixa de email é sempre de quem a conecta.",
-      done: "Seus agentes usam quando você pede, na sua conversa com eles.",
+      done: "Seus agentes só usam quando você pede.",
       worksWhenAsked: "Só funciona quando você pede.",
       remove: "Remover",
       removeName: "Remover {{name}}",

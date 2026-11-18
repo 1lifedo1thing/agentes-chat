@@ -12890,7 +12890,7 @@
       "forWhom": "Für wen",
       "teamLocked": "Nur wer Konnektoren verwaltet, fügt die des Teams hinzu.",
       "mailLocked": "Ein Postfach gehört immer der Person, die es verbindet.",
-      "done": "Deine Agenten nutzen es, wenn du fragst, in deinem eigenen Gespräch mit ihnen.",
+      "done": "Deine Agenten nutzen es nur, wenn du fragst.",
       "worksWhenAsked": "Funktioniert nur, wenn du fragst.",
       "remove": "Entfernen",
       "removeName": "{{name}} entfernen",

@@ -178,8 +178,8 @@ describe("Connecting on the phone: Para quem and the closing line", () => {
   test("the words, in Portuguese and English", async () => {
     const pt = await translator("pt-BR");
     const en = await translator("en");
-    expect(pt("connectors.personal.done")).toBe("Seus agentes usam quando você pede, na sua conversa com eles.");
-    expect(en("connectors.personal.done")).toBe("Your agents use it when you ask, in your own conversation with them.");
+    expect(pt("connectors.personal.done")).toBe("Seus agentes só usam quando você pede.");
+    expect(en("connectors.personal.done")).toBe("Your agents use it only when you ask.");
     expect(pt("connectors.personal.worksWhenAsked")).toBe("Só funciona quando você pede.");
     expect(pt("connectors.personal.of", { name: "Bia" })).toBe("Pessoal de Bia");
   });

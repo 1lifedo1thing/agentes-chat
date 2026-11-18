@@ -13875,7 +13875,7 @@
       "forWhom": "Dla kogo",
       "teamLocked": "Połączenia zespołu dodają tylko osoby zarządzające konektorami.",
       "mailLocked": "Skrzynka pocztowa zawsze należy do osoby, która ją łączy.",
-      "done": "Twoi agenci używają go, gdy poprosisz, we własnej rozmowie z nimi.",
+      "done": "Twoi agenci używają go tylko wtedy, gdy poprosisz.",
       "worksWhenAsked": "Działa tylko, gdy poprosisz.",
       "remove": "Usuń",
       "removeName": "Usuń {{name}}",

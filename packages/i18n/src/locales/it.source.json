@@ -31582,7 +31582,7 @@
     "value": "A mailbox always belongs to whoever connects it."
   },
   "connectors.personal.done": {
-    "value": "Your agents use it when you ask, in your own conversation with them."
+    "value": "Your agents use it only when you ask."
   },
   "connectors.personal.worksWhenAsked": {
     "value": "Works only when you ask."

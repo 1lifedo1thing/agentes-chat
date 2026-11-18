@@ -84,7 +84,7 @@ describe("Conectores: Equipe | Pessoal", () => {
     expect(within(forWhom).getByRole("radio", { name: "Pessoal" }).hasAttribute("disabled")).toBe(false);
     expect(forWhom.hasAttribute("aria-disabled")).toBe(false);
     expect(dialog.textContent).toContain("Só quem gerencia conectores adiciona os da equipe.");
-    expect(dialog.textContent).toContain("Seus agentes usam quando você pede, na sua conversa com eles.");
+    expect(dialog.textContent).toContain("Seus agentes só usam quando você pede.");
     await type(within(dialog).getByLabelText("Endereço do servidor MCP"), "https://mcp.example.com/mcp");
     await click(within(dialog).getByText("Conectar com uma chave de API"));
     await type(within(dialog).getByLabelText("Chave de API"), "fake-key-1234");
@@ -93,7 +93,7 @@ describe("Conectores: Equipe | Pessoal", () => {
       serverUrl: "https://mcp.example.com/mcp",
       personal: true,
     });
-    expect(flow().textContent).toContain("Seus agentes usam quando você pede, na sua conversa com eles.");
+    expect(flow().textContent).toContain("Seus agentes só usam quando você pede.");
     // A server not reviewed yet: Continuar saves the levels suggested for its tools.
     await click(within(flow()).getByRole("button", { name: "Continuar" }), 6);
     expect(within(tabs).getByRole("radio", { name: /Pessoal/ }).textContent).toContain("1");

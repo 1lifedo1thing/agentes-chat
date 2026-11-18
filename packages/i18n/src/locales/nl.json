@@ -12952,7 +12952,7 @@
       "forWhom": "Voor wie",
       "teamLocked": "Alleen wie connectors beheert voegt die van het team toe.",
       "mailLocked": "Een mailbox is altijd van wie hem verbindt.",
-      "done": "Je agenten gebruiken het als jij erom vraagt, in je eigen gesprek met ze.",
+      "done": "Je agenten gebruiken het alleen als jij erom vraagt.",
       "worksWhenAsked": "Werkt alleen als jij erom vraagt.",
       "remove": "Verwijderen",
       "removeName": "{{name}} verwijderen",

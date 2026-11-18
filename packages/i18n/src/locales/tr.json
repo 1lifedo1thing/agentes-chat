@@ -12827,7 +12827,7 @@
       "forWhom": "Kimin için",
       "teamLocked": "Ekibinkileri yalnızca bağlayıcıları yönetenler ekler.",
       "mailLocked": "Bir posta kutusu her zaman onu bağlayan kişinindir.",
-      "done": "Ajanların onu sen istediğinde, onlarla kendi konuşmanda kullanır.",
+      "done": "Ajanların onu yalnızca sen istediğinde kullanır.",
       "worksWhenAsked": "Yalnızca sen istediğinde çalışır.",
       "remove": "Kaldır",
       "removeName": "{{name}} kaldır",

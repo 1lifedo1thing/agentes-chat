@@ -13391,7 +13391,7 @@
       "forWhom": "Per chi",
       "teamLocked": "Solo chi gestisce i connettori aggiunge quelli del team.",
       "mailLocked": "Una casella di posta è sempre di chi la collega.",
-      "done": "I tuoi agenti lo usano quando lo chiedi tu, nella tua conversazione con loro.",
+      "done": "I tuoi agenti lo usano solo quando lo chiedi tu.",
       "worksWhenAsked": "Funziona solo quando lo chiedi tu.",
       "remove": "Rimuovi",
       "removeName": "Rimuovi {{name}}",
