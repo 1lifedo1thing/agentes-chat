@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { eq, schema } from "@agenteschat/db";
 import * as Y from "yjs";
-import { appendChanges, readSince, updateInserts, writeCompacted } from "../src/live/store";
+import { appendChanges, liveDocMeta, readSince, updateInserts, writeCompacted } from "../src/live/store";
 import { type Fixture, setup } from "./fixtures";
 import { makeLiveFile } from "./live-fixtures";
 
@@ -101,11 +101,18 @@ describe("where a live document is kept", () => {
     // A process at change 0 is behind the compaction: it gets the whole state and the change after it.
     const behind = await readSince(f.db, f.org.id, file.id, 0);
     expect(behind?.state).not.toBeNull();
+    expect(Y.decodeUpdate(behind?.state ?? new Uint8Array()).structs.length).toBeGreaterThan(0);
     expect(behind?.changes.map((c) => c.seq)).toEqual([2]);
     expect(behind?.head).toBe(2);
-    // One at the head lacks nothing.
+    // One at the head lacks nothing, and the check reads where the changes stand, never the whole document.
     const current = await readSince(f.db, f.org.id, file.id, 2);
     expect(current).toMatchObject({ state: null, changes: [], head: 2 });
+    expect(current?.row).toEqual({ headSeq: 2, compactedSeq: 1 });
+    // The row without its state: what decides a version or draws a card.
+    const meta = await liveDocMeta(f.db, f.org.id, file.id);
+    expect(meta).toMatchObject({ headSeq: 2, compactedSeq: 1 });
+    expect(meta).not.toHaveProperty("state");
+    expect(await liveDocMeta(f.db, f.org.id, crypto.randomUUID())).toBeNull();
     expect(await readSince(f.db, f.org.id, crypto.randomUUID(), 0)).toBeNull();
   });
 

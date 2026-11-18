@@ -51,7 +51,7 @@ import {
   snapshotContent,
   versionDoc,
 } from "./live/preview";
-import { docOf, liveDocRow, loadStored, toB64 } from "./live/store";
+import { docOf, liveDocMeta, loadStored, toB64 } from "./live/store";
 
 export { tableToCsv };
 
@@ -1925,7 +1925,7 @@ async function liveHeadContent(
   a: ArtifactRow,
   kind: LiveArtifactKind,
 ): Promise<LiveContent | null> {
-  const row = await liveDocRow(deps.db, a.orgId, a.id);
+  const row = await liveDocMeta(deps.db, a.orgId, a.id);
   if (!row) return null;
   // A document's content also carries its whole Markdown (ADR 0200), so it is read from the head every time.
   if (row.preview && kind !== "document") return { kind, preview: row.preview } as unknown as LiveContent;
@@ -3245,7 +3245,7 @@ export async function liveSnapshotOf(deps: ArtifactDeps, orgId: string, fileId: 
  */
 export async function adoptMarkdownDocument(deps: ArtifactDeps, orgId: string, fileId: string): Promise<boolean> {
   const a = await loadArtifact(deps.db, orgId, fileId);
-  if (a?.kind !== "document" || (await liveDocRow(deps.db, orgId, fileId))) return false;
+  if (a?.kind !== "document" || (await liveDocMeta(deps.db, orgId, fileId))) return false;
   const v = await versionRow(deps.db, a);
   const doc = versionDoc("document", (await readVersion(deps, a, v)).body, v.contentType);
   try {

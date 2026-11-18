@@ -5,7 +5,7 @@ import { type ArtifactAuthor, type ArtifactDeps, isLiveArtifactKind, touchLiveAr
 import { enqueue, type JobHandlers, type OutboxJob } from "../outbox";
 import { idleDecision, LIVE_CHECKPOINTS, writeCheckpoint } from "./checkpoints";
 import { liveContentOf, liveExcerpt, liveProblems } from "./preview";
-import { docOf, liveDocRow, loadStored, writeCompacted } from "./store";
+import { docOf, liveDocMeta, loadStored, writeCompacted } from "./store";
 
 /**
  * The outbox jobs that keep live documents small and versioned (ADR 0196 §4, §7, ADR 0005):
@@ -127,7 +127,7 @@ export async function idleCheckpoint(
   jobId: string,
   now = new Date(),
 ) {
-  const row = await liveDocRow(deps.db, orgId, fileId);
+  const row = await liveDocMeta(deps.db, orgId, fileId);
   if (!row) return null;
   const decision = idleDecision(row, now);
   if (decision.kind === "none") return null;

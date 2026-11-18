@@ -66,6 +66,55 @@ export async function liveDocRow(db: Executor, orgId: string, fileId: string): P
   return row ?? null;
 }
 
+/** A live file's row without its compacted state. */
+export type LiveDocMeta = Omit<LiveDocRow, "state">;
+
+// Every column but `state`, which grows with the document (up to `LIVE_LIMITS.docBytes`, as base64): reads that only
+// decide something (is there a document, is a version due, which preview) never carry it. `satisfies` keeps the
+// list whole when the table gains a column.
+const META_COLUMNS = {
+  artifactId: liveDocs.artifactId,
+  orgId: liveDocs.orgId,
+  kind: liveDocs.kind,
+  stateBytes: liveDocs.stateBytes,
+  headSeq: liveDocs.headSeq,
+  compactedSeq: liveDocs.compactedSeq,
+  preview: liveDocs.preview,
+  editedAt: liveDocs.editedAt,
+  editedByType: liveDocs.editedByType,
+  editedById: liveDocs.editedById,
+  editedRunId: liveDocs.editedRunId,
+  checkpointAt: liveDocs.checkpointAt,
+  checkpointSeq: liveDocs.checkpointSeq,
+  createdAt: liveDocs.createdAt,
+  updatedAt: liveDocs.updatedAt,
+} satisfies { [K in keyof LiveDocMeta]: unknown };
+
+/** `liveDocRow` without the state, or null. */
+export async function liveDocMeta(db: Executor, orgId: string, fileId: string): Promise<LiveDocMeta | null> {
+  if (!valid(orgId, fileId)) return null;
+  const [row] = await db
+    .select(META_COLUMNS)
+    .from(liveDocs)
+    .where(and(eq(liveDocs.artifactId, fileId), eq(liveDocs.orgId, orgId)));
+  return row ?? null;
+}
+
+/** Where a live file's changes stand (its newest, and where its last compaction stopped), or null. */
+async function liveDocHead(db: Executor, orgId: string, fileId: string) {
+  const [row] = await db
+    .select({ headSeq: liveDocs.headSeq, compactedSeq: liveDocs.compactedSeq })
+    .from(liveDocs)
+    .where(and(eq(liveDocs.artifactId, fileId), eq(liveDocs.orgId, orgId)));
+  return row ?? null;
+}
+
+/** The compacted state alone, decoded (empty when the row is gone). */
+async function compactedState(db: Executor, fileId: string): Promise<Uint8Array> {
+  const [row] = await db.select({ state: liveDocs.state }).from(liveDocs).where(eq(liveDocs.artifactId, fileId));
+  return row ? fromB64(row.state) : new Uint8Array();
+}
+
 /** The changes stored after `after`, in order. */
 export async function changesAfter(db: Executor, fileId: string, after: number): Promise<StoredChange[]> {
   const rows = await db
@@ -122,12 +171,14 @@ export async function loadHeadState(db: Database, orgId: string, fileId: string)
 export async function readSince(db: Database, orgId: string, fileId: string, after: number) {
   if (!valid(orgId, fileId)) return null;
   return inOneSnapshot(db, async (tx) => {
-    const row = await liveDocRow(tx, orgId, fileId);
+    // The state is read only by a process behind a compaction: the holders' tail check runs every few seconds and
+    // must not carry the whole document each time.
+    const row = await liveDocHead(tx, orgId, fileId);
     if (!row) return null;
     if (row.headSeq <= after) return { state: null, changes: [] as StoredChange[], head: row.headSeq, row };
     const behind = after < row.compactedSeq;
     const changes = await changesAfter(tx, fileId, behind ? row.compactedSeq : after);
-    return { state: behind ? fromB64(row.state) : null, changes, head: row.headSeq, row };
+    return { state: behind ? await compactedState(tx, fileId) : null, changes, head: row.headSeq, row };
   });
 }
 
@@ -184,7 +235,7 @@ export async function appendChanges(
   if (!valid(orgId, fileId)) throw new NotFoundError("Artifact not found", "artifact.not_found");
   const last = changes.at(-1);
   if (!last) {
-    const row = await liveDocRow(db, orgId, fileId);
+    const row = await liveDocHead(db, orgId, fileId);
     if (!row) throw new NotFoundError("Artifact not found", "artifact.not_found");
     return { seqs: [], headSeq: row.headSeq, compactedSeq: row.compactedSeq };
   }
