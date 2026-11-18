@@ -15008,7 +15008,7 @@ html:not([data-pointer]) .rh-set__face-edit:focus-visible {
     padding-left: calc(28px + 14px);
   }
 }
-/* A row that ends in one button (PrefRow's `settings-row--button`: Link, Open on your phone, Decline), at every width:
+/* A row that ends in one button (PrefRow's `settings-row--button`: Link, Open, Decline), at every width:
    the button on the name's line at the row's end, centred on that line, never under a sentence. What is true now
    (`__status`: the linked sender, an error) stays under the name, from the words' edge. The name keeps the room left
    and wraps whole words: its basis is its longest word, so the button goes under it, still at the end, only when that

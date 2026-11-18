@@ -2151,6 +2151,7 @@ export const ptBR = {
     phone: "Celular",
     phoneOn: "No app do celular, com o aparelho bloqueado também",
     phoneOff: "Ative no app do celular",
+    phoneOpen: "Abrir",
     mac: "App do Mac",
     macHelp: "Enquanto o app estiver aberto, mesmo em segundo plano",
     on: "Ligado",

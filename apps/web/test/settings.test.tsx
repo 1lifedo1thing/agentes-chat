@@ -174,7 +174,10 @@ describe("Configurações do workspace", () => {
     expect(document.getElementById("notice-phone-status")).toBeNull();
     expect(row.classList.contains("settings-row--button")).toBe(true);
     expect(row.textContent).not.toContain("›");
-    await click(within(row).getByRole("button", { name: "Abrir no celular" }));
+    // The button's word is short enough for the name's line; a screen reader hears what it opens.
+    const open = within(row).getByRole("button", { name: "Abrir no celular" });
+    expect(open.textContent).toBe("Abrir");
+    await click(open);
     await settle(4);
     expect(screen().getByRole("dialog", { name: "Abrir no celular" })).toBeTruthy();
   });

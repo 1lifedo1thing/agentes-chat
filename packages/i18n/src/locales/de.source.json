@@ -5171,6 +5171,9 @@
   "noticePrefs.phoneOff": {
     "value": "Turn them on in the phone app"
   },
+  "noticePrefs.phoneOpen": {
+    "value": "Open"
+  },
   "noticePrefs.mac": {
     "value": "Mac app"
   },

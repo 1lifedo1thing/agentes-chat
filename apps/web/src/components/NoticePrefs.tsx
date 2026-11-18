@@ -70,8 +70,8 @@ export function NoticePrefsSection() {
                   {t("noticePrefs.on")}
                 </Chip>
               ) : (
-                <Button size="sm" icon="phone" onClick={() => setPhoneCode(true)}>
-                  {t("shell.openOnPhone")}
+                <Button size="sm" icon="phone" aria-label={t("shell.openOnPhone")} onClick={() => setPhoneCode(true)}>
+                  {t("noticePrefs.phoneOpen")}
                 </Button>
               ))
             }

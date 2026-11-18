@@ -2244,6 +2244,7 @@ export const en = {
     phone: "Phone",
     phoneOn: "In the phone app, even with the phone locked",
     phoneOff: "Turn them on in the phone app",
+    phoneOpen: "Open",
     mac: "Mac app",
     macHelp: "While the app is open, even in the background",
     on: "On",
