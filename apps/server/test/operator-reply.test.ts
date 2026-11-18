@@ -128,8 +128,15 @@ async function mails() {
 }
 /** A text as it reads, without the hair spaces that keep a mail app from linking it. */
 const shown = (text: string) => text.replaceAll("\u200a", "");
-/** The HTML part's words as they read, without its tags. */
-const words = (html: string) => shown(html).replace(/<[^>]+>/g, "");
+/** The HTML part's words as they read, without its tags: stripped until none is left, so two can't leave a third. */
+const words = (html: string) => {
+  let text = shown(html);
+  for (let before = ""; before !== text; ) {
+    before = text;
+    text = text.replace(/<[^>]+>/g, "");
+  }
+  return text;
+};
 const forget = async () => {
   await db.delete(schema.operatorEvents);
   await db.delete(schema.auditLog).where(eq(schema.auditLog.action, "operator.support_replied"));
