@@ -11,13 +11,20 @@ import {
   createAgentRuns,
   createChannel,
   createConnectorToolSource,
+  createDashboard,
+  createToolGateway,
   DEFAULT_ROUTER_POLICY,
+  DIRECTORY_MAX_TOOLS,
   decideApproval,
   drainOutbox,
+  executeRoutineRun,
   followWork,
   getAgentAccess,
   getRun,
+  getWidget,
   insertMessage,
+  insertWidget,
+  invokeWithChip,
   listApprovals,
   listAudit,
   listConnections,
@@ -30,11 +37,14 @@ import {
   mcpSessionOver,
   openPersonAgentDm,
   postPersonMessage,
+  presentTools,
   publishApproval,
+  queueRoutineRun,
   type RoutingInput,
   removeApprovalRule,
   renameConnection,
   routeMessage,
+  runWhere,
   saveCustomTools,
   seedToolPins,
   setAgentAccess,
@@ -44,8 +54,10 @@ import {
   type ToolSource,
   taskManager,
   taskSteps,
+  updateRoutine,
 } from "../src";
 import { addMember, type Fixture, makeAdmin, setup } from "./fixtures";
+import { routineDeps, routineRow, routineRunRow } from "./routine-fixtures";
 
 const ACCOUNT = "walter@example.com";
 const WHOLE = `CRM (${ACCOUNT})`;
@@ -420,12 +432,142 @@ describe("what a person's own connection leaves for everyone else", () => {
         lastError: `Refused for ${ACCOUNT}`,
       },
     });
+    // The agent changes hands: its new owner manages the routine, as the workspace's owner does.
+    const dora = await addMember(f.db, f.org.id, "member", "dora");
+    await f.db.update(schema.agents).set({ ownerUserId: dora.id }).where(eq(schema.agents.id, f.agent.id));
     const triggerFor = async (userId: string) =>
       JSON.stringify((await listRoutines(f.db, userId, f.org.id)).find((r) => r.id === routine.id)?.trigger ?? null);
-    const caios = await triggerFor(s.caio.id);
-    expect(caios).toContain("millionsend.email.received");
-    expect(caios).not.toContain(ACCOUNT);
-    expect(caios).not.toContain("boss@example.com");
+    for (const who of [s.bia.id, s.caio.id, f.owner.id, dora.id]) {
+      const read = await triggerFor(who);
+      expect(read).not.toContain(ACCOUNT);
+      expect(read).not.toContain("boss@example.com");
+      expect(read).not.toContain("Refused");
+      // The service is read by who manages connectors (the workspace's owner) only: anyone else, a plain webhook's.
+      if (who === f.owner.id) expect(read).toContain("millionsend.email.received");
+      else expect(read.toLowerCase()).not.toContain("millionsend");
+    }
     expect(await triggerFor(s.walter.id)).toContain(ACCOUNT);
+    expect(await triggerFor(s.walter.id)).toContain("boss@example.com");
+    // Only he changes what it waits for: anyone else would save it blank.
+    for (const who of [f.owner.id, dora.id])
+      await expect(
+        updateRoutine(routineDeps(f), who, f.org.id, routine.id, { trigger: { type: "webhook", methods: ["POST"] } }),
+      ).rejects.toMatchObject({ code: "routine.connector_not_yours" });
+  });
+
+  test("a big connection behind its directory: no line, no listing, no service for anyone else", async () => {
+    const s = await walterUsedHisCrm();
+    const names = Array.from({ length: DIRECTORY_MAX_TOOLS + 5 }, (_, i) => `read_${i}`);
+    await f.db.insert(schema.customTools).values(
+      names.map((name) => ({
+        orgId: f.org.id,
+        connectionId: s.crm.id,
+        name,
+        access: "read" as const,
+        suggestedAccess: "read" as const,
+      })),
+    );
+    const many: McpConnect = async () => {
+      const server = new McpServer({ name: "big-crm", version: "1" });
+      for (const name of names)
+        server.registerTool(
+          name,
+          { description: `Lists ${name} of a contact`, inputSchema: { q: z.string() } },
+          async () => ({
+            content: [{ type: "text", text: "ok" }],
+          }),
+        );
+      const [client, transport] = InMemoryTransport.createLinkedPair();
+      await server.connect(transport);
+      return mcpSessionOver(client);
+    };
+    const source = createConnectorToolSource({ ...depsOf(), connect: many });
+    const asked = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: s.dm.id,
+      author: { type: "person", userId: s.walter.id },
+      body: "find my notes",
+    });
+    const [run0] = await f.db.transaction((tx) => createAgentRuns(tx, asked, [f.agent.id], "mention"));
+    if (!run0) throw new Error("no run");
+    await f.db
+      .update(schema.agentRuns)
+      .set({ status: "running", startedAt: new Date(Date.now() - 180_000), heartbeatAt: new Date() })
+      .where(eq(schema.agentRuns.id, run0.id));
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: run0.id,
+      channelId: s.dm.id,
+      threadRootId: asked.id,
+      triggerMessageId: asked.id,
+    };
+    const granted = await source.tools(ctx);
+    const shown = presentTools(granted);
+    const find = shown.find((t) => t.name.endsWith("_find_tools"));
+    const use = shown.find((t) => t.name.endsWith("_use_tool"));
+    expect(find?.ownerUserId).toBe(s.walter.id);
+    expect(use?.ownerUserId).toBe(s.walter.id);
+    // Tools on demand: their own search lists his tools too.
+    expect(presentTools(granted, undefined, []).find((t) => t.name === "find_tools")?.ownerUserId).toBe(s.walter.id);
+    if (!find || !use) throw new Error("no directory");
+    const gateway = createToolGateway({ sources: [source] });
+    const turn = { deps: { db: f.db, pubsub: f.pubsub }, tools: gateway, ctx, where: runWhere(run0), turnTools: shown };
+    await invokeWithChip(turn, { id: "find", name: find.name, input: { query: "contact" } });
+    await invokeWithChip(turn, { id: "nowhere", name: use.name, input: { tool: "no_such_tool", arguments: {} } });
+    await new Promise((r) => setTimeout(r, 100));
+    expect(JSON.stringify(await getRun(f.db, s.walter.id, f.org.id, run0.id))).toContain("Lists read_");
+    const dora = await addMember(f.db, f.org.id, "member", "dora");
+    await f.db.update(schema.agents).set({ ownerUserId: dora.id }).where(eq(schema.agents.id, f.agent.id));
+    for (const who of [s.bia.id, s.caio.id, f.owner.id, dora.id]) {
+      const line = JSON.stringify((await agentStatuses(f.db, who, f.org.id)).find((a) => a.agentId === f.agent.id));
+      expect(line).not.toContain("CRM");
+      const trace = JSON.stringify(await getRun(f.db, who, f.org.id, run0.id).catch(() => null));
+      expect(trace).not.toContain("Lists read_");
+      expect(trace).not.toContain(ACCOUNT);
+    }
+  });
+
+  test("a widget refreshing through his own connection reads plain refreshing to anyone else", async () => {
+    const s = await walterUsedHisCrm();
+    const dash = routineDeps(f);
+    const board = await createDashboard(dash, s.walter.id, f.org.id, {
+      title: "Contacts",
+      audience: "workspace",
+      editPolicy: "owner",
+    });
+    const widget = await insertWidget(dash, {
+      orgId: f.org.id,
+      dashboardId: board.id,
+      agentId: f.agent.id,
+      title: "Notes",
+      prompt: "How many notes this week",
+      format: "kpi",
+      schedule: "hour",
+      spec: { kind: "kpi", value: 3 },
+      createdByUserId: s.walter.id,
+    });
+    if (!widget.routineId) throw new Error("no routine");
+    const queued = await queueRoutineRun({ db: f.db }, await routineRow(f, widget.routineId), new Date(), "manual");
+    if (!queued) throw new Error("slot taken");
+    await executeRoutineRun(routineDeps(f), queued.id);
+    const runId = (await routineRunRow(f, queued.id)).agentRunId ?? "";
+    await f.db
+      .update(schema.dashboardWidgets)
+      .set({ status: "updating" })
+      .where(eq(schema.dashboardWidgets.id, widget.id));
+    await f.db.insert(schema.agentRunSteps).values({
+      orgId: f.org.id,
+      runId,
+      seq: 900,
+      kind: "tool_call",
+      data: { name: s.addNote.name, input: {}, connector: "CRM", personal: true },
+    });
+    const dora = await addMember(f.db, f.org.id, "member", "dora");
+    await f.db.update(schema.agents).set({ ownerUserId: dora.id }).where(eq(schema.agents.id, f.agent.id));
+    for (const who of [s.bia.id, s.caio.id, f.owner.id, dora.id])
+      expect((await getWidget(dash, who, f.org.id, widget.id)).step).toBeNull();
+    expect((await getWidget(dash, s.walter.id, f.org.id, widget.id)).step).toMatchObject({ connector: "CRM" });
   });
 });

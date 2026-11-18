@@ -65,13 +65,16 @@ export function auditInput(input: Record<string, unknown>): Record<string, unkno
  * Which calls the audit keeps. Every refusal and failure; of the rest, what
  * changes or sends something, a connected app's reads (someone's data), and
  * the computer's commands. Not looking around inside the workspace (search,
- * reading a channel), a directory's search or `pass`: they would bury the rest.
+ * reading a channel), a directory's search (but one listing a person's own
+ * connection's tools) or `pass`: they would bury the rest.
  */
 export function auditsCall(
   kind: string,
-  tool: { connectionId?: string | null },
+  tool: { connectionId?: string | null; ownerUserId?: string },
   outcome: schema.AuditOutcome,
 ): boolean {
+  // Its row is what hides its result from a run's other readers (`othersPersonalTools`).
+  if (kind === "directory") return Boolean(tool.ownerUserId);
   if (outcome === "refused" || outcome === "failed") return kind !== "directory";
   if (kind === "read") return Boolean(tool.connectionId);
   return kind !== "directory" && kind !== "pass" && kind !== "self" && kind !== "here";
