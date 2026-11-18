@@ -11507,12 +11507,6 @@
       "read": "{{name}} 已读",
       "resolved": "{{name}} 关闭了求助请求"
     },
-    "well": {
-      "readYours": "已读你的留言",
-      "readOf": "已读 {{name}} 的留言",
-      "nowYours": "停下来阅读你的留言",
-      "nowOf": "停下来阅读 {{name}} 的留言"
-    },
     "strip": {
       "see": "查看",
       "toStop": "以停止"

@@ -29177,18 +29177,6 @@
   "run.steer.resolved": {
     "value": "{{name}} closed the help request"
   },
-  "run.well.readYours": {
-    "value": "Read your note"
-  },
-  "run.well.readOf": {
-    "value": "Read {{name}}'s note"
-  },
-  "run.well.nowYours": {
-    "value": "Stopped to read your note"
-  },
-  "run.well.nowOf": {
-    "value": "Stopped to read {{name}}'s note"
-  },
   "run.strip.see": {
     "value": "View"
   },

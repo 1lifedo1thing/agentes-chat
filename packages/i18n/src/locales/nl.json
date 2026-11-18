@@ -12000,12 +12000,6 @@
       "read": "{{name}} heeft het gelezen",
       "resolved": "{{name}} heeft het hulpverzoek gesloten"
     },
-    "well": {
-      "readYours": "Las je notitie",
-      "readOf": "Las de notitie van {{name}}",
-      "nowYours": "Stopte om je notitie te lezen",
-      "nowOf": "Stopte om de notitie van {{name}} te lezen"
-    },
     "strip": {
       "see": "Bekijken",
       "toStop": "om te stoppen"

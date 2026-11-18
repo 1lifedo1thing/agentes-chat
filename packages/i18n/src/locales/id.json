@@ -11489,12 +11489,6 @@
       "read": "{{name}} sudah membacanya",
       "resolved": "{{name}} menutup permintaan bantuan"
     },
-    "well": {
-      "readYours": "Membaca catatanmu",
-      "readOf": "Membaca catatan {{name}}",
-      "nowYours": "Berhenti untuk membaca catatanmu",
-      "nowOf": "Berhenti untuk membaca catatan {{name}}"
-    },
     "strip": {
       "see": "Lihat",
       "toStop": "untuk menghentikan"

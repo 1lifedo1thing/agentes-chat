@@ -12417,12 +12417,6 @@
       "read": "{{name}} l'ha letto",
       "resolved": "{{name}} ha chiuso la richiesta di aiuto"
     },
-    "well": {
-      "readYours": "Ha letto la tua nota",
-      "readOf": "Ha letto la nota di {{name}}",
-      "nowYours": "Si è fermato per leggere la tua nota",
-      "nowOf": "Si è fermato per leggere la nota di {{name}}"
-    },
     "strip": {
       "see": "Vedi",
       "toStop": "per fermare"

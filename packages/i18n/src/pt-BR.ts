@@ -12331,12 +12331,6 @@ export const ptBR = {
       read: "{{name}} leu",
       resolved: "{{name}} encerrou o pedido de ajuda",
     },
-    well: {
-      readYours: "Leu seu recado",
-      readOf: "Leu o recado de {{name}}",
-      nowYours: "Parou para ler seu recado",
-      nowOf: "Parou para ler o recado de {{name}}",
-    },
     strip: {
       see: "Ver",
       toStop: "para parar",
