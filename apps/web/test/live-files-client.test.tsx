@@ -9,7 +9,6 @@ import {
   closeAllLiveRooms,
   liveRoomsOpen,
   useCreateLiveFile,
-  useGenerateImages,
   useLiveDocVersion,
   useLivePeers,
   useLivePresence,
@@ -149,7 +148,7 @@ describe("live files in React", () => {
     expect(saved).toEqual([null, 2]);
   });
 
-  test("generated pictures: placeholders at once, pictures when they come", async () => {
+  test("pictures an agent asked for: placeholders at once, pictures when they come", async () => {
     const { live, wrapper, roomOptions } = setup();
     const file = await live.addFile(ORG_ID, { kind: "canvas", title: "Campaign" });
     const view = renderHook(() => useLiveRoom(ORG_ID, file.id, roomOptions()), { wrapper });
@@ -165,10 +164,9 @@ describe("live files in React", () => {
         ),
       { wrapper },
     );
-    const generate = renderHook(() => useGenerateImages(ORG_ID, file.id), { wrapper });
     let requestId = "";
     await act(async () => {
-      const made = await generate.result.current.mutateAsync({ prompt: "A fox in the snow", count: 2, aspect: "16:9" });
+      const made = await live.askImages(ORG_ID, file.id, { prompt: "A fox in the snow", count: 2, aspect: "16:9" });
       requestId = made.requestId;
       expect(made.shapeIds).toHaveLength(2);
       expect(made.frameId).not.toBeNull();

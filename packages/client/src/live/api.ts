@@ -7,7 +7,6 @@ import {
   type AskAgentInput,
   type AskAgentResult,
   type CreateLiveFileInput,
-  type GenerateImagesInput,
   type ImageModelOption,
   type ImageRequestResult,
   type ImageRequestStatus,
@@ -60,8 +59,6 @@ export interface LiveApi {
   openAs(orgId: string, fileId: string): Promise<Artifact>;
   /** The image models the workspace can use now, the default first (empty: no key for any). */
   imageModels(orgId: string): Promise<ImageModelOption[]>;
-  /** Pictures onto a canvas: placeholders show at once, the pictures come in their place (ADR 0197). */
-  generateImages(orgId: string, fileId: string, input: GenerateImagesInput): Promise<ImageRequestResult>;
   /** "Tentar de novo" on pictures that failed. */
   retryImages(orgId: string, fileId: string, requestId: string): Promise<ImageRequestResult>;
 }
@@ -142,8 +139,6 @@ export function createLiveApi(request: Requester, options: { upload?: LiveUpload
       const models = Array.isArray(res) ? res : res?.models;
       return Array.isArray(models) ? models : [];
     },
-    generateImages: async (orgId, fileId, input) =>
-      imageRequestOf(await request<unknown>(`${file(orgId, fileId)}/images`, { json: input })),
     retryImages: async (orgId, fileId, requestId) =>
       imageRequestOf(await request<unknown>(`${file(orgId, fileId)}/images/${enc(requestId)}/retry`, { json: {} })),
   };

@@ -2649,7 +2649,6 @@
       "live.canvas.pen.short.l",
       "live.canvas.image.details",
       "live.canvas.inspector.model",
-      "live.images.model",
       "live.sheet.colors.magenta",
       "live.sheet.args.a1",
       "live.sheet.args.criteria",
@@ -3175,7 +3174,6 @@
       "live.office.kind.file",
       "live.canvas.kinds.file",
       "live.canvas.inspector.model",
-      "live.images.model",
       "shell.email.label",
       "devices.cpus",
       "devices.memory",
@@ -3491,7 +3489,6 @@
     ],
     "tr": [
       "live.canvas.inspector.model",
-      "live.images.model",
       "live.canvas.sizes.short.s",
       "live.canvas.sizes.short.m",
       "live.canvas.sizes.short.l",
@@ -4021,7 +4018,6 @@
       "live.canvas.pen.short.m",
       "live.canvas.pen.short.l",
       "live.canvas.inspector.model",
-      "live.images.model",
       "live.sheet.args.a1",
       "live.sheet.args.k",
       "live.sheet.args.x"

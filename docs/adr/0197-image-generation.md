@@ -13,7 +13,7 @@
 
 People ask agents for images all the time, and the only images made today come from Codex's own tool on a
 computer, billed to a ChatGPT plan and invisible to the workspace's budget. A canvas that groups generated images
-(ADR 0196) needs images made on request, by people from the canvas and by any agent from a conversation, priced
+(ADR 0196) needs images made on request, by any agent from a conversation (a person asks it there), priced
 and limited like every other model call.
 
 ## Decision
@@ -34,8 +34,8 @@ A workspace can generate images when it has a key (its own, or the platform's) f
 models each workspace may pick is `GET …/images/models`; the default is the first one available in that order.
 
 **Every image goes through the gateway.** `generateImages` mirrors `stream`: the workspace's standing, the agent's
-budget reserved at the model's worst case before the call (or the person's own limit, ADR 0141, when a person asks
-from the canvas), the key resolved for the image model's provider (never an agent's chat credential of another
+budget reserved at the model's worst case before the call (or the person's own limit, ADR 0141, when a person tries
+a failed request again), the key resolved for the image model's provider (never an agent's chat credential of another
 provider), the call, and one `usage_records` row of the new kind `image` with the cost the provider reported or the
 catalog's, the run, the agent or the person. Readers of "what an agent's budget paid" count `agent` and `image`.
 A failed call is settled at what the provider billed, usually nothing.
@@ -57,9 +57,9 @@ A failed call is settled at what the provider billed, usually nothing.
 Variations and edits send the images to start from as references: on a canvas its pictures, in a conversation
 picture files the agent reads (a picture posted there).
 
-**People and agents.** People generate on a canvas (`POST …/artifacts/{id}/images`: a person who may upload
-files, at most 30 requests an hour, four images a request), and ask the canvas's agent for more in its conversation
-(Variations, ADR 0199). Agents call `generate_image` (`drive:write`), which waits for the images (at most two
+**People and agents.** People ask an agent: in the canvas's own conversation (Variations, ADR 0199) or any other.
+On the canvas a person only tries a failed request again (Try again on its placeholder: a person who may upload
+files, at most 30 an hour). Agents call `generate_image` (`drive:write`), which waits for the images (at most two
 minutes), hands them to a model that can see them, and answers with the pictures as the reply's cards
 (`meta.artifacts`, one per picture) or, on a canvas, the canvas as the reply's card. In Codex's turns both tools
 exist; the prompt says ours posts the images in the conversation (or on a canvas) and counts them in the budget.
@@ -74,6 +74,11 @@ image AIs take only raster pictures.
 
 - Image spend shows in Usage with its own kind, and budgets stop it like any other spend.
 - Prices change often: they are dated in the catalog like text models' (ADR 0018), each call priced at its time.
-- A workspace with only an Anthropic key can't generate images, and the canvas says so instead of offering it.
+- A workspace with only an Anthropic key can't generate images: its agents aren't offered `generate_image`, and
+  they put pictures in with an SVG or from the web instead.
 - Pictures made in a conversation are Drive files like an upload: counted in the workspace's storage, seen by who
   sees the conversation, and one call away from a canvas.
+
+*Amended 2026-11-18.* The canvas's own "Generate image" panel (a prompt, a model, a shape, a count) is gone, with
+the route that made pictures for a person directly: pictures are asked for in a conversation, where the agent can
+also write an SVG or find a real photo when that fits better.

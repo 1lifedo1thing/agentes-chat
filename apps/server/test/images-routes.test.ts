@@ -60,12 +60,10 @@ describe("the API's description", () => {
     const paths = Object.keys(((await res.json()) as { paths: Record<string, unknown> }).paths);
     const org = "/app/organizations/{orgId}";
     expect(paths).toEqual(
-      expect.arrayContaining([
-        `${org}/images/models`,
-        `${org}/artifacts/{artifactId}/images`,
-        `${org}/artifacts/{artifactId}/images/{requestId}/retry`,
-      ]),
+      expect.arrayContaining([`${org}/images/models`, `${org}/artifacts/{artifactId}/images/{requestId}/retry`]),
     );
+    // Pictures are asked for through an agent: no route makes them for a person directly.
+    expect(paths).not.toContain(`${org}/artifacts/{artifactId}/images`);
   });
 });
 
@@ -93,84 +91,36 @@ describe("image models", () => {
   });
 });
 
-describe("asking for pictures on a canvas", () => {
-  test("placeholders at once (202), the pictures after the job, billed to the person", async () => {
-    const { api, canvas, owner } = await seeded();
-    await addGemini(api);
-    const res = await api(`/artifacts/${canvas.id}/images`, {
-      json: { prompt: "a lighthouse at dusk", count: 2, aspect: "16:9", at: { x: 0, y: 0 } },
-    });
-    expect(res.status).toBe(202);
-    const body = (await res.json()) as {
-      requestId: string;
-      status: string;
-      shapeIds: string[];
-      frameId: string;
-      costNanoUsd?: number;
-    };
-    expect(body).toMatchObject({ status: "queued", model: "gemini-nano-banana-2.1", aspect: "16:9", error: null });
-    expect(body.shapeIds).toHaveLength(2);
-    expect(body.costNanoUsd).toBeUndefined();
-    const before = await shapesOf(api, canvas.id);
-    expect(before.filter((s) => s.type === "pending").map((s) => s.status)).toEqual(["queued", "queued"]);
-    expect(before.find((s) => s.id === body.frameId)?.name).toBe("a lighthouse at dusk");
+/** Pictures asked for on the canvas through the image service, as an agent's `generate_image` asks (ADR 0197). */
+async function ask(owner: Browser, orgId: string, canvasId: string, prompt: string) {
+  const userId = ((await (await owner("/api/app/me")).json()) as { user: { id: string } }).user.id;
+  return t.engine.images.request({ type: "person", userId }, orgId, canvasId, { prompt, at: { x: 0, y: 0 } });
+}
 
+describe("pictures asked for through an agent", () => {
+  test("placeholders at once in a frame named with the prompt; the pictures after the job", async () => {
+    const { api, canvas, org, owner } = await seeded();
+    await addGemini(api);
+    const asked = await ask(owner, org.orgId, canvas.id, "a lighthouse at dusk");
+    expect(asked).toMatchObject({ status: "queued", model: "gemini-nano-banana-2.1", error: null });
+    const before = await shapesOf(api, canvas.id);
+    expect(before.filter((s) => s.type === "pending").map((s) => s.status)).toEqual(["queued"]);
+    expect(before.find((s) => s.id === asked.frameId)?.name).toBe("a lighthouse at dusk");
     await t.drain();
-    const after = await shapesOf(api, canvas.id);
-    const images = after.filter((s) => s.type === "image");
-    expect(images.map((s) => s.id).sort()).toEqual([...body.shapeIds].sort());
+    const images = (await shapesOf(api, canvas.id)).filter((s) => s.type === "image");
+    expect(images.map((s) => s.id)).toEqual(asked.shapeIds);
     // Each picture is served to whoever reads the canvas.
     const asset = await api(`/artifacts/${canvas.id}/assets/${images[0]?.asset}`);
     expect(asset.status).toBe(200);
     expect(asset.headers.get("content-type")).toBe("image/png");
-    const me = ((await (await owner("/api/app/me")).json()) as { user: { id: string } }).user.id;
-    const [usage] = await t.db.select().from(schema.usageRecords).where(eq(schema.usageRecords.kind, "image"));
-    expect(usage).toMatchObject({ agentId: null, personId: me, costNanoUsd: 2 * 33_600_000 });
-  });
-
-  test("refusals in the person's words: no image model, not a canvas, a file out of reach, a bad body", async () => {
-    const { api, canvas } = await seeded();
-    const none = await api(`/artifacts/${canvas.id}/images`, { json: { prompt: "a fox" } });
-    expect(none.status).toBe(400);
-    expect(((await none.json()) as { error: { code: string } }).error.code).toBe("images.no_model");
-    await addGemini(api);
-    const sheet = (await (await api("/live-files", { json: { kind: "spreadsheet", title: "Costs" } })).json()) as {
-      id: string;
-    };
-    const notCanvas = await api(`/artifacts/${sheet.id}/images`, { json: { prompt: "a fox" } });
-    expect(((await notCanvas.json()) as { error: { code: string } }).error.code).toBe("images.not_canvas");
-    const missing = await api(`/artifacts/${crypto.randomUUID()}/images`, { json: { prompt: "a fox" } });
-    expect(missing.status).toBe(404);
-    const unknownModel = await api(`/artifacts/${canvas.id}/images`, {
-      json: { prompt: "a fox", model: "gpt-image-2" },
-    });
-    expect(((await unknownModel.json()) as { error: { code: string } }).error.code).toBe("images.model_unavailable");
-    for (const json of [{ prompt: "" }, { prompt: "a fox", count: 5 }, { prompt: "a fox", aspect: "5:4" }]) {
-      expect((await api(`/artifacts/${canvas.id}/images`, { json })).status).toBe(400);
-    }
-    expect(await shapesOf(api, canvas.id)).toEqual([]);
-  });
-
-  test(`at most ${IMAGE_REQUESTS_PER_PERSON.limit} requests an hour per person`, async () => {
-    const { api, canvas, owner } = await seeded();
-    await addGemini(api);
-    const me = ((await (await owner("/api/app/me")).json()) as { user: { id: string } }).user.id;
-    for (let i = 0; i < IMAGE_REQUESTS_PER_PERSON.limit; i++)
-      await t.adapters.rateLimiter.consume(`images:${me}`, IMAGE_REQUESTS_PER_PERSON);
-    const res = await api(`/artifacts/${canvas.id}/images`, { json: { prompt: "a fox" } });
-    expect(res.status).toBe(429);
-    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("images.rate");
   });
 });
 
 describe("Try again", () => {
-  test("a request that failed for lack of a key makes its pictures once a key is back", async () => {
-    const { api, canvas } = await seeded();
+  test("a request that failed for lack of a key makes its pictures once a key is back, billed to who tried", async () => {
+    const { api, canvas, org, owner } = await seeded();
     const key = await addGemini(api);
-    const asked = (await (await api(`/artifacts/${canvas.id}/images`, { json: { prompt: "a fox" } })).json()) as {
-      requestId: string;
-      shapeIds: string[];
-    };
+    const asked = await ask(owner, org.orgId, canvas.id, "a fox");
     expect((await api(`/credentials/${key.id}`, { method: "DELETE" })).status).toBeLessThan(300);
     await t.drain();
     const failed = (await shapesOf(api, canvas.id)).find((s) => s.id === asked.shapeIds[0]);
@@ -179,12 +129,29 @@ describe("Try again", () => {
     await addGemini(api, "AQ.gemini-second-key-5678");
     const retry = await api(`/artifacts/${canvas.id}/images/${asked.requestId}/retry`, { json: {} });
     expect(retry.status).toBe(200);
-    expect(await retry.json()).toMatchObject({ requestId: asked.requestId, status: "queued", error: null });
+    const body = (await retry.json()) as { costNanoUsd?: number };
+    expect(body).toMatchObject({ requestId: asked.requestId, status: "queued", error: null });
+    expect(body.costNanoUsd).toBeUndefined();
     await t.drain();
     const made = (await shapesOf(api, canvas.id)).find((s) => s.id === asked.shapeIds[0]);
     expect(made?.type).toBe("image");
+    const me = ((await (await owner("/api/app/me")).json()) as { user: { id: string } }).user.id;
+    const [usage] = await t.db.select().from(schema.usageRecords).where(eq(schema.usageRecords.kind, "image"));
+    expect(usage).toMatchObject({ agentId: null, personId: me, costNanoUsd: 33_600_000 });
     const unknown = await api(`/artifacts/${canvas.id}/images/${crypto.randomUUID()}/retry`, { json: {} });
     expect(unknown.status).toBe(404);
+  });
+
+  test(`at most ${IMAGE_REQUESTS_PER_PERSON.limit} an hour per person`, async () => {
+    const { api, canvas, org, owner } = await seeded();
+    await addGemini(api);
+    const asked = await ask(owner, org.orgId, canvas.id, "a fox");
+    const me = ((await (await owner("/api/app/me")).json()) as { user: { id: string } }).user.id;
+    for (let i = 0; i < IMAGE_REQUESTS_PER_PERSON.limit; i++)
+      await t.adapters.rateLimiter.consume(`images:${me}`, IMAGE_REQUESTS_PER_PERSON);
+    const res = await api(`/artifacts/${canvas.id}/images/${asked.requestId}/retry`, { json: {} });
+    expect(res.status).toBe(429);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe("images.rate");
   });
 });
 

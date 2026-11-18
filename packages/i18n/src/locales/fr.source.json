@@ -52782,51 +52782,6 @@
   "live.canvas.inspector.uploaded": {
     "value": "Uploaded to this canvas"
   },
-  "live.images.title": {
-    "value": "Generate image"
-  },
-  "live.images.prompt": {
-    "value": "Describe the image you want"
-  },
-  "live.images.promptLabel": {
-    "value": "Image description"
-  },
-  "live.images.model": {
-    "value": "Model"
-  },
-  "live.images.aspect": {
-    "value": "Shape"
-  },
-  "live.images.count": {
-    "value": "How many"
-  },
-  "live.images.generate": {
-    "value": "Generate"
-  },
-  "live.images.price": {
-    "value": "about {{price}}"
-  },
-  "live.images.references": {
-    "value": "Images to start from"
-  },
-  "live.images.removeReference": {
-    "value": "Remove this image"
-  },
-  "live.images.noKey": {
-    "value": "To generate images, connect an OpenAI, Google or OpenRouter key."
-  },
-  "live.images.connect": {
-    "value": "Connect"
-  },
-  "live.images.loadingModels": {
-    "value": "Loading the image models…"
-  },
-  "live.images.offline": {
-    "value": "No connection. You can generate once it's back."
-  },
-  "live.images.noRefs": {
-    "value": "This model doesn't start from images."
-  },
   "live.images.queued": {
     "value": "Waiting its turn…"
   },

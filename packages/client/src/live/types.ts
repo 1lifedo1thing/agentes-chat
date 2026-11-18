@@ -100,19 +100,6 @@ export interface ImageModelOption {
   pricePerImage?: number;
 }
 
-/** "Gerar": pictures onto the canvas, placed where there is room (or near `at`), from the selected ones (`references`). */
-export interface GenerateImagesInput {
-  prompt: string;
-  count?: number;
-  aspect?: ImageAspect;
-  /** An id from `ImageModelOption`; the workspace's default without one. */
-  model?: string;
-  /** Ids of the canvas's pictures to start from. */
-  references?: string[];
-  /** Where on the canvas (world units) the new pictures go. */
-  at?: { x: number; y: number };
-}
-
 export type ImageRequestStatus = "queued" | "running" | "done" | "failed";
 /** Why pictures weren't made (each placeholder says so, with Try again). */
 export type ImageFailure = "no_key" | "budget" | "limit" | "blocked" | "provider" | "too_many";

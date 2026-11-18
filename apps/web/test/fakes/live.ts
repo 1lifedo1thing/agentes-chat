@@ -8,8 +8,8 @@
  *   and `artifacts.get` reads it. `addFile` makes one with other content (`init`).
  * - Versions are snapshots of the document: saving one when nothing changed answers `version: null`; restoring writes
  *   the old content over the file for everyone in it.
- * - Generating pictures places a frame titled with the prompt and one placeholder per picture on the canvas at once;
- *   `finishImages` turns them into pictures (or failures with a reason), as the server's job does. `holdImages` false
+ * - `askImages` (an agent asking for pictures) places a frame titled with the prompt and one placeholder per picture
+ *   on the canvas at once; `finishImages` turns them into pictures (or failures with a reason), as the server's job does. `holdImages` false
  *   (the default is true) finishes each request on the next tick instead.
  * - Office previews answer from `previews` (by file id, or `${id}@${version}`); anything else can't be shown.
  * Calls are logged (`record`); reads are not.
@@ -20,7 +20,6 @@ import type {
   ArtifactLiveContent,
   AskAgentInput,
   CreateLiveFileInput,
-  GenerateImagesInput,
   ImageAspect,
   ImageFailure,
   ImageModelOption,
@@ -56,11 +55,22 @@ export interface FakeLiveAsset extends LiveAsset {
   fileId: string;
 }
 
+/** What an agent asks for when it asks for pictures (`generate_image`'s input on a canvas). */
+export interface FakeImageAsk {
+  prompt: string;
+  count?: number;
+  aspect?: ImageAspect;
+  model?: string;
+  references?: string[];
+  /** Where on the canvas (world units) the new pictures go. */
+  at?: { x: number; y: number };
+}
+
 /** A request for pictures, as the server's `live_image_requests` row keeps it. */
 export interface FakeImageRequest {
   id: string;
   fileId: string;
-  input: GenerateImagesInput;
+  input: FakeImageAsk;
   status: ImageRequestStatus;
   shapeIds: string[];
   frameId: string | null;
@@ -85,6 +95,11 @@ export interface FakeLive {
   holdImages: boolean;
   /** A live file in the Drive and on the server, as "Novo" makes one; `init` fills it instead of a new file's content. */
   addFile(orgId: string, input: CreateLiveFileInput & { init?: (doc: Y.Doc) => void }): Promise<Artifact>;
+  /**
+   * An agent asked for pictures on a canvas (`generate_image`, ADR 0197): a frame named with the prompt and one
+   * placeholder per picture, placed at once as the server places them.
+   */
+  askImages(orgId: string, fileId: string, input: FakeImageAsk): Promise<ImageRequestResult>;
   /** A request's pictures arrive (each placeholder becomes a picture), or fail with `error`. */
   finishImages(requestId: string, outcome?: { error: ImageFailure }): void;
 }
@@ -174,6 +189,58 @@ export function createFakeLive(
     presence: new Map(),
     holdImages: true,
     addFile,
+    async askImages(orgId, fileId, input) {
+      record("images.ask", orgId, fileId, input);
+      live(fileId);
+      const prompt = input.prompt.trim();
+      if (!prompt) throw new ApiError(400, "validation", "Say what the picture shows");
+      const model = input.model ? fake.imageModels.find((m) => m.id === input.model) : fake.imageModels[0];
+      if (!model) throw new ApiError(400, "images.no_key", "No image model is available");
+      const count = Math.min(model.maxCount, Math.max(1, Math.floor(input.count ?? 1)));
+      const by = await me();
+      const request: FakeImageRequest = {
+        id: mockId("imgreq"),
+        fileId,
+        input: { ...input, prompt },
+        status: "queued",
+        shapeIds: [],
+        frameId: null,
+        error: null,
+      };
+      const { w, h } = boxOf(input.aspect);
+      server.edit(fileId, (doc) => {
+        const placed = placeBoxes(doc, {
+          count,
+          w,
+          h,
+          ...(input.at ? { near: input.at } : {}),
+          frame: { name: prompt.slice(0, 60) },
+        });
+        const frame = placed.frame;
+        request.frameId = frame
+          ? addShape(doc, { type: "frame", ...frame, name: prompt.slice(0, 60) }, FAKE_SERVER_ORIGIN)
+          : null;
+        request.shapeIds = placed.boxes.map((box, index) =>
+          addShape(
+            doc,
+            {
+              type: "pending",
+              ...box,
+              ...(request.frameId ? { parent: request.frameId } : {}),
+              request: request.id,
+              index,
+              status: "queued",
+              prompt,
+              by,
+            },
+            FAKE_SERVER_ORIGIN,
+          ),
+        );
+      });
+      fake.requests.push(request);
+      if (!fake.holdImages) setTimeout(() => fake.finishImages(request.id), 0);
+      return resultOf(request);
+    },
     finishImages(requestId, outcome) {
       const request = fake.requests.find((r) => r.id === requestId);
       if (!request) throw new Error(`No image request ${requestId}`);
@@ -377,58 +444,6 @@ export function createFakeLive(
         });
       },
       imageModels: async () => structuredClone(fake.imageModels),
-      generateImages: async (orgId, fileId, input) => {
-        record("live.generateImages", orgId, fileId, input);
-        live(fileId);
-        const prompt = input.prompt.trim();
-        if (!prompt) throw new ApiError(400, "validation", "Say what the picture shows");
-        const model = input.model ? fake.imageModels.find((m) => m.id === input.model) : fake.imageModels[0];
-        if (!model) throw new ApiError(400, "images.no_key", "No image model is available");
-        const count = Math.min(model.maxCount, Math.max(1, Math.floor(input.count ?? 1)));
-        const by = await me();
-        const request: FakeImageRequest = {
-          id: mockId("imgreq"),
-          fileId,
-          input: { ...input, prompt },
-          status: "queued",
-          shapeIds: [],
-          frameId: null,
-          error: null,
-        };
-        const { w, h } = boxOf(input.aspect);
-        server.edit(fileId, (doc) => {
-          const placed = placeBoxes(doc, {
-            count,
-            w,
-            h,
-            ...(input.at ? { near: input.at } : {}),
-            frame: { name: prompt.slice(0, 60) },
-          });
-          const frame = placed.frame;
-          request.frameId = frame
-            ? addShape(doc, { type: "frame", ...frame, name: prompt.slice(0, 60) }, FAKE_SERVER_ORIGIN)
-            : null;
-          request.shapeIds = placed.boxes.map((box, index) =>
-            addShape(
-              doc,
-              {
-                type: "pending",
-                ...box,
-                ...(request.frameId ? { parent: request.frameId } : {}),
-                request: request.id,
-                index,
-                status: "queued",
-                prompt,
-                by,
-              },
-              FAKE_SERVER_ORIGIN,
-            ),
-          );
-        });
-        fake.requests.push(request);
-        if (!fake.holdImages) setTimeout(() => fake.finishImages(request.id), 0);
-        return resultOf(request);
-      },
       retryImages: async (orgId, fileId, requestId) => {
         record("live.retryImages", orgId, fileId, requestId);
         const request = fake.requests.find((r) => r.id === requestId && r.fileId === fileId);

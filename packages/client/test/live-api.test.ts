@@ -131,25 +131,24 @@ describe("live API", () => {
   test("image models and requests are read leniently", async () => {
     const answers: Record<string, unknown> = {
       [`${BASE}/images/models`]: { models: [{ id: "m1", label: "Model 1" }] },
-      [`${BASE}/artifacts/f1/images`]: { id: "r1", status: "queued", shapeIds: ["s1", 2], frameId: "fr" },
-      [`${BASE}/artifacts/f1/images/r1/retry`]: { requestId: "r1", status: "bogus" },
+      [`${BASE}/artifacts/f1/images/r1/retry`]: { id: "r1", status: "queued", shapeIds: ["s1", 2], frameId: "fr" },
     };
     const { calls, request } = recorder((path) => answers[path]);
     const api = createLiveApi(request);
     expect(await api.imageModels(ORG)).toEqual([{ id: "m1", label: "Model 1" }] as never);
-    expect(await api.generateImages(ORG, "f1", { prompt: "a fox", count: 2, aspect: "16:9" })).toEqual({
+    expect(await api.retryImages(ORG, "f1", "r1")).toEqual({
       requestId: "r1",
       status: "queued",
       shapeIds: ["s1"],
       frameId: "fr",
     });
-    expect(await api.retryImages(ORG, "f1", "r1")).toEqual({
+    expect(calls[1]?.options.json).toEqual({});
+    expect(imageRequestOf({ requestId: "r1", status: "bogus" })).toEqual({
       requestId: "r1",
       status: "queued",
       shapeIds: [],
       frameId: null,
     });
-    expect(calls[1]?.options.json).toEqual({ prompt: "a fox", count: 2, aspect: "16:9" });
     expect(imageRequestOf(null)).toEqual({ requestId: "", status: "queued", shapeIds: [], frameId: null });
     const bare = createLiveApi(recorder(() => [{ id: "m2" }]).request);
     expect(await bare.imageModels(ORG)).toEqual([{ id: "m2" }] as never);

@@ -278,10 +278,10 @@ describe("the canvas editor", () => {
   });
 
   test("pictures asked for show as placeholders in a frame near the view's middle; they turn into pictures", async () => {
-    const { api, file, live, onServer } = await open();
-    // An agent asked in the file's conversation (ADR 0199): the request goes through the same route.
+    const { file, live, onServer } = await open();
+    // An agent asked in the file's conversation (ADR 0199).
     await act(async () => {
-      await api.live.generateImages(ORG_ID, file.id, {
+      await live.askImages(ORG_ID, file.id, {
         prompt: "Uma raposa na neve",
         count: 2,
         aspect: "1:1",
@@ -315,9 +315,9 @@ describe("the canvas editor", () => {
   });
 
   test("a failed request says why and tries again", async () => {
-    const { api, file, state, live } = await open();
+    const { file, state, live } = await open();
     await act(async () => {
-      await api.live.generateImages(ORG_ID, file.id, { prompt: "Um farol", count: 1, at: { x: 0, y: 0 } });
+      await live.askImages(ORG_ID, file.id, { prompt: "Um farol", count: 1, at: { x: 0, y: 0 } });
       await live.server.settle();
     });
     await settle();

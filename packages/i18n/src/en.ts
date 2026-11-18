@@ -22385,22 +22385,6 @@ export const en = {
     },
     /** Generating images onto a canvas (ADR 0197). */
     images: {
-      title: "Generate image",
-      prompt: "Describe the image you want",
-      promptLabel: "Image description",
-      model: "Model",
-      aspect: "Shape",
-      count: "How many",
-      generate: "Generate",
-      /** Beside Generate, only for whoever may see usage. */
-      price: "about {{price}}",
-      references: "Images to start from",
-      removeReference: "Remove this image",
-      noKey: "To generate images, connect an OpenAI, Google or OpenRouter key.",
-      connect: "Connect",
-      loadingModels: "Loading the image models…",
-      offline: "No connection. You can generate once it's back.",
-      noRefs: "This model doesn't start from images.",
       /** On a placeholder. */
       queued: "Waiting its turn…",
       making: "Making the image…",

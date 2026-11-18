@@ -6,19 +6,14 @@ import {
   requireActiveMembership,
   requirePermission,
 } from "@agenteschat/engine";
-import {
-  IMAGE_ASPECTS,
-  MAX_IMAGE_PROMPT_CHARS,
-  MAX_IMAGE_REFERENCES,
-  MAX_IMAGES_PER_REQUEST,
-} from "@agenteschat/providers/images";
+import { IMAGE_ASPECTS } from "@agenteschat/providers/images";
 import { createRoute, z } from "@hono/zod-openapi";
 import { apiError, errorResponse } from "../../http/errors";
-import { type AppDeps, body, createAppRouter, errors, json, OrgParams, requireSession, security } from "./context";
+import { type AppDeps, createAppRouter, errors, json, OrgParams, requireSession, security } from "./context";
 
 const tags = ["Live files"];
 
-/** Requests for pictures one person may make (ADR 0197): asking and trying again both count. */
+/** Try again on pictures one person may ask for in an hour (ADR 0197). */
 export const IMAGE_REQUESTS_PER_PERSON = { limit: 30, windowMs: 3600_000 };
 
 const ArtifactParams = OrgParams.extend({ artifactId: z.uuid() });
@@ -69,8 +64,9 @@ const answerOf = (view: ImageRequestView) => {
 };
 
 /**
- * Images on canvases (ADR 0197): which image models the workspace can use, pictures asked for on a canvas (placed at
- * once as placeholders, made by a job through the Model Gateway), and Try again on a request that failed.
+ * Images on canvases (ADR 0197): which image models the workspace can use, and Try again on a request that failed.
+ * Pictures are asked for through an agent (`generate_image`, in the canvas's conversation or any other); the canvas
+ * shows their placeholders and, when one fails, why, with Try again.
  */
 export function imageRoutes(deps: AppDeps) {
   const { db } = deps;
@@ -105,7 +101,7 @@ export function imageRoutes(deps: AppDeps) {
       security,
       summary: "The image models this workspace can use now, its default first",
       description:
-        "Models whose provider has a key here (the workspace's own or the server's). Empty: none, and the canvas says how to add one.",
+        "Models whose provider has a key here (the workspace's own or the server's). Empty: none, and agents aren't offered `generate_image`.",
       request: { params: OrgParams },
       responses: { 200: json(z.object({ models: z.array(ImageModel) })), ...errors },
     }),
@@ -114,57 +110,6 @@ export function imageRoutes(deps: AppDeps) {
       const membership = await requireActiveMembership(db, c.get("user").id, orgId);
       const models = await images().models(orgId, { prices: can(membership, "view_usage") });
       return c.json({ models }, 200);
-    },
-  );
-
-  app.openapi(
-    createRoute({
-      method: "post",
-      path: "/organizations/{orgId}/artifacts/{artifactId}/images",
-      tags,
-      security,
-      summary: "Make pictures on a canvas: placeholders now, the pictures when they're ready",
-      description: `Needs \`upload_files\`; at most ${IMAGE_REQUESTS_PER_PERSON.limit} requests an hour per person (429 \`images.rate\`). Refused with \`images.no_model\` when no image model has a key, \`images.model_unavailable\` for a model the workspace can't use, \`images.not_canvas\`, and \`images.reference\` for a picture to start from that isn't on this canvas.`,
-      request: {
-        params: ArtifactParams,
-        body: body(
-          z.object({
-            prompt: z.string().trim().min(1).max(MAX_IMAGE_PROMPT_CHARS),
-            count: z.number().int().min(1).max(MAX_IMAGES_PER_REQUEST).optional(),
-            aspect: Aspect.optional(),
-            model: z.string().min(1).max(300).optional(),
-            references: z
-              .array(z.string().min(1).max(64))
-              .max(MAX_IMAGE_REFERENCES)
-              .optional()
-              .openapi({ description: "The canvas's pictures to start from (their shape ids)." }),
-            at: z
-              .object({ x: z.number(), y: z.number() })
-              .optional()
-              .openapi({ description: "Where on the canvas (world units) the new pictures go." }),
-          }),
-        ),
-      },
-      responses: {
-        202: json(ImageRequest, "Placed; the pictures come in the placeholders' place"),
-        429: errorResponse("Too many requests for pictures (`images.rate`)"),
-        ...errors,
-      },
-    }),
-    async (c) => {
-      const { orgId, artifactId } = c.req.valid("param");
-      const userId = c.get("user").id;
-      if (!(await allowed(userId, orgId))) return apiError(c, 429, "images.rate", tooMany);
-      const input = c.req.valid("json");
-      const view = await images().request(person(userId), orgId, artifactId, {
-        prompt: input.prompt,
-        count: input.count,
-        aspect: input.aspect as (typeof IMAGE_ASPECTS)[number] | undefined,
-        model: input.model ?? null,
-        references: input.references,
-        at: input.at ?? null,
-      });
-      return c.json(answerOf(view), 202);
     },
   );
 

@@ -2,13 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { useMemo } from "react";
 import { useApi } from "../api/context";
 import { keys } from "../api/keys";
-import type {
-  AskAgentInput,
-  CreateLiveFileInput,
-  GenerateImagesInput,
-  LiveAssetSource,
-  PresenceSummary,
-} from "./types";
+import type { AskAgentInput, CreateLiveFileInput, LiveAssetSource, PresenceSummary } from "./types";
 
 /**
  * React Query hooks around live files (ADR 0196, 0197, 0198): making one, who is in which file (the Drive's and
@@ -72,14 +66,6 @@ export function useImageModels(orgId: string, options: { enabled?: boolean } = {
     queryFn: () => api.live.imageModels(orgId),
     enabled: options.enabled ?? true,
     staleTime: 60_000,
-  });
-}
-
-/** "Gerar": the placeholders are on the canvas when it answers; the pictures replace them as they come. */
-export function useGenerateImages(orgId: string, fileId: string) {
-  const api = useApi();
-  return useMutation({
-    mutationFn: (input: GenerateImagesInput) => api.live.generateImages(orgId, fileId, input),
   });
 }
 
