@@ -315,6 +315,13 @@ describe("Configurações → Auditoria", () => {
     expect(panel.querySelector(".audit-panel__reason")?.textContent).toBe(
       `Motivo: pedido de suporte de ${longName} · com um assistente de IA`,
     );
+    // Its title is one line, the sentence whole under it. On a phone the title is a block: its words are a box of
+    // their own there, or they run past the panel's edge with no "…".
+    expect(panel.querySelector(".thread-title__text")?.textContent).toBe(
+      "Quem cuida deste servidor respondeu por e-mail",
+    );
+    const threads = await Bun.file(new URL("../src/components/threads/threads.css", import.meta.url).pathname).text();
+    expect(threads.replace(/\/\*[\s\S]*?\*\//g, "")).toMatch(/\.thread-title__text \{\s*display: block;/);
     const details = panel.querySelector(".audit-panel__sent")?.textContent ?? "";
     expect(details).toContain("1840");
     expect(details).not.toMatch(/req-1|requestId|cloud/i);
