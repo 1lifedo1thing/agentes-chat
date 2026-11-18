@@ -50,8 +50,9 @@ const out = `/**
  * icons.material.names.ts.
  *
  * Material Symbols (Rounded), Copyright Google LLC, licensed under the Apache License, Version 2.0
- * (apps/mobile/src/ui/LICENSE.material-symbols; NOTICE). Each symbol's outline (\`line\`) and filled (\`fill\`) shape as
- * path data on the symbols' own grid (viewBox "0 -960 960 960").
+ * (apps/mobile/src/ui/LICENSE.material-symbols; NOTICE). Changed from the package's files: each symbol's SVG is reduced
+ * to its path data (a symbol's paths joined into one), outline (\`line\`) and filled (\`fill\`), on the symbols' own
+ * grid (viewBox "0 -960 960 960").
  */
 export const MATERIAL_PATHS: Record<string, { line: string; fill: string }> = {
 ${entries.join("\n")}
