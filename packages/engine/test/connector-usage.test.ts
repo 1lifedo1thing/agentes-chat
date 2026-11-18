@@ -615,6 +615,38 @@ describe("the operator's reads", () => {
       expect(text).not.toContain(secret);
   });
 
+  test("the product over two days: per-day counts, and active workspaces counted once across the range", async () => {
+    f = await setup();
+    const [other] = await f.db.insert(schema.organizations).values({ name: "Beta" }).returning();
+    if (!other) throw new Error("no org");
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 86_400_000);
+    const event = (type: string, orgId: string | null, createdAt: Date) => ({ type, orgId, createdAt });
+    await f.db
+      .insert(schema.operatorEvents)
+      .values([
+        event("run.finished", f.org.id, yesterday),
+        event("run.finished", f.org.id, yesterday),
+        event("task.finished", other.id, yesterday),
+        event("user.signed_up", null, yesterday),
+        event("run.finished", f.org.id, today),
+        event("organization.created", other.id, today),
+        event("session.created", null, today),
+      ]);
+    const day = (d: Date) => d.toISOString().slice(0, 10);
+    const a = await operatorAnalytics(f.db, { from: day(yesterday), to: day(today) });
+    expect(a.product).toEqual({
+      days: [
+        { day: day(yesterday), runs: 2, tasks: 1, activeWorkspaces: 2, newWorkspaces: 0, signUps: 1 },
+        { day: day(today), runs: 1, tasks: 0, activeWorkspaces: 1, newWorkspaces: 1, signUps: 0 },
+      ],
+      activeWorkspaces: 2,
+      keptDays: OPERATOR_EVENTS_KEEP_DAYS,
+    });
+    const empty = await operatorAnalytics(f.db, { from: "2001-01-01", to: "2001-01-02" });
+    expect(empty.product).toEqual({ days: [], activeWorkspaces: 0, keptDays: OPERATOR_EVENTS_KEEP_DAYS });
+  });
+
   test("at most 500 connectors and 500 workspaces, then `more`", async () => {
     f = await setup();
     const orgs = await f.db

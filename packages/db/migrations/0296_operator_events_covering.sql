@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS "operator_events_created_at_type_org" ON "operator_events" USING btree ("created_at","type","org_id");

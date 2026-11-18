@@ -352,30 +352,42 @@ const WORK_EVENTS = ["run.finished", "task.finished"];
  */
 async function productDays(db: Database, r: Range) {
   const e = operatorEvents;
-  const inRange = and(gte(e.createdAt, r.start), lt(e.createdAt, r.end));
-  const day = sql<string>`to_char(${e.createdAt} at time zone 'utc', 'YYYY-MM-DD')`;
-  const of = (type: string) => howMany(eq(e.type, type));
-  const active = howMany(inArray(e.type, WORK_EVENTS), e.orgId);
-  const [days, [all]] = await Promise.all([
-    db
-      .select({
-        day,
-        runs: of("run.finished"),
-        tasks: of("task.finished"),
-        activeWorkspaces: active,
-        newWorkspaces: of("organization.created"),
-        signUps: of("user.signed_up"),
-      })
-      .from(e)
-      .where(and(inRange, inArray(e.type, [...WORK_EVENTS, "organization.created", "user.signed_up"])))
-      .groupBy(day)
-      .orderBy(day),
-    db
-      .select({ n: active })
-      .from(e)
-      .where(and(inRange, inArray(e.type, WORK_EVENTS))),
-  ]);
-  return { days, activeWorkspaces: all?.n ?? 0, keptDays: OPERATOR_EVENTS_KEEP_DAYS };
+  // Rows per day, type and workspace first: a few thousand groups, so the distinct counts below sort no spill to
+  // disk, and the range is read once, from the (created_at, type, org_id) index alone.
+  const g = db
+    .select({
+      day: sql<string>`to_char(${e.createdAt} at time zone 'utc', 'YYYY-MM-DD')`.as("day"),
+      type: e.type,
+      orgId: e.orgId,
+      n: sql<number>`count(*)`.as("n"),
+    })
+    .from(e)
+    .where(
+      and(
+        gte(e.createdAt, r.start),
+        lt(e.createdAt, r.end),
+        inArray(e.type, [...WORK_EVENTS, "organization.created", "user.signed_up"]),
+      ),
+    )
+    .groupBy(sql`1`, e.type, e.orgId)
+    .as("g");
+  const of = (type: string) => sql<number>`coalesce(sum(${g.n}) filter (where ${g.type} = ${type}), 0)`.mapWith(Number);
+  // The empty grouping set adds the row of the whole range (day null): its active workspaces.
+  const rows = await db
+    .select({
+      day: g.day,
+      runs: of("run.finished"),
+      tasks: of("task.finished"),
+      activeWorkspaces: howMany(inArray(g.type, WORK_EVENTS), g.orgId),
+      newWorkspaces: of("organization.created"),
+      signUps: of("user.signed_up"),
+    })
+    .from(g)
+    .groupBy(sql`grouping sets ((${g.day}), ())`)
+    .orderBy(g.day);
+  const days = rows.filter((d) => d.day !== null);
+  const all = rows.find((d) => d.day === null);
+  return { days, activeWorkspaces: all?.activeWorkspaces ?? 0, keptDays: OPERATOR_EVENTS_KEEP_DAYS };
 }
 
 /** Composio's month (UTC) so far: what was counted since the 1st, connected accounts made included. */
