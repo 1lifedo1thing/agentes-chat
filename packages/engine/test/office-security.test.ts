@@ -1,9 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { documentToMarkdown, LiveEditError, markdownToBlocks } from "@agenteschat/live";
-import * as XLSX from "xlsx";
 import { docxToDocument, readCsv, readXls } from "../src/office";
 import { parseXml, tagCount } from "../src/office/xml";
-import { readZip, zip } from "../src/zip";
+import { zip } from "../src/zip";
 import { docxDocument } from "./office-fixtures";
 
 /**
@@ -161,18 +160,22 @@ describe("a Word document's tables as a live document", () => {
   });
 });
 
-/** An `.ods` from the library, its sheet's rows replaced with `rows`. */
+const ODS_NAMESPACES = [
+  'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"',
+  'xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"',
+  'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"',
+  'xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"',
+  'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
+].join(" ");
+
+/** A one-sheet `.ods` whose sheet holds `rows`, with one cell style (`ce1`, a red fill). */
 function odsWith(rows: string): Uint8Array {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([[1]]), "S");
-  const base = new Uint8Array(XLSX.write(wb, { bookType: "ods", type: "array" }) as ArrayBuffer);
-  const parts = readZip(base, { maxFiles: 100, maxBytes: 10_000_000 });
+  const content = `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${ODS_NAMESPACES} office:version="1.3"><office:automatic-styles><style:style style:name="ce1" style:family="table-cell"><style:table-cell-properties fo:background-color="#ff0000"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="S">${rows}</table:table></office:spreadsheet></office:body></office:document-content>`;
   return zip(
-    parts.map((p): [string, Uint8Array] => {
-      if (p.path !== "content.xml") return [p.path, p.data];
-      const text = new TextDecoder().decode(p.data).replace(/<table:table-row[\s\S]*<\/table:table-row>/, rows);
-      return [p.path, new TextEncoder().encode(text)];
-    }),
+    [
+      ["mimetype", "application/vnd.oasis.opendocument.spreadsheet"],
+      ["content.xml", content],
+    ],
     { store: (path) => path === "mimetype" },
   );
 }
@@ -181,31 +184,44 @@ const floatCell = (cols: number, extra = "") =>
   `<table:table-cell office:value-type="float" office:value="1" table:number-columns-repeated="${cols}"${extra}><text:p>1</text:p></table:table-cell>`;
 
 describe("an OpenDocument spreadsheet's repeats", () => {
-  test("a cell asking for a million rows of a thousand columns is refused before the library writes them out", async () => {
+  test("a cell asking for a million rows of a thousand columns is refused before a cell is made", async () => {
     const bomb = odsWith(`<table:table-row table:number-rows-repeated="1000000">${floatCell(1000)}</table:table-row>`);
     const start = performance.now();
     await expect(readXls(bomb)).rejects.toMatchObject({ code: "office.too_large" });
     expect(performance.now() - start).toBeLessThan(2000);
   });
 
-  test("the repeat is read as the library reads it, a comment hides nothing, and the row's repeat holds to its end", async () => {
-    const asNumber = odsWith(`<table:table-row table:number-rows-repeated="1e6">${floatCell(1000)}</table:table-row>`);
-    await expect(readXls(asNumber)).rejects.toMatchObject({ code: "office.too_large" });
+  test("a comment hides nothing, and a repeat is a whole number (anything else is one)", async () => {
     const commented = odsWith(
       `<table:table-row table:number-rows-repeated="1000000"><!-- <table:table-row> --><!-- </table:table-row> -->${floatCell(1000)}</table:table-row>`,
     );
     await expect(readXls(commented)).rejects.toMatchObject({ code: "office.too_large" });
-    const endless = odsWith(`<table:table-row table:number-rows-repeated="Infinity">${floatCell(1)}</table:table-row>`);
-    await expect(readXls(endless)).rejects.toMatchObject({ code: "office.too_large" });
+    for (const odd of ["1e6", "Infinity", "-5", "abc"]) {
+      const book = await readXls(
+        odsWith(`<table:table-row table:number-rows-repeated="${odd}">${floatCell(1000)}</table:table-row>`),
+      );
+      expect(book.sheets[0]?.cells.length).toBe(1000);
+    }
   });
 
-  test("small repeats and a sheet's long empty tail read as before", async () => {
+  test("small repeats read; a long empty or styled tail makes no cells past the content", async () => {
     const book = await readXls(
       odsWith(
-        `<table:table-row table:number-rows-repeated="3">${floatCell(2)}</table:table-row><table:table-row table:number-rows-repeated="1048570"><table:table-cell table:number-columns-repeated="1024"/></table:table-row>`,
+        `<table:table-row table:number-rows-repeated="3">${floatCell(2)}<table:table-cell table:style-name="ce1"/></table:table-row><table:table-row table:number-rows-repeated="1048570"><table:table-cell table:style-name="ce1" table:number-columns-repeated="16384"/></table:table-row>`,
       ),
     );
-    expect(book.sheets[0]?.cells.length).toBe(6);
+    const sheet = book.sheets[0];
+    // Six numbers; the styled cell beside them is past their last column, and the styled tail past their last row.
+    expect(sheet?.cells.length).toBe(6);
+    expect(sheet?.rows).toBe(3);
+    expect(sheet?.cols).toBe(2);
+    const inside = await readXls(
+      odsWith(`<table:table-row><table:table-cell table:style-name="ce1"/>${floatCell(1)}</table:table-row>`),
+    );
+    expect(inside.sheets[0]?.cells).toEqual([
+      { r: 0, c: 1, v: 1 },
+      { r: 0, c: 0, s: { bg: "#ff0000" } },
+    ]);
   });
 });
 

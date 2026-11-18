@@ -22,9 +22,13 @@ drawn read-only by the same spreadsheet view as a live file. A `pptx` is read in
 its formatting, pictures, shapes, tables, backgrounds, placeholders resolved through their layout and master) and
 drawn by the slides view. A `docx` becomes plain, clean HTML (headings, paragraphs, lists, tables, links, pictures
 inline) drawn in the isolated frame of ADR 0019, never on the app's own origin. Nothing in a file runs: macros,
-external links, embedded objects and fields are left out. The server reads these formats itself, on its own zip
-reader and an XML parser (`@xmldom/xmldom`), and the legacy binary `xls` through SheetJS's community edition
-(Apache-2.0); `.doc` and `.ppt` stay download only.
+external links, embedded objects and fields are left out. The server reads every one of these formats with its
+own code, on its own zip reader and XML scanners (`@xmldom/xmldom` for the small parts): the legacy binary `xls`
+(Excel 97 to 2003, BIFF8) through its own compound-file reader (`cfb.ts`), with formulas written back from their
+tokens (`xls-formula.ts`, the value Excel last calculated where a token isn't known), and `ods` through its own
+OpenDocument reader (`ods-read.ts`, OpenFormula written back in A1). No third-party spreadsheet library is involved,
+so the build pulls nothing from outside the npm registry. Excel 95 and older files say so and ask for `.xlsx`;
+`.doc` and `.ppt` stay download only.
 
 Reading is bounded: files up to 25 MB, 200,000 cells, 300 slides, 40 MB unpacked, as `file-reader.ts` already
 guards against zip bombs. The result is cached per version in the process, since versions never change.

@@ -283,7 +283,7 @@ function rangeRef(ref: string): { r1: number; c1: number; r2: number; c2: number
 }
 
 /** An ISO 8601 date-time (a cell of type `d`) as a serial in the 1900 date system. */
-function isoSerial(text: string): number | null {
+export function isoSerial(text: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?)?/.exec(text.trim());
   if (!m) {
     const time = /^T?(\d{2}):(\d{2})(?::(\d{2}))?/.exec(text.trim());

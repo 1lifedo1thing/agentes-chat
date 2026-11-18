@@ -1,9 +1,10 @@
 import type { DeckData, WorkbookData } from "@agenteschat/live";
 import { readCsv } from "./csv";
 import { OFFICE_LIMITS, officeTooLarge, officeUnreadable, officeUnsupported } from "./limits";
+import { readOds } from "./ods-read";
 import { isCompoundFile, isZipFile } from "./package";
 import { readPptx } from "./pptx-read";
-import { readXls } from "./xls-read";
+import { readBiff } from "./xls-read";
 import { readXlsx } from "./xlsx-read";
 
 /**
@@ -25,10 +26,11 @@ export {
   officeUnreadable,
   officeUnsupported,
 } from "./limits";
+export { odsFormula, readOds } from "./ods-read";
 export { readPptx } from "./pptx-read";
 export { type DeckMediaReader, writePptx } from "./pptx-write";
 export { slidesPdf } from "./slides-pdf";
-export { readXls } from "./xls-read";
+export { readBiff, readXls } from "./xls-read";
 export { BUILTIN_NUMBER_FORMATS, readXlsx } from "./xlsx-read";
 export { writeXlsx } from "./xlsx-write";
 
@@ -82,15 +84,16 @@ export function officeKindOf(format: OfficeFormat): OfficeFileKind {
 
 /**
  * Any workbook the server reads, by its name and type (and its bytes, when they say otherwise: an `.xls` that is
- * really an `.xlsx`, or the reverse): `.xlsx` on our own reader, `.csv`/`.tsv` as text, `.xls`/`.ods` through SheetJS.
+ * really an `.xlsx`, or the reverse), each on the server's own reader: `.xlsx`, `.xls` (BIFF8), `.ods`, and
+ * `.csv`/`.tsv` as text.
  */
 export async function readWorkbook(bytes: Uint8Array, name: string, contentType = ""): Promise<WorkbookData> {
   if (bytes.byteLength > OFFICE_LIMITS.inputBytes) throw officeTooLarge("size");
   const format = officeFormatOf(name, contentType);
   if (format === "csv" || format === "tsv") return readCsv(bytes, name);
   if (format === "xlsx" || format === "xls" || format === "ods") {
-    if (isZipFile(bytes) && format !== "ods") return readXlsx(bytes);
-    if (isZipFile(bytes) || isCompoundFile(bytes)) return readXls(bytes);
+    if (isZipFile(bytes)) return format === "ods" ? readOds(bytes) : readXlsx(bytes);
+    if (isCompoundFile(bytes)) return readBiff(bytes);
     // Old exports often save their text as `.xls`; anything else under a workbook's name is no workbook.
     if (format === "xls") return readCsv(bytes, name);
     throw officeUnreadable("it is not a spreadsheet");

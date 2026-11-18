@@ -213,22 +213,27 @@ const ATTRIBUTE = /([^\s=/>]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 
 const localOf = (qname: string) => qname.slice(qname.indexOf(":") + 1);
 
-function attrsOf(source: string): SaxAttrs {
+function attrsOf(source: string, keyOf: (qname: string) => string): SaxAttrs {
   const attrs: SaxAttrs = {};
   if (source.length === 0) return attrs;
   ATTRIBUTE.lastIndex = 0;
   for (let m = ATTRIBUTE.exec(source); m; m = ATTRIBUTE.exec(source)) {
     const value = m[2] ?? m[3] ?? "";
-    attrs[localOf(m[1] as string)] = value.includes("&") ? decodeXmlEntities(value) : value;
+    attrs[keyOf(m[1] as string)] = value.includes("&") ? decodeXmlEntities(value) : value;
   }
   return attrs;
 }
 
+const asWritten = (qname: string) => qname;
+
 /**
  * Walks XML once, in linear time, calling `handler` for each start tag, end tag and run of text. Comments and
  * processing instructions are skipped; a document type declaration, or a tag that never ends, is `officeUnreadable`.
+ * Names are local ("c" for "x:c") unless `qualified`, for formats whose attributes share local names across
+ * namespaces (OpenDocument's `office:value-type` and `calcext:value-type`).
  */
-export function sax(xml: string, handler: SaxHandler, part = "a part"): void {
+export function sax(xml: string, handler: SaxHandler, part = "a part", options: { qualified?: boolean } = {}): void {
+  const keyOf = options.qualified ? asWritten : localOf;
   const n = xml.length;
   let i = 0;
   const wantText = handler.text !== undefined;
@@ -277,7 +282,7 @@ export function sax(xml: string, handler: SaxHandler, part = "a part"): void {
     }
     if (j >= n) throw officeUnreadable(`${part} has a tag that never ends`);
     if (next === 47 /* / */) {
-      handler.close?.(localOf(xml.slice(lt + 2, j).trim()));
+      handler.close?.(keyOf(xml.slice(lt + 2, j).trim()));
     } else {
       const selfClosing = xml.charCodeAt(j - 1) === 47;
       const body = xml.slice(lt + 1, selfClosing ? j - 1 : j);
@@ -287,8 +292,8 @@ export function sax(xml: string, handler: SaxHandler, part = "a part"): void {
         if (c === 32 || c === 9 || c === 10 || c === 13) break;
         k++;
       }
-      const name = localOf(body.slice(0, k));
-      handler.open?.(name, attrsOf(body.slice(k)), selfClosing);
+      const name = keyOf(body.slice(0, k));
+      handler.open?.(name, attrsOf(body.slice(k), keyOf), selfClosing);
       if (selfClosing) handler.close?.(name);
     }
     i = j + 1;
