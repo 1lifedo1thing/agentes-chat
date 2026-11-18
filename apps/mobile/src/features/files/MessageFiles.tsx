@@ -9,7 +9,7 @@ import { Icon, PressScale, Text } from "@/ui";
 import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
-import { useKeptWidth } from "../chat/look";
+import { useKeptWidth, useMessageCardCorners } from "../chat/look";
 import { useColors, useOrgId } from "../shared/hooks";
 import { useSurface } from "../shared/parts";
 import { AttachmentTile } from "./AttachmentTile";
@@ -180,6 +180,7 @@ function InlineImage({
   label: string;
   onPress: () => void;
 }) {
+  const cardCorners = useMessageCardCorners();
   const { t } = useTranslation();
   const orgId = useOrgId();
   const c = useColors();
@@ -193,7 +194,7 @@ function InlineImage({
       accessibilityRole="imagebutton"
       accessibilityLabel={label || t("mobile.files.openImage")}
       accessibilityHint={t("mobile.files.openImage")}
-      style={[styles.shot, { width, height, backgroundColor: c.sunken, borderColor: c.line2 }]}
+      style={[styles.shot, { width, height, backgroundColor: c.sunken, borderColor: c.line2 }, cardCorners]}
     >
       {link.data && !failed ? (
         <Image
@@ -231,6 +232,7 @@ function InlineVideo({
   width: number;
   siblings: readonly FileRef[];
 }) {
+  const cardCorners = useMessageCardCorners();
   const orgId = useOrgId();
   const c = useColors();
   const link = useRemoteFile(orgId, file.id, file.version, { once: true });
@@ -256,7 +258,11 @@ function InlineVideo({
         />
       ) : (
         <View
-          style={[styles.shot, { width, height: videoHeight(width), backgroundColor: c.sunken, borderColor: c.line2 }]}
+          style={[
+            styles.shot,
+            { width, height: videoHeight(width), backgroundColor: c.sunken, borderColor: c.line2 },
+            cardCorners,
+          ]}
         />
       )}
     </View>
@@ -359,11 +365,16 @@ function LocalMedia({
   box: { width: number; height: number };
   sending: boolean;
 }) {
+  const cardCorners = useMessageCardCorners();
   const c = useColors();
   const video = file.type.startsWith("video/");
   return (
     <View
-      style={[styles.shot, { width: box.width, height: box.height, backgroundColor: c.sunken, borderColor: c.line2 }]}
+      style={[
+        styles.shot,
+        { width: box.width, height: box.height, backgroundColor: c.sunken, borderColor: c.line2 },
+        cardCorners,
+      ]}
       accessible
       accessibilityLabel={file.name}
     >
@@ -388,11 +399,12 @@ function LocalMedia({
 }
 
 function LocalFileCard({ file, sending }: { file: LocalFile; sending: boolean }) {
+  const cardCorners = useMessageCardCorners();
   const { i18n } = useTranslation();
   const c = useColors();
   const surface = useSurface();
   return (
-    <View style={[styles.card, surface]} accessible accessibilityLabel={file.name}>
+    <View style={[styles.card, surface, cardCorners]} accessible accessibilityLabel={file.name}>
       <FileTile ext={extLabel(extensionOf(file.name))} />
       <View style={styles.grow}>
         <Text variant="body" style={styles.bold} numberOfLines={2}>
@@ -445,11 +457,12 @@ export function FileTile({ ext }: { ext: string }) {
 }
 
 function RemovedCard() {
+  const cardCorners = useMessageCardCorners();
   const { t } = useTranslation();
   const c = useColors();
   const surface = useSurface();
   return (
-    <View style={[styles.card, surface]}>
+    <View style={[styles.card, surface, cardCorners]}>
       <View style={[styles.tile, { backgroundColor: c.sunken }]}>
         <Icon name="file" size={20} color={c.faint} />
       </View>

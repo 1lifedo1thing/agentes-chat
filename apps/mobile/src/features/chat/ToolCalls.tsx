@@ -63,6 +63,7 @@ import { useColors, useOrgId } from "../shared/hooks";
 import { MONO, tapHaptic } from "../shared/parts";
 import { CodeCard } from "./CodeCard";
 import { keepOpen, keptOpen } from "./kept-sizes";
+import { useMessageCardCorners } from "./look";
 import { MessageText } from "./MessageText";
 import { outputTail } from "./turn";
 
@@ -285,6 +286,7 @@ export function ToolBlock({
   keep?: string | undefined;
 }) {
   const c = useColors();
+  const cardCorners = useMessageCardCorners();
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(() => defaultOpen || keptOpen(keep));
   const flashing = useFlash(flash, reduced ? FLASH_MS : FLASH_HOLD_MS);
@@ -312,7 +314,7 @@ export function ToolBlock({
         only.line.detail
       );
     return (
-      <View style={[styles.block, { backgroundColor: c.raised, borderColor: c.line2 }]}>
+      <View style={[styles.block, { backgroundColor: c.raised, borderColor: c.line2 }, cardCorners]}>
         {plate}
         <View style={styles.one}>
           <Line line={{ ...only.line, detail }} color={color} onToggle={onToggle} keep={keep} />
@@ -321,7 +323,7 @@ export function ToolBlock({
     );
   }
   return (
-    <View style={[styles.block, { backgroundColor: c.raised, borderColor: c.line2 }]}>
+    <View style={[styles.block, { backgroundColor: c.raised, borderColor: c.line2 }, cardCorners]}>
       {plate}
       <Pressable
         onPress={() => {

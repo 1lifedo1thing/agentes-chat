@@ -90,6 +90,7 @@ import {
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
+import { RADIUS } from "@/ui/radius";
 import { InstructionProposals } from "../agents/InstructionProposalCard";
 import { ProposalCard } from "../agents/ProposalCard";
 import { CostlyProposalCard } from "../ai/CostlyProposalCard";
@@ -1457,7 +1458,7 @@ const POP_IN: EntryExitAnimationFunction = () => {
 const POP_OUT = FadeOut.duration(160);
 
 /** The turn's last corner, cut as a card's is, on the side my bubble stands. */
-const BUBBLE_CUT = 6;
+const BUBBLE_CUT = RADIUS.sm;
 
 /** A row under the quote it answers: they read as one. */
 const QUOTE_GAP = 2;
@@ -1470,9 +1471,9 @@ const AMBER_TINT = 0x21 / 0xff;
 
 const BUBBLE_RUN: Record<RunPosition, { borderTopRightRadius?: number; borderBottomRightRadius?: number }> = {
   solo: { borderBottomRightRadius: BUBBLE_CUT },
-  start: { borderBottomRightRadius: 6 },
-  mid: { borderTopRightRadius: 6, borderBottomRightRadius: 6 },
-  end: { borderTopRightRadius: 6, borderBottomRightRadius: BUBBLE_CUT },
+  start: { borderBottomRightRadius: RADIUS.sm },
+  mid: { borderTopRightRadius: RADIUS.sm, borderBottomRightRadius: RADIUS.sm },
+  end: { borderTopRightRadius: RADIUS.sm, borderBottomRightRadius: BUBBLE_CUT },
 };
 
 /**
@@ -1506,9 +1507,9 @@ const BUBBLE_JOIN = 3;
 /** Anyone else's bubble in `bubbles`: the same, on the left. */
 const OTHER_RUN: Record<RunPosition, { borderTopLeftRadius?: number; borderBottomLeftRadius?: number }> = {
   solo: {},
-  start: { borderBottomLeftRadius: 6 },
-  mid: { borderTopLeftRadius: 6, borderBottomLeftRadius: 6 },
-  end: { borderTopLeftRadius: 6 },
+  start: { borderBottomLeftRadius: RADIUS.sm },
+  mid: { borderTopLeftRadius: RADIUS.sm, borderBottomLeftRadius: RADIUS.sm },
+  end: { borderTopLeftRadius: RADIUS.sm },
 };
 
 /** Words and time on my solid bubble. */

@@ -21,6 +21,8 @@ import { type LayoutChangeEvent, StyleSheet, useWindowDimensions, type ViewStyle
 import { useOrg } from "@/providers/org";
 import { useTheme } from "@/ui";
 import { appShadows, type Scheme } from "@/ui/palette";
+import { type Corners, RADIUS } from "@/ui/radius";
+import { BUBBLE_PART_CORNERS, MESSAGE_CARD_CORNERS, useBubblePart } from "../shared/bubble-part";
 import { keepSize, keptSize } from "./kept-sizes";
 import { BUBBLES_INSET, bubbleFill, CHAT_TEXT, quietInset } from "./logic";
 import { wallpaperKey } from "./wallpaper-logic";
@@ -138,6 +140,17 @@ export const useOwnTop = (marginTop: number) => (useContext(RowPartContext) === 
 /** `useOwnTop` for a card, the one thing in a body with room of its own: `CHAT_RHYTHM`'s `card` under words. */
 export const useCardTop = (marginTop = 0) => ({ marginTop: useContext(RowPartContext) ?? marginTop });
 
+/**
+ * A card's corners in a message's body, the same for every card there: a bubble part's in a conversation of bubbles
+ * (`BUBBLE_PART_CORNERS`), the conversation's card in the other looks (`MESSAGE_CARD_CORNERS`). Null outside a body (a
+ * mission's screen, the inbox): the card's own. Spread last, over the card's own radius.
+ */
+export function useMessageCardCorners(): Corners | null {
+  const part = useBubblePart();
+  const inBody = useContext(RowPartContext) !== null;
+  return part ? BUBBLE_PART_CORNERS : inBody ? MESSAGE_CARD_CORNERS : null;
+}
+
 /** `quietInset` in this conversation's look. */
 export const useQuietInset = () => quietInset(useRowLook());
 
@@ -167,5 +180,11 @@ export const lookRows = StyleSheet.create({
   compactRow: { paddingLeft: 10, paddingRight: 12, gap: 6 },
   compactSlot: { width: 18, paddingTop: 1 },
   compactClock: { width: 34, textAlign: "right", lineHeight: 20, fontVariant: ["tabular-nums"] },
-  bubble: { alignSelf: "flex-start", maxWidth: "100%", paddingVertical: 7, paddingHorizontal: 13, borderRadius: 18 },
+  bubble: {
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+    paddingVertical: 7,
+    paddingHorizontal: 13,
+    borderRadius: RADIUS.xl,
+  },
 });
