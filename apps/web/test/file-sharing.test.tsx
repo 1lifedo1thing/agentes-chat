@@ -97,9 +97,11 @@ const openList = async (dialog: HTMLElement, select: string) => {
   }
   throw new Error(`no options in ${select}`);
 };
-/** Picks an option of one of the access dialog's dropdowns by the start of its text. */
+/** An option's own words: a person's or an agent's name comes after their avatar's initials. */
+const labelOf = (o: HTMLElement) => o.querySelector(".ac-menu__label > span")?.textContent ?? o.textContent ?? "";
+/** Picks an option of one of the access dialog's dropdowns by the start of its words. */
 const pickLevel = async (dialog: HTMLElement, select: string, option: string) => {
-  const row = (await openList(dialog, select)).find((o) => o.textContent?.startsWith(option));
+  const row = (await openList(dialog, select)).find((o) => labelOf(o).startsWith(option));
   if (!row) throw new Error(`no ${option} in ${select}`);
   await click(row);
   await settle(1);
@@ -189,8 +191,8 @@ describe("Compartilhar (ADR 0157, 0201)", () => {
     expect(levelOf(dialog, "Todos os agentes")).toBe("Editar");
     // I'm its maker: I'm not one to add.
     const options = await openList(dialog, "Adicionar pessoa, cargo ou agente");
-    expect(options.some((o) => o.textContent?.startsWith("Walter"))).toBe(false);
-    const joao = options.find((o) => o.textContent?.startsWith("João"));
+    expect(options.some((o) => labelOf(o).startsWith("Walter"))).toBe(false);
+    const joao = options.find((o) => labelOf(o).startsWith("João"));
     if (!joao) throw new Error("no João");
     await click(joao);
     await settle(1);
@@ -330,6 +332,15 @@ describe("Compartilhar (ADR 0157, 0201)", () => {
               ],
             },
             sharing: { mode: "people", userIds: ["u-walter"], roleIds: [] },
+            access: {
+              place: "edit",
+              workspace: "none",
+              users: [{ id: "u-walter", level: "edit" }],
+              roles: [],
+              agents: "edit",
+              agentRows: [],
+              limited: false,
+            },
             canShare: false,
           }
         : a;
@@ -357,7 +368,11 @@ describe("Compartilhar (ADR 0157, 0201)", () => {
       "Walter (você)",
     ]);
     expect(dialog.textContent).toContain("Só quem está na conversa muda quem vê.");
-    expect(within(dialog).getAllByRole("combobox").every((b) => b.hasAttribute("disabled"))).toBe(true);
+    expect(
+      within(dialog)
+        .getAllByRole("combobox")
+        .every((b) => b.hasAttribute("disabled")),
+    ).toBe(true);
     // Who may only look closes it: Fechar is the footer's only button.
     const close = within(dialog).getAllByRole("button", { name: "Fechar" });
     await click(close[close.length - 1] as HTMLElement);

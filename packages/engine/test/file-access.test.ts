@@ -104,9 +104,9 @@ describe("who edits among people", () => {
     expect(await mode(personActor(caio.id))).toBe("view");
     expect(await mode(personActor(duda.id))).toBe("edit");
     // A viewer may not open it to more people; the maker may.
-    await expect(
-      setFileAccess(f.artifactDeps, caio.id, f.org.id, sheet.id, { ...OPEN }),
-    ).rejects.toMatchObject({ code: "artifact.sharing_forbidden" });
+    await expect(setFileAccess(f.artifactDeps, caio.id, f.org.id, sheet.id, { ...OPEN })).rejects.toMatchObject({
+      code: "artifact.sharing_forbidden",
+    });
   });
 
   test("a person who only views a document can't save a version of it", async () => {
@@ -167,6 +167,32 @@ describe("agents", () => {
     expect((await listArtifacts(f.db, agentHere, f.org.id)).map((a) => a.id)).not.toContain(sheet.id);
     expect(await mode(qaHere)).toBe("edit");
     expect((await listArtifacts(f.db, qaHere, f.org.id)).map((a) => a.id)).toContain(sheet.id);
+  });
+
+  test("an agent named on a file still never opens it where nobody asking sees it", async () => {
+    const { bia, sheet } = await world();
+    const qa = await createAgent(f.db, f.owner.id, f.org.id, { name: "QA", handle: "qa" }, NEW_AGENT_DEFAULTS);
+    await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { agentId: qa.id });
+    const qaHere: ArtifactActor = { type: "agent", agentId: qa.id, channelId: f.general.id };
+    const mode = async () => (await liveFileAccess(f.artifactDeps, qaHere, f.org.id, sheet.id))?.mode ?? null;
+    // Only Bia sees it: QA, named to edit, reaches it neither where it lives nor for someone who sees it.
+    await setFileAccess(f.artifactDeps, bia.id, f.org.id, sheet.id, {
+      ...OPEN,
+      workspace: "none",
+      agents: "none",
+      agentRows: [{ id: qa.id, level: "edit" }],
+    });
+    expect(await mode()).toBeNull();
+    expect((await listArtifacts(f.db, qaHere, f.org.id)).map((a) => a.id)).not.toContain(sheet.id);
+    await expect(getArtifact(f.artifactDeps, qaHere, f.org.id, sheet.id)).rejects.toThrow();
+    // Everyone sees it: QA edits it, the other agents nothing.
+    await setFileAccess(f.artifactDeps, bia.id, f.org.id, sheet.id, {
+      ...OPEN,
+      workspace: "view",
+      agents: "none",
+      agentRows: [{ id: qa.id, level: "edit" }],
+    });
+    expect(await mode()).toBe("edit");
   });
 
   test("every agent views: agents read it, and are told how to change it", async () => {

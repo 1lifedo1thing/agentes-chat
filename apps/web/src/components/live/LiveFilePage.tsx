@@ -296,9 +296,7 @@ export function LiveFilePage({
   const requestEdit = useCallback(() => {
     const maker = artifact?.createdBy;
     const handle = maker?.type === "person" ? dir.memberById.get(maker.id)?.handle : undefined;
-    const text = handle
-      ? `@${handle} ${t("live.shell.requestEditText")}`
-      : t("live.shell.requestEditAnyone");
+    const text = handle ? `@${handle} ${t("live.shell.requestEditText")}` : t("live.shell.requestEditAnyone");
     setPrefill({ text, key: Date.now() });
     if (!column.open) column.toggle();
   }, [artifact, dir.memberById, column, t]);

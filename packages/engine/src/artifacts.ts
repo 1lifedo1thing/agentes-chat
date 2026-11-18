@@ -928,7 +928,13 @@ async function sharedByRole(db: Database, userId: string, orgId: string, roleIds
 /** What someone may do with a file: nothing, read it, or change it too. */
 export type AccessLevel = "none" | "view" | "edit";
 
-type EditsBy = "editorsLimited" | "editorUserIds" | "editorRoleIds" | "conversationEdits" | "createdByType" | "createdById";
+type EditsBy =
+  | "editorsLimited"
+  | "editorUserIds"
+  | "editorRoleIds"
+  | "conversationEdits"
+  | "createdByType"
+  | "createdById";
 
 /**
  * Whether a person who sees a file also changes it (ADR 0201): whoever sees it, unless its editors are limited; then
@@ -1104,10 +1110,12 @@ async function canRead(db: Database, actor: ArtifactActor, orgId: string, a: Pic
 }
 
 /**
- * What an agent may do with a file (ADR 0201). The agent that made it changes it; one named on the file has its own
- * level. The others get the file's level for agents: every agent of the workspace for a file of the Drive, the agents
- * where it lives for one in a conversation. A file nobody set this on (from before) keeps the rule from before: an
- * agent where it lives changes it. Past that, an agent reads (never changes) what the person behind its run may.
+ * What an agent may do with a file (ADR 0201). Agents never widen who sees a file (ADR 0157): an agent gets a level only
+ * where it reaches the file, by where it lives or for the person behind its run. There, the agent that made it changes
+ * it, and one named on the file has its own level. The others get the file's level for agents: every agent of the
+ * workspace for a file of the Drive, the agents where it lives for one in a conversation (an agent elsewhere, asked by
+ * someone who reads it, only reads it). A file nobody set this on (from before) keeps the rule from before: an agent
+ * where it lives changes it, another asked by someone who reads it reads it.
  */
 async function agentLevel(
   db: Database,
@@ -1115,15 +1123,14 @@ async function agentLevel(
   orgId: string,
   a: Pick<ArtifactRow, "id"> & Readable,
 ): Promise<AccessLevel> {
+  const reaches = await agentReaches(db, actor, orgId, a);
+  if (!reaches && !(await readsForItsPerson(db, actor, orgId, a))) return "none";
   if (a.createdByType === "agent" && a.createdById === actor.agentId) return "edit";
   if (a.agentEditIds.includes(actor.agentId)) return "edit";
   if (a.agentViewIds.includes(actor.agentId)) return "view";
   if (a.agentBase === "none") return "none";
-  const reaches = await agentReaches(db, actor, orgId, a);
-  if (a.agentBase === null) {
-    if (reaches) return "edit";
-  } else if (!a.channelId || reaches) return a.agentBase;
-  return (await readsForItsPerson(db, actor, orgId, a)) ? "view" : "none";
+  if (a.agentBase === null) return reaches ? "edit" : "view";
+  return !a.channelId || reaches ? a.agentBase : "view";
 }
 
 /** Whether an agent reads a file for the person behind its run (their conversations, its sharing, the agents' DM). */
@@ -2162,12 +2169,11 @@ async function artifactScope(db: Database, actor: ArtifactActor, orgId: string, 
   let widened: SQL;
   // The Drive's own files they read where they live (ADR 0157, amendment 2026-11-17).
   let drive: SQL | undefined;
-  // An agent: the files that name it or open to every agent, and those closed to agents (ADR 0201, `agentLevel`).
-  let granted: SQL | undefined;
+  // An agent: the files closed to agents but the ones that name it or that it made (ADR 0201, `agentLevel`). Naming an
+  // agent never lists it a file it doesn't reach otherwise: agents never widen who sees a file (ADR 0157).
   let closedToAgent: SQL | undefined;
   if (actor.type === "agent") {
     const named = sql`(${actor.agentId}::uuid = any(${artifacts.agentViewIds}) or ${actor.agentId}::uuid = any(${artifacts.agentEditIds}))`;
-    granted = or(named, and(isNull(artifacts.channelId), inArray(artifacts.agentBase, ["view", "edit"])));
     closedToAgent = and(
       sql`coalesce(${artifacts.agentBase}, '') = 'none'`,
       sql`not ${named}`,
@@ -2207,7 +2213,6 @@ async function artifactScope(db: Database, actor: ArtifactActor, orgId: string, 
       visible.length > 0 ? inArray(artifacts.channelId, visible) : undefined,
       ownRoom,
       widened,
-      granted,
     ),
     closedToAgent ? not(closedToAgent) : undefined,
     filters.channelId ? eq(artifacts.channelId, filters.channelId) : undefined,
@@ -2625,12 +2630,7 @@ export interface PersonArtifactFacts {
 
 export async function withPersonFacts<
   T extends Pick<ArtifactView, "id" | "channelId" | "createdBy" | "inDrive" | "access" | "canEdit">,
->(
-  db: Database,
-  userId: string,
-  orgId: string,
-  list: T[],
-): Promise<(T & PersonArtifactFacts)[]> {
+>(db: Database, userId: string, orgId: string, list: T[]): Promise<(T & PersonArtifactFacts)[]> {
   if (list.length === 0) return [];
   const channelIds = [...new Set(list.flatMap((a) => (a.channelId ? [a.channelId] : [])))];
   const [deletable, chans, conversations] = await Promise.all([
@@ -2710,10 +2710,7 @@ export async function withPersonFacts<
             .select({ id: schema.organizationMemberRoles.roleId })
             .from(schema.organizationMemberRoles)
             .where(
-              and(
-                eq(schema.organizationMemberRoles.orgId, orgId),
-                eq(schema.organizationMemberRoles.userId, userId),
-              ),
+              and(eq(schema.organizationMemberRoles.orgId, orgId), eq(schema.organizationMemberRoles.userId, userId)),
             )
         ).map((r) => r.id)
       : [],
@@ -2724,7 +2721,10 @@ export async function withPersonFacts<
     isAdmin ||
     a.access.users.some((u) => u.id === userId && u.level === "edit") ||
     a.access.roles.some((r) => r.level === "edit" && myRoles.has(r.id)) ||
-    (a.access.place === "edit" && a.channelId !== null && !outside(a.channelId) && (!closed.has(a.channelId) || readsThere.has(a.channelId)));
+    (a.access.place === "edit" &&
+      a.channelId !== null &&
+      !outside(a.channelId) &&
+      (!closed.has(a.channelId) || readsThere.has(a.channelId)));
   const audience = new Map<string, ArtifactAudience>(
     chans.map((c): [string, ArtifactAudience] => {
       if (c.kind !== "dm") {
@@ -2916,7 +2916,10 @@ export async function setFileAccess(
     throw new ValidationError(`${what}: one of ${allowed.join(", ")}`, "artifact.access_invalid");
   };
   const [where] = a.channelId
-    ? await db.select({ kind: channels.kind, visibility: channels.visibility }).from(channels).where(eq(channels.id, a.channelId))
+    ? await db
+        .select({ kind: channels.kind, visibility: channels.visibility })
+        .from(channels)
+        .where(eq(channels.id, a.channelId))
     : [];
   // A public channel's file: the whole workspace reads it there already.
   const open = where?.kind === "channel" && where.visibility === "public";
@@ -2955,9 +2958,7 @@ export async function setFileAccess(
   const editRoles = [...roles].filter(([, l]) => l === "edit").map(([id]) => id);
   const limited =
     workspace !== "edit" &&
-    (place === "view" ||
-      workspace === "view" ||
-      [...users.values(), ...roles.values()].some((l) => l === "view"));
+    (place === "view" || workspace === "view" || [...users.values(), ...roles.values()].some((l) => l === "view"));
   if (limited && (editUsers.length > AUDIENCE_MAX || editRoles.length > AUDIENCE_MAX)) {
     throw new ValidationError(
       `Choose at most ${AUDIENCE_MAX} people and ${AUDIENCE_MAX} roles`,
@@ -2965,10 +2966,15 @@ export async function setFileAccess(
       { max: AUDIENCE_MAX },
     );
   }
-  const known = limited && (editUsers.length || editRoles.length)
-    ? await cleanSharing(db, orgId, { mode: "people", userIds: editUsers, roleIds: editRoles })
-    : null;
-  const agentIds = await workspaceAgents(db, orgId, [...agentRows.keys()].filter((id) => UUID.test(id)));
+  const known =
+    limited && (editUsers.length || editRoles.length)
+      ? await cleanSharing(db, orgId, { mode: "people", userIds: editUsers, roleIds: editRoles })
+      : null;
+  const agentIds = await workspaceAgents(
+    db,
+    orgId,
+    [...agentRows.keys()].filter((id) => UUID.test(id)),
+  );
   const agentEdit = [...agentRows].filter(([id, l]) => l === "edit" && agentIds.has(id)).map(([id]) => id);
   const agentView = [...agentRows].filter(([id, l]) => l === "view" && agentIds.has(id)).map(([id]) => id);
   const before = accessOf(a);

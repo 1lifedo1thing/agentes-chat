@@ -39,7 +39,7 @@ itself reached every agent.
    rows under it say nothing and adding one drops that base to `none`, in plain sight, until Salvar; while it views,
    a row can only be "this one edits too".
 2. **Who always edits.** The person who made the file, the workspace's administrators (as for who sees, ADR 0157)
-   and the agent that made it. Nobody else is above the list.
+   and the agent that made it, wherever it reaches the file (§5). Nobody else is above the list.
 3. **What is kept.** Who sees stays `share`, `share_user_ids` and `share_role_ids` (ADR 0157), derived from the rows.
    Beside them, on `artifacts`: `editors_limited` (someone who sees it only views), `editor_user_ids`,
    `editor_role_ids`, `conversation_edits` (its conversation edits), `agent_base` and the named agents
@@ -51,10 +51,12 @@ itself reached every agent.
    that tell it to ask who made the file for edit access instead of trying another way. `liveFileAccess` opens a live
    file in view mode for who only views, and the live socket's recheck includes the editors, so a change of level
    reaches sockets already open.
-5. **Agents.** `agentLevel` decides: the agent that made it, or one named to edit, edits; one named to view, views;
+5. **Agents.** Agents never widen who sees a file (ADR 0157): `agentLevel` gives an agent a level only where it
+   reaches the file, by where it lives or for the person behind its run, so naming an agent never lets it open a file
+   for someone who can't. There, the agent that made it, or one named to edit, edits; one named to view, views;
    `agent_base` `none` closes the file to every other agent, which neither opens it nor finds it in lists and search
    (`artifactScope`); otherwise the base applies to every agent for a Drive file and to the agents where it lives for
-   a conversation's file. An agent that reaches a file only through the person behind its run reads it, never edits.
+   a conversation's file. An agent elsewhere, asked by someone who reads a conversation's file, reads it, never edits.
 6. **Who changes it.** `PUT …/artifacts/{id}/access` (`setFileAccess`): someone who reads the file where it lives and
    edits it; for a Drive file, its maker or an administrator. Others get 403 `artifact.sharing_forbidden`, and the
    apps show them the list as it is, read-only. Levels outside the three are 400 `artifact.access_invalid`; people,

@@ -8,8 +8,8 @@ import { useFileActions } from "../../files/actions";
 import { chooseAction } from "../../settings/parts";
 import { useDirectory } from "../../shared/hooks";
 import { PushedHeader } from "../../shared/parts";
-import { useOpenFileTalk } from "../talk/hooks";
 import { type LiveClosed, liveStatusWord } from "../logic";
+import { useOpenFileTalk } from "../talk/hooks";
 import { HereFaces } from "./HereFaces";
 import type { LiveDoc } from "./useLiveDoc";
 

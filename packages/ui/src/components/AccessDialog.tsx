@@ -150,31 +150,31 @@ export function AccessDialog<L extends string = string>({
         <DialogBody className="ac-access">
           {note && <p className="ac-access__note">{note}</p>}
           {!readOnly && (
-          <SearchSelect
-            value={undefined}
-            placeholder={labels.add}
-            aria-label={labels.add}
-            labels={{
-              search: labels.addSearch,
-              searchPlaceholder: labels.addSearch,
-              noResults: labels.noResults,
-              list: labels.addList,
-            }}
-            options={() =>
-              addable.map((s) => ({
-                value: s.id,
-                label: s.name,
-                description: s.detail,
-                leading: s.lead,
-                group: s.group,
-              }))
-            }
-            onValueChange={(id) => {
-              const subject = addable.find((s) => s.id === id);
-              const level = subject && levelsFor(subject).at(-1);
-              if (subject && level) onLevelChange(subject, level.value);
-            }}
-          />
+            <SearchSelect
+              value={undefined}
+              placeholder={labels.add}
+              aria-label={labels.add}
+              labels={{
+                search: labels.addSearch,
+                searchPlaceholder: labels.addSearch,
+                noResults: labels.noResults,
+                list: labels.addList,
+              }}
+              options={() =>
+                addable.map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                  description: s.detail,
+                  leading: s.lead,
+                  group: s.group,
+                }))
+              }
+              onValueChange={(id) => {
+                const subject = addable.find((s) => s.id === id);
+                const level = subject && levelsFor(subject).at(-1);
+                if (subject && level) onLevelChange(subject, level.value);
+              }}
+            />
           )}
           <div className="ac-access__list">
             {base.map((b) => (
