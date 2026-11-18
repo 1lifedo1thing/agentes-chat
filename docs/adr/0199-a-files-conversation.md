@@ -22,7 +22,7 @@
   `api/client.ts` and `http-client.ts` (`artifacts.conversation`, `reads.unreadFiles`, the post's `liveRef`),
   `api/queries.ts` (`useFileConversation`, `useUnreadFiles`, `useFileUnread`, `applyIssueEvent`), `live/types.ts`
   (`fileConversationOf`, `LiveRefInput`, `messageLiveRef`), `lib/notifications.ts` (`openTarget`); migration
-  `0297_live_files.sql`; tests `packages/engine/test/file-conversation.test.ts`,
+  `0298_live_files.sql`; tests `packages/engine/test/file-conversation.test.ts`,
   `apps/server/test/file-conversation.test.ts`
 
 ## Context
@@ -131,9 +131,9 @@ fits with it open; once the person uses the sidebar's toggle on the page, the pa
 the agent, with the selection as `meta.liveRef` and no card of the file; when the agent can't work on the file there
 (a private channel it isn't in) it still goes to the person's DM with the agent, carrying the file, as before.
 
-### 8. Migration 0297
+### 8. Migration 0298
 
-`0297_live_files.sql` adds `file` to `channel_kind` and the two columns of `artifacts` with their unique
+`0298_live_files.sql` adds `file` to `channel_kind` and the two columns of `artifacts` with their unique
 index and foreign key. Nothing moves: conversations are made on first use.
 
 ### 9. On the phone

@@ -1,6 +1,6 @@
 {
-  "id": "75a45fc7-441f-4884-9e1c-863c10e0dc47",
-  "prevId": "7bbc0742-3bdd-41b3-9f24-ed245734b8b5",
+  "id": "1a23439a-9e09-4f7d-8807-3fb60d5515d8",
+  "prevId": "6d40bf81-aa23-4408-bacb-f6f0f44ed6ed",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -19532,6 +19532,33 @@
           "columns": [
             {
               "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "operator_events_created_at_type_org": {
+          "name": "operator_events_created_at_type_org",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "org_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
