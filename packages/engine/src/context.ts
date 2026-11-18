@@ -35,7 +35,14 @@ import {
   threadIsConfidential,
   unsealed,
 } from "./confidential";
-import { consultationOrigin, type HandOff, handOffsFrom } from "./consultations";
+import {
+  consultationOrigin,
+  HANDED_REMEMBERED_DAYS,
+  type HandedFor,
+  type HandOff,
+  handedFor,
+  handOffsFrom,
+} from "./consultations";
 import { teamMemoryForPrompt } from "./context/tools";
 import { widgetRunContext } from "./dashboards/refresh-context";
 import { deviceRoster, osName, switchesOff } from "./device-resolve";
@@ -83,7 +90,7 @@ import { loadTeam, rosterScopeNames, TEAM_IN_PROMPT, teammatesFor, teammatesNowP
 import { rangeStillVisible, threadRunInfo } from "./threads";
 import { HAND_OVER_STEP } from "./tools/directory";
 import type { ApprovalsLevel } from "./tools/run-policy";
-import { neutralizeUntrusted, untrustedBlock } from "./untrusted";
+import { neutralizeUntrusted, quotedUntrusted, untrustedBlock } from "./untrusted";
 import { waitingOnPerson, waitingOnPersonBlock } from "./waiting";
 import { workBrief } from "./works";
 import { workspaceMode } from "./workspace-mode";
@@ -344,6 +351,27 @@ const QUIET_TOOLS = [
   "read_file",
   "list_files",
 ];
+
+/** One line of "# What other agents asked of you" (`handedFor`): the other agent's words never read as instructions. */
+function handedLine(h: HandedFor) {
+  const what = h.kind === "note" ? "handed you" : "asked you";
+  const came =
+    h.status === "open"
+      ? "you are still on it"
+      : h.status === "answered"
+        ? h.answer
+          ? `you answered ${quotedUntrusted(h.answer, 300)}`
+          : h.answerHidden
+            ? "you answered (not shown: it may carry text read outside)"
+            : "you finished it"
+        : h.status === "expired"
+          ? "you never got to it"
+          : h.stopped
+            ? "it was stopped before you finished"
+            : "you couldn't finish it";
+  const asked = h.question === null ? "(it relayed text it read outside, not shown)" : quotedUntrusted(h.question, 200);
+  return `- @${h.askerHandle} ${what}, ${ago(h.createdAt)}: ${asked} → ${came}`;
+}
 
 /** "13 min ago", "2 h ago", "3 days ago". */
 export function ago(at: Date, now = Date.now()) {
@@ -824,7 +852,12 @@ export async function buildRunContext(
   const samePerson = agentsDm ? await forSamePerson(db, run, fullHistory, trigger.id) : null;
   const history = samePerson ? samePerson.history : fullHistory;
 
-  const [names, members, zone, talks, personLines, origins] = await Promise.all([
+  // What other agents handed it for the person of this DM happened elsewhere (the agents' DM, a task), never shown here.
+  const handedHere =
+    channel.kind === "dm" && !agentsDm && !background && !options.routine && trigger.authorUserId
+      ? handedFor(db, run.orgId, agent.id, trigger.authorUserId).catch(() => [])
+      : Promise.resolve([]);
+  const [names, members, zone, talks, personLines, origins, handedRows] = await Promise.all([
     authorNames(db, history),
     caches.channelMembers.getOrLoad(`${run.orgId}:${run.channelId}`, () =>
       db
@@ -872,6 +905,7 @@ export async function buildRunContext(
     // No person reads the agents' DM: the asking agent words the answer for its person.
     personNotes(db, run, trigger.authorUserId, { language: !background, style: !agentsDm }),
     originNotes(db, run.orgId, agent.id, run.channelId, history, trigger.authorUserId),
+    handedHere,
   ]);
   // One statement, two parts: what agents already did in this thread (or DM),
   // and this agent's own work in other conversations the requester is in.
@@ -979,6 +1013,8 @@ export async function buildRunContext(
       }),
     WORK_ELSEWHERE_MAX,
   );
+  // Only where that person is the one reading: never into a DM with someone else in it.
+  const handed = members.every((m) => !m.userId || m.userId === requester) ? handedRows.map(handedLine) : [];
   // What the other agents here can do, so this one never answers for them.
   const others = members.filter((m) => m.agentId && m.agentId !== agent.id);
   const here = new Set(others.map((m) => m.agentId as string));
@@ -1208,6 +1244,18 @@ export async function buildRunContext(
               "What you yourself did in the last 14 days in conversations this person is in:",
               ...workElsewhere,
               'You are in several conversations at once. "In the DM", "in private" or "over in #channel" (in Portuguese "no privado", "na DM", "lá no #canal") talk about these other conversations; they don\'t ask you to go there. To bring a file from there to here, use `share_artifact` (say you are bringing it from the DM, if that is the case). Never say you only answer here or can\'t see the DM when the item shows in this list.',
+            ].join("\n"),
+          },
+        ]
+      : []),
+    ...(handed.length > 0
+      ? [
+          {
+            found: true,
+            text: [
+              `# What other agents asked of you for ${requesterName}`,
+              `In your private conversations with other agents, and tasks they handed you, in the last ${HANDED_REMEMBERED_DAYS} days, latest first. It is your own work for this person: when they ask about it, answer from it as yours.`,
+              ...handed,
             ].join("\n"),
           },
         ]

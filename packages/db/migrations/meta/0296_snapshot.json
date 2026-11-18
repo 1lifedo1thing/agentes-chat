@@ -1,6 +1,6 @@
 {
-  "id": "4e3f950d-d77f-4b93-9f66-f15cc92b051e",
-  "prevId": "6a44f286-66bd-4a4a-bf0b-7eb024c2b899",
+  "id": "87035c51-e363-424d-9357-d9849a75654d",
+  "prevId": "f24af517-0ac8-49a4-ab0c-9d809c6f4035",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -552,6 +552,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "for_user_id": {
+          "name": "for_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "asker_read_outside": {
+          "name": "asker_read_outside",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {
@@ -639,6 +652,39 @@
             },
             {
               "expression": "channel_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_consultations_handed_for_idx": {
+          "name": "agent_consultations_handed_for_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "for_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

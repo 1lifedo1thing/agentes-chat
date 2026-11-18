@@ -121,7 +121,7 @@ conversation, and its sharing says who else sees it, with the same three modes:
   always see a list and every file of the Drive itself.
 - `people`: its maker, the people and roles chosen, and administrators.
 - `everyone`: the whole workspace, as before. Every Drive file made so far says so (migration
-  `0296_drive_files_shared.sql`), and a new one is made shared with everyone: nothing changes until someone chooses.
+  `0297_drive_files_shared.sql`), and a new one is made shared with everyone: nothing changes until someone chooses.
 
 **Who changes it**: its maker and administrators (`keepsDriveFile`); anyone else gets `artifact.sharing_forbidden`,
 including the people it was shared with. A public channel's file still has nothing to widen (`artifact.sharing_open`).
