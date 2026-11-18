@@ -364,9 +364,7 @@
       "delivered": "{{name}}이(가) 받았어요",
       "held": "{{name}}이(가) 내 결정 후에 읽어요",
       "read": "{{name}}이(가) 읽었어요",
-      "resolved": "{{name}}이(가) 도움 요청을 닫았어요",
-      "well": "메모를 읽었어요",
-      "wellNow": "멈추고 메모를 읽었어요"
+      "resolved": "{{name}}이(가) 도움 요청을 닫았어요"
     },
     "stopped": {
       "byYou": "여기서 멈춤",

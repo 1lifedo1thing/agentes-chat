@@ -364,9 +364,7 @@
       "delivered": "{{name}} sudah menerimanya",
       "held": "{{name}} membacanya setelah kamu memutuskan",
       "read": "{{name}} sudah membacanya",
-      "resolved": "{{name}} menutup permintaan bantuan",
-      "well": "Membaca catatanmu",
-      "wellNow": "Berhenti untuk membaca catatanmu"
+      "resolved": "{{name}} menutup permintaan bantuan"
     },
     "stopped": {
       "byYou": "Berhenti di sini",

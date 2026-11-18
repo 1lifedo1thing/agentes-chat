@@ -379,9 +379,7 @@
       "delivered": "{{name}} aldı",
       "held": "{{name}} kararınızdan sonra okuyacak",
       "read": "{{name}} okudu",
-      "resolved": "{{name}} yardım isteğini kapattı",
-      "well": "Notunuzu okudu",
-      "wellNow": "Notunuzu okumak için durdu"
+      "resolved": "{{name}} yardım isteğini kapattı"
     },
     "stopped": {
       "byYou": "Burada durdu",

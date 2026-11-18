@@ -364,9 +364,7 @@
       "delivered": "{{name}}に届きました",
       "held": "{{name}}はあなたの決定後に読みます",
       "read": "{{name}}が読みました",
-      "resolved": "{{name}}がヘルプのリクエストを閉じました",
-      "well": "メモを読みました",
-      "wellNow": "手を止めてメモを読みました"
+      "resolved": "{{name}}がヘルプのリクエストを閉じました"
     },
     "stopped": {
       "byYou": "ここで停止",

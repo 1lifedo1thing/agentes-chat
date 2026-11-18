@@ -364,9 +364,7 @@
       "delivered": "{{name}} 已收到",
       "held": "{{name}} 会在你做出决定后读取",
       "read": "{{name}} 已读",
-      "resolved": "{{name}} 已关闭求助请求",
-      "well": "已读你的留言",
-      "wellNow": "停下来读了你的留言"
+      "resolved": "{{name}} 已关闭求助请求"
     },
     "stopped": {
       "byYou": "在这里停止",

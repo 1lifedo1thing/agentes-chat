@@ -170,6 +170,7 @@ import {
 import { SecretCard } from "./SecretCard";
 import { ModelStandInLine, SpeedFallbackLine, StopPill } from "./StoppedLine";
 import { useStopMovedOn, useStoppedRun } from "./stopped-runs";
+import { SwipeSlide, SwipeTime, useGiveWay } from "./swipe-time";
 import { TeamChecks } from "./TeamChecks";
 import { SavedTools, TurnTools } from "./ToolCalls";
 import { keptTurn, stepLimitOf, stoppedOf, turnOpener } from "./turn";
@@ -557,19 +558,22 @@ function RowBody({
       ) : null}
     </>
   );
+  // Someone else's bubble gives way to the times only when it is too wide for them (`useGiveWay`).
+  const giveWay = useGiveWay();
 
   if (onRight) {
-    const stamp = (
-      <View style={styles.stamp}>
-        {surfaceTag ? <SurfaceMark tag={surfaceTag} color={solidInk ?? c.muted} /> : null}
-        <Text variant="caption" tone="muted" style={solidInk ? { color: solidInk } : undefined}>
-          {when.time(m.createdAt)}
-        </Text>
-        <ReceiptMark message={m} mine receipt={receipt} seenBy={seenBy} {...(solidInk ? { ink: solidInk } : {})} />
-      </View>
-    );
-    // A voice message and a choice's answer lead with their own player or line, so their time stays under them.
-    const myBubble = bubbled && Boolean(body) && !voiceOf(meta) && !choiceReply;
+    // In bubbles the time and what became of the message are never in it (a mark coming in or swapping changed the
+    // bubble's width): a pull to the left shows them (`SwipeTime`). A send in flight has its place too.
+    const swipeTime =
+      bubbled && m.local !== "failed" ? (
+        <SwipeTime>
+          {surfaceTag ? <SurfaceMark tag={surfaceTag} color={c.muted} /> : null}
+          <Text variant="caption" tone="muted">
+            {when.time(m.createdAt)}
+          </Text>
+          <ReceiptMark message={m} mine receipt={receipt} seenBy={seenBy} />
+        </SwipeTime>
+      ) : null;
     const player = voiceOf(meta) ? (
       <View style={styles.meFiles}>
         <VoiceMessage message={m} />
@@ -590,20 +594,16 @@ function RowBody({
         ]}
       >
         {quote ? <QuotePlate reply={quote} onJump={onQuote} {...(solidInk ? { ink: solidInk } : {})} /> : null}
-        <View style={bubbled ? styles.bubbleLine : undefined}>
-          <ClippedMessage id={m.id} behind={[(bubbled && look.fill) || c.bubble]} ink={solidInk}>
-            <MessageText
-              body={body}
-              selectable={false}
-              accent={accent}
-              channelRefs={channelRefsOf(m.meta)}
-              everyone={m.meta?.mentionsEveryone === true}
-              {...(solidInk ? { ink: solidInk } : {})}
-            />
-          </ClippedMessage>
-          {/* On its way too (its own clock): the bubble keeps its size when the server's copy takes its place. */}
-          {myBubble && m.local !== "failed" ? stamp : null}
-        </View>
+        <ClippedMessage id={m.id} behind={[(bubbled && look.fill) || c.bubble]} ink={solidInk}>
+          <MessageText
+            body={body}
+            selectable={false}
+            accent={accent}
+            channelRefs={channelRefsOf(m.meta)}
+            everyone={m.meta?.mentionsEveryone === true}
+            {...(solidInk ? { ink: solidInk } : {})}
+          />
+        </ClippedMessage>
       </View>
     ) : player ? (
       player
@@ -628,56 +628,60 @@ function RowBody({
         accessibilityHint={press ? t("mobile.chat.longPressHint") : undefined}
         style={({ pressed }) => [styles.me, rowFrame(rhythm.block, rowGap), pressed && press && styles.mePressed]}
       >
-        <RowPartContext.Provider value={cardTop}>
-          <View style={[styles.meParts, { gap: rhythm.part }]}>
-            {m.pinned ? (
-              <View style={[styles.pinLine, styles.meEnd, { marginBottom: PIN_GAP - rhythm.part }]}>
-                <PinMark />
-                <Text variant="caption" tone="faint">
-                  {t("mobile.pins.mark")}
-                </Text>
-              </View>
-            ) : null}
-            {liveRef ? <MessageAbout liveRef={liveRef} messageId={m.id} end /> : null}
-            {/* With no words there is no bubble to hold it. */}
-            {quote && (!body || choiceReply) ? (
-              <View style={styles.meEnd}>
-                <QuotePlate reply={quote} onJump={onQuote} />
-              </View>
-            ) : null}
-            {lead}
-            {body ? player : null}
-            {body && media ? (
-              <View style={styles.meFiles}>
-                <ChatMedia media={media} align="end" liveId={m.id} />
-              </View>
-            ) : null}
-            {(body || media) && files.length > 0 ? (
-              <View style={styles.meFiles}>
-                <MessageFiles files={files} align="end" />
-              </View>
-            ) : null}
-            {(body || media) && localFiles.length > 0 ? (
-              <View style={styles.meFiles}>
-                <LocalFiles files={localFiles} align="end" sending={m.local === "pending"} />
-              </View>
-            ) : null}
-            {cards}
-            {missionDecision}
-            {foot}
-          </View>
-        </RowPartContext.Provider>
-        {/* One time per run of my rows (they group a few minutes apart), under its last, the receipt's mark ending
-            its line; a send in flight has it too (its own clock), so nothing moves when the server's copy lands. */}
-        {m.local !== "failed" && (run === "end" || run === "solo") && !myBubble ? (
-          <View style={[styles.meTime, { marginTop: rhythm.part / 2 }]}>
-            {surfaceTag ? <SurfaceMark tag={surfaceTag} color={c.faint} /> : null}
-            <Text variant="caption" tone="faint">
-              {when.time(m.createdAt)}
-            </Text>
-            <ReceiptMark message={m} mine receipt={receipt} seenBy={seenBy} />
-          </View>
-        ) : null}
+        <SwipeSlide on={bubbled} style={styles.meSlide}>
+          <RowPartContext.Provider value={cardTop}>
+            <View style={[styles.meParts, { gap: rhythm.part }]}>
+              {m.pinned ? (
+                <View style={[styles.pinLine, styles.meEnd, { marginBottom: PIN_GAP - rhythm.part }]}>
+                  <PinMark />
+                  <Text variant="caption" tone="faint">
+                    {t("mobile.pins.mark")}
+                  </Text>
+                </View>
+              ) : null}
+              {liveRef ? <MessageAbout liveRef={liveRef} messageId={m.id} end /> : null}
+              {/* With no words there is no bubble to hold it. */}
+              {quote && (!body || choiceReply) ? (
+                <View style={styles.meEnd}>
+                  <QuotePlate reply={quote} onJump={onQuote} />
+                </View>
+              ) : null}
+              {lead}
+              {body ? player : null}
+              {body && media ? (
+                <View style={styles.meFiles}>
+                  <ChatMedia media={media} align="end" liveId={m.id} />
+                </View>
+              ) : null}
+              {(body || media) && files.length > 0 ? (
+                <View style={styles.meFiles}>
+                  <MessageFiles files={files} align="end" />
+                </View>
+              ) : null}
+              {(body || media) && localFiles.length > 0 ? (
+                <View style={styles.meFiles}>
+                  <LocalFiles files={localFiles} align="end" sending={m.local === "pending"} />
+                </View>
+              ) : null}
+              {cards}
+              {missionDecision}
+              {foot}
+            </View>
+          </RowPartContext.Provider>
+          {/* One time per run of my rows (they group a few minutes apart), under its last, the receipt's mark ending
+            its line; a send in flight has it too (its own clock), so nothing moves when the server's copy lands. In
+            bubbles a pull to the left shows it instead. */}
+          {m.local !== "failed" && (run === "end" || run === "solo") && !bubbled ? (
+            <View style={[styles.meTime, { marginTop: rhythm.part / 2 }]}>
+              {surfaceTag ? <SurfaceMark tag={surfaceTag} color={c.faint} /> : null}
+              <Text variant="caption" tone="faint">
+                {when.time(m.createdAt)}
+              </Text>
+              <ReceiptMark message={m} mine receipt={receipt} seenBy={seenBy} />
+            </View>
+          ) : null}
+        </SwipeSlide>
+        {swipeTime}
         {popNode}
       </Pressable>
     );
@@ -908,7 +912,14 @@ function RowBody({
           </Text>
         ) : null}
         {look.faces ? (
-          <View style={[styles.avslot, bubbled && lookRows.bubblesSlot, compact && lookRows.compactSlot]}>
+          <Animated.View
+            style={[
+              styles.avslot,
+              bubbled && lookRows.bubblesSlot,
+              compact && lookRows.compactSlot,
+              inBubble && giveWay.style,
+            ]}
+          >
             {grouped ? (
               // A grouped row's receipt in its face's place, on its first line: a tap opens who it went to.
               (receipt || seenBy) && !m.local && !inBubble ? (
@@ -919,31 +930,25 @@ function RowBody({
             ) : (
               <Face who={m.author} size={compact ? 18 : bubbled ? 30 : 34} live={false} />
             )}
-          </View>
+          </Animated.View>
         ) : null}
-        <View style={[styles.body, { gap: rhythm.part }]}>
+        {/* Its face and its body give way together (`useGiveWay`), so the bubble never runs under the face. */}
+        <Animated.View style={[styles.body, { gap: rhythm.part }, inBubble && giveWay.style]}>
           <RowParts top={partTop} part={bubblePart} head={bubbleHead}>
             {nameOrWords ? (
-              <View>
+              <View onLayout={inBubble ? giveWay.onArea : undefined}>
                 {inBubble ? (
                   <>
                     {pinLine}
                     {reportOpened}
-                    <View style={[lookRows.bubble, OTHER_RUN[run], { backgroundColor: otherBubble }, bubbleEdge]}>
+                    <View
+                      onLayout={giveWay.onBubble}
+                      style={[lookRows.bubble, OTHER_RUN[run], { backgroundColor: otherBubble }, bubbleEdge]}
+                    >
                       {!grouped && (look.names || tagged) ? who(true) : null}
                       {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}
                       {opener}
-                      <View style={styles.bubbleLine}>
-                        {words}
-                        <View style={styles.stamp}>
-                          <Text variant="caption" tone="muted">
-                            {when.time(m.createdAt)}
-                          </Text>
-                          {receipt || seenBy ? (
-                            <ReceiptMark message={m} mine={mine} receipt={receipt} seenBy={seenBy} />
-                          ) : null}
-                        </View>
-                      </View>
+                      {words}
                     </View>
                   </>
                 ) : compact && !grouped ? (
@@ -1021,7 +1026,6 @@ function RowBody({
                 items={opened?.lines ?? kept.items}
                 agentName={agent?.name ?? name}
                 color={color}
-                quoteOf={(id) => kept.quotes[id]}
                 done
                 settled
                 keep={`tools:${m.id}`}
@@ -1067,7 +1071,16 @@ function RowBody({
             {foot}
           </RowParts>
           {hintNode}
-        </View>
+        </Animated.View>
+        {/* A bubble holds no time (its words alone set its width): a pull to the left shows it, in the row's gutter. */}
+        {inBubble ? (
+          <SwipeTime>
+            <Text variant="caption" tone="muted">
+              {when.time(m.createdAt)}
+            </Text>
+            {receipt || seenBy ? <ReceiptMark message={m} mine={mine} receipt={receipt} seenBy={seenBy} /> : null}
+          </SwipeTime>
+        ) : null}
         {popNode}
       </Pressable>
     </>
@@ -1549,21 +1562,14 @@ const styles = StyleSheet.create({
   // On the words' first line: the slot's 2 over the words' own 1.
   slotMark: { marginTop: -1, justifyContent: "center" },
   whoTight: { marginBottom: 0 },
-  // The time ends the words' line when it fits; a longer text pushes it to a line of its own, at the bubble's end.
-  bubbleLine: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "flex-end",
-    alignItems: "flex-end",
-    columnGap: 8,
-  },
   bubbleEnd: { alignSelf: "flex-end" },
   retry: { fontWeight: "600", textDecorationLine: "underline" },
-  stamp: { flexDirection: "row", alignItems: "center", gap: 4, height: 16, marginLeft: "auto" },
   compactLine: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: 6 },
   name: { fontWeight: "600", fontSize: 14, lineHeight: 19, flexShrink: 1 },
   me: { paddingLeft: 64, paddingRight: 16, alignItems: "flex-end" },
   meParts: { alignSelf: "stretch" },
+  // What slides with a pull to the left (`SwipeSlide`): the row's whole width, as its parts were.
+  meSlide: { alignSelf: "stretch" },
   meTime: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 4, height: 16 },
   mePressed: { opacity: 0.7 },
   meEnd: { alignSelf: "flex-end" },

@@ -394,9 +394,7 @@
       "delivered": "{{name}} l'a reçu",
       "held": "{{name}} le lira après votre décision",
       "read": "{{name}} l'a lu",
-      "resolved": "{{name}} a clos la demande d'aide",
-      "well": "A lu votre note",
-      "wellNow": "S'est arrêté pour lire votre note"
+      "resolved": "{{name}} a clos la demande d'aide"
     },
     "stopped": {
       "byYou": "Arrêté ici",

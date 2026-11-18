@@ -295,6 +295,7 @@ import {
   ThreadOptions,
 } from "./sheets";
 import { movedOnKey, StoppedRunsContext, StopsMovedOnContext, stoppedRunsKey, stoppedRunsOf } from "./stopped-runs";
+import { SwipeTimeFrame, useSwipeTimePan } from "./swipe-time";
 import { rememberTurn, turnItems, turnRuns, turnSignature, withOpacity } from "./turn";
 import { JumpToMessageContext } from "./WorkLine";
 
@@ -707,10 +708,6 @@ function Chat({
   const heldKey = heldNow.map((h) => `${h.id}:${h.runId}:${h.controllerUserId ?? ""}`).join(" ");
   // biome-ignore lint/correctness/useExhaustiveDependencies: the rows change only when what is held changes
   const held = useMemo(() => heldNow, [heldKey]);
-  // The messages an agent read while working (its "Leu seu recado" wells quote them; a GIF or a sticker by its word).
-  const bodiesRef = useRef(new Map<string, string>());
-  bodiesRef.current = useMemo(() => new Map(list.map((m) => [m.id, textOrMedia(t, m.body, m.meta)])), [list, t]);
-  const bodyOf = useCallback((id: string) => bodiesRef.current.get(id), []);
   // Every agent at work here draws nothing in the conversation while it works: the line above the composer says who
   // works, on what and for how long, and its reply shows whole once posted, with the work it did (kept here, so the
   // reply shows it at once, `recentTurn`). A run in its browser has its browser card instead.
@@ -718,13 +715,7 @@ function Chat({
   const workKey = useMemo(() => atWork.map((r) => `${r.runId}:${turnSignature(turnItems(r))}`).join("|"), [atWork]);
   // biome-ignore lint/correctness/useExhaustiveDependencies: `workKey` stands for the runs' work
   useEffect(() => {
-    for (const run of atWork) {
-      const items = turnItems(run, true);
-      const quotes = Object.fromEntries(
-        items.flatMap((x) => (x.kind === "steer" ? [[x.messageId, bodyOf(x.messageId) ?? ""]] : [])),
-      );
-      rememberTurn(run.runId, { items, quotes, at: Date.now() });
-    }
+    for (const run of atWork) rememberTurn(run.runId, { items: turnItems(run, true), at: Date.now() });
   }, [workKey]);
 
   // ── Rows ──
@@ -1069,6 +1060,9 @@ function Chat({
   }, [rowKeys]);
   // Less motion asked for: nothing rises in.
   const stillRows = useReducedMotion();
+  // The way to the times in a conversation of bubbles (they hold none): a pull to the left (`swipe-time.tsx`).
+  const timePull = useSharedValue(0);
+  const timePan = useSwipeTimePan(timePull, rowLook.style === "bubbles", stillRows);
   const isFresh = useCallback(
     (key: string) => {
       const t0 = freshRef.current.get(key);
@@ -3174,65 +3168,68 @@ function Chat({
                             <StopsMovedOnContext.Provider value={stopsMoved}>
                               <OpenedMessagesContext.Provider value={openedMessages}>
                                 <WorkLineContext.Provider value={workLine}>
-                                  <ConversationList
-                                    ref={attachList}
-                                    refScrollView={listScroll}
-                                    style={styles.grow}
-                                    data={shownRows}
-                                    keyExtractor={rowKey}
-                                    getItemType={rowType}
-                                    renderItem={renderItem}
-                                    // The list redraws mounted rows only when this changes: what a row shows beyond
-                                    // its message (the thread link that loads after it, a held state) lives in
-                                    // `renderItem`'s dependencies.
-                                    extraData={renderItem}
-                                    estimatedItemSize={72}
-                                    drawDistance={placed ? Math.round(windowHeight) : OPEN_DRAW_DISTANCE}
-                                    // Opens at the latest message, short conversations sit at the bottom like any chat.
-                                    initialScrollAtEnd
-                                    alignItemsAtEnd
-                                    // New messages, a reply growing word by word and the working line (the footer,
-                                    // whose size the list follows too) keep the end in view, but only while the person
-                                    // is near it, and never while newer messages wait to load under one opened far up
-                                    // (`gap`).
-                                    maintainScrollAtEnd={readHold || gap ? false : GLIDE}
-                                    maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
-                                    // Older pages above and rows changing size keep what is on screen still.
-                                    maintainVisibleContentPosition
-                                    // Our own insets, never the system's (the keyboard library's advice for chat
-                                    // lists): the bar's room is the content's top padding, the indicator kept below
-                                    // the bar.
-                                    contentInsetAdjustmentBehavior="never"
-                                    automaticallyAdjustContentInsets={false}
-                                    scrollIndicatorInsets={listIndicator}
-                                    // Still while a sheet or the agent's computer covers the conversation.
-                                    freeze={freeze}
-                                    onReady={onListReady}
-                                    onStartReached={loadOlder}
-                                    onEndReached={gap ? loadNewer : undefined}
-                                    // A look at the waiting requests' cards and the live rows, once a frame and only
-                                    // while there is one.
-                                    onScroll={onListScroll}
-                                    onViewableItemsChanged={onViewable}
-                                    viewabilityConfig={STICKER_VIEW}
-                                    onScrollBeginDrag={onDragStart}
-                                    onScrollEndDrag={onScrollSettled}
-                                    onMomentumScrollBegin={onGlide}
-                                    onMomentumScrollEnd={onScrollSettled}
-                                    onStartReachedThreshold={0.5}
-                                    keyboardDismissMode="interactive"
-                                    keyboardShouldPersistTaps="handled"
-                                    keyboardOffset={lift}
-                                    // The dock's height (the connection, a request out of view, the reply bar) and the
-                                    // keyboard move the conversation only at its end. Above it nothing moves: with the
-                                    // library's default the words being read shifted each time the dock changed, under
-                                    // the person's finger.
-                                    keyboardLiftBehavior="whenAtEnd"
-                                    contentInsetEndAdjustment={listEnd}
-                                    contentContainerStyle={listPad}
-                                    ListHeaderComponent={listHeader}
-                                    ListFooterComponent={WORK_FOOTER}
-                                  />
+                                  <SwipeTimeFrame pull={timePull} gesture={timePan}>
+                                    <ConversationList
+                                      ref={attachList}
+                                      refScrollView={listScroll}
+                                      style={styles.grow}
+                                      data={shownRows}
+                                      keyExtractor={rowKey}
+                                      getItemType={rowType}
+                                      renderItem={renderItem}
+                                      // The list redraws mounted rows only when this changes: what a row shows beyond
+                                      // its message (the thread link that loads after it, a held state) lives in
+                                      // `renderItem`'s dependencies.
+                                      extraData={renderItem}
+                                      estimatedItemSize={72}
+                                      drawDistance={placed ? Math.round(windowHeight) : OPEN_DRAW_DISTANCE}
+                                      // Opens at the latest message, short conversations sit at the bottom like any
+                                      // chat.
+                                      initialScrollAtEnd
+                                      alignItemsAtEnd
+                                      // New messages, a reply growing word by word and the working line (the footer,
+                                      // whose size the list follows too) keep the end in view, but only while the
+                                      // person is near it, and never while newer messages wait to load under one
+                                      // opened far up (`gap`).
+                                      maintainScrollAtEnd={readHold || gap ? false : GLIDE}
+                                      maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
+                                      // Older pages above and rows changing size keep what is on screen still.
+                                      maintainVisibleContentPosition
+                                      // Our own insets, never the system's (the keyboard library's advice for chat
+                                      // lists): the bar's room is the content's top padding, the indicator kept below
+                                      // the bar.
+                                      contentInsetAdjustmentBehavior="never"
+                                      automaticallyAdjustContentInsets={false}
+                                      scrollIndicatorInsets={listIndicator}
+                                      // Still while a sheet or the agent's computer covers the conversation.
+                                      freeze={freeze}
+                                      onReady={onListReady}
+                                      onStartReached={loadOlder}
+                                      onEndReached={gap ? loadNewer : undefined}
+                                      // A look at the waiting requests' cards and the live rows, once a frame and only
+                                      // while there is one.
+                                      onScroll={onListScroll}
+                                      onViewableItemsChanged={onViewable}
+                                      viewabilityConfig={STICKER_VIEW}
+                                      onScrollBeginDrag={onDragStart}
+                                      onScrollEndDrag={onScrollSettled}
+                                      onMomentumScrollBegin={onGlide}
+                                      onMomentumScrollEnd={onScrollSettled}
+                                      onStartReachedThreshold={0.5}
+                                      keyboardDismissMode="interactive"
+                                      keyboardShouldPersistTaps="handled"
+                                      keyboardOffset={lift}
+                                      // The dock's height (the connection, a request out of view, the reply bar) and
+                                      // the keyboard move the conversation only at its end. Above it nothing moves:
+                                      // with the library's default the words being read shifted each time the dock
+                                      // changed, under the person's finger.
+                                      keyboardLiftBehavior="whenAtEnd"
+                                      contentInsetEndAdjustment={listEnd}
+                                      contentContainerStyle={listPad}
+                                      ListHeaderComponent={listHeader}
+                                      ListFooterComponent={WORK_FOOTER}
+                                    />
+                                  </SwipeTimeFrame>
                                 </WorkLineContext.Provider>
                               </OpenedMessagesContext.Provider>
                             </StopsMovedOnContext.Provider>

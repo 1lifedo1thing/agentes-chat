@@ -399,8 +399,6 @@ export const featureKeysPtBR = {
       held: "{{name}} lê depois da sua decisão",
       read: "{{name}} leu",
       resolved: "{{name}} encerrou o pedido de ajuda",
-      well: "Leu seu recado",
-      wellNow: "Parou para ler seu recado",
     },
     stopped: {
       byYou: "Parou aqui",

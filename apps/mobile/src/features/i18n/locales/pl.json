@@ -409,9 +409,7 @@
       "delivered": "{{name}} ma to już u siebie",
       "held": "{{name}} przeczyta to po twojej decyzji",
       "read": "Przeczytane przez: {{name}}",
-      "resolved": "{{name}} zamyka prośbę o pomoc",
-      "well": "Przeczytane",
-      "wellNow": "Przerwa na przeczytanie twojej uwagi"
+      "resolved": "{{name}} zamyka prośbę o pomoc"
     },
     "stopped": {
       "byYou": "Zatrzymano tutaj",

@@ -932,12 +932,6 @@
   "chat.steer.resolved": {
     "value": "{{name}} closed the help request"
   },
-  "chat.steer.well": {
-    "value": "Read your note"
-  },
-  "chat.steer.wellNow": {
-    "value": "Stopped to read your note"
-  },
   "chat.stopped.byYou": {
     "value": "Stopped here"
   },

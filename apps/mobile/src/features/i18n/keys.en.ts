@@ -406,8 +406,6 @@ export const featureKeysEn = {
       held: "{{name}} reads it after your decision",
       read: "{{name}} read it",
       resolved: "{{name}} closed the help request",
-      well: "Read your note",
-      wellNow: "Stopped to read your note",
     },
     stopped: {
       byYou: "Stopped here",
