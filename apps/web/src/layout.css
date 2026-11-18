@@ -15016,8 +15016,9 @@ html:not([data-pointer]) .rh-set__face-edit:focus-visible {
 .settings-row--button > .settings-row__text {
   display: contents;
 }
+/* The name takes the room before the end's: up to its own length it grows, and the end gets what is left. */
 .settings-row--button > .settings-row__text > :first-child {
-  flex: 1 1 0;
+  flex: 1000 1 0;
   min-width: min-content;
   max-width: max-content;
 }
@@ -15029,9 +15030,11 @@ html:not([data-pointer]) .rh-set__face-edit:focus-visible {
   box-sizing: border-box;
   padding-left: calc(28px + var(--space-3));
 }
+/* The end takes the line's room left and holds the button at its end: under the name it is the row's width, so the
+   icon never owns a column beside the name's lines and the button's. */
 .settings-row.settings-row--button > .settings-row__end:not(:has(> .ac-switch)) {
-  flex: none;
-  margin-left: auto;
+  flex: 1 0 auto;
+  justify-content: flex-end;
   padding-left: 0;
 }
 /* Wide enough for its placeholder ("Padrão do workspace", longer in es, de, ru) after "US$". */

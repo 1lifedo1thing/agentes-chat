@@ -86,6 +86,7 @@ test("a row that ends in one button keeps it on the name's line at the row's end
   expect(last(top, row, "flex-wrap")).toBe("wrap");
   expect(last(top, ".settings-row--button>.settings-row__text", "display")).toBe("contents");
   const name = ".settings-row--button>.settings-row__text>:first-child";
+  expect(last(top, name, "flex")?.split(" ")[0]).toBe("1000");
   expect(last(top, name, "min-width")).toBe("min-content");
   expect(last(top, name, "max-width")).toBe("max-content");
   expect(last(top, ".settings-row--button>.settings-row__text>.settings-row__status", "flex-basis")).toBe("100%");
@@ -98,7 +99,8 @@ test("a row that ends in one button keeps it on the name's line at the row's end
     )?.replace(/\s+/g, ""),
   ).toBe("calc(28px+var(--space-3))");
   const end = `${row}>.settings-row__end:not(:has(>.ac-switch))`;
-  expect(last(top, end, "margin-left")).toBe("auto");
+  expect(last(top, end, "flex")).toBe("1 0 auto");
+  expect(last(top, end, "justify-content")).toBe("flex-end");
   expect(last(top, end, "padding-left")).toBe("0");
   // Nothing on a phone or in the agent's narrow panel sends it under the words again (a rule that leaves it out says so
   // in a `:not()`).
