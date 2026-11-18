@@ -38,6 +38,7 @@ export {
   type EventPillProps,
   EventPillText,
 } from "./EventPill";
+export { CLICK_IN, FADE_IN, FADE_OUT, RISE_IN } from "./entrances";
 export { type FilterItem, Filters, type FiltersProps } from "./Filters";
 export { Glass, type GlassProps, liquidHere } from "./Glass";
 export {
