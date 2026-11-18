@@ -1,6 +1,6 @@
 {
-  "id": "97460065-cd74-4412-9a2a-b22efc4e48c3",
-  "prevId": "87035c51-e363-424d-9357-d9849a75654d",
+  "id": "7bbc0742-3bdd-41b3-9f24-ed245734b8b5",
+  "prevId": "6f281c15-2cf9-4f79-bc10-4be4eefd2aee",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1477,6 +1477,12 @@
         },
         "transcript": {
           "name": "transcript",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profiles": {
+          "name": "profiles",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false

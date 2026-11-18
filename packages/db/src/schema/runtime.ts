@@ -125,6 +125,11 @@ export const agentRuns = pgTable(
      * prompt caches stay valid). See docs/adr/0015-tool-gateway-and-approvals.md.
      */
     transcript: jsonb().$type<Record<string, unknown>>(),
+    /**
+     * Each claim's stage profile (the last `RUN_PROFILES_KEPT`), for the operator's work analytics. Its own column so
+     * analytics read it without decompressing the transcript; null on runs that ended before it existed.
+     */
+    profiles: jsonb().$type<unknown[]>(),
     /** Model calls made so far (capped by AGENT_MAX_TOOL_TURNS). */
     turns: integer().notNull().default(0),
     /**
