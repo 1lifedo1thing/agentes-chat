@@ -37,12 +37,35 @@ test("opening at its latest message, the list shows only once it sits at its end
 test("a message sent slides up into view in one motion and is there at once, whole", () => {
   // Going to the end glides the list's own follow of its end for a moment, instead of a jump and a second scroll.
   expect(chat).toContain("const GLIDE = { animated: true } as const;");
-  expect(chat).toMatch(/setAtEnd\(true\);\s*setGlide\(\(n\) => n \+ 1\);/);
-  expect(chat).toContain("maintainScrollAtEnd={readHold ? false : glide > 0 ? GLIDE : true}");
+  expect(chat).toMatch(/setAtEnd\(true\);[\s\S]{0,240}setGlide\(\(n\) => n \+ 1\);/);
+  expect(chat).toContain("maintainScrollAtEnd={readHold || anchored ? false : glide > 0 ? GLIDE : true}");
   // Meanwhile the keyboard list's instant shift for the growing dock is held, and a cover keeps its own hold.
   expect(chat).toMatch(
     /if \(glide === 0\) return;\s*if \(!covered\.current\) freeze\.value = true;\s*const timer = setTimeout\(\(\) => \{\s*setGlide\(0\);\s*if \(!covered\.current\) freeze\.value = false;\s*\}, GLIDE_MS\);/,
   );
   // My own words never fade in; someone else's still rise in.
   expect(chat).toContain("entering={fresh && m.author.id !== meId ? ENTER : undefined}");
+});
+
+test("in a DM with an agent, a message I send rises to the top of the room and the reply writes under it", () => {
+  // Its row's key held as it is sent (an agent answers it: not a GIF or a sticker alone).
+  expect(chat).toMatch(
+    /if \(isMediaAlone\(local\)\) return;\s*\/\/[^\n]*\n\s*if \(dmAgentId\) \{\s*anchorRise\.current = "waiting";\s*setAnchorKey\(messageKey\(local\)\);/,
+  );
+  // The room under it is the list's (`anchoredEndSpace`), the message under the bar, a long one by its last lines.
+  expect(chat).toContain("anchorOffset: (hasPin ? 0 : headerHeight) + BAND_GAP,");
+  expect(chat).toContain("anchorMaxSize: ANCHOR_MAX,");
+  expect(chat).toContain("anchoredEndSpace={anchoredEndSpace}");
+  // It rises once the list measured it and what follows (or a moment later anyway), with the keyboard list's own scroll,
+  // the keyboard left as it is.
+  expect(chat).toMatch(/if \(info\.anchorKey === anchorKeyRef\.current\) rise\(\);/);
+  expect(chat).toContain("void scrollMessageToEnd({ animated: true, closeKeyboard: false })");
+  expect(chat).toContain("const timer = setTimeout(rise, ANCHOR_WAIT_MS);");
+  // Going to the end leaves the rise to it, and the reply is never chased: no follow while a message is held.
+  expect(chat).toMatch(/if \(anchorRise\.current === "waiting"\) return;\s*setGlide/);
+  expect(chat).toContain("maintainScrollAtEnd={readHold || anchored ? false : glide > 0 ? GLIDE : true}");
+  // At its end is where it is (the round button and what is new below read that), and a long reply isn't taken to its
+  // first line: it already reads from there.
+  expect(chat).toContain('return state.listen(anchored ? "isAtEnd" : "isFollowingEnd", setAtEnd);');
+  expect(chat).toMatch(/if \(anchorKeyRef\.current\) \{\s*toReadRef\.current = null;\s*return;\s*\}/);
 });

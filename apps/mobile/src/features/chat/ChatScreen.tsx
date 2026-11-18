@@ -91,7 +91,7 @@ import { voiceOf } from "@agenteschat/client/lib/voice";
 import { waitingAway, waitingNotification } from "@agenteschat/client/lib/waiting";
 import { makingImage, stopsMovedOn } from "@agenteschat/client/lib/work";
 import { isIdHandle } from "@agenteschat/ui/names";
-import { KeyboardAwareLegendList } from "@legendapp/list/keyboard";
+import { KeyboardAwareLegendList, useKeyboardScrollToEnd } from "@legendapp/list/keyboard";
 import type { LegendListRef, OnViewableItemsChanged } from "@legendapp/list/react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
@@ -237,6 +237,7 @@ import {
   keepSameRows,
   mayStopRun,
   mergeTimeline,
+  messageKey,
   parseSlash,
   pinnedAsListed,
   pinTarget,
@@ -345,6 +346,14 @@ const FRESH_MS = 800;
 const GLIDE = { animated: true } as const;
 /** How long the follow glides after going to the end: the scroll to the message and its last settling (ms). */
 const GLIDE_MS = 700;
+/**
+ * In a DM with an agent, a message I send rises to the top of the room, with the room under it left for the reply, which
+ * writes into it without the list chasing it (as AI chat apps do: Legend List's `anchoredEndSpace`). A long one shows
+ * its last lines there, this tall at most (points).
+ */
+const ANCHOR_MAX = 88;
+/** How long the rise waits for the list to measure the message and what follows it before going anyway (ms). */
+const ANCHOR_WAIT_MS = 300;
 /** How close to the end a scroll has to stop for a list held at a long message's start to follow again. */
 const READ_RELEASE_PX = 24;
 /** A row the list takes to the top of the room (a long reply's start, the "Novas" line) sits this far under the bar. */
@@ -908,6 +917,13 @@ function Chat({
   const [glide, setGlide] = useState(0);
   const gliding = useRef(false);
   gliding.current = glide > 0;
+  // In a DM with an agent, the message I sent last (its row's key), held at the top of the room (`ANCHOR_MAX`), and
+  // whether its rise still waits for the list to measure it or is under way.
+  const [anchorKey, setAnchorKey] = useState<string | null>(null);
+  const anchorKeyRef = useRef<string | null>(null);
+  anchorKeyRef.current = anchorKey;
+  const anchored = anchorKey !== null;
+  const anchorRise = useRef<"waiting" | "moving" | null>(null);
   // The person's first touch here, anywhere (a scroll, the box, a message): the day's greeting closes a while after.
   const [touched, setTouched] = useState(false);
   // The messages "Ver mais" opened in place: they stay open while the screen lives (rows unmount off screen).
@@ -978,6 +994,8 @@ function Chat({
     toReadRef.current = null;
     setReadHold(false);
     setAtEnd(true);
+    // My words to an agent rise on their own once the list has measured them (`anchorRise`); the rest glides to the end.
+    if (anchorRise.current === "waiting") return;
     setGlide((n) => n + 1);
     requestAnimationFrame(() => void listRef.current?.scrollToEnd({ animated: true }));
   }, [letGo]);
@@ -1103,6 +1121,11 @@ function Chat({
       // What waits behind it stays under it (`keepBehind`).
       if (waitingBehind.current.length > 0) keepBehind(local);
       if (isMediaAlone(local)) return;
+      // My words to an agent rise to the top of the room once their row is measured (`anchoredEndSpace`).
+      if (dmAgentId) {
+        anchorRise.current = "waiting";
+        setAnchorKey(messageKey(local));
+      }
       const atWork = live.runs.some(
         (r) =>
           !r.provisional &&
@@ -1890,7 +1913,7 @@ function Chat({
     const list = listRef.current;
     const state = list?.getState();
     if (!list || !state) return null;
-    if (state.isFollowingEnd) return { end: true };
+    if (state.isFollowingEnd || state.isAtEnd) return { end: true };
     const anchor = list.anchorVisibleContent({ hold: false });
     const position = anchor ? state.positionByKey(anchor.key) : undefined;
     return { end: false, scroll: state.scroll, key: anchor?.key ?? null, position: position ?? null };
@@ -2567,7 +2590,7 @@ function Chat({
     // Two frames on, once the inset is in (the list's distance counts it), a list left short goes on to the end: one
     // that the scroll view already shifted is at its end and isn't moved twice.
     // While a send glides, the list's own follow takes the grown dock into the same motion.
-    if (grew && followsEnd() && !gliding.current)
+    if (grew && followsEnd() && !gliding.current && anchorRise.current === null)
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           const state = listRef.current?.getState();
@@ -2613,6 +2636,43 @@ function Chat({
   // is one, already holds that room). iOS's automatic inset made keyboard moves land short at the end.
   const hasPin = pinned !== null;
   band.current = { top: hasPin ? 0 : headerHeight, lift };
+  // The rise of a message I sent to an agent: the keyboard list's scroll to its end, holding the list's keyboard room
+  // still while it runs (Legend List's AI chat recipe); with the room left under the message, the end is the message at
+  // the top of the room. It starts once the list has measured the message and what follows it, when that room is known
+  // (a scroll started earlier stops short), two frames on so the room is applied.
+  const { scrollMessageToEnd } = useKeyboardScrollToEnd({ freeze, listRef });
+  const anchorIndex = anchorKey ? shownRows.findIndex((r) => r.key === anchorKey) : -1;
+  const rise = useCallback(() => {
+    if (anchorRise.current !== "waiting") return;
+    anchorRise.current = "moving";
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        void scrollMessageToEnd({ animated: true, closeKeyboard: false }).finally(() => {
+          if (anchorRise.current === "moving") anchorRise.current = null;
+        });
+      }),
+    );
+  }, [scrollMessageToEnd]);
+  const anchoredEndSpace = useMemo(
+    () =>
+      anchorIndex >= 0
+        ? {
+            anchorIndex,
+            anchorOffset: (hasPin ? 0 : headerHeight) + BAND_GAP,
+            anchorMaxSize: ANCHOR_MAX,
+            onReady: (info: { anchorKey: string | undefined }) => {
+              if (info.anchorKey === anchorKeyRef.current) rise();
+            },
+          }
+        : undefined,
+    [anchorIndex, hasPin, headerHeight, rise],
+  );
+  // The list never said it measured them (a row that doesn't lay out): it rises anyway.
+  useEffect(() => {
+    if (anchorIndex < 0 || anchorRise.current !== "waiting") return;
+    const timer = setTimeout(rise, ANCHOR_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [anchorIndex, rise]);
   // The conversation's first message is loaded (a thread loads whole): what sits above it can show.
   const atStart = isThread || olderDone || (top.data?.length ?? 0) < MESSAGES_PAGE;
   const listPad = useMemo(
@@ -2699,8 +2759,9 @@ function Chat({
     // A new list opens at the end (initialScrollAtEnd); only changes count from here, so the button never
     // flashes on open.
     setAtEnd(true);
-    return state.listen("isFollowingEnd", setAtEnd);
-  }, [showList]);
+    // Holding a message of mine at the top (`anchorKey`) the list doesn't follow its end: at its end is where it is.
+    return state.listen(anchored ? "isAtEnd" : "isFollowingEnd", setAtEnd);
+  }, [showList, anchored]);
 
   // "Última mensagem lida" with something unread: it opens at the "Novas" line, kept as it was on opening because
   // reading moves it. Threads open at their end, and a conversation asked to open at a message (a pin) at that message.
@@ -2861,6 +2922,11 @@ function Chat({
   // Taller than the room it shows in (under the bar, over the dock and the keyboard). The list says the new size before
   // it measures the row (an estimate): a row not measured yet waits for its own size, never taken for a tall one.
   const checkReading = useCallback(() => {
+    // Under a message of mine held at the top, the reply already reads from its first line.
+    if (anchorKeyRef.current) {
+      toReadRef.current = null;
+      return;
+    }
     const key = toReadRef.current;
     const room = roomNow();
     if (!key || !room) return;
@@ -3052,7 +3118,10 @@ function Chat({
                                   alignItemsAtEnd
                                   // New messages, a reply growing word by word and the working line keep the end in view,
                                   // but only while the person is near it.
-                                  maintainScrollAtEnd={readHold ? false : glide > 0 ? GLIDE : true}
+                                  maintainScrollAtEnd={readHold || anchored ? false : glide > 0 ? GLIDE : true}
+                                  // A message I sent to an agent at the top of the room, the room under it left for the
+                                  // reply (`anchorKey`).
+                                  anchoredEndSpace={anchoredEndSpace}
                                   maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
                                   // Older pages above and rows changing size keep what is on screen still.
                                   maintainVisibleContentPosition
