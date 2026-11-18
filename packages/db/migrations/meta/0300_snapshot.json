@@ -1,5 +1,5 @@
 {
-  "id": "064341d5-2554-4f26-9646-55f8d942c52e",
+  "id": "1a8aaf87-e02f-48b9-9bad-5f8a0901de48",
   "prevId": "13ecdbb7-388f-4d8e-8fee-7fd76fc3be9a",
   "version": "7",
   "dialect": "postgresql",
@@ -4422,6 +4422,18 @@
           "notNull": true,
           "default": 1
         },
+        "conversation_channel_id": {
+          "name": "conversation_channel_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "conversation_root_id": {
+          "name": "conversation_root_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_by_type": {
           "name": "created_by_type",
           "type": "text",
@@ -4503,6 +4515,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "artifacts_conversation_channel_id_index": {
+          "name": "artifacts_conversation_channel_id_index",
+          "columns": [
+            {
+              "expression": "conversation_channel_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -4517,6 +4544,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "artifacts_conversation_channel_id_channels_id_fk": {
+          "name": "artifacts_conversation_channel_id_channels_id_fk",
+          "tableFrom": "artifacts",
+          "tableTo": "channels",
+          "columnsFrom": [
+            "conversation_channel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -12575,88 +12615,377 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.live_activity_devices": {
-      "name": "live_activity_devices",
+    "public.live_assets": {
+      "name": "live_assets",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "artifact_id": {
+          "name": "artifact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_config_id": {
+          "name": "storage_config_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "blob_key": {
+          "name": "blob_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origin": {
+          "name": "origin",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by_type": {
+          "name": "created_by_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "live_assets_org_id_index": {
+          "name": "live_assets_org_id_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "live_assets_org_id_organizations_id_fk": {
+          "name": "live_assets_org_id_organizations_id_fk",
+          "tableFrom": "live_assets",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "live_assets_artifact_id_artifacts_id_fk": {
+          "name": "live_assets_artifact_id_artifacts_id_fk",
+          "tableFrom": "live_assets",
+          "tableTo": "artifacts",
+          "columnsFrom": [
+            "artifact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "live_assets_artifact_id_id_pk": {
+          "name": "live_assets_artifact_id_id_pk",
+          "columns": [
+            "artifact_id",
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.live_doc_updates": {
+      "name": "live_doc_updates",
+      "schema": "",
+      "columns": {
+        "artifact_id": {
+          "name": "artifact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "update": {
+          "name": "update",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bytes": {
+          "name": "bytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "live_doc_updates_org_id_index": {
+          "name": "live_doc_updates_org_id_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "live_doc_updates_artifact_id_artifacts_id_fk": {
+          "name": "live_doc_updates_artifact_id_artifacts_id_fk",
+          "tableFrom": "live_doc_updates",
+          "tableTo": "artifacts",
+          "columnsFrom": [
+            "artifact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "live_doc_updates_org_id_organizations_id_fk": {
+          "name": "live_doc_updates_org_id_organizations_id_fk",
+          "tableFrom": "live_doc_updates",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "live_doc_updates_artifact_id_seq_pk": {
+          "name": "live_doc_updates_artifact_id_seq_pk",
+          "columns": [
+            "artifact_id",
+            "seq"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.live_docs": {
+      "name": "live_docs",
+      "schema": "",
+      "columns": {
+        "artifact_id": {
+          "name": "artifact_id",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
-        "user_id": {
-          "name": "user_id",
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "install_id": {
-          "name": "install_id",
+        "state": {
+          "name": "state",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "push_to_start_token": {
-          "name": "push_to_start_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "activity_id": {
-          "name": "activity_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "activity_token": {
-          "name": "activity_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "widgets_dir": {
-          "name": "widgets_dir",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "app_id": {
-          "name": "app_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "apns_sandbox": {
-          "name": "apns_sandbox",
-          "type": "boolean",
+        "state_bytes": {
+          "name": "state_bytes",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": false
+          "default": 0
         },
-        "locale": {
-          "name": "locale",
-          "type": "text",
+        "head_seq": {
+          "name": "head_seq",
+          "type": "bigint",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": 0
         },
-        "started_at": {
-          "name": "started_at",
+        "compacted_seq": {
+          "name": "compacted_seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "preview": {
+          "name": "preview",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edited_at": {
+          "name": "edited_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
-        "last_sent": {
-          "name": "last_sent",
+        "edited_by_type": {
+          "name": "edited_by_type",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
-        "last_sent_at": {
-          "name": "last_sent_at",
+        "edited_by_id": {
+          "name": "edited_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edited_run_id": {
+          "name": "edited_run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checkpoint_at": {
+          "name": "checkpoint_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "checkpoint_seq": {
+          "name": "checkpoint_seq",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         },
         "created_at": {
           "name": "created_at",
@@ -12673,14 +13002,43 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "live_docs_org_id_index": {
+          "name": "live_docs_org_id_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
-        "live_activity_devices_user_id_users_id_fk": {
-          "name": "live_activity_devices_user_id_users_id_fk",
-          "tableFrom": "live_activity_devices",
-          "tableTo": "users",
+        "live_docs_artifact_id_artifacts_id_fk": {
+          "name": "live_docs_artifact_id_artifacts_id_fk",
+          "tableFrom": "live_docs",
+          "tableTo": "artifacts",
           "columnsFrom": [
-            "user_id"
+            "artifact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "live_docs_org_id_organizations_id_fk": {
+          "name": "live_docs_org_id_organizations_id_fk",
+          "tableFrom": "live_docs",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
           ],
           "columnsTo": [
             "id"
@@ -12690,16 +13048,212 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "live_activity_devices_userId_installId_unique": {
-          "name": "live_activity_devices_userId_installId_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "install_id"
-          ]
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.live_image_requests": {
+      "name": "live_image_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "artifact_id": {
+          "name": "artifact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_by_type": {
+          "name": "requested_by_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_by_id": {
+          "name": "requested_by_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prompt": {
+          "name": "prompt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "model": {
+          "name": "model",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "aspect": {
+          "name": "aspect",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'1:1'"
+        },
+        "references": {
+          "name": "references",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "shape_ids": {
+          "name": "shape_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "frame_id": {
+          "name": "frame_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "asset_ids": {
+          "name": "asset_ids",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "cost_nano_usd": {
+          "name": "cost_nano_usd",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
+      "indexes": {
+        "live_image_requests_org_id_requested_by_id_created_at_index": {
+          "name": "live_image_requests_org_id_requested_by_id_created_at_index",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "requested_by_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "live_image_requests_artifact_id_index": {
+          "name": "live_image_requests_artifact_id_index",
+          "columns": [
+            {
+              "expression": "artifact_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "live_image_requests_org_id_organizations_id_fk": {
+          "name": "live_image_requests_org_id_organizations_id_fk",
+          "tableFrom": "live_image_requests",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "live_image_requests_artifact_id_artifacts_id_fk": {
+          "name": "live_image_requests_artifact_id_artifacts_id_fk",
+          "tableFrom": "live_image_requests",
+          "tableTo": "artifacts",
+          "columnsFrom": [
+            "artifact_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -28761,7 +29315,10 @@
         "file",
         "block",
         "poll",
-        "choices"
+        "choices",
+        "spreadsheet",
+        "slides",
+        "canvas"
       ]
     },
     "public.author_type": {
@@ -28779,7 +29336,8 @@
         "channel",
         "dm",
         "forum",
-        "task"
+        "task",
+        "file"
       ]
     },
     "public.channel_visibility": {
@@ -28996,7 +29554,8 @@
         "agent",
         "router",
         "embedding",
-        "summary"
+        "summary",
+        "image"
       ]
     }
   },
