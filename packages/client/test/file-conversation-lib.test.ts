@@ -86,5 +86,9 @@ test("a notice from a file's conversation opens the file at that message", () =>
     source: { channelId: "c1", threadId: "r1", messageId: "m1", artifactId: "f1", label: "Campanha" },
     latest: { text: "Vi aqui" },
   } as unknown as AppNotification;
-  expect(openTarget(notice)).toEqual({ to: "/org/$orgId/drive/$fileId", params: { fileId: "f1" }, search: { m: "m1" } });
+  expect(openTarget(notice)).toEqual({
+    to: "/org/$orgId/drive/$fileId",
+    params: { fileId: "f1" },
+    search: { m: "m1" },
+  });
 });

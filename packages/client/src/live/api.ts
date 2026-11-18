@@ -99,7 +99,9 @@ export function createLiveApi(request: Requester, options: { upload?: LiveUpload
         : request<LiveFileState>(`${file(orgId, fileId)}/live`),
     rename: (orgId, fileId, title) => request<Artifact>(`${file(orgId, fileId)}/live/rename`, { json: { title } }),
     duplicate: (orgId, fileId, title) =>
-      request<Artifact>(`${file(orgId, fileId)}/live/duplicate`, { json: title?.trim() ? { title: title.trim() } : {} }),
+      request<Artifact>(`${file(orgId, fileId)}/live/duplicate`, {
+        json: title?.trim() ? { title: title.trim() } : {},
+      }),
     saveVersion: (orgId, fileId, note) =>
       request<LiveVersionSaved>(`${file(orgId, fileId)}/live/versions`, {
         json: note?.trim() ? { note: note.trim() } : {},

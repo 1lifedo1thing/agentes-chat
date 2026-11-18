@@ -70,8 +70,10 @@ export const channelReaderSql = (channelId: SQL, userId: SQL, depth = FILE_CONVE
   or exists (select 1 from ${channels} rc where rc.id = ${channelId}
     and ((rc.kind = 'channel' and ${maySql(sql`rc.org_id`, userId, "administrator")})
       or (rc.kind = 'task' and ${taskReaderSql(channelId, userId)})${
-        depth > 0 ? sql`
-      or (rc.kind = 'file' and ${fileConversationReaderSql(sql`rc.id`, userId, depth - 1)})` : sql``
+        depth > 0
+          ? sql`
+      or (rc.kind = 'file' and ${fileConversationReaderSql(sql`rc.id`, userId, depth - 1)})`
+          : sql``
       })))`;
 
 /** The people of `orgId` who read the channel `channelId` (`channelReaderSql`), as a subquery of `user_id`. */

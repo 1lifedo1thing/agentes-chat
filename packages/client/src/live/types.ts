@@ -201,7 +201,12 @@ export interface FileConversationRoot {
 }
 
 /** The live kinds, as the client knows them without loading the package's code (types only come from it here). */
-const LIVE_KIND_NAMES: readonly string[] = ["spreadsheet", "slides", "canvas", "document"] satisfies readonly LiveKind[];
+const LIVE_KIND_NAMES: readonly string[] = [
+  "spreadsheet",
+  "slides",
+  "canvas",
+  "document",
+] satisfies readonly LiveKind[];
 
 /** Whether an artifact kind is a live file's (`isLiveKind` of `@agenteschat/live`, without importing its code). */
 export const isLiveFileKind = (kind: unknown): kind is LiveKind =>

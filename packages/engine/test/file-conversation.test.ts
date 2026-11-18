@@ -14,8 +14,8 @@ import {
   ForbiddenError,
   fileConversationOf,
   fileConversationSummaries,
-  liveFileAccess,
   listMembers,
+  liveFileAccess,
   markThreadRead,
   NEW_AGENT_DEFAULTS,
   NotFoundError,
@@ -75,7 +75,10 @@ describe("a live file's conversation (ADR 0199)", () => {
     const asked = await postPersonMessage(deps, f.owner.id, f.org.id, at.channelId, {
       body: "@dev faz variações desta",
       threadId: at.rootId,
-      liveRef: { artifactId: canvas.id, selection: { label: "1 imagem", shapes: ["img_1"], point: { x: 1.26, y: -4 } } },
+      liveRef: {
+        artifactId: canvas.id,
+        selection: { label: "1 imagem", shapes: ["img_1"], point: { x: 1.26, y: -4 } },
+      },
     });
     const ref = {
       artifactId: canvas.id,

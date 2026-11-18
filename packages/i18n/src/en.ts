@@ -18922,7 +18922,8 @@ export const en = {
     },
     generate_image: {
       label: "Generate images",
-      description: "Makes images with the workspace's image AI, in the conversation or on a canvas. Paid from its budget.",
+      description:
+        "Makes images with the workspace's image AI, in the conversation or on a canvas. Paid from its budget.",
     },
     list_issues: {
       label: "View tasks",

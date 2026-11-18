@@ -18791,7 +18791,8 @@ export const ptBR = {
     },
     generate_image: {
       label: "Gerar imagens",
-      description: "Cria imagens com a IA de imagens do workspace, na conversa ou num quadro. Sai do orçamento do agente.",
+      description:
+        "Cria imagens com a IA de imagens do workspace, na conversa ou num quadro. Sai do orçamento do agente.",
     },
     list_issues: {
       label: "Ver tarefas",
@@ -22353,7 +22354,8 @@ export const ptBR = {
         delete: "Excluir",
         copyName: "{{name}} (cópia)",
         deleteTitle: "Excluir {{name}}?",
-        deleteBody: "Tudo o que está nesta aba vai junto. Fórmulas de outras abas que usam ela passam a dar erro de referência.",
+        deleteBody:
+          "Tudo o que está nesta aba vai junto. Fórmulas de outras abas que usam ela passam a dar erro de referência.",
         deleteConfirm: "Excluir aba",
       },
       /** Why a change was refused, in a toast (the edit's reason). */

@@ -458,8 +458,7 @@ const GROUP_LABELS: Record<string, string> = {
     "More of the conversation (reading a channel or a message by its link, stickers, your status, reply style, threads, adding agents to channels, the agents' directory, your usage, instruction changes, your own settings, the agents' line on commits, feedback on this app)",
   drive: "Files (Drive)",
   [DASHBOARD_GROUP]: "Dashboards and widgets (numbers and charts kept up to date, boards to share)",
-  [LIVE_FILES_GROUP]:
-    "Live spreadsheets, slides, canvases and documents, and pictures in them",
+  [LIVE_FILES_GROUP]: "Live spreadsheets, slides, canvases and documents, and pictures in them",
   issues: "Issues",
   calendar: "Calendar",
   schedule: "Schedule, reminders and routines",
