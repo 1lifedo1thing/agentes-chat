@@ -49,6 +49,7 @@ import {
   hiddenAgentIds,
   listsAllAgents,
   managesAgent,
+  opensDm,
 } from "@agenteschat/client/lib/audience";
 import { workspaceNotes } from "@agenteschat/client/lib/deletion";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
@@ -443,10 +444,12 @@ export function Sidebar() {
   const float = tablet && !collapsed;
 
   // AGENTES (ADR 0083 and its addendum): the agents that talk to me (who manages agents may list the rest), the ones in
-  // no group, then each group of agents, each with my pinned ones on top and the rest in my order.
+  // no group, then each group of agents, each with my pinned ones on top and the rest in my order. A row opens its DM,
+  // so "the rest" are the agents whose DM opens for me (`opensDm`): the ones I manage, never someone's private agent
+  // the key doesn't reach (ADR 0085 addendum of 2026-11-17), which Team still lists.
   const manages = can(org, "manage_agents");
   const team = dir.agents.filter((a) => !isRightHand(a));
-  const shownAgents = team.filter((a) => (manages && view.showAllAgents) || canTalk(a));
+  const shownAgents = team.filter((a) => canTalk(a) || (manages && view.showAllAgents && opensDm(a)));
   const groups = useAgentGroups(orgId).data ?? [];
   const byGroup = agentSections(shownAgents, groups, (a) => a.id);
   const ordered = (items: Agent[]) => {
@@ -1867,7 +1870,7 @@ function AgentRow({
   const rowMenu = entityMenu(() => agentEntries(a, menuExtra));
   // Its owner and who manages it (ADR 0085 addendum of 2026-11-17): its settings on hover, like a channel's.
   const edits = managesAgent(a) || a.ownerUserId === me.user.id;
-  // Listed for who manages agents though it doesn't talk to them: the line says who it talks to.
+  // Listed for who manages it though it doesn't talk to them (its DM opens, `opensDm`): the line says who it talks to.
   const locked = !canTalk(a);
   const names = locked ? audienceNames(a, (id) => dir.memberById.get(id)?.name, dir.roleName) : [];
   // Working: the pixel orbit in its color beside its name (what it is on in its label and the row's title), so the

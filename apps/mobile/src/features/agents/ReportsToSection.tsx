@@ -1,7 +1,7 @@
 import { type AgentLineChange, useSetAgentLines, useTeam } from "@agenteschat/client";
 import { managesAgent } from "@agenteschat/client/lib/audience";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
-import { mayReportTo, reportsOf, supervisorOf } from "@agenteschat/client/lib/team-views";
+import { mayReportTo, mayUndoLines, reportsOf, supervisorOf } from "@agenteschat/client/lib/team-views";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, useToast } from "@/ui";
@@ -13,7 +13,8 @@ import { closeAgentChoose, openAgentChoose } from "./agent-choose";
 /**
  * Responde a (ADR 0148 addendum), as the web's field: who manages the agent (the server's `canManage`) picks the agent
  * it reports to on a screen of its own (the agents it may report to, and nobody), applied at once, with Desfazer in the
- * toast; anyone else reads it. A supervisor lists who reports to it. No drag on the phone.
+ * toast while the server would take it back (`mayUndoLines`); anyone else reads it. A supervisor lists who reports to
+ * it. No drag on the phone.
  */
 export function ReportsToSection({ agentId }: { agentId: string }) {
   const { t } = useTranslation();
@@ -36,7 +37,9 @@ export function ReportsToSection({ agentId }: { agentId: string }) {
             ? t("team.reportsTo.done", { agent: name, to: team.find((a) => a.id === to)?.name ?? "" })
             : t("team.reportsTo.cleared", { agent: name }),
           agentId,
-          ...(undoing || previous.length === 0
+          // Undoing puts it back under its former supervisor: only one the person manages, or nobody (ADR 0085
+          // addendum of 2026-11-17). Nothing changed, nothing to undo.
+          ...(undoing || previous.length === 0 || !mayUndoLines(previous, team)
             ? {}
             : { action: { label: t("agentGroups.undo"), onPress: () => apply(previous, true) } }),
         });

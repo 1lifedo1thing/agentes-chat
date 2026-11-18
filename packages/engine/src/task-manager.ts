@@ -10,7 +10,7 @@ import {
   waitsOnViewerIn,
   workStateOf,
 } from "./agent-work";
-import { managesAgentSql } from "./audience";
+import { ACCESS_COLUMNS, managesAgentSql } from "./audience";
 import { runAuthorityById } from "./authority";
 import type { ModelScope } from "./brains/select";
 import { TtlCache } from "./cache";
@@ -326,14 +326,12 @@ const RUN_COLUMNS = {
 const managesSql = (userId: string) => managesAgentSql("a", sql`${userId}::text`);
 
 /**
- * `seesRunSql` for a run `r` of agent `a`, with who manages that agent in place of the workspace's key: work no person
- * is a member of (a routine's background run, two agents' private conversation) shows to its owner and to who manages
- * that very agent, so a private agent's work stays out of sight of who merely holds "Editar qualquer agente". Never
- * NULL, as `seesRunSql`: `not` of it counts the hidden ones.
+ * `seesRunSql` for a run `r` of agent `a`, with who manages that agent (`managesSql`) in place of the workspace's key:
+ * work no person is a member of (a routine's background run, two agents' private conversation) shows to its owner and
+ * to who manages that very agent, so a private agent's work stays out of sight of who merely holds "Edit agents".
+ * Never NULL, as `seesRunSql`: `not` of it counts the hidden ones.
  */
-const seesSql = (userId: string, orgId: string) =>
-  sql<boolean>`coalesce(${seesRunSql(RUN_COLUMNS, userId, orgId, false)}
-    or (${seesRunSql(RUN_COLUMNS, userId, orgId, true)} and ${managesSql(userId)}), false)`;
+const seesSql = (userId: string, orgId: string) => seesRunSql(RUN_COLUMNS, userId, orgId, managesSql(userId));
 
 /** The oldest card a run waiting on a person waits on (an approval, a question, a secret): its message. */
 const CARD_OF_RUN = sql`(case when r.status in ('waiting_approval', 'waiting_input') then (
@@ -715,16 +713,27 @@ export async function taskManager(
     wait: waitOf(r),
     work: workOf(r),
   }));
+  // Who may press "Continue now" on each paused task: their agents are read once for them all, not once a task.
+  const paused = active.flatMap((r, i) => {
+    const wait = tasks[i]?.wait;
+    return wait?.code === "usage_pause" ? [{ r, wait }] : [];
+  });
+  const pausedIds = [...new Set(paused.map(({ r }) => r.agent_id))];
+  const pausedAgents = pausedIds.length
+    ? await db
+        .select({ id: agents.id, ...ACCESS_COLUMNS })
+        .from(agents)
+        .where(and(eq(agents.orgId, orgId), inArray(agents.id, pausedIds)))
+    : [];
   await Promise.all(
-    active.map(async (r, i) => {
-      const wait = tasks[i]?.wait;
-      if (wait?.code !== "usage_pause") return;
+    paused.map(async ({ r, wait }) => {
       wait.canContinue = await mayContinuePause(db, userId, membership, {
         run: { orgId, agentId: r.agent_id, triggerMessageId: r.trigger_message_id },
         requester: r.requester_id,
         ownerUserId: r.owner_user_id,
         routineId: r.routine_id,
         routineCreatorId: r.routine_creator,
+        agent: pausedAgents.find((a) => a.id === r.agent_id),
       });
     }),
   );

@@ -17,7 +17,6 @@ import {
   healthWords,
   isRunAtWork,
   isStoppable,
-  pausedFix,
   routineChannelOf,
   routineStateTime,
   routineStateWords,
@@ -84,6 +83,7 @@ import {
 } from "./hooks";
 import {
   FIX_ICON,
+  fixFor,
   hasFired,
   isDoneOnce,
   isPaused,
@@ -160,7 +160,8 @@ function Details({ routine: r, refetch }: { routine: Routine; refetch: () => Pro
     r.active && r.trigger.type === "schedule" && r.trigger.rule ? r.trigger.rule : null,
   );
   const nexts = described.data?.ok ? described.data.nextRuns.slice(0, 4) : r.nextRunAt ? [r.nextRunAt] : [];
-  const fix = r.canManage ? pausedFix(r) : null;
+  // Its one-tap fix, "Take over" only for who may make a routine for its agent (`fixFor`).
+  const fix = fixFor(r, dir.agentById.get(r.agentId));
   // "Trocar computador": the outage its run waits on, for whoever manages its agent (the server's `canManage`), where
   // people connect their own computers (a Cloud workspace has one).
   const selfHost = useEdition() === "selfhost";

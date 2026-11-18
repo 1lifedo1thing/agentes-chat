@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { PubSub } from "@agenteschat/adapters";
 import { PERMISSION_TOOL } from "@agenteschat/adapters";
 import { and, type Database, desc, type Executor, eq, gt, inArray, isNull, or, schema, sql } from "@agenteschat/db";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { accountablePerson, messageRoot, type RunAuthority } from "./authority";
 import {
   AUTONOMY_DEFAULTS,
@@ -314,16 +314,7 @@ export async function decideCostlyProposal(
     .where(and(eq(messages.orgId, orgId), eq(messages.id, signal.messageId)));
   const card = proposalCardOf(message?.meta);
   const [agent] = await db
-    .select({
-      ownerUserId: agents.ownerUserId,
-      autonomy: agents.autonomyBrakes,
-      handle: agents.handle,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select({ autonomy: agents.autonomyBrakes, handle: agents.handle, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.orgId, orgId), eq(agents.id, signal.agentId)));
   const membership = await requireActiveMembership(db, actorId, orgId);

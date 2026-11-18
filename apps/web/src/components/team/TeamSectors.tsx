@@ -320,8 +320,10 @@ function SectorCard({
 /**
  * A setor's "Supervisor" (ADR 0148 addendum): the agent its agents report to, set for all of them at once with
  * Desfazer, and "1 agente sem supervisor · Aplicar" when one of them doesn't (an agent moved in later keeps its own).
- * The server applies all of the lines or none, each only for who manages its agent (`setReportsTo`, ADR 0085 addendum
- * of 2026-11-17): the choice is offered to who manages every agent of the setor, Aplicar to who manages the ones left.
+ * The server applies all of the lines or none, each only for who manages its agent and the agent it goes under, which
+ * changes too (`setReportsTo`, ADR 0085 addendum of 2026-11-17): the choice is offered to who manages every agent of
+ * the department, among the agents they manage (the current supervisor still named), and Apply to who manages the
+ * ones left and their supervisor.
  */
 function SectorSupervisor({
   group,
@@ -352,7 +354,9 @@ function SectorSupervisor({
   const off = now?.off.length ?? 0;
   const mine = group.agentIds.flatMap((id) => team.agents.find((a) => a.id === id) ?? []);
   const picks = arranges && mine.every((a) => managesAgent(a));
-  const applies = arranges && !!now && now.off.every((a) => managesAgent(a));
+  const applies = arranges && !!now && managesAgent(now.supervisor) && now.off.every((a) => managesAgent(a));
+  // What a department's agents may go under: agents I manage, the one they go under now kept so the picker names it.
+  const choices = team.agents.filter((a) => !look.isLodi(a) && (managesAgent(a) || a.id === now?.supervisor.id));
   return (
     <span className="team-sector-card__sup">
       {picks ? (
@@ -363,7 +367,7 @@ function SectorSupervisor({
           onValueChange={(v) => apply(v === NOBODY ? null : v)}
           options={[
             { value: NOBODY, label: t("team.sectors.none") },
-            ...team.agents.filter((a) => !look.isLodi(a)).map((a) => ({ value: a.id, label: a.name })),
+            ...choices.map((a) => ({ value: a.id, label: a.name })),
           ]}
         />
       ) : now ? (

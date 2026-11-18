@@ -11,7 +11,7 @@ import {
   useRuleDescribe,
   useRuleParse,
 } from "@agenteschat/client";
-import { managesRoutinesOf } from "@agenteschat/client/lib/audience";
+import { createsRoutinesFor } from "@agenteschat/client/lib/audience";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { upperFirst } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
@@ -171,10 +171,12 @@ function Form({ routine }: { routine: Routine | undefined }) {
   );
   const targetLabel = useTargetLabel();
   const action = useRoutineAction(orgId);
-  // The agents whose routines this person sets up (the server's `canManageRoutines`: who edits each one, and "Criar
-  // rotinas" where it reaches); a routine being edited keeps its own.
+  // The agents this person may make a routine for (`createsRoutinesFor`: they set up its routines, who edits each one
+  // and "Create routines" where it reaches, and it answers them, since a routine asks it on its creator's behalf; ADR
+  // 0085 addendum of 2026-11-17), as the server checks a new routine and a move to another agent. A routine being
+  // edited keeps its own agent, which whoever edits it needn't talk to.
   const agents = useMemo(
-    () => dir.agents.filter((a) => managesRoutinesOf(a) || a.id === routine?.agentId),
+    () => dir.agents.filter((a) => createsRoutinesFor(a) || a.id === routine?.agentId),
     [dir.agents, routine?.agentId],
   );
   const editing = Boolean(routine);

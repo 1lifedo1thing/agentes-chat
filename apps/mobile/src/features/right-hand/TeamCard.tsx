@@ -5,12 +5,12 @@ import {
   type TeamPlan,
   type TeamProposalCard,
   useAiStatus,
+  useFormerAgents,
   useMessages,
   usePostMessage,
   useTeamCard,
 } from "@agenteschat/client";
 import { teamProposalOf } from "@agenteschat/client/lib/action-cards";
-import { managesAgent } from "@agenteschat/client/lib/audience";
 import { joinNames } from "@agenteschat/client/lib/format";
 import { can } from "@agenteschat/client/lib/permissions";
 import { isRightHand, RIGHT_HAND_DEFAULT } from "@agenteschat/client/lib/right-hand";
@@ -19,6 +19,7 @@ import {
   answerPicks,
   answerText,
   firstTasks,
+  managesTeamAgents,
   replyChipsOf,
   teamColumns,
   teamCounts,
@@ -325,6 +326,7 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
   const failed = useFailed();
   const held = usePlanHold(orgId, org) !== null;
   const team = useTeamCard(orgId, { channelId: m.channelId, messageId: m.id });
+  const former = useFormerAgents(orgId).data;
   // Made here and now, on a hold: when the new agents' wave started.
   const [waveFrom, setWaveFrom] = useState<number>();
   const [map, setMap] = useState(false);
@@ -340,14 +342,10 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
   const open = status === "open";
   const decidedAt = card.decidedAt ? when.short(card.decidedAt) : undefined;
   const by = card.decidedByUserId === meId ? null : dir.memberById.get(card.decidedByUserId ?? "")?.name;
-  // Undoing archives its agents: anyone but who created it needs to manage each one still here (the server's
-  // `canManage`, so a private agent stays out of reach of who only holds "Editar qualquer agente").
-  const managesTeam =
-    can(org, "manage_agents") &&
-    (card.created?.agentIds ?? []).every((id) => {
-      const a = dir.agentById.get(id);
-      return !a || managesAgent(a);
-    });
+  // Undoing archives its agents: anyone but who created it needs to manage each one it made, the ones archived since
+  // included (the server's `undoTeam`, so a private agent stays out of reach of who only holds "Edit agents", ADR 0085
+  // addendum of 2026-11-17). An archived one says so in the former agents' list, not in the directory.
+  const managesTeam = managesTeamAgents(org, card.created?.agentIds ?? [], dir.agents, former);
   const answer: AskAnswer | null = open
     ? null
     : status === "created"

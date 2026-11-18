@@ -8,7 +8,7 @@ import {
   usePeople,
   useRoles,
 } from "@agenteschat/client";
-import { editsAgent, managesAgent } from "@agenteschat/client/lib/audience";
+import { editsAgent, managesAgent, opensDm } from "@agenteschat/client/lib/audience";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { leavesChannel, managesChannel } from "@agenteschat/client/lib/permissions";
@@ -238,9 +238,9 @@ export function useChannelMenu() {
 }
 
 /**
- * An agent (sidebar row, its face or name in a message, its card's ⋯): talk, its profile, its computer (`openComputer`,
- * where the caller knows this person may open it), mention, copy @, mark its DM read, edit (who edits it), its link,
- * stop while it works, its id.
+ * An agent (sidebar row, its face or name in a message, its card's ⋯): talk (where its DM opens for me, `opensDm`), its
+ * profile, its computer (`openComputer`, where the caller knows this person may open it), mention, copy @, mark its DM
+ * read, edit (who edits it), its link, stop while it works, its id.
  */
 export function useAgentMenu() {
   const { t } = useTranslation();
@@ -258,7 +258,7 @@ export function useAgentMenu() {
   const pins = useSidebarPins();
   /** `extra`: the sidebar row's own items (Mudar de grupo), after Fixar no topo. */
   return (
-    a: Pick<Agent, "id" | "name" | "handle" | "ownerUserId" | "builtin" | "canManage" | "canEdit">,
+    a: Pick<Agent, "id" | "name" | "handle" | "ownerUserId" | "builtin" | "canTalk" | "canManage" | "canEdit">,
     extra: MenuEntry[] = [],
     openComputer?: () => void,
   ): MenuEntry[] => {
@@ -278,13 +278,20 @@ export function useAgentMenu() {
       });
     return [
       { kind: "header", label: a.name },
-      {
-        kind: "item",
-        id: "dm",
-        label: t("profile.dm"),
-        icon: "message",
-        run: () => void navigate({ to: "/org/$orgId/dm/agent/$agentId", params: { orgId: org.id, agentId: a.id } }),
-      },
+      // Its DM only where the server opens it: someone's private agent, or one I only edit, would refuse it (ADR 0085
+      // addendum of 2026-11-17).
+      ...(opensDm(a)
+        ? ([
+            {
+              kind: "item",
+              id: "dm",
+              label: t("profile.dm"),
+              icon: "message",
+              run: () =>
+                void navigate({ to: "/org/$orgId/dm/agent/$agentId", params: { orgId: org.id, agentId: a.id } }),
+            },
+          ] satisfies MenuEntry[])
+        : []),
       {
         kind: "item",
         id: "profile",

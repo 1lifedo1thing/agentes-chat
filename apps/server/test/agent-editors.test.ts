@@ -48,11 +48,17 @@ async function start() {
   const listed = async (b: Browser) =>
     ((await (await b(`${org}/agents`)).json()) as { agents: ListedAgent[] }).agents.find((a) => a.id === agentId);
   const patch = (b: Browser, json: unknown) => b(`${org}/agents/${agentId}`, { method: "PATCH", json });
-  return { owner, eva, bia, lara, org, agentId, ids, listed, patch };
+  return { owner, eva, bia, lara, orgId, org, agentId, ids, listed, patch };
 }
 
 const rights = (a: ListedAgent | undefined) =>
   a && { canManage: a.canManage, canEdit: a.canEdit, canManageRoutines: a.canManageRoutines };
+
+/** The agent's row as saved. */
+const rowOf = async (agentId: string) => {
+  const [row] = await t.db.select().from(schema.agents).where(eq(schema.agents.id, agentId));
+  return row;
+};
 
 test('"Who can edit" is saved with PATCH and audited; each viewer reads what they may do with the agent', async () => {
   const { owner, eva, bia, lara, agentId, ids, listed, patch } = await start();
@@ -129,4 +135,83 @@ test('an agent made with "Who can edit" starts with it', async () => {
     canEdit: true,
     canManageRoutines: true,
   });
+});
+
+test("one PATCH is decided against the agent as it was: who manages it leaves themselves out and names themselves", async () => {
+  const { lara, agentId, ids, listed, patch } = await start();
+  // Dev answers everyone, so Lara's "Edit agents" reaches it: who talks to it, her name in its list and its role go
+  // together, though the audience leaves her out before the list is saved.
+  const saved = await patch(lara, {
+    role: "QA",
+    audience: { mode: "people", userIds: [ids.bia] },
+    editors: { userIds: [ids.lara], roleIds: [] },
+  });
+  expect(saved.status).toBe(200);
+  expect(await saved.json()).toMatchObject({
+    role: "QA",
+    audience: { mode: "people", userIds: [ids.bia] },
+    editors: { userIds: [ids.lara], roleIds: [] },
+    canManage: false,
+    canEdit: true,
+  });
+  expect(await rowOf(agentId)).toMatchObject({
+    role: "QA",
+    audienceMode: "people",
+    audienceUserIds: [ids.bia],
+    editorUserIds: [ids.lara],
+  });
+  // From now on she edits it without managing it.
+  expect(rights(await listed(lara))).toEqual({ canManage: false, canEdit: true, canManageRoutines: true });
+  expect((await patch(lara, { monthlyBudgetUsd: 10 })).status).toBe(403);
+});
+
+test("a PATCH with one part the person may not make, or one value refused, changes nothing", async () => {
+  const { owner, eva, agentId, ids, patch } = await start();
+  expect((await patch(owner, { editors: { userIds: [ids.eva], roleIds: [] } })).status).toBe(200);
+  const before = await rowOf(agentId);
+  // Eva edits its role, not who edits it: the role she sent with it isn't saved either.
+  const mixed = await patch(eva, { role: "QA", editors: { userIds: [ids.eva, ids.bia], roleIds: [] } });
+  expect(mixed.status).toBe(403);
+  // Its owner makes every part, but a role that isn't the workspace's refuses the whole change.
+  const refused = await patch(owner, {
+    role: "QA",
+    audience: { mode: "people", userIds: [ids.bia], roleIds: [crypto.randomUUID()] },
+    editors: { userIds: [], roleIds: [] },
+  });
+  expect(refused.status).toBe(400);
+  expect(await rowOf(agentId)).toMatchObject({
+    role: before?.role,
+    audienceMode: "everyone",
+    audienceUserIds: [],
+    editorUserIds: [ids.eva],
+    updatedAt: before?.updatedAt,
+  });
+});
+
+test('"Edit agents" makes someone an agent whose audience leaves its creator out and names them: once, with both', async () => {
+  const { lara, orgId, org, ids } = await start();
+  const made = await lara(`${org}/agents`, {
+    json: {
+      name: "Iara",
+      handle: "iara",
+      ownerUserId: ids.owner,
+      audience: { mode: "people", userIds: [ids.bia] },
+      editors: { userIds: [ids.lara], roleIds: [] },
+      appearance: { color: "rose", eyes: "dots", accessory: "headphones" },
+    },
+  });
+  expect(made.status).toBe(201);
+  expect(await made.json()).toMatchObject({
+    ownerUserId: ids.owner,
+    audience: { mode: "people", userIds: [ids.bia] },
+    editors: { userIds: [ids.lara], roleIds: [] },
+    appearance: { color: "rose", eyes: "dots", accessory: "headphones" },
+    canManage: false,
+    canEdit: true,
+  });
+  const iara = await t.db
+    .select()
+    .from(schema.agents)
+    .where(and(eq(schema.agents.orgId, orgId), eq(schema.agents.handle, "iara")));
+  expect(iara).toMatchObject([{ audienceMode: "people", audienceUserIds: [ids.bia], editorUserIds: [ids.lara] }]);
 });

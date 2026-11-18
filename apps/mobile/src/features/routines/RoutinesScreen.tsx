@@ -1,5 +1,5 @@
 import { type Routine, useRoutines } from "@agenteschat/client";
-import { managesRoutinesOf } from "@agenteschat/client/lib/audience";
+import { createsRoutinesFor } from "@agenteschat/client/lib/audience";
 import { routineStateTime, routineStateWords } from "@agenteschat/client/lib/routine-view";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -98,9 +98,9 @@ export function RoutinesScreen() {
     setQ("");
     setStatus("all");
   };
-  // Some agent whose routines this person sets up (the server's `canManageRoutines`).
-  const managesRoutines = dir.agents.some((a) => managesRoutinesOf(a));
-  const mayNew = mayCreate(useOrg().org, "routine", { managesRoutines });
+  // Some agent this person may make a routine for (`createsRoutinesFor`: they set up its routines and it answers them).
+  const createsRoutines = dir.agents.some((a) => createsRoutinesFor(a));
+  const mayNew = mayCreate(useOrg().org, "routine", { createsRoutines });
   // A section that comes or goes with a filter, or as a routine is paused or deleted, fades while the rest slide into
   // place; what shows when the screen opens doesn't fade section by section (as Drive's days).
   const reduced = useReducedMotion();

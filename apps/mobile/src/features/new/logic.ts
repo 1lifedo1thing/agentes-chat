@@ -61,19 +61,20 @@ const CREATE_ORDER: readonly CreateItem[] = ["agent", "channel", "task", "routin
 /**
  * Whether this person may start `item`, as the server checks it (ADR 0085): an agent (`create_agents`, and none while
  * the workspace is being deleted, as on the web), a channel (`create_channels`), a task (`post`), a routine (some agent
- * whose routines they set up, `managesRoutines`: the agents' `canManageRoutines`, which "Criar rotinas" gives only where
- * it reaches, ADR 0085 addendum of 2026-11-17), a wiki page (`edit_wiki`) and invitations (`invite_people`).
+ * they may make one for, `createsRoutines`: the agents' `createsRoutinesFor`, who set up its routines, which "Create
+ * routines" gives only where it reaches, and whom it answers, since a routine asks it on its creator's behalf; ADR 0085
+ * addendum of 2026-11-17), a wiki page (`edit_wiki`) and invitations (`invite_people`).
  */
 export function mayCreate(
   org: { permissions?: readonly string[]; deletion?: unknown } | null | undefined,
   item: CreateItem,
-  { managesRoutines = false }: { managesRoutines?: boolean } = {},
+  { createsRoutines = false }: { createsRoutines?: boolean } = {},
 ): boolean {
   const allowed: Record<CreateItem, boolean> = {
     agent: makesAgents(org),
     channel: can(org, "create_channels"),
     task: can(org, "post"),
-    routine: managesRoutines,
+    routine: createsRoutines,
     wiki: can(org, "edit_wiki"),
     invite: can(org, "invite_people"),
   };
@@ -83,9 +84,9 @@ export function mayCreate(
 /** What this person may start from "New". */
 export function createItems(
   org: { permissions?: readonly string[]; deletion?: unknown } | null | undefined,
-  { managesRoutines }: { managesRoutines: boolean },
+  { createsRoutines }: { createsRoutines: boolean },
 ): CreateItem[] {
-  return CREATE_ORDER.filter((item) => mayCreate(org, item, { managesRoutines }));
+  return CREATE_ORDER.filter((item) => mayCreate(org, item, { createsRoutines }));
 }
 
 /** Names offered for a new agent (short, friendly, easy to call). */

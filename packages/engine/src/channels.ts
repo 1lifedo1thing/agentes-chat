@@ -15,7 +15,7 @@ import {
   sql,
 } from "@agenteschat/db";
 import { resolveChannelAgentAsks } from "./admin-asks";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { caches } from "./cache";
 import { endOfCategory, requireCategoryInOrg } from "./channel-categories";
 import { wordsOf } from "./confidential";
@@ -758,14 +758,7 @@ async function requirePlacesAgent(
   agentId: string,
 ) {
   const [agent] = await db
-    .select({
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select(REACH_COLUMNS)
     .from(agents)
     .where(and(eq(agents.id, agentId), eq(agents.orgId, channel.orgId), isNull(agents.archivedAt)));
   if (!agent) throw new ValidationError("That agent does not exist in this organization");

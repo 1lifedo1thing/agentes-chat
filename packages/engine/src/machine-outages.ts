@@ -1,7 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
 import { getAgent } from "./agents";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { brainOf, brainOptions } from "./brain-settings";
 import type { ComputerBrainKind } from "./brains/types";
@@ -139,14 +139,9 @@ export async function listMachineOutages(
           .select({
             id: agents.id,
             name: agents.name,
-            brain: agents.brain,
             machineId: agents.machineId,
-            ownerUserId: agents.ownerUserId,
-            audienceMode: agents.audienceMode,
-            audienceUserIds: agents.audienceUserIds,
-            audienceRoleIds: agents.audienceRoleIds,
-            consultable: agents.consultable,
             createdAt: agents.createdAt,
+            ...REACH_COLUMNS,
           })
           .from(agents)
           .where(and(eq(agents.orgId, orgId), inArray(agents.machineId, offlineIds), isNull(agents.archivedAt))),
@@ -161,14 +156,9 @@ export async function listMachineOutages(
         .select({
           id: agents.id,
           name: agents.name,
-          brain: agents.brain,
           machineId: agents.machineId,
-          ownerUserId: agents.ownerUserId,
-          audienceMode: agents.audienceMode,
-          audienceUserIds: agents.audienceUserIds,
-          audienceRoleIds: agents.audienceRoleIds,
-          consultable: agents.consultable,
           createdAt: agents.createdAt,
+          ...REACH_COLUMNS,
         })
         .from(agents)
         .where(and(eq(agents.orgId, orgId), inArray(agents.id, extraIds), isNull(agents.archivedAt)))

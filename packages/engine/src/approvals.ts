@@ -21,7 +21,7 @@ import { type ActiveCover, activeCoversFrom, activeCoversTo } from "./approval-c
 import { resumeHeldRuns, wakeLine } from "./approval-order";
 import { addApprovalRules, addRoutineOwnActions, type RememberedKind, rememberedKindOf } from "./approval-rules";
 import { queueApprovalsDigest } from "./approvals-digest";
-import { managesAgent, managesAgentSql, managesRoutinesOf } from "./audience";
+import { ACCESS_COLUMNS, managesAgent, managesAgentSql, managesRoutinesOf, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { approvalCardVia } from "./card-via";
 import { CONNECTOR_CATALOG } from "./connectors/catalog";
@@ -600,12 +600,12 @@ export function decides(
   return named?.userIds.length ? named.userIds.includes(actorId) : approval.ownerUserId === actorId;
 }
 
-/** The agents the access requests among `rows` ask for (`adminsDecide`), by id: what `decides` needs of each. */
+/** The agents the access requests among `rows` ask for (`adminsDecide`), by id: what `decides` reads of each. */
 async function askingAgents(db: Executor, orgId: string, rows: readonly Pick<Approval, "agentId" | "tool">[]) {
   const ids = [...new Set(rows.filter((r) => adminsDecide(r)).map((r) => r.agentId))];
   const found = ids.length
     ? await db
-        .select()
+        .select({ id: agents.id, ...REACH_COLUMNS })
         .from(agents)
         .where(and(eq(agents.orgId, orgId), inArray(agents.id, ids)))
     : [];
@@ -1363,7 +1363,7 @@ export async function cancelableAhead(db: Database, actorId: string, orgId: stri
     current.ownerUserId === actorId || routine?.createdByUserId === actorId || can(membership, "approve_actions")
       ? []
       : await db
-          .select()
+          .select(ACCESS_COLUMNS)
           .from(agents)
           .where(and(eq(agents.id, current.agentId), eq(agents.orgId, orgId)));
   const may =

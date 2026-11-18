@@ -1,5 +1,5 @@
 import type { PubSub } from "@agenteschat/adapters";
-import { and, type Database, type Executor, eq, inArray, type SQL, schema, sql } from "@agenteschat/db";
+import { and, type Database, type Executor, eq, inArray, isNull, type SQL, schema, sql } from "@agenteschat/db";
 import { type Agent, getAgent } from "./agents";
 import { recordAudit } from "./audit";
 import { isComputerBrain } from "./brains/types";
@@ -29,6 +29,9 @@ export interface AgentAudience {
   /** Other agents may consult it for people outside it (ADR 0085 addendum); absent (older apps) = keep. */
   consultable?: boolean;
 }
+
+/** An audience as a save takes it: an older app sends no roles, and a change then keeps the ones picked. */
+export type AudienceInput = Omit<AgentAudience, "roleIds"> & { roleIds?: string[] };
 
 type AudienceFields = Pick<
   Agent,
@@ -83,7 +86,7 @@ export async function audienceMailLoss(
   actorId: string,
   orgId: string,
   agentId: string,
-  audience: Omit<AgentAudience, "roleIds"> & { roleIds?: string[] },
+  audience: AudienceInput,
 ): Promise<ForeignMailbox[]> {
   const agent = await audienceEditable(db, actorId, orgId, agentId);
   const people = audience.mode === "people";
@@ -97,14 +100,18 @@ export async function audienceMailLoss(
 }
 
 /**
- * The agent, when `actorId` may change who talks to it or who edits it: its owner or who manages it (`managesAgent`;
- * with no owner, them only).
+ * What a save of who talks to the agent, or who edits it, reads of it (never its instructions), when `actorId` may make
+ * it (`ownsOrManagesAgent`). `checked`: the caller already decided that against the agent as it was (`editAgent`,
+ * `createAgent`), and a part saved before this one in the same change may have taken them out of its reach.
  */
-async function audienceEditable(db: Database, actorId: string, orgId: string, agentId: string) {
-  const membership = await requirePermission(db, actorId, orgId, "read");
-  const agent = await getAgent(db, orgId, agentId);
+async function audienceEditable(db: Database, actorId: string, orgId: string, agentId: string, checked = false) {
+  const membership = checked ? null : await requirePermission(db, actorId, orgId, "read");
+  const [agent] = await db
+    .select({ archivedAt: agents.archivedAt, builtin: agents.builtin, ...ACCESS_COLUMNS })
+    .from(agents)
+    .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId), isNull(agents.deletedAt)));
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
-  if (!managesAgent(agent, actorId, membership) && !(agent.ownerUserId && agent.ownerUserId === actorId)) {
+  if (!checked && !ownsOrManagesAgent(agent, actorId, membership)) {
     throw new ForbiddenError("Only the agent's owner or an admin can change who talks to it");
   }
   return agent;
@@ -120,7 +127,7 @@ async function agentsOpenedBy(
 ) {
   if (added.length === 0) return [];
   const rows = await db
-    .select()
+    .select({ id: agents.id, name: agents.name, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.orgId, orgId), eq(agents.audienceMode, "people")));
   const speaker: Speaker = { talks: true, roleIds: [...rolesBefore] };
@@ -220,6 +227,26 @@ export function canTalkTo(a: AudienceFields, userId: string | null, person: Spea
 /** What the editing rules need of an agent: its audience and its "Quem pode editar". */
 export type AgentAccessFields = AudienceFields & Pick<Agent, "editorUserIds" | "editorRoleIds">;
 
+/**
+ * The `agents` columns the reach rules read (`keysReach`, `managesAgent`, `canTalkTo`): a partial select spreads these
+ * instead of its own copy, so a rule that starts reading another column reaches every caller at once.
+ */
+export const REACH_COLUMNS = {
+  ownerUserId: agents.ownerUserId,
+  audienceMode: agents.audienceMode,
+  audienceUserIds: agents.audienceUserIds,
+  audienceRoleIds: agents.audienceRoleIds,
+  consultable: agents.consultable,
+  brain: agents.brain,
+};
+
+/** `REACH_COLUMNS` and the "Quem pode editar" lists: what `editsAgent`, `managesRoutinesOf` and `seesAgentDetails` read. */
+export const ACCESS_COLUMNS = {
+  ...REACH_COLUMNS,
+  editorUserIds: agents.editorUserIds,
+  editorRoleIds: agents.editorRoleIds,
+};
+
 /** A person's membership, as the agent rules read it (null: not a member). */
 type Viewer = Pick<Membership, "permissions" | "roleIds"> | null | undefined;
 
@@ -239,6 +266,13 @@ export function keysReach(a: AudienceFields, userId: string, membership: Viewer)
 /** "Editar qualquer agente" on this agent: `manage_agents` where it reaches (`keysReach`). */
 export const managesAgent = (a: AudienceFields, userId: string, membership: Viewer) =>
   can(membership, "manage_agents") && keysReach(a, userId, membership);
+
+/**
+ * Who changes who talks to the agent, who edits it and its look: its owner or who manages it (`managesAgent`; with no
+ * owner, who manages it alone). ADR 0085, addendum of 2026-11-17.
+ */
+export const ownsOrManagesAgent = (a: AudienceFields, userId: string, membership: Viewer) =>
+  !!membership && (a.ownerUserId === userId || managesAgent(a, userId, membership));
 
 /** Named in the agent's "Quem pode editar": picked, or holding one of its roles now. */
 export const namedEditor = (a: Pick<Agent, "editorUserIds" | "editorRoleIds">, userId: string, membership: Viewer) =>
@@ -317,7 +351,10 @@ export async function agentIdsWithDetails(db: Database, userId: string, orgId: s
 export async function agentIdsSeen(db: Database, userId: string, orgId: string) {
   const [membership, rows] = await Promise.all([
     getMembership(db, userId, orgId),
-    db.select().from(agents).where(eq(agents.orgId, orgId)),
+    db
+      .select({ id: agents.id, ...ACCESS_COLUMNS })
+      .from(agents)
+      .where(eq(agents.orgId, orgId)),
   ]);
   return {
     details: new Set(rows.filter((a) => seesAgentDetails(a, userId, membership)).map((a) => a.id)),
@@ -577,17 +614,18 @@ export async function planOpened(
  * admins only), on a plan too (ADR 0059 §5): its owner hears by email when someone else lets more people in.
  * `mailLossSeen`: the mailboxes the person agreed it loses (`audienceMailLoss`); losing any other refuses the save
  * (409 `agent.mail_loss_changed`), so a mailbox given after they were asked is never taken unasked.
- * Audited.
+ * `checked`: the caller already decided who may (`audienceEditable`). Audited.
  */
 export async function setAgentAudience(
   db: Database,
   actorId: string,
   orgId: string,
   agentId: string,
-  audience: Omit<AgentAudience, "roleIds"> & { roleIds?: string[] },
+  audience: AudienceInput,
   mailLossSeen?: readonly string[],
+  options: { checked?: boolean } = {},
 ): Promise<Agent> {
-  const agent = await audienceEditable(db, actorId, orgId, agentId);
+  const agent = await audienceEditable(db, actorId, orgId, agentId, options.checked);
   if (!AUDIENCE_MODES.includes(audience.mode)) throw new ValidationError("Unknown audience mode");
   const requested = audience.mode === "people" ? [...new Set(audience.userIds)] : [];
   if (requested.length > 500) throw new ValidationError("At most 500 people");
@@ -676,7 +714,8 @@ export const editorsOf = (a: Pick<Agent, "editorUserIds" | "editorRoleIds">): Ag
  * Changes who edits the agent's instructions, role, skills and routines ("Quem pode editar", ADR 0085, addendum of
  * 2026-11-17): its owner or who manages it, as who talks to it. Its owner always edits, so naming them adds nothing;
  * someone no longer in the workspace drops out, and every role must be one of the workspace's own. The team's right
- * hand is the product's (ADR 0137): nobody edits how it works. Audited as `agent.editors_changed`.
+ * hand is the product's (ADR 0137): nobody edits how it works. `checked`: the caller already decided who may
+ * (`audienceEditable`). Audited as `agent.editors_changed`.
  */
 export async function setAgentEditors(
   db: Database,
@@ -684,8 +723,9 @@ export async function setAgentEditors(
   orgId: string,
   agentId: string,
   editors: AgentEditors,
+  options: { checked?: boolean } = {},
 ): Promise<Agent> {
-  const agent = await audienceEditable(db, actorId, orgId, agentId);
+  const agent = await audienceEditable(db, actorId, orgId, agentId, options.checked);
   if (agent.builtin)
     throw new ForbiddenError("The team's right hand can't be edited this way", "agent.right_hand_permanent");
   const requested = [...new Set(editors.userIds)].filter((id) => id !== agent.ownerUserId);

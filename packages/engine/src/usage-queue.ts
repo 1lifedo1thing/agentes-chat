@@ -1,7 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, desc, eq, gt, gte, inArray, ne, schema, sql } from "@agenteschat/db";
 import { planCheckedAt } from "@agenteschat/ui/plan-state";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { cancelRun, mayStopRun, runRequester } from "./cancel";
 import { writtenSince } from "./catch-up";
 import { ANSWER_ANYWAY_MS, type ClosedNote } from "./catch-up-triage";
@@ -89,15 +89,7 @@ const rank = (r: { background: boolean; workId: string | null }) => (r.backgroun
 export async function usageQueue(db: Database, viewerId: string, orgId: string, agentId: string): Promise<UsageQueue> {
   const membership = await requirePermission(db, viewerId, orgId, "read");
   const [agent] = await db
-    .select({
-      id: agents.id,
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select({ id: agents.id, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.orgId, orgId), eq(agents.id, agentId)));
   if (!agent) throw new NotFoundError("Agent not found");

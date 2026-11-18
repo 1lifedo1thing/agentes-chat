@@ -15,7 +15,7 @@ import {
 } from "@agenteschat/db";
 import { announceAgentStatus } from "./agent-status";
 import { agentsOnlyIn } from "./agent-work";
-import { managesAgent, managesAgentSql } from "./audience";
+import { managesAgent, managesAgentSql, REACH_COLUMNS } from "./audience";
 import { runAuthority } from "./authority";
 import { askStillOpen, unrequested } from "./brakes";
 import { requireChannelAccess } from "./channels";
@@ -550,17 +550,7 @@ export async function cancelFollowUp(
     throw new NotFoundError("Follow-up not found", "follow_up.not_found");
   const { workspace } = await requireChannelAccess(deps.db, userId, orgId, line.channelId);
   const [agent] = line.authorAgentId
-    ? await deps.db
-        .select({
-          ownerUserId: agents.ownerUserId,
-          audienceMode: agents.audienceMode,
-          audienceUserIds: agents.audienceUserIds,
-          audienceRoleIds: agents.audienceRoleIds,
-          consultable: agents.consultable,
-          brain: agents.brain,
-        })
-        .from(agents)
-        .where(eq(agents.id, line.authorAgentId))
+    ? await deps.db.select(REACH_COLUMNS).from(agents).where(eq(agents.id, line.authorAgentId))
     : [];
   const who = { personId: refsOf(line).personId ?? null, ownerUserId: agent?.ownerUserId ?? null };
   // An admin's override is who manages that agent (ADR 0085 addendum of 2026-11-17), not any holder of the key.

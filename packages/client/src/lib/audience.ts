@@ -107,29 +107,42 @@ export const opensDetails = (agent: { seesDetails?: boolean; former?: unknown } 
   Boolean(agent) && !agent?.former && seesDetails(agent);
 
 /**
- * Whether my lists and pickers show the agent: every agent for who manages agents, who arrange the team (the lock
- * says who it answers), only the ones that answer me or that I edit for everyone else (the server's `listsAgentTo`).
- * From the server's `canTalk` (the agent's audience and `talk_to_agents`) and `canEdit` (its "Quem pode editar", ADR
- * 0085 addendum of 2026-11-17), so a later limit per person reaches every list unchanged.
+ * Whether its DM opens for me (the server's `openDm`): it answers me, or I manage it (its composer then says why it
+ * won't answer and offers to let me in). A private agent's stays closed to who merely holds "Edit agents" and to who
+ * its "Who can edit" names (ADR 0085 addendum of 2026-11-17): every row, item or button that leads to its DM asks this,
+ * never `listsAgent`.
  */
-export const listsAgent = (org: OrgSummary | null | undefined, agent: Pick<Agent, "canTalk" | "canEdit"> | undefined) =>
-  can(org, "manage_agents") || canTalk(agent) || editsAgent(agent);
+export const opensDm = (agent: Pick<Agent, "canTalk" | "canManage"> | undefined) =>
+  canTalk(agent) || managesAgent(agent);
+
+/**
+ * Whether my lists and pickers show the agent (the server's `listsAgentTo`, short of `listsAllAgents`): the ones whose
+ * DM opens for me (`opensDm`: that answer me, or that I manage, the lock saying who they answer) and the ones whose
+ * workings I edit (`canEdit`, its "Who can edit", ADR 0085 addendum of 2026-11-17). From the server's flags, so a later
+ * limit per person reaches every list unchanged. A list whose rows open the DM asks `opensDm` instead: an agent I only
+ * edit opens on its page, from Team.
+ */
+export const listsAgent = (
+  _org: OrgSummary | null | undefined,
+  agent: Pick<Agent, "canTalk" | "canManage" | "canEdit"> | undefined,
+) => opensDm(agent) || editsAgent(agent);
 
 /**
  * Whether Equipe, its sectors and the counts name every agent for me (the server's `listsAllAgents`); without it the
- * server sends them only the agents that answer me.
+ * server sends them only the agents whose workings I see (`listsAgentTo`): that answer me, or that I edit.
  */
 export const listsAllAgents = (org: OrgSummary | null | undefined) =>
   can(org, "view_all_agents") || can(org, "manage_agents");
 
 /**
- * The agents my lists leave out (`listsAgent`, from the server's `canTalk`): unless I manage agents, the ones not
- * answering me.
+ * The agents whose DMs my lists leave out (`hiddenDm`): the ones whose DM wouldn't open for me (`opensDm`), as the
+ * sidebar's agents and the phone's conversations, whose rows open it, leave them out. An agent I only edit is no
+ * exception: its workings are on its page, never in a DM it won't answer (ADR 0085 addendum of 2026-11-17).
  */
 export const hiddenAgentIds = (
-  org: OrgSummary | null | undefined,
-  agents: readonly Pick<Agent, "id" | "canTalk" | "canEdit">[],
-) => new Set(agents.filter((a) => !listsAgent(org, a)).map((a) => a.id));
+  _org: OrgSummary | null | undefined,
+  agents: readonly Pick<Agent, "id" | "canTalk" | "canManage">[],
+) => new Set(agents.filter((a) => !opensDm(a)).map((a) => a.id));
 
 /** A DM with one of `hiddenAgents` (`hiddenAgentIds`): off the lists and their counts. */
 export const hiddenDm = (d: { with: { type: string; id: string } }, hiddenAgents: ReadonlySet<string> | undefined) =>
@@ -194,6 +207,13 @@ export const editsAgent = (agent: { canEdit?: boolean } | null | undefined) => a
 /** Whether I set up and change the agent's routines (the server's `canManageRoutines`). */
 export const managesRoutinesOf = (agent: { canManageRoutines?: boolean } | null | undefined) =>
   agent?.canManageRoutines === true;
+
+/**
+ * Whether I may make (or copy) a routine for the agent: I set up its routines and it answers me, since a routine asks
+ * the agent on its creator's behalf (the server's `createRoutine`, ADR 0053; ADR 0085 addendum of 2026-11-17).
+ */
+export const createsRoutinesFor = (agent: { canManageRoutines?: boolean; canTalk?: boolean } | null | undefined) =>
+  managesRoutinesOf(agent) && agent?.canTalk !== false;
 
 /** Only the agent's owner and who manages it change who talks to it and who edits it (same rule as the backend). */
 export const canEditAudience = (_org: OrgSummary | undefined, agent: Agent, myUserId: string) =>

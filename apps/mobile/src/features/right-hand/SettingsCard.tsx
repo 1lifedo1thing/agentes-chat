@@ -221,7 +221,10 @@ function SettingsRow({
     };
   }
 
-  const asked = p.askedAt ? sentToText(t, i18n.language, decidersOf(p, members, roles, agent), p.askedAt) : null;
+  // A row that puts its agent under another went only to who manages that one too (ADR 0085 addendum of 2026-11-17).
+  const asked = p.askedAt
+    ? sentToText(t, i18n.language, decidersOf(p, members, roles, agent, dir.anyAgent), p.askedAt)
+    : null;
   const state = p.stale
     ? t("rightHand.card.stale")
     : p.canDecide

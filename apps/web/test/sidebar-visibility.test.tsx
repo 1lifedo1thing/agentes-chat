@@ -122,6 +122,34 @@ describe("what a member's sidebar lists", () => {
     expect(offered).not.toContain("Ada");
   });
 
+  test("Edit agents showing the rest lists only the agents whose DM opens: someone's private agent stays in Team", async () => {
+    const keyHolder = acme("member");
+    meWithRole(keyHolder, ["manage_agents"]);
+    keyHolder.sidebarView = { agentSort: "workspace", showAllAgents: true, pins: null };
+    await go(keyHolder);
+    // Ada answers only João: the key doesn't reach her (ADR 0085 addendum), and her row would open a DM the server
+    // refuses.
+    expect(agentRows()).toEqual(["Atlas"]);
+    expect(sections()).not.toContain("Integrations");
+    expect(
+      within(nav())
+        .getByRole("link", { name: /Mais 1 agente na Equipe/ })
+        .getAttribute("href"),
+    ).toBe(`/org/${ORG_ID}/team`);
+    cleanup();
+    // With nobody responsible for her, the key reaches her: she shows, locked, and her row opens her DM.
+    const ownerless = acme("member");
+    meWithRole(ownerless, ["manage_agents"]);
+    ownerless.sidebarView = { agentSort: "workspace", showAllAgents: true, pins: null };
+    const ada = ownerless.agents.find((a) => a.id === ADA_ID);
+    if (ada) ada.ownerUserId = null;
+    await go(ownerless);
+    expect(agentRows()).toEqual(["Atlas", "Ada"]);
+    expect(within(nav()).getByRole("link", { name: /^Ada/ }).getAttribute("href")).toBe(
+      `/org/${ORG_ID}/dm/agent/${ADA_ID}`,
+    );
+  });
+
   test("owners and admins see every category, and the agents that talk to them until they show the rest", async () => {
     await go(acme("owner"));
     expect(sections()).toEqual(["Canais", "Engenharia", "Diretoria", "Agentes", "Mensagens diretas"]);

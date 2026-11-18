@@ -51,9 +51,23 @@ describe("Who can edit on the phone", () => {
     expect(row).toContain('name: t("common.about", { label: t("editors.section") }), text: t("editors.note"');
     expect(row).toContain('const changes = canEditAudience(org ?? undefined, agent, meId ?? "");');
     expect(row).toContain("{...(changes ? { chevron: true, onPress: () => openAgentEditors(agent.id) } : {})}");
-    // Nobody edits how the right hand works; alone in a personal workspace, it waits until it names someone.
+    // Nobody edits how the right hand works; who doesn't see how an agent works gets no editors from the server (the
+    // line would name nobody); alone in a personal workspace, it waits until it names someone.
     expect(row).toContain(
-      'if (isRightHand(agent) || (solo && editorsMode(editorsOf(agent)) === "owner")) return null;',
+      'if (isRightHand(agent) || !seesDetails(agent) || (solo && editorsMode(editorsOf(agent)) === "owner")) return null;',
+    );
+  });
+
+  test("who doesn't see how it works reads no editors: the screen says its workings are kept, as its public card", async () => {
+    // The server blanks its editors for them (ADR 0085 addendum of 2026-11-17): "Only who looks after it" would be wrong.
+    const screen = flat(SCREEN);
+    expect(screen).toContain("{seesDetails(agent) ? (");
+    expect(screen).toContain('<GroupedFooter>{t("profile.detailsHidden", g)}</GroupedFooter>');
+    const hiddenFrom = { ...nina, seesDetails: false, editors: { userIds: [], roleIds: [] } };
+    const en = await translator("en");
+    expect(editorsSummary(en, hiddenFrom, nameOf, roleName)).toBe("Only who looks after it");
+    expect(en("profile.detailsHidden", agentGrammar("Nina"))).toBe(
+      "Only the people Nina answers, whoever can edit it, its owner and admins see its instructions, tools, memory and usage.",
     );
   });
 
@@ -68,7 +82,7 @@ describe("Who can edit on the phone", () => {
     expect(screen).toContain(
       "{ editors: editorsPatch(draft) }, { onSuccess: () => { leave(); successHaptic(); goBack(); }, onError: failed, },",
     );
-    // Only its owner and who manages it change it; anyone else who reaches it reads who edits it.
+    // Only its owner and who manages it change it; anyone else who sees how it works reads who edits it.
     expect(screen).toContain(
       'if (!canEditAudience(org ?? undefined, agent, meId ?? "")) return <EditorsRead agent={agent} />;',
     );

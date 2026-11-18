@@ -188,7 +188,9 @@ function RemovalCard({
   const sent = open.find((p) => p.askedAt);
   // Each row went to who manages its agent (ADR 0085 addendum of 2026-11-17): the card names them all, once each.
   const sentRows = open.filter((p) => p.askedAt);
-  const sentTo = [...new Set(sentRows.flatMap((p) => decidersOf(p, members, roles, dir.anyAgent(p.agentId))))];
+  const sentTo = [
+    ...new Set(sentRows.flatMap((p) => decidersOf(p, members, roles, dir.anyAgent(p.agentId), dir.anyAgent))),
+  ];
   const state = decides ? undefined : mine && unsent.length > 0 ? t(onlyKey(first)) : t("proposals.waitingAdmin");
   const decision = decides ? (
     <>
@@ -378,7 +380,9 @@ function SettingsRow({
     };
   }
 
-  const asked = p.askedAt ? sentToText(t, i18n.language, decidersOf(p, members, roles, agent), p.askedAt) : null;
+  const asked = p.askedAt
+    ? sentToText(t, i18n.language, decidersOf(p, members, roles, agent, dir.anyAgent), p.askedAt)
+    : null;
   const state = p.stale
     ? t("rightHand.card.stale")
     : p.canDecide

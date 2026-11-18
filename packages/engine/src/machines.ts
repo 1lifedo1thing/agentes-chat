@@ -26,7 +26,7 @@ import {
 } from "@agenteschat/db";
 import { appLocale } from "@agenteschat/i18n/locale";
 import { getAgent, workspaceHomeId } from "./agents";
-import { managesAgent, managesAgentSql } from "./audience";
+import { managesAgent, managesAgentSql, REACH_COLUMNS } from "./audience";
 import { type AuditEntry, recordAudit } from "./audit";
 import { isSandboxedBrain } from "./brains/types";
 import { caches } from "./cache";
@@ -404,15 +404,9 @@ export async function computerDriving(db: Database, userId: string, orgId: strin
   const [agent] = await db
     .select({
       machineId: agents.machineId,
-      owner: agents.ownerUserId,
-      brain: agents.brain,
       account: agents.brainAccountId,
       builtin: agents.builtin,
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
+      ...REACH_COLUMNS,
     })
     .from(agents)
     .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId)));
@@ -431,7 +425,7 @@ export async function computerDriving(db: Database, userId: string, orgId: strin
     userId,
     admin: can(membership, "control_computers"),
     own: can(membership, "own_computers"),
-    owner: agent.owner === userId,
+    owner: agent.ownerUserId === userId,
     manages: managesAgent(agent, userId, membership),
     browsers: can(membership, "control_browsers"),
   };

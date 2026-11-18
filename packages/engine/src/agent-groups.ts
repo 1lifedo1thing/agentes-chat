@@ -1,6 +1,6 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, asc, type Database, type Executor, eq, inArray, isNotNull, isNull, schema, sql } from "@agenteschat/db";
-import { listsAllAgents, managesAgent, seesAgentDetailsSql } from "./audience";
+import { listsAllAgents, managesAgent, REACH_COLUMNS, seesAgentDetailsSql } from "./audience";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishOrgEvent } from "./events";
 import { getMembership, type Membership, requirePermission } from "./organizations";
@@ -91,16 +91,6 @@ async function announce(deps: AgentGroupDeps, orgId: string) {
   return agentGroupViews(deps.db, orgId);
 }
 
-/** What `managesAgent` reads of an agent. */
-const MANAGED_COLUMNS = {
-  ownerUserId: agents.ownerUserId,
-  audienceMode: agents.audienceMode,
-  audienceUserIds: agents.audienceUserIds,
-  audienceRoleIds: agents.audienceRoleIds,
-  consultable: agents.consultable,
-  brain: agents.brain,
-};
-
 /**
  * `ids`, each an agent here not archived and one `by` manages (`managesAgent`, ADR 0085 addendum of 2026-11-17): who
  * merely holds "Editar qualquer agente" doesn't arrange a private agent.
@@ -112,7 +102,7 @@ async function requireAgents(
   by: { userId: string; membership: Membership },
 ) {
   const found = await db
-    .select({ id: agents.id, ...MANAGED_COLUMNS })
+    .select({ id: agents.id, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.orgId, orgId), inArray(agents.id, ids), isNull(agents.archivedAt)));
   if (found.length !== ids.length) throw new NotFoundError("Agent not found");
@@ -259,7 +249,7 @@ export async function deleteAgentGroup(
       .for("update");
     if (!group) throw groupNotFound();
     const inIt = await tx
-      .select(MANAGED_COLUMNS)
+      .select(REACH_COLUMNS)
       .from(agents)
       .where(and(eq(agents.orgId, orgId), eq(agents.groupId, group.id)));
     if (inIt.some((a) => !managesAgent(a, userId, membership)))

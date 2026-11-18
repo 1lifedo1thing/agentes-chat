@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { and, eq, rowsOf, schema, sql } from "@agenteschat/db";
+import { orgTopic, type RealtimeEvent } from "@agenteschat/adapters";
+import { and, asc, eq, rowsOf, schema, sql } from "@agenteschat/db";
 import {
   type AgentInput,
   agentEditorIds,
@@ -13,6 +14,7 @@ import {
   deleteAgent,
   deleteAgentGroup,
   deleteRole,
+  editAgent,
   editorsOf,
   editsAgent,
   editsAgentSql,
@@ -274,6 +276,132 @@ describe('"Who can edit" (setAgentEditors)', () => {
     expect(await listing(w.eva.id)).toEqual({ team: ["Dev"], groups: [], count: 1 });
     await setAgentEditors(f.db, w.bia.id, f.org.id, ada.id, { userIds: [w.eva.id], roleIds: [] });
     expect(await listing(w.eva.id)).toEqual({ team: ["Ada", "Dev"], groups: ["Privado:1"], count: 2 });
+  });
+});
+
+describe("one change of an agent, or a new one, is decided whole against the agent as it was", () => {
+  test("who manages it leaves themselves out of who talks to it and names themselves in one change (editAgent)", async () => {
+    const w = await world();
+    const ada = await agentOf(w.bia.id, "Ada");
+    const heard: RealtimeEvent[] = [];
+    f.pubsub.subscribe(orgTopic(f.org.id), (e) => heard.push(e));
+    // Ada answers everyone, so Lara's "Edit agents" reaches it: every part is hers to make, the last ones included.
+    const saved = await editAgent({ db: f.db, pubsub: f.pubsub }, w.lara.id, f.org.id, ada.id, {
+      fields: { role: "QA" },
+      audience: { mode: "people", userIds: [w.leo.id] },
+      editors: { userIds: [w.lara.id], roleIds: [] },
+      appearance: { color: "teal", eyes: "happy" },
+    });
+    const changed = {
+      role: "QA",
+      audienceMode: "people",
+      audienceUserIds: [w.leo.id],
+      editorUserIds: [w.lara.id],
+      appearance: { color: "teal", eyes: "happy", accessory: "none" },
+    };
+    expect(saved).toMatchObject(changed);
+    expect(await rowOf(ada.id)).toMatchObject(changed);
+    // The apps hear it once, after it is saved.
+    expect(heard).toEqual([{ type: "org.broadcast", orgId: f.org.id, event: { type: "agents.changed" } }]);
+    // From now on she edits it, without managing it.
+    const membership = await getMembership(f.db, w.lara.id, f.org.id);
+    expect([managesAgent(saved, w.lara.id, membership), editsAgent(saved, w.lara.id, membership)]).toEqual([
+      false,
+      true,
+    ]);
+  });
+
+  test("a part the person may not make, or a value refused on the way, saves none of the change", async () => {
+    const w = await world();
+    const ada = await agentOf(w.bia.id, "Ada");
+    await setAgentEditors(f.db, w.bia.id, f.org.id, ada.id, { userIds: [w.eva.id], roleIds: [] });
+    const heard: RealtimeEvent[] = [];
+    f.pubsub.subscribe(orgTopic(f.org.id), (e) => heard.push(e));
+    const deps = { db: f.db, pubsub: f.pubsub };
+    // Eva edits its role, not who edits it: the role she sent with it isn't saved either.
+    await expect(
+      editAgent(deps, w.eva.id, f.org.id, ada.id, {
+        fields: { role: "QA" },
+        editors: { userIds: [w.eva.id, w.rui.id], roleIds: [] },
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+    // Its owner makes every part, but a role that isn't the workspace's refuses the audience, and with it the rest.
+    await expect(
+      editAgent(deps, w.bia.id, f.org.id, ada.id, {
+        fields: { role: "QA" },
+        audience: { mode: "people", userIds: [w.leo.id], roleIds: [crypto.randomUUID()] },
+        editors: { userIds: [], roleIds: [] },
+      }),
+    ).rejects.toBeInstanceOf(ValidationError);
+    // A change of nothing is who manages it's alone.
+    await expect(editAgent(deps, w.eva.id, f.org.id, ada.id, {})).rejects.toBeInstanceOf(ForbiddenError);
+    expect(await rowOf(ada.id)).toMatchObject({
+      role: "",
+      audienceMode: "everyone",
+      audienceUserIds: [],
+      editorUserIds: [w.eva.id],
+    });
+    expect(heard).toEqual([]);
+  });
+
+  test("its creator gives a new agent who talks to it, who edits it and its look, though the audience leaves them out", async () => {
+    const w = await world();
+    // Lara holds "Edit agents": she makes Bia an agent that answers Leo, names herself in its list and dresses it.
+    const iara = await createAgent(
+      f.db,
+      w.lara.id,
+      f.org.id,
+      {
+        name: "Iara",
+        handle: "iara",
+        ownerUserId: w.bia.id,
+        audience: { mode: "people", userIds: [w.leo.id] },
+        editors: { userIds: [w.lara.id], roleIds: [] },
+        appearance: { color: "rose", eyes: "dots" },
+      },
+      MODEL,
+    );
+    const made = {
+      ownerUserId: w.bia.id,
+      audienceMode: "people",
+      audienceUserIds: [w.leo.id],
+      editorUserIds: [w.lara.id],
+      appearance: { color: "rose", eyes: "dots", accessory: "none" },
+    };
+    expect(iara).toMatchObject(made);
+    expect(await rowOf(iara.id)).toMatchObject(made);
+    const audit = await f.db
+      .select({ action: schema.auditLog.action })
+      .from(schema.auditLog)
+      .where(eq(schema.auditLog.targetId, iara.id))
+      .orderBy(asc(schema.auditLog.id));
+    expect(audit.map((a) => a.action)).toEqual([
+      "agent.created",
+      "agent.audience_changed",
+      "agent.editors_changed",
+      "agent.appearance_changed",
+    ]);
+    // A value refused on the way makes no agent: its handle stays free.
+    await expect(
+      createAgent(
+        f.db,
+        w.lara.id,
+        f.org.id,
+        {
+          name: "Nina",
+          handle: "nina",
+          ownerUserId: w.bia.id,
+          audience: { mode: "people", userIds: [], roleIds: [crypto.randomUUID()] },
+          editors: { userIds: [w.lara.id], roleIds: [] },
+        },
+        MODEL,
+      ),
+    ).rejects.toBeInstanceOf(ValidationError);
+    const nina = await f.db
+      .select({ id: schema.agents.id })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.orgId, f.org.id), eq(schema.agents.handle, "nina")));
+    expect(nina).toEqual([]);
   });
 });
 

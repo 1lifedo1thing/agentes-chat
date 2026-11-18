@@ -8,8 +8,10 @@ import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import {
   ADA_ID,
   createFakeApi,
+  ENG_ID,
   type FakeState,
   LODI_ID,
+  meWithRole,
   ORG_ID,
   seedRoles,
   seedState,
@@ -236,6 +238,111 @@ describe("Who can edit for who doesn't change it", () => {
     );
     await settle(6);
     expect(updates(state)).toEqual([{ instructions: "Instruções de Ada.\nRevisa PRs pequenos." }]);
+  });
+});
+
+describe("Who can edit, for someone it names who doesn't talk to it", () => {
+  /** Ada answers only João; her "Who can edit" names me, a member who holds no key. */
+  const namedOnly = () => {
+    const state = asMember(acme({ userIds: ["u-walter"], roleIds: [] }));
+    const ada = state.agents.find((a) => a.id === ADA_ID);
+    if (ada) ada.audience = { mode: "owner", userIds: [] };
+    return state;
+  };
+  const visit = async (path: string, state: FakeState) => {
+    const r = await renderApp(`/org/${ORG_ID}/${path}`, { api: createFakeApi(state) });
+    await settle(8);
+    return r;
+  };
+  const rightClick = async (el: Element) => {
+    await act(async () =>
+      el.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 30, clientY: 40 })),
+    );
+    await settle(2);
+  };
+
+  test("Team takes me to her page, which edits how she works and offers no Chat to a DM she'd refuse", async () => {
+    const state = namedOnly();
+    localStorage.setItem("agentes.team.view", "list");
+    try {
+      await visit("team", state);
+      expect(document.querySelector(`.team-table__row a[href="/org/${ORG_ID}/agents/${ADA_ID}"]`)).not.toBeNull();
+    } finally {
+      localStorage.removeItem("agentes.team.view");
+    }
+    cleanup();
+    await visit(`agents/${ADA_ID}?tab=instructions`, state);
+    expect(screen().getByRole("textbox", { name: "Instruções" })).toBeTruthy();
+    expect(screen().getByRole("button", { name: "Mais ações" })).toBeTruthy();
+    // The server opens her DM only to whom she answers and who manages her (ADR 0085 addendum of 2026-11-17).
+    expect(screen().queryByRole("link", { name: "Conversar" })).toBeNull();
+  });
+
+  test("no row or item leads to her DM: the sidebar, ⌘K's Go to and her face's menu leave it out", async () => {
+    await visit(`c/${ENG_ID}`, namedOnly());
+    const nav = screen().getByRole("navigation", { name: "Navegação do workspace" });
+    const rows = [...nav.querySelectorAll("[data-agent-row] .sidebar__item-label")].map((l) => l.textContent);
+    expect(rows).not.toContain("Ada");
+    // Her name on her message in #eng: View profile and Edit agent, no Direct message.
+    const face = screen()
+      .getAllByRole("button", { name: "Perfil de Ada" })
+      .find((b) => !b.hasAttribute("aria-hidden"));
+    if (!face) throw new Error("no author name for Ada");
+    await rightClick(face);
+    const items = within(screen().getByRole("menu", { name: "Ações" }))
+      .getAllByRole("menuitem")
+      .map((i) => i.textContent);
+    expect(items).toContain("Ver perfil");
+    expect(items).toContain("Editar agente");
+    expect(items).not.toContain("Mensagem direta");
+    await act(async () => fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" }));
+    await settle(2);
+    // ⌘K: her Agent page and its parts, never Go to her DM.
+    await act(async () => fireEvent.keyDown(window, { key: "k", metaKey: true }));
+    const input = screen().getByRole("combobox", { name: "Ir para, ou pedir a um agente" });
+    await act(async () => fireEvent.change(input, { target: { value: "Ada" } }));
+    await settle(2);
+    const found = within(screen().getByRole("listbox", { name: "Resultados" }))
+      .getAllByRole("option")
+      .map((o) => o.textContent ?? "");
+    expect(found.some((o) => o.includes("Ada · Página do agente"))).toBe(true);
+    expect(found.some((o) => o.includes("agente · Dev"))).toBe(false);
+  });
+
+  test("her routines change but aren't made or copied: a routine asks her on its creator's behalf", async () => {
+    await visit("routines", namedOnly());
+    // No agent answers me and lets me set up its routines: nothing to make one for, no New routine, and N opens nothing
+    // (the server's createRoutine).
+    expect(screen().queryByRole("button", { name: "Nova rotina" })).toBeNull();
+    await act(async () => fireEvent.keyDown(window, { key: "n" }));
+    await settle(2);
+    expect(screen().queryByRole("dialog")).toBeNull();
+    // One of hers: Edit, never Duplicate.
+    await rightClick(screen().getByRole("article", { name: "Revisar PR aberto" }));
+    const items = within(screen().getByRole("menu", { name: "Ações" }))
+      .getAllByRole("menuitem")
+      .map((i) => i.textContent);
+    expect(items).toContain("Editar");
+    expect(items).not.toContain("Duplicar");
+  });
+
+  test("with Create routines, New routine offers the agents that answer me, never her", async () => {
+    const state = namedOnly();
+    meWithRole(state, ["manage_routines"]);
+    await visit("routines", state);
+    await act(async () => fireEvent.click(screen().getByRole("button", { name: "Nova rotina" })));
+    await settle(4);
+    const field = within(screen().getByRole("dialog", { name: "Nova rotina" })).getByRole("combobox", {
+      name: "Agente",
+    });
+    field.focus();
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    await settle(2);
+    const offered = screen()
+      .getAllByRole("option")
+      .map((o) => o.textContent ?? "");
+    expect(offered.some((o) => o.includes("Atlas"))).toBe(true);
+    expect(offered.some((o) => o.includes("Ada"))).toBe(false);
   });
 });
 

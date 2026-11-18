@@ -1,4 +1,5 @@
 import { useAgentDetail } from "@agenteschat/client";
+import { opensDm } from "@agenteschat/client/lib/audience";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { type AgentColor, Button, Icon, Menu, MenuItem } from "@agenteschat/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -77,7 +78,9 @@ export function AgentHero({
         <div className="agp-cover" data-busy={busy || undefined}>
           <AgentCover color={draft.look.color as AgentColor} busy={busy} clear={() => [face.current, acts.current]} />
           <div className="agp-cover__acts" ref={acts}>
-            {!panel && (
+            {/* Its DM, where the server opens it: someone its "Who can edit" names reaches its page from Team without
+                talking to it (ADR 0085 addendum of 2026-11-17). */}
+            {!panel && opensDm(agent) && (
               // The same glass as "…" beside it: a solid button on the light cover read as a washed-out slab.
               <Button asChild size="sm" className="agp-chat agp-glass">
                 <Link to="/org/$orgId/dm/agent/$agentId" params={{ orgId: org.id, agentId: agent.id }}>

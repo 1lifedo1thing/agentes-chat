@@ -1,6 +1,6 @@
 import { useAuthConfig, useChannels, useWikiTree } from "@agenteschat/client";
 import { AGENT_SECTIONS, AGENT_TABS, PERSONAL_AGENT_TABS } from "@agenteschat/client/lib/agent-edit";
-import { canTalk, listsAgent, managesAgent } from "@agenteschat/client/lib/audience";
+import { canTalk, listsAgent, managesAgent, opensDm } from "@agenteschat/client/lib/audience";
 import { joinable } from "@agenteschat/client/lib/channel-access";
 import { setDraftFor } from "@agenteschat/client/lib/drafts";
 import { can, makesAgents } from "@agenteschat/client/lib/permissions";
@@ -80,8 +80,10 @@ export function CommandMenu() {
         onSelect: () => void navigate({ to: "/org/$orgId/c/$channelId", params: { orgId, channelId: c.id } }),
       });
     }
+    // An agent goes to its DM: only one whose DM opens for me (`opensDm`, ADR 0085 addendum of 2026-11-17). One I only
+    // edit is among its own options below, on its page.
     for (const a of dir.agents) {
-      if (!listsAgent(org, a)) continue;
+      if (!opensDm(a)) continue;
       list.push({
         key: `a:${a.id}`,
         group: goTo,

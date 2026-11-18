@@ -1,7 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, desc, type Executor, eq, gt, inArray, isNull, rowsOf, schema, sql } from "@agenteschat/db";
 import { getAgentCached } from "./agents";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { messageRoot } from "./authority";
 import { routineBriefOfRun } from "./background";
@@ -483,20 +483,12 @@ export async function continueStretch(
 ): Promise<{ runs: { agentId: string; runId: string }[] }> {
   const { db } = deps;
   const owners = await db
-    .select({
-      owner: agents.ownerUserId,
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select(REACH_COLUMNS)
     .from(agents)
     .where(and(eq(agents.orgId, message.orgId), inArray(agents.id, card.agentIds)));
   const manages =
     owners.length === 0 ? can(membership, "manage_agents") : owners.every((a) => managesAgent(a, userId, membership));
-  if (card.forUserId !== userId && !owners.some((a) => a.owner === userId) && !manages)
+  if (card.forUserId !== userId && !owners.some((a) => a.ownerUserId === userId) && !manages)
     throw new ForbiddenError("Only who asked, the agents' owners or an admin can do this", "run.answer_forbidden");
   const stretchId = Bun.randomUUIDv7();
   const done = await db.transaction(async (tx) => {

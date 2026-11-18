@@ -5,7 +5,7 @@ import { driveFolder, isIdHandle, isSecretFile } from "@agenteschat/ui/names";
 import { createAgent, freeHandle, HANDLE_PATTERN, updateAgent } from "./agents";
 import { type AgentAppearance, setAgentAppearance, validateAppearance } from "./appearance";
 import { ARTIFACT_LIMITS, type ArtifactDeps, createFileArtifact } from "./artifacts";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { addChannelMember, CHANNEL_NAME_PATTERN, createChannel } from "./channels";
 import type { ConnectorTriggerDeps } from "./connector-triggers";
@@ -1008,15 +1008,7 @@ export async function copyImportedFile(
   const { db } = deps;
   const membership = await requirePermission(db, actorId, orgId, "create_agents");
   const [agent] = await db
-    .select({
-      name: agents.name,
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select({ name: agents.name, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.id, input.agentId), eq(agents.orgId, orgId), isNull(agents.deletedAt)));
   if (!agent) throw new NotFoundError("Agent not found");

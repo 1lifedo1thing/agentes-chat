@@ -30,21 +30,22 @@ describe("who gets the first step", () => {
     }
   });
 
-  test("a routine: who sets up some agent's routines, its owner or editors included, never the permission alone", () => {
-    expect(mayCreate({ permissions: ["read"] }, "routine", { managesRoutines: true })).toBe(true);
-    // "Create routines" reaches only the agents whose audience takes the person (ADR 0085 addendum of 2026-11-17): the
-    // server says which on each agent (`canManageRoutines`), so the key with none of them starts nothing.
+  test("a routine: who may make one for some agent, its owner or editors included, never the permission alone", () => {
+    expect(mayCreate({ permissions: ["read"] }, "routine", { createsRoutines: true })).toBe(true);
+    // "Create routines" reaches only the agents whose audience takes the person, and a routine asks its agent on its
+    // creator's behalf (ADR 0085 addendum of 2026-11-17): the server says which on each agent (`canManageRoutines`,
+    // `canTalk`: `createsRoutinesFor`), so the key with none of them starts nothing.
     expect(mayCreate({ permissions: ["manage_routines"] }, "routine")).toBe(false);
-    expect(mayCreate({ permissions: ["manage_routines"] }, "routine", { managesRoutines: false })).toBe(false);
+    expect(mayCreate({ permissions: ["manage_routines"] }, "routine", { createsRoutines: false })).toBe(false);
     expect(mayCreate({ permissions: ["read"] }, "routine")).toBe(false);
   });
 
   test("New offers the same as the empty states", () => {
     const org = { permissions: ["post", "edit_wiki"] };
-    expect(createItems(org, { managesRoutines: true })).toEqual(["task", "routine", "wiki"]);
+    expect(createItems(org, { createsRoutines: true })).toEqual(["task", "routine", "wiki"]);
     // Both read it from the agents the same way.
     for (const file of ["new/NewScreen.tsx", "routines/RoutinesScreen.tsx"])
-      expect(source(file)).toContain("const managesRoutines = dir.agents.some((a) => managesRoutinesOf(a));");
+      expect(source(file)).toContain("const createsRoutines = dir.agents.some((a) => createsRoutinesFor(a));");
   });
 
   test.each([
@@ -52,7 +53,7 @@ describe("who gets the first step", () => {
     ["chats/Greeting.tsx", 'place="agents"', 'if (!mayCreate(org, "agent"))'],
     ["drive/DriveScreen.tsx", 'place="drive"', 'can(useOrg().org, "upload_files")'],
     ["issues/IssuesScreen.tsx", 'place="tasks"', 'mayCreate(useOrg().org, "task")'],
-    ["routines/RoutinesScreen.tsx", 'place="routines"', 'mayCreate(useOrg().org, "routine", { managesRoutines })'],
+    ["routines/RoutinesScreen.tsx", 'place="routines"', 'mayCreate(useOrg().org, "routine", { createsRoutines })'],
     ["wiki/WikiScreen.tsx", 'place="wiki"', 'can(org, "edit_wiki")'],
     ["new/ChatTargets.tsx", 'place="people"', 'mayCreate(org, "invite")'],
     ["settings/AccessScreen.tsx", 'place="access"', "acts={addsConnectors(org)}"],

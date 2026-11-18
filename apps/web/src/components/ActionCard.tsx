@@ -36,7 +36,7 @@ import {
   type UpdateSkillsCard,
 } from "@agenteschat/client/lib/action-cards";
 import { delegateUndoLine } from "@agenteschat/client/lib/approval-words";
-import { managesRoutinesOf } from "@agenteschat/client/lib/audience";
+import { createsRoutinesFor } from "@agenteschat/client/lib/audience";
 import { connectedItems, itemName, personalAllowed } from "@agenteschat/client/lib/connected";
 import { setDraftFor } from "@agenteschat/client/lib/drafts";
 import { errorText } from "@agenteschat/client/lib/errors";
@@ -581,7 +581,9 @@ export function AgentProposalCardView({
         </Button>
       )}
       {routineLeft(card) &&
-        (card.decidedByUserId === me.user.id || managesRoutinesOf(dir.agentById.get(card.agentId ?? ""))) && (
+        // Who created it, or who may make a routine for it (`createsRoutinesFor`: the server's `createRoutine`, ADR 0085
+        // addendum of 2026-11-17).
+        (card.decidedByUserId === me.user.id || createsRoutinesFor(dir.agentById.get(card.agentId ?? ""))) && (
           // Not made with it (the agent wasn't where it reports yet): made from here once it is.
           <Button
             size="sm"

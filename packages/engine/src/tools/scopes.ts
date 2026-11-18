@@ -13,7 +13,7 @@ import {
   schema,
   sql,
 } from "@agenteschat/db";
-import { managesAgent } from "../audience";
+import { managesAgent, REACH_COLUMNS } from "../audience";
 import { recordAudit } from "../audit";
 import { caches } from "../cache";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
@@ -405,16 +405,7 @@ export async function setAgentScopes(
 ) {
   const membership = await requirePermission(db, actorId, orgId, "manage_agents");
   const [agent] = await db
-    .select({
-      id: agents.id,
-      builtin: agents.builtin,
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select({ id: agents.id, builtin: agents.builtin, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId), isNull(agents.deletedAt)));
   if (!agent) throw new NotFoundError("Agent not found");

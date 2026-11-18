@@ -543,9 +543,12 @@ describe("an agent that doesn't answer me", () => {
     expect(screen).toMatch(
       /disabled=\{\s*!\(\s*canTalk\(agent\) \|\|\s*managesAgent\(agent\) \|\|\s*dms\.data\?\.some\(\(d\) => d\.with\.type === "agent" && d\.with\.id === id\)\s*\)\s*\}/,
     );
-    // The Agents list still names it for who holds the key, its lock saying whom it answers.
-    expect(listsAgent(admin, kept)).toBe(true);
+    // The Agents list still names it for who manages it (the server's `canManage`), its lock saying whom it answers, and
+    // for who edits it; "Edit agents" alone doesn't reach someone's private agent (ADR 0085 addendum of 2026-11-17).
+    expect(listsAgent(admin, { ...kept, canManage: true })).toBe(true);
+    expect(listsAgent(admin, kept)).toBe(false);
     expect(listsAgent(member, kept)).toBe(false);
+    expect(listsAgent(member, { ...kept, canEdit: true })).toBe(true);
     expect(listsAgent(member, { ...kept, canTalk: true })).toBe(true);
   });
 

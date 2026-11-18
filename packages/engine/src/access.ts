@@ -1,6 +1,6 @@
 import { and, asc, type Database, type Executor, eq, inArray, isNull, schema } from "@agenteschat/db";
 import { getAgent } from "./agents";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { BROWSER_SCOPE, BROWSER_TOOL_INFO, BROWSER_TOOLS, DESKTOP_SCOPE, DESKTOP_TOOL_INFO } from "./browser/types";
 import { caches } from "./cache";
@@ -888,17 +888,7 @@ export async function accessMatrix(db: Database, actorId: string, orgId: string)
   ];
   const agentRows = (
     await db
-      .select({
-        id: agents.id,
-        name: agents.name,
-        handle: agents.handle,
-        ownerUserId: agents.ownerUserId,
-        audienceMode: agents.audienceMode,
-        audienceUserIds: agents.audienceUserIds,
-        audienceRoleIds: agents.audienceRoleIds,
-        consultable: agents.consultable,
-        brain: agents.brain,
-      })
+      .select({ id: agents.id, name: agents.name, handle: agents.handle, ...REACH_COLUMNS })
       .from(agents)
       .where(and(eq(agents.orgId, orgId), isNull(agents.archivedAt)))
       .orderBy(asc(agents.createdAt))

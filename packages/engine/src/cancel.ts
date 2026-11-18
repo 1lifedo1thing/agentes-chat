@@ -2,7 +2,7 @@ import { type AgentScope, DESKTOP_PROTOCOL, type PubSub } from "@agenteschat/ada
 import { and, type Database, type Executor, eq, gte, inArray, schema, sql } from "@agenteschat/db";
 import { announceAgentStatus } from "./agent-status";
 import { publishApproval } from "./approvals";
-import { managesAgent } from "./audience";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { personOfMessage } from "./authority";
 import { lineMachineOf, publishQueueChanged } from "./computer-queue";
@@ -186,49 +186,49 @@ const continuedBy = sql`coalesce(${messages.meta}->'canceled'->>'continuedByUser
   ${messages.meta}->'stepLimit'->>'continuedByUserId')`;
 export const runRequester = sql<string | null>`coalesce(${messages.authorUserId}, ${continuedBy})`;
 
+/** A run's agent as `managesAgent` reads it (`REACH_COLUMNS`). */
+type RunAgent = Parameters<typeof managesAgent>[0];
+
+/**
+ * A run as the rules over stopping it read it. `agent`: its agent's `REACH_COLUMNS`, when the caller's select has them
+ * (nothing is read for it then).
+ */
+interface StoppableRun {
+  run: { orgId: string; agentId: string; triggerMessageId: string };
+  requester: string | null;
+  ownerUserId: string | null;
+  agent?: RunAgent;
+}
+
 /**
  * Who may stop a run, continue it, or start it again ("Responder agora"): who asked for it (`runRequester`), the
  * person behind its work (a run another agent woke works for them too, ADR 0089), the agent's owner, or who manages
- * the agent (`managesRunAgent`).
+ * the agent (`managesRunAgent`). A caller checking many runs passes each one's `agent`: nothing is read for it then.
  */
-export async function mayStopRun(
-  db: Executor,
-  userId: string,
-  membership: Membership,
-  row: {
-    run: { orgId: string; agentId: string; triggerMessageId: string };
-    requester: string | null;
-    ownerUserId: string | null;
-  },
-) {
+export async function mayStopRun(db: Executor, userId: string, membership: Membership, row: StoppableRun) {
   if (row.requester === userId || row.ownerUserId === userId) return true;
-  if (await managesRunAgent(db, userId, membership, row.run)) return true;
+  if (await managesRunAgent(db, userId, membership, row)) return true;
   return (await personOfMessage(db, row.run.orgId, row.run.triggerMessageId)) === userId;
 }
 
 /**
  * Whether the person decides for an agent's runs as an admin: who manages that agent (`managesAgent`, ADR 0085 addendum
- * of 2026-11-17), never who merely holds "Editar qualquer agente" over a private agent. An agent no longer there leaves
- * the key alone.
+ * of 2026-11-17), never who merely holds "Edit agents" over a private agent. The agent is `row.agent`, or read here
+ * (its `REACH_COLUMNS` only); one no longer there leaves the key alone.
  */
 async function managesRunAgent(
   db: Executor,
   userId: string,
   membership: Membership,
-  run: { orgId: string; agentId: string },
+  row: Pick<StoppableRun, "run" | "agent">,
 ) {
   if (!can(membership, "manage_agents")) return false;
-  const [agent] = await db
-    .select({
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
-    .from(agents)
-    .where(and(eq(agents.orgId, run.orgId), eq(agents.id, run.agentId)));
+  const [agent] = row.agent
+    ? [row.agent]
+    : await db
+        .select(REACH_COLUMNS)
+        .from(agents)
+        .where(and(eq(agents.orgId, row.run.orgId), eq(agents.id, row.run.agentId)));
   return !agent || managesAgent(agent, userId, membership);
 }
 
@@ -268,6 +268,7 @@ export async function cancelRun(
   const [row] = await db
     .select({
       run: agentRuns,
+      agent: REACH_COLUMNS,
       ownerUserId: agents.ownerUserId,
       requester: runRequester,
       channelKind: channels.kind,
@@ -292,7 +293,7 @@ export async function cancelRun(
     return { id: row.run.id, status: row.run.status, previousStatus: row.run.status };
   }
   // The agent's owner or who manages it decides for the whole conversation; who asked, only for what they sent.
-  const forAll = row.ownerUserId === userId || (await managesRunAgent(db, userId, membership, row.run));
+  const forAll = row.ownerUserId === userId || (await managesRunAgent(db, userId, membership, row));
   const stopped = await stopRun(
     deps,
     orgId,

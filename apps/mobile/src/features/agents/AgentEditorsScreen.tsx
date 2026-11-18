@@ -7,6 +7,7 @@ import {
   editorsPatch,
   editorsSummary,
   editorsValueOf,
+  seesDetails,
 } from "@agenteschat/client/lib/audience";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
@@ -44,8 +45,8 @@ export function useEditorsSummary() {
 /**
  * "Who can edit" an agent (ADR 0085 addendum of 2026-11-17), the web's choice as a pushed form: only who looks after
  * it, or some people and roles too, checked on the page, Save in the bar. Its owner and who manages it change it
- * (`canEditAudience`, the server's rule); anyone else who reaches it reads who edits it. The right hand has none: nobody
- * edits how it works (ADR 0137).
+ * (`canEditAudience`, the server's rule); anyone else who sees how it works reads who edits it (`EditorsRead`). The
+ * right hand has none: nobody edits how it works (ADR 0137).
  */
 export function AgentEditorsScreen({ agentId }: { agentId: string }) {
   const { t } = useTranslation();
@@ -73,7 +74,11 @@ export function AgentEditorsScreen({ agentId }: { agentId: string }) {
   return <EditorsForm agent={agent} />;
 }
 
-/** For whoever only reads it: who edits it in one line, and what editing changes. */
+/**
+ * For whoever only reads it: who edits it in one line, and what editing changes. Who doesn't see how it works gets no
+ * editors from the server (the line would name nobody): only that its workings are kept for others, as its public card
+ * says (ADR 0085 addendum of 2026-11-17).
+ */
 function EditorsRead({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
   const summary = useEditorsSummary();
@@ -81,10 +86,16 @@ function EditorsRead({ agent }: { agent: Agent }) {
   return (
     <SettingsPage title={t("editors.title", g)}>
       <Gap />
-      <GroupedList>
-        <GroupedRow icon="pen" label={summary(agent)} labelLines={0} />
-      </GroupedList>
-      <GroupedFooter>{t("editors.note", g)}</GroupedFooter>
+      {seesDetails(agent) ? (
+        <>
+          <GroupedList>
+            <GroupedRow icon="pen" label={summary(agent)} labelLines={0} />
+          </GroupedList>
+          <GroupedFooter>{t("editors.note", g)}</GroupedFooter>
+        </>
+      ) : (
+        <GroupedFooter>{t("profile.detailsHidden", g)}</GroupedFooter>
+      )}
     </SettingsPage>
   );
 }

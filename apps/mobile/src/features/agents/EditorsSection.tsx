@@ -1,5 +1,5 @@
 import type { Agent } from "@agenteschat/client";
-import { canEditAudience, editorsMode, editorsOf } from "@agenteschat/client/lib/audience";
+import { canEditAudience, editorsMode, editorsOf, seesDetails } from "@agenteschat/client/lib/audience";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { useTranslation } from "react-i18next";
@@ -13,8 +13,9 @@ import { openAgentEditors, useEditorsSummary } from "./AgentEditorsScreen";
 /**
  * "Who can edit" on Edit agent (ADR 0085 addendum of 2026-11-17), after who talks to it as on the web's overview: who
  * changes how it works besides who looks after it, in one line under its name (a list of names, never cut short at the
- * row's end). Its owner and who manages it open the choice on a screen of its own; anyone else reads it. Never on the
- * right hand (ADR 0137); alone in a personal workspace, only once it names someone (ADR 0159).
+ * row's end). Its owner and who manages it open the choice on a screen of its own; anyone else who sees how it works
+ * reads it. Who doesn't gets no row: the server sends its editors to nobody else, so the line would name nobody. Never
+ * on the right hand (ADR 0137); alone in a personal workspace, only once it names someone (ADR 0159).
  */
 export function EditorsSection({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
@@ -22,7 +23,7 @@ export function EditorsSection({ agent }: { agent: Agent }) {
   const meId = useMeId();
   const { solo } = usePersonalView();
   const summary = useEditorsSummary();
-  if (isRightHand(agent) || (solo && editorsMode(editorsOf(agent)) === "owner")) return null;
+  if (isRightHand(agent) || !seesDetails(agent) || (solo && editorsMode(editorsOf(agent)) === "owner")) return null;
   const changes = canEditAudience(org ?? undefined, agent, meId ?? "");
   return (
     <>

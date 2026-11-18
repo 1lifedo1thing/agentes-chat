@@ -34,6 +34,7 @@ import {
   denyAgentProposal,
   denyTeam,
   type EndpointNet,
+  editAgent,
   editorsOf,
   endpointOrgsOf,
   getAgent,
@@ -67,17 +68,13 @@ import {
   rightHandWidgetsReady,
   SETUP_AGENTS_MAX,
   seesAgentDetails,
-  setAgentAppearance,
-  setAgentAudience,
   setAgentBrain,
-  setAgentEditors,
   setReportsTo,
   speakerOf,
   summaryModelReady,
   TEAM_TEMPLATES,
   unarchiveAgent,
   undoTeam,
-  updateAgent,
   updateAgentGroup,
   updateEndpointModels,
   usageQueue,
@@ -1071,30 +1068,20 @@ export function agentRoutes(deps: AppDeps) {
             ...input,
             monthlyBudgetNanoUsd: budget(monthlyBudgetUsd),
             ...(brakes ? { autonomyBrakes: brakes } : {}),
-            // A restricted one is born answering only its owner, so an audience refused below never leaves it open.
-            ...(audience && audience.mode !== "everyone" ? { audienceMode: "owner" as const } : {}),
+            // Who talks to it, who edits it besides its owner (ADR 0085 addendum of 2026-11-17) and its look, made
+            // with it: an audience that leaves its creator out never refuses the rest, and a value refused makes none.
+            ...(audience ? { audience } : {}),
+            ...(editors ? { editors } : {}),
+            ...(appearance ? { appearance } : {}),
           },
           // New agents start on "Automático".
           NEW_AGENT_DEFAULTS,
           // The person's Criar agente: what they pick is what the next one starts with (ADR 0094).
           { remember: true, pubsub: adapters.pubsub },
         );
-      let agent = proposal
+      const agent = proposal
         ? await createAgentFromProposal({ db, pubsub: adapters.pubsub }, c.get("user").id, orgId, proposal, make)
         : await make();
-      if (audience) {
-        agent = await setAgentAudience(db, c.get("user").id, orgId, agent.id, audience);
-        await publishAgentsChanged(adapters.pubsub, orgId);
-      }
-      // Who edits it besides its owner (ADR 0085 addendum of 2026-11-17), by its own call as on an edit.
-      if (editors) {
-        agent = await setAgentEditors(db, c.get("user").id, orgId, agent.id, editors);
-        await publishAgentsChanged(adapters.pubsub, orgId);
-      }
-      if (appearance)
-        agent = await setAgentAppearance(db, c.get("user").id, orgId, agent.id, appearance, {
-          pubsub: adapters.pubsub,
-        });
       // Born on the workspace's own computer: it lists its agents again.
       if (agent.machineId) await publishMachineAgentsChanged(adapters.pubsub, orgId);
       const userId = c.get("user").id;
@@ -1583,46 +1570,29 @@ export function agentRoutes(deps: AppDeps) {
         brakes,
         ...rest
       } = c.req.valid("json");
-      const input = { ...rest, ...(brakes ? { autonomyBrakes: brakes } : {}) };
+      const fields = {
+        ...rest,
+        ...(brakes ? { autonomyBrakes: brakes } : {}),
+        monthlyBudgetNanoUsd: budget(monthlyBudgetUsd),
+      };
       const actor = c.get("user").id;
-      // The audience, who edits it and the look have their own calls (its owner too); the rest goes by `updateAgent`'s
-      // rule.
-      const other =
-        (!audience && !editors && appearance === undefined) ||
-        Object.values(input).some((v) => v !== undefined) ||
-        monthlyBudgetUsd !== undefined;
-      let agent = other
-        ? await updateAgent(
-            db,
-            actor,
-            orgId,
-            agentId,
-            { ...input, monthlyBudgetNanoUsd: budget(monthlyBudgetUsd) },
-            { pubsub: adapters.pubsub },
-          )
-        : null;
-      if (audience) {
-        agent = await setAgentAudience(db, actor, orgId, agentId, audience, mailLossSeen);
-        await publishAgentsChanged(adapters.pubsub, orgId);
-      }
-      if (editors) {
-        agent = await setAgentEditors(db, actor, orgId, agentId, editors);
-        await publishAgentsChanged(adapters.pubsub, orgId);
-      }
-      if (appearance !== undefined)
-        agent = await setAgentAppearance(db, actor, orgId, agentId, appearance, { pubsub: adapters.pubsub });
-      if (!agent) {
-        agent = await getAgent(db, orgId, agentId);
-        if (!agent) throw new NotFoundError("Agent not found");
-      }
+      // Every part is decided against the agent as it is, then all are saved together (`editAgent`): narrowing who
+      // talks to it never refuses the rest of the same change.
+      const agent = await editAgent({ db, pubsub: adapters.pubsub }, actor, orgId, agentId, {
+        ...(Object.values(fields).some((v) => v !== undefined) ? { fields } : {}),
+        audience,
+        mailLossSeen,
+        editors,
+        appearance,
+      });
       // Its computer shows its name and look (the desktop app, ADR 0036) and names its folder by its handle, and a new
       // owner may take its plan away.
       if (
         agent.machineId &&
-        (input.name !== undefined ||
-          input.handle !== undefined ||
+        (rest.name !== undefined ||
+          rest.handle !== undefined ||
           appearance !== undefined ||
-          input.ownerUserId !== undefined)
+          rest.ownerUserId !== undefined)
       ) {
         await publishMachineAgentsChanged(adapters.pubsub, orgId);
       }

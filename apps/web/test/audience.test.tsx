@@ -266,13 +266,15 @@ describe("audience rules", () => {
     expect(canEditAudience(admin, theo({}), "u2")).toBe(false);
   });
 
-  test("whose lists show it: anyone's while it answers them or they edit it, always who manages agents'", () => {
+  test("whose lists show it: anyone's while it answers them, they manage it or they edit it; never the key alone", () => {
     const member: OrgSummary = { id: ORG_ID, name: "Acme", role: "member", permissions: ["read", "talk_to_agents"] };
     const manager: OrgSummary = { ...member, permissions: ["read", "talk_to_agents", "manage_agents"] };
     const locked = theo({ canTalk: false });
     expect(listsAgent(member, theo({}))).toBe(true);
     expect(listsAgent(member, locked)).toBe(false);
-    expect(listsAgent(manager, locked)).toBe(true);
+    // "Edit agents" where it reaches the agent (`canManage`, ADR 0085 addendum of 2026-11-17), not someone's private one.
+    expect(listsAgent(manager, locked)).toBe(false);
+    expect(listsAgent(manager, { ...locked, canManage: true })).toBe(true);
     // Named in its "Who can edit": listed though it doesn't answer them.
     expect(listsAgent(member, { ...locked, canEdit: true })).toBe(true);
     // An older server says nothing: it answers everyone.

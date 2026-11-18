@@ -1,6 +1,6 @@
 import { ACCESS_ALLOW_PROTOCOL, type AgentScope, BROWSER_PROFILE_PROTOCOL, type PubSub } from "@agenteschat/adapters";
 import { and, asc, type Database, type Executor, eq, inArray, isNull, notInArray, schema, sql } from "@agenteschat/db";
-import { managesAgent } from "../audience";
+import { managesAgent, REACH_COLUMNS } from "../audience";
 import { recordAudit } from "../audit";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "../errors";
 import { type MachineCaller, MachineRequestError } from "../machine-hub";
@@ -178,15 +178,7 @@ async function requireEditableAgents(
 ) {
   if (agentIds.length === 0) return;
   const rows = await db
-    .select({
-      id: agents.id,
-      ownerUserId: agents.ownerUserId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select({ id: agents.id, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.orgId, orgId), inArray(agents.id, agentIds)));
   if (rows.length !== new Set(agentIds).size) throw new ValidationError("Unknown agent");
@@ -435,15 +427,7 @@ export async function setAgentBrowserProfile(
 ) {
   const membership = await requireActiveMembership(db, actorId, orgId);
   const [agent] = await db
-    .select({
-      ownerUserId: agents.ownerUserId,
-      browserProfileId: agents.browserProfileId,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
-    })
+    .select({ browserProfileId: agents.browserProfileId, ...REACH_COLUMNS })
     .from(agents)
     .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId)));
   if (!agent) throw new NotFoundError("Agent not found");
@@ -514,13 +498,8 @@ export async function requestBrowserProfile(deps: NotificationDeps, actorId: str
     .select({
       name: agents.name,
       handle: agents.handle,
-      ownerUserId: agents.ownerUserId,
       machineId: sql<string | null>`coalesce(${agents.browserMachineId}, ${agents.machineId})`,
-      audienceMode: agents.audienceMode,
-      audienceUserIds: agents.audienceUserIds,
-      audienceRoleIds: agents.audienceRoleIds,
-      consultable: agents.consultable,
-      brain: agents.brain,
+      ...REACH_COLUMNS,
     })
     .from(agents)
     .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId)));

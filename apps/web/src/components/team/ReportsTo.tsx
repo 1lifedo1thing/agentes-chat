@@ -3,7 +3,7 @@ import { useSetAgentLines, useTeam } from "@agenteschat/client";
 import { managesAgent } from "@agenteschat/client/lib/audience";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
-import { mayReportTo, reportsOf, supervisorOf } from "@agenteschat/client/lib/team-views";
+import { mayReportTo, mayUndoLines, reportsOf, supervisorOf } from "@agenteschat/client/lib/team-views";
 import { Field, Icon, MenuRadioGroup, Select } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -17,8 +17,10 @@ const NOBODY = "";
 
 /**
  * Responde a (ADR 0148 addendum): sets who agents report to at once, for who manages each of them (`setReportsTo`, ADR
- * 0085 addendum of 2026-11-17), and says so with Desfazer (the same call with what they were). `said`: the toast's
- * words; absent, one agent's line by name.
+ * 0085 addendum of 2026-11-17), and says so with Undo (the same call with what they were) when each agent goes back
+ * under nobody or an agent I manage (`mayUndoLines`): putting one back under someone's private agent would be refused.
+ * `said`: the toast's words; absent, one agent's line by name. Every way Team and the agent's page change a line goes
+ * through here.
  */
 export function useSetReportsTo() {
   const { t } = useTranslation();
@@ -38,10 +40,16 @@ export function useSetReportsTo() {
           (one?.reportsToAgentId
             ? t("team.reportsTo.done", { agent: nameOf(one.agentId), to: nameOf(one.reportsToAgentId) })
             : t("team.reportsTo.cleared", { agent: nameOf(one?.agentId ?? null) }));
-        toast.show(words, "info", {
-          label: t("agentGroups.undo"),
-          run: () => set.mutate(previous, { onError: (e) => toast.show(errorText(t, e), "error") }),
-        });
+        toast.show(
+          words,
+          "info",
+          mayUndoLines(previous, dir.agents)
+            ? {
+                label: t("agentGroups.undo"),
+                run: () => set.mutate(previous, { onError: (e) => toast.show(errorText(t, e), "error") }),
+              }
+            : undefined,
+        );
       },
     });
 }
