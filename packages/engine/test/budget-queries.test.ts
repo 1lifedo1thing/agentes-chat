@@ -131,7 +131,7 @@ test("the run keeps its stage profile in its own column, for the operator's anal
   const stages = (kept: unknown) =>
     (kept as { stages: StageTiming[] }[] | undefined)?.map((p) => p.stages.map((s) => s.stage));
   expect(stages(row?.profiles)).toEqual([["claim", "context", "model#1", "persist", "events"]]);
-  expect(stages(row?.transcript?.profiles)).toEqual(stages(row?.profiles));
+  expect(row?.transcript?.profiles).toBeUndefined();
   const steps = await f.db
     .select({ data: schema.agentRunSteps.data })
     .from(schema.agentRunSteps)
