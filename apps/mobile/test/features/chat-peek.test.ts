@@ -140,7 +140,7 @@ describe("the peek's wiring", () => {
     expect(list).toContain("refScrollView={listScroll}");
     expect(list).toContain("contentInsetEndAdjustment={listEnd}");
     expect(list).toContain('keyboardLiftBehavior="whenAtEnd"');
-    expect(list).toContain("maintainScrollAtEnd={readHold || anchored ? false : glide > 0 ? GLIDE : true}");
+    expect(list).toContain("maintainScrollAtEnd={readHold ? false : glide > 0 ? GLIDE : true}");
     expect(chat).toContain("const listScroll = useAnimatedRef<Animated.ScrollView>();");
     expect(chat).toContain("const pull = usePullPastEnd(listScroll, peekAgentId !== null);");
     // iOS only: Android's list never reports a pull past its end.

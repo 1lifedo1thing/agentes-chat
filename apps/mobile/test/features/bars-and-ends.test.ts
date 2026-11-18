@@ -16,7 +16,7 @@ test("the dock grows at the conversation's end (who is working, the reply bar): 
   // is false then) when the agent's working line grows the dock, and it must not stay under it.
   expect(chat).toContain("return !!state && (state.isFollowingEnd || state.isAtEnd);");
   // While a send glides, the list's own follow takes the grown dock into the same motion.
-  expect(chat).toContain("if (grew && followsEnd() && !gliding.current && anchorRise.current === null)");
+  expect(chat).toContain("if (grew && followsEnd() && !gliding.current)");
   // The second scroll that ran over the list's own shift is gone.
   expect(chat).not.toContain("boxHeightRef");
 });
