@@ -242,17 +242,19 @@ export function PresenceStack({
           const look = looks(p.user);
           const followed = followingId === p.clientId;
           return (
-            <li key={p.clientId} className="lf-people__row ac-iconline">
-              <PeerFace user={p.user} name={look.name} color={look.color} working={peerWorking(p)} />
-              <span className="lf-people__who">
-                <span className="lf-people__name">
-                  {p.self ? t("live.shell.presence.you") : look.name}
-                  {p.user.kind === "agent" && !p.self && (
-                    <span className="lf-people__kind"> {t("live.shell.presence.agent")}</span>
-                  )}
-                </span>
-                <span className="lf-people__doing" style={{ color: p.self ? undefined : look.color }}>
-                  {doing(p)}
+            <li key={p.clientId} className="lf-people__row">
+              <span className="lf-people__line ac-iconline">
+                <PeerFace user={p.user} name={look.name} color={look.color} working={peerWorking(p)} />
+                <span className="lf-people__who">
+                  <span className="lf-people__name">
+                    {p.self ? t("live.shell.presence.you") : look.name}
+                    {p.user.kind === "agent" && !p.self && (
+                      <span className="lf-people__kind"> {t("live.shell.presence.agent")}</span>
+                    )}
+                  </span>
+                  <span className="lf-people__doing" style={{ color: p.self ? undefined : look.color }}>
+                    {doing(p)}
+                  </span>
                 </span>
               </span>
               {!p.self && (

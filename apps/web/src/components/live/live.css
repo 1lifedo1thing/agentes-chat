@@ -479,9 +479,17 @@ html:not([data-pointer]) .lf-stack:focus-visible {
 }
 /* A row with a 24 face (`.ac-iconline`: on the name's capitals): 40 high on one line, and the name as far from the
    row's top over what they are doing. */
+/* The face and its words are the icon line; the row centres that line and the Follow button beside it. */
 .lf-people__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: 9px var(--space-2);
   box-sizing: border-box;
+}
+.lf-people__line {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 @supports (top: 1lh) {
   .lf-people__row {
@@ -712,7 +720,6 @@ html:not([data-pointer]) .lf-stack:focus-visible {
 .lf-version {
   width: 100%;
   display: flex;
-  align-items: center;
   gap: var(--space-2);
   min-height: var(--control-h-md);
   padding: var(--space-2);
@@ -727,6 +734,10 @@ html:not([data-pointer]) .lf-stack:focus-visible {
 }
 /* A saved version: who made it on its first line's capitals (`.ac-iconline`), that line as far from the row's top on
    one line as over its name. */
+/* A row of words alone (the current version) centres them; a row with a face is an icon line. */
+.lf-version:not(.ac-iconline) {
+  align-items: center;
+}
 .lf-version.ac-iconline {
   align-items: flex-start;
   padding-block: 9px;
