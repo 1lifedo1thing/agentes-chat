@@ -87,7 +87,7 @@ const KEPT: Record<string, string[]> = {
     "transcript.waitingForBrain.code",
     "transcript.waitingForBrain.source",
     // The stages of a run's profile: named by the code that times them, counted by the work analytics.
-    "transcript.profiles.stages.stage",
+    "profiles.stages.stage",
   ],
   agent_run_steps: [
     "data.name",

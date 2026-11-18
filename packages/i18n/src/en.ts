@@ -2244,6 +2244,7 @@ export const en = {
     phone: "Phone",
     phoneOn: "In the phone app, even with the phone locked",
     phoneOff: "Turn them on in the phone app",
+    phoneOpen: "Open",
     mac: "Mac app",
     macHelp: "While the app is open, even in the background",
     on: "On",
@@ -2603,7 +2604,10 @@ export const en = {
     row: {
       hint: "Talk with {{assistant}} and get its replies on {{surface}}.",
       link: "Link",
-      /** Under the app's name while nothing is linked. {{assistant}} is the workspace's built-in assistant by name. */
+      /**
+       * Behind the ⓘ beside the app's name while nothing is linked. {{assistant}} is the workspace's built-in assistant
+       * by name.
+       */
       none: "{{assistant}} can message you there",
       pending: "A sender is waiting for you to confirm",
       unlink: "Unlink",
@@ -13322,6 +13326,43 @@ export const en = {
       list: "Connected MCP servers",
       none: "MCP servers you connect by their address show up here.",
     },
+    /** Connections split as the Vault splits its items: the team's and each person's (ADR 0099 addendum). */
+    personal: {
+      note: "Only you open these connections. Your agents use them only when you ask.",
+      /** Over one connection's own screen on the phone. */
+      noteOne: "Only you open this connection. Your agents use it only when you ask.",
+      emptyTitle: "Connect your own accounts",
+      emptyText:
+        "Only you open your connections, and your agents use them only when you ask. Mailboxes follow their own rule.",
+      noApps: "Services you connect just for yourself show up here.",
+      /** Over the person's own mailboxes on Pessoal: their rule (ADR 0038), not the connections' one. */
+      mailTitle: "Your mailboxes",
+      mailNote:
+        "Agents you allowed use your mailboxes as you set, also for people who talk to them directly. When someone else asks for something that needs approval, you're the one who approves it.",
+      others: "Others' personal connections",
+      of: "Personal to {{name}}",
+      seeAll: "See all {{count}}",
+      forWhom: "Who it's for",
+      teamLocked: "Only people who manage connectors add the team's.",
+      mailLocked: "A mailbox always belongs to whoever connects it.",
+      done: "Your agents use it only when you ask.",
+      worksWhenAsked: "Works only when you ask.",
+      remove: "Remove",
+      removeName: "Remove {{name}}",
+      removeTitle: "Remove {{name}}?",
+      takeOff: "Take off an agent",
+      takeOffTitle: "Take {{name}} off an agent",
+      takeOffName: "Take {{name}} off {{agent}}",
+      takeOffOne: "Take off",
+      takenOff: "{{agent}} no longer uses {{name}}.",
+      turnOff: "Turn off",
+      turnOffName: "Turn off {{name}} for this agent",
+      moveToTeam: "Move to the team",
+      moveTitle: "Move {{name}} to the team?",
+      moveText:
+        "Everyone in the workspace sees it. People who manage agents choose which agents use it, and an agent's owner can turn it off on theirs. An agent that uses every connected app gets it right away.",
+      moved: "{{name}} now belongs to the team.",
+    },
     addTitle: "Add connector",
     catalogText: "Connect once for {{org}}. Then choose what each agent can use.",
     catalog: "Available connectors",
@@ -15334,6 +15375,8 @@ export const en = {
       createRefused: "You can't create a workspace right now.",
       noAgentToRemind: "No agent in this conversation can remind you.",
       agentCantRead: "Let the agent read this first, in its access settings.",
+      /** A routine on someone else's own connection: only that person's own routine waits on its events. */
+      connectionNotYours: "This connection is someone else's own. Only a routine of theirs can wait on its events.",
       neverHappens: "This schedule never happens.",
       soleOwner:
         "You're the only owner of a workspace with other members. Make someone else an owner, or delete the workspace, first.",
@@ -17310,7 +17353,7 @@ export const en = {
       roles: "Each role adds permissions, channels and agents.",
       vault: "Your agents' passwords, keys and contacts. They never see a password.",
       access: "What each agent can use: one level per connector.",
-      connectors: "Services and MCP servers connected once for the whole workspace.",
+      connectors: "Services and MCP servers, connected for the team or just for you.",
       skills: "Markdown instructions agents open when they need them.",
       storage: "Where the workspace's files live.",
       usage: "The workspace's AI accounts, and how much each person and agent uses.",
@@ -17399,7 +17442,7 @@ export const en = {
         wallpaper: {
           title: "Background",
           help: "Changes only for you, on all your devices",
-          rowHelp: "Behind every conversation, only for you. A conversation can have its own from its menu.",
+          rowHelp: "Behind every conversation, only for you, unless a conversation has its own from its menu.",
           rowSub: "Only for you, in every conversation",
           onlyHere: "Only in {{name}}, only for you",
           none: "No background",
