@@ -203,7 +203,7 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
   // Above 272K prompt tokens, input, cached input and cache writes cost 2×, output 1.5×. Context windows from each
   // model's page (2026-10-26, Terra's 2026-10-31, Astra's 2026-11-09, 6.2's 2026-11-17).
   // GPT-6.2 Astra, OpenAI's flagship ("our most capable model"), 4× GPT-6.2 Sol's prices: like GPT-6 Astra, no tier
-  // and no pick for routing or system tasks, so "Automático" never chooses it, people do.
+  // and no pick for routing or system tasks, so Automatic never chooses it, people do.
   "gpt-6.2-astra": {
     provider: "openai",
     label: "GPT-6.2 Astra",
@@ -233,7 +233,7 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
     tier: "medium",
   },
   // OpenAI's previous flagship, 5× GPT-6.1 Sol's prices: no tier and no pick for routing or system tasks, so
-  // "Automático" never chooses it, people do.
+  // Automatic never chooses it, people do.
   "gpt-6-astra": {
     provider: "openai",
     label: "GPT-6 Astra",
@@ -300,7 +300,7 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
   // and Hydrogen 2026-11-17). Thinking is billed as output. Caching is implicit, with no write charge, so a cache
   // write costs the input rate (none is ever reported). Carbon, Argon and 3.8 Flash cost half until the day in `intro`.
   // Gemini 4 Carbon, Google's strongest reasoning model, thinks more per turn than Argon at Argon's prices: no tier
-  // and no pick for routing or system tasks, so "Automático" never chooses it (Argon stays the large one), people do.
+  // and no pick for routing or system tasks, so Automatic never chooses it (Argon stays the large one), people do.
   "gemini-4-carbon": {
     provider: "gemini",
     label: "Gemini 4 Carbon",
