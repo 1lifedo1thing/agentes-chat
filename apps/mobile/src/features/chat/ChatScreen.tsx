@@ -133,11 +133,9 @@ import {
   useReanimatedKeyboardAnimation,
 } from "react-native-keyboard-controller";
 import Animated, {
-  Easing,
   FadeIn,
   FadeInDown,
   FadeOut,
-  Keyframe,
   LayoutAnimationConfig,
   useAnimatedRef,
   useAnimatedStyle,
@@ -164,8 +162,8 @@ import {
   type HeaderAction,
   Icon,
   LineIcon,
-  motion,
   PressScale,
+  RISE_IN,
   type SendHow,
   Text,
   useReducedMotion,
@@ -336,15 +334,11 @@ const DIVIDER_KEY = "unseen-divider";
 const OFFLINE_AFTER_MS = 1200;
 /** "Conectado de novo" stays this long. */
 const BACK_ONLINE_MS = 1600;
-const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
 /**
- * A row that just arrived at the bottom rises 6pt into place (`--dur-base`, as on the web), on the strong ease-out
- * every entrance uses; only while it is fresh: history, a jump and a row scrolled back into view never do.
+ * A row that just arrived at the bottom rises 6pt into place (`RISE_IN`: `--dur-base`, as on the web, on the strong
+ * ease-out every entrance uses); only while it is fresh: history, a jump and a row scrolled back into view never do.
  */
-const ENTER = new Keyframe({
-  0: { opacity: 0, transform: [{ translateY: 6 }] },
-  100: { opacity: 1, transform: [{ translateY: 0 }], easing: EASE_OUT },
-}).duration(motion.base);
+const ENTER = RISE_IN;
 const FRESH_MS = 800;
 /** How close to the end a scroll has to stop for a list held at a long message's start to follow again. */
 const READ_RELEASE_PX = 24;

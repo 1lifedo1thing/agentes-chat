@@ -23,7 +23,7 @@ import { notifiedIds } from "./approvals";
 import { isComputerBrain, planName } from "./brains/types";
 import { confidentialRoots } from "./confidential";
 import { invitationMailProof } from "./crypto";
-import { inertText } from "./email/inert";
+import { inertSender, inertText } from "./email/inert";
 import {
   type Block,
   EMAIL_PICTURES,
@@ -862,7 +862,7 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
         c.preheader,
         c.headline(t.surface),
         [
-          { p: c.body(t.surface, inertText(t.display), inertText(t.orgName)) },
+          { p: c.body(t.surface, inertSender(t.display), inertText(t.orgName)) },
           { note: c.notYou },
           { button: c.button, url: t.url },
           { small: c.small },
@@ -877,7 +877,7 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
         c.subject(t.surface),
         c.preheader,
         c.headline(t.surface),
-        [{ p: c.body(t.surface, inertText(t.display)) }, { small: c.small }],
+        [{ p: c.body(t.surface, inertSender(t.display)) }, { small: c.small }],
         c.why(t.surface),
       );
     }

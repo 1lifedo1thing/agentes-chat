@@ -1,5 +1,5 @@
 {
-  "id": "19d7f47e-a2fe-4d11-8f08-ff15cc602a4a",
+  "id": "f24af517-0ac8-49a4-ab0c-9d809c6f4035",
   "prevId": "15e88fa3-34f7-4ec5-8d8e-434b500f00e8",
   "version": "7",
   "dialect": "postgresql",
@@ -239,20 +239,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
-        },
-        "editor_user_ids": {
-          "name": "editor_user_ids",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::text[]"
-        },
-        "editor_role_ids": {
-          "name": "editor_role_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
         },
         "autonomy_brakes": {
           "name": "autonomy_brakes",
@@ -15312,6 +15298,19 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "for_user_id": {
+          "name": "for_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "asker_read_outside": {
+          "name": "asker_read_outside",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {
@@ -15399,6 +15398,39 @@
             },
             {
               "expression": "channel_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_consultations_handed_for_idx": {
+          "name": "agent_consultations_handed_for_idx",
+          "columns": [
+            {
+              "expression": "org_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "target_agent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "for_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
