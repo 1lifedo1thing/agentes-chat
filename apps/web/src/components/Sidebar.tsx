@@ -48,6 +48,7 @@ import {
   canTalk,
   hiddenAgentIds,
   listsAllAgents,
+  managesAgent,
 } from "@agenteschat/client/lib/audience";
 import { workspaceNotes } from "@agenteschat/client/lib/deletion";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
@@ -503,6 +504,9 @@ export function Sidebar() {
   const agentRow = (a: Agent) => {
     const dm = dmOf.get(a.id);
     const unread = dm?.unread ?? 0;
+    // Groups are made by who holds "Edit agents"; an agent moves in or out of one only for who manages it (ADR 0085
+    // addendum of 2026-11-17): the key alone doesn't reach someone's private agent.
+    const arranges = managesAgent(a);
     return (
       <ErrorBoundary
         key={a.id}
@@ -522,8 +526,8 @@ export function Sidebar() {
           pinned={pins.agents.includes(a.id)}
           onPrefetch={() => dm && prefetch(dm.channelId)}
           onOpen={() => markOpen(dm?.channelId ?? a.id)}
-          drag={organize ? drag.row(a.id) : undefined}
-          menuExtra={manages ? groupEntries(a) : undefined}
+          drag={organize && arranges ? drag.row(a.id) : undefined}
+          menuExtra={arranges ? groupEntries(a) : undefined}
         />
       </ErrorBoundary>
     );
@@ -1861,8 +1865,8 @@ function AgentRow({
   const navigate = useNavigate();
   const agentEntries = useAgentMenu();
   const rowMenu = entityMenu(() => agentEntries(a, menuExtra));
-  // Its owner and the admins: its settings on hover, like a channel's.
-  const edits = can(org, "manage_agents") || a.ownerUserId === me.user.id;
+  // Its owner and who manages it (ADR 0085 addendum of 2026-11-17): its settings on hover, like a channel's.
+  const edits = managesAgent(a) || a.ownerUserId === me.user.id;
   // Listed for who manages agents though it doesn't talk to them: the line says who it talks to.
   const locked = !canTalk(a);
   const names = locked ? audienceNames(a, (id) => dir.memberById.get(id)?.name, dir.roleName) : [];

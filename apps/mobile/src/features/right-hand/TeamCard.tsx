@@ -10,6 +10,7 @@ import {
   useTeamCard,
 } from "@agenteschat/client";
 import { teamProposalOf } from "@agenteschat/client/lib/action-cards";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import { joinNames } from "@agenteschat/client/lib/format";
 import { can } from "@agenteschat/client/lib/permissions";
 import { isRightHand, RIGHT_HAND_DEFAULT } from "@agenteschat/client/lib/right-hand";
@@ -339,6 +340,14 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
   const open = status === "open";
   const decidedAt = card.decidedAt ? when.short(card.decidedAt) : undefined;
   const by = card.decidedByUserId === meId ? null : dir.memberById.get(card.decidedByUserId ?? "")?.name;
+  // Undoing archives its agents: anyone but who created it needs to manage each one still here (the server's
+  // `canManage`, so a private agent stays out of reach of who only holds "Editar qualquer agente").
+  const managesTeam =
+    can(org, "manage_agents") &&
+    (card.created?.agentIds ?? []).every((id) => {
+      const a = dir.agentById.get(id);
+      return !a || managesAgent(a);
+    });
   const answer: AskAnswer | null = open
     ? null
     : status === "created"
@@ -348,7 +357,7 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
             ? t(modeKey(org, "teamPlan.card.created"), { name: by })
             : t(modeKey(org, "teamPlan.card.createdYou")),
           time: decidedAt,
-          actions: teamUndoable(card, { userId: meId ?? "", admin: can(org, "manage_agents") }) ? (
+          actions: teamUndoable(card, { userId: meId ?? "", admin: managesTeam }) ? (
             <Button
               variant="ghost"
               size="card"

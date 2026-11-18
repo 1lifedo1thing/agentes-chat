@@ -26,6 +26,7 @@ import {
   useRuleParse,
 } from "@agenteschat/client";
 import { approvalTitle, ownActionName, routineVaultKey, splitOwnActions } from "@agenteschat/client/lib/approval-words";
+import { managesAgent, managesRoutinesOf } from "@agenteschat/client/lib/audience";
 import type { RunStatus } from "@agenteschat/client/lib/calendar";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
@@ -306,7 +307,7 @@ export function useWhen() {
 /** Rotinas: scheduled and event-driven agent tasks. */
 export function RoutinesPage() {
   const { t } = useTranslation();
-  const { org, me } = useOrg();
+  const { org } = useOrg();
   const dir = useDirectory(org.id);
   const routines = useRoutines(org.id);
   const now = useNow();
@@ -320,8 +321,8 @@ export function RoutinesPage() {
   // After the directory: who may create hangs on the agents they own.
   const noRoutines = routines.isSuccess && list.length === 0 && !dir.loading;
   const look = useRightHandLook();
-  // The server's rule: who manages routines, or an agent's owner for that agent.
-  const mayCreate = can(org, "manage_routines") || dir.agents.some((a) => a.ownerUserId === me.user.id);
+  // The server's rule, per agent (ADR 0085 addendum of 2026-11-17): who edits it, or "Criar rotinas" where it reaches.
+  const mayCreate = dir.agents.some((a) => managesRoutinesOf(a));
   const [agents, setAgents] = useState<string[]>([]);
   const copy = useFilterCopy();
   const agentOptions = useActorFilterOptions().filter((o) => o.value.startsWith("agent:"));
@@ -1328,6 +1329,7 @@ function RoutineDetails({ routine: r, now, onClose }: { routine: Routine; now: D
   const controls = useRoutineControls(r);
   const action = controls.action;
   const runs = useRoutineRuns(org.id, r.id);
+  const moves = managesAgent(actors.dir.agentById.get(r.agentId));
   const when = useWhen();
   const say = useSay();
   const outages = useMachineOutages(org.id, r.state === "waiting_computer");
@@ -1347,11 +1349,11 @@ function RoutineDetails({ routine: r, now, onClose }: { routine: Routine; now: D
   );
   const nexts = described.data?.ok ? described.data.nextRuns.slice(0, 4) : r.nextRunAt ? [r.nextRunAt] : [];
   const fix = r.canManage ? pausedFix(r) : null;
-  // "Trocar computador": the outage its run waits on, for whoever can move agents, where people connect their own
+  // "Trocar computador": the outage its run waits on, for whoever manages its agent, where people connect their own
   // computers (a Cloud workspace has one).
   const selfHost = useComputerEdition(org.id) === "selfhost";
   const outage =
-    selfHost && r.state === "waiting_computer" && r.waitingFor && can(org, "manage_agents")
+    selfHost && r.state === "waiting_computer" && r.waitingFor && moves
       ? outages.data?.outages.find((o) => o.machineId === r.waitingFor?.machineId)
       : undefined;
   const usage = usageParts(r.usage, can(org, "view_usage"));
@@ -1802,13 +1804,17 @@ function RoutineStrip({
       { onSuccess: onSaved, onError: (error) => toast.show(errorText(t, error), "error") },
     );
   const hint = (kind: ReturnType<typeof whereHint>) => t(`routines.panel.whereHint.${kind}`);
+  // Only agents whose routines this person sets up (the server checks again), the routine's own kept: its creator
+  // still edits it after losing that agent's routines (ADR 0085 addendum of 2026-11-17).
   const agentOptions = [
-    ...actors.dir.agents.map((a) => ({
-      value: a.id,
-      label: a.name,
-      description: a.role || undefined,
-      leading: actors.avatar({ type: "agent", id: a.id }, "sm"),
-    })),
+    ...actors.dir.agents
+      .filter((a) => managesRoutinesOf(a) || a.id === r.agentId)
+      .map((a) => ({
+        value: a.id,
+        label: a.name,
+        description: a.role || undefined,
+        leading: actors.avatar({ type: "agent", id: a.id }, "sm"),
+      })),
     ...(actors.dir.agentById.has(r.agentId)
       ? []
       : [{ value: r.agentId, label: actors.name(agent), description: undefined, leading: actors.avatar(agent, "sm") }]),
@@ -2401,7 +2407,8 @@ function RoutineDialog({
   const channels = useChannels(org.id);
   const targetLabel = useTargetLabel();
   const action = useRoutineAction(org.id);
-  const agents = actors.dir.agents;
+  // The agents whose routines this person sets up (the server checks again), the routine's own kept.
+  const agents = actors.dir.agents.filter((a) => managesRoutinesOf(a) || a.id === routine?.agentId);
   const editing = Boolean(routine);
   const shows = (p: RoutinePart) => !part || part === p;
   const myZone = actors.dir.memberById.get(me.user.id)?.timezone || browserTimezone() || "America/Sao_Paulo";

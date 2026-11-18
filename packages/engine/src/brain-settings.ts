@@ -60,6 +60,7 @@ import {
   audienceChanged,
   audienceOf,
   dropMailIfWidened,
+  managesAgent,
   OWNER_ONLY,
   planOpened,
 } from "./audience";
@@ -581,14 +582,14 @@ interface BrainDeps {
 }
 
 /**
- * Admins (`manage_agents`) and the agent's owner see and change it; anyone else gets a 403. The team's right hand's
- * `mine` (ADR 0137 §11) is every member's own: theirs to see and change.
+ * Who manages the agent (`managesAgent`, ADR 0085 addendum of 2026-11-17) and its owner see and change it; anyone else
+ * gets a 403. The team's right hand's `mine` (ADR 0137 §11) is every member's own: theirs to see and change.
  */
 async function agentBrainAccess(db: Database, userId: string, orgId: string, agentId: string, scope?: unknown) {
   const membership = await requirePermission(db, userId, orgId, "read");
   const agent = await getAgent(db, orgId, agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
-  const admin = can(membership, "manage_agents");
+  const admin = managesAgent(agent, userId, membership);
   const which: BrainScope | undefined = isRightHand(agent) ? (scope === "mine" ? "mine" : "workspace") : undefined;
   if (which !== "mine" && !admin && agent.ownerUserId !== userId) {
     throw new ForbiddenError("Only an admin or the agent's owner can see who thinks for it", "agent.not_owner");
@@ -1784,12 +1785,15 @@ export function brainModelLabel(
   return brainModelOptions(kind).find((o) => o.value === value)?.label ?? value;
 }
 
-/** Each agent's brain summary for this viewer (one query for the computers, one for the accounts). */
+/**
+ * Each agent's brain summary for this viewer (one query for the computers, one for the accounts). Its computer's name
+ * shows to its owner and who manages it (`managesAgent`).
+ */
 export async function agentBrainSummaries(
   db: Database,
   viewerId: string,
   orgId: string,
-  agents: readonly {
+  agents: readonly (Pick<Agent, "audienceMode" | "audienceUserIds" | "audienceRoleIds" | "consultable"> & {
     id: string;
     brain: string;
     brainModel: string | null;
@@ -1798,7 +1802,7 @@ export async function agentBrainSummaries(
     brainAccountId?: string | null;
     brainSpeed?: string;
     builtin?: string | null;
-  }[],
+  })[],
 ): Promise<Map<string, AgentBrainSummary>> {
   const out = new Map<string, AgentBrainSummary>();
   const computerIds = [
@@ -1837,10 +1841,11 @@ export async function agentBrainSummaries(
   ]);
   const live = new Map(machines.filter((m) => !m.deletedAt).map((m) => [m.id, m]));
   const accountById = new Map(accounts.map((r) => [r.id, r]));
-  const manages = membership !== null && !readRefusal(membership.standing) && can(membership, "manage_agents");
+  const reads = membership !== null && !readRefusal(membership.standing);
   for (const a of agents) {
     const kind = brainOf(a.brain);
     const machine = a.machineId ? live.get(a.machineId) : undefined;
+    const manages = reads && managesAgent(a, viewerId, membership);
     const computer = machine && (manages || a.ownerUserId === viewerId) ? machine.name : undefined;
     const row = kind !== "model" && a.brainAccountId ? accountById.get(a.brainAccountId) : undefined;
     const provider = kind === "claude_code" ? (row?.provider ?? undefined) : undefined;

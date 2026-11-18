@@ -164,7 +164,7 @@ function SettingsRow({
   const ask = useAskProposal(orgId);
   const redo = useSendDm(orgId);
   const actions = useAgentActions(orgId, message?.channelId ?? "");
-  const delegateUndo = useDelegateUndoAction(first ? delegate : null);
+  const delegateUndo = useDelegateUndoAction(first ? delegate : null, p.agentId);
   const when = useWhen();
   const agent = dir.anyAgent(p.agentId);
   const proposer = p.proposedByAgentId ?? p.agentId;
@@ -221,9 +221,7 @@ function SettingsRow({
     };
   }
 
-  const asked = p.askedAt
-    ? sentToText(t, i18n.language, decidersOf(p, members, roles, agent?.ownerUserId), p.askedAt)
-    : null;
+  const asked = p.askedAt ? sentToText(t, i18n.language, decidersOf(p, members, roles, agent), p.askedAt) : null;
   const state = p.stale
     ? t("rightHand.card.stale")
     : p.canDecide

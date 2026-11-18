@@ -1,5 +1,6 @@
 import type { Message, TeamAgentDraft, TeamPlan, TeamProposalCard } from "@agenteschat/client";
 import { useAiStatus, useApplyTeamTemplate, useMessages, useTeamCard, useTeamTemplates } from "@agenteschat/client";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import { setDraftFor } from "@agenteschat/client/lib/drafts";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { joinNames, whenAt } from "@agenteschat/client/lib/format";
@@ -302,6 +303,15 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
   // Desfazer where its buttons were.
   const open = status === "open";
   const by = card.decidedByUserId === me.user.id ? null : dir.memberById.get(card.decidedByUserId ?? "")?.name;
+  // Undoing archives its agents: anyone but who created it needs to manage each one still here (the server's
+  // `canManage`, ADR 0085 addendum of 2026-11-17), so a private agent stays out of reach of who only holds "Edit
+  // agents".
+  const managesTeam =
+    can(org, "manage_agents") &&
+    (card.created?.agentIds ?? []).every((id) => {
+      const a = dir.agentById.get(id);
+      return !a || managesAgent(a);
+    });
   const answer: RequestAnswer | undefined = open
     ? undefined
     : status === "created"
@@ -311,7 +321,7 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
             ? t(modeKey(org, "teamPlan.card.created"), { name: by })
             : t(modeKey(org, "teamPlan.card.createdYou")),
           time: card.decidedAt ? whenAt(t, i18n.language, card.decidedAt) : undefined,
-          action: teamUndoable(card, { userId: me.user.id, admin: can(org, "manage_agents") }) ? (
+          action: teamUndoable(card, { userId: me.user.id, admin: managesTeam }) ? (
             <Button
               size="sm"
               variant="ghost"

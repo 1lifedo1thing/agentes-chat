@@ -23,6 +23,7 @@ import {
   suggestedAiText,
 } from "@agenteschat/client/lib/action-cards";
 import { delegateLine, delegateUndoLine } from "@agenteschat/client/lib/approval-words";
+import { managesRoutinesOf } from "@agenteschat/client/lib/audience";
 import { connectedItems, itemName } from "@agenteschat/client/lib/connected";
 import { can } from "@agenteschat/client/lib/permissions";
 import { sentToText } from "@agenteschat/client/lib/proposals";
@@ -112,7 +113,7 @@ export function AgentProposalView({
   const lines = proposalLines(card, { userId: meId ?? "", admin: can(org, "manage_agents") });
   // The right hand looked at it for the person it is for (ADR 0139): its line, Desfazer and "Por quê?".
   const delegate = card.delegate;
-  const delegateUndo = useDelegateUndoAction(delegate);
+  const delegateUndo = useDelegateUndoAction(delegate, card.agentId);
   const delegated = delegate
     ? delegateLine(
         t,
@@ -177,7 +178,7 @@ export function AgentProposalView({
               ) : null}
               {status === "created" &&
               routineLeft(card) &&
-              (card.decidedByUserId === meId || can(org, "manage_routines")) ? (
+              (card.decidedByUserId === meId || managesRoutinesOf(dir.agentById.get(card.agentId ?? ""))) ? (
                 // Not made with it (the agent wasn't where it reports yet): made from here once it is.
                 <Button
                   variant="ghost"

@@ -363,6 +363,13 @@ export async function createRole(
           .where(and(eq(agents.orgId, orgId), sql`${source.id}::uuid = any(${agents.audienceRoleIds})`))
           .returning({ id: agents.id })
       ).map((a) => a.id);
+      // And the agents it edits ("Quem pode editar", ADR 0085 addendum of 2026-11-17).
+      const edits = await tx
+        .update(agents)
+        .set({ editorRoleIds: sql`array_append(${agents.editorRoleIds}, ${row.id}::uuid)`, updatedAt: new Date() })
+        .where(and(eq(agents.orgId, orgId), sql`${source.id}::uuid = any(${agents.editorRoleIds})`))
+        .returning({ id: agents.id });
+      for (const a of edits) caches.agents.delete(`${orgId}:${a.id}`);
     }
     await recordAudit(tx, {
       orgId,
@@ -575,6 +582,13 @@ export async function deleteRole(
       .update(schema.channels)
       .set({ audienceRoleIds: sql`array_remove(${schema.channels.audienceRoleIds}, ${role.id}::uuid)` })
       .where(and(eq(schema.channels.orgId, orgId), sql`${role.id}::uuid = any(${schema.channels.audienceRoleIds})`));
+    // Agents' "Quem pode editar" forget it, or saving one sends a role that is gone; their cached rows go with it.
+    const unedited = await tx
+      .update(schema.agents)
+      .set({ editorRoleIds: sql`array_remove(${schema.agents.editorRoleIds}, ${role.id}::uuid)` })
+      .where(and(eq(schema.agents.orgId, orgId), sql`${role.id}::uuid = any(${schema.agents.editorRoleIds})`))
+      .returning({ id: schema.agents.id });
+    for (const a of unedited) caches.agents.delete(`${orgId}:${a.id}`);
     // Invitations and links forget it too, or an app starting an approval or a change on their cargos sends one gone.
     for (const t of [schema.organizationInvitations, schema.organizationInviteLinks]) {
       await tx

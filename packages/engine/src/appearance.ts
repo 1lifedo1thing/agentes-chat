@@ -1,11 +1,12 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, eq, schema } from "@agenteschat/db";
 import { type Agent, getAgent } from "./agents";
+import { managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import { caches } from "./cache";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishAgentsChanged } from "./events";
-import { can, requirePermission } from "./organizations";
+import { requirePermission } from "./organizations";
 
 const { agents } = schema;
 
@@ -59,7 +60,7 @@ export function validateAppearance(input: { color?: unknown; eyes?: unknown; acc
 
 /**
  * Changes an agent's look (`appearance` on PATCH/POST …/agents). Its owner or
- * an admin; audited. `null` goes back to the default look.
+ * who manages it (`managesAgent`, ADR 0085 addendum of 2026-11-17); audited. `null` goes back to the default look.
  */
 export async function setAgentAppearance(
   db: Database,
@@ -72,7 +73,7 @@ export async function setAgentAppearance(
   const membership = await requirePermission(db, actorId, orgId, "read");
   const agent = await getAgent(db, orgId, agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
-  if (!can(membership, "manage_agents") && !(agent.ownerUserId && agent.ownerUserId === actorId)) {
+  if (!managesAgent(agent, actorId, membership) && !(agent.ownerUserId && agent.ownerUserId === actorId)) {
     throw new ForbiddenError("Only the agent's owner or an admin can change its look");
   }
   const look = appearance === null ? null : validateAppearance(appearance);

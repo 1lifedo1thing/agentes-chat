@@ -60,19 +60,20 @@ const CREATE_ORDER: readonly CreateItem[] = ["agent", "channel", "task", "routin
 
 /**
  * Whether this person may start `item`, as the server checks it (ADR 0085): an agent (`create_agents`, and none while
- * the workspace is being deleted, as on the web), a channel (`create_channels`), a task (`post`), a routine
- * (`manage_routines`, or the owner of an agent), a wiki page (`edit_wiki`) and invitations (`invite_people`).
+ * the workspace is being deleted, as on the web), a channel (`create_channels`), a task (`post`), a routine (some agent
+ * whose routines they set up, `managesRoutines`: the agents' `canManageRoutines`, which "Criar rotinas" gives only where
+ * it reaches, ADR 0085 addendum of 2026-11-17), a wiki page (`edit_wiki`) and invitations (`invite_people`).
  */
 export function mayCreate(
   org: { permissions?: readonly string[]; deletion?: unknown } | null | undefined,
   item: CreateItem,
-  { ownsAgent = false }: { ownsAgent?: boolean } = {},
+  { managesRoutines = false }: { managesRoutines?: boolean } = {},
 ): boolean {
   const allowed: Record<CreateItem, boolean> = {
     agent: makesAgents(org),
     channel: can(org, "create_channels"),
     task: can(org, "post"),
-    routine: can(org, "manage_routines") || ownsAgent,
+    routine: managesRoutines,
     wiki: can(org, "edit_wiki"),
     invite: can(org, "invite_people"),
   };
@@ -82,9 +83,9 @@ export function mayCreate(
 /** What this person may start from "New". */
 export function createItems(
   org: { permissions?: readonly string[]; deletion?: unknown } | null | undefined,
-  { ownsAgent }: { ownsAgent: boolean },
+  { managesRoutines }: { managesRoutines: boolean },
 ): CreateItem[] {
-  return CREATE_ORDER.filter((item) => mayCreate(org, item, { ownsAgent }));
+  return CREATE_ORDER.filter((item) => mayCreate(org, item, { managesRoutines }));
 }
 
 /** Names offered for a new agent (short, friendly, easy to call). */

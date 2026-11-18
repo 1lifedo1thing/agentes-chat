@@ -11,6 +11,7 @@ import {
   useRuleDescribe,
   useRuleParse,
 } from "@agenteschat/client";
+import { managesRoutinesOf } from "@agenteschat/client/lib/audience";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { splitAddresses } from "@agenteschat/client/lib/mail";
@@ -30,7 +31,7 @@ import {
   zoneDisplayName,
 } from "@agenteschat/client/lib/routines";
 import { WEEKDAYS } from "@agenteschat/ui/recurrence";
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
 import { useOrg } from "@/providers/org";
@@ -169,7 +170,12 @@ function Form({ routine }: { routine: Routine | undefined }) {
   );
   const targetLabel = useTargetLabel();
   const action = useRoutineAction(orgId);
-  const agents = dir.agents;
+  // The agents whose routines this person sets up (the server's `canManageRoutines`: who edits each one, and "Criar
+  // rotinas" where it reaches); a routine being edited keeps its own.
+  const agents = useMemo(
+    () => dir.agents.filter((a) => managesRoutinesOf(a) || a.id === routine?.agentId),
+    [dir.agents, routine?.agentId],
+  );
   const editing = Boolean(routine);
   const myZone = useMyZone("America/Sao_Paulo");
   const savedZone = zoneOf(routine);
@@ -565,7 +571,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
   };
 
   const agent = dir.agentById.get(d.agentId);
-  /** The agent: the app's agent picker, pushed (every agent of the workspace, as the web's form offers). */
+  /** The agent: the app's agent picker, pushed (the agents whose routines this person sets up, talked to or not). */
   const pickAgent = () => {
     if (agents.length === 0) return;
     openAgentPick({
@@ -574,6 +580,7 @@ function Form({ routine }: { routine: Routine | undefined }) {
       title: t("routines.form.agent"),
       note: "",
       everyone: true,
+      ids: agents.map((a) => a.id),
     });
     router.push("/agent-pick");
   };

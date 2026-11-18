@@ -2,6 +2,7 @@ import { type AgentScope, DESKTOP_PROTOCOL, type PubSub } from "@agenteschat/ada
 import { and, type Database, type Executor, eq, gte, inArray, schema, sql } from "@agenteschat/db";
 import { announceAgentStatus } from "./agent-status";
 import { publishApproval } from "./approvals";
+import { managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import { personOfMessage } from "./authority";
 import { lineMachineOf, publishQueueChanged } from "./computer-queue";
@@ -187,16 +188,48 @@ export const runRequester = sql<string | null>`coalesce(${messages.authorUserId}
 
 /**
  * Who may stop a run, continue it, or start it again ("Responder agora"): who asked for it (`runRequester`), the
- * person behind its work (a run another agent woke works for them too, ADR 0089), the agent's owner, or an admin.
+ * person behind its work (a run another agent woke works for them too, ADR 0089), the agent's owner, or who manages
+ * the agent (`managesRunAgent`).
  */
 export async function mayStopRun(
   db: Executor,
   userId: string,
   membership: Membership,
-  row: { run: { orgId: string; triggerMessageId: string }; requester: string | null; ownerUserId: string | null },
+  row: {
+    run: { orgId: string; agentId: string; triggerMessageId: string };
+    requester: string | null;
+    ownerUserId: string | null;
+  },
 ) {
-  if (row.requester === userId || row.ownerUserId === userId || can(membership, "manage_agents")) return true;
+  if (row.requester === userId || row.ownerUserId === userId) return true;
+  if (await managesRunAgent(db, userId, membership, row.run)) return true;
   return (await personOfMessage(db, row.run.orgId, row.run.triggerMessageId)) === userId;
+}
+
+/**
+ * Whether the person decides for an agent's runs as an admin: who manages that agent (`managesAgent`, ADR 0085 addendum
+ * of 2026-11-17), never who merely holds "Editar qualquer agente" over a private agent. An agent no longer there leaves
+ * the key alone.
+ */
+async function managesRunAgent(
+  db: Executor,
+  userId: string,
+  membership: Membership,
+  run: { orgId: string; agentId: string },
+) {
+  if (!can(membership, "manage_agents")) return false;
+  const [agent] = await db
+    .select({
+      ownerUserId: agents.ownerUserId,
+      audienceMode: agents.audienceMode,
+      audienceUserIds: agents.audienceUserIds,
+      audienceRoleIds: agents.audienceRoleIds,
+      consultable: agents.consultable,
+      brain: agents.brain,
+    })
+    .from(agents)
+    .where(and(eq(agents.orgId, run.orgId), eq(agents.id, run.agentId)));
+  return !agent || managesAgent(agent, userId, membership);
 }
 
 export { canceledBy } from "./runs";
@@ -258,8 +291,8 @@ export async function cancelRun(
     await tellAgentStopped(deps, row.run, row.run.status, userId, options.reason, helpers, by).catch(() => null);
     return { id: row.run.id, status: row.run.status, previousStatus: row.run.status };
   }
-  // The agent's owner or an admin decides for the whole conversation; who asked, only for what they sent.
-  const forAll = row.ownerUserId === userId || can(membership, "manage_agents");
+  // The agent's owner or who manages it decides for the whole conversation; who asked, only for what they sent.
+  const forAll = row.ownerUserId === userId || (await managesRunAgent(db, userId, membership, row.run));
   const stopped = await stopRun(
     deps,
     orgId,

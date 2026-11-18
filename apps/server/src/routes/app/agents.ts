@@ -4,6 +4,7 @@ import {
   adjustTeamAgent,
   agentBrainLines,
   agentBudgetsThisMonth,
+  agentRights,
   agentStatuses,
   agentView,
   allowsPrivateEndpoints,
@@ -33,6 +34,7 @@ import {
   denyAgentProposal,
   denyTeam,
   type EndpointNet,
+  editorsOf,
   endpointOrgsOf,
   getAgent,
   getAgentBrain,
@@ -68,6 +70,7 @@ import {
   setAgentAppearance,
   setAgentAudience,
   setAgentBrain,
+  setAgentEditors,
   setReportsTo,
   speakerOf,
   summaryModelReady,
@@ -104,6 +107,7 @@ import {
   AgentAudience,
   AgentBrain,
   AgentBrakes,
+  AgentEditors,
   AgentSetup,
   AgentSetupResult,
   ApprovalsLevel,
@@ -168,6 +172,8 @@ const toAgent = (
     audience: audienceOf(a),
     audienceMode: a.audienceMode,
     canTalk: canTalkTo(a, viewerId, speakerOf(viewer)),
+    ...agentRights(a, viewerId, viewer),
+    editors: seesDetails ? editorsOf(a) : { userIds: [], roleIds: [] },
   };
 };
 
@@ -191,6 +197,10 @@ const AgentFields = z.object({
   }),
   audience: AgentAudience.optional().openapi({
     description: "Who can talk to it. The agent's owner or admins can change it.",
+  }),
+  editors: AgentEditors.optional().openapi({
+    description:
+      '"Quem pode editar": who edits its instructions, role, skills and routines besides its owner and who manages it. The agent\'s owner or who manages it can change it. Audited as `agent.editors_changed`.',
   }),
   appearance: AgentAppearance.nullable().optional().openapi({
     description: "Its look (fixed allow-list). The agent's owner or admins can change it; null = the default.",
@@ -920,6 +930,9 @@ export function agentRoutes(deps: AppDeps) {
       .openapi({ description: "The channels it is in that the current person may see, in the sidebar's order." }),
     canTalk: z.boolean(),
     seesDetails: z.boolean().openapi({ description: "Whether the current person sees how it works." }),
+    canManage: z.boolean().openapi({
+      description: "Whether the current person manages it (`manage_agents` where it reaches, ADR 0085 addendum).",
+    }),
   });
   app.openapi(
     createRoute({
@@ -1047,7 +1060,7 @@ export function agentRoutes(deps: AppDeps) {
       responses: { 201: json(Agent, "Created"), ...errors },
     }),
     async (c) => {
-      const { monthlyBudgetUsd, audience, appearance, proposal, brakes, ...input } = c.req.valid("json");
+      const { monthlyBudgetUsd, audience, editors, appearance, proposal, brakes, ...input } = c.req.valid("json");
       const orgId = c.req.valid("param").orgId;
       const make = () =>
         createAgent(
@@ -1071,6 +1084,11 @@ export function agentRoutes(deps: AppDeps) {
         : await make();
       if (audience) {
         agent = await setAgentAudience(db, c.get("user").id, orgId, agent.id, audience);
+        await publishAgentsChanged(adapters.pubsub, orgId);
+      }
+      // Who edits it besides its owner (ADR 0085 addendum of 2026-11-17), by its own call as on an edit.
+      if (editors) {
+        agent = await setAgentEditors(db, c.get("user").id, orgId, agent.id, editors);
         await publishAgentsChanged(adapters.pubsub, orgId);
       }
       if (appearance)
@@ -1557,6 +1575,7 @@ export function agentRoutes(deps: AppDeps) {
       const {
         monthlyBudgetUsd,
         audience,
+        editors,
         appearance,
         coordinator: _coordinator,
         acceptPlanTerms: _,
@@ -1566,9 +1585,10 @@ export function agentRoutes(deps: AppDeps) {
       } = c.req.valid("json");
       const input = { ...rest, ...(brakes ? { autonomyBrakes: brakes } : {}) };
       const actor = c.get("user").id;
-      // The audience and the look can be changed by the agent's owner too; everything else needs an admin.
+      // The audience, who edits it and the look have their own calls (its owner too); the rest goes by `updateAgent`'s
+      // rule.
       const other =
-        (!audience && appearance === undefined) ||
+        (!audience && !editors && appearance === undefined) ||
         Object.values(input).some((v) => v !== undefined) ||
         monthlyBudgetUsd !== undefined;
       let agent = other
@@ -1583,6 +1603,10 @@ export function agentRoutes(deps: AppDeps) {
         : null;
       if (audience) {
         agent = await setAgentAudience(db, actor, orgId, agentId, audience, mailLossSeen);
+        await publishAgentsChanged(adapters.pubsub, orgId);
+      }
+      if (editors) {
+        agent = await setAgentEditors(db, actor, orgId, agentId, editors);
         await publishAgentsChanged(adapters.pubsub, orgId);
       }
       if (appearance !== undefined)
@@ -1826,7 +1850,7 @@ export function agentRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/agent-groups/{groupId}",
       tags,
       security,
-      summary: "Delete a group; its agents go back to no group (owners and admins)",
+      summary: "Delete a group; its agents go back to no group (who manages every agent in it)",
       request: { params: GroupParams },
       responses: { 200: json(Groups), ...errors },
     }),

@@ -1,6 +1,7 @@
 import type { PlanUsage, PubSub } from "@agenteschat/adapters";
 import { and, type Database, desc, type Executor, eq, inArray, type SQL, schema, sql } from "@agenteschat/db";
 import { extraUsageLeft, PLAN_PAUSE, planBinding, planState } from "@agenteschat/ui/plan-state";
+import { managesRoutinesOf } from "./audience";
 import { recordAudit } from "./audit";
 import { UUID } from "./authority";
 import { forgetPlanLimit, storedPlanUsage } from "./brains/select";
@@ -10,7 +11,7 @@ import { ConflictError, ForbiddenError } from "./errors";
 import { publishMessageCreated } from "./events";
 import { inMillisecondOf } from "./message-place";
 import { type Message, messageView } from "./messages";
-import { can, type Membership, requireActiveMembership } from "./organizations";
+import { type Membership, requireActiveMembership } from "./organizations";
 import { enqueue } from "./outbox";
 import { isRightHand } from "./right-hand";
 import { missStaleRoutineRun } from "./routine-firing";
@@ -900,7 +901,7 @@ export async function overrideUsagePause(
 
 /**
  * Who may press Continuar agora on a paused run: the card's people (`mayStopRun`) and, for a routine's run, Rotinas'
- * (its creator, whoever manages routines).
+ * (its creator, whoever manages that agent's routines: `managesRoutinesOf`, ADR 0085 addendum of 2026-11-17).
  */
 export async function mayContinuePause(
   db: Executor,
@@ -908,8 +909,22 @@ export async function mayContinuePause(
   membership: Membership,
   row: Parameters<typeof mayStopRun>[3] & { routineId: string | null; routineCreatorId: string | null },
 ) {
-  if (row.routineId && (row.routineCreatorId === userId || can(membership, "manage_routines"))) return true;
+  if (
+    row.routineId &&
+    (row.routineCreatorId === userId || (await managesRoutine(db, row.routineId, userId, membership)))
+  )
+    return true;
   return mayStopRun(db, userId, membership, row);
+}
+
+/** Whether `userId` manages the routines of the agent `routineId` belongs to (`managesRoutinesOf`). */
+async function managesRoutine(db: Executor, routineId: string, userId: string, membership: Membership) {
+  const [row] = await db
+    .select({ agent: schema.agents })
+    .from(schema.routines)
+    .innerJoin(schema.agents, eq(schema.agents.id, schema.routines.agentId))
+    .where(eq(schema.routines.id, routineId));
+  return !!row && managesRoutinesOf(row.agent, userId, membership);
 }
 
 /**
@@ -928,7 +943,12 @@ export async function continuePausedRuns(
   const membership = await requireActiveMembership(db, userId, orgId);
   const rows = await db
     .select({
-      run: { id: agentRuns.id, orgId: agentRuns.orgId, triggerMessageId: agentRuns.triggerMessageId },
+      run: {
+        id: agentRuns.id,
+        orgId: agentRuns.orgId,
+        agentId: agentRuns.agentId,
+        triggerMessageId: agentRuns.triggerMessageId,
+      },
       ownerUserId: agents.ownerUserId,
       requester: runRequester,
       routineId: routines.id,

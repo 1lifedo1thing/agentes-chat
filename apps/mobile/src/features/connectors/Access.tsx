@@ -7,14 +7,13 @@ import {
   resourcesOf,
   saveLevels,
 } from "@agenteschat/client/lib/access-levels";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import type { ConnectedItem } from "@agenteschat/client/lib/connected";
 import { githubDisconnectNote } from "@agenteschat/client/lib/github-app";
-import { can } from "@agenteschat/client/lib/permissions";
 import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
-import { useOrg } from "@/providers/org";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Icon, useToast } from "@/ui";
 import { useAgentsAccess } from "../settings/hooks";
 import { confirmAction } from "../settings/parts";
@@ -81,14 +80,13 @@ function AgentLevelRow({
   const dir = useDirectory();
   const toast = useToast();
   const word = useLevelWord();
-  const { org } = useOrg();
   const agent = dir.agentById.get(agentId);
   const access = useAgentAccess(orgId, agentId);
   const [saving, setSaving] = useState<Level | null>(null);
   const resource = access.data ? resourcesOf(access.data).find((r) => r.id === `connector:${connectionId}`) : undefined;
   const current: LevelState = saving ?? (resource ? levelOf(resource) : "none");
-  // Giving an agent a connector is an admin's call, like its scopes (the server checks it again).
-  const mayChange = can(org, "manage_agents") && Boolean(resource);
+  // Giving an agent a connector is for who manages that agent, like its scopes (the server checks it again).
+  const mayChange = managesAgent(agent) && Boolean(resource);
   const choose = (level: Level) => {
     if (!resource || level === current) return;
     setSaving(level);

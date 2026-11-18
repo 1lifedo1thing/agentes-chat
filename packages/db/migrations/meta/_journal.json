@@ -2031,6 +2031,13 @@
       "when": 1794952526821,
       "tag": "0294_machine_wake_wanted",
       "breakpoints": true
+    },
+    {
+      "idx": 292,
+      "version": "7",
+      "when": 1794962526821,
+      "tag": "0295_agent_editors",
+      "breakpoints": true
     }
   ]
 }

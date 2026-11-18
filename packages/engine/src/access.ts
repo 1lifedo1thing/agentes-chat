@@ -1,5 +1,6 @@
 import { and, asc, type Database, type Executor, eq, inArray, isNull, schema } from "@agenteschat/db";
 import { getAgent } from "./agents";
+import { managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import { BROWSER_SCOPE, BROWSER_TOOL_INFO, BROWSER_TOOLS, DESKTOP_SCOPE, DESKTOP_TOOL_INFO } from "./browser/types";
 import { caches } from "./cache";
@@ -9,7 +10,7 @@ import { classifiedTools, customScope, isCustom, type ToolAccess } from "./conne
 import { exposedToolName } from "./connectors/mcp";
 import { sha256 } from "./crypto";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
-import { can, requirePermission } from "./organizations";
+import { requirePermission } from "./organizations";
 import { isRightHand, isRightHandId, RIGHT_HAND_COMPUTER_GRANTS, RIGHT_HAND_GRANTS } from "./right-hand";
 import { isSensitive } from "./tools/gateway";
 import {
@@ -502,11 +503,10 @@ export async function getAgentAccess(db: Database, actorId: string, orgId: strin
 }
 
 /**
- * `PUT …/agents/{id}/access`: replaces the agent's grants. Admins give and take
- * anything; the agent's owner may only narrow it (drop grants it has, add
- * denials), like `PUT …/scopes`: giving an agent a connector, a tool or a
- * built-in is an admin's call. Approvals never change: sensitive tools still
- * ask a person.
+ * `PUT …/agents/{id}/access`: replaces the agent's grants. Who manages the agent (`managesAgent`, ADR 0085 addendum
+ * of 2026-11-17) gives and takes anything; its owner may only narrow it (drop grants it has, add denials), like
+ * `PUT …/scopes`: giving an agent a connector, a tool or a built-in is an admin's call, and "Quem pode editar" doesn't
+ * give it. Approvals never change: sensitive tools still ask a person.
  */
 export async function setAgentAccess(
   db: Database,
@@ -518,7 +518,7 @@ export async function setAgentAccess(
   const membership = await requirePermission(db, actorId, orgId, "read");
   const agent = await getAgent(db, orgId, agentId);
   if (!agent) throw new NotFoundError("Agent not found");
-  const admin = can(membership, "manage_agents");
+  const admin = managesAgent(agent, actorId, membership);
   if (!admin && agent.ownerUserId !== actorId) {
     throw new ForbiddenError("Only an admin or the agent's owner can change its access");
   }
@@ -766,9 +766,13 @@ export async function resolveApps(db: Executor, orgId: string, names: string[]) 
   return { found, unknown, choices };
 }
 
-/** `GET …/access-matrix` (admins): agents × tools with the effective state. */
+/**
+ * `GET …/access-matrix` (admins): agents × tools with the effective state, for the agents the person manages
+ * (`managesAgent`): a private agent's access stays out of reach of who merely edits any agent (ADR 0085 addendum of
+ * 2026-11-17).
+ */
 export async function accessMatrix(db: Database, actorId: string, orgId: string) {
-  await requirePermission(db, actorId, orgId, "manage_agents");
+  const membership = await requirePermission(db, actorId, orgId, "manage_agents");
   const catalog = await orgToolCatalog(db, orgId);
   const tools: (Omit<AccessTool, "state"> & { group: string; key: string })[] = [
     ...Object.entries(BUILTIN_TOOLS).flatMap(([scope, names]) =>
@@ -786,11 +790,25 @@ export async function accessMatrix(db: Database, actorId: string, orgId: string)
       ),
     ),
   ];
-  const agentRows = await db
-    .select({ id: agents.id, name: agents.name, handle: agents.handle })
-    .from(agents)
-    .where(and(eq(agents.orgId, orgId), isNull(agents.archivedAt)))
-    .orderBy(asc(agents.createdAt));
+  const agentRows = (
+    await db
+      .select({
+        id: agents.id,
+        name: agents.name,
+        handle: agents.handle,
+        ownerUserId: agents.ownerUserId,
+        audienceMode: agents.audienceMode,
+        audienceUserIds: agents.audienceUserIds,
+        audienceRoleIds: agents.audienceRoleIds,
+        consultable: agents.consultable,
+        brain: agents.brain,
+      })
+      .from(agents)
+      .where(and(eq(agents.orgId, orgId), isNull(agents.archivedAt)))
+      .orderBy(asc(agents.createdAt))
+  )
+    .filter((a) => managesAgent(a, actorId, membership))
+    .map((a) => ({ id: a.id, name: a.name, handle: a.handle }));
   const grants = agentRows.length
     ? await db
         .select({ agentId: agentScopes.agentId, connectionId: agentScopes.connectionId, scope: agentScopes.scope })

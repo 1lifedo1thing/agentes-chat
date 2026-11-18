@@ -96,12 +96,15 @@ export async function audienceMailLoss(
   return foreignMailboxes(db, orgId, agentId, actorId);
 }
 
-/** The agent, when `actorId` may change who talks to it: its owner or admins (with no owner, admins only). */
+/**
+ * The agent, when `actorId` may change who talks to it or who edits it: its owner or who manages it (`managesAgent`;
+ * with no owner, them only).
+ */
 async function audienceEditable(db: Database, actorId: string, orgId: string, agentId: string) {
   const membership = await requirePermission(db, actorId, orgId, "read");
   const agent = await getAgent(db, orgId, agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
-  if (!can(membership, "manage_agents") && !(agent.ownerUserId && agent.ownerUserId === actorId)) {
+  if (!managesAgent(agent, actorId, membership) && !(agent.ownerUserId && agent.ownerUserId === actorId)) {
     throw new ForbiddenError("Only the agent's owner or an admin can change who talks to it");
   }
   return agent;
@@ -214,16 +217,60 @@ export function canTalkTo(a: AudienceFields, userId: string | null, person: Spea
   return a.audienceUserIds.includes(userId) || a.audienceRoleIds.some((id) => person.roleIds.includes(id));
 }
 
+/** What the editing rules need of an agent: its audience and its "Quem pode editar". */
+export type AgentAccessFields = AudienceFields & Pick<Agent, "editorUserIds" | "editorRoleIds">;
+
+/** A person's membership, as the agent rules read it (null: not a member). */
+type Viewer = Pick<Membership, "permissions" | "roleIds"> | null | undefined;
+
 /**
- * Whether a person sees how an agent works (its instructions, tools and access, memory, usage and activity): its
- * owner, who manages agents, and whoever it answers. Everyone else sees its public card: face, name, role, owner,
- * where it works and who it answers.
+ * Whether a person's workspace keys over agents ("Editar qualquer agente", "Criar rotinas") reach this agent (ADR
+ * 0085, addendum of 2026-11-17). Owners and administrators reach every agent. Anyone else reaches the agents whose
+ * audience takes them (whether their roles talk to agents aside: the audience is what makes an agent private) and the
+ * ones nobody is responsible for, so an agent whose person left stays someone's to look after. A private agent is out
+ * of reach of who merely holds the key: only its own "Quem pode editar" lets them in.
  */
-export const seesAgentDetails = (
-  a: AudienceFields,
-  userId: string,
-  membership: Pick<Membership, "permissions" | "roleIds"> | null,
-) => can(membership, "manage_agents") || canTalkTo(a, userId, speakerOf(membership));
+export function keysReach(a: AudienceFields, userId: string, membership: Viewer): boolean {
+  if (!membership) return false;
+  if (can(membership, "administrator")) return true;
+  return !a.ownerUserId || canTalkTo(a, userId, { talks: true, roleIds: membership.roleIds });
+}
+
+/** "Editar qualquer agente" on this agent: `manage_agents` where it reaches (`keysReach`). */
+export const managesAgent = (a: AudienceFields, userId: string, membership: Viewer) =>
+  can(membership, "manage_agents") && keysReach(a, userId, membership);
+
+/** Named in the agent's "Quem pode editar": picked, or holding one of its roles now. */
+export const namedEditor = (a: Pick<Agent, "editorUserIds" | "editorRoleIds">, userId: string, membership: Viewer) =>
+  !!membership && (a.editorUserIds.includes(userId) || a.editorRoleIds.some((id) => membership.roleIds.includes(id)));
+
+/**
+ * Who edits how the agent works: its instructions, role, skills and routines (ADR 0085, addendum of 2026-11-17). Its
+ * owner, who manages it (`managesAgent`) and the people its "Quem pode editar" names. What gives it more (its apps and
+ * their levels, its budget, how much it asks, its brakes, who owns it) stays with who manages it.
+ */
+export const editsAgent = (a: AgentAccessFields, userId: string, membership: Viewer) =>
+  !!membership &&
+  (a.ownerUserId === userId || managesAgent(a, userId, membership) || namedEditor(a, userId, membership));
+
+/** Who sets up and changes the agent's routines: who edits it, and "Criar rotinas" where it reaches (`keysReach`). */
+export const managesRoutinesOf = (a: AgentAccessFields, userId: string, membership: Viewer) =>
+  editsAgent(a, userId, membership) || (can(membership, "manage_routines") && keysReach(a, userId, membership));
+
+/**
+ * Whether a person sees how an agent works (its instructions, tools and access, memory, usage and activity): who
+ * edits it (`editsAgent`: its owner, who manages it, its "Quem pode editar") and whoever it answers. Everyone else sees
+ * its public card: face, name, role, owner, where it works and who it answers.
+ */
+export const seesAgentDetails = (a: AgentAccessFields, userId: string, membership: Viewer) =>
+  editsAgent(a, userId, membership) || canTalkTo(a, userId, speakerOf(membership ?? null));
+
+/** What a person may do with an agent, as the apps read it beside `canTalk`. */
+export const agentRights = (a: AgentAccessFields, userId: string, membership: Viewer) => ({
+  canManage: managesAgent(a, userId, membership),
+  canEdit: editsAgent(a, userId, membership),
+  canManageRoutines: managesRoutinesOf(a, userId, membership),
+});
 
 /** Whether the workspace's lists of agents (Equipe, its sectors, the counts) name every agent for this person. */
 export const listsAllAgents = (membership: Pick<Membership, "permissions"> | null) =>
@@ -232,13 +279,10 @@ export const listsAllAgents = (membership: Pick<Membership, "permissions"> | nul
 /**
  * Whether those lists name the agent for this person: every agent with `listsAllAgents`, else only the ones whose
  * workings they see (`seesAgentDetails`). It narrows lists only: the agent's public card and its messages in shared
- * channels still show. `audienceSql` is the same rule as SQL for who doesn't list all.
+ * channels still show. `seesAgentDetailsSql` is the same rule as SQL for who doesn't list all.
  */
-export const listsAgentTo = (
-  a: AudienceFields,
-  userId: string,
-  membership: Pick<Membership, "permissions" | "roleIds"> | null,
-) => listsAllAgents(membership) || seesAgentDetails(a, userId, membership);
+export const listsAgentTo = (a: AgentAccessFields, userId: string, membership: Viewer) =>
+  listsAllAgents(membership ?? null) || seesAgentDetails(a, userId, membership);
 
 /** The agent, for someone who sees how it works (`seesAgentDetails`); 403 `agent.details_hidden` for anyone else. */
 export async function requireAgentDetails(db: Database, userId: string, orgId: string, agentId: string) {
@@ -260,12 +304,9 @@ export async function requireAgentDetails(db: Database, userId: string, orgId: s
 export const isPlaybook = (i: { kind: string; agentId: string | null; scopeType: string; createdByKind: string }) =>
   !!i.agentId && i.scopeType === "agent" && i.createdByKind === "agent" && (i.kind === "note" || i.kind === "lesson");
 
-/** Who reads an agent's playbook (`isPlaybook`, ADR 0120 addendum): its owner and who manages agents. */
-export const readsPlaybook = (
-  a: { ownerUserId: string | null },
-  userId: string,
-  membership: Pick<Membership, "permissions" | "roleIds"> | null,
-) => a.ownerUserId === userId || can(membership, "manage_agents");
+/** Who reads an agent's playbook (`isPlaybook`, ADR 0120 addendum): who edits it (`editsAgent`). */
+export const readsPlaybook = (a: AgentAccessFields, userId: string, membership: Viewer) =>
+  editsAgent(a, userId, membership);
 
 /** The ids of the workspace's agents whose details this person sees (`seesAgentDetails`). */
 export async function agentIdsWithDetails(db: Database, userId: string, orgId: string) {
@@ -300,6 +341,71 @@ export function audienceSql(alias: string, userId: SQL, options: { channelId?: S
           or exists (select 1 from organization_member_roles amr where amr.org_id = ${a}.org_id
             and amr.user_id = ${userId} and amr.role_id = any(${a}.audience_role_ids)))))
       and (${userId} is null or ${talks})), false)`;
+}
+
+/**
+ * `keysReach` in SQL, for an `agents` row aliased `alias` and a person id expression: an owner or administrator of the
+ * workspace, an agent with no owner, or one whose audience takes the person (whether they talk to agents aside).
+ */
+export function keysReachSql(alias: string, userId: SQL): SQL<boolean> {
+  const a = sql.raw(alias);
+  return sql<boolean>`(${maySql(sql`${a}.org_id`, userId, "administrator")}
+    or ${a}.owner_user_id is null or ${a}.owner_user_id = ${userId} or ${a}.audience_mode = 'everyone'
+    or (${a}.audience_mode = 'people' and (${userId} = any(${a}.audience_user_ids)
+      or exists (select 1 from organization_member_roles kr where kr.org_id = ${a}.org_id
+        and kr.user_id = ${userId} and kr.role_id = any(${a}.audience_role_ids)))))`;
+}
+
+/** `managesAgent` in SQL: `manage_agents` where it reaches (`keysReachSql`). */
+export const managesAgentSql = (alias: string, userId: SQL): SQL<boolean> =>
+  sql<boolean>`(${maySql(sql`${sql.raw(alias)}.org_id`, userId, "manage_agents")} and ${keysReachSql(alias, userId)})`;
+
+/** `editsAgent` in SQL: its owner, who manages it, or who its "Quem pode editar" names (a member, by name or role). */
+export function editsAgentSql(alias: string, userId: SQL): SQL<boolean> {
+  const a = sql.raw(alias);
+  return sql<boolean>`(${managesAgentSql(alias, userId)}
+    or (exists (select 1 from organization_members em where em.org_id = ${a}.org_id and em.user_id = ${userId})
+      and (${a}.owner_user_id = ${userId} or ${userId} = any(${a}.editor_user_ids)
+        or exists (select 1 from organization_member_roles er where er.org_id = ${a}.org_id
+          and er.user_id = ${userId} and er.role_id = any(${a}.editor_role_ids)))))`;
+}
+
+/**
+ * `seesAgentDetails` in SQL: who edits it (`editsAgentSql`) or whom it answers (`audienceSql`). For who doesn't list
+ * every agent (`listsAllAgents`), the agents their lists name (`listsAgentTo`): a named editor's included.
+ */
+export const seesAgentDetailsSql = (alias: string, userId: SQL): SQL<boolean> =>
+  sql<boolean>`(${editsAgentSql(alias, userId)} or ${audienceSql(alias, userId)})`;
+
+/** `managesRoutinesOf` in SQL: who edits it, or `manage_routines` where it reaches. */
+export const managesRoutinesSql = (alias: string, userId: SQL): SQL<boolean> =>
+  sql<boolean>`(${editsAgentSql(alias, userId)} or (${maySql(sql`${sql.raw(alias)}.org_id`, userId, "manage_routines")}
+    and ${keysReachSql(alias, userId)}))`;
+
+/**
+ * Who manages the agent (`managesAgent`), as member ids: whom what needs an admin's eye on it is told. A private
+ * agent's news never reaches who merely holds "Editar qualquer agente".
+ */
+export async function agentManagerIds(db: Executor, orgId: string, agentId: string): Promise<string[]> {
+  const rows = await db
+    .select({ userId: organizationMembers.userId })
+    .from(organizationMembers)
+    .innerJoin(agents, and(eq(agents.orgId, organizationMembers.orgId), eq(agents.id, agentId)))
+    .where(and(eq(organizationMembers.orgId, orgId), managesAgentSql("agents", sql`${organizationMembers.userId}`)));
+  return rows.map((r) => r.userId);
+}
+
+/**
+ * Who edits the agent (`editsAgent`: its owner, who manages it and the people its editors name), as member ids: whom a
+ * change to how it works (its instructions, role or skills) is sent to for a decision.
+ */
+export async function agentEditorIds(db: Executor, orgId: string, agentId: string): Promise<string[]> {
+  const rows = await db
+    .select({ userId: organizationMembers.userId })
+    .from(organizationMembers)
+    .innerJoin(agents, and(eq(agents.orgId, organizationMembers.orgId), eq(agents.id, agentId)))
+    .where(and(eq(organizationMembers.orgId, orgId), editsAgentSql("agents", sql`${organizationMembers.userId}`)));
+  return rows.map((r) => r.userId);
 }
 
 /** Whom it answers by name: its roles first, then its owner and the people of its audience (only what still exists). */
@@ -548,6 +654,79 @@ export async function setAgentAudience(
       await audienceChanged(tx, orgId, actorId, updated, audienceOf(agent), audienceOf(updated));
     }
     return updated;
+  });
+  if (!updated) throw new NotFoundError("Agent not found");
+  caches.agents.delete(`${orgId}:${agentId}`);
+  caches.agents.delete(`${orgId}:team`);
+  return updated;
+}
+
+/** "Quem pode editar" as the apps read and save it: who it names besides the agent's owner and who manages it. */
+export interface AgentEditors {
+  userIds: string[];
+  roleIds: string[];
+}
+
+export const editorsOf = (a: Pick<Agent, "editorUserIds" | "editorRoleIds">): AgentEditors => ({
+  userIds: a.editorUserIds,
+  roleIds: a.editorRoleIds,
+});
+
+/**
+ * Changes who edits the agent's instructions, role, skills and routines ("Quem pode editar", ADR 0085, addendum of
+ * 2026-11-17): its owner or who manages it, as who talks to it. Its owner always edits, so naming them adds nothing;
+ * someone no longer in the workspace drops out, and every role must be one of the workspace's own. The team's right
+ * hand is the product's (ADR 0137): nobody edits how it works. Audited as `agent.editors_changed`.
+ */
+export async function setAgentEditors(
+  db: Database,
+  actorId: string,
+  orgId: string,
+  agentId: string,
+  editors: AgentEditors,
+): Promise<Agent> {
+  const agent = await audienceEditable(db, actorId, orgId, agentId);
+  if (agent.builtin)
+    throw new ForbiddenError("The team's right hand can't be edited this way", "agent.right_hand_permanent");
+  const requested = [...new Set(editors.userIds)].filter((id) => id !== agent.ownerUserId);
+  if (requested.length > 500) throw new ValidationError("At most 500 people");
+  const requestedRoles = [...new Set(editors.roleIds)];
+  if (requestedRoles.length > 100) throw new ValidationError("At most 100 roles");
+  // FOR SHARE on the member rows read, as the audience's save: a removeMember either waits for it or is seen by it.
+  const updated = await db.transaction(async (tx) => {
+    let userIds = requested;
+    if (userIds.length > 0) {
+      const members = await tx
+        .select({ userId: organizationMembers.userId })
+        .from(organizationMembers)
+        .where(and(eq(organizationMembers.orgId, orgId), inArray(organizationMembers.userId, userIds)))
+        .for("share");
+      const known = new Set(members.map((m) => m.userId));
+      userIds = userIds.filter((id) => known.has(id));
+    }
+    if (requestedRoles.length > 0) {
+      const known = await tx
+        .select({ id: orgRoles.id })
+        .from(orgRoles)
+        .where(and(eq(orgRoles.orgId, orgId), eq(orgRoles.kind, "custom"), inArray(orgRoles.id, requestedRoles)));
+      if (known.length !== requestedRoles.length)
+        throw new ValidationError("Every role must be one of the workspace's");
+    }
+    const [row] = await tx
+      .update(agents)
+      .set({ editorUserIds: userIds, editorRoleIds: requestedRoles, updatedAt: new Date() })
+      .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId)))
+      .returning();
+    if (row) {
+      await recordAudit(tx, {
+        orgId,
+        actor: { type: "person", id: actorId },
+        action: "agent.editors_changed",
+        target: { type: "agent", id: agentId },
+        details: { from: editorsOf(agent), to: editorsOf(row) },
+      });
+    }
+    return row;
   });
   if (!updated) throw new NotFoundError("Agent not found");
   caches.agents.delete(`${orgId}:${agentId}`);

@@ -9,6 +9,7 @@ import { NoAiChip } from "@/components/NoAi";
 import { useOrg } from "@/components/org-context";
 import { AgentCover } from "@/components/Sky";
 import { UsageQueueChip } from "@/components/UsageQueue";
+import { ownsOrManages } from "@/lib/agent-edit";
 import { useToast } from "@/lib/toast";
 import { useStreams } from "@/realtime/context";
 import { useAgentEdit } from "./context";
@@ -116,7 +117,7 @@ export function AgentHero({
               <MenuItem icon="book" onSelect={() => goTo("memory")}>
                 {t("agent.viewMemory")}
               </MenuItem>
-              {viewer !== "member" && (
+              {ownsOrManages(viewer) && (
                 <MenuItem icon="routines" onSelect={() => goTo("activity")}>
                   {t("agent.viewRuns")}
                 </MenuItem>

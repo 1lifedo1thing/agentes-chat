@@ -1,6 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
 import { getAgent } from "./agents";
+import { managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import { brainOf, brainOptions } from "./brain-settings";
 import type { ComputerBrainKind } from "./brains/types";
@@ -11,7 +12,7 @@ import { publishOrgEvent } from "./events";
 import { TASK_OFFLINE_GRACE_MS } from "./machine-tasks";
 import { getMachine, type MachineRow, machinePause, mayBeHome, setAgentComputerTarget, shownOnline } from "./machines";
 import { missionTurnFor } from "./missions-engine";
-import { can, requirePermission } from "./organizations";
+import { requirePermission } from "./organizations";
 import { enqueue } from "./outbox";
 import { missStaleRoutineRun } from "./routine-firing";
 
@@ -112,8 +113,8 @@ async function waitingRunsFor(db: Database, orgId: string, machineIds: string[],
 /**
  * `GET …/machines/outages`: each offline computer that some agents think on
  * (computer brain pointed at it) or that runs wait for, with only the agents
- * this person may move (admins with `manage_agents`: all; others: their own
- * agents); and every other computer as a place to move them.
+ * this person may move (the ones they manage, `managesAgent`, ADR 0085 addendum
+ * of 2026-11-17, and their own); and every other computer as a place to move them.
  */
 export async function listMachineOutages(
   deps: OutageDeps,
@@ -123,7 +124,6 @@ export async function listMachineOutages(
   const { db } = deps;
   const now = deps.now?.() ?? new Date();
   const membership = await requirePermission(db, actorId, orgId, "read");
-  const admin = can(membership, "manage_agents");
   const rows = await db
     .select()
     .from(machines)
@@ -142,6 +142,10 @@ export async function listMachineOutages(
             brain: agents.brain,
             machineId: agents.machineId,
             ownerUserId: agents.ownerUserId,
+            audienceMode: agents.audienceMode,
+            audienceUserIds: agents.audienceUserIds,
+            audienceRoleIds: agents.audienceRoleIds,
+            consultable: agents.consultable,
             createdAt: agents.createdAt,
           })
           .from(agents)
@@ -160,13 +164,18 @@ export async function listMachineOutages(
           brain: agents.brain,
           machineId: agents.machineId,
           ownerUserId: agents.ownerUserId,
+          audienceMode: agents.audienceMode,
+          audienceUserIds: agents.audienceUserIds,
+          audienceRoleIds: agents.audienceRoleIds,
+          consultable: agents.consultable,
           createdAt: agents.createdAt,
         })
         .from(agents)
         .where(and(eq(agents.orgId, orgId), inArray(agents.id, extraIds), isNull(agents.archivedAt)))
     : [];
   const byId = new Map([...onMachines, ...extra].map((a) => [a.id, a]));
-  const mayMove = (a: { ownerUserId: string | null }) => admin || a.ownerUserId === actorId;
+  const mayMove = (a: Parameters<typeof managesAgent>[0]) =>
+    a.ownerUserId === actorId || managesAgent(a, actorId, membership);
 
   const outages: MachineOutage[] = [];
   for (const m of offline) {
@@ -261,7 +270,6 @@ export async function moveAgentsFromMachine(
   const { db } = deps;
   const now = deps.now?.() ?? new Date();
   const membership = await requirePermission(db, actorId, orgId, "read");
-  const admin = can(membership, "manage_agents");
   const from = await getMachine(db, orgId, machineId);
   if (!from) throw new NotFoundError("Computer not found", "machine.not_found");
   const agentIds = [...new Set(input.agentIds)];
@@ -291,7 +299,7 @@ export async function moveAgentsFromMachine(
       skipped.push({ agentId, reason: "not_found" });
       continue;
     }
-    if (!admin && agent.ownerUserId !== actorId) {
+    if (agent.ownerUserId !== actorId && !managesAgent(agent, actorId, membership)) {
       skipped.push({ agentId, reason: "forbidden" });
       continue;
     }

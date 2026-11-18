@@ -1,5 +1,6 @@
 import type { AgentGroup, Team, TeamAgent } from "@agenteschat/client";
 import { useAgentGroupAction, useRoutines } from "@agenteschat/client";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import { setDraftFor } from "@agenteschat/client/lib/drafts";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { can } from "@agenteschat/client/lib/permissions";
@@ -29,9 +30,10 @@ const CARD_ROUTINES = 3;
 
 /**
  * Equipe › Setores (ADR 0148): the agent groups (ADR 0083) as setores, one card each: who leads it and who covers,
- * its agents, the people around them, the channels they are in and their routines. Who manages agents creates,
- * edits, orders and deletes them, picks the lead and the substitute, and drags agents between cards. The sidebar's
- * AGENTES sections are the same groups.
+ * its agents, the people around them, the channels they are in and their routines. Who holds "Edit agents" creates,
+ * edits, orders and deletes them and picks the lead and the substitute; an agent is dragged between cards, and a
+ * setor's agents get a supervisor, only by who manages them (`TeamAgent.canManage`, ADR 0085 addendum of 2026-11-17).
+ * The sidebar's AGENTES sections are the same groups.
  */
 export function TeamSectors({ team, groups }: { team: Team; groups: AgentGroup[] }) {
   const { t } = useTranslation();
@@ -125,6 +127,7 @@ export function TeamSectors({ team, groups }: { team: Team; groups: AgentGroup[]
 
 type Drag = ReturnType<typeof useAgentDrag>;
 
+/** A setor's agents as chips; `drag`: the ones the person manages move between setores (the server's `canManage`). */
 function AgentChips({ agents, drag }: { agents: TeamAgent[]; drag: Drag | null }) {
   const { org } = useOrg();
   return (
@@ -136,7 +139,7 @@ function AgentChips({ agents, drag }: { agents: TeamAgent[]; drag: Drag | null }
           params={{ orgId: org.id, agentId: a.id }}
           className="team-who team-who--chip"
           data-agent-row={a.id}
-          {...(drag ? drag.row(a.id) : {})}
+          {...(drag && managesAgent(a) ? drag.row(a.id) : {})}
         >
           <AgentAvatar agentId={a.id} name={a.name} size="xs" />
           {a.name}
@@ -317,6 +320,8 @@ function SectorCard({
 /**
  * A setor's "Supervisor" (ADR 0148 addendum): the agent its agents report to, set for all of them at once with
  * Desfazer, and "1 agente sem supervisor · Aplicar" when one of them doesn't (an agent moved in later keeps its own).
+ * The server applies all of the lines or none, each only for who manages its agent (`setReportsTo`, ADR 0085 addendum
+ * of 2026-11-17): the choice is offered to who manages every agent of the setor, Aplicar to who manages the ones left.
  */
 function SectorSupervisor({
   group,
@@ -345,9 +350,12 @@ function SectorSupervisor({
     );
   };
   const off = now?.off.length ?? 0;
+  const mine = group.agentIds.flatMap((id) => team.agents.find((a) => a.id === id) ?? []);
+  const picks = arranges && mine.every((a) => managesAgent(a));
+  const applies = arranges && !!now && now.off.every((a) => managesAgent(a));
   return (
     <span className="team-sector-card__sup">
-      {arranges ? (
+      {picks ? (
         <Select
           size="sm"
           aria-label={t("team.sectors.supervisorOf", { name: group.name })}
@@ -369,7 +377,7 @@ function SectorSupervisor({
       {now && off > 0 && (
         <span className="team-sector-card__off">
           {t("team.sectors.unsupervised", { count: off })}
-          {arranges && (
+          {applies && (
             <>
               {" · "}
               <button type="button" className="ac-link" onClick={() => apply(now.supervisor.id)}>

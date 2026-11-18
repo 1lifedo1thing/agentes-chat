@@ -24,7 +24,7 @@ import {
 import { isIdHandle } from "@agenteschat/ui/names";
 import type { AgentAppearance } from "./appearance";
 import { dropAgentRules } from "./approval-rules";
-import { answersOthers, audienceOf, canTalkTo, speakerFor } from "./audience";
+import { answersOthers, audienceOf, canTalkTo, editsAgent, managesAgent, speakerFor } from "./audience";
 import { recordAudit } from "./audit";
 import { type AutonomySettings, autonomySettings, chosenAutonomy } from "./autonomy-settings";
 import { isComputerBrain } from "./brains/types";
@@ -448,12 +448,16 @@ async function refuseRightHandFields(db: Database, orgId: string, agentId: strin
     throw rightHandPermanent(`changed this way (${fixed.join(", ")})`);
 }
 
-/** What an agent's owner may change besides admins: its API model, among the keys the workspace connected. */
+/** What an agent's owner may change besides who manages it: its API model, among the keys the workspace connected. */
 const OWNER_MODEL_FIELDS: ReadonlySet<string> = new Set(["model", "credentialId"]);
 
+/** What whoever edits an agent changes (`editsAgent`, ADR 0085 addendum of 2026-11-17): how it works, not its reach. */
+const EDITOR_FIELDS: ReadonlySet<string> = new Set(["instructions", "role"]);
+
 /**
- * Who may make this change: admins anything; the agent's owner only its API model and which of the workspace's keys
- * it uses (`OWNER_MODEL_FIELDS`), as they choose its plan's model. Connecting keys and budgets stay admins'.
+ * Who may make this change: who manages the agent anything (`managesAgent`); who edits it its instructions and role
+ * (`EDITOR_FIELDS`); its owner also its API model and which of the workspace's keys it uses (`OWNER_MODEL_FIELDS`), as
+ * they choose its plan's model. Connecting keys, budgets and what it may use stay who manages it.
  */
 async function updateAgentMembership(
   db: Database,
@@ -463,16 +467,17 @@ async function updateAgentMembership(
   patch: Partial<AgentInput>,
 ) {
   const membership = await requireActiveMembership(db, actorId, orgId);
-  if (can(membership, "manage_agents")) return membership;
+  const [row] = await db
+    .select()
+    .from(agents)
+    .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId), isNull(agents.deletedAt)));
+  if (!row) throw new NotFoundError("Agent not found");
+  if (managesAgent(row, actorId, membership)) return membership;
   const fields = Object.entries(patch).filter(([, v]) => v !== undefined);
-  const modelOnly = fields.length > 0 && fields.every(([k]) => OWNER_MODEL_FIELDS.has(k));
-  const [row] = modelOnly
-    ? await db
-        .select({ ownerUserId: agents.ownerUserId })
-        .from(agents)
-        .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId), isNull(agents.deletedAt)))
-    : [];
-  if (row?.ownerUserId !== actorId) throw new ForbiddenError();
+  const allowed = (k: string) =>
+    (EDITOR_FIELDS.has(k) && editsAgent(row, actorId, membership)) ||
+    (OWNER_MODEL_FIELDS.has(k) && row.ownerUserId === actorId);
+  if (fields.length === 0 || !fields.every(([k]) => allowed(k))) throw new ForbiddenError();
   return membership;
 }
 
@@ -570,13 +575,15 @@ export async function updateAgent(
           previousHandles: sql`case when ${agents.handle} = ${handle} then ${agents.previousHandles}
             else array_append(array_remove(${agents.previousHandles}, ${handle}::text), ${agents.handle}) end`,
         };
+  // A new owner always edits it: they leave its "Quem pode editar" (ADR 0085 addendum of 2026-11-17).
+  const editors = owner ? { editorUserIds: sql`array_remove(${agents.editorUserIds}, ${owner}::text)` } : {};
   const { approvalsLevel, ...stored } = input;
   const level = approvalsLevel === undefined ? {} : await approvalsLevelFields(db, orgId, approvalsLevel);
   let agent: Agent | undefined;
   try {
     [agent] = await db
       .update(agents)
-      .set({ ...stored, ...level, ...handover, ...previous, updatedAt: new Date() })
+      .set({ ...stored, ...level, ...handover, ...previous, ...editors, updatedAt: new Date() })
       .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId), isNull(agents.deletedAt)))
       .returning();
   } catch (error) {
@@ -638,6 +645,30 @@ export async function updateAgent(
   return agent;
 }
 
+/**
+ * The agent, for who manages it (`managesAgent`): "Editar qualquer agente" where it reaches (ADR 0085 addendum of
+ * 2026-11-17). Archived ones too, so an archive's Undo finds it. 403 for anyone else, 404 when there is none.
+ */
+export async function requireAgentManager(db: Database, actorId: string, orgId: string, agentId: string) {
+  const membership = await requirePermission(db, actorId, orgId, "manage_agents");
+  const agent = await getAgent(db, orgId, agentId);
+  if (!agent) throw new NotFoundError("Agent not found");
+  if (!managesAgent(agent, actorId, membership)) throw new ForbiddenError();
+  return { agent, membership };
+}
+
+/**
+ * The agent, for who edits how it works (`editsAgent`: its owner, who manages it, its "Quem pode editar"). 403 for
+ * anyone else, 404 when there is none.
+ */
+export async function requireAgentEditor(db: Database, actorId: string, orgId: string, agentId: string) {
+  const membership = await requirePermission(db, actorId, orgId, "read");
+  const agent = await getAgent(db, orgId, agentId);
+  if (!agent) throw new NotFoundError("Agent not found");
+  if (!editsAgent(agent, actorId, membership)) throw new ForbiddenError();
+  return { agent, membership };
+}
+
 export async function archiveAgent(
   db: Database,
   actorId: string,
@@ -647,7 +678,7 @@ export async function archiveAgent(
   /** The caller already checked who may (the right hand's Desfazer, ADR 0139: the person it created it for). */
   checked = false,
 ) {
-  if (!checked) await requirePermission(db, actorId, orgId, "manage_agents");
+  if (!checked) await requireAgentManager(db, actorId, orgId, agentId);
   await refuseRightHand(db, orgId, agentId, "archived");
   const [gone] = await db
     .update(agents)
@@ -689,7 +720,7 @@ export async function unarchiveAgent(
   agentId: string,
   options: { pubsub?: PubSub } = {},
 ) {
-  await requirePermission(db, actorId, orgId, "manage_agents");
+  await requireAgentManager(db, actorId, orgId, agentId);
   const [back] = await db
     .update(agents)
     .set({ archivedAt: null, updatedAt: new Date() })
@@ -733,9 +764,11 @@ export async function getAgent(db: Database, orgId: string, agentId: string): Pr
 /**
  * Agents no longer in the team (archived or deleted) as what they left behind shows them: name, role and look,
  * so their old messages, threads and reports still say who wrote them. Never offered anywhere an agent is picked.
+ * An archived one says whether the viewer manages it (`canManage`: `managesAgent`, ADR 0085 addendum of 2026-11-17), so
+ * brings it back or deletes it for good (`requireAgentManager`); a deleted one has nobody to manage it any more.
  */
 export async function listFormerAgents(db: Database, actorId: string, orgId: string) {
-  await requirePermission(db, actorId, orgId, "read");
+  const membership = await requirePermission(db, actorId, orgId, "read");
   const rows = await db
     .select({
       id: agents.id,
@@ -743,14 +776,23 @@ export async function listFormerAgents(db: Database, actorId: string, orgId: str
       role: agents.role,
       appearance: agents.appearance,
       deletedAt: agents.deletedAt,
+      ownerUserId: agents.ownerUserId,
+      audienceMode: agents.audienceMode,
+      audienceUserIds: agents.audienceUserIds,
+      audienceRoleIds: agents.audienceRoleIds,
+      consultable: agents.consultable,
+      brain: agents.brain,
     })
     .from(agents)
     .where(and(eq(agents.orgId, orgId), isNotNull(agents.archivedAt)))
     .orderBy(asc(agents.createdAt));
-  return rows.map(({ deletedAt, ...a }) => ({
-    ...a,
+  return rows.map((a) => ({
+    id: a.id,
+    name: a.name,
+    role: a.role,
     appearance: (a.appearance ?? null) as AgentAppearance | null,
-    deleted: deletedAt !== null,
+    deleted: a.deletedAt !== null,
+    ...(a.deletedAt === null ? { canManage: managesAgent(a, actorId, membership) } : {}),
   }));
 }
 
