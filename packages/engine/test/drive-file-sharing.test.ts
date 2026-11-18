@@ -251,7 +251,7 @@ describe("a file of the Drive itself (ADR 0157, amendment 2026-11-17)", () => {
   });
 });
 
-test("migration 0299: every Drive file so far is shared with everyone, a conversation's file stays its own", async () => {
+test("migration 0301: every Drive file so far is shared with everyone, a conversation's file stays its own", async () => {
   f = await setup();
   const drive = await createArtifact(f.artifactDeps, personActor(f.owner.id), f.org.id, {
     title: "Manual",
@@ -264,7 +264,7 @@ test("migration 0299: every Drive file so far is shared with everyone, a convers
   });
   // As every Drive file was stored before it: the column's default.
   await f.db.update(schema.artifacts).set({ share: "conversation" }).where(eq(schema.artifacts.id, drive.id));
-  const text = await Bun.file(new URL("../../db/migrations/0299_drive_files_shared.sql", import.meta.url)).text();
+  const text = await Bun.file(new URL("../../db/migrations/0301_drive_files_shared.sql", import.meta.url)).text();
   await f.db.execute(sql.raw(text));
   const rows = await f.db.select({ id: schema.artifacts.id, share: schema.artifacts.share }).from(schema.artifacts);
   expect(rows.find((r) => r.id === drive.id)?.share).toBe("everyone");

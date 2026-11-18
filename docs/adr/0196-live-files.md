@@ -10,7 +10,7 @@
   `packages/client/src/live/*`, web `apps/web/src/components/live/*` and the route `org.$orgId.drive_.$fileId`,
   phone `apps/mobile/src/features/live-files/*`; tables `live_docs`, `live_doc_updates`, `live_assets`; pictures an
   agent draws or finds (§8): `live/svg.ts` (`sanitizeSvg`, `rasterPicture`), `live/web-pictures.ts`
-  (`fetchWebPicture`), `live/pictures.ts`, `image_search` in `web-tools.ts`, migration `0298_live_files`
+  (`fetchWebPicture`), `live/pictures.ts`, `image_search` in `web-tools.ts`, migration `0300_live_files`
 
 ## Context
 
