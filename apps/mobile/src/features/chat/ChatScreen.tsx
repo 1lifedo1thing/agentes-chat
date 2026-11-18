@@ -107,6 +107,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -221,7 +222,7 @@ import { ConversationSwitcher } from "./ConversationSwitcher";
 import { takeComposerRequest, useComposerRequest } from "./composer-request";
 import { DATE_PILL_IDLE_MS, DatePill } from "./DatePill";
 import { DmComputerWords, dmComputerAction } from "./DmComputerButton";
-import { composerLift, createDockHeight, type DockHeight } from "./dock-height";
+import { composerLift, createDockHeight, type DockHeight, openingDockHeight, rememberDockHeight } from "./dock-height";
 import { EventLine } from "./EventLine";
 import { FirstDay } from "./FirstDay";
 import { HeaderPill } from "./HeaderPill";
@@ -340,6 +341,10 @@ const BACK_ONLINE_MS = 1600;
  */
 const ENTER = RISE_IN;
 const FRESH_MS = 800;
+/** The list's follow of its end, gliding (`maintainScrollAtEnd`): after a send, the round button. */
+const GLIDE = { animated: true } as const;
+/** How long the follow glides after going to the end: the scroll to the message and its last settling (ms). */
+const GLIDE_MS = 700;
 /** How close to the end a scroll has to stop for a list held at a long message's start to follow again. */
 const READ_RELEASE_PX = 24;
 /** A row the list takes to the top of the room (a long reply's start, the "Novas" line) sits this far under the bar. */
@@ -350,6 +355,8 @@ const OLDER_ROW = 44;
 const END_SLACK = 2;
 /** The composer's safe-area padding hides behind the open keyboard; this much stays between them. */
 const KEYBOARD_GAP = 8;
+/** The dock with a one-line field and nothing over it, above its bottom padding (the box's 6 and the field's 49). */
+const DOCK_LINE = 55;
 const COMPOSER_INPUT_ID = "chat-composer";
 /** How long the conversation is held in place after something opens over it and after it closes (ms). */
 const HOLD_MS = 900;
@@ -895,6 +902,12 @@ function Chat({
   // Held at the start of a long message someone else wrote (see "Reading from the top"), or where "Ver mais" opened
   // one: the list doesn't follow the end until the person gets there, sends, or takes the pill.
   const [readHold, setReadHold] = useState(false);
+  // Going to the end (a send, the round button): for `GLIDE_MS` the list's own follow of its end glides instead of
+  // jumping (`GLIDE`), so a message just sent slides up into view in one motion as the rows and the dock settle under it.
+  // A count, so each send starts its own.
+  const [glide, setGlide] = useState(0);
+  const gliding = useRef(false);
+  gliding.current = glide > 0;
   // The person's first touch here, anywhere (a scroll, the box, a message): the day's greeting closes a while after.
   const [touched, setTouched] = useState(false);
   // The messages "Ver mais" opened in place: they stay open while the screen lives (rows unmount off screen).
@@ -965,6 +978,7 @@ function Chat({
     toReadRef.current = null;
     setReadHold(false);
     setAtEnd(true);
+    setGlide((n) => n + 1);
     requestAnimationFrame(() => void listRef.current?.scrollToEnd({ animated: true }));
   }, [letGo]);
 
@@ -1966,6 +1980,18 @@ function Chat({
     });
     return () => gone.remove();
   }, [freeze]);
+  // A glide (`GLIDE`) holds the keyboard list's room still meanwhile: its instant shift for the dock growing under a
+  // message just sent (the working line coming) cut the motion short. It ends `GLIDE_MS` later; a cover that came
+  // meanwhile keeps its own hold.
+  useLayoutEffect(() => {
+    if (glide === 0) return;
+    if (!covered.current) freeze.value = true;
+    const timer = setTimeout(() => {
+      setGlide(0);
+      if (!covered.current) freeze.value = false;
+    }, GLIDE_MS);
+    return () => clearTimeout(timer);
+  }, [glide, freeze]);
   // Every sheet of this screen says when it opens (before the keyboard leaves) and closes: one place for all of
   // them (the header's, a message's, the composer's).
   useEffect(() => {
@@ -2513,7 +2539,7 @@ function Chat({
   const composerRef = useRef<ComponentRef<typeof View>>(null);
   const [composerFloat] = useState(createComposerFloat);
   // The composer's box with the lines over it, as last laid out (the agent's face and a background's band size to it).
-  const boxHeight = useSharedValue(0);
+  const boxHeight = useSharedValue(openingDockHeight(Math.max(insets.bottom, 10) + DOCK_LINE));
   // Read while laying out the box: at the conversation's end and following it (not held where the person reads).
   const followingEnd = useRef(true);
   followingEnd.current = atEnd && !readHold;
@@ -2530,6 +2556,7 @@ function Chat({
     const before = dock.get();
     const grew = before > 0 && height > before + 0.5;
     boxHeight.set(height);
+    rememberDockHeight(height);
     // Only what is drawn from it redraws (`DockHeight`); the waiting requests look again at their band's new bottom.
     dock.set(height);
     watchList();
@@ -2539,7 +2566,8 @@ function Chat({
     // sent is still scrolling down when an agent starts thinking, so its last lines stayed under the working line.
     // Two frames on, once the inset is in (the list's distance counts it), a list left short goes on to the end: one
     // that the scroll view already shifted is at its end and isn't moved twice.
-    if (grew && followsEnd())
+    // While a send glides, the list's own follow takes the grown dock into the same motion.
+    if (grew && followsEnd() && !gliding.current)
       requestAnimationFrame(() =>
         requestAnimationFrame(() => {
           const state = listRef.current?.getState();
@@ -2570,6 +2598,16 @@ function Chat({
     dragStarted: keyboardDragStarted,
     dragSettled: keyboardDragSettled,
   } = useListEnd({ keyboard: keyboardAt, box: boxHeight, lift, freeze });
+  // The dock's room told to the list as it mounts (Legend List's own chat example, #586): the keyboard's list hears it
+  // only through a round trip from the UI thread, which can land after the list said it was placed at its end, and the
+  // conversation opened with its last message under the dock.
+  const attachList = useCallback(
+    (list: LegendListRef | null) => {
+      listRef.current = list;
+      list?.reportContentInset({ bottom: listEnd.get() });
+    },
+    [listEnd],
+  );
   const showList = !loading && !(rows.length === 0 && runs.length === 0);
   // The conversation starts below the clear bar by our own padding, on both platforms (the pinned card, when there
   // is one, already holds that room). iOS's automatic inset made keyboard moves land short at the end.
@@ -2620,18 +2658,31 @@ function Chat({
   const [placed, setPlaced] = useState(false);
   // Opening at the latest message (no "Novas" line to open at, no message asked for): set once the lists say so.
   const opensAtEnd = useRef(false);
+  const revealing = useRef(false);
   const revealList = useCallback(() => {
-    // It shows at its end: the end can still move after the list's first placement (the dock's room reaching it a pass
-    // later, with the keyboard library's list taking it without following), and it showed short of it, its last
-    // message under the dock. Once, as it first shows: after that the person may be reading.
-    if (!listPlaced.current && opensAtEnd.current) {
-      const state = listRef.current?.getState();
-      if (state && state.distanceFromEnd > END_SLACK) void listRef.current?.scrollToEnd({ animated: false });
+    if (revealing.current) return;
+    revealing.current = true;
+    const show = () => {
+      listShown.value = withTiming(1, { duration: 160 });
+      listPlaced.current = true;
+      setPlaced(true);
+      watchList();
+    };
+    if (!opensAtEnd.current) {
+      show();
+      return;
     }
-    listShown.value = withTiming(1, { duration: 160 });
-    listPlaced.current = true;
-    setPlaced(true);
-    watchList();
+    // Opening at its latest message, it shows only once it sits at its end, taken there three times over two frames, as
+    // v0's and Expensify's lists do: the list says it is placed a frame before iOS applies its last adjustment (Legend
+    // List #600), and a row measured late moves the end. Nothing of it moves under the person's eyes.
+    void listRef.current?.scrollToEnd({ animated: false });
+    requestAnimationFrame(() => {
+      void listRef.current?.scrollToEnd({ animated: false });
+      requestAnimationFrame(() => {
+        void listRef.current?.scrollToEnd({ animated: false });
+        show();
+      });
+    });
   }, [listShown, watchList]);
   useEffect(() => {
     if (!showList) return;
@@ -2983,7 +3034,7 @@ function Chat({
                             <StopsMovedOnContext.Provider value={stopsMoved}>
                               <OpenedMessagesContext.Provider value={openedMessages}>
                                 <ConversationList
-                                  ref={listRef}
+                                  ref={attachList}
                                   refScrollView={listScroll}
                                   style={styles.grow}
                                   data={shownRows}
@@ -3001,7 +3052,7 @@ function Chat({
                                   alignItemsAtEnd
                                   // New messages, a reply growing word by word and the working line keep the end in view,
                                   // but only while the person is near it.
-                                  maintainScrollAtEnd={!readHold}
+                                  maintainScrollAtEnd={readHold ? false : glide > 0 ? GLIDE : true}
                                   maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
                                   // Older pages above and rows changing size keep what is on screen still.
                                   maintainVisibleContentPosition
@@ -3430,7 +3481,11 @@ const ChatMessage = memo(function ChatMessage({
     />
   );
   return (
-    <Animated.View entering={fresh ? ENTER : undefined} style={lit ? { backgroundColor: c.sunken } : undefined}>
+    // My own words are there at once, whole (as every chat app's): only someone else's rise in.
+    <Animated.View
+      entering={fresh && m.author.id !== meId ? ENTER : undefined}
+      style={lit ? { backgroundColor: c.sunken } : undefined}
+    >
       {/* Swipe right to answer it (a quote above the field); hold it for the system's menu (iOS) or the app's sheet. A
           message still on its way can't be swiped, and its menu offers only copying its words; the same views stand
           around it either way, so it isn't drawn again when it turns sent. The menu brings the plain view it lifts (the

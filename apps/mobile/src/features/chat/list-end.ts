@@ -139,8 +139,9 @@ export function useListEnd({
       for (const subscription of subscriptions) subscription.remove();
     };
   }, [keyboard, freeze, gap, room, dragging]);
-  // A shared value of its own (the list's prop takes one, not a derived value), kept on the UI thread.
-  const end = useSharedValue(0);
+  // A shared value of its own (the list's prop takes one, not a derived value), kept on the UI thread; the dock's opening
+  // height from the start, so the list's first placement already ends above it.
+  const end = useSharedValue(box.get());
   useAnimatedReaction(
     () => box.get() + gap.get(),
     (next) => {

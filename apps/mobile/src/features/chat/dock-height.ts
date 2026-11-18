@@ -11,6 +11,21 @@ export interface DockHeight {
   subscribe(listener: () => void): () => void;
 }
 
+/** The dock's height as last laid out in any conversation (0 before the first). */
+let lastDock = 0;
+
+/**
+ * What a conversation opening now starts its dock's height at: the one laid out last, or a one-line composer over the
+ * home indicator (`resting`). The list places its end above the dock before the dock has measured itself.
+ */
+export function openingDockHeight(resting: number): number {
+  return lastDock > 0 ? lastDock : resting;
+}
+
+export function rememberDockHeight(height: number): void {
+  if (height > 0) lastDock = height;
+}
+
 export function createDockHeight(): DockHeight {
   let height = 0;
   const listeners = new Set<() => void>();

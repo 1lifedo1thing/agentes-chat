@@ -1,20 +1,12 @@
+import { radius } from "@agenteschat/tokens";
+
 /**
- * The phone's corner radii: the design system's scale (`--radius-*` in `packages/ui/src/styles/tokens.css`), so a
- * corner here is one the web draws too. Pure (no React Native import), so tests read it.
+ * The phone's corner radii: the design system's scale (`@agenteschat/tokens`, the web's `--radius-*`), so a corner here
+ * is one the web draws too: `sm` (6) the cards' cut corner and a run's joined one, `xl` (18) a conversation's bubbles and
+ * the cards in its messages, `section` (20) the app's raised cards (`Card`). Pure (no React Native import), so tests
+ * read it.
  */
-export const RADIUS = {
-  xs: 4,
-  /** The cards' cut corner, and a run's joined one. */
-  sm: 6,
-  md: 10,
-  btn: 12,
-  lg: 14,
-  /** A conversation's bubbles and the cards in its messages. */
-  xl: 18,
-  /** The app's raised cards (`Card`). */
-  section: 20,
-  full: 999,
-} as const;
+export const RADIUS = radius;
 
 /**
  * A shape with its four corners named (top left, top right, bottom right, bottom left). React Native draws a corner's
