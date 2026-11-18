@@ -55,8 +55,13 @@ export const othersPersonal = (c: Pick<ConnectorConnection, "ownerUserId">, acto
  * stays ("CRM (walter@example.com) 2" reads "CRM 2"), so two rows stay apart.
  */
 export function othersLabel(label: string, account: string | null | undefined) {
-  const named = account ? /^(.+?) \((.+)\)( \d+)?$/.exec(label) : null;
-  return named ? `${named[1]}${named[3] ?? ""}` : label;
+  if (!account) return label;
+  // Read by position, not by a pattern: a person types this name, and a pattern with two open-ended parts backtracks.
+  const open = label.indexOf(" (", 1);
+  const close = label.lastIndexOf(")");
+  if (open < 0 || close < open + 3) return label;
+  const number = label.slice(close + 1);
+  return number === "" || /^ \d+$/.test(number) ? `${label.slice(0, open)}${number}` : label;
 }
 
 /**

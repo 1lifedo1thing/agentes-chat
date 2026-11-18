@@ -1425,6 +1425,14 @@ describe("what a call and a card of it leave for others", () => {
     expect(othersLabel("Stripe (Example Ltd (Brazil))", "Example Ltd (Brazil)")).toBe("Stripe");
     expect(othersLabel("Stripe (Example Ltd (Brazil)) 2", "Example Ltd (Brazil)")).toBe("Stripe 2");
     expect(othersLabel("CRM (old@example.com)", "new@example.com")).toBe("CRM");
+    // Not the default form: nothing in the brackets, words after them, no brackets at all, no account yet.
+    for (const kept of ["CRM", "CRM ()", "CRM (x) 2 3", "CRM (x) team", "(x) CRM"])
+      expect(othersLabel(kept, ACCOUNT)).toBe(kept);
+    expect(othersLabel(`CRM (${ACCOUNT})`, null)).toBe(`CRM (${ACCOUNT})`);
+    // A name made to be slow to read is read once, by position.
+    const slow = `a (${"a (a".repeat(20_000)}`;
+    expect(othersLabel(slow, ACCOUNT)).toBe(slow);
+    expect(othersLabel(`${slow})`, ACCOUNT)).toBe("a");
     expect(auditLabel({ label: `CRM (${ACCOUNT}) 2`, accountLabel: ACCOUNT, ownerUserId: "u1" })).toBe("CRM 2");
     expect(auditLabel({ label: `CRM (${ACCOUNT}) 2`, accountLabel: ACCOUNT, ownerUserId: null })).toBe(
       `CRM (${ACCOUNT}) 2`,
