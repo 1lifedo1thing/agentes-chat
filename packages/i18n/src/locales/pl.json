@@ -5,6 +5,7 @@
   },
   "common": {
     "close": "Zamknij",
+    "details": "Szczegóły",
     "joinSentences": "{{a}} {{b}}",
     "cantUndo": "Tego nie da się cofnąć.",
     "removeName": "Usuń {{name}}",
@@ -626,6 +627,10 @@
     "hidePassword": "Ukryj hasło",
     "capsLock": "Caps Lock jest włączony",
     "tooManyTries": "Za dużo prób. Odczekaj kilka minut i spróbuj ponownie.",
+    "passwordTries_one": "Za dużo prób hasła na tym koncie. Spróbuj ponownie za {{count}} minutę.",
+    "passwordTries_few": "Za dużo prób hasła na tym koncie. Spróbuj ponownie za {{count}} minuty.",
+    "passwordTries_many": "Za dużo prób hasła na tym koncie. Spróbuj ponownie za {{count}} minut.",
+    "passwordTries_other": "Za dużo prób hasła na tym koncie. Spróbuj ponownie za {{count}} minuty.",
     "accountBlocked": "To konto nie może się zalogować.",
     "passwordHelp": "Co najmniej 8 znaków.",
     "passwordOk": "Hasło w porządku.",
@@ -13529,7 +13534,48 @@
     "goneIn_few": "zniknie za {{count}} dni",
     "goneIn_many": "zniknie za {{count}} dni",
     "goneIn_other": "zniknie za {{count}} dnia",
-    "fileBadge": "PLIK"
+    "fileBadge": "PLIK",
+    "folders": "Foldery",
+    "folder": "Folder",
+    "newFolder": "Nowy folder",
+    "renameFolder": "Zmień nazwę folderu",
+    "renameFile": "Zmień nazwę pliku",
+    "rename": "Zmień nazwę",
+    "create": "Utwórz",
+    "openFolder": "Otwórz",
+    "folderMore": "Więcej działań dla {{name}}",
+    "path": "Ścieżka folderu",
+    "up": "Poziom wyżej",
+    "folderEmptyTitle": "Ten folder jest pusty",
+    "folderEmptyText": "Upuść tu pliki albo je prześlij. Przeciągnięcie pliku na folder przenosi go tam.",
+    "folderEmptyViewer": "Pliki dodane do tego folderu pojawią się tutaj.",
+    "move": "Przenieś",
+    "moveToMenu": "Przenieś do…",
+    "moveTitle_one": "Przenieś {{count}} element",
+    "moveTitle_few": "Przenieś {{count}} elementy",
+    "moveTitle_many": "Przenieś {{count}} elementów",
+    "moveTitle_other": "Przenieś {{count}} elementu",
+    "moveTo": "Foldery",
+    "moveSearch": "Szukaj folderów",
+    "moveEmpty": "Brak folderu o nazwie „{{q}}”.",
+    "moveHere": "Jest tutaj",
+    "moveToName": "Przenieś do {{name}}",
+    "moved_one": "Przeniesiono do {{name}}.",
+    "moved_few": "Przeniesiono {{count}} elementy do {{name}}.",
+    "moved_many": "Przeniesiono {{count}} elementów do {{name}}.",
+    "moved_other": "Przeniesiono {{count}} elementu do {{name}}.",
+    "deleteFolder": "Usuń folder",
+    "deleteFolderTitle": "Usunąć „{{name}}”?",
+    "deleteFolderBody": "Foldery w środku też znikną. Pliki, które możesz usunąć, trafią do kosza na 30 dni. Pliki innych osób przejdą tam, gdzie był ten folder.",
+    "folderDeletedEmpty": "Folder usunięty.",
+    "folderDeleted_one": "Folder usunięty. {{count}} plik trafił do kosza.",
+    "folderDeleted_few": "Folder usunięty. {{count}} pliki trafiły do kosza.",
+    "folderDeleted_many": "Folder usunięty. {{count}} plików trafiło do kosza.",
+    "folderDeleted_other": "Folder usunięty. {{count}} pliku trafiło do kosza.",
+    "folderDeletedKept_one": "Folder usunięty. {{count}} plik, którego nie możesz usunąć, przeszedł poziom wyżej.",
+    "folderDeletedKept_few": "Folder usunięty. {{count}} pliki, których nie możesz usunąć, przeszły poziom wyżej.",
+    "folderDeletedKept_many": "Folder usunięty. {{count}} plików, których nie możesz usunąć, przeszło poziom wyżej.",
+    "folderDeletedKept_other": "Folder usunięty. {{count}} pliku, których nie możesz usunąć, przeszło poziom wyżej."
   },
   "storage": {
     "title": "Miejsce na dane",
@@ -16444,6 +16490,9 @@
       "sharingTooMany": "Wybierz najwyżej {{max}} osób i {{max}} ról.",
       "notInDrive": "To istnieje tylko w swojej rozmowie, więc nie da się tego udostępnić."
     },
+    "drive": {
+      "folderIntoItself": "Folder nie może trafić do samego siebie ani do folderu w środku."
+    },
     "live": {
       "readOnly": "Ten plik jest teraz tylko do odczytu, więc nie można go zmienić.",
       "tooLarge": "Ten plik osiągnął limit rozmiaru. Najpierw coś z niego usuń.",
@@ -18645,7 +18694,7 @@
       "routines": "Rutyny"
     },
     "hint": {
-      "handoffs": "Większość użycia w tym tygodniu pochodziła z agentów przekazujących sobie pracę. Długą pracę zlecaj bezpośrednio agentowi.",
+      "handoffs": "Większość pochodziła z przekazań między agentami.",
       "message": "Napisz do: {{name}}"
     }
   },

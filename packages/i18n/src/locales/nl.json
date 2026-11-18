@@ -5,6 +5,7 @@
   },
   "common": {
     "close": "Sluiten",
+    "details": "Details",
     "joinSentences": "{{a}} {{b}}",
     "cantUndo": "Dit kan niet ongedaan worden gemaakt.",
     "removeName": "{{name}} verwijderen",
@@ -600,6 +601,8 @@
     "hidePassword": "Wachtwoord verbergen",
     "capsLock": "Caps Lock staat aan",
     "tooManyTries": "Te veel pogingen. Wacht een paar minuten en probeer het opnieuw.",
+    "passwordTries_one": "Te veel wachtwoordpogingen voor dit account. Probeer het over {{count}} minuut opnieuw.",
+    "passwordTries_other": "Te veel wachtwoordpogingen voor dit account. Probeer het over {{count}} minuten opnieuw.",
     "accountBlocked": "Met dit account kun je niet inloggen.",
     "passwordHelp": "Minstens 8 tekens.",
     "passwordOk": "Wachtwoord oké.",
@@ -12614,7 +12617,40 @@
     "daysLeft_other": "{{count}} dagen",
     "goneIn_one": "weg over {{count}} dag",
     "goneIn_other": "weg over {{count}} dagen",
-    "fileBadge": "BESTAND"
+    "fileBadge": "BESTAND",
+    "folders": "Mappen",
+    "folder": "Map",
+    "newFolder": "Nieuwe map",
+    "renameFolder": "Map hernoemen",
+    "renameFile": "Bestand hernoemen",
+    "rename": "Hernoemen",
+    "create": "Maken",
+    "openFolder": "Openen",
+    "folderMore": "Meer acties voor {{name}}",
+    "path": "Pad van de map",
+    "up": "Eén niveau omhoog",
+    "folderEmptyTitle": "Deze map is leeg",
+    "folderEmptyText": "Zet hier bestanden neer of upload ze. Een bestand naar een map slepen verplaatst het daarheen.",
+    "folderEmptyViewer": "Bestanden in deze map verschijnen hier.",
+    "move": "Verplaatsen",
+    "moveToMenu": "Verplaatsen naar…",
+    "moveTitle_one": "{{count}} item verplaatsen",
+    "moveTitle_other": "{{count}} items verplaatsen",
+    "moveTo": "Mappen",
+    "moveSearch": "Mappen zoeken",
+    "moveEmpty": "Geen map met de naam ‘{{q}}’.",
+    "moveHere": "Staat hier nu",
+    "moveToName": "Verplaatsen naar {{name}}",
+    "moved_one": "Verplaatst naar {{name}}.",
+    "moved_other": "{{count}} items verplaatst naar {{name}}.",
+    "deleteFolder": "Map verwijderen",
+    "deleteFolderTitle": "‘{{name}}’ verwijderen?",
+    "deleteFolderBody": "De mappen erin gaan ook weg. Bestanden die je mag verwijderen gaan 30 dagen naar de prullenbak. Bestanden van anderen gaan naar waar deze map stond.",
+    "folderDeletedEmpty": "Map verwijderd.",
+    "folderDeleted_one": "Map verwijderd. {{count}} bestand ging naar de prullenbak.",
+    "folderDeleted_other": "Map verwijderd. {{count}} bestanden gingen naar de prullenbak.",
+    "folderDeletedKept_one": "Map verwijderd. {{count}} bestand dat je niet mag verwijderen ging een niveau omhoog.",
+    "folderDeletedKept_other": "Map verwijderd. {{count}} bestanden die je niet mag verwijderen gingen een niveau omhoog."
   },
   "storage": {
     "title": "Opslag",
@@ -15443,6 +15479,9 @@
       "sharingTooMany": "Kies hoogstens {{max}} mensen en {{max}} rollen.",
       "notInDrive": "Dit bestaat alleen in zijn gesprek, dus het kan niet worden gedeeld."
     },
+    "drive": {
+      "folderIntoItself": "Een map kan niet in zichzelf of in een map daarin."
+    },
     "live": {
       "readOnly": "Dit bestand is nu alleen-lezen en kan dus niet worden gewijzigd.",
       "tooLarge": "Dit bestand heeft de maximale grootte bereikt. Haal er eerst iets uit.",
@@ -17585,7 +17624,7 @@
       "routines": "Routines"
     },
     "hint": {
-      "handoffs": "Het meeste gebruik deze week kwam van agents die elkaar werk overdragen. Vraag lang werk rechtstreeks aan de agent.",
+      "handoffs": "Het meeste kwam van overdrachten tussen agents.",
       "message": "Bericht aan {{name}}"
     }
   },

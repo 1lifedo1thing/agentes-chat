@@ -5,6 +5,7 @@
   },
   "common": {
     "close": "Cerrar",
+    "details": "Detalles",
     "joinSentences": "{{a}} {{b}}",
     "cantUndo": "No se puede deshacer.",
     "removeName": "Quitar a {{name}}",
@@ -613,6 +614,9 @@
     "hidePassword": "Ocultar contraseña",
     "capsLock": "Bloq Mayús está activado",
     "tooManyTries": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+    "passwordTries_one": "Demasiados intentos de contraseña en esta cuenta. Inténtalo de nuevo en {{count}} minuto.",
+    "passwordTries_many": "Demasiados intentos de contraseña en esta cuenta. Inténtalo de nuevo en {{count}} minutos.",
+    "passwordTries_other": "Demasiados intentos de contraseña en esta cuenta. Inténtalo de nuevo en {{count}} minutos.",
     "accountBlocked": "Esta cuenta no puede iniciar sesión.",
     "passwordHelp": "Al menos 8 caracteres.",
     "passwordOk": "Contraseña válida.",
@@ -12956,7 +12960,44 @@
     "goneIn_one": "se va en {{count}} día",
     "goneIn_many": "se va en {{count}} días",
     "goneIn_other": "se va en {{count}} días",
-    "fileBadge": "ARCH"
+    "fileBadge": "ARCH",
+    "folders": "Carpetas",
+    "folder": "Carpeta",
+    "newFolder": "Nueva carpeta",
+    "renameFolder": "Cambiar nombre de la carpeta",
+    "renameFile": "Cambiar nombre del archivo",
+    "rename": "Cambiar nombre",
+    "create": "Crear",
+    "openFolder": "Abrir",
+    "folderMore": "Más acciones de {{name}}",
+    "path": "Ruta de la carpeta",
+    "up": "Subir un nivel",
+    "folderEmptyTitle": "Esta carpeta está vacía",
+    "folderEmptyText": "Suelta archivos aquí o súbelos. Arrastrar un archivo a una carpeta lo mueve allí.",
+    "folderEmptyViewer": "Los archivos que se pongan en esta carpeta aparecen aquí.",
+    "move": "Mover",
+    "moveToMenu": "Mover a…",
+    "moveTitle_one": "Mover {{count}} elemento",
+    "moveTitle_many": "Mover {{count}} elementos",
+    "moveTitle_other": "Mover {{count}} elementos",
+    "moveTo": "Carpetas",
+    "moveSearch": "Buscar carpetas",
+    "moveEmpty": "Ninguna carpeta se llama “{{q}}”.",
+    "moveHere": "Está aquí",
+    "moveToName": "Mover a {{name}}",
+    "moved_one": "Movido a {{name}}.",
+    "moved_many": "{{count}} elementos movidos a {{name}}.",
+    "moved_other": "{{count}} elementos movidos a {{name}}.",
+    "deleteFolder": "Eliminar carpeta",
+    "deleteFolderTitle": "¿Eliminar “{{name}}”?",
+    "deleteFolderBody": "Las carpetas que tiene dentro también se eliminan. Los archivos que puedes eliminar van a la papelera por 30 días. Los archivos de otras personas suben a donde estaba esta carpeta.",
+    "folderDeletedEmpty": "Carpeta eliminada.",
+    "folderDeleted_one": "Carpeta eliminada. {{count}} archivo fue a la papelera.",
+    "folderDeleted_many": "Carpeta eliminada. {{count}} archivos fueron a la papelera.",
+    "folderDeleted_other": "Carpeta eliminada. {{count}} archivos fueron a la papelera.",
+    "folderDeletedKept_one": "Carpeta eliminada. {{count}} archivo que no puedes eliminar subió un nivel.",
+    "folderDeletedKept_many": "Carpeta eliminada. {{count}} archivos que no puedes eliminar subieron un nivel.",
+    "folderDeletedKept_other": "Carpeta eliminada. {{count}} archivos que no puedes eliminar subieron un nivel."
   },
   "storage": {
     "title": "Almacenamiento",
@@ -15830,6 +15871,9 @@
       "sharingTooMany": "Elige como máximo {{max}} personas y {{max}} roles.",
       "notInDrive": "Esto vive solo en su conversación, así que no se puede compartir."
     },
+    "drive": {
+      "folderIntoItself": "Una carpeta no puede ir dentro de sí misma ni de una carpeta que tiene dentro."
+    },
     "live": {
       "readOnly": "Este archivo ahora es de solo lectura, así que no se puede cambiar.",
       "tooLarge": "Este archivo llegó a su límite de tamaño. Quita algo primero.",
@@ -18001,7 +18045,7 @@
       "routines": "Rutinas"
     },
     "hint": {
-      "handoffs": "La mayor parte del uso de esta semana vino de agentes que se pasan trabajo entre sí. Para trabajos largos, pídeselo directamente al agente.",
+      "handoffs": "La mayor parte vino de traspasos entre agentes.",
       "message": "Escribir a {{name}}"
     }
   },

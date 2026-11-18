@@ -14,6 +14,7 @@ export const en = {
   },
   common: {
     close: "Close",
+    details: "Details",
     joinSentences: "{{a}} {{b}}",
     cantUndo: "This can't be undone.",
     removeName: "Remove {{name}}",
@@ -626,6 +627,9 @@ export const en = {
     hidePassword: "Hide password",
     capsLock: "Caps Lock is on",
     tooManyTries: "Too many tries. Wait a few minutes and try again.",
+    /** Wrong passwords on one account, from this network or from all, ran out: `count` is the minutes until they open again. */
+    passwordTries_one: "Too many password tries on this account. Try again in {{count}} minute.",
+    passwordTries_other: "Too many password tries on this account. Try again in {{count}} minutes.",
     accountBlocked: "This account can't sign in.",
     passwordHelp: "At least 8 characters.",
     passwordOk: "Password ok.",
@@ -12953,6 +12957,43 @@ export const en = {
     goneIn_one: "gone in {{count}} day",
     goneIn_other: "gone in {{count}} days",
     fileBadge: "FILE",
+    /** Folders (the shared Drive's own structure: everyone sees them, a file in one keeps who sees it). */
+    folders: "Folders",
+    folder: "Folder",
+    newFolder: "New folder",
+    renameFolder: "Rename folder",
+    renameFile: "Rename file",
+    rename: "Rename",
+    create: "Create",
+    openFolder: "Open",
+    folderMore: "More actions for {{name}}",
+    /** The trail under a folder's title: "Drive / Reports / 2026". */
+    path: "Folder path",
+    up: "Up one level",
+    folderEmptyTitle: "This folder is empty",
+    folderEmptyText: "Drop files here, or upload them. Dragging a file onto a folder moves it.",
+    folderEmptyViewer: "Files put in this folder show up here.",
+    move: "Move",
+    moveToMenu: "Move to…",
+    moveTitle_one: "Move {{count}} item",
+    moveTitle_other: "Move {{count}} items",
+    moveTo: "Folders",
+    moveSearch: "Search folders",
+    moveEmpty: "No folder named “{{q}}”.",
+    /** Beside the folder the items are in now. */
+    moveHere: "Here now",
+    moveToName: "Move to {{name}}",
+    moved_one: "Moved to {{name}}.",
+    moved_other: "{{count}} items moved to {{name}}.",
+    deleteFolder: "Delete folder",
+    deleteFolderTitle: "Delete “{{name}}”?",
+    deleteFolderBody:
+      "The folders inside it go too. Files you can delete go to the trash for 30 days. Anyone else's files move up to where this folder was.",
+    folderDeletedEmpty: "Folder deleted.",
+    folderDeleted_one: "Folder deleted. {{count}} file went to the trash.",
+    folderDeleted_other: "Folder deleted. {{count}} files went to the trash.",
+    folderDeletedKept_one: "Folder deleted. {{count}} file you can't delete moved up a level.",
+    folderDeletedKept_other: "Folder deleted. {{count}} files you can't delete moved up a level.",
   },
   storage: {
     title: "Storage",
@@ -15668,6 +15709,9 @@ export const en = {
       sharingTooMany: "Choose at most {{max}} people and {{max}} roles.",
       notInDrive: "This lives only in its conversation, so it can't be shared.",
     },
+    drive: {
+      folderIntoItself: "A folder can't go inside itself or a folder inside it.",
+    },
     /** Spreadsheets, presentations and canvases people and agents edit together (ADR 0196). */
     live: {
       readOnly: "This file is read-only now, so it can't be changed.",
@@ -17916,8 +17960,7 @@ export const en = {
     },
     hint: {
       /** Shown when handoffs led the week's use; followed by the `message` link. */
-      handoffs:
-        "Most of this week's use came from agents handing work to each other. Ask the agent directly for long work.",
+      handoffs: "Most of it came from handoffs between agents.",
       /** Opens the DM with the agent that took most of the handed work. */
       message: "Message {{name}}",
     },
