@@ -5,7 +5,7 @@ import { composerLift, listKeyboardRoom } from "../../src/features/chat/dock-hei
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
-test("the dock grows at the conversation's end (who is working, the reply bar): the conversation keeps ending above it", () => {
+test("the dock grows at the conversation's end (a request out of view, the reply bar): the conversation keeps ending above it", () => {
   const chat = src("features/chat/ChatScreen.tsx");
   expect(chat).toContain("followingEnd.current = atEnd && !readHold;");
   // One place does it: two frames on, only a list the grown dock left short (still scrolling down) goes on to the end.
@@ -147,7 +147,30 @@ test("no suggestion pills over the conversation", () => {
   expect(chat).not.toMatch(/\bsuggestions=/);
 });
 
-test('an agent\'s "pensando…" comes with my message, in the same frame: the dock grows once, with it', () => {
+test("who is working is the conversation's last line, scrolling with it: above the composer only before there is one", () => {
+  const chat = src("features/chat/ChatScreen.tsx");
+  // The list's footer, one element for the screen's life: the line redraws with each step of work, the list never does.
+  expect(chat).toContain("const WORK_FOOTER = <WorkFooter />;");
+  expect(chat).toContain("ListFooterComponent={WORK_FOOTER}");
+  expect(chat).toMatch(
+    /function WorkFooter\(\) \{\s*const line = useContext\(WorkLineContext\);\s*return line \? <LiveWorkingLine \{\.\.\.line\} \/> : null;/,
+  );
+  expect(chat).toContain("<WorkLineContext.Provider value={workLine}>");
+  expect(chat).toMatch(/member && showList\s*\? \{\s*runs,/);
+  // The list follows the footer's size as it follows a new row (Legend List does, unless told only some changes).
+  expect(chat).toContain("const GLIDE = { animated: true } as const;");
+  // Over the composer only while the conversation has nothing to end with.
+  expect(chat).toContain("{member && !awayAsk && !waitingFirst && !showList ? (");
+  // The composer's edges and a turn's gap above it, only while the line says something (a return at rest too).
+  expect(chat).toContain(
+    "const lineInList = useMemo(() => ({ paddingHorizontal: 10, paddingTop: rhythm.turn }), [rhythm.turn]);",
+  );
+  expect(chat).toContain("onOpen={openReturns} style={lineInList} />");
+  expect(src("features/chat/LiveRows.tsx")).toContain("<View style={[styles.dock, style]}>");
+  expect(src("features/chat/Returns.tsx")).toContain("<View style={[styles.dock, style]}>");
+});
+
+test('an agent\'s "pensando…" comes with my message, in the same frame: the conversation grows once, with it', () => {
   const chat = src("features/chat/ChatScreen.tsx");
   const optimistic = chat.slice(
     chat.indexOf("onOptimistic: (local) => {"),

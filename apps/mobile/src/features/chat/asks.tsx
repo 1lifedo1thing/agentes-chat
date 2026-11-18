@@ -898,10 +898,10 @@ function pillWords(words: string, color: string) {
 // ── The bar ──────────────────────────────────────────────────────────────────
 
 /**
- * The line above the composer while a request waits out of view (waiting beats working): the agent's face,
- * the breathing square, "Ada espera sua aprovação · Enviar e-mail", "+1" when more wait, and Ver, which
- * scrolls to it. While one agent works here with its live row out of view, the working line's "Parar" stays at its
- * end (a row on screen carries its own).
+ * The line above the composer while a request waits out of view: the agent's face, the breathing square, "Ada espera
+ * sua aprovação · Enviar e-mail", "+1" when more wait, and Ver, which scrolls to it. While one agent works here, the
+ * working line's "Parar" stays at its end: that line is the conversation's last, out of view with it (a row on screen
+ * carries its own).
  */
 export function AskBar({
   away,

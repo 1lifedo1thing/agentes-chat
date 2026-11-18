@@ -103,9 +103,11 @@ import { useHeaderHeight } from "expo-router/react-navigation";
 import {
   type ComponentProps,
   type ComponentRef,
+  createContext,
   memo,
   type ReactNode,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -634,8 +636,8 @@ function Chat({
   );
   const { sendTyping } = live;
   // While an agent works here, a tap on send reaches it at its next pause and holding send stops it and sends (the
-  // server takes a steer). "Parar" itself is a word at the end of the line above the composer (and of the live row
-  // while it shows): the composer keeps only its send, the one ink circle.
+  // server takes a steer). "Parar" itself is a word at the end of the working line, the conversation's last line (and
+  // of the live row while it shows): the composer keeps only its send, the one ink circle.
   const busyRuns = useMemo(() => stoppableInLine(runs).filter((r) => !r.stopping), [runs]);
   const stoppable = useMemo(() => stoppableInLine(runs).filter((r) => canStop(r)), [runs, canStop]);
   // The same object while someone works: the field isn't redrawn by each step of that work.
@@ -1098,8 +1100,9 @@ function Chat({
   // clock and goes by itself when the connection is back, from whatever screen is open (`useSendWaiting`).
   const post = usePostMessage(orgId, channelId, {
     me: { id: meId ?? "" },
-    // The moment my message is in the conversation, as on the web: an agent DM's "pensando…" on it, so the dock grows in
-    // the frame the message appears (from the server's answer it grew while the list was still going down to it). Not
+    // The moment my message is in the conversation, as on the web: an agent DM's "pensando…" on it, so the conversation's
+    // last line says it in the frame the message appears, one glide down to both (from the server's answer it came
+    // while the list was still going down to the message). Not
     // when the agent is at work here already: the server takes the message into that work ("lê na próxima pausa"), no
     // second run; nor for a GIF or a sticker alone, which no agent answers (ADR 0091).
     onOptimistic: (local) => {
@@ -1983,9 +1986,9 @@ function Chat({
     });
     return () => gone.remove();
   }, [freeze]);
-  // A glide (`GLIDE`) holds the keyboard list's room still meanwhile: its instant shift for the dock growing under a
-  // message just sent (the working line coming) cut the motion short. It ends `GLIDE_MS` later; a cover that came
-  // meanwhile keeps its own hold.
+  // A glide (`GLIDE`) holds the keyboard list's room still meanwhile: its instant shift for the dock changing under a
+  // message just sent (the field back to one line, the reply bar leaving) cut the motion short. It ends `GLIDE_MS`
+  // later; a cover that came meanwhile keeps its own hold.
   useLayoutEffect(() => {
     if (glide === 0) return;
     if (!covered.current) freeze.value = true;
@@ -2563,10 +2566,10 @@ function Chat({
     // Only what is drawn from it redraws (`DockHeight`); the waiting requests look again at their band's new bottom.
     dock.set(height);
     watchList();
-    // The dock grew under the conversation (who is working, the reply bar, a taller field) while it follows its end.
-    // The libraries cover only part of it: the keyboard's scroll view shifts the list by the grown inset only when it
-    // rests at its end, and with the keyboard up the list learns the new inset without following it. A message just
-    // sent is still scrolling down when an agent starts thinking, so its last lines stayed under the working line.
+    // The dock grew under the conversation (a request out of view, the reply bar, a taller field) while it follows its
+    // end. The libraries cover only part of it: the keyboard's scroll view shifts the list by the grown inset only when
+    // it rests at its end, and with the keyboard up the list learns the new inset without following it. A message just
+    // sent is still scrolling down when the dock grows, so its last lines stayed under it.
     // Two frames on, once the inset is in (the list's distance counts it), a list left short goes on to the end: one
     // that the scroll view already shifted is at its end and isn't moved twice.
     // While a send glides, the list's own follow takes the grown dock into the same motion.
@@ -2612,6 +2615,49 @@ function Chat({
     [listEnd],
   );
   const showList = !loading && !(rows.length === 0 && runs.length === 0);
+  // Who works and who types here, and at rest who comes back when: the conversation's last line, under its last
+  // message and scrolling with it (the list's footer, `WORK_FOOTER`), as a reply on its way. Pinned above the composer,
+  // it stayed over the words being read and moved the conversation's end each time an agent started or finished.
+  // Above the composer only while there is no conversation to end with. The composer's edges, a turn's gap above it.
+  const lineInList = useMemo(() => ({ paddingHorizontal: 10, paddingTop: rhythm.turn }), [rhythm.turn]);
+  const listReturns = useMemo(
+    () => <HereReturns channelId={channelId} threadId={threadId} onOpen={openReturns} style={lineInList} />,
+    [channelId, threadId, openReturns, lineInList],
+  );
+  const workLine = useMemo<WorkLine | null>(
+    () =>
+      member && showList
+        ? {
+            runs,
+            consults: lineBase,
+            consultData,
+            typing: live.typing,
+            meId,
+            threadId,
+            onSeeConsult: seeConsult,
+            // The agent's browser card is in the conversation, its page always in view: go to it at the end.
+            onOpenBrowser: openBrowserLine,
+            stop: lineStop,
+            rest: listReturns,
+            style: lineInList,
+          }
+        : null,
+    [
+      member,
+      showList,
+      runs,
+      lineBase,
+      consultData,
+      live.typing,
+      meId,
+      threadId,
+      seeConsult,
+      openBrowserLine,
+      lineStop,
+      listReturns,
+      lineInList,
+    ],
+  );
   // The conversation starts below the clear bar by our own padding, on both platforms (the pinned card, when there
   // is one, already holds that room). iOS's automatic inset made keyboard moves land short at the end.
   const hasPin = pinned !== null;
@@ -3036,60 +3082,65 @@ function Chat({
                           <StoppedRunsContext.Provider value={stoppedRuns}>
                             <StopsMovedOnContext.Provider value={stopsMoved}>
                               <OpenedMessagesContext.Provider value={openedMessages}>
-                                <ConversationList
-                                  ref={attachList}
-                                  refScrollView={listScroll}
-                                  style={styles.grow}
-                                  data={shownRows}
-                                  keyExtractor={rowKey}
-                                  getItemType={rowType}
-                                  renderItem={renderItem}
-                                  // The list redraws mounted rows only when this changes: what a row shows beyond its
-                                  // message (the thread link that loads after it, a held state) lives in `renderItem`'s
-                                  // dependencies.
-                                  extraData={renderItem}
-                                  estimatedItemSize={72}
-                                  drawDistance={placed ? Math.round(windowHeight) : OPEN_DRAW_DISTANCE}
-                                  // Opens at the latest message, short conversations sit at the bottom like any chat.
-                                  initialScrollAtEnd
-                                  alignItemsAtEnd
-                                  // New messages, a reply growing word by word and the working line keep the end in view,
-                                  // but only while the person is near it.
-                                  maintainScrollAtEnd={readHold ? false : GLIDE}
-                                  maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
-                                  // Older pages above and rows changing size keep what is on screen still.
-                                  maintainVisibleContentPosition
-                                  // Our own insets, never the system's (the keyboard library's advice for chat lists): the
-                                  // bar's room is the content's top padding, the indicator kept below the bar.
-                                  contentInsetAdjustmentBehavior="never"
-                                  automaticallyAdjustContentInsets={false}
-                                  scrollIndicatorInsets={listIndicator}
-                                  // Still while a sheet or the agent's computer covers the conversation.
-                                  freeze={freeze}
-                                  onReady={onListReady}
-                                  onStartReached={loadOlder}
-                                  // A look at the waiting requests' cards and the live rows, once a frame and only while
-                                  // there is one.
-                                  onScroll={onListScroll}
-                                  onViewableItemsChanged={onViewable}
-                                  viewabilityConfig={STICKER_VIEW}
-                                  onScrollBeginDrag={onDragStart}
-                                  onScrollEndDrag={onScrollSettled}
-                                  onMomentumScrollBegin={onGlide}
-                                  onMomentumScrollEnd={onScrollSettled}
-                                  onStartReachedThreshold={0.5}
-                                  keyboardDismissMode="interactive"
-                                  keyboardShouldPersistTaps="handled"
-                                  keyboardOffset={lift}
-                                  // The dock's height (who is working, someone typing, the connection, a request out of
-                                  // view) and the keyboard move the conversation only at its end. Above it nothing moves:
-                                  // with the library's default the words being read shifted each time an agent started
-                                  // or finished, under the person's finger.
-                                  keyboardLiftBehavior="whenAtEnd"
-                                  contentInsetEndAdjustment={listEnd}
-                                  contentContainerStyle={listPad}
-                                  ListHeaderComponent={listHeader}
-                                />
+                                <WorkLineContext.Provider value={workLine}>
+                                  <ConversationList
+                                    ref={attachList}
+                                    refScrollView={listScroll}
+                                    style={styles.grow}
+                                    data={shownRows}
+                                    keyExtractor={rowKey}
+                                    getItemType={rowType}
+                                    renderItem={renderItem}
+                                    // The list redraws mounted rows only when this changes: what a row shows beyond
+                                    // its message (the thread link that loads after it, a held state) lives in
+                                    // `renderItem`'s dependencies.
+                                    extraData={renderItem}
+                                    estimatedItemSize={72}
+                                    drawDistance={placed ? Math.round(windowHeight) : OPEN_DRAW_DISTANCE}
+                                    // Opens at the latest message, short conversations sit at the bottom like any chat.
+                                    initialScrollAtEnd
+                                    alignItemsAtEnd
+                                    // New messages, a reply growing word by word and the working line (the footer,
+                                    // whose size the list follows too) keep the end in view, but only while the person
+                                    // is near it.
+                                    maintainScrollAtEnd={readHold ? false : GLIDE}
+                                    maintainScrollAtEndThreshold={STICK_TO_END_THRESHOLD}
+                                    // Older pages above and rows changing size keep what is on screen still.
+                                    maintainVisibleContentPosition
+                                    // Our own insets, never the system's (the keyboard library's advice for chat
+                                    // lists): the bar's room is the content's top padding, the indicator kept below
+                                    // the bar.
+                                    contentInsetAdjustmentBehavior="never"
+                                    automaticallyAdjustContentInsets={false}
+                                    scrollIndicatorInsets={listIndicator}
+                                    // Still while a sheet or the agent's computer covers the conversation.
+                                    freeze={freeze}
+                                    onReady={onListReady}
+                                    onStartReached={loadOlder}
+                                    // A look at the waiting requests' cards and the live rows, once a frame and only
+                                    // while there is one.
+                                    onScroll={onListScroll}
+                                    onViewableItemsChanged={onViewable}
+                                    viewabilityConfig={STICKER_VIEW}
+                                    onScrollBeginDrag={onDragStart}
+                                    onScrollEndDrag={onScrollSettled}
+                                    onMomentumScrollBegin={onGlide}
+                                    onMomentumScrollEnd={onScrollSettled}
+                                    onStartReachedThreshold={0.5}
+                                    keyboardDismissMode="interactive"
+                                    keyboardShouldPersistTaps="handled"
+                                    keyboardOffset={lift}
+                                    // The dock's height (the connection, a request out of view, the reply bar) and the
+                                    // keyboard move the conversation only at its end. Above it nothing moves: with the
+                                    // library's default the words being read shifted each time the dock changed, under
+                                    // the person's finger.
+                                    keyboardLiftBehavior="whenAtEnd"
+                                    contentInsetEndAdjustment={listEnd}
+                                    contentContainerStyle={listPad}
+                                    ListHeaderComponent={listHeader}
+                                    ListFooterComponent={WORK_FOOTER}
+                                  />
+                                </WorkLineContext.Provider>
                               </OpenedMessagesContext.Provider>
                             </StopsMovedOnContext.Provider>
                           </StoppedRunsContext.Provider>
@@ -3251,8 +3302,9 @@ function Chat({
                 <Connection status={realtime} />
                 {banner && !org?.deletion ? <NoAiBanner banner={banner} /> : null}
                 <UnavailableLines notices={notices} />
-                {/* Who is working, right above the composer (as on the web), while they work; a request waiting out
-                    of view takes the line, with "Ver" (and the working line's stop while one agent works). */}
+                {/* A request waiting out of view, with "Ver" (and the working line's stop while one agent works).
+                    Who is working sits here only while there is no conversation yet: once there is one, it is the
+                    conversation's last line (`WORK_FOOTER`), scrolling with it. */}
                 {member && awayAsk ? (
                   <LineAskBar
                     away={awayAsk}
@@ -3271,7 +3323,7 @@ function Chat({
                     onSee={seeWaiting}
                   />
                 ) : null}
-                {member && !awayAsk && !waitingFirst ? (
+                {member && !awayAsk && !waitingFirst && !showList ? (
                   <LiveWorkingLine
                     runs={runs}
                     consults={lineBase}
@@ -3280,7 +3332,6 @@ function Chat({
                     meId={meId}
                     threadId={threadId}
                     onSeeConsult={seeConsult}
-                    // The agent's browser card is in the conversation, its page always in view: go to it at the end.
                     onOpenBrowser={openBrowserLine}
                     stop={lineStop}
                     rest={returnLine}
@@ -3840,8 +3891,8 @@ const LineAskBar = memo(function LineAskBar({
 });
 
 /**
- * Who works and who types here, right above the composer (`WorkingLine`, as on the web). On its own: someone typing and
- * the workspace's presence redraw this line, never the conversation.
+ * Who works and who types here (`WorkingLine`): the conversation's last line, or above the composer while there is no
+ * conversation yet. On its own: someone typing and the workspace's presence redraw this line, never the conversation.
  */
 const LiveWorkingLine = memo(function LiveWorkingLine({
   consults,
@@ -3867,18 +3918,34 @@ const LiveWorkingLine = memo(function LiveWorkingLine({
   return <WorkingLine {...line} consults={lineConsults} typing={typers} />;
 });
 
-/** The returns agents set here, at rest in the working line's slot (`ReturnLine`), read where they are drawn. */
+type WorkLine = ComponentProps<typeof LiveWorkingLine>;
+
+/** The working line the conversation ends with, as the screen has it now: null while it has none to show. */
+const WorkLineContext = createContext<WorkLine | null>(null);
+
+/** The list's footer: it redraws with the work going on (through `WorkLineContext`), the list never does. */
+function WorkFooter() {
+  const line = useContext(WorkLineContext);
+  return line ? <LiveWorkingLine {...line} /> : null;
+}
+
+/** One element for the screen's whole life: a new footer each time would redraw the list with every step of work. */
+const WORK_FOOTER = <WorkFooter />;
+
+/** The returns agents set here, at rest in the working line's place (`ReturnLine`), read where they are drawn. */
 function HereReturns({
   channelId,
   threadId,
   onOpen,
+  style,
 }: {
   channelId: string;
   threadId: string | null;
   onOpen: () => void;
+  style?: ComponentProps<typeof ReturnLine>["style"];
 }) {
   const returns = useReturnsHere(channelId, threadId);
-  return returns.length > 0 ? <ReturnLine returns={returns} onOpen={onOpen} /> : null;
+  return returns.length > 0 ? <ReturnLine returns={returns} onOpen={onOpen} style={style} /> : null;
 }
 
 /**

@@ -403,7 +403,7 @@ describe("working line", () => {
     expect(line).not.toContain("<Dither");
     expect(line).not.toContain("glassSolid");
     expect(line).toContain("const plate = [styles.tok, { backgroundColor: c.bg }];");
-    // The requests' lines that take its place are as bare.
+    // The requests' lines over the composer are as bare.
     const asks = await source("features/chat/asks.tsx");
     const askLines = asks.slice(asks.indexOf("export function AskBar("), asks.indexOf("const styles"));
     expect(askLines).not.toContain("glassSolid");
