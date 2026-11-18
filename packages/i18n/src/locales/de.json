@@ -16745,6 +16745,10 @@
       "fault": "zur Diagnose eines fehlgeschlagenen oder hängenden Laufs",
       "ai": "mit einem KI-Assistenten"
     },
+    "operatorReply": {
+      "sentence": "{{who}} hat per E-Mail geantwortet",
+      "request": "Support-Anfrage von {{name}}"
+    },
     "change": {
       "mergedWithoutAsking": "In {{repo}} ohne Nachfrage gemergt",
       "accentChanged": "Hat die Akzentfarbe des Workspace geändert",

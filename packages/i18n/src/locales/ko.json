@@ -16156,6 +16156,10 @@
       "fault": "실패했거나 멈춘 실행을 진단하기 위해",
       "ai": "AI 어시스턴트 사용"
     },
+    "operatorReply": {
+      "sentence": "{{who}}이 이메일로 답했어요",
+      "request": "{{name}}님의 지원 요청"
+    },
     "change": {
       "mergedWithoutAsking": "{{repo}}에서 묻지 않고 병합했어요",
       "accentChanged": "워크스페이스의 강조 색상을 변경했어요",

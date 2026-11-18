@@ -17219,6 +17219,10 @@
       "fault": "para diagnosticar una ejecución que falló o se quedó detenida",
       "ai": "con un asistente de IA"
     },
+    "operatorReply": {
+      "sentence": "{{who}} respondió por correo",
+      "request": "solicitud de soporte de {{name}}"
+    },
     "change": {
       "mergedWithoutAsking": "Hizo merge en {{repo}} sin preguntar",
       "accentChanged": "Cambió el color de acento del espacio de trabajo",

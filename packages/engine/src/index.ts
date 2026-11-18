@@ -243,6 +243,7 @@ export {
 export * from "./operator-lookups";
 export * from "./operator-machines";
 export * from "./operator-people";
+export * from "./operator-reply";
 export * from "./operator-reveal";
 export * from "./operator-review";
 export * from "./operator-runs";

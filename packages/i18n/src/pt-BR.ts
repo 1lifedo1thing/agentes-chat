@@ -17019,6 +17019,10 @@ export const ptBR = {
       fault: "para diagnosticar uma execução que falhou ou travou",
       ai: "com um assistente de IA",
     },
+    operatorReply: {
+      sentence: "{{who}} respondeu por e-mail",
+      request: "pedido de suporte de {{name}}",
+    },
     change: {
       mergedWithoutAsking: "Fez o merge em {{repo}} sem perguntar",
       accentChanged: "Mudou a cor de destaque do workspace",

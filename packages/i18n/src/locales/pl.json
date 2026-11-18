@@ -17847,6 +17847,10 @@
       "fault": "aby zdiagnozować nieudane lub zawieszone uruchomienie",
       "ai": "z pomocą asystenta AI"
     },
+    "operatorReply": {
+      "sentence": "{{who}}: odpowiedziano e-mailem",
+      "request": "prośba o wsparcie od osoby: {{name}}"
+    },
     "change": {
       "mergedWithoutAsking": "Scalono w {{repo}} bez pytania",
       "accentChanged": "Zmieniono kolor akcentu przestrzeni roboczej",

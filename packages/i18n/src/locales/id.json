@@ -16217,6 +16217,10 @@
       "fault": "untuk mendiagnosis proses yang gagal atau macet",
       "ai": "dengan asisten AI"
     },
+    "operatorReply": {
+      "sentence": "{{who}} menjawab lewat email",
+      "request": "permintaan dukungan dari {{name}}"
+    },
     "change": {
       "mergedWithoutAsking": "Merge di {{repo}} tanpa bertanya",
       "accentChanged": "Mengubah warna aksen ruang kerja",

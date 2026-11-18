@@ -16164,6 +16164,10 @@
       "fault": "失敗または停止した実行の調査のため",
       "ai": "AIアシスタントを使用"
     },
+    "operatorReply": {
+      "sentence": "{{who}}がメールで回答",
+      "request": "{{name}}のサポートへの依頼"
+    },
     "change": {
       "mergedWithoutAsking": "{{repo}}で確認なしでマージしました",
       "accentChanged": "ワークスペースのアクセントカラーを変更",

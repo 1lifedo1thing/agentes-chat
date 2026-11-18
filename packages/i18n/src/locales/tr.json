@@ -16682,6 +16682,10 @@
       "fault": "başarısız olan veya takılan bir çalıştırmayı incelemek için",
       "ai": "bir yapay zeka asistanıyla"
     },
+    "operatorReply": {
+      "sentence": "{{who}} e-postayla yanıt verdi",
+      "request": "{{name}} adlı üyenin destek talebi"
+    },
     "change": {
       "mergedWithoutAsking": "{{repo}} içinde sormadan birleştirdi",
       "accentChanged": "Çalışma alanının vurgu rengini değiştirdi",

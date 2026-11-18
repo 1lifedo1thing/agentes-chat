@@ -523,10 +523,14 @@ const PLAIN_LINE = new Set([
   "request_expired",
   "request_unknown",
   "request_used",
-  // Only the operator API's reveal door refuses with these (ADR 0056): no person in the apps meets them.
+  // Only the operator API's reveal door and its replies refuse with these (ADR 0056): no person in the apps meets them.
+  "reveal.limit_day",
   "reveal.limit_minute",
+  "reveal.limit_request",
   "reveal.limit_workspace",
+  "reveal.no_email",
   "reveal.no_error",
+  "reveal.request_old",
   "right_hand.missing",
   "right_hand_approvals.budget",
   // "Quem pode" sends only the rows and steps the cargo page draws (`areaRows`, `rowMax`): another is a client fault.
