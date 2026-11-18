@@ -1,6 +1,7 @@
 import type { PlanUsage, PubSub } from "@agenteschat/adapters";
 import { and, type Database, desc, type Executor, eq, inArray, type SQL, schema, sql } from "@agenteschat/db";
 import { extraUsageLeft, PLAN_PAUSE, planBinding, planState } from "@agenteschat/ui/plan-state";
+import { ACCESS_COLUMNS, type AgentAccessFields, managesRoutinesOf, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { UUID } from "./authority";
 import { forgetPlanLimit, storedPlanUsage } from "./brains/select";
@@ -10,7 +11,7 @@ import { ConflictError, ForbiddenError } from "./errors";
 import { publishMessageCreated } from "./events";
 import { inMillisecondOf } from "./message-place";
 import { type Message, messageView } from "./messages";
-import { can, type Membership, requireActiveMembership } from "./organizations";
+import { type Membership, requireActiveMembership } from "./organizations";
 import { enqueue } from "./outbox";
 import { isRightHand } from "./right-hand";
 import { missStaleRoutineRun } from "./routine-firing";
@@ -900,16 +901,30 @@ export async function overrideUsagePause(
 
 /**
  * Who may press Continuar agora on a paused run: the card's people (`mayStopRun`) and, for a routine's run, Rotinas'
- * (its creator, whoever manages routines).
+ * (its creator, whoever manages that agent's routines: `managesRoutinesOf`, ADR 0085 addendum of 2026-11-17). The
+ * agent is the run's own, even when its routine moved to another since: `row.agent`, its `ACCESS_COLUMNS` when the
+ * caller's select has them (a caller checking many runs passes them), else read here once for both rules.
  */
 export async function mayContinuePause(
   db: Executor,
   userId: string,
   membership: Membership,
-  row: Parameters<typeof mayStopRun>[3] & { routineId: string | null; routineCreatorId: string | null },
+  row: Parameters<typeof mayStopRun>[3] & {
+    routineId: string | null;
+    routineCreatorId: string | null;
+    agent?: AgentAccessFields;
+  },
 ) {
-  if (row.routineId && (row.routineCreatorId === userId || can(membership, "manage_routines"))) return true;
-  return mayStopRun(db, userId, membership, row);
+  if (!row.routineId) return mayStopRun(db, userId, membership, row);
+  if (row.routineCreatorId === userId) return true;
+  const [agent] = row.agent
+    ? [row.agent]
+    : await db
+        .select(ACCESS_COLUMNS)
+        .from(schema.agents)
+        .where(and(eq(schema.agents.orgId, row.run.orgId), eq(schema.agents.id, row.run.agentId)));
+  if (agent && managesRoutinesOf(agent, userId, membership)) return true;
+  return mayStopRun(db, userId, membership, { ...row, agent });
 }
 
 /**
@@ -928,7 +943,14 @@ export async function continuePausedRuns(
   const membership = await requireActiveMembership(db, userId, orgId);
   const rows = await db
     .select({
-      run: { id: agentRuns.id, orgId: agentRuns.orgId, triggerMessageId: agentRuns.triggerMessageId },
+      run: {
+        id: agentRuns.id,
+        orgId: agentRuns.orgId,
+        agentId: agentRuns.agentId,
+        triggerMessageId: agentRuns.triggerMessageId,
+      },
+      // What `mayContinuePause` reads of each run's agent, read with the runs.
+      agent: ACCESS_COLUMNS,
       ownerUserId: agents.ownerUserId,
       requester: runRequester,
       routineId: routines.id,
@@ -1002,7 +1024,7 @@ export async function continueUsagePause(
   const { db } = deps;
   const { agentRuns, agents, messages } = schema;
   const [row] = await db
-    .select({ run: agentRuns, ownerUserId: agents.ownerUserId, requester: runRequester })
+    .select({ run: agentRuns, agent: REACH_COLUMNS, ownerUserId: agents.ownerUserId, requester: runRequester })
     .from(agentRuns)
     .innerJoin(agents, eq(agents.id, agentRuns.agentId))
     .leftJoin(messages, and(eq(messages.id, agentRuns.triggerMessageId), eq(messages.orgId, agentRuns.orgId)))
