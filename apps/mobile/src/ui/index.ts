@@ -70,6 +70,7 @@ export { LineIcon, type LineIconProps } from "./LineIcon";
 export { LIST_AVATAR, LIST_INSET, LIST_PREVIEW, LIST_TIME, ListRow, type ListRowProps } from "./ListRow";
 export { Locked } from "./Locked";
 export { LogoMark } from "./LogoMark";
+export { MarkIcon } from "./MarkIcon";
 export { MediaRow, type MediaRowProps } from "./MediaRow";
 export { MEDIA_ROW, type MediaRowSize } from "./media-row";
 export {
