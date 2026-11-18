@@ -161,9 +161,11 @@ import {
   type ComposerProps,
   type ComposerWorking,
   Count,
+  Glass,
   type HeaderAction,
   Icon,
   LineIcon,
+  liquidHere,
   PressScale,
   RISE_IN,
   type SendHow,
@@ -3672,6 +3674,7 @@ const ChatComposer = memo(function ChatComposer({
 /**
  * Back to the latest messages: a round button at the bottom right, right above the composer, as on the web.
  * It counts what arrived below, in red when one mentions me; its label says who spoke and who is writing.
+ * Liquid Glass on iOS 26, as the composer under it wears, over the messages it floats on; a raised plate before it.
  */
 function ToLatest({ unseen, onPress }: { unseen: Unseen; onPress: () => void }) {
   const { t } = useTranslation();
@@ -3704,8 +3707,12 @@ function ToLatest({ unseen, onPress }: { unseen: Unseen; onPress: () => void }) 
         accessibilityLabel={
           said.length > 0 ? t("mobile.chat.toLatestNew", { text: said.join(" · ") }) : t("mobile.chat.toLatest")
         }
-        style={[styles.jump, { backgroundColor: colors.raised, boxShadow: `${shadows.e2}, ${shadows.top}` }]}
+        style={[
+          styles.jump,
+          liquidHere ? null : { backgroundColor: colors.raised, boxShadow: `${shadows.e2}, ${shadows.top}` },
+        ]}
       >
+        {liquidHere ? <Glass liquid interactive={false} style={styles.jumpGlass} /> : null}
         <View style={styles.jumpIcon}>
           <Icon name="down" size={20} color={colors.ink2} />
         </View>
@@ -4168,6 +4175,7 @@ const styles = StyleSheet.create({
   float: { paddingHorizontal: 10 },
   older: { height: OLDER_ROW, alignItems: "center", justifyContent: "center" },
   jump: { width: 40, height: 40, borderRadius: 20 },
+  jumpGlass: { ...StyleSheet.absoluteFill, borderRadius: 20 },
   jumpIcon: { flex: 1, alignItems: "center", justifyContent: "center" },
   jumpCount: { position: "absolute", top: -6, right: -6, borderWidth: 2, borderRadius: 999 },
   pillFace: { borderWidth: 2, borderRadius: 8 },
