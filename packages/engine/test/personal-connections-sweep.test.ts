@@ -34,6 +34,7 @@ import {
   listRoutines,
   listRuns,
   type McpConnect,
+  managedWebhookRoutine,
   mcpSessionOver,
   openPersonAgentDm,
   postPersonMessage,
@@ -453,6 +454,11 @@ describe("what a person's own connection leaves for everyone else", () => {
       await expect(
         updateRoutine(routineDeps(f), who, f.org.id, routine.id, { trigger: { type: "webhook", methods: ["POST"] } }),
       ).rejects.toMatchObject({ code: "routine.connector_not_yours" });
+    // Its address fires his routine: nobody else gets it.
+    for (const who of [f.owner.id, dora.id])
+      await expect(managedWebhookRoutine(f.db, who, f.org.id, routine.id)).rejects.toMatchObject({
+        code: "routine.connector_not_yours",
+      });
   });
 
   test("a big connection behind its directory: no line, no listing, no service for anyone else", async () => {

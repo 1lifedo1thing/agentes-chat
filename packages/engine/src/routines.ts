@@ -1616,6 +1616,10 @@ export async function managedWebhookRoutine(db: Database, actorId: string, orgId
   if (routine.event !== WEBHOOK_EVENT) {
     throw new NotFoundError("This routine isn't started by a webhook", "routine.no_webhook");
   }
+  // A person's own connection's address fires that person's routine: theirs alone, as its trigger is (`views`).
+  const source = await connectorOf(db, routine.id);
+  const refusal = source && (await connectorRefusal(db, { orgId, createdByUserId: actorId }, source.connectionId));
+  if (refusal) throw refusal;
   return routine;
 }
 
