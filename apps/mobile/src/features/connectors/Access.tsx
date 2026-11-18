@@ -7,18 +7,19 @@ import {
   resourcesOf,
   saveLevels,
 } from "@agenteschat/client/lib/access-levels";
-import { managesAgent } from "@agenteschat/client/lib/audience";
+import { canEditAudience, managesAgent } from "@agenteschat/client/lib/audience";
 import type { ConnectedItem } from "@agenteschat/client/lib/connected";
 import { githubDisconnectNote } from "@agenteschat/client/lib/github-app";
 import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
+import { useOrg } from "@/providers/org";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, Icon, useToast } from "@/ui";
 import { useAgentsAccess } from "../settings/hooks";
 import { confirmAction } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
-import { useColors, useDirectory, useOrgId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { errorHaptic, successHaptic } from "../shared/parts";
 import { pickLevel } from "./pick-level";
 
@@ -26,11 +27,23 @@ import { pickLevel } from "./pick-level";
  * Who uses a connection, as the phone's settings list it: one row per agent, its face in its sky at 36, the level
  * as the row's value ("Sem acesso", "Ler", "Ler e escrever", the web's words) with the mark of a value that changes
  * in place; a tap opens the system's choice. Who may not change it sees the value alone. What always asks is the
- * footer, in one sentence. One way to give a level, never two: the rows are the whole of it.
+ * footer, in one sentence. One way to give a level, never two: the rows are the whole of it. A personal connection
+ * (its person's own) lists only the agents its person may change.
  */
-export function AgentLevelList({ connectionId, title }: { connectionId: string; title?: string }) {
+export function AgentLevelList({
+  connectionId,
+  title,
+  personal = false,
+}: {
+  connectionId: string;
+  title?: string;
+  personal?: boolean;
+}) {
   const { t } = useTranslation();
   const dir = useDirectory();
+  const { org } = useOrg();
+  const me = useMeId();
+  const agents = personal ? dir.agents.filter((a) => canEditAudience(org ?? undefined, a, me ?? "")) : dir.agents;
   const qc = useQueryClient();
   const orgId = useOrgId();
   // A new connection: every agent's tree must be read again to show it.
@@ -42,12 +55,13 @@ export function AgentLevelList({ connectionId, title }: { connectionId: string; 
     <View>
       <GroupedHeader>{title ?? t("mobile.connectors.whoTitle")}</GroupedHeader>
       <GroupedList>
-        {dir.agents.map((a) => (
+        {agents.map((a) => (
           <AgentLevelRow
             key={a.id}
             orgId={orgId}
             agentId={a.id}
             connectionId={connectionId}
+            personal={personal}
             leading={<AgentFace agentId={a.id} size={36} live={false} />}
           />
         ))}
@@ -67,11 +81,13 @@ function AgentLevelRow({
   orgId,
   agentId,
   connectionId,
+  personal,
   leading,
 }: {
   orgId: string;
   agentId: string;
   connectionId: string;
+  personal: boolean;
   leading: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -80,13 +96,18 @@ function AgentLevelRow({
   const dir = useDirectory();
   const toast = useToast();
   const word = useLevelWord();
+  const { org } = useOrg();
+  const me = useMeId();
   const agent = dir.agentById.get(agentId);
   const access = useAgentAccess(orgId, agentId);
   const [saving, setSaving] = useState<Level | null>(null);
   const resource = access.data ? resourcesOf(access.data).find((r) => r.id === `connector:${connectionId}`) : undefined;
   const current: LevelState = saving ?? (resource ? levelOf(resource) : "none");
-  // Giving an agent a connector is for who manages that agent, like its scopes (the server checks it again).
-  const mayChange = managesAgent(agent) && Boolean(resource);
+  // Giving an agent a connector is for who manages that agent, like its scopes (ADR 0085 addendum of 2026-11-17); one's
+  // own personal connection goes on the agents its person may change (the server checks both again).
+  const mayChange =
+    (personal ? Boolean(agent && canEditAudience(org ?? undefined, agent, me ?? "")) : managesAgent(agent)) &&
+    Boolean(resource);
   const choose = (level: Level) => {
     if (!resource || level === current) return;
     setSaving(level);

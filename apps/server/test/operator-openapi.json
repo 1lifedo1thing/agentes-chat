@@ -6995,6 +6995,10 @@
             "type": "boolean",
             "description": "It has a logo."
           },
+          "poweredBy": {
+            "type": "boolean",
+            "description": "Its pages before sign-in end with the powered-by line."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -7004,7 +7008,7 @@
             "format": "date-time"
           }
         },
-        "required": ["host", "name", "accent", "logo", "createdAt", "updatedAt"]
+        "required": ["host", "name", "accent", "logo", "poweredBy", "createdAt", "updatedAt"]
       },
       "OperatorHostLook": {
         "type": "object",
@@ -7037,6 +7041,10 @@
             },
             "required": ["contentType", "base64"],
             "description": "Its logo, checked by its bytes, metadata removed; shown at the sign-in page's lockup height. Null: the name alone. Left out: left as it is."
+          },
+          "poweredBy": {
+            "type": "boolean",
+            "description": "Its pages before sign-in end with a line linking to the software's site. Left out: left as it is (true on a new host)."
           }
         },
         "required": ["name"]

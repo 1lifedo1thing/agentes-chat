@@ -1,5 +1,5 @@
 {
-  "id": "82610483-7b14-4382-b684-fa30b45dbfe9",
+  "id": "6f281c15-2cf9-4f79-bc10-4be4eefd2aee",
   "prevId": "f24af517-0ac8-49a4-ab0c-9d809c6f4035",
   "version": "7",
   "dialect": "postgresql",
@@ -239,20 +239,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
-        },
-        "editor_user_ids": {
-          "name": "editor_user_ids",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::text[]"
-        },
-        "editor_role_ids": {
-          "name": "editor_role_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
         },
         "autonomy_brakes": {
           "name": "autonomy_brakes",
@@ -16027,6 +16013,12 @@
         },
         "transcript": {
           "name": "transcript",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profiles": {
+          "name": "profiles",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false

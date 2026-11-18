@@ -13,6 +13,7 @@ import {
 } from "@agenteschat/client";
 import { managesRoutinesOf } from "@agenteschat/client/lib/audience";
 import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
+import { upperFirst } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { splitAddresses } from "@agenteschat/client/lib/mail";
 import { routineReachWarnings } from "@agenteschat/client/lib/reach";
@@ -819,7 +820,11 @@ function Form({ routine }: { routine: Routine | undefined }) {
               <GroupedRow
                 icon="mail"
                 label={t("mail.routine.mailbox")}
-                value={mailbox?.address}
+                value={
+                  mailbox?.address ??
+                  // Someone else's mailbox the routine already watches isn't listed to the viewer: it stays, unnamed.
+                  (d.email.accountId ? upperFirst(t("mail.routine.unknownMailbox"), i18n.language) : undefined)
+                }
                 chevron={mailList.length > 1}
                 {...(mailList.length > 1 ? { onPress: pickMailbox } : {})}
               />

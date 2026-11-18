@@ -2042,8 +2042,36 @@
     {
       "idx": 293,
       "version": "7",
-      "when": 1794962626821,
-      "tag": "0296_agent_editors",
+      "when": 1794963495178,
+      "tag": "0296_run_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 294,
+      "version": "7",
+      "when": 1794964106130,
+      "tag": "0297_operator_events_covering",
+      "breakpoints": true
+    },
+    {
+      "idx": 295,
+      "version": "7",
+      "when": 1794984191596,
+      "tag": "0298_host_powered_by",
+      "breakpoints": true
+    },
+    {
+      "idx": 296,
+      "version": "7",
+      "when": 1794984291596,
+      "tag": "0299_personal_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 297,
+      "version": "7",
+      "when": 1794994291596,
+      "tag": "0300_agent_editors",
       "breakpoints": true
     }
   ]
