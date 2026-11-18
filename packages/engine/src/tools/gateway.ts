@@ -1346,7 +1346,7 @@ export function createToolGateway(deps: {
         ...(tool?.connectorLabel ? { connector: tool.connectorLabel } : {}),
         ...(tool?.service ? { service: tool.service } : {}),
         ...(tool?.serviceIcon ? { serviceIcon: tool.serviceIcon } : {}),
-        ...(tool?.ownerUserId ? { personal: true } : {}),
+        ...(tool?.ownerUserId ? { personal: true, personalOf: tool.ownerUserId } : {}),
       });
       /** The rules ("Aprovar sempre") this call ran under instead of asking. */
       let approvedBy: string[] | null = null;

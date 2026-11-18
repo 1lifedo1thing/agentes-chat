@@ -632,6 +632,88 @@ describe("what a person's own connection leaves for everyone else", () => {
     expect(found.content).not.toContain("carol@example.com");
   });
 
+  test("a trace read while his call is still running keeps its input from everyone else", async () => {
+    const s = await walterUsedHisCrm();
+    await f.db.update(schema.agents).set({ ownerUserId: s.bia.id }).where(eq(schema.agents.id, f.agent.id));
+    await f.db.insert(schema.customTools).values({
+      orgId: f.org.id,
+      connectionId: s.crm.id,
+      name: "count_notes",
+      access: "read",
+      suggestedAccess: "read",
+    });
+    let answer = () => {};
+    const held = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    const slow: McpConnect = async () => {
+      const server = new McpServer({ name: "slow-crm", version: "1" });
+      server.registerTool(
+        "count_notes",
+        { description: "Counts the notes of a contact", inputSchema: { email: z.string() } },
+        async () => {
+          await held;
+          return { content: [{ type: "text", text: "Seven notes for dave@example.com" }] };
+        },
+      );
+      const [client, transport] = InMemoryTransport.createLinkedPair();
+      await server.connect(transport);
+      return mcpSessionOver(client);
+    };
+    // He asks in the channel he shares with Bia, who owns the agent and reads its runs.
+    const asked = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: s.deals.id,
+      author: { type: "person", userId: s.walter.id },
+      body: "@dev count Dave's notes",
+    });
+    const [run] = await f.db.transaction((tx) => createAgentRuns(tx, asked, [f.agent.id], "mention"));
+    if (!run) throw new Error("no run");
+    await f.db
+      .update(schema.agentRuns)
+      .set({ status: "running", startedAt: new Date(), heartbeatAt: new Date() })
+      .where(eq(schema.agentRuns.id, run.id));
+    const gateway = createToolGateway({ sources: [createConnectorToolSource({ ...depsOf(), connect: slow })] });
+    const ctx: ToolContext = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: run.id,
+      channelId: s.deals.id,
+      threadRootId: asked.id,
+      triggerMessageId: asked.id,
+    };
+    const call = gateway.invoke(ctx, {
+      toolUseId: "slow",
+      name: `${s.crm.toolPrefix}_count_notes`,
+      input: { email: "dave@example.com" },
+    });
+    for (let i = 0; i < 100; i++) {
+      const [step] = await f.db
+        .select({ id: schema.agentRunSteps.id })
+        .from(schema.agentRunSteps)
+        .where(and(eq(schema.agentRunSteps.runId, run.id), eq(schema.agentRunSteps.kind, "tool_call")));
+      if (step) break;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    const trace = async (userId: string) => JSON.stringify(await getRun(f.db, userId, f.org.id, run.id));
+    try {
+      for (const who of [s.bia.id, f.owner.id]) {
+        const during = await trace(who);
+        expect(during).toContain("_count_notes");
+        expect(during).not.toContain("dave@example.com");
+      }
+      // He reads the agent's runs once he is an admin: his own call is whole to him.
+      await makeAdmin(f.db, f.org.id, s.walter.id);
+      expect(await trace(s.walter.id)).toContain("dave@example.com");
+    } finally {
+      answer();
+      await call;
+    }
+    for (const who of [s.bia.id, f.owner.id]) expect(await trace(who)).not.toContain("dave@example.com");
+    expect(await trace(s.walter.id)).toContain("Seven notes for dave@example.com");
+  });
+
   test("a widget refreshing through his own connection reads plain refreshing to anyone else", async () => {
     const s = await walterUsedHisCrm();
     const dash = routineDeps(f);

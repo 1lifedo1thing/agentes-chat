@@ -810,11 +810,20 @@ export async function getRun(db: Database, actorId: string, orgId: string, runId
     .where(eq(agentRunSteps.runId, runId))
     .orderBy(asc(agentRunSteps.seq));
   const hidden = await othersPersonalTools(db, orgId, runId, actorId);
-  if (hidden.size === 0) return { run: summary, steps };
+  // A call still running has no audit row yet: its step says whose connection it goes through.
+  const running = new Set(
+    steps.flatMap((s) =>
+      s.kind === "tool_call" && typeof s.data.personalOf === "string" && s.data.personalOf !== actorId
+        ? [String(s.data.toolUseId)]
+        : [],
+    ),
+  );
+  if (hidden.size === 0 && running.size === 0) return { run: summary, steps };
   return {
     run: summary,
     steps: steps.map((s) =>
-      (s.kind === "tool_call" || s.kind === "tool_result") && hidden.has(String(s.data.name))
+      (s.kind === "tool_call" || s.kind === "tool_result") &&
+      (hidden.has(String(s.data.name)) || running.has(String(s.data.toolUseId)))
         ? { ...s, data: { toolUseId: s.data.toolUseId, name: s.data.name, isError: s.data.isError } }
         : s,
     ),
