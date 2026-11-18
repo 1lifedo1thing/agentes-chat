@@ -126,6 +126,7 @@ import type { SkillDeps } from "./skills";
 import { TEAM_HELLO_JOB } from "./standing";
 import { purgeOrgFiles, purgeUserFiles, runMigration, type StorageDeps } from "./storage";
 import { postStretchCard, STRETCH_JOB, type StretchHold } from "./stretch";
+import { forgetReplyWords } from "./support-requests";
 import { fallBack, queueSurfaceDelivery, SURFACE_FALLBACK_JOB } from "./surfaces/deliveries";
 import { sayTeamHello } from "./team-templates";
 import { postTeamWeek, TEAM_DAY_JOB, TEAM_WEEK_JOB } from "./team-week";
@@ -986,14 +987,19 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       );
     },
     "email.send": async (job, ctx) => {
+      // What an email's job must not keep once it can't be sent again: a code's whole row, a reply's own words.
+      const forget = async () => {
+        await forgetCodeEmail(deps.db, job);
+        await forgetReplyWords(deps.db, job);
+      };
       try {
         if (!deps.email) throw new PermanentJobError("no email sender configured");
         await sendQueuedEmail(deps.email, job.payload, deps.emailArt);
       } catch (error) {
-        if (ctx.finalAttempt || error instanceof PermanentJobError) await forgetCodeEmail(deps.db, job);
+        if (ctx.finalAttempt || error instanceof PermanentJobError) await forget();
         throw error;
       }
-      await forgetCodeEmail(deps.db, job);
+      await forget();
     },
     // The team says hi in #general once it can work (ADR 0162).
     [TEAM_HELLO_JOB]: async (job) => {
