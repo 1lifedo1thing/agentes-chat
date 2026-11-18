@@ -48,7 +48,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import { PixelStop } from "@/agent/PixelMarks";
 import { readValueSync, STORED, writeValueSync } from "@/lib/storage";
 import { FADE_OUT, RISE_IN } from "./entrances";
-import { Glass, liquidHere } from "./Glass";
+import { Glass } from "./Glass";
 import { haptics } from "./haptics";
 import { Icon } from "./Icon";
 import { PRESS_IN, PRESS_OUT, PressScale } from "./PressScale";
@@ -172,14 +172,6 @@ const SEND = 36;
 const INSET = (FIELD - SEND) / 2;
 /** The field's ring and its soft shadow; a voice take's bar wears the same. */
 const FIELD_SHADOW = (line: string) => `0px 0px 0px 0.5px ${line}, 0px 6px 18px -10px rgba(0, 0, 0, 0.25)`;
-/**
- * What the field, a voice take's bar and the formatting bar stand on: on iOS 26 the system's Liquid Glass, as the
- * conversation's bar and its buttons wear it (its own edge and shadow, no ring); before it, and on Android, the raised
- * pill with its ring and shadow. The glass is drawn under what they hold, never answering a touch itself: the field
- * takes the finger for its words, the buttons on it have their own press.
- */
-const raisedGround = (raised: string, shadow: string) =>
-  liquidHere ? null : { backgroundColor: raised, boxShadow: shadow };
 /** Words left in a conversation's field, by `draftKey`, while the app runs. */
 const DRAFTS = new Map<string, string>();
 
@@ -521,9 +513,8 @@ export function Composer({
             <View
               accessibilityRole="toolbar"
               accessibilityLabel={t("composer.format.toolbar")}
-              style={[styles.format, raisedGround(colors.raised, `${shadows.e1}, ${shadows.top}`)]}
+              style={[styles.format, { backgroundColor: colors.raised, boxShadow: `${shadows.e1}, ${shadows.top}` }]}
             >
-              {liquidHere ? <Glass liquid interactive={false} style={styles.formatGlass} /> : null}
               {FORMAT_KINDS.map((kind) => (
                 <PressScale
                   key={kind}
@@ -596,9 +587,8 @@ export function Composer({
         <Animated.View
           entering={reducedMotion ? undefined : RISE_IN}
           exiting={reducedMotion ? undefined : FADE_OUT}
-          style={[styles.bar, raisedGround(colors.raised, FIELD_SHADOW(colors.line2))]}
+          style={[styles.bar, { backgroundColor: colors.raised, boxShadow: FIELD_SHADOW(colors.line2) }]}
         >
-          {liquidHere ? <Glass liquid interactive={false} style={styles.fieldGlass} /> : null}
           {voice.bar}
         </Animated.View>
       ) : null}
@@ -607,13 +597,14 @@ export function Composer({
         <Animated.View
           style={[
             styles.field,
-            raisedGround(colors.raised, FIELD_SHADOW(colors.line2)),
-            { paddingRight: button || mediaButton || mic ? INSET : 14 },
+            {
+              backgroundColor: colors.raised,
+              boxShadow: FIELD_SHADOW(colors.line2),
+              paddingRight: button || mediaButton || mic ? INSET : 14,
+            },
             shakeStyle,
           ]}
         >
-          {/* Under everything it holds, the whole field's size as it grows a line or takes attachments. */}
-          {liquidHere ? <Glass liquid interactive={false} style={styles.fieldGlass} /> : null}
           {/* What goes with the message: a row of its own across the field, over the words and the send button. */}
           {attachments ? <View style={styles.attachRow}>{attachments}</View> : null}
           {/* The placeholder is ours, on one line (cut with "…"): a long one wrapped and grew the empty field. */}
@@ -693,11 +684,7 @@ export function Composer({
   );
 }
 
-/**
- * The round glass "+": a piece of its own, so the keys typed in the field never draw it again. Liquid Glass on iOS 26
- * beside the field's (its own edge, no ring); the blur and a hairline before it. One press: the kit's scale, never the
- * glass's own answer on top of it (`IconButton`).
- */
+/** The round glass "+": a piece of its own, so the keys typed in the field never draw it again. */
 const PlusButton = memo(function PlusButton({ label, onPress }: { label: string; onPress: () => void }) {
   const { colors, shadows } = useTheme();
   return (
@@ -706,9 +693,9 @@ const PlusButton = memo(function PlusButton({ label, onPress }: { label: string;
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={[styles.plus, liquidHere ? null : { boxShadow: `0px 0px 0px 0.5px ${colors.line2}, ${shadows.top}` }]}
+      style={[styles.plus, { boxShadow: `0px 0px 0px 0.5px ${colors.line2}, ${shadows.top}` }]}
     >
-      <Glass liquid interactive={false} style={styles.plusGlass} intensity={50}>
+      <Glass style={styles.plusGlass} intensity={50}>
         <View style={styles.center}>
           <Icon name="plus" size={24} color={colors.ink2} />
         </View>
@@ -929,7 +916,6 @@ const styles = StyleSheet.create({
   formatBleed: { marginHorizontal: -10 },
   formatRow: { paddingHorizontal: 10, paddingBottom: 8 },
   format: { flexDirection: "row", height: 44, padding: 4, gap: 2, borderRadius: 22 },
-  formatGlass: { ...StyleSheet.absoluteFill, borderRadius: 22 },
   formatButton: { width: SEND, height: SEND, borderRadius: SEND / 2 },
   row: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
   plus: { width: FIELD, height: FIELD, borderRadius: FIELD / 2 },
@@ -948,8 +934,6 @@ const styles = StyleSheet.create({
     paddingVertical: INSET,
     paddingLeft: 14,
   },
-  // The field's glass, and a take's bar's: the capsule at one line, its corners kept as it grows.
-  fieldGlass: { ...StyleSheet.absoluteFill, borderRadius: FIELD / 2 },
   // A take's row above the field: the field's capsule at its one-line height, its 36 controls INSET from every edge.
   bar: {
     marginBottom: 8,

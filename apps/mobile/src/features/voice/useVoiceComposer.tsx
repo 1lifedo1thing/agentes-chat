@@ -375,8 +375,7 @@ export function useVoiceComposer(
           pointerEvents="none"
         >
           <Animated.View style={lockStyle}>
-            {/* The field's own glass (Liquid Glass on iOS 26): a label, never answering a touch. */}
-            <Glass liquid interactive={false} style={styles.capsule} intensity={50}>
+            <Glass style={styles.capsule} intensity={50}>
               <Icon name="lock" size={14} color={c.muted} />
               <Text variant="footnote" tone="muted" numberOfLines={1}>
                 {t("mobile.voice.slideUpToLock")}
@@ -468,7 +467,7 @@ export function useVoiceComposer(
       pointerEvents="none"
       accessibilityLiveRegion="polite"
     >
-      <Glass liquid interactive={false} style={styles.lineGlass} intensity={50}>
+      <Glass style={styles.lineGlass} intensity={50}>
         <View style={[styles.dot, { backgroundColor: c.danger }]} />
         <Text variant="footnote" numberOfLines={1} style={styles.lineText}>
           <Text variant="footnote" style={styles.lineBold}>
