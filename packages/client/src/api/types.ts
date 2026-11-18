@@ -184,11 +184,15 @@ export interface AuthConfig {
   host?: HostLook | null;
 }
 
-/** A registered host's look (`AuthConfig.host`): `accent` a `#rrggbb` or null, `logoUrl` on that host or null. */
+/**
+ * A registered host's look (`AuthConfig.host`): `accent` a `#rrggbb` or null, `logoUrl` on that host or null,
+ * `poweredBy` whether its pages end with the powered-by line.
+ */
 export interface HostLook {
   name: string;
   accent: string | null;
   logoUrl: string | null;
+  poweredBy: boolean;
 }
 
 export interface ErrorReportsConfig {
