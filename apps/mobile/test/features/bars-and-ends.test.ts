@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { restingKeyboard } from "../../src/features/chat/dock-height";
+import { composerLift, listKeyboardRoom } from "../../src/features/chat/dock-height";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 
@@ -25,7 +25,7 @@ test("the dock's height redraws only what is drawn from it, never the whole conv
   // Held outside the screen's state: a field growing a line, the working line coming or going drew the whole screen.
   expect(chat).not.toContain("setComposerHeight");
   expect(chat).toContain("const [dock] = useState(createDockHeight);");
-  expect(chat).toMatch(/endInset\.value = height;[\s\S]{0,200}dock\.set\(height\);\s*watchList\(\);/);
+  expect(chat).toMatch(/boxHeight\.set\(height\);[\s\S]{0,200}dock\.set\(height\);\s*watchList\(\);/);
   // Read where it is drawn: the keyboard's gesture area, an empty conversation's greeting, the skeleton.
   expect(chat).toContain("<DockGestureArea dock={dock} lift={lift}>");
   expect(chat.match(/<DockRoom dock=\{dock\}>/g)).toHaveLength(2);
@@ -49,39 +49,55 @@ test("a pushed screen's large title is the system's on iOS, over a scroll view t
   expect(header).toContain("headerLargeTitleShadowVisible: false,");
 });
 
-test("the dock settles on the system's word once the keyboard is shown or gone, and looks again on a doubt", () => {
-  const truth = src("features/chat/keyboard-truth.ts");
-  // The system's notifications that a move finished settle it at once.
-  expect(truth).toMatch(
-    /Keyboard\.addListener\("keyboardDidHide", \(\) => \{\s*movingUntil = 0;\s*settle\(false, 0\);/,
-  );
-  expect(truth).toMatch(
-    /Keyboard\.addListener\("keyboardDidShow", \(e\) => \{\s*movingUntil = 0;\s*settle\(true, e\.endCoordinates\.height\);/,
-  );
-  // A doubt looks at the system's state a moment later, never while the system says a move is under way.
-  expect(truth).toContain("settle(Keyboard.isVisible(), Keyboard.metrics()?.height ?? 0);");
-  expect(truth).toMatch(
-    /const wait = movingUntil - Date\.now\(\);\s*if \(wait > 0\) \{\s*timer = setTimeout\(check, wait\);/,
-  );
-  expect(truth).toContain('if (state === "active") look.current();');
-  // On iOS only: Android's height leaves out the navigation bar the keyboard library counts edge to edge, so a late
-  // event sank the box behind the keys (and the library ends every move there itself).
-  expect(truth).toMatch(/useEffect\(\(\) => \{\s*if \(Platform\.OS !== "ios"\) return;/);
-  // The doubts: the library ending a move, the list let go, the dock changing height, the screen coming back.
+test("the dock rides the keyboard library's values alone: nothing rewrites them from a notification's height", () => {
   const chat = src("features/chat/ChatScreen.tsx");
-  expect(chat).toContain("const lookAtKeyboard = useKeyboardTruth(keyboardAt);");
-  expect(chat).toContain("if (IOS) scheduleOnRN(lookAtKeyboard);");
+  // On iOS 26 and later a notification's height can be off by the suggestion row (40 points): rewritten from one,
+  // the dock floated that much over the keys once the row left after a message was sent.
+  expect(chat).not.toMatch(/keyboardAt\.(height|progress)\.(value =|set\()/);
+  expect(chat).not.toContain("useKeyboardTruth");
+  expect(chat).not.toContain("Keyboard.metrics()");
+  expect(chat).not.toContain("KeyboardController.state()");
+  expect(chat).toContain("<KeyboardStickyView offset={{ opened: lift }}");
+  // The list ends where the dock starts (`useListEnd`); the agent's face and a background's band size to the box.
+  expect(chat).toContain("useListEnd({ keyboard: keyboardAt, box: boxHeight, lift, freeze })");
+  expect(chat).toContain("contentInsetEndAdjustment={listEnd}");
+  // A drag holds the list's room while the keys follow the finger.
   expect(chat).toMatch(
-    /hideDay\(\);[\s\S]{0,200}lookAtKeyboard\(\);\s*\}, \[releaseAtEnd, hideDay, still, lookAtKeyboard\]\);/,
+    /showDay\(\);\s*\/\/[^\n]*\n\s*keyboardDragStarted\(\);\s*\}, \[showDay, still, keyboardDragStarted\]\);/,
   );
-  expect(chat).toMatch(/dock\.set\(height\);\s*watchList\(\);\s*lookAtKeyboard\(\);/);
-  expect(chat).toContain("if (focused) lookAtKeyboard();");
+  expect(chat).toMatch(/hideDay\(\);\s*keyboardDragSettled\(\);/);
 });
 
-test("with no keyboard the dock rests down, whatever height was last said", () => {
-  expect(restingKeyboard(false, 336)).toEqual({ height: 0, progress: 0 });
-  expect(restingKeyboard(true, 336)).toEqual({ height: -336, progress: 1 });
-  expect(restingKeyboard(true, 0)).toEqual({ height: 0, progress: 0 });
+test("the list follows the dock when the keys' top moves with no notification, and rests with it once they are gone", () => {
+  const end = src("features/chat/list-end.ts");
+  // A move the system announced: both take its height, no gap.
+  expect(end).toMatch(/room\.set\(listKeyboardRoom\(e\.height, target\.get\(\), lift\)\);\s*gap\.set\(0\);/);
+  // The layout guide's reading with no finger on the list: the gap between where the dock rides and the list's room.
+  expect(end).toMatch(
+    /if \(dragging\.get\(\)\) \{\s*keysDragged\.set\(true\);\s*return;\s*\}[\s\S]{0,200}gap\.set\(composerLift\(-e\.height, e\.progress, lift\) - room\.get\(\)\);/,
+  );
+  expect(end).toMatch(/\(\) => box\.get\(\) \+ gap\.get\(\),\s*\(next\) => \{\s*end\.set\(next\);/);
+  // The system saying the keyboard is gone puts the dock down (zeros only), unless it comes back at once.
+  expect(end).toMatch(/if \(back\) return;\s*if \(keyboard\.height\.get\(\) !== 0\) keyboard\.height\.set\(0\);/);
+  expect(end).not.toMatch(/keyboard\.height\.set\((?!0\))/);
+  expect(end).toMatch(/useEffect\(\(\) => \{\s*if \(!IOS\) return;/);
+});
+
+test("the dock's lift and the list's keyboard room agree for every reading of the same keyboard", () => {
+  // A keyboard of 336 points, the composer's padding hiding 26 behind it: both 310.
+  expect(composerLift(-336, 1, 26)).toBe(310);
+  expect(listKeyboardRoom(336, 336, 26)).toBe(310);
+  // Gone: nothing.
+  expect(composerLift(0, 0, 26)).toBe(0);
+  expect(listKeyboardRoom(0, 336, 26)).toBe(0);
+  // No offset, or no target yet: the height as is.
+  expect(listKeyboardRoom(200, 336, 0)).toBe(200);
+  expect(listKeyboardRoom(200, 0, 26)).toBe(200);
+  // Part way (the layout guide's reading, its progress against the open height): the same share on both sides.
+  expect(composerLift(-168, 0.5, 26)).toBeCloseTo(listKeyboardRoom(168, 336, 26), 6);
+  // The suggestion row leaving (360.67 → 320.67 on a 932-point iPhone): the list's end comes down with the dock.
+  const gap = composerLift(-320.67, 320.67 / 360.67, 26) - listKeyboardRoom(360.67, 360.67, 26);
+  expect(gap).toBeCloseTo(-37.11, 1);
 });
 
 test("a cover freezes the list only once a keyboard that was up has gone: no keyboard-tall gap over the dock after", () => {
@@ -102,9 +118,8 @@ test("a long reply lands at its start only once it is measured, against the room
   const chat = src("features/chat/ChatScreen.tsx");
   // The list says a new size from its estimate before it measures the row: an unknown size never counts as tall.
   expect(chat).toContain("if (size === undefined || size <= room.height - BAND_GAP) return;");
-  expect(chat).toContain(
-    "const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;",
-  );
+  // The keyboard's share is where the dock rides, as it rides (not a notification's height).
+  expect(chat).toContain("const keyboard = composerLift(keyboardAt.height.get(), keyboardAt.progress.get(), lift);");
   expect(chat).toContain("return { state, top, height: state.scrollLength - top - dock.get() - keyboard };");
 });
 

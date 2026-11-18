@@ -211,11 +211,12 @@ describe("the composer", () => {
     expect(float).toBeGreaterThan(button);
     expect(chat.indexOf("ref={composerRef}", dock)).toBeGreaterThan(float);
     expect(chat).toContain("float={composerFloat}");
-    // No suggestion pills over the conversation: the list's end inset is the box alone.
+    // No suggestion pills over the conversation: the list's end inset is the box (and what the keyboard library's two
+    // paths disagree on, `useListEnd`).
     expect(chat).not.toContain("composerSuggestions");
     expect(chat).not.toContain("PILLS_ROOM");
-    expect(chat).toContain("endInset.value = height;");
-    expect(chat).toContain("contentInsetEndAdjustment={endInset}");
+    expect(chat).toContain("boxHeight.set(height);");
+    expect(chat).toContain("contentInsetEndAdjustment={listEnd}");
   });
 
   test("the send button comes in from 0.85 on an ease-out with no overshoot, and leaves the same way", () => {

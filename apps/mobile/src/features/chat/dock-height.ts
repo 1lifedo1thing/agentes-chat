@@ -31,9 +31,21 @@ export function createDockHeight(): DockHeight {
 }
 
 /**
- * Where the dock rests for a keyboard the system says is `visible` and `height` tall, in the keyboard library's values
- * (`useKeyboardTruth`): up by the keyboard's height, or down with no keyboard whatever height was last said.
+ * How far above its resting place the dock rides for the keyboard library's values (`KeyboardStickyView` with
+ * `offset={{ opened: lift }}`, the height negative while open): the keyboard's height less the share of the composer's
+ * bottom padding hidden behind the keys. A worklet.
  */
-export function restingKeyboard(visible: boolean, height: number): { height: number; progress: number } {
-  return visible && height > 0 ? { height: -height, progress: 1 } : { height: 0, progress: 0 };
+export function composerLift(height: number, progress: number, lift: number): number {
+  "worklet";
+  return Math.max(0, -height - lift * progress);
+}
+
+/**
+ * The keyboard's room in the conversation's list as `KeyboardChatScrollView` takes it (its `getEffectiveHeight`): the
+ * height the keyboard reached, less `offset` in the share it holds of the open keyboard's height (`target`). A worklet.
+ */
+export function listKeyboardRoom(height: number, target: number, offset: number): number {
+  "worklet";
+  if (offset === 0 || target === 0) return height;
+  return (height * Math.max(target - offset, 0)) / target;
 }

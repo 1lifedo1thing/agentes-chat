@@ -129,7 +129,6 @@ import {
   KeyboardEvents,
   KeyboardGestureArea,
   KeyboardStickyView,
-  useKeyboardHandler,
   useReanimatedKeyboardAnimation,
 } from "react-native-keyboard-controller";
 import Animated, {
@@ -143,7 +142,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { scheduleOnRN } from "react-native-worklets";
 import { frameClock } from "@/agent/clock";
 import { useStillWhileScrolling } from "@/agent/live";
 import { StickerStageContext } from "@/agent/StickerCanvas";
@@ -223,13 +221,13 @@ import { ConversationSwitcher } from "./ConversationSwitcher";
 import { takeComposerRequest, useComposerRequest } from "./composer-request";
 import { DATE_PILL_IDLE_MS, DatePill } from "./DatePill";
 import { DmComputerWords, dmComputerAction } from "./DmComputerButton";
-import { createDockHeight, type DockHeight } from "./dock-height";
+import { composerLift, createDockHeight, type DockHeight } from "./dock-height";
 import { EventLine } from "./EventLine";
 import { FirstDay } from "./FirstDay";
 import { HeaderPill } from "./HeaderPill";
 import { IssueTakenLine } from "./issue-work";
-import { useKeyboardTruth } from "./keyboard-truth";
 import { browsingRuns, WorkingLine } from "./LiveRows";
+import { useListEnd } from "./list-end";
 import { type LiveTyping, useChatLive, useLiveTyping } from "./live";
 import {
   buildRows,
@@ -355,8 +353,6 @@ const KEYBOARD_GAP = 8;
 const COMPOSER_INPUT_ID = "chat-composer";
 /** How long the conversation is held in place after something opens over it and after it closes (ms). */
 const HOLD_MS = 900;
-/** iOS, where the system's word on the keyboard settles the dock (`useKeyboardTruth`). */
-const IOS = Platform.OS === "ios";
 /** Holding a message opens the system's menu where there is one (iOS); elsewhere, the app's sheet. */
 const NATIVE_MENU = Platform.OS === "ios";
 /**
@@ -456,6 +452,8 @@ function Chat({
   const toast = useToast();
   const sheet = useSheet();
   const insets = useSafeAreaInsets();
+  // Where the keyboard is, as the keyboard library says: the composer rides it, and nothing else writes it.
+  const keyboardAt = useReanimatedKeyboardAnimation();
   const when = useWhen();
   // The requests waiting here and which messages are on screen: the line above the composer says when one
   // waits out of view (waiting beats working).
@@ -863,9 +861,9 @@ function Chat({
     const state = listRef.current?.getState();
     if (!state) return null;
     const { top, lift } = band.current;
-    const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;
+    const keyboard = composerLift(keyboardAt.height.get(), keyboardAt.progress.get(), lift);
     return { state, top, height: state.scrollLength - top - dock.get() - keyboard };
-  }, [dock]);
+  }, [dock, keyboardAt]);
   /** `scrollToIndex`'s place for a row in that room (`bandAim`): sent to the top, it lands under the bar. */
   const aimAt = useCallback(
     (index: number, viewPosition: number, tall: "start" | "end") => {
@@ -2507,37 +2505,15 @@ function Chat({
     [channelId, mentionMembers, everyoneOffered],
   );
   const onType = useCallback((text: string) => sendTyping(threadId, text), [sendTyping, threadId]);
-  // The composer floats over the list's bottom and rides the keyboard (KeyboardStickyView); the list's end
-  // inset is the composer's height plus the keyboard, moved on the UI thread frame by frame (also while the
-  // keyboard is dragged down interactively).
+  // The composer floats over the list's bottom and rides the keyboard (KeyboardStickyView, on the keyboard library's
+  // values and nothing else); the list ends where the composer starts (`useListEnd`, below).
   // The "@" picker floats above the box, outside what is measured (`ComposerFloat`): it comes and goes as the person
   // types and the conversation stays where it is. No suggestion pills over the conversation: always there, they read
   // as noise (the owner had them removed).
   const composerRef = useRef<ComponentRef<typeof View>>(null);
   const [composerFloat] = useState(createComposerFloat);
-  const endInset = useSharedValue(0);
-  // On iOS the keyboard library moves what rides the keyboard (the composer's dock) when a move starts and while
-  // the keyboard is dragged, and never when the move ends, while the list takes its room from the start and the
-  // end. A last event that wasn't the final state left the box up at the keyboard's height over a list that had
-  // gone back down. The end of every move has the last word for both; then, on iOS, the system's own
-  // (`useKeyboardTruth`: its notifications settle the dock, and a doubt looks at them again a moment later).
-  const keyboardAt = useReanimatedKeyboardAnimation();
-  const lookAtKeyboard = useKeyboardTruth(keyboardAt);
-  useKeyboardHandler(
-    {
-      onEnd: (e) => {
-        "worklet";
-        keyboardAt.height.value = -e.height;
-        keyboardAt.progress.value = e.progress;
-        if (IOS) scheduleOnRN(lookAtKeyboard);
-      },
-    },
-    [lookAtKeyboard],
-  );
-  // Back on this screen (a pushed screen or a sheet closed over it): where the keyboard really is.
-  useEffect(() => {
-    if (focused) lookAtKeyboard();
-  }, [focused, lookAtKeyboard]);
+  // The composer's box with the lines over it, as last laid out (the agent's face and a background's band size to it).
+  const boxHeight = useSharedValue(0);
   // Read while laying out the box: at the conversation's end and following it (not held where the person reads).
   const followingEnd = useRef(true);
   followingEnd.current = atEnd && !readHold;
@@ -2553,11 +2529,10 @@ function Chat({
     const height = e.nativeEvent.layout.height;
     const before = dock.get();
     const grew = before > 0 && height > before + 0.5;
-    endInset.value = height;
+    boxHeight.set(height);
     // Only what is drawn from it redraws (`DockHeight`); the waiting requests look again at their band's new bottom.
     dock.set(height);
     watchList();
-    lookAtKeyboard();
     // The dock grew under the conversation (who is working, the reply bar, a taller field) while it follows its end.
     // The libraries cover only part of it: the keyboard's scroll view shifts the list by the grown inset only when it
     // rests at its end, and with the keyboard up the list learns the new inset without following it. A message just
@@ -2588,6 +2563,13 @@ function Chat({
   // showed through the bar's pill and between its buttons), fading out in the 28 points under it.
   const topFadeSolid = headerHeight > 0 ? Math.min(1, headerHeight / (headerHeight + 28)) : 0;
   const lift = Math.max(0, bottomPad - KEYBOARD_GAP);
+  // The list ends where the composer starts: the dock's height plus whatever part of the keyboard the composer rides
+  // over that the list's own keyboard room missed (a height iOS changed with no notification).
+  const {
+    end: listEnd,
+    dragStarted: keyboardDragStarted,
+    dragSettled: keyboardDragSettled,
+  } = useListEnd({ keyboard: keyboardAt, box: boxHeight, lift, freeze });
   const showList = !loading && !(rows.length === 0 && runs.length === 0);
   // The conversation starts below the clear bar by our own padding, on both platforms (the pinned card, when there
   // is one, already holds that room). iOS's automatic inset made keyboard moves land short at the end.
@@ -2608,9 +2590,9 @@ function Chat({
   const listPlaced = useRef(false);
   const askInsets = useCallback(() => {
     if (!listPlaced.current) return null;
-    const keyboard = KeyboardController.isVisible() ? Math.max(0, KeyboardController.state().height - lift) : 0;
+    const keyboard = composerLift(keyboardAt.height.get(), keyboardAt.progress.get(), lift);
     return { top: hasPin ? 0 : headerHeight, bottom: dock.get() + keyboard };
-  }, [hasPin, headerHeight, lift, dock]);
+  }, [hasPin, headerHeight, lift, dock, keyboardAt]);
   // A row the list doesn't draw now (outside what it keeps mounted) has no card: its request is out of view.
   const askDrawn = useCallback((messageId: string) => {
     const state = listRef.current?.getState();
@@ -2636,7 +2618,16 @@ function Chat({
   const listFade = useAnimatedStyle(() => ({ opacity: listShown.value }));
   // Until then the conversation's skeleton stands where the messages will (`ChatSkeleton`), and leaves as they fade in.
   const [placed, setPlaced] = useState(false);
+  // Opening at the latest message (no "Novas" line to open at, no message asked for): set once the lists say so.
+  const opensAtEnd = useRef(false);
   const revealList = useCallback(() => {
+    // It shows at its end: the end can still move after the list's first placement (the dock's room reaching it a pass
+    // later, with the keyboard library's list taking it without following), and it showed short of it, its last
+    // message under the dock. Once, as it first shows: after that the person may be reading.
+    if (!listPlaced.current && opensAtEnd.current) {
+      const state = listRef.current?.getState();
+      if (state && state.distanceFromEnd > END_SLACK) void listRef.current?.scrollToEnd({ animated: false });
+    }
     listShown.value = withTiming(1, { duration: 160 });
     listPlaced.current = true;
     setPlaced(true);
@@ -2670,6 +2661,7 @@ function Chat({
         ? { at: channel?.lastReadAt ?? dm?.lastReadAt }
         : null;
   const openFrom = readFrom.current;
+  opensAtEnd.current = openFrom === null && !focusId;
   // The list laid out (`onReady`) shows only once where it opens is settled: placed at its end and taken to the line
   // after, it showed its end and then jumped. `SHOW_LIST_MS` still shows it whatever happens.
   const listReady = useRef(false);
@@ -2868,7 +2860,9 @@ function Chat({
     dragging.current = true;
     still.hold();
     showDay();
-  }, [showDay, still]);
+    // The keys may follow the finger now: the list keeps its room until the move that ends the drag.
+    keyboardDragStarted();
+  }, [showDay, still, keyboardDragStarted]);
   const onGlide = useCallback(() => {
     still.hold();
     showDay();
@@ -2877,9 +2871,8 @@ function Chat({
     still.settle();
     releaseAtEnd();
     hideDay();
-    // Letting go of the list can let go of the keyboard too (dragged down, or back up with no word from the system).
-    lookAtKeyboard();
-  }, [releaseAtEnd, hideDay, still, lookAtKeyboard]);
+    keyboardDragSettled();
+  }, [releaseAtEnd, hideDay, still, keyboardDragSettled]);
   const openPinsHere = useLatest(openPins);
   const goToPinHere = useLatest(goToPin);
   // Before the conversation's start: the older pages' row (a spinner while one loads, the way to ask again when one
@@ -3039,7 +3032,7 @@ function Chat({
                                   // with the library's default the words being read shifted each time an agent started
                                   // or finished, under the person's finger.
                                   keyboardLiftBehavior="whenAtEnd"
-                                  contentInsetEndAdjustment={endInset}
+                                  contentInsetEndAdjustment={listEnd}
                                   contentContainerStyle={listPad}
                                   ListHeaderComponent={listHeader}
                                 />
@@ -3156,7 +3149,7 @@ function Chat({
           {peeking ? null : (
             <KeyboardStickyView offset={{ opened: lift }} style={styles.composerDock} pointerEvents="box-none">
               {/* First in the dock, so everything in it draws over the face. */}
-              {peekAgentId && showList ? <ChatPeek agentId={peekAgentId} pull={pull} dock={endInset} /> : null}
+              {peekAgentId && showList ? <ChatPeek agentId={peekAgentId} pull={pull} dock={boxHeight} /> : null}
               {/* Right above the composer and its working line, in the same dock: it rides the keyboard with them and
                   moves with the box in the same frame when the field grows a line (placed from the box's measured
                   height it came a render later). */}
@@ -3190,7 +3183,7 @@ function Chat({
                     strength={backdrop.strength}
                     width={wallSize.width}
                     height={wallSize.height}
-                    box={endInset}
+                    box={boxHeight}
                     keyboard={keyboardAt}
                     lift={lift}
                   />
