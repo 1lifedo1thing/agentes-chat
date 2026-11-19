@@ -424,9 +424,6 @@ function StickerTab({
           ))}
         </ScrollView>
       </StickerStageContext.Provider>
-      <Text variant="caption" tone="faint" style={styles.centered}>
-        {t("media.stickers.foot")}
-      </Text>
     </>
   );
 }

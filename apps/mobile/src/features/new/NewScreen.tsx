@@ -242,17 +242,17 @@ const CREATE_LOOK: Record<Exclude<CreateItem, "invite">, { icon: IconName; color
 };
 
 /**
- * What to start, as rows: a soft tile of its color, a short name and a hint under it. A personal workspace's channel
- * is a group conversation, and its wiki is for its person's agents (ADR 0159). A spreadsheet, a presentation or a
- * canvas is made in the Drive at once and opens on its own screen (ADR 0196 §9).
+ * What to start, as rows: a soft tile of its color, a short name and, when the name alone isn't enough, a hint under
+ * it. A personal workspace's channel is a group conversation, and its wiki is for its person's agents (ADR 0159). A
+ * spreadsheet, a presentation or a canvas is made in the Drive at once and opens on its own screen (ADR 0196 §9).
  */
 function CreateList({ items }: { items: CreateItem[] }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const maker = useCreateLive();
   // The short names reuse labels already translated in every language (a form field's or a screen's name elsewhere).
-  const spec: Record<Exclude<CreateItem, "invite">, { label: string; sub: string; onPress: () => void }> = {
-    agent: { label: t("missions.new.agent"), sub: t("mobile.new.agentHint"), onPress: () => router.push("/new-agent") },
+  const spec: Record<Exclude<CreateItem, "invite">, { label: string; sub?: string; onPress: () => void }> = {
+    agent: { label: t("missions.new.agent"), onPress: () => router.push("/new-agent") },
     channel: {
       label: isPersonal(org) ? t("mobile.new.channelPersonal") : t("missions.new.channel"),
       sub: t(modeKey(org, "mobile.chats.newChannelHint")),
@@ -271,12 +271,10 @@ function CreateList({ items }: { items: CreateItem[] }) {
     },
     spreadsheet: {
       label: t("live.kinds.spreadsheet"),
-      sub: t("live.kinds.spreadsheetHint"),
       onPress: () => void maker.make("spreadsheet"),
     },
     slides: {
       label: t("live.kinds.slides"),
-      sub: t("live.kinds.slidesHint"),
       onPress: () => void maker.make("slides"),
     },
     canvas: {
