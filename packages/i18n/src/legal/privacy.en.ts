@@ -110,7 +110,7 @@ export const privacyEn: LegalDocument = {
             "**Workspace Content:** for the life of the workspace, and earlier when the workspace deletes specific content. When a workspace's agentes.chat plan ends, its content stays available for 90 days and is then deleted. When an owner deletes a workspace, it closes for everyone at once and its content is deleted 7 days later, unless an owner restores it before then, and leaves our backups within 30 days after that, except content we must keep by law or as a record of abuse (below), and except the excerpts we read for support or an investigation, which follow their own line below.",
             "**Logs:** request and security logs for up to 90 days. Model usage records (tokens and cost) for the life of the workspace, because budgets and usage reports depend on them.",
             "**Support requests:** what you sent us when asking for help, for 90 days. The email it arrived in stays in our team's mailbox for 90 days. Pictures and video for 30 days (not counting the copy inside that email).",
-            "**Support and investigations:** what we read to answer a support request or to look into a fault or suspected abuse, and any copy of it in our working thread, for up to 90 days after we read it, even if the workspace deletes it sooner, unless it is a record of abuse (below). Our conclusion about a case, which holds none of the content, stays with the case's record. The record of each read (who, when, which item and why, never the content) for one year.",
+            "**Support and investigations:** what we read to answer a support request or to look into a fault or suspected abuse, and any copy of it in our working thread, for up to 90 days after we read it, even if the workspace deletes it sooner, unless it is a record of abuse (below). Our conclusion about a case, which holds none of the content, stays with the case's record. Our record of each read made with the tools that Section 6 describes (who, when, which item and why, never the content) for one year.",
             "**Billing data:** while you pay for a workspace, and after that for as long as tax and accounting law requires.",
             "**Waiting list:** until you are invited and for 12 months after, or until you ask us to remove you.",
             "**Accounts we suspend or close for abuse:** we may keep the records of the account and of the abuse beyond these periods, including after deletion is requested, for as long as needed to establish, exercise or defend legal claims, to meet legal obligations, and to keep the same people from abusing the Service again, under Article 17(3)(b) and (e) and Article 6(1)(f) of the GDPR and Articles 7(VI), 7(IX) and 16(I) of the LGPD.",
@@ -129,7 +129,7 @@ export const privacyEn: LegalDocument = {
       id: "transfers",
       heading: "9. International transfers",
       blocks: [
-        "Our application and its database run in the United States, and the providers named in this policy process data in the United States, except the model providers and connected services a workspace chooses, and the companies they pass calls on to, which may process data in other countries under their own terms. The model provider of our AI assistants (Section 5) processes data in the United States, and in other countries when it routes a request there. The workspaces' computers run in the United States and the European Union. Our network provider handles traffic at its data center nearest to each device, in the United States or elsewhere.",
+        "Our application and its database run in the United States, and the providers named in this policy process data in the United States, except the model providers and connected services a workspace chooses, and the companies they pass calls on to, which may process data in other countries under their own terms, and except DuckDuckGo, GIPHY, DeepInfra, Inc., Team Cymru, the registry of an email's domain, our proxy provider, the push service of your browser's maker and our storage providers, whose location we do not state. The model provider of our AI assistants (Section 5) processes data in the United States, and in other countries when it routes a request there. The workspaces' computers run in the United States and the European Union. Our network provider handles traffic at its data center nearest to each device, in the United States or elsewhere.",
         "**Subprocessors.** These companies process Workspace Content for us:",
         {
           list: [
@@ -138,9 +138,9 @@ export const privacyEn: LegalDocument = {
             "**Our file storage and backup storage providers:** storage of uploaded files and of database backups, and encrypted backups of workspaces' computers.",
             "**MillionSend, a service of CODARI GLOBAL, LLC:** email delivery and receiving, and our team's mailboxes, where support requests arrive. Location: United States.",
             "**TypeSafe:** AI services we provide: choosing which agent answers, judging memory and actions, reading a screen, abuse checks. Location: United States.",
-            "**DeepInfra, Inc.:** search (text embeddings). Location: United States.",
+            "**DeepInfra, Inc.:** search (text embeddings).",
             "**Composio:** connections to the services listed in Section 5. Location: United States.",
-            "**Apple Inc., Google LLC and the push service of your browser's maker:** delivery of notifications. Location: United States.",
+            "**Apple Inc., Google LLC and the push service of your browser's maker:** delivery of notifications. Location: United States for Apple and Google.",
             "**Anthropic, PBC:** AI assistants for support, faults and safety. It may not train on what it receives. Location: United States, and other countries when it routes a request there.",
           ],
         },
