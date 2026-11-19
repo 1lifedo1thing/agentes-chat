@@ -83,8 +83,9 @@ const MAX_ACTIONS = 3;
  * The work as a card that matches where it stands. In a message's body, the conversation's own card (as the tool
  * block's, the receipts' and the team checks': a hairline, radius 14, the cut corner) on the body's edges, off the part
  * above by the body's card gap (`useCardTop`). On a task's screen, the screen's card (radius 20 with the cut corner,
- * the raised surface and its lit top), as the work card over it; the screen places it. Either way its text, actions
- * and the plan under them (`below`) share one column: 14 + mark 16 + 10 = 40 from the card's left edge.
+ * the raised surface and its lit top), as the work card over it; the screen places it. Its text and the plan under it
+ * (`below`) share one column, 14 + mark 16 + 10 = 40 from the card's left edge; its actions are the card's foot in a
+ * message (equal buttons under a hairline) and words in that column on a task's screen.
  */
 function Line({
   work,
@@ -126,42 +127,28 @@ function Line({
     if (!jump?.(messageId)) router.push(chatHref(work.channelId, work.homeThreadId));
   };
   // Priority when more than MAX_ACTIONS apply: stopping, then the result, the task, the thread; shown in reading order.
-  const all: { key: string; rank: number; node: ReactNode }[] = [];
-  if (onThread && view.threadId)
-    all.push({ key: "thread", rank: 3, node: <Action key="thread" label={t("work.openThread")} onPress={onThread} /> });
+  const all: (WorkAction & { rank: number })[] = [];
+  if (onThread && view.threadId) all.push({ key: "thread", rank: 3, label: t("work.openThread"), onPress: onThread });
   if (view.task) {
     const number = view.task.number;
-    all.push({
-      key: "task",
-      rank: 2,
-      node: <Action key="task" label={view.task.label} onPress={() => router.push(`/issues/${number}`)} />,
-    });
+    all.push({ key: "task", rank: 2, label: view.task.label, onPress: () => router.push(`/issues/${number}`) });
   }
   if (view.result) {
     const messageId = view.result.messageId;
-    all.push({
-      key: "result",
-      rank: 1,
-      node: <Action key="result" label={view.result.label} onPress={() => seeResult(messageId)} />,
-    });
+    all.push({ key: "result", rank: 1, label: view.result.label, onPress: () => seeResult(messageId) });
   }
   if (view.stop) {
     const runId = view.stop.runId;
     all.push({
       key: "stop",
       rank: 0,
-      node: (
-        <Action
-          key="stop"
-          label={t("work.stop")}
-          danger
-          disabled={stop.isPending}
-          onPress={() => {
-            haptics.firm();
-            stop.mutate(runId);
-          }}
-        />
-      ),
+      label: t("work.stop"),
+      danger: true,
+      disabled: stop.isPending,
+      onPress: () => {
+        haptics.firm();
+        stop.mutate(runId);
+      },
     });
   }
   const kept = new Set(
@@ -170,11 +157,14 @@ function Line({
       .slice(0, MAX_ACTIONS)
       .map((a) => a.key),
   );
-  const actions = all.filter((a) => kept.has(a.key)).map((a) => a.node);
+  const actions = all.filter((a) => kept.has(a.key));
+  // In a message, its actions are the card's foot: buttons of equal width under a hairline, as the system's alerts
+  // and notifications put theirs (colored links under the words read as a web page). On a task's screen, words.
+  const bar = inBody && actions.length > 0;
   return (
     <View
       style={[
-        styles.line,
+        styles.card,
         // In a conversation of bubbles, a bubble of the message that handed it (its fill, joined to it).
         inBody && part
           ? [styles.inBody, { borderWidth: 0 }, surface]
@@ -184,77 +174,129 @@ function Line({
         // The corners every card in a message has (none outside one: the screen's card above).
         cardCorners,
         cardTop,
+        bar && styles.clip,
       ]}
       accessibilityRole="summary"
     >
-      {/* On the first line's reading middle. */}
-      <View style={styles.mark}>
-        {view.tone === "working" ? (
-          <LineIcon variant="small" size={12} mark>
-            <PixelOrbit color="sky" size={12} />
-          </LineIcon>
-        ) : (
-          <LineIcon variant="small" name={mark.icon} size={12} color={mark.color} />
-        )}
-      </View>
-      <View style={styles.body}>
-        <Text variant="small" tone="ink2">
-          {h ? (
-            <>
-              <Trans i18nKey="work.handed.lead" values={{ name: line.agentName }} components={[<Text key="face" />]} />
-              {" · "}
-              <Text
-                variant="small"
-                style={[styles.bold, { color: h.tone === "working" ? c.agent : h.tone === "waiting" ? c.warn : c.ink }]}
-              >
-                {h.state}
-              </Text>
-              {h.facts.map((fact) => ` · ${fact}`).join("")}
-            </>
+      <View style={styles.line}>
+        {/* On the first line's reading middle. */}
+        <View style={styles.mark}>
+          {view.tone === "working" ? (
+            <LineIcon variant="small" size={MARK} mark>
+              <PixelOrbit color="sky" size={MARK - 2} />
+            </LineIcon>
           ) : (
-            view.text
+            <LineIcon variant="small" name={mark.icon} size={MARK} color={mark.color} />
           )}
-        </Text>
-        {view.question ? (
-          <Text variant="small" tone="ink" numberOfLines={2}>
-            {view.question.text}
+        </View>
+        <View style={styles.body}>
+          <Text variant="small" tone="ink2">
+            {h ? (
+              <>
+                <Trans
+                  i18nKey="work.handed.lead"
+                  values={{ name: line.agentName }}
+                  components={[<Text key="face" />]}
+                />
+                {" · "}
+                <Text
+                  variant="small"
+                  style={[
+                    styles.bold,
+                    { color: h.tone === "working" ? c.agent : h.tone === "waiting" ? c.warn : c.ink },
+                  ]}
+                >
+                  {h.state}
+                </Text>
+                {h.facts.map((fact) => ` · ${fact}`).join("")}
+              </>
+            ) : (
+              view.text
+            )}
           </Text>
-        ) : null}
-        {view.update ? (
-          <Text variant="small" tone="muted">
-            {view.update}
-          </Text>
-        ) : null}
-        {actions.length > 0 ? <View style={styles.actions}>{actions}</View> : null}
-        {below}
+          {view.question ? (
+            <Text variant="small" tone="ink" numberOfLines={2}>
+              {view.question.text}
+            </Text>
+          ) : null}
+          {view.update ? (
+            <Text variant="small" tone="muted">
+              {view.update}
+            </Text>
+          ) : null}
+          {!bar && actions.length > 0 ? (
+            <View style={styles.actions}>
+              {actions.map((a) => (
+                <Action key={a.key} action={a} />
+              ))}
+            </View>
+          ) : null}
+          {below}
+        </View>
       </View>
+      {bar ? (
+        <View style={[styles.bar, { borderTopColor: c.line2 }]}>
+          {actions.map((a, i) => (
+            <BarAction key={a.key} action={a} divider={i > 0} />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function Action({
-  label,
-  onPress,
-  danger,
-  disabled,
-}: {
+/** One of the work's actions: what it says, what it does, and whether it stops the work (`danger`). */
+interface WorkAction {
+  key: string;
   label: string;
   onPress: () => void;
   danger?: boolean;
   disabled?: boolean;
-}) {
+}
+
+/** The status mark beside the line, on its first line's middle. */
+const MARK = 16;
+
+/** A button of the card's foot: an equal share of its width, 44 tall, a hairline before every one but the first. */
+function BarAction({ action: a, divider }: { action: WorkAction; divider: boolean }) {
+  const c = useColors();
+  return (
+    <Pressable
+      onPress={a.onPress}
+      disabled={a.disabled}
+      accessibilityRole="button"
+      accessibilityLabel={a.label}
+      style={({ pressed }) => [
+        styles.barButton,
+        divider && [styles.barDivider, { borderLeftColor: c.line2 }],
+        pressed && { backgroundColor: c.sunken },
+      ]}
+    >
+      <Text
+        variant="small"
+        numberOfLines={1}
+        style={[styles.action, { color: a.disabled ? c.faint : a.danger ? c.danger : c.ink }]}
+      >
+        {a.label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/** One action in words, on a task's screen: neutral, the stop in the danger color. */
+function Action({ action: a }: { action: WorkAction }) {
   const c = useColors();
   return (
     // 44 tall to the finger; across, no more than the gap to the next action.
     <Pressable
-      onPress={onPress}
-      disabled={disabled}
+      onPress={a.onPress}
+      disabled={a.disabled}
       accessibilityRole="button"
       hitSlop={{ top: 12, bottom: 12, left: 6, right: 6 }}
       style={({ pressed }) => pressed && styles.pressed}
     >
-      <Text variant="small" style={[styles.action, { color: disabled ? c.faint : danger ? c.danger : c.agent }]}>
-        {label}
+      <Text variant="small" style={[styles.action, { color: a.disabled ? c.faint : a.danger ? c.danger : c.ink }]}>
+        {a.label}
       </Text>
     </Pressable>
   );
@@ -426,15 +468,16 @@ export function useShareWork(issue: Issue): { share: () => void; pending: boolea
 }
 
 const styles = StyleSheet.create({
-  // The app's card: radius 20 with the cut corner; text at 14 + 16 + 10 = 40 from its left edge.
-  line: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 20,
-    borderBottomLeftRadius: 6,
-  },
+  // The app's card: radius 20 with the cut corner.
+  card: { borderRadius: 20, borderBottomLeftRadius: 6 },
+  // With a foot, its pressed buttons stay inside the corners (only then: clipping would cut a raised card's shadow).
+  clip: { overflow: "hidden" },
+  // The mark and the words: text at 14 + 16 + 10 = 40 from the card's left edge.
+  line: { flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
+  // The card's foot in a message: its actions side by side under a hairline.
+  bar: { flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth },
+  barButton: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  barDivider: { borderLeftWidth: StyleSheet.hairlineWidth },
   // In a message's body: the conversation's card family (ToolCalls, Receipts, TeamChecks, ReachLines).
   inBody: {
     borderWidth: StyleSheet.hairlineWidth,

@@ -324,7 +324,7 @@ export function MessageActions(props: MessageActionsContext) {
 
 // ── "+" in the composer ──────────────────────────────────────────────────────
 
-export type PlusPick = "camera" | "photos" | "file" | "media" | "mission" | "summary" | "remind";
+export type PlusPick = "camera" | "photos" | "file" | "media" | "summary" | "remind";
 
 /**
  * The "+" of the chat: what goes with a message as tiles (camera, photos, file and, where they can be sent, the
@@ -354,7 +354,7 @@ export function PlusActions({ onPick, media = false }: { onPick: (pick: PlusPick
             <View style={[styles.bigTile, surface]}>
               <Icon name={x.icon} size={24} />
             </View>
-            <Text variant="caption" tone="ink2" style={styles.bold}>
+            <Text variant="caption" tone="ink2">
               {x.label}
             </Text>
           </PressScale>
@@ -362,13 +362,6 @@ export function PlusActions({ onPick, media = false }: { onPick: (pick: PlusPick
       </View>
       <ActionList
         items={[
-          {
-            key: "mission",
-            icon: "target",
-            label: t("mobile.plus.mission"),
-            hint: t("mobile.plus.missionHint"),
-            onPress: () => onPick("mission"),
-          },
           {
             key: "summary",
             icon: "sparkle",
@@ -753,7 +746,6 @@ export function MissionSummaryView({ missionId }: { missionId: string }) {
 
 const styles = StyleSheet.create({
   grow: { flex: 1 },
-  bold: { fontWeight: "600" },
   preview: { flexDirection: "row", gap: 10, padding: 12, borderRadius: 14 },
   emorow: {
     flexDirection: "row",
