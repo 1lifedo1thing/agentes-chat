@@ -294,6 +294,7 @@ export const featureKeysPtBR = {
     people: "Pessoas",
     search: "Pessoa ou agente",
     create: "Criar",
+    agentHint: "Nome e o que ele faz",
     chatShort: "Conversa",
     chatHint: "Uma pessoa ou um agente",
     taskHint: "Com responsável e prazo",

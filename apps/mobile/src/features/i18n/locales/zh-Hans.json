@@ -268,6 +268,7 @@
     "people": "成员",
     "search": "成员或智能体",
     "create": "创建",
+    "agentHint": "名称和职责",
     "chatShort": "对话",
     "chatHint": "一位成员或一个智能体",
     "taskHint": "附负责人和截止日期",

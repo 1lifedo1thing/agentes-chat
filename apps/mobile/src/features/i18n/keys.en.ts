@@ -291,6 +291,7 @@ export const featureKeysEn = {
     to: "To:",
     people: "People",
     search: "Person or agent",
+    agentHint: "A name and what it does",
     create: "Create",
     chatShort: "Conversation",
     chatHint: "A person or an agent",

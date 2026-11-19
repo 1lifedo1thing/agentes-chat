@@ -656,6 +656,9 @@
   "new.create": {
     "value": "Create"
   },
+  "new.agentHint": {
+    "value": "A name and what it does"
+  },
   "new.chatShort": {
     "value": "Conversation"
   },

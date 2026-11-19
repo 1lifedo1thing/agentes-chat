@@ -641,7 +641,12 @@ function RowBody({
         onLongPress={press}
         delayLongPress={380}
         accessibilityHint={press ? t("mobile.chat.longPressHint") : undefined}
-        style={({ pressed }) => [styles.me, rowFrame(rhythm.block, rowGap), pressed && press && styles.mePressed]}
+        style={({ pressed }) => [
+          styles.me,
+          rowFrame(rhythm.block, rowGap),
+          bubbled && styles.ownBox,
+          pressed && press && styles.mePressed,
+        ]}
       >
         <SwipeSlide on={bubbled} style={styles.meSlide}>
           <RowPartContext.Provider value={cardTop}>
@@ -911,6 +916,9 @@ function RowBody({
           styles.msg,
           bubbled && lookRows.bubblesRow,
           bubbled && !look.faces && lookRows.bubblesBare,
+          // A bubble row paints nothing past its own box: the list puts the next row right under it, and a bubble
+          // drawn taller than its row (its frame lagging its layout) covered the messages after it.
+          bubbled && styles.ownBox,
           compact && lookRows.compactRow,
           rowFrame(rhythm.block, rowGap),
           // On the quote it answers (or the line about a file's part), its plate never over it.
@@ -1563,6 +1571,8 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   replied: { marginTop: 0, paddingTop: QUOTE_GAP },
+  // Bubbles only: the other looks' cards cast shadows past the row.
+  ownBox: { overflow: "hidden" },
   aboutAbove: { paddingRight: 16 },
   avslot: { width: MSG_AVATAR, alignItems: "center", paddingTop: 2 },
   body: { flex: 1, minWidth: 0 },

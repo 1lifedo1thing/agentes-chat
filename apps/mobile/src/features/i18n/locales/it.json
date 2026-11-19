@@ -286,6 +286,7 @@
     "people": "Persone",
     "search": "Persona o agente",
     "create": "Crea",
+    "agentHint": "Un nome e cosa fa",
     "chatShort": "Conversazione",
     "chatHint": "Una persona o un agente",
     "taskHint": "Con responsabile e scadenza",
