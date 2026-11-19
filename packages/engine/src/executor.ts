@@ -444,6 +444,7 @@ import { movedNote, queuedNote, workMayStart, workStartsNote } from "./work-tool
 import {
   dropWorkNotices,
   endWork,
+  liveWorksHere,
   moveToBackground,
   pauseWorkTimer,
   resumeWorkTimer,
@@ -3336,6 +3337,13 @@ async function executeRunInner(
    * claims a result no call produced, or gives up with ways left. True when nothing of it is left for the turn's end
    * (posted, or nothing to say: the silence word alone, its last message word for word).
    */
+  /**
+   * The titles of the agent's own work running in the background in this conversation (ADR 0121), other than this
+   * run's: the follow-through judge reads a promise about what that work will bring as kept by it, so a reply turn
+   * beside it ("I'll bring the findings when it ends") isn't pushed into doing the work itself.
+   */
+  const backgroundWorkHere = async () =>
+    run.workId ? [] : (await liveWorksHere(db, run).catch(() => [])).map((w) => w.title || "untitled background work");
   const answerNow = async (answer: string): Promise<boolean> => {
     const t = transcript as Transcript;
     const betweenAgents = Boolean(channelRow && isAgentOnlyDm(channelRow));
@@ -3358,6 +3366,7 @@ async function executeRunInner(
         ...(await evidenceFor(t).gather()),
         runKind: "conversation",
         personal: await isPersonalWorkspace(db, run.orgId),
+        backgroundWork: await backgroundWorkHere(),
       }).catch(() => null);
       if (verdict === "secret" || verdict === "unbacked" || verdict === "untried") return false;
     }
@@ -6102,7 +6111,11 @@ async function executeRunInner(
         prepare: () => void judging.gather().catch(() => {}),
         verdict: checker
           ? async () => {
-              const [gathered, personal] = await Promise.all([judging.gather(), isPersonalWorkspace(db, run.orgId)]);
+              const [gathered, personal, backgroundWork] = await Promise.all([
+                judging.gather(),
+                isPersonalWorkspace(db, run.orgId),
+                backgroundWorkHere(),
+              ]);
               return continuationVerdict(checker, {
                 orgId: run.orgId,
                 agentId: run.agentId,
@@ -6113,6 +6126,7 @@ async function executeRunInner(
                 runKind: betweenAgents ? "agents_dm" : "conversation",
                 unreached,
                 personal,
+                backgroundWork,
                 onLearn: (signal) => {
                   learned = signal;
                 },
