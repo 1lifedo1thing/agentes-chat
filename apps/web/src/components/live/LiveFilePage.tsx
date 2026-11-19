@@ -292,7 +292,7 @@ export function LiveFilePage({
     [dir.agentById, fileAgent, column],
   );
 
-  /** Pedir para editar (ADR 0201): the conversation opens with the words for who made the file, mine to send. */
+  /** Pedir para editar (ADR 0202): the conversation opens with the words for who made the file, mine to send. */
   const requestEdit = useCallback(() => {
     const maker = artifact?.createdBy;
     const handle = maker?.type === "person" ? dir.memberById.get(maker.id)?.handle : undefined;

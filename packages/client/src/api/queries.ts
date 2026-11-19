@@ -543,6 +543,15 @@ export function useDeleteWorkspace(orgId: string) {
   });
 }
 
+/** Resets a workspace (owners): its apps read everything again when it is done (`org.reset`). */
+export function useResetWorkspace(orgId: string) {
+  const api = useApi();
+  return useMutation({
+    mutationFn: (proof: DeletionProofInput) => api.orgs.reset(orgId, proof),
+    meta: { silent: true },
+  });
+}
+
 /** Restores a workspace being deleted (owners): it opens again for everyone. */
 export function useRestoreWorkspace(orgId: string) {
   const api = useApi();
@@ -4746,7 +4755,7 @@ export function useSaveArtifact(orgId: string, id: string) {
   });
 }
 
-/** Compartilhar with levels (ADR 0201): who sees and who edits a file. The dialog says a failure itself. */
+/** Compartilhar with levels (ADR 0202): who sees and who edits a file. The dialog says a failure itself. */
 export function useSetArtifactAccess(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();

@@ -41,7 +41,7 @@ export function LiveBar({
   const openTalk = useOpenFileTalk(detail);
   const room = live.room;
   const edit = live.mode === "edit";
-  // Only viewing it (ADR 0201): Pedir para editar opens its conversation with the words for who made it, mine to send.
+  // Only viewing it (ADR 0202): Pedir para editar opens its conversation with the words for who made it, mine to send.
   const asksToEdit = live.mode === "view" && detail?.myAccess === "view";
   const requestEdit = () => {
     const maker = detail?.createdBy;

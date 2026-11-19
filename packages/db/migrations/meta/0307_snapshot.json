@@ -1,5 +1,5 @@
 {
-  "id": "254f817d-6328-431f-a5af-aaa141ed74fb",
+  "id": "8512bfa1-0aee-4bf7-843c-850be23feead",
   "prevId": "164253d7-8605-4865-8e35-0c49dea2e18d",
   "version": "7",
   "dialect": "postgresql",
@@ -4504,54 +4504,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "editors_limited": {
-          "name": "editors_limited",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "editor_user_ids": {
-          "name": "editor_user_ids",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::text[]"
-        },
-        "editor_role_ids": {
-          "name": "editor_role_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
-        },
-        "conversation_edits": {
-          "name": "conversation_edits",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "agent_base": {
-          "name": "agent_base",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "agent_view_ids": {
-          "name": "agent_view_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
-        },
-        "agent_edit_ids": {
-          "name": "agent_edit_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
         }
       },
       "indexes": {
@@ -21512,6 +21464,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "reset_requested_at": {
+          "name": "reset_requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_requested_by": {
+          "name": "reset_requested_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -21528,6 +21492,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "deletion_requested_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "organizations_reset_requested_by_users_id_fk": {
+          "name": "organizations_reset_requested_by_users_id_fk",
+          "tableFrom": "organizations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reset_requested_by"
           ],
           "columnsTo": [
             "id"

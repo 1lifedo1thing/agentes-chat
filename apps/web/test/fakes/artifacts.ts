@@ -194,7 +194,7 @@ export function createMockArtifacts(
     const viewer = await me();
     const mine = s.meta.createdBy.type === "person" && s.meta.createdBy.id === viewer.id;
     const sharing = s.meta.sharing ?? { mode: drive ? "everyone" : "conversation", userIds: [], roleIds: [] };
-    // As the server's `accessOf` (ADR 0201): a file nobody set levels on, whoever sees it edits, an agent where it lives.
+    // As the server's `accessOf` (ADR 0202): a file nobody set levels on, whoever sees it edits, an agent where it lives.
     const access = s.meta.access ?? {
       place: "edit" as const,
       workspace: sharing.mode === "everyone" ? ("edit" as const) : ("none" as const),

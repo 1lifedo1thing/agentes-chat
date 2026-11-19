@@ -1,4 +1,4 @@
-# 0201. Who sees and who edits a file: people, roles and agents
+# 0202. Who sees and who edits a file: people, roles and agents
 
 - Status: Accepted (built)
 - Date: 2026-11-18

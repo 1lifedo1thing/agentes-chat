@@ -70,7 +70,7 @@ export function LiveHeader({
   onSave: () => void;
   onShortcuts: () => void;
   onDelete: () => void;
-  /** Only viewing it (ADR 0201): Pedir para editar, beside Só leitura. */
+  /** Only viewing it (ADR 0202): Pedir para editar, beside Só leitura. */
   onRequestEdit?: () => void;
 }) {
   const { t, i18n } = useTranslation();

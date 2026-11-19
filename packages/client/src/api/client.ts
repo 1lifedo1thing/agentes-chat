@@ -583,6 +583,13 @@ export interface ApiClient {
     deleteWorkspace(orgId: string, input?: DeletionProofInput): Promise<{ dueAt: string }>;
     /** Owners, before its date: it opens again. `org.not_restorable` (409) once the date passed. */
     restore(orgId: string): Promise<void>;
+    /** Owners: emails me the code that resetting this workspace takes (a deletion's code doesn't). */
+    resetCode(orgId: string): Promise<CodeSent>;
+    /**
+     * Owners: erases everything made in the workspace and starts it over, keeping its people, plan, AI accounts and
+     * computers; its apps hear `org.reset` once done. Proof as `deleteWorkspace`'s; 429 after 3 resets of it in a day.
+     */
+    reset(orgId: string, input?: DeletionProofInput): Promise<{ startedAt: string }>;
     /** My handle and time zone in this organization (`timezone: null` = the organization's). */
     updateMe(orgId: string, input: { handle?: string; timezone?: string | null }): Promise<Person>;
     /** Your availability (auto, busy, hidden) and what you are doing (ADR 0084). */
@@ -1918,7 +1925,7 @@ export interface ApiClient {
       input: { content: ArtifactContent; note?: string | null; baseVersion: number; title?: string },
     ): Promise<ArtifactDetail>;
     /**
-     * Who sees and who edits it, people, roles and agents (ADR 0201); 403 `artifact.sharing_forbidden` for who may not
+     * Who sees and who edits it, people, roles and agents (ADR 0202); 403 `artifact.sharing_forbidden` for who may not
      * change it.
      */
     setAccess(orgId: string, id: string, access: Omit<ArtifactAccess, "limited">): Promise<Artifact>;

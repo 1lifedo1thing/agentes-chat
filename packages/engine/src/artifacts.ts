@@ -221,7 +221,7 @@ export interface ArtifactView {
   id: string;
   kind: ArtifactKind;
   title: string;
-  /** Who sees and who edits it (ADR 0201). */
+  /** Who sees and who edits it (ADR 0202). */
   access: FileAccess;
   version: number;
   channelId: string | null;
@@ -259,7 +259,7 @@ export interface AccessRow {
 }
 
 /**
- * Who sees and who edits a file, as Compartilhar shows it (ADR 0201): one level per row. `place` is who reads it where
+ * Who sees and who edits a file, as Compartilhar shows it (ADR 0202): one level per row. `place` is who reads it where
  * it lives (a conversation's readers; a file of the Drive itself, its maker, who always edits); `workspace` everyone;
  * `agents` every agent (a file of the Drive) or the agents where it lives (one in a conversation). `limited`: someone
  * who sees it only reads it.
@@ -841,7 +841,7 @@ const sharingOf = (a: Pick<ArtifactRow, "share" | "shareUserIds" | "shareRoleIds
   roleIds: a.share === "people" ? a.shareRoleIds : [],
 });
 
-/** A file's access row by row (ADR 0201), from its sharing, its editors and its agents' columns. */
+/** A file's access row by row (ADR 0202), from its sharing, its editors and its agents' columns. */
 export function accessOf(
   a: Pick<
     ArtifactRow,
@@ -925,7 +925,7 @@ async function sharedByRole(db: Database, userId: string, orgId: string, roleIds
   return row?.yes === true || row?.yes === "t";
 }
 
-// ── Who edits (ADR 0201) ─────────────────────────────────────────────────────
+// ── Who edits (ADR 0202) ─────────────────────────────────────────────────────
 
 /** What someone may do with a file: nothing, read it, or change it too. */
 export type AccessLevel = "none" | "view" | "edit";
@@ -939,7 +939,7 @@ type EditsBy =
   | "createdById";
 
 /**
- * Whether a person who sees a file also changes it (ADR 0201): whoever sees it, unless its editors are limited; then
+ * Whether a person who sees a file also changes it (ADR 0202): whoever sees it, unless its editors are limited; then
  * its maker, the people and roles listed, administrators, and who reads it in its conversation when they still edit.
  */
 async function personEdits(
@@ -1112,7 +1112,7 @@ async function canRead(db: Database, actor: ArtifactActor, orgId: string, a: Pic
 }
 
 /**
- * What an agent may do with a file (ADR 0201). Agents never widen who sees a file (ADR 0157): an agent gets a level only
+ * What an agent may do with a file (ADR 0202). Agents never widen who sees a file (ADR 0157): an agent gets a level only
  * where it reaches the file, by where it lives or for the person behind its run. There, the agent that made it changes
  * it, and one named on the file has its own level. The others get the file's level for agents: every agent of the
  * workspace for a file of the Drive, the agents where it lives for one in a conversation (an agent elsewhere, asked by
@@ -1237,7 +1237,7 @@ const outOfReach = (a: Pick<ArtifactRow, "channelId">) =>
     : "it is in the Drive, not shared with the whole workspace (who sees it may mention you in its conversation)";
 
 /**
- * `readable` to change a file (ADR 0201): a person who edits it, an agent whose level is edit. An agent hears why and
+ * `readable` to change a file (ADR 0202): a person who edits it, an agent whose level is edit. An agent hears why and
  * what to do instead; a person a plain refusal (the apps show the file as read only).
  */
 async function writable(deps: ArtifactDeps, actor: ArtifactActor, orgId: string, id: string) {
@@ -2199,7 +2199,7 @@ async function artifactScope(db: Database, actor: ArtifactActor, orgId: string, 
   let widened: SQL;
   // The Drive's own files they read where they live (ADR 0157, amendment 2026-11-17).
   let drive: SQL | undefined;
-  // An agent: the files closed to agents but the ones that name it or that it made (ADR 0201, `agentLevel`). Naming an
+  // An agent: the files closed to agents but the ones that name it or that it made (ADR 0202, `agentLevel`). Naming an
   // agent never lists it a file it doesn't reach otherwise: agents never widen who sees a file (ADR 0157).
   let closedToAgent: SQL | undefined;
   if (actor.type === "agent") {
@@ -2655,7 +2655,7 @@ export interface PersonArtifactFacts {
    */
   canShare: boolean;
   /**
-   * What its access lets them do (ADR 0201): `view` shows it read only, with Pedir para editar. `canEdit` (its kind's
+   * What its access lets them do (ADR 0202): `view` shows it read only, with Pedir para editar. `canEdit` (its kind's
    * own editing: a table, a new version of a file) needs `edit` too.
    */
   myAccess: "view" | "edit";
@@ -2735,7 +2735,7 @@ export async function withPersonFacts<
   // Shared with them from a conversation they don't read (ADR 0157): what's said is never "you and …", and there's no
   // way into it.
   const outside = (id: string) => closed.has(id) && !readsThere.has(id);
-  // Who edits (ADR 0201, `personEdits`): only files with limited editors ask more than who sees them.
+  // Who edits (ADR 0202, `personEdits`): only files with limited editors ask more than who sees them.
   const limited = list.filter((a) => a.access.limited && !mine(a));
   const isAdmin = limited.length > 0 && (await sharedByRole(db, userId, orgId, []));
   const myRoles = new Set(
@@ -2907,7 +2907,7 @@ export async function setFileSharing(
   return artifact;
 }
 
-/** What Compartilhar sends (ADR 0201): `FileAccess` without what the server works out. */
+/** What Compartilhar sends (ADR 0202): `FileAccess` without what the server works out. */
 export type FileAccessInput = Omit<FileAccess, "limited">;
 
 const LEVELS: readonly AccessLevel[] = ["none", "view", "edit"];
@@ -2923,7 +2923,7 @@ async function workspaceAgents(db: Database, orgId: string, ids: string[]) {
 }
 
 /**
- * Compartilhar with levels (ADR 0201): who sees a file and who edits it, people, roles and agents. Whoever may change
+ * Compartilhar with levels (ADR 0202): who sees a file and who edits it, people, roles and agents. Whoever may change
  * who sees it (`setFileSharing`) and edits it may change this. Stored as its sharing (who sees), its editors (who
  * among them edits) and its agents' access; rows that say what the rest already says are left out. Audited; its
  * conversation and the workspace's Drive lists hear of it.

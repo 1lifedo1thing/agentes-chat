@@ -241,7 +241,7 @@ describe("Compartilhar (ADR 0157, 0201)", () => {
       title: "Plano de férias",
       content: { kind: "table", columns: ["Quem", "Quando"], rows: [["João", "Julho"]] },
     });
-    // As the server answers about João's own Drive file he let me view (ADR 0201).
+    // As the server answers about João's own Drive file he let me view (ADR 0202).
     const joaos = <T extends Artifact>(a: T): T =>
       a.id === plan.id
         ? {

@@ -243,7 +243,7 @@ const Access = z
   })
   .openapi("ArtifactAccess", {
     description:
-      "Who sees and who edits a file (ADR 0201), row by row as Compartilhar shows it. Administrators always see and edit; the agent that made a file always edits it.",
+      "Who sees and who edits a file (ADR 0202), row by row as Compartilhar shows it. Administrators always see and edit; the agent that made a file always edits it.",
   });
 
 /** Where a live file's conversation lives (ADR 0199): the chat's routes read and post to this thread. */

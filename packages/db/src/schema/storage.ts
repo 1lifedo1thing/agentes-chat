@@ -245,7 +245,7 @@ export const artifacts = pgTable(
     shareUserIds: text().array().notNull().default(sql`'{}'::text[]`),
     shareRoleIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
     /**
-     * Who edits it among the people who see it (ADR 0201): when `editorsLimited`, only `editorUserIds`, whoever holds
+     * Who edits it among the people who see it (ADR 0202): when `editorsLimited`, only `editorUserIds`, whoever holds
      * one of `editorRoleIds`, its maker, administrators and (`conversationEdits`) who reads it in its conversation; the
      * others only read it. Not limited: whoever sees it edits.
      */
@@ -255,7 +255,7 @@ export const artifacts = pgTable(
     /** With limited editors, whether who reads it in its conversation still edits it (a file in a conversation). */
     conversationEdits: boolean().notNull().default(true),
     /**
-     * Agents' access (ADR 0201): `agentBase` is every agent's level (a file of the Drive) or every agent's in its
+     * Agents' access (ADR 0202): `agentBase` is every agent's level (a file of the Drive) or every agent's in its
      * conversation; null keeps the rule from before, by where the file lives. `agentEditIds` edit and `agentViewIds`
      * read it whatever the base; the agent that made it always edits.
      */

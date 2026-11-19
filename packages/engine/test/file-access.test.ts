@@ -20,7 +20,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { makeLiveFile, personActor } from "./live-fixtures";
 
 /**
- * Who sees and who edits a file (ADR 0201): people, roles and agents, each to view or edit, beside who reads it where
+ * Who sees and who edits a file (ADR 0202): people, roles and agents, each to view or edit, beside who reads it where
  * it lives and the whole workspace. Files from before keep their rule: whoever sees edits, an agent where it lives
  * edits.
  */
