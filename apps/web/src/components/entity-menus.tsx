@@ -73,19 +73,21 @@ export function useArchiveChannelWithUndo() {
   const router = useRouter();
   const archive = useArchiveChannel(org.id);
   const restore = useRestoreChannel();
-  const run = (channel: Pick<Channel, "id" | "name">, onDone?: () => void) =>
-    archive.mutate(channel.id, {
-      onSuccess: () => {
-        onDone?.();
-        if (router.state.location.pathname.includes(`/c/${channel.id}`))
-          void navigate({ to: "/org/$orgId", params: { orgId: org.id } });
+  const run = (channel: Pick<Channel, "id" | "name">, onDone?: () => void) => {
+    // It leaves the lists at once, so its page goes now too. The call's own promise, not a mutation callback: the
+    // screen that archived it may be gone when the answer comes.
+    onDone?.();
+    if (router.state.location.pathname.includes(`/c/${channel.id}`))
+      void navigate({ to: "/org/$orgId", params: { orgId: org.id } });
+    void archive.mutateAsync(channel.id).then(
+      () =>
         toast.show(t("channel.archived", { channel: channel.name }), "info", {
           label: t("channelCategories.undo"),
           run: () => restore.run(channel),
-        });
-      },
-      onError: (e) => toast.show(errorText(t, e), "error"),
-    });
+        }),
+      (e: unknown) => toast.show(errorText(t, e), "error"),
+    );
+  };
   return { run, pending: archive.isPending };
 }
 

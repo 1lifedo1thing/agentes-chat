@@ -158,7 +158,6 @@ export function TeamPage() {
                   variant="ghost"
                   icon="undo"
                   aria-label={t("team.restoreAction", agentGrammar(a.name))}
-                  disabled={restore.isPending}
                   onClick={() => restoreAgent(a)}
                 >
                   {t("team.restore")}

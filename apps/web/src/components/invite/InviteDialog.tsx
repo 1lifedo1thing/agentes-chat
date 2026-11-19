@@ -196,13 +196,14 @@ function InviteDialog({ request, open, onClose }: { request: InviteRequest; open
   const send = useMutation({
     mutationFn: (input: InviteBatch) => api.orgs.inviteMany(org.id, input),
     meta: { silent: true },
-    onSettled: () => qc.invalidateQueries({ queryKey: keys.invitations(org.id) }),
+    // Not awaited: the dialog answers when the server did, not after the list was read again.
+    onSettled: () => void qc.invalidateQueries({ queryKey: keys.invitations(org.id) }),
   });
   // Link's: the workspace's link renewed as it opens, or a link of its own. Here, so it locks the whole dialog.
   const make = useMutation({
     mutationFn: (c: LinkChoices) => api.invites.createLink(org.id, c),
     meta: { silent: true },
-    onSettled: () => qc.invalidateQueries({ queryKey: keys.inviteLinks(org.id) }),
+    onSettled: () => void qc.invalidateQueries({ queryKey: keys.inviteLinks(org.id) }),
   });
   const pending = send.isPending || make.isPending;
   const unsaved = useEdited(open, [chips, draft, note]) || pending;
