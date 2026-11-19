@@ -16,7 +16,7 @@ import type { LiveDoc } from "./useLiveDoc";
 /**
  * A live file's bar on the phone (ADR 0196), the same for a spreadsheet, a presentation and a canvas: the system's
  * back, the file's name with how it stands under it ("Salvo", "Salvando…", "Sem conexão · guardado no celular", "Só
- * leitura") beside the faces of who else is in it, then Compartilhar (who sees and edits it, ADR 0157, 0201) and the
+ * leitura") beside the faces of who else is in it, then Compartilhar (who sees and edits it, ADR 0157, 0202) and the
  * "…": Pedir para editar while only viewing it, the screen's own choices, then Desfazer and Refazer (only this person's changes, never an agent's), Enviar cópia (as the
  * Office file other apps open) and Ver no Drive. On Android the "…" lists the same choices in the app's sheet.
  */
@@ -114,7 +114,8 @@ export function LiveBar({
         ]
       : []),
   ];
-  return <PushedHeader title={<LiveTitle live={live} fileId={fileId} title={title} />} actions={bar} />;
+  // The file's name in the bar's middle, as on every screen, whatever stands on the right.
+  return <PushedHeader centered title={<LiveTitle live={live} fileId={fileId} title={title} />} actions={bar} />;
 }
 
 /** How long a dropped connection waits before the bar says so (a quick reconnect says nothing). */

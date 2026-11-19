@@ -17,12 +17,21 @@ import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { serverUrl } from "@/lib/server";
 import { useOrg } from "@/providers/org";
-import { Button, EmptyState, GroupedFooter, Locked, RoleMark, SheetScreen, SkeletonList, useToast } from "@/ui";
+import {
+  Button,
+  EmptyState,
+  GroupedFooter,
+  Locked,
+  RoleMark,
+  SheetBar,
+  SheetScreen,
+  SkeletonList,
+  useToast,
+} from "@/ui";
 import { AccessList, type AccessListRow } from "../shared/AccessList";
 import { Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useDirectory, useMeId, useOrgId } from "../shared/hooks";
-import { SheetTitle } from "../shared/PromptForm";
 import { copyText, successHaptic } from "../shared/parts";
 
 type Row = "view" | "edit";
@@ -54,7 +63,7 @@ const listOf = (rows: Record<string, Row>): ArtifactAccessRow[] =>
   Object.entries(rows).map(([id, level]) => ({ id, level }));
 
 /**
- * Compartilhar on the phone (ADR 0157, 0201), the web's dialog on the shared `AccessList`, as the wiki's Acesso: who
+ * Compartilhar on the phone (ADR 0157, 0202), the web's dialog on the shared `AccessList`, as the wiki's Acesso: who
  * reads it where it lives (a file of the Drive itself: its maker, who always edits), the whole workspace and the
  * agents, then roles, people and agents, each a level a tap walks through; Salvar keeps it. Whoever may not change it
  * sees the list as it is. Copiar link stays at the foot.
@@ -244,7 +253,8 @@ function Form({
     );
   return (
     <SheetScreen>
-      <SheetTitle title={t("share.title", { name: a.title })} />
+      {/* A task sheet: the close plate and the title in its bar, as every task sheet has them (no "Concluído" under it). */}
+      <SheetBar inset title={t("share.title", { name: a.title })} onClose={onClose} />
       <Locked when={save.isPending} style={styles.fields}>
         {readOnly ? <GroupedFooter>{t(drive ? "share.readOnlyDrive" : "share.readOnly")}</GroupedFooter> : null}
         {/* The access lists keep their own 16 at the sides: out of the sheet's padding, as on the wiki's Acesso. */}
@@ -278,7 +288,6 @@ function Form({
         <GroupedFooter>{t(modeKey(org, "share.admins"))}</GroupedFooter>
         {readOnly ? null : <Button variant="primary" wide label={t("common.save")} onPress={keep} />}
         <Button variant="secondary" wide icon="link" label={t("share.copyLink")} onPress={() => void copy()} />
-        <Button variant="secondary" wide label={t("common.close")} onPress={onClose} />
       </Locked>
     </SheetScreen>
   );

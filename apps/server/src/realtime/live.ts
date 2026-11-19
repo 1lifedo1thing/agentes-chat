@@ -147,7 +147,7 @@ export interface LiveSocketDeps {
 }
 
 /** Who a file is shared with, as one string to compare (`LiveSocketData.sharing`). */
-/** Who sees and who edits it (ADR 0157, 0201): a change to either checks the sockets' access again. */
+/** Who sees and who edits it (ADR 0157, 0202): a change to either checks the sockets' access again. */
 const sharingKey = (a: {
   share: string;
   shareUserIds: string[];

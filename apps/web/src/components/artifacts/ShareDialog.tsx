@@ -74,7 +74,7 @@ const listOf = (rows: Record<string, Row>): ArtifactAccessRow[] =>
   Object.entries(rows).map(([id, level]) => ({ id, level }));
 
 /**
- * Compartilhar (ADR 0157, 0201), as the wiki's Acesso: one list with a level for each row. Always there: who reads it
+ * Compartilhar (ADR 0157, 0202), as the wiki's Acesso: one list with a level for each row. Always there: who reads it
  * where it lives (a file of the Drive itself: its maker, who always edits), the whole workspace and the agents (every
  * agent of the workspace, or the agents where it lives); added: people, roles and agents, each to view or edit.
  * Whoever may not change it sees the list as it is. Copiar link stays at the foot.

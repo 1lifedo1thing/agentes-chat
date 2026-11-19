@@ -107,7 +107,7 @@ const pickLevel = async (dialog: HTMLElement, select: string, option: string) =>
   await settle(1);
 };
 
-describe("Compartilhar (ADR 0157, 0201)", () => {
+describe("Compartilhar (ADR 0157, 0202)", () => {
   test("a DM's file: one list with a level for each row; the link's warning beside Copiar link, which copies the app's address", async () => {
     const { report } = await drive();
     await fromDetails("Relatório de visitas", "Compartilhar");
