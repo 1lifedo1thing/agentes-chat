@@ -37,7 +37,6 @@ import { useFontScale } from "@/ui/text-scale";
 import { leadBox } from "@/ui/type-scale";
 import { useBubblePart } from "./bubble-part";
 import { useColors } from "./hooks";
-import { NavSubtitle } from "./nav-subtitle";
 
 /**
  * Small pieces the screens share that the design system doesn't have as
@@ -223,12 +222,12 @@ export function PushedHeader({
 }: {
   title?: ReactNode;
   /**
-   * A line under the title (the step, the board, who sent a file). iOS 26: the system bar's own subtitle, centred
-   * with the title by the bar itself (`NavSubtitle`). Before it, drawn with the title, kept clear of the wider side so
-   * the bar centres both instead of pushing them against the back button; on Android, drawn at the bar's start.
+   * A line under the title (the step, the board, who sent a file), drawn with it in a view of our own: on iOS kept
+   * clear of the wider side (`titleSide`) so the bar centres both instead of pushing them against the back button,
+   * on Android at the bar's start.
    */
   subtitle?: string | undefined;
-  /** The drawn line's colour (a dropped connection's warning); the system's bar keeps its own gray. */
+  /** The line's colour (a dropped connection's warning); muted when not given. */
   subtitleColor?: string | undefined;
   right?: ReactNode;
   action?: HeaderWordAction;
@@ -259,11 +258,10 @@ export function PushedHeader({
   const text = typeof title === "string" ? title : "";
   const titleNode = useHeaderSlot(typeof title === "string" ? null : title);
   const rightNode = useHeaderSlot(right);
-  // The system's bar holds the line under its title (iOS 26); elsewhere it is drawn with the title.
-  const nativeLine = NavSubtitle !== null && typeof title === "string";
-  const line = subtitle && !nativeLine ? subtitle : undefined;
+  // The bar of the navigator the app uses has no subtitle: a title with a line is drawn, both, in a view of our own.
+  const line = subtitle || undefined;
   // Words are the system's own title; a view of our own (a pill, a fading name, a segmented control) is ours, and so
-  // are words with a line the bar can't hold.
+  // are words with a line under them.
   const custom = (title != null && typeof title !== "string") || line !== undefined;
   // What stands on the right, which a drawn title and its line keep clear of on both sides.
   const rightCount = (actions?.length ?? 0) + (lead != null ? 1 : 0) + (right ? 1 : 0);
@@ -297,7 +295,7 @@ export function PushedHeader({
               node={titleNode}
               line={line}
               lineColor={subtitleColor}
-              side={line !== undefined ? titleSide(word !== null, rightCount) : word !== null ? 100 : 75}
+              side={line !== undefined ? titleSide(word, rightCount) : word !== null ? 100 : 75}
             />
           )
         : text,
@@ -359,20 +357,21 @@ export function PushedHeader({
       wordOff,
     ],
   );
-  return (
-    <>
-      <Stack.Screen options={options} />
-      {/* Always there with words for a title, so a line dropped later leaves the bar too. */}
-      {NavSubtitle && typeof title === "string" ? <NavSubtitle subtitle={subtitle} style={styles.navLine} /> : null}
-    </>
-  );
+  // Nothing of its own in the screen, only its options: the navigator finds a screen's list through its first
+  // children (to fold a large title, to turn the bar to glass as the list scrolls under it), and a view placed here
+  // would be the first one.
+  return <Stack.Screen options={options} />;
 }
 
 /**
- * Before iOS 26, how far a drawn title and its line keep from each edge so the bar can centre them: the wider side's
- * room (the back button's or one button's, a word's, and 50 for each more button).
+ * How far a drawn title and its line keep from each edge, the wider side's room, so the bar can centre them: the back
+ * button (a 44-point circle) on the left; on the right a word's capsule (about 9 points a letter and 32 of padding)
+ * and 44 points a button; the bar's 16-point margin and 8 of air before the title on both.
  */
-const titleSide = (word: boolean, buttons: number) => (word ? 100 : 75) + 50 * Math.max(0, buttons - (word ? 0 : 1));
+const titleSide = (word: string | null, buttons: number) => {
+  const right = (word ? 32 + word.length * 9 + (buttons > 0 ? 8 : 0) : 0) + 44 * buttons;
+  return 16 + Math.max(44, right) + 8;
+};
 
 /**
  * A word and buttons together on a bar (a task's "Concluir" beside its "…"): the word at the bar's end, the buttons
@@ -423,8 +422,8 @@ export interface HeaderWordAction {
 
 /**
  * A title of our own in the native bar (centered on iOS, leading on Android): a view (the conversation's pill), or the
- * words with their line under them where the system's bar has no subtitle. `side`: the room kept on each side, the
- * wider side's, so iOS centres it instead of pushing it against the back button.
+ * words with their line under them. `side`: the room kept on each side, the wider side's, so iOS centres it instead
+ * of pushing it against the back button.
  */
 function HeaderTitle({
   text,
@@ -526,8 +525,6 @@ const styles = StyleSheet.create({
   mono: { fontFamily: MONO, fontSize: 13 },
   headerTitle: { alignItems: Platform.OS === "ios" ? "center" : "flex-start", minWidth: 0 },
   titleText: { fontWeight: "600" },
-  // The system bar's subtitle sits in the screen with no size (`NavSubtitle`).
-  navLine: { position: "absolute", width: 0, height: 0 },
   headerRight: { flexDirection: "row", alignItems: "center" },
   headerWithWord: { gap: 8 },
 });

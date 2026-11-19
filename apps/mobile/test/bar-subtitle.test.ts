@@ -1,45 +1,30 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /*
  * A pushed screen's title and its line (the step, the board, the plan, who sent a file) stand together in the bar,
- * centred. On iOS 26 the system's bar holds the line itself (`UINavigationItem.subtitle`), set by the app's own
- * module (the navigator has none); before it, and on Android, `PushedHeader` draws both, kept clear of the wider side
- * so the bar never pushes them against the back button.
+ * centred: the navigator's bar has no subtitle, so `PushedHeader` draws both as its title (the navigator's own
+ * `headerTitle`), kept clear of the wider side so the bar never pushes them against the back button.
  */
 const APP = join(import.meta.dir, "..");
 const read = (path: string) => readFileSync(join(APP, path), "utf8");
 
-test("on iOS 26 the system's bar holds the line: a view of no size sets the screen's navigation item", () => {
-  const swift = read("modules/nav-subtitle/ios/NavSubtitleModule.swift");
-  expect(swift).toContain('Name("NavSubtitle")');
-  expect(swift).toContain("if #available(iOS 26.0, *) {");
-  expect(swift).toContain("screenController()?.navigationItem.subtitle = subtitle");
-  // Older compilers know no subtitle: the module builds and says it can't.
-  expect(swift).toContain("#if compiler(>=6.2)");
-  expect(JSON.parse(read("modules/nav-subtitle/expo-module.config.json"))).toEqual({
-    platforms: ["apple"],
-    apple: { modules: ["NavSubtitleModule"] },
-  });
-  const js = read("src/features/shared/nav-subtitle.ts");
-  expect(js).toContain('requireOptionalNativeModule<NavSubtitleNative>("NavSubtitle")');
-  expect(js).toMatch(/native\?\.supported\(\)\s*\?\s*requireNativeView\("NavSubtitle"\)\s*:\s*null/);
+test("PushedHeader puts nothing in the screen, only its options", () => {
+  // The navigator finds a screen's list through the screen's first children (to fold a large title, to turn the bar
+  // to glass as the list scrolls under it): a view of the header placed there hid the list from it, and large titles
+  // stayed open over the lists.
+  const parts = read("src/features/shared/parts.tsx");
+  const header = parts.slice(parts.indexOf("export function PushedHeader({"), parts.indexOf("const titleSide ="));
+  expect(header).toContain("  return <Stack.Screen options={options} />;\n}");
+  expect(header.match(/return /g)?.length).toBe(1);
+  expect(existsSync(join(APP, "modules/nav-subtitle"))).toBe(false);
 });
 
-test("PushedHeader: the system's line where there is one, drawn with the title elsewhere", () => {
+test("a title's line is drawn with it, kept clear of the wider side so the bar centres both", () => {
   const parts = read("src/features/shared/parts.tsx");
-  expect(parts).toContain('const nativeLine = NavSubtitle !== null && typeof title === "string";');
-  expect(parts).toContain("const line = subtitle && !nativeLine ? subtitle : undefined;");
-  // Always there with words for a title, so a line dropped later leaves the bar too.
-  expect(parts).toContain(
-    '{NavSubtitle && typeof title === "string" ? <NavSubtitle subtitle={subtitle} style={styles.navLine} /> : null}',
-  );
-  // Drawn: kept clear of the wider side, so iOS centres it.
-  expect(parts).toContain(
-    "side={line !== undefined ? titleSide(word !== null, rightCount) : word !== null ? 100 : 75}",
-  );
-  expect(parts).not.toContain("BarNote");
+  expect(parts).toContain('const custom = (title != null && typeof title !== "string") || line !== undefined;');
+  expect(parts).toContain("side={line !== undefined ? titleSide(word, rightCount) : word !== null ? 100 : 75}");
 });
 
 test("the screens hand their line to the bar", () => {
