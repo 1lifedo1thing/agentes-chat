@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { schema, sql, tracingLogger } from "@agenteschat/db";
+import { rowsOf, schema, sql, tracingLogger } from "@agenteschat/db";
 import { operatorRunTimings } from "@agenteschat/engine";
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
@@ -72,6 +72,21 @@ async function ok<T = Record<string, unknown>>(res: Response) {
   return (await res.json()) as T;
 }
 const refusal = async (res: Response) => [res.status, ((await res.json()) as { error: { code: string } }).error.code];
+/** The statements `read` sent to the database, each on one line. */
+async function issuedBy(read: () => Promise<unknown>) {
+  const issued: string[] = [];
+  const logged = tracingLogger.logQuery;
+  tracingLogger.logQuery = (query?: string) => {
+    issued.push((query ?? "").replace(/\s+/g, " ").trim());
+    logged();
+  };
+  try {
+    await read();
+  } finally {
+    tracingLogger.logQuery = logged;
+  }
+  return issued;
+}
 
 type Rows = Record<string, unknown>[];
 type Timings = {
@@ -248,7 +263,10 @@ test("computer starts and waits: per brain, each wait until the run's next step,
   await step(waited, 4, "model_call", { model: "claude-sonnet-5-5" }, at(130));
   // No next step: until the run's end.
   const ended = await run({ createdAt: at(0), brain: "claude_code", finishedAt: at(210) });
-  await step(ended, 1, "error", { reason: "provider_outage", message: "x" }, at(200));
+  await step(ended, 1, "error", { reason: "brain_unavailable", code: "standby" }, at(200));
+  // A provider's outage is no wait for a computer: in no row.
+  const outage = await run({ createdAt: at(0), brain: "model", finishedAt: at(400) });
+  await step(outage, 1, "error", { reason: "provider_outage", message: "x" }, at(300));
   // Neither: until the window's end, which is before now.
   const open = await run({ createdAt: at(0), brain: "codex", status: "waiting_input" });
   await step(open, 1, "error", { reason: "brain_unavailable", code: "offline" }, new Date(from + DAY - 45_000));
@@ -286,13 +304,13 @@ test("computer starts and waits: per brain, each wait until the run's next step,
   });
   expect(found.waits).toEqual([
     wait("claude_code", "brain_unavailable:busy", 2, 1, 45, 57, 60, 90),
-    wait("claude_code", "provider_outage", 1, 1, 10, 10, 10, 10),
+    wait("claude_code", "brain_unavailable:standby", 1, 1, 10, 10, 10, 10),
     // Its second step came a second before the window's end: the wait ended there.
     wait("codex", "brain_unavailable:offline", 1, 1, 44, 44, 44, 44),
   ]);
   expect((await timings(`${windowOf(2)}&by=model`)).waits.map((w) => [w.cause, w.brain, w.model])).toEqual([
     ["brain_unavailable:busy", "claude_code", "claude-sonnet-5-5"],
-    ["provider_outage", "claude_code", null],
+    ["brain_unavailable:standby", "claude_code", null],
     ["brain_unavailable:offline", "codex", null],
   ]);
 
@@ -666,8 +684,9 @@ test("the query is checked, the token is needed, and the read is bounded in time
   expect((await get(q({ from, to: plus(DAY) }), null)).status).toBe(401);
   expect((await get(q({ from, to: plus(DAY) }), "wrong")).status).toBe(401);
   expect((await get(q({ from, to: plus(DAY) }), TOKEN)).status).toBe(200);
-  // The longest window, and an instant written with an offset.
-  expect((await get(q({ from, to: plus(31 * DAY) }))).status).toBe(200);
+  // The longest window across workspaces and in one, and an instant written with an offset.
+  expect((await get(q({ from, to: plus(7 * DAY) }))).status).toBe(200);
+  expect((await get(q({ from, to: plus(31 * DAY), orgId: ada }))).status).toBe(200);
   expect((await timings(new URLSearchParams({ from: "2026-10-17T02:00:00+02:00", to: plus(1) }).toString())).from).toBe(
     from,
   );
@@ -675,13 +694,18 @@ test("the query is checked, the token is needed, and the read is bounded in time
   for (const range of [
     { from, to: from },
     { from, to: plus(-1) },
-    { from, to: plus(31 * DAY + 1) },
+    { from, to: plus(7 * DAY + 1) },
+    { from, to: plus(8 * DAY) },
+    { from, to: plus(31 * DAY + 1), orgId: ada },
+    { from, to: plus(32 * DAY), orgId: ada },
     { from: "2026-10-17", to: plus(DAY) },
     { from, to: "tomorrow" },
     { from: "2026-02-30T00:00:00Z", to: "2026-03-02T00:00:00Z" },
-  ]) {
+  ] as Record<string, string>[]) {
     expect(await refusal(await get(q(range)))).toEqual([400, "analytics.range"]);
   }
+  const { error } = (await (await get(q({ from, to: plus(8 * DAY) }))).json()) as { error: { message: string } };
+  expect(error.message).toMatch(/\b7 days .*\b31 with orgId/);
   for (const shape of [
     { from },
     { to: plus(DAY) },
@@ -694,17 +718,7 @@ test("the query is checked, the token is needed, and the read is bounded in time
   }
 
   // Both statements run with the planner's compiler off and a limit on how long they may run.
-  const issued: string[] = [];
-  const logged = tracingLogger.logQuery;
-  tracingLogger.logQuery = (query?: string) => {
-    issued.push((query ?? "").replace(/\s+/g, " ").trim());
-    logged();
-  };
-  try {
-    await timings(windowOf(17));
-  } finally {
-    tracingLogger.logQuery = logged;
-  }
+  const issued = await issuedBy(() => timings(windowOf(17)));
   const settings = issued.filter((statement) => statement.startsWith("set local"));
   expect(settings.sort()).toEqual([
     "set local jit = off",
@@ -712,4 +726,21 @@ test("the query is checked, the token is needed, and the read is bounded in time
     "set local statement_timeout = '20s'",
     "set local statement_timeout = '20s'",
   ]);
+});
+
+test("the waits are asked for in the words of the index that finds them", async () => {
+  // The planner reads a run's waits through the partial index only when the statement holds the index's condition.
+  // Both are brought down to the same words: the index's as the database prints it, the statement's as it was sent.
+  const words = (text: string) => text.replace(/::\w+|[()\s]|\bs\./g, "").toLowerCase();
+  const [index] = rowsOf<{ condition: string }>(
+    await t.db.execute(
+      sql`select pg_get_expr(indpred, indrelid) as condition from pg_index
+        where indexrelid = 'agent_run_steps_run_id_index'::regclass`,
+    ),
+  );
+  expect(index?.condition).toContain("brain_unavailable");
+  const issued = await issuedBy(() => timings(`${windowOf(19)}&by=model`));
+  const waits = issued.filter((statement) => statement.includes("agent_run_steps s "));
+  expect(waits.length).toBe(1);
+  expect(words(waits[0] ?? "")).toContain(words(index?.condition ?? "none"));
 });

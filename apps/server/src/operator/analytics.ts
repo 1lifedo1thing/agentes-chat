@@ -14,6 +14,7 @@ import {
   operatorOrgWorkAnalytics,
   operatorRunTimings,
   operatorWorkAnalytics,
+  RUN_TIMINGS_FLEET_MAX_DAYS,
   RUN_TIMINGS_MAX_DAYS,
   RUN_TIMINGS_ROWS_MAX,
   WORK_ANALYTICS_HOURLY_DAYS,
@@ -359,7 +360,7 @@ const TimingsQuery = z.object({
     example: "2026-10-30T00:00:00Z",
   }),
   to: z.string().openapi({
-    description: `An ISO 8601 instant: runs created before it. After \`from\`, at most ${RUN_TIMINGS_MAX_DAYS} days apart. Else 400 \`analytics.range\`.`,
+    description: `An ISO 8601 instant: runs created before it. After \`from\`, at most ${RUN_TIMINGS_FLEET_MAX_DAYS} days apart across workspaces and ${RUN_TIMINGS_MAX_DAYS} with \`orgId\`. Else 400 \`analytics.range\`.`,
     example: "2026-10-31T00:00:00Z",
   }),
   orgId: z.uuid().optional().openapi({ description: "Only this workspace's runs." }),
@@ -427,7 +428,7 @@ const RunTimings = z
         z.object({
           cause: z.string().openapi({
             description:
-              "`brain_unavailable:<code>` (a wait for its computer: `busy` for room, `offline`, `standby`, …) or `provider_outage`. `other`: not shaped like either. Ignore values you don't know.",
+              "`brain_unavailable:<code>`, a wait for its computer by its code: `busy` for room, `offline`, `standby`, … `other`: not shaped like one. Ignore values you don't know.",
           }),
           ...TimingsGroup,
           waits: Count,
@@ -439,7 +440,7 @@ const RunTimings = z
         }),
       )
       .openapi({
-        description: `By brain, then model, then most waits first, at most ${RUN_TIMINGS_ROWS_MAX}: the most frequent. Each wait lasts until the run's next step, its end, or the earlier of now and \`to\`.`,
+        description: `The waits for a computer alone (a provider's outage is not among them). By brain, then model, then most waits first, at most ${RUN_TIMINGS_ROWS_MAX}: the most frequent. Each wait lasts until the run's next step, its end, or the earlier of now and \`to\`.`,
       }),
   })
   .openapi("OperatorRunTimings");
@@ -689,8 +690,7 @@ export function registerOperatorAnalytics(api: OpenAPIHono, { db }: OperatorDeps
       path: "/analytics/run-timings",
       tags,
       summary: "Where the runs' time went: each stage, how computer turns started and the waits, per brain or model",
-      description:
-        "Of the runs created in the window, across workspaces or in one. Counts, times and the server's own words only: no message, no name. An unknown workspace answers with zeros.",
+      description: `Of the runs created in the window: ${RUN_TIMINGS_FLEET_MAX_DAYS} days at most across workspaces, ${RUN_TIMINGS_MAX_DAYS} in one (\`orgId\`). Counts, times and the server's own words only: no message, no name. An unknown workspace answers with zeros.`,
       request: { query: TimingsQuery },
       responses: { 200: json(RunTimings), 400: errors[400], 401: errors[401] },
     }),

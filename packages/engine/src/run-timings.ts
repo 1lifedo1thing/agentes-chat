@@ -15,8 +15,10 @@ import { instantOf } from "./operator-paging";
 export const RUN_CLAIMS_MAX = 10;
 export const RUN_CLAIM_STAGES_MAX = 200;
 export const RUN_CLAIM_TURNS_MAX = 50;
-/** The longest window of `operatorRunTimings`, and the most rows of each of its lists. */
+/** The longest window of `operatorRunTimings` in one workspace, and across them all, which reads every one's runs. */
 export const RUN_TIMINGS_MAX_DAYS = 31;
+export const RUN_TIMINGS_FLEET_MAX_DAYS = 7;
+/** The most rows of each of its lists. */
 export const RUN_TIMINGS_ROWS_MAX = 300;
 /** A stage, a claim or a computer's start lasting longer than a day is no measure. */
 const TIMING_MAX_MS = 86_400_000;
@@ -87,15 +89,17 @@ const byWord = (a: string | null, b: string | null) =>
   a === b ? 0 : a === null ? 1 : b === null ? -1 : a < b ? -1 : 1;
 
 /**
- * Where the time of the runs created in a window went (31 days at most), across workspaces or in one, per brain or
- * per brain and model: each stage's count and percentiles, how computer turns started, and the waits by cause.
+ * Where the time of the runs created in a window went, in one workspace (31 days at most) or across them (7), per
+ * brain or per brain and model: each stage's count and percentiles, how computer turns started, and the waits for a
+ * computer by their code.
  */
 export async function operatorRunTimings(db: Database, query: RunTimingsQuery, now = new Date()) {
   const [from, to] = [instantOf(query.from), instantOf(query.to)];
   const apart = from && to ? Date.parse(to) - Date.parse(from) : 0;
-  if (!from || !to || apart <= 0 || apart > RUN_TIMINGS_MAX_DAYS * 86_400_000) {
+  const maxDays = query.orgId ? RUN_TIMINGS_MAX_DAYS : RUN_TIMINGS_FLEET_MAX_DAYS;
+  if (!from || !to || apart <= 0 || apart > maxDays * 86_400_000) {
     throw new ValidationError(
-      `from and to are ISO 8601 instants, from before to, at most ${RUN_TIMINGS_MAX_DAYS} days apart`,
+      `from and to are ISO 8601 instants, from before to, at most ${RUN_TIMINGS_FLEET_MAX_DAYS} days apart across workspaces and ${RUN_TIMINGS_MAX_DAYS} with orgId`,
       "analytics.range",
     );
   }
@@ -172,19 +176,20 @@ export async function operatorRunTimings(db: Database, query: RunTimingsQuery, n
           from b group by brain, model order by turns desc, brain, model limit ${sql.raw(kept)}
         ) g) as starts`),
     // A wait is a step written once: it lasts until the run's next step, its end, or the earlier of now and `to`.
-    // Materialized, or each of the four measures of `sec` below would look the next step up again.
+    // Materialized, or each of the four measures of `sec` below would look the next step up again. The step's
+    // condition is the one of `agent_run_steps`'s partial index on `run_id`, word for word: the planner reads the
+    // waits through that index only when it can prove the condition from the statement's.
     read(sql`
       with w as materialized (
         select ar.id, ${brain} as brain, ${model} as model,
-          case when s.data->>'reason' = 'brain_unavailable'
-            then 'brain_unavailable:' || coalesce(s.data->>'code', 'other') else s.data->>'reason' end as said,
+          'brain_unavailable:' || coalesce(s.data->>'code', 'other') as said,
           greatest(extract(epoch from coalesce(
             (select n.created_at from agent_run_steps n where n.run_id = s.run_id and n.seq > s.seq
               order by n.seq limit 1),
             ar.finished_at, least(${now.toISOString()}::timestamptz, ${to}::timestamptz)) - s.created_at)::float8,
             0) as sec
         from agent_runs ar join agent_run_steps s on s.run_id = ar.id
-        where ${runsIn} and s.kind = 'error' and s.data->>'reason' in ('brain_unavailable', 'provider_outage')
+        where ${runsIn} and s.kind = 'error' and s.data->>'reason' = 'brain_unavailable'
       )
       select case when said ~ '${sql.raw(CAUSE_SQL)}' then said else 'other' end as cause, brain, model,
         count(*)::int as waits, count(distinct id)::int as runs, ${sql.raw(pct(0.5, "sec"))} as "medianSec",
