@@ -24,7 +24,6 @@ import {
   IconTile,
   LivePause,
   RowPressable,
-  SCREEN_X,
   Text,
   ToggleSwitch,
   textLineOf,
@@ -38,6 +37,7 @@ import { useFontScale } from "@/ui/text-scale";
 import { leadBox } from "@/ui/type-scale";
 import { useBubblePart } from "./bubble-part";
 import { useColors } from "./hooks";
+import { NavSubtitle } from "./nav-subtitle";
 
 /**
  * Small pieces the screens share that the design system doesn't have as
@@ -197,9 +197,9 @@ const liquidGlass = IOS && !needsHeaderBlur(Platform.OS, Platform.Version);
 
 /**
  * The bar of a pushed screen, as the native header (react-native-screens): the system back chevron with
- * the edge swipe, a title (the system's own when it is words: centred and shortened by it), an action on the right.
- * What a subtitle would say goes under the bar, as a `BarNote` (the navigator has no native subtitle). Renders nothing
- * itself; it sets the screen's header options, so screens keep calling it where the bar used to be.
+ * the edge swipe, a title (the system's own when it is words: centred and shortened by it) with its line under it,
+ * an action on the right. Renders nothing itself; it sets the screen's header options, so screens keep calling it
+ * where the bar used to be.
  * The bar is opaque by default (`solid`, content lays out below it); `solid={false}` makes content scroll
  * under it (glass on iOS 26, blur before; the screen's scroll view needs
  * `contentInsetAdjustmentBehavior="automatic"`); `plate` puts a clear bar over a full-bleed cover. On Android
@@ -218,8 +218,18 @@ export function PushedHeader({
   largeTitle = false,
   actions,
   lead,
+  subtitle,
+  subtitleColor,
 }: {
   title?: ReactNode;
+  /**
+   * A line under the title (the step, the board, who sent a file). iOS 26: the system bar's own subtitle, centred
+   * with the title by the bar itself (`NavSubtitle`). Before it, drawn with the title, kept clear of the wider side so
+   * the bar centres both instead of pushing them against the back button; on Android, drawn at the bar's start.
+   */
+  subtitle?: string | undefined;
+  /** The drawn line's colour (a dropped connection's warning); the system's bar keeps its own gray. */
+  subtitleColor?: string | undefined;
   right?: ReactNode;
   action?: HeaderWordAction;
   /**
@@ -249,8 +259,14 @@ export function PushedHeader({
   const text = typeof title === "string" ? title : "";
   const titleNode = useHeaderSlot(typeof title === "string" ? null : title);
   const rightNode = useHeaderSlot(right);
-  // Words are the system's own title; only a view of our own (a pill, a fading name, a segmented control) is ours.
-  const custom = title != null && typeof title !== "string";
+  // The system's bar holds the line under its title (iOS 26); elsewhere it is drawn with the title.
+  const nativeLine = NavSubtitle !== null && typeof title === "string";
+  const line = subtitle && !nativeLine ? subtitle : undefined;
+  // Words are the system's own title; a view of our own (a pill, a fading name, a segmented control) is ours, and so
+  // are words with a line the bar can't hold.
+  const custom = (title != null && typeof title !== "string") || line !== undefined;
+  // What stands on the right, which a drawn title and its line keep clear of on both sides.
+  const rightCount = (actions?.length ?? 0) + (lead != null ? 1 : 0) + (right ? 1 : 0);
   const hasRight = Boolean(right);
   // The action's press always reaches its latest handler; the options change only with its word and state.
   const press = useRef(action?.onPress);
@@ -274,7 +290,17 @@ export function PushedHeader({
         ? { headerLargeTitleShadowVisible: false, headerLargeTitleStyle: { color: colors.ink } }
         : null),
       title: text,
-      headerTitle: custom ? () => <HeaderTitle node={titleNode} beside={word !== null} /> : text,
+      headerTitle: custom
+        ? () => (
+            <HeaderTitle
+              text={line !== undefined ? text : ""}
+              node={titleNode}
+              line={line}
+              lineColor={subtitleColor}
+              side={line !== undefined ? titleSide(word !== null, rightCount) : word !== null ? 100 : 75}
+            />
+          )
+        : text,
       ...(word !== null && IOS
         ? {
             unstable_headerRightItems: () => [
@@ -323,6 +349,9 @@ export function PushedHeader({
       colors.ink,
       text,
       custom,
+      line,
+      subtitleColor,
+      rightCount,
       titleNode,
       hasRight,
       rightNode,
@@ -330,8 +359,20 @@ export function PushedHeader({
       wordOff,
     ],
   );
-  return <Stack.Screen options={options} />;
+  return (
+    <>
+      <Stack.Screen options={options} />
+      {/* Always there with words for a title, so a line dropped later leaves the bar too. */}
+      {NavSubtitle && typeof title === "string" ? <NavSubtitle subtitle={subtitle} style={styles.navLine} /> : null}
+    </>
+  );
 }
+
+/**
+ * Before iOS 26, how far a drawn title and its line keep from each edge so the bar can centre them: the wider side's
+ * room (the back button's or one button's, a word's, and 50 for each more button).
+ */
+const titleSide = (word: boolean, buttons: number) => (word ? 100 : 75) + 50 * Math.max(0, buttons - (word ? 0 : 1));
 
 /**
  * A word and buttons together on a bar (a task's "Concluir" beside its "…"): the word at the bar's end, the buttons
@@ -381,37 +422,43 @@ export interface HeaderWordAction {
 }
 
 /**
- * A title of our own in the native bar (centered on iOS, leading on Android). `beside`: a word action (Save) on the
- * right, wider than the back button: the centered title keeps clear of it on both sides.
+ * A title of our own in the native bar (centered on iOS, leading on Android): a view (the conversation's pill), or the
+ * words with their line under them where the system's bar has no subtitle. `side`: the room kept on each side, the
+ * wider side's, so iOS centres it instead of pushing it against the back button.
  */
-function HeaderTitle({ node, beside = false }: { node: HeaderSlotStore; beside?: boolean }) {
+function HeaderTitle({
+  text,
+  node,
+  line,
+  lineColor,
+  side,
+}: {
+  text: string;
+  node: HeaderSlotStore;
+  line?: string | undefined;
+  lineColor?: string | undefined;
+  side: number;
+}) {
   const { width } = useWindowDimensions();
-  return (
-    <View style={[styles.headerTitle, { maxWidth: width - (beside ? 200 : 150) }]}>
-      {/* A title of our own is pressable (the conversation's pill): its tap is its, not the bar's scroll to top. */}
-      <BarPressable>
-        <HeaderSlot slot={node} />
-      </BarPressable>
-    </View>
-  );
-}
-
-/**
- * What a native subtitle says (the navigator has none yet: a title and a subtitle of our own in the bar did not fit
- * its middle beside the buttons and were pushed against the back button): a quiet line centred right under the bar,
- * the bar keeping the system's own title. On a screen whose content scrolls under the bar, the first thing in it.
- */
-export function BarNote({ children, color }: { children: ReactNode; color?: string }) {
   const c = useColors();
   return (
-    <Text
-      variant="footnote"
-      numberOfLines={2}
-      style={[styles.barNote, { color: color ?? c.faint }]}
-      accessibilityLiveRegion="polite"
-    >
-      {children}
-    </Text>
+    <View style={[styles.headerTitle, { maxWidth: width - 2 * side }]}>
+      {text ? (
+        <Text variant="body" numberOfLines={1} style={styles.titleText}>
+          {text}
+        </Text>
+      ) : (
+        // A title of our own is pressable (the conversation's pill): its tap is its, not the bar's scroll to top.
+        <BarPressable>
+          <HeaderSlot slot={node} />
+        </BarPressable>
+      )}
+      {line ? (
+        <Text variant="caption" numberOfLines={1} style={{ color: lineColor ?? c.muted }}>
+          {line}
+        </Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -478,7 +525,9 @@ const styles = StyleSheet.create({
   actionText: { flex: 1, minWidth: 0 },
   mono: { fontFamily: MONO, fontSize: 13 },
   headerTitle: { alignItems: Platform.OS === "ios" ? "center" : "flex-start", minWidth: 0 },
-  barNote: { textAlign: "center", paddingHorizontal: SCREEN_X, paddingTop: 4, paddingBottom: 10 },
+  titleText: { fontWeight: "600" },
+  // The system bar's subtitle sits in the screen with no size (`NavSubtitle`).
+  navLine: { position: "absolute", width: 0, height: 0 },
   headerRight: { flexDirection: "row", alignItems: "center" },
   headerWithWord: { gap: 8 },
 });
