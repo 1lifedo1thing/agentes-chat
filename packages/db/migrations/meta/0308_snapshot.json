@@ -1,5 +1,5 @@
 {
-  "id": "df70f40e-4ab4-4777-b120-c567b087a268",
+  "id": "2a9565ce-6d7f-40f2-aaa1-df9613391745",
   "prevId": "8512bfa1-0aee-4bf7-843c-850be23feead",
   "version": "7",
   "dialect": "postgresql",
@@ -4504,54 +4504,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "editors_limited": {
-          "name": "editors_limited",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "editor_user_ids": {
-          "name": "editor_user_ids",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::text[]"
-        },
-        "editor_role_ids": {
-          "name": "editor_role_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
-        },
-        "conversation_edits": {
-          "name": "conversation_edits",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "agent_base": {
-          "name": "agent_base",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "agent_view_ids": {
-          "name": "agent_view_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
-        },
-        "agent_edit_ids": {
-          "name": "agent_edit_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::uuid[]"
         }
       },
       "indexes": {
@@ -15822,6 +15774,13 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "disconnects": {
+          "name": "disconnects",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "standby_at": {
           "name": "standby_at",

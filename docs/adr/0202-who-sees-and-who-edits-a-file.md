@@ -14,7 +14,7 @@
   `artifact.access_invalid`); UI `packages/ui/src/components/AccessDialog.tsx` (`readOnly`); web
   `components/artifacts/ShareDialog.tsx`, `components/live/LiveHeader.tsx` and `LiveFilePage.tsx` (Pedir para
   editar); phone `features/files/ShareSheet.tsx`, `features/live-files/shared/LiveBar.tsx`; migration
-  `0306_file_access.sql`; tests `packages/engine/test/file-access.test.ts`, `apps/web/test/file-sharing.test.tsx`
+  `0309_file_access.sql`; tests `packages/engine/test/file-access.test.ts`, `apps/web/test/file-sharing.test.tsx`
 
 ## Context
 
@@ -43,7 +43,7 @@ itself reached every agent.
 3. **What is kept.** Who sees stays `share`, `share_user_ids` and `share_role_ids` (ADR 0157), derived from the rows.
    Beside them, on `artifacts`: `editors_limited` (someone who sees it only views), `editor_user_ids`,
    `editor_role_ids`, `conversation_edits` (its conversation edits), `agent_base` and the named agents
-   `agent_view_ids` and `agent_edit_ids` (migration 0306). A file nobody has set levels on keeps its rule:
+   `agent_view_ids` and `agent_edit_ids` (migration 0309). A file nobody has set levels on keeps its rule:
    `editors_limited` false (whoever sees it edits) and `agent_base` null (an agent where it lives edits; a Drive file
    reaches agents as before). `accessOf` reads the columns back as the list the apps draw.
 4. **One gate for writes.** `writable` is the check every change goes through (a new version, a live file's socket,
