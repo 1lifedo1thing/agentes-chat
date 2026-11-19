@@ -173,7 +173,7 @@ test("nobody answers for a working run of a confidential thread: the conversatio
   const [stored] = await w.db.select().from(schema.messages).where(eq(schema.messages.id, message.id));
   if (!run || !stored) throw new Error("no run");
   const before = w.f.provider.calls.length;
-  await talker.consider({ run, message: stored, live: false, waited: null });
+  await talker.consider({ run, message: stored, waited: null });
   expect(decisions).toEqual(["confidential"]);
   expect(
     w.f.provider.calls.slice(before).filter((c) => systemText(c.request.system).includes("conversation layer")),
