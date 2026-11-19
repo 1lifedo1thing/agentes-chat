@@ -650,7 +650,8 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       if (message.meta.issueWork || message.meta.issueWorkStart || message.meta.issueTaken) return;
       if (message.meta.taskConversation || message.meta.fileConversation) return;
       // A fast reply while the task works (talker.ts): its task reads it; it starts nobody, not even by mention.
-      if (message.meta.talker) return;
+      // Nor does the line an agent says before slow work (`say_now`, ADR 0207): its reply comes after it.
+      if (message.meta.talker || message.meta.sayNow) return;
       // A GIF or a sticker alone (ADR 0091), an agent's silent one after its reply too: it starts nobody, routes
       // to nobody and gets no sticker after it. Its insert queues no `message.posted`; one delivered anyway does
       // nothing.
