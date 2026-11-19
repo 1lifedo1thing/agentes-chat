@@ -292,7 +292,7 @@ const workTotals = z.object({
       z.object({
         cause: z.string().openapi({
           description:
-            "`brain_unavailable:<code>` (a wait for its computer: `busy` for room, `offline`, `standby`, …) or `provider_outage`. Ignore values you don't know.",
+            "`brain_unavailable:<code>` (a wait for its computer: `busy` for room, `machine_offline`, `machine_paused`, …) or `provider_outage`. Ignore values you don't know.",
         }),
         waits: Count,
         medianSec: z.number().int().nullable(),
@@ -428,7 +428,7 @@ const RunTimings = z
         z.object({
           cause: z.string().openapi({
             description:
-              "`brain_unavailable:<code>`, a wait for its computer by its code: `busy` for room, `offline`, `standby`, … `other`: not shaped like one. Ignore values you don't know.",
+              "`brain_unavailable:<code>`, a wait for its computer or a sign-in on it, by its code: `busy` for room, `machine_offline`, `not_logged_in`, … `other`: not shaped like one. Ignore values you don't know.",
           }),
           ...TimingsGroup,
           waits: Count,

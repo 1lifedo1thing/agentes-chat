@@ -263,13 +263,13 @@ test("computer starts and waits: per brain, each wait until the run's next step,
   await step(waited, 4, "model_call", { model: "claude-sonnet-5-5" }, at(130));
   // No next step: until the run's end.
   const ended = await run({ createdAt: at(0), brain: "claude_code", finishedAt: at(210) });
-  await step(ended, 1, "error", { reason: "brain_unavailable", code: "standby" }, at(200));
+  await step(ended, 1, "error", { reason: "brain_unavailable", code: "machine_paused" }, at(200));
   // A provider's outage is no wait for a computer: in no row.
   const outage = await run({ createdAt: at(0), brain: "model", finishedAt: at(400) });
   await step(outage, 1, "error", { reason: "provider_outage", message: "x" }, at(300));
   // Neither: until the window's end, which is before now.
   const open = await run({ createdAt: at(0), brain: "codex", status: "waiting_input" });
-  await step(open, 1, "error", { reason: "brain_unavailable", code: "offline" }, new Date(from + DAY - 45_000));
+  await step(open, 1, "error", { reason: "brain_unavailable", code: "machine_offline" }, new Date(from + DAY - 45_000));
   // Another error is no wait.
   await step(open, 2, "error", { reason: "transient", code: "run.provider_rate_limit" }, new Date(from + DAY - 1000));
 
@@ -304,14 +304,14 @@ test("computer starts and waits: per brain, each wait until the run's next step,
   });
   expect(found.waits).toEqual([
     wait("claude_code", "brain_unavailable:busy", 2, 1, 45, 57, 60, 90),
-    wait("claude_code", "brain_unavailable:standby", 1, 1, 10, 10, 10, 10),
+    wait("claude_code", "brain_unavailable:machine_paused", 1, 1, 10, 10, 10, 10),
     // Its second step came a second before the window's end: the wait ended there.
-    wait("codex", "brain_unavailable:offline", 1, 1, 44, 44, 44, 44),
+    wait("codex", "brain_unavailable:machine_offline", 1, 1, 44, 44, 44, 44),
   ]);
   expect((await timings(`${windowOf(2)}&by=model`)).waits.map((w) => [w.cause, w.brain, w.model])).toEqual([
     ["brain_unavailable:busy", "claude_code", "claude-sonnet-5-5"],
-    ["brain_unavailable:standby", "claude_code", null],
-    ["brain_unavailable:offline", "codex", null],
+    ["brain_unavailable:machine_paused", "claude_code", null],
+    ["brain_unavailable:machine_offline", "codex", null],
   ]);
 
   // A wait still open is counted to now while the window is not over, and never as less than nothing.
