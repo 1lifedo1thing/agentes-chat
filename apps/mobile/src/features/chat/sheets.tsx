@@ -40,7 +40,7 @@ import { setPinDraft } from "../dashboards/logic";
 import { chatHref } from "../links/logic";
 import { AgentFace, Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { type Directory, useDirectory, useOrgId } from "../shared/hooks";
+import { type Directory, useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { genderOf, previewOf } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
 import { type ActionItem, ActionList, copyText, successHaptic, Tile, tapHaptic, useSurface } from "../shared/parts";
@@ -332,7 +332,7 @@ export type PlusPick = "camera" | "photos" | "file" | "media" | "summary" | "rem
  */
 export function PlusActions({ onPick, media = false }: { onPick: (pick: PlusPick) => void; media?: boolean }) {
   const { t } = useTranslation();
-  const surface = useSurface();
+  const c = useColors();
   const tiles: { key: PlusPick; icon: "camera" | "image" | "file" | "sticker"; label: string }[] = [
     { key: "camera", icon: "camera", label: t("mobile.plus.camera") },
     { key: "photos", icon: "image", label: t("mobile.plus.photos") },
@@ -349,12 +349,10 @@ export function PlusActions({ onPick, media = false }: { onPick: (pick: PlusPick
             accessibilityRole="button"
             accessibilityLabel={x.label}
             style={styles.tileBtn}
-            contentStyle={styles.tileIn}
+            contentStyle={[styles.tileIn, { backgroundColor: c.raised }]}
           >
-            <View style={[styles.bigTile, surface]}>
-              <Icon name={x.icon} size={24} />
-            </View>
-            <Text variant="caption" tone="ink2">
+            <Icon name={x.icon} size={24} />
+            <Text variant="caption" tone="ink2" numberOfLines={1} maxFontSizeMultiplier={CHROME_MAX_SCALE}>
               {x.label}
             </Text>
           </PressScale>
@@ -759,8 +757,16 @@ const styles = StyleSheet.create({
   emoText: { fontSize: 26, lineHeight: 34 },
   // The action groups, divided as the menu divides them.
   groups: { gap: 12 },
-  tiles: { flexDirection: "row", justifyContent: "space-between" },
+  tiles: { flexDirection: "row", gap: 8 },
   tileBtn: { flex: 1 },
-  tileIn: { alignItems: "center", gap: 8, paddingVertical: 6 },
-  bigTile: { width: 54, height: 54, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  // The four share the list's width and edges (its sides are theirs), each a flat raised square as the list is.
+  tileIn: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    height: 76,
+    paddingHorizontal: 4,
+    borderRadius: 18,
+    borderCurve: "continuous",
+  },
 });
