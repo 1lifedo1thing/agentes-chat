@@ -10063,7 +10063,7 @@
       "get": {
         "tags": ["Operator"],
         "summary": "Where the runs' time went: each stage, how computer turns started and the waits, per brain or model",
-        "description": "Of the runs created in the window: 7 days at most across workspaces, 31 in one (`orgId`). Counts, times and the server's own words only: no message, no name. An unknown workspace answers with zeros.",
+        "description": "Of the runs created in the window: 2 days at most across workspaces, 31 in one (`orgId`). Counts, times and the server's own words only: no message, no name. An unknown workspace answers with zeros.",
         "parameters": [
           {
             "schema": {
@@ -10079,11 +10079,11 @@
           {
             "schema": {
               "type": "string",
-              "description": "An ISO 8601 instant: runs created before it. After `from`, at most 7 days apart across workspaces and 31 with `orgId`. Else 400 `analytics.range`.",
+              "description": "An ISO 8601 instant: runs created before it. After `from`, at most 2 days apart across workspaces and 31 with `orgId`. Else 400 `analytics.range`.",
               "example": "2026-10-31T00:00:00Z"
             },
             "required": true,
-            "description": "An ISO 8601 instant: runs created before it. After `from`, at most 7 days apart across workspaces and 31 with `orgId`. Else 400 `analytics.range`.",
+            "description": "An ISO 8601 instant: runs created before it. After `from`, at most 2 days apart across workspaces and 31 with `orgId`. Else 400 `analytics.range`.",
             "name": "to",
             "in": "query"
           },

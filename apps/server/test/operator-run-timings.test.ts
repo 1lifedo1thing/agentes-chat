@@ -685,7 +685,7 @@ test("the query is checked, the token is needed, and the read is bounded in time
   expect((await get(q({ from, to: plus(DAY) }), "wrong")).status).toBe(401);
   expect((await get(q({ from, to: plus(DAY) }), TOKEN)).status).toBe(200);
   // The longest window across workspaces and in one, and an instant written with an offset.
-  expect((await get(q({ from, to: plus(7 * DAY) }))).status).toBe(200);
+  expect((await get(q({ from, to: plus(2 * DAY) }))).status).toBe(200);
   expect((await get(q({ from, to: plus(31 * DAY), orgId: ada }))).status).toBe(200);
   expect((await timings(new URLSearchParams({ from: "2026-10-17T02:00:00+02:00", to: plus(1) }).toString())).from).toBe(
     from,
@@ -694,8 +694,8 @@ test("the query is checked, the token is needed, and the read is bounded in time
   for (const range of [
     { from, to: from },
     { from, to: plus(-1) },
-    { from, to: plus(7 * DAY + 1) },
-    { from, to: plus(8 * DAY) },
+    { from, to: plus(2 * DAY + 1) },
+    { from, to: plus(3 * DAY) },
     { from, to: plus(31 * DAY + 1), orgId: ada },
     { from, to: plus(32 * DAY), orgId: ada },
     { from: "2026-10-17", to: plus(DAY) },
@@ -704,8 +704,8 @@ test("the query is checked, the token is needed, and the read is bounded in time
   ] as Record<string, string>[]) {
     expect(await refusal(await get(q(range)))).toEqual([400, "analytics.range"]);
   }
-  const { error } = (await (await get(q({ from, to: plus(8 * DAY) }))).json()) as { error: { message: string } };
-  expect(error.message).toMatch(/\b7 days .*\b31 with orgId/);
+  const { error } = (await (await get(q({ from, to: plus(3 * DAY) }))).json()) as { error: { message: string } };
+  expect(error.message).toMatch(/\b2 days .*\b31 with orgId/);
   for (const shape of [
     { from },
     { to: plus(DAY) },

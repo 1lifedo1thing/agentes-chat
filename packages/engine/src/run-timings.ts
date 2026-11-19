@@ -17,7 +17,7 @@ export const RUN_CLAIM_STAGES_MAX = 200;
 export const RUN_CLAIM_TURNS_MAX = 50;
 /** The longest window of `operatorRunTimings` in one workspace, and across them all, which reads every one's runs. */
 export const RUN_TIMINGS_MAX_DAYS = 31;
-export const RUN_TIMINGS_FLEET_MAX_DAYS = 7;
+export const RUN_TIMINGS_FLEET_MAX_DAYS = 2;
 /** The most rows of each of its lists. */
 export const RUN_TIMINGS_ROWS_MAX = 300;
 /** A stage, a claim or a computer's start lasting longer than a day is no measure. */
