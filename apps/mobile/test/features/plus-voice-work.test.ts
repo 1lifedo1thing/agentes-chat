@@ -43,18 +43,15 @@ describe("a voice message's play button", () => {
   });
 });
 
-describe("the long work's card", () => {
-  test("in a message, its actions are its foot: equal buttons under a hairline, words in neutral ink", () => {
+describe("the long work's line in a message", () => {
+  test('a quiet line under the bubble: its words open the work, a thin rule and "Parar", neutral until pressed', () => {
     const line = src("features/chat/WorkLine.tsx");
-    expect(line).toContain("const bar = inBody && actions.length > 0;");
-    expect(line).toContain("<BarAction key={a.key} action={a} divider={i > 0} />");
-    expect(line).toContain(
-      'barButton: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },',
-    );
-    // No brand blue on an action: neutral, the stop in the danger color.
+    expect(line).not.toContain("BarAction");
+    expect(line).toContain("const go = actions.filter((a) => !a.danger).sort((a, b) => a.rank - b.rank)[0];");
+    expect(line).toContain("color: halt.disabled ? c.faint : pressed ? c.danger : c.ink");
+    // No brand blue on an action.
     expect(line).not.toContain("c.agent }]}");
-    expect(line).toContain("a.danger ? c.danger : c.ink");
-    // A state's mark the size of the words beside it.
-    expect(line).toContain("const MARK = 16;");
+    // On a task's screen it stays the screen's card.
+    expect(line).toContain('<View style={[styles.card, surface]} accessibilityRole="summary">');
   });
 });

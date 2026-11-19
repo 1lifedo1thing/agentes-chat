@@ -16,13 +16,14 @@ import { createContext, type ReactNode, useContext, useEffect, useState } from "
 import { Trans, useTranslation } from "react-i18next";
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, haptics, LineIcon, PixelOrbit, Text, useToast } from "@/ui";
+import { Button, haptics, LineIcon, PixelOrbit, Text, textLineOf, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
+import { useFontScale } from "@/ui/text-scale";
 import { chatHref } from "../links/logic";
 import { useBubblePart } from "../shared/bubble-part";
 import { useColors, useOrgId } from "../shared/hooks";
 import { tapHaptic, useSurface } from "../shared/parts";
-import { RowPartContext, useCardTop, useMessageCardCorners } from "./look";
+import { RowPartContext, useCardTop } from "./look";
 import { useRowDirectory, useRowMeId } from "./row-data";
 
 /** The conversation's list scrolls to one of its messages (false: it doesn't show it). */
@@ -105,7 +106,7 @@ function Line({
   const surface = useSurface();
   const part = useBubblePart();
   const cardTop = useCardTop();
-  const cardCorners = useMessageCardCorners();
+  const fontScale = useFontScale();
   const inBody = useContext(RowPartContext) !== null;
   const line = useLine(work, inUpdatesThread);
   const { stop, t } = line;
@@ -158,61 +159,102 @@ function Line({
       .map((a) => a.key),
   );
   const actions = all.filter((a) => kept.has(a.key));
-  // In a message, its actions are the card's foot: buttons of equal width under a hairline, as the system's alerts
-  // and notifications put theirs (colored links under the words read as a web page). On a task's screen, words.
-  const bar = inBody && actions.length > 0;
+  // The state's words, the handed work's or the work's own, at the given size.
+  const said = (variant: "small" | "caption") =>
+    h ? (
+      <>
+        <Trans i18nKey="work.handed.lead" values={{ name: line.agentName }} components={[<Text key="face" />]} />
+        {" · "}
+        <Text
+          variant={variant}
+          style={[styles.bold, { color: h.tone === "working" ? c.agent : h.tone === "waiting" ? c.warn : c.ink }]}
+        >
+          {h.state}
+        </Text>
+        {h.facts.map((fact) => ` · ${fact}`).join("")}
+      </>
+    ) : (
+      view.text
+    );
+  const markOf = (variant: "small" | "caption", size: number) =>
+    view.tone === "working" ? (
+      <LineIcon variant={variant} size={size} mark>
+        <PixelOrbit color="sky" size={size - 2} />
+      </LineIcon>
+    ) : (
+      <LineIcon variant={variant} name={mark.icon} size={size} color={mark.color} />
+    );
+  if (inBody) {
+    // In a message: a quiet line under it, in the conversation's working line's words (a card under the bubble read
+    // as a dialog in the chat). The way to the work (its result, its task or its thread) is its words' tap, said after
+    // them; "Parar" ends the line after a thin rule, neutral until pressed.
+    const go = actions.filter((a) => !a.danger).sort((a, b) => a.rank - b.rank)[0];
+    const halt = actions.find((a) => a.danger);
+    return (
+      <View style={[styles.quiet, part ? styles.quietInBubble : null, cardTop]} accessibilityRole="summary">
+        <View style={styles.quietMark}>{markOf("caption", QUIET_MARK)}</View>
+        <Pressable
+          onPress={go?.onPress}
+          disabled={!go}
+          accessibilityRole={go ? "button" : undefined}
+          {...(go ? { accessibilityHint: go.label } : {})}
+          style={({ pressed }) => [styles.quietWords, pressed && styles.pressed]}
+        >
+          <Text variant="caption" tone="muted">
+            {said("caption")}
+            {go ? (
+              <>
+                {" · "}
+                <Text variant="caption" style={[styles.bold, { color: c.ink2 }]}>
+                  {go.label}
+                </Text>
+              </>
+            ) : null}
+          </Text>
+          {view.question ? (
+            <Text variant="caption" tone="ink" numberOfLines={2}>
+              {view.question.text}
+            </Text>
+          ) : null}
+          {view.update ? (
+            <Text variant="caption" tone="faint">
+              {view.update}
+            </Text>
+          ) : null}
+        </Pressable>
+        {halt ? (
+          <View style={[styles.quietStop, { height: textLineOf("caption", fontScale).height }]}>
+            <View style={[styles.rule, { backgroundColor: c.line }]} />
+            <Pressable
+              onPress={halt.onPress}
+              disabled={halt.disabled}
+              accessibilityRole="button"
+              accessibilityLabel={halt.label}
+              // A caption word: 14 above and under make the 44 a finger needs.
+              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+            >
+              {({ pressed }) => (
+                <Text
+                  variant="caption"
+                  style={[styles.bold, { color: halt.disabled ? c.faint : pressed ? c.danger : c.ink }]}
+                >
+                  {halt.label}
+                </Text>
+              )}
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+    );
+  }
   return (
-    <View
-      style={[
-        styles.card,
-        // In a conversation of bubbles, a bubble of the message that handed it (its fill, joined to it).
-        inBody && part
-          ? [styles.inBody, { borderWidth: 0 }, surface]
-          : inBody
-            ? [styles.inBody, { backgroundColor: c.raised, borderColor: c.line2 }]
-            : surface,
-        // The corners every card in a message has (none outside one: the screen's card above).
-        cardCorners,
-        cardTop,
-        bar && styles.clip,
-      ]}
-      accessibilityRole="summary"
-    >
+    <View style={[styles.card, surface]} accessibilityRole="summary">
       <View style={styles.line}>
         {/* On the first line's reading middle. */}
-        <View style={styles.mark}>
-          {view.tone === "working" ? (
-            <LineIcon variant="small" size={MARK} mark>
-              <PixelOrbit color="sky" size={MARK - 2} />
-            </LineIcon>
-          ) : (
-            <LineIcon variant="small" name={mark.icon} size={MARK} color={mark.color} />
-          )}
-        </View>
+        <View style={styles.mark}>{markOf("small", MARK)}</View>
         <View style={styles.body}>
           <Text variant="small" tone="ink2">
-            {h ? (
-              <>
-                <Trans
-                  i18nKey="work.handed.lead"
-                  values={{ name: line.agentName }}
-                  components={[<Text key="face" />]}
-                />
-                {" · "}
-                <Text
-                  variant="small"
-                  style={[
-                    styles.bold,
-                    { color: h.tone === "working" ? c.agent : h.tone === "waiting" ? c.warn : c.ink },
-                  ]}
-                >
-                  {h.state}
-                </Text>
-                {h.facts.map((fact) => ` · ${fact}`).join("")}
-              </>
-            ) : (
-              view.text
-            )}
+            {said("small")}
           </Text>
           {view.question ? (
             <Text variant="small" tone="ink" numberOfLines={2}>
@@ -224,7 +266,7 @@ function Line({
               {view.update}
             </Text>
           ) : null}
-          {!bar && actions.length > 0 ? (
+          {actions.length > 0 ? (
             <View style={styles.actions}>
               {actions.map((a) => (
                 <Action key={a.key} action={a} />
@@ -234,13 +276,6 @@ function Line({
           {below}
         </View>
       </View>
-      {bar ? (
-        <View style={[styles.bar, { borderTopColor: c.line2 }]}>
-          {actions.map((a, i) => (
-            <BarAction key={a.key} action={a} divider={i > 0} />
-          ))}
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -254,34 +289,9 @@ interface WorkAction {
   disabled?: boolean;
 }
 
-/** The status mark beside the line, on its first line's middle. */
+/** The status mark beside the line, on its first line's middle; in a message's quiet line, the caption's size. */
 const MARK = 16;
-
-/** A button of the card's foot: an equal share of its width, 44 tall, a hairline before every one but the first. */
-function BarAction({ action: a, divider }: { action: WorkAction; divider: boolean }) {
-  const c = useColors();
-  return (
-    <Pressable
-      onPress={a.onPress}
-      disabled={a.disabled}
-      accessibilityRole="button"
-      accessibilityLabel={a.label}
-      style={({ pressed }) => [
-        styles.barButton,
-        divider && [styles.barDivider, { borderLeftColor: c.line2 }],
-        pressed && { backgroundColor: c.sunken },
-      ]}
-    >
-      <Text
-        variant="small"
-        numberOfLines={1}
-        style={[styles.action, { color: a.disabled ? c.faint : a.danger ? c.danger : c.ink }]}
-      >
-        {a.label}
-      </Text>
-    </Pressable>
-  );
-}
+const QUIET_MARK = 14;
 
 /** One action in words, on a task's screen: neutral, the stop in the danger color. */
 function Action({ action: a }: { action: WorkAction }) {
@@ -470,22 +480,24 @@ export function useShareWork(issue: Issue): { share: () => void; pending: boolea
 const styles = StyleSheet.create({
   // The app's card: radius 20 with the cut corner.
   card: { borderRadius: 20, borderBottomLeftRadius: 6 },
-  // With a foot, its pressed buttons stay inside the corners (only then: clipping would cut a raised card's shadow).
-  clip: { overflow: "hidden" },
   // The mark and the words: text at 14 + 16 + 10 = 40 from the card's left edge.
   line: { flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
-  // The card's foot in a message: its actions side by side under a hairline.
-  bar: { flexDirection: "row", borderTopWidth: StyleSheet.hairlineWidth },
-  barButton: { flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
-  barDivider: { borderLeftWidth: StyleSheet.hairlineWidth },
-  // In a message's body: the conversation's card family (ToolCalls, Receipts, TeamChecks, ReachLines).
-  inBody: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderTopLeftRadius: 14,
-    borderTopRightRadius: 14,
-    borderBottomRightRadius: 14,
-    borderBottomLeftRadius: 6,
+  // In a message: the line under it, as wide as its words, a little under the part above.
+  quiet: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    alignSelf: "flex-start",
+    maxWidth: "100%",
+    gap: 6,
+    paddingTop: 4,
   },
+  // Under a bubble: its mark where the bubble's words start.
+  quietInBubble: { paddingLeft: 14 },
+  quietMark: { width: QUIET_MARK, alignItems: "center" },
+  quietWords: { flexShrink: 1, minWidth: 0, gap: 2 },
+  // The rule and "Parar" on the words' first line.
+  quietStop: { flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 2 },
+  rule: { width: StyleSheet.hairlineWidth, height: 12 },
   mark: { width: 16, alignItems: "center" },
   body: { flex: 1, minWidth: 0, gap: 4 },
   actions: { flexDirection: "row", flexWrap: "wrap", columnGap: 16, rowGap: 4, marginTop: 4 },

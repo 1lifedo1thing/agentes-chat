@@ -15,7 +15,7 @@ import { useColors, useOrgId } from "../shared/hooks";
 import { MONO } from "../shared/parts";
 import { extensionOf, type FileRef, fileInfo, isCodeName } from "./logic";
 import { openFile } from "./open";
-import { useRemoteFile } from "./source";
+import { pictureDrawn, pictureFade, useRemoteFile } from "./source";
 
 /**
  * An attachment as a tile (as on the web): what it holds drawn small on top (its cover: a document's start, a table's
@@ -327,7 +327,8 @@ function PictureCover({ fileId, version }: { fileId: string; version: number }) 
           source={{ uri: link.data.uri, headers: link.data.headers, cacheKey: `${fileId}@${version}` }}
           recyclingKey={`${fileId}@${version}`}
           contentFit="cover"
-          transition={160}
+          transition={pictureFade(`${fileId}@${version}`)}
+          onLoad={() => pictureDrawn(`${fileId}@${version}`)}
           style={StyleSheet.absoluteFill}
           onError={() => setFailed(true)}
           accessible={false}
