@@ -12867,12 +12867,6 @@
       "read": "{{name}}: przeczytane",
       "resolved": "{{name}}: prośba o pomoc zamknięta"
     },
-    "well": {
-      "readYours": "Twoja notatka przeczytana",
-      "readOf": "Notatka od {{name}} przeczytana",
-      "nowYours": "Przerwa na przeczytanie twojej notatki",
-      "nowOf": "Przerwa na przeczytanie notatki od {{name}}"
-    },
     "strip": {
       "see": "Zobacz",
       "toStop": "aby zatrzymać"
