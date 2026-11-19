@@ -736,7 +736,7 @@ export async function operatorReveal(
 export interface DisclosureInput {
   from: Date;
   to: Date;
-  /** How many items were read, from 1 to `DISCLOSURE_MAX_COUNT`. */
+  /** How many items were read: a whole number from 1 to `DISCLOSURE_MAX_COUNT`, which the route's schema holds it to. */
   count: number;
 }
 
