@@ -127,7 +127,7 @@ beforeAll(async () => {
     secretCiphertext: "v1.fake.fake.fake",
     wrappedDataKey: "fake",
     kekId: "local:v1",
-    keyHint: "abcd",
+    keyHint: "wqrs",
     revokedAt,
   });
   await t.db
@@ -171,7 +171,7 @@ const PRIVATE = [
   "Ada@Example.com",
   "lia@example.com",
   "9xyz",
-  "abcd",
+  "wqrs",
   "org-ada",
   "org-lia",
   "Session",
