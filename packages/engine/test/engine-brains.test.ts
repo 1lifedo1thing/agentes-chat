@@ -67,6 +67,7 @@ import {
   notePlanLimit,
   OUTAGE_PARK,
   openDm,
+  operatorRunTimings,
   PERSON_ROOM_RETRY_MS,
   postPersonMessage,
   queueOnRun,
@@ -4326,6 +4327,13 @@ test("a Claude plan sign-in at its cap: the next run waits in line like any othe
   expect(run?.status).toBe("waiting_input");
   expect(run?.transcript).toMatchObject({ waitingForBrain: { code: "busy" }, signInWait: { key: "own" } });
   expect(seen).toHaveLength(0);
+  // The run timings tell this wait from the computer's own refusal and the line's spacing.
+  const timings = await operatorRunTimings(f.db, {
+    from: new Date(Date.now() - 3_600_000).toISOString(),
+    to: new Date(Date.now() + 60_000).toISOString(),
+    orgId: f.org.id,
+  });
+  expect(timings.waits.map((w) => w.cause)).toEqual(["brain_unavailable:busy:sign_in"]);
   const line = await computerQueue(f.db, f.owner.id, f.org.id, machineId);
   // In line like any turn waiting for room: the same status, no reason for the apps to tell apart.
   expect(line.waiting.map((w) => w.runId)).toEqual([run?.id ?? ""]);

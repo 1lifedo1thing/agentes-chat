@@ -182,7 +182,7 @@ export async function operatorRunTimings(db: Database, query: RunTimingsQuery, n
     read(sql`
       with w as materialized (
         select ar.id, ${brain} as brain, ${model} as model,
-          'brain_unavailable:' || coalesce(s.data->>'code', 'other') as said,
+          'brain_unavailable:' || coalesce(s.data->>'code', 'other') || coalesce(':' || (s.data->>'room'), '') as said,
           greatest(extract(epoch from coalesce(
             (select n.created_at from agent_run_steps n where n.run_id = s.run_id and n.seq > s.seq
               order by n.seq limit 1),
