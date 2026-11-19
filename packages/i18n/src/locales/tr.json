@@ -11873,12 +11873,6 @@
       "read": "{{name}} okudu",
       "resolved": "{{name}} yardım isteğini kapattı"
     },
-    "well": {
-      "readYours": "Notunuzu okudu",
-      "readOf": "{{name}} notunu okudu",
-      "nowYours": "Notunuzu okumak için durdu",
-      "nowOf": "{{name}} notunu okumak için durdu"
-    },
     "strip": {
       "see": "Gör",
       "toStop": "durdurmak için"

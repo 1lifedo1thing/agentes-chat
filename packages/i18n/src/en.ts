@@ -12329,12 +12329,6 @@ export const en = {
       read: "{{name}} read it",
       resolved: "{{name}} closed the help request",
     },
-    well: {
-      readYours: "Read your note",
-      readOf: "Read {{name}}'s note",
-      nowYours: "Stopped to read your note",
-      nowOf: "Stopped to read {{name}}'s note",
-    },
     strip: {
       see: "View",
       toStop: "to stop",

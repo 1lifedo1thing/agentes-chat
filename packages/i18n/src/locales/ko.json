@@ -11434,12 +11434,6 @@
       "read": "{{name}}이(가) 읽었어요",
       "resolved": "{{name}}이(가) 도움 요청을 닫았어요"
     },
-    "well": {
-      "readYours": "내 메모를 읽었어요",
-      "readOf": "{{name}}의 메모를 읽었어요",
-      "nowYours": "멈추고 내 메모를 읽었어요",
-      "nowOf": "멈추고 {{name}}의 메모를 읽었어요"
-    },
     "strip": {
       "see": "보기",
       "toStop": "중지"
