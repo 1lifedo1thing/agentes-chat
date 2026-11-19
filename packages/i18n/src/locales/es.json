@@ -17323,12 +17323,11 @@
       "request": "solicitud de soporte de {{name}}"
     },
     "operatorReview": {
-      "between_one": "{{who}} revisó {{value}} elemento por seguridad entre el {{from}} y el {{to}}",
-      "between_many": "{{who}} revisó {{value}} elementos por seguridad entre el {{from}} y el {{to}}",
-      "between_other": "{{who}} revisó {{value}} elementos por seguridad entre el {{from}} y el {{to}}",
-      "on_one": "{{who}} revisó {{value}} elemento por seguridad el {{date}}",
-      "on_many": "{{who}} revisó {{value}} elementos por seguridad el {{date}}",
-      "on_other": "{{who}} revisó {{value}} elementos por seguridad el {{date}}"
+      "sentence": "{{who}} revisó contenido por seguridad",
+      "items_one": "{{value}} elemento",
+      "items_many": "{{value}} elementos",
+      "items_other": "{{value}} elementos",
+      "period": "del {{from}} al {{to}}"
     },
     "change": {
       "mergedWithoutAsking": "Hizo merge en {{repo}} sin preguntar",

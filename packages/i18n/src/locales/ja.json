@@ -16253,8 +16253,9 @@
       "request": "{{name}}のサポートへの依頼"
     },
     "operatorReview": {
-      "between_other": "{{who}}が{{from}}から{{to}}の間に、安全上の理由で{{value}}件を確認",
-      "on_other": "{{who}}が{{date}}に、安全上の理由で{{value}}件を確認"
+      "sentence": "{{who}}が安全上の理由でコンテンツを確認",
+      "items_other": "{{value}}件",
+      "period": "{{from}}〜{{to}}"
     },
     "change": {
       "mergedWithoutAsking": "{{repo}}で確認なしでマージしました",

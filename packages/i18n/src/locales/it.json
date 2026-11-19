@@ -17414,12 +17414,11 @@
       "request": "richiesta di supporto di {{name}}"
     },
     "operatorReview": {
-      "between_one": "{{who}} ha esaminato {{value}} elemento per motivi di sicurezza tra il {{from}} e il {{to}}",
-      "between_many": "{{who}} ha esaminato {{value}} elementi per motivi di sicurezza tra il {{from}} e il {{to}}",
-      "between_other": "{{who}} ha esaminato {{value}} elementi per motivi di sicurezza tra il {{from}} e il {{to}}",
-      "on_one": "{{who}} ha esaminato {{value}} elemento per motivi di sicurezza il {{date}}",
-      "on_many": "{{who}} ha esaminato {{value}} elementi per motivi di sicurezza il {{date}}",
-      "on_other": "{{who}} ha esaminato {{value}} elementi per motivi di sicurezza il {{date}}"
+      "sentence": "{{who}} ha esaminato contenuti per motivi di sicurezza",
+      "items_one": "{{value}} elemento",
+      "items_many": "{{value}} elementi",
+      "items_other": "{{value}} elementi",
+      "period": "{{from}} – {{to}}"
     },
     "change": {
       "mergedWithoutAsking": "Ha fatto il merge in {{repo}} senza chiedere",

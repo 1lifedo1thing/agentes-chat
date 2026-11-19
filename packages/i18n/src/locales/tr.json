@@ -16777,10 +16777,10 @@
       "request": "{{name}} adlı üyenin destek talebi"
     },
     "operatorReview": {
-      "between_one": "{{who}} {{from}} ile {{to}} arasında güvenlik amacıyla {{value}} öğe inceledi",
-      "between_other": "{{who}} {{from}} ile {{to}} arasında güvenlik amacıyla {{value}} öğe inceledi",
-      "on_one": "{{who}} {{date}} tarihinde güvenlik amacıyla {{value}} öğe inceledi",
-      "on_other": "{{who}} {{date}} tarihinde güvenlik amacıyla {{value}} öğe inceledi"
+      "sentence": "{{who}} güvenlik amacıyla içerik inceledi",
+      "items_one": "{{value}} öğe",
+      "items_other": "{{value}} öğe",
+      "period": "{{from}} – {{to}}"
     },
     "change": {
       "mergedWithoutAsking": "{{repo}} içinde sormadan birleştirdi",

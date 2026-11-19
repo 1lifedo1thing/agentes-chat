@@ -41465,17 +41465,17 @@
   "audit.operatorReply.request": {
     "value": "support request from {{name}}"
   },
-  "audit.operatorReview.between": {
+  "audit.operatorReview.sentence": {
+    "value": "{{who}} reviewed content for safety"
+  },
+  "audit.operatorReview.items": {
     "value": {
-      "one": "{{who}} reviewed {{value}} item for safety between {{from}} and {{to}}",
-      "other": "{{who}} reviewed {{value}} items for safety between {{from}} and {{to}}"
+      "one": "{{value}} item",
+      "other": "{{value}} items"
     }
   },
-  "audit.operatorReview.on": {
-    "value": {
-      "one": "{{who}} reviewed {{value}} item for safety on {{date}}",
-      "other": "{{who}} reviewed {{value}} items for safety on {{date}}"
-    }
+  "audit.operatorReview.period": {
+    "value": "{{from}} to {{to}}"
   },
   "audit.change.mergedWithoutAsking": {
     "value": "Merged in {{repo}} without asking"

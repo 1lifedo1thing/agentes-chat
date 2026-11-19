@@ -17128,10 +17128,10 @@ export const ptBR = {
       request: "pedido de suporte de {{name}}",
     },
     operatorReview: {
-      between_one: "{{who}} analisou {{value}} item por segurança entre {{from}} e {{to}}",
-      between_other: "{{who}} analisou {{value}} itens por segurança entre {{from}} e {{to}}",
-      on_one: "{{who}} analisou {{value}} item por segurança em {{date}}",
-      on_other: "{{who}} analisou {{value}} itens por segurança em {{date}}",
+      sentence: "{{who}} analisou conteúdo por segurança",
+      items_one: "{{value}} item",
+      items_other: "{{value}} itens",
+      period: "{{from}} a {{to}}",
     },
     change: {
       mergedWithoutAsking: "Fez o merge em {{repo}} sem perguntar",

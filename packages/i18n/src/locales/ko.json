@@ -16245,8 +16245,9 @@
       "request": "{{name}}님의 지원 요청"
     },
     "operatorReview": {
-      "between_other": "{{who}}이 {{from}}부터 {{to}}까지 안전을 위해 항목 {{value}}개를 검토했어요",
-      "on_other": "{{who}}이 {{date}}에 안전을 위해 항목 {{value}}개를 검토했어요"
+      "sentence": "{{who}}이 안전을 위해 콘텐츠를 검토했어요",
+      "items_other": "{{value}}개 항목",
+      "period": "{{from}}~{{to}}"
     },
     "change": {
       "mergedWithoutAsking": "{{repo}}에서 묻지 않고 병합했어요",

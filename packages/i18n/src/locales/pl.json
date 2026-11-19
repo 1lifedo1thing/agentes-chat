@@ -17964,14 +17964,12 @@
       "request": "prośba o wsparcie od osoby: {{name}}"
     },
     "operatorReview": {
-      "between_one": "{{who}}: sprawdzono {{value}} element ze względów bezpieczeństwa między {{from}} a {{to}}",
-      "between_few": "{{who}}: sprawdzono {{value}} elementy ze względów bezpieczeństwa między {{from}} a {{to}}",
-      "between_many": "{{who}}: sprawdzono {{value}} elementów ze względów bezpieczeństwa między {{from}} a {{to}}",
-      "between_other": "{{who}}: sprawdzono {{value}} elementu ze względów bezpieczeństwa między {{from}} a {{to}}",
-      "on_one": "{{who}}: sprawdzono {{value}} element ze względów bezpieczeństwa w dniu {{date}}",
-      "on_few": "{{who}}: sprawdzono {{value}} elementy ze względów bezpieczeństwa w dniu {{date}}",
-      "on_many": "{{who}}: sprawdzono {{value}} elementów ze względów bezpieczeństwa w dniu {{date}}",
-      "on_other": "{{who}}: sprawdzono {{value}} elementu ze względów bezpieczeństwa w dniu {{date}}"
+      "sentence": "{{who}}: sprawdzono treści ze względów bezpieczeństwa",
+      "items_one": "{{value}} element",
+      "items_few": "{{value}} elementy",
+      "items_many": "{{value}} elementów",
+      "items_other": "{{value}} elementu",
+      "period": "od {{from}} do {{to}}"
     },
     "change": {
       "mergedWithoutAsking": "Scalono w {{repo}} bez pytania",

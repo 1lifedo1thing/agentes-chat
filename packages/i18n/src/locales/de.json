@@ -16842,10 +16842,10 @@
       "request": "Support-Anfrage von {{name}}"
     },
     "operatorReview": {
-      "between_one": "{{who}} hat {{value}} Element aus Sicherheitsgründen geprüft, zwischen dem {{from}} und dem {{to}}",
-      "between_other": "{{who}} hat {{value}} Elemente aus Sicherheitsgründen geprüft, zwischen dem {{from}} und dem {{to}}",
-      "on_one": "{{who}} hat {{value}} Element aus Sicherheitsgründen geprüft, am {{date}}",
-      "on_other": "{{who}} hat {{value}} Elemente aus Sicherheitsgründen geprüft, am {{date}}"
+      "sentence": "{{who}} hat Inhalte aus Sicherheitsgründen geprüft",
+      "items_one": "{{value}} Element",
+      "items_other": "{{value}} Elemente",
+      "period": "{{from}} bis {{to}}"
     },
     "change": {
       "mergedWithoutAsking": "In {{repo}} ohne Nachfrage gemergt",

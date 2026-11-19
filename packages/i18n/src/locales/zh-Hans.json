@@ -16322,8 +16322,9 @@
       "request": "{{name}} 的支持请求"
     },
     "operatorReview": {
-      "between_other": "{{who}}在{{from}}至{{to}}期间出于安全原因审查了 {{value}} 项内容",
-      "on_other": "{{who}}在{{date}}出于安全原因审查了 {{value}} 项内容"
+      "sentence": "{{who}}出于安全原因审查了内容",
+      "items_other": "{{value}} 项内容",
+      "period": "{{from}}至{{to}}"
     },
     "change": {
       "mergedWithoutAsking": "未经询问在 {{repo}} 中合并",

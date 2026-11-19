@@ -17260,15 +17260,19 @@ export const en = {
     },
     /** Whoever runs the server tells the workspace, afterwards, that it read content to investigate suspected abuse. */
     operatorReview: {
+      /** `who`: one of `operatorRead.who.*`. As short as the language allows: a phone's list cuts it after one line. */
+      sentence: "{{who}} reviewed content for safety",
       /**
-       * `who`: one of `operatorRead.who.*`. `value`: how many, as the language writes numbers. `from`, `to`: short
-       * dates ("Nov 3").
+       * Under the sentence, its first words: how many, before a "·" and the days. `value`: the count as the language
+       * writes numbers. It stands alone, so it takes the form a count has by itself.
        */
-      between_one: "{{who}} reviewed {{value}} item for safety between {{from}} and {{to}}",
-      between_other: "{{who}} reviewed {{value}} items for safety between {{from}} and {{to}}",
-      /** The same, of a review that began and ended on one day. `date`: a short date ("Nov 3"). */
-      on_one: "{{who}} reviewed {{value}} item for safety on {{date}}",
-      on_other: "{{who}} reviewed {{value}} items for safety on {{date}}",
+      items_one: "{{value}} item",
+      items_other: "{{value}} items",
+      /**
+       * Under the sentence, after the count and a "·": the review's first and last day. `from`, `to`: short dates
+       * ("Nov 3"). A review of one day shows that date alone, without these words.
+       */
+      period: "{{from}} to {{to}}",
     },
     change: {
       mergedWithoutAsking: "Merged in {{repo}} without asking",

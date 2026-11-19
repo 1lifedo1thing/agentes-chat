@@ -16910,10 +16910,10 @@
       "request": "supportverzoek van {{name}}"
     },
     "operatorReview": {
-      "between_one": "{{who}} controleerde {{value}} item om veiligheidsredenen tussen {{from}} en {{to}}",
-      "between_other": "{{who}} controleerde {{value}} items om veiligheidsredenen tussen {{from}} en {{to}}",
-      "on_one": "{{who}} controleerde {{value}} item om veiligheidsredenen op {{date}}",
-      "on_other": "{{who}} controleerde {{value}} items om veiligheidsredenen op {{date}}"
+      "sentence": "{{who}} controleerde inhoud om veiligheidsredenen",
+      "items_one": "{{value}} item",
+      "items_other": "{{value}} items",
+      "period": "{{from}} t/m {{to}}"
     },
     "change": {
       "mergedWithoutAsking": "Gemerged in {{repo}} zonder te vragen",
