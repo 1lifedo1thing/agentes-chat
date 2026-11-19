@@ -1033,6 +1033,40 @@ describe("A device's page", () => {
     expect(document.querySelector(".settings-rows")?.textContent).toContain("Same as Sam's MacBook Pro");
   });
 
+  test("a brought computer offline for a known cause: its way out names the command as code", async () => {
+    const app = await open(`/org/${ORG_ID}/settings/devices/${IMAC}`, (devices) => {
+      const list = acmeDevices();
+      const imac = list.devices.find((d) => d.id === IMAC);
+      if (imac?.status.kind !== "offline") throw new Error("fixture");
+      imac.status = { ...imac.status, cause: "unresponsive" };
+      devices.set(list);
+    });
+    const line = document.querySelector(".dv-statusline__text");
+    expect(line?.textContent).toContain("Run agentes-runner doctor on it.");
+    expect(line?.querySelector("code.ac-inlinecode")?.textContent).toBe("agentes-runner doctor");
+    // The longest translation keeps the command whole, with its own backticks never shown.
+    await showIn(app.services, "ru");
+    await settle(4);
+    const ru = document.querySelector(".dv-statusline__text");
+    expect(ru?.querySelector("code.ac-inlinecode")?.textContent).toBe("agentes-runner doctor");
+    expect(ru?.textContent).not.toContain("`");
+    (globalThis as { geometrySnapshot?: () => void }).geometrySnapshot?.();
+  });
+
+  test("a computer's typed name in the line stays as typed: its backticks and asterisks mark nothing", async () => {
+    const name = "Ana's `iMac` **<b>2</b>**";
+    await open(`/org/${ORG_ID}/settings/devices/phones/p-ana-iphone`, (devices) => {
+      const list = acmeDevices();
+      const imac = list.devices.find((d) => d.id === IMAC);
+      if (!imac) throw new Error("fixture");
+      imac.name = name;
+      devices.set(list);
+    });
+    const line = document.querySelector(".dv-statusline__text");
+    expect(line?.textContent).toContain(`${name} is offline.`);
+    expect(line?.querySelector("code, b")).toBeNull();
+  });
+
   test("spill-over on someone's computer: an admin may turn it off, never on", async () => {
     const { state } = await open(`/org/${ORG_ID}/settings/devices/${IMAC}`);
     const own = screen().getByRole("switch", { name: "Your replies can think here" });
