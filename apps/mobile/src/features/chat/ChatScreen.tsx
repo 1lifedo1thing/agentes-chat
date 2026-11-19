@@ -2310,6 +2310,7 @@ function Chat({
           onPress={pressMembers}
           extraActions={channelExtra}
           leadRoom={leadRoom}
+          inView={pillInView}
           onHold={onHoldPill}
           holdHint={holdHint}
           // A channel's pill opens who is in it, and says so (its "…" holds the options).
@@ -2533,6 +2534,11 @@ function Chat({
     },
     [walled, rhythm.turn, c.glass, c.line2],
   );
+  // The browser's and the picture's rows: one style object while the inset and the rhythm hold.
+  const cardRow = useMemo(
+    () => [styles.browserRow, { paddingLeft: quiet, marginTop: rhythm.turn }],
+    [quiet, rhythm.turn],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: Row }) => {
@@ -2552,20 +2558,14 @@ function Chat({
         case "browser": {
           const agentId = item.run ? item.run.agentId : item.handoff.agentId;
           return (
-            <Animated.View
-              entering={isFresh(item.key) ? ENTER : undefined}
-              style={[styles.browserRow, { paddingLeft: quiet, marginTop: rhythm.turn }]}
-            >
+            <Animated.View entering={isFresh(item.key) ? ENTER : undefined} style={cardRow}>
               {item.run ? <BrowserRunCard run={item.run} /> : <BrowserCard agentId={agentId} handoff={item.handoff} />}
             </Animated.View>
           );
         }
         case "image":
           return (
-            <Animated.View
-              entering={isFresh(item.key) ? ENTER : undefined}
-              style={[styles.browserRow, { paddingLeft: quiet, marginTop: rhythm.turn }]}
-            >
+            <Animated.View entering={isFresh(item.key) ? ENTER : undefined} style={cardRow}>
               <ImageMaking color={agentLook(dir.agentById.get(item.run.agentId)).color} />
             </Animated.View>
           );
@@ -2612,7 +2612,7 @@ function Chat({
       t,
       when,
       rhythm,
-      quiet,
+      cardRow,
       meId,
       isThread,
       channelId,
@@ -3919,7 +3919,7 @@ function OlderRow({ loading, failed, onRetry }: { loading: boolean; failed: bool
 }
 
 /** "Novas": before the first message that arrived while the person read above, until they leave the conversation. */
-function UnseenLine() {
+const UnseenLine = memo(function UnseenLine() {
   const { t } = useTranslation();
   const rhythm = useRhythm();
   const c = useColors();
@@ -3931,7 +3931,7 @@ function UnseenLine() {
       <View style={[styles.unseenRule, { backgroundColor: c.agent }]} />
     </View>
   );
-}
+});
 
 /**
  * The connection, above the composer: "Sem conexão. O que você mandar sai sozinho quando
@@ -4245,6 +4245,7 @@ const DmPill = memo(function DmPill({
       working={busy}
       collapsed={isFar && quietBelow}
       extraActions={extraActions}
+      inView={inView}
       label={
         agentId
           ? t("mobile.chat.headerAgent", { who: who(name, line ?? doing ?? roleLine ?? "") })
@@ -4263,6 +4264,7 @@ const ChannelPill = memo(function ChannelPill({
   color,
   roster,
   extraActions,
+  inView,
   ...hands
 }: PillHands & {
   title: string;
@@ -4271,6 +4273,8 @@ const ChannelPill = memo(function ChannelPill({
   color: ComponentProps<typeof HeaderPill>["color"];
   roster: RosterMember[] | undefined;
   extraActions: number;
+  /** Its screen shows: the sky in it moves only then. */
+  inView: boolean;
 }) {
   const c = useColors();
   const lead = useMemo(() => <Icon name="hash" size={18} color={c.muted} />, [c.muted]);
@@ -4305,6 +4309,7 @@ const ChannelPill = memo(function ChannelPill({
       color={color}
       trailing={trailing}
       extraActions={extraActions}
+      inView={inView}
       label={label}
       {...hands}
     />

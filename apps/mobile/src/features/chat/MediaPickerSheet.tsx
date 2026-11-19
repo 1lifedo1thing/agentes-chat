@@ -300,6 +300,7 @@ const GifCell = memo(function GifCell({ place, onPick }: { place: GifPlace<Gif>;
       <Image
         source={source}
         recyclingKey={source.cacheKey}
+        cachePolicy="memory-disk"
         contentFit="cover"
         autoplay={!reduced}
         transition={120}

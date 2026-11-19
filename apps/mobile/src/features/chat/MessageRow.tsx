@@ -58,7 +58,7 @@ import { listedText, voiceOf } from "@agenteschat/client/lib/voice";
 import { type ReplyStop, showsActivity, splitCanceled } from "@agenteschat/client/lib/work";
 import { type AgentColorName, mixHex } from "@agenteschat/ui/agent/engine";
 import { WALLPAPER_LIFT } from "@agenteschat/ui/sky/wallpaper";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type GestureResponderEvent, Pressable, StyleSheet, View } from "react-native";
@@ -268,15 +268,15 @@ function RowBody({
   const qc = useQueryClient();
   const orgId = useOrgId();
   const { org } = useOrg();
-  const report = routine?.noticeId
-    ? routineReportText(
-        [
-          ...(qc.getQueryData<Message[]>(keys.messages(orgId, m.channelId)) ?? []),
-          ...((m.threadId && qc.getQueryData<Message[]>(keys.thread(orgId, m.channelId, m.threadId))) || []),
-        ],
-        routine.noticeId,
-      )
-    : null;
+  // Found again only when the cached lists it reads change, not on every draw of the row.
+  const noticeId = routine?.noticeId;
+  const listed = noticeId ? qc.getQueryData<Message[]>(keys.messages(orgId, m.channelId)) : undefined;
+  const threaded =
+    noticeId && m.threadId ? qc.getQueryData<Message[]>(keys.thread(orgId, m.channelId, m.threadId)) : undefined;
+  const report = useMemo(
+    () => (noticeId ? routineReportText([...(listed ?? []), ...(threaded ?? [])], noticeId) : null),
+    [noticeId, listed, threaded],
+  );
   // A plain reminder: the agent's own message with a "Lembrete" label (the server's prefix dropped).
   const reminder = isReminderMessage(meta);
   // A short reply it gave while its task kept working (the talker): its message, "enquanto trabalha".
@@ -435,7 +435,17 @@ function RowBody({
   const files = artifactsOf(meta);
   // Mine, just sent: drawn from the phone while they upload.
   const localFiles = localFilesOf(meta);
-  const aboveReactions = useReactions(orgId, above?.id ?? "", false).data;
+  // The message above's reactions as `useReactions` reads them (cached, never fetched here); with no message above,
+  // nothing to follow.
+  const api = useApi();
+  const aboveId = above?.id ?? "";
+  const aboveReactions = useQuery({
+    queryKey: keys.reactions(orgId, aboveId),
+    queryFn: () => api.chat.reactions(orgId, aboveId),
+    enabled: false,
+    staleTime: 30_000,
+    subscribed: above !== undefined,
+  }).data;
   const run = runAround(
     runAt,
     above ? hangsUnder(above, aboveThread, aboveReactions, meId) : false,
