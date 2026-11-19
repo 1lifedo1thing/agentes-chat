@@ -1,5 +1,5 @@
 import type { PubSub } from "@agenteschat/adapters";
-import { type Database, eq, schema } from "@agenteschat/db";
+import { and, type Database, eq, notInArray, schema, sql } from "@agenteschat/db";
 import type { ContextDeps } from "./context/summaries";
 import { publishDelivery } from "./delivery";
 import { deliverLive, returnToInbox } from "./live-steer";
@@ -9,7 +9,35 @@ import { type AgentRun, addRunStep, computerWaitOf } from "./runs";
 import { movedNote, queuedNote } from "./work-tools";
 import { moveToBackground, WORK_LIMITS, workEligible } from "./works";
 
-const { agentRuns } = schema;
+const { agentRuns, agentRunSteps } = schema;
+
+/**
+ * The tools a turn uses to talk or to keep its books, not to work: a reaction, a question card, its background works'
+ * own tools (`REACT_TOOL`, `ASK_USER_TOOL`, `ASK_CHOICES_TOOL` and the four of `work-tools.ts`; written out here, as
+ * those modules import this one's callers).
+ */
+const TALK_TOOLS = ["react", "ask_user", "ask_choices", "post_update", "steer_work", "stop_work", "work_in_background"];
+
+/**
+ * Whether a run is at work on something: it called a tool other than a way of talking (`TALK_TOOLS`). A turn that has
+ * only talked so far ("oi", a reaction, a question) answers soon and reads the next message right after: moving it to
+ * background work would only post "this will take a while" over a greeting, and the next message would move the turn
+ * that answers it, and so on.
+ */
+export async function runAtWork(db: Database, runId: string): Promise<boolean> {
+  const [step] = await db
+    .select({ id: agentRunSteps.id })
+    .from(agentRunSteps)
+    .where(
+      and(
+        eq(agentRunSteps.runId, runId),
+        eq(agentRunSteps.kind, "tool_call"),
+        notInArray(sql<string>`coalesce(${agentRunSteps.data}->>'name', '')`, TALK_TOOLS),
+      ),
+    )
+    .limit(1);
+  return step !== undefined;
+}
 
 export interface StepAsideDeps {
   db: Database;
@@ -67,13 +95,15 @@ export async function moveRunAside(
  * addendum of 2026-11-19): the task steps out of the conversation into background work and keeps going, and the
  * message gets a turn of its own, where the agent itself answers it with what the work is doing in front of it
  * ("# Your background work here") and passes on what is for the work (`steer_work`). Every brain alike: it is an
- * ordinary turn. The message leaves the run's inbox first, so the task never reads it too; when the run doesn't step
- * aside (not working, not eligible, its work would wait in line) it goes back to the front of the inbox, as if nothing
- * happened. False then, and when the run read it already.
+ * ordinary turn. Only a run at work steps aside (`runAtWork`): one that has only talked keeps the message, read with
+ * its next turn. The message leaves the run's inbox first, so the task never reads it too; when the run doesn't step
+ * aside (not eligible, its work would wait in line) it goes back to the front of the inbox, as if nothing happened.
+ * False then, and when the run read it already.
  */
 export async function stepAsideFor(deps: StepAsideDeps, run: AgentRun, messageId: string): Promise<boolean> {
   // Asking from its computer's line it isn't at work yet: it reads the message with its first turn.
   if (run.status !== "running" || run.background || run.workId || computerWaitOf(run)) return false;
+  if (!(await runAtWork(deps.db, run.id))) return false;
   const taken = await takeForHandOn(deps.db, run, [messageId]);
   if (taken.length === 0) return false;
   const moved = await moveRunAside(deps, run.id, { onlyIfRoom: true }).catch(() => null);

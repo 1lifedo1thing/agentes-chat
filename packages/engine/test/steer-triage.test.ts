@@ -15,7 +15,7 @@ import {
 } from "../src";
 import { RUN_INTERRUPT_TOPIC } from "../src/cancel";
 import { releaseInbox, stoppedToSend, takeInbox } from "../src/run-inbox";
-import type { AgentRun } from "../src/runs";
+import { type AgentRun, addRunStep } from "../src/runs";
 import { answerSteering, type Fixture, setup } from "./fixtures";
 
 /**
@@ -91,8 +91,11 @@ describe("a message sent while the agent works", () => {
     },
   });
 
-  /** The agent at work on a person's request (`brain`: what it thinks with); its thread takes what they send next. */
-  async function working(brain: "model" | "claude_code" = "model") {
+  /**
+   * The agent at work on a person's request (`brain`: what it thinks with); its thread takes what they send next.
+   * `tool`: the tool its turn already called (`null`: none yet, it has only talked).
+   */
+  async function working(brain: "model" | "claude_code" = "model", tool: string | null = "run_code") {
     f = await setup();
     const question = await postPersonMessage(deps(), f.owner.id, f.org.id, f.general.id, {
       body: "@dev monta o relatório de outubro",
@@ -103,6 +106,7 @@ describe("a message sent while the agent works", () => {
       .update(schema.agentRuns)
       .set({ status: "running", ...(brain === "model" ? {} : { brain }) })
       .where(eq(schema.agentRuns.id, run.id));
+    if (tool) await addRunStep(f.db, run, "tool_call", { toolUseId: "c-1", name: tool, input: {} });
     return { run, threadId: question.id };
   }
 
@@ -167,6 +171,20 @@ describe("a message sent while the agent works", () => {
     expect(handed).toMatchObject({ redispatchedMessageIds: [sent.id], reason: "aside", toRunId: reply?.id });
     // Nothing answers in the agent's place meanwhile.
     expect(talked).toEqual([]);
+  });
+
+  test("a turn that has only talked never steps aside: a greeting, then another, is one turn answering both", async () => {
+    for (const tool of [null, "react"]) {
+      const { run, threadId } = await working("model", tool);
+      const { sent } = await send(threadId, "oii", triage({ oii: "answer" }));
+      const kept = (await runById(run.id)) as AgentRun;
+      expect(kept.workId).toBeNull();
+      expect(kept.pendingMessageIds).toContain(sent.id);
+      expect(await runs()).toHaveLength(1);
+      expect(await f.db.select().from(schema.agentWorks)).toEqual([]);
+      await f.close();
+    }
+    f = undefined as unknown as Fixture;
   });
 
   test("a separate request steps aside too: the agent takes it up in a turn of its own while the task goes on", async () => {
