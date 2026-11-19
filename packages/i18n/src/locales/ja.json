@@ -16252,6 +16252,10 @@
       "sentence": "{{who}}がメールで回答",
       "request": "{{name}}のサポートへの依頼"
     },
+    "operatorReview": {
+      "between_other": "{{who}}が{{from}}から{{to}}の間に、安全上の理由で{{value}}件を確認",
+      "on_other": "{{who}}が{{date}}に、安全上の理由で{{value}}件を確認"
+    },
     "change": {
       "mergedWithoutAsking": "{{repo}}で確認なしでマージしました",
       "accentChanged": "ワークスペースのアクセントカラーを変更",

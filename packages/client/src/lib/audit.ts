@@ -4,7 +4,7 @@ import { serviceKey, toolActivity } from "./activity";
 import { approvalTitle } from "./approval-words";
 import { billingHoldOf } from "./billing";
 import { reviewFlaggedOf } from "./errors";
-import { lowerFirst } from "./format";
+import { formatInt, formatShortDate, lowerFirst } from "./format";
 import { COMPUTERS_ROW } from "./roles";
 import { stepLabel, toolWhy } from "./work";
 
@@ -19,6 +19,8 @@ export const OPERATOR_READ = "operator.content_read";
 /** Whoever runs the server answered a member's support request, by email to their account's address. */
 export const OPERATOR_REPLIED = "operator.support_replied";
 const byOperator = (row: AuditRow) => row.action === OPERATOR_READ || row.action === OPERATOR_REPLIED;
+/** Whoever runs the server tells the workspace, afterwards, that it read content to investigate suspected abuse. */
+export const OPERATOR_DISCLOSED = "operator.content_review_disclosed";
 
 /** The shortcuts over the list: one view at a time. */
 export type AuditShow = "all" | "problems" | "waiting" | "people";
@@ -85,6 +87,8 @@ export function auditPhrase(t: TFunction, row: AuditRow, locale?: string): strin
     return t("audit.operatorRead.sentence", { who: operatorWho(t, row), what: t(`audit.operatorRead.what.${what}`) });
   }
   if (row.action === OPERATOR_REPLIED) return t("audit.operatorReply.sentence", { who: operatorWho(t, row) });
+  const reviewed = row.action === OPERATOR_DISCLOSED ? operatorReviewed(t, row, locale ?? "en") : null;
+  if (reviewed) return reviewed;
   if (row.action === "organization.accent_changed") return t("audit.change.accentChanged");
   if (row.action === "agent.merged_without_asking") {
     return t("audit.change.mergedWithoutAsking", { repo: row.target.id ?? "" });
@@ -153,6 +157,23 @@ const READ_KINDS = [
 /** Who the operator is to the workspace's people: on agentes.chat's own servers, its support. */
 const operatorWho = (t: TFunction, row: AuditRow) =>
   t(row.details.cloud === true ? "audit.operatorRead.who.cloud" : "audit.operatorRead.who.server");
+
+/**
+ * "… reviewed 12 items for safety between Nov 3 and Nov 9", or "on Nov 3" when both ends are one day here. The year
+ * shows when either date is of another one. Null for an entry without its period.
+ */
+function operatorReviewed(t: TFunction, row: AuditRow, locale: string) {
+  const [from, to] = [auditStr(row.details.from), auditStr(row.details.to)];
+  if (!from || !to || Number.isNaN(Date.parse(from) + Date.parse(to))) return null;
+  const count = Number(row.details.count) || 0;
+  const thisYear = new Date().getFullYear();
+  const year = [from, to].some((iso) => new Date(iso).getFullYear() !== thisYear);
+  const [first, last] = [formatShortDate(locale, from, year), formatShortDate(locale, to, year)];
+  const said = { who: operatorWho(t, row), count, value: formatInt(locale, count) };
+  return first === last
+    ? t("audit.operatorReview.on", { ...said, date: first })
+    : t("audit.operatorReview.between", { ...said, from: first, to: last });
+}
 
 /**
  * Under the operator's sentence. A read: at whose request and how that request arrived, or to diagnose a run. An

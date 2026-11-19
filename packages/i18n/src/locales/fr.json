@@ -17397,6 +17397,14 @@
       "sentence": "{{who}} a répondu par e-mail",
       "request": "demande d'assistance de {{name}}"
     },
+    "operatorReview": {
+      "between_one": "{{who}} a examiné {{value}} élément pour des raisons de sécurité entre le {{from}} et le {{to}}",
+      "between_many": "{{who}} a examiné {{value}} éléments pour des raisons de sécurité entre le {{from}} et le {{to}}",
+      "between_other": "{{who}} a examiné {{value}} éléments pour des raisons de sécurité entre le {{from}} et le {{to}}",
+      "on_one": "{{who}} a examiné {{value}} élément pour des raisons de sécurité le {{date}}",
+      "on_many": "{{who}} a examiné {{value}} éléments pour des raisons de sécurité le {{date}}",
+      "on_other": "{{who}} a examiné {{value}} éléments pour des raisons de sécurité le {{date}}"
+    },
     "change": {
       "mergedWithoutAsking": "A mergé dans {{repo}} sans demander",
       "accentChanged": "A changé la couleur d’accent de l’espace de travail",

@@ -17963,6 +17963,16 @@
       "sentence": "{{who}}: odpowiedziano e-mailem",
       "request": "prośba o wsparcie od osoby: {{name}}"
     },
+    "operatorReview": {
+      "between_one": "{{who}}: sprawdzono {{value}} element ze względów bezpieczeństwa między {{from}} a {{to}}",
+      "between_few": "{{who}}: sprawdzono {{value}} elementy ze względów bezpieczeństwa między {{from}} a {{to}}",
+      "between_many": "{{who}}: sprawdzono {{value}} elementów ze względów bezpieczeństwa między {{from}} a {{to}}",
+      "between_other": "{{who}}: sprawdzono {{value}} elementu ze względów bezpieczeństwa między {{from}} a {{to}}",
+      "on_one": "{{who}}: sprawdzono {{value}} element ze względów bezpieczeństwa w dniu {{date}}",
+      "on_few": "{{who}}: sprawdzono {{value}} elementy ze względów bezpieczeństwa w dniu {{date}}",
+      "on_many": "{{who}}: sprawdzono {{value}} elementów ze względów bezpieczeństwa w dniu {{date}}",
+      "on_other": "{{who}}: sprawdzono {{value}} elementu ze względów bezpieczeństwa w dniu {{date}}"
+    },
     "change": {
       "mergedWithoutAsking": "Scalono w {{repo}} bez pytania",
       "accentChanged": "Zmieniono kolor akcentu przestrzeni roboczej",

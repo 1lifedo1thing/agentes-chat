@@ -17258,6 +17258,18 @@ export const en = {
       /** Under the sentence, before `operatorRead.ai`, and after "Reason:" in the entry's panel. `name`: the member. */
       request: "support request from {{name}}",
     },
+    /** Whoever runs the server tells the workspace, afterwards, that it read content to investigate suspected abuse. */
+    operatorReview: {
+      /**
+       * `who`: one of `operatorRead.who.*`. `value`: how many, as the language writes numbers. `from`, `to`: short
+       * dates ("Nov 3").
+       */
+      between_one: "{{who}} reviewed {{value}} item for safety between {{from}} and {{to}}",
+      between_other: "{{who}} reviewed {{value}} items for safety between {{from}} and {{to}}",
+      /** The same, of a review that began and ended on one day. `date`: a short date ("Nov 3"). */
+      on_one: "{{who}} reviewed {{value}} item for safety on {{date}}",
+      on_other: "{{who}} reviewed {{value}} items for safety on {{date}}",
+    },
     change: {
       mergedWithoutAsking: "Merged in {{repo}} without asking",
       accentChanged: "Changed the workspace's accent color",

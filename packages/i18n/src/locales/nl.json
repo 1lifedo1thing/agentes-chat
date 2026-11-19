@@ -16909,6 +16909,12 @@
       "sentence": "{{who}} antwoordde per e-mail",
       "request": "supportverzoek van {{name}}"
     },
+    "operatorReview": {
+      "between_one": "{{who}} controleerde {{value}} item om veiligheidsredenen tussen {{from}} en {{to}}",
+      "between_other": "{{who}} controleerde {{value}} items om veiligheidsredenen tussen {{from}} en {{to}}",
+      "on_one": "{{who}} controleerde {{value}} item om veiligheidsredenen op {{date}}",
+      "on_other": "{{who}} controleerde {{value}} items om veiligheidsredenen op {{date}}"
+    },
     "change": {
       "mergedWithoutAsking": "Gemerged in {{repo}} zonder te vragen",
       "accentChanged": "Heeft de accentkleur van de werkruimte gewijzigd",

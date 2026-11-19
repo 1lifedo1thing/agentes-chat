@@ -4,6 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import type { AuditRow } from "@agenteschat/client";
+import { formatInt, formatShortDate } from "@agenteschat/client/lib/format";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { ADA_ID, ATLAS_ID, createFakeApi, GENERAL_ID, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle, showIn } from "./render";
@@ -342,6 +343,100 @@ describe("Configurações → Auditoria", () => {
       expect(document.querySelector(".audit-row__title")?.textContent).toBe(title);
       expect(document.querySelector(".audit-row__sub")?.textContent).toBe(sub);
     }
+  });
+
+  // Whoever runs the server tells the workspace afterwards that it read content to investigate suspected abuse: one
+  // sentence, with how many items and between which days. One item and 10,000, one day and two years, and the longest
+  // language are the worst cases for CI's geometry check.
+  test("the operator's disclosure of a safety review: how many items it reviewed, and between which days", async () => {
+    const year = new Date().getFullYear();
+    const disclosed = (id: string, minutes: number, details: Record<string, unknown>): AuditRow =>
+      row({
+        id,
+        at: at(minutes),
+        actor: { type: "system", id: null, name: null },
+        action: "operator.content_review_disclosed",
+        target: { type: "organization", id: null },
+        details,
+        runId: null,
+        channelId: null,
+        channel: null,
+        onBehalfOf: null,
+        outcome: null,
+      });
+    const week = { from: `${year}-03-03T12:00:00.000Z`, to: `${year}-03-09T12:00:00.000Z` };
+    const day = { from: `${year}-03-09T10:00:00.000Z`, to: `${year}-03-09T13:00:00.000Z` };
+    const years = { from: `${year - 1}-12-28T12:00:00.000Z`, to: `${year}-01-03T12:00:00.000Z` };
+    const { r } = await go(
+      seedState({
+        audit: [
+          disclosed("d1", 1, { ...years, count: 10000 }),
+          disclosed("d2", 2, { ...day, count: 1, cloud: true }),
+          disclosed("d3", 3, { ...week, count: 2 }),
+          disclosed("d4", 4, { ...week, count: 12 }),
+          disclosed("d5", 5, { ...week, count: 21 }),
+        ],
+      }),
+    );
+    expect(titles()).toEqual([
+      `Quem cuida deste servidor analisou 10.000 itens por segurança entre 28 dez ${year - 1} e 3 jan ${year}`,
+      "O suporte do agentes.chat analisou 1 item por segurança em 9 mar",
+      "Quem cuida deste servidor analisou 2 itens por segurança entre 3 mar e 9 mar",
+      "Quem cuida deste servidor analisou 12 itens por segurança entre 3 mar e 9 mar",
+      "Quem cuida deste servidor analisou 21 itens por segurança entre 3 mar e 9 mar",
+    ]);
+    // The sentence says it all: nothing under it, and no chip.
+    expect([...section().querySelectorAll(".audit-row__sub")].map((e) => e.textContent)).toEqual(["", "", "", "", ""]);
+    expect(section().querySelector(".audit-row .ac-chip")).toBeNull();
+    // Each language's own plural forms, with the dates as the page writes them there. German's is the longest sentence.
+    type Short = (iso: string, year?: boolean) => string;
+    const said: Record<"de" | "pl" | "ru", (d: Short, n: string) => string[]> = {
+      de: (d, n) => [
+        `Die Person, die diesen Server betreibt, hat ${n} Elemente aus Sicherheitsgründen geprüft, zwischen dem ${d(years.from, true)} und dem ${d(years.to, true)}`,
+        `Der Support von agentes.chat hat 1 Element aus Sicherheitsgründen geprüft, am ${d(day.from)}`,
+        ...["2", "12", "21"].map(
+          (count) =>
+            `Die Person, die diesen Server betreibt, hat ${count} Elemente aus Sicherheitsgründen geprüft, zwischen dem ${d(week.from)} und dem ${d(week.to)}`,
+        ),
+      ],
+      pl: (d, n) => [
+        `Osoba zarządzająca tym serwerem: sprawdzono ${n} elementów ze względów bezpieczeństwa między ${d(years.from, true)} a ${d(years.to, true)}`,
+        `Wsparcie agentes.chat: sprawdzono 1 element ze względów bezpieczeństwa w dniu ${d(day.from)}`,
+        ...["2 elementy", "12 elementów", "21 elementów"].map(
+          (items) =>
+            `Osoba zarządzająca tym serwerem: sprawdzono ${items} ze względów bezpieczeństwa między ${d(week.from)} a ${d(week.to)}`,
+        ),
+      ],
+      ru: (d, n) => [
+        `Администратор этого сервера: проверка ${n} элементов в целях безопасности с ${d(years.from, true)} по ${d(years.to, true)}`,
+        `Поддержка agentes.chat: проверка 1 элемента в целях безопасности ${d(day.from)}`,
+        ...["2 элементов", "12 элементов", "21 элемента"].map(
+          (items) =>
+            `Администратор этого сервера: проверка ${items} в целях безопасности с ${d(week.from)} по ${d(week.to)}`,
+        ),
+      ],
+    };
+    const german: Short = (iso, withYear = false) => formatShortDate("de", iso, withYear);
+    for (const lang of ["pl", "ru", "de"] as const) {
+      await showIn(r.services, lang);
+      const short: Short = (iso, withYear = false) => formatShortDate(lang, iso, withYear);
+      expect([...document.querySelectorAll(".audit-row__title")].map((e) => e.textContent)).toEqual(
+        said[lang](short, formatInt(lang, 10000)),
+      );
+    }
+    // The panel says the sentence whole, in the longest language too, and gives no reason.
+    await click(document.querySelector(".audit-row") as HTMLElement);
+    const lead = () => document.querySelector(".audit-panel .audit-panel__lead")?.textContent;
+    expect(lead()).toBe(said.de(german, formatInt("de", 10000))[0]);
+    expect(document.querySelector(".audit-panel .audit-panel__reason")).toBeNull();
+    await showIn(r.services, "pt-BR");
+    expect(lead()).toBe(
+      `Quem cuida deste servidor analisou 10.000 itens por segurança entre 28 dez ${year - 1} e 3 jan ${year}`,
+    );
+    // Of the entry's details, the count as it is kept and never the server's own mark.
+    const details = document.querySelector(".audit-panel .audit-panel__sent")?.textContent ?? "";
+    expect(details).toContain("10000");
+    expect(details).not.toMatch(/cloud/i);
   });
 
   test("the panel hangs from <body>, so it stays put while the list scrolls", async () => {

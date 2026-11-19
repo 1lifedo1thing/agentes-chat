@@ -256,6 +256,60 @@ describe("Auditoria in words (web and phone)", () => {
     ]);
   });
 
+  test("whoever runs the server discloses a safety review: how many items, between which days, and nothing under it", () => {
+    const year = new Date().getFullYear();
+    const disclosed = (details: Record<string, unknown>) =>
+      row({
+        actor: { type: "system", id: null, name: null },
+        action: "operator.content_review_disclosed",
+        target: { type: "organization", id: null },
+        details,
+        runId: null,
+        channelId: null,
+        channel: null,
+        onBehalfOf: null,
+        outcome: null,
+      });
+    const week = { from: `${year}-03-03T12:00:00.000Z`, to: `${year}-03-09T12:00:00.000Z` };
+    const own = disclosed({ ...week, count: 12 });
+    // The count twice: once to pick the plural form, once as the language writes numbers.
+    expect(auditSentence(t, own, "en")).toEqual({
+      name: null,
+      text: "audit.operatorReview.between(audit.operatorRead.who.server,12,12,Mar 3,Mar 9)",
+    });
+    expect(auditSentence(t, disclosed({ ...week, count: 10000 }), "en").text).toBe(
+      "audit.operatorReview.between(audit.operatorRead.who.server,10000,10,000,Mar 3,Mar 9)",
+    );
+    // The sentence says it all: no line under it, no reason, no outcome, and the panel's title is the sentence.
+    expect([auditSubLine(t, own), auditReason(t, own), auditOutcome(t, own), auditHint(t, own)]).toEqual([
+      "",
+      null,
+      null,
+      null,
+    ]);
+    // A review that began and ended on one day names that day once. On agentes.chat's own servers, its support.
+    const day = disclosed({
+      from: `${year}-03-09T10:00:00.000Z`,
+      to: `${year}-03-09T13:00:00.000Z`,
+      count: 1,
+      cloud: true,
+    });
+    expect(auditSentence(t, day, "en").text).toBe("audit.operatorReview.on(audit.operatorRead.who.cloud,1,1,Mar 9)");
+    // A date of another year says its year, and so does the one beside it.
+    const years = disclosed({ from: `${year - 1}-12-28T12:00:00.000Z`, to: `${year}-01-03T12:00:00.000Z`, count: 3 });
+    expect(auditSentence(t, years, "en").text).toBe(
+      `audit.operatorReview.between(audit.operatorRead.who.server,3,3,Dec 28, ${year - 1},Jan 3, ${year})`,
+    );
+    // The panel's details: the period and the count as the entry holds them, never the server's own mark.
+    expect(auditDetailEntries(day.details).map(([key]) => key)).toEqual(["from", "to", "count"]);
+    // An entry without its period, or with one that is no date, reads as any change: never a broken sentence.
+    for (const details of [{ count: 3 }, { from: "soon", to: week.to, count: 3 }]) {
+      expect(auditSentence(t, disclosed(details), "en").text).toBe(
+        "audit.change.pattern(audit.change.verb.other,audit.change.area.other)",
+      );
+    }
+  });
+
   test("a merge done without asking says where", () => {
     const merged = row({
       action: "agent.merged_without_asking",

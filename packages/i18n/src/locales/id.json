@@ -16305,6 +16305,10 @@
       "sentence": "{{who}} menjawab lewat email",
       "request": "permintaan dukungan dari {{name}}"
     },
+    "operatorReview": {
+      "between_other": "{{who}} meninjau {{value}} item demi keamanan antara {{from}} dan {{to}}",
+      "on_other": "{{who}} meninjau {{value}} item demi keamanan pada {{date}}"
+    },
     "change": {
       "mergedWithoutAsking": "Merge di {{repo}} tanpa bertanya",
       "accentChanged": "Mengubah warna aksen ruang kerja",

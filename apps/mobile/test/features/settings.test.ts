@@ -715,6 +715,54 @@ test("Auditoria says an operator's answer to a support request as the web does: 
   expect(auditOutcome(en, plain)).toBeNull();
 });
 
+test("Auditoria says an operator's disclosure of a safety review as the web does: how many items and between which days, in each plural form", async () => {
+  const [pt, en] = [await translator("pt-BR"), await translator("en")];
+  const year = new Date().getFullYear();
+  const disclosed = (details: Record<string, unknown>): AuditRow => ({
+    id: "d1",
+    at: "2026-10-28T12:00:00Z",
+    actor: { type: "system", id: null, name: null },
+    action: "operator.content_review_disclosed",
+    target: { type: "organization", id: null },
+    details,
+    runId: null,
+    channelId: null,
+    channel: null,
+    onBehalfOf: null,
+    outcome: null,
+    approval: null,
+    secret: null,
+  });
+  const week = { from: `${year}-03-03T12:00:00.000Z`, to: `${year}-03-09T12:00:00.000Z` };
+  const many = disclosed({ ...week, count: 10000 });
+  // The list's row: no name before the sentence (the system's), so the label is the sentence alone.
+  expect(auditSentence(pt, many, "pt-BR")).toEqual({
+    name: null,
+    text: "Quem cuida deste servidor analisou 10.000 itens por segurança entre 3 mar e 9 mar",
+  });
+  expect(auditSentence(en, many, "en").text).toBe(
+    "Whoever runs this server reviewed 10,000 items for safety between Mar 3 and Mar 9",
+  );
+  // One item, on one day, on agentes.chat's own servers.
+  const one = disclosed({
+    from: `${year}-03-09T10:00:00.000Z`,
+    to: `${year}-03-09T13:00:00.000Z`,
+    count: 1,
+    cloud: true,
+  });
+  expect(auditSentence(pt, one, "pt-BR").text).toBe("O suporte do agentes.chat analisou 1 item por segurança em 9 mar");
+  expect(auditSentence(en, one, "en").text).toBe("agentes.chat support reviewed 1 item for safety on Mar 9");
+  // A date of another year says its year.
+  const years = disclosed({ from: `${year - 1}-12-28T12:00:00.000Z`, to: `${year}-01-03T12:00:00.000Z`, count: 12 });
+  expect(auditSentence(en, years, "en").text).toBe(
+    `Whoever runs this server reviewed 12 items for safety between Dec 28, ${year - 1} and Jan 3, ${year}`,
+  );
+  // The sentence says it all: the row draws no line under it, and its own screen no reason and no outcome.
+  expect([auditSubLine(en, many), auditReason(en, many), auditOutcome(en, many)]).toEqual(["", null, null]);
+  const src = readFileSync(join(import.meta.dir, "..", "..", "src", "features", "settings", "AuditScreen.tsx"), "utf8");
+  expect(src).toContain("{...(sub ? { sub } : {})}");
+});
+
 test("my photo on Você changes it with a tap, through Conta's own Alterar foto", () => {
   const read = (file: string) => readFileSync(join(import.meta.dir, "..", "..", "src", "features", "me", file), "utf8");
   const me = read("MeScreen.tsx");

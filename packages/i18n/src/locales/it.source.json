@@ -41465,6 +41465,18 @@
   "audit.operatorReply.request": {
     "value": "support request from {{name}}"
   },
+  "audit.operatorReview.between": {
+    "value": {
+      "one": "{{who}} reviewed {{value}} item for safety between {{from}} and {{to}}",
+      "other": "{{who}} reviewed {{value}} items for safety between {{from}} and {{to}}"
+    }
+  },
+  "audit.operatorReview.on": {
+    "value": {
+      "one": "{{who}} reviewed {{value}} item for safety on {{date}}",
+      "other": "{{who}} reviewed {{value}} items for safety on {{date}}"
+    }
+  },
   "audit.change.mergedWithoutAsking": {
     "value": "Merged in {{repo}} without asking"
   },

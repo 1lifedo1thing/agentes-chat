@@ -17127,6 +17127,12 @@ export const ptBR = {
       sentence: "{{who}} respondeu por e-mail",
       request: "pedido de suporte de {{name}}",
     },
+    operatorReview: {
+      between_one: "{{who}} analisou {{value}} item por segurança entre {{from}} e {{to}}",
+      between_other: "{{who}} analisou {{value}} itens por segurança entre {{from}} e {{to}}",
+      on_one: "{{who}} analisou {{value}} item por segurança em {{date}}",
+      on_other: "{{who}} analisou {{value}} itens por segurança em {{date}}",
+    },
     change: {
       mergedWithoutAsking: "Fez o merge em {{repo}} sem perguntar",
       accentChanged: "Mudou a cor de destaque do workspace",

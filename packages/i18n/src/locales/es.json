@@ -17322,6 +17322,14 @@
       "sentence": "{{who}} respondió por correo",
       "request": "solicitud de soporte de {{name}}"
     },
+    "operatorReview": {
+      "between_one": "{{who}} revisó {{value}} elemento por seguridad entre el {{from}} y el {{to}}",
+      "between_many": "{{who}} revisó {{value}} elementos por seguridad entre el {{from}} y el {{to}}",
+      "between_other": "{{who}} revisó {{value}} elementos por seguridad entre el {{from}} y el {{to}}",
+      "on_one": "{{who}} revisó {{value}} elemento por seguridad el {{date}}",
+      "on_many": "{{who}} revisó {{value}} elementos por seguridad el {{date}}",
+      "on_other": "{{who}} revisó {{value}} elementos por seguridad el {{date}}"
+    },
     "change": {
       "mergedWithoutAsking": "Hizo merge en {{repo}} sin preguntar",
       "accentChanged": "Cambió el color de acento del espacio de trabajo",
