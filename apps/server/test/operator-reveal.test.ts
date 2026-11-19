@@ -116,6 +116,8 @@ const ask = (kind: string, id: string, field: string, proof: Record<string, unkn
   ...("runId" in proof ? { purpose: "fault" } : { purpose: "member_request" }),
   ...proof,
 });
+/** A safety review where a helper takes a proof: the purpose, and no request where the helper would name its own. */
+const UNTOLD = { purpose: "trust_safety", requestId: undefined };
 /** The answer's status and, for a refusal, its code. */
 async function outcome(json: unknown, options?: Parameters<typeof call>[1]) {
   const res = await call(json, options);
@@ -986,7 +988,8 @@ test("a conversation deleted for good: what its runs kept is the same 404 as nob
     .where(eq(schema.channels.id, w.goneId));
   await forget();
   const nobody = await (await call(ask("message", UNKNOWN, "text", mine))).text();
-  for (const json of [...kept, ...kept.map((k) => ({ ...k, runId: undefined, purpose: "member_request", ...mine }))]) {
+  const under = (proof: Record<string, unknown>) => kept.map((k) => ({ ...k, runId: undefined, ...proof }));
+  for (const json of [...kept, ...under({ purpose: "member_request", ...mine }), ...under(UNTOLD)]) {
     const res = await call(json);
     expect({ json, status: res.status, body: (await res.text()).replace(String(json.id), UNKNOWN) }).toEqual({
       json,
@@ -1967,10 +1970,11 @@ test("the door's own limits: 30 calls a minute, and 100 reads of one workspace i
   expect(await outcome(good, { on })).toBe(200);
 });
 
-test("a confidential thread: its run's steps and the task it started open under neither purpose, its messages read as the stub, and what is no thread's words stays", async () => {
+test("a confidential thread: its run's steps and the task it started open under no purpose, its messages read as the stub, and what is no thread's words stays", async () => {
   const root = asking.get(runs.sealed) ?? "";
   const mine = { requestId: requests.owner };
   const of = { runId: runs.sealed };
+  const purposes = { member_request: mine, fault: of, trust_safety: UNTOLD };
   type Proof = Record<string, unknown>;
   // Every field of the door's table: the thread's own record where the kind has one.
   const places: Record<string, (proof: Proof) => Record<string, unknown>> = {
@@ -2002,7 +2006,7 @@ test("a confidential thread: its run's steps and the task it started open under 
   const read = async () => {
     const answers: Record<string, unknown> = {};
     for (const [asked, json] of Object.entries(places)) {
-      for (const [purpose, proof] of Object.entries({ member_request: mine, fault: of })) {
+      for (const [purpose, proof] of Object.entries(purposes)) {
         const res = await call(json(proof));
         const body = (await res.json()) as Answer & Refusal;
         answers[`${asked} ${purpose}`] = res.status === 200 ? body.text : [res.status, body.error.code];
@@ -2030,11 +2034,12 @@ test("a confidential thread: its run's steps and the task it started open under 
     "task.result": "canary-sealed-result",
   };
   for (const [asked, text] of Object.entries(held)) {
-    for (const purpose of ["member_request", "fault"]) {
+    for (const purpose of Object.keys(purposes)) {
       expect({ asked, purpose, text: before[`${asked} ${purpose}`] }).toEqual({ asked, purpose, text });
     }
   }
-  expect(await onRecord()).toEqual([14, 14]);
+  // Each of the seven under each purpose is in the feed; a safety review's are in no audit log.
+  expect(await onRecord()).toEqual([21, 14]);
 
   await forget();
   await markThreadConfidential(db, { orgId: w.orgId, channelId: w.generalId, rootId: root });
@@ -2076,11 +2081,11 @@ test("a confidential thread: its run's steps and the task it started open under 
 });
 
 test("a task the server started again by itself is its first task's run's: a confidential thread keeps it after any number of restarts", async () => {
-  const mine = { requestId: requests.owner };
-  const read = async () => {
+  const proofs = [{ requestId: requests.owner }, UNTOLD];
+  const read = async (proof: Record<string, unknown>) => {
     const answers: unknown[] = [];
     for (const field of REVEAL_FIELDS.task) {
-      const res = await call(ask("task", w.againTaskId, field, mine));
+      const res = await call(ask("task", w.againTaskId, field, proof));
       const body = (await res.json()) as Answer & Refusal;
       answers.push(res.status === 200 ? body.text : [res.status, body.error.code]);
     }
@@ -2088,17 +2093,21 @@ test("a task the server started again by itself is its first task's run's: a con
   };
   // It has no run of its own: no run's fault opens it, whatever its thread.
   const fault = ask("task", w.againTaskId, "command", { runId: runs.again });
-  expect(await read()).toEqual(["canary-again-command", "canary-again-prompt", "canary-again-result"]);
+  for (const proof of proofs) {
+    expect(await read(proof)).toEqual(["canary-again-command", "canary-again-prompt", "canary-again-result"]);
+  }
   expect(await outcome(fault)).toEqual([403, "reveal.not_the_fault"]);
 
   await forget();
   await markThreadConfidential(db, { orgId: w.orgId, channelId: w.generalId, rootId: asking.get(runs.again) ?? "" });
-  expect(await read()).toEqual(REVEAL_FIELDS.task.map(() => [403, "reveal.confidential"]));
+  for (const proof of proofs) {
+    expect(await read(proof)).toEqual(REVEAL_FIELDS.task.map(() => [403, "reveal.confidential"]));
+  }
   expect(await outcome(fault)).toEqual([403, "reveal.not_the_fault"]);
   expect([await events(), await auditLines()]).toEqual([[], []]);
 });
 
-test("a message of a confidential thread that is not sealed yet reads as the stub, under both purposes", async () => {
+test("a message of a confidential thread that is not sealed yet reads as the stub, under every purpose", async () => {
   const root = asking.get(runs.sealed) ?? "";
   await markThreadConfidential(db, { orgId: w.orgId, channelId: w.generalId, rootId: root });
   // As a message written while the mark was being committed is stored: in the thread, with its words.
@@ -2115,7 +2124,7 @@ test("a message of a confidential thread that is not sealed yet reads as the stu
     })
     .returning({ id: schema.messages.id, body: schema.messages.body });
   expect(reply?.body).toBe("canary-unsealed reply");
-  for (const proof of [{ requestId: requests.owner }, { runId: runs.sealed }]) {
+  for (const proof of [{ requestId: requests.owner }, { runId: runs.sealed }, UNTOLD]) {
     expect(await text(ask("message", reply?.id ?? "", "text", proof))).toBe(CONFIDENTIAL_STUB);
   }
   // A message of any other thread reads as it is stored.
