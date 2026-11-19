@@ -72,6 +72,7 @@ import {
   Segmented,
   StepTrack,
   type StepTrackStep,
+  settleOnNextFrame,
   Tip,
   Toolbar,
   WorkSweep,
@@ -443,6 +444,7 @@ export function ApprovalsPage() {
             <div className={cx("ap-split", !missionsBelow && "page-split")}>
               <nav
                 className="ap-list"
+                ref={settleOnNextFrame}
                 data-scroll-restoration-id="approvals-list"
                 aria-label={t("approvals.review.list")}
               >

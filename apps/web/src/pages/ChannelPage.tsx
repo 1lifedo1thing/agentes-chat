@@ -1266,17 +1266,6 @@ function ChannelView({
     return () => document.removeEventListener("visibilitychange", mark);
   }, [markThreadRead, threadId, isMember, lastReplyId]);
 
-  // The skeleton was on screen: the real messages fade in (once).
-  const hadSkeleton = useRef(messages.isLoading);
-  const [fresh, setFresh] = useState(false);
-  useEffect(() => {
-    if (!serverRead || !hadSkeleton.current) return;
-    hadSkeleton.current = false;
-    setFresh(true);
-    const timer = setTimeout(() => setFresh(false), 400);
-    return () => clearTimeout(timer);
-  }, [serverRead]);
-
   // Person messages loaded over HTTP start their receipts.
   useEffect(() => {
     if (messages.data) live.seed(messages.data);
@@ -2686,7 +2675,6 @@ function ChannelView({
                             data-look={look.style}
                             data-faces={look.faces ? undefined : "false"}
                             data-wallpaper={wallpaper?.wallpaper.kind}
-                            data-fresh={fresh || undefined}
                             aria-label={t("channel.messages")}
                             aria-live="polite"
                             aria-relevant="additions"
