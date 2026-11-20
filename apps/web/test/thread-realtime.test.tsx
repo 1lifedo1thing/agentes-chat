@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, setSystemTime, test } from "bun:test";
+import { afterEach, describe, expect, setSystemTime, spyOn, test } from "bun:test";
 import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import { type ActiveRun, type Message, UNREAD_REFRESH_MS, UNREAD_SPREAD_MS } from "@agenteschat/client";
+import { type ActiveRun, type Message, UNREAD_REFRESH_MS } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { createStreamsStore } from "@/realtime/context";
 import { ADA_ID, createFakeApi, ENG_ID, GENERAL_ID, ORG_ID, seedDm, seedState } from "./fake-api";
@@ -572,12 +572,17 @@ describe("other conversations shown as a thread", () => {
       document.querySelector('[data-card="131"] .ac-factline__fact[title$="mensagens"]')?.textContent;
     expect(talking()).toBe("3");
     conversation.count = 4;
-    await act(async () => socket.push({ type: "event", scope: "org", event: { type: "issue.updated" } }));
-    // The board's read waits up to this long, past Bun's 5 s default with the render: the test's own timeout is longer.
-    await act(() => new Promise((done) => setTimeout(done, UNREAD_REFRESH_MS + UNREAD_SPREAD_MS + 100)));
+    // No random spread on the board's read, so the wait stays inside Bun's default timeout.
+    const random = spyOn(Math, "random").mockReturnValue(0);
+    try {
+      await act(async () => socket.push({ type: "event", scope: "org", event: { type: "issue.updated" } }));
+      await act(() => new Promise((done) => setTimeout(done, UNREAD_REFRESH_MS + 100)));
+    } finally {
+      random.mockRestore();
+    }
     await settle(5);
     expect(talking()).toBe("4");
-  }, 15_000);
+  });
 
   test("a mission's thread: a live reply lands", async () => {
     const state = seedState();

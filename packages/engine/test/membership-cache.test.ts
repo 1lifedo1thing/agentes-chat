@@ -40,3 +40,15 @@ test("no membership is never kept: someone who just joined is let in at once", a
   await f.db.insert(schema.organizationMembers).values({ orgId: f.org.id, userId: caio.id, role: "member" });
   expect(await roleOf(caio.id)).toBe("member");
 });
+
+test("a read inside a transaction that rolls back is not kept", async () => {
+  const caio = await addUser(f.db, "caio");
+  await f.db
+    .transaction(async (tx) => {
+      await tx.insert(schema.organizationMembers).values({ orgId: f.org.id, userId: caio.id, role: "member" });
+      expect((await getMembership(tx, caio.id, f.org.id))?.role).toBe("member");
+      tx.rollback();
+    })
+    .catch(() => {});
+  expect(await roleOf(caio.id)).toBeNull();
+});

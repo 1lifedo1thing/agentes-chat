@@ -1463,6 +1463,7 @@ async function takeOut(
     },
   );
   forgetConnectionCaches(orgId);
+  caches.membership.delete(`${orgId}:${targetUserId}`);
   if (tasks.length > 0) {
     const { unassignGone } = await import("./issues");
     await unassignGone({ db, pubsub: options.pubsub }, orgId, { type: "person", id: targetUserId }, tasks).catch(
@@ -1497,7 +1498,6 @@ async function takeOut(
   }
   // Their open WebSocket connections lose every subscription now, not on reconnect.
   const quiet = remover === targetUserId ? { quiet: true as const } : {};
-  caches.membership.delete(`${orgId}:${targetUserId}`);
   await publishOrgEvent(options.pubsub, { type: "membership.revoked", orgId, userId: targetUserId, ...quiet });
   // The workspace's computer hears their seat is gone: its worker and containers stop there.
   await publishMachineAgentsChanged(options.pubsub, orgId);
