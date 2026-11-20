@@ -717,6 +717,8 @@ export interface RouteResult {
     | "org_deleting"
     /** An agent's line the server wrote (`SYSTEM_LINE_META`): no other agent chimes in on it. */
     | "system_line"
+    /** An agent's message that names nobody and asks nothing: no other agent chimes in on it. */
+    | "asks_nobody"
     /** The same person's next message right after it is one the router decides on too: that one decides for both. */
     | "continued";
   selected?: string[];
@@ -979,11 +981,12 @@ export async function routeMessage(
     );
   }
 
-  const [channel] = await db
-    .select({ id: channels.id, name: channels.name, topic: channels.topic })
+  const [channelRow] = await db
+    .select({ id: channels.id, name: channels.name, topic: channels.topic, kind: channels.kind })
     .from(channels)
     .where(and(eq(channels.id, message.channelId), eq(channels.orgId, message.orgId)));
-  if (!channel) return { runs: [], skipped: "message_missing" };
+  if (!channelRow) return { runs: [], skipped: "message_missing" };
+  const { kind: channelKind, ...channel } = channelRow;
   const historyOf = (where: ReturnType<typeof and>) =>
     db
       .select({
@@ -1077,6 +1080,10 @@ export async function routeMessage(
   }
   const namesOf = (m: { body: string; authorUserId: string | null; authorAgentId: string | null }) =>
     namesIn(m.body, nameable, m.authorUserId ?? m.authorAgentId);
+  // In a channel, an agent's message that names nobody and asks nothing brings nobody in: the step is asked only about
+  // one that does. A DM's other agent is who it talks to (an agents' DM carries hand-offs back).
+  if (byAgent && channelKind !== "dm" && !hasQuestionMark(message.body) && namesOf(message).length === 0)
+    return { runs: [], skipped: "asks_nobody" };
 
   // Conversation continuity: within the window, the agent that spoke last here, or the one this
   // person addressed in their previous message, is who a follow-up without a mention is for.
