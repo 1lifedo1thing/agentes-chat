@@ -4427,6 +4427,19 @@
     "ask": "Bir admine sor",
     "sent": "Bunu yapabilecek kişilere gönderildi."
   },
+  "accountRef": {
+    "label": "{{name}} hesabı",
+    "card": "{{name}} hesabı hakkında",
+    "mine": "Senin hesabın",
+    "of": "{{name}} kişisinin hesabı",
+    "on": "{{computer}} üzerinde",
+    "gone": "Bu hesap artık çalışma alanında değil."
+  },
+  "accountSwitch": {
+    "limit": "<from/> hesabı sınırına ulaştığı için <to/> hesabıyla devam etti",
+    "line": "<from/> hesabı sınırına yaklaştığı için <to/> hesabıyla devam etti",
+    "extra": "<from/> hesabı ücretli ek kullanıma geçeceği için <to/> hesabıyla devam etti"
+  },
   "channelRefs": {
     "list": "Kanallar",
     "label": "#{{name}} kanalı",

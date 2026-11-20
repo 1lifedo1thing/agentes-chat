@@ -10891,6 +10891,33 @@
   "adminAsk.sent": {
     "value": "Sent to whoever can do it."
   },
+  "accountRef.label": {
+    "value": "{{name}} account"
+  },
+  "accountRef.card": {
+    "value": "About the {{name}} account"
+  },
+  "accountRef.mine": {
+    "value": "Your account"
+  },
+  "accountRef.of": {
+    "value": "{{name}}'s account"
+  },
+  "accountRef.on": {
+    "value": "On {{computer}}"
+  },
+  "accountRef.gone": {
+    "value": "This account isn't in the workspace anymore."
+  },
+  "accountSwitch.limit": {
+    "value": "Went on with the <to/> account because the <from/> account hit its limit"
+  },
+  "accountSwitch.line": {
+    "value": "Went on with the <to/> account because the <from/> account is near its limit"
+  },
+  "accountSwitch.extra": {
+    "value": "Went on with the <to/> account because the <from/> account would go into paid extra usage"
+  },
   "channelRefs.list": {
     "value": "Channels"
   },

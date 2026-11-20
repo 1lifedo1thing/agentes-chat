@@ -4442,6 +4442,19 @@
     "ask": "Een admin vragen",
     "sent": "Verstuurd naar wie het kan doen."
   },
+  "accountRef": {
+    "label": "Account {{name}}",
+    "card": "Over het account {{name}}",
+    "mine": "Jouw account",
+    "of": "Account van {{name}}",
+    "on": "Op {{computer}}",
+    "gone": "Dit account zit niet meer in de workspace."
+  },
+  "accountSwitch": {
+    "limit": "Ging verder met het account <to/> omdat het account <from/> zijn limiet bereikte",
+    "line": "Ging verder met het account <to/> omdat het account <from/> bijna aan zijn limiet zit",
+    "extra": "Ging verder met het account <to/> omdat het account <from/> in betaald extra gebruik zou gaan"
+  },
   "channelRefs": {
     "list": "Kanalen",
     "label": "Kanaal #{{name}}",

@@ -4442,6 +4442,19 @@
     "ask": "Einen Admin fragen",
     "sent": "An alle gesendet, die das tun können."
   },
+  "accountRef": {
+    "label": "Konto {{name}}",
+    "card": "Über das Konto {{name}}",
+    "mine": "Dein Konto",
+    "of": "Konto von {{name}}",
+    "on": "Auf {{computer}}",
+    "gone": "Dieses Konto ist nicht mehr im Workspace."
+  },
+  "accountSwitch": {
+    "limit": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> sein Limit erreicht hat",
+    "line": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> fast am Limit ist",
+    "extra": "Hat mit dem Konto <to/> weitergemacht, weil das Konto <from/> in die kostenpflichtige Zusatznutzung gehen würde"
+  },
   "channelRefs": {
     "list": "Kanäle",
     "label": "Kanal #{{name}}",
