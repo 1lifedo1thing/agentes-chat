@@ -237,7 +237,7 @@ import { agentRepositoryList, repositoriesPrompt } from "./git/repos";
 import { askVerdict, handOffHolds, repeatedAsk, saysNeedsNothing } from "./hand-off";
 import { UPDATE_ISSUE_TOOL } from "./issue-tools";
 import { linkRunToIssue, mirrorReplyToIssue } from "./issues";
-import { type Judge, judgeCallOf, TURN_END_CHECK_BUDGET_MS, withJudgeBudget } from "./judge";
+import { type Judge, JudgeGroup, judgeCallOf, TURN_END_CHECK_BUDGET_MS, withJudgeBudget } from "./judge";
 import {
   KEY_LINE_PERSON_MINUTES,
   type KeyLinePlace,
@@ -1976,11 +1976,23 @@ async function executeRunInner(
     recentRead ??= recentForJudge(db, run).catch(() => [] as string[]);
     return recentRead;
   };
+  const autoEarly = needsContext && autoWanted(agent);
+  const groupsJudged = needsContext && deps.toolsOnDemand && judge && granted.length > 0 && !every;
+  // The run's start judgments (Automático, its tool groups, its line) go to Jev as one request.
+  const startGroup =
+    needsContext && judge
+      ? new JudgeGroup([...(autoEarly ? ["auto_model"] : []), ...(groupsJudged ? ["tool_groups"] : []), "agent_status"])
+      : undefined;
+  /** The routine whose prompt the run works on: the same work every firing, so Automático's choice is kept for it. */
+  const routineCalled = (trigger?.meta?.routine as { id?: unknown } | undefined)?.id;
   // "Automático": the judge picks the run's model tier and effort while the context is built; the
   // choice is applied once the brain is known, before the first model call. Never blocks: no answer in time
   // is medium/medium.
   const askAuto = (): Promise<AutoChoice> => {
     if (!judge) return Promise.resolve(fallbackChoice("none"));
+    const message = trigger?.body ?? topTrigger?.body ?? "";
+    const computer = brainOf(agent.brain) !== "model";
+    const hasTools = granted.length > 0;
     return Promise.all([recentMessages(), inMission(db, run).catch(() => false)])
       .then(([recent, mission]) =>
         chooseAutoModel(judge, {
@@ -1990,20 +2002,26 @@ async function executeRunInner(
           agent: isRightHand(agent)
             ? { name: agent.name, role: RIGHT_HAND_AUTO.role, instructions: RIGHT_HAND_AUTO.instructions }
             : { name: agent.name, role: agent.role, instructions: agent.instructions },
-          message: trigger?.body ?? topTrigger?.body ?? "",
+          message,
           recent,
           routine: run.background || Boolean(trigger?.meta?.routine),
           mission,
-          computer: brainOf(agent.brain) !== "model",
-          tools: granted.length > 0,
+          computer,
+          tools: hasTools,
+          group: startGroup,
+          ...(typeof routineCalled === "string"
+            ? {
+                cacheKey: `${run.orgId}:${agent.id}:${routineCalled}:${sha256(JSON.stringify([message, mission, computer, hasTools]))}`,
+              }
+            : {}),
         }),
       )
       .catch(() => fallbackChoice("error"));
   };
-  const autoAsked = needsContext && autoWanted(agent) ? askAuto() : null;
+  const autoAsked = autoEarly ? askAuto() : null;
   // The judge's answer is awaited where the tools are needed: the context is read meanwhile (`CONTEXT_TOOLS`).
   const judging: Promise<void> | null =
-    needsContext && deps.toolsOnDemand && judge && granted.length > 0 && !every
+    groupsJudged && judge
       ? (async () => {
           const [recent, kept, live] = await Promise.all([
             recentMessages(),
@@ -2023,6 +2041,7 @@ async function executeRunInner(
             tools: granted,
             // The message's words may not mention its file (it may have none), and the agent has to open it.
             keep: Array.isArray(trigger?.meta.artifacts) ? [...keep, toolGroupKey({ scope: "drive:read" })] : keep,
+            group: startGroup,
           });
           toolChoice = choice;
           ctx.loadedGroups = choice.groups;
@@ -2039,18 +2058,26 @@ async function executeRunInner(
   if (needsContext) {
     void queryTrace
       .run({ count: 0 }, async () => {
-        const lines = await statusCandidates(db, run, granted);
-        const pick = judge
-          ? await askRunStatus(judge, {
-              orgId: run.orgId,
-              agentId: agent.id,
-              runId: run.id,
-              agent: { name: agent.name, role: agent.role, instructions: agent.instructions },
-              message: trigger?.body ?? topTrigger?.body ?? "",
-              recent: await recentMessages(),
-              candidates: lines,
-            }).catch(() => null)
-          : null;
+        const lines = await statusCandidates(db, run, granted).catch((error: unknown) => {
+          startGroup?.skip("agent_status");
+          throw error;
+        });
+        // A routine's run shows its routine's line (`STICKY`): nothing to pick.
+        const routineLine = lines.some((c) => c.kind === "routine");
+        if (routineLine) startGroup?.skip("agent_status");
+        const pick =
+          judge && !routineLine
+            ? await askRunStatus(judge, {
+                orgId: run.orgId,
+                agentId: agent.id,
+                runId: run.id,
+                agent: { name: agent.name, role: agent.role, instructions: agent.instructions },
+                message: trigger?.body ?? topTrigger?.body ?? "",
+                recent: await recentMessages(),
+                candidates: lines,
+                group: startGroup,
+              }).catch(() => null)
+            : null;
         await startRunStatus({ db, pubsub: deps.pubsub }, run, lines, pick);
       })
       .catch(() => {});
@@ -5975,7 +6002,9 @@ async function executeRunInner(
           decided: null,
           unanswered: false,
           unreached: "",
-          judged: record,
+          // A record nobody reads (it posted nothing, and its routine reports only what is new) is not judged: the
+          // routine fires again on its own schedule.
+          judged: anythingPosted || routineBriefOf(triggerMessage?.meta)?.report === "always" ? record : "",
           mission: false,
           wakesLater: () => wakesLater(db, run),
           prepare: () => void judging.gather().catch(() => {}),

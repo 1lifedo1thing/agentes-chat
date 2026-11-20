@@ -12,6 +12,7 @@ import {
   createAgent,
   createAgentRuns,
   createChannel,
+  type createFakeJudge,
   createJobHandlers,
   createPassToolSource,
   drainOutbox,
@@ -120,7 +121,7 @@ function workTools(over: { onLook?: (ctx: { runId: string; db: Fixture["db"] }) 
  * A routine's background run, as the routine engine fires it: a brief in the routine's own room (here a
  * plain channel standing in for it), delivering to #general. Not executed yet.
  */
-async function backgroundRun(options: { access?: "read" | "act"; body?: string } = {}) {
+async function backgroundRun(options: { access?: "read" | "act"; body?: string; report?: "always" | "when_new" } = {}) {
   const room = await createChannel(f.db, f.owner.id, f.org.id, { name: `rotina-${crypto.randomUUID().slice(0, 8)}` });
   await addChannelMember(f.db, f.owner.id, f.org.id, room.id, { agentId: f.agent.id });
   const [routine] = await f.db
@@ -148,7 +149,7 @@ async function backgroundRun(options: { access?: "read" | "act"; body?: string }
     creatorUserId: f.owner.id,
     deliverTo: { channelId: f.general.id, threadId: null },
     access: options.access ?? "act",
-    report: "when_new",
+    report: options.report ?? "when_new",
     trigger: "schedule",
     dueAt: new Date().toISOString(),
   };
@@ -225,6 +226,23 @@ describe("a routine's background run never posts by itself", () => {
     expect(await agentMessages()).toEqual([]);
     expect(ends()).toEqual([{ runId: run.id, status: "done", text: "Nada novo desde ontem." }]);
     expect(await routineRunById(routineRun.id)).toMatchObject({ status: "silent", summary: "Nada novo desde ontem." });
+  });
+
+  test("a silent run picks no line and isn't checked at its end; one that reports every run is", async () => {
+    f = await setup({ reply: () => ({ chunks: ["Nada novo desde ontem."] }) });
+    const judge = f.context.judge as ReturnType<typeof createFakeJudge>;
+    await backgroundRun();
+    await drainOutbox(f.db, f.handlers);
+    expect(judge.calls.map((c) => c.kind)).not.toContain("agent_status");
+    expect(judge.calls.map((c) => c.kind)).not.toContain("follow_through");
+    expect((await f.db.select().from(schema.agents).where(eq(schema.agents.id, f.agent.id)))[0]?.statusKind).toBe(
+      "routine",
+    );
+
+    judge.calls.length = 0;
+    await backgroundRun({ report: "always" });
+    await drainOutbox(f.db, f.handlers);
+    expect(judge.calls.map((c) => c.kind)).toContain("follow_through");
   });
 
   test("a failure: nothing posted, the ledger fails with the run's error code", async () => {

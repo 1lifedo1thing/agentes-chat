@@ -716,13 +716,15 @@ test("long work past the line on its owner's plan goes on with a free account be
 });
 
 /** A scheduled slot of a routine: long work by kind. */
-async function scheduledSlot(fx: Fixture) {
+async function scheduledSlot(fx: Fixture, report?: "always") {
   const deps = { db: fx.db, pubsub: fx.pubsub, context: fx.context };
   const routine = await createRoutine(deps, fx.owner.id, fx.org.id, {
     name: "Deploys",
     agentId: fx.agent.id,
     prompt: "Check the deploys.",
     target: { type: "channel", channelId: fx.general.id },
+    // Its record is its report: a turn that says it goes on is read at its end (a silent routine's isn't).
+    ...(report ? { report } : {}),
     trigger: { type: "schedule", phrase: "todo dia às 8h" },
   });
   await runRoutineNow(deps, fx.owner.id, fx.org.id, routine.id);
@@ -872,11 +874,11 @@ test("long work moved onto a teammate's account that reaches the line there goes
     .set({ usage: extraOpen as never })
     .where(eq(schema.machineAccounts.id, OWN1));
   const { brain, seen } = fillsTheWeek(fx);
-  await scheduledSlot(fx);
+  await scheduledSlot(fx, "always");
   await drainOutbox(fx.db, handlersWith(fx, brain));
-  // A free account first, then its owner's paid extra usage, never a wait on the teammate's week.
-  expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL, OWN1]);
   const [run] = await runs(fx);
+  // A free account first, then its owner's paid extra usage, never a wait on the teammate's week.
+  expect(seen.filter((t) => t.runId === run?.id).map((t) => t.account?.id)).toEqual([WALTER_ALL, OWN1]);
   expect(run?.status).toBe("done");
   expect(moveOf(run)).toBeUndefined();
 });
@@ -887,7 +889,7 @@ test("long work moved onto a teammate's account that reaches the line there wait
   await usage(WALTER_ALL, 40);
   await usage(OWN1, 99, iso(3 * 3600_000));
   const { brain, seen } = fillsTheWeek(fx);
-  await scheduledSlot(fx);
+  await scheduledSlot(fx, "always");
   await drainOutbox(fx.db, handlersWith(fx, brain));
   expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL]);
   const [run] = await runs(fx);
@@ -905,7 +907,7 @@ test("long work on a teammate's account it moved to stops at that plan's line, t
   await usage(WALTER_ALL, 40);
   await usage(OWN1, 99, iso(3 * 3600_000));
   const { brain, seen } = fillsTheWeek(fx, 1, true);
-  await scheduledSlot(fx);
+  await scheduledSlot(fx, "always");
   await drainOutbox(fx.db, handlersWith(fx, brain));
   // One turn on Walter's account, then a wait: never a second turn there on Walter's paid extra usage.
   expect(seen.map((t) => t.account?.id)).toEqual([WALTER_ALL]);
@@ -1036,7 +1038,7 @@ test("long work on a plan lent to its agent never goes back into that plan's pai
     .where(eq(schema.machineAccounts.id, WALTER_ALL));
   await usage(OWN1, 40);
   const { brain, seen } = fillsTheWeek(fx);
-  await scheduledSlot(fx);
+  await scheduledSlot(fx, "always");
   await drainOutbox(fx.db, handlersWith(fx, brain));
   expect(seen.map((t) => t.account?.id)).toEqual([OWN1]);
   const [run] = await runs(fx);
@@ -1423,6 +1425,8 @@ test("Lodi's long work on its person's other account it moved to stops at that p
     agentId: lodi.id,
     prompt: "Check the deploys.",
     target: { type: "channel", channelId: fx.general.id },
+    // Its record is its report: a turn that says it goes on is read at its end (a silent routine's isn't).
+    report: "always",
     trigger: { type: "schedule", phrase: "todo dia às 8h" },
   });
   await runRoutineNow(deps, fx.owner.id, fx.org.id, routine.id);
