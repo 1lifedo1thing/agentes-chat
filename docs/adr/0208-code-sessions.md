@@ -7,7 +7,8 @@
 - Code: db `packages/db/src/schema/code.ts` (`code_sessions`), migration `0309_code_sessions.sql` (`channel_kind`
   gains `code`); engine `packages/engine/src/code-sessions.ts` (`createCodeSession`, `prepareCodeSession`,
   `ensureCodeSessionsOn`, `codeAgentSql`, `codeSessionCwd`, `codeSessionBrief`, `admitCodeMembers`,
-  `codeSessionDiff`, `codeSessionGit`, `recordCodeSessionPr`, `codeStartOptions`), `messages.ts` (the session's agent
+  `codeSessionDiff`, `codeSessionGit`, `codeSessionGitLog`, `codeSessionFiles`, `codeSessionFile`,
+  `recordCodeSessionPr`, `codeStartOptions`), `messages.ts` (the session's agent
   answers like a DM; who is named joins), `jobs.ts` (never routed), `brains/select.ts` (the worktree as the brain's
   folder), `context.ts` (the session's brief), `notification-producers.ts` (`codeSessionId`); server
   `apps/server/src/routes/app/code-sessions.ts`, `engine.ts` (the computer-online hook); client
@@ -74,13 +75,21 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
   standing on its horizon saying what they do. Writing and Enter opens a session with the picked agent and repository
   (the last ones used come back); the computer is the agent's own, so there is nothing else to pick.
 - **Session**: the conversation under its header (name, state and branch, the git button, only when there is a next
-  step and the agent is free to take it), and a side panel with the kit's tabs, Diff and Screen, and a Terminal under
-  either. The list, the conversation and the terminal's height drag, each kept on the device, and a session squeezed
+  step and the agent is free to take it), and a side panel with the kit's tabs, Git, Files and Screen, and a Terminal
+  under any of them. The list, the conversation and the terminal's height drag, each kept on the device, and a session squeezed
   by the window folds the app's sidebar to its rail until the room comes back (`usePageRoom`, as beside a live file's
   conversation):
-  - **Diff**: read with `git` in the worktree as its agent (the runner's `exec`, read-only commands): since the base
-    (committed or not, new files included) or only what isn't committed. The sky rises behind it from the panel's
-    foot, with the agent standing on it.
+  - **Git**: read with `git` in the worktree as its agent (the runner's `exec`, read-only commands), again every few
+    seconds while it works (`codeSessionGitLog`): the branch and what it came from, the whole change since the base
+    (committed or not, new files included), what isn't committed as `git status` letters it (with its lines), and the
+    branch's commits since the base as a line of nodes. Any row opens its diff in place (an uncommitted file's, a
+    commit's `git show`, everything's), unified or side by side from the diff's own head. The sky rises behind it from
+    the panel's foot, with the agent standing on it.
+  - **Files**: the worktree's tree, the files git tracks and the new ones it doesn't ignore (`ls-files -co
+    --exclude-standard`), changed ones marked with the Git tab's letters and their folders open at first, and a search
+    by path. A file opens in place, read-only, with line numbers and the shared highlighter's colors
+    (`codeSessionFile`): never one git ignores, a `.env` one or one reached through a link out of the worktree (each
+    step resolved on the computer), only its first 512 KB, and a binary one only said to be one.
   - **Screen**: the agent's computer as its computer dialog shows it (live, "Take control", full screen; a Mac's
     browser page). The worktree's server runs there on a port only that agent reaches (0096), so its screen is the
     preview. It stands in the agents' fine sky; where the person may use phones (0042), a picker offers them. The

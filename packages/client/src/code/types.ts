@@ -43,7 +43,8 @@ export interface CreateCodeSessionInput {
   text: string;
 }
 
-export type CodeDiffScope = "base" | "uncommitted";
+/** Since the base (committed or not), only what isn't committed, or one commit (`sha`). */
+export type CodeDiffScope = "base" | "uncommitted" | "commit";
 
 export interface CodeDiffFile {
   path: string;
@@ -74,4 +75,63 @@ export interface CodeGit {
   local: boolean;
   pr: { number: number; url: string | null } | null;
   next: CodeGitStep | null;
+}
+
+/** What `git status` says of a path not committed: changed, new (added, or not tracked yet), deleted or renamed. */
+export type CodeChangeStatus = "modified" | "added" | "deleted" | "renamed" | "untracked";
+
+export interface CodeChange {
+  path: string;
+  /** Where a renamed file was. */
+  from?: string;
+  status: CodeChangeStatus;
+  /** Its lines against HEAD; null for a binary file (or a new one past those counted). */
+  added: number | null;
+  removed: number | null;
+}
+
+export interface CodeCommit {
+  sha: string;
+  short: string;
+  subject: string;
+  author: string;
+  /** When it was authored (ISO). */
+  at: string;
+  files: number;
+  added: number;
+  removed: number;
+}
+
+/** The Git tab: what isn't committed, and the branch's commits since its base (the newest first). */
+export interface CodeGitLog {
+  branch: string | null;
+  base: { branch: string | null; sha: string | null };
+  changes: CodeChange[];
+  changesMore: boolean;
+  commits: CodeCommit[];
+  /** More commits than listed. */
+  more: boolean;
+}
+
+/** The Files tab: the worktree's files git doesn't ignore, and which of them changed. */
+export interface CodeFiles {
+  paths: string[];
+  truncated: boolean;
+  changes: { path: string; status: CodeChangeStatus }[];
+}
+
+/**
+ * A file read-only, or why not: `binary`, `missing` (gone, or a folder), `ignored` (git ignores it), `secret` (a
+ * `.env` file), `outside` (a link out of the worktree).
+ */
+export type CodeFileState = "ok" | "binary" | "missing" | "ignored" | "secret" | "outside";
+
+export interface CodeFile {
+  path: string;
+  state: CodeFileState;
+  content: string;
+  /** In bytes. */
+  size: number;
+  /** Only its start came. */
+  truncated: boolean;
 }

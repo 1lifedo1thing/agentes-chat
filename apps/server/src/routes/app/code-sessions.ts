@@ -1,8 +1,12 @@
 import {
   archiveCodeSession,
   type CodeSessionDeps,
+  codeSessionCommitDiff,
   codeSessionDiff,
+  codeSessionFile,
+  codeSessionFiles,
   codeSessionGit,
+  codeSessionGitLog,
   codeStartOptions,
   createCodeSession,
   getCodeSession,
@@ -56,7 +60,7 @@ const SessionParams = OrgParams.extend({ sessionId: z.uuid() });
 
 const CodeDiff = z
   .object({
-    scope: z.enum(["base", "uncommitted"]),
+    scope: z.enum(["base", "uncommitted", "commit"]),
     base: z.object({ branch: z.string().nullable(), sha: z.string().nullable() }),
     files: z.array(
       z.object({
@@ -83,6 +87,56 @@ const CodeGit = z
     next: z.enum(["commit", "push", "pr", "merge"]).nullable(),
   })
   .openapi("CodeGit");
+
+const ChangeStatus = z.enum(["modified", "added", "deleted", "renamed", "untracked"]);
+
+const CodeGitLog = z
+  .object({
+    branch: z.string().nullable(),
+    base: z.object({ branch: z.string().nullable(), sha: z.string().nullable() }),
+    changes: z.array(
+      z.object({
+        path: z.string(),
+        from: z.string().optional().openapi({ description: "Where a renamed file was." }),
+        status: ChangeStatus,
+        added: z.number().int().nullable(),
+        removed: z.number().int().nullable(),
+      }),
+    ),
+    changesMore: z.boolean(),
+    commits: z.array(
+      z.object({
+        sha: z.string(),
+        short: z.string(),
+        subject: z.string(),
+        author: z.string(),
+        at: z.string(),
+        files: z.number().int(),
+        added: z.number().int(),
+        removed: z.number().int(),
+      }),
+    ),
+    more: z.boolean().openapi({ description: "More commits than listed." }),
+  })
+  .openapi("CodeGitLog");
+
+const CodeFiles = z
+  .object({
+    paths: z.array(z.string()),
+    truncated: z.boolean(),
+    changes: z.array(z.object({ path: z.string(), status: ChangeStatus })),
+  })
+  .openapi("CodeFiles");
+
+const CodeFile = z
+  .object({
+    path: z.string(),
+    state: z.enum(["ok", "binary", "missing", "ignored", "secret", "outside"]),
+    content: z.string(),
+    size: z.number().int(),
+    truncated: z.boolean(),
+  })
+  .openapi("CodeFile");
 
 /**
  * Code sessions (ADR 0208): a request worked on in its own git worktree on the agent's computer, with its own
@@ -280,17 +334,80 @@ export function codeSessionRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/code-sessions/{sessionId}/diff",
       tags,
       security,
-      summary: "The session's change, read with git in its worktree: since its base, or only what isn't committed",
+      summary:
+        "The session's change, read with git in its worktree: since its base, only what isn't committed, or one commit",
       request: {
         params: SessionParams,
-        query: z.object({ scope: z.enum(["base", "uncommitted"]).default("base") }),
+        query: z.object({
+          scope: z.enum(["base", "uncommitted", "commit"]).default("base"),
+          sha: z
+            .string()
+            .regex(/^[0-9a-f]{7,40}$/)
+            .optional()
+            .openapi({ description: "The commit, with `scope=commit`." }),
+        }),
       },
       responses: { 200: json(CodeDiff), ...errors },
     }),
     async (c) => {
       const { orgId, sessionId } = c.req.valid("param");
-      const { scope } = c.req.valid("query");
-      return c.json(await codeSessionDiff(sessions(), c.get("user").id, orgId, sessionId, scope), 200);
+      const { scope, sha } = c.req.valid("query");
+      const user = c.get("user").id;
+      if (scope === "commit")
+        return c.json(await codeSessionCommitDiff(sessions(), user, orgId, sessionId, sha ?? ""), 200);
+      return c.json(await codeSessionDiff(sessions(), user, orgId, sessionId, scope), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/organizations/{orgId}/code-sessions/{sessionId}/git/log",
+      tags,
+      security,
+      summary: "The Git tab: what isn't committed, and the branch's commits since the session's base",
+      request: { params: SessionParams },
+      responses: { 200: json(CodeGitLog), ...errors },
+    }),
+    async (c) => {
+      const { orgId, sessionId } = c.req.valid("param");
+      return c.json(await codeSessionGitLog(sessions(), c.get("user").id, orgId, sessionId), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/organizations/{orgId}/code-sessions/{sessionId}/files",
+      tags,
+      security,
+      summary: "The Files tab: the worktree's files git doesn't ignore, and which of them changed",
+      request: { params: SessionParams },
+      responses: { 200: json(CodeFiles), ...errors },
+    }),
+    async (c) => {
+      const { orgId, sessionId } = c.req.valid("param");
+      return c.json(await codeSessionFiles(sessions(), c.get("user").id, orgId, sessionId), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/organizations/{orgId}/code-sessions/{sessionId}/file",
+      tags,
+      security,
+      summary: "One file of the worktree, read-only (never one git ignores, a `.env` file or a link out of it)",
+      request: {
+        params: SessionParams,
+        query: z.object({ path: z.string().min(1).max(1024).openapi({ description: "Relative to the worktree." }) }),
+      },
+      responses: { 200: json(CodeFile), ...errors },
+    }),
+    async (c) => {
+      const { orgId, sessionId } = c.req.valid("param");
+      const { path } = c.req.valid("query");
+      return c.json(await codeSessionFile(sessions(), c.get("user").id, orgId, sessionId, path), 200);
     },
   );
 

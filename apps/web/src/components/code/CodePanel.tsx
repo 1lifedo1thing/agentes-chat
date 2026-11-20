@@ -1,26 +1,27 @@
-import { type CodeDiffScope, type CodeSession, useCodeDiff } from "@agenteschat/client";
-import { errorText } from "@agenteschat/client/lib/errors";
-import { Button, Select, TabPanel, Tabs } from "@agenteschat/ui";
+import type { CodeSession } from "@agenteschat/client";
+import { Button, TabPanel, Tabs } from "@agenteschat/ui";
 import { type CSSProperties, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
-import { DiffView } from "@/components/artifacts/views";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { FilesPane } from "./CodeFiles";
+import { GitPane } from "./CodeGit";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodeScreen } from "./CodeScreen";
 import { CodeHorizon } from "./CodeSky";
 import { TerminalPane } from "./TerminalPane";
 
-export type CodeTab = "diff" | "screen";
+export type CodeTab = "git" | "files" | "screen";
 const TAB_KEY = "code:tab";
 const TERMINAL_KEY = "code:terminal";
 
 function readTab(): CodeTab {
   try {
-    return localStorage.getItem(TAB_KEY) === "screen" ? "screen" : "diff";
+    const kept = localStorage.getItem(TAB_KEY);
+    return kept === "screen" || kept === "files" ? kept : "git";
   } catch {
-    return "diff";
+    return "git";
   }
 }
 
@@ -45,9 +46,10 @@ function readTerminal() {
 }
 
 /**
- * The session's side panel (ADR 0208): the change (Diff) or the agent's computer or a phone (Screen), and under
- * either, when opened, a shell in the worktree (Terminal) whose height drags. The agents' sky rises behind the diff
- * from its foot, with the session's agent standing on it, and fills the screen's stage.
+ * The session's side panel (ADR 0208): its git (what changed, the commits, each diff), its files, or the agent's
+ * computer or a phone (Screen), and under any of them, when opened, a shell in the worktree (Terminal) whose height
+ * drags. The agents' sky rises behind the git tab from its foot, with the session's agent standing on it, and fills
+ * the screen's stage.
  */
 export function CodePanel({
   session,
@@ -82,19 +84,20 @@ export function CodePanel({
         label={t("codeSessions.panel.label")}
         items={[
           {
-            value: "diff",
+            value: "git",
             label: (
               <>
-                {t("codeSessions.panel.diff")}
+                {t("codeSessions.gitTab.label")}
                 {stat && <span className="code-ptab__n tabular">{stat}</span>}
               </>
             ),
           },
+          { value: "files", label: t("codeSessions.files.label") },
           { value: "screen", label: t("codeSessions.panel.screen") },
         ]}
       >
-        <TabPanel value="diff">
-          <DiffPane session={session} />
+        <TabPanel value="git">
+          <GitPane session={session} />
           {agent && (
             <div className="code-hz" aria-hidden="true">
               <CodeHorizon />
@@ -114,6 +117,9 @@ export function CodePanel({
               </span>
             </div>
           )}
+        </TabPanel>
+        <TabPanel value="files">
+          <FilesPane session={session} />
         </TabPanel>
         <TabPanel value="screen">{agent && <CodeScreen agent={agent} />}</TabPanel>
       </Tabs>
@@ -143,73 +149,5 @@ export function CodePanel({
         </div>
       )}
     </section>
-  );
-}
-
-/** The change, read with git in the worktree: since the base (committed or not), or only what isn't committed. */
-function DiffPane({ session }: { session: CodeSession }) {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const [scope, setScope] = useState<CodeDiffScope>("base");
-  const ready = session.worktree.state === "ready";
-  const diff = useCodeDiff(org.id, session.id, scope, ready);
-  if (!ready) return <p className="code-empty">{t("codeSessions.panel.notReady")}</p>;
-  return (
-    <div className="code-diff">
-      <div className="code-fhead">
-        <Select
-          size="sm"
-          className="code-select"
-          aria-label={t("codeSessions.diff.scope")}
-          value={scope}
-          onValueChange={setScope}
-          options={[
-            { value: "base", label: t("codeSessions.diff.base", { base: session.baseBranch ?? "main" }) },
-            { value: "uncommitted", label: t("codeSessions.diff.uncommitted") },
-          ]}
-        />
-        {diff.data && (
-          <span className="code-fhead__n tabular">
-            {t("codeSessions.diff.files", { count: diff.data.files.length })}{" "}
-            <span className="code-add">+{diff.data.added}</span> <span className="code-del">−{diff.data.removed}</span>
-          </span>
-        )}
-        <span className="code-fhead__r">
-          <Button
-            size="sm"
-            variant="ghost"
-            icon="refresh"
-            iconOnly
-            aria-label={t("codeSessions.diff.refresh")}
-            title={t("codeSessions.diff.refresh")}
-            loading={diff.isFetching}
-            onClick={() => void diff.refetch()}
-          />
-        </span>
-      </div>
-      <div className="code-dscroll">
-        {diff.isPending ? (
-          <p className="code-empty">{t("codeSessions.diff.reading")}</p>
-        ) : diff.error ? (
-          <p className="code-empty">{errorText(t, diff.error)}</p>
-        ) : diff.data && diff.data.files.length === 0 ? (
-          <p className="code-empty">{t("codeSessions.diff.none")}</p>
-        ) : diff.data?.truncated ? (
-          <ul className="code-files">
-            <li className="code-empty">{t("codeSessions.diff.tooLarge")}</li>
-            {diff.data.files.map((f) => (
-              <li key={f.path}>
-                <code>{f.path}</code>{" "}
-                <span className="tabular">
-                  <span className="code-add">+{f.added}</span> <span className="code-del">−{f.removed}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : diff.data ? (
-          <DiffView files={diff.data.files.map((f) => ({ path: f.path, patch: f.patch }))} />
-        ) : null}
-      </div>
-    </div>
   );
 }

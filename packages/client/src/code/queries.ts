@@ -11,9 +11,13 @@ export const codeKeys = {
   list: (orgId: string) => ["org", orgId, "code", "list"] as const,
   start: (orgId: string) => ["org", orgId, "code", "start"] as const,
   one: (orgId: string, sessionId: string) => ["org", orgId, "code", "one", sessionId] as const,
-  diff: (orgId: string, sessionId: string, scope: CodeDiffScope) =>
-    ["org", orgId, "code", "one", sessionId, "diff", scope] as const,
+  diff: (orgId: string, sessionId: string, scope: CodeDiffScope, sha?: string) =>
+    ["org", orgId, "code", "one", sessionId, "diff", scope, sha ?? ""] as const,
   git: (orgId: string, sessionId: string) => ["org", orgId, "code", "one", sessionId, "git"] as const,
+  gitLog: (orgId: string, sessionId: string) => ["org", orgId, "code", "one", sessionId, "git", "log"] as const,
+  files: (orgId: string, sessionId: string) => ["org", orgId, "code", "one", sessionId, "files"] as const,
+  file: (orgId: string, sessionId: string, path: string) =>
+    ["org", orgId, "code", "one", sessionId, "file", path] as const,
 };
 
 type QC = ReturnType<typeof useQueryClient>;
@@ -59,13 +63,57 @@ export const useCodeStart = (orgId: string) => {
   return useQuery({ queryKey: codeKeys.start(orgId), queryFn: () => api.code.start(orgId), staleTime: 60_000 });
 };
 
-/** The panel's diff: read on demand from the computer, kept a few seconds. */
-export const useCodeDiff = (orgId: string, sessionId: string, scope: CodeDiffScope, enabled: boolean) => {
+/** The panel's diff: read on demand from the computer, kept a few seconds (`sha`: one commit's, with "commit"). */
+export const useCodeDiff = (
+  orgId: string,
+  sessionId: string,
+  scope: CodeDiffScope,
+  enabled: boolean,
+  sha?: string,
+) => {
   const api = useApi();
   return useQuery({
-    queryKey: codeKeys.diff(orgId, sessionId, scope),
-    queryFn: () => api.code.diff(orgId, sessionId, scope),
+    queryKey: codeKeys.diff(orgId, sessionId, scope, sha),
+    queryFn: () => api.code.diff(orgId, sessionId, scope, sha),
     enabled,
+    staleTime: 3_000,
+    retry: false,
+  });
+};
+
+/** The Git tab's lists, read again every few seconds while the agent works (`live`). */
+export const useCodeGitLog = (orgId: string, sessionId: string, enabled: boolean, live = false) => {
+  const api = useApi();
+  return useQuery({
+    queryKey: codeKeys.gitLog(orgId, sessionId),
+    queryFn: () => api.code.gitLog(orgId, sessionId),
+    enabled,
+    staleTime: 3_000,
+    refetchInterval: live ? 8_000 : false,
+    retry: false,
+  });
+};
+
+/** The Files tab's list, read again every few seconds while the agent works (`live`). */
+export const useCodeFiles = (orgId: string, sessionId: string, enabled: boolean, live = false) => {
+  const api = useApi();
+  return useQuery({
+    queryKey: codeKeys.files(orgId, sessionId),
+    queryFn: () => api.code.files(orgId, sessionId),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: live ? 15_000 : false,
+    retry: false,
+  });
+};
+
+/** One file of the worktree, read-only; nothing asked without a path. */
+export const useCodeFile = (orgId: string, sessionId: string, path: string | null) => {
+  const api = useApi();
+  return useQuery({
+    queryKey: codeKeys.file(orgId, sessionId, path ?? ""),
+    queryFn: () => api.code.file(orgId, sessionId, path ?? ""),
+    enabled: path !== null,
     staleTime: 3_000,
     retry: false,
   });

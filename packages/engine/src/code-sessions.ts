@@ -839,8 +839,8 @@ export async function archiveCodeSession(deps: CodeSessionDeps, userId: string, 
 
 /* ───────── git in the worktree, for the panel ───────── */
 
-/** What the diff covers: everything since the base (committed or not), or only what isn't committed. */
-export type CodeDiffScope = "base" | "uncommitted";
+/** What the diff covers: everything since the base (committed or not), only what isn't committed, or one commit. */
+export type CodeDiffScope = "base" | "uncommitted" | "commit";
 
 export interface CodeDiffFile {
   path: string;
@@ -1050,3 +1050,330 @@ export async function recordCodeSessionPr(
   if (!row || (row.prNumber === pr.number && (row.prUrl === pr.url || !pr.url))) return row;
   return setSession(deps, row, { prNumber: pr.number, prUrl: pr.url });
 }
+
+/* ───────── the panel's Git and Files tabs (ADR 0208) ───────── */
+
+/** Most commits the Git tab lists, the newest first. */
+const LOG_MAX = 100;
+/** Most changes the Git tab lists (a folder of new files not ignored yet can hold thousands). */
+const CHANGES_MAX = 1_000;
+/** Most untracked files whose lines the Git tab counts. */
+const UNTRACKED_COUNTED = 100;
+/** Most paths the Files tab lists. */
+const FILES_MAX = 20_000;
+/** Most of a file the Files tab shows. */
+export const CODE_FILE_MAX_BYTES = 512 * 1024;
+/** A commit named by its hash, short or whole. */
+const COMMIT_SHA = /^[0-9a-f]{7,40}$/;
+/** Files that hold secrets by convention: never shown, even where a repository tracks one. */
+const SECRET_FILE = /^\.env(\..*)?$/i;
+
+/** A read-only command in the session's worktree, as its agent: its exit code and what it printed. */
+async function worktreeShell(deps: CodeSessionDeps, row: CodeSessionRow, command: string) {
+  if (!deps.hub || !row.machineId)
+    throw new ConflictError("This session's computer isn't reachable", "code_session.offline");
+  if (row.worktreeState !== "ready" || !row.worktreePath)
+    throw new ConflictError("The worktree isn't ready yet", "code_session.not_ready");
+  const agent = await getAgentCached(deps.db, row.orgId, row.agentId);
+  if (!agent) throw new NotFoundError("Agent not found");
+  try {
+    return await deps.hub.call<"exec">(row.machineId, {
+      op: "exec",
+      command,
+      cwd: row.worktreePath,
+      timeoutSeconds: GIT_READ_SECONDS,
+      stream: false,
+      agent: { id: agent.id, handle: agent.handle },
+    });
+  } catch (error) {
+    if (error instanceof MachineOfflineError || error instanceof MachinePausedError)
+      throw new ConflictError("This session's computer isn't reachable", "code_session.offline");
+    throw error;
+  }
+}
+
+/** What `git status` says of a path not committed: changed, new (added, or not tracked yet), deleted or renamed. */
+export type CodeChangeStatus = "modified" | "added" | "deleted" | "renamed" | "untracked";
+
+export interface CodeChange {
+  path: string;
+  /** Where a renamed file was. */
+  from?: string;
+  status: CodeChangeStatus;
+  /** Its lines against HEAD; null for a binary file, or a new one past those counted. */
+  added: number | null;
+  removed: number | null;
+}
+
+export interface CodeCommit {
+  sha: string;
+  short: string;
+  subject: string;
+  author: string;
+  /** When it was authored (ISO). */
+  at: string;
+  files: number;
+  added: number;
+  removed: number;
+}
+
+/** The Git tab: what isn't committed, and the branch's commits since its base. */
+export interface CodeGitLog {
+  branch: string | null;
+  base: { branch: string | null; sha: string | null };
+  changes: CodeChange[];
+  /** More changes than listed. */
+  changesMore: boolean;
+  commits: CodeCommit[];
+  /** More commits than listed. */
+  more: boolean;
+}
+
+/** `git status --porcelain=v1 -z` as entries; with `-z` a rename's path is followed by where it came from. */
+export function parseStatus(text: string): { path: string; from?: string; status: CodeChangeStatus }[] {
+  const parts = text.split("\0");
+  const out: { path: string; from?: string; status: CodeChangeStatus }[] = [];
+  for (let i = 0; i < parts.length; i += 1) {
+    const entry = parts[i] ?? "";
+    if (entry.length < 4) continue;
+    const x = entry[0];
+    const y = entry[1];
+    const path = entry.slice(3);
+    if (x === "?" && y === "?") out.push({ path, status: "untracked" });
+    else if (x === "R" || x === "C") {
+      const from = parts[i + 1] ?? "";
+      i += 1;
+      out.push(x === "R" ? { path, from, status: "renamed" } : { path, status: "added" });
+    } else if (x === "!") continue;
+    else out.push({ path, status: x === "D" || y === "D" ? "deleted" : x === "A" ? "added" : "modified" });
+  }
+  return out;
+}
+
+/** `git diff --numstat -z` by path (a rename's counts go to its new path); a binary file's are null. */
+export function parseNumstatZ(text: string): Map<string, { added: number | null; removed: number | null }> {
+  const counts = new Map<string, { added: number | null; removed: number | null }>();
+  const parts = text.split("\0");
+  for (let i = 0; i < parts.length; i += 1) {
+    const m = /^(\d+|-)\t(\d+|-)\t([\s\S]*)$/.exec(parts[i] ?? "");
+    if (!m) continue;
+    let path = m[3] ?? "";
+    if (!path) {
+      // A rename: where it was, then where it is.
+      path = parts[i + 2] ?? "";
+      i += 2;
+    }
+    counts.set(path, {
+      added: m[1] === "-" ? null : Number(m[1]),
+      removed: m[2] === "-" ? null : Number(m[2]),
+    });
+  }
+  return counts;
+}
+
+/** `git log` written as `%x1e%H%x1f%h%x1f%an%x1f%aI%x1f%s` with `--numstat`: one commit per record. */
+export function parseLog(text: string): CodeCommit[] {
+  const commits: CodeCommit[] = [];
+  for (const record of text.split("\x1e")) {
+    const [head = "", ...lines] = record.split("\n");
+    const [sha = "", short = "", author = "", at = "", subject = ""] = head.split("\x1f");
+    if (!/^[0-9a-f]{40}$/.test(sha)) continue;
+    let files = 0;
+    let added = 0;
+    let removed = 0;
+    for (const line of lines) {
+      const m = /^(\d+|-)\t(\d+|-)\t/.exec(line);
+      if (!m) continue;
+      files += 1;
+      if (m[1] !== "-") added += Number(m[1]);
+      if (m[2] !== "-") removed += Number(m[2]);
+    }
+    commits.push({ sha, short, subject, author, at, files, added, removed });
+  }
+  return commits;
+}
+
+/**
+ * The Git tab: what isn't committed (as `git status` lists it, with its lines against HEAD; new files counted whole)
+ * and the branch's commits since the session's base, read in the worktree as its agent.
+ */
+export async function codeSessionGitLog(
+  deps: CodeSessionDeps,
+  userId: string,
+  orgId: string,
+  sessionId: string,
+): Promise<CodeGitLog> {
+  const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
+  const base = row.baseSha || row.baseBranch;
+  const range = base ? `${shellQuote(base)}..HEAD` : "HEAD";
+  const [status, numstat, log] = await Promise.all([
+    worktreeShell(deps, row, "git --no-pager status --porcelain=v1 -z --untracked-files=all"),
+    worktreeShell(deps, row, "git --no-pager diff --no-color --no-ext-diff --numstat -z HEAD"),
+    worktreeShell(
+      deps,
+      row,
+      `git --no-pager log --no-color --format=%x1e%H%x1f%h%x1f%an%x1f%aI%x1f%s --numstat -n ${LOG_MAX + 1} ${range}`,
+    ),
+  ]);
+  if (status.exitCode !== 0)
+    throw new ConflictError(status.stderr.trim() || "git failed", "code_session.git_failed");
+  const listed = parseStatus(status.stdout);
+  const entries = listed.slice(0, CHANGES_MAX);
+  const counts = parseNumstatZ(numstat.exitCode === 0 ? numstat.stdout : "");
+  // A new file's lines, as a diff against nothing would count them: one command for all of them, NUL between.
+  const untracked = entries.filter((e) => e.status === "untracked").slice(0, UNTRACKED_COUNTED);
+  const fresh = new Map<string, number | null>();
+  if (untracked.length > 0) {
+    const paths = untracked.map((e) => shellQuote(e.path)).join(" ");
+    const out = await worktreeShell(
+      deps,
+      row,
+      `for p in ${paths}; do n=$(git --no-pager diff --no-color --no-index --numstat -- /dev/null "$p" 2>/dev/null | cut -f1); printf '%s\\0' "\${n:-0}"; done`,
+    ).catch(() => null);
+    const said = out?.stdout.split("\0") ?? [];
+    untracked.forEach((e, i) => {
+      const n = said[i];
+      fresh.set(e.path, n === undefined || n === "-" || n === "" ? null : Number(n));
+    });
+  }
+  const changes = entries.map((e): CodeChange => {
+    if (e.status === "untracked") {
+      const added = fresh.get(e.path);
+      return { path: e.path, status: e.status, added: added ?? null, removed: added === undefined ? null : 0 };
+    }
+    const c = counts.get(e.path);
+    return {
+      path: e.path,
+      ...(e.from ? { from: e.from } : {}),
+      status: e.status,
+      added: c?.added ?? (e.status === "deleted" ? 0 : null),
+      removed: c?.removed ?? null,
+    };
+  });
+  const commits = parseLog(log.exitCode === 0 ? log.stdout : "");
+  return {
+    branch: row.branch,
+    base: { branch: row.baseBranch, sha: row.baseSha },
+    changes,
+    changesMore: listed.length > CHANGES_MAX,
+    commits: commits.slice(0, LOG_MAX),
+    more: commits.length > LOG_MAX,
+  };
+}
+
+/** One commit's change in the worktree (`git show`), split per file like the session's diff. */
+export async function codeSessionCommitDiff(
+  deps: CodeSessionDeps,
+  userId: string,
+  orgId: string,
+  sessionId: string,
+  sha: string,
+): Promise<CodeDiff> {
+  const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
+  if (!COMMIT_SHA.test(sha)) throw new ValidationError("A commit's hash is needed", "code_session.commit_sha");
+  const out = await worktreeShell(deps, row, `git --no-pager show --no-color --no-ext-diff -M --format= ${sha}`);
+  if (out.exitCode !== 0) throw new NotFoundError("No such commit in this worktree");
+  const files = splitPatch(out.stdout);
+  const truncated = files.reduce((n, f) => n + f.patch.length, 0) > DIFF_MAX_CHARS;
+  return {
+    scope: "commit",
+    base: { branch: row.baseBranch, sha: row.baseSha },
+    files: truncated ? files.map((f) => ({ ...f, patch: "" })) : files,
+    added: files.reduce((n, f) => n + f.added, 0),
+    removed: files.reduce((n, f) => n + f.removed, 0),
+    truncated,
+  };
+}
+
+/** The Files tab: the worktree's files (tracked, and new ones git doesn't ignore), and which of them changed. */
+export interface CodeFiles {
+  paths: string[];
+  /** More files than listed. */
+  truncated: boolean;
+  changes: { path: string; status: CodeChangeStatus }[];
+}
+
+export async function codeSessionFiles(
+  deps: CodeSessionDeps,
+  userId: string,
+  orgId: string,
+  sessionId: string,
+): Promise<CodeFiles> {
+  const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
+  const [list, status] = await Promise.all([
+    worktreeShell(deps, row, "git --no-pager ls-files -co --exclude-standard -z"),
+    worktreeShell(deps, row, "git --no-pager status --porcelain=v1 -z --untracked-files=all"),
+  ]);
+  if (list.exitCode !== 0) throw new ConflictError(list.stderr.trim() || "git failed", "code_session.git_failed");
+  const paths = [...new Set(list.stdout.split("\0").filter(Boolean))];
+  return {
+    paths: paths.slice(0, FILES_MAX),
+    truncated: paths.length > FILES_MAX,
+    changes: parseStatus(status.exitCode === 0 ? status.stdout : "").map(({ path, status }) => ({ path, status })),
+  };
+}
+
+/**
+ * A file shown read-only in the Files tab, or why not: `binary`, `missing` (gone, or a folder), `ignored` (git ignores
+ * it: build output, a key), `secret` (a `.env` file), `outside` (a link out of the worktree).
+ */
+export type CodeFileState = "ok" | "binary" | "missing" | "ignored" | "secret" | "outside";
+
+export interface CodeFile {
+  path: string;
+  state: CodeFileState;
+  /** Its text, up to `CODE_FILE_MAX_BYTES` (empty unless `ok`). */
+  content: string;
+  /** Its size in bytes. */
+  size: number;
+  /** Only its start is here. */
+  truncated: boolean;
+}
+
+/**
+ * A path the Files tab may ask for: relative to the worktree, with no `..`, `.` or empty step, no `.git` folder, no
+ * backslash and no NUL.
+ */
+export function codeFilePathOk(path: string): boolean {
+  if (!path || path.length > 1024 || path.includes("\0") || path.includes("\\") || path.startsWith("/")) return false;
+  return path.split("/").every((step) => step !== "" && step !== "." && step !== ".." && step !== ".git");
+}
+
+/**
+ * One file of the worktree as its agent reads it, for whoever reads the session: never a file git ignores, a `.env`
+ * one, or one reached through a link out of the worktree (each step resolved, POSIX `sh` on any computer).
+ */
+export async function codeSessionFile(
+  deps: CodeSessionDeps,
+  userId: string,
+  orgId: string,
+  sessionId: string,
+  path: string,
+): Promise<CodeFile> {
+  const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
+  if (!codeFilePathOk(path)) throw new ValidationError("A path inside the worktree is needed", "code_session.file_path");
+  const none = (state: CodeFileState): CodeFile => ({ path, state, content: "", size: 0, truncated: false });
+  if (SECRET_FILE.test(path.split("/").pop() ?? "")) return none("secret");
+  const command = [
+    `p=${shellQuote(path)}`,
+    `if git check-ignore -q -- "$p" 2>/dev/null; then echo ignored; exit 0; fi`,
+    `if [ -L "$p" ]; then echo outside; exit 0; fi`,
+    `if [ ! -f "$p" ]; then echo missing; exit 0; fi`,
+    `d=$(cd -- "$(dirname -- "$p")" 2>/dev/null && pwd -P) || { echo missing; exit 0; }`,
+    `case "$d/" in "$(pwd -P)/"*) ;; *) echo outside; exit 0 ;; esac`,
+    `echo "ok $(wc -c < "$p" | tr -d ' ')"`,
+    `head -c ${CODE_FILE_MAX_BYTES} -- "$p"`,
+  ].join("\n");
+  const out = await worktreeShell(deps, row, command);
+  if (out.exitCode !== 0) throw new ConflictError(out.stderr.trim() || "The file couldn't be read", "code_session.file_failed");
+  const cut = out.stdout.indexOf("\n");
+  const head = cut < 0 ? out.stdout.trim() : out.stdout.slice(0, cut);
+  const [word = "", bytes = "0"] = head.split(" ");
+  if (word !== "ok") return none(word === "ignored" || word === "outside" ? word : "missing");
+  const content = cut < 0 ? "" : out.stdout.slice(cut + 1);
+  const size = Number(bytes) || content.length;
+  // A NUL early on is a binary file: nothing to read as text.
+  if (content.slice(0, 8000).includes("\0")) return { ...none("binary"), size };
+  return { path, state: "ok", content, size, truncated: size > CODE_FILE_MAX_BYTES };
+}
+

@@ -2,7 +2,10 @@ import { enc, type Requester } from "../api/http";
 import type {
   CodeDiff,
   CodeDiffScope,
+  CodeFile,
+  CodeFiles,
   CodeGit,
+  CodeGitLog,
   CodeSession,
   CodeStartOptions,
   CreateCodeSessionInput,
@@ -24,10 +27,16 @@ export interface CodeApi {
   retry(orgId: string, sessionId: string): Promise<CodeSession>;
   /** Closes it: out of the list, the worktree removed (the branch stays). */
   close(orgId: string, sessionId: string): Promise<void>;
-  /** The change, read with git in the worktree. */
-  diff(orgId: string, sessionId: string, scope: CodeDiffScope): Promise<CodeDiff>;
+  /** The change, read with git in the worktree (`sha`: the commit, with `scope` "commit"). */
+  diff(orgId: string, sessionId: string, scope: CodeDiffScope, sha?: string): Promise<CodeDiff>;
   /** Where its git stands and the next step. */
   git(orgId: string, sessionId: string): Promise<CodeGit>;
+  /** The Git tab: what isn't committed and the branch's commits. */
+  gitLog(orgId: string, sessionId: string): Promise<CodeGitLog>;
+  /** The Files tab's list. */
+  files(orgId: string, sessionId: string): Promise<CodeFiles>;
+  /** One file, read-only. */
+  file(orgId: string, sessionId: string, path: string): Promise<CodeFile>;
 }
 
 export function createCodeApi(request: Requester): CodeApi {
@@ -41,7 +50,11 @@ export function createCodeApi(request: Requester): CodeApi {
       request<CodeSession>(one(orgId, sessionId), { method: "PATCH", json: { title } }),
     retry: (orgId, sessionId) => request<CodeSession>(`${one(orgId, sessionId)}/retry`, { json: {} }),
     close: (orgId, sessionId) => request<void>(one(orgId, sessionId), { method: "DELETE" }),
-    diff: (orgId, sessionId, scope) => request<CodeDiff>(`${one(orgId, sessionId)}/diff`, { query: { scope } }),
+    diff: (orgId, sessionId, scope, sha) =>
+      request<CodeDiff>(`${one(orgId, sessionId)}/diff`, { query: sha ? { scope, sha } : { scope } }),
     git: (orgId, sessionId) => request<CodeGit>(`${one(orgId, sessionId)}/git`),
+    gitLog: (orgId, sessionId) => request<CodeGitLog>(`${one(orgId, sessionId)}/git/log`),
+    files: (orgId, sessionId) => request<CodeFiles>(`${one(orgId, sessionId)}/files`),
+    file: (orgId, sessionId, path) => request<CodeFile>(`${one(orgId, sessionId)}/file`, { query: { path } }),
   };
 }

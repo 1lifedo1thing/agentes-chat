@@ -546,15 +546,6 @@
   color: var(--muted);
   font-size: 13.5px;
 }
-/* Over the sky that rises behind it from the panel's foot. */
-.code-diff {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
 .code-fhead {
   flex: none;
   display: flex;
@@ -774,3 +765,304 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── the panel's Git and Files tabs (ADR 0208): one row of head, rows like the list's, a diff or a file in place ── */
+.code-vcs,
+.code-tree {
+  /* Over the sky that rises behind the Git tab from the panel's foot. */
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.code-vcs > .code-fhead,
+.code-tree > .code-fhead {
+  height: 44px;
+  gap: 8px;
+  padding: 0 8px 0 16px;
+}
+/* A head that starts with "back": the button at the edge, its glyph where the rows' text starts. */
+.code-vcs > .code-fhead:has(> .ac-btn:first-child),
+.code-tree > .code-fhead:has(> .ac-btn:first-child) {
+  padding-left: 6px;
+}
+.code-vcs__where {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+}
+.code-vcs__where > .ac-icon {
+  flex: none;
+}
+/* The branch gives way first; where it came from stays whole. */
+.code-vcs__branch {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink2);
+  font: 600 12.5px / 18px var(--font-mono);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.code-vcs__base {
+  flex: none;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.code-vcs__scroll {
+  padding: 0 6px 160px;
+}
+.code-vcs__list,
+.code-tree__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.code-vcs__h {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 16px 10px 4px;
+  color: var(--faint);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.code-vcs__count {
+  font-weight: 500;
+}
+.code-vcs__none {
+  margin: 2px 10px 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+/* A row as the session list's: the cut corner, the plate on hover. */
+.code-vcs__row,
+.code-tree__row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px 10px 10px 3px;
+  background: none;
+  color: var(--ink2);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+.code-vcs__row:hover,
+.code-tree__row:hover {
+  background: var(--plate-soft);
+}
+html:not([data-pointer]) .code-vcs__row:focus-visible,
+html:not([data-pointer]) .code-tree__row:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-inset);
+}
+.code-vcs__row > .ac-icon,
+.code-tree__row > .ac-icon {
+  flex: none;
+  color: var(--faint);
+}
+.code-vcs__name,
+.code-tree__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.code-vcs__name[data-status="deleted"],
+.code-tree__name[data-status="deleted"] {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.code-vcs__dir,
+.code-tree__dir {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--faint);
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.code-vcs__n {
+  flex: none;
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+/* What a change is, as `git status` letters it, in its color: the words are its title and for screen readers. */
+.code-vcs__letter {
+  flex: none;
+  width: 14px;
+  color: var(--warn);
+  font: 700 11.5px / 1 var(--font-mono);
+  text-align: center;
+}
+.code-vcs__letter[data-status="added"],
+.code-vcs__letter[data-status="untracked"] {
+  color: var(--ok);
+}
+.code-vcs__letter[data-status="deleted"] {
+  color: var(--danger);
+}
+.code-vcs__letter[data-status="renamed"] {
+  color: var(--info);
+}
+/* Everything since the base: the change as a whole, above its parts. */
+.code-vcs__row--all {
+  margin-top: 4px;
+}
+.code-vcs__row--all .code-vcs__name {
+  font-weight: 600;
+}
+.code-vcs__go {
+  margin-right: -4px;
+}
+/* The commits as a line through their nodes, the newest (HEAD) filled. */
+.code-vcs__row--commit .code-vcs__name {
+  flex: 1;
+}
+.code-vcs__node {
+  position: relative;
+  flex: none;
+  align-self: stretch;
+  width: 14px;
+}
+.code-vcs__node::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: -1px;
+  left: 6px;
+  width: 2px;
+  background: var(--line2);
+}
+.code-vcs__node::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pane);
+  box-shadow: inset 0 0 0 2px var(--muted);
+  transform: translateY(-50%);
+}
+.code-vcs__graph > li:first-child .code-vcs__node::before {
+  top: 50%;
+}
+.code-vcs__graph > li:last-child .code-vcs__node::before {
+  bottom: 50%;
+}
+.code-vcs__graph > li:only-child .code-vcs__node::before {
+  display: none;
+}
+.code-vcs__graph > li:first-child .code-vcs__node::after {
+  background: var(--ink2);
+  box-shadow: none;
+}
+.code-vcs__sha {
+  flex: none;
+  color: var(--faint);
+  font: 12px / 18px var(--font-mono);
+}
+.code-vcs__when {
+  flex: none;
+  min-width: 52px;
+  color: var(--faint);
+  font-size: 12px;
+  text-align: right;
+  white-space: nowrap;
+}
+/* An opened diff's or file's head: what it is, its counts, its own switch. */
+.code-vcs__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.code-vcs__title > code {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font: 600 12.5px / 18px var(--font-mono);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.code-vcs__subject {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* Files: the search takes the head; the tree is an explorer's, a row per name, folders opening in place. */
+.code-tree__search {
+  flex: 1;
+  min-width: 0;
+}
+.code-fscroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 6px 24px;
+}
+.code-tree__row {
+  --depth: 0;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px 0 calc(6px + var(--depth) * 16px);
+  border-radius: 8px 8px 8px 3px;
+}
+.code-tree__chev {
+  flex: none;
+  width: 14px;
+  color: var(--faint);
+}
+.code-tree__row--dir > .ac-icon:not(.code-tree__chev) {
+  color: var(--muted);
+}
+/* A folder holding changes reads in the changed color; a changed file, in the ink with its letter. */
+.code-tree__row--dir[data-changed] .code-tree__name {
+  color: var(--warn);
+}
+.code-tree__name {
+  color: var(--ink2);
+}
+.code-tree__name[data-status] {
+  color: var(--ink);
+  font-weight: 500;
+}
+.code-tree__row > .code-vcs__letter {
+  margin-left: auto;
+}
+.code-tree__note {
+  margin: 10px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+/* A file shown: the code viewer's own look, line numbers in the margin. */
+.code-fview {
+  padding: 6px 0 24px;
+}
+.code-fview__code {
+  padding: 0 14px 0 6px;
+}
+
