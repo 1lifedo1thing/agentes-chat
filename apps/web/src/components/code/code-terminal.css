@@ -28,6 +28,10 @@
 .code-term__screen[hidden] {
   display: none;
 }
+/* Off on its computer: no dark screen, only why and the way to turn it on, on the panel's own ground. */
+.code-term:has(> .code-term__screen[hidden]) {
+  background: none;
+}
 .code-term__screen .xterm {
   padding: 8px 4px 8px 12px;
 }

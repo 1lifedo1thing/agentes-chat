@@ -13,7 +13,18 @@ import {
 import { errorText } from "@agenteschat/client/lib/errors";
 import { can } from "@agenteschat/client/lib/permissions";
 import { planMeterText, usageShown } from "@agenteschat/client/lib/plan-usage";
-import { AvatarStack, Button, Icon, Menu, MenuItem, MenuNote, Popover, planLine, SplitButton } from "@agenteschat/ui";
+import {
+  AvatarStack,
+  Button,
+  Icon,
+  Menu,
+  MenuItem,
+  MenuNote,
+  Popover,
+  planLevel,
+  planLine,
+  SplitButton,
+} from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, useMemo, useState } from "react";
@@ -115,7 +126,11 @@ function AgentStatus({ session }: { session: CodeSession }) {
     <span className="code-status">
       <ModelPickerButton agent={agent} size="row" />
       {meter?.line && (
-        <span className="code-status__limit" data-state={meter.state} title={meter.title}>
+        <span
+          className="code-status__limit"
+          data-level={planLevel(meter.top?.used ?? 0, meter.state === "limited")}
+          title={meter.title}
+        >
           {[meter.line, meter.alert].filter(Boolean).join(" · ")}
         </span>
       )}

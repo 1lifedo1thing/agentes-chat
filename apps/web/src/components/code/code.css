@@ -422,18 +422,29 @@
 }
 /* Under the composer, as a coding CLI's status line: the agent's model (its picker) and its plan's limits. */
 .code-status {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
-  max-width: 100%;
 }
-.code-status__limit {
+.code-status > .mp-trigger,
+.code-status > .mp-label {
   flex: none;
-  color: var(--muted);
   white-space: nowrap;
 }
-.code-status__limit[data-state="limited"] {
+/* Its words in the meter's colors (`planLevel`): amber from 80%, red from 90% and at the limit; cut, whole on hover. */
+.code-status__limit {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.code-status__limit[data-level="almost"] {
+  color: var(--warn);
+}
+.code-status__limit:is([data-level="critical"], [data-level="limited"]) {
   color: var(--danger);
 }
 /* The git button: the kit's split button, at the header's small size. */
