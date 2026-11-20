@@ -1,5 +1,5 @@
 import { type CodeChangeStatus, type CodeSession, useCodeFile, useCodeFiles } from "@agenteschat/client";
-import { highlightCode } from "@agenteschat/client/lib/code";
+import { codeLangOfPath, highlightCode } from "@agenteschat/client/lib/code";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { Button, cx, Icon, SearchField } from "@agenteschat/ui";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
@@ -54,15 +54,6 @@ function foldersAbove(paths: Iterable<string>): Set<string> {
     for (let i = 1; i < steps.length; i += 1) out.add(steps.slice(0, i).join("/"));
   }
   return out;
-}
-
-/** The highlighter's language for a file: its extension, or the few names that are a language of their own. */
-function langOf(path: string): string {
-  const name = (path.slice(path.lastIndexOf("/") + 1) || path).toLowerCase();
-  if (name === "dockerfile" || name.endsWith(".dockerfile")) return "dockerfile";
-  if (name === "makefile" || name === ".bashrc" || name === ".zshrc") return "sh";
-  const dot = name.lastIndexOf(".");
-  return dot > 0 ? name.slice(dot + 1) : "";
 }
 
 /**
@@ -299,7 +290,10 @@ function FileView({
   const { org } = useOrg();
   const file = useCodeFile(org.id, session.id, path);
   const data = file.data;
-  const lines = useMemo(() => (data?.state === "ok" ? highlightCode(data.content, langOf(path)) : []), [data, path]);
+  const lines = useMemo(
+    () => (data?.state === "ok" ? highlightCode(data.content, codeLangOfPath(path)) : []),
+    [data, path],
+  );
   return (
     <div className="code-tree">
       <div className="code-fhead">

@@ -57,6 +57,7 @@ type WorkRow =
   | "issues"
   | "proposals"
   | "routines"
+  | "code"
   | "wiki"
   | "drive"
   | "dashboards"
@@ -68,7 +69,17 @@ type WorkRow =
  * A team's workspace: Threads is a tab and Team a row of Agents. Archived channels last, only while there are some (no
  * longer a link at the end of Conversas).
  */
-const TEAM_WORK: WorkRow[] = ["issues", "proposals", "routines", "wiki", "drive", "dashboards", "memory", "archived"];
+const TEAM_WORK: WorkRow[] = [
+  "issues",
+  "proposals",
+  "routines",
+  "code",
+  "wiki",
+  "drive",
+  "dashboards",
+  "memory",
+  "archived",
+];
 /**
  * A personal workspace (ADR 0159): what its sidebar keeps in sight first, then the rest of its More; Threads (no tab
  * there) and Team (no row in Agents) live here, Team last.
@@ -77,6 +88,7 @@ const PERSONAL_WORK: WorkRow[] = [
   "routines",
   "drive",
   "issues",
+  "code",
   "threads",
   "proposals",
   "wiki",
@@ -229,6 +241,8 @@ function MePage() {
     routines: (
       <GroupedRow key="routines" icon="clock" label={t("routines.title")} chevron onPress={() => open("/routines")} />
     ),
+    // Código (ADR 0208): the sessions where agents program, as the web's sidebar tool.
+    code: <GroupedRow key="code" icon="code" label={t("shell.code")} chevron onPress={() => open("/coding")} />,
     wiki: <GroupedRow key="wiki" icon="file" label={t("wiki.title")} chevron onPress={() => open("/wiki")} />,
     drive: <GroupedRow key="drive" icon="drive" label={t("mobile.me.drive")} chevron onPress={() => open("/drive")} />,
     dashboards: (

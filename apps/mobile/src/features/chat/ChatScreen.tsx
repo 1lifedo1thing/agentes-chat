@@ -7,6 +7,7 @@ import {
   type Channel,
   type ConnectionStatus,
   channelsQuery,
+  codeSessionOf,
   type DirectMessage,
   dmsQuery,
   fileConversationOf,
@@ -35,6 +36,7 @@ import {
   useApi,
   useArtifact,
   useChannelThreads,
+  useCodeSession,
   useConsultations,
   useCreateMission,
   useDmReads,
@@ -187,6 +189,8 @@ import { usePlanHold } from "../ai/parts";
 import { BrowserCard, BrowserRunCard } from "../browser/BrowserCard";
 import { OpenHandoffProvider } from "../browser/open";
 import { threadTitle } from "../chats/logic";
+import { sessionCodeHref, sessionStateKey } from "../coding/logic";
+import { useSessionMenu } from "../coding/menu";
 import { ImageMaking } from "../files/ImageMaking";
 import { isLocalMedia, LOCAL_FILES, type LocalFile, localFilesOf } from "../files/local-files";
 import { rememberLocalCopy } from "../files/source";
@@ -772,11 +776,12 @@ function Chat({
       const root = list.find((m) => m.id === threadId);
       const replies = list.filter((m) => m.id !== threadId);
       // A task's conversation (ADR 0145): its root stands for the task, one screen back; only the replies show. A
-      // live file's (ADR 0199) the same, under where the file was made.
+      // live file's (ADR 0199) the same, under where the file was made, and a code session's (ADR 0208): its root is
+      // never shown.
       const file = root ? fileConversationOf(root.meta) : null;
       const head: Row[] = file
         ? [{ kind: "origin", key: "origin", artifactId: file.artifactId, fileKind: file.kind }]
-        : root && !taskConversationOf(root.meta)
+        : root && !taskConversationOf(root.meta) && !codeSessionOf(root.meta)
           ? [
               { kind: "marker", key: "started", text: startedText },
               // The root as it started the thread (its mission card is pinned above already).
@@ -1974,19 +1979,29 @@ function Chat({
   // A live file's (ADR 0199): "Canvas conversation", who took part under it (the file's name until someone writes).
   const rootFile = fileConversationOf(root?.meta);
   const fileTalk = useArtifact(orgId, rootFile?.artifactId ?? null).data?.conversation;
+  // A code session's (ADR 0208): its name, its state and branch under it (the project until the session is read);
+  // the bar opens its code and its agent's computer, its "…" the session's menu.
+  const rootCode = codeSessionOf(root?.meta);
+  // Its id is what the pill's memo compares (the root's meta is read anew each render).
+  const codeId = rootCode?.sessionId ?? null;
+  const codeSession = useCodeSession(orgId, rootCode?.sessionId).data ?? null;
+  const codeMore = useSessionMenu(codeSession, { inChat: true });
+  const codeState = codeSession ? sessionStateKey(codeSession) : null;
   const title = isThread
     ? rootTask
       ? t("issues.conversation.title")
       : rootFile
         ? t(`live.conversation.title.${rootFile.kind}`)
-        : rootWork
-          ? t("issues.open", { number: rootWork.number, title: rootWork.title })
-          : info
-            ? // A thread on a GIF or a sticker has no words of its own to title it (ADR 0091).
-              threadTitle(info) ||
-              previewOf(root ? textOrMedia(t, root.body, root.meta) : "") ||
-              t("mobile.chat.thread")
-            : ""
+        : rootCode
+          ? (codeSession?.title ?? rootCode.title)
+          : rootWork
+            ? t("issues.open", { number: rootWork.number, title: rootWork.title })
+            : info
+              ? // A thread on a GIF or a sticker has no words of its own to title it (ADR 0091).
+                threadTitle(info) ||
+                previewOf(root ? textOrMedia(t, root.body, root.meta) : "") ||
+                t("mobile.chat.thread")
+              : ""
     : dm
       ? dm.with.name
       : channel
@@ -2000,28 +2015,37 @@ function Chat({
         ? fileTalk?.participants.length
           ? joinNames(fileTalk.participants.map(dir.nameOf).filter(Boolean), t)
           : rootFile.title || undefined
-        : info
-          ? info.channelKind === "dm"
-            ? // A DM's channel name is internal ("dm-…"): the thread says who it is with.
-              t(
-                mission
-                  ? "mobile.chat.missionWith"
-                  : info.state === "closed"
-                    ? "mobile.chat.closedThreadWith"
-                    : "mobile.chat.threadWith",
-                { name: dm?.with.name ?? "" },
-              )
-            : t(
-                mission
-                  ? "mobile.chat.missionIn"
-                  : info.state === "closed"
-                    ? "mobile.chat.closedThreadIn"
-                    : "mobile.chat.threadIn",
-                {
-                  channel: info.channelName,
-                },
-              )
-          : undefined
+        : rootCode
+          ? codeSession && codeState
+            ? [
+                codeState.pr !== null ? t(codeState.key, { number: codeState.pr }) : t(codeState.key),
+                codeSession.branch,
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            : rootCode.repo
+          : info
+            ? info.channelKind === "dm"
+              ? // A DM's channel name is internal ("dm-…"): the thread says who it is with.
+                t(
+                  mission
+                    ? "mobile.chat.missionWith"
+                    : info.state === "closed"
+                      ? "mobile.chat.closedThreadWith"
+                      : "mobile.chat.threadWith",
+                  { name: dm?.with.name ?? "" },
+                )
+              : t(
+                  mission
+                    ? "mobile.chat.missionIn"
+                    : info.state === "closed"
+                      ? "mobile.chat.closedThreadIn"
+                      : "mobile.chat.threadIn",
+                  {
+                    channel: info.channelName,
+                  },
+                )
+            : undefined
     : dmAgentId
       ? rightHand
         ? `${t("rightHand.label")} · ${t("rightHand.actsAsYou")}`
@@ -2243,6 +2267,12 @@ function Chat({
   // their identity, reading the screen as it is when pressed.
   const pressOptions = useLatest(openOptions);
   const pressMembers = useLatest(openMembers);
+  // A code session's pill opens its code (ADR 0208), as its bar's button does.
+  const pressCode = useLatest(() => {
+    if (!codeId) return;
+    leavePlace();
+    router.push(sessionCodeHref(codeId) as never);
+  });
   const pressAgent = useCallback(() => {
     if (dmAgentId) router.push(`/agent/${dmAgentId}`);
   }, [dmAgentId]);
@@ -2253,6 +2283,8 @@ function Chat({
   // What stands in the bar beside "…", which the pill makes room for (`pillRoom`): our counted views first, as wide as
   // they lay out (`barLead`, measured), then the system's buttons (the computer, search).
   const [computerWords, setComputerWords] = useState<string | null>(null);
+  // A code session's agent's computer (ADR 0208), where it shows what it builds: the same entry as a DM's.
+  const [codeComputerWords, setCodeComputerWords] = useState<string | null>(null);
   const queueInBar = Boolean(queueShown && barQueue && queueMachineId);
   const tasksInBar = Boolean(dmAgentId && agentTasks);
   const [leadWidth, setLeadWidth] = useState(0);
@@ -2260,6 +2292,7 @@ function Chat({
   const computerInBar = Boolean(dmAgentId && !isThread && computerWords && !queueInBar);
   const dmExtra = computerInBar ? 1 : 0;
   const channelExtra = searchPlace ? 1 : 0;
+  const threadExtra = channelExtra + (codeId ? 1 : 0) + (codeSession && codeComputerWords ? 1 : 0);
   // The channel's sky in the pill, as an agent's DM: the color of the first agent in it.
   const channelColor = agentLook(dir.agentById.get(roster.data?.find((r) => r.type === "agent")?.id ?? "")).color;
   const dmColor = dmAgentId ? agentLook(dmAgent).color : undefined;
@@ -2273,12 +2306,14 @@ function Chat({
         <ThreadPill
           title={title}
           subtitle={subtitle}
-          onPress={pressOptions}
-          extraActions={channelExtra}
+          onPress={codeId ? pressCode : pressOptions}
+          extraActions={threadExtra}
           leadRoom={leadRoom}
           onHold={onHoldPill}
           holdHint={holdHint}
-          label={t("mobile.chat.headerChannel", { who: who(title, subtitle ?? "") })}
+          label={t(codeId ? "mobile.coding.pill" : "mobile.chat.headerChannel", {
+            who: who(title, subtitle ?? ""),
+          })}
         />
       ) : pillKind === "dm" && dm ? (
         <DmPill
@@ -2321,6 +2356,9 @@ function Chat({
       title,
       subtitle,
       pressOptions,
+      pressCode,
+      codeId,
+      threadExtra,
       onHoldPill,
       holdHint,
       t,
@@ -2391,6 +2429,20 @@ function Chat({
         ...(dmComputer && computerWords && !queueButton
           ? [dmComputerAction(dmComputer.agentId, computerWords, leavePlace)]
           : []),
+        // A code session's code, then its agent's computer (ADR 0208).
+        ...(codeId
+          ? [
+              {
+                icon: "code" as const,
+                sf: "chevron.left.forwardslash.chevron.right" as const,
+                label: t("mobile.coding.code"),
+                onPress: pressCode,
+              },
+              ...(codeSession && codeComputerWords
+                ? [dmComputerAction(codeSession.agentId, codeComputerWords, leavePlace)]
+                : []),
+            ]
+          : []),
         // A DM searches from its "…" (its name and the agent's own buttons keep the room).
         ...(searchPlace && !dm
           ? [
@@ -2402,7 +2454,7 @@ function Chat({
               },
             ]
           : []),
-        { icon: "more", sf: "ellipsis", label: t("mobile.chat.options"), onPress: openOptions },
+        codeMore ?? { icon: "more", sf: "ellipsis", label: t("mobile.chat.options"), onPress: openOptions },
       ]
     : undefined;
 
@@ -3217,6 +3269,7 @@ function Chat({
           {...(barActions ? { actions: barActions, lead: barLead } : {})}
         />
         {dmComputer ? <DmComputerWords agentId={dmComputer.agentId} onWords={setComputerWords} /> : null}
+        {codeSession ? <DmComputerWords agentId={codeSession.agentId} onWords={setCodeComputerWords} /> : null}
         {hasPin ? (
           // The bar is see-through (the conversation runs under it): an open mission's card starts below it. Pinned
           // messages have no bar here: they wait above the first message, revealed by pulling down (`PinnedLines`).

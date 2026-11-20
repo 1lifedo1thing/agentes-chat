@@ -3,5 +3,6 @@
  * session's conversation is the chat's (a thread in a channel of kind `code`).
  */
 export * from "./api";
+export * from "./meta";
 export * from "./queries";
 export * from "./types";

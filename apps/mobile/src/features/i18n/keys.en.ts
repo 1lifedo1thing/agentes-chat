@@ -1521,6 +1521,17 @@ export const featureKeysEn = {
       lastDay: "Last day",
     },
   },
+  // Código (ADR 0208; the rest of its words are the web's, `codeSessions.*`).
+  coding: {
+    /** The bar's button in a session's conversation: its Git and Files. */
+    code: "Code",
+    /** A session's pill in its conversation, which opens its code. */
+    pill: "{{who}}. See the code",
+    /** Over the agent's repositories and projects when a typed name is offered as a new one above them. */
+    listed: "The agent's",
+    /** A commit's diff, by its short hash. */
+    commit: "Commit {{short}}",
+  },
   // The task manager (ADR 0128; the rest of its words are shared, `taskManager.*`).
   taskManager: {
     loadFailed: "Couldn't load the tasks.",
@@ -2939,6 +2950,10 @@ export const featureKeysEn = {
       titlePersonal: "Hand your to-dos to your agents",
       textPersonal: "Create a task for an agent and follow it to the end.",
       viewerTitlePersonal: "Follow your agents' work",
+    },
+    coding: {
+      title: "Code with your agents",
+      text: "Each session is a conversation with an agent working on its own branch, on its computer.",
     },
     routines: {
       title: "Leave repeated work to your agents",

@@ -1470,6 +1470,13 @@ export const featureKeysPtBR = {
       lastDay: "Último dia",
     },
   },
+  // Código (ADR 0208; the rest of its words are the web's, `codeSessions.*`).
+  coding: {
+    code: "Código",
+    pill: "{{who}}. Ver o código",
+    listed: "Do agente",
+    commit: "Commit {{short}}",
+  },
   // The task manager (ADR 0128; the rest of its words are shared, `taskManager.*`).
   taskManager: {
     loadFailed: "Não deu para carregar as tarefas.",
@@ -2827,6 +2834,10 @@ export const featureKeysPtBR = {
       titlePersonal: "Passe seus afazeres para os agentes",
       textPersonal: "Crie uma tarefa para um agente e acompanhe até o fim.",
       viewerTitlePersonal: "Acompanhe o trabalho dos seus agentes",
+    },
+    coding: {
+      title: "Programe junto com os agentes",
+      text: "Cada sessão é uma conversa com um agente que trabalha numa branch própria, no computador dele.",
     },
     routines: {
       title: "Deixe o trabalho repetido com os agentes",
