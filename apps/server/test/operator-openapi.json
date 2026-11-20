@@ -36,9 +36,28 @@
           },
           "botCheck": {
             "$ref": "#/components/schemas/OperatorBotCheck"
+          },
+          "eventLoopLag": {
+            "type": ["object", "null"],
+            "properties": {
+              "p50Ms": {
+                "type": "number"
+              },
+              "p99Ms": {
+                "type": "number"
+              },
+              "maxMs": {
+                "type": "number"
+              },
+              "at": {
+                "type": "string"
+              }
+            },
+            "required": ["p50Ms", "p99Ms", "maxMs", "at"],
+            "description": "How late this process ran what was due over its last minute, from the runtime's own sampling (also logged as `event loop lag`). Null: no minute ended yet."
           }
         },
-        "required": ["ok", "version", "botCheck"]
+        "required": ["ok", "version", "botCheck", "eventLoopLag"]
       },
       "OperatorBotCheck": {
         "type": "object",
@@ -1923,7 +1942,7 @@
                   "properties": {
                     "cause": {
                       "type": "string",
-                      "description": "`brain_unavailable:<code>` (a wait for its computer: `busy` for room, `machine_offline`, `machine_paused`, …) or `provider_outage`. Ignore values you don't know."
+                      "description": "`brain_unavailable:<code>` (a wait for its computer: `busy` for room, `machine_offline`, `machine_paused`, …) or `provider_outage`. A wait for room names the gate that held it when it began: `busy:line` (another run ahead), `busy:sign_in` (its plan sign-in at its cap), `busy:spacing` (agents' turns start seconds apart), `busy:memory` (the computer refused it for room); plain `busy` before these were kept. Ignore values you don't know."
                     },
                     "waits": {
                       "type": "integer",
@@ -2396,7 +2415,7 @@
                   "properties": {
                     "cause": {
                       "type": "string",
-                      "description": "`brain_unavailable:<code>` (a wait for its computer: `busy` for room, `machine_offline`, `machine_paused`, …) or `provider_outage`. Ignore values you don't know."
+                      "description": "`brain_unavailable:<code>` (a wait for its computer: `busy` for room, `machine_offline`, `machine_paused`, …) or `provider_outage`. A wait for room names the gate that held it when it began: `busy:line` (another run ahead), `busy:sign_in` (its plan sign-in at its cap), `busy:spacing` (agents' turns start seconds apart), `busy:memory` (the computer refused it for room); plain `busy` before these were kept. Ignore values you don't know."
                     },
                     "waits": {
                       "type": "integer",
@@ -2599,7 +2618,7 @@
                 },
                 "stage": {
                   "type": "string",
-                  "description": "`claim`, `context`, `model` (each turn), `persist`, `events`… `other`: a name not shaped like one the server writes."
+                  "description": "`claim`, `context`, `model` (each turn), `persist`, `events`, `end`… a step inside a stage after it (`context.build`). `other`: a name not shaped like one the server writes."
                 },
                 "count": {
                   "type": "integer",
@@ -2705,7 +2724,7 @@
               "properties": {
                 "cause": {
                   "type": "string",
-                  "description": "`brain_unavailable:<code>`, a wait for its computer or a sign-in on it, by its code: `busy` for room, `machine_offline`, `not_logged_in`, … `other`: not shaped like one. Ignore values you don't know."
+                  "description": "`brain_unavailable:<code>`, a wait for its computer or a sign-in on it, by its code: `busy` for room, `machine_offline`, `not_logged_in`, … `other`: not shaped like one. A wait for room names the gate that held it when it began: `busy:line` (another run ahead), `busy:sign_in` (its plan sign-in at its cap), `busy:spacing` (agents' turns start seconds apart), `busy:memory` (the computer refused it for room); plain `busy` before these were kept. Ignore values you don't know."
                 },
                 "brain": {
                   "type": ["string", "null"],
@@ -4793,7 +4812,7 @@
                     "properties": {
                       "stage": {
                         "type": "string",
-                        "description": "`claim`, `context`, `model#1` (the turn it is of), `persist`, `events`… `other`: a name not shaped like one the server writes."
+                        "description": "`claim`, `context`, `model#1` (the turn it is of), `persist`, `events`, `end` (after the last of them)… `other`: a name not shaped like one the server writes."
                       },
                       "ms": {
                         "type": "integer",
@@ -4802,6 +4821,27 @@
                       "queries": {
                         "type": "integer",
                         "minimum": 0
+                      },
+                      "parts": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "stage": {
+                              "type": "string"
+                            },
+                            "ms": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "queries": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": ["stage", "ms", "queries"]
+                        },
+                        "description": "Steps inside the stage, back to back from its start (`context`: `tools_granted`, `ai_state`, `checks`, `build`, `judging`, `summary`); what they leave of `ms` came after the last."
                       }
                     },
                     "required": ["stage", "ms", "queries"]
