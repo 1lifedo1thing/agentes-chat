@@ -41,17 +41,49 @@ const QUOTE = /"([^"]+)"|“([^”]+)”/g;
 const LITERAL =
   /^(?:(?:the\s+)?(?:page|screen|window)\s+)?(?:shows|says|displays|contains|reads)?\s*((?:"[^"]+"|“[^”]+”)(?:\s*(?:,|and|&)\s*(?:"[^"]+"|“[^”]+”))*)\s*(?:is\s+(?:shown|visible|displayed|on\s+screen)|appears)?\s*\.?$/i;
 
-/** The words a literal condition or question names (see `LITERAL`), as `plainWords` writes them; else null. */
-function literalWords(text: string): string[] | null {
+/** The phrases a literal condition or question names (see `LITERAL`); else null. */
+function literalPhrases(text: string): string[] | null {
   const m = LITERAL.exec(text.trim());
   if (!m) return null;
-  const words = [...(m[1] as string).matchAll(QUOTE)].map((q) => plainWords(q[1] ?? q[2] ?? "")).filter(Boolean);
-  return words.length > 0 ? words : null;
+  const phrases = [...(m[1] as string).matchAll(QUOTE)].map((q) => q[1] ?? q[2] ?? "").filter((q) => plainWords(q));
+  return phrases.length > 0 ? phrases : null;
 }
 
-/** The lines that show `words`, whole words within one line. */
-const linesWith = (lines: string[], words: string) =>
-  lines.flatMap((l, i) => (` ${plainWords(l)} `.includes(` ${words} `) ? [i] : []));
+/**
+ * Words that turn what follows them around ("not confirmed", "couldn't be saved", "nicht gespeichert"), as
+ * `plainWords` writes them ("couldn't" is "couldn t").
+ */
+const NEGATIONS = new Set(
+  "not no never t cannot unable failed without nicht kein keine nie nao nunca sem nenhum non pas jamais sans aucun sin ningun ninguna senza nessun niet geen nooit не нет без".split(
+    " ",
+  ),
+);
+/** Text as a page writes it, give or take case, curly quotes and spacing. */
+const asWritten = (s: string) => s.toLowerCase().replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ");
+
+/**
+ * The lines that show `phrase`: as written (so "$5.00" isn't "€5.00"), whole words, and with no word before it in
+ * its sentence that says it isn't so ("Not in stock" doesn't show "in stock").
+ */
+function linesWith(lines: string[], phrase: string): number[] {
+  const written = asWritten(phrase).trim();
+  const words = plainWords(phrase);
+  return lines.flatMap((l, i) => {
+    if (!asWritten(l).includes(written)) return [];
+    const shows = l.split(/[!?;"“”()[\]|·•]+|\.(?=\s|$)/).some((part) => {
+      const said = plainWords(part);
+      const at = ` ${said} `.indexOf(` ${words} `);
+      return (
+        at >= 0 &&
+        !said
+          .slice(0, at)
+          .split(" ")
+          .some((w) => NEGATIONS.has(w))
+      );
+    });
+    return shows ? [i] : [];
+  });
+}
 
 /** A long page, in part: how the judge is told it isn't all there. */
 const leftOut = (omitted: number, of: number) =>
@@ -81,7 +113,7 @@ export async function checkCondition(
 ): Promise<ConditionResult> {
   const condition = input.condition.trim();
   // The words it names are on the screen: nothing for a judge to weigh.
-  const literal = literalWords(condition);
+  const literal = literalPhrases(condition);
   if (literal?.every((w) => linesWith(input.observation.lines, w).length > 0)) return { met: true, p: 1 };
   const placeholder = input.image ? `screen_${randomUUID()}` : null;
   const page = input.image
@@ -207,7 +239,7 @@ export async function findInPage(
   const id = (i: number) => `L${i + 1}`;
   const question = input.question.trim();
   // The words it names are on the page: those lines are the answer.
-  const literal = literalWords(question)?.map((w) => linesWith(lines, w));
+  const literal = literalPhrases(question)?.map((w) => linesWith(lines, w));
   if (literal?.every((at) => at.length > 0)) {
     const at = literal.flatMap((a) => a.slice(0, 8));
     return { answered: "yes", text: cutText(withContext(lines, at), input.maxChars ?? 6000) };

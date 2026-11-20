@@ -146,6 +146,40 @@ describe("screen checks on a long page", () => {
   });
 });
 
+describe("long pages in other scripts and with long lines", () => {
+  test("a condition in a script without spaces finds its line far down the page", async () => {
+    const rows = Array.from(
+      { length: 600 },
+      (_, i) =>
+        `    - row "订单 #${10_000 + i} · 3月${(i % 28) + 1}日 · 已送达"\n      - link "查看订单 ${10_000 + i}" [ref=e${100 + i}]`,
+    );
+    const page = look(
+      ['- heading "我的订单" [level=1, ref=e1]', ...rows, "    - paragraph: 您的退款已处理完毕"].join("\n"),
+    );
+    expect(page.lines.join("\n").length).toBeGreaterThan(16_000);
+    const judge = readingJudge("退款已处理");
+    const r = await checkCondition({ judge, ...ids, condition: "页面显示退款已处理", observation: page });
+    expect(r.met).toBe(true);
+    expect(sentText(judge.calls[0] as JudgeRequest).length).toBeLessThanOrEqual(16_000);
+  });
+
+  test("a very long line: the piece with the words goes, not only the line's start", async () => {
+    const items = Array.from({ length: 900 }, (_, i) => `{"id":${i},"state":"open"}`);
+    items.splice(700, 0, '{"id":"r1","state":"refund issued"}');
+    const page = look(`- heading "Export" [level=1, ref=e1]\n- text: [${items.join(",")}]`);
+    expect(page.lines[1]?.length).toBeGreaterThan(20_000);
+    const judge = readingJudge("refund issued");
+    const r = await checkCondition({ judge, ...ids, condition: "the export lists a refund", observation: page });
+    expect(r.met).toBe(true);
+    const text = sentText(judge.calls[0] as JudgeRequest);
+    expect(text.length).toBeLessThanOrEqual(16_000);
+    expect(text.startsWith('- heading "Export" [level=1, ref=e1]\n- text: [{"id":0')).toBe(true);
+    // The line's middle and end are left out around the piece that has the refund, each marked.
+    expect(text.slice(0, -1)).toContain("…");
+    expect(text.endsWith("…")).toBe(true);
+  });
+});
+
 describe("words already on the screen need no judge", () => {
   const page = look(ordersPage({ status: "Order #10600 placed. A receipt is on its way." }));
 
@@ -175,6 +209,22 @@ describe("words already on the screen need no judge", () => {
       expect((await checkCondition({ judge, ...ids, condition, observation: page })).met).toBe(false);
       expect(judge.calls).toHaveLength(1);
     }
+  });
+
+  test("words the page says aren't so, or writes otherwise, still go to the judge", async () => {
+    const mug = look(
+      '- heading "Blue mug" [level=1, ref=e1]\n- status: Not in stock\n- alert: Changes couldn\'t be saved\n- text: Price 5.00 EUR',
+    );
+    for (const condition of ['"in stock"', '"saved"', '"$5.00"', '"Price 5.00 USD"']) {
+      const judge = createFakeJudge((kind) => (kind === "screen_check" ? 0.05 : undefined));
+      expect((await checkCondition({ judge, ...ids, condition, observation: mug })).met).toBe(false);
+      expect(judge.calls).toHaveLength(1);
+    }
+    const judge = createFakeJudge(() => 0);
+    expect(await checkCondition({ judge, ...ids, condition: '"Price 5.00 EUR"', observation: mug })).toEqual({
+      met: true,
+      p: 1,
+    });
   });
 
   test("a wait until words show ends on the first look that shows them, with no judgment", async () => {
