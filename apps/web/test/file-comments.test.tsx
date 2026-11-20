@@ -183,7 +183,7 @@ const THREE: Comment[] = [
 async function openPage(api: ApiClient, fileId: string, search = "") {
   const app = await renderApp(`/org/${ORG_ID}/drive/${fileId}${search}`, { api });
   await settle(8);
-  await waitFor(() => expect(document.querySelector(".mf-page")).toBeTruthy());
+  await waitFor(() => expect(document.querySelector(".mf-root")).toBeTruthy());
   return app;
 }
 
@@ -191,7 +191,7 @@ describe("a picture's page", () => {
   test("its header, Move and Comment under it, and its open comments pinned with who wrote them", async () => {
     const { api, file } = await pictureWithTalk({ comments: THREE });
     await openPage(api, file.id);
-    const page = document.querySelector(".mf-page") as HTMLElement;
+    const page = document.querySelector(".mf-root") as HTMLElement;
     expect(page.dataset.kind).toBe("image");
     // A page of the app, as a live file's: the sidebar stays; no live file's editor.
     expect(document.querySelector(".sidebar")).toBeTruthy();

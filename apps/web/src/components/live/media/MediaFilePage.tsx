@@ -394,7 +394,7 @@ export function MediaFilePage({
         <LiveAskContext.Provider value={ask}>
           <div
             ref={setPageEl}
-            className="lf-page mf-page"
+            className="lf-page mf-root"
             data-kind={media}
             data-compact={folded || undefined}
             data-talk={docked || undefined}
@@ -587,7 +587,7 @@ function MediaHeader({
           {artifact && (
             <>
               {!compact && shares && (
-                <Button size="sm" icon="personAdd" onClick={onShare}>
+                <Button size="sm" icon="personAdd" className="mf-share" onClick={onShare}>
                   {t("share.button")}
                 </Button>
               )}

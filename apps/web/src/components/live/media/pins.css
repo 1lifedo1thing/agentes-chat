@@ -123,3 +123,10 @@ html:not([data-pointer]) .mf-pin:focus-visible {
   z-index: 1;
   pointer-events: none;
 }
+
+/* A pin's words come on hover: a narrow screen (a finger, no hover) opens the conversation instead. */
+@media (max-width: 600px) {
+  .mf-peek {
+    display: none;
+  }
+}
