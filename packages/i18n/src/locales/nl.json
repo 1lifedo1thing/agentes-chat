@@ -2710,6 +2710,8 @@
     "uploading": "uploaden…",
     "uploadFailed": "is niet geüpload",
     "removeFile": "{{name}} verwijderen",
+    "dropFileTitle": "Loslaten om bij te voegen",
+    "dropFileNote": "De bestanden blijven in het concept van dit gesprek tot je ze verstuurt.",
     "tooManyFiles": "Maximaal {{max}} bestanden per bericht.",
     "reminder": "Herinnering",
     "reactions": "Reacties",

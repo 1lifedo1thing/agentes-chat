@@ -2612,6 +2612,8 @@
     "uploading": "上传中…",
     "uploadFailed": "未上传",
     "removeFile": "移除 {{name}}",
+    "dropFileTitle": "松开即可添加附件",
+    "dropFileNote": "文件会留在此对话的草稿中，直到你发送。",
     "tooManyFiles": "每条消息最多 {{max}} 个文件。",
     "reminder": "提醒",
     "reactions": "回应",

@@ -2810,6 +2810,8 @@
     "uploading": "caricamento…",
     "uploadFailed": "non è stato caricato",
     "removeFile": "Rimuovi {{name}}",
+    "dropFileTitle": "Rilascia per allegare",
+    "dropFileNote": "I file restano nella bozza di questa conversazione finché non li invii.",
     "tooManyFiles": "Fino a {{max}} file per messaggio.",
     "reminder": "Promemoria",
     "reactions": "Reazioni",

@@ -1106,10 +1106,10 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
 .channel__file-drop {
   position: absolute;
   z-index: 5;
-  inset: 8px;
+  inset: var(--space-2);
   display: grid;
   place-items: center;
-  padding: 20px;
+  padding: var(--space-6);
   border: 1px dashed var(--info);
   border-radius: 18px;
   background: color-mix(in srgb, var(--bg) 81%, transparent);
@@ -1119,9 +1119,9 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
 .channel__file-drop-card {
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: min(100%, 320px);
-  padding: 24px 20px;
+  padding: var(--space-6);
   border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--raised);
@@ -1145,7 +1145,7 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   place-items: center;
   width: 54px;
   height: 54px;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
   border-radius: 17px;
   background: color-mix(in srgb, var(--info) 15%, var(--raised));
   color: var(--info);

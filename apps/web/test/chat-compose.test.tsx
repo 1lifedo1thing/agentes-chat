@@ -303,6 +303,24 @@ describe("attachments", () => {
     expect(screen().getByRole("button", { name: "Remover notas.txt" })).toBeTruthy();
   });
 
+  test("a picture pasted with the focus on the history, or in the box, joins the draft once", async () => {
+    const { state } = await open();
+    const uploads = () => state.calls.filter((call) => call.method === "artifacts.upload");
+    const shot = new File(["png"], "image.png", { type: "image/png" });
+    await act(async () => fireEvent.paste(document.body, { clipboardData: { files: [shot] } }));
+    await settle(4);
+    expect(uploads()).toHaveLength(1);
+    expect(screen().getByRole("button", { name: "Remover image.png" })).toBeTruthy();
+    await act(async () => fireEvent.paste(composer(), { clipboardData: { files: [shot] } }));
+    await settle(4);
+    expect(uploads()).toHaveLength(2);
+    // Text pasted on the page is left alone.
+    await act(async () => fireEvent.paste(document.body, { clipboardData: { files: [] } }));
+    await settle(2);
+    expect(uploads()).toHaveLength(2);
+    expect(state.calls.some((call) => call.method === "chat.post")).toBe(false);
+  });
+
   test("a picked file uploads to this channel, shows as a chip, and goes with the message", async () => {
     const { state } = await open();
     const input = document.querySelector('.channel__composer input[type="file"]') as HTMLInputElement;

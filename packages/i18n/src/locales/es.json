@@ -2809,6 +2809,8 @@
     "uploading": "subiendo…",
     "uploadFailed": "no se subió",
     "removeFile": "Quitar {{name}}",
+    "dropFileTitle": "Suelta para adjuntar",
+    "dropFileNote": "Los archivos quedan en el borrador de esta conversación hasta que los envíes.",
     "tooManyFiles": "Hasta {{max}} archivos por mensaje.",
     "reminder": "Recordatorio",
     "reactions": "Reacciones",

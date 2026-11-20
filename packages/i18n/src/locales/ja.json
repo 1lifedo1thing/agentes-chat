@@ -2612,6 +2612,8 @@
     "uploading": "アップロード中…",
     "uploadFailed": "アップロードされませんでした",
     "removeFile": "{{name}}を削除",
+    "dropFileTitle": "ドロップして添付",
+    "dropFileNote": "送信するまで、ファイルはこの会話の下書きに残ります。",
     "tooManyFiles": "1つのメッセージに添付できるファイルは{{max}}個までです。",
     "reminder": "リマインダー",
     "reactions": "リアクション",

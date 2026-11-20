@@ -2612,6 +2612,8 @@
     "uploading": "mengunggah…",
     "uploadFailed": "tidak terunggah",
     "removeFile": "Hapus {{name}}",
+    "dropFileTitle": "Lepas untuk melampirkan",
+    "dropFileNote": "File tetap di draf percakapan ini sampai kamu mengirimnya.",
     "tooManyFiles": "Maksimal {{max}} file per pesan.",
     "reminder": "Pengingat",
     "reactions": "Reaksi",

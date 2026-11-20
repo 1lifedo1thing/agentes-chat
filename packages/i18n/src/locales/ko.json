@@ -2612,6 +2612,8 @@
     "uploading": "업로드 중…",
     "uploadFailed": "업로드되지 않았어요",
     "removeFile": "{{name}} 삭제",
+    "dropFileTitle": "놓아서 첨부",
+    "dropFileNote": "보내기 전까지 파일은 이 대화의 임시 저장 메시지에 남아 있어요.",
     "tooManyFiles": "메시지당 파일은 최대 {{max}}개예요.",
     "reminder": "리마인더",
     "reactions": "반응",
