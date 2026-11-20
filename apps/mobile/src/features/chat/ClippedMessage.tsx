@@ -64,6 +64,9 @@ export interface OpenedMessages {
 }
 export const OpenedMessagesContext = createContext<OpenedMessages | null>(null);
 
+/** The message whose "See more" was just tapped: its words take the screen reader's focus once they show open. */
+let focusOnOpen: string | null = null;
+
 /**
  * A message's words in a conversation (the web's `ClippedBody`, the same heights): one taller than the shared rule
  * shows its start, fading into what is behind it, with "Ver mais", and so does an agent's long message to another
@@ -110,9 +113,12 @@ export function ClippedMessage({
   // folded and whole on every layout, covering the next message each time it opened (seen on a phone).
   const folded = shows !== null || unmeasured;
   const words = useRef<ComponentRef<typeof View>>(null);
+  // The screen reader goes to the words "See more" opened, here or in the row drawn anew for them (`MessageRow`).
   useEffect(() => {
-    if (tapped && words.current) AccessibilityInfo.sendAccessibilityEvent(words.current, "focus");
-  }, [tapped]);
+    if (!open || focusOnOpen !== id || !words.current) return;
+    focusOnOpen = null;
+    AccessibilityInfo.sendAccessibilityEvent(words.current, "focus");
+  }, [open, id]);
   return (
     // One tree whether it clips or not: the words never remount when their height is first known.
     <View>
@@ -158,6 +164,7 @@ export function ClippedMessage({
           accessibilityRole="button"
           hitSlop={12}
           onPress={() => {
+            focusOnOpen = id;
             setTapped(true);
             screen?.open(id);
           }}
