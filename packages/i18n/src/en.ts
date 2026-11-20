@@ -11648,6 +11648,17 @@ export const en = {
       onHost: "on {{host}}",
       exitFull: "Exit full screen",
     },
+    /** Who is in the session: faces beside the git button, a list where they can be taken out. */
+    who: {
+      label: "In this session",
+      open_one: "{{count}} in this session",
+      open_other: "{{count}} in this session",
+      agent: "works in the worktree",
+      opener: "opened the session",
+      leave: "Leave",
+      remove: "Remove {{name}} from the session",
+      invite: "To bring someone in, type @ and their name in the conversation.",
+    },
     /** A browser or desktop card in the conversation, as one line: the screen is the panel's. */
     screenLine: {
       show: "See on Screen",

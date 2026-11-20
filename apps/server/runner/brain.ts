@@ -94,6 +94,7 @@ import {
 } from "./mcp";
 import { isInside, resolveForAgent } from "./paths";
 import { resetIso } from "./plan-usage";
+import { claudeAtLeast, REPO_PLUGIN_MIN_CLAUDE, repoPlugin } from "./repo-plugin";
 import type { Spawn } from "./scope-gate";
 import { claudeSessionExists, claudeSessionFile, type TaskSecrets, WRONG_SESSION_FLAG } from "./tasks";
 
@@ -846,6 +847,8 @@ export interface ClaudeLaunch {
   permissionMode: "acceptEdits" | "dontAsk" | "default";
   /** Protocol 10: folders allowed for the agent besides its own (`--add-dir` each). */
   addDirs?: string[];
+  /** A code session's turn (ADR 0208): the worktree's own agents, skills and commands as a plugin (`repoPlugin`). */
+  pluginDirs?: string[];
   /** Protocol 13: `--effort` (anything else is left out). */
   effort?: BrainEffort;
   /**
@@ -876,6 +879,11 @@ export interface ClaudeLaunch {
  * (`WEB_BUILTIN_TOOLS`). Names Claude Code doesn't know are ignored by it.
  */
 export const BRAIN_BUILTIN_TOOLS = ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "ToolSearch"] as const;
+/**
+ * A code session's turn (ADR 0208) also starts Claude Code's own subagents (`Agent`, `Task` before 2.1.63), which get
+ * the turn's tools and permission mode, and uses skills (`Skill`): the worktree's own, loaded as a plugin.
+ */
+export const CODE_SESSION_TOOLS = ["Agent", "Task", "Skill"] as const;
 /** A plan turn's own tools (ADR 0053 §3, 0109): reading, a shell our prompt tool keeps read-only, ToolSearch; no edits. */
 export const PLAN_BUILTIN_TOOLS = ["Bash", "Read", "Glob", "Grep", "ToolSearch"] as const;
 /** Claude Code's web tools, which ours replace on a brain turn. */
@@ -928,6 +936,8 @@ export function brainProfileLaunch(
   personalMcp: boolean,
   delegated = false,
   asksFirst = false,
+  /** A code session's turn (ADR 0208): Claude Code's subagents and skills too. */
+  code = false,
 ): Pick<
   ClaudeLaunch,
   | "strictMcp"
@@ -975,7 +985,10 @@ export function brainProfileLaunch(
     // With the owner's own MCP servers the owner's settings stay, and so does every tool of Claude Code but the web.
     ...(personalMcp
       ? { disallowedTools: WEB_BUILTIN_TOOLS }
-      : { settingSources: "", builtinTools: BRAIN_BUILTIN_TOOLS }),
+      : {
+          settingSources: "",
+          builtinTools: code ? [...BRAIN_BUILTIN_TOOLS, ...CODE_SESSION_TOOLS] : BRAIN_BUILTIN_TOOLS,
+        }),
   };
 }
 
@@ -1007,6 +1020,7 @@ export function claudeBrainArgs(l: ClaudeLaunch): string[] {
     ...(l.mcpConfigFile ? ["--allowedTools", "mcp__agentes"] : []),
     ...(l.promptTool && l.mcpConfigFile ? ["--permission-prompt-tool", PERMISSION_PROMPT_TOOL] : []),
     ...(l.addDirs ?? []).flatMap((d) => ["--add-dir", d]),
+    ...(l.pluginDirs ?? []).flatMap((d) => ["--plugin-dir", d]),
     ...(l.settingSources !== undefined ? ["--setting-sources", l.settingSources] : []),
     ...(l.builtinTools ? ["--tools", l.builtinTools.join(",")] : []),
     ...(l.disallowedTools?.length ? ["--disallowedTools", l.disallowedTools.join(",")] : []),
@@ -1754,6 +1768,11 @@ export interface BrainManagerOptions {
   mcp?: { socketPath: string; command: string[] };
   /** The runner's home (its accounts among it): turns never read it. */
   runnerHome?: string;
+  /**
+   * The `--version` line of the Claude Code turns start (`executors`), when known: a code session's turn loads the
+   * worktree's plugin only on one that takes `--plugin-dir` (`REPO_PLUGIN_MIN_CLAUDE`).
+   */
+  claudeVersion?: () => string | null | undefined;
   /** How Claude Code starts (a worker under systemd: in the agent's AI CLIs slice, `scope-gate.ts`). */
   spawn?: Spawn;
   idleMs?: number;
@@ -2504,7 +2523,15 @@ export class BrainManager {
     const systemFile = path.join(dir, "system.txt");
     const mode = req.permissions?.mode === "plan" || req.permissions?.mode === "chat" ? req.permissions.mode : "work";
     const asks = mode === "work" ? turnAsks(req.permissions?.asks) : undefined;
-    const launch = brainProfileLaunch(mode, req.personalMcp === true, delegated !== undefined, asks === "always");
+    // A code session's turn (ADR 0208) on the agent's own Claude Code: its subagents and skills, and the worktree's.
+    const codeTurn = req.codeSession === true && mode === "work" && !delegated && req.personalMcp !== true;
+    const launch = brainProfileLaunch(
+      mode,
+      req.personalMcp === true,
+      delegated !== undefined,
+      asks === "always",
+      codeTurn,
+    );
     const system = typeof req.system === "string" ? req.system : "";
     const ranKey = ranKeyOf(req, session);
     // A `chat` turn reads nothing of the folder, its CLAUDE.md included.
@@ -2653,6 +2680,10 @@ export class BrainManager {
       mode === "chat" || delegated
         ? []
         : [...(cwd !== ctx.folder ? [ctx.folder] : []), ...(ctx.grants ?? []).filter((g) => !isInside(g, cwd))];
+    const plugin =
+      codeTurn && claudeAtLeast(this.opts.claudeVersion?.(), REPO_PLUGIN_MIN_CLAUDE)
+        ? repoPlugin(cwd, path.join(dir, "repo"), fileMode)
+        : null;
     const args = claudeBrainArgs({
       session,
       resume,
@@ -2663,6 +2694,7 @@ export class BrainManager {
       settingsFile,
       ...launch,
       ...(addDirs.length ? { addDirs } : {}),
+      ...(plugin ? { pluginDirs: [plugin] } : {}),
       ...(isBrainEffort(req.effort) ? { effort: req.effort } : {}),
     });
     // Claimed before it starts: a CLI that dies in its first turn still left a transcript that is this agent's.

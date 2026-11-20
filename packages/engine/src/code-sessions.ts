@@ -56,6 +56,12 @@ export const codeWorktreeStateOf = (v: unknown): CodeWorktreeState =>
  */
 export const CODE_BRAINS = ["claude_code", "codex"] as const;
 
+/**
+ * What a computer brain isn't given in a code session: sharing a file to the Drive and onto its reply. The person sees
+ * the worktree's files and the agent's screen in the session's panel.
+ */
+export const CODE_SESSION_HIDDEN_TOOLS: ReadonlySet<string> = new Set(["upload_file", "export_file"]);
+
 /** `ensure` copies `.env*` files and may prune: more than a plain request (as for a mission). */
 const ENSURE_TIMEOUT_MS = 120_000;
 /** A clone still running on the computer is asked again this often, this many times. */

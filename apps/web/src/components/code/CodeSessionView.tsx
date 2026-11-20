@@ -1,7 +1,9 @@
 import {
   type CodeGitStep,
   type CodeSession,
+  keys,
   useApi,
+  useChannelMembers,
   useCloseCodeSession,
   useCodeGit,
   useCodeSession,
@@ -9,12 +11,18 @@ import {
   useThreadInfo,
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { Button, Icon, Menu, MenuItem, MenuNote, SplitButton } from "@agenteschat/ui";
+import { can } from "@agenteschat/client/lib/permissions";
+import { planMeterText, usageShown } from "@agenteschat/client/lib/plan-usage";
+import { AvatarStack, Button, Icon, Menu, MenuItem, MenuNote, Popover, planLine, SplitButton } from "@agenteschat/ui";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useActors } from "@/components/actors";
+import { ModelPickerButton } from "@/components/ai/ModelPicker";
 import { ScreenPanelContext } from "@/components/browser/screen-panel";
 import { useOrg } from "@/components/org-context";
+import { useDirectory } from "@/hooks/useDirectory";
 import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
@@ -82,11 +90,133 @@ function CodeConversation({ session }: { session: CodeSession }) {
         // The page's header is the session's own, above the conversation.
         header: () => null,
         composerLabel: t("codeSessions.view.composer"),
+        composerNote: <AgentStatus session={session} />,
         panel: true,
         openThread: false,
         task: true,
       }}
     />
+  );
+}
+
+/**
+ * Under the session's composer, as a coding CLI's status line: what its agent thinks with (changed in place, with the
+ * DM's own picker) and how much of its plan's limits it has used.
+ */
+function AgentStatus({ session }: { session: CodeSession }) {
+  const { t, i18n } = useTranslation();
+  const { org } = useOrg();
+  const dir = useDirectory(org.id);
+  const agent = dir.agentById.get(session.agentId);
+  if (!agent) return null;
+  const plan = usageShown(agent.brain, 0).plan;
+  const meter = plan ? planLine(plan.usage, planMeterText(t, i18n.language)) : null;
+  return (
+    <span className="code-status">
+      <ModelPickerButton agent={agent} size="row" />
+      {meter?.line && (
+        <span className="code-status__limit" data-state={meter.state} title={meter.title}>
+          {[meter.line, meter.alert].filter(Boolean).join(" · ")}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Who is in the session, as faces beside the git button (its agent first, then who opened it): a list where whoever
+ * opened it, or an admin, takes someone out, and anyone else leaves. Bringing someone in is an @ in the conversation.
+ */
+function SessionPeople({ session }: { session: CodeSession }) {
+  const { t } = useTranslation();
+  const { org, me } = useOrg();
+  const api = useApi();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const actors = useActors();
+  const members = useChannelMembers(org.id, session.channelId);
+  const [open, setOpen] = useState(false);
+  const rank = (m: { type: string; id: string }) =>
+    m.type === "agent" && m.id === session.agentId ? 0 : m.id === session.createdBy ? 1 : 2;
+  const people = [...(members.data ?? [])]
+    .filter((m) => m.type === "agent" || m.type === "person")
+    .map((m) => ({ type: m.type as "agent" | "person", id: m.id }))
+    .sort((a, b) => rank(a) - rank(b));
+  const manages = session.createdBy === me.user.id || can(org, "manage_channels");
+  const remove = useMutation({
+    mutationFn: (m: { type: "agent" | "person"; id: string }) =>
+      api.chat.removeMember(org.id, session.channelId, m.type === "agent" ? { agentId: m.id } : { userId: m.id }),
+    onSuccess: (_, m) => {
+      void qc.invalidateQueries({ queryKey: keys.channelMembers(org.id, session.channelId) });
+      void qc.invalidateQueries({ queryKey: keys.roster(org.id, session.channelId) });
+      // Out of it myself: the session isn't mine to see any more.
+      if (m.type === "person" && m.id === me.user.id) {
+        setOpen(false);
+        void navigate({ to: "/org/$orgId/code", params: { orgId: org.id } });
+      }
+    },
+    onError: (error) => toast.show(errorText(t, error), "error"),
+  });
+  if (people.length === 0) return null;
+  return (
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      side="bottom"
+      align="end"
+      label={t("codeSessions.who.label")}
+      className="code-whopop"
+      trigger={
+        <button type="button" className="code-who" aria-label={t("codeSessions.who.open", { count: people.length })}>
+          <AvatarStack>{people.slice(0, 3).map((p) => actors.avatar(p, "sm"))}</AvatarStack>
+          {people.length > 3 && <span className="code-who__n tabular">+{people.length - 3}</span>}
+        </button>
+      }
+    >
+      <p className="ac-popover__title">{t("codeSessions.who.label")}</p>
+      {people.map((p) => {
+        const core = rank(p) < 2;
+        const self = p.type === "person" && p.id === me.user.id;
+        const name = actors.name(p);
+        return (
+          <div key={`${p.type}:${p.id}`} className="ac-popover__row code-whopop__row">
+            {actors.avatar(p, "sm")}
+            <span className="code-whopop__name">{name}</span>
+            {core ? (
+              <span className="ac-popover__row-status">
+                {rank(p) === 0 ? t("codeSessions.who.agent") : t("codeSessions.who.opener")}
+              </span>
+            ) : self ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="code-whopop__act"
+                loading={remove.isPending && remove.variables?.id === p.id}
+                onClick={() => remove.mutate(p)}
+              >
+                {t("codeSessions.who.leave")}
+              </Button>
+            ) : (
+              manages && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon="close"
+                  iconOnly
+                  className="code-whopop__act"
+                  aria-label={t("codeSessions.who.remove", { name })}
+                  title={t("codeSessions.who.remove", { name })}
+                  loading={remove.isPending && remove.variables?.id === p.id}
+                  onClick={() => remove.mutate(p)}
+                />
+              )
+            )}
+          </div>
+        );
+      })}
+      <p className="code-whopop__note">{t("codeSessions.who.invite")}</p>
+    </Popover>
   );
 }
 
@@ -115,6 +245,7 @@ function CodeHeader({ session }: { session: CodeSession }) {
         </span>
       </div>
       <div className="code-head__r">
+        <SessionPeople session={session} />
         {session.worktree.state === "ready" && <GitButton session={session} />}
         <Menu
           align="end"

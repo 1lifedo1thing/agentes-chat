@@ -2263,6 +2263,12 @@ export interface BrainTurnRequest {
   /** Also load the machine owner's own MCP servers (default false: `--strict-mcp-config`; never in a `plan` turn). */
   personalMcp?: boolean;
   /**
+   * A code session's turn (ADR 0208), Claude Code: its own subagents and skills too, and the worktree's `.claude`
+   * agents, skills and commands as a plugin, without their hooks, MCP servers or allowed tools. An older runner
+   * ignores it.
+   */
+  codeSession?: boolean;
+  /**
    * The turn's permission profile (ADR 0053 §3): `work` (default) edits and asks a person (or the server's
    * rules) for the rest; `plan` reads only. Codex honours it from `BRAIN_PROFILES_PROTOCOL` on.
    */

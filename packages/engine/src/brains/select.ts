@@ -909,7 +909,9 @@ export async function resolveBrain(
           machineId,
           // A code session's conversation works in the session's worktree (ADR 0208); any other chat turn starts in
           // the agent's folder.
-          cwd: (await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null)) ?? "",
+          ...(await codeSessionCwd(deps.db, run.channelId, agent.id)
+            .catch(() => null)
+            .then((cwd) => (cwd ? { cwd, codeSession: true } : { cwd: "" }))),
         }
       : undefined);
   return {
