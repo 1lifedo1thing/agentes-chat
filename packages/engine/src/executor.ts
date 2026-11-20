@@ -1993,15 +1993,16 @@ async function executeRunInner(
     const message = trigger?.body ?? topTrigger?.body ?? "";
     const computer = brainOf(agent.brain) !== "model";
     const hasTools = granted.length > 0;
+    const who = isRightHand(agent)
+      ? { name: agent.name, role: RIGHT_HAND_AUTO.role, instructions: RIGHT_HAND_AUTO.instructions }
+      : { name: agent.name, role: agent.role, instructions: agent.instructions };
     return Promise.all([recentMessages(), inMission(db, run).catch(() => false)])
       .then(([recent, mission]) =>
         chooseAutoModel(judge, {
           orgId: run.orgId,
           agentId: agent.id,
           runId: run.id,
-          agent: isRightHand(agent)
-            ? { name: agent.name, role: RIGHT_HAND_AUTO.role, instructions: RIGHT_HAND_AUTO.instructions }
-            : { name: agent.name, role: agent.role, instructions: agent.instructions },
+          agent: who,
           message,
           recent,
           routine: run.background || Boolean(trigger?.meta?.routine),
@@ -2011,7 +2012,7 @@ async function executeRunInner(
           group: startGroup,
           ...(typeof routineCalled === "string"
             ? {
-                cacheKey: `${run.orgId}:${agent.id}:${routineCalled}:${sha256(JSON.stringify([message, mission, computer, hasTools]))}`,
+                cacheKey: `${run.orgId}:${agent.id}:${routineCalled}:${sha256(JSON.stringify([who, message, mission, computer, hasTools]))}`,
               }
             : {}),
         }),

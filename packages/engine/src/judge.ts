@@ -301,6 +301,8 @@ export class JudgeGroup {
       Object.assign(state, m.request.state);
       together.push(m);
     }
+    // One label per set of kinds in the usage rows, whatever order they joined in.
+    together.sort((a, b) => a.request.kind.localeCompare(b.request.kind));
     const [first] = together;
     if (!first) return;
     if (together.length === 1) {

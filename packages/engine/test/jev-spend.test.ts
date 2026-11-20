@@ -115,7 +115,7 @@ describe("a run's start judgments in one request", () => {
     expect(auto).toEqual({ tier: { choice: "small", probabilities: {} } });
     expect(tools).toEqual({ g0: { noul: 0.7 } });
     expect(status).toEqual({ q: { noul: 0.7 } });
-    expect(usage).toMatchObject([{ requestedModel: "auto_model+tool_groups+agent_status" }]);
+    expect(usage).toMatchObject([{ requestedModel: "agent_status+auto_model+tool_groups" }]);
   });
 
   test("a kind skipped is waited for no longer; one asked after the group went goes alone", async () => {
@@ -154,7 +154,7 @@ describe("a run's start judgments in one request", () => {
     ]);
     expect(auto).toEqual({ q: { noul: 0.2 } });
     expect(status).toEqual({ q: { noul: 0.4 } });
-    expect(fallback.calls.map((c) => c.kind)).toEqual(["auto_model", "agent_status"]);
+    expect(fallback.calls.map((c) => c.kind).sort()).toEqual(["agent_status", "auto_model"]);
   });
 });
 
