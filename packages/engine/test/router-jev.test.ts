@@ -220,11 +220,9 @@ describe("Jev's questions", () => {
       for_everyone: { instructions: string };
       agent_0: { instructions: { question: string } };
     };
-    const rules = String((jev.requests[0]?.body.state as { reply_rules?: string } | undefined)?.reply_rules);
-    expect(questions.agent_0.instructions.question).toBe("Should `agent` reply to `latest_message`, by `reply_rules`?");
     for (const phrase of ["everyone", "all of you", "gente", "vocês", "agentes"]) {
       expect(questions.for_everyone.instructions).toContain(`"${phrase}"`);
-      expect(rules).toContain(`"${phrase}"`);
+      expect(questions.agent_0.instructions.question).toContain(`"${phrase}"`);
     }
   });
 
@@ -247,7 +245,7 @@ describe("Jev's questions", () => {
       recent_messages: [{ from: "@ada", names: [], text: "Campanha publicada." }],
       alone_with: "@ada",
     });
-    for (const text of [body.questions.needs_agent.instructions, String(body.state.reply_rules)]) {
+    for (const text of [body.questions.needs_agent.instructions, body.questions.agent_0.instructions.question]) {
       expect(text).toContain("Messages a person sends in a row continue the same address");
       expect(text).toContain("A message to a person, by @ or by name, is for that person, not for an agent.");
       expect(text).toContain("Greetings and small talk between people get no agent.");
@@ -289,15 +287,14 @@ describe("who a message speaks to", () => {
       theo: "Theo (@theo)",
       none: "No agent in particular.",
     });
-    const rules = String((jev.requests[0]?.body.state as { reply_rules?: string } | undefined)?.reply_rules);
     for (const text of [
       questions.needs_agent.instructions,
-      rules,
+      questions.agent_1.instructions.question,
       questions.best_agent.instructions,
       questions.addressee.instructions,
     ])
       expect(text).toContain(SPOKEN_TO);
-    expect(rules).toContain(
+    expect(questions.agent_1.instructions.question).toContain(
       "No when it speaks to another agent, even when it names this one as someone to ask, involve or hand over to",
     );
     // Right after Theo spoke, "pergunta pra Ada se o PR subiu" speaks to Theo.

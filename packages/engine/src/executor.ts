@@ -6003,9 +6003,7 @@ async function executeRunInner(
           decided: null,
           unanswered: false,
           unreached: "",
-          // A record nobody reads (it posted nothing, and its routine reports only what is new) is not judged: the
-          // routine fires again on its own schedule.
-          judged: anythingPosted || routineBriefOf(triggerMessage?.meta)?.report === "always" ? record : "",
+          judged: record,
           mission: false,
           wakesLater: () => wakesLater(db, run),
           prepare: () => void judging.gather().catch(() => {}),

@@ -13,13 +13,7 @@ import { openPullRequestTool } from "./tools";
 afterEach(closeWorlds);
 
 /** An hourly routine of `handle` reporting to the scenario's channel, fired once now; settles. */
-async function fireRoutine(
-  w: World,
-  handle: string,
-  prompt: string,
-  access: "read" | "act",
-  report?: "always" | "when_new",
-) {
+async function fireRoutine(w: World, handle: string, prompt: string, access: "read" | "act") {
   const routine = await createRoutine(routineDeps(w.f), w.owner.id, w.org.id, {
     name: "Sentry",
     agentId: w.agents[handle]?.id ?? "",
@@ -27,7 +21,6 @@ async function fireRoutine(
     target: { type: "channel", channelId: w.channelId },
     trigger: { type: "schedule", phrase: "a cada hora" },
     access,
-    ...(report ? { report } : {}),
   });
   const queued = await queueRoutineRun({ db: w.db }, await routineRow(w.f, routine.id), new Date(), "manual");
   if (!queued) throw new Error("not queued");
@@ -216,8 +209,7 @@ scenario(
   },
 );
 
-// A routine that reports only what is new and posted nothing is not read at its end: it fires again on its schedule.
-scenario("S50", "a routine that reports every run, told to go on, keeps what its first turn found", async () => {
+scenario("S50", "a routine told to go on keeps what its first turn found in its record", async () => {
   const w = await world({
     agents: ["otto"],
     judge: { followThrough: (s) => (String(s.reply).includes("Vou abrir") ? "continue" : "done") },
@@ -225,12 +217,10 @@ scenario("S50", "a routine that reports every run, told to go on, keeps what its
       otto: [
         { text: "Achei 3 erros novos no Sentry: login, export e push. Vou abrir as issues." },
         { text: "Issues abertas." },
-        // The run its report wakes in the conversation.
-        { text: "Abri as issues dos 3 erros novos do Sentry." },
       ],
     },
   });
-  const run = await fireRoutine(w, "otto", "Checa o Sentry e abre issues dos erros novos.", "act", "always");
+  const run = await fireRoutine(w, "otto", "Checa o Sentry e abre issues dos erros novos.", "act");
   expect(run?.summary).toContain("Achei 3 erros novos");
   expect(run?.summary).toContain("Issues abertas.");
   await assertInvariants(w);
