@@ -4683,7 +4683,7 @@ export const ptBR = {
     ask: "Pedir a um admin",
     sent: "Pedido enviado a quem pode fazer isso.",
   },
-  /** Uma conta de IA citada nos detalhes de uma execução: uma pílula, com o cartão ao passar o mouse ou tocar. */
+  /** An AI account named in a run's details: a pill, its card on hover or a press (provider, whose, which computer, usage). */
   accountRef: {
     label: "Conta {{name}}",
     card: "Sobre a conta {{name}}",
@@ -4692,7 +4692,7 @@ export const ptBR = {
     on: "No computador {{computer}}",
     gone: "Esta conta não está mais no workspace.",
   },
-  /** Uma execução que seguiu em outra conta que não a do agente, nos detalhes e em Atividade (nunca uma linha no chat). */
+  /** A run that went on with another account than its agent's own, in its details and Atividade (never a chat line). */
   accountSwitch: {
     limit: "Seguiu na conta <to/> porque a conta <from/> chegou ao limite",
     line: "Seguiu na conta <to/> porque a conta <from/> está perto do limite",

@@ -3586,14 +3586,7 @@ html:not([data-pointer]) .channel-ref:focus-visible {
   overflow-wrap: break-word;
 }
 .id-ref > .ac-icon,
-.file-ref > .ac-icon {
-  position: absolute;
-  top: 0.27em;
-  left: 3px;
-  width: 1em;
-  height: 1em;
-}
-/* An AI account's pill (AccountRef): its maker's mark in the padding, as an id's icon. */
+.file-ref > .ac-icon,
 .account-ref > .ac-brand {
   position: absolute;
   top: 0.27em;

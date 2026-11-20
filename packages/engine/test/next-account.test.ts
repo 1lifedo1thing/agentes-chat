@@ -987,7 +987,7 @@ test("the first turn on the account a run moved to refused for room: the next cl
   expect(await turnPrompt(fx)).toContain("Already done in this run, do not repeat: Bash(git push)");
 });
 
-test("the moved line is said once per run, also when the run moves again after every account was limited", async () => {
+test("the switch keeps the first account the run left, also when it moves again after every account was limited", async () => {
   const { fx, account, usage } = await world();
   await account(OWN2, fx.owner.id);
   await usage(OWN1, 100, iso(3600_000));
@@ -1013,7 +1013,7 @@ test("the moved line is said once per run, also when the run moves again after e
   expect(await movedLines(fx)).toHaveLength(0);
 });
 
-test("long work at the pause line of a teammate's account says so, naming whose account it leaves and whose it takes", async () => {
+test("long work at the pause line of a teammate's account records the switch, naming whose account it leaves and whose it takes", async () => {
   const { fx, walter, account, usage } = await world({}, goesOn);
   await account(WALTER_ALL, walter.id);
   await fx.db
@@ -1143,7 +1143,7 @@ test("a run refused by the account it just moved to moves again with one note, n
   expect(last.split("Already done in this run").length).toBe(2);
 });
 
-test("long work that would go into its owner's paid extra usage says so when it goes on with a free account", async () => {
+test("long work that would go into its owner's paid extra usage records the switch when it goes on with a free account", async () => {
   const { fx, account, usage } = await world({}, goesOn);
   await account(OWN2, fx.owner.id);
   await usage(OWN2, 40);
