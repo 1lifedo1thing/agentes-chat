@@ -38,8 +38,8 @@ import {
   type BrainTurnContext,
   brainKey,
   brainProfileLaunch,
-  CODE_SESSION_TOOLS,
   ClaudeStreamParser,
+  CODE_SESSION_TOOLS,
   carryClaudeSession,
   claudeBrainArgs,
   claudeCapabilities,
@@ -615,7 +615,11 @@ test("profiles (ADR 0053 §3): plan has our tools only, no settings files, no ed
   expect(brainProfileLaunch("work", false, true, true).permissionMode).toBe("default");
   expect(brainProfileLaunch("work", false, true).permissionMode).toBe("acceptEdits");
   // A code session's turn (ADR 0208): Claude Code's subagents and skills too, still no settings of the checkout.
-  const code = claudeBrainArgs({ ...base, ...brainProfileLaunch("work", false, false, false, true), pluginDirs: ["/b/repo"] });
+  const code = claudeBrainArgs({
+    ...base,
+    ...brainProfileLaunch("work", false, false, false, true),
+    pluginDirs: ["/b/repo"],
+  });
   expect(at(code, "--tools")).toBe([...BRAIN_BUILTIN_TOOLS, ...CODE_SESSION_TOOLS].join(","));
   expect(at(code, "--setting-sources")).toBe("");
   expect(at(code, "--plugin-dir")).toBe("/b/repo");

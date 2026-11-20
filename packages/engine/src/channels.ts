@@ -1006,10 +1006,7 @@ async function keepCodeSessionCore(db: Database, channelId: string, member: { us
     .limit(1);
   if (!session) return;
   if ("agentId" in member ? member.agentId === session.agentId : member.userId === session.createdBy)
-    throw new ValidationError(
-      "A code session keeps its own agent and whoever opened it",
-      "code_session.member_stays",
-    );
+    throw new ValidationError("A code session keeps its own agent and whoever opened it", "code_session.member_stays");
 }
 
 /** The channel, when `actorId` may archive it or bring it back: its creator or an admin. */

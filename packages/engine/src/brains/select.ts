@@ -10,7 +10,6 @@ import {
   OPENCODE_PROTOCOL,
   type PlanUsage,
 } from "@agenteschat/adapters";
-import { codeSessionCwd } from "../code-sessions";
 import { and, desc, type Executor, eq, isNotNull, ne, or, schema, sql } from "@agenteschat/db";
 import { AUTO_MODEL, isAutoModel } from "@agenteschat/providers";
 import {
@@ -25,6 +24,7 @@ import {
 } from "@agenteschat/providers/plans";
 import { planFull, planState } from "@agenteschat/ui/plan-state";
 import type { Agent } from "../agents";
+import { codeSessionCwd } from "../code-sessions";
 import type { ModelGateway } from "../gateway";
 import type { MachineStatus } from "../machine-hub";
 import { pausedMessage } from "../machines";
