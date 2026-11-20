@@ -1481,7 +1481,7 @@ describe("a reply that names its own tools to a person", () => {
 });
 
 describe("a turn end's reads and judgment", () => {
-  const WAIT = 120;
+  const WAIT = 250;
   const slowly = <T>(value: T) => Bun.sleep(WAIT).then(() => value);
   const turn = (over: Partial<TurnEnd> = {}): TurnEnd => ({
     state: { count: 0 },

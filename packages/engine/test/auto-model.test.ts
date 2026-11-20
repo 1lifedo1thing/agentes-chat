@@ -245,11 +245,20 @@ describe("one decision, mapped per brain", () => {
     expect(pick("medium", { medium: "claude-sonnet-5-5" })).toBe("~z-ai/glm-latest");
   });
 
-  test("an API model on auto with a computer brain: the API model is chosen too (a fallback thinks with it)", () => {
-    const both = { model: AUTO_MODEL, brain: "codex", brainModel: "gpt-6-sol", brainEffort: null };
-    const plan: BrainPlan = { kind: "codex", model: "gpt-6-sol" };
-    expect(needsAutoChoice(both, plan)).toBe(true);
-    expect(autoApplied(both, plan, choice, "anthropic")).toEqual({ apiModel: "claude-haiku-5-5" });
+  test("an API model on auto with a computer brain whose model and effort are pinned: nothing is asked", () => {
+    const both = { model: AUTO_MODEL, brain: "codex", brainModel: "gpt-6-sol", brainEffort: "high" };
+    const plan: BrainPlan = { kind: "codex", model: "gpt-6-sol", effort: "high" };
+    expect(autoWanted(both)).toBe(false);
+    expect(needsAutoChoice(both, plan)).toBe(false);
+    expect(autoApplied(both, plan, choice, "anthropic")).toEqual({});
+    expect(withAuto(both, plan, {}).plan).toEqual(plan);
+    // Its effort left to the CLI's default is no auto either.
+    expect(needsAutoChoice({ ...both, brainEffort: null }, { kind: "codex", model: "gpt-6-sol" })).toBe(false);
+    // The right hand stands in on its key with the API model: that one is still chosen.
+    const lodi = { ...both, builtin: "right_hand" };
+    expect(autoWanted(lodi)).toBe(true);
+    expect(needsAutoChoice(lodi, plan)).toBe(true);
+    expect(autoApplied(lodi, plan, choice, "anthropic")).toEqual({ apiModel: "claude-haiku-5-5" });
   });
 
   test("nothing on auto: nothing to choose (a stale computer setting on the API brain asks nobody)", () => {

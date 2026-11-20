@@ -130,6 +130,13 @@ export const caches = {
   routineWeekUsage: new TtlCache<unknown>(60_000, 1000),
   /** Registered hosts by name (`hostLook`, ADR 0194), read by the origin check of every write. */
   hosts: new TtlCache<unknown>(TTL_MS),
+  /**
+   * Jev's answers to a text-only request sent the same way before (`orgId:hash`): a routine whose conversation hasn't
+   * moved, or a retry, asks again within minutes. Never an image's: a screen changes under the same words.
+   */
+  jevAnswers: new TtlCache<unknown>(15 * 60_000, 2000),
+  /** Automático's choice for a routine's prompt (`orgId:agentId:routineId:hash`): the same work every firing. */
+  routineAutoModel: new TtlCache<unknown>(24 * 3600_000, 5000),
 };
 
 /** `caches.contextPresence`'s key for whether an agent holds a rule people gave (`rulesForRun`). */
