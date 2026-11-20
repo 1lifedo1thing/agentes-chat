@@ -3,7 +3,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import { type ActiveRun, type Message, UNREAD_REFRESH_MS } from "@agenteschat/client";
+import { type ActiveRun, type Message, UNREAD_REFRESH_MS, UNREAD_SPREAD_MS } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { createStreamsStore } from "@/realtime/context";
 import { ADA_ID, createFakeApi, ENG_ID, GENERAL_ID, ORG_ID, seedDm, seedState } from "./fake-api";
@@ -573,10 +573,11 @@ describe("other conversations shown as a thread", () => {
     expect(talking()).toBe("3");
     conversation.count = 4;
     await act(async () => socket.push({ type: "event", scope: "org", event: { type: "issue.updated" } }));
-    await act(() => new Promise((done) => setTimeout(done, UNREAD_REFRESH_MS + 100)));
+    // The board's read waits up to this long, past Bun's 5 s default with the render: the test's own timeout is longer.
+    await act(() => new Promise((done) => setTimeout(done, UNREAD_REFRESH_MS + UNREAD_SPREAD_MS + 100)));
     await settle(5);
     expect(talking()).toBe("4");
-  });
+  }, 15_000);
 
   test("a mission's thread: a live reply lands", async () => {
     const state = seedState();
