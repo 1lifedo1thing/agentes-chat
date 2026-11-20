@@ -11623,9 +11623,11 @@ export const ptBR = {
         "Este workspace não tem acesso ao GitHub para esse repositório. Conecte o GitHub em Configurações › Conectores, ou comece uma sessão num projeto no computador (só um nome).",
     },
     panel: {
+      label: "Painel da sessão",
       diff: "Diff",
       screen: "Tela",
       terminal: "Terminal",
+      terminalHeight: "Altura do terminal",
       notReady: "A worktree ainda está sendo preparada.",
       agent_preparing: "está preparando a worktree",
       agent_failed: "não conseguiu preparar a worktree",
@@ -11651,12 +11653,15 @@ export const ptBR = {
       menu_female: "Telas que a {{name}} usa",
       computerHint: "Onde a worktree está",
       onHost: "em {{host}}",
-      noPhones: "Nenhum celular que você pode usar está conectado.",
       exitFull: "Sair da tela cheia",
+    },
+    /** Um card do navegador ou do computador na conversa, como uma linha: a tela é a do painel. */
+    screenLine: {
+      show: "Ver na Tela",
+      held: "Uma pessoa está no controle da tela",
     },
     git: {
       step: { commit: "Commit", push: "Enviar", pr: "Abrir PR", merge: "Juntar" },
-      upToDate: "Em dia",
       more: "Outros passos do git",
       /** O que o botão pede ao agente da sessão, como mensagem da pessoa na conversa. */
       ask: {
@@ -20454,6 +20459,7 @@ export const ptBR = {
     offline: "Computador offline",
     outdated: "Atualize o computador para abrir o terminal na pasta da sessão",
     unavailable: "O computador deste agente não abre terminal",
+    off: "O terminal está desligado em {{computer}}",
     busy: "Este computador já tem o máximo de terminais abertos. Feche um e abra de novo.",
     paused: "O computador está pausado",
     failed: "Não deu para abrir o terminal",

@@ -46,7 +46,7 @@ import {
   type ToolBlockLine,
 } from "@agenteschat/ui";
 import type { TFunction } from "i18next";
-import { createContext, type ReactNode, useContext, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { CodePanel, formatBytes, OutputView } from "@/components/LiveCode";
@@ -250,12 +250,6 @@ function useBlockItems(items: ToolItem[]): ToolBlockItem[] {
 }
 
 /**
- * Whether the work blocks start open: a code session's conversation (ADR 0208) reads like a terminal, every line in
- * sight; everywhere else they start closed.
- */
-export const ToolsOpenContext = createContext(false);
-
-/**
  * The tools of a reply while it works (and kept after, `done`): one line saying what it does now, the apps'
  * logos and the steps, opening into every call; a single call is that call's own line. What it said between calls
  * is inside. A message it read on the way shows nothing here: that message says it ("Ada read it", `MessageReceipts`).
@@ -276,7 +270,6 @@ export function LiveTools({
   stopped?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const openByDefault = useContext(ToolsOpenContext);
   const { org } = useOrg();
   const items = toolItemsLive(work, stopped || done);
   const blockItems = useBlockItems(items);
@@ -318,7 +311,6 @@ export function LiveTools({
       };
   return (
     <ToolBlock
-      defaultOpen={openByDefault}
       logos={toolApps(items).map((a) => <span key={appKey(a)}>{logo(a)}</span>)}
       head={head}
       // Its own line is closed until clicked, as the block it stands for (code that runs shows when opened).
@@ -407,8 +399,7 @@ export function SavedTools({
 }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
-  const openByDefault = useContext(ToolsOpenContext);
-  const [open, setOpen] = useState(openByDefault);
+  const [open, setOpen] = useState(false);
   const run = useRun(org.id, open ? runId : null);
   const logo = useCallLogo();
   const compact = workMeta(meta);
@@ -469,7 +460,6 @@ export function SavedTools({
       : [];
   return (
     <ToolBlock
-      defaultOpen={openByDefault}
       logos={apps.map((a) => <span key={appKey(a)}>{logo(a)}</span>)}
       head={{
         text: calls > 0 ? t("chat.work.used", { count: calls }) : t("chat.work.block", agentGrammar(agentName)),

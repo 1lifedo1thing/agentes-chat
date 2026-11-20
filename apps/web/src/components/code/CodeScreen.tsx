@@ -12,6 +12,7 @@ import { PhoneLive } from "@/components/devices/PhoneLive";
 import { useDevices } from "@/components/devices/queries";
 import { useOrg } from "@/components/org-context";
 import { useSaid } from "@/lib/toast";
+import { CodeHomeSky } from "./CodeSky";
 
 /** A screen the panel can show: the agent's computer, or a phone this person may use (ADR 0042). */
 type ScreenPick = { kind: "computer" } | { kind: "phone"; phoneId: string };
@@ -38,7 +39,11 @@ export function CodeScreen({ agent }: { agent: Agent }) {
   const phone = pick.kind === "phone" ? (phones.find((p) => p.phone.id === pick.phoneId) ?? null) : null;
   return (
     <div className="code-screen">
+      <div className="code-ssky" aria-hidden="true">
+        <CodeHomeSky />
+      </div>
       <div className="code-sbar">
+        {phones.length > 0 && (
         <Select
           size="sm"
           className="code-select"
@@ -58,18 +63,9 @@ export function CodeScreen({ agent }: { agent: Agent }) {
               description: t("codeSessions.screen.onHost", { host }),
               leading: <Icon name="phone" size={16} />,
             })),
-            ...(phones.length === 0
-              ? [
-                  {
-                    value: "none",
-                    label: t("codeSessions.screen.noPhones"),
-                    disabled: true,
-                    leading: <Icon name="phone" size={16} />,
-                  },
-                ]
-              : []),
           ]}
         />
+        )}
         {!phone && (
           <>
             <span className="code-sbar__sub" ref={setSub} />

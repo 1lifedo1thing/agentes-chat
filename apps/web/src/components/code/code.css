@@ -155,19 +155,6 @@
 .code-st--fail {
   color: var(--danger);
 }
-.code-spin {
-  animation: code-spin 1.1s steps(8) infinite;
-}
-@keyframes code-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .code-spin {
-    animation: none;
-  }
-}
 
 /* ── the home: the field in the middle of the sky, the agents on its horizon ── */
 .code-home {
@@ -316,6 +303,7 @@
   align-items: center;
   justify-content: center;
 }
+/* The conversation card's top row: as tall as the panel's tabs, on a hairline like theirs. */
 .code-head {
   flex: none;
   display: flex;
@@ -323,7 +311,8 @@
   justify-content: space-between;
   gap: 12px;
   height: 56px;
-  padding: 0 4px 0 10px;
+  padding: 0 10px 0 16px;
+  border-bottom: 1px solid var(--line);
 }
 .code-head__l {
   min-width: 0;
@@ -379,7 +368,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 8px;
+  margin: 8px 10px 0;
   padding: 10px 12px;
   border-radius: 12px 12px 12px 4px;
   background: color-mix(in srgb, var(--danger) 9%, var(--pane));
@@ -412,9 +401,44 @@
   flex: 1;
   min-height: 0;
 }
+/* The side panel: the tabs and the terminal's switch on one row, the tab under them, the terminal's drawer at the
+   foot (its height drags). */
 .code-pane--side {
   position: relative;
   flex: 1 1 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: 56px minmax(0, 1fr) auto auto;
+}
+.code-pane--side > .ac-tabs {
+  grid-area: 1 / 1 / 2 / 3;
+  align-items: flex-end;
+  padding: 0 12px;
+}
+.code-pane--side > .code-ptoggle {
+  grid-area: 1 / 2 / 2 / 3;
+  align-self: center;
+  margin-right: 10px;
+}
+.code-pane--side > .ac-tabpanel {
+  grid-area: 2 / 1 / 3 / 3;
+  position: relative;
+  min-height: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.code-pane--side > .code-gutter--y {
+  grid-area: 3 / 1 / 4 / 3;
+}
+.code-drawer {
+  grid-area: 4 / 1 / 5 / 3;
+  height: var(--code-term, 280px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.code-drawer[hidden] {
+  display: none;
 }
 .code-gutter {
   position: relative;
@@ -438,6 +462,17 @@
 .code-gutter:hover::after,
 .code-gutter:focus-visible::after {
   opacity: 1;
+}
+.code-gutter--y {
+  height: 8px;
+  cursor: row-resize;
+}
+.code-gutter--y::after {
+  top: 3px;
+  left: 50%;
+  width: 36px;
+  height: 2px;
+  transform: translateX(-50%);
 }
 
 /* ── the side panel: tabs, and the sky rising from its foot behind what it shows ── */
@@ -482,59 +517,22 @@
   color: var(--ink);
   font-weight: 600;
 }
-.code-ptabs {
-  position: relative;
-  z-index: 1;
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  height: 40px;
-  padding: 0 6px 0 8px;
-  border-bottom: 1px solid var(--line);
-  background: var(--pane);
-}
-.code-ptab {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 9px;
-  border: 0;
-  border-radius: 9px 9px 9px 3px;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.code-ptab:hover {
-  color: var(--ink2);
-}
-.code-ptab.is-on {
-  background: var(--plate-soft);
-  color: var(--ink);
-}
+/* The diff's size in its tab, after its name. */
 .code-ptab__n {
+  margin-left: 6px;
   color: var(--faint);
   font-weight: 500;
   font-size: 12px;
-}
-.code-pbody {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 .code-empty {
   margin: 24px 16px;
   color: var(--muted);
   font-size: 13.5px;
 }
+/* Over the sky that rises behind it from the panel's foot. */
 .code-diff {
+  position: relative;
+  z-index: 1;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -571,21 +569,36 @@
   gap: 6px;
   font-size: 13px;
 }
+/* The screen stands in the agents' sky, which fills the tab behind its bar and its stage. */
 .code-screen {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
 }
+.code-ssky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.code-ssky > .ac-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
 .code-sbar {
+  position: relative;
+  z-index: 1;
   flex: none;
   display: flex;
   align-items: center;
   gap: 10px;
   height: 44px;
-  padding: 0 8px 0 10px;
-  border-bottom: 1px solid var(--line);
-  background: var(--pane);
+  padding: 0 8px 0 12px;
 }
 .code-sbar__sub {
   min-width: 0;
@@ -603,12 +616,16 @@
 }
 .code-sstage {
   position: relative;
+  z-index: 1;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--sunken);
   overflow: hidden;
+}
+/* The computer dialog's stage draws its own ground: here the sky is the ground. */
+.code-sstage .brw-ac__stage {
+  background: none;
 }
 .code-sstage--phone {
   align-items: center;
@@ -618,6 +635,7 @@
   position: fixed;
   inset: 0;
   z-index: 60;
+  background: var(--sunken);
 }
 .code-sstage__exit {
   position: absolute;
@@ -642,15 +660,6 @@
   .code-gutter {
     display: none;
   }
-}
-.code-pbody__keep {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.code-pbody__keep[hidden] {
-  display: none;
 }
 .code-group__where {
   color: var(--faint);
@@ -720,4 +729,29 @@
   color: var(--faint);
   font-size: 12px;
   line-height: 16px;
+}
+
+/* A browser or desktop card in the session's conversation: one line, the screen being the panel's. */
+.code-screenline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 560px;
+  margin-top: 6px;
+  padding: 2px 2px 2px 10px;
+  border-radius: 10px 10px 10px 3px;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink2);
+  font-size: 13.5px;
+}
+.code-screenline > .ac-icon {
+  flex: none;
+  color: var(--faint);
+}
+.code-screenline__t {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

@@ -4,11 +4,13 @@ import {
   terminalFrame,
   terminalSize,
   terminalSocketUrl,
+  useMachines,
 } from "@agenteschat/client";
 import { Button } from "@agenteschat/ui";
 import type { Terminal } from "@xterm/xterm";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ToolOffWayOut } from "@/components/devices/ToolOneClick";
 import { SocketFactoryContext } from "@/realtime/context";
 import "@xterm/xterm/css/xterm.css";
 import "./code-terminal.css";
@@ -55,7 +57,18 @@ function bytesOf(data: unknown): Uint8Array | null {
  * text frame. Who may open it is who may drive that computer (ADR 0058 §6). Its shell's end, or a refusal, says why
  * under it, with "Open again" where opening again can change that: a new terminal is a new shell, nothing is kept.
  */
-export function TerminalPane({ orgId, agentId, sessionId }: { orgId: string; agentId: string; sessionId: string }) {
+export function TerminalPane({
+  orgId,
+  agentId,
+  machineId,
+  sessionId,
+}: {
+  orgId: string;
+  agentId: string;
+  /** The agent's computer: where its terminal is off, the way to turn it on there. */
+  machineId: string | null;
+  sessionId: string;
+}) {
   const { t } = useTranslation();
   const createSocket = useContext(SocketFactoryContext);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -63,6 +76,10 @@ export function TerminalPane({ orgId, agentId, sessionId }: { orgId: string; age
   /** Its computer is too old for the session's folder: the shell started in the agent's folder. */
   const [agentFolder, setAgentFolder] = useState(false);
   const [round, setRound] = useState(0);
+  // Refused for want of the computer's switch: the computer, for the way to turn the terminal on.
+  const machines = useMachines(orgId, state === "unavailable" && machineId !== null);
+  const machine = machines.data?.find((m) => m.id === machineId) ?? null;
+  const off = state === "unavailable" && machine !== null && machine.access?.tools.terminal !== true;
 
   // A new socket, and so a new shell, for each of these and for each "Open again" (`round`).
   useEffect(() => {
@@ -208,11 +225,19 @@ export function TerminalPane({ orgId, agentId, sessionId }: { orgId: string; age
       )}
       {state !== "opening" && state !== "live" && (
         <div className="code-term__end">
-          <p role="status">{t(END_WORDS[state])}</p>
-          {!FINAL.includes(state) && (
-            <Button size="sm" icon="refresh" onClick={() => setRound((r) => r + 1)}>
-              {t("codeTerminal.openAgain")}
-            </Button>
+          <p role="status">{off ? t("codeTerminal.off", { computer: machine.name }) : t(END_WORDS[state])}</p>
+          {off ? (
+            <ToolOffWayOut machine={machine} tool="terminal">
+              <Button size="sm" icon="refresh" onClick={() => setRound((r) => r + 1)}>
+                {t("codeTerminal.openAgain")}
+              </Button>
+            </ToolOffWayOut>
+          ) : (
+            !FINAL.includes(state) && (
+              <Button size="sm" icon="refresh" onClick={() => setRound((r) => r + 1)}>
+                {t("codeTerminal.openAgain")}
+              </Button>
+            )
           )}
         </div>
       )}

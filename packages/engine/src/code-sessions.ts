@@ -199,6 +199,7 @@ export async function codeSessionBrief(
     lines.push(
       `You work in its own git worktree, \`${row.worktreePath}\` (your folder for this conversation), on branch \`${row.branch ?? "?"}\`, made from \`${row.baseBranch ?? "the default branch"}\`${row.baseSha ? ` at ${row.baseSha.slice(0, 7)}` : ""}.`,
       "Work like in a terminal with this person: read, change and run things in that folder, and say what you did in a few words. Don't touch other checkouts.",
+      "Your computer's screen is this session's preview: the person watches it beside the conversation. When what you made can be looked at (a page, an app, a UI), show it there yourself before you say it's done, without being asked: run the project's dev server, or serve the folder on localhost (for example `python3 -m http.server 8000`, left running in the background), open that address in your browser, look at it and fix what is off. The browser opens only http and https addresses, never a file. The person sees your screen and the diff: don't save copies to the Drive or paste screenshots.",
       local
         ? `Commit when a piece of work is done, with a short message. There is no remote: nothing to push. When the person asks to merge, merge this branch into \`${row.baseBranch ?? "main"}\` in \`${row.repoDir}\`.`
         : "Commit when a piece of work is done, with a short message. Push and open a pull request only when the person asks (the session's git button asks you in words).",
@@ -593,6 +594,7 @@ async function prepare(deps: CodeSessionDeps, sessionId: string): Promise<CodeSe
     return failSession(deps, row, code === "not_git" ? "The repository's folder isn't a git repository." : message);
   }
   const got = parseMissionWorktreeEnsured(reply);
+  await ensureGitIdentity(hub, machineId, got?.path || row.worktreePath || codeWorktreePath(row.id), scope, agent.name);
   row = await setSession(deps, row, {
     repoDir,
     worktreePath: got?.path || row.worktreePath,
@@ -638,6 +640,26 @@ async function ensureLocalProject(
     if (error instanceof MachineOfflineError || error instanceof MachinePausedError) return "away";
     return error instanceof Error ? error.message : String(error);
   }
+}
+
+/**
+ * The agent's name on its commits in the worktree, where the repository has none: the coding CLI commits with plain
+ * `git commit`, which stops without one. Kept in the repository's own config (its worktrees share it); never fails
+ * the session.
+ */
+async function ensureGitIdentity(
+  hub: MachineCaller,
+  machineId: string,
+  worktree: string,
+  scope: AgentScope,
+  agentName: string,
+) {
+  const set = (key: string, value: string) =>
+    `(git config ${key} >/dev/null 2>&1 || git config ${key} ${shellQuote(value)})`;
+  const command = `cd ${shellQuote(worktree)} && ${set("user.name", agentName)} && ${set("user.email", `${scope.handle}@agents.local`)}`;
+  await hub
+    .call<"exec">(machineId, { op: "exec", command, timeoutSeconds: 30, stream: false, agent: scope })
+    .catch(() => null);
 }
 
 async function failSession(deps: CodeSessionDeps, row: CodeSessionRow, error: string) {

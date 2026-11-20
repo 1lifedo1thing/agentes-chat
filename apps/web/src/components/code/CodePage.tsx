@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { CodeGutter, useStoredWidth } from "./CodeGutter";
+import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodeList } from "./CodeList";
 import "./code.css";
 
@@ -10,10 +10,10 @@ import "./code.css";
  */
 export function CodePage({ activeId, children }: { activeId: string | null; children: ReactNode }) {
   const { t } = useTranslation();
-  const list = useStoredWidth("code:listWidth", 220, 460, 296);
+  const list = useStoredSize("code:listWidth", 220, 460, 296);
   return (
     <main className="shell__main shell__main--chat code-page">
-      <div className="code" style={{ "--code-list": `${list.width}px` } as CSSProperties}>
+      <div className="code" style={{ "--code-list": `${list.size}px` } as CSSProperties}>
         <CodeList activeId={activeId} />
         <CodeGutter label={t("codeSessions.list.resize")} size={list} />
         <section className="code-main">{children}</section>

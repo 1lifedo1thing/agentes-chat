@@ -3,7 +3,7 @@ import { cx, Icon } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { AgentAvatar } from "@/components/AgentAvatar";
+import { AgentAvatar, AgentSpinner } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 
@@ -28,7 +28,7 @@ export function SessionState({ session }: { session: CodeSession }) {
   if (work === "working" || work === "preparing")
     return (
       <span className="code-st code-st--work">
-        <Icon name="spinner" size={14} className="code-spin" />
+        <AgentSpinner agentId={session.agentId} size={14} />
         <span>{t(work === "working" ? "codeSessions.state.working" : "codeSessions.state.preparing")}</span>
       </span>
     );

@@ -11616,9 +11616,11 @@ export const en = {
         "This workspace has no GitHub access for this repository. Connect GitHub in Settings › Connectors, or start a session on a project on the computer (just a name).",
     },
     panel: {
+      label: "Session panel",
       diff: "Diff",
       screen: "Screen",
       terminal: "Terminal",
+      terminalHeight: "Terminal height",
       notReady: "The worktree is still being prepared.",
       agent_preparing: "is preparing the worktree",
       agent_failed: "couldn't prepare the worktree",
@@ -11644,12 +11646,15 @@ export const en = {
       menu_female: "Screens {{name}} uses",
       computerHint: "Where the worktree is",
       onHost: "on {{host}}",
-      noPhones: "No phone you may use is connected.",
       exitFull: "Exit full screen",
+    },
+    /** A browser or desktop card in the conversation, as one line: the screen is the panel's. */
+    screenLine: {
+      show: "See on Screen",
+      held: "A person has the screen",
     },
     git: {
       step: { commit: "Commit", push: "Push", pr: "Open PR", merge: "Merge" },
-      upToDate: "Up to date",
       more: "Other git steps",
       /** What the button asks the session's agent, as the person's message in the conversation. */
       ask: {
@@ -20527,6 +20532,7 @@ export const en = {
     offline: "The computer is offline",
     outdated: "Update the computer to open the terminal in the session's folder",
     unavailable: "This agent's computer doesn't open terminals",
+    off: "The terminal is off on {{computer}}",
     busy: "This computer has as many terminals open as it takes. Close one and open again.",
     paused: "The computer is paused",
     failed: "Couldn't open the terminal",

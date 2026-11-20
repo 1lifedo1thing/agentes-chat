@@ -61,7 +61,10 @@ setup command (from the lockfile) and runs it like a person would.
 
 A run in the session gets the worktree as its folder (`codeSessionCwd`, read by `resolveBrain`; the pre-turn checkout
 sync of chat turns then doesn't apply) and a brief naming the repository, branch, base and folder, and how to work
-there (`codeSessionBrief`).
+there (`codeSessionBrief`): among it, that its screen is the session's preview, so what can be looked at it serves on
+localhost and opens in its browser itself, looks at and fixes before saying it's done (the browser opens only http
+and https), never asking the person to open it. Where the repository has no name for commits, the agent's goes in its
+config once the worktree is made (`ensureGitIdentity`): the CLI commits with plain `git commit`.
 
 ### 4. The page: a list, a home in the agents' sky, and a session
 
@@ -70,15 +73,21 @@ there (`codeSessionBrief`).
 - **Home**: the field in the middle of the agents' fine sky (the agent page's cover sky), the agents that program
   standing on its horizon saying what they do. Writing and Enter opens a session with the picked agent and repository
   (the last ones used come back); the computer is the agent's own, so there is nothing else to pick.
-- **Session**: its header (name, branch and state, the git button), the conversation, and a side panel whose sky
-  rises from its foot behind what it shows, with the agent standing on it:
+- **Session**: the conversation under its header (name, state and branch, the git button, only when there is a next
+  step and the agent is free to take it), and a side panel with the kit's tabs, Diff and Screen, and a Terminal under
+  either. The list, the conversation and the terminal's height drag, each kept on the device:
   - **Diff**: read with `git` in the worktree as its agent (the runner's `exec`, read-only commands): since the base
-    (committed or not, new files included) or only what isn't committed.
+    (committed or not, new files included) or only what isn't committed. The sky rises behind it from the panel's
+    foot, with the agent standing on it.
   - **Screen**: the agent's computer as its computer dialog shows it (live, "Take control", full screen; a Mac's
     browser page). The worktree's server runs there on a port only that agent reaches (0096), so its screen is the
-    preview. A menu also offers the phones the person may use (0042).
-  - **Terminal**: a shell on the agent's computer opened in the worktree (the terminal of 0058 §6, with a folder), for
-    running a script; the AI doesn't run there. Only who may drive that computer opens it, and a server that screens
+    preview. It stands in the agents' fine sky; where the person may use phones (0042), a picker offers them. The
+    conversation's browser and desktop cards are one line there ("See on Screen", `ScreenPanelContext`), and the panel
+    turns to the screen once as the agent starts using it.
+  - **Terminal**: a drawer at the panel's foot, under the diff or the screen, opened and closed by its switch beside
+    the tabs: a shell on the agent's computer opened in the worktree (the terminal of 0058 §6, with a folder), for
+    running a script; the AI doesn't run there. Where the computer's terminal is off, it offers the app's way to turn it
+    on (`ToolOffWayOut`: whoever paired it turns it on there, anyone else asks them). Only who may drive that computer opens it, and a server that screens
     sessions keeps terminals off. The stream takes a `cwd` (`TERMINAL_CWD_PROTOCOL`, 74) that the server sets from the
     session (`/api/terminal?…&session=`, checked with `requireCodeSession`) and the runner resolves inside the agent's
     folder; an older runner opens the shell in the agent's folder and the pane says so (`cwd_ignored`). The pane is
@@ -99,9 +108,9 @@ work, as in a terminal: a `context` step `cliTool` (`packages/engine/src/cli-too
 worktree, counts such as lines added and removed or tests passed, an output excerpt masked), written when the call
 ends. A `context` row keeps them out of every Tool Gateway reader (cost brakes, outbound checks, other runs' context,
 continuation). Live, `agent.step` carries the line at its start (the runner now sends the input with `tool_started`)
-and at its end (`ended`, `failed`); `meta.work.cliCalls` counts them, they show with the work summary off, and the
-blocks start open in the session (`ToolsOpenContext`). Elsewhere they stay off the trail (ADR 0032 addendum: a row per
-call on every turn of every chat is not worth its writes).
+and at its end (`ended`, `failed`); `meta.work.cliCalls` counts them and they show with the work summary off, in a
+block closed like every other (the diff and the screen say what changed). Elsewhere they stay off the trail (ADR 0032
+addendum: a row per call on every turn of every chat is not worth its writes).
 
 ### 7. A failing check comes back to the agent
 

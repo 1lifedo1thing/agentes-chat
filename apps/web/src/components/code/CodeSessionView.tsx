@@ -11,26 +11,29 @@ import {
 import { errorText } from "@agenteschat/client/lib/errors";
 import { Button, Icon, Menu, MenuItem, MenuNote, SplitButton } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ScreenPanelContext } from "@/components/browser/screen-panel";
 import { useOrg } from "@/components/org-context";
-import { ToolsOpenContext } from "@/components/ToolCalls";
 import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
-import { CodeGutter, useStoredWidth } from "./CodeGutter";
+import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { SessionState } from "./CodeList";
-import { CodePanel } from "./CodePanel";
+import { CodePanel, useCodeTab } from "./CodePanel";
 
 /**
- * One code session (ADR 0208): its header (name, branch and state, the git button), the conversation with its agent
- * in the middle (the chat's own thread screen: tool rows, steering, stop, approvals), and the side panel. The gutter
- * between them drags (double click puts it back).
+ * One code session (ADR 0208): the conversation with its agent under the session's header (name, state and branch,
+ * the git button), the chat's own thread screen (tool rows, steering, stop, approvals), and the side panel. The
+ * gutter between them drags (double click puts it back). The screen is the panel's: the conversation's browser cards
+ * are a line that opens it, and it turns to the screen as the agent starts using it.
  */
 export function CodeSessionView({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const session = useCodeSession(org.id, sessionId);
-  const talk = useStoredWidth("code:talkWidth", 360, 1100, 620);
+  const talk = useStoredSize("code:talkWidth", 360, 1100, 620);
+  const [tab, setTab] = useCodeTab();
+  const screen = useMemo(() => ({ show: () => setTab("screen") }), [setTab]);
   if (session.isPending) return <ChannelSkeleton thread panel />;
   if (!session.data)
     return (
@@ -40,15 +43,17 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
     );
   const s = session.data;
   return (
-    <div className="code-session" style={{ "--code-talk": `${talk.width}px` } as CSSProperties}>
-      <CodeHeader session={s} />
-      {s.worktree.state === "failed" && <FailedBar session={s} />}
+    <div className="code-session" style={{ "--code-talk": `${talk.size}px` } as CSSProperties}>
       <div className="code-panes">
         <section className="code-pane code-pane--talk">
-          <CodeConversation session={s} />
+          <CodeHeader session={s} />
+          {s.worktree.state === "failed" && <FailedBar session={s} />}
+          <ScreenPanelContext.Provider value={screen}>
+            <CodeConversation session={s} />
+          </ScreenPanelContext.Provider>
         </section>
         <CodeGutter label={t("codeSessions.view.resize")} size={talk} />
-        <CodePanel session={s} />
+        <CodePanel session={s} tab={tab} onTab={setTab} />
       </div>
     </div>
   );
@@ -62,9 +67,7 @@ function CodeConversation({ session }: { session: CodeSession }) {
   const thread = info.data;
   if (!thread) return <ChannelSkeleton thread panel />;
   return (
-    // The agent's work reads like a terminal there: every tool line in sight.
-    <ToolsOpenContext.Provider value={true}>
-      <ChannelPage
+    <ChannelPage
         channelId={thread.channelId}
         thread={thread}
         fallback={{
@@ -84,7 +87,6 @@ function CodeConversation({ session }: { session: CodeSession }) {
           task: true,
         }}
       />
-    </ToolsOpenContext.Provider>
   );
 }
 
@@ -100,14 +102,16 @@ function CodeHeader({ session }: { session: CodeSession }) {
       <div className="code-head__l">
         <h1 className="code-head__t">{session.title}</h1>
         <span className="code-head__m">
-          {session.branch && (
-            <span className="code-br">
-              <Icon name="gitPull" size={14} />
-              <code>{session.branch}</code>
-            </span>
-          )}
-          <span className="code-dot">·</span>
           <SessionState session={session} />
+          {session.branch && (
+            <>
+              <span className="code-dot">·</span>
+              <span className="code-br" title={session.branch}>
+                <Icon name="gitPull" size={14} />
+                <code>{session.branch}</code>
+              </span>
+            </>
+          )}
         </span>
       </div>
       <div className="code-head__r">
@@ -195,13 +199,15 @@ function GitButton({ session }: { session: CodeSession }) {
   };
   // A local project has no remote: Commit and Merge (into its base branch on the computer) only.
   const steps = session.local ? STEPS.filter((s) => s === "commit" || s === "merge") : STEPS;
+  // Only when there is a next step and the agent is free to take it: no button that waits greyed out.
+  if (!next || working) return null;
   return (
     <SplitButton
       size="sm"
       className="code-git"
-      disabled={!next || working || sending}
+      disabled={sending}
       loading={sending}
-      onClick={() => next && void ask(next)}
+      onClick={() => void ask(next)}
       menu={
         <Menu
           align="end"
@@ -213,7 +219,7 @@ function GitButton({ session }: { session: CodeSession }) {
               key={step}
               icon={step === "commit" ? "check" : step === "push" ? "upload" : step === "pr" ? "pullRequest" : "merge"}
               description={hint(step) || undefined}
-              disabled={working || sending}
+              disabled={sending}
               onSelect={() => void ask(step)}
             >
               {t(`codeSessions.git.step.${step}`)}
@@ -223,7 +229,7 @@ function GitButton({ session }: { session: CodeSession }) {
         </Menu>
       }
     >
-      {next ? t(`codeSessions.git.step.${next}`) : t("codeSessions.git.upToDate")}
+      {t(`codeSessions.git.step.${next}`)}
     </SplitButton>
   );
 }
