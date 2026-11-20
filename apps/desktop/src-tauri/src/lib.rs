@@ -942,6 +942,26 @@ mod tests {
     }
 
     #[test]
+    fn a_relaunch_opens_the_bundle_it_runs_from() {
+        assert_eq!(
+            bundle_of(Path::new("/Applications/agentes.chat.app/Contents/MacOS/agentes-chat")),
+            Some(std::path::PathBuf::from("/Applications/agentes.chat.app"))
+        );
+        assert_eq!(bundle_of(Path::new("/Users/x/target/debug/agentes-chat")), None);
+        assert_eq!(bundle_of(Path::new("/Applications/x/Contents/MacOS/agentes-chat")), None);
+    }
+
+    #[test]
+    fn a_relaunch_keeps_the_arguments_and_says_a_reopen_once() {
+        let args = |list: &[&str]| list.iter().map(|a| a.to_string()).collect::<Vec<_>>().into_iter();
+        assert_eq!(relaunch_args(args(&["agentes-chat", AUTOSTART_ARG]), false), vec![AUTOSTART_ARG]);
+        assert_eq!(relaunch_args(args(&["agentes-chat", AUTOSTART_ARG]), true), vec![AUTOSTART_ARG, REOPENED_ARG]);
+        // An update after a Reopen is no Reopen: the argument isn't carried on.
+        assert_eq!(relaunch_args(args(&["agentes-chat", REOPENED_ARG]), false), Vec::<String>::new());
+        assert_eq!(relaunch_args(args(&["agentes-chat", REOPENED_ARG]), true), vec![REOPENED_ARG]);
+    }
+
+    #[test]
     fn what_opens_in_the_browser() {
         assert!(is_sign_in_url("https://claude.ai/oauth/authorize?client_id=x"));
         assert!(is_app_download("https://app.agentes.chat/api/desktop/download/0.6.0/agentes_0.6.0_universal.dmg"));
