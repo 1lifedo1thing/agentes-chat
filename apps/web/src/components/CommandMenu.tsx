@@ -115,6 +115,7 @@ export function CommandMenu() {
       { key: "issues", to: "/org/$orgId/issues", icon: "issues", label: t("shell.issues") },
       { key: "routines", to: "/org/$orgId/routines", icon: "routines", label: t("shell.routines") },
       { key: "task-manager", to: "/org/$orgId/task-manager", icon: "stageProgress", label: t("taskManager.title") },
+      { key: "code", to: "/org/$orgId/code", icon: "code", label: t("shell.code") },
       { key: "calendar", to: "/org/$orgId/calendar", icon: "calendar", label: t("shell.calendar") },
       { key: "drive", to: "/org/$orgId/drive", icon: "drive", label: t("shell.drive") },
       { key: "team", to: "/org/$orgId/team", icon: "agent", label: t("shell.team") },
