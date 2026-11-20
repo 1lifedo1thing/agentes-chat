@@ -130,6 +130,8 @@ export const caches = {
   routineWeekUsage: new TtlCache<unknown>(60_000, 1000),
   /** Registered hosts by name (`hostLook`, ADR 0194), read by the origin check of every write. */
   hosts: new TtlCache<unknown>(TTL_MS),
+  /** Whether any phone shows a Live Activity (`liveActivitiesInUse`, ADR 0210), read on every run's start and end. */
+  liveActivities: new TtlCache<boolean>(TTL_MS),
   /**
    * Jev's answers to a text-only request sent the same way before (`orgId:hash`): a routine whose conversation hasn't
    * moved, or a retry, asks again within minutes. Never an image's: a screen changes under the same words.
