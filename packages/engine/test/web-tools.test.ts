@@ -272,7 +272,7 @@ describe("the controller's untried verdict", () => {
     // The judge reads that a caveat beside the answer is no give-up.
     const verdict = asked[0]?.questions.verdict as { criteria: Record<string, string> } | undefined;
     const criteria = verdict?.criteria ?? {};
-    expect(criteria.done).toContain("also with a caveat");
+    expect(criteria.done).toContain("also when it adds a caveat");
     expect(criteria.untried).toStartWith("What `request` asked for is still missing");
   });
 
