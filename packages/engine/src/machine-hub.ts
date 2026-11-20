@@ -211,6 +211,12 @@ export const COMPUTER_BLIP_WAIT_MS = 30_000;
 export const COMPUTER_WAKE_WAIT_MS = 60_000;
 
 /**
+ * How often a run looks again at a computer it woke: a once-a-second look added half a second on average between its
+ * runner's hello and the run going on.
+ */
+export const WAKING_LOOK_MS = 200;
+
+/**
  * Waits for a computer to come back: one gone less than the outage grace (`TASK_OFFLINE_GRACE_MS`: its runner dialing
  * again, our own restart) up to `waitMs`, unless `justGone` is false; one in standby, asked to wake, up to `wakeWaitMs`
  * however long it has slept. The run stays `running` meanwhile (its heartbeat and its job's lease go on) and nothing is
@@ -241,7 +247,8 @@ export async function computerBackSoon(
     const gone = status?.lastSeenAt ? Date.now() - Date.parse(status.lastSeenAt) : Number.POSITIVE_INFINITY;
     if (!waking && (options.justGone === false || gone >= TASK_OFFLINE_GRACE_MS)) return false;
     if (Date.now() >= until) return false;
-    await sleep(Math.min(1_000, until - Date.now()), undefined, { signal: options.signal }).catch(() => {});
+    const every = waking ? WAKING_LOOK_MS : 1_000;
+    await sleep(Math.min(every, until - Date.now()), undefined, { signal: options.signal }).catch(() => {});
     if (await options.canceled?.()) return null;
   }
 }

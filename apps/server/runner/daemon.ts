@@ -152,7 +152,7 @@ import {
   systemShared,
   withShared,
 } from "./shared-folder";
-import { ackStandby, readStandby, STANDBY_POLL_MS, standbyOn } from "./standby";
+import { ackStandby, readStandby, STANDBY_POLL_MS, standbyOn, watchStandby } from "./standby";
 import { prepareSystemStartPage } from "./start-page";
 import { DataSockets, RELAYED_FILE, RelayCount } from "./streams";
 import {
@@ -445,6 +445,7 @@ export class RunnerDaemon implements RequestObserver {
   private readonly requests: AccessRequests;
   private pairing: AbortController | null = null;
   private stopWatch: (() => void) | null = null;
+  private stopStandbyWatch: (() => void) | null = null;
   private readonly timers: ReturnType<typeof setInterval>[] = [];
   /** Protocol 22: how busy this computer got over the last day (rides on `pong`). */
   private readonly load = new LoadWindow();
@@ -827,6 +828,7 @@ export class RunnerDaemon implements RequestObserver {
     this.timers.push(sizes);
     // System mode: for an operator's network guard, at most once a minute.
     this.checkStandby();
+    if (this.opts.watch !== false) this.stopStandbyWatch = watchStandby(this.opts.home, () => this.checkStandby());
     const standby = setInterval(() => {
       this.checkStandby();
       this.checkPark();
@@ -865,6 +867,7 @@ export class RunnerDaemon implements RequestObserver {
     if (this.stopped) return;
     this.stopped = true;
     this.stopWatch?.();
+    this.stopStandbyWatch?.();
     for (const t of this.timers) clearInterval(t);
     if (this.sharedLoginRetry) clearTimeout(this.sharedLoginRetry);
     this.desktops.close();
