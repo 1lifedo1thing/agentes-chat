@@ -106,8 +106,8 @@ nothing said why. Now:
   nothing. A check that only ran out of the turn end's wait still ends as done.
 - **Routing.** The router's Jev step is skipped past the cap (`platformCapRouter`), so the workspace's own small model
   picks; only with none is nothing picked (`platform_cap`).
-- **Saying so.** At 100% whoever may `manage_credentials` gets one `platform_ai_limit` notice that month (inbox only,
-  opening AI and usage). The receipt under an unrouted message says what stops, until the 1st, that mentioned agents
+- **Saying so.** At 100%, with no AI key of its own, whoever may `manage_credentials` gets one `platform_ai_limit`
+  notice that month (inbox only, opening AI and usage). The receipt under an unrouted message says what stops, until the 1st, that mentioned agents
   work as usual, and the way out: an AI key in Settings › AI and usage.
 - **A routine's resume.** A routine's background run may set `follow_up` for work it is blocked on; at its time the
   agent wakes where the routine reports, in a run that keeps the routine's bounds.

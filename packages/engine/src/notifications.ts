@@ -127,8 +127,8 @@ export const NOTIFICATION_KINDS = [
   "composio_limit",
   /**
    * The workspace used its platform AI for the month (`platformUsdPerMonth`, ADR 0079): who manages its AI keys
-   * (`manage_credentials`) hears it once that month, `latest.title` the month (`2026-11`). Until the month ends only
-   * @mentions start agents, unless the workspace has a small model of its own. Inbox only, opening AI and usage.
+   * (`manage_credentials`) hears it once that month when it has no AI key of its own, `latest.title` the month
+   * (`2026-11`). Until the month ends only @mentions start agents. Inbox only, opening AI and usage.
    */
   "platform_ai_limit",
   /**

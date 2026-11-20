@@ -18008,7 +18008,7 @@ export const en = {
     },
     actions: { raise: "Raise to {{amount}} this month", refuse: "Decline", see: "See their usage" },
   },
-  /** Settings\u00a0›\u00a0AI and usage: what a plan's use was for, under an account's agents. */
+  /** Settings › AI and usage: what a plan's use was for, under an account's agents. */
   usage: {
     kinds: {
       label: "By kind",

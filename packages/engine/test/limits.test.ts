@@ -461,12 +461,14 @@ describe("the platform's AI", () => {
     expect(asked).toEqual(["llm"]);
   });
 
+  const notices = () =>
+    f.db.select().from(schema.notifications).where(eq(schema.notifications.kind, "platform_ai_limit"));
+
   test("at 100% who can connect an AI key hears it once that month; a member doesn't", async () => {
     f = await setup();
+    await f.db.update(schema.providerCredentials).set({ revokedAt: new Date() });
     const admin = await addMember(f.db, f.org.id, "admin");
     const member = await addMember(f.db, f.org.id, "member");
-    const notices = () =>
-      f.db.select().from(schema.notifications).where(eq(schema.notifications.kind, "platform_ai_limit"));
     const month = new Date().toISOString().slice(0, 7);
     await limit({ platformUsdPerMonth: 3 });
     await spend(1.6);
@@ -479,6 +481,14 @@ describe("the platform's AI", () => {
     expect(rows.map((n) => n.userId).sort()).toEqual([f.owner.id, admin.id].sort());
     expect(rows[0]).toMatchObject({ groupKey: `platform_ai_limit:${month}`, latest: { title: month } });
     expect(rows.some((n) => n.userId === member.id)).toBe(false);
+  });
+
+  test("a workspace with an AI key of its own isn't told: its small model keeps picking", async () => {
+    f = await setup();
+    await limit({ platformUsdPerMonth: 3 });
+    await spend(3);
+    expect(await platformCapReached(f.db, f.org.id)).toBe(true);
+    expect(await notices()).toEqual([]);
   });
 
   test("the operator's feed hears 50% and 100% once per month", async () => {

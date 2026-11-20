@@ -7,7 +7,7 @@ import type { Judge } from "./judge";
 import { notifyPlatformAiLimit } from "./notification-producers";
 import { recordOperatorEvent } from "./operator-events";
 import { can, requirePermission } from "./organizations";
-import { RouterSkip, type RouterStrategy } from "./router";
+import { orgKeyProviders, RouterSkip, type RouterStrategy } from "./router";
 import { storedBytes, usesOwnBucket } from "./storage";
 import { monthStartUtc } from "./usage";
 
@@ -241,8 +241,8 @@ export const PLATFORM_CAP = "platform_cap" as const;
 /**
  * Whether the workspace used up its platform AI for this UTC month (`platformUsdPerMonth`), cached a minute per
  * process. The first time a month's spend reaches 50% and 100% of it, the operator's feed gets
- * `platform_ai.threshold`, once per workspace, month and threshold, and at 100% who can connect the workspace's own
- * AI key hears it (`platform_ai_limit`).
+ * `platform_ai.threshold`, once per workspace, month and threshold, and at 100%, when the workspace has no AI key of
+ * its own, who can connect one hears it (`platform_ai_limit`).
  * ponytail: the cache lets the spend run up to a minute of calls past the cap; a counter row moved by every call
  * would be exact.
  */
@@ -282,7 +282,10 @@ export async function platformCapReached(
         if (moved.length > 0) await recordOperatorEvent(tx, { type: "platform_ai.threshold", orgId, data });
         return moved.length > 0;
       });
-      if (told && percent === 100) await notifyPlatformAiLimit({ db, pubsub }, orgId, month).catch(() => {});
+      // With an AI key of its own its small model keeps picking: the notice ("only @mentions", "connect a key") would
+      // be false there.
+      if (told && percent === 100 && (await orgKeyProviders(db, orgId)).size === 0)
+        await notifyPlatformAiLimit({ db, pubsub }, orgId, month).catch(() => {});
     }
     return spent >= org.limit;
   })) as boolean;
