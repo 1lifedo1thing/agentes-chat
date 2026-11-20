@@ -14,11 +14,8 @@ export function FilePage(props: {
   onSearch: (patch: Partial<LiveFileSearch>) => void;
 }) {
   const { org } = useOrg();
-  const query = useArtifact(org.id, props.fileId);
-  const artifact = query.data;
+  const artifact = useArtifact(org.id, props.fileId).data;
   const media = mediaKindOfArtifact(artifact);
-  if (media && artifact) return <MediaFilePage {...props} media={media} />;
-  // Until the file is known, neither page: a picture would open a live file's connection for nothing.
-  if (!artifact && query.isPending) return <div className="lf-page lf-page--empty" aria-busy="true" />;
-  return <LiveFilePage {...props} />;
+  // Until the file is known, the live file's page: it is the one that tells a file that doesn't exist (its room).
+  return media && artifact ? <MediaFilePage {...props} media={media} /> : <LiveFilePage {...props} />;
 }
