@@ -1,13 +1,16 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, test } from "bun:test";
 import {
   checkCondition,
   createFakeJudge,
   diffObservations,
   findInPage,
+  type Judge,
   type JudgeRequest,
   observeSnapshot,
   runPlan,
+  type ScreenJudgmentShadow,
   type ScreenSurface,
+  setScreenJudgments,
 } from "../src";
 
 /**
@@ -17,6 +20,10 @@ import {
  */
 
 const ids = { orgId: "o", agentId: "a", runId: "r" };
+
+// The smaller judgments are what most of this file is about; `SCREEN_JUDGMENTS` at the end covers the others.
+beforeEach(() => setScreenJudgments("small"));
+afterAll(() => setScreenJudgments("full"));
 
 /** A long order history: a header, 600 rows of past orders, then the checkout panel at the bottom. */
 function ordersPage(extra: { status?: string; total?: string } = {}) {
@@ -271,6 +278,118 @@ describe("finding in a page sends each line once", () => {
       }
       expect(size(c)).toBeLessThan(45_000);
     }
+  });
+});
+
+describe("SCREEN_JUDGMENTS", () => {
+  const page = look(ordersPage());
+  /** Far enough down to be in a full check's 60k characters, and too far for a small one's 16k. */
+  const deep = "Order #10300 ";
+
+  test("by default a check sends the page as it always did, and quoted words still go to the judge", async () => {
+    setScreenJudgments("full");
+    const judge = readingJudge(deep);
+    expect(await checkCondition({ judge, ...ids, condition: "the order history is shown", observation: page })).toEqual(
+      { met: true, p: 0.95 },
+    );
+    const text = sentText(judge.calls[0] as JudgeRequest);
+    expect(text.length).toBeGreaterThan(55_000);
+    expect((judge.calls[0] as JudgeRequest).state.screen).not.toHaveProperty("left_out");
+    await checkCondition({ judge, ...ids, condition: '"Cart total"', observation: page });
+    expect(judge.calls).toHaveLength(2);
+  });
+
+  test("by default a find's options are the lines themselves", async () => {
+    setScreenJudgments("full");
+    const judge = createFakeJudge(() => undefined);
+    await findInPage({ judge, ...ids, question: '"Cart total"', observation: page });
+    expect(judge.calls.length).toBeGreaterThan(0);
+    const criteria = ((judge.calls[0] as JudgeRequest).questions.where as { criteria: Record<string, string> })
+      .criteria;
+    expect(criteria.L2).toBe('- link "Northwind Supply" [ref=e1]');
+  });
+
+  test("small applies to the listed workspaces only", async () => {
+    setScreenJudgments("small", ["o"]);
+    const judge = readingJudge(deep);
+    expect(
+      (await checkCondition({ judge, ...ids, condition: "the order history is shown", observation: page })).met,
+    ).toBe(false);
+    expect(sentText(judge.calls[0] as JudgeRequest).length).toBeLessThanOrEqual(16_000);
+    const other = { ...ids, orgId: "another" };
+    expect(
+      (await checkCondition({ judge, ...other, condition: "the order history is shown", observation: page })).met,
+    ).toBe(true);
+    expect(sentText(judge.calls[1] as JudgeRequest).length).toBeGreaterThan(55_000);
+  });
+
+  test("shadow: the full check decides, both are recorded and logged, the page's text never is", async () => {
+    const lines: { level: string; message: string; data?: Record<string, unknown> }[] = [];
+    setScreenJudgments("shadow", ["o"], {
+      info: (message, data) => lines.push({ level: "info", message, data }),
+      warn: (message, data) => lines.push({ level: "warn", message, data }),
+    });
+    const reading = readingJudge(deep);
+    // A judge that reports tokens, as Jev and the small model do.
+    const judge: Judge = {
+      name: "counting",
+      ask: (r) => {
+        r.onUsage?.({ inputTokens: Math.ceil(size(r) / 4), outputTokens: 1 });
+        return reading.ask(r);
+      },
+    };
+    const shadow: ScreenJudgmentShadow[] = [];
+    const r = await checkCondition({
+      judge,
+      ...ids,
+      shadow,
+      condition: "the order history is shown",
+      observation: page,
+    });
+    expect(r).toEqual({ met: true, p: 0.95 });
+    expect(shadow).toHaveLength(1);
+    const [s] = shadow as [ScreenJudgmentShadow];
+    expect(s).toMatchObject({
+      kind: "screen_check",
+      agree: false,
+      full: { decision: true, p: 0.95, calls: 1 },
+      small: { decision: false, p: 0.05, calls: 1 },
+    });
+    expect(s.small.chars).toBeLessThan(s.full.chars / 3);
+    expect(s.small.inputTokens).toBeLessThan(s.full.inputTokens as number);
+    expect(lines).toEqual([
+      { level: "warn", message: "screen judgment shadow", data: expect.objectContaining({ ...s, runId: "r" }) },
+    ]);
+    expect(JSON.stringify(lines)).not.toContain("Northwind");
+
+    // Words already on the screen: the small path needs no judgment, and the two agree.
+    await checkCondition({ judge, ...ids, shadow, condition: '"Cart total"', observation: page });
+    expect(shadow[1]).toMatchObject({ agree: true, small: { decision: true, calls: 0, chars: 0, inputTokens: null } });
+    expect(lines[1]?.level).toBe("info");
+  });
+
+  test("shadow on a find and in a plan: the full answer is returned, every judgment recorded", async () => {
+    setScreenJudgments("shadow");
+    const judge = createFakeJudge((kind, id, state) => {
+      if (kind === "screen_check") return 0.95;
+      if (kind !== "screen_find") return undefined;
+      const hit = /^(L\d+): - paragraph: Cart total/m.exec((state.page as { lines: string }).lines)?.[1];
+      if (id === "answers") return hit ? 0.95 : 0.02;
+      return hit ? { choice: hit, probabilities: { [hit]: 0.9 } } : "none";
+    });
+    const shadow: ScreenJudgmentShadow[] = [];
+    const found = await findInPage({ judge, ...ids, shadow, question: "the cart total", observation: page });
+    expect(found.answered).toBe("yes");
+    expect(shadow[0]).toMatchObject({ kind: "screen_find", agree: true, full: { decision: "yes" } });
+    const surface: ScreenSurface = {
+      observe: async () => page,
+      perform: async () => ({ ok: true, observation: null }),
+    };
+    const report = await runPlan({ judge, ...ids, scope: "s", surface, shadow, now: fakeClock() }, [
+      { do: "wait", until: "the cart shows a total", seconds: 5 },
+    ]);
+    expect(report.steps[0]?.status).toBe("done");
+    expect(shadow[1]).toMatchObject({ kind: "screen_check", agree: true });
   });
 });
 

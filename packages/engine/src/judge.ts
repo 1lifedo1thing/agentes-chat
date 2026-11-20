@@ -81,6 +81,8 @@ export interface JudgeRequest {
   images?: Record<string, JudgeImage>;
   /** Its own wait for Jev (ms), when the caller can wait longer or must wait less than the judge's default. */
   timeoutMs?: number;
+  /** Told the tokens the call read and wrote, cached ones included, once the judge has them. */
+  onUsage?: (usage: { inputTokens: number; outputTokens: number }) => void;
 }
 
 export interface Judge {
@@ -178,6 +180,7 @@ export function createJevJudge(options: {
         throw withJudgeCall(error, model, "typesafe");
       });
       const inputTokens = body.usage?.input_tokens ?? 0;
+      request.onUsage?.({ inputTokens, outputTokens: body.usage?.output_tokens ?? 0 });
       await options.gateway
         .recordExternalUsage({
           orgId: request.orgId,
@@ -279,6 +282,11 @@ export function createLlmJudge(deps: {
         .catch((error: unknown) => {
           throw withJudgeCall(error, model, provider);
         });
+      const { usage } = result;
+      request.onUsage?.({
+        inputTokens: usage.inputTokens + usage.cacheReadTokens + usage.cacheWriteTokens,
+        outputTokens: usage.outputTokens,
+      });
       let parsed: Record<string, unknown> = {};
       try {
         const text = result.text.trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
