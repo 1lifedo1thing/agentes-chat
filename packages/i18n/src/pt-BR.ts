@@ -2962,8 +2962,7 @@ export const ptBR = {
     retry: "Tentar de novo",
     /** On its way (`receipts.retry` pressed): the line says so until the server answers. */
     retrying: "Tentando de novo…",
-    platformCap:
-      "A IA deste mês para escolher quem responde acabou neste workspace: até o dia 1º, só uma @menção chama um agente. Os agentes que você mencionar trabalham normalmente. Um admin pode reativar agora conectando uma chave de IA em Configurações\u00a0›\u00a0IA e uso.",
+    platformCap: "Mencione um agente com @ para ele responder.",
     mentionNeeded: "Nenhum agente vai responder sem @",
     mentionNeededHint:
       "Nenhuma IA aqui conseguiu escolher um agente para esta mensagem. Mencione um agente para chamá-lo.",
@@ -19849,10 +19848,6 @@ export const ptBR = {
   },
   /** A workspace's limits, set by the billing service (ADR 0079): people and files. */
   limits: {
-    platformAi: {
-      notice:
-        "A IA deste mês para escolher quem responde acabou neste workspace: até o dia 1º, só uma @menção chama um agente. Conecte uma chave de IA em Configurações\u00a0›\u00a0IA e uso para reativar agora.",
-    },
     members: {
       full: "Este workspace está com {{members}} de {{limit}} pessoas.",
       fullOne: "No plano do agentes.chat deste workspace cabe 1 pessoa.",

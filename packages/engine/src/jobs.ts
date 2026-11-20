@@ -288,7 +288,6 @@ export function messageRouter(deps: JobDeps): RouterDeps | null {
                 });
               },
             }),
-            deps.pubsub,
           ),
         ]
       : []),
@@ -311,9 +310,7 @@ export function messageRouter(deps: JobDeps): RouterDeps | null {
     pubsub: deps.pubsub,
     // Jev bills the platform: past the workspace's platform AI for the month, its own small model picks, else only
     // @mentions start agents.
-    ...(jev
-      ? { platformCapReached: (orgId: string) => platformCapReached(deps.db, orgId, undefined, deps.pubsub) }
-      : {}),
+    ...(jev ? { platformCapReached: (orgId: string) => platformCapReached(deps.db, orgId) } : {}),
   };
 }
 

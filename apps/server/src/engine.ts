@@ -285,7 +285,6 @@ export function buildEngine(o: EngineOptions) {
           visionModel: config.JEV_VISION_MODEL,
           fetch: o.jevFetch,
         }),
-        adapters.pubsub,
       ),
       llmJudge,
       () => jevKey.usable(),
