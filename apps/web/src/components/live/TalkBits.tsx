@@ -17,6 +17,7 @@ import { Icon } from "@agenteschat/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { useMaybeArtifactViewer } from "@/components/artifacts/ArtifactViewer";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { TYPED_VALUES } from "@/i18n";
@@ -80,6 +81,7 @@ export function LiveRefLine({ liveRef }: { liveRef: LiveRef }) {
   const navigate = useNavigate();
   const api = useApi();
   const talk = useFileTalk();
+  const viewer = useMaybeArtifactViewer();
   const { what, where } = aboutParts(t, liveRef);
   const crop = liveRef.selection?.crop;
   const open = () => {
@@ -88,7 +90,9 @@ export function LiveRefLine({ liveRef }: { liveRef: LiveRef }) {
       return;
     }
     if (liveRef.selection) revealOnOpen(liveRef.artifactId, liveRef.selection);
-    openLivePage(navigate, org.id, liveRef.artifactId);
+    // A picture, a video or a PDF opens in the viewer with its comments, at this one (ADR 0208).
+    if (viewer && isMediaKind(liveRef.kind)) viewer.open(liveRef.artifactId, undefined, undefined, {});
+    else openLivePage(navigate, org.id, liveRef.artifactId);
   };
   return (
     <button

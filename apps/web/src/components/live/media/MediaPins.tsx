@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar, PersonAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
-import { type MediaPin, pinAt } from "./marks";
+import { type MediaPin, pinAt, pinFlips } from "./marks";
 import "./pins.css";
 
 /** Who wrote a comment, by name, as the pins and the peek say it. */
@@ -86,6 +86,7 @@ export function MediaPins({
               (pin.old || pin.resolved) && "mf-pin--faded",
             )}
             data-pin={pin.message.id}
+            data-flip={pinFlips(at.x) || undefined}
             style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}
             aria-label={t("live.canvas.comment.pin", { n: pin.n, name })}
             title={
@@ -115,7 +116,10 @@ export function MediaPins({
   );
 }
 
-/** A pin's words on hover, in the viewer: who, when, what, and that a click opens the conversation there. */
+/**
+ * A pin's words on hover, in the viewer with its comments closed: who, when, what, and that a click opens them there.
+ * On the picture's right half it opens to the pin's left.
+ */
 function PinPeek({ pin, name }: { pin: MediaPin; name: string }) {
   const { t, i18n } = useTranslation();
   const mark = pin.selection.mark;
@@ -126,7 +130,12 @@ function PinPeek({ pin, name }: { pin: MediaPin; name: string }) {
   );
   const words = pin.message.body.replace(/\s+/g, " ").trim();
   return (
-    <div className="mf-peek ac-glass" style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }} role="tooltip">
+    <div
+      className="mf-peek ac-glass"
+      data-flip={at.x > 0.5 || undefined}
+      style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}
+      role="tooltip"
+    >
       <div className="mf-peek__head">
         <PinFace pin={pin} name={name} />
         <b>{name}</b>

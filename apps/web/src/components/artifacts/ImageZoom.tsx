@@ -27,6 +27,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { type Mark, markOf } from "@/components/live/media/marks";
 import { useMatchMedia } from "@/hooks/useMatchMedia";
 import { STORAGE_KEYS, storage } from "@/lib/storage";
 
@@ -51,20 +52,35 @@ const middle = (a: Point, b: Point) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2
  * (mouse only, switchable), a click to zoom in at the pointer and back, the wheel or a pinch around the cursor, a
  * drag or two fingers on a trackpad to move, − / % / + / Ajustar / 100% on a bar floating over the picture (shown on
  * hover, on focus and while zoomed), and the keys + − 0 1, the arrows and Esc (back to fitted, then the dialog
- * closes). With `onSwipe`, a finger drags a fitted picture sideways to the next or previous one. No `src` yet: the
- * stage waits for it.
+ * closes). With `onSwipe`, a finger drags a fitted picture sideways to the next or previous one. With `marking` (the
+ * file's comments open, ADR 0208), a press on the picture marks a point and a drag an area instead, and the bar says
+ * so; the wheel, a pinch and the bar still zoom. No `src` yet: the stage waits for it.
  */
 export function ImageZoom({
   src,
   alt,
   onSwipe,
   overlay,
+  marking,
+  tools,
 }: {
   src: string | null;
   alt: string;
   onSwipe?: ((dir: 1 | -1) => void) | undefined;
   /** Over the picture, in its box as it zooms and moves (a file's comments, ADR 0208): placed in fractions of it. */
   overlay?: ReactNode;
+  marking?:
+    | {
+        /** What a press does now, in the bar's words. */
+        hint: string;
+        /** A press and its release on the picture: a point, or an area when dragged, in fractions of it. */
+        onMark: (mark: Mark, picture: HTMLImageElement) => void;
+        /** The area as it is dragged; null once it ends. */
+        onDraft?: (mark: Mark | null) => void;
+      }
+    | undefined;
+  /** On the bar, ahead of the zoom's own tools. */
+  tools?: ReactNode;
 }) {
   const { t, i18n } = useTranslation();
   const hintId = useId();
@@ -92,6 +108,10 @@ export function ImageZoom({
   const zoomedInAt = useRef(0);
   const viewRef = useRef(view);
   viewRef.current = view;
+  const imgRef = useRef<HTMLImageElement>(null);
+  /** A mark being drawn (`marking`): where the press began, on the screen, and by which pointer. */
+  const markFrom = useRef<{ x: number; y: number; id: number } | null>(null);
+  const prevStage = useRef<Size | null>(null);
 
   const fit = img && stage ? fitScale(img, stage) : 1;
   const zoomed = Boolean(view && img && stage && isZoomed(view, img, stage));
@@ -110,10 +130,13 @@ export function ImageZoom({
     return () => ro.disconnect();
   }, []);
 
-  // A new stage size keeps a zoomed picture where it is (inside the bounds) and refits a fitted one.
+  // A new stage size keeps a zoomed picture where it is (inside the bounds) and refits a fitted one: fitted to the
+  // stage it had (the comments' column opening beside it would read the old fit as zoomed in).
   useEffect(() => {
     if (!img || !stage) return;
-    setView((v) => (v && isZoomed(v, img, stage) ? clampPan(v, img, stage) : fitView(img, stage)));
+    const before = prevStage.current;
+    prevStage.current = stage;
+    setView((v) => (v && before && isZoomed(v, img, before) ? clampPan(v, img, stage) : fitView(img, stage)));
   }, [img, stage]);
 
   const go = useCallback((next: ZoomView, smooth: boolean) => {
@@ -225,8 +248,30 @@ export function ImageZoom({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [img, stage, go]);
 
+  /** The picture's box on the screen, as the marks measure it. */
+  const boxOnScreen = () => {
+    const r = stageRef.current?.getBoundingClientRect();
+    const v = viewRef.current;
+    if (!r || !v || !img) return null;
+    return { left: r.left + v.x, top: r.top + v.y, width: img.w * v.scale, height: img.h * v.scale };
+  };
+
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 || !view) return;
+    if (marking) {
+      // A second finger while marking drops the mark: no pinch is half a mark.
+      if (markFrom.current) {
+        markFrom.current = null;
+        marking.onDraft?.(null);
+        return;
+      }
+      const r = boxOnScreen();
+      if (!r || e.clientX < r.left || e.clientX > r.left + r.width || e.clientY < r.top || e.clientY > r.top + r.height)
+        return;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      markFrom.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+      return;
+    }
     e.currentTarget.setPointerCapture?.(e.pointerId);
     const p = local(e);
     pointers.current.set(e.pointerId, p);
@@ -246,6 +291,13 @@ export function ImageZoom({
   };
 
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const from = markFrom.current;
+    if (from && marking && e.pointerId === from.id) {
+      const r = boxOnScreen();
+      const mark = r ? markOf(from, { x: e.clientX, y: e.clientY }, r) : null;
+      marking.onDraft?.(mark?.w !== undefined ? mark : null);
+      return;
+    }
     const p = local(e);
     if (e.pointerType === "mouse") setPointer(p);
     if (!pointers.current.has(e.pointerId)) return;
@@ -269,6 +321,15 @@ export function ImageZoom({
   };
 
   const onPointerEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const from = markFrom.current;
+    if (from && e.pointerId === from.id) {
+      markFrom.current = null;
+      marking?.onDraft?.(null);
+      const r = boxOnScreen();
+      const mark = r ? markOf(from, { x: e.clientX, y: e.clientY }, r) : null;
+      if (e.type === "pointerup" && mark && imgRef.current) marking?.onMark(mark, imgRef.current);
+      return;
+    }
     if (!pointers.current.delete(e.pointerId)) return;
     const g = gesture.current;
     const left = [...pointers.current.values()];
@@ -325,13 +386,13 @@ export function ImageZoom({
     pointer.y <= box.y + box.h;
   const mag = lensMag(fit);
   const lens =
-    hover && lensOn && !zoomed && !dragging && stage && box && pointer && inBox
+    hover && lensOn && !marking && !zoomed && !dragging && stage && box && pointer && inBox
       ? lensLayout({ w: stage.w, h: stage.h - BAR_ROOM }, box, pointer, mag)
       : null;
   const percent = formatPercent(i18n.language, Math.round((view?.scale ?? 1) * 100));
 
   return (
-    <div className="izoom" data-zoomed={zoomed || undefined}>
+    <div className="izoom" data-zoomed={zoomed || undefined} data-marking={marking ? true : undefined}>
       {/* biome-ignore lint/a11y/useSemanticElements: a picture's stage, not a set of form fields */}
       <div
         ref={stageRef}
@@ -350,6 +411,7 @@ export function ImageZoom({
       >
         {src && (
           <img
+            ref={imgRef}
             className="izoom__img"
             src={src}
             alt={alt}
@@ -419,12 +481,15 @@ export function ImageZoom({
       </div>
       <div className="izoom__bar">
         <p id={hintId} className="izoom__hint small muted">
-          {hover
-            ? t(zoomed ? "files.zoom.hintZoomed" : "files.zoom.hint")
-            : t(zoomed ? "files.zoom.hintZoomedTouch" : "files.zoom.hintTouch")}
+          {marking
+            ? marking.hint
+            : hover
+              ? t(zoomed ? "files.zoom.hintZoomed" : "files.zoom.hint")
+              : t(zoomed ? "files.zoom.hintZoomedTouch" : "files.zoom.hintTouch")}
         </p>
         <div className="izoom__tools ac-acts" role="toolbar" aria-label={t("files.zoom.toolbar")}>
-          {hover && (
+          {tools}
+          {hover && !marking && (
             <Button
               size="sm"
               variant="ghost"

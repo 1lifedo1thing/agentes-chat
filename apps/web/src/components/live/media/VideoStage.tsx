@@ -4,9 +4,15 @@ import { useTranslation } from "react-i18next";
 import { useVideoLabels } from "@/components/artifacts/FileView";
 import { clockOf } from "../talk";
 import { DraftMark } from "./DraftMark";
-import { STAGE_PAD, type StageMarks } from "./ImageStage";
 import { MediaPins, PinFace, usePinAuthor } from "./MediaPins";
-import { type Mark, markOf } from "./marks";
+import { type Mark, markOf, type StageMarks } from "./marks";
+
+/** Room around the frame inside the stage (pixels). */
+export interface StagePad {
+  x: number;
+  top: number;
+  bottom: number;
+}
 
 /** A frame's pins show this long around their moment (seconds), as it plays or is paused near it. */
 const NEAR_S = 1.5;
@@ -19,21 +25,23 @@ export interface VideoHandle {
 }
 
 /**
- * A video on its page (ADR 0208): our player, the comments as marks over its timeline (the face and the moment; a
- * press goes there and opens the conversation at it), a frame's pins around their moment, and with Comment on a
- * click or a drag on the picture pauses it there and marks that moment with a point or an area (`onMark`, with the
- * video element to take its frame from).
+ * A video in the viewer with its comments (ADR 0208): our player, the comments as marks over its timeline (the face
+ * and the moment; a press goes there and opens the conversation at it), a frame's pins around their moment, and with
+ * the comments open a click or a drag on the picture pauses it there and marks that moment with a point or an area
+ * (`onMark`, with the video element to take its frame from).
  */
 export function VideoStage({
   src,
   name,
   marks,
+  pad,
   onMark,
   onHandle,
 }: {
   src: string;
   name: string;
   marks: StageMarks;
+  pad: StagePad;
   onMark: (mark: Mark | null, time: number, video: HTMLVideoElement) => void;
   onHandle?: (handle: VideoHandle | null) => void;
 }) {
@@ -92,8 +100,8 @@ export function VideoStage({
     if (marks.tool === "comment") video.current?.pause();
   }, [marks.tool]);
 
-  const roomW = Math.max(0, stage.w - STAGE_PAD.x * 2);
-  const roomH = Math.max(0, stage.h - STAGE_PAD.top - STAGE_PAD.bottom + 24);
+  const roomW = Math.max(0, stage.w - pad.x * 2);
+  const roomH = Math.max(0, stage.h - pad.top - pad.bottom);
   const boxW = Math.min(roomW, roomH * ratio);
   const boxH = boxW / ratio;
 
@@ -163,8 +171,8 @@ export function VideoStage({
       <div
         className="mf-box mf-box--video"
         style={{
-          left: STAGE_PAD.x + (roomW - boxW) / 2,
-          top: STAGE_PAD.top - 24 + (roomH - boxH) / 2,
+          left: pad.x + (roomW - boxW) / 2,
+          top: pad.top + (roomH - boxH) / 2,
           width: boxW || undefined,
           height: boxH || undefined,
           visibility: boxW ? "visible" : "hidden",

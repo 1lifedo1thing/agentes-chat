@@ -78,7 +78,10 @@ function markWhat(t: TFunction, selection: LiveSelection): string {
     : t(area ? "live.conversation.what.anArea" : "live.conversation.what.aPoint");
 }
 
-/** A part of a file a message's line named in another chat, kept until the file's page opens and shows it. */
+/**
+ * A part of a file a message's line named in another chat, kept until the file opens and shows it (a live file's
+ * page, the viewer's comments of a picture, a video or a PDF).
+ */
 const waiting = new Map<string, LiveSelection>();
 
 export const revealOnOpen = (fileId: string, selection: LiveSelection) => void waiting.set(fileId, selection);

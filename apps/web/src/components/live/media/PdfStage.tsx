@@ -3,9 +3,8 @@ import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist";
 import { type PointerEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DraftMark } from "./DraftMark";
-import type { StageMarks } from "./ImageStage";
 import { MediaPins } from "./MediaPins";
-import { type Mark, type MediaPin, markOf } from "./marks";
+import { type Mark, type MediaPin, markOf, type StageMarks } from "./marks";
 
 /*
  * A PDF on its page (ADR 0208): drawn by pdf.js, loaded only here (never in the app's first load), page under page.

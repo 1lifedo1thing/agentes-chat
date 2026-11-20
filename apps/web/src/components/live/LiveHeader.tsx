@@ -261,7 +261,7 @@ export function LiveHeader({
 }
 
 /** "Drive / #eng": the Drive, then the conversation the file lives in (the Drive's grouping), each a way back. */
-export function LiveCrumbs({ artifact }: { artifact: Artifact | null }) {
+function LiveCrumbs({ artifact }: { artifact: Artifact | null }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const dir = useDirectory(org.id);

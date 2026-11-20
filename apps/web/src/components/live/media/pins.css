@@ -64,6 +64,13 @@ html:not([data-pointer]) .mf-pin:focus-visible {
 .mf-pin--draft {
   pointer-events: none;
 }
+/* Near the right edge it turns inward: its tail on the spot from the other side, its face last. */
+.mf-pin[data-flip] {
+  flex-direction: row-reverse;
+  padding: 2px 2px 2px 6px;
+  border-radius: 14px 14px 3px 14px;
+  transform: translate(-100%, -100%);
+}
 
 /* An area: white with a dark edge, readable on any picture. */
 .mf-area {
@@ -95,6 +102,9 @@ html:not([data-pointer]) .mf-pin:focus-visible {
   font-size: 14px;
   line-height: 20px;
   pointer-events: none;
+}
+.mf-peek[data-flip] {
+  transform: translate(calc(-100% - 12px), calc(-100% - 6px));
 }
 .mf-peek__head {
   display: flex;

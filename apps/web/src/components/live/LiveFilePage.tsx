@@ -136,17 +136,19 @@ export function LiveFilePage({
   // The window's title in the desktop app (its Window menu, Mission Control) and the browser's tab: the file's name.
   useDocumentTitle(artifact?.title);
 
-  // Not a live file (an old link, a file that changed kind): the Drive's viewer shows it. A picture, a video or a PDF
-  // has a page of its own (`FilePage`, ADR 0208).
+  // Not a live file (an old link, a file that changed kind): the Drive's viewer shows it, a picture's, a video's or a
+  // PDF's comments open at the message named (ADR 0208).
+  const linkedMessage = search.m;
   useEffect(() => {
-    if (!artifact || isLiveFileKind(artifact.kind) || mediaKindOfArtifact(artifact)) return;
+    if (!artifact || isLiveFileKind(artifact.kind)) return;
+    const m = linkedMessage && mediaKindOfArtifact(artifact) ? linkedMessage : undefined;
     void navigate({
       to: "/org/$orgId/drive",
       params: { orgId: org.id },
-      search: { artifact: artifact.id },
+      search: { artifact: artifact.id, ...(m ? { m } : {}) },
       replace: true,
     });
-  }, [artifact, navigate, org.id]);
+  }, [artifact, navigate, org.id, linkedMessage]);
 
   // What the server refused while the person edits, said once each time.
   useEffect(() => {

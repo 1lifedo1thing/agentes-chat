@@ -20,6 +20,25 @@ export interface MediaPin {
   old: boolean;
 }
 
+/** With the comments open, a press on the file marks it; else it plays, zooms or scrolls as the viewer does. */
+export type MediaTool = "move" | "comment";
+
+/** What every stage shows over its picture: the comments, the one being written, and what the person does. */
+export interface StageMarks {
+  pins: readonly MediaPin[];
+  focusId: string | null;
+  showResolved: boolean;
+  /** The comment being written: its mark, the number it will have, and the person's own face. */
+  draft: { mark: Mark; n: number } | null;
+  /** A PDF's comment being written: the page it is on. */
+  draftPage?: number | undefined;
+  tool: MediaTool;
+  onOpenPin: (messageId: string) => void;
+}
+
+/** A pin this close to the picture's right edge turns inward, so the edge never cuts it. */
+export const pinFlips = (x: number) => x > 0.86;
+
 /** The conversation's comments with a pin on this file, numbered oldest first. */
 export function mediaPinsOf(messages: readonly Message[], artifactId: string, version: number): MediaPin[] {
   const out: MediaPin[] = [];

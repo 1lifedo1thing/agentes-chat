@@ -1,6 +1,6 @@
 import { PersonAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
-import { type Mark, pinAt } from "./marks";
+import { type Mark, pinAt, pinFlips } from "./marks";
 
 /**
  * The comment being written (ADR 0208): its area's dashed outline as it is dragged, then the pin it will have, with
@@ -24,7 +24,11 @@ export function DraftMark({ mark, n }: { mark: Mark; n?: number }) {
         />
       )}
       {n !== undefined && (
-        <span className="mf-pin mf-pin--on mf-pin--draft" style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}>
+        <span
+          className="mf-pin mf-pin--on mf-pin--draft"
+          data-flip={pinFlips(at.x) || undefined}
+          style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}
+        >
           <PersonAvatar id={me.user.id} name={me.user.name} size="xs" />
           <span className="mf-pin__n tabular">{n}</span>
         </span>
