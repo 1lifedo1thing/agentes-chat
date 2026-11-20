@@ -68,7 +68,7 @@ export function CodePanel({ session }: { session: CodeSession }) {
             className={cx("code-ptab", tab === x.id && "is-on")}
             onClick={() => setTab(x.id)}
           >
-            <Icon name={x.icon} size={15} />
+            <Icon name={x.icon} size={16} />
             <span>{x.label}</span>
             {x.extra && <span className="code-ptab__n tabular">{x.extra}</span>}
           </button>
@@ -120,7 +120,7 @@ function DiffPane({ session }: { session: CodeSession }) {
             <option value="base">{t("codeSessions.diff.base", { base: session.baseBranch ?? "main" })}</option>
             <option value="uncommitted">{t("codeSessions.diff.uncommitted")}</option>
           </select>
-          <Icon name="chevronDown" size={12} />
+          <Icon name="chevronDown" size={14} />
         </label>
         {diff.data && (
           <span className="code-fhead__n tabular">

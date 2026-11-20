@@ -48,9 +48,9 @@ export function CodeScreen({ agent }: { agent: Agent }) {
             aria-expanded={menu}
             onClick={() => setMenu((open) => !open)}
           >
-            <Icon name={phone ? "phone" : "computer"} size={15} />
+            <Icon name={phone ? "phone" : "computer"} size={16} />
             <span>{label}</span>
-            <Icon name="chevronDown" size={12} />
+            <Icon name="chevronDown" size={14} />
           </button>
           {menu && (
             <div className="ac-menu code-devmenu" role="menu">

@@ -4587,6 +4587,26 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
     databases: databases.client,
     dashboards: dashboards.client,
     live: live.client,
+    // Code sessions (ADR 0208): none in these tests.
+    code: {
+      list: async () => [],
+      start: async () => ({ agents: [] }),
+      create: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      get: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      rename: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      retry: async () => {
+        throw new Error("code sessions aren't faked");
+      },
+      close: async () => {},
+      diff: async () => ({ scope: "base" as const, base: { branch: null, sha: null }, files: [], added: 0, removed: 0, truncated: false }),
+      git: async () => ({ uncommitted: 0, ahead: 0, upstream: false, pr: null, next: null }),
+    },
     browser: browser.client,
     desktop: browser.desktop,
     // "Trabalhando agora" and the task manager only for a test that gives the task manager (`state.taskManager`).

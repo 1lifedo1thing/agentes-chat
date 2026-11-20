@@ -402,6 +402,7 @@ export type OpenTarget =
   | { to: "/org/$orgId/dm/person/$userId"; params: { userId: string }; search?: { m: string } }
   | { to: "/org/$orgId/issues/$number"; params: { number: string }; search?: { m: string } }
   | { to: "/org/$orgId/drive/$fileId"; params: { fileId: string }; search?: { m: string } }
+  | { to: "/org/$orgId/code/$sessionId"; params: { sessionId: string } }
   | { to: "/org/$orgId/approvals"; search?: { open: string } }
   | { to: "/org/$orgId/proposals" }
   | { to: "/org/$orgId/routines"; search?: { open: string } }

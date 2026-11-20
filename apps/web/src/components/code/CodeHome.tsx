@@ -141,10 +141,10 @@ export function CodeHome() {
                     </option>
                   ))}
                 </select>
-                <Icon name="chevronDown" size={12} />
+                <Icon name="chevronDown" size={14} />
               </label>
               <label className="code-pick">
-                <Icon name="repo" size={15} />
+                <Icon name="repo" size={16} />
                 {picked && !picked.any ? (
                   <select value={repo} onChange={(e) => setRepo(e.target.value)} aria-label={t("codeSessions.home.repo")}>
                     {picked.repos.map((r) => (
@@ -169,7 +169,7 @@ export function CodeHome() {
                     ))}
                   </datalist>
                 )}
-                {picked && !picked.any && <Icon name="chevronDown" size={12} />}
+                {picked && !picked.any && <Icon name="chevronDown" size={14} />}
               </label>
               <span className="code-start__hint">{t("codeSessions.home.hint")}</span>
               <Button type="submit" size="sm" variant="primary" disabled={!ready} loading={create.isPending}>

@@ -17,7 +17,7 @@ const t = i18n.t;
 type Ev = Parameters<typeof applyChannelEvent>[1];
 const base = { channelId: "c1", threadId: "m1", runId: "r1", agentId: "ada" };
 const step = (toolUseId: string, tool: string, cli: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
-  ({ type: "agent.step", ...base, tool, toolUseId, cli, ...extra }) as Ev;
+  ({ type: "agent.step", ...base, tool, toolUseId, cli, ...extra }) as unknown as Ev;
 /** The run's live row after these events. */
 const live = (events: Ev[]) =>
   events.reduce(applyChannelEvent, applyChannelEvent(emptyStreams, { type: "agent.thinking", ...base } as Ev)).runs.r1;

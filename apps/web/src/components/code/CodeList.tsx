@@ -28,20 +28,20 @@ export function SessionState({ session }: { session: CodeSession }) {
   if (work === "working" || work === "preparing")
     return (
       <span className="code-st code-st--work">
-        <Icon name="spinner" size={13} className="code-spin" />
+        <Icon name="spinner" size={14} className="code-spin" />
         <span>{t(work === "working" ? "codeSessions.state.working" : "codeSessions.state.preparing")}</span>
       </span>
     );
   if (work === "failed")
     return (
       <span className="code-st code-st--fail">
-        <Icon name="alert" size={13} />
+        <Icon name="alert" size={14} />
         <span>{t("codeSessions.state.failed")}</span>
       </span>
     );
   return (
     <span className="code-st code-st--ok">
-      <Icon name="check" size={13} />
+      <Icon name="check" size={14} />
       <span>{session.pr ? t("codeSessions.state.pr", { number: session.pr.number }) : t("codeSessions.state.idle")}</span>
     </span>
   );

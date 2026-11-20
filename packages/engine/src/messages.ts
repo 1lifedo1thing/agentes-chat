@@ -925,7 +925,7 @@ export async function insertMessageWithRuns(
         -- line too ("feito", "pago"), never the router's to drop. Naming a person or quoting another agent goes to
         -- the router.
         -- A code session's conversation (ADR 0208) is the same with the session's agent, once its worktree is ready
-        -- (`codeAgentSql`); before that what names nobody waits for it (`prepareCodeSession` hands it over).
+        -- (codeAgentSql); before that what names nobody waits for it (prepareCodeSession hands it over).
         select t.agent_id from (select coalesce(${taskAgentSql(sql`${input.channelId}::uuid`)},
           ${codeAgentSql(sql`${input.channelId}::uuid`)}) as agent_id) t
         where ${startRuns}::boolean and not exists (select 1 from mentioned)
