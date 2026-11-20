@@ -812,8 +812,8 @@ test.skipIf(!posix)("a plan turn's approvals are refused on the computer, never 
   expect(answerOf(read.events)).toBe("decision: accept");
   expect(asked).toEqual([]);
   expect(told.map((a) => a.refused)).toEqual([
-    { code: "plan_turn", message: PLAN_MESSAGE },
-    { code: "plan_turn", message: PLAN_MESSAGE },
+    { code: "policy", message: PLAN_MESSAGE },
+    { code: "policy", message: PLAN_MESSAGE },
   ]);
 });
 

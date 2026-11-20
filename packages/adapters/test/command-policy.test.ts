@@ -705,7 +705,7 @@ describe("what the computer decides by itself (`localVerdict`)", () => {
     expect(verdict("git status")).toEqual({ behavior: "allow" });
     expect(verdict("git status", "plan")).toEqual({ behavior: "allow" });
     expect(verdict("curl -sI https://example.com")).toEqual({ behavior: "allow" });
-    const planned = { behavior: "deny" as const, message: PLAN_MESSAGE, code: "plan_turn" };
+    const planned = { behavior: "deny" as const, message: PLAN_MESSAGE, code: "policy" };
     expect(verdict("curl -sI https://example.com", "plan")).toEqual(planned);
     expect(verdict("npm install", "plan")).toEqual(planned);
     expect(localVerdict("Edit", { file_path: "a.ts" }, scope, "plan")).toEqual(planned);

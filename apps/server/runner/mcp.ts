@@ -15,6 +15,7 @@ import {
   localVerdict,
   MISSION_DENY_RULES,
   maskKeyShapes,
+  outboundCallProblem,
   PUSH_ASK_RULES,
   SECRET_BASH_DENY_RULES,
   SECRET_READ_DENY_RULES,
@@ -1053,7 +1054,9 @@ export function reportRefusal(
   asked: { tool_name: string; input: Record<string, unknown> } & Record<string, unknown>,
   refused: { code: string; message: string },
 ) {
-  const input = redactDeep(asked.input, maskKeyShapes) as Record<string, unknown>;
+  const masked = redactDeep(asked.input, maskKeyShapes) as Record<string, unknown>;
+  // A key the policy still finds after masking (percent-encoded, a private key): the call goes without its input.
+  const input = outboundCallProblem(asked.tool_name, masked)?.code === "outbound.credential" ? {} : masked;
   void call(PERMISSION_TOOL, { ...asked, input, refused: { code: refused.code, message: refused.message } }).catch(
     () => undefined,
   );

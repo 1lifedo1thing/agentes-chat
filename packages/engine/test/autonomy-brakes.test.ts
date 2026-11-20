@@ -480,19 +480,19 @@ describe("costly work an agent starts on its own, set to ask first, needs a go (
         input: {
           tool_name: "Bash",
           input: { command: "gh pr create --fill" },
-          refused: { code: "plan_turn", message },
+          refused: { code: "policy", message },
         },
       },
     );
     if (out.type !== "result") throw new Error(`expected a result, got ${out.type}`);
-    const answer = { behavior: "deny", message, code: "plan_turn", refusal: "policy" };
+    const answer = { behavior: "deny", message, code: "policy", refusal: "policy" };
     expect(JSON.parse(out.output.content)).toEqual(answer);
     expect(await signalsOf("proposal")).toHaveLength(0);
     const steps = await f.db.select().from(schema.agentRunSteps).where(eq(schema.agentRunSteps.runId, run.id));
     const result = steps.find((s) => s.kind === "tool_result");
     expect(steps.find((s) => s.kind === "tool_call")?.data).toMatchObject({
       name: PERMISSION_TOOL,
-      input: { refused: { code: "plan_turn" } },
+      input: { refused: { code: "policy" } },
     });
     expect(JSON.parse(String((result?.data as { content?: unknown })?.content))).toEqual(answer);
   });

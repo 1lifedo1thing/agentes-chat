@@ -1288,7 +1288,7 @@ describe("missions (ADR 0029)", () => {
 
     test("a command the computer refused by itself is answered with that refusal: no card, nobody asked", async () => {
       const { view, main, prompt } = await working();
-      const refused = { code: "plan_turn", message: "This turn may only read." };
+      const refused = { code: "policy", message: "This turn may only read." };
       expect(
         await prompt(main.taskId, { tool_name: "Bash", input: { command: "swift build -c release" }, refused }),
       ).toEqual({ behavior: "deny", ...refused, refusal: "policy" });

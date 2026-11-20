@@ -1975,7 +1975,7 @@ export function outboundCallProblem(
  * and secrets are refused (`how`: what the refusal says to do to ask a
  * person), plain reads allowed; in a `plan` turn everything else is refused
  * too. A refusal's `code` uses the server's prompt codes (`never`, `secret`,
- * `outbound.*`), plus `plan_turn`. Null: the server decides (`permission_prompt`: a mission's card, or
+ * `outbound.*`), and `policy` for a plan turn's. Null: the server decides (`permission_prompt`: a mission's card, or
  * code's rules for a run). The runner's prompt tool for Claude Code and its
  * answers to Codex's command approvals both start here; pushes come next
  * there (`approvalNeeded`).
@@ -1993,7 +1993,7 @@ export function localVerdict(
   if (outbound) return { behavior: "deny", message: outbound.message, code: outbound.code };
   if (secretRead(toolName, input, scope)) return { behavior: "deny", message: SECRET_MESSAGE, code: "secret" };
   if (scope && readOnlyCall(toolName, input, scope, profile)) return { behavior: "allow" };
-  if (profile === "plan") return { behavior: "deny", message: PLAN_MESSAGE, code: "plan_turn" };
+  if (profile === "plan") return { behavior: "deny", message: PLAN_MESSAGE, code: "policy" };
   return null;
 }
 
