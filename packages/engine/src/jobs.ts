@@ -282,6 +282,7 @@ export function messageRouter(deps: JobDeps): RouterDeps | null {
                   kind: "router",
                   provider: "typesafe",
                   model: u.model,
+                  requestedModel: "route",
                   inputTokens: u.inputTokens,
                   outputTokens: u.outputTokens,
                   costNanoUsd: u.costNanoUsd,
