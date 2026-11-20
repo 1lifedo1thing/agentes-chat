@@ -349,12 +349,13 @@ fn relaunch(app: &AppHandle) {
     #[cfg(target_os = "macos")]
     if let Some(bundle) = std::env::current_exe().ok().as_deref().and_then(bundle_of) {
         use std::os::unix::process::CommandExt;
+        let reopened = std::env::var_os(REOPENED_VAR).is_some();
         let spawned = Command::new("/bin/sh")
             .arg("-c")
             .arg(RELAUNCH_SCRIPT)
             .arg(bundle)
             .arg(std::process::id().to_string())
-            .args(std::env::args().skip(1))
+            .args(relaunch_args(std::env::args(), reopened))
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -385,6 +386,17 @@ fn bundle_of(exe: &Path) -> Option<std::path::PathBuf> {
     let named = |p: &Path, name: &str| p.file_name().is_some_and(|n| n == name);
     (named(macos, "MacOS") && named(contents, "Contents") && bundle.extension().is_some_and(|e| e == "app"))
         .then(|| bundle.to_path_buf())
+}
+
+/// The arguments the reopened app gets: its own (the program left out), `REOPENED_ARG` only for a person's Reopen.
+/// `open` hands the new app no environment of ours, so on macOS a Reopen is said with an argument.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn relaunch_args(args: impl Iterator<Item = String>, reopened: bool) -> Vec<String> {
+    let mut kept: Vec<String> = args.skip(1).filter(|a| a != REOPENED_ARG).collect();
+    if reopened {
+        kept.push(REOPENED_ARG.into());
+    }
+    kept
 }
 
 #[tauri::command]
@@ -580,6 +592,8 @@ async fn update_install(app: AppHandle) -> Result<bool, String> {
 /// Set by a person's Reopen: the reopened app keeps the arguments it started with, `AUTOSTART_ARG` too, and opens its
 /// windows all the same.
 const REOPENED_VAR: &str = "AGENTES_DESKTOP_REOPENED";
+/// The same, as the argument macOS's relaunch passes (`relaunch_args`): `open` doesn't carry the variable.
+const REOPENED_ARG: &str = "--reopened";
 
 /// A person's Reopen: the runners and the server here finish their work first, as when quitting; then the app opens
 /// again, its windows shown.
@@ -641,7 +655,7 @@ pub fn run() {
     // Before any thread starts: WebKitGTK reads how to draw once.
     graphics::choose();
     // Taken once: a later reopen for an update keeps a start at login in the background.
-    let reopened = std::env::var_os(REOPENED_VAR).is_some();
+    let reopened = std::env::var_os(REOPENED_VAR).is_some() || std::env::args().any(|a| a == REOPENED_ARG);
     std::env::remove_var(REOPENED_VAR);
     let builder = tauri::Builder::default()
         // First: a second launch brings the running app's window back; one carrying a link (Windows,
