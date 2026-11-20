@@ -891,6 +891,10 @@ export async function resolveBrain(
           .limit(1)
           .then(([last]) => Boolean(last && last.key !== options.promptKey))
       : false;
+  // A code session's conversation works in the session's worktree (ADR 0208); any other chat turn starts in the
+  // agent's folder.
+  const codeCwd =
+    !mission?.session && machineId ? await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null) : null;
   const session: BrainSession | undefined =
     mission?.session ??
     (machineId
@@ -907,11 +911,8 @@ export async function resolveBrain(
             options.now ?? new Date(),
           )),
           machineId,
-          // A code session's conversation works in the session's worktree (ADR 0208); any other chat turn starts in
-          // the agent's folder.
-          ...(await codeSessionCwd(deps.db, run.channelId, agent.id)
-            .catch(() => null)
-            .then((cwd) => (cwd ? { cwd, codeSession: true } : { cwd: "" }))),
+          cwd: codeCwd ?? "",
+          ...(codeCwd ? { codeSession: true } : {}),
         }
       : undefined);
   return {
