@@ -128,7 +128,8 @@ else of the checkout's `.claude/`, so its settings (hooks, allow rules, env) sta
 Claude Code the runner knows takes the plugin (2.1.63 or newer, `REPO_PLUGIN_MIN_CLAUDE`).
 
 Files and pictures stay in the session's panel: `upload_file` and `export_file` aren't given to a computer brain in
-a session (`CODE_SESSION_HIDDEN_TOOLS`), and its brief says not to paste screenshots.
+a session (`CODE_SESSION_HIDDEN_TOOLS`), a screenshot taken with `share` isn't shown there (`shareSavedFile`), and
+its brief says not to paste screenshots.
 
 ### 7. The brain's own tool calls, one line each
 
