@@ -334,11 +334,57 @@ fn leave(app: AppHandle, again: bool) {
     std::thread::spawn(move || {
         stop_children(&app);
         if again {
-            app.restart();
+            relaunch(&app);
         } else {
             app.exit(0);
         }
     });
+}
+
+/// Opens the app anew. On macOS, Tauri's `restart` runs `open -n` while this instance still lives, so the new one
+/// gets a Dock icon of its own beside the one kept in the Dock, and the single-instance check may hand it back to
+/// the one quitting. Here a detached shell waits for this process to end, then opens the bundle without `-n`:
+/// LaunchServices starts it in the icon already there. Not in a bundle (a dev build): Tauri's own restart.
+fn relaunch(app: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    if let Some(bundle) = std::env::current_exe().ok().as_deref().and_then(bundle_of) {
+        use std::os::unix::process::CommandExt;
+        let spawned = Command::new("/bin/sh")
+            .arg("-c")
+            .arg(RELAUNCH_SCRIPT)
+            .arg(bundle)
+            .arg(std::process::id().to_string())
+            .args(std::env::args().skip(1))
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .process_group(0)
+            .spawn();
+        if spawned.is_ok() {
+            app.exit(0);
+            return;
+        }
+    }
+    app.restart();
+}
+
+/// `$0` the bundle, `$1` the pid to wait for (at most 30 s), the rest the app's arguments.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+const RELAUNCH_SCRIPT: &str = concat!(
+    r#"pid=$1; shift; i=0; "#,
+    r#"while kill -0 "$pid" 2>/dev/null && [ $i -lt 300 ]; do sleep 0.1; i=$((i+1)); done; "#,
+    r#"exec /usr/bin/open "$0" --args "$@""#,
+);
+
+/// The `.app` a binary at `…/X.app/Contents/MacOS/x` belongs to.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
+fn bundle_of(exe: &Path) -> Option<std::path::PathBuf> {
+    let macos = exe.parent()?;
+    let contents = macos.parent()?;
+    let bundle = contents.parent()?;
+    let named = |p: &Path, name: &str| p.file_name().is_some_and(|n| n == name);
+    (named(macos, "MacOS") && named(contents, "Contents") && bundle.extension().is_some_and(|e| e == "app"))
+        .then(|| bundle.to_path_buf())
 }
 
 #[tauri::command]
