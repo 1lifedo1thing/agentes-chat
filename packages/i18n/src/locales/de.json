@@ -3223,16 +3223,17 @@
       "title_one": "{{count}} Anfrage von {{name}} wartet auf dich",
       "title_other": "{{count}} Anfragen von {{name}} warten auf dich",
       "line": "Wartet seit {{since}}.",
-      "action": "Ansehen und freigeben",
-      "hide": "Ausblenden"
+      "action": "Ansehen und freigeben"
     },
     "budget": {
       "title": "Budget von {{name}}: {{from}} → {{to}}",
+      "item": "Budget: {{from}} → {{to}}",
       "line_one": "{{count}}-mal am Monatslimit gestoppt.",
       "line_other": "{{count}}-mal am Monatslimit gestoppt."
     },
     "channel": {
       "title": "{{name}} in #{{channel}} aufnehmen",
+      "item": "In #{{channel}} aufnehmen",
       "line": "{{name}} ist in keinem Kanal, darum hat die ganze Woche niemand damit gesprochen."
     },
     "unanswered": {
@@ -3245,6 +3246,7 @@
     },
     "routine": {
       "title": "Routine von {{name}} jeden Tag um {{time}}",
+      "item": "Routine jeden Tag um {{time}}",
       "line_one": "Du hast das diese Woche {{count}}-mal gefragt: „{{text}}“",
       "line_other": "Du hast das diese Woche an {{count}} Tagen gefragt: „{{text}}“",
       "action": "Routine erstellen",
@@ -3254,6 +3256,11 @@
       "title": "{{name}} hat gelernt: {{what}}",
       "line": "{{uses}}× genutzt. Zum Skill machen?",
       "action": "Zum Skill machen",
+      "uses": "{{uses}}× genutzt",
+      "group_one": "{{name}} hat eine Arbeitsweise gelernt",
+      "group_other": "{{name}} hat {{count}} Arbeitsweisen gelernt",
+      "applyAll_one": "Zum Skill machen",
+      "applyAll_other": "Zu {{count}} Skills machen",
       "done": "Bestätigt"
     },
     "stalled": {
@@ -3289,11 +3296,13 @@
     },
     "retire": {
       "title": "{{name}} archivieren",
+      "item": "Archivieren",
       "line": "Seit 4 Wochen keine Arbeit, keine Routine und keine offene Aufgabe.",
       "action": "Archivieren"
     },
     "model": {
       "title": "{{name}} kann {{to}} nutzen.",
+      "item": "Kann {{to}} nutzen",
       "line": "Nutzt heute {{from}}."
     },
     "skip": "Verwerfen",

@@ -3092,15 +3092,16 @@
     "approvals": {
       "title_other": "{{name}} 的 {{count}} 个请求在等你",
       "line": "从 {{since}} 起在等。",
-      "action": "查看并批准",
-      "hide": "收起"
+      "action": "查看并批准"
     },
     "budget": {
       "title": "{{name}} 的预算：{{from}} → {{to}}",
+      "item": "预算：{{from}} → {{to}}",
       "line_other": "本月 {{count}} 次停在上限。"
     },
     "channel": {
       "title": "把 {{name}} 加入 #{{channel}}",
+      "item": "加入 #{{channel}}",
       "line": "{{name}} 不在任何频道里，所以这一周没人和它说话。"
     },
     "unanswered": {
@@ -3112,6 +3113,7 @@
     },
     "routine": {
       "title": "{{name}} 的例行任务：每天 {{time}}",
+      "item": "例行任务：每天 {{time}}",
       "line_other": "本周你有 {{count}} 天都这样要求过：“{{text}}”",
       "action": "创建例行任务",
       "done": "例行任务已创建"
@@ -3120,6 +3122,9 @@
       "title": "{{name}} 学会了：{{what}}",
       "line": "已使用 {{uses}} 次。要做成技能吗？",
       "action": "做成技能",
+      "uses": "已使用 {{uses}} 次",
+      "group_other": "{{name}} 学会了 {{count}} 种工作方法",
+      "applyAll_other": "做成 {{count}} 个技能",
       "done": "已确认"
     },
     "stalled": {
@@ -3151,11 +3156,13 @@
     },
     "retire": {
       "title": "归档 {{name}}",
+      "item": "归档",
       "line": "4 周没有工作，没有例行任务，也没有未完成的任务。",
       "action": "归档"
     },
     "model": {
       "title": "{{name}} 可以使用 {{to}}。",
+      "item": "可以使用 {{to}}",
       "line": "目前使用 {{from}}。"
     },
     "skip": "忽略",

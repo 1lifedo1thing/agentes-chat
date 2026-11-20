@@ -3353,17 +3353,18 @@
       "title_many": "{{count}} richieste di {{name}} ti aspettano",
       "title_other": "{{count}} richieste di {{name}} ti aspettano",
       "line": "In attesa da {{since}}.",
-      "action": "Vedi e approva",
-      "hide": "Nascondi"
+      "action": "Vedi e approva"
     },
     "budget": {
       "title": "Budget di {{name}}: {{from}} → {{to}}",
+      "item": "Budget: {{from}} → {{to}}",
       "line_one": "Si è fermato {{count}} volta al limite del mese.",
       "line_many": "Si è fermato {{count}} volte al limite del mese.",
       "line_other": "Si è fermato {{count}} volte al limite del mese."
     },
     "channel": {
       "title": "Mettere {{name}} in #{{channel}}",
+      "item": "Mettere in #{{channel}}",
       "line": "{{name}} non è in nessun canale, quindi nessuno ci ha parlato per tutta la settimana."
     },
     "unanswered": {
@@ -3377,6 +3378,7 @@
     },
     "routine": {
       "title": "Routine di {{name}} ogni giorno alle {{time}}",
+      "item": "Routine ogni giorno alle {{time}}",
       "line_one": "L’hai chiesto {{count}} volta questa settimana: “{{text}}”",
       "line_many": "L’hai chiesto in {{count}} giorni questa settimana: “{{text}}”",
       "line_other": "L’hai chiesto in {{count}} giorni questa settimana: “{{text}}”",
@@ -3387,6 +3389,13 @@
       "title": "{{name}} ha imparato: {{what}}",
       "line": "Usato {{uses}}×. Farne una skill?",
       "action": "Fanne una skill",
+      "uses": "Usato {{uses}}×",
+      "group_one": "{{name}} ha imparato un modo di lavorare",
+      "group_many": "{{name}} ha imparato {{count}} modi di lavorare",
+      "group_other": "{{name}} ha imparato {{count}} modi di lavorare",
+      "applyAll_one": "Fanne una skill",
+      "applyAll_many": "Fanne {{count}} skill",
+      "applyAll_other": "Fanne {{count}} skill",
       "done": "Confermato"
     },
     "stalled": {
@@ -3426,11 +3435,13 @@
     },
     "retire": {
       "title": "Archiviare {{name}}",
+      "item": "Archivia",
       "line": "Nessun lavoro da 4 settimane, nessuna routine e nessuna attività aperta.",
       "action": "Archivia"
     },
     "model": {
       "title": "{{name}} può usare {{to}}.",
+      "item": "Può usare {{to}}",
       "line": "Oggi usa {{from}}."
     },
     "skip": "Ignora",

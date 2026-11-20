@@ -3487,11 +3487,11 @@
       "title_many": "{{count}} próśb od {{name}} czeka na ciebie",
       "title_other": "{{count}} próśb od {{name}} czeka na ciebie",
       "line": "Czeka od {{since}}.",
-      "action": "Zobacz i zatwierdź",
-      "hide": "Ukryj"
+      "action": "Zobacz i zatwierdź"
     },
     "budget": {
       "title": "Budżet {{name}}: {{from}} → {{to}}",
+      "item": "Budżet: {{from}} → {{to}}",
       "line_one": "Zatrzymał się na limicie miesiąca {{count}} raz.",
       "line_few": "Zatrzymał się na limicie miesiąca {{count}} razy.",
       "line_many": "Zatrzymał się na limicie miesiąca {{count}} razy.",
@@ -3499,6 +3499,7 @@
     },
     "channel": {
       "title": "Dodaj {{name}} do #{{channel}}",
+      "item": "Dodaj do #{{channel}}",
       "line": "{{name}} nie jest w żadnym kanale, więc przez cały tydzień nikt się do niego nie odezwał."
     },
     "unanswered": {
@@ -3513,6 +3514,7 @@
     },
     "routine": {
       "title": "Rutyna {{name}} codziennie o {{time}}",
+      "item": "Rutyna codziennie o {{time}}",
       "line_one": "Prosiłeś o to {{count}} raz w tym tygodniu: „{{text}}”",
       "line_few": "Prosiłeś o to w {{count}} dni w tym tygodniu: „{{text}}”",
       "line_many": "Prosiłeś o to w {{count}} dni w tym tygodniu: „{{text}}”",
@@ -3524,6 +3526,15 @@
       "title": "{{name}} nauczył się: {{what}}",
       "line": "Użyte {{uses}}×. Zrobić z tego umiejętność?",
       "action": "Zrób umiejętność",
+      "uses": "Użyte {{uses}}×",
+      "group_one": "{{name}}: nowy sposób pracy",
+      "group_few": "{{name}}: {{count}} nowe sposoby pracy",
+      "group_many": "{{name}}: {{count}} nowych sposobów pracy",
+      "group_other": "{{name}}: {{count}} nowych sposobów pracy",
+      "applyAll_one": "Zrób umiejętność",
+      "applyAll_few": "Zrób {{count}} umiejętności",
+      "applyAll_many": "Zrób {{count}} umiejętności",
+      "applyAll_other": "Zrób {{count}} umiejętności",
       "done": "Potwierdzono"
     },
     "stalled": {
@@ -3567,11 +3578,13 @@
     },
     "retire": {
       "title": "Zarchiwizuj {{name}}",
+      "item": "Archiwizuj",
       "line": "Od 4 tygodni bez pracy, bez rutyny i bez otwartego zadania.",
       "action": "Archiwizuj"
     },
     "model": {
       "title": "{{name}} może używać {{to}}.",
+      "item": "Może używać {{to}}",
       "line": "Dziś używa {{from}}."
     },
     "skip": "Odrzuć",

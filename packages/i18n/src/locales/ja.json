@@ -3093,15 +3093,16 @@
     "approvals": {
       "title_other": "{{name}} の依頼 {{count}} 件があなたを待っています",
       "line": "{{since}} から待っています。",
-      "action": "確認して承認",
-      "hide": "閉じる"
+      "action": "確認して承認"
     },
     "budget": {
       "title": "{{name}} の予算: {{from}} → {{to}}",
+      "item": "予算: {{from}} → {{to}}",
       "line_other": "今月の上限で {{count}} 回止まりました。"
     },
     "channel": {
       "title": "{{name}} を #{{channel}} に追加",
+      "item": "#{{channel}} に追加",
       "line": "{{name}} はどのチャンネルにも入っていないため、今週は誰も話しかけませんでした。"
     },
     "unanswered": {
@@ -3113,6 +3114,7 @@
     },
     "routine": {
       "title": "{{name}} のルーティン: 毎日 {{time}}",
+      "item": "ルーティン: 毎日 {{time}}",
       "line_other": "今週 {{count}} 日、これを頼みました: 「{{text}}」",
       "action": "ルーティンを作成",
       "done": "ルーティンを作成しました"
@@ -3121,6 +3123,9 @@
       "title": "{{name}}が覚えたこと: {{what}}",
       "line": "{{uses}}回使用。スキルにしますか?",
       "action": "スキルにする",
+      "uses": "{{uses}}回使用",
+      "group_other": "{{name}}が覚えた仕事のやり方: {{count}}件",
+      "applyAll_other": "{{count}}件をスキルにする",
       "done": "確認しました"
     },
     "stalled": {
@@ -3152,11 +3157,13 @@
     },
     "retire": {
       "title": "{{name}} をアーカイブ",
+      "item": "アーカイブ",
       "line": "4 週間仕事がなく、ルーティンも未完了のタスクもありません。",
       "action": "アーカイブ"
     },
     "model": {
       "title": "{{name}} は {{to}} を使えます。",
+      "item": "{{to}} を使えます",
       "line": "現在は {{from}} を使っています。"
     },
     "skip": "却下",

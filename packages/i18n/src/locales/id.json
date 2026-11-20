@@ -3093,15 +3093,16 @@
     "approvals": {
       "title_other": "{{count}} permintaan dari {{name}} menunggumu",
       "line": "Menunggu sejak {{since}}.",
-      "action": "Lihat dan setujui",
-      "hide": "Tutup"
+      "action": "Lihat dan setujui"
     },
     "budget": {
       "title": "Anggaran {{name}}: {{from}} → {{to}}",
+      "item": "Anggaran: {{from}} → {{to}}",
       "line_other": "Berhenti {{count}} kali di batas bulanan."
     },
     "channel": {
       "title": "Masukkan {{name}} ke #{{channel}}",
+      "item": "Masukkan ke #{{channel}}",
       "line": "{{name}} tidak ada di kanal mana pun, jadi tidak ada yang mengajaknya bicara sepanjang minggu."
     },
     "unanswered": {
@@ -3113,6 +3114,7 @@
     },
     "routine": {
       "title": "Rutinitas {{name}} setiap hari pukul {{time}}",
+      "item": "Rutinitas setiap hari pukul {{time}}",
       "line_other": "Kamu meminta ini pada {{count}} hari minggu ini: “{{text}}”",
       "action": "Buat rutinitas",
       "done": "Rutinitas dibuat"
@@ -3121,6 +3123,9 @@
       "title": "{{name}} belajar: {{what}}",
       "line": "Dipakai {{uses}}×. Jadikan skill?",
       "action": "Jadikan skill",
+      "uses": "Dipakai {{uses}}×",
+      "group_other": "{{name}} belajar {{count}} cara kerja",
+      "applyAll_other": "Jadikan {{count}} skill",
       "done": "Dikonfirmasi"
     },
     "stalled": {
@@ -3152,11 +3157,13 @@
     },
     "retire": {
       "title": "Arsipkan {{name}}",
+      "item": "Arsipkan",
       "line": "Tidak ada pekerjaan selama 4 minggu, tanpa rutinitas dan tanpa tugas terbuka.",
       "action": "Arsipkan"
     },
     "model": {
       "title": "{{name}} bisa memakai {{to}}.",
+      "item": "Bisa memakai {{to}}",
       "line": "Sekarang memakai {{from}}."
     },
     "skip": "Abaikan",

@@ -3482,15 +3482,17 @@ export const en = {
       title_other: "{{count}} requests from {{name}} wait for you",
       line: "Waiting since {{since}}.",
       action: "Review and approve",
-      hide: "Hide",
     },
     budget: {
       title: "{{name}}'s budget: {{from}} → {{to}}",
+      /** The same under the agent's face, where its name is already above. */
+      item: "Budget: {{from}} → {{to}}",
       line_one: "It stopped at the monthly limit {{count}} time.",
       line_other: "It stopped at the monthly limit {{count}} times.",
     },
     channel: {
       title: "Put {{name}} in #{{channel}}",
+      item: "Add to #{{channel}}",
       line: "{{name}} is in no channel, so nobody talked to it all week.",
     },
     unanswered: {
@@ -3504,6 +3506,7 @@ export const en = {
     },
     routine: {
       title: "{{name}}'s routine every day at {{time}}",
+      item: "A routine every day at {{time}}",
       line_one: "You asked for this {{count}} time this week: “{{text}}”",
       line_other: "You asked for this on {{count}} days this week: “{{text}}”",
       action: "Create routine",
@@ -3514,6 +3517,13 @@ export const en = {
       title: "{{name}} learned: {{what}}",
       line: "Used {{uses}}×. Make it a skill?",
       action: "Make it a skill",
+      /** Under the agent's face, each how-to's line, and the line by the face over them. */
+      uses: "Used {{uses}}×",
+      group_one: "{{name}} learned a way of working",
+      group_other: "{{name}} learned {{count}} ways of working",
+      /** The card's one button when every marked suggestion is a how-to. */
+      applyAll_one: "Make it a skill",
+      applyAll_other: "Make {{count}} skills",
       done: "Confirmed",
     },
     stalled: {
@@ -3555,12 +3565,14 @@ export const en = {
     /** An agent with no work in four weeks, offered for archiving. `{{name}}` is the agent. */
     retire: {
       title: "Archive {{name}}",
+      item: "Archive",
       line: "No work in 4 weeks, no routine and no open task.",
       action: "Archive",
     },
     /** An agent on a large model whose work is light. `{{from}}` and `{{to}}` are model names. */
     model: {
       title: "{{name}} can use {{to}}.",
+      item: "Can use {{to}}",
       line: "It uses {{from}} today.",
     },
     /** Puts one suggestion away for good, and what its row says once it was. */

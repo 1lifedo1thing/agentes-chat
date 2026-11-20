@@ -3219,16 +3219,17 @@
       "title_one": "{{name}} için {{count}} istek seni bekliyor",
       "title_other": "{{name}} için {{count}} istek seni bekliyor",
       "line": "{{since}} tarihinden beri bekliyor.",
-      "action": "Gör ve onayla",
-      "hide": "Gizle"
+      "action": "Gör ve onayla"
     },
     "budget": {
       "title": "{{name}} bütçesi: {{from}} → {{to}}",
+      "item": "Bütçe: {{from}} → {{to}}",
       "line_one": "Aylık sınırda {{count}} kez durdu.",
       "line_other": "Aylık sınırda {{count}} kez durdu."
     },
     "channel": {
       "title": "{{name}} ajanını #{{channel}} kanalına ekle",
+      "item": "#{{channel}} kanalına ekle",
       "line": "{{name}} hiçbir kanalda değil, bu yüzden bütün hafta kimse onunla konuşmadı."
     },
     "unanswered": {
@@ -3241,6 +3242,7 @@
     },
     "routine": {
       "title": "{{name}} rutini her gün {{time}}",
+      "item": "Her gün {{time}} rutini",
       "line_one": "Bunu bu hafta {{count}} kez istedin: “{{text}}”",
       "line_other": "Bunu bu hafta {{count}} gün istedin: “{{text}}”",
       "action": "Rutin oluştur",
@@ -3250,6 +3252,11 @@
       "title": "{{name}} öğrendi: {{what}}",
       "line": "{{uses}}× kullanıldı. Beceri yapılsın mı?",
       "action": "Beceri yap",
+      "uses": "{{uses}}× kullanıldı",
+      "group_one": "{{name}} bir çalışma yolu öğrendi",
+      "group_other": "{{name}} {{count}} çalışma yolu öğrendi",
+      "applyAll_one": "Beceri yap",
+      "applyAll_other": "{{count}} beceri yap",
       "done": "Onaylandı"
     },
     "stalled": {
@@ -3285,11 +3292,13 @@
     },
     "retire": {
       "title": "{{name}} ajanını arşivle",
+      "item": "Arşivle",
       "line": "4 haftadır iş yok, rutin yok, açık görev yok.",
       "action": "Arşivle"
     },
     "model": {
       "title": "{{name}}, {{to}} kullanabilir.",
+      "item": "{{to}} kullanabilir",
       "line": "Bugün {{from}} kullanıyor."
     },
     "skip": "Yok say",

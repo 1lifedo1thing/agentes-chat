@@ -8042,11 +8042,11 @@
   "teamWeek.approvals.action": {
     "value": "Review and approve"
   },
-  "teamWeek.approvals.hide": {
-    "value": "Hide"
-  },
   "teamWeek.budget.title": {
     "value": "{{name}}'s budget: {{from}} → {{to}}"
+  },
+  "teamWeek.budget.item": {
+    "value": "Budget: {{from}} → {{to}}"
   },
   "teamWeek.budget.line": {
     "value": {
@@ -8056,6 +8056,9 @@
   },
   "teamWeek.channel.title": {
     "value": "Put {{name}} in #{{channel}}"
+  },
+  "teamWeek.channel.item": {
+    "value": "Add to #{{channel}}"
   },
   "teamWeek.channel.line": {
     "value": "{{name}} is in no channel, so nobody talked to it all week."
@@ -8081,6 +8084,9 @@
   "teamWeek.routine.title": {
     "value": "{{name}}'s routine every day at {{time}}"
   },
+  "teamWeek.routine.item": {
+    "value": "A routine every day at {{time}}"
+  },
   "teamWeek.routine.line": {
     "value": {
       "one": "You asked for this {{count}} time this week: “{{text}}”",
@@ -8101,6 +8107,21 @@
   },
   "teamWeek.howto.action": {
     "value": "Make it a skill"
+  },
+  "teamWeek.howto.uses": {
+    "value": "Used {{uses}}×"
+  },
+  "teamWeek.howto.group": {
+    "value": {
+      "one": "{{name}} learned a way of working",
+      "other": "{{name}} learned {{count}} ways of working"
+    }
+  },
+  "teamWeek.howto.applyAll": {
+    "value": {
+      "one": "Make it a skill",
+      "other": "Make {{count}} skills"
+    }
   },
   "teamWeek.howto.done": {
     "value": "Confirmed"
@@ -8177,6 +8198,9 @@
   "teamWeek.retire.title": {
     "value": "Archive {{name}}"
   },
+  "teamWeek.retire.item": {
+    "value": "Archive"
+  },
   "teamWeek.retire.line": {
     "value": "No work in 4 weeks, no routine and no open task."
   },
@@ -8185,6 +8209,9 @@
   },
   "teamWeek.model.title": {
     "value": "{{name}} can use {{to}}."
+  },
+  "teamWeek.model.item": {
+    "value": "Can use {{to}}"
   },
   "teamWeek.model.line": {
     "value": "It uses {{from}} today."

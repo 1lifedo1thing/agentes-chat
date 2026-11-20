@@ -3222,16 +3222,17 @@
       "title_one": "{{count}} verzoek van {{name}} wacht op jou",
       "title_other": "{{count}} verzoeken van {{name}} wachten op jou",
       "line": "Wacht sinds {{since}}.",
-      "action": "Bekijken en goedkeuren",
-      "hide": "Verbergen"
+      "action": "Bekijken en goedkeuren"
     },
     "budget": {
       "title": "Budget van {{name}}: {{from}} → {{to}}",
+      "item": "Budget: {{from}} → {{to}}",
       "line_one": "Stopte {{count}} keer bij de maandlimiet.",
       "line_other": "Stopte {{count}} keer bij de maandlimiet."
     },
     "channel": {
       "title": "{{name}} in #{{channel}} zetten",
+      "item": "In #{{channel}} zetten",
       "line": "{{name}} zit in geen enkel kanaal, dus niemand sprak het de hele week."
     },
     "unanswered": {
@@ -3244,6 +3245,7 @@
     },
     "routine": {
       "title": "Routine van {{name}} elke dag om {{time}}",
+      "item": "Routine elke dag om {{time}}",
       "line_one": "Je vroeg dit deze week {{count}} keer: ‘{{text}}’",
       "line_other": "Je vroeg dit deze week op {{count}} dagen: ‘{{text}}’",
       "action": "Routine maken",
@@ -3253,6 +3255,11 @@
       "title": "{{name}} leerde: {{what}}",
       "line": "{{uses}}× gebruikt. Een skill van maken?",
       "action": "Maak er een skill van",
+      "uses": "{{uses}}× gebruikt",
+      "group_one": "{{name}} leerde een manier van werken",
+      "group_other": "{{name}} leerde {{count}} manieren van werken",
+      "applyAll_one": "Maak er een skill van",
+      "applyAll_other": "Maak er {{count}} skills van",
       "done": "Bevestigd"
     },
     "stalled": {
@@ -3288,11 +3295,13 @@
     },
     "retire": {
       "title": "{{name}} archiveren",
+      "item": "Archiveren",
       "line": "Al 4 weken geen werk, geen routine en geen open taak.",
       "action": "Archiveren"
     },
     "model": {
       "title": "{{name}} kan {{to}} gebruiken.",
+      "item": "Kan {{to}} gebruiken",
       "line": "Gebruikt nu {{from}}."
     },
     "skip": "Negeren",

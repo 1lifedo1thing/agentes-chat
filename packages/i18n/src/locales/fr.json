@@ -3358,17 +3358,18 @@
       "title_many": "{{count}} demandes de {{name}} vous attendent",
       "title_other": "{{count}} demandes de {{name}} vous attendent",
       "line": "En attente depuis {{since}}.",
-      "action": "Voir et approuver",
-      "hide": "Masquer"
+      "action": "Voir et approuver"
     },
     "budget": {
       "title": "Budget de {{name}} : {{from}} → {{to}}",
+      "item": "Budget : {{from}} → {{to}}",
       "line_one": "S’est arrêté {{count}} fois à la limite du mois.",
       "line_many": "S’est arrêté {{count}} fois à la limite du mois.",
       "line_other": "S’est arrêté {{count}} fois à la limite du mois."
     },
     "channel": {
       "title": "Mettre {{name}} dans #{{channel}}",
+      "item": "Mettre dans #{{channel}}",
       "line": "{{name}} n’est dans aucun canal, donc personne ne lui a parlé de la semaine."
     },
     "unanswered": {
@@ -3382,6 +3383,7 @@
     },
     "routine": {
       "title": "Routine de {{name}} tous les jours à {{time}}",
+      "item": "Routine tous les jours à {{time}}",
       "line_one": "Vous l’avez demandé {{count}} fois cette semaine : « {{text}} »",
       "line_many": "Vous l’avez demandé {{count}} jours cette semaine : « {{text}} »",
       "line_other": "Vous l’avez demandé {{count}} jours cette semaine : « {{text}} »",
@@ -3392,6 +3394,13 @@
       "title": "{{name}} a appris : {{what}}",
       "line": "Utilisé {{uses}}×. En faire une compétence ?",
       "action": "En faire une compétence",
+      "uses": "Utilisé {{uses}}×",
+      "group_one": "{{name}} a appris une façon de travailler",
+      "group_many": "{{name}} a appris {{count}} façons de travailler",
+      "group_other": "{{name}} a appris {{count}} façons de travailler",
+      "applyAll_one": "En faire une compétence",
+      "applyAll_many": "En faire {{count}} compétences",
+      "applyAll_other": "En faire {{count}} compétences",
       "done": "Confirmé"
     },
     "stalled": {
@@ -3431,11 +3440,13 @@
     },
     "retire": {
       "title": "Archiver {{name}}",
+      "item": "Archiver",
       "line": "Aucun travail depuis 4 semaines, ni routine ni tâche ouverte.",
       "action": "Archiver"
     },
     "model": {
       "title": "{{name}} peut utiliser {{to}}.",
+      "item": "Peut utiliser {{to}}",
       "line": "Utilise {{from}} aujourd'hui."
     },
     "skip": "Ignorer",

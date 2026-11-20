@@ -3352,16 +3352,17 @@ export const ptBR = {
       title_other: "{{count}} pedidos de {{name}} esperam você",
       line: "Esperando desde {{since}}.",
       action: "Ver e aprovar",
-      hide: "Fechar",
     },
     budget: {
       title: "Orçamento do {{name}}: {{from}} → {{to}}",
+      item: "Orçamento: {{from}} → {{to}}",
       title_female: "Orçamento da {{name}}: {{from}} → {{to}}",
       line_one: "Parou {{count}} vez no limite do mês.",
       line_other: "Parou {{count}} vezes no limite do mês.",
     },
     channel: {
       title: "Colocar o {{name}} em #{{channel}}",
+      item: "Colocar em #{{channel}}",
       title_female: "Colocar a {{name}} em #{{channel}}",
       line: "O {{name}} não está em nenhum canal, então ninguém falou com ele a semana toda.",
       line_female: "A {{name}} não está em nenhum canal, então ninguém falou com ela a semana toda.",
@@ -3377,6 +3378,7 @@ export const ptBR = {
     },
     routine: {
       title: "Rotina do {{name}} todo dia às {{time}}",
+      item: "Rotina todo dia às {{time}}",
       title_female: "Rotina da {{name}} todo dia às {{time}}",
       line_one: "Você pediu isto {{count}} vez esta semana: “{{text}}”",
       line_other: "Você pediu isto em {{count}} dias esta semana: “{{text}}”",
@@ -3387,6 +3389,11 @@ export const ptBR = {
       title: "{{name}} aprendeu: {{what}}",
       line: "Usado {{uses}}×. Virar skill?",
       action: "Virar skill",
+      uses: "Usado {{uses}}×",
+      group_one: "{{name}} aprendeu um jeito de trabalhar",
+      group_other: "{{name}} aprendeu {{count}} jeitos de trabalhar",
+      applyAll_one: "Virar skill",
+      applyAll_other: "Virar {{count}} skills",
       done: "Confirmado",
     },
     stalled: {
@@ -3422,12 +3429,14 @@ export const ptBR = {
     },
     retire: {
       title: "Arquivar o {{name}}",
+      item: "Arquivar",
       title_female: "Arquivar a {{name}}",
       line: "Sem trabalho há 4 semanas, sem rotina e sem tarefa aberta.",
       action: "Arquivar",
     },
     model: {
       title: "{{name}} pode usar o {{to}}.",
+      item: "Pode usar o {{to}}",
       line: "Hoje usa o {{from}}.",
     },
     skip: "Dispensar",

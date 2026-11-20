@@ -3093,15 +3093,16 @@
     "approvals": {
       "title_other": "{{name}} 님의 요청 {{count}}개가 기다리고 있어요",
       "line": "{{since}}부터 기다리는 중이에요.",
-      "action": "보고 승인하기",
-      "hide": "닫기"
+      "action": "보고 승인하기"
     },
     "budget": {
       "title": "{{name}} 님의 예산: {{from}} → {{to}}",
+      "item": "예산: {{from}} → {{to}}",
       "line_other": "이번 달 한도에서 {{count}}번 멈췄어요."
     },
     "channel": {
       "title": "{{name}} 님을 #{{channel}}에 추가",
+      "item": "#{{channel}}에 추가",
       "line": "{{name}} 님은 어느 채널에도 없어서 이번 주에 아무도 말을 걸지 않았어요."
     },
     "unanswered": {
@@ -3113,6 +3114,7 @@
     },
     "routine": {
       "title": "{{name}} 님의 루틴: 매일 {{time}}",
+      "item": "루틴: 매일 {{time}}",
       "line_other": "이번 주 {{count}}일 동안 이걸 요청했어요: “{{text}}”",
       "action": "루틴 만들기",
       "done": "루틴을 만들었어요"
@@ -3121,6 +3123,9 @@
       "title": "{{name}}이(가) 배운 것: {{what}}",
       "line": "{{uses}}번 사용됨. 스킬로 만들까요?",
       "action": "스킬로 만들기",
+      "uses": "{{uses}}번 사용됨",
+      "group_other": "{{name}}이(가) 배운 일하는 방식 {{count}}개",
+      "applyAll_other": "{{count}}개를 스킬로 만들기",
       "done": "확인됨"
     },
     "stalled": {
@@ -3152,11 +3157,13 @@
     },
     "retire": {
       "title": "{{name}} 님 보관하기",
+      "item": "보관",
       "line": "4주 동안 작업이 없고, 루틴도 열린 작업도 없어요.",
       "action": "보관"
     },
     "model": {
       "title": "{{name}} 님은 {{to}}을(를) 쓸 수 있어요.",
+      "item": "{{to}}을(를) 쓸 수 있어요",
       "line": "지금은 {{from}}을(를) 써요."
     },
     "skip": "무시",
