@@ -1,64 +1,67 @@
 import { type CodeGitStep, type CodeSession, useApi, useCloseCodeSession, useCodeGit } from "@agenteschat/client";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Linking } from "react-native";
-import type { HeaderAction, HeaderMenuItem, IconName } from "@/ui";
+import type { HeaderAction, HeaderMenuItem } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useErrorToast, useOrgId } from "../shared/hooks";
 import { showActionSheet } from "../shared/PickerSheet";
 import { CODING_HREF, sessionChatHref, sessionPeopleHref } from "./logic";
-
-/** Each git step's mark in the menu, as the web's menu draws it. */
-const STEP: Record<CodeGitStep, { icon: IconName; sf: HeaderMenuItem["sf"] }> = {
-  commit: { icon: "check", sf: "checkmark.circle" },
-  push: { icon: "up", sf: "arrow.up.circle" },
-  pr: { icon: "pullRequest", sf: "arrow.triangle.pull" },
-  merge: { icon: "gitPull", sf: "arrow.triangle.merge" },
-};
-/** The steps a project only on the computer has: Commit, then Merge into its base branch there. */
-const LOCAL_STEPS: CodeGitStep[] = ["commit", "merge"];
-const STEPS: CodeGitStep[] = ["commit", "push", "pr", "merge"];
+import { freeForStep, STEP, stepAsk, stepsOf } from "./steps";
 
 /**
- * A session's "…" (ADR 0208), in its conversation's bar and on its code screen: what the web's header holds, as the
- * system's menu from the bar's button (the app's sheet on Android). The git step it can take now first (asked of the
- * agent in words in the conversation; from the code screen, back to it to watch), then who is in it, its pull request,
- * and closing it (red). Null until the session is known.
+ * Asking a session's agent for a git step: the step's words posted as the person's message in the session's
+ * conversation (ADR 0208), then, from anywhere but the conversation, back to it to watch. `sending` while it posts.
  */
-export function useSessionMenu(session: CodeSession | null, { inChat }: { inChat: boolean }): HeaderAction | null {
+export function useStepAsk(session: CodeSession | null, { inChat }: { inChat: boolean }) {
   const { t } = useTranslation();
   const orgId = useOrgId();
   const api = useApi();
   const failed = useErrorToast();
-  const close = useCloseCodeSession(orgId);
-  const git = useCodeGit(orgId, session?.id ?? "", session?.worktree.state === "ready");
-  if (!session) return null;
-  const working = session.work === "working";
-  const next = git.data?.next ?? null;
-  const steps = session.local ? LOCAL_STEPS : STEPS;
-  const ask = (step: CodeGitStep) => {
-    const body =
-      session.local && step === "merge"
-        ? t("codeSessions.git.ask.mergeLocal", { base: session.baseBranch ?? "main" })
-        : t(`codeSessions.git.ask.${step}`);
-    api.chat
-      .post(orgId, session.channelId, { body, threadId: session.rootId })
-      .then(() => {
-        if (!inChat) router.dismissTo(sessionChatHref(session) as never);
-      })
-      .catch(failed);
+  const [sending, setSending] = useState(false);
+  const ask = async (step: CodeGitStep): Promise<boolean> => {
+    if (!session || sending) return false;
+    setSending(true);
+    try {
+      await api.chat.post(orgId, session.channelId, { body: stepAsk(t, session, step), threadId: session.rootId });
+      if (!inChat) router.dismissTo(sessionChatHref(session) as never);
+      return true;
+    } catch (error) {
+      failed(error);
+      return false;
+    } finally {
+      setSending(false);
+    }
   };
+  return { ask, sending };
+}
+
+/**
+ * A session's "…" (ADR 0208), in its conversation's bar and on its code screen: what the web's header holds, as the
+ * system's menu from the bar's button (the app's sheet on Android). The git steps while the agent is free (the next
+ * one first), then who is in it, its pull request, and closing it (red). Null until the session is known.
+ */
+export function useSessionMenu(session: CodeSession | null, { inChat }: { inChat: boolean }): HeaderAction | null {
+  const { t } = useTranslation();
+  const orgId = useOrgId();
+  const failed = useErrorToast();
+  const close = useCloseCodeSession(orgId);
+  const free = freeForStep(session);
+  const git = useCodeGit(orgId, session?.id ?? "", free);
+  const { ask } = useStepAsk(session, { inChat });
+  if (!session) return null;
+  const next = git.data?.next ?? null;
   const menu: HeaderMenuItem[] = [
-    // The git steps while the agent is free: the next one first, as the web's button.
-    ...(working
-      ? []
-      : [...steps]
+    ...(free
+      ? stepsOf(session)
           .sort((a, b) => (a === next ? -1 : b === next ? 1 : 0))
           .map((step) => ({
             label: t(`codeSessions.git.step.${step}`),
             icon: STEP[step].icon,
             sf: STEP[step].sf,
-            onPress: () => ask(step),
-          }))),
+            onPress: () => void ask(step),
+          }))
+      : []),
     {
       label: t("codeSessions.who.label"),
       icon: "members",

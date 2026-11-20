@@ -10,7 +10,7 @@ import {
 import { joinNames } from "@agenteschat/client/lib/format";
 import { issueWorkOf, taskConversationOf } from "@agenteschat/client/lib/issues";
 import { textOrMedia } from "@agenteschat/client/lib/media";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import type { HeaderAction } from "@/ui";
@@ -89,13 +89,13 @@ export function useChatTitle({
         : rootCode
           ? rootCode.title
           : rootWork
-          ? t("issues.open", { number: rootWork.number, title: rootWork.title })
-          : info
-            ? // A thread on a GIF or a sticker has no words of its own to title it (ADR 0091).
-              threadTitle(info) ||
-              previewOf(root ? textOrMedia(t, root.body, root.meta) : "") ||
-              t("mobile.chat.thread")
-            : ""
+            ? t("issues.open", { number: rootWork.number, title: rootWork.title })
+            : info
+              ? // A thread on a GIF or a sticker has no words of its own to title it (ADR 0091).
+                threadTitle(info) ||
+                previewOf(root ? textOrMedia(t, root.body, root.meta) : "") ||
+                t("mobile.chat.thread")
+              : ""
     : dm
       ? dm.with.name
       : channel
@@ -113,26 +113,26 @@ export function useChatTitle({
           ? rootCode.repo
           : info
             ? info.channelKind === "dm"
-            ? // A DM's channel name is internal ("dm-…"): the thread says who it is with.
-              t(
-                mission
-                  ? "mobile.chat.missionWith"
-                  : info.state === "closed"
-                    ? "mobile.chat.closedThreadWith"
-                    : "mobile.chat.threadWith",
-                { name: dm?.with.name ?? "" },
-              )
-            : t(
-                mission
-                  ? "mobile.chat.missionIn"
-                  : info.state === "closed"
-                    ? "mobile.chat.closedThreadIn"
-                    : "mobile.chat.threadIn",
-                {
-                  channel: info.channelName,
-                },
-              )
-          : undefined
+              ? // A DM's channel name is internal ("dm-…"): the thread says who it is with.
+                t(
+                  mission
+                    ? "mobile.chat.missionWith"
+                    : info.state === "closed"
+                      ? "mobile.chat.closedThreadWith"
+                      : "mobile.chat.threadWith",
+                  { name: dm?.with.name ?? "" },
+                )
+              : t(
+                  mission
+                    ? "mobile.chat.missionIn"
+                    : info.state === "closed"
+                      ? "mobile.chat.closedThreadIn"
+                      : "mobile.chat.threadIn",
+                  {
+                    channel: info.channelName,
+                  },
+                )
+            : undefined
     : dmAgentId
       ? rightHand
         ? `${t("rightHand.label")} · ${t("rightHand.actsAsYou")}`
@@ -202,11 +202,20 @@ export function ChatHeader({
   const orgId = useOrgId();
   // A code session's conversation (ADR 0208): the session's name and its state and branch in the pill, which opens its
   // code; in the bar its code, its agent's computer (where it shows what it builds) and the session's "…".
-  const codeSession = useCodeSession(orgId, codeId).data ?? null;
+  const codeQuery = useCodeSession(orgId, codeId);
+  const codeSession = codeQuery.data ?? null;
   const codeMore = useSessionMenu(codeSession, { inChat: true });
   const [codeComputerWords, setCodeComputerWords] = useState<string | null>(null);
+  // Its agent's run here says "working" at once; when it ends, the session is read again for what came of it.
+  const codeBusy = codeId !== null && runs.length > 0;
+  const refetchCode = codeQuery.refetch;
+  useEffect(() => {
+    if (codeId && !codeBusy) void refetchCode();
+  }, [codeId, codeBusy, refetchCode]);
   const pillTitle = codeSession?.title ?? title;
-  const pillSubtitle = codeSession ? codeSessionLine(t, codeSession) : subtitle;
+  const pillSubtitle = codeSession
+    ? codeSessionLine(t, codeBusy ? { ...codeSession, work: "working" } : codeSession)
+    : subtitle;
   const pressCode = useLatest(() => {
     if (!codeId) return;
     leavePlace();

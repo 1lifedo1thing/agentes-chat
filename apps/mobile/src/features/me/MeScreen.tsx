@@ -22,7 +22,6 @@ import {
   GroupedRow,
   Icon,
   PersonAvatar,
-  PixelOrbit,
   PressScale,
   SCREEN_X,
   Text,
@@ -42,6 +41,7 @@ import { pickOne } from "../shared/PickerSheet";
 import { FocusLive, goBack, MentionCount, PushedHeader } from "../shared/parts";
 import { usePersonPhoto } from "../shared/photo";
 import { useTasksUnreadMarks, useUnreadThreads } from "../shared/queries";
+import { RowWorkingLine } from "../shared/RowWorkingLine";
 import { useMyPerson, usePresenceOf } from "../status/hooks";
 import { personLine } from "../status/logic";
 import { openStatus } from "../status/StatusScreen";
@@ -635,22 +635,10 @@ function AgentRow({ agentId, name, role }: { agentId: string; name: string; role
     <GroupedRow
       leading={<AgentFace agentId={agentId} size={36} />}
       label={name}
-      {...(working ? { below: <WorkingLine color={look.color} text={working} /> } : role ? { sub: role } : {})}
+      {...(working ? { below: <RowWorkingLine color={look.color} text={working} /> } : role ? { sub: role } : {})}
       chevron
       onPress={() => open(`/agent/${agentId}`)}
     />
-  );
-}
-
-/** What a working agent does, in words with its orbit, never a label. */
-function WorkingLine({ color, text }: { color: Parameters<typeof PixelOrbit>[0]["color"]; text: string }) {
-  return (
-    <View style={styles.working}>
-      <PixelOrbit color={color} size={11} />
-      <Text variant="footnote" tone="ink2" numberOfLines={1} style={styles.shrink}>
-        {text}
-      </Text>
-    </View>
   );
 }
 
@@ -690,6 +678,4 @@ const styles = StyleSheet.create({
   center: { textAlign: "center" },
   groups: { paddingHorizontal: SCREEN_X, paddingTop: 4 },
   gapBig: { height: 24 },
-  working: { flexDirection: "row", alignItems: "center", gap: 4 },
-  shrink: { flexShrink: 1, minWidth: 0 },
 });

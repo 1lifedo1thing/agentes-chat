@@ -875,6 +875,7 @@ function Chat({
               onRecording={onRecording}
               admin={admin}
               join={join}
+              codeId={codeId}
             />
           )}
         </DockGestureArea>

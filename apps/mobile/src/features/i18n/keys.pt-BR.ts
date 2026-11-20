@@ -1474,6 +1474,11 @@ export const featureKeysPtBR = {
     pill: "{{who}}. Ver o código",
     listed: "Do agente",
     commit: "Commit {{short}}",
+    waiting: "Esperando você",
+    next: {
+      pr: "Branch enviada, ainda sem PR",
+      mergeLocal: "Pronta para juntar na {{base}}",
+    },
   },
   // The task manager (ADR 0128; the rest of its words are shared, `taskManager.*`).
   taskManager: {

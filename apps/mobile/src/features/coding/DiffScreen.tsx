@@ -4,7 +4,17 @@ import type { DiffLine } from "@agenteschat/ui/diff";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { DiffView, GroupedHeader, GroupedList, GroupedRow, SCREEN_X, SkeletonList, Text, useTheme } from "@/ui";
+import {
+  DiffView,
+  GROUPED_ROW,
+  GroupedHeader,
+  GroupedList,
+  GroupedRow,
+  SCREEN_X,
+  SkeletonList,
+  Text,
+  useTheme,
+} from "@/ui";
 import { LoadFailed } from "../shared/FirstUse";
 import { useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedHeader } from "../shared/parts";
@@ -94,5 +104,5 @@ export function DiffScreen({
 
 const styles = StyleSheet.create({
   body: { paddingHorizontal: SCREEN_X, paddingTop: 4, paddingBottom: 40 },
-  note: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  note: { paddingHorizontal: GROUPED_ROW.padX, paddingTop: 16, paddingBottom: 12 },
 });

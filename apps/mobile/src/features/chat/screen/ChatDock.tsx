@@ -8,6 +8,7 @@ import { KeyboardStickyView, type useReanimatedKeyboardAnimation } from "react-n
 import Animated, { type SharedValue } from "react-native-reanimated";
 import { Button, Text } from "@/ui";
 import { ComposerFloat, type ComposerFloatSlot } from "@/ui/Composer";
+import { CodeStepLine } from "../../coding/StepLine";
 import { useColors } from "../../shared/hooks";
 import { type useAwayAsk, WaitingHereBar } from "../asks";
 import { ChatPeek } from "../ChatPeek";
@@ -36,7 +37,8 @@ type AnimatedViewStyle = ComponentProps<typeof Animated.View>["style"];
 /**
  * The conversation's dock, riding the keyboard: the agent peeking from behind it, the way back to the latest messages,
  * the "@" picker, and the composer's box with what stands over the field (the connection, a missing AI, who won't
- * answer, a request out of view, who works while there is no conversation yet) or what stands in its place.
+ * answer, a request out of view, a code session's next git step, who works while there is no conversation yet) or what
+ * stands in its place.
  */
 export function ChatDock({
   lift,
@@ -112,6 +114,7 @@ export function ChatDock({
   onRecording,
   admin,
   join,
+  codeId,
 }: Pick<
   ChatData,
   | "gap"
@@ -182,6 +185,8 @@ export function ChatDock({
     orgId: string;
     placeholder: string;
     prefill: ReturnType<typeof useComposerRequest> | null;
+    /** The code session this thread is (ADR 0208): its next git step stands over the field while its agent is free. */
+    codeId: string | null;
   }) {
   const { t } = useTranslation();
   const c = useColors();
@@ -253,6 +258,9 @@ export function ChatDock({
             agentId={waitingFirst.asker?.type === "agent" ? waitingFirst.asker.id : null}
             onSee={seeWaiting}
           />
+        ) : null}
+        {member && codeId && !awayAsk && !waitingFirst ? (
+          <CodeStepLine sessionId={codeId} busy={runs.length > 0} />
         ) : null}
         {member && !awayAsk && !waitingFirst && !showList ? (
           <LiveWorkingLine

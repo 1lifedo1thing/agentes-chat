@@ -1528,6 +1528,13 @@ export const featureKeysEn = {
     listed: "The agent's",
     /** A commit's diff, by its short hash. */
     commit: "Commit {{short}}",
+    /** The list's first group: the sessions whose agent waits on me. */
+    waiting: "Waiting on you",
+    /** Where the branch stands before its next git step (the line over the composer, the Git view's button). */
+    next: {
+      pr: "Branch sent, no pull request yet",
+      mergeLocal: "Ready to merge into {{base}}",
+    },
   },
   // The task manager (ADR 0128; the rest of its words are shared, `taskManager.*`).
   taskManager: {

@@ -1,9 +1,11 @@
-import { type CodeSession, useCodeFiles, useCodeGitLog, useCodeSession } from "@agenteschat/client";
+import { type CodeSession, useCodeFiles, useCodeGit, useCodeGitLog, useCodeSession } from "@agenteschat/client";
 import { relativeTime } from "@agenteschat/client/lib/format";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
+  Button,
+  GROUPED_ROW,
   GroupedFooter,
   GroupedHeader,
   GroupedList,
@@ -20,8 +22,9 @@ import { LoadFailed } from "../shared/FirstUse";
 import { useOrgId, usePullRefresh } from "../shared/hooks";
 import { PushedHeader } from "../shared/parts";
 import { folderEntries, sessionDiffHref, sessionFileHref, sessionFolderHref, splitPath } from "./logic";
-import { useSessionMenu } from "./menu";
+import { useSessionMenu, useStepAsk } from "./menu";
 import { ChangeTile } from "./parts";
+import { freeForStep, STEP, stepWords } from "./steps";
 
 type Pane = "git" | "files";
 
@@ -29,9 +32,10 @@ type Pane = "git" | "files";
  * A session's code (ADR 0208), pushed from its conversation's bar: the web panel's Git and Files as the two views of
  * one screen (the app's segmented control), its name and branch in the bar. Git: the whole change since the base,
  * what isn't committed (as `git status` lists it) and the branch's commits, each opening its diff; Files: the
- * worktree's folders and files, a search over every path, each opening read-only. Its "…" holds what the web's header
- * holds: the git steps (asked of the agent in words in the conversation, which the screen goes back to), who is in the
- * session, its pull request and closing it.
+ * worktree's folders and files, a search over every path, each opening read-only. The next git step leads the Git view
+ * (the web header's button); its "…" holds the rest of what the web's header holds: every git step (each asked of the
+ * agent in words in the conversation, which the screen goes back to), who is in the session, its pull request and
+ * closing it.
  */
 export function SessionCodeScreen({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
@@ -119,6 +123,7 @@ function GitPane({ session, log }: { session: CodeSession; log: ReturnType<typeo
   const all = session.stat.at ? `+${session.stat.added} −${session.stat.removed}` : null;
   return (
     <>
+      <NextStep session={session} />
       <GroupedList>
         <GroupedRow
           icon="list"
@@ -177,6 +182,40 @@ function GitPane({ session, log }: { session: CodeSession; log: ReturnType<typeo
       )}
       {data.more ? <GroupedFooter>{t("codeSessions.gitTab.more")}</GroupedFooter> : null}
     </>
+  );
+}
+
+/**
+ * The next git step first in the Git view while the agent is free: its word as the screen's one primary button, where
+ * the branch stands beside it, and that it is asked of the agent. Asking goes back to the conversation to watch.
+ */
+function NextStep({ session }: { session: CodeSession }) {
+  const { t } = useTranslation();
+  const orgId = useOrgId();
+  const free = freeForStep(session);
+  const git = useCodeGit(orgId, session.id, free);
+  const { ask, sending } = useStepAsk(session, { inChat: false });
+  const next = free ? (git.data?.next ?? null) : null;
+  if (!git.data || !next) return null;
+  return (
+    <View style={styles.step}>
+      <Button
+        variant="primary"
+        size="sm"
+        icon={STEP[next].icon}
+        label={t(`codeSessions.git.step.${next}`)}
+        loading={sending}
+        onPress={() => void ask(next)}
+      />
+      <View style={styles.stepText}>
+        <Text variant="footnote" tone="ink2" numberOfLines={1}>
+          {stepWords(t, session, git.data, next)}
+        </Text>
+        <Text variant="caption" tone="faint" numberOfLines={2}>
+          {t("codeSessions.git.note")}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -271,5 +310,8 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: SCREEN_X, paddingTop: 8, paddingBottom: 40 },
   views: { paddingBottom: 12 },
   search: { paddingBottom: 12 },
-  note: { paddingHorizontal: 20, paddingTop: 16 },
+  note: { paddingHorizontal: GROUPED_ROW.padX, paddingTop: 16 },
+  // The step's button and its words, on the grouped gray above the first group, at the groups' inset.
+  step: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 4, paddingBottom: 16 },
+  stepText: { flex: 1, minWidth: 0, gap: 2 },
 });
