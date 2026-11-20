@@ -6,15 +6,16 @@ import {
   type DesktopLookReply,
   type PubSub,
 } from "@agenteschat/adapters";
-import { getAgentCached } from "../agents";
 import { recordAudit } from "../audit";
 import { handedBackSince, markPageRead, requirePageRead, waitIfPersonInControl } from "../browser/handoff";
 import { agentFolderPath, MAX_PAGE_TEXT, MAX_PLAN_STEPS } from "../browser/tools";
 import { DESKTOP_SCOPE, DESKTOP_TOOL_INFO } from "../browser/types";
+import { ToolOffError } from "../errors";
 import type { Judge } from "../judge";
 import { callWhenBack, type MachineCaller, MachineRequestError } from "../machine-hub";
 import { MachineOfflineError, MachinePausedError } from "../machines";
-import { getSandboxSettings, SANDBOX_SCOPE } from "../sandbox";
+import { machineScope, screenKey } from "../right-hand-seats";
+import { getSandboxSettings, SANDBOX_SCOPE, SandboxUnavailableError } from "../sandbox";
 import {
   actsBeforeOpening,
   createLookMemory,
@@ -26,8 +27,10 @@ import {
   MAX_WAIT_MS,
   type PlanReport,
   runPlan,
+  type ScreenJudgmentShadow,
   type ScreenStep,
   type ScreenVerb,
+  screenJudgmentsData,
   screenStepOf,
   type TargetCache,
 } from "../screen";
@@ -173,13 +176,20 @@ const screenBlock = (text: string) => untrustedBlock("desktop screen", text, MAX
 /** Said when a plan stopped with the agent's browser on the screen: what is in its window is the browser's. */
 const BROWSER_WINDOW = "Your browser's window is on this screen: what is in it is for browser_do, not the desktop.";
 
+/** A failed call as its result, carrying a switch off on the computer for the reply's one-click card. */
+const refusedOutput = (error: unknown): ToolOutput => ({
+  content: error instanceof Error ? error.message : String(error),
+  isError: true,
+  ...(error instanceof ToolOffError ? { data: { toolOff: error.toolOff } } : {}),
+});
+
 /** Runner refusals → what the agent reads. A step's own failure (a stale element, what covers it) stays as said. */
 function explain(error: unknown, machineName: string): string {
   if (error instanceof MachineOfflineError || error instanceof MachinePausedError) return error.message;
   if (!(error instanceof MachineRequestError)) return error instanceof Error ? error.message : String(error);
   switch (error.code) {
     case "not_allowed":
-      return `The desktop or commands are turned off on the computer ${machineName}. Only the person at that computer can turn them on; tell the people.`;
+      return `The desktop or commands are turned off on the computer ${machineName}. Whoever connected it turns them on with the button under your reply; tell the people.`;
     case "desktop_unavailable":
       return `Your desktop isn't available on the computer ${machineName}: ${error.message}`;
     case "desktop_busy":
@@ -253,7 +263,7 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
   const now = deps.now ?? Date.now;
   /** The screen each agent last saw: what changes are counted from, and the first target found on. */
   const seen = createLookMemory(now);
-  const seenKey = (ctx: ToolContext) => `${ctx.orgId}:${ctx.agentId}`;
+  const seenKey = screenKey;
 
   /** Whether this agent may drive its desktop now, and whether driving it asks a person first, as code does. */
   async function gateOf(
@@ -290,19 +300,23 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
     if (!status.available) return { ok: false, text: desktopUseUnavailableText(status) };
     if (!hub) return { ok: false, text: "Connected computers are not available on this server." };
     const caller = hub;
-    const row = await getAgentCached(ctx.db, ctx.orgId, ctx.agentId);
-    const agent: AgentScope = {
-      id: ctx.agentId,
-      handle: row?.handle ?? "agent",
-      ...(row?.name ? { name: row.name } : {}),
-    };
     const { machineId, machineName } = status;
+    // The right hand's desktop is the seat's its run works in, a person's own or the shared one (ADR 0175).
+    let agent: AgentScope;
+    try {
+      agent = await machineScope(caller, ctx, machineId);
+    } catch (error) {
+      if (error instanceof SandboxUnavailableError) return { ok: false, text: error.message };
+      throw error;
+    }
     const options = { signal: ctx.signal };
     // A computer just gone or asleep in standby is waited for, as the browser's and the sandbox's calls do (ADR 0161).
     const told = async <T>(call: () => Promise<T>) => {
       try {
         return await callWhenBack(caller, machineId, call, ctx.signal);
       } catch (error) {
+        if (error instanceof MachineRequestError && error.code === "not_allowed")
+          throw new ToolOffError(explain(error, machineName), { machineId, tool: "desktop" }, { cause: error });
         throw new Error(explain(error, machineName));
       }
     };
@@ -339,12 +353,13 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
   async function plan(ctx: ToolContext, steps: ScreenStep[]): Promise<ToolOutput> {
     const linked = await linkFor(ctx);
     if (!linked.ok) return { content: linked.text, isError: true };
-    const key = seenKey(ctx);
+    const key = await seenKey(ctx);
     let paused: ToolOutput | null = null;
     // A take over that begins and ends within one step leaves no open handoff to see: it is checked too.
     const started = new Date();
     let handedBack = false;
     const acted: DesktopAction[] = [];
+    const shadow: ScreenJudgmentShadow[] = [];
     const report = await runPlan(
       {
         judge,
@@ -379,6 +394,7 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
         // What covers a target on a desktop is usually a real dialog ("Save changes?"): never closed on a guess.
         dismiss: false,
         now,
+        shadow,
       },
       steps,
     );
@@ -392,6 +408,7 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
     const data: Record<string, unknown> = {
       desktopTrail: trailOf(report),
       timing: { ms: report.ms, steps: report.steps.map((s) => s.ms) },
+      ...screenJudgmentsData(shadow),
     };
     const waiting = paused as ToolOutput | null;
     if (waiting) {
@@ -472,13 +489,14 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
         try {
           look = await linked.link.look();
         } catch (error) {
-          return { content: error instanceof Error ? error.message : String(error), isError: true };
+          return refusedOutput(error);
         }
         const screen = observationOf(look);
-        seen.remember(seenKey(ctx), screen);
+        seen.remember(await seenKey(ctx), screen);
         await markPageRead(ctx.db, ctx, "desktop");
         const question = typeof input.find === "string" ? input.find.trim() : "";
         if (question && deps.judge) {
+          const shadow: ScreenJudgmentShadow[] = [];
           const found = await findInPage({
             judge,
             orgId: ctx.orgId,
@@ -486,17 +504,22 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
             runId: ctx.runId,
             question,
             observation: screen,
+            shadow,
           }).catch(() => null);
           const part = found?.searched
             ? ` (searched ${found.searched.lines} of the screen's ${found.searched.of} lines)`
             : "";
           if (found && found.answered !== "no") {
             const partly = found.answered === "partly" ? " (it may only partly answer it)" : "";
-            return { content: `Where the screen answers "${question}"${partly}${part}:\n${screenBlock(found.text)}` };
+            return {
+              content: `Where the screen answers "${question}"${partly}${part}:\n${screenBlock(found.text)}`,
+              data: screenJudgmentsData(shadow),
+            };
           }
           if (found) {
             return {
               content: `Nothing on the screen answers "${question}"${part}. Read the whole screen (no \`find\`) to look yourself, or open where it would be.`,
+              data: screenJudgmentsData(shadow),
             };
           }
         }
@@ -544,7 +567,7 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
           if (input.share !== true) return { ...saved, content: `${saved.content} ${SHARE_HINT}` };
           return shareSavedFile(deps, ctx, linked.machineId, path, saved);
         } catch (error) {
-          return { content: error instanceof Error ? error.message : String(error), isError: true };
+          return refusedOutput(error);
         }
       },
     ),
