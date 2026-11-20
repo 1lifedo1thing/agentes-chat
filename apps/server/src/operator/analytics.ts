@@ -392,7 +392,7 @@ const RunTimings = z
           ...TimingsGroup,
           stage: z.string().openapi({
             description:
-              "`claim`, `context`, `model` (each turn), `persist`, `events`… `other`: a name not shaped like one the server writes.",
+              "`claim`, `context`, `model` (each turn), `persist`, `events`, `end`… a step inside a stage after it (`context.build`). `other`: a name not shaped like one the server writes.",
           }),
           count: Count.openapi({ description: "Stages measured, not runs: a run has one `model` per turn." }),
           medianMs: Ms,
