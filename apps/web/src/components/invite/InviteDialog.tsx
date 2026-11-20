@@ -53,7 +53,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { OnlyYouNote } from "@/components/AgentAudience";
-import { usePlanHold } from "@/components/ai/ConnectAiSteps";
+import { usePlanHold } from "@/components/ai/plan-hold";
 import { BillingLinkButton } from "@/components/BillingLinkButton";
 import { MembersFull } from "@/components/Limits";
 import { useOrg } from "@/components/org-context";

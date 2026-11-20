@@ -95,7 +95,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConnectFlow, type FlowState } from "@/components/ConnectFlow";
-import { ConnectorIcon } from "@/components/ConnectorCatalog";
+import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { LoadingLine, LoadingList, useStepText } from "@/components/Loading";
 import { ForWhom, type OwnerTab, OwnerTabs } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";

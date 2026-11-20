@@ -1,9 +1,16 @@
 import { useRouterState } from "@tanstack/react-router";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from "react";
 import { type DetailsItem, OpenDetailsContext } from "@/components/details-link";
-import { UsageQueueDialog } from "@/components/UsageQueue";
-import { ApprovalDetailsDialog } from "@/pages/ApprovalsPage";
-import { RoutineDetailsDialog } from "@/pages/RoutinesPage";
+
+// Each dialog's code comes when one opens: the workspace's shell holds this host on every page, and the routines'
+// and approvals' pages (with the conversations they show) would otherwise load with the first page of any workspace.
+const RoutineDetailsDialog = lazy(() =>
+  import("@/pages/RoutinesPage").then((m) => ({ default: m.RoutineDetailsDialog })),
+);
+const ApprovalDetailsDialog = lazy(() =>
+  import("@/pages/ApprovalsPage").then((m) => ({ default: m.ApprovalDetailsDialog })),
+);
+const UsageQueueDialog = lazy(() => import("@/components/UsageQueue").then((m) => ({ default: m.UsageQueueDialog })));
 
 /**
  * One details dialog for the workspace, over the page the person is on: a `DetailsLink` opens it in place and
@@ -19,17 +26,19 @@ export function DetailsHost({ children }: { children: ReactNode }) {
   return (
     <OpenDetailsContext.Provider value={setItem}>
       {children}
-      {item?.kind === "routine" && <RoutineDetailsDialog key={item.id} routineId={item.id} onClose={close} />}
-      {item?.kind === "approval" && <ApprovalDetailsDialog key={item.id} approvalId={item.id} onClose={close} />}
-      {item?.kind === "usage_queue" && (
-        <UsageQueueDialog
-          key={item.id}
-          agentId={item.id}
-          tab={item.tab}
-          open
-          onOpenChange={(open) => !open && close()}
-        />
-      )}
+      <Suspense fallback={null}>
+        {item?.kind === "routine" && <RoutineDetailsDialog key={item.id} routineId={item.id} onClose={close} />}
+        {item?.kind === "approval" && <ApprovalDetailsDialog key={item.id} approvalId={item.id} onClose={close} />}
+        {item?.kind === "usage_queue" && (
+          <UsageQueueDialog
+            key={item.id}
+            agentId={item.id}
+            tab={item.tab}
+            open
+            onOpenChange={(open) => !open && close()}
+          />
+        )}
+      </Suspense>
     </OpenDetailsContext.Provider>
   );
 }

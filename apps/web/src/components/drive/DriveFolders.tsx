@@ -28,7 +28,7 @@ import type { TFunction } from "i18next";
 import { type DragEvent, type MouseEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActorAvatar } from "@/components/AgentAvatar";
-import { useAuthorName } from "@/components/artifacts/ArtifactViewer";
+import { useAuthorName } from "@/components/artifacts/viewer-context";
 import { MenuEntries } from "@/components/DesktopMenus";
 import { useOrg } from "@/components/org-context";
 import type { MenuEntry } from "@/lib/context-menu";

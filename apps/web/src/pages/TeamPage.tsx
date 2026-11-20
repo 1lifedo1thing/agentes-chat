@@ -29,7 +29,7 @@ import { useRightHandLook } from "@/hooks/useRightHandLook";
 import { STORAGE_KEYS, storage } from "@/lib/storage";
 import { useToast } from "@/lib/toast";
 import "./team.css";
-import { CreateAgentButton } from "@/components/new-agent/NewAgentDialog";
+import { CreateAgentButton } from "@/components/new-agent/new-agent-context";
 
 const VIEWS = ["list", "chart", "map", "sectors", "usage"] as const;
 type TeamView = (typeof VIEWS)[number];

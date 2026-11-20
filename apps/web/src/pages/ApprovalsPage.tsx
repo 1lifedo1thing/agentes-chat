@@ -106,7 +106,7 @@ import {
 } from "@/components/ApprovalItem";
 import { WhenAsksLink } from "@/components/ApprovalsLevelDialog";
 import { ApprovalsTabs } from "@/components/ApprovalsTabs";
-import { ConnectorIcon } from "@/components/ConnectorCatalog";
+import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { EmailLetter } from "@/components/EmailLetter";
 import { HelpLink } from "@/components/HelpLink";
 import { ErrorState, LoadingCards } from "@/components/Loading";

@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useInviteDialog } from "@/components/invite/InviteDialog";
 import { NewChannelDialog } from "@/components/NewChannelDialog";
-import { useNewAgent } from "@/components/new-agent/NewAgentDialog";
+import { useNewAgent } from "@/components/new-agent/new-agent-context";
 import { useOrg } from "@/components/org-context";
 import { MyFace } from "@/components/ProfilePhoto";
 import { useDirectory } from "@/hooks/useDirectory";

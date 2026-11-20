@@ -113,7 +113,9 @@ import {
   type DragEvent,
   Fragment,
   type HTMLAttributes,
+  lazy,
   type ReactNode,
+  Suspense,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -122,7 +124,9 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
+import { useNewAgent } from "@/components/new-agent/new-agent-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useEverTrue } from "@/hooks/useEverTrue";
 import { agentLine, availabilityOf, personLine, useAgentPresence, usePersonPresence } from "@/hooks/usePresence";
 import { useServerPlace } from "@/hooks/useServerPlace";
 import { useSidebarPins } from "@/hooks/useSidebarPins";
@@ -145,8 +149,6 @@ import { useToast } from "@/lib/toast";
 import { offersNewWorkspace, type WorkspaceGroup } from "@/lib/workspaces";
 import type { SettingsSection } from "@/pages/settings-sections";
 import { useStreams } from "@/realtime/context";
-import { EmailDialog, ProfileDialog } from "./AccountSettings";
-import { AddPasswordDialog } from "./AddPassword";
 import { AgentAvatar } from "./AgentAvatar";
 import {
   DeleteGroupDialog,
@@ -160,18 +162,14 @@ import {
 import { AgentWorkLine } from "./AgentWorkLine";
 import { AgoraButton } from "./Agora";
 import { ArchivedChannelsDialog } from "./ArchivedChannelsDialog";
-import { ChangeAvatarDialog } from "./AvatarBuilder";
 import { FeedbackMark } from "./arrival/FeedbackDialog";
 import { MoveChannelDialog, NewCategoryDialog, RenameCategoryDialog } from "./ChannelCategoryDialogs";
-import { DeleteAccountDialog } from "./DeleteAccount";
 import { MenuEntries } from "./DesktopMenus";
 import { useAgentMenu, useChannelMenu, usePersonMenu } from "./entity-menus";
 import { useInviteDialog } from "./invite/InviteDialog";
 import { useNow } from "./missions/MissionBits";
 import { COMPACT_QUERY, useMediaQuery, useNavDrawer } from "./NavDrawer";
 import { NewChannelDialog } from "./NewChannelDialog";
-import { useNewAgent } from "./new-agent/NewAgentDialog";
-import { OpenOnPhoneDialog } from "./OpenOnPhone";
 import { useOrg } from "./org-context";
 import { StatusLine } from "./Presence";
 import { MyFace, OrgMark } from "./ProfilePhoto";
@@ -181,6 +179,15 @@ import { SIDEBAR_TOOLS, SidebarSetupDialog, ToolList } from "./SidebarSetup";
 import { AgentGlow, AgentTrail, colorOf, MenuHorizon, SidebarHorizon, WorkspaceSky } from "./Sky";
 import { SetStatusDialog, useSaveStatus } from "./StatusDialog";
 import { closeTabletSidebar, NEW_CHANNEL_EVENT, TABLET_QUERY, useSidebarCollapsed } from "./sidebar-state";
+
+// The account's dialogs come when one first opens: every workspace page holds the sidebar, and these bring the profile
+// and avatar editors, the look of the chat and the sign-in pages.
+const ProfileDialog = lazy(() => import("./AccountSettings").then((m) => ({ default: m.ProfileDialog })));
+const EmailDialog = lazy(() => import("./AccountSettings").then((m) => ({ default: m.EmailDialog })));
+const AddPasswordDialog = lazy(() => import("./AddPassword").then((m) => ({ default: m.AddPasswordDialog })));
+const ChangeAvatarDialog = lazy(() => import("./AvatarBuilder").then((m) => ({ default: m.ChangeAvatarDialog })));
+const DeleteAccountDialog = lazy(() => import("./DeleteAccount").then((m) => ({ default: m.DeleteAccountDialog })));
+const OpenOnPhoneDialog = lazy(() => import("./OpenOnPhone").then((m) => ({ default: m.OpenOnPhoneDialog })));
 
 /** An agent's sky for its busy chip (`.sidebar__busy`): both themes, the CSS picks one. */
 const selectionSky = (color: AgentColor) =>
@@ -2114,6 +2121,14 @@ function AccountMenu({ personal = false }: { personal?: boolean }) {
   const [phone, setPhone] = useState(false);
   const [account, setAccount] = useOpenParam("account");
   const [statusOpen, setStatusOpen] = useState(false);
+  const mounted = {
+    profile: useEverTrue(profile),
+    photo: useEverTrue(photo),
+    phone: useEverTrue(phone),
+    email: useEverTrue(account === "email"),
+    password: useEverTrue(account === "password"),
+    delete: useEverTrue(account === "delete"),
+  };
   // The app's "Show QR code" for this server (Preferences › Servers).
   useEffect(() => {
     if (takePhoneAsk()) setPhone(true);
@@ -2285,13 +2300,15 @@ function AccountMenu({ personal = false }: { personal?: boolean }) {
           {t("auth.signOut")}
         </MenuItem>
       </Menu>
-      <ProfileDialog focus={profile ? "name" : null} onClose={() => setProfile(false)} />
-      <ChangeAvatarDialog open={photo} onClose={() => setPhoto(false)} />
       <SetStatusDialog open={statusOpen} onClose={() => setStatusOpen(false)} />
-      <OpenOnPhoneDialog open={phone} onClose={() => setPhone(false)} />
-      <EmailDialog open={account === "email"} onClose={() => setAccount(null)} />
-      <AddPasswordDialog open={account === "password"} onClose={() => setAccount(null)} />
-      <DeleteAccountDialog open={account === "delete"} onClose={() => setAccount(null)} />
+      <Suspense fallback={null}>
+        {mounted.profile && <ProfileDialog focus={profile ? "name" : null} onClose={() => setProfile(false)} />}
+        {mounted.photo && <ChangeAvatarDialog open={photo} onClose={() => setPhoto(false)} />}
+        {mounted.phone && <OpenOnPhoneDialog open={phone} onClose={() => setPhone(false)} />}
+        {mounted.email && <EmailDialog open={account === "email"} onClose={() => setAccount(null)} />}
+        {mounted.password && <AddPasswordDialog open={account === "password"} onClose={() => setAccount(null)} />}
+        {mounted.delete && <DeleteAccountDialog open={account === "delete"} onClose={() => setAccount(null)} />}
+      </Suspense>
     </>
   );
 }
