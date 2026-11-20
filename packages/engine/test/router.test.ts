@@ -1309,6 +1309,15 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
     expect(await timed("ada e dev, a campanha")).toBeGreaterThanOrEqual(TYPING_GRACE_MS - 50);
     // Still typing after it: more is on its way, so the whole window.
     expect(await timed("ada, olha isso", true)).toBeGreaterThanOrEqual(ROUTER_QUIET_MS - 300);
+    // Not waited for, the person's next message already here still decides for both.
+    const first = await say("ada, olha isso", 1);
+    await say("o relatório de ontem");
+    const res = await route(quiet().strategy, first.id, {
+      quietMs: ROUTER_QUIET_MS,
+      quietByTyping: true,
+      pubsub: f.pubsub,
+    });
+    expect(res.skipped).toBe("continued");
   }, 20_000);
 
   test("a message naming several agents and no person goes to each of them, unless it speaks to one", async () => {
@@ -1337,6 +1346,11 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
       needsAgent: 0.9,
     });
     expect((await route(scored.strategy, apart.id)).selected).toEqual([ada.id]);
+    // A short word between them is no list: "ada, ask dev" names them apart.
+    const asks = await say("ada, ask dev for the report");
+    expect((await route(scored.strategy, asks.id)).selected).toEqual([ada.id]);
+    const listed = await say("ada and dev, are you there?");
+    expect(new Set((await route(quiet().strategy, listed.id)).selected)).toEqual(new Set([ada.id, f.agent.id]));
   });
 
   test("the channel's one agent gets a short follow-up within 10 minutes of speaking, whatever the need score", async () => {

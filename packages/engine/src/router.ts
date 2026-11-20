@@ -925,8 +925,9 @@ export async function routeMessage(
         const wait = end - Date.now();
         if (wait > 0) await Bun.sleep(wait);
       }
-      if (await continuedSoon(db, message, quietMs)) return { runs: [], skipped: "continued" };
     }
+    // Not waited for, a next message already here (a busy queue) still decides for both.
+    if (await continuedSoon(db, message, quietMs)) return { runs: [], skipped: "continued" };
   }
   // What each one can reach, by name ("Sentry"): a question about an app goes to who has it. A person's own
   // connection is never named: the router's reason is read by the whole conversation.
@@ -1870,16 +1871,43 @@ function namesIn(body: string, nameable: Nameable[], authorId: string | null): N
 }
 
 /**
- * The agents `body` names together as one list: two or more names in a row, at most one short word (up to 3
- * letters: "e", "and", "y") between two of them, and no other agent named apart. By position, so it holds in any
- * language. Else none.
+ * The words that join a list of names, in the app's languages with spaced words: "ada e theo", "ada and theo". Never
+ * any short word: "ada, ask theo" names them apart. No "o" (an article in Portuguese: "ada, o theo já viu?").
+ */
+const LIST_JOINERS: ReadonlySet<string> = new Set([
+  "and",
+  "or",
+  "e",
+  "ou",
+  "y",
+  "et",
+  "und",
+  "oder",
+  "ed",
+  "en",
+  "of",
+  "dan",
+  "atau",
+  "ve",
+  "veya",
+  "i",
+  "oraz",
+  "lub",
+  "и",
+  "или",
+]);
+
+/**
+ * The agents `body` names together as one list: two or more names in a row, at most a joiner (`LIST_JOINERS`)
+ * between two of them, and no other agent named apart. Else none.
  */
 function listedAgents(body: string, agentNames: Nameable[]): string[] {
   const words = fold(body).match(/[\p{L}\p{N}_-]+/gu) ?? [];
   const idAt = words.map((w) => agentNames.find((n) => n.keys.some((k) => k.length > 1 && fold(k) === w))?.id);
   const at = idAt.flatMap((id, i) => (id ? [i] : []));
   const together = at.every(
-    (i, j) => j === 0 || i - (at[j - 1] ?? 0) === 1 || (i - (at[j - 1] ?? 0) === 2 && (words[i - 1]?.length ?? 0) <= 3),
+    (i, j) =>
+      j === 0 || i - (at[j - 1] ?? 0) === 1 || (i - (at[j - 1] ?? 0) === 2 && LIST_JOINERS.has(words[i - 1] ?? "")),
   );
   const ids = [...new Set(at.map((i) => idAt[i] as string))];
   return together && ids.length >= 2 ? ids : [];
