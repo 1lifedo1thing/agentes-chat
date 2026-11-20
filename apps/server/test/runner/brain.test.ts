@@ -1666,6 +1666,14 @@ test.if(posix)(
       await silent.turn(3, "ECHOMODEL", { effort: "medium" });
       expect(silent.spawns()).toHaveLength(3);
       expect(said.filter((l) => l.includes("didn't answer a switch"))).toHaveLength(1);
+
+      // Success said, but its `--effort` stays in force: `get_settings` shows it, and a new process takes the effort.
+      process.env.FAKE_CLAUDE_NO_SWITCH = "flag_wins";
+      const flagWins = setup();
+      await flagWins.turn(1, "ECHOMODEL", { effort: "low" });
+      const f = await flagWins.turn(2, "ECHOMODEL", { effort: "high" });
+      expect(f.final).toMatchObject({ type: "done", text: "model null effort high", timings: { warm: false } });
+      expect(flagWins.spawns()).toHaveLength(2);
     } finally {
       delete process.env.FAKE_CLAUDE_NO_SWITCH;
     }

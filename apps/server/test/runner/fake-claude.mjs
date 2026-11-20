@@ -19,8 +19,9 @@
 // "RETRYWAIT" and "QUIETWAIT" go quiet (see below), "THOUGHT" thinks in two blocks first (one with 10 characters of text,
 // one whose text is left out), "ECHOMODEL" answers with the model and effort it runs on. Control requests:
 // `initialize`, `get_usage` as $FAKE_CLAUDE_USAGE says ("" a Max plan's windows, "signed_out", "error", "hang": never),
-// and `set_model` and `apply_flag_settings` (`effortLevel`), which switch what "ECHOMODEL" says unless
-// $FAKE_CLAUDE_NO_SWITCH is "refuse" (an error answer) or "silent" (none).
+// and `set_model` and `apply_flag_settings` (`effortLevel`), which switch what "ECHOMODEL" says (and `get_settings`
+// shows) unless $FAKE_CLAUDE_NO_SWITCH is "refuse" (an error answer), "silent" (none) or "flag_wins" (the effort says
+// success and stays the `--effort` one).
 // With `--json-schema` it is a route (`brain.route`): the prompt on stdin, one JSON result whose
 // `structured_output` gives the schema's first handle 0.9, and a line with the system prompt and the
 // prompt in the log. "SLOW_ROUTE" never answers, "BAD_ROUTE" answers no JSON.
@@ -633,9 +634,11 @@ function answerControl(req) {
     return reply("success", { response: { model: liveModel } });
   }
   if (req.request?.subtype === "apply_flag_settings") {
-    liveEffort = req.request.settings?.effortLevel ?? null;
+    if (process.env.FAKE_CLAUDE_NO_SWITCH !== "flag_wins") liveEffort = req.request.settings?.effortLevel ?? null;
     return reply("success", {});
   }
+  if (req.request?.subtype === "get_settings")
+    return reply("success", { response: { applied: { model: liveModel, effort: liveEffort } } });
   if (req.request?.subtype !== "get_usage") return reply("error", { error: "not supported" });
   if (mode === "hang") return;
   if (mode === "error") return reply("error", { error: "get_usage failed" });

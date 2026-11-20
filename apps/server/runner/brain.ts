@@ -1266,10 +1266,14 @@ export class ClaudeProcess {
   }
 
   /**
-   * One control request of ours: "ok" once Claude Code said success, "refused" on its error or exit, "silent" when
-   * `ms` passed with no answer (a version that ignores the request).
+   * One control request of ours: "ok" once Claude Code said success (and its answer passes `check`), "refused" on its
+   * error, another answer or exit, "silent" when `ms` passed with no answer (a version that ignores the request).
    */
-  control(request: Record<string, unknown>, ms: number): Promise<"ok" | "refused" | "silent"> {
+  control(
+    request: Record<string, unknown>,
+    ms: number,
+    check?: (response: Record<string, unknown>) => boolean,
+  ): Promise<"ok" | "refused" | "silent"> {
     if (this.exited) return Promise.resolve("refused");
     const id = `agentes-${crypto.randomUUID()}`;
     return new Promise((resolve) => {
@@ -1281,7 +1285,9 @@ export class ClaudeProcess {
       };
       const timer = setTimeout(() => done("silent"), ms);
       const offExit = this.onExit(() => done("refused"));
-      this.controls.set(id, (r) => done(r.subtype === "success" ? "ok" : "refused"));
+      this.controls.set(id, (r) =>
+        done(r.subtype === "success" && (!check || check(isObj(r.response) ? r.response : {})) ? "ok" : "refused"),
+      );
       this.write(`${JSON.stringify({ type: "control_request", request_id: id, request })}\n`);
     });
   }
@@ -2277,6 +2283,9 @@ export class BrainManager {
       this.drop(live);
       live = undefined;
     }
+    // A turn of its own may have begun while it switched, and the runner may have begun to stop.
+    if (live?.proc.onItsOwn) live = await this.awaitOwnTurn(live, session, ctx);
+    if (this.closed) return errorEvent("runner_stopping", "The runner is stopping.", true);
     const keepAlive = req.keepAlive !== false;
     warm = Boolean(live);
     if (!live && keepAlive) {
@@ -2330,10 +2339,17 @@ export class BrainManager {
       const ms = this.opts.controlReplyMs ?? CONTROL_REPLY_MS;
       const said =
         model === live.model ? "ok" : await live.proc.control({ subtype: "set_model", model: model ?? null }, ms);
-      const saidEffort =
+      const appliedEffort =
         said !== "ok" || effort === live.effort
           ? said
           : await live.proc.control({ subtype: "apply_flag_settings", settings: { effortLevel: effort ?? null } }, ms);
+      // A CLI whose `--effort` outranks the flag layer still says success: only `get_settings` shows the effort in force.
+      const saidEffort =
+        appliedEffort !== "ok" || effort === live.effort
+          ? appliedEffort
+          : await live.proc.control({ subtype: "get_settings" }, ms, (r) =>
+              isObj(r.applied) ? r.applied.effort === effort : false,
+            );
       if (saidEffort === "ok") {
         live.model = model;
         live.effort = effort;
