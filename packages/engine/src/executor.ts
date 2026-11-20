@@ -5285,6 +5285,18 @@ async function executeRunInner(
               // The text it streams next is another model call's: never one reply with what it wrote before.
               deltas.toolEnded();
             },
+            // Its CLI went quiet and the computer stopped it: on the trail, where it was and for how long.
+            onStalled: (stall) => {
+              const step = {
+                reason: "brain_stalled",
+                code: stall.phase,
+                ...(stall.tool ? { tool: stall.tool } : {}),
+                ...(stall.label ? { label: stall.label } : {}),
+                silentMs: stall.silentMs,
+                resumed: stall.resumed,
+              };
+              later(() => addRunStep(db, run, "error", step));
+            },
             onFile: (path) => {
               const machineId = turnPlan.session?.machineId;
               if (!machineId || !deps.shareFile || run.background) return;
@@ -6678,6 +6690,8 @@ async function thinkOnce(
     onTaken?(): void | Promise<void>;
     /** Fast failed and the turn answered at standard speed. */
     onSpeedFallback?(message: string): void;
+    /** The computer stopped the brain's CLI for its silence (`stalled`): resumed there, or the turn ends. */
+    onStalled?(stall: Extract<BrainEvent, { type: "stalled" }>): void;
     /** A failed turn that is the plan's refusal, though the CLI didn't call it a limit. */
     refusedByPlan?(message: string): boolean;
   } = {},
@@ -6724,6 +6738,7 @@ async function thinkOnce(
     }
     if (event.type === "text_delta") onDelta(event.text);
     else if (event.type === "tool_started") hooks.onStarted?.(event);
+    else if (event.type === "stalled") hooks.onStalled?.(event);
     else if (event.type === "tool_call") {
       // Executed elsewhere (a computer brain through the runner bridge, which recorded its steps): shown only.
       if (event.executed) {
