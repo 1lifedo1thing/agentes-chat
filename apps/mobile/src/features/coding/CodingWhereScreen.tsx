@@ -51,7 +51,9 @@ export function CodingWhereScreen() {
           <SearchField
             value={q}
             onChangeText={setQ}
-            placeholder={t("codeSessions.home.repoSearch")}
+            // One line on the phone: the web's "Search, or type owner/name or a new name" was cut; the note below says
+            // the rest.
+            placeholder={t("mobile.coding.whereSearch")}
             accessibilityLabel={t("codeSessions.home.repoSearch")}
             autoCapitalize="none"
             autoCorrect={false}

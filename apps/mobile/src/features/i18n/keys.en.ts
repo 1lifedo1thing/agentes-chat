@@ -1526,6 +1526,8 @@ export const featureKeysEn = {
     seeChanges: "See the changes",
     /** A new session's field for where it works (a repository, or a project only on the computer). */
     project: "Project",
+    /** Where to work's search field, one line on a phone (the note under the list says what a name does). */
+    whereSearch: "Search or type a name",
     /** Over the agent's repositories and projects when a typed name is offered as a new one above them. */
     listed: "The agent's",
     /** A commit's diff, by its short hash. */
