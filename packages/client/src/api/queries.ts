@@ -1975,6 +1975,18 @@ function messageEdit(orgId: string, channelId: string, messageId: string, patch:
   );
 }
 
+/** A message as this client holds it, from any loaded list of its conversation or its threads. */
+function cachedMessage(qc: QueryClient, orgId: string, channelId: string, messageId: string): Message | undefined {
+  for (const [, data] of qc.getQueriesData<Message[]>({
+    queryKey: ["org", orgId, "channel", channelId],
+    predicate: (q) => isMessageList(q.queryKey),
+  })) {
+    const found = Array.isArray(data) ? data.find((m) => m?.id === messageId) : undefined;
+    if (found) return found;
+  }
+  return undefined;
+}
+
 /** The ids of every message a channel's lists hold (its latest page and its threads'). */
 const idsInLists = (qc: QueryClient, prefix: readonly unknown[]) =>
   new Set(
@@ -4244,12 +4256,42 @@ export function useUpdateChannel(orgId: string, channelId: string) {
 }
 
 /** Archives a channel (creator or admin): it leaves the list. */
+/**
+ * The channels this tab archived, as they were in the list: "Restaurar" puts the same row back before the server
+ * answers (the archived list holds only a name and a topic).
+ */
+const archivedRows = new Map<string, Channel>();
+
 export function useArchiveChannel(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (channelId: string) => api.chat.archive(orgId, channelId),
-    ...optimistic(qc, (channelId: string) => [edit<Channel[]>(keys.channels(orgId), without<Channel>(channelId))]),
+    // It leaves the channels and joins the archived ones at once ("Canais arquivados" can bring it back right away).
+    ...optimistic(qc, (channelId: string) => {
+      const row = qc.getQueryData<Channel[]>(keys.channels(orgId))?.find((c) => c.id === channelId);
+      if (row) archivedRows.set(channelId, row);
+      const archived: ArchivedChannel | null = row
+        ? {
+            id: row.id,
+            name: row.name,
+            topic: row.topic,
+            visibility: row.visibility,
+            archivedAt: new Date().toISOString(),
+          }
+        : null;
+      return [
+        edit<Channel[]>(keys.channels(orgId), without<Channel>(channelId)),
+        ...(archived
+          ? [
+              edit<ArchivedChannel[]>(keys.archivedChannels(orgId), (list) =>
+                list.some((c) => c.id === channelId) ? list : [archived, ...list],
+              ),
+            ]
+          : []),
+      ];
+    }),
+    // The channel list's prefix holds the archived list too: both are read again.
     onSettled: () => void qc.invalidateQueries({ queryKey: keys.channels(orgId) }),
   });
 }
@@ -4271,11 +4313,34 @@ export function useUnarchiveChannel(orgId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (channelId: string) => api.chat.unarchive(orgId, channelId),
-    // It leaves the archived list at once; it comes back to the channels with their read.
-    ...optimistic(qc, (channelId: string) => [
-      edit<ArchivedChannel[]>(keys.archivedChannels(orgId), without<ArchivedChannel>(channelId)),
-      edit<ChannelCard>(keys.channelCard(orgId, channelId), (card) => ({ ...card, archived: false })),
-    ]),
+    // It leaves the archived list and is back in the channels at once: the row it had when this tab archived it, or
+    // one made from the archived list's (I restore it, so I'm in it); the read below brings the rest.
+    ...optimistic(qc, (channelId: string) => {
+      const archived = qc
+        .getQueryData<ArchivedChannel[]>(keys.archivedChannels(orgId))
+        ?.find((c) => c.id === channelId);
+      const row: Channel | undefined =
+        archivedRows.get(channelId) ??
+        (archived && {
+          id: archived.id,
+          name: archived.name,
+          topic: archived.topic,
+          visibility: archived.visibility,
+          isMember: true,
+          createdAt: archived.archivedAt,
+        });
+      return [
+        edit<ArchivedChannel[]>(keys.archivedChannels(orgId), without<ArchivedChannel>(channelId)),
+        edit<ChannelCard>(keys.channelCard(orgId, channelId), (card) => ({ ...card, archived: false })),
+        ...(row
+          ? [
+              edit<Channel[]>(keys.channels(orgId), (list) =>
+                list.some((c) => c.id === channelId) ? list : [...list, { ...row, unreadCount: 0, mentionCount: 0 }],
+              ),
+            ]
+          : []),
+      ];
+    }),
     onSettled: () => void qc.invalidateQueries({ queryKey: keys.channels(orgId) }),
   });
 }
@@ -8104,13 +8169,27 @@ export function usePinMessage(orgId: string) {
       if (pinned) await pins.pin(orgId, channelId, messageId);
       else await pins.unpin(orgId, channelId, messageId);
     },
-    // The message's pin mark at once, and an unpinned one leaves the pins; a new pin joins them with the read below.
-    ...optimistic(qc, ({ channelId, messageId, pinned }: { channelId: string; messageId: string; pinned: boolean }) => [
-      messageEdit(orgId, channelId, messageId, (m) => ({ ...m, pinned })),
-      ...(pinned
-        ? []
-        : [edit<MessagePin[]>(keys.pins(orgId, channelId), (list) => list.filter((p) => p.messageId !== messageId))]),
-    ]),
+    // The message's pin mark and the pins bar at once: an unpinned one leaves the pins, a new one goes on top of them
+    // (newest first, as the server lists them), built from the message as cached here.
+    ...optimistic(qc, ({ channelId, messageId, pinned }: { channelId: string; messageId: string; pinned: boolean }) => {
+      const message = cachedMessage(qc, orgId, channelId, messageId);
+      return [
+        messageEdit(orgId, channelId, messageId, (m) => ({ ...m, pinned })),
+        edit<MessagePin[]>(keys.pins(orgId, channelId), (list) => {
+          const others = list.filter((p) => p.messageId !== messageId);
+          if (!pinned || !message) return others.length === list.length ? list : others;
+          const pin: MessagePin = {
+            messageId,
+            channelId,
+            threadId: message.threadId,
+            pinnedByUserId: meUser(qc)?.id ?? null,
+            pinnedAt: new Date().toISOString(),
+            message: { ...message, pinned: true },
+          };
+          return [pin, ...others];
+        }),
+      ];
+    }),
     onSuccess: (_v, { channelId }) => {
       void qc.invalidateQueries({ queryKey: keys.pins(orgId, channelId) });
       void qc.invalidateQueries({ queryKey: keys.messages(orgId, channelId) });
