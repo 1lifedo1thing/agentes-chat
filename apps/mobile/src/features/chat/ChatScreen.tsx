@@ -15,8 +15,10 @@ import { usePush } from "@/providers/push";
 import { useRealtime } from "@/providers/realtime";
 import { useToast } from "@/ui";
 import { createComposerFloat } from "@/ui/Composer";
+import { router } from "@/ui/navigation";
 import { AgentSetupIntro } from "../agents/setup/SetupCard";
 import { OpenHandoffProvider } from "../browser/open";
+import { sessionCodeHref } from "../coding/logic";
 import { MissionCardView } from "../missions/cards";
 import { isOpenMission } from "../missions/logic";
 import { RightHandIntro } from "../right-hand/Intro";
@@ -278,6 +280,12 @@ function Chat({
     dir,
     data,
   });
+  // A code session's changes (ADR 0208), from its step line over the composer: the conversation keeps its place.
+  const openCode = useCallback(() => {
+    if (!codeId) return;
+    leavePlace();
+    router.push(sessionCodeHref(codeId) as never);
+  }, [codeId, leavePlace]);
   const {
     canMission,
     canReply,
@@ -876,6 +884,7 @@ function Chat({
               admin={admin}
               join={join}
               codeId={codeId}
+              openCode={openCode}
             />
           )}
         </DockGestureArea>

@@ -115,6 +115,7 @@ export function ChatDock({
   admin,
   join,
   codeId,
+  openCode,
 }: Pick<
   ChatData,
   | "gap"
@@ -187,6 +188,8 @@ export function ChatDock({
     prefill: ReturnType<typeof useComposerRequest> | null;
     /** The code session this thread is (ADR 0208): its next git step stands over the field while its agent is free. */
     codeId: string | null;
+    /** Its changes, from the step line's words. */
+    openCode: () => void;
   }) {
   const { t } = useTranslation();
   const c = useColors();
@@ -260,7 +263,7 @@ export function ChatDock({
           />
         ) : null}
         {member && codeId && !awayAsk && !waitingFirst ? (
-          <CodeStepLine sessionId={codeId} busy={runs.length > 0} />
+          <CodeStepLine sessionId={codeId} busy={runs.length > 0} onSee={openCode} />
         ) : null}
         {member && !awayAsk && !waitingFirst && !showList ? (
           <LiveWorkingLine

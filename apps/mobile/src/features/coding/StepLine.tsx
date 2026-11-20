@@ -15,12 +15,12 @@ const LINE_SLOP = { top: 8, bottom: 8 };
 
 /**
  * A code session's next git step over its conversation's composer (ADR 0208), the web header's button on the phone:
- * where the branch stands, then the step's word ("3 arquivos mudados · Commit"), which asks the agent in the
- * conversation. Only while the agent is free (`busy`: a run of it is live here) and there is a step to take; once
- * asked, it keeps away until the agent has started (or a while has passed). The shape of the bars above the
- * composer (`WaitingHereBar`), so one replaces another without moving.
+ * where the branch stands, which opens the changes to look first (`onSee`), then the step's word ("3 arquivos mudados ·
+ * Commit"), which asks the agent in the conversation. Only while the agent is free (`busy`: a run of it is live here)
+ * and there is a step to take; once asked, it keeps away until the agent has started (or a while has passed). The
+ * shape of the bars above the composer (`WaitingHereBar`), so one replaces another without moving.
  */
-export function CodeStepLine({ sessionId, busy }: { sessionId: string; busy: boolean }) {
+export function CodeStepLine({ sessionId, busy, onSee }: { sessionId: string; busy: boolean; onSee: () => void }) {
   const { t } = useTranslation();
   const c = useColors();
   const reduced = useReducedMotion();
@@ -63,11 +63,9 @@ export function CodeStepLine({ sessionId, busy }: { sessionId: string; busy: boo
       <Animated.View entering={reduced ? undefined : FadeIn.duration(160)} style={styles.line}>
         <Icon name={STEP[next].icon} size={14} color={c.ink2} />
         <Pressable
-          onPress={press}
-          disabled={sending}
+          onPress={onSee}
           accessibilityRole="button"
-          accessibilityLabel={`${words}. ${label}`}
-          accessibilityState={{ disabled: sending, busy: sending }}
+          accessibilityLabel={`${words}. ${t("mobile.coding.seeChanges")}`}
           hitSlop={LINE_SLOP}
           style={({ pressed }) => [styles.words, pressed && styles.pressed]}
         >
@@ -78,8 +76,10 @@ export function CodeStepLine({ sessionId, busy }: { sessionId: string; busy: boo
         <Pressable
           onPress={press}
           disabled={sending}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          accessibilityHint={t("codeSessions.git.note")}
+          accessibilityState={{ disabled: sending, busy: sending }}
           hitSlop={8}
           style={({ pressed }) => (pressed || sending ? styles.pressed : null)}
         >

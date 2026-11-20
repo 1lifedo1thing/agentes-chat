@@ -1470,8 +1470,8 @@ export const featureKeysPtBR = {
   },
   // Código (ADR 0208; the rest of its words are the web's, `codeSessions.*`).
   coding: {
-    code: "Código",
     pill: "{{who}}. Ver o código",
+    seeChanges: "Ver as mudanças",
     listed: "Do agente",
     commit: "Commit {{short}}",
     waiting: "Esperando você",

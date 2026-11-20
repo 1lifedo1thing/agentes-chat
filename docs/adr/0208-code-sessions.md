@@ -168,12 +168,15 @@ The phone app has Code as a row of You, with the same API and the conversation a
   while that work is in this session's channel. Otherwise its state in words. A row opens the session's conversation.
 - A new session is a pushed form (what to do, the agent, where it works). "Where to work" is its own pushed screen,
   and starting replaces the form with the conversation.
-- The conversation hides the root as a task's does. Its pill shows the session's name, then its state and branch, and
-  opens its code. It says "working" from the live run at once and reads the session again when the run ends. The bar
-  holds the code, the agent's computer (the computer screen the phone already has) and the session's "…": the git
-  steps (the next one first), who is in it, its pull request, closing it.
+- The conversation hides the root as a task's does. Its pill, marked with the code's symbol, shows the session's name,
+  then its state and branch (without the agent's `agentes/<handle>/` prefix), and opens its code. It says "working"
+  from the live run at once and reads the session again when the run ends. The bar holds one button besides "…", the
+  agent's computer (the computer screen the phone already has): with two, a 393-point phone left the pill a few
+  letters of the name. The "…" is the session's: the git steps (the next one first), who is in it, its pull request,
+  closing it.
 - Over the composer, while the agent is free, the next git step stands in the shape of the other bars there: where
-  the branch stands, then the step's word ("3 files changed · Commit"). It asks the agent in words, as on the web.
+  the branch stands, which opens the changes to look first, then the step's word ("3 files changed · Commit"), which
+  asks the agent in words, as on the web.
   Nothing read before a run ended is shown, and once asked it stays away until the agent has started.
 - The session's code is one pushed screen with Git and Files as a segmented control. Git leads with the next step as
   its one primary button. Folders, read-only files, diffs and who is in the session are screens of their own.

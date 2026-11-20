@@ -16,7 +16,7 @@ import { StyleSheet, View } from "react-native";
 import type { HeaderAction } from "@/ui";
 import { router } from "@/ui/navigation";
 import { threadTitle } from "../../chats/logic";
-import { sessionCodeHref, sessionStateKey } from "../../coding/logic";
+import { sessionCodeHref, sessionStateKey, shortBranch } from "../../coding/logic";
 import { useSessionMenu } from "../../coding/menu";
 import { DmQueueButton, QueueButton, useAgentsQueue, useOpenQueue } from "../../queue/QueueSheet";
 import { type Directory, useDirectory, useOrgId } from "../../shared/hooks";
@@ -37,11 +37,17 @@ const NO_RUNS: LiveRun[] = [];
 const NO_LINE: LiveConsult[] = [];
 
 /**
- * A code session's line under its name (ADR 0208): its state in words and its branch, as the web's header says them.
+ * A code session's line under its name (ADR 0208): its state in words and its branch, as the web's header says them
+ * (the branch without its agent's prefix: the room is the pill's).
  */
 function codeSessionLine(t: ReturnType<typeof useTranslation>["t"], s: CodeSession) {
   const state = sessionStateKey(s);
-  return [state.pr !== null ? t(state.key, { number: state.pr }) : t(state.key), s.branch].filter(Boolean).join(" · ");
+  return [
+    state.pr !== null ? t(state.key, { number: state.pr }) : t(state.key),
+    s.branch ? shortBranch(s.branch) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 /**
@@ -201,7 +207,8 @@ export function ChatHeader({
   const dir = useDirectory();
   const orgId = useOrgId();
   // A code session's conversation (ADR 0208): the session's name and its state and branch in the pill, which opens its
-  // code; in the bar its code, its agent's computer (where it shows what it builds) and the session's "…".
+  // code (its mark the code's); in the bar its agent's computer (where it shows what it builds) and the session's "…".
+  // One button besides "…" at most: with two, the pill kept room for a few letters of the name on a 393-point phone.
   const codeQuery = useCodeSession(orgId, codeId);
   const codeSession = codeQuery.data ?? null;
   const codeMore = useSessionMenu(codeSession, { inChat: true });
@@ -255,7 +262,7 @@ export function ChatHeader({
   const dmExtra = computerInBar ? 1 : 0;
   const channelExtra = searchPlace ? 1 : 0;
   const codeComputer = codeSession && codeComputerWords ? codeSession.agentId : null;
-  const threadExtra = channelExtra + (codeId ? 1 : 0) + (codeComputer ? 1 : 0);
+  const threadExtra = channelExtra + (codeComputer ? 1 : 0);
   // The channel's sky in the pill, as an agent's DM: the color of the first agent in it.
   const channelColor = agentLook(dir.agentById.get(roster.data?.find((r) => r.type === "agent")?.id ?? "")).color;
   const dmColor = dmAgentId ? agentLook(dmAgent).color : undefined;
@@ -270,6 +277,7 @@ export function ChatHeader({
           title={pillTitle}
           subtitle={pillSubtitle}
           onPress={codeId ? pressCode : pressOptions}
+          icon={codeId ? "code" : "reply"}
           extraActions={threadExtra}
           leadRoom={leadRoom}
           onHold={onHoldPill}
@@ -395,17 +403,7 @@ export function ChatHeader({
         ...(dmComputer && computerWords && !queueButton
           ? [dmComputerAction(dmComputer.agentId, computerWords, leavePlace)]
           : []),
-        // A code session's code, then its agent's computer.
-        ...(codeId
-          ? [
-              {
-                icon: "code" as const,
-                sf: "chevron.left.forwardslash.chevron.right" as const,
-                label: t("mobile.coding.code"),
-                onPress: pressCode,
-              },
-            ]
-          : []),
+        // A code session's agent's computer (its code is the pill's).
         ...(codeComputer && codeComputerWords ? [dmComputerAction(codeComputer, codeComputerWords, leavePlace)] : []),
         // A DM searches from its "…" (its name and the agent's own buttons keep the room).
         ...(searchPlace && !dm

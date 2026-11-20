@@ -1520,10 +1520,10 @@ export const featureKeysEn = {
   },
   // Código (ADR 0208; the rest of its words are the web's, `codeSessions.*`).
   coding: {
-    /** The bar's button in a session's conversation: its Git and Files. */
-    code: "Code",
     /** A session's pill in its conversation, which opens its code. */
     pill: "{{who}}. See the code",
+    /** The step line's words over the composer ("3 files changed"), which open the session's Git view. */
+    seeChanges: "See the changes",
     /** Over the agent's repositories and projects when a typed name is offered as a new one above them. */
     listed: "The agent's",
     /** A commit's diff, by its short hash. */

@@ -11,6 +11,7 @@ import {
   sessionFolderHref,
   sessionStateKey,
   sessionsByRepo,
+  shortBranch,
   splitPath,
   statWords,
 } from "../../src/features/coding/logic";
@@ -122,6 +123,12 @@ describe("a session's screens", () => {
     expect(sessionDiffHref("s1", { scope: "commit", sha: "a1b2c3d" })).toBe("/coding/s1/diff?scope=commit&sha=a1b2c3d");
   });
 
+  test("the pill says the branch without its agent's prefix, which the session already names", () => {
+    expect(shortBranch("agentes/atlas/free-shipping-3f9a")).toBe("free-shipping-3f9a");
+    expect(shortBranch("feature/cart")).toBe("feature/cart");
+    expect(shortBranch("main")).toBe("main");
+  });
+
   test("a path reads as its name, then its folder", () => {
     expect(splitPath("src/cart/total.ts")).toEqual({ name: "total.ts", dir: "src/cart" });
     expect(splitPath("README.md")).toEqual({ name: "README.md", dir: "" });
@@ -158,13 +165,15 @@ describe("a session's screens", () => {
 });
 
 describe("the session's conversation", () => {
-  test("its root is never shown; its pill opens its code, its bar holds its code, computer and menu", () => {
+  test("its root is never shown; its pill opens its code, its bar holds its agent's computer and its menu", () => {
     expect(src("features/chat/screen/useChatRows.ts")).toContain(
       "root && !taskConversationOf(root.meta) && !codeSessionOf(root.meta)",
     );
     const header = src("features/chat/screen/ChatHeader.tsx");
     expect(header).toContain("onPress={codeId ? pressCode : pressOptions}");
-    expect(header).toContain('sf: "chevron.left.forwardslash.chevron.right" as const');
+    expect(header).toContain('icon={codeId ? "code" : "reply"}');
+    // One button besides "…" at most (its agent's computer): with two, a 393-point phone left the pill a few letters.
+    expect(header).toContain("const threadExtra = channelExtra + (codeComputer ? 1 : 0);");
     expect(header).toContain("codeMore ?? {");
     // Its agent's live run says "working" at once (the session is read every 15 s).
     expect(header).toContain('codeBusy ? { ...codeSession, work: "working" } : codeSession');
@@ -172,7 +181,7 @@ describe("the session's conversation", () => {
 
   test("the next git step stands over the composer only when no request or wait does", () => {
     expect(src("features/chat/screen/ChatDock.tsx")).toContain(
-      "{member && codeId && !awayAsk && !waitingFirst ? (\n          <CodeStepLine sessionId={codeId} busy={runs.length > 0} />",
+      "{member && codeId && !awayAsk && !waitingFirst ? (\n          <CodeStepLine sessionId={codeId} busy={runs.length > 0} onSee={openCode} />",
     );
     const line = src("features/coding/StepLine.tsx");
     // Nothing read before the run ended, and nothing again until the agent started on what was asked.

@@ -25,6 +25,12 @@ export type DiffOpen = { scope: "base" } | { scope: "uncommitted"; path: string 
 export const sessionDiffHref = (sessionId: string, d: DiffOpen) =>
   `/coding/${sessionId}/diff?scope=${d.scope}${"path" in d ? `&path=${encodeURIComponent(d.path)}` : ""}${"sha" in d ? `&sha=${d.sha}` : ""}`;
 
+/**
+ * A session's branch as the conversation's pill says it: without the `agentes/<handle>/` its agent's branches start
+ * with (the pill already is that agent's session), so what is left is the change's own name.
+ */
+export const shortBranch = (branch: string) => branch.replace(/^agentes\/[^/]+\//, "");
+
 /** A project only on the agent's computer: a name with no owner. */
 export const isLocalRepo = (repo: string) => repo !== "" && !repo.includes("/");
 
