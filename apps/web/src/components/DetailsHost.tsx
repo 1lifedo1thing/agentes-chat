@@ -1,16 +1,13 @@
 import { useRouterState } from "@tanstack/react-router";
-import { lazy, type ReactNode, Suspense, useCallback, useEffect, useState } from "react";
+import { type ReactNode, Suspense, useCallback, useEffect, useState } from "react";
 import { type DetailsItem, OpenDetailsContext } from "@/components/details-link";
+import { lazyDialog } from "@/lib/lazy-dialog";
 
 // Each dialog's code comes when one opens: the workspace's shell holds this host on every page, and the routines'
 // and approvals' pages (with the conversations they show) would otherwise load with the first page of any workspace.
-const RoutineDetailsDialog = lazy(() =>
-  import("@/pages/RoutinesPage").then((m) => ({ default: m.RoutineDetailsDialog })),
-);
-const ApprovalDetailsDialog = lazy(() =>
-  import("@/pages/ApprovalsPage").then((m) => ({ default: m.ApprovalDetailsDialog })),
-);
-const UsageQueueDialog = lazy(() => import("@/components/UsageQueue").then((m) => ({ default: m.UsageQueueDialog })));
+const RoutineDetailsDialog = lazyDialog(() => import("@/pages/RoutinesPage").then((m) => m.RoutineDetailsDialog));
+const ApprovalDetailsDialog = lazyDialog(() => import("@/pages/ApprovalsPage").then((m) => m.ApprovalDetailsDialog));
+const UsageQueueDialog = lazyDialog(() => import("@/components/UsageQueue").then((m) => m.UsageQueueDialog));
 
 /**
  * One details dialog for the workspace, over the page the person is on: a `DetailsLink` opens it in place and

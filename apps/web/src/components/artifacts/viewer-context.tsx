@@ -4,17 +4,18 @@ import { isPreviewImage } from "@agenteschat/client/lib/files";
 import { filePath } from "@agenteschat/client/lib/message-links";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { createContext, lazy, type ReactNode, Suspense, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, type ReactNode, Suspense, useCallback, useContext, useMemo, useState } from "react";
 import { knownLive, openLivePage } from "@/components/live/open";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { lazyDialog } from "@/lib/lazy-dialog";
 
 /*
  * Opening a file in the workspace's side panel, as the shell holds it: the context, its provider and the hooks. The
  * viewer itself (`ArtifactViewer.tsx`, with every kind's view and editor) comes when a file opens.
  */
 
-const LazyArtifactViewer = lazy(() => import("./ArtifactViewer").then((m) => ({ default: m.ArtifactViewer })));
+const LazyArtifactViewer = lazyDialog(() => import("./ArtifactViewer").then((m) => m.ArtifactViewer));
 
 /** Link to an artifact (opens Drive with the viewer). */
 export const artifactLink = (origin: string, orgId: string, id: string, version?: number) =>

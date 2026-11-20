@@ -1,22 +1,13 @@
 import { useIssue } from "@agenteschat/client";
-import {
-  createContext,
-  lazy,
-  type ReactNode,
-  Suspense,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, type ReactNode, Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
+import { lazyDialog } from "@/lib/lazy-dialog";
 import { useToast } from "@/lib/toast";
 
 // The task's page comes when one opens: a message's text links tasks everywhere (the Home's feed too), and the task
 // page brings its conversation, which brings the whole chat.
-const IssueDialog = lazy(() => import("@/pages/IssuePage").then((m) => ({ default: m.IssueDialog })));
+const IssueDialog = lazyDialog(() => import("@/pages/IssuePage").then((m) => m.IssueDialog));
 
 /** Opens a task a conversation names in its dialog, over the conversation (routines: `DetailsLink`). */
 export interface InPlace {

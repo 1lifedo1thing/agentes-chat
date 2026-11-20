@@ -1,19 +1,10 @@
 import { can } from "@agenteschat/client/lib/permissions";
 import { type AgentAppearance, Button } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  createContext,
-  lazy,
-  type ReactNode,
-  Suspense,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, type ReactNode, Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
+import { lazyDialog } from "@/lib/lazy-dialog";
 import { NEW_AGENT_EVENT } from "./events";
 import type { Draft, Pick } from "./NewAgentDialog";
 import type { ProposalReview } from "./ProposalReview";
@@ -24,8 +15,8 @@ import type { ProposalReview } from "./ProposalReview";
  * mailbox and database steps) comes when it opens.
  */
 
-const LazyNewAgentDialog = lazy(() => import("./NewAgentDialog").then((m) => ({ default: m.NewAgentDialog })));
-const LazyAgentFlight = lazy(() => import("./NewAgentDialog").then((m) => ({ default: m.AgentFlight })));
+const LazyNewAgentDialog = lazyDialog(() => import("./NewAgentDialog").then((m) => m.NewAgentDialog));
+const LazyAgentFlight = lazyDialog(() => import("./NewAgentDialog").then((m) => m.AgentFlight));
 
 type Look = Required<AgentAppearance>;
 

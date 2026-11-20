@@ -5,21 +5,12 @@ import { stepPermissions } from "@agenteschat/client/lib/home";
 import { type AiChoice, mayConnectAi, type PlanChoice } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
-import {
-  createContext,
-  lazy,
-  type ReactNode,
-  Suspense,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, type ReactNode, Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ConnectStart } from "@/components/devices/ConnectDialog";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { lazyDialog } from "@/lib/lazy-dialog";
 import { useOpenParam } from "@/lib/open-param";
 import { useToast } from "@/lib/toast";
 
@@ -28,8 +19,8 @@ import { useToast } from "@/lib/toast";
  * dialog itself (`ConnectAi.tsx`, with every plan's steps and the phone and computer pairing) comes when it opens.
  */
 
-const LazyConnectAiDialog = lazy(() => import("./ConnectAi").then((m) => ({ default: m.ConnectAiDialog })));
-const LazyConnectDialog = lazy(() => import("./devices/ConnectDialog").then((m) => ({ default: m.ConnectDialog })));
+const LazyConnectAiDialog = lazyDialog(() => import("./ConnectAi").then((m) => m.ConnectAiDialog));
+const LazyConnectDialog = lazyDialog(() => import("./devices/ConnectDialog").then((m) => m.ConnectDialog));
 
 export interface ConnectAiRequest {
   /** The step the message asked for (Jev); `any`, `task` or none: the first step. */

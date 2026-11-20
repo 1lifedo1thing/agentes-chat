@@ -113,7 +113,6 @@ import {
   type DragEvent,
   Fragment,
   type HTMLAttributes,
-  lazy,
   type ReactNode,
   Suspense,
   useEffect,
@@ -139,6 +138,7 @@ import { requestChannelDetails } from "@/lib/channel-details";
 import type { MenuEntry } from "@/lib/context-menu";
 import { onPhoneAsk, takePhoneAsk, thisMac } from "@/lib/desktop";
 import { entityMenu } from "@/lib/entity-menu";
+import { lazyDialog } from "@/lib/lazy-dialog";
 import { navigateAway } from "@/lib/navigate";
 import { useOpenParam } from "@/lib/open-param";
 import { markOpen } from "@/lib/perf";
@@ -182,12 +182,12 @@ import { closeTabletSidebar, NEW_CHANNEL_EVENT, TABLET_QUERY, useSidebarCollapse
 
 // The account's dialogs come when one first opens: every workspace page holds the sidebar, and these bring the profile
 // and avatar editors, the look of the chat and the sign-in pages.
-const ProfileDialog = lazy(() => import("./AccountSettings").then((m) => ({ default: m.ProfileDialog })));
-const EmailDialog = lazy(() => import("./AccountSettings").then((m) => ({ default: m.EmailDialog })));
-const AddPasswordDialog = lazy(() => import("./AddPassword").then((m) => ({ default: m.AddPasswordDialog })));
-const ChangeAvatarDialog = lazy(() => import("./AvatarBuilder").then((m) => ({ default: m.ChangeAvatarDialog })));
-const DeleteAccountDialog = lazy(() => import("./DeleteAccount").then((m) => ({ default: m.DeleteAccountDialog })));
-const OpenOnPhoneDialog = lazy(() => import("./OpenOnPhone").then((m) => ({ default: m.OpenOnPhoneDialog })));
+const ProfileDialog = lazyDialog(() => import("./AccountSettings").then((m) => m.ProfileDialog));
+const EmailDialog = lazyDialog(() => import("./AccountSettings").then((m) => m.EmailDialog));
+const AddPasswordDialog = lazyDialog(() => import("./AddPassword").then((m) => m.AddPasswordDialog));
+const ChangeAvatarDialog = lazyDialog(() => import("./AvatarBuilder").then((m) => m.ChangeAvatarDialog));
+const DeleteAccountDialog = lazyDialog(() => import("./DeleteAccount").then((m) => m.DeleteAccountDialog));
+const OpenOnPhoneDialog = lazyDialog(() => import("./OpenOnPhone").then((m) => m.OpenOnPhoneDialog));
 
 /** An agent's sky for its busy chip (`.sidebar__busy`): both themes, the CSS picks one. */
 const selectionSky = (color: AgentColor) =>

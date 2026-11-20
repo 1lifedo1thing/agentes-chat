@@ -1,12 +1,13 @@
 import { type Seat, screenId } from "@agenteschat/client/lib/seat";
 import { SeatContext } from "@agenteschat/client/lib/seat-context";
-import { lazy, type ReactNode, Suspense, useCallback, useMemo, useState } from "react";
+import { type ReactNode, Suspense, useCallback, useMemo, useState } from "react";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { lazyDialog } from "@/lib/lazy-dialog";
 import { type OpenComputer, OpenComputerContext, OpenedComputerContext } from "./open";
 
 // The dialog (the agent's screen, its browser and desktop views) comes when a computer opens, not with the shell.
-const LazyComputerDialog = lazy(() => import("./ComputerDialog").then((m) => ({ default: m.ComputerDialog })));
+const LazyComputerDialog = lazyDialog(() => import("./ComputerDialog").then((m) => m.ComputerDialog));
 
 /**
  * One computer dialog for the workspace: its agent page's entry, the DM's button, a computer's page and the

@@ -35,6 +35,7 @@ import { ComputerSetupNotice } from "@/components/WorkspaceComputer";
 import { HeaderSearchProvider } from "@/hooks/useWorkspaceSearch";
 import { useServerLocale } from "@/i18n";
 import { inDesktopApp } from "@/lib/desktop";
+import { preloadDialogs } from "@/lib/lazy-dialog";
 import { notePlace } from "@/lib/return-to";
 import { rememberPlace, showWorkspace } from "@/lib/start";
 import { STORAGE_KEYS, storage } from "@/lib/storage";
@@ -83,6 +84,9 @@ function OrgLayout() {
   useWorkspaceAccent(membership?.accent);
   // An agent picked as the app icon follows its name and look in its workspace (ADR 0179).
   useFollowPickedAgent(orgId);
+  // The dialogs the shell and its pages open (Connect AI, a new agent, a file, a computer, details) left the first
+  // load: their code comes in the background once this page is up, so opening one doesn't wait for it either.
+  useEffect(() => preloadDialogs(), []);
   useEffect(() => {
     if (!membership) return;
     storage.set(STORAGE_KEYS.lastOrg, membership.id);

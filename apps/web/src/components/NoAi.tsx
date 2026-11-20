@@ -30,7 +30,7 @@ import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { Button, Chip, Dialog, DialogFooter, EventPill, EventPillAction, Icon, InfoHint } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePlanHold } from "@/components/ai/plan-hold";
 import { useOpenBilling } from "@/components/BillingLinkButton";
@@ -44,11 +44,10 @@ import { STORAGE_KEYS, sessionStore } from "@/lib/storage";
 import { useToast } from "@/lib/toast";
 import { useChannelEvents } from "@/realtime/context";
 import "./no-ai.css";
+import { lazyDialog } from "@/lib/lazy-dialog";
 
 // The vault's form comes when a key is kept there: this card shows under messages, on the Home's first steps too.
-const VaultNewDialog = lazy(() =>
-  import("@/components/vault/VaultNewDialog").then((m) => ({ default: m.VaultNewDialog })),
-);
+const VaultNewDialog = lazyDialog(() => import("@/components/vault/VaultNewDialog").then((m) => m.VaultNewDialog));
 
 /*
  * No AI connected (ADR 0061), wherever it shows: above the composer, the agent's card in the
