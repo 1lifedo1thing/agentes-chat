@@ -2,12 +2,14 @@ import type { ArtifactAuthor, ArtifactDetail, LiveRef, ResolvedMark, TalkKind } 
 import { isMediaKind, useArtifact } from "@agenteschat/client";
 import { joinNames } from "@agenteschat/client/lib/format";
 import { Image } from "expo-image";
+import { memo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Icon, type IconName, Text, TOUCH } from "@/ui";
 import { router } from "@/ui/navigation";
+import { useRowDirectory, useRowMeId } from "../../chat/row-data";
 import { chatHref } from "../../links/logic";
-import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../../shared/hooks";
+import { useColors, useOrgId, useWhen } from "../../shared/hooks";
 import { talkIcon } from "../routes";
 import { useFilePictures } from "../slides/pictures";
 import { useOpenLiveRef } from "./hooks";
@@ -148,12 +150,12 @@ function placeOf(
  * link), "Imported from Plan.docx by Ada" for a document opened from an upload, "Ada sent this image in the
  * conversation in #design" for a picture, a video or a PDF a person uploaded (ADR 0208).
  */
-export function FileOrigin({ artifactId, kind }: { artifactId: string; kind: TalkKind }) {
+export const FileOrigin = memo(function FileOrigin({ artifactId, kind }: { artifactId: string; kind: TalkKind }) {
   const { t } = useTranslation();
   const c = useColors();
   const orgId = useOrgId();
-  const meId = useMeId();
-  const dir = useDirectory();
+  const meId = useRowMeId();
+  const dir = useRowDirectory();
   const file = useArtifact(orgId, artifactId).data;
   if (!file) return <View style={styles.originRoom} />;
   const name = dir.nameOf(file.createdBy);
@@ -198,7 +200,7 @@ export function FileOrigin({ artifactId, kind }: { artifactId: string; kind: Tal
       </Text>
     </View>
   );
-}
+});
 
 /**
  * Under a resolved comment on a picture, a video or a PDF (ADR 0208), quietly: "Resolved by Iris · 14:05". Its pin is
@@ -207,7 +209,8 @@ export function FileOrigin({ artifactId, kind }: { artifactId: string; kind: Tal
 export function ResolvedLine({ resolved, end = false }: { resolved: ResolvedMark; end?: boolean }) {
   const { t } = useTranslation();
   const c = useColors();
-  const dir = useDirectory();
+  // The row's directory, read once for the list as the rows read it (`row-data`).
+  const dir = useRowDirectory();
   const when = useWhen();
   const name =
     dir.nameOf(resolved.by) || t(resolved.by.type === "agent" ? "channel.unknownAgent" : "channel.unknownPerson");
