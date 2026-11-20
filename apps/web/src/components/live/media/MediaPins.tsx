@@ -5,6 +5,7 @@ import { AgentAvatar, PersonAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { type MediaPin, pinAt } from "./marks";
+import "./pins.css";
 
 /** Who wrote a comment, by name, as the pins and the peek say it. */
 export function usePinAuthor() {
@@ -56,7 +57,7 @@ export function MediaPins({
   const area = focus?.selection.mark?.w !== undefined ? focus.selection.mark : null;
   const peeked = peek ? shown.find((p) => p.message.id === hover) : undefined;
   return (
-    <div className="cnv-pins mf-pins">
+    <div className="mf-pins">
       {area && (
         <span
           className="mf-area"
@@ -80,7 +81,7 @@ export function MediaPins({
             key={pin.message.id}
             type="button"
             className={cx(
-              "cnv-pin mf-pin",
+              "mf-pin",
               pin.message.id === focusId && "mf-pin--on",
               (pin.old || pin.resolved) && "mf-pin--faded",
             )}
@@ -105,7 +106,7 @@ export function MediaPins({
             }}
           >
             <PinFace pin={pin} name={name} />
-            <span className="cnv-pin__n tabular">{pin.n}</span>
+            <span className="mf-pin__n tabular">{pin.n}</span>
           </button>
         );
       })}

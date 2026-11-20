@@ -44,80 +44,6 @@
   pointer-events: none;
 }
 
-/* The pins over the file: they may stand past its edges (an area's corner). */
-.mf-pins.cnv-pins {
-  overflow: visible;
-  z-index: 2;
-}
-.mf-pin {
-  z-index: 1;
-}
-.mf-pin--on,
-.mf-pin--draft {
-  z-index: 2;
-  box-shadow:
-    var(--e2),
-    0 0 0 2px var(--ink);
-}
-.mf-pin--faded {
-  opacity: 0.5;
-}
-.mf-pin--draft {
-  pointer-events: none;
-}
-
-/* An area: white with a dark edge, readable on any picture. */
-.mf-area {
-  position: absolute;
-  z-index: 1;
-  border: 2px solid #fff;
-  border-radius: 6px;
-  box-shadow:
-    0 0 0 1.5px rgb(0 0 0 / 0.45),
-    inset 0 0 0 1px rgb(0 0 0 / 0.12);
-  box-sizing: border-box;
-  pointer-events: none;
-}
-.mf-area--draft {
-  border-style: dashed;
-  background: rgb(255 255 255 / 0.08);
-}
-
-/* A pin's words on hover (the viewer). */
-.mf-peek {
-  position: absolute;
-  z-index: 5;
-  width: 280px;
-  max-width: 60vw;
-  padding: var(--space-2) var(--space-3);
-  box-sizing: border-box;
-  transform: translate(44px, calc(-100% - 6px));
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 20px;
-  pointer-events: none;
-}
-.mf-peek__head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.mf-peek__head b {
-  font-weight: 600;
-}
-.mf-peek__head time {
-  color: var(--muted);
-  font-size: 12.5px;
-}
-.mf-peek__words {
-  margin: 4px 0 6px;
-  overflow-wrap: anywhere;
-}
-.mf-peek__go {
-  color: var(--muted);
-  font-size: 12.5px;
-}
-
 /* The video: its box fits the stage; Comment's surface lies over the picture only while Comment is on. */
 .mf-box--video {
   border-radius: 12px;
@@ -244,11 +170,4 @@
   color: var(--muted);
   font-size: 12.5px;
   white-space: nowrap;
-}
-
-/* The viewer's picture: its comments' pins in its box as it zooms and moves (ImageZoom's `overlay`). */
-.izoom__overlay {
-  position: absolute;
-  z-index: 1;
-  pointer-events: none;
 }

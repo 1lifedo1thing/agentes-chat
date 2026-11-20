@@ -3,6 +3,7 @@ import type { PubSub } from "@agenteschat/adapters";
 import { and, asc, eq, isNull, schema } from "@agenteschat/db";
 import type { ToolImage } from "@agenteschat/providers";
 import type { ArtifactActor, ArtifactDeps } from "../artifacts";
+import { getChannelCached } from "../context";
 import { publishMessageCreated } from "../events";
 import type { Judge } from "../judge";
 import { insertMessage, messageView } from "../messages";
@@ -359,6 +360,9 @@ export function createCommentToolSource(deps: CommentToolDeps): ToolSource {
     name: "file-comments",
     async tools(ctx) {
       if (!ctx.runId) return [];
+      // Listed on every run: only a file's own conversation (the per-process cache says) reads further.
+      const channel = await getChannelCached(ctx.db, ctx.orgId, ctx.channelId).catch(() => null);
+      if (String(channel?.kind ?? "") !== "file") return [];
       const row = await fileOfConversation(ctx.db, ctx.orgId, ctx.channelId);
       if (!row || row.deletedAt) return [];
       const kind = await mediaKindOf(ctx.db, row);

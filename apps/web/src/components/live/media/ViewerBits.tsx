@@ -10,8 +10,6 @@ import { ThreadLineBody } from "@/components/threads/ThreadLines";
 import { openMediaPage } from "../open";
 import { MediaPins } from "./MediaPins";
 import { mediaPinsOf } from "./marks";
-import "./media.css";
-import "../canvas/canvas.css";
 
 /*
  * The viewer, the preview first (ADR 0208): a picture, a video or a PDF opened from the chat or the Drive shows its
@@ -67,11 +65,12 @@ export function ViewerCommentButtons({ artifactId }: { artifactId: string }) {
  * Under a picture, a video or a PDF posted in a conversation, once it has comments (ADR 0208): who commented, "3
  * comments on the image" and when, the look of a thread's line; a press opens its page with the conversation.
  */
-export function ChatCommentsLine({ artifactId }: { artifactId: string }) {
+export function ChatCommentsLine({ artifactId, version }: { artifactId: string; version?: number }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const navigate = useNavigate();
-  const artifact = useArtifact(org.id, artifactId).data;
+  // The card's own query (the same version): read once for both.
+  const artifact = useArtifact(org.id, artifactId, version).data;
   const media = mediaKindOfArtifact(artifact);
   const talk = artifact?.conversation;
   if (!media || !talk || talk.count === 0) return null;

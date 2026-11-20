@@ -55,6 +55,8 @@ export function PdfStage({
   const [width, setWidth] = useState(0);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [failed, setFailed] = useState(false);
+  // The first page's proportions stand for the pages not read yet (most PDFs have one size).
+  const [aspect, setAspect] = useState(1.294);
   const pages = useRef(new Map<number, HTMLDivElement>());
 
   useLayoutEffect(() => {
@@ -78,8 +80,12 @@ export function PdfStage({
         task = loading;
         return loading.promise;
       })
-      .then((d) => {
+      .then(async (d) => {
         if (gone) return;
+        const first = await d.getPage(1).catch(() => null);
+        const v = first?.getViewport({ scale: 1 });
+        if (gone) return;
+        if (v && v.width > 0) setAspect(v.height / v.width);
         setDoc(d);
         onPages(d.numPages);
       })
@@ -125,6 +131,7 @@ export function PdfStage({
               doc={doc}
               n={n}
               width={pageW}
+              aspect={aspect}
               marks={marks}
               pins={marks.pins
                 .filter((p) => p.selection.page === n)
@@ -141,11 +148,15 @@ export function PdfStage({
   );
 }
 
-/** One page: its box at once (its proportions read first), drawn when it comes near the screen. */
+/**
+ * One page: its box at once (the first page's proportions until its own are read), read and drawn when it comes near
+ * the screen, and its drawing let go when it goes far (a long PDF never holds every page's pixels).
+ */
 function PdfPage({
   doc,
   n,
   width,
+  aspect,
   marks,
   pins,
   onMark,
@@ -154,6 +165,7 @@ function PdfPage({
   doc: PDFDocumentProxy;
   n: number;
   width: number;
+  aspect: number;
   marks: StageMarks;
   pins: MediaPin[];
   onMark: (mark: Mark, page: number, canvas: HTMLCanvasElement) => void;
@@ -166,19 +178,25 @@ function PdfPage({
   const [near, setNear] = useState(n <= 2);
   const [drag, setDrag] = useState<{ from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
 
+  // Read once it first comes near.
   useEffect(() => {
+    if (!near || page) return;
     let gone = false;
-    void doc.getPage(n).then((p) => !gone && setPage(p));
+    void doc
+      .getPage(n)
+      .then((p) => !gone && setPage(p))
+      .catch(() => undefined);
     return () => {
       gone = true;
     };
-  }, [doc, n]);
+  }, [doc, n, near, page]);
 
+  // Near the screen (a screen's height or so around it): drawn; far: its pixels let go.
   useEffect(() => {
     const el = box.current;
     if (!el || typeof IntersectionObserver === "undefined") return setNear(true);
-    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && setNear(true), {
-      rootMargin: "800px 0px",
+    const io = new IntersectionObserver((entries) => setNear(entries.some((e) => e.isIntersecting)), {
+      rootMargin: "1200px 0px",
     });
     io.observe(el);
     return () => io.disconnect();
@@ -186,10 +204,15 @@ function PdfPage({
 
   const base = page?.getViewport({ scale: 1 });
   const baseW = base?.width ?? 0;
-  const height = base ? (width * base.height) / base.width : width * 1.294;
+  const height = base ? (width * base.height) / base.width : width * aspect;
 
   useEffect(() => {
     const c = canvas.current;
+    if (c && !near) {
+      c.width = 0;
+      c.height = 0;
+      return;
+    }
     if (!page || !near || !c || !baseW) return;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     const viewport = page.getViewport({ scale: (width / baseW) * dpr });
@@ -222,7 +245,7 @@ function PdfPage({
   const draftHere = marks.draft && marks.draftPage === n ? marks.draft : null;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: Comment's marking surface on the page
+    // biome-ignore lint/a11y/useSemanticElements: a PDF's page with its pins, not a set of form fields
     <div
       ref={(el) => {
         box.current = el;

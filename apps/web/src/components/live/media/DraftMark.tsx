@@ -24,12 +24,9 @@ export function DraftMark({ mark, n }: { mark: Mark; n?: number }) {
         />
       )}
       {n !== undefined && (
-        <span
-          className="cnv-pin mf-pin mf-pin--on mf-pin--draft"
-          style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}
-        >
+        <span className="mf-pin mf-pin--on mf-pin--draft" style={{ left: `${at.x * 100}%`, top: `${at.y * 100}%` }}>
           <PersonAvatar id={me.user.id} name={me.user.name} size="xs" />
-          <span className="cnv-pin__n tabular">{n}</span>
+          <span className="mf-pin__n tabular">{n}</span>
         </span>
       )}
     </>

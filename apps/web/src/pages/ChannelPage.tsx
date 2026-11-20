@@ -4988,7 +4988,9 @@ export const TimelineMessage = memo(function TimelineMessage({
               </ImageSet>
             )}
             {/* A picture, a video or a PDF with comments (ADR 0208): its line, to its page. */}
-            {artifacts.map((r) => (r.deleted ? null : <ChatCommentsLine key={`talk:${r.id}`} artifactId={r.id} />))}
+            {artifacts.map((r) =>
+              r.deleted ? null : <ChatCommentsLine key={`talk:${r.id}`} artifactId={r.id} version={r.version} />,
+            )}
             {/* Its tools after its words and what it changed: the same place live, kept and saved. */}
             {keptSteps?.length && seenLive ? (
               <LiveTools work={keptSteps} agentName={name} color={colorOf(agent)} done stopped={stopped.canceled} />
