@@ -1207,11 +1207,16 @@ export function mcpScopeFromEnv(env: NodeJS.ProcessEnv): CommandScope | undefine
   const runnerHome = env.AGENTES_RUNNER_HOME?.trim();
   // Windows has no HOME, as a rule: the home is USERPROFILE (without one, `~` would read as the agent's folder).
   const home = env.HOME || (process.platform === "win32" ? env.USERPROFILE : undefined);
+  const runtime = env.XDG_RUNTIME_DIR?.trim();
   return {
     cwd,
     folders: folders.length ? folders : [cwd],
     ...(home ? { home } : {}),
     ...(runnerHome && path.isAbsolute(runnerHome) ? { runnerHome } : {}),
+    // A system-mode launch's engines live in the agent's runtime dir (`systemLauncher`).
+    ...(runtime && path.isAbsolute(runtime) && env.DOCKER_HOST?.startsWith(`unix://${runtime}/`)
+      ? { rootlessContainers: true }
+      : {}),
   };
 }
 
