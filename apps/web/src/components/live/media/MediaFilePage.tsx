@@ -38,7 +38,7 @@ import { usePageRoom } from "../room";
 import { talkIcon } from "../TalkBits";
 import { FileAgentContext, type FileTalk, FileTalkContext, LiveAskContext, takeRevealOnOpen } from "../talk";
 import { ImageStage, type MediaTool, type StageMarks } from "./ImageStage";
-import { type Mark, mediaPinsOf, takeMarkPictures } from "./marks";
+import { type Mark, type MarkPictures, mediaPinsOf, takeMarkPictures } from "./marks";
 import { PdfStage } from "./PdfStage";
 import { type VideoHandle, VideoStage } from "./VideoStage";
 import "../live.css";
@@ -47,12 +47,16 @@ import "./media.css";
 
 const ZOOM_STEPS = [1, 1.5, 2, 3, 4];
 
-/** A comment being written: what it points at, the app's picture of it while it goes up, and its own key. */
+/** A comment being written: what it points at, the app's pictures of the place (sent with it), and its own key. */
 interface Draft {
   selection: LiveSelection;
   thumb: string | null;
+  pictures: MarkPictures | null;
   key: number;
 }
+
+/** A message waits at most this long for its pictures to go up; past it, it goes without them. */
+const PICTURES_WAIT_MS = 8_000;
 
 /**
  * A picture, a video or a PDF on a page of the app with its conversation beside it (ADR 0208), as a live file's page
@@ -191,8 +195,8 @@ export function MediaFilePage({
   );
 
   /**
-   * A mark made with Comment: the composer gets it at once ("About area 4 of the image"), then the app's two pictures
-   * of the place go up and ride on it (a message sent before they are up goes without them).
+   * A mark made with Comment: the composer gets it at once ("About area 4 of the image") with the app's two pictures
+   * of the place, which go up only with the message (`prepareAbout`): a comment dropped stores nothing.
    */
   const comment = useCallback(
     async (
@@ -208,7 +212,7 @@ export function MediaFilePage({
         ...extra,
         version,
       };
-      setDraft({ selection, thumb: null, key });
+      setDraft({ selection, thumb: null, pictures: null, key });
       setDraftPage(extra.page);
       setFocusId(null);
       if (!column.open) column.toggle();
@@ -216,18 +220,27 @@ export function MediaFilePage({
       const pictures = await takeMarkPictures(picture.source, picture.width, picture.height, mark);
       if (!pictures) return;
       const thumb = URL.createObjectURL(pictures.crop);
-      setDraft((d) => (d?.key === key ? { ...d, thumb } : d));
-      try {
-        const [crop, frame] = await Promise.all([
-          api.live.uploadMark(org.id, fileId, pictures.crop),
-          api.live.uploadMark(org.id, fileId, pictures.frame),
-        ]);
-        setDraft((d) => (d?.key === key ? { ...d, selection: { ...d.selection, crop: crop.id, frame: frame.id } } : d));
-      } catch {
-        // The comment goes without its pictures: the agent reads the file itself.
-      }
+      setDraft((d) => (d?.key === key ? { ...d, thumb, pictures } : d));
     },
-    [pins.length, version, column, api, org.id, fileId],
+    [pins.length, version, column],
+  );
+
+  // The draft as the send reads it (the conversation calls `prepareAbout` as the message goes).
+  const draftNow = useRef<Draft | null>(null);
+  draftNow.current = draft;
+  /** The comment's pictures go up as its message goes; it goes without them when they can't (the agent reads the file). */
+  const prepareAbout = useCallback(
+    async (about: LiveSelection): Promise<LiveSelection> => {
+      const pictures = draftNow.current?.pictures;
+      if (!pictures || about.crop) return about;
+      const upload = Promise.all([
+        api.live.uploadMark(org.id, fileId, pictures.crop),
+        api.live.uploadMark(org.id, fileId, pictures.frame),
+      ]).then(([crop, frame]) => ({ ...about, crop: crop.id, frame: frame.id }));
+      const late = new Promise<LiveSelection>((resolve) => setTimeout(() => resolve(about), PICTURES_WAIT_MS));
+      return Promise.race([upload, late]).catch(() => about);
+    },
+    [api, org.id, fileId],
   );
 
   // C turns Comment on, H back to moving, Esc leaves Comment (outside a field).
@@ -260,12 +273,13 @@ export function MediaFilePage({
               setDraft(null);
               setDraftPage(undefined);
             },
+            prepareAbout,
             prefill,
             tookPrefill: () => setPrefill(null),
             reveal,
           }
         : null,
-    [artifact, media, talkRef?.rootId, draft, prefill, reveal],
+    [artifact, media, talkRef?.rootId, draft, prefill, reveal, prepareAbout],
   );
 
   const image = media === "image";

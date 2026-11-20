@@ -22,6 +22,11 @@ export interface FileTalk {
   about: LiveSelection | null;
   /** A picture's, a video's or a PDF's comment (ADR 0208): the app's picture of the place, shown in the quote. */
   aboutThumb?: string | null;
+  /**
+   * Called as the message goes: what it is about, with the app's pictures of the place uploaded now (only a message
+   * that is sent stores them); as it was when they can't go up.
+   */
+  prepareAbout?(about: LiveSelection): Promise<LiveSelection>;
   /** The quote's ×, and once a message carried it: it goes until the selection changes. */
   dropAbout(): void;
   /** Words to put in the composer ("@Atlas faz variações desta imagem"), a new `key` for each request. */

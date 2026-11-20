@@ -9,6 +9,7 @@ import type {
   ArtifactRef,
   Channel,
   HeldPlace,
+  LiveSelection,
   Member,
   MemoryUpdate,
   MessageMedia,
@@ -2210,20 +2211,23 @@ function ChannelView({
     setDraft("");
     const meta = localMeta(quote, quote ? dir.authorName(quote.author) : "", attached);
     setQuote(null);
-    // About what is selected in the file beside it (ADR 0199): the message carries it, then the quote goes.
-    if (fileHere?.about) {
-      meta.liveRef = {
-        artifactId: fileHere.artifactId,
-        kind: fileHere.kind,
-        title: fileHere.title,
-        selection: fileHere.about,
-      };
-      fileHere.dropAbout();
-    }
-    // From the thread panel or page: the reply makes it a "Responder" thread (out of the channel's timeline).
-    if (thread && chrome?.openThread) meta[OPEN_THREAD] = true;
-    // "Parar e mandar" (⌘↵): the agent drops the step it is on and reads this now.
-    send(text, thread ? thread.id : null, meta, opts?.interrupt ? { steer: "now" } : undefined);
+    // About what is selected in the file beside it (ADR 0199): the message carries it, then the quote goes. A comment
+    // on a picture, a video or a PDF uploads its pictures of the place first (ADR 0208), so only a sent one keeps them.
+    const file = fileHere?.about ? fileHere : null;
+    const about = file?.about ?? null;
+    const prepared = about && file?.prepareAbout ? file.prepareAbout(about) : null;
+    file?.dropAbout();
+    const go = (selection: LiveSelection | null) => {
+      if (file && selection) {
+        meta.liveRef = { artifactId: file.artifactId, kind: file.kind, title: file.title, selection };
+      }
+      // From the thread panel or page: the reply makes it a "Responder" thread (out of the channel's timeline).
+      if (thread && chrome?.openThread) meta[OPEN_THREAD] = true;
+      // "Parar e mandar" (⌘↵): the agent drops the step it is on and reads this now.
+      send(text, thread ? thread.id : null, meta, opts?.interrupt ? { steer: "now" } : undefined);
+    };
+    if (prepared) void prepared.then(go, () => go(about));
+    else go(about);
     dropFiles(() => false);
   };
   // A GIF or a sticker from the picker (ADR 0091): one click sends it here, as a message of its own (no text), shown
