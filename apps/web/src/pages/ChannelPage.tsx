@@ -331,6 +331,7 @@ import { useUploadFailed } from "@/components/Limits";
 import { LiveCodeToggle } from "@/components/LiveCode";
 import { ErrorState, LoadingConversation } from "@/components/Loading";
 import { ResolveButton, ResolvedLine } from "@/components/live/media/ResolveBits";
+import { ChatCommentsLine } from "@/components/live/media/ViewerBits";
 import { LiveQuoteBar, LiveRefLine } from "@/components/live/TalkBits";
 import { useFileTalk } from "@/components/live/talk";
 import { AwayPill, WaitingCard } from "@/components/MachineOutages";
@@ -4986,6 +4987,8 @@ export const TimelineMessage = memo(function TimelineMessage({
                 </div>
               </ImageSet>
             )}
+            {/* A picture, a video or a PDF with comments (ADR 0208): its line, to its page. */}
+            {artifacts.map((r) => (r.deleted ? null : <ChatCommentsLine key={`talk:${r.id}`} artifactId={r.id} />))}
             {/* Its tools after its words and what it changed: the same place live, kept and saved. */}
             {keptSteps?.length && seenLive ? (
               <LiveTools work={keptSteps} agentName={name} color={colorOf(agent)} done stopped={stopped.canceled} />

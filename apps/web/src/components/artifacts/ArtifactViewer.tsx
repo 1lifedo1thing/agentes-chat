@@ -40,6 +40,7 @@ import { copyText } from "@/lib/context-menu";
 import { useToast } from "@/lib/toast";
 import { ArtifactMoreMenu, type DownloadFormat, useArtifactDownload, useDeleteArtifact } from "./ArtifactActions";
 import { fileSaver } from "./fileSaver";
+import { ViewerCommentButtons } from "@/components/live/media/ViewerBits";
 import { useFileShare } from "./ShareDialog";
 import { UploadButton, useDriveUpload } from "./Upload";
 import { ArtifactContentView, TableEditor } from "./views";
@@ -258,6 +259,8 @@ export function ArtifactViewer({
           {place}
         </span>
       )}
+      {/* A picture, a video or a PDF: its comments, on its page (ADR 0208). */}
+      {a.kind === "file" && <ViewerCommentButtons artifactId={a.id} />}
       {a.kind === "file" ? (
         <Button
           size="sm"

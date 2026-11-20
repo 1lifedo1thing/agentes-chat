@@ -245,3 +245,10 @@
   font-size: 12.5px;
   white-space: nowrap;
 }
+
+/* The viewer's picture: its comments' pins in its box as it zooms and moves (ImageZoom's `overlay`). */
+.izoom__overlay {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
