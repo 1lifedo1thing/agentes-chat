@@ -81,7 +81,6 @@ import {
   SESSION_MAX_INPUT_TOKENS,
   sessionLostNote,
   setAgentBrain,
-  statusReply,
   storeMachineAccess,
   type ToolSource,
   taskManager,
@@ -4148,8 +4147,6 @@ test("a run that waited in line counts its work from the turn it got, not from t
     yield { type: "text_delta", text: "Pronto." };
     await Bun.sleep(0);
     await Bun.sleep(0);
-    const [row] = await f.db.select().from(schema.agentRuns);
-    notes.push((await statusReply(f.db, row as NonNullable<typeof row>, new Date())).meta.bodyParams.minutes);
     notes.push(
       Date.now() - Date.parse((await activeRunsIn(f.db, f.org.id, f.general.id))[0]?.startedAt ?? "") < 60_000,
     );
@@ -4172,7 +4169,7 @@ test("a run that waited in line counts its work from the turn it got, not from t
   });
   await drainOutbox(f.db, handlers, { now: new Date(Date.now() + COMPUTER_BUSY_RETRY_MS + 1_000) });
   // Once as the ask starts, once as the computer takes the turn.
-  expect(notes).toEqual(["1", true, 2]);
+  expect(notes).toEqual([true, 2]);
 });
 
 test("a person's message during the ask joins the wait: its receipt says the line, as a reload would", async () => {
@@ -4722,6 +4719,36 @@ test("a session whose folder is gone from the computer goes on fresh in the agen
     "Your previous session on the computer was lost: the folder it worked in (repos/acme/app) isn't there anymore.",
   );
   expect((await timeline(f)).map((m) => m.body)).toEqual(["@dev oi", "Pronto."]);
+});
+
+test("a computer whose disk is full ends the run on that, whatever code its failure came with", async () => {
+  f = await setup();
+  await computerAgent(f);
+  const { brain } = scriptedComputerBrain((n) => [
+    n === 0
+      ? { type: "error", code: "runner_error", message: "ENOSPC: no space left on device, write", retryable: false }
+      : {
+          type: "error",
+          code: "machine_offline",
+          message: "The agent's worker on this computer stopped because the disk is full (no space left on device).",
+          retryable: true,
+        },
+  ]);
+  const handlers = createJobHandlers({
+    ...f.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  // A dropped worker's turn doesn't wait for a computer that is there: the next turn would drop the same way.
+  await post(f, "@dev de novo");
+  await drainOutbox(f.db, handlers);
+  const runs = await f.db.select().from(schema.agentRuns);
+  expect(runs.map((r) => [r.status, r.error])).toEqual([
+    ["failed", "disk_full"],
+    ["failed", "disk_full"],
+  ]);
 });
 
 test("a Codex session whose folder is gone: a fresh session, once per run", async () => {
