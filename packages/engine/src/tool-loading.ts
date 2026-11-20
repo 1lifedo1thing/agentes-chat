@@ -1,4 +1,5 @@
 import { and, type Database, desc, eq, gt, isNull, ne, or, schema, sql } from "@agenteschat/db";
+import { isConfidentialRun } from "./confidential";
 import { cutText } from "./format";
 import { JevOffError } from "./jev-key";
 import type { Judge } from "./judge";
@@ -49,8 +50,8 @@ const describeGroup = (g: ToolGroup) =>
  * The tool groups a run loads up front: `keep`, and one calibrated yes/no per
  * other group the agent may use ("will it need these for this message?"), all
  * in one judge request. Without an answer in time, only `keep` (with the core
- * tools and `find_tools`); the same on a server with no Jev key (`JevOffError`),
- * where no run is ever judged. When the judge refuses or fails, every group: a
+ * tools and `find_tools`); the same on a server with no Jev key (`JevOffError`)
+ * and in a confidential thread, where no run is ever judged. When the judge refuses or fails, every group: a
  * judge that is down (or refused for the month) would otherwise leave each run
  * with only what the previous one used, its other tools a search it may not
  * think of.
@@ -127,7 +128,8 @@ export async function chooseToolGroups(
     });
     return { groups: chosen, scores, source: "judge", kept };
   } catch (error) {
-    if (error instanceof JevOffError) return none("error");
+    // A confidential thread's run is never judged (ADR 0190): its refusal is no outage.
+    if (error instanceof JevOffError || isConfidentialRun(input.runId)) return none("error");
     const reason = cutText(error instanceof Error ? error.message : String(error), 200);
     return { groups: [...kept, ...groups.map((g) => g.key)], scores: {}, source: "error", kept, reason };
   } finally {

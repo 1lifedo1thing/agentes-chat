@@ -10,6 +10,7 @@ import {
   grantScopes,
   JevOffError,
   type Judge,
+  noteConfidentialRun,
   PLATFORM_CAP,
   postPersonMessage,
   presentTools,
@@ -228,6 +229,14 @@ test("chooseToolGroups: one calibrated question per group, the threshold, and th
   // A server with no Jev key never judges a run: the kept groups and find_tools, as without an answer.
   const jevOff: Judge = { name: "jev", ask: () => Promise.reject(new JevOffError()) };
   expect(await chooseToolGroups(jevOff, { ...input, keep: ["wiki"] })).toEqual({
+    groups: ["wiki"],
+    scores: {},
+    source: "error",
+    kept: ["wiki"],
+  });
+  // Nor is a confidential thread's run: the judge's refusal there keeps the kept groups too.
+  noteConfidentialRun("run-sealed");
+  expect(await chooseToolGroups(broken, { ...input, runId: "run-sealed", keep: ["wiki"] })).toEqual({
     groups: ["wiki"],
     scores: {},
     source: "error",

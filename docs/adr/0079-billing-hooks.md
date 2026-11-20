@@ -101,8 +101,8 @@ Now:
 
 - **Tool groups.** A refused or failed tool-group judge loads every group the agent is granted, the reason on the run's
   `context` step (`toolGroups.reason`, `platform_cap` here). A slow judge still starts with the kept groups, and so
-  does a server with no Jev key (`JevOffError`), where no run is ever judged: there, loading every group would only add
-  cost and latency.
+  does a server with no Jev key (`JevOffError`) or a confidential thread's run, where no run is ever judged: there,
+  loading every group would only add cost and latency.
 - **Turn ends.** The judge falls back to the workspace's small model as before. When the workspace has none and the
   refusal is the platform cap, the run gets one self-check turn per run (`uncheckedNudge`, step `nudged: unchecked`):
   its reply is held, posted as it is if it adds nothing. Any other failure ends as done as before (`judge_error`): no
