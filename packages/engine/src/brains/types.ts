@@ -209,10 +209,14 @@ export type BrainEvent =
       model?: string;
       cacheRead?: number;
       cacheWrite?: number;
-      /** Computer brains: the API calls the turn made, and the most uncached input and whole input one of them read. */
+      /**
+       * Computer brains: the API calls the turn made, the most uncached input and whole input one of them read, and
+       * the whole input its last one read (the session's size as the turn ends).
+       */
       calls?: number;
       maxUncached?: number;
       maxContext?: number;
+      lastContext?: number;
     }
   | { type: "limit"; resetsAt?: string }
   | { type: "done"; text: string; session?: { id: string }; timings?: BrainTurnTimings }

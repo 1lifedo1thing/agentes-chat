@@ -2146,11 +2146,13 @@ export type WireBrainEvent =
       /**
        * The API calls the turn made (Claude Code's `num_turns`, Codex's model requests), the most uncached input one of
        * them read (Claude Code), and the most input one read, cache included: its context at that step. An older
-       * runner sends none.
+       * runner sends none. `lastContext`: what the turn's last call read, cache included, the session's size as it
+       * ends (an older runner sends none: the engine takes the biggest call, else the turn's input over `calls`).
        */
       calls?: number;
       maxUncached?: number;
       maxContext?: number;
+      lastContext?: number;
     }
   | { type: "limit"; resetsAt?: string }
   | { type: "done"; text: string; session?: { id: string }; timings?: BrainTurnTimings }
@@ -3689,6 +3691,7 @@ export function parseBrainEvent(v: unknown): WireBrainEvent | null {
         ...(num(v.calls) > 0 ? { calls: num(v.calls) } : {}),
         ...(num(v.maxUncached) > 0 ? { maxUncached: num(v.maxUncached) } : {}),
         ...(num(v.maxContext) > 0 ? { maxContext: num(v.maxContext) } : {}),
+        ...(num(v.lastContext) > 0 ? { lastContext: num(v.lastContext) } : {}),
       };
     case "limit":
       return { type: "limit", ...(isString(v.resetsAt) ? { resetsAt: v.resetsAt.slice(0, 40) } : {}) };
@@ -4292,6 +4295,8 @@ export const MISSION_MCP_TOOLS: readonly MissionMcpTool[] = [
         request_id: { type: "string", maxLength: 64 },
         /** Added by the runner: where the task runs and its folders (the code-side rules check paths). */
         scope: { type: "object" },
+        /** Added by the runner: it refused this call by itself (`localVerdict`'s code and words), told for the run's steps. */
+        refused: { type: "object" },
       },
     },
   },
