@@ -114,7 +114,7 @@ import { EgressObservation, probeEgress } from "./egress";
 import { NetworkChangingError, RUNNER_VERSION, RunnerError } from "./errors";
 import { cachedExecutors, EXECUTORS_TTL_MS, type ExecutorRun } from "./executors";
 import { systemGitCache } from "./git";
-import type { HandlerContext, RequestObserver, RequestOutcome } from "./handlers";
+import { closeIdleUnderPressure, type HandlerContext, type RequestObserver, type RequestOutcome } from "./handlers";
 import { Holds } from "./holds";
 import { IphoneSetup, type IphoneSetupOptions } from "./iphone-setup";
 import { currentProcess, isCompiled, selfCommand } from "./launch";
@@ -185,18 +185,30 @@ import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
  */
 
 /**
- * Where the runner reads free memory (Linux), an idle CLI closes whenever a turn needs its room (`reclaim`), so keeping
- * it warm costs no admission: follow-ups minutes apart skip a cold start and keep the prompt cache. Elsewhere a count
- * of turns decides room, so idle CLIs close soon.
+ * Where the runner reads free memory (Linux), an idle Claude Code closes when memory runs short (a turn that needs its
+ * room, `reclaim`, or `closeIdleUnderPressure`), so keeping it warm costs no admission: follow-ups skip a cold start
+ * and keep the prompt cache. The idle limit there is only a backstop, as long as a session is picked up again
+ * (`SESSION_IDLE_MS` on the server). Elsewhere a count of turns decides room, so idle CLIs close soon.
  */
 const MEMORY_READ = process.platform === "linux";
 
 export const DEFAULT_LIMITS = {
   maxConcurrentTasks: 3,
   taskMaxSeconds: 4 * 3600,
+  brainIdleMinutes: MEMORY_READ ? 60 : 3,
+  brainMaxProcesses: MEMORY_READ ? 8 : 1,
+} as const;
+
+/** Codex app-servers aren't closed for memory (`reclaimIdle` is Claude Code's): they keep the shorter limits. */
+const CODEX_DEFAULT_LIMITS = {
   brainIdleMinutes: MEMORY_READ ? 20 : 3,
   brainMaxProcesses: MEMORY_READ ? 2 : 1,
 } as const;
+
+const codexLimits = (c: Pick<StoredConfig, "brainIdleMinutes" | "brainMaxProcesses"> | null | undefined) => ({
+  idleMs: (c?.brainIdleMinutes ?? CODEX_DEFAULT_LIMITS.brainIdleMinutes) * 60_000,
+  maxProcesses: c?.brainMaxProcesses ?? CODEX_DEFAULT_LIMITS.brainMaxProcesses,
+});
 
 /** Bounds for `config.set` (the app's Preferences). */
 const LIMIT_BOUNDS: Record<keyof typeof DEFAULT_LIMITS, [number, number]> = {
@@ -843,7 +855,16 @@ export class RunnerDaemon implements RequestObserver {
     }, 60_000);
     relayed.unref?.();
     this.timers.push(relayed);
+    if (MEMORY_READ) this.timers.push(closeIdleUnderPressure(() => this.reclaimIdleBrains()));
     this.expireRequests();
+  }
+
+  /** One idle Claude Code closes, the least recently used on this computer (any agent's in system mode). */
+  private reclaimIdleBrains(): Promise<boolean> {
+    const s = this.session;
+    if (!s) return Promise.resolve(false);
+    if (s.supervisor) return s.accountBrains?.reclaim("") ?? s.supervisor.reclaimBrains();
+    return s.brains.reclaimIdle();
   }
 
   /**
@@ -1015,7 +1036,7 @@ export class RunnerDaemon implements RequestObserver {
       };
       this.session.brains.setLimits(brainLimits);
       this.session.accountBrains?.brains.setLimits(brainLimits);
-      this.session.codexApp.setLimits(brainLimits);
+      this.session.codexApp.setLimits(codexLimits(paired));
       this.session.supervisor?.stateChanged();
     }
     this.queueStatus();
@@ -1043,6 +1064,8 @@ export class RunnerDaemon implements RequestObserver {
         taskMaxSeconds: c?.taskMaxSeconds ?? DEFAULT_LIMITS.taskMaxSeconds,
         brainIdleMinutes: c?.brainIdleMinutes ?? DEFAULT_LIMITS.brainIdleMinutes,
         brainMaxProcesses: c?.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
+        codexIdleMinutes: c?.brainIdleMinutes ?? CODEX_DEFAULT_LIMITS.brainIdleMinutes,
+        codexMaxProcesses: c?.brainMaxProcesses ?? CODEX_DEFAULT_LIMITS.brainMaxProcesses,
       },
     };
   }
@@ -1231,8 +1254,7 @@ export class RunnerDaemon implements RequestObserver {
     // Codex turns on long-lived app-servers (live steering); `codex exec` where they can't run.
     const codexApp = new CodexAppServers({
       runs: codexRuns,
-      idleMs: (config.brainIdleMinutes ?? DEFAULT_LIMITS.brainIdleMinutes) * 60_000,
-      maxProcesses: config.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
+      ...codexLimits(config),
       onRateLimits: (account, rateLimits) =>
         this.accounts.noteCodexRateLimits(account ?? OWN_USAGE_ID.codex, rateLimits),
       log,

@@ -8,6 +8,7 @@ import { createInterface } from "node:readline";
 import type { CommandProfile, CommandScope } from "@agenteschat/adapters/command-policy";
 import { type BrainSteerReply, type BrainSteerRequest, isBrainEffort } from "@agenteschat/adapters/machine-protocol";
 import { accountEnv, withoutContainers, yieldRoute } from "./accounts";
+import { awakeClock } from "./awake";
 import {
   CODEX_DIRECT_MCP_CONFIG,
   CODEX_NO_NETWORK,
@@ -759,6 +760,8 @@ interface AppLive {
   tools: Set<string> | null;
   busy: boolean;
   lastUsed: number;
+  /** Awake time (`awakeClock`) its last turn ended at. */
+  idleSince: number;
   idleTimer: ReturnType<typeof setTimeout> | null;
   /** The bridge entry between turns (no run: its calls are refused quietly). */
   bridge: McpTaskInfo | null;
@@ -1069,6 +1072,7 @@ export class CodexAppServers implements CodexAppRunner {
       tools: null,
       busy: false,
       lastUsed: Date.now(),
+      idleSince: awakeClock.read(),
       idleTimer: null,
       bridge,
       turn: null,
@@ -1469,13 +1473,21 @@ export class CodexAppServers implements CodexAppRunner {
   }
 
   private armIdle(live: AppLive) {
+    live.idleSince = awakeClock.read();
+    this.checkIdle(live, this.opts.idleMs ?? CODEX_APP_IDLE_MS);
+  }
+
+  /** Idle time is awake time: a timer that fires after the computer slept finds less and waits on. */
+  private checkIdle(live: AppLive, waitMs: number) {
     if (live.idleTimer) clearTimeout(live.idleTimer);
     live.idleTimer = setTimeout(() => {
-      if (!live.busy) {
-        this.log(`codex app-server for ${live.sessionId.slice(0, 8)} idle; closing`);
-        this.drop(live);
-      }
-    }, this.opts.idleMs ?? CODEX_APP_IDLE_MS);
+      live.idleTimer = null;
+      if (live.busy) return;
+      const left = (this.opts.idleMs ?? CODEX_APP_IDLE_MS) - (awakeClock.read() - live.idleSince);
+      if (left > 0) return this.checkIdle(live, left);
+      this.log(`codex app-server for ${live.sessionId.slice(0, 8)} idle; closing`);
+      this.drop(live);
+    }, waitMs);
     live.idleTimer.unref?.();
   }
 

@@ -5252,3 +5252,30 @@ test("a refusal of the computer's own waits for that computer: never the provide
   expect(after?.status).toBe("done");
   expect(after?.waitingMachineId).toBeNull();
 });
+
+test("a conversation's run warms its Claude Code at claim with the session and model its turn gets", async () => {
+  f = await setup();
+  const machineId = await computerAgent(f);
+  const { brain: scripted, seen } = scriptedComputerBrain(() => [
+    { type: "usage", input: 40, output: 5, source: "plan", model: "claude-sonnet-5-5" },
+    { type: "done", text: "ok" },
+  ]);
+  const warmed: BrainTurn[] = [];
+  const brain: Brain = { ...scripted, warm: async (turn) => void warmed.push(turn) };
+  const handlers = createJobHandlers({
+    ...f.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  const question = await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
+    body: "@dev e agora?",
+    threadId: question.id,
+  });
+  await drainOutbox(f.db, handlers);
+  expect(seen).toHaveLength(2);
+  expect(warmed.map((t) => [t.session, t.model])).toEqual(seen.map((t) => [t.session, t.model]));
+  expect(warmed[1]?.session).toMatchObject({ machineId, resume: true });
+  expect(warmed.every((t) => t.system === "" && t.messages.length === 0)).toBe(true);
+});

@@ -1962,6 +1962,17 @@ async function executeRunInner(
     const ai = await agentAiState({ db, gateway: deps.gateway, machines: deps.machines }, agent, run);
     if (ai.state === "no_ai") return failNoAi(ai.reason ?? "no_key", ai.own, undefined, undefined, ai);
     prof.part("ai_state");
+    // Somebody waits on a conversation's run: its CLI starts while the turn is built. Not for a routine's or
+    // background work, which nobody waits on.
+    if (
+      fresh &&
+      !run.background &&
+      !isRightHand(agent) &&
+      brainOf(agent.brain) === "claude_code" &&
+      !runMessageMeta(run, trigger).viaRoutine
+    ) {
+      void warmAtClaim(deps, agent, run, replyThreadId ?? run.channelId).catch(() => {});
+    }
   }
   if (!askingForRoom) await publishChannelEvent(deps.pubsub, event("running"));
   // Tools on demand (ADR 0043): a new run lists the core tools and the groups the judge expects it to need.
@@ -6463,6 +6474,40 @@ async function executeRunInner(
     offWork?.();
     if (autoTick) clearInterval(autoTick);
   }
+}
+
+/**
+ * A conversation's run that will think with Claude Code: its computer starts the session's CLI now, while the
+ * context, the judges and the computer's line run (`Brain.warm`). The plan is the one the run will most likely get:
+ * its session picked without the prompt key (nothing kept on the run), "Automático" at the medium tier it falls back
+ * to. A different launch at the turn only costs that start.
+ */
+async function warmAtClaim(deps: EngineDeps, agent: Agent, run: AgentRun, conversation: string) {
+  const factory = deps.brains?.claude_code;
+  if (!factory) return;
+  let plan = await resolveBrain(deps, agent, run, conversation, { peek: true });
+  if (plan.kind !== "claude_code" || plan.unavailable || !plan.session) return;
+  if (needsAutoChoice(agent, plan)) {
+    plan = withAuto(agent, plan, autoApplied(agent, plan, fallbackChoice("none"), "anthropic")).plan;
+    const model = isAutoModel(plan.model) ? undefined : autoPlanModel(plan.account?.provider, plan.model, plan.usage);
+    if (model) plan = { ...plan, model };
+  }
+  await factory(agent, run, { mcpToken: () => "" }).warm?.({
+    runId: run.id,
+    orgId: run.orgId,
+    agentId: run.agentId,
+    channelId: run.channelId,
+    threadRootId: run.threadRootId,
+    system: "",
+    messages: [],
+    tools: [],
+    trigger: "",
+    session: plan.session,
+    ...(plan.model ? { model: plan.model } : {}),
+    ...(plan.account ? { account: plan.account } : {}),
+    ...(plan.effort ? { effort: plan.effort } : {}),
+    ...(agent.contextTokens ? { contextTokens: agent.contextTokens } : {}),
+  });
 }
 
 /** Builds the brain of this kind (`resolveBrain` picks it): a registered factory, else the built-in model brain. */
