@@ -103,7 +103,7 @@ function sheetParts(label: string): { range: string; sheet: string } | null {
  */
 export function aboutWords(t: TFunction, kind: TalkKind, selection: LiveSelection): string {
   const label = selection.label;
-  // A picture's, a video's or a PDF's comment (ADR 0208): "Sobre a área 4 da imagem", "Sobre 0:42 do vídeo".
+  // A picture's, a video's or a PDF's comment (ADR 0208): "About area 4 of the image", "About 0:42 of the video".
   if (isMediaKind(kind)) {
     if (kind === "video" && selection.time !== undefined) {
       return t("live.conversation.about.videoAt", { time: clockOf(selection.time) });
@@ -138,8 +138,8 @@ export function aboutParts(t: TFunction, ref: LiveRef): { what: string; where: s
       ? { what: title, where: t(`live.conversation.where.${ref.kind}` as "live.conversation.where.image") }
       : { what: title, where: t(`live.kinds.${ref.kind}` as "live.kinds.canvas") };
   }
-  // A picture's, a video's or a PDF's comment (ADR 0208): "Área 1" on the image, "0:42 · área 2" on the video,
-  // "Página 3" with its "área 1".
+  // A picture's, a video's or a PDF's comment (ADR 0208): "Area 1" on the image, "0:42 · area 2" on the video,
+  // "Page 3" with its "area 1".
   if (isMediaKind(ref.kind)) {
     const where = t(`live.conversation.where.${ref.kind}` as "live.conversation.where.image");
     if (ref.kind === "video" && selection.time !== undefined) {

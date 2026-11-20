@@ -183,7 +183,7 @@ export function MediaFilePage({
     if (waiting) reveal(waiting);
   }, [fileId, Boolean(messages.data)]);
 
-  /** "Pedir à Iris": the conversation opens with the agent's @. */
+  /** "Ask Iris": the conversation opens with the agent's @. */
   const ask = useCallback(
     (request: LiveAskRequest = {}) => {
       const agent = request.agentId === null ? null : fileAgent;
