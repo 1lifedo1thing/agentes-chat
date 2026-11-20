@@ -37,11 +37,16 @@
   height: 100%;
   min-height: 0;
 }
-/* The handle over the 12 between the file and the comments. */
+/* The handle over the 12 between the file and the comments; under a finger, wider, its bar still in the middle. */
 .lf-talk-grip.lf-talk-grip--viewer {
   top: 0;
   bottom: 0;
   right: var(--viewer-talk-w);
+}
+@media (hover: none) {
+  .lf-talk-grip.lf-talk-grip--viewer {
+    right: calc(var(--viewer-talk-w) - 6px);
+  }
 }
 /* Narrow, the comments take the viewer: "Comentários" goes back to the file. */
 @media (max-width: 760px) {
