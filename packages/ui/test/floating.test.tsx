@@ -19,8 +19,8 @@ import {
   timeOptions,
 } from "../src";
 import { TIP_OPEN_MS } from "../src/components/Tip";
-import { HOVER_CLOSE_MS } from "../src/hooks/useHoverCard";
 import { EDGE_ROOM, placeList, placeTip, pullToFit, TIP_GAP } from "../src/floating";
+import { HOVER_CLOSE_MS } from "../src/hooks/useHoverCard";
 
 const body = () => within(document.body);
 const key = async (el: Element, k: string) => {

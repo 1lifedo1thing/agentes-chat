@@ -329,8 +329,7 @@ html[data-pointer] :focus-visible {
   margin-inline-end: calc(-1 * (var(--ghost-plate) + var(--glyph-air, 0px)));
 }
 @media (pointer: coarse) {
-  .ac-acts
-    > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph):has(+ :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)) {
+  .ac-acts > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph):has(+ :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)) {
     margin-inline-end: calc(var(--space-2) - var(--ghost-plate) - var(--glyph-air, 0px));
   }
 }
