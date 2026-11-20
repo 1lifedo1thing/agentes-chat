@@ -11,7 +11,7 @@ import {
 } from "../artifacts";
 import { recordAudit } from "../audit";
 import { UUID } from "../authority";
-import { sniffModelImage } from "../avatars";
+import { sniffImage, sniffModelImage } from "../avatars";
 import { NotFoundError, ValidationError } from "../errors";
 import { imageSize } from "../image-size";
 import { looksLikeSvg, SVG_TYPE, sanitizeSvg } from "./svg";
@@ -108,7 +108,8 @@ export async function putMarkPicture(
   if (!(await mediaFileOf(deps, actor, orgId, fileId))) {
     throw new NotFoundError("Artifact not found", "artifact.not_found");
   }
-  if (bytes.byteLength > MARK_PICTURE_BYTES || !sniffModelImage(bytes)) {
+  // PNG, JPEG or WebP only (`sniffImage`), as said: a GIF is no picture of a place.
+  if (bytes.byteLength > MARK_PICTURE_BYTES || !sniffImage(bytes)) {
     throw new ValidationError("A comment's picture is a PNG, JPEG or WebP of at most 2 MB", "live.asset_type");
   }
   return storeAsset(deps, actor, orgId, fileId, { bytes, source: "mark" });

@@ -11,7 +11,14 @@ import { replyThreadOf } from "../runs";
 import type { ToolContext, ToolDefinition, ToolOutput, ToolSource } from "../tools/types";
 import { untrustedBlock } from "../untrusted";
 import { getAsset, readPictureFile } from "./assets";
-import { fileOfConversation, isPinned, type LiveAskSelection, liveRefOf, markWords } from "./conversation";
+import {
+  cleanSelection,
+  fileOfConversation,
+  isPinned,
+  type LiveAskSelection,
+  liveRefOf,
+  markWords,
+} from "./conversation";
 import { type MediaKind, mediaKindOf } from "./media";
 import { resolveComment, resolvedOf } from "./resolve";
 
@@ -269,14 +276,16 @@ function commentTool(deps: CommentToolDeps, file: ConversationFile): ToolDefinit
             isError: true,
           };
         }
-        // Its label is its pin's number, as the apps write theirs: the next one.
-        const selection: LiveAskSelection = {
-          label: String((await pinnedComments(ctx, file)).length + 1),
+        // Its label is its pin's number, as the apps write theirs: the next one. Kept as a person's selection is
+        // (`cleanSelection`): an area stays inside the file, fractions and the moment rounded.
+        const label = String((await pinnedComments(ctx, file)).length + 1);
+        const selection: LiveAskSelection = cleanSelection({
+          label,
           ...(mark ? { mark } : {}),
           ...(time !== undefined ? { time } : {}),
           ...(page !== undefined ? { page } : {}),
           version: file.currentVersion,
-        };
+        }) ?? { label };
         const [run] = await ctx.db
           .select({ hop: schema.agentRuns.hop })
           .from(schema.agentRuns)
