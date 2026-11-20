@@ -66,6 +66,11 @@ export interface CommandScope {
   home?: string;
   /** The runner's own home wherever it is (`AGENTES_RUNNER_HOME`): its accounts, tokens and settings are secrets. */
   runnerHome?: string;
+  /**
+   * `docker` and `podman` reach the agent's own rootless engine (`DOCKER_HOST` in its runtime dir, ADR 0169 and 0209):
+   * a privileged container, its capabilities and its engine's socket reach only the agent's user namespace.
+   */
+  rootlessContainers?: boolean;
 }
 
 type Word = { text: string; op?: undefined } | { text: string; op: "pipe" | "list" | "redirect" | "input" };
@@ -2575,10 +2580,14 @@ const findRoots = (args: readonly string[]) => {
   return args.slice(0, end < 0 ? args.length : end).filter((a) => !/^-[HLP]$/.test(a));
 };
 
-/** A container given the host: `--privileged`, the host's namespaces or admin capabilities, `/` or Docker's socket mounted. */
+/**
+ * A container given the host: `--privileged`, the host's namespaces or admin capabilities, `/` or Docker's socket
+ * mounted. Under the agent's own rootless engine all of that stays the agent's, but the host's processes.
+ */
 function hostAccess(args: readonly string[], scope: CommandScope) {
   return args.some((a, i) => {
     const next = args[i + 1] ?? "";
+    if (scope.rootlessContainers) return /^--pid=host$/i.test(a) || (a === "--pid" && next === "host");
     if (
       /^--privileged$|^--(pid|ipc|userns|uts|cgroupns)=host$|^--cap-add=(ALL|SYS_ADMIN|SYS_MODULE|SYS_PTRACE)$/i.test(a)
     )

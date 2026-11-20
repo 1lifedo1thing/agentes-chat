@@ -197,6 +197,13 @@ test("the prompt tool: plain reads are allowed at once (no card, nothing posted)
     home: "/Users/w",
   });
   expect(mcpScopeFromEnv({ AGENTES_MCP_CWD: "relative" })).toBeUndefined();
+  // A system-mode launch's own rootless engine, in its runtime dir: its privileged containers stay the agent's.
+  const engine = (DOCKER_HOST: string) =>
+    mcpScopeFromEnv({ AGENTES_MCP_CWD: "/w/ada", XDG_RUNTIME_DIR: "/run/user/21003", DOCKER_HOST })?.rootlessContainers;
+  expect(engine("unix:///run/user/21003/docker.sock")).toBe(true);
+  expect(engine("unix:///run/user/21003/podman/podman.sock")).toBe(true);
+  expect(engine("unix:///var/run/docker.sock")).toBeUndefined();
+  expect(engine("unix:///run/user/210033/docker.sock")).toBeUndefined();
   // The runner's own home, wherever it is (system mode), is read by nothing either: its accounts are there.
   const system = mcpScopeFromEnv({ AGENTES_MCP_CWD: "/w/ada", AGENTES_RUNNER_HOME: "/var/lib/agentes-runner" });
   expect(system?.runnerHome).toBe("/var/lib/agentes-runner");
