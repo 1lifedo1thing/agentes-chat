@@ -2448,6 +2448,7 @@ export class RunnerDaemon implements RequestObserver {
       brainIdleMinutes: c.brainIdleMinutes ?? DEFAULT_LIMITS.brainIdleMinutes,
       brainMaxProcesses: c.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
       workspace: this.session?.workspaceReal ?? c.workspace,
+      defaultMaxConcurrentTasks: DEFAULT_LIMITS.maxConcurrentTasks,
       ...(c.managedBy === "desktop" ? { managedBy: c.managedBy } : {}),
     };
   }

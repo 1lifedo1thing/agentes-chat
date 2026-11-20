@@ -14,10 +14,13 @@ import { shortPath } from "../../ui/time";
 /**
  * The runner's defaults (the same numbers `agentes-runner`'s `DEFAULT_LIMITS` uses when the config has none): on
  * Linux, where it reads free memory and closes idle conversations once memory runs short, they stay open longer. Its
- * task limit is sized to the computer (at least 3): `config.get` says the real one.
+ * task limit is sized to the computer: `config.get` says it (`defaultMaxConcurrentTasks`), 3 from an older runner.
  */
-export const defaultLimits = (platform: Platform): Required<Omit<ControlConfigPatch, "name">> => ({
-  maxConcurrentTasks: 3,
+export const defaultLimits = (
+  platform: Platform,
+  maxConcurrentTasks = 3,
+): Required<Omit<ControlConfigPatch, "name">> => ({
+  maxConcurrentTasks,
   taskMaxSeconds: 4 * 3600,
   brainMaxProcesses: platform === "linux" ? 8 : 1,
   brainIdleMinutes: platform === "linux" ? 60 : 3,
@@ -48,7 +51,7 @@ export function Advanced() {
     };
   }, [store, first]);
 
-  const defaults = defaultLimits(host.platform);
+  const defaults = defaultLimits(host.platform, config?.defaultMaxConcurrentTasks);
   const idle = idleChoices(host.platform);
   const limits = { ...defaults, ...(config ?? {}) };
 

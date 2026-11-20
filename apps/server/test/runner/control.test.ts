@@ -763,6 +763,7 @@ test("folders, tools and settings from the app: system folders refused, everythi
     brainIdleMinutes: DEFAULT_LIMITS.brainIdleMinutes,
     brainMaxProcesses: DEFAULT_LIMITS.brainMaxProcesses,
     workspace: expect.any(String),
+    defaultMaxConcurrentTasks: DEFAULT_LIMITS.maxConcurrentTasks,
     managedBy: "desktop",
   });
   expect(await c.data({ type: "config.set", patch: { name: "Notebook", maxConcurrentTasks: 5 } })).toMatchObject({
