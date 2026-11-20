@@ -392,7 +392,12 @@ export function ImageZoom({
   const percent = formatPercent(i18n.language, Math.round((view?.scale ?? 1) * 100));
 
   return (
-    <div className="izoom" data-zoomed={zoomed || undefined} data-marking={marking ? true : undefined}>
+    <div
+      className="izoom"
+      data-zoomed={zoomed || undefined}
+      data-marking={marking ? true : undefined}
+      data-tools={tools ? true : undefined}
+    >
       {/* biome-ignore lint/a11y/useSemanticElements: a picture's stage, not a set of form fields */}
       <div
         ref={stageRef}
@@ -525,6 +530,7 @@ export function ImageZoom({
           <Button
             size="sm"
             variant="ghost"
+            className="izoom__fit"
             disabled={!zoomed}
             onClick={() => img && stage && go(fitView(img, stage), true)}
           >

@@ -206,6 +206,12 @@
     display: none;
   }
 }
+/* A phone's stage: the PDF's bar keeps the zoom and the resolved ones; its page shows as it scrolls. */
+@container (max-width: 439px) {
+  .mf-bar .mf-pages-now {
+    display: none;
+  }
+}
 .izoom[data-marking] .izoom__stage {
   cursor: crosshair;
 }
