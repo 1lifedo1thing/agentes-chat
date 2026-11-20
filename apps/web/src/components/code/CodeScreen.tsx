@@ -44,27 +44,27 @@ export function CodeScreen({ agent }: { agent: Agent }) {
       </div>
       <div className="code-sbar">
         {phones.length > 0 && (
-        <Select
-          size="sm"
-          className="code-select"
-          aria-label={t("codeSessions.screen.menu", agentGrammar(agent.name))}
-          value={phone ? phone.phone.id : "computer"}
-          onValueChange={(v) => setPick(v === "computer" ? { kind: "computer" } : { kind: "phone", phoneId: v })}
-          options={[
-            {
-              value: "computer",
-              label: t("codeSessions.screen.computer", agentGrammar(agent.name)),
-              description: t("codeSessions.screen.computerHint"),
-              leading: <Icon name="computer" size={16} />,
-            },
-            ...phones.map(({ phone: p, host }) => ({
-              value: p.id,
-              label: p.name,
-              description: t("codeSessions.screen.onHost", { host }),
-              leading: <Icon name="phone" size={16} />,
-            })),
-          ]}
-        />
+          <Select
+            size="sm"
+            className="code-select"
+            aria-label={t("codeSessions.screen.menu", agentGrammar(agent.name))}
+            value={phone ? phone.phone.id : "computer"}
+            onValueChange={(v) => setPick(v === "computer" ? { kind: "computer" } : { kind: "phone", phoneId: v })}
+            options={[
+              {
+                value: "computer",
+                label: t("codeSessions.screen.computer", agentGrammar(agent.name)),
+                description: t("codeSessions.screen.computerHint"),
+                leading: <Icon name="computer" size={16} />,
+              },
+              ...phones.map(({ phone: p, host }) => ({
+                value: p.id,
+                label: p.name,
+                description: t("codeSessions.screen.onHost", { host }),
+                leading: <Icon name="phone" size={16} />,
+              })),
+            ]}
+          />
         )}
         {!phone && (
           <>

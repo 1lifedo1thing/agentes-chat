@@ -5,7 +5,19 @@ import {
   type PubSub,
   parseMissionWorktreeEnsured,
 } from "@agenteschat/adapters";
-import { and, type Database, desc, type Executor, eq, inArray, isNotNull, isNull, type SQL, schema, sql } from "@agenteschat/db";
+import {
+  and,
+  type Database,
+  desc,
+  type Executor,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  type SQL,
+  schema,
+  sql,
+} from "@agenteschat/db";
 import { getAgentCached } from "./agents";
 import { caches } from "./cache";
 import { requireChannelAccess } from "./channels";
@@ -34,7 +46,9 @@ export type CodeSessionRow = typeof codeSessions.$inferSelect;
 export const CODE_WORKTREE_STATES = ["preparing", "ready", "failed", "removed"] as const;
 export type CodeWorktreeState = (typeof CODE_WORKTREE_STATES)[number];
 export const codeWorktreeStateOf = (v: unknown): CodeWorktreeState =>
-  typeof v === "string" && (CODE_WORKTREE_STATES as readonly string[]).includes(v) ? (v as CodeWorktreeState) : "failed";
+  typeof v === "string" && (CODE_WORKTREE_STATES as readonly string[]).includes(v)
+    ? (v as CodeWorktreeState)
+    : "failed";
 
 /**
  * The brains a code session can have: those that work on the agent's computer in the folder their turn names (the
@@ -169,7 +183,7 @@ export async function codeSessionCwd(db: Executor, channelId: string, agentId: s
     .from(codeSessions)
     .where(and(eq(codeSessions.channelId, channelId), isNull(codeSessions.archivedAt)))
     .limit(1);
-  if (!row || row.state !== "ready" || !row.path) return null;
+  if (row?.state !== "ready" || !row.path) return null;
   // Another agent called into the session works in its own folder: the worktree is on the session agent's computer.
   return row.agentId === agentId ? row.path : null;
 }
@@ -382,7 +396,11 @@ async function announce(deps: Pick<CodeSessionDeps, "db" | "pubsub">, row: CodeS
   }
 }
 
-async function setSession(deps: Pick<CodeSessionDeps, "db" | "pubsub">, row: CodeSessionRow, patch: Partial<CodeSessionRow>) {
+async function setSession(
+  deps: Pick<CodeSessionDeps, "db" | "pubsub">,
+  row: CodeSessionRow,
+  patch: Partial<CodeSessionRow>,
+) {
   const [fresh] = await deps.db
     .update(codeSessions)
     .set({ ...patch, updatedAt: new Date() })
@@ -535,7 +553,8 @@ async function prepare(deps: CodeSessionDeps, sessionId: string): Promise<CodeSe
   const agent = await getAgentCached(deps.db, row.orgId, row.agentId);
   if (!agent) return row;
   const scope: AgentScope = { id: agent.id, handle: agent.handle };
-  if (row.worktreeState === "failed") row = await setSession(deps, row, { worktreeState: "preparing", worktreeError: null });
+  if (row.worktreeState === "failed")
+    row = await setSession(deps, row, { worktreeState: "preparing", worktreeError: null });
 
   // The checkout, cloned or brought up to date (a clone may still be running: asked again for a while); a local
   // project is made on the computer instead, or adopted when its folder is there.
@@ -558,7 +577,11 @@ async function prepare(deps: CodeSessionDeps, sessionId: string): Promise<CodeSe
         if (error instanceof MachineOfflineError || error instanceof MachinePausedError) return row;
         const message = error instanceof Error ? error.message : String(error);
         // No GitHub here (not connected, or no git scope): said in the person's words, with the way out (a local project).
-        return failSession(deps, row, /git access to GitHub|GitHub isn't connected/i.test(message) ? GITHUB_ACCESS_ERROR : message);
+        return failSession(
+          deps,
+          row,
+          /git access to GitHub|GitHub isn't connected/i.test(message) ? GITHUB_ACCESS_ERROR : message,
+        );
       }
       if (attempt >= CLONE_RETRIES) return failSession(deps, row, "The repository took too long to clone.");
       await sleep(CLONE_RETRY_MS);
@@ -841,7 +864,8 @@ export interface CodeDiff {
 
 /** A read-only git command in the session's worktree, as its agent (the runner's command policy reads it as a read). */
 async function gitRead(deps: CodeSessionDeps, row: CodeSessionRow, args: string): Promise<string> {
-  if (!deps.hub || !row.machineId) throw new ConflictError("This session's computer isn't reachable", "code_session.offline");
+  if (!deps.hub || !row.machineId)
+    throw new ConflictError("This session's computer isn't reachable", "code_session.offline");
   if (row.worktreeState !== "ready" || !row.worktreePath)
     throw new ConflictError("The worktree isn't ready yet", "code_session.not_ready");
   const agent = await getAgentCached(deps.db, row.orgId, row.agentId);
@@ -905,11 +929,9 @@ export async function codeSessionDiff(
   const untracked = untrackedList.split("\0").filter(Boolean).slice(0, 200);
   for (const path of untracked) {
     // `git diff --no-index` exits 1 when files differ: read through `|| true` so the patch comes back.
-    const patch = await gitRead(
-      deps,
-      row,
-      `diff --no-color --no-index -- /dev/null ${shellQuote(path)} || true`,
-    ).catch(() => "");
+    const patch = await gitRead(deps, row, `diff --no-color --no-index -- /dev/null ${shellQuote(path)} || true`).catch(
+      () => "",
+    );
     const [file] = splitPatch(patch);
     files.push({ path, patch: file?.patch ?? "", added: file?.added ?? 0, removed: 0, untracked: true });
   }

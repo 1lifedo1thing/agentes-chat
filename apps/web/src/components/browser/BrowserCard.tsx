@@ -99,7 +99,6 @@ import { useOpenComputer, useOpenedComputer } from "../computer/open";
 import { DesktopView } from "../desktop/DesktopView";
 import { PASTE_MAX_BYTES, pasteBytes } from "../desktop/paste";
 import { MachineToolButton } from "../devices/ToolOneClick";
-import { ScreenLine, ScreenPanelContext } from "./screen-panel";
 import { useOrg } from "../org-context";
 import { ReportProblem } from "../ReportProblem";
 import { colorOf } from "../Sky";
@@ -110,6 +109,7 @@ import { Cover } from "./Cover";
 import { LivePicture } from "./LivePicture";
 import { requestBrowserCard, useBrowserCardRequest } from "./open";
 import { SiteIcon } from "./SiteIcon";
+import { ScreenLine, ScreenPanelContext } from "./screen-panel";
 import "./browser.css";
 
 // The card's title, shared with the phone.

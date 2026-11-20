@@ -68,25 +68,25 @@ function CodeConversation({ session }: { session: CodeSession }) {
   if (!thread) return <ChannelSkeleton thread panel />;
   return (
     <ChannelPage
-        channelId={thread.channelId}
-        thread={thread}
-        fallback={{
-          id: thread.channelId,
-          name: thread.channelName,
-          topic: "",
-          visibility: "private",
-          isMember: true,
-          createdAt: thread.createdAt,
-        }}
-        chrome={{
-          // The page's header is the session's own, above the conversation.
-          header: () => null,
-          composerLabel: t("codeSessions.view.composer"),
-          panel: true,
-          openThread: false,
-          task: true,
-        }}
-      />
+      channelId={thread.channelId}
+      thread={thread}
+      fallback={{
+        id: thread.channelId,
+        name: thread.channelName,
+        topic: "",
+        visibility: "private",
+        isMember: true,
+        createdAt: thread.createdAt,
+      }}
+      chrome={{
+        // The page's header is the session's own, above the conversation.
+        header: () => null,
+        composerLabel: t("codeSessions.view.composer"),
+        panel: true,
+        openThread: false,
+        task: true,
+      }}
+    />
   );
 }
 
