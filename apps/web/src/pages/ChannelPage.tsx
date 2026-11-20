@@ -1398,12 +1398,14 @@ function ChannelView({
       // The thread's conversation. One made from a range: not its root (the channel's marker) nor the
       // moved messages (written before the root; the context block lists them).
       const mine = (channelMessages.data ?? []).filter((m) => m.local && m.threadId === thread.id);
-      // A task's conversation: not its root, which stands for the task beside it (ADR 0145); a live file's the same
-      // (ADR 0199).
+      // A task's conversation: not its root, which stands for the task beside it (ADR 0145); a live file's and a code
+      // session's the same (ADR 0199, 0208).
       const list = mergeTimeline(threadMessages.data ?? [], [mine]).filter(
         (m) =>
           !taskConversationOf(m.meta) &&
           !fileConversationOf(m.meta) &&
+          // A code session's root stands for the session, whose page is around it (ADR 0208).
+          !(m.meta && "codeSession" in m.meta) &&
           (!thread.context || m.local || (m.id !== thread.id && m.createdAt > thread.createdAt)),
       );
       const passed = supersededBrainNotices(list);
