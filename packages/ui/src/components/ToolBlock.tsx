@@ -220,6 +220,51 @@ function Line({
   );
 }
 
+/**
+ * A card of one line that leads somewhere instead of opening (a code session's line to its screen, ADR 0208): a tool
+ * line's look and size (`.ac-tools--one`), so it lines up with the tools block beside it; the whole line is the
+ * button, and what it does reads on the right, where a call's time goes.
+ */
+export function ToolLink({
+  logo,
+  label,
+  target,
+  action,
+  onClick,
+  className,
+}: {
+  logo: ReactNode;
+  label: string;
+  /** What it acted on, in mono after the label (an address). */
+  target?: string | null;
+  /** "Ver na Tela". */
+  action: string;
+  onClick: () => void;
+  className?: string;
+}) {
+  return (
+    <section className={cx("ac-tools ac-tools--one", className)} aria-label={target ? `${label} ${target}` : label}>
+      <ol className="ac-tools__lines">
+        <li className="ac-tools__line">
+          <button type="button" className="ac-tools__row" onClick={onClick}>
+            <span className="ac-tools__logo">{logo}</span>
+            <span className="ac-tools__label">
+              <b>{label}</b>
+              {target && (
+                <code className="ac-tools__target" title={target}>
+                  {target}
+                </code>
+              )}
+            </span>
+            <span className="ac-tools__time">{action}</span>
+            <Chevron className="ac-tools__linechev" />
+          </button>
+        </li>
+      </ol>
+    </section>
+  );
+}
+
 /** The pixel marks: the orbit while it works, one green pixel when done, an exclamation if it failed. */
 function Mark({ state, color }: { state: ToolBlockState; color?: AgentColor }) {
   return (

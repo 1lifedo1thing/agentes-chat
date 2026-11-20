@@ -1469,7 +1469,7 @@ html:not([data-pointer]) .brw-trail__ext:focus-visible {
 /* The page always in view; the frame's top says where it is and what it does now (its steps on hover);
    Assumir, Parar and full screen show over the page on hover. In control, the frame turns graphite. */
 .brw-ac.brw-mf {
-  max-width: 640px;
+  max-width: var(--msg-card-w);
   padding: 0 5px 5px;
   border-radius: 18px 18px 18px 6px;
   overflow: visible;

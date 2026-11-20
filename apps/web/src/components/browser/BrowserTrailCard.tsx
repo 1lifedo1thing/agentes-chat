@@ -72,7 +72,8 @@ export function BrowserTrailCard({
   const last = steps.at(-1);
   if (!last || held) return null;
   // Where the screen has a panel of its own, the trail is its last step and the way there.
-  if (panel) return <ScreenLine icon={screenIcon(screen)} text={said(t, last, screen)} onShow={panel.show} />;
+  if (panel)
+    return <ScreenLine icon={screenIcon(screen)} text={said(t, last, screen)} detail={last.detail} onShow={panel.show} />;
   const time = formatTime(i18n.language, last.at);
   const by = stopped ? stopperOf(stopped, me.user.id) : null;
   const person = stopperName(by, {

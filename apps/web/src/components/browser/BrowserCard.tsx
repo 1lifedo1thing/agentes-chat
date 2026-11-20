@@ -225,7 +225,7 @@ function RunScreenLine({ run, panel }: { run: LiveRun; panel: { show: () => void
     if (started) panel.show();
   }, [started, panel]);
   if (!last) return null;
-  return <ScreenLine icon={iconOf(last.tool)} text={stepText(t, last)} onShow={panel.show} />;
+  return <ScreenLine icon={iconOf(last.tool)} text={stepText(t, last)} detail={last.detail} onShow={panel.show} />;
 }
 
 function RunBrowser({ run, name }: { run: LiveRun; name: string }) {
