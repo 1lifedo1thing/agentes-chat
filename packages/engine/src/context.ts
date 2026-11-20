@@ -51,6 +51,7 @@ import { cutText, stringsOf } from "./format";
 import { issueWorkBrief, issueWorkOf } from "./issue-work";
 import { openTasksBrief } from "./issues";
 import { fileConversationBrief, liveRefLine } from "./live/conversation";
+import { codeSessionBrief } from "./code-sessions";
 import type { MachineCaller } from "./machine-hub";
 import { type TaskEnd, taskEndText } from "./machine-task-text";
 import { type MessageMedia, mediaOf } from "./media";
@@ -1116,6 +1117,14 @@ export async function buildRunContext(
     root && channel.kind === "file"
       ? await fileConversationBrief(db, run.orgId, root.meta, agent.id).catch(() => null)
       : null;
+  // A code session's conversation (ADR 0208): the repository, branch and worktree it works in, read from the session
+  // now. Its first turn is told to install the project when the worktree is new.
+  const codeBrief =
+    channel.kind === "code"
+      ? await codeSessionBrief(db, channel.id, agent.id, {
+          first: !history.some((m) => m.authorType === "agent"),
+        }).catch(() => null)
+      : null;
 
   // A routine's background run: its routine block, time line and where it reports (ADR 0053 §4).
   const routine = background ? await routineContext(db, run, agent, trigger, zone, personal) : null;
@@ -1299,6 +1308,7 @@ export async function buildRunContext(
     ...(briefing ? await briefing.then((text) => (text ? [{ conversation: true, text }] : [])) : []),
     ...(issueBrief ? [{ conversation: true, text: issueBrief }] : []),
     ...(fileBrief ? [{ conversation: true, text: fileBrief }] : []),
+    ...(codeBrief ? [{ conversation: true, text: codeBrief }] : []),
     ...(machineAccess
       ? await machineAccess.then((a) =>
           a

@@ -52,6 +52,7 @@ import { machineAccountRoutes } from "./routes/app/machine-accounts";
 import { mailRoutes } from "./routes/app/mail";
 import { managementRoutes } from "./routes/app/management";
 import { memoryRoutes } from "./routes/app/memory";
+import { codeSessionRoutes } from "./routes/app/code-sessions";
 import { missionRoutes } from "./routes/app/missions";
 import { notificationRoutes } from "./routes/app/notifications";
 import { personUsageRoutes } from "./routes/app/person-usage";
@@ -223,6 +224,8 @@ export function createApp(options: AppOptions) {
     api.route("/app", issueRoutes(deps));
     api.route("/app", threadRoutes(deps));
     api.route("/app", missionRoutes(deps));
+    // Code sessions (ADR 0208): a request in its own worktree on the agent's computer, with its conversation.
+    api.route("/app", codeSessionRoutes(deps));
     api.route("/app", wikiRoutes(deps));
     api.route("/app", routineRoutes(deps));
     api.route("/app", calendarRoutes(deps));

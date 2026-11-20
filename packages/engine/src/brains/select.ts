@@ -10,6 +10,7 @@ import {
   OPENCODE_PROTOCOL,
   type PlanUsage,
 } from "@agenteschat/adapters";
+import { codeSessionCwd } from "../code-sessions";
 import { and, desc, type Executor, eq, isNotNull, ne, or, schema, sql } from "@agenteschat/db";
 import { AUTO_MODEL, isAutoModel } from "@agenteschat/providers";
 import {
@@ -906,7 +907,9 @@ export async function resolveBrain(
             options.now ?? new Date(),
           )),
           machineId,
-          cwd: "",
+          // A code session's conversation works in the session's worktree (ADR 0208); any other chat turn starts in
+          // the agent's folder.
+          cwd: (await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null)) ?? "",
         }
       : undefined);
   return {

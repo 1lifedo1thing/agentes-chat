@@ -93,6 +93,7 @@ import {
   deviceWaitHooks,
   type EmailArt,
   emailArtAt,
+  ensureCodeSessionsOn,
   envSpeechEngines,
   feedbackDestination,
   type GatewayEmbeddings,
@@ -606,6 +607,10 @@ export function buildEngine(o: EngineOptions) {
     online: async (machineId: string) => {
       await missionHooks.online?.(machineId);
       await deviceWaits.online(machineId).catch(() => undefined);
+      // Code sessions whose worktree waited for this computer (ADR 0208) are prepared now.
+      await ensureCodeSessionsOn({ db, pubsub: adapters.pubsub, hub: machineHub, git: sandbox.git }, machineId).catch(
+        () => undefined,
+      );
     },
     phonesChanged: deviceWaits.phonesChanged,
   };

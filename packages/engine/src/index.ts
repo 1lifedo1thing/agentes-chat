@@ -335,6 +335,7 @@ export * from "./surfaces/turn";
 export * from "./talker";
 export * from "./task-access";
 export * from "./task-conversation";
+export * from "./code-sessions";
 export * from "./task-manager";
 export * from "./team";
 export * from "./team-actions";
