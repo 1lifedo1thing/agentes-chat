@@ -237,7 +237,7 @@ import { agentRepositoryList, repositoriesPrompt } from "./git/repos";
 import { askVerdict, handOffHolds, repeatedAsk, saysNeedsNothing } from "./hand-off";
 import { UPDATE_ISSUE_TOOL } from "./issue-tools";
 import { linkRunToIssue, mirrorReplyToIssue } from "./issues";
-import { type Judge, judgeCallOf, TURN_END_CHECK_BUDGET_MS, withJudgeBudget } from "./judge";
+import { type Judge, JudgeGroup, judgeCallOf, TURN_END_CHECK_BUDGET_MS, withJudgeBudget } from "./judge";
 import {
   KEY_LINE_PERSON_MINUTES,
   type KeyLinePlace,
@@ -1962,6 +1962,17 @@ async function executeRunInner(
     const ai = await agentAiState({ db, gateway: deps.gateway, machines: deps.machines }, agent, run);
     if (ai.state === "no_ai") return failNoAi(ai.reason ?? "no_key", ai.own, undefined, undefined, ai);
     prof.part("ai_state");
+    // Somebody waits on a conversation's run: its CLI starts while the turn is built. Not for a routine's or
+    // background work, which nobody waits on.
+    if (
+      fresh &&
+      !run.background &&
+      !isRightHand(agent) &&
+      brainOf(agent.brain) === "claude_code" &&
+      !runMessageMeta(run, trigger).viaRoutine
+    ) {
+      void warmAtClaim(deps, agent, run, replyThreadId ?? run.channelId).catch(() => {});
+    }
   }
   if (!askingForRoom) await publishChannelEvent(deps.pubsub, event("running"));
   // Tools on demand (ADR 0043): a new run lists the core tools and the groups the judge expects it to need.
@@ -1976,34 +1987,53 @@ async function executeRunInner(
     recentRead ??= recentForJudge(db, run).catch(() => [] as string[]);
     return recentRead;
   };
+  const autoEarly = needsContext && autoWanted(agent);
+  const groupsJudged = needsContext && deps.toolsOnDemand && judge && granted.length > 0 && !every;
+  // The run's start judgments (Automático, its tool groups, its line) go to Jev as one request.
+  const startGroup =
+    needsContext && judge
+      ? new JudgeGroup([...(autoEarly ? ["auto_model"] : []), ...(groupsJudged ? ["tool_groups"] : []), "agent_status"])
+      : undefined;
+  /** The routine whose prompt the run works on: the same work every firing, so Automático's choice is kept for it. */
+  const routineCalled = (trigger?.meta?.routine as { id?: unknown } | undefined)?.id;
   // "Automático": the judge picks the run's model tier and effort while the context is built; the
   // choice is applied once the brain is known, before the first model call. Never blocks: no answer in time
   // is medium/medium.
   const askAuto = (): Promise<AutoChoice> => {
     if (!judge) return Promise.resolve(fallbackChoice("none"));
+    const message = trigger?.body ?? topTrigger?.body ?? "";
+    const computer = brainOf(agent.brain) !== "model";
+    const hasTools = granted.length > 0;
+    const who = isRightHand(agent)
+      ? { name: agent.name, role: RIGHT_HAND_AUTO.role, instructions: RIGHT_HAND_AUTO.instructions }
+      : { name: agent.name, role: agent.role, instructions: agent.instructions };
     return Promise.all([recentMessages(), inMission(db, run).catch(() => false)])
       .then(([recent, mission]) =>
         chooseAutoModel(judge, {
           orgId: run.orgId,
           agentId: agent.id,
           runId: run.id,
-          agent: isRightHand(agent)
-            ? { name: agent.name, role: RIGHT_HAND_AUTO.role, instructions: RIGHT_HAND_AUTO.instructions }
-            : { name: agent.name, role: agent.role, instructions: agent.instructions },
-          message: trigger?.body ?? topTrigger?.body ?? "",
+          agent: who,
+          message,
           recent,
           routine: run.background || Boolean(trigger?.meta?.routine),
           mission,
-          computer: brainOf(agent.brain) !== "model",
-          tools: granted.length > 0,
+          computer,
+          tools: hasTools,
+          group: startGroup,
+          ...(typeof routineCalled === "string"
+            ? {
+                cacheKey: `${run.orgId}:${agent.id}:${routineCalled}:${sha256(JSON.stringify([who, message, mission, computer, hasTools]))}`,
+              }
+            : {}),
         }),
       )
       .catch(() => fallbackChoice("error"));
   };
-  const autoAsked = needsContext && autoWanted(agent) ? askAuto() : null;
+  const autoAsked = autoEarly ? askAuto() : null;
   // The judge's answer is awaited where the tools are needed: the context is read meanwhile (`CONTEXT_TOOLS`).
   const judging: Promise<void> | null =
-    needsContext && deps.toolsOnDemand && judge && granted.length > 0 && !every
+    groupsJudged && judge
       ? (async () => {
           const [recent, kept, live] = await Promise.all([
             recentMessages(),
@@ -2023,6 +2053,7 @@ async function executeRunInner(
             tools: granted,
             // The message's words may not mention its file (it may have none), and the agent has to open it.
             keep: Array.isArray(trigger?.meta.artifacts) ? [...keep, toolGroupKey({ scope: "drive:read" })] : keep,
+            group: startGroup,
           });
           toolChoice = choice;
           ctx.loadedGroups = choice.groups;
@@ -2039,18 +2070,26 @@ async function executeRunInner(
   if (needsContext) {
     void queryTrace
       .run({ count: 0 }, async () => {
-        const lines = await statusCandidates(db, run, granted);
-        const pick = judge
-          ? await askRunStatus(judge, {
-              orgId: run.orgId,
-              agentId: agent.id,
-              runId: run.id,
-              agent: { name: agent.name, role: agent.role, instructions: agent.instructions },
-              message: trigger?.body ?? topTrigger?.body ?? "",
-              recent: await recentMessages(),
-              candidates: lines,
-            }).catch(() => null)
-          : null;
+        const lines = await statusCandidates(db, run, granted).catch((error: unknown) => {
+          startGroup?.skip("agent_status");
+          throw error;
+        });
+        // A routine's run shows its routine's line (`STICKY`): nothing to pick.
+        const routineLine = lines.some((c) => c.kind === "routine");
+        if (routineLine) startGroup?.skip("agent_status");
+        const pick =
+          judge && !routineLine
+            ? await askRunStatus(judge, {
+                orgId: run.orgId,
+                agentId: agent.id,
+                runId: run.id,
+                agent: { name: agent.name, role: agent.role, instructions: agent.instructions },
+                message: trigger?.body ?? topTrigger?.body ?? "",
+                recent: await recentMessages(),
+                candidates: lines,
+                group: startGroup,
+              }).catch(() => null)
+            : null;
         await startRunStatus({ db, pubsub: deps.pubsub }, run, lines, pick);
       })
       .catch(() => {});
@@ -2389,13 +2428,13 @@ async function executeRunInner(
   const repeatsLastPost = (text: string) => text.trim() !== "" && text.trim() === transcript?.lastPosted;
   /**
    * What a message of the run says when it held a reply back (`held`): `words` alone when they stand on their own, the
-   * held reply with them, or the held reply alone when they add nothing ("nothing to add", "see above", no words).
-   * A judge error keeps both: nothing it wrote is lost.
+   * held reply with them, or the held reply alone when they add nothing ("nothing to add", "see above", no words, the
+   * same words again). A judge error keeps both: nothing it wrote is lost.
    */
   const heldWords = async (words: string): Promise<string> => {
     const held = transcript?.held;
     if (!held) return words;
-    if (!words) return held;
+    if (!words || words.trim() === held.trim()) return held;
     const read = judge
       ? await heldReplyRead(judge, { orgId: run.orgId, agentId: run.agentId, runId: run.id, held, reply: words }).catch(
           () => "both" as const,
@@ -6008,8 +6047,9 @@ async function executeRunInner(
             continuation: recorded,
             ...(decision.outcome === "continue"
               ? {
-                  nudged:
-                    decision.rule === "untried" || decision.rule === "unbacked" || decision.rule === "widget"
+                  nudged: decision.judgeError
+                    ? "unchecked"
+                    : decision.rule === "untried" || decision.rule === "unbacked" || decision.rule === "widget"
                       ? decision.rule
                       : "promise",
                 }
@@ -6288,7 +6328,9 @@ async function executeRunInner(
       later(() =>
         addRunStep(db, run, "context", {
           continuation: recorded,
-          ...(decision.outcome === "continue" ? { nudged: nudgedAs ?? (plan.missionId ? "mission_ask" : "ask") } : {}),
+          ...(decision.outcome === "continue"
+            ? { nudged: decision.judgeError ? "unchecked" : (nudgedAs ?? (plan.missionId ? "mission_ask" : "ask")) }
+            : {}),
         }),
       );
       if (decision.outcome === "done") learnLater(decision);
@@ -6298,7 +6340,8 @@ async function executeRunInner(
         // A give-up judged untried is held back, not dropped (`held`): it reads as unseen, and goes out if nothing
         // better comes.
         if (decision.rule === "untried") t.held = text;
-        const nudge = decision.rule === "untried" ? heldNudge(decision.nudge) : decision.nudge;
+        // A check that couldn't run says so in its own nudge (`uncheckedNudge`).
+        const nudge = decision.rule === "untried" && !decision.judgeError ? heldNudge(decision.nudge) : decision.nudge;
         appendUserText(t, nudge);
         if (plan.kind !== "model") nextPrompt = nudge;
         // Nothing to post first: it simply goes on. A give-up judged untried isn't posted either: it would send people
@@ -6463,6 +6506,42 @@ async function executeRunInner(
     offWork?.();
     if (autoTick) clearInterval(autoTick);
   }
+}
+
+/**
+ * A conversation's run that will think with Claude Code: its computer starts the session's CLI now, while the
+ * context, the judges and the computer's line run (`Brain.warm`). The plan is the one the run will most likely get:
+ * its session picked without the prompt key (nothing kept on the run), "Automático" at the medium tier it falls back
+ * to. A different launch at the turn only costs that start.
+ */
+async function warmAtClaim(deps: EngineDeps, agent: Agent, run: AgentRun, conversation: string) {
+  const factory = deps.brains?.claude_code;
+  if (!factory) return;
+  let plan = await resolveBrain(deps, agent, run, conversation, { peek: true });
+  if (plan.kind !== "claude_code" || plan.unavailable || !plan.session) return;
+  if (needsAutoChoice(agent, plan)) {
+    // As the turn does: a pinned model stays, only "Automático" gives way to a held plan model's stand-in.
+    const autoBrain = isAutoModel(plan.model);
+    plan = withAuto(agent, plan, autoApplied(agent, plan, fallbackChoice("none"), "anthropic")).plan;
+    const model = autoBrain ? autoPlanModel(plan.account?.provider, plan.model, plan.usage) : undefined;
+    if (model) plan = { ...plan, model };
+  }
+  await factory(agent, run, { mcpToken: () => "" }).warm?.({
+    runId: run.id,
+    orgId: run.orgId,
+    agentId: run.agentId,
+    channelId: run.channelId,
+    threadRootId: run.threadRootId,
+    system: "",
+    messages: [],
+    tools: [],
+    trigger: "",
+    session: plan.session,
+    ...(plan.model ? { model: plan.model } : {}),
+    ...(plan.account ? { account: plan.account } : {}),
+    ...(plan.effort ? { effort: plan.effort } : {}),
+    ...(agent.contextTokens ? { contextTokens: agent.contextTokens } : {}),
+  });
 }
 
 /** Builds the brain of this kind (`resolveBrain` picks it): a registered factory, else the built-in model brain. */
@@ -6642,7 +6721,14 @@ interface BrainStep {
   costNanoUsd?: number;
   usage?: Partial<
     Record<
-      "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens" | "calls" | "maxUncached" | "maxContext",
+      | "inputTokens"
+      | "outputTokens"
+      | "cacheReadTokens"
+      | "cacheWriteTokens"
+      | "calls"
+      | "maxUncached"
+      | "maxContext"
+      | "lastContext",
       number
     >
   >;
@@ -6837,6 +6923,7 @@ async function thinkOnce(
           ...(usage.calls ? { calls: usage.calls } : {}),
           ...(usage.maxUncached ? { maxUncached: usage.maxUncached } : {}),
           ...(usage.maxContext ? { maxContext: usage.maxContext } : {}),
+          ...(usage.lastContext ? { lastContext: usage.lastContext } : {}),
         }
       : undefined,
   };

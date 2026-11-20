@@ -1,5 +1,7 @@
 import { modelInfo } from "@agenteschat/providers";
+import { caches } from "./cache";
 import { isConfidentialRun } from "./confidential";
+import { sha256 } from "./crypto";
 import { cutText } from "./format";
 import type { ModelGateway } from "./gateway";
 import { callJev, type JevKeySource } from "./jev-key";
@@ -83,6 +85,8 @@ export interface JudgeRequest {
   timeoutMs?: number;
   /** Told the tokens the call read and wrote, cached ones included, once the judge has them. */
   onUsage?: (usage: { inputTokens: number; outputTokens: number }) => void;
+  /** Asked together with the other judgments of the group, as one Jev request (`JudgeGroup`). */
+  group?: JudgeGroup;
 }
 
 export interface Judge {
@@ -131,7 +135,8 @@ function boxOf(v: unknown): JudgeBox {
 
 /**
  * TypeSafe Jev (`POST /v1/systemone`, or OpenRouter's Decisions route with an OpenRouter key): one request, all
- * questions answered in parallel.
+ * questions answered in parallel. A text-only request sent the same way within 15 minutes gets the answers Jev gave it
+ * (`caches.jevAnswers`, on in the server), and the judgments of a `group` go as one request.
  */
 export function createJevJudge(options: {
   /** Read on every call (`jev-key.ts`): without one it throws `JevOffError`. */
@@ -146,77 +151,195 @@ export function createJevJudge(options: {
   visionTimeoutMs?: number;
   fetch?: typeof fetch;
 }): Judge {
+  const call = async (request: JudgeRequest, vision: boolean): Promise<Record<string, JudgeAnswer>> => {
+    const model = vision ? (options.visionModel ?? "jev-preview") : (options.model ?? "jev-latest");
+    const assets = Object.fromEntries(
+      Object.entries(request.images ?? {}).map(([key, image]) => [
+        key,
+        { data_base64: image.data, format: image.format },
+      ]),
+    );
+    const body = await callJev<{
+      model?: string;
+      answers?: Record<string, JudgeAnswer>;
+      usage?: { input_tokens?: number; output_tokens?: number; cost?: number };
+    }>(options.key, {
+      fetch: options.fetch,
+      baseURL: options.baseURL,
+      // Images and Box questions are off unless asked for on each request.
+      headers: vision ? { "TypeSafe-Danger-Zone-Images": "true" } : undefined,
+      body: {
+        state: request.state,
+        model,
+        questions: request.questions,
+        ...(Object.keys(assets).length > 0 ? { assets } : {}),
+      },
+      timeoutMs: vision
+        ? (options.visionTimeoutMs ?? Math.max(6000, options.timeoutMs ?? 0))
+        : (request.timeoutMs ?? options.timeoutMs ?? 2000),
+    }).catch((error: unknown) => {
+      throw withJudgeCall(error, model, "typesafe");
+    });
+    const inputTokens = body.usage?.input_tokens ?? 0;
+    request.onUsage?.({ inputTokens, outputTokens: body.usage?.output_tokens ?? 0 });
+    await options.gateway
+      .recordExternalUsage({
+        orgId: request.orgId,
+        agentId: request.agentId,
+        runId: request.runId,
+        kind: "router",
+        provider: "typesafe",
+        model: body.model ?? model,
+        requestedModel: request.kind,
+        inputTokens,
+        outputTokens: body.usage?.output_tokens ?? 0,
+        costNanoUsd: jevCostOf(body.usage),
+      })
+      .catch(() => {});
+    const out: Record<string, JudgeAnswer> = {};
+    for (const [id, q] of Object.entries(request.questions)) {
+      const a = body.answers?.[id];
+      const confidence = typeof a?.confidence === "number" ? { confidence: clamp(a.confidence) } : {};
+      if (q.type === "noul") out[id] = { noul: clamp(a?.noul) };
+      else if (q.type === "box") out[id] = { box: boxOf(a?.box), ...confidence };
+      else if (q.type === "score") {
+        out[id] = {
+          score: typeof a?.score === "number" ? Math.min(q.criteria.length - 1, Math.max(0, a.score)) : 0,
+          probabilities: a?.probabilities ?? {},
+          ...confidence,
+        };
+      } else {
+        out[id] = {
+          choice: typeof a?.choice === "string" ? a.choice : undefined,
+          probabilities: a?.probabilities ?? {},
+          ...confidence,
+        };
+      }
+    }
+    return out;
+  };
+  const textCall = (request: JudgeRequest) =>
+    caches.jevAnswers.getOrLoad(
+      `${request.orgId}:${sha256(JSON.stringify([options.model ?? "", request.state, request.questions]))}`,
+      () => call(request, false),
+    ) as Promise<Record<string, JudgeAnswer>>;
   return {
     name: "jev",
     async ask(request) {
       refuseConfidential(request);
-      const vision = judgeSeesImages(request);
-      const model = vision ? (options.visionModel ?? "jev-preview") : (options.model ?? "jev-latest");
-      const assets = Object.fromEntries(
-        Object.entries(request.images ?? {}).map(([key, image]) => [
-          key,
-          { data_base64: image.data, format: image.format },
-        ]),
-      );
-      const body = await callJev<{
-        model?: string;
-        answers?: Record<string, JudgeAnswer>;
-        usage?: { input_tokens?: number; output_tokens?: number; cost?: number };
-      }>(options.key, {
-        fetch: options.fetch,
-        baseURL: options.baseURL,
-        // Images and Box questions are off unless asked for on each request.
-        headers: vision ? { "TypeSafe-Danger-Zone-Images": "true" } : undefined,
-        body: {
-          state: request.state,
-          model,
-          questions: request.questions,
-          ...(Object.keys(assets).length > 0 ? { assets } : {}),
-        },
-        timeoutMs: vision
-          ? (options.visionTimeoutMs ?? Math.max(6000, options.timeoutMs ?? 0))
-          : (request.timeoutMs ?? options.timeoutMs ?? 2000),
-      }).catch((error: unknown) => {
-        throw withJudgeCall(error, model, "typesafe");
-      });
-      const inputTokens = body.usage?.input_tokens ?? 0;
-      request.onUsage?.({ inputTokens, outputTokens: body.usage?.output_tokens ?? 0 });
-      await options.gateway
-        .recordExternalUsage({
-          orgId: request.orgId,
-          agentId: request.agentId,
-          runId: request.runId,
-          kind: "router",
-          provider: "typesafe",
-          model: body.model ?? model,
-          inputTokens,
-          outputTokens: body.usage?.output_tokens ?? 0,
-          costNanoUsd: jevCostOf(body.usage),
-        })
-        .catch(() => {});
-      const out: Record<string, JudgeAnswer> = {};
-      for (const [id, q] of Object.entries(request.questions)) {
-        const a = body.answers?.[id];
-        const confidence = typeof a?.confidence === "number" ? { confidence: clamp(a.confidence) } : {};
-        if (q.type === "noul") out[id] = { noul: clamp(a?.noul) };
-        else if (q.type === "box") out[id] = { box: boxOf(a?.box), ...confidence };
-        else if (q.type === "score") {
-          out[id] = {
-            score: typeof a?.score === "number" ? Math.min(q.criteria.length - 1, Math.max(0, a.score)) : 0,
-            probabilities: a?.probabilities ?? {},
-            ...confidence,
-          };
-        } else {
-          out[id] = {
-            choice: typeof a?.choice === "string" ? a.choice : undefined,
-            probabilities: a?.probabilities ?? {},
-            ...confidence,
-          };
-        }
-      }
-      return out;
+      if (judgeSeesImages(request)) return call(request, true);
+      // Without a key it fails at once (`JevOffError`): nothing waits on a group for that.
+      const on = typeof options.key === "string" || options.key.usable();
+      return request.group && on ? request.group.join(request, textCall) : textCall(request);
     },
   };
+}
+
+/** How long a grouped judgment waits for the others of its group before it goes alone with those that came. */
+export const JUDGE_GROUP_WAIT_MS = 100;
+
+interface GroupMember {
+  request: JudgeRequest;
+  resolve(answers: Record<string, JudgeAnswer>): void;
+  reject(error: unknown): void;
+}
+
+/**
+ * Judgments asked together (a run's start: `auto_model`, `agent_status`, `tool_groups`): Jev answers them in one
+ * request, each judgment's questions under its kind, so one round trip and one copy of the shared state serve them all.
+ * Each waits for the kinds still expected, at most `waitMs`; one asked after the group went goes alone, and a kind
+ * that won't be asked after all is `skip`ped so nobody waits for it. A member whose state disagrees with the others'
+ * goes alone. When the request fails, each member fails and takes its own fallback. Other judges ignore the group.
+ */
+export class JudgeGroup {
+  private readonly expected: Set<string>;
+  private members: GroupMember[] = [];
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private send: ((request: JudgeRequest) => Promise<Record<string, JudgeAnswer>>) | null = null;
+
+  constructor(
+    kinds: Iterable<string>,
+    private readonly waitMs = JUDGE_GROUP_WAIT_MS,
+  ) {
+    this.expected = new Set(kinds);
+  }
+
+  /** `kind` won't be asked in this group: the others stop waiting for it. */
+  skip(kind: string) {
+    this.expected.delete(kind);
+    if (this.expected.size === 0 && this.members.length > 0) this.flush();
+  }
+
+  join(
+    request: JudgeRequest,
+    send: (request: JudgeRequest) => Promise<Record<string, JudgeAnswer>>,
+  ): Promise<Record<string, JudgeAnswer>> {
+    if (!this.expected.delete(request.kind)) return send(request);
+    this.send ??= send;
+    const answers = new Promise<Record<string, JudgeAnswer>>((resolve, reject) => {
+      this.members.push({ request, resolve, reject });
+    });
+    if (this.expected.size === 0) this.flush();
+    else this.timer ??= setTimeout(() => this.flush(), this.waitMs);
+    return answers;
+  }
+
+  private flush() {
+    clearTimeout(this.timer);
+    this.expected.clear();
+    const send = this.send;
+    const members = this.members;
+    this.members = [];
+    if (!send) return;
+    const state: Record<string, unknown> = {};
+    const together: GroupMember[] = [];
+    for (const m of members) {
+      const fits = Object.entries(m.request.state).every(
+        ([k, v]) => !(k in state) || JSON.stringify(state[k]) === JSON.stringify(v),
+      );
+      if (!fits) {
+        send(m.request).then(m.resolve, m.reject);
+        continue;
+      }
+      Object.assign(state, m.request.state);
+      together.push(m);
+    }
+    // One label per set of kinds in the usage rows, whatever order they joined in.
+    together.sort((a, b) => a.request.kind.localeCompare(b.request.kind));
+    const [first] = together;
+    if (!first) return;
+    if (together.length === 1) {
+      send(first.request).then(first.resolve, first.reject);
+      return;
+    }
+    const questions: Record<string, JudgeQuestion> = {};
+    for (const m of together)
+      for (const [id, q] of Object.entries(m.request.questions)) questions[`${m.request.kind}__${id}`] = q;
+    const waits = together.map((m) => m.request.timeoutMs).filter((t): t is number => t !== undefined);
+    send({
+      orgId: first.request.orgId,
+      agentId: first.request.agentId,
+      runId: first.request.runId,
+      kind: together.map((m) => m.request.kind).join("+"),
+      state,
+      questions,
+      ...(waits.length > 0 ? { timeoutMs: Math.max(...waits) } : {}),
+    }).then(
+      (answers) => {
+        for (const m of together) {
+          const own: Record<string, JudgeAnswer> = {};
+          for (const id of Object.keys(m.request.questions)) {
+            const a = answers[`${m.request.kind}__${id}`];
+            if (a) own[id] = a;
+          }
+          m.resolve(own);
+        }
+      },
+      (error: unknown) => {
+        for (const m of together) m.reject(error);
+      },
+    );
+  }
 }
 
 const LLM_SYSTEM =
@@ -358,7 +481,8 @@ export function withJudgeBudget(judge: Judge, budgetMs: number, slow: { timedOut
 
 /**
  * `primary`, and `fallback` on any error or timeout. Named after `fallback` while `primaryOn()` is false (no Jev key
- * now), so a decision never names a judge that wasn't asked.
+ * now), so a decision never names a judge that wasn't asked. When `fallback` fails before calling a model (no small
+ * model), the primary's error is the one thrown: why no judge answered (`JevOffError`, the platform cap).
  */
 export function withJudgeFallback(primary: Judge, fallback: Judge, primaryOn: () => boolean = () => true): Judge {
   return {
@@ -370,7 +494,9 @@ export function withJudgeFallback(primary: Judge, fallback: Judge, primaryOn: ()
         return await primary.ask(request);
       } catch (error) {
         if (request.calibrated) throw error;
-        return fallback.ask(request);
+        return fallback.ask(request).catch((second: unknown) => {
+          throw judgeCallOf(second).judge_model ? second : error;
+        });
       }
     },
   };

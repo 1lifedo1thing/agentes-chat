@@ -258,7 +258,7 @@ test("parser: partial deltas, our tool calls with results, usage, and the final 
   expect(p.session).toBe(SESSION(1));
 });
 
-test("parser: a turn's usage says how many API calls it made and the most uncached and whole input one read", () => {
+test("parser: a turn's usage says how many API calls it made, the most uncached and whole input one read, and the last's", () => {
   const p = new ClaudeStreamParser();
   p.beginTurn();
   const call = (id: string, input: number, written = 0) =>
@@ -279,6 +279,8 @@ test("parser: a turn's usage says how many API calls it made and the most uncach
   call("m2", 3400);
   // The biggest step is not the most uncached one: its context, cache included.
   call("m3", 40, 5000);
+  // The last call, after a compaction: what the session holds now, smaller than its biggest.
+  call("m4", 20);
   const end = p.push(
     line({
       type: "result",
@@ -299,6 +301,7 @@ test("parser: a turn's usage says how many API calls it made and the most uncach
       calls: 3,
       maxUncached: 3400,
       maxContext: 14040,
+      lastContext: 9020,
     },
   ]);
   // It reaches the server as said.
@@ -3163,3 +3166,57 @@ test.if(posix)("turn.context: the worker's answer: the folder as the agent resol
   expect(said).toContain("?? CLAUDE.md");
   expect(said).toContain("first");
 });
+
+// ── Idle time across sleep, and warm starts (protocol 74) ────────────────────
+
+test.if(posix)(
+  "idle time is awake time: a timer that fires after the computer slept leaves the process open",
+  async () => {
+    let awake = 0;
+    const { m, turn } = setup({ idleMs: 60, clock: { read: () => awake } });
+    await turn(1, "hi");
+    const proc = m.process(AGENT.id, SESSION(1));
+    // The timers fired, but the time they waited was asleep: no awake time went by.
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(m.size).toBe(1);
+    expect(proc?.exited).toBe(false);
+    // Awake past the idle time: it closes at the next look.
+    awake = 1_000;
+    await waitFor(() => m.size === 0 && proc?.exited === true, 4000);
+  },
+);
+
+test.if(posix)(
+  "brain.warm starts the session's process with the agent's last system text, and the turn uses it",
+  async () => {
+    const { m, ws, spawns, turn } = setup();
+    const ctx = { agent: AGENT, folder: await agentWorkspace(ws, AGENT), emit: () => {} };
+    const warm = (n: number) =>
+      m.prewarm({ kind: "claude_code", session: { id: SESSION(n), resume: false }, cwd: "" }, ctx);
+    // Before any turn of the agent's: nothing to start it with.
+    expect(await warm(2)).toEqual({ open: false, started: false });
+    expect(spawns()).toHaveLength(0);
+    await turn(1, "hi", { system: "S1" });
+    expect(await warm(2)).toEqual({ open: true, started: true });
+    // The CLI writes its line once it runs, and says `init` before any prompt: no turn of its own.
+    await waitFor(() => spawns().length === 2, 4000);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(spawns().map((s) => [s.system, s.args.at(-2), s.args.at(-1)])).toEqual([
+      ["S1", "--session-id", SESSION(1)],
+      ["S1", "--session-id", SESSION(2)],
+    ]);
+    // Open already: kept.
+    expect(await warm(2)).toEqual({ open: true, started: false });
+    const b = await turn(2, "there", { system: "S1", session: { id: SESSION(2), resume: false } });
+    expect(b.final).toMatchObject({ type: "done", text: "echo 1: there" });
+    expect(b.final).toMatchObject({ timings: { warm: true } });
+    expect(spawns()).toHaveLength(2);
+    // The agent's text changed since: the turn starts its own process, with its own text.
+    expect(await warm(3)).toEqual({ open: true, started: true });
+    await waitFor(() => spawns().length === 3, 4000);
+    const c = await turn(3, "later", { system: "S2", session: { id: SESSION(3), resume: false } });
+    expect(c.final).toMatchObject({ type: "done" });
+    expect(spawns().map((s) => s.system)).toEqual(["S1", "S1", "S1", "S2"]);
+    expect(spawns().at(-1)?.args.slice(-2)).toEqual(["--session-id", SESSION(3)]);
+  },
+);

@@ -667,7 +667,10 @@ export interface RouterDeps {
   hasAi?(orgId: string): Promise<boolean>;
   /** What picks now, for `ai-status`. */
   routing?: RoutingSetup;
-  /** Whether the workspace used up its platform AI for the month (`limits.ts`): only with a chain that bills it. */
+  /**
+   * Whether the workspace used up its platform AI for the month (`limits.ts`): only with a chain that bills it. Then
+   * nobody is picked, unless `routing` names a small model of its own.
+   */
   platformCapReached?(orgId: string): Promise<boolean>;
   /**
    * The agents among `agentIds` that are out of office now (`outOfOfficeIds`, ADR 0084 §12): their plan or budget ran
@@ -714,6 +717,8 @@ export interface RouteResult {
     | "org_deleting"
     /** An agent's line the server wrote (`SYSTEM_LINE_META`): no other agent chimes in on it. */
     | "system_line"
+    /** An agent's message that names nobody and asks nothing: no other agent chimes in on it. */
+    | "asks_nobody"
     /** The same person's next message right after it is one the router decides on too: that one decides for both. */
     | "continued";
   selected?: string[];
@@ -898,7 +903,12 @@ export async function routeMessage(
   // never misses a key). Stored as `no_ai`, which "Responder agora" routes again once an AI is connected.
   if (waitsForPlan) return { ...(await unrouted(NO_AI, KEPT_ON_HOLD)), held: true };
   if (deps.hasAi && !(await deps.hasAi(message.orgId))) return unrouted(NO_AI);
-  if (await deps.platformCapReached?.(message.orgId)) return unrouted(PLATFORM_CAP);
+  // Past the workspace's platform AI for the month, its own small model still picks (the chain skips Jev).
+  if (
+    (await deps.platformCapReached?.(message.orgId)) &&
+    !(await deps.routing?.smallModel(message.orgId).catch(() => null))
+  )
+    return unrouted(PLATFORM_CAP);
   const quietMs = byAgent ? 0 : (deps.quietMs ?? 0);
   if (quietMs > 0) {
     const end = message.createdAt.getTime() + quietMs;
@@ -971,11 +981,12 @@ export async function routeMessage(
     );
   }
 
-  const [channel] = await db
-    .select({ id: channels.id, name: channels.name, topic: channels.topic })
+  const [channelRow] = await db
+    .select({ id: channels.id, name: channels.name, topic: channels.topic, kind: channels.kind })
     .from(channels)
     .where(and(eq(channels.id, message.channelId), eq(channels.orgId, message.orgId)));
-  if (!channel) return { runs: [], skipped: "message_missing" };
+  if (!channelRow) return { runs: [], skipped: "message_missing" };
+  const { kind: channelKind, ...channel } = channelRow;
   const historyOf = (where: ReturnType<typeof and>) =>
     db
       .select({
@@ -1069,6 +1080,10 @@ export async function routeMessage(
   }
   const namesOf = (m: { body: string; authorUserId: string | null; authorAgentId: string | null }) =>
     namesIn(m.body, nameable, m.authorUserId ?? m.authorAgentId);
+  // In a channel, an agent's message that names nobody and asks nothing brings nobody in: the step is asked only about
+  // one that does. A DM's other agent is who it talks to (an agents' DM carries hand-offs back).
+  if (byAgent && channelKind !== "dm" && !hasQuestionMark(message.body) && namesOf(message).length === 0)
+    return { runs: [], skipped: "asks_nobody" };
 
   // Conversation continuity: within the window, the agent that spoke last here, or the one this
   // person addressed in their previous message, is who a follow-up without a mention is for.
