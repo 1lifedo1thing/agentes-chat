@@ -39,7 +39,6 @@ import {
 import { runnerUpdateWay } from "../runner-update";
 import type { AgentRun } from "../runs";
 import { accountUnavailable, brainSessionId, claudeCodeAvailability, cliMissingMessage, toolOff } from "./claude-code";
-import { codexVersionOk } from "./codex";
 import { BRAIN_NAMES, BRAIN_PLAN_NAMES, type BrainAccount, type BrainKind, type BrainSession } from "./types";
 
 const KINDS: readonly BrainKind[] = ["model", "claude_code", "codex", "cursor", "opencode", "grok", "antigravity"];
@@ -57,7 +56,7 @@ export interface MissionTurn {
  * Which brain thinks for this run (ADR 0032 §5), by priority: the mission's
  * brain when the run is its main session (`missionTurnFor`), else the
  * agent's stored brain (`agents.brain`, block 3a). Availability is checked
- * separately (`computerBrainUnavailable`); the engine falls back from there.
+ * separately (`computerBrainUnavailable`); the engine waits or fails from there.
  */
 export function brainFor(
   agent: Pick<Agent, "brain">,
@@ -69,7 +68,7 @@ export function brainFor(
 
 /**
  * The brain a run thinks with (ADR 0053 §10): its own (`agent_runs.brain`, stored when the engine resolves
- * it and when a conversation run falls back), else the agent's until its first turn. Shared code (steering,
+ * it), else the agent's until its first turn. Shared code (steering,
  * the talker, "Continuar") reads this, never the agent's stored brain alone.
  */
 export const runBrainOf = (run: { brain?: string | null }, agent?: { brain?: string | null } | null): BrainKind =>
@@ -79,17 +78,6 @@ export const runBrainOf = (run: { brain?: string | null }, agent?: { brain?: str
 export async function recordRunBrain(db: Executor, runId: string, kind: BrainKind) {
   await db.update(schema.agentRuns).set({ brain: kind }).where(eq(schema.agentRuns.id, runId));
 }
-
-/**
- * Whether a run whose computer brain can't answer may hand the turn to the model brain (ADR 0032 §5).
- * Never a background run (ADR 0053 §6.4): a routine thinks with its agent's own brain and waits quietly
- * for its computer instead; the agent's owner may also turn the fallback off. Never the team's right hand on a
- * plan (ADR 0137 §7): its DM says why it can't think, with the way to an API key, and nothing runs on a key unasked.
- */
-export const mayFallBack = (
-  agent: Pick<Agent, "brainFallback"> & { builtin?: string | null },
-  run: Pick<AgentRun, "background"> & { workId?: string | null },
-) => !run.background && !run.workId && agent.brainFallback !== false && !isRightHand(agent);
 
 /**
  * Plan limits seen on this process (`limit` events), by machine, brain and account: a cache in front of the
@@ -461,14 +449,11 @@ export function computerBrainUnavailable(
   if (status.executors?.detectedAt && !codex) {
     return { code: "codex_missing", message: cliMissingMessage("Codex", status, "codex") };
   }
-  if (codex && !codexVersionOk(codex.version)) {
-    return { code: "codex_too_old", message: `Codex on ${status.name} is too old. Update it there.` };
-  }
   return accountUnavailable(status, account, "codex");
 }
 
 /**
- * Brain errors that mean "not now on this computer": they fall back, or the message waits. `busy`: the
+ * Brain errors that mean "not now on this computer": the message waits. `busy`: the
  * computer had no room for the turn, and the run looks again on a timer (`COMPUTER_BUSY_RETRY_MS`).
  */
 export const UNAVAILABLE_CODES: ReadonlySet<string> = new Set([
@@ -483,6 +468,7 @@ export const UNAVAILABLE_CODES: ReadonlySet<string> = new Set([
   "cli_missing",
   "not_logged_in",
   "codex_missing",
+  // Only runners from before Codex counted at any version still refuse with it.
   "codex_too_old",
   "cursor_missing",
   "opencode_missing",
@@ -629,8 +615,7 @@ export async function planIsOwners(
 
 /**
  * The agent's effort when it thinks with its own brain (a mission's other brain: the CLI's default). On an API key it
- * holds for a fixed model; "Automático" picks its own (`autoApplied`), and a computer brain's fallback to the API sends
- * none.
+ * holds for a fixed model; "Automático" picks its own (`autoApplied`), and a brain other than the agent's own sends none.
  */
 export function brainEffortFor(agent: Pick<Agent, "brain" | "brainEffort">, kind: BrainKind): BrainEffort | undefined {
   if (kindOf(agent.brain) !== kind) return undefined;
@@ -656,9 +641,8 @@ export function brainSpeedFor(
 /** A conversation's session is picked up again only this soon after its last turn (its prompt cache is gone after). */
 export const SESSION_IDLE_MS = 60 * 60_000;
 /**
- * …and only while its last turn read less than this (input + cache, summed
- * over the turn's model calls): past it every turn re-reads a huge history,
- * so a fresh session starts with the recent messages instead.
+ * …and only while it holds less than this as its last turn ended (what that turn's last model call read, cache
+ * included): past it every turn re-reads a huge history, so a fresh session starts with the recent messages instead.
  */
 export const SESSION_MAX_INPUT_TOKENS = 150_000;
 
@@ -695,7 +679,8 @@ async function sessionFor(
   kind: BrainKind,
   conversation: string,
   machineId: string,
-  options: { fresh?: boolean; promptKey?: string },
+  accountId: string | null,
+  options: { fresh?: boolean; promptKey?: string; peek?: boolean },
   now: Date,
 ): Promise<{ id: string; resume: boolean }> {
   if (run.brainSessionId) {
@@ -703,7 +688,7 @@ async function sessionFor(
   }
   let id: string | null = null;
   if (!options.fresh && !run.background) {
-    const { agentRuns, usageRecords, messages } = schema;
+    const { agentRuns, agentRunSteps, usageRecords, messages } = schema;
     const [last] = await db
       .select({
         id: agentRuns.id,
@@ -711,11 +696,18 @@ async function sessionFor(
         at: sql<Date>`coalesce(${agentRuns.finishedAt}, ${agentRuns.updatedAt})`.mapWith(
           (v: string | Date) => new Date(v),
         ),
-        // Qualified by hand: inside the subquery a bare "id" would be usage_records.id. A row's `input_tokens` is
-        // only the uncached part (`recordPlanUsage`), so the cache counts here too: a well-cached session reads
-        // almost all of its history from the cache.
-        input: sql<number>`coalesce((select max(u.input_tokens + u.cache_read_tokens + u.cache_write_tokens)
-          from ${usageRecords} u where u.run_id = "agent_runs"."id" and u.provider = ${kind}), 0)`.mapWith(Number),
+        // The session's size as the run's last turn ended. A usage row sums a whole turn over all of its calls, so
+        // it reads several times the context: the turn's step says what its last call read (`lastContext`), else
+        // (an older runner) its biggest call, else its input over its calls. Only a run with no such step reads
+        // its usage rows, cache included (`input_tokens` is only the uncached part, `recordPlanUsage`). Qualified
+        // by hand: inside a subquery a bare "id" would be the subquery's own.
+        input: sql<number>`coalesce(
+          (select coalesce((s.data->>'lastContext')::numeric, (s.data->>'maxContext')::numeric,
+              (s.data->>'inputTokens')::numeric / nullif((s.data->>'calls')::numeric, 0))
+            from ${agentRunSteps} s where s.run_id = "agent_runs"."id" and s.kind = 'model_call'
+            order by s.seq desc limit 1),
+          (select max(u.input_tokens + u.cache_read_tokens + u.cache_write_tokens)
+            from ${usageRecords} u where u.run_id = "agent_runs"."id" and u.provider = ${kind}), 0)`.mapWith(Number),
         promptKey: sql<string | null>`${agentRuns.transcript}->>'promptKey'`,
       })
       .from(agentRuns)
@@ -738,6 +730,11 @@ async function sessionFor(
           sql`not exists (select 1 from ${usageRecords} u4 where u4.org_id = "agent_runs"."org_id"
             and u4.run_id = "agent_runs"."id" and u4.provider = ${kind} and u4.machine_id is not null
             and u4.machine_id <> ${machineId}::uuid)`,
+          // Nor one another account thought in (a run that went on with the next account, ADR 0041 §6): that account's
+          // folder holds it, so this one would start over while being told only what's new.
+          sql`not exists (select 1 from ${usageRecords} u5 where u5.org_id = "agent_runs"."org_id"
+            and u5.run_id = "agent_runs"."id" and u5.provider = ${kind} and u5.brain_account_id is not null
+            and u5.brain_account_id is distinct from ${accountId}::uuid)`,
           // Never a session background work thought in (a routine's: it was told to answer NO_REPLY, and a
           // conversation that picked it up answered that). Any run that shared it counts, older rows too.
           sql`not exists (select 1 from ${agentRuns} r2
@@ -761,7 +758,8 @@ async function sessionFor(
     }
   }
   const sessionId = id ?? brainSessionId(agent.id, `${conversation}:${run.id}`, kind);
-  await db.update(schema.agentRuns).set({ brainSessionId: sessionId }).where(eq(schema.agentRuns.id, run.id));
+  if (!options.peek)
+    await db.update(schema.agentRuns).set({ brainSessionId: sessionId }).where(eq(schema.agentRuns.id, run.id));
   return { id: sessionId, resume: id ? await sessionUsed(db, run, kind, sessionId) : false };
 }
 
@@ -784,9 +782,10 @@ export async function resolveBrain(
   conversation: string,
   /**
    * `fresh`: a new computer session whatever the conversation had (routine runs). `promptKey`: the run's
-   * (`Transcript.promptKey`); the conversation's session is picked up only when it started with the same.
+   * (`Transcript.promptKey`); the conversation's session is picked up only when it started with the same. `peek`:
+   * nothing is kept on the run (the session it would most likely get, before its prompt key is known).
    */
-  options: { fresh?: boolean; now?: Date; promptKey?: string; thinker?: Agent } = {},
+  options: { fresh?: boolean; now?: Date; promptKey?: string; thinker?: Agent; peek?: boolean } = {},
 ): Promise<BrainPlan> {
   const mission: MissionTurn | null = await missionTurnFor(deps.db, run).catch(() => null);
   // The right hand: the AI of the person whose DM this is, else the workspace's; on a plan, its computer and owner.
@@ -814,7 +813,9 @@ export async function resolveBrain(
     kind === "claude_code" && model && !isAutoModel(model) ? claudeCodeModel(planOf(account?.provider), model) : model;
   const effort = brainEffortFor(agent, kind);
   const unavailable =
-    (isRightHand(agent) && agent.brainAccountId ? await rightHandPlanRefusal(deps.db, agent, run, status) : null) ??
+    (isRightHand(agent) && (agent.brainAccountId || agent.machineId)
+      ? await rightHandPlanRefusal(deps.db, agent, run, status)
+      : null) ??
     (machineId && !deps.machines
       ? null
       : computerBrainUnavailable(
@@ -835,7 +836,29 @@ export async function resolveBrain(
   const backSoon =
     status?.standby ||
     (unavailable?.code === "machine_offline" && gone < (await import("../machine-tasks")).TASK_OFFLINE_GRACE_MS);
-  if (unavailable && isRightHand(agent) && !mission && !options.thinker && !backSoon) {
+  // At its account's limit, the next account of the person it answers goes first (ADR 0041 §6, the executor's move):
+  // nothing stands in while one has room.
+  const movesOn =
+    unavailable?.code === "plan_limit" &&
+    !unavailable.scope &&
+    machineId &&
+    account &&
+    !options.thinker &&
+    isRightHand(agent) &&
+    Boolean(
+      (
+        await (
+          await import("../spill")
+        ).nextAccountPlan(
+          deps,
+          agent,
+          { kind, account, ...(runs ? { model: runs } : {}), session: { id: "", resume: false, machineId, cwd: "" } },
+          [account.id],
+          { forPerson: person },
+        )
+      ).plan,
+    );
+  if (unavailable && isRightHand(agent) && !mission && !options.thinker && !backSoon && !movesOn) {
     let standIn = await rightHandStandIn(deps, agent, person, unavailable.code).catch(() => null);
     if (standIn?.brainAccountId) {
       const thinker: Agent = {
@@ -879,7 +902,17 @@ export async function resolveBrain(
     mission?.session ??
     (machineId
       ? {
-          ...(await sessionFor(deps.db, agent, run, kind, conversation, machineId, options, options.now ?? new Date())),
+          ...(await sessionFor(
+            deps.db,
+            agent,
+            run,
+            kind,
+            conversation,
+            machineId,
+            account?.id ?? null,
+            options,
+            options.now ?? new Date(),
+          )),
           machineId,
           cwd: "",
         }

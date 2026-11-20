@@ -4,9 +4,9 @@ import { type AgentWork, agentWorkFor, bareWork } from "./agent-work";
 import { publishOrgEvent } from "./events";
 import { type PendingReturn, pendingReturns } from "./follow-through";
 import { cutText } from "./format";
-import type { Judge } from "./judge";
+import type { Judge, JudgeGroup } from "./judge";
 import { requirePermission } from "./organizations";
-import { type OutOfOffice, type OutOfOfficeOptions, outOfOffice } from "./out-of-office";
+import { type OutOfOffice, outOfOffice } from "./out-of-office";
 import { rightHandId } from "./right-hand";
 import { routineSeer } from "./routines";
 import { outageParkedSql } from "./runs";
@@ -127,11 +127,10 @@ export async function agentStatuses(
   actorId: string,
   orgId: string,
   now = new Date(),
-  options: Pick<OutOfOfficeOptions, "hasModel"> = {},
 ): Promise<(AgentStatusView & { work: AgentWork | null })[]> {
   await requirePermission(db, actorId, orgId, "read");
   const [list, sees, work, rightHand, returns] = await Promise.all([
-    loadAgentStatuses(db, orgId, now, undefined, options),
+    loadAgentStatuses(db, orgId, now),
     routineSeer(db, orgId, actorId),
     agentWorkFor(db, actorId, orgId, new Date(now.getTime() - AGENT_HEARTBEAT_FRESH_MS)),
     rightHandId(db, orgId),
@@ -190,14 +189,13 @@ const rightHandFor = (s: AgentStatusView, w: AgentWork | null): AgentStatusView 
 
 /**
  * Every agent's presence and line in an organization, at `now` (no permission check), or only `ids`'. Checked on
- * read, no job. `hasModel` (the gateway's key check) tells whether a plan at its limit still falls back to a model.
+ * read, no job.
  */
 export async function loadAgentStatuses(
   db: Database,
   orgId: string,
   now = new Date(),
   ids?: string[],
-  options: Pick<OutOfOfficeOptions, "hasModel"> = {},
 ): Promise<AgentStatusView[]> {
   if (ids?.length === 0) return [];
   const ofAgents = ids ? [inArray(agents.id, ids)] : [];
@@ -210,8 +208,9 @@ export async function loadAgentStatuses(
         model: agents.model,
         credentialId: agents.credentialId,
         brain: agents.brain,
-        brainFallback: agents.brainFallback,
         brainAccountId: agents.brainAccountId,
+        brainAccountPinned: agents.brainAccountPinned,
+        ownerUserId: agents.ownerUserId,
         machineId: agents.machineId,
         monthlyBudgetNanoUsd: agents.monthlyBudgetNanoUsd,
         heldAt: agents.operatorHoldAt,
@@ -262,10 +261,7 @@ export async function loadAgentStatuses(
       .from(agentRuns)
       .where(and(eq(agentRuns.orgId, orgId), inArray(agentRuns.status, [...ACTIVE, ...WAITING]), ...ofRuns)),
   ]);
-  const [works, outs] = await Promise.all([
-    liveWorksByAgent(db, orgId, ids),
-    outOfOffice(db, orgId, list, { now, ...options }),
-  ]);
+  const [works, outs] = await Promise.all([liveWorksByAgent(db, orgId, ids), outOfOffice(db, orgId, list, { now })]);
   const publicIds = await publicChannelIds(
     db,
     orgId,
@@ -524,10 +520,14 @@ export interface StatusCandidate {
   text: string;
 }
 
-/** What it is doing, by the group of the tool it uses; null = nothing worth a line (chat, memory, skills). */
+/**
+ * What it is doing, by the group of the tool it uses; null = nothing worth a line (chat, memory, skills). A person's
+ * own connection's tool says nothing: everyone who may talk to the agent reads the line.
+ */
 export function activityOf(
-  tool: Pick<ToolDefinition, "name" | "scope" | "connectionId" | "connectorLabel">,
+  tool: Pick<ToolDefinition, "name" | "scope" | "connectionId" | "connectorLabel" | "ownerUserId">,
 ): Omit<StatusCandidate, "key"> | null {
+  if (tool.ownerUserId) return null;
   const group = toolGroupKey(tool);
   const label = tool.connectorLabel?.trim();
   if (group === "browser") return { kind: "browsing", subject: null, text: "Browsing the web" };
@@ -708,15 +708,21 @@ export async function askRunStatus(
     message: string;
     recent: string[];
     candidates: StatusCandidate[];
+    /** Asked with the run's other start judgments (`JudgeGroup`). */
+    group?: JudgeGroup;
   },
 ): Promise<StatusPick | null> {
-  if (input.candidates.length === 0) return null;
+  if (input.candidates.length === 0) {
+    input.group?.skip("agent_status");
+    return null;
+  }
   const answers = await judge.ask({
     orgId: input.orgId,
     agentId: input.agentId,
     runId: input.runId,
     kind: "agent_status",
     calibrated: true,
+    ...(input.group ? { group: input.group } : {}),
     state: {
       agent: { name: input.agent.name, role: input.agent.role, instructions: cutText(input.agent.instructions, 1500) },
       message: cutText(input.message, 2000),
@@ -784,7 +790,7 @@ async function writeAutoLine(
 export async function followWork(
   deps: { db: Database; pubsub?: PubSub; judge?: Judge | null },
   ctx: Pick<ToolContext, "orgId" | "agentId" | "runId">,
-  tool: Pick<ToolDefinition, "name" | "scope" | "connectionId" | "connectorLabel">,
+  tool: Pick<ToolDefinition, "name" | "scope" | "connectionId" | "connectorLabel" | "ownerUserId">,
   now = new Date(),
 ): Promise<void> {
   if (!ctx.runId) return;

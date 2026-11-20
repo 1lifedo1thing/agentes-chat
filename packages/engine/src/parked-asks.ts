@@ -77,7 +77,8 @@ export const CLOSED_NOTE_CODE = "catch_up_closed";
  * already be answered here. One statement.
  */
 export async function scheduleParkedChecks(db: Executor, m: Message) {
-  if (m.deletedAt || m.meta.notice || m.meta.usageWait || m.meta.talker) return;
+  // A line before slow work (`say_now`, ADR 0207) answers nothing a waiting run asked.
+  if (m.deletedAt || m.meta.notice || m.meta.usageWait || m.meta.talker || m.meta.sayNow) return;
   if (m.authorType !== "person" && m.authorType !== "agent") return;
   const card = m.authorType === "agent" && Boolean(m.meta.questionId || m.meta.secretRequest || m.meta.browserHandoff);
   // One check per run and window, a whole window after the first message in it: the replies it brings come in.
@@ -748,7 +749,9 @@ export function createReleaseAsksToolSource(deps: { pubsub?: PubSub } = {}): Too
         };
       const caller = await getAgentCached(ctx.db, ctx.orgId, ctx.agentId);
       const who = { name: caller?.name ?? "Another agent", agentId: ctx.agentId };
-      const reason = cutText(String(input.reason ?? "").trim(), 300);
+      // From a confidential thread (ADR 0190) no reason goes with it: the step it is written in is the other
+      // agent's run's, which may belong to another thread.
+      const reason = ctx.confidential ? "" : cutText(String(input.reason ?? "").trim(), 300);
       let released = 0;
       for (const p of found) {
         const held = [p.run.triggerMessageId, ...p.run.pendingMessageIds].filter((id) => handled.includes(id));
