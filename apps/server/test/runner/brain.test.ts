@@ -258,7 +258,7 @@ test("parser: partial deltas, our tool calls with results, usage, and the final 
   expect(p.session).toBe(SESSION(1));
 });
 
-test("parser: a turn's usage says how many API calls it made and the most uncached and whole input one read", () => {
+test("parser: a turn's usage says how many API calls it made, the most uncached and whole input one read, and the last's", () => {
   const p = new ClaudeStreamParser();
   p.beginTurn();
   const call = (id: string, input: number, written = 0) =>
@@ -279,6 +279,8 @@ test("parser: a turn's usage says how many API calls it made and the most uncach
   call("m2", 3400);
   // The biggest step is not the most uncached one: its context, cache included.
   call("m3", 40, 5000);
+  // The last call, after a compaction: what the session holds now, smaller than its biggest.
+  call("m4", 20);
   const end = p.push(
     line({
       type: "result",
@@ -299,6 +301,7 @@ test("parser: a turn's usage says how many API calls it made and the most uncach
       calls: 3,
       maxUncached: 3400,
       maxContext: 14040,
+      lastContext: 9020,
     },
   ]);
   // It reaches the server as said.

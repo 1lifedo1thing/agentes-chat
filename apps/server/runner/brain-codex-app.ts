@@ -492,9 +492,10 @@ export class CodexAppMapper {
   /** The thread's totals before this `brain.turn`, and now. */
   private base?: TokenUsageBreakdown;
   private total?: TokenUsageBreakdown;
-  /** Model requests of this `brain.turn`, and the most input one read. */
+  /** Model requests of this `brain.turn`, the most input one read, and what the last one read. */
   private calls = 0;
   private maxContext = 0;
+  private lastContext = 0;
   /** An `error` notification Codex won't retry (the turn's own error says more). */
   lastError?: string;
   /** The turn ran a command, changed a file or called our bridge: a cut now loses work the API couldn't see. */
@@ -598,7 +599,10 @@ export class CodexAppMapper {
     if (!this.total || num(u.total.totalTokens) > num(this.total.totalTokens)) {
       this.calls++;
       // Codex counts cached input inside `inputTokens`: the request's whole context.
-      if (isObj(u.last)) this.maxContext = Math.max(this.maxContext, num(u.last.inputTokens));
+      if (isObj(u.last)) {
+        this.lastContext = num(u.last.inputTokens);
+        this.maxContext = Math.max(this.maxContext, this.lastContext);
+      }
     }
     this.total = u.total;
   }
@@ -627,6 +631,7 @@ export class CodexAppMapper {
           ...(u && u.cacheWriteInputTokens > 0 ? { cacheWrite: u.cacheWriteInputTokens } : {}),
           ...(this.calls > 0 ? { calls: this.calls } : {}),
           ...(this.maxContext > 0 ? { maxContext: this.maxContext } : {}),
+          ...(this.lastContext > 0 ? { lastContext: this.lastContext } : {}),
         },
         { type: "done", text: answer, session: { id: sessionId } },
       ];
