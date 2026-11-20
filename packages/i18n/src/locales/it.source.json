@@ -37288,7 +37288,7 @@
     "value": "Check the address and try again."
   },
   "errors.said.privateNetwork": {
-    "value": "This address is on a private network. Use a public address, or on a self-hosted server allow it with OUTBOUND_ALLOW_CIDRS."
+    "value": "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`."
   },
   "errors.said.tooLong": {
     "value": "That's too long. Shorten it and try again."
