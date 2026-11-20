@@ -777,3 +777,10 @@
 .code-pbody__keep[hidden] {
   display: none;
 }
+.code-pick--repo input {
+  width: 250px;
+}
+.code-group__where {
+  color: var(--faint);
+  font-weight: 500;
+}

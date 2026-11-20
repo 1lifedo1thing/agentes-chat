@@ -39,6 +39,12 @@ message (`meta.codeSession`), and the session is that thread's replies, so runs,
 events, receipts and the thread screen work unchanged. People are members of the channel: who opened it, and whoever
 is named there with `@` (`admitCodeMembers`); agents named there join it too.
 
+A session may also start with no repository: a name with no owner (`hello-world`) is a project only on the agent's
+computer, `projects/<name>` in its folder, made with `git init` on first use (or adopted with its files in a first
+commit when the folder is there). Its session has the same worktree, diff and terminal; with no remote, its git button
+offers Commit and Merge (into the project's base branch, on the computer), never Push or a pull request. A clone that
+fails for want of GitHub access is said in the person's words with that way out (`errorCode: github_access`).
+
 ### 2. Its agent answers like in a DM, once its worktree is ready
 
 What names nobody in the session goes to the session's agent (`codeAgentSql` in the `task_agent` step of

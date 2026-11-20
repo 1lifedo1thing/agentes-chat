@@ -58,7 +58,7 @@ export function CodeHome() {
     const agent = agents.find((a) => a.agentId === last.agentId) ?? agents[0];
     if (!agent) return;
     setAgentId(agent.agentId);
-    setRepo(last.repo && (agent.any || agent.repos.includes(last.repo)) ? last.repo : (agent.repos[0] ?? ""));
+    setRepo(last.repo ?? agent.repos[0] ?? "");
   }, [agents, agentId, org.id]);
   const picked = agents.find((a) => a.agentId === agentId) ?? null;
   const counts = useMemo(
@@ -71,7 +71,7 @@ export function CodeHome() {
   const pickAgent = (id: string) => {
     setAgentId(id);
     const agent = agents.find((a) => a.agentId === id);
-    if (agent && !agent.any && !agent.repos.includes(repo)) setRepo(agent.repos[0] ?? "");
+    if (agent && !repo.trim()) setRepo(agent.repos[0] ?? "");
   };
   const ready = Boolean(picked && repo.trim() && text.trim()) && !create.isPending;
   const submit = (e?: FormEvent) => {
@@ -143,33 +143,20 @@ export function CodeHome() {
                 </select>
                 <Icon name="chevronDown" size={14} />
               </label>
-              <label className="code-pick">
+              <label className="code-pick code-pick--repo">
                 <Icon name="repo" size={16} />
-                {picked && !picked.any ? (
-                  <select value={repo} onChange={(e) => setRepo(e.target.value)} aria-label={t("codeSessions.home.repo")}>
-                    {picked.repos.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    value={repo}
-                    onChange={(e) => setRepo(e.target.value)}
-                    placeholder="owner/name"
-                    list="code-repos"
-                    aria-label={t("codeSessions.home.repo")}
-                  />
-                )}
-                {picked?.any && (
-                  <datalist id="code-repos">
-                    {picked.repos.map((r) => (
-                      <option key={r} value={r} />
-                    ))}
-                  </datalist>
-                )}
-                {picked && !picked.any && <Icon name="chevronDown" size={14} />}
+                <input
+                  value={repo}
+                  onChange={(e) => setRepo(e.target.value)}
+                  placeholder={t("codeSessions.home.repoPlaceholder")}
+                  list="code-repos"
+                  aria-label={t("codeSessions.home.repo")}
+                />
+                <datalist id="code-repos">
+                  {(picked?.repos ?? []).map((r) => (
+                    <option key={r} value={r} />
+                  ))}
+                </datalist>
               </label>
               <span className="code-start__hint">{t("codeSessions.home.hint")}</span>
               <Button type="submit" size="sm" variant="primary" disabled={!ready} loading={create.isPending}>

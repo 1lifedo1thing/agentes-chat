@@ -11571,12 +11571,14 @@ export const en = {
       label: "Code sessions",
       new: "New session",
       newRow: "New session",
+      /** Beside a local project's name in the list. */
+      local: "on the computer",
       empty: "The sessions you open, or are called into, show here.",
     },
     home: {
       /** Over the agents' sky; the field is under it. */
       title: "What to do in {{repo}}?",
-      aRepo: "a repository",
+      aRepo: "a project",
       working_one: "{{count}} working",
       working_other: "{{count}} working",
       waiting_one: "{{count}} waiting for you",
@@ -11587,7 +11589,9 @@ export const en = {
       label: "What to do",
       agent: "Agent",
       repo: "Repository",
-      hint: "@ calls someone · paste an issue, a log or a link",
+      /** A GitHub repository, or just a name: a new project on the agent's computer, no remote. */
+      repoPlaceholder: "owner/name, or a new project's name",
+      hint: "Just a name starts a project on the agent's computer · @ calls someone",
       start: "Start",
       agent_waiting: "waiting for you",
       agent_working: "working",
@@ -11602,6 +11606,8 @@ export const en = {
       closeHint: "It leaves the list; the worktree is removed and the branch stays",
       failed: "The worktree couldn't be prepared.",
       retry: "Try again",
+      githubAccess:
+        "This workspace has no GitHub access for this repository. Connect GitHub in Settings › Connectors, or start a session on a project on the computer (just a name).",
     },
     panel: {
       diff: "Diff",
@@ -11644,6 +11650,7 @@ export const en = {
         push: "Push the branch.",
         pr: "Open a pull request from this branch, with a title and description from the diff.",
         merge: "Merge the pull request into the base branch.",
+        mergeLocal: "Merge this branch into {{base}} in the project.",
       },
       hint: {
         commit_one: "{{count}} file changed",
@@ -11653,6 +11660,7 @@ export const en = {
         pr: "On GitHub, with a title and text from the diff",
         prOpen: "PR #{{number}} is open",
         merge: "Asks for approval, as always",
+        mergeLocal: "Into {{base}}, on the computer",
       },
       note: "Each step asks the agent, in the conversation.",
     },

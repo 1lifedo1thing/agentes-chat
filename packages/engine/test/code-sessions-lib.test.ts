@@ -3,6 +3,8 @@ import {
   codeBranchName,
   codeSessionOf,
   codeWorktreePath,
+  isLocalSession,
+  localProjectName,
   shellQuote,
   splitPatch,
   titleOfRequest,
@@ -91,5 +93,19 @@ describe("shellQuote", () => {
   test("single quotes, a quote inside escaped", () => {
     expect(shellQuote("a b")).toBe("'a b'");
     expect(shellQuote("it's")).toBe("'it'\\''s'");
+  });
+});
+
+describe("local projects", () => {
+  test("a folder-like name is a local project's, anything else isn't", () => {
+    expect(localProjectName("hello-world")).toBe("hello-world");
+    expect(localProjectName(" site_v2.1/ ")).toBe("site_v2.1");
+    expect(localProjectName(".hidden")).toBeNull();
+    expect(localProjectName("a b")).toBeNull();
+    expect(localProjectName("acme/web")).toBeNull();
+  });
+  test("a session on a local project has no owner in its repo", () => {
+    expect(isLocalSession({ repo: "hello-world" })).toBe(true);
+    expect(isLocalSession({ repo: "acme/web" })).toBe(false);
   });
 });

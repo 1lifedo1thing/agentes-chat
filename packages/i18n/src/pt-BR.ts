@@ -11577,12 +11577,14 @@ export const ptBR = {
       label: "Sessões de código",
       new: "Nova sessão",
       newRow: "Nova sessão",
+      /** Ao lado do nome de um projeto local na lista. */
+      local: "no computador",
       empty: "As sessões que você abre, ou para as quais é chamado, aparecem aqui.",
     },
     home: {
       /** Sobre o céu dos agentes; o campo fica embaixo. */
       title: "O que fazer em {{repo}}?",
-      aRepo: "um repositório",
+      aRepo: "um projeto",
       working_one: "{{count}} trabalhando",
       working_other: "{{count}} trabalhando",
       waiting_one: "{{count}} espera você",
@@ -11594,7 +11596,9 @@ export const ptBR = {
       label: "O que fazer",
       agent: "Agente",
       repo: "Repositório",
-      hint: "@ chama alguém · cole uma issue, um log ou um link",
+      /** Um repositório do GitHub, ou só um nome: um projeto novo no computador do agente, sem remote. */
+      repoPlaceholder: "owner/name, ou o nome de um projeto novo",
+      hint: "Só um nome cria um projeto no computador do agente · @ chama alguém",
       start: "Começar",
       agent_waiting: "espera você",
       agent_working: "trabalhando",
@@ -11609,6 +11613,8 @@ export const ptBR = {
       closeHint: "Sai da lista; a worktree é removida e a branch fica",
       failed: "Não deu para preparar a worktree.",
       retry: "Tentar de novo",
+      githubAccess:
+        "Este workspace não tem acesso ao GitHub para esse repositório. Conecte o GitHub em Configurações › Conectores, ou comece uma sessão num projeto no computador (só um nome).",
     },
     panel: {
       diff: "Diff",
@@ -11651,6 +11657,7 @@ export const ptBR = {
         push: "Envia a branch.",
         pr: "Abre um pull request desta branch, com título e texto tirados do diff.",
         merge: "Junta o pull request na branch base.",
+        mergeLocal: "Junta esta branch na {{base}} do projeto.",
       },
       hint: {
         commit_one: "{{count}} arquivo mudado",
@@ -11660,6 +11667,7 @@ export const ptBR = {
         pr: "No GitHub, com título e texto do diff",
         prOpen: "O PR #{{number}} está aberto",
         merge: "Pede aprovação, como sempre",
+        mergeLocal: "Na {{base}}, no computador",
       },
       note: "Cada passo pede ao agente, na conversa.",
     },

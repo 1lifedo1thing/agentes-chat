@@ -247,7 +247,10 @@ function GitButton({ session }: { session: CodeSession }) {
     setSending(true);
     try {
       await api.chat.post(org.id, session.channelId, {
-        body: t(`codeSessions.git.ask.${step}`),
+        body:
+          session.local && step === "merge"
+            ? t("codeSessions.git.ask.mergeLocal", { base: session.baseBranch ?? "main" })
+            : t(`codeSessions.git.ask.${step}`),
         threadId: session.rootId,
       });
     } catch (error) {
@@ -263,8 +266,12 @@ function GitButton({ session }: { session: CodeSession }) {
     if (step === "commit") return t("codeSessions.git.hint.commit", { count: d.uncommitted });
     if (step === "push") return t("codeSessions.git.hint.push", { count: d.ahead });
     if (step === "pr") return d.pr ? t("codeSessions.git.hint.prOpen", { number: d.pr.number }) : t("codeSessions.git.hint.pr");
-    return t("codeSessions.git.hint.merge");
+    return session.local
+      ? t("codeSessions.git.hint.mergeLocal", { base: session.baseBranch ?? "main" })
+      : t("codeSessions.git.hint.merge");
   };
+  // A local project has no remote: Commit and Merge (into its base branch on the computer) only.
+  const steps = session.local ? STEPS.filter((s) => s === "commit" || s === "merge") : STEPS;
   return (
     <span className="code-git">
       <Button
@@ -291,7 +298,7 @@ function GitButton({ session }: { session: CodeSession }) {
       />
       {menu && (
         <div className="ac-menu code-gitmenu" role="menu">
-          {STEPS.map((step) => (
+          {steps.map((step) => (
             <button
               key={step}
               type="button"
@@ -326,7 +333,8 @@ function FailedBar({ session }: { session: CodeSession }) {
     <div className="code-failed" role="alert">
       <Icon name="alert" size={16} />
       <span className="code-failed__t">
-        <b>{t("codeSessions.view.failed")}</b> {session.worktree.error}
+        <b>{t("codeSessions.view.failed")}</b>{" "}
+        {session.worktree.errorCode === "github_access" ? t("codeSessions.view.githubAccess") : session.worktree.error}
       </span>
       <Button size="sm" loading={retry.isPending} onClick={() => retry.mutate()}>
         {t("codeSessions.view.retry")}

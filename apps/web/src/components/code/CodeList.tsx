@@ -100,7 +100,10 @@ export function CodeList({ activeId }: { activeId: string | null }) {
         </Link>
         {groups.map(([repo, sessions]) => (
           <div key={repo} className="code-group">
-            <div className="code-group__h">{repo}</div>
+            <div className="code-group__h">
+              {repo}
+              {sessions[0]?.local && <span className="code-group__where"> · {t("codeSessions.list.local")}</span>}
+            </div>
             {sessions.map((s) => {
               const agent = dir.agentById.get(s.agentId);
               return (

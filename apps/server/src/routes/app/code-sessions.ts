@@ -30,7 +30,12 @@ const CodeSession = z
     worktree: z.object({
       state: z.enum(["preparing", "ready", "failed", "removed"]),
       error: z.string().nullable(),
+      errorCode: z
+        .enum(["github_access"])
+        .nullable()
+        .openapi({ description: "A known failure the apps say in the person's words: no GitHub access here." }),
     }),
+    local: z.boolean().openapi({ description: "A project only on the agent's computer (no remote)." }),
     pr: z.object({ number: z.number().int(), url: z.string().nullable() }).nullable(),
     stat: z.object({
       files: z.number().int(),
@@ -73,6 +78,7 @@ const CodeGit = z
     uncommitted: z.number().int(),
     ahead: z.number().int(),
     upstream: z.boolean(),
+    local: z.boolean(),
     pr: z.object({ number: z.number().int(), url: z.string().nullable() }).nullable(),
     next: z.enum(["commit", "push", "pr", "merge"]).nullable(),
   })
@@ -154,7 +160,11 @@ export function codeSessionRoutes(deps: AppDeps) {
             "application/json": {
               schema: z.object({
                 agentId: z.uuid(),
-                repo: z.string().min(3).max(200),
+                repo: z
+                  .string()
+                  .min(1)
+                  .max(200)
+                  .openapi({ description: "`owner/name` on GitHub, or a name for a project on the agent's computer." }),
                 text: z.string().min(1).max(20_000).openapi({ description: "The request: the first message." }),
               }),
             },

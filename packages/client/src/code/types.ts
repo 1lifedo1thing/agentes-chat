@@ -20,7 +20,9 @@ export interface CodeSession {
   baseBranch: string | null;
   agentId: string;
   machineId: string | null;
-  worktree: { state: CodeWorktreeState; error: string | null };
+  worktree: { state: CodeWorktreeState; error: string | null; errorCode: "github_access" | null };
+  /** A project only on the agent's computer (no remote): no push, no pull request. */
+  local: boolean;
   pr: { number: number; url: string | null } | null;
   /** The last known size of the change against the base (`at` null: never read). */
   stat: { files: number; added: number; removed: number; at: string | null };
@@ -68,6 +70,8 @@ export interface CodeGit {
   uncommitted: number;
   ahead: number;
   upstream: boolean;
+  /** A local project: Commit, then Merge into its base branch on the computer. */
+  local: boolean;
   pr: { number: number; url: string | null } | null;
   next: CodeGitStep | null;
 }

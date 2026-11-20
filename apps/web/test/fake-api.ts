@@ -4606,7 +4606,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
       },
       close: async () => {},
       diff: async () => ({ scope: "base" as const, base: { branch: null, sha: null }, files: [], added: 0, removed: 0, truncated: false }),
-      git: async () => ({ uncommitted: 0, ahead: 0, upstream: false, pr: null, next: null }),
+      git: async () => ({ uncommitted: 0, ahead: 0, upstream: false, local: false, pr: null, next: null }),
     },
     browser: browser.client,
     desktop: browser.desktop,

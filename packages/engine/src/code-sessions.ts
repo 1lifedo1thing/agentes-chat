@@ -83,6 +83,23 @@ export function codeSessionOf(meta: unknown): CodeSessionMeta | null {
 
 const shortId = (id: string) => id.replace(/-/g, "").slice(-8);
 
+/**
+ * A project only on the agent's computer, with no remote yet (ADR 0208): named like a folder (letters, digits, dots,
+ * dashes, underscores, not starting with a dot), it lives in `projects/<name>` in the agent's folder, a git repository
+ * of its own made on first use. A session on it has `repo` = that name (no slash), so `isLocalSession` tells it apart
+ * from a GitHub repository's (`owner/name`).
+ */
+export const LOCAL_PROJECTS_DIR = "projects";
+const LOCAL_NAME = /^(?!\.)[A-Za-z0-9._-]{1,64}$/;
+export const localProjectName = (input: string) => {
+  const name = input.trim().replace(/\/+$/, "");
+  return LOCAL_NAME.test(name) ? name : null;
+};
+export const isLocalSession = (row: Pick<CodeSessionRow, "repo">) => !row.repo.includes("/");
+
+/** The clone failed for want of GitHub access: stored as this code, said in the person's language by the apps. */
+export const GITHUB_ACCESS_ERROR = "github_access";
+
 /** The session's folder, relative to the agent's folder (`.worktrees/` stays out of git on the runner). */
 export const codeWorktreePath = (sessionId: string) => `.worktrees/c-${shortId(sessionId)}`;
 
@@ -171,15 +188,20 @@ export async function codeSessionBrief(
   const row = await codeSessionOfChannel(db, channelId);
   if (!row || row.archivedAt) return null;
   const own = row.agentId === agentId;
+  const local = isLocalSession(row);
   const lines = [
     "# This conversation: a code session",
-    `A person opened this session to work on ${row.repo}: "${row.title}".`,
+    local
+      ? `A person opened this session to work on the project "${row.repo}", a local git repository on your computer (\`${row.repoDir}\`, no remote): "${row.title}".`
+      : `A person opened this session to work on ${row.repo}: "${row.title}".`,
   ];
   if (own && row.worktreeState === "ready" && row.worktreePath) {
     lines.push(
       `You work in its own git worktree, \`${row.worktreePath}\` (your folder for this conversation), on branch \`${row.branch ?? "?"}\`, made from \`${row.baseBranch ?? "the default branch"}\`${row.baseSha ? ` at ${row.baseSha.slice(0, 7)}` : ""}.`,
       "Work like in a terminal with this person: read, change and run things in that folder, and say what you did in a few words. Don't touch other checkouts.",
-      "Commit when a piece of work is done, with a short message. Push and open a pull request only when the person asks (the session's git button asks you in words).",
+      local
+        ? `Commit when a piece of work is done, with a short message. There is no remote: nothing to push. When the person asks to merge, merge this branch into \`${row.baseBranch ?? "main"}\` in \`${row.repoDir}\`.`
+        : "Commit when a piece of work is done, with a short message. Push and open a pull request only when the person asks (the session's git button asks you in words).",
     );
     if (options.first && row.setupCommand)
       lines.push(`The worktree is new: install the project first if it needs it (\`${row.setupCommand}\`).`);
@@ -204,7 +226,9 @@ export interface CodeSessionView {
   baseBranch: string | null;
   agentId: string;
   machineId: string | null;
-  worktree: { state: CodeWorktreeState; error: string | null };
+  worktree: { state: CodeWorktreeState; error: string | null; errorCode: "github_access" | null };
+  /** A project only on the agent's computer (no remote): no push, no pull request. */
+  local: boolean;
   pr: { number: number; url: string | null } | null;
   stat: { files: number; added: number; removed: number; at: string | null };
   /** What it is doing now, for the list: preparing, failed, working (a live run), waiting (on this person), idle. */
@@ -239,7 +263,11 @@ function viewOf(
     baseBranch: row.baseBranch,
     agentId: row.agentId,
     machineId: row.machineId,
-    worktree: { state, error: row.worktreeError },
+    worktree:
+      row.worktreeError === GITHUB_ACCESS_ERROR
+        ? { state, error: null, errorCode: "github_access" }
+        : { state, error: row.worktreeError, errorCode: null },
+    local: isLocalSession(row),
     pr: row.prNumber ? { number: row.prNumber, url: row.prUrl } : null,
     stat: { files: row.files, added: row.added, removed: row.removed, at: row.statAt?.toISOString() ?? null },
     work,
@@ -388,9 +416,15 @@ export async function createCodeSession(
   const text = input.text.trim();
   if (!text) throw new ValidationError("Say what to do", "code_session.empty");
   if (text.length > REQUEST_MAX_CHARS) throw new ValidationError("The request is too long", "code_session.too_long");
+  // A GitHub repository (`owner/name`, or its URL), else a local project's name on the agent's computer.
   const parsed = parseRepo(input.repo);
-  if (!parsed) throw new ValidationError("repo must be owner/name", "code_session.bad_repo");
-  const repo = `${parsed.owner}/${parsed.repo}`;
+  const local = parsed ? null : localProjectName(input.repo);
+  if (!parsed && !local)
+    throw new ValidationError(
+      "Give a GitHub repository (owner/name) or a name for a project on the computer",
+      "code_session.bad_repo",
+    );
+  const repo = parsed ? `${parsed.owner}/${parsed.repo}` : (local as string);
   const agent = await getAgentCached(deps.db, orgId, input.agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
   if (!(CODE_BRAINS as readonly string[]).includes(agent.brain))
@@ -399,7 +433,7 @@ export async function createCodeSession(
     });
   if (!agent.machineId)
     throw new ValidationError("This agent has no computer", "code_session.no_computer", { agent: agent.name });
-  if (!repoInList(await agentRepositoryList(deps.db, orgId, agent.id), parsed.owner, parsed.repo))
+  if (parsed && !repoInList(await agentRepositoryList(deps.db, orgId, agent.id), parsed.owner, parsed.repo))
     throw new ValidationError("This agent can't work in that repository", "code_session.repo_not_allowed", {
       agent: agent.name,
       repo,
@@ -447,7 +481,7 @@ export async function createCodeSession(
         agentId: agent.id,
         machineId: agent.machineId,
         repo,
-        repoDir: gitCheckoutDir(repo),
+        repoDir: parsed ? gitCheckoutDir(repo) : `${LOCAL_PROJECTS_DIR}/${repo}`,
         title,
         branch: codeBranchName(agent.handle, title, id),
         worktreePath: codeWorktreePath(id),
@@ -502,9 +536,14 @@ async function prepare(deps: CodeSessionDeps, sessionId: string): Promise<CodeSe
   const scope: AgentScope = { id: agent.id, handle: agent.handle };
   if (row.worktreeState === "failed") row = await setSession(deps, row, { worktreeState: "preparing", worktreeError: null });
 
-  // The checkout, cloned or brought up to date (a clone may still be running: asked again for a while).
+  // The checkout, cloned or brought up to date (a clone may still be running: asked again for a while); a local
+  // project is made on the computer instead, or adopted when its folder is there.
   let repoDir = row.repoDir;
-  if (deps.git) {
+  if (isLocalSession(row)) {
+    const made = await ensureLocalProject(hub, machineId, row, scope, agent.name);
+    if (made === "away") return row;
+    if (made !== "ok") return failSession(deps, row, made);
+  } else if (deps.git) {
     for (let attempt = 0; ; attempt += 1) {
       try {
         const synced = await cloneOnMachine(
@@ -516,7 +555,9 @@ async function prepare(deps: CodeSessionDeps, sessionId: string): Promise<CodeSe
         if (synced.status !== "cloning") break;
       } catch (error) {
         if (error instanceof MachineOfflineError || error instanceof MachinePausedError) return row;
-        return failSession(deps, row, error instanceof Error ? error.message : String(error));
+        const message = error instanceof Error ? error.message : String(error);
+        // No GitHub here (not connected, or no git scope): said in the person's words, with the way out (a local project).
+        return failSession(deps, row, /git access to GitHub|GitHub isn't connected/i.test(message) ? GITHUB_ACCESS_ERROR : message);
       }
       if (attempt >= CLONE_RETRIES) return failSession(deps, row, "The repository took too long to clone.");
       await sleep(CLONE_RETRY_MS);
@@ -564,6 +605,39 @@ async function prepare(deps: CodeSessionDeps, sessionId: string): Promise<CodeSe
   });
   await releaseRequest(deps, row);
   return row;
+}
+
+/**
+ * A local project's folder on the computer, as its agent: made with `git init` (its files, if the folder was there,
+ * in a first commit) when it isn't a repository with a commit yet, so the session's worktree can start from it.
+ * "ok", "away" (offline, paused) or why it failed.
+ */
+async function ensureLocalProject(
+  hub: MachineCaller,
+  machineId: string,
+  row: CodeSessionRow,
+  scope: AgentScope,
+  agentName: string,
+): Promise<"ok" | "away" | string> {
+  const dir = shellQuote(row.repoDir);
+  const who = `-c user.name=${shellQuote(agentName)} -c user.email=${shellQuote(`${scope.handle}@agents.local`)}`;
+  const command =
+    `mkdir -p ${dir} && cd ${dir} && if ! git rev-parse --verify -q HEAD >/dev/null 2>&1; then ` +
+    `(git init -q -b main 2>/dev/null || git init -q) && git add -A && ` +
+    `git ${who} commit -q --allow-empty -m 'Start the project'; fi`;
+  try {
+    const out = await hub.call<"exec">(machineId, {
+      op: "exec",
+      command,
+      timeoutSeconds: 60,
+      stream: false,
+      agent: scope,
+    });
+    return out.exitCode === 0 ? "ok" : out.stderr.trim() || "The project's folder couldn't be made.";
+  } catch (error) {
+    if (error instanceof MachineOfflineError || error instanceof MachinePausedError) return "away";
+    return error instanceof Error ? error.message : String(error);
+  }
 }
 
 async function failSession(deps: CodeSessionDeps, row: CodeSessionRow, error: string) {
@@ -847,6 +921,8 @@ export interface CodeGitState {
   uncommitted: number;
   ahead: number;
   upstream: boolean;
+  /** A local project: Commit, then Merge into its base branch on the computer; never Push or a pull request. */
+  local: boolean;
   pr: { number: number; url: string | null } | null;
   next: "commit" | "push" | "pr" | "merge" | null;
 }
@@ -880,9 +956,17 @@ export async function codeSessionGit(
     ahead = Number(count.trim()) || 0;
   }
   const pr = row.prNumber ? { number: row.prNumber, url: row.prUrl } : null;
-  // Sessions are made from GitHub repositories (`owner/name`), so a pushed branch can always become a pull request.
+  if (isLocalSession(row)) {
+    // What the base branch doesn't have yet (merging it there clears it).
+    const base = row.baseBranch ?? "main";
+    const count = await gitRead(deps, row, `rev-list --count ${shellQuote(base)}..HEAD`).catch(() => "0");
+    const unmerged = Number(count.trim()) || 0;
+    const next = uncommitted > 0 ? "commit" : unmerged > 0 ? "merge" : null;
+    return { uncommitted, ahead: unmerged, upstream: false, local: true, pr: null, next };
+  }
+  // A GitHub repository (`owner/name`): a pushed branch can always become a pull request.
   const next = uncommitted > 0 ? "commit" : ahead > 0 ? "push" : pr ? "merge" : upstream ? "pr" : null;
-  return { uncommitted, ahead, upstream, pr, next };
+  return { uncommitted, ahead, upstream, local: false, pr, next };
 }
 
 /**
