@@ -140,6 +140,7 @@ import { REACT_TOOL } from "./chat-tools";
 import {
   kickRoomQueue,
   publishQueueChanged,
+  type RoomWaitCause,
   roomGate,
   roomHead,
   SIGN_IN_CONCURRENCY,
@@ -3809,7 +3810,7 @@ async function executeRunInner(
    * until it runs.
    */
   const brainUnavailable = async (
-    u: BrainUnavailability & { queued?: boolean; retryAt?: number },
+    u: BrainUnavailability & { queued?: boolean; retryAt?: number; room?: RoomWaitCause },
     look?: "first" | "again",
   ): Promise<"fallback" | "waited" | "failed" | "no" | "back" | "canceled" | "moved"> => {
     const from = plan.kind;
@@ -4005,7 +4006,12 @@ async function executeRunInner(
       ...(quietUntil !== null ? { quiet: true } : {}),
     };
     if (!stillBusy)
-      await addRunStep(db, run, "error", { reason: "brain_unavailable", code: u.code, message: u.message });
+      await addRunStep(db, run, "error", {
+        reason: "brain_unavailable",
+        code: u.code,
+        message: u.message,
+        ...(busy && u.room ? { room: u.room } : {}),
+      });
     // Online and full, it sends no "back" signal: ask again soon. Just gone: look again when the grace is over (back
     // before that, `resumeRunsWaitingForMachine` resumes it and this job finds another wait). Queued before the wait
     // is stored, so a crash in between leaves at worst a job that finds another wait and does nothing.
@@ -5080,13 +5086,14 @@ async function executeRunInner(
         if (behind) {
           // Not working on the computer: no slot of a sign-in is its (`kickSignInLine` reads it as it leaves).
           delete transcript.roomAsk;
-          if (behind.signIn && slot) transcript.signInWait = { key: slot.key };
+          if (behind.cause === "sign_in" && slot) transcript.signInWait = { key: slot.key };
           else delete transcript.signInWait;
           const handled = await brainUnavailable({
             code: "busy",
             message: "Waiting in line.",
             queued: true,
             retryAt: behind.retryAt,
+            room: behind.cause,
           });
           if (handled === "waited" || handled === "failed") return;
         } else {
@@ -5526,7 +5533,12 @@ async function executeRunInner(
               continue;
             }
           }
-          const handled = await brainUnavailable({ code: error.code, message: error.message, ...refusal });
+          const handled = await brainUnavailable({
+            code: error.code,
+            message: error.message,
+            ...refusal,
+            ...(error.code === "busy" ? { room: "memory" as const } : {}),
+          });
           if (handled === "fallback" || handled === "moved") continue;
           if (handled === "waited" || handled === "failed") return;
         }
