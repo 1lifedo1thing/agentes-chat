@@ -4,6 +4,7 @@ import { humanCheckHeaders } from "../lib/human-check";
 import type { OnboardingStepId } from "../lib/onboarding";
 import { type LodiPrefs, lodiPrefsOf } from "../lib/right-hand-prefs";
 import { CLOUD_SERVER, withoutTrailingSlashes } from "../lib/server";
+import { createCodeApi } from "../code/api";
 import { createLiveApi } from "../live/api";
 import { consultSeeds } from "../realtime/consults";
 import { steerStore } from "../realtime/steer";
@@ -1721,6 +1722,7 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
     },
     dashboards: createDashboardsApi(request),
     live: createLiveApi(request, { upload: files.upload, base }),
+    code: createCodeApi(request),
     missions: ((): HttpApi["missions"] => {
       const one = (orgId: string, missionId: string) => `${org(orgId)}/missions/${enc(missionId)}`;
       return {

@@ -2875,7 +2875,7 @@ export interface AgentWork {
   runId: string;
   /** Where it shows, when you read that conversation: null otherwise. */
   channelId: string | null;
-  channelKind: "channel" | "dm" | "task" | "file" | null;
+  channelKind: "channel" | "dm" | "task" | "file" | "code" | null;
   channelName: string | null;
   threadId: string | null;
   /** The reply that handed it off, once posted. */
@@ -2899,7 +2899,7 @@ export interface PendingReturn {
   messageId: string;
   agentId: string;
   channelId: string;
-  channelKind: "channel" | "dm" | "task" | "file";
+  channelKind: "channel" | "dm" | "task" | "file" | "code";
   channelName: string | null;
   /** Null: the conversation's main timeline. */
   threadId: string | null;
@@ -2920,7 +2920,7 @@ export interface CanceledReturn {
   messageId: string;
   agentId: string;
   channelId: string;
-  channelKind: "channel" | "dm" | "task" | "file";
+  channelKind: "channel" | "dm" | "task" | "file" | "code";
   channelName: string | null;
   threadId: string | null;
   at: string;
@@ -5855,7 +5855,7 @@ export interface ThreadInfo {
   id: string;
   channelId: string;
   channelName: string;
-  channelKind: "channel" | "dm" | "task" | "file";
+  channelKind: "channel" | "dm" | "task" | "file" | "code";
   /** Null: show `rootText`. */
   title: string | null;
   rootText: string;
@@ -7296,7 +7296,7 @@ export interface AuditRow {
   details: Record<string, unknown>;
   runId: string | null;
   channelId: string | null;
-  channel: { id: string; name: string; kind: "channel" | "dm" | "task" | "file" } | null;
+  channel: { id: string; name: string; kind: "channel" | "dm" | "task" | "file" | "code" } | null;
   onBehalfOf: { id: string; name: string | null } | null;
   outcome: AuditOutcome | null;
   /** The approval the call waited for or ran after, as it stands now. */
@@ -7389,7 +7389,8 @@ export type SidebarItem =
   | "calendar"
   | "team"
   | "dashboards"
-  | "taskManager";
+  | "taskManager"
+  | "code";
 /** `always` in the list, `more` only in the More menu, `auto` in the list while its count is above zero. */
 export type SidebarPlace = "always" | "more" | "auto";
 /** Where I put each tool I moved, in one workspace (`GET …/me/sidebar`); the others keep their default. */
@@ -7545,7 +7546,7 @@ export interface TaskDelegation {
   /** Where it was handed off, when you read that conversation. Older servers send none. */
   from?: {
     channelId: string;
-    channelKind: "channel" | "dm" | "task" | "file";
+    channelKind: "channel" | "dm" | "task" | "file" | "code";
     channelName: string | null;
     threadId: string | null;
     messageId: string | null;

@@ -18,6 +18,7 @@ import {
   ApiError,
   applyBrowserHandoff,
   applyChannelEvent,
+  applyCodeSessionEvent,
   applyComputerEvent,
   applyConsultEvent,
   applyConversationEvent,
@@ -484,6 +485,8 @@ export function RealtimeProvider({
       }
       // A proposal I may decide: the sidebar's count and Aprovações' tab.
       if (event.type === "proposal.created") void refreshProposals(qc, orgId);
+      // A code session I'm in changed (ADR 0208): its worktree, name or pull request.
+      applyCodeSessionEvent(qc, orgId, event);
       // Unread marks: a message where I am, and my reads and mutes from any device.
       applyUnreadEvent(qc, orgId, event);
       // My inbox: new or merged items, auto-resolved ones, and the badge's numbers.

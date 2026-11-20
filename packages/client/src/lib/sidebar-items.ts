@@ -14,6 +14,7 @@ export const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   "team",
   "dashboards",
   "taskManager",
+  "code",
 ];
 
 /** Where each tool goes for someone who never moved it. */
@@ -30,6 +31,8 @@ export const SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   team: "always",
   dashboards: "more",
   taskManager: "more",
+  // Code sessions (ADR 0208): for the people who program with the agents; one click away in More for everyone.
+  code: "more",
 };
 
 /**
@@ -50,6 +53,8 @@ export const PERSONAL_SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   team: "more",
   dashboards: "more",
   taskManager: "more",
+  // Code sessions (ADR 0208): for the people who program with the agents; one click away in More for everyone.
+  code: "more",
 };
 
 /** Where each tool goes by default in a workspace of this mode (`personal`: ADR 0159). */
@@ -72,6 +77,7 @@ export const PERSONAL_SIDEBAR_ITEMS: readonly SidebarItem[] = [
   "wiki",
   "dashboards",
   "taskManager",
+  "code",
 ];
 
 /** The tools' default order in a workspace of this mode: the list's and More's. */

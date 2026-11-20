@@ -10,6 +10,7 @@ import type { Wallpaper } from "../lib/wallpaper";
 import type { AudienceChoice } from "../lib/who-sees";
 import type { WikiAccess } from "../lib/wiki";
 import type { WorkAreaAnswer } from "../lib/work-area";
+import type { CodeApi } from "../code/api";
 import type { LiveApi } from "../live/api";
 import type { LiveRefInput } from "../live/types";
 import type {
@@ -1572,6 +1573,8 @@ export interface ApiClient {
   dashboards: DashboardsApi;
   /** Spreadsheets, presentations and canvases edited together (ADR 0196), their pictures and Office previews. */
   live: LiveApi;
+  /** Code sessions (ADR 0208): a request in its own worktree on an agent's computer, with its conversation. */
+  code: CodeApi;
   /** Missions (ADR 0029): long work by the agent's executor on a connected computer, in one thread. */
   missions: {
     /** Missions you can see (the Missões tab), most recently changed first, with the counts for the tabs. */

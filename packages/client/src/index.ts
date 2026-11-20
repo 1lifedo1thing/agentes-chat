@@ -21,6 +21,7 @@ export * from "./api/types";
 export * from "./browser";
 export * from "./dashboards";
 export * from "./desktop";
+export * from "./code";
 export * from "./live";
 export * from "./realtime/connection";
 export * from "./realtime/consults";

@@ -50,6 +50,7 @@ export const SIDEBAR_TOOLS = {
   team: { to: "/org/$orgId/team", icon: "agent" },
   dashboards: { to: "/org/$orgId/dashboards", icon: "chart" },
   taskManager: { to: "/org/$orgId/task-manager", icon: "stageProgress" },
+  code: { to: "/org/$orgId/code", icon: "code" },
 } as const satisfies Record<SidebarItem, { to: string; icon: IconName }>;
 
 /**
