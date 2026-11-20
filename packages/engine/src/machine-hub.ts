@@ -211,10 +211,12 @@ export const COMPUTER_BLIP_WAIT_MS = 30_000;
 export const COMPUTER_WAKE_WAIT_MS = 60_000;
 
 /**
- * How often a run looks again at a computer it woke: a once-a-second look added half a second on average between its
- * runner's hello and the run going on.
+ * How often a run looks again at a computer it woke, for the first `WAKING_FAST_MS` of the wake: a once-a-second look
+ * added half a second on average between its runner's hello and the run going on. Past that it looks once a second
+ * again, so runs waiting on computers that don't come back (their host down) don't query five times as often.
  */
 export const WAKING_LOOK_MS = 200;
+export const WAKING_FAST_MS = 15_000;
 
 /**
  * Waits for a computer to come back: one gone less than the outage grace (`TASK_OFFLINE_GRACE_MS`: its runner dialing
@@ -236,18 +238,20 @@ export async function computerBackSoon(
 ): Promise<boolean | null> {
   let until = Date.now() + (options.waitMs ?? COMPUTER_BLIP_WAIT_MS);
   let waking = false;
+  let wokeAt = 0;
   for (;;) {
     const status = await machines?.status(machineId).catch(() => null);
     if (status?.online) return true;
     if (status?.standby && !waking) {
       waking = true;
+      wokeAt = Date.now();
       until = Date.now() + (options.wakeWaitMs ?? COMPUTER_WAKE_WAIT_MS);
       void machines?.wake?.(machineId, options.why ?? "run").catch(() => {});
     }
     const gone = status?.lastSeenAt ? Date.now() - Date.parse(status.lastSeenAt) : Number.POSITIVE_INFINITY;
     if (!waking && (options.justGone === false || gone >= TASK_OFFLINE_GRACE_MS)) return false;
     if (Date.now() >= until) return false;
-    const every = waking ? WAKING_LOOK_MS : 1_000;
+    const every = waking && Date.now() - wokeAt < WAKING_FAST_MS ? WAKING_LOOK_MS : 1_000;
     await sleep(Math.min(every, until - Date.now()), undefined, { signal: options.signal }).catch(() => {});
     if (await options.canceled?.()) return null;
   }
