@@ -1,5 +1,5 @@
 import type { ScreenKind } from "@agenteschat/adapters";
-import { cutText } from "../format";
+import { cutText, plainWords } from "../format";
 
 /**
  * What an agent sees on a screen (ADR 0054): the page or window as text, one
@@ -377,7 +377,89 @@ export function clipLines(lines: string[], max: number): { text: string; omitted
   return { text: out.join("\n"), omitted: lines.length - out.length };
 }
 
-/** The page's text for a judge, at most `max` characters. */
-export function screenText(o: ScreenObservation, max = 60_000): string {
-  return clipLines(o.lines, max).text;
+/** What a judge reads of a page, at most (about 4-5k tokens): a longer page goes in part. */
+const JUDGE_TEXT_CHARS = 16_000;
+/** On a long page, the top always goes in (its title, header, who is signed in), and each line at most this long. */
+const HEAD_CHARS = 2000;
+const JUDGE_LINE_CHARS = 1000;
+/** Lines kept on each side of a changed line or of one with the question's words. */
+const NEAR = 2;
+/** What a page says of itself, wherever it is: kept last, while room is left. */
+const SIGNALS = new Set(["heading", "dialog", "alertdialog", "alert", "status"]);
+
+/** The indices of `changes.added` in `o` (a repeated line: its last copies, as `diffObservations` counts them). */
+function addedIndices(o: ScreenObservation, changes: ScreenChanges): number[] {
+  const left = new Map<string, number>();
+  for (const l of changes.added) left.set(l.trim(), (left.get(l.trim()) ?? 0) + 1);
+  const out: number[] = [];
+  for (let i = o.lines.length - 1; i >= 0; i--) {
+    const k = (o.lines[i] as string).trim();
+    const n = left.get(k) ?? 0;
+    if (n === 0) continue;
+    left.set(k, n - 1);
+    out.push(i);
+  }
+  return out.reverse();
+}
+
+/**
+ * The page's text for a judge. A page longer than `max` characters goes in part, in page order with `…` where lines
+ * are left out: its top, then the lines that changed (a change on the same page, not a new one) and the lines with
+ * the most of `words` (the condition, the target), each with a few around it, then headings, dialogs and alerts.
+ */
+export function screenText(
+  o: ScreenObservation,
+  focus: { changes?: ScreenChanges | null; words?: string } = {},
+  max = JUDGE_TEXT_CHARS,
+): { text: string; omitted: number } {
+  const lines = o.lines;
+  if (lines.reduce((n, l) => n + l.length + 1, 0) <= max) return { text: lines.join("\n"), omitted: 0 };
+  const shown = lines.map((l) => cutText(l, JUDGE_LINE_CHARS));
+  const keep = new Set<number>();
+  let room = max;
+  const take = (i: number) => {
+    if (i < 0 || i >= shown.length || keep.has(i)) return;
+    // The line, and a `…` line it may open after it.
+    const n = (shown[i] as string).length + 3;
+    if (n > room) return;
+    keep.add(i);
+    room -= n;
+  };
+  const around = (i: number) => {
+    take(i);
+    for (let d = 1; d <= NEAR; d++) {
+      take(i - d);
+      take(i + d);
+    }
+  };
+  for (let i = 0, size = 0; i < shown.length && size < HEAD_CHARS; i++) {
+    take(i);
+    size += (shown[i] as string).length + 1;
+  }
+  if (focus.changes && !focus.changes.newPage) for (const i of addedIndices(o, focus.changes)) around(i);
+  const terms = [...new Set(plainWords(focus.words ?? "").split(" "))].filter((t) => t.length > 2);
+  if (terms.length > 0) {
+    // A word counts less the more lines have it ("the" on every line, "declined" on one).
+    const said = shown.map((l) => ` ${plainWords(l)} `);
+    const has = terms.map((t) => said.map((l) => l.includes(` ${t}`)));
+    const weight = has.map((lines) => 1 / Math.max(1, lines.filter(Boolean).length));
+    const scored: { i: number; score: number }[] = [];
+    said.forEach((_, i) => {
+      const score = has.reduce((n, lines, k) => n + (lines[i] ? (weight[k] as number) : 0), 0);
+      if (score > 0) scored.push({ i, score });
+    });
+    for (const { i } of scored.sort((a, b) => b.score - a.score || a.i - b.i)) around(i);
+  }
+  shown.forEach((l, i) => {
+    if (SIGNALS.has(headOf(l.trim()).role)) take(i);
+  });
+  const out: string[] = [];
+  let prev = -1;
+  for (const i of [...keep].sort((a, b) => a - b)) {
+    if (i !== prev + 1) out.push("…");
+    out.push(shown[i] as string);
+    prev = i;
+  }
+  if (prev < shown.length - 1) out.push("…");
+  return { text: out.join("\n"), omitted: shown.length - keep.size };
 }

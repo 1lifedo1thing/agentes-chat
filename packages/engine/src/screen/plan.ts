@@ -712,8 +712,9 @@ export async function runPlan(deps: PlanDeps, steps: ScreenStep[]): Promise<Plan
       report.ran = true;
       if (step.expect?.trim()) {
         const condition = step.expect.trim();
+        const focus = step.target?.trim();
         const judgeOn = (o: ScreenObservation) =>
-          checkCondition({ ...ids, condition, observation: o, changes: diffObservations(prior, o) });
+          checkCondition({ ...ids, condition, observation: o, changes: diffObservations(prior, o), focus });
         let after = screen ?? (await look());
         let check = await judgeOn(after);
         // Not true yet: the page may still be on its way (a submit that navigates later, a server's answer).

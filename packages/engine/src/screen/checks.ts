@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { cutText } from "../format";
+import { cutText, plainWords } from "../format";
 import type { Judge, JudgeAnswer } from "../judge";
 import {
+  clipLines,
   describeElement,
   type ScreenChanges,
   type ScreenElement,
@@ -35,6 +36,34 @@ const changesText = (c: ScreenChanges | null | undefined) =>
     ? cutText([...c.added.map((l) => `+ ${l.trim()}`), ...c.removed.map((l) => `- ${l.trim()}`)].join("\n"), 6000)
     : null;
 
+const QUOTE = /"([^"]+)"|“([^”]+)”/g;
+/** A condition or a question that only names words on the screen: `"Order confirmed"`, `shows "Saved" and "3 items"`. */
+const LITERAL =
+  /^(?:(?:the\s+)?(?:page|screen|window)\s+)?(?:shows|says|displays|contains|reads)?\s*((?:"[^"]+"|“[^”]+”)(?:\s*(?:,|and|&)\s*(?:"[^"]+"|“[^”]+”))*)\s*(?:is\s+(?:shown|visible|displayed|on\s+screen)|appears)?\s*\.?$/i;
+
+/** The words a literal condition or question names (see `LITERAL`), as `plainWords` writes them; else null. */
+function literalWords(text: string): string[] | null {
+  const m = LITERAL.exec(text.trim());
+  if (!m) return null;
+  const words = [...(m[1] as string).matchAll(QUOTE)].map((q) => plainWords(q[1] ?? q[2] ?? "")).filter(Boolean);
+  return words.length > 0 ? words : null;
+}
+
+/** The lines that show `words`, whole words within one line. */
+const linesWith = (lines: string[], words: string) =>
+  lines.flatMap((l, i) => (` ${plainWords(l)} `.includes(` ${words} `) ? [i] : []));
+
+/** A long page, in part: how the judge is told it isn't all there. */
+const leftOut = (omitted: number, of: number) =>
+  omitted > 0
+    ? {
+        left_out: `${omitted} of ${of} lines (… marks where): shown are the top, what changed and the lines near the condition's words.`,
+      }
+    : {};
+
+/** The vision check reads the page's text as it always has: up to this much of it from the top. */
+const IMAGE_TEXT_CHARS = 60_000;
+
 /**
  * Whether the screen shows `condition` now ("the order is confirmed", "an
  * error says the card was declined"). With an image, the judge looks at it too
@@ -46,20 +75,33 @@ export async function checkCondition(
     observation: ScreenObservation;
     changes?: ScreenChanges | null;
     image?: ScreenImage | null;
+    /** More words that say where to look on a long page: the target the step acted on. */
+    focus?: string;
   },
 ): Promise<ConditionResult> {
+  const condition = input.condition.trim();
+  // The words it names are on the screen: nothing for a judge to weigh.
+  const literal = literalWords(condition);
+  if (literal?.every((w) => linesWith(input.observation.lines, w).length > 0)) return { met: true, p: 1 };
   const placeholder = input.image ? `screen_${randomUUID()}` : null;
+  const page = input.image
+    ? { text: clipLines(input.observation.lines, IMAGE_TEXT_CHARS).text, omitted: 0 }
+    : screenText(input.observation, {
+        changes: input.changes,
+        words: input.focus ? `${condition} ${input.focus}` : condition,
+      });
   const answers = await input.judge.ask({
     orgId: input.orgId,
     agentId: input.agentId,
     runId: input.runId,
     kind: "screen_check",
     state: {
-      condition: input.condition.trim(),
+      condition,
       screen: {
         address: input.observation.url,
         ...(changesText(input.changes) ? { what_just_changed: changesText(input.changes) } : {}),
-        text: screenText(input.observation),
+        text: page.text,
+        ...leftOut(page.omitted, input.observation.lines.length),
         ...(placeholder ? { screenshot: placeholder } : {}),
       },
     },
@@ -85,13 +127,14 @@ export async function checkCondition(
 /** Lines one Choice offers when finding an answer in a page (Jev takes 255 options). */
 const WINDOW = 200;
 /**
- * What one window holds at most, in characters: its lines in `state` (each cut at `LINE_CHARS`) and
- * as options (cut at `OPTION_CHARS`). Jev reads at most 32k tokens per question and 64k per request,
- * so a page goes in windows, each its own request, all asked at once.
+ * What one window holds at most, in characters: its lines in `state` (each cut at `LINE_CHARS`), with
+ * their ids as the options. Jev reads at most 32k tokens per question and 64k per request, so a page
+ * goes in windows, each its own request, all asked at once.
  */
 const WINDOW_CHARS = 20_000;
 const LINE_CHARS = 300;
-const OPTION_CHARS = 120;
+/** A line's id in `state` and its option (`"L123": "line L123"`). */
+const ID_CHARS = 24;
 /** Windows asked at once, at most: on a longer page, those with the most of the question's words. */
 const MAX_WINDOWS = 12;
 /** Lines of context kept around each hit. */
@@ -115,7 +158,7 @@ function windowsOf(lines: string[]): Window[] {
   let size = 0;
   lines.forEach((line, i) => {
     const n = line.trim().length;
-    const cost = Math.min(n, LINE_CHARS) + Math.min(n, OPTION_CHARS) + 12;
+    const cost = Math.min(n, LINE_CHARS) + ID_CHARS;
     if (i > from && (i - from >= WINDOW || size + cost > WINDOW_CHARS)) {
       out.push({ from, to: i });
       from = i;
@@ -163,6 +206,12 @@ export async function findInPage(
   if (lines.length === 0) return { answered: "no", text: "" };
   const id = (i: number) => `L${i + 1}`;
   const question = input.question.trim();
+  // The words it names are on the page: those lines are the answer.
+  const literal = literalWords(question)?.map((w) => linesWith(lines, w));
+  if (literal?.every((at) => at.length > 0)) {
+    const at = literal.flatMap((a) => a.slice(0, 8));
+    return { answered: "yes", text: cutText(withContext(lines, at), input.maxChars ?? 6000) };
+  }
   const windows = windowsToAsk(windowsOf(lines), lines, question);
   const asked = await Promise.allSettled(
     windows.map((w) => {
@@ -171,7 +220,8 @@ export async function findInPage(
       for (let i = w.from; i < w.to; i++) {
         const line = (lines[i] as string).trim();
         numbered.push(`${id(i)}: ${cutText(line, LINE_CHARS)}`);
-        criteria[id(i)] = cutText(line, OPTION_CHARS) || "(empty)";
+        // The line's text is in `state` already: the option only names it.
+        criteria[id(i)] = `line ${id(i)}`;
       }
       criteria.none = "No line here answers it.";
       return input.judge.ask({
@@ -210,8 +260,22 @@ export async function findInPage(
       if (m && p >= 0.2) hits.set(Number(m[1]) - 1, p);
     }
   });
+  const top = [...hits].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const text = cutText(
+    withContext(
+      lines,
+      top.map(([i]) => i),
+    ),
+    input.maxChars ?? 6000,
+  );
+  const answered = exists >= 0.7 && text ? "yes" : exists >= 0.35 && text ? "partly" : "no";
+  return { answered, text, ...(searched < lines.length ? { searched: { lines: searched, of: lines.length } } : {}) };
+}
+
+/** The lines at `at`, each with `AROUND` lines of context, in page order with `…` between runs. */
+function withContext(lines: string[], at: number[]): string {
   const keep = new Set<number>();
-  for (const [i] of [...hits].sort((a, b) => b[1] - a[1]).slice(0, 8)) {
+  for (const i of at) {
     for (let k = Math.max(0, i - AROUND); k <= Math.min(lines.length - 1, i + AROUND); k++) keep.add(k);
   }
   const out: string[] = [];
@@ -221,9 +285,7 @@ export async function findInPage(
     out.push(lines[i] as string);
     prev = i;
   }
-  const text = cutText(out.join("\n"), input.maxChars ?? 6000);
-  const answered = exists >= 0.7 && text ? "yes" : exists >= 0.35 && text ? "partly" : "no";
-  return { answered, text, ...(searched < lines.length ? { searched: { lines: searched, of: lines.length } } : {}) };
+  return out.join("\n");
 }
 
 /** A dismiss is clicked from this probability: it must clearly be one. */
