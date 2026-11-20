@@ -179,7 +179,7 @@ export const isCodeName = (name: string) => CODE_EXT.has(extensionOf(name));
 
 /** A Markdown file, by its name or its type: the viewers draw it as a document. */
 export const isMarkdownFile = (name: string, contentType = "") =>
-  ["md", "markdown"].includes(extensionOf(name)) || previewType(contentType) === "text/markdown";
+  ["md", "markdown", "mdx"].includes(extensionOf(name)) || previewType(contentType) === "text/markdown";
 
 /** A JSON file, by its name or its type (`application/json`, `…+json`): the viewers show it formatted. */
 export const isJsonFile = (name: string, contentType = "") =>

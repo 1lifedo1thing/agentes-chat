@@ -79,7 +79,7 @@ describe("a PDF's first page on its cover", () => {
     expect(view.getByText("PDF")).toBeTruthy();
   });
 
-  test("one pdf.js can't open (a password, a damaged file) keeps the type's cover", async () => {
+  test("a PDF pdf.js can't open (a password, a damaged file) keeps the type's cover", async () => {
     fakePdfJs("fails");
     const view = render(<PdfCover src="/files/b.pdf" label="PDF: Contrato" fallback={<span>PDF</span>} />);
     await settle();
