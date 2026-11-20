@@ -32,6 +32,7 @@ import { getChannelCached } from "./context";
 import { consolidateOrg } from "./context/consolidate";
 import { applyReactionFeedback } from "./context/feedback";
 import { LEARN_JOB, learnRun } from "./context/learn";
+import { MOVE_LEARNED_JOB, moveLearnedSections } from "./context/learned-sections";
 import { REFLECT_DEFAULTS, reflectThread } from "./context/reflect";
 import { judgeOf, summaryModelReady } from "./context/summaries";
 import { reportDroppedMentions, tellWakeSkipped } from "./continuation";
@@ -1257,6 +1258,11 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     [VAULT_SYNC_JOB]: async (job) => {
       if (!deps.vault) return;
       await runVaultSync(deps.vault, orgOf(job), String(job.payload.connectionId));
+    },
+    // Queued once by migration 0309: the agents' "## Learned" sections become memory; a no-op once moved.
+    [MOVE_LEARNED_JOB]: async (job) => {
+      if ((await moveLearnedSections(deps.db, orgOf(job))) > 0)
+        await publishListChanged(deps.pubsub, orgOf(job), "memory");
     },
     "context.consolidate": async (job) => {
       if (!deps.context) return;

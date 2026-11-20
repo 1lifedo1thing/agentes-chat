@@ -92,6 +92,7 @@ export * from "./context/feedback";
 export * from "./context/items";
 export { type Plan, planConsolidation } from "./context/judgments";
 export * from "./context/learn";
+export * from "./context/learned-sections";
 export * from "./context/learned-skills";
 export * from "./context/outcomes";
 export * from "./context/proposals";
