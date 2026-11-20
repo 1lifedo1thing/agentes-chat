@@ -15336,6 +15336,11 @@ export const ptBR = {
         pdf_one: "{{count}} comentário no PDF",
         pdf_other: "{{count}} comentários no PDF",
       },
+      write: {
+        image: "Escrever sobre a imagem…",
+        video: "Escrever sobre o vídeo…",
+        pdf: "Escrever sobre o PDF…",
+      },
     },
     zoom: {
       toolbar: "Zoom",

@@ -1,10 +1,13 @@
 import {
   ApiError,
   cachePinned,
+  isPinnedSelection,
   keys,
   type Message,
   type Mission,
+  messageLiveRef,
   type ReactionCount,
+  resolvedOf,
   type ThreadInfo,
   useApi,
   useChannelCategories,
@@ -15,6 +18,7 @@ import {
   useMissionControl,
   usePinMessage,
   usePins,
+  useResolveComment,
   useThreadInfo,
   useThreadMutation,
   useToggleReaction,
@@ -85,13 +89,15 @@ export interface MessageActionHands {
   toggle: ReturnType<typeof useToggleReaction>["mutate"];
   /** Pins or unpins (`usePinMessage`). */
   pin: ReturnType<typeof usePinMessage>["mutate"];
+  /** Resolves a comment on a picture, a video or a PDF, or opens it again (`useResolveComment`, ADR 0208). */
+  resolve: ReturnType<typeof useResolveComment>["mutate"];
 }
 
 /**
  * A message's actions, one list for the system's menu (iOS, on hold) and the app's sheet (Android): the quick
  * reactions, then the actions in groups, as the hand expects them: answer (here, in a thread), keep (copy, pin,
- * remind, a mission), and the rest (its link, a chart to a dashboard, the agent who wrote it). `close` runs before
- * an action that opens something else (the sheet closes; the system's menu closes itself).
+ * resolve a comment on a file, remind, a mission), and the rest (its link, a chart to a dashboard, the agent who wrote
+ * it). `close` runs before an action that opens something else (the sheet closes; the system's menu closes itself).
  */
 export function useMessageActions(context: MessageActionsContext, close: () => void) {
   const { t } = useTranslation();
@@ -102,7 +108,8 @@ export function useMessageActions(context: MessageActionsContext, close: () => v
   const qc = useQueryClient();
   const toggle = useToggleReaction(orgId, context.message.id).mutate;
   const pin = usePinMessage(orgId).mutate;
-  return messageActionsOf(context, close, { t, orgId, meId, dir, toast, qc, toggle, pin });
+  const resolve = useResolveComment(orgId).mutate;
+  return messageActionsOf(context, close, { t, orgId, meId, dir, toast, qc, toggle, pin, resolve });
 }
 
 /**
@@ -111,7 +118,7 @@ export function useMessageActions(context: MessageActionsContext, close: () => v
  */
 export function messageActionsOf(context: MessageActionsContext, close: () => void, hands: MessageActionHands) {
   const { message: m, canMission, inThread, thread, onMission, onRemind, onReply } = context;
-  const { t, orgId, meId, dir, toast, qc, toggle, pin } = hands;
+  const { t, orgId, meId, dir, toast, qc, toggle, pin, resolve } = hands;
   const pinned = Boolean(m.pinned);
   const togglePin = () => {
     close();
@@ -128,6 +135,17 @@ export function messageActionsOf(context: MessageActionsContext, close: () => vo
           toast({ title: t(full ? "mobile.pins.full" : "mobile.app.failed"), icon: "x" });
         },
       },
+    );
+  };
+  // A comment with a pin on a picture, a video or a PDF (ADR 0208): Resolve takes its pin off the file, Reopen puts
+  // it back; the message stays. At once here (`useResolveComment`), then as the server says (`message.resolved`).
+  const resolvable = !m.local && isPinnedSelection(messageLiveRef(m)?.selection);
+  const resolved = resolvable && resolvedOf(m.meta) !== null;
+  const toggleResolved = () => {
+    close();
+    resolve(
+      { channelId: m.channelId, messageId: m.id, resolved: !resolved, by: { type: "person", id: meId ?? "" } },
+      { onError: () => toast({ title: t("mobile.app.failed"), icon: "x" }) },
     );
   };
   const agentName = m.author.type === "agent" ? dir.nameOf(m.author) : "";
@@ -205,6 +223,17 @@ export function messageActionsOf(context: MessageActionsContext, close: () => vo
             label: pinned ? t("mobile.pins.unpin") : t("mobile.pins.pin"),
             onPress: togglePin,
           },
+          ...(resolvable
+            ? [
+                {
+                  key: "resolve",
+                  icon: "check" as const,
+                  symbol: (resolved ? "arrow.uturn.backward" : "checkmark.circle") as MenuSymbol,
+                  label: resolved ? t("files.comments.reopen") : t("files.comments.resolve"),
+                  onPress: toggleResolved,
+                },
+              ]
+            : []),
           {
             key: "remind",
             icon: "clock" as const,

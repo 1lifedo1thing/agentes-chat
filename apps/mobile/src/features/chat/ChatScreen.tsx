@@ -12,9 +12,9 @@ import {
   fileConversationOf,
   heldTakeoversHere,
   inMainTimeline,
+  isMediaKind,
   keys,
   type LiveConsult,
-  type LiveKind,
   type LiveRun,
   MESSAGES_PAGE,
   type Message,
@@ -28,6 +28,7 @@ import {
   type RunConsultation,
   type SearchHit,
   sendHelpers,
+  type TalkKind,
   type ThreadInfo,
   typingIn,
   useAgentsBrowserHandoffs,
@@ -317,8 +318,8 @@ type Row =
       newTurn?: boolean;
     })
   | { kind: "marker"; key: string; text: string }
-  /** A live file's conversation (ADR 0199): where the file was made, at its top. */
-  | { kind: "origin"; key: string; artifactId: string; fileKind: LiveKind }
+  /** A file's conversation (ADR 0199, 0208): where the file was made or sent from, at its top. */
+  | { kind: "origin"; key: string; artifactId: string; fileKind: TalkKind }
   /** A run in line for its computer (`conversationWaits`): no live row of its own, this one for all its messages. */
   | { kind: "wait"; key: string; wait: ConversationWait }
   /** An agent's browser card: its live run in the browser, or (no run row) a take over held here. */
@@ -2411,7 +2412,12 @@ function Chat({
       ? // One line on the phone: the tip after "·" in the web's placeholder doesn't fit.
         t("issues.comment")
       : rootFile
-        ? t(`mobile.live.talk.placeholder.${rootFile.kind}`)
+        ? // A picture's, a video's or a PDF's (ADR 0208): the shared words, one line as the live files' are.
+          t(
+            isMediaKind(rootFile.kind)
+              ? `files.comments.write.${rootFile.kind}`
+              : `mobile.live.talk.placeholder.${rootFile.kind}`,
+          )
         : t("mobile.chat.reply")
     : dm
       ? // One line on the phone: the right hand's "nada muda sem você" doesn't fit beside its name.

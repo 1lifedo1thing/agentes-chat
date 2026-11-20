@@ -15384,6 +15384,12 @@ export const en = {
         pdf_one: "{{count}} comment on the PDF",
         pdf_other: "{{count}} comments on the PDF",
       },
+      /** The phone's composer in a picture's, a video's or a PDF's conversation: one line. */
+      write: {
+        image: "Write about the image…",
+        video: "Write about the video…",
+        pdf: "Write about the PDF…",
+      },
     },
     zoom: {
       toolbar: "Zoom",
