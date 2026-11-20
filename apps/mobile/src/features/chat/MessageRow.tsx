@@ -59,7 +59,7 @@ import { type ReplyStop, showsActivity, splitCanceled } from "@agenteschat/clien
 import { type AgentColorName, mixHex } from "@agenteschat/ui/agent/engine";
 import { WALLPAPER_LIFT } from "@agenteschat/ui/sky/wallpaper";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { memo, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type GestureResponderEvent, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
@@ -124,7 +124,7 @@ import { VoiceMessage } from "../voice/VoiceMessage";
 import { FilesTextOnlyFix, ReceiptMark } from "./AgentReceipts";
 import { secretRequestOf } from "./ask-store";
 import { ChatMedia } from "./ChatMedia";
-import { ClippedMessage } from "./ClippedMessage";
+import { ClippedMessage, OpenedMessagesContext } from "./ClippedMessage";
 import { ConsultPairRow, useRunConsults } from "./ConsultGroup";
 import { ApprovalInline, QuestionCard, ThreadLink } from "./cards";
 import { FeedbackOfferRow } from "./FeedbackOffer";
@@ -194,10 +194,15 @@ const TRAIL_RECENT_MS = 12 * 60 * 60_000;
  * What the row holds when it mounts just shows (`skipEntering`): the list mounts a row again each time it comes back
  * into view, and a part that fades in when it changes (a receipt's mark, a decided request's outcome, an undone
  * action's line) faded in again on every scroll. What changes while the row shows still fades in.
+ *
+ * "See more" opening its message mounts the row again the same way, at its whole height from its first frame (the
+ * words' height and a table's columns are kept): grown in place, the bubble's frame stayed taller than its words, an
+ * empty block under the last line that pushed what follows away (seen on a phone).
  */
 export const MessageRow = memo(function MessageRow(props: RowProps) {
+  const opened = useContext(OpenedMessagesContext)?.has(props.message.id) === true;
   return (
-    <LayoutAnimationConfig skipEntering>
+    <LayoutAnimationConfig key={opened ? "opened" : "row"} skipEntering>
       <RowBody {...props} />
     </LayoutAnimationConfig>
   );
