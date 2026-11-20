@@ -122,8 +122,11 @@ describe("a conversation's background on the phone", () => {
     expect(row).toContain("const otherFill = lifted ? lift : c.bubble;");
     expect(row).toContain("const bubbleEdge = lifted ? liftedEdge(scheme) : null;");
     expect(row).not.toContain("boxShadow");
+    // The edge is the cards' own (`cardEdge`), the one the grouped lists carry too.
     const look = await read("chat/look.ts");
-    expect(look).toContain("appShadows(scheme).e1.find((l) => l.blur === 0 && l.spread > 0)");
-    expect(look).toContain('{ outlineWidth: ring.spread, outlineColor: ring.color, outlineStyle: "solid" }');
+    expect(look).toContain("return cardEdge(scheme);");
+    const palette = await Bun.file(new URL("../../src/ui/palette.ts", import.meta.url).pathname).text();
+    expect(palette).toContain("appShadows(scheme).e1.find((l) => l.blur === 0 && l.spread > 0)");
+    expect(palette).toContain('{ outlineWidth: ring.spread, outlineColor: ring.color, outlineStyle: "solid" }');
   });
 });
