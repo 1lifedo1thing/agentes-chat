@@ -466,7 +466,10 @@ test("computer sessions: the cap reads the session's real context, not the turn'
   await computerAgent(f);
   // A turn of four calls whose usage row adds up to past the cap.
   const input = SESSION_MAX_INPUT_TOKENS * 3;
-  let sizes: { lastContext?: number; maxContext?: number } = { lastContext: 45_000, maxContext: 50_000 };
+  let sizes: { lastContext?: number; maxContext?: number } = {
+    lastContext: 45_000,
+    maxContext: SESSION_MAX_INPUT_TOKENS + 1,
+  };
   const { brain, seen } = scriptedComputerBrain(() => [
     { type: "usage", input, output: 5, source: "plan", model: "claude-sonnet-5-5", calls: 4, ...sizes },
     { type: "done", text: "ok" },
@@ -492,7 +495,7 @@ test("computer sessions: the cap reads the session's real context, not the turn'
     return session?.resume === true && session.id === before;
   };
 
-  // Its last call held 45k: the session goes on.
+  // Its last call held 45k (a bigger one before it was compacted away): the session goes on.
   expect(await resumed("@dev e agora?")).toBe(true);
   // An older runner says only its biggest call, and an older one still only its calls: each under the cap goes on.
   sizes = { maxContext: 50_000 };
