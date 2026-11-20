@@ -10,7 +10,18 @@ import { redactCredentials } from "./tool-detail";
  * one on the run's trail (a `context` step with `cliTool`) and says it live (`agent.step`).
  */
 
-export const CLI_VERBS = ["read", "search", "edit", "write", "run", "fetch", "delegate", "skill", "other"] as const;
+export const CLI_VERBS = [
+  "read",
+  "search",
+  "edit",
+  "write",
+  "run",
+  "fetch",
+  "delegate",
+  "skill",
+  "workflow",
+  "other",
+] as const;
 export type CliVerb = (typeof CLI_VERBS)[number];
 
 /** What a call came to, as counts the apps put in words ("+2 −1", "3 places", "15 passed", "exit 1"). */
@@ -55,10 +66,11 @@ const ABOUT_MAX = 120;
 
 /** The CLIs' own tool names (lower-cased) by what they do: Claude Code's, Codex's, then the other CLIs'. */
 const VERBS: Record<string, CliVerb> = {
-  // A subagent of its own (`Agent`, `Task` before Claude Code 2.1.63) and a skill (ADR 0208).
+  // A subagent of its own (`Agent`, `Task` before Claude Code 2.1.63), a skill and a workflow of subagents (ADR 0208).
   agent: "delegate",
   task: "delegate",
   skill: "skill",
+  workflow: "workflow",
   read: "read",
   notebookread: "read",
   ls: "read",
@@ -157,6 +169,19 @@ const ABOUT_KEYS = ["description", "subject", "prompt", "skill"] as const;
 const DELEGATE_KEYS = ["description", "prompt"] as const;
 /** Which skill it used. */
 const SKILL_KEYS = ["skill", "name", "command"] as const;
+/** A workflow named by its caller; else the script's own `meta` says what it does. */
+const WORKFLOW_KEYS = ["name", "description"] as const;
+const WORKFLOW_META = (key: "description" | "name") => new RegExp(`\\b${key}\\s*:\\s*(["'\`])([^"'\`\\n]{1,200})\\1`);
+
+/** What a workflow does: its name, else its script's `meta` description or name, else its script's file. */
+function workflowAbout(i: Record<string, unknown>): string {
+  const named = first(i, WORKFLOW_KEYS);
+  if (named) return named;
+  const script = typeof i.script === "string" ? i.script : "";
+  const meta = WORKFLOW_META("description").exec(script)?.[2] ?? WORKFLOW_META("name").exec(script)?.[2];
+  if (meta) return meta;
+  return typeof i.scriptPath === "string" ? i.scriptPath : "";
+}
 
 /**
  * `path` as the folder it works in (`cwd`, relative to the agent's own folder: a code session's worktree) reads it.
@@ -365,6 +390,9 @@ export function cliToolSummary(
       break;
     case "skill":
       target = first(i, SKILL_KEYS);
+      break;
+    case "workflow":
+      about = workflowAbout(i);
       break;
     case "other":
       target = shownName(name);

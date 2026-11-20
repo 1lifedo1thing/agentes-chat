@@ -917,9 +917,10 @@ export interface ClaudeLaunch {
 export const BRAIN_BUILTIN_TOOLS = ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "ToolSearch"] as const;
 /**
  * A code session's turn (ADR 0208) also starts Claude Code's own subagents (`Agent`, `Task` before 2.1.63), which get
- * the turn's tools and permission mode, and uses skills (`Skill`): the worktree's own, loaded as a plugin.
+ * the turn's tools and permission mode, uses skills (`Skill`: the worktree's own, loaded as a plugin) and runs
+ * workflows of subagents (`Workflow`) where the account's plan has them.
  */
-export const CODE_SESSION_TOOLS = ["Agent", "Task", "Skill"] as const;
+export const CODE_SESSION_TOOLS = ["Agent", "Task", "Skill", "Workflow"] as const;
 /** A plan turn's own tools (ADR 0053 §3, 0109): reading, a shell our prompt tool keeps read-only, ToolSearch; no edits. */
 export const PLAN_BUILTIN_TOOLS = ["Bash", "Read", "Glob", "Grep", "ToolSearch"] as const;
 /** Claude Code's web tools, which ours replace on a brain turn. */
@@ -2811,6 +2812,8 @@ export class BrainManager {
               ...(asks === "always" ? { asksFirst: true } : {}),
             },
           ),
+          // A code session's workflows (ADR 0208): on wherever the account's plan has them (the CLI still gates them).
+          ...(codeTurn ? { enableWorkflows: true } : {}),
           // With the owner's own settings loaded (`personalMcp`), theirs decide the computer's own sign-in.
           ...(ctx.accountHome
             ? { env: accountSettingsEnv(plan, model) }

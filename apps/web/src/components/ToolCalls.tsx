@@ -152,6 +152,7 @@ const CLI_ICON: Record<CliVerb, IconName> = {
   fetch: "globe",
   delegate: "agent",
   skill: "sparkle",
+  workflow: "agent",
   other: "plug",
 };
 

@@ -7,7 +7,18 @@ import type { TFunction } from "i18next";
  * steps (`cliTool`) and, for a reply's lone call, on `meta.work`.
  */
 
-export const CLI_VERBS = ["read", "search", "edit", "write", "run", "fetch", "delegate", "skill", "other"] as const;
+export const CLI_VERBS = [
+  "read",
+  "search",
+  "edit",
+  "write",
+  "run",
+  "fetch",
+  "delegate",
+  "skill",
+  "workflow",
+  "other",
+] as const;
 export type CliVerb = (typeof CLI_VERBS)[number];
 
 /** What a call came to, as counts: lines added and removed, places found, files changed, tests, an exit code. */

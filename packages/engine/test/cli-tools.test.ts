@@ -113,6 +113,20 @@ describe("Claude Code's own tools", () => {
       about: "Review the HTML",
     });
     expect(cliToolSummary("Skill", { skill: "release" })).toEqual({ verb: "skill", target: "release" });
+    // A workflow says what it does: its name, else its script's meta.
+    expect(cliToolSummary("Workflow", { name: "review-changes" })).toEqual({
+      verb: "workflow",
+      about: "review-changes",
+    });
+    const script = "export const meta = {\n  name: 'review',\n  description: 'Review every page, then verify',\n}";
+    expect(cliToolSummary("Workflow", { script })).toEqual({
+      verb: "workflow",
+      about: "Review every page, then verify",
+    });
+    expect(cliToolSummary("Workflow", { scriptPath: "flows/audit.js" })).toEqual({
+      verb: "workflow",
+      about: "flows/audit.js",
+    });
     const todos = [
       { content: "Read the router", status: "completed", activeForm: "Reading the router" },
       { content: "Run the tests", status: "in_progress", activeForm: "Running the tests" },

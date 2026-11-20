@@ -129,6 +129,11 @@ that would act outside the turn's checks (`hooks`, `mcpServers`, `permissionMode
 else of the checkout's `.claude/`, so its settings (hooks, allow rules, env) stay unread as ADR 0117 wants. Only on a
 Claude Code the runner knows takes the plugin (2.1.63 or newer, `REPO_PLUGIN_MIN_CLAUDE`).
 
+The turn also gets `Workflow`, Claude Code's scripted workflows of subagents, with `enableWorkflows` in the runner's
+own settings for the turn: the CLI still offers it only where the account's plan has it. A workflow's call is one
+line in the session ("Ran a workflow" and what it does: its name, else its script's `meta`), its subagents' work
+inside it.
+
 Files and pictures stay in the session's panel: `upload_file` and `export_file` aren't given to a computer brain in
 a session (`CODE_SESSION_HIDDEN_TOOLS`), a screenshot taken with `share` isn't shown there (`shareSavedFile`), and
 its brief says not to paste screenshots.
