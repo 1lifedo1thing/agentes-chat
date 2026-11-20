@@ -10,7 +10,7 @@ import { redactCredentials } from "./tool-detail";
  * one on the run's trail (a `context` step with `cliTool`) and says it live (`agent.step`).
  */
 
-export const CLI_VERBS = ["read", "search", "edit", "write", "run", "fetch", "other"] as const;
+export const CLI_VERBS = ["read", "search", "edit", "write", "run", "fetch", "delegate", "skill", "other"] as const;
 export type CliVerb = (typeof CLI_VERBS)[number];
 
 /** What a call came to, as counts the apps put in words ("+2 −1", "3 places", "15 passed", "exit 1"). */
@@ -55,6 +55,10 @@ const ABOUT_MAX = 120;
 
 /** The CLIs' own tool names (lower-cased) by what they do: Claude Code's, Codex's, then the other CLIs'. */
 const VERBS: Record<string, CliVerb> = {
+  // A subagent of its own (`Agent`, `Task` before Claude Code 2.1.63) and a skill (ADR 0208).
+  agent: "delegate",
+  task: "delegate",
+  skill: "skill",
   read: "read",
   notebookread: "read",
   ls: "read",
@@ -149,6 +153,10 @@ const PATTERN_KEYS = ["pattern", "query", "regex", "search_term", "glob_pattern"
 const COMMAND_KEYS = ["command", "cmd"] as const;
 const URL_KEYS = ["url", "uri"] as const;
 const ABOUT_KEYS = ["description", "subject", "prompt", "skill"] as const;
+/** What a subagent was asked to do: its short description, else its prompt. */
+const DELEGATE_KEYS = ["description", "prompt"] as const;
+/** Which skill it used. */
+const SKILL_KEYS = ["skill", "name", "command"] as const;
 
 /**
  * `path` as the folder it works in (`cwd`, relative to the agent's own folder: a code session's worktree) reads it.
@@ -347,6 +355,12 @@ export function cliToolSummary(
     }
     case "fetch":
       target = first(i, URL_KEYS);
+      break;
+    case "delegate":
+      about = first(i, DELEGATE_KEYS);
+      break;
+    case "skill":
+      target = first(i, SKILL_KEYS);
       break;
     case "other":
       target = shownName(name);

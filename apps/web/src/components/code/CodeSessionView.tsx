@@ -27,7 +27,7 @@ import {
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { type CSSProperties, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useActors } from "@/components/actors";
 import { ModelPickerButton } from "@/components/ai/ModelPicker";
@@ -152,6 +152,11 @@ function SessionPeople({ session }: { session: CodeSession }) {
   const actors = useActors();
   const members = useChannelMembers(org.id, session.channelId);
   const [open, setOpen] = useState(false);
+  // Whoever an @ brought in joins as the conversation moves: read again when it does, and when the list opens.
+  const refetch = members.refetch;
+  useEffect(() => {
+    if (session.lastAt) void refetch();
+  }, [session.lastAt, refetch]);
   const rank = (m: { type: string; id: string }) =>
     m.type === "agent" && m.id === session.agentId ? 0 : m.id === session.createdBy ? 1 : 2;
   const people = [...(members.data ?? [])]
@@ -177,7 +182,10 @@ function SessionPeople({ session }: { session: CodeSession }) {
   return (
     <Popover
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) void refetch();
+      }}
       side="bottom"
       align="end"
       label={t("codeSessions.who.label")}

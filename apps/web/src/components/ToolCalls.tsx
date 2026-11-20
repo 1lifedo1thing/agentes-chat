@@ -150,6 +150,8 @@ const CLI_ICON: Record<CliVerb, IconName> = {
   write: "document",
   run: "code",
   fetch: "globe",
+  delegate: "agent",
+  skill: "sparkle",
   other: "plug",
 };
 

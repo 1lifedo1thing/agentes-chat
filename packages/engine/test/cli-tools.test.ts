@@ -105,8 +105,14 @@ describe("Claude Code's own tools", () => {
   });
 
   test("a tool with no verb of its own says its name and what for", () => {
+    // A subagent, by either of its names, says what it was asked; a skill names itself (ADR 0208).
     const task = cliToolSummary("Task", { description: "Explore the router", prompt: "Look at…" });
-    expect(task).toEqual({ verb: "other", target: "Task", about: "Explore the router" });
+    expect(task).toEqual({ verb: "delegate", about: "Explore the router" });
+    expect(cliToolSummary("Agent", { prompt: "Review the HTML\nthen say" })).toEqual({
+      verb: "delegate",
+      about: "Review the HTML",
+    });
+    expect(cliToolSummary("Skill", { skill: "release" })).toEqual({ verb: "skill", target: "release" });
     const todos = [
       { content: "Read the router", status: "completed", activeForm: "Reading the router" },
       { content: "Run the tests", status: "in_progress", activeForm: "Running the tests" },

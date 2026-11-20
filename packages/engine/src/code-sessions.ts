@@ -219,6 +219,7 @@ export async function codeSessionBrief(
     lines.push(
       `You work in its own git worktree, \`${row.worktreePath}\` (your folder for this conversation), on branch \`${row.branch ?? "?"}\`, made from \`${row.baseBranch ?? "the default branch"}\`${row.baseSha ? ` at ${row.baseSha.slice(0, 7)}` : ""}.`,
       "Work like in a terminal with this person: read, change and run things in that folder, and say what you did in a few words. Don't touch other checkouts.",
+      "Run your subagents in the foreground and wait for what they say before you answer: a subagent left running in the background means a second answer later.",
       "Your computer's screen is this session's preview: the person watches it beside the conversation. When what you made can be looked at (a page, an app, a UI), show it there yourself before you say it's done, without being asked: run the project's dev server, or serve the folder on localhost (for example `python3 -m http.server 8000`, left running in the background), open that address in your browser, look at it and fix what is off. The browser opens only http and https addresses, never a file. The person sees your screen and the diff: don't save copies to the Drive or paste screenshots.",
       local
         ? `Commit when a piece of work is done, with a short message. There is no remote: nothing to push. When the person asks to merge, merge this branch into \`${row.baseBranch ?? "main"}\` in \`${row.repoDir}\`.`
@@ -229,11 +230,37 @@ export async function codeSessionBrief(
   } else if (own && row.worktreeState === "preparing") {
     lines.push("Its worktree is still being prepared on your computer; nothing to change yet.");
   } else if (!own) {
+    const team = await db
+      .select({ id: schema.agents.id, name: schema.agents.name, handle: schema.agents.handle, machineId: schema.agents.machineId })
+      .from(schema.agents)
+      .where(and(eq(schema.agents.orgId, row.orgId), inArray(schema.agents.id, [row.agentId, agentId])));
+    const lead = team.find((a) => a.id === row.agentId);
+    const me = team.find((a) => a.id === agentId);
+    const name = lead?.name ?? "The session's agent";
     lines.push(
-      "Another agent works in this session's worktree; you were called in to help (read, review, test). Don't change its files.",
+      `${name} works in this session's worktree; you were called in to help (read, review, test). Don't change its files.`,
     );
+    if (lead && row.worktreeState === "ready" && row.worktreePath)
+      lines.push(
+        me?.machineId && me.machineId === row.machineId
+          ? `It is on your computer too, beside your folder: \`../${agentFolderOf(lead)}/${row.worktreePath}\` (branch \`${row.branch ?? "?"}\`). Read what you need there; if you can't, ask ${lead.name}.`
+          : `It is on ${lead.name}'s computer, not yours: ask ${lead.name} for what you need to read.`,
+      );
   }
   return lines.join("\n");
+}
+
+/**
+ * An agent's folder's name on its computer, as the runner names it (`agentFolderName` in the runner's `paths.ts`):
+ * `<handle>-<first 8 of its id>`. Agents of one workspace keep theirs side by side.
+ */
+export function agentFolderOf(agent: { id: string; handle: string }) {
+  const handle = agent.handle
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^[-_.]+|[-_.]+$/g, "")
+    .slice(0, 40);
+  return `${handle || "agent"}-${agent.id.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8)}`;
 }
 
 /** One session as the apps show it. */

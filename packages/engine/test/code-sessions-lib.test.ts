@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  agentFolderOf,
   codeBranchName,
   codeSessionOf,
   codeWorktreePath,
@@ -93,6 +94,13 @@ describe("shellQuote", () => {
   test("single quotes, a quote inside escaped", () => {
     expect(shellQuote("a b")).toBe("'a b'");
     expect(shellQuote("it's")).toBe("'it'\\''s'");
+  });
+});
+
+describe("agentFolderOf", () => {
+  test("the agent's folder as the runner names it: its handle, then the first 8 of its id", () => {
+    expect(agentFolderOf({ id: "9A9BD9B2-7b3c-7d4e-8f90-1a2b3c4d5e6f", handle: "Leo.Dev" })).toBe("leo-dev-9a9bd9b2");
+    expect(agentFolderOf({ id: "0193f1a2-7b3c-7d4e-8f90-1a2b3c4d5e6f", handle: "--" })).toBe("agent-0193f1a2");
   });
 });
 

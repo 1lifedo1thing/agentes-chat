@@ -20368,6 +20368,9 @@ export const ptBR = {
     write: "Escreveu",
     run: "Rodou",
     fetch: "Abriu",
+    /** Um subagente do próprio CLI (ADR 0208): "Pediu a um subagente · Revisar o HTML". */
+    delegate: "Pediu a um subagente",
+    skill: "Usou a skill",
     other: "Usou",
     running: {
       read: "Lendo",
@@ -20376,6 +20379,8 @@ export const ptBR = {
       write: "Escrevendo",
       run: "Rodando",
       fetch: "Abrindo",
+      delegate: "Pedindo a um subagente",
+      skill: "Usando a skill",
       other: "Usando",
     },
     lines: "+{{added}} −{{removed}}",

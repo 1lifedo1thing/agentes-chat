@@ -40,7 +40,9 @@ message (`meta.codeSession`), and the session is that thread's replies, so runs,
 events, receipts and the thread screen work unchanged. People are members of the channel: who opened it, and whoever
 is named there with `@` (`admitCodeMembers`); agents named there join it too. Its faces stand in the header: whoever
 opened it, or an admin, takes someone out, anyone else leaves (`removeChannelMember`, which lets a code session be
-left and always keeps its own agent and whoever opened it).
+left and always keeps its own agent and whoever opened it). An agent called in reads, reviews and tests: its brief says
+where the worktree is beside its own folder when they share the computer (`agentFolderOf`, the runner's folder name),
+and to ask the session's agent otherwise.
 
 A session may also start with no repository: a name with no owner (`hello-world`) is a project only on the agent's
 computer, `projects/<name>` in its folder, made with `git init` on first use (or adopted with its files in a first

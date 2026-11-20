@@ -20443,6 +20443,9 @@ export const en = {
     write: "Wrote",
     run: "Ran",
     fetch: "Fetched",
+    /** The CLI's own subagent (ADR 0208): "Asked a subagent · Review the HTML". */
+    delegate: "Asked a subagent",
+    skill: "Used the skill",
     other: "Used",
     /** While the call runs. */
     running: {
@@ -20452,6 +20455,8 @@ export const en = {
       write: "Writing",
       run: "Running",
       fetch: "Fetching",
+      delegate: "Asking a subagent",
+      skill: "Using the skill",
       other: "Using",
     },
     /** Lines an edit added and removed. */

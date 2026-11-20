@@ -124,12 +124,13 @@ export function CodePanel({
       >
         <TabPanel value="git">
           <GitPane session={session} />
-          {agent && (
+          {/* The sky rises from the panel's foot; with the terminal open, the foot is the terminal's. */}
+          {agent && !terminal && (
             <div className="code-hz" aria-hidden="true">
               <CodeHorizon />
             </div>
           )}
-          {agent && (
+          {agent && !terminal && (
             <div className="code-hz__row">
               <AgentAvatar
                 agentId={agent.id}
