@@ -1,6 +1,6 @@
 import type { CodeSession } from "@agenteschat/client";
 import { Button, TabPanel, Tabs } from "@agenteschat/ui";
-import { type CSSProperties, useCallback, useState } from "react";
+import { type CSSProperties, useCallback, useLayoutEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
@@ -36,6 +36,24 @@ export function useCodeTab() {
   }, []);
   return [tab, setTab] as const;
 }
+
+/** The panel's width, read as it changes (a drag of its gutter, the window): its tab row gives way under it. */
+function useWidth(el: HTMLElement | null) {
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setWidth(el.getBoundingClientRect().width);
+    measure();
+    const watch = new ResizeObserver(measure);
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, [el]);
+  return width;
+}
+
+/** Under these widths the tab row keeps its three tabs whole: the terminal's switch drops its word, then the size. */
+const ROW_NARROW = 440;
+const ROW_TIGHT = 350;
 
 function readTerminal() {
   try {
@@ -75,9 +93,17 @@ export function CodePanel({
       localStorage.setItem(TERMINAL_KEY, open ? "open" : "closed");
     } catch {}
   };
-  const stat = session.stat.at ? `+${session.stat.added} −${session.stat.removed}` : null;
+  const [panel, setPanel] = useState<HTMLElement | null>(null);
+  const width = useWidth(panel);
+  const narrow = width > 0 && width < ROW_NARROW;
+  const stat =
+    session.stat.at && !(width > 0 && width < ROW_TIGHT) ? `+${session.stat.added} −${session.stat.removed}` : null;
   return (
-    <section className="code-pane code-pane--side" style={{ "--code-term": `${height.size}px` } as CSSProperties}>
+    <section
+      ref={setPanel}
+      className="code-pane code-pane--side"
+      style={{ "--code-term": `${height.size}px` } as CSSProperties}
+    >
       <Tabs
         value={tab}
         onValueChange={onTab}
@@ -127,8 +153,11 @@ export function CodePanel({
         size="sm"
         variant="ghost"
         icon="codeBlock"
+        iconOnly={narrow}
         className="code-ptoggle"
         aria-pressed={terminal}
+        aria-label={narrow ? t("codeSessions.panel.terminal") : undefined}
+        title={narrow ? t("codeSessions.panel.terminal") : undefined}
         onClick={() => setTerminal(!terminal)}
       >
         {t("codeSessions.panel.terminal")}
