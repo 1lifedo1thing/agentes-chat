@@ -9,10 +9,9 @@ const { agents, contextItems, contextProposals, organizationMembers, users } = s
 export const MOVE_LEARNED_JOB = "memory.move_learned";
 
 const HEADING = /^##\s+Learned\s*$/;
-const BULLET = /^\s*[-*]\s+(.*)$/;
 const ANY_HEADING = /^#{1,6}\s/;
 /** "Ada: always do X", the way a lesson named who taught it. */
-const TAUGHT_BY = /^([^:\n]{1,80}):\s+(.+)$/s;
+const TAUGHT_BY = /^([^:\n]{1,80}):\s(.+)$/s;
 
 const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
 
@@ -34,9 +33,10 @@ export function splitLearned(text: string): { instructions: string; lessons: str
       continue;
     }
     if (inside) {
-      const bullet = BULLET.exec(line);
-      if (bullet?.[1]?.trim()) {
-        lessons.push(bullet[1].trim());
+      const start = line.trimStart();
+      const bullet = /^[-*]\s/.test(start) ? start.slice(2).trim() : "";
+      if (bullet) {
+        lessons.push(bullet);
         afterBullet = true;
         continue;
       }
