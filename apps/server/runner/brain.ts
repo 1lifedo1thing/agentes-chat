@@ -655,6 +655,8 @@ export class ClaudeStreamParser {
     const calls = num(ev.num_turns);
     const maxUncached = Math.max(0, ...this.uncached.values());
     const maxContext = Math.max(0, ...this.context.values());
+    // A Map keeps the order calls first came in: its last value is the turn's last call, the session's size now.
+    const lastContext = [...this.context.values()].at(-1) ?? 0;
     if (input > 0 || output > 0) {
       events.push({
         type: "usage",
@@ -667,6 +669,7 @@ export class ClaudeStreamParser {
         ...(calls > 0 ? { calls } : {}),
         ...(maxUncached > 0 ? { maxUncached } : {}),
         ...(maxContext > 0 ? { maxContext } : {}),
+        ...(lastContext > 0 ? { lastContext } : {}),
       });
     }
     this.tools.clear();

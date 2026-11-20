@@ -461,6 +461,53 @@ test("computer sessions: the conversation's session goes on while recent and sma
   expect(plan.session?.id).not.toBe(seen[6]?.session?.id);
 });
 
+test("computer sessions: the cap reads the session's real context, not the turn's calls added up", async () => {
+  f = await setup();
+  await computerAgent(f);
+  // A turn of four calls whose usage row adds up to past the cap.
+  const input = SESSION_MAX_INPUT_TOKENS * 3;
+  let sizes: { lastContext?: number; maxContext?: number } = {
+    lastContext: 45_000,
+    maxContext: SESSION_MAX_INPUT_TOKENS + 1,
+  };
+  const { brain, seen } = scriptedComputerBrain(() => [
+    { type: "usage", input, output: 5, source: "plan", model: "claude-sonnet-5-5", calls: 4, ...sizes },
+    { type: "done", text: "ok" },
+  ]);
+  const handlers = createJobHandlers({
+    ...f.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  const question = await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  const turn = async (body: string) => {
+    await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
+      body,
+      threadId: question.id,
+    });
+    await drainOutbox(f.db, handlers);
+    return seen.at(-1)?.session;
+  };
+  const resumed = async (body: string) => {
+    const before = seen.at(-1)?.session?.id;
+    const session = await turn(body);
+    return session?.resume === true && session.id === before;
+  };
+
+  // Its last call held 45k (a bigger one before it was compacted away): the session goes on.
+  expect(await resumed("@dev e agora?")).toBe(true);
+  // An older runner says only its biggest call, and an older one still only its calls: each under the cap goes on.
+  sizes = { maxContext: 50_000 };
+  expect(await resumed("@dev mais uma")).toBe(true);
+  sizes = {};
+  expect(await resumed("@dev e essa?")).toBe(true);
+  // Its last call read past the cap: a fresh session.
+  sizes = { lastContext: SESSION_MAX_INPUT_TOKENS, maxContext: SESSION_MAX_INPUT_TOKENS };
+  expect(await resumed("@dev grande")).toBe(true);
+  expect(await resumed("@dev depois")).toBe(false);
+});
+
 test("edited instructions or org context reach a kept-alive session's next turn: a fresh session with the conversation", async () => {
   f = await setup();
   await computerAgent(f, { instructions: "Never query the database." });
