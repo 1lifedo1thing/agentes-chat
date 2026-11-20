@@ -3,13 +3,16 @@
  * the video's and the PDF's stages (the picture keeps the viewer's own zoom), the bar over them, the video's marks.
  */
 
-/* The comments beside the file: the viewer's grid gets a column of their own, edge to edge with a line between. */
+/*
+ * The comments beside the file: the viewer's grid gets a column of their own, the card a live file's conversation is
+ * (live.css `.thread-panel.lf-talk`: its ring, its corners, the cut one at its foot), as wide as the person left that
+ * conversation (`--lf-talk-w`, set by its handle in the 12 between).
+ */
 .artifact-viewer.artifact-viewer--talk {
-  grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 400px);
-  gap: 0;
-}
-.artifact-viewer--talk > .artifact-viewer__main {
-  padding-right: var(--space-4);
+  --viewer-talk-w: var(--lf-talk-w, clamp(340px, 30vw, 440px));
+  position: relative;
+  grid-template-columns: minmax(0, 1fr) var(--viewer-talk-w);
+  gap: var(--space-3);
 }
 .viewer-talk {
   container: thread-dock / inline-size;
@@ -17,30 +20,37 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  /* To the dialog's edges: its own padding stays with the file. */
-  margin: -12px calc(-1 * var(--details-pad, 24px)) calc(-1 * var(--details-pad, 24px)) 0;
-  border-left: 1px solid var(--line);
   overflow: hidden;
+  border-radius: var(--radius-section) var(--radius-section) var(--radius-section) 4px;
+  box-shadow: 0 0 0 1px var(--line);
   --bg: var(--pane);
   --surface: var(--pane);
+  background: var(--pane);
+}
+[data-theme="light"] .viewer-talk {
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 1px 3px rgba(9, 20, 34, 0.05);
 }
 .viewer-talk > .thread-panel__chat {
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
 }
+/* The handle over the 12 between the file and the comments. */
+.lf-talk-grip.lf-talk-grip--viewer {
+  top: 0;
+  bottom: 0;
+  right: var(--viewer-talk-w);
+}
 /* Narrow, the comments take the viewer: "Comentários" goes back to the file. */
 @media (max-width: 760px) {
   .artifact-viewer.artifact-viewer--talk {
     grid-template-columns: minmax(0, 1fr);
   }
-  .artifact-viewer--talk > .artifact-viewer__main {
+  .artifact-viewer--talk > .artifact-viewer__main,
+  .lf-talk-grip.lf-talk-grip--viewer {
     display: none;
-  }
-  .viewer-talk {
-    margin: -12px calc(-1 * var(--details-pad, 24px)) calc(-1 * var(--details-pad, 24px));
-    border-left: 0;
-    border-top: 1px solid var(--line);
   }
 }
 

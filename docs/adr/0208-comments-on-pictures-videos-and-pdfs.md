@@ -13,9 +13,10 @@
   `POST …/messages/{id}/resolve`), `routes/app/schemas.ts` (`LiveSelection`); client `live/types.ts` (`TalkKind`,
   `FileMediaKind`, `isTalkKind`, `isPinnedSelection`, `resolvedOf`), `live/api.ts` (`uploadMark`, `resolveComment`),
   `api/queries.ts` (`cacheResolved`, `useResolveComment`), `lib/files.ts` (`mediaKindOfType`, `mediaKindOfArtifact`);
-  web `components/live/media/*` (`FilePage`, `MediaFilePage`, `ImageStage`, `VideoStage`, `PdfStage`, `MediaPins`,
-  `marks.ts`, `ResolveBits`, `ViewerBits`), `components/live/talk.ts`, `TalkBits.tsx`, `pages/ChannelPage.tsx`,
-  `components/artifacts/ArtifactViewer.tsx`, `FileView.tsx`, `ImageZoom.tsx` (`overlay`), `packages/ui`
+  web `components/live/media/*` (`ViewerComments`, `VideoStage`, `PdfStage`, `MediaPins`, `marks.ts`, `ResolveBits`,
+  `ViewerBits`), `components/live/talk.ts`, `TalkBits.tsx`, `FileConversation.tsx` (`TalkGrip`),
+  `pages/ChannelPage.tsx`, `pages/ThreadPage.tsx` (`headless`), `pages/DrivePage.tsx` (`?m=`),
+  `components/artifacts/ArtifactViewer.tsx`, `ImageZoom.tsx` (`overlay`, `marking`, `tools`), `packages/ui`
   `VideoPlayer.tsx` (`onTime`, `onVideo`, `marks`); phone `features/files/ImageViewer.tsx`, `ZoomPicture.tsx`,
   `DocumentViewer.tsx`, `features/live-files/talk/*` (`PicturePins`, `logic.ts`), `features/chat/sheets.tsx`
 
@@ -87,18 +88,21 @@ names its pictures. Three tools, listed only there (`createCommentToolSource`, b
 
 ### 5. The apps
 
-On the web the preview comes first: a picture, a video or a PDF opened from the chat or the Drive opens in the viewer
-as before, now with its open comments' pins over the picture (their words on hover) and "Comment" and "Conversation
-N" over it; a pin, or either button, opens the file's page (`/drive/<id>`, `?m=` at a comment, `?comment` with Comment
-on). Under a file with comments the chat shows their line (who, how many, when), the thread line's look.
+On the web everything happens in the viewer, where a picture, a video or a PDF opens from the chat or the Drive; it
+has no page of its own. The viewer shows its open comments' pins over the file (their words on hover) and one
+"Comments N" in its header, which opens the file's conversation as the viewer's right column: the card a live file's
+conversation is (ADR 0199 §6), sized by the same handle and to the same width, with no header of its own. With it
+open, a click on the file marks a point and a drag an area (the zoom's bar says so; the wheel, a pinch and the bar
+still zoom), and the composer gets "About area 4 of the image" with the crop; closed, a click zooms as before and a
+pin opens it at that comment. A video plays in our player with its comments as marks over the timeline; marking
+pauses it at that moment (and a point or an area of the frame). A PDF is drawn by pdf.js (Apache-2.0, loaded only
+when one opens), a page read and drawn as it comes near and let go when it goes far, the viewer as tall as a
+picture's; a comment marks a page and a point or an area of it, and the versions give way to the conversation while
+it is open. Narrow, the conversation takes the whole viewer and "Comments" goes back to the file.
 
-The page is a live file's (ADR 0199 §6): the header without what only a live file has, the conversation docked
-beside it, the file on a quiet stage, the canvas's dock (Move, Comment, ask the file's agent) and its zoom island.
-With Comment on, a click marks a point and a drag an area; the conversation opens with "About area 4 of the image"
-and the crop over its composer. A video plays in our player with its comments as marks over the timeline; Comment
-pauses it and marks that moment (and a point or an area of the frame). A PDF is drawn by pdf.js (Apache-2.0, loaded
-only on that page), a page read and drawn as it comes near and let go when it goes far; a comment marks a page and a
-point or an area of it.
+Under a file with comments the chat shows their line (who, how many, when), the thread line's look; it opens the
+viewer with the comments open, as does a link to one (the Drive's `?artifact=…&m=…`; the file's page address of a
+live file, `/drive/<id>?m=…`, sends a picture, a video or a PDF there).
 
 The phone follows its live files: the viewer pins a picture's open comments on it and ends with the file's talk line;
 its Comment marks a point on a picture or the moment a video is paused at and opens the conversation with it; a PDF

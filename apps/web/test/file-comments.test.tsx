@@ -11,19 +11,22 @@ import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, ORG_ID, seedState } from "./fa
 import { renderApp, screen, settle } from "./render";
 
 /*
- * Comments on a picture (ADR 0208), as live files have them (ADR 0199): the picture's own page (its header, Move and
- * Comment under it, its comments pinned on it with who wrote them and their number, the resolved ones hidden until
- * asked for), a click with Comment on that goes in the conversation's composer as "Sobre o ponto N da imagem" and
- * rides on the message, Resolver on a pinned comment and who resolved it under it, Comentar and Conversa in the
- * viewer with the pins over the picture, and the line under a picture posted in a chat once it has comments. Videos
- * and PDFs share all of this but their stages (a PDF's draws with pdf.js, kept out of these tests).
+ * Comments on a picture (ADR 0208), in the viewer: "Comentários N" in its header and its open comments pinned on the
+ * picture with who wrote them (their words on hover, the resolved ones hidden until asked for); the button opens the
+ * file's conversation (ADR 0199) as the viewer's right column, and with it open a click marks a point and a drag an
+ * area, which go in the composer as "Sobre o ponto N da imagem" and ride on the message; Resolver on a pinned comment
+ * and who resolved it under it; a link to a comment and the line under a picture posted in a chat open the viewer
+ * there. Videos and PDFs share all of this but their stages (a PDF's draws with pdf.js, kept out of these tests).
  */
 
-/** The picture's stage and, in the viewer, the zoom's stage: a size, as a browser lays them out (happy-dom doesn't). */
+/** The zoom's stage: a size, as a browser lays it out (happy-dom doesn't). A 1200×800 picture fits it at 1000×666⅔. */
 const STAGE = { w: 1000, h: 700 };
-/** Where the picture's box is on screen once fitted (its page's `.mf-box`). */
-const BOX = { left: 100, top: 50, width: 400, height: 200 };
-const sized = (el: Element) => el.classList?.contains("mf-stage") || el.classList?.contains("izoom__stage");
+/** Where the fitted picture's box starts on the stage (centered: (700 − 666⅔) / 2). */
+const TOP = 50 / 3;
+const BOX_H = 2000 / 3;
+/** A spot on the fitted picture, in fractions of it, as screen coordinates. */
+const on = (x: number, y: number) => ({ clientX: x * STAGE.w, clientY: TOP + y * BOX_H });
+const sized = (el: Element) => el.classList?.contains("izoom__stage");
 const realRect = Element.prototype.getBoundingClientRect;
 const realSize = ["clientWidth", "clientHeight"].map(
   (k) => [k, Object.getOwnPropertyDescriptor(HTMLElement.prototype, k)] as const,
@@ -37,13 +40,8 @@ beforeAll(() => {
   objectUrls.create = () => `blob:picture-${++urls}`;
   objectUrls.revoke = () => {};
   Element.prototype.getBoundingClientRect = function (this: Element) {
-    const r = this.classList?.contains("mf-box")
-      ? { ...BOX, right: BOX.left + BOX.width, bottom: BOX.top + BOX.height }
-      : sized(this)
-        ? { left: 0, top: 0, width: STAGE.w, height: STAGE.h, right: STAGE.w, bottom: STAGE.h }
-        : null;
-    if (!r) return realRect.call(this);
-    const rect = { ...r, x: r.left, y: r.top };
+    if (!sized(this)) return realRect.call(this);
+    const rect = { left: 0, top: 0, width: STAGE.w, height: STAGE.h, right: STAGE.w, bottom: STAGE.h, x: 0, y: 0 };
     return { ...rect, toJSON: () => rect } as DOMRect;
   };
   for (const [k, d] of realSize) {
@@ -65,15 +63,14 @@ afterAll(() => {
 });
 afterEach(() => {
   cleanup();
-  // The conversation's open or closed state is kept in the browser: each test starts fresh.
+  // The conversation's width is kept in the browser: each test starts fresh.
   window.localStorage.clear();
 });
 
 const click = (el: Element) => act(async () => fireEvent.click(el));
 const type = (el: Element, value: string) => act(async () => fireEvent.change(el, { target: { value } }));
-const header = () => within(document.querySelector(".lf-head") as HTMLElement);
-const panel = () => document.querySelector("aside.lf-talk") as HTMLElement | null;
-const pins = () => [...document.querySelectorAll<HTMLElement>(".mf-pins .mf-pin")];
+const panel = () => document.querySelector("aside.viewer-talk") as HTMLElement | null;
+const pins = () => [...document.querySelectorAll<HTMLElement>(".izoom__overlay .mf-pins .mf-pin")];
 const pinNames = () => pins().map((p) => p.getAttribute("aria-label"));
 const png = (name: string) =>
   new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3])], name, { type: "image/png" });
@@ -180,99 +177,95 @@ const THREE: Comment[] = [
   },
 ];
 
-async function openPage(api: ApiClient, fileId: string, search = "") {
-  const app = await renderApp(`/org/${ORG_ID}/drive/${fileId}${search}`, { api });
-  await settle(8);
-  await waitFor(() => expect(document.querySelector(".mf-root")).toBeTruthy());
-  return app;
+/** The viewer's picture has loaded at its size: fitted, its box placed, the pins with it. */
+async function load(dialog: HTMLElement) {
+  const img = await waitFor(() => {
+    const found = dialog.querySelector<HTMLImageElement>(".izoom__img");
+    if (!found) throw new Error("no picture in the viewer yet");
+    return found;
+  });
+  Object.defineProperty(img, "naturalWidth", { value: 1200 });
+  Object.defineProperty(img, "naturalHeight", { value: 800 });
+  await act(async () => fireEvent.load(img));
+  await settle(2);
 }
 
-describe("a picture's page", () => {
-  test("its header, Move and Comment under it, and its open comments pinned with who wrote them", async () => {
+/** The Drive's link to the picture (`?artifact=`, and `&m=` at a comment): the viewer, its picture loaded. */
+async function openViewer(api: ApiClient, fileId: string, search = "") {
+  const app = await renderApp(`/org/${ORG_ID}/drive?artifact=${fileId}${search}`, { api });
+  await settle(8);
+  const dialog = screen().getByRole("dialog", { name: "banner.png" });
+  await load(dialog);
+  return { app, dialog };
+}
+const comments = (dialog: HTMLElement) =>
+  within(dialog.querySelector(".ac-details__actions") as HTMLElement).getByRole("button", { name: /^Comentários/ });
+const openComments = async (dialog: HTMLElement) => {
+  await click(comments(dialog));
+  await settle(8);
+  return await waitFor(() => {
+    const open = panel();
+    if (!open) throw new Error("the comments aren't open yet");
+    return open;
+  });
+};
+const press = async (from: { clientX: number; clientY: number }, to = from) => {
+  const stage = document.querySelector(".izoom__stage") as HTMLElement;
+  const base = { pointerId: 1, pointerType: "mouse", button: 0, buttons: 1 };
+  await act(async () => fireEvent.pointerDown(stage, { ...base, ...from }));
+  if (to !== from) await act(async () => fireEvent.pointerMove(stage, { ...base, ...to }));
+  await act(async () => fireEvent.pointerUp(stage, { ...base, ...to, buttons: 0 }));
+  await settle(8);
+};
+
+describe("a picture's comments in the viewer", () => {
+  test("Comentários N in its header and its open comments pinned with who wrote them, their words on hover", async () => {
     const { api, file } = await pictureWithTalk({ comments: THREE });
-    await openPage(api, file.id);
-    const page = document.querySelector(".mf-root") as HTMLElement;
-    expect(page.dataset.kind).toBe("image");
-    // A page of the app, as a live file's: the sidebar stays; no live file's editor.
-    expect(document.querySelector(".sidebar")).toBeTruthy();
-    expect(header().getByRole("heading", { level: 1 }).textContent).toBe("banner.png");
-    expect(header().getByRole("button", { name: "Conversa, 3 mensagens" })).toBeTruthy();
-    expect(header().getByRole("button", { name: "Mais" })).toBeTruthy();
-    expect(document.title).toBe("banner.png");
-    // Under the picture: Move (on), Comment, and asking the file's agent.
-    const dock = within(screen().getByRole("toolbar", { name: "Ferramentas" }));
-    expect(dock.getByRole("button", { name: "Mover a tela" }).getAttribute("aria-pressed")).toBe("true");
-    expect(dock.getByRole("button", { name: "Comentar" }).getAttribute("aria-pressed")).toBe("false");
-    // The picture itself, from its own bytes.
-    expect(document.querySelector<HTMLImageElement>(".mf-img")?.getAttribute("src")).toMatch(/^blob:picture-/);
+    const { dialog } = await openViewer(api, file.id);
+    const actions = within(dialog.querySelector(".ac-details__actions") as HTMLElement);
+    // One button for them: no Comentar and Conversa beside it.
+    expect(comments(dialog).textContent).toBe("Comentários3");
+    expect(comments(dialog).getAttribute("aria-pressed")).toBe("false");
+    expect(actions.queryByRole("button", { name: "Comentar" })).toBeNull();
+    expect(actions.queryByRole("button", { name: /^Conversa/ })).toBeNull();
+    expect(panel()).toBeNull();
     // Its open comments, numbered oldest first with who wrote them; the resolved one is gone.
     await waitFor(() => expect(pinNames()).toEqual(["Comentário 1 de João", "Comentário 2 de Ada"]));
     expect(pins().map((p) => p.querySelector(".mf-pin__n")?.textContent)).toEqual(["1", "2"]);
     // A point's pin stands on it; an area's on its top right corner.
     expect([pins()[0]?.style.left, pins()[0]?.style.top]).toEqual(["20%", "30%"]);
     expect([pins()[1]?.style.left, pins()[1]?.style.top]).toEqual(["75%", "10%"]);
-    // Its words on hover.
-    expect(pins()[0]?.getAttribute("title")).toBe("João: O título está cortado aqui.");
+    // Closed, the words show on hover, with where a click goes.
+    const first = pins()[0] as HTMLElement;
+    expect(first.getAttribute("title")).toBeNull();
+    await act(async () => fireEvent.pointerEnter(first));
+    const peek = dialog.querySelector(".mf-peek")?.textContent;
+    expect(peek).toContain("O título está cortado aqui.");
+    expect(peek).toContain("Clique para abrir na conversa");
   });
 
-  test("the resolved ones come back faded with 1 resolvido, and go again", async () => {
-    const { api, file } = await pictureWithTalk({ comments: THREE });
-    await openPage(api, file.id);
-    await waitFor(() => expect(pins()).toHaveLength(2));
-    const zoom = within(screen().getByRole("toolbar", { name: "Zoom do quadro" }));
-    const show = zoom.getByRole("button", { name: "1 resolvido" });
-    expect(show.getAttribute("aria-pressed")).toBe("false");
-    expect(show.getAttribute("title")).toBe("Mostrar os resolvidos");
-    await click(show);
-    await settle(2);
-    expect(pinNames()).toEqual(["Comentário 1 de João", "Comentário 2 de Ada", "Comentário 3 de João"]);
-    expect(pins().map((p) => p.classList.contains("mf-pin--faded"))).toEqual([false, false, true]);
-    expect(show.getAttribute("aria-pressed")).toBe("true");
-    await click(show);
-    await settle(2);
-    expect(pins()).toHaveLength(2);
-  });
-
-  test("a pin opens the conversation at its message", async () => {
-    const { api, file } = await pictureWithTalk({ comments: THREE });
-    // Closed by this person before.
-    window.localStorage.setItem(`agentes.live.talk.u-walter.${ORG_ID}`, "0");
-    const app = await openPage(api, file.id);
-    expect(panel()).toBeNull();
-    await waitFor(() => expect(pins()).toHaveLength(2));
-    await click(pins()[1] as HTMLElement);
-    await settle(8);
-    await waitFor(() => expect(panel()).toBeTruthy());
-    expect(pins()[1]?.classList.contains("mf-pin--on")).toBe(true);
-    // The area of the comment open now is outlined.
-    expect(document.querySelector<HTMLElement>(".mf-pins .mf-area")?.style.width).toBe("25%");
-    await waitFor(() => expect(app.router.state.location.search).toMatchObject({ m: "c-2" }));
-  });
-
-  test("Comment: a click marks a point, the composer says so, and the message carries it", async () => {
+  test("Comentários opens the conversation beside it; a click marks a point and the message carries it", async () => {
     const { api, state, file } = await pictureWithTalk({ comments: THREE });
-    await openPage(api, file.id);
-    await waitFor(() => expect(pins()).toHaveLength(2));
-    const dock = within(screen().getByRole("toolbar", { name: "Ferramentas" }));
-    await click(dock.getByRole("button", { name: "Comentar" }));
-    expect(dock.getByRole("button", { name: "Comentar" }).getAttribute("aria-pressed")).toBe("true");
-    expect(document.querySelector(".mf-hint")?.textContent).toBe(
+    const { dialog } = await openViewer(api, file.id);
+    const talk = await openComments(dialog);
+    expect(comments(dialog).getAttribute("aria-pressed")).toBe("true");
+    expect(dialog.querySelector(".artifact-viewer--talk")).toBeTruthy();
+    // Its own header is the viewer's: none inside the column. Its left edge sizes it.
+    expect(talk.querySelector(".thread-head")).toBeNull();
+    expect(within(dialog).getByRole("separator", { name: "Largura da conversa" })).toBeTruthy();
+    // The bar says what a click does now.
+    expect(dialog.querySelector(".izoom__hint")?.textContent).toBe(
       "Clique para marcar um ponto ou arraste para marcar uma área",
     );
-    // A press and its release a quarter of the way into the picture's box.
-    const stage = document.querySelector(".mf-stage") as HTMLElement;
-    const at = { pointerId: 1, pointerType: "mouse", button: 0, buttons: 1, clientX: 200, clientY: 100 };
-    await act(async () => fireEvent.pointerDown(stage, at));
-    await act(async () => fireEvent.pointerUp(stage, { ...at, buttons: 0 }));
-    await settle(8);
-    // Back to moving; the draft's pin takes the next number, with my face.
-    expect(dock.getByRole("button", { name: "Comentar" }).getAttribute("aria-pressed")).toBe("false");
+    // A press and its release a quarter of the way into the picture.
+    await press(on(0.25, 0.25));
+    // The draft's pin takes the next number, with my face.
     const draft = document.querySelector<HTMLElement>(".mf-pin--draft");
     expect(draft?.querySelector(".mf-pin__n")?.textContent).toBe("4");
     expect([draft?.style.left, draft?.style.top]).toEqual(["25%", "25%"]);
-    const quote = await waitFor(() => document.querySelector(".lf-quote") as HTMLElement);
+    const quote = await waitFor(() => talk.querySelector(".lf-quote") as HTMLElement);
     expect(quote.textContent).toBe("Sobre o ponto 4 da imagem");
-    const composer = within(panel() as HTMLElement).getByRole("combobox", {
+    const composer = within(talk).getByRole("combobox", {
       name: "Escrever sobre a imagem · use @ para chamar um agente",
     });
     await type(composer, "Esse ícone está borrado");
@@ -292,58 +285,94 @@ describe("a picture's page", () => {
     expect(document.querySelector(".mf-pin--draft")).toBeNull();
   });
 
-  test("C turns Comment on and Esc off; × on the quote drops the comment being written", async () => {
+  test("a drag marks an area; × on the quote drops it, and closing the comments too", async () => {
     const { api, file } = await pictureWithTalk({ comments: THREE });
-    await openPage(api, file.id);
-    const comment = () =>
-      within(screen().getByRole("toolbar", { name: "Ferramentas" })).getByRole("button", { name: "Comentar" });
-    await act(async () => fireEvent.keyDown(window, { key: "c" }));
-    expect(comment().getAttribute("aria-pressed")).toBe("true");
-    await act(async () => fireEvent.keyDown(window, { key: "Escape" }));
-    expect(comment().getAttribute("aria-pressed")).toBe("false");
-    await click(comment());
-    const stage = document.querySelector(".mf-stage") as HTMLElement;
-    // A drag: an area.
-    const from = { pointerId: 1, pointerType: "mouse", button: 0, buttons: 1, clientX: 100, clientY: 50 };
-    await act(async () => fireEvent.pointerDown(stage, from));
-    await act(async () => fireEvent.pointerMove(stage, { ...from, clientX: 300, clientY: 150 }));
-    await act(async () => fireEvent.pointerUp(stage, { ...from, buttons: 0, clientX: 300, clientY: 150 }));
-    await settle(8);
-    const quote = await waitFor(() => document.querySelector(".lf-quote") as HTMLElement);
+    const { dialog } = await openViewer(api, file.id);
+    const talk = await openComments(dialog);
+    await press(on(0.1, 0.1), on(0.6, 0.4));
+    const quote = await waitFor(() => talk.querySelector(".lf-quote") as HTMLElement);
     expect(quote.textContent).toBe("Sobre a área 4 da imagem");
     expect(document.querySelector<HTMLElement>(".mf-area--draft")?.style.width).toBe("50%");
-    await click(screen().getByRole("button", { name: "Não mandar a seleção" }));
+    await click(within(talk).getByRole("button", { name: "Não mandar a seleção" }));
     await settle(2);
     expect(document.querySelector(".lf-quote")).toBeNull();
     expect(document.querySelector(".mf-area--draft")).toBeNull();
+    // Another, then Comentários closes them: it goes with them, and a click zooms again.
+    await press(on(0.5, 0.5));
+    await waitFor(() => expect(document.querySelector(".mf-pin--draft")).toBeTruthy());
+    await click(comments(dialog));
+    await settle(4);
+    expect(panel()).toBeNull();
+    expect(document.querySelector(".mf-pin--draft")).toBeNull();
+    expect(dialog.querySelector(".izoom__hint")?.textContent).not.toContain("marcar");
   });
 
-  test("the page opens with Comment on from the viewer's Comentar (?comment)", async () => {
-    const { api, file } = await pictureWithTalk();
-    await openPage(api, file.id, "?comment=true");
-    const dock = within(screen().getByRole("toolbar", { name: "Ferramentas" }));
-    expect(dock.getByRole("button", { name: "Comentar" }).getAttribute("aria-pressed")).toBe("true");
-    // No comments yet: no pins, no resolved count, and Conversa with no count.
-    expect(pins()).toHaveLength(0);
-    expect(screen().queryByRole("button", { name: /resolvid/ })).toBeNull();
-    expect(header().getByRole("button", { name: "Conversa" })).toBeTruthy();
+  test("the resolved ones come back faded with 1 resolvido, and go again", async () => {
+    const { api, file } = await pictureWithTalk({ comments: THREE });
+    const { dialog } = await openViewer(api, file.id);
+    await waitFor(() => expect(pins()).toHaveLength(2));
+    const show = within(dialog).getByRole("button", { name: "1 resolvido" });
+    expect(show.getAttribute("aria-pressed")).toBe("false");
+    expect(show.getAttribute("title")).toBe("Mostrar os resolvidos");
+    await click(show);
+    await settle(2);
+    expect(pinNames()).toEqual(["Comentário 1 de João", "Comentário 2 de Ada", "Comentário 3 de João"]);
+    expect(pins().map((p) => p.classList.contains("mf-pin--faded"))).toEqual([false, false, true]);
+    await click(show);
+    await settle(2);
+    expect(pins()).toHaveLength(2);
+  });
+
+  test("a pin opens the comments at its message, its area outlined", async () => {
+    const { api, file } = await pictureWithTalk({ comments: THREE });
+    const { dialog } = await openViewer(api, file.id);
+    await waitFor(() => expect(pins()).toHaveLength(2));
+    await click(pins()[1] as HTMLElement);
+    await settle(8);
+    await waitFor(() => expect(panel()).toBeTruthy());
+    expect(comments(dialog).getAttribute("aria-pressed")).toBe("true");
+    expect(pins()[1]?.classList.contains("mf-pin--on")).toBe(true);
+    expect(document.querySelector<HTMLElement>(".mf-pins .mf-area")?.style.width).toBe("25%");
+  });
+
+  test("a link to a comment opens the viewer there, the old page's address too", async () => {
+    const { api, file } = await pictureWithTalk({ comments: THREE });
+    const { app, dialog } = await openViewer(api, file.id, "&m=c-2");
+    await waitFor(() => expect(panel()).toBeTruthy());
+    expect(comments(dialog).getAttribute("aria-pressed")).toBe("true");
+    await waitFor(() => expect(pins()[1]?.classList.contains("mf-pin--on")).toBe(true));
+    app.unmount();
+    cleanup();
+    // The file's own page was a picture's page: its address goes to the Drive's viewer, at the comment.
+    const again = await renderApp(`/org/${ORG_ID}/drive/${file.id}?m=c-1`, { api });
+    await settle(10);
+    await waitFor(() => expect(again.router.state.location.pathname).toBe(`/org/${ORG_ID}/drive`));
+    expect(again.router.state.location.search).toMatchObject({ artifact: file.id, m: "c-1" });
+    await waitFor(() => expect(screen().getByRole("dialog", { name: "banner.png" })).toBeTruthy());
+    await waitFor(() => expect(panel()).toBeTruthy());
+  });
+
+  test("a file that isn't a picture, a video or a PDF has no Comentários", async () => {
+    const api = createFakeApi(seedState());
+    const zip = await api.artifacts.upload(ORG_ID, new File([new Uint8Array([80, 75, 3, 4])], "notas.zip"));
+    await renderApp(`/org/${ORG_ID}/drive?artifact=${zip.id}`, { api });
+    await settle(8);
+    const dialog = within(screen().getByRole("dialog", { name: "notas.zip" }));
+    expect(dialog.queryByRole("button", { name: /^Comentários/ })).toBeNull();
+    expect(dialog.queryByRole("button", { name: "Comentar" })).toBeNull();
   });
 });
 
-describe("Resolver in a picture's conversation", () => {
+describe("Resolver in a picture's comments", () => {
   test("a pinned comment has Resolver; resolved, it says who and when, and Reabrir puts it back", async () => {
-    const comments: Comment[] = [
+    const list: Comment[] = [
       ...THREE,
       // About the picture, with no place in it: nothing to resolve.
       { id: "c-plain", by: joao, body: "Ficou ótima.", selection: { label: "banner.png" } },
     ];
-    const { api, state, file } = await pictureWithTalk({ comments });
-    await openPage(api, file.id);
-    const talk = await waitFor(() => {
-      const open = panel();
-      if (!open) throw new Error("the conversation isn't open yet");
-      return open;
-    });
+    const { api, state, file } = await pictureWithTalk({ comments: list });
+    const { dialog } = await openViewer(api, file.id);
+    const talk = await openComments(dialog);
     const row = async (id: string) =>
       within(
         await waitFor(() => {
@@ -379,12 +408,8 @@ describe("Resolver in a picture's conversation", () => {
 
   test("a message about part of the picture has its line; a click opens its pin", async () => {
     const { api, file } = await pictureWithTalk({ comments: THREE });
-    await openPage(api, file.id);
-    const talk = await waitFor(() => {
-      const open = panel();
-      if (!open) throw new Error("the conversation isn't open yet");
-      return open;
-    });
+    const { dialog } = await openViewer(api, file.id);
+    const talk = await openComments(dialog);
     const line = await waitFor(() =>
       within(talk).getByRole("button", { name: "Mostrar Área 2 (na imagem) no arquivo" }),
     );
@@ -395,81 +420,9 @@ describe("Resolver in a picture's conversation", () => {
   });
 });
 
-describe("a picture in the viewer", () => {
-  /** The viewer's picture has loaded at its size: fitted, its box placed, the overlay with it. */
-  const load = async (dialog: HTMLElement) => {
-    const img = dialog.querySelector<HTMLImageElement>(".izoom__img");
-    if (!img) throw new Error("no picture in the viewer");
-    Object.defineProperty(img, "naturalWidth", { value: 1200 });
-    Object.defineProperty(img, "naturalHeight", { value: 800 });
-    await act(async () => fireEvent.load(img));
-    await settle(2);
-  };
-
-  test("Comentar and Conversa N in its header, its open comments' pins over it; Comentar opens its page", async () => {
-    const { api, file } = await pictureWithTalk({ comments: THREE });
-    const app = await renderApp(`/org/${ORG_ID}/drive?artifact=${file.id}`, { api });
-    await settle(8);
-    const dialog = screen().getByRole("dialog", { name: "banner.png" });
-    const actions = within(dialog.querySelector(".ac-details__actions") as HTMLElement);
-    await waitFor(() => expect(actions.getByRole("button", { name: "Comentar" })).toBeTruthy());
-    expect(actions.getByRole("button", { name: /^Conversa/ }).textContent).toBe("Conversa3");
-    await load(dialog);
-    const over = await waitFor(() => dialog.querySelector(".izoom__overlay") as HTMLElement);
-    await waitFor(() =>
-      expect([...over.querySelectorAll(".mf-pin")].map((p) => p.getAttribute("aria-label"))).toEqual([
-        "Comentário 1 de João",
-        "Comentário 2 de Ada",
-      ]),
-    );
-    // The viewer has no conversation beside it: the words show on hover, with where a click goes.
-    const first = over.querySelector(".mf-pin") as HTMLElement;
-    expect(first.getAttribute("title")).toBeNull();
-    await act(async () => fireEvent.pointerEnter(first));
-    expect(over.querySelector(".mf-peek")?.textContent).toContain("O título está cortado aqui.");
-    expect(over.querySelector(".mf-peek")?.textContent).toContain("Clique para abrir na conversa");
-
-    await click(actions.getByRole("button", { name: "Comentar" }));
-    await settle(8);
-    expect(app.router.state.location.pathname).toBe(`/org/${ORG_ID}/drive/${file.id}`);
-    expect(app.router.state.location.search).toMatchObject({ comment: true });
-    expect(screen().queryByRole("dialog", { name: "banner.png" })).toBeNull();
-    await waitFor(() =>
-      expect(
-        within(screen().getByRole("toolbar", { name: "Ferramentas" }))
-          .getByRole("button", { name: "Comentar" })
-          .getAttribute("aria-pressed"),
-      ).toBe("true"),
-    );
-  });
-
-  test("a pin in the viewer opens the page at its comment", async () => {
-    const { api, file } = await pictureWithTalk({ comments: THREE });
-    const app = await renderApp(`/org/${ORG_ID}/drive?artifact=${file.id}`, { api });
-    await settle(8);
-    const dialog = screen().getByRole("dialog", { name: "banner.png" });
-    await load(dialog);
-    const pin = await waitFor(() => dialog.querySelector(".izoom__overlay .mf-pin") as HTMLElement);
-    await click(pin);
-    await settle(8);
-    expect(app.router.state.location.pathname).toBe(`/org/${ORG_ID}/drive/${file.id}`);
-    expect(app.router.state.location.search).toMatchObject({ m: "c-1" });
-  });
-
-  test("a file that isn't a picture, a video or a PDF has neither", async () => {
-    const api = createFakeApi(seedState());
-    const zip = await api.artifacts.upload(ORG_ID, new File([new Uint8Array([80, 75, 3, 4])], "notas.zip"));
-    await renderApp(`/org/${ORG_ID}/drive?artifact=${zip.id}`, { api });
-    await settle(8);
-    const dialog = within(screen().getByRole("dialog", { name: "notas.zip" }));
-    expect(dialog.queryByRole("button", { name: "Comentar" })).toBeNull();
-    expect(dialog.queryByRole("button", { name: /^Conversa/ })).toBeNull();
-  });
-});
-
 describe("a picture posted in a chat", () => {
-  async function postedIn(comments: Comment[], count = comments.length) {
-    const made = await pictureWithTalk({ comments, count });
+  async function postedIn(list: Comment[], count = list.length) {
+    const made = await pictureWithTalk({ comments: list, count });
     made.state.messages.push({
       id: "m-picture",
       channelId: ENG_ID,
@@ -487,14 +440,17 @@ describe("a picture posted in a chat", () => {
   }
   const row = () => document.querySelector(`article[data-message-id="m-picture"]`) as HTMLElement;
 
-  test("once it has comments: who commented and 3 comentários na imagem under it; a press opens its page", async () => {
-    const { app, file } = await postedIn(THREE);
+  test("once it has comments: who commented and 3 comentários na imagem; a press opens them in the viewer", async () => {
+    const { app } = await postedIn(THREE);
     const line = await waitFor(() => row().querySelector(".mf-chatline") as HTMLElement);
     expect(line.querySelector("b")?.textContent).toBe("3 comentários na imagem");
     expect(line.classList.contains("thread-line")).toBe(true);
     await click(line);
     await settle(8);
-    expect(app.router.state.location.pathname).toBe(`/org/${ORG_ID}/drive/${file.id}`);
+    // The chat stays; the viewer opens over it with the comments open.
+    expect(app.router.state.location.pathname).toBe(`/org/${ORG_ID}/c/${ENG_ID}`);
+    expect(screen().getByRole("dialog", { name: "banner.png" })).toBeTruthy();
+    await waitFor(() => expect(panel()).toBeTruthy());
   });
 
   test("one comment is said in the singular; none, no line", async () => {

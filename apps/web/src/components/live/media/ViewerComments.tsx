@@ -12,7 +12,7 @@ import { useOrg } from "@/components/org-context";
 import { ChannelSkeleton } from "@/pages/ChannelPage";
 import { ThreadPage } from "@/pages/ThreadPage";
 import type { LiveAskRequest } from "../editor";
-import { useFileAgent, useFileTalkLive } from "../FileConversation";
+import { TalkGrip, useFileAgent, useFileTalkLive } from "../FileConversation";
 import { FileAgentContext, type FileTalk, FileTalkContext, LiveAskContext, takeRevealOnOpen } from "../talk";
 import { DraftMark } from "./DraftMark";
 import { MediaPins } from "./MediaPins";
@@ -111,6 +111,9 @@ export function ViewerComments({
   const [pageCount, setPageCount] = useState(0);
   const [prefill, setPrefill] = useState<{ text: string; key: number } | null>(null);
   const video = useRef<VideoHandle | null>(null);
+  // The viewer's body the conversation is a column of: its handle sets the column's width there.
+  const [body, setBody] = useState<HTMLElement | null>(null);
+  const placeGrip = useCallback((el: HTMLElement | null) => setBody(el?.parentElement ?? null), []);
 
   // The draft's picture goes with it.
   useEffect(() => {
@@ -384,18 +387,29 @@ export function ViewerComments({
     const link = (e.target as HTMLElement).closest("a[href]");
     if (link && link.getAttribute("target") !== "_blank") onLeave();
   };
+  // Its left edge sizes it, as a live file's conversation does (the same width, kept per person).
   const panel = open ? (
-    <aside
-      className="viewer-talk"
-      aria-label={t(`live.conversation.title.${media}` as "live.conversation.title.file")}
-      onClickCapture={onClickCapture}
-    >
-      {talkRef?.rootId ? (
-        <ThreadPage threadId={talkRef.rootId} focusMessageId={jump} onClose={() => onOpen(false)} escInside headless />
-      ) : (
-        <ChannelSkeleton thread panel />
-      )}
-    </aside>
+    <>
+      {body && <TalkGrip work={body} className="lf-talk-grip--viewer" />}
+      <aside
+        ref={placeGrip}
+        className="viewer-talk"
+        aria-label={t(`live.conversation.title.${media}` as "live.conversation.title.file")}
+        onClickCapture={onClickCapture}
+      >
+        {talkRef?.rootId ? (
+          <ThreadPage
+            threadId={talkRef.rootId}
+            focusMessageId={jump}
+            onClose={() => onOpen(false)}
+            escInside
+            headless
+          />
+        ) : (
+          <ChannelSkeleton thread panel />
+        )}
+      </aside>
+    </>
   ) : null;
 
   return (
