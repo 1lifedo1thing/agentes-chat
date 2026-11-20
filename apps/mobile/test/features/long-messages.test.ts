@@ -23,8 +23,10 @@ describe("long messages on the phone", () => {
     expect(screen).toMatch(
       /open: \(id\) => \{\s*setOpened\(\(s\) => new Set\(s\)\.add\(id\)\);\s*if \(atEndRef\.current\) setReadHold\(true\);/,
     );
-    // It grows down from the fold, at once with Reduce Motion, and the reader's screen reader goes to the words.
-    expect(clip).toContain("layout={tapped && !reduced ? REVEAL : undefined}");
+    // It opens at once, never with a layout transition: inside the list an animated height left the words' frame at
+    // the fold under a bubble already as tall as the whole words. The reader's screen reader goes to the words.
+    expect(clip).not.toContain("layout=");
+    expect(clip).not.toContain("<Animated.View");
     expect(clip).toContain('AccessibilityInfo.sendAccessibilityEvent(words.current, "focus")');
     // A fade, never an ellipsis: no line count cuts the words.
     expect(clip).not.toContain("numberOfLines");
