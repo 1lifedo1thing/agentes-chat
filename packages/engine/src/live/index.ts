@@ -14,8 +14,10 @@ export {
   type LiveAssetFile,
   type LiveAssetOrigin,
   listAssets,
+  MARK_PICTURE_BYTES,
   type PictureFile,
   putAsset,
+  putMarkPicture,
   readPictureFile,
 } from "./assets";
 export type { PresencePeer } from "./awareness";
@@ -41,9 +43,21 @@ export {
   type LiveRef,
   liveRefFor,
   liveRefLine,
+  isPinned,
   liveRefOf,
+  markWords,
   openFileConversation,
 } from "./conversation";
+export {
+  COMMENT_ON_FILE,
+  type CommentToolDeps,
+  createCommentToolSource,
+  isMediaConversation,
+  LOOK_AT_COMMENT,
+  RESOLVE_COMMENT,
+} from "./comment-tools";
+export { type ResolveActor, type ResolvedMark, resolveComment, resolvedOf } from "./resolve";
+export { isMediaKind, isTalkKind, MEDIA_KINDS, type MediaKind, mediaOfType, type TalkKind, talkKindOf } from "./media";
 export { createLiveFile } from "./create";
 export {
   createLiveDocs,
