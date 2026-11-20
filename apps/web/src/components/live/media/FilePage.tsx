@@ -14,7 +14,11 @@ export function FilePage(props: {
   onSearch: (patch: Partial<LiveFileSearch>) => void;
 }) {
   const { org } = useOrg();
-  const artifact = useArtifact(org.id, props.fileId).data;
+  const query = useArtifact(org.id, props.fileId);
+  const artifact = query.data;
   const media = mediaKindOfArtifact(artifact);
-  return media && artifact ? <MediaFilePage {...props} media={media} /> : <LiveFilePage {...props} />;
+  if (media && artifact) return <MediaFilePage {...props} media={media} />;
+  // Until the file is known, neither page: a picture would open a live file's connection for nothing.
+  if (!artifact && query.isPending) return <div className="lf-page lf-page--empty" aria-busy="true" />;
+  return <LiveFilePage {...props} />;
 }

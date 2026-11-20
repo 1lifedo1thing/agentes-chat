@@ -50,11 +50,18 @@ export function ViewerCommentButtons({ artifactId }: { artifactId: string }) {
   if (!media) return null;
   return (
     <>
-      <Button size="sm" variant="ghost" icon="comment" onClick={() => go({ comment: true })}>
-        {t("live.canvas.tools.comment")}
+      {/* Like the viewer's other actions: their words go on a narrow screen, their icon and name stay. */}
+      <Button
+        size="sm"
+        variant="ghost"
+        icon="comment"
+        title={t("live.canvas.tools.comment")}
+        onClick={() => go({ comment: true })}
+      >
+        <span className="artifact-action__label">{t("live.canvas.tools.comment")}</span>
       </Button>
-      <Button size="sm" variant="ghost" icon="message" onClick={() => go()}>
-        {t("live.conversation.button")}
+      <Button size="sm" variant="ghost" icon="message" title={t("live.conversation.button")} onClick={() => go()}>
+        <span className="artifact-action__label">{t("live.conversation.button")}</span>
         {count > 0 && <CountChip size="sm">{count}</CountChip>}
       </Button>
     </>
