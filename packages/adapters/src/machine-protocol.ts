@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 73;
+export const MACHINE_PROTOCOL_VERSION = 74;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -687,6 +687,13 @@ export const ANTIGRAVITY_MAC_PROTOCOL = 68;
  * installed now, checks it on the phone). Older runners answer `bad_request`: the server asks none of them.
  */
 export const PHONE_REPAIR_PROTOCOL = 73;
+/**
+ * A code session's terminal (ADR 0208): `stream.open` of a terminal may carry `cwd`, a folder inside the agent's own
+ * (relative to it, the session's worktree), where the shell starts. One that isn't there starts it in the agent's
+ * folder; one that leaves the agent's folder is refused. The server sends `cwd` to no older runner, which opens the
+ * terminal in the agent's folder.
+ */
+export const TERMINAL_CWD_PROTOCOL = 74;
 /**
  * From this protocol on, the runner sends `room.freed` once there is room again after it refused a turn (`no_slot`): a
  * turn ended there, or its memory came back over the agents' floor. The server asks its line again at once; an older
@@ -1658,7 +1665,8 @@ export const STREAM_CLOSE = {
  */
 export type StreamRequest =
   | { kind: "desktop"; mode: DesktopMode }
-  | { kind: "terminal"; cols: number; rows: number }
+  /** `cwd` (`TERMINAL_CWD_PROTOCOL`): where the shell starts, a folder relative to the agent's own (ADR 0208). */
+  | { kind: "terminal"; cols: number; rows: number; cwd?: string }
   /** A phone's screen (`PHONES_PROTOCOL`): `stream.open` carries the phone itself as `phone`, its holder the person. */
   | { kind: "phone"; mode: DesktopMode; phoneId: string };
 
@@ -1694,6 +1702,11 @@ export interface StreamHello {
 export type StreamControl =
   | { type: "resize"; cols: number; rows: number }
   | { type: "exit"; code: number | null }
+  /**
+   * Server → viewer, once a terminal is ready (ADR 0208): its computer is too old for the folder it was asked to start
+   * in (`TERMINAL_CWD_PROTOCOL`), so the shell started in the agent's folder.
+   */
+  | { type: "cwd_ignored" }
   | { type: "mode"; mode: DesktopMode }
   /** Protocol 49: a browser view's frame arrived (server → runner), or a phone's picture was drawn (viewer → runner). */
   | { type: "ack" }
@@ -2156,8 +2169,12 @@ export type WireBrainEvent =
   | { type: "answer"; text: string }
   /** Protocol 46: Fast failed (`message`: the provider's words) and this turn answered at standard speed. */
   | { type: "speed_fallback"; message: string }
-  /** A call the brain starts on its own (Claude Code's Read, Bash, Task): its `tool_call` follows once it ended. */
-  | { type: "tool_started"; id: string; name: string }
+  /**
+   * A call the brain starts on its own (Claude Code's Read, Bash, Task): its `tool_call` follows once it ended.
+   * `input`: what it was given, masked (a code session shows the call's line while it runs, ADR 0208); an older runner
+   * sends none, an older server drops it.
+   */
+  | { type: "tool_started"; id: string; name: string; input?: unknown }
   /**
    * A file a tool of the brain's own made (Codex's image generation), kept in the agent's folder (`path`, relative
    * to it): the server sends it to the Drive and its card goes with the reply. An older server drops the event.
@@ -3725,7 +3742,12 @@ export function parseBrainEvent(v: unknown): WireBrainEvent | null {
       return { type: "speed_fallback", message: (isString(v.message) ? v.message : "").slice(0, BRAIN_LIMITS.message) };
     case "tool_started":
       return isString(v.id) && isString(v.name)
-        ? { type: "tool_started", id: v.id.slice(0, 128), name: v.name.slice(0, BRAIN_LIMITS.toolName) }
+        ? {
+            type: "tool_started",
+            id: v.id.slice(0, 128),
+            name: v.name.slice(0, BRAIN_LIMITS.toolName),
+            ...(v.input !== undefined ? { input: cutJson(v.input, BRAIN_LIMITS.toolText) } : {}),
+          }
         : null;
     case "file":
       return isString(v.path) && v.path.length > 0 && v.path.length <= 1024 ? { type: "file", path: v.path } : null;

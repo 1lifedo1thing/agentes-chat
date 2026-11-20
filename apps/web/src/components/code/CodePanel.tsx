@@ -34,8 +34,11 @@ export function CodePanel({ session }: { session: CodeSession }) {
   const dir = useDirectory(org.id);
   const agent = dir.agentById.get(session.agentId) ?? null;
   const [tab, setTabState] = useState<CodeTab>(readTab);
+  // The shell lives on while another tab shows: once opened, the terminal stays mounted, only hidden.
+  const [shellOpened, setShellOpened] = useState(tab === "terminal");
   const setTab = (next: CodeTab) => {
     setTabState(next);
+    if (next === "terminal") setShellOpened(true);
     try {
       localStorage.setItem(TAB_KEY, next);
     } catch {}
@@ -74,12 +77,14 @@ export function CodePanel({ session }: { session: CodeSession }) {
       <div className="code-pbody">
         {tab === "diff" && <DiffPane session={session} />}
         {tab === "screen" && agent && <CodeScreen agent={agent} />}
-        {tab === "terminal" &&
-          (session.worktree.state === "ready" ? (
+        {shellOpened && session.worktree.state === "ready" && (
+          <div className="code-pbody__keep" hidden={tab !== "terminal"}>
             <TerminalPane orgId={org.id} agentId={session.agentId} sessionId={session.id} />
-          ) : (
-            <p className="code-empty">{t("codeSessions.panel.notReady")}</p>
-          ))}
+          </div>
+        )}
+        {tab === "terminal" && session.worktree.state !== "ready" && (
+          <p className="code-empty">{t("codeSessions.panel.notReady")}</p>
+        )}
       </div>
       {tab !== "terminal" && agent && (
         <div className="code-hz__row">
