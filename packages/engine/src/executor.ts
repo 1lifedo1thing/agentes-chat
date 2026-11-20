@@ -138,6 +138,7 @@ import {
   triageSnapshot,
 } from "./catch-up-triage";
 import { REACT_TOOL } from "./chat-tools";
+import { type CliToolStep, type CliToolSummary, cliToolShown, cliToolStep, cliToolSummary } from "./cli-tools";
 import {
   kickRoomQueue,
   publishQueueChanged,
@@ -2282,8 +2283,11 @@ async function executeRunInner(
     // message it reacts to, looking a tool up is how our tools load (`find_tools`, a big connector's own, a
     // `use_tool` that named none), the line before slow work is a message already (`say_now`, ADR 0207), and the runner
     // asking again about a command waiting on a person is that command's line (`promptPoll`): none is counted, as the
-    // apps leave them out of the opened block (`UNLISTED`).
-    const name = sql<string>`${agentRunSteps.data}->>'name'`;
+    // apps leave them out of the opened block (`UNLISTED`). In a code session the brain's own calls are steps of their
+    // own (`cliTool`, ADR 0208), counted here by their CLI's name.
+    const cliTool = sql`${agentRunSteps.kind} = 'context' and ${agentRunSteps.data} ? 'cliTool'`;
+    const cliName = sql`${agentRunSteps.data}->'cliTool'->>'name'`;
+    const name = sql<string>`case when ${cliTool} then ${cliName} else ${agentRunSteps.data}->>'name' end`;
     const screen = sql`substring(${name} from '^(?:mcp__agentes__)?(browser|desktop)_')`;
     const app = sql`coalesce(${agentRunSteps.data}->>'service', ${agentRunSteps.data}->>'connector', ${screen}, ${name})`;
     const tools = await tx
@@ -2293,12 +2297,13 @@ async function executeRunInner(
         service: sql<string | null>`min(${agentRunSteps.data}->>'service')`,
         serviceIcon: sql<string | null>`min(${agentRunSteps.data}->>'serviceIcon')`,
         n: count(),
+        own: sql<number>`(count(*) filter (where ${cliTool}))::int`,
       })
       .from(agentRunSteps)
       .where(
         and(
           eq(agentRunSteps.runId, run.id),
-          eq(agentRunSteps.kind, "tool_call"),
+          or(eq(agentRunSteps.kind, "tool_call"), sql`(${cliTool})`),
           sql`coalesce(${name}, '') !~ ${UNCOUNTED_TOOLS}`,
           sql`(${agentRunSteps.data}->>'name' is distinct from ${PERMISSION_TOOL} or ${agentRunSteps.data}->'input'->>'request_id' is null)`,
         ),
@@ -2309,9 +2314,12 @@ async function executeRunInner(
     const besideScreens = tools.length > 1 ? tools.filter((t) => !SCREEN_TOOL.test(t.name)) : [];
     const leftover = besideScreens.length === 1 && besideScreens[0]?.n === 1 ? besideScreens[0] : null;
     const leftoverCall = leftover ? await loneCall(tx, run.id, leftover.name) : {};
+    // The brain's own calls in a code session: its work shows whoever turned the summary off (ADR 0208).
+    const cliCalls = tools.reduce((n, t) => n + Number(t.own), 0);
     const work = {
       steps: tools.reduce((n, t) => n + t.n, 0),
       durationMs: Math.max(0, Date.now() - run.createdAt.getTime()),
+      ...(cliCalls > 0 ? { cliCalls } : {}),
       ...(tools.length === 1 && tools[0]?.n === 1 ? await loneCall(tx, run.id, tools[0].name) : {}),
       calls: tools.slice(0, WORK_CALLS).map((t) => ({
         name: t.name,
@@ -5155,17 +5163,36 @@ async function executeRunInner(
       const ownExecutedNow = () => executedNow.filter((c) => !turnTools.some((t) => t.name === c.name)).length;
       /** Files the brain's own tools made this turn (`file` events), on their way to the Drive. */
       const sharing: Promise<void>[] = [];
-      /** Its own calls whose step line went out as they started (`tool_started`): not again as they end. */
-      const stepTold = new Set<string>();
-      /** A call of its own (not ours through the bridge, which says its step as it starts) is the step line now. */
-      const ownStep = (call: { id: string; name: string }) => {
+      /** Its own calls whose step line went out as they started (`tool_started`), and when: not again as they end. */
+      const stepTold = new Map<string, number>();
+      /**
+       * A code session reads like its CLI in a terminal (ADR 0208): each call of the brain's own is a line of the run's
+       * work, live and on its trail. Elsewhere they stay off the trail (ADR 0032: a write for every call).
+       */
+      const cliLines = turnPlan.kind !== "model" && channelRow?.kind === "code";
+      /** The folder its CLI works in, relative to the agent's own (the session's worktree): its paths are there. */
+      const cliFolder = turnPlan.session?.cwd ?? "";
+      /** A call of its own that is a line of its work (ours through the bridge have steps of their own). */
+      const cliLine = (name: string) => cliLines && cliToolShown(name) && !turnTools.some((t) => t.name === name);
+      /**
+       * A call of its own (not ours through the bridge, which says its step as it starts) is the step line now: as it
+       * starts, else once it ended. In a code session its end is said too, with what it came to (ADR 0208).
+       */
+      const ownStep = (call: { id: string; name: string; input?: unknown; result?: ToolResult }, ended = false) => {
         if (run.background || turnTools.some((t) => t.name === call.name)) return;
-        const said = takeStepWords(run.id);
+        const told = ended && stepTold.has(call.id);
+        const cli = cliLine(call.name)
+          ? cliToolSummary(call.name, call.input, ended ? (call.result ?? null) : null, cliFolder)
+          : null;
+        if (told && !cli) return;
+        const said = told ? undefined : takeStepWords(run.id);
         void publishChannelEvent(deps.pubsub, {
           type: "agent.step",
           ...where,
           tool: call.name,
           ...(said ? { said } : {}),
+          ...(cli ? { toolUseId: call.id, cli } : {}),
+          ...(cli && ended ? { ended: true as const, ...(call.result?.isError ? { failed: true as const } : {}) } : {}),
         }).catch(() => {});
       };
       // Context budget: a request that wouldn't fit the model's window sends old tool results as a
@@ -5274,14 +5301,23 @@ async function executeRunInner(
             },
             ...(deps.planLimitGraceMs !== undefined ? { limitGraceMs: deps.planLimitGraceMs } : {}),
             onStarted: (call) => {
-              stepTold.add(call.id);
+              stepTold.set(call.id, Date.now());
               ownStep(call);
             },
             onExecuted: (call) => {
               // Its line on the way (`say_now`) is talk, not work: a turn that fails after it did nothing to keep.
               if (!isSayNow(call.name)) executedNow.push(call);
-              // A brain that tells its calls only once they ended (Codex, an older runner) says the step now.
-              if (!stepTold.delete(call.id)) ownStep(call);
+              // A brain that tells its calls only once they ended (Codex, an older runner) says the step now; in a code
+              // session the end of one told as it started is said too.
+              ownStep(call, true);
+              const startedAt = stepTold.get(call.id);
+              stepTold.delete(call.id);
+              // In a code session each call of its own is a step, where its reply's work lists it (ADR 0208).
+              if (cliLine(call.name)) {
+                const ms = startedAt === undefined ? undefined : Date.now() - startedAt;
+                const cliTool = cliToolStep(call, { cwd: cliFolder, ...(ms !== undefined ? { ms } : {}) });
+                later(() => addRunStep(db, run, "context", { cliTool }));
+              }
               // The text it streams next is another model call's: never one reply with what it wrote before.
               deltas.toolEnded();
             },
@@ -6675,8 +6711,8 @@ async function thinkOnce(
     limitGraceMs?: number;
     /** A call the brain already ran (through the bridge, or its own tools). */
     onExecuted?(call: { id: string; name: string; input: unknown; result?: ToolResult }): void;
-    /** A call of its own the brain started (`tool_started`): its `onExecuted` follows. */
-    onStarted?(call: { id: string; name: string }): void;
+    /** A call of its own the brain started (`tool_started`; a newer runner says its input): `onExecuted` follows. */
+    onStarted?(call: { id: string; name: string; input?: unknown }): void;
     /** A file a tool of the brain's own made in the agent's folder (`file`). */
     onFile?(path: string): void;
     /** Messages handed to the turn mid-turn that it read (live steering). */
@@ -6987,12 +7023,34 @@ function closingSummary(t: Transcript, anythingPosted: boolean): string {
 /** The screens' tools (`browser_*`, `desktop_*`), as the work summary groups them. */
 const SCREEN_TOOL = /^(?:mcp__agentes__)?(?:browser|desktop)_/;
 
-async function loneCall(tx: Executor, runId: string, name: string): Promise<{ ms?: number; failed?: true }> {
+async function loneCall(
+  tx: Executor,
+  runId: string,
+  name: string,
+): Promise<{ ms?: number; failed?: true; cli?: CliToolSummary }> {
   const steps = await tx
     .select({ kind: agentRunSteps.kind, data: agentRunSteps.data, createdAt: agentRunSteps.createdAt })
     .from(agentRunSteps)
-    .where(and(eq(agentRunSteps.runId, runId), inArray(agentRunSteps.kind, ["tool_call", "tool_result"])))
+    .where(
+      and(
+        eq(agentRunSteps.runId, runId),
+        or(
+          inArray(agentRunSteps.kind, ["tool_call", "tool_result"]),
+          sql`(${agentRunSteps.kind} = 'context' and ${agentRunSteps.data} ? 'cliTool')`,
+        ),
+      ),
+    )
     .orderBy(agentRunSteps.seq);
+  // A call of the brain's own in a code session (ADR 0208): its step has its line, its time and how it went.
+  const own = steps.find((s) => s.kind === "context" && (s.data.cliTool as CliToolStep | undefined)?.name === name);
+  if (own) {
+    const { verb, target, about, meta, ok, ms } = own.data.cliTool as CliToolStep;
+    return {
+      ...(typeof ms === "number" ? { ms } : {}),
+      ...(ok === false ? { failed: true as const } : {}),
+      cli: { verb, ...(target ? { target } : {}), ...(about ? { about } : {}), ...(meta ? { meta } : {}) },
+    };
+  }
   const call = steps.find((s) => s.kind === "tool_call" && s.data.name === name);
   const result = call && steps.find((s) => s.kind === "tool_result" && s.data.toolUseId === call.data.toolUseId);
   if (!call || !result) return {};

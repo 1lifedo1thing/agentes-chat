@@ -207,7 +207,7 @@ test("parser: partial deltas, our tool calls with results, usage, and the final 
         },
       }),
     ).events,
-  ).toEqual([{ type: "tool_started", id: "t2", name: "Bash" }]);
+  ).toEqual([{ type: "tool_started", id: "t2", name: "Bash", input: { command: "ls" } }]);
   const results = p.push(
     line({
       type: "user",
@@ -319,7 +319,7 @@ test("parser: a streamed message said again in a later assistant event (with its
       { type: "tool_use", id: "t1", name: "Bash", input: { command: "ls" } },
     ]),
     // Its own call is told as it starts (the step line), ours through the bridge never.
-  ).toEqual([{ type: "tool_started", id: "t1", name: "Bash" }]);
+  ).toEqual([{ type: "tool_started", id: "t1", name: "Bash", input: { command: "ls" } }]);
   // The next API message, never streamed (no partials for it): its text comes whole.
   expect(
     p.push(

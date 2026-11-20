@@ -1,4 +1,5 @@
 import type { ActiveRun, BrowserProfileWait, ChannelEvent, Message, RunStatus } from "../api/types";
+import { type CliLine, cliLineOf } from "../lib/cli-tools";
 import { isMediaAfterReply } from "../lib/media";
 import { NO_AI } from "../lib/no-ai";
 
@@ -199,6 +200,8 @@ export type LiveWork =
       requestId?: string;
       /** A rule ("Aprovar sempre") let it run without asking: whose person, a reads one or not. */
       autoApproved?: { by: string | null; reads: boolean };
+      /** A call of the computer brain's own in a code session (`agent.step`, ADR 0208): its line, as in a terminal. */
+      cli?: CliLine;
     };
 
 export interface LiveCode {
@@ -300,6 +303,14 @@ export interface AgentStepEvent {
   agentId: string;
   tool: string;
   said?: string | null;
+  /**
+   * In a code session (ADR 0208), the call's line in the work: its id and what it does (`cli`), as it starts and again
+   * once it ended (`ended`, `failed`), then with what it came to.
+   */
+  toolUseId?: string;
+  cli?: CliLine | null;
+  ended?: boolean;
+  failed?: boolean;
 }
 
 export interface StreamsState {
@@ -582,8 +593,37 @@ function applyEvent(state: StreamsState, event: StreamEvent): StreamsState {
       });
     }
     case "agent.step": {
-      if (state.finished[event.runId] || !state.runs[event.runId]) return state;
-      return upsert(state, event, { step: { tool: event.tool, ...(event.said ? { said: event.said } : {}) } });
+      const current = state.runs[event.runId];
+      if (state.finished[event.runId] || !current) return state;
+      const step = { tool: event.tool, ...(event.said ? { said: event.said } : {}) };
+      // In a code session (ADR 0208) the call is a line of the work too: its start adds it, its end closes it.
+      const cli = cliLineOf(event.cli);
+      if (!cli || !event.toolUseId) return upsert(state, event, { step });
+      const work = current.work ?? [];
+      const at = work.findIndex((w) => w.kind === "call" && w.id === event.toolUseId);
+      const told = work[at];
+      if (told?.kind === "call") {
+        if (!event.ended) return state;
+        // Its end leaves the step line as it is: what it does next says so itself.
+        const ms = told.since !== undefined ? { ms: Math.max(0, Date.now() - told.since) } : {};
+        const closed: LiveWork = { ...told, cli, running: false, ...ms, ...(event.failed ? { failed: true } : {}) };
+        return upsert(state, event, { work: work.map((w, i) => (i === at ? closed : w)) });
+      }
+      // Its start, or its end when the brain tells its calls only once they ended (Codex).
+      const line: LiveWork = {
+        kind: "call",
+        id: event.toolUseId,
+        tool: event.tool,
+        connector: null,
+        detail: null,
+        code: null,
+        output: [],
+        running: !event.ended,
+        ...(event.ended ? {} : { since: Date.now() }),
+        ...(event.failed ? { failed: true } : {}),
+        cli,
+      };
+      return upsert(state, event, { step, work: [...work, line] });
     }
     case "agent.tool.output": {
       if (state.finished[event.runId]) return state;

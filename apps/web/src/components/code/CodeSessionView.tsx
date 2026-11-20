@@ -14,6 +14,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
+import { ToolsOpenContext } from "@/components/ToolCalls";
 import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
 import { CodePanel } from "./CodePanel";
@@ -74,7 +75,9 @@ function CodeConversation({ session }: { session: CodeSession }) {
   const thread = info.data;
   if (!thread) return <ChannelSkeleton thread panel />;
   return (
-    <ChannelPage
+    // The agent's work reads like a terminal there: every tool line in sight.
+    <ToolsOpenContext.Provider value={true}>
+      <ChannelPage
       channelId={thread.channelId}
       thread={thread}
       fallback={{
@@ -93,7 +96,8 @@ function CodeConversation({ session }: { session: CodeSession }) {
         openThread: false,
         task: true,
       }}
-    />
+      />
+    </ToolsOpenContext.Provider>
   );
 }
 

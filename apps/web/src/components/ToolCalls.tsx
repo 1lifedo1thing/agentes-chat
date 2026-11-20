@@ -8,6 +8,7 @@ import {
   useRun,
 } from "@agenteschat/client";
 import type { Activity, ActivityKind } from "@agenteschat/client/lib/activity";
+import { type CliLine, type CliVerb, cliMetaWords, cliVerbWord } from "@agenteschat/client/lib/cli-tools";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import {
   appKey,
@@ -45,7 +46,7 @@ import {
   type ToolBlockLine,
 } from "@agenteschat/ui";
 import type { TFunction } from "i18next";
-import { type ReactNode, useState } from "react";
+import { createContext, type ReactNode, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { CodePanel, formatBytes, OutputView } from "@/components/LiveCode";
@@ -141,8 +142,49 @@ export function useCallLogo() {
   };
 }
 
+/** A computer brain's own calls in a code session by what they did (ADR 0208): their icon on the line. */
+const CLI_ICON: Record<CliVerb, IconName> = {
+  read: "file",
+  search: "search",
+  edit: "edit",
+  write: "document",
+  run: "code",
+  fetch: "globe",
+  other: "plug",
+};
+
+/**
+ * A computer brain's own call in a code session as its terminal shows it (ADR 0208): its verb, what it worked on in
+ * mono, what it came to on the right; it opens on what it gave back (an edit's changed lines).
+ */
+function cliBlockLine(t: TFunction, locale: string, l: ToolLine, cli: CliLine): ToolBlockLine {
+  return {
+    key: l.key,
+    state: l.state,
+    logo: (
+      <span className="tool-logo" aria-hidden="true">
+        <Icon name={CLI_ICON[cli.verb]} size={14} />
+      </span>
+    ),
+    // While it runs, or stopped during it, as `toolPhrase` says ours: "Running".
+    label: cliVerbWord(t, cli.verb, l.state === "run" || l.state === "stop"),
+    target: cli.target ?? null,
+    hint: cli.about ?? null,
+    meta: cliMetaWords(t, cli.meta) ?? undefined,
+    time: l.ms !== null && l.state !== "run" ? formatLineTime(locale, l.ms) : undefined,
+    why: null,
+    detail: l.result ? (
+      <OutputView output={[{ stream: l.state === "fail" ? "stderr" : "stdout", text: l.result }]} />
+    ) : undefined,
+  };
+}
+
+/** The words of a line in the block's closed head: a computer's own call names what it works on too. */
+const headText = (line: ToolBlockLine) => (line.target ? `${line.label} ${line.target}` : line.label);
+
 /** A line of the block from the shared model: its phrase, time, open view (code, output, what it got and gave). */
 function blockLine(t: TFunction, locale: string, l: ToolLine, logo: ReactNode, personal = false) {
+  if (l.cli) return cliBlockLine(t, locale, l, l.cli);
   const lines = l.code ? l.code.source.split("\n").length : 0;
   const output = l.output ?? [];
   const label =
@@ -208,6 +250,12 @@ function useBlockItems(items: ToolItem[]): ToolBlockItem[] {
 }
 
 /**
+ * Whether the work blocks start open: a code session's conversation (ADR 0208) reads like a terminal, every line in
+ * sight; everywhere else they start closed.
+ */
+export const ToolsOpenContext = createContext(false);
+
+/**
  * The tools of a reply while it works (and kept after, `done`): one line saying what it does now, the apps'
  * logos and the steps, opening into every call; a single call is that call's own line. What it said between calls
  * is inside. A message it read on the way shows nothing here: that message says it ("Ada read it", `MessageReceipts`).
@@ -228,13 +276,16 @@ export function LiveTools({
   stopped?: boolean;
 }) {
   const { t, i18n } = useTranslation();
+  const openByDefault = useContext(ToolsOpenContext);
   const { org } = useOrg();
   const items = toolItemsLive(work, stopped || done);
   const blockItems = useBlockItems(items);
   const logo = useCallLogo();
   const calls = toolCalls(items);
-  // Done, its tools are the summary the person chose not to see (`showActivity`).
-  if (done && !showsActivity(org)) return null;
+  // Done, its tools are the summary the person chose not to see (`showActivity`); a code session's CLI work is the
+  // conversation itself, as in a terminal (ADR 0208).
+  const terminal = items.some((i) => i.kind === "call" && i.line.cli);
+  if (done && !showsActivity(org) && !terminal) return null;
   // A lone quick read that only fed the answer: no card, as if it called nothing (once done, what it said on the way
   // is in its reply).
   const quiet = quietWork(items);
@@ -260,13 +311,14 @@ export function LiveTools({
         time: total > 0 ? formatDuration(t, total) : undefined,
       }
     : {
-        text: blockLine(t, i18n.language, now, null).label,
+        text: headText(blockLine(t, i18n.language, now, null)),
         textKey: `${now.key}-${now.state}`,
         state: now.state,
         count: t("chat.work.steps", { count: calls }),
       };
   return (
     <ToolBlock
+      defaultOpen={openByDefault}
       logos={toolApps(items).map((a) => <span key={appKey(a)}>{logo(a)}</span>)}
       head={head}
       // Its own line is closed until clicked, as the block it stands for (code that runs shows when opened).
@@ -316,7 +368,7 @@ export function TaskStepsBlock({
   const head =
     working && now
       ? {
-          text: blockLine(t, i18n.language, now, null).label,
+          text: headText(blockLine(t, i18n.language, now, null)),
           textKey: `${now.key}-${now.state}`,
           state: now.state,
           count: t("chat.work.steps", { count: calls }),
@@ -355,7 +407,8 @@ export function SavedTools({
 }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
-  const [open, setOpen] = useState(false);
+  const openByDefault = useContext(ToolsOpenContext);
+  const [open, setOpen] = useState(openByDefault);
   const run = useRun(org.id, open ? runId : null);
   const logo = useCallLogo();
   const compact = workMeta(meta);
@@ -372,7 +425,8 @@ export function SavedTools({
   // its own cards show (where it browsed).
   // No `meta.work` (a reply saved before it): a block that loads the run's steps when opened, gone if it called none.
   const shown = compact ? workSteps(compact, onCard) : null;
-  if (shown === 0 || !showsActivity(org)) return null;
+  // A code session's CLI work shows whoever turned the summary off: it is the conversation (ADR 0208).
+  if (shown === 0 || !(showsActivity(org) || (compact?.cliCalls ?? 0) > 0)) return null;
   const calls = work ? toolCalls(items) : (shown ?? 0);
   const lone = savedOneLine(meta, onCard);
   // Its one call (beside the screens' on their cards) only fed the answer (`quietLine`): the reply says it. Time
@@ -415,6 +469,7 @@ export function SavedTools({
       : [];
   return (
     <ToolBlock
+      defaultOpen={openByDefault}
       logos={apps.map((a) => <span key={appKey(a)}>{logo(a)}</span>)}
       head={{
         text: calls > 0 ? t("chat.work.used", { count: calls }) : t("chat.work.block", agentGrammar(agentName)),

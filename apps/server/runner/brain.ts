@@ -539,12 +539,14 @@ export class ClaudeStreamParser {
           if (block.type === "tool_use") this.worked = true;
           if (block.type === "tool_use" && str(block.id) && str(block.name)) {
             this.tools.set(str(block.id), { name: str(block.name), input: block.input ?? {} });
-            // Ours run through the bridge, which tells the engine as they start.
+            // Ours run through the bridge, which tells the engine as they start. Its input goes too (masked on the
+            // way out): a code session shows the call's line while it runs (ADR 0208).
             if (!str(block.name).startsWith(OUR_TOOL_PREFIX))
               events.push({
                 type: "tool_started",
                 id: str(block.id),
                 name: str(block.name).slice(0, BRAIN_LIMITS.toolName),
+                input: cutInput(block.input ?? {}),
               });
           } else if (block.type === "text" && str(block.text) && !streamed) {
             // No partial messages (an older Claude Code): the whole text block at once.
@@ -1568,6 +1570,7 @@ export function runTurnOnProcess(
           input: redactDeep(e.input ?? {}, redact),
         };
       }
+      if (e.type === "tool_started" && e.input !== undefined) return { ...e, input: redactDeep(e.input, redact) };
       if (e.type === "done") return { ...e, text: redact(e.text) };
       if (e.type === "error") return { ...e, message: redact(e.message) };
       return e;

@@ -9,6 +9,7 @@ import type { BlockStateView } from "./block-state";
 import type { ChoicesView, PollView } from "./blocks";
 import type { BrowserHandoffView } from "./browser/handoff";
 import type { CalendarEventView, CalendarProposalView } from "./calendar";
+import type { CliToolSummary } from "./cli-tools";
 import type { FeedbackOfferView } from "./feedback-offers";
 import type { IssueActivityView, IssueView } from "./issues";
 import type { MachineTaskView } from "./machine-tasks";
@@ -262,6 +263,15 @@ export type ChannelEvent =
       agentId: string;
       tool: string;
       said?: string;
+      /**
+       * In a code session (ADR 0208), the call's line in the run's work: its id and what it does and on what (`cli`),
+       * as it starts and again once it ended (`ended`; `failed` when its result was an error), then with what it came
+       * to. The end of a call told as it started carries no words.
+       */
+      toolUseId?: string;
+      cli?: CliToolSummary;
+      ended?: true;
+      failed?: true;
     }
   /** What a computer command prints while it runs (throttled, ≤ 64 KB per call). */
   | {

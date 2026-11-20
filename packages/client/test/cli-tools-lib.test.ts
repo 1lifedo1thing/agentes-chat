@@ -1,0 +1,105 @@
+import { expect, test } from "bun:test";
+import { ptBR } from "@agenteschat/i18n";
+import i18next from "i18next";
+import { applyChannelEvent, emptyStreams } from "../src/index";
+import { cliLineOf, cliMetaWords } from "../src/lib/cli-tools";
+import { savedOneLine, toolItemsLive, waitStep, workFromSteps } from "../src/lib/work";
+
+/**
+ * A computer brain's own tool calls in a code session (ADR 0208): one line each, live and saved, as its terminal shows
+ * them.
+ */
+
+const i18n = i18next.createInstance();
+await i18n.init({ lng: "pt-BR", resources: { "pt-BR": { translation: ptBR } }, interpolation: { escapeValue: false } });
+const t = i18n.t;
+
+type Ev = Parameters<typeof applyChannelEvent>[1];
+const base = { channelId: "c1", threadId: "m1", runId: "r1", agentId: "ada" };
+const step = (toolUseId: string, tool: string, cli: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
+  ({ type: "agent.step", ...base, tool, toolUseId, cli, ...extra }) as Ev;
+/** The run's live row after these events. */
+const live = (events: Ev[]) =>
+  events.reduce(applyChannelEvent, applyChannelEvent(emptyStreams, { type: "agent.thinking", ...base } as Ev)).runs.r1;
+
+const read = { verb: "read", target: "src/app/router.ts" };
+
+test("its start adds a running line that the step line names", () => {
+  const started = live([step("t1", "Read", read, { said: "Vou ler o roteador" })]);
+  expect(started?.work).toMatchObject([{ kind: "call", id: "t1", tool: "Read", running: true, cli: read }]);
+  expect(waitStep(t, started?.work)).toBe("Lendo · router.ts…");
+});
+
+test("its end closes its line and leaves the step line's words", () => {
+  const started = step("t1", "Read", read, { said: "Vou ler o roteador" });
+  const ended = live([started, step("t1", "Read", read, { ended: true })]);
+  expect(ended?.work).toMatchObject([{ id: "t1", running: false, cli: read }]);
+  expect(ended?.step).toEqual({ tool: "Read", said: "Vou ler o roteador" });
+});
+
+test("a call told only once it ended is added ended, failed or not", () => {
+  const cli = { verb: "run", target: "bun test", meta: { passed: 3 } };
+  const ran = live([step("c1", "shell", cli, { ended: true, failed: true })]);
+  expect(ran?.work).toMatchObject([{ id: "c1", running: false, failed: true, cli }]);
+  expect(ran?.step).toEqual({ tool: "shell" });
+});
+
+test("each call is its own line, never folded with the one before", () => {
+  const readOf = (id: string, target: string) => step(id, "Read", { verb: "read", target }, { ended: true });
+  const items = toolItemsLive(live([readOf("a", "a.ts"), readOf("b", "b.ts")])?.work ?? []);
+  const lines = items.map((i) => (i.kind === "call" ? [i.line.count, i.line.cli?.target] : null));
+  expect(lines).toEqual([
+    [1, "a.ts"],
+    [1, "b.ts"],
+  ]);
+});
+
+test("saved, each of its own calls is a line with what it gave back", () => {
+  const at = "2026-11-20T10:00:00.000Z";
+  const edit = {
+    id: "e1",
+    name: "Edit",
+    verb: "edit",
+    target: "src/a.ts",
+    meta: { added: 2, removed: 1 },
+    ok: true,
+    output: "- a\n+ b",
+    ms: 40,
+  };
+  const bash = { id: "b1", name: "Bash", verb: "run", target: "bun test", ok: false };
+  const work = workFromSteps([
+    { seq: 1, kind: "context", data: { cliTool: edit }, createdAt: at },
+    { seq: 2, kind: "context", data: { steeredMessageIds: [] }, createdAt: at },
+    { seq: 3, kind: "context", data: { cliTool: bash }, createdAt: at },
+  ]);
+  expect(work.steps).toMatchObject([
+    { key: "cli-e1", tool: "Edit", failed: false, ms: 40, count: 1, result: "- a\n+ b", cli: { verb: "edit" } },
+    { key: "cli-b1", tool: "Bash", failed: true, ms: null, cli: { verb: "run", target: "bun test" } },
+  ]);
+  expect(work.steps[0]?.cli?.meta).toEqual({ added: 2, removed: 1 });
+});
+
+test("a reply's lone call of its own reads as its line before its steps load", () => {
+  const cli = { verb: "search", target: "parseRoute", meta: { found: 3 } };
+  const meta = { work: { steps: 1, durationMs: 900, ms: 120, cli, calls: [{ name: "Grep", n: 1 }] } };
+  expect(savedOneLine(meta)).toMatchObject({ tool: "Grep", state: "done", ms: 120, hint: null, cli });
+});
+
+test("what it came to, in words", () => {
+  expect(cliMetaWords(t, { added: 2, removed: 1 })).toBe("+2 −1");
+  expect(cliMetaWords(t, { added: 4 })).toBe("+4");
+  expect(cliMetaWords(t, { found: 3 })).toBe("3 lugares");
+  expect(cliMetaWords(t, { found: 1 })).toBe("1 lugar");
+  expect(cliMetaWords(t, { passed: 14, failed: 1 })).toBe("14 passaram · 1 falhou");
+  expect(cliMetaWords(t, { passed: 15, failed: 0 })).toBe("15 passaram");
+  expect(cliMetaWords(t, { exit: 2 })).toBe("saiu com 2");
+  expect(cliMetaWords(t, undefined)).toBeNull();
+});
+
+test("a line from the server is checked", () => {
+  expect(cliLineOf({ verb: "nope" })).toBeNull();
+  expect(cliLineOf({ verb: "run", target: " ", meta: { exit: -1, passed: 2 } })).toEqual({
+    verb: "run",
+    meta: { passed: 2 },
+  });
+});
