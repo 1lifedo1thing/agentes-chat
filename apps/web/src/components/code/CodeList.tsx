@@ -42,7 +42,9 @@ export function SessionState({ session }: { session: CodeSession }) {
   return (
     <span className="code-st code-st--ok">
       <Icon name="check" size={14} />
-      <span>{session.pr ? t("codeSessions.state.pr", { number: session.pr.number }) : t("codeSessions.state.idle")}</span>
+      <span>
+        {session.pr ? t("codeSessions.state.pr", { number: session.pr.number }) : t("codeSessions.state.idle")}
+      </span>
     </span>
   );
 }
