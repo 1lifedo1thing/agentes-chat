@@ -6148,16 +6148,16 @@ html:not([data-pointer]) .tr-ok:focus-visible {
 .channel__composer-skeleton-line {
   display: block;
   flex: 1;
-  min-height: var(--control-h-sm);
-  padding: calc((var(--control-h-sm) - 22px) / 2) var(--space-2);
-  line-height: 22px;
+  min-height: var(--composer-row);
+  padding: calc((var(--composer-row) - var(--composer-line)) / 2) var(--space-2);
+  line-height: var(--composer-line);
 }
 .channel__composer-skeleton-line::before {
   content: "\a0";
 }
 .channel__composer-skeleton-send.ac-skeleton {
-  width: var(--control-h-sm);
-  height: var(--control-h-sm);
+  width: var(--composer-row);
+  height: var(--composer-row);
   margin-left: auto;
   border-radius: var(--control-r-sm);
 }
@@ -9939,8 +9939,10 @@ html:not([data-pointer]) .newag__addrow:focus-visible {
   text-align: start;
   text-decoration: none;
   cursor: pointer;
-  /* Where its words and where it goes don't fit one line, the second goes under, whole. */
+  /* Where its words and where it goes don't fit one line, the second goes under, whole. Its icon leads its words by
+     the kit's icon gap. */
   flex-wrap: wrap;
+  column-gap: var(--icon-gap);
   row-gap: var(--space-1);
   transition:
     background-color var(--dur-base) var(--out),
