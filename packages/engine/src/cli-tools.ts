@@ -164,7 +164,11 @@ const SKILL_KEYS = ["skill", "name", "command"] as const;
  */
 export function workingPath(path: string, cwd = ""): string {
   const p = path.trim().replace(/\\/g, "/");
-  const folder = cwd.trim().replace(/\\/g, "/").replace(/^\.?\/+/, "").replace(/\/+$/, "");
+  const folder = cwd
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\.?\/+/, "")
+    .replace(/\/+$/, "");
   if (folder) {
     const at = p.lastIndexOf(`/${folder}/`);
     if (at >= 0) return p.slice(at + folder.length + 2) || ".";

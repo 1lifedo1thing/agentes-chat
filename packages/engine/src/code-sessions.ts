@@ -231,7 +231,12 @@ export async function codeSessionBrief(
     lines.push("Its worktree is still being prepared on your computer; nothing to change yet.");
   } else if (!own) {
     const team = await db
-      .select({ id: schema.agents.id, name: schema.agents.name, handle: schema.agents.handle, machineId: schema.agents.machineId })
+      .select({
+        id: schema.agents.id,
+        name: schema.agents.name,
+        handle: schema.agents.handle,
+        machineId: schema.agents.machineId,
+      })
       .from(schema.agents)
       .where(and(eq(schema.agents.orgId, row.orgId), inArray(schema.agents.id, [row.agentId, agentId])));
     const lead = team.find((a) => a.id === row.agentId);
@@ -260,7 +265,10 @@ export function agentFolderOf(agent: { id: string; handle: string }) {
     .replace(/[^a-z0-9_-]+/g, "-")
     .replace(/^[-_.]+|[-_.]+$/g, "")
     .slice(0, 40);
-  return `${handle || "agent"}-${agent.id.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8)}`;
+  return `${handle || "agent"}-${agent.id
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, 8)}`;
 }
 
 /** One session as the apps show it. */
