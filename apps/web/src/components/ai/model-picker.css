@@ -189,3 +189,9 @@
     display: none;
   }
 }
+/* The agent's model drawn as the kit's small select (a code session's status line): as wide as what it says. */
+.mp-field {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}

@@ -427,19 +427,17 @@
   gap: 10px;
   min-width: 0;
 }
-.code-status > .mp-trigger,
-.code-status > .mp-label {
+/* The plan's windows inside the model's field, after a dot, in the meter's colors (`planLevel`): amber from 80%,
+   red from 90% and at the limit; the whole of it on hover and in the picker. */
+.code-status__limit {
   flex: none;
+  color: var(--muted);
   white-space: nowrap;
 }
-/* Its words in the meter's colors (`planLevel`): amber from 80%, red from 90% and at the limit; cut, whole on hover. */
-.code-status__limit {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.code-status__limit::before {
+  content: "·";
+  margin: 0 7px;
+  color: var(--faint);
 }
 .code-status__limit[data-level="almost"] {
   color: var(--warn);

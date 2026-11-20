@@ -124,16 +124,21 @@ function AgentStatus({ session }: { session: CodeSession }) {
   const meter = plan ? planLine(plan.usage, planMeterText(t, i18n.language)) : null;
   return (
     <span className="code-status">
-      <ModelPickerButton agent={agent} size="row" />
-      {meter?.line && (
-        <span
-          className="code-status__limit"
-          data-level={planLevel(meter.top?.used ?? 0, meter.state === "limited")}
-          title={meter.title}
-        >
-          {[meter.line, meter.alert].filter(Boolean).join(" · ")}
-        </span>
-      )}
+      <ModelPickerButton
+        agent={agent}
+        size="field"
+        after={
+          meter?.line ? (
+            <span
+              className="code-status__limit"
+              data-level={planLevel(meter.top?.used ?? 0, meter.state === "limited")}
+              title={[meter.title, meter.alert].filter(Boolean).join(" · ")}
+            >
+              {meter.line}
+            </span>
+          ) : null
+        }
+      />
     </span>
   );
 }

@@ -40,7 +40,7 @@ import {
   Select,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { type CSSProperties, type ReactElement, useState } from "react";
+import { type CSSProperties, type ReactElement, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOpenAgentPanel } from "@/components/agent-panel-context";
 import { TeamScene } from "@/components/arrival/TeamScene";
@@ -58,16 +58,20 @@ const SEARCH_FROM = 8;
 /**
  * The agent's AI and model, changed in place (a DM's header, its profile card, its side panel): a button saying what
  * it thinks with, opening the picker under the agent's sky. Whoever can't change it (not an admin, not its owner)
- * reads the same words, with nothing to press.
+ * reads the same words, with nothing to press. `field`: drawn as the kit's small select (a code session's status
+ * line, ADR 0208), with `after` (its plan's limits) in it.
  */
 export function ModelPickerButton({
   agent,
   size = "sm",
   className,
+  after,
 }: {
   agent: Agent;
-  size?: "sm" | "row";
+  size?: "sm" | "row" | "field";
   className?: string;
+  /** In it after the model, in a `field`. */
+  after?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { me } = useOrg();
@@ -84,7 +88,37 @@ export function ModelPickerButton({
       >
         {mark}
         <span className="mp-label__text">{thinks.text}</span>
+        {size === "field" && after}
       </span>
+    );
+  if (size === "field")
+    return (
+      <div className={cx("ac-select ac-select--sm mp-field", className)}>
+        <ModelPickerPopover
+          agent={agent}
+          trigger={(open) => (
+            <button
+              type="button"
+              className="ac-select__trigger"
+              aria-label={t("brain.picker.open", { agent: agent.name })}
+              aria-expanded={open}
+            >
+              <span className="ac-select__value">
+                <span>
+                  <span className="ac-select__lead" aria-hidden="true">
+                    {mark}
+                  </span>
+                  <span className="ac-select__text">{thinks.text}</span>
+                  {after}
+                </span>
+              </span>
+              <svg className="ac-select__chev" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m6 8 4 4 4-4" />
+              </svg>
+            </button>
+          )}
+        />
+      </div>
     );
   return (
     <ModelPickerPopover
