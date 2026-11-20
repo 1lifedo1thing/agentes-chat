@@ -94,7 +94,8 @@ export function CodeScreenSky() {
           const wave = 0.04 * S(u * 4 + t * 0.5) * e;
           return dark ? Math.max(0, 0.6 * e + wave) : Math.min(1, 1 - 0.8 * e + wave);
         },
-        { sprites: { area: 12_000, max: 5 }, ceil: 0.55 },
+        // No agents drifting here: the screen is what to look at, and the line under it is read over the sky.
+        { sprites: { area: 12_000, max: 0 }, ceil: 0.55 },
       ),
     [],
   );

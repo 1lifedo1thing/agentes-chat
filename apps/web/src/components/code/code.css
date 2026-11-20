@@ -729,6 +729,10 @@
 .code-sstage .brw-ac__stage {
   background: none;
 }
+/* The line under the screen reads over the sky: the page's second ink, not its quiet one. */
+.code-sstage .dsk-line .muted {
+  color: var(--ink2);
+}
 .code-sstage--phone {
   align-items: center;
   justify-content: center;
