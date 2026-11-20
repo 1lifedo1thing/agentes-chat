@@ -705,6 +705,9 @@ export async function archiveCodeSession(deps: CodeSessionDeps, userId: string, 
           action: "remove",
           repo: row.repoDir,
           path: row.worktreePath,
+          // The branch stays: what was pushed (or only committed) is never lost with the folder.
+          branch: row.branch ?? "",
+          deleteBranch: false,
           agent: { id: agent.id, handle: agent.handle },
         })
         .then(() => deps.db.update(codeSessions).set({ worktreeState: "removed" }).where(eq(codeSessions.id, row.id)))

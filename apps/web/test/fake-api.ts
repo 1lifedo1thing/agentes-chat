@@ -1298,7 +1298,8 @@ type FakedParts =
   | "databases"
   | "browser"
   | "desktop"
-  | "live";
+  | "live"
+  | "code";
 
 /** The core of the fake backend, over `FakeState`. Records every call in `state.calls`. */
 /** A member as the signed-in person sees them: hidden reads as offline to everyone else (ADR 0084). */
