@@ -64,13 +64,7 @@ export const useCodeStart = (orgId: string) => {
 };
 
 /** The panel's diff: read on demand from the computer, kept a few seconds (`sha`: one commit's, with "commit"). */
-export const useCodeDiff = (
-  orgId: string,
-  sessionId: string,
-  scope: CodeDiffScope,
-  enabled: boolean,
-  sha?: string,
-) => {
+export const useCodeDiff = (orgId: string, sessionId: string, scope: CodeDiffScope, enabled: boolean, sha?: string) => {
   const api = useApi();
   return useQuery({
     queryKey: codeKeys.diff(orgId, sessionId, scope, sha),

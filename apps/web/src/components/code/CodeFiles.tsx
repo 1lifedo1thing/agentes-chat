@@ -90,12 +90,10 @@ export function FilesPane({ session }: { session: CodeSession }) {
     if (list.data && open === null) setOpen(new Set(changedFolders));
   }, [list.data, open, changedFolders]);
   const q = query.trim().toLowerCase();
-  const results = useMemo(
-    () => (q ? (paths ?? []).filter((p) => p.toLowerCase().includes(q)) : []),
-    [q, paths],
-  );
+  const results = useMemo(() => (q ? (paths ?? []).filter((p) => p.toLowerCase().includes(q)) : []), [q, paths]);
   if (!ready) return <p className="code-empty">{t("codeSessions.panel.notReady")}</p>;
-  if (shown) return <FileView session={session} path={shown} status={changed.get(shown)} onBack={() => setShown(null)} />;
+  if (shown)
+    return <FileView session={session} path={shown} status={changed.get(shown)} onBack={() => setShown(null)} />;
   const toggle = (path: string) =>
     setOpen((was) => {
       const next = new Set(was ?? []);

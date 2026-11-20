@@ -4605,7 +4605,14 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
         throw new Error("code sessions aren't faked");
       },
       close: async () => {},
-      diff: async () => ({ scope: "base" as const, base: { branch: null, sha: null }, files: [], added: 0, removed: 0, truncated: false }),
+      diff: async () => ({
+        scope: "base" as const,
+        base: { branch: null, sha: null },
+        files: [],
+        added: 0,
+        removed: 0,
+        truncated: false,
+      }),
       git: async () => ({ uncommitted: 0, ahead: 0, upstream: false, local: false, pr: null, next: null }),
       gitLog: async () => ({
         branch: null,

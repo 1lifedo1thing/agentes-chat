@@ -5,9 +5,16 @@ import { codeFilePathOk, parseLog, parseNumstatZ, parseStatus } from "../src/cod
 
 describe("parseStatus", () => {
   test("each kind of change, a rename with where it came from (`-z` puts it after)", () => {
-    const out = [" M src/a.ts", "A  src/new.ts", " D gone.md", "R  to.ts", "from.ts", "?? fresh dir/x.txt", "MM both.ts", ""].join(
-      "\0",
-    );
+    const out = [
+      " M src/a.ts",
+      "A  src/new.ts",
+      " D gone.md",
+      "R  to.ts",
+      "from.ts",
+      "?? fresh dir/x.txt",
+      "MM both.ts",
+      "",
+    ].join("\0");
     expect(parseStatus(out)).toEqual([
       { path: "src/a.ts", status: "modified" },
       { path: "src/new.ts", status: "added" },
@@ -74,7 +81,18 @@ describe("codeFilePathOk", () => {
     expect(codeFilePathOk("docs/a b.md")).toBe(true);
   });
   test("never out of it, into git's own folder, or odd", () => {
-    for (const bad of ["", "/etc/passwd", "../x", "a/../../x", "a//b", "./a", ".git/config", "a/.git/HEAD", "a\\b", "a\0b"])
+    for (const bad of [
+      "",
+      "/etc/passwd",
+      "../x",
+      "a/../../x",
+      "a//b",
+      "./a",
+      ".git/config",
+      "a/.git/HEAD",
+      "a\\b",
+      "a\0b",
+    ])
       expect(codeFilePathOk(bad)).toBe(false);
   });
 });

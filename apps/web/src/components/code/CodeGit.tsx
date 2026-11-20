@@ -105,7 +105,11 @@ export function GitPane({ session }: { session: CodeSession }) {
           <p className="code-empty">{errorText(t, log.error)}</p>
         ) : data ? (
           <>
-            <button type="button" className="code-vcs__row code-vcs__row--all" onClick={() => setOpened({ kind: "all" })}>
+            <button
+              type="button"
+              className="code-vcs__row code-vcs__row--all"
+              onClick={() => setOpened({ kind: "all" })}
+            >
               <Icon name="layers" size={16} />
               <span className="code-vcs__name">{t("codeSessions.gitTab.all", { base })}</span>
               {session.stat.at && <Counts added={session.stat.added} removed={session.stat.removed} />}

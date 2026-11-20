@@ -1215,8 +1215,7 @@ export async function codeSessionGitLog(
       `git --no-pager log --no-color --format=%x1e%H%x1f%h%x1f%an%x1f%aI%x1f%s --numstat -n ${LOG_MAX + 1} ${range}`,
     ),
   ]);
-  if (status.exitCode !== 0)
-    throw new ConflictError(status.stderr.trim() || "git failed", "code_session.git_failed");
+  if (status.exitCode !== 0) throw new ConflictError(status.stderr.trim() || "git failed", "code_session.git_failed");
   const listed = parseStatus(status.stdout);
   const entries = listed.slice(0, CHANGES_MAX);
   const counts = parseNumstatZ(numstat.exitCode === 0 ? numstat.stdout : "");
@@ -1351,7 +1350,8 @@ export async function codeSessionFile(
   path: string,
 ): Promise<CodeFile> {
   const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
-  if (!codeFilePathOk(path)) throw new ValidationError("A path inside the worktree is needed", "code_session.file_path");
+  if (!codeFilePathOk(path))
+    throw new ValidationError("A path inside the worktree is needed", "code_session.file_path");
   const none = (state: CodeFileState): CodeFile => ({ path, state, content: "", size: 0, truncated: false });
   if (SECRET_FILE.test(path.split("/").pop() ?? "")) return none("secret");
   const command = [
@@ -1365,7 +1365,8 @@ export async function codeSessionFile(
     `head -c ${CODE_FILE_MAX_BYTES} -- "$p"`,
   ].join("\n");
   const out = await worktreeShell(deps, row, command);
-  if (out.exitCode !== 0) throw new ConflictError(out.stderr.trim() || "The file couldn't be read", "code_session.file_failed");
+  if (out.exitCode !== 0)
+    throw new ConflictError(out.stderr.trim() || "The file couldn't be read", "code_session.file_failed");
   const cut = out.stdout.indexOf("\n");
   const head = cut < 0 ? out.stdout.trim() : out.stdout.slice(0, cut);
   const [word = "", bytes = "0"] = head.split(" ");
@@ -1376,4 +1377,3 @@ export async function codeSessionFile(
   if (content.slice(0, 8000).includes("\0")) return { ...none("binary"), size };
   return { path, state: "ok", content, size, truncated: size > CODE_FILE_MAX_BYTES };
 }
-
