@@ -37,6 +37,7 @@ import {
   Popover,
   ProviderLogo,
   planLine,
+  Select,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { type CSSProperties, type ReactElement, useState } from "react";
@@ -320,18 +321,14 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
           <div className="mp__who">
             <b>{tile.name}</b>
             {tile.accounts.length > 1 ? (
-              <select
+              <Select
+                size="sm"
                 className="mp__account"
                 aria-label={t("brain.picker.account")}
                 value={account?.id ?? ""}
-                onChange={(e) => setAccountId(e.target.value || null)}
-              >
-                {tile.accounts.map((a) => (
-                  <option key={a.id ?? "own"} value={a.id ?? ""}>
-                    {a.label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={(v) => setAccountId(v || null)}
+                options={tile.accounts.map((a) => ({ value: a.id ?? "", label: a.label }))}
+              />
             ) : (
               account && <span className="mp__plan">{account.label}</span>
             )}

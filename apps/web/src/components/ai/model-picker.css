@@ -123,23 +123,19 @@
 .mp__who {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-2);
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  min-height: var(--control-h-sm);
 }
-.mp__plan,
-.mp__account {
+.mp__plan {
   color: var(--muted);
   font-size: var(--text-sm);
 }
+/* Several accounts of that AI: the kit's small select beside its name. */
 .mp__account {
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
-  padding: 0 var(--space-4) 0 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: var(--text-sm);
-  color: var(--ink2);
-  cursor: pointer;
 }
 .mp__usage {
   color: var(--muted);
