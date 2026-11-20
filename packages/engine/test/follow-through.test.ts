@@ -21,11 +21,13 @@ import {
   FOLLOW_UP_TOOL,
   insertMessage,
   invokeToolForRun,
+  JevOffError,
   joinChannel,
   listThreads,
   openAgentDm,
   openPersonAgentDm,
   openTaskConversation,
+  PLATFORM_CAP,
   pendingReturns,
   postPersonMessage,
   RIGHT_HAND,
@@ -42,7 +44,7 @@ import {
   wakeFollowUp,
 } from "../src";
 import { advance, decideTurnEnd, type TurnEnd, toolsNamed } from "../src/continuation";
-import { JudgeBudgetError } from "../src/judge";
+import { createLlmJudge, JudgeBudgetError, withJudgeFallback } from "../src/judge";
 import { personCanPost } from "../src/routine-state";
 import { addMember, type Fixture, setup } from "./fixtures";
 
@@ -1550,11 +1552,10 @@ describe("a turn end's reads and judgment", () => {
       outcome: "continue",
       rule: "promise",
     });
-    // A failed judgment checks itself once (below); a failed read is what it always was.
+    // A failed judgment, or a failed read, is what it always was (only the platform cap checks itself: below).
     expect((await timed(turn({ verdict: () => Promise.reject(new Error("down")) }))).d).toMatchObject({
-      outcome: "continue",
-      rule: "untried",
-      judgeError: true,
+      outcome: "done",
+      rule: "judge_error",
     });
     expect((await timed(turn({ wakesLater: () => Promise.reject(new Error("db")) }))).d).toMatchObject({
       outcome: "continue",
@@ -1562,8 +1563,8 @@ describe("a turn end's reads and judgment", () => {
     });
   });
 
-  test("a check refused or down: once per run the agent checks itself, held in a conversation; then done", async () => {
-    const down = () => Promise.reject(new Error("platform_cap"));
+  test("a check refused past the platform cap: once per run the agent checks itself, held in a conversation; then done", async () => {
+    const down = () => Promise.reject(new Error(PLATFORM_CAP));
     const evidence = { means: ["terminal (run_code)"], tried: ["github_get_issue #12 → ok"] };
     const first = await decideTurnEnd(turn({ verdict: down, evidence }));
     expect(first).toMatchObject({ outcome: "continue", rule: "untried", judgeError: true });
@@ -1582,8 +1583,24 @@ describe("a turn end's reads and judgment", () => {
     const routine = await decideTurnEnd(turn({ kind: "routine", verdict: down }));
     expect(routine).toMatchObject({ outcome: "continue", rule: "untried", judgeError: true });
     expect(routine.nudge).not.toContain("Not posted yet");
-    // Only out of the turn end's wait (a slow judge): done at once, or every reply would wait a turn more.
+    // Out of the turn end's wait (a slow judge), or no judge at all (no Jev key, no small model): done at once.
     expect(await decideTurnEnd(turn({ verdict: () => Promise.reject(new JudgeBudgetError()) }))).toMatchObject({
+      outcome: "done",
+      rule: "judge_error",
+    });
+    const noJudge = withJudgeFallback(
+      {
+        name: "jev",
+        ask: () => Promise.reject(new JevOffError()),
+      },
+      createLlmJudge({
+        gateway: { complete: () => Promise.reject(new Error("unused")) },
+        resolveModel: async () => null,
+      }),
+    );
+    const askNoJudge = () => noJudge.ask({ orgId: "org-1", kind: "continuation", state: {}, questions: {} });
+    expect(await askNoJudge().catch((e: unknown) => e)).toBeInstanceOf(JevOffError);
+    expect(await decideTurnEnd(turn({ verdict: () => askNoJudge().then(() => "done" as const) }))).toMatchObject({
       outcome: "done",
       rule: "judge_error",
     });

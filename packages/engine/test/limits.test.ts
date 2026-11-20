@@ -9,6 +9,7 @@ import {
   createFakeJudge,
   createFileArtifact,
   createInvitation,
+  createLlmJudge,
   deleteArtifact,
   enableOperatorEvents,
   getOrgLimits,
@@ -378,6 +379,16 @@ describe("the platform's AI", () => {
     // A higher cap applies at once.
     await limit({ platformUsdPerMonth: 4 });
     expect((await ask()).stop?.noul).toBe(0.9);
+    // With no small model of its own either, the refusal is what the question fails with: the turn end's self-check
+    // (`uncheckedNudge`) tells it from a server with no judge at all.
+    await limit({ platformUsdPerMonth: 3 });
+    const noModel = withJudgeFallback(
+      platformCapJudge(f.db, jev),
+      createLlmJudge({ gateway: f.gateway, resolveModel: async () => null }),
+    );
+    await expect(
+      noModel.ask({ orgId: f.org.id, kind: "stop_request", state: { message: "para" }, questions: question }),
+    ).rejects.toThrow(PLATFORM_CAP);
   });
 
   test("the router starts nobody past the cap and says so; @mentions still start their agents", async () => {

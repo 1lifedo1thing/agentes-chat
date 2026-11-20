@@ -100,10 +100,15 @@ runs loaded only the tool groups their thread's previous run used, turn ends clo
 nothing said why. Now:
 
 - **Tool groups.** A refused or failed tool-group judge loads every group the agent is granted, the reason on the run's
-  `context` step (`toolGroups.reason`, `platform_cap` here). A slow judge still starts with the kept groups.
-- **Turn ends.** The judge falls back to the workspace's small model as before. When that fails too, the run gets one
-  self-check turn per run (`uncheckedNudge`, step `nudged: unchecked`): its reply is held, posted as it is if it adds
-  nothing. A check that only ran out of the turn end's wait still ends as done.
+  `context` step (`toolGroups.reason`, `platform_cap` here). A slow judge still starts with the kept groups, and so
+  does a server with no Jev key (`JevOffError`), where no run is ever judged: there, loading every group would only add
+  cost and latency.
+- **Turn ends.** The judge falls back to the workspace's small model as before. When the workspace has none and the
+  refusal is the platform cap, the run gets one self-check turn per run (`uncheckedNudge`, step `nudged: unchecked`):
+  its reply is held, posted as it is if it adds nothing. Any other failure ends as done as before (`judge_error`): no
+  Jev key and no small model (no judge at all), a small model that fails, a check that only ran out of the turn end's
+  wait. When the fallback fails before calling a model, `withJudgeFallback` throws the primary's error, so a turn end
+  tells the platform cap from a server with no Jev.
 - **Routing.** The router's Jev step is skipped past the cap (`platformCapRouter`), so the workspace's own small model
   picks; only with none is nothing picked (`platform_cap`).
 - **Saying so.** At 100%, with no AI key of its own, whoever may `manage_credentials` gets one `platform_ai_limit`

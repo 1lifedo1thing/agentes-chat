@@ -13,6 +13,7 @@ import { isAgentOnlyDm } from "./dms";
 import { decisionNudge, FOLLOW_THROUGH_NUDGE, FOLLOW_THROUGH_NUDGE_DM, MISSION_ASK_NUDGE } from "./follow-through";
 import { cutText, cutTextEnd } from "./format";
 import { type Judge, JudgeBudgetError } from "./judge";
+import { PLATFORM_CAP } from "./limits";
 import type { NoticeKind } from "./notices";
 import { notifyRunFailed } from "./notification-producers";
 import { ANSWER_NUDGE } from "./reply-policy";
@@ -70,8 +71,8 @@ export function untriedNudge(means: string[], tried: string[]) {
 }
 
 /**
- * What a run reads, once, when its turn-end check couldn't run (the judge down, or refused past the workspace's
- * platform AI for the month with no small model of its own): it checks its own reply, so an agent that stopped at an
+ * What a run reads, once, when its turn-end check was refused past the workspace's platform AI for the month, with no
+ * small model of its own to check in its place: it checks its own reply, so an agent that stopped at an
  * obstacle doesn't stay stopped. `held`: a conversation's reply is held meanwhile (`Transcript.held`) and goes out as
  * it is when nothing is added; with no judge to merge them, what it adds goes out below it.
  */
@@ -705,9 +706,10 @@ async function answerTurnEnd(t: TurnEnd): Promise<TurnEndDecision> {
   try {
     verdict = await t.verdict();
   } catch (error) {
-    // Refused or down, the check would end every turn as done: once per run, the agent checks itself instead. A check
-    // that only ran out of the turn end's wait (a slow judge) ends as done, or every reply would wait one more turn.
-    if (canNudge && !t.state.uncheckedNudged && !(error instanceof JudgeBudgetError))
+    // Refused past the platform AI for the month, the check would end every turn as done: once per run, the agent
+    // checks itself instead. Any other failure (no Jev on this server, a judge down or slow) ends as done, or every
+    // reply there would wait one more turn.
+    if (canNudge && !t.state.uncheckedNudged && error instanceof Error && error.message === PLATFORM_CAP)
       return {
         outcome: "continue",
         rule: "untried",

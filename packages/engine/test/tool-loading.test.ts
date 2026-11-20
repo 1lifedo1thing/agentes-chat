@@ -8,7 +8,9 @@ import {
   describeCapabilities,
   drainOutbox,
   grantScopes,
+  JevOffError,
   type Judge,
+  PLATFORM_CAP,
   postPersonMessage,
   presentTools,
   type ToolContext,
@@ -221,6 +223,16 @@ test("chooseToolGroups: one calibrated question per group, the threshold, and th
   expect(all).toMatchObject({ source: "error", kept: ["wiki"], reason: "down", scores: {} });
   expect(all.groups[0]).toBe("wiki");
   expect([...all.groups].sort()).toEqual(["browser", "issues", "sentry", "wiki"]);
+  const capped: Judge = { name: "jev", ask: () => Promise.reject(new Error(PLATFORM_CAP)) };
+  expect(await chooseToolGroups(capped, input)).toMatchObject({ source: "error", reason: PLATFORM_CAP });
+  // A server with no Jev key never judges a run: the kept groups and find_tools, as without an answer.
+  const jevOff: Judge = { name: "jev", ask: () => Promise.reject(new JevOffError()) };
+  expect(await chooseToolGroups(jevOff, { ...input, keep: ["wiki"] })).toEqual({
+    groups: ["wiki"],
+    scores: {},
+    source: "error",
+    kept: ["wiki"],
+  });
 });
 
 test("a run lists what the judge expects it to need, keeps it for the whole run, and reaches the rest on demand", async () => {

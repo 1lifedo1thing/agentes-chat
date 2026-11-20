@@ -172,9 +172,9 @@ test("the small model judging without Jev: the questions lead as a cached prefix
   const user = textOf(followThrough?.messages[0]?.content ?? "");
   expect(JSON.parse(user)).toEqual({ state: expect.any(Object) });
   const steps = await f.db.select().from(schema.agentRunSteps);
-  // The check failed (not out of the turn end's wait): the agent checked itself once, and its reply went out once.
-  expect(steps.some((s) => (s.data.continuation as { judgeError?: boolean } | undefined)?.judgeError)).toBe(true);
-  expect(steps.filter((s) => s.data.nudged === "unchecked")).toHaveLength(1);
+  // A small model that fails is no platform cap: the turn ends as done, with no self-check turn.
+  expect(steps.some((s) => (s.data.continuation as { rule?: string } | undefined)?.rule === "judge_error")).toBe(true);
+  expect(steps.filter((s) => s.data.nudged === "unchecked")).toHaveLength(0);
   expect(posted.filter((m) => m.body === "Pronto: está salvo.")).toHaveLength(1);
 });
 
