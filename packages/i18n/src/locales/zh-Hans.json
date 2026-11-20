@@ -14947,6 +14947,7 @@
       "notLinkMaker": "只有创建链接的人才能让这台电脑加入。",
       "widenForbidden": "管理员只能缩小可以使用他人个人设备的人员范围。",
       "spillOwnerOnly": "只有连接这台电脑的人才能让回复在这里思考。你可以把它关掉。",
+      "tasksOwnerOnly": "只有连接这台电脑的人才能更改它同时运行的任务数。",
       "notHome": "智能体住在工作区的电脑上，点名时才使用这台电脑。"
     },
     "machine": {
@@ -15433,6 +15434,9 @@
     "line": {
       "ready": "智能体现在就可以使用它。",
       "busy_other": "{{max}} 个任务中有 {{count}} 个正在运行",
+      "tasksChange": "这里同时运行的任务数：{{max}}。在下方更改。",
+      "tasksOwner": "这里同时运行的任务数：{{max}}。连接它的人可以更改。",
+      "tasksUpdate": "这里同时运行的任务数：{{max}}。更新它的应用后即可在这里更改。",
       "offline": "智能体会等它回来。",
       "offlineSeen": "上次在线 {{time}}。智能体会等它回来。",
       "offlineWithHost": "{{host}} 已离线。智能体会等它回来。",

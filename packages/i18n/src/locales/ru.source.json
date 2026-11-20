@@ -37995,6 +37995,9 @@
   "errors.device.spillOwnerOnly": {
     "value": "Only the person who connected this computer can let replies think on it. You can turn it off."
   },
+  "errors.device.tasksOwnerOnly": {
+    "value": "Only the person who connected this computer can change how many tasks it runs at once."
+  },
   "errors.device.notHome": {
     "value": "Agents live on the workspace computer and use this one when they name it."
   },
@@ -39235,6 +39238,15 @@
       "one": "{{count}} of {{max}} tasks running",
       "other": "{{count}} of {{max}} tasks running"
     }
+  },
+  "devices.line.tasksChange": {
+    "value": "Tasks at once here: {{max}}. Change it below."
+  },
+  "devices.line.tasksOwner": {
+    "value": "Tasks at once here: {{max}}. The person who connected it can change that."
+  },
+  "devices.line.tasksUpdate": {
+    "value": "Tasks at once here: {{max}}. Update its app to change that from here."
   },
   "devices.line.offline": {
     "value": "Agents wait for it to come back."
