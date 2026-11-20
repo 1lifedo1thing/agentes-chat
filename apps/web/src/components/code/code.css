@@ -434,10 +434,15 @@
   color: var(--muted);
   white-space: nowrap;
 }
+/* The value's own gap (8) before the dot, the same after it. */
 .code-status__limit::before {
   content: "·";
-  margin: 0 7px;
+  margin-right: 8px;
   color: var(--faint);
+}
+/* A control under the composer: its edge on the composer's, not the hint's text inset. */
+.ac-composer__hint:has(> .code-status) {
+  margin-inline: 0;
 }
 .code-status__limit[data-level="almost"] {
   color: var(--warn);
