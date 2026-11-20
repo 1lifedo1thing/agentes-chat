@@ -190,7 +190,7 @@ export function createSkillToolSource(
             const holders = await skillHolders(ctx.db, ctx.orgId, skill.id);
             const on = holders.length ? holders.map((h) => `@${h}`).join(", ") : "no agent";
             return {
-              content: `Skill "${skill.name}" (v${skill.version}) is not on for you: you read it to manage it for the person who asked, never to follow it yourself. On for: ${on}. Change it with update_skill; give it to agents or take it away with propose_settings_change (add_skills, remove_skills).\n\n${skill.body}\n\nFiles (read with read_skill_file):\n${list}`,
+              content: `Skill "${skill.name}" (v${skill.version}) is not on for you: you read it to manage it for the person who asked, never to follow it yourself (to use it yourself, ${ASK_FOR_SKILL.slice(0, -1)}). On for: ${on}. Change it with update_skill; give it to agents or take it away with propose_settings_change (add_skills, remove_skills).\n\n${skill.body}\n\nFiles (read with read_skill_file):\n${list}`,
               data: { skill: { id: skill.id, name: skill.name, version: skill.version } },
             };
           }
