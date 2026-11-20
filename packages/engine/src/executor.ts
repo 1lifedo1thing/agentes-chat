@@ -6488,8 +6488,10 @@ async function warmAtClaim(deps: EngineDeps, agent: Agent, run: AgentRun, conver
   let plan = await resolveBrain(deps, agent, run, conversation, { peek: true });
   if (plan.kind !== "claude_code" || plan.unavailable || !plan.session) return;
   if (needsAutoChoice(agent, plan)) {
+    // As the turn does: a pinned model stays, only "Automático" gives way to a held plan model's stand-in.
+    const autoBrain = isAutoModel(plan.model);
     plan = withAuto(agent, plan, autoApplied(agent, plan, fallbackChoice("none"), "anthropic")).plan;
-    const model = isAutoModel(plan.model) ? undefined : autoPlanModel(plan.account?.provider, plan.model, plan.usage);
+    const model = autoBrain ? autoPlanModel(plan.account?.provider, plan.model, plan.usage) : undefined;
     if (model) plan = { ...plan, model };
   }
   await factory(agent, run, { mcpToken: () => "" }).warm?.({

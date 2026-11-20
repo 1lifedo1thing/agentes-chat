@@ -1004,3 +1004,33 @@ test("while memory is short, one idle CLI closes per look; with room, none", asy
     clearInterval(timer);
   }
 });
+
+test("a warm start that started nothing gives its room back to the next turn", async () => {
+  const ws = tempDir();
+  dirs.push(ws);
+  const sent: { type: string; id: string; ok: boolean; data?: unknown }[] = [];
+  const ran: string[] = [];
+  // Room for one more CLI, not two.
+  const runner = new RequestRunner(
+    { workspaceReal: ws, exec: true, token: "agm_x", warmBrain: async () => false },
+    (f) => sent.push(f as unknown as (typeof sent)[number]),
+    () => {},
+    async (_ctx, req) => {
+      ran.push(String((req as { session?: { id?: string } }).session?.id));
+      return { open: false, started: false };
+    },
+    { memAvailable: () => MIN_FREE_BYTES + TURN_BYTES - 1, now: () => 1_000_000 },
+  );
+  const warm = (id: string, session: string) =>
+    runner.start(id, {
+      op: "brain.warm",
+      kind: "claude_code",
+      session: { id: session, resume: false },
+      cwd: "",
+      agent: { id: "a1", handle: "dev" },
+    } as MachineRequest);
+  await warm("w1", "s1");
+  await warm("w2", "s2");
+  expect(ran).toEqual(["s1", "s2"]);
+  runner.close();
+});

@@ -1852,8 +1852,18 @@ export class RequestRunner {
       return open.then((warm) => {
         this.inflight.delete(id);
         if (this.closed) return;
-        if (warm || this.admit(false, false)) return this.run(id, req, controller);
-        this.reply(id, { ok: true, data: { open: false, started: false } satisfies MachineReplies["brain.warm"] });
+        if (warm) return this.run(id, req, controller);
+        if (!this.admit(false, false)) {
+          this.reply(id, { ok: true, data: { open: false, started: false } satisfies MachineReplies["brain.warm"] });
+          return;
+        }
+        const at = this.admitted.at(-1);
+        // Declined (nothing to start it with, the agent's cap): no CLI of its grows, so other turns' room comes back.
+        return this.run(id, req, controller, (outcome) => {
+          if (outcome.ok && (outcome.data as MachineReplies["brain.warm"] | undefined)?.started) return;
+          const i = at === undefined ? -1 : this.admitted.lastIndexOf(at);
+          if (i >= 0) this.admitted.splice(i, 1);
+        });
       });
     }
     const locked = req.op === "brain.turn" && req.permissions?.mode === "chat";
@@ -1922,7 +1932,12 @@ export class RequestRunner {
     }
   }
 
-  private run(id: string, req: MachineRequest, controller: AbortController): Promise<void> {
+  private run(
+    id: string,
+    req: MachineRequest,
+    controller: AbortController,
+    settled?: (outcome: RequestOutcome) => void,
+  ): Promise<void> {
     const turn = req.op === "brain.turn";
     if (turn) this.turns++;
     this.inflight.set(id, controller);
@@ -1981,6 +1996,7 @@ export class RequestRunner {
           const note = notes.length > 0 ? ` (${notes.join(", ")})` : "";
           this.log(`${describeRequest(req)} ${Date.now() - startedAt}ms${note}`);
         }
+        settled?.(outcome);
         this.observe(() => this.observer?.finished(id, req, outcome));
         this.reply(id, outcome);
       })
