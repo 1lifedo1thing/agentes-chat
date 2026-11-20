@@ -169,7 +169,16 @@ test.skipIf(!posix)(
     // The same usage and answer exec gives for this turn (TURN1 of brain-codex.test.ts).
     expect(notDeltas(first.events)).toEqual([
       // One model request: said twice by Codex, counted once.
-      { type: "usage", input: 17806, output: 5, source: "plan", cacheRead: 6912, calls: 1, maxContext: 17806 },
+      {
+        type: "usage",
+        input: 17806,
+        output: 5,
+        source: "plan",
+        cacheRead: 6912,
+        calls: 1,
+        maxContext: 17806,
+        lastContext: 17806,
+      },
       { type: "done", text: "pong", session: { id: SESSION } },
     ]);
     const [threadStart] = t.rpcs("thread/start");
@@ -207,7 +216,8 @@ test.skipIf(!posix)(
     ].flatMap((l) => exec.line(l));
     const execAll = [...execEvents, ...exec.finish({ exitCode: 0, sessionId: SESSION })];
     // Only the app-server says the turn's model requests and the biggest one.
-    const steps = (e: (typeof execAll)[number]) => (e.type === "usage" ? { ...e, calls: 1, maxContext: 200 } : e);
+    const steps = (e: (typeof execAll)[number]) =>
+      e.type === "usage" ? { ...e, calls: 1, maxContext: 200, lastContext: 200 } : e;
     expect(notDeltas(second.events)).toEqual(notDeltas(execAll.map(steps)));
     // Live text: the message that came whole, then the streamed one.
     expect(deltas(second.events)).toBe("I’ll check the folder now.\n\nDone: tests pass.");

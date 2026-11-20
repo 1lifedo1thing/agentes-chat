@@ -6642,7 +6642,14 @@ interface BrainStep {
   costNanoUsd?: number;
   usage?: Partial<
     Record<
-      "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens" | "calls" | "maxUncached" | "maxContext",
+      | "inputTokens"
+      | "outputTokens"
+      | "cacheReadTokens"
+      | "cacheWriteTokens"
+      | "calls"
+      | "maxUncached"
+      | "maxContext"
+      | "lastContext",
       number
     >
   >;
@@ -6837,6 +6844,7 @@ async function thinkOnce(
           ...(usage.calls ? { calls: usage.calls } : {}),
           ...(usage.maxUncached ? { maxUncached: usage.maxUncached } : {}),
           ...(usage.maxContext ? { maxContext: usage.maxContext } : {}),
+          ...(usage.lastContext ? { lastContext: usage.lastContext } : {}),
         }
       : undefined,
   };
