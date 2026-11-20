@@ -158,6 +158,27 @@ opened from its branch (`open_pull_request`, and `pull_request` opened or merged
 A message in a session notifies as in a channel thread, named by the session (`label`) and with `codeSessionId`, so
 the apps open it on the Code page.
 
+### 10. On the phone
+
+The phone app has Code as a row of You, with the same API and the conversation as the chat's own thread screen
+(real navigation: each place a pushed screen with the system's back).
+
+- The list leads with the sessions that wait on the person, then the rest by project, each with its agent's face. A
+  working session says what its agent does there right now, in words with its orbit: the agents' status line, only
+  while that work is in this session's channel. Otherwise its state in words. A row opens the session's conversation.
+- A new session is a pushed form (what to do, the agent, where it works). "Where to work" is its own pushed screen,
+  and starting replaces the form with the conversation.
+- The conversation hides the root as a task's does. Its pill shows the session's name, then its state and branch, and
+  opens its code. It says "working" from the live run at once and reads the session again when the run ends. The bar
+  holds the code, the agent's computer (the computer screen the phone already has) and the session's "…": the git
+  steps (the next one first), who is in it, its pull request, closing it.
+- Over the composer, while the agent is free, the next git step stands in the shape of the other bars there: where
+  the branch stands, then the step's word ("3 files changed · Commit"). It asks the agent in words, as on the web.
+  Nothing read before a run ended is shown, and once asked it stays away until the agent has started.
+- The session's code is one pushed screen with Git and Files as a segmented control. Git leads with the next step as
+  its one primary button. Folders, read-only files, diffs and who is in the session are screens of their own.
+- The app hears `code_session.updated`, as the web does.
+
 ## Consequences
 
 - No new runner op for the worktree or the diff: the session reuses `mission.worktree` and `exec`. The terminal's
@@ -167,8 +188,8 @@ the apps open it on the Code page.
 - Apps registered before this need "Check run" ticked on GitHub; until then no check comes back (Settings says so).
 - A branch that keeps failing wakes the agent at each push that fails again, within its budgets; no other cap yet.
 - Sessions need an agent whose brain is Claude Code or Codex on a computer with git access to the repository.
-- The conversation is a thread like a task's: the phone app shows it with its thread screen through the notification's
-  channel and thread until it has a Code screen of its own.
+- The conversation is a thread like a task's: the phone app shows it with its own thread screen (§10), so a session
+  reached from a notification opens the same way as from Code.
 - Out of this first version: several agents writing in one session at once (one writes, the others read and review),
   a lead agent splitting work into child worktrees, line comments on the diff sent together, and a diff per turn with
   undo.
