@@ -38,7 +38,9 @@ the base it started from, the worktree's folder (`.worktrees/c-<short id>` in th
 Its conversation follows the task's model (0145): a channel of kind `code` (private, never listed) with one root
 message (`meta.codeSession`), and the session is that thread's replies, so runs, steering, stop, approvals, live
 events, receipts and the thread screen work unchanged. People are members of the channel: who opened it, and whoever
-is named there with `@` (`admitCodeMembers`); agents named there join it too.
+is named there with `@` (`admitCodeMembers`); agents named there join it too. Its faces stand in the header: whoever
+opened it, or an admin, takes someone out, anyone else leaves (`removeChannelMember`, which lets a code session be
+left and always keeps its own agent and whoever opened it).
 
 A session may also start with no repository: a name with no owner (`hello-world`) is a project only on the agent's
 computer, `projects/<name>` in its folder, made with `git init` on first use (or adopted with its files in a first
@@ -74,9 +76,11 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
 - **Home**: the field in the middle of the agents' fine sky (the agent page's cover sky), the agents that program
   standing on its horizon saying what they do. Writing and Enter opens a session with the picked agent and repository
   (the last ones used come back); the computer is the agent's own, so there is nothing else to pick.
-- **Session**: the conversation under its header (name, state and branch, the git button, only when there is a next
-  step and the agent is free to take it), and a side panel with the kit's tabs, Git, Files and Screen, and a Terminal
-  under any of them. The list, the conversation and the terminal's height drag, each kept on the device, and a session squeezed
+- **Session**: the conversation under its header (name, state and branch, who is in it, the git button, only when
+  there is a next step and the agent is free to take it), with the agent's model (the DM's picker, changed in place)
+  and its plan's limits under the composer like a coding CLI's status line, and a side panel with the kit's tabs, Git,
+  Files and Screen, and a Terminal under any of them. The list, the conversation and the terminal's height drag, each
+  kept on the device, and a session squeezed
   by the window folds the app's sidebar to its rail until the room comes back (`usePageRoom`, as beside a live file's
   conversation):
   - **Git**: read with `git` in the worktree as its agent (the runner's `exec`, read-only commands), again every few
@@ -112,7 +116,21 @@ asks the session's agent in words in the conversation: it commits, pushes or ope
 already has, on any host. Merging stays an approval (`merge` is always sensitive). With CI on GitHub, a failing check
 on the session's branch comes back to the agent as a notice in the session, so it reads the log and fixes it.
 
-### 6. The brain's own tool calls, one line each
+### 6. Claude Code's own subagents and skills, and the repository's
+
+A session's turn tells the runner it is one (`codeSession` on `brain.turn`): on the agent's own Claude Code (not a
+shared sign-in, not the owner's MCP servers, which already keep everything) the turn also gets `Agent` (its
+subagents, with the turn's tools and permission mode), `Task` (its name before 2.1.63) and `Skill`. The worktree's
+`.claude/agents`, `.claude/skills` and `.claude/commands` load as a plugin (`--plugin-dir`, `repoPlugin`): copied
+into the turn's folder as regular files only, never through a link, each Markdown file without the frontmatter keys
+that would act outside the turn's checks (`hooks`, `mcpServers`, `permissionMode`, `allowed-tools`), and nothing
+else of the checkout's `.claude/`, so its settings (hooks, allow rules, env) stay unread as ADR 0117 wants. Only on a
+Claude Code the runner knows takes the plugin (2.1.63 or newer, `REPO_PLUGIN_MIN_CLAUDE`).
+
+Files and pictures stay in the session's panel: `upload_file` and `export_file` aren't given to a computer brain in
+a session (`CODE_SESSION_HIDDEN_TOOLS`), and its brief says not to paste screenshots.
+
+### 7. The brain's own tool calls, one line each
 
 In a code session each call the CLI makes on its own (read, search, edit, write, run, fetch) is one line of the run's
 work, as in a terminal: a `context` step `cliTool` (`packages/engine/src/cli-tools.ts`: verb, target relative to the
@@ -123,7 +141,7 @@ and at its end (`ended`, `failed`); `meta.work.cliCalls` counts them and they sh
 block closed like every other (the diff and the screen say what changed). Elsewhere they stay off the trail (ADR 0032
 addendum: a row per call on every turn of every chat is not worth its writes).
 
-### 7. A failing check comes back to the agent
+### 8. A failing check comes back to the agent
 
 The GitHub App subscribes `check_run`. A check that completes failed, timed out or waiting on an action, on an
 `agentes/` branch, becomes a `github_check` notice in the open session on that branch (its thread, from its agent,
@@ -132,7 +150,7 @@ It asks the agent to read the log, fix it in the worktree, run what failed, push
 say so when the change didn't cause it. Once per session, commit and check name. The session keeps the pull request
 opened from its branch (`open_pull_request`, and `pull_request` opened or merged).
 
-### 8. Notifications
+### 9. Notifications
 
 A message in a session notifies as in a channel thread, named by the session (`label`) and with `codeSessionId`, so
 the apps open it on the Code page.
@@ -140,7 +158,9 @@ the apps open it on the Code page.
 ## Consequences
 
 - No new runner op for the worktree or the diff: the session reuses `mission.worktree` and `exec`. The terminal's
-  folder needs a newer runner (protocol 74); an older one opens the shell in the agent's folder and says so.
+  folder needs a newer runner (protocol 74); an older one opens the shell in the agent's folder and says so. Claude
+  Code's subagents and the repository's skills need a runner that reads `codeSession`; an older one runs the turn as
+  before.
 - Apps registered before this need "Check run" ticked on GitHub; until then no check comes back (Settings says so).
 - A branch that keeps failing wakes the agent at each push that fails again, within its budgets; no other cap yet.
 - Sessions need an agent whose brain is Claude Code or Codex on a computer with git access to the repository.

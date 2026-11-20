@@ -3,8 +3,16 @@
  * between them; corners 14 px with the cut corner (4 px) like every card; heights on the 56/40/36 rule.
  */
 
+/* The page's surfaces stand on the sidebar's paper, each one a sheet as the work area is elsewhere: no sheet round
+   them, so white never meets white. */
+.shell__work .shell__pages:has(.code-page) {
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
 .code-page {
   overflow: hidden;
+  background: none;
 }
 .code {
   flex: 1;
@@ -12,14 +20,19 @@
   display: grid;
   /* The list's width is the person's (its gutter, `CodeGutter`); the gutter is the 8 px between the surfaces. */
   grid-template-columns: var(--code-list, 296px) 8px minmax(0, 1fr);
-  padding: 8px;
 }
+/* The work sheet's edge (`.shell__pages`): a hairline in both themes, a soft lift in light. */
 .code-list,
 .code-pane,
 .code-home {
   background: var(--pane);
   border-radius: 14px 14px 14px 4px;
   box-shadow: inset 0 0 0 1px var(--line);
+}
+[data-theme="light"] :is(.code-list, .code-pane, .code-home) {
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 1px 3px rgba(9, 20, 34, 0.05);
 }
 .code-main {
   min-width: 0;
@@ -364,6 +377,75 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+/* Who is in the session: its faces, a quiet button beside the git button. */
+.code-who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-btn);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.code-who:hover,
+.code-who[aria-expanded="true"] {
+  background: var(--plate-soft);
+  color: var(--ink2);
+}
+.code-whopop {
+  min-width: 280px;
+}
+.code-whopop__row {
+  min-height: 36px;
+}
+.code-whopop__name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.code-whopop__act {
+  margin-left: auto;
+}
+.code-whopop__note {
+  margin: 4px 6px 2px;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 16px;
+}
+/* Under the composer, as a coding CLI's status line: the agent's model (its picker) and its plan's limits. */
+.code-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.code-status > .mp-trigger,
+.code-status > .mp-label {
+  flex: none;
+  white-space: nowrap;
+}
+/* Its words in the meter's colors (`planLevel`): amber from 80%, red from 90% and at the limit; cut, whole on hover. */
+.code-status__limit {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.code-status__limit[data-level="almost"] {
+  color: var(--warn);
+}
+.code-status__limit:is([data-level="critical"], [data-level="limited"]) {
+  color: var(--danger);
 }
 /* The git button: the kit's split button, at the header's small size. */
 .code-git {

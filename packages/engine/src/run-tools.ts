@@ -6,6 +6,7 @@ import { openApprovalCard, publishApproval, supersedeApprovals } from "./approva
 import { runAuthorityById } from "./authority";
 import type { BrainTool, ToolResult } from "./brains/types";
 import { readableChannelIds } from "./channels";
+import { CODE_SESSION_HIDDEN_TOOLS, codeSessionOfChannel } from "./code-sessions";
 import { isConfidential, threadIsConfidential } from "./confidential";
 import { announceConsultationChange, consultationCardThread, consultationOrigin } from "./consultations";
 import { NotFoundError } from "./errors";
@@ -673,7 +674,10 @@ const loadedGroupsOf = (transcript: unknown): string[] | null => {
 export async function bridgeToolsFor(deps: RunToolsDeps, id: BridgeIdentity): Promise<BrainTool[]> {
   if (!deps.tools) return [];
   const { ctx, run } = await locate(deps.db, id);
-  const tools = await deps.tools.list(ctx);
+  // A code session (ADR 0208): the person sees the worktree's files and the agent's screen in its panel, so no file
+  // goes to the Drive or onto a reply from there.
+  const inCode = run ? await codeSessionOfChannel(deps.db, run.channelId) : null;
+  const tools = (await deps.tools.list(ctx)).filter((t) => !(inCode && CODE_SESSION_HIDDEN_TOOLS.has(t.name)));
   // Our own tools before the connectors': a cap on the list (`MCP_TOOLS_MAX`) only ever drops connector tools.
   const ordered = [...tools.filter((t) => !t.connectionId), ...tools.filter((t) => t.connectionId)];
   const authority = run ? await runAuthorityById(deps.db, run.orgId, run.id) : null;

@@ -11697,6 +11697,17 @@ export const ptBR = {
       onHost: "em {{host}}",
       exitFull: "Sair da tela cheia",
     },
+    /** Quem está na sessão: rostos ao lado do botão do git, uma lista onde dá para tirar alguém. */
+    who: {
+      label: "Na sessão",
+      open_one: "{{count}} na sessão",
+      open_other: "{{count}} na sessão",
+      agent: "trabalha na worktree",
+      opener: "abriu a sessão",
+      leave: "Sair",
+      remove: "Tirar {{name}} da sessão",
+      invite: "Para chamar alguém, escreva @ e o nome na conversa.",
+    },
     /** Um card do navegador ou do computador na conversa, como uma linha: a tela é a do painel. */
     screenLine: {
       show: "Ver na Tela",

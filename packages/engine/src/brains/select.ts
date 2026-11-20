@@ -10,7 +10,6 @@ import {
   OPENCODE_PROTOCOL,
   type PlanUsage,
 } from "@agenteschat/adapters";
-import { codeSessionCwd } from "../code-sessions";
 import { and, desc, type Executor, eq, isNotNull, ne, or, schema, sql } from "@agenteschat/db";
 import { AUTO_MODEL, isAutoModel } from "@agenteschat/providers";
 import {
@@ -25,6 +24,7 @@ import {
 } from "@agenteschat/providers/plans";
 import { planFull, planState } from "@agenteschat/ui/plan-state";
 import type { Agent } from "../agents";
+import { codeSessionCwd } from "../code-sessions";
 import type { ModelGateway } from "../gateway";
 import type { MachineStatus } from "../machine-hub";
 import { pausedMessage } from "../machines";
@@ -891,6 +891,10 @@ export async function resolveBrain(
           .limit(1)
           .then(([last]) => Boolean(last && last.key !== options.promptKey))
       : false;
+  // A code session's conversation works in the session's worktree (ADR 0208); any other chat turn starts in the
+  // agent's folder.
+  const codeCwd =
+    !mission?.session && machineId ? await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null) : null;
   const session: BrainSession | undefined =
     mission?.session ??
     (machineId
@@ -907,9 +911,8 @@ export async function resolveBrain(
             options.now ?? new Date(),
           )),
           machineId,
-          // A code session's conversation works in the session's worktree (ADR 0208); any other chat turn starts in
-          // the agent's folder.
-          cwd: (await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null)) ?? "",
+          cwd: codeCwd ?? "",
+          ...(codeCwd ? { codeSession: true } : {}),
         }
       : undefined);
   return {

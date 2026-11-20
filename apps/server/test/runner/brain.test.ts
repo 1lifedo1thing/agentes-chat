@@ -39,6 +39,7 @@ import {
   brainKey,
   brainProfileLaunch,
   ClaudeStreamParser,
+  CODE_SESSION_TOOLS,
   carryClaudeSession,
   claudeBrainArgs,
   claudeCapabilities,
@@ -613,6 +614,18 @@ test("profiles (ADR 0053 §3): plan has our tools only, no settings files, no ed
   expect(asks).toContain("--permission-prompt-tool");
   expect(brainProfileLaunch("work", false, true, true).permissionMode).toBe("default");
   expect(brainProfileLaunch("work", false, true).permissionMode).toBe("acceptEdits");
+  // A code session's turn (ADR 0208): Claude Code's subagents and skills too, still no settings of the checkout.
+  const code = claudeBrainArgs({
+    ...base,
+    ...brainProfileLaunch("work", false, false, false, true),
+    pluginDirs: ["/b/repo"],
+  });
+  expect(at(code, "--tools")).toBe([...BRAIN_BUILTIN_TOOLS, ...CODE_SESSION_TOOLS].join(","));
+  expect(at(code, "--setting-sources")).toBe("");
+  expect(at(code, "--plugin-dir")).toBe("/b/repo");
+  // Nowhere else: a chat turn or a shared sign-in never get them.
+  expect(brainProfileLaunch("chat", false, false, false, true).builtinTools).toEqual([]);
+  expect(brainProfileLaunch("work", false, true, false, true).builtinTools).not.toContain("Agent");
 });
 
 test("protocol 41: a chat turn (the team's right hand on a plan) gets our MCP tools and nothing else", () => {

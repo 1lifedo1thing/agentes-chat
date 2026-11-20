@@ -1225,6 +1225,7 @@ export class RunnerDaemon implements RequestObserver {
       idleMs: (config.brainIdleMinutes ?? DEFAULT_LIMITS.brainIdleMinutes) * 60_000,
       maxProcesses: config.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
       accounts: this.accounts,
+      claudeVersion: () => this.executors().claude?.version ?? null,
       log,
     });
     const codexRuns = new Map<string, McpTaskInfo>();

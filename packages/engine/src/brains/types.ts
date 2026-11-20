@@ -111,6 +111,8 @@ export interface BrainSession {
   cwd: string;
   /** Start in the agent's own folder, never one of its checkouts: the folder of its session before was gone. */
   ownFolder?: boolean;
+  /** A code session's turn (ADR 0208): `cwd` is its worktree. */
+  codeSession?: boolean;
 }
 
 export interface BrainTurn {
