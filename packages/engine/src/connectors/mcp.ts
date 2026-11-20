@@ -289,6 +289,8 @@ export const exposedToolName = (connector: string, tool: string) =>
   `${connector}_${tool}`.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 64);
 
 const LIST_TTL_MS = 60_000;
+/** How old a listed set may get and still be served while a refresh runs: a server's tool changes reach the pins check by then. */
+const STALE_MAX_MS = 10 * LIST_TTL_MS;
 
 /** Where a tool call's signed caller statement goes in the request's `params._meta` (ADR 0181). */
 export const CALLER_META_KEY = "chat.agentes/caller";
@@ -320,7 +322,8 @@ export function createConnectorToolSource(
   },
 ): ToolSource {
   const connect = deps.connect ?? connectOverHttp;
-  const cache = new Map<string, { at: number; tools: McpTool[] } | { at: number; failed: unknown }>();
+  /** `at` is the last try, `listed` the last listing that worked. */
+  const cache = new Map<string, { at: number; listed: number; tools: McpTool[] } | { at: number; failed: unknown }>();
   const listing = new Map<string, Promise<McpTool[]>>();
   /** How many times a listing found changed tools and worked out a custom server's levels again. */
   let reclassified = 0;
@@ -349,19 +352,21 @@ export function createConnectorToolSource(
 
   /**
    * The server's tools, stale-while-revalidate: a list past its TTL is returned at once while one refresh per
-   * connection runs behind it. Only a connection with no list yet waits on the network. A failed listing is kept for
-   * the TTL too, so a server that is down isn't asked again on every claim.
+   * connection runs behind it. A connection with no list yet, or one older than `STALE_MAX_MS`, waits on the network.
+   * A failed refresh keeps the last list; a failure with no usable list is kept for the TTL, so a server that is down
+   * isn't asked again on every claim.
    */
   async function serverTools(connection: ConnectorConnection): Promise<McpTool[]> {
     // A change to the connection lists again at once; a token refresh isn't one (it leaves `updatedAt` as it was).
     const key = `${connection.id}:${connection.updatedAt.getTime()}`;
     const hit = cache.get(key);
-    const fresh = hit !== undefined && Date.now() - hit.at < LIST_TTL_MS;
-    if (hit && "tools" in hit) {
+    const now = Date.now();
+    const fresh = hit !== undefined && now - hit.at < LIST_TTL_MS;
+    if (hit && "tools" in hit && now - hit.listed < STALE_MAX_MS) {
       if (!fresh) refreshTools(connection, key).catch(() => {});
       return hit.tools;
     }
-    if (hit && fresh) throw hit.failed;
+    if (hit && "failed" in hit && fresh) throw hit.failed;
     return refreshTools(connection, key);
   }
 
@@ -371,11 +376,17 @@ export function createConnectorToolSource(
       pending = listNow(connection)
         .then(
           (tools) => {
-            cache.set(key, { at: Date.now(), tools });
+            const now = Date.now();
+            cache.set(key, { at: now, listed: now, tools });
             return tools;
           },
           (failed: unknown) => {
-            cache.set(key, { at: Date.now(), failed });
+            const now = Date.now();
+            const prev = cache.get(key);
+            cache.set(
+              key,
+              prev && "tools" in prev && now - prev.listed < STALE_MAX_MS ? { ...prev, at: now } : { at: now, failed },
+            );
             throw failed;
           },
         )
