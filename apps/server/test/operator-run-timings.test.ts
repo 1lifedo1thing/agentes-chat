@@ -815,7 +815,7 @@ type ReplyTimes = {
 };
 const replyTimes = async (query: string) => ok<ReplyTimes>(await get(`/analytics/reply-times?${query}`));
 /** A message in Ada's channel: a person's, or an agent's in `runId`. */
-async function message(body: string, createdAt: Date, runId?: string) {
+async function message(body: string, createdAt: Date, runId?: string, meta: Record<string, unknown> = {}) {
   const [made] = await t.db
     .insert(schema.messages)
     .values({
@@ -823,6 +823,7 @@ async function message(body: string, createdAt: Date, runId?: string) {
       channelId: adaChannel,
       body,
       createdAt,
+      meta,
       ...(runId ? { authorType: "agent", authorAgentId: ada1, agentRunId: runId, hop: 1 } : { authorType: "person" }),
     })
     .returning({ id: schema.messages.id });
@@ -890,6 +891,27 @@ test("reply times: from a person's message to the run's first message, per bucke
   ]);
   // A window with nothing in it lists nothing.
   expect(await replyTimes(windowOf(26))).toMatchObject({ replies: [], computerStarts: [], waits: [] });
+});
+
+test("reply times: the server's notices are no reply, and an agent's message nobody waits on starts no count", async () => {
+  const from = day(28);
+  const at = (ms: number) => new Date(from + ms);
+  // No AI to think with: its notice comes at once, yet nothing answered.
+  const ask = await message("hello?", at(0));
+  const noAi = await run({ createdAt: at(0), triggerMessageId: ask, status: "failed" });
+  await message("No AI is set up", at(50), noAi.id, { bodyCode: "no_ai", noAi: true });
+  // A plan at its limit: the wait's notice at once, the answer 60 s after the person wrote.
+  const later = await message("and now?", at(1000));
+  const waited = await run({ createdAt: at(1000), triggerMessageId: later, brain: "claude_code" });
+  await message("The plan hit its limit", at(1500), waited.id, { bodyCode: "plan_limit_wait" });
+  await message("here it is", at(61_000), waited.id, { bodyCode: "approval_request" });
+  // A routine's report that names another agent: a hop-1 run nobody is waiting for.
+  const report = await message("weekly report", at(2000), (await run({ createdAt: at(1900), background: true })).id);
+  const relay = await run({ createdAt: at(2000), triggerMessageId: report, brain: "model" });
+  await message("noted", at(2100), relay.id);
+
+  const all = (await replyTimes(windowOf(28))).replies.find((r) => r.brain === "all" && r.trigger === "all");
+  expect(all).toMatchObject({ runs: 2, replied: 1, p50Ms: 60_000 });
 });
 
 test("reply times: computer turns' starts and the waits for a computer, per bucket", async () => {

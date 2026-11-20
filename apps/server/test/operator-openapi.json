@@ -2849,7 +2849,7 @@
                 "replied": {
                   "type": "integer",
                   "minimum": 0,
-                  "description": "Of them, the ones that put a message in the conversation."
+                  "description": "Of them, the ones that put a message in the conversation. The server's notices that it can't answer yet (no AI, a plan at its limit or switched, a computer or provider not answering) aren't one."
                 },
                 "p50Ms": {
                   "type": ["integer", "null"],
@@ -2872,7 +2872,7 @@
                     "replied": {
                       "type": "integer",
                       "minimum": 0,
-                      "description": "Of them, the ones that put a message in the conversation."
+                      "description": "Of them, the ones that put a message in the conversation. The server's notices that it can't answer yet (no AI, a plan at its limit or switched, a computer or provider not answering) aren't one."
                     },
                     "p50Ms": {
                       "type": ["integer", "null"],

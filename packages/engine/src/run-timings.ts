@@ -313,6 +313,12 @@ export const REPLY_TIME_BUCKETS = ["hour", "day"] as const;
 /** The brains a reply time is split by: any other, or none yet, is `other`. */
 export const REPLY_BRAINS = ["model", "claude_code", "codex", "other"] as const;
 export const REPLY_WAIT_CAUSES = ["room", "offline", "other"] as const;
+/**
+ * The server's own lines a run posts before (or instead of) its answer, by `bodyCode`: no AI to think with, a plan at
+ * its limit or switched, a computer or provider not answering, the asker at their limit. None is a reply: within a
+ * second, they'd pass for the quickest ones.
+ */
+const NOT_A_REPLY = "^(no_ai|plan_limit|plan_account_moved|brain_unavailable|provider_|person_limit)";
 
 export interface ReplyTimesQuery {
   /** ISO 8601 instants: runs created at or after `from` and before `to`. */
@@ -358,15 +364,19 @@ export async function operatorReplyTimes(db: Database, query: ReplyTimesQuery, n
           extract(epoch from (
             select min(m.created_at) from messages m where m.agent_run_id = ar.id
               and m.created_at >= ar.created_at - interval '1 minute' and m.created_at < ar.created_at + interval '2 days'
+              and coalesce(m.meta->>'bodyCode', '') !~ '${sql.raw(NOT_A_REPLY)}'
           ) - coalesce(q.asked, ar.created_at)) * 1000 as said
         from agent_runs ar
         left join lateral (
-          select m.created_at as asked, char_length(m.body) < ${SHORT_ASK_CHARS} as short from messages m
+          select m.created_at as asked, char_length(m.body) < ${SHORT_ASK_CHARS} as short,
+            m.author_type = 'person' as person
+          from messages m
           where m.id = ar.trigger_message_id and m.created_at <= ar.created_at + interval '1 minute'
             and m.created_at > ar.created_at - interval '1 day'
           limit 1
         ) q on true
-        where ${runsIn} and ar.hop = 1
+        -- An agent's message can start a hop-1 run too (a routine's report that names another agent): nobody waits on it.
+        where ${runsIn} and ar.hop = 1 and q.person is not false
       ), r as (
         -- A run that never replied stays null: greatest() would make it 0.
         select at, brain, trigger, short, case when said < 0 then 0 else said end as ms from s

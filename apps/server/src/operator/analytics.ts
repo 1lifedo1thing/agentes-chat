@@ -479,7 +479,10 @@ const At = z
   .openapi({ description: "The bucket's start, UTC: `YYYY-MM-DDTHH:00:00Z`.", example: "2026-10-30T00:00:00Z" });
 const ReplyMeasures = {
   runs: Count.openapi({ description: "Runs answering a person's message (hop 1), routines' left out." }),
-  replied: Count.openapi({ description: "Of them, the ones that put a message in the conversation." }),
+  replied: Count.openapi({
+    description:
+      "Of them, the ones that put a message in the conversation. The server's notices that it can't answer yet (no AI, a plan at its limit or switched, a computer or provider not answering) aren't one.",
+  }),
   p50Ms: Ms.openapi({ description: "From the person's message to the run's first message, of the runs that replied." }),
   p90Ms: Ms,
   p99Ms: Ms,
