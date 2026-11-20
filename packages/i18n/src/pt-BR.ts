@@ -18360,6 +18360,10 @@ export const ptBR = {
         merged: "{{who}} fez o merge do PR #{{number}} ({{repo}}) no GitHub",
         closed: "{{who}} fechou o PR #{{number}} ({{repo}}) no GitHub",
         closedIssue: "{{who}} fechou a issue #{{number}} ({{repo}}) no GitHub",
+        /** Numa sessão de código: uma verificação (teste ou build automático do GitHub) não passou no PR da sessão. */
+        checkFailed: "A verificação «{{check}}» não passou no PR #{{number}} ({{repo}}) no GitHub",
+        /** O mesmo antes de haver PR: no commit (`commit`, o id curto) que o agente enviou. */
+        checkFailedCommit: "A verificação «{{check}}» não passou no commit {{commit}} ({{repo}}) no GitHub",
         /** Na linha de alguém a quem o agente não responde: uma pessoa daqui pede para o agente responder lá. */
         ask: "Pedir resposta",
         /** A linha depois que alguém pediu (`asker`), no lugar do botão. */
@@ -20283,6 +20287,36 @@ export const ptBR = {
     screenOff: "A tela está desligada",
     screenOffHelp: "Ela liga quando alguém assiste.",
   },
+  /** A coding agent's own tool calls in a code session, one line each as in a terminal: "Read src/app.ts". */
+  cliTools: {
+    read: "Leu",
+    search: "Buscou",
+    edit: "Editou",
+    write: "Escreveu",
+    run: "Rodou",
+    fetch: "Abriu",
+    other: "Usou",
+    running: {
+      read: "Lendo",
+      search: "Buscando",
+      edit: "Editando",
+      write: "Escrevendo",
+      run: "Rodando",
+      fetch: "Abrindo",
+      other: "Usando",
+    },
+    lines: "+{{added}} −{{removed}}",
+    added: "+{{added}}",
+    found_one: "{{count}} lugar",
+    found_other: "{{count}} lugares",
+    files_one: "{{count}} arquivo",
+    files_other: "{{count}} arquivos",
+    passed_one: "{{count}} passou",
+    passed_other: "{{count}} passaram",
+    failedTests_one: "{{count}} falhou",
+    failedTests_other: "{{count}} falharam",
+    exit: "saiu com {{code}}",
+  },
   agentComputer: {
     title: "Computador do {{name}}",
     title_female: "Computador da {{name}}",
@@ -20392,6 +20426,23 @@ export const ptBR = {
       upright: "Voltar a tela para em pé",
       message: "Mensagem para {{name}}",
     },
+  },
+  /** A code session's Terminal tab (ADR 0208): a shell on the agent's computer, in the session's folder. */
+  codeTerminal: {
+    label: "Terminal",
+    opening: "Abrindo o terminal…",
+    openAgain: "Abrir de novo",
+    ended: "O shell terminou",
+    dropped: "A conexão com o terminal caiu",
+    screening: "O terminal está desligado neste servidor",
+    forbidden: "Só quem pode usar esse computador abre o terminal",
+    offline: "Computador offline",
+    outdated: "Atualize o computador para abrir o terminal na pasta da sessão",
+    unavailable: "O computador deste agente não abre terminal",
+    busy: "Este computador já tem o máximo de terminais abertos. Feche um e abra de novo.",
+    paused: "O computador está pausado",
+    failed: "Não deu para abrir o terminal",
+    agentFolder: "O terminal abriu na pasta do agente. Atualize o computador para abrir na pasta da sessão.",
   },
   /** Agora (ADR 0128 addendum): the whole workspace's work in one place, a button beside "Ir para…" and its list. */
   agora: {

@@ -879,15 +879,17 @@ export async function codeSessionGit(
   return { uncommitted, ahead, upstream, pr, next };
 }
 
-/** Records the pull request opened from the session's branch (the agent's `open_pull_request`, or GitHub's event). */
-export async function recordCodeSessionPr(
-  deps: Pick<CodeSessionDeps, "db" | "pubsub">,
+/**
+ * The open session working on `branch` of `repo` (`owner/name`, in any case: GitHub's events spell it their way), if
+ * any: what GitHub's events on that branch reach (a check that failed there, a pull request opened from it).
+ */
+export async function codeSessionOnBranch(
+  db: Executor,
   orgId: string,
   repo: string,
   branch: string,
-  pr: { number: number; url: string | null },
-) {
-  const [row] = await deps.db
+): Promise<CodeSessionRow | null> {
+  const [row] = await db
     .select()
     .from(codeSessions)
     .where(
@@ -899,6 +901,18 @@ export async function recordCodeSessionPr(
       ),
     )
     .limit(1);
-  if (!row || row.prNumber === pr.number) return row ?? null;
+  return row ?? null;
+}
+
+/** Records the pull request opened from the session's branch (the agent's `open_pull_request`, or GitHub's event). */
+export async function recordCodeSessionPr(
+  deps: Pick<CodeSessionDeps, "db" | "pubsub">,
+  orgId: string,
+  repo: string,
+  branch: string,
+  pr: { number: number; url: string | null },
+) {
+  const row = await codeSessionOnBranch(deps.db, orgId, repo, branch);
+  if (!row || (row.prNumber === pr.number && (row.prUrl === pr.url || !pr.url))) return row;
   return setSession(deps, row, { prNumber: pr.number, prUrl: pr.url });
 }

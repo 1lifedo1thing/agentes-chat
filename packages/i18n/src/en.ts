@@ -18510,6 +18510,13 @@ export const en = {
         merged: "{{who}} merged PR #{{number}} ({{repo}}) on GitHub",
         closed: "{{who}} closed PR #{{number}} ({{repo}}) on GitHub",
         closedIssue: "{{who}} closed issue #{{number}} ({{repo}}) on GitHub",
+        /**
+         * In a code session: a check (an automatic test or build GitHub runs, named `check`) didn't pass on the
+         * session's pull request. "Show" opens what the check said and its page.
+         */
+        checkFailed: "Check «{{check}}» didn't pass on PR #{{number}} ({{repo}}) on GitHub",
+        /** The same before there is a pull request: on the commit (`commit`, its short id) the agent pushed. */
+        checkFailedCommit: "Check «{{check}}» didn't pass on commit {{commit}} ({{repo}}) on GitHub",
         /** On the line of someone the agent doesn't answer: a person here asks the agent to answer them there. */
         ask: "Ask for a reply",
         /** The line once someone asked (`asker`), in place of the button. */
@@ -20351,6 +20358,45 @@ export const en = {
     screenOff: "The screen is off",
     screenOffHelp: "It turns on when someone watches.",
   },
+  /**
+   * A coding agent's own tool calls in a code session, one quiet line each as in a terminal: the verb, then what it
+   * worked on (a file, a search, a command) and what it came to on the right ("Read src/app.ts", "Ran bun test · 15
+   * passed").
+   */
+  cliTools: {
+    read: "Read",
+    search: "Searched",
+    edit: "Edited",
+    write: "Wrote",
+    run: "Ran",
+    fetch: "Fetched",
+    other: "Used",
+    /** While the call runs. */
+    running: {
+      read: "Reading",
+      search: "Searching",
+      edit: "Editing",
+      write: "Writing",
+      run: "Running",
+      fetch: "Fetching",
+      other: "Using",
+    },
+    /** Lines an edit added and removed. */
+    lines: "+{{added}} −{{removed}}",
+    added: "+{{added}}",
+    /** Places a search found. */
+    found_one: "{{count}} place",
+    found_other: "{{count}} places",
+    files_one: "{{count}} file",
+    files_other: "{{count}} files",
+    /** Tests a command ran. */
+    passed_one: "{{count}} passed",
+    passed_other: "{{count}} passed",
+    failedTests_one: "{{count}} failed",
+    failedTests_other: "{{count}} failed",
+    /** A failed command's exit code. */
+    exit: "exit {{code}}",
+  },
   agentComputer: {
     title: "{{name}}'s computer",
     open: "Open",
@@ -20450,6 +20496,27 @@ export const en = {
       upright: "Turn upright",
       message: "Message {{name}}",
     },
+  },
+  /**
+   * A code session's Terminal tab (ADR 0208): a shell on the agent's computer, in the session's folder. One line under
+   * it says why it closed; "Open again" opens a new shell.
+   */
+  codeTerminal: {
+    label: "Terminal",
+    opening: "Opening the terminal…",
+    openAgain: "Open again",
+    ended: "The shell ended",
+    dropped: "The connection to the terminal dropped",
+    screening: "Terminals are off on this server",
+    forbidden: "Only whoever may use this computer opens a terminal",
+    offline: "The computer is offline",
+    outdated: "Update the computer to open the terminal in the session's folder",
+    unavailable: "This agent's computer doesn't open terminals",
+    busy: "This computer has as many terminals open as it takes. Close one and open again.",
+    paused: "The computer is paused",
+    failed: "Couldn't open the terminal",
+    /** Its computer's app is too old for the session's folder: the shell started in the agent's own. */
+    agentFolder: "The terminal opened in the agent's folder. Update the computer to open it in the session's folder.",
   },
   /** Agora (ADR 0128 addendum): the whole workspace's work in one place, a button beside "Go to…" and its list. */
   agora: {
