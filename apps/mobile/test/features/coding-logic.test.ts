@@ -56,7 +56,7 @@ const git = (over: Partial<CodeGit> = {}): CodeGit => ({
   ...over,
 });
 
-describe("Código's list", () => {
+describe("Code's list", () => {
   test("sessions group by project, the project of the newest first, each newest first", () => {
     const groups = sessionsByRepo([
       session({ id: "old", repo: "acme/shop", lastAt: "2026-11-18T10:00:00Z" }),
@@ -149,14 +149,14 @@ describe("a session's screens", () => {
     });
   });
 
-  test("every screen of a session lands back on Código when its address is wrong, never on a blank screen", () => {
+  test("every screen of a session lands back on Code when its address is wrong, never on a blank screen", () => {
     for (const file of ["index.tsx", "files.tsx", "file.tsx", "diff.tsx", "people.tsx"])
       expect(route(`coding/[sessionId]/${file}`)).toContain('<LandOn href="/coding" />');
     // A commit's diff needs a commit's hash.
     expect(route("coding/[sessionId]/diff.tsx")).toContain("/^[0-9a-f]{7,40}$/i");
   });
 
-  test("Código's grouped screens are pushed on the grouped gray, as the steps of creating an agent", () => {
+  test("Code's grouped screens are pushed on the grouped gray, as the steps of creating an agent", () => {
     const layout = mainLayout();
     for (const name of ["coding/index", "coding/new", "coding/where", "coding/[sessionId]/index"])
       expect(layout).toContain(`"${name}"`);

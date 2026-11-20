@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { PixelOrbit, Text } from "@/ui";
 
 /**
- * What a working agent does, under a row's label: in words with its orbit, never a label (Você's agents, Código's
+ * What a working agent does, under a row's label: in words with its orbit, never a label (You's agents, Code's
  * sessions).
  */
 export function RowWorkingLine({ color, text }: { color: ComponentProps<typeof PixelOrbit>["color"]; text: string }) {

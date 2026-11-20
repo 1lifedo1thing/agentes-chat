@@ -11,7 +11,7 @@ const GITHUB_REPO = /^[\w.-]+\/[\w.-]+$/;
 const LOCAL_NAME = /^(?!\.)[A-Za-z0-9._-]{1,64}$/;
 
 /**
- * Onde trabalhar (ADR 0208), pushed from a new session's form: the web's repository picker as its own screen. The
+ * Where to work (ADR 0208), pushed from a new session's form: the web's repository picker as its own screen. The
  * search, the agent's repositories and the projects only on its computer used before (the chosen one checked), and a
  * name typed that isn't listed offered as a new one: a new project on the computer, or `owner/name` where the agent's
  * list allows any. A pick goes back to the form. Opened on its own (after a restart, nothing to pick for), it goes back.

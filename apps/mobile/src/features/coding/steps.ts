@@ -23,8 +23,8 @@ export const stepAsk = (t: T, s: Pick<CodeSession, "local" | "baseBranch">, step
     : t(`codeSessions.git.ask.${step}`);
 
 /**
- * Where the branch stands for its next step, in a few words ("3 arquivos mudados", "2 commits não enviados", "O PR
- * #12 está aberto"): the line the step's word ends.
+ * Where the branch stands for its next step, in a few words ("3 files changed", "2 commits not pushed", "PR #12
+ * is open"): the line the step's word ends.
  */
 export function stepWords(t: T, s: Pick<CodeSession, "local" | "baseBranch">, git: CodeGit, step: CodeGitStep) {
   if (step === "commit") return t("codeSessions.git.hint.commit", { count: git.uncommitted });

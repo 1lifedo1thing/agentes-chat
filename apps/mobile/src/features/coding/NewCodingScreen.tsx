@@ -24,9 +24,9 @@ import { codeDraft } from "./draft";
 import { CODING_WHERE_HREF, isLocalRepo, sessionChatHref } from "./logic";
 
 /**
- * Nova sessão (ADR 0208), pushed from Código: the web home's field and its two choices as a grouped form. What to do,
- * then the agent (the app's own picker, faces as the web's select) and where it works ("Onde trabalhar", its own
- * pushed screen: the agent's repositories, the projects only on its computer, or a new one); "Começar" in the bar.
+ * New session (ADR 0208), pushed from Code: the web home's field and its two choices as a grouped form. What to do,
+ * then the agent (the app's own picker, faces as the web's select) and where it works ("Where to work", its own
+ * pushed screen: the agent's repositories, the projects only on its computer, or a new one); "Start" in the bar.
  * The last pick comes back as on the web: the first agent and its first repository otherwise. Starting it replaces
  * this screen with the session's conversation, so back goes to the list.
  */
@@ -149,8 +149,9 @@ export function NewCodingScreen() {
                     </View>
                   ) : null}
                 </GroupedField>
+                {/* "Project": the web's "Where to work" wrapped in the field's 96-point label column on a phone. */}
                 <GroupedField
-                  label={t("codeSessions.home.repo")}
+                  label={t("mobile.coding.project")}
                   onPress={() => router.push(CODING_WHERE_HREF as never)}
                 >
                   <View style={styles.value}>

@@ -1524,6 +1524,8 @@ export const featureKeysEn = {
     pill: "{{who}}. See the code",
     /** The step line's words over the composer ("3 files changed"), which open the session's Git view. */
     seeChanges: "See the changes",
+    /** A new session's field for where it works (a repository, or a project only on the computer). */
+    project: "Project",
     /** Over the agent's repositories and projects when a typed name is offered as a new one above them. */
     listed: "The agent's",
     /** A commit's diff, by its short hash. */

@@ -15,7 +15,7 @@ const LINE_SLOP = { top: 8, bottom: 8 };
 
 /**
  * A code session's next git step over its conversation's composer (ADR 0208), the web header's button on the phone:
- * where the branch stands, which opens the changes to look first (`onSee`), then the step's word ("3 arquivos mudados ·
+ * where the branch stands, which opens the changes to look first (`onSee`), then the step's word ("3 files changed ·
  * Commit"), which asks the agent in the conversation. Only while the agent is free (`busy`: a run of it is live here)
  * and there is a step to take; once asked, it keeps away until the agent has started (or a while has passed). The
  * shape of the bars above the composer (`WaitingHereBar`), so one replaces another without moving.

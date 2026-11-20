@@ -1472,6 +1472,7 @@ export const featureKeysPtBR = {
   coding: {
     pill: "{{who}}. Ver o código",
     seeChanges: "Ver as mudanças",
+    project: "Projeto",
     listed: "Do agente",
     commit: "Commit {{short}}",
     waiting: "Esperando você",

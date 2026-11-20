@@ -14,7 +14,7 @@ import { CODING_HREF } from "./logic";
 /**
  * Who is in a session (ADR 0208), pushed from its "…": its agent first ("trabalha na worktree"), whoever opened it,
  * then whoever an @ brought in. Whoever opened it, or an admin, takes someone out (the row's button, as the app's
- * lists remove); anyone else leaves (and goes back to Código). Bringing someone in is an @ in the conversation.
+ * lists remove); anyone else leaves (and goes back to Code). Bringing someone in is an @ in the conversation.
  */
 export function PeopleScreen({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
