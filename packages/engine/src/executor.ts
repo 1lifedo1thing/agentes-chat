@@ -1208,6 +1208,8 @@ export async function executeRun(deps: EngineDeps, runId: string, options: RunJo
   try {
     return await executeRunInner(deps, runId, options, prof, abort.signal, steerGate);
   } finally {
+    // A run that ended before its last stage (failed, passed, paused) still accounts for the time since its last mark.
+    if (prof.stages.at(-1)?.stage !== "events") prof.end();
     steerGate.close();
     clearInterval(heartbeat);
     unregisterRunAbort(runId, abort);
@@ -1936,6 +1938,7 @@ async function executeRunInner(
             .where(and(eq(schema.messages.orgId, run.orgId), eq(schema.messages.id, run.triggerMessageId))),
     deps.tools ? deps.tools.granted(ctx, heldBack) : Promise.resolve([]),
   ]);
+  prof.part("tools_granted");
   let tools = presentTools(granted, isSensitive, ctx.loadedGroups);
   /**
    * Only Claude Code defers our tools itself: a run that lists every tool and thinks with another brain (the model
@@ -1956,6 +1959,7 @@ async function executeRunInner(
   if (needsContext) {
     const ai = await agentAiState({ db, gateway: deps.gateway, machines: deps.machines }, agent, run);
     if (ai.state === "no_ai") return failNoAi(ai.reason ?? "no_key", ai.own, undefined, undefined, ai);
+    prof.part("ai_state");
   }
   if (!askingForRoom) await publishChannelEvent(deps.pubsub, event("running"));
   // Tools on demand (ADR 0043): a new run lists the core tools and the groups the judge expects it to need.
@@ -2210,6 +2214,8 @@ async function executeRunInner(
         .catch(() => {});
     }
   }
+  // The checks before the context: the trigger's thread, how the run was routed, a catch-up's triage.
+  prof.part("checks");
   /** Whether this run read outside content (`runReadOutside`): sticky once true. */
   let readOutside = false;
   const outsideMemo: OutsideMemo = {};
@@ -2528,7 +2534,11 @@ async function executeRunInner(
         : Promise.resolve({ text: "", pageIds: [] as string[], held: false }),
       rulesForRun(db, run, agent).catch(() => ({ text: "", itemIds: [] as string[] })),
     ]);
-    await judging;
+    prof.part("build");
+    if (judging) {
+      await judging;
+      prof.part("judging");
+    }
     // Its thread turned confidential after the claim read the message that asked: it is a run of that thread now.
     if (context.confidential && !ctx.confidential) {
       ctx.confidential = true;
@@ -2551,6 +2561,7 @@ async function executeRunInner(
           conversation: true,
           text: `# Earlier in this thread (summary)\n${itemLabel(summary)} ${summary.content}`,
         });
+      prof.part("summary");
     }
     // Per turn like memory: who the run acts for picks the rules, so they never move the cached prompt.
     if (rules.text) {

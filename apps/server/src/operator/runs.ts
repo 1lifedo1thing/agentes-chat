@@ -361,10 +361,17 @@ const Trace = z
               z.object({
                 stage: z.string().openapi({
                   description:
-                    "`claim`, `context`, `model#1` (the turn it is of), `persist`, `events`… `other`: a name not shaped like one the server writes.",
+                    "`claim`, `context`, `model#1` (the turn it is of), `persist`, `events`, `end` (after the last of them)… `other`: a name not shaped like one the server writes.",
                 }),
                 ms: Count,
                 queries: Count,
+                parts: z
+                  .array(z.object({ stage: z.string(), ms: Count, queries: Count }))
+                  .optional()
+                  .openapi({
+                    description:
+                      "Steps inside the stage, back to back from its start (`context`: `tools_granted`, `ai_state`, `checks`, `build`, `judging`, `summary`); what they leave of `ms` came after the last.",
+                  }),
               }),
             )
             .openapi({ description: `In the order they ran, at most ${RUN_CLAIM_STAGES_MAX}.` }),
