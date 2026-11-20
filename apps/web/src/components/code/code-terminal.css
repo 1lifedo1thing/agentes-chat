@@ -25,6 +25,9 @@
   font-feature-settings: normal;
 }
 /* The room around the text is xterm's own padding: its fit counts it, and never the pane's. */
+.code-term__screen[hidden] {
+  display: none;
+}
 .code-term__screen .xterm {
   padding: 8px 4px 8px 12px;
 }

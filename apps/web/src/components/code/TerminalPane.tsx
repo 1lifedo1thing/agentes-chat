@@ -217,7 +217,8 @@ export function TerminalPane({
   return (
     <section className="code-term" aria-label={t("codeTerminal.label")}>
       {agentFolder && <p className="code-term__note">{t("codeTerminal.agentFolder")}</p>}
-      <div className="code-term__screen" ref={hostRef} />
+      {/* Off on its computer: no screen, only why and the way to turn it on. */}
+      <div className="code-term__screen" ref={hostRef} hidden={off} />
       {state === "opening" && (
         <p className="code-term__opening" role="status">
           {t("codeTerminal.opening")}

@@ -79,3 +79,24 @@ export function CodeHorizon() {
   );
   return <PixelSky options={options} />;
 }
+
+/**
+ * The screen's stage: the bare surface at the top, under its bar, and the sky rising toward the foot behind the screen
+ * (its contour moves like slow hills, never a straight line where it starts).
+ */
+export function CodeScreenSky() {
+  const options = useMemo(
+    () =>
+      fineSky(
+        (u, v, t, dark) => {
+          const top = 0.14 + 0.08 * S(u * 2.7 + t * 0.12) + 0.04 * S(u * 6.1 - t * 0.09);
+          const e = smooth(top, v) ** 1.3;
+          const wave = 0.04 * S(u * 4 + t * 0.5) * e;
+          return dark ? Math.max(0, 0.6 * e + wave) : Math.min(1, 1 - 0.8 * e + wave);
+        },
+        { sprites: { area: 12_000, max: 5 }, ceil: 0.55 },
+      ),
+    [],
+  );
+  return <PixelSky options={options} />;
+}

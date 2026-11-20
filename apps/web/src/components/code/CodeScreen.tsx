@@ -12,7 +12,7 @@ import { PhoneLive } from "@/components/devices/PhoneLive";
 import { useDevices } from "@/components/devices/queries";
 import { useOrg } from "@/components/org-context";
 import { useSaid } from "@/lib/toast";
-import { CodeHomeSky } from "./CodeSky";
+import { CodeScreenSky } from "./CodeSky";
 
 /** A screen the panel can show: the agent's computer, or a phone this person may use (ADR 0042). */
 type ScreenPick = { kind: "computer" } | { kind: "phone"; phoneId: string };
@@ -40,7 +40,7 @@ export function CodeScreen({ agent }: { agent: Agent }) {
   return (
     <div className="code-screen">
       <div className="code-ssky" aria-hidden="true">
-        <CodeHomeSky />
+        <CodeScreenSky />
       </div>
       <div className="code-sbar">
         {phones.length > 0 && (

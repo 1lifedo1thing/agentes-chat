@@ -338,11 +338,17 @@
   font-size: 12.5px;
   line-height: 18px;
 }
+/* The state always whole; the branch gives way. */
+.code-head__m > .code-st {
+  flex: none;
+}
 .code-br {
   display: inline-flex;
+  flex: 0 1 auto;
   align-items: center;
   gap: 5px;
   min-width: 0;
+  overflow: hidden;
 }
 .code-br code {
   overflow: hidden;
@@ -394,8 +400,10 @@
   flex-direction: column;
   overflow: hidden;
 }
+/* As wide as the person dragged it, giving way to the panel's least where the window is narrow. */
 .code-pane--talk {
-  flex: 0 0 var(--code-talk, 620px);
+  flex: 0 1 var(--code-talk, 620px);
+  min-width: 320px;
 }
 .code-pane--talk > .shell__main {
   flex: 1;
@@ -406,21 +414,30 @@
 .code-pane--side {
   position: relative;
   flex: 1 1 0;
+  min-width: 300px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: 56px minmax(0, 1fr) auto auto;
 }
-.code-pane--side > .ac-tabs {
+/* The row's hairline under the tabs and the switch alike (the kit's tabs draw theirs under the tabs only). */
+.code-pane--side::before {
+  content: "";
   grid-area: 1 / 1 / 2 / 3;
+  border-bottom: 1px solid var(--line);
+  pointer-events: none;
+}
+/* The kit's tabs sit in a `display: contents` root: its list and panels are this grid's items. */
+.code-pane--side > * > .ac-tabs {
+  grid-area: 1 / 1 / 2 / 2;
   align-items: flex-end;
   padding: 0 12px;
 }
 .code-pane--side > .code-ptoggle {
   grid-area: 1 / 2 / 2 / 3;
-  align-self: center;
-  margin-right: 10px;
+  align-self: end;
+  margin: 0 10px 3px 0;
 }
-.code-pane--side > .ac-tabpanel {
+.code-pane--side > * > .ac-tabpanel {
   grid-area: 2 / 1 / 3 / 3;
   position: relative;
   min-height: 0;
@@ -554,11 +571,13 @@
 .code-fhead__r {
   margin-left: auto;
 }
+/* The change dissolves into the sky at the panel's foot, where its agent stands; its end scrolls above it. */
 .code-dscroll {
   flex: 1;
   min-height: 0;
   overflow: auto;
   padding: 4px 12px 160px;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 150px), transparent calc(100% - 40px));
 }
 .code-files {
   margin: 0;

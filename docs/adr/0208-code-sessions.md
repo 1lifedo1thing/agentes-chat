@@ -75,7 +75,9 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
   (the last ones used come back); the computer is the agent's own, so there is nothing else to pick.
 - **Session**: the conversation under its header (name, state and branch, the git button, only when there is a next
   step and the agent is free to take it), and a side panel with the kit's tabs, Diff and Screen, and a Terminal under
-  either. The list, the conversation and the terminal's height drag, each kept on the device:
+  either. The list, the conversation and the terminal's height drag, each kept on the device, and a session squeezed
+  by the window folds the app's sidebar to its rail until the room comes back (`usePageRoom`, as beside a live file's
+  conversation):
   - **Diff**: read with `git` in the worktree as its agent (the runner's `exec`, read-only commands): since the base
     (committed or not, new files included) or only what isn't committed. The sky rises behind it from the panel's
     foot, with the agent standing on it.
