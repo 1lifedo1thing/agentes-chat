@@ -330,6 +330,7 @@ import { useLeaveChannelWithUndo } from "@/components/LeaveChannelDialog";
 import { useUploadFailed } from "@/components/Limits";
 import { LiveCodeToggle } from "@/components/LiveCode";
 import { ErrorState, LoadingConversation } from "@/components/Loading";
+import { ResolveButton, ResolvedLine } from "@/components/live/media/ResolveBits";
 import { LiveQuoteBar, LiveRefLine } from "@/components/live/TalkBits";
 import { useFileTalk } from "@/components/live/talk";
 import { AwayPill, WaitingCard } from "@/components/MachineOutages";
@@ -1136,6 +1137,7 @@ function ChannelView({
     <LiveQuoteBar
       kind={fileHere.kind}
       selection={fileHere.about}
+      thumb={fileHere.aboutThumb}
       onDrop={() => {
         fileHere.dropAbout();
         composer.current?.focus();
@@ -5050,13 +5052,20 @@ export const TimelineMessage = memo(function TimelineMessage({
             ))}
             {/* A "Responder" thread went on from here: its line (opens the panel). */}
             {threadLine && <ThreadReplyLine thread={threadLine.thread} count={threadLine.count} />}
+            {/* A comment on a picture, a video or a PDF that was resolved (ADR 0208): by whom, when. */}
+            {liveRef && <ResolvedLine message={m} />}
             {feedback && (
               <MessageFeedback
                 messageId={m.id}
                 agentName={agent?.name ?? t("channel.unknownAgent")}
                 active={active}
                 initial={m.reactions}
-                quick={<ReplyButton message={m} />}
+                quick={
+                  <>
+                    <ReplyButton message={m} />
+                    <ResolveButton message={m} />
+                  </>
+                }
                 more={<MessageMoreMenu entries={menu.more} />}
               />
             )}
