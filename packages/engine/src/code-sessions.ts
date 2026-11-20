@@ -36,8 +36,11 @@ export type CodeWorktreeState = (typeof CODE_WORKTREE_STATES)[number];
 export const codeWorktreeStateOf = (v: unknown): CodeWorktreeState =>
   typeof v === "string" && (CODE_WORKTREE_STATES as readonly string[]).includes(v) ? (v as CodeWorktreeState) : "failed";
 
-/** The brains that work on a computer, in a folder: the only ones a code session can have. */
-export const CODE_BRAINS = ["claude", "codex"] as const;
+/**
+ * The brains a code session can have: those that work on the agent's computer in the folder their turn names (the
+ * worktree, `codeSessionCwd`). The other CLI brains start in the agent's folder whatever the turn says.
+ */
+export const CODE_BRAINS = ["claude_code", "codex"] as const;
 
 /** `ensure` copies `.env*` files and may prune: more than a plain request (as for a mission). */
 const ENSURE_TIMEOUT_MS = 120_000;
