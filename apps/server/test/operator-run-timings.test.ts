@@ -804,3 +804,149 @@ test("the waits are asked for in the words of the index that finds them", async 
   expect(waits.length).toBe(1);
   expect(words(waits[0] ?? "")).toContain(words(index?.condition ?? "none"));
 });
+
+type ReplyTimes = {
+  from: string;
+  to: string;
+  bucket: string;
+  replies: (Record<string, unknown> & { at: string; brain: string; trigger: string })[];
+  computerStarts: Rows;
+  waits: Rows;
+};
+const replyTimes = async (query: string) => ok<ReplyTimes>(await get(`/analytics/reply-times?${query}`));
+/** A message in Ada's channel: a person's, or an agent's in `runId`. */
+async function message(body: string, createdAt: Date, runId?: string) {
+  const [made] = await t.db
+    .insert(schema.messages)
+    .values({
+      orgId: ada,
+      channelId: adaChannel,
+      body,
+      createdAt,
+      ...(runId ? { authorType: "agent", authorAgentId: ada1, agentRunId: runId, hop: 1 } : { authorType: "person" }),
+    })
+    .returning({ id: schema.messages.id });
+  if (!made) throw new Error("no message");
+  return made.id;
+}
+
+test("reply times: from a person's message to the run's first message, per bucket, brain, trigger and short ask", async () => {
+  const from = day(25);
+  const at = (ms: number) => new Date(from + ms);
+  // A short mention answered in 3 s (its second message later counts nothing).
+  const hi = await message("hi", at(0));
+  const quick = await run({ createdAt: at(0), triggerMessageId: hi, brain: "claude_code" });
+  await message("on it", at(3000), quick.id);
+  await message("done", at(9000), quick.id);
+  // A long ask the router gave out 2 s later, answered 10 s after the person wrote.
+  const long = await message("please look at the failing deploy and tell me what went wrong there", at(10_000));
+  const routed = await run({ createdAt: at(12_000), triggerMessageId: long, trigger: "router", brain: "model" });
+  await message("found it", at(20_000), routed.id);
+  // A direct message no reply came to yet, a routine's run and an agent's answer to an agent: only the first counts.
+  const dm = await message("ok?", at(30_000));
+  await run({ createdAt: at(30_000), triggerMessageId: dm, trigger: "dm", status: "failed" });
+  const routine = await run({ createdAt: at(31_000), background: true, brain: "model" });
+  await message("report", at(32_000), routine.id);
+  const relay = await run({ createdAt: at(33_000), hop: 2, brain: "model" });
+  await message("relay", at(34_000), relay.id);
+  // An hour later, a mention whose trigger is out of reach counts from its run's start.
+  const late = await run({ createdAt: at(3_600_000), brain: "codex" });
+  await message("later", at(3_605_000), late.id);
+
+  const daily = await replyTimes(windowOf(25));
+  expect(daily.bucket).toBe("day");
+  const row = (rows: ReplyTimes["replies"], brain: string, trigger: string) =>
+    rows.find((r) => r.brain === brain && r.trigger === trigger);
+  const dayAt = "2026-10-25T00:00:00Z";
+  expect(row(daily.replies, "all", "all")).toEqual({
+    at: dayAt,
+    brain: "all",
+    trigger: "all",
+    runs: 4,
+    replied: 3,
+    p50Ms: 5000,
+    p90Ms: 9000,
+    p99Ms: 9900,
+    short: { runs: 2, replied: 1, p50Ms: 3000, p90Ms: 3000, p99Ms: 3000 },
+  });
+  expect(daily.replies.map((r) => [r.brain, r.trigger, r.runs, r.replied, r.p50Ms])).toEqual([
+    ["all", "all", 4, 3, 5000],
+    ["all", "dm", 1, 0, null],
+    ["all", "mention", 2, 2, 4000],
+    ["all", "router", 1, 1, 10_000],
+    ["claude_code", "all", 1, 1, 3000],
+    ["codex", "all", 1, 1, 5000],
+    ["model", "all", 1, 1, 10_000],
+    ["other", "all", 1, 0, null],
+  ]);
+
+  const hourly = await replyTimes(`${windowOf(25)}&bucket=hour`);
+  expect(hourly.bucket).toBe("hour");
+  expect(
+    hourly.replies.filter((r) => r.brain === "all" && r.trigger === "all").map((r) => [r.at, r.runs, r.p50Ms]),
+  ).toEqual([
+    ["2026-10-25T00:00:00Z", 3, 6500],
+    ["2026-10-25T01:00:00Z", 1, 5000],
+  ]);
+  // A window with nothing in it lists nothing.
+  expect(await replyTimes(windowOf(26))).toMatchObject({ replies: [], computerStarts: [], waits: [] });
+});
+
+test("reply times: computer turns' starts and the waits for a computer, per bucket", async () => {
+  const from = day(27);
+  const at = (ms: number) => new Date(from + ms);
+  const turns = [
+    { warm: true, firstEventMs: 100 },
+    { warm: true, firstEventMs: 300 },
+    { warm: false, firstEventMs: 5000 },
+    { warm: "yes", firstEventMs: 1 },
+  ];
+  await run({ createdAt: at(0), brain: "claude_code", profiles: [claim([], { brain: turns }), "junk"] });
+  await run({
+    createdAt: at(1),
+    background: true,
+    profiles: [claim([], { brain: [{ warm: false, firstEventMs: 9 }] })],
+  });
+  const waited = await run({ createdAt: at(1000), brain: "codex", finishedAt: at(60_000) });
+  const unavailable = (code: string) => ({ reason: "brain_unavailable", code });
+  await step(waited, 1, "error", unavailable("busy"), at(2000));
+  await step(waited, 2, "context", {}, at(6000));
+  await step(waited, 3, "error", unavailable("machine_offline"), at(10_000));
+  await step(waited, 4, "error", unavailable("not_logged_in"), at(50_000));
+
+  const read = await replyTimes(windowOf(27));
+  expect(read.computerStarts).toEqual([
+    {
+      at: "2026-10-27T00:00:00Z",
+      turns: 3,
+      warm: 2,
+      warmFirstEventP50Ms: 200,
+      warmFirstEventP90Ms: 280,
+      coldFirstEventP50Ms: 5000,
+      coldFirstEventP90Ms: 5000,
+    },
+  ]);
+  expect(read.waits).toEqual([
+    { at: "2026-10-27T00:00:00Z", cause: "offline", waits: 1, runs: 1, p50Ms: 40_000, p90Ms: 40_000 },
+    { at: "2026-10-27T00:00:00Z", cause: "other", waits: 1, runs: 1, p50Ms: 10_000, p90Ms: 10_000 },
+    { at: "2026-10-27T00:00:00Z", cause: "room", waits: 1, runs: 1, p50Ms: 4000, p90Ms: 4000 },
+  ]);
+});
+
+test("reply times: the window and the bucket are checked, and the token is needed", async () => {
+  const from = new Date(day(29)).toISOString();
+  const plus = (ms: number) => new Date(day(29) + ms).toISOString();
+  const q = (query: Record<string, string>) => `/analytics/reply-times?${new URLSearchParams(query)}`;
+  expect((await get(q({ from, to: plus(DAY) }), null)).status).toBe(401);
+  expect((await get(q({ from, to: plus(31 * DAY), bucket: "hour" }))).status).toBe(200);
+  for (const range of [
+    { from, to: from },
+    { from, to: plus(31 * DAY + 1) },
+    { from, to: "soon" },
+  ]) {
+    expect(await refusal(await get(q(range)))).toEqual([400, "analytics.range"]);
+  }
+  expect(await refusal(await get(q({ from, to: plus(DAY), bucket: "week" })))).toEqual([400, "invalid_request"]);
+  const issued = await issuedBy(() => replyTimes(windowOf(29)));
+  expect(issued.filter((statement) => statement === "set local jit = off").length).toBe(3);
+});
