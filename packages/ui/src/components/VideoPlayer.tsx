@@ -201,8 +201,11 @@ export function VideoPlayer({
     },
     [onVideo],
   );
-  // Whoever follows it hears where it is (the comments' marks, a frame to take).
-  useEffect(() => onTime?.(time, duration), [onTime, time, duration]);
+  // Whoever follows it hears where it is (the comments' marks, a frame to take). A block body: whatever the callback
+  // returns must never reach React as the effect's clean-up.
+  useEffect(() => {
+    onTime?.(time, duration);
+  }, [onTime, time, duration]);
   useEffect(
     () => () => {
       cancelAnimationFrame(frame.current);

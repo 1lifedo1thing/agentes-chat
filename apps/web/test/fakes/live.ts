@@ -414,9 +414,11 @@ export function createFakeLive(
           height: null,
         };
       },
+      // As the server: resolved by the signed-in person, now.
       resolveComment: async (orgId, messageId, resolved) => {
         record("live.resolveComment", orgId, messageId, resolved);
-        return { resolved: resolved ? { by: { type: "person", id: "me" }, at: ctx.now().toISOString() } : null };
+        const by = { type: "person" as const, id: (await me()).id };
+        return { resolved: resolved ? { by, at: ctx.now().toISOString() } : null };
       },
       ask: async (orgId, fileId, input) => {
         record("live.ask", orgId, fileId, input);
