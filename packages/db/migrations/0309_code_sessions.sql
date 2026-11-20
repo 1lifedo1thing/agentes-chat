@@ -1,5 +1,3 @@
--- Code sessions (ADR 0208): a request worked on in its own git worktree, with a conversation of kind 'code'.
--- Postgres can't use a new enum value in the transaction that adds it; nothing here writes one.
 ALTER TYPE "public"."channel_kind" ADD VALUE 'code';--> statement-breakpoint
 CREATE TABLE "code_sessions" (
 	"id" uuid PRIMARY KEY NOT NULL,
@@ -28,7 +26,7 @@ CREATE TABLE "code_sessions" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"archived_at" timestamp with time zone,
-	CONSTRAINT "code_sessions_org_id_channel_id_unique" UNIQUE("org_id","channel_id")
+	CONSTRAINT "code_sessions_orgId_channelId_unique" UNIQUE("org_id","channel_id")
 );
 --> statement-breakpoint
 ALTER TABLE "code_sessions" ADD CONSTRAINT "code_sessions_org_id_organizations_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organizations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
