@@ -9990,6 +9990,13 @@
     "noResults": "没有与“{{q}}”匹配的技能。",
     "version": "v{{version}}",
     "usedBy_other": "{{count}} 个智能体在使用",
+    "agents": {
+      "title": "拥有此技能的智能体",
+      "none": "还没有智能体。",
+      "choose": "选择智能体",
+      "dialogTitle": "拥有 {{name}} 的智能体",
+      "dialogText": "每个开启的智能体都会在任务需要时使用它。"
+    },
     "updated": "{{when}}更新",
     "source": {
       "github": "GitHub",
@@ -13793,6 +13800,7 @@
       "ask_agent": "询问其他智能体",
       "tell_agent": "通知其他智能体",
       "find_agent": "查找智能体",
+      "read_agent": "读取智能体设置",
       "ask_user": "提出问题",
       "ask_choices": "提供选项",
       "request_approval": "请求审批",

@@ -9947,6 +9947,13 @@
     "noResults": "「{{q}}」に一致するスキルはありません。",
     "version": "v{{version}}",
     "usedBy_other": "{{count}}体のエージェントが使用中",
+    "agents": {
+      "title": "このスキルを持つエージェント",
+      "none": "まだエージェントはいません。",
+      "choose": "エージェントを選ぶ",
+      "dialogTitle": "{{name}} を持つエージェント",
+      "dialogText": "オンにしたエージェントは、タスクで必要なときにいつでも使います。"
+    },
     "updated": "{{when}}に更新",
     "source": {
       "github": "GitHub",
@@ -13724,6 +13731,7 @@
       "ask_agent": "別のエージェントに質問",
       "tell_agent": "別のエージェントに連絡",
       "find_agent": "エージェントを検索",
+      "read_agent": "エージェントの設定を読む",
       "ask_user": "質問する",
       "ask_choices": "選択肢を表示",
       "request_approval": "承認を依頼",

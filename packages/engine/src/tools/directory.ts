@@ -395,6 +395,7 @@ export const RARE_TOOLS: ReadonlySet<string> = new Set([
   "send_sticker",
   "read_skill_file",
   "find_agent",
+  "read_agent",
   "get_my_usage",
   "set_status",
   "set_reply_style",

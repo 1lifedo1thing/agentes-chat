@@ -99,3 +99,16 @@ A customer moving 18 agents clicked one card per change, for changes he had just
 ### Consequences
 
 - `read_conversation` and `read_artifact` still count as outside (ADR 0120 stays), so a change made right after reading a file is a card, one click. How often that happens is worth watching.
+
+## Amendment (2026-11-20): an agent reads a teammate's setup and manages its skills
+
+### Context
+
+Asked to change another agent's instructions or skills, an agent saw only a 240-character "About" of its teammate (`find_agent`), so it could add a rule but not swap text it couldn't read, nor rewrite the instructions. Skills it could only give or take away (`propose_settings_change`); a skill's text it changed only when the skill was its own and loaded in that turn.
+
+### Decision
+
+- **`read_agent`** (no scope, on demand): a teammate's role, department, the skills it has on and its whole instructions (up to 20,000 characters), for a person behind the run who sees that agent's details (`seesAgentDetails`, as its page). It says whether that person edits the agent, so the agent knows whether a change applies at once.
+- **A rewrite.** `propose_instruction_change` takes `instructions`, the whole new text, for the caller or one agent, in place of `change` and `replaces`. It is the same row, diff, judge and decider as any other instructions change.
+- **Other agents' skills.** `load_skill` and `read_skill_file` also read a skill that isn't on for the caller when the person behind the run may change it on its page (`maySkill`, `skillPersonMayChange`): marked as read to manage, never to follow, with the agents that have it on. `update_skill` then changes it as the person's own edit when they asked in their own words and may decide it (§5 above), else as a skill proposal for who manages agents. Its use count doesn't move.
+- **The web and the phone.** A skill's page lists the agents that have it on. On the web "Escolher agentes" switches them on or off in one dialog, one call per agent changed; on the phone each agent is a switch on the skill's page.

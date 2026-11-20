@@ -11157,6 +11157,13 @@
     "usedBy_few": "{{count}} agentów jej używa",
     "usedBy_many": "{{count}} agentów jej używa",
     "usedBy_other": "{{count}} agentów jej używa",
+    "agents": {
+      "title": "Agenci z tą umiejętnością",
+      "none": "Jeszcze żadnego agenta.",
+      "choose": "Wybierz agentów",
+      "dialogTitle": "Agenci z {{name}}",
+      "dialogText": "Każdy włączony agent używa jej, gdy tylko zadanie tego wymaga."
+    },
     "updated": "zaktualizowano {{when}}",
     "source": {
       "github": "GitHub",
@@ -15281,6 +15288,7 @@
       "ask_agent": "Zapytaj innego agenta",
       "tell_agent": "Powiadom innego agenta",
       "find_agent": "Znajdź agenta",
+      "read_agent": "Odczytaj ustawienia agenta",
       "ask_user": "Zadaj pytanie",
       "ask_choices": "Zaproponuj opcje",
       "request_approval": "Poproś o zatwierdzenie",

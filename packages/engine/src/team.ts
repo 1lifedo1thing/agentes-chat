@@ -5,6 +5,7 @@ import { type AiStatusDeps, agentAiStates } from "./ai-status";
 import type { AgentAppearance } from "./appearance";
 import {
   canTalkTo,
+  editsAgent,
   findsAgent,
   listsAgentTo,
   managesAgent,
@@ -24,11 +25,12 @@ import { agentDesktopUseStatus } from "./desktop/status";
 import { cutText, editDistance } from "./format";
 import type { MachineCaller, MachineStatus } from "./machine-hub";
 import { parseMentionHandles } from "./messages";
-import { requirePermission } from "./organizations";
+import { getMembership, requirePermission } from "./organizations";
 import { maySql } from "./permissions";
 import { personBehindCall, routineCreatorOfCall } from "./requester";
 import { getSandboxSettings } from "./sandbox";
 import { SANDBOX_SCOPE } from "./sandbox-scope";
+import { enabledSkills } from "./skills";
 import type { ToolContext, ToolDefinition, ToolSource } from "./tools/types";
 import { inWorkspaceWords, isPersonalWorkspace } from "./workspace-mode";
 
@@ -125,6 +127,9 @@ export async function rosterScopeNames(
 }
 
 export const FIND_AGENT_TOOL = "find_agent";
+export const READ_AGENT_TOOL = "read_agent";
+/** The most of an agent's instructions `read_agent` returns: past it, the rest is cut and said so. */
+const READ_INSTRUCTIONS_CHARS = 20_000;
 /** Up to this many teammates are named in every prompt; above it, only a hint to use `find_agent`. */
 export const TEAM_IN_PROMPT = 15;
 
@@ -432,9 +437,55 @@ export function createFindAgentToolSource(deps: { machines?: Pick<MachineCaller,
       return { content };
     },
   };
+  const read: ToolDefinition = {
+    name: READ_AGENT_TOOL,
+    description:
+      "Read a teammate's whole setup before you change it for the person who asked: its role, its full instructions and the skills it has on. Only an agent that person may see the details of. Then change its instructions with propose_instruction_change (replaces with the exact text, or instructions to rewrite them whole), its skills with propose_settings_change (add_skills, remove_skills), and a skill's text with load_skill then update_skill.",
+    scope: "",
+    inputSchema: {
+      type: "object",
+      properties: { agent: { type: "string", minLength: 1, maxLength: 64, description: "Its @handle." } },
+      required: ["agent"],
+      additionalProperties: false,
+    },
+    describe: (input) => ({ title: "Read an agent's setup", detail: String(input.agent ?? "") }),
+    async execute(input, ctx) {
+      const person = await personBehindCall(ctx);
+      if (!person) return { content: "Only a person's request reads another agent's setup.", isError: true };
+      const handle = String(input.agent ?? "")
+        .trim()
+        .replace(/^@/, "")
+        .toLowerCase();
+      const agent = (await loadTeam(ctx.db, ctx.orgId)).find((a) => a.handle === handle);
+      const membership = await getMembership(ctx.db, person, ctx.orgId);
+      if (!agent || !seesAgentDetails(agent, person, membership)) {
+        return { content: `No agent @${handle} whose setup the person who asked may see.`, isError: true };
+      }
+      const on = await enabledSkills(ctx.db, ctx.orgId, agent.id);
+      const text = agent.instructions.trim();
+      const shown =
+        text.length > READ_INSTRUCTIONS_CHARS
+          ? `${cutText(text, READ_INSTRUCTIONS_CHARS)}\n[cut: ${text.length} characters in all]`
+          : text || "(none)";
+      const edits = editsAgent(agent, person, membership);
+      return {
+        content: [
+          `@${agent.handle}: ${agent.name}${agent.role ? `, ${agent.role}` : ""}`,
+          agent.groupName ? `Department: ${agent.groupName}` : "",
+          `Skills on: ${on.length ? on.map((s) => s.name).join(", ") : "none"}`,
+          edits
+            ? "The person who asked edits this agent: a change they ask for applies at once with Undo."
+            : "The person who asked doesn't edit this agent: a change waits on its card for who does.",
+          `Instructions:\n<instructions>\n${shown}\n</instructions>`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      };
+    },
+  };
   return {
     name: "team",
-    tools: async (ctx) => inWorkspaceWords(ctx.db, ctx.orgId, [tool], FIND_AGENT_PERSONAL),
+    tools: async (ctx) => inWorkspaceWords(ctx.db, ctx.orgId, [tool, read], FIND_AGENT_PERSONAL),
   };
 }
 

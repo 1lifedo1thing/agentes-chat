@@ -10374,6 +10374,13 @@
     "version": "v{{version}}",
     "usedBy_one": "{{count}} Agent nutzt ihn",
     "usedBy_other": "{{count}} Agenten nutzen ihn",
+    "agents": {
+      "title": "Agenten mit diesem Skill",
+      "none": "Noch kein Agent.",
+      "choose": "Agenten wählen",
+      "dialogTitle": "Agenten mit {{name}}",
+      "dialogText": "Jeder eingeschaltete Agent nutzt ihn, wann immer eine Aufgabe ihn braucht."
+    },
     "updated": "aktualisiert {{when}}",
     "source": {
       "github": "GitHub",
@@ -14262,6 +14269,7 @@
       "ask_agent": "Anderen Agenten fragen",
       "tell_agent": "Anderen Agenten informieren",
       "find_agent": "Agenten finden",
+      "read_agent": "Agent-Einrichtung lesen",
       "ask_user": "Frage stellen",
       "ask_choices": "Optionen anbieten",
       "request_approval": "Freigabe anfragen",

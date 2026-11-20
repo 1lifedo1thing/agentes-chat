@@ -10318,6 +10318,13 @@
     "version": "v{{version}}",
     "usedBy_one": "{{count}} ajan kullanıyor",
     "usedBy_other": "{{count}} ajan kullanıyor",
+    "agents": {
+      "title": "Bu beceriye sahip ajanlar",
+      "none": "Henüz ajan yok.",
+      "choose": "Ajanları seç",
+      "dialogTitle": "{{name}} olan ajanlar",
+      "dialogText": "Açık olan her ajan, bir görev gerektirdiğinde onu kullanır."
+    },
     "updated": "{{when}} güncellendi",
     "source": {
       "github": "GitHub",
@@ -14197,6 +14204,7 @@
       "ask_agent": "Başka bir ajana sor",
       "tell_agent": "Başka bir ajana bildir",
       "find_agent": "Ajanı bul",
+      "read_agent": "Ajan ayarlarını oku",
       "ask_user": "Soru sor",
       "ask_choices": "Seçenek sun",
       "request_approval": "Onay iste",
