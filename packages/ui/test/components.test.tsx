@@ -1347,7 +1347,7 @@ describe("Message on touch", () => {
         example.com/briefing
       </a>
       {/* biome-ignore lint/a11y/useMediaCaption: a test video with no words */}
-      <video src="https://example.com/demo.mp4" onClick={() => onClick?.("video")} />
+      <video src="https://example.com/demo.mp4" width={160} height={90} onClick={() => onClick?.("video")} />
       <button type="button">Conectar</button>
     </Message>
   );
