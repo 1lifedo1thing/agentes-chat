@@ -1,6 +1,6 @@
 import { type CodeSession, useCodeSessions, useCodeStart, useCreateCodeSession } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { Button, cx, Icon } from "@agenteschat/ui";
+import { Button, cx, Icon, Popover, SearchField, Select } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -61,6 +61,11 @@ export function CodeHome() {
     setRepo(last.repo ?? agent.repos[0] ?? "");
   }, [agents, agentId, org.id]);
   const picked = agents.find((a) => a.agentId === agentId) ?? null;
+  // The projects only on this agent's computer that my sessions used: offered beside its repositories.
+  const locals = useMemo(
+    () => [...new Set(sessions.filter((s) => s.local && s.agentId === agentId).map((s) => s.repo))],
+    [sessions, agentId],
+  );
   const counts = useMemo(
     () => ({
       working: sessions.filter((s) => s.work === "working" || s.work === "preparing").length,
@@ -122,42 +127,27 @@ export function CodeHome() {
               aria-label={t("codeSessions.home.label")}
             />
             <div className="code-start__opts">
-              <label className="code-pick">
-                {picked && (
-                  <AgentAvatar
-                    agentId={picked.agentId}
-                    name={dir.agentById.get(picked.agentId)?.name ?? ""}
-                    size="xs"
-                  />
-                )}
-                <select
-                  value={agentId ?? ""}
-                  onChange={(e) => pickAgent(e.target.value)}
-                  aria-label={t("codeSessions.home.agent")}
-                >
-                  {agents.map((a) => (
-                    <option key={a.agentId} value={a.agentId}>
-                      {dir.agentById.get(a.agentId)?.name ?? a.agentId}
-                    </option>
-                  ))}
-                </select>
-                <Icon name="chevronDown" size={14} />
-              </label>
-              <label className="code-pick code-pick--repo">
-                <Icon name="repo" size={16} />
-                <input
-                  value={repo}
-                  onChange={(e) => setRepo(e.target.value)}
-                  placeholder={t("codeSessions.home.repoPlaceholder")}
-                  list="code-repos"
-                  aria-label={t("codeSessions.home.repo")}
-                />
-                <datalist id="code-repos">
-                  {(picked?.repos ?? []).map((r) => (
-                    <option key={r} value={r} />
-                  ))}
-                </datalist>
-              </label>
+              <Select
+                size="sm"
+                className="code-select"
+                aria-label={t("codeSessions.home.agent")}
+                value={agentId ?? undefined}
+                onValueChange={pickAgent}
+                options={agents.map((a) => ({
+                  value: a.agentId,
+                  label: dir.agentById.get(a.agentId)?.name ?? a.agentId,
+                  leading: (
+                    <AgentAvatar agentId={a.agentId} name={dir.agentById.get(a.agentId)?.name ?? ""} size="sm" />
+                  ),
+                }))}
+              />
+              <RepoPicker
+                repo={repo}
+                onRepo={setRepo}
+                repos={picked?.repos ?? []}
+                locals={locals}
+                any={picked?.any ?? false}
+              />
               <span className="code-start__hint">{t("codeSessions.home.hint")}</span>
               <Button type="submit" size="sm" variant="primary" disabled={!ready} loading={create.isPending}>
                 {t("codeSessions.home.start")}
@@ -198,6 +188,135 @@ export function CodeHome() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/** The shapes the server takes (ADR 0208 §1): a GitHub repository, or a local project's name (no owner). */
+const GITHUB_REPO = /^[\w.-]+\/[\w.-]+$/;
+const LOCAL_NAME = /^(?!\.)[A-Za-z0-9._-]{1,64}$/;
+
+/**
+ * Where the session works, drawn as a select: one of the agent's GitHub repositories, or a project only on its
+ * computer (a name with no owner; a new name makes one). The wiki's folder picker's shape: a search over the choices,
+ * Enter takes the first, and a name typed that isn't listed is offered as a new one.
+ */
+function RepoPicker({
+  repo,
+  onRepo,
+  repos,
+  locals,
+  any,
+}: {
+  repo: string;
+  onRepo: (repo: string) => void;
+  /** The agent's repositories; `any`: its list allows more than it names. */
+  repos: string[];
+  locals: string[];
+  any: boolean;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const query = q.trim().replace(/\/+$/, "");
+  const all = [
+    ...repos.map((value) => ({ value, local: false })),
+    ...locals.filter((l) => !repos.includes(l)).map((value) => ({ value, local: true })),
+  ];
+  const shown = all.filter((r) => !query || r.value.toLowerCase().includes(query.toLowerCase()));
+  const listed = all.some((r) => r.value.toLowerCase() === query.toLowerCase());
+  const creates =
+    !query || listed ? null : LOCAL_NAME.test(query) ? "local" : any && GITHUB_REPO.test(query) ? "repo" : null;
+  const pick = (value: string) => {
+    onRepo(value);
+    setOpen(false);
+    setQ("");
+  };
+  const local = Boolean(repo) && !repo.includes("/");
+  const shownValue = repo || t("codeSessions.home.repoPlaceholder");
+  return (
+    <div className="ac-select ac-select--sm code-select">
+      <Popover
+        label={t("codeSessions.home.repo")}
+        side="bottom"
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setQ("");
+        }}
+        className="code-repopop"
+        trigger={
+          <button
+            type="button"
+            className="ac-select__trigger"
+            aria-label={`${t("codeSessions.home.repo")}: ${shownValue}`}
+            data-placeholder={repo ? undefined : ""}
+          >
+            <span className="ac-select__value">
+              <span>
+                <span className="ac-select__lead" aria-hidden="true">
+                  <Icon name={local ? "computer" : "repo"} size={16} />
+                </span>
+                <span className="ac-select__text">{shownValue}</span>
+              </span>
+            </span>
+            <svg className="ac-select__chev" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="m6 8 4 4 4-4" />
+            </svg>
+          </button>
+        }
+      >
+        <SearchField
+          size="sm"
+          aria-label={t("codeSessions.home.repoSearch")}
+          placeholder={t("codeSessions.home.repoSearch")}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onClear={() => setQ("")}
+          clearLabel={t("filters.clearSearch")}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            const first = shown[0]?.value ?? (creates ? query : null);
+            if (first) pick(first);
+          }}
+        />
+        {(shown.length > 0 || creates) && (
+          <div className="code-repopop__list" role="listbox" aria-label={t("codeSessions.home.repo")}>
+            {shown.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                role="option"
+                aria-selected={r.value === repo}
+                className="code-repopop__row"
+                onClick={() => pick(r.value)}
+              >
+                <Icon name={r.local ? "computer" : "repo"} size={16} />
+                <span className="code-repopop__name">{r.value}</span>
+                {r.local && <span className="code-repopop__where">{t("codeSessions.list.local")}</span>}
+              </button>
+            ))}
+            {creates && (
+              <button
+                type="button"
+                role="option"
+                aria-selected={false}
+                className="code-repopop__row"
+                onClick={() => pick(query)}
+              >
+                <Icon name="plus" size={16} />
+                <span className="code-repopop__name">
+                  {creates === "local"
+                    ? t("codeSessions.home.newLocal", { name: query })
+                    : t("codeSessions.home.useRepo", { repo: query })}
+                </span>
+              </button>
+            )}
+          </div>
+        )}
+        <p className="code-repopop__note">{t("codeSessions.home.repoNote")}</p>
+      </Popover>
     </div>
   );
 }

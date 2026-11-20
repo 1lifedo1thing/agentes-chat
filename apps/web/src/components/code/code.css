@@ -10,8 +10,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 296px minmax(0, 1fr);
-  gap: 8px;
+  /* The list's width is the person's (its gutter, `CodeGutter`); the gutter is the 8 px between the surfaces. */
+  grid-template-columns: var(--code-list, 296px) 8px minmax(0, 1fr);
   padding: 8px;
 }
 .code-list,
@@ -247,7 +247,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   padding-top: 8px;
 }
 .code-start__hint {
@@ -259,39 +259,6 @@
   font-size: 12.5px;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-.code-pick {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 8px;
-  border-radius: 10px 10px 10px 3px;
-  color: var(--ink2);
-  font-size: 13px;
-  font-weight: 600;
-}
-.code-pick:hover {
-  background: var(--plate-soft);
-}
-.code-pick select,
-.code-pick input {
-  max-width: 220px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  appearance: none;
-  outline: none;
-  cursor: pointer;
-}
-.code-pick input {
-  cursor: text;
-}
-.code-pick > .ac-icon:last-child {
-  color: var(--faint);
-  pointer-events: none;
 }
 .code-team {
   position: absolute;
@@ -403,68 +370,9 @@
   align-items: center;
   gap: 6px;
 }
-.code-more,
+/* The git button: the kit's split button, at the header's small size. */
 .code-git {
-  position: relative;
-  display: inline-flex;
-  gap: 1px;
-}
-.code-git > .ac-btn:first-child {
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-}
-.code-git__more.ac-btn {
-  width: 26px;
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-}
-.code-gitmenu,
-.code-moremenu,
-.code-devmenu {
-  position: absolute;
-  z-index: 20;
-  min-width: 0;
-  max-width: none;
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-  padding: 6px;
-  border-radius: 14px 14px 14px 4px;
-  background: var(--raised);
-  box-shadow: var(--e3), var(--top);
-}
-.code-gitmenu,
-.code-moremenu {
-  top: 38px;
-  right: 0;
-}
-.code-devmenu {
-  top: 36px;
-  left: 0;
-}
-.code-gitmenu .ac-menu__item,
-.code-moremenu .ac-menu__item,
-.code-devmenu .ac-menu__item {
-  width: 100%;
-  align-items: flex-start;
-  text-decoration: none;
-}
-.code-gitmenu .ac-menu__label,
-.code-moremenu .ac-menu__label,
-.code-devmenu .ac-menu__label {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.code-gitmenu .is-next {
-  background: var(--plate-soft);
-}
-.code-gitmenu__note,
-.code-devmenu__none {
-  margin: 6px 10px 4px;
-  color: var(--faint);
-  font-size: 12px;
-  line-height: 16px;
+  --split-r: var(--control-r-sm);
 }
 .code-failed {
   flex: none;
@@ -648,36 +556,6 @@
 .code-fhead__r {
   margin-left: auto;
 }
-.code-scope {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 26px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 8px;
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--line2);
-  color: var(--ink2);
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.code-scope.is-open {
-  background: var(--plate-soft);
-}
-.code-scope select {
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  appearance: none;
-  outline: none;
-  cursor: pointer;
-}
 .code-dscroll {
   flex: 1;
   min-height: 0;
@@ -708,9 +586,6 @@
   padding: 0 8px 0 10px;
   border-bottom: 1px solid var(--line);
   background: var(--pane);
-}
-.code-dev {
-  position: relative;
 }
 .code-sbar__sub {
   min-width: 0;
@@ -777,10 +652,72 @@
 .code-pbody__keep[hidden] {
   display: none;
 }
-.code-pick--repo input {
-  width: 250px;
-}
 .code-group__where {
   color: var(--faint);
   font-weight: 500;
+}
+
+/* The pickers (the composer's agent and repository, the diff's scope, the screen): the kit's small select, as wide as
+   what it shows. */
+.code-select {
+  flex: none;
+  max-width: 260px;
+}
+/* The repository picker: the wiki's folder picker's search and rows. */
+.code-repopop {
+  min-width: 280px;
+}
+.code-repopop__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  margin-top: 6px;
+  overflow-y: auto;
+}
+.code-repopop__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink2);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.code-repopop__row:hover {
+  background: var(--plate);
+}
+.code-repopop__row[aria-selected="true"] {
+  background: var(--chosen-bg);
+  box-shadow: var(--chosen-shadow);
+  color: var(--ink);
+  font-weight: 600;
+}
+.code-repopop__row .ac-icon {
+  flex: none;
+  color: var(--faint);
+}
+.code-repopop__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.code-repopop__where {
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 500;
+}
+.code-repopop__note {
+  margin: 6px 10px 2px;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 16px;
 }

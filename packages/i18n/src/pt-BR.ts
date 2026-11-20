@@ -11577,6 +11577,7 @@ export const ptBR = {
       label: "Sessões de código",
       new: "Nova sessão",
       newRow: "Nova sessão",
+      resize: "Largura da lista",
       /** Ao lado do nome de um projeto local na lista. */
       local: "no computador",
       empty: "As sessões que você abre, ou para as quais é chamado, aparecem aqui.",
@@ -11595,10 +11596,14 @@ export const ptBR = {
       placeholder: "Descreva a mudança, o bug ou a dúvida",
       label: "O que fazer",
       agent: "Agente",
-      repo: "Repositório",
-      /** Um repositório do GitHub, ou só um nome: um projeto novo no computador do agente, sem remote. */
-      repoPlaceholder: "owner/name, ou o nome de um projeto novo",
-      hint: "Só um nome cria um projeto no computador do agente · @ chama alguém",
+      repo: "Onde trabalhar",
+      repoPlaceholder: "Repositório ou projeto",
+      repoSearch: "Busque, ou digite owner/name ou um nome novo",
+      /** Um nome sem owner: um projeto novo só no computador do agente, sem remote. */
+      newLocal: "Novo projeto no computador: {{name}}",
+      useRepo: "Usar {{repo}}",
+      repoNote: "Um nome sem owner cria um projeto no computador do agente, fora do GitHub.",
+      hint: "@ chama alguém para a sessão",
       start: "Começar",
       agent_waiting: "espera você",
       agent_working: "trabalhando",
@@ -11606,6 +11611,7 @@ export const ptBR = {
     },
     view: {
       gone: "Esta sessão não existe mais, ou não é sua para ver.",
+      resize: "Largura da conversa",
       composer: "Responder · @ chama alguém · / comandos",
       more: "Mais",
       openPr: "Abrir o PR #{{number}}",
@@ -11628,6 +11634,7 @@ export const ptBR = {
       agent_idle: "está livre",
     },
     diff: {
+      scope: "O que mostrar",
       base: "Tudo desde {{base}}",
       uncommitted: "Não commitado",
       files_one: "{{count}} arquivo",

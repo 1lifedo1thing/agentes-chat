@@ -11571,6 +11571,7 @@ export const en = {
       label: "Code sessions",
       new: "New session",
       newRow: "New session",
+      resize: "List width",
       /** Beside a local project's name in the list. */
       local: "on the computer",
       empty: "The sessions you open, or are called into, show here.",
@@ -11588,10 +11589,14 @@ export const en = {
       placeholder: "Describe the change, the bug or the question",
       label: "What to do",
       agent: "Agent",
-      repo: "Repository",
-      /** A GitHub repository, or just a name: a new project on the agent's computer, no remote. */
-      repoPlaceholder: "owner/name, or a new project's name",
-      hint: "Just a name starts a project on the agent's computer · @ calls someone",
+      repo: "Where to work",
+      repoPlaceholder: "Repository or project",
+      repoSearch: "Search, or type owner/name or a new name",
+      /** A name with no owner: a new project only on the agent's computer, no remote. */
+      newLocal: "New project on the computer: {{name}}",
+      useRepo: "Use {{repo}}",
+      repoNote: "A name with no owner starts a project on the agent's computer, outside GitHub.",
+      hint: "@ calls someone into the session",
       start: "Start",
       agent_waiting: "waiting for you",
       agent_working: "working",
@@ -11599,6 +11604,7 @@ export const en = {
     },
     view: {
       gone: "This session is gone, or isn't yours to see.",
+      resize: "Conversation width",
       composer: "Reply · @ calls someone · / commands",
       more: "More",
       openPr: "Open PR #{{number}}",
@@ -11621,6 +11627,7 @@ export const en = {
       agent_idle: "is free",
     },
     diff: {
+      scope: "What to show",
       base: "Everything since {{base}}",
       uncommitted: "Not committed",
       files_one: "{{count}} file",

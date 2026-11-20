@@ -1,6 +1,6 @@
 import { type CodeDiffScope, type CodeSession, useCodeDiff } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { Button, cx, Icon } from "@agenteschat/ui";
+import { Button, cx, Icon, Select } from "@agenteschat/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
@@ -115,13 +115,17 @@ function DiffPane({ session }: { session: CodeSession }) {
   return (
     <div className="code-diff">
       <div className="code-fhead">
-        <label className="code-scope">
-          <select value={scope} onChange={(e) => setScope(e.target.value as CodeDiffScope)}>
-            <option value="base">{t("codeSessions.diff.base", { base: session.baseBranch ?? "main" })}</option>
-            <option value="uncommitted">{t("codeSessions.diff.uncommitted")}</option>
-          </select>
-          <Icon name="chevronDown" size={14} />
-        </label>
+        <Select
+          size="sm"
+          className="code-select"
+          aria-label={t("codeSessions.diff.scope")}
+          value={scope}
+          onValueChange={setScope}
+          options={[
+            { value: "base", label: t("codeSessions.diff.base", { base: session.baseBranch ?? "main" }) },
+            { value: "uncommitted", label: t("codeSessions.diff.uncommitted") },
+          ]}
+        />
         {diff.data && (
           <span className="code-fhead__n tabular">
             {t("codeSessions.diff.files", { count: diff.data.files.length })}{" "}

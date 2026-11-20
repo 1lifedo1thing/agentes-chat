@@ -1,7 +1,7 @@
 import type { Agent, PhoneDevice } from "@agenteschat/client";
 import { type ComputerSurface, surfaceOf } from "@agenteschat/client/lib/agent-computer";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { Button, cx, Icon } from "@agenteschat/ui";
+import { Button, cx, Icon, Select } from "@agenteschat/ui";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ComputerStage } from "@/components/computer/ComputerDialog";
@@ -25,7 +25,6 @@ export function CodeScreen({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const [pick, setPick] = useState<ScreenPick>({ kind: "computer" });
-  const [menu, setMenu] = useState(false);
   // The bar's places the computer's stage portals its sub-line and its actions into (its dialog head's slots).
   const [sub, setSub] = useState<HTMLElement | null>(null);
   const [acts, setActs] = useState<HTMLElement | null>(null);
@@ -37,63 +36,40 @@ export function CodeScreen({ agent }: { agent: Agent }) {
     return list;
   }, [devices.data]);
   const phone = pick.kind === "phone" ? (phones.find((p) => p.phone.id === pick.phoneId) ?? null) : null;
-  const label = phone ? phone.phone.name : t("codeSessions.screen.computer", agentGrammar(agent.name));
   return (
     <div className="code-screen">
       <div className="code-sbar">
-        <div className="code-dev">
-          <button
-            type="button"
-            className={cx("code-scope", menu && "is-open")}
-            aria-expanded={menu}
-            onClick={() => setMenu((open) => !open)}
-          >
-            <Icon name={phone ? "phone" : "computer"} size={16} />
-            <span>{label}</span>
-            <Icon name="chevronDown" size={14} />
-          </button>
-          {menu && (
-            <div className="ac-menu code-devmenu" role="menu">
-              <div className="ac-menu__heading">{t("codeSessions.screen.menu", agentGrammar(agent.name))}</div>
-              <button
-                type="button"
-                role="menuitemradio"
-                aria-checked={pick.kind === "computer"}
-                className="ac-menu__item"
-                onClick={() => {
-                  setPick({ kind: "computer" });
-                  setMenu(false);
-                }}
-              >
-                <Icon name="computer" size={16} />
-                <span className="ac-menu__label">
-                  <span>{t("codeSessions.screen.computer", agentGrammar(agent.name))}</span>
-                  <span className="ac-menu__desc">{t("codeSessions.screen.computerHint")}</span>
-                </span>
-              </button>
-              {phones.map(({ phone: p, host }) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={pick.kind === "phone" && pick.phoneId === p.id}
-                  className="ac-menu__item"
-                  onClick={() => {
-                    setPick({ kind: "phone", phoneId: p.id });
-                    setMenu(false);
-                  }}
-                >
-                  <Icon name="phone" size={16} />
-                  <span className="ac-menu__label">
-                    <span>{p.name}</span>
-                    <span className="ac-menu__desc">{t("codeSessions.screen.onHost", { host })}</span>
-                  </span>
-                </button>
-              ))}
-              {phones.length === 0 && <p className="code-devmenu__none">{t("codeSessions.screen.noPhones")}</p>}
-            </div>
-          )}
-        </div>
+        <Select
+          size="sm"
+          className="code-select"
+          aria-label={t("codeSessions.screen.menu", agentGrammar(agent.name))}
+          value={phone ? phone.phone.id : "computer"}
+          onValueChange={(v) => setPick(v === "computer" ? { kind: "computer" } : { kind: "phone", phoneId: v })}
+          options={[
+            {
+              value: "computer",
+              label: t("codeSessions.screen.computer", agentGrammar(agent.name)),
+              description: t("codeSessions.screen.computerHint"),
+              leading: <Icon name="computer" size={16} />,
+            },
+            ...phones.map(({ phone: p, host }) => ({
+              value: p.id,
+              label: p.name,
+              description: t("codeSessions.screen.onHost", { host }),
+              leading: <Icon name="phone" size={16} />,
+            })),
+            ...(phones.length === 0
+              ? [
+                  {
+                    value: "none",
+                    label: t("codeSessions.screen.noPhones"),
+                    disabled: true,
+                    leading: <Icon name="phone" size={16} />,
+                  },
+                ]
+              : []),
+          ]}
+        />
         {!phone && (
           <>
             <span className="code-sbar__sub" ref={setSub} />
