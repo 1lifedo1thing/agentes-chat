@@ -29,6 +29,38 @@ export interface ServerTelemetry {
   report: Record<string, unknown>;
 }
 
+/** Where a problem report comes from (`POST /api/app/problem-reports/preview`). */
+export type ProblemReportPlace = "browser" | "computer" | "run" | "settings";
+
+export interface ProblemReportPreviewInput {
+  orgId: string;
+  place: ProblemReportPlace;
+  code?: string | null;
+  step?: string | null;
+  context?: { machineId?: string; agentId?: string; runId?: string };
+  timings?: Record<string, number>;
+  /** What the screen measured (a card's state, its attempt). */
+  facts?: Record<string, string | number | boolean>;
+  client?: { web?: string; mobile?: string; browser?: string; locale?: string };
+}
+
+/** A problem report, shown in full before it's sent, and why a log may be missing from it. */
+export interface ProblemReportPreview {
+  report: Record<string, unknown>;
+  /** The report as shown and copied. */
+  text: string;
+  /** `off`: the server sends none (`PROBLEM_REPORT_URL` is empty), only Copy works. */
+  send: "on" | "off";
+  missing: { computer?: string; runnerLog?: "no_answer" | "old_app"; serverLines?: boolean };
+}
+
+export interface ProblemReportSendInput {
+  orgId: string;
+  report: Record<string, unknown>;
+  note?: string | null;
+  replyTo?: string | null;
+}
+
 /** The installation's Jev key, for its pinned owner on a self-hosted server (`GET /api/app/jev`, ADR 0073). */
 export interface JevKey {
   /** `env`: `TYPESAFE_API_KEY`, read-only here. `settings`: added in Settings. Null: none. */
@@ -96,7 +128,7 @@ export type PushDeviceInput =
   | { platform: "web"; endpoint: string; keys: { p256dh: string; auth: string }; locale: string };
 
 /**
- * Where the agents' Live Activity goes on an iPhone (`POST /api/app/push/live-activity`, ADR 0201), per install: the
+ * Where the agents' Live Activity goes on an iPhone (`POST /api/app/push/live-activity`, ADR 0210), per install: the
  * push-to-start token, the running activity's id and token, the app group's widgets directory (the faces' folder),
  * the app's id, whether its tokens are the APNs sandbox's, and its language. Fields left out keep what was there.
  */
@@ -931,6 +963,12 @@ export interface Agent {
    * Without it `instructions` is empty and its tools, memory, usage and activity are refused: only its public card.
    */
   seesDetails?: boolean;
+  /**
+   * Whether my lists and pickers name it; absent = yes (an older server). False for a private agent (it answers only its
+   * owner) to anyone but its owner, administrators and who its "Quem pode editar" names: its messages and its public
+   * card still show.
+   */
+  listed?: boolean;
   /** Its look (color, eyes, accessory), from the backend's allow-list. */
   appearance?: AgentLookInput;
   /** Who thinks for it (ADR 0032): the brain, a computer brain's model label, its computer (owner and admins). */
@@ -2035,6 +2073,18 @@ export type ChannelEvent =
       runId: string;
       newRunId: string;
       messageIds: string[];
+    }
+  /**
+   * A message that went into the agent's task isn't for it (the triage): it saw it and won't answer it, and the
+   * router decides who does (`message.routed` follows).
+   */
+  | {
+      type: "agent.run.released";
+      channelId: string;
+      threadId: string | null;
+      agentId: string;
+      runId: string;
+      messageId: string;
     }
   /** The run ended without posting (nobody called it by name and it had nothing to add): drop its row now. */
   | { type: "agent.passed"; channelId: string; threadId: string | null; agentId: string; runId: string }
@@ -3920,6 +3970,8 @@ export interface Artifact {
    * Drive itself (ADR 0157, amendment 2026-11-17), and I made it or I'm an administrator.
    */
   canShare?: boolean;
+  /** The Drive folder it is in; null = the top level. Absent from an older server. */
+  folderId?: string | null;
   /** A live file's conversation (ADR 0199), once someone opened or wrote in it; null until then and for other kinds. */
   conversation?: FileConversation | null;
 }
@@ -3945,6 +3997,17 @@ export interface UnreadFile {
   /** Replies I haven't read: every one where I follow the conversation, else only those that mention me. */
   unread: number;
   mentions: number;
+}
+
+/** A Drive folder: every one in the workspace sees it; a file in it keeps its own visibility. */
+export interface DriveFolder {
+  id: string;
+  name: string;
+  /** Null: at the Drive's top level. */
+  parentId: string | null;
+  createdBy: ArtifactAuthor;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -4025,6 +4088,8 @@ export interface ArtifactFilters {
   who?: "agents" | "people";
   /** Newest update first (default), by name, or by kind. */
   sort?: "recent" | "name" | "kind";
+  /** In this Drive folder; null = the top level; absent = anywhere. */
+  folderId?: string | null;
 }
 
 /** A page of the Drive: the next one starts at `nextCursor`; the first also counts the files per kind. */
@@ -4945,6 +5010,8 @@ export type MachineOs = "linux" | "darwin" | "windows" | "other";
 export type MachineKind = "connected" | "host" | "managed";
 
 /** `GET …/machines`: a computer connected with `agentes-runner`. */
+export type MachineOfflineCause = "unresponsive" | "stopped" | "dropped";
+
 export interface Machine {
   id: string;
   /** The public address measured through an agent process, absent on older runners. */
@@ -4969,6 +5036,11 @@ export interface Machine {
    * from an older server: not in standby.
    */
   standby?: boolean;
+  /**
+   * Why it is offline, from its runner's last close: `unresponsive` (no network, or too busy to answer), `stopped`
+   * (its runner stopped), `dropped` (the link dropped). Null or absent: online, the workspace's own, or unknown.
+   */
+  offlineCause?: MachineOfflineCause | null;
   lastSeenAt: string | null;
   hostname: string;
   /** `linux`, `darwin`, `windows` or `other` (`MachineOs`). */
@@ -5999,8 +6071,6 @@ export interface Mission {
     lentBy: string | null;
     /** Who can program on that computer (the plan card switches before Start). */
     executors: MissionExecutor[];
-    /** Codex is installed but too old for missions. */
-    codexTooOld: boolean;
   } | null;
   /** Handed over without a computer: the owner sets one. */
   needsComputer: boolean;
@@ -6097,7 +6167,6 @@ export interface MissionEligibleAgent {
   /** Who can program on its computer ("Quem programa"), and the default. */
   executors: MissionExecutor[];
   defaultExecutor: MissionExecutor | null;
-  codexTooOld: boolean;
   /** The autonomy its new missions start with ("Usar como padrão"); absent on older servers. */
   commandApproval?: CommandApproval;
 }
@@ -6132,7 +6201,6 @@ export type BrainUnavailable =
   | "runner_old"
   | "tool_off"
   | "not_installed"
-  | "outdated"
   /** Its runner hasn't said which CLIs it has yet. */
   | "not_reported"
   /** Its runner doesn't run this CLI on the computer's system (Cursor on Windows, for one). */
@@ -6141,7 +6209,7 @@ export type BrainUnavailable =
   | "cant_start";
 
 export interface BrainModelOption {
-  /** What is stored (`opus`, `sonnet`, `haiku`, a Codex model). */
+  /** What is stored (`fable`, `opus`, `sonnet`, `haiku`, a Codex model). */
   value: string;
   label: string;
   modelId?: string;
@@ -6154,16 +6222,10 @@ export interface BrainModelOption {
   free?: boolean;
 }
 
-export interface CodexVersionRequirement {
-  detected: string;
-  minimum: string;
-}
-
 export interface BrainOption {
   kind: BrainKind;
   available: boolean;
   reason?: BrainUnavailable;
-  codexVersion?: CodexVersionRequirement;
   models: BrainModelOption[];
   defaultModel: string | null;
 }
@@ -6346,7 +6408,6 @@ export interface AiComputer {
   };
   /** Why a CLI of `brains` can't think there (absent: an older server). */
   off?: Partial<Record<MachineAccountKind, BrainUnavailable>>;
-  codexVersion?: CodexVersionRequirement;
   /** What it can think with now: Claude Code (Claude and the coding plans) and Codex (ChatGPT). */
   brains: {
     claude_code: boolean;
@@ -6370,6 +6431,8 @@ export interface PlanWindow {
   label?: string;
   usedPercent: number;
   resetsAt?: string;
+  /** When this window was last read, where that is before the reading's `at`. */
+  at?: string;
 }
 
 /** A plan's usage limits, as the CLI on its computer said them (`at`); no token is ever read. */
@@ -8402,7 +8465,8 @@ export type DeviceStatus =
   | { kind: "needs_you"; reason: string }
   | { kind: "preparing"; reason: string }
   | { kind: "paused"; until: string | null }
-  | { kind: "offline"; lastSeenAt: string | null; withHost?: boolean }
+  /** `cause`: a computer's, as `Machine.offlineCause`; absent: unknown. */
+  | { kind: "offline"; lastSeenAt: string | null; withHost?: boolean; cause?: MachineOfflineCause }
   | { kind: "unsupported"; reason: string };
 
 export interface PhoneDevice {
@@ -8526,6 +8590,12 @@ export interface CliInstall {
   state: "running" | "done" | "failed" | "canceled" | "unsupported";
   message?: string;
   cause?: "git_missing" | "still_missing";
+}
+
+/** A repair of an iPhone's test helper started on its Mac; `update`: the Mac's agentes.chat is too old for it. */
+export interface IphoneRepairView {
+  repairing: boolean;
+  update?: true;
 }
 
 /** `fix: null`: none ran; `update`: the Mac's agentes.chat is too old to fix it (the Terminal way instead). */

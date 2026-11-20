@@ -5,7 +5,7 @@ import { readValueSync, STORED } from "@/lib/storage";
 import AgentsActivity from "./AgentsActivity";
 
 /**
- * Signing out of a server: it stops sending this install the agents' Live Activity (ADR 0201), before the session ends
+ * Signing out of a server: it stops sending this install the agents' Live Activity (ADR 0210), before the session ends
  * (the call needs it), and the activities on the phone end, so an account no longer signed in shows nothing here.
  */
 export async function liveActivitySignOut(server: string): Promise<void> {

@@ -28,7 +28,7 @@ type RegisterBody = RelayErrorBody & { instanceId?: unknown; secret?: unknown };
  * Registers lazily (`POST {url}/instances`) and saves the credentials. A 401 means the relay no longer
  * knows this installation: the server registers again once and retries once. A 403 `blocked` never
  * retries; a 429 or a relay failure does (the outbox retries). Message text is never logged. Live Activity
- * pushes (ADR 0201) go to `POST {url}/live-activities`; a relay that doesn't know that path sends none.
+ * pushes (ADR 0210) go to `POST {url}/live-activities`; a relay that doesn't know that path sends none.
  */
 export function createRelayPushSender(options: {
   url: string;
@@ -200,7 +200,7 @@ function resultOf(token: string, r: Partial<PushResult>): PushResult {
   };
 }
 
-/** A Live Activity push as the relay takes it (ADR 0201): every field Apple gets, nothing else. */
+/** A Live Activity push as the relay takes it (ADR 0210): every field Apple gets, nothing else. */
 function relayActivityOf(m: LiveActivityMessage) {
   return {
     to: m.to,

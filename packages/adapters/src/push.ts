@@ -44,7 +44,7 @@ export interface PushResult {
 }
 
 /**
- * A Live Activity push (ADR 0201): an iPhone's activity started, updated or ended by the server, with Apple's
+ * A Live Activity push (ADR 0210): an iPhone's activity started, updated or ended by the server, with Apple's
  * `liveactivity` push type. `to` is the activity's own push token (update, end) or the app's push-to-start token
  * (start), hex. Times are Unix seconds, as Apple reads them.
  */
@@ -79,7 +79,7 @@ export interface PushSender {
   /** One result per message, in order. Throws `PushError` when the whole request failed. */
   send(messages: PushMessage[]): Promise<PushResult[]>;
   /**
-   * Live Activity pushes (ADR 0201), iPhones only: one result per message, in order. Absent: this sender pushes
+   * Live Activity pushes (ADR 0210), iPhones only: one result per message, in order. Absent: this sender pushes
    * none (the server answers them as `skipped`).
    */
   sendLiveActivity?(messages: LiveActivityMessage[]): Promise<PushResult[]>;
@@ -115,7 +115,7 @@ export function createPhonePushSender(senders: { android?: PushSender | null; io
   const of = (platform: PushPlatform) => senders[platform] ?? null;
   return {
     id: "phones",
-    // Live Activities are the iPhone's own (ADR 0201): its sender's, or none sent.
+    // Live Activities are the iPhone's own (ADR 0210): its sender's, or none sent.
     async sendLiveActivity(messages) {
       const ios = of("ios");
       if (ios?.sendLiveActivity) return ios.sendLiveActivity(messages);
@@ -183,7 +183,7 @@ export function createPhonePushSender(senders: { android?: PushSender | null; io
 /**
  * Test sender: records every message, never sends. Tokens in `unregistered`
  * come back unregistered at once; tokens in `failing` as a failure that can be
- * retried (as FCM's and APNs' 429 and 5xx). Live Activity pushes (ADR 0201) are
+ * retried (as FCM's and APNs' 429 and 5xx). Live Activity pushes (ADR 0210) are
  * recorded in `liveActivities`, under the same rules.
  */
 export function createFakePushSender(options: { unregistered?: Iterable<string>; failing?: Iterable<string> } = {}) {

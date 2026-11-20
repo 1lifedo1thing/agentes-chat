@@ -15,7 +15,6 @@ export const featureKeysEn = {
     channelCount_one: "{{count}} channel",
     channelCount_other: "{{count}} channels",
     none: "No categories yet.",
-    manageHelp: "Tap a category to rename it, move it or delete it.",
     manageHint: "Order, names and delete",
     deleteTitle: "Delete {{name}}?",
     order: "Place in the list",
@@ -292,8 +291,8 @@ export const featureKeysEn = {
     to: "To:",
     people: "People",
     search: "Person or agent",
-    create: "Create",
     agentHint: "A name and what it does",
+    create: "Create",
     chatShort: "Conversation",
     chatHint: "A person or an agent",
     taskHint: "With an assignee and a due date",
@@ -368,6 +367,8 @@ export const featureKeysEn = {
     replies_other: "{{count}} replies",
     repliesWord_one: "reply",
     repliesWord_other: "replies",
+    /** A conversation of bubbles says when it picks up again: "Today 15:35". */
+    dayAt: "{{day}} {{time}}",
     thread: "Thread",
     closed: "closed",
     options: "Options",
@@ -406,8 +407,6 @@ export const featureKeysEn = {
       held: "{{name}} reads it after your decision",
       read: "{{name}} read it",
       resolved: "{{name}} closed the help request",
-      well: "Read your note",
-      wellNow: "Stopped to read your note",
     },
     stopped: {
       byYou: "Stopped here",
@@ -600,11 +599,9 @@ export const featureKeysEn = {
     camera: "Camera",
     photos: "Photos",
     file: "File",
-    /** The fourth tile: the GIFs and stickers, out of the field so it only sends. */
+    /** The fourth tile: the GIFs and stickers (also beside the mic in the empty field). */
     media: "GIFs",
     noCamera: "No camera access. Allow it in the phone's Settings.",
-    mission: "Start a mission",
-    missionHint: "Long work, with a plan, from start to finish",
     summary: "Sum up the chat",
     summaryHint: "What happened while you were away",
     remind: "Remind me later",
@@ -866,7 +863,6 @@ export const featureKeysEn = {
     /** Under the name while it is typed: the @ follows the name until the person changes it. */
     handleFromName: "In the chat: @{{handle}}. It comes from the name. You can change it.",
     handleFromNameEmpty: "Its @ in the chat comes from the name.",
-    reviewLead: "Tap a line to change it.",
     planHint: "Or connect your AI plan: {{name}} then thinks with it, without spending the key.",
     planHint_female: "Or connect your AI plan: {{name}} then thinks with it, without spending the key.",
     partly: "The agent was created, but part of what its role brings didn't go through. Adjust it on its profile.",
@@ -877,9 +873,9 @@ export const featureKeysEn = {
         openmausbot:
           "In OpenMausBot: right-click the team\u00a0›\u00a0Share team…\u00a0›\u00a0Save file. Then pick that file here.",
         hermes:
-          "Hermes exports from a terminal (hermes profile export), as a .tar.gz the phone can't open. Import it on the computer, or pick the profile's .md and .yaml files here.",
+          "Hermes exports from a terminal (`hermes profile export`), as a .tar.gz the phone can't open. Import it on the computer, or pick the profile's .md and .yaml files here.",
         openclaw:
-          "OpenClaw keeps agents in the ~/.openclaw folder on the computer. Pick a workspace's .md files here, or import the whole folder on the computer.",
+          "OpenClaw keeps agents in the `~/.openclaw` folder on the computer. Pick a workspace's .md files here, or import the whole folder on the computer.",
         paperclip: "Paste the package's GitHub link below, or pick its COMPANY.md and the other .md files.",
         agenteschat:
           "In the other workspace: Settings\u00a0›\u00a0Import and export\u00a0›\u00a0Download the file. Then pick the .json here.",
@@ -1171,7 +1167,7 @@ export const featureKeysEn = {
     notificationsOnHint: "They also arrive in the browser and the desktop app, if they're on there.",
     notificationsOffHint: "Turn them on to get notifications here. The kinds below apply to all your devices.",
     notificationsKindsHint: "Activity keeps everything. This applies to this workspace, on all your devices.",
-    /** The switch for the agents' Live Activity (the iPhone's Dynamic Island and Lock Screen, ADR 0201). */
+    /** The switch for the agents' Live Activity (the iPhone's Dynamic Island and Lock Screen, ADR 0210). */
     liveActivity: "Agents in the Dynamic Island",
     liveActivityHint:
       "When an agent works on something you asked for, it shows at the top of the screen, in any app, and on the Lock Screen. With the app closed, it needs iOS 17.2 or later.",
@@ -1196,8 +1192,7 @@ export const featureKeysEn = {
     agentStyle: "How agents talk",
     workspaces: "Workspaces",
     workspacesIn: "You're in",
-    workspacesFoot:
-      "You stay signed in to each one and get notifications from all of them. Tap a workspace to open it.",
+    workspacesFoot: "You stay signed in to each one and get notifications from all of them.",
     /** A server in Workspaces that didn't answer. */
     workspacesUnreachable: "No answer right now",
     addWorkspace: "Add workspace",
@@ -2079,8 +2074,7 @@ export const featureKeysEn = {
       /** Xcode's names (Signing & Capabilities) stay in English. */
       teamMissing:
         "Xcode is signed in but shows no team yet. In Xcode, make any iOS app, pick your team under Signing & Capabilities and run it on this iPhone once.",
-      uiRefused:
-        "This iPhone refused the test helper's taps. Unlock it and enter its passcode if it asks. If it keeps happening, turn Settings\u00a0›\u00a0Developer\u00a0›\u00a0Enable UI Automation off and on.",
+      uiRefused: "Agents see this iPhone's screen, but iOS refuses their taps.",
       /** A button on step 1: the person says it's plugged in, and the guide says what to check. */
       pluggedIn: "It's plugged in",
       /** iPhones on the Mac's network that already trust it (they did over a cable once), offered, never used until picked. */
@@ -2373,7 +2367,6 @@ export const featureKeysEn = {
   },
   crash: {
     title: "Something went wrong on this screen",
-    subtitle: "The app hit an error showing this. Try again.",
     retry: "Try again",
   },
   notFound: {
@@ -2409,9 +2402,8 @@ export const featureKeysEn = {
     deleteIntro: "{{name}} turns read-only for everyone right away and is deleted for good in 7 days.",
     holdDelete: "Hold to delete",
     deleteFailed: "Couldn't delete the workspace. Try again.",
-    access: {
-      how: "Tap a row to change its level: No access, Read, Read and write.",
-    },
+    holdReset: "Hold to reset",
+    resetFailed: "Couldn't reset the workspace. Try again.",
     logo: {
       failed: "Couldn't upload the logo",
       tooBig: "That image is too big. Try another one.",
@@ -2695,7 +2687,7 @@ export const featureKeysEn = {
       sealedHelp: "For safety, what's saved here never shows again. To change it, type it again.",
       changePassword: "Change password",
       changeValue: "Change value",
-      changeHelp: "Tap Save to keep it. Agents use the new one from then on.",
+      changeHelp: "Agents use the new one after you save.",
       hidden: "Hidden",
       saved: "Saved",
       delete: "Delete",
@@ -2714,7 +2706,7 @@ export const featureKeysEn = {
       newPassword: "New password",
       keyName: "Variable",
       keyNamePlaceholder: "ACME_API_KEY",
-      keyNameHelp: "Capital letters, digits and _, like ACME_API_KEY. Agents ask for the key by this name.",
+      keyNameHelp: "Capital letters, digits and _, like `ACME_API_KEY`. Agents ask for the key by this name.",
       value: "Value",
       newValue: "New value",
       description: "Description",
@@ -2842,7 +2834,7 @@ export const featureKeysEn = {
   },
   // Dashboards on the phone (ADR 0135); the rest of their words are the web's, `dashboards.*` and `widgets.*`.
   dashboards: {
-    homeRow: "Only you · your own widgets",
+    homeRow: "Only you",
     create: "Create",
     routineTarget: "its widget",
     pin: {
@@ -2928,11 +2920,11 @@ export const featureKeysEn = {
     },
     drive: {
       title: "Everything the team makes, in one place",
-      text: "Reports, tables and files from agents and people stay here, easy to find.",
+      text: "Reports, tables and files from agents and people stay here.",
       viewerTitle: "Find what the team makes",
       viewerText: "What agents and people create in the chats shows up here.",
       titlePersonal: "Everything your agents make, in one place",
-      textPersonal: "Reports, tables and files from your agents stay here, easy to find.",
+      textPersonal: "Reports, tables and files from your agents stay here.",
       viewerTitlePersonal: "Find what your agents make",
       viewerTextPersonal: "What agents create in your chats shows up here.",
     },
@@ -2998,7 +2990,7 @@ export const featureKeysEn = {
       viewerTextPersonal: "When someone joins, they show up here.",
     },
     chat: {
-      title: "It all starts with a message",
+      title: "Start the conversation",
       text: "Write below and everyone here sees it.",
       viewerTitle: "Messages show up here",
       viewerText: "When someone writes, you read it here.",
@@ -3039,8 +3031,8 @@ export const featureKeysEn = {
     board: {
       title: "See what matters on one board",
       text: "Add a widget, ask an agent for one or pin a block from the chat.",
-      viewerTitle: "This board is taking shape",
-      viewerText: "Whoever edits this board adds the widgets, and they show up here.",
+      viewerTitle: "Widgets show up here",
+      viewerText: "Whoever edits this board adds them.",
     },
     computers: {
       title: "Bring another computer to your agents",
@@ -3049,7 +3041,7 @@ export const featureKeysEn = {
       viewerText: "Whoever connects computers adds them, and they show up here.",
     },
     connectors: {
-      title: "Give your agents real tools",
+      title: "Give your agents tools",
       text: "Connect a service and they start reading and acting in it.",
       viewerTitle: "Your agents' tools show up here",
       viewerText: "Whoever manages connectors connects the services below.",
@@ -3211,7 +3203,7 @@ export const featureKeysEn = {
       done: "Done",
       placeholder: "Type the text",
       titlePlaceholder: "Type the title",
-      hint: "Each line is a paragraph. What you type goes into the file as you type.",
+      hint: "Each line is a paragraph.",
     },
     /** Presenting. */
     show: {

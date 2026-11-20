@@ -11,7 +11,7 @@ import { writeFaces } from "./faces";
 import { useLiveActivityOn } from "./switch";
 
 /**
- * The agents' Live Activity on this iPhone (ADR 0201): the server makes and sends what it shows; the app tells it where
+ * The agents' Live Activity on this iPhone (ADR 0210): the server makes and sends what it shows; the app tells it where
  * to send (this install's push-to-start token, each running activity's id and token, the widgets directory its faces
  * are read from) and draws those faces, while its switch (Você › Notificações) is on. iOS only: Android's build takes
  * `useLiveActivity.ts`, which does nothing (expo-widgets' Live Activities are iOS's).

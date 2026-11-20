@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 import { readValueSync, STORED, writeValue } from "@/lib/storage";
 
 /**
- * The agents' Live Activity's switch (Você › Notificações, ADR 0201): on by default, kept on this phone. Its own module,
+ * The agents' Live Activity's switch (Você › Notificações, ADR 0210): on by default, kept on this phone. Its own module,
  * with nothing native in it: the settings screen reads it on every platform.
  */
 let off = readValueSync(STORED.liveActivityOff) === "1";

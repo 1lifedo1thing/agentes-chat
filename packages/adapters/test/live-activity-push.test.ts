@@ -17,7 +17,7 @@ import {
 } from "../src/push-apns";
 import { createRelayPushSender, type RelayCredentials } from "../src/push-relay";
 
-/** Live Activity pushes (ADR 0201): Apple's request, the APNs sender, the phones' sender, the push relay's client. */
+/** Live Activity pushes (ADR 0210): Apple's request, the APNs sender, the phones' sender, the push relay's client. */
 
 const APP = "chat.agentes.app";
 const RELAY_URL = "https://relay.example/api/push-relay/v1";

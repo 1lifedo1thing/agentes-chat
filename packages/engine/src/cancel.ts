@@ -40,10 +40,6 @@ const { agentRuns, agents, approvals, agentQuestions, outbox, messages, channels
 /** Cross-instance: the worker running the run aborts it (LISTEN/NOTIFY with the Postgres pub/sub). */
 export const RUN_CANCEL_TOPIC = "system:run-cancel";
 
-/** How often a running run's worker says it is alive; after `RUN_STALE_MS` without it, the run is recovered. */
-export const RUN_HEARTBEAT_MS = 20_000;
-export const RUN_STALE_MS = 2 * 60_000;
-
 /** Runs executing in this process, by id: canceling aborts the model stream, tools and code. */
 const active = new Map<string, AbortController>();
 
@@ -233,7 +229,7 @@ async function managesRunAgent(
   return !agent || managesAgent(agent, userId, membership);
 }
 
-export { canceledBy } from "./runs";
+export { canceledBy, RUN_HEARTBEAT_MS, RUN_STALE_MS } from "./runs";
 
 /**
  * Stops an agent's run (`POST …/runs/{runId}/cancel`), for who may (`mayStopRun`).
@@ -545,7 +541,7 @@ export async function stopRun(
       ...(actor.agentId ? { byAgentId: actor.agentId } : {}),
     });
   await publishChannelEvent(deps.pubsub, { type: "agent.run", ...where, ...bg, status: "canceled" });
-  // Its line ends with the run (ADR 0084 §11), and so does its place in its person's Live Activity (ADR 0201).
+  // Its line ends with the run (ADR 0084 §11), and so does its place in its person's Live Activity (ADR 0210).
   await announceAgentStatus(deps.pubsub, run.orgId, run.agentId).catch(() => {});
   await queueLiveActivityRun(db, run).catch(() => {});
   if (line) await publishQueueChanged(deps.pubsub, run.orgId, line);

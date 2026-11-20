@@ -43,7 +43,7 @@ export default function AppLayout() {
     <>
       <AppSheets />
       <AppWork />
-      {/* The agents at work in the iPhone's Dynamic Island and on its Lock Screen (ADR 0201). */}
+      {/* The agents at work in the iPhone's Dynamic Island and on its Lock Screen (ADR 0210). */}
       <LiveActivityWork />
       {/* What reaches me while the app is open, out of the camera's island (ADR 0071 §9). */}
       <NoticeIsland />

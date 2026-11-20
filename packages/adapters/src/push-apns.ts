@@ -46,7 +46,7 @@ export const APNS_CATEGORY = /^[A-Za-z0-9._-]{1,64}$/;
 export const apnsAppIdValid = (id: string) => id.length <= APNS_APP_ID_MAX && APNS_APP_ID.test(id);
 
 /**
- * A Live Activity's push token or an app's push-to-start token (ADR 0201), as the app hands them over: hex, longer
+ * A Live Activity's push token or an app's push-to-start token (ADR 0210), as the app hands them over: hex, longer
  * than a device token today, so a wider bound.
  */
 export const APNS_ACTIVITY_TOKEN = /^[0-9a-fA-F]{64,400}$/;
@@ -85,7 +85,7 @@ export function apnsRequest(m: PushMessage, topic: string, now = Date.now()) {
 }
 
 /**
- * One Live Activity push's APNs request (ADR 0201): Apple's `liveactivity` push type on the app's Live Activity topic,
+ * One Live Activity push's APNs request (ADR 0210): Apple's `liveactivity` push type on the app's Live Activity topic,
  * the message's priority, and `aps` with the event, its time and the content state as given (`props` stays a JSON
  * string: expo-widgets decodes it), plus a start's alert, attributes and request for the activity's own token.
  */
@@ -257,7 +257,7 @@ const failed = (token: string, retryable: boolean, error: string): PushResult =>
 });
 
 /**
- * The iPhones' `PushSender`, Live Activities included (ADR 0201). Answers every message (never throws): sent,
+ * The iPhones' `PushSender`, Live Activities included (ADR 0210). Answers every message (never throws): sent,
  * unregistered (410, `Unregistered`, `BadDeviceToken`, `DeviceTokenNotForTopic`, a token that isn't hex), retryable
  * (429, 5xx, the network) or a final failure (a key Apple refuses, an app that isn't one of `appIds`, other 4xx).
  *
@@ -375,7 +375,7 @@ export function createApnsPushSender(options: {
     return deliver(message.to, message.apns, (app) => () => apnsRequest(message, app, now()));
   }
 
-  /** A Live Activity push (ADR 0201): its own push type and topic, on the same connection and provider token. */
+  /** A Live Activity push (ADR 0210): its own push type and topic, on the same connection and provider token. */
   async function sendLiveOne(message: LiveActivityMessage): Promise<PushResult> {
     if (!APNS_ACTIVITY_TOKEN.test(message.to))
       return { token: message.to, ok: false, unregistered: true, error: "not an APNs activity token" };

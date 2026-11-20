@@ -3,7 +3,7 @@ import { eq, schema } from "@agenteschat/db";
 import { LIVE_ACTIVITY_JOB } from "@agenteschat/engine";
 import { type Browser, browser, createTestServer, signUp, type TestServer } from "./harness";
 
-/** The phone's Live Activity registration (ADR 0201): `POST`/`DELETE /api/app/push/live-activity`. */
+/** The phone's Live Activity registration (ADR 0210): `POST`/`DELETE /api/app/push/live-activity`. */
 
 let t: TestServer;
 afterEach(async () => {

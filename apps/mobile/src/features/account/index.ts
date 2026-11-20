@@ -38,7 +38,7 @@ export async function signOut(): Promise<void> {
 export async function signOutOf(server: string, last = false): Promise<void> {
   if (last) await unregisterPush({ optOut: false });
   else await unregisterPushOn(server);
-  // The agents' Live Activity too (ADR 0201): the previous account's would keep reaching this phone.
+  // The agents' Live Activity too (ADR 0210): the previous account's would keep reaching this phone.
   await liveActivitySignOut(server);
   await authClient(server)
     .signOut({ fetchOptions: { timeout: SIGN_OUT_WAIT_MS } })

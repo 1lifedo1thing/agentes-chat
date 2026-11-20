@@ -34,7 +34,7 @@ export interface PushRelayDeps {
 type Vars = { Variables: { instance: RelayInstance } };
 
 /**
- * The push relay's API (ADR 0152, ADR 0178, ADR 0201), mounted at `/api/push-relay/v1` only when this server runs the relay
+ * The push relay's API (ADR 0152, ADR 0178, ADR 0210), mounted at `/api/push-relay/v1` only when this server runs the relay
  * (`PUSH_RELAY_SERVE` with `FIREBASE_SERVICE_ACCOUNT` or `APNS_KEY`). Server to server, JSON only, no session or CSRF:
  * installations register on their own and then call with `Authorization: Bearer <instanceId>.<secret>`.
  * Errors use the API's error shape (`{ error: { code, message } }`); the client reads `blocked` and
@@ -76,7 +76,7 @@ export function pushRelayRoutes(deps: PushRelayDeps) {
     await next();
   });
 
-  /** Passes an installation's pushes on (`relaySend`, or `relayLiveActivities` for Live Activities, ADR 0201). */
+  /** Passes an installation's pushes on (`relaySend`, or `relayLiveActivities` for Live Activities, ADR 0210). */
   const relayed =
     (field: "messages" | "activities", relay: typeof relaySend, what: string) => async (c: Context<Vars>) => {
       const body = await readJson(c);

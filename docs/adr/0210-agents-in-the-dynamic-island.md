@@ -1,4 +1,4 @@
-# 0201. Agents at work in the iPhone's Dynamic Island
+# 0210. Agents at work in the iPhone's Dynamic Island
 
 - Status: Accepted
 - Date: 2026-11-18

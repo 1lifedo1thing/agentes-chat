@@ -5,7 +5,7 @@ import { enqueue } from "./outbox";
 const { liveActivityDevices } = schema;
 
 /**
- * When the Live Activity of a person's agents at work is computed again (ADR 0201): one job kind, coalesced. Apart
+ * When the Live Activity of a person's agents at work is computed again (ADR 0210): one job kind, coalesced. Apart
  * from the rest of the module (`live-activity.ts`) so the flows that call it (notifications, runs) import nothing of
  * what it reads.
  */

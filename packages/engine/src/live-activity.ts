@@ -15,7 +15,7 @@ import { accountClosed } from "./standing";
 const { agents, liveActivityDevices, notifications, users } = schema;
 
 /**
- * The agents at work for one person, in their iPhone's Dynamic Island and on its Lock Screen (ADR 0201): one Live
+ * The agents at work for one person, in their iPhone's Dynamic Island and on its Lock Screen (ADR 0210): one Live
  * Activity per person, never one per agent. It shows the runs they are behind (`authority.ts`), in every workspace they
  * are in, and the requests waiting for them (an approval, a question, a secret: their inbox's "Esperando você", the
  * one record of what waits on a person). The server computes it and sends it to Apple (`live-activity.refresh`): a
@@ -84,7 +84,7 @@ export interface LiveActivityState {
 
 export type LiveActivityTone = "working" | "waiting" | "done";
 
-/** The content state's `props` (ADR 0201 §5), sent as a JSON string. */
+/** The content state's `props` (ADR 0210 §5), sent as a JSON string. */
 export interface LiveActivityProps {
   v: 1;
   tone: LiveActivityTone;
@@ -300,7 +300,7 @@ async function asksOf(db: Database, userId: string, orgId: string, orgName: stri
 }
 
 /**
- * What `userId`'s Live Activity shows now (ADR 0201 §1): in every workspace they read, the requests waiting for them
+ * What `userId`'s Live Activity shows now (ADR 0210 §1): in every workspace they read, the requests waiting for them
  * and the runs they are behind, one item per agent (a request over its work), requests first, then the latest first.
  * Nothing for an account that is closed.
  */
@@ -361,7 +361,7 @@ export function liveActivityFace(widgetsDir: string, agentId: string): string | 
   return pathToFileURL(`${dir.slice(0, end)}/faces/${agentId}.png`).href;
 }
 
-/** Where a tap on the activity goes: the app's own link to the conversation (ADR 0201 §5). */
+/** Where a tap on the activity goes: the app's own link to the conversation (ADR 0210 §5). */
 export function liveActivityUrl(item: Pick<LiveActivityItem, "orgId" | "channelId" | "threadId" | "messageId">) {
   const q = new URLSearchParams({ org: item.orgId });
   if (item.channelId) {
@@ -395,7 +395,7 @@ function stepWords(locale: PushLocale, item: LiveActivityItem): string {
 }
 
 /**
- * The content state's props (ADR 0201 §5) for what `state` holds, in `locale`, with faces in the phone's widgets
+ * The content state's props (ADR 0210 §5) for what `state` holds, in `locale`, with faces in the phone's widgets
  * directory. A request waiting leads ("Iris pede aprovação", "Aprovar?"); otherwise one agent's name and its timer, or
  * how many work. Null when nothing is left (`liveActivityDoneProps` says "done").
  */
@@ -619,7 +619,7 @@ export async function runLiveActivityJob(
 }
 
 /**
- * Sends each of the person's phones what its activity should show now (ADR 0201 §3):
+ * Sends each of the person's phones what its activity should show now (ADR 0210 §3):
  * - content and the activity's token: an `update` when the content changed (at most one every
  *   `LIVE_ACTIVITY_UPDATE_EVERY_MS` unless the tone changed: a later refresh sends the rest), or the same again once
  *   `LIVE_ACTIVITY_RESEND_MS` old, so it never goes stale while it is right;

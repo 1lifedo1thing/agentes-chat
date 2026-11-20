@@ -256,7 +256,7 @@ describe("relay sending", () => {
   });
 });
 
-/** A Live Activity's push token (ADR 0201). */
+/** A Live Activity's push token (ADR 0210). */
 const activityToken = (n: number) => String(n).padStart(160, "d");
 
 const activity = (n: number, extra: Partial<LiveActivityMessage> = {}): LiveActivityMessage => ({
@@ -270,7 +270,7 @@ const activity = (n: number, extra: Partial<LiveActivityMessage> = {}): LiveActi
   ...extra,
 });
 
-describe("relay sending, Live Activities (ADR 0201)", () => {
+describe("relay sending, Live Activities (ADR 0210)", () => {
   test("forwards only the fields Apple gets, in order, counted with the installation's messages", async () => {
     const { instance } = await registered();
     const sender = createFakePushSender({ unregistered: [activityToken(2)] });

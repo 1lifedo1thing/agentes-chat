@@ -35,7 +35,7 @@ export const PUSH_RELAY_LIMITS = {
   /** Messages to one phone per hour, from every installation together. */
   perToken: { limit: 120, windowMs: 3600_000 },
   /**
-   * Live Activity pushes (ADR 0201) to one activity or app token per hour: a server sends at most one every few
+   * Live Activity pushes (ADR 0210) to one activity or app token per hour: a server sends at most one every few
    * seconds while its person's agents work, and Apple keeps its own budget on top.
    */
   perActivityToken: { limit: 720, windowMs: 3600_000 },
@@ -173,7 +173,7 @@ const LIVE_EVENTS = new Set(["start", "update", "end"]);
 const IDENTIFIER = /^[A-Za-z][A-Za-z0-9_]*$/;
 const unixSeconds = (v: unknown) => typeof v === "number" && Number.isInteger(v) && v > 0 && v < 1e11;
 
-/** Checks one Live Activity push from an installation (ADR 0201) and keeps only the fields Apple gets. */
+/** Checks one Live Activity push from an installation (ADR 0210) and keeps only the fields Apple gets. */
 function relayActivity(input: unknown, index: number): LiveActivityMessage {
   const bad = (why: string) => new ValidationError(`activities.${index}: ${why}`, "invalid_request", { index });
   if (!input || typeof input !== "object" || Array.isArray(input)) throw bad("must be an object");
@@ -292,7 +292,7 @@ export async function relaySend(deps: RelayDeps, instance: RelayInstance, input:
 }
 
 /**
- * Sends an installation's Live Activity pushes (ADR 0201) through APNs, under the same rules as its messages: the
+ * Sends an installation's Live Activity pushes (ADR 0210) through APNs, under the same rules as its messages: the
  * whole request refused when one is malformed or the installation is over its hourly share (which they count in), a
  * token over its own hourly share answered `rate_limited`, and APNs refusing an app that isn't one of the relay's
  * (`APNS_APP_IDS`). A relay with no APNs key answers them `skipped`.

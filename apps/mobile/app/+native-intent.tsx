@@ -15,7 +15,7 @@ export function redirectSystemPath({ path, initial }: { path: string; initial: b
   try {
     // The share extension opens the app with `agenteschat://dataUrl=…` (expo-share-intent): "Compartilhar com…".
     if (path.includes("dataUrl=")) return SHARE_ROUTE;
-    // A tap on the agents' island (ADR 0201): the conversation it shows.
+    // A tap on the agents' island (ADR 0210): the conversation it shows.
     const island = liveActivityLinkHref(path, workspaceOnScreen());
     if (island) return island;
     const link = appLinkFromUrl(path, workspaceOnScreen());

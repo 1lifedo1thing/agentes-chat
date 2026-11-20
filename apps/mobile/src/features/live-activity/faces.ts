@@ -29,7 +29,7 @@ function facePng(id: string, look: AgentLookInput): Uint8Array | null {
 const INDEX = "index.json";
 
 /**
- * Writes the agents' faces where the Live Activity reads them (the app group's widgets directory, ADR 0201): one PNG
+ * Writes the agents' faces where the Live Activity reads them (the app group's widgets directory, ADR 0210): one PNG
  * per agent, drawn again only when its look changed. Never throws: an island without a face shows a dot instead.
  */
 export function writeFaces(dir: string, agents: readonly { id: string; look: AgentLookInput }[]): void {

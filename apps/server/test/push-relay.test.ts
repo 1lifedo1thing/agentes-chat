@@ -203,7 +203,7 @@ describe("push relay routes", () => {
   });
 });
 
-describe("push relay routes, Live Activities (ADR 0201)", () => {
+describe("push relay routes, Live Activities (ADR 0210)", () => {
   const activityToken = (n: number) => String(n).padStart(160, "f");
   const activity = (n: number, topic = "chat.agentes.app"): LiveActivityMessage => ({
     to: activityToken(n),

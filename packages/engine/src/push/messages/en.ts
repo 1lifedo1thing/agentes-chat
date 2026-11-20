@@ -106,7 +106,7 @@ export interface PushStrings {
   /** A reminder of what the person left unread in "Esperando você": how many things, over the oldest one's own line. */
   teamWatchStill: (count: number) => string;
   /**
-   * The Live Activity of the agents at work (ADR 0201): its first line when a request waits (`a` the agent), the word
+   * The Live Activity of the agents at work (ADR 0210): its first line when a request waits (`a` the agent), the word
    * at the closed island's end in its place, how many agents work, what an agent does when it says nothing of its
    * own, one still in line, and the last word once nothing is left. Short: the island is small.
    */

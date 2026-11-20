@@ -258,7 +258,7 @@ export async function resolveLink(
 }
 
 /**
- * A tap on the agents' island (ADR 0201): the conversation it points at, straight away in `current` (the workspace on
+ * A tap on the agents' island (ADR 0210): the conversation it points at, straight away in `current` (the workspace on
  * screen), else through `/link`, which switches workspace first. Null for any other link.
  */
 export function liveActivityLinkHref(url: string, current: string | null = null): string | null {

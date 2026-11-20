@@ -1,5 +1,5 @@
 /**
- * What the island shows, as the server sends it (ADR 0201): the Live Activity's `props`, a JSON string in the push's
+ * What the island shows, as the server sends it (ADR 0210): the Live Activity's `props`, a JSON string in the push's
  * `content-state`. Made and worded on the server; the layout (`AgentsActivity`) only draws it.
  */
 export interface IslandProps {
@@ -60,5 +60,5 @@ export function liveActivityTargetOf(url: string): LiveActivityTarget | null {
   return { orgId, channelId, threadId: query.thread || null, messageId: query.message || null };
 }
 
-/** Where an agent's face is in the widgets directory: the path the server puts in `face` (ADR 0201). */
+/** Where an agent's face is in the widgets directory: the path the server puts in `face` (ADR 0210). */
 export const facePath = (dir: string, agentId: string) => `${dir.replace(/\/+$/, "")}/faces/${agentId}.png`;

@@ -14,7 +14,7 @@ import { createLiveActivity, type LiveActivityEnvironment } from "expo-widgets";
 import type { IslandProps } from "./props";
 
 /**
- * The agents at work in the Dynamic Island and on the Lock Screen (ADR 0201): one Live Activity per person, its content
+ * The agents at work in the Dynamic Island and on the Lock Screen (ADR 0210): one Live Activity per person, its content
  * made and pushed by the server (`IslandProps`, a JSON string in the push's `content-state`). Drawn by iOS from iOS's
  * own components: a face, words and the system's timer, nothing of ours that moves.
  *
@@ -116,7 +116,7 @@ function AgentsActivityLayout(props: IslandProps, _environment: LiveActivityEnvi
   };
 }
 
-/** The Live Activity's name: the server's pushes say it (`content-state.name`, ADR 0201). */
+/** The Live Activity's name: the server's pushes say it (`content-state.name`, ADR 0210). */
 export const AGENTS_ACTIVITY = "AgentsActivity";
 
 export default createLiveActivity<IslandProps>(AGENTS_ACTIVITY, AgentsActivityLayout);

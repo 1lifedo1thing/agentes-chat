@@ -25,7 +25,7 @@ import {
 import { addMember, type Fixture, setup } from "./fixtures";
 import shapes from "./fixtures/live-activity-props.json";
 
-/** The agents at work in a person's iPhone Live Activity (ADR 0201): what it shows, its words, and what is sent. */
+/** The agents at work in a person's iPhone Live Activity (ADR 0210): what it shows, its words, and what is sent. */
 
 let f: Fixture;
 afterEach(async () => {
@@ -100,14 +100,14 @@ const register = (input: Partial<Parameters<typeof registerLiveActivityDevice>[2
     ...input,
   });
 
-/** The props as ADR 0201 §5 writes them: a request waiting, one agent at work, done. */
+/** The props as ADR 0210 §5 writes them: a request waiting, one agent at work, done. */
 const expected = shapes as unknown as Record<"waiting" | "working" | "done", LiveActivityProps>;
 
 const propsOf = (m: LiveActivityMessage | undefined) =>
   JSON.parse(m?.contentState.props ?? "null") as LiveActivityProps;
 const seconds = (d: Date) => Math.floor(d.getTime() / 1000);
 
-describe("its words (ADR 0201 §5)", () => {
+describe("its words (ADR 0210 §5)", () => {
   const ORG = "0193a000-0000-7000-8000-0000000000a0";
   const id = (n: number) => `0193a000-0000-7000-8000-00000000000${n}`;
   const dev = {

@@ -21,7 +21,6 @@ export const featureKeysPtBR = {
     channelCount_one: "{{count}} canal",
     channelCount_other: "{{count}} canais",
     none: "Nenhuma categoria ainda.",
-    manageHelp: "Toque numa categoria para renomear, mudar de lugar ou excluir.",
     manageHint: "Ordem, nomes e excluir",
     deleteTitle: "Excluir {{name}}?",
     order: "Lugar na lista",
@@ -362,6 +361,8 @@ export const featureKeysPtBR = {
     replies_other: "{{count}} respostas",
     repliesWord_one: "resposta",
     repliesWord_other: "respostas",
+    /** A conversation of bubbles says when it picks up again: "Today 15:35". */
+    dayAt: "{{day}} {{time}}",
     thread: "Thread",
     closed: "fechada",
     options: "Opções",
@@ -399,8 +400,6 @@ export const featureKeysPtBR = {
       held: "{{name}} lê depois da sua decisão",
       read: "{{name}} leu",
       resolved: "{{name}} encerrou o pedido de ajuda",
-      well: "Leu seu recado",
-      wellNow: "Parou para ler seu recado",
     },
     stopped: {
       byYou: "Parou aqui",
@@ -585,11 +584,9 @@ export const featureKeysPtBR = {
     camera: "Câmera",
     photos: "Fotos",
     file: "Arquivo",
-    /** The fourth tile: the GIFs and stickers, out of the field so it only sends. */
+    /** The fourth tile: the GIFs and stickers (also beside the mic in the empty field). */
     media: "GIFs",
     noCamera: "Sem acesso à câmera. Libere nos Ajustes do celular.",
-    mission: "Começar uma missão",
-    missionHint: "Um trabalho longo, com plano, do começo ao fim",
     summary: "Resumir a conversa",
     summaryHint: "O que aconteceu enquanto você estava fora",
     remind: "Lembrar depois",
@@ -844,7 +841,6 @@ export const featureKeysPtBR = {
     handleMention: "Mencione @{{handle}} para chamar.",
     handleFromName: "No chat: @{{handle}}. Vem do nome, dá para mudar.",
     handleFromNameEmpty: "O @ no chat vem do nome.",
-    reviewLead: "Toque numa linha para mudar.",
     planHint: "Ou conecte o seu plano de IA: o {{name}} passa a pensar por ele, sem gastar a chave.",
     planHint_female: "Ou conecte o seu plano de IA: a {{name}} passa a pensar por ele, sem gastar a chave.",
     partly: "O agente foi criado, mas parte do que a função traz não entrou. Ajuste no perfil dele.",
@@ -855,9 +851,9 @@ export const featureKeysPtBR = {
         openmausbot:
           "No OpenMausBot: clique com o botão direito na equipe\u00a0›\u00a0Compartilhar equipe…\u00a0›\u00a0Salvar arquivo. Depois escolha esse arquivo aqui.",
         hermes:
-          "O Hermes exporta pelo terminal (hermes profile export), num .tar.gz que o celular não abre. Importe pelo computador, ou escolha aqui os arquivos .md e .yaml do perfil.",
+          "O Hermes exporta pelo terminal (`hermes profile export`), num .tar.gz que o celular não abre. Importe pelo computador, ou escolha aqui os arquivos .md e .yaml do perfil.",
         openclaw:
-          "O OpenClaw guarda os agentes na pasta ~/.openclaw do computador. Escolha aqui os arquivos .md de um workspace, ou importe a pasta inteira pelo computador.",
+          "O OpenClaw guarda os agentes na pasta `~/.openclaw` do computador. Escolha aqui os arquivos .md de um workspace, ou importe a pasta inteira pelo computador.",
         paperclip: "Cole abaixo o link do pacote no GitHub, ou escolha o COMPANY.md e os outros arquivos .md.",
         agenteschat:
           "No outro workspace: Configurações\u00a0›\u00a0Importar e exportar\u00a0›\u00a0Baixar o arquivo. Depois escolha o .json aqui.",
@@ -1147,7 +1143,7 @@ export const featureKeysPtBR = {
     notificationsOnHint: "Também chegam no navegador e no app do computador, se estiverem ligadas lá.",
     notificationsOffHint: "Ligue para receber avisos aqui. Os tipos abaixo valem para todos os seus aparelhos.",
     notificationsKindsHint: "A Atividade guarda tudo. Vale para este workspace, em todos os seus aparelhos.",
-    /** The switch for the agents' Live Activity (the iPhone's Dynamic Island and Lock Screen, ADR 0201). */
+    /** The switch for the agents' Live Activity (the iPhone's Dynamic Island and Lock Screen, ADR 0210). */
     liveActivity: "Agentes na ilha",
     liveActivityHint:
       "Quando um agente trabalha no que você pediu, ele aparece em cima da tela, em qualquer app, e na tela bloqueada. Com o app fechado, precisa do iOS 17.2 ou mais novo.",
@@ -1167,7 +1163,7 @@ export const featureKeysPtBR = {
     agentStyle: "Como os agentes falam",
     workspaces: "Workspaces",
     workspacesIn: "Você está em",
-    workspacesFoot: "Você continua conectado em cada um e recebe os avisos de todos. Toque num workspace para abrir.",
+    workspacesFoot: "Você continua conectado em cada um e recebe os avisos de todos.",
     workspacesUnreachable: "Sem resposta agora",
     addWorkspace: "Adicionar workspace",
     addWorkspaceCreate: "Criar um workspace novo",
@@ -2019,8 +2015,7 @@ export const featureKeysPtBR = {
         "Este iPhone usa o iOS {{version}}, mais novo do que o Xcode no {{host}} conhece. Instale lá o Xcode {{major}} e rode xcrun devicectl manage ddis update no Terminal.",
       teamMissing:
         "O Xcode está conectado, mas ainda não mostra um time. No Xcode, crie qualquer app de iOS, escolha seu time em Signing & Capabilities e rode neste iPhone uma vez.",
-      uiRefused:
-        "Este iPhone recusou os toques do app de testes. Desbloqueie e digite seu código se ele pedir. Se continuar, desligue e ligue Ajustes\u00a0›\u00a0Desenvolvedor\u00a0›\u00a0Ativar Automação da IU.",
+      uiRefused: "Os agentes veem a tela deste iPhone, mas o iOS recusa os toques deles.",
       pluggedIn: "Já está ligado",
       wifi: {
         also: "Também no Wi-Fi de {{host}}: {{name}}",
@@ -2290,7 +2285,6 @@ export const featureKeysPtBR = {
   },
   crash: {
     title: "Algo deu errado nesta tela",
-    subtitle: "O app achou um erro ao mostrar isto. Tente de novo.",
     retry: "Tentar de novo",
   },
   notFound: {
@@ -2319,9 +2313,8 @@ export const featureKeysPtBR = {
     deleteIntro: "{{name}} fica só para leitura para todos agora e é apagado de vez em 7 dias.",
     holdDelete: "Segure para apagar",
     deleteFailed: "Não deu para apagar o workspace. Tente de novo.",
-    access: {
-      how: "Toque numa linha para trocar o nível: Sem acesso, Ler, Ler e escrever.",
-    },
+    holdReset: "Segure para recomeçar",
+    resetFailed: "Não deu para recomeçar o workspace. Tente de novo.",
     logo: {
       failed: "Não deu para enviar o logo",
       tooBig: "Imagem grande demais. Tente outra.",
@@ -2586,7 +2579,7 @@ export const featureKeysPtBR = {
       sealedHelp: "Por segurança, o que foi salvo aqui não aparece mais. Para mudar, digite de novo.",
       changePassword: "Trocar senha",
       changeValue: "Trocar valor",
-      changeHelp: "Toque em Salvar para guardar. Os agentes passam a usar o novo.",
+      changeHelp: "Os agentes passam a usar o novo depois que você salvar.",
       hidden: "Oculto",
       saved: "Salvo",
       delete: "Excluir",
@@ -2605,7 +2598,7 @@ export const featureKeysPtBR = {
       newPassword: "Nova senha",
       keyName: "Variável",
       keyNamePlaceholder: "ACME_API_KEY",
-      keyNameHelp: "Letras maiúsculas, números e _, como ACME_API_KEY. Os agentes pedem a chave por esse nome.",
+      keyNameHelp: "Letras maiúsculas, números e _, como `ACME_API_KEY`. Os agentes pedem a chave por esse nome.",
       value: "Valor",
       newValue: "Novo valor",
       description: "Descrição",
@@ -2732,7 +2725,7 @@ export const featureKeysPtBR = {
   },
   // Dashboards on the phone (ADR 0135); the rest of their words are the web's, `dashboards.*` and `widgets.*`.
   dashboards: {
-    homeRow: "Só você · seus próprios widgets",
+    homeRow: "Só você",
     create: "Criar",
     routineTarget: "o widget dela",
     pin: {
@@ -2816,11 +2809,11 @@ export const featureKeysPtBR = {
     },
     drive: {
       title: "Tudo o que o time cria, num lugar só",
-      text: "Relatórios, tabelas e arquivos de agentes e pessoas ficam aqui, fáceis de achar.",
+      text: "Relatórios, tabelas e arquivos de agentes e pessoas ficam aqui.",
       viewerTitle: "Encontre o que o time cria",
       viewerText: "O que agentes e pessoas criam nas conversas aparece aqui.",
       titlePersonal: "Tudo o que seus agentes criam, num lugar só",
-      textPersonal: "Relatórios, tabelas e arquivos dos seus agentes ficam aqui, fáceis de achar.",
+      textPersonal: "Relatórios, tabelas e arquivos dos seus agentes ficam aqui.",
       viewerTitlePersonal: "Encontre o que seus agentes criam",
       viewerTextPersonal: "O que os agentes criam nas suas conversas aparece aqui.",
     },
@@ -2886,7 +2879,7 @@ export const featureKeysPtBR = {
       viewerTextPersonal: "Quando alguém entrar, aparece aqui.",
     },
     chat: {
-      title: "Tudo começa com uma mensagem",
+      title: "Comece a conversa",
       text: "Escreva aqui embaixo e todo mundo aqui vê.",
       viewerTitle: "As mensagens aparecem aqui",
       viewerText: "Quando alguém escrever, você lê por aqui.",
@@ -2927,8 +2920,8 @@ export const featureKeysPtBR = {
     board: {
       title: "Veja o que importa num painel só",
       text: "Adicione um widget, peça um a um agente ou fixe um bloco do chat.",
-      viewerTitle: "Este painel está tomando forma",
-      viewerText: "Quem edita este painel adiciona os widgets, e eles aparecem aqui.",
+      viewerTitle: "Os widgets aparecem aqui",
+      viewerText: "Quem edita este painel adiciona os widgets.",
     },
     computers: {
       title: "Traga outro computador para os agentes",
@@ -2937,7 +2930,7 @@ export const featureKeysPtBR = {
       viewerText: "Quem conecta computadores adiciona os outros, e eles aparecem aqui.",
     },
     connectors: {
-      title: "Dê ferramentas de verdade aos agentes",
+      title: "Dê ferramentas aos agentes",
       text: "Conecte um serviço e eles passam a ler e agir nele.",
       viewerTitle: "As ferramentas dos agentes aparecem aqui",
       viewerText: "Quem gerencia os conectores liga os serviços abaixo.",
@@ -3090,7 +3083,7 @@ export const featureKeysPtBR = {
       done: "OK",
       placeholder: "Escreva o texto",
       titlePlaceholder: "Escreva o título",
-      hint: "Cada linha é um parágrafo. O que você escreve vai para o arquivo enquanto escreve.",
+      hint: "Cada linha é um parágrafo.",
     },
     /** Presenting. */
     show: {

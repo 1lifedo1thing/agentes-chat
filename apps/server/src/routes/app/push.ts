@@ -82,7 +82,7 @@ const WebDevice = z.object({
   locale: Locale,
 });
 
-/** A Live Activity's push token or the app's push-to-start token (ADR 0201): hex. */
+/** A Live Activity's push token or the app's push-to-start token (ADR 0210): hex. */
 const ActivityToken = z
   .string()
   .regex(APNS_ACTIVITY_TOKEN, "must be an APNs token (hex)")
@@ -96,7 +96,7 @@ const InstallId = z
   .regex(/^[A-Za-z0-9._:-]+$/, "must be an install id")
   .openapi({ example: "7f0c1a2e-3b4d-4c5e-8f60-718293a4b5c6" });
 
-/** The phone's Live Activity registration (ADR 0201). */
+/** The phone's Live Activity registration (ADR 0210). */
 const LiveActivityDevice = z.object({
   installId: InstallId,
   pushToStartToken: ActivityToken.nullable()
@@ -142,7 +142,7 @@ export function pushRoutes(deps: AppDeps) {
       security,
       summary: "Show your agents at work on this iPhone",
       description:
-        "Registers this app install for the Live Activity of your agents at work (ADR 0201): its push-to-start token, the activity running now with its push token, the widgets directory its faces are in, its app and whether it is a development build. Upsert by `installId`: an activity it hadn't told replaces the one before. Call when the app comes to the foreground and whenever an activity's token changes; the server then sends what it should show.",
+        "Registers this app install for the Live Activity of your agents at work (ADR 0210): its push-to-start token, the activity running now with its push token, the widgets directory its faces are in, its app and whether it is a development build. Upsert by `installId`: an activity it hadn't told replaces the one before. Call when the app comes to the foreground and whenever an activity's token changes; the server then sends what it should show.",
       request: { body: body(LiveActivityDevice) },
       responses: { 204: noContent[204], 429: errorResponse("Too many registrations"), ...errors },
     }),

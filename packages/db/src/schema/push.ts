@@ -47,7 +47,7 @@ export const pushDevices = pgTable(
 );
 
 /**
- * iPhones that show their person's agents at work in a Live Activity (ADR 0201). Per person, not per organization,
+ * iPhones that show their person's agents at work in a Live Activity (ADR 0210). Per person, not per organization,
  * as `push_devices`: one activity shows their work in every workspace. One row per app install (`installId`): the
  * token that starts an activity with the app closed (push-to-start), the running activity's id and its own token,
  * and what was last sent to it. Tokens Apple reports as gone are cleared.

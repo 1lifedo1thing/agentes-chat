@@ -6,7 +6,7 @@ import { facePath, liveActivityTargetOf } from "../src/features/live-activity/pr
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "..", file), "utf8");
 
-describe("the agents' Live Activity (ADR 0201)", () => {
+describe("the agents' Live Activity (ADR 0210)", () => {
   test("a tap opens the conversation it shows, straight away in the workspace on screen, else through /link", () => {
     const url = "agenteschat://island?org=o1&channel=c1&thread=t1&message=m1";
     expect(liveActivityTargetOf(url)).toEqual({ orgId: "o1", channelId: "c1", threadId: "t1", messageId: "m1" });

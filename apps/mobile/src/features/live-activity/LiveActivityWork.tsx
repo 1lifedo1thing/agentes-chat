@@ -6,7 +6,7 @@ import { agentLook } from "../shared/logic";
 import { useLiveActivity } from "./useLiveActivity";
 
 /**
- * The agents' Live Activity's work in the signed-in app (ADR 0201): registration with the server and the faces it
+ * The agents' Live Activity's work in the signed-in app (ADR 0210): registration with the server and the faces it
  * reads. A leaf of its own: the directory's changes redraw nothing else.
  */
 export function LiveActivityWork() {

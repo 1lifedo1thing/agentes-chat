@@ -103,7 +103,7 @@ export function NotificationsPage() {
   const toast = useToast();
   const { orgId } = useOrg();
   const push = usePushSwitch();
-  // The agents at work in the Dynamic Island (ADR 0201): this phone's own switch.
+  // The agents at work in the Dynamic Island (ADR 0210): this phone's own switch.
   const liveActivityOn = useLiveActivityOn();
   const prefs = useNoticePrefs(orgId);
   const set = useSetNoticePref(orgId);
