@@ -73,7 +73,10 @@ there (`codeSessionBrief`).
     preview. A menu also offers the phones the person may use (0042).
   - **Terminal**: a shell on the agent's computer opened in the worktree (the terminal of 0058 §6, with a folder), for
     running a script; the AI doesn't run there. Only who may drive that computer opens it, and a server that screens
-    sessions keeps terminals off.
+    sessions keeps terminals off. The stream takes a `cwd` (`TERMINAL_CWD_PROTOCOL`, 74) that the server sets from the
+    session (`/api/terminal?…&session=`, checked with `requireCodeSession`) and the runner resolves inside the agent's
+    folder; an older runner opens the shell in the agent's folder and the pane says so (`cwd_ignored`). The pane is
+    xterm (keystrokes as binary frames, `resize` as text) and lives on while another tab shows.
 
 ### 5. Git through the agent, so any host and flow works
 
@@ -83,7 +86,27 @@ asks the session's agent in words in the conversation: it commits, pushes or ope
 already has, on any host. Merging stays an approval (`merge` is always sensitive). With CI on GitHub, a failing check
 on the session's branch comes back to the agent as a notice in the session, so it reads the log and fixes it.
 
-### 6. Notifications
+### 6. The brain's own tool calls, one line each
+
+In a code session each call the CLI makes on its own (read, search, edit, write, run, fetch) is one line of the run's
+work, as in a terminal: a `context` step `cliTool` (`packages/engine/src/cli-tools.ts`: verb, target relative to the
+worktree, counts such as lines added and removed or tests passed, an output excerpt masked), written when the call
+ends. A `context` row keeps them out of every Tool Gateway reader (cost brakes, outbound checks, other runs' context,
+continuation). Live, `agent.step` carries the line at its start (the runner now sends the input with `tool_started`)
+and at its end (`ended`, `failed`); `meta.work.cliCalls` counts them, they show with the work summary off, and the
+blocks start open in the session (`ToolsOpenContext`). Elsewhere they stay off the trail (ADR 0032 addendum: a row per
+call on every turn of every chat is not worth its writes).
+
+### 7. A failing check comes back to the agent
+
+The GitHub App subscribes `check_run`. A check that completes failed, timed out or waiting on an action, on an
+`agentes/` branch, becomes a `github_check` notice in the open session on that branch (its thread, from its agent,
+waking it with trigger `dm`): which check, on which PR or commit, the link and the check's own output as outside text.
+It asks the agent to read the log, fix it in the worktree, run what failed, push again and say what it changed, or to
+say so when the change didn't cause it. Once per session, commit and check name. The session keeps the pull request
+opened from its branch (`open_pull_request`, and `pull_request` opened or merged).
+
+### 8. Notifications
 
 A message in a session notifies as in a channel thread, named by the session (`label`) and with `codeSessionId`, so
 the apps open it on the Code page.
@@ -91,7 +114,9 @@ the apps open it on the Code page.
 ## Consequences
 
 - No new runner op for the worktree or the diff: the session reuses `mission.worktree` and `exec`. The terminal's
-  folder needs a newer runner; an older one opens the shell in the agent's folder.
+  folder needs a newer runner (protocol 74); an older one opens the shell in the agent's folder and says so.
+- Apps registered before this need "Check run" ticked on GitHub; until then no check comes back (Settings says so).
+- A branch that keeps failing wakes the agent at each push that fails again, within its budgets; no other cap yet.
 - Sessions need an agent whose brain is Claude Code or Codex on a computer with git access to the repository.
 - The conversation is a thread like a task's: the phone app shows it with its thread screen through the notification's
   channel and thread until it has a Code screen of its own.
