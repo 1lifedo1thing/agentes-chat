@@ -255,4 +255,9 @@ export type BrainEvent =
 export interface Brain {
   kind: BrainKind;
   run(turn: BrainTurn, io: BrainIO): AsyncIterable<BrainEvent>;
+  /**
+   * The run was claimed: its computer starts the CLI its turn will most likely use now, while the engine builds the
+   * turn (`brain.warm`). Best effort, never fails; `turn` has no words yet.
+   */
+  warm?(turn: BrainTurn): Promise<void>;
 }

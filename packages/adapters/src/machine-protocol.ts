@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 73;
+export const MACHINE_PROTOCOL_VERSION = 74;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -2340,6 +2340,26 @@ export const ROUTE_TIMEOUT_MS = 30_000;
 /** Largest `brain.route` fields (characters; the schema as JSON). */
 export const ROUTE_LIMITS = { system: 8000, prompt: 32_000, schema: 8000 } as const;
 
+/**
+ * `brain.warm` (protocol 74): the engine claimed a run that will think with Claude Code here, and asks before it builds
+ * the turn's context: the session's CLI starts now (or stays open), with the launch the turn will most likely ask for,
+ * so the turn finds it warm. Best effort: the runner may decline (no room, nothing to start it with) and the turn
+ * starts its CLI as before; a turn whose launch differs starts its own. The server sends it to no older runner.
+ */
+export const BRAIN_WARM_PROTOCOL = 74;
+
+/** What `brain.turn` would start its CLI with, without the turn's own words (no prompt, system text or run). */
+export type BrainWarmRequest = Pick<
+  BrainTurnRequest,
+  "kind" | "session" | "cwd" | "model" | "personalMcp" | "permissions" | "account" | "effort" | "contextTokens"
+>;
+
+/** `open`: the session has a CLI now; `started`: this request started it. */
+export interface BrainWarmReply {
+  open: boolean;
+  started: boolean;
+}
+
 /** `brain.route` (protocol 24): one answer in `schema`'s shape from the account's CLI. */
 export interface BrainRouteRequest {
   kind: AccountKind;
@@ -2663,6 +2683,8 @@ export type MachineRequest = (
   | ({ op: "brain.steer" } & BrainSteerRequest)
   /** Protocol 24: a plan picks who answers a message (ADR 0074); the request's agent is the one it is lent to. */
   | ({ op: "brain.route" } & BrainRouteRequest)
+  /** Protocol 74: start (or keep) a session's Claude Code before its turn comes (`BRAIN_WARM_PROTOCOL`). */
+  | ({ op: "brain.warm" } & BrainWarmRequest)
   /** Protocol 11: clone or update the agent's checkouts through our git proxy. */
   | ({ op: "git.sync" } & GitSyncRequest)
   /** Protocol 14: the mission's worktree (ADR 0044). */
@@ -2880,6 +2902,7 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "brain.turn",
   "brain.steer",
   "brain.route",
+  "brain.warm",
   "git.sync",
   "mission.worktree",
   "access.request",
@@ -2993,6 +3016,7 @@ export interface MachineReplies {
   "brain.turn": { runId: string; final: WireBrainEvent };
   "brain.steer": BrainSteerReply;
   "brain.route": BrainRouteReply;
+  "brain.warm": BrainWarmReply;
   "git.sync": { repos: GitSyncRepo[] };
   /** `remove` answers `{ removed }` (`false`: the folder was already gone). */
   "mission.worktree": Partial<MissionWorktreeEnsured> & { removed?: boolean };

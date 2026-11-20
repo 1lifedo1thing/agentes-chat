@@ -680,7 +680,7 @@ async function sessionFor(
   conversation: string,
   machineId: string,
   accountId: string | null,
-  options: { fresh?: boolean; promptKey?: string },
+  options: { fresh?: boolean; promptKey?: string; peek?: boolean },
   now: Date,
 ): Promise<{ id: string; resume: boolean }> {
   if (run.brainSessionId) {
@@ -758,7 +758,8 @@ async function sessionFor(
     }
   }
   const sessionId = id ?? brainSessionId(agent.id, `${conversation}:${run.id}`, kind);
-  await db.update(schema.agentRuns).set({ brainSessionId: sessionId }).where(eq(schema.agentRuns.id, run.id));
+  if (!options.peek)
+    await db.update(schema.agentRuns).set({ brainSessionId: sessionId }).where(eq(schema.agentRuns.id, run.id));
   return { id: sessionId, resume: id ? await sessionUsed(db, run, kind, sessionId) : false };
 }
 
@@ -781,9 +782,10 @@ export async function resolveBrain(
   conversation: string,
   /**
    * `fresh`: a new computer session whatever the conversation had (routine runs). `promptKey`: the run's
-   * (`Transcript.promptKey`); the conversation's session is picked up only when it started with the same.
+   * (`Transcript.promptKey`); the conversation's session is picked up only when it started with the same. `peek`:
+   * nothing is kept on the run (the session it would most likely get, before its prompt key is known).
    */
-  options: { fresh?: boolean; now?: Date; promptKey?: string; thinker?: Agent } = {},
+  options: { fresh?: boolean; now?: Date; promptKey?: string; thinker?: Agent; peek?: boolean } = {},
 ): Promise<BrainPlan> {
   const mission: MissionTurn | null = await missionTurnFor(deps.db, run).catch(() => null);
   // The right hand: the AI of the person whose DM this is, else the workspace's; on a plan, its computer and owner.
