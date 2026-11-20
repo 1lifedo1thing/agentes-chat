@@ -87,7 +87,7 @@ export function PersonMessageActions({
 /**
  * A message's menu (lib/context-menu.ts), one list for its right click and its "…" (`more`): reactions with every
  * emoji, Responder, Copiar texto, Copiar link, Fixar mensagem, Salvar na wiki. With text selected in it, the
- * selection's own menu (Copiar, Responder; Salvar na wiki saves the selection). `touch` is the same menu for a tap on
+ * selection's own menu (Copiar, Responder; Salvar na wiki saves the selection). `touch` is the same menu for a long press on
  * touch, where it stands in for the bar, so an agent's reply (`feedback`) also has the bar's Não ajudou and Corrigir
  * resposta. `dialog` goes with the message. Fixar needs `post` (the server's rule) and a conversation that isn't
  * read only.

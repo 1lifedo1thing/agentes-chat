@@ -6712,7 +6712,19 @@ html:not([data-pointer]) .ac-hint:focus-visible {
     background: var(--plate-soft);
   }
 }
-/* The row a menu is open for (a tap on touch), a step brighter than a hover. */
+/* A row whose menu a long press opens (`Message` `menu`): that press never selects its words or opens the page's menu. */
+@media (hover: none) {
+  .ac-msg[data-hold-menu] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* Its links, pictures and videos keep the browser's own long press (open, save). */
+  .ac-msg[data-hold-menu] :is(a[href], img, video) {
+    -webkit-touch-callout: default;
+  }
+}
+/* The row a menu is open for (a long press on touch), a step brighter than a hover. */
 .ac-msg[data-menu-open="true"] {
   background: var(--plate);
 }
