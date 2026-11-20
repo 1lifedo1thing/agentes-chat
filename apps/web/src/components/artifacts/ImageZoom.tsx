@@ -17,7 +17,15 @@ import {
   zoomAt,
 } from "@agenteschat/client/lib/zoom";
 import { Button, Spinner } from "@agenteschat/ui";
-import { type PointerEvent as ReactPointerEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  type ReactNode,
+  type PointerEvent as ReactPointerEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useMatchMedia } from "@/hooks/useMatchMedia";
 import { STORAGE_KEYS, storage } from "@/lib/storage";
@@ -368,10 +376,7 @@ export function ImageZoom({
           />
         )}
         {overlay && box && (
-          <div
-            className="izoom__overlay"
-            style={{ left: box.x + swipe, top: box.y, width: box.w, height: box.h }}
-          >
+          <div className="izoom__overlay" style={{ left: box.x + swipe, top: box.y, width: box.w, height: box.h }}>
             {overlay}
           </div>
         )}

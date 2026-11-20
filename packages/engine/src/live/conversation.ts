@@ -89,7 +89,12 @@ function cleanMark(raw: unknown): LiveAskSelection["mark"] | undefined {
   const w = fraction(m.w);
   const h = fraction(m.h);
   if (w === null || h === null || w === 0 || h === 0) return { x, y };
-  return { x, y, w: Math.min(w, Math.round((1 - x) * 10_000) / 10_000), h: Math.min(h, Math.round((1 - y) * 10_000) / 10_000) };
+  return {
+    x,
+    y,
+    w: Math.min(w, Math.round((1 - x) * 10_000) / 10_000),
+    h: Math.min(h, Math.round((1 - y) * 10_000) / 10_000),
+  };
 }
 
 /** `meta.liveRef`: the file a message is about and what was selected in it. */
@@ -266,7 +271,10 @@ export function liveRefLine(meta: Record<string, unknown> | null | undefined): s
   const label = untrustedBlock("what the person selected, as their app names it", s.label, 200);
   const quote = s.text ? `\nThe words they selected:\n${untrustedBlock("the file's words", s.text, 200)}` : "";
   // The app's pictures of the place: the agent sees them with one call, as it sees a file (ADR 0208).
-  const pictures = s.crop || s.frame ? `\nTo see the place they marked, call look_at_comment with comment "${s.crop ?? s.frame}".` : "";
+  const pictures =
+    s.crop || s.frame
+      ? `\nTo see the place they marked, call look_at_comment with comment "${s.crop ?? s.frame}".`
+      : "";
   return `\n(about what they selected in ${file}${parts.length ? `: ${parts.join("; ")}` : ""})\n${label}${quote}${pictures}`;
 }
 
@@ -573,7 +581,11 @@ function mediaBrief(
   const word = kindWord(kind);
   const title = titleWords(file.title);
   const place =
-    kind === "image" ? "an area or a point of it" : kind === "video" ? "a moment of it (and maybe an area of that frame)" : "a page of it (and maybe an area of that page)";
+    kind === "image"
+      ? "an area or a point of it"
+      : kind === "video"
+        ? "a moment of it (and maybe an area of that frame)"
+        : "a page of it (and maybe an area of that page)";
   return [
     `# This conversation: the ${word} "${title}"`,
     `This is the conversation of the ${word} "${title}" (artifact ${file.id}), the file in focus here${mine ? ", which you made" : ""}. Everyone who reads the file reads and writes here, and your replies land here, next to the file.`,

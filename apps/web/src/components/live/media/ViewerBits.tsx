@@ -8,8 +8,8 @@ import { useMaybeArtifactViewer } from "@/components/artifacts/ArtifactViewer";
 import { useOrg } from "@/components/org-context";
 import { ThreadLineBody } from "@/components/threads/ThreadLines";
 import { openMediaPage } from "../open";
-import { mediaPinsOf } from "./marks";
 import { MediaPins } from "./MediaPins";
+import { mediaPinsOf } from "./marks";
 import "./media.css";
 import "../canvas/canvas.css";
 

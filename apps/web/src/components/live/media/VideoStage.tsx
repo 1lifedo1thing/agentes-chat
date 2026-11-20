@@ -5,8 +5,8 @@ import { useVideoLabels } from "@/components/artifacts/FileView";
 import { clockOf } from "../talk";
 import { DraftMark } from "./DraftMark";
 import { STAGE_PAD, type StageMarks } from "./ImageStage";
-import { type Mark, markOf } from "./marks";
 import { MediaPins, PinFace, usePinAuthor } from "./MediaPins";
+import { type Mark, markOf } from "./marks";
 
 /** A frame's pins show this long around their moment (seconds), as it plays or is paused near it. */
 const NEAR_S = 1.5;

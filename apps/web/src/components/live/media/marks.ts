@@ -64,7 +64,8 @@ export function markOf(
 }
 
 /** Where a mark's pin stands: an area's top right corner, a point itself. */
-export const pinAt = (mark: Mark) => (mark.w !== undefined ? { x: mark.x + mark.w, y: mark.y } : { x: mark.x, y: mark.y });
+export const pinAt = (mark: Mark) =>
+  mark.w !== undefined ? { x: mark.x + mark.w, y: mark.y } : { x: mark.x, y: mark.y };
 
 // ── The app's pictures of the place (what the agent sees, the comment's thumbnail) ──────────────────────────────────
 
@@ -105,7 +106,12 @@ export function cropRect(mark: Mark, width: number, height: number) {
   }
   const x = Math.max(0, Math.floor(x0));
   const y = Math.max(0, Math.floor(y0));
-  return { x, y, w: Math.max(1, Math.min(width, Math.ceil(x1)) - x), h: Math.max(1, Math.min(height, Math.ceil(y1)) - y) };
+  return {
+    x,
+    y,
+    w: Math.max(1, Math.min(width, Math.ceil(x1)) - x),
+    h: Math.max(1, Math.min(height, Math.ceil(y1)) - y),
+  };
 }
 
 const blobOf = (canvas: HTMLCanvasElement, type: string, quality: number) =>

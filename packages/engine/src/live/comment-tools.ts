@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import type { PubSub } from "@agenteschat/adapters";
 import { and, asc, eq, isNull, schema } from "@agenteschat/db";
+import type { ToolImage } from "@agenteschat/providers";
 import type { ArtifactActor, ArtifactDeps } from "../artifacts";
 import { publishMessageCreated } from "../events";
 import type { Judge } from "../judge";
 import { insertMessage, messageView } from "../messages";
 import { replyThreadOf } from "../runs";
-import type { ToolImage } from "@agenteschat/providers";
 import type { ToolContext, ToolDefinition, ToolOutput, ToolSource } from "../tools/types";
 import { untrustedBlock } from "../untrusted";
 import { getAsset, readPictureFile } from "./assets";
@@ -113,12 +113,20 @@ function lookTool(deps: CommentToolDeps, file: ConversationFile): ToolDefinition
     inputSchema: {
       type: "object",
       properties: {
-        comment: { type: "string", minLength: 1, maxLength: 64, description: 'The comment\'s number ("4") or the id its line gives.' },
+        comment: {
+          type: "string",
+          minLength: 1,
+          maxLength: 64,
+          description: 'The comment\'s number ("4") or the id its line gives.',
+        },
       },
       required: ["comment"],
       additionalProperties: false,
     },
-    describe: (input) => ({ title: "Look at a comment", detail: typeof input.comment === "string" ? input.comment : undefined }),
+    describe: (input) => ({
+      title: "Look at a comment",
+      detail: typeof input.comment === "string" ? input.comment : undefined,
+    }),
     async execute(input, ctx) {
       try {
         const list = await pinnedComments(ctx, file);
@@ -139,7 +147,9 @@ function lookTool(deps: CommentToolDeps, file: ConversationFile): ToolDefinition
         const newer = c.selection.version !== undefined && c.selection.version < file.currentVersion;
         const lines = [
           `Comment ${c.n}${c.resolved ? " (resolved)" : ""}, by ${c.authorType === "agent" ? "an agent" : "a person"}: ${where || "the whole file"}.`,
-          newer ? `It was made on version ${c.selection.version}; the file is at version ${file.currentVersion} now.` : "",
+          newer
+            ? `It was made on version ${c.selection.version}; the file is at version ${file.currentVersion} now.`
+            : "",
           images.length === 0
             ? "Their app sent no pictures of it: read the file itself to see the place."
             : images.length === 2
@@ -258,8 +268,9 @@ function commentTool(deps: CommentToolDeps, file: ConversationFile): ToolDefinit
             isError: true,
           };
         }
+        // Its label is its pin's number, as the apps write theirs: the next one.
         const selection: LiveAskSelection = {
-          label: "comment",
+          label: String((await pinnedComments(ctx, file)).length + 1),
           ...(mark ? { mark } : {}),
           ...(time !== undefined ? { time } : {}),
           ...(page !== undefined ? { page } : {}),
@@ -300,13 +311,21 @@ function resolveTool(deps: CommentToolDeps, file: ConversationFile): ToolDefinit
     inputSchema: {
       type: "object",
       properties: {
-        comment: { type: "string", minLength: 1, maxLength: 64, description: 'The comment\'s number ("4") or the id its line gives.' },
+        comment: {
+          type: "string",
+          minLength: 1,
+          maxLength: 64,
+          description: 'The comment\'s number ("4") or the id its line gives.',
+        },
         resolved: { type: "boolean", description: "False opens it again. Default true." },
       },
       required: ["comment"],
       additionalProperties: false,
     },
-    describe: (input) => ({ title: "Resolve a comment", detail: typeof input.comment === "string" ? input.comment : undefined }),
+    describe: (input) => ({
+      title: "Resolve a comment",
+      detail: typeof input.comment === "string" ? input.comment : undefined,
+    }),
     async execute(input, ctx) {
       try {
         const list = await pinnedComments(ctx, file);

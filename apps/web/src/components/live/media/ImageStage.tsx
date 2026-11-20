@@ -1,7 +1,7 @@
 import { type PointerEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { type Mark, type MediaPin, markOf } from "./marks";
-import { MediaPins } from "./MediaPins";
 import { DraftMark } from "./DraftMark";
+import { MediaPins } from "./MediaPins";
+import { type Mark, type MediaPin, markOf } from "./marks";
 
 /** Room around the picture inside the stage (pixels): at its sides, over it (the zoom island) and under it (the dock). */
 export const STAGE_PAD = { x: 40, top: 64, bottom: 80 };
@@ -147,7 +147,13 @@ export function ImageStage({
       <div
         ref={box}
         className="mf-box"
-        style={{ left, top, width: boxW || undefined, height: boxH || undefined, visibility: boxW ? "visible" : "hidden" }}
+        style={{
+          left,
+          top,
+          width: boxW || undefined,
+          height: boxH || undefined,
+          visibility: boxW ? "visible" : "hidden",
+        }}
       >
         <img
           ref={img}
@@ -162,7 +168,12 @@ export function ImageStage({
             onSize?.(size);
           }}
         />
-        <MediaPins pins={marks.pins} focusId={marks.focusId} showResolved={marks.showResolved} onOpen={marks.onOpenPin} />
+        <MediaPins
+          pins={marks.pins}
+          focusId={marks.focusId}
+          showResolved={marks.showResolved}
+          onOpen={marks.onOpenPin}
+        />
         {dragging?.w !== undefined ? <DraftMark mark={dragging} /> : marks.draft && <DraftMark {...marks.draft} />}
       </div>
     </div>

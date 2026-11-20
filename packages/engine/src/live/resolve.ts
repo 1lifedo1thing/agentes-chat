@@ -65,7 +65,10 @@ export async function resolveComment(
   if (resolved && now) return now;
   if (!resolved && !now) return null;
   const mark: ResolvedMark | null = resolved
-    ? { by: actor.type === "person" ? { type: "person", id: actor.userId } : { type: "agent", id: actor.agentId }, at: new Date().toISOString() }
+    ? {
+        by: actor.type === "person" ? { type: "person", id: actor.userId } : { type: "agent", id: actor.agentId },
+        at: new Date().toISOString(),
+      }
     : null;
   const where = and(
     eq(messages.orgId, orgId),

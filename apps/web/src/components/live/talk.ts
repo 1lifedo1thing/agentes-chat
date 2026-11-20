@@ -48,7 +48,9 @@ export const useAskInConversation = () => useContext(LiveAskContext);
 
 /** Two selections are the same part of the file (the quote dropped for one stays dropped until it changes). */
 export const selectionKey = (s: LiveSelection | null | undefined) =>
-  s ? JSON.stringify([s.label, s.sheet, s.range, s.slide, s.shapes, s.point, s.text, s.block, s.mark, s.time, s.page]) : "";
+  s
+    ? JSON.stringify([s.label, s.sheet, s.range, s.slide, s.shapes, s.point, s.text, s.block, s.mark, s.time, s.page])
+    : "";
 
 /** A video's moment as m:ss (h:mm:ss past an hour). */
 export function clockOf(seconds: number): string {
@@ -101,7 +103,8 @@ export function aboutWords(t: TFunction, kind: TalkKind, selection: LiveSelectio
     if (kind === "video" && selection.time !== undefined) {
       return t("live.conversation.about.videoAt", { time: clockOf(selection.time) });
     }
-    if (kind === "pdf" && selection.page !== undefined) return t("live.conversation.about.pdfPage", { page: selection.page });
+    if (kind === "pdf" && selection.page !== undefined)
+      return t("live.conversation.about.pdfPage", { page: selection.page });
     const n = pinNumber(selection);
     if (selection.mark?.w !== undefined) return t("live.conversation.about.imageArea", { n });
     if (selection.mark) return t("live.conversation.about.imagePoint", { n });

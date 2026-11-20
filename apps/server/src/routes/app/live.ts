@@ -9,16 +9,16 @@ import {
   LIVE_ASSET_BYTES,
   LIVE_ASSET_MB,
   type LiveDeps,
-  MARK_PICTURE_BYTES,
   type LiveDocs,
   liveSnapshotOf,
+  MARK_PICTURE_BYTES,
   MAX_MESSAGE_LENGTH,
   putAsset,
   putMarkPicture,
   renameLiveFile,
   requireActiveMembership,
-  resolveComment,
   requireLiveFile,
+  resolveComment,
   withPersonFacts,
 } from "@agenteschat/engine";
 import { createRoute, z } from "@hono/zod-openapi";
@@ -450,7 +450,13 @@ export function liveRoutes(deps: AppDeps) {
       }
       const userId = c.get("user").id;
       await requireActiveMembership(db, userId, orgId);
-      const asset = await putMarkPicture(artifacts(), person(userId), orgId, artifactId, new Uint8Array(await file.arrayBuffer()));
+      const asset = await putMarkPicture(
+        artifacts(),
+        person(userId),
+        orgId,
+        artifactId,
+        new Uint8Array(await file.arrayBuffer()),
+      );
       return c.json(assetView(asset), 201);
     },
   );
@@ -477,7 +483,13 @@ export function liveRoutes(deps: AppDeps) {
       const { orgId, messageId } = c.req.valid("param");
       const { resolved } = c.req.valid("json");
       const userId = c.get("user").id;
-      const mark = await resolveComment({ db, pubsub: deps.adapters.pubsub }, { type: "person", userId }, orgId, messageId, resolved);
+      const mark = await resolveComment(
+        { db, pubsub: deps.adapters.pubsub },
+        { type: "person", userId },
+        orgId,
+        messageId,
+        resolved,
+      );
       return c.json({ resolved: mark }, 200);
     },
   );

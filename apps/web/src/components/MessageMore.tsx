@@ -7,8 +7,8 @@ import { chartBlocksOf, chartBlockToWidgetSpec } from "@agenteschat/ui/widgets/s
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChannelActions } from "@/components/channel-actions";
-import { ResolveButton } from "@/components/live/media/ResolveBits";
 import { MenuEntries } from "@/components/DesktopMenus";
+import { ResolveButton } from "@/components/live/media/ResolveBits";
 import { useOrg } from "@/components/org-context";
 import { PinToDashboard } from "@/components/widgets/PinToDashboard";
 import {

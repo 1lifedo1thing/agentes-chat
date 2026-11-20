@@ -159,12 +159,12 @@ export interface LiveSelection {
 }
 
 /** Uploaded files with a page and a conversation of their own (ADR 0208): a picture, a video, a PDF. */
-export type MediaKind = "image" | "video" | "pdf";
-/** What a file's conversation is about: a live file's kind, or a `MediaKind`. */
-export type TalkKind = LiveKind | MediaKind;
+export type FileMediaKind = "image" | "video" | "pdf";
+/** What a file's conversation is about: a live file's kind, or a `FileMediaKind`. */
+export type TalkKind = LiveKind | FileMediaKind;
 
-const MEDIA_KIND_NAMES: readonly string[] = ["image", "video", "pdf"] satisfies readonly MediaKind[];
-export const isMediaKind = (kind: unknown): kind is MediaKind =>
+const MEDIA_KIND_NAMES: readonly string[] = ["image", "video", "pdf"] satisfies readonly FileMediaKind[];
+export const isMediaKind = (kind: unknown): kind is FileMediaKind =>
   typeof kind === "string" && MEDIA_KIND_NAMES.includes(kind);
 
 /** A comment that points at a place in a picture, a video or a PDF: it has a numbered pin there (ADR 0208). */

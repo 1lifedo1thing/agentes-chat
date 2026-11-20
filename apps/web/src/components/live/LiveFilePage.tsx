@@ -10,8 +10,8 @@ import {
   useSaveLiveVersion,
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { clockHour, dayLabel, formatTime } from "@agenteschat/client/lib/format";
 import { mediaKindOfArtifact } from "@agenteschat/client/lib/files";
+import { clockHour, dayLabel, formatTime } from "@agenteschat/client/lib/format";
 import type { Peer } from "@agenteschat/live/awareness";
 import {
   Button,

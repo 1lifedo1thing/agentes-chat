@@ -4,8 +4,8 @@ import { type PointerEvent, useEffect, useLayoutEffect, useRef, useState } from 
 import { useTranslation } from "react-i18next";
 import { DraftMark } from "./DraftMark";
 import type { StageMarks } from "./ImageStage";
-import { type Mark, type MediaPin, markOf } from "./marks";
 import { MediaPins } from "./MediaPins";
+import { type Mark, type MediaPin, markOf } from "./marks";
 
 /*
  * A PDF on its page (ADR 0208): drawn by pdf.js, loaded only here (never in the app's first load), page under page.
@@ -70,20 +70,23 @@ export function PdfStage({
 
   useEffect(() => {
     let gone = false;
-    let made: PDFDocumentProxy | null = null;
+    let task: { destroy(): Promise<void> } | null = null;
     setFailed(false);
     loadPdfJs()
-      .then((lib) => lib.getDocument({ url: src, isEvalSupported: false }).promise)
+      .then((lib) => {
+        const loading = lib.getDocument({ url: src });
+        task = loading;
+        return loading.promise;
+      })
       .then((d) => {
-        made = d;
-        if (gone) return void d.destroy();
+        if (gone) return;
         setDoc(d);
         onPages(d.numPages);
       })
       .catch(() => !gone && setFailed(true));
     return () => {
       gone = true;
-      void made?.destroy();
+      void task?.destroy();
     };
   }, [src, onPages]);
 
@@ -227,6 +230,7 @@ function PdfPage({
       }}
       className="mf-page"
       style={{ width, height }}
+      role="group"
       aria-label={t("files.comments.page", { page: n })}
       onPointerDown={onPointerDown}
       onPointerMove={(e) => drag && setDrag({ from: drag.from, to: { x: e.clientX, y: e.clientY } })}

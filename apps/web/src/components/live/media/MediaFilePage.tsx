@@ -1,8 +1,18 @@
-import type { ArtifactDetail, LiveSelection, MediaKind } from "@agenteschat/client";
+import type { ArtifactDetail, FileMediaKind, LiveSelection } from "@agenteschat/client";
 import { ApiError, keys, useApi, useArtifact, useFileConversation, useThreadMessages } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { Button, cx, EmptyState, Icon, Menu, MenuItem, MenuSeparator, typingInField, useMatchMedia } from "@agenteschat/ui";
+import {
+  Button,
+  cx,
+  EmptyState,
+  Icon,
+  Menu,
+  MenuItem,
+  MenuSeparator,
+  typingInField,
+  useMatchMedia,
+} from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -25,8 +35,8 @@ import {
 import { LIVE_COMPACT_QUERY, type LiveFileSearch } from "../LiveFilePage";
 import { LiveCrumbs, LiveMeta } from "../LiveHeader";
 import { usePageRoom } from "../room";
-import { FileAgentContext, type FileTalk, FileTalkContext, LiveAskContext, takeRevealOnOpen } from "../talk";
 import { talkIcon } from "../TalkBits";
+import { FileAgentContext, type FileTalk, FileTalkContext, LiveAskContext, takeRevealOnOpen } from "../talk";
 import { ImageStage, type MediaTool, type StageMarks } from "./ImageStage";
 import { type Mark, mediaPinsOf, takeMarkPictures } from "./marks";
 import { PdfStage } from "./PdfStage";
@@ -59,7 +69,7 @@ export function MediaFilePage({
   onSearch,
 }: {
   fileId: string;
-  media: MediaKind;
+  media: FileMediaKind;
   search: LiveFileSearch;
   onSearch: (patch: Partial<LiveFileSearch>) => void;
 }) {
@@ -212,9 +222,7 @@ export function MediaFilePage({
           api.live.uploadMark(org.id, fileId, pictures.crop),
           api.live.uploadMark(org.id, fileId, pictures.frame),
         ]);
-        setDraft((d) =>
-          d?.key === key ? { ...d, selection: { ...d.selection, crop: crop.id, frame: frame.id } } : d,
-        );
+        setDraft((d) => (d?.key === key ? { ...d, selection: { ...d.selection, crop: crop.id, frame: frame.id } } : d));
       } catch {
         // The comment goes without its pictures: the agent reads the file itself.
       }
@@ -275,7 +283,10 @@ export function MediaFilePage({
           title={notFound ? t("live.shell.notFound.title") : t("live.shell.failed.title")}
           actions={
             notFound ? (
-              <Button variant="primary" onClick={() => void navigate({ to: "/org/$orgId/drive", params: { orgId: org.id } })}>
+              <Button
+                variant="primary"
+                onClick={() => void navigate({ to: "/org/$orgId/drive", params: { orgId: org.id } })}
+              >
                 {t("live.shell.notFound.back")}
               </Button>
             ) : (
@@ -293,13 +304,15 @@ export function MediaFilePage({
     pins,
     focusId,
     showResolved,
-    draft: draft?.selection.mark ? { mark: draft.selection.mark, n: Number(draft.selection.label) || pins.length + 1 } : null,
+    draft: draft?.selection.mark
+      ? { mark: draft.selection.mark, n: Number(draft.selection.label) || pins.length + 1 }
+      : null,
     draftPage,
     tool,
     onOpenPin: openPin,
   };
   const resolvedCount = pins.filter((p) => p.resolved).length;
-  const maxZoom = media === "pdf" ? 3 : ZOOM_STEPS[ZOOM_STEPS.length - 1] ?? 4;
+  const maxZoom = media === "pdf" ? 3 : (ZOOM_STEPS[ZOOM_STEPS.length - 1] ?? 4);
   const step = (dir: 1 | -1) =>
     setZoom((z) => {
       const steps = media === "pdf" ? [0.75, 1, 1.25, 1.5, 2, 3] : ZOOM_STEPS;
@@ -319,9 +332,7 @@ export function MediaFilePage({
         zoom={zoom}
         marks={marks}
         alt={artifact.title}
-        onMark={(mark, el) =>
-          void comment(mark, { source: el, width: el.naturalWidth, height: el.naturalHeight }, {})
-        }
+        onMark={(mark, el) => void comment(mark, { source: el, width: el.naturalWidth, height: el.naturalHeight }, {})}
       />
     ) : preview.failed ? (
       <EmptyState size="panel" icon="image" title={t("files.comments.loadFailed")} />
@@ -338,7 +349,11 @@ export function MediaFilePage({
           video.current = h;
         }}
         onMark={(mark, time, el) =>
-          void comment(mark, { source: el, width: el.videoWidth, height: el.videoHeight }, { time: Math.round(time * 10) / 10 })
+          void comment(
+            mark,
+            { source: el, width: el.videoWidth, height: el.videoHeight },
+            { time: Math.round(time * 10) / 10 },
+          )
         }
       />
     );
@@ -363,14 +378,25 @@ export function MediaFilePage({
     <FileTalkContext.Provider value={talk}>
       <FileAgentContext.Provider value={fileAgent}>
         <LiveAskContext.Provider value={ask}>
-          <div ref={setPageEl} className="lf-page mf-page" data-kind={media} data-compact={folded || undefined} data-talk={docked || undefined}>
+          <div
+            ref={setPageEl}
+            className="lf-page mf-page"
+            data-kind={media}
+            data-compact={folded || undefined}
+            data-talk={docked || undefined}
+          >
             <MediaHeader
               artifact={artifact ?? null}
               media={media}
               compact={folded}
               talk={
                 artifact ? (
-                  <FileConversationButton artifact={artifact} open={talkOpen} compact={folded} onToggle={column.toggle} />
+                  <FileConversationButton
+                    artifact={artifact}
+                    open={talkOpen}
+                    compact={folded}
+                    onToggle={column.toggle}
+                  />
                 ) : null
               }
               onShare={() => artifact && share.open(artifact)}
@@ -400,7 +426,9 @@ export function MediaFilePage({
                     )}
                     {media === "pdf" && pageCount > 0 && (
                       <>
-                        <span className="mf-pages-now tabular">{t("files.comments.pageOf", { page: pageNow, count: pageCount })}</span>
+                        <span className="mf-pages-now tabular">
+                          {t("files.comments.pageOf", { page: pageNow, count: pageCount })}
+                        </span>
                         <span className="cnv-bar__divider" aria-hidden="true" />
                       </>
                     )}
@@ -519,7 +547,7 @@ function MediaHeader({
   onDelete,
 }: {
   artifact: ArtifactDetail | null;
-  media: MediaKind;
+  media: FileMediaKind;
   compact: boolean;
   talk: ReactNode;
   onShare: () => void;
@@ -532,7 +560,11 @@ function MediaHeader({
   const navigate = useNavigate();
   const shares = artifact?.inDrive !== false;
   const toDrive = () =>
-    void navigate({ to: "/org/$orgId/drive", params: { orgId: org.id }, search: artifact ? { artifact: artifact.id } : {} });
+    void navigate({
+      to: "/org/$orgId/drive",
+      params: { orgId: org.id },
+      search: artifact ? { artifact: artifact.id } : {},
+    });
   return (
     <header className="lf-head" data-kind={media}>
       <div className="lf-top">
@@ -550,7 +582,14 @@ function MediaHeader({
                 align="end"
                 label={t("live.shell.more")}
                 trigger={
-                  <Button size="sm" variant="ghost" iconOnly icon="more" aria-label={t("live.shell.more")} title={t("live.shell.more")} />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    iconOnly
+                    icon="more"
+                    aria-label={t("live.shell.more")}
+                    title={t("live.shell.more")}
+                  />
                 }
               >
                 {compact && shares && (
