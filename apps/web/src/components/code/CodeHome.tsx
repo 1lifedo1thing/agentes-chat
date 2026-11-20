@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
-import { CodeHomeSky } from "./CodeSky";
 import { WaitMark } from "./CodeList";
+import { CodeHomeSky } from "./CodeSky";
 
 const LAST_PICK = "code:lastPick";
 

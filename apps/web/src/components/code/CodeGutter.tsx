@@ -23,13 +23,7 @@ export function useStoredWidth(key: string, min: number, max: number, start: num
  * The drag between two of the Code page's surfaces (ADR 0208): it sets the width of the one on its left. Arrows move
  * it by 24 px, double click puts it back; the width is kept on this device.
  */
-export function CodeGutter({
-  label,
-  size,
-}: {
-  label: string;
-  size: ReturnType<typeof useStoredWidth>;
-}) {
+export function CodeGutter({ label, size }: { label: string; size: ReturnType<typeof useStoredWidth> }) {
   const start = useRef<{ x: number; w: number } | null>(null);
   const clamp = (w: number) => Math.round(Math.max(size.min, Math.min(size.max, w)));
   const down = (e: ReactPointerEvent<HTMLDivElement>) => {

@@ -18,8 +18,8 @@ import { ToolsOpenContext } from "@/components/ToolCalls";
 import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
 import { CodeGutter, useStoredWidth } from "./CodeGutter";
-import { CodePanel } from "./CodePanel";
 import { SessionState } from "./CodeList";
+import { CodePanel } from "./CodePanel";
 
 /**
  * One code session (ADR 0208): its header (name, branch and state, the git button), the conversation with its agent
@@ -65,24 +65,24 @@ function CodeConversation({ session }: { session: CodeSession }) {
     // The agent's work reads like a terminal there: every tool line in sight.
     <ToolsOpenContext.Provider value={true}>
       <ChannelPage
-      channelId={thread.channelId}
-      thread={thread}
-      fallback={{
-        id: thread.channelId,
-        name: thread.channelName,
-        topic: "",
-        visibility: "private",
-        isMember: true,
-        createdAt: thread.createdAt,
-      }}
-      chrome={{
-        // The page's header is the session's own, above the conversation.
-        header: () => null,
-        composerLabel: t("codeSessions.view.composer"),
-        panel: true,
-        openThread: false,
-        task: true,
-      }}
+        channelId={thread.channelId}
+        thread={thread}
+        fallback={{
+          id: thread.channelId,
+          name: thread.channelName,
+          topic: "",
+          visibility: "private",
+          isMember: true,
+          createdAt: thread.createdAt,
+        }}
+        chrome={{
+          // The page's header is the session's own, above the conversation.
+          header: () => null,
+          composerLabel: t("codeSessions.view.composer"),
+          panel: true,
+          openThread: false,
+          task: true,
+        }}
       />
     </ToolsOpenContext.Provider>
   );
@@ -187,7 +187,8 @@ function GitButton({ session }: { session: CodeSession }) {
     if (!d) return "";
     if (step === "commit") return t("codeSessions.git.hint.commit", { count: d.uncommitted });
     if (step === "push") return t("codeSessions.git.hint.push", { count: d.ahead });
-    if (step === "pr") return d.pr ? t("codeSessions.git.hint.prOpen", { number: d.pr.number }) : t("codeSessions.git.hint.pr");
+    if (step === "pr")
+      return d.pr ? t("codeSessions.git.hint.prOpen", { number: d.pr.number }) : t("codeSessions.git.hint.pr");
     return session.local
       ? t("codeSessions.git.hint.mergeLocal", { base: session.baseBranch ?? "main" })
       : t("codeSessions.git.hint.merge");
