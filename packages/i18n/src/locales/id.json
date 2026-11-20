@@ -14641,6 +14641,7 @@
       "tooMany": "Itu lebih dari yang muat di sini. Hapus beberapa dan coba lagi.",
       "fillIn": "Isi yang kurang dan coba lagi.",
       "checkAddress": "Periksa alamatnya dan coba lagi.",
+      "privateNetwork": "Alamat ini ada di jaringan privat. Gunakan alamat publik, atau di server yang di-host sendiri, izinkan dengan OUTBOUND_ALLOW_CIDRS.",
       "tooLong": "Itu terlalu panjang. Persingkat dan coba lagi.",
       "updateComputerApp": "Aplikasi di komputer terlalu lama untuk ini. Perbarui dan coba lagi.",
       "computerUpdatesItself": "Komputer ruang kerja memperbarui dirinya sendiri untuk ini. Coba lagi sebentar lagi.",

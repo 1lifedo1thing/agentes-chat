@@ -237,7 +237,7 @@ test("outboundFetch is the plain fetch where the operator lets workspaces reach 
 
 /**
  * A self-hosted server on a private network (a Tailscale tailnet, a LAN) reaches the servers its operator names in
- * `OUTBOUND_ALLOW_HOSTS` / `OUTBOUND_ALLOW_CIDRS` (ADR 0174); loopback and metadata addresses stay out regardless.
+ * `OUTBOUND_ALLOW_HOSTS` / `OUTBOUND_ALLOW_CIDRS` (ADR 0210); loopback and metadata addresses stay out regardless.
  */
 const tailnet = async () => ["100.101.102.103"];
 
@@ -291,14 +291,25 @@ test("loopback and metadata addresses stay refused whatever is allowed", async (
   }
 });
 
-test("the private switch lets assertPublicHttpsUrl through to the server's network", async () => {
+test("the private switch alone lets no private address through the check", async () => {
   try {
     allowPrivateOutbound();
-    await assertPublicHttpsUrl("https://executor.tail1234.ts.net/mcp", tailnet);
-    await assertPublicHttpsUrl("https://[fd7a:115c:a1e0::1]/mcp");
-    await assertPublicHttpsUrl("https://mcp.corp.internal/mcp", async () => ["10.0.0.5"]);
-    await expect(assertPublicHttpsUrl("http://10.0.0.5/mcp")).rejects.toThrow();
+    await expect(assertPublicHttpsUrl("https://executor.tail1234.ts.net/mcp", tailnet)).rejects.toThrow();
+    await expect(assertPublicHttpsUrl("https://mcp.corp.internal/mcp", async () => ["10.0.0.5"])).rejects.toThrow();
+    expect(outboundFetch()).toBe(fetch);
+    // An allow-list makes every request pinned and checked again at connect time, even with the switch on.
+    allowOutbound({ cidrs: ["100.64.0.0/10"] });
+    expect(outboundFetch()).not.toBe(fetch);
+    const https = fakeHttps({ status: 200, body: "ok" });
+    let answer = "100.101.102.103";
+    const guarded = outboundFetch({ resolveHost: async () => [answer], request: https.request });
+    expect(await (await guarded("https://executor.tail1234.ts.net/mcp")).text()).toBe("ok");
+    // The name moves onto the metadata address after it was checked (DNS rebinding): refused at connect time.
+    answer = "169.254.169.254";
+    expect(await refusal(guarded("https://executor.tail1234.ts.net/mcp"))).toBeInstanceOf(OutboundAddressError);
+    expect(https.sent).toHaveLength(1);
   } finally {
+    allowOutbound();
     allowPrivateOutbound(false);
   }
 });

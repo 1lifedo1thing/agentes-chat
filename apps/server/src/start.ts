@@ -385,8 +385,12 @@ async function boot(
   // Addresses a workspace names (custom MCP servers, its own bucket, pages agents read) are pinned to public ones at
   // every request, except where the operator lets workspaces reach this server's network.
   allowPrivateOutbound(allowsPrivateEndpoints(config));
-  // The private hosts and ranges the operator named reach the guard everywhere, whatever the switch (ADR 0174).
-  allowOutbound({ hosts: config.OUTBOUND_ALLOW_HOSTS, cidrs: config.OUTBOUND_ALLOW_CIDRS });
+  // The private hosts and ranges the operator named pass every guard for typed addresses (ADR 0210). agentes.chat
+  // Cloud never lets a workspace reach a private network, whatever is set.
+  const outboundLists = { hosts: config.OUTBOUND_ALLOW_HOSTS, cidrs: config.OUTBOUND_ALLOW_CIDRS };
+  if (!isAgentesCloud(config.PUBLIC_URL)) allowOutbound(outboundLists);
+  else if (outboundLists.hosts.length || outboundLists.cidrs.length)
+    log.warn("OUTBOUND_ALLOW_HOSTS and OUTBOUND_ALLOW_CIDRS are ignored on agentes.chat Cloud");
   // Per-process caches for agent/org/channel config, scopes, connections, credential rows (30 s TTL).
   enableCaches();
   // A write in any process (the app, a worker) clears what every process cached of it.
@@ -879,7 +883,7 @@ function mailAdapters(
       })
     : null;
   // A mail server named by a person never resolves to our network (private, loopback, metadata), unless the
-  // operator allowed that host or range (ADR 0174): the same check as when the account was saved.
+  // operator allowed that host or range (ADR 0210): the same check as when the account was saved.
   const checkHost = async (host: string) => {
     const checked = await publicHostAddress(host);
     if (!checked.ok) throw new Error(checked.reason === "blocked" ? "blocked host" : `no address for ${host}`);

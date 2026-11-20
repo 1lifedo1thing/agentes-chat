@@ -530,7 +530,7 @@ export const envVars = {
   MODEL_ENDPOINTS_PRIVATE: {
     schema: z.stringbool().optional(),
     description:
-      "Whether a workspace's own model endpoint (Settings › AI keys › Other provider) may be on this server's network or over http: an Ollama, vLLM, LM Studio or LiteLLM next to it. The same switch covers the other addresses a workspace names: custom MCP servers and their sign-in, its own bucket, server icons and the pages agents read. Unset: allowed, except on agentes.chat Cloud (https://app.agentes.chat) and with `ALLOW_SIGNUP=true`, where only public https addresses are, checked again at every connection.",
+      "Whether a workspace's own model endpoint (Settings › AI keys › Other provider) may be on this server's network or over http: an Ollama, vLLM, LM Studio or LiteLLM next to it. The other addresses a workspace names (custom MCP servers and their sign-in, its own bucket, server icons, the pages agents read) reach a private network only through `OUTBOUND_ALLOW_CIDRS` or `OUTBOUND_ALLOW_HOSTS`. Unset: allowed, except on agentes.chat Cloud (https://app.agentes.chat) and with `ALLOW_SIGNUP=true`, where only public https addresses are, checked again at every connection.",
     section: "Agents",
   },
   OUTBOUND_ALLOW_HOSTS: {
@@ -540,14 +540,14 @@ export const envVars = {
       (host) => host.toLowerCase(),
     ),
     description:
-      "Comma-separated host names, or `*.` suffixes, that addresses a workspace types (custom MCP servers and their sign-in, its own bucket, a database, a mail server, a password manager) may reach on a private network, such as a Tailscale tailnet or a LAN, whatever they resolve to. Loopback and cloud metadata addresses stay refused. For a server where `MODEL_ENDPOINTS_PRIVATE` is off, or for what it doesn't cover. Name a narrow suffix: everyone who can make a name under it can point it at your network. Unset: none.",
+      "Comma-separated host names, or `*.` suffixes, that addresses a workspace types (custom MCP servers and their sign-in, its own bucket, a database, a mail server, a password manager) may reach on a private network, such as a Tailscale tailnet or a LAN, whatever they resolve to, checked again at every connection. Loopback and cloud metadata addresses stay refused, and agentes.chat Cloud ignores it. Name a narrow suffix: everyone who can make a name under it can point it at your network. Unset: none.",
     section: "Security",
     example: "*.tail1234.ts.net,nas.example.com",
   },
   OUTBOUND_ALLOW_CIDRS: {
     schema: commaList(allowedRange, "must be IP addresses or CIDR ranges such as 100.64.0.0/10, comma-separated"),
     description:
-      "Comma-separated IP ranges (CIDR) or addresses that addresses a workspace types may reach, as with `OUTBOUND_ALLOW_HOSTS`: Tailscale's are `100.64.0.0/10` and `fd7a:115c:a1e0::/48`. Loopback, link-local and cloud metadata addresses stay refused even inside a range. Unset: none.",
+      "Comma-separated IP ranges (CIDR) or addresses that addresses a workspace types may reach, as with `OUTBOUND_ALLOW_HOSTS`: Tailscale's are `100.64.0.0/10` and `fd7a:115c:a1e0::/48`. Loopback, link-local and cloud metadata addresses stay refused even inside a range, and agentes.chat Cloud ignores it. Unset: none.",
     section: "Security",
     example: "100.64.0.0/10,fd7a:115c:a1e0::/48",
   },

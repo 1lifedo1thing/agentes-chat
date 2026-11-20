@@ -15716,6 +15716,7 @@
       "tooMany": "È più di quanto ci sta qui. Togline alcuni e riprova.",
       "fillIn": "Compila ciò che manca e riprova.",
       "checkAddress": "Controlla l'indirizzo e riprova.",
+      "privateNetwork": "Questo indirizzo è su una rete privata. Usa un indirizzo pubblico oppure, su un server self-hosted, consentilo con OUTBOUND_ALLOW_CIDRS.",
       "tooLong": "È troppo lungo. Accorcialo e riprova.",
       "updateComputerApp": "L'app del computer è troppo vecchia per questo. Aggiornala e riprova.",
       "computerUpdatesItself": "Il computer dello spazio di lavoro si aggiorna da solo per questo. Riprova tra poco.",

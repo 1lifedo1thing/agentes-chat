@@ -118,7 +118,7 @@ function rangeAllowed(address: string): boolean {
 
 /**
  * The networks a self-hosted server's operator lets typed-in addresses reach (`OUTBOUND_ALLOW_HOSTS`,
- * `OUTBOUND_ALLOW_CIDRS`, ADR 0174): a Tailscale tailnet, a LAN. Set once at boot; called with nothing, it clears
+ * `OUTBOUND_ALLOW_CIDRS`, ADR 0210): a Tailscale tailnet, a LAN. Set once at boot; called with nothing, it clears
  * both. Hosts are names (`nas.example.com`) or suffixes (`*.tail1234.ts.net`); ranges are CIDRs or single addresses.
  * Throws on an entry that isn't one (the config refuses those first).
  */
@@ -143,26 +143,25 @@ export function allowOutbound(list: { hosts?: readonly string[]; cidrs?: readonl
 
 /**
  * Whether the guard refuses to connect to `address` for `host`: a blocked address (`isBlockedAddress`) unless the
- * operator let it through (`allowOutbound`'s host or range, or with `orPrivate` the private switch), and never one
- * of `alwaysBlocked`'s.
+ * operator let it through (`allowOutbound`'s host or range), and never one of `alwaysBlocked`'s.
  */
-function refusedAddress(address: string, host: string, orPrivate = false): boolean {
+function refusedAddress(address: string, host: string): boolean {
   if (!isBlockedAddress(address)) return false;
   if (alwaysBlocked(address)) return true;
-  return !((orPrivate && privateOutbound) || hostOnAllowList(host) || rangeAllowed(address));
+  return !(hostOnAllowList(host) || rangeAllowed(address));
 }
 
 /** Names that only mean this machine: refused whatever is allowed. */
 const loopbackName = (host: string) => host === "localhost" || host.endsWith(".localhost");
 
 /**
- * Names that never leave the local network, refused without being resolved, unless the operator allowed the host
- * (or with `orPrivate`, the private switch is on). Loopback names are refused always.
+ * Names that never leave the local network, refused without being resolved, unless the operator allowed the host.
+ * Loopback names are refused always.
  */
-function internalNameRefused(host: string, orPrivate = false): boolean {
+function internalNameRefused(host: string): boolean {
   if (loopbackName(host)) return true;
   if (!(host.endsWith(".local") || host.endsWith(".internal"))) return false;
-  return !((orPrivate && privateOutbound) || hostOnAllowList(host));
+  return !hostOnAllowList(host);
 }
 
 /**
@@ -178,10 +177,10 @@ export const internalAddress = (host: string) =>
  * it, and neither the host nor any address it resolves to may be private,
  * loopback, link-local or a cloud metadata address (SSRF). DNS can change
  * between this check and the request; the check still stops the obvious
- * cases and every typed-in internal name. Private addresses pass where the
- * operator allowed them: the hosts and ranges of `allowOutbound`, or every
- * one with the private switch (`allowPrivateOutbound`), whose `fetch` is
- * the plain one; loopback and metadata never do.
+ * cases and every typed-in internal name. Private addresses pass only where
+ * the operator allowed them (`allowOutbound`'s hosts and ranges), and then
+ * `outboundFetch` checks them again at connect time; loopback and metadata
+ * never pass.
  */
 export async function assertPublicHttpsUrl(raw: string, resolve: ResolveHost = resolveHostDns): Promise<URL> {
   let url: URL;
@@ -194,9 +193,9 @@ export async function assertPublicHttpsUrl(raw: string, resolve: ResolveHost = r
   if (url.username || url.password)
     throw new ValidationError("The address can't have a user or password", "url.credentials");
   const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (internalNameRefused(host, true)) throw internalAddress(host);
+  if (internalNameRefused(host)) throw internalAddress(host);
   if (isIP(host)) {
-    if (refusedAddress(host, host, true)) throw internalAddress(host);
+    if (refusedAddress(host, host)) throw internalAddress(host);
     return url;
   }
   let addresses: string[];
@@ -205,7 +204,7 @@ export async function assertPublicHttpsUrl(raw: string, resolve: ResolveHost = r
   } catch {
     throw new ValidationError(`Couldn't find ${host}`, "url.not_found", { host });
   }
-  if (addresses.length === 0 || addresses.some((address) => refusedAddress(address, host, true))) {
+  if (addresses.length === 0 || addresses.some((address) => refusedAddress(address, host))) {
     throw internalAddress(host);
   }
   return url;
@@ -499,13 +498,15 @@ const MAX_OWN_REDIRECTS = 3;
  * The `fetch` for an address a workspace's people, agents or connected servers named (a custom MCP server and its
  * token endpoint, the workspace's own bucket, a page an agent reads), never for one the operator set by env:
  * `publicHttpsFetch`, so the address is checked and pinned at every request, not only when it was saved, unless
- * `allowPrivateOutbound` is on. `ownRedirects` follows a 307 or 308 that stays on the same origin (a trailing slash,
+ * `allowPrivateOutbound` is on and `allowOutbound` named nothing. `ownRedirects` follows a 307 or 308 that stays on the same origin (a trailing slash,
  * a moved path), each hop checked and pinned again: what the request carries never leaves the host it was meant for.
  */
 export function outboundFetch(
   options: { resolveHost?: ResolveHost; ownRedirects?: boolean; request?: typeof httpsRequest } = {},
 ): typeof fetch {
-  if (privateOutbound) return fetch;
+  // With an allow-list set, the private addresses it lets through are only safe pinned and checked at connect time
+  // (DNS rebinding onto a metadata address), so the plain fetch is never used then.
+  if (privateOutbound && !allowedHosts.length && !allowedRanges) return fetch;
   const { resolveHost } = options;
   const pinned = publicHttpsFetch({
     request: options.request,
