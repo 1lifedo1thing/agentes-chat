@@ -833,7 +833,6 @@
   line-height: 16px;
 }
 
-
 /* ── the panel's Git and Files tabs (ADR 0208): one row of head, rows like the list's, a diff or a file in place ── */
 .code-vcs,
 .code-tree {
