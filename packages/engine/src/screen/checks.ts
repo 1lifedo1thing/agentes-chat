@@ -138,13 +138,21 @@ const changesText = (c: ScreenChanges | null | undefined) =>
     : null;
 
 const QUOTE = /"([^"]+)"|“([^”]+)”/g;
-/** A condition or a question that only names words on the screen: `"Order confirmed"`, `shows "Saved" and "3 items"`. */
+/**
+ * A condition or a question that only names words on the screen: `"Order confirmed"`, `shows "Saved" and "3 items"`.
+ * Matched against text with its spacing collapsed to single spaces, so no two whitespace quantifiers sit side by side:
+ * a step's text can carry a web page's words, and those would make a backtracking regex run for minutes.
+ */
 const LITERAL =
-  /^(?:(?:the\s+)?(?:page|screen|window)\s+)?(?:shows|says|displays|contains|reads)?\s*((?:"[^"]+"|“[^”]+”)(?:\s*(?:,|and|&)\s*(?:"[^"]+"|“[^”]+”))*)\s*(?:is\s+(?:shown|visible|displayed|on\s+screen)|appears)?\s*\.?$/i;
+  /^(?:(?:the )?(?:page|screen|window) )?(?:(?:shows|says|displays|contains|reads) ?)?((?:"[^"]+"|“[^”]+”)(?: ?(?:,|and|&) ?(?:"[^"]+"|“[^”]+”))*) ?(?:(?:is (?:shown|visible|displayed|on screen)|appears) ?)?\.?$/i;
+/** Longer than this, a condition isn't only quoted words on the screen. */
+const LITERAL_MAX = 2000;
 
 /** The phrases a literal condition or question names (see `LITERAL`); else null. */
 function literalPhrases(text: string): string[] | null {
-  const m = LITERAL.exec(text.trim());
+  const collapsed = text.trim().replace(/\s+/g, " ");
+  if (collapsed.length > LITERAL_MAX) return null;
+  const m = LITERAL.exec(collapsed);
   if (!m) return null;
   const phrases = [...(m[1] as string).matchAll(QUOTE)].map((q) => q[1] ?? q[2] ?? "").filter((q) => plainWords(q));
   return phrases.length > 0 ? phrases : null;

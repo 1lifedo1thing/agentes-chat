@@ -234,6 +234,24 @@ describe("words already on the screen need no judge", () => {
     });
   });
 
+  test("long runs of spaces in a condition or a question take no time to read", async () => {
+    const saved = look("- status: Saved");
+    const spaces = " ".repeat(100_000);
+    for (const text of [
+      `"Saved"${spaces}x`,
+      `page${spaces}x`,
+      `"Saved"${spaces}and${spaces}x`,
+      `"Saved" is${spaces}x`,
+      `"Saved"${"  ".repeat(50_000)}.x`,
+    ]) {
+      const judge = createFakeJudge(() => 0.05);
+      const started = performance.now();
+      await checkCondition({ judge, ...ids, condition: text, observation: saved });
+      await findInPage({ judge, ...ids, question: text, observation: saved });
+      expect(performance.now() - started).toBeLessThan(200);
+    }
+  });
+
   test("a wait until words show ends on the first look that shows them, with no judgment", async () => {
     let n = 0;
     const surface: ScreenSurface = {
