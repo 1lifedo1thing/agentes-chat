@@ -6885,6 +6885,9 @@ export const en = {
          */
         cli_sandbox:
           "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings.",
+        /** The agent's CLI doesn't run on its computer's system (Grok Build on Windows), so no turn was sent there. */
+        cli_system:
+          "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings.",
         account_missing:
           "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */

@@ -6770,6 +6770,8 @@ export const ptBR = {
         /** The agent's CLI couldn't start its sandbox on its computer (bubblewrap refused), before the model was asked. */
         cli_sandbox:
           "O {{brain}} não consegue abrir a sandbox dele neste computador. Escolha outra IA nas configurações do agente.",
+        cli_system:
+          "O {{brain}} ainda não roda no sistema deste computador. Escolha outra IA nas configurações do agente.",
         account_missing:
           "A conta escolhida para este agente não está mais no computador dele. Escolha outra nas configurações do agente ou adicione de novo.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */

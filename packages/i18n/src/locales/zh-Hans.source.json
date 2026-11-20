@@ -15784,6 +15784,9 @@
   "agentPage.activity.errors.cli_sandbox": {
     "value": "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings."
   },
+  "agentPage.activity.errors.cli_system": {
+    "value": "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings."
+  },
   "agentPage.activity.errors.account_missing": {
     "value": "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again."
   },
