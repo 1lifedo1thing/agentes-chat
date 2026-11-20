@@ -1,6 +1,5 @@
 import { type PubSub, uploadTopic } from "@agenteschat/adapters";
 import { and, type Database, eq, inArray, schema } from "@agenteschat/db";
-import { codeSessionOfChannel } from "./code-sessions";
 import { getAgentCached } from "./agents";
 import {
   ARTIFACT_LIMITS,
@@ -12,6 +11,7 @@ import {
   fileReach,
 } from "./artifacts";
 import { recordAudit } from "./audit";
+import { codeSessionOfChannel } from "./code-sessions";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { formatBytes } from "./format";
 import { pictureSize } from "./image-size";
