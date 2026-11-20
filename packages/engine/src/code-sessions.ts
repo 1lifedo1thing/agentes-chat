@@ -744,9 +744,9 @@ async function gitRead(deps: CodeSessionDeps, row: CodeSessionRow, args: string)
     throw new ConflictError("The worktree isn't ready yet", "code_session.not_ready");
   const agent = await getAgentCached(deps.db, row.orgId, row.agentId);
   if (!agent) throw new NotFoundError("Agent not found");
-  let reply: Awaited<ReturnType<MachineCaller["call"]>>;
+  let out: { exitCode: number; stdout: string; stderr: string };
   try {
-    reply = await deps.hub.call<"exec">(row.machineId, {
+    out = await deps.hub.call<"exec">(row.machineId, {
       op: "exec",
       command: `git --no-pager ${args}`,
       cwd: row.worktreePath,
@@ -759,7 +759,6 @@ async function gitRead(deps: CodeSessionDeps, row: CodeSessionRow, args: string)
       throw new ConflictError("This session's computer isn't reachable", "code_session.offline");
     throw error;
   }
-  const out = reply as { exitCode: number; stdout: string; stderr: string };
   if (out.exitCode !== 0) throw new ConflictError(out.stderr.trim() || "git failed", "code_session.git_failed");
   return out.stdout;
 }
@@ -857,25 +856,26 @@ export async function codeSessionGit(
   const lines = status.split("\n").filter(Boolean);
   const head = lines[0]?.startsWith("## ") ? (lines.shift() ?? "") : "";
   const uncommitted = lines.length;
-  const upstream = /\.\.\.\S+/.test(head);
+  let upstream = /\.\.\.\S+/.test(head);
   const aheadMatch = /\[(?:[^\]]*?)ahead (\d+)/.exec(head);
   let ahead = aheadMatch ? Number(aheadMatch[1]) : 0;
+  if (!upstream && row.branch) {
+    // Pushed without tracking (`git push origin <branch>`): the remote branch's local copy says what is still ahead.
+    const remote = `refs/remotes/origin/${row.branch}`;
+    const known = await gitRead(deps, row, `rev-parse --verify --quiet ${shellQuote(remote)}`).catch(() => "");
+    if (known.trim()) {
+      upstream = true;
+      const count = await gitRead(deps, row, `rev-list --count ${shellQuote(remote)}..HEAD`).catch(() => "0");
+      ahead = Number(count.trim()) || 0;
+    }
+  }
   if (!upstream && row.baseSha) {
     const count = await gitRead(deps, row, `rev-list --count ${shellQuote(row.baseSha)}..HEAD`).catch(() => "0");
     ahead = Number(count.trim()) || 0;
   }
   const pr = row.prNumber ? { number: row.prNumber, url: row.prUrl } : null;
-  const github = true;
-  const next =
-    uncommitted > 0
-      ? "commit"
-      : ahead > 0
-        ? "push"
-        : pr
-          ? "merge"
-          : upstream && github
-            ? "pr"
-            : null;
+  // Sessions are made from GitHub repositories (`owner/name`), so a pushed branch can always become a pull request.
+  const next = uncommitted > 0 ? "commit" : ahead > 0 ? "push" : pr ? "merge" : upstream ? "pr" : null;
   return { uncommitted, ahead, upstream, pr, next };
 }
 
