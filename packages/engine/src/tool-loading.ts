@@ -15,7 +15,7 @@ import type { ToolDefinition } from "./tools/types";
  * wrong guess costs a search, never a capability. The choice is made once per
  * run and kept on the transcript (`toolGroups`), so the tool list, and with
  * it the prompt cache, stays the same for the whole run. Some groups go
- * without asking (`keptToolGroups`): those the previous run here used.
+ * without asking (`keptToolGroups`): those the previous run here used, or listed within the hour.
  */
 
 /** A group is loaded up front at this probability or more (a miss costs a search; a load costs every call). */
@@ -192,14 +192,26 @@ export async function recentForJudge(
 
 /**
  * The groups a run keeps without asking the judge (ADR 0043, token-trim B1): those of the tools the agent's previous
- * run in this conversation called (`previousRunHere`). Only what that one run used, so a group comes along for the
- * next message and drops once a run goes without it: a greeting after computer work no longer carries the computer's
- * tools. A miss costs one `find_tools` search.
+ * run in this conversation called (`previousRunHere`), and, while that run is within `KEEP_LOADED_MS`, every group it
+ * listed. The tools come before the system prompt and the history in the provider's prompt cache, so a group that
+ * drops between two runs makes the next one write all of it again; one kept is read from the cache for a tenth of
+ * that. Past the hour the cache is cold anyway: only what was used stays, and a greeting after computer work no longer
+ * carries the computer's tools. A miss costs one `find_tools` search.
  */
-export function keptToolGroups(previous: PreviousRun | null, tools: ToolDefinition[]): string[] {
-  if (!previous) return [];
+export function keptToolGroups(
+  previous: PreviousRun | null,
+  tools: ToolDefinition[],
+  now = Date.now(),
+): { used: string[]; listed: string[] } {
+  if (!previous) return { used: [], listed: [] };
   const names = new Set(previous.calledTools);
-  return [...new Set(tools.filter((t) => names.has(t.name)).map(toolGroupKey))];
+  const warm = now - previous.updatedAt.getTime() < KEEP_LOADED_MS;
+  const listed = new Set(warm ? (previous.toolGroups ?? []) : []);
+  const used = new Set(tools.filter((t) => names.has(t.name)).map(toolGroupKey));
+  return {
+    used: [...used],
+    listed: [...new Set(tools.map(toolGroupKey).filter((g) => listed.has(g) && !used.has(g)))],
+  };
 }
 
 /** The agent's previous run in this conversation, as the next run's start reads it (`previousRunHere`). */
@@ -257,3 +269,6 @@ export async function previousRunHere(
   const auto = autoModel && typeof autoModel === "object" ? (autoModel as PreviousRun["autoModel"]) : null;
   return { id: row.id, updatedAt: row.updatedAt, toolGroups: groups, autoModel: auto, calledTools: row.calledTools };
 }
+
+/** How long a run keeps every group the previous run listed: the prompt cache's longest life (`cacheTtl` 1h). */
+export const KEEP_LOADED_MS = 60 * 60_000;
