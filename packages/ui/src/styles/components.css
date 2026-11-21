@@ -317,10 +317,10 @@ html[data-pointer] :focus-visible {
   padding-inline: var(--ghost-plate);
 }
 /*
- * Two plated buttons side by side stand 8 apart, as in a dialog's foot: the row's gap is a ghost's. Two icon buttons
- * keep the row's 16 between their glyphs, as between any two things it shows: their plates, which show one at a time,
- * meet (a toolbar's). On touch their plates stand 8 apart, so their grown targets never overlap. By the first's end,
- * so the one that wraps to a line of its own starts on the row's edge.
+ * Two plated buttons side by side stand 8 apart, as in a dialog's foot: the row's gap is a ghost's. Two icon buttons'
+ * plates, which show one at a time, meet (a toolbar's); small ones with a pointer come closer still (below). On touch
+ * their plates stand 8 apart, so their grown targets never overlap. By the first's end, so the one that wraps to a
+ * line of its own starts on the row's edge.
  */
 .ac-acts > .ac-btn:not(.ac-btn--ghost):has(+ .ac-btn:not(.ac-btn--ghost)) {
   margin-inline-end: calc(var(--space-2) - 2 * var(--ghost-plate));
@@ -331,6 +331,117 @@ html[data-pointer] :focus-visible {
 @media (pointer: coarse) {
   .ac-acts > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph):has(+ :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)) {
     margin-inline-end: calc(var(--space-2) - var(--ghost-plate) - var(--glyph-air, 0px));
+  }
+}
+/*
+ * With a pointer two small icon buttons stand as close as an icon and its words: their glyphs 8 apart (`--icon-gap`).
+ * Each box keeps 8 on its outer side and gives up 4 on the inner one, so each target stays 28 wide and the two only
+ * touch. The plate is drawn around the glyph (`::before`), the 32 square of every small icon button, reaching 4 into
+ * the neighbour's box: only one shows at a time, and it takes no clicks, so neither steals the other's edge (a pseudo
+ * element hit-tests as its button). The second reaches out by its own padding, so on a line of its own
+ * it still starts on the row's edge. A middle one of three keeps the second's shape: 8 then 12 between the glyphs.
+ */
+@media not (pointer: coarse) {
+  .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    ) {
+    position: relative;
+    justify-content: flex-start;
+    width: calc(var(--control-h-sm) - var(--space-1));
+  }
+  .ac-acts
+    > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+      + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+    ) {
+    padding-inline-start: var(--ghost-plate);
+    margin-inline: calc(-1 * var(--ghost-plate)) calc(var(--space-1) - 2 * var(--ghost-plate));
+  }
+  .ac-acts
+    > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+    + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm {
+    padding-inline-start: var(--space-1);
+    margin-inline-start: calc(-1 * var(--space-1));
+  }
+  .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    )::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline: 0 calc(-1 * var(--space-1));
+    border-radius: inherit;
+    transition: inherit;
+    pointer-events: none;
+  }
+  .ac-acts
+    > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+    + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm::before {
+    inset-inline: calc(-1 * var(--space-1)) 0;
+  }
+  .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    )
+    > * {
+    position: relative;
+  }
+  .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    ):is(:hover, [aria-pressed="true"]),
+  html:not([data-pointer])
+    .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    ):focus-visible {
+    background: transparent;
+    box-shadow: none;
+  }
+  .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    ):is(:hover, [aria-pressed="true"])::before {
+    background: var(--plate);
+  }
+  .ac-on-dark
+    .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    ):is(:hover, [aria-pressed="true"])::before {
+    background: var(--on-dark-plate);
+  }
+  html:not([data-pointer])
+    .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    ):focus-visible::before {
+    box-shadow: var(--focus-ring);
   }
 }
 /*
