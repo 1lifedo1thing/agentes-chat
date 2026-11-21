@@ -1,5 +1,5 @@
 {
-  "id": "0e558069-128a-490f-b17f-50c9a70c02ab",
+  "id": "bcd24b8e-2e0c-4ed3-bb67-993fcd6de7b3",
   "prevId": "1fe103c6-f0ba-40ac-b895-41209c802b14",
   "version": "7",
   "dialect": "postgresql",
@@ -3609,13 +3609,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "reply_in_threads": {
-          "name": "reply_in_threads",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
       "indexes": {},
@@ -16760,6 +16753,22 @@
           "method": "btree",
           "with": {}
         },
+        "agent_run_steps_provider_outage_idx": {
+          "name": "agent_run_steps_provider_outage_idx",
+          "columns": [
+            {
+              "expression": "run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"agent_run_steps\".\"kind\" = 'error' and \"agent_run_steps\".\"data\"->>'reason' = 'provider_outage'",
+          "concurrently": true,
+          "method": "btree",
+          "with": {}
+        },
         "agent_run_steps_tool_calls_idx": {
           "name": "agent_run_steps_tool_calls_idx",
           "columns": [
@@ -16874,13 +16883,6 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
-        },
-        "reply_in_thread": {
-          "name": "reply_in_thread",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "trigger": {
           "name": "trigger",
