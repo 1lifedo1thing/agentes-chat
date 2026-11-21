@@ -71,7 +71,8 @@ export function CodeDockSky() {
           const wave = 0.03 * S(u * 4 + t * 0.5) * e * e;
           return dark ? Math.max(0, 0.44 * e + wave) : Math.min(1, 1 - 0.62 * e + wave);
         },
-        { sprites: 0 },
+        // Where it has no pixel, what is behind shows: no band of the surface's color over the conversation.
+        { sprites: 0, seeThrough: true },
       ),
     [],
   );

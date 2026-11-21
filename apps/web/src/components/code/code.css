@@ -560,14 +560,14 @@
 }
 
 /* ── the side panel: tabs, and the sky rising from its foot behind what it shows ── */
-/* A session's foot: a light sky from the conversation's floor up past the line over the composer, behind them
-   (`CodeDockSky`); the pane's own corners at its foot. */
+/* A session's foot: a light sky from the conversation's floor behind the composer and the line over it
+   (`CodeDockSky`), inside their own box (never over the messages); the pane's own corners at its foot. */
 .channel__composer:has(> .code-dock-sky) {
   isolation: isolate;
 }
 .code-dock-sky {
   position: absolute;
-  inset: -40px 0 0;
+  inset: 0;
   z-index: -1;
   overflow: hidden;
   border-radius: 0 0 13px 3px;
