@@ -8,7 +8,6 @@ import { KeyboardStickyView, type useReanimatedKeyboardAnimation } from "react-n
 import Animated, { type SharedValue } from "react-native-reanimated";
 import { Button, Text } from "@/ui";
 import { ComposerFloat, type ComposerFloatSlot } from "@/ui/Composer";
-import { CodeStepLine } from "../../coding/StepLine";
 import { useColors } from "../../shared/hooks";
 import { type useAwayAsk, WaitingHereBar } from "../asks";
 import { ChatPeek } from "../ChatPeek";
@@ -114,8 +113,6 @@ export function ChatDock({
   onRecording,
   admin,
   join,
-  codeId,
-  openCode,
 }: Pick<
   ChatData,
   | "gap"
@@ -186,10 +183,6 @@ export function ChatDock({
     orgId: string;
     placeholder: string;
     prefill: ReturnType<typeof useComposerRequest> | null;
-    /** The code session this thread is (ADR 0208): its next git step stands over the field while its agent is free. */
-    codeId: string | null;
-    /** Its changes, from the step line's words. */
-    openCode: () => void;
   }) {
   const { t } = useTranslation();
   const c = useColors();
@@ -261,9 +254,6 @@ export function ChatDock({
             agentId={waitingFirst.asker?.type === "agent" ? waitingFirst.asker.id : null}
             onSee={seeWaiting}
           />
-        ) : null}
-        {member && codeId && !awayAsk && !waitingFirst ? (
-          <CodeStepLine sessionId={codeId} busy={runs.length > 0} onSee={openCode} />
         ) : null}
         {member && !awayAsk && !waitingFirst && !showList ? (
           <LiveWorkingLine

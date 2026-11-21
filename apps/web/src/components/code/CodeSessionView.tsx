@@ -1,11 +1,9 @@
 import {
-  type CodeGitStep,
   type CodeSession,
   keys,
   useApi,
   useChannelMembers,
   useCloseCodeSession,
-  useCodeGit,
   useCodeSession,
   useRetryCodeSession,
   useThreadInfo,
@@ -13,18 +11,7 @@ import {
 import { errorText } from "@agenteschat/client/lib/errors";
 import { can } from "@agenteschat/client/lib/permissions";
 import { planMeterText, usageShown } from "@agenteschat/client/lib/plan-usage";
-import {
-  AvatarStack,
-  Button,
-  Icon,
-  Menu,
-  MenuItem,
-  MenuNote,
-  Popover,
-  planLevel,
-  planLine,
-  SplitButton,
-} from "@agenteschat/ui";
+import { AvatarStack, Button, Icon, Menu, MenuItem, Popover, planLevel, planLine } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
@@ -274,7 +261,6 @@ function CodeHeader({ session }: { session: CodeSession }) {
       </div>
       <div className="code-head__r">
         <SessionPeople session={session} />
-        {session.worktree.state === "ready" && <GitButton session={session} />}
         <Menu
           align="end"
           label={t("codeSessions.view.more")}
@@ -310,86 +296,6 @@ function CodeHeader({ session }: { session: CodeSession }) {
         </Menu>
       </div>
     </header>
-  );
-}
-
-const STEPS: CodeGitStep[] = ["commit", "push", "pr", "merge"];
-
-/**
- * The git button (ADR 0208): its label is the next step (Commit, Push, Open PR, Merge), read from the worktree; the
- * others are in its menu. Each asks the session's agent in words in the conversation, so it works with any git host
- * and flow: the agent commits, pushes or opens the PR, and merging still asks for approval as it always does.
- */
-function GitButton({ session }: { session: CodeSession }) {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const api = useApi();
-  const toast = useToast();
-  const git = useCodeGit(org.id, session.id, true);
-  const [sending, setSending] = useState(false);
-  const next = git.data?.next ?? null;
-  const ask = async (step: CodeGitStep) => {
-    setSending(true);
-    try {
-      await api.chat.post(org.id, session.channelId, {
-        body:
-          session.local && step === "merge"
-            ? t("codeSessions.git.ask.mergeLocal", { base: session.baseBranch ?? "main" })
-            : t(`codeSessions.git.ask.${step}`),
-        threadId: session.rootId,
-      });
-    } catch (error) {
-      toast.show(errorText(t, error), "error");
-    } finally {
-      setSending(false);
-    }
-  };
-  const working = session.work === "working";
-  const hint = (step: CodeGitStep) => {
-    const d = git.data;
-    if (!d) return "";
-    if (step === "commit") return t("codeSessions.git.hint.commit", { count: d.uncommitted });
-    if (step === "push") return t("codeSessions.git.hint.push", { count: d.ahead });
-    if (step === "pr")
-      return d.pr ? t("codeSessions.git.hint.prOpen", { number: d.pr.number }) : t("codeSessions.git.hint.pr");
-    return session.local
-      ? t("codeSessions.git.hint.mergeLocal", { base: session.baseBranch ?? "main" })
-      : t("codeSessions.git.hint.merge");
-  };
-  // A local project has no remote: Commit and Merge (into its base branch on the computer) only.
-  const steps = session.local ? STEPS.filter((s) => s === "commit" || s === "merge") : STEPS;
-  // Only when there is a next step and the agent is free to take it: no button that waits greyed out.
-  if (!next || working) return null;
-  return (
-    <SplitButton
-      size="sm"
-      className="code-git"
-      disabled={sending}
-      loading={sending}
-      onClick={() => void ask(next)}
-      menu={
-        <Menu
-          align="end"
-          label={t("codeSessions.git.more")}
-          trigger={<Button size="sm" icon="chevronDown" iconOnly aria-label={t("codeSessions.git.more")} />}
-        >
-          {steps.map((step) => (
-            <MenuItem
-              key={step}
-              icon={step === "commit" ? "check" : step === "push" ? "upload" : step === "pr" ? "pullRequest" : "merge"}
-              description={hint(step) || undefined}
-              disabled={sending}
-              onSelect={() => void ask(step)}
-            >
-              {t(`codeSessions.git.step.${step}`)}
-            </MenuItem>
-          ))}
-          <MenuNote>{t("codeSessions.git.note")}</MenuNote>
-        </Menu>
-      }
-    >
-      {t(`codeSessions.git.step.${next}`)}
-    </SplitButton>
   );
 }
 

@@ -458,10 +458,6 @@
 .code-status__limit:is([data-level="critical"], [data-level="limited"]) {
   color: var(--danger);
 }
-/* The git button: the kit's split button, at the header's small size. */
-.code-git {
-  --split-r: var(--control-r-sm);
-}
 .code-failed {
   flex: none;
   display: flex;
