@@ -24,7 +24,8 @@ const CONTROLLER = path.join("ShareExtension", "ShareViewController.swift");
 
 /** The extension's link to the app, as expo-share-intent writes it. */
 const LINK = 'URL(string: "\\(shareProtocol)://dataUrl=\\(sharedKey)?nonce=\\(nonce)#\\(type)")!';
-const LINK_WITH_PICK = 'URL(string: "\\(shareProtocol)://dataUrl=\\(sharedKey)?nonce=\\(nonce)\\(pickedSuggestion)#\\(type)")!';
+const LINK_WITH_PICK =
+  'URL(string: "\\(shareProtocol)://dataUrl=\\(sharedKey)?nonce=\\(nonce)\\(pickedSuggestion)#\\(type)")!';
 
 /** Where the helper goes: right before the controller's last type, inside its class. */
 const BEFORE = "\n  enum RedirectType {";
@@ -50,7 +51,8 @@ function withIntentsSupported(plist) {
   }
   return plist.replace(
     attributes,
-    (head) => `${head}\n\t\t\t<key>IntentsSupported</key>\n\t\t\t<array>\n\t\t\t\t<string>${INTENT}</string>\n\t\t\t</array>`,
+    (head) =>
+      `${head}\n\t\t\t<key>IntentsSupported</key>\n\t\t\t<array>\n\t\t\t\t<string>${INTENT}</string>\n\t\t\t</array>`,
   );
 }
 

@@ -4,11 +4,12 @@ import config from "../app.config";
 import { pickedOf, pickedOfShareLink, suggestionId } from "../src/features/share/picked";
 
 // The config plugin is plain CommonJS (expo prebuild loads it); only its pure parts are tested here.
-const { withIntentsSupported, withPickedSuggestion, withActivityType } = require("../plugins/with-share-suggestions") as {
-  withIntentsSupported: (plist: string) => string;
-  withPickedSuggestion: (swift: string) => string;
-  withActivityType: (plist: Record<string, unknown>) => Record<string, unknown>;
-};
+const { withIntentsSupported, withPickedSuggestion, withActivityType } =
+  require("../plugins/with-share-suggestions") as {
+    withIntentsSupported: (plist: string) => string;
+    withPickedSuggestion: (swift: string) => string;
+    withActivityType: (plist: Record<string, unknown>) => Record<string, unknown>;
+  };
 
 const PLIST = `<plist version="1.0">
 <dict>
