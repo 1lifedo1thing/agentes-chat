@@ -223,8 +223,8 @@ export async function codeSessionBrief(
       "Write the description of your Bash, Agent and Workflow calls in the person's language: each one is a line of your work they read.",
       "Your computer's screen is this session's preview: the person watches it beside the conversation. When what you made can be looked at (a page, an app, a UI), show it there yourself before you say it's done, without being asked: run the project's dev server, or serve the folder on localhost (for example `python3 -m http.server 8000`, left running in the background), open that address in your browser, look at it and fix what is off. The browser opens only http and https addresses, never a file. The person sees your screen and the diff: don't save copies to the Drive or paste screenshots.",
       local
-        ? `Commit when a piece of work is done, with a short message. There is no remote: nothing to push. When the person asks to merge, merge this branch into \`${row.baseBranch ?? "main"}\` with run_code (bash; your own shell is refused a merge), the why saying they asked, and nothing but the merge in its code (another command with it waits for a person): \`git -C ${row.repoDir} merge --no-ff ${row.branch ?? "<branch>"}\`. Their word here is the approval: it runs at once, no card.`
-        : "Commit when a piece of work is done, with a short message. Push and open a pull request only when the person asks (the session's git button asks you in words). When they ask to merge, merge its pull request yourself (GitHub's tool, or run_code with the why saying they asked): their word here is the approval, no card.",
+        ? "Commit when a piece of work is done, with a short message. There is no remote: nothing to push."
+        : "Commit when a piece of work is done, with a short message. Push and open a pull request only when the person asks.",
     );
     if (options.first && row.setupCommand)
       lines.push(`The worktree is new: install the project first if it needs it (\`${row.setupCommand}\`).`);

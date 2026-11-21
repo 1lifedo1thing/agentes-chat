@@ -1,4 +1,4 @@
-import { LOCAL_MERGE_PREFIX, type MergeDone } from "@agenteschat/adapters";
+import type { MergeDone } from "@agenteschat/adapters";
 import { and, asc, type Database, type Executor, eq, schema } from "@agenteschat/db";
 import { recordAgentActions } from "../agent-actions";
 import { getAgent } from "../agents";
@@ -184,47 +184,18 @@ export async function agentMergeRepos(db: Executor, orgId: string, agentId: stri
 }
 
 /**
- * A code session's own merge target (ADR 0208), for a run in its conversation by its own agent: its GitHub
- * repository, or its local project's folder and branch (`local:<folder>#<branch>`, the folder in the agent's own,
- * as the computer resolves it). Null anywhere else.
- */
-async function codeSessionMerge(db: Executor, orgId: string, agentId: string, runId: string) {
-  const [run] = await db
-    .select({ channelId: schema.agentRuns.channelId })
-    .from(schema.agentRuns)
-    .where(and(eq(schema.agentRuns.id, runId), eq(schema.agentRuns.orgId, orgId)));
-  if (!run) return null;
-  const [row] = await db
-    .select({
-      agentId: schema.codeSessions.agentId,
-      repo: schema.codeSessions.repo,
-      repoDir: schema.codeSessions.repoDir,
-      branch: schema.codeSessions.branch,
-      archivedAt: schema.codeSessions.archivedAt,
-    })
-    .from(schema.codeSessions)
-    .where(and(eq(schema.codeSessions.channelId, run.channelId), eq(schema.codeSessions.orgId, orgId)))
-    .limit(1);
-  if (!row || row.agentId !== agentId || row.archivedAt || !row.branch) return null;
-  return row.repo.includes("/") ? row.repo : `${LOCAL_MERGE_PREFIX}${row.repoDir}#${row.branch}`;
-}
-
-/**
  * Where this call may merge without asking: none outside a run (a mission keeps its own gates, and a receipt needs a
  * run), nor in a run a routine's reading woke, where text nobody checked feeds it and every write asks a person
- * (ADR 0053). In a person's turn in a code session, its own branch into its base too (ADR 0208): they asked for it
- * in that conversation, so their word there is the approval and no card asks again.
+ * (ADR 0053).
  */
 export async function mergeReposOfCall(ctx: Pick<ToolContext, "db" | "orgId" | "agentId" | "runId">) {
   if (!ctx.runId) return [];
   const repos = await agentMergeRepos(ctx.db, ctx.orgId, ctx.agentId);
-  const session = await codeSessionMerge(ctx.db, ctx.orgId, ctx.agentId, ctx.runId);
-  if (repos.length === 0 && !session) return [];
+  if (repos.length === 0) return repos;
   // An agent that always asks (ADR 0173) asks for its merges too, whatever was chosen here.
   if ((await approvalsLevelOf(ctx.db, ctx.orgId, ctx.agentId)) === "always") return [];
   const authority = await runAuthorityById(ctx.db, ctx.orgId, ctx.runId);
-  if (authority.kind === "unattended" && fedByRoutine(authority)) return [];
-  return session && authority.kind === "person" && !repos.includes(session) ? [...repos, session] : repos;
+  return authority.kind === "unattended" && fedByRoutine(authority) ? [] : repos;
 }
 
 /** `GET …/agents/{id}/merge-repositories` (who sees the agent's details). */

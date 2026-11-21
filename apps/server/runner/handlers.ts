@@ -459,15 +459,7 @@ async function doExec(
     ? null
     : req.approved === true
       ? await mergeOf(command, cwd)
-      : await allowedMerge(command, {
-          cwd,
-          repos: req.mergeRepos ?? [],
-          // A code session's local project, named from the agent's folder (ADR 0208).
-          folderOf: async (dir) => {
-            const found = await resolvePath(ctx, dir).catch(() => null);
-            return found?.exists ? found.abs : null;
-          },
-        });
+      : await allowedMerge(command, { cwd, repos: req.mergeRepos ?? [] });
   if (held && req.approved !== true && !merge) throw new RunnerError("approval_needed", held.message);
   let env = secrets?.env;
   let redact = secrets;

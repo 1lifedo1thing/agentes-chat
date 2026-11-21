@@ -1,5 +1,5 @@
 import { execFile } from "node:child_process";
-import { open, realpath, stat } from "node:fs/promises";
+import { open, stat } from "node:fs/promises";
 import path from "node:path";
 import {
   approvalNeeded,
@@ -8,7 +8,6 @@ import {
   gitPushes,
   type Hold,
   isProxyUrl,
-  localMergeTarget,
   loneMerge,
   type MergeDone,
   pushRemote,
@@ -225,26 +224,12 @@ export async function mergeOf(command: string, cwd: string): Promise<MergeDone |
 
 /**
  * The merge a held command is (`mergeOf`), when its repository is one of `repos`, the agent's "merge without asking"
- * list; null: it stays held. A repository nobody can tell is never in the list. A code session's local project there
- * (`local:<folder>#<branch>`, ADR 0208) lets through `git merge` of that one branch, run in that very folder (`folderOf`
- * resolves it in the agent's own; both compared as real paths, so a link can't stand in for it).
+ * list; null: it stays held. A repository nobody can tell is never in the list.
  */
 export async function allowedMerge(
   command: string,
-  opts: { cwd: string; repos: readonly string[]; folderOf?: (dir: string) => Promise<string | null> },
+  opts: { cwd: string; repos: readonly string[] },
 ): Promise<MergeDone | null> {
-  const locals = opts.repos.map(localMergeTarget).filter((t) => t !== null);
-  if (locals.length > 0 && opts.folderOf) {
-    const script = await scriptOf(command, opts.cwd);
-    const lone = script?.code || script?.cut ? null : loneMerge(script?.text ?? command);
-    const at = lone?.ref ? await realpath(path.resolve(opts.cwd, lone.dir)).catch(() => null) : null;
-    for (const target of at && lone?.ref ? locals : []) {
-      const folder = await opts.folderOf(target.dir);
-      const want = folder ? await realpath(folder).catch(() => null) : null;
-      if (want && want === at && lone?.ref === target.branch)
-        return { repo: path.basename(want), pr: null, ref: lone.ref };
-    }
-  }
   const merge = await mergeOf(command, opts.cwd);
   return merge && opts.repos.some((r) => r.toLowerCase() === merge.repo.toLowerCase()) ? merge : null;
 }
