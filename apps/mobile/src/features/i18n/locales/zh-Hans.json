@@ -267,8 +267,8 @@
     "to": "发给：",
     "people": "成员",
     "search": "成员或智能体",
-    "create": "创建",
     "agentHint": "名称和职责",
+    "create": "创建",
     "chatShort": "对话",
     "chatHint": "一位成员或一个智能体",
     "taskHint": "附负责人和截止日期",
@@ -1153,6 +1153,16 @@
       "fullscreen": "全屏",
       "open": "打开",
       "cantPlay": "此视频无法在这部手机上播放。"
+    },
+    "talk": {
+      "hint": {
+        "image": "点按要评论的位置",
+        "video": "点按视频，评论这一刻",
+        "pdf": "点按页面以标记一个点"
+      },
+      "markVideo": "评论视频的这一刻",
+      "pdfPage": "第 {{page}} 页，共 {{count}} 页",
+      "pdfFailed": "无法显示此 PDF。"
     }
   },
   "issues": {

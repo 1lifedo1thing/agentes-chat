@@ -276,8 +276,8 @@
     "to": "Kime:",
     "people": "Kişiler",
     "search": "Kişi veya ajan",
-    "create": "Oluştur",
     "agentHint": "Adı ve ne yaptığı",
+    "create": "Oluştur",
     "chatShort": "Sohbet",
     "chatHint": "Bir kişi veya bir ajan",
     "taskHint": "Sorumlu kişi ve son tarihle",
@@ -1232,6 +1232,16 @@
       "fullscreen": "Tam ekran",
       "open": "Aç",
       "cantPlay": "Bu video bu telefonda oynatılamıyor."
+    },
+    "talk": {
+      "hint": {
+        "image": "Yorum yapmak istediğiniz yere dokunun",
+        "video": "Bu ana yorum yapmak için videoya dokunun",
+        "pdf": "Bir nokta işaretlemek için sayfaya dokunun"
+      },
+      "markVideo": "Videonun bu anına yorum yap",
+      "pdfPage": "Sayfa {{page}} / {{count}}",
+      "pdfFailed": "Bu PDF gösterilemedi."
     }
   },
   "issues": {

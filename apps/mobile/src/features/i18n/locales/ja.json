@@ -267,8 +267,8 @@
     "to": "宛先:",
     "people": "人",
     "search": "人またはエージェント",
-    "create": "作成",
     "agentHint": "名前と役割",
+    "create": "作成",
     "chatShort": "会話",
     "chatHint": "人またはエージェント",
     "taskHint": "担当者と期限つき",
@@ -1153,6 +1153,16 @@
       "fullscreen": "全画面表示",
       "open": "開く",
       "cantPlay": "この動画はこの端末では再生できません。"
+    },
+    "talk": {
+      "hint": {
+        "image": "コメントしたい場所をタップします",
+        "video": "動画をタップすると、この場面にコメントできます",
+        "pdf": "ページをタップして位置を指定します"
+      },
+      "markVideo": "動画のこの場面にコメント",
+      "pdfPage": "{{page}} / {{count}} ページ",
+      "pdfFailed": "このPDFを表示できませんでした。"
     }
   },
   "issues": {

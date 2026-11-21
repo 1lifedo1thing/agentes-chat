@@ -285,8 +285,8 @@
     "to": "A:",
     "people": "Persone",
     "search": "Persona o agente",
-    "create": "Crea",
     "agentHint": "Un nome e cosa fa",
+    "create": "Crea",
     "chatShort": "Conversazione",
     "chatHint": "Una persona o un agente",
     "taskHint": "Con responsabile e scadenza",
@@ -1308,6 +1308,16 @@
       "fullscreen": "Schermo intero",
       "open": "Apri",
       "cantPlay": "Questo video non può essere riprodotto su questo telefono."
+    },
+    "talk": {
+      "hint": {
+        "image": "Tocca dove vuoi commentare",
+        "video": "Tocca il video per commentare questo momento",
+        "pdf": "Tocca la pagina per segnare un punto"
+      },
+      "markVideo": "Commenta questo momento del video",
+      "pdfPage": "Pagina {{page}} di {{count}}",
+      "pdfFailed": "Impossibile mostrare questo PDF."
     }
   },
   "issues": {

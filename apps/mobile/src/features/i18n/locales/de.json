@@ -276,8 +276,8 @@
     "to": "An:",
     "people": "Personen",
     "search": "Person oder Agent",
-    "create": "Erstellen",
     "agentHint": "Ein Name und was er tut",
+    "create": "Erstellen",
     "chatShort": "Unterhaltung",
     "chatHint": "Eine Person oder ein Agent",
     "taskHint": "Mit verantwortlicher Person und Frist",
@@ -1232,6 +1232,16 @@
       "fullscreen": "Vollbild",
       "open": "Öffnen",
       "cantPlay": "Dieses Video kann auf diesem Handy nicht abgespielt werden."
+    },
+    "talk": {
+      "hint": {
+        "image": "Tippe dort, wo du kommentieren willst",
+        "video": "Tippe auf das Video, um diesen Moment zu kommentieren",
+        "pdf": "Tippe auf die Seite, um einen Punkt zu markieren"
+      },
+      "markVideo": "Diesen Moment des Videos kommentieren",
+      "pdfPage": "Seite {{page}} von {{count}}",
+      "pdfFailed": "Dieses PDF lässt sich nicht anzeigen."
     }
   },
   "issues": {

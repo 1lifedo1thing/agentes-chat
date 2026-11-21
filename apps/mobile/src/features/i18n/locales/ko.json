@@ -267,8 +267,8 @@
     "to": "받는 사람:",
     "people": "사람",
     "search": "사람 또는 에이전트",
-    "create": "만들기",
     "agentHint": "이름과 하는 일",
+    "create": "만들기",
     "chatShort": "대화",
     "chatHint": "사람 또는 에이전트",
     "taskHint": "담당자와 마감일 포함",
@@ -1153,6 +1153,16 @@
       "fullscreen": "전체 화면",
       "open": "열기",
       "cantPlay": "이 동영상은 이 휴대폰에서 재생할 수 없습니다."
+    },
+    "talk": {
+      "hint": {
+        "image": "댓글을 달 곳을 탭하세요",
+        "video": "동영상을 탭해 이 순간에 댓글을 다세요",
+        "pdf": "페이지를 탭해 지점을 표시하세요"
+      },
+      "markVideo": "동영상의 이 순간에 댓글 달기",
+      "pdfPage": "{{page}}/{{count}}페이지",
+      "pdfFailed": "이 PDF를 표시할 수 없어요."
     }
   },
   "issues": {
