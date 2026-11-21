@@ -214,7 +214,7 @@ export async function applyAgentSetup(
   // An admin of each agent, not of the workspace: who manages it (`managesAgent`, ADR 0085 addendum of 2026-11-17).
   const admin = (t: Agent) => managesAgent(t, userId, membership);
   // Its owner, or who holds its owner role (ADR 0085, addendum of 2026-11-21).
-  const owns = (t: Agent) => ownsAgent(t, userId, membership.roleIds);
+  const ownsIt = (t: Agent) => ownsAgent(t, userId, membership.roleIds);
   const setup = readSetup(input.setup);
   const ids = [...new Set(input.agentIds)];
   if (ids.length > SETUP_AGENTS_MAX) throw new ValidationError(`At most ${SETUP_AGENTS_MAX} agents`, "setup.invalid");
@@ -262,7 +262,7 @@ export async function applyAgentSetup(
     planFor(t, {
       setup,
       admin: admin(t),
-      owns: owns(t),
+      owns: ownsIt(t),
       userId,
       machine,
       account,
@@ -290,7 +290,7 @@ export async function applyAgentSetup(
             : { status: p.status, ...(p.status === "applied" && p.keeps ? { keeps: p.keeps } : {}) };
         const from = agentMissionApproval(t);
         // Its Autonomia wherever the person may set it by hand, whatever its AI can take.
-        const mayManage = admin(t) || owns(t);
+        const mayManage = admin(t) || ownsIt(t);
         const autonomy = mayManage && setup.autonomy && setup.autonomy !== from ? setup.autonomy : null;
         if (p.status !== "applied" && !autonomy) {
           results.set(t.id, { agentId: t.id, ...ai });

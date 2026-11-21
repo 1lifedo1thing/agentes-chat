@@ -1711,7 +1711,8 @@ export const featureKeysEn = {
       },
       asksYou: "Merging and publishing ask for your approval, unless the agent never asks.",
       asksOwner: "Merging and publishing ask for {{name}}'s approval, unless the agent never asks.",
-      asksOwnerRole: "Merging and publishing ask for approval from whoever holds {{role}}, unless the agent never asks.",
+      asksOwnerRole:
+        "Merging and publishing ask for approval from whoever holds {{role}}, unless the agent never asks.",
       asksAdmins: "Merging and publishing ask for an admin's approval, unless the agent never asks.",
       empty: "For now, only conversation.",
     },

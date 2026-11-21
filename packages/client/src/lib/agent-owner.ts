@@ -38,7 +38,8 @@ export const ownerValueOf = (a: AgentOwnerLike, none: string) =>
 
 /** What a save sends for a picked value: a role clears the person and a person (or nobody) the role. */
 export function ownerPatchOf(value: string, none: string): { ownerUserId: string | null; ownerRoleId: string | null } {
-  if (value.startsWith(ROLE_OWNER_PREFIX)) return { ownerUserId: null, ownerRoleId: value.slice(ROLE_OWNER_PREFIX.length) };
+  if (value.startsWith(ROLE_OWNER_PREFIX))
+    return { ownerUserId: null, ownerRoleId: value.slice(ROLE_OWNER_PREFIX.length) };
   return { ownerUserId: value === none ? null : value, ownerRoleId: null };
 }
 

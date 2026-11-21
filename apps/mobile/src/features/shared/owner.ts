@@ -45,7 +45,5 @@ export function ownerNameIn(
 }
 
 /** Who an approval waits on: the owner it was asked under (its own fields), else its agent's now. */
-export const approvalOwnerOf = (
-  approval: AgentOwnerLike,
-  agent: AgentOwnerLike | null | undefined,
-): AgentOwnerLike => (hasAgentOwner(approval) ? approval : (agent ?? {}));
+export const approvalOwnerOf = (approval: AgentOwnerLike, agent: AgentOwnerLike | null | undefined): AgentOwnerLike =>
+  hasAgentOwner(approval) ? approval : (agent ?? {});

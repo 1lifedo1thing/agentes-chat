@@ -84,8 +84,11 @@ export async function decidesAgentApprovals(
   if (owner.ownerUserId === userId) return true;
   const membership = await getMembership(db, userId, orgId);
   return (
-    ownsAgent({ ownerUserId: owner.ownerUserId, ownerRoleId: owner.ownerRoleId ?? null }, userId, membership?.roleIds ?? []) ||
-    can(membership, "approve_actions")
+    ownsAgent(
+      { ownerUserId: owner.ownerUserId, ownerRoleId: owner.ownerRoleId ?? null },
+      userId,
+      membership?.roleIds ?? [],
+    ) || can(membership, "approve_actions")
   );
 }
 

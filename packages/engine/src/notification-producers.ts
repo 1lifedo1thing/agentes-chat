@@ -1696,7 +1696,10 @@ export async function notifyAgentHold(
 ) {
   await notify(deps, {
     orgId: hold.orgId,
-    userIds: [...(await agentOwners(deps, hold.agentId)), ...(await agentManagerIds(deps.db, hold.orgId, hold.agentId))],
+    userIds: [
+      ...(await agentOwners(deps, hold.agentId)),
+      ...(await agentManagerIds(deps.db, hold.orgId, hold.agentId)),
+    ],
     kind: "org_standing",
     groupKey: `${agentHoldGroup(hold.agentId)}${hold.at.getTime()}:${hold.kind}`,
     source: { agentId: hold.agentId, label: hold.name },

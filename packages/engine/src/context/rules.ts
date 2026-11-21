@@ -43,7 +43,13 @@ const holdsRules = (db: Executor, orgId: string, agentId: string) =>
  */
 export async function rulesForPerson(
   db: Executor,
-  input: { orgId: string; agentId: string; ownerUserId: string | null; ownerRoleId?: string | null; personId: string | null },
+  input: {
+    orgId: string;
+    agentId: string;
+    ownerUserId: string | null;
+    ownerRoleId?: string | null;
+    personId: string | null;
+  },
 ) {
   const rows = await db
     .select({
@@ -71,8 +77,7 @@ export async function rulesForPerson(
   const holds = new Map(
     await Promise.all(
       givers.map(
-        async (by) =>
-          [by, by === input.personId || (await decidesAgentApprovals(db, input.orgId, by, input))] as const,
+        async (by) => [by, by === input.personId || (await decidesAgentApprovals(db, input.orgId, by, input))] as const,
       ),
     ),
   );

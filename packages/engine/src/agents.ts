@@ -224,7 +224,8 @@ export async function validateAgentFields(db: Database, orgId: string, input: Pa
           eq(schema.orgRoles.kind, "custom"),
         ),
       );
-    if (!role) throw new ValidationError("ownerRoleId must be one of this workspace's roles", "agent.owner_role_unknown");
+    if (!role)
+      throw new ValidationError("ownerRoleId must be one of this workspace's roles", "agent.owner_role_unknown");
   }
 }
 

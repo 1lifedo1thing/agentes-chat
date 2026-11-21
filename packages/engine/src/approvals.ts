@@ -616,7 +616,9 @@ export function decides(
 }
 
 /** Who answered for its agent when it asked: a person or a role (`ownsAgent` reads it as an agent's). */
-const ownerOfApproval = (a: Pick<Approval, "ownerUserId"> & Partial<Pick<Approval, "ownerRoleId">>): AgentOwnerFields => ({
+const ownerOfApproval = (
+  a: Pick<Approval, "ownerUserId"> & Partial<Pick<Approval, "ownerRoleId">>,
+): AgentOwnerFields => ({
   ownerUserId: a.ownerUserId,
   ownerRoleId: a.ownerRoleId ?? null,
 });

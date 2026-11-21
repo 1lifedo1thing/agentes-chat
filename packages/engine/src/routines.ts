@@ -21,8 +21,8 @@ import { type AiStatusDeps, rightHandWorkAi } from "./ai-status";
 import { decidesAgentApprovals, MAX_OWN_ACTIONS, OWN_ACTION_NAME } from "./approval-rules";
 import { cancelRoutineAhead, type RoutineAheadView, routinesAhead } from "./approvals";
 import {
-  audienceError,
   type AgentOwnerFields,
+  audienceError,
   audienceSql,
   canTalkTo,
   managesRoutinesOf,
