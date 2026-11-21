@@ -11590,10 +11590,7 @@
       "useRepo": "Usar {{repo}}",
       "repoNote": "Un nombre sin owner crea un proyecto en la computadora del agente, fuera de GitHub.",
       "hint": "@ llama a alguien a la sesión",
-      "start": "Empezar",
-      "agent_waiting": "esperándote",
-      "agent_working": "trabajando",
-      "agent_free": "libre"
+      "start": "Empezar"
     },
     "view": {
       "gone": "Esta sesión ya no existe, o no puedes verla.",

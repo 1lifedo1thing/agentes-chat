@@ -10842,10 +10842,7 @@
       "useRepo": "使用 {{repo}}",
       "repoNote": "不带 owner 的名称会在智能体的电脑上新建项目，不放在 GitHub 上。",
       "hint": "用 @ 呼叫他人加入会话",
-      "start": "开始",
-      "agent_waiting": "等你处理",
-      "agent_working": "工作中",
-      "agent_free": "空闲"
+      "start": "开始"
     },
     "view": {
       "gone": "这个会话已不存在，或者你无权查看。",

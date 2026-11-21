@@ -5,7 +5,7 @@ import { AgentAvatar } from "@/components/AgentAvatar";
 import { CursorMark } from "@/components/browser/AgentCursor";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { fullLook, lookOf } from "@/lib/look";
-import { agentCubes, voxelView } from "./agent-voxel";
+import { agentCubes, BUILD_MS, voxelView } from "./agent-voxel";
 
 /** CSS px per cube. */
 const UNIT = 5.5;
@@ -17,8 +17,8 @@ const REST = { yaw: -0.3, pitch: 0.2 };
 const TILT = { yaw: 0.38, pitch: 0.22 };
 /** Dither cells per cube. */
 const DITHER = 2;
-/** When its cursor comes in, after the home shows (ms). */
-const CURSOR_IN_MS = 700;
+/** When its cursor comes in: as the figure's last cube lands (ms after it starts building). */
+const CURSOR_IN_MS = BUILD_MS - 120;
 
 /** The avatar's own seed for its idle blink (`Avatar`'s `seedOf`), so the figure and its face blink together. */
 const seedOf = (name: string) => {
@@ -31,8 +31,9 @@ type Box = { left: number; top: number; right: number; bottom: number };
 
 /**
  * The Code home's agent (ADR 0214): the agent picked in the field, in cubes from its own avatar, standing over the
- * title. It turns a little toward the pointer anywhere over the home (`area`) and blinks when its avatar does; its
- * cursor glides in and waits beside it. Decoration (the field says who works): hidden from screen readers. Without
+ * title. It builds itself as it shows (each cube dropping into place from its foot up, `BUILD_MS`), turns a little
+ * toward the pointer anywhere over the home (`area`) and blinks when its avatar does; its cursor glides in as the last
+ * cube lands and waits beside it. Decoration (the field says who works): hidden from screen readers. Without
  * WebGL it is the flat avatar.
  */
 export function CodeHomeAgent({
@@ -66,8 +67,11 @@ export function CodeHomeAgent({
       return;
     }
     setFlat(false);
+    // Measured built (where its cursor waits), then drawn from nothing: it builds itself from the first frame on.
     view.draw(0, 0, false);
     setInk(view.inked());
+    if (!reduced) view.draw(0, 0, false, 0);
+    const born = performance.now();
     const seed = seedOf(name);
     const aim = { x: 0, y: 0 };
     const now = { x: 0, y: 0 };
@@ -94,7 +98,7 @@ export function CodeHomeAgent({
       const k = 1 - Math.exp(-dt * 3.2);
       now.x += (aim.x - now.x) * k;
       now.y += (aim.y - now.y) * k;
-      view.draw(TILT.yaw * now.x, TILT.pitch * now.y, idlePose(t / 1000, seed).blink);
+      view.draw(TILT.yaw * now.x, TILT.pitch * now.y, idlePose(t / 1000, seed).blink, (t - born) / 1000);
       frame = seen && !document.hidden ? requestAnimationFrame(tick) : 0;
     };
     const resume = () => {

@@ -109,15 +109,16 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
 
 - **List**: the sessions I take part in, grouped by repository, with their state in words (`preparing`, `working`,
   `waiting for you`, `ready`, the PR) and the change's size.
-- **Home**: the field in the middle of the agents' fine sky (the agent page's cover sky), the agents that program
-  standing on its horizon saying what they do. Over the field the page's title ("Coding mode", in the brand's face, with a Beta mark)
-  and the question, and over them the agent picked in the field drawn in cubes from its own avatar (each pixel of the
-  engine's drawing a cube, the avatar's tones through the sky's dither, plain WebGL: `agent-voxel.ts`,
-  `CodeHomeAgent`): it turns a little toward the pointer, blinks with its face, and its cursor (the browser's, ADR 0040
-  §7.2) glides in and waits beside it. The three stand in the middle of the sky over the team; a window too short for
-  them shows the title and the field alone, a browser without WebGL the flat avatar. Writing and Enter opens a session
-  with the picked agent and repository (the last ones used come back); the computer is the agent's own, so there is
-  nothing else to pick.
+- **Home**: the field in the middle of the agents' fine sky (the agent page's cover sky). Over the field the page's
+  title ("Coding mode", in the brand's face, with a Beta tag of its own) and the question, and over them the agent
+  picked in the field drawn in cubes from its own avatar (each pixel of the engine's drawing a cube, the avatar's tones
+  through the sky's dither, plain WebGL: `agent-voxel.ts`, `CodeHomeAgent`). As the home opens the figure builds
+  itself, each cube dropping into place from its foot up, while the title, the question and the field rise into place
+  under it; nothing waits for the build, and with reduced motion all of it is simply there. It turns a little toward
+  the pointer, blinks with its face, and its cursor (the browser's, ADR 0040 §7.2) glides in as the last cube lands and
+  waits beside it. The three stand in the middle of the sky; a window too short for them shows the title and the field
+  alone, a browser without WebGL the flat avatar. Writing and Enter opens a session with the picked agent and
+  repository (the last ones used come back); the computer is the agent's own, so there is nothing else to pick.
 - **Session**: the conversation under its header (its name, who is in it and its menu: its state is the list's and the
   line over the composer's, its branch the Git tab's), with the agent's model (the DM's picker, changed in place)
   and its plan's limits under the composer like a coding CLI's status line, and a side panel with the kit's tabs, Git,

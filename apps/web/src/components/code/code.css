@@ -196,7 +196,7 @@
 .code-mid {
   position: absolute;
   left: 50%;
-  top: 37%;
+  top: 46%;
   z-index: 2;
   width: min(820px, calc(100% - 64px));
   display: flex;
@@ -227,6 +227,47 @@
   justify-content: center;
   gap: 10px;
 }
+/* Opening the home: the agent builds itself (`CodeHomeAgent`) while its words rise into place under it, the title
+   first, then the question and the field, overlapping by less each time; nothing waits for the build and the field
+   takes the caret at once. Until the home knows its agent (their place depends on it) the words wait, unseen. */
+.code-mid:not(.is-in) > :not(.code-agent) {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .code-mid.is-in > .code-mid__head {
+    --rise: 10px;
+    animation: code-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
+  }
+  .code-mid.is-in > .code-mid__s {
+    --rise: 8px;
+    animation: code-rise 460ms cubic-bezier(0.2, 0.8, 0.2, 1) 190ms both;
+  }
+  .code-mid.is-in > :is(.code-start, .code-mid__none) {
+    --rise: 6px;
+    animation: code-rise 460ms cubic-bezier(0.2, 0.8, 0.2, 1) 240ms both;
+  }
+}
+@keyframes code-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rise, 8px));
+  }
+}
+/* Beta, as a tag of the title's own: its face in capitals, on a line of the info color, the sky showing through. */
+.code-mid__beta {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 3px 7px 2px;
+  border: 1.5px solid color-mix(in srgb, var(--info) 45%, transparent);
+  border-radius: 6px;
+  color: var(--info);
+  font-family: var(--font-brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
 /* The title in the brand's face, in today's title box (40 tall), so the field stays where it is; the question under it. */
 .code-mid__t--brand {
   font-family: var(--font-brand);
@@ -237,15 +278,15 @@
 .code-mid__s--ask {
   font-size: 15px;
 }
-/* With the agent over the title, the three (agent, title and field) stand in the middle of the sky over the team: the
-   field's middle 14 above the home's (the team takes 163 at the foot, the agent 136 over the title). A window too short
-   for them shows the title and the field alone. */
+/* With the agent over the title, the three (agent, title and field) stand in the middle of the sky: the agent takes
+   about 150 over the title, so the form's middle sits that much under the home's. A window too short for them shows
+   the title and the field alone. */
 .code-mid--agent {
-  top: calc(50% - 14px);
+  top: calc(50% + 60px);
 }
 @media (max-height: 600px) {
   .code-mid--agent {
-    top: 37%;
+    top: 46%;
   }
   .code-agent {
     display: none;
@@ -320,51 +361,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.code-team {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 32px;
-  z-index: 1;
-  display: flex;
-  justify-content: space-evenly;
-  padding: 0 24px;
-}
-.code-actor {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.code-actor .ac-avatar {
-  width: 72px;
-  height: 72px;
-  margin-bottom: 6px;
-}
-.code-actor.is-picked .code-actor__n {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.code-actor__n {
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 650;
-}
-.code-actor__s {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ink2);
-  font-size: 12.5px;
-  white-space: nowrap;
-}
-
 /* ── a session ── */
 .code-session {
   flex: 1;

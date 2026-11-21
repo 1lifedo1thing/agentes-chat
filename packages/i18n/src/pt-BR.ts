@@ -11690,9 +11690,6 @@ export const ptBR = {
       repoNote: "Um nome sem owner cria um projeto no computador do agente, fora do GitHub.",
       hint: "@ chama alguém para a sessão",
       start: "Começar",
-      agent_waiting: "espera você",
-      agent_working: "trabalhando",
-      agent_free: "livre",
     },
     view: {
       gone: "Esta sessão não existe mais, ou não é sua para ver.",

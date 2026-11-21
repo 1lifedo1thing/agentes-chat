@@ -31,6 +31,16 @@ const EYE_OUT = 0.35;
 const RAMP = 10;
 /** A face's tone against its front's: the top catches the light, the right side and the underside fall away. */
 const FACE = { top: 2.4, left: -0.8, right: -2.6, bottom: -3.2 };
+/**
+ * How it builds itself when the home opens: each cube drops into its place from this many cells over it, row after row
+ * from its foot up (a little earlier or later by column, so the rows never land as one), over `BUILD_SPREAD` seconds,
+ * each fall taking `BUILD_FALL`; it settles a hair past its place and back.
+ */
+const BUILD_DROP = 7;
+const BUILD_SPREAD = 0.5;
+const BUILD_FALL = 0.42;
+/** When the last cube has landed (ms after the first starts). */
+export const BUILD_MS = Math.round((BUILD_SPREAD + BUILD_FALL) * 1000);
 const LIGHT = (() => {
   const [x, y, z] = [-0.5, 0.75, 0.45];
   const l = Math.hypot(x, y, z);
@@ -197,7 +207,9 @@ attribute vec2 aDither;
 attribute float aLevel;
 attribute float aRamp;
 attribute float aShow;
+attribute float aDelay;
 uniform mat4 uMvp;
+uniform float uBuild;
 uniform mat3 uTurn;
 uniform mat3 uRest;
 uniform float uBlink;
@@ -207,16 +219,21 @@ varying float vRamp;
 varying vec3 vNormal;
 varying vec3 vRestNormal;
 void main() {
-  if ((aShow == 1.0 && uBlink > 0.5) || (aShow == 2.0 && uBlink < 0.5)) {
+  // Its place in the build: not started yet (not drawn), falling, or landed.
+  float p = clamp((uBuild - aDelay * ${BUILD_SPREAD.toFixed(3)}) / ${BUILD_FALL.toFixed(3)}, 0.0, 1.0);
+  if ((aShow == 1.0 && uBlink > 0.5) || (aShow == 2.0 && uBlink < 0.5) || p <= 0.0) {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     return;
   }
+  // Out-back with a small overshoot (1.2): it lands a hair low and settles up into its place.
+  float q = p - 1.0;
+  float landed = 1.0 + 2.2 * q * q * q + 1.2 * q * q;
   vDither = aDither;
   vLevel = aLevel;
   vRamp = aRamp;
   vNormal = uTurn * aNormal;
   vRestNormal = uRest * aNormal;
-  gl_Position = uMvp * vec4(aPos, 1.0);
+  gl_Position = uMvp * vec4(aPos + vec3(0.0, (1.0 - landed) * ${BUILD_DROP.toFixed(1)}, 0.0), 1.0);
 }`;
 
 const FRAG = `
@@ -250,7 +267,16 @@ function geometry(cubes: Cube[], dither: number) {
   const lev: number[] = [];
   const ramp: number[] = [];
   const show: number[] = [];
+  const delay: number[] = [];
   const idx: number[] = [];
+  // Its turn in the build (0..1): its row from the foot up, nudged by a fixed noise of its column.
+  const ys = cubes.map((c) => c.y);
+  const [low, high] = [Math.min(...ys), Math.max(...ys)];
+  const turnOf = (c: Cube) => {
+    const row = high > low ? (c.y - low) / (high - low) : 0;
+    const noise = Math.abs(Math.sin(c.x * 12.9898 + c.y * 78.233) * 43758.5453) % 1;
+    return Math.min(1, row * 0.85 + noise * 0.15);
+  };
   const quad = (corners: number[][], n: number[], ditherOf: (p: number[]) => number[], level: number, c: Cube) => {
     const base = pos.length / 3;
     for (const p of corners) {
@@ -260,6 +286,7 @@ function geometry(cubes: Cube[], dither: number) {
       lev.push(level);
       ramp.push(c.ramp);
       show.push(c.show);
+      delay.push(turnOf(c));
     }
     idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
   };
@@ -330,7 +357,7 @@ function geometry(cubes: Cube[], dither: number) {
       c,
     );
   }
-  return { pos, nor, dit, lev, ramp, show, idx };
+  return { pos, nor, dit, lev, ramp, show, delay, idx };
 }
 
 type Mat4 = number[];
@@ -373,8 +400,11 @@ const perspective = (fov: number, aspect: number, near: number, far: number): Ma
 };
 
 export interface VoxelView {
-  /** Draws it turned by `yaw` and `pitch` (radians, beyond its rest), its eyes shut or open. */
-  draw(yaw: number, pitch: number, blink: boolean): void;
+  /**
+   * Draws it turned by `yaw` and `pitch` (radians, beyond its rest), its eyes shut or open, `build` seconds into its
+   * building itself (`BUILD_MS`; left out: built).
+   */
+  draw(yaw: number, pitch: number, blink: boolean, build?: number): void;
   /** What it drew last, in the canvas's CSS pixels (read back), or null. */
   inked(): { left: number; top: number; right: number; bottom: number } | null;
   destroy(): void;
@@ -441,6 +471,7 @@ export function voxelView(
     attribute("aLevel", g.lev, 1),
     attribute("aRamp", g.ramp, 1),
     attribute("aShow", g.show, 1),
+    attribute("aDelay", g.delay, 1),
   ];
   const indices = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indices);
@@ -481,8 +512,9 @@ export function voxelView(
   gl.clearColor(0, 0, 0, 0);
 
   return {
-    draw(yaw, pitch, blink) {
+    draw(yaw, pitch, blink, build = BUILD_MS / 1000) {
       const turn = rotation(rest.pitch + pitch, rest.yaw + yaw);
+      gl.uniform1f(u("uBuild"), build);
       gl.uniformMatrix4fv(u("uMvp"), false, multiply(projection, multiply(view, multiply(turn, toMiddle))));
       gl.uniformMatrix3fv(u("uTurn"), false, mat3Of(turn));
       gl.uniform1f(u("uBlink"), blink ? 1 : 0);

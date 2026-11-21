@@ -11675,9 +11675,6 @@ export const en = {
       repoNote: "A name with no owner starts a project on the agent's computer, outside GitHub.",
       hint: "@ calls someone into the session",
       start: "Start",
-      agent_waiting: "waiting for you",
-      agent_working: "working",
-      agent_free: "free",
     },
     view: {
       gone: "This session is gone, or isn't yours to see.",

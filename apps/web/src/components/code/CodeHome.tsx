@@ -1,6 +1,6 @@
-import { type CodeSession, useCodeSessions, useCodeStart, useCreateCodeSession } from "@agenteschat/client";
+import { useCodeSessions, useCodeStart, useCreateCodeSession } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { Button, Chip, cx, Icon, Popover, SearchField, Select } from "@agenteschat/ui";
+import { Button, cx, Icon, Popover, SearchField, Select } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,6 @@ import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { CodeHomeAgent } from "./CodeHomeAgent";
-import { WaitMark } from "./CodeList";
 import { CodeHomeSky } from "./CodeSky";
 import { takeCodeKey, useCodeKey } from "./shortcuts";
 
@@ -28,17 +27,9 @@ function saveLastPick(orgId: string, pick: { agentId: string; repo: string }) {
   } catch {}
 }
 
-/** What an agent on the horizon is doing now, from the sessions I take part in. */
-function agentState(sessions: CodeSession[], agentId: string): "waiting" | "working" | "free" {
-  const own = sessions.filter((s) => s.agentId === agentId);
-  if (own.some((s) => s.work === "waiting")) return "waiting";
-  if (own.some((s) => s.work === "working" || s.work === "preparing")) return "working";
-  return "free";
-}
-
 /**
  * The Code page's home (ADR 0214): the field in the middle of the agents' sky, the picked agent in cubes over its title
- * (`CodeHomeAgent`), and the agents that program standing on its horizon, each saying what it does now. Writing and Enter opens a session with the picked agent in the picked
+ * (`CodeHomeAgent`). Writing and Enter opens a session with the picked agent in the picked
  * repository (the last ones used come back); the computer is the agent's own, so there is nothing else to choose.
  */
 export function CodeHome() {
@@ -104,16 +95,18 @@ export function CodeHome() {
     }
   };
   const repoName = repo.trim() || t("codeSessions.home.aRepo");
+  // Its words come in once the home knows where they stand: with an agent over them, or with none to pick.
+  const placed = start.isError || (start.isSuccess && (agents.length === 0 || Boolean(pickedAgent)));
   return (
     <div className="code-home" ref={home}>
       <div className="code-stage" aria-hidden="true">
         <CodeHomeSky />
       </div>
-      <form className={cx("code-mid", pickedAgent && "code-mid--agent")} onSubmit={submit}>
+      <form className={cx("code-mid", pickedAgent && "code-mid--agent", placed && "is-in")} onSubmit={submit}>
         {pickedAgent && <CodeHomeAgent agent={pickedAgent} name={pickedAgent.name} area={home} />}
         <div className="code-mid__head">
           <h2 className="code-mid__t code-mid__t--brand">{t("codeSessions.home.mode")}</h2>
-          <Chip>{t("codeSessions.home.beta")}</Chip>
+          <span className="code-mid__beta">{t("codeSessions.home.beta")}</span>
         </div>
         <span className="code-mid__s code-mid__s--ask">{t("codeSessions.home.title", { repo: repoName })}</span>
         {agents.length === 0 && start.isSuccess ? (
@@ -165,33 +158,6 @@ export function CodeHome() {
           </p>
         )}
       </form>
-      <div className="code-team">
-        {agents.map((a) => {
-          const name = dir.agentById.get(a.agentId)?.name ?? "";
-          const state = agentState(sessions, a.agentId);
-          return (
-            <button
-              key={a.agentId}
-              type="button"
-              className={cx("code-actor", a.agentId === agentId && "is-picked")}
-              onClick={() => pickAgent(a.agentId)}
-            >
-              <AgentAvatar
-                agentId={a.agentId}
-                name={name}
-                size="lg"
-                framed={false}
-                state={state === "working" ? "writing" : undefined}
-              />
-              <span className="code-actor__n">{name}</span>
-              <span className={cx("code-actor__s", state === "waiting" && "code-st--wait")}>
-                {state === "waiting" && <WaitMark />}
-                <span>{t(`codeSessions.home.agent_${state}`)}</span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }

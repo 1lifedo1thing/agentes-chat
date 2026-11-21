@@ -27341,15 +27341,6 @@
   "codeSessions.home.start": {
     "value": "Start"
   },
-  "codeSessions.home.agent_waiting": {
-    "value": "waiting for you"
-  },
-  "codeSessions.home.agent_working": {
-    "value": "working"
-  },
-  "codeSessions.home.agent_free": {
-    "value": "free"
-  },
   "codeSessions.view.gone": {
     "value": "This session is gone, or isn't yours to see."
   },

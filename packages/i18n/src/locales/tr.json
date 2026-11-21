@@ -11161,10 +11161,7 @@
       "useRepo": "{{repo}} kullan",
       "repoNote": "Sahibi olmayan bir ad, ajanın bilgisayarında GitHub dışında bir proje başlatır.",
       "hint": "@ birini oturuma çağırır",
-      "start": "Başlat",
-      "agent_waiting": "sizi bekliyor",
-      "agent_working": "çalışıyor",
-      "agent_free": "boşta"
+      "start": "Başlat"
     },
     "view": {
       "gone": "Bu oturum artık yok ya da onu görme izniniz yok.",

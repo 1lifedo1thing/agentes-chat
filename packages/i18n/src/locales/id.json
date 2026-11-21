@@ -10828,10 +10828,7 @@
       "useRepo": "Pakai {{repo}}",
       "repoNote": "Nama tanpa owner membuat proyek di komputer agen, di luar GitHub.",
       "hint": "@ memanggil seseorang ke sesi",
-      "start": "Mulai",
-      "agent_waiting": "menunggumu",
-      "agent_working": "sedang bekerja",
-      "agent_free": "tersedia"
+      "start": "Mulai"
     },
     "view": {
       "gone": "Sesi ini sudah tidak ada, atau bukan untuk kamu lihat.",

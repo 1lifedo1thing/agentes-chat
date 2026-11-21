@@ -11296,10 +11296,7 @@
       "useRepo": "{{repo}} gebruiken",
       "repoNote": "Een naam zonder eigenaar start een project op de computer van de agent, buiten GitHub.",
       "hint": "@ haalt iemand bij de sessie",
-      "start": "Starten",
-      "agent_waiting": "wacht op jou",
-      "agent_working": "bezig",
-      "agent_free": "vrij"
+      "start": "Starten"
     },
     "view": {
       "gone": "Deze sessie bestaat niet meer, of je mag die niet zien.",

@@ -10765,10 +10765,7 @@
       "useRepo": "{{repo}} 사용",
       "repoNote": "owner 없이 이름만 쓰면 GitHub 밖, 에이전트의 컴퓨터에 프로젝트를 만들어요.",
       "hint": "@로 다른 사람을 세션에 부를 수 있어요",
-      "start": "시작",
-      "agent_waiting": "내 확인 대기",
-      "agent_working": "작업 중",
-      "agent_free": "사용 가능"
+      "start": "시작"
     },
     "view": {
       "gone": "이 세션은 없어졌거나 볼 수 없는 세션이에요.",

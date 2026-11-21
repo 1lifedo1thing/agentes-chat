@@ -10771,10 +10771,7 @@
       "useRepo": "{{repo}}を使う",
       "repoNote": "ownerなしの名前にすると、GitHubの外で、エージェントのコンピューター上にプロジェクトを作ります。",
       "hint": "@で誰かをセッションに呼べます",
-      "start": "開始",
-      "agent_waiting": "あなたの対応待ち",
-      "agent_working": "作業中",
-      "agent_free": "対応可能"
+      "start": "開始"
     },
     "view": {
       "gone": "このセッションはもうないか、閲覧する権限がありません。",
