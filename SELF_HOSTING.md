@@ -836,6 +836,25 @@ tools. A model without prices costs nothing in budgets (its tokens are still cou
 `http://` are allowed on a self-hosted server, unless `ALLOW_SIGNUP=true` lets anyone in; set
 `MODEL_ENDPOINTS_PRIVATE` to choose (`false` allows only public https ones, what agentes.chat Cloud does).
 
+**Servers on your private network.** Other addresses a workspace types (a custom MCP server and its sign-in,
+its own bucket, a database, a mail server, a password manager, the pages its agents read) must be public,
+whatever the switch above says, until you name the private ones they may reach. For a custom MCP server
+on a Tailscale tailnet or a LAN:
+
+```bash
+# Tailscale's ranges, or your LAN's (192.168.1.0/24)
+OUTBOUND_ALLOW_CIDRS=100.64.0.0/10,fd7a:115c:a1e0::/48
+# Optional: names allowed whatever they resolve to, such as your tailnet's (needed for *.local and *.internal names)
+OUTBOUND_ALLOW_HOSTS=*.tail1234.ts.net
+```
+
+Restart the server after changing them. Name the narrowest range and suffix you can: anyone who can make a name
+under an allowed suffix can point it at your network. Every request is checked again when it connects, so a name
+that changes after it was saved can't move it onto an address you didn't allow. Loopback (`127.0.0.1`, `::1`,
+`localhost`), link-local and cloud metadata addresses (`169.254.169.254`, `fd00:ec2::254`, `100.100.100.200`) stay
+refused whatever you set. An address refused for this shows in the server's log as
+`outbound address refused: private network`, with its host. agentes.chat Cloud ignores both settings.
+
 **Sign-up.** The first account is allowed unless an owner link or the desktop app's owner key holds
 it (below). After it, with `ALLOW_SIGNUP=false` (the default), only invited people get in: invited by
 email from **Settings → Members and invitations**. A workspace's invitation link lets nobody in by
@@ -1037,14 +1056,21 @@ with one exception you have to switch on: `OPERATOR_API_REVEAL_TOKEN` (a third v
 the other two). Leave it unset unless a tool of yours needs it. Set, `POST /reveal/orgs/{orgId}` reads
 one field of one record at a time (a message, a step of a run, an agent's instructions, a routine, a
 task, a connection's error, what a member wrote to you), at most 2,000 characters a call, with a
-reason in one line, for one of two purposes the server checks for itself. For a member who asked for
-help (`member_request` with the id of their support request, 30 days at most): only what that member
-reads in the app. To diagnose a run that failed or got stuck (`fault` with the run's id, 14 days at
-most): only what hangs on that run. Never a file or a credential, and of a direct conversation only
-for a member who is in it. Every read is recorded before any text leaves, in the events feed with
-your reason and in that workspace's own audit log (**Settings → Audit log**: who read what, at whose
-request or for which failed run, never your reason), credentials are masked, and the door takes 30
-calls a minute and 100 reads of one workspace a day. `GET /orgs/{orgId}/support-requests` lists who
+reason in one line, for one of three purposes. Two the server checks for itself. For a member who
+asked for help (`member_request` with the id of their support request, 30 days at most): only what
+that member reads in the app. To diagnose a run that failed or got stuck (`fault` with the run's id,
+14 days at most): only what hangs on that run. Never a file or a credential, and of a direct
+conversation only for a member who is in it. The third, `trust_safety`, is for investigating
+suspected abuse. The server has no record that could prove it, so it names no request and no run,
+never opens a support request's words or what people said to each other in a direct conversation,
+and is capped at 150 reads a day for the whole server. Every read is recorded before any text
+leaves, in the events feed with your reason. Requests and faults show in each workspace's own audit
+log at once (**Settings → Audit log**: who read what, at whose request or for which failed run,
+never your reason). A read to investigate abuse shows there when you disclose it, which you owe
+within 7 days and as soon as your review ends: `POST /orgs/{orgId}/content-reads/disclosure` with
+your full token and `{ from, to, count }` writes one entry that says you reviewed that many items
+for safety in that period. Credentials are masked, and the door takes 30 calls a minute and 100
+reads of one workspace a day. `GET /orgs/{orgId}/support-requests` lists who
 asked for help and when, and `POST` there records a request that reached you another way (a mail, a
 call), which the audit log then shows as recorded by you. `POST /reveal/orgs/{orgId}/replies` answers
 a member's support request by email, at the address of their account and in their language, never
@@ -1054,7 +1080,8 @@ replies a request and 60 a day, and is recorded in the events feed and in that w
 (that you answered, whose request, and whether an AI assistant wrote the answer), never with its
 words, which the server forgets once the email is sent or given up. Write in a reply only what that
 member could read in the app. Setting the token makes you a reader of your workspaces' content: tell
-them before the first read, and say whether an AI assistant reads with you (`assistedByAi`). It also
+them before the first read what you may read it for, and say whether an AI assistant reads with you
+(`assistedByAi`). It also
 makes the server keep what members write in the feedback form, and what the thing they reported
 says, for 90 days beside their request. Unset, every path under
 `/reveal` answers 403 and the server keeps neither: of a member's feedback it keeps only that they
@@ -1541,6 +1568,15 @@ leaves as one of those ids: a firewall of yours that keys on the agents' uid ran
 up the same way. Containers stop when the computer restarts and come back, those with `restart: always`, with the
 agent's next request. Agents on Codex, Cursor, Grok or Antigravity get none: their CLI's own sandbox is what holds
 them, and the containers service runs outside it. [ADR 0169](docs/adr/0169-agents-containers.md) has the rest.
+
+**Docker and KVM (`--system`).** With Docker's rootless install there too (Docker's apt repository: `docker-ce
+docker-ce-cli containerd.io docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin`, in place of
+`podman-docker` and `docker-compose`), each agent gets Docker's own daemon, rootless under its user, started by its
+first `docker` command (ADR 0209): `docker`, `docker compose` and `docker buildx` are Docker's, `podman` stays Podman.
+The package starts a root daemon of its own, which no agent reaches (nobody joins `docker`); stop it if you don't use
+it: `systemctl disable --now docker.service docker.socket containerd.service`. Where the computer has `/dev/kvm` (bare
+metal, or a VM with nested virtualization), each agent joins its group, so Android's emulator and QEMU run with KVM as
+the agent; every agent's VMs are its own. Restart the runner after either.
 
 **The shared folder.** Every computer has one folder all of its agents read and write, so what one of
 them downloads, clones or installs, the others use instead of fetching it again. With `--system` it is

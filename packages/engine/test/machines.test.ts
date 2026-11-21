@@ -252,6 +252,41 @@ describe("a runner that dies mid-request (brain turns never stay working)", () =
     expect(runner.closed()).toMatchObject({ code: 4408 });
   });
 
+  test("a server whose loop stalls keeps the runners whose pongs it couldn't read in time; a dead link still goes", async () => {
+    f = await setup({ machines: true });
+    const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-l", heartbeatMs: 100 });
+    hubs.push(hub);
+    const alive = fakeRunner(hub, { pong: true });
+    await alive.hello((await pair()).token);
+    const dead = fakeRunner(hub, { dead: true });
+    await dead.hello((await pair(f.owner.id, "Gone box")).token);
+    // Busy for over two heartbeats (under the four after which silence closes anyway): the next ping tick fires
+    // late, long after the last pong it could read.
+    void alive.frame({ type: "pong", at: Date.now() });
+    Bun.sleepSync(220);
+    await Bun.sleep(400);
+    expect(alive.closed()).toBeNull();
+    expect(alive.sent.filter((frame) => frame.type === "ping").length).toBeGreaterThanOrEqual(3);
+    expect(dead.closed()).toMatchObject({ code: 4408, reason: "no pong" });
+  });
+
+  test("a computer that keeps dropping gets one offline check per grace window, a full grace after its last drop", async () => {
+    f = await setup({ machines: true });
+    const grace = 3_600_000;
+    const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-f", taskOfflineGraceMs: grace });
+    hubs.push(hub);
+    const paired = await pair();
+    for (let i = 0; i < 5; i++) {
+      const runner = fakeRunner(hub);
+      await runner.hello(paired.token);
+      await runner.disconnect({ code: 1006, reason: "" });
+    }
+    const lastDrop = Date.now();
+    const jobs = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "machine.tasks_offline"));
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]?.nextAttemptAt.getTime()).toBeGreaterThanOrEqual(lastDrop + grace);
+  });
+
   test("a request cut by its socket closing fails as dropped (it may have run); our own stop says it is ours", async () => {
     f = await setup({ machines: true });
     const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-d" });
@@ -285,8 +320,11 @@ describe("a runner that dies mid-request (brain turns never stay working)", () =
     const graces = (await jobs())
       .map((j) => ({ ms: j.nextAttemptAt.getTime() - j.createdAt.getTime(), payload: j.payload }))
       .sort((a, b) => a.ms - b.ms);
-    expect(graces[0]?.ms).toBeLessThan(TASK_OFFLINE_GRACE_MS + 5000);
-    expect(graces[1]?.ms).toBeLessThan(TASK_OFFLINE_GRACE_MS + 5000);
+    // Due at the end of the window after the one it closed in: a full grace at least, two at most.
+    for (const g of graces.slice(0, 2)) {
+      expect(g.ms).toBeGreaterThan(TASK_OFFLINE_GRACE_MS - 5000);
+      expect(g.ms).toBeLessThanOrEqual(2 * TASK_OFFLINE_GRACE_MS);
+    }
     expect(graces.slice(0, 2).map((g) => g.payload)).toContainEqual({
       machineId: paired.machineId,
       statusOnly: true,
@@ -790,6 +828,20 @@ describe("machines and targets", () => {
     expect(machine?.agents.map((a) => a.handle)).toEqual(["dev", "qa"]);
   });
 
+  test("a private agent on a computer is named only to who lists it and to who paired that computer", async () => {
+    f = await setup();
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const carl = await addMember(f.db, f.org.id, "member", "carl");
+    const box = await pair(bia.id, "Bia's laptop");
+    await setAgentComputerTarget(deps(), f.owner.id, f.org.id, f.agent.id, box.machineId);
+    await f.db.update(schema.agents).set({ audienceMode: "owner" }).where(eq(schema.agents.id, f.agent.id));
+    const named = async (userId: string) =>
+      (await listMachines(f.db, userId, f.org.id))[0]?.agents.map((a) => a.handle);
+    expect(await named(carl.id)).toEqual([]);
+    expect(await named(bia.id)).toEqual(["dev"]);
+    expect(await named(f.owner.id)).toEqual(["dev"]);
+  });
+
   test("list, rename and delete: every member sees them, only the pairer or an admin changes them", async () => {
     f = await setup();
     const bia = await addMember(f.db, f.org.id, "member", "bia");
@@ -941,6 +993,11 @@ describe("hub", () => {
     await Bun.sleep(60);
     expect(slow.sent).toEqual([]);
     expect(slow.closed()).toMatchObject({ code: 4408 });
+    // A hello the server is still checking (a busy database) is not a runner that said nothing.
+    const checking = fakeRunner(hub);
+    checking.conn.authing = true;
+    await Bun.sleep(60);
+    expect(checking.closed()).toBeNull();
   });
 
   test("hello → welcome and online; bad token and outdated runners are refused", async () => {

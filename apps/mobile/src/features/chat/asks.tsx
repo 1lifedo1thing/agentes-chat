@@ -75,6 +75,7 @@ import { LineStop } from "./LiveRows";
 import { approvalIdOf, lineStops, markedParts, markName, parseInline, questionOf, workingEntries } from "./logic";
 import { useCardTop, useMessageCardCorners, useOwnTop } from "./look";
 import { Spans } from "./MessageSpans";
+import { useRowDirectory } from "./row-data";
 import { withOpacity } from "./turn";
 import { WaitMark } from "./WaitMark";
 
@@ -486,7 +487,7 @@ export function AskCard({
   const ownTop = useCardTop(12);
   const { t } = useTranslation();
   const c = useColors();
-  const dir = useDirectory();
+  const dir = useRowDirectory();
   const surface = useSurface();
   // Under someone else's words in a conversation of bubbles: a bubble of that message (its fill, joined to it, no sky),
   // and, when the message is only this request, its name line at the top and its time at the end, as a bubble's.
@@ -684,7 +685,7 @@ export function AskNote({
 }) {
   const ownTop = useCardTop(12);
   const { t } = useTranslation();
-  const dir = useDirectory();
+  const dir = useRowDirectory();
   const surface = useSurface();
   const part = useBubblePart();
   const cardCorners = useMessageCardCorners();
@@ -1106,8 +1107,8 @@ const styles = StyleSheet.create({
   lineMore: { flexDirection: "row", alignItems: "center", gap: 3, alignSelf: "flex-start", marginLeft: 30, height: 22 },
   // Under the title, on its column (the mark and its gap), to the card's edge.
   lineDetail: { marginLeft: 30, marginTop: 1 },
-  // The deadline at the foot's end, right-aligned under the decision.
-  expiryRow: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
+  // The deadline under the decision, from the card's edge as everything in it: never floating at the other end.
+  expiryRow: { flexDirection: "row", marginTop: 10 },
   pressed: { opacity: 0.7 },
   flip: { transform: [{ rotate: "180deg" }] },
   exact: { gap: 10, paddingVertical: 12 },

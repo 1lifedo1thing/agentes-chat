@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { chatScreenSource } from "./chat-screen-source";
 
 /** A file of the app, as text: where a reply's parts go lives in components the tests can't render. */
 const source = (path: string) => readFileSync(join(import.meta.dir, "../../src/features/chat", path), "utf8");
@@ -77,7 +78,7 @@ describe("agents it asked first: one pair row right before the reply, never insi
       ascending(at(row, ["const grouped = groupedIn && !pair;", "{pair}\n      {liveRef ? (", "{quote && !inBubble"])),
     ).toBe(true);
     const [bodyAt, endAt] = at(row, [
-      "<Animated.View style={[styles.body, { gap: rhythm.part }, inBubble && giveWay.style]}>",
+      "<Animated.View style={[styles.body, { gap: rhythm.part }, inBubble && giveWay.style, compact && slide]}>",
       "{foot}\n          </RowParts>\n          {hintNode}\n        </Animated.View>\n",
     ]);
     expect(row.slice(bodyAt, endAt)).not.toContain("Consult");
@@ -139,7 +140,7 @@ describe("an exchange between the same two agents", () => {
     expect(source("row-data.tsx")).toContain("byRun: groupsByRun(asExchanges(list ?? []))");
     expect(source("ConsultGroup.tsx")).toContain("const group = runId ? list.byRun.get(runId) : undefined;");
     expect(source("ConsultGroup.tsx")).toContain("consultPair(items, now, askerId,");
-    expect(source("ChatScreen.tsx")).toContain("asExchanges(consultData)");
+    expect(chatScreenSource()).toContain("asExchanges(consultData)");
     expect(source("ConsultationScreen.tsx")).toContain("useExchangeConversation(");
   });
 });
@@ -444,6 +445,8 @@ describe("the secret card on the phone", () => {
     expect(asks).toContain("lineMark: { flexShrink: 0, width: 20, height: 20,");
     // The fuse and the time left under the decision, never on the card's top line.
     expect(asks).toContain('{waitsFor === "you" && expiry ? <View style={styles.expiryRow}>{expiry}</View> : null}');
+    // From the card's edge, as the buttons above it: never floating at the other end on a line of its own.
+    expect(asks).toContain('expiryRow: { flexDirection: "row", marginTop: 10 },');
     expect(asks).toContain('{waitsFor && waitsFor !== "you" && !ended ? (');
   });
 });
