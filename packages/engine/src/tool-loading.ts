@@ -19,7 +19,7 @@ import type { ToolDefinition } from "./tools/types";
 
 /** A group is loaded up front at this probability or more (a miss costs a search; a load costs every call). */
 export const TOOL_GROUP_THRESHOLD = 0.3;
-/** The judge answers within this, or the run starts with the core tools only. */
+/** The judge answers within this, or the run starts with the previous run's groups (`chooseToolGroups`). */
 export const TOOL_GROUPS_TIMEOUT_MS = 1500;
 /** Tool names per group shown to the judge. */
 const NAMES_PER_GROUP = 20;
@@ -30,8 +30,9 @@ export interface ToolGroupChoice {
   /** Each group's probability; empty when the judge didn't answer. */
   scores: Record<string, number>;
   /**
-   * "judge", or why it fell back: to the core tools and `keep` ("timeout", "none", and "error" on a server with no
-   * Jev key), to every group ("error" otherwise: the judge refused or failed).
+   * "judge", or why it fell back: to `keep` and the previous run's groups, else every group ("timeout"); to the core
+   * tools and `keep` ("none", and "error" on a server with no Jev key); to every group ("error" otherwise: the judge
+   * refused or failed).
    */
   source: "judge" | "timeout" | "error" | "none";
   /** Groups loaded without asking (`keptToolGroups`). */
@@ -49,8 +50,10 @@ const describeGroup = (g: ToolGroup) =>
 /**
  * The tool groups a run loads up front: `keep`, and one calibrated yes/no per
  * other group the agent may use ("will it need these for this message?"), all
- * in one judge request. Without an answer in time, only `keep` (with the core
- * tools and `find_tools`); the same on a server with no Jev key (`JevOffError`)
+ * in one judge request. Without an answer in time, `keep` and the groups the
+ * previous run here listed (`previous`), or every group when it listed none: a
+ * slow judge must not leave the agent saying it can't do what it can. Only
+ * `keep` (with the core tools and `find_tools`) on a server with no Jev key (`JevOffError`)
  * and in a confidential thread, where no run is ever judged. When the judge refuses or fails, every group: a
  * judge that is down (or refused for the month) would otherwise leave each run
  * with only what the previous one used, its other tools a search it may not
@@ -72,6 +75,8 @@ export async function chooseToolGroups(
     tools: ToolDefinition[];
     /** Groups loaded without asking the judge (`keptToolGroups`). */
     keep?: string[];
+    /** The groups the previous run in this conversation listed (`previousRunHere`): what a timeout loads. */
+    previous?: string[] | null;
     timeoutMs?: number;
     /** Asked with the run's other start judgments (`JudgeGroup`). */
     group?: JudgeGroup;
@@ -124,7 +129,11 @@ export async function chooseToolGroups(
       }),
       timeout,
     ]);
-    if (answers === "timeout") return none("timeout");
+    if (answers === "timeout") {
+      const had = all.some((g) => input.previous?.includes(g.key));
+      const more = groups.filter((g) => !had || input.previous?.includes(g.key)).map((g) => g.key);
+      return { groups: [...kept, ...more], scores: {}, source: "timeout", kept };
+    }
     const scores: Record<string, number> = {};
     const chosen = [...kept];
     groups.forEach((g, i) => {
@@ -223,4 +232,56 @@ export async function keptToolGroups(
     .limit(200);
   const names = new Set(used.map((u) => u.name));
   return [...new Set(tools.filter((t) => names.has(t.name)).map(toolGroupKey))];
+}
+
+/** The agent's previous run in this conversation, as the next run's start reads it (`previousRunHere`). */
+export interface PreviousRun {
+  id: string;
+  /** When it ended (else its last change): the provider's prompt cache of it lives an hour from its last call. */
+  updatedAt: Date;
+  /** The groups it listed (`Transcript.toolGroups`). */
+  toolGroups: string[] | null;
+  /** Its "Automático" choice (`Transcript.autoModel`). */
+  autoModel: { tier?: unknown; effort?: unknown } | null;
+}
+
+/** The agent's previous run in this conversation: the thread; in a channel's or DM's main timeline, its last run there. */
+export async function previousRunHere(
+  db: Database,
+  run: {
+    id: string;
+    orgId: string;
+    agentId: string;
+    channelId: string;
+    threadRootId: string;
+    triggerMessageId: string;
+  },
+): Promise<PreviousRun | null> {
+  const r = schema.agentRuns;
+  const flat = run.threadRootId === run.triggerMessageId;
+  const [row] = await db
+    .select({
+      id: r.id,
+      updatedAt: sql<Date>`coalesce(${r.finishedAt}, ${r.updatedAt})`.mapWith(r.updatedAt),
+      toolGroups: sql<unknown>`${r.transcript}->'toolGroups'`,
+      autoModel: sql<unknown>`${r.transcript}->'autoModel'`,
+    })
+    .from(r)
+    .where(
+      and(
+        eq(r.orgId, run.orgId),
+        eq(r.agentId, run.agentId),
+        eq(r.channelId, run.channelId),
+        flat ? sql`${r.threadRootId} = ${r.triggerMessageId}` : eq(r.threadRootId, run.threadRootId),
+        ne(r.id, run.id),
+      ),
+    )
+    .orderBy(desc(r.createdAt))
+    .limit(1);
+  if (!row) return null;
+  const groups = Array.isArray(row.toolGroups)
+    ? row.toolGroups.filter((g): g is string => typeof g === "string")
+    : null;
+  const auto = row.autoModel && typeof row.autoModel === "object" ? (row.autoModel as PreviousRun["autoModel"]) : null;
+  return { id: row.id, updatedAt: row.updatedAt, toolGroups: groups, autoModel: auto };
 }

@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import {
+  agentOutputTokens,
   cheapModelOf,
   contextWindowOf,
   costNanoUsd,
+  effortWithin,
   isKnownModel,
   listedModels,
   MODEL_CATALOG,
@@ -274,6 +276,20 @@ describe("pricing", () => {
     expect(isKnownModel("claude-sonnet-5-5")).toBe(true);
     expect(isKnownModel("claude-haiku-5-5")).toBe(true);
   });
+});
+
+test("effortWithin and agentOutputTokens: a model gets the effort and the output room it takes", () => {
+  expect(effortWithin("max", MODEL_CATALOG["claude-opus-5-5"])).toBe("max");
+  expect(effortWithin("xhigh", MODEL_CATALOG["claude-sonnet-5-5"])).toBe("xhigh");
+  expect(effortWithin("max", MODEL_CATALOG["gpt-6.2-sol"])).toBe("high");
+  expect(effortWithin("xhigh")).toBe("high");
+  expect(effortWithin("medium")).toBe("medium");
+  expect(agentOutputTokens("claude-opus-5-5")).toBe(64_000);
+  expect(agentOutputTokens("claude-opus-5-5", "high")).toBe(64_000);
+  expect(agentOutputTokens("claude-opus-5-5", "max")).toBe(128_000);
+  // No known limit: the old 16K, since more than a model takes is refused.
+  expect(agentOutputTokens("deepseek-v4-pro", "max")).toBe(16_000);
+  expect(agentOutputTokens("not-a-model")).toBe(16_000);
 });
 
 describe("models listed at run time (OpenRouter's)", () => {

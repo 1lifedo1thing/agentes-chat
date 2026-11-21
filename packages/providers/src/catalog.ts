@@ -1,4 +1,4 @@
-import type { ModelUsage } from "./types";
+import type { ModelRequest, ModelUsage } from "./types";
 
 /**
  * Prices in nano-USD per token (1e-9 USD), i.e. USD per million tokens × 1000,
@@ -115,7 +115,10 @@ export interface ModelInfo {
   contextWindow?: number;
   /** The most output tokens one call may ask for; the gateway caps each call at it. */
   maxOutputTokens?: number;
-  /** The reasoning efforts it takes, highest first: a request's effort goes as the nearest. Absent: any. */
+  /**
+   * The reasoning efforts it takes, highest first: a request's effort goes as the nearest. Absent: any up to `high`
+   * (`effortWithin`); on OpenRouter's list, any.
+   */
   efforts?: readonly string[];
   /** It can't follow an `outputSchema`: never a pick for routing, the judge or summaries. */
   structuredOutput?: false;
@@ -141,6 +144,30 @@ export const MODEL_TIERS: readonly ModelTier[] = ["small", "medium", "large"];
 export const AUTO_MODEL = "auto";
 export const isAutoModel = (model: string | null | undefined) => model === AUTO_MODEL;
 
+type Effort = NonNullable<ModelRequest["effort"]>;
+
+/** The effort a model is sent: `xhigh` and `max` go as `high` unless its row lists them (`efforts`). */
+export function effortWithin<E extends Effort>(effort: E | undefined): Exclude<E, "xhigh" | "max"> | "high" | undefined;
+export function effortWithin<E extends Effort>(
+  effort: E | undefined,
+  info: ModelInfo | undefined,
+): E | "high" | undefined;
+export function effortWithin(effort: Effort | undefined, info?: ModelInfo): Effort | undefined {
+  return (effort === "xhigh" || effort === "max") && !info?.efforts?.includes(effort) ? "high" : effort;
+}
+
+/**
+ * An agent call's output cap when the server sets none (`AGENT_MAX_OUTPUT_TOKENS`). Thinking counts against it, so
+ * 16K cut long answers and big tool inputs at high effort: 64K where the model's row says how much it may write
+ * (up to 128K at `max`), else 16K, since sending more than a model takes is refused.
+ */
+export function agentOutputTokens(model: string, effort?: ModelRequest["effort"]): number {
+  const info = modelInfo(model);
+  const most = info?.maxOutputTokens;
+  if (!most) return 16_000;
+  return Math.min(most, effortWithin(effort, info) === "max" ? 128_000 : 64_000);
+}
+
 /** Context window assumed for a model without one in the catalog: the smallest current one, so runs stay inside it. */
 export const DEFAULT_CONTEXT_WINDOW = 200_000;
 
@@ -150,6 +177,9 @@ const DEEPSEEK_PEAK = [
   [6, 10],
 ] as const;
 
+// Claude 5.x on its own API: every effort, and up to 128K output tokens (platform.claude.com, 2026-11-21).
+const CLAUDE_EFFORTS = ["max", "xhigh", "high", "medium", "low"] as const;
+
 export const MODEL_CATALOG: Record<string, ModelInfo> = {
   // Claude Fable 5.2, Fable 5.1's successor at a lower price: $8 / $0.20 / $10 / $40 across its whole 1M-token
   // window (2026-11-17). Like 5.1, no tier and no pick for routing or system tasks: people choose it.
@@ -158,6 +188,8 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
     label: "Claude Fable 5.2",
     prices: { input: 8000, output: 40000, cacheRead: 200, cacheWrite: 10000 },
     contextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    efforts: CLAUDE_EFFORTS,
     serverSideFallback: true,
   },
   // Its 1M-token window from platform.claude.com/docs/en/about-claude/models/overview, all of it at these prices
@@ -167,6 +199,8 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
     label: "Claude Fable 5.1",
     prices: { input: 10000, output: 50000, cacheRead: 250, cacheWrite: 12500 },
     contextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    efforts: CLAUDE_EFFORTS,
     serverSideFallback: true,
   },
   "claude-opus-5-5": {
@@ -174,6 +208,8 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
     label: "Claude Opus 5.5",
     prices: { input: 4000, output: 20000, cacheRead: 200, cacheWrite: 5000 },
     contextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    efforts: CLAUDE_EFFORTS,
     serverSideFallback: true,
     tier: "large",
   },
@@ -182,6 +218,8 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
     label: "Claude Sonnet 5.5",
     prices: { input: 2000, output: 10000, cacheRead: 100, cacheWrite: 2500 },
     contextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    efforts: CLAUDE_EFFORTS,
     serverSideFallback: true,
     recommended: true,
     tier: "medium",
@@ -192,6 +230,8 @@ export const MODEL_CATALOG: Record<string, ModelInfo> = {
     prices: { input: 100, output: 500, cacheRead: 10, cacheWrite: 125 },
     longContext: { aboveInputTokens: 100_000, prices: { input: 500, output: 2500, cacheRead: 50, cacheWrite: 625 } },
     contextWindow: 1_000_000,
+    maxOutputTokens: 128_000,
+    efforts: CLAUDE_EFFORTS,
     serverSideFallback: false,
     cheap: true,
     router: true,
