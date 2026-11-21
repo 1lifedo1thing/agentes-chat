@@ -20846,7 +20846,7 @@
     "mark": "Beta",
     "open": "Geri bildirim gönder",
     "ask": "Ne eksikti, ne bozuldu ya da ne rahatsız etti?",
-    "goesCloud": "Yazdıklarınız e-postayla agentes.chat ekibine gider.",
+    "goesCloud": "Yazdıklarınız e-postayla agentes.chat ekibine gider. Ekip, incelemek için bir yapay zeka asistanı kullanabilir.",
     "goesServer": "Yazdıklarınız e-postayla bu sunucuyu yöneten kişiye gider.",
     "placeholder": "İçinizden geldiği gibi yazın",
     "report": "Burada bir sorun bildir",

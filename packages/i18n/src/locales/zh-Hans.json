@@ -20444,7 +20444,7 @@
     "mark": "Beta",
     "open": "发送反馈",
     "ask": "缺了什么、哪里坏了，或者哪里让你不顺手？",
-    "goesCloud": "你写的内容会通过邮件发给 agentes.chat 团队。",
+    "goesCloud": "你写的内容会通过邮件发给 agentes.chat 团队，团队可能会使用 AI 助手来查看。",
     "goesServer": "你写的内容会通过邮件发给管理这台服务器的人。",
     "placeholder": "随意写就好",
     "report": "在这里报告问题",
