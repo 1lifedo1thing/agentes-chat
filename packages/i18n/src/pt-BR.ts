@@ -3661,6 +3661,7 @@ export const ptBR = {
     chat: {
       mine: "Suas",
       yours: "Sua",
+      free: "Grátis",
       keys: "Chave do workspace",
       /** A group of the switch screen's accounts by AI: the workspace's API keys. */
       apiKeys: "Chaves de API",

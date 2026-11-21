@@ -3469,6 +3469,7 @@
     "chat": {
       "mine": "Sizinkiler",
       "yours": "Sizin",
+      "free": "Ücretsiz",
       "keys": "Çalışma alanı anahtarı",
       "apiKeys": "API anahtarları",
       "best": "Şu an en müsait olan",

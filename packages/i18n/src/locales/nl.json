@@ -3479,6 +3479,7 @@
     "chat": {
       "mine": "Van jou",
       "yours": "Van jou",
+      "free": "Gratis",
       "keys": "Werkruimtesleutel",
       "apiKeys": "API-sleutels",
       "best": "Nu met de meeste ruimte",
