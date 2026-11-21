@@ -27,15 +27,22 @@ export interface ViewerItem {
   version?: number | undefined;
 }
 
+/** A picture, a video or a PDF opened with its comments beside it (ADR 0208), at one of them when `at` says so. */
+export interface ViewerCommentsAt {
+  at?: string | undefined;
+}
+
 interface ViewerTarget extends ViewerItem {
   /** The pictures of the message it opened from, in its order, to move through. */
   set?: ViewerItem[] | undefined;
   /** The one it opened on: moving through `set` keeps the same dialog, only its picture changes. */
   key: string;
+  /** Opened with its comments open (the chat's line under it, a link to one). */
+  comments?: ViewerCommentsAt | undefined;
 }
 
 const ViewerContext = createContext<{
-  open: (id: string, version?: number, set?: ViewerItem[]) => void;
+  open: (id: string, version?: number, set?: ViewerItem[], comments?: ViewerCommentsAt) => void;
   close: () => void;
 } | null>(null);
 
@@ -47,10 +54,10 @@ export function ArtifactViewerProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const orgId = org.id;
   const open = useCallback(
-    (id: string, version?: number, set?: ViewerItem[]) => {
+    (id: string, version?: number, set?: ViewerItem[], comments?: ViewerCommentsAt) => {
       // A spreadsheet, a presentation or a canvas opens on its own page (ADR 0196 §9), not in the viewer.
       if (knownLive(qc, orgId, id)) openLivePage(navigate, orgId, id, { version });
-      else setTarget({ id, version, set, key: id });
+      else setTarget({ id, version, set, key: id, comments });
     },
     [qc, orgId, navigate],
   );
@@ -66,8 +73,10 @@ export function ArtifactViewerProvider({ children }: { children: ReactNode }) {
             id={target.id}
             version={target.version}
             set={target.set}
+            comments={target.comments}
             onVersion={(version) => setTarget({ ...target, version })}
-            onMove={(item) => setTarget({ ...target, id: item.id, version: item.version })}
+            // The comment it opened at was the first picture's.
+            onMove={(item) => setTarget({ ...target, id: item.id, version: item.version, comments: undefined })}
             onClose={close}
           />
         )}
@@ -103,7 +112,13 @@ export function useArtifactViewer() {
   const value = useContext(ViewerContext);
   const setOf = useContext(ImageSetContext);
   if (!value) throw new Error("useArtifactViewer must be used inside ArtifactViewerProvider");
-  return setOf ? { ...value, open: (id: string, version?: number) => value.open(id, version, setOf(id)) } : value;
+  return setOf
+    ? {
+        ...value,
+        open: (id: string, version?: number, _set?: ViewerItem[], comments?: ViewerCommentsAt) =>
+          value.open(id, version, setOf(id), comments),
+      }
+    : value;
 }
 
 /** The viewer where there is one; a text with no viewer around it (a page of its own) opens the Drive instead. */

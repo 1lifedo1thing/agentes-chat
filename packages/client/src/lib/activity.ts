@@ -257,6 +257,7 @@ const BUILTIN: Record<string, ActivityKind> = {
   get_my_usage: "checkingUsage",
   ignore_usage_limit: "updatingWork",
   find_agent: "findingAgent",
+  read_agent: "findingAgent",
   // The right hand's look at the team: its tasks, open and stuck, and what waits.
   team_status: "listingTasks",
   cancel_follow_up: "cancelingFollowUp",
