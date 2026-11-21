@@ -2894,6 +2894,8 @@ export const en = {
     uploading: "uploading…",
     uploadFailed: "was not uploaded",
     removeFile: "Remove {{name}}",
+    dropFileTitle: "Drop to attach",
+    dropFileNote: "Files stay in this conversation’s draft until you send them.",
     tooManyFiles: "Up to {{max}} files per message.",
     reminder: "Reminder",
     reactions: "Reactions",
@@ -4821,6 +4823,21 @@ export const en = {
   adminAsk: {
     ask: "Ask an admin",
     sent: "Sent to whoever can do it.",
+  },
+  /** An AI account named in a run's details: a pill, its card on hover or a press (provider, whose, which computer, usage). */
+  accountRef: {
+    label: "{{name}} account",
+    card: "About the {{name}} account",
+    mine: "Your account",
+    of: "{{name}}'s account",
+    on: "On {{computer}}",
+    gone: "This account isn't in the workspace anymore.",
+  },
+  /** A run that went on with another account than its agent's own, in its details and Atividade (never a chat line). */
+  accountSwitch: {
+    limit: "Went on with the <to/> account because the <from/> account hit its limit",
+    line: "Went on with the <to/> account because the <from/> account is near its limit",
+    extra: "Went on with the <to/> account because the <from/> account would go into paid extra usage",
   },
   channelRefs: {
     list: "Channels",
@@ -6885,6 +6902,9 @@ export const en = {
          */
         cli_sandbox:
           "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings.",
+        /** The agent's CLI doesn't run on its computer's system (Grok Build on Windows), so no turn was sent there. */
+        cli_system:
+          "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings.",
         account_missing:
           "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
@@ -15365,6 +15385,43 @@ export const en = {
       open: "Open",
     },
     /** The picture viewer's zoom bar. */
+    /** Comments on a picture, a video or a PDF (ADR 0208): pins on the file, its page's tools, the chat's line. */
+    comments: {
+      title: "Comments",
+      resolve: "Resolve",
+      reopen: "Reopen",
+      resolvedBy: "Resolved by {{name}} · {{time}}",
+      resolvedCount_one: "{{count}} resolved",
+      resolvedCount_other: "{{count}} resolved",
+      showResolved: "Show resolved",
+      hideResolved: "Hide resolved",
+      fromVersion: "From version {{version}}",
+      peekOpen: "Click to open in the conversation",
+      markAt: "Comment {{n}} at {{time}}, by {{name}}",
+      page: "Page {{page}}",
+      pageOf: "{{page}} of {{count}}",
+      pdfFailed: "This PDF can't be shown here. Download it to open it.",
+      loadFailed: "This image can't be shown here.",
+      hint: {
+        image: "Click to mark a point or drag to mark an area",
+        video: "Click the video to comment at this moment, or drag to mark an area",
+        pdf: "Click a page to mark a point or drag to mark an area",
+      },
+      line: {
+        image_one: "{{count}} comment on the image",
+        image_other: "{{count}} comments on the image",
+        video_one: "{{count}} comment on the video",
+        video_other: "{{count}} comments on the video",
+        pdf_one: "{{count}} comment on the PDF",
+        pdf_other: "{{count}} comments on the PDF",
+      },
+      /** The phone's composer in a picture's, a video's or a PDF's conversation: one line. */
+      write: {
+        image: "Write about the image…",
+        video: "Write about the video…",
+        pdf: "Write about the PDF…",
+      },
+    },
     zoom: {
       toolbar: "Zoom",
       in: "Zoom in",
@@ -15430,6 +15487,8 @@ export const en = {
       tooMany: "That's more than fits here. Remove some and try again.",
       fillIn: "Fill in what's missing and try again.",
       checkAddress: "Check the address and try again.",
+      privateNetwork:
+        "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "That's too long. Shorten it and try again.",
       updateComputerApp: "The computer's app is too old for this. Update it and try again.",
       computerUpdatesItself: "The workspace's computer updates itself for this. Try again in a little while.",
@@ -22192,6 +22251,9 @@ export const en = {
         slides: "Presentation conversation",
         document: "Document conversation",
         file: "File conversation",
+        image: "Image conversation",
+        video: "Video conversation",
+        pdf: "PDF conversation",
       },
       placeholder: {
         canvas: "Write about this canvas · use @ to call an agent",
@@ -22199,6 +22261,9 @@ export const en = {
         slides: "Write about this presentation · use @ to call an agent",
         document: "Write about this document · use @ to call an agent",
         file: "Write about this file · use @ to call an agent",
+        image: "Write about this image · use @ to call an agent",
+        video: "Write about this video · use @ to call an agent",
+        pdf: "Write about this PDF · use @ to call an agent",
       },
       /** In the origin line: what was made. */
       this: {
@@ -22206,6 +22271,9 @@ export const en = {
         spreadsheet: "this spreadsheet",
         slides: "this presentation",
         document: "this document",
+        image: "this image",
+        video: "this video",
+        pdf: "this PDF",
       },
       /** At the conversation's top: where the file was made. */
       origin: {
@@ -22213,6 +22281,9 @@ export const en = {
         made: "<0>{{name}}</0> made {{what}}",
         /** A document opened from an uploaded Word file (ADR 0200). */
         imported: "Imported from <1>{{file}}</1> by {{name}}",
+        /** A picture, a video or a PDF a person uploaded (ADR 0208). */
+        sentIn: "<0>{{name}}</0> sent {{what}} in the <1>{{place}}</1>",
+        sent: "<0>{{name}}</0> sent {{what}}",
       },
       /** Over the composer: what is selected in the file, sent with the message. */
       about: {
@@ -22222,6 +22293,28 @@ export const en = {
         text: "About the selected text",
         point: "About a spot on the canvas",
         other: "About {{label}}",
+        /** A comment on a picture, a video or a PDF (ADR 0208); `n` is its pin's number. */
+        imageArea: "About area {{n}} of the image",
+        imagePoint: "About point {{n}} of the image",
+        videoAt: "About {{time}} of the video",
+        pdfPage: "About page {{page}} of the PDF",
+        image: "About the image",
+        video: "About the video",
+        pdf: "About the PDF",
+      },
+      /** A comment's line over its message: what it points at, short. */
+      what: {
+        area: "Area {{n}}",
+        point: "Point {{n}}",
+        anArea: "An area",
+        aPoint: "A point",
+        page: "Page {{page}}",
+      },
+      /** …and where. */
+      where: {
+        image: "on the image",
+        video: "on the video",
+        pdf: "on the PDF",
       },
       drop: "Don't send the selection",
       /** The line over a message about part of a file. */

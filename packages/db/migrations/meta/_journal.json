@@ -2129,6 +2129,20 @@
       "when": 1795061928914,
       "tag": "0308_machine_disconnects",
       "breakpoints": true
+    },
+    {
+      "idx": 306,
+      "version": "7",
+      "when": 1795215601286,
+      "tag": "0309_live_activity_devices",
+      "breakpoints": true
+    },
+    {
+      "idx": 307,
+      "version": "7",
+      "when": 1795219383867,
+      "tag": "0310_move_learned_sections",
+      "breakpoints": true
     }
   ]
 }
