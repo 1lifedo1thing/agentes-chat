@@ -11,7 +11,7 @@ export const TIP_OPEN_MS = 250;
 /** How long a finger rests on a button before its tip opens (`button`): that press then doesn't act. */
 export const TIP_HOLD_MS = 500;
 /** How far a finger may move during that press (px): farther is a scroll. */
-const HOLD_SLOP = 10;
+export const HOLD_SLOP = 10;
 
 export interface TipProps extends HTMLAttributes<HTMLElement> {
   /** What it says. Nothing: it never opens. */

@@ -6720,7 +6720,24 @@ html:not([data-pointer]) .ac-hint:focus-visible {
     background: var(--plate-soft);
   }
 }
-/* The row a menu is open for (a tap on touch), a step brighter than a hover. */
+/* A row whose menu a long press opens (`Message` `menu`): that press never selects its words or opens the page's menu. */
+@media (hover: none) {
+  .ac-msg[data-hold-menu] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* Its links, pictures and videos keep the browser's own long press (open, save). */
+  .ac-msg[data-hold-menu] :is(a[href], img, video) {
+    -webkit-touch-callout: default;
+  }
+  /* A field in a row (a card's form) stays selectable: Safari won't type in one under user-select: none. */
+  .ac-msg[data-hold-menu] :is(input, textarea, [contenteditable]) {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}
+/* The row a menu is open for (a long press on touch), a step brighter than a hover. */
 .ac-msg[data-menu-open="true"] {
   background: var(--plate);
 }
@@ -7009,8 +7026,8 @@ html:not([data-pointer]) .ac-msg:focus-within .ac-msg__actions,
   }
 }
 /*
- * A touch screen's bar (a keyboard's there: a tap opens the menu) has no room left of a phone-width bubble, and a
- * finger's is bigger: it sits over the bubble's top edge on its right, 4px up so it clears the first line.
+ * A touch screen's bar (a keyboard's there: a long press opens the menu) has no room left of a phone-width bubble,
+ * and a finger's is bigger: it sits over the bubble's top edge on its right, 4px up so it clears the first line.
  */
 @media (hover: none), (pointer: coarse) {
   .ac-msg--own > .ac-msg__body > .ac-msg__actions {
@@ -10746,8 +10763,8 @@ html:not([data-pointer]) .ac-filter__option:focus-visible {
 
 /* Touch: hover-only actions and small controls. */
 @media (hover: none) {
-  /* A tap opens the row's menu beside the row (Message.tsx `menu`), so the bar is the keyboard's here: a hover a tap
-     leaves behind, or a tap on a control in the row, would put it on the text. A field one types in is :focus-visible
+  /* A long press opens the row's menu beside the row (Message.tsx `menu`), so the bar is the keyboard's here: a hover a
+     tap leaves behind, or a tap on a control in the row, would put it on the text. A field one types in is :focus-visible
      after a tap too, so it doesn't count (`:read-write`). */
   .ac-msg:is(:hover, :focus-within):not(:has(:focus-visible:not(:read-write)))
   .ac-msg__actions:not([data-open="true"], :has([aria-expanded="true"])) {

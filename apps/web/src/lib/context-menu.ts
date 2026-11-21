@@ -190,7 +190,7 @@ export const contextMenusOn = () => show !== null;
 export function contextMenuHandler(build: (e: MouseEvent) => MenuEntry[]) {
   return (e: MouseEvent) => {
     if (e.defaultPrevented || !contextMenusOn() || keepsSystemMenu(e.target)) return;
-    // A long press on touch fires `contextmenu` too: it keeps selecting text (taps have their own menu).
+    // A long press on touch fires `contextmenu` too: the row's own long press answers it (`Message` `menu`).
     if ((e.nativeEvent as PointerEvent).pointerType === "touch" || matchesNow(TOUCH)) return;
     const entries = build(e);
     if (!entries.length) return;
