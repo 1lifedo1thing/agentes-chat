@@ -220,6 +220,39 @@
   font-size: 14px;
   text-align: center;
 }
+/* The title in the brand's face, in today's title box (40 tall), so the field stays where it is; the question under it. */
+.code-mid__t--brand {
+  font-family: var(--font-brand);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.code-mid__s--ask {
+  font-size: 15px;
+}
+/* The picked agent in cubes (`CodeHomeAgent`): a point 12 over the title's box, on the field's middle, where the
+   figure's drawn foot stands; the canvas and the cursor are placed from it. Never in the way of a click. */
+.code-agent {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  --cursor-shadow: rgba(10, 20, 40, 0.38);
+}
+.code-agent__art {
+  position: absolute;
+  width: 260px;
+  height: 240px;
+}
+.code-agent__flat {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
 .code-mid__none,
 .code-mid__error {
   margin: 0;

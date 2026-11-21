@@ -2,11 +2,12 @@ import { type CodeSession, useCodeSessions, useCodeStart, useCreateCodeSession }
 import { errorText } from "@agenteschat/client/lib/errors";
 import { Button, cx, Icon, Popover, SearchField, Select } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
-import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { CodeHomeAgent } from "./CodeHomeAgent";
 import { WaitMark } from "./CodeList";
 import { CodeHomeSky } from "./CodeSky";
 
@@ -35,8 +36,8 @@ function agentState(sessions: CodeSession[], agentId: string): "waiting" | "work
 }
 
 /**
- * The Code page's home (ADR 0208): the field in the middle of the agents' sky, and the agents that program standing on
- * its horizon, each saying what it does now. Writing and Enter opens a session with the picked agent in the picked
+ * The Code page's home (ADR 0208): the field in the middle of the agents' sky, the picked agent in cubes over its title
+ * (`CodeHomeAgent`), and the agents that program standing on its horizon, each saying what it does now. Writing and Enter opens a session with the picked agent in the picked
  * repository (the last ones used come back); the computer is the agent's own, so there is nothing else to choose.
  */
 export function CodeHome() {
@@ -66,13 +67,8 @@ export function CodeHome() {
     () => [...new Set(sessions.filter((s) => s.local && s.agentId === agentId).map((s) => s.repo))],
     [sessions, agentId],
   );
-  const counts = useMemo(
-    () => ({
-      working: sessions.filter((s) => s.work === "working" || s.work === "preparing").length,
-      waiting: sessions.filter((s) => s.work === "waiting").length,
-    }),
-    [sessions],
-  );
+  const home = useRef<HTMLDivElement>(null);
+  const pickedAgent = agentId ? dir.agentById.get(agentId) : undefined;
   const pickAgent = (id: string) => {
     setAgentId(id);
     const agent = agents.find((a) => a.agentId === id);
@@ -99,20 +95,14 @@ export function CodeHome() {
   };
   const repoName = repo.trim() || t("codeSessions.home.aRepo");
   return (
-    <div className="code-home">
+    <div className="code-home" ref={home}>
       <div className="code-stage" aria-hidden="true">
         <CodeHomeSky />
       </div>
       <form className="code-mid" onSubmit={submit}>
-        <h2 className="code-mid__t">{t("codeSessions.home.title", { repo: repoName })}</h2>
-        <span className="code-mid__s">
-          {[
-            counts.working ? t("codeSessions.home.working", { count: counts.working }) : null,
-            counts.waiting ? t("codeSessions.home.waiting", { count: counts.waiting }) : null,
-          ]
-            .filter(Boolean)
-            .join(" · ") || t("codeSessions.home.quiet")}
-        </span>
+        {pickedAgent && <CodeHomeAgent agent={pickedAgent} name={pickedAgent.name} area={home} />}
+        <h2 className="code-mid__t code-mid__t--brand">{t("codeSessions.home.mode")}</h2>
+        <span className="code-mid__s code-mid__s--ask">{t("codeSessions.home.title", { repo: repoName })}</span>
         {agents.length === 0 && start.isSuccess ? (
           <p className="code-mid__none">{t("codeSessions.home.noAgents")}</p>
         ) : (

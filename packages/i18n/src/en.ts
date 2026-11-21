@@ -11588,14 +11588,11 @@ export const en = {
       empty: "The sessions you open, or are called into, show here.",
     },
     home: {
-      /** Over the agents' sky; the field is under it. */
+      /** The home's title, under the agent in cubes (the mode's name, the same in every language). */
+      mode: "Vibecoding mode",
+      /** Under the title, over the field. */
       title: "What to do in {{repo}}?",
       aRepo: "a project",
-      working_one: "{{count}} working",
-      working_other: "{{count}} working",
-      waiting_one: "{{count}} waiting for you",
-      waiting_other: "{{count}} waiting for you",
-      quiet: "Your agents are free",
       noAgents: "No agent thinks on a computer yet. Give one Claude Code or Codex on a computer, in its settings.",
       placeholder: "Describe the change, the bug or the question",
       label: "What to do",

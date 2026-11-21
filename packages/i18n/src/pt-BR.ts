@@ -11591,14 +11591,11 @@ export const ptBR = {
       empty: "As sessões que você abre, ou para as quais é chamado, aparecem aqui.",
     },
     home: {
-      /** Sobre o céu dos agentes; o campo fica embaixo. */
+      /** O título da casa, embaixo do agente em cubos (o nome do modo, igual em toda língua). */
+      mode: "Vibecoding mode",
+      /** Embaixo do título, sobre o campo. */
       title: "O que fazer em {{repo}}?",
       aRepo: "um projeto",
-      working_one: "{{count}} trabalhando",
-      working_other: "{{count}} trabalhando",
-      waiting_one: "{{count}} espera você",
-      waiting_other: "{{count}} esperam você",
-      quiet: "Seus agentes estão livres",
       noAgents:
         "Nenhum agente pensa num computador ainda. Dê a um deles o Claude Code ou o Codex num computador, nas configurações dele.",
       placeholder: "Descreva a mudança, o bug ou a dúvida",
