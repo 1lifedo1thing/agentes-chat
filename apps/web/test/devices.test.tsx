@@ -179,6 +179,25 @@ describe("Settings › Devices", () => {
     ]);
   });
 
+  test("a computer's phones: each state a pill alone, its detail in its tip; one that needs me opens its fix", async () => {
+    await open(`/org/${ORG_ID}/settings/devices/${MAC}`);
+    const list = screen().getByRole("list", { name: "Phones on this computer" });
+    expect(list.querySelector(".dv-row__detail")).toBeNull();
+    const [pixel, iphone] = [...list.querySelectorAll(".dv-row")] as HTMLElement[];
+    const used = pixel?.querySelector(".dv-status-tip") as HTMLElement;
+    expect(used.tagName).toBe("SPAN");
+    expect(used.textContent).toMatch(/^In use by Lia\s*for Rui since /);
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "Tab" });
+      used.focus();
+    });
+    expect(document.querySelector(".ac-tip")?.textContent).toMatch(/^for Rui since /);
+    const fix = iphone?.querySelector("button.dv-status-tip") as HTMLButtonElement;
+    expect(fix.textContent).toBe("Needs youTurn on Developer Mode");
+    await click(fix);
+    expect(screen().getByRole("dialog", { name: "Connect an iPhone" })).toBeTruthy();
+  });
+
   test("Let it join, from the list: name and who can use it, then the server lets it in", async () => {
     const { state } = await open(`/org/${ORG_ID}/settings/devices`);
     const ask = screen().getByRole("list", { name: "Asking to join" });
