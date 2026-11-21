@@ -127,6 +127,7 @@ import { tapHaptic } from "../shared/parts";
 import { VoiceMessage } from "../voice/VoiceMessage";
 import { FilesTextOnlyFix, ReceiptMark } from "./AgentReceipts";
 import { secretRequestOf } from "./ask-store";
+import { useBubbleCap } from "./bubble-cap";
 import { ChatMedia } from "./ChatMedia";
 import { ClippedMessage, OpenedMessagesContext } from "./ClippedMessage";
 import { ConsultPairRow, useRunConsults } from "./ConsultGroup";
@@ -605,6 +606,8 @@ function RowBody({
   // Someone else's bubble gives way to the times only when it is too wide for them (`useGiveWay`): its bubbles end
   // sooner than mine at the screen's edge, so that much room is there before it moves.
   const giveWay = useGiveWay(ROW_BODY_INSET.bubbles.right - BUBBLES_EDGE);
+  // Someone else's bubble never taller than what it holds (`useBubbleCap`).
+  const bubbleCap = useBubbleCap();
   // A compact row runs to the screen's edge: its face and words slide over with the pull, for its time.
   const slide = useSwipeSlide(compact);
 
@@ -886,7 +889,13 @@ function RowBody({
   ) : choiceReply ? (
     choiceReply
   ) : body ? (
-    <ClippedMessage id={m.id} behind={behindWords} lead={talk ? saying(talk.lead) : undefined}>
+    <ClippedMessage
+      id={m.id}
+      behind={behindWords}
+      lead={talk ? saying(talk.lead) : undefined}
+      // In a bubble, where its words end keeps the bubble no taller than them (`useBubbleCap`).
+      onEnd={bubbled ? bubbleCap.onEnd : undefined}
+    >
       {saying(body)}
     </ClippedMessage>
   ) : null;
@@ -994,8 +1003,17 @@ function RowBody({
                     {pinLine}
                     {reportOpened}
                     <View
-                      onLayout={giveWay.onBubble}
-                      style={[lookRows.bubble, OTHER_RUN[run], { backgroundColor: otherBubble }, bubbleEdge]}
+                      onLayout={(e) => {
+                        giveWay.onBubble(e);
+                        bubbleCap.onBubble(e);
+                      }}
+                      style={[
+                        lookRows.bubble,
+                        OTHER_RUN[run],
+                        { backgroundColor: otherBubble },
+                        bubbleEdge,
+                        bubbleCap.capStyle,
+                      ]}
                     >
                       {!grouped && (look.names || tagged) ? who(true) : null}
                       {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}
