@@ -8,9 +8,9 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { FilesPane } from "./CodeFiles";
 import { GitPane } from "./CodeGit";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
-import { useCodeKey, withKey } from "./shortcuts";
 import { CodeScreen } from "./CodeScreen";
 import { CodeHorizon } from "./CodeSky";
+import { useCodeKey, withKey } from "./shortcuts";
 import { TerminalPane } from "./TerminalPane";
 
 export type CodeTab = "git" | "files" | "screen";
