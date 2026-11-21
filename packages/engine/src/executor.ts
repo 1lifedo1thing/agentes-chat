@@ -2340,14 +2340,12 @@ async function executeRunInner(
     // Team actions (ADR 0064): what the run didn't repeat because the team already did it rides on its reply.
     const teamChecks = note ? [] : await runChecksForReply(tx, run.orgId, run.id);
     // A run that answered on the way (ADR 0112) counts from its reply before: each reply lists the work that led to
-    // it, never what one before it already listed (the apps read its steps the same way, `replySteps`).
-    const [before] = await tx
-      .select({ seq: agentRunSteps.seq, at: agentRunSteps.createdAt })
-      .from(agentRunSteps)
-      .where(and(eq(agentRunSteps.runId, run.id), eq(agentRunSteps.kind, "message")))
-      .orderBy(desc(agentRunSteps.seq))
-      .limit(1);
-    const since = before?.seq ?? -1;
+    // it, never what one before it already listed (the apps read its steps the same way, `replySteps`). Read in the
+    // same statement as the calls: the reply before's step and when it was written.
+    const lastReply = sql`(select coalesce(max(r.seq), -1) from ${agentRunSteps} r where r.run_id = ${run.id} and r.kind = 'message')`;
+    const lastReplyAt = sql<
+      string | null
+    >`(select r.created_at from ${agentRunSteps} r where r.run_id = ${run.id} and r.kind = 'message' order by r.seq desc limit 1)`;
     // "Ver o que ele fez" under the reply: how many tool calls so far, so the apps leave it out at 0, and one call
     // per logo of the closed block, in order of first use: per service, else app, else screen, else tool (a
     // connector's dozens of tools would push the next apps past the few kept). A reaction already shows on the
@@ -2369,12 +2367,14 @@ async function executeRunInner(
         serviceIcon: sql<string | null>`min(${agentRunSteps.data}->>'serviceIcon')`,
         n: count(),
         own: sql<number>`(count(*) filter (where ${cliTool}))::int`,
+        since: sql<number>`${lastReply}`,
+        sinceAt: lastReplyAt,
       })
       .from(agentRunSteps)
       .where(
         and(
           eq(agentRunSteps.runId, run.id),
-          gt(agentRunSteps.seq, since),
+          sql`${agentRunSteps.seq} > ${lastReply}`,
           or(eq(agentRunSteps.kind, "tool_call"), sql`(${cliTool})`),
           sql`coalesce(${name}, '') !~ ${UNCOUNTED_TOOLS}`,
           sql`(${agentRunSteps.data}->>'name' is distinct from ${PERMISSION_TOOL} or ${agentRunSteps.data}->'input'->>'request_id' is null)`,
@@ -2390,12 +2390,14 @@ async function executeRunInner(
     // The one call beside the screens' (their cards show those steps): its time and outcome, for its own line.
     const besideScreens = tools.length > 1 ? tools.filter((t) => !SCREEN_TOOL.test(t.name)) : [];
     const leftover = besideScreens.length === 1 && besideScreens[0]?.n === 1 ? besideScreens[0] : null;
+    const since = Number(tools[0]?.since ?? -1);
+    const sinceAt = tools[0]?.sinceAt ? new Date(tools[0].sinceAt) : run.createdAt;
     const leftoverCall = leftover ? await loneCall(tx, run.id, leftover.name, since) : {};
     // The brain's own calls in a code session: its work shows whoever turned the summary off (ADR 0213).
     const cliCalls = tools.reduce((n, t) => n + Number(t.own), 0);
     const work = {
       steps: tools.reduce((n, t) => n + t.n, 0),
-      durationMs: Math.max(0, Date.now() - (before?.at ?? run.createdAt).getTime()),
+      durationMs: Math.max(0, Date.now() - sinceAt.getTime()),
       ...(cliCalls > 0 ? { cliCalls } : {}),
       ...(tools.length === 1 && tools[0]?.n === 1 ? await loneCall(tx, run.id, tools[0].name, since) : {}),
       calls: tools.slice(0, WORK_CALLS).map((t) => ({

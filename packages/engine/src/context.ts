@@ -27,6 +27,7 @@ import { isSandboxedBrain } from "./brains/types";
 import { caches } from "./cache";
 import { summarizeScopes } from "./capabilities";
 import { peopleAllIn } from "./channels";
+import { codeSessionBrief } from "./code-sessions";
 import {
   CONFIDENTIAL_NOT_SHOWN,
   confidentialThreadSql,
@@ -51,7 +52,6 @@ import { cutText, stringsOf } from "./format";
 import { issueWorkBrief, issueWorkOf } from "./issue-work";
 import { openTasksBrief } from "./issues";
 import { fileConversationBrief, liveRefLine } from "./live/conversation";
-import { codeSessionBrief } from "./code-sessions";
 import type { MachineCaller } from "./machine-hub";
 import { type TaskEnd, taskEndText } from "./machine-task-text";
 import { type MessageMedia, mediaOf } from "./media";

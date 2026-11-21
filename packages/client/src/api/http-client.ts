@@ -1,10 +1,10 @@
+import { createCodeApi } from "../code/api";
 import { createDashboardsApi } from "../dashboards/api";
 import type { ChatPrefs } from "../lib/chat-look";
 import { humanCheckHeaders } from "../lib/human-check";
 import type { OnboardingStepId } from "../lib/onboarding";
 import { type LodiPrefs, lodiPrefsOf } from "../lib/right-hand-prefs";
 import { CLOUD_SERVER, withoutTrailingSlashes } from "../lib/server";
-import { createCodeApi } from "../code/api";
 import { createLiveApi } from "../live/api";
 import { consultSeeds } from "../realtime/consults";
 import { steerStore } from "../realtime/steer";

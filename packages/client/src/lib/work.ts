@@ -858,8 +858,6 @@ export function toolPhrase(t: TFunction, l: Pick<ToolLine, "kind" | "app" | "too
   return t(`chat.work.step.${l.kind}`, { app: appLabel(l), tool: toolWords(t, l.tool, locale) });
 }
 
-const lowerStart = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
-
 /** Subagents still at work behind the agent's own call, in a few words: "2 subagentes", "workflow 2 de 3". */
 export const subagentsTail = (t: TFunction, busy: SubagentsNow) =>
   busy.workflow && busy.workflow.total > 0
@@ -875,7 +873,7 @@ export const STEP_WORDS_AFTER_MS = 5000;
  * runs; "Esperando aprovação…" while its last call waits on a person. `step`: the brain's own words for its latest call
  * (quoted), or its own call no `agent.tool` told.
  */
-export function waitStep(t: TFunction, work: LiveWork[] | undefined, step?: LiveStep): string {
+export function waitStep(t: TFunction, work: LiveWork[] | undefined, step?: LiveStep, locale?: string): string {
   const last = (work ?? []).findLast((w) => w.kind === "call");
   if (last?.kind === "call" && last.held) return t("chat.wait.held");
   if (step?.said) return t("chat.wait.said", { text: step.said });
@@ -884,7 +882,10 @@ export function waitStep(t: TFunction, work: LiveWork[] | undefined, step?: Live
   // still running, or over with them going on in the background).
   const busy = subagentsNow(work);
   const starting = now?.cli?.verb === "delegate" || now?.cli?.verb === "workflow";
-  if (busy && (now?.state !== "run" || starting)) return `${capitalize(subagentsWords(t, busy, lowerStart))}…`;
+  if (busy && (now?.state !== "run" || starting)) {
+    const words = subagentsWords(t, busy, (s) => lowerFirst(s, locale));
+    return `${capitalize(words, locale)}…`;
+  }
   if (now?.state !== "run") {
     return step?.tool ? `${capitalize(activityVerb(t, toolActivity(step.tool)))}…` : t("chat.wait.thinking");
   }
@@ -919,7 +920,7 @@ export function barStep(
   const calling = (run.work ?? []).some((w) => w.kind === "call" && w.running);
   if (!calling && run.status === "running") return `${activityVerb(t, { kind: "writing" })}…`;
   const long = now - (run.workingSince ?? run.startedAt ?? now) >= STEP_WORDS_AFTER_MS;
-  return lowerFirst(waitStep(t, run.work, long ? run.step : undefined), locale);
+  return lowerFirst(waitStep(t, run.work, long ? run.step : undefined, locale), locale);
 }
 
 export { formatLineTime } from "./format";

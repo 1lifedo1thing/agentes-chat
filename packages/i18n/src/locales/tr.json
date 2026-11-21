@@ -15338,6 +15338,13 @@
       "conflict": "Bu şu anda yapılamıyor. Yenileyip tekrar deneyin.",
       "computer": "Bilgisayar bunu şu anda yapamadı. Açık olduğunu kontrol edip tekrar deneyin."
     },
+    "codeSession": {
+      "noComputer": "Bu ajanın henüz bir bilgisayarı yok. Onunla kod yazmak için ayarlarından ona bir bilgisayar verin.",
+      "noComputerBrain": "Bu ajan bir bilgisayarda düşünmüyor. Bilgisayarda düşünen bir ajan seçin ya da ayarlarından ona Claude Code veya Codex verin.",
+      "repoNotAllowed": "Bu ajan o depoda çalışamaz. Başka bir depo seçin ya da ajanın ayarlarından bu depoyu ekleyin.",
+      "notYours": "Oturumu yalnızca açan kişi veya bir yönetici kapatabilir.",
+      "notReady": "Oturumun worktree'si henüz hazır değil. Birazdan tekrar deneyin."
+    },
     "webhook": {
       "githubNoAccess": "Bu çalışma alanının GitHub'ı {{repo}} içinde webhook oluşturamıyor. Elle oluşturmak için aşağıdaki adımları izle.",
       "githubFailed": "GitHub, {{repo}} içinde webhook'u oluşturmadı ({{status}}). Elle oluşturmak için aşağıdaki adımları izle.",

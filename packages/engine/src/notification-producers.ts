@@ -6,6 +6,7 @@ import { agentManagerIds } from "./audience";
 import { accountablePerson, runAuthorityById } from "./authority";
 import { autonomyNoteFor, proposalCardOf } from "./brakes";
 import { readableChannelIds } from "./channels";
+import { codeSessionOfChannel } from "./code-sessions";
 import { confidentialThreadSql, isConfidential } from "./confidential";
 import { threadFollowChoices } from "./follows";
 import { type Assignee, assigneesOfIssue } from "./issue-assignees";
@@ -30,7 +31,6 @@ import {
 import { maySql, type RolePermission } from "./permissions";
 import { secretLabelOf } from "./secrets";
 import { stretchCardOf } from "./stretch";
-import { codeSessionOfChannel } from "./code-sessions";
 import { adminChannelSql, fileConversationReaderSql, taskReadersAmong } from "./task-access";
 
 /**

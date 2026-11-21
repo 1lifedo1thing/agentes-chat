@@ -13,8 +13,8 @@ export const SIDEBAR_ITEMS: readonly SidebarItem[] = [
   "calendar",
   "team",
   "dashboards",
-  "taskManager",
   "code",
+  "taskManager",
 ];
 
 /** Where each tool goes for someone who never moved it. */
@@ -76,8 +76,8 @@ export const PERSONAL_SIDEBAR_ITEMS: readonly SidebarItem[] = [
   "team",
   "wiki",
   "dashboards",
-  "taskManager",
   "code",
+  "taskManager",
 ];
 
 /** The tools' default order in a workspace of this mode: the list's and More's. */

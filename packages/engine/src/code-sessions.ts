@@ -24,7 +24,7 @@ import { requireChannelAccess } from "./channels";
 import { createAgentRuns } from "./dispatch";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishChannelEvent, publishUserEvent } from "./events";
-import { cutTextEnd } from "./format";
+import { cutTextEnd, trimEdges } from "./format";
 import { cloneOnMachine, type MachineGitDeps } from "./git/machine";
 import { agentRepositoryList, parseRepo, repoInList } from "./git/repos";
 import { type MachineCaller, MachineRequestError } from "./machine-hub";
@@ -32,6 +32,7 @@ import { MachineOfflineError, MachinePausedError } from "./machines";
 import { getMessage } from "./messages";
 import { branchSlug } from "./mission-worktree";
 import { can, getMembership } from "./organizations";
+import { withoutTrailingSlashes } from "./url-text";
 
 /*
  * Code sessions (ADR 0213): a request worked on in its own git worktree on the agent's computer. The session's
@@ -112,7 +113,7 @@ const shortId = (id: string) => id.replace(/-/g, "").slice(-8);
 export const LOCAL_PROJECTS_DIR = "projects";
 const LOCAL_NAME = /^(?!\.)[A-Za-z0-9._-]{1,64}$/;
 export const localProjectName = (input: string) => {
-  const name = input.trim().replace(/\/+$/, "");
+  const name = withoutTrailingSlashes(input.trim());
   return LOCAL_NAME.test(name) ? name : null;
 };
 export const isLocalSession = (row: Pick<CodeSessionRow, "repo">) => !row.repo.includes("/");
@@ -130,6 +131,8 @@ export const codeWorktreePath = (sessionId: string) => `.worktrees/c-${shortId(s
 export const codeBranchName = (handle: string, title: string, sessionId: string) =>
   `agentes/${handle}/${branchSlug(title) || "work"}-${shortId(sessionId).slice(-4)}`;
 
+const isStop = (c: string) => c === "." || c === "!" || c === "?";
+
 /**
  * The session's name from the request: its first sentence of its first line, without a trailing period, capitalized,
  * at most 72 characters (cut at a word). People rename it.
@@ -140,7 +143,7 @@ export function titleOfRequest(text: string): string {
       .split("\n")
       .map((l) => l.trim())
       .find(Boolean) ?? "";
-  const sentence = (/^(.+?[.!?])(\s|$)/.exec(line)?.[1] ?? line).replace(/[.!?]+$/, "").trim();
+  const sentence = trimEdges(/^(.+?[.!?])(\s|$)/.exec(line)?.[1] ?? line, isStop, "end").trim();
   const clean = sentence.replace(/\s+/g, " ");
   const cut = clean.length > 72 ? `${clean.slice(0, 72).replace(/\s+\S*$/, "")}…` : clean;
   return cut ? cut.charAt(0).toLocaleUpperCase() + cut.slice(1) : "Code session";
@@ -261,11 +264,8 @@ export async function codeSessionBrief(
  * `<handle>-<first 8 of its id>`. Agents of one workspace keep theirs side by side.
  */
 export function agentFolderOf(agent: { id: string; handle: string }) {
-  const handle = agent.handle
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]+/g, "-")
-    .replace(/^[-_.]+|[-_.]+$/g, "")
-    .slice(0, 40);
+  const slug = agent.handle.toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
+  const handle = trimEdges(slug, (c) => c === "-" || c === "_" || c === ".").slice(0, 40);
   return `${handle || "agent"}-${agent.id
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "")
@@ -931,13 +931,30 @@ async function gitRead(deps: CodeSessionDeps, row: CodeSessionRow, args: string)
   return out.stdout;
 }
 
+const LINE_ENDS = new Set(["\n", "\r", "\u2028", "\u2029"]);
+
+/**
+ * The file a patch is about, from its first line, `diff --git a/<old> b/<new>`: the new path, "?" when the line is
+ * another. Read by index, as `/^diff --git a\/(.+?) b\/(.+)$/` would (the old path at least one character, the first
+ * " b/" after it with at least one character after that, on the first line), without its quadratic reading of a line
+ * with many " b/" in it.
+ */
+function patchPath(chunk: string): string {
+  const start = "diff --git a/".length;
+  if (!chunk.startsWith("diff --git a/")) return "?";
+  let end = start;
+  while (end < chunk.length && !LINE_ENDS.has(chunk.charAt(end))) end++;
+  const line = chunk.slice(start, end);
+  const at = line.indexOf(" b/", 1);
+  return at >= 1 && at + 3 < line.length ? line.slice(at + 3) : "?";
+}
+
 /** Splits `git diff` output into one patch per file, with its line counts. */
 export function splitPatch(text: string): CodeDiffFile[] {
   const files: CodeDiffFile[] = [];
   const chunks = text.split(/^(?=diff --git )/m).filter((c) => c.startsWith("diff --git "));
   for (const chunk of chunks) {
-    const header = /^diff --git a\/(.+?) b\/(.+)$/m.exec(chunk);
-    const path = header?.[2] ?? header?.[1] ?? "?";
+    const path = patchPath(chunk);
     let added = 0;
     let removed = 0;
     for (const line of chunk.split("\n")) {

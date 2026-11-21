@@ -15650,6 +15650,16 @@ export const ptBR = {
       computer: "O computador não conseguiu fazer isso agora. Confira se ele está ligado e tente de novo.",
     },
     /** Setting up a GitHub or Sentry routine's webhook: `repo` is owner/name, `status` GitHub's HTTP status. */
+    /** Uma sessão de código (ADR 0213): o que impede de começar uma, ou o painel de ler o computador do agente. */
+    codeSession: {
+      noComputer: "Este agente ainda não tem computador. Dê um a ele nas configurações dele para programar com ele.",
+      noComputerBrain:
+        "Este agente não pensa num computador. Escolha um que pense, ou dê a ele o Claude Code ou o Codex nas configurações dele.",
+      repoNotAllowed:
+        "Este agente não pode trabalhar nesse repositório. Escolha outro, ou adicione esse nas configurações do agente.",
+      notYours: "Só quem abriu a sessão, ou um admin, fecha a sessão.",
+      notReady: "A worktree da sessão ainda não está pronta. Tente de novo daqui a pouco.",
+    },
     webhook: {
       githubNoAccess:
         "O GitHub deste workspace não pode criar webhooks no {{repo}}. Siga os passos abaixo para criar à mão.",

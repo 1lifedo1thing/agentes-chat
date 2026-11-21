@@ -22,10 +22,10 @@ import { CHANNEL_REF } from "@agenteschat/ui/channel-refs";
 import { plainLine } from "@agenteschat/ui/markdown";
 import { type AgentActionView, actionsFor } from "./agent-actions";
 import { currentHandles } from "./agents";
-import { admitCodeMembers, codeAgentSql } from "./code-sessions";
 import { withDeletedArtifacts } from "./artifacts";
 import { audienceSql, notifyBlocked } from "./audience";
 import { postRefusal, requireChannelAccess } from "./channels";
+import { admitCodeMembers, codeAgentSql } from "./code-sessions";
 import { CONFIDENTIAL_STUB, confidentialThreadSql, threadIsConfidential, unsealed } from "./confidential";
 import { ConflictError, NotFoundError, ValidationError } from "./errors";
 import {
@@ -1330,7 +1330,12 @@ export async function postPersonMessage(
   }
   // A code session's conversation (ADR 0213): who is named there (an agent, a person of the workspace) joins it.
   if (channel.kind === "code") {
-    await admitCodeMembers(deps.db, orgId, channelId, await currentHandles(deps.db, orgId, parseMentionHandles(input.body)));
+    await admitCodeMembers(
+      deps.db,
+      orgId,
+      channelId,
+      await currentHandles(deps.db, orgId, parseMentionHandles(input.body)),
+    );
   }
   // A live file's conversation (ADR 0199): an agent mentioned there joins it when it may work on the file.
   if (channel.kind === "file") {

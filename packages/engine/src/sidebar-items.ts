@@ -25,8 +25,8 @@ export const SIDEBAR_ITEMS = [
   "calendar",
   "team",
   "dashboards",
-  "taskManager",
   "code",
+  "taskManager",
 ] as const;
 export type SidebarItem = (typeof SIDEBAR_ITEMS)[number];
 /**
@@ -45,8 +45,8 @@ export const PERSONAL_SIDEBAR_ITEMS: readonly SidebarItem[] = [
   "team",
   "wiki",
   "dashboards",
-  "taskManager",
   "code",
+  "taskManager",
 ];
 export const SIDEBAR_PLACES = ["always", "more", "auto"] as const;
 export type SidebarPlace = (typeof SIDEBAR_PLACES)[number];

@@ -1,5 +1,6 @@
 import type { AppLocale } from "@agenteschat/i18n/locale";
 import type { PlanModel } from "@agenteschat/providers/plans";
+import type { CodeApi } from "../code/api";
 import type { DashboardsApi } from "../dashboards/api";
 import type { ChatPrefs } from "../lib/chat-look";
 import type { OnboardingStepId } from "../lib/onboarding";
@@ -10,7 +11,6 @@ import type { Wallpaper } from "../lib/wallpaper";
 import type { AudienceChoice } from "../lib/who-sees";
 import type { WikiAccess } from "../lib/wiki";
 import type { WorkAreaAnswer } from "../lib/work-area";
-import type { CodeApi } from "../code/api";
 import type { LiveApi } from "../live/api";
 import type { LiveRefInput } from "../live/types";
 import type {

@@ -513,7 +513,12 @@ describe("what happens on GitHub wakes the agent it concerns (ADR 0156)", () => 
     await world();
     const { session } = await codeSession();
     const kept = async () =>
-      (await f.db.select().from(schema.codeSessions).where(eq(schema.codeSessions.id, session?.id ?? "")))[0];
+      (
+        await f.db
+          .select()
+          .from(schema.codeSessions)
+          .where(eq(schema.codeSessions.id, session?.id ?? ""))
+      )[0];
     // The agent opened it through the app (its bot): no news, but the session knows its pull request.
     expect(await deliver("pull_request", prOpened(APP_BOT, BRANCH))).toBe(true);
     expect(await kept()).toMatchObject({ prNumber: 12, prUrl: "https://github.com/acme/app/pull/12" });

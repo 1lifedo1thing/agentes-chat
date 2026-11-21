@@ -15876,6 +15876,13 @@
       "conflict": "Eso no se puede hacer ahora. Actualiza e inténtalo de nuevo.",
       "computer": "La computadora no pudo hacer esto ahora. Revisa que esté encendida e inténtalo de nuevo."
     },
+    "codeSession": {
+      "noComputer": "Este agente todavía no tiene computadora. Dale una en su configuración para programar con él.",
+      "noComputerBrain": "Este agente no piensa en una computadora. Elige uno que sí lo haga, o dale Claude Code o Codex en su configuración.",
+      "repoNotAllowed": "Este agente no puede trabajar en ese repositorio. Elige otro, o agrégalo en la configuración del agente.",
+      "notYours": "Solo quien abrió la sesión o un administrador puede cerrarla.",
+      "notReady": "El worktree de la sesión todavía no está listo. Inténtalo de nuevo en un momento."
+    },
     "webhook": {
       "githubNoAccess": "El GitHub de este workspace no puede crear webhooks en {{repo}}. Sigue los pasos de abajo para crearlo a mano.",
       "githubFailed": "GitHub no creó el webhook en {{repo}} ({{status}}). Sigue los pasos de abajo para crearlo a mano.",

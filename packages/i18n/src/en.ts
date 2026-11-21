@@ -15703,6 +15703,15 @@ export const en = {
       computer: "The computer couldn't do this now. Check that it's on and try again.",
     },
     /** Setting up a GitHub or Sentry routine's webhook: `repo` is owner/name, `status` GitHub's HTTP status. */
+    /** A code session (ADR 0213): what keeps one from starting, or its panel from reading the agent's computer. */
+    codeSession: {
+      noComputer: "This agent has no computer yet. Give it one in its settings to code with it.",
+      noComputerBrain:
+        "This agent doesn't think on a computer. Pick one that does, or give it Claude Code or Codex in its settings.",
+      repoNotAllowed: "This agent can't work in that repository. Pick another one, or add it in the agent's settings.",
+      notYours: "Only who opened the session, or an admin, closes it.",
+      notReady: "The session's worktree isn't ready yet. Try again in a moment.",
+    },
     webhook: {
       githubNoAccess:
         "This workspace's GitHub can't add webhooks to {{repo}}. Follow the steps below to add it by hand.",

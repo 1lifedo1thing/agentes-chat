@@ -14876,6 +14876,13 @@
       "conflict": "Itu tidak bisa dilakukan sekarang. Muat ulang dan coba lagi.",
       "computer": "Komputer tidak bisa melakukan ini sekarang. Pastikan komputer menyala dan coba lagi."
     },
+    "codeSession": {
+      "noComputer": "Agen ini belum punya komputer. Beri satu lewat pengaturannya untuk menulis kode bersamanya.",
+      "noComputerBrain": "Agen ini tidak berpikir di komputer. Pilih agen yang berpikir di komputer, atau beri Claude Code atau Codex lewat pengaturannya.",
+      "repoNotAllowed": "Agen ini tidak bisa bekerja di repositori itu. Pilih yang lain, atau tambahkan di pengaturan agen.",
+      "notYours": "Hanya pembuka sesi atau administrator yang bisa menutupnya.",
+      "notReady": "Worktree sesi belum siap. Coba lagi sebentar lagi."
+    },
     "webhook": {
       "githubNoAccess": "GitHub workspace ini tidak bisa membuat webhook di {{repo}}. Ikuti langkah di bawah untuk membuatnya manual.",
       "githubFailed": "GitHub tidak membuat webhook di {{repo}} ({{status}}). Ikuti langkah di bawah untuk membuatnya manual.",

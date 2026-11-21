@@ -15471,6 +15471,13 @@
       "conflict": "Dat kan nu niet. Vernieuw en probeer het opnieuw.",
       "computer": "De computer kon dit nu niet doen. Controleer of hij aanstaat en probeer het opnieuw."
     },
+    "codeSession": {
+      "noComputer": "Deze agent heeft nog geen computer. Geef er een in de instellingen van de agent om ermee te programmeren.",
+      "noComputerBrain": "Deze agent denkt niet op een computer. Kies er een die dat wel doet, of geef de agent Claude Code of Codex in de instellingen.",
+      "repoNotAllowed": "Deze agent kan niet in die repository werken. Kies een andere, of voeg hem toe in de instellingen van de agent.",
+      "notYours": "Alleen wie de sessie heeft geopend, of een admin, kan hem sluiten.",
+      "notReady": "De worktree van de sessie is nog niet klaar. Probeer het zo opnieuw."
+    },
     "webhook": {
       "githubNoAccess": "De GitHub van deze workspace kan geen webhooks maken in {{repo}}. Volg de stappen hieronder om hem met de hand te maken.",
       "githubFailed": "GitHub heeft de webhook in {{repo}} niet gemaakt ({{status}}). Volg de stappen hieronder om hem met de hand te maken.",

@@ -37889,6 +37889,21 @@
   "errors.said.computer": {
     "value": "The computer couldn't do this now. Check that it's on and try again."
   },
+  "errors.codeSession.noComputer": {
+    "value": "This agent has no computer yet. Give it one in its settings to code with it."
+  },
+  "errors.codeSession.noComputerBrain": {
+    "value": "This agent doesn't think on a computer. Pick one that does, or give it Claude Code or Codex in its settings."
+  },
+  "errors.codeSession.repoNotAllowed": {
+    "value": "This agent can't work in that repository. Pick another one, or add it in the agent's settings."
+  },
+  "errors.codeSession.notYours": {
+    "value": "Only who opened the session, or an admin, closes it."
+  },
+  "errors.codeSession.notReady": {
+    "value": "The session's worktree isn't ready yet. Try again in a moment."
+  },
   "errors.webhook.githubNoAccess": {
     "value": "This workspace's GitHub can't add webhooks to {{repo}}. Follow the steps below to add it by hand."
   },

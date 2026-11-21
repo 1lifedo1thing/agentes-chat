@@ -705,7 +705,7 @@
   min-height: 0;
   overflow: auto;
   padding: 4px 12px 160px;
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 150px), transparent calc(100% - 40px));
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 150px), transparent calc(100% - 40px)), var(--scroll-strip);
 }
 .code-files {
   margin: 0;

@@ -1,13 +1,4 @@
-import {
-  foreignKey,
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+import { foreignKey, index, integer, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { agents } from "./agents";
 import { users } from "./auth";
 import { channels } from "./chat";

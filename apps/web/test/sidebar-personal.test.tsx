@@ -128,6 +128,7 @@ describe("a personal workspace's sidebar", () => {
       "Equipe",
       "Wiki",
       "Painéis",
+      "Código",
       "Gerenciador de tarefas",
     ]);
     expect(within(menu).getByRole("button", { name: /Ir para…/ })).toBeTruthy();

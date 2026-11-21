@@ -14892,6 +14892,13 @@
       "conflict": "现在无法这样做。请刷新后重试。",
       "computer": "电脑现在无法完成这项操作。请确认电脑已开机后重试。"
     },
+    "codeSession": {
+      "noComputer": "这个智能体还没有电脑。在它的设置里给它配一台，就能和它一起写代码。",
+      "noComputerBrain": "这个智能体不在电脑上思考。换一个在电脑上思考的智能体，或者在它的设置里给它配上 Claude Code 或 Codex。",
+      "repoNotAllowed": "这个智能体不能在那个仓库里工作。换一个仓库，或者在智能体的设置里添加它。",
+      "notYours": "只有打开这个会话的人或管理员可以关闭它。",
+      "notReady": "会话的工作树还没准备好。请稍后再试。"
+    },
     "webhook": {
       "githubNoAccess": "这个工作区的 GitHub 无法在 {{repo}} 中创建 Webhook。请按下面的步骤手动创建。",
       "githubFailed": "GitHub 没有在 {{repo}} 中创建 Webhook（{{status}}）。请按下面的步骤手动创建。",

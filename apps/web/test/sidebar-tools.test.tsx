@@ -132,6 +132,7 @@ describe("the tools on top", () => {
       "Rotinas",
       "Calendário",
       "Painéis",
+      "Código",
       "Gerenciador de tarefas",
     ]);
     expect(
@@ -156,6 +157,7 @@ describe("the tools on top", () => {
       "Rotinas",
       "Calendário",
       "Painéis",
+      "Código",
       "Gerenciador de tarefas",
     ]);
   });
@@ -282,6 +284,7 @@ describe("the tools on top", () => {
       "Drive",
       "Calendário",
       "Painéis",
+      "Código",
       "Gerenciador de tarefas",
     ]);
   });
@@ -363,6 +366,7 @@ describe("the tools on top", () => {
           "calendar",
           "team",
           "dashboards",
+          "code",
           "taskManager",
         ],
       ]);
@@ -407,6 +411,7 @@ describe("the tools on top", () => {
         "calendar",
         "team",
         "dashboards",
+        "code",
         "taskManager",
       ]);
     });

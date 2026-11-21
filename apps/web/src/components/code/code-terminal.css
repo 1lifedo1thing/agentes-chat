@@ -35,8 +35,10 @@
 .code-term__screen .xterm {
   padding: 8px 4px 8px 12px;
 }
+/* The kit's scrollbar, in the plate's light ink: the screen is dark in both themes. */
 .code-term__screen .xterm-viewport {
-  scrollbar-color: var(--on-dark-plate-strong) transparent;
+  --scroll-thumb: var(--on-dark-plate);
+  --scroll-thumb-hover: var(--on-dark-plate-strong);
 }
 .code-term__opening {
   position: absolute;
