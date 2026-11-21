@@ -1,16 +1,16 @@
-import { keys, useArchivedChannels, useChannels, useMuteChannel } from "@agenteschat/client";
-import { canTalk } from "@agenteschat/client/lib/audience";
+import { keys, useChannels, useMuteChannel } from "@agenteschat/client";
+import { canTalk, listsAgent } from "@agenteschat/client/lib/audience";
 import { waitingComputerByAgent } from "@agenteschat/client/lib/machine-outages";
 import { isRightHand, rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { WORKING_POLL_MS } from "@agenteschat/client/lib/working";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
-import { useIsFocused } from "expo-router";
+import { Stack, useIsFocused } from "expo-router";
 import { useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { useOrg } from "@/providers/org";
-import { LargeTitleScreen, LIST_AVATAR, ListRow, SkeletonList } from "@/ui";
+import { LargeTitleScreen, LIST_AVATAR, ListRow, SkeletonList, useWide } from "@/ui";
 import { router } from "@/ui/navigation";
 import { workByAgent } from "../agents/logic";
 import { useRowMenus } from "../categories/menus";
@@ -27,8 +27,10 @@ import { Tile } from "../shared/parts";
 import { useActiveWork, useHiddenAgents, useWorkingNow } from "../shared/queries";
 import { SheetHostProvider } from "../shared/SheetHost";
 import { useTabHeader } from "../shared/tabHeader";
+import { alongInAccessory } from "../work-along/logic";
+import { useHasWorkAlong } from "../work-along/WorkAlong";
+import { ChatsSplit, OpenFirstChat, SplitHandoff } from "./ChatsSplit";
 import { DeletingNotice } from "./DeletingNotice";
-import { FirstRunLine } from "./FirstRunLine";
 import { FirstAgentEmpty, Greeting, GreetingSky } from "./Greeting";
 import { Arrive, useHomeEntrance, useWake } from "./HomeEntrance";
 import { HomeRow } from "./HomeRow";
@@ -47,6 +49,9 @@ import {
 } from "./logic";
 import { type PinnedItem, PinnedStrip } from "./PinnedStrip";
 import { usePins } from "./pins";
+import { firstChatOf, useChatOpener } from "./split";
+import { TeamPeek } from "./TeamPeek";
+import { teamPeekers } from "./team-peek";
 import { useAgentRowStates, useFinished } from "./useHomeNow";
 import { useConversationRows, useRowFacts } from "./useRows";
 import { useWaitingItems } from "./useWaitingItems";
@@ -55,6 +60,13 @@ import { useWaitingItems } from "./useWaitingItems";
 const LIVE_ROWS = 6;
 /** The home's sky fading in after the launch splash. */
 const SKY_ARRIVE_MS = 300;
+/**
+ * The team peeking past the list's end (`TeamPeek`) where the list reports a pull there: iOS bounces past its end;
+ * Android's list stops at it (as in a conversation, `ChatPeek`).
+ */
+const PEEK = Platform.OS === "ios";
+/** iOS 26 holds the work-along line in the tab bar's accessory, over the bar: the faces would rise behind it. */
+const ACCESSORY = alongInAccessory(Platform.OS, Platform.Version);
 
 /** A section's "See all", pushed: Recentes in full. */
 export const openKindList = (kind: ListKind) => router.push(`/conversations/${kind}`);
@@ -82,15 +94,37 @@ export function useHidesQuietGeneral(): boolean {
  * first agent. Nothing opens over it on its own: the offer to turn on notifications comes as a line in the right
  * hand's conversation. When the server doesn't answer it says so (`HomeServerError`), over the kept rows as a card,
  * and tries again on its own. A personal workspace (ADR 0159), while its person is alone in it, leaves a quiet #general
- * out.
+ * out. Pulled past its last row, the team peeks up from behind the tab bar (iOS, `TeamPeek`); archived channels are in
+ * You › Work.
  */
 export function ChatsScreen() {
+  // On a large screen (ADR 0212: the iPhone Duo's inner display) the list and the open conversation side by side, each
+  // pane with its own bar: the tab's bar would stand over both.
+  const wide = useWide();
   return (
-    <SheetHostProvider>
-      <Home />
-    </SheetHostProvider>
+    <>
+      <Stack.Screen options={wide ? SPLIT_OPTIONS : LIST_OPTIONS} />
+      <SplitHandoff wide={wide} />
+      {wide ? (
+        <ChatsSplit
+          list={
+            <SheetHostProvider>
+              <Home />
+            </SheetHostProvider>
+          }
+        />
+      ) : (
+        <SheetHostProvider>
+          <Home />
+        </SheetHostProvider>
+      )}
+    </>
   );
 }
+
+/** Said either way: a screen's options merge, so the bar the split hid stays hidden until it is shown again. */
+const SPLIT_OPTIONS = { headerShown: false };
+const LIST_OPTIONS = { headerShown: true };
 
 function Home() {
   const { t } = useTranslation();
@@ -112,9 +146,12 @@ function Home() {
   const active = useActiveWork();
   const waiting = useWaitingItems();
   const { collapsed, toggle } = useCollapsedSections();
+  // The widgets' section is memoized: its toggle stays one function.
+  const toggleWidgets = useCallback(() => toggle("widgets"), [toggle]);
   // An administrator reads every channel (ADR 0151): the ones they aren't in wait at the end of the home.
   const others = (useChannels(orgId).data ?? []).filter((c) => c.seenAsAdmin);
-  const archived = useArchivedChannels(orgId).data?.length ?? 0;
+  // Beside the open conversation (ADR 0212) a conversation opens in the split's pane rather than pushed.
+  const opener = useChatOpener();
   const menus = useRowMenus();
   const { mutate: muteChannel } = useMuteChannel(orgId);
   const muteRow = useCallback(
@@ -134,10 +171,13 @@ function Home() {
   const offline = useMemo(() => waitingComputerByAgent(outages.outages), [outages.outages]);
   const { hidden } = useHiddenAgents();
   // An agent waiting for its offline computer isn't working (its run only waits), and the count matches Agentes,
-  // which it opens: my lists can leave some agents out.
+  // which it opens: my lists can leave some agents out (`listsAgent`; one I only edit is in them, its DM isn't).
   const working = workByAgent(work)
     .map((w) => w.agentId)
-    .filter((id) => dir.agentById.has(id) && !hidden.has(id) && !offline.has(id));
+    .filter((id) => {
+      const a = dir.agentById.get(id);
+      return a !== undefined && listsAgent(org, a) && !offline.has(id);
+    });
   const finished = useFinished(active, list.rows);
   const pull = usePullRefresh(() => Promise.allSettled([list.refetch(), waiting.refetch(), outages.refetch()]));
   const openDm = useOpenDm();
@@ -146,6 +186,8 @@ function Home() {
   // outside its audience, none.
   const rightHand = rightHandOf(dir.agents);
   const pinned = rightHandPin(list.rows, rightHand && canTalk(rightHand) ? rightHand : undefined);
+  // The team's agents never talked to, as ones to start (a pinned one stands on the strip): only those whose DM the
+  // server opens for me (`agentStarters`), never one I only edit.
   const starters = useMemo(
     () =>
       agentStarters(
@@ -161,11 +203,23 @@ function Home() {
   const pins = usePins();
   // Recentes: every conversation by its latest activity, the pinned ones in their place (the strip holds the pins).
   const recent = recentRows(withoutQuietGeneral(pinned.rows, hideGeneral));
+  // In the split with nothing open yet, the most recent conversation opens beside the list (the right hand's after
+  // every row of Recentes: it is never one of them).
+  const first = opener ? firstChatOf(pinned.pin ? [...recent, pinned.pin] : recent) : null;
   // A list that failed to load isn't an empty workspace: it says the server didn't answer. A #general left out of
   // sight still counts: the home keeps its greeting and the right hand's field.
   const failed = list.failed && list.rows.length === 0;
-  // Agents already in the team (in Agentes, a pinned one on the strip) leave out the invitation to make the first one.
-  const empty = !list.loading && !failed && pinned.rows.length === 0 && starters.length === 0;
+  // Who peeks past the end: the right hand in the middle, then the agents of the latest conversations (none hidden);
+  // nobody while the line of work along stands over the bar, or while the list isn't there.
+  const along = useHasWorkAlong();
+  const peekers =
+    PEEK && !(ACCESSORY && along) && !list.loading && !failed
+      ? teamPeekers(rightHand && canTalk(rightHand) ? rightHand.id : null, recent, hidden).join(" ")
+      : "";
+  // Agents already in the team (in Agentes, a pinned one on the strip) leave out the invitation to make the first one:
+  // every one the Agents tab lists (`listsAgent`), those I only edit included, though none of them is one to start.
+  const teamListed = dir.agents.some((a) => !isRightHand(a) && listsAgent(org, a));
+  const empty = !list.loading && !failed && pinned.rows.length === 0 && !teamListed;
 
   // The first Conversas after the splash arrives as one gesture (once per launch, never holding a tap back): the sky
   // comes up from the splash's, the greeting rises, the right hand's field follows and its face wakes with a small
@@ -217,7 +271,9 @@ function Home() {
         )
       }
       pull={pull}
+      {...(peekers ? { pastEnd: (scroll) => <TeamPeek scroll={scroll} agents={peekers} /> } : {})}
     >
+      {opener ? <OpenFirstChat channelId={first?.channelId ?? null} threadId={first?.threadId ?? null} /> : null}
       {/* Being deleted, its line comes first and alone: its work stopped, nothing else is news (ADR 0088 §7). */}
       {org?.deletion ? (
         <DeletingNotice />
@@ -245,8 +301,7 @@ function Home() {
       ) : (
         <>
           {/* Início's widgets, and the way to Dashboards ("See all"), not a tab (ADR 0135 §15). */}
-          <HomeWidgets collapsed={collapsed.includes("widgets")} onToggle={() => toggle("widgets")} />
-          <FirstRunLine />
+          <HomeWidgets collapsed={collapsed.includes("widgets")} onToggle={toggleWidgets} />
           <PinnedStrip
             items={strip}
             collapsed={collapsed.includes("pinned")}
@@ -281,7 +336,7 @@ function Home() {
                   facts={factsOf(r, agentStates.get(r.key))}
                   divider={i > 0}
                   live={!collapsed.includes("recent") && live++ < LIVE_ROWS}
-                  pinLabel={menus.rowActionsOf(r).find((a) => a.key === "pin")?.label ?? null}
+                  pinLabel={menus.pinLabelOf(r)}
                   onHold={menus.openRowMenu}
                   holdLabel={holdLabel}
                   holdActions={menus.rowActionsOf}
@@ -312,16 +367,11 @@ function Home() {
               {...(o.topic ? { sub: o.topic, subLines: 1 } : {})}
               chevron
               accessibilityRole="button"
-              onPress={() => router.push(chatHref(o.id))}
+              opens={!opener}
+              onPress={() => (opener ? opener.open({ channelId: o.id, threadId: null }) : router.push(chatHref(o.id)))}
             />
           ))}
         </CollapsibleSection>
-      ) : null}
-      {archived > 0 && !failed && !list.loading ? (
-        <SeeAllRow
-          label={t("channel.archivedCount", { count: archived })}
-          onPress={() => router.push("/archived-channels")}
-        />
       ) : null}
     </LargeTitleScreen>
   );

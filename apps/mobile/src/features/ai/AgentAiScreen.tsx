@@ -7,17 +7,17 @@ import {
   ownSignInName,
   signInOf,
 } from "@agenteschat/client/lib/ai-accounts";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import { brainLine, thinksWith } from "@agenteschat/client/lib/brain";
 import { advancedContents, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { aiChoiceOf, planOfKind } from "@agenteschat/client/lib/no-ai";
-import { can } from "@agenteschat/client/lib/permissions";
 import { modelLimitText } from "@agenteschat/client/lib/plan-usage";
 import { brainPlan, geminiPersonal, isPlanId, planFreeHint, planOf } from "@agenteschat/client/lib/plans";
 import { apiProviderOf, isAuto, providerLabel } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
-import { extraUsageOn, limitOffers, planState } from "@agenteschat/ui/plan-state";
+import { limitOffers, planState } from "@agenteschat/ui/plan-state";
 import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
@@ -31,11 +31,13 @@ import {
   GroupedHeader,
   GroupedList,
   GroupedRow,
+  insetPastFold,
   motion,
   ProviderLogo,
   SCREEN_X,
   SkeletonList,
   Text,
+  useFoldRoom,
   useReducedMotion,
   useTheme,
 } from "@/ui";
@@ -55,6 +57,7 @@ import {
   accountRow,
   accountSaved,
   agentAccounts,
+  agentChain,
   modelInput,
   modelRows,
   modelSections,
@@ -62,7 +65,7 @@ import {
   thinkingUsage,
 } from "./logic";
 import { openConnectAi } from "./NoAiCard";
-import { AiRow, Note, PlanHoldNote, usePlanHold } from "./parts";
+import { AiRow, Note, openRenameAiAccount, PlanHoldNote, usePlanHold } from "./parts";
 import { useSaveBrain } from "./useSaveBrain";
 
 /*
@@ -71,7 +74,7 @@ import { useSaveBrain } from "./useSaveBrain";
  * its owner's, or that computer's own sign-in), one row per account, which is the plan choice (another plan's starts
  * on that plan's default model), then the model, that plan's usage with, at its limit, the owner's other accounts that
  * could think instead, and
- * "Configuração avançada" (ADR 0086: effort, context window, "Atende outras pessoas", the API when away, on a screen of
+ * "Configuração avançada" (ADR 0086: effort, context window, "Atende outras pessoas", "Só esta conta", on a screen of
  * its own). Each choice saves at once. Another AI, or one more login of an account other agents think with where it
  * may have one per agent ("Também usada por Theo"), goes through Connect an AI. Its owner and admins open it; only its
  * owner picks an account or lets other people talk to it on the plan (`canUsePlans`).
@@ -97,8 +100,8 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const name = agent?.name ?? "";
   const g = agentGrammar(name);
   const ownerFirst = agent?.ownerUserId ? dir.memberById.get(agent.ownerUserId)?.name.split(" ")[0] : undefined;
-  // As on the web: its owner and admins load it, members don't.
-  const allowed = (meId !== null && agent?.ownerUserId === meId) || can(org, "manage_agents");
+  // As on the web: its owner and who manages it (the server's `canManage`) load it, members don't.
+  const allowed = (meId !== null && agent?.ownerUserId === meId) || managesAgent(agent);
   const brain = useAgentBrain(orgId, agentId, allowed);
   const { pending, save } = useSaveBrain(agentId);
   // Looking at the plan: its usage is looked up again (it comes back as `machine.updated`).
@@ -135,12 +138,6 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const computer = computerNameOf(t, org?.name ?? "", view?.computer?.name ?? "", isPersonal(org));
   // The account picked while its save is on its way, else the saved one: its row is checked on the tap.
   const account = pending.account !== undefined ? pending.account : view?.account;
-  // The paid extra usage's switch, flipped on the tap; it waits for its own save before it flips again.
-  const extra = pending.extraUsage ?? view?.extraUsage ?? false;
-  const flipExtra = () => {
-    if (pending.extraUsage !== undefined) return;
-    void save({ extraUsage: !extra }, t("usageCard.extraTitle"));
-  };
   const choose = (a: MachineAccount | null) => {
     if (!view || (a?.id ?? null) === account) return;
     const input = accountInput(view, a);
@@ -157,7 +154,10 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   const usage = view && kind ? thinkingUsage(view, kind) : undefined;
   const limited = usage ? planState(usage).state === "limited" : false;
   const modelLimit = modelLimitText(t, i18n.language, usage, current?.provider, model?.value);
-  const offers = limited && kind && view ? limitOffers(accounts, kind, view.account).slice(0, 2) : [];
+  const chain = view ? agentChain(view, agentId, agent?.ownerUserId) : { moves: false, waits: false };
+  // At its limit with another account of its order that has room, its runs go on there: no way out by hand.
+  const waits = limited && (chain.waits || !chain.moves);
+  const offers = waits && kind && view ? limitOffers(accounts, kind, view.account).slice(0, 2) : [];
   const signedOut = current != null && signInOf(current) === "signed_out" && current.mine;
   const signInAgain = current != null && offersSignInAgain(current) && current.mine;
   // A coding plan's key that its endpoint refused: a new key, on that plan's page.
@@ -168,7 +168,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
     ? t(refused ? "aiAccounts.page.keyRefused" : "agentPage.work.brain.accountSignedOut")
     : current != null && signInOf(current) === "unknown"
       ? t("aiAccounts.page.statusUnknown")
-      : limited
+      : waits
         ? t("agentPage.work.brain.v2.fullWait", g)
         : lends
           ? t("agentPage.work.brain.accountOthers")
@@ -229,6 +229,9 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                       row={accountRow(t, c, name, i18n.language)}
                       checked={c.login.id === account}
                       onPress={() => (c.also ? connect(c.login, true) : choose(c.login))}
+                      {...(c.login.mine && view.computer
+                        ? { onRename: () => view.computer && openRenameAiAccount(view.computer.machineId, c.login.id) }
+                        : {})}
                     />
                   ))}
                   {adds ? (
@@ -255,7 +258,13 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                     {t("connectAi.accountsLocked", { name: pairer?.name.split(" ")[0] ?? "", computer })}
                   </Note>
                 ) : null}
-                {accountNote ? <GroupedFooter>{accountNote}</GroupedFooter> : null}
+                {accountNote || chain.moves ? (
+                  <GroupedFooter>
+                    {[accountNote, chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null]
+                      .filter(Boolean)
+                      .join("\n")}
+                  </GroupedFooter>
+                ) : null}
               </>
             ) : null}
             {kind ? (
@@ -293,16 +302,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                       onPress={() => choose(a)}
                     />
                   ))}
-                  {extraUsageOn(usage) ? (
-                    <GroupedRow
-                      label={t("usageCard.extraTitle")}
-                      labelLines={2}
-                      toggle={extra}
-                      disabled={!(current ? current.mine : view.canUsePlans)}
-                      onPress={flipExtra}
-                    />
-                  ) : null}
-                  {limited && view.canUsePlans && view.canManageAccounts ? (
+                  {waits && view.canUsePlans && view.canManageAccounts ? (
                     <GroupedRow
                       icon="plus"
                       label={t("aiAccounts.usage.offer.connect")}
@@ -359,7 +359,8 @@ const DOCK_OUT = 28;
 
 /**
  * The effort, floating over the model list in the thumb's reach, whatever is scrolled under it. It slides away with
- * "Automático", which picks the effort too.
+ * "Automático", which picks the effort too. Folded like a book, the ramp keeps to the half past the fold, so its thumb
+ * never slides through the curve (ADR 0212).
  */
 function EffortDock({
   agentId,
@@ -375,6 +376,7 @@ function EffortDock({
   const { colors, shadows } = useTheme();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
+  const foldSide = useFoldRoom();
   const dir = useDirectory();
   const { orgId } = useOrg();
   const view = useAgentBrain(orgId, agentId, true, false, scope).data;
@@ -397,7 +399,12 @@ function EffortDock({
         height.set(e.nativeEvent.layout.height);
         onHeight(e.nativeEvent.layout.height);
       }}
-      style={[styles.dock, { bottom: insets.bottom + 8, boxShadow: shadows.e2 }, slid]}
+      style={[
+        styles.dock,
+        { bottom: insets.bottom + 8, boxShadow: shadows.e2 },
+        foldSide && insetPastFold(foldSide, SCREEN_X),
+        slid,
+      ]}
     >
       <Glass liquid intensity={70} style={[styles.dockGlass, { borderColor: colors.line2 }]}>
         <EffortRamp

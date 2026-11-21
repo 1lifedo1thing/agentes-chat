@@ -1,8 +1,9 @@
-import { useAuthConfig, useIssues, useMe, useOverview } from "@agenteschat/client";
+import { useApi, useArchivedChannels, useAuthConfig, useIssues, useMe, useOverview } from "@agenteschat/client";
 import { showsAbout } from "@agenteschat/client/lib/about";
 import { PHONE_APP_ICON } from "@agenteschat/client/lib/app-icons";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { isAppLocale, localeInfo } from "@agenteschat/i18n/locale";
+import { useMutation } from "@tanstack/react-query";
 import Constants from "expo-constants";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { type ReactNode, useEffect, useState } from "react";
@@ -27,32 +28,62 @@ import {
   Text,
   type ThemePreference,
   useTheme,
+  useToast,
   WithPresence,
 } from "@/ui";
 import { CoverBarBackdrop, CoverParallax, useCoverScroll } from "@/ui/cover";
 import { router } from "@/ui/navigation";
+import { openPage } from "../ai/parts";
 import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { pickOne } from "../shared/PickerSheet";
-import { goBack, MentionCount, PushedHeader } from "../shared/parts";
+import { FocusLive, goBack, MentionCount, PushedHeader } from "../shared/parts";
 import { usePersonPhoto } from "../shared/photo";
 import { useTasksUnreadMarks, useUnreadThreads } from "../shared/queries";
+import { PageSplitScreen, type SplitPages, useLitPage, useOpenPage } from "../shared/SplitPanes";
 import { useMyPerson, usePresenceOf } from "../status/hooks";
 import { personLine } from "../status/logic";
-import { openStatus } from "../status/StatusScreen";
-import { AppIconPicture, useAppIconName } from "./AppIconPage";
+import { StatusScreen } from "../status/StatusScreen";
+import { AboutPage } from "./AboutPage";
+import { AccountPage } from "./AccountPage";
+import { AppIconPage, AppIconPicture, useAppIconName } from "./AppIconPage";
+import { ApprovalsPage } from "./ApprovalsPage";
 import { useAppIcon } from "./app-icon";
-import { openIssuesWithMe, workspacesBeyond } from "./logic";
-import { usePushSwitch, useSoundLabel, useStartLabel } from "./PreferencePages";
+import { ChatLookPage } from "./ChatLookPage";
+import { offersReferrals, openIssuesWithMe, workspacesBeyond } from "./logic";
+import {
+  ActivityPage,
+  AgentStylePage,
+  LanguagePage,
+  NotificationsPage,
+  StartPage,
+  usePushSwitch,
+  useSoundLabel,
+  useStartLabel,
+} from "./PreferencePages";
 import { useChangePhoto } from "./parts";
+import { ME_FALLBACK, type MePageHref, meSplit } from "./split";
 import { useWorkspacesAcross, WorkspaceMark } from "./WorkspacesPages";
 
 /** The rows of Você's Work group. */
-type WorkRow = "issues" | "proposals" | "routines" | "wiki" | "drive" | "dashboards" | "memory" | "threads" | "team";
-/** A team's workspace: Threads is a tab and Team a row of Agents. */
-const TEAM_WORK: WorkRow[] = ["issues", "proposals", "routines", "wiki", "drive", "dashboards", "memory"];
+type WorkRow =
+  | "issues"
+  | "proposals"
+  | "routines"
+  | "wiki"
+  | "drive"
+  | "dashboards"
+  | "memory"
+  | "threads"
+  | "team"
+  | "archived";
+/**
+ * A team's workspace: Threads is a tab and Team a row of Agents. Archived channels last, only while there are some (no
+ * longer a link at the end of Conversas).
+ */
+const TEAM_WORK: WorkRow[] = ["issues", "proposals", "routines", "wiki", "drive", "dashboards", "memory", "archived"];
 /**
  * A personal workspace (ADR 0159): what its sidebar keeps in sight first, then the rest of its More; Threads (no tab
  * there) and Team (no row in Agents) live here, Team last.
@@ -67,10 +98,29 @@ const PERSONAL_WORK: WorkRow[] = [
   "dashboards",
   "memory",
   "team",
+  "archived",
 ];
 
-/** Opens a screen over this page with the platform's push (back comes here). */
-const open = (href: string) => router.push(href as never);
+/** Opens a screen over this page with the platform's push (back comes here), in either size. */
+const pushScreen = (href: string) => router.push(href as never);
+
+/**
+ * Você's own pages as their routes draw them (`app/(app)/(main)/me/*`), so each can stand beside the list on a large
+ * screen (ADR 0212; `ME_PAGES` names them).
+ */
+const ME_PAGE_VIEWS = {
+  "/me/status": () => <StatusScreen />,
+  "/me/notifications": () => <NotificationsPage />,
+  "/me/approvals": () => <ApprovalsPage />,
+  "/me/start": () => <StartPage />,
+  "/me/activity": () => <ActivityPage />,
+  "/me/chat-look": () => <ChatLookPage />,
+  "/me/agent-style": () => <AgentStylePage />,
+  "/me/app-icon": () => <AppIconPage />,
+  "/me/language": () => <LanguagePage />,
+  "/me/about": () => <AboutPage />,
+  "/me/account": () => <AccountPage />,
+} satisfies SplitPages & Record<MePageHref, () => ReactNode>;
 
 /** The agents of yours Você lists before "Ver todos". */
 const AGENTS_SHOWN = 3;
@@ -112,9 +162,26 @@ let horizonArrived = false;
  * so nothing here animates beyond the presses and the platform's push, but for your agents rising onto the horizon the
  * first time it opens in a session. A personal workspace
  * (ADR 0159) is yours: no workspace name after your @, your face as its mark, and its work led by what its sidebar
- * keeps in sight (Routines, Drive), with Threads (no tab there) and Team (no row in Agents) in it.
+ * keeps in sight (Routines, Drive), with Threads (no tab there) and Team (no row in Agents) in it. Its sky and your
+ * agents hold still while a screen it opened is over it. On a large screen (ADR 0212: the iPhone Duo's inner display)
+ * the list stands on the left with the way back in its bar, and the page a row opens stands on the right, the row lit
+ * (`PageSplitScreen`); Notificações there while none is chosen. Rows that open anything else push it, as before.
  */
 export function MeScreen() {
+  return (
+    <FocusLive>
+      <PageSplitScreen
+        store={meSplit}
+        pages={ME_PAGE_VIEWS}
+        fallback={ME_FALLBACK}
+        list={<MePage />}
+        testID="me-split"
+      />
+    </FocusLive>
+  );
+}
+
+function MePage() {
   const { t, i18n } = useTranslation();
   const me = useMe();
   const meId = useMeId();
@@ -128,6 +195,10 @@ export function MeScreen() {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
+  // A screen over this page with the platform's push (back comes here); on a large screen (ADR 0212) one of Você's own
+  // pages opens beside the list instead, its row lit while it shows.
+  const open = useOpenPage();
+  const lit = useLitPage();
   // The bar is clear over the sky and becomes its own once the page scrolls under it (as an agent's page).
   const { y, onScroll } = useCoverScroll();
   // The sky's band: from the screen's top (behind the status bar and the clear bar) to the photo's middle. It reaches
@@ -135,8 +206,19 @@ export function MeScreen() {
   const band = insets.top + 62 + PHOTO_OVERLAP;
   const issues = useIssues(org.orgId);
   const proposals = useOverview(org.orgId).data?.proposalsWaitingForMe ?? 0;
+  const archived = useArchivedChannels(org.orgId).data?.length ?? 0;
   const push = usePushSwitch().on;
-  const about = showsAbout(useAuthConfig().data);
+  const server = useAuthConfig().data;
+  const about = showsAbout(server);
+  const toast = useToast();
+  const api = useApi();
+  // Minted on the tap and opened at once: the link lasts minutes and opens once (ADR 0192).
+  const referrals = useMutation({
+    mutationFn: () => api.account.referralsLink(),
+    onSuccess: ({ url }) => openPage(url),
+    onError: () => toast({ title: t("referrals.failed"), tone: "danger" }),
+    meta: { silent: true },
+  });
   const mine = meId ? dir.memberById.get(meId) : undefined;
   // How you appear (to yourself: hidden stays hidden), on your photo's corner (ADR 0084).
   const myPresence = useMyPerson()?.presence;
@@ -193,7 +275,7 @@ export function MeScreen() {
       <GroupedRow key="routines" icon="clock" label={t("routines.title")} chevron onPress={() => open("/routines")} />
     ),
     wiki: <GroupedRow key="wiki" icon="file" label={t("wiki.title")} chevron onPress={() => open("/wiki")} />,
-    drive: <GroupedRow key="drive" icon="doc" label={t("mobile.me.drive")} chevron onPress={() => open("/drive")} />,
+    drive: <GroupedRow key="drive" icon="drive" label={t("mobile.me.drive")} chevron onPress={() => open("/drive")} />,
     dashboards: (
       <GroupedRow
         key="dashboards"
@@ -218,6 +300,17 @@ export function MeScreen() {
       />
     ),
     team: <GroupedRow key="team" icon="members" label={t("team.title")} chevron onPress={() => open("/team")} />,
+    archived:
+      archived > 0 ? (
+        <GroupedRow
+          key="archived"
+          icon="archive"
+          label={t("channel.archivedTitle")}
+          value={String(archived)}
+          chevron
+          onPress={() => open("/archived-channels")}
+        />
+      ) : null,
   };
   const soundValue = sounds === "off" ? t("mobile.me.soundsOff") : styleLabel(sounds);
   const themeValue = t(`mobile.theme.${theme.preference}`);
@@ -377,6 +470,7 @@ export function MeScreen() {
               icon="bell"
               label={t("mobile.me.notifications")}
               {...(push === null ? {} : { value: push ? t("mobile.me.on") : t("mobile.me.off") })}
+              {...lit("/me/notifications")}
               chevron
               onPress={() => open("/me/notifications")}
             />
@@ -387,6 +481,7 @@ export function MeScreen() {
                 key="approvals"
                 icon="shield"
                 label={t("settings.section.approvals")}
+                {...lit("/me/approvals")}
                 chevron
                 onPress={() => open("/me/approvals")}
               />
@@ -398,6 +493,7 @@ export function MeScreen() {
                 icon="home"
                 label={t("mobile.me.start")}
                 value={startLabel}
+                {...lit("/me/start")}
                 chevron
                 onPress={() => open("/me/start")}
               />
@@ -409,6 +505,7 @@ export function MeScreen() {
                 icon="eye"
                 label={t("mobile.me.activity")}
                 value={org.org.showActivity ? t("mobile.me.on") : t("mobile.me.off")}
+                {...lit("/me/activity")}
                 chevron
                 onPress={() => open("/me/activity")}
               />
@@ -419,6 +516,7 @@ export function MeScreen() {
                 key="chat"
                 icon="text"
                 label={t("settings.account.chat.title")}
+                {...lit("/me/chat-look")}
                 chevron
                 onPress={() => open("/me/chat-look")}
               />
@@ -434,6 +532,7 @@ export function MeScreen() {
                     ? t("settings.account.agentStyleTechnical")
                     : t("settings.account.agentStyleSimple")
                 }
+                {...lit("/me/agent-style")}
                 chevron
                 onPress={() => open("/me/agent-style")}
               />
@@ -461,6 +560,7 @@ export function MeScreen() {
                 leading={<AppIconPicture icon={appIcon.icon} />}
                 label={t("appIcon.title")}
                 value={appIconName}
+                {...lit("/me/app-icon")}
                 chevron
                 onPress={() => open("/me/app-icon")}
               />
@@ -470,14 +570,26 @@ export function MeScreen() {
               icon="globe"
               label={t("mobile.me.language")}
               value={isAppLocale(i18n.language) ? localeInfo(i18n.language).native : i18n.language}
+              {...lit("/me/language")}
               chevron
               onPress={() => open("/me/language")}
             />
+            {offersReferrals(server) ? (
+              <GroupedRow
+                key="referrals"
+                icon="wallet"
+                label={t("referrals.open")}
+                chevron
+                disabled={referrals.isPending}
+                onPress={() => referrals.mutate()}
+              />
+            ) : null}
             {about ? (
               <GroupedRow
                 key="about"
                 icon="info"
                 label={t("settings.section.about")}
+                {...lit("/me/about")}
                 chevron
                 onPress={() => open("/me/about")}
               />
@@ -498,10 +610,15 @@ export function MeScreen() {
   );
 }
 
-/** Your status as a row (ADR 0084): "Definir status" or how you appear, with when it clears; a tap pushes Status. */
+/**
+ * Your status as a row (ADR 0084): "Definir status" or how you appear, with when it clears; a tap pushes Status (beside
+ * the list on a large screen, ADR 0212).
+ */
 function StatusRow() {
   const { t, i18n } = useTranslation();
   const me = useMyPerson();
+  const open = useOpenPage();
+  const lit = useLitPage();
   const presence = me?.presence ?? "offline";
   const status = me?.status ?? null;
   const label = status
@@ -509,7 +626,7 @@ function StatusRow() {
     : presence === "online"
       ? t("presence.setStatus")
       : t(`presence.${presence}`);
-  return <GroupedRow icon="smile" label={label} chevron onPress={openStatus} />;
+  return <GroupedRow icon="smile" label={label} {...lit("/me/status")} chevron onPress={() => open("/me/status")} />;
 }
 
 /**
@@ -565,7 +682,7 @@ function AgentRow({ agentId, name, role }: { agentId: string; name: string; role
       label={name}
       {...(working ? { below: <WorkingLine color={look.color} text={working} /> } : role ? { sub: role } : {})}
       chevron
-      onPress={() => open(`/agent/${agentId}`)}
+      onPress={() => pushScreen(`/agent/${agentId}`)}
     />
   );
 }

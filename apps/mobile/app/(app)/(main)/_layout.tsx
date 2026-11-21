@@ -1,8 +1,9 @@
 import { type ErrorBoundaryProps, type NativeStackNavigationOptions, Stack } from "expo-router";
 import { useMemo } from "react";
-import { isStill } from "@/features/links/landing";
+import { slideListeners } from "@/agent/live";
+import { isStill, STILL_PARAM } from "@/features/links/landing";
 import { ScreenError } from "@/features/shared/ScreenError";
-import { coverBarOptions, usePushedOptions, useScrollUnderPushedOptions, useTheme } from "@/ui";
+import { coverBarOptions, usePushedOptions, useScrollUnderPushedOptions, useSideInsets, useTheme } from "@/ui";
 
 /** A link straight to a pushed screen still has the tabs under it (the back button works). */
 export const unstable_settings = { anchor: "(tabs)" };
@@ -22,6 +23,26 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
  * never ships without a bar and a way back. A screen opened in place (`stillHref`: the start screen at launch) comes
  * in without its slide.
  */
+/**
+ * The stack's listeners: the slide's hold on the shared clock (`slideListeners`), and a screen opened in place
+ * (`stillHref`) dropping that mark once it is up, so going back slides as from any pushed screen. A conversation drops
+ * it itself too (`useSettleStill`); the pages a split pushes in place when an iPhone Duo closes (ADR 0212: You's, the
+ * settings' sections, an agent's) and a start screen that isn't a conversation have only this.
+ */
+const stackListeners = ({
+  navigation,
+  route,
+}: {
+  navigation: { setParams: (params: object) => void };
+  route: { params?: object | undefined };
+}) => ({
+  transitionStart: slideListeners.transitionStart,
+  transitionEnd: (e: { data?: { closing?: boolean } }) => {
+    slideListeners.transitionEnd();
+    if (!e.data?.closing && isStill(route.params)) navigation.setParams({ [STILL_PARAM]: undefined });
+  },
+});
+
 /** Create an agent's steps (`new-agent/*`), one pushed screen each. */
 const NEW_AGENT_ROUTES = [
   "new-agent/index",
@@ -37,6 +58,7 @@ export default function MainStack() {
   const { colors } = useTheme();
   const pushed = usePushedOptions();
   const scrollUnder = useScrollUnderPushedOptions();
+  const side = useSideInsets();
   const screenOptions = useMemo(() => {
     const base: NativeStackNavigationOptions = {
       headerShown: false,
@@ -51,7 +73,7 @@ export default function MainStack() {
     const cover = { ...solid, ...coverBarOptions };
     // Screens that only find where to go and replace themselves: no bar, no slide.
     const bare = { ...base, animation: "none" as const };
-    const connectAi = { ...page, contentStyle: { backgroundColor: colors.grouped } };
+    const connectAi = { ...page, contentStyle: { backgroundColor: colors.grouped, ...side } };
     const own: Record<string, NativeStackNavigationOptions> = {
       "(tabs)": base,
       "chat/[channelId]": solid,
@@ -67,6 +89,8 @@ export default function MainStack() {
       // On the sign-in's ruler, its own sky (the scanner: the camera): a clear bar, the system's back over it.
       "me/team-server": cover,
       "me/scan": cover,
+      // A background photo's preview: the photo fills the screen, a clear bar and the back button over it.
+      "me/chat-wallpaper-photo": cover,
       "connectors/oauth": bare,
       // A bare link to a browser request: finds its conversation and replaces itself with it.
       "handoff/[id]": bare,
@@ -74,6 +98,7 @@ export default function MainStack() {
       link: { ...solid, animation: "none" },
       // Connect an AI: one pushed screen per question, on the grouped gray (its bar counts the steps).
       "connect-ai/index": connectAi,
+      "connect-ai/have": connectAi,
       "connect-ai/plans": connectAi,
       "connect-ai/plan": connectAi,
       "connect-ai/key": connectAi,
@@ -88,19 +113,38 @@ export default function MainStack() {
       },
       // A file: pushed with its bar opaque over the file itself (a web view lays out below it, as a block does).
       "file/[id]": solid,
+      // A live spreadsheet (ADR 0196): the grid, its bars and the keyboard's cell bar lay out below an opaque bar.
+      "spreadsheet/[id]": solid,
+      // A live presentation and a live canvas (ADR 0196): their slides, their plane and their tools lay out below an
+      // opaque bar, as the words of a text box do over the keyboard.
+      "slides/[id]": solid,
+      "canvas/[id]": solid,
+      // A live document (ADR 0200): its page and the format bar over the keyboard lay out below an opaque bar.
+      "document/[id]": solid,
+      "slide-text/[id]": solid,
+      "slide-layout/[id]": solid,
+      // Presenting: no bar, black around the slides, faded in; the edge swipe is the pager's (× leaves). Never a
+      // modal, as the computer's screen below (the app's toasts present over it).
+      "slides-show/[id]": {
+        ...base,
+        animation: "fade",
+        gestureEnabled: false,
+        contentStyle: { backgroundColor: "#000000" },
+      },
       // An agent's computer and a shared browser profile's live view: pushed with the opaque bar, their picture laid
       // out below it. Never a modal: the app's sheets, pickers and toasts they open present over them, where under a
       // modal they opened hidden and the screen stopped answering.
-      "computer/[agentId]": solid,
+      // The computer's screen places its own banner and edges by the side insets (`useSideInsets` would add them twice).
+      "computer/[agentId]": { ...solid, contentStyle: { backgroundColor: colors.bg } },
       "browser-profile/[profileId]": solid,
     };
     return ({ route }: { route: { name: string; params?: object } }): NativeStackNavigationOptions => {
       const options = own[route.name] ?? page;
       return isStill(route.params) ? { ...options, animation: "none" } : options;
     };
-  }, [colors, pushed, scrollUnder]);
+  }, [colors, pushed, scrollUnder, side]);
   return (
-    <Stack screenOptions={screenOptions}>
+    <Stack screenOptions={screenOptions} screenListeners={stackListeners}>
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

@@ -1,19 +1,26 @@
 import {
   ApiError,
+  type Channel,
   cachePinned,
+  channelsQuery,
+  type DirectMessage,
+  dmsQuery,
+  isPinnedSelection,
   keys,
   type Message,
   type Mission,
+  messageLiveRef,
+  type ReactionCount,
+  resolvedOf,
   type ThreadInfo,
   useApi,
   useChannelCategories,
-  useChannels,
   useCloseMission,
   useFollowThread,
   useMissionControl,
   usePinMessage,
   usePins,
-  useReactions,
+  useResolveComment,
   useThreadInfo,
   useThreadMutation,
   useToggleReaction,
@@ -22,12 +29,15 @@ import { textOrMedia } from "@agenteschat/client/lib/media";
 import { messagePath } from "@agenteschat/client/lib/message-links";
 import { summaryParts } from "@agenteschat/client/lib/missions";
 import { listedText } from "@agenteschat/client/lib/voice";
+import { conversationWallpaperOf } from "@agenteschat/client/lib/wallpaper";
 import { chartBlocksOf } from "@agenteschat/ui/widgets/spec";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ReactNode } from "react";
+import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { TFunction } from "i18next";
+import { type ReactNode, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { serverUrl } from "@/lib/server";
+import { useOrg } from "@/providers/org";
 import { CHROME_MAX_SCALE, Count, GroupedList, GroupedRow, Icon, PressScale, SkeletonList, Text, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useMovesChannel } from "../categories/CategoryScreens";
@@ -36,13 +46,16 @@ import { setPinDraft } from "../dashboards/logic";
 import { chatHref } from "../links/logic";
 import { AgentFace, Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
-import { useDirectory, useMeId, useOrgId } from "../shared/hooks";
+import { type Directory, useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { genderOf, previewOf } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
 import { type ActionItem, ActionList, copyText, successHaptic, Tile, tapHaptic, useSurface } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
+import { useWallpaperName } from "./ChatWallpaper";
 import { QUICK_REACTIONS, reactionName, reactionPills } from "./logic";
 import type { MenuSymbol } from "./MessageMenu";
+import { useRowDirectory, useRowMeId } from "./row-data";
+import { wallpaperHrefs } from "./wallpaper-logic";
 
 // ── Long press on a message ──────────────────────────────────────────────────
 
@@ -66,30 +79,55 @@ export interface MessageAction extends ActionItem {
   symbol?: MenuSymbol;
 }
 
+/** What a message's actions do their work with (`messageActionsOf`). */
+export interface MessageActionHands {
+  t: TFunction;
+  orgId: string;
+  meId: string | null;
+  dir: Pick<Directory, "nameOf">;
+  toast: ReturnType<typeof useToast>;
+  qc: QueryClient;
+  /** Adds or takes back a reaction of mine (`useToggleReaction`). */
+  toggle: ReturnType<typeof useToggleReaction>["mutate"];
+  /** Pins or unpins (`usePinMessage`). */
+  pin: ReturnType<typeof usePinMessage>["mutate"];
+  /** Resolves a comment on a picture, a video or a PDF, or opens it again (`useResolveComment`, ADR 0208). */
+  resolve: ReturnType<typeof useResolveComment>["mutate"];
+}
+
 /**
  * A message's actions, one list for the system's menu (iOS, on hold) and the app's sheet (Android): the quick
  * reactions, then the actions in groups, as the hand expects them: answer (here, in a thread), keep (copy, pin,
- * remind, a mission), and the rest (its link, a chart to a dashboard, the agent who wrote it). `close` runs before
- * an action that opens something else (the sheet closes; the system's menu closes itself).
+ * resolve a comment on a file, remind, a mission), and the rest (its link, a chart to a dashboard, the agent who wrote
+ * it). `close` runs before an action that opens something else (the sheet closes; the system's menu closes itself).
  */
 export function useMessageActions(context: MessageActionsContext, close: () => void) {
-  const { message: m, canMission, inThread, thread, onMission, onRemind, onReply } = context;
   const { t } = useTranslation();
   const orgId = useOrgId();
-  const meId = useMeId();
-  const dir = useDirectory();
+  const meId = useRowMeId();
+  const dir = useRowDirectory();
   const toast = useToast();
   const qc = useQueryClient();
-  const cached = useReactions(orgId, m.id, false);
-  const toggle = useToggleReaction(orgId, m.id);
-  const pin = usePinMessage(orgId);
+  const toggle = useToggleReaction(orgId, context.message.id).mutate;
+  const pin = usePinMessage(orgId).mutate;
+  const resolve = useResolveComment(orgId).mutate;
+  return messageActionsOf(context, close, { t, orgId, meId, dir, toast, qc, toggle, pin, resolve });
+}
+
+/**
+ * `useMessageActions` without its hooks, for the system's menu, which builds its actions only once a finger is on the
+ * row (`MessageMenuFor`). A reaction reads the message's reactions as they are when it is picked.
+ */
+export function messageActionsOf(context: MessageActionsContext, close: () => void, hands: MessageActionHands) {
+  const { message: m, canMission, inThread, thread, onMission, onRemind, onReply } = context;
+  const { t, orgId, meId, dir, toast, qc, toggle, pin, resolve } = hands;
   const pinned = Boolean(m.pinned);
   const togglePin = () => {
     close();
     const next = !pinned;
     // The mark shows at once; the server's answer (or its event) confirms it.
     cachePinned(qc, orgId, m.channelId, m.id, next);
-    pin.mutate(
+    pin(
       { channelId: m.channelId, messageId: m.id, pinned: next },
       {
         onSuccess: () => toast({ title: t(next ? "mobile.pins.pinned" : "mobile.pins.unpinned"), icon: "pin" }),
@@ -101,7 +139,17 @@ export function useMessageActions(context: MessageActionsContext, close: () => v
       },
     );
   };
-  const pills = reactionPills(cached.data ?? m.reactions, meId);
+  // A comment with a pin on a picture, a video or a PDF (ADR 0208): Resolve takes its pin off the file, Reopen puts
+  // it back; the message stays. At once here (`useResolveComment`), then as the server says (`message.resolved`).
+  const resolvable = !m.local && isPinnedSelection(messageLiveRef(m)?.selection);
+  const resolved = resolvable && resolvedOf(m.meta) !== null;
+  const toggleResolved = () => {
+    close();
+    resolve(
+      { channelId: m.channelId, messageId: m.id, resolved: !resolved, by: { type: "person", id: meId ?? "" } },
+      { onError: () => toast({ title: t("mobile.app.failed"), icon: "x" }) },
+    );
+  };
   const agentName = m.author.type === "agent" ? dir.nameOf(m.author) : "";
   const rootId = m.threadId ?? m.id;
   // Of a voice message only what was typed beside it: its words are the audio's.
@@ -116,8 +164,9 @@ export function useMessageActions(context: MessageActionsContext, close: () => v
   const react = (emoji: string) => {
     tapHaptic();
     const reaction = reactionName(emoji);
-    const mine = pills.find((p) => p.reaction === reaction)?.mine ?? false;
-    toggle.mutate({ reaction, on: !mine });
+    const now = qc.getQueryData<ReactionCount[]>(keys.reactions(orgId, m.id)) ?? m.reactions;
+    const mine = reactionPills(now, meId).find((p) => p.reaction === reaction)?.mine ?? false;
+    toggle({ reaction, on: !mine });
     close();
   };
   const copied = (ok: boolean, title: string) =>
@@ -176,6 +225,17 @@ export function useMessageActions(context: MessageActionsContext, close: () => v
             label: pinned ? t("mobile.pins.unpin") : t("mobile.pins.pin"),
             onPress: togglePin,
           },
+          ...(resolvable
+            ? [
+                {
+                  key: "resolve",
+                  icon: "check" as const,
+                  symbol: (resolved ? "arrow.uturn.backward" : "checkmark.circle") as MenuSymbol,
+                  label: resolved ? t("files.comments.reopen") : t("files.comments.resolve"),
+                  onPress: toggleResolved,
+                },
+              ]
+            : []),
           {
             key: "remind",
             icon: "clock" as const,
@@ -295,7 +355,7 @@ export function MessageActions(props: MessageActionsContext) {
 
 // ── "+" in the composer ──────────────────────────────────────────────────────
 
-export type PlusPick = "camera" | "photos" | "file" | "media" | "mission" | "summary" | "remind";
+export type PlusPick = "camera" | "photos" | "file" | "media" | "summary" | "remind";
 
 /**
  * The "+" of the chat: what goes with a message as tiles (camera, photos, file and, where they can be sent, the
@@ -303,7 +363,7 @@ export type PlusPick = "camera" | "photos" | "file" | "media" | "mission" | "sum
  */
 export function PlusActions({ onPick, media = false }: { onPick: (pick: PlusPick) => void; media?: boolean }) {
   const { t } = useTranslation();
-  const surface = useSurface();
+  const c = useColors();
   const tiles: { key: PlusPick; icon: "camera" | "image" | "file" | "sticker"; label: string }[] = [
     { key: "camera", icon: "camera", label: t("mobile.plus.camera") },
     { key: "photos", icon: "image", label: t("mobile.plus.photos") },
@@ -320,12 +380,10 @@ export function PlusActions({ onPick, media = false }: { onPick: (pick: PlusPick
             accessibilityRole="button"
             accessibilityLabel={x.label}
             style={styles.tileBtn}
-            contentStyle={styles.tileIn}
+            contentStyle={[styles.tileIn, { backgroundColor: c.raised }]}
           >
-            <View style={[styles.bigTile, surface]}>
-              <Icon name={x.icon} size={24} />
-            </View>
-            <Text variant="caption" tone="ink2" style={styles.bold}>
+            <Icon name={x.icon} size={24} />
+            <Text variant="caption" tone="ink2" numberOfLines={1} maxFontSizeMultiplier={CHROME_MAX_SCALE}>
               {x.label}
             </Text>
           </PressScale>
@@ -333,13 +391,6 @@ export function PlusActions({ onPick, media = false }: { onPick: (pick: PlusPick
       </View>
       <ActionList
         items={[
-          {
-            key: "mission",
-            icon: "target",
-            label: t("mobile.plus.mission"),
-            hint: t("mobile.plus.missionHint"),
-            onPress: () => onPick("mission"),
-          },
           {
             key: "summary",
             icon: "sparkle",
@@ -612,11 +663,21 @@ export function ChannelOptions({
   const count = pins.data?.length ?? 0;
   // A channel's sidebar category (ADR 0080), for whoever may move it.
   const moves = useMovesChannel(channelId);
-  const channel = useChannels(orgId).data?.find((c) => c.id === channelId);
+  // Only what this sheet reads of the lists (its category, whether it is a DM): they are read again for any message.
+  const api = useApi();
+  const categoryOf = useCallback(
+    (all: Channel[]) => all.find((c) => c.id === channelId)?.categoryId ?? null,
+    [channelId],
+  );
+  const isDm = useCallback((all: DirectMessage[]) => all.some((d) => d.channelId === channelId), [channelId]);
+  const categoryId = useQuery({ ...channelsQuery(api, orgId), select: categoryOf }).data;
   const categories = useChannelCategories(orgId);
-  const categoryName = channel?.categoryId
-    ? categories.data?.find((c) => c.id === channel.categoryId)?.name
-    : undefined;
+  const categoryName = categoryId ? categories.data?.find((c) => c.id === categoryId)?.name : undefined;
+  // This conversation's own background, mine alone; none of its own: it follows the others.
+  const { org } = useOrg();
+  const dm = useQuery({ ...dmsQuery(api, orgId), select: isDm }).data === true;
+  const ownWallpaper = conversationWallpaperOf(org?.chatPrefs, channelId);
+  const nameOf = useWallpaperName();
   return (
     <>
       <SheetTitle leading={leading} title={title} {...(subtitle ? { subtitle } : {})} />
@@ -651,6 +712,16 @@ export function ChannelOptions({
                 },
               ]
             : []),
+          {
+            key: "wallpaper",
+            icon: "image",
+            label: t("settings.account.chat.wallpaper.title"),
+            hint: ownWallpaper ? nameOf(ownWallpaper, dm) : t("settings.account.chat.wallpaper.sameShort"),
+            onPress: () => {
+              sheet.close();
+              router.push(wallpaperHrefs.choose({ channelId }));
+            },
+          },
           ...(agentId
             ? [
                 {
@@ -709,7 +780,6 @@ export function MissionSummaryView({ missionId }: { missionId: string }) {
 
 const styles = StyleSheet.create({
   grow: { flex: 1 },
-  bold: { fontWeight: "600" },
   preview: { flexDirection: "row", gap: 10, padding: 12, borderRadius: 14 },
   emorow: {
     flexDirection: "row",
@@ -723,8 +793,16 @@ const styles = StyleSheet.create({
   emoText: { fontSize: 26, lineHeight: 34 },
   // The action groups, divided as the menu divides them.
   groups: { gap: 12 },
-  tiles: { flexDirection: "row", justifyContent: "space-between" },
+  tiles: { flexDirection: "row", gap: 8 },
   tileBtn: { flex: 1 },
-  tileIn: { alignItems: "center", gap: 8, paddingVertical: 6 },
-  bigTile: { width: 54, height: 54, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  // The four share the list's width and edges (its sides are theirs), each a flat raised square as the list is.
+  tileIn: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    height: 76,
+    paddingHorizontal: 4,
+    borderRadius: 18,
+    borderCurve: "continuous",
+  },
 });

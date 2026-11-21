@@ -66,7 +66,8 @@ const AGENTS = [
   agent({ id: "rex", name: "Rex", ...people() }),
   agent({ id: "nora", name: "Nora", ownerUserId: "u-me", ...people() }),
 ];
-const VIEWER = { userId: "u-me", managesAgents: false };
+// Whether they manage an agent is the agent's own `canManage` (ADR 0085 addendum of 2026-11-17): none here.
+const VIEWER = { userId: "u-me" };
 
 const draft = (over: Partial<InviteDraft> = {}): InviteDraft => ({ ...EMPTY_INVITE, ...over });
 
@@ -375,6 +376,9 @@ describe("the choices pushed over a form", () => {
       ["Nora", "mailbox", "Lê o e-mail de Bruno", false, false, "agent"],
       ["Rex", "locked", "Restrito · só Bruno libera", false, true, ""],
     ]);
+    // Someone else's agent the viewer manages (its `canManage`) opens as their own does.
+    const managed = agentPicks(pt, { ...args, agents: [{ ...(AGENTS[4] as Agent), canManage: true }] });
+    expect(said(managed.others)).toEqual([["Rex", "opens", "Restrito · você libera", false, false, ""]]);
     // While its mailboxes are being asked, one the viewer would open waits.
     const asking = agentPicks(pt, {
       agents: [AGENTS[3] as Agent],
@@ -594,7 +598,7 @@ describe("Configurações › Pessoas: Membros · Convites · Cargos", () => {
   test("a request's review starts on its link's choices, and a full link waits for a bigger maximum", () => {
     const sheet = src("features/members/JoinRequestsScreen.tsx");
     expect(sheet).toContain("const { given, leftOut } = approvalCargos(roles, r.link?.roleIds ?? []);");
-    expect(sheet).toContain("disabled={busy || full || linkFull || !draft}");
+    expect(sheet).toContain("disabled={busy || waitsForRoom(r, full) || linkFull || !draft}");
     expect(sheet).toContain('t("errors.join.linkFullApproval")');
     // A link's cargo the approver can't give stays out, and the card says which, as the web's row.
     expect(sheet).toContain(
@@ -637,7 +641,9 @@ describe("the arrival card (#general for a newcomer's first day)", () => {
   });
 
   test("the Agentes tab shows the pinned agents first, the invitation's included", () => {
-    expect(src("features/agents/AgentsScreen.tsx")).toContain("freeSections(free, groups, pins.pins.agents)");
+    const screen = src("features/agents/AgentsScreen.tsx");
+    expect(screen).toContain("freeSections(free, groups, pinned)");
+    expect(screen).toContain("pinned={pins.pins.agents}");
   });
 });
 
