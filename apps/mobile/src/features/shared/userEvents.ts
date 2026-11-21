@@ -84,7 +84,7 @@ export function useUserEvents() {
       if (event.type === "issue.columns" || event.type === "issue.projects")
         void qc.invalidateQueries({ queryKey: keys.issues(orgId) });
       applyIssueEvent(qc, orgId, event);
-      // A code session I'm in changed (ADR 0208): its worktree, name or pull request.
+      // A code session I'm in changed (ADR 0213): its worktree, name or pull request.
       applyCodeSessionEvent(qc, orgId, event);
       // A change I asked the right hand for was decided by someone else (ADR 0137): "Aplicado por …" on my card.
       if (event.type === "proposal.created") void refreshProposals(qc, orgId);

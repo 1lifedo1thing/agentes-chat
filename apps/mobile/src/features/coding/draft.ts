@@ -1,7 +1,7 @@
 import { pickStore } from "../agents/pick-store";
 
 /**
- * A new session's choices while its form and "Where to work" are open (ADR 0208, real navigation: each its own
+ * A new session's choices while its form and "Where to work" are open (ADR 0213, real navigation: each its own
  * pushed screen). The form opens it, the pick screen changes `repo` in it and goes back.
  */
 export interface CodeDraft {

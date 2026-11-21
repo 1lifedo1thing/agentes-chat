@@ -2897,6 +2897,8 @@ export const en = {
     uploading: "uploading…",
     uploadFailed: "was not uploaded",
     removeFile: "Remove {{name}}",
+    dropFileTitle: "Drop to attach",
+    dropFileNote: "Files stay in this conversation’s draft until you send them.",
     tooManyFiles: "Up to {{max}} files per message.",
     reminder: "Reminder",
     reactions: "Reactions",
@@ -4824,6 +4826,21 @@ export const en = {
   adminAsk: {
     ask: "Ask an admin",
     sent: "Sent to whoever can do it.",
+  },
+  /** An AI account named in a run's details: a pill, its card on hover or a press (provider, whose, which computer, usage). */
+  accountRef: {
+    label: "{{name}} account",
+    card: "About the {{name}} account",
+    mine: "Your account",
+    of: "{{name}}'s account",
+    on: "On {{computer}}",
+    gone: "This account isn't in the workspace anymore.",
+  },
+  /** A run that went on with another account than its agent's own, in its details and Atividade (never a chat line). */
+  accountSwitch: {
+    limit: "Went on with the <to/> account because the <from/> account hit its limit",
+    line: "Went on with the <to/> account because the <from/> account is near its limit",
+    extra: "Went on with the <to/> account because the <from/> account would go into paid extra usage",
   },
   channelRefs: {
     list: "Channels",
@@ -6888,6 +6905,9 @@ export const en = {
          */
         cli_sandbox:
           "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings.",
+        /** The agent's CLI doesn't run on its computer's system (Grok Build on Windows), so no turn was sent there. */
+        cli_system:
+          "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings.",
         account_missing:
           "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
@@ -10776,6 +10796,13 @@ export const en = {
     usedBy_zero: "no agent uses it",
     usedBy_one: "{{count}} agent uses it",
     usedBy_other: "{{count}} agents use it",
+    agents: {
+      title: "Agents with this skill",
+      none: "No agent yet.",
+      choose: "Choose agents",
+      dialogTitle: "Agents with {{name}}",
+      dialogText: "Each agent turned on uses it whenever a task calls for it.",
+    },
     updated: "updated {{when}}",
     source: { github: "GitHub", url: "Link", upload: "Uploaded", manual: "Made here" },
     defaultChip: "On for new agents",
@@ -11567,7 +11594,7 @@ export const en = {
     createKeywords: "create new add",
     empty: "Nothing for “{{q}}”.",
   },
-  /** Code (ADR 0208): sessions where a request is worked on in its own git worktree on an agent's computer. */
+  /** Code (ADR 0213): sessions where a request is worked on in its own git worktree on an agent's computer. */
   codeSessions: {
     title: "Code",
     state: {
@@ -11717,29 +11744,6 @@ export const en = {
     screenLine: {
       show: "See on Screen",
       held: "A person has the screen",
-    },
-    git: {
-      step: { commit: "Commit", push: "Push", pr: "Open PR", merge: "Merge" },
-      more: "Other git steps",
-      /** What the button asks the session's agent, as the person's message in the conversation. */
-      ask: {
-        commit: "Commit what's ready, with a short message.",
-        push: "Push the branch.",
-        pr: "Open a pull request from this branch, with a title and description from the diff.",
-        merge: "Merge the pull request into the base branch.",
-        mergeLocal: "Merge this branch into {{base}} in the project.",
-      },
-      hint: {
-        commit_one: "{{count}} file changed",
-        commit_other: "{{count}} files changed",
-        push_one: "{{count}} commit not pushed",
-        push_other: "{{count}} commits not pushed",
-        pr: "On GitHub, with a title and text from the diff",
-        prOpen: "PR #{{number}} is open",
-        merge: "Asks for approval, as always",
-        mergeLocal: "Into {{base}}, on the computer",
-      },
-      note: "Each step asks the agent, in the conversation.",
     },
   },
   code: {
@@ -14771,6 +14775,7 @@ export const en = {
       ask_agent: "Ask another agent",
       tell_agent: "Tell another agent",
       find_agent: "Find agent",
+      read_agent: "Read agent setup",
       ask_user: "Ask a question",
       ask_choices: "Offer choices",
       request_approval: "Ask for approval",
@@ -15548,6 +15553,43 @@ export const en = {
       open: "Open",
     },
     /** The picture viewer's zoom bar. */
+    /** Comments on a picture, a video or a PDF (ADR 0208): pins on the file, its page's tools, the chat's line. */
+    comments: {
+      title: "Comments",
+      resolve: "Resolve",
+      reopen: "Reopen",
+      resolvedBy: "Resolved by {{name}} · {{time}}",
+      resolvedCount_one: "{{count}} resolved",
+      resolvedCount_other: "{{count}} resolved",
+      showResolved: "Show resolved",
+      hideResolved: "Hide resolved",
+      fromVersion: "From version {{version}}",
+      peekOpen: "Click to open in the conversation",
+      markAt: "Comment {{n}} at {{time}}, by {{name}}",
+      page: "Page {{page}}",
+      pageOf: "{{page}} of {{count}}",
+      pdfFailed: "This PDF can't be shown here. Download it to open it.",
+      loadFailed: "This image can't be shown here.",
+      hint: {
+        image: "Click to mark a point or drag to mark an area",
+        video: "Click the video to comment at this moment, or drag to mark an area",
+        pdf: "Click a page to mark a point or drag to mark an area",
+      },
+      line: {
+        image_one: "{{count}} comment on the image",
+        image_other: "{{count}} comments on the image",
+        video_one: "{{count}} comment on the video",
+        video_other: "{{count}} comments on the video",
+        pdf_one: "{{count}} comment on the PDF",
+        pdf_other: "{{count}} comments on the PDF",
+      },
+      /** The phone's composer in a picture's, a video's or a PDF's conversation: one line. */
+      write: {
+        image: "Write about the image…",
+        video: "Write about the video…",
+        pdf: "Write about the PDF…",
+      },
+    },
     zoom: {
       toolbar: "Zoom",
       in: "Zoom in",
@@ -15613,6 +15655,8 @@ export const en = {
       tooMany: "That's more than fits here. Remove some and try again.",
       fillIn: "Fill in what's missing and try again.",
       checkAddress: "Check the address and try again.",
+      privateNetwork:
+        "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "That's too long. Shorten it and try again.",
       updateComputerApp: "The computer's app is too old for this. Update it and try again.",
       computerUpdatesItself: "The workspace's computer updates itself for this. Try again in a little while.",
@@ -15944,6 +15988,7 @@ export const en = {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
       spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
+      tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
     },
     machine: {
@@ -16443,6 +16488,10 @@ export const en = {
       ready: "Agents can use it now.",
       busy_one: "{{count}} of {{max}} tasks running",
       busy_other: "{{count}} of {{max}} tasks running",
+      /** Under a busy computer's pill, for whoever may change its limit: the row "Tasks at once" is under it on the page. */
+      tasksChange: "Tasks at once here: {{max}}. Change it below.",
+      tasksOwner: "Tasks at once here: {{max}}. The person who connected it can change that.",
+      tasksUpdate: "Tasks at once here: {{max}}. Update its app to change that from here.",
       offline: "Agents wait for it to come back.",
       offlineSeen: "Last seen {{time}}. Agents wait for it to come back.",
       offlineWithHost: "{{host}} is offline. Agents wait for it to come back.",
@@ -20460,10 +20509,10 @@ export const en = {
     write: "Wrote",
     run: "Ran",
     fetch: "Fetched",
-    /** The CLI's own subagent (ADR 0208): "Asked a subagent · Review the HTML". */
+    /** The CLI's own subagent (ADR 0213): "Asked a subagent · Review the HTML". */
     delegate: "Asked a subagent",
     skill: "Used the skill",
-    /** A workflow of the CLI's own subagents (ADR 0208): "Ran a workflow · Review every page". */
+    /** A workflow of the CLI's own subagents (ADR 0213): "Ran a workflow · Review every page". */
     workflow: "Ran a workflow",
     other: "Used",
     /** While the call runs. */
@@ -20494,7 +20543,7 @@ export const en = {
     failedTests_other: "{{count}} failed",
     /** A failed command's exit code. */
     exit: "exit {{code}}",
-    /** A code session's subagents and workflows while they work (ADR 0208), live in the agent's row. */
+    /** A code session's subagents and workflows while they work (ADR 0213), live in the agent's row. */
     progress: {
       block: "{{name}}'s subagents",
       subagent: "Subagent",
@@ -20609,7 +20658,7 @@ export const en = {
     },
   },
   /**
-   * A code session's Terminal tab (ADR 0208): a shell on the agent's computer, in the session's folder. One line under
+   * A code session's Terminal tab (ADR 0213): a shell on the agent's computer, in the session's folder. One line under
    * it says why it closed; "Open again" opens a new shell.
    */
   codeTerminal: {
@@ -22464,6 +22513,9 @@ export const en = {
         slides: "Presentation conversation",
         document: "Document conversation",
         file: "File conversation",
+        image: "Image conversation",
+        video: "Video conversation",
+        pdf: "PDF conversation",
       },
       placeholder: {
         canvas: "Write about this canvas · use @ to call an agent",
@@ -22471,6 +22523,9 @@ export const en = {
         slides: "Write about this presentation · use @ to call an agent",
         document: "Write about this document · use @ to call an agent",
         file: "Write about this file · use @ to call an agent",
+        image: "Write about this image · use @ to call an agent",
+        video: "Write about this video · use @ to call an agent",
+        pdf: "Write about this PDF · use @ to call an agent",
       },
       /** In the origin line: what was made. */
       this: {
@@ -22478,6 +22533,9 @@ export const en = {
         spreadsheet: "this spreadsheet",
         slides: "this presentation",
         document: "this document",
+        image: "this image",
+        video: "this video",
+        pdf: "this PDF",
       },
       /** At the conversation's top: where the file was made. */
       origin: {
@@ -22485,6 +22543,9 @@ export const en = {
         made: "<0>{{name}}</0> made {{what}}",
         /** A document opened from an uploaded Word file (ADR 0200). */
         imported: "Imported from <1>{{file}}</1> by {{name}}",
+        /** A picture, a video or a PDF a person uploaded (ADR 0208). */
+        sentIn: "<0>{{name}}</0> sent {{what}} in the <1>{{place}}</1>",
+        sent: "<0>{{name}}</0> sent {{what}}",
       },
       /** Over the composer: what is selected in the file, sent with the message. */
       about: {
@@ -22494,6 +22555,28 @@ export const en = {
         text: "About the selected text",
         point: "About a spot on the canvas",
         other: "About {{label}}",
+        /** A comment on a picture, a video or a PDF (ADR 0208); `n` is its pin's number. */
+        imageArea: "About area {{n}} of the image",
+        imagePoint: "About point {{n}} of the image",
+        videoAt: "About {{time}} of the video",
+        pdfPage: "About page {{page}} of the PDF",
+        image: "About the image",
+        video: "About the video",
+        pdf: "About the PDF",
+      },
+      /** A comment's line over its message: what it points at, short. */
+      what: {
+        area: "Area {{n}}",
+        point: "Point {{n}}",
+        anArea: "An area",
+        aPoint: "A point",
+        page: "Page {{page}}",
+      },
+      /** …and where. */
+      where: {
+        image: "on the image",
+        video: "on the video",
+        pdf: "on the PDF",
       },
       drop: "Don't send the selection",
       /** The line over a message about part of a file. */

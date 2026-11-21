@@ -14,6 +14,7 @@ import { type MemoryUpdate, publishChannelEvent, publishMessageCreated, takeStep
 import { type PendingFeedbackOffer, pendingFeedbackOfferOf } from "./feedback-offers";
 import { pgSafeStringify } from "./format";
 import type { Judge } from "./judge";
+import { queueLiveActivityRun } from "./live-activity-queue";
 import { insertMessage, type Message, messageView } from "./messages";
 import { notifyMissionApproval } from "./mission-tools";
 import { notifyQuestion } from "./notification-producers";
@@ -674,7 +675,7 @@ const loadedGroupsOf = (transcript: unknown): string[] | null => {
 export async function bridgeToolsFor(deps: RunToolsDeps, id: BridgeIdentity): Promise<BrainTool[]> {
   if (!deps.tools) return [];
   const { ctx, run } = await locate(deps.db, id);
-  // A code session (ADR 0208): the person sees the worktree's files and the agent's screen in its panel, so no file
+  // A code session (ADR 0213): the person sees the worktree's files and the agent's screen in its panel, so no file
   // goes to the Drive or onto a reply from there.
   const inCode = run ? await codeSessionOfChannel(deps.db, run.channelId) : null;
   const tools = (await deps.tools.list(ctx)).filter((t) => !(inCode && CODE_SESSION_HIDDEN_TOOLS.has(t.name)));
@@ -1171,6 +1172,7 @@ export async function suspendRunForTool(
     // It parked mid-turn: its face and lists say so now, and so does the conversation that handed it the work (its
     // own events reach only the agents' DM, which nobody has open). The turn's end says it again.
     await announceAgentStatus(deps.pubsub, run.orgId, run.agentId).catch(() => {});
+    await queueLiveActivityRun(deps.db, run).catch(() => {});
     await announceConsultationChange(deps, run).catch(() => {});
   }
 

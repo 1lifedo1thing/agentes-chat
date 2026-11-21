@@ -203,7 +203,7 @@ test("system mode's terminal: root starts it in the agent's home, the agent's ow
   expect(pwd(dev).trim()).toBe(realpathSync(folder));
   expect(pwd(ops).trim()).toBe(realpathSync(home));
 
-  // A code session's worktree (ADR 0208): the agent's own user changes into it after its folder.
+  // A code session's worktree (ADR 0213): the agent's own user changes into it after its folder.
   const worktree = path.join(folder, ".worktrees", "c-1a2b3c4d");
   mkdirSync(worktree, { recursive: true });
   expect(pwd(dev, ".worktrees/c-1a2b3c4d").trim()).toBe(realpathSync(worktree));

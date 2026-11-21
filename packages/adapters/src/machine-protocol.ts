@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 74;
+export const MACHINE_PROTOCOL_VERSION = 76;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -290,6 +290,8 @@ export interface MachineSize {
   memoryGb: number;
   diskGb: number;
   limit?: { cpus: number; memoryGb: number };
+  /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once. */
+  maxTasks?: number;
 }
 
 /**
@@ -688,12 +690,12 @@ export const ANTIGRAVITY_MAC_PROTOCOL = 68;
  */
 export const PHONE_REPAIR_PROTOCOL = 73;
 /**
- * A code session's terminal (ADR 0208): `stream.open` of a terminal may carry `cwd`, a folder inside the agent's own
+ * A code session's terminal (ADR 0213): `stream.open` of a terminal may carry `cwd`, a folder inside the agent's own
  * (relative to it, the session's worktree), where the shell starts. One that isn't there starts it in the agent's
  * folder; one that leaves the agent's folder is refused. The server sends `cwd` to no older runner, which opens the
  * terminal in the agent's folder.
  */
-export const TERMINAL_CWD_PROTOCOL = 74;
+export const TERMINAL_CWD_PROTOCOL = 76;
 /**
  * From this protocol on, the runner sends `room.freed` once there is room again after it refused a turn (`no_slot`): a
  * turn ended there, or its memory came back over the agents' floor. The server asks its line again at once; an older
@@ -1665,7 +1667,7 @@ export const STREAM_CLOSE = {
  */
 export type StreamRequest =
   | { kind: "desktop"; mode: DesktopMode }
-  /** `cwd` (`TERMINAL_CWD_PROTOCOL`): where the shell starts, a folder relative to the agent's own (ADR 0208). */
+  /** `cwd` (`TERMINAL_CWD_PROTOCOL`): where the shell starts, a folder relative to the agent's own (ADR 0213). */
   | { kind: "terminal"; cols: number; rows: number; cwd?: string }
   /** A phone's screen (`PHONES_PROTOCOL`): `stream.open` carries the phone itself as `phone`, its holder the person. */
   | { kind: "phone"; mode: DesktopMode; phoneId: string };
@@ -1703,7 +1705,7 @@ export type StreamControl =
   | { type: "resize"; cols: number; rows: number }
   | { type: "exit"; code: number | null }
   /**
-   * Server → viewer, once a terminal is ready (ADR 0208): its computer is too old for the folder it was asked to start
+   * Server → viewer, once a terminal is ready (ADR 0213): its computer is too old for the folder it was asked to start
    * in (`TERMINAL_CWD_PROTOCOL`), so the shell started in the agent's folder.
    */
   | { type: "cwd_ignored" }
@@ -2159,11 +2161,13 @@ export type WireBrainEvent =
       /**
        * The API calls the turn made (Claude Code's `num_turns`, Codex's model requests), the most uncached input one of
        * them read (Claude Code), and the most input one read, cache included: its context at that step. An older
-       * runner sends none.
+       * runner sends none. `lastContext`: what the turn's last call read, cache included, the session's size as it
+       * ends (an older runner sends none: the engine takes the biggest call, else the turn's input over `calls`).
        */
       calls?: number;
       maxUncached?: number;
       maxContext?: number;
+      lastContext?: number;
     }
   | { type: "limit"; resetsAt?: string }
   | { type: "done"; text: string; session?: { id: string }; timings?: BrainTurnTimings }
@@ -2192,7 +2196,7 @@ export type WireBrainEvent =
   | { type: "speed_fallback"; message: string }
   /**
    * A call the brain starts on its own (Claude Code's Read, Bash, Task): its `tool_call` follows once it ended.
-   * `input`: what it was given, masked (a code session shows the call's line while it runs, ADR 0208); an older runner
+   * `input`: what it was given, masked (a code session shows the call's line while it runs, ADR 0213); an older runner
    * sends none, an older server drops it.
    */
   | { type: "tool_started"; id: string; name: string; input?: unknown }
@@ -2217,7 +2221,7 @@ export type WireBrainEvent =
     }
   /**
    * How a call of the brain's own that runs subagents goes while they work (Claude Code's `Agent`, `Task` and
-   * `Workflow`, ADR 0208), by that call's id: its subagent's latest call (`step`: the tool, and its input cut as a
+   * `Workflow`, ADR 0213), by that call's id: its subagent's latest call (`step`: the tool, and its input cut as a
    * `tool_call`'s when the CLI shows it), how many calls it made so far, a workflow's agents, and `ended` once it is
    * over (a workflow ends after its own call did). An older server drops it.
    */
@@ -2336,7 +2340,7 @@ export interface BrainTurnRequest {
   /** Also load the machine owner's own MCP servers (default false: `--strict-mcp-config`; never in a `plan` turn). */
   personalMcp?: boolean;
   /**
-   * A code session's turn (ADR 0208), Claude Code: its own subagents and skills too, and the worktree's `.claude`
+   * A code session's turn (ADR 0213), Claude Code: its own subagents and skills too, and the worktree's `.claude`
    * agents, skills and commands as a plugin, without their hooks, MCP servers or allowed tools. An older runner
    * ignores it.
    */
@@ -2412,6 +2416,35 @@ export const ROUTE_PROTOCOL = 24;
 export const ROUTE_TIMEOUT_MS = 30_000;
 /** Largest `brain.route` fields (characters; the schema as JSON). */
 export const ROUTE_LIMITS = { system: 8000, prompt: 32_000, schema: 8000 } as const;
+
+/**
+ * `brain.warm` (protocol 74): the engine claimed a run that will think with Claude Code here, and asks before it builds
+ * the turn's context: the session's CLI starts now (or stays open), with the launch the turn will most likely ask for,
+ * so the turn finds it warm. Best effort: the runner may decline (no room, nothing to start it with) and the turn
+ * starts its CLI as before; a turn whose launch differs starts its own. The server sends it to no older runner.
+ */
+export const BRAIN_WARM_PROTOCOL = 74;
+
+/**
+ * Background tasks at once, from the apps (protocol 75): `hello.size.maxTasks` and `runner.state.maxTasks` say the
+ * computer's limit, and `limits.set` changes it as its owner asked. An older runner says none: it runs 3, its old
+ * default, unless its config says otherwise.
+ */
+export const TASK_LIMIT_PROTOCOL = 75;
+/** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
+export const TASK_LIMIT_BOUNDS = [1, 20] as const;
+
+/** What `brain.turn` would start its CLI with, without the turn's own words (no prompt, system text or run). */
+export type BrainWarmRequest = Pick<
+  BrainTurnRequest,
+  "kind" | "session" | "cwd" | "model" | "personalMcp" | "permissions" | "account" | "effort" | "contextTokens"
+>;
+
+/** `open`: the session has a CLI now; `started`: this request started it. */
+export interface BrainWarmReply {
+  open: boolean;
+  started: boolean;
+}
 
 /** `brain.route` (protocol 24): one answer in `schema`'s shape from the account's CLI. */
 export interface BrainRouteRequest {
@@ -2736,6 +2769,8 @@ export type MachineRequest = (
   | ({ op: "brain.steer" } & BrainSteerRequest)
   /** Protocol 24: a plan picks who answers a message (ADR 0074); the request's agent is the one it is lent to. */
   | ({ op: "brain.route" } & BrainRouteRequest)
+  /** Protocol 74: start (or keep) a session's Claude Code before its turn comes (`BRAIN_WARM_PROTOCOL`). */
+  | ({ op: "brain.warm" } & BrainWarmRequest)
   /** Protocol 11: clone or update the agent's checkouts through our git proxy. */
   | ({ op: "git.sync" } & GitSyncRequest)
   /** Protocol 14: the mission's worktree (ADR 0044). */
@@ -2888,6 +2923,8 @@ export type MachineRequest = (
   | { op: "phone.pair.cancel"; pairingId: string }
   /** `REMOTE_PAUSE_PROTOCOL`: pause (until `until`, null: until resumed) or resume, for the person `by`. */
   | { op: "pause.set"; paused: boolean; until?: string | null; by: string }
+  /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once, from now on (stored in its config). */
+  | { op: "limits.set"; maxTasks: number }
   /**
    * A phone guide is open and waits for a phone: for the next minute, a Windows runner also looks for a plugged phone
    * Windows has no USB driver for (adb never lists one) and reports it as `no_driver`. From `IPHONE_DEV_MODE_PROTOCOL`
@@ -2953,6 +2990,7 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "brain.turn",
   "brain.steer",
   "brain.route",
+  "brain.warm",
   "git.sync",
   "mission.worktree",
   "access.request",
@@ -2992,6 +3030,7 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "phone.pair.status",
   "phone.pair.cancel",
   "pause.set",
+  "limits.set",
   "phone.look",
   "phone.wifi",
   "keep.start",
@@ -3066,6 +3105,7 @@ export interface MachineReplies {
   "brain.turn": { runId: string; final: WireBrainEvent };
   "brain.steer": BrainSteerReply;
   "brain.route": BrainRouteReply;
+  "brain.warm": BrainWarmReply;
   "git.sync": { repos: GitSyncRepo[] };
   /** `remove` answers `{ removed }` (`false`: the folder was already gone). */
   "mission.worktree": Partial<MissionWorktreeEnsured> & { removed?: boolean };
@@ -3164,6 +3204,7 @@ export interface MachineReplies {
   "phone.pair.status": PhonePairing;
   "phone.pair.cancel": { canceled: boolean };
   "pause.set": { paused: RunnerPause };
+  "limits.set": { maxTasks: number };
   "phone.look": { looking: boolean };
   "phone.wifi": { available: WifiIphone[] };
   "keep.start": { held: true };
@@ -3362,7 +3403,12 @@ export type RunnerFrame =
   /** Protocol 8: a `brain.turn` sent its last event. */
   | { type: "brain.done"; runId: string }
   /** Protocol 9: the pause state changed on the machine (paused, resumed, new `until`). */
-  | { type: "runner.state"; paused: RunnerPause }
+  | {
+      type: "runner.state";
+      paused: RunnerPause;
+      /** `TASK_LIMIT_PROTOCOL`: the tasks it runs at once, sent when that changed on the computer. */
+      maxTasks?: number;
+    }
   /** Protocol 10: what the machine allows changed (the person granted, removed, or turned a tool on or off). */
   | { type: "access.changed"; access: RunnerAccess }
   /**
@@ -3764,6 +3810,7 @@ export function parseBrainEvent(v: unknown): WireBrainEvent | null {
         ...(num(v.calls) > 0 ? { calls: num(v.calls) } : {}),
         ...(num(v.maxUncached) > 0 ? { maxUncached: num(v.maxUncached) } : {}),
         ...(num(v.maxContext) > 0 ? { maxContext: num(v.maxContext) } : {}),
+        ...(num(v.lastContext) > 0 ? { lastContext: num(v.lastContext) } : {}),
       };
     case "limit":
       return { type: "limit", ...(isString(v.resetsAt) ? { resetsAt: v.resetsAt.slice(0, 40) } : {}) };
@@ -3999,7 +4046,8 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
     }
     case "runner.state": {
       const paused = parsePause(f.paused);
-      return paused ? { type: "runner.state", paused } : null;
+      if (!paused) return null;
+      return { type: "runner.state", paused, ...(taskLimit(f.maxTasks) ? { maxTasks: f.maxTasks } : {}) };
     }
     case "access.changed": {
       const access = parseAccess(f.access);
@@ -4666,8 +4714,16 @@ export function parseMachineSize(v: unknown): MachineSize | null {
     isObject(l) && inRange(l.cpus, [1, v.cpus]) && between(l.memoryGb, 0, v.memoryGb)
       ? { limit: { cpus: l.cpus, memoryGb: l.memoryGb } }
       : {};
-  return { cpus: v.cpus, memoryGb: v.memoryGb, diskGb: v.diskGb, ...limit };
+  return {
+    cpus: v.cpus,
+    memoryGb: v.memoryGb,
+    diskGb: v.diskGb,
+    ...limit,
+    ...(taskLimit(v.maxTasks) ? { maxTasks: v.maxTasks } : {}),
+  };
 }
+
+const taskLimit = (v: unknown): v is number => inRange(v, TASK_LIMIT_BOUNDS);
 
 /** `pong.load` (protocol 22): sane numbers, else none. */
 export function parseMachineLoad(v: unknown): MachineLoad | null {

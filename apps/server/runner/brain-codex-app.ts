@@ -8,6 +8,7 @@ import { createInterface } from "node:readline";
 import type { CommandProfile, CommandScope } from "@agenteschat/adapters/command-policy";
 import { type BrainSteerReply, type BrainSteerRequest, isBrainEffort } from "@agenteschat/adapters/machine-protocol";
 import { accountEnv, withoutContainers, yieldRoute } from "./accounts";
+import { awakeClock } from "./awake";
 import {
   CODEX_DIRECT_MCP_CONFIG,
   CODEX_NO_NETWORK,
@@ -492,9 +493,10 @@ export class CodexAppMapper {
   /** The thread's totals before this `brain.turn`, and now. */
   private base?: TokenUsageBreakdown;
   private total?: TokenUsageBreakdown;
-  /** Model requests of this `brain.turn`, and the most input one read. */
+  /** Model requests of this `brain.turn`, the most input one read, and what the last one read. */
   private calls = 0;
   private maxContext = 0;
+  private lastContext = 0;
   /** An `error` notification Codex won't retry (the turn's own error says more). */
   lastError?: string;
   /** The turn ran a command, changed a file or called our bridge: a cut now loses work the API couldn't see. */
@@ -598,7 +600,10 @@ export class CodexAppMapper {
     if (!this.total || num(u.total.totalTokens) > num(this.total.totalTokens)) {
       this.calls++;
       // Codex counts cached input inside `inputTokens`: the request's whole context.
-      if (isObj(u.last)) this.maxContext = Math.max(this.maxContext, num(u.last.inputTokens));
+      if (isObj(u.last)) {
+        this.lastContext = num(u.last.inputTokens);
+        this.maxContext = Math.max(this.maxContext, this.lastContext);
+      }
     }
     this.total = u.total;
   }
@@ -627,6 +632,7 @@ export class CodexAppMapper {
           ...(u && u.cacheWriteInputTokens > 0 ? { cacheWrite: u.cacheWriteInputTokens } : {}),
           ...(this.calls > 0 ? { calls: this.calls } : {}),
           ...(this.maxContext > 0 ? { maxContext: this.maxContext } : {}),
+          ...(this.lastContext > 0 ? { lastContext: this.lastContext } : {}),
         },
         { type: "done", text: answer, session: { id: sessionId } },
       ];
@@ -759,6 +765,8 @@ interface AppLive {
   tools: Set<string> | null;
   busy: boolean;
   lastUsed: number;
+  /** Awake time (`awakeClock`) its last turn ended at. */
+  idleSince: number;
   idleTimer: ReturnType<typeof setTimeout> | null;
   /** The bridge entry between turns (no run: its calls are refused quietly). */
   bridge: McpTaskInfo | null;
@@ -1069,6 +1077,7 @@ export class CodexAppServers implements CodexAppRunner {
       tools: null,
       busy: false,
       lastUsed: Date.now(),
+      idleSince: awakeClock.read(),
       idleTimer: null,
       bridge,
       turn: null,
@@ -1469,13 +1478,21 @@ export class CodexAppServers implements CodexAppRunner {
   }
 
   private armIdle(live: AppLive) {
+    live.idleSince = awakeClock.read();
+    this.checkIdle(live, this.opts.idleMs ?? CODEX_APP_IDLE_MS);
+  }
+
+  /** Idle time is awake time: a timer that fires after the computer slept finds less and waits on. */
+  private checkIdle(live: AppLive, waitMs: number) {
     if (live.idleTimer) clearTimeout(live.idleTimer);
     live.idleTimer = setTimeout(() => {
-      if (!live.busy) {
-        this.log(`codex app-server for ${live.sessionId.slice(0, 8)} idle; closing`);
-        this.drop(live);
-      }
-    }, this.opts.idleMs ?? CODEX_APP_IDLE_MS);
+      live.idleTimer = null;
+      if (live.busy) return;
+      const left = (this.opts.idleMs ?? CODEX_APP_IDLE_MS) - (awakeClock.read() - live.idleSince);
+      if (left > 0) return this.checkIdle(live, left);
+      this.log(`codex app-server for ${live.sessionId.slice(0, 8)} idle; closing`);
+      this.drop(live);
+    }, waitMs);
     live.idleTimer.unref?.();
   }
 

@@ -24,7 +24,7 @@ import { codeDraft } from "./draft";
 import { CODING_WHERE_HREF, isLocalRepo, sessionChatHref } from "./logic";
 
 /**
- * New session (ADR 0208), pushed from Code: the web home's field and its two choices as a grouped form. What to do,
+ * New session (ADR 0213), pushed from Code: the web home's field and its two choices as a grouped form. What to do,
  * then the agent (the app's own picker, faces as the web's select) and where it works ("Where to work", its own
  * pushed screen: the agent's repositories, the projects only on its computer, or a new one); "Start" in the bar.
  * The last pick comes back as on the web: the first agent and its first repository otherwise. Starting it replaces

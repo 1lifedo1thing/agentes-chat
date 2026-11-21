@@ -15,7 +15,7 @@ import "./code.css";
 const SESSION_ROOM_MIN = 860;
 
 /**
- * The Code page (ADR 0208): the list of the sessions I take part in, and beside it the home (start one) or a session.
+ * The Code page (ADR 0213): the list of the sessions I take part in, and beside it the home (start one) or a session.
  * Surfaces on the app's background; the gutter after the list drags its width. A session squeezed by the window folds
  * the app's sidebar until the room comes back (`usePageRoom`).
  */

@@ -1,5 +1,5 @@
 /**
- * Code sessions (ADR 0208): a request worked on in its own git worktree on an agent's computer, with its own
+ * Code sessions (ADR 0213): a request worked on in its own git worktree on an agent's computer, with its own
  * conversation (a thread in a channel of kind `code`: `channelId` + `rootId`). The same shapes as the server's.
  */
 

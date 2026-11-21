@@ -127,6 +127,21 @@ export type PushDeviceInput =
   | { platform: "ios" | "android"; token: string; locale: string; appId?: string; sandbox?: boolean }
   | { platform: "web"; endpoint: string; keys: { p256dh: string; auth: string }; locale: string };
 
+/**
+ * Where the agents' Live Activity goes on an iPhone (`POST /api/app/push/live-activity`, ADR 0210), per install: the
+ * push-to-start token, the running activity's id and token, the app group's widgets directory (the faces' folder),
+ * the app's id, whether its tokens are the APNs sandbox's, and its language. Fields left out keep what was there.
+ */
+export interface LiveActivityInput {
+  installId: string;
+  pushToStartToken?: string | null;
+  activity?: { id: string; token: string } | null;
+  widgetsDir: string;
+  appId?: string | null;
+  sandbox?: boolean;
+  locale?: string;
+}
+
 /** What the feedback form sends (`POST /api/app/feedback`): `id` is made by the app, so a retry goes once. */
 export interface FeedbackInput {
   id: string;
@@ -1859,6 +1874,14 @@ export type ChannelEvent =
     }
   /** A message was unpinned. */
   | { type: "message.unpinned"; channelId: string; messageId: string }
+  /** A comment on a picture, a video or a PDF was resolved (or opened again: `resolved` null), ADR 0208. */
+  | {
+      type: "message.resolved";
+      channelId: string;
+      messageId: string;
+      threadId: string | null;
+      resolved: { by: { type: "person" | "agent"; id: string }; at: string } | null;
+    }
   /** A person read this DM up to `lastReadAt` (DMs between people only: "Visto"). */
   | { type: "channel.read"; channelId: string; userId: string; lastReadAt: string }
   /**
@@ -3027,6 +3050,23 @@ export interface Run {
   repo?: string | null;
   /** A GitHub repository it was refused (not in the agent's repositories). */
   deniedRepo?: string | null;
+  /** It went on with another account than its agent's own, and why (absent: an older server). */
+  accountSwitch?: RunAccountSwitch | null;
+}
+
+/** An account a run thought with: its id, and the name it went by then (with its owner's when not the agent owner's). */
+export interface RunAccount {
+  id: string;
+  name: string;
+}
+
+export interface RunAccountSwitch {
+  /** The first account it left. */
+  from: RunAccount;
+  /** The last one it moved to. */
+  to: RunAccount;
+  /** Its plan's limit, the pause line (99%) of long work, or the paid extra usage `from` would go into. */
+  cause: "limit" | "line" | "extra";
 }
 
 export interface RunStep {
@@ -7176,7 +7216,7 @@ export interface NotificationSource {
   widgetId?: string;
   /** A message in a live file's conversation (ADR 0199): the file, opened with it at `messageId`. */
   artifactId?: string;
-  /** A message in a code session's conversation (ADR 0208): the session, opened on the Code page. */
+  /** A message in a code session's conversation (ADR 0213): the session, opened on the Code page. */
   codeSessionId?: string;
   /** Channel name, thread title, issue title, topic title, mission or routine name (or the computer's name). */
   label?: string;

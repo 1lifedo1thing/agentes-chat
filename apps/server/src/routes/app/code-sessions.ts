@@ -139,7 +139,7 @@ const CodeFile = z
   .openapi("CodeFile");
 
 /**
- * Code sessions (ADR 0208): a request worked on in its own git worktree on the agent's computer, with its own
+ * Code sessions (ADR 0213): a request worked on in its own git worktree on the agent's computer, with its own
  * conversation. The conversation itself goes through the chat's routes (`…/channels/{channelId}/messages` with the
  * root as the thread); these routes open, list, rename and close sessions and read git in their worktree.
  */

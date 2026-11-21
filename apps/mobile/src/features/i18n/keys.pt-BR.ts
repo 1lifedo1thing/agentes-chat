@@ -204,6 +204,8 @@ export const featureKeysPtBR = {
     recent: "Recentes",
     /** Under Recentes' first rows: the whole list. */
     seeAll: "Ver todas as conversas",
+    /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */
+    splitEmpty: "Suas conversas abrem aqui.",
     wait: {
       verb: {
         approval: "precisa do seu ok",
@@ -785,9 +787,13 @@ export const featureKeysPtBR = {
       missions: "Missões",
       threads: "Threads",
     },
+    /** On a large screen (the iPhone Duo open), where the open thread stands beside the list while there is none yet. */
+    splitEmpty: "Suas threads abrem aqui.",
   },
   agents: {
     title: "Agentes",
+    /** On a large screen (the iPhone Duo open), where an agent's page stands beside the list while the team has none. */
+    splitEmpty: "As páginas dos seus agentes abrem aqui.",
     subtitle_one: "{{count}} na equipe · {{working}} trabalhando",
     subtitle_other: "{{count}} na equipe · {{working}} trabalhando",
     free: "Livre",
@@ -1143,6 +1149,10 @@ export const featureKeysPtBR = {
     notificationsOnHint: "Também chegam no navegador e no app do computador, se estiverem ligadas lá.",
     notificationsOffHint: "Ligue para receber avisos aqui. Os tipos abaixo valem para todos os seus aparelhos.",
     notificationsKindsHint: "A Atividade guarda tudo. Vale para este workspace, em todos os seus aparelhos.",
+    /** The switch for the agents' Live Activity (the iPhone's Dynamic Island and Lock Screen, ADR 0210). */
+    liveActivity: "Agentes na ilha",
+    liveActivityHint:
+      "Quando um agente trabalha no que você pediu, ele aparece em cima da tela, em qualquer app, e na tela bloqueada. Com o app fechado, precisa do iOS 17.2 ou mais novo.",
     version: "agentes.chat · versão {{version}}",
     edit: "Editar",
     status: "Status",
@@ -1283,6 +1293,16 @@ export const featureKeysPtBR = {
       fullscreen: "Tela cheia",
       open: "Abrir",
       cantPlay: "Este vídeo não toca neste celular.",
+    },
+    talk: {
+      hint: {
+        image: "Toque onde quer comentar",
+        video: "Toque no vídeo para comentar neste momento",
+        pdf: "Toque na página para marcar um ponto",
+      },
+      markVideo: "Comentar neste momento do vídeo",
+      pdfPage: "Página {{page}} de {{count}}",
+      pdfFailed: "Não deu para mostrar este PDF.",
     },
   },
   issues: {
@@ -1468,7 +1488,7 @@ export const featureKeysPtBR = {
       lastDay: "Último dia",
     },
   },
-  // Código (ADR 0208; the rest of its words are the web's, `codeSessions.*`).
+  // Código (ADR 0213; the rest of its words are the web's, `codeSessions.*`).
   coding: {
     pill: "{{who}}. Ver o código",
     seeChanges: "Ver as mudanças",

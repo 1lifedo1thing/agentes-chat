@@ -458,7 +458,7 @@ test("where sessions are screened no terminal opens: refused as not found, nothi
   runner.ws.close();
 });
 
-/** A code session of the owner's agent on its computer, its worktree ready (ADR 0208). */
+/** A code session of the owner's agent on its computer, its worktree ready (ADR 0213). */
 async function codeSession(org: { orgId: string; agentId: string }, machineId: string) {
   const [user] = await t.db.select().from(schema.users).where(eq(schema.users.email, "owner@example.com"));
   const userId = user?.id ?? "";

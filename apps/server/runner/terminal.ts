@@ -20,7 +20,7 @@ import type { DataSocket } from "./streams";
 /**
  * Terminals people open on an agent's computer (ADR 0058 §6): the login
  * shell of the agent's OS user in a PTY (`Bun.Terminal`), in the agent's
- * folder (or a folder inside it: a code session's worktree, ADR 0208), with
+ * folder (or a folder inside it: a code session's worktree, ADR 0213), with
  * none of the agent's secrets in its environment. Its bytes go
  * both ways over the stream's data socket; a resize comes as a control frame,
  * and how the shell ended goes back as `exit` before the socket closes.
@@ -275,7 +275,7 @@ export class Terminals {
    * size, then its data socket (`dial`); resolves once both are up, and the
    * bytes go on flowing until either ends. What the shell prints before the
    * socket is ready waits for it. `cwd` (`TERMINAL_CWD_PROTOCOL`): a folder
-   * inside the agent's own to start in (a code session's worktree, ADR 0208).
+   * inside the agent's own to start in (a code session's worktree, ADR 0213).
    */
   async open(agent: AgentScope, size: { cols: number; rows: number }, dial: () => Promise<DataSocket>, cwd?: string) {
     const info = this.info();

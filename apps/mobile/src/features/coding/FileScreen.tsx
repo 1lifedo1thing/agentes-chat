@@ -12,7 +12,7 @@ import { PushedHeader } from "../shared/parts";
 import { splitPath } from "./logic";
 
 /**
- * A file of a session's worktree, read-only (ADR 0208), pushed from Files or a search: its name in the bar and its
+ * A file of a session's worktree, read-only (ADR 0213), pushed from Files or a search: its name in the bar and its
  * folder under it, its lines numbered and in the code's colors (the app's highlighter, as a message's code in full),
  * across the screen's width with long lines scrolling sideways, or wrapped from the bar. Why it doesn't show, in words,
  * when it can't (a binary, a `.env`, ignored by git, a link out, gone); only its start when it is large.

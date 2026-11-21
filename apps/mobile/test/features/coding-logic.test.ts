@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CodeGit, CodeSession } from "@agenteschat/client";
+import type { CodeSession } from "@agenteschat/client";
 import {
   folderEntries,
   isLocalRepo,
@@ -15,15 +15,10 @@ import {
   splitPath,
   statWords,
 } from "../../src/features/coding/logic";
-import { freeForStep, stepAsk, stepsOf, stepWords } from "../../src/features/coding/steps";
 import { MAIN, mainLayout } from "../main-stack";
 
 const src = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
 const route = (path: string) => readFileSync(join(MAIN, path), "utf8");
-
-/** The key and its values, so a test reads which words a step picked. */
-const t = ((key: string, values?: Record<string, unknown>) =>
-  values ? `${key} ${JSON.stringify(values)}` : key) as never;
 
 const session = (over: Partial<CodeSession> = {}): CodeSession => ({
   id: "s1",
@@ -43,16 +38,6 @@ const session = (over: Partial<CodeSession> = {}): CodeSession => ({
   createdBy: "u1",
   createdAt: "2026-11-20T09:00:00Z",
   lastAt: "2026-11-20T10:00:00Z",
-  ...over,
-});
-
-const git = (over: Partial<CodeGit> = {}): CodeGit => ({
-  uncommitted: 3,
-  ahead: 0,
-  upstream: true,
-  local: false,
-  pr: null,
-  next: "commit",
   ...over,
 });
 
@@ -179,56 +164,7 @@ describe("the session's conversation", () => {
     expect(header).toContain('codeBusy ? { ...codeSession, work: "working" } : codeSession');
   });
 
-  test("the next git step stands over the composer only when no request or wait does", () => {
-    expect(src("features/chat/screen/ChatDock.tsx")).toContain(
-      "{member && codeId && !awayAsk && !waitingFirst ? (\n          <CodeStepLine sessionId={codeId} busy={runs.length > 0} onSee={openCode} />",
-    );
-    const line = src("features/coding/StepLine.tsx");
-    // Nothing read before the run ended, and nothing again until the agent started on what was asked.
-    expect(line).toContain("git.dataUpdatedAt >= endedAt && sessionQuery.dataUpdatedAt >= endedAt");
-    expect(line).toContain("free && fresh && !asked");
-  });
-
   test("the phone hears a session's changes (its worktree, name, pull request), as the web does", () => {
     expect(src("features/shared/userEvents.ts")).toContain("applyCodeSessionEvent(qc, orgId, event);");
-  });
-});
-
-describe("git steps", () => {
-  test("a project only on the computer has Commit and Merge; one with a remote has the four", () => {
-    expect(stepsOf(session({ local: true }))).toEqual(["commit", "merge"]);
-    expect(stepsOf(session())).toEqual(["commit", "push", "pr", "merge"]);
-  });
-
-  test("a step is asked of the agent in words; merging a local project names its base", () => {
-    expect(stepAsk(t, session(), "commit")).toBe("codeSessions.git.ask.commit");
-    expect(stepAsk(t, session({ local: true, baseBranch: "trunk" }), "merge")).toBe(
-      'codeSessions.git.ask.mergeLocal {"base":"trunk"}',
-    );
-    expect(stepAsk(t, session({ local: true, baseBranch: null }), "merge")).toBe(
-      'codeSessions.git.ask.mergeLocal {"base":"main"}',
-    );
-  });
-
-  test("where the branch stands, before each step's word", () => {
-    expect(stepWords(t, session(), git({ uncommitted: 3 }), "commit")).toBe('codeSessions.git.hint.commit {"count":3}');
-    expect(stepWords(t, session(), git({ ahead: 2 }), "push")).toBe('codeSessions.git.hint.push {"count":2}');
-    expect(stepWords(t, session(), git(), "pr")).toBe("mobile.coding.next.pr");
-    expect(stepWords(t, session(), git({ pr: { number: 12, url: null } }), "merge")).toBe(
-      'codeSessions.git.hint.prOpen {"number":12}',
-    );
-    expect(stepWords(t, session({ local: true }), git(), "merge")).toBe(
-      'mobile.coding.next.mergeLocal {"base":"main"}',
-    );
-  });
-
-  test("a step is offered only while the agent is free: its worktree ready, no run, no work going on", () => {
-    expect(freeForStep(session())).toBe(true);
-    expect(freeForStep(session({ work: "waiting" }))).toBe(true);
-    expect(freeForStep(session(), true)).toBe(false);
-    expect(freeForStep(session({ work: "working" }))).toBe(false);
-    expect(freeForStep(session({ work: "preparing" }))).toBe(false);
-    expect(freeForStep(session({ worktree: { state: "preparing", error: null, errorCode: null } }))).toBe(false);
-    expect(freeForStep(null)).toBe(false);
   });
 });

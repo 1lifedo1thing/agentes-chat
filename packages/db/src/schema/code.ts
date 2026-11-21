@@ -15,7 +15,7 @@ import { machines } from "./machines";
 import { organizations } from "./tenancy";
 
 /**
- * A code session (ADR 0208): one request worked on in its own git worktree on the agent's computer, with its own
+ * A code session (ADR 0213): one request worked on in its own git worktree on the agent's computer, with its own
  * conversation. The conversation is a channel of kind `code` (private, never listed) with one root message
  * (`meta.codeSession`); the session is that thread's replies, as a task's conversation is (ADR 0145). Its agent
  * answers there like in a DM, and its computer brain (Claude Code, Codex) works with the worktree as its folder.

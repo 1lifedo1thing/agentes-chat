@@ -26,6 +26,8 @@ import {
   type BrainSteerRequest,
   type BrainTurnRequest,
   type BrainTurnTimings,
+  type BrainWarmReply,
+  type BrainWarmRequest,
   isAccountId,
   isBrainEffort,
   isContextTokens,
@@ -62,6 +64,7 @@ import {
   withSignIn,
   yieldRoute,
 } from "./accounts";
+import { type AwakeClock, awakeClock } from "./awake";
 import {
   BASH_DEFAULT_MS,
   CLAUDE_SILENCE,
@@ -123,7 +126,8 @@ import { claudeSessionExists, claudeSessionFile, type TaskSecrets, WRONG_SESSION
  *   Claude Code's own on the machine), plan usage, plan limits, and a final
  *   `done` or `error`.
  * - Block 5: one process per (agent, session) stays alive between turns
- *   (stdin open), closed after `idleMs` without a turn, at most
+ *   (stdin open), closed after `idleMs` without a turn (awake time: a computer that slept doesn't close them all on
+ *   waking, `AwakeClock`), at most
  *   `maxProcesses` kept per agent (the least recently used idle one of that
  *   agent's is closed for a new one). With all busy, a turn still gets its
  *   own process (live messages reach it too), and the cap is restored as
@@ -133,6 +137,7 @@ import { claudeSessionExists, claudeSessionFile, type TaskSecrets, WRONG_SESSION
  *   `reclaimIdle` closes one when the computer is short of memory for a turn
  *   (any agent's, the least recently used; the waiting turn's own session
  *   last).
+ *   `brain.warm` (protocol 74, `prewarm`) starts a session's process before its turn comes, the same way.
  *   A process that dies while idle is started again (resumed) on the next
  *   turn; one that dies mid-turn is replaced by a one-shot resume of the same
  *   turn. Turns of one session run one at a time (queued).
@@ -238,7 +243,7 @@ export const STEER_FOLLOW_UP_MS = 30_000;
  */
 export const STEER_BACKGROUND_WAIT_MS = 10 * 60_000;
 /**
- * A result came while a workflow or a subagent this request started still runs in the background (ADR 0208): how
+ * A result came while a workflow or a subagent this request started still runs in the background (ADR 0213): how
  * long the request waits for it and the turn the CLI then runs with its outcome, the run "working" meanwhile, its
  * progress live (`tool_progress`), its commands still checked as this turn's. Past it, as above.
  */
@@ -380,7 +385,7 @@ export interface ParsedTask {
   backgrounded?: boolean;
   /**
    * Its end is what the answer waits for (`AWAITED_TASKS`: a workflow, a subagent): a request it runs past the result
-   * of goes on until it ended and the CLI answered it, as for work moved aside (ADR 0208).
+   * of goes on until it ended and the CLI answered it, as for work moved aside (ADR 0213).
    */
   awaited?: boolean;
   /** Over (`task_notification`, or `task_updated` with a final status). */
@@ -642,7 +647,7 @@ export class ClaudeStreamParser {
           if (block.type === "tool_use" && str(block.id) && str(block.name)) {
             this.tools.set(str(block.id), { name: str(block.name), input: block.input ?? {} });
             // Ours run through the bridge, which tells the engine as they start. Its input goes too (masked on the
-            // way out): a code session shows the call's line while it runs (ADR 0208).
+            // way out): a code session shows the call's line while it runs (ADR 0213).
             if (!str(block.name).startsWith(OUR_TOOL_PREFIX))
               events.push({
                 type: "tool_started",
@@ -705,7 +710,7 @@ export class ClaudeStreamParser {
 
   /**
    * A task that runs subagents (`system/task_*` of a workflow or a subagent) as the progress of the main
-   * conversation's call that started it (ADR 0208): its start, its calls so far (a subagent's latest tool, a
+   * conversation's call that started it (ADR 0213): its start, its calls so far (a subagent's latest tool, a
    * workflow's agents) and its end. A subagent's own subagents are its business: never a line here.
    */
   private taskProgress(ev: Record<string, unknown>): WireBrainEvent | undefined {
@@ -800,6 +805,8 @@ export class ClaudeStreamParser {
     const calls = num(ev.num_turns);
     const maxUncached = Math.max(0, ...this.uncached.values());
     const maxContext = Math.max(0, ...this.context.values());
+    // A Map keeps the order calls first came in: its last value is the turn's last call, the session's size now.
+    const lastContext = [...this.context.values()].at(-1) ?? 0;
     if (input > 0 || output > 0) {
       events.push({
         type: "usage",
@@ -812,6 +819,7 @@ export class ClaudeStreamParser {
         ...(calls > 0 ? { calls } : {}),
         ...(maxUncached > 0 ? { maxUncached } : {}),
         ...(maxContext > 0 ? { maxContext } : {}),
+        ...(lastContext > 0 ? { lastContext } : {}),
       });
     }
     this.tools.clear();
@@ -1025,7 +1033,7 @@ export interface ClaudeLaunch {
   permissionMode: "acceptEdits" | "dontAsk" | "default";
   /** Protocol 10: folders allowed for the agent besides its own (`--add-dir` each). */
   addDirs?: string[];
-  /** A code session's turn (ADR 0208): the worktree's own agents, skills and commands as a plugin (`repoPlugin`). */
+  /** A code session's turn (ADR 0213): the worktree's own agents, skills and commands as a plugin (`repoPlugin`). */
   pluginDirs?: string[];
   /** Protocol 13: `--effort` (anything else is left out). */
   effort?: BrainEffort;
@@ -1040,7 +1048,7 @@ export interface ClaudeLaunch {
   builtinTools?: readonly string[];
   /**
    * Its own tools allowed without our prompt tool (`--allowedTools`, beside our MCP's): a code session's workflows,
-   * which the CLI would ask about though there is nothing in them for our rules to check (ADR 0208).
+   * which the CLI would ask about though there is nothing in them for our rules to check (ADR 0213).
    */
   allowedTools?: readonly string[];
   /** Claude Code's own tools taken away (`--disallowedTools`), where `builtinTools` can't be set. */
@@ -1063,7 +1071,7 @@ export interface ClaudeLaunch {
  */
 export const BRAIN_BUILTIN_TOOLS = ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "ToolSearch"] as const;
 /**
- * A code session's turn (ADR 0208) also starts Claude Code's own subagents (`Agent`, `Task` before 2.1.63), which get
+ * A code session's turn (ADR 0213) also starts Claude Code's own subagents (`Agent`, `Task` before 2.1.63), which get
  * the turn's tools and permission mode, uses skills (`Skill`: the worktree's own, loaded as a plugin) and runs
  * workflows of subagents (`Workflow`) where the account's plan has them.
  */
@@ -1122,7 +1130,7 @@ export function brainProfileLaunch(
   personalMcp: boolean,
   delegated = false,
   asksFirst = false,
-  /** A code session's turn (ADR 0208): Claude Code's subagents and skills too. */
+  /** A code session's turn (ADR 0213): Claude Code's subagents and skills too. */
   code = false,
 ): Pick<
   ClaudeLaunch,
@@ -1278,6 +1286,8 @@ export class ClaudeProcess {
   ownTurnDue = false;
   /** Turns the CLI ran by itself and finished while no request listened (tests, logs). */
   ownTurns = 0;
+  /** A turn listened to it once (`onLine`). */
+  private listened = false;
   /** Its tasks running in the background (a dev server, a watcher), whichever turn started them. */
   private readonly backgroundTasks = new Set<string>();
   private ownTurnWaiters = new Set<() => void>();
@@ -1507,6 +1517,8 @@ export class ClaudeProcess {
 
   /** A line no request listens to: a turn the CLI started by itself begins (or ends). */
   private noteIdle(line: string) {
+    // Before its first prompt (a warm start, `prewarm`) it runs no turn: its `init` says only that it started.
+    if (!this.listened) return;
     // Leftovers of the last turn (`command_lifecycle` completed, task summaries) say nothing.
     if (!/"type":\s*"(result|assistant|stream_event)"|"subtype":\s*"(init|task_notification)"/.test(line)) return;
     try {
@@ -1567,6 +1579,7 @@ export class ClaudeProcess {
 
   onLine(handler: ((line: string) => void) | null) {
     this.lineHandler = handler;
+    if (handler) this.listened = true;
   }
 
   onExit(handler: () => void): () => void {
@@ -1737,7 +1750,7 @@ export function runTurnOnProcess(
     const foreground = new Set<string>();
     /**
      * Its tasks running in the background, by why the request waits for them: moved there mid-turn, or a workflow or
-     * a subagent whose end the answer waits for (`awaited`, ADR 0208); one the model started there (a dev server) not.
+     * a subagent whose end the answer waits for (`awaited`, ADR 0213); one the model started there (a dev server) not.
      */
     const background = new Map<string, "moved" | "awaited" | "started">();
     /** Its tasks the answer waits for (`ParsedTask.awaited`), from their start: also once moved to the background. */
@@ -2044,8 +2057,11 @@ export interface BrainManagerOptions {
   sharedFolder?: () => string | null | undefined;
   /** How Claude Code starts (a worker under systemd: in the agent's AI CLIs slice, `scope-gate.ts`). */
   spawn?: Spawn;
+  /** How long a process may sit between turns, in time the computer was awake (`AwakeClock`). */
   idleMs?: number;
   maxProcesses?: number;
+  /** Tests: the awake time idle processes are measured in. */
+  clock?: Pick<AwakeClock, "read">;
   deltaMs?: number;
   /** Tests: `STEER_FOLLOW_UP_MS`. */
   steerFollowUpMs?: number;
@@ -2097,8 +2113,15 @@ interface Live {
   opening: boolean;
   busy: boolean;
   lastUsed: number;
+  /** Awake time (`AwakeClock`) its last turn ended at. */
+  idleSince: number;
   idleTimer: ReturnType<typeof setTimeout> | null;
   persistent: boolean;
+  /**
+   * Started by `brain.warm` with the agent's last system text, its turn not come yet: a turn with another text starts
+   * its own process (the session's first text is the one it keeps).
+   */
+  guessed?: string;
   /** `drop` ran: a process closed while idle exits after, and its exit handler drops it again. */
   dropped?: boolean;
 }
@@ -2232,6 +2255,10 @@ export class BrainManager {
   private keep: ReadonlySet<string> | undefined;
   /** The same per agent, where one manager runs several agents' CLIs (root's). */
   private readonly keeps = new Map<string, ReadonlySet<string>>();
+  /** Each agent's system text as its last turn sent it (`prewarm`): the same in each of its conversations. */
+  private readonly systems = new Map<string, string>();
+  /** …and the folder its last turn ran in. */
+  private readonly cwds = new Map<string, string>();
   /** Ended background shells of sessions with no process to tell, by `brainKey`: their next turn hears of them. */
   private readonly notices = new Map<string, ToolNotice[]>();
   private readonly log: (line: string) => void;
@@ -2370,19 +2397,34 @@ export class BrainManager {
     }
     if (typeof req.runId !== "string" || !RUN_ID.test(req.runId))
       throw new RunnerError("bad_request", "Invalid run id");
+    if (typeof req.session?.id !== "string" || !SESSION_ID.test(req.session.id))
+      throw new RunnerError("bad_request", "The session must be a UUID");
+    if (typeof req.prompt !== "string" || !req.prompt.trim()) throw new RunnerError("bad_request", "Empty prompt");
+    const at = await this.place(req, ctx);
+    return "type" in at ? at : this.queueTurn(at.session, at.cwd, req, at.ctx);
+  }
+
+  /** Where a turn (or a warm start) of `req` runs: its session, folder and sign-in; an event when it can't. */
+  private async place(
+    req: BrainWarmRequest,
+    ctx: BrainTurnContext,
+  ): Promise<{ session: string; cwd: string; ctx: BrainTurnContext } | WireBrainEvent> {
     const session = typeof req.session?.id === "string" ? req.session.id : "";
     if (!SESSION_ID.test(session)) throw new RunnerError("bad_request", "The session must be a UUID");
-    if (typeof req.prompt !== "string" || !req.prompt.trim()) throw new RunnerError("bad_request", "Empty prompt");
     const chat = req.permissions?.mode === "chat";
     if (ctx.delegated) {
       if (req.personalMcp === true && !chat) return errorEvent("unsupported", PERSONAL_MCP_REFUSED, false);
       const at = await ctx.delegated.where(chat || typeof req.cwd !== "string" ? undefined : req.cwd);
-      return this.queueTurn(session, at.cwd, req, {
-        ...ctx,
-        folder: at.folder,
-        accountHome: ctx.delegated.configDir,
-        secrets: { env: {}, redact: redactTokenShapes },
-      });
+      return {
+        session,
+        cwd: at.cwd,
+        ctx: {
+          ...ctx,
+          folder: at.folder,
+          accountHome: ctx.delegated.configDir,
+          secrets: { env: {}, redact: redactTokenShapes },
+        },
+      };
     }
     let cwd = ctx.folder;
     // A `chat` turn starts in the agent's own folder, whatever the request names.
@@ -2408,19 +2450,76 @@ export class BrainManager {
         secrets: withSignIn(ctx.secrets, signIn),
       };
     }
-    return this.queueTurn(session, cwd, req, ctx);
+    return { session, cwd, ctx };
   }
 
-  private async queueTurn(session: string, cwd: string, req: BrainTurnRequest, ctx: BrainTurnContext) {
-    const key = brainKey(ctx.agent.id, session);
+  private queueTurn(session: string, cwd: string, req: BrainTurnRequest, ctx: BrainTurnContext) {
+    return this.queue(brainKey(ctx.agent.id, session), (key) => this.runTurn(key, session, cwd, req, ctx));
+  }
+
+  /** Turns of one session (and its warm starts) run one at a time. */
+  private async queue<T>(key: string, next: (key: string) => Promise<T>): Promise<T> {
     const prev = this.chains.get(key) ?? Promise.resolve();
-    const run = prev.catch(() => undefined).then(() => this.runTurn(key, session, cwd, req, ctx));
+    const run = prev.catch(() => undefined).then(() => next(key));
     this.chains.set(key, run);
     try {
       return await run;
     } finally {
       if (this.chains.get(key) === run) this.chains.delete(key);
     }
+  }
+
+  /**
+   * `brain.warm` (protocol 74): the session's process starts now, as its turn would start it, so the turn finds it
+   * open; one already open stays (its idle time starts again). It starts with the session's kept system text, else
+   * the agent's last turn's (`guessed`). Never for a sign-in several agents share, nor before this manager ran a
+   * turn of the agent's, nor past the agent's cap with none of its processes idle.
+   */
+  async prewarm(req: BrainWarmRequest, ctx: BrainTurnContext): Promise<BrainWarmReply> {
+    const no: BrainWarmReply = { open: false, started: false };
+    const system = this.systems.get(ctx.agent.id);
+    if (this.closed || req.kind !== "claude_code" || ctx.delegated || system === undefined) return no;
+    const at = await this.place(req, ctx).catch(() => null);
+    if (!at || "type" in at) return no;
+    // The agent's folder asked: where its last turn ran instead (a checkout the engine moves its turns to), if still
+    // one it may use.
+    const last = this.cwds.get(ctx.agent.id);
+    const allowed = (dir: string) => [at.ctx.folder, ...(at.ctx.grants ?? [])].some((root) => isInside(root, dir));
+    if (!req.cwd && req.permissions?.mode !== "chat" && last && allowed(last) && existsSync(last)) at.cwd = last;
+    return this.queue(brainKey(ctx.agent.id, at.session), async (key) => {
+      const open = this.live.get(key);
+      if (open && !open.proc.exited) {
+        if (!open.busy) {
+          open.lastUsed = Date.now();
+          this.armIdle(open);
+        }
+        return { open: true, started: false };
+      }
+      const turn: BrainTurnRequest = {
+        ...req,
+        runId: "warm",
+        system,
+        conversation: "",
+        prompt: "",
+        mcp: { token: "" },
+      };
+      await yieldRoute("claude_code", at.ctx.accountHome);
+      if (this.closed) return no;
+      if (this.alive(ctx.agent.id) >= this.max) {
+        const idle = this.lruIdle(ctx.agent.id);
+        if (!idle) return no;
+        this.closeIdle(idle);
+      }
+      const sig = this.signature(at.cwd, turn, at.ctx);
+      const resume = this.resumeFor(at.cwd, at.session, turn, at.ctx);
+      const live = await this.spawn(key, at.session, at.cwd, turn, at.ctx, sig, true, resume);
+      // `opening`: the turn would start from its own system text, not a kept one.
+      if (live.opening) live.guessed = system;
+      live.busy = false;
+      live.lastUsed = Date.now();
+      this.armIdle(live);
+      return { open: true, started: true };
+    });
   }
 
   private signature(cwd: string, req: BrainTurnRequest, ctx: BrainTurnContext) {
@@ -2493,7 +2592,22 @@ export class BrainManager {
     // The runner began to stop during the awaits since the turn came in: `close` wouldn't reach a process started now.
     if (this.closed) return errorEvent("runner_stopping", "The runner is stopping.", true);
     const sig = this.signature(cwd, req, ctx);
+    const system = typeof req.system === "string" ? req.system : "";
+    if (!ctx.delegated) {
+      this.systems.set(ctx.agent.id, system);
+      this.cwds.set(ctx.agent.id, cwd);
+    }
     let live = this.live.get(key);
+    // Warmed with another system text than this turn's: that text would be the session's for good.
+    if (live?.guessed !== undefined) {
+      const guessed = live.guessed;
+      live.guessed = undefined;
+      if (guessed !== system) {
+        this.drop(live);
+        rmSync(live.keptSystem, { force: true });
+        live = undefined;
+      }
+    }
     // A turn Claude Code runs by itself there (or one due): its output would read as this turn's. Wait for
     // its end (output discarded) and keep the process, with the agent's background jobs; kill only a stuck one.
     if (live && live.sig === sig && live.proc.onItsOwn) live = await this.awaitOwnTurn(live, session, ctx);
@@ -2867,7 +2981,7 @@ export class BrainManager {
     const systemFile = path.join(dir, "system.txt");
     const mode = req.permissions?.mode === "plan" || req.permissions?.mode === "chat" ? req.permissions.mode : "work";
     const asks = mode === "work" ? turnAsks(req.permissions?.asks) : undefined;
-    // A code session's turn (ADR 0208) on the agent's own Claude Code: its subagents and skills, and the worktree's.
+    // A code session's turn (ADR 0213) on the agent's own Claude Code: its subagents and skills, and the worktree's.
     const codeTurn = req.codeSession === true && mode === "work" && !delegated && req.personalMcp !== true;
     const launch = brainProfileLaunch(
       mode,
@@ -3017,7 +3131,7 @@ export class BrainManager {
               ...(asks === "always" ? { asksFirst: true } : {}),
             },
           ),
-          // A code session's workflows (ADR 0208): on wherever the account's plan has them (the CLI still gates them).
+          // A code session's workflows (ADR 0213): on wherever the account's plan has them (the CLI still gates them).
           ...(codeTurn ? { enableWorkflows: true } : {}),
           // With the owner's own settings loaded (`personalMcp`), theirs decide the computer's own sign-in.
           ...(ctx.accountHome
@@ -3094,6 +3208,7 @@ export class BrainManager {
       // Its turn comes next (`onLive`): a turn starting meanwhile must not take it for an idle one to close.
       busy: true,
       lastUsed: Date.now(),
+      idleSince: this.clock.read(),
       idleTimer: null,
       persistent,
     };
@@ -3169,15 +3284,28 @@ export class BrainManager {
     }
   }
 
+  private get clock() {
+    return this.opts.clock ?? awakeClock;
+  }
+
   private armIdle(live: Live) {
+    live.idleSince = this.clock.read();
+    this.checkIdle(live, this.opts.idleMs ?? BRAIN_IDLE_MS);
+  }
+
+  /** Closes `live` once it sat idle `idleMs` of awake time: a timer that fires after a sleep finds less and waits on. */
+  private checkIdle(live: Live, waitMs: number) {
     if (live.idleTimer) clearTimeout(live.idleTimer);
     live.idleTimer = setTimeout(() => {
+      live.idleTimer = null;
       if (live.busy) return;
       // Its dev server or watcher would die with it: looked at again later.
       if (live.proc.holdsWork) return this.armIdle(live);
+      const left = (this.opts.idleMs ?? BRAIN_IDLE_MS) - (this.clock.read() - live.idleSince);
+      if (left > 0) return this.checkIdle(live, left);
       this.log(`brain process ${live.key.split(":")[1]?.slice(0, 8) ?? ""} idle; closing`);
       this.drop(live);
-    }, this.opts.idleMs ?? BRAIN_IDLE_MS);
+    }, waitMs);
     live.idleTimer.unref?.();
   }
 

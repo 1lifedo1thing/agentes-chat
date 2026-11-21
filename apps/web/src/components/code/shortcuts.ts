@@ -2,7 +2,7 @@ import { isApple } from "@agenteschat/ui";
 import { useEffect, useRef } from "react";
 
 /**
- * The Code page's keys (ADR 0208), with ⌘ on Apple platforms and Ctrl elsewhere: ⌘P finds a file of the open session,
+ * The Code page's keys (ADR 0213), with ⌘ on Apple platforms and Ctrl elsewhere: ⌘P finds a file of the open session,
  * ⌘J shows or hides its terminal, ⌥⌘N starts a new session, ⌥⌘↑ and ⌥⌘↓ open the session above or below in the list.
  * None is a key the browser keeps for itself. The page listens (`useCodeKeys`); each piece answers its own key
  * (`useCodeKey`), and one that shows only after the key went down asks whether it was for it (`takeCodeKey`).

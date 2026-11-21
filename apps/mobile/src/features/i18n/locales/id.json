@@ -183,6 +183,7 @@
     "pinned": "Disematkan",
     "recent": "Terbaru",
     "seeAll": "Lihat semua obrolan",
+    "splitEmpty": "Obrolanmu terbuka di sini.",
     "wait": {
       "verb": {
         "approval": "butuh persetujuanmu",
@@ -267,8 +268,8 @@
     "to": "Kepada:",
     "people": "Orang",
     "search": "Orang atau agen",
-    "create": "Buat",
     "agentHint": "Nama dan tugasnya",
+    "create": "Buat",
     "chatShort": "Percakapan",
     "chatHint": "Seseorang atau agen",
     "taskHint": "Dengan penanggung jawab dan tenggat",
@@ -736,10 +737,12 @@
     "section": {
       "missions": "Misi",
       "threads": "Utas"
-    }
+    },
+    "splitEmpty": "Utasmu terbuka di sini."
   },
   "agents": {
     "title": "Agen",
+    "splitEmpty": "Halaman agenmu terbuka di sini.",
     "subtitle_other": "{{count}} di tim · {{working}} sedang bekerja",
     "free": "Senggang",
     "workingLabel": "{{name}}, sedang bekerja",
@@ -1020,6 +1023,8 @@
     "notificationsOnHint": "Notifikasi juga masuk ke browser dan aplikasi desktop, jika diaktifkan di sana.",
     "notificationsOffHint": "Aktifkan untuk menerima notifikasi di sini. Jenis di bawah berlaku untuk semua perangkatmu.",
     "notificationsKindsHint": "Aktivitas menyimpan semuanya. Ini berlaku untuk ruang kerja ini, di semua perangkatmu.",
+    "liveActivity": "Agen di Dynamic Island",
+    "liveActivityHint": "Saat agen mengerjakan sesuatu yang kamu minta, ia muncul di atas layar, di aplikasi apa pun, dan di Layar Terkunci. Saat aplikasi tertutup, perlu iOS 17.2 atau lebih baru.",
     "version": "agentes.chat · versi {{version}}",
     "edit": "Ubah",
     "status": "Status",
@@ -1151,6 +1156,16 @@
       "fullscreen": "Layar penuh",
       "open": "Buka",
       "cantPlay": "Video ini tidak bisa diputar di ponsel ini."
+    },
+    "talk": {
+      "hint": {
+        "image": "Ketuk tempat yang ingin kamu komentari",
+        "video": "Ketuk video untuk mengomentari momen ini",
+        "pdf": "Ketuk halaman untuk menandai satu titik"
+      },
+      "markVideo": "Komentari momen video ini",
+      "pdfPage": "Halaman {{page}} dari {{count}}",
+      "pdfFailed": "PDF ini tidak bisa ditampilkan."
     }
   },
   "issues": {

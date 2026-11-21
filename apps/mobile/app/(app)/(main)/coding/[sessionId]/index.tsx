@@ -3,7 +3,7 @@ import { SessionCodeScreen } from "@/features/coding/SessionCodeScreen";
 import { isSafeId } from "@/features/shared/logic";
 import { LandOn } from "@/ui/navigation";
 
-/** A session's Git and Files (ADR 0208), pushed from its conversation's bar. */
+/** A session's Git and Files (ADR 0213), pushed from its conversation's bar. */
 export default function SessionCodeRoute() {
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
   if (!isSafeId(sessionId)) return <LandOn href="/coding" />;

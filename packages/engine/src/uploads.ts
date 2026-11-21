@@ -380,7 +380,7 @@ export async function shareSavedFile(
   path: string,
   saved: ToolOutput,
 ): Promise<ToolOutput> {
-  // A code session's conversation (ADR 0208): the person sees the agent's screen beside it, in the session's panel.
+  // A code session's conversation (ADR 0213): the person sees the agent's screen beside it, in the session's panel.
   if (await codeSessionOfChannel(ctx.db, ctx.channelId))
     return {
       ...saved,

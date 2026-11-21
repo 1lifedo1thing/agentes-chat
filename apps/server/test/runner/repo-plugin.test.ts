@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { claudeAtLeast, REPO_PLUGIN_MIN_CLAUDE, repoPlugin, safeFrontmatter } from "../../runner/repo-plugin";
 
-// A code session's turn (ADR 0208): the worktree's agents, skills and commands, without what acts outside the turn.
+// A code session's turn (ADR 0213): the worktree's agents, skills and commands, without what acts outside the turn.
 
 const made: string[] = [];
 afterEach(() => {

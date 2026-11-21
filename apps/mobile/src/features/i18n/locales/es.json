@@ -195,6 +195,7 @@
     "pinned": "Fijados",
     "recent": "Recientes",
     "seeAll": "Ver todos los chats",
+    "splitEmpty": "Tus chats se abren aquí.",
     "wait": {
       "verb": {
         "approval": "necesita tu aprobación",
@@ -285,8 +286,8 @@
     "to": "Para:",
     "people": "Personas",
     "search": "Persona o agente",
-    "create": "Crear",
     "agentHint": "Un nombre y lo que hace",
+    "create": "Crear",
     "chatShort": "Conversación",
     "chatHint": "Una persona o un agente",
     "taskHint": "Con responsable y fecha límite",
@@ -782,10 +783,12 @@
     "section": {
       "missions": "Misiones",
       "threads": "Hilos"
-    }
+    },
+    "splitEmpty": "Tus hilos se abren aquí."
   },
   "agents": {
     "title": "Agentes",
+    "splitEmpty": "Las páginas de tus agentes se abren aquí.",
     "subtitle_one": "{{count}} en el equipo · {{working}} trabajando",
     "subtitle_many": "{{count}} en el equipo · {{working}} trabajando",
     "subtitle_other": "{{count}} en el equipo · {{working}} trabajando",
@@ -1172,6 +1175,8 @@
     "notificationsOnHint": "También llegan al navegador y a la app de escritorio, si están activadas ahí.",
     "notificationsOffHint": "Actívalas para recibir notificaciones aquí. Los tipos de abajo se aplican a todos tus dispositivos.",
     "notificationsKindsHint": "Actividad lo guarda todo. Esto se aplica a este espacio de trabajo, en todos tus dispositivos.",
+    "liveActivity": "Agentes en la Dynamic Island",
+    "liveActivityHint": "Cuando un agente trabaja en algo que pediste, aparece en la parte superior de la pantalla, en cualquier app, y en la pantalla de bloqueo. Con la app cerrada, necesita iOS 17.2 o posterior.",
     "version": "agentes.chat · versión {{version}}",
     "edit": "Editar",
     "status": "Estado",
@@ -1306,6 +1311,16 @@
       "fullscreen": "Pantalla completa",
       "open": "Abrir",
       "cantPlay": "Este video no se puede reproducir en este teléfono."
+    },
+    "talk": {
+      "hint": {
+        "image": "Toca donde quieras comentar",
+        "video": "Toca el video para comentar este momento",
+        "pdf": "Toca la página para marcar un punto"
+      },
+      "markVideo": "Comentar este momento del video",
+      "pdfPage": "Página {{page}} de {{count}}",
+      "pdfFailed": "No se pudo mostrar este PDF."
     }
   },
   "issues": {

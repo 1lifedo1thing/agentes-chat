@@ -103,6 +103,7 @@ function scopeOf(value: unknown): CommandScope | null {
     folders: folders.length ? folders : [v.cwd],
     ...(abs(v.home) ? { home: v.home } : {}),
     ...(abs(v.runnerHome) ? { runnerHome: v.runnerHome } : {}),
+    ...(v.rootlessContainers === true ? { rootlessContainers: true } : {}),
   };
 }
 const NO_SCOPE: CommandScope = { cwd: "/nonexistent", folders: [] };

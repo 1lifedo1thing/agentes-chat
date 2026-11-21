@@ -1,10 +1,10 @@
-# 0208. Code sessions: a request in its own worktree, on the Code page
+# 0213. Code sessions: a request in its own worktree, on the Code page
 
 - Status: Proposed (being built)
 - Date: 2026-11-20
 - Extends: 0025 (connected computers), 0032 (computer brains), 0044 (a mission's worktree), 0058 and 0065 (the agent's
   desktop and terminal), 0042 (phones), 0145 (a task's conversation is a thread of its own), 0156 (the GitHub App)
-- Code: db `packages/db/src/schema/code.ts` (`code_sessions`), migration `0309_code_sessions.sql` (`channel_kind`
+- Code: db `packages/db/src/schema/code.ts` (`code_sessions`), migration `0311_code_sessions.sql` (`channel_kind`
   gains `code`); engine `packages/engine/src/code-sessions.ts` (`createCodeSession`, `prepareCodeSession`,
   `ensureCodeSessionsOn`, `codeAgentSql`, `codeSessionCwd`, `codeSessionBrief`, `admitCodeMembers`,
   `codeSessionDiff`, `codeSessionGit`, `codeSessionGitLog`, `codeSessionFiles`, `codeSessionFile`,
@@ -46,8 +46,8 @@ and to ask the session's agent otherwise.
 
 A session may also start with no repository: a name with no owner (`hello-world`) is a project only on the agent's
 computer, `projects/<name>` in its folder, made with `git init` on first use (or adopted with its files in a first
-commit when the folder is there). Its session has the same worktree, diff and terminal; with no remote, its git button
-offers Commit and Merge (into the project's base branch, on the computer), never Push or a pull request. A clone that
+commit when the folder is there). Its session has the same worktree, diff and terminal; with no remote, the person
+asks for a commit or a merge into the project's base branch in words, never a push or a pull request. A clone that
 fails for want of GitHub access is said in the person's words with that way out (`errorCode: github_access`).
 
 ### 2. Its agent answers like in a DM, once its worktree is ready
@@ -76,10 +76,16 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
 - **List**: the sessions I take part in, grouped by repository, with their state in words (`preparing`, `working`,
   `waiting for you`, `ready`, the PR) and the change's size.
 - **Home**: the field in the middle of the agents' fine sky (the agent page's cover sky), the agents that program
-  standing on its horizon saying what they do. Writing and Enter opens a session with the picked agent and repository
-  (the last ones used come back); the computer is the agent's own, so there is nothing else to pick.
-- **Session**: the conversation under its header (name, state and branch, who is in it, the git button, only when
-  there is a next step and the agent is free to take it), with the agent's model (the DM's picker, changed in place)
+  standing on its horizon saying what they do. Over the field the page's title ("Vibecoding mode", in the brand's face)
+  and the question, and over them the agent picked in the field drawn in cubes from its own avatar (each pixel of the
+  engine's drawing a cube, the avatar's tones through the sky's dither, plain WebGL: `agent-voxel.ts`,
+  `CodeHomeAgent`): it turns a little toward the pointer, blinks with its face, and its cursor (the browser's, ADR 0040
+  §7.2) glides in and waits beside it. The three stand in the middle of the sky over the team; a window too short for
+  them shows the title and the field alone, a browser without WebGL the flat avatar. Writing and Enter opens a session
+  with the picked agent and repository (the last ones used come back); the computer is the agent's own, so there is
+  nothing else to pick.
+- **Session**: the conversation under its header (its name, who is in it and its menu: its state is the list's and the
+  line over the composer's, its branch the Git tab's), with the agent's model (the DM's picker, changed in place)
   and its plan's limits under the composer like a coding CLI's status line, and a side panel with the kit's tabs, Git,
   Files and Screen, and a Terminal under any of them. The list, the conversation and the terminal's height drag, each
   kept on the device, and a session squeezed
@@ -105,18 +111,27 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
     the tabs: a shell on the agent's computer opened in the worktree (the terminal of 0058 §6, with a folder), for
     running a script; the AI doesn't run there. Where the computer's terminal is off, it offers the app's way to turn it
     on (`ToolOffWayOut`: whoever paired it turns it on there, anyone else asks them). Only who may drive that computer opens it, and a server that screens
-    sessions keeps terminals off. The stream takes a `cwd` (`TERMINAL_CWD_PROTOCOL`, 74) that the server sets from the
+    sessions keeps terminals off. The stream takes a `cwd` (`TERMINAL_CWD_PROTOCOL`, 76) that the server sets from the
     session (`/api/terminal?…&session=`, checked with `requireCodeSession`) and the runner resolves inside the agent's
     folder; an older runner opens the shell in the agent's folder and the pane says so (`cwd_ignored`). The pane is
     xterm (keystrokes as binary frames, `resize` as text) and lives on while another tab shows.
 
 ### 5. Git through the agent, so any host and flow works
 
-The header's git button is labeled with the next step read from the worktree (`codeSessionGit`: uncommitted changes →
-Commit; commits not pushed → Push; pushed and on GitHub → Open PR; a PR → Merge); its menu has the others. Each step
-asks the session's agent in words in the conversation: it commits, pushes or opens the pull request with the tools it
-already has, on any host. Merging stays an approval (`merge` is always sensitive). With CI on GitHub, a failing check
-on the session's branch comes back to the agent as a notice in the session, so it reads the log and fixes it.
+There is no git button: the person asks the session's agent in words in the conversation (commit, push, open the pull
+request, merge), and it does it with the tools it already has, on any host, or the person runs it in the terminal.
+Nothing about a session changes the rules: a merge stays an approval (`merge` is always sensitive), asked in the
+conversation like any other. The Git tab reads where the branch stands (`codeSessionGit`). With CI on GitHub, a
+failing check on the session's branch comes back to the agent as a notice in the session, so it reads the log and
+fixes it.
+
+### 5a. Keys
+
+The page's keys, with ⌘ on Apple platforms and Ctrl elsewhere, none one the browser keeps for itself (`shortcuts.ts`):
+⌘P finds a file of the open session (the Files tab and its search), ⌘J shows or hides its terminal, ⌥⌘N starts a new
+session (the home with the caret in its field), ⌥⌘↑ and ⌥⌘↓ open the session above or below in the list. The page
+catches them on their way down, before the focused control's own keys; each piece answers its own, and the buttons say
+theirs in their tooltips.
 
 ### 6. Claude Code's own subagents and skills, and the repository's
 
@@ -132,7 +147,11 @@ Claude Code the runner knows takes the plugin (2.1.63 or newer, `REPO_PLUGIN_MIN
 The turn also gets `Workflow`, Claude Code's scripted workflows of subagents, with `enableWorkflows` in the runner's
 own settings for the turn: the CLI still offers it only where the account's plan has it. A workflow's call is one
 line in the session ("Ran a workflow" and what it does: its name, else its script's `meta`), its subagents' work
-inside it.
+inside it. While they work, subagents and workflows are in plain sight: the runner reads the CLI's task events
+(`tool_progress` on the wire, `agent.tool.progress` to the apps) and the conversation shows each subagent's call now,
+a workflow's agents and how many are done; the line over the composer and the list say it in words. A turn waits for
+the work it started in the background (up to an hour), so its result reaches the conversation. A call whose work goes
+on in the background ends, live and on the trail, when that work ends, with that time.
 
 Files and pictures stay in the session's panel: `upload_file` and `export_file` aren't given to a computer brain in
 a session (`CODE_SESSION_HIDDEN_TOOLS`), a screenshot taken with `share` isn't shown there (`shareSavedFile`), and
@@ -147,7 +166,10 @@ ends. A `context` row keeps them out of every Tool Gateway reader (cost brakes, 
 continuation). Live, `agent.step` carries the line at its start (the runner now sends the input with `tool_started`)
 and at its end (`ended`, `failed`); `meta.work.cliCalls` counts them and they show with the work summary off, in a
 block closed like every other (the diff and the screen say what changed). Elsewhere they stay off the trail (ADR 0032
-addendum: a row per call on every turn of every chat is not worth its writes).
+addendum: a row per call on every turn of every chat is not worth its writes). A run that answers on the way lists
+under each reply only the work that led to it (`replySteps`, and the reply's own summary counted from the reply
+before), and in a session the computer's permission check that let a command through at once is no line of its own
+(the command is the brain's own line, or a subagent's work); one that waits on a person or refuses stays.
 
 ### 8. A failing check comes back to the agent
 
@@ -177,20 +199,15 @@ The phone app has Code as a row of You, with the same API and the conversation a
   then its state and branch (without the agent's `agentes/<handle>/` prefix), and opens its code. It says "working"
   from the live run at once and reads the session again when the run ends. The bar holds one button besides "…", the
   agent's computer (the computer screen the phone already has): with two, a 393-point phone left the pill a few
-  letters of the name. The "…" is the session's: the git steps (the next one first), who is in it, its pull request,
-  closing it.
-- Over the composer, while the agent is free, the next git step stands in the shape of the other bars there: where
-  the branch stands, which opens the changes to look first, then the step's word ("3 files changed · Commit"), which
-  asks the agent in words, as on the web.
-  Nothing read before a run ended is shown, and once asked it stays away until the agent has started.
-- The session's code is one pushed screen with Git and Files as a segmented control. Git leads with the next step as
-  its one primary button. Folders, read-only files, diffs and who is in the session are screens of their own.
+  letters of the name. The "…" is the session's: who is in it, its pull request, closing it.
+- The session's code is one pushed screen with Git and Files as a segmented control: where the branch stands, its
+  changes and its commits. Folders, read-only files, diffs and who is in the session are screens of their own.
 - The app hears `code_session.updated`, as the web does.
 
 ## Consequences
 
 - No new runner op for the worktree or the diff: the session reuses `mission.worktree` and `exec`. The terminal's
-  folder needs a newer runner (protocol 74); an older one opens the shell in the agent's folder and says so. Claude
+  folder needs a newer runner (protocol 76); an older one opens the shell in the agent's folder and says so. Claude
   Code's subagents and the repository's skills need a runner that reads `codeSession`; an older one runs the turn as
   before.
 - Apps registered before this need "Check run" ticked on GitHub; until then no check comes back (Settings says so).

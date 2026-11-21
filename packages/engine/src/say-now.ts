@@ -4,6 +4,7 @@ import { runAuthority } from "./authority";
 import { threadIsConfidential } from "./confidential";
 import { getChannelCached } from "./context";
 import { publishMessageCreated } from "./events";
+import { plainWords } from "./format";
 import { insertMessage, messageView } from "./messages";
 import { runReadOutside } from "./outside";
 import { endsWithSentinel, isSentinelOnly } from "./reply-policy";
@@ -46,7 +47,7 @@ export async function sayNowApplies(db: Executor, run: AgentRun, confidential?: 
   if (run.background || run.workId) return false;
   // Known to the run already (`sealedAtClaim`): no read of the thread's row on its way to the model.
   if (confidential ?? (await threadIsConfidential(db, run.orgId, run.threadRootId))) return false;
-  // A code session (ADR 0208) is read as it goes, though its runs never move to the background.
+  // A code session (ADR 0213) is read as it goes, though its runs never move to the background.
   const channel = await getChannelCached(db as Database, run.orgId, run.channelId);
   if (channel?.kind === "code") return (await runAuthority(db, run)).kind === "person";
   return movableRun(db, run);
@@ -202,15 +203,6 @@ export function createSayNowToolSource(deps: { pubsub?: PubSub }): ToolSource {
   };
 }
 
-/** A sentence's words as they compare: lower case, no accents, no punctuation or emoji. */
-const wordsOf = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/\p{M}/gu, "")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim();
-
 /**
  * A reply without what it already told them on the way (`say_now`): models often write the line again as the first
  * words of the turn that called it, or open their final message with it. The leading sentences go when together they
@@ -220,7 +212,7 @@ const wordsOf = (s: string) =>
  */
 export function withoutSaidNow(text: string, said: readonly Pick<SaidNow, "text">[] | undefined): string {
   if (!said?.length || !text.trim()) return text;
-  const lines = said.map((s) => wordsOf(s.text)).filter(Boolean);
+  const lines = said.map((s) => plainWords(s.text)).filter(Boolean);
   if (lines.length === 0) return text;
   const start = text.trimStart();
   let rest = start;
@@ -231,7 +223,7 @@ export function withoutSaidNow(text: string, said: readonly Pick<SaidNow, "text"
     if (!match) break;
     // A heading that runs into a list ("Os voos mais baratos:") leads the answer: it never repeats the line.
     if (match[2] === "\n" && /:\s*$/.test(match[1] ?? "")) break;
-    const sentence = wordsOf(match[1] ?? "");
+    const sentence = plainWords(match[1] ?? "");
     rest = rest.slice(match[0].length);
     // Punctuation or emoji alone joins the sentences around it.
     if (!sentence) continue;

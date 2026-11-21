@@ -476,7 +476,7 @@ export function terminalSize(cols: number, rows: number) {
 
 /**
  * A person's socket to a terminal as the agent: the shell's bytes both ways, binary; text frames `resize` out, and
- * `exit` and `cwd_ignored` in. `session`: a code session's, started in its worktree (ADR 0208).
+ * `exit` and `cwd_ignored` in. `session`: a code session's, started in its worktree (ADR 0213).
  */
 export function terminalSocketUrl(
   base: SocketBase,
@@ -532,7 +532,7 @@ export function terminalCloseState(code: number, reason = ""): TerminalEnd {
 
 /**
  * What a terminal's text frame says: its shell ended (`exit`), or its computer, too old for the folder asked, started
- * it in the agent's folder (`cwd_ignored`, ADR 0208); null for any other.
+ * it in the agent's folder (`cwd_ignored`, ADR 0213); null for any other.
  */
 export function terminalFrame(text: string): "exit" | "cwd_ignored" | null {
   try {

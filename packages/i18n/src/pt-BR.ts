@@ -2771,6 +2771,8 @@ export const ptBR = {
     uploading: "enviando…",
     uploadFailed: "não foi enviado",
     removeFile: "Remover {{name}}",
+    dropFileTitle: "Solte para anexar",
+    dropFileNote: "Os arquivos ficam no rascunho desta conversa até você enviar.",
     tooManyFiles: "Até {{max}} arquivos por mensagem.",
     reminder: "Lembrete",
     reactions: "Reações",
@@ -4685,6 +4687,21 @@ export const ptBR = {
   adminAsk: {
     ask: "Pedir a um admin",
     sent: "Pedido enviado a quem pode fazer isso.",
+  },
+  /** An AI account named in a run's details: a pill, its card on hover or a press (provider, whose, which computer, usage). */
+  accountRef: {
+    label: "Conta {{name}}",
+    card: "Sobre a conta {{name}}",
+    mine: "Sua conta",
+    of: "Conta de {{name}}",
+    on: "No computador {{computer}}",
+    gone: "Esta conta não está mais no workspace.",
+  },
+  /** A run that went on with another account than its agent's own, in its details and Atividade (never a chat line). */
+  accountSwitch: {
+    limit: "Seguiu na conta <to/> porque a conta <from/> chegou ao limite",
+    line: "Seguiu na conta <to/> porque a conta <from/> está perto do limite",
+    extra: "Seguiu na conta <to/> porque a conta <from/> entraria no uso extra pago",
   },
   channelRefs: {
     list: "Canais",
@@ -6773,6 +6790,8 @@ export const ptBR = {
         /** The agent's CLI couldn't start its sandbox on its computer (bubblewrap refused), before the model was asked. */
         cli_sandbox:
           "O {{brain}} não consegue abrir a sandbox dele neste computador. Escolha outra IA nas configurações do agente.",
+        cli_system:
+          "O {{brain}} ainda não roda no sistema deste computador. Escolha outra IA nas configurações do agente.",
         account_missing:
           "A conta escolhida para este agente não está mais no computador dele. Escolha outra nas configurações do agente ou adicione de novo.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
@@ -10735,6 +10754,13 @@ export const ptBR = {
     usedBy_zero: "nenhum agente usa",
     usedBy_one: "{{count}} agente usa",
     usedBy_other: "{{count}} agentes usam",
+    agents: {
+      title: "Agentes com esta skill",
+      none: "Nenhum agente ainda.",
+      choose: "Escolher agentes",
+      dialogTitle: "Agentes com {{name}}",
+      dialogText: "Cada agente ligado usa a skill sempre que uma tarefa pedir.",
+    },
     updated: "atualizada {{when}}",
     source: { github: "GitHub", url: "Link", upload: "Enviada", manual: "Criada aqui" },
     defaultChip: "Em agentes novos",
@@ -11570,7 +11596,7 @@ export const ptBR = {
     createKeywords: "criar novo adicionar",
     empty: "Nada com “{{q}}”.",
   },
-  /** Código (ADR 0208): sessões em que um pedido é trabalhado numa worktree própria no computador de um agente. */
+  /** Código (ADR 0213): sessões em que um pedido é trabalhado numa worktree própria no computador de um agente. */
   codeSessions: {
     title: "Código",
     state: {
@@ -11721,29 +11747,6 @@ export const ptBR = {
     screenLine: {
       show: "Ver na Tela",
       held: "Uma pessoa está no controle da tela",
-    },
-    git: {
-      step: { commit: "Commit", push: "Enviar", pr: "Abrir PR", merge: "Juntar" },
-      more: "Outros passos do git",
-      /** O que o botão pede ao agente da sessão, como mensagem da pessoa na conversa. */
-      ask: {
-        commit: "Faz o commit do que está pronto, com uma mensagem curta.",
-        push: "Envia a branch.",
-        pr: "Abre um pull request desta branch, com título e texto tirados do diff.",
-        merge: "Junta o pull request na branch base.",
-        mergeLocal: "Junta esta branch na {{base}} do projeto.",
-      },
-      hint: {
-        commit_one: "{{count}} arquivo mudado",
-        commit_other: "{{count}} arquivos mudados",
-        push_one: "{{count}} commit não enviado",
-        push_other: "{{count}} commits não enviados",
-        pr: "No GitHub, com título e texto do diff",
-        prOpen: "O PR #{{number}} está aberto",
-        merge: "Pede aprovação, como sempre",
-        mergeLocal: "Na {{base}}, no computador",
-      },
-      note: "Cada passo pede ao agente, na conversa.",
     },
   },
   code: {
@@ -14727,6 +14730,7 @@ export const ptBR = {
       ask_agent: "Perguntar a outro agente",
       tell_agent: "Avisar outro agente",
       find_agent: "Encontrar agente",
+      read_agent: "Ler configuração do agente",
       ask_user: "Fazer uma pergunta",
       ask_choices: "Oferecer opções",
       request_approval: "Pedir aprovação",
@@ -15499,6 +15503,41 @@ export const ptBR = {
       exitFullscreen: "Sair da tela cheia",
       open: "Abrir",
     },
+    comments: {
+      title: "Comentários",
+      resolve: "Resolver",
+      reopen: "Reabrir",
+      resolvedBy: "Resolvido por {{name}} · {{time}}",
+      resolvedCount_one: "{{count}} resolvido",
+      resolvedCount_other: "{{count}} resolvidos",
+      showResolved: "Mostrar os resolvidos",
+      hideResolved: "Esconder os resolvidos",
+      fromVersion: "Da versão {{version}}",
+      peekOpen: "Clique para abrir na conversa",
+      markAt: "Comentário {{n}} em {{time}}, de {{name}}",
+      page: "Página {{page}}",
+      pageOf: "{{page}} de {{count}}",
+      pdfFailed: "Não deu para mostrar este PDF aqui. Baixe para abrir.",
+      loadFailed: "Não deu para mostrar esta imagem aqui.",
+      hint: {
+        image: "Clique para marcar um ponto ou arraste para marcar uma área",
+        video: "Clique no vídeo para comentar neste momento, ou arraste para marcar uma área",
+        pdf: "Clique numa página para marcar um ponto ou arraste para marcar uma área",
+      },
+      line: {
+        image_one: "{{count}} comentário na imagem",
+        image_other: "{{count}} comentários na imagem",
+        video_one: "{{count}} comentário no vídeo",
+        video_other: "{{count}} comentários no vídeo",
+        pdf_one: "{{count}} comentário no PDF",
+        pdf_other: "{{count}} comentários no PDF",
+      },
+      write: {
+        image: "Escrever sobre a imagem…",
+        video: "Escrever sobre o vídeo…",
+        pdf: "Escrever sobre o PDF…",
+      },
+    },
     zoom: {
       toolbar: "Zoom",
       in: "Ampliar",
@@ -15563,6 +15602,8 @@ export const ptBR = {
       tooMany: "É mais do que cabe aqui. Tire alguns e tente de novo.",
       fillIn: "Preencha o que falta e tente de novo.",
       checkAddress: "Confira o endereço e tente de novo.",
+      privateNetwork:
+        "Este endereço está numa rede privada. Use um endereço público ou, num servidor próprio, libere-o com `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "Ficou longo demais. Encurte e tente de novo.",
       updateComputerApp: "O app do computador é antigo demais para isso. Atualize e tente de novo.",
       computerUpdatesItself: "O computador do workspace se atualiza sozinho para isso. Tente de novo daqui a pouco.",
@@ -15880,6 +15921,7 @@ export const ptBR = {
       notLinkMaker: "Só quem gerou o link pode deixar este computador entrar.",
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
       spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
+      tasksOwnerOnly: "Só quem conectou este computador pode mudar quantas tarefas ele roda ao mesmo tempo.",
       notHome: "Os agentes moram no computador do workspace e usam este quando o citam pelo nome.",
     },
     machine: {
@@ -16367,6 +16409,9 @@ export const ptBR = {
       ready: "Os agentes já podem usá-lo.",
       busy_one: "{{count}} de {{max}} tarefas rodando",
       busy_other: "{{count}} de {{max}} tarefas rodando",
+      tasksChange: "Tarefas ao mesmo tempo aqui: {{max}}. Mude abaixo.",
+      tasksOwner: "Tarefas ao mesmo tempo aqui: {{max}}. Quem conectou este computador pode mudar isso.",
+      tasksUpdate: "Tarefas ao mesmo tempo aqui: {{max}}. Atualize o app dele para mudar isso daqui.",
       offline: "Os agentes esperam ele voltar.",
       offlineSeen: "Visto às {{time}}. Os agentes esperam ele voltar.",
       offlineWithHost: "{{host}} está offline. Os agentes esperam ele voltar.",
@@ -20382,7 +20427,7 @@ export const ptBR = {
     write: "Escreveu",
     run: "Rodou",
     fetch: "Abriu",
-    /** Um subagente do próprio CLI (ADR 0208): "Pediu a um subagente · Revisar o HTML". */
+    /** Um subagente do próprio CLI (ADR 0213): "Pediu a um subagente · Revisar o HTML". */
     delegate: "Pediu a um subagente",
     skill: "Usou a skill",
     workflow: "Rodou um workflow",
@@ -20410,7 +20455,7 @@ export const ptBR = {
     failedTests_one: "{{count}} falhou",
     failedTests_other: "{{count}} falharam",
     exit: "saiu com {{code}}",
-    /** A code session's subagents and workflows while they work (ADR 0208), live in the agent's row. */
+    /** A code session's subagents and workflows while they work (ADR 0213), live in the agent's row. */
     progress: {
       block: "Subagentes do {{name}}",
       block_female: "Subagentes da {{name}}",
@@ -20535,7 +20580,7 @@ export const ptBR = {
       message: "Mensagem para {{name}}",
     },
   },
-  /** A code session's Terminal tab (ADR 0208): a shell on the agent's computer, in the session's folder. */
+  /** A code session's Terminal tab (ADR 0213): a shell on the agent's computer, in the session's folder. */
   codeTerminal: {
     label: "Terminal",
     opening: "Abrindo o terminal…",
@@ -22288,6 +22333,9 @@ export const ptBR = {
         slides: "Conversa da apresentação",
         document: "Conversa do documento",
         file: "Conversa do arquivo",
+        image: "Conversa da imagem",
+        video: "Conversa do vídeo",
+        pdf: "Conversa do PDF",
       },
       placeholder: {
         canvas: "Escrever no quadro · use @ para chamar um agente",
@@ -22295,17 +22343,25 @@ export const ptBR = {
         slides: "Escrever na apresentação · use @ para chamar um agente",
         document: "Escrever no documento · use @ para chamar um agente",
         file: "Escrever sobre o arquivo · use @ para chamar um agente",
+        image: "Escrever sobre a imagem · use @ para chamar um agente",
+        video: "Escrever sobre o vídeo · use @ para chamar um agente",
+        pdf: "Escrever sobre o PDF · use @ para chamar um agente",
       },
       this: {
         canvas: "este quadro",
         spreadsheet: "esta planilha",
         slides: "esta apresentação",
         document: "este documento",
+        image: "esta imagem",
+        video: "este vídeo",
+        pdf: "este PDF",
       },
       origin: {
         from: "<0>{{name}}</0> criou {{what}} a partir da <1>{{place}}</1>",
         made: "<0>{{name}}</0> criou {{what}}",
         imported: "Importado de <1>{{file}}</1> por {{name}}",
+        sentIn: "<0>{{name}}</0> enviou {{what}} na <1>{{place}}</1>",
+        sent: "<0>{{name}}</0> enviou {{what}}",
       },
       about: {
         range: "Sobre {{range}} em {{sheet}}",
@@ -22314,6 +22370,25 @@ export const ptBR = {
         text: "Sobre o trecho selecionado",
         point: "Sobre um ponto do quadro",
         other: "Sobre {{label}}",
+        imageArea: "Sobre a área {{n}} da imagem",
+        imagePoint: "Sobre o ponto {{n}} da imagem",
+        videoAt: "Sobre {{time}} do vídeo",
+        pdfPage: "Sobre a página {{page}} do PDF",
+        image: "Sobre a imagem",
+        video: "Sobre o vídeo",
+        pdf: "Sobre o PDF",
+      },
+      what: {
+        area: "Área {{n}}",
+        point: "Ponto {{n}}",
+        anArea: "Uma área",
+        aPoint: "Um ponto",
+        page: "Página {{page}}",
+      },
+      where: {
+        image: "na imagem",
+        video: "no vídeo",
+        pdf: "no PDF",
       },
       drop: "Não mandar a seleção",
       aboutLine: "Mostrar {{what}} ({{where}}) no arquivo",

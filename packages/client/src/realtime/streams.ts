@@ -200,7 +200,7 @@ export type LiveWork =
       requestId?: string;
       /** A rule ("Aprovar sempre") let it run without asking: whose person, a reads one or not. */
       autoApproved?: { by: string | null; reads: boolean };
-      /** A call of the computer brain's own in a code session (`agent.step`, ADR 0208): its line, as in a terminal. */
+      /** A call of the computer brain's own in a code session (`agent.step`, ADR 0213): its line, as in a terminal. */
       cli?: CliLine;
       /**
        * A subagent or a workflow it started, while it works (`agent.tool.progress`): what it does now, its calls, a
@@ -234,7 +234,7 @@ export interface AgentToolOutputEvent {
   text: string;
 }
 
-/** A subagent or a workflow of a computer brain's own while it works (ADR 0208), by the call that started it. */
+/** A subagent or a workflow of a computer brain's own while it works (ADR 0213), by the call that started it. */
 export interface AgentToolProgressEvent {
   type: "agent.tool.progress";
   channelId: string;
@@ -320,7 +320,7 @@ export interface AgentStepEvent {
   tool: string;
   said?: string | null;
   /**
-   * In a code session (ADR 0208), the call's line in the work: its id and what it does (`cli`), as it starts and again
+   * In a code session (ADR 0213), the call's line in the work: its id and what it does (`cli`), as it starts and again
    * once it ended (`ended`, `failed`), then with what it came to.
    */
   toolUseId?: string;
@@ -613,7 +613,7 @@ function applyEvent(state: StreamsState, event: StreamEvent): StreamsState {
       const current = state.runs[event.runId];
       if (state.finished[event.runId] || !current) return state;
       const step = { tool: event.tool, ...(event.said ? { said: event.said } : {}) };
-      // In a code session (ADR 0208) the call is a line of the work too: its start adds it, its end closes it.
+      // In a code session (ADR 0213) the call is a line of the work too: its start adds it, its end closes it.
       const cli = cliLineOf(event.cli);
       if (!cli || !event.toolUseId) return upsert(state, event, { step });
       const work = current.work ?? [];
@@ -805,7 +805,7 @@ const postedOnTheWay = (state: StreamsState, m: Pick<Message, "agentRunId" | "me
   Boolean(
     m.agentRunId &&
       state.runs[m.agentRunId]?.work?.some(
-        // A call still running, or a subagent or a workflow it started still at work (ADR 0208): the answer it
+        // A call still running, or a subagent or a workflow it started still at work (ADR 0213): the answer it
         // wrote meanwhile is on the way, its outcome comes after.
         (w) => w.kind === "call" && (w.running || (w.progress !== undefined && !w.progress.ended)),
       ),

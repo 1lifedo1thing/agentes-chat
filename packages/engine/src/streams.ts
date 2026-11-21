@@ -58,7 +58,7 @@ export type StreamTarget =
       phone?: PhoneTarget;
       /** The right hand's seat for this person isn't made yet (a screen's state was asked, nothing opened). */
       unmade?: boolean;
-      /** A terminal: the computer starts it in the folder the request asks for (`TERMINAL_CWD_PROTOCOL`, ADR 0208). */
+      /** A terminal: the computer starts it in the folder the request asks for (`TERMINAL_CWD_PROTOCOL`, ADR 0213). */
       takesCwd?: boolean;
     }
   | { refused: number; reason: string };
@@ -296,7 +296,7 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
     const held = target.held === true;
     // A card's view never starts a stopped screen: only someone opening it does.
     const starts = s.request.kind === "desktop" && !held && !s.preview ? { start: true } : {};
-    // A code session's terminal starts in its worktree (ADR 0208) on a computer that takes a folder; an older one
+    // A code session's terminal starts in its worktree (ADR 0213) on a computer that takes a folder; an older one
     // opens it in the agent's folder, and the person hears so once it is ready.
     const asked = s.request;
     s.cwdIgnored = asked.kind === "terminal" && asked.cwd !== undefined && target.takesCwd !== true;
@@ -406,7 +406,7 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
     if (s.switches && request.kind === "desktop") {
       quietly(() => s.viewer.send(JSON.stringify({ type: "mode", mode: request.mode })));
     }
-    // A terminal its computer opened in the agent's folder, too old for the one asked (ADR 0208).
+    // A terminal its computer opened in the agent's folder, too old for the one asked (ADR 0213).
     if (s.cwdIgnored) quietly(() => s.viewer.send(JSON.stringify({ type: "cwd_ignored" } satisfies StreamControl)));
     const queue = s.queue;
     s.queue = [];

@@ -1,4 +1,4 @@
-/** A code session's root message (ADR 0208, `meta.codeSession`): which session its thread is. */
+/** A code session's root message (ADR 0213, `meta.codeSession`): which session its thread is. */
 export interface CodeSessionRoot {
   sessionId: string;
   repo: string;

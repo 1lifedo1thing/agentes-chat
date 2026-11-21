@@ -264,7 +264,7 @@ export type ChannelEvent =
       tool: string;
       said?: string;
       /**
-       * In a code session (ADR 0208), the call's line in the run's work: its id and what it does and on what (`cli`),
+       * In a code session (ADR 0213), the call's line in the run's work: its id and what it does and on what (`cli`),
        * as it starts and again once it ended (`ended`; `failed` when its result was an error), then with what it came
        * to. The end of a call told as it started carries no words.
        */
@@ -274,7 +274,7 @@ export type ChannelEvent =
       failed?: true;
     }
   /**
-   * A subagent or a workflow of a computer brain's own while it works (ADR 0208), by the call that started it: what
+   * A subagent or a workflow of a computer brain's own while it works (ADR 0213), by the call that started it: what
    * it does now, how many calls it made, a workflow's agents, its end. Never stored.
    */
   | {
@@ -623,6 +623,17 @@ export type ChannelEvent =
     }
   /** A message was unpinned. */
   | { type: "message.unpinned"; channelId: string; messageId: string }
+  /**
+   * A comment on a picture, a video or a PDF was resolved or opened again (ADR 0208): its `meta.resolved` now (null:
+   * open). Its pin leaves the file while resolved.
+   */
+  | {
+      type: "message.resolved";
+      channelId: string;
+      messageId: string;
+      threadId: string | null;
+      resolved: { by: { type: "person" | "agent"; id: string }; at: string } | null;
+    }
   /** A person read this DM up to `lastReadAt` (DMs between people only: "Visto"). */
   | { type: "channel.read"; channelId: string; userId: string; lastReadAt: string }
   /** An agent saved something to memory from this person's message: its current memory marks. */

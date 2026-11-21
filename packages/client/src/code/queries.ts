@@ -3,7 +3,7 @@ import { useApi } from "../api/context";
 import type { CodeDiffScope, CodeSession, CreateCodeSessionInput } from "./types";
 
 /**
- * React Query hooks for code sessions (ADR 0208). The user event `code_session.updated` (a session's row changed:
+ * React Query hooks for code sessions (ADR 0213). The user event `code_session.updated` (a session's row changed:
  * its worktree, title, PR) refetches them (`applyCodeSessionEvent`); the conversation itself is the chat's.
  */
 export const codeKeys = {

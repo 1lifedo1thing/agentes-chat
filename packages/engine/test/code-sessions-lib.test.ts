@@ -11,7 +11,7 @@ import {
   titleOfRequest,
 } from "../src/code-sessions";
 
-// Code sessions (ADR 0208): the pure pieces (names, the branch, the diff's split).
+// Code sessions (ADR 0213): the pure pieces (names, the branch, the diff's split).
 
 describe("titleOfRequest", () => {
   test("the first sentence of the first line, capitalized, without its period", () => {

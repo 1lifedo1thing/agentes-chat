@@ -34,7 +34,7 @@ import { branchSlug } from "./mission-worktree";
 import { can, getMembership } from "./organizations";
 
 /*
- * Code sessions (ADR 0208): a request worked on in its own git worktree on the agent's computer. The session's
+ * Code sessions (ADR 0213): a request worked on in its own git worktree on the agent's computer. The session's
  * conversation is a thread in a channel of kind `code` (the task conversation's model, ADR 0145): runs, steering,
  * stop, approvals, live events and the thread screens work unchanged. Its agent answers there like in a DM, and its
  * computer brain works with the worktree as its folder (`codeSessionCwd`, read by `resolveBrain`).
@@ -104,7 +104,7 @@ export function codeSessionOf(meta: unknown): CodeSessionMeta | null {
 const shortId = (id: string) => id.replace(/-/g, "").slice(-8);
 
 /**
- * A project only on the agent's computer, with no remote yet (ADR 0208): named like a folder (letters, digits, dots,
+ * A project only on the agent's computer, with no remote yet (ADR 0213): named like a folder (letters, digits, dots,
  * dashes, underscores, not starting with a dot), it lives in `projects/<name>` in the agent's folder, a git repository
  * of its own made on first use. A session on it has `repo` = that name (no slash), so `isLocalSession` tells it apart
  * from a GitHub repository's (`owner/name`).
@@ -153,7 +153,7 @@ export const codeAgentSql = (channelId: SQL) =>
     where cs.channel_id = ${channelId} and cs.archived_at is null and cs.worktree_state = 'ready' limit 1)`;
 
 /**
- * Who a person names in a session's conversation joins it (ADR 0208): an agent of the workspace by its handle (so the
+ * Who a person names in a session's conversation joins it (ADR 0213): an agent of the workspace by its handle (so the
  * mention wakes it there), a person of the workspace too (they see and talk in the session from then on; what they
  * may do on the computer stays the computer's rule). Returns nothing; the members cache is dropped.
  */
@@ -1093,7 +1093,7 @@ export async function recordCodeSessionPr(
   return setSession(deps, row, { prNumber: pr.number, prUrl: pr.url });
 }
 
-/* ───────── the panel's Git and Files tabs (ADR 0208) ───────── */
+/* ───────── the panel's Git and Files tabs (ADR 0213) ───────── */
 
 /** Most commits the Git tab lists, the newest first. */
 const LOG_MAX = 100;

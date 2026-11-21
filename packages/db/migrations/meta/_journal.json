@@ -2133,8 +2133,22 @@
     {
       "idx": 306,
       "version": "7",
-      "when": 1795181443373,
-      "tag": "0309_code_sessions",
+      "when": 1795215601286,
+      "tag": "0309_live_activity_devices",
+      "breakpoints": true
+    },
+    {
+      "idx": 307,
+      "version": "7",
+      "when": 1795219383867,
+      "tag": "0310_move_learned_sections",
+      "breakpoints": true
+    },
+    {
+      "idx": 308,
+      "version": "7",
+      "when": 1795229383867,
+      "tag": "0311_code_sessions",
       "breakpoints": true
     }
   ]

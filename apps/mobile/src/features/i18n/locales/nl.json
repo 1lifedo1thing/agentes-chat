@@ -189,6 +189,7 @@
     "pinned": "Vastgezet",
     "recent": "Recent",
     "seeAll": "Alle gesprekken bekijken",
+    "splitEmpty": "Je gesprekken openen hier.",
     "wait": {
       "verb": {
         "approval": "heeft je akkoord nodig",
@@ -276,8 +277,8 @@
     "to": "Aan:",
     "people": "Mensen",
     "search": "Persoon of agent",
-    "create": "Maken",
     "agentHint": "Een naam en wat hij doet",
+    "create": "Maken",
     "chatShort": "Gesprek",
     "chatHint": "Een persoon of een agent",
     "taskHint": "Met een verantwoordelijke en een deadline",
@@ -759,10 +760,12 @@
     "section": {
       "missions": "Missies",
       "threads": "Threads"
-    }
+    },
+    "splitEmpty": "Je threads openen hier."
   },
   "agents": {
     "title": "Agents",
+    "splitEmpty": "De pagina's van je agents openen hier.",
     "subtitle_one": "{{count}} in het team · {{working}} aan het werk",
     "subtitle_other": "{{count}} in het team · {{working}} aan het werk",
     "free": "Vrij",
@@ -1096,6 +1099,8 @@
     "notificationsOnHint": "Ze komen ook binnen in de browser en de desktop-app, als ze daar aan staan.",
     "notificationsOffHint": "Zet ze aan om hier meldingen te krijgen. De soorten hieronder gelden voor al je apparaten.",
     "notificationsKindsHint": "Activiteit bewaart alles. Dit geldt voor deze werkruimte, op al je apparaten.",
+    "liveActivity": "Agents in het Dynamic Island",
+    "liveActivityHint": "Als een agent werkt aan iets wat je vroeg, staat hij bovenaan het scherm, in elke app, en op het toegangsscherm. Met de app gesloten is iOS 17.2 of nieuwer nodig.",
     "version": "agentes.chat · versie {{version}}",
     "edit": "Bewerken",
     "status": "Status",
@@ -1230,6 +1235,16 @@
       "fullscreen": "Volledig scherm",
       "open": "Openen",
       "cantPlay": "Deze video kan niet op deze telefoon worden afgespeeld."
+    },
+    "talk": {
+      "hint": {
+        "image": "Tik waar je een opmerking wilt plaatsen",
+        "video": "Tik op de video om bij dit moment een opmerking te plaatsen",
+        "pdf": "Tik op de pagina om een punt te markeren"
+      },
+      "markVideo": "Opmerking bij dit moment van de video",
+      "pdfPage": "Pagina {{page}} van {{count}}",
+      "pdfFailed": "Deze pdf kan niet worden weergegeven."
     }
   },
   "issues": {

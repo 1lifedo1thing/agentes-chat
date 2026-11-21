@@ -201,6 +201,7 @@ import type {
   JoinClaim,
   JoinRequest,
   LearnedSkill,
+  LiveActivityInput,
   Machine,
   MachineAccess,
   MachineAccessReduce,
@@ -553,6 +554,10 @@ export interface ApiClient {
      * body, not the path: an endpoint's encoded slashes don't survive every proxy.
      */
     unregister(token: string): Promise<void>;
+    /** Registers where the agents' Live Activity goes on this iPhone (ADR 0210); refreshed as tokens change. */
+    liveActivity(input: LiveActivityInput): Promise<void>;
+    /** Stops the agents' Live Activity on this install (its switch turned off, or signing out). */
+    liveActivityOff(installId: string): Promise<void>;
     /**
      * Of these notification ids (at most 100), the ones no longer open and unread for me (read, done, snoozed or
      * gone): a browser closes the notifications it still shows for them (clear on read, ADR 0071).
@@ -1573,7 +1578,7 @@ export interface ApiClient {
   dashboards: DashboardsApi;
   /** Spreadsheets, presentations and canvases edited together (ADR 0196), their pictures and Office previews. */
   live: LiveApi;
-  /** Code sessions (ADR 0208): a request in its own worktree on an agent's computer, with its conversation. */
+  /** Code sessions (ADR 0213): a request in its own worktree on an agent's computer, with its conversation. */
   code: CodeApi;
   /** Missions (ADR 0029): long work by the agent's executor on a connected computer, in one thread. */
   missions: {

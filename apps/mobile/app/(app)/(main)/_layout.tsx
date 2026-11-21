@@ -1,9 +1,9 @@
 import { type ErrorBoundaryProps, type NativeStackNavigationOptions, Stack } from "expo-router";
 import { useMemo } from "react";
 import { slideListeners } from "@/agent/live";
-import { isStill } from "@/features/links/landing";
+import { isStill, STILL_PARAM } from "@/features/links/landing";
 import { ScreenError } from "@/features/shared/ScreenError";
-import { coverBarOptions, usePushedOptions, useScrollUnderPushedOptions, useTheme } from "@/ui";
+import { coverBarOptions, usePushedOptions, useScrollUnderPushedOptions, useSideInsets, useTheme } from "@/ui";
 
 /** A link straight to a pushed screen still has the tabs under it (the back button works). */
 export const unstable_settings = { anchor: "(tabs)" };
@@ -23,6 +23,26 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
  * never ships without a bar and a way back. A screen opened in place (`stillHref`: the start screen at launch) comes
  * in without its slide.
  */
+/**
+ * The stack's listeners: the slide's hold on the shared clock (`slideListeners`), and a screen opened in place
+ * (`stillHref`) dropping that mark once it is up, so going back slides as from any pushed screen. A conversation drops
+ * it itself too (`useSettleStill`); the pages a split pushes in place when an iPhone Duo closes (ADR 0212: You's, the
+ * settings' sections, an agent's) and a start screen that isn't a conversation have only this.
+ */
+const stackListeners = ({
+  navigation,
+  route,
+}: {
+  navigation: { setParams: (params: object) => void };
+  route: { params?: object | undefined };
+}) => ({
+  transitionStart: slideListeners.transitionStart,
+  transitionEnd: (e: { data?: { closing?: boolean } }) => {
+    slideListeners.transitionEnd();
+    if (!e.data?.closing && isStill(route.params)) navigation.setParams({ [STILL_PARAM]: undefined });
+  },
+});
+
 /** Create an agent's steps (`new-agent/*`), one pushed screen each. */
 const NEW_AGENT_ROUTES = [
   "new-agent/index",
@@ -34,7 +54,7 @@ const NEW_AGENT_ROUTES = [
   "new-agent/import-preview",
 ];
 
-/** Código's screens on the grouped gray (ADR 0208): the list, a new session and where it works, a session's Git and
+/** Código's screens on the grouped gray (ADR 0213): the list, a new session and where it works, a session's Git and
  * Files, a folder, a diff and who is in it. */
 const CODING_GROUPED_ROUTES = [
   "coding/index",
@@ -50,6 +70,7 @@ export default function MainStack() {
   const { colors } = useTheme();
   const pushed = usePushedOptions();
   const scrollUnder = useScrollUnderPushedOptions();
+  const side = useSideInsets();
   const screenOptions = useMemo(() => {
     const base: NativeStackNavigationOptions = {
       headerShown: false,
@@ -64,7 +85,7 @@ export default function MainStack() {
     const cover = { ...solid, ...coverBarOptions };
     // Screens that only find where to go and replace themselves: no bar, no slide.
     const bare = { ...base, animation: "none" as const };
-    const connectAi = { ...page, contentStyle: { backgroundColor: colors.grouped } };
+    const connectAi = { ...page, contentStyle: { backgroundColor: colors.grouped, ...side } };
     const own: Record<string, NativeStackNavigationOptions> = {
       "(tabs)": base,
       "chat/[channelId]": solid,
@@ -127,16 +148,17 @@ export default function MainStack() {
       // An agent's computer and a shared browser profile's live view: pushed with the opaque bar, their picture laid
       // out below it. Never a modal: the app's sheets, pickers and toasts they open present over them, where under a
       // modal they opened hidden and the screen stopped answering.
-      "computer/[agentId]": solid,
+      // The computer's screen places its own banner and edges by the side insets (`useSideInsets` would add them twice).
+      "computer/[agentId]": { ...solid, contentStyle: { backgroundColor: colors.bg } },
       "browser-profile/[profileId]": solid,
     };
     return ({ route }: { route: { name: string; params?: object } }): NativeStackNavigationOptions => {
       const options = own[route.name] ?? page;
       return isStill(route.params) ? { ...options, animation: "none" } : options;
     };
-  }, [colors, pushed, scrollUnder]);
+  }, [colors, pushed, scrollUnder, side]);
   return (
-    <Stack screenOptions={screenOptions} screenListeners={slideListeners}>
+    <Stack screenOptions={screenOptions} screenListeners={stackListeners}>
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

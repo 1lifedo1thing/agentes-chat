@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { codeFilePathOk, parseLog, parseNumstatZ, parseStatus } from "../src/code-sessions";
 
-// The Git and Files tabs of a code session (ADR 0208): git's own output read as the panel shows it.
+// The Git and Files tabs of a code session (ADR 0213): git's own output read as the panel shows it.
 
 describe("parseStatus", () => {
   test("each kind of change, a rename with where it came from (`-z` puts it after)", () => {

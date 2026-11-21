@@ -13,7 +13,7 @@ import type {
 
 const org = (orgId: string) => `/api/app/organizations/${enc(orgId)}`;
 
-/** Code sessions' routes (ADR 0208), `/api/app/organizations/{orgId}/code-sessions…`. */
+/** Code sessions' routes (ADR 0213), `/api/app/organizations/{orgId}/code-sessions…`. */
 export interface CodeApi {
   /** The sessions I take part in, most recent activity first. */
   list(orgId: string): Promise<CodeSession[]>;

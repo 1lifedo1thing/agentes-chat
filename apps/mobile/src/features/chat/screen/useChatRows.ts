@@ -117,7 +117,7 @@ export function useChatRows({
       const root = list.find((m) => m.id === threadId);
       const replies = list.filter((m) => m.id !== threadId);
       // A task's conversation (ADR 0145): its root stands for the task, one screen back; only the replies show. A
-      // live file's (ADR 0199) the same, under where the file was made, and a code session's (ADR 0208), whose root
+      // live file's (ADR 0199) the same, under where the file was made, and a code session's (ADR 0213), whose root
       // is never shown.
       const file = root ? fileConversationOf(root.meta) : null;
       const head: Row[] = file

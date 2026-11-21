@@ -26,7 +26,7 @@ function patchLines(patch: string): DiffLine[] {
 }
 
 /**
- * A diff in a session (ADR 0208), pushed from Git: the whole change since its base, one change not committed, or one
+ * A diff in a session (ADR 0213), pushed from Git: the whole change since its base, one change not committed, or one
  * commit, read in the worktree. Its name in the bar and its size under it; each file under its path, as the app's diff
  * draws a change (added lines green, removed ones red and struck). Too large to send: the files that changed, each with
  * its counts.

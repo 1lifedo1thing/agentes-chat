@@ -31,7 +31,7 @@ export const SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   team: "always",
   dashboards: "more",
   taskManager: "more",
-  // Code sessions (ADR 0208): for the people who program with the agents; one click away in More for everyone.
+  // Code sessions (ADR 0213): for the people who program with the agents; one click away in More for everyone.
   code: "more",
 };
 
@@ -53,7 +53,7 @@ export const PERSONAL_SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   team: "more",
   dashboards: "more",
   taskManager: "more",
-  // Code sessions (ADR 0208): for the people who program with the agents; one click away in More for everyone.
+  // Code sessions (ADR 0213): for the people who program with the agents; one click away in More for everyone.
   code: "more",
 };
 

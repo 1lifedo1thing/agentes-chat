@@ -366,11 +366,19 @@ describe("routeMessage", () => {
     expect(result.runs.map((r) => [r.agentId, r.hop])).toEqual([[infra.id, 2]]);
 
     const lukewarm = fixedStrategy({ infra: 0.7, qa: 0.6 });
-    const second = await byDev("Also the cache was cold.", 1);
+    const second = await byDev("Also the cache was cold, did anyone warm it?", 1);
     expect(
       (await routeMessage({ db: f.db, strategy: lukewarm.strategy, policy }, { orgId: f.org.id, messageId: second.id }))
         .selected,
     ).toEqual([]);
+
+    // Naming nobody and asking nothing, it brings nobody in, and the step isn't asked.
+    const plain = await byDev("Also the cache was cold.", 1);
+    expect(
+      (await routeMessage({ db: f.db, strategy: lukewarm.strategy, policy }, { orgId: f.org.id, messageId: plain.id }))
+        .skipped,
+    ).toBe("asks_nobody");
+    expect(lukewarm.seen).toHaveLength(1);
 
     const deep = await byDev("answer to an answer", 2);
     expect((await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: deep.id })).skipped).toBe(
@@ -694,7 +702,11 @@ describe("LLM strategy (end to end through the outbox)", () => {
     f = await setup({
       reply: (req) => {
         if (!req.outputSchema)
-          return { chunks: [JSON.stringify(req.messages).includes("cache") ? "Ok." : "The cache is cold."] };
+          return {
+            chunks: [
+              JSON.stringify(req.messages).includes("cache") ? "Ok." : "The cache is cold. Can anyone check the tests?",
+            ],
+          };
         const prompt = textOf(req.messages[0]?.content ?? "");
         // The person's message goes to @dev; @dev's answer brings in @qa.
         return prompt.includes("[@dev]:")
@@ -1300,9 +1312,10 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
           userId: f.owner.id,
           ttlMs: 6000,
         });
-      const started = Date.now();
       await route(quiet().strategy, m.id, { quietMs: ROUTER_QUIET_MS, quietByTyping: true, pubsub: f.pubsub });
-      return Date.now() - started;
+      // From the message's own time, which the router's wait counts from: on a slow machine the insert before the
+      // call takes tens of milliseconds, which a clock started after it would take off the wait.
+      return Date.now() - m.createdAt.getTime();
     };
     expect(await timed("ada, como vai a campanha")).toBeLessThan(TYPING_GRACE_MS - 200);
     expect(await timed("alguém viu a campanha")).toBeGreaterThanOrEqual(TYPING_GRACE_MS - 50);

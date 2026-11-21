@@ -9,6 +9,7 @@ import type {
   ArtifactRef,
   Channel,
   HeldPlace,
+  LiveSelection,
   Member,
   MemoryUpdate,
   MessageMedia,
@@ -331,6 +332,8 @@ import { useLeaveChannelWithUndo } from "@/components/LeaveChannelDialog";
 import { useUploadFailed } from "@/components/Limits";
 import { LiveCodeToggle } from "@/components/LiveCode";
 import { ErrorState, LoadingConversation } from "@/components/Loading";
+import { ResolveButton, ResolvedLine } from "@/components/live/media/ResolveBits";
+import { ChatCommentsLine } from "@/components/live/media/ViewerBits";
 import { LiveQuoteBar, LiveRefLine } from "@/components/live/TalkBits";
 import { useFileTalk } from "@/components/live/talk";
 import { AwayPill, WaitingCard } from "@/components/MachineOutages";
@@ -410,6 +413,7 @@ import { BarAlsoTyping, BarPhrase, BarStep, ConsultClock, TypingMark, WorkingSta
 import { useChannelSearch } from "@/hooks/useChannelSearch";
 import { useComposerDraft } from "@/hooks/useComposerDraft";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useFileDrop } from "@/hooks/useFileDrop";
 import { useDmSidebar, useMembersColumn } from "@/hooks/useMembersColumn";
 import { useMentionSearch } from "@/hooks/useMentionSearch";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
@@ -419,7 +423,7 @@ import { useHeaderSearch } from "@/hooks/useWorkspaceSearch";
 import { TYPED_VALUES } from "@/i18n";
 import { onAgentPanel, takeAgentPanel } from "@/lib/agent-panel-ask";
 import { onChannelDetails, takeChannelDetails } from "@/lib/channel-details";
-import { selectingIn } from "@/lib/context-menu";
+import { inTextField, selectingIn } from "@/lib/context-menu";
 import { desktopPlatform, thisMac, useDocumentTitle } from "@/lib/desktop";
 import { holdOnScreen } from "@/lib/island";
 import { composes, typingInField } from "@/lib/keys";
@@ -1139,6 +1143,7 @@ function ChannelView({
     <LiveQuoteBar
       kind={fileHere.kind}
       selection={fileHere.about}
+      thumb={fileHere.aboutThumb}
       onDrop={() => {
         fileHere.dropAbout();
         composer.current?.focus();
@@ -1407,7 +1412,7 @@ function ChannelView({
         (m) =>
           !taskConversationOf(m.meta) &&
           !fileConversationOf(m.meta) &&
-          // A code session's root stands for the session, whose page is around it (ADR 0208).
+          // A code session's root stands for the session, whose page is around it (ADR 0213).
           !(m.meta && "codeSession" in m.meta) &&
           (!thread.context || m.local || (m.id !== thread.id && m.createdAt > thread.createdAt)),
       );
@@ -2174,6 +2179,33 @@ function ChannelView({
     }
     composer.current?.focus();
   };
+  const canAttach =
+    isMember &&
+    !adjustThreadId &&
+    !org.deletion &&
+    !chrome?.composerReplacement &&
+    !chrome?.locked &&
+    channel.can?.post !== false;
+  const fileDrop = useFileDrop(addFiles, canAttach);
+  const column = useRef<HTMLDivElement>(null);
+  const addFilesNow = useRef(addFiles);
+  addFilesNow.current = addFiles;
+  // A picture pasted after a click in the history (focus on the page, not the box) still joins the draft. The
+  // composer's own paste runs first and takes its files.
+  useEffect(() => {
+    if (!canAttach) return;
+    const paste = (e: globalThis.ClipboardEvent) => {
+      const target = e.target;
+      if (e.defaultPrevented || !(target instanceof Element) || inTextField(target)) return;
+      if (target !== document.body && !column.current?.contains(target)) return;
+      const pasted = Array.from(e.clipboardData?.files ?? []);
+      if (pasted.length === 0) return;
+      e.preventDefault();
+      addFilesNow.current(pasted);
+    };
+    document.addEventListener("paste", paste);
+    return () => document.removeEventListener("paste", paste);
+  }, [canAttach]);
   // A draft past the length limit goes as a text file instead, which agents open like any other.
   const draftAsFile = () => {
     addFiles([new File([draft], t("channel.tooLong.fileName"), { type: "text/plain" })]);
@@ -2212,20 +2244,23 @@ function ChannelView({
     setDraft("");
     const meta = localMeta(quote, quote ? dir.authorName(quote.author) : "", attached);
     setQuote(null);
-    // About what is selected in the file beside it (ADR 0199): the message carries it, then the quote goes.
-    if (fileHere?.about) {
-      meta.liveRef = {
-        artifactId: fileHere.artifactId,
-        kind: fileHere.kind,
-        title: fileHere.title,
-        selection: fileHere.about,
-      };
-      fileHere.dropAbout();
-    }
-    // From the thread panel or page: the reply makes it a "Responder" thread (out of the channel's timeline).
-    if (thread && chrome?.openThread) meta[OPEN_THREAD] = true;
-    // "Parar e mandar" (⌘↵): the agent drops the step it is on and reads this now.
-    send(text, thread ? thread.id : null, meta, opts?.interrupt ? { steer: "now" } : undefined);
+    // About what is selected in the file beside it (ADR 0199): the message carries it, then the quote goes. A comment
+    // on a picture, a video or a PDF uploads its pictures of the place first (ADR 0208), so only a sent one keeps them.
+    const file = fileHere?.about ? fileHere : null;
+    const about = file?.about ?? null;
+    const prepared = about && file?.prepareAbout ? file.prepareAbout(about) : null;
+    file?.dropAbout();
+    const go = (selection: LiveSelection | null) => {
+      if (file && selection) {
+        meta.liveRef = { artifactId: file.artifactId, kind: file.kind, title: file.title, selection };
+      }
+      // From the thread panel or page: the reply makes it a "Responder" thread (out of the channel's timeline).
+      if (thread && chrome?.openThread) meta[OPEN_THREAD] = true;
+      // "Parar e mandar" (⌘↵): the agent drops the step it is on and reads this now.
+      send(text, thread ? thread.id : null, meta, opts?.interrupt ? { steer: "now" } : undefined);
+    };
+    if (prepared) void prepared.then(go, () => go(about));
+    else go(about);
     dropFiles(() => false);
   };
   // A GIF or a sticker from the picker (ADR 0091): one click sends it here, as a message of its own (no text), shown
@@ -2626,7 +2661,24 @@ function ChannelView({
                 )}
                 {/* Under the header: the conversation, and the members beside it (the header spans both, as Discord's). */}
                 <div className="channel__body">
-                  <div className="channel__col" data-wallpaper={wallpaper?.wallpaper.kind} style={wallpaper?.vars}>
+                  <div
+                    ref={column}
+                    className="channel__col"
+                    data-wallpaper={wallpaper?.wallpaper.kind}
+                    style={wallpaper?.vars}
+                    {...fileDrop.props}
+                  >
+                    {fileDrop.over && (
+                      <div className="channel__file-drop" role="status">
+                        <div className="channel__file-drop-card">
+                          <span className="channel__file-drop-icon" aria-hidden="true">
+                            <Icon name="upload" size={20} />
+                          </span>
+                          <strong>{t("channel.dropFileTitle")}</strong>
+                          <span>{t("channel.dropFileNote")}</span>
+                        </div>
+                      </div>
+                    )}
                     {wallpaper && <ChatWallpaper wallpaper={wallpaper.wallpaper} strength={wallpaper.strength} />}
                     {isMember && (
                       <ChannelPinnedBar
@@ -2974,7 +3026,7 @@ function ChannelView({
                                       ))
                                     : undefined
                                 }
-                                onFiles={chrome?.locked ? undefined : addFiles}
+                                onFiles={canAttach ? addFiles : undefined}
                                 canSendEmpty={attached.length > 0}
                                 sendBlocked={uploading || tooLongToSend(draft)}
                                 notice={
@@ -4533,7 +4585,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   // Where it browsed (`meta.browser`) and what it did on its desktop (`meta.desktop`): each card stays
   // after the run, and its steps leave the work list.
   // Step summaries, no picture: activity, so the person's setting hides them like the tool block.
-  // A code session's screen line (ADR 0208) is its way to the panel's screen: shown whatever that setting says.
+  // A code session's screen line (ADR 0213) is its way to the panel's screen: shown whatever that setting says.
   const screenPanel = useContext(ScreenPanelContext);
   const trailsShown = m.author.type === "agent" && (showsActivity(org) || screenPanel !== null);
   const browserTrail = useMemo(() => (trailsShown ? browserTrailOf(m.meta) : []), [trailsShown, m.meta]);
@@ -4637,7 +4689,7 @@ export const TimelineMessage = memo(function TimelineMessage({
     readOnly,
     agentName: agent?.name ?? t("channel.unknownAgent"),
   });
-  // A row with a bar has the same actions in a menu that a tap opens on touch (an agent's sticker gets a person's).
+  // A row with a bar has the same actions in a menu a long press opens on touch (an agent's sticker gets a person's).
   const personBar = (m.author.type === "person" || mediaAfter) && !m.local;
   const barred = !readOnly && (feedback || personBar);
   // Watched live here: the steps it took stay in the block, folded ("3 passos"), instead of the summary.
@@ -4835,7 +4887,7 @@ export const TimelineMessage = memo(function TimelineMessage({
           <Parts resetKey={m}>
             <LiveRunStatus run={live} />
             {makingImage(live) && <ImageMaking color={colorOf(agent)} />}
-            {/* Its subagents and workflows at work, in a code session (ADR 0208). */}
+            {/* Its subagents and workflows at work, in a code session (ADR 0213). */}
             <LiveSubagents work={live.work ?? []} agentName={name} color={colorOf(agent)} />
             <RunBrowserCard run={live} name={name} />
             <span className="ac-visually-hidden">{t("channel.writing")}</span>
@@ -4994,6 +5046,10 @@ export const TimelineMessage = memo(function TimelineMessage({
                 </div>
               </ImageSet>
             )}
+            {/* A picture, a video or a PDF with comments (ADR 0208): its line, to its page. */}
+            {artifacts.map((r) =>
+              r.deleted ? null : <ChatCommentsLine key={`talk:${r.id}`} artifactId={r.id} version={r.version} />,
+            )}
             {/* Its tools after its words and what it changed: the same place live, kept and saved. */}
             {keptSteps?.length && seenLive ? (
               <LiveTools work={keptSteps} agentName={name} color={colorOf(agent)} done stopped={stopped.canceled} />
@@ -5061,13 +5117,20 @@ export const TimelineMessage = memo(function TimelineMessage({
             ))}
             {/* A "Responder" thread went on from here: its line (opens the panel). */}
             {threadLine && <ThreadReplyLine thread={threadLine.thread} count={threadLine.count} />}
+            {/* A comment on a picture, a video or a PDF that was resolved (ADR 0208): by whom, when. */}
+            {liveRef && <ResolvedLine message={m} />}
             {feedback && (
               <MessageFeedback
                 messageId={m.id}
                 agentName={agent?.name ?? t("channel.unknownAgent")}
                 active={active}
                 initial={m.reactions}
-                quick={<ReplyButton message={m} />}
+                quick={
+                  <>
+                    <ReplyButton message={m} />
+                    <ResolveButton message={m} />
+                  </>
+                }
                 more={<MessageMoreMenu entries={menu.more} />}
               />
             )}

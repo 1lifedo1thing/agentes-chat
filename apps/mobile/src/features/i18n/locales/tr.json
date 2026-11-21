@@ -189,6 +189,7 @@
     "pinned": "Sabitlenenler",
     "recent": "Son sohbetler",
     "seeAll": "Tüm sohbetleri gör",
+    "splitEmpty": "Sohbetlerin burada açılır.",
     "wait": {
       "verb": {
         "approval": "onayınızı bekliyor",
@@ -276,8 +277,8 @@
     "to": "Kime:",
     "people": "Kişiler",
     "search": "Kişi veya ajan",
-    "create": "Oluştur",
     "agentHint": "Adı ve ne yaptığı",
+    "create": "Oluştur",
     "chatShort": "Sohbet",
     "chatHint": "Bir kişi veya bir ajan",
     "taskHint": "Sorumlu kişi ve son tarihle",
@@ -759,10 +760,12 @@
     "section": {
       "missions": "Misyonlar",
       "threads": "İleti dizileri"
-    }
+    },
+    "splitEmpty": "İleti dizilerin burada açılır."
   },
   "agents": {
     "title": "Ajanlar",
+    "splitEmpty": "Ajanlarının sayfaları burada açılır.",
     "subtitle_one": "Ekipte {{count}} ajan · {{working}} çalışıyor",
     "subtitle_other": "Ekipte {{count}} ajan · {{working}} çalışıyor",
     "free": "Boşta",
@@ -1096,6 +1099,8 @@
     "notificationsOnHint": "Açıksa tarayıcıya ve masaüstü uygulamasına da gelir.",
     "notificationsOffHint": "Burada bildirim almak için açın. Aşağıdaki türler tüm cihazlarınız için geçerlidir.",
     "notificationsKindsHint": "Etkinlik her şeyi tutar. Bu ayar, tüm cihazlarınızda bu çalışma alanı için geçerlidir.",
+    "liveActivity": "Dynamic Island'da ajanlar",
+    "liveActivityHint": "Bir ajan istediğin bir şey üzerinde çalışırken ekranın üstünde, her uygulamada ve Kilitli Ekran'da görünür. Uygulama kapalıyken iOS 17.2 veya üstü gerekir.",
     "version": "agentes.chat · sürüm {{version}}",
     "edit": "Düzenle",
     "status": "Durum",
@@ -1230,6 +1235,16 @@
       "fullscreen": "Tam ekran",
       "open": "Aç",
       "cantPlay": "Bu video bu telefonda oynatılamıyor."
+    },
+    "talk": {
+      "hint": {
+        "image": "Yorum yapmak istediğiniz yere dokunun",
+        "video": "Bu ana yorum yapmak için videoya dokunun",
+        "pdf": "Bir nokta işaretlemek için sayfaya dokunun"
+      },
+      "markVideo": "Videonun bu anına yorum yap",
+      "pdfPage": "Sayfa {{page}} / {{count}}",
+      "pdfFailed": "Bu PDF gösterilemedi."
     }
   },
   "issues": {

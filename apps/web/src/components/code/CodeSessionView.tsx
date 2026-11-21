@@ -29,7 +29,7 @@ import { CodeDockSky } from "./CodeSky";
 import { useCodeKey } from "./shortcuts";
 
 /**
- * One code session (ADR 0208): the conversation with its agent under the session's header (name, state and branch,
+ * One code session (ADR 0213): the conversation with its agent under the session's header (name, state and branch,
  * the git button), the chat's own thread screen (tool rows, steering, stop, approvals), and the side panel. The
  * gutter between them drags (double click puts it back). The screen is the panel's: the conversation's browser cards
  * are a line that opens it, and it turns to the screen as the agent starts using it.

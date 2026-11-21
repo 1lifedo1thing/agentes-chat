@@ -62,7 +62,7 @@ export const NotificationSource = z.object({
     description: "A message in a live file's conversation (ADR 0199): the file, opened with it at `messageId`.",
   }),
   codeSessionId: z.string().optional().openapi({
-    description: "A message in a code session's conversation (ADR 0208): the session, opened on the Code page.",
+    description: "A message in a code session's conversation (ADR 0213): the session, opened on the Code page.",
   }),
   accountId: z
     .string()

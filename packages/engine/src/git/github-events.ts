@@ -45,7 +45,7 @@ const {
  * item no agent worked on to the workspace's right hand, to hand on. A member whose GitHub account is linked to their
  * sign-in wakes the agent with them behind the run; anyone else only leaves the notice, which a member may ask the
  * agent to answer (`answerGitHubNotice`). Bots, the app's own included, and what our agents wrote are never news.
- * What happens on an agent's own branch reaches the code session working on it (ADR 0208): a check that failed there
+ * What happens on an agent's own branch reaches the code session working on it (ADR 0213): a check that failed there
  * wakes its agent to fix it, and a pull request opened from it is kept on the session.
  */
 
@@ -112,7 +112,7 @@ export async function recordGitHubItem(ctx: ToolContext, item: GitHubItemRef) {
 /**
  * What happened to an item: a comment, a review, the app's review asked, an item opened naming the app, merged or
  * closed; or a pull request opened from an agent's own branch that isn't news (`pr_opened`: an agent opened it, or
- * nobody named the app), which only the code session working on that branch keeps (ADR 0208).
+ * nobody named the app), which only the code session working on that branch keeps (ADR 0213).
  */
 export type GitHubEventAction =
   | "comment"
@@ -137,7 +137,7 @@ export interface GitHubItemEvent {
   state: string | null;
   /** It names the app's bot (`@slug`), or asks for its review. */
   mentioned: boolean;
-  /** A pull request's own events: its head branch (an agent's own is a code session's, ADR 0208). */
+  /** A pull request's own events: its head branch (an agent's own is a code session's, ADR 0213). */
   branch?: string;
   /** GitHub's `X-GitHub-Delivery`, set when queued: a job run twice brings it once. */
   delivery?: string;
@@ -145,7 +145,7 @@ export interface GitHubItemEvent {
 
 /**
  * A check that failed on an agent's own branch (`check_run` completed as `failure`, `timed_out` or `action_required`),
- * for the code session working on that branch (ADR 0208).
+ * for the code session working on that branch (ADR 0213).
  */
 export interface GitHubCheckEvent {
   installationId: number;
@@ -194,7 +194,7 @@ const FAILED_CHECKS: ReadonlySet<string> = new Set(["failure", "timed_out", "act
 const CHECK_TEXT_CHARS = 2_000;
 
 /**
- * A check that failed on an agent's own branch (ADR 0208), null for any other: still running, passed, cancelled or
+ * A check that failed on an agent's own branch (ADR 0213), null for any other: still running, passed, cancelled or
  * skipped, the app's own, or on another branch (a fork's run names no branch, and is left out with them).
  */
 function failedCheckOf(
@@ -237,7 +237,7 @@ function failedCheckOf(
  * The event agents hear in what GitHub sent (`X-GitHub-Event` and its payload), null for any other: a comment, a
  * submitted review with something to read, the app's bot asked to review, a pull request, issue or discussion opened
  * naming the app, a pull request merged or closed, an issue closed. Bots' text and what our agents signed are left
- * out, and so is an item the app itself closed (an agent did it). On an agent's own branch (ADR 0208), also a check
+ * out, and so is an item the app itself closed (an agent did it). On an agent's own branch (ADR 0213), also a check
  * that failed there and a pull request opened from it that isn't news (`pr_opened`, an agent's own included).
  */
 export function githubAppEventOf(
@@ -433,7 +433,7 @@ async function rightHandConversation(db: Database, orgId: string, userId: string
  * may read that conversation and talk to the agent wakes it, behind the run; anyone else leaves a notice only
  * (`refs.outside`). A merge or a close wakes the agent whoever did it. A workspace closed to changes (suspended, or
  * being deleted) takes none. On an agent's own branch, a failed check goes to its code session (`deliverFailedCheck`)
- * and a pull request opened from it is kept there (ADR 0208).
+ * and a pull request opened from it is kept there (ADR 0213).
  */
 export async function handleGitHubAppEvent(
   deps: { db: Database; pubsub?: PubSub },
@@ -443,7 +443,7 @@ export async function handleGitHubAppEvent(
   const { db } = deps;
   if (closedRefusal(await orgStanding(db, orgId))) return "ignored";
   if (e.action === "check_failed") return deliverFailedCheck(deps, orgId, e);
-  // A pull request from an agent's own branch: the code session working on that branch keeps it (ADR 0208). Not its
+  // A pull request from an agent's own branch: the code session working on that branch keeps it (ADR 0213). Not its
   // state: a merge only fills in one whose opening went unheard.
   const opening = e.action === "pr_opened" || e.action === "opened" || e.action === "merged";
   if (opening && e.item === "pull_request" && e.branch && isAgentBranch(e.branch))
@@ -550,7 +550,7 @@ export async function handleGitHubAppEvent(
 }
 
 /**
- * A check that failed on an agent's own branch, to the code session working on that branch (ADR 0208): a notice in
+ * A check that failed on an agent's own branch, to the code session working on that branch (ADR 0213): a notice in
  * its conversation that wakes its agent to read why and fix it, once per check and commit (GitHub's Redeliver, or the
  * same check run again on that commit, adds nothing). Its run goes on from the session's last one, for whoever is
  * behind that (`refs.runId`, which `messageRoot` follows): the check is that work's. Nothing when no open session

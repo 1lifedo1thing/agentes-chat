@@ -51,6 +51,7 @@ import {
   cacheMessageWork,
   cachePinned,
   cacheReceipts,
+  cacheResolved,
   cacheTask,
   cacheTeamCard,
   catchUpChannel,
@@ -485,7 +486,7 @@ export function RealtimeProvider({
       }
       // A proposal I may decide: the sidebar's count and Aprovações' tab.
       if (event.type === "proposal.created") void refreshProposals(qc, orgId);
-      // A code session I'm in changed (ADR 0208): its worktree, name or pull request.
+      // A code session I'm in changed (ADR 0213): its worktree, name or pull request.
       applyCodeSessionEvent(qc, orgId, event);
       // Unread marks: a message where I am, and my reads and mutes from any device.
       applyUnreadEvent(qc, orgId, event);
@@ -860,6 +861,10 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
       if (event.type === "message.pinned" || event.type === "message.unpinned") {
         cachePinned(qc, orgId, channelId, event.messageId, event.type === "message.pinned");
         void qc.invalidateQueries({ queryKey: keys.pins(orgId, channelId) });
+      }
+      // A comment on a picture, a video or a PDF was resolved or opened again (ADR 0208): its pin and line follow.
+      if (event.type === "message.resolved") {
+        cacheResolved(qc, orgId, event.channelId, event.messageId, event.resolved);
       }
       // Act with undo: an agent message's receipts changed (made, undone, redone): replace the list.
       // A long work moved, updated or ended (ADR 0121): its anchor's line redraws; its card on the board too.

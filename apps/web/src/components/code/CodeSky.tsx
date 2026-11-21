@@ -2,7 +2,7 @@ import { isDarkSurface, mix, PixelSky, SKY_TONES, type SkyOptions, softTones, sp
 import { useMemo } from "react";
 
 /*
- * The Code page's skies (ADR 0208), the agent page's fine sky (`agentCoverOptions`): 2 px pixels, only the light tones
+ * The Code page's skies (ADR 0213), the agent page's fine sky (`agentCoverOptions`): 2 px pixels, only the light tones
  * of the agents' blue in light, the surface rising into it in dark, a few faint pixel agents drifting. Decorative, as
  * every sky is: what it says is said in words beside it.
  */

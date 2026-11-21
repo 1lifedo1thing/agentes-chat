@@ -27,7 +27,7 @@ import { ChangeTile } from "./parts";
 type Pane = "git" | "files";
 
 /**
- * A session's code (ADR 0208), pushed from its conversation's bar: the web panel's Git and Files as the two views of
+ * A session's code (ADR 0213), pushed from its conversation's bar: the web panel's Git and Files as the two views of
  * one screen (the app's segmented control), its name and branch in the bar. Git: the whole change since the base,
  * what isn't committed (as `git status` lists it) and the branch's commits, each opening its diff; Files: the
  * worktree's folders and files, a search over every path, each opening read-only. The next git step leads the Git view
@@ -41,7 +41,7 @@ export function SessionCodeScreen({ sessionId }: { sessionId: string }) {
   const orgId = useOrgId();
   const session = useCodeSession(orgId, sessionId);
   const s = session.data;
-  const more = useSessionMenu(s ?? null, { inChat: false });
+  const more = useSessionMenu(s ?? null);
   const [pane, setPane] = useState<Pane>("git");
   return (
     <>
