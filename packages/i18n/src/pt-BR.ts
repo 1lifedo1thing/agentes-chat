@@ -11675,12 +11675,16 @@ export const ptBR = {
     files: {
       label: "Arquivos",
       search: "Buscar arquivo",
+      /** The search's field, in the app's palette (as ⌘K). */
+      searchPlaceholder: "Buscar arquivo pelo nome ou pela pasta",
+      /** The palette's first group: the files the session changed. */
+      changedGroup: "Alterados",
+      count_one: "{{formatted}} arquivo",
+      count_other: "{{formatted}} arquivos",
       refresh: "Ler de novo",
       reading: "Lendo os arquivos no computador…",
       empty: "Nenhum arquivo ainda.",
       noMatch: "Nenhum arquivo com “{{query}}”.",
-      moreResults_one: "E mais {{formatted}}: busque algo mais exato.",
-      moreResults_other: "E mais {{formatted}}: busque algo mais exato.",
       truncated_one: "Mostrando o primeiro {{formatted}} arquivo.",
       truncated_other: "Mostrando os primeiros {{formatted}} arquivos.",
       hasChanges: "Tem mudanças",
@@ -12545,6 +12549,9 @@ export const ptBR = {
       textOnly: "Só lê texto",
       search: "Buscar modelos",
       account: "Conta",
+      /** The account part of the AI's control: what it says to a screen reader. */
+      accountOf: "Conta: {{account}}",
+      connectAccount: "Conectar outra conta",
       /** The AIs it may think with, as a row of their marks. */
       ais: "IA",
       connect: "Conectar uma IA",

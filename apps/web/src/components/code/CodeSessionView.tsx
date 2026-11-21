@@ -126,7 +126,7 @@ function AgentStatus({ session }: { session: CodeSession }) {
     <span className="code-status">
       <ModelPickerButton
         agent={agent}
-        size="field"
+        size="status"
         after={
           meter?.line ? (
             <span

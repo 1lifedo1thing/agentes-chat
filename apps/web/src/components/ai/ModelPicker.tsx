@@ -34,11 +34,14 @@ import {
   EventPillAction,
   Icon,
   Input,
+  Menu,
+  MenuItem,
+  MenuRadioGroup,
+  MenuSeparator,
   Popover,
   ProviderLogo,
   planLine,
   Segmented,
-  Select,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { type CSSProperties, type ReactElement, type ReactNode, useState } from "react";
@@ -59,8 +62,8 @@ const SEARCH_FROM = 8;
 /**
  * The agent's AI and model, changed in place (a DM's header, its profile card, its side panel): a button saying what
  * it thinks with, opening the picker under the agent's sky. Whoever can't change it (not an admin, not its owner)
- * reads the same words, with nothing to press. `field`: drawn as the kit's small select (a code session's status
- * line, ADR 0208), with `after` (its plan's limits) in it.
+ * reads the same words, with nothing to press. `status`: a code session's status line under its composer (ADR 0208),
+ * quiet words with `after` (its plan's limits) in them, a plate only under the pointer.
  */
 export function ModelPickerButton({
   agent,
@@ -69,9 +72,9 @@ export function ModelPickerButton({
   after,
 }: {
   agent: Agent;
-  size?: "sm" | "row" | "field";
+  size?: "sm" | "row" | "status";
   className?: string;
-  /** In it after the model, in a `field`. */
+  /** In it after the model, on a `status` line. */
   after?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -89,37 +92,8 @@ export function ModelPickerButton({
       >
         {mark}
         <span className="mp-label__text">{thinks.text}</span>
-        {size === "field" && after}
+        {size === "status" && after}
       </span>
-    );
-  if (size === "field")
-    return (
-      <div className={cx("ac-select ac-select--sm mp-field", className)}>
-        <ModelPickerPopover
-          agent={agent}
-          trigger={(open) => (
-            <button
-              type="button"
-              className="ac-select__trigger"
-              aria-label={t("brain.picker.open", { agent: agent.name })}
-              aria-expanded={open}
-            >
-              <span className="ac-select__value">
-                <span>
-                  <span className="ac-select__lead" aria-hidden="true">
-                    {mark}
-                  </span>
-                  <span className="ac-select__text">{thinks.text}</span>
-                  {after}
-                </span>
-              </span>
-              <svg className="ac-select__chev" viewBox="0 0 20 20" aria-hidden="true">
-                <path d="m6 8 4 4 4-4" />
-              </svg>
-            </button>
-          )}
-        />
-      </div>
     );
   return (
     <ModelPickerPopover
@@ -134,6 +108,7 @@ export function ModelPickerButton({
         >
           {mark}
           <span className="mp-label__text">{thinks.text}</span>
+          {size === "status" && after}
           <Icon name="chevronDown" size={14} className="mp-trigger__chevron" />
         </button>
       )}
@@ -356,19 +331,48 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
       </div>
       {tile && (
         <div className="mp__head">
-          <div className="mp__who">
-            <b>{tile.name}</b>
-            {tile.accounts.length > 1 ? (
-              <Select
-                size="sm"
-                className="mp__account"
-                aria-label={t("brain.picker.account")}
-                value={account?.id ?? ""}
-                onValueChange={(v) => setAccountId(v || null)}
-                options={tile.accounts.map((a) => ({ value: a.id ?? "", label: a.label }))}
-              />
-            ) : (
-              account && <span className="mp__plan">{account.label}</span>
+          {/* The AI and the account it thinks on as one control, the kit's split (as the git button): its name, then
+              its account, which opens the others and connecting one more. */}
+          <div className="ac-split mp__who">
+            <span className="mp__ai">
+              <ProviderLogo id={tile.mark} size="xs" />
+              {tile.name}
+            </span>
+            {account && (
+              <Menu
+                label={t("brain.picker.account")}
+                trigger={
+                  <Button
+                    size="sm"
+                    className="mp__account"
+                    aria-label={t("brain.picker.accountOf", { account: account.label })}
+                  >
+                    <span className="mp__account-name">{account.label}</span>
+                    <Icon name="chevronDown" size={14} />
+                  </Button>
+                }
+              >
+                <MenuRadioGroup
+                  label={t("brain.picker.account")}
+                  value={account.id ?? ""}
+                  onValueChange={(v) => setAccountId(v || null)}
+                  options={tile.accounts.map((a) => ({ value: a.id ?? "", label: a.label }))}
+                />
+                {connect && (
+                  <>
+                    <MenuSeparator />
+                    <MenuItem
+                      icon="plus"
+                      onSelect={() => {
+                        onClose();
+                        connect.open({ agentId: agent.id, chat: true });
+                      }}
+                    >
+                      {t("brain.picker.connectAccount")}
+                    </MenuItem>
+                  </>
+                )}
+              </Menu>
             )}
           </div>
           {meter?.line && (

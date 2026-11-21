@@ -54,7 +54,8 @@
   align-items: center;
   justify-content: space-between;
   height: 56px;
-  padding: 0 8px 0 16px;
+  /* The title on the line the rows' faces start: the list's own 8 and a row's 10. */
+  padding: 0 8px 0 18px;
 }
 .code-list__t {
   font-size: 17px;
@@ -99,14 +100,19 @@
   display: flex;
   padding-top: 2px;
 }
+/* "Nova sessão": its plus where the sessions' faces are, their size, no box of its own (the row is the button). */
 .code-row__plus {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  box-shadow: inset 0 0 0 1px var(--line2);
   color: var(--muted);
+}
+.code-row--new {
+  align-items: center;
+}
+.code-row--new .code-row__plus {
+  padding-top: 0;
 }
 .code-row__main {
   min-width: 0;
@@ -324,7 +330,8 @@
   justify-content: space-between;
   gap: 12px;
   height: 56px;
-  padding: 0 10px 0 16px;
+  /* On the conversation's column: its messages and its composer start and end 24 in. */
+  padding: 0 24px;
   border-bottom: 1px solid var(--line);
 }
 .code-head__l {
@@ -440,9 +447,10 @@
   margin-right: 8px;
   color: var(--faint);
 }
-/* A control under the composer: its edge on the composer's, not the hint's text inset. */
+/* The status line under the composer: its plate where the composer's buttons have theirs (8 in), so its mark sits
+   under the attach button's. */
 .ac-composer__hint:has(> .code-status) {
-  margin-inline: 0;
+  margin-inline: 8px 0;
 }
 .code-status__limit[data-level="almost"] {
   color: var(--warn);
@@ -529,11 +537,11 @@
   padding: 0 10px;
   font-size: 12.5px;
 }
-/* On the same line as the tabs, its edge where the conversation head's last button has its own. */
+/* On the same line as the tabs, its edge where the screen bar's last button has its own (8 in). */
 .code-pane--side > .code-ptoggle {
   grid-area: 1 / 2 / 2 / 3;
   align-self: center;
-  margin: 0 10px 0 8px;
+  margin: 0 8px;
 }
 .code-pane--side > * > .ac-tabpanel {
   grid-area: 2 / 1 / 3 / 3;
@@ -658,6 +666,9 @@
 }
 .code-fhead__r {
   margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 /* The change dissolves into the sky at the panel's foot, where its agent stands; its end scrolls above it. */
 .code-dscroll {
@@ -706,6 +717,20 @@
   gap: 10px;
   height: 44px;
   padding: 0 8px 0 12px;
+}
+/* Where the bar is narrow its live line would read cut ("Ao vivo · vo…"): it leaves the eye (a screen reader still
+   has it) and the buttons keep their words. */
+.code-sbar {
+  container: code-sbar / inline-size;
+}
+@container code-sbar (max-width: 460px) {
+  .code-sbar__sub {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
 }
 /* The live line takes the room the buttons leave, on one line cut at its end: a face in it never breaks it. */
 .code-sbar__sub {
@@ -1099,10 +1124,6 @@ html:not([data-pointer]) .code-tree__row:focus-visible {
   text-overflow: ellipsis;
 }
 /* Files: the search takes the head; the tree is an explorer's, a row per name, folders opening in place. */
-.code-tree__search {
-  flex: 1;
-  min-width: 0;
-}
 .code-fscroll {
   flex: 1;
   min-height: 0;

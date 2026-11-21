@@ -11671,12 +11671,16 @@ export const en = {
     files: {
       label: "Files",
       search: "Search files",
+      /** The search's field, in the app's palette (as ⌘K). */
+      searchPlaceholder: "Find a file by name or folder",
+      /** The palette's first group: the files the session changed. */
+      changedGroup: "Changed",
+      count_one: "{{formatted}} file",
+      count_other: "{{formatted}} files",
       refresh: "Read again",
       reading: "Reading the files on the computer…",
       empty: "No files yet.",
       noMatch: "No file matches “{{query}}”.",
-      moreResults_one: "And {{formatted}} more: search for something narrower.",
-      moreResults_other: "And {{formatted}} more: search for something narrower.",
       truncated_one: "Showing the first {{formatted}} file.",
       truncated_other: "Showing the first {{formatted}} files.",
       hasChanges: "Has changes",
@@ -12540,6 +12544,9 @@ export const en = {
       textOnly: "Reads text only",
       search: "Search models",
       account: "Account",
+      /** The account part of the AI's control: what it says to a screen reader. */
+      accountOf: "Account: {{account}}",
+      connectAccount: "Connect another account",
       /** The AIs it may think with, as a row of their marks. */
       ais: "AI",
       connect: "Connect an AI",

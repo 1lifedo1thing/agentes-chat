@@ -91,29 +91,44 @@
   min-width: 0;
 }
 
-/* The AI's name and account on one line, its use as one quiet line under them. */
+/* The AI and its account as one control, its use as one quiet line under it. */
 .mp__head {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 6px;
   margin-top: var(--space-3);
 }
-.mp__who {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-2);
-  min-height: var(--control-h-sm);
-}
-.mp__plan {
-  color: var(--muted);
-  font-size: var(--text-sm);
-}
-/* Several accounts of that AI: the kit's small select beside its name. */
-.mp__account {
-  flex: 0 1 auto;
-  min-width: 0;
+/* The kit's split at the small size, as the git button: the AI's name, a line, its account (which opens the rest). */
+.mp__who.ac-split {
+  --split-r: var(--control-r-sm);
   max-width: 100%;
+  height: var(--control-h-sm);
+}
+.mp__ai {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 12px;
+  color: var(--ink);
+  font-size: var(--control-fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mp__account {
+  min-width: 0;
+  gap: 6px;
+}
+.mp__account-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mp__account > .ac-icon {
+  flex: none;
+  color: var(--muted);
 }
 .mp__usage {
   color: var(--muted);
@@ -171,9 +186,36 @@
     display: none;
   }
 }
-/* The agent's model drawn as the kit's small select (a code session's status line): as wide as what it says. */
-.mp-field {
-  flex: 0 1 auto;
+/* A code session's status line (ADR 0208): quiet words under the composer, a plate only under the pointer or open. */
+.mp-trigger[data-size="status"],
+.mp-label[data-size="status"] {
   min-width: 0;
-  max-width: 100%;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: var(--radius-btn);
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 20px;
+}
+.mp-trigger[data-size="status"]:hover,
+.mp-trigger[data-size="status"][aria-expanded="true"] {
+  background: var(--plate-soft);
+  box-shadow: none;
+  color: var(--ink2);
+}
+/* One line, never wrapping: its marks centered on it (the 2-line rule above nudges them onto a first line). */
+.mp-trigger[data-size="status"],
+.mp-label[data-size="status"] {
+  align-items: center;
+}
+.mp-trigger[data-size="status"] > *,
+.mp-label[data-size="status"] > * {
+  translate: none;
+}
+.mp-trigger[data-size="status"] .mp-label__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
