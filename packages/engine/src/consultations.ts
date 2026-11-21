@@ -32,6 +32,7 @@ import { publishChannelEvent } from "./events";
 import { cutText } from "./format";
 import type { Judge } from "./judge";
 import { machineOnline } from "./machines";
+import { messageLink } from "./message-links";
 import { getMessage, insertMessage, type Message, type MessageView, withMessageDetails } from "./messages";
 import type { Notice } from "./notices";
 import { notifyAgentUnreached } from "./notification-producers";
@@ -755,6 +756,8 @@ async function sameRequestRun(
       id: agentRuns.id,
       status: agentRuns.status,
       replyMessageId: agentRuns.replyMessageId,
+      workId: agentRuns.workId,
+      createdAt: agentRuns.createdAt,
       handle: agents.handle,
     })
     .from(agentRuns)
@@ -774,20 +777,40 @@ async function sameRequestRun(
     .limit(1);
   if (!run) return null;
   const data = { duplicateOf: { runId: run.id, agentId: targetAgentId, status: run.status } };
-  if (run.status !== "done") {
-    return {
-      content: `@${run.handle} is already working on this person's request here (run ${run.id}, ${run.status}): the person asked it directly. Don't ask it again or relay the request; its answer goes to the person in this conversation. Do only your own part, or end your turn and let it answer.`,
-      data,
-    };
-  }
+  // "Already answered" while it still works reads, to the person it is relayed to, as a lost message: its work's
+  // card is what it is doing, whether this run is that work or the answer it gave started one.
+  const [work] = await db
+    .select({ id: messages.id, channelId: messages.channelId, threadId: messages.threadId })
+    .from(agentWorks)
+    .innerJoin(messages, eq(messages.id, agentWorks.anchorMessageId))
+    .where(
+      and(
+        eq(agentWorks.orgId, ctx.orgId),
+        run.workId
+          ? eq(agentWorks.id, run.workId)
+          : and(
+              eq(agentWorks.agentId, targetAgentId),
+              eq(agentWorks.channelId, ctx.channelId),
+              gte(agentWorks.createdAt, run.createdAt),
+            ),
+        inArray(agentWorks.status, ["live", "queued"]),
+      ),
+    )
+    .orderBy(desc(agentWorks.createdAt))
+    .limit(1);
+  const working = `@${run.handle} is already working on this`;
+  const leave =
+    "Don't ask it again or relay the request: its answer goes to the person in this conversation. If you tell the person, say it in those words, with the link. Do only your own part, or end your turn and let it answer.";
+  if (work) return { content: `${working}: ${messageLink(ctx.orgId, work)}. ${leave}`, data };
+  if (run.status !== "done") return { content: `${working} (run ${run.id}, ${run.status}). ${leave}`, data };
   const [reply] = run.replyMessageId
     ? await db
-        .select({ body: messages.body })
+        .select({ id: messages.id, channelId: messages.channelId, threadId: messages.threadId, body: messages.body })
         .from(messages)
         .where(and(eq(messages.orgId, ctx.orgId), eq(messages.id, run.replyMessageId)))
     : [];
   return {
-    content: `@${run.handle} already answered this person's request here (run ${run.id})${reply?.body ? `:\n\n${cutText(reply.body, 4000)}` : "."}\n\nDon't ask it again; build on its answer.`,
+    content: `@${run.handle} already answered this person's request here${reply ? ` (${messageLink(ctx.orgId, reply)})` : ""}${reply?.body ? `:\n\n${cutText(reply.body, 4000)}` : "."}\n\nDon't ask it again; build on its answer, and link it if you mention it.`,
     data,
   };
 }

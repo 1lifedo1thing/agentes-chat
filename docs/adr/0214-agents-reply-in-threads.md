@@ -4,7 +4,7 @@
 - Date: 2026-11-20
 - Extends: 0032 ("One reply placement": `replyThreadOf`), 0112 (the floor and one active run per conversation),
   0190 (a run asked in the main timeline that answers under its trigger)
-- Code: db `channels.reply_in_threads`, `agent_runs.reply_in_thread` (migration 0314); engine `runs.ts`
+- Code: db `channels.reply_in_threads`, `agent_runs.reply_in_thread` (migration 0313); engine `runs.ts`
   (`replyThreadOf`), `run-scope.ts` (`inChannelRun`, `joinsRun`, `askedBy`, `placeAfter`, `repliesInThreadSql`),
   `messages.ts` (the `floor_runs`, `active`, `runs` and `opened` parts of `insertMessageWithRuns`,
   `postPersonMessage`'s thinking events), `dispatch.ts` (`startOrJoinRun`'s `after` and `several`, `createAgentRuns`),
