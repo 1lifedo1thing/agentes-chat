@@ -370,6 +370,7 @@ const QUIET_TOOLS = [
   "load_skill",
   "read_skill_file",
   "read_file",
+  "review_media",
   "list_files",
 ];
 
