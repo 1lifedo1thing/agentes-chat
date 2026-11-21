@@ -1116,6 +1116,7 @@ export function createSandboxToolSource(
         properties: {
           path: pathProp,
           title: { type: "string", maxLength: 200 },
+          name: { type: "string", maxLength: 200, description: "Same as title." },
           artifact_id: { type: "string", minLength: 36, maxLength: 36 },
           note: { type: "string", maxLength: 500 },
           shared_drive: SHARED_DRIVE_INPUT,
@@ -1152,10 +1153,10 @@ export function createSandboxToolSource(
             ? await updateArtifact(deps.artifacts, actor, ctx.orgId, str(input.artifact_id), {
                 content,
                 note: str(input.note) || `Atualizado a partir de ${path}`,
-                title: str(input.title) || undefined,
+                title: str(input.title) || str(input.name) || undefined,
               })
             : await createArtifact(deps.artifacts, actor, ctx.orgId, {
-                title: str(input.title) || path.split("/").at(-1) || path,
+                title: str(input.title) || str(input.name) || path.split("/").at(-1) || path,
                 content,
               });
           return {
@@ -1176,6 +1177,7 @@ export function createSandboxToolSource(
         properties: {
           path: { ...pathProp, description: "File or folder inside the workspace" },
           title: { type: "string", maxLength: 200 },
+          name: { type: "string", maxLength: 200, description: "Same as title." },
           artifact_id: { type: "string", minLength: 36, maxLength: 36 },
           note: { type: "string", maxLength: 500 },
           shared_drive: SHARED_DRIVE_INPUT,
@@ -1211,7 +1213,7 @@ export function createSandboxToolSource(
             async (c) => {
               await refuseSecretPath(ctx, c, path);
               return uploadFromComputer(deps, ctx, c, path, {
-                title: str(input.title) || null,
+                title: str(input.title) || str(input.name) || null,
                 note: str(input.note) || null,
                 targetArtifactId,
               });

@@ -5750,7 +5750,8 @@ async function executeRunInner(
         transcript.harnessTried = [
           ...(transcript.harnessTried ?? []),
           ...own.map((c) => callLine(c.name, c.input, c.result)),
-        ].slice(-20);
+          // More than the judge reads (`triedCalls`), so it can tell it how many earlier ones it doesn't see.
+        ].slice(-60);
       // Independent writes in parallel (different rows).
       const [counted] = await Promise.all([
         db

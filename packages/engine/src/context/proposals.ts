@@ -542,7 +542,7 @@ export async function decideProposal(
   const finalText = options.finalText ?? p.proposedText;
   if (options.finalText !== undefined) {
     checkContent(options.finalText);
-    await checkPermissionText(options.judge, orgId, options.finalText);
+    await checkPermissionText(options.judge, orgId, options.finalText, { db, userId: actorId });
   }
   const blobs = options.blobs && p.skillPath ? await pinBlobs(options.blobs, orgId) : options.blobs;
   const events = holdEvents(options.pubsub);
