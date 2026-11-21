@@ -21,9 +21,9 @@ import { FileTalkLine } from "../live-files/talk/TalkLine";
 import { chooseAction } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
-import { copyText, MONO, PushedHeader, successHaptic } from "../shared/parts";
+import { copyText, PushedHeader, successHaptic } from "../shared/parts";
 import { useFileActions } from "./actions";
-import { fileInfo, isCodeName, textChunks } from "./logic";
+import { extensionOf, fileInfo, isCodeName, textChunks } from "./logic";
 import { useFileLine } from "./MessageFiles";
 import { openFile } from "./open";
 import { PageBones } from "./PageBones";
@@ -205,8 +205,9 @@ function useFileText(detail: ArtifactDetail | undefined, enabled: boolean) {
 }
 
 /**
- * Markdown with the messages' renderer, code in mono and any other text in the app's, across the screen as a page
- * reads. JSON formatted and colored as a code block reads it, the text as written one press away ("Original").
+ * Markdown with the messages' renderer, code colored by its extension and any other text in the app's, across the
+ * screen as a page reads. JSON formatted and colored as a code block reads it, the text as written one press away
+ * ("Original").
  */
 function TextPage({ detail, markdown, json }: { detail: ArtifactDetail; markdown: boolean; json: boolean }) {
   const c = useColors();
@@ -234,12 +235,18 @@ function TextPage({ detail, markdown, json }: { detail: ArtifactDetail; markdown
         </View>
       ) : (
         // In pieces: a long file in one text view was taller than the phone draws, and showed blank.
-        textChunks(text.data).map((piece, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
-          <RNText key={i} selectable style={[code ? styles.mono : styles.prose, { color: c.ink2 }]}>
-            {piece}
-          </RNText>
-        ))
+        // Code is colored piece by piece: a block comment across two pieces loses its color in the second.
+        textChunks(text.data).map((piece, i) =>
+          code ? (
+            // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
+            <CodeText key={i} lines={highlightCode(piece, extensionOf(fileInfo(detail).name))} wrap />
+          ) : (
+            // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
+            <RNText key={i} selectable style={[styles.prose, { color: c.ink2 }]}>
+              {piece}
+            </RNText>
+          ),
+        )
       )}
     </ScrollView>
   );
@@ -341,7 +348,6 @@ const styles = StyleSheet.create({
   middle: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: SCREEN_X },
   page: { paddingHorizontal: SCREEN_X, paddingTop: 12 },
   white: { backgroundColor: "#fff" },
-  mono: { fontFamily: MONO, fontSize: 13, lineHeight: 19 },
   // The app's body, as a message's words.
   prose: systemText("body"),
   json: { gap: 10, alignItems: "flex-start" },

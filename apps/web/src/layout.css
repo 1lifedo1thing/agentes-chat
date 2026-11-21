@@ -1985,6 +1985,33 @@ html:not([data-pointer]) .artifact-tile__open:focus-visible {
   max-width: 100%;
   max-height: calc(var(--tile-cover) - 16px);
 }
+/* A PDF's first page (`PdfCover`): the type's cover until it is drawn, then on a tile the page's top across it, on
+   its own white. */
+.pdf-cover {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.pdf-cover canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+}
+.pdf-cover[data-drawn] canvas {
+  opacity: 1;
+}
+.artifact-tile__cover .pdf-cover[data-drawn] {
+  background: #fff;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pdf-cover[data-drawn] canvas {
+    transition: opacity 200ms var(--out);
+  }
+}
 /* A picture fills its cover. */
 .artifact-tile__picture {
   display: block;
@@ -2956,6 +2983,18 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
     0 0 0 1px var(--line),
     0 10px 24px -14px rgba(0, 0, 0, 0.25);
   color: var(--ink2);
+}
+/* A PDF's first page drawn where its sheet stands. */
+.drive-pv .pdf-cover canvas {
+  top: 10%;
+  left: 16%;
+  width: 68%;
+  border-radius: 2.6cqw 2.6cqw 0 0;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 0 0 1px var(--line),
+    0 10px 24px -14px rgba(0, 0, 0, 0.25);
 }
 .drive-pv__paper {
   left: 16%;
@@ -8406,6 +8445,12 @@ html:not([data-pointer]) .izoom__stage:focus-visible {
   border: 0;
   border-radius: var(--radius-sm);
   background: var(--surface-raised);
+}
+/* A Markdown file, drawn as a document at a reading width. */
+.file-view__doc {
+  max-width: 72ch;
+  margin: 0 auto;
+  overflow-wrap: anywhere;
 }
 .file-view__text {
   max-height: 60vh;
