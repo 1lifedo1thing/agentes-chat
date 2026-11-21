@@ -2810,6 +2810,8 @@
     "uploading": "caricamento…",
     "uploadFailed": "non è stato caricato",
     "removeFile": "Rimuovi {{name}}",
+    "dropFileTitle": "Rilascia per allegare",
+    "dropFileNote": "I file restano nella bozza di questa conversazione finché non li invii.",
     "tooManyFiles": "Fino a {{max}} file per messaggio.",
     "reminder": "Promemoria",
     "reactions": "Reazioni",
@@ -4600,6 +4602,19 @@
   "adminAsk": {
     "ask": "Chiedi a un admin",
     "sent": "Inviato a chi può farlo."
+  },
+  "accountRef": {
+    "label": "Account {{name}}",
+    "card": "Informazioni sull’account {{name}}",
+    "mine": "Il tuo account",
+    "of": "Account di {{name}}",
+    "on": "Su {{computer}}",
+    "gone": "Questo account non è più nel workspace."
+  },
+  "accountSwitch": {
+    "limit": "Ha continuato con l’account <to/> perché l’account <from/> ha raggiunto il limite",
+    "line": "Ha continuato con l’account <to/> perché l’account <from/> è vicino al limite",
+    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento"
   },
   "channelRefs": {
     "list": "Canali",
@@ -6641,6 +6656,7 @@
         "cli_stopped": "Il programma {{brain}} si è fermato con un errore.",
         "cli_closed": "Il programma {{brain}} si è chiuso all'improvviso.",
         "cli_sandbox": "Il programma {{brain}} non riesce ad avviare la sua sandbox su questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
+        "cli_system": "Il programma {{brain}} non funziona ancora sul sistema di questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "account_missing": "L'account scelto per questo agente non è più sul suo computer. Scegline un altro nelle impostazioni dell'agente o aggiungilo di nuovo.",
         "windows_sandbox": "Questo computer Windows non riesce a isolare i comandi di Codex: serve Windows 11 24H2 o più recente. Aggiorna Windows, scegli Claude o una chiave API per questo agente, oppure spostalo su un computer Linux.",
         "our_error": "Qualcosa è andato storto da parte nostra e l'attività si è fermata. Richiedilo tra poco.",
@@ -10795,6 +10811,13 @@
     "usedBy_one": "la usa {{count}} agente",
     "usedBy_many": "la usano {{count}} agenti",
     "usedBy_other": "la usano {{count}} agenti",
+    "agents": {
+      "title": "Agenti con questa skill",
+      "none": "Ancora nessun agente.",
+      "choose": "Scegli gli agenti",
+      "dialogTitle": "Agenti con {{name}}",
+      "dialogText": "Ogni agente attivato la usa ogni volta che un compito lo richiede."
+    },
     "updated": "aggiornata {{when}}",
     "source": {
       "github": "GitHub",
@@ -14786,6 +14809,7 @@
       "ask_agent": "Chiedi a un altro agente",
       "tell_agent": "Avvisa un altro agente",
       "find_agent": "Trova agente",
+      "read_agent": "Leggi la configurazione dell'agente",
       "ask_user": "Fai una domanda",
       "ask_choices": "Offri opzioni",
       "request_approval": "Chiedi approvazione",
@@ -15755,6 +15779,7 @@
       "tooMany": "È più di quanto ci sta qui. Togline alcuni e riprova.",
       "fillIn": "Compila ciò che manca e riprova.",
       "checkAddress": "Controlla l'indirizzo e riprova.",
+      "privateNetwork": "Questo indirizzo è su una rete privata. Usa un indirizzo pubblico oppure, su un server self-hosted, consentilo con `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "È troppo lungo. Accorcialo e riprova.",
       "updateComputerApp": "L'app del computer è troppo vecchia per questo. Aggiornala e riprova.",
       "computerUpdatesItself": "Il computer dello spazio di lavoro si aggiorna da solo per questo. Riprova tra poco.",
@@ -16045,6 +16070,7 @@
       "notLinkMaker": "Solo chi ha creato il link può far entrare questo computer.",
       "widenForbidden": "Gli admin possono solo restringere chi usa il dispositivo personale di qualcuno.",
       "spillOwnerOnly": "Solo chi ha collegato questo computer può lasciare che le risposte pensino qui. Tu puoi disattivarlo.",
+      "tasksOwnerOnly": "Solo chi ha collegato questo computer può cambiare quante attività esegue in contemporanea.",
       "notHome": "Gli agenti vivono sul computer del workspace e usano questo quando lo nominano."
     },
     "machine": {
@@ -16537,6 +16563,9 @@
       "busy_one": "{{count}} attività su {{max}} in corso",
       "busy_many": "{{count}} attività su {{max}} in corso",
       "busy_other": "{{count}} attività su {{max}} in corso",
+      "tasksChange": "Attività in contemporanea qui: {{max}}. Cambialo qui sotto.",
+      "tasksOwner": "Attività in contemporanea qui: {{max}}. Chi l'ha collegato può cambiarlo.",
+      "tasksUpdate": "Attività in contemporanea qui: {{max}}. Aggiorna la sua app per cambiarlo da qui.",
       "offline": "Gli agenti aspettano che torni.",
       "offlineSeen": "Visto l'ultima volta {{time}}. Gli agenti aspettano che torni.",
       "offlineWithHost": "{{host}} è offline. Gli agenti aspettano che torni.",

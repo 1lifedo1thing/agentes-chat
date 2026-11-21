@@ -6707,6 +6707,12 @@
   "channel.removeFile": {
     "value": "Remove {{name}}"
   },
+  "channel.dropFileTitle": {
+    "value": "Drop to attach"
+  },
+  "channel.dropFileNote": {
+    "value": "Files stay in this conversation’s draft until you send them."
+  },
   "channel.tooManyFiles": {
     "value": "Up to {{max}} files per message."
   },
@@ -10890,6 +10896,33 @@
   },
   "adminAsk.sent": {
     "value": "Sent to whoever can do it."
+  },
+  "accountRef.label": {
+    "value": "{{name}} account"
+  },
+  "accountRef.card": {
+    "value": "About the {{name}} account"
+  },
+  "accountRef.mine": {
+    "value": "Your account"
+  },
+  "accountRef.of": {
+    "value": "{{name}}'s account"
+  },
+  "accountRef.on": {
+    "value": "On {{computer}}"
+  },
+  "accountRef.gone": {
+    "value": "This account isn't in the workspace anymore."
+  },
+  "accountSwitch.limit": {
+    "value": "Went on with the <to/> account because the <from/> account hit its limit"
+  },
+  "accountSwitch.line": {
+    "value": "Went on with the <to/> account because the <from/> account is near its limit"
+  },
+  "accountSwitch.extra": {
+    "value": "Went on with the <to/> account because the <from/> account would go into paid extra usage"
   },
   "channelRefs.list": {
     "value": "Channels"
@@ -15783,6 +15816,9 @@
   },
   "agentPage.activity.errors.cli_sandbox": {
     "value": "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings."
+  },
+  "agentPage.activity.errors.cli_system": {
+    "value": "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings."
   },
   "agentPage.activity.errors.account_missing": {
     "value": "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again."
@@ -25261,6 +25297,21 @@
       "one": "{{count}} agent uses it",
       "other": "{{count}} agents use it"
     }
+  },
+  "skills.agents.title": {
+    "value": "Agents with this skill"
+  },
+  "skills.agents.none": {
+    "value": "No agent yet."
+  },
+  "skills.agents.choose": {
+    "value": "Choose agents"
+  },
+  "skills.agents.dialogTitle": {
+    "value": "Agents with {{name}}"
+  },
+  "skills.agents.dialogText": {
+    "value": "Each agent turned on uses it whenever a task calls for it."
   },
   "skills.updated": {
     "value": "updated {{when}}"
@@ -35097,6 +35148,9 @@
   "toolNames.label.find_agent": {
     "value": "Find agent"
   },
+  "toolNames.label.read_agent": {
+    "value": "Read agent setup"
+  },
   "toolNames.label.ask_user": {
     "value": "Ask a question"
   },
@@ -37368,6 +37422,9 @@
   "errors.said.checkAddress": {
     "value": "Check the address and try again."
   },
+  "errors.said.privateNetwork": {
+    "value": "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`."
+  },
   "errors.said.tooLong": {
     "value": "That's too long. Shorten it and try again."
   },
@@ -38075,6 +38132,9 @@
   },
   "errors.device.spillOwnerOnly": {
     "value": "Only the person who connected this computer can let replies think on it. You can turn it off."
+  },
+  "errors.device.tasksOwnerOnly": {
+    "value": "Only the person who connected this computer can change how many tasks it runs at once."
   },
   "errors.device.notHome": {
     "value": "Agents live on the workspace computer and use this one when they name it."
@@ -39316,6 +39376,15 @@
       "one": "{{count}} of {{max}} tasks running",
       "other": "{{count}} of {{max}} tasks running"
     }
+  },
+  "devices.line.tasksChange": {
+    "value": "Tasks at once here: {{max}}. Change it below."
+  },
+  "devices.line.tasksOwner": {
+    "value": "Tasks at once here: {{max}}. The person who connected it can change that."
+  },
+  "devices.line.tasksUpdate": {
+    "value": "Tasks at once here: {{max}}. Update its app to change that from here."
   },
   "devices.line.offline": {
     "value": "Agents wait for it to come back."

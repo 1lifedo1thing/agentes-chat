@@ -2894,6 +2894,8 @@ export const en = {
     uploading: "uploading…",
     uploadFailed: "was not uploaded",
     removeFile: "Remove {{name}}",
+    dropFileTitle: "Drop to attach",
+    dropFileNote: "Files stay in this conversation’s draft until you send them.",
     tooManyFiles: "Up to {{max}} files per message.",
     reminder: "Reminder",
     reactions: "Reactions",
@@ -4821,6 +4823,21 @@ export const en = {
   adminAsk: {
     ask: "Ask an admin",
     sent: "Sent to whoever can do it.",
+  },
+  /** An AI account named in a run's details: a pill, its card on hover or a press (provider, whose, which computer, usage). */
+  accountRef: {
+    label: "{{name}} account",
+    card: "About the {{name}} account",
+    mine: "Your account",
+    of: "{{name}}'s account",
+    on: "On {{computer}}",
+    gone: "This account isn't in the workspace anymore.",
+  },
+  /** A run that went on with another account than its agent's own, in its details and Atividade (never a chat line). */
+  accountSwitch: {
+    limit: "Went on with the <to/> account because the <from/> account hit its limit",
+    line: "Went on with the <to/> account because the <from/> account is near its limit",
+    extra: "Went on with the <to/> account because the <from/> account would go into paid extra usage",
   },
   channelRefs: {
     list: "Channels",
@@ -6885,6 +6902,9 @@ export const en = {
          */
         cli_sandbox:
           "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings.",
+        /** The agent's CLI doesn't run on its computer's system (Grok Build on Windows), so no turn was sent there. */
+        cli_system:
+          "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings.",
         account_missing:
           "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
@@ -10773,6 +10793,13 @@ export const en = {
     usedBy_zero: "no agent uses it",
     usedBy_one: "{{count}} agent uses it",
     usedBy_other: "{{count}} agents use it",
+    agents: {
+      title: "Agents with this skill",
+      none: "No agent yet.",
+      choose: "Choose agents",
+      dialogTitle: "Agents with {{name}}",
+      dialogText: "Each agent turned on uses it whenever a task calls for it.",
+    },
     updated: "updated {{when}}",
     source: { github: "GitHub", url: "Link", upload: "Uploaded", manual: "Made here" },
     defaultChip: "On for new agents",
@@ -14588,6 +14615,7 @@ export const en = {
       ask_agent: "Ask another agent",
       tell_agent: "Tell another agent",
       find_agent: "Find agent",
+      read_agent: "Read agent setup",
       ask_user: "Ask a question",
       ask_choices: "Offer choices",
       request_approval: "Ask for approval",
@@ -15467,6 +15495,8 @@ export const en = {
       tooMany: "That's more than fits here. Remove some and try again.",
       fillIn: "Fill in what's missing and try again.",
       checkAddress: "Check the address and try again.",
+      privateNetwork:
+        "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "That's too long. Shorten it and try again.",
       updateComputerApp: "The computer's app is too old for this. Update it and try again.",
       computerUpdatesItself: "The workspace's computer updates itself for this. Try again in a little while.",
@@ -15798,6 +15828,7 @@ export const en = {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
       spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
+      tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
     },
     machine: {
@@ -16297,6 +16328,10 @@ export const en = {
       ready: "Agents can use it now.",
       busy_one: "{{count}} of {{max}} tasks running",
       busy_other: "{{count}} of {{max}} tasks running",
+      /** Under a busy computer's pill, for whoever may change its limit: the row "Tasks at once" is under it on the page. */
+      tasksChange: "Tasks at once here: {{max}}. Change it below.",
+      tasksOwner: "Tasks at once here: {{max}}. The person who connected it can change that.",
+      tasksUpdate: "Tasks at once here: {{max}}. Update its app to change that from here.",
       offline: "Agents wait for it to come back.",
       offlineSeen: "Last seen {{time}}. Agents wait for it to come back.",
       offlineWithHost: "{{host}} is offline. Agents wait for it to come back.",

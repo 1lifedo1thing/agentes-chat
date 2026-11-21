@@ -2612,6 +2612,8 @@
     "uploading": "업로드 중…",
     "uploadFailed": "업로드되지 않았어요",
     "removeFile": "{{name}} 삭제",
+    "dropFileTitle": "놓아서 첨부",
+    "dropFileNote": "보내기 전까지 파일은 이 대화의 임시 저장 메시지에 남아 있어요.",
     "tooManyFiles": "메시지당 파일은 최대 {{max}}개예요.",
     "reminder": "리마인더",
     "reactions": "반응",
@@ -4272,6 +4274,19 @@
   "adminAsk": {
     "ask": "관리자에게 요청",
     "sent": "할 수 있는 사람에게 보냈어요."
+  },
+  "accountRef": {
+    "label": "{{name}} 계정",
+    "card": "{{name}} 계정 정보",
+    "mine": "내 계정",
+    "of": "{{name}} 님의 계정",
+    "on": "{{computer}}에서",
+    "gone": "이 계정은 더 이상 워크스페이스에 없어요."
+  },
+  "accountSwitch": {
+    "limit": "<from/> 계정이 한도에 도달해서 <to/> 계정으로 이어서 했어요",
+    "line": "<from/> 계정이 한도에 가까워서 <to/> 계정으로 이어서 했어요",
+    "extra": "<from/> 계정이 유료 추가 사용량으로 넘어가게 되어 <to/> 계정으로 이어서 했어요"
   },
   "channelRefs": {
     "list": "채널",
@@ -6134,6 +6149,7 @@
         "cli_stopped": "오류로 {{brain}} 프로그램이 멈췄어요.",
         "cli_closed": "갑자기 {{brain}} 프로그램이 종료됐어요.",
         "cli_sandbox": "{{brain}} 프로그램이 이 컴퓨터에서 샌드박스를 시작할 수 없어요. 에이전트 설정에서 다른 AI를 고르세요.",
+        "cli_system": "{{brain}} 프로그램은 아직 이 컴퓨터의 시스템에서 실행되지 않아요. 에이전트 설정에서 다른 AI를 고르세요.",
         "account_missing": "이 에이전트에 고른 계정이 더 이상 컴퓨터에 없어요. 에이전트 설정에서 다른 계정을 고르거나 다시 추가하세요.",
         "windows_sandbox": "이 Windows 컴퓨터에서는 Codex의 명령을 격리할 수 없어요. Windows 11 24H2 이상이 필요해요. Windows를 업데이트하거나, 이 에이전트에 Claude나 API 키를 선택하거나, Linux 컴퓨터로 옮기세요.",
         "our_error": "저희 쪽에서 문제가 생겨 작업이 멈췄어요. 잠시 후 다시 요청해 주세요.",
@@ -9941,6 +9957,13 @@
     "noResults": "“{{q}}”와 일치하는 스킬이 없어요.",
     "version": "v{{version}}",
     "usedBy_other": "에이전트 {{count}}명이 사용 중",
+    "agents": {
+      "title": "이 스킬을 가진 에이전트",
+      "none": "아직 에이전트가 없어요.",
+      "choose": "에이전트 선택",
+      "dialogTitle": "{{name}}을(를) 가진 에이전트",
+      "dialogText": "켜진 에이전트는 작업에 필요할 때마다 사용해요."
+    },
     "updated": "{{when}} 업데이트됨",
     "source": {
       "github": "GitHub",
@@ -13718,6 +13741,7 @@
       "ask_agent": "다른 에이전트에게 질문",
       "tell_agent": "다른 에이전트에게 알림",
       "find_agent": "에이전트 찾기",
+      "read_agent": "에이전트 설정 읽기",
       "ask_user": "질문하기",
       "ask_choices": "선택지 제시",
       "request_approval": "승인 요청",
@@ -14613,6 +14637,7 @@
       "tooMany": "여기에 들어갈 수 있는 것보다 많아요. 일부를 빼고 다시 시도해 주세요.",
       "fillIn": "빠진 내용을 채우고 다시 시도해 주세요.",
       "checkAddress": "주소를 확인하고 다시 시도해 주세요.",
+      "privateNetwork": "이 주소는 사설 네트워크에 있어요. 공개 주소를 쓰거나, 직접 호스팅하는 서버라면 `OUTBOUND_ALLOW_CIDRS`로 허용해 주세요.",
       "tooLong": "너무 길어요. 줄이고 다시 시도해 주세요.",
       "updateComputerApp": "컴퓨터의 앱이 너무 오래됐어요. 업데이트하고 다시 시도해 주세요.",
       "computerUpdatesItself": "워크스페이스 컴퓨터가 이를 위해 스스로 업데이트돼요. 잠시 후 다시 시도하세요.",
@@ -14903,6 +14928,7 @@
       "notLinkMaker": "링크를 만든 사람만 이 컴퓨터를 참여시킬 수 있어요.",
       "widenForbidden": "관리자는 다른 사람의 개인 기기를 쓸 수 있는 사람을 줄이는 것만 할 수 있어요.",
       "spillOwnerOnly": "이 컴퓨터에서 답장이 생각하도록 허용할 수 있는 사람은 컴퓨터를 연결한 사람뿐입니다. 끄는 것은 할 수 있어요.",
+      "tasksOwnerOnly": "이 컴퓨터가 동시에 실행하는 작업 수는 컴퓨터를 연결한 사람만 바꿀 수 있어요.",
       "notHome": "에이전트는 워크스페이스 컴퓨터에 있고, 이름을 부를 때 이 컴퓨터를 써요."
     },
     "machine": {
@@ -15387,6 +15413,9 @@
     "line": {
       "ready": "에이전트가 지금 사용할 수 있어요.",
       "busy_other": "작업 {{max}}개 중 {{count}}개 실행 중",
+      "tasksChange": "여기 동시 작업 수: {{max}}. 아래에서 바꿀 수 있어요.",
+      "tasksOwner": "여기 동시 작업 수: {{max}}. 연결한 사람이 바꿀 수 있어요.",
+      "tasksUpdate": "여기 동시 작업 수: {{max}}. 여기서 바꾸려면 그 컴퓨터의 앱을 업데이트하세요.",
       "offline": "에이전트는 다시 연결될 때까지 기다려요.",
       "offlineSeen": "마지막 확인 {{time}}. 에이전트는 다시 연결될 때까지 기다려요.",
       "offlineWithHost": "{{host}}이(가) 오프라인이에요. 에이전트는 다시 연결될 때까지 기다려요.",
