@@ -256,10 +256,12 @@ function SystemZoom({ picture, screen, max, pull, enabled, reduced, onTap, onZoo
     },
   });
   const gesture = useExclusiveGestures(pull, doubleTap, tap);
-  // A picture smaller than the screen sits centered, as taps and pins count it (`tapOnZoomed`). iOS's own centering
-  // (`centerContent`) only sets the scroll view's insets: the picture stayed where it was scrolled to, so when it
-  // shrank (the conversation's sheet coming up under it) it sat against the left edge while taps landed as if centered.
-  // Not zoomed, the scroll view is put at those insets each time the picture or the screen changes size.
+  // A picture smaller than the screen sits centered, as taps and pins count it (`tapOnZoomed`). `centerContent` gives
+  // the scroll view insets from its content's size, so the content is the picture's own box (`contentContainerStyle`):
+  // a vertical scroll view's content otherwise stretches to its width, and a picture narrower than the screen (one
+  // shown above the conversation's sheet, or a tall one) sat at that content's left edge, with no inset to center it.
+  // The insets don't move what is already scrolled to: not zoomed, the scroll view is put at them each time the
+  // picture or the screen changes size.
   useEffect(() => {
     if (zoomed.value) return;
     const left = Math.max(0, (screen.width - picture.width) / 2);
@@ -272,6 +274,7 @@ function SystemZoom({ picture, screen, max, pull, enabled, reduced, onTap, onZoo
       <Animated.ScrollView
         ref={scroll}
         style={screen}
+        contentContainerStyle={picture}
         maximumZoomScale={max}
         minimumZoomScale={1}
         pinchGestureEnabled

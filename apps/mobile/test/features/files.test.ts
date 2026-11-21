@@ -393,6 +393,12 @@ describe("viewer", () => {
     expect(zoom).toContain("maximumZoomScale={max}");
     expect(zoom).toContain("pinchGestureEnabled");
     expect(zoom).toContain("scroll.current?.scrollResponderZoomTo({ ...rect, animated: !reduced });");
+    // Centered by the system's insets, worked out from the content's size: the content is the picture's own box (a
+    // vertical scroll view stretches its content to its width, and a narrower picture sat at its left edge), and at
+    // 1× the scroll view is put at those insets when a size changes.
+    expect(zoom).toContain("centerContent");
+    expect(zoom).toContain("contentContainerStyle={picture}");
+    expect(zoom).toContain("scroll.current?.scrollTo({ x: -left, y: -top, animated: false })");
     // Android: a pinch of ours that gives a little past its limits and springs back, a drag that resists past the
     // edges, a fling that glides and bounces off an edge it hits; with reduced motion, no glide and no spring.
     expect(zoom).toContain('Platform.OS === "ios" ? <SystemZoom {...zoom} /> : <OwnZoom {...zoom} />');
