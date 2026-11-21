@@ -158,7 +158,7 @@ describe("one call is its own line", () => {
 describe("nothing more than the message shows", () => {
   test("a lone quick read draws no block; no block opens on nothing or says it used no tools", () => {
     const tools = source("ToolCalls.tsx");
-    expect(tools).toContain("const now = quietWork(items) || (done && !showsActivity(org)) ? null : toolNow(items);");
+    expect(tools).toContain("const now = quietWork(items) || (done && !shows) ? null : toolNow(items);");
     expect(tools).toContain("if (lone && lone.ms !== null && quietLine(lone)) return null;");
     expect(tools).toContain("const shown = compact ? workSteps(compact, onCard) : 0;");
     expect(tools).not.toContain("chat.work.none");
@@ -170,15 +170,20 @@ describe("what agents did under each reply: the person's own setting, off by def
   test("off, a done reply draws nothing and a saved one no block; the live block stays", () => {
     const tools = source("ToolCalls.tsx");
     // Done and off: no call is "now", so nothing shows (the branch for a reply with no call: its words are the reply).
-    expect(tools).toContain("(done && !showsActivity(org)) ? null : toolNow(items);");
+    // The setting is read through `useShowsWork`: in a code session's conversation the work always shows (ADR 0214).
+    expect(tools).toContain("const shows = useShowsWork(org);");
+    expect(tools).toContain("(done && !shows) ? null : toolNow(items);");
     expect(tools).toContain('const said = done ? [] : items.flatMap((i) => (i.kind === "say" ? [i] : []));');
-    expect(tools).toContain("if (!compact || shown === 0 || !showsActivity(org)) return null;");
+    expect(tools).toContain("if (!compact || shown === 0 || !shows) return null;");
     // The cards that carry content or wait for a person aren't the tools' and stay in the row.
     const row = source("MessageRow.tsx");
     expect(row).toContain("<SecretCard");
     // Where it browsed and its desktop are step summaries (no picture): activity, gated like the tools.
-    expect(row).toContain("isAgent && m.author.id && !m.local && showsActivity(org)");
-    expect(row.match(/showsActivity/g)?.length).toBe(2);
+    expect(row).toContain("const shows = useShowsWork(org);");
+    expect(row).toContain("isAgent && m.author.id && !m.local && shows");
+    expect(row).not.toContain("showsActivity");
+    // A code session's conversation says so around its rows.
+    expect(source("ChatScreen.tsx")).toContain("<CodeConversation.Provider value={codeId !== null}>");
   });
 
   test("Você has the row and its page, and a secret request's card shows without its text", () => {
