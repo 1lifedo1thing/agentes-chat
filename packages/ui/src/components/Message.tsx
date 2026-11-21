@@ -395,7 +395,9 @@ export function Message({
       }}
       onContextMenu={(e) => {
         onContextMenu?.(e);
-        if (!menu || e.defaultPrevented) return;
+        if (!menu) return;
+        // A menu the page opened for this press is the only one: the hold's timer would open a second.
+        if (e.defaultPrevented) return endPress();
         // Android's long press opens the page's menu (and selects a word): here it opens the row's, at once.
         if (press.current) openMenu(e.clientX, e.clientY);
         if (held.current) e.preventDefault();

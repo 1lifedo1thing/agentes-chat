@@ -1456,6 +1456,30 @@ describe("Message on touch", () => {
     }
   });
 
+  test("a long press whose `contextmenu` the page answered opens only the page's menu", async () => {
+    const restore = device(true);
+    try {
+      const { container } = render(
+        <Message
+          author="João"
+          time="10:43"
+          menu={{ label: "Ações da mensagem de João", items: <MenuItem>Responder</MenuItem> }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <MessageText>Os rótulos ficam com o verde antigo?</MessageText>
+        </Message>,
+      );
+      await act(async () => {
+        fireEvent.pointerDown(words(container), finger());
+        fireEvent.contextMenu(words(container), finger());
+        await Bun.sleep(TIP_HOLD_MS + 50);
+      });
+      expect(body().queryByRole("menu")).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+
   /** The row's box on a screen `height` tall, 390 wide; and the box its menu opens beside (the menu's hidden anchor). */
   const layout = (article: HTMLElement) => {
     const own = Object.getOwnPropertyDescriptor(window, "innerHeight");

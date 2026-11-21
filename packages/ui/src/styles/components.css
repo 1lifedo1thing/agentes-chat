@@ -6731,6 +6731,11 @@ html:not([data-pointer]) .ac-hint:focus-visible {
   .ac-msg[data-hold-menu] :is(a[href], img, video) {
     -webkit-touch-callout: default;
   }
+  /* A field in a row (a card's form) stays selectable: Safari won't type in one under user-select: none. */
+  .ac-msg[data-hold-menu] :is(input, textarea, [contenteditable]) {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 /* The row a menu is open for (a long press on touch), a step brighter than a hover. */
 .ac-msg[data-menu-open="true"] {
