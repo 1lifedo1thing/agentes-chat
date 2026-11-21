@@ -53,12 +53,19 @@ describe("an agent's owner: a person, a role or nobody (ADR 0085, addendum of 20
   });
 
   test("the roles offered leave out the base role and any that administers (no owner already means the admins)", () => {
-    const roles = [role("r-admin", { permissions: ["administrator"] }), role("r-tech"), role("r-all", { kind: "everyone" })];
+    const roles = [
+      role("r-admin", { permissions: ["administrator"] }),
+      role("r-tech"),
+      role("r-all", { kind: "everyone" }),
+    ];
     expect(ownerRoles(roles).map((r) => r.id)).toEqual(["r-tech"]);
   });
 
   test("the owner's name: the person's, else the role's", () => {
-    const names = { person: (id: string) => ({ "u-ana": "Ana" })[id], role: (id: string) => ({ "r-tech": "Tech" })[id] };
+    const names = {
+      person: (id: string) => ({ "u-ana": "Ana" })[id],
+      role: (id: string) => ({ "r-tech": "Tech" })[id],
+    };
     expect(ownerNameOf({ ownerUserId: "u-ana" }, names)).toBe("Ana");
     expect(ownerNameOf({ ownerRoleId: "r-tech" }, names)).toBe("Tech");
     expect(ownerNameOf({}, names)).toBeUndefined();

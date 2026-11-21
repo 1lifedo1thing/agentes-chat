@@ -91,7 +91,10 @@ describe("Equipe's views (ADR 0148)", () => {
     ]);
     const names = (list: TeamAgent[]) => list.map((a) => a.name);
     const base = { q: "", meId: "u-amara" };
-    expect(names(filterTeam([ops, milo, kai], { ...base, filter: "mine", myRoleIds: ["r-tech"] }))).toEqual(["Ops", "Milo"]);
+    expect(names(filterTeam([ops, milo, kai], { ...base, filter: "mine", myRoleIds: ["r-tech"] }))).toEqual([
+      "Ops",
+      "Milo",
+    ]);
     expect(names(filterTeam([ops, milo, kai], { ...base, filter: "mine" }))).toEqual(["Milo"]);
     expect(names(filterTeam([ops, milo, kai], { ...base, filter: "noOwner" }))).toEqual(["Kai"]);
   });

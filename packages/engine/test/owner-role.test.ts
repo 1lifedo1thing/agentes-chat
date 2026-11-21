@@ -35,7 +35,9 @@ afterEach(async () => {
 /** A workspace with Bia and Caio in "Tech", Dani outside it, and the agent handed to "Tech". */
 async function techTeam() {
   f = await setup();
-  const [bia, caio, dani] = await Promise.all(["bia", "caio", "dani"].map((n) => addMember(f.db, f.org.id, "member", n)));
+  const [bia, caio, dani] = await Promise.all(
+    ["bia", "caio", "dani"].map((n) => addMember(f.db, f.org.id, "member", n)),
+  );
   if (!bia || !caio || !dani) throw new Error("no members");
   const tech = await createRole(f.db, f.owner.id, f.org.id, { name: "Tech", permissions: ["talk_to_agents"] });
   await setMemberRoles(f.db, f.owner.id, f.org.id, bia.id, [tech.id]);
