@@ -3686,6 +3686,11 @@ html:not([data-pointer]) .channel-ref:focus-visible {
   margin: 0;
   overflow-wrap: anywhere;
 }
+/* An account's name can be one long run (a hyphenated team name): it breaks at its hyphens and syllables, not mid-letter. */
+.account-card .profile-card__name {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
 
 /* "Ada não está no canal" after an @ pick */
 .mention-offer {

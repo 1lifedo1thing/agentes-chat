@@ -21,7 +21,7 @@ export function AccountRef({ account }: { account: RunAccount }) {
       hover={card}
       label={t("accountRef.card", { name: account.name })}
       side="bottom"
-      className="profile-card channel-card"
+      className="profile-card channel-card account-card"
       trigger={
         <button
           type="button"
