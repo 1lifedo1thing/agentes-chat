@@ -24,7 +24,6 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
-import { SessionState } from "./CodeList";
 import { CodePanel, useCodeTab } from "./CodePanel";
 
 /**
@@ -235,7 +234,10 @@ function SessionPeople({ session }: { session: CodeSession }) {
   );
 }
 
-/** The session's header: its name, branch and state, and the git button. */
+/**
+ * The session's header: its name, who is in it and its menu. Its state is the list's and the line over the composer's,
+ * its branch the Git tab's: said once each, not here again.
+ */
 function CodeHeader({ session }: { session: CodeSession }) {
   const { t } = useTranslation();
   const { org } = useOrg();
@@ -244,21 +246,9 @@ function CodeHeader({ session }: { session: CodeSession }) {
   const close = useCloseCodeSession(org.id);
   return (
     <header className="code-head">
-      <div className="code-head__l">
-        <h1 className="code-head__t">{session.title}</h1>
-        <span className="code-head__m">
-          <SessionState session={session} />
-          {session.branch && (
-            <>
-              <span className="code-dot">·</span>
-              <span className="code-br" title={session.branch}>
-                <Icon name="gitPull" size={14} />
-                <code>{session.branch}</code>
-              </span>
-            </>
-          )}
-        </span>
-      </div>
+      <h1 className="code-head__t" title={session.title}>
+        {session.title}
+      </h1>
       <div className="code-head__r">
         <SessionPeople session={session} />
         <Menu

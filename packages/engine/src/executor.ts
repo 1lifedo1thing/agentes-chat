@@ -5235,9 +5235,9 @@ async function executeRunInner(
         }).catch(() => {});
       };
       /** A call of its own in a code session on the run's trail (`cliTool`), timed from its start. */
-      const cliStepNow = (call: OwnCall, startedAt: number | undefined) => {
+      const cliStepNow = (call: OwnCall, startedAt: number | undefined, background = false) => {
         const ms = startedAt === undefined ? undefined : Date.now() - startedAt;
-        const cliTool = cliToolStep(call, { cwd: cliFolder, ...(ms !== undefined ? { ms } : {}) });
+        const cliTool = cliToolStep(call, { cwd: cliFolder, background, ...(ms !== undefined ? { ms } : {}) });
         later(() => addRunStep(db, run, "context", { cliTool }));
       };
       /** A call whose work went on in the background ends now: its line live, then its step. */
@@ -5247,7 +5247,7 @@ async function executeRunInner(
         backgroundCalls.delete(id);
         ownStep(held.call, true);
         stepTold.delete(id);
-        cliStepNow(held.call, held.startedAt);
+        cliStepNow(held.call, held.startedAt, true);
       };
       /** The turn ended: calls whose background work never said it ended end as they are. */
       const flushBackground = () => {

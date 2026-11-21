@@ -427,13 +427,17 @@ function outputOf(verb: CliVerb, input: unknown, result: { content: string; isEr
   return shown ? masked(shown, CLI_OUTPUT_MAX) : "";
 }
 
-/** One call of the brain's own as its run keeps it (ADR 0208). `ms`: how long it ran, when the brain said its start. */
+/**
+ * One call of the brain's own as its run keeps it (ADR 0208). `ms`: how long it ran, when the brain said its start.
+ * `background`: its work went on after the call (a workflow, a subagent it didn't wait for), so the call only answered
+ * that it started, in words for the model: nothing of it to open.
+ */
 export function cliToolStep(
   call: { id: string; name: string; input?: unknown; result?: { content: string; isError?: boolean } },
-  options: { cwd?: string; ms?: number } = {},
+  options: { cwd?: string; ms?: number; background?: boolean } = {},
 ): CliToolStep {
   const summary = cliToolSummary(call.name, call.input, call.result ?? null, options.cwd);
-  const output = outputOf(summary.verb, call.input, call.result);
+  const output = options.background ? "" : outputOf(summary.verb, call.input, call.result);
   return {
     id: cutText(call.id, 128),
     name: cutText(call.name, 128),

@@ -384,7 +384,7 @@ import {
 } from "@/components/RequestCard";
 import { ReturnLine } from "@/components/ReturnLine";
 import { SidePanel } from "@/components/SidePanel";
-import { ChannelWelcome, colorOf } from "@/components/Sky";
+import { AskSky, ChannelWelcome, colorOf } from "@/components/Sky";
 import { isStoppable, StopButton, useContinueRun, useStopRun, useWasContinued } from "@/components/StopRun";
 import { SearchResultsPanel } from "@/components/search/SearchResultsPanel";
 import { TeamChecks } from "@/components/TeamChecks";
@@ -4266,6 +4266,7 @@ function ActivityBar({
       >
         {ask && (
           <>
+            <AskSky color={colorOf(dir.anyAgent(ask.agentId))} />
             <span className="ac-typing__avatars" aria-hidden="true">
               <span className="ac-typing__tok">
                 <AgentAvatar agentId={ask.agentId} size="xs" name={askName} state="waiting" />
@@ -4292,6 +4293,7 @@ function ActivityBar({
         )}
         {away && (
           <>
+            {awayAgent && <AskSky color={colorOf(awayAgent)} />}
             {awayAgent && (
               <span className="ac-typing__avatars" aria-hidden="true">
                 <span className="ac-typing__tok">

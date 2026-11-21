@@ -441,6 +441,31 @@ export function CardSky({ color }: { color: AgentColor }) {
 }
 
 /**
+ * Behind the line over the composer while an agent waits on the viewer (an approval, a question): a light drift in its
+ * color from its face, gone before the line ends. Chrome that stays on screen, so soft tones, low and slow; the card
+ * itself has its own (`CardSky`).
+ */
+export function AskSky({ color }: { color: AgentColor }) {
+  return (
+    <span className="ac-typing__sky" aria-hidden="true">
+      <PixelSky
+        options={{
+          pixel: 3,
+          palette: (bg) => softTones(color, bg),
+          light: 0,
+          seeThrough: true,
+          base: (u, v, tt) => {
+            const from = Math.max(0, 1 - u * 1.5);
+            const middle = 1 - Math.abs(v - 0.5) * 1.6;
+            return from * from * (0.14 + 0.2 * middle + 0.05 * S(u * 6 - tt * 0.4));
+          },
+        }}
+      />
+    </span>
+  );
+}
+
+/**
  * The top of a suggested connector in the catalog: a soft pixel sky in the brand's own color (the
  * ink's sky when the brand has none), fading into the card.
  */

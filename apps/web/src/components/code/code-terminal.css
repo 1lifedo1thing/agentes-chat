@@ -50,11 +50,12 @@
   pointer-events: none;
 }
 /* What the pane says around the shell is the page's own text, on the page's ground. */
+/* Its words on the button's middle: a button's baseline is its icon's foot, so a baseline line sat the words low. */
 .code-term__note,
 .code-term__end {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 8px 12px;
   margin: 0;
   padding: 10px 16px;

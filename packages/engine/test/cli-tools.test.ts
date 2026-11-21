@@ -177,6 +177,16 @@ describe("its step", () => {
     expect(step.output?.endsWith("…")).toBe(true);
   });
 
+  test("a call whose work went on in the background keeps its line and time, not its words for the model", () => {
+    const result = { content: "Workflow launched in background. Run ID: wf_1. To resume after editing the script: …" };
+    const step = cliToolStep(
+      { id: "w1", name: "Workflow", input: { description: "Três agentes" }, result },
+      { ms: 7800, background: true },
+    );
+    expect(step).toMatchObject({ id: "w1", verb: "workflow", ok: true, ms: 7800 });
+    expect(step.output).toBeUndefined();
+  });
+
   test("leaves out the notes Claude Code adds for the model", () => {
     const content = "     1\tconst a = 1;\n<system-reminder>Whenever you read a file…</system-reminder>";
     const step = cliToolStep({ id: "r1", name: "Read", input: { file_path: "a.ts" }, result: { content } });
