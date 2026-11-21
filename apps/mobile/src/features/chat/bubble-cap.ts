@@ -25,10 +25,12 @@ export function bubbleCapAfter(cap: number | null, box: number, content: number,
 
 /**
  * Keeps someone else's bubble no taller than what it holds. On a phone, a long message's words laid out at their own
- * height while the bubble around them came out thousands of points taller (measured layer by layer: the words 1707
- * points, the bubble 12459), an empty block under the last line that pushed the message's file away. The bubble's
- * height is checked against its content's after every layout (once per frame, both measures from the same layout) and
- * capped when it runs over.
+ * height while the box right around them came out thousands of points taller (measured layer by layer: the words 1707
+ * points, the bubble around them 12459; with a view put between the two, that view grew instead), an empty block under
+ * the last line that pushed the message's file away. So what the bubble holds is read where its words end (their top
+ * plus their height, `ClippedMessage`'s `onEnd`: the words come last), never from a box around them, and the bubble's
+ * height is checked against it after every layout (once per frame, both measures from the same layout) and capped
+ * when it runs over.
  */
 export function useBubbleCap() {
   const [cap, setCap] = useState<number | null>(null);
@@ -41,7 +43,8 @@ export function useBubbleCap() {
     pending.current = true;
     requestAnimationFrame(() => {
       pending.current = false;
-      const next = bubbleCapAfter(capNow.current, box.current, content.current, BUBBLE_PAD_V * 2);
+      // Where the words end counts the bubble's padding over them already: only the padding under them is added.
+      const next = bubbleCapAfter(capNow.current, box.current, content.current, BUBBLE_PAD_V);
       if (next === capNow.current) return;
       capNow.current = next;
       setCap(next);
@@ -54,12 +57,12 @@ export function useBubbleCap() {
     },
     [check],
   );
-  const onContent = useCallback(
-    (e: LayoutChangeEvent) => {
-      content.current = e.nativeEvent.layout.height;
+  const onEnd = useCallback(
+    (end: number) => {
+      content.current = end;
       check();
     },
     [check],
   );
-  return { capStyle: cap === null ? null : { maxHeight: cap }, onBubble, onContent };
+  return { cap, capStyle: cap === null ? null : { maxHeight: cap }, onBubble, onEnd };
 }

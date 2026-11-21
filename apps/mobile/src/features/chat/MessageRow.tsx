@@ -868,7 +868,13 @@ function RowBody({
   ) : choiceReply ? (
     choiceReply
   ) : body ? (
-    <ClippedMessage id={m.id} behind={behindWords} lead={talk ? saying(talk.lead) : undefined}>
+    <ClippedMessage
+      id={m.id}
+      behind={behindWords}
+      lead={talk ? saying(talk.lead) : undefined}
+      // In a bubble, where its words end keeps the bubble no taller than them (`useBubbleCap`).
+      onEnd={bubbled ? bubbleCap.onEnd : undefined}
+    >
       {saying(body)}
     </ClippedMessage>
   ) : null;
@@ -988,13 +994,10 @@ function RowBody({
                         bubbleCap.capStyle,
                       ]}
                     >
-                      {/* What the bubble holds, measured as one: the bubble is kept no taller than it. */}
-                      <View onLayout={bubbleCap.onContent}>
-                        {!grouped && (look.names || tagged) ? who(true) : null}
-                        {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}
-                        {opener}
-                        {words}
-                      </View>
+                      {!grouped && (look.names || tagged) ? who(true) : null}
+                      {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}
+                      {opener}
+                      {words}
                     </View>
                   </>
                 ) : compact && !grouped ? (
