@@ -122,7 +122,17 @@ export const GIT_FOR_WINDOWS_URL = "https://git-scm.com/downloads/win";
 
 /** The coding CLI a brain runs, when the computer installs it from the apps (`INSTALLABLE_CLIS`); null otherwise. */
 export const installableCli = (kind: string): InstallableCli | null =>
-  kind === "claude_code" || kind === "claude" ? "claude" : kind === "codex" ? "codex" : null;
+  kind === "claude_code" || kind === "claude"
+    ? "claude"
+    : kind === "codex"
+      ? "codex"
+      : kind === "antigravity" || kind === "agy"
+        ? "agy"
+        : null;
+
+/** The brain (and `MachineTool`) an installable CLI is, for its name (`brain.card.*`, `machines.oneClick.tools.*`). */
+export const cliBrainKind = (cli: InstallableCli) =>
+  cli === "claude" ? "claude_code" : cli === "agy" ? "antigravity" : "codex";
 
 /** Why an install of a coding CLI failed, in words, with the installer's own line; null when it didn't fail. */
 export function cliInstallFailure(
@@ -140,18 +150,18 @@ export function cliInstallFailure(
  * What one click does where a coding CLI isn't on `m`, for the person `meId`, as `toolOneClick` for a switch: `allow`
  * installs it there (they paired it), `ask` sends whoever paired it the same button, `outdated` means its app must
  * update first. Null where nobody installs from here (the workspace's own computer installs its own, or nobody is
- * behind it), and `allow` only where an installer exists there: never Codex on Windows, nor a computer whose agents
+ * behind it), and `allow` only where an installer exists there: never Codex or the Antigravity CLI on Windows, nor a computer whose agents
  * are users of their own (its setup installs for them).
  */
 export function cliOneClick(
-  m: Pick<Machine, "kind" | "pairedBy" | "cliInstall" | "os" | "mode"> | null | undefined,
+  m: Pick<Machine, "kind" | "pairedBy" | "cliInstall" | "agyInstall" | "os" | "mode"> | null | undefined,
   meId: string | null | undefined,
   cli: InstallableCli,
 ): ToolOneClick | null {
   if (!m || m.kind === "managed" || !m.pairedBy) return null;
-  if (m.mode === "system" || (cli === "codex" && m.os === "windows")) return null;
+  if (m.mode === "system" || (cli !== "claude" && m.os === "windows")) return null;
   if (m.pairedBy.id !== meId) return { kind: "ask", ownerId: m.pairedBy.id, ownerName: m.pairedBy.name };
-  return m.cliInstall ? { kind: "allow" } : { kind: "outdated" };
+  return (cli === "agy" ? m.agyInstall : m.cliInstall) ? { kind: "allow" } : { kind: "outdated" };
 }
 
 /**

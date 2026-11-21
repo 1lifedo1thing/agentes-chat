@@ -3458,7 +3458,12 @@
       "getGit": "Git for Windows herunterladen",
       "cantStart": "{{program}} ist auf {{computer}}, startet aber nicht: {{message}}",
       "outdated": "Aktualisiere die agentes.chat-App auf {{computer}}, um von hier zu installieren.",
-      "asked": "Anfrage gesendet. {{name}} bekommt einen Button zum Installieren."
+      "asked": "Anfrage gesendet. {{name}} bekommt einen Button zum Installieren.",
+      "update": "{{program}} aktualisieren",
+      "updating": "{{program}} wird auf {{computer}} aktualisiert. Das dauert etwa eine Minute.",
+      "checkUpdated": "Ich habe es aktualisiert, erneut prüfen",
+      "outdatedUpdate": "Um von hier zu aktualisieren, aktualisiere zuerst die agentes.chat-App auf {{computer}}.",
+      "askedUpdate": "Anfrage gesendet. {{name}} bekommt eine Schaltfläche zum Aktualisieren."
     },
     "titleFor": "Eine KI für {{name}} verbinden",
     "have": {
@@ -12093,7 +12098,7 @@
     "free": "Kostenlos",
     "opencodeFreeHint": "Andere kostenlose Modelle laufen über OpenCode auf dem Computer des Agenten.",
     "missingModel": {
-      "cli_old": "{{model}} braucht eine neuere Version der Antigravity CLI auf dem Computer des Agenten. Führe dort agy update aus.",
+      "cli_old": "{{model}} braucht eine neuere Version der Antigravity CLI auf dem Computer des Agenten.",
       "plan": "{{model}} ist in Google AI Pro und Ultra enthalten. Kein Gemini-Konto auf dem Computer des Agenten hat diesen Plan."
     },
     "modelHelp": "Größere Modelle denken mehr nach und verbrauchen das Abo schneller.",

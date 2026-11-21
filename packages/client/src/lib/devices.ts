@@ -1194,8 +1194,12 @@ export function deviceNoticeOf(
   const l = n.latest as Record<string, unknown>;
   const join = kind === "device.join_request";
   const actor = n.actors?.find((a) => a.type === "agent");
+  const reason = str(l.reason);
+  // A request for the Antigravity CLI says `agy`, its program: named, and installed again, as its tool `antigravity`.
   const tool =
-    kind === "device.tool_request" || kind === "device.cli_request" ? (str(l.reason) as MachineTool | null) : null;
+    kind === "device.tool_request" || kind === "device.cli_request"
+      ? ((kind === "device.cli_request" && reason === "agy" ? "antigravity" : reason) as MachineTool | null)
+      : null;
   return {
     kind: kind as DeviceNoticeKind,
     requestId: str(s.requestId),

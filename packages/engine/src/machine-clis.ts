@@ -1,10 +1,12 @@
 import {
+  AGY_INSTALL_PROTOCOL,
   CLI_ERROR_MAX,
   CLI_INSTALL_CAUSES,
   CLI_INSTALL_PROTOCOL,
   CLI_INSTALL_STATES,
   type CliInstall,
   type InstallableCli,
+  isInstallableCli,
   parseExecutors,
 } from "@agenteschat/adapters";
 import type { Database } from "@agenteschat/db";
@@ -18,8 +20,17 @@ import { requirePermission } from "./organizations";
 
 type Deps = AccessDeps & { hub: Pick<MachineCaller, "call" | "status"> };
 
-/** The computer, refused where nobody installs from here: the workspace's own (ours installs by itself) and old apps. */
-async function installable(db: Database, actorId: string, orgId: string, machineId: string): Promise<MachineRow> {
+/**
+ * The computer, refused where nobody installs from here: the workspace's own (ours installs by itself) and old apps,
+ * the Antigravity CLI on one before `AGY_INSTALL_PROTOCOL`.
+ */
+async function installable(
+  db: Database,
+  actorId: string,
+  orgId: string,
+  machineId: string,
+  tool?: InstallableCli,
+): Promise<MachineRow> {
   await requirePermission(db, actorId, orgId, "read");
   const machine = await getMachine(db, orgId, machineId);
   if (!machine) throw new NotFoundError("Computer not found", "machine.not_found");
@@ -29,7 +40,7 @@ async function installable(db: Database, actorId: string, orgId: string, machine
       "machine.managed_access",
     );
   }
-  if (machine.protocol < CLI_INSTALL_PROTOCOL) {
+  if (machine.protocol < (tool === "agy" ? AGY_INSTALL_PROTOCOL : CLI_INSTALL_PROTOCOL)) {
     throw new ValidationError(
       "This computer's app is too old to install or look for programs from here. Update the app on it.",
       "machine.cli_outdated",
@@ -65,7 +76,7 @@ function installOf(r: { install?: unknown } | undefined, tool: InstallableCli): 
   const message = typeof f.message === "string" ? f.message.slice(0, CLI_ERROR_MAX) : "";
   const cause = CLI_INSTALL_CAUSES.find((c) => c === f.cause);
   return {
-    tool: f.tool === "claude" || f.tool === "codex" ? f.tool : tool,
+    tool: isInstallableCli(f.tool) ? f.tool : tool,
     state,
     ...(message ? { message } : {}),
     ...(state === "failed" && cause ? { cause } : {}),
@@ -86,7 +97,7 @@ export async function machineCliInstall(
   action: "start" | "status" | "cancel",
   tool: InstallableCli,
 ): Promise<{ install: CliInstall | null }> {
-  const machine = await installable(deps.db, actorId, orgId, machineId);
+  const machine = await installable(deps.db, actorId, orgId, machineId, tool);
   if (machine.pairedByUserId !== actorId) {
     throw new ForbiddenError(
       "Only the person who connected this computer can install programs on it",

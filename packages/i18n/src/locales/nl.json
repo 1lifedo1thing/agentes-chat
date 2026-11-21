@@ -3457,7 +3457,12 @@
       "getGit": "Git for Windows downloaden",
       "cantStart": "{{program}} staat op {{computer}}, maar start niet: {{message}}",
       "outdated": "Werk de agentes.chat-app op {{computer}} bij om hiervandaan te installeren.",
-      "asked": "Verzoek verstuurd. {{name}} krijgt een knop om het te installeren."
+      "asked": "Verzoek verstuurd. {{name}} krijgt een knop om het te installeren.",
+      "update": "{{program}} bijwerken",
+      "updating": "{{program}} wordt bijgewerkt op {{computer}}. Dit duurt ongeveer een minuut.",
+      "checkUpdated": "Ik heb het bijgewerkt, opnieuw controleren",
+      "outdatedUpdate": "Werk eerst de agentes.chat-app op {{computer}} bij om hiervandaan bij te werken.",
+      "askedUpdate": "Verzoek verstuurd. {{name}} krijgt een knop om het bij te werken."
     },
     "titleFor": "Een AI koppelen voor {{name}}",
     "titleFor_female": "Een AI koppelen voor {{name}}",
@@ -12164,7 +12169,7 @@
     "free": "Gratis",
     "opencodeFreeHint": "Andere gratis modellen draaien via OpenCode op de computer van de agent.",
     "missingModel": {
-      "cli_old": "{{model}} heeft een nieuwere versie van de Antigravity CLI nodig op de computer van de agent. Voer daar agy update uit.",
+      "cli_old": "{{model}} heeft een nieuwere versie van de Antigravity CLI nodig op de computer van de agent.",
       "plan": "{{model}} hoort bij Google AI Pro en Ultra. Geen enkel Gemini-account op de computer van de agent heeft dat abonnement."
     },
     "modelHelp": "Grotere modellen denken meer na en verbruiken het abonnement sneller.",

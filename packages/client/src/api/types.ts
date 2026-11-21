@@ -5101,6 +5101,8 @@ export interface Machine {
    * (`…/cli-install`); `false` or absent: its app is too old, or it is the workspace's own computer.
    */
   cliInstall?: boolean;
+  /** And the Antigravity CLI (`agy`), installed or brought up to date there; `false` or absent: its app is too old. */
+  agyInstall?: boolean;
   /**
    * The coding CLIs there that can't start (`claude`, `codex`…), each with its own last error line, or
    * `CLI_GIT_MISSING`; null or absent for people who don't manage it.
@@ -8607,8 +8609,8 @@ export interface XcodeFix {
   still?: "command_line_tools" | "license";
 }
 
-/** The coding CLIs a computer installs from the apps (`INSTALLABLE_CLIS`). */
-export type InstallableCli = "claude" | "codex";
+/** The coding CLIs a computer installs from the apps (`INSTALLABLE_CLIS`); `agy` is updated where it is already. */
+export type InstallableCli = "claude" | "codex" | "agy";
 
 /**
  * Where an install of a coding CLI stands (`…/cli-install`): `failed` with the installer's `message`, or a `cause`:

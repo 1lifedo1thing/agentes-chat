@@ -314,9 +314,12 @@ export function deviceNoticeOf(
     device: str(s.label) ?? n.latest?.title ?? "",
     forUserId: str(s.userId),
     doing: n.latest?.text ?? null,
+    // A request for the Antigravity CLI says `agy`, its program: named, and installed again, as its tool `antigravity`.
     tool:
       n.kind === "device.tool_request" || n.kind === "device.cli_request"
-        ? (str(n.latest?.reason) as MachineTool | null)
+        ? ((n.kind === "device.cli_request" && str(n.latest?.reason) === "agy"
+            ? "antigravity"
+            : str(n.latest?.reason)) as MachineTool | null)
         : null,
     path: n.kind === "device.folder_request" ? str(n.latest?.title) : null,
   };

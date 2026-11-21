@@ -10,7 +10,7 @@ import {
 } from "@agenteschat/adapters/machine-protocol";
 import { killTree } from "./exec";
 import { envValue, findOnWindowsPath, isFile } from "./executors";
-import { CLAUDE_INSTALL_PS1_URL, CLAUDE_INSTALL_URL, CODEX_RELEASES } from "./install-script";
+import { AGY_INSTALL_URL, CLAUDE_INSTALL_PS1_URL, CLAUDE_INSTALL_URL, CODEX_RELEASES } from "./install-script";
 import { mergePathWith } from "./login-path";
 
 /**
@@ -52,7 +52,9 @@ export const cliInstallDir = (platform: NodeJS.Platform, env: NodeJS.ProcessEnv)
 
 /**
  * The program and argv that install `tool` here, or null where we have no installer for it (Codex on Windows: OpenAI
- * documents npm there). The address is an argument (`$0`), never part of the script's text.
+ * documents npm there; the Antigravity CLI on Windows, where Gemini doesn't think). The address is an argument (`$0`),
+ * never part of the script's text. The Antigravity CLI already here is updated in place instead (`agy update`): its
+ * installer stops where one is.
  */
 export function cliInstaller(
   tool: InstallableCli,
@@ -76,6 +78,10 @@ export function cliInstaller(
     };
   }
   if (platform !== "darwin" && platform !== "linux") return null;
+  if (tool === "agy") {
+    const script = `if command -v agy >/dev/null 2>&1; then exec agy update; fi; set -o pipefail; curl -fsSL --proto '=https' "$0" | bash`;
+    return { file: "/bin/bash", args: ["-c", script, AGY_INSTALL_URL] };
+  }
   const script =
     tool === "claude"
       ? `set -o pipefail; curl -fsSL --proto '=https' "$0" | bash`

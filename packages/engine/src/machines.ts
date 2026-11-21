@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
   ACCESS_ALLOW_PROTOCOL,
+  AGY_INSTALL_PROTOCOL,
   BROWSER_PROFILE_PROTOCOL,
   CLI_INSTALL_PROTOCOL,
   DESKTOP_PROTOCOL,
@@ -606,6 +607,8 @@ async function machineViews(db: Database, actorId: string, orgId: string, only?:
        * (`CLI_INSTALL_PROTOCOL`); never the workspace's own computer, which installs them itself.
        */
       cliInstall: !managed && m.protocol >= CLI_INSTALL_PROTOCOL,
+      /** And the Antigravity CLI, installed or brought up to date from here (`AGY_INSTALL_PROTOCOL`). */
+      agyInstall: !managed && m.protocol >= AGY_INSTALL_PROTOCOL,
       /** The coding CLIs there that can't start, with their own error line; admins and the pairer only. */
       cliErrors: (admin || mine) && !managed ? (m.executors?.broken ?? null) : null,
       pairedBy: m.pairedByUserId ? { id: m.pairedByUserId, name: pairedByName ?? "" } : null,

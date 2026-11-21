@@ -1,7 +1,7 @@
 import { type AppNotification, type InstallableCli, useCliInstall, useNotificationAction } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { firstName } from "@agenteschat/client/lib/format";
-import { cliInstallFailure, computerKind, installableCli } from "@agenteschat/client/lib/machines";
+import { cliBrainKind, cliInstallFailure, computerKind, installableCli } from "@agenteschat/client/lib/machines";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
@@ -118,7 +118,7 @@ function CliInstallButton({
   const { t } = useTranslation();
   const toast = useToast();
   const run = useCliInstall(useOrgId(), machineId, cli, true);
-  const program = t(`brain.card.${cli === "claude" ? "claude_code" : "codex"}`);
+  const program = t(`brain.card.${cliBrainKind(cli)}`);
   // An install that ended badly says why where it was started; one that ended before this row opened says nothing.
   const was = useRef(run.install?.state);
   useEffect(() => {

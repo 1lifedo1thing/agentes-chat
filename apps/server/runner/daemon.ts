@@ -2260,7 +2260,9 @@ export class RunnerDaemon implements RequestObserver {
       log: this.opts.log,
       onDone: async (tool) => {
         await this.clisLook();
-        return Boolean(this.executors()[tool]);
+        // A new Antigravity CLI lists the models its catalog added: each account's list is taken again.
+        if (tool === "agy") void this.accounts.refresh(true).catch(() => undefined);
+        return Boolean(this.executors()[tool === "agy" ? "antigravity" : tool]);
       },
       ...this.opts.cliInstall,
     });

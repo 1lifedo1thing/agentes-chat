@@ -2,7 +2,12 @@ import { afterEach, expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { CliInstaller, type CliInstallerOptions, cliInstaller, gitBashPath } from "../../runner/cli-install";
-import { CLAUDE_INSTALL_PS1_URL, CLAUDE_INSTALL_URL, CODEX_RELEASES } from "../../runner/install-script";
+import {
+  AGY_INSTALL_URL,
+  CLAUDE_INSTALL_PS1_URL,
+  CLAUDE_INSTALL_URL,
+  CODEX_RELEASES,
+} from "../../runner/install-script";
 import { removeDirs, tempDir, waitFor } from "./helpers";
 
 const dirs: string[] = [];
@@ -92,6 +97,16 @@ test("the installers: the vendor's address over https as an argument, never part
   expect(win?.args.at(-1)).toContain(`irm '${CLAUDE_INSTALL_PS1_URL}' | iex`);
   expect(CLAUDE_INSTALL_PS1_URL.startsWith("https://")).toBe(true);
   expect(cliInstaller("codex", "win32", {})).toBeNull();
+  // The Antigravity CLI: updated in place where it is (Google's installer stops there), else Google's installer.
+  const agy = cliInstaller("agy", "linux", {});
+  expect(agy?.file).toBe("/bin/bash");
+  expect(agy?.args[1]).toContain("command -v agy");
+  expect(agy?.args[1]).toContain("exec agy update");
+  expect(agy?.args[1]).toContain("--proto '=https'");
+  expect(agy?.args.at(-1)).toBe(AGY_INSTALL_URL);
+  expect(cliInstaller("agy", "darwin", {})?.args.at(-1)).toBe(AGY_INSTALL_URL);
+  // Gemini doesn't think on Windows.
+  expect(cliInstaller("agy", "win32", {})).toBeNull();
 });
 
 test("Git Bash: where CLAUDE_CODE_GIT_BASH_PATH points, beside git on the PATH, or Git for Windows' own folder", () => {

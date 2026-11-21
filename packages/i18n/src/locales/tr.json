@@ -3448,7 +3448,12 @@
       "getGit": "Git for Windows'u indir",
       "cantStart": "{{program}}, {{computer}} üzerinde var ama açılmıyor: {{message}}",
       "outdated": "Buradan kurmak için {{computer}} üzerindeki agentes.chat uygulamasını güncelleyin.",
-      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır."
+      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır.",
+      "update": "{{program}} güncelle",
+      "updating": "{{program}}, {{computer}} üzerinde güncelleniyor. Yaklaşık bir dakika sürer.",
+      "checkUpdated": "Güncelledim, tekrar kontrol et",
+      "outdatedUpdate": "Buradan güncellemek için önce {{computer}} üzerindeki agentes.chat uygulamasını güncelleyin.",
+      "askedUpdate": "İstek gönderildi. {{name}} güncellemek için bir düğme alır."
     },
     "titleFor": "{{name}} için bir yapay zeka bağlayın",
     "have": {
@@ -12032,7 +12037,7 @@
     "free": "Ücretsiz",
     "opencodeFreeHint": "Diğer ücretsiz modeller ajanın bilgisayarındaki OpenCode ile çalışır.",
     "missingModel": {
-      "cli_old": "{{model}} için ajanın bilgisayarında daha yeni bir Antigravity CLI sürümü gerekir. Orada agy update çalıştırın.",
+      "cli_old": "{{model}} için ajanın bilgisayarında daha yeni bir Antigravity CLI sürümü gerekir.",
       "plan": "{{model}}, Google AI Pro ve Ultra ile gelir. Ajanın bilgisayarındaki hiçbir Gemini hesabında bu plan yok."
     },
     "modelHelp": "Büyük modeller daha çok düşünür ve planı daha hızlı tüketir.",

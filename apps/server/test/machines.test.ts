@@ -5,6 +5,7 @@ import path from "node:path";
 import { createDiskBlobStore } from "@agenteschat/adapters";
 import {
   ACCESS_ALLOW_PROTOCOL,
+  AGY_INSTALL_PROTOCOL,
   CLI_GIT_MISSING,
   CLI_INSTALL_PROTOCOL,
   MACHINE_PROTOCOL_VERSION,
@@ -773,4 +774,70 @@ test("a coding CLI from the apps: anyone looks again; only whoever connected it 
   const outdated = await orgApi(bia)(`/machines/${old.machineId}/clis/check`, { json: {} });
   expect(outdated.status).toBe(400);
   expect(((await outdated.json()) as { error: { code: string } }).error.code).toBe("machine.cli_outdated");
+}, 30_000);
+
+test("the Antigravity CLI from the apps: updated where it is, from protocol 76; a request for it ends once it runs Neon", async () => {
+  const { owner, orgId } = await start();
+  const orgApi = (b: typeof owner) => (path: string, init?: Parameters<typeof owner>[1]) =>
+    b(`/api/app/organizations/${orgId}${path}`, init);
+  const bia = await joinByInvitation(t, owner, orgId, "bia@example.com");
+  const caio = await joinByInvitation(t, owner, orgId, "caio@example.com");
+  const runner = { ...RUNNER, os: "linux", protocol: MACHINE_PROTOCOL_VERSION };
+  const paired = await pairComputer(t, orgApi(bia), { ...runner, exec: true }, { name: "Bia's box" });
+  const hub = t.engine.machineHub;
+  const sent: MachineRequest[] = [];
+  let found: Record<string, unknown> = { antigravity: { version: "1.5.0" } };
+  const conn = hub.open({
+    send(text: string) {
+      const frame = JSON.parse(text) as ServerFrame;
+      if (frame.type !== "request" || (frame.op !== "clis.check" && frame.op !== "cli.install")) return;
+      sent.push(frame);
+      const data =
+        frame.op === "clis.check" ? { executors: found } : { install: { tool: frame.tool, state: "running" } };
+      setTimeout(() => void hub.message(conn, JSON.stringify({ type: "result", id: frame.id, ok: true, data })), 1);
+    },
+    close() {},
+  });
+  await hub.message(
+    conn,
+    JSON.stringify({ type: "hello", token: paired.token, ...runner, exec: true, executors: { ...found } }),
+  );
+  const path = `/machines/${paired.machineId}`;
+  type Listed = { machines: { name: string; cliInstall: boolean; agyInstall: boolean }[] };
+  const listed = async () => ((await (await orgApi(bia)("/machines")).json()) as Listed).machines;
+  expect((await listed()).find((m) => m.name === "Bia's box")).toMatchObject({ cliInstall: true, agyInstall: true });
+
+  const started = await orgApi(bia)(`${path}/cli-install`, { json: { tool: "agy" } });
+  expect(started.status).toBe(200);
+  expect(await started.json()).toEqual({ install: { tool: "agy", state: "running" } });
+  expect(sent.at(-1)).toMatchObject({ op: "cli.install", action: "start", tool: "agy" });
+
+  // Caio asks Bia; the row stays while the CLI there predates Neon, and ends once it runs it.
+  expect((await orgApi(caio)(`${path}/cli-install/ask`, { json: { tool: "agy" } })).status).toBe(200);
+  type Inbox = { items: { kind: string; latest: { reason?: string } }[] };
+  const requests = async () =>
+    ((await (await orgApi(bia)("/notifications")).json()) as Inbox).items.filter(
+      (n) => n.kind === "device.cli_request",
+    );
+  expect(await requests()).toEqual([expect.objectContaining({ latest: expect.objectContaining({ reason: "agy" }) })]);
+  expect((await orgApi(caio)(`${path}/clis/check`, { json: {} })).status).toBe(200);
+  expect(await requests()).toHaveLength(1);
+  found = { antigravity: { version: "1.5.14" } };
+  expect((await orgApi(caio)(`${path}/clis/check`, { json: {} })).status).toBe(200);
+  expect(await requests()).toHaveLength(0);
+
+  // A runner before protocol 76 installs Claude Code and Codex from here, never the Antigravity CLI.
+  const old = await pairComputer(
+    t,
+    orgApi(bia),
+    { ...runner, protocol: AGY_INSTALL_PROTOCOL - 1, exec: true },
+    { name: "Bia's old box" },
+  );
+  expect((await listed()).find((m) => m.name === "Bia's old box")).toMatchObject({
+    cliInstall: true,
+    agyInstall: false,
+  });
+  const refused = await orgApi(bia)(`/machines/${old.machineId}/cli-install`, { json: { tool: "agy" } });
+  expect(refused.status).toBe(400);
+  expect(((await refused.json()) as { error: { code: string } }).error.code).toBe("machine.cli_outdated");
 }, 30_000);

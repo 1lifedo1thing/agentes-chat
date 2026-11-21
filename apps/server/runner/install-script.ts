@@ -146,6 +146,11 @@ export const CLAUDE_EXE = "/usr/local/bin/claude";
  */
 export const CODEX_RELEASES = "https://github.com/openai/codex/releases/latest/download";
 export const CODEX_EXE = "/usr/local/bin/codex";
+/**
+ * Google's installer for the Antigravity CLI (macOS and Linux, into `~/.local/bin`; it checks what it downloads against
+ * its manifest's SHA-512). It stops where `agy` is already: `agy update` updates that one.
+ */
+export const AGY_INSTALL_URL = "https://antigravity.google/cli/install.sh";
 
 /**
  * The installer served at `GET /api/machines/install.sh`:

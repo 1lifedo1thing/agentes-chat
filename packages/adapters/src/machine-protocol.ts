@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 75;
+export const MACHINE_PROTOCOL_VERSION = 76;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -730,8 +730,11 @@ export interface RunnerReportParts {
   logTail: string[];
 }
 
-/** The coding CLIs `cli.install` installs: Claude Code and Codex. */
-export const INSTALLABLE_CLIS = ["claude", "codex"] as const;
+/**
+ * The coding CLIs `cli.install` installs: Claude Code and Codex, and the Antigravity CLI (`AGY_INSTALL_PROTOCOL`), which
+ * it also brings up to date where it is already.
+ */
+export const INSTALLABLE_CLIS = ["claude", "codex", "agy"] as const;
 export type InstallableCli = (typeof INSTALLABLE_CLIS)[number];
 export const isInstallableCli = (v: unknown): v is InstallableCli =>
   (INSTALLABLE_CLIS as readonly unknown[]).includes(v);
@@ -2356,6 +2359,13 @@ export const BRAIN_WARM_PROTOCOL = 74;
  * default, unless its config says otherwise.
  */
 export const TASK_LIMIT_PROTOCOL = 75;
+
+/**
+ * `cli.install` with `agy` (protocol 76, ADR 0143): the Antigravity CLI installed by Google's installer, or, where it
+ * is already, brought up to date (`agy update`): its own catalog decides which Gemini models it lists and runs, and the
+ * runner keeps it from updating itself during turns. The server asks no older runner for it.
+ */
+export const AGY_INSTALL_PROTOCOL = 76;
 /** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
 export const TASK_LIMIT_BOUNDS = [1, 20] as const;
 

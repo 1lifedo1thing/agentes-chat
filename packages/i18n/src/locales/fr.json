@@ -3597,7 +3597,12 @@
       "getGit": "Télécharger Git for Windows",
       "cantStart": "{{program}} est sur {{computer}}, mais ne démarre pas : {{message}}",
       "outdated": "Mettez à jour l'app agentes.chat sur {{computer}} pour installer d'ici.",
-      "asked": "Demande envoyée. {{name}} reçoit un bouton pour l'installer."
+      "asked": "Demande envoyée. {{name}} reçoit un bouton pour l'installer.",
+      "update": "Mettre à jour {{program}}",
+      "updating": "Mise à jour de {{program}} sur {{computer}}. Cela prend environ une minute.",
+      "checkUpdated": "Je l'ai mis à jour, vérifier à nouveau",
+      "outdatedUpdate": "Pour mettre à jour d'ici, mettez d'abord à jour l'app agentes.chat sur {{computer}}.",
+      "askedUpdate": "Demande envoyée. {{name}} reçoit un bouton pour le mettre à jour."
     },
     "titleFor": "Connecter une IA pour {{name}}",
     "titleFor_female": "Connecter une IA pour {{name}}",
@@ -12564,7 +12569,7 @@
     "free": "Gratuit",
     "opencodeFreeHint": "Les autres modèles gratuits passent par OpenCode sur l'ordinateur de l'agent.",
     "missingModel": {
-      "cli_old": "{{model}} nécessite une version plus récente d'Antigravity CLI sur l'ordinateur de l'agent. Lancez agy update dessus.",
+      "cli_old": "{{model}} nécessite une version plus récente d'Antigravity CLI sur l'ordinateur de l'agent.",
       "plan": "{{model}} est inclus dans Google AI Pro et Ultra. Aucun compte Gemini sur l'ordinateur de l'agent n'a cet abonnement."
     },
     "modelHelp": "Les plus gros modèles réfléchissent davantage et consomment l'abonnement plus vite.",

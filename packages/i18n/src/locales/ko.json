@@ -3310,7 +3310,12 @@
       "getGit": "Git for Windows 다운로드",
       "cantStart": "{{program}}이(가) {{computer}}에 있지만 실행되지 않습니다: {{message}}",
       "outdated": "여기서 설치하려면 {{computer}}의 agentes.chat 앱을 업데이트하세요.",
-      "asked": "요청을 보냈습니다. {{name}} 님이 설치 버튼을 받습니다."
+      "asked": "요청을 보냈습니다. {{name}} 님이 설치 버튼을 받습니다.",
+      "update": "{{program}} 업데이트",
+      "updating": "{{computer}}에서 {{program}}을(를) 업데이트하는 중입니다. 1분 정도 걸립니다.",
+      "checkUpdated": "업데이트했어요, 다시 확인",
+      "outdatedUpdate": "여기서 업데이트하려면 먼저 {{computer}}의 agentes.chat 앱을 업데이트하세요.",
+      "askedUpdate": "요청을 보냈습니다. {{name}} 님이 업데이트 버튼을 받습니다."
     },
     "titleFor": "{{name}}의 AI 연결",
     "have": {
@@ -11591,7 +11596,7 @@
     "free": "무료",
     "opencodeFreeHint": "다른 무료 모델은 에이전트 컴퓨터의 OpenCode에서 실행돼요.",
     "missingModel": {
-      "cli_old": "{{model}}을(를) 쓰려면 에이전트 컴퓨터의 Antigravity CLI를 더 새 버전으로 올려야 합니다. 그 컴퓨터에서 agy update를 실행하세요.",
+      "cli_old": "{{model}}을(를) 쓰려면 에이전트 컴퓨터의 Antigravity CLI를 더 새 버전으로 올려야 합니다.",
       "plan": "{{model}}은(는) Google AI Pro와 Ultra에 포함되어 있습니다. 에이전트 컴퓨터의 Gemini 계정 중 이 요금제가 있는 계정이 없습니다."
     },
     "modelHelp": "큰 모델일수록 더 많이 생각하고 요금제를 더 빨리 소진해요.",

@@ -8557,6 +8557,21 @@
   "connectAi.cli.asked": {
     "value": "Request sent. {{name}} gets a button to install it."
   },
+  "connectAi.cli.update": {
+    "value": "Update {{program}}"
+  },
+  "connectAi.cli.updating": {
+    "value": "Updating {{program}} on {{computer}}. It takes about a minute."
+  },
+  "connectAi.cli.checkUpdated": {
+    "value": "I updated it, check again"
+  },
+  "connectAi.cli.outdatedUpdate": {
+    "value": "To update from here, first update the agentes.chat app on {{computer}}."
+  },
+  "connectAi.cli.askedUpdate": {
+    "value": "Request sent. {{name}} gets a button to update it."
+  },
   "connectAi.titleFor": {
     "value": "Connect an AI for {{name}}"
   },
@@ -29571,7 +29586,7 @@
     "value": "Other free models run through OpenCode on the agent's computer."
   },
   "brain.missingModel.cli_old": {
-    "value": "{{model}} needs a newer Antigravity CLI on the agent's computer. Run agy update there."
+    "value": "{{model}} needs a newer Antigravity CLI on the agent's computer."
   },
   "brain.missingModel.plan": {
     "value": "{{model}} comes with Google AI Pro and Ultra. No Gemini account on the agent's computer has that plan."

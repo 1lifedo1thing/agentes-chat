@@ -175,6 +175,10 @@ export const Machine = z
       description:
         "Its coding CLIs can be looked for again from here (`POST …/clis/check`) and installed by the person who paired it (`…/cli-install`); `false`: its app is too old, or it is the workspace's own computer.",
     }),
+    agyInstall: z.boolean().openapi({
+      description:
+        "And the Antigravity CLI (`agy`): installed, or brought up to date where it is already; `false`: its app is too old for that, or it is the workspace's own computer.",
+    }),
     cliErrors: z.record(z.string(), z.string()).nullable().openapi({
       description:
         "The coding CLIs there that can't start (`claude`, `codex`…), each with its own last error line; `git_missing`: Claude Code on Windows without Git for Windows. Null unless admin or the person who paired it.",
@@ -669,7 +673,9 @@ export function machineAppRoutes(deps: AppDeps) {
     },
   );
 
-  const CliTool = z.enum(INSTALLABLE_CLIS).openapi({ description: "`claude` (Claude Code) or `codex` (Codex)." });
+  const CliTool = z.enum(INSTALLABLE_CLIS).openapi({
+    description: "`claude` (Claude Code), `codex` (Codex) or `agy` (the Antigravity CLI, updated where it is already).",
+  });
   const CliInstallView = z
     .object({
       install: z

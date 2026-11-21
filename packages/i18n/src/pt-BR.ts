@@ -3633,6 +3633,12 @@ export const ptBR = {
       cantStart: "O {{program}} está no {{computer}}, mas não abre: {{message}}",
       outdated: "Atualize o app do agentes.chat no {{computer}} para instalar daqui.",
       asked: "Pedido enviado. {{name}} recebe um botão para instalar.",
+      /** The program is there and too old for what was asked (the Antigravity CLI before Gemini 4 Neon). */
+      update: "Atualizar o {{program}}",
+      updating: "Atualizando o {{program}} no {{computer}}. Leva cerca de um minuto.",
+      checkUpdated: "Já atualizei, verificar de novo",
+      outdatedUpdate: "Para atualizar daqui, atualize antes o app do agentes.chat no {{computer}}.",
+      askedUpdate: "Pedido enviado. {{name}} recebe um botão para atualizar.",
     },
     titleFor: "Conectar uma IA para o {{name}}",
     titleFor_female: "Conectar uma IA para a {{name}}",
@@ -12513,8 +12519,7 @@ export const ptBR = {
     opencodeFreeHint: "Outros modelos grátis rodam pelo OpenCode no computador do agente.",
     /** Under the Gemini plan's models: why its newest model isn't there (`BrainOption.missing`). */
     missingModel: {
-      cli_old:
-        "O {{model}} precisa de uma versão mais nova do Antigravity CLI no computador do agente. Rode agy update nele.",
+      cli_old: "O {{model}} precisa de uma versão mais nova do Antigravity CLI no computador do agente.",
       plan: "O {{model}} vem com o Google AI Pro e o Ultra. Nenhuma conta do Gemini no computador do agente tem esse plano.",
     },
     modelHelp: "Os modelos maiores pensam mais e gastam o plano mais rápido.",
