@@ -750,23 +750,20 @@ function Hero({ mark, sub }: { mark: ReactNode; sub: string }) {
 }
 
 /**
- * The web's `CliMissing` on the phone: Claude Code, Codex or the Antigravity CLI isn't on a computer someone
- * connected, or won't start there, or is too old for what was asked (`outdated`, with `text` saying what). Whoever
- * connected it installs or updates it from here (it runs on the computer), anyone else asks them, anyone looks again.
- * The page's own "Use an API key now" stays under it.
+ * The web's `CliMissing` on the phone: Claude Code or Codex isn't on a computer someone connected, or won't start
+ * there. Whoever connected it installs it from here (it runs on the computer), anyone else asks them, anyone looks
+ * again. The page's own "Use an API key now" stays under it.
  */
-export function CliMissingCard({
+function CliMissingCard({
   machine,
   kind,
   computer,
   reason,
-  text: outdatedText,
 }: {
   machine: Machine;
   kind: MachineAccountKind;
   computer: string;
-  reason: "not_installed" | "cant_start" | "outdated";
-  text?: string;
+  reason: "not_installed" | "cant_start";
 }) {
   const { t } = useTranslation();
   const { orgId } = useAiOrg();
@@ -782,14 +779,13 @@ export function CliMissingCard({
   const install = run.install;
   const running = install?.state === "running";
   const pending = run.start.isPending || run.cancel.isPending || run.ask.isPending || check.isPending;
-  const broken = reason === "cant_start" ? (machine.cliErrors?.[cli === "agy" ? "antigravity" : cli] ?? "") : null;
-  const update = reason === "outdated";
+  const broken = reason === "cant_start" ? (machine.cliErrors?.[cli] ?? "") : null;
   const gitMissing =
     (install?.state === "failed" && install.cause === "git_missing") ||
     (broken === CLI_GIT_MISSING && install?.state !== "failed");
   const fail = (err: unknown) => toast({ title: errorText(t, err), icon: "x" });
   const text = running
-    ? t(update ? "connectAi.cli.updating" : "connectAi.cli.installing", words)
+    ? t("connectAi.cli.installing", words)
     : gitMissing
       ? t("connectAi.cli.gitMissing", words)
       : (cliInstallFailure(t, install, words) ??
@@ -797,18 +793,14 @@ export function CliMissingCard({
           ? broken
             ? t("connectAi.cli.cantStart", { ...words, message: broken })
             : t("brain.reasons.cant_start", words)
-          : update
-            ? oneClick?.kind === "outdated"
-              ? t("common.joinSentences", { a: outdatedText ?? "", b: t("connectAi.cli.outdatedUpdate", { computer }) })
-              : (outdatedText ?? "")
-            : checked
-              ? t("connectAi.cli.checked", words)
-              : oneClick?.kind === "outdated"
-                ? t("common.joinSentences", {
-                    a: t("connectAi.cli.missing", words),
-                    b: t("connectAi.cli.outdated", { computer }),
-                  })
-                : t("connectAi.cli.missing", words)));
+          : checked
+            ? t("connectAi.cli.checked", words)
+            : oneClick?.kind === "outdated"
+              ? t("common.joinSentences", {
+                  a: t("connectAi.cli.missing", words),
+                  b: t("connectAi.cli.outdated", { computer }),
+                })
+              : t("connectAi.cli.missing", words)));
   const failedBefore = install?.state === "failed" || install?.state === "canceled";
   const actions = running ? (
     <Button
@@ -825,9 +817,7 @@ export function CliMissingCard({
         <Button
           size="sm"
           variant={gitMissing ? "secondary" : "primary"}
-          label={
-            failedBefore ? t("common.retry") : t(update ? "connectAi.cli.update" : "connectAi.cli.install", { program })
-          }
+          label={failedBefore ? t("common.retry") : t("connectAi.cli.install", { program })}
           disabled={pending}
           loading={run.start.isPending}
           onPress={() => run.start.mutate(undefined, { onError: fail })}
@@ -842,12 +832,7 @@ export function CliMissingCard({
           loading={run.ask.isPending}
           onPress={() =>
             run.ask.mutate(undefined, {
-              onSuccess: () =>
-                toast({
-                  title: t(update ? "connectAi.cli.askedUpdate" : "connectAi.cli.asked", {
-                    name: firstName(oneClick.ownerName),
-                  }),
-                }),
+              onSuccess: () => toast({ title: t("connectAi.cli.asked", { name: firstName(oneClick.ownerName) }) }),
               onError: fail,
             })
           }
@@ -857,7 +842,7 @@ export function CliMissingCard({
         <Button
           size="sm"
           variant="secondary"
-          label={t(update ? "connectAi.cli.checkUpdated" : "connectAi.cli.check")}
+          label={t("connectAi.cli.check")}
           disabled={pending || !machine.online}
           loading={check.isPending}
           onPress={() => check.mutate(machine.id, { onSuccess: () => setChecked(true), onError: fail })}
@@ -875,7 +860,7 @@ export function CliMissingCard({
     oneClick?.kind !== "outdated";
   const why = plain && cli === "claude" && (machine.os === "windows" || machine.os === "darwin");
   return (
-    <InfoCard icon={running ? "clock" : update ? "info" : "laptop"} action={actions} live>
+    <InfoCard icon={running ? "clock" : "laptop"} action={actions} live>
       {why ? (
         <InfoHint name={t("common.about", { label: program })} text={t("connectAi.cli.claudeApp")} variant="subhead">
           {text}

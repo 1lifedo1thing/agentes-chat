@@ -4,7 +4,6 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { firstName } from "@agenteschat/client/lib/format";
 import {
   CLI_GIT_MISSING,
-  cliBrainKind,
   cliInstallFailure,
   cliOneClick,
   GIT_FOR_WINDOWS_URL,
@@ -17,26 +16,23 @@ import { useToast } from "@/lib/toast";
 import { useOrg } from "../org-context";
 
 /**
- * Claude Code, Codex or the Antigravity CLI isn't on a computer someone connected (`not_installed`), or is there and
- * won't start (`cant_start`), or is too old for what was asked (`outdated`, with `text` saying what: the Antigravity
- * CLI before Gemini 4 Neon): one line, then the way on. Whoever connected it installs or updates it from here with the
- * vendor's own installer, anyone else asks them; anyone looks again after doing it by hand. `useKey`: the panel's
- * "Use an API key now". Null for a computer where nobody installs from here (the workspace's own installs its programs
- * itself) or a program with no installer: the caller keeps its own line there.
+ * Claude Code or Codex isn't on a computer someone connected (`not_installed`), or is there and won't start
+ * (`cant_start`): one line, then the way on. Whoever connected it installs it from here with the vendor's own installer,
+ * anyone else asks them; anyone looks again after installing by hand. `useKey`: the panel's "Use an API key now".
+ * Null for a computer where nobody installs from here (the workspace's own installs its programs itself) or a program
+ * with no installer: the caller keeps its own line there.
  */
 export function CliMissing({
   machine,
   kind,
   computer,
   reason,
-  text: outdatedText,
   useKey,
 }: {
   machine: Machine | undefined;
   kind: MachineAccountKind;
   computer: string;
-  reason: "not_installed" | "cant_start" | "outdated";
-  text?: string;
+  reason: "not_installed" | "cant_start";
   useKey?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -54,8 +50,7 @@ export function CliMissing({
   const install = run.install;
   const running = install?.state === "running";
   const pending = run.start.isPending || run.cancel.isPending || run.ask.isPending || check.isPending;
-  const broken = reason === "cant_start" ? (machine.cliErrors?.[cli === "agy" ? "antigravity" : cli] ?? "") : null;
-  const update = reason === "outdated";
+  const broken = reason === "cant_start" ? (machine.cliErrors?.[cli] ?? "") : null;
   const gitMissing =
     (install?.state === "failed" && install.cause === "git_missing") ||
     (broken === CLI_GIT_MISSING && install?.state !== "failed");
@@ -67,7 +62,7 @@ export function CliMissing({
       // SettingNote's own line with a spinner for its icon: no shift when the install starts or ends.
       <p className="ac-setnote ac-iconline ac-setnote--live" role="status">
         <Spinner size={14} />
-        <span>{t(update ? "connectAi.cli.updating" : "connectAi.cli.installing", words)}</span>
+        <span>{t("connectAi.cli.installing", words)}</span>
       </p>
     );
   } else {
@@ -78,22 +73,18 @@ export function CliMissing({
           ? broken
             ? t("connectAi.cli.cantStart", { ...words, message: broken })
             : t("brain.reasons.cant_start", words)
-          : update
-            ? oneClick?.kind === "outdated"
-              ? t("common.joinSentences", { a: outdatedText ?? "", b: t("connectAi.cli.outdatedUpdate", { computer }) })
-              : (outdatedText ?? "")
-            : checked
-              ? t("connectAi.cli.checked", words)
-              : oneClick?.kind === "outdated"
-                ? t("common.joinSentences", {
-                    a: t("connectAi.cli.missing", words),
-                    b: t("connectAi.cli.outdated", { computer }),
-                  })
-                : null));
+          : checked
+            ? t("connectAi.cli.checked", words)
+            : oneClick?.kind === "outdated"
+              ? t("common.joinSentences", {
+                  a: t("connectAi.cli.missing", words),
+                  b: t("connectAi.cli.outdated", { computer }),
+                })
+              : null));
     // The Claude chat app is likely on a Mac or a PC, and isn't Claude Code: said once, behind the ⓘ.
     const why = cli === "claude" && (machine.os === "windows" || machine.os === "darwin");
     line = (
-      <SettingNote icon={update && install?.state !== "failed" ? "info" : "alert"} live>
+      <SettingNote icon="alert" live>
         {text ??
           (why ? (
             <HintLine name={t("common.about", { label: program })} hint={t("connectAi.cli.claudeApp")}>
@@ -139,9 +130,7 @@ export function CliMissing({
                 loading={run.start.isPending}
                 onClick={start}
               >
-                {failedBefore
-                  ? t("common.retry")
-                  : t(update ? "connectAi.cli.update" : "connectAi.cli.install", { program })}
+                {failedBefore ? t("common.retry") : t("connectAi.cli.install", { program })}
               </Button>
             )}
             {oneClick?.kind === "ask" && broken === null && (
@@ -151,12 +140,7 @@ export function CliMissing({
                 loading={run.ask.isPending}
                 onClick={() =>
                   run.ask.mutate(undefined, {
-                    onSuccess: () =>
-                      toast.show(
-                        t(update ? "connectAi.cli.askedUpdate" : "connectAi.cli.asked", {
-                          name: firstName(oneClick.ownerName),
-                        }),
-                      ),
+                    onSuccess: () => toast.show(t("connectAi.cli.asked", { name: firstName(oneClick.ownerName) })),
                     onError: fail,
                   })
                 }
@@ -166,7 +150,7 @@ export function CliMissing({
             )}
             {machine.cliInstall && (
               <Button size="sm" disabled={pending || !machine.online} loading={check.isPending} onClick={lookAgain}>
-                {t(update ? "connectAi.cli.checkUpdated" : "connectAi.cli.check")}
+                {t("connectAi.cli.check")}
               </Button>
             )}
           </>
@@ -195,7 +179,7 @@ export function CliInstallButton({
   const toast = useToast();
   const run = useCliInstall(org.id, machineId, cli, true);
   const running = run.install?.state === "running";
-  const program = t(`brain.card.${cliBrainKind(cli)}`);
+  const program = t(`brain.card.${cli === "claude" ? "claude_code" : "codex"}`);
   // An install that ended badly says why where it was started; one that ended before this row opened says nothing.
   const was = useRef(run.install?.state);
   useEffect(() => {

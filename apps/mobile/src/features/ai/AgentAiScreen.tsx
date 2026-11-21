@@ -57,7 +57,6 @@ import { PushedHeader } from "../shared/parts";
 import { PlanMeter, PlanModels } from "../usage/parts";
 import { advancedOf, openAgentAdvanced } from "./AgentAdvancedScreen";
 import { openAgentSetup } from "./AgentSetupScreen";
-import { CliMissingCard } from "./ConnectAiSteps";
 import { EffortRamp, useEffortChoice } from "./EffortRamp";
 import {
   accountInput,
@@ -448,11 +447,12 @@ export function AgentModelScreen({ agentId, scope }: { agentId: string; scope?: 
   const view = brain.data;
   const plan = view ? brainPlan(view) : undefined;
   const rows = view ? modelRows(t, view, plan) : [];
-  // Gemini's newest model missing: why, and its CLI updated from here where that is the reason (the web's too).
-  const option = view?.options.find((o) => o.kind === view.brain && !plan);
-  const freeHint = planFreeHint(t, plan) ?? brainMissingHint(t, option);
-  const cliOld = option?.missing?.why === "cli_old";
-  const computer = useMachines(orgId, cliOld).data?.find((m) => m.id === view?.computer?.machineId);
+  const freeHint =
+    planFreeHint(t, plan) ??
+    brainMissingHint(
+      t,
+      view?.options.find((o) => o.kind === view.brain && !plan),
+    );
   // A model without a maker of its own wears its plan's mark, else its brain's.
   const mark = (plan && view?.accounts.find((a) => a.id === view.account)?.provider) || (view?.brain ?? "");
   const hasModels = view !== undefined && view.brain !== "model";
@@ -507,21 +507,9 @@ export function AgentModelScreen({ agentId, scope }: { agentId: string; scope?: 
           ))
         )}
         {view && freeHint ? (
-          cliOld && computer && computer.kind !== "managed" ? (
-            <View style={styles.cliCard}>
-              <CliMissingCard
-                machine={computer}
-                kind="antigravity"
-                computer={computer.name}
-                reason="outdated"
-                text={freeHint}
-              />
-            </View>
-          ) : (
-            <Note icon="info" inset>
-              {freeHint}
-            </Note>
-          )
+          <Note icon="info" inset>
+            {freeHint}
+          </Note>
         ) : null}
       </ScrollView>
       {hasModels ? <EffortDock agentId={agentId} scope={scope} shown={fixed} onHeight={setDock} /> : null}
@@ -532,8 +520,6 @@ export function AgentModelScreen({ agentId, scope }: { agentId: string; scope?: 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   in: { paddingHorizontal: 16, paddingTop: 8 },
-  // Under the models, as the note it stands for.
-  cliCard: { marginTop: 16 },
   hero: { alignItems: "center", gap: 10, paddingTop: 6, paddingBottom: 4 },
   center: { textAlign: "center" },
   // On a grouped row's edges, as the rows under it.

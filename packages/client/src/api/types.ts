@@ -5101,8 +5101,6 @@ export interface Machine {
    * (`…/cli-install`); `false` or absent: its app is too old, or it is the workspace's own computer.
    */
   cliInstall?: boolean;
-  /** And the Antigravity CLI (`agy`), installed or brought up to date there; `false` or absent: its app is too old. */
-  agyInstall?: boolean;
   /**
    * The coding CLIs there that can't start (`claude`, `codex`…), each with its own last error line, or
    * `CLI_GIT_MISSING`; null or absent for people who don't manage it.
@@ -6256,10 +6254,11 @@ export interface BrainOption {
   models: BrainModelOption[];
   defaultModel: string | null;
   /**
-   * Antigravity: the newest Gemini isn't among its models, and why: the computer's CLI predates it (`cli_old`), or no
+   * Antigravity: the newest Gemini isn't among its models, and why: the computer's agentes.chat is too old to bring a
+   * CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no
    * account there has a plan that includes it (`plan`).
    */
-  missing?: { modelId: string; label: string; why: "cli_old" | "plan" };
+  missing?: { modelId: string; label: string; why: "app_old" | "cli_old" | "plan" };
 }
 
 /** A computer the caller may give an agent, with what it offers. */
@@ -8609,8 +8608,8 @@ export interface XcodeFix {
   still?: "command_line_tools" | "license";
 }
 
-/** The coding CLIs a computer installs from the apps (`INSTALLABLE_CLIS`); `agy` is updated where it is already. */
-export type InstallableCli = "claude" | "codex" | "agy";
+/** The coding CLIs a computer installs from the apps (`INSTALLABLE_CLIS`). */
+export type InstallableCli = "claude" | "codex";
 
 /**
  * Where an install of a coding CLI stands (`…/cli-install`): `failed` with the installer's `message`, or a `cause`:

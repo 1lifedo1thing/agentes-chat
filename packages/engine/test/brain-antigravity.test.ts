@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { ANTIGRAVITY_PROTOCOL, LOCKED_BRAIN_PROTOCOL, SHARED_GEMINI_PROTOCOL } from "@agenteschat/adapters";
+import {
+  AGY_COPY_PROTOCOL,
+  ANTIGRAVITY_PROTOCOL,
+  LOCKED_BRAIN_PROTOCOL,
+  SHARED_GEMINI_PROTOCOL,
+} from "@agenteschat/adapters";
 import {
   ANTIGRAVITY_MODELS,
   GEMINI_ENTERPRISE_PROVIDER,
@@ -175,18 +180,34 @@ test("the Gemini plan's models: Gemini only, Neon where the CLI runs it, and why
   // Nothing listed by a CLI that predates Neon: no reserve row it can't run.
   expect(values([], "1.5.0").some((v) => v.includes("neon") || v.includes("hydrogen"))).toBe(false);
 
-  const option = (antigravity: { version: string; models?: { id: string; label?: string }[] }) =>
+  const option = (
+    antigravity: { version: string; models?: { id: string; label?: string }[] },
+    over: { protocol?: number; kind?: string; mode?: "system" } = {},
+  ) =>
     brainOptions({
       id: "m1",
       name: "box",
       execAllowed: true,
-      protocol: ANTIGRAVITY_PROTOCOL,
+      protocol: over.protocol ?? AGY_COPY_PROTOCOL - 1,
       online: true,
       lastSeenAt: new Date(),
-      executors: { antigravity },
+      ...(over.kind ? { kind: over.kind } : {}),
+      executors: { antigravity, ...(over.mode ? { mode: over.mode } : {}) },
     } as never).find((o) => o.kind === "antigravity");
   const neon = { modelId: "gemini-4-neon", label: "Gemini 4 Neon" };
-  expect(option({ version: "agy 1.5.0", models: older })?.missing).toEqual({ ...neon, why: "cli_old" });
+  // A CLI older than Neon: an app before protocol 76 doesn't bring its own, so the app is what to update.
+  expect(option({ version: "agy 1.5.0", models: older })?.missing).toEqual({ ...neon, why: "app_old" });
+  // A newer app brings it (still on its way); in system mode the computer's setup installs it.
+  expect(option({ version: "agy 1.5.0", models: older }, { protocol: AGY_COPY_PROTOCOL })?.missing).toEqual({
+    ...neon,
+    why: "cli_old",
+  });
+  expect(option({ version: "agy 1.5.0", models: older }, { mode: "system" })?.missing).toEqual({
+    ...neon,
+    why: "cli_old",
+  });
+  // The workspace's own computer gets it with its image: nothing to say there.
+  expect(option({ version: "agy 1.5.0", models: older }, { kind: "managed" })?.missing).toBeUndefined();
   expect(option({ version: "1.5.14", models: free })?.missing).toEqual({ ...neon, why: "plan" });
   expect(option({ version: "1.5.14", models: older })?.missing).toBeUndefined();
   // Nothing listed yet (no account signed in): the reserve, with nothing to explain.

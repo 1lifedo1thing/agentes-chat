@@ -168,37 +168,6 @@ describe("Quem pensa (its dialog)", () => {
     );
   });
 
-  test("Gemini on a CLI too old for Neon: whoever connected the computer updates it from here", async () => {
-    const state = seedState();
-    const api = createFakeApi(state);
-    fakeMachinesOf
-      .get(api)
-      ?.pair({ id: "machine_1", name: "MacBook", os: "darwin", cliInstall: true, agyInstall: true });
-    const base = fakeAgentBrain(ADA_ID);
-    const gemini = {
-      kind: "antigravity" as const,
-      available: true,
-      models: [{ value: "gemini-4-argon-high", label: "Gemini 4 Argon (High)", modelId: "gemini-4-argon" }],
-      defaultModel: null,
-      missing: { modelId: "gemini-4-neon", label: "Gemini 4 Neon", why: "cli_old" as const },
-    };
-    const options = [...base.options, gemini];
-    const machines = [{ machineId: "machine_1", name: "MacBook", online: true, options }];
-    api.agents.brain = async () => ({ ...base, brain: "antigravity", options, machines });
-    await open(state, api);
-    const d = await brainDialog();
-    await toScreen(d, "Modelo");
-    expect(shownText(d)).toContain(
-      "O Gemini 4 Neon precisa de uma versão mais nova do Antigravity CLI no computador do agente.",
-    );
-    expect(shownText(d)).toContain("Já atualizei, verificar de novo");
-    await click(within(d).getByRole("button", { name: "Atualizar o Antigravity CLI" }));
-    expect(state.calls.filter((c) => c.method === "machines.cliInstall").map((c) => c.args.slice(2))).toContainEqual([
-      "agy",
-      "start",
-    ]);
-  });
-
   test("on the computer it already works on: no side words on the plans, nothing about the computer", async () => {
     const state = seedState();
     const api = createFakeApi(state);

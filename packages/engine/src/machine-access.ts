@@ -11,7 +11,6 @@ import {
   type RunnerTools,
 } from "@agenteschat/adapters";
 import { and, type Database, eq, isNull, schema, sql } from "@agenteschat/db";
-import { ANTIGRAVITY_NEON_CLI, cliVersionAtLeast } from "@agenteschat/providers/plans";
 import { getAgentCached } from "./agents";
 import { recordAudit } from "./audit";
 import { createAgentRuns, eligibleChannelAgents } from "./dispatch";
@@ -119,11 +118,9 @@ export async function storeMachineExecutors(
     .returning({ orgId: machines.orgId });
   if (!row) return;
   await publishMachineUpdated(deps.pubsub, row.orgId, machineId, { executors: true });
-  // A program installed, from the apps or by hand, answers whoever asked for it; the Antigravity CLI once it is one
-  // that runs Gemini 4 Neon (a request for it may be to bring it up to date).
-  const agy = cliVersionAtLeast(executors.antigravity?.version, ANTIGRAVITY_NEON_CLI) === true;
-  for (const tool of ["claude", "codex", "agy"] as const) {
-    if (tool === "agy" ? !agy : !executors[tool]) continue;
+  // A program installed, from the apps or by hand, answers whoever asked for it.
+  for (const tool of ["claude", "codex"] as const) {
+    if (!executors[tool]) continue;
     await resolveNotifications(deps, row.orgId, {
       groupKey: cliRequestKey(machineId, tool),
       kind: "device.cli_request",

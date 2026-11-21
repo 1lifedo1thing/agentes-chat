@@ -1,6 +1,7 @@
 import {
   ACCOUNTS_PROTOCOL,
   type AccountKind,
+  AGY_COPY_PROTOCOL,
   ANTIGRAVITY_MAC_PROTOCOL,
   ANTIGRAVITY_PROTOCOL,
   BRAIN_PROTOCOL,
@@ -244,18 +245,24 @@ export function antigravityModels(
 }
 
 /**
- * Why the newest Gemini isn't among an Antigravity computer's models (`BrainOption.missing`): its CLI predates it, or
- * what the accounts there listed has no paid Gemini 4 model. None while nothing was listed (the reserve shows).
+ * Why the newest Gemini isn't among an Antigravity computer's models (`BrainOption.missing`): its CLI predates it
+ * (where the app brings its own from `AGY_COPY_PROTOCOL` on, an older app is the reason; the workspace's own computer
+ * gets it with its image, so nothing is said there), or what the accounts there listed has no paid Gemini 4 model.
+ * None while nothing was listed (the reserve shows).
  */
 function antigravityMissing(
   models: readonly BrainModelOption[],
-  machine: { executors?: schema.MachineExecutors | null } | null,
+  machine: { kind?: string; protocol: number; executors?: schema.MachineExecutors | null } | null,
 ): BrainOption["missing"] {
   const cli = machine?.executors?.antigravity;
-  if (!cli || models.some((m) => m.modelId === ANTIGRAVITY_NEON)) return undefined;
+  if (!machine || !cli || models.some((m) => m.modelId === ANTIGRAVITY_NEON)) return undefined;
   const label = MODEL_CATALOG[ANTIGRAVITY_NEON]?.label ?? ANTIGRAVITY_NEON;
-  if (cliVersionAtLeast(cli.version, ANTIGRAVITY_NEON_CLI) === false)
-    return { modelId: ANTIGRAVITY_NEON, label, why: "cli_old" };
+  if (cliVersionAtLeast(cli.version, ANTIGRAVITY_NEON_CLI) === false) {
+    if (machine.kind === "managed") return undefined;
+    const system = machine.executors?.mode === "system";
+    const why = !system && machine.protocol < AGY_COPY_PROTOCOL ? "app_old" : "cli_old";
+    return { modelId: ANTIGRAVITY_NEON, label, why };
+  }
   return cli.models?.some((m) => isAntigravityGemini(m.id))
     ? { modelId: ANTIGRAVITY_NEON, label, why: "plan" }
     : undefined;
@@ -378,15 +385,18 @@ export interface BrainOption {
   models: BrainModelOption[];
   defaultModel: string | null;
   /**
-   * Antigravity: the newest Gemini (`ANTIGRAVITY_NEON`) isn't among its models, and why: the computer's CLI predates
-   * it (`cli_old`), or no account signed in there has a plan that includes it (`plan`).
+   * Antigravity: the newest Gemini (`ANTIGRAVITY_NEON`) isn't among its models, and why: the computer's agentes.chat
+   * is too old to bring a CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it
+   * (`cli_old`, system mode), or no account signed in there has a plan that includes it (`plan`).
    */
-  missing?: { modelId: string; label: string; why: "cli_old" | "plan" };
+  missing?: { modelId: string; label: string; why: "app_old" | "cli_old" | "plan" };
 }
 
 type MachineLike = Parameters<typeof machineExecutors>[0] & {
   id: string;
   name: string;
+  /** `managed`: the workspace's own computer, whose CLIs come with its image. */
+  kind?: string;
   /** Its system (`hello.os`): a Windows runner before `CODEX_WINDOWS_PROTOCOL` can't think with Codex. */
   os?: string;
   /** Protocol 10: what the machine allows (the app's Ferramentas); absent on older runners. */

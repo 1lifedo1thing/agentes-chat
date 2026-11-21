@@ -12,7 +12,6 @@ import {
   brainTool,
   browserNoAnswerMessage,
   browserOffMessage,
-  cliBrainKind,
   cliInstallFailure,
   cliOneClick,
   commandInReason,
@@ -632,25 +631,6 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
       'connectAi.cli.failed {"computer":"PC","message":"curl: (6)"}',
     );
     expect(installableCli("cursor")).toBeNull();
-  });
-
-  test("the Antigravity CLI: installed or updated from here only by an app from protocol 76, never on Windows", () => {
-    const box = {
-      kind: "connected",
-      pairedBy: bia,
-      cliInstall: true,
-      agyInstall: true,
-      os: "linux",
-      mode: "single",
-    } as Pick<Machine, "kind" | "pairedBy" | "cliInstall" | "agyInstall" | "os" | "mode">;
-    expect(installableCli("antigravity")).toBe("agy");
-    expect(cliBrainKind("agy")).toBe("antigravity");
-    expect(cliOneClick(box, "u-bia", "agy")).toEqual({ kind: "allow" });
-    // Claude Code and Codex from here already, the Antigravity CLI not yet: its app updates first.
-    expect(cliOneClick({ ...box, agyInstall: false }, "u-bia", "agy")).toEqual({ kind: "outdated" });
-    expect(cliOneClick({ ...box, agyInstall: false }, "u-bia", "claude")).toEqual({ kind: "allow" });
-    expect(cliOneClick(box, "u-caio", "agy")).toEqual({ kind: "ask", ownerId: "u-bia", ownerName: "Bia Rocha" });
-    expect(cliOneClick({ ...box, os: "windows" }, "u-bia", "agy")).toBeNull();
   });
 
   test("Prefiro no Terminal: the same switches as one command, only for who turns them on, where there may be no app", () => {

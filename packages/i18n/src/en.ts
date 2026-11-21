@@ -3758,12 +3758,6 @@ export const en = {
       cantStart: "{{program}} is on {{computer}}, but it won't start: {{message}}",
       outdated: "Update the agentes.chat app on {{computer}} to install from here.",
       asked: "Request sent. {{name}} gets a button to install it.",
-      /** The program is there and too old for what was asked (the Antigravity CLI before Gemini 4 Neon). */
-      update: "Update {{program}}",
-      updating: "Updating {{program}} on {{computer}}. It takes about a minute.",
-      checkUpdated: "I updated it, check again",
-      outdatedUpdate: "To update from here, first update the agentes.chat app on {{computer}}.",
-      askedUpdate: "Request sent. {{name}} gets a button to update it.",
     },
     titleFor: "Connect an AI for {{name}}",
     /** What the person already has, before the new sign-ins: accounts on the agent's computer, the workspace's keys. */
@@ -12518,7 +12512,8 @@ export const en = {
     opencodeFreeHint: "Other free models run through OpenCode on the agent's computer.",
     /** Under the Gemini plan's models: why its newest model isn't there (`BrainOption.missing`). */
     missingModel: {
-      cli_old: "{{model}} needs a newer Antigravity CLI on the agent's computer.",
+      app_old: "Update the agentes.chat app on the agent's computer to use {{model}}.",
+      cli_old: "{{model}} needs a newer Antigravity CLI on the agent's computer. Run agy update there.",
       plan: "{{model}} comes with Google AI Pro and Ultra. No Gemini account on the agent's computer has that plan.",
     },
     modelHelp: "Bigger models think more and use up the plan faster.",

@@ -730,11 +730,8 @@ export interface RunnerReportParts {
   logTail: string[];
 }
 
-/**
- * The coding CLIs `cli.install` installs: Claude Code and Codex, and the Antigravity CLI (`AGY_INSTALL_PROTOCOL`), which
- * it also brings up to date where it is already.
- */
-export const INSTALLABLE_CLIS = ["claude", "codex", "agy"] as const;
+/** The coding CLIs `cli.install` installs: Claude Code and Codex. */
+export const INSTALLABLE_CLIS = ["claude", "codex"] as const;
 export type InstallableCli = (typeof INSTALLABLE_CLIS)[number];
 export const isInstallableCli = (v: unknown): v is InstallableCli =>
   (INSTALLABLE_CLIS as readonly unknown[]).includes(v);
@@ -2361,11 +2358,11 @@ export const BRAIN_WARM_PROTOCOL = 74;
 export const TASK_LIMIT_PROTOCOL = 75;
 
 /**
- * `cli.install` with `agy` (protocol 76, ADR 0143): the Antigravity CLI installed by Google's installer, or, where it
- * is already, brought up to date (`agy update`): its own catalog decides which Gemini models it lists and runs, and the
- * runner keeps it from updating itself during turns. The server asks no older runner for it.
+ * Protocol 76 (ADR 0143): outside system mode the runner brings its own Antigravity CLI (`AGY_PIN`, at least that
+ * version) where the person's is older or missing and Gemini thinks there, so a computer's Gemini models follow the
+ * app's version. An older runner runs whatever `agy` the person installed.
  */
-export const AGY_INSTALL_PROTOCOL = 76;
+export const AGY_COPY_PROTOCOL = 76;
 /** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
 export const TASK_LIMIT_BOUNDS = [1, 20] as const;
 

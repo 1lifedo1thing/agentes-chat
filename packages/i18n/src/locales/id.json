@@ -3318,12 +3318,7 @@
       "getGit": "Unduh Git for Windows",
       "cantStart": "{{program}} ada di {{computer}}, tetapi tidak mau berjalan: {{message}}",
       "outdated": "Perbarui aplikasi agentes.chat di {{computer}} untuk memasang dari sini.",
-      "asked": "Permintaan terkirim. {{name}} mendapat tombol untuk memasangnya.",
-      "update": "Perbarui {{program}}",
-      "updating": "Memperbarui {{program}} di {{computer}}. Butuh sekitar satu menit.",
-      "checkUpdated": "Sudah saya perbarui, periksa lagi",
-      "outdatedUpdate": "Untuk memperbarui dari sini, perbarui dulu aplikasi agentes.chat di {{computer}}.",
-      "askedUpdate": "Permintaan terkirim. {{name}} mendapat tombol untuk memperbaruinya."
+      "asked": "Permintaan terkirim. {{name}} mendapat tombol untuk memasangnya."
     },
     "titleFor": "Hubungkan AI untuk {{name}}",
     "titleFor_female": "Hubungkan AI untuk {{name}}",
@@ -11654,7 +11649,8 @@
     "free": "Gratis",
     "opencodeFreeHint": "Model gratis lainnya berjalan lewat OpenCode di komputer agen.",
     "missingModel": {
-      "cli_old": "{{model}} memerlukan Antigravity CLI versi lebih baru di komputer agen.",
+      "app_old": "Perbarui aplikasi agentes.chat di komputer agen untuk memakai {{model}}.",
+      "cli_old": "{{model}} memerlukan Antigravity CLI versi lebih baru di komputer agen. Jalankan agy update di sana.",
       "plan": "{{model}} tersedia di Google AI Pro dan Ultra. Tidak ada akun Gemini di komputer agen yang memiliki paket itu."
     },
     "modelHelp": "Model yang lebih besar berpikir lebih banyak dan menghabiskan paket lebih cepat.",

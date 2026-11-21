@@ -3312,12 +3312,7 @@
       "getGit": "Git for Windows をダウンロード",
       "cantStart": "{{program}} は {{computer}} にありますが、起動しません: {{message}}",
       "outdated": "ここからインストールするには、{{computer}} の agentes.chat アプリを更新してください。",
-      "asked": "依頼を送りました。{{name}} さんにインストールのボタンが届きます。",
-      "update": "{{program}} を更新",
-      "updating": "{{computer}} の {{program}} を更新しています。1 分ほどかかります。",
-      "checkUpdated": "更新しました。もう一度確認",
-      "outdatedUpdate": "ここから更新するには、先に {{computer}} の agentes.chat アプリを更新してください。",
-      "askedUpdate": "リクエストを送信しました。{{name}} さんに更新ボタンが届きます。"
+      "asked": "依頼を送りました。{{name}} さんにインストールのボタンが届きます。"
     },
     "titleFor": "{{name}}のAIを接続",
     "have": {
@@ -11602,7 +11597,8 @@
     "free": "無料",
     "opencodeFreeHint": "ほかの無料モデルは、エージェントのコンピューターの OpenCode で動きます。",
     "missingModel": {
-      "cli_old": "{{model}} を使うには、エージェントのコンピューターの Antigravity CLI を新しいバージョンにする必要があります。",
+      "app_old": "{{model}} を使うには、エージェントのコンピューターの agentes.chat アプリを更新してください。",
+      "cli_old": "{{model}} を使うには、エージェントのコンピューターの Antigravity CLI を新しいバージョンにする必要があります。そこで agy update を実行してください。",
       "plan": "{{model}} は Google AI Pro と Ultra に含まれています。エージェントのコンピューターにある Gemini アカウントには、このプランがありません。"
     },
     "modelHelp": "大きいモデルほど深く考え、プランの消費が早くなります。",

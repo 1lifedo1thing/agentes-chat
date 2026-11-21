@@ -5,7 +5,6 @@ import {
   useAiAccounts,
   useApi,
   useCredentials,
-  useMachines,
   useModels,
   usePlatformKey,
   useUpdateAgent,
@@ -49,7 +48,6 @@ import { useOrg } from "@/components/org-context";
 import { useAgentThinks } from "@/hooks/useAgentThinks";
 import { fullLook, lookOf } from "@/lib/look";
 import { useToast } from "@/lib/toast";
-import { CliMissing } from "./CliMissing";
 import { UseKeyForAll } from "./UseKeyForAll";
 import "./model-picker.css";
 
@@ -206,15 +204,14 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
   const [accountId, setAccountId] = useState<string | null | undefined>(undefined);
   const account = tile?.accounts.find((a) => a.id === accountId) ?? tile?.accounts[0];
   const rows = tile ? modelPickerModels(t, i18n.language, view, tile, account, choices, agent.model) : [];
-  // Gemini's newest model missing from the computer's list: why, under the list, with its CLI updated from here
-  // where that is the reason.
-  const tileOption =
+  // Gemini's newest model missing from the computer's list: why, under the list.
+  const missing =
     tile && tile.kind !== "model" && !planOf(account?.provider)
-      ? view.options.find((o) => o.kind === tile.kind)
+      ? brainMissingHint(
+          t,
+          view.options.find((o) => o.kind === tile.kind),
+        )
       : undefined;
-  const missing = brainMissingHint(t, tileOption);
-  const machines = useMachines(org.id, tileOption?.missing?.why === "cli_old");
-  const computer = machines.data?.find((m) => m.id === view.computer?.machineId);
   const [q, setQ] = useState("");
   const shown = q.trim() ? rows.filter((r) => r.label.toLowerCase().includes(q.trim().toLowerCase())) : rows;
   const [busy, setBusy] = useState(false);
@@ -389,20 +386,7 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
           </button>
         ))}
       </div>
-      {missing &&
-        (tileOption?.missing?.why === "cli_old" && computer && computer.kind !== "managed" ? (
-          <div className="mp__missing">
-            <CliMissing
-              machine={computer}
-              kind="antigravity"
-              computer={computer.name}
-              reason="outdated"
-              text={missing}
-            />
-          </div>
-        ) : (
-          <p className="mp__missing">{missing}</p>
-        ))}
+      {missing && <p className="mp__missing">{missing}</p>}
       {effortOn && tile && (
         <div className="mp__effort">
           <EffortPixels

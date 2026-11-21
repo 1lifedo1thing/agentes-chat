@@ -928,20 +928,9 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
             </SettingNote>
           )}
           {planFreeHint(t, s.plan) && <SettingNote icon="info">{planFreeHint(t, s.plan)}</SettingNote>}
-          {/* Gemini's newest model missing: why, and its CLI updated from here where that is the reason. */}
-          {!s.plan &&
-            brainMissingHint(t, s.option) &&
-            (s.option?.missing?.why === "cli_old" && offOn && offOn.kind !== "managed" ? (
-              <CliMissing
-                machine={offOn}
-                kind="antigravity"
-                computer={offOn.name}
-                reason="outdated"
-                text={brainMissingHint(t, s.option)}
-              />
-            ) : (
-              <SettingNote icon="info">{brainMissingHint(t, s.option)}</SettingNote>
-            ))}
+          {!s.plan && brainMissingHint(t, s.option) && (
+            <SettingNote icon="info">{brainMissingHint(t, s.option)}</SettingNote>
+          )}
         </>
       );
     if (screen === "more") {
