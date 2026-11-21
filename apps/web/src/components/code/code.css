@@ -891,7 +891,8 @@
 .code-tree > .code-fhead {
   height: 44px;
   gap: 8px;
-  padding: 0 8px 0 16px;
+  /* The panel's column: 12 in, as its tabs, the screen's bar, the files' tree and the terminal. */
+  padding: 0 8px 0 12px;
 }
 /* A head that starts with "back": the button at the edge, its glyph where the rows' text starts. */
 .code-vcs > .code-fhead:has(> .ac-btn:first-child),
@@ -938,7 +939,7 @@
   display: flex;
   align-items: baseline;
   gap: 6px;
-  margin: 16px 10px 4px;
+  margin: 16px 6px 4px;
   color: var(--faint);
   font-size: 12.5px;
   font-weight: 600;
@@ -947,7 +948,7 @@
   font-weight: 500;
 }
 .code-vcs__none {
-  margin: 2px 10px 4px;
+  margin: 2px 6px 4px;
   color: var(--muted);
   font-size: 13px;
 }
@@ -973,6 +974,10 @@
 .code-vcs__row:hover,
 .code-tree__row:hover {
   background: var(--plate-soft);
+}
+/* Its text on the panel's column (the list's own 6, then 6 inside the row's plate), as the files' tree. */
+.code-vcs__row {
+  padding: 0 10px 0 6px;
 }
 html:not([data-pointer]) .code-vcs__row:focus-visible,
 html:not([data-pointer]) .code-tree__row:focus-visible {
