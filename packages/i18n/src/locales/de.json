@@ -6373,6 +6373,7 @@
         "empty_reply": "Das Modell hat nichts zurückgegeben.",
         "model_refused": "Das Modell hat die Antwort verweigert.",
         "agent_archived": "Der Agent wurde archiviert.",
+        "code_session_unavailable": "Der Worktree der Sitzung ist auf dem Computer nicht verfügbar.",
         "provider_error": "Der Modellanbieter hat einen Fehler gemeldet: {{detail}}",
         "provider_account": "Der Anbieter hat den Schlüssel abgelehnt: Er ist vielleicht ungültig, ohne Guthaben oder über dem Kontingent.",
         "provider_unavailable": "Der Modellanbieter hat nicht geantwortet: {{detail}}",

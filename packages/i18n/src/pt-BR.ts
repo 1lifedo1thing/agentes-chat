@@ -6752,6 +6752,7 @@ export const ptBR = {
         empty_reply: "O modelo não respondeu nada.",
         model_refused: "O modelo se recusou a responder.",
         agent_archived: "O agente foi arquivado.",
+        code_session_unavailable: "A worktree da sessão não está disponível no computador.",
         provider_error: "O provedor do modelo deu erro: {{detail}}",
         /** Its 401, 402, 403 or 429: the provider's own words (`detail`) show only on hover. */
         provider_account: "O provedor recusou a chave: ela pode estar inválida, sem crédito ou sem cota.",

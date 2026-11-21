@@ -137,38 +137,38 @@ const call = async (ctx: ToolContext, name: string, input: Record<string, unknow
 const text = (bytes: Uint8Array | undefined) => (bytes ? new TextDecoder().decode(bytes) : undefined);
 
 describe("the session's place", () => {
-  test("its own agent, once the worktree is ready, works on the session's computer; anyone else in their own folder", async () => {
+  test("its own agent works in the worktree while it is ready on the computer it uses; anyone else in their folder", async () => {
     f = await setup();
     const mac = await pair("Mac");
     const box = await pair("Box");
     await f.db.update(schema.agents).set({ machineId: mac }).where(eq(schema.agents.id, f.agent.id));
     const channelId = await session(mac);
-    expect(await codeSessionContext(f.db, f.org.id, channelId, f.agent.id)).toEqual({
-      place: { machineId: mac, cwd: WORKTREE },
-    });
-    // The agent moved to another computer since: the worktree is still where the session made it.
-    await f.db.update(schema.agents).set({ machineId: box }).where(eq(schema.agents.id, f.agent.id));
-    expect((await codeSessionContext(f.db, f.org.id, channelId, f.agent.id))?.place?.machineId).toBe(mac);
+    const here = () => codeSessionContext(f.db, f.org.id, channelId, f.agent.id);
+    expect(await here()).toEqual({ place: { machineId: mac, cwd: WORKTREE } });
     // An agent called in is in the session, with no place: it works in its own folder.
     expect(await codeSessionContext(f.db, f.org.id, channelId, crypto.randomUUID())).toEqual({ place: null });
-    // Not ready yet, or its computer gone: no place either.
+    // Moved to another computer since: nothing goes to the one it left.
+    await f.db.update(schema.agents).set({ machineId: box }).where(eq(schema.agents.id, f.agent.id));
+    expect((await here())?.place).toBeNull();
+    expect((await here())?.unavailable).toContain("a computer you no longer use");
+    await f.db.update(schema.agents).set({ machineId: mac }).where(eq(schema.agents.id, f.agent.id));
+    // Still being prepared, or gone: no place, and the agent reads why.
     await f.db.update(schema.codeSessions).set({ worktreeState: "preparing" });
-    expect(await codeSessionContext(f.db, f.org.id, channelId, f.agent.id)).toEqual({ place: null });
-    await f.db.update(schema.codeSessions).set({ worktreeState: "ready", machineId: null });
-    expect(await codeSessionContext(f.db, f.org.id, channelId, f.agent.id)).toEqual({ place: null });
-    // Closed, or any other conversation: no session at all.
-    await f.db.update(schema.codeSessions).set({ machineId: mac, archivedAt: new Date() });
-    expect(await codeSessionContext(f.db, f.org.id, channelId, f.agent.id)).toBeNull();
+    expect((await here())?.unavailable).toContain("still being prepared");
+    await f.db.update(schema.codeSessions).set({ worktreeState: "removed" });
+    expect((await here())?.unavailable).toContain("is gone");
+    await f.db.update(schema.codeSessions).set({ worktreeState: "ready", archivedAt: new Date() });
+    expect((await here())?.unavailable).toContain("is gone");
+    // Any other conversation: no session at all.
     expect(await codeSessionContext(f.db, f.org.id, f.general.id, f.agent.id)).toBeNull();
   });
 
   test("a computer brain's turn opens in the worktree, on the session's computer", async () => {
     f = await setup();
     const mac = await pair("Mac");
-    const box = await pair("Box");
     await f.db
       .update(schema.agents)
-      .set({ machineId: box, brain: "claude_code" })
+      .set({ machineId: mac, brain: "claude_code" })
       .where(eq(schema.agents.id, f.agent.id));
     const [agent] = await f.db.select().from(schema.agents).where(eq(schema.agents.id, f.agent.id));
     if (!agent) throw new Error("no agent");
@@ -177,9 +177,9 @@ describe("the session's place", () => {
     const codeSession = await codeSessionContext(f.db, f.org.id, channelId, f.agent.id);
     const plan = await resolveBrain({ db: f.db }, agent, run, run.threadRootId, { codeSession });
     expect(plan.session).toMatchObject({ machineId: mac, cwd: WORKTREE, codeSession: true });
-    // With no session, the same agent's turn starts in its own folder on its own computer.
+    // With no session, the same agent's turn starts in its own folder.
     const chat = await resolveBrain({ db: f.db }, agent, await runRow(f.general.id), f.general.id);
-    expect(chat.session).toMatchObject({ machineId: box, cwd: "" });
+    expect(chat.session).toMatchObject({ machineId: mac, cwd: "" });
     expect(chat.session?.codeSession).toBeUndefined();
   });
 });
@@ -200,7 +200,15 @@ describe("who can have a session", () => {
   test("an API agent with Run code on a computer: Code offers it, it starts sessions and suggests them", async () => {
     f = await setup({ machines: true, reply: () => ({ chunks: ["ok"] }) });
     await connectedComputer(f);
-    const ctx = { db: f.db, orgId: f.org.id, agentId: f.agent.id, runId: "r", background: false } as ToolContext;
+    const ctx = {
+      db: f.db,
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      runId: "r",
+      channelId: f.general.id,
+      threadRootId: "",
+      background: false,
+    } as ToolContext;
     expect((await orgOverview(f.db, f.owner.id, f.org.id)).code).toBe(true);
     expect((await codeStartOptions(f.db, f.owner.id, f.org.id)).agents.map((a) => a.agentId)).toEqual([f.agent.id]);
     expect((await createCodeSuggestionToolSource().tools(ctx)).map((t) => t.name)).toEqual([SUGGEST_CODE_SESSION_TOOL]);
@@ -244,8 +252,13 @@ describe("the engine's code tools in the session", () => {
     const read = await call(inSession, "read_file", { path: "src/login.ts" });
     expect(read.content).toStartWith("src/login.ts (13 bytes;");
     expect(read.content).toContain("const a = 1;");
+    expect((await call(inSession, "read_file", { path: "src/none.ts" })).content).toBe("No file src/none.ts.");
     expect((await call(inSession, "write_file", { path: "../escape.ts", content: "x" })).isError).toBe(true);
     expect((await call(inSession, "write_file", { path: "", content: "x" })).isError).toBe(true);
+    // A path given from the agent's folder is the same file, never the worktree inside itself.
+    const again = await call(inSession, "write_file", { path: `${WORKTREE}/src/login.ts`, content: "const b = 2;\n" });
+    expect(again.content).toBe("Wrote src/login.ts (13 bytes).");
+    expect(text(runner.files.get(`${WORKTREE}/src/login.ts`))).toBe("const b = 2;\n");
     // Listed as the agent passes them back: from the worktree.
     const listed = await call(inSession, "list_files", { path: "src" });
     expect(listed.content).toContain("src/login.ts (13 bytes)");
@@ -265,6 +278,26 @@ describe("the engine's code tools in the session", () => {
       "Wrote notes.md (1 bytes).",
     );
     expect(runner.files.has("notes.md")).toBe(true);
+  });
+
+  test("with no worktree there, the tools refuse instead of working in the agent's own folder", async () => {
+    f = await setup({ machines: true, reply: () => ({ chunks: ["ok"] }) });
+    const execs: Parameters<NonNullable<FakeRunnerOptions["exec"]>>[0][] = [];
+    const { paired, runner } = await connectedComputer(f, {
+      exec: (req) => {
+        execs.push(req);
+        return { exitCode: 0, stdout: "ok", stderr: "" };
+      },
+    });
+    const channelId = await session(paired.machineId, "preparing");
+    const ctx = await runIn(channelId);
+    expect(ctx.codeSession?.place).toBeNull();
+    const ran = await call(ctx, "run_code", { language: "bash", code: "rm -rf dist" });
+    expect(ran.isError).toBe(true);
+    expect(ran.content).toContain("still being prepared");
+    expect(execs).toEqual([]);
+    expect((await call(ctx, "write_file", { path: "src/a.ts", content: "x" })).isError).toBe(true);
+    expect(runner.files.has("src/a.ts")).toBe(false);
   });
 
   test("what makes no sense in a session is hidden from every brain, through the gateway and the bridge", async () => {

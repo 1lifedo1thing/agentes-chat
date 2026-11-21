@@ -147,7 +147,7 @@ import {
   cliToolSummary,
   verbOfTool,
 } from "./cli-tools";
-import { type CodeSessionContext, codeSessionContext } from "./code-sessions";
+import { type CodeSessionContext, codeSessionContext, loseCodeWorktree } from "./code-sessions";
 import { type CodeSuggestion, codeSuggestionApplies, SUGGEST_CODE_SESSION_TOOL } from "./code-suggestions";
 import {
   kickRoomQueue,
@@ -1995,6 +1995,9 @@ async function executeRunInner(
   if (fresh && trigger)
     deps.onTiming?.("trigger_to_claim_ms", claimedAt - trigger.createdAt.getTime(), { runId: run.id });
   if (!agent || agent.archivedAt) return fail("agent_archived");
+  // A code session with no worktree there for its own agent (ADR 0214): a computer brain's turn would open in the
+  // agent's own folder, so it doesn't start. Any other brain answers in words, its computer's tools refusing.
+  if (ctx.codeSession?.unavailable && isComputerBrain(agent.brain)) return fail("code_session_unavailable");
   // A new run that can't think (no key, a computer brain signed out or missing) fails here,
   // before the judges below, any context or a model call.
   if (needsContext) {
@@ -5681,6 +5684,11 @@ async function executeRunInner(
             later(() => addRunStep(db, run, "context", { sessionLost: gone }));
             continue;
           }
+          // A code session's worktree gone from its computer: the session says so and its retry makes it again.
+          if (gone && plan.session?.codeSession)
+            await loseCodeWorktree({ db, ...(deps.pubsub ? { pubsub: deps.pubsub } : {}) }, run.orgId, run.channelId).catch(
+              () => {},
+            );
           // The plan refused the rest of a turn that worked (the runner says so; an older one is taken as having
           // worked): never ended there nor handed to the API, which can't see what it did. It waits for the plan and
           // the same session finishes the turn.

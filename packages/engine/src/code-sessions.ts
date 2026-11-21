@@ -246,13 +246,37 @@ export async function codeSessionOfChannel(
 export interface CodeSessionContext {
   /**
    * Where the session works: its computer and its worktree (relative to the agent's folder, as the runner resolves
-   * it), for the session's own agent once the worktree is ready; null for an agent called in (it works in its own
-   * folder) and while the worktree isn't there.
+   * it), for the session's own agent while the worktree is ready on the computer the agent uses; null for an agent
+   * called in (it works in its own folder) and while the session's own agent has no place (`unavailable`).
    */
   place: { machineId: string; cwd: string } | null;
+  /**
+   * Why the session's own agent has no place, for it to read: its turn on a computer and its tools that act there
+   * refuse with these words, never working in its own folder instead.
+   */
+  unavailable?: string;
 }
 
-/** The code session of a run in `channelId`, or null when the conversation isn't an open session's. */
+const PLACE_PREPARING = "This session's worktree is still being prepared on your computer: nothing can run or change yet.";
+const PLACE_GONE =
+  "This session's worktree is gone (the session was closed, or its worktree failed or was removed): nothing runs here any more. Tell the person; they can retry the session or open a new one.";
+const PLACE_MOVED =
+  "This session's worktree is on a computer you no longer use: nothing runs here. Tell the person; a new session works on your current computer.";
+
+/**
+ * Where an agent works in a session: the session's own agent in its worktree, while it is ready on the computer the
+ * agent uses now (a session never sends work to a computer the agent left); anyone else in their own folder.
+ */
+function placeIn(row: CodeSessionRow, agent: { id: string; machineId: string | null }): CodeSessionContext {
+  if (row.agentId !== agent.id) return { place: null };
+  if (row.archivedAt || row.worktreeState === "failed" || row.worktreeState === "removed" || !row.worktreePath)
+    return { place: null, unavailable: PLACE_GONE };
+  if (row.worktreeState !== "ready") return { place: null, unavailable: PLACE_PREPARING };
+  if (!row.machineId || row.machineId !== agent.machineId) return { place: null, unavailable: PLACE_MOVED };
+  return { place: { machineId: row.machineId, cwd: row.worktreePath } };
+}
+
+/** The code session of a run in `channelId`, or null when the conversation isn't a session's. */
 export async function codeSessionContext(
   db: Executor,
   orgId: string,
@@ -260,9 +284,13 @@ export async function codeSessionContext(
   agentId: string,
 ): Promise<CodeSessionContext | null> {
   const row = await codeSessionOfChannel(db, orgId, channelId);
-  if (!row || row.archivedAt) return null;
-  const ready = row.agentId === agentId && row.worktreeState === "ready" && row.worktreePath && row.machineId;
-  return { place: ready ? { machineId: row.machineId as string, cwd: row.worktreePath as string } : null };
+  if (!row) return null;
+  if (row.agentId !== agentId) return { place: null };
+  const [agent] = await db
+    .select({ id: schema.agents.id, machineId: schema.agents.machineId })
+    .from(schema.agents)
+    .where(and(eq(schema.agents.orgId, orgId), eq(schema.agents.id, agentId)));
+  return placeIn(row, agent ?? { id: agentId, machineId: null });
 }
 
 /**
@@ -271,7 +299,7 @@ export async function codeSessionContext(
  * installing).
  */
 export async function codeSessionBrief(
-  db: Executor,
+  db: Database,
   orgId: string,
   channelId: string,
   agentId: string,
@@ -287,9 +315,20 @@ export async function codeSessionBrief(
       ? `A person opened this session to work on the project "${row.repo}", a local git repository on your computer (\`${row.repoDir}\`, no remote): "${row.title}".`
       : `A person opened this session to work on ${row.repo}: "${row.title}".`,
   ];
-  if (own && row.worktreeState === "ready" && row.worktreePath) {
+  const at = own
+    ? placeIn(
+        row,
+        (
+          await db
+            .select({ id: schema.agents.id, machineId: schema.agents.machineId })
+            .from(schema.agents)
+            .where(and(eq(schema.agents.orgId, orgId), eq(schema.agents.id, agentId)))
+        )[0] ?? { id: agentId, machineId: null },
+      )
+    : null;
+  if (at?.place) {
     lines.push(
-      `You work in its own git worktree, \`${row.worktreePath}\` (your folder for this conversation), on branch \`${row.branch ?? "?"}\`, made from \`${row.baseBranch ?? "the default branch"}\`${row.baseSha ? ` at ${row.baseSha.slice(0, 7)}` : ""}.`,
+      `You work in its own git worktree, on branch \`${row.branch ?? "?"}\`, made from \`${row.baseBranch ?? "the default branch"}\`${row.baseSha ? ` at ${row.baseSha.slice(0, 7)}` : ""}. That worktree is your working folder for this conversation: every relative path, in your commands and your file tools, is inside it.`,
       "Work like in a terminal with this person: read, change and run things in that folder, and say what you did in a few words. Don't touch other checkouts.",
       "If you hand work to helpers of your own (subagents, a workflow), keep it in this turn and answer once, with what they found: work left running in the background means a second answer later.",
       "Say what each command or tool call of yours is for in the person's language: each one is a line of your work they read.",
@@ -298,10 +337,16 @@ export async function codeSessionBrief(
         ? "Commit when a piece of work is done, with a short message. There is no remote: nothing to push."
         : "Commit when a piece of work is done, with a short message. Push and open a pull request only when the person asks.",
     );
+    // A shell kept to its own folder by its CLI's sandbox can't write the repository's git data, which is beside the
+    // worktree: the runner's own shell can (only named where the agent has it).
+    if ((await codeRunning(db, orgId, agentId)).refused === null)
+      lines.push(
+        "If your own shell can't write the repository's git data from this folder (a sandbox that keeps it inside), commit with run_code, which runs here too.",
+      );
     if (options.first && row.setupCommand)
       lines.push(`The worktree is new: install the project first if it needs it (\`${row.setupCommand}\`).`);
-  } else if (own && row.worktreeState === "preparing") {
-    lines.push("Its worktree is still being prepared on your computer; nothing to change yet.");
+  } else if (at?.unavailable) {
+    lines.push(at.unavailable);
   } else if (!own) {
     const team = await db
       .select({
@@ -659,6 +704,8 @@ export async function createCodeSession(
     if (!session) throw new Error("session insert returned nothing");
     return session;
   });
+  // The agent's list of conversations it sees (`readableChannelIds`) now has this one.
+  caches.scopes.deletePrefix(`${orgId}:${row.agentId}:visible`);
   await deps.postRequest(row.channelId, row.rootMessageId, text);
   await announce(deps, row);
   // The worktree is made in the background: the conversation shows it preparing meanwhile.
@@ -833,8 +880,18 @@ async function ensureGitIdentity(
     .catch(() => null);
 }
 
-async function failSession(deps: CodeSessionDeps, row: CodeSessionRow, error: string) {
+async function failSession(deps: Pick<CodeSessionDeps, "db" | "pubsub">, row: CodeSessionRow, error: string) {
   return setSession(deps, row, { worktreeState: "failed", worktreeError: cutTextEnd(error, ERROR_CHARS) });
+}
+
+/**
+ * A turn found the session's worktree missing on its computer (removed there behind our back): the session is failed
+ * with that reason, so the person retries it, which makes the worktree again (`retryCodeSession`).
+ */
+export async function loseCodeWorktree(deps: Pick<CodeSessionDeps, "db" | "pubsub">, orgId: string, channelId: string) {
+  const row = await codeSessionOfChannel(deps.db, orgId, channelId);
+  if (!row || row.archivedAt || row.worktreeState !== "ready") return;
+  await failSession(deps, row, "The worktree isn't on the computer any more.");
 }
 
 /**

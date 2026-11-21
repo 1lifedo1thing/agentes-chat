@@ -2456,10 +2456,22 @@ export const TASK_LIMIT_PROTOCOL = 75;
 /** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
 export const TASK_LIMIT_BOUNDS = [1, 20] as const;
 
-/** What `brain.turn` would start its CLI with, without the turn's own words (no prompt, system text or run). */
+/**
+ * What `brain.turn` would start its CLI with, without the turn's own words (no prompt, system text or run); a code
+ * session's turn (`codeSession`, ADR 0214) starts with its session's tools, so its warm start does too.
+ */
 export type BrainWarmRequest = Pick<
   BrainTurnRequest,
-  "kind" | "session" | "cwd" | "model" | "personalMcp" | "permissions" | "account" | "effort" | "contextTokens"
+  | "kind"
+  | "session"
+  | "cwd"
+  | "model"
+  | "personalMcp"
+  | "permissions"
+  | "account"
+  | "effort"
+  | "contextTokens"
+  | "codeSession"
 >;
 
 /** `open`: the session has a CLI now; `started`: this request started it. */

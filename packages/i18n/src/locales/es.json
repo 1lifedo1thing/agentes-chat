@@ -6588,6 +6588,7 @@
         "empty_reply": "El modelo no devolvió nada.",
         "model_refused": "El modelo se negó a responder.",
         "agent_archived": "El agente fue archivado.",
+        "code_session_unavailable": "El worktree de la sesión no está disponible en la computadora.",
         "provider_error": "El proveedor del modelo devolvió un error: {{detail}}",
         "provider_account": "El proveedor rechazó la clave: puede ser inválida o no tener crédito o cuota.",
         "provider_unavailable": "El proveedor del modelo no respondió: {{detail}}",

@@ -6124,6 +6124,7 @@
         "empty_reply": "モデルから何も返ってきませんでした。",
         "model_refused": "モデルが回答を拒否しました。",
         "agent_archived": "エージェントがアーカイブされました。",
+        "code_session_unavailable": "セッションのworktreeがコンピューター上で利用できません。",
         "provider_error": "モデルプロバイダーがエラーを返しました: {{detail}}",
         "provider_account": "プロバイダーがキーを拒否しました。無効か、クレジットや割り当てが足りない可能性があります。",
         "provider_unavailable": "モデルプロバイダーが応答しませんでした: {{detail}}",

@@ -15736,6 +15736,9 @@
   "agentPage.activity.errors.agent_archived": {
     "value": "The agent was archived."
   },
+  "agentPage.activity.errors.code_session_unavailable": {
+    "value": "The session's worktree isn't available on its computer."
+  },
   "agentPage.activity.errors.provider_error": {
     "value": "The model provider returned an error: {{detail}}"
   },

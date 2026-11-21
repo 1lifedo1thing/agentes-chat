@@ -6157,6 +6157,7 @@
         "empty_reply": "模型没有返回任何内容。",
         "model_refused": "模型拒绝回答。",
         "agent_archived": "该智能体已归档。",
+        "code_session_unavailable": "会话的 worktree 在电脑上不可用。",
         "provider_error": "模型服务商返回了错误：{{detail}}",
         "provider_account": "服务商拒绝了这个密钥：它可能无效、没有余额或超出配额。",
         "provider_unavailable": "模型服务商没有响应：{{detail}}",

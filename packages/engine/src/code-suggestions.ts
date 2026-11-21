@@ -124,7 +124,10 @@ async function runOf(ctx: ToolContext) {
  * Why no session is suggested where the run works, or null where one may be: a code session's own conversation, a
  * task's, or a mission's thread is already the place for that work (a mission has a worktree of its own).
  */
-async function workPlace(db: Database, run: AgentRun): Promise<string | null> {
+async function workPlace(
+  db: Database,
+  run: Pick<AgentRun, "orgId" | "channelId" | "threadRootId">,
+): Promise<string | null> {
   const channel = await getChannelCached(db, run.orgId, run.channelId);
   if (!channel) return REFUSED.nobody;
   if (channel.kind === "code") return REFUSED.inSession;
@@ -223,7 +226,9 @@ export function createCodeSuggestionToolSource(): ToolSource {
     async tools(ctx) {
       if (!ctx.runId || ctx.background) return [];
       const agent = await getAgentCached(ctx.db, ctx.orgId, ctx.agentId);
-      return agent && (await worksInSessions(ctx.db, agent)) ? [tool] : [];
+      if (!agent || !(await worksInSessions(ctx.db, agent))) return [];
+      // Not where the work has a place already (a task's or a mission's conversation): there it could only refuse.
+      return (await workPlace(ctx.db, ctx)) ? [] : [tool];
     },
   };
 }

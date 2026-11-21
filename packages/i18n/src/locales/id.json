@@ -6138,6 +6138,7 @@
         "empty_reply": "Model tidak mengembalikan apa pun.",
         "model_refused": "Model menolak menjawab.",
         "agent_archived": "Agen sudah diarsipkan.",
+        "code_session_unavailable": "Worktree sesi tidak tersedia di komputer.",
         "provider_error": "Penyedia model mengembalikan error: {{detail}}",
         "provider_account": "Penyedia menolak kuncinya: mungkin tidak valid, kehabisan kredit, atau melewati kuota.",
         "provider_unavailable": "Penyedia model tidak menjawab: {{detail}}",

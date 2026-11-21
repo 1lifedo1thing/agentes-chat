@@ -6629,6 +6629,7 @@
         "empty_reply": "Il modello non ha restituito nulla.",
         "model_refused": "Il modello si è rifiutato di rispondere.",
         "agent_archived": "L'agente è stato archiviato.",
+        "code_session_unavailable": "Il worktree della sessione non è disponibile sul computer.",
         "provider_error": "Il provider del modello ha restituito un errore: {{detail}}",
         "provider_account": "Il provider ha rifiutato la chiave: potrebbe non essere valida, senza credito o oltre la quota.",
         "provider_unavailable": "Il provider del modello non ha risposto: {{detail}}",

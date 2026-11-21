@@ -347,6 +347,9 @@ export function runErrorDetail(error: string | null | undefined): {
     DISK_FULL,
     // A Codex turn on a Windows computer where MXC can't hold its commands (the runner's own words say what to do).
     "windows_sandbox",
+    // A code session's worktree isn't there for its agent's computer brain (ADR 0214): still being prepared, gone, or
+    // on a computer the agent no longer uses.
+    "code_session_unavailable",
   ];
   if (simple.includes(error)) return { errorCode: `run.${error}` };
   if (error === "timeout") return { errorCode: "run.computer_timeout", errorParams: { code: error } };

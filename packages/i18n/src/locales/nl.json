@@ -6406,6 +6406,7 @@
         "empty_reply": "Het model gaf niets terug.",
         "model_refused": "Het model weigerde te antwoorden.",
         "agent_archived": "De agent is gearchiveerd.",
+        "code_session_unavailable": "De worktree van de sessie is niet beschikbaar op de computer.",
         "provider_error": "De modelaanbieder gaf een fout: {{detail}}",
         "provider_account": "De aanbieder heeft de sleutel geweigerd: die is misschien ongeldig, zonder tegoed of over het quotum.",
         "provider_unavailable": "De modelaanbieder reageerde niet: {{detail}}",

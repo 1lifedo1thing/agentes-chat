@@ -2719,6 +2719,8 @@ export class BrainManager {
       context: isContextTokens(req.contextTokens) ? req.contextTokens : null,
       // Its commits' lines are in its env (`co-authors.ts`): turned off or the agent renamed, a new one (resumed).
       coAuthors: coAuthorLines(ctx.agent),
+      // A code session's turn starts with its session's tools and the repository's plugin (ADR 0214 §6).
+      code: req.codeSession === true,
     });
   }
 

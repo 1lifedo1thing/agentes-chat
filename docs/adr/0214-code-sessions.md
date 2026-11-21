@@ -71,17 +71,29 @@ setup command (from the lockfile) and runs it like a person would.
 
 A run in the session works in the worktree, whichever brain it thinks with: the session is the run's place
 (`codeSessionContext`: the session's computer, from its row, and the worktree, relative to the agent's folder), read
-once when the run starts (the executor, or the bridge for a computer brain's calls) and carried on its tool context
-(`ToolContext.codeSession`). Every piece that runs something reads that place, never the brain's kind:
+once when the run starts (the executor, or the bridge for a computer brain's calls and its tasks' calls) and carried
+on its tool context (`ToolContext.codeSession`). Every piece that runs something reads that place, never the brain's
+kind:
 
-- a computer brain's turn (`resolveBrain`) runs on that computer and opens in that folder, like a mission's, and the
-  missing-folder retry and the pre-turn checkout sync of chat turns don't apply;
-- our code tools (`run_code`, `start_task`, `read_file`, `write_file`, `list_files`, `import_file`) run on that
-  computer, in that folder: a relative path is inside the worktree, never climbs out of it, and comes back relative
-  to it, and a script runs from there;
-- the Tool Gateway hides what doesn't belong in a session from every brain (`CODE_SESSION_HIDDEN_TOOLS`, §6, §11).
+- a computer brain's turn (`resolveBrain`) runs on that computer and opens in that folder, like a mission's: it never
+  spills over to another computer, the pre-turn checkout sync of chat turns doesn't apply, and a warm start carries
+  the session's flag (`brain.warm`'s `codeSession`, in the runner's process signature), so the turn finds a process
+  with the session's tools. A worktree missing on the computer fails the turn and the session (its retry makes it
+  again, `loseCodeWorktree`), never a fresh session in the agent's folder;
+- our code tools (`run_code`, `start_task`, `read_file`, `write_file`, `list_files`, `import_file`) work in that
+  folder when the call runs on the session's computer (`sessionFolder`, decided on the computer the call reached): a
+  relative path is inside the worktree, never climbs out of it, comes back relative to it, and a path already given
+  from the agent's folder is taken as it is; a script runs from there; `import_file`'s default goes under `.agentes/`,
+  out of git; a task works on the session's branch (`branch` is refused there), and a Codex task keeps the agent's
+  folder writable as its turns do;
+- the Tool Gateway leaves what doesn't belong in a session out of every brain's tools, neither listed nor called
+  (`CODE_SESSION_HIDDEN_TOOLS`: the Drive's file tools, the suggestion of a session, and `propose_mission`, since a
+  session is already the place of its work, §6, §11).
 
-An agent called in works in its own folder (no place), and so does the session's agent until the worktree is ready.
+The place holds only while the worktree is ready on the computer the agent uses now. Otherwise the session's own agent
+has none, and reads why (`unavailable`: still being prepared, gone, or on a computer it left): its computer tools
+refuse with those words and a computer brain's turn fails (`code_session_unavailable`), never working in the agent's
+own folder or on a computer it no longer belongs to. An agent called in works in its own folder.
 Who may have a session is one check (`worksInSessions`): a computer for the worktree, and a way to work in it there:
 a computer brain brings its own shell, any other brain needs to be allowed to run code (`codeRunning`, the same rule
 `run_code` and the desktop's tools apply: the grant, the workspace's code environment, the agent's computer). A
@@ -273,9 +285,9 @@ what is missing, and a session's links keep working.
   any model allowed to run code.
 - Cursor, Grok Build and the Antigravity CLI run their shells in a sandbox that writes only in the turn's folder and
   temp: in a session that is the worktree, whose git data stays in the checkout beside it, so a commit from their
-  shell may be refused (they still read, change and run in the worktree, and the person commits in the terminal).
-  Codex's sandbox takes the agent's whole folder, checkout included, and Claude Code and OpenCode have none of their
-  own.
+  own shell may be refused. Their brief says to commit with `run_code` then (the runner's shell, in the worktree),
+  where the agent may run code; otherwise the person commits in the terminal. Codex's sandbox takes the agent's whole
+  folder, checkout included, and Claude Code and OpenCode have none of their own.
 - The conversation is a thread like a task's: the phone app shows it with its own thread screen (§10), so a session
   reached from a notification opens the same way as from Code.
 - Out of this first version: several agents writing in one session at once (one writes, the others read and review),

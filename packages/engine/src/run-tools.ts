@@ -617,6 +617,15 @@ export async function invokeWithChip(
 type Located = { ctx: ToolContext; run: AgentRun | null };
 
 /**
+ * The code session of a conversation, for a tool context (ADR 0214): read only in a session's conversation, the same
+ * place the run's own turn got.
+ */
+const codeSessionOf = async (db: Database, orgId: string, channelId: string, agentId: string) =>
+  (await getChannelCached(db, orgId, channelId))?.kind === "code"
+    ? await codeSessionContext(db, orgId, channelId, agentId)
+    : null;
+
+/**
  * The tool context of an identity. A run: its row (org and agent must match).
  * A mission task (`taskId`): the task's channel and thread, no run (the
  * gateway records no steps), marked as the task's bridge call.
@@ -630,6 +639,7 @@ async function locate(db: Database, id: BridgeIdentity): Promise<Located> {
         and(eq(machineTasks.id, id.taskId), eq(machineTasks.orgId, id.orgId), eq(machineTasks.agentId, id.agentId)),
       );
     if (!task) throw new NotFoundError("Task not found");
+    const codeSession = await codeSessionOf(db, task.orgId, task.channelId, task.agentId);
     return {
       run: null,
       ctx: {
@@ -640,6 +650,7 @@ async function locate(db: Database, id: BridgeIdentity): Promise<Located> {
         channelId: task.channelId,
         threadRootId: task.threadRootId ?? "",
         triggerMessageId: "",
+        ...(codeSession ? { codeSession } : {}),
         bridge: { machineId: id.machineId, taskId: task.id },
       },
     };
@@ -649,11 +660,7 @@ async function locate(db: Database, id: BridgeIdentity): Promise<Located> {
     .from(agentRuns)
     .where(and(eq(agentRuns.id, id.runId), eq(agentRuns.orgId, id.orgId), eq(agentRuns.agentId, id.agentId)));
   if (!run) throw new NotFoundError("Run not found");
-  // A code session's conversation (ADR 0214): the same place the run's own turn got, for the tools it calls.
-  const codeSession =
-    (await getChannelCached(db, run.orgId, run.channelId))?.kind === "code"
-      ? await codeSessionContext(db, run.orgId, run.channelId, run.agentId)
-      : null;
+  const codeSession = await codeSessionOf(db, run.orgId, run.channelId, run.agentId);
   return {
     run,
     ctx: {

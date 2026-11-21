@@ -6863,6 +6863,7 @@ export const en = {
         empty_reply: "The model returned nothing.",
         model_refused: "The model refused to answer.",
         agent_archived: "The agent was archived.",
+        code_session_unavailable: "The session's worktree isn't available on its computer.",
         provider_error: "The model provider returned an error: {{detail}}",
         /** Its 401, 402, 403 or 429: the provider's own words (`detail`) show only on hover. */
         provider_account: "The provider refused the key: it may be invalid, out of credit or over its quota.",

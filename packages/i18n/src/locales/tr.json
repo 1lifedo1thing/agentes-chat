@@ -6355,6 +6355,7 @@
         "empty_reply": "Model hiçbir şey döndürmedi.",
         "model_refused": "Model yanıt vermeyi reddetti.",
         "agent_archived": "Ajan arşivlendi.",
+        "code_session_unavailable": "Oturumun worktree'si bilgisayarda kullanılamıyor.",
         "provider_error": "Model sağlayıcısı bir hata döndürdü: {{detail}}",
         "provider_account": "Sağlayıcı anahtarı reddetti: geçersiz olabilir, kredisi veya kotası bitmiş olabilir.",
         "provider_unavailable": "Model sağlayıcısı yanıt vermedi: {{detail}}",

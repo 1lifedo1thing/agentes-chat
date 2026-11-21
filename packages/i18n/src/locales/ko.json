@@ -6122,6 +6122,7 @@
         "empty_reply": "모델이 아무것도 반환하지 않았어요.",
         "model_refused": "모델이 답변을 거부했어요.",
         "agent_archived": "에이전트가 보관됐어요.",
+        "code_session_unavailable": "세션의 worktree를 컴퓨터에서 사용할 수 없어요.",
         "provider_error": "모델 제공업체에서 오류가 발생했어요: {{detail}}",
         "provider_account": "제공업체가 키를 거부했어요: 유효하지 않거나 크레딧 또는 할당량이 부족할 수 있어요.",
         "provider_unavailable": "모델 제공업체가 응답하지 않았어요: {{detail}}",
