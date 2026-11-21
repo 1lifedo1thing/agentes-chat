@@ -20128,6 +20128,10 @@ export const en = {
     seatsPaid_other: "{{count}} paid seats",
     noLimit: "No limit",
     ownBucket: "On your own bucket, with no limit from us",
+    /** X's posts and reads this month, against what the plan includes. */
+    connectors: "X this month",
+    /** `{{share}}`: a percentage, already formatted ("42%"). */
+    shareUsed: "{{share}} used",
   },
   /** The referral service (ADR 0192): this server knows nothing of the program, only the way there. */
   referrals: {

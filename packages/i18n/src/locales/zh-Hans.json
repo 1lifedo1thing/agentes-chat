@@ -18972,7 +18972,9 @@
     "usedOf": "{{used}} / {{limit}}",
     "seatsPaid_other": "已付费 {{count}} 个席位",
     "noLimit": "无限制",
-    "ownBucket": "在你自己的存储桶上，我们不设限制"
+    "ownBucket": "在你自己的存储桶上，我们不设限制",
+    "connectors": "本月 X",
+    "shareUsed": "已用 {{share}}"
   },
   "referrals": {
     "open": "推荐有奖",

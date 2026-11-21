@@ -19605,7 +19605,9 @@
     "seatsPaid_one": "{{count}} betaalde plek",
     "seatsPaid_other": "{{count}} betaalde plekken",
     "noLimit": "Geen limiet",
-    "ownBucket": "Op je eigen bucket, zonder limiet van ons"
+    "ownBucket": "Op je eigen bucket, zonder limiet van ons",
+    "connectors": "X deze maand",
+    "shareUsed": "{{share}} gebruikt"
   },
   "referrals": {
     "open": "Aanbevelen en verdienen",

@@ -2157,6 +2157,13 @@
       "when": 1795283187686,
       "tag": "0315_telegram_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 310,
+      "version": "7",
+      "when": 1795305042155,
+      "tag": "0316_connector_spend",
+      "breakpoints": true
     }
   ]
 }

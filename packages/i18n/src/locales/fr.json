@@ -20133,7 +20133,9 @@
     "seatsPaid_many": "{{count}} places payées",
     "seatsPaid_other": "{{count}} places payées",
     "noLimit": "Sans limite",
-    "ownBucket": "Sur votre propre bucket, sans limite de notre part"
+    "ownBucket": "Sur votre propre bucket, sans limite de notre part",
+    "connectors": "X ce mois-ci",
+    "shareUsed": "{{share}} utilisé"
   },
   "referrals": {
     "open": "Parrainer et gagner",
