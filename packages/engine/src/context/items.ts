@@ -16,7 +16,7 @@ import {
 } from "@agenteschat/db";
 import { setsCredential } from "@agenteschat/ui/names";
 import { getAgent } from "../agents";
-import { agentIdsSeen, isPlaybook, readsPlaybook, seesAgentDetails } from "../audience";
+import { agentIdsSeen, isPlaybook, ownsAgent, readsPlaybook, seesAgentDetails } from "../audience";
 import { caches, rulesPresenceKey } from "../cache";
 import { isAgentOnlyDm } from "../dms";
 import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
@@ -697,7 +697,7 @@ async function requireEdit(db: Database, actorId: string, item: ContextItem) {
   if (item.kind === "rule" && item.createdByKind === "person" && item.createdById === actorId) return;
   if (item.agentId) {
     const agent = await getAgent(db, item.orgId, item.agentId);
-    if (agent?.ownerUserId === actorId) {
+    if (agent && ownsAgent(agent, actorId, membership.roleIds)) {
       if (item.channelIds?.length && !itemVisibleIn(item, await userVisibleChannels(db, item.orgId, actorId)))
         throw new NotFoundError("Item not found");
       return;

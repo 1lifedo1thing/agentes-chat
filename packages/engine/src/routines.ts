@@ -1590,6 +1590,7 @@ export async function routineSeer(
       .select({
         id: agents.id,
         ownerUserId: agents.ownerUserId,
+        ownerRoleId: agents.ownerRoleId,
         audienceMode: agents.audienceMode,
         audienceUserIds: agents.audienceUserIds,
         audienceRoleIds: agents.audienceRoleIds,

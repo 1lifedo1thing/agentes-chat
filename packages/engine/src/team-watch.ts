@@ -5,7 +5,7 @@ import type { AppLocale } from "@agenteschat/i18n/locale";
 import type { Agent } from "./agents";
 import { backgroundAiState } from "./ai-status";
 import { postApprovalsDigest } from "./approvals-digest";
-import { managesAgentSql } from "./audience";
+import { agentOwnerIds, managesAgentSql } from "./audience";
 import type { JobDeps } from "./jobs";
 import {
   inboxVisible,
@@ -353,8 +353,11 @@ interface Problem {
    * none back unread.
    */
   ripe: boolean;
-  /** Whose it is to fix, when they still may (`needs`). Else the first person who may `orElse`, else nobody. */
-  to: string | null;
+  /**
+   * Whose it is to fix, when they still may (`needs`): one person, or several (an agent's owner role's holders, ADR
+   * 0085, addendum of 2026-11-21), each told who may. Else the first person who may `orElse`, else nobody.
+   */
+  to: string | readonly string[] | null;
   needs?: RolePermission;
   orElse?: RolePermission;
   /**
@@ -524,7 +527,8 @@ async function problemsOf(db: Database, orgId: string, now: Date): Promise<Probl
     .select({
       id: agents.id,
       name: agents.name,
-      owner: agents.ownerUserId,
+      ownerUserId: agents.ownerUserId,
+      ownerRoleId: agents.ownerRoleId,
       budget: agents.monthlyBudgetNanoUsd,
       spent: agentBudgetPeriods.spentNanoUsd,
     })
@@ -546,7 +550,8 @@ async function problemsOf(db: Database, orgId: string, now: Date): Promise<Probl
       episode: `${period}:${budget}`,
       since: monthStartUtc(now),
       ripe: true,
-      to: a.owner,
+      // Its owner, or everyone holding its owner role now.
+      to: await agentOwnerIds(db, orgId, a),
       needs: "manage_agents",
       orElseManager: true,
       ...(usedUp ? { elsewhere: saidElsewhere.budget(a.id) } : {}),
@@ -649,38 +654,39 @@ async function tellProblems(deps: NotificationDeps, orgId: string, lodi: Agent, 
   // notice's: told for good, and in no row of the right hand's.
   const groups = new Map<string, { userId: string; cause: TeamWatchCause; problems: Problem[] }>();
   for (const p of problems) {
-    const own = p.to ? await memberOf(p.to) : null;
-    const userId =
-      own && (!p.needs || can(own, p.needs))
-        ? p.to
-        : p.orElseManager
-          ? await firstManagerOf(p.id)
-          : p.orElse
-            ? await firstWhoMay(p.orElse)
-            : null;
-    if (!userId) continue;
-    if (p.elsewhere) {
-      const [other] = await db
-        .select({ id: notifications.id })
-        .from(notifications)
-        .where(
-          and(
-            eq(notifications.orgId, orgId),
-            eq(notifications.userId, userId),
-            p.elsewhere,
-            gt(notifications.createdAt, p.since),
-          ),
-        )
-        .limit(1);
-      if (other) {
-        await markTold(userId, [p]);
-        continue;
-      }
+    const userIds: string[] = [];
+    for (const to of typeof p.to === "string" ? [p.to] : (p.to ?? [])) {
+      const member = await memberOf(to);
+      if (member && (!p.needs || can(member, p.needs))) userIds.push(to);
     }
-    const key = `${userId}:${p.cause}`;
-    const group = groups.get(key) ?? { userId, cause: p.cause, problems: [] };
-    group.problems.push(p);
-    groups.set(key, group);
+    if (userIds.length === 0) {
+      const other = p.orElseManager ? await firstManagerOf(p.id) : p.orElse ? await firstWhoMay(p.orElse) : null;
+      if (other) userIds.push(other);
+    }
+    for (const userId of userIds) {
+      if (p.elsewhere) {
+        const [other] = await db
+          .select({ id: notifications.id })
+          .from(notifications)
+          .where(
+            and(
+              eq(notifications.orgId, orgId),
+              eq(notifications.userId, userId),
+              p.elsewhere,
+              gt(notifications.createdAt, p.since),
+            ),
+          )
+          .limit(1);
+        if (other) {
+          await markTold(userId, [p]);
+          continue;
+        }
+      }
+      const key = `${userId}:${p.cause}`;
+      const group = groups.get(key) ?? { userId, cause: p.cause, problems: [] };
+      group.problems.push(p);
+      groups.set(key, group);
+    }
   }
 
   const causeOf = (row: { latest: Record<string, unknown> }) => String(row.latest.reason ?? "");

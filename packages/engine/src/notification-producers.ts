@@ -118,12 +118,6 @@ async function isOrgMember(deps: Pick<NotificationDeps, "db">, orgId: string, us
   return Boolean(row);
 }
 
-/** The agent's owner as one person: null when nobody, or a role, answers for it. */
-async function agentOwner(deps: Pick<NotificationDeps, "db">, agentId: string) {
-  const [a] = await deps.db.select({ owner: agents.ownerUserId }).from(agents).where(eq(agents.id, agentId));
-  return a?.owner ?? null;
-}
-
 /**
  * Who answers for the agent now (`agentOwnerIds`): its owner, or everyone holding its owner role (ADR 0085, addendum
  * of 2026-11-21). Empty with neither.
@@ -222,26 +216,31 @@ export async function notifyMessage(deps: NotificationDeps, orgId: string, messa
   // hear it in any public channel of the workspace, joined or not, since they answer for their agent's work there.
   const card = message.authorType === "agent" ? stretchCardOf(meta) : null;
   const stoppedAt = card?.agentIds.at(-1);
-  const owner = !behind && !card?.forUserId && stoppedAt ? await agentOwner(deps, stoppedAt) : null;
-  // The autonomy brakes' proposal card, digest and loop stop (ADR 0131) are for the person they name.
-  const asker = unasked
-    ? null
-    : (behind ?? card?.forUserId ?? proposalCardOf(meta)?.forUserId ?? autonomyNoteFor(meta) ?? owner);
-  const ownerSees =
-    asker !== null &&
-    asker === owner &&
-    channel.kind === "channel" &&
-    channel.visibility === "public" &&
-    (await isOrgMember(deps, orgId, asker));
-  if (
-    asker &&
-    !message.mentionedUserIds.includes(asker) &&
-    // A work the person stopped themselves tells them nothing new.
-    (meta.workEnd as { byUserId?: unknown } | undefined)?.byUserId !== asker &&
-    (ownerSees || (await inChannel(deps, message.channelId, [asker])).length > 0)
-  ) {
-    // A long work's report (ADR 0121) is news of its own, never merged into the conversation's open reply.
-    const workEnd = (meta.workEnd as { id?: unknown } | undefined)?.id;
+  // Its owner, or everyone holding its owner role (ADR 0085, addendum of 2026-11-21).
+  const owners = !behind && !card?.forUserId && stoppedAt ? await agentOwners(deps, stoppedAt) : [];
+  // The autonomy brakes' proposal card, digest and loop stop (ADR 0131) are for the person they name. One that names
+  // nobody because a role answers for its agent is for whoever holds that role now.
+  const named = behind ?? card?.forUserId ?? proposalCardOf(meta)?.forUserId ?? autonomyNoteFor(meta);
+  const braked =
+    !named && owners.length === 0 && message.authorAgentId && (proposalCardOf(meta) || meta.autonomyNote)
+      ? await agentOwners(deps, message.authorAgentId)
+      : [];
+  const askers = unasked ? [] : named ? [named] : owners.length > 0 ? owners : braked;
+  // A long work's report (ADR 0121) is news of its own, never merged into the conversation's open reply.
+  const workEnd = (meta.workEnd as { id?: unknown } | undefined)?.id;
+  for (const asker of askers) {
+    const ownerSees =
+      owners.includes(asker) &&
+      channel.kind === "channel" &&
+      channel.visibility === "public" &&
+      (await isOrgMember(deps, orgId, asker));
+    if (
+      message.mentionedUserIds.includes(asker) ||
+      // A work the person stopped themselves tells them nothing new.
+      (meta.workEnd as { byUserId?: unknown } | undefined)?.byUserId === asker ||
+      !(ownerSees || (await inChannel(deps, message.channelId, [asker])).length > 0)
+    )
+      continue;
     await notify(deps, {
       orgId,
       userIds: [asker],
@@ -625,6 +624,25 @@ export async function rerouteApprovals(deps: NotificationDeps, orgId: string, us
         eq(approvals.status, "pending"),
         sql`(${approvals.ownerUserId} = ${userId} or ${approvals.approvers} -> 'userIds' @> to_jsonb(${userId}::text))`,
       ),
+    );
+  for (const row of rows) {
+    await resolveApprovalNotifications(deps, row);
+    await notifyNewcomers(deps, row);
+  }
+}
+
+/**
+ * Who holds these roles changed (`setMemberRoles`), or one of them is gone (`deleteRole`): the approvals waiting whose
+ * agent such a role answered for when it asked (`approvals.owner_role_id`, ADR 0085, addendum of 2026-11-21) reach
+ * whoever is asked now, and leave whoever isn't any more. A deleted role matches nobody, so its admins are asked.
+ */
+export async function rerouteRoleApprovals(deps: NotificationDeps, orgId: string, roleIds: readonly string[]) {
+  if (roleIds.length === 0) return;
+  const rows = await deps.db
+    .select()
+    .from(approvals)
+    .where(
+      and(eq(approvals.orgId, orgId), eq(approvals.status, "pending"), inArray(approvals.ownerRoleId, [...roleIds])),
     );
   for (const row of rows) {
     await resolveApprovalNotifications(deps, row);
@@ -1509,11 +1527,12 @@ export async function notifyComputerNoChrome(
  */
 export async function notifyDesktopTaken(
   deps: NotificationDeps,
-  input: { orgId: string; agentId: string; agentName: string; ownerUserId: string; actorId: string; at: Date },
+  /** `ownerIds`: who answers for the agent (`agentOwnerIds`), its owner role's holders too. */
+  input: { orgId: string; agentId: string; agentName: string; ownerIds: string[]; actorId: string; at: Date },
 ) {
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [input.ownerUserId],
+    userIds: input.ownerIds,
     kind: "desktop_taken",
     groupKey: `desktop_taken:${input.agentId}:${input.at.toISOString().slice(0, 10)}`,
     actor: { type: "user", id: input.actorId },

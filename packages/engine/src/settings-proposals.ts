@@ -4,7 +4,16 @@ import { accessInputOf, replaceableGrants, setAgentAccess } from "./access";
 import { moveAgentToGroup } from "./agent-groups";
 import { type Agent, archiveAgent, getAgent, unarchiveAgent, updateAgent, validateAgentFields } from "./agents";
 import { setAgentAppearance, validateAppearance } from "./appearance";
-import { agentEditorIds, agentManagerIds, audienceOf, editsAgent, managesAgent, setAgentAudience } from "./audience";
+import {
+  agentEditorIds,
+  agentManagerIds,
+  agentOwnerIds,
+  audienceOf,
+  editsAgent,
+  managesAgent,
+  ownsAgent,
+  setAgentAudience,
+} from "./audience";
 import { normalizeBrainModel, setAgentBrain } from "./brain-settings";
 import { isComputerBrain } from "./brains/types";
 import { invalidateOrg } from "./cache";
@@ -348,7 +357,8 @@ export async function maySettle(db: Database, actorId: string, p: Proposal) {
     return admin && (!supervisor || managesAgent(supervisor, actorId, membership));
   }
   if (group === "editor") return editsAgent(agent, actorId, membership);
-  if (group === "admin_or_owner") return admin || agent.ownerUserId === actorId;
+  if (group === "admin_or_owner") return admin || ownsAgent(agent, actorId, membership.roleIds);
+  // An AI account's line is its owner's plan: the agent's one person, never a role (ADR 0085, addendum of 2026-11-21).
   return agent.ownerUserId === actorId && (await accountOwner(db, p.orgId, p.settings ?? [])) === actorId;
 }
 
@@ -368,7 +378,7 @@ export async function settingsDeciders(db: Database, p: Proposal): Promise<strin
   if (!agent) return [];
   if (group === "editor") return agentEditorIds(db, p.orgId, agent.id);
   const ids = new Set(await agentManagerIds(db, p.orgId, agent.id));
-  if (group === "admin_or_owner" && agent.ownerUserId) ids.add(agent.ownerUserId);
+  if (group === "admin_or_owner") for (const id of await agentOwnerIds(db, p.orgId, agent)) ids.add(id);
   const under = group === "admin" ? supervisorOf(p) : null;
   if (under && (await getAgent(db, p.orgId, under))) {
     const theirs = new Set(await agentManagerIds(db, p.orgId, under));

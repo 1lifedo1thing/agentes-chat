@@ -25,6 +25,7 @@ import {
 } from "@agenteschat/ui/blocks/spec";
 import * as Y from "yjs";
 import { type AgentsDmReads, agentsDmReads, readerOfRun } from "./agents-dm-reads";
+import { ownsAgentSql } from "./audience";
 import { recordAudit } from "./audit";
 import { runAuthorityById, runPerson, UUID } from "./authority";
 import { routineBriefOfRun } from "./background";
@@ -2454,7 +2455,7 @@ async function deletableIds(db: Database, userId: string, orgId: string, list: O
       .where(
         and(
           eq(schema.agents.orgId, orgId),
-          eq(schema.agents.ownerUserId, userId),
+          ownsAgentSql("agents", sql`${userId}::text`),
           inArray(schema.agents.id, [...new Set(byAgent.map((a) => a.createdById))]),
         ),
       ),
