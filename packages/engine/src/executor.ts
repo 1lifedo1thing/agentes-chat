@@ -5165,6 +5165,7 @@ async function executeRunInner(
         let behind = isRightHand(agent) ? null : await roomGate(db, run, roomMachine, place, slotOf(plan));
         let askOn = roomMachine;
         // Spill-over: behind others, or refused for room before, a person's first turn may think on another computer.
+        // Never a mission's or a code session's (ADR 0214): its worktree is on this one.
         const to =
           (behind || transcript.roomWaitSince !== undefined) &&
           personWaiting &&
@@ -5172,6 +5173,7 @@ async function executeRunInner(
           !run.workId &&
           !run.background &&
           !plan.missionId &&
+          !plan.session?.codeSession &&
           !isRightHand(agent) &&
           !transcript.spill
             ? await spillOver()
