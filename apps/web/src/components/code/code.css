@@ -571,6 +571,7 @@
   z-index: -1;
   overflow: hidden;
   border-radius: 0 0 13px 3px;
+  opacity: 0.5;
   pointer-events: none;
 }
 .code-dock-sky > .ac-sky {
