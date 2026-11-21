@@ -20,6 +20,7 @@ import {
   type PickerBefore,
   type PickerModel,
 } from "@agenteschat/client/lib/brain-picker";
+import type { PlanChoice } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
 import { modelStandInKey, planMeterText } from "@agenteschat/client/lib/plan-usage";
 import { planOf } from "@agenteschat/client/lib/plans";
@@ -365,7 +366,9 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
                       icon="plus"
                       onSelect={() => {
                         onClose();
-                        connect.open({ agentId: agent.id, chat: true });
+                        // Another account of this plan: its own sign-in steps, not the generic choice.
+                        const plan = tile.kind === "model" ? undefined : (tile.key as PlanChoice);
+                        connect.open({ agentId: agent.id, chat: true, ...(plan ? { plan, start: plan } : {}) });
                       }}
                     >
                       {t("brain.picker.connectAccount")}

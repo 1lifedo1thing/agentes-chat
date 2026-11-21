@@ -53,6 +53,23 @@ test("the DM header's button opens the AIs and models; a model of another AI swi
   expect(screen().getByRole("button", { name: "Desfazer" })).toBeTruthy();
 });
 
+test("another account of the AI shown: its own sign-in steps, never the generic choice", async () => {
+  const { panel } = await openPicker();
+  const ais = within(panel).getByRole("radiogroup", { name: "IA" });
+  await click(within(ais).getByRole("radio", { name: "Claude" }));
+  // The account's menu (Radix opens it from the keyboard here), then its last item.
+  const account = within(panel).getByRole("button", { name: /^Conta:/ });
+  account.focus();
+  await act(async () => {
+    fireEvent.keyDown(account, { key: "Enter" });
+    fireEvent.keyUp(account, { key: "Enter" });
+  });
+  await settle(2);
+  await click(within(screen().getByRole("menu")).getByRole("menuitem", { name: "Conectar outra conta" }));
+  expect(screen().getByRole("dialog")).toBeTruthy();
+  expect(screen().getByText("Seu plano do Claude")).toBeTruthy();
+});
+
 test("who can't change it reads what it thinks with, with nothing to press", async () => {
   const state = seedState();
   const ada = state.agents.find((a) => a.id === ADA_ID);
