@@ -97,7 +97,7 @@ test("a run that answered on the way lists each piece of work under the reply it
   // Timed from the reply before it.
   expect(workFromSteps(second.steps).durationMs).toBe(90_000);
   // Its only reply, or one saved without its step: the whole run.
-  expect(replySteps(steps.slice(0, 2), "running")).toEqual({ steps: steps.slice(0, 2), whole: true });
+  expect(replySteps(steps.slice(0, 2), "running")).toEqual({ steps: steps.slice(0, 2), whole: true, cli: true });
   expect(replySteps(steps, "elsewhere").whole).toBe(true);
   // Work after its last reply stays with it.
   const after = [...steps, { seq: 5, kind: "context", data: { cliTool: cli("b1", "Bash", "run") }, createdAt: later }];
@@ -107,11 +107,21 @@ test("a run that answered on the way lists each piece of work under the reply it
 test("in a code session a check that let a command through at once is no line; a refused one is", () => {
   const at = "2026-11-20T21:00:00.000Z";
   const check = (seq: number, id: string, content: string) => [
-    { seq, kind: "tool_call", data: { name: "permission_prompt", toolUseId: id, input: { tool_name: "Bash" } }, createdAt: at },
+    {
+      seq,
+      kind: "tool_call",
+      data: { name: "permission_prompt", toolUseId: id, input: { tool_name: "Bash" } },
+      createdAt: at,
+    },
     { seq: seq + 1, kind: "tool_result", data: { name: "permission_prompt", toolUseId: id, content }, createdAt: at },
   ];
   const steps = [
-    { seq: 1, kind: "context", data: { cliTool: { id: "w1", name: "Workflow", verb: "workflow", ok: true } }, createdAt: at },
+    {
+      seq: 1,
+      kind: "context",
+      data: { cliTool: { id: "w1", name: "Workflow", verb: "workflow", ok: true } },
+      createdAt: at,
+    },
     ...check(2, "p1", '{"behavior":"allow"}'),
     ...check(4, "p2", '{"behavior":"deny","message":"Not here"}'),
   ];
