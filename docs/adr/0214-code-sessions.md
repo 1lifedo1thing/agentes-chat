@@ -111,10 +111,10 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
   `waiting for you`, `ready`, the PR) and the change's size.
 - **Home**: the field in the middle of the agents' fine sky (the agent page's cover sky). Over the field the page's
   title ("Coding mode", in the brand's face, as an added line of a diff: a block with a top and a side in the agent's
-  own dithered material, which drops on "− Chat mode" as the home opens and knocks it off; a Beta tag beside it) and the question, and over them the agent
+  own dithered material, which drops on "− Chat mode" as the home opens and knocks it off; a Beta tag beside it), and over it the agent
   picked in the field drawn in cubes from its own avatar (each pixel of the engine's drawing a cube, the avatar's tones
   through the sky's dither, plain WebGL: `agent-voxel.ts`, `CodeHomeAgent`). As the home opens the figure builds
-  itself, each cube dropping into place from its foot up, while the title, the question and the field rise into place
+  itself, each cube dropping into place from its foot up, while the title and the field rise into place
   under it; nothing waits for the build, and with reduced motion all of it is simply there. It turns a little toward
   the pointer, blinks with its face, and its cursor (the browser's, ADR 0040 §7.2) glides in as the last cube lands and
   waits beside it. The three stand in the middle of the sky; a window too short for them shows the title and the field

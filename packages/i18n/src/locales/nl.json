@@ -11284,8 +11284,6 @@
       "mode": "Coding mode",
       "was": "Chat mode",
       "beta": "Beta",
-      "title": "Wat doen we in {{repo}}?",
-      "aRepo": "een project",
       "noAgents": "Nog geen agent programmeert op een computer. Geef een agent in de instellingen een computer en een codeerapp, of laat hem daar code uitvoeren.",
       "placeholder": "Beschrijf de wijziging, de bug of de vraag",
       "label": "Wat er moet gebeuren",

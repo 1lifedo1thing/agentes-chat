@@ -11149,8 +11149,6 @@
       "mode": "Coding mode",
       "was": "Chat mode",
       "beta": "Beta",
-      "title": "{{repo}} üzerinde ne yapalım?",
-      "aRepo": "Bir proje",
       "noAgents": "Henüz bilgisayarda kod yazan bir ajan yok. Bir ajanın ayarlarından ona bir bilgisayar ve bir kodlama uygulaması verin ya da orada kod çalıştırmasına izin verin.",
       "placeholder": "Değişikliği, hatayı veya soruyu anlatın",
       "label": "Ne yapılacak",

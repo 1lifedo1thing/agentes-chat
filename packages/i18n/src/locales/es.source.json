@@ -27302,12 +27302,6 @@
   "codeSessions.home.beta": {
     "value": "Beta"
   },
-  "codeSessions.home.title": {
-    "value": "What to do in {{repo}}?"
-  },
-  "codeSessions.home.aRepo": {
-    "value": "a project"
-  },
   "codeSessions.home.noAgents": {
     "value": "No agent codes on a computer yet. In an agent's settings, give it a computer and a coding app, or let it run code there."
   },

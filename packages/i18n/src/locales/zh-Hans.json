@@ -10830,8 +10830,6 @@
       "mode": "Coding mode",
       "was": "Chat mode",
       "beta": "Beta",
-      "title": "要在 {{repo}} 里做什么？",
-      "aRepo": "某个项目",
       "noAgents": "还没有能在电脑上编程的智能体。在智能体的设置里给它一台电脑和一个编程应用，或者允许它在那里运行代码。",
       "placeholder": "描述要做的改动、bug 或问题",
       "label": "要做什么",

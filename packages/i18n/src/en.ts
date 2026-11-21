@@ -11660,9 +11660,6 @@ export const en = {
       was: "Chat mode",
       /** Beside the mode's name: the page is still a beta. */
       beta: "Beta",
-      /** Under the title, over the field. */
-      title: "What to do in {{repo}}?",
-      aRepo: "a project",
       noAgents:
         "No agent codes on a computer yet. In an agent's settings, give it a computer and a coding app, or let it run code there.",
       placeholder: "Describe the change, the bug or the question",

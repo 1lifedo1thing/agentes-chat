@@ -11651,8 +11651,6 @@
       "mode": "Coding mode",
       "was": "Chat mode",
       "beta": "Beta",
-      "title": "Que faire dans {{repo}} ?",
-      "aRepo": "un projet",
       "noAgents": "Aucun agent ne code sur un ordinateur pour l'instant. Dans les paramètres d'un agent, donnez-lui un ordinateur et une app de code, ou laissez-le y exécuter du code.",
       "placeholder": "Décrivez le changement, le bug ou la question",
       "label": "Que faire",

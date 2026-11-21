@@ -11675,9 +11675,6 @@ export const ptBR = {
       was: "Chat mode",
       /** Ao lado do nome do modo: a página ainda é beta. */
       beta: "Beta",
-      /** Embaixo do título, sobre o campo. */
-      title: "O que fazer em {{repo}}?",
-      aRepo: "um projeto",
       noAgents:
         "Nenhum agente programa num computador ainda. Nas configurações de um agente, dê a ele um computador e um app de programação, ou deixe ele rodar código lá.",
       placeholder: "Descreva a mudança, o bug ou a dúvida",

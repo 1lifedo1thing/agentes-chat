@@ -214,21 +214,17 @@
   text-align: center;
   text-wrap: balance;
 }
-.code-mid__s {
-  margin-bottom: 14px;
-  color: var(--ink2);
-  font-size: 14px;
-  text-align: center;
-}
 /* The mode's name and its Beta mark on one line, in the middle (the name is one short line, so the mark sits on it). */
 .code-mid__head {
+  /* The field stands this far under the title's block. */
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 20px;
 }
 /* Opening the home: the agent builds itself (`CodeHomeAgent`) while its words rise into place under it, the title
-   first, then the question and the field, overlapping by less each time; nothing waits for the build and the field
+   first, then the field, overlapping by less each time; nothing waits for the build and the field
    takes the caret at once. Until the home knows its agent (their place depends on it) the words wait, unseen. */
 .code-mid:not(.is-in) > :not(.code-agent) {
   opacity: 0;
@@ -237,10 +233,6 @@
   .code-mid.is-in > .code-mid__head {
     --rise: 10px;
     animation: code-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) 120ms both;
-  }
-  .code-mid.is-in > .code-mid__s {
-    --rise: 8px;
-    animation: code-rise 460ms cubic-bezier(0.2, 0.8, 0.2, 1) 190ms both;
   }
   .code-mid.is-in > :is(.code-start, .code-mid__none) {
     --rise: 6px;
@@ -436,9 +428,6 @@
   font-size: 31px;
   font-weight: 600;
   letter-spacing: -0.02em;
-}
-.code-mid__s--ask {
-  font-size: 15px;
 }
 /* With the agent over the title, the three (agent, title and field) stand in the middle of the sky: the agent takes
    about 150 over the title, so the form's middle sits that much under the home's. A window too short for them shows

@@ -10816,8 +10816,6 @@
       "mode": "Coding mode",
       "was": "Chat mode",
       "beta": "Beta",
-      "title": "Apa yang dikerjakan di {{repo}}?",
-      "aRepo": "sebuah proyek",
       "noAgents": "Belum ada agen yang memprogram di komputer. Di pengaturan agen, beri dia komputer dan aplikasi coding, atau izinkan dia menjalankan kode di sana.",
       "placeholder": "Jelaskan perubahan, bug, atau pertanyaannya",
       "label": "Yang dikerjakan",

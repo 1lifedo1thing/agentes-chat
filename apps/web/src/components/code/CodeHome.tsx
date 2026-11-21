@@ -94,7 +94,6 @@ export function CodeHome() {
       submit();
     }
   };
-  const repoName = repo.trim() || t("codeSessions.home.aRepo");
   // Its words come in once the home knows where they stand: with an agent over them, or with none to pick.
   const placed = start.isError || (start.isSuccess && (agents.length === 0 || Boolean(pickedAgent)));
   return (
@@ -120,7 +119,6 @@ export function CodeHome() {
           </span>
           <span className="code-mid__beta">{t("codeSessions.home.beta")}</span>
         </div>
-        <span className="code-mid__s code-mid__s--ask">{t("codeSessions.home.title", { repo: repoName })}</span>
         {agents.length === 0 && start.isSuccess ? (
           <p className="code-mid__none">{t("codeSessions.home.noAgents")}</p>
         ) : (
