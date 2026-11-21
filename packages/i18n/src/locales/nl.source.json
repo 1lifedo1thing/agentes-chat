@@ -44967,6 +44967,9 @@
   "chat.work.step.proposingMission": {
     "value": "Proposed a mission"
   },
+  "chat.work.step.suggestingCodeSession": {
+    "value": "Suggested a code session"
+  },
   "chat.work.step.messagingMission": {
     "value": "Sent a note to the mission"
   },
@@ -45317,6 +45320,9 @@
   },
   "chat.activity.proposingMission": {
     "value": "proposing a mission"
+  },
+  "chat.activity.suggestingCodeSession": {
+    "value": "suggesting a code session"
   },
   "chat.activity.messagingMission": {
     "value": "sending a note to the mission"
