@@ -10434,6 +10434,13 @@
     "version": "v{{version}}",
     "usedBy_one": "{{count}} agent gebruikt hem",
     "usedBy_other": "{{count}} agents gebruiken hem",
+    "agents": {
+      "title": "Agents met deze skill",
+      "none": "Nog geen agent.",
+      "choose": "Agents kiezen",
+      "dialogTitle": "Agents met {{name}}",
+      "dialogText": "Elke ingeschakelde agent gebruikt hem wanneer een taak erom vraagt."
+    },
     "updated": "bijgewerkt {{when}}",
     "source": {
       "github": "GitHub",
@@ -14346,6 +14353,7 @@
       "ask_agent": "Een andere agent vragen",
       "tell_agent": "Een andere agent informeren",
       "find_agent": "Agent vinden",
+      "read_agent": "Agentinstellingen lezen",
       "ask_user": "Een vraag stellen",
       "ask_choices": "Keuzes aanbieden",
       "request_approval": "Goedkeuring vragen",

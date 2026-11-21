@@ -25298,6 +25298,21 @@
       "other": "{{count}} agents use it"
     }
   },
+  "skills.agents.title": {
+    "value": "Agents with this skill"
+  },
+  "skills.agents.none": {
+    "value": "No agent yet."
+  },
+  "skills.agents.choose": {
+    "value": "Choose agents"
+  },
+  "skills.agents.dialogTitle": {
+    "value": "Agents with {{name}}"
+  },
+  "skills.agents.dialogText": {
+    "value": "Each agent turned on uses it whenever a task calls for it."
+  },
   "skills.updated": {
     "value": "updated {{when}}"
   },
@@ -35132,6 +35147,9 @@
   },
   "toolNames.label.find_agent": {
     "value": "Find agent"
+  },
+  "toolNames.label.read_agent": {
+    "value": "Read agent setup"
   },
   "toolNames.label.ask_user": {
     "value": "Ask a question"

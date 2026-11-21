@@ -10791,6 +10791,13 @@
     "usedBy_one": "{{count}} agent l'utilise",
     "usedBy_many": "{{count}} agents l'utilisent",
     "usedBy_other": "{{count}} agents l'utilisent",
+    "agents": {
+      "title": "Agents avec cette compétence",
+      "none": "Aucun agent pour l'instant.",
+      "choose": "Choisir les agents",
+      "dialogTitle": "Agents avec {{name}}",
+      "dialogText": "Chaque agent activé l'utilise dès qu'une tâche le demande."
+    },
     "updated": "mise à jour {{when}}",
     "source": {
       "github": "GitHub",
@@ -14786,6 +14793,7 @@
       "ask_agent": "Demander à un autre agent",
       "tell_agent": "Prévenir un autre agent",
       "find_agent": "Trouver un agent",
+      "read_agent": "Lire la configuration de l'agent",
       "ask_user": "Poser une question",
       "ask_choices": "Proposer des choix",
       "request_approval": "Demander une approbation",

@@ -1198,7 +1198,7 @@ async function cardAgents(
 /**
  * Proposals an agent makes because a person asked it in conversation: a
  * rule added to its own or other agents' instructions or to the org context
- * (or exact text swapped or removed there), and other agents' roles and apps.
+ * (or exact text swapped or removed there, or the whole text rewritten), and other agents' roles and apps.
  * One row per agent and kind of change, for one card; the agent never edits
  * any of them, a person who may make that change accepts each, or with `atOnce`
  * the person who asked, as it is made (`applyAsked`). Only agents the person who
@@ -1217,6 +1217,8 @@ export async function proposeChange(
     /** The rule to add, or what takes the place of `replaces` (empty: removes it). */
     change: string;
     replaces?: string;
+    /** The whole new text, in place of `change` and `replaces`: a rewrite the person asked for. */
+    whole?: string;
     roles?: { agentId: string; role: string }[];
     access?: { agentId: string; lines: AccessLine[] }[];
     rationale: string;
@@ -1238,7 +1240,7 @@ export async function proposeChange(
   const rows: (typeof contextProposals.$inferInsert)[] = [];
   const skipped: string[] = [];
   const textChange = (current: string, what: string, max: number, heading: boolean) => {
-    const next = changedText(current, change, replaces, heading);
+    const next = input.whole ?? changedText(current, change, replaces, heading);
     if (next === null) {
       const where = current.includes(replaces ?? "") ? "appears more than once in" : "isn't in";
       skipped.push(`The text to swap ${where} ${what}. It reads: """${cutText(current, CURRENT_CHARS)}"""`);

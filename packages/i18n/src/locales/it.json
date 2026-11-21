@@ -10811,6 +10811,13 @@
     "usedBy_one": "la usa {{count}} agente",
     "usedBy_many": "la usano {{count}} agenti",
     "usedBy_other": "la usano {{count}} agenti",
+    "agents": {
+      "title": "Agenti con questa skill",
+      "none": "Ancora nessun agente.",
+      "choose": "Scegli gli agenti",
+      "dialogTitle": "Agenti con {{name}}",
+      "dialogText": "Ogni agente attivato la usa ogni volta che un compito lo richiede."
+    },
     "updated": "aggiornata {{when}}",
     "source": {
       "github": "GitHub",
@@ -14802,6 +14809,7 @@
       "ask_agent": "Chiedi a un altro agente",
       "tell_agent": "Avvisa un altro agente",
       "find_agent": "Trova agente",
+      "read_agent": "Leggi la configurazione dell'agente",
       "ask_user": "Fai una domanda",
       "ask_choices": "Offri opzioni",
       "request_approval": "Chiedi approvazione",

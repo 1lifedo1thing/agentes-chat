@@ -10011,6 +10011,13 @@
     "noResults": "Tidak ada skill yang cocok dengan “{{q}}”.",
     "version": "v{{version}}",
     "usedBy_other": "{{count}} agen memakainya",
+    "agents": {
+      "title": "Agen dengan skill ini",
+      "none": "Belum ada agen.",
+      "choose": "Pilih agen",
+      "dialogTitle": "Agen dengan {{name}}",
+      "dialogText": "Setiap agen yang diaktifkan memakainya setiap kali tugas membutuhkannya."
+    },
     "updated": "diperbarui {{when}}",
     "source": {
       "github": "GitHub",
@@ -13793,6 +13800,7 @@
       "ask_agent": "Tanya agen lain",
       "tell_agent": "Beri tahu agen lain",
       "find_agent": "Temukan agen",
+      "read_agent": "Baca pengaturan agen",
       "ask_user": "Ajukan pertanyaan",
       "ask_choices": "Tawarkan pilihan",
       "request_approval": "Minta persetujuan",

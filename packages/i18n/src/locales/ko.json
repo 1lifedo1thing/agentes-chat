@@ -9957,6 +9957,13 @@
     "noResults": "“{{q}}”와 일치하는 스킬이 없어요.",
     "version": "v{{version}}",
     "usedBy_other": "에이전트 {{count}}명이 사용 중",
+    "agents": {
+      "title": "이 스킬을 가진 에이전트",
+      "none": "아직 에이전트가 없어요.",
+      "choose": "에이전트 선택",
+      "dialogTitle": "{{name}}을(를) 가진 에이전트",
+      "dialogText": "켜진 에이전트는 작업에 필요할 때마다 사용해요."
+    },
     "updated": "{{when}} 업데이트됨",
     "source": {
       "github": "GitHub",
@@ -13734,6 +13741,7 @@
       "ask_agent": "다른 에이전트에게 질문",
       "tell_agent": "다른 에이전트에게 알림",
       "find_agent": "에이전트 찾기",
+      "read_agent": "에이전트 설정 읽기",
       "ask_user": "질문하기",
       "ask_choices": "선택지 제시",
       "request_approval": "승인 요청",
