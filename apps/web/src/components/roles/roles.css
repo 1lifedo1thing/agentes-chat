@@ -656,15 +656,17 @@ html:not([data-pointer]) .roles-names__more:focus-visible {
 .roles-pick__row {
   cursor: pointer;
 }
-/* The icon sits on the address's line (20px), not on the middle of the address and its owner. */
 .roles-mail__row {
   flex-wrap: nowrap;
-  align-items: flex-start;
   padding-block: var(--space-3);
 }
-.roles-mail__row > .ac-icon {
-  flex: none;
-  margin-top: 1px;
+/* The icon on the address's 20px line, not on the middle of the address and its owner. */
+.roles-mail__line {
+  gap: var(--space-3);
+  min-width: 0;
+  line-height: 20px;
+}
+.roles-mail__line > .ac-icon {
   color: var(--muted);
 }
 .roles-mail__text {
