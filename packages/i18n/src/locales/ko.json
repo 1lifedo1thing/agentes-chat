@@ -11603,6 +11603,11 @@
     "recommended": "추천",
     "free": "무료",
     "opencodeFreeHint": "다른 무료 모델은 에이전트 컴퓨터의 OpenCode에서 실행돼요.",
+    "missingModel": {
+      "app_old": "{{model}}을(를) 쓰려면 에이전트 컴퓨터의 agentes.chat 앱을 업데이트하세요.",
+      "cli_old": "{{model}}을(를) 쓰려면 에이전트 컴퓨터의 Antigravity CLI를 더 새 버전으로 올려야 합니다. 그 컴퓨터에서 agy update를 실행하세요.",
+      "plan": "{{model}}은(는) Google AI Pro와 Ultra에 포함되어 있습니다. 에이전트 컴퓨터의 Gemini 계정 중 이 요금제가 있는 계정이 없습니다."
+    },
     "modelHelp": "큰 모델일수록 더 많이 생각하고 요금제를 더 빨리 소진해요.",
     "hidden": "생각하는 AI는 {{owner}}님이나 관리자가 골라요.",
     "hiddenAdmins": "생각하는 AI는 관리자만 고를 수 있어요.",
@@ -20275,7 +20280,7 @@
     "mark": "Beta",
     "open": "피드백 보내기",
     "ask": "무엇이 부족했거나, 고장 났거나, 불편했나요?",
-    "goesCloud": "작성한 내용은 이메일로 agentes.chat 팀에 전달돼요.",
+    "goesCloud": "작성한 내용은 이메일로 agentes.chat 팀에 전달되며, 팀이 내용을 살펴볼 때 AI 어시스턴트를 사용할 수 있어요.",
     "goesServer": "작성한 내용은 이메일로 이 서버를 운영하는 사람에게 전달돼요.",
     "placeholder": "편하게 적어 주세요",
     "report": "여기서 문제 신고",

@@ -12576,6 +12576,11 @@
     "recommended": "Recommandé",
     "free": "Gratuit",
     "opencodeFreeHint": "Les autres modèles gratuits passent par OpenCode sur l'ordinateur de l'agent.",
+    "missingModel": {
+      "app_old": "Mettez à jour l'app agentes.chat sur l'ordinateur de l'agent pour utiliser {{model}}.",
+      "cli_old": "{{model}} nécessite une version plus récente d'Antigravity CLI sur l'ordinateur de l'agent. Lancez agy update dessus.",
+      "plan": "{{model}} est inclus dans Google AI Pro et Ultra. Aucun compte Gemini sur l'ordinateur de l'agent n'a cet abonnement."
+    },
     "modelHelp": "Les plus gros modèles réfléchissent davantage et consomment l'abonnement plus vite.",
     "hidden": "{{owner}} ou un admin choisit qui réfléchit.",
     "hiddenAdmins": "Seuls les admins choisissent qui réfléchit.",
@@ -21683,7 +21688,7 @@
     "mark": "Beta",
     "open": "Envoyer un retour",
     "ask": "Qu'est-ce qui a manqué, cassé ou gêné ?",
-    "goesCloud": "Ce que vous écrivez part par e-mail à l'équipe d'agentes.chat.",
+    "goesCloud": "Ce que vous écrivez part par e-mail à l'équipe d'agentes.chat, qui peut utiliser un assistant IA pour l'examiner.",
     "goesServer": "Ce que vous écrivez part par e-mail à la personne qui gère ce serveur.",
     "placeholder": "Écrivez-le à votre façon",
     "report": "Signaler un problème ici",
