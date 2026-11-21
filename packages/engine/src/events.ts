@@ -263,6 +263,18 @@ export type ChannelEvent =
       tool: string;
       said?: string;
     }
+  /**
+   * What a run started on a person's message is about to do, in a few words of the workspace's small model
+   * (`announceIntent`): the bar's line until the agent's own words come. Never stored.
+   */
+  | {
+      type: "agent.intent";
+      channelId: string;
+      threadId: string | null;
+      runId: string;
+      agentId: string;
+      text: string;
+    }
   /** What a computer command prints while it runs (throttled, ≤ 64 KB per call). */
   | {
       type: "agent.tool.output";
