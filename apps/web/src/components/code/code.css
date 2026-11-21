@@ -560,6 +560,26 @@
 }
 
 /* ── the side panel: tabs, and the sky rising from its foot behind what it shows ── */
+/* A session's foot: a light sky from the conversation's floor up past the line over the composer, behind them
+   (`CodeDockSky`); the pane's own corners at its foot. */
+.channel__composer:has(> .code-dock-sky) {
+  isolation: isolate;
+}
+.code-dock-sky {
+  position: absolute;
+  inset: -40px 0 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: 0 0 13px 3px;
+  pointer-events: none;
+}
+.code-dock-sky > .ac-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
 .code-hz {
   position: absolute;
   left: 0;

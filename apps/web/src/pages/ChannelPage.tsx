@@ -384,7 +384,7 @@ import {
 } from "@/components/RequestCard";
 import { ReturnLine } from "@/components/ReturnLine";
 import { SidePanel } from "@/components/SidePanel";
-import { AskSky, ChannelWelcome, colorOf } from "@/components/Sky";
+import { ChannelWelcome, colorOf } from "@/components/Sky";
 import { isStoppable, StopButton, useContinueRun, useStopRun, useWasContinued } from "@/components/StopRun";
 import { SearchResultsPanel } from "@/components/search/SearchResultsPanel";
 import { TeamChecks } from "@/components/TeamChecks";
@@ -512,6 +512,8 @@ export interface ChannelChrome {
   composerReplacement?: ReactNode;
   /** Under the composer (a mission someone only reads: "para pedir algo, peça para participar"). */
   composerNote?: ReactNode;
+  /** Behind the composer and what sits on it, from the conversation's floor (a code session's light sky). */
+  composerSky?: ReactNode;
   /** A thread in the panel beside its channel: a section, not the page's main. */
   panel?: boolean;
   /** A thread view where a person's reply makes it a "Responder" thread (`openThread` on the post). */
@@ -2874,6 +2876,7 @@ function ChannelView({
                           </div>
                         )}
                         <div className="channel__composer">
+                          {chrome?.composerSky}
                           <ConnectionBanner status={status} />
                           {!chrome?.intro && !org.deletion && (
                             <NoAiBanner agentIds={channelAgents.map((a) => a.id)} dmAgentId={chrome?.dmAgentId} />
@@ -4266,7 +4269,6 @@ function ActivityBar({
       >
         {ask && (
           <>
-            <AskSky color={colorOf(dir.anyAgent(ask.agentId))} />
             <span className="ac-typing__avatars" aria-hidden="true">
               <span className="ac-typing__tok">
                 <AgentAvatar agentId={ask.agentId} size="xs" name={askName} state="waiting" />
@@ -4293,7 +4295,6 @@ function ActivityBar({
         )}
         {away && (
           <>
-            {awayAgent && <AskSky color={colorOf(awayAgent)} />}
             {awayAgent && (
               <span className="ac-typing__avatars" aria-hidden="true">
                 <span className="ac-typing__tok">

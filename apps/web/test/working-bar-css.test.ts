@@ -8,13 +8,10 @@ test("what ships keeps the bar above the composer one low width, the composer's:
       .filter(([p]) => p === property)
       .at(-1)?.[1];
   const bar = '.ac-typing[data-active="true"]';
-  // A bare line on the conversation's ground: no glass, no shadow. Only an agent waiting on the viewer has a light sky
-  // in its color behind the line (`AskSky`), under the line's own pieces.
+  // A bare line on the conversation's ground: no glass, no shadow (and no sky behind it).
   expect(last(bar, "background")).toBeUndefined();
   expect(last(bar, "box-shadow")).toBeUndefined();
-  expect(last(".ac-typing[data-ask]", "isolation")).toBe("isolate");
-  expect(last(".ac-typing__sky", "z-index")).toBe("-1");
-  expect(last(".ac-typing__sky", "pointer-events")).toBe("none");
+  expect(declarations(css, ".ac-typing__sky")).toEqual([]);
   // One width whatever it says or shows (a turning phrase, the seconds, "Ver" coming and going): no width
   // of its own and no cap, so it fills the composer's column, its edges on the composer's (the channel, a thread in
   // the panel, a DM, a task's conversation alike).

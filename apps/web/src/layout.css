@@ -7452,21 +7452,6 @@ html:not([data-pointer]) .run-continue:focus-visible {
 .ac-typing[data-active="true"]:has(> .ac-typing__avatars):not(:has(> .ac-typing__dots, > .ac-pixspin)) {
   padding-left: 7px;
 }
-/* An agent waiting on the viewer is the one band it has: a light sky in its color from its face (`AskSky`), under the
-   line's own words and buttons. */
-.ac-typing[data-ask] {
-  position: relative;
-  isolation: isolate;
-  border-radius: var(--radius-sm);
-}
-.ac-typing__sky {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  border-radius: inherit;
-  pointer-events: none;
-}
 /* An agent in its browser: the whole pill opens the live view; the globe says so. */
 .ac-typing[data-browser="true"] {
   cursor: pointer;

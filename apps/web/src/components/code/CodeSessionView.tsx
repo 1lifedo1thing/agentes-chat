@@ -25,6 +25,7 @@ import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodePanel, useCodeTab } from "./CodePanel";
+import { CodeDockSky } from "./CodeSky";
 
 /**
  * One code session (ADR 0208): the conversation with its agent under the session's header (name, state and branch,
@@ -88,6 +89,7 @@ function CodeConversation({ session }: { session: CodeSession }) {
         header: () => null,
         composerLabel: t("codeSessions.view.composer"),
         composerNote: <AgentStatus session={session} />,
+        composerSky: <CodeDockSky />,
         panel: true,
         openThread: false,
         task: true,

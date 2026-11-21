@@ -58,6 +58,31 @@ export function CodeHomeSky() {
 }
 
 /**
+ * The foot of a session's conversation: a light sky rising from its floor behind the composer, which stands on it as
+ * the home's does on its sky. Lower and quieter than the panel's horizon, with no pixel agents: someone types there.
+ */
+export function CodeDockSky() {
+  const options = useMemo(
+    () =>
+      fineSky(
+        (u, v, t, dark) => {
+          const top = 0.32 + 0.08 * S(u * 3.1 + t * 0.15) + 0.04 * S(u * 7.7 - t * 0.1);
+          const e = smooth(top, v) ** 1.6;
+          const wave = 0.03 * S(u * 4 + t * 0.5) * e * e;
+          return dark ? Math.max(0, 0.44 * e + wave) : Math.min(1, 1 - 0.62 * e + wave);
+        },
+        { sprites: 0 },
+      ),
+    [],
+  );
+  return (
+    <div className="code-dock-sky" aria-hidden="true">
+      <PixelSky options={options} />
+    </div>
+  );
+}
+
+/**
  * The foot of a session's side panel: the sky rises from the bottom with no edge, behind what the panel shows. Its top
  * third is the bare surface; the contour moves like slow hills (never a straight line where it starts), and a pool of
  * light sits behind whoever stands on it (bottom left).
