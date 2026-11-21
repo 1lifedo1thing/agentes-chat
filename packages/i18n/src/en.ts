@@ -6134,6 +6134,8 @@ export const en = {
       undo: "Undo",
       deadline: "Time left",
       decides: "Who decides",
+      /** A request of an agent a role answers for (ADR 0085, addendum of 2026-11-21): the first decision counts. */
+      decidesRole: "Anyone in {{role}}",
       state: "Status",
       why: "Why {{name}} asks",
       email: "The email",
@@ -7643,6 +7645,9 @@ export const en = {
     noOwnerShort: "Admins get the alerts and approve",
     noOwnerHelp: "Without an owner, admins get the alerts and approve sensitive actions.",
     ownerHelp: "Gets the budget alerts and approves sensitive actions.",
+    /** A role as its owner (ADR 0085, addendum of 2026-11-21): whoever holds it gets them, any of them decides. */
+    ownerRoleHelp:
+      "Whoever holds {{role}} gets its approval requests and notices. Any of them decides, including people who join the role later.",
     ownerYours: "Whoever creates the agent is its owner. An admin can hand it to someone else later.",
     accessAdmins: "Only admins give agents access to apps and mailboxes. Once it's created, ask an admin.",
     /** A personal workspace (ADR 0159): `keeper` is who runs it, as `agentPage.lock`. */
@@ -11311,6 +11316,8 @@ export const en = {
       everyone: "Everyone in the workspace",
       people: "Only some people or roles",
       owner: "Only the owner",
+      /** "Only the owner" when a role answers for it (ADR 0085, addendum of 2026-11-21). */
+      ownerRole: "Only whoever holds {{role}}",
       /** `<key>Personal`: a personal workspace's plain words (ADR 0159), where a family picks people, not roles. */
       everyonePersonal: "Everyone here",
       peoplePersonal: "Only some people",
@@ -11320,6 +11327,8 @@ export const en = {
       people: "Pick the people and roles that can talk to {{name}}.",
       owner: "Only {{owner}} talks to {{name}}. Lists show {{name}} only to {{owner}}, admins and whoever can edit.",
       noOwner: "Set an owner to use this option.",
+      ownerRole:
+        "Only whoever holds {{role}} talks to {{name}}. Lists show {{name}} only to whoever holds {{role}}, admins and whoever can edit.",
       everyonePersonal: "Anyone here can call {{name}}.",
       peoplePersonal: "Pick the people who can talk to {{name}}.",
     },
@@ -11330,8 +11339,11 @@ export const en = {
     roleMembers_other: "{{count}} people",
     picked: "Picked",
     ownerAlways: "{{name}} always can, as the owner.",
+    ownerRoleAlways: "Whoever holds {{role}} always can, as the owner.",
+    whoHolds: "whoever holds {{role}}",
     onlyYouForNow: "Only you, for now",
     onlyOwnerForNow: "Only {{name}}, for now",
+    onlyOwnerRoleForNow: "Only whoever holds {{role}}, for now",
     search: "Search roles and people",
     /** With no role to pick (a personal workspace, ADR 0159): people only. */
     searchPeople: "Search people",
@@ -11344,6 +11356,7 @@ export const en = {
       everyone: "Everyone in the workspace",
       everyonePersonal: "Everyone here",
       owner: "Only {{name}}",
+      ownerRole: "Only whoever holds {{role}}",
       nobody: "No one for now",
       someone: "Some people",
       people: "{{names}}",
@@ -11372,6 +11385,8 @@ export const en = {
       /** `owner`: the owner's name. "owner" stays a plain label beside it: never give that person a gender. */
       owner: "{{owner}} (owner), admins and whoever edits agents and talks to {{name}}.",
       noOwner: "Admins and whoever edits agents and talks to {{name}}.",
+      /** A role as its owner (ADR 0085, addendum of 2026-11-21). */
+      ownerRole: "Whoever holds {{role}} (the owner role), admins and whoever edits agents and talks to {{name}}.",
       people: "Pick who else can change how {{name}} works.",
     },
     rolesHint: "Whoever has the role can edit, including people who join it later.",
@@ -15941,6 +15956,10 @@ export const en = {
        * edit"), so are their Undo and Redo.
        */
       undoSkillsAdmins: "Only whoever can edit the agent can undo or redo a change to its skills.",
+      /** `agent.owner_both` (ADR 0085, addendum of 2026-11-21): a person or a role answers for an agent, never both. */
+      ownerBoth: "The owner is a person or a role, not both. Pick one.",
+      /** `agent.owner_role_unknown`: the role picked as owner is gone. */
+      ownerRoleUnknown: "That role no longer exists in this workspace. Pick another owner.",
     },
     account: {
       notRestorable: "This account can't be restored anymore.",

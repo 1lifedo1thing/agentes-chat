@@ -178,6 +178,7 @@ async function readOthersInstructions(db: Database, orgId: string, person: strin
   const read = await db
     .select({
       ownerUserId: agents.ownerUserId,
+      ownerRoleId: agents.ownerRoleId,
       editorUserIds: agents.editorUserIds,
       editorRoleIds: agents.editorRoleIds,
     })

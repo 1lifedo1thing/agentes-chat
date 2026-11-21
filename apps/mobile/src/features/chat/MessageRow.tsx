@@ -122,6 +122,7 @@ import { type BubbleHead, BubbleHeadContext, type BubblePart, BubblePartContext 
 import { AgentFace, Face, withAgentFaces } from "../shared/Face";
 import { useColors, useOrgId, useWhen } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
+import { ownsIn } from "../shared/owner";
 import { tapHaptic } from "../shared/parts";
 import { VoiceMessage } from "../voice/VoiceMessage";
 import { FilesTextOnlyFix, ReceiptMark } from "./AgentReceipts";
@@ -1253,6 +1254,8 @@ function StoppedLine({
       : (runErrorText(t, stopped.code) ?? t("mobile.chat.stopped.plain"));
   const author = m.author.id ? dir.agentById.get(m.author.id) : undefined;
   const owner = author?.ownerUserId ?? null;
+  // Holding the role that answers for it counts as its owner (ADR 0085, addendum of 2026-11-21).
+  const owns = ownsIn(dir.memberById, meId, author);
   const loaded = [
     ...(qc.getQueryData<Message[]>(keys.messages(orgId, m.channelId)) ?? []),
     ...((m.threadId && qc.getQueryData<Message[]>(keys.thread(orgId, m.channelId, m.threadId))) || []),
@@ -1262,7 +1265,7 @@ function StoppedLine({
     byMe ||
     mayStopRun(
       { agentId: m.author.id ?? "", threadId: m.threadId ?? m.id, triggerMessageId: null },
-      { meId, manageAgents: managesAgent(author), agentOwnerId: owner, messages: loaded },
+      { meId, manageAgents: managesAgent(author), agentOwnerId: owner, owns, messages: loaded },
     );
   // The agent works here again, or wrote after the stop: it went on, the stop offers nothing.
   const movedOn = useStopMovedOn(runId);
