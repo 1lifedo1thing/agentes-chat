@@ -188,6 +188,19 @@ describe("a screen of rows", () => {
     );
   });
 
+  test("the home never sways: lists glide to a new place in a set time, rows fade in where they stand, no hop", () => {
+    const section = src("chats/HomeSection.tsx");
+    expect(section).toContain(
+      "export const LIST_MOVE = LinearTransition.duration(motion.panel).easing(motion.easeInOut);",
+    );
+    expect(section).not.toContain("springify");
+    expect(section).toContain("const look = useAnimatedStyle(() => ({ opacity: shown.get() }));");
+    expect(section).not.toContain("translateY");
+    const entrance = src("chats/HomeEntrance.tsx");
+    expect(entrance).not.toContain("withSpring");
+    expect(entrance).toContain('return { mode: awake ? ("idle" as const) : ("sleep" as const) };');
+  });
+
   test("a finger only starting a scroll lights no row; the finger landing already asks for the conversation", () => {
     const section = src("chats/HomeSection.tsx");
     const seeAll = section.slice(section.indexOf("export function SeeAllRow"));
