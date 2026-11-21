@@ -1,3 +1,4 @@
+import { Icon } from "@agenteschat/ui";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MessageBody } from "@/chat/MessageBody";
@@ -32,13 +33,14 @@ export function FoldedBody({ body }: { body: string }) {
       {cut && !open && (
         <button
           type="button"
-          className="ac-link folded-body__more"
+          className="ac-link ac-link--action folded-body__more"
           onClick={() => {
             reveal();
             setOpen(true);
           }}
         >
           {t("channel.long.more")}
+          <Icon name="chevronDown" size={16} />
         </button>
       )}
     </div>

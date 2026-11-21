@@ -1,4 +1,5 @@
 import { LONG_MESSAGE } from "@agenteschat/client/lib/message-length";
+import { Icon } from "@agenteschat/ui";
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChannelActions } from "@/components/channel-actions";
@@ -43,7 +44,7 @@ export function ClippedBody({
         {folded && (
           <button
             type="button"
-            className="ac-link msg-clip__more"
+            className="ac-link ac-link--action msg-clip__more"
             onClick={() => {
               reveal();
               actions?.letGo?.();
@@ -51,6 +52,7 @@ export function ClippedBody({
             }}
           >
             {t("channel.long.more")}
+            <Icon name="chevronDown" size={16} />
           </button>
         )}
       </div>
