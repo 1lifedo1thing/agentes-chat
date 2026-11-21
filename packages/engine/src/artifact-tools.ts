@@ -339,7 +339,7 @@ export function createArtifactToolSource(deps: ArtifactDeps): ToolSource {
           },
           since: { type: "string", maxLength: 40, description: "ISO date: only files updated since then." },
           folder: { type: "string", maxLength: 500, description: 'Only files in this Drive folder ("Reports/2026").' },
-          limit: { type: "number", description: "How many, newest first (default and at most 30)." },
+          limit: { type: "number" },
         },
         additionalProperties: false,
       },

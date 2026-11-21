@@ -183,7 +183,7 @@ export function createChatToolSource(deps: {
     {
       name: POST_MESSAGE_TOOL,
       description:
-        'Post a new message in another channel, e.g. "manda no #geral". `channel`: its name. `move_here`: asked to continue in a channel or out of a thread (its own channel too): your replies and background work go on at its top level, and a line here links there. Files: `artifact_ids`; one from a DM goes as a copy. Only channels the person who asked is in (when nobody asked, yours). Then say where you posted. From a thread, its own channel posts at its top level; otherwise, for this conversation, just reply.',
+        'Post a new message in another channel, e.g. "manda no #geral". `channel`: its name. `move_here`: asked to continue in a channel or out of a thread (its own channel too): your replies and background work go on at its top level, and a line here links there. Files: `artifact_ids`; one from a DM goes as a copy. Only channels the person who asked is in (when nobody asked, yours). Then say where you posted. From a thread, its own channel posts at its top level.',
       scope: "",
       inputSchema: {
         type: "object",

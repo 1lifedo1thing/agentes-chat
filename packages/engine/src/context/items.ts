@@ -127,7 +127,7 @@ export async function checkPermissionText(
   const changes = await triesToChangePermissions(judge, { orgId, text, adminWords }).catch(() => false);
   if (changes) {
     throw new ValidationError(
-      "Not saved: this reads as a change to what agents may do, and memory can't change permissions or approvals (an admin changes those on the agent's Access tab). Tell the person here, in one line, that it wasn't saved and why; if it is only a decision about the work, save it again worded as that decision.",
+      "Not saved: this reads as a change to what agents may do, and memory can't change permissions or approvals (an admin changes those on the agent's Access tab). Tell the person here, in one line, that it wasn't saved and why. If it is only a decision about the work, save it again worded as that decision.",
       "context.changes_permissions",
     );
   }

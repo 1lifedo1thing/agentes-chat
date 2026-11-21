@@ -1116,7 +1116,7 @@ export function createSandboxToolSource(
         properties: {
           path: pathProp,
           title: { type: "string", maxLength: 200 },
-          name: { type: "string", maxLength: 200, description: "Same as title." },
+          name: { type: "string", maxLength: 200 },
           artifact_id: { type: "string", minLength: 36, maxLength: 36 },
           note: { type: "string", maxLength: 500 },
           shared_drive: SHARED_DRIVE_INPUT,
@@ -1177,7 +1177,7 @@ export function createSandboxToolSource(
         properties: {
           path: { ...pathProp, description: "File or folder inside the workspace" },
           title: { type: "string", maxLength: 200 },
-          name: { type: "string", maxLength: 200, description: "Same as title." },
+          name: { type: "string", maxLength: 200 },
           artifact_id: { type: "string", minLength: 36, maxLength: 36 },
           note: { type: "string", maxLength: 500 },
           shared_drive: SHARED_DRIVE_INPUT,
