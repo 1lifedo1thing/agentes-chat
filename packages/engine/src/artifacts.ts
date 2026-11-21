@@ -2890,7 +2890,8 @@ export async function setFileSharing(
   if (where?.kind === "channel" && where.visibility === "public") {
     throw new ValidationError("Everyone in the workspace sees this file already", "artifact.sharing_open");
   }
-  if (!(await readsItThere(db, userId, orgId, a))) {
+  // Someone who only views it (ADR 0202) may not widen it through this older route either.
+  if (!(await readsItThere(db, userId, orgId, a)) || !(await personEdits(db, userId, orgId, a))) {
     throw new ForbiddenError(
       a.channelId
         ? "Only who is in the conversation the file is in changes who sees it"

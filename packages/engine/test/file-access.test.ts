@@ -12,6 +12,7 @@ import {
   liveFileAccess,
   NEW_AGENT_DEFAULTS,
   setFileAccess,
+  setFileSharing,
   setMemberRoles,
   updateArtifact,
   withPersonFacts,
@@ -143,6 +144,10 @@ describe("who edits among people", () => {
     expect(await mode(caio.id)).toBe("view");
     expect(await mode(duda.id)).toBe("edit");
     expect(await mode(bia.id)).toBe("edit");
+    // Nor through the sharing route installed phones still call.
+    await expect(
+      setFileSharing(f.artifactDeps, caio.id, f.org.id, deck.id, { mode: "everyone" }),
+    ).rejects.toMatchObject({ code: "artifact.sharing_forbidden" });
   });
 });
 
