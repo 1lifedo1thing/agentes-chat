@@ -82,6 +82,8 @@ import { platformCapReached, platformCapRouter } from "./limits";
 import type { LiveDocs } from "./live/docs";
 import { liveImageJobHandlers } from "./live/images";
 import { liveJobHandlers } from "./live/jobs";
+import { runLiveActivityJob } from "./live-activity";
+import { LIVE_ACTIVITY_JOB } from "./live-activity-queue";
 import { wakeForAccessDecision } from "./machine-access";
 import type { MachineCaller } from "./machine-hub";
 import {
@@ -1242,6 +1244,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         { held: job.payload.held === true },
       );
     },
+    // The Live Activity of a person's agents at work, on their iPhones (ADR 0210): sent when what it shows changed.
+    [LIVE_ACTIVITY_JOB]: async (job) => {
+      await runLiveActivityJob({ db: deps.db, push: deps.push }, job);
+    },
     // A workspace's skills that update by themselves from their links, once a day.
     [SKILL_UPDATES_JOB]: async (job) => {
       if (!deps.skills) return;
@@ -1259,7 +1265,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       if (!deps.vault) return;
       await runVaultSync(deps.vault, orgOf(job), String(job.payload.connectionId));
     },
-    // Queued once by migration 0309: the agents' "## Learned" sections become memory; a no-op once moved.
+    // Queued once by migration 0310: the agents' "## Learned" sections become memory; a no-op once moved.
     [MOVE_LEARNED_JOB]: async (job) => {
       if ((await moveLearnedSections(deps.db, orgOf(job))) > 0)
         await publishListChanged(deps.pubsub, orgOf(job), "memory");

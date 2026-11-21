@@ -5,7 +5,7 @@ import { type Evidence, insertContextItem, itemWords, looksLikeSecret } from "./
 
 const { agents, contextItems, contextProposals, organizationMembers, users } = schema;
 
-/** Queued once per workspace by migration 0309: its agents' "## Learned" sections become memory. */
+/** Queued once per workspace by migration 0310: its agents' "## Learned" sections become memory. */
 export const MOVE_LEARNED_JOB = "memory.move_learned";
 
 const HEADING = /^##\s+Learned\s*$/;

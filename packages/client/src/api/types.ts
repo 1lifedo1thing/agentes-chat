@@ -127,6 +127,21 @@ export type PushDeviceInput =
   | { platform: "ios" | "android"; token: string; locale: string; appId?: string; sandbox?: boolean }
   | { platform: "web"; endpoint: string; keys: { p256dh: string; auth: string }; locale: string };
 
+/**
+ * Where the agents' Live Activity goes on an iPhone (`POST /api/app/push/live-activity`, ADR 0210), per install: the
+ * push-to-start token, the running activity's id and token, the app group's widgets directory (the faces' folder),
+ * the app's id, whether its tokens are the APNs sandbox's, and its language. Fields left out keep what was there.
+ */
+export interface LiveActivityInput {
+  installId: string;
+  pushToStartToken?: string | null;
+  activity?: { id: string; token: string } | null;
+  widgetsDir: string;
+  appId?: string | null;
+  sandbox?: boolean;
+  locale?: string;
+}
+
 /** What the feedback form sends (`POST /api/app/feedback`): `id` is made by the app, so a retry goes once. */
 export interface FeedbackInput {
   id: string;
@@ -1859,6 +1874,14 @@ export type ChannelEvent =
     }
   /** A message was unpinned. */
   | { type: "message.unpinned"; channelId: string; messageId: string }
+  /** A comment on a picture, a video or a PDF was resolved (or opened again: `resolved` null), ADR 0208. */
+  | {
+      type: "message.resolved";
+      channelId: string;
+      messageId: string;
+      threadId: string | null;
+      resolved: { by: { type: "person" | "agent"; id: string }; at: string } | null;
+    }
   /** A person read this DM up to `lastReadAt` (DMs between people only: "Visto"). */
   | { type: "channel.read"; channelId: string; userId: string; lastReadAt: string }
   /**

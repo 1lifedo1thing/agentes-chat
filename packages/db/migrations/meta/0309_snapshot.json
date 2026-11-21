@@ -1,5 +1,5 @@
 {
-  "id": "a36624d4-ea24-4fc4-be9d-a070d2677ec8",
+  "id": "21a3d340-6ba8-4ecf-8275-e3f7ad015b3e",
   "prevId": "2a9565ce-6d7f-40f2-aaa1-df9613391745",
   "version": "7",
   "dialect": "postgresql",
@@ -12793,6 +12793,135 @@
           "columns": [
             "org_id",
             "number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.live_activity_devices": {
+      "name": "live_activity_devices",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "install_id": {
+          "name": "install_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "push_to_start_token": {
+          "name": "push_to_start_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activity_id": {
+          "name": "activity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activity_token": {
+          "name": "activity_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "widgets_dir": {
+          "name": "widgets_dir",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "app_id": {
+          "name": "app_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "apns_sandbox": {
+          "name": "apns_sandbox",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_sent": {
+          "name": "last_sent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_sent_at": {
+          "name": "last_sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "live_activity_devices_user_id_users_id_fk": {
+          "name": "live_activity_devices_user_id_users_id_fk",
+          "tableFrom": "live_activity_devices",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "live_activity_devices_userId_installId_unique": {
+          "name": "live_activity_devices_userId_installId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "install_id"
           ]
         }
       },
