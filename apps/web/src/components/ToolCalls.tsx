@@ -34,6 +34,7 @@ import {
   workMeta,
   workSteps,
 } from "@agenteschat/client/lib/work";
+import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import {
   type AgentColor,
   Icon,
@@ -46,8 +47,9 @@ import {
 import type { TFunction } from "i18next";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AccountSwitchLine } from "@/chat/AccountRef";
 import { ConnectorIcon } from "@/components/ConnectorCatalog";
-import { CodePanel, formatBytes, OutputView, type SteerNote, SteerWell } from "@/components/LiveCode";
+import { CodePanel, formatBytes, OutputView } from "@/components/LiveCode";
 import { useOrg } from "@/components/org-context";
 
 /** Our own tools by what they do: their icon in the block (a connector's call shows its logo). */
@@ -92,6 +94,7 @@ const KIND_ICON: Partial<Record<ActivityKind, IconName>> = {
   runningCode: "code",
   browsing: "globe",
   pcFiles: "file",
+  creatingImage: "image",
   checkingComputer: "computer",
   checkingUsage: "chart",
   findingAgent: "search",
@@ -140,7 +143,7 @@ export function useCallLogo() {
 }
 
 /** A line of the block from the shared model: its phrase, time, open view (code, output, what it got and gave). */
-function blockLine(t: TFunction, locale: string, l: ToolLine, logo: ReactNode) {
+function blockLine(t: TFunction, locale: string, l: ToolLine, logo: ReactNode, personal = false) {
   const lines = l.code ? l.code.source.split("\n").length : 0;
   const output = l.output ?? [];
   const label =
@@ -153,8 +156,8 @@ function blockLine(t: TFunction, locale: string, l: ToolLine, logo: ReactNode) {
             output.reduce((n, o) => n + new TextEncoder().encode(o.text).length, 0),
           ),
         })
-      : toolPhrase(t, l);
-  const why = toolWhy(t, l);
+      : toolPhrase(t, l, locale);
+  const why = toolWhy(t, l, personal);
   // What the tool answered, its own words when it failed: only in the open view, never under the line.
   const answered = l.result ?? why ?? l.why;
   const detail = l.code ? (
@@ -195,9 +198,10 @@ function blockLine(t: TFunction, locale: string, l: ToolLine, logo: ReactNode) {
 function useBlockItems(items: ToolItem[]): ToolBlockItem[] {
   const { t, i18n } = useTranslation();
   const logo = useCallLogo();
+  const personal = isPersonal(useOrg().org);
   return items.flatMap((item): ToolBlockItem[] =>
     item.kind === "call"
-      ? [{ kind: "line", line: blockLine(t, i18n.language, item.line, logo(item.line)) }]
+      ? [{ kind: "line", line: blockLine(t, i18n.language, item.line, logo(item.line), personal) }]
       : item.kind === "say"
         ? [{ kind: "note", key: item.key, node: item.text }]
         : [],
@@ -207,20 +211,18 @@ function useBlockItems(items: ToolItem[]): ToolBlockItem[] {
 /**
  * The tools of a reply while it works (and kept after, `done`): one line saying what it does now, the apps'
  * logos and the steps, opening into every call; a single call is that call's own line. What it said between calls
- * is inside; the messages it read stay outside, under the block, so "Leu seu recado" is always in sight.
+ * is inside. A message it read on the way shows nothing here: that message says it ("Ada read it", `MessageReceipts`).
  */
 export function LiveTools({
   work,
   agentName,
   color,
-  steerNote,
   done,
   stopped,
 }: {
   work: LiveWork[];
   agentName: string;
   color?: AgentColor;
-  steerNote?: (messageId: string) => SteerNote | undefined;
   /** The reply is done: "Usou 4 ferramentas". */
   done?: boolean;
   /** Stopped by someone: the call running then shows as stopped. */
@@ -232,28 +234,22 @@ export function LiveTools({
   const blockItems = useBlockItems(items);
   const logo = useCallLogo();
   const calls = toolCalls(items);
-  const steers = items.flatMap((i) => (i.kind === "steer" ? [i] : []));
-  // Done, its tools are the summary the person chose not to see (`showActivity`): what it read stays.
-  if (done && !showsActivity(org))
-    return steers.map((s) => <SteerWell key={s.key} now={s.now} note={steerNote?.(s.messageId)} />);
+  // Done, its tools are the summary the person chose not to see (`showActivity`).
+  if (done && !showsActivity(org)) return null;
   // A lone quick read that only fed the answer: no card, as if it called nothing (once done, what it said on the way
   // is in its reply).
   const quiet = quietWork(items);
   const now = quiet ? null : toolNow(items);
   const said = quiet && done ? [] : items.flatMap((i) => (i.kind === "say" ? [i] : []));
   if (!now) {
-    // Nothing called yet: what it said and read, as lines.
-    return said.length + steers.length > 0 ? (
+    // Nothing called yet: what it said, as lines.
+    return said.length > 0 ? (
       <div className="live-work-notes">
-        {items.map((i) =>
-          i.kind === "say" && said.length > 0 ? (
-            <p key={i.key} className="live-work__say">
-              {i.text}
-            </p>
-          ) : i.kind === "steer" ? (
-            <SteerWell key={i.key} now={i.now} note={steerNote?.(i.messageId)} />
-          ) : null,
-        )}
+        {said.map((i) => (
+          <p key={i.key} className="live-work__say">
+            {i.text}
+          </p>
+        ))}
       </div>
     ) : null;
   }
@@ -271,24 +267,19 @@ export function LiveTools({
         count: t("chat.work.steps", { count: calls }),
       };
   return (
-    <>
-      <ToolBlock
-        logos={toolApps(items).map((a) => <span key={appKey(a)}>{logo(a)}</span>)}
-        head={head}
-        // Its own line is closed until clicked, as the block it stands for (code that runs shows when opened).
-        items={
-          one
-            ? blockItems.map((i) => (i.kind === "line" ? { ...i, line: { ...i.line, defaultOpen: false } } : i))
-            : blockItems
-        }
-        color={color}
-        label={t("chat.work.block", agentGrammar(agentName))}
-        one={one}
-      />
-      {steers.map((s) => (
-        <SteerWell key={s.key} now={s.now} note={steerNote?.(s.messageId)} />
-      ))}
-    </>
+    <ToolBlock
+      logos={toolApps(items).map((a) => <span key={appKey(a)}>{logo(a)}</span>)}
+      head={head}
+      // Its own line is closed until clicked, as the block it stands for (code that runs shows when opened).
+      items={
+        one
+          ? blockItems.map((i) => (i.kind === "line" ? { ...i, line: { ...i.line, defaultOpen: false } } : i))
+          : blockItems
+      }
+      color={color}
+      label={t("chat.work.block", agentGrammar(agentName))}
+      one={one}
+    />
   );
 }
 
@@ -377,7 +368,12 @@ export function SavedTools({
       )
     : null;
   const items = work ? toolItemsSaved(work) : [];
-  const blockItems = useBlockItems(items);
+  const toolItems = useBlockItems(items);
+  const switched = run.data?.run?.accountSwitch;
+  // It went on with another account: said here, never in the chat.
+  const blockItems: ToolBlockItem[] = switched
+    ? [{ kind: "note", key: "account", node: <AccountSwitchLine move={switched} /> }, ...toolItems]
+    : toolItems;
   // Nothing more to show than the message does: no tools (lookups and reactions aren't counted), or only the ones
   // its own cards show (where it browsed).
   // No `meta.work` (a reply saved before it): a block that loads the run's steps when opened, gone if it called none.
@@ -389,7 +385,7 @@ export function SavedTools({
   // unknown (saved before the server wrote it): kept, it may have failed.
   if (lone && lone.ms !== null && quietLine(lone)) return null;
   if (lone && (!work || oneCall(items) || !items.some((i) => i.kind === "call"))) {
-    const line = blockLine(t, i18n.language, lone, logo(lone));
+    const line = blockLine(t, i18n.language, lone, logo(lone), isPersonal(org));
     const wait = run.isError ? (
       t("chat.work.failed")
     ) : !work ? (

@@ -85,8 +85,13 @@ export function toSystem(entries: MenuEntry[]): { items: SystemItem[]; runs: Map
  */
 export function keepsSystemMenu(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
-  if (target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']")) return true;
+  if (inTextField(target)) return true;
   return !inDesktopApp() && Boolean(target.closest("a[href], img, video, pre, code"));
+}
+
+/** Inside something that takes typing (a field, a select, an editable block). */
+export function inTextField(target: Element): boolean {
+  return target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']") !== null;
 }
 
 /** The text selected where the right click landed (empty when the click was elsewhere). */
@@ -133,8 +138,35 @@ export function setMenuHost(host: ((menu: OpenMenu | null) => void) | null) {
   } else delete w.__agentesContextMenu;
 }
 
-export function openContextMenu(x: number, y: number, raw: MenuEntry[]) {
-  const entries = tidy(raw);
+/**
+ * "Report a problem here" (ADR 0160): the last entry of every menu a right click opens, where the server takes
+ * feedback. Set by the feedback form's host, with the words in the person's language.
+ */
+let reporter: { label: string; run: (target: EventTarget, selected: string) => void } | null = null;
+export function setMenuReporter(next: typeof reporter) {
+  reporter = next;
+}
+
+/** `target`: what the right click landed on; with it the menu ends in the report entry. A button's menu has none. */
+export function openContextMenu(x: number, y: number, raw: MenuEntry[], target?: EventTarget | null) {
+  const report = reporter;
+  // Read now: choosing an entry may drop the selection.
+  const selected = target ? selectedTextAt(target) : "";
+  const entries = tidy(
+    target && report
+      ? [
+          ...raw,
+          { kind: "separator" },
+          {
+            kind: "item",
+            id: "feedback.report",
+            label: report.label,
+            icon: "message",
+            run: () => report.run(target, selected),
+          },
+        ]
+      : raw,
+  );
   if (!entries.length) return;
   const invoke = tauriInvoke();
   if (look === "system" && invoke) {
@@ -158,12 +190,12 @@ export const contextMenusOn = () => show !== null;
 export function contextMenuHandler(build: (e: MouseEvent) => MenuEntry[]) {
   return (e: MouseEvent) => {
     if (e.defaultPrevented || !contextMenusOn() || keepsSystemMenu(e.target)) return;
-    // A long press on touch fires `contextmenu` too: it keeps selecting text (taps have their own menu).
+    // A long press on touch fires `contextmenu` too: the row's own long press answers it (`Message` `menu`).
     if ((e.nativeEvent as PointerEvent).pointerType === "touch" || matchesNow(TOUCH)) return;
     const entries = build(e);
     if (!entries.length) return;
     e.preventDefault();
-    openContextMenu(e.clientX, e.clientY, entries);
+    openContextMenu(e.clientX, e.clientY, entries, e.target);
   };
 }
 

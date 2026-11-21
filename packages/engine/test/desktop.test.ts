@@ -10,11 +10,13 @@ import {
   claudeCodeAvailability,
   computerBrainUnavailable,
   confirmDeviceCode,
+  containersText,
   createJobHandlers,
   createOrganization,
   DEVICE_MAX_PENDING_PER_IP,
   DeviceCodeLimitError,
   denyDeviceCode,
+  devicesText,
   drainOutbox,
   ForbiddenError,
   formatUserCode,
@@ -218,6 +220,8 @@ describe("connecting a computer (device code)", () => {
     const token = await poll();
     if (!token.ok) throw new Error(token.error);
     expect(token).toMatchObject({ machineId: view.id, name: "Mac da Bia", org: { id: f.org.id, name: f.org.name } });
+    // Who may use it as it joined (a person's computer: its owner), named for the computer to say so.
+    expect(token).toMatchObject({ audience: "owner", owner: "bia" });
     expect(token.token).toMatch(/^agm_[A-Za-z0-9_-]{43}$/);
     const [machine] = await f.db.select().from(schema.machines).where(eq(schema.machines.id, view.id));
     expect(machine).toMatchObject({
@@ -317,9 +321,9 @@ describe("pause (protocol 9)", () => {
 
     const [row] = await f.db.select().from(schema.machines).where(eq(schema.machines.id, paired.machineId));
     expect(row).toMatchObject({ paused: true, pausedUntil: new Date(until) });
-    expect((await listMachines(f.db, f.owner.id, f.org.id))[0]?.paused).toEqual({ until });
+    expect((await listMachines(f.db, f.owner.id, f.org.id))[0]?.paused).toEqual({ until, by: null });
     expect((await hub.status(paired.machineId))?.paused).toEqual({ until, timezone: null });
-    expect(events).toContainEqual(expect.objectContaining({ type: "machine.updated", paused: { until } }));
+    expect(events).toContainEqual(expect.objectContaining({ type: "machine.updated", paused: { until, by: null } }));
 
     const refused = hub.call(paired.machineId, { op: "exec", command: "ls", timeoutSeconds: 5, stream: false });
     await expect(refused).rejects.toThrow(MachinePausedError);
@@ -373,7 +377,7 @@ describe("pause (protocol 9)", () => {
     expect(listed?.find((t) => t.name === "run_code")?.description).toContain("The owner paused the computer MacBook");
   });
 
-  test("a computer brain treats a paused computer like an offline one; with fallback on, the API answers", async () => {
+  test("a computer brain treats a paused computer like an offline one, and the API never answers for it", async () => {
     const until = new Date(Date.now() + 3600_000).toISOString();
     const status = (over: Partial<MachineStatus> = {}): MachineStatus => ({
       id: "m1",
@@ -417,24 +421,17 @@ describe("pause (protocol 9)", () => {
       brains: { claude_code: () => brain },
       machines: { status: async (id) => status({ id, orgId: f.org.id }) },
     });
-    await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
+    // Though the workspace has a key: the agent says the computer is paused and waits (until the pause ends, or it
+    // resumes).
+    const asked = await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
       body: "@dev oi",
     });
     await drainOutbox(f.db, handlers);
     expect(seen).toEqual([]);
-    const timeline = await listMessages(f.db, f.owner.id, f.org.id, f.general.id);
-    expect(timeline.at(-1)?.body).toBe("Respondi pela API.");
-    expect(timeline.at(-1)?.meta.brainFallback).toMatchObject({ from: "claude_code", code: "machine_paused" });
-
-    // Fallback off: the agent says the computer is paused and waits (until the pause ends, or it resumes).
-    await f.db.update(schema.agents).set({ brainFallback: false }).where(eq(schema.agents.id, f.agent.id));
-    const again = await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
-      body: "@dev e agora?",
-    });
-    await drainOutbox(f.db, handlers);
-    const [run] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.triggerMessageId, again.id));
+    const [run] = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.triggerMessageId, asked.id));
     expect(run).toMatchObject({ status: "waiting_input", waitingMachineId: paired.machineId });
     const waiting = await listMessages(f.db, f.owner.id, f.org.id, f.general.id);
+    expect(waiting.map((m) => m.body)).not.toContain("Respondi pela API.");
     expect(waiting.at(-1)?.meta).toMatchObject({ brainUnavailable: { code: "machine_paused", resetsAt: until } });
     expect(waiting.at(-1)?.body).toContain("paused");
   });
@@ -465,6 +462,8 @@ describe("the agents frame (protocol 9)", () => {
           name: "Dev",
           locale: "pt-BR",
           look: { color: "rose", eyes: "happy", accessory: "crown" },
+          // On a model, its shell has no sandbox of its own: its containers service may run (ADR 0169).
+          containers: true,
         },
       ],
     });
@@ -694,6 +693,67 @@ describe("folders and tools on the machine (protocol 10)", () => {
     expect(later.some((m) => m.meta.bodyCode === "machine_access_expired")).toBe(true);
   });
 
+  test("a folder an agent waits for waits in the computer owner's inbox, and the answer ends it", async () => {
+    f = await setup({ machines: true, reply: () => ({ chunks: ["Ok"] }) });
+    const hub = f.machineHub as MachineHub;
+    const paired = await pairMachine(deps(), f.owner.id, f.org.id, COMPUTER);
+    const carl = await addMember(f.db, f.org.id, "member", "carl");
+    await grantScopes(f.db, f.org.id, f.agent.id, SANDBOX);
+    await setAgentComputerTarget(deps(), f.owner.id, f.org.id, f.agent.id, paired.machineId);
+    const runner = fakeRunner(hub, (req) => {
+      if (req.op !== "access.request") return undefined;
+      const status = req.path === "/Users/ana/Projects" ? "granted" : "pending";
+      return { ok: true, data: { requestId: req.requestId, status } };
+    });
+    await runner.hello(paired.token, {
+      access: { folders: [{ path: "/Users/ana/Projects", agents: [f.agent.id] }], tools: ACCESS.tools },
+    });
+    const ctx = await runCtx();
+    const folderRows = () =>
+      f.db.select().from(schema.notifications).where(eq(schema.notifications.kind, "device.folder_request"));
+
+    // Already allowed: nothing waits, so nobody's inbox gets a row.
+    await invoke(ctx, "request_folder_access", { path: "/Users/ana/Projects", reason: "o site" });
+    expect(await folderRows()).toEqual([]);
+
+    await invoke(ctx, "request_folder_access", { path: "/Users/ana/Documents", reason: "ler os contratos" });
+    const [asked] = await f.db
+      .select()
+      .from(schema.machineAccessRequests)
+      .where(eq(schema.machineAccessRequests.path, "/Users/ana/Documents"));
+    expect(asked?.status).toBe("pending");
+    const rows = await folderRows();
+    // The person who connected the computer, once, waiting: nobody else (the member is not its owner).
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      orgId: f.org.id,
+      userId: f.owner.id,
+      kind: "device.folder_request",
+      waiting: true,
+      readAt: null,
+      doneAt: null,
+      actors: [{ type: "agent", id: f.agent.id }],
+      source: {
+        machineId: paired.machineId,
+        label: "MacBook",
+        agentId: f.agent.id,
+        requestId: asked?.id,
+        channelId: f.general.id,
+        userId: f.owner.id,
+      },
+      latest: { title: "/Users/ana/Documents", text: "ler os contratos" },
+    });
+    expect(rows.some((r) => r.userId === carl.id)).toBe(false);
+
+    // Answered on the computer: the row stops waiting, and a second decision changes nothing (one row, done).
+    await runner.send({ type: "access.decided", requestId: asked?.id, decision: "denied" });
+    const [settled] = await folderRows();
+    expect(settled?.doneAt).not.toBeNull();
+    await runner.send({ type: "access.decided", requestId: asked?.id, decision: "granted", scope: "agent" });
+    expect(await folderRows()).toHaveLength(1);
+    expect((await folderRows())[0]?.doneAt).not.toBeNull();
+  });
+
   test("the workspace's own computer: nobody to ask, and every refusal says what the agent can do", async () => {
     f = await setup({ machines: true, reply: () => ({ chunks: ["Ok"] }) });
     const hub = f.machineHub as MachineHub;
@@ -783,6 +843,31 @@ describe("folders and tools on the machine (protocol 10)", () => {
     expect(notAllowedMessage("Box", "Grok is turned off", "/srv", true)).toBe("Grok is turned off. Tell the people.");
   });
 
+  test("a person's computer used as a device: folders and tools are that person's to allow, never request_folder_access", () => {
+    const detail = "/Users/sam/Projects is outside your folder (ask for it with request_folder_access)";
+    const mac = { os: "darwin", executors: {} };
+    expect(notAllowedMessage("Sam's Mac", detail, "/Users/sam/Projects", false, mac)).toBe(
+      "/Users/sam/Projects is outside your folder. Only the person at Sam's Mac can allow /Users/sam/Projects, in the agentes.chat app there (Preferences › Folders): tell them, or work inside your own folder.",
+    );
+    expect(notAllowedMessage("Box", detail, "/srv", false, { os: "linux", executors: {} })).toContain(
+      "with `agentes-runner folders allow /srv` there",
+    );
+    expect(notAllowedMessage("Sam's Mac", "Cursor is turned off on this computer", undefined, false, mac)).toBe(
+      "Cursor is turned off on this computer. On Sam's Mac, only the person at it can allow folders or turn tools on: tell them.",
+    );
+  });
+
+  test("a person's Mac among the devices: a screenshot is screencapture through commands, Screen Recording in the app", () => {
+    const phones: { name: string; platform: string }[] = [];
+    const mac = devicesText({ computers: [{ name: "Sam's Mac", os: "darwin" }], phones });
+    expect(mac).toContain("`screencapture -x screen.png`");
+    expect(mac).toContain("Screen Recording in the agentes.chat app there (Preferences › General › Permissions)");
+    // macOS refuses a protected folder with EPERM: a shell says "Operation not permitted", the runner's file tools
+    // "Permission denied".
+    expect(mac).toContain('refused with "Operation not permitted" or "Permission denied" needs Full Disk Access');
+    expect(devicesText({ computers: [{ name: "Box", os: "linux" }], phones })).not.toContain("screencapture");
+  });
+
   test("what the agent reads: its folders, the tools that are off, and the outcome of a request", () => {
     const text = machineAccessText({
       name: "MacBook",
@@ -815,7 +900,10 @@ describe("folders and tools on the machine (protocol 10)", () => {
     expect(system).toStartWith('# Shared folder on "Build box"\n/srv/agentes/shared is shared by every agent');
     expect(system).toContain("~/shared");
     expect(system).toContain("look there first");
-    expect(system).toContain("/srv/agentes/shared/bin (on your PATH there)");
+    // Every agent can write the shared bin/: a tool there is read first and run by its full path, never by name.
+    expect(system).toContain("/srv/agentes/shared/bin is not on your PATH");
+    expect(system).toContain("read it first, then run it by its full path, like /srv/agentes/shared/bin/<tool>");
+    expect(system).not.toContain("on your PATH there");
     // A plain cp keeps the source's mode, which the default ACL then caps the group to: the others couldn't write.
     expect(system).toContain("cp -r --no-preserve=mode");
     expect(system).toContain("mv or a plain cp keeps it private or read-only to the others");
@@ -846,6 +934,17 @@ describe("folders and tools on the machine (protocol 10)", () => {
     );
   });
 
+  test("the containers block: Docker's commands, the agent's own containers, ports above 1024 (ADR 0169)", () => {
+    const text = containersText("Build box");
+    expect(text).toStartWith(
+      '# Containers on "Build box"\ndocker, docker compose, docker buildx and podman work there, rootless',
+    );
+    expect(text).toContain("Root inside a container is yours");
+    expect(text).toContain("never another agent's containers or files");
+    expect(text).toContain("-p 8080:80");
+    expect(text).toContain("restart: always come back");
+  });
+
   test("the sharing block: the agents share the computer, look before something heavy, tell the person (ADR 0057)", () => {
     const text = sharingText("Build box", { cpus: 4, memoryGb: 8 });
     // Most of the memory, not all: the agents together stop where the computer keeps the rest for itself.
@@ -857,6 +956,9 @@ describe("folders and tools on the machine (protocol 10)", () => {
     expect(text).toContain('exit code 137, "Killed"');
     // A finished build's daemons hold their memory for hours unless stopped.
     expect(text).toContain("./gradlew --stop");
+    // Each agent's home is private there: a path handed to another agent leads nowhere.
+    expect(text).toContain("as a git branch or pull request");
+    expect(text).toContain("never as a path in your own home");
     // A size the runner never reported: no numbers.
     expect(sharingText("Build box", null)).toContain("share its CPUs and memory, with no part");
   });

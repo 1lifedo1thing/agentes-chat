@@ -4,10 +4,12 @@ import { CONNECTOR_MARK, OWN_MARK, SERVER_ICON } from "@agenteschat/client/lib/c
 import type { MailChoice } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorDescription, connectorName, scopeText } from "@agenteschat/client/lib/scopes";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import {
   AgentSearching,
   Button,
   Chip,
+  codeAndBold,
   Dialog,
   EmptyState,
   GroupHeading,
@@ -36,6 +38,7 @@ export const CATEGORIES: ConnectorCategory[] = [
   "support",
   "marketing",
   "automation",
+  "social",
 ];
 
 /** Connector search over label, id and description, plus the text shown (`shown`: the name and description in the app's language). */
@@ -377,7 +380,11 @@ export function ConnectorCatalogDialog({
             <>
               {suggested.length > 0 && (
                 <section className="catalog__section" aria-labelledby="catalog-suggested">
-                  <GroupHeading level={3} id="catalog-suggested" title={t("connectors.suggested", { org: org.name })} />
+                  <GroupHeading
+                    level={3}
+                    id="catalog-suggested"
+                    title={t(modeKey(org, "connectors.suggested"), { org: org.name })}
+                  />
                   <ul className="catalog-feat">
                     {suggested.map((e) => (
                       <li key={e.key}>
@@ -449,7 +456,7 @@ export function ConnectorCatalogDialog({
                     </button>
                   </li>
                 </ul>
-                {composioOff && <p className="small muted catalog__note">{composioOff}</p>}
+                {composioOff && <p className="small muted catalog__note">{codeAndBold(composioOff)}</p>}
               </section>
             </>
           )}

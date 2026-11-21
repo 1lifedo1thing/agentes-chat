@@ -1,9 +1,10 @@
 import type { CardDelegate } from "@agenteschat/client";
 import { useUndoRightHand } from "@agenteschat/client";
 import { delegateLine } from "@agenteschat/client/lib/approval-words";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { can } from "@agenteschat/client/lib/permissions";
-import { EventPillAction, Icon } from "@agenteschat/ui";
+import { Button, Icon } from "@agenteschat/ui";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -33,26 +34,35 @@ export function DelegateNote({ d }: { d: CardDelegate | null | undefined }) {
   );
 }
 
-/** "Undo" on what it approved, while it lasts (an action of its pill): for the person it decided for, and admins. */
-export function DelegateUndo({ d }: { d: CardDelegate | null | undefined }) {
+/**
+ * "Undo" on what it approved, while it lasts (in its card's footer): for the person it decided for, and who manages
+ * the agent it made or changed (`agentId`; the server's `undoRightHandDecision`, ADR 0085 addendum of 2026-11-17), so
+ * a private agent's decision shows no Undo to who only holds "Edit agents". Not knowing that agent, the key decides.
+ */
+export function DelegateUndo({ d, agentId }: { d: CardDelegate | null | undefined; agentId?: string | null }) {
   const { t } = useTranslation();
   const { org, me } = useOrg();
+  const dir = useDirectory(org.id);
   const toast = useToast();
   const undo = useUndoRightHand(org.id);
+  const target = agentId ? dir.agentById.get(agentId) : undefined;
+  const manages = target ? managesAgent(target) : can(org, "manage_agents");
   const open =
     d?.state === "approved" &&
     d.decisionId &&
     d.undoUntil &&
     Date.parse(d.undoUntil) > Date.now() &&
-    (d.forUserId === me.user.id || can(org, "manage_agents"));
+    (d.forUserId === me.user.id || manages);
   if (!open || !d.decisionId) return null;
   const id = d.decisionId;
   return (
-    <EventPillAction
+    <Button
+      size="sm"
+      variant="ghost"
       disabled={undo.isPending}
       onClick={() => undo.mutate(id, { onError: (e) => toast.show(errorText(t, e), "error") })}
     >
       {t("rightHandApprovals.card.undo")}
-    </EventPillAction>
+    </Button>
   );
 }

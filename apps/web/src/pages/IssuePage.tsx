@@ -1,26 +1,31 @@
-import type { Issue, IssueActivity, IssuePatch, IssuePriority } from "@agenteschat/client";
+import type { Actor, Issue, IssueActivity, IssuePatch, IssuePriority, WorkView } from "@agenteschat/client";
 import {
   ApiError,
   keys,
   useChannels,
+  useDms,
   useIssue,
   useIssueAction,
   useIssueActivity,
   useIssueColumns,
 } from "@agenteschat/client";
 import { canTalk } from "@agenteschat/client/lib/audience";
+import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
 import { relativeTime, whenAt } from "@agenteschat/client/lib/format";
 import { githubLinkLabel, isGithubLink } from "@agenteschat/client/lib/github-link";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { webUrl } from "@agenteschat/client/lib/guards";
+import { NO_PROJECT } from "@agenteschat/client/lib/issue-projects";
 import { issueEventText } from "@agenteschat/client/lib/issues";
-import { foldSteps } from "@agenteschat/client/lib/work";
+import { can } from "@agenteschat/client/lib/permissions";
+import { foldSteps, shownSteps } from "@agenteschat/client/lib/work";
 import {
   Alert,
   Button,
   Checkbox,
   Chip,
   CriteriaPixels,
+  codeAndBold,
   cx,
   DatePicker,
   DetailsDialog,
@@ -28,24 +33,29 @@ import {
   Field,
   Icon,
   Input,
+  LimitLine,
   Locked,
+  limitShown,
+  Menu,
+  MenuItem,
+  MenuSeparator,
+  overLimit,
+  Popover,
   SavedNote,
   Select,
-  type SelectOption,
   TabPanel,
   Tabs,
   useAutoGrow,
-  useElementWidth,
   WorkSweep,
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { renderIdRef } from "@/chat/IdRef";
 import { ActorAvatar, AgentAvatar } from "@/components/AgentAvatar";
-import { actorFromKey, actorKey, useActors } from "@/components/actors";
+import { actorKey, useActors } from "@/components/actors";
 import { ArtifactCard } from "@/components/artifacts/ArtifactCard";
 import { IssueWorkBlock } from "@/components/BackgroundWork";
 import { EditInPlace, useFocusAtEnd, useSavedFlash, useSent } from "@/components/EditInPlace";
@@ -56,9 +66,12 @@ import { SidePanel } from "@/components/SidePanel";
 import { TaskConversationButton, TaskConversationPanel, TaskConversationSummary } from "@/components/TaskConversation";
 import { IssueWhoSeesDialog, WhoSeesButton } from "@/components/WhoSees";
 import { useWikiLinkRenderer } from "@/components/WikiLinks";
+import { usePersonalView } from "@/hooks/usePersonalView";
+import { useTextLimit } from "@/hooks/useTextLimit";
 import {
   columnIdOf,
   columnsOf,
+  isCustomBoard,
   isOpen,
   PRIORITIES,
   STATUS_ICON,
@@ -72,7 +85,10 @@ import { Markdown } from "@/lib/markdown";
 import { useOpenParam } from "@/lib/open-param";
 import { useToast } from "@/lib/toast";
 import { useIssueRealtime } from "@/realtime/context";
-import { IssueDeleteButton, IssueDeleteProvider } from "./IssueDelete";
+import { AssigneeFaces, AssigneesField } from "./IssueAssignees";
+import { IssueDeleteButton, IssueDeleteProvider, useIssueDeleting } from "./IssueDelete";
+import { NEW_PROJECT, ProjectDialog, useProjectOptions } from "./IssueProjects";
+import { PRIORITY_ICON } from "./IssuesToolbar";
 import "./issues.css";
 
 /** One issue as a page (`/issues/131`); the board opens the same details in its panel. */
@@ -120,6 +136,7 @@ function useIssueSource(i: Issue) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const channels = useChannels(org.id);
+  const dms = useDms(org.id);
   switch (i.source.type) {
     case "message": {
       const { channelId } = i.source;
@@ -134,8 +151,27 @@ function useIssueSource(i: Issue) {
         />
       );
     }
-    case "agent":
-      return t("issues.fromAgent");
+    case "agent": {
+      // Handed from a DM with an agent: a link for whoever reads that DM, the plain words for anyone else.
+      const { channelId, messageId } = i.source;
+      const dm = dms.data?.find((d) => d.channelId === channelId && d.with.type === "agent");
+      if (!dm) return t("issues.fromAgent");
+      return (
+        <Trans
+          i18nKey="issues.fromDm"
+          values={{ name: dm.with.name }}
+          components={[
+            <Link
+              key="l"
+              to="/org/$orgId/dm/agent/$agentId"
+              params={{ orgId: org.id, agentId: dm.with.id }}
+              search={messageId ? { m: messageId } : {}}
+              className="ac-link"
+            />,
+          ]}
+        />
+      );
+    }
     case "webhook":
       return t("issues.fromWebhook", { provider: i.source.provider });
     default:
@@ -145,8 +181,8 @@ function useIssueSource(i: Issue) {
 
 /**
  * An issue opened from the board or the list: the task's own page inside the shared details dialog ("#131" and its
- * title on its bar, which never scrolls away; "abrir em página própria"), wide and always full height so changing
- * tabs never makes it jump.
+ * title on its bar, which never scrolls away, its actions behind ⋯), wide and always full height so changing tabs
+ * never makes it jump.
  */
 export function IssueDialog({
   issue: i,
@@ -159,19 +195,13 @@ export function IssueDialog({
   focusMessageId?: string;
 }) {
   const { t } = useTranslation();
-  const { org } = useOrg();
   // "Conversa 5" (variant B): the conversation as the dialog's right column.
   const focus = focusMessageId;
   const [talk, setTalk] = useState(Boolean(focus));
   return (
     <IssueDeleteProvider onDeleted={onClose}>
       <DetailsDialog
-        actions={
-          <>
-            <IssueDeleteButton issue={i} />
-            <TaskConversationButton issue={i} open={talk} onToggle={() => setTalk((v) => !v)} />
-          </>
-        }
+        more={<IssueMore issue={i} onConversation={() => setTalk((v) => !v)} />}
         side={
           talk ? <TaskConversationPanel issue={i} focusMessageId={focus} onClose={() => setTalk(false)} /> : undefined
         }
@@ -191,16 +221,57 @@ export function IssueDialog({
             el.blur();
           }
         }}
-        page={{
-          label: t("issues.openPage"),
-          render: (props) => (
-            <Link to="/org/$orgId/issues/$number" params={{ orgId: org.id, number: String(i.number) }} {...props} />
-          ),
-        }}
       >
         <IssueDetails issue={i} variant="dialog" onConversation={() => setTalk(true)} />
       </DetailsDialog>
     </IssueDeleteProvider>
+  );
+}
+
+/**
+ * The dialog's actions behind one ⋯ beside the ×, so "#131" and the title keep the bar: its conversation, its own
+ * page, and, after a divider, Excluir tarefa for who may. The conversation also opens from its section in the body.
+ */
+function IssueMore({ issue: i, onConversation }: { issue: Issue; onConversation: () => void }) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const navigate = useNavigate();
+  const { ask, mayDelete } = useIssueDeleting();
+  return (
+    <Menu
+      label={t("issues.moreOptions")}
+      align="end"
+      trigger={
+        <Button
+          variant="ghost"
+          size="sm"
+          iconOnly
+          icon="more"
+          aria-label={t("issues.moreOptions")}
+          title={t("issues.moreOptions")}
+        />
+      }
+    >
+      <MenuItem icon="message" onSelect={onConversation}>
+        {t("issues.conversation.button")}
+      </MenuItem>
+      <MenuItem
+        icon="external"
+        onSelect={() =>
+          void navigate({ to: "/org/$orgId/issues/$number", params: { orgId: org.id, number: String(i.number) } })
+        }
+      >
+        {t("issues.openPage")}
+      </MenuItem>
+      {mayDelete(i) && (
+        <>
+          <MenuSeparator />
+          <MenuItem icon="trash" danger onSelect={() => ask(i)}>
+            {t("issues.delete.action")}
+          </MenuItem>
+        </>
+      )}
+    </Menu>
   );
 }
 
@@ -218,9 +289,9 @@ function IssueBarTitle({ issue: i }: { issue: Issue }) {
 }
 
 /**
- * An issue's details, the same on its page and in the dialog (whose bar has the title): who made it and from where, the title, then tabs
- * (the agent's work, live steps or "stalled" with "Pedir para continuar"; "Pedir a um agente"; description,
- * criteria and who checked them; sub-issues; discussion), and the aside with its fields and links. The title, the
+ * An issue's details, the same on its page and in the dialog (whose bar has the title): who made it and from where, the
+ * title, its fields and links as one strip, then tabs (the agent's work, live steps or "stalled" with "Pedir para
+ * continuar"; "Pedir a um agente"; description, criteria and who checked them; sub-issues; discussion). The title, the
  * description and the criteria are edited where they are, saved on leaving the field ("Salvo" by the source line).
  */
 export function IssueDetails({
@@ -246,68 +317,57 @@ export function IssueDetails({
   const [saved, flashSaved] = useSavedFlash();
   // The files it was created with show under the description (prints, logs): the rest are in "Anexos".
   const createdFiles = list.find((a) => a.event === "created")?.attachments ?? [];
-  // Too narrow for the fields beside the task (its conversation open beside it, a small window): they go on one line
-  // at its top instead of a card under everything. Unmeasured (0) keeps the aside.
-  const [layout, width] = useElementWidth<HTMLDivElement>();
-  const narrow = width > 0 && width <= NARROW_LAYOUT;
   return (
-    <div className="issue-layout" ref={layout}>
-      <div className="issue-details issue-layout__main">
-        <header className="issue-details__head">
-          <span className="small muted tabular">
-            {variant === "page"
-              ? t("issues.createdBy", { number: i.number, name: actors.name(i.createdBy) })
-              : t("issues.createdByShort", { name: actors.name(i.createdBy) })}
-            {from && <> {from}</>}
-            <SavedNote shown={saved} label={t("common.saved")} className="issue-details__saved" />
-          </span>
-          {variant === "page" && <IssueTitle issue={i} onSaved={flashSaved} />}
-        </header>
-        {narrow && <PropsLine issue={i} />}
-        <Tabs
-          value={tab}
-          onValueChange={setTab}
-          label={t("issues.tabs.label")}
-          items={[
-            { value: "details", label: t("issues.tabs.details") },
-            { value: "files", label: t("issues.tabs.files"), count: files.length || undefined },
-            { value: "history", label: t("issues.tabs.history") },
-          ]}
-        >
-          <TabPanel value="details">
-            <WorkBox issue={i} />
-            <IssueWorkBlock issue={i} />
-            {i.assignee?.type !== "agent" && isOpen(i) && <AskAgent issue={i} />}
-            <DetailsSection title={t("issues.description")}>
-              <IssueDescription issue={i} hasFiles={createdFiles.length > 0} onSaved={flashSaved} />
-              {createdFiles.length > 0 && (
-                <div className="artifact-cards issue-description__files">
-                  {createdFiles.map((f) => (
-                    <ArtifactCard key={f.id} artifact={{ id: f.id }} />
-                  ))}
-                </div>
-              )}
-            </DetailsSection>
-            <IssueCriteria issue={i} onSaved={flashSaved} />
-            <IssueSubIssues issue={i} />
-            <DetailsSection title={t("issues.conversation.button")}>
-              <TaskConversationSummary issue={i} onOpen={onConversation} />
-            </DetailsSection>
-          </TabPanel>
-          <TabPanel value="files">
-            <IssueFiles issue={i} activity={list} />
-          </TabPanel>
-          <TabPanel value="history">
-            <History activity={list} loaded={activity.isSuccess} />
-          </TabPanel>
-        </Tabs>
-      </div>
-      {!narrow && (
-        <aside aria-label={t("issues.details")} className="issue-aside">
-          <Details issue={i} />
-          <Links issue={i} />
-        </aside>
-      )}
+    <div className="issue-details">
+      <header className="issue-details__head">
+        <span className="small muted tabular">
+          {variant === "page"
+            ? t("issues.createdBy", { number: i.number, name: actors.name(i.createdBy) })
+            : t("issues.createdByShort", { name: actors.name(i.createdBy) })}
+          {from && <> {from}</>}
+          <SavedNote shown={saved} label={t("common.saved")} className="issue-details__saved" />
+        </span>
+        {variant === "page" && <IssueTitle issue={i} onSaved={flashSaved} />}
+      </header>
+      <PropsLine issue={i} />
+      <Tabs
+        value={tab}
+        onValueChange={setTab}
+        label={t("issues.tabs.label")}
+        items={[
+          { value: "details", label: t("issues.tabs.details") },
+          { value: "files", label: t("issues.tabs.files"), count: files.length || undefined },
+          { value: "history", label: t("issues.tabs.history") },
+        ]}
+      >
+        <TabPanel value="details">
+          <WorkBox issue={i} />
+          {/* Handed work: the box above follows it step by step, asks and ends; the line would say it twice. */}
+          {i.backgroundWork?.how !== "handed" && <IssueWorkBlock issue={i} />}
+          {!i.assignees.some((a) => a.type === "agent") && isOpen(i) && <AskAgent issue={i} />}
+          <DetailsSection title={t("issues.description")}>
+            <IssueDescription issue={i} hasFiles={createdFiles.length > 0} onSaved={flashSaved} />
+            {createdFiles.length > 0 && (
+              <div className="artifact-cards issue-description__files">
+                {createdFiles.map((f) => (
+                  <ArtifactCard key={f.id} artifact={{ id: f.id }} />
+                ))}
+              </div>
+            )}
+          </DetailsSection>
+          <IssueCriteria issue={i} onSaved={flashSaved} />
+          <IssueSubIssues issue={i} />
+          <DetailsSection title={t("issues.conversation.button")}>
+            <TaskConversationSummary issue={i} onOpen={onConversation} />
+          </DetailsSection>
+        </TabPanel>
+        <TabPanel value="files">
+          <IssueFiles issue={i} activity={list} />
+        </TabPanel>
+        <TabPanel value="history">
+          <History activity={list} loaded={activity.isSuccess} />
+        </TabPanel>
+      </Tabs>
     </div>
   );
 }
@@ -349,7 +409,7 @@ function IssueTitle({ issue: i, onSaved }: { issue: Issue; onSaved: () => void }
     );
   return (
     <EditInPlace label={t("issues.edit.title")} onEdit={() => setDraft(title)}>
-      <h1 className="issue-details__title">{title}</h1>
+      <h1 className="issue-details__title">{codeAndBold(title)}</h1>
     </EditInPlace>
   );
 }
@@ -366,8 +426,10 @@ function IssueDescription({ issue: i, hasFiles, onSaved }: { issue: Issue; hasFi
   const ref = useFocusAtEnd<HTMLTextAreaElement>(draft !== null);
   // As tall as its text where the engine can't size it from CSS (`field-sizing`, which the Mac app's WebKit lacks).
   useAutoGrow(ref, draft ?? "", draft !== null);
+  const limit = useTextLimit(FIELD_LIMITS.issueDescription);
   const save = () => {
-    if (draft === null) return;
+    // Past its limit it stays open, the line under it saying so: nothing is saved cut.
+    if (draft === null || overLimit(draft, limit)) return;
     const next = draft.trim();
     setDraft(null);
     if (next === description.trim()) return;
@@ -386,7 +448,8 @@ function IssueDescription({ issue: i, hasFiles, onSaved }: { issue: Issue; hasFi
             className="issue-new__text"
             rows={4}
             value={draft}
-            maxLength={50_000}
+            aria-invalid={overLimit(draft, limit) || undefined}
+            aria-describedby={limitShown(draft, limit) ? `issue-description-${i.id}-limit` : undefined}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={save}
             onKeyDown={(e) => {
@@ -398,6 +461,7 @@ function IssueDescription({ issue: i, hasFiles, onSaved }: { issue: Issue; hasFi
             aria-label={t("issues.description")}
           />
         </div>
+        <LimitLine id={`issue-description-${i.id}-limit`} value={draft} limit={limit} />
         <p className="issue-new__hint small muted">{t("issues.edit.hint")}</p>
       </>
     );
@@ -566,11 +630,15 @@ function IssueSubIssues({ issue: i }: { issue: Issue }) {
             <Link to="/org/$orgId/issues/$number" params={{ orgId: org.id, number: String(s.number) }}>
               <span className="issue-subl__num">#{s.number}</span>
               <span className="issue-subl__tx">{s.title}</span>
-              {s.assignee && (
-                <span className="issue-subl__who">
-                  <ActorAvatar actor={s.assignee} name={actors.name(s.assignee)} size="xs" />
-                  {actors.name(s.assignee)}
-                </span>
+              {s.assignees.length > 1 ? (
+                <AssigneeFaces all={s.assignees} size="xs" />
+              ) : (
+                s.assignees[0] && (
+                  <span className="issue-subl__who">
+                    <ActorAvatar actor={s.assignees[0]} name={actors.name(s.assignees[0])} size="xs" />
+                    {actors.name(s.assignees[0])}
+                  </span>
+                )
               )}
               <Chip icon={STATUS_ICON[s.status]}>{t(`issues.status.${s.status}`)}</Chip>
             </Link>
@@ -581,7 +649,7 @@ function IssueSubIssues({ issue: i }: { issue: Issue }) {
   );
 }
 
-/** The assigned agent's work: live steps (with Parar) or stalled (with "Pedir para continuar"). */
+/** The work of the agent whose run it is (`work.agentId`): live steps (with "Stop") or stalled (with "Ask to continue"). */
 function WorkBox({ issue: i }: { issue: Issue }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
@@ -597,19 +665,21 @@ function WorkBox({ issue: i }: { issue: Issue }) {
     onSettled: () => void qc.invalidateQueries({ queryKey: keys.issues(org.id) }),
   });
   const w = i.work;
-  if (!w || !i.assignee || i.assignee.type !== "agent") return null;
-  const name = actors.name(i.assignee);
+  const handed = i.backgroundWork?.how === "handed" ? i.backgroundWork : null;
+  if (!w) return handed?.status === "done" ? <HandedDoneBox issue={i} work={handed} /> : null;
+  const name = actors.name({ type: "agent", id: w.agentId });
   const g = agentGrammar(name);
   const stalled = w.state === "stalled";
   const waiting = w.state === "waiting_approval" || w.state === "waiting_input";
   const when = relativeTime(t, i18n.language, w.since);
-  const last = w.steps.at(-1);
-  const lines = foldSteps(w.steps, stepText);
+  const steps = shownSteps(w.steps);
+  const last = steps.at(-1);
+  const lines = foldSteps(steps, stepText);
   return (
     <section className={cx("issue-work", stalled && "is-stalled")} aria-label={t("issues.work.label", g)}>
       <div className="issue-work__head ac-iconline">
         <AgentAvatar
-          agentId={i.assignee.id}
+          agentId={w.agentId}
           name={name}
           size="sm"
           running={w.state === "running"}
@@ -652,7 +722,7 @@ function WorkBox({ issue: i }: { issue: Issue }) {
               loading={action.isPending}
               onClick={() =>
                 action.mutate(
-                  { type: "ask", id: i.id, agentId: i.assignee?.id ?? "" },
+                  { type: "ask", id: i.id, agentId: w.agentId },
                   { onSuccess: () => toast.show(t("issues.work.resumed", g)) },
                 )
               }
@@ -679,7 +749,67 @@ function WorkBox({ issue: i }: { issue: Issue }) {
           </ol>
         )
       )}
+      {handed?.question && w.state === "waiting_input" && <HandedAsk work={handed} />}
       {!stalled && <WorkSweep color={color(i) ?? "sky"} waiting={waiting} />}
+    </section>
+  );
+}
+
+/** Where a handed work's card waits for an answer: the person's DM with the agent that handed it, else its channel. */
+function useOpenAsk(work: WorkView) {
+  const { org } = useOrg();
+  const dms = useDms(org.id);
+  const navigate = useNavigate();
+  const dm = dms.data?.find((d) => d.channelId === work.channelId && d.with.type === "agent");
+  const m = work.question?.messageId ?? undefined;
+  return () =>
+    dm
+      ? void navigate({
+          to: "/org/$orgId/dm/agent/$agentId",
+          params: { orgId: org.id, agentId: dm.with.id },
+          search: m ? { m } : {},
+        })
+      : void navigate({
+          to: "/org/$orgId/c/$channelId",
+          params: { orgId: org.id, channelId: work.channelId },
+          search: m ? { m } : {},
+        });
+}
+
+/** A handed work waiting on the reader: its question, and one way to answer it where its card is. */
+function HandedAsk({ work }: { work: WorkView }) {
+  const { t } = useTranslation();
+  const open = useOpenAsk(work);
+  if (!work.question) return null;
+  return (
+    <>
+      <p className="issue-work__ask">{work.question.text}</p>
+      <div className="issue-work__actions">
+        <Button size="sm" variant="primary" icon="message" onClick={open}>
+          {t("issues.work.answer")}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/** A handed work that finished: who did it, when, who handed it, and the first line of what came of it. */
+function HandedDoneBox({ issue: i, work }: { issue: Issue; work: WorkView }) {
+  const { t, i18n } = useTranslation();
+  const actors = useActors();
+  const name = actors.name({ type: "agent", id: work.agentId });
+  const by = work.handedBy ? actors.name({ type: "agent", id: work.handedBy.agentId }) : null;
+  const when = relativeTime(t, i18n.language, work.finishedAt ?? i.updatedAt);
+  return (
+    <section className="issue-work" aria-label={t("issues.work.label", agentGrammar(name))}>
+      <div className="issue-work__head ac-iconline">
+        <AgentAvatar agentId={work.agentId} name={name} size="sm" state="idle" />
+        <span className="issue-work__text">
+          <b>{t("issues.work.finishedTitle", { name })}</b>
+          <small>{by ? t("issues.work.finishedMeta", { when, name: by }) : when}</small>
+        </span>
+      </div>
+      {work.result && <p className="issue-work__result">{work.result.text}</p>}
     </section>
   );
 }
@@ -747,7 +877,7 @@ function History({ activity, loaded }: { activity: IssueActivity[]; loaded: bool
           <div key={a.id} className="issue-event ac-iconline small muted">
             <Icon name={a.event === "agent_asked" ? "agent" : "waiting"} size={16} />
             <span>
-              <b className="issue-event__who">{actors.name(a.author)}</b> {issueEventText(t, a)}
+              <b className="issue-event__who">{actors.name(a.author)}</b> {issueEventText(t, a, actors.name)}
               {a.auto && (
                 <Chip icon="repeat" className="issue-event__auto" title={t("issues.autoHint")}>
                   {t("issues.auto")}
@@ -784,28 +914,31 @@ function History({ activity, loaded }: { activity: IssueActivity[]; loaded: bool
   );
 }
 
-/** The details' width under which its fields leave the side for the line at the top (the old container query's). */
-const NARROW_LAYOUT = 803;
-
-/** What a task's four fields offer and how each changes it, for the aside and for the line at the top. */
+/** What a task's fields offer and how each changes it, for the strip at its top. */
 function useIssueFields(i: Issue) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
-  const actors = useActors();
   const action = useIssueAction(org.id);
   const columns = useIssueColumns(org.id).data ?? [];
   const title = useColumnTitle();
   const stageName = useStageName();
+  const custom = isCustomBoard(columns);
   const update = (patch: IssuePatch) => action.mutate({ type: "update", id: i.id, patch });
+  const [picked, setPicked] = useState<Actor[] | null>(null);
+  const saved = i.assignees.map(actorKey).join(" ");
+  useEffect(() => {
+    if (picked && picked.map(actorKey).join(" ") === saved) setPicked(null);
+  }, [picked, saved]);
   return {
     column: {
       value: columnIdOf(i, columns) ?? undefined,
-      // Every column, grouped by stage (also the keyboard way to move a card).
+      // Every column (also the keyboard way to move a card), under its stage's name only on a customized board: on
+      // the plain one each column is its stage, and the name over it said it twice.
       options: STATUSES.flatMap((s) =>
         columnsOf(columns, s).map((c) => ({
           value: c.id,
           label: title(c),
-          group: stageName(s),
+          ...(custom ? { group: stageName(s) } : {}),
           leading: <Icon name={STATUS_ICON[s]} size={16} />,
         })),
       ),
@@ -814,13 +947,20 @@ function useIssueFields(i: Issue) {
       placeholder: stageName(i.status),
     },
     who: {
-      value: actorKey(i.assignee),
-      options: actors.options(true, actorKey(i.assignee)),
-      onChange: (v: string) => update({ assignee: actorFromKey(v) }),
+      // What was just picked shows until the task comes back with it: each pick saves at once, the next builds on it.
+      value: picked ?? i.assignees,
+      onChange: (assignees: Actor[]) => {
+        setPicked(assignees);
+        action.mutate({ type: "update", id: i.id, patch: { assignees } }, { onError: () => setPicked(null) });
+      },
     },
     priority: {
       value: i.priority,
-      options: PRIORITIES.map((p) => ({ value: p, label: t(`issues.priority.${p}`) })),
+      options: PRIORITIES.map((p) => ({
+        value: p,
+        label: t(`issues.priority.${p}`),
+        leading: <Icon name={PRIORITY_ICON[p]} size={16} />,
+      })),
       onChange: (v: string) => update({ priority: v as IssuePriority }),
     },
     due: {
@@ -839,68 +979,50 @@ function useIssueFields(i: Issue) {
   };
 }
 
-/** Column, who, priority and due date, at the top of the aside (on the page and in the dialog). */
-function Details({ issue: i }: { issue: Issue }) {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const f = useIssueFields(i);
-  const [choosing, setChoosing] = useState(false);
-  return (
-    <>
-      <Field label={t("issues.column")} id={`is-col-${i.id}`}>
-        <Select
-          size="sm"
-          value={f.column.value}
-          onValueChange={f.column.onChange}
-          options={f.column.options}
-          placeholder={f.column.placeholder}
-        />
-      </Field>
-      <Field label={t("issues.form.assignee")} id={`is-who-${i.id}`}>
-        <Select size="sm" value={f.who.value} onValueChange={f.who.onChange} options={f.who.options} />
-      </Field>
-      <Field label={t("whoSees.label")} id={`is-who-sees-${i.id}`}>
-        <WhoSeesButton select value={i.audience ?? { mode: "everyone" }} onClick={() => setChoosing(true)} />
-        {choosing && <IssueWhoSeesDialog issue={i} onClose={() => setChoosing(false)} />}
-      </Field>
-      <Field label={t("issues.form.priority")} id={`is-pri-${i.id}`}>
-        <Select size="sm" value={f.priority.value} onValueChange={f.priority.onChange} options={f.priority.options} />
-      </Field>
-      <Field label={t("issues.due")} id={`is-due-${i.id}`}>
-        <DatePicker size="sm" {...f.due} />
-        {i.dueDate && (
-          <Link to="/org/$orgId/calendar" params={{ orgId: org.id }} className="ac-link small issue-due__link">
-            {t("issues.seeCalendar")}
-          </Link>
-        )}
-      </Field>
-    </>
-  );
+/**
+ * Whether a task shows "Who sees it": always, but alone in a personal workspace only once it says anything but
+ * everyone (ADR 0159): nobody else is there to see it.
+ */
+function useWhoSeesShown(i: Issue) {
+  const { solo } = usePersonalView();
+  return !solo || (i.audience?.mode ?? "everyone") !== "everyone";
 }
 
 /**
- * The same four fields where the aside doesn't fit beside the task (its conversation open beside it, a small
- * window): one line of compact buttons at the top, each its icon and value (its name on hover and to a screen
- * reader), then the task's GitHub link, pull requests and labels. With no link yet, pasting one is the aside's.
+ * The task's fields as one strip under who made it, at every width: Projeto, Coluna, Responsável, Prioridade, Prazo and Quem
+ * vê, each its icon or face and its value (its name on hover and to a screen reader), then after a hairline its pull
+ * requests, labels and GitHub link. With no link yet, "GitHub" opens the field to paste one.
  */
 function PropsLine({ issue: i }: { issue: Issue }) {
   const { t } = useTranslation();
+  const { org } = useOrg();
   const actors = useActors();
   const f = useIssueFields(i);
   const [choosing, setChoosing] = useState(false);
-  const withLeading = (o: SelectOption) => (
-    <span className="issue-prop__value">
-      {o.leading}
-      {o.label}
-    </span>
-  );
+  const [newProject, setNewProject] = useState(false);
+  const action = useIssueAction(org.id);
+  const setProject = (projectId: string | null) => action.mutate({ type: "update", id: i.id, patch: { projectId } });
+  const projectOptions = useProjectOptions(i.project, can(org, "post"));
+  const whoSees = useWhoSeesShown(i);
   const prop = (label: string, control: ReactNode) => (
     <span className="issue-prop" title={label}>
       {control}
     </span>
   );
   return (
-    <div className="issue-props">
+    // biome-ignore lint/a11y/useSemanticElements: a labelled row of controls that change at once, not a form's fieldset
+    <div className="ac-props issue-props" role="group" aria-label={t("issues.details")}>
+      {prop(
+        t("issues.projects.label"),
+        <Select
+          size="sm"
+          aria-label={t("issues.projects.label")}
+          value={i.project?.id ?? NO_PROJECT}
+          onValueChange={(v) => (v === NEW_PROJECT ? setNewProject(true) : setProject(v === NO_PROJECT ? null : v))}
+          options={projectOptions}
+        />,
+      )}
+      {newProject && <ProjectDialog onClose={() => setNewProject(false)} onDone={(p) => setProject(p.id)} />}
       {prop(
         t("issues.column"),
         <Select
@@ -910,20 +1032,9 @@ function PropsLine({ issue: i }: { issue: Issue }) {
           onValueChange={f.column.onChange}
           options={f.column.options}
           placeholder={f.column.placeholder}
-          renderValue={withLeading}
         />,
       )}
-      {prop(
-        t("issues.form.assignee"),
-        <Select
-          size="sm"
-          aria-label={t("issues.form.assignee")}
-          value={f.who.value}
-          onValueChange={f.who.onChange}
-          options={f.who.options}
-          renderValue={withLeading}
-        />,
-      )}
+      {prop(t("issues.form.assignee"), <AssigneesField value={f.who.value} onChange={f.who.onChange} />)}
       {prop(
         t("issues.form.priority"),
         <Select
@@ -932,25 +1043,42 @@ function PropsLine({ issue: i }: { issue: Issue }) {
           value={f.priority.value}
           onValueChange={f.priority.onChange}
           options={f.priority.options}
-          renderValue={(o) => withLeading({ ...o, leading: <Icon name="flag" size={16} /> })}
         />,
       )}
-      {prop(t("issues.due"), <DatePicker size="sm" short aria-label={t("issues.due")} {...f.due} />)}
       {prop(
-        t("whoSees.label"),
-        <WhoSeesButton value={i.audience ?? { mode: "everyone" }} onClick={() => setChoosing(true)} />,
+        t("issues.due"),
+        <DatePicker
+          size="sm"
+          short
+          aria-label={t("issues.due")}
+          {...f.due}
+          footer={
+            i.dueDate && (
+              <Link to="/org/$orgId/calendar" params={{ orgId: org.id }} className="ac-link">
+                {t("issues.seeCalendar")}
+              </Link>
+            )
+          }
+        />,
       )}
+      {whoSees &&
+        prop(
+          t("whoSees.label"),
+          <WhoSeesButton select value={i.audience ?? { mode: "everyone" }} onClick={() => setChoosing(true)} />,
+        )}
       {choosing && <IssueWhoSeesDialog issue={i} onClose={() => setChoosing(false)} />}
-      {(i.pullRequests.length > 0 || i.labels.length > 0 || i.githubUrl) && (
-        <span className="issue-props__sep" aria-hidden="true" />
-      )}
-      {i.githubUrl && <GithubLink issue={i} />}
+      <span className="ac-props__sep" aria-hidden="true" />
       {i.pullRequests.map((pr) => (
-        <a key={pr.number} href={webUrl(pr.url)} target="_blank" rel="noopener noreferrer" className="issue-link">
-          <Icon name="pullRequest" size={16} />
-          {pr.openedBy
-            ? t("issues.prBy", { number: pr.number, name: actors.name(pr.openedBy) })
-            : t("issues.pr", { number: pr.number })}
+        <a
+          key={pr.number}
+          href={webUrl(pr.url)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="issue-link"
+          title={pr.openedBy ? t("issues.prBy", { number: pr.number, name: actors.name(pr.openedBy) }) : undefined}
+        >
+          <GitHubMark />
+          {t("issues.pr", { number: pr.number })}
         </a>
       ))}
       {i.labels.map((l) => (
@@ -958,19 +1086,29 @@ function PropsLine({ issue: i }: { issue: Issue }) {
           {l}
         </span>
       ))}
+      <GithubLink issue={i} />
     </div>
   );
 }
 
-/** The GitHub issue or pull request the task is about: a field to paste it, then a chip that opens it. */
+/** The GitHub issue or pull request the task is about: a chip that opens it and its ×, or "GitHub" to paste one. */
 function GithubLink({ issue: i }: { issue: Issue }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const action = useIssueAction(org.id);
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [invalid, setInvalid] = useState(false);
   const save = (githubUrl: string | null) =>
-    action.mutate({ type: "update", id: i.id, patch: { githubUrl } }, { onSuccess: () => setText("") });
+    action.mutate(
+      { type: "update", id: i.id, patch: { githubUrl } },
+      {
+        onSuccess: () => {
+          setText("");
+          setOpen(false);
+        },
+      },
+    );
   const submit = () => {
     const url = text.trim();
     if (action.isPending) return;
@@ -999,64 +1137,57 @@ function GithubLink({ issue: i }: { issue: Issue }) {
     );
   }
   return (
-    <Locked when={action.isPending}>
-      <Field
-        className="issue-github__field"
-        label={t("issues.github.label")}
-        id={`is-github-${i.id}`}
-        error={invalid ? t("issues.github.invalid") : undefined}
-      >
-        <Input
-          type="url"
-          inputMode="url"
-          spellCheck={false}
-          value={text}
-          placeholder={t("issues.github.placeholder")}
-          onChange={(e) => {
-            setText(e.target.value);
-            setInvalid(false);
-          }}
-          onBlur={submit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-          }}
-        />
-      </Field>
-    </Locked>
-  );
-}
-
-/** Pull requests and labels (files are in "Anexos"). */
-function Links({ issue: i }: { issue: Issue }) {
-  const { t } = useTranslation();
-  const actors = useActors();
-  return (
-    <>
-      <div className="issue-aside__item">
-        <span className="ac-field__label">{t("issues.links")}</span>
-        {i.pullRequests.length === 0 && !i.githubUrl && <span className="small muted">{t("issues.noLinks")}</span>}
-        {i.pullRequests.map((pr) => (
-          <a key={pr.number} href={webUrl(pr.url)} target="_blank" rel="noopener noreferrer" className="issue-link">
-            <Icon name="pullRequest" size={16} />
-            {pr.openedBy
-              ? t("issues.prBy", { number: pr.number, name: actors.name(pr.openedBy) })
-              : t("issues.pr", { number: pr.number })}
-          </a>
-        ))}
-        <GithubLink issue={i} />
-      </div>
-      {i.labels.length > 0 && (
-        <div className="issue-aside__item">
-          <span className="ac-field__label">{t("issues.labels")}</span>
-          <span className="row" style={{ gap: 6 }}>
-            {i.labels.map((l) => (
-              <span key={l} className="ac-chip issue-label">
-                {l}
-              </span>
-            ))}
-          </span>
-        </div>
-      )}
-    </>
+    <Popover
+      label={t("issues.github.add")}
+      side="bottom"
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setInvalid(false);
+      }}
+      className="issue-github__pop"
+      trigger={
+        <Button
+          size="sm"
+          variant="ghost"
+          icon="plus"
+          aria-label={t("issues.github.add")}
+          title={t("issues.github.add")}
+        >
+          GitHub
+        </Button>
+      }
+    >
+      <Locked when={action.isPending}>
+        <Field
+          className="issue-github__field"
+          label={t("issues.github.label")}
+          id={`is-github-${i.id}`}
+          error={invalid ? t("issues.github.invalid") : undefined}
+        >
+          <Input
+            type="url"
+            inputMode="url"
+            spellCheck={false}
+            value={text}
+            placeholder={t("issues.github.placeholder")}
+            onChange={(e) => {
+              setText(e.target.value);
+              setInvalid(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              submit();
+            }}
+          />
+        </Field>
+        <span className="issue-github__acts">
+          <Button size="sm" variant="primary" loading={action.isPending} onClick={submit}>
+            {t("common.save")}
+          </Button>
+        </span>
+      </Locked>
+    </Popover>
   );
 }

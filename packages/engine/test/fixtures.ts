@@ -4,6 +4,7 @@ import {
   createMemoryBlobStore,
   createMemoryPubSub,
   createPostgresSearchResolver,
+  type ErrorReporter,
   type GifProvider,
   type KeyWrapper,
   noPlatformCredentials,
@@ -48,6 +49,7 @@ import {
   createPermissionToolSource,
   createReactToolSource,
   createSandboxToolSource,
+  createSayNowToolSource,
   createScheduleToolSource,
   createSkillToolSource,
   createToolGateway,
@@ -55,6 +57,7 @@ import {
   createWorkToolSource,
   type FakeScheduleAnswer,
   type FakeScheduleAnswers,
+  type GatewayEmbeddings,
   localDateTimeOf,
   type RunExecutorDeps,
   type SandboxDeps,
@@ -65,7 +68,7 @@ import {
   type WorkspaceComputer,
   zonedParts,
 } from "../src";
-import { listenLiveSteering } from "../src/live-steer";
+import { type LiveSteeringHooks, listenLiveSteering } from "../src/live-steer";
 
 export const SECRET = "test-secret-".padEnd(48, "x");
 
@@ -110,6 +113,15 @@ export async function adminRoleId(db: Database, orgId: string) {
 export async function makeAdmin(db: Database, orgId: string, userId: string) {
   const roleId = await adminRoleId(db, orgId);
   await db.insert(schema.organizationMemberRoles).values({ orgId, userId, roleId }).onConflictDoNothing();
+}
+
+/** Takes `key` off the workspace's base role ("Todos"), as an admin may in Cargos. */
+export async function everyoneWithout(db: Database, orgId: string, key: string) {
+  await ensureRoles(db, orgId);
+  await db
+    .update(schema.orgRoles)
+    .set({ permissions: sql`array_remove(${schema.orgRoles.permissions}, ${key}::text)` })
+    .where(and(eq(schema.orgRoles.orgId, orgId), eq(schema.orgRoles.kind, "everyone")));
 }
 
 export async function addMember(db: Database, orgId: string, role: TestRole, name: string = role) {
@@ -180,6 +192,11 @@ export async function setup(
     /** Add the built-in `react` tool. */
     react?: boolean;
     /**
+     * Add the built-in `say_now` tool (ADR 0207): one short line before slow work. Off by default, so the prompts and
+     * tool lists other tests pin stay as they are.
+     */
+    sayNow?: boolean;
+    /**
      * Add the built-in `send_gif` and `send_sticker` tools (ADR 0091), with `gifs` as the server's GIF search (also
      * `post_message`'s `gif`).
      */
@@ -199,8 +216,13 @@ export async function setup(
     calendarTools?: boolean;
     /** Add the skill tools (load_skill, read_skill_file). */
     skillTools?: boolean;
-    /** Fake embeddings (hybrid search). Off: full-text only, no embedding usage rows. */
-    embeddings?: boolean;
+    /**
+     * Embeddings (hybrid search): `true`, the fake for every kind; an object sets the provider (the fake when left
+     * out), the kinds that get vectors and the query's timeout. Off: full-text only, no embedding usage rows.
+     */
+    embeddings?: boolean | Partial<Omit<GatewayEmbeddings, "apiKey">>;
+    /** Where the gateway reports an embeddings outage. */
+    errors?: ErrorReporter;
     /** Add the scheduling tools (schedule_reminder, create_routine…). */
     scheduleTools?: boolean;
     /** Keep the workspace's right hand (ADR 0137). Off: its only agent is `@dev`. */
@@ -237,6 +259,8 @@ export async function setup(
     workTools?: boolean;
     /** Long work's safety net (ADR 0121 §1). None: off (no test moves by accident). */
     workAuto?: { afterMs?: number; afterCalls?: number; minMs?: number; tickMs?: number };
+    /** Brains the jobs think with besides the model brain (computer brains). None: a computer brain's turn waits. */
+    brains?: RunExecutorDeps["brains"];
   } = {},
 ) {
   const { db, close } = await createTestDatabase();
@@ -286,7 +310,10 @@ export async function setup(
     // Every provider but OpenAI answers through `provider`.
     providers: { ...Object.fromEntries(PROVIDER_IDS.map((id) => [id, provider])), openai: openaiProvider },
     platformCredentials: options.platform ?? noPlatformCredentials,
-    embeddings: options.embeddings ? { provider: embeddings, apiKey: "test" } : undefined,
+    embeddings: options.embeddings
+      ? { provider: embeddings, apiKey: "test", ...(options.embeddings === true ? {} : options.embeddings) }
+      : undefined,
+    errors: options.errors,
   });
   const search = createPostgresSearchResolver(db);
   const context: ContextDeps = {
@@ -341,6 +368,7 @@ export async function setup(
         ]
       : []),
     ...(options.react ? [createReactToolSource({ pubsub })] : []),
+    ...(options.sayNow ? [createSayNowToolSource({ pubsub })] : []),
     ...(options.mediaTools ? [createMediaToolSource({ pubsub, gifs: options.gifs ?? null })] : []),
     ...(options.followUps ? [createFollowUpToolSource({ pubsub })] : []),
     ...(options.workTools ? [createWorkToolSource({ pubsub })] : []),
@@ -398,7 +426,6 @@ export async function setup(
     contextMessages: 30,
     workspaceComputer: options.workspaceComputer,
     maxHops: 100,
-    deltaFlushMs: 0,
     tools,
     context,
     search,
@@ -413,6 +440,7 @@ export async function setup(
     workAutoAfterCalls: options.workAuto?.afterCalls ?? 100_000,
     workAutoMinMs: options.workAuto?.minMs,
     workTickMs: options.workAuto?.tickMs ?? 60_000,
+    ...(options.brains ? { brains: options.brains } : {}),
   };
   const handlers = createJobHandlers(jobDeps);
 
@@ -458,7 +486,8 @@ export type Fixture = Awaited<ReturnType<typeof setup>>;
 /**
  * What the executor of a run set to `running` by hand would do: answer a message steered into the run at once
  * (no turn takes it here, so it stays in the run's inbox). Unanswered, posting that message waits out
- * `LIVE_STEER_WAIT_MS`, 3 s of real time.
+ * `LIVE_STEER_WAIT_MS`, 3 s of real time. `hooks`: the executor's own (its inbox, its background work), for a test
+ * that hands it a turn.
  */
-export const answerSteering = (f: Fixture, run: AgentRun) =>
-  listenLiveSteering(f, run, null, { take: async () => [], onRead: () => {} });
+export const answerSteering = (f: Fixture, run: AgentRun, hooks: Partial<LiveSteeringHooks> = {}) =>
+  listenLiveSteering(f, run, null, { take: async () => [], onRead: () => {}, ...hooks });

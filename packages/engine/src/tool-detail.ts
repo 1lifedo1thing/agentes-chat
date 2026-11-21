@@ -1,7 +1,9 @@
 import {
   commandOf,
   commandWords,
+  errorLineOf,
   KEY_SHAPES,
+  maskValuesAfter,
   normalizedCommand,
   PERMISSION_TOOL,
   PRIVATE_KEY,
@@ -9,6 +11,7 @@ import {
   SIGNED_SHAPES,
 } from "@agenteschat/adapters";
 import { and, type Database, eq, isNull, schema } from "@agenteschat/db";
+import { clipText } from "@agenteschat/ui/widgets/spec";
 
 const MAX = 80;
 
@@ -47,6 +50,10 @@ function promptAsked(i: Record<string, unknown>): { tool: string; input: Record<
 /** The runner asking again about a command waiting on a person: no step of its own, its answer is the first ask's. */
 export const promptPoll = (name: string, input: Record<string, unknown> | undefined) =>
   name === PERMISSION_TOOL && typeof input?.request_id === "string";
+
+/** The runner telling of a call its own command policy refused (`refused`): recorded, never asked, held or judged. */
+export const promptRefused = (name: string, input: Record<string, unknown> | undefined) =>
+  name === PERMISSION_TOOL && typeof input?.refused === "object" && input.refused !== null;
 
 /**
  * `permission_prompt`'s answer: `{behavior}` when decided (a `deny` says why: `message` to the agent, `code` for
@@ -130,6 +137,9 @@ export function toolDetail(name: string, input: Record<string, unknown> | undefi
     case "comment_issue":
       return issueRef(i.issue);
     case "create_artifact":
+    case "create_spreadsheet":
+    case "create_presentation":
+    case "create_canvas":
       return short(i.title);
     case "update_artifact":
       return short(i.title);
@@ -156,6 +166,23 @@ export function toolDetail(name: string, input: Record<string, unknown> | undefi
   }
 }
 
+/** The input naming the file each Drive tool works on: `artifact_id`, a live file's `file` (ADR 0196), a canvas. */
+const FILE_FIELD: Readonly<Record<string, string>> = {
+  read_artifact: "artifact_id",
+  update_artifact: "artifact_id",
+  share_artifact: "artifact_id",
+  import_file: "artifact_id",
+  read_spreadsheet: "file",
+  edit_spreadsheet: "file",
+  read_presentation: "file",
+  edit_presentation: "file",
+  read_canvas: "file",
+  edit_canvas: "file",
+  read_document: "file",
+  edit_document: "file",
+  generate_image: "canvas",
+};
+
 /** Drive tools by id: the file's title, only when it belongs to this same channel (so no title leaks elsewhere). */
 export async function artifactToolDetail(
   db: Database,
@@ -164,8 +191,9 @@ export async function artifactToolDetail(
   name: string,
   input: Record<string, unknown> | undefined,
 ): Promise<string | undefined> {
-  if (!["read_artifact", "update_artifact", "share_artifact", "import_file"].includes(name)) return undefined;
-  const id = input?.artifact_id;
+  const field = Object.hasOwn(FILE_FIELD, name) ? FILE_FIELD[name] : undefined;
+  if (!field) return undefined;
+  const id = input?.[field];
   if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) return undefined;
   const [a] = await db
     .select({ title: schema.artifacts.title, channelId: schema.artifacts.channelId })
@@ -178,6 +206,13 @@ export async function artifactToolDetail(
 const SECRET = new RegExp(`${KEY_SHAPES.source}|${SIGNED_SHAPES.source}`, "g");
 
 export const maskSecrets = (text: string) => text.replace(SECRET, "••••");
+
+/** `text` with each of `values` masked wherever it appears, the longest first: secrets known by value, of any shape. */
+export const maskValues = (text: string, values: readonly string[]) =>
+  values
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length)
+    .reduce((masked, value) => masked.replaceAll(value, "••••"), text);
 
 /**
  * Whether a value carries a credential by its format (an API key, a token, a private key): what a run
@@ -220,18 +255,39 @@ export function scrubSignIns(text: string, note: string): { text: string; found:
     return note;
   };
   const out = text
-    .replace(SIGN_IN_FIELD, (_match, field: string) => `${field}${hit()}`)
+    // A value already scrubbed stays as it is, so scrubbing twice changes nothing: only when what matched is the
+    // note's own start and nothing more (the note in front of a real value hides nothing).
+    .replace(SIGN_IN_FIELD, (match, field: string, value: string, at: number, all: string) =>
+      note.startsWith(value) && all.startsWith(note, at + field.length) ? match : `${field}${hit()}`,
+    )
     .replace(PRIVATE_KEY_BLOCK, hit)
     .replace(SECRET, hit)
     .replace(SIGN_IN_SHAPES, hit);
   return { text: out, found };
 }
 
-/** An address's user and password (`postgres://user:pass@host`). */
-const USERINFO = /\b([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@'"]+@/gi;
-/** The value after an option named for a secret (`--password hunter2`, `--api-key k`). */
-const SECRET_OPTION =
-  /(?<!\S)(--?[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*\s+)("[^"]*"|'[^']*'|[^\s"'-]\S*)/gi;
+/**
+ * An address's user and password (`postgres://user:pass@host`), found from its `://` with its scheme checked behind
+ * it. Looked for from each letter a scheme could start at, one long word of dots or dashes costs the square of its
+ * length.
+ */
+const USERINFO = /:\/\/(?<=\b[a-z][a-z0-9+.-]*:\/\/)[^\s/?#@'"]+@/gi;
+/** In a list of arguments kept as text, what stands between one and the next (`","`), up to the next one's quote. */
+const NEXT_ARGUMENT = String.raw`\\*["']\s*,\s*`;
+/**
+ * The value after an option named for a secret (`--password hunter2`, `--api-key k`), a quoted one whole, also where
+ * its quotes are written with backslashes: the option may open a quoted command (`sh -c "--token …"`), and a command
+ * kept in JSON has its quotes written so. In a list of arguments kept as text, the value is the next one
+ * (`"--password","…"`). Never a number after a name in the plural, which sets a count (`--max-tokens 4096`), also
+ * with what closes or ends its command right after it (`$(llm --max-tokens 4096)`, `--max-tokens 4096; echo`).
+ *
+ * The first lookahead lets an option through only where a value follows its name. Without it, in one long word after
+ * `--` every `token` is tried as the name's last and the rest of the word read again: the square of its length.
+ */
+const SECRET_OPTION = new RegExp(
+  String.raw`(?<![^\s"'])(?=--?[\w-]+(?:\s+[^\s-]|${NEXT_ARGUMENT}\\*["'][^-]))--?(?![\w-]*s(?:\s+|${NEXT_ARGUMENT}\\*["'])\d+[)\]};|&<>,.]*(?![^\s"'\\]))[\w-]*(?:password|passwd|secret|token|api[_-]?key)[\w-]*(?:\s+|${NEXT_ARGUMENT}(?=\\*["']))(?=[^\s-])`,
+  "gi",
+);
 
 /**
  * `maskCredentials`, an address's user and password (`postgres://***@host`, first: `redactCommon` would read a
@@ -239,7 +295,41 @@ const SECRET_OPTION =
  * `token=` values) and the value after a secret-named option (`--password ***`): text that leaves its place.
  */
 export const redactCredentials = (text: string) =>
-  redactCommon(maskCredentials(text).replace(USERINFO, "$1***@")).replace(SECRET_OPTION, "$1***");
+  maskValuesAfter(redactCommon(maskCredentials(text).replace(USERINFO, "://***@")), SECRET_OPTION);
+
+/** An absolute path two parts deep or more (`/home/ada/x.jsonl`, `~/x/y`, `C:\Users\x`), never a URL's. */
+const ABSOLUTE_PATH = /(?<![\w:/.~\\-])(?:~|[A-Za-z]:)?(?:[\\/][^\s\\/:"'()<>,;]+){2,}[\\/]?/g;
+
+/**
+ * What a command-line tool said when it failed, as anyone in the conversation may read it: a provider's JSON answer's
+ * own `message`, else its last line that names an error, else its last line. No stack frames, credentials and sign-ins
+ * masked, absolute paths cut to their last part (they name people's folders), one line of at most 200 characters (cut
+ * at a word, with "…").
+ */
+export function cliErrorWords(text: string): string {
+  let said = "";
+  const json = text.indexOf("{");
+  if (json >= 0) {
+    try {
+      const o = JSON.parse(text.slice(json, text.lastIndexOf("}") + 1)) as {
+        error?: { message?: unknown };
+        message?: unknown;
+      };
+      const message = o.error?.message ?? o.message;
+      if (typeof message === "string") said = message;
+    } catch {
+      // Not JSON: its lines say it.
+    }
+  }
+  if (!said) said = errorLineOf(text);
+  const safe = scrubSignIns(redactCredentials(said.replace(/file:\/\//g, "")), "••••").text;
+  const short = safe
+    .replace(ABSOLUTE_PATH, (path) => path.split(/[\\/]/).filter(Boolean).at(-1) ?? "")
+    .replace(/^(?:Uncaught )?error:\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clipText(short, 200);
+}
 
 export const PREVIEW_CODE_CHARS = 4096;
 

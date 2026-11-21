@@ -35,13 +35,14 @@ export function issueWorkOf(
  * The task block of a run in a task's conversation (ADR 0145), or in an older work thread of a DM, read from the
  * issue now (description, criteria and their state, PRs, files), so each turn sees what the team changed since
  * the last one. The conversation itself is the thread the run reads. `asked`: the agent was asked to implement it
- * (the assignee working on it); else it was called into the task's conversation.
+ * (an assignee working on it); else it was called into the task's conversation.
  */
 export async function issueWorkBrief(
   db: Executor,
   orgId: string,
   issueId: string,
-  options: { asked?: boolean; inConversation?: boolean } = {},
+  /** `personal`: a personal workspace's words (ADR 0159). */
+  options: { asked?: boolean; inConversation?: boolean; personal?: boolean } = {},
 ): Promise<string | null> {
   const asked = options.asked ?? true;
   const [issue] = await db
@@ -68,17 +69,17 @@ export async function issueWorkBrief(
     criteria ? `## Acceptance criteria\n${criteria}` : "",
     prs ? `## Pull requests linked\n${prs}` : "",
     files.length
-      ? `## Files attached to the issue\n${files.map((f) => `- ${f.title} (artifact ${f.id})`).join("\n")}\nOpen one with \`read_artifact\` when it helps.`
+      ? `## Files attached to the issue\n${files.map((f) => `- ${f.title} (artifact ${f.id})`).join("\n")}\nOpen each with \`read_artifact\` before you work on it: pictures and PDFs are shown to you, documents, sheets and audio come as text.`
       : "",
     [
       "## How to work on it",
       here
         ? "- This is the task's own conversation: everyone who sees the task reads it and writes here, and your replies land here. Say when you start, at each real step and when you finish, in your replies."
-        : "- This conversation is private between you and the person who asked. The rest of the team follows the task's own conversation: post progress there with `comment_issue` when you start, at each real step and when you finish.",
+        : `- This conversation is private between you and the person who asked. ${options.personal ? "Everyone else who sees the task follows" : "The rest of the team follows"} the task's own conversation: post progress there with \`comment_issue\` when you start, at each real step and when you finish.`,
       asked
         ? `- Refer to the issue as #${issue.number} in your tools. Check each criterion you meet with \`update_issue\` (\`done_criteria\`), and link the pull request with \`update_issue\`. The issue's status follows your work on its own: don't set it yourself.`
         : `- Refer to the task as #${issue.number} in your tools. Change it only when someone asks you to.`,
-      "- Sensitive actions (merge, deploy, rollback) still need a person's approval.",
+      "- Merge, deploy and rollback follow your approvals here as anywhere else.",
     ].join("\n"),
   ]
     .filter(Boolean)

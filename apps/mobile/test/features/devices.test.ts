@@ -4,6 +4,7 @@ import { placeOf, subtitleOf } from "../../src/features/activity/logic";
 import {
   androidStage,
   audienceText,
+  connectKindOf,
   deviceHref,
   deviceNoticeOf,
   deviceNoticeTitle,
@@ -13,6 +14,7 @@ import {
   narrowsAudience,
   phoneFacts,
   phonePortrait,
+  reasonText,
   statusView,
   thisPhoneOn,
 } from "../../src/features/devices/logic";
@@ -63,6 +65,9 @@ describe("a device's state, as its chip and the words after it", async () => {
       "with Ana's iMac",
     );
     expect(statusView(t, { kind: "busy", running: 1, max: 1 }, when).label).toBe("Busy 1/1");
+    const dropped = statusView(t, { kind: "offline", lastSeenAt: AT, cause: "dropped" }, when);
+    expect(dropped.label).toBe("Offline");
+    expect(dropped.line).toStartWith("connection dropped at ");
   });
 });
 
@@ -112,13 +117,41 @@ describe("the phone in hand", () => {
     expect(androidStage(phone({ id: "p", status: needs("unauthorized") }))).toBe("allow");
     expect(androidStage(phone({ id: "p" }))).toBe("done");
   });
+  test("a phone with no driver: its maker's USB driver on Windows, udev rules on Linux", async () => {
+    const t = await translator("en");
+    expect(reasonText(t, "no_driver", "windows")).toBe("Windows needs the phone maker's USB driver");
+    expect(reasonText(t, "no_driver", "linux")).toBe("Linux needs udev rules for this phone");
+    expect(reasonText(t, "no_driver")).toBe("Windows needs the phone maker's USB driver");
+  });
   test("the iPhone's steps follow the Mac's reason", () => {
     expect(iphoneStep(null)).toBe(0);
     expect(iphoneStep(phone({ id: "i", status: needs("untrusted") }))).toBe(1);
     expect(iphoneStep(phone({ id: "i", status: needs("developer_mode_off") }))).toBe(2);
     expect(iphoneStep(phone({ id: "i", status: needs("ui_automation_off") }))).toBe(3);
     expect(iphoneStep(phone({ id: "i", status: needs("helper_expired") }))).toBe(4);
+    // The Mac builds the test helper; trusting it, or an Apple Account or app limit, holds that last step.
+    for (const reason of ["helper_untrusted", "team_limit", "apple_account_missing", "apple_team_missing"])
+      expect(iphoneStep(phone({ id: "i", status: needs(reason) }))).toBe(4);
     expect(iphoneStep(phone({ id: "i" }))).toBe(5);
+    // The iPhone refused the helper's taps: UI Automation's step says what to do.
+    expect(iphoneStep(phone({ id: "i", status: needs("ui_not_authorized") }))).toBe(3);
+    // Below iOS 17 it never gets past being plugged in, and never reads as ready.
+    expect(iphoneStep(phone({ id: "i", status: { kind: "unsupported", reason: "os_too_old" } }))).toBe(0);
+  });
+  test("the new iPhone reasons have their own words", async () => {
+    const t = await translator("en");
+    expect(reasonText(t, "apple_team_missing")).toBe("Xcode on the Mac shows no team yet");
+    expect(reasonText(t, "ui_not_authorized")).toBe("This iPhone refused the test helper's taps");
+  });
+  test("an iPhone over Wi-Fi: not reached is the first step, not trusted the second, each in its own words", async () => {
+    for (const reason of ["wifi_away", "wifi_asleep", "tunnel_down"])
+      expect(iphoneStep(phone({ id: "i", status: needs(reason) }))).toBe(0);
+    expect(iphoneStep(phone({ id: "i", status: needs("wifi_untrusted") }))).toBe(1);
+    const t = await translator("en");
+    expect(reasonText(t, "wifi_away")).toBe("Join the Mac's Wi-Fi on this iPhone, or plug it in");
+    expect(reasonText(t, "tunnel_down")).toBe("The Wi-Fi link dropped. Keep this iPhone near the Mac, or plug it in");
+    const pt = await translator("pt-BR");
+    expect(reasonText(pt, "wifi_untrusted")).toBe("Conecte uma vez e toque em Confiar");
   });
   test("a phone waiting on someone is drawn dimmed, an offline one dark", () => {
     expect(phonePortrait(phone({ id: "i", platform: "ios", status: needs("locked") }))).toEqual({
@@ -146,6 +179,8 @@ describe("notices, waits and facts", async () => {
       device: "Pixel 8",
       forUserId: "rui",
       doing: "Recording a test video",
+      tool: null,
+      path: null,
     });
     expect(d ? deviceHref(d) : null).toBe("/settings/devices/phone/p1");
     expect(deviceHref({ phoneId: "../x", machineId: null })).toBe("/settings/devices");
@@ -158,6 +193,41 @@ describe("notices, waits and facts", async () => {
     expect(deviceNoticeTitle(en, { ...d, kind: "device.join_request", device: "build-box" }, "", "", "Acme")).toBe(
       "build-box wants to join Acme",
     );
+    // Someone asks the viewer to turn a tool on: the tool in words, from `latest.reason`.
+    const ask = deviceNoticeOf({
+      kind: "device.tool_request" as never,
+      source: { machineId: "k1", label: "Sam's MacBook" } as never,
+      latest: { reason: "browser" },
+    });
+    expect(ask).toMatchObject({ kind: "device.tool_request", machineId: "k1", tool: "browser" });
+    if (ask)
+      expect(deviceNoticeTitle(en, ask, "Rui", "", "")).toBe(
+        "Rui asks you to turn on the browser on your Sam's MacBook",
+      );
+    // Or to install a coding CLI there.
+    const install = deviceNoticeOf({
+      kind: "device.cli_request" as never,
+      source: { machineId: "k1", label: "Sam's PC" } as never,
+      latest: { reason: "claude" },
+    });
+    expect(install).toMatchObject({ kind: "device.cli_request", machineId: "k1", tool: "claude" });
+    if (install)
+      expect(deviceNoticeTitle(en, install, "Rui", "", "")).toBe(
+        "Rui asks you to install Claude Code on your Sam's PC",
+      );
+    // Or an agent waits for a folder there: the folder in the line, and the row opens the computer.
+    const folder = deviceNoticeOf({
+      kind: "device.folder_request" as never,
+      source: { machineId: "k1", label: "Sam's MacBook" } as never,
+      latest: { title: "/Users/sam/Music", text: "the playlist" },
+    });
+    expect(folder).toMatchObject({ kind: "device.folder_request", machineId: "k1", path: "/Users/sam/Music" });
+    if (folder) {
+      expect(deviceNoticeTitle(en, folder, "Rui", "", "")).toBe(
+        "Rui asks for the folder /Users/sam/Music on your Sam's MacBook",
+      );
+      expect(deviceHref(folder)).toBe("/settings/devices/k1");
+    }
   });
   test("an inbox row of a device's notice says only what the agent is doing under its title", () => {
     const n = {
@@ -187,5 +257,19 @@ describe("notices, waits and facts", async () => {
       "Permitir",
     ]);
     expect(en("mobile.devices.android.prompt.title")).toBe("Allow USB debugging?");
+  });
+
+  test("connecting another computer: through its app, or one line; the app's Allow named as the app names it", () => {
+    expect(["app", "server", "computer", "phone", undefined].map(connectKindOf)).toEqual([
+      "app",
+      "server",
+      "computer",
+      null,
+      null,
+    ]);
+    expect(en("mobile.devices.connect.appStep3", { org: "Acme" })).toBe(
+      "Click Allow when it asks to let Acme's agents use it",
+    );
+    expect(pt("mobile.devices.connect.appConnected", { name: "Mac mini da Ana" })).toBe("Conectado: Mac mini da Ana");
   });
 });

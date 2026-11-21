@@ -13,6 +13,7 @@ import {
   grantScopes,
   type Judge,
   type MachineCaller,
+  MachineOfflineError,
   MachineRequestError,
   type MachineStatus,
   type RunAuthority,
@@ -46,6 +47,7 @@ async function desktopSetup(options: { judge?: Judge } = {}) {
       hub: {
         status: (id) => (holder.hub as MachineCaller).status(id),
         call: (id, request, o) => (holder.hub as MachineCaller).call(id, request, o),
+        wake: (id, why) => (holder.hub as MachineCaller).wake?.(id, why) ?? Promise.resolve(),
       },
     },
     ...(options.judge ? { judge: options.judge } : {}),
@@ -344,7 +346,9 @@ test("the computer's refusals in the agent's words", async () => {
   const d = await desktopSetup();
   await d.grant(DESKTOP_SCOPE, SANDBOX_SCOPE);
   d.s.error = new MachineRequestError("not_allowed", "desktop is off");
-  expect((await d.call("desktop_read", {})).content).toContain("turned off on the computer Box");
+  const off = await d.call("desktop_read", {});
+  expect(off.content).toContain("turned off on the computer Box");
+  expect(off.data).toMatchObject({ toolOff: { tool: "desktop" } });
   d.s.error = new MachineRequestError("desktop_unavailable", "The agent's desktop stopped. Try again.");
   const plan = await d.call("desktop_do", { steps: [{ do: "press", key: "ctrl+s" }] });
   expect(plan.isError).toBe(true);
@@ -361,6 +365,29 @@ test("the computer's refusals in the agent's words", async () => {
   // It looks again, so the answer shows what covers the target, as untrusted screen text.
   expect(sent().map((c) => c.op)).toEqual(["desktop.act", "desktop.look"]);
   expect(covered.content).toContain('<external_data source="desktop screen">');
+});
+
+test("its computer asleep in standby: the desktop asks it to wake and waits, as the browser and the sandbox do", async () => {
+  const d = await desktopSetup();
+  await d.grant(DESKTOP_SCOPE, SANDBOX_SCOPE);
+  const slept = new Date(Date.now() - 6 * 3600_000).toISOString();
+  d.s.status = { online: false, standby: true, kind: "managed", lastSeenAt: slept };
+  const woke: string[] = [];
+  d.hub.wake = async (_id, why) => {
+    woke.push(why);
+    d.s.status = { online: true };
+  };
+  // Sent while it sleeps, a request never leaves: nothing there takes it.
+  d.s.respond = () => {
+    if (d.s.status.online === false) throw new MachineOfflineError("Box", "managed");
+    return undefined;
+  };
+  const sent = d.since();
+  const read = await d.call("desktop_read", {});
+  expect(read.isError).toBeFalsy();
+  expect(read.content).toContain('<external_data source="desktop screen">');
+  expect(woke).toEqual(["run"]);
+  expect(sent().map((c) => c.op)).toEqual(["desktop.look", "desktop.look"]);
 });
 
 test("a person in control holds the desktop; after they hand it back, the agent reads it before acting", async () => {

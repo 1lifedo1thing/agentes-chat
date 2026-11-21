@@ -29,12 +29,18 @@
     "./sfx": "./src/sfx/synth.ts",
     "./sky/engine": "./src/sky/engine.ts",
     "./sky/math": "./src/sky/math.ts",
+    "./sky/forming": "./src/sky/forming.ts",
     "./sky/horizon": "./src/sky/horizon.ts",
     "./sky/chart": "./src/sky/chart.ts",
+    "./sky/accent": "./src/sky/accent.ts",
     "./sky/avatar": "./src/sky/avatar.ts",
+    "./sky/wallpaper": "./src/sky/wallpaper.ts",
     "./sky/workspace": "./src/sky/workspace.ts",
+    "./sky/team": "./src/sky/team.ts",
+    "./agent-talk": "./src/agent-talk.ts",
     "./channel-refs": "./src/channel-refs.ts",
     "./diff": "./src/diff.ts",
+    "./format": "./src/format.ts",
     "./markdown": "./src/markdown.ts",
     "./media-grid": "./src/media-grid.ts",
     "./names": "./src/names.ts",
@@ -59,7 +65,8 @@
   "dependencies": {
     "@agenteschat/i18n": "workspace:*",
     "@agenteschat/tokens": "workspace:*",
-    "radix-ui": "^1.8.1"
+    "radix-ui": "^1.8.1",
+    "uqr": "0.1.3"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",

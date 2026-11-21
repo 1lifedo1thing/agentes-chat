@@ -38,12 +38,25 @@ export const words: EmailWords = {
       inviter
         ? [{ b: inviter }, `${email ? ` (${email})` : ""} 邀请你以${role}身份加入 `, { b: org }, "。"]
         : [`你受邀以${role}身份加入 `, { b: org }, "。"],
+    starts: (channels, agents) => [
+      ...(channels ? ["你会直接加入 ", ...channels, "。"] : []),
+      ...(agents ? ["你将和 ", ...agents, " 一起工作。"] : []),
+    ],
+    more: (n) => `另外${n}个`,
     what: "agentes.chat 是成员和 AI 智能体一起工作的地方。",
     noteFrom: (inviter, note) => [{ b: inviter ? `${inviter}：` : "附言：" }, `“${note}”`],
     button: "接受邀请",
     small: "邀请 7 天内有效。请用这个邮箱地址接受。",
     why: (org) =>
       `你收到这封邮件，是因为 ${org} 的成员邀请了这个地址。如果你不认识对方，忽略即可。在你接受之前，什么都不会发生。`,
+    personal: {
+      body: (inviter, email) =>
+        inviter
+          ? [{ b: inviter }, `${email ? ` (${email})` : ""} 邀请你加入 agentes.chat 上的个人工作区。`]
+          : "你受邀加入 agentes.chat 上的一个个人工作区。",
+      why: () =>
+        "你收到这封邮件，是因为有人邀请这个地址加入个人工作区。如果你不认识对方，忽略即可。在你接受之前，什么都不会发生。",
+    },
   },
   inviteRequest: {
     subject: "有人请求新的邀请",
@@ -56,6 +69,13 @@ export const words: EmailWords = {
     next: "如果你认识对方，请在“成员”中发送新的邀请。如果不认识，无需任何操作。",
     button: "打开成员",
     why: (org) => `你收到这封邮件，是因为你创建了这个邀请，或者负责管理 ${org} 的成员。`,
+    personal: {
+      body: (email) =>
+        email
+          ? [{ b: email }, " 打开了加入你的工作区的过期邀请，并请求一个新的。"]
+          : "有人用过期的邀请链接尝试加入你的工作区，并请求一个新的。",
+      why: () => "你收到这封邮件，是因为你创建了这个邀请，或者负责管理谁在你的工作区里。",
+    },
   },
   calendar: {
     subject: "你受邀参加一个活动",
@@ -65,6 +85,9 @@ export const words: EmailWords = {
     someone: "有人",
     button: "查看活动",
     why: (org) => `你收到这封邮件，是因为 ${org} 的成员邀请你参加一个活动。`,
+    personal: {
+      why: () => "你收到这封邮件，是因为你的工作区里有人邀请你参加一个活动。",
+    },
   },
   waitlist: {
     subject: "确认你在 agentes.chat 候补名单上的位置",
@@ -114,6 +137,11 @@ export const words: EmailWords = {
     button: "查看预算",
     why: (org) =>
       `你收到这封邮件，是因为你是这个智能体的负责人，或是 ${org} 的管理员。用到 80% 和 100% 时各发送一次，每月一次。`,
+    personal: {
+      warning: "用到 100% 时它会停止并告诉你。你可以在智能体页面上修改上限。",
+      exhausted: "在下个月到来，或你在智能体页面上调高上限之前，它不会再回复。",
+      why: () => "你收到这封邮件，是因为这个智能体是你的。用到 80% 和 100% 时各发送一次，每月一次。",
+    },
   },
   digest: {
     subject: (n) => (n === 1 ? "有一个请求等你审批" : `有 ${n} 个请求等你审批`),
@@ -129,6 +157,11 @@ export const words: EmailWords = {
     button: (n) => (n === 1 ? "查看请求" : "打开审批"),
     why: (org, hours) =>
       `你收到这封邮件，是因为你可以在 ${org} 中批准这些请求。${hours ? `请求等待超过 ${hours} 小时后发送，每个请求只发一次。` : ""}`,
+    personal: {
+      body: () => "你的智能体请求做需要你批准的事。",
+      why: (_org, hours) =>
+        `你收到这封邮件，是因为你可以批准这些请求。${hours ? `请求等待超过 ${hours} 小时后发送，每个请求只发一次。` : ""}`,
+    },
   },
   ready: {
     subject: "你的智能体的电脑已就绪",
@@ -154,17 +187,30 @@ export const words: EmailWords = {
     },
     button: { ai: "连接你的 AI", task: "布置第一个任务", create: "创建智能体" },
     why: (org) => `你收到这封邮件，是因为你是 agentes.chat 上 ${org} 的所有者。关于这台电脑，只会发这一封邮件。`,
+    personal: {
+      body: () =>
+        "感谢耐心等待。你的智能体的电脑已经开机并设置完毕，每个智能体都有自己的用户。它昼夜不停地运行，你的智能体随时都能工作。",
+      steps: {
+        task: ["布置第一个任务。", "打开和你的某个智能体的对话，说出你需要什么。"],
+      },
+      why: () => "你收到这封邮件，是因为 agentes.chat 上的这个工作区是你的。关于这台电脑，只会发这一封邮件。",
+    },
   },
   joinRequest: {
     subject: "有人请求加入你的工作区",
     preheader: "在“成员”中批准或拒绝。在你回复之前，什么都不会发生。",
     headline: "有一个加入请求等你处理",
     body: (org) => ["对方打开了 ", { b: org }, " 的邀请链接，并请求加入。"],
+    outside: (by) => ["对方为 ", { b: by }, " 工作，申请以外部协作者身份加入。不占用你套餐的席位，你可以随时移除。"],
     note: "只批准你认识的人。除非你在页面上选择其他角色，否则对方会以成员身份加入。",
     approve: "批准",
     deny: "拒绝",
     more: "所有待处理的请求都在“成员”中。",
     why: (org) => `你收到这封邮件，是因为你是 ${org} 的所有者或管理员。每小时最多发送一次。`,
+    personal: {
+      body: () => "对方打开了你的工作区的邀请链接，并请求加入。",
+      why: () => "你收到这封邮件，是因为你负责管理谁加入你的工作区。每小时最多发送一次。",
+    },
   },
   joinAnswer: {
     someone: "有人",
@@ -192,6 +238,16 @@ export const words: EmailWords = {
       small: "如果你觉得这是个误会，请让那里的人通过邮件邀请你。",
     },
     why: (org) => `你收到这封邮件，是因为这个地址请求加入 agentes.chat 上的 ${org}。`,
+    personal: {
+      joined: { body: (who) => `${who} 批准了你的请求。你现在已加入这个工作区。` },
+      invited: { body: (who) => `${who} 批准了你加入工作区的请求。` },
+      denied: {
+        preheader: "对方查看后没有批准。",
+        body: () => "你请求的那个人查看了你的请求，没有批准。",
+        small: "如果你觉得这是个误会，请让对方通过邮件邀请你。",
+      },
+      why: () => "你收到这封邮件，是因为这个地址请求加入 agentes.chat 上的一个个人工作区。",
+    },
   },
   joinCode: {
     subject: (code) => `你的 agentes.chat 验证码：${code}`,
@@ -200,13 +256,24 @@ export const words: EmailWords = {
     body: (org) => ["在页面上输入这个验证码，即可请求加入 ", { b: org }, "。"],
     small: "10 分钟内有效。如果不是你本人请求，忽略这封邮件即可。",
     why: (org) => `你收到这封邮件，是因为有人输入了这个地址，请求加入 agentes.chat 上的 ${org}。`,
+    personal: {
+      body: () => "在页面上输入这个验证码，即可请求加入这个工作区。",
+      why: () => "你收到这封邮件，是因为有人输入了这个地址，请求加入 agentes.chat 上的一个个人工作区。",
+    },
   },
   deletionCode: {
     subjectWorkspace: (code) => `删除工作区的验证码：${code}`,
     subjectAccount: (code) => `删除整个账号的验证码：${code}`,
+    subjectReset: (code) => `重置工作区的验证码：${code}`,
+    reset: (org) => [
+      "输入这个验证码即可重置工作区 ",
+      { b: org },
+      "。它的智能体、对话、文件和记忆会立即被永久删除，并像新工作区一样重新开始。",
+    ],
+    whyReset: (org) => `你收到这封邮件，是因为你的账号请求重置 agentes.chat 上的 ${org}。`,
     preheader: "在 agentes.chat 中输入它来确认。10 分钟内有效。",
     headline: "你的验证码",
-    workspace: (org) => ["输入这个验证码即可删除工作区 ", { b: org }, "。它会立即对所有人关闭，7 天后被永久删除。"],
+    workspace: (org) => ["输入这个验证码即可删除工作区 ", { b: org }, "。它会立即对所有人变为只读，7 天后被永久删除。"],
     account: (email) => [
       "输入这个验证码即可删除整个账号 ",
       { b: email },
@@ -221,21 +288,64 @@ export const words: EmailWords = {
       "验证码 10 分钟内有效，没有它什么都不会被删除。如果不是你本人操作，请不要告诉任何人，并告知这台服务器的管理人员。",
     whyWorkspace: (org) => `你收到这封邮件，是因为你的账号请求删除 agentes.chat 上的 ${org}。`,
     whyAccount: "你收到这封邮件，是因为你的账号请求在 agentes.chat 上删除自己。",
+    personal: {
+      workspace: (org) => ["输入这个验证码即可删除你的工作区 ", { b: org }, "。它会立即变为只读，7 天后被永久删除。"],
+    },
+  },
+  emailChange: {
+    code: {
+      subject: (code) => `更改邮箱的验证码：${code}`,
+      preheader: "在 agentes.chat 中输入它来确认。10 分钟内有效。",
+      headline: "你的验证码",
+      body: (email, newEmail) => ["输入这个验证码，即可把账号 ", { b: email }, " 的邮箱改为 ", { b: newEmail }, "。"],
+      support: (address) => [
+        "验证码 10 分钟内有效，没有它邮箱不会改变。如果不是你本人操作，请不要告诉任何人，并写信至 ",
+        { mail: address },
+        "。",
+      ],
+      noSupport:
+        "验证码 10 分钟内有效，没有它邮箱不会改变。如果不是你本人操作，请不要告诉任何人，并告知这台服务器的管理人员。",
+      why: "你收到这封邮件，是因为你的账号请求在 agentes.chat 上更改邮箱。",
+    },
+    link: {
+      subject: "确认你在 agentes.chat 的新邮箱",
+      preheader: "点一下，以后就用这个地址登录。链接一小时内有效。",
+      headline: "确认你的新邮箱",
+      body: "只差一步：确认这个地址属于你。之后你的账号就用它登录。",
+      button: "确认新邮箱",
+      small: "链接一小时内有效。如果不是你请求的，可以忽略这封邮件。",
+      why: "你收到这封邮件，是因为有人请求把这个地址用于一个 agentes.chat 账号。",
+    },
+    changed: {
+      subject: "你的 agentes.chat 账号邮箱已更改",
+      preheader: "如果不是你本人操作，7 天内可以把这个地址改回来。",
+      headline: "你的邮箱已更改",
+      body: (email, newEmail) => ["账号 ", { b: email }, " 现在用 ", { b: newEmail }, " 登录。"],
+      notYou:
+        "不是你本人操作？请在 7 天内按下按钮。我们会改回这个地址，退出所有会话，断开 AI 应用的连接，并让此后添加的登录方式失效。密码也会被清除，下一个密码可通过“忘记密码”设置。",
+      button: "不是我",
+      small: "如果是你本人操作，无需任何处理。",
+      why: "你收到这封邮件，是因为这个地址曾是一个 agentes.chat 账号的邮箱。",
+    },
   },
   deleting: {
     subject: (day) => `你所在的一个工作区将于 ${day} 删除`,
-    preheader: "它现在已关闭。在那之前，所有者仍可恢复它。",
+    preheader: "它现在只读。在那之前，所有者仍可恢复它。",
     headline: "一个工作区正在被删除",
     body: (by, org, day, time) => [
       { b: by },
       " 删除了工作区 ",
       { b: org },
-      `。它现在已关闭，将于 ${day} ${time} 被永久删除。`,
+      `。它现在只读，将于 ${day} ${time} 被永久删除。`,
     ],
     owner: "改变主意了？在那之前恢复它。",
     button: "恢复工作区",
     member: "如果这是误操作，请让所有者恢复它。",
     why: (org) => `你收到这封邮件，是因为你在 agentes.chat 上的 ${org} 中。`,
+    personal: {
+      member: "如果这是误操作，请让删除它的人恢复它。",
+      why: () => "你收到这封邮件，是因为你在 agentes.chat 上的这个工作区中。",
+    },
   },
   restored: {
     subject: "你所在的一个工作区已恢复",
@@ -244,6 +354,9 @@ export const words: EmailWords = {
     body: (by, org) => [{ b: by }, " 恢复了 ", { b: org }, "，现在可以正常使用了。"],
     button: "打开工作区",
     why: (org) => `你收到这封邮件，是因为你在 agentes.chat 上的 ${org} 中。`,
+    personal: {
+      why: () => "你收到这封邮件，是因为你在 agentes.chat 上的这个工作区中。",
+    },
   },
   appConnected: {
     subject: "有应用连接到了你的 agentes.chat 账号",
@@ -253,6 +366,10 @@ export const words: EmailWords = {
     note: "不是你连接的？请立即断开它，并修改密码。",
     button: "查看已连接的应用",
     why: (org) => `你收到这封邮件，是因为有应用连接到了你在 agentes.chat 上 ${org} 的账号。`,
+    personal: {
+      body: (app) => [{ b: app }, " 现在可以访问你在个人工作区中的账号。"],
+      why: () => "你收到这封邮件，是因为有应用连接到了你在 agentes.chat 个人工作区中的账号。",
+    },
   },
   accountDeleting: {
     subject: (day) => `你的 agentes.chat 账号将于 ${day} 删除`,
@@ -328,6 +445,9 @@ export const words: EmailWords = {
     note: "要撤销，请在智能体页面修改谁可以对话。",
     button: "查看谁可以对话",
     why: (org) => `你收到这封邮件，是因为你在 ${org} 的智能体使用你的套餐思考，而其他人修改了谁可以和它对话。`,
+    personal: {
+      why: () => "你收到这封邮件，是因为你的一个智能体使用你的套餐思考，而其他人修改了谁可以和它对话。",
+    },
   },
   planLent: {
     subject: (plan) => `你的 ${plan} 套餐现在在为另一个智能体思考`,
@@ -345,6 +465,9 @@ export const words: EmailWords = {
     note: "在通知里点一下就能收回，之后这个智能体不再用你的套餐思考。",
     button: "打开通知",
     why: (org) => `你收到这封邮件，是因为 ${org} 里有人把你的套餐连接到了一个智能体。`,
+    personal: {
+      why: () => "你收到这封邮件，是因为你的工作区里有人把你的套餐连接到了一个智能体。",
+    },
   },
   planWaiting: {
     subject: "你的团队正在等待",
@@ -360,5 +483,53 @@ export const words: EmailWords = {
     },
     button: "查看 agentes.chat 套餐",
     why: (org) => `你收到这封邮件，是因为你在 agentes.chat 上管理 ${org}。此类提醒只发送两次。`,
+    personal: {
+      subject: "你的智能体正在等待",
+      headline: "你的智能体正在等待",
+      body: (agents, _channels, routines) => {
+        const a = `${agents} 个智能体`;
+        const r = `${routines} 个例行任务`;
+        return `${routines > 0 ? `${a}和${r}` : a}已就绪。只差一个 agentes.chat 套餐了。`;
+      },
+      why: () => "你收到这封邮件，是因为 agentes.chat 上的这个工作区是你的。此类提醒只发送两次。",
+    },
+  },
+  surface: {
+    linked: {
+      subject: (surface) => `${surface} 已关联到你的 agentes.chat 账号`,
+      preheader: "你的助手现在会在那里回复你。如果不是你，请解除关联。",
+      headline: (surface) => `${surface} 已关联`,
+      body: (surface, display, org) => [{ b: display }, `（${surface}）现在可以和你在 `, { b: org }, " 的助手对话。"],
+      notYou: "不是你？请解除关联。来自那里的消息会立即不再进入你的账号。",
+      button: "解除关联",
+      small: "如果是你本人，无需任何操作。你可以随时在设置中解除关联。",
+      why: (surface) => `你收到这封邮件，是因为 ${surface} 关联到了你的 agentes.chat 账号。`,
+      picture: "你的助手，现在也在你的手机上",
+    },
+    unlinked: {
+      subject: (surface) => `${surface} 已与你的 agentes.chat 账号解除关联`,
+      preheader: "对方的身份已变更。如果是你，请在设置中重新关联。",
+      headline: (surface) => `${surface} 已解除关联`,
+      body: (surface, display) => [{ b: display }, `（${surface}）因身份变更已解除关联。`],
+      small: "如果是你，请在设置中重新关联。",
+      why: (surface) => `你收到这封邮件，是因为 ${surface} 曾关联到你的 agentes.chat 账号。`,
+      picture: "你的助手，已不在你的手机上",
+    },
+  },
+  supportReply: {
+    subject: "你的求助有了回复",
+    preheader: "关于你在 agentes.chat 上请求的帮助。",
+    headline: "你的求助有了回复",
+    answers: {
+      received: "我们已收到你的请求，正在查看。",
+      need_more: "我们需要了解更多信息才能帮到你：你当时在做什么、预期的结果是什么，以及实际发生了什么。",
+      resolved: "你报告的问题已经修复。",
+      handed_over: "现在已有专人接手你的请求，并会回复你。",
+    },
+    from: (host) =>
+      host ? ["由 ", { nobr: host }, " 上 agentes.chat 服务器的管理人员回复。"] : "由 agentes.chat 回复。",
+    ai: "这条回复由 AI 助手撰写。",
+    reply: (address) => ["如需回复，请写信至 ", { mail: address }, "。"],
+    why: "你收到这封邮件，是因为你在 agentes.chat 上请求了帮助。",
   },
 };

@@ -6,20 +6,23 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text as RNText, StyleSheet, View } from "react-native";
-import { Icon, type IconName, Text } from "@/ui";
-import { router } from "@/ui/navigation";
+import { Text as RNText, StyleSheet, View } from "react-native";
+import { Icon, type IconName, LineIcon, PressScale, Text } from "@/ui";
+import { useMessageCardCorners } from "../chat/look";
 import { MessageText } from "../chat/MessageText";
+import { LiveCover } from "../live-files/shared/LiveCover";
 import { useColors, useOrgId } from "../shared/hooks";
 import { MONO } from "../shared/parts";
-import { encodeFileList, extensionOf, fileInfo } from "./logic";
-import { useRemoteFile } from "./source";
+import { extensionOf, type FileRef, fileInfo, isCodeName } from "./logic";
+import { openFile } from "./open";
+import { pictureDrawn, pictureFade, useRemoteFile } from "./source";
 
 /**
- * An attachment as a tile of one size, so several sit two to a row (as on the web): what it holds drawn small on top
- * (its cover: a document's start, a table's first rows, a change's files, a picture, a text file's first lines, else
- * its type) and its name with its kind and size under it. A tap opens it: a picture in the picture viewer, the rest
- * in the file screen.
+ * An attachment as a tile (as on the web): what it holds drawn small on top (its cover: a document's start, a table's
+ * first rows, a change's files, a text file's first lines, else its type) and its name, whole, with its kind and size
+ * under it. A picture is only the picture: its name and size are what a screen reader hears and what the picture
+ * viewer's header says. A tap opens it (`openFile`): a picture or a video in the picture viewer, among the message's
+ * (`siblings`), the rest in the file screen.
  */
 
 /** What a cover shows of a table, a code change or a text file: the rest is in the file screen. */
@@ -29,12 +32,6 @@ const COVER_FILES = 3;
 const COVER_LINES = 10;
 /** The start of a document drawn on its cover (cut at a line). */
 const COVER_CHARS = 700;
-/** Code files read in the code font; any other text in the app's. */
-const CODE_EXT = new Set(
-  "ts tsx js jsx mjs cjs json py rb go rs java kt swift c h cc cpp hpp cs php sh bash zsh yml yaml toml sql css scss html xml vue svelte lua dart".split(
-    " ",
-  ),
-);
 /** A signed percentage ("+12%", "−3%"): its cell takes the up or down tone. */
 const SIGNED = /^([+\-−])\s?\d[\d.,]*\s?%$/;
 /** A column of numbers, amounts or percentages lines up on the right. */
@@ -49,6 +46,9 @@ const KIND_ICON: Record<Exclude<ArtifactContent["kind"], "file">, IconName> = {
   block: "globe",
   poll: "check",
   choices: "check",
+  spreadsheet: "spreadsheet",
+  slides: "slides",
+  canvas: "canvas",
 };
 
 export interface TileFile {
@@ -61,22 +61,30 @@ export function AttachmentTile({
   file,
   detail,
   failed = false,
+  picture: seen = false,
   width,
   single = false,
+  siblings,
 }: {
   file: TileFile;
   detail: ArtifactDetail | undefined;
   failed?: boolean;
+  /** Known to be a picture before it loads (by its name), so its tile never sheds a foot once it does. */
+  picture?: boolean;
   width: number;
   /** Alone on its message: a taller cover. */
   single?: boolean;
+  /** The message's pictures and videos in the order they show: a picture's tap pages through them in the viewer. */
+  siblings?: readonly FileRef[];
 }) {
   const { t, i18n } = useTranslation();
   const c = useColors();
+  // In a message, the corners every card there has (a bubble's in bubbles); its own shape elsewhere.
+  const cardCorners = useMessageCardCorners();
   const info = detail ? fileInfo(detail) : null;
   const content = detail?.content;
   const name = detail?.kind === "file" ? info?.name || file.title : detail?.title || file.title;
-  const picture = info?.view === "image";
+  const picture = info ? info.view === "image" : seen;
   const meta = !detail
     ? failed
       ? t("mobile.files.loadFailed")
@@ -85,33 +93,24 @@ export function AttachmentTile({
   const icon: IconName =
     !content || content.kind === "file" ? (picture ? "image" : fileIconOf(info?.type)) : KIND_ICON[content.kind];
   const open = () => {
-    if (!detail) return;
-    const older = detail.shownVersion < detail.version;
-    if (picture)
-      router.push({
-        pathname: "/images",
-        params: { files: encodeFileList([{ id: file.id, version: detail.shownVersion }]), at: "0" },
-      });
-    else
-      router.push({
-        pathname: "/file/[id]",
-        params: { id: file.id, ...(older ? { v: String(detail.shownVersion) } : {}) },
-      });
+    if (detail) openFile({ id: file.id, version: file.version, title: file.title, detail }, siblings);
   };
   return (
-    <Pressable
+    // Opening it is navigation: the tile gives under the finger, no tap.
+    <PressScale
+      haptic={false}
       onPress={open}
       disabled={!detail}
       accessibilityRole={picture ? "imagebutton" : "button"}
       accessibilityLabel={`${name}, ${meta}`}
-      style={({ pressed }) => [
-        styles.tile,
-        { width, backgroundColor: c.raised, borderColor: picture ? c.line : c.line2 },
-        pressed && styles.pressed,
-      ]}
+      style={[styles.tile, { width, backgroundColor: c.raised, borderColor: picture ? c.line : c.line2 }, cardCorners]}
     >
       <View
-        style={[styles.cover, { height: single ? 150 : 104, borderBottomColor: c.line }]}
+        style={[
+          styles.cover,
+          !picture && styles.coverOverFoot,
+          { height: single ? 150 : 104, borderBottomColor: c.line },
+        ]}
         accessible={false}
         importantForAccessibility="no-hide-descendants"
       >
@@ -120,21 +119,23 @@ export function AttachmentTile({
             {failed ? <TypeCover icon="file" label={extensionOf(file.title).toUpperCase()} /> : null}
           </View>
         ) : (
-          <Cover detail={detail} fileId={file.id} />
+          <Cover detail={detail} fileId={file.id} width={width} height={single ? 150 : 104} />
         )}
       </View>
-      <View style={styles.foot}>
-        <Icon name={icon} size={14} color={c.faint} />
-        <View style={styles.grow}>
-          <Text variant="footnote" style={styles.title} numberOfLines={1}>
-            {name}
-          </Text>
-          <Text variant="caption" tone="faint" numberOfLines={1}>
-            {meta}
-          </Text>
+      {picture ? null : (
+        <View style={styles.foot}>
+          <LineIcon name={icon} size={14} color={c.faint} variant="footnote" />
+          <View style={styles.grow}>
+            <Text variant="footnote" style={styles.title}>
+              {name}
+            </Text>
+            <Text variant="caption" tone="faint">
+              {meta}
+            </Text>
+          </View>
         </View>
-      </View>
-    </Pressable>
+      )}
+    </PressScale>
   );
 }
 
@@ -154,6 +155,8 @@ function fileIconOf(type: string | undefined): IconName {
     case "pdf":
     case "document":
       return "doc";
+    case "slides":
+      return "slides";
     default:
       return "file";
   }
@@ -169,6 +172,11 @@ function metaOf(t: TFunction, detail: ArtifactDetail, locale: string) {
   }
   const kind = t(`artifacts.kind.${content.kind}`);
   if (content.kind === "table") return `${kind} · ${t("artifacts.rows", { count: content.rows.length })}`;
+  // A live file says how big it is, not its version: it is always as it is now (ADR 0196).
+  if (content.kind === "spreadsheet")
+    return `${kind} · ${t("mobile.live.card.sheets", { count: content.preview.sheets })}`;
+  if (content.kind === "slides") return `${kind} · ${t("mobile.live.card.slides", { count: content.preview.count })}`;
+  if (content.kind === "canvas") return kind;
   if (content.kind === "diff") {
     const total = { added: 0, removed: 0 };
     for (const f of content.files) {
@@ -181,9 +189,23 @@ function metaOf(t: TFunction, detail: ArtifactDetail, locale: string) {
   return `${kind} · ${t("artifacts.version", { version: detail.shownVersion })}`;
 }
 
-function Cover({ detail, fileId }: { detail: ArtifactDetail; fileId: string }) {
+function Cover({
+  detail,
+  fileId,
+  width,
+  height,
+}: {
+  detail: ArtifactDetail;
+  fileId: string;
+  width: number;
+  height: number;
+}) {
   const content = detail.content;
   switch (content.kind) {
+    case "spreadsheet":
+    case "slides":
+    case "canvas":
+      return <LiveCover content={content} width={width} height={height} />;
     case "document":
       return <TextCover markdown={documentStart(content.markdown, COVER_CHARS)} />;
     case "table":
@@ -201,7 +223,7 @@ function Cover({ detail, fileId }: { detail: ArtifactDetail; fileId: string }) {
           return <TableCover columns={head} rows={rows} />;
         }
         if (info.view === "markdown") return <TextCover markdown={documentStart(text, COVER_CHARS)} />;
-        return <LinesCover text={text} code={CODE_EXT.has(ext)} />;
+        return <LinesCover text={text} code={isCodeName(`x.${ext}`)} />;
       }
       return <TypeCover icon={fileIconOf(info.type)} label={ext.toUpperCase()} />;
     }
@@ -304,8 +326,10 @@ function PictureCover({ fileId, version }: { fileId: string; version: number }) 
         <Image
           source={{ uri: link.data.uri, headers: link.data.headers, cacheKey: `${fileId}@${version}` }}
           recyclingKey={`${fileId}@${version}`}
+          cachePolicy="memory-disk"
           contentFit="cover"
-          transition={160}
+          transition={pictureFade(`${fileId}@${version}`)}
+          onLoad={() => pictureDrawn(`${fileId}@${version}`)}
           style={StyleSheet.absoluteFill}
           onError={() => setFailed(true)}
           accessible={false}
@@ -335,9 +359,10 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  pressed: { opacity: 0.85 },
-  cover: { overflow: "hidden", borderBottomWidth: StyleSheet.hairlineWidth },
-  foot: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  cover: { overflow: "hidden" },
+  coverOverFoot: { borderBottomWidth: StyleSheet.hairlineWidth },
+  // The icon on the name's first line, however many lines the name wraps to.
+  foot: { flexDirection: "row", alignItems: "flex-start", gap: 8, paddingHorizontal: 10, paddingVertical: 8 },
   grow: { flex: 1, minWidth: 0 },
   title: { fontWeight: "600" },
   pad: { flex: 1, paddingHorizontal: 10, paddingTop: 8, overflow: "hidden" },

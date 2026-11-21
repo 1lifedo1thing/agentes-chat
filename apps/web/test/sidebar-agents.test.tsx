@@ -5,7 +5,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, GENERAL_ID, ORG_ID, seedDm, seedState } from "./fake-api";
+import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, GENERAL_ID, ORG_ID, seedDm, seedRoles, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
 /**
@@ -174,6 +174,33 @@ describe("Agentes and its groups", () => {
     const theirs = await openMenu("Opções de Agentes");
     expect(within(theirs).queryByRole("menuitemcheckbox")).toBeNull();
   });
+
+  test("with Ver todos os agentes off on Todos, a member's sidebar points at no agent that doesn't talk to them", async () => {
+    const hidingAda = (state: State) => {
+      const ada = state.agents.find((a) => a.id === ADA_ID);
+      if (ada) Object.assign(ada, { ownerUserId: "u-other", audience: { mode: "people", userIds: ["u-third"] } });
+      return asMember(state);
+    };
+    await go(hidingAda(seedState()));
+    expect(rowsIn(section("Agentes"))).toEqual(["Atlas"]);
+    expect(within(nav()).getByRole("link", { name: "Mais 1 agente na Equipe" })).toBeTruthy();
+    cleanup();
+    // Someone else's private agent (it answers only its owner) is unlisted: not even counted.
+    const personal = asMember(seedState());
+    const ada = personal.agents.find((a) => a.id === ADA_ID);
+    if (ada) Object.assign(ada, { ownerUserId: "u-other", audience: { mode: "owner", userIds: [] } });
+    await go(personal);
+    expect(rowsIn(section("Agentes"))).toEqual(["Atlas"]);
+    expect(nav().querySelector(".sidebar__see-all")).toBeNull();
+    cleanup();
+    const off = hidingAda(seedState());
+    off.roles = seedRoles().map((r) =>
+      r.kind === "everyone" ? { ...r, permissions: r.permissions.filter((k) => k !== "view_all_agents") } : r,
+    );
+    await go(off);
+    expect(rowsIn(section("Agentes"))).toEqual(["Atlas"]);
+    expect(nav().querySelector(".sidebar__see-all")).toBeNull();
+  });
 });
 
 describe("Mudar de setor", () => {
@@ -238,16 +265,64 @@ describe("Dragging into a setor", () => {
     state.agentGroups = [{ id: INTEGRATIONS, name: "Integrations", agentIds: [ATLAS_ID, caio.id] }];
     pinned(state, [ATLAS_ID]);
     await go(state);
-    expect(rowsIn(section("Integrations"))).toEqual(["Caio"]);
+    expect(rowsIn(section("Integrations"))).toEqual(["Atlas", "Caio"]);
     await dragInto(ADA_ID, section("Integrations"), { clientY: 9999 });
     const moves = state.calls.filter((c) => c.method === "agentGroups.move").map((c) => c.args[2]);
     expect(moves).toEqual([{ groupId: INTEGRATIONS, index: 2 }]);
-    expect(rowsIn(section("Integrations"))).toEqual(["Caio", "Ada"]);
+    expect(rowsIn(section("Integrations"))).toEqual(["Atlas", "Caio", "Ada"]);
+  });
+});
+
+describe("a setor's ⋯ in the sidebar", () => {
+  const calls = (state: State, method: string) =>
+    state.calls.filter((c) => c.method === method).map((c) => c.args.slice(1));
+
+  test("owners and admins edit and delete a setor from its header, as on Equipe", async () => {
+    const { state } = await go(withGroups());
+    const menu = await openMenu("Opções de Integrations");
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((i) => i.textContent),
+    ).toEqual(["Editar", "Mover para cima", "Mover para baixo", "Excluir setor"]);
+    await click(within(menu).getByRole("menuitem", { name: "Editar" }));
+    const edit = screen().getByRole("dialog", { name: "Editar setor" });
+    await act(async () => fireEvent.change(within(edit).getByLabelText("Nome"), { target: { value: "APIs" } }));
+    await click(within(edit).getByRole("button", { name: "Salvar" }));
+    expect(calls(state, "agentGroups.update")).toEqual([
+      [INTEGRATIONS, { name: "APIs", color: "graphite", icon: "person" }],
+    ]);
+    expect(rowsIn(section("APIs"))).toEqual(["Atlas"]);
+
+    await click(within(await openMenu("Opções de APIs")).getByRole("menuitem", { name: "Excluir setor" }));
+    const sure = screen().getByRole("dialog", { name: "Excluir o setor APIs?" });
+    await click(within(sure).getByRole("button", { name: "Excluir setor" }));
+    expect(calls(state, "agentGroups.remove")).toEqual([[INTEGRATIONS]]);
+    expect(rowsIn(section("Agentes"))).toEqual(["Ada", "Atlas"]);
+  });
+
+  test("Organizar setores na Equipe opens Equipe on its setores, whatever view it showed last", async () => {
+    localStorage.setItem("agentes.team.view", "list");
+    await go(withGroups());
+    await click(
+      within(await openMenu("Opções de Agentes")).getByRole("menuitem", { name: "Organizar setores na Equipe" }),
+    );
+    await settle(6);
+    expect(screen().getByRole("region", { name: "Setores" })).toBeTruthy();
+  });
+
+  test("its header's right click has the same; a member has neither", async () => {
+    await go(withGroups());
+    await rightClick(head("Integrations"));
+    expect(items()).toEqual(["Editar", "Mover para cima", "Mover para baixo", "Excluir setor"]);
+    cleanup();
+    await go(asMember(withGroups()));
+    expect(within(nav()).queryByRole("button", { name: "Opções de Integrations" })).toBeNull();
   });
 });
 
 describe("Fixar no topo", () => {
-  test("day one: my own agents on top of Agentes, with a line about pins; its ✕ keeps them and the line goes", async () => {
+  test("day one: my own agents on top of Agentes, with no tip about pins (the row's menu has Fixar no topo)", async () => {
     const state = seedState();
     const atlas = state.agents.find((a) => a.id === ATLAS_ID);
     if (atlas) atlas.ownerUserId = "u-walter";
@@ -256,11 +331,8 @@ describe("Fixar no topo", () => {
     const pinned = nav().querySelector(`[data-agent-row="${ATLAS_ID}"]`) as HTMLElement;
     expect(within(pinned).getByRole("img", { name: "Fixado no topo" })).toBeTruthy();
     expect(section("Agentes").querySelector(".sidebar__pins-end")).not.toBeNull();
-    const hint = section("Agentes").querySelector(".sidebar__pins-hint") as HTMLElement;
-    expect(hint.textContent).toContain("Seus agentes ficam no topo.");
-    await click(within(hint).getByRole("button", { name: "Fechar" }));
-    expect(section("Agentes").querySelector(".sidebar__pins-hint")).toBeNull();
-    expect(views(state).at(-1)).toMatchObject({ pins: { agents: [ATLAS_ID], channels: [], people: [] } });
+    expect(section("Agentes").querySelector('[role="note"]')).toBeNull();
+    expect(section("Agentes").textContent).not.toContain("Seus agentes ficam no topo.");
   });
 
   test("day one leaves my agents in their groups: an agent writing in its DM keeps its group", async () => {
@@ -274,7 +346,63 @@ describe("Fixar no topo", () => {
     expect(rowsIn(section("Integrations"))).toEqual(["Atlas"]);
     expect(rowsIn(section("Diretoria"))).toEqual(["Ada"]);
     expect(within(nav()).queryByRole("img", { name: "Fixado no topo" })).toBeNull();
-    expect(section("Agentes").querySelector(".sidebar__pins-hint")).toBeNull();
+  });
+
+  test("an agent pinned before it went into a setor shows in that setor, on top, whoever put it there", async () => {
+    const state = withGroups();
+    state.sidebarView = {
+      agentSort: "workspace",
+      showAllAgents: false,
+      pins: { agents: [ADA_ID], channels: [], people: [] },
+    };
+    const r = await go(state);
+    const socket = r.sockets.last();
+    await act(async () => socket.open());
+    await settle(3);
+    expect(rowsIn(section("Agentes"))).toEqual(["Ada"]);
+    // Someone else puts Ada in Integrations (another admin, her page, the right hand): my pin is still there.
+    state.agentGroups = [
+      { id: INTEGRATIONS, name: "Integrations", agentIds: [ATLAS_ID, ADA_ID] },
+      { id: BOARD, name: "Diretoria", agentIds: [] },
+    ];
+    await act(async () => socket.push({ type: "event", scope: "org", event: { type: "agent.groups" } }));
+    await settle(4);
+    expect(rowsIn(section("Integrations"))).toEqual(["Ada", "Atlas"]);
+    expect(head("Integrations").querySelector(".sidebar__section-count")?.textContent).toBe("2");
+    const ada = nav().querySelector(`[data-agent-row="${ADA_ID}"]`) as HTMLElement;
+    expect(within(ada).getByRole("img", { name: "Fixado no topo" })).toBeTruthy();
+    expect(rowsIn(section("Agentes"))).toEqual([]);
+  });
+
+  test("Fixar no topo puts the agent first, so the row moves where the person looks", async () => {
+    const state = seedState();
+    state.sidebarView = {
+      agentSort: "workspace",
+      showAllAgents: false,
+      pins: { agents: [ATLAS_ID], channels: [], people: [] },
+    };
+    await go(state);
+    expect(rowsIn(section("Agentes"))).toEqual(["Atlas", "Ada"]);
+    await rightClick(within(nav()).getByRole("link", { name: /^Ada/ }));
+    await pick("Fixar no topo");
+    expect(rowsIn(section("Agentes"))).toEqual(["Ada", "Atlas"]);
+    expect(views(state).at(-1)).toMatchObject({ pins: { agents: [ADA_ID, ATLAS_ID] } });
+  });
+
+  test("a pin of an agent no longer here holds no place: no one could take it off the top", async () => {
+    const state = seedState();
+    const gone = ["b1", "b2", "b3", "b4"].map((n) => `00000000-0000-4000-8000-0000000000${n}`);
+    state.sidebarView = {
+      agentSort: "workspace",
+      showAllAgents: false,
+      pins: { agents: [...gone, ATLAS_ID], channels: [], people: [] },
+    };
+    await go(state);
+    await rightClick(within(nav()).getByRole("link", { name: /^Ada/ }));
+    await pick("Fixar no topo");
+    expect(screen().queryByText("Você já fixou 5 agentes. Tire um do topo para fixar este.")).toBeNull();
+    expect(rowsIn(section("Agentes"))).toEqual(["Ada", "Atlas"]);
+    expect(views(state).at(-1)).toMatchObject({ pins: { agents: [ADA_ID, ATLAS_ID] } });
   });
 
   test("a channel pinned from its right click goes on top of Canais; Tirar do topo puts it back", async () => {
@@ -306,7 +434,16 @@ describe("Fixar no topo", () => {
 
   test("five per section: the sixth says so and pins nothing", async () => {
     const state = seedState();
-    const five = ["c1", "c2", "c3", "c4", "c5"];
+    const five = [1, 2, 3, 4, 5].map((n) => `00000000-0000-4000-8000-0000000000d${n}`);
+    for (const [i, id] of five.entries())
+      state.channels.push({
+        id,
+        name: `sala-${i + 1}`,
+        topic: "",
+        visibility: "public",
+        isMember: true,
+        createdAt: state.channels[0]?.createdAt ?? "",
+      });
     state.sidebarView = {
       agentSort: "workspace",
       showAllAgents: false,

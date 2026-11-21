@@ -3,9 +3,20 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
-import type { TeamProposalCard } from "@agenteschat/client";
+import type { FormerAgent, TeamProposalCard } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { createFakeApi, type FakeState, LODI_ID, ORG_ID, seedDm, seedState, withRightHand } from "./fake-api";
+import {
+  createFakeApi,
+  ENG_ID,
+  type FakeState,
+  fakeMachinesOf,
+  LODI_ID,
+  meWithRole,
+  ORG_ID,
+  seedDm,
+  seedState,
+  withRightHand,
+} from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
 /** The right hand's team setup on the web (ADR 0137 §10): answers to tap, the team card, the templates. */
@@ -163,12 +174,18 @@ describe("the team card", () => {
 
   test("Criar o time makes it in one click; the receipt has Desfazer and a first task per agent", async () => {
     const state = lodiDm();
+    // Lodi's checklist above it, its asks out once the team can think.
+    const lodi = state.agents.find((a) => a.id === LODI_ID);
+    if (lodi) lodi.setup = { role: null, done: ["apps"] };
     const { router } = await openDm(state);
     await click(button("Criar o time"), 12);
     expect(calls(state, "agents.createTeam").map((c) => c.args[1])).toEqual(["m-team"]);
     expect(document.body.textContent).toContain("Time criado por você");
     expect(button("Desfazer")).toBeTruthy();
     const first = screen().getByRole("group", { name: "Primeira tarefa" });
+    // One offer of a first task, this card's: the checklist's asks above it offer none.
+    expect(screen().getByText("Agora me peça algo:")).toBeTruthy();
+    expect(screen().queryByRole("button", { name: /Dar a primeira tarefa/ })).toBeNull();
     expect(first.textContent).toContain("Responder a última mensagem que espera");
     // The task under the name at the row's full width, its button at the name's line's end or under the task.
     const task = first.querySelector(".tp-agent.ac-mediarow") as HTMLElement;
@@ -222,15 +239,68 @@ describe("the team card", () => {
   });
 });
 
+describe("Undo on a team someone else made", () => {
+  const IARA_ID = "00000000-0000-4000-8000-0000000000c1";
+  const BIA_ID = "00000000-0000-4000-8000-0000000000c2";
+  /**
+   * João made the team an hour ago: Iara is still here and answers everyone, Bia was archived since. I hold "Edit
+   * agents": undoing archives them all, so I need to manage each, the archived one too (ADR 0085 addendum of
+   * 2026-11-17).
+   */
+  const madeByJoao = (bia: Partial<FormerAgent>) => {
+    const state = lodiDm();
+    meWithRole(state, ["manage_agents"]);
+    state.agents.push({
+      id: IARA_ID,
+      name: "Iara",
+      handle: "iara",
+      role: "Atendimento",
+      instructions: "",
+      model: "auto",
+      ownerUserId: "u-joao",
+      hasCredential: false,
+      monthlyBudgetUsd: null,
+      createdAt: new Date().toISOString(),
+    });
+    state.former = [{ id: BIA_ID, name: "Bia", role: "Dev", appearance: null, deleted: false, ...bia }];
+    const card = state.messages.find((m) => m.id === "m-team")?.meta?.actionCard as TeamProposalCard;
+    Object.assign(card, {
+      state: "created",
+      decidedByUserId: "u-joao",
+      decidedAt: new Date(Date.now() - 3_600_000).toISOString(),
+      created: { agentIds: [IARA_ID, BIA_ID], channelIds: [], routineIds: [], skillIds: [], skipped: [], noAi: [] },
+    });
+    return state;
+  };
+
+  test("only for who manages every agent it made: an archived one by its own, a deleted one reached by the key", async () => {
+    await openDm(madeByJoao({ canManage: false }));
+    expect(screen().queryByRole("button", { name: "Desfazer" })).toBeNull();
+    cleanup();
+    await openDm(madeByJoao({ canManage: true }));
+    expect(button("Desfazer")).toBeTruthy();
+    cleanup();
+    // Deleted since: what's left of it belongs to nobody, which "Edit agents" reaches (ADR 0082).
+    await openDm(madeByJoao({ deleted: true }));
+    expect(button("Desfazer")).toBeTruthy();
+  });
+});
+
 describe("team templates", () => {
-  test("the checklist's Ver o time lists them with a preview; Criar o time makes it at once (ADR 0155 §6)", async () => {
+  test("the kept card's Ver modelos de time lists them with a preview; Criar o time makes it at once", async () => {
     const state = withRightHand(seedState({ agents: [] }), { setup: { role: null, done: [] } });
     state.members = state.members.slice(0, 1);
+    if (state.me)
+      state.me.organizations = state.me.organizations.map((o) => ({
+        ...o,
+        standing: { state: "hold" as const, reason: "payment" },
+      }));
+    state.aiStatus = { any: false, agents: [{ agentId: LODI_ID, state: "no_ai", reason: "no_key" }] };
     state.teamTemplates = [
       {
         id: "software",
         name: "Software e apps",
-        sub: "Suporte, cobrança e código",
+        sub: "Atendimento, cobrança e código",
         description: "Para quem vende um sistema.",
         team: CARD.params,
       },
@@ -242,8 +312,26 @@ describe("team templates", () => {
         team: { ...CARD.params, agents: [CARD.params.agents[0] as never] },
       },
     ];
-    await openDm(state);
-    await click(button("Ver o time"), 10);
+    state.messages.push({
+      id: "m-kept",
+      channelId: ENG_ID,
+      threadId: null,
+      author: { type: "agent", id: LODI_ID },
+      body: "I kept your message.",
+      mentionedAgentIds: [],
+      agentRunId: "r-kept",
+      meta: {
+        bodyCode: "no_ai",
+        noAi: { agentId: LODI_ID, forUserId: "u-walter", reason: "plan_hold", intent: "task", runId: "r" },
+      },
+      createdAt: new Date().toISOString(),
+    });
+    const api = createFakeApi(state);
+    // agentes.chat Cloud, where each workspace's own computer waits for the plan: only there is a hold.
+    fakeMachinesOf.get(api)?.setSetup({ state: null });
+    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api });
+    await settle(10);
+    await click(button("Ver modelos de time"), 10);
     const dialog = screen().getByRole("dialog", { name: "Modelos de time" });
     expect(dialog.textContent).toContain("Para quem vende um sistema.");
     expect(dialog.textContent).toContain("Responde os clientes no WhatsApp e no e-mail.");
@@ -255,6 +343,5 @@ describe("team templates", () => {
     await click(within(dialog).getByRole("button", { name: "Criar o time" }), 12);
     expect(calls(state, "agents.applyTeamTemplate").map((c) => c.args[1])).toEqual(["clinic"]);
     expect(screen().queryByRole("dialog", { name: "Modelos de time" })).toBeNull();
-    expect(document.querySelector(".setup-cl")?.textContent).toContain("1 agente no time");
   });
 });

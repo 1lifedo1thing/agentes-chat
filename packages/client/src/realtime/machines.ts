@@ -15,6 +15,7 @@ import type {
   OrgStanding,
 } from "../api/types";
 import { pacer } from "../lib/pace";
+import { isWorkspaceMode } from "../lib/workspace-mode";
 
 const MACHINE_EVENTS = new Set([
   "machine.status",
@@ -39,7 +40,11 @@ export function pauseOf(v: unknown): MachinePause | undefined {
   if (v === null) return { paused: false };
   if (!isObject(v)) return undefined;
   if (v.paused === false) return { paused: false };
-  return { paused: true, until: typeof v.until === "string" ? v.until : null };
+  const by =
+    isObject(v.by) && typeof v.by.id === "string" && typeof v.by.name === "string"
+      ? { id: v.by.id, name: v.by.name }
+      : null;
+  return { paused: true, until: typeof v.until === "string" ? v.until : null, ...(by ? { by } : {}) };
 }
 
 /** Access from an event (`{ folders, tools }`), checked; `null` when the machine stopped reporting it. */
@@ -83,6 +88,12 @@ function patchTargets(
  * Returns whether the event was one of these.
  */
 export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type: string }): boolean {
+  // What an agent keeps running (ADR 0176): only its list, nothing else about the computer changed.
+  if (event.type === "machine.holds") {
+    const agentId = (event as { agentId?: unknown }).agentId;
+    if (typeof agentId === "string") void qc.invalidateQueries({ queryKey: keys.agentHolds(orgId, agentId) });
+    return true;
+  }
   if (!isMachineEvent(event.type)) return false;
   // The devices list (`devices.changed`, and every computer's state, pause or name in it) is read again.
   void qc.invalidateQueries({ queryKey: keys.devices(orgId) });
@@ -97,6 +108,7 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
     executors?: unknown;
     egress?: unknown;
     networkTransition?: unknown;
+    standby?: unknown;
   };
   if (typeof e.machineId !== "string") return true;
   const machineId = e.machineId;
@@ -131,16 +143,27 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
   if (accounts) void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
   switch (e.type) {
     case "machine.status": {
-      const online = e.online === true;
+      // A computer gone into standby reads online still (ADR 0161); its hello ends the standby.
+      const asleep = e.online !== true && qc.getQueryData<Machine[]>(list)?.find((m) => m.id === machineId)?.standby;
+      const online = e.online === true || asleep === true;
       const now = new Date().toISOString();
       qc.setQueryData<Machine[]>(list, (old) =>
         old?.map((m) =>
-          m.id === machineId ? { ...m, online, egress: null, lastSeenAt: online ? now : m.lastSeenAt } : m,
+          m.id === machineId
+            ? {
+                ...m,
+                online,
+                egress: null,
+                lastSeenAt: e.online === true ? now : m.lastSeenAt,
+                ...(online ? { offlineCause: null } : {}),
+                ...(e.online === true && m.standby ? { standby: false } : {}),
+              }
+            : m,
         ),
       );
       patchTargets(qc, orgId, machineId, { online });
-      // A machine we don't know yet (paired in another tab): fetch it.
-      if (!qc.getQueryData<Machine[]>(list)?.some((m) => m.id === machineId)) {
+      // A machine we don't know yet (paired in another tab), or one gone offline (why it went is on the server): fetch.
+      if (!online || !qc.getQueryData<Machine[]>(list)?.some((m) => m.id === machineId)) {
         void qc.invalidateQueries({ queryKey: list });
       }
       break;
@@ -182,6 +205,9 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
         };
       }
       if (typeof e.name === "string") patch.name = e.name;
+      // Put in standby once it is asleep (ADR 0161): online again to people, its agents' computer too.
+      if (e.standby === true) Object.assign(patch, { standby: true, online: true });
+      else if (e.standby === false) patch.standby = false;
       const paused = pauseOf(e.paused);
       if (paused) patch.paused = paused;
       const access = accessOf(e.access);
@@ -195,9 +221,15 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
           ),
         );
         if (patch.name) patchTargets(qc, orgId, machineId, { name: patch.name });
+        if (patch.online) patchTargets(qc, orgId, machineId, { online: true });
       }
       // Nothing to patch, or `access: true` (it changed, and who may see it differs per person): refetch.
       if (Object.keys(patch).length === 0 || e.access === true) void qc.invalidateQueries({ queryKey: list });
+      // Out of standby: whether it is online is the server's again.
+      if (e.standby === false) {
+        void qc.invalidateQueries({ queryKey: list });
+        void qc.invalidateQueries({ queryKey: keys.computers(orgId) });
+      }
       break;
     }
     case "machine.agents_moved":
@@ -260,7 +292,11 @@ const isAgentPart = (k: readonly unknown[], orgId: string, part: string) =>
 const READ_GAP_MS = 500;
 const pacers = new WeakMap<QueryClient, ReturnType<typeof pacer>>();
 
-function readList(qc: QueryClient, list: string, filters: InvalidateQueryFilters) {
+/**
+ * Reads `filters` again, paced per `list` (`READ_GAP_MS`): every event that reads the same list names it the same way
+ * (`${orgId}:working`), so a run's events on the conversation and on the workspace's topic read it once.
+ */
+export function readList(qc: QueryClient, list: string, filters: InvalidateQueryFilters) {
   const pace = pacers.get(qc) ?? pacer(READ_GAP_MS);
   pacers.set(qc, pace);
   pace(list, () => void qc.invalidateQueries(filters));
@@ -328,7 +364,21 @@ export function applyMembershipEvent(qc: QueryClient, orgId: string, event: Chan
 export function applyConversationEvent(qc: QueryClient, orgId: string, event: ChannelEvent): boolean {
   const type: string = event.type;
   if (type === "artifact.created" || type === "artifact.updated" || type === "artifact.deleted") {
-    void qc.invalidateQueries({ queryKey: keys.artifacts(orgId) });
+    const e = event as { artifact?: { id?: unknown }; artifactId?: unknown };
+    const id = typeof e.artifact?.id === "string" ? e.artifact.id : e.artifactId;
+    // That file's own queries (its card, versions, bytes) and the lists it may sit in. Not every other file on the
+    // screen: each save used to read all their cards again and download all their previews again.
+    void qc.invalidateQueries(
+      typeof id === "string"
+        ? {
+            predicate: ({ queryKey: k }) =>
+              k[0] === "org" &&
+              k[1] === orgId &&
+              k[2] === "artifacts" &&
+              (k[3] === "list" || k[3] === "trash" || k[4] === id),
+          }
+        : { queryKey: keys.artifacts(orgId) },
+    );
     const channelId = (event as { channelId?: unknown }).channelId;
     if (type === "artifact.deleted" && typeof channelId === "string")
       void qc.invalidateQueries({ queryKey: ["org", orgId, "channel", channelId] });
@@ -347,9 +397,9 @@ export function applyConversationEvent(qc: QueryClient, orgId: string, event: Ch
  * (`ready`) refetches the computers; `org.standing` sets this workspace's standing in `GET /me`, so the banner
  * and the suspended screen follow without a reload, and asks for the setup again: a workspace on hold waits for no
  * computer, and one active again waits for one. `org.deleting` (an owner deleted it) sets its deletion there, so the
- * closing screen takes its place at once. `org.limits` (a new plan, ADR 0079) asks for the limits again, so a full
- * workspace's invitations open by themselves. `agent.groups` (ADR 0083) says the groups of agents changed: they are
- * read again.
+ * line on top shows at once and the workspace turns read-only. `org.limits` (a new plan, ADR 0079) asks for the
+ * limits again, so a full workspace's invitations open by themselves. `agent.groups` (ADR 0083) says the groups of
+ * agents changed: they are read again.
  * `member.status` and `agent.status` (ADR 0084) refetch the people and the agents' presence. `org.members` (someone
  * joined or left, a role changed, ADR 0085, or a person's name, handle or photo) refetches the people, Members, each
  * channel's roster, the roles, `me`, the agents, the
@@ -370,6 +420,8 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
     // Each channel's roster names them too, and so does an agent's open page.
     refreshChannelMembers(qc, orgId);
     readList(qc, `${orgId}:agent-pages`, { predicate: (q) => isAgentPart(q.queryKey, orgId, "detail") });
+    // The library and each agent's skills: an agent page saves its whole list, so a stale one would undo a card's.
+    readList(qc, `${orgId}:skills`, { queryKey: keys.skills(orgId) });
     return true;
   }
   if (event.type === "channels.changed") {
@@ -446,6 +498,25 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
     void qc.invalidateQueries({ queryKey: keys.computerSetup(target) });
     return true;
   }
+  if (event.type === "org.mode") {
+    // The workspace became personal or a team's (ADR 0159): its shape follows at once, in every member's apps.
+    const e = event as { orgId?: unknown; mode?: unknown };
+    const target = typeof e.orgId === "string" ? e.orgId : orgId;
+    if (isWorkspaceMode(e.mode)) {
+      const mode = e.mode;
+      qc.setQueryData<Me>(keys.me, (me) =>
+        me ? { ...me, organizations: me.organizations.map((o) => (o.id === target ? { ...o, mode } : o)) } : me,
+      );
+    }
+    void qc.invalidateQueries({ queryKey: keys.me });
+    void qc.invalidateQueries({ queryKey: keys.settings(target) });
+    return true;
+  }
+  if (event.type === "org.reset") {
+    // An owner reset the workspace: everything in it went, so every list reads again and its owner's onboarding opens.
+    void qc.invalidateQueries();
+    return true;
+  }
   if (event.type === "org.deleting") {
     const e = event as { orgId?: unknown; dueAt?: unknown; by?: unknown };
     const by = isObject(e.by) ? e.by : {};
@@ -454,21 +525,31 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
       requestedAt: new Date().toISOString(),
       requestedBy: typeof by.id === "string" && typeof by.name === "string" ? { id: by.id, name: by.name } : null,
     });
-    // The socket closes right after it: the server's own record replaces this one.
+    // The server's own record replaces this one.
     void qc.invalidateQueries({ queryKey: keys.me });
+    return true;
+  }
+  if (event.type === "org.look") {
+    // The workspace's logo or accent changed (ADR 0193): every member's apps repaint with it.
+    void qc.invalidateQueries({ queryKey: keys.me });
+    void qc.invalidateQueries({ queryKey: [...keys.org(orgId), "detail"], exact: true });
     return true;
   }
   if (event.type === "org.limits") {
     void qc.invalidateQueries({ queryKey: keys.limits(orgId) });
     return true;
   }
-  // Someone changed their availability or line, or an agent its line (ADR 0084): the lists follow.
+  // Someone changed their availability or line, or an agent its line (ADR 0084): the lists follow, paced as the
+  // others (a burst of these is one read at its start and one at its end).
   if (event.type === "member.status") {
-    void qc.invalidateQueries({ queryKey: keys.people(orgId) });
+    readList(qc, `${orgId}:status:people`, { queryKey: keys.people(orgId) });
     return true;
   }
+  // An agent's run started, parked, came back or ended: its face and line follow, and so does "Working now"
+  // (work handed off in two agents' DM reaches no conversation's events).
   if (event.type === "agent.status") {
-    void qc.invalidateQueries({ queryKey: keys.agentStatus(orgId) });
+    readList(qc, `${orgId}:status:agents`, { queryKey: keys.agentStatus(orgId) });
+    readList(qc, `${orgId}:working`, { queryKey: keys.working(orgId) });
     return true;
   }
   // A routine's run was queued, started or ended, or a routine was made, changed or deleted: Rotinas follows.
@@ -480,7 +561,10 @@ export function applyWorkspaceEvent(qc: QueryClient, orgId: string, event: { typ
   if (event.type === "artifacts.changed") {
     readList(qc, `${orgId}:drive`, {
       predicate: ({ queryKey: k }) =>
-        k[0] === "org" && k[1] === orgId && k[2] === "artifacts" && (k[3] === "list" || k[3] === "trash"),
+        k[0] === "org" &&
+        k[1] === orgId &&
+        k[2] === "artifacts" &&
+        (k[3] === "list" || k[3] === "trash" || k[3] === "folders"),
     });
     return true;
   }

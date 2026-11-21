@@ -7,6 +7,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -38,6 +39,7 @@ import {
   RUNNER_BUN_WINDOWS_SHA256,
   SYSTEM_BROWSER_DIR,
   shQuote,
+  withoutTrailingSlashes,
 } from "../../runner/install-script";
 import { launchdPlist, systemdUnit, windowsTaskCommand } from "../../runner/service";
 import { removeDirs, tempDir } from "./helpers";
@@ -85,7 +87,20 @@ mkdir -p "$dir/bun-linux-aarch64" && cp "$FAKE_BUN" "$dir/bun-linux-aarch64/bun"
   }
   const fetched = path.join(root, "fetched-bun");
   writeFileSync(fetched, fakeBun(RUNNER_BUN_VERSION, true), { mode: 0o755 });
-  for (const tool of ["sed", "grep", "mkdir", "chmod", "mv", "cp", "rm", "mktemp", "cut", "sha256sum", "shasum"]) {
+  for (const tool of [
+    "sed",
+    "grep",
+    "mkdir",
+    "chmod",
+    "mv",
+    "cp",
+    "rm",
+    "mktemp",
+    "cut",
+    "sha256sum",
+    "shasum",
+    "date",
+  ]) {
     const real = Bun.which(tool);
     if (real) symlinkSync(real, path.join(sys, tool));
   }
@@ -117,6 +132,17 @@ mkdir -p "$dir/bun-linux-aarch64" && cp "$FAKE_BUN" "$dir/bun-linux-aarch64/bun"
 test("shQuote survives single quotes", () => {
   expect(shQuote("plain")).toBe("'plain'");
   expect(shQuote("it's")).toBe("'it'\\''s'");
+});
+
+test("the server's address loses the slashes it ends with, read once however long a run of them inside it", () => {
+  expect(withoutTrailingSlashes("https://a.example//")).toBe("https://a.example");
+  expect(withoutTrailingSlashes("https://a.example//x")).toBe("https://a.example//x");
+  expect(withoutTrailingSlashes("///")).toBe("");
+  const started = performance.now();
+  const run = `https://a.example${"/".repeat(200_000)}x`;
+  expect(installScript(` ${run}// `)).toContain(`SERVER='${run}'\n`);
+  expect(installScriptPowerShell(`${run}/`)).toContain(run);
+  expect(performance.now() - started).toBeLessThan(1000);
 });
 
 test("the install script quotes the server URL and is valid sh", () => {
@@ -233,7 +259,8 @@ test.skipIf(process.platform === "win32")(
     expect(r.out).toContain(
       `●  To use the agentes-runner command, add it to your PATH:\n     export PATH="${pc.home}/.agentes-runner/bin:$PATH"\n`,
     );
-    expect(r.out).toEndWith("\nDone\n");
+    // How long it took, as term.ts's elapsed() writes it.
+    expect(r.out).toMatch(/\nDone in \d+s\n$/);
     expect(r.out).not.toContain("\x1b");
     expect(r.out).not.toContain("│");
 
@@ -270,7 +297,7 @@ test.skipIf(process.platform === "win32")(
   async () => {
     const pc = fakeComputer({ bun: fakeBun(RUNNER_BUN_VERSION, true) });
     writeFileSync(path.join(pc.fake, "curl"), CURL_404, { mode: 0o755 });
-    for (const tool of ["date", "sleep", "stty", "fold", "tail", "tr"]) {
+    for (const tool of ["sleep", "stty", "fold", "tail", "tr"]) {
       const real = Bun.which(tool);
       if (real) symlinkSync(real, path.join(pc.sys, tool));
     }
@@ -509,8 +536,8 @@ test.skipIf(process.platform === "win32")(
       const r = pc.install(`umask ${umask}\n${pc.script}`, ["--system", "--desktop", "--no-pair", "--no-start"]);
       expect(r.status).toBe(0);
       expect(r.log).toContain("service install --system --no-start");
-      expect(r.out).toEndWith(
-        `●  The agentes-runner command is ${pc.at("bin/agentes-runner")}. To check this computer's connection:\n     agentes-runner status\n\nDone\n`,
+      expect(r.out).toContain(
+        `●  The agentes-runner command is ${pc.at("bin/agentes-runner")}. To check this computer's connection:\n     agentes-runner status\n\nDone in `,
       );
       return Object.fromEntries(
         readdirSync(pc.at(""), { recursive: true })
@@ -873,14 +900,20 @@ test.skipIf(process.platform === "win32")(
       const real = Bun.which(tool);
       if (real && !existsSync(path.join(pc.sys, tool))) symlinkSync(real, path.join(pc.sys, tool));
     }
-    // Codex's release: a tar.gz with the binary named for this processor.
+    // Codex's release: its whole package for this processor (the CLI and the helpers it starts), and the sums.
     const release = path.join(pc.home, "codex-release");
-    mkdirSync(release);
-    writeFileSync(path.join(release, "codex-aarch64-unknown-linux-musl"), '#!/bin/sh\necho "codex-cli 0.167.0"\n', {
-      mode: 0o755,
-    });
+    mkdirSync(path.join(release, "bin"), { recursive: true });
+    writeFileSync(path.join(release, "bin/codex"), '#!/bin/sh\necho "codex-cli 0.167.0"\n', { mode: 0o755 });
+    writeFileSync(path.join(release, "bin/codex-code-mode-host"), "#!/bin/sh\n", { mode: 0o755 });
+    writeFileSync(path.join(release, "codex-package.json"), '{"layoutVersion":1,"entrypoint":"bin/codex"}\n');
     const tarball = path.join(pc.home, "codex.tar.gz");
-    spawnSync("tar", ["-czf", tarball, "-C", release, "codex-aarch64-unknown-linux-musl"]);
+    spawnSync("tar", ["-czf", tarball, "-C", release, "bin", "codex-package.json"]);
+    const sums = path.join(pc.home, "codex-sums");
+    const sha = createHash("sha256").update(readFileSync(tarball)).digest("hex");
+    const goodSums =
+      `${"0".repeat(64)}  codex-package-x86_64-unknown-linux-musl.tar.gz\n` +
+      `${sha}  codex-package-aarch64-unknown-linux-musl.tar.gz\n`;
+    writeFileSync(sums, goodSums);
     fake(
       "curl",
       `#!/bin/sh
@@ -891,7 +924,8 @@ case "$url" in
     'printf "#!/bin/sh\\\\necho 2.1.319 \\\\(Claude Code\\\\)\\\\n" > "$HOME/.local/share/claude-2.1.319"' \\
     'chmod 755 "$HOME/.local/share/claude-2.1.319"' 'ln -s "$HOME/.local/share/claude-2.1.319" "$HOME/.local/bin/claude"' \\
     'echo "claude install as $CLAUDE_INSTALL_ALLOW_SUDO" >> "$LOG"' > "$out" ;;
-  *codex-aarch64-unknown-linux-musl.tar.gz) cp '${tarball}' "$out" ;;
+  *codex-package-aarch64-unknown-linux-musl.tar.gz) cp '${tarball}' "$out" ;;
+  *codex-package_SHA256SUMS) cp '${sums}' "$out" ;;
   *) printf '#!/usr/bin/env node\\n' > "$out" ;;
 esac
 `,
@@ -924,10 +958,17 @@ printf '#!/bin/sh\\necho "Chromium 157.0.8103.38 snap"\\n' > '${pc.at("snap/chro
     expect(r.log).toContain("claude install as 1\n");
     expect(lstatSync(pc.at("bin/claude")).isFile()).toBe(true);
     expect(r.out).toContain(`Claude Code 2.1.319, in ${pc.at("bin/claude")}`);
-    // Codex: the latest release's build for this processor.
+    // Codex: the latest release's whole package for this processor, checked against its sums, unpacked in lib/codex
+    // beside the agents' PATH and linked there; code mode's helper is in it, beside the CLI the link leads to.
     expect(r.log).toContain(
-      "curl https://github.com/openai/codex/releases/latest/download/codex-aarch64-unknown-linux-musl.tar.gz\n",
+      "curl https://github.com/openai/codex/releases/latest/download/codex-package-aarch64-unknown-linux-musl.tar.gz\n",
     );
+    expect(r.log).toContain("curl https://github.com/openai/codex/releases/latest/download/codex-package_SHA256SUMS\n");
+    expect(readlinkSync(pc.at("bin/codex"))).toBe(pc.at("lib/codex/bin/codex"));
+    expect(statSync(pc.at("lib/codex/bin/codex-code-mode-host")).mode & 0o777).toBe(0o755);
+    expect(existsSync(pc.at("lib/codex/codex-package.json"))).toBe(true);
+    expect(existsSync(pc.at("bin/codex-code-mode-host"))).toBe(false);
+    expect(readdirSync(pc.at("lib"))).toEqual(["codex"]);
     expect(r.out).toContain(`Codex 0.167.0, in ${pc.at("bin/codex")}`);
     // Nothing of the runner: it stops there.
     expect(r.log).not.toContain("agentes-runner.mjs");
@@ -936,8 +977,41 @@ printf '#!/bin/sh\\necho "Chromium 157.0.8103.38 snap"\\n' > '${pc.at("snap/chro
     const again = pc.install(script, ["--requirements", "browser,claude,codex"]);
     expect(again.status).toBe(0);
     expect(again.log.split("snap install").length).toBe(2);
+    expect(again.log.split("codex-package-aarch64").length).toBe(2);
     expect(again.out).toContain("Chromium 157.0.8103.38, updated by this computer's own updates");
     expect(again.out).toContain("Claude Code 2.1.319\n");
+    expect(again.out).toContain("Codex 0.167.0\n");
+
+    // A lone Codex binary, as this installed before, can't run code mode: installed again, whole.
+    const lone = () => {
+      rmSync(pc.at("bin/codex"));
+      rmSync(pc.at("lib/codex"), { recursive: true, force: true });
+      writeFileSync(pc.at("bin/codex"), '#!/bin/sh\necho "codex-cli 0.160.0"\n', { mode: 0o755 });
+    };
+    lone();
+    const repaired = pc.install(script, ["--requirements", "codex"]);
+    expect(repaired.status).toBe(0);
+    expect(repaired.out).toContain("Installing Codex again, whole: it lacked the helpers it starts");
+    expect(repaired.out).toContain(`Codex 0.167.0, in ${pc.at("bin/codex")}`);
+    expect(readlinkSync(pc.at("bin/codex"))).toBe(pc.at("lib/codex/bin/codex"));
+    expect(repaired.log.split("codex-package-aarch64").length).toBe(3);
+
+    // One with the helper beside it (put there by hand) is whole: kept.
+    lone();
+    writeFileSync(pc.at("bin/codex-code-mode-host"), "#!/bin/sh\n", { mode: 0o755 });
+    const byHand = pc.install(script, ["--requirements", "codex"]);
+    expect(byHand.out).toContain("Codex 0.160.0\n");
+    expect(lstatSync(pc.at("bin/codex")).isFile()).toBe(true);
+    expect(byHand.log.split("codex-package-aarch64").length).toBe(3);
+    rmSync(pc.at("bin/codex-code-mode-host"));
+
+    // A download that doesn't match the release's sums is never installed, and the lone binary stays as it was.
+    writeFileSync(sums, goodSums.replace(sha, "f".repeat(64)));
+    const tampered = pc.install(script, ["--requirements", "codex"]);
+    expect(tampered.status).toBe(0);
+    expect(tampered.out).toContain("Installing Codex failed: run this again, or install it yourself");
+    expect(lstatSync(pc.at("bin/codex")).isFile()).toBe(true);
+    expect(readdirSync(pc.at("lib"))).toEqual([]);
   },
   30_000,
 );
@@ -1137,3 +1211,183 @@ test("the PowerShell installer: the link and server baked in, Bun pinned by SHA-
     "$Server = 'https://o''neil.test'",
   );
 });
+
+test.skipIf(process.platform === "win32")("the shell installer ends with how long it took: 52s, 1m 04s", () => {
+  const doneIn = /^done_in\(\) \{[\s\S]*?^\}$/m.exec(installScript("https://x.test"))?.[0];
+  expect(doneIn).toBeDefined();
+  for (const [ago, says] of [
+    [52, /^Done in 5[23]s\n$/],
+    [64, /^Done in 1m 0[45]s\n$/],
+  ] as const) {
+    const run = `${TERM_SH}\n${doneIn}\nt_init 1\nT_START=$(($(date +%s) - ${ago}))\ndone_in\n`;
+    expect(spawnSync("/bin/sh", ["-c", run], { encoding: "utf8" }).stdout).toMatch(says);
+  }
+});
+
+const PWSH = Bun.which("pwsh");
+
+/**
+ * Reads the installer with PowerShell's own parser and says what it uses: parse errors, syntax newer than Windows
+ * PowerShell 5.1 (`&&`, `? :`, `??`, `?.`), each command with its named parameters and whether this PowerShell knows
+ * them (Get-Command), the .NET types, the environment variables, and the special folders it asks Windows for.
+ */
+const PS_ANALYZER = `param([string]$File)
+$tokens = $null; $errors = $null
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($File, [ref]$tokens, [ref]$errors)
+$all = @($ast.FindAll({ $true }, $true))
+$defined = @($all | Where-Object { $_ -is [System.Management.Automation.Language.FunctionDefinitionAst] } | ForEach-Object { $_.Name })
+$newer = @($all | ForEach-Object {
+  $n = $_.GetType().Name
+  if ($n -eq 'PipelineChainAst' -or $n -eq 'TernaryExpressionAst') { $n }
+  elseif ($_ -is [System.Management.Automation.Language.BinaryExpressionAst] -and "$($_.Operator)" -like 'QuestionQuestion*') { 'NullCoalescing' }
+  elseif ($_ -is [System.Management.Automation.Language.MemberExpressionAst] -and $_.NullConditional) { 'NullConditional' }
+})
+$commands = @($all | Where-Object { $_ -is [System.Management.Automation.Language.CommandAst] } | ForEach-Object {
+  $name = $_.GetCommandName()
+  if ($name -and $defined -notcontains $name) {
+    $params = @($_.CommandElements | Where-Object { $_ -is [System.Management.Automation.Language.CommandParameterAst] } | ForEach-Object { $_.ParameterName })
+    $known = Get-Command $name -ErrorAction SilentlyContinue
+    $unknown = @()
+    if ($known) {
+      $names = @($known.Parameters.Values | ForEach-Object { $_.Name; $_.Aliases })
+      $unknown = @($params | Where-Object { $names -notcontains $_ })
+    }
+    [pscustomobject]@{ name = $name; params = $params; here = [bool]$known; unknown = $unknown }
+  }
+})
+$types = @($all | Where-Object { $_ -is [System.Management.Automation.Language.TypeExpressionAst] -or $_ -is [System.Management.Automation.Language.TypeConstraintAst] } | ForEach-Object { $_.TypeName.FullName } | Sort-Object -Unique)
+$unresolved = @($types | Where-Object { -not ($_ -as [type]) })
+$envs = @($all | Where-Object { $_ -is [System.Management.Automation.Language.VariableExpressionAst] -and $_.VariablePath.DriveName -eq 'env' } | ForEach-Object { $_.VariablePath.UserPath.Substring(4) } | Sort-Object -Unique)
+$folders = @($all | Where-Object { $_ -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and "$($_.Member)" -eq 'GetFolderPath' } | ForEach-Object {
+  $arg = $_.Arguments[0].Value
+  [pscustomobject]@{ name = $arg; known = [Enum]::IsDefined([Environment+SpecialFolder], $arg) }
+})
+[pscustomobject]@{ errors = @($errors | ForEach-Object { $_.Message }); newer = $newer; commands = $commands; types = $types; unresolved = $unresolved; envs = $envs; folders = $folders } | ConvertTo-Json -Depth 6 -Compress
+`;
+
+/**
+ * What the installer may call on Windows 10 and 11 as they ship (Windows PowerShell 5.1): its cmdlets, with the named
+ * parameters each takes. The ScheduledTasks module's are there since Windows 8; the rest are PowerShell's own, so
+ * where this PowerShell has them too their parameters are also checked against it.
+ */
+const WINDOWS_CMDLETS: Record<string, string[] | "builtin"> = {
+  "Write-Host": "builtin",
+  "Join-Path": "builtin",
+  "Test-Path": "builtin",
+  "Get-Content": "builtin",
+  "Set-Content": "builtin",
+  "New-Item": "builtin",
+  "Copy-Item": "builtin",
+  "Move-Item": "builtin",
+  "Remove-Item": "builtin",
+  "Out-Null": "builtin",
+  "Get-Date": "builtin",
+  "Invoke-WebRequest": "builtin",
+  "Get-FileHash": "builtin",
+  "Expand-Archive": "builtin",
+  "ConvertFrom-Json": "builtin",
+  "Stop-Process": "builtin",
+  "Start-Process": "builtin",
+  "New-TimeSpan": "builtin",
+  "New-ScheduledTaskAction": ["Execute", "Argument", "WorkingDirectory", "Id"],
+  "New-ScheduledTaskTrigger": ["AtLogOn", "AtStartup", "User", "Once", "At", "Daily", "Weekly", "RandomDelay"],
+  "New-ScheduledTaskPrincipal": ["UserId", "LogonType", "RunLevel", "GroupId", "Id"],
+  "New-ScheduledTaskSettingsSet": [
+    "AllowStartIfOnBatteries",
+    "DontStopIfGoingOnBatteries",
+    "StartWhenAvailable",
+    "ExecutionTimeLimit",
+    "RestartCount",
+    "RestartInterval",
+    "Hidden",
+    "MultipleInstances",
+  ],
+  "Register-ScheduledTask": [
+    "TaskName",
+    "TaskPath",
+    "Action",
+    "Trigger",
+    "Principal",
+    "Settings",
+    "Force",
+    "Description",
+  ],
+  "Start-ScheduledTask": ["TaskName", "TaskPath"],
+};
+/** Variables Windows sets for every signed-in user, and the installer's own. */
+const WINDOWS_ENV = ["PROCESSOR_ARCHITECTURE", "PROCESSOR_ARCHITEW6432", "USERPROFILE", "USERDOMAIN", "USERNAME"];
+const OWN_ENV = ["AGENTES_RUNNER_HOME", "AGENTES_FRAME"];
+/** .NET Framework 4.x types (what Windows PowerShell 5.1 runs on) the installer uses. */
+const FRAMEWORK_TYPES = ["Net.ServicePointManager", "Net.SecurityProtocolType", "IO.Path", "guid", "Environment"];
+const PS_PRIMITIVES = ["char", "string", "int", "math", "TimeSpan"];
+
+test.skipIf(!PWSH)(
+  "the PowerShell installer parses as PowerShell 5.1 and calls only what Windows has, as it has it",
+  () => {
+    const dir = tempDir("ps-");
+    dirs.push(dir);
+    const file = path.join(dir, "install.ps1");
+    writeFileSync(file, installScriptPowerShell("https://agentes.test", { link: "7KQ2-M9XD" }));
+    writeFileSync(path.join(dir, "analyze.ps1"), PS_ANALYZER);
+    const run = spawnSync(
+      PWSH as string,
+      ["-NoProfile", "-NonInteractive", "-File", path.join(dir, "analyze.ps1"), file],
+      {
+        encoding: "utf8",
+      },
+    );
+    expect(run.stderr).toBe("");
+    const found = JSON.parse(run.stdout) as {
+      errors: string[];
+      newer: string[];
+      commands: { name: string; params: string[]; here: boolean; unknown: string[] }[];
+      types: string[];
+      unresolved: string[];
+      envs: string[];
+      folders: { name: string; known: boolean }[];
+    };
+    expect(found.errors).toEqual([]);
+    expect(found.newer).toEqual([]);
+    for (const c of found.commands) {
+      const allowed = WINDOWS_CMDLETS[c.name];
+      expect({ command: c.name, onWindows: allowed !== undefined }).toEqual({ command: c.name, onWindows: true });
+      if (allowed === "builtin") {
+        expect({ command: c.name, here: c.here, unknown: c.unknown }).toEqual({
+          command: c.name,
+          here: true,
+          unknown: [],
+        });
+      } else if (allowed) {
+        expect({ command: c.name, unknown: c.params.filter((p) => !allowed.includes(p)) }).toEqual({
+          command: c.name,
+          unknown: [],
+        });
+      }
+    }
+    // Every scheduled-task cmdlet it needs is called (the Startup folder is the way out when they refuse).
+    expect(new Set(found.commands.map((c) => c.name))).toContain("Register-ScheduledTask");
+    expect(found.types.filter((t) => !FRAMEWORK_TYPES.includes(t) && !PS_PRIMITIVES.includes(t))).toEqual([]);
+    expect(found.unresolved).toEqual([]);
+    expect(found.envs.filter((e) => !WINDOWS_ENV.includes(e) && !OWN_ENV.includes(e))).toEqual([]);
+    expect(found.folders).toEqual([{ name: "Startup", known: true }]);
+
+    // The end line's time, run as the installer writes it.
+    const took = installScriptPowerShell("https://agentes.test", { link: "7KQ2-M9XD" })
+      .split("\n")
+      .find((l) => l.trim().startsWith("$Took = "));
+    for (const [seconds, says] of [
+      [21, "21s"],
+      [64, "1m 04s"],
+    ] as const) {
+      const r = spawnSync(
+        PWSH as string,
+        ["-NoProfile", "-NonInteractive", "-Command", `$S = ${seconds}\n${took}\n$Took`],
+        {
+          encoding: "utf8",
+        },
+      );
+      expect(r.stdout.trim()).toBe(says);
+    }
+  },
+  60_000,
+);

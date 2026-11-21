@@ -83,8 +83,30 @@ export const strings: Partial<PushStrings> = {
   deviceAccessTitle: (a, p, d) =>
     p ? `${a} (untuk ${p}) minta izin memakai ${d} milikmu` : `${a} minta izin memakai ${d} milikmu`,
   deviceAccessBody: "Ketuk untuk mengizinkan sekali, selalu, atau menolak.",
+  deviceToolTitle: (a, d) => `${a} meminta kamu menyalakan alat di ${d} kamu`,
+  deviceToolBody: "Ketuk untuk menyalakannya dengan sekali klik.",
+  deviceCliTitle: (a, d) => `${a} meminta kamu memasang program di ${d} kamu`,
+  deviceCliBody: "Ketuk untuk memasangnya dengan sekali klik.",
+  deviceFolderTitle: (a, f, d) =>
+    f ? `${a} meminta ${f} di ${d} milikmu` : `${a} meminta sebuah folder di ${d} milikmu`,
+  deviceFolderBody: "Izinkan di aplikasi pada komputer itu.",
+  adminAskTitle: (a, what, l) =>
+    what === "channel_agent"
+      ? `${a} memintamu menambahkan agen ke #${l}`
+      : what === "create_agents"
+        ? `${a} meminta izin membuat agen`
+        : `${a} memintamu menyiapkan webhook ${l} untuk rutinitas`,
   deviceWaitingTitle: (p, d) => `Agen ${p} sedang menunggu ${d} milikmu`,
   deviceWaitingBody: "Mulai begitu perangkatnya kembali.",
   teamWeekReady: "Ringkasan minggu timmu sudah siap",
   teamDayReady: "Ringkasan harimu sudah siap",
+  machineConnectedTitlePersonal: "Komputer baru sudah terhubung",
+  computerReadyTitlePersonal: "Komputer agen-agenmu sudah siap",
+  agentUnreachedBodyPersonal:
+    "Orang yang membuat rutinitas ini belum bisa bicara dengan agen ini. Ketuk untuk mengizinkan.",
+  widgetFailedReasonsPersonal: { creator_left: "Orang yang menyiapkannya sudah tidak ada di ruang kerjamu." },
+  joinRequestTitlePersonal: (name) => `${name} minta bergabung ke ruang kerjamu`,
+  joinSuggestionTitlePersonal: (by, name) => `${by} menyarankan untuk mengundang ${name}`,
+  teamWeekReadyPersonal: "Ringkasan minggumu sudah siap",
+  teamWatchStill: (n) => `${n} hal masih menunggumu`,
 };

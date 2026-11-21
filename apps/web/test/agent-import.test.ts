@@ -4,6 +4,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import type { MigrationBundle } from "@agenteschat/client";
 import { cronOf, everyMinutes, sha256, splitNote } from "@agenteschat/client/lib/import/shared";
+import { en } from "@agenteschat/i18n/en";
 import {
   detectSource,
   EXPORT_PROMPT,
@@ -14,6 +15,8 @@ import {
   interpolateEnv,
   parseImport,
   parsePackage,
+  type SayKey,
+  type SayValues,
   scrubSecrets,
   uniqueHandle,
 } from "@/lib/import";
@@ -518,6 +521,286 @@ describe("OpenBot.run", () => {
     const newer = JSON.stringify({ ...transfer, version: 2 });
     expect(code(() => parseImport([{ name: "openbot-transfer.json", text: newer }]))).toBe("newerVersion");
   });
+
+  test("everything comes: webhook routines, workflows as routines or skills, answers handed on", () => {
+    // The request's words, as the web app writes them in English.
+    const say = (key: SayKey, values: SayValues) =>
+      en.onboarding.import.say[key].replace(/\{\{(\w+)\}\}/g, (_, k: string) => values[k as keyof SayValues] ?? "");
+    const agent = (key: string, name: string, more: object = {}) => ({
+      key,
+      name,
+      title: "",
+      description: `${name} helps.`,
+      avatarSeed: key,
+      avatarHue: null,
+      avatar: null,
+      provider: "claude",
+      model: "claude-sonnet-5-5",
+      reasoningEffort: "medium",
+      notifications: true,
+      skills: [],
+      files: null,
+      routines: [],
+      memories: [],
+      ...more,
+    });
+    const node = (id: string, kind: string, fields: object, schedule?: object) => ({
+      id,
+      kind,
+      at: { x: 0, y: 0 },
+      fields,
+      ...(schedule ? { schedule } : {}),
+    });
+    const edge = (from: string, to: string, branch?: string) => ({
+      id: `${from}-${to}`,
+      from,
+      to,
+      type: "text",
+      ...(branch ? { branch } : {}),
+    });
+    const graph = (nodes: object[], edges: object[]) => ({ nodes, edges, strokes: [] });
+    const transfer = {
+      format: "openbot-instance-transfer",
+      version: 1,
+      source: { appVersion: "0.30.0", exportedAt: "2026-11-16T12:00:00Z" },
+      agents: [
+        agent("scout", "Scout", {
+          routines: [
+            {
+              key: "r-sweep",
+              name: "Morning sweep",
+              instruction: "Check prices.",
+              active: true,
+              timezone: "UTC",
+              schedule: { kind: "weekdays", time: "08:15" },
+            },
+          ],
+          webhookRoutines: [
+            { key: "r-hook", name: "Lead in", instruction: "Qualify the lead.", active: true, timezone: "UTC" },
+          ],
+        }),
+        agent("otto", "Otto"),
+        agent("nina", "Nina"),
+      ],
+      channels: [{ key: "launch", name: "Launch", members: ["scout", "otto"], lead: "scout" }],
+      settings: {
+        mcpServers: [],
+        customProviders: [],
+        customAgents: [],
+        sidebarSections: [],
+        routineFlows: [
+          { routineKey: "r-sweep", fromAgentKey: "scout", toAgentKey: "otto", instruction: "Write the offer." },
+        ],
+        workflows: [
+          {
+            title: "Weekly prices",
+            graph: graph(
+              [
+                node(
+                  "t",
+                  "trigger",
+                  { trigger: "schedule", timezone: "UTC" },
+                  { kind: "weekly", weekday: 1, time: "09:00" },
+                ),
+                node("a", "agent", { agentId: "scout", task: "Research prices" }),
+                node("c", "condition", { rule: "Did any price move more than 5%?" }),
+                node("b", "agent", { agentId: "otto", task: "Write a new offer" }),
+                node("p", "approval", { question: "Post it?" }),
+                node("o", "output", { target: "chat-channel", channelId: "launch" }),
+                node("n", "output", { target: "notify" }),
+                node("x", "note", { text: "Only drawn" }),
+              ],
+              [
+                edge("t", "a"),
+                edge("a", "c"),
+                edge("c", "b", "yes"),
+                edge("b", "p"),
+                edge("p", "o"),
+                edge("c", "n", "no"),
+              ],
+            ),
+          },
+          {
+            title: "New PR",
+            graph: graph(
+              [
+                node("t", "trigger", {
+                  trigger: "github",
+                  event: "pr.opened",
+                  repositories: "example/web",
+                  repository: "example/web",
+                }),
+                node("a", "agent", { agentId: "nina", task: "Review the pull request" }),
+                node("o", "output", { target: "github", action: "comment" }),
+              ],
+              [edge("t", "a"), edge("a", "o")],
+            ),
+          },
+          {
+            title: "Daily digest",
+            graph: graph(
+              [
+                node("t", "trigger", { trigger: "manual" }),
+                node("l", "llm", { prompt: "Summarize the day" }),
+                node("o", "output", { target: "notify" }),
+              ],
+              [edge("t", "l"), edge("l", "o")],
+            ),
+          },
+          {
+            title: "Slack bridge",
+            graph: graph(
+              [
+                node("t", "trigger", { trigger: "slack", connectionId: "", event: "message" }),
+                node("a", "agent", { agentId: "nina", task: "Answer the question" }),
+                node("o", "output", { target: "slack", connectionId: "trigger", action: "post" }),
+              ],
+              [edge("t", "a"), edge("a", "o")],
+            ),
+            relink: true,
+          },
+          {
+            title: "Hook flow",
+            graph: graph(
+              [
+                node("t", "trigger", { trigger: "webhook" }),
+                node("a", "agent", { agentId: "otto", task: "Log the call" }),
+                node("o", "output", { target: "file" }),
+              ],
+              [edge("t", "a"), edge("a", "o")],
+            ),
+          },
+        ],
+        messagingConnections: [{ platform: "whatsapp", name: "Support line" }],
+      },
+      shared: null,
+      signedIn: [],
+    };
+    const parsed = parsePackage([{ name: "openbot-transfer.json", text: JSON.stringify(transfer) }], {
+      models: MODELS,
+      say,
+    });
+    const b = parsed.bundle;
+    expect(b.routines.map((r) => [r.key, r.agent, r.channel, r.trigger])).toEqual([
+      ["scout/r-sweep", "scout", null, { cron: "15 8 * * 1,2,3,4,5", timezone: "UTC" }],
+      ["scout/r-hook", "scout", null, { webhook: true }],
+      ["workflow/weekly-prices", "scout", "launch", { cron: "0 9 * * 1", timezone: "UTC" }],
+      ["workflow/new-pr", "nina", null, { event: "github.pr_opened" }],
+      ["workflow/hook-flow", "otto", null, { webhook: true }],
+    ]);
+    const prompt = (key: string) => b.routines.find((r) => r.key === key)?.prompt;
+    // The answer handed to another agent is said at the end of the routine's request.
+    expect(prompt("scout/r-sweep")).toBe(
+      "Check prices.\n\nWhen you finish, pass your answer to @otto: Write the offer.",
+    );
+    expect(prompt("workflow/weekly-prices")).toBe(
+      [
+        "This is the workflow “Weekly prices”, brought from OpenBot.",
+        "",
+        "1. Research prices",
+        "2. If the answer to “Did any price move more than 5%?” is yes, go on.",
+        "   Otherwise:",
+        "   - Send the result to the person in charge of you.",
+        "3. Ask @otto: “Write a new offer”, with what you have so far, and use the answer.",
+        "4. Before going on, ask the person in charge of you for approval, in the chat: “Post it?”",
+        "5. Post the result in #launch.",
+      ].join("\n"),
+    );
+    expect(prompt("workflow/new-pr")).toBe(
+      [
+        "This is the workflow “New PR”, brought from OpenBot.",
+        "",
+        "It starts when a pull request is opened on GitHub in example/web: that pull request is your input. If it is in another repository, stop without posting anything.",
+        "",
+        "1. Review the pull request",
+        "2. Comment the result on GitHub.",
+      ].join("\n"),
+    );
+    expect(prompt("workflow/hook-flow")).toContain("It starts when this routine's address is called");
+    // Started by hand, or by something with no match here: a skill of its agent, which runs when someone asks.
+    expect(b.agents.map((a) => [a.key, a.skills])).toEqual([
+      ["scout", ["daily-digest"]],
+      ["otto", []],
+      ["nina", ["slack-bridge"]],
+    ]);
+    expect(b.skills.find((s) => s.key === "daily-digest")?.markdown).toBe(
+      '---\nname: daily-digest\ndescription: "Runs the workflow “Daily digest”, brought from OpenBot, when someone asks."\n---\n\n1. Summarize the day\n2. Send the result to the person in charge of you.\n',
+    );
+    expect(b.skills.find((s) => s.key === "slack-bridge")?.markdown).toContain(
+      "In OpenBot it started on its own. Here, it runs when someone asks.\n\n1. Answer the question\n",
+    );
+    // A webhook's routine gets a new address; GitHub is connected here.
+    expect(b.todo.map((t) => [t.kind, t.label, t.agents])).toEqual([
+      ["webhook", "Lead in", ["scout"]],
+      ["app", "GitHub", ["nina"]],
+      ["webhook", "Hook flow", ["otto"]],
+    ]);
+    expect(groupLeftOut(b.leftOut)).toEqual([
+      { kind: "messaging", labels: ["whatsapp: Support line"] },
+      { kind: "other", labels: ["Slack bridge (slack)"] },
+    ]);
+    // Beside the bundle, for the sheet: what each workflow became, and who a routine hands its answer to.
+    expect(parsed.workflows.map((w) => [w.item, w.agent, w.was])).toEqual([
+      [{ kind: "routine", key: "workflow/weekly-prices" }, "scout", null],
+      [{ kind: "routine", key: "workflow/new-pr" }, "nina", null],
+      [{ kind: "skill", key: "daily-digest" }, "scout", "manual"],
+      [{ kind: "skill", key: "slack-bridge" }, "nina", "slack"],
+      [{ kind: "routine", key: "workflow/hook-flow" }, "otto", null],
+    ]);
+    expect(parsed.workflows[0]?.steps).toEqual([
+      { kind: "do", agent: "scout", task: "Research prices" },
+      { kind: "if", rule: "Did any price move more than 5%?", otherwise: [{ kind: "post", to: "notify" }] },
+      { kind: "do", agent: "otto", task: "Write a new offer", by: "scout" },
+      { kind: "approval", question: "Post it?" },
+      { kind: "post", to: "channel", channel: "launch" },
+    ]);
+    expect(parsed.workflows[3]?.steps).toEqual([
+      { kind: "do", agent: "nina", task: "Answer the question" },
+      { kind: "lost", what: "slack" },
+    ]);
+    expect(parsed.passes).toEqual({ "scout/r-sweep": ["otto"] });
+  });
+
+  test("each agent keeps the colour the app draws it in: its own, its hue's, or the one its seed picks", () => {
+    const agent = (key: string, look: object) => ({
+      key,
+      name: key,
+      title: "",
+      description: "",
+      avatar: null,
+      provider: "claude",
+      model: "claude-sonnet-5-5",
+      reasoningEffort: "medium",
+      notifications: true,
+      skills: [],
+      files: null,
+      routines: [],
+      memories: [],
+      ...look,
+    });
+    const transfer = {
+      format: "openbot-instance-transfer",
+      version: 1,
+      source: { appVersion: "", exportedAt: "2026-11-16T12:00:00Z" },
+      agents: [
+        agent("own", { avatarSeed: "s", avatarHue: 55, avatarColor: "#12AB34" }),
+        agent("hue", { avatarSeed: "s", avatarHue: 245 }),
+        // Not a colour: the hue's instead.
+        agent("odd", { avatarSeed: "s", avatarHue: 185, avatarColor: "red" }),
+        agent("seed", { avatarSeed: "scout", avatarHue: null }),
+      ],
+      settings: { mcpServers: [], customProviders: [], customAgents: [], sidebarSections: [], routineFlows: [] },
+      shared: null,
+      signedIn: [],
+    };
+    const b = parseImport([{ name: "openbot-transfer.json", text: JSON.stringify(transfer) }], { models: MODELS });
+    expect(b.agents.map((a) => [a.key, a.appearance.color])).toEqual([
+      ["own", "#12ab34"],
+      ["hue", "#5d67ee"],
+      ["odd", "#2fbfa0"],
+      ["seed", "#e8483f"],
+    ]);
+  });
 });
 
 describe("OpenClaw", () => {
@@ -892,7 +1175,8 @@ describe("agentes.chat bundle", () => {
     const b = parseImport([{ name: "agentes-chat-export.json", text: JSON.stringify(ourBundle) }], { models: MODELS });
     expect(b.source).toEqual({
       app: "agenteschat",
-      ref: "claude:dana-claude",
+      // Every reply from one app is one package: the model's own `ref` changes from one export to the next.
+      ref: "claude",
       name: "Dana's Claude",
       files: ["agentes-chat-export.json"],
     });
@@ -905,8 +1189,8 @@ describe("agentes.chat bundle", () => {
       { key: "news", name: "newsletter", topic: "Drafts and feedback", agents: [{ key: "writer", autoReply: true }] },
     ]);
     expect(b.routines.map((r) => [r.key, r.channel, r.trigger])).toEqual([
-      ["draft", "news", { cron: "0 10 * * 5", timezone: "America/Sao_Paulo" }],
-      ["launch", null, { at: "2026-12-01T12:00:00.000Z" }],
+      ["writer/friday-draft", "news", { cron: "0 10 * * 5", timezone: "America/Sao_Paulo" }],
+      ["writer/launch-post", null, { at: "2026-12-01T12:00:00.000Z" }],
     ]);
     // A note keeps its title (our export writes one).
     expect(b.notes.map((n) => [n.agent, n.kind, n.title])).toEqual([
@@ -958,6 +1242,61 @@ describe("agentes.chat bundle", () => {
     expect(long.endsWith("channel.")).toBe(true);
     // A label that fits stays as written.
     expect(b.leftOut.find((l) => l.kind === "other")?.label).toBe("Q4 planning");
+  });
+
+  test("asking the same app again brings the same package and the same agents, whatever keys the model picks", () => {
+    const read = (over: object) =>
+      parseImport([{ name: "pasted", text: JSON.stringify({ ...ourBundle, ...over }) }], { models: MODELS });
+    const first = read({});
+    const [writer] = ourBundle.agents;
+    const again = read({
+      source: { app: "Claude", ref: "export-2", name: "My agents", files: [] },
+      agents: [
+        { ...writer, key: "agent-1", handle: "agent-1" },
+        { ...writer, key: "agent-2", name: "Editor", handle: "" },
+      ],
+      channels: [{ key: "c1", name: "Newsletter", topic: "", agents: [{ key: "agent-1" }, { key: "Editor" }] }],
+      routines: [{ ...ourBundle.routines[0], key: "r-77", agent: "@agent-1", channel: null }],
+      notes: [{ key: "x", agent: "Writer", kind: "preference", content: "Dana likes short paragraphs." }],
+      todo: [{ kind: "app", label: "Gmail", agents: ["agent-2"] }],
+    });
+    expect(again.source.ref).toBe(first.source.ref);
+    expect(again.agents.map((a) => a.key)).toEqual(["writer", "editor"]);
+    expect(again.channels[0]?.agents.map((m) => m.key)).toEqual(["writer", "editor"]);
+    expect(again.routines.map((r) => [r.key, r.agent])).toEqual([["writer/friday-draft", "writer"]]);
+    expect(again.notes[0]?.key).toBe(first.notes[0]?.key);
+    expect(again.notes[0]?.agent).toBe("writer");
+    expect(again.todo[0]?.agents).toEqual(["editor"]);
+    // Two agents with one name stay two.
+    const twins = read({ agents: [writer, { ...writer, key: "writer-b" }] });
+    expect(twins.agents.map((a) => a.key)).toEqual(["writer", "writer-writer-b"]);
+  });
+
+  test("our own export keeps its workspace and its keys", () => {
+    const b = parseImport([
+      {
+        name: "agentes-chat-export.json",
+        text: JSON.stringify({
+          ...ourBundle,
+          source: { app: "agenteschat", ref: "org-1", name: "Acme", files: [] },
+          agents: [{ ...ourBundle.agents[0], key: "a-1" }],
+          channels: [],
+          routines: [{ ...ourBundle.routines[0], agent: "a-1", channel: null }],
+          notes: [{ key: "n1", agent: "a-1", kind: "fact", content: "Fridays." }],
+          todo: [],
+        }),
+      },
+    ]);
+    expect(b.source.ref).toBe("agenteschat:org-1");
+    expect(b.agents.map((a) => a.key)).toEqual(["a-1"]);
+    expect(b.routines.map((r) => [r.key, r.agent])).toEqual([["draft", "a-1"]]);
+    expect(b.notes.map((n) => [n.key, n.agent])).toEqual([["n1", "a-1"]]);
+  });
+
+  test("the export prompt asks for every agent, not only the one in the chat", () => {
+    expect(EXPORT_PROMPT).toContain("Export all of my agents in this one file, not only the one I'm talking to now");
+    expect(EXPORT_PROMPT).toContain('"agents" has one entry for every agent I have');
+    expect(EXPORT_PROMPT).toContain('"instructions": ""');
   });
 
   test("the export prompt asks for exactly our shape, and never for a secret", () => {

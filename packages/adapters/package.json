@@ -14,7 +14,9 @@
     "./redact": "./src/redact.ts",
     "./error-scrub": "./src/error-scrub.ts",
     "./error-reports": "./src/error-reports.ts",
+    "./problem-report": "./src/problem-report.ts",
     "./host-stats": "./src/host-stats.ts",
+    "./in-flight": "./src/in-flight.ts",
     "./browser-start": "./src/browser-start.ts",
     "./vault/site": "./src/vault/site.ts"
   },

@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { freemem, totalmem } from "node:os";
 import { join, resolve } from "node:path";
 import {
   type Adapters,
@@ -7,8 +8,6 @@ import {
   createComposioMailConnector,
   createDiskBlobStore,
   createErrorReporter,
-  createExpoPushSender,
-  createFcmPushSender,
   createGiphyGifs,
   createImapConnectionTester,
   createImapMailConnector,
@@ -28,7 +27,6 @@ import {
   createRelayPushSender,
   createS3BlobStore,
   createSmtpEmailSender,
-  createTurnstileCheck,
   createWebPushSender,
   type EmailSender,
   type ErrorReporter,
@@ -37,7 +35,6 @@ import {
   type KeyWrapper,
   MAIL_PRESETS,
   type MailAdapters,
-  type PushSender,
   postgresJsNotifier,
   type WebPushSender,
 } from "@agenteschat/adapters";
@@ -50,8 +47,12 @@ import {
   MigrationMismatchError,
 } from "@agenteschat/db";
 import {
+  APP_JOB_KINDS,
   adoptRestoredOperatorEvents,
+  allowOutbound,
+  allowPrivateOutbound,
   allowsPrivateEndpoints,
+  backfillMemoryTrust,
   composioUsageHook,
   createGifKey,
   createLocalKeyWrapper,
@@ -62,36 +63,52 @@ import {
   enableAccountContacts,
   enableCaches,
   enableOperatorEvents,
+  enableSvgRasterizer,
   ensureRightHands,
   type GifKey,
   isAgentesCloud,
   isBlockedAddress,
+  laneLimits,
+  memoryBudget,
   meterComposio,
   moveIssueComments,
+  publicHostAddress,
   publicHttpsFetch,
+  queueEmbeddingBackfill,
   relayCredentials,
   resolveHostDns,
   retireHostTokens,
   retireMillionSendMailboxes,
+  SURFACE_PREFIX,
   setMessageLinkBase,
   setRestrictionNotices,
+  setScreenJudgments,
+  setSurface,
   setWorkspaceComputers,
+  shareCacheInvalidations,
+  surfaceFromConfig,
   surfaceRoomFiles,
   vapidKeys,
   vapidSubject,
+  widenDmHowTos,
 } from "@agenteschat/engine";
-
 import { type AgentesModule, type Edition, type ModuleContext, resolveAdapters } from "@agenteschat/modules";
 import { createModelProviders, enableOpenRouterModels } from "@agenteschat/providers";
 import { createApp } from "./app";
 import { createAuth } from "./auth";
 import { buildEngine } from "./engine";
-import { checkHumanCheckAtBoot } from "./http/human-check";
+import { watchEventLoopLag } from "./event-loop-lag";
+import { startFreezeWatch } from "./freeze-watch";
+import { checkHumanCheckAtBoot, createHumanCheck } from "./http/human-check";
 import { createLogger, type Logger } from "./logger";
 import { OPERATOR_API_PREFIX, serveOperatorApi } from "./operator/app";
+import { apnsKeyGaps, directPushSenders, phonePushMode, relayServeSender } from "./push-senders";
+import { createLiveSockets } from "./realtime/live";
 import { createMachineSockets } from "./realtime/machines";
 import { createStreamSockets } from "./realtime/streams";
 import { createRealtime, type SocketData } from "./realtime/ws";
+import type { AppDeps } from "./routes/app/context";
+import { workerHealth } from "./routes/health";
 import { startTelemetry } from "./telemetry";
 import { releaseOf, version } from "./version";
 import { startWorkers } from "./workers";
@@ -122,15 +139,17 @@ export interface StartOptions {
  * The engine's process-wide switches this config sets, every one of them here: `startServer` sets them at boot, and a
  * test that boots like a given setup (the Cloud) sets them the same way.
  */
-export function applyBootSwitches(config: Config) {
+export function applyBootSwitches(config: Config, log?: Logger) {
   // On agentes.chat Cloud a restriction names its kind and how to contest it, elsewhere it reads as before.
   setRestrictionNotices(config.PUBLIC_URL);
   // The links to messages that agents write and their tools return.
   setMessageLinkBase(config.PUBLIC_URL);
   // The operator API's events feed records only while that API is on (ADR 0056).
   enableOperatorEvents(Boolean(config.OPERATOR_API_TOKEN));
+  setSurface(surfaceFromConfig(config));
   // Where each workspace gets its own computer, the computers people bring are targets, never agents' homes.
   setWorkspaceComputers(config.MACHINE_PROVISIONING === "external");
+  setScreenJudgments(config.SCREEN_JUDGMENTS, config.SCREEN_JUDGMENTS_ORGS, log);
 }
 
 /**
@@ -158,9 +177,21 @@ export async function startServer(options: StartOptions) {
     release,
     runtime: { name: "bun", version: Bun.version },
   });
-  const log = createLogger(config.LOG_LEVEL, errors);
+  const log = createLogger(config.LOG_LEVEL, errors, config.LOG_FORMAT);
   try {
-    return await boot(options, config, log, release, errors);
+    const started = await boot(options, config, log, release, errors);
+    // Once it serves: a boot's own long steps (migrations, the built-in database's start) aren't what it is for.
+    startFreezeWatch(
+      {
+        logLevel: config.LOG_LEVEL,
+        logFormat: config.LOG_FORMAT,
+        ...(config.SENTRY_DSN
+          ? { reports: { dsn: config.SENTRY_DSN, environment: config.SENTRY_ENVIRONMENT, release } }
+          : {}),
+      },
+      log,
+    );
+    return started;
   } catch (error) {
     log.error("startup failed", { error, unhandled: true });
     await log.flush(EXIT_FLUSH_MS);
@@ -183,7 +214,11 @@ async function boot(
       ? { to: new URL(config.SENTRY_DSN).host, environment: config.SENTRY_ENVIRONMENT, release }
       : { reports: "off" },
   );
-  if (config.NODE_ENV === "production" && config.PUBLIC_URL === "http://localhost:3000") {
+  if (
+    config.NODE_ENV === "production" &&
+    config.PUBLIC_URL === "http://localhost:3000" &&
+    !config.EXTRA_TRUSTED_ORIGINS?.length
+  ) {
     log.warn(
       "PUBLIC_URL is http://localhost:3000 (the default): only a browser on this machine, at exactly that address, can sign in and save. Set PUBLIC_URL to the address people open (e.g. https://chat.example.com): sign-in cookies, the browser origin allowed to make changes (CSRF) and the links in emails all come from it, so from any other address sign-in and saving fail with bad_origin.",
     );
@@ -204,17 +239,44 @@ async function boot(
   let resolved: Adapters | null = null;
   // The push relay's credentials are sealed the same way (ADR 0152).
   const keyWrappers = () => [resolved?.keyWrapper ?? localKeyWrapper, ...(resolved?.legacyKeyWrappers ?? [])];
-  // Android pushes straight to Firebase and the push relay this server may run share one sender, so one access
-  // token (ADR 0152).
-  const account = config.FIREBASE_SERVICE_ACCOUNT;
-  const fcm = account ? createFcmPushSender({ serviceAccount: account }) : null;
+  // Pushes straight to Firebase and to Apple, and the push relay this server may run, share one sender each: one
+  // access token, one connection to APNs (ADR 0152, ADR 0178).
+  const direct = directPushSenders(config);
+  const pushModes = {
+    android: phonePushMode(config, direct.android),
+    ios: phonePushMode(config, direct.ios),
+  };
+  // One relay sender for both platforms, so this installation registers there once.
+  const relayed =
+    pushModes.android === "relay" || pushModes.ios === "relay"
+      ? createRelayPushSender({
+          url: config.PUSH_RELAY_URL,
+          credentials: relayCredentials(database.db, keyWrappers, config.PUSH_RELAY_URL),
+          version: release,
+        })
+      : null;
+  const phoneSender = (platform: "android" | "ios") =>
+    pushModes[platform] === "direct" ? direct[platform] : pushModes[platform] === "relay" ? relayed : null;
   // The GIPHY key its owner may add in Settings (ADR 0091, amended 2026-10-31), made below once modules had their
   // say on the key wrappers; the GIF provider asks it on every call.
   let gifKey: GifKey | null = null;
   const defaults: Adapters = {
     search: createPostgresSearchResolver(database.db),
-    // PGlite (native mode) is one process: nothing to tell other replicas.
-    pubsub: database.client ? await createPostgresPubSub(postgresJsNotifier(database.client)) : createMemoryPubSub(),
+    // PGlite (native mode) is one process: nothing to tell other replicas. A break in delivery stops every app's live
+    // updates, so it is reported as an error (ADR 0104), and its end says how long it lasted (ADR 0010).
+    pubsub: database.client
+      ? await createPostgresPubSub(postgresJsNotifier(database.client, database.listenClient), {
+          onTrouble: (kind, detail) => {
+            if (kind === "resumed") log.warn("realtime events reach their subscribers again", { kind, ...detail });
+            else
+              log.error("realtime events stopped reaching their subscribers", {
+                kind,
+                ...detail,
+                error: detail.error ?? kind,
+              });
+          },
+        })
+      : createMemoryPubSub(),
     presence: createMemoryPresence(),
     rateLimiter: createMemoryRateLimiter(),
     keyWrapper: localKeyWrapper,
@@ -222,14 +284,15 @@ async function boot(
     email: emailSender(config, log),
     platformCredentials: envPlatformCredentials({
       anthropic: { apiKey: config.PLATFORM_ANTHROPIC_API_KEY, workspaceId: config.PLATFORM_ANTHROPIC_WORKSPACE_ID },
+      // Image generation's providers (ADR 0197), which serve their chat models to workspaces without a key too.
+      openai: { apiKey: config.PLATFORM_OPENAI_API_KEY },
+      gemini: { apiKey: config.PLATFORM_GEMINI_API_KEY },
+      openrouter: { apiKey: config.PLATFORM_OPENROUTER_API_KEY },
     }),
     platformBlobs: platformBlobStore(config, database.db),
-    // Phone app push (ADR 0035, ADR 0152): only devices that registered get anything. Android straight to
-    // Firebase or through the push relay (`PUSH_SENDER`); iPhones through Expo.
-    push: createPhonePushSender({
-      android: androidPushSender(config, fcm, database.db, keyWrappers, release),
-      ios: createExpoPushSender({ accessToken: config.EXPO_ACCESS_TOKEN }),
-    }),
+    // Phone app push (ADR 0035, ADR 0152, ADR 0178): only devices that registered get anything. Android straight
+    // to Firebase and iPhones straight to Apple, or through the push relay (`PUSH_SENDER`).
+    push: createPhonePushSender({ android: phoneSender("android"), ios: phoneSender("ios") }),
     // Browser push (ADR 0071): the installation's own VAPID pair, made on first use.
     webPush: webPushSender(config, database.db, keyWrappers, log),
     // Each Composio call counts for its workspace before it is made (ADR 0107 §7).
@@ -240,16 +303,7 @@ async function boot(
     ),
     // People's Postgres databases for agents (ADR 0039): always on; every connection is checked and read-only.
     databases: createPostgresDatabaseDriver(),
-    // agentes.chat Cloud's bot check (ADR 0075), only with both keys: without them nothing reaches Cloudflare.
-    humanCheck:
-      config.TURNSTILE_SITE_KEY && config.TURNSTILE_SECRET_KEY
-        ? createTurnstileCheck({
-            siteKey: config.TURNSTILE_SITE_KEY,
-            secretKey: config.TURNSTILE_SECRET_KEY,
-            hostnames: [new URL(config.PUBLIC_URL).hostname],
-            log,
-          })
-        : null,
+    humanCheck: createHumanCheck(config, { log }),
     // GIFs in chat (ADR 0091), only with a key: without one nothing reaches GIPHY and the app shows no GIFs.
     gifs: gifProvider(config, () => gifKey?.key() ?? null),
     // The Vault's external sources (ADR 0144): nothing reaches them until a person connects one. A self-hosted
@@ -268,21 +322,43 @@ async function boot(
     imap: Boolean(defaults.mail?.imap),
   });
   log.info("browser push", defaults.webPush ? { webPush: "on", contact: vapidSubject(config) } : { webPush: "off" });
-  const androidPush = androidPushMode(config);
-  log.info("phone push", { android: androidPush, ios: "expo" });
-  if (androidPush === "relay") {
+  log.info("phone push", pushModes);
+  if (relayed) {
     // Said at every boot, so whoever runs the server knows what leaves it and how to stop it (ADR 0152).
     log.info(
-      "Android pushes go through the push relay: each one's phone token, title, text and ids pass through it, which keeps none of them. PUSH_SENDER=off turns them off; FIREBASE_SERVICE_ACCOUNT sends them straight to Firebase.",
-      { relay: new URL(config.PUSH_RELAY_URL).host },
+      "Phone pushes go through the push relay: each one's phone token, title, text and ids pass through it, which keeps none of them. PUSH_SENDER=off turns them off; FIREBASE_SERVICE_ACCOUNT sends Android's straight to Firebase and APNS_KEY the iPhone's straight to Apple.",
+      {
+        relay: new URL(config.PUSH_RELAY_URL).host,
+        platforms: (["android", "ios"] as const).filter((platform) => pushModes[platform] === "relay"),
+      },
     );
   }
-  if (config.PUSH_SENDER === "direct" && !config.FIREBASE_SERVICE_ACCOUNT) {
+  const unsent = (["android", "ios"] as const).filter((platform) => pushModes[platform] === "off");
+  if (config.PUSH_SENDER === "auto" && unsent.length > 0) {
+    // This server is the push relay and holds no credentials for these: there is nowhere to send them (ADR 0178).
+    log.info("phone push: none sent where this server, the push relay itself, has no credentials", {
+      platforms: unsent,
+      needs: unsent.map((platform) => (platform === "ios" ? "APNS_KEY" : "FIREBASE_SERVICE_ACCOUNT")),
+    });
+  }
+  const apnsGaps = apnsKeyGaps(config);
+  if (apnsGaps.length > 0) {
+    log.warn("APNS_KEY, APNS_KEY_ID and APNS_TEAM_ID work only together: iPhones are not pushed straight to Apple", {
+      missing: apnsGaps,
+    });
+  }
+  if (config.PUSH_SENDER === "direct" && !direct.android) {
     log.warn("PUSH_SENDER=direct without FIREBASE_SERVICE_ACCOUNT: Android phones get no push");
   }
+  if (config.PUSH_SENDER === "direct" && !direct.ios) {
+    log.warn("PUSH_SENDER=direct without APNS_KEY, APNS_KEY_ID and APNS_TEAM_ID: iPhones get no push");
+  }
   if (config.PUSH_RELAY_SERVE === "on") {
-    const serving = config.FIREBASE_SERVICE_ACCOUNT ? "/api/push-relay/v1" : "nothing (no FIREBASE_SERVICE_ACCOUNT)";
-    log.info("push relay", { serving });
+    const platforms = (["android", "ios"] as const).filter((platform) => direct[platform]);
+    log.info("push relay", {
+      serving: platforms.length > 0 ? "/api/push-relay/v1" : "nothing (no FIREBASE_SERVICE_ACCOUNT, no APNS_KEY)",
+      platforms,
+    });
   }
   const base = { config, db: database.db, edition, version: release };
   const { adapters, modelProviders, overridden } = await resolveAdapters(
@@ -319,11 +395,22 @@ async function boot(
   }
   const ctx: ModuleContext = { ...base, adapters };
 
+  // Addresses a workspace names (custom MCP servers, its own bucket, pages agents read) are pinned to public ones at
+  // every request, except where the operator lets workspaces reach this server's network.
+  allowPrivateOutbound(allowsPrivateEndpoints(config));
+  // The private hosts and ranges the operator named pass every guard for typed addresses (ADR 0210). agentes.chat
+  // Cloud never lets a workspace reach a private network, whatever is set.
+  const outboundLists = { hosts: config.OUTBOUND_ALLOW_HOSTS, cidrs: config.OUTBOUND_ALLOW_CIDRS };
+  if (!isAgentesCloud(config.PUBLIC_URL)) allowOutbound(outboundLists);
+  else if (outboundLists.hosts.length || outboundLists.cidrs.length)
+    log.warn("OUTBOUND_ALLOW_HOSTS and OUTBOUND_ALLOW_CIDRS are ignored on agentes.chat Cloud");
   // Per-process caches for agent/org/channel config, scopes, connections, credential rows (30 s TTL).
   enableCaches();
+  // A write in any process (the app, a worker) clears what every process cached of it.
+  shareCacheInvalidations(adapters.pubsub);
   // OpenRouter's public model list (ADR 0087): read only while a workspace has an OpenRouter key.
   enableOpenRouterModels(fetch);
-  applyBootSwitches(config);
+  applyBootSwitches(config, log);
   enableAccountContacts(config.PUBLIC_URL, adapters.email);
   if (config.OPERATOR_API_TOKEN) {
     // Before the API serves a page: a caller restarting after a restore must find these rows first.
@@ -378,6 +465,30 @@ async function boot(
       if (made > 0) log.info("right hands created", { made });
     })
     .catch((error: unknown) => log.warn("right hands backfill failed", { error: String(error) }));
+  // Off the boot path, once (ADR 0167): untrusted memories saved from a person's own words are trusted again, and
+  // how-tos agents worked out between themselves that name nobody reach their other work.
+  void backfillMemoryTrust(database.db)
+    .then(async (r) => {
+      if (Object.keys(r.changed).length > 0) log.info("memory trust re-derived", { ...r });
+      const widened = await widenDmHowTos(database.db);
+      if (widened > 0) log.info("how-tos out of agents' DMs", { widened });
+    })
+    .catch((error: unknown) => log.warn("memory backfill failed", { error: String(error) }));
+  // Off the boot path (ADR 0167): what this model hasn't embedded yet gets its vectors, a reindex per workspace.
+  const vectors = engine.embeddings;
+  if (config.EMBEDDINGS_PROVIDER !== "none" && !vectors) {
+    const missing = config.EMBEDDINGS_PROVIDER === "voyage" ? "VOYAGE_API_KEY" : "EMBEDDINGS_URL";
+    log.warn("search goes on words alone", {
+      because: `EMBEDDINGS_PROVIDER=${config.EMBEDDINGS_PROVIDER} needs ${missing}`,
+    });
+  }
+  if (vectors?.kinds) {
+    void queueEmbeddingBackfill(database.db, { model: vectors.provider.model, kinds: vectors.kinds })
+      .then((queued) => {
+        if (queued > 0) log.info("embeddings backfill queued", { workspaces: queued, model: vectors.provider.model });
+      })
+      .catch((error: unknown) => log.warn("embeddings backfill failed", { error: String(error) }));
+  }
   // Off the boot path: tasks' comments from before their conversations move into them once (ADR 0145).
   void moveIssueComments(database.db)
     .then((moved) => {
@@ -390,23 +501,54 @@ async function boot(
       if (moved > 0) log.info("files moved out of agent rooms", { moved });
     })
     .catch((error: unknown) => log.warn("files move out of agent rooms failed", { error: String(error) }));
+  // A worker (`SERVER_ROLE=worker`) runs jobs only: no app, API, sockets or usage report, its health check alone. Its
+  // runs reach computers through the process that holds their socket (`machine_rpc`).
+  const worker = config.SERVER_ROLE === "worker";
+  const slots = { quick: config.OUTBOX_QUICK_SLOTS, long: config.OUTBOX_MAX_IN_FLIGHT - config.OUTBOX_QUICK_SLOTS };
+  const memoryBytes = memoryBudget({
+    limitBytes: process.constrainedMemory() || totalmem(),
+    rssBytes: process.memoryUsage().rss,
+    freeBytes: freemem(),
+  });
+  const outbox = {
+    maxInFlight: config.OUTBOX_MAX_IN_FLIGHT,
+    quickSlots: config.OUTBOX_QUICK_SLOTS,
+    ...(worker && { skipKinds: APP_JOB_KINDS }),
+    // The built-in database is one process's, on one computer: its slots stay where they start.
+    ...(database.client && {
+      limits: laneLimits(
+        slots,
+        { memoryBytes, rssBytes: process.memoryUsage().rss, dbConnections: config.DATABASE_POOL_MAX },
+        config.OUTBOX_MAX_IN_FLIGHT_CEILING,
+      ),
+      memoryBytes,
+    }),
+  };
+  log.info("job slots", { start: slots, upTo: outbox.limits ?? "fixed", memoryBytes, role: config.SERVER_ROLE });
+  // SVG pictures drawn as PNGs for exports and models (ADR 0196 §8); without it they are left out of those.
+  if (!(await enableSvgRasterizer())) log.warn("svg pictures", { drawn: false, because: "resvg didn't load" });
   const workers = startWorkers({
     db: database.db,
     handlers: engine.handlers,
     pubsub: adapters.pubsub,
     context: engine.context,
     artifacts: engine.artifacts,
+    feedbackFiles: { db: database.db, blobs: adapters.platformBlobs },
     voice: engine.voice,
     approvalDigest: { publicUrl: config.PUBLIC_URL, afterHours: config.APPROVAL_REMINDER_HOURS },
     mail: { deps: engine.mail, pollSeconds: config.MAIL_POLL_SECONDS },
     browserLive: engine.browserLive,
     desktops: engine.desktops,
+    machines: engine.machineHub,
     ...(config.OPS_REPORT_EMAIL?.length
       ? { opsReport: { to: config.OPS_REPORT_EMAIL, publicUrl: config.PUBLIC_URL } }
       : {}),
+    outbox,
+    builtInDatabase: !database.client,
+    errors,
     log,
   });
-  const telemetry = startTelemetry({ db: database.db, config, log });
+  const telemetry = worker ? null : startTelemetry({ db: database.db, config, log });
 
   const auth = createAuth({
     db: database.db,
@@ -418,43 +560,59 @@ async function boot(
     pubsub: adapters.pubsub,
   });
   let stopping = false;
+  const services: AppDeps = {
+    db: database.db,
+    auth,
+    config,
+    adapters,
+    wakeWorkers: workers.wakeAll,
+    extras: {
+      embed: engine.gateway.embed,
+      storage: engine.storage,
+      artifacts: engine.artifacts,
+      context: engine.context,
+      sandbox: engine.sandbox,
+      browserLive: engine.browserLive,
+      streams: engine.streams,
+      talker: engine.talker,
+      router: engine.router,
+      jevKey: engine.jevKey,
+      gifKey: gifKey ?? undefined,
+      githubApp: engine.githubApp,
+      speech: engine.speech,
+      voice: engine.voice,
+      gitProxy: engine.gitProxy,
+      pushRelaySender: relayServeSender(direct),
+      live: engine.live,
+      liveDeps: engine.liveDeps,
+      images: engine.images,
+    },
+    log,
+  };
   const app = createApp({
     edition,
     version,
     modules,
     draining: () => stopping,
     moduleContext: ctx,
-    services: {
-      db: database.db,
-      auth,
-      config,
-      adapters,
-      wakeWorkers: workers.wakeAll,
-      extras: {
-        embed: engine.gateway.embed,
-        storage: engine.storage,
-        artifacts: engine.artifacts,
-        context: engine.context,
-        sandbox: engine.sandbox,
-        browserLive: engine.browserLive,
-        streams: engine.streams,
-        talker: engine.talker,
-        router: engine.router,
-        jevKey: engine.jevKey,
-        gifKey: gifKey ?? undefined,
-        githubApp: engine.githubApp,
-        speech: engine.speech,
-        voice: engine.voice,
-        gitProxy: engine.gitProxy,
-        pushRelaySender: fcm,
-      },
-    },
+    services,
     log,
     pingDatabase: database.ping,
     webDir: existsSync(webDir) ? webDir : undefined,
   });
-  if (!existsSync(webDir)) log.warn("web app not found; serving API only", { webDir });
+  if (!worker && !existsSync(webDir)) log.warn("web app not found; serving API only", { webDir });
 
+  // Live files' sockets (ADR 0196 §3): one per open spreadsheet, presentation or canvas.
+  const liveSockets = createLiveSockets({
+    db: database.db,
+    auth,
+    config,
+    pubsub: adapters.pubsub,
+    rateLimiter: adapters.rateLimiter,
+    docs: engine.live,
+    artifacts: engine.artifacts,
+    log,
+  });
   const realtime = createRealtime({
     db: database.db,
     auth,
@@ -464,6 +622,7 @@ async function boot(
     machines: createMachineSockets(engine.machineHub),
     browserLive: engine.browserLive,
     streams: createStreamSockets({ db: database.db, auth, config, broker: engine.streams }),
+    live: liveSockets,
   });
   const publicUrl = new URL(config.PUBLIC_URL);
   const ownHosts = ownHostsOnly
@@ -481,34 +640,59 @@ async function boot(
     const { pathname, search } = new URL(req.url);
     return Response.redirect(new URL(pathname + search, publicUrl).href, 302);
   };
-  const server = Bun.serve<SocketData>({
-    hostname: config.HOST,
-    port: config.PORT,
-    // Bun's default (10 s) cuts a request still waiting on its answer: opening a site in an agent's
-    // browser waits for the page, and a closed browser starts first (up to 90 s on the computer).
-    idleTimeout: 120,
-    fetch: (req, srv) => ownHostAnswer(req) ?? realtime.fetch(req, srv, (r) => app.fetch(r)),
-    websocket: realtime.websocket,
-    // What the HTTP app doesn't answer itself: a WebSocket upgrade that failed before the socket opened.
-    error(error) {
-      log.error("request failed", { error, stack: error.stack });
-      return new Response("Something went wrong on our side\n", { status: 500 });
-    },
+  // A worker answers its health check alone: the image's check reads it, and a deploy waits for it.
+  const server = worker
+    ? Bun.serve({
+        hostname: config.HOST,
+        port: config.PORT,
+        fetch: workerHealth({
+          version,
+          edition,
+          modules: modules.map((m) => m.name),
+          pingDatabase: database.ping,
+          draining: () => stopping,
+        }),
+      })
+    : Bun.serve<SocketData>({
+        hostname: config.HOST,
+        port: config.PORT,
+        // Bun's default (10 s) cuts a request still waiting on its answer: opening a site in an agent's
+        // browser waits for the page, and a closed browser starts first (up to 90 s on the computer).
+        idleTimeout: 120,
+        fetch: (req, srv) => ownHostAnswer(req) ?? realtime.fetch(req, srv, (r) => app.fetch(r)),
+        websocket: realtime.websocket,
+        // What the HTTP app doesn't answer itself: a WebSocket upgrade that failed before the socket opened.
+        error(error) {
+          log.error("request failed", { error, stack: error.stack });
+          return new Response("Something went wrong on our side\n", { status: 500 });
+        },
+      });
+  log.info(worker ? "running jobs only, answering /api/health alone (SERVER_ROLE=worker)" : "listening", {
+    url: `http://${config.HOST}:${config.PORT}`,
   });
-  log.info("listening", { url: `http://${config.HOST}:${config.PORT}` });
-  const operator = serveOperatorApi({
-    db: database.db,
-    config,
-    version: release,
-    log,
-    pubsub: adapters.pubsub,
-    hub: engine.machineHub,
-    emails: adapters.email.delivers,
-    humanCheck: adapters.humanCheck,
-    sessions: engine.sessions,
-  });
-  if (operator) {
+  const eventLoopLag = watchEventLoopLag(log);
+  const operator = worker
+    ? null
+    : serveOperatorApi({
+        db: database.db,
+        config,
+        version: release,
+        log,
+        pubsub: adapters.pubsub,
+        blobs: adapters.platformBlobs,
+        hub: engine.machineHub,
+        emails: adapters.email.delivers,
+        humanCheck: adapters.humanCheck,
+        eventLoopLag,
+        rateLimiter: adapters.rateLimiter,
+        sessions: engine.sessions,
+        surface: services,
+      });
+  if (operator && config.OPERATOR_API_TOKEN) {
     log.info("operator API listening", { url: `http://${config.HOST}:${operator.port}${OPERATOR_API_PREFIX}` });
+  }
+  if (operator && config.SURFACE_BRIDGE_TOKEN) {
+    log.info("chat surface bridge listening", { url: `http://${config.HOST}:${operator.port}${SURFACE_PREFIX}` });
   }
   if (engine.sessions) log.info("session screening on: screens are read while people are in control (ADR 0076)");
 
@@ -520,17 +704,23 @@ async function boot(
     log.info("shutting down", { signal });
     // No new jobs, from now on: one started during the delay below would be cut by the drain.
     workers.stop();
+    // The switch is the process's: a server started after this one sets its own.
+    allowPrivateOutbound(false);
+    allowOutbound();
     // `/api/health` answers 503 from now on: the proxy's health check takes this instance out before it stops
     // listening, and holds new requests for the next one instead of failing them.
     if (config.SHUTDOWN_DELAY_MS > 0) await Bun.sleep(config.SHUTDOWN_DELAY_MS);
     // HTTP stops taking requests (the new deploy serves them). Not awaited: the
     // promise resolves only once every socket is closed, and browser tabs never close theirs.
-    telemetry.stop();
-    void server.stop();
+    telemetry?.stop();
+    void server?.stop();
     void operator?.stop();
     // Runners reconnect to the next instance, and people's desktops and terminals open again there.
     await engine.machineHub.stop();
     engine.streams.stop();
+    // People's live files open again on the next instance; what their apps sent that isn't stored yet goes again from
+    // their state vectors there. The documents stay here for the agents' tools in the runs still finishing.
+    liveSockets.stop();
     // Runs in progress get up to 20 s to finish; the rest are checkpointed and resume on the next instance. The other
     // jobs running here get as long, 5 s at least, then go back to the queue, due at once, instead of waiting out
     // their lease. A task's call cut by the stop is sent again to the next instance, which answers it from what is
@@ -549,8 +739,10 @@ async function boot(
     ]);
     if (interrupted.length > 0) log.info("runs handed back for the next instance", { runs: interrupted });
     if (handed > 0) log.info("jobs handed back for the next instance", { jobs: handed });
+    // What live files hold that isn't stored yet is stored, now that no run here changes them (ADR 0196 §4).
+    await engine.live.stop().catch((error: unknown) => log.warn("live files' last changes failed", { error }));
     // Browser tabs, left open so they saw those runs finish, reconnect to the next instance.
-    await server.stop(true);
+    await server?.stop(true);
     for (const module of modules) await module.onStop?.();
     await adapters.pubsub.close?.();
     await database.close();
@@ -636,34 +828,6 @@ function platformBlobStore(config: Config, db: Database) {
   });
 }
 
-/** How this server sends Android pushes (ADR 0152): `PUSH_SENDER`, with `auto` resolved. */
-function androidPushMode(config: Config): "direct" | "relay" | "off" {
-  if (config.PUSH_SENDER !== "auto") return config.PUSH_SENDER;
-  return config.FIREBASE_SERVICE_ACCOUNT ? "direct" : "relay";
-}
-
-/**
- * Android pushes (ADR 0152): straight to Firebase with this server's service account (`fcm`), or through the
- * push relay, which registers this installation on its first push and keeps its credentials sealed with
- * `wrappers()`; null when off or `direct` has no account.
- */
-function androidPushSender(
-  config: Config,
-  fcm: PushSender | null,
-  db: Database,
-  wrappers: () => KeyWrapper[],
-  version: string,
-): PushSender | null {
-  const mode = androidPushMode(config);
-  if (mode === "off") return null;
-  if (mode === "direct") return fcm;
-  return createRelayPushSender({
-    url: config.PUSH_RELAY_URL,
-    credentials: relayCredentials(db, wrappers, config.PUSH_RELAY_URL),
-    version,
-  });
-}
-
 /** At most one log line this often about push services refusing this server's signature. */
 const WEB_PUSH_REFUSED_LOG_MS = 10 * 60_000;
 
@@ -731,10 +895,11 @@ function mailAdapters(
         beforeToolCall,
       })
     : null;
-  // A mail server named by a person never resolves to our network (private, loopback, metadata).
+  // A mail server named by a person never resolves to our network (private, loopback, metadata), unless the
+  // operator allowed that host or range (ADR 0210): the same check as when the account was saved.
   const checkHost = async (host: string) => {
-    const addresses = await resolveHostDns(host);
-    if (addresses.length === 0 || addresses.some(isBlockedAddress)) throw new Error("blocked host");
+    const checked = await publicHostAddress(host);
+    if (!checked.ok) throw new Error(checked.reason === "blocked" ? "blocked host" : `no address for ${host}`);
   };
   const imapOptions = { checkHost };
   return {

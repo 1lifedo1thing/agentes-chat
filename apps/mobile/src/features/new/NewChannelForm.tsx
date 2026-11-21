@@ -1,23 +1,29 @@
 import { keys, useApi } from "@agenteschat/client";
+import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, TextInput, View } from "react-native";
-import { Button, fieldText, Icon, Locked, SheetScreen, Text, useToast } from "@/ui";
+import { useOrg } from "@/providers/org";
+import { Button, fieldText, GROUPED_ROW, GroupedFooter, GroupedList, Icon, Locked, SheetScreen } from "@/ui";
 import { chatHref } from "../links/logic";
-import { useColors, useOrgId } from "../shared/hooks";
-import { useSurface } from "../shared/parts";
+import { useColors, useErrorToast, useOrgId } from "../shared/hooks";
 import { closeSheetsAndOpen, SheetHeader } from "./parts";
 
-/** "Novo canal": only the name; people and agents are called in later, by name. */
+/**
+ * "New channel": only the name; people and agents are called in later, by name. A personal workspace's channels are
+ * its group conversations (ADR 0159). The sheet comes up with the keyboard down (the person taps the name), and a
+ * channel that couldn't be made says why.
+ */
 export function NewChannelForm() {
   const { t } = useTranslation();
   const api = useApi();
   const orgId = useOrgId();
+  const { org } = useOrg();
+  const title = isPersonal(org) ? t("shell.sidebarMenu.newChannelPersonal") : t("mobile.chats.newChannel");
   const qc = useQueryClient();
-  const toast = useToast();
+  const failed = useErrorToast();
   const c = useColors();
-  const surface = useSurface();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const clean = name.trim().replace(/^#/, "");
@@ -30,37 +36,37 @@ export function NewChannelForm() {
         void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
         closeSheetsAndOpen(chatHref(ch.id));
       })
-      .catch(() => toast({ title: t("mobile.app.failed"), icon: "x" }))
+      .catch(failed)
       .finally(() => setBusy(false));
   };
   return (
     <SheetScreen>
-      <SheetHeader title={t("mobile.chats.newChannel")} />
+      <SheetHeader title={title} />
+      {/* The name in a group of its own, on the grouped rows' ruler, the fine print under it as every group's. */}
       <Locked when={busy}>
-        <View style={[styles.field, surface]}>
-          <Icon name="hash" size={20} color={c.faint} />
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            placeholder={t("mobile.chats.channelPlaceholder")}
-            placeholderTextColor={c.faint}
-            accessibilityLabel={t("mobile.chats.newChannel")}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoFocus
-            returnKeyType="done"
-            onSubmitEditing={submit}
-            style={[styles.input, { color: c.ink }]}
-          />
-        </View>
+        <GroupedList>
+          <View style={styles.field}>
+            <Icon name="hash" size={20} color={c.faint} />
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder={t(modeKey(org, "mobile.chats.channelPlaceholder"))}
+              placeholderTextColor={c.faint}
+              accessibilityLabel={title}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={submit}
+              style={[styles.input, { color: c.ink }]}
+            />
+          </View>
+        </GroupedList>
+        <GroupedFooter>{t(modeKey(org, "mobile.new.channelFine"))}</GroupedFooter>
       </Locked>
-      <Text variant="footnote" tone="faint" style={styles.fine}>
-        {t("mobile.new.channelFine")}
-      </Text>
       <Button
         variant="primary"
         wide
-        label={t("mobile.chats.createChannel")}
+        label={t(modeKey(org, "mobile.chats.createChannel"))}
         loading={busy}
         disabled={!clean}
         onPress={submit}
@@ -73,11 +79,9 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    minHeight: 50,
-    paddingHorizontal: 14,
-    borderRadius: 20,
+    gap: 12,
+    minHeight: GROUPED_ROW.minHeight,
+    paddingHorizontal: GROUPED_ROW.padX,
   },
   input: { flex: 1, paddingVertical: 12, ...fieldText("body") },
-  fine: { marginHorizontal: 6, marginBottom: 4 },
 });

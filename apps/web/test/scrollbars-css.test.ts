@@ -56,23 +56,30 @@ async function selectorsWith(match: (property: string, value: string) => boolean
  */
 const SIDEWAYS: Record<string, "strip" | "content"> = {
   ".agp-subnav": "strip",
-  ".agp-tabs .ac-tabs": "strip",
+  ".ac-tabs": "strip",
   ".settings__groups": "strip",
   ".channel-settings__nav": "strip",
   ".onb__steps": "strip",
   ".newag .onb__steps": "strip",
   ".newag__tips": "strip",
-  ".issues-now__list": "strip",
   ".threads-tabs": "strip",
   ".nt-segwrap": "strip",
   ".mi-files__tabs": "strip",
   ".ac-seg": "strip",
-  ".ac-composer__format": "strip",
   ".ac-toolbar__filters": "strip",
   ".ac-toolbar[data-stack]>.ac-toolbar__filters": "strip",
   ".ac-carousel__track": "strip",
   ".dk-orgpick": "strip",
   ".wiki-doc .wiki-editor__bar": "strip",
+  ".nac-band__path": "strip",
+  ".cnv-dock": "strip",
+  ".sheet-tabs__strip": "strip",
+  ".sheet-tools": "strip",
+  ".sl-tools": "strip",
+  ".ac-formatbar__row": "strip",
+  // A document's code block with long lines keeps our scrollbar (ADR 0200).
+  ".lf-doc__body pre.lf-doc__code": "content",
+  ".sl-rail__list": "strip",
   ".code-card__code": "content",
   ".code-card__preview": "content",
   ".level-matrix": "content",
@@ -81,10 +88,12 @@ const SIDEWAYS: Record<string, "strip" | "content"> = {
   ".machine-command__code": "content",
   ".md__table-scroll": "content",
   ".issues-boardwrap": "content",
+  ".issue-tablewrap": "content",
   ".team-tree": "content",
   ".mi-log": "content",
   ".mi-cmd__line": "content",
   ".ac-msg__text pre": "content",
+  ".sl-chartdlg__data": "content",
 };
 
 describe("our scrollbars, never the browser's", () => {
@@ -341,6 +350,7 @@ describe("columns that scroll on their own", () => {
     ".cal-side",
     ".cal-agenda",
     ".cal-week__scroll",
+    ".onb",
   ];
   test("each hides its thumb until the pointer or the keyboard is on it, with its room kept", async () => {
     const layout = topLevel(await read("apps/web/src/layout.css"));

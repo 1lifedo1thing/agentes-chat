@@ -4,9 +4,10 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { localMeta, quoteExcerpt, replyOf } from "@agenteschat/client/lib/reply";
+import { installTitleTips, TITLE_TIP_ID, TITLE_TIP_OPEN_MS } from "@agenteschat/ui";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { objectUrls } from "@/components/artifacts/FileView";
-import { createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
+import { ADA_ID, createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
 afterEach(() => {
@@ -37,12 +38,43 @@ const pickEmoji = async (trigger: HTMLElement, name: string) => {
   await settle(3);
 };
 
-describe("composer toolbar", () => {
+/** The buttons and the text box of a composer's one row, by name, in the order they are drawn. */
+const rowOf = (box: HTMLElement) =>
+  Array.from((box.closest(".ac-composer__row") as HTMLElement).querySelectorAll("button, textarea")).map((el) =>
+    el.getAttribute("aria-label"),
+  );
+
+describe("composer row and formatting", () => {
+  test("a channel, a thread and a DM: attach, emoji, the text and send, and no formatting bar at rest", async () => {
+    await open();
+    expect(rowOf(composer())).toEqual(["Anexar arquivo", "Emojis, GIFs e figurinhas", "Mensagem para #eng", "Enviar"]);
+    expect(screen().queryByRole("toolbar", { name: "Formatação" })).toBeNull();
+    // A draft that calls an agent grows no chip over the text: the @ picker and the sent message say who.
+    await act(async () => fireEvent.change(composer(), { target: { value: "@ada olha isso" } }));
+    expect(composer().closest(".ac-composer")?.querySelector(".ac-composer__pills")).toBeNull();
+    await act(async () => fireEvent.change(composer(), { target: { value: "" } }));
+    const bar = within(article("o login está devolvendo 401")).getByRole("toolbar");
+    await act(async () => fireEvent.click(within(bar).getByRole("button", { name: "Responder" })));
+    await settle(6);
+    const reply = screen().getByRole("combobox", { name: "Responder na thread" });
+    expect(rowOf(reply)).toEqual(["Anexar arquivo", "Emojis, GIFs e figurinhas", "Responder na thread", "Enviar"]);
+    cleanup();
+    await renderApp(`/org/${ORG_ID}/dm/agent/${ADA_ID}`, { api: createFakeApi(seedState()) });
+    await settle(8);
+    const dm = screen().getByRole("combobox", { name: "Mensagem para Ada" });
+    expect(rowOf(dm)).toEqual(["Anexar arquivo", "Emojis, GIFs e figurinhas", "Mensagem para Ada", "Enviar"]);
+    // No chip for the DM's agent: the header and the placeholder already say who.
+    expect(dm.closest(".ac-composer")?.querySelector(".ac-composer__pills")).toBeNull();
+    expect(screen().queryByRole("toolbar", { name: "Formatação" })).toBeNull();
+  });
+
   test("Negrito wraps the selection in the channel composer; ⌘K makes a link, not the palette", async () => {
     await open();
     const box = composer();
     await act(async () => fireEvent.change(box, { target: { value: "olha o deploy" } }));
+    box.focus();
     box.setSelectionRange(7, 13);
+    await act(async () => fireEvent.select(box));
     const toolbar = screen().getByRole("toolbar", { name: "Formatação" });
     await act(async () => fireEvent.click(within(toolbar).getByRole("button", { name: "Negrito" })));
     expect(composer().value).toBe("olha o **deploy**");
@@ -51,6 +83,13 @@ describe("composer toolbar", () => {
     await settle(1);
     expect(composer().value).toBe("[olha](https://) o **deploy**");
     expect(screen().queryByRole("dialog")).toBeNull();
+    // Nothing selected (the box holds the cursor whenever a conversation is open): ⌘K is the palette.
+    const linked = composer();
+    linked.setSelectionRange(linked.value.length, linked.value.length);
+    await act(async () => fireEvent.keyDown(linked, { key: "k", metaKey: true }));
+    await settle(1);
+    expect(linked.value).toBe("[olha](https://) o **deploy**");
+    expect(screen().queryByRole("dialog")).not.toBeNull();
   });
 });
 
@@ -128,6 +167,53 @@ describe("reactions on any message", () => {
     // "+" adds another.
     expect(within(pills).getByRole("button", { name: "Adicionar reação" })).toBeTruthy();
   });
+
+  test("the pill's hover text is the product's tip: every name whole, você first", async () => {
+    const state = seedState();
+    const joao = state.members.find((m) => m.userId === "u-joao");
+    if (joao) joao.name = "João Pedro Lima";
+    const { socket } = await open(state);
+    const off = installTitleTips();
+    try {
+      await act(async () =>
+        socket.push({
+          type: "event",
+          channelId: ENG_ID,
+          event: {
+            type: "message.reactions",
+            channelId: ENG_ID,
+            messageId: "m-1",
+            reactions: [{ reaction: "🚀", count: 3, userIds: ["u-walter", "u-joao"], agentIds: [ADA_ID] }],
+          },
+        }),
+      );
+      await settle(2);
+      // No line breaks inside a name: its spaces are no-break ones.
+      const who = "você, João\u00a0Pedro\u00a0Lima e Ada reagiram com 🚀";
+      const pills = within(article("o login está devolvendo 401")).getByRole("group", { name: "Reações" });
+      const pill = within(pills).getByRole("button", { name: who });
+      expect(pill.getAttribute("title")).toBe(who);
+      await act(async () => fireEvent.pointerOver(pill, { pointerType: "mouse" }));
+      // Held while the pointer is on it: the browser's own tooltip has nothing to show.
+      expect(pill.getAttribute("title")).toBe("");
+      await act(() => new Promise((r) => setTimeout(r, TITLE_TIP_OPEN_MS + 20)));
+      expect(document.getElementById(TITLE_TIP_ID)?.textContent).toBe(who);
+      expect(pill.getAttribute("aria-label")).toBe(who);
+      expect(pill.hasAttribute("aria-describedby")).toBe(false);
+      // "+" has no title: an icon-only control says its label.
+      const add = within(pills).getByRole("button", { name: "Adicionar reação" });
+      await act(async () => {
+        fireEvent.pointerOut(pill, { pointerType: "mouse", relatedTarget: add });
+        fireEvent.pointerOver(add, { pointerType: "mouse" });
+      });
+      expect(document.getElementById(TITLE_TIP_ID)?.textContent).toBe("Adicionar reação");
+      expect(pill.getAttribute("title")).toBe(who);
+      await act(async () => fireEvent.pointerOut(add, { pointerType: "mouse" }));
+      expect(document.getElementById(TITLE_TIP_ID)).toBeNull();
+    } finally {
+      off();
+    }
+  });
 });
 
 // "Responder" opens the thread panel now (message-actions.test.tsx); a quote stays only for
@@ -163,6 +249,78 @@ describe("quotes", () => {
 });
 
 describe("attachments", () => {
+  test("a file dropped on the agent DM history joins that conversation and waits to send", async () => {
+    const state = seedState();
+    await renderApp(`/org/${ORG_ID}/dm/agent/${ADA_ID}`, { api: createFakeApi(state) });
+    await settle(8);
+    const box = screen().getByRole("combobox", { name: "Mensagem para Ada" });
+    const history = box.closest(".channel__col")?.querySelector(".channel__messages");
+    if (!history) throw new Error("No conversation history");
+    const channelId = state.dms.find((dm) => dm.with.id === ADA_ID)?.channelId;
+    if (!channelId) throw new Error("No direct conversation");
+    const file = new File(["teste"], "proposta.pdf", { type: "application/pdf" });
+    const dataTransfer = { types: ["Files"], files: [file] };
+    await act(async () => fireEvent.drop(history, { dataTransfer }));
+    await settle(4);
+    expect(state.calls.filter((call) => call.method === "artifacts.upload").map((call) => call.args.slice(1))).toEqual([
+      ["proposta.pdf", { channelId }],
+    ]);
+    expect(screen().getByRole("button", { name: "Remover proposta.pdf" })).toBeTruthy();
+    expect(state.calls.some((call) => call.method === "chat.post")).toBe(false);
+    await act(async () => fireEvent.click(screen().getByRole("button", { name: "Enviar" })));
+    await settle(4);
+    const post = state.calls.find((call) => call.method === "chat.post");
+    expect(post?.args[1]).toBe(channelId);
+    expect(post?.args[2]).toMatchObject({ attachments: [expect.any(String)] });
+  });
+
+  test("the chat hints only for files, clears on leave and takes a compositor drop once", async () => {
+    const { state } = await open();
+    const box = composer();
+    const history = box.closest(".channel__col")?.querySelector(".channel__messages");
+    const child = history?.firstElementChild;
+    if (!history || !child) throw new Error("No message area");
+    const hint = () => screen().queryByText("Solte para anexar");
+    const file = new File(["draft"], "notas.txt", { type: "text/plain" });
+    const dataTransfer = { types: ["Files"], files: [file] };
+    await act(async () => fireEvent.dragEnter(history, { dataTransfer: { types: ["text/plain"] } }));
+    expect(hint()).toBeNull();
+    await act(async () => fireEvent.dragEnter(history, { dataTransfer }));
+    expect(hint()).toBeTruthy();
+    await act(async () => {
+      fireEvent.dragEnter(child, { dataTransfer });
+      fireEvent.dragLeave(history, { dataTransfer });
+    });
+    expect(hint()).toBeTruthy();
+    await act(async () => fireEvent.dragLeave(child, { dataTransfer }));
+    expect(hint()).toBeNull();
+    await act(async () => fireEvent.dragEnter(box, { dataTransfer }));
+    expect(hint()).toBeTruthy();
+    await act(async () => fireEvent.drop(box, { dataTransfer }));
+    await settle(4);
+    expect(hint()).toBeNull();
+    expect(state.calls.filter((call) => call.method === "artifacts.upload")).toHaveLength(1);
+    expect(screen().getByRole("button", { name: "Remover notas.txt" })).toBeTruthy();
+  });
+
+  test("a picture pasted with the focus on the history, or in the box, joins the draft once", async () => {
+    const { state } = await open();
+    const uploads = () => state.calls.filter((call) => call.method === "artifacts.upload");
+    const shot = new File(["png"], "image.png", { type: "image/png" });
+    await act(async () => fireEvent.paste(document.body, { clipboardData: { files: [shot] } }));
+    await settle(4);
+    expect(uploads()).toHaveLength(1);
+    expect(screen().getByRole("button", { name: "Remover image.png" })).toBeTruthy();
+    await act(async () => fireEvent.paste(composer(), { clipboardData: { files: [shot] } }));
+    await settle(4);
+    expect(uploads()).toHaveLength(2);
+    // Text pasted on the page is left alone.
+    await act(async () => fireEvent.paste(document.body, { clipboardData: { files: [] } }));
+    await settle(2);
+    expect(uploads()).toHaveLength(2);
+    expect(state.calls.some((call) => call.method === "chat.post")).toBe(false);
+  });
+
   test("a picked file uploads to this channel, shows as a chip, and goes with the message", async () => {
     const { state } = await open();
     const input = document.querySelector('.channel__composer input[type="file"]') as HTMLInputElement;

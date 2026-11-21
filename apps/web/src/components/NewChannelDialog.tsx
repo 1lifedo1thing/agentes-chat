@@ -5,8 +5,11 @@ import {
   type ChannelAccess,
   type ChannelAccessMode,
 } from "@agenteschat/client/lib/channel-access";
+import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { can } from "@agenteschat/client/lib/permissions";
+import { rolePicksInSight } from "@agenteschat/client/lib/personal-view";
 import { isEveryone, sortRoles } from "@agenteschat/client/lib/roles";
+import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import {
   Button,
   Dialog,
@@ -25,17 +28,27 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
+import { usePersonalView } from "@/hooks/usePersonalView";
 import { CategorySelect } from "./ChannelCategoryDialogs";
 import { memberOf, PeoplePicker, type PickKey } from "./MemberPicker";
 import { useOrg } from "./org-context";
 import { RoleChecklist } from "./roles/RoleChecklist";
 
-const ACCESS_MODES: ChannelAccessMode[] = ["public", "private", "roles"];
+const ACCESS_MODES: ChannelAccessMode[] = ["public", "roles", "private"];
+
+/** A team's three words for who sees a channel, the same as a cargo's "Quem vê #canal" says them. */
+const TEAM_ACCESS = {
+  public: "rolesPage.everyoneName",
+  roles: "rolesPage.who.some",
+  private: "rolesPage.sees.private",
+} as const;
 
 /**
- * "Quem pode entrar": Público, Privado or Departamentos ou papéis (ADR 0125). The third shows the roles picked, each
- * removable, and "Escolher papéis", which ticks them in a dialog of their own (it opens by itself while none is
- * picked). Creating a channel and its details share it.
+ * "Quem pode entrar": Todos, Só alguns cargos or Só quem for adicionado (ADR 0125), the words a cargo's Canais uses.
+ * The second shows the roles picked, each removable, and "Escolher cargos", which ticks them in a dialog of their own
+ * (it opens by itself while none is picked). Creating a channel and its details share it. A personal workspace says
+ * the open and closed ones plainly ("Everyone here can join", "Only who I add") and offers the cargos only when a
+ * role is worth it or it is the channel's (ADR 0158); what each one does is the same.
  */
 export function ChannelAccessChoice({
   value,
@@ -55,6 +68,22 @@ export function ChannelAccessChoice({
   const candidates = sortRoles((roles.data?.roles ?? []).filter((r) => !isEveryone(r)));
   const [choosing, setChoosing] = useState(false);
   const pickedRoles = candidates.filter((r) => value.roleIds.includes(r.id));
+  const modes = ACCESS_MODES.filter(
+    (mode) => mode !== "roles" || value.mode === "roles" || rolePicksInSight(org, roles.data?.roles ?? []),
+  );
+  const personal = isPersonal(org);
+  const label = (mode: ChannelAccessMode) =>
+    !personal
+      ? TEAM_ACCESS[mode]
+      : mode === "roles"
+        ? ("newChannel.roles" as const)
+        : modeKey(org, `newChannel.${mode}` as const);
+  const desc = (mode: ChannelAccessMode) =>
+    mode === "roles"
+      ? ("newChannel.rolesDesc" as const)
+      : !personal && mode === "private"
+        ? ("rolesPage.sees.privateDesc" as const)
+        : modeKey(org, `newChannel.${mode}Desc` as const);
   return (
     <div className="channel-access">
       {/* A dropdown, as "Categoria" above it: three cards side by side broke their words in a narrow dialog. */}
@@ -63,7 +92,7 @@ export function ChannelAccessChoice({
         id={`${idPrefix}-vis`}
         hint={{
           name: t("common.about", { label: t("newChannel.visibility") }),
-          text: t(`newChannel.${value.mode}Desc`),
+          text: t(desc(value.mode)),
         }}
         labelAside={
           value.mode === "roles" && (
@@ -79,10 +108,10 @@ export function ChannelAccessChoice({
             onChange({ ...value, mode });
             if (mode === "roles" && value.roleIds.length === 0) setChoosing(true);
           }}
-          options={ACCESS_MODES.map((mode) => ({
+          options={modes.map((mode) => ({
             value: mode,
-            label: t(`newChannel.${mode}`),
-            description: t(`newChannel.${mode}Desc`),
+            label: t(label(mode)),
+            description: t(desc(mode)),
           }))}
         />
       </Field>
@@ -207,17 +236,22 @@ export function channelNameError(name: string, taken: Set<string>): "invalid" | 
 
 /**
  * "Criar canal", in one column: name, topic, sidebar category, who can join, then the initial members (people and
- * agents: search and a list that scrolls in its own box). The footer, with the count and Criar, stays in view.
+ * agents: search and a list that scrolls in its own box). The footer, with the count and Criar, stays in view. A
+ * personal workspace calls it a group conversation, and alone leaves out who can join while it is the default, open to
+ * everyone here (ADR 0159): the same channel either way.
  */
 export function NewChannelDialog({
   open,
   onOpenChange,
   category = null,
+  roleIds,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Opened from a category's +: it starts chosen. */
   category?: string | null;
+  /** Opened from a cargo's Canais: it starts limited to these cargos. */
+  roleIds?: string[];
 }) {
   const { t } = useTranslation();
   const { org } = useOrg();
@@ -225,23 +259,15 @@ export function NewChannelDialog({
   const qc = useQueryClient();
   const navigate = useNavigate();
   const channels = useChannels(org.id);
+  const { solo } = usePersonalView();
   const [name, setName] = useState("");
   const [topic, setTopic] = useState("");
-  const [access, setAccess] = useState<ChannelAccess>({ mode: "public", roleIds: [] });
+  const [access, setAccess] = useState<ChannelAccess>(
+    roleIds?.length ? { mode: "roles", roleIds } : { mode: "public", roleIds: [] },
+  );
   const [categoryId, setCategoryId] = useState<string | null>(category);
   const [selected, setSelected] = useState<Set<PickKey>>(new Set());
   const [touched, setTouched] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    setName("");
-    setTopic("");
-    setAccess({ mode: "public", roleIds: [] });
-    setCategoryId(category);
-    setSelected(new Set());
-    setTouched(false);
-  }, [open, category]);
-  const taken = new Set((channels.data ?? []).map((c) => c.name));
-  const error = channelNameError(name, taken);
   const create = useMutation({
     mutationFn: async () => {
       const channel = await api.chat.createChannel(org.id, {
@@ -260,9 +286,27 @@ export function NewChannelDialog({
       await navigate({ to: "/org/$orgId/c/$channelId", params: { orgId: org.id, channelId: channel.id } });
     },
   });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the cargos it opens with are read once per opening
+  useEffect(() => {
+    if (!open) return;
+    setName("");
+    setTopic("");
+    setAccess(roleIds?.length ? { mode: "roles", roleIds } : { mode: "public", roleIds: [] });
+    setCategoryId(category);
+    setSelected(new Set());
+    setTouched(false);
+    create.reset();
+  }, [open, category, create.reset]);
+  const taken = useHeldWhile(new Set((channels.data ?? []).map((c) => c.name)), create.isPending || create.isSuccess);
+  const error = channelNameError(name, taken);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} title={t("newChannel.title")} closeLabel={t("common.close")}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={t(modeKey(org, "newChannel.title"))}
+      closeLabel={t("common.close")}
+    >
       <form
         style={{ display: "contents" }}
         onSubmit={(e) => {
@@ -282,7 +326,7 @@ export function NewChannelDialog({
                   ? error === "invalid"
                     ? t("newChannel.nameInvalid")
                     : error === "taken"
-                      ? t("newChannel.nameTaken", { name })
+                      ? t(modeKey(org, "newChannel.nameTaken"), { name })
                       : undefined
                   : undefined
               }
@@ -290,7 +334,7 @@ export function NewChannelDialog({
               <Input
                 value={name}
                 onChange={(e) => setName(toChannelName(e.target.value))}
-                placeholder={t("newChannel.namePlaceholder")}
+                placeholder={t(modeKey(org, "newChannel.namePlaceholder"))}
                 autoFocus
               />
             </Field>
@@ -311,9 +355,11 @@ export function NewChannelDialog({
             >
               <CategorySelect value={categoryId} onChange={setCategoryId} canCreate={can(org, "manage_channels")} />
             </Field>
-            <ChannelAccessChoice value={access} onChange={setAccess} idPrefix="ch" showError={touched} />
+            {!(solo && access.mode === "public") && (
+              <ChannelAccessChoice value={access} onChange={setAccess} idPrefix="ch" showError={touched} />
+            )}
             <PeoplePicker
-              label={t("newChannel.members")}
+              label={t(modeKey(org, "newChannel.members"))}
               searchLabel={t("newChannel.membersSearch")}
               emptyText={(q) => t("newChannel.membersEmpty", { q })}
               selected={selected}

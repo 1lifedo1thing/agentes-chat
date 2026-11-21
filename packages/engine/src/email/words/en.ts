@@ -18,6 +18,10 @@ export type Step = [title: string, text: string];
  * alone: with the word it may not fit a 320 px phone's line (digits run wide), and would then break inside again or
  * leave the word alone on a line of its own.
  */
+/** Sentences of inline parts, one space between them, the missing ones left out. */
+export const sentences = (...parts: (Inline[] | null)[]): Inline[] =>
+  parts.filter((p): p is Inline[] => p !== null).flatMap((p, i) => (i > 0 ? [" ", ...p] : p));
+
 export const atHost = (lead: string, word: string, host: string): Text =>
   host.length > 36 ? [`${lead} ${word} `, { nobr: `${host}.` }] : [`${lead} `, { nobr: `${word} ${host}.` }];
 
@@ -56,12 +60,30 @@ export const en = {
       inviter
         ? [{ b: inviter }, `${email ? ` (${email})` : ""} invited you to join `, { b: org }, ` as ${role}.`]
         : ["You're invited to join ", { b: org }, ` as ${role}.`],
+    /**
+     * What the person starts with besides #general and the right hand (ADR 0184): the channels they join and the
+     * agents they work with, each list already joined in the language ("#support and #billing", each channel held
+     * whole), or null. `count`: how many of each, for languages whose words change with it.
+     */
+    starts: (channels: Inline[] | null, agents: Inline[] | null, _count: { channels: number; agents: number }): Text =>
+      sentences(channels && ["You'll start in ", ...channels, "."], agents && ["You'll work with ", ...agents, "."]),
+    /** The last place of a list cut short: how many more it holds (always 2 or more). */
+    more: (n: number) => `${n} more`,
     what: "agentes.chat is where people and AI agents work together.",
     noteFrom: (inviter: string, note: string): Text => [{ b: inviter ? `${inviter}: ` : "Their note: " }, `“${note}”`],
     button: "Accept invitation",
     small: "The invitation works for 7 days. Accept it with this email address.",
     why: (org: string) =>
       `You got this email because someone at ${org} invited this address. If you don't know them, ignore it. Nothing happens until you accept.`,
+    /** A personal workspace's (ADR 0159): someone's family or friends, with no workspace name nor role to read. */
+    personal: {
+      body: (inviter: string, email: string | null): Text =>
+        inviter
+          ? [{ b: inviter }, `${email ? ` (${email})` : ""} invited you to their personal workspace on agentes.chat.`]
+          : "You're invited to a personal workspace on agentes.chat.",
+      why: () =>
+        "You got this email because someone invited this address to their personal workspace. If you don't know them, ignore it. Nothing happens until you accept.",
+    },
   },
   inviteRequest: {
     subject: "Someone asked for a new invitation",
@@ -74,6 +96,13 @@ export const en = {
     next: "If you expect them, send a new invitation from Members. If not, there's nothing to do.",
     button: "Open Members",
     why: (org: string) => `You got this email because you created this invitation, or manage the members of ${org}.`,
+    personal: {
+      body: (email: string): Text =>
+        email
+          ? [{ b: email }, " opened an expired invitation to your workspace and asked for a new one."]
+          : "Someone with an expired invitation link to your workspace asked for a new one.",
+      why: () => "You got this email because you created this invitation, or look after who is in your workspace.",
+    },
   },
   calendar: {
     subject: "You're invited to an event",
@@ -83,6 +112,9 @@ export const en = {
     someone: "Someone",
     button: "See the event",
     why: (org: string) => `You got this email because someone at ${org} invited you to an event.`,
+    personal: {
+      why: () => "You got this email because someone in your workspace invited you to an event.",
+    },
   },
   waitlist: {
     subject: "Confirm your spot on the agentes.chat waiting list",
@@ -137,6 +169,13 @@ export const en = {
     button: "See the budget",
     why: (org: string) =>
       `You got this email because you own this agent, or are an admin of ${org}. It goes out at 80% and at 100%, once a month each.`,
+    /** A personal workspace's (ADR 0159): one person and their own agents, no admin to ask. */
+    personal: {
+      warning: "At 100% it stops and tells you. You can change the limit on the agent's page.",
+      exhausted: "It won't answer until the month turns, or until you raise the limit on the agent's page.",
+      why: () =>
+        "You got this email because this agent is one of yours. It goes out at 80% and at 100%, once a month each.",
+    },
   },
   digest: {
     subject: (n: number) =>
@@ -160,6 +199,15 @@ export const en = {
     button: (n: number): string => plural("en", n, { one: "Review the request", other: "Open approvals" }),
     why: (org: string, hours: number | undefined) =>
       `You got this email because you can approve these requests in ${org}.${hours ? ` It goes out when a request waits more than ${hours} hours, once per request.` : ""}`,
+    personal: {
+      body: (n: number): Text =>
+        plural("en", n, {
+          one: "One of your agents asked to do something that needs your approval.",
+          other: "Your agents asked to do things that need your approval.",
+        }),
+      why: (_org: string, hours: number | undefined) =>
+        `You got this email because you can approve these requests.${hours ? ` It goes out when a request waits more than ${hours} hours, once per request.` : ""}`,
+    },
   },
   ready: {
     subject: "Your agents' computer is ready",
@@ -193,18 +241,39 @@ export const en = {
     button: { ai: "Connect your AI", task: "Give a first task", create: "Create an agent" },
     why: (org: string) =>
       `You got this email because you own ${org} on agentes.chat. It's the only email about this computer.`,
+    /** A personal workspace's (ADR 0159): the person's computer for their agents, who they talk to directly. */
+    personal: {
+      body: (): Text =>
+        "Thanks for waiting. Your agents' computer is on and set up, with a user of its own for each agent. It stays on day and night, so your agents can work any time.",
+      steps: {
+        task: ["Give a first task.", "Open a conversation with one of your agents and say what you need."] as Step,
+      },
+      why: () =>
+        "You got this email because this workspace on agentes.chat is yours. It's the only email about this computer.",
+    },
   },
   joinRequest: {
     subject: "Someone asks to join your workspace",
     preheader: "Approve or deny it in Members. Nothing happens until you answer.",
     headline: "A request to join is waiting",
     body: (org: string): Text => ["They opened ", { b: org }, "'s invitation link and asked to join."],
+    /** In place of `body` for an outside collaborator's request (ADR 0191): `by`, who they work for. */
+    outside: (by: string): Text => [
+      "They ask to join as an outside collaborator for ",
+      { b: by },
+      ". They take no seat in your plan, and you can remove them at any time.",
+    ],
     note: "Approve only people you expect. They join as a member unless you pick another role on the page.",
     approve: "Approve",
     deny: "Deny",
     more: "All waiting requests are in Members." as Text,
     why: (org: string) =>
       `You got this email because you're an owner or admin of ${org}. It goes out at most once an hour.`,
+    personal: {
+      body: (): Text => "They opened your workspace's invitation link and asked to join.",
+      why: () =>
+        "You got this email because you look after who joins your workspace. It goes out at most once an hour.",
+    },
   },
   joinAnswer: {
     someone: "Someone",
@@ -236,6 +305,17 @@ export const en = {
       small: "If you think it's a mistake, ask someone there to invite you by email.",
     },
     why: (org: string) => `You got this email because this address asked to join ${org} on agentes.chat.`,
+    /** Joining someone's personal workspace (ADR 0159): the person who answered, not a company. */
+    personal: {
+      joined: { body: (who: string): Text => `${who} approved your request. You're in their workspace now.` },
+      invited: { body: (who: string): Text => `${who} approved your request to join their workspace.` },
+      denied: {
+        preheader: "They looked at it and didn't approve it.",
+        body: (): Text => "The person you asked looked at your request and didn't approve it.",
+        small: "If you think it's a mistake, ask them to invite you by email.",
+      },
+      why: () => "You got this email because this address asked to join a personal workspace on agentes.chat.",
+    },
   },
   joinCode: {
     subject: (code: string) => `${code} is your agentes.chat code`,
@@ -245,16 +325,28 @@ export const en = {
     small: ["It works for 10 minutes. If you didn't ask, ", { nobr: "ignore this email." }] as Text,
     why: (org: string) =>
       `You got this email because someone typed this address to ask to join ${org} on agentes.chat.`,
+    personal: {
+      body: (): Text => "Type this code on the page to ask to join this workspace.",
+      why: () =>
+        "You got this email because someone typed this address to ask to join a personal workspace on agentes.chat.",
+    },
   },
   deletionCode: {
     subjectWorkspace: (code: string) => `${code} is your code to delete a workspace`,
     subjectAccount: (code: string) => `${code} is your code to delete your whole account`,
+    subjectReset: (code: string) => `${code} is your code to reset a workspace`,
+    reset: (org: string): Text => [
+      "Type this code to reset the workspace ",
+      { b: org },
+      ". Its agents, conversations, files and memory are erased at once, for good, and it starts over like a new one.",
+    ],
+    whyReset: (org: string) => `You got this email because your account asked to reset ${org} on agentes.chat.`,
     preheader: "Type it in agentes.chat to confirm. It works for 10 minutes.",
     headline: "Your code",
     workspace: (org: string): Text => [
       "Type this code to delete the workspace ",
       { b: org },
-      ". It closes for everyone at once and is deleted for good 7 days later.",
+      ". It turns read-only for everyone at once and is deleted for good 7 days later.",
     ],
     account: (email: string): Text => [
       "Type this code to delete the whole account ",
@@ -270,21 +362,80 @@ export const en = {
       "It works for 10 minutes, and nothing is deleted without it. If it wasn't you, don't share it and tell the people who run this server." as Text,
     whyWorkspace: (org: string) => `You got this email because your account asked to delete ${org} on agentes.chat.`,
     whyAccount: "You got this email because your account asked to be deleted on agentes.chat.",
+    personal: {
+      workspace: (org: string): Text => [
+        "Type this code to delete your workspace ",
+        { b: org },
+        ". It turns read-only at once and is deleted for good 7 days later.",
+      ],
+    },
+  },
+  emailChange: {
+    code: {
+      subject: (code: string) => `${code} is your code to change your email`,
+      preheader: "Type it in agentes.chat to confirm. It works for 10 minutes.",
+      headline: "Your code",
+      body: (email: string, newEmail: string): Text => [
+        "Type this code to change the email of the account ",
+        { b: email },
+        " to ",
+        { b: newEmail },
+        ".",
+      ],
+      support: (address: string): Text => [
+        "It works for 10 minutes, and your email stays the same without it. If it wasn't you, don't share it and write to ",
+        { mail: address },
+        ".",
+      ],
+      noSupport:
+        "It works for 10 minutes, and your email stays the same without it. If it wasn't you, don't share it and tell the people who run this server." as Text,
+      why: "You got this email because your account asked to change its email on agentes.chat.",
+    },
+    link: {
+      subject: "Confirm your new email for agentes.chat",
+      preheader: "One click to sign in with this address from now on. The link works for an hour.",
+      headline: "Confirm your new email",
+      body: "One step left: confirm that this address is yours. Your account signs in with it from then on.",
+      button: "Confirm new email",
+      small: "The link works for an hour. If you didn't ask for this, you can ignore this email.",
+      why: "You got this email because someone asked to use this address for an agentes.chat account.",
+    },
+    changed: {
+      subject: "Your agentes.chat email changed",
+      preheader: "If it wasn't you, you can put this address back for 7 days.",
+      headline: "Your email changed",
+      body: (email: string, newEmail: string): Text => [
+        "The account ",
+        { b: email },
+        " now signs in with ",
+        { b: newEmail },
+        ".",
+      ],
+      notYou:
+        "Wasn't you? Press the button within 7 days. This address comes back, every session is signed out, the AI apps are disconnected and ways to sign in added since then stop working. The password is cleared too, and “Forgot my password” sets the next one." as Text,
+      button: "This wasn't me",
+      small: "If it was you, there's nothing to do.",
+      why: "You got this email because this address was the email of an agentes.chat account.",
+    },
   },
   deleting: {
     subject: (day: string) => `A workspace you're in will be deleted on ${day}`,
-    preheader: "It's closed now. An owner can still restore it until then.",
+    preheader: "It's read-only now. An owner can still restore it until then.",
     headline: "A workspace is being deleted",
     body: (by: string, org: string, day: string, time: string): Text => [
       { b: by },
       " deleted the workspace ",
       { b: org },
-      `. It's closed now and goes for good on ${day} at ${time}.`,
+      `. It's read-only now and goes for good on ${day} at ${time}.`,
     ],
     owner: "Changed your mind? Restore it before then.",
     button: "Restore the workspace",
     member: "If it's a mistake, ask an owner to restore it." as Text,
     why: (org: string) => `You got this email because you're in ${org} on agentes.chat.`,
+    personal: {
+      member: "If it's a mistake, ask whoever deleted it to restore it." as Text,
+      why: () => "You got this email because you're in this workspace on agentes.chat.",
+    },
   },
   restored: {
     subject: "A workspace you're in is back",
@@ -293,6 +444,9 @@ export const en = {
     body: (by: string, org: string): Text => [{ b: by }, " restored ", { b: org }, ". It works again."],
     button: "Open the workspace",
     why: (org: string) => `You got this email because you're in ${org} on agentes.chat.`,
+    personal: {
+      why: () => "You got this email because you're in this workspace on agentes.chat.",
+    },
   },
   appConnected: {
     subject: "An app was connected to your agentes.chat account",
@@ -302,6 +456,11 @@ export const en = {
     note: "Didn't connect it? Disconnect it now and change your password.",
     button: "See connected apps",
     why: (org: string) => `You got this email because an app was connected to your account in ${org} on agentes.chat.`,
+    personal: {
+      body: (app: string): Text => [{ b: app }, " now has access to your account in your personal workspace."],
+      why: () =>
+        "You got this email because an app was connected to your account in your personal workspace on agentes.chat.",
+    },
   },
   accountDeleting: {
     subject: (day: string) => `Your agentes.chat account will be deleted on ${day}`,
@@ -392,6 +551,10 @@ export const en = {
     button: "See who can talk",
     why: (org: string) =>
       `You got this email because an agent of yours in ${org} thinks with your plan and someone else changed who can talk to it.`,
+    personal: {
+      why: () =>
+        "You got this email because an agent of yours thinks with your plan and someone else changed who can talk to it.",
+    },
   },
   planLent: {
     subject: (plan: string) => `Your ${plan} plan now thinks for another agent`,
@@ -409,6 +572,9 @@ export const en = {
     note: "Take it back in one click from your notifications, and the agent stops thinking with your plan.",
     button: "Open notifications",
     why: (org: string) => `You got this email because someone in ${org} connected your plan to an agent.`,
+    personal: {
+      why: () => "You got this email because someone in your workspace connected your plan to an agent.",
+    },
   },
   planWaiting: {
     subject: "Your team is waiting",
@@ -422,6 +588,69 @@ export const en = {
     },
     button: "See agentes.chat plans",
     why: (org: string) => `You got this email because you run ${org} on agentes.chat. We send two of these, then stop.`,
+    /** A personal workspace's (ADR 0159): the person's agents and routines, no team nor channels. */
+    personal: {
+      subject: "Your agents are waiting",
+      headline: "Your agents are waiting",
+      body: (agents: number, _channels: number, routines: number): Text => {
+        const a = plural("en", agents, { one: "1 agent", other: `${agents} agents` });
+        const r = plural("en", routines, { one: "1 routine", other: `${routines} routines` });
+        return `Ready to go: ${routines > 0 ? `${a} and ${r}` : a}. All that's missing is an agentes.chat plan.`;
+      },
+      why: () => "You got this email because this workspace on agentes.chat is yours. We send two of these, then stop.",
+    },
+  },
+  /** An outside chat surface linked to the account (ADR 0187), or unlinked by it. */
+  surface: {
+    linked: {
+      subject: (surface: string) => `${surface} was linked to your agentes.chat account`,
+      preheader: "Your assistant answers you there now. If it wasn't you, unlink it.",
+      headline: (surface: string) => `${surface} was linked`,
+      body: (surface: string, display: string, org: string): Text => [
+        { b: display },
+        ` on ${surface} now talks to your assistant in `,
+        { b: org },
+        ".",
+      ],
+      notYou: "Not you? Unlink it. Messages from there stop reaching your account at once.",
+      button: "Unlink it",
+      small: "If it was you, there's nothing to do. You can unlink it any time in Settings.",
+      why: (surface: string) => `You got this email because ${surface} was linked to your agentes.chat account.`,
+      /** The picture's alt text: the assistant beside the phone. */
+      picture: "Your assistant, now on your phone too",
+    },
+    unlinked: {
+      subject: (surface: string) => `${surface} was unlinked from your agentes.chat account`,
+      preheader: "Its identity changed. Link it again in Settings if it was you.",
+      headline: (surface: string) => `${surface} was unlinked`,
+      body: (surface: string, display: string): Text => [
+        { b: display },
+        ` on ${surface} was unlinked because its identity changed.`,
+      ],
+      small: "Link it again in Settings if it was you.",
+      why: (surface: string) => `You got this email because ${surface} was linked to your agentes.chat account.`,
+      /** The picture's alt text: the assistant beside the phone, switched off. */
+      picture: "Your assistant, no longer on your phone",
+    },
+  },
+  /** The answer of whoever runs the server to a member's request for help (ADR 0056). */
+  supportReply: {
+    subject: "An answer to your request for help",
+    preheader: "About the help you asked for on agentes.chat.",
+    headline: "An answer to your request for help",
+    /** Our own sentences, each under the word the operator API takes for it. */
+    answers: {
+      received: "We got your request and are looking into it.",
+      need_more: "We need to know more to help: what you were doing, what you expected and what happened instead.",
+      resolved: "What you reported is fixed.",
+      handed_over: "A person now has your request and will answer you.",
+    },
+    /** Who answers: agentes.chat, or the people who run a self-hosted server, named by its host. */
+    from: (host: string | null): Text =>
+      host ? atHost("Answered by the people who run the agentes.chat server", "at", host) : "Answered by agentes.chat.",
+    ai: "An AI assistant wrote this answer.",
+    reply: (address: string): Text => ["To answer, write to ", { mail: address }, "."],
+    why: "You got this email because you asked for help on agentes.chat.",
   },
 };
 

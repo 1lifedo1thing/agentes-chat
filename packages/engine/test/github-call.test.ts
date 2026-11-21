@@ -10,6 +10,7 @@ import {
   type GitHubAppConfig,
   githubAppManifest,
   SIGNATURE_MARK,
+  setAgentCoAuthor,
   syncGitHubAppConnection,
   type ToolContext,
 } from "../src";
@@ -220,6 +221,47 @@ describe("GitHub's tools act as the app where it is installed (ADR 0156)", () =>
   });
 });
 
+describe("where the agent's words went on GitHub is kept with its conversation", () => {
+  test("a pull request it opened is its own; an issue it commented on is kept too; reads and failures aren't", async () => {
+    const w = await world();
+    await w.call("github_create_pull_request", { owner: "acme", repo: "App", title: "T", head: "a", base: "main" });
+    await w.call("github_add_issue_comment", { owner: "acme", repo: "api", issue_number: 4, body: "On it" });
+    await w.call("github_pull_request_read", { owner: "acme", repo: "app", pullNumber: 3 });
+    await w.call("github_add_issue_comment", { owner: "other", repo: "x", issue_number: 1, body: "Refused" });
+    const items = await f.db.select().from(schema.githubItems).orderBy(schema.githubItems.repo);
+    expect(
+      items.map((i) => ({
+        repo: i.repo,
+        number: i.number,
+        authored: i.authored,
+        agentId: i.agentId,
+        channelId: i.channelId,
+        threadId: i.threadId,
+        runId: i.runId,
+      })),
+    ).toEqual([
+      {
+        repo: "acme/api",
+        number: 4,
+        authored: false,
+        agentId: f.agent.id,
+        channelId: f.general.id,
+        threadId: w.ctx.threadRootId,
+        runId: w.ctx.runId,
+      },
+      {
+        repo: "acme/app",
+        number: 12,
+        authored: true,
+        agentId: f.agent.id,
+        channelId: f.general.id,
+        threadId: w.ctx.threadRootId,
+        runId: w.ctx.runId,
+      },
+    ]);
+  });
+});
+
 describe("what only an organization's installation reaches (ADR 0156, addendum)", () => {
   const personal = () =>
     f.db.insert(schema.githubAppInstallations).values({
@@ -314,26 +356,36 @@ describe("what agents write on GitHub is signed (ADR 0156)", () => {
     expect(pr.args?.body).toBe(line);
   });
 
-  test("API commits credit the person when they linked GitHub to sign in", async () => {
+  test("API commits end with the agent's own line, and credit the person when they linked GitHub to sign in", async () => {
     const w = await world({ account: true });
     const files = [{ path: "a.txt", content: "x" }];
+    const dev = "Co-authored-by: Dev <noreply@agentes.chat>";
     const plain = await w.call("github_push_files", { owner: "acme", repo: "app", branch: "b", files, message: "Fix" });
-    expect(plain.args?.message).toBe("Fix");
+    expect(plain.args?.message).toBe(`Fix\n\n${dev}`);
     await f.db.insert(schema.accounts).values({
       id: crypto.randomUUID(),
       accountId: "583231",
       providerId: "github",
       userId: f.owner.id,
     });
-    const credited = await w.call("github_push_files", {
+    const credited = await w.call("github_create_or_update_file", {
       owner: "acme",
       repo: "app",
       branch: "b",
-      files,
+      path: "a.txt",
+      content: "x",
       message: "Fix login\n\nSigned-off-by: Dev <dev@example.com>",
     });
-    expect(credited.args?.message).toBe(
-      "Fix login\n\nSigned-off-by: Dev <dev@example.com>\nCo-authored-by: ana <583231+ana-gh@users.noreply.github.com>",
-    );
+    const ana = "Co-authored-by: ana <583231+ana-gh@users.noreply.github.com>";
+    expect(credited.args?.message).toBe(`Fix login\n\nSigned-off-by: Dev <dev@example.com>\n${dev}\n${ana}`);
+    // A merge's message the agent wrote is its commit too; without one, GitHub writes its own.
+    const pr = { owner: "acme", repo: "app", pullNumber: 12 };
+    const merged = await w.call("github_merge_pull_request", { ...pr, commit_message: "Fixes login." });
+    expect(merged.args?.commit_message).toBe(`Fixes login.\n\n${dev}\n${ana}`);
+    expect((await w.call("github_merge_pull_request", pr)).args).not.toHaveProperty("commit_message");
+    // Turned off for the workspace: the person's credit alone.
+    await setAgentCoAuthor(f.db, f.org.id, false);
+    const off = await w.call("github_push_files", { owner: "acme", repo: "app", branch: "b", files, message: "Fix" });
+    expect(off.args?.message).toBe(`Fix\n\n${ana}`);
   });
 });

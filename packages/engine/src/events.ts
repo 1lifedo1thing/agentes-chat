@@ -1,4 +1,4 @@
-import { channelTopic, chatActivityTopic, orgTopic, type PubSub, userTopic } from "@agenteschat/adapters";
+import { channelTopic, chatActivityTopic, orgTopic, type PubSub, typingTopic, userTopic } from "@agenteschat/adapters";
 import { modelProvider } from "@agenteschat/providers";
 import { plainLines } from "@agenteschat/ui/markdown";
 import type { AgentActionView } from "./agent-actions";
@@ -9,6 +9,7 @@ import type { BlockStateView } from "./block-state";
 import type { ChoicesView, PollView } from "./blocks";
 import type { BrowserHandoffView } from "./browser/handoff";
 import type { CalendarEventView, CalendarProposalView } from "./calendar";
+import type { FeedbackOfferView } from "./feedback-offers";
 import type { IssueActivityView, IssueView } from "./issues";
 import type { MachineTaskView } from "./machine-tasks";
 import { oneLine } from "./mail/text";
@@ -61,40 +62,14 @@ type RouterRule = "reply" | "only_agent" | "follow_up" | "coordinator" | "defaul
 /** Why a routed message reached no agent: no step could read it, and no rule fit (`strategy` `none`). */
 export const MENTION_NEEDED = "mention_needed";
 
-export interface LiveTurn {
-  turn: number;
-  text: string;
-  /** Where the body starts: past the last call. With `stretches`, the current stretch's start (`agent.delta.from`). */
-  from: number;
-  /** Its brain says when each call ended (`createDeltaPublisher`). */
-  stretches?: boolean;
-  /** A call started in this stretch: the app moved it to the narration, and the rest of it goes there too. */
-  spoke?: boolean;
-}
-
-/**
- * The text each run executing here has streamed so far in its current model call (what its `agent.delta` events
- * carried), until that call ends. An app opened mid-answer reads it with the active runs and goes on from there.
- * ponytail: per process; a request served by another replica gets none and the app shows the waiting row until the
- * call ends, as before. Ask the run's replica over pub/sub if replicas ever split one workspace.
- */
-export const liveTurns = new Map<string, LiveTurn>();
-
-/** A tool starts inside the model call (a computer brain's): the body so far became narration. */
-export function liveTurnToolStarted(runId: string) {
-  const live = liveTurns.get(runId);
-  if (live?.stretches) live.spoke = true;
-  else if (live) live.from = live.text.length;
-}
-
 /** The most a step line says of what the agent wrote: one short line, cut with "…". */
 const STEP_WORDS_MAX = 120;
 /** How much of a stretch is kept for it: its first sentence is all that is read. */
 export const STEP_HELD_MAX = 600;
 
 /**
- * What each run executing here wrote since its last call, held out of the chat (`createDeltaPublisher`): the words of
- * its next call's step line (`takeStepWords`), never posted. Same ceiling as `liveTurns`.
+ * What each run executing here wrote since its last call, held out of the chat (`createTurnText`): the words of its
+ * next call's step line (`takeStepWords`), never posted.
  */
 const stepHeld = new Map<string, string>();
 
@@ -114,14 +89,6 @@ export function takeStepWords(runId: string): string | undefined {
   const line = held ? (plainLines(redactCredentials(stripSentinel(held)).replace(/\p{Cc}/gu, " "))[0] ?? "") : "";
   const sentence = /^.+?[.!?…:](?=\s|$)/u.exec(line)?.[0] ?? line;
   return oneLine(sentence.replace(/[.:]$/, ""), STEP_WORDS_MAX) || undefined;
-}
-
-/** What `GET …/active-runs` gives of it: the body so far and where it starts in the call's text (`agent.delta.at`). */
-export function liveTurnOf(runId: string) {
-  const live = liveTurns.get(runId);
-  if (!live) return undefined;
-  const at = live.spoke ? live.text.length : live.from;
-  return { turn: live.turn, at, text: live.text.slice(at) };
 }
 
 const RULES = new Set(["reply", "only_agent", "follow_up", "coordinator", "default", "alone"]);
@@ -159,26 +126,8 @@ export type ChannelEvent =
       message?: MessageView;
       threadId?: string | null;
       agentRunId?: string | null;
-    }
-  /** A fragment of an agent's reply while it is generated (not persisted; the final message follows). */
-  | {
-      type: "agent.delta";
-      channelId: string;
-      threadId: string | null;
-      runId: string;
-      agentId: string;
-      seq: number;
-      text: string;
-      /** The model call this text belongs to (1, 2…): a new turn starts a new segment, never glued to the last one. */
-      turn: number;
-      /** Where `text` starts in its turn's text (UTF-16 units): an app that missed a piece sees the hole. */
-      at?: number;
-      /**
-       * Where its stretch starts in the turn's text: a computer brain's turn holds many, one between each two calls.
-       * Brains keep text back, so a stretch's end can arrive after the next call's start: this says what it finishes.
-       * Only from a brain that says when each call ended (`createDeltaPublisher`).
-       */
-      from?: number;
+      /** With `message` left out: the person who wrote it (null for an agent), so their typing line ends with it. */
+      authorUserId?: string | null;
     }
   /** An agent run changed state (`running` = typing indicator). */
   | {
@@ -341,7 +290,7 @@ export type ChannelEvent =
         holder: { type: "agent"; agentId: string; since: string } | { type: "person"; userId: string; since: string };
       } | null;
     }
-  /** The agent's first words arrived (switch "thinking" to "typing"). */
+  /** It writes (a model call's first text): the apps say so; its words wait for the message that posts them whole. */
   | { type: "agent.typing"; channelId: string; threadId: string | null; agentId: string; runId: string }
   /** A long work changed (ADR 0121): moved, updated, waiting, queued or ended. Its anchor's line redraws from `work`. */
   | {
@@ -437,6 +386,18 @@ export type ChannelEvent =
       newRunId: string;
       messageIds: string[];
     }
+  /**
+   * A message that went into the agent's task isn't for it (the triage, `steerHandling` `elsewhere`): it saw it and
+   * won't answer it; the router decides who does (`message.routed` follows).
+   */
+  | {
+      type: "agent.run.released";
+      channelId: string;
+      threadId: string | null;
+      agentId: string;
+      runId: string;
+      messageId: string;
+    }
   /** The run ended without posting: nobody called it by name and it had nothing to add (`pass`). */
   | { type: "agent.passed"; channelId: string; threadId: string | null; agentId: string; runId: string }
   /**
@@ -477,9 +438,14 @@ export type ChannelEvent =
       agentId: string;
       runId: string;
       byUserId: string;
+      /** The agent that stopped it at that person's word (the right hand). */
+      byAgentId?: string;
     }
-  /** A person is typing (client frame `typing`). Clients drop it after `ttlMs`. */
-  | { type: "user.typing"; channelId: string; threadId: string | null; userId: string; ttlMs: number }
+  /**
+   * A person is typing (client frame `typing`), or recording a voice message (`kind: "voice"`, also while its words
+   * are made out). Clients drop it after `ttlMs`.
+   */
+  | { type: "user.typing"; channelId: string; threadId: string | null; userId: string; ttlMs: number; kind?: "voice" }
   /** Who saw a message and who will answer (receipts). No router scores here. */
   | {
       type: "message.routed";
@@ -589,6 +555,8 @@ export type ChannelEvent =
   | { type: "artifact.created" | "artifact.updated"; channelId: string; artifact: ArtifactView }
   /** A file was deleted (it shows as removed; restorable for 30 days). */
   | { type: "artifact.deleted"; channelId: string; artifactId: string }
+  /** Who is in a live file changed (ADR 0196 §5): its cards ask `…/live/presence` again. Ids only. */
+  | { type: "live.presence"; channelId: string; artifactId: string }
   /** Channel membership changed (agents carry `autoReply`). */
   | {
       type: "channel.member_added" | "channel.member_removed" | "channel.member_updated";
@@ -632,6 +600,17 @@ export type ChannelEvent =
     }
   /** A message was unpinned. */
   | { type: "message.unpinned"; channelId: string; messageId: string }
+  /**
+   * A comment on a picture, a video or a PDF was resolved or opened again (ADR 0208): its `meta.resolved` now (null:
+   * open). Its pin leaves the file while resolved.
+   */
+  | {
+      type: "message.resolved";
+      channelId: string;
+      messageId: string;
+      threadId: string | null;
+      resolved: { by: { type: "person" | "agent"; id: string }; at: string } | null;
+    }
   /** A person read this DM up to `lastReadAt` (DMs between people only: "Visto"). */
   | { type: "channel.read"; channelId: string; userId: string; lastReadAt: string }
   /** An agent saved something to memory from this person's message: its current memory marks. */
@@ -714,6 +693,14 @@ export type ChannelEvent =
       messageId: string;
       deviceWait: Record<string, unknown>;
     }
+  /** A report an agent offered was sent or put away (ADR 0160 §12): the message's whole `meta.feedbackOffer` now. */
+  | {
+      type: "feedback_offer.updated";
+      channelId: string;
+      threadId: string | null;
+      messageId: string;
+      offer: FeedbackOfferView;
+    }
   /** The right hand looked at a card for someone (ADR 0139): its `meta.actionCard.delegate` now (null: nothing to say). */
   | {
       type: "card.delegate";
@@ -734,20 +721,38 @@ export async function publishChannelEvent(pubsub: PubSub | undefined, event: Cha
   }
 }
 
+/** How long "está digitando…" or "gravando áudio…" lasts without another frame. */
+export const TYPING_TTL_MS = 5000;
+
+/**
+ * "Marina está digitando…", or "Marina está gravando áudio…" with `kind: "voice"`: to the conversation's apps for
+ * `TYPING_TTL_MS`, and on `typingTopic` for an agent's quiet window (ADR 0112), which counts both alike.
+ */
+export async function publishTyping(
+  pubsub: PubSub,
+  { kind, ...where }: { channelId: string; threadId: string | null; userId: string; kind?: "voice" },
+) {
+  const event: ChannelEvent = { type: "user.typing", ...where, ttlMs: TYPING_TTL_MS, ...(kind ? { kind } : {}) };
+  await Promise.all(
+    [channelTopic(where.channelId), typingTopic].map((topic) => pubsub.publish(topic, event).catch(() => {})),
+  );
+}
+
 export async function publishMessageCreated(pubsub: PubSub, message: MessageView) {
   const inline = Buffer.byteLength(JSON.stringify(message)) <= INLINE_LIMIT;
+  const authorUserId = message.author.type === "person" ? message.author.id : null;
   await publishChannelEvent(pubsub, {
     type: "message.created",
     channelId: message.channelId,
     messageId: message.id,
-    ...(inline ? { message } : { threadId: message.threadId, agentRunId: message.agentRunId }),
+    ...(inline ? { message } : { threadId: message.threadId, agentRunId: message.agentRunId, authorUserId }),
   });
   try {
     await pubsub.publish(chatActivityTopic, {
       type: "channel.activity",
       channelId: message.channelId,
       threadId: message.threadId,
-      authorUserId: message.author.type === "person" ? message.author.id : null,
+      authorUserId,
       mentionedUserIds: message.mentionedUserIds,
     });
   } catch {
@@ -810,8 +815,8 @@ export type OrgEvent =
   | { type: "org.broadcast"; orgId: string; event: { type: string; [key: string]: unknown } };
 
 /**
- * An org broadcast: an owner (`by`) deleted the workspace. It is closed now, so its people's sockets close after this
- * event, and it goes for good at `dueAt` unless an owner restores it first.
+ * An org broadcast: an owner (`by`) deleted the workspace. It is read-only now (its people's sockets stay open), and it
+ * goes for good at `dueAt` unless an owner restores it first.
  */
 export type OrgDeletingEvent = {
   type: "org.deleting";

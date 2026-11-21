@@ -1,6 +1,7 @@
-import { and, desc, type Executor, eq, inArray, isNull, lte, or, schema, sql } from "@agenteschat/db";
-import { type AuthorityRun, fedByRoutine, type RunAuthority, runAuthority } from "./authority";
+import { and, desc, type Executor, eq, inArray, isNull, or, schema, sql } from "@agenteschat/db";
+import { type AuthorityRun, fedByRoutine, type RunAuthority, runAuthority, transcriptKeys } from "./authority";
 import { caches, cachesEnabled } from "./cache";
+import { postedBySql } from "./message-place";
 
 const { agentRuns, agentRunSteps, messages } = schema;
 
@@ -43,7 +44,8 @@ async function conversationReadOutside(db: Executor, run: OutsideRun, authority?
           eq(messages.orgId, run.orgId),
           eq(messages.channelId, trigger.channelId),
           isNull(messages.threadId),
-          lte(messages.createdAt, trigger.createdAt),
+          // What its context reads (`buildRunContext`).
+          postedBySql(messages, { createdAt: trigger.createdAt, id: run.triggerMessageId }),
         ),
       )
       .orderBy(desc(messages.createdAt))
@@ -107,6 +109,10 @@ async function readOutsideItself(db: Executor, run: OutsideRun): Promise<boolean
   );
 }
 
+/**
+ * One of the run's tool results came from outside, or a message with `meta.readOutside` (a forwarded one, say) was
+ * steered into it while it worked. One statement for both: every run asks this.
+ */
 async function stepReadOutside(db: Executor, run: OutsideRun): Promise<boolean> {
   const [step] = await db
     .select({ id: agentRunSteps.id })
@@ -114,8 +120,15 @@ async function stepReadOutside(db: Executor, run: OutsideRun): Promise<boolean> 
     .where(
       and(
         eq(agentRunSteps.runId, run.id),
-        eq(agentRunSteps.kind, "tool_result"),
-        sql`${agentRunSteps.data}->'data'->>'outside' = 'true'`,
+        or(
+          and(eq(agentRunSteps.kind, "tool_result"), sql`${agentRunSteps.data}->'data'->>'outside' = 'true'`),
+          and(
+            eq(agentRunSteps.kind, "context"),
+            sql`exists (select 1 from messages m
+              where m.org_id = ${run.orgId} and m.meta->>'readOutside' = 'true'
+                and m.id in (select jsonb_array_elements_text(${agentRunSteps.data}->'steeredMessageIds')::uuid))`,
+          ),
+        ),
       ),
     )
     .limit(1);
@@ -142,7 +155,7 @@ async function outsideRun(db: Executor, orgId: string, runId: string) {
       orgId: agentRuns.orgId,
       triggerMessageId: agentRuns.triggerMessageId,
       background: agentRuns.background,
-      transcript: agentRuns.transcript,
+      transcript: transcriptKeys("steeredBy", "harnessTried"),
     })
     .from(agentRuns)
     .where(and(eq(agentRuns.orgId, orgId), eq(agentRuns.id, runId)));
@@ -226,6 +239,11 @@ function hostsIn(text: string, anyTld = false): string[] {
   for (const m of text.matchAll(IPV4)) out.push(m[0]);
   return out.map((h) => h.toLowerCase().replace(/\.$/, "")).filter(Boolean);
 }
+
+/** Whether `text` holds an email address or a phone number: someone's contact details. */
+export const hasContact = (text: string) =>
+  [...text.matchAll(EMAIL)].length > 0 ||
+  [...text.replace(EMAIL, " ").matchAll(PHONE)].some((m) => digits(m[0]).length >= 8);
 
 /**
  * The first address in `text` (a URL's host, a bare domain, an IP address, an email address, an @handle, a phone

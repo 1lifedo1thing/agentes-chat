@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
   archParam,
+  autoUpdateOn,
   compareVersions,
+  installNight,
   isNewer,
   latestUrl,
   noteLines,
@@ -65,5 +67,19 @@ describe("latest release", () => {
       "Pedidos",
       "Tarefas longas",
     ]);
+  });
+});
+
+describe("night install", () => {
+  test("only from 03:00 until 05:00, one key per night", () => {
+    expect(installNight(new Date(2026, 10, 12, 2, 59))).toBeNull();
+    expect(installNight(new Date(2026, 10, 12, 3, 0))).toBe("2026-11-12");
+    expect(installNight(new Date(2026, 10, 12, 4, 59))).toBe("2026-11-12");
+    expect(installNight(new Date(2026, 10, 12, 5, 0))).toBeNull();
+  });
+  test("unset is on, a choice wins", () => {
+    expect(autoUpdateOn(null)).toBe(true);
+    expect(autoUpdateOn(false)).toBe(false);
+    expect(autoUpdateOn(true)).toBe(true);
   });
 });

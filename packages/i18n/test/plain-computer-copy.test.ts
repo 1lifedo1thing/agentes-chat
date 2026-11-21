@@ -70,11 +70,11 @@ const SELFHOST_ONLY = [
   "agentComputer.state.offline",
   "agentComputer.state.offlineHelpPlain",
   "agentComputer.state.screensOff",
+  "agentComputer.state.screensOffOne",
   "agentComputer.state.screensMissing",
   "agentComputer.state.outdated",
   "agentComputer.state.noComputer",
   "agentComputer.state.browserOff",
-  "agentComputer.phone.chooseOnWeb",
 ];
 
 /**
@@ -117,12 +117,9 @@ const CLOUD_EXTRA = [
   "desktop.keyboard.field",
   "desktop.keyboard.label",
   ...["got", "copied", "tooLong", "textOnly"].map((k) => `desktop.clipboard.${k}`),
-  "computers.leadCloud",
   "computers.about",
   "agentPage.work.cell.computer",
   "agentPage.work.offlineCloud",
-  "agentPage.work.brain.fallbackTitle",
-  "agentPage.work.brain.fallbackHint",
   "agentPage.work.brain.add.stepOneHint",
   "aiAccounts.page.hint",
   "agentPage.work.brain.offCloud",
@@ -147,7 +144,7 @@ const CLOUD_EXTRA = [
   "connectAi.useAnyway",
   "outage.titleCloud",
   "outage.cloudSub",
-  ...["online", "installing", "updating", "runnerOld", "execOff", "toolOff", "preparing"].map(
+  ...["online", "installing", "runnerOld", "execOff", "toolOff", "preparing"].map(
     (k) => `aiAccounts.connect.needsCloud.${k}`,
   ),
   "agentPage.work.browserDialog.noComputerCloud",
@@ -163,11 +160,9 @@ const CLOUD_EXTRA = [
 /** The same screens' self-host keys, past the `agentComputer.` ones. */
 const SELFHOST_EXTRA = [
   ...PLAN_REPLIES,
-  "computers.lead",
   "browser.inCard.offline",
   "browser.inCard.noComputer",
   "computers.hostMissing",
-  ...["title", "text", "emptyTitle"].map((k) => `computers.other.${k}`),
   "computers.how",
   "computers.agents.title",
   "machines.host.label",

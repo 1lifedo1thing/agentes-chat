@@ -140,7 +140,8 @@ export function parseMarkdown(source: string, options: ParseOptions & { ranges?:
   while (i < lines.length) {
     start = i;
     const line = lines[i] as string;
-    const fence = line.match(/^\s*```\s*([\w+-]*)\s*$/);
+    // An info string may follow the language ("```ts title=a.ts", "```c#", "```ts:src/a.ts"), never a backtick.
+    const fence = line.match(/^\s*```\s*([\w+#.-]*)[^`]*$/);
     if (fence) {
       const body: string[] = [];
       i++;
@@ -209,12 +210,15 @@ export function parseMarkdown(source: string, options: ParseOptions & { ranges?:
     const para: string[] = [];
     while (i < lines.length) {
       const l = lines[i] as string;
+      // The first line always joins: no block above took it, so it is prose even when it looks like a block's start
+      // ("```foo```", "````", a heading cut by U+2028). Breaking on it would leave `i` where it is, forever.
       if (
-        !l.trim() ||
-        /^(#{1,6})\s|^\s*```|^\s*>/.test(l) ||
-        LIST.test(l) ||
-        (para.length && tableAt(lines, i)) ||
-        (options.details && DETAILS_OPEN.test(l))
+        para.length &&
+        (!l.trim() ||
+          /^(#{1,6})\s|^\s*```|^\s*>/.test(l) ||
+          LIST.test(l) ||
+          tableAt(lines, i) ||
+          (options.details && DETAILS_OPEN.test(l)))
       )
         break;
       para.push(l.trim());
@@ -230,6 +234,39 @@ export function parseMarkdown(source: string, options: ParseOptions & { ranges?:
 export const INLINE =
   /(`[^`]+`)|(\*\*[^*]+?\*\*|__[^_]+?__)|((?<![\w*])\*[^*\s][^*]*?\*(?![\w*])|(?<![\w_])_[^_\s][^_]*?_(?![\w_]))|(\[[^\]]+\]\([^)\s]+\))|(https?:\/\/[^\s<>()]*[^\s<>().,;:!?'"])|(\[\[[^[\]\n]+\]\])|(~~[^~\s](?:[^~]*?[^~\s])?~~)/;
 export const SAFE_URL = /^(https?:|mailto:)/i;
+
+/**
+ * A short line's `code` and **bold** spans in order, the rest as typed (a task's title, an option's label): only the
+ * marks such a line carries, never a link or a mention that would take the press of what it sits in. Each of `plain`
+ * (a name someone typed, put in the line) stays as typed: its backticks and asterisks neither mark it nor pair with the
+ * line's own.
+ */
+export function codeAndBoldParts(
+  text: string,
+  plain: readonly (string | null | undefined)[] = [],
+): { text: string; mark?: "code" | "bold" }[] {
+  const names = plain.filter((n): n is string => !!n);
+  const hits = names.map((n) => ({ n, at: text.indexOf(n) })).filter((h) => h.at >= 0);
+  if (hits.length) {
+    const first = hits.reduce((a, b) => (b.at < a.at || (b.at === a.at && b.n.length > a.n.length) ? b : a));
+    return [
+      ...codeAndBoldParts(text.slice(0, first.at)),
+      { text: first.n },
+      ...codeAndBoldParts(text.slice(first.at + first.n.length), names),
+    ];
+  }
+  return text
+    .split(/(`[^`\n]+`|\*\*[^*\n]+\*\*)/g)
+    .filter(Boolean)
+    .map((part) =>
+      part.length > 2 && part.startsWith("`") && part.endsWith("`")
+        ? { text: part.slice(1, -1), mark: "code" as const }
+        : part.length > 4 && part.startsWith("**") && part.endsWith("**")
+          ? { text: part.slice(2, -2), mark: "bold" as const }
+          : { text: part },
+    );
+}
+
 /** The words for everyone outside the handles' letters (`@全員`, `@все`); the others are handles to `MENTION` already. */
 const OTHER_SCRIPT_EVERYONE = EVERYONE_WORDS.filter((w) => !/^[a-z0-9_-]+$/.test(w));
 /**

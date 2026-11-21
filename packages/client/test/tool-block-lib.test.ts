@@ -2,11 +2,12 @@ import { describe, expect, test } from "bun:test";
 import type { TFunction } from "i18next";
 import type { LiveRun, LiveWork } from "../src/index";
 import { applyChannelEvent, emptyStreams, isQuiet, QUIET_AFTER_MS } from "../src/index";
-import { type Activity, barEntries, toolActivity } from "../src/lib/activity";
+import { type Activity, barEntries, serviceKey, toolActivity } from "../src/lib/activity";
 import {
   callLogo,
   foldSteps,
   formatLineTime,
+  makingImage,
   oneCall,
   quietLine,
   quietWork,
@@ -22,6 +23,7 @@ import {
   toolNow,
   toolPhrase,
   toolWhy,
+  waitStep,
   workApps,
   workFromSteps,
   workMeta,
@@ -94,18 +96,16 @@ const call = (id: string, tool: string, extra: Partial<Extract<LiveWork, { kind:
 });
 
 describe("the block's lines", () => {
-  test("the same kind in a row is one line counting each; a failure or something said keeps them apart", () => {
+  test("the same kind in a row is one line counting each; a failure keeps them apart", () => {
     const items = toolItemsLive([
       call("1", "browser_open"),
       call("2", "browser_click"),
       call("3", "browser_click", { failed: true }),
-      { kind: "say", text: "Vou tentar de novo." },
       call("4", "browser_click", { running: true, ms: undefined }),
     ]);
     expect(items.map((i) => (i.kind === "call" ? `${i.line.state}×${i.line.count}` : i.kind))).toEqual([
       "done×2",
       "fail×1",
-      "say",
       "run×1",
     ]);
     expect(toolCalls(items)).toBe(4);
@@ -184,6 +184,45 @@ describe("the block's lines", () => {
     expect(
       workSteps({ steps: 2, calls: [{ name: "tiktok_find_tools", connector: "TikTok Ads" }], durationMs: 0 }),
     ).toBe(2);
+  });
+
+  test("the line before slow work (`say_now`, ADR 0207) is its own message, not a line; `post_message` is one", () => {
+    expect(toolItemsLive([call("1", "say_now")])).toEqual([]);
+    const items = toolItemsLive([
+      call("1", "mcp__agentes__say_now"),
+      call("2", "browser_open"),
+      call("3", "post_message"),
+    ]);
+    expect(items.map((i) => (i.kind === "call" ? `${i.line.kind}×${i.line.count}` : i.kind))).toEqual([
+      "browsing×1",
+      "postingMessage×1",
+    ]);
+    expect(toolCalls(items)).toBe(2);
+    expect(toolApps(items)).toEqual([{ kind: "browsing" }, { kind: "postingMessage" }]);
+    // Going out right after a call refused for its arguments: the step line names that call's work, never the line.
+    const slipped = call("1", "github_search_issues", { connector: "GitHub", failed: true, slip: true });
+    const going = [slipped, call("2", "say_now", { running: true, ms: undefined })];
+    expect(toolItemsLive(going).map((i) => (i.kind === "call" ? `${i.line.key}:${i.line.state}` : i.kind))).toEqual([
+      "1:run",
+    ]);
+    expect(waitStep(t, going)).toBe('Chat.activity.consulting|{"app":"GitHub"} · search issues…');
+    // Saved: the run's steps leave it out, and so do the closed block's count and logos.
+    const at = (s: number) => new Date(Date.UTC(2026, 10, 19, 10, 0, s)).toISOString();
+    const saved = workFromSteps([
+      {
+        seq: 1,
+        kind: "tool_call",
+        data: { toolUseId: "t1", name: "say_now", input: { text: "Bora! Vou abrir o painel e já te mando." } },
+        createdAt: at(0),
+      },
+      { seq: 2, kind: "tool_result", data: { toolUseId: "t1", content: "Posted." }, createdAt: at(1) },
+      { seq: 3, kind: "tool_call", data: { toolUseId: "t2", name: "browser_open", input: {} }, createdAt: at(1) },
+      { seq: 4, kind: "tool_result", data: { toolUseId: "t2", content: "ok" }, createdAt: at(3) },
+    ]);
+    expect(saved.steps.map((s) => s.tool)).toEqual(["browser_open"]);
+    expect(toolCalls(toolItemsSaved(saved))).toBe(1);
+    expect(workSteps({ steps: 1, calls: [{ name: "say_now", n: 1 }], durationMs: 900 })).toBe(0);
+    expect(workApps([{ name: "mcp__agentes__say_now" }, { name: "browser_open" }])).toEqual([{ kind: "browsing" }]);
   });
 
   test("coming back later is ours, not apps called follow and cancel", () => {
@@ -478,6 +517,13 @@ describe("a computer command (its permission check)", () => {
     const none = ((key: string, o?: { defaultValue?: string }) =>
       key.endsWith(".new") ? (o?.defaultValue ?? "") : key) as TFunction;
     expect(toolWhy(none, { why: BECAUSE, refusal: "new" })).toBeNull();
+    // A personal workspace (ADR 0159): its own words where it has them ("This was already done"), else the team's.
+    const known = (key: string) => key === "chat.work.refusal.teamPersonal" || !key.endsWith("Personal");
+    const own = ((key: string, o?: { defaultValue?: string }) =>
+      known(key) ? key : (o?.defaultValue ?? "")) as TFunction;
+    expect(toolWhy(own, { refusal: "team" }, true)).toBe("chat.work.refusal.teamPersonal");
+    expect(toolWhy(own, { refusal: "person" }, true)).toBe("chat.work.refusal.person");
+    expect(toolWhy(own, { refusal: "team" })).toBe("chat.work.refusal.team");
   });
 
   test("a failed tool's own error never shows under its line: the gateway's refusals say why in words", () => {
@@ -553,11 +599,11 @@ describe("each call's service and its logo", () => {
     const [gmail, sales, other, old] = lines(
       toolItemsLive([
         call("1", "mail_wnogueira_search", { connector: "Email", service: "gmail" }),
-        { kind: "say", text: "Agora a de vendas." },
+        { kind: "steer", messageId: "m1" },
         call("2", "mail_vendas_search", { connector: "Email", service: "gmail" }),
-        { kind: "say", text: "Agora a outra caixa." },
+        { kind: "steer", messageId: "m2" },
         call("3", "mail_contato_read", { connector: "Email", service: "custom" }),
-        { kind: "say", text: "E a de antes." },
+        { kind: "steer", messageId: "m3" },
         call("4", "mail_ana_read", { connector: "Email" }),
       ]),
     );
@@ -632,6 +678,18 @@ describe("each call's service and its logo", () => {
     expect(second?.hint).toBe("list issues");
   });
 
+  test("a connection's service by its name, each run of spaces or parentheses read once", () => {
+    expect(serviceKey("Google Drive (ana@acme.com) 2")).toBe("google_drive");
+    expect(serviceKey("Notion  3")).toBe("notion");
+    expect(serviceKey("A (b) (c)")).toBe("a_(b)");
+    expect(serviceKey("A (b)) 2")).toBe("a_(b))");
+    const started = performance.now();
+    expect(serviceKey(`a${" ".repeat(100_000)}b`)).toBe("a_b");
+    expect(serviceKey(`a${"(".repeat(100_000)}`)).toBe(`a${"(".repeat(100_000)}`);
+    expect(serviceKey(`a${" (".repeat(50_000)}x)`)).toBe("a");
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   test("the block's logos: each service once, in order of first use, four at most", () => {
     const items = toolItemsLive([
       call("1", "mail_wnogueira_search", { connector: "Email", service: "gmail" }),
@@ -700,9 +758,7 @@ describe("each call's service and its logo", () => {
       agentId: "theo",
       channelId: "c1",
       threadId: "m1",
-      status: "running" as const,
-      text: "",
-      lastSeq: 0,
+      status: "thinking" as const,
       tool: "mail_wnogueira_search",
       connector: "Email",
       service: "gmail",
@@ -725,16 +781,8 @@ describe("each call's service and its logo", () => {
 describe("one call is its own line (no 'Usou 1 ferramenta' to open)", () => {
   test("one call stands alone; two or more keep the block, a folded line counting each", () => {
     expect(oneCall(toolItemsLive([call("1", "create_routine")]))).toBe(true);
-    // What it said and the messages it read are not calls.
-    expect(
-      oneCall(
-        toolItemsLive([
-          { kind: "say", text: "Vou criar a rotina." },
-          call("1", "create_routine"),
-          { kind: "steer", messageId: "m9" },
-        ]),
-      ),
-    ).toBe(true);
+    // The messages it read are not calls.
+    expect(oneCall(toolItemsLive([call("1", "create_routine"), { kind: "steer", messageId: "m9" }]))).toBe(true);
     // Two browser steps fold into one line ("×2"): still two calls, the block.
     expect(oneCall(toolItemsLive([call("1", "browser_open"), call("2", "browser_click")]))).toBe(false);
     expect(oneCall(toolItemsLive([call("1", "create_routine"), call("2", "create_issue")]))).toBe(false);
@@ -787,6 +835,29 @@ describe("a lone quick read that only fed the answer shows no card", () => {
     for (const [why, work] of kept) expect([why, quietWork(toolItemsLive(work))]).toEqual([why, false]);
     // Lookups aren't steps: a usage check after looking the tool up is still a lone read.
     expect(quietWork(toolItemsLive([call("1", "find_tools"), call("2", "get_my_usage")]))).toBe(true);
+  });
+
+  test("a picture its own image tool made is its reply's picture: no card, however long it took; failed, it shows", () => {
+    expect(toolActivity("image_generation").kind).toBe("creatingImage");
+    expect(quietWork(toolItemsLive([call("1", "image_generation", { ms: 48_000 })]))).toBe(true);
+    expect(quietWork(toolItemsLive([call("1", "image_generation", { ms: 48_000, failed: true })]))).toBe(false);
+    expect(quietWork(toolItemsLive([call("1", "image_generation", { running: true })]))).toBe(false);
+    // Beside another call, the block stays.
+    expect(quietWork(toolItemsLive([call("1", "image_generation"), call("2", "create_issue")]))).toBe(false);
+    const saved = savedOneLine({ work: { steps: 1, calls: [{ name: "image_generation" }], durationMs: 50_000 } });
+    expect(saved && quietLine(saved)).toBe(true);
+  });
+
+  test("while it makes a picture its live run says so (`makingImage`), until another step replaces it", () => {
+    expect(makingImage({ step: { tool: "image_generation" } })).toBe(true);
+    expect(makingImage({ step: { tool: "shell" } })).toBe(false);
+    expect(makingImage({ step: { said: "Vou desenhar" } })).toBe(false);
+    expect(makingImage({})).toBe(false);
+    // Ours onto a canvas (ADR 0197): while its call runs, on any brain; its end (`tool` null) ends it.
+    expect(makingImage({ tool: "generate_image" })).toBe(true);
+    expect(makingImage({ tool: "mcp__agentes__generate_image" })).toBe(true);
+    expect(makingImage({ tool: "mcp__higgsfield__generate_image" })).toBe(false);
+    expect(makingImage({ tool: null })).toBe(false);
   });
 
   test("saved: the run's lone call is quiet by meta.work; calls another card shows are left out of the count", () => {

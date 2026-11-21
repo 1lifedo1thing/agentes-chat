@@ -83,8 +83,29 @@ export const strings: Partial<PushStrings> = {
   deviceAccessTitle: (a, p, d) =>
     p ? `${a} (${p} için) ${d} cihazınızı kullanmak istiyor` : `${a}, ${d} cihazınızı kullanmak istiyor`,
   deviceAccessBody: "Bir kez ya da her zaman izin vermek veya hayır demek için dokunun.",
+  deviceToolTitle: (a, d) => `${a}, ${d} cihazınızda bir aracı açmanızı istiyor`,
+  deviceToolBody: "Tek tıkla açmak için dokunun.",
+  deviceCliTitle: (a, d) => `${a}, ${d} cihazınıza bir program kurmanızı istiyor`,
+  deviceCliBody: "Tek tıkla kurmak için dokunun.",
+  deviceFolderTitle: (a, f, d) =>
+    f ? `${a}, ${d} cihazınızda ${f} istiyor` : `${a}, ${d} cihazınızda bir klasör istiyor`,
+  deviceFolderBody: "O bilgisayardaki uygulamadan izin verin.",
+  adminAskTitle: (a, what, l) =>
+    what === "channel_agent"
+      ? `${a}, #${l} kanalına bir ajan eklemenizi istiyor`
+      : what === "create_agents"
+        ? `${a}, ajan oluşturabilmek istiyor`
+        : `${a}, rutinler için ${l} webhook'unu kurmanızı istiyor`,
   deviceWaitingTitle: (p, d) => `${p} için çalışan ajan ${d} cihazınızı bekliyor`,
   deviceWaitingBody: "Cihaz geri geldiğinde başlar.",
   teamWeekReady: "Ekibinin haftası hazır",
   teamDayReady: "Günün özeti hazır",
+  machineConnectedTitlePersonal: "Yeni bir bilgisayar bağlandı",
+  computerReadyTitlePersonal: "Ajanlarınızın bilgisayarı hazır",
+  agentUnreachedBodyPersonal: "Rutini oluşturan kişi bu ajanla henüz konuşamıyor. İzin vermek için dokunun.",
+  widgetFailedReasonsPersonal: { creator_left: "Onu kuran kişi artık çalışma alanınızda değil." },
+  joinRequestTitlePersonal: (name) => `${name}, çalışma alanınıza katılmak istiyor`,
+  joinSuggestionTitlePersonal: (by, name) => `${by}, ${name} adlı kişiyi davet etmeyi önerdi`,
+  teamWeekReadyPersonal: "Haftan hazır",
+  teamWatchStill: (n) => `${n} şey hâlâ seni bekliyor`,
 };

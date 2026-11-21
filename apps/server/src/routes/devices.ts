@@ -1,17 +1,29 @@
+import { pairAddress, TASK_LIMIT_BOUNDS } from "@agenteschat/adapters";
 import {
   approveDeviceJoin,
+  cancelWifiPairing,
+  connectLinkInfo,
   connectLinkState,
   createConnectLink,
   deleteMachine,
   denyDeviceJoin,
   forgetPhone,
+  IPHONE_REPAIR_LIMIT,
   listDevices,
+  lookForPhones,
   normalizeUserCode,
   openConnectLink,
+  openXcode,
+  pickIphoneOverWifi,
+  repairIphone,
+  startWifiPairing,
   stopPhone,
   updateComputerDevice,
   updatePhoneDevice,
   ValidationError,
+  wifiIphones,
+  wifiPairingState,
+  xcodeFix,
 } from "@agenteschat/engine";
 import { createRoute, type OpenAPIHono, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
@@ -21,6 +33,7 @@ import {
   installScript,
   installScriptPowerShell,
 } from "../../runner/install-script";
+import { migrateScript, migrateScriptPowerShell } from "../../runner/migrate-script";
 import { requestLimitIp } from "../http/client-ip";
 import { apiError, errorResponse } from "../http/errors";
 import {
@@ -66,7 +79,14 @@ const Status = z
     z.object({ kind: z.literal("needs_you"), reason: Reason }),
     z.object({ kind: z.literal("preparing"), reason: Reason }),
     z.object({ kind: z.literal("paused"), until: z.string().nullable() }),
-    z.object({ kind: z.literal("offline"), lastSeenAt: z.string().nullable(), withHost: z.boolean().optional() }),
+    z.object({
+      kind: z.literal("offline"),
+      lastSeenAt: z.string().nullable(),
+      withHost: z.boolean().optional(),
+      cause: z.enum(["unresponsive", "stopped", "dropped"]).optional().openapi({
+        description: "A computer someone brought: why it went offline (`Machine.offlineCause`). Absent: unknown.",
+      }),
+    }),
     z.object({ kind: z.literal("unsupported"), reason: Reason }),
   ])
   .openapi("DeviceStatus");
@@ -102,11 +122,18 @@ const Computer = z
     memoryGb: z.number().nullable(),
     ownerUserId: z.string().nullable(),
     belongsToWorkspace: z.boolean(),
+    spill: z.object({ own: z.boolean(), others: z.boolean() }).openapi({
+      description:
+        "While an agent's own computer is full, replies people wait on may think here: replies to its owner (`own`), to anyone else (`others`).",
+    }),
     systemMode: z.boolean().openapi({ description: "Each agent works as its own OS user there (a server install)." }),
     audience: Audience,
     status: Status,
     maxTasks: z.number().int().nullable(),
     toolchains: z.record(z.string(), z.string()),
+    opensXcode: z.boolean().openapi({
+      description: "A Mac whose agentes.chat opens Xcode and looks at its iPhone again for the iPhone guide.",
+    }),
     lastSeenAt: z.string().nullable(),
     mayUse: z.boolean(),
     mayManage: z.boolean(),
@@ -146,13 +173,74 @@ const ConnectLinkState = z
   })
   .openapi("ConnectLinkState");
 
+const WifiPairing = z
+  .object({
+    id: z.string(),
+    way: z.enum(["qr", "code"]),
+    state: z.enum(["waiting", "pairing", "connecting", "connected", "failed"]),
+    reason: z
+      .enum([
+        "mdns_off",
+        "same_wifi",
+        "refused",
+        "timed_out",
+        "outdated",
+        "adb_missing",
+        "canceled",
+        "failed",
+        "update",
+      ])
+      .optional(),
+    qr: z
+      .string()
+      .optional()
+      .openapi({ description: "Only when it starts: Android's `WIFI:T:ADB;S:…;P:…;;` QR text." }),
+    phoneId: z.uuid().optional().openapi({ description: "Connected: the phone in `GET …/devices`." }),
+    expiresAt: z.string(),
+  })
+  .openapi("WifiPairing");
+
+const WifiIphones = z
+  .object({
+    available: z.array(
+      z.object({ serial: z.string(), model: z.string(), name: z.string().optional(), osVersion: z.string() }),
+    ),
+    update: z.literal(true).optional(),
+  })
+  .openapi("WifiIphones");
+
+const XcodeFixView = z
+  .object({
+    fix: z
+      .object({
+        kind: z.enum(["select", "update"]),
+        state: z.enum(["asking", "running", "done", "canceled", "no_answer", "failed", "unsupported"]),
+        step: z.number().int().min(0).max(3),
+        message: z.string().optional(),
+      })
+      .nullable(),
+    update: z.literal(true).optional(),
+  })
+  .openapi("XcodeFix", {
+    description:
+      "A fix of the Mac's Xcode: `asking` (macOS's password window is open on the Mac), `running` (`step` of 3 done), `done`, `canceled`, `no_answer` (nobody typed the password in 3 minutes), `failed` (`message`), `unsupported` (this Mac can't: a system-mode runner, no Xcode in /Applications). `update`: the Mac's agentes.chat is too old for it.",
+  });
+
 const MachineParams = OrgParams.extend({ machineId: z.uuid() });
+const WifiIphoneParams = MachineParams.extend({ serial: z.string().min(1).max(200) });
+const PairingParams = MachineParams.extend({ pairingId: z.uuid() });
 const PhoneParams = OrgParams.extend({ phoneId: z.uuid() });
 const LinkParams = OrgParams.extend({ linkId: z.uuid() });
 const RequestParams = OrgParams.extend({ requestId: z.uuid() });
 
 /** New connect links per person: a few tries while setting up a server, never a stream. */
 const LINK_LIMIT = { limit: 20, windowMs: 10 * 60_000 };
+/** Wi-Fi pairings per person: each runs adb on the computer for up to 2 minutes. */
+const PAIR_LIMIT = { limit: 30, windowMs: 10 * 60_000 };
+/** Xcode fixes per person: each may open a password window on someone's Mac. */
+const XCODE_FIX_LIMIT = { limit: 10, windowMs: 10 * 60_000 };
+/** Xcode opened on a Mac per person: each puts a window on someone's screen. */
+const XCODE_OPEN_LIMIT = { limit: 10, windowMs: 10 * 60_000 };
 /** Installer fetches per address (`/i/{code}`): a person retrying, not someone guessing codes. */
 const SCRIPT_LIMIT = { limit: 30, windowMs: 60_000 };
 
@@ -196,9 +284,10 @@ export function deviceAppRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/devices/computers/{machineId}",
       tags,
       security,
-      summary: "Rename a computer, change who can use it, mark it the workspace's",
+      summary:
+        "Rename a computer, change who can use it, mark it the workspace's, let replies spill over to it, set its tasks at once",
       description:
-        "Its owner: anything. An admin: rename, mark it the workspace's, and narrow who can use someone's own computer (`device.widen_forbidden` otherwise). Never the workspace's computer (`machine.managed`).",
+        "Its owner: anything. An admin: rename, mark it the workspace's, and narrow who can use someone's own computer (`device.widen_forbidden` otherwise). Never the workspace's computer (`machine.managed`). Only its owner turns spill-over on (`device.spill_owner_only`) and changes its tasks at once (`device.tasks_owner_only`; an admin too on a computer nobody connected), which the computer applies: it must be online (`machine.offline`) with an app that can (`machine.outdated`).",
       request: {
         params: MachineParams,
         body: body(
@@ -206,6 +295,8 @@ export function deviceAppRoutes(deps: AppDeps) {
             name: z.string().min(1).max(80).optional(),
             audience: Audience.optional(),
             belongsToWorkspace: z.boolean().optional(),
+            spill: z.object({ own: z.boolean().optional(), others: z.boolean().optional() }).optional(),
+            maxTasks: z.number().int().min(TASK_LIMIT_BOUNDS[0]).max(TASK_LIMIT_BOUNDS[1]).optional(),
           }),
         ),
       },
@@ -214,7 +305,7 @@ export function deviceAppRoutes(deps: AppDeps) {
     async (c) => {
       const { orgId, machineId } = c.req.valid("param");
       const device = await updateComputerDevice(
-        { db, pubsub },
+        { db, pubsub, hub: deps.extras?.sandbox?.machines?.hub },
         c.get("user").id,
         orgId,
         machineId,
@@ -272,12 +363,13 @@ export function deviceAppRoutes(deps: AppDeps) {
       tags,
       security,
       summary: "Forget a phone (its owner or an admin); it comes back if its computer sees it again",
+      description: "An iPhone used over Wi-Fi also stops being used over Wi-Fi: it comes back only if picked again.",
       request: { params: PhoneParams },
       responses: { 204: noContent[204], ...errors },
     }),
     async (c) => {
       const { orgId, phoneId } = c.req.valid("param");
-      await forgetPhone({ db, pubsub }, c.get("user").id, orgId, phoneId);
+      await forgetPhone({ db, pubsub, hub: hub() }, c.get("user").id, orgId, phoneId);
       return c.body(null, 204);
     },
   );
@@ -295,6 +387,239 @@ export function deviceAppRoutes(deps: AppDeps) {
     async (c) => {
       const { orgId, phoneId } = c.req.valid("param");
       await stopPhone({ db, pubsub, hub: hub() }, c.get("user").id, orgId, phoneId);
+      return c.body(null, 204);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/wifi-pairings",
+      tags,
+      security,
+      summary: "Pair an Android phone with this computer over Wi-Fi (its owner or an admin)",
+      description:
+        "Without a body: Android's QR for Wireless debugging › Pair device with QR code. With `address` and `code`: the six digits and the address Pair device with pairing code shows. The computer finds the phone, pairs and connects it, for up to 2 minutes; one at a time. Ask `GET` for where it stands.",
+      request: {
+        params: MachineParams,
+        body: body(
+          z
+            .object({
+              address: z
+                .string()
+                .max(80)
+                .regex(/^(\d{1,3}(\.\d{1,3}){3}|\[[0-9a-fA-F:%.\w]{2,60}\]):\d{1,5}$/)
+                .refine((a) => pairAddress(a) !== null, "Not an IP address and port")
+                .openapi({ example: "192.168.1.20:37099" }),
+              code: z.string().regex(/^\d{6}$/),
+            })
+            .partial()
+            .refine((v) => (v.address === undefined) === (v.code === undefined), "address and code go together"),
+        ),
+      },
+      responses: { 201: json(WifiPairing, "Started"), 429: errorResponse("Too many pairings"), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      const userId = c.get("user").id;
+      const limit = await deps.adapters.rateLimiter.consume(`device-pair:user:${userId}`, PAIR_LIMIT);
+      if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many pairings. Try again in a few minutes.");
+      const started = await startWifiPairing({ db, hub: hub() }, userId, orgId, machineId, c.req.valid("json"));
+      return c.json(started, 201);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/wifi-pairings/{pairingId}",
+      tags,
+      security,
+      summary: "Where a Wi-Fi pairing stands: waiting for the phone, pairing, connecting, connected or failed",
+      request: { params: PairingParams },
+      responses: { 200: json(WifiPairing), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId, pairingId } = c.req.valid("param");
+      return c.json(await wifiPairingState({ db, hub: hub() }, c.get("user").id, orgId, machineId, pairingId), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/phone-looks",
+      tags,
+      security,
+      summary: "Look for a cabled phone the computer has no driver for",
+      description:
+        "A phone guide waits for a phone plugged into this computer: for the next minute, the computer also looks for one it has no USB driver for (Windows), which then shows as needing the person (`no_driver`). Read only. Ask again while the guide stays open.",
+      request: { params: MachineParams },
+      responses: { 204: noContent[204], ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      await lookForPhones({ db, hub: hub() }, c.get("user").id, orgId, machineId);
+      return c.body(null, 204);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/xcode-fix",
+      tags,
+      security,
+      summary: "Fix this Mac's Xcode for an iPhone (its owner or an admin)",
+      description:
+        "`select`: the Mac puts Xcode in use, accepts its license and installs its first-launch packages; macOS asks for the Mac's password in its own window, on that Mac. `update`: the Mac gets the support files for an iPhone's newer iOS, no password. One at a time; ask `GET` for where it stands. Once done, the Mac looks at Xcode again at once.",
+      request: { params: MachineParams, body: body(z.object({ kind: z.enum(["select", "update"]) }).strict()) },
+      responses: { 200: json(XcodeFixView), 429: errorResponse("Too many fixes"), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      const userId = c.get("user").id;
+      const limit = await deps.adapters.rateLimiter.consume(`xcode-fix:user:${userId}`, XCODE_FIX_LIMIT);
+      if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many tries. Try again in a few minutes.");
+      const { kind } = c.req.valid("json");
+      return c.json(await xcodeFix({ db, hub: hub() }, userId, orgId, machineId, "start", kind), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/xcode-fix",
+      tags,
+      security,
+      summary: "Where this Mac's Xcode fix stands (its owner or an admin)",
+      request: { params: MachineParams },
+      responses: { 200: json(XcodeFixView), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      return c.json(await xcodeFix({ db, hub: hub() }, c.get("user").id, orgId, machineId, "status"), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/xcode-fix",
+      tags,
+      security,
+      summary: "Stop this Mac's Xcode fix (its password window closes)",
+      request: { params: MachineParams },
+      responses: { 200: json(XcodeFixView), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      return c.json(await xcodeFix({ db, hub: hub() }, c.get("user").id, orgId, machineId, "cancel"), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/xcode-open",
+      tags,
+      security,
+      summary: "Open Xcode on this Mac (its owner or an admin)",
+      description:
+        "Xcode, open with an iPhone plugged in, shows the Developer Mode switch in the iPhone's Settings when it is hidden. `opened: false`: the Mac's agentes.chat is too old for it, or Xcode didn't open.",
+      request: { params: MachineParams },
+      responses: {
+        200: json(z.object({ opened: z.boolean() }).openapi("XcodeOpened")),
+        429: errorResponse("Too many tries"),
+        ...errors,
+      },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      const userId = c.get("user").id;
+      const limit = await deps.adapters.rateLimiter.consume(`xcode-open:user:${userId}`, XCODE_OPEN_LIMIT);
+      if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many tries. Try again in a few minutes.");
+      return c.json(await openXcode({ db, hub: hub() }, userId, orgId, machineId), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/devices/phones/{phoneId}/repair",
+      tags,
+      security,
+      summary: "Repair a real iPhone's test helper (its Mac's owner or an admin)",
+      description:
+        "The Mac stops the iPhone's test helper and whatever is left of it, builds it again with the Xcode installed there now and checks it on the iPhone, in a few minutes; the phone's state shows it. What runs on the phone stops. `update`: the Mac's agentes.chat is too old for it.",
+      request: { params: PhoneParams, body: body(z.object({}).strict()) },
+      responses: {
+        200: json(z.object({ repairing: z.boolean(), update: z.literal(true).optional() }).openapi("IphoneRepair")),
+        429: errorResponse("Too many repairs"),
+        ...errors,
+      },
+    }),
+    async (c) => {
+      const { orgId, phoneId } = c.req.valid("param");
+      const userId = c.get("user").id;
+      const limit = await deps.adapters.rateLimiter.consume(`iphone-repair:user:${userId}`, IPHONE_REPAIR_LIMIT);
+      if (!limit.allowed) return apiError(c, 429, "rate_limited", "Too many tries. Try again in a few minutes.");
+      return c.json(await repairIphone({ db, hub: hub() }, userId, orgId, phoneId), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/wifi-iphones",
+      tags,
+      security,
+      summary: "iPhones on this Mac's Wi-Fi it could use (its owner or an admin)",
+      description:
+        "The iPhones on the Mac's network that already trust it (they did over a cable once) and aren't used yet. None is used until picked with `PUT`. `update`: the Mac's agentes.chat is too old for this. An offline Mac lists none.",
+      request: { params: MachineParams },
+      responses: { 200: json(WifiIphones), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      return c.json(await wifiIphones({ db, hub: hub() }, c.get("user").id, orgId, machineId), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/wifi-iphones/{serial}",
+      tags,
+      security,
+      summary: "Use an iPhone on this Mac's Wi-Fi (its owner or an admin)",
+      description:
+        "From now on the Mac reaches it through CoreDevice's own tunnel, and it shows up among the Mac's phones, connected over Wi-Fi. Forgetting the phone stops it. Answers the iPhones still on offer.",
+      request: { params: WifiIphoneParams, body: body(z.object({}).strict()) },
+      responses: { 200: json(WifiIphones), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId, serial } = c.req.valid("param");
+      return c.json(
+        await pickIphoneOverWifi({ db, pubsub, hub: hub() }, c.get("user").id, orgId, machineId, serial),
+        200,
+      );
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/organizations/{orgId}/devices/computers/{machineId}/wifi-pairings/{pairingId}",
+      tags,
+      security,
+      summary: "Stop a Wi-Fi pairing (the dialog closed)",
+      request: { params: PairingParams },
+      responses: { 204: noContent[204], ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId, pairingId } = c.req.valid("param");
+      await cancelWifiPairing({ db, hub: hub() }, c.get("user").id, orgId, machineId, pairingId);
       return c.body(null, 204);
     },
   );
@@ -378,6 +703,46 @@ export function deviceAppRoutes(deps: AppDeps) {
   return app;
 }
 
+/**
+ * `GET /api/machines/connect-links/{code}` (no session, no CSRF: it only reads): the workspace and the maker of a
+ * link, for the desktop app's own "Connect this computer to …?" before it asks to join with it. Unknown, used and
+ * expired give the same 404, and a try counts like the install line's.
+ */
+export function registerConnectLinkInfo(api: OpenAPIHono, deps: AppDeps) {
+  const { db, config, adapters } = deps;
+  api.openapi(
+    createRoute({
+      method: "get",
+      path: "/machines/connect-links/{code}",
+      tags,
+      summary: "A connect link's workspace and maker, while it waits for its computer",
+      request: { params: z.object({ code: z.string().openapi({ example: "K7QM-4ZPA" }) }) },
+      responses: {
+        200: json(
+          z
+            .object({
+              org: z.object({ name: z.string() }),
+              by: z.object({ name: z.string() }),
+              kind: z.enum(["server", "computer"]),
+              expiresAt: z.string(),
+            })
+            .openapi("ConnectLinkInfo"),
+        ),
+        404: json(z.object({ error: z.literal("link_expired") }), "Unknown, used or expired"),
+        429: errorResponse("Too many tries from this address"),
+      },
+    }),
+    async (c) => {
+      const ip = requestLimitIp(c.req.raw.headers, config.TRUSTED_PROXIES);
+      if (!(await adapters.rateLimiter.consume(`device-link-info:${ip}`, SCRIPT_LIMIT)).allowed) {
+        return apiError(c, 429, "rate_limited", "Too many tries from this address. Wait a minute and try again.");
+      }
+      const info = await connectLinkInfo(db, c.req.valid("param").code);
+      return info ? c.json(info, 200) : c.json({ error: "link_expired" as const }, 404);
+    },
+  );
+}
+
 const SH = { "content-type": "text/x-shellscript; charset=utf-8", "cache-control": "no-store" };
 const PS = { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" };
 
@@ -410,4 +775,8 @@ export function registerConnectScripts(app: OpenAPIHono, deps: AppDeps) {
   };
   app.get("/i/:code", serve(false));
   app.get("/i/:code/ps", serve(true));
+  // `agentes-runner migrate`, run once without installing or connecting anything (ADR 0055, addendum 2026-11-16):
+  // the same for everyone, so no code and nothing of the caller's in it.
+  app.get("/migrate.sh", (c) => c.body(migrateScript(config.PUBLIC_URL), 200, SH));
+  app.get("/migrate.ps1", (c) => c.body(migrateScriptPowerShell(config.PUBLIC_URL), 200, PS));
 }

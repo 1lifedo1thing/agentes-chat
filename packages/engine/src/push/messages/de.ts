@@ -82,8 +82,30 @@ export const strings: Partial<PushStrings> = {
   deviceInUseBody: "Tippe, um es zu stoppen.",
   deviceAccessTitle: (a, p, d) => (p ? `${a} (für ${p}) möchte dein ${d} nutzen` : `${a} möchte dein ${d} nutzen`),
   deviceAccessBody: "Tippe, um einmal oder immer zu erlauben oder Nein zu sagen.",
+  deviceToolTitle: (a, d) => `${a} bittet dich, ein Werkzeug auf deinem ${d} einzuschalten`,
+  deviceToolBody: "Tippe, um es mit einem Klick einzuschalten.",
+  deviceCliTitle: (a, d) => `${a} bittet dich, ein Programm auf deinem ${d} zu installieren`,
+  deviceCliBody: "Tippe, um es mit einem Klick zu installieren.",
+  deviceFolderTitle: (a, f, d) =>
+    f ? `${a} bittet um ${f} auf deinem ${d}` : `${a} bittet um einen Ordner auf deinem ${d}`,
+  deviceFolderBody: "Erlaube ihn in der App auf dem Computer.",
+  adminAskTitle: (a, what, l) =>
+    what === "channel_agent"
+      ? `${a} bittet dich, einen Agenten zu #${l} hinzuzufügen`
+      : what === "create_agents"
+        ? `${a} möchte Agenten erstellen dürfen`
+        : `${a} bittet dich, den ${l}-Webhook für Routinen einzurichten`,
   deviceWaitingTitle: (p, d) => `Der Agent von ${p} wartet auf dein ${d}`,
   deviceWaitingBody: "Er startet, sobald es zurück ist.",
   teamWeekReady: "Die Woche deines Teams ist fertig",
   teamDayReady: "Deine Tageszusammenfassung ist fertig",
+  machineConnectedTitlePersonal: "Ein neuer Computer wurde verbunden",
+  computerReadyTitlePersonal: "Der Computer deiner Agenten ist bereit",
+  agentUnreachedBodyPersonal:
+    "Wer die Routine erstellt hat, kann noch nicht mit diesem Agenten sprechen. Tippe, um es zu erlauben.",
+  widgetFailedReasonsPersonal: { creator_left: "Wer es eingerichtet hat, ist nicht mehr in deinem Workspace." },
+  joinRequestTitlePersonal: (name) => `${name} möchte deinem Workspace beitreten`,
+  joinSuggestionTitlePersonal: (by, name) => `${by} hat vorgeschlagen, ${name} einzuladen`,
+  teamWeekReadyPersonal: "Deine Woche ist fertig",
+  teamWatchStill: (n) => (n === 1 ? "1 Sache wartet noch auf dich" : `${n} Sachen warten noch auf dich`),
 };

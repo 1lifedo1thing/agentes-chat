@@ -23,12 +23,13 @@ import {
   applyConversationEvent,
   applyDashboardEvent,
   applyIssueEvent,
+  applyLiveEvent,
   applyMachineEvent,
   applyMembershipEvent,
   applyNotificationEvent,
   applyReactions,
   applyReceiptEvent,
-  applyTyping,
+  applyTypingEvent,
   applyUnreadEvent,
   applyWorkspaceEvent,
   type BrowserFrame,
@@ -37,6 +38,7 @@ import {
   type BrowserLiveUnavailable,
   type ConnectionStatus,
   type ConsultsState,
+  type CountedPointer,
   cacheActionCard,
   cacheAgentProposal,
   cacheApproval,
@@ -44,16 +46,17 @@ import {
   cacheDmRead,
   cacheMessage,
   cacheMessageActions,
-  cacheMessageMemories,
   cacheMessageMeta,
   cacheMessageWork,
   cachePinned,
   cacheReceipts,
+  cacheResolved,
   cacheTask,
   cacheTeamCard,
   catchUpChannel,
   consultSeeds,
   createBrowserLiveConnection,
+  desktopPointerOf,
   dismissRun,
   dropLocalVoice,
   dropProvisional,
@@ -65,7 +68,9 @@ import {
   isNotificationEvent,
   keys,
   markStopping,
+  nextPointer,
   type OpenConsult,
+  openConversation,
   RealtimeConnection,
   type ReceiptsState,
   realtimeUrl,
@@ -82,7 +87,7 @@ import {
   seedReceipt,
   staleProvisional,
   startThreadCache,
-  stopTyping,
+  type TypingKind,
   type TypingState,
   touchRun,
   typingThrottle,
@@ -95,8 +100,10 @@ import { newerBlockState } from "@agenteschat/client/lib/blocks";
 import { deviceWaitEventOf } from "@agenteschat/client/lib/devices";
 import { knownErrorText } from "@agenteschat/client/lib/errors";
 import { formatPercent } from "@agenteschat/client/lib/format";
+import { isReturnLine } from "@agenteschat/client/lib/notices";
 import { nextMonthIso, usageWhen } from "@agenteschat/client/lib/plan-usage";
-import { playSound, soundForNotification } from "@agenteschat/client/lib/sounds";
+import { useSeat } from "@agenteschat/client/lib/seat-context";
+import { playSound, soundForEvent } from "@agenteschat/client/lib/sounds";
 import { playAgentReaction } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
@@ -231,9 +238,7 @@ export function createStreamsStore(
   return {
     get: () => state,
     apply: (event: ChannelEvent) => {
-      let typing = state.typing;
-      if (event.type === "user.typing")
-        typing = applyTyping(typing, event.channelId, event.userId, now(), event.ttlMs, event.threadId);
+      const typing = applyTypingEvent(state.typing, event, now());
       const memory =
         event.type === "memory.updated"
           ? {
@@ -253,9 +258,6 @@ export function createStreamsStore(
           : event.type === "message.created" && event.message
             ? dropMemoryCards(state.memory, event.channelId, event.message)
             : state.memory;
-      if (event.type === "message.created" && event.message?.author?.type === "person" && event.message.author.id) {
-        typing = stopTyping(typing, event.channelId, event.message.author.id);
-      }
       const questions =
         event.type === "question.asked" || event.type === "question.answered"
           ? { ...state.questions, [event.question.id]: event.question }
@@ -272,6 +274,15 @@ export function createStreamsStore(
             }
           : state.continued;
       const streaming = event.type === "agent.delta" || event.type === ("agent.tool.output" as string);
+      let streams = applyChannelEvent(state.streams, event, now());
+      // Tentar de novo: a new run took a message whose run failed (the server deleted that one), so its failed row goes
+      // and only the new run's shows.
+      if (event.type === "message.claimed" || event.type === ("agent.run.steered" as string)) {
+        const taken = event as { messageId: string; agentId?: string; runId?: string };
+        const before = taken.agentId ? state.receipts[taken.messageId]?.runOf?.[taken.agentId] : undefined;
+        if (before && before !== taken.runId && streams.runs[before]?.status === "failed")
+          streams = dismissRun(streams, before);
+      }
       set(
         {
           ...state,
@@ -279,7 +290,7 @@ export function createStreamsStore(
           questions,
           secrets,
           memory,
-          streams: applyChannelEvent(state.streams, event, now()),
+          streams,
           consults: applyConsultEvent(state.consults, event, now()),
           receipts: applyReceiptEvent(
             event.type === "message.created" && event.message
@@ -444,37 +455,10 @@ export function RealtimeProvider({
       void checkAppVersion();
       // Reactions heard live may be stale now: the refetched message lists carry them again.
       qc.removeQueries({ queryKey: ["org", orgId, "reactions"] });
-      // Notifications that arrived while offline: the inbox and the badge catch up.
-      void qc.invalidateQueries({ queryKey: keys.notifications(orgId) });
-      // The workspace's computer on its way, its standing and its limits (a new plan) may have moved meanwhile, and so
-      // may the computers (one back online, a pause) and the agents' screens.
-      void qc.invalidateQueries({ queryKey: keys.computerSetup(orgId) });
-      void qc.invalidateQueries({ queryKey: keys.machines(orgId) });
-      void qc.invalidateQueries({ queryKey: keys.agentDesktops(orgId) });
+      // Nothing sent while the socket was down reached this tab, so everything the workspace holds may be old: what
+      // is on screen reads again now, the rest when it is shown.
+      void qc.invalidateQueries({ queryKey: keys.org(orgId) });
       void qc.invalidateQueries({ queryKey: keys.me });
-      void qc.invalidateQueries({ queryKey: keys.limits(orgId) });
-      void qc.invalidateQueries({ queryKey: ["org", orgId, "channel"] });
-      // The agents, channels and people who came, changed or left meanwhile.
-      void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
-      void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
-      void qc.invalidateQueries({ queryKey: keys.dms(orgId) });
-      void qc.invalidateQueries({ queryKey: keys.members(orgId) });
-      // Who came and went while this socket was down: their `member.status` never reached it.
-      void qc.invalidateQueries({ queryKey: keys.people(orgId) });
-      void qc.invalidateQueries({ queryKey: keys.threads(orgId) });
-      // The groups of agents someone changed meanwhile.
-      void qc.invalidateQueries({ queryKey: keys.agentGroups(orgId) });
-      // The Vault, whose `vault.changed` may have come while offline (ADR 0144).
-      void qc.invalidateQueries({ queryKey: keys.vault(orgId) });
-      // The Drive, the Wiki, the calendar, the routines and the invitations someone changed meanwhile.
-      for (const key of [
-        keys.artifacts(orgId),
-        keys.wiki(orgId),
-        keys.calendar(orgId),
-        keys.routines(orgId),
-        keys.invitations(orgId),
-      ])
-        void qc.invalidateQueries({ queryKey: key });
     });
     // The first open too, for what a return from the billing service changes: a new plan's limits, standing and
     // computer can land in core between this page's first reads and the socket's open, and that event reaches no one.
@@ -510,7 +494,7 @@ export function RealtimeProvider({
       // Its sound (ADR 0070): in one tab only, and in the background only what matters.
       if (isNotificationEvent(event) && event.type === "notification.upserted") {
         const { mine, background } = notificationAudience();
-        const sound = mine ? soundForNotification(event.notification, background) : null;
+        const sound = mine ? soundForEvent(event, background) : null;
         if (sound) playSound(sound);
       }
       // Notifications in this browser (ADR 0071): what was read, done or snoozed closes there too; a drop in
@@ -524,8 +508,17 @@ export function RealtimeProvider({
         event.alert !== false &&
         inDesktopApp()
       ) {
-        const notice = desktopNotice(tRef.current, orgId, event.notification);
-        if (notice) void thisMac.notify(notice.title, notice.body, notice.path).catch(() => {});
+        const agentName = (id: string) => qc.getQueryData<Agent[]>(keys.agents(orgId))?.find((a) => a.id === id)?.name;
+        const notice = desktopNotice(tRef.current, orgId, event.notification, agentName);
+        if (notice)
+          void thisMac
+            .notify(
+              notice.title,
+              notice.body,
+              notice.path,
+              notice.phoneId ? { orgId, phoneId: notice.phoneId } : undefined,
+            )
+            .catch(() => {});
       }
       // A mission waits for me (a decision, a review, an approval): the lists and the sidebar's count.
       if (event.type.startsWith("mission.") && "missionId" in event && typeof event.missionId === "string") {
@@ -548,6 +541,8 @@ export function RealtimeProvider({
         qc.setQueryData(keys.issueColumns(orgId), event.columns as IssueColumn[]);
         void qc.invalidateQueries({ queryKey: keys.issues(orgId), predicate: (q) => q.queryKey[3] === "list" });
       }
+      // A project was made, renamed, recoloured, archived or deleted: the menu and every card that names it.
+      if (event.type === "issue.projects") void qc.invalidateQueries({ queryKey: keys.issues(orgId) });
       applyIssueEvent(qc, orgId, event);
       // An agent switched computers, or its computer was removed: the cached view takes the new target.
       applyComputerEvent(qc, orgId, event);
@@ -639,7 +634,7 @@ export async function reconcileChannelRuns(
   runIds?: string[],
 ): Promise<boolean> {
   const live = runsInChannel(store.get().streams, channelId).filter(
-    (r) => !r.provisional && r.status !== "failed" && r.status !== "canceled" && (!runIds || runIds.includes(r.runId)),
+    (r) => !r.provisional && r.status !== "failed" && (!runIds || runIds.includes(r.runId)),
   );
   const askedAt = Date.now();
   const active = await api.agents.activeRuns(orgId, channelId).catch(() => undefined);
@@ -801,7 +796,8 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
   }, [connection, enabled, orgId, channelId, qc, streams, api]);
   useEffect(() => {
     if (!connection || !enabled) return;
-    return connection.subscribe(channelId, (event) => {
+    const close = openConversation(qc, orgId, channelId);
+    const off = connection.subscribe(channelId, (event) => {
       if (handledEvents.has(event)) return;
       handledEvents.add(event);
       streams.apply(event);
@@ -811,6 +807,8 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
       }
       // A file's cards and viewer, an agent's memory list.
       applyConversationEvent(qc, orgId, event);
+      // Who is in one of the conversation's live files changed (ADR 0196 §5): its cards ask again.
+      applyLiveEvent(qc, orgId, event);
       if (event.type === "poll.updated") qc.setQueryData(keys.poll(orgId, event.poll.id), event.poll);
       if (event.type === "block.state") {
         const { block } = event;
@@ -836,6 +834,12 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
       if (event.type === "card.delegate") cacheCardDelegate(qc, orgId, event, event.delegate);
       // A right hand's card of a workspace change was applied, dismissed or sent on: the whole card.
       if (event.type === "action_card.updated") cacheActionCard(qc, orgId, event, event.card);
+      // A report an agent offered was sent or put away (on another device of the person's): its row follows.
+      if (event.type === "feedback_offer.updated") {
+        cacheMessageMeta(qc, orgId, event.channelId, event.messageId, () => ({ feedbackOffer: event.offer }));
+        if (event.threadId)
+          void qc.invalidateQueries({ queryKey: keys.thread(orgId, event.channelId, event.threadId) });
+      }
       // An agent's wait for a device ended (or changed): its card flips to how it ended, without a reload.
       const deviceWait = deviceWaitEventOf(event);
       if (deviceWait) {
@@ -850,13 +854,14 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
       // Someone reacted: the pills under that message change for everyone.
       if (event.type === "message.reactions")
         applyReactions(qc, orgId, event.messageId, event.reactions, playAgentReaction);
-      // An agent saved something from a person's message: the memory mark appears (or goes) live.
-      if (event.type === "message.memories")
-        cacheMessageMemories(qc, orgId, event.channelId, event.messageId, event.memories);
       // Someone pinned or unpinned a message: its "Fixar" / "Desafixar" and the pins list follow.
       if (event.type === "message.pinned" || event.type === "message.unpinned") {
         cachePinned(qc, orgId, channelId, event.messageId, event.type === "message.pinned");
         void qc.invalidateQueries({ queryKey: keys.pins(orgId, channelId) });
+      }
+      // A comment on a picture, a video or a PDF was resolved or opened again (ADR 0208): its pin and line follow.
+      if (event.type === "message.resolved") {
+        cacheResolved(qc, orgId, event.channelId, event.messageId, event.resolved);
       }
       // Act with undo: an agent message's receipts changed (made, undone, redone): replace the list.
       // A long work moved, updated or ended (ADR 0121): its anchor's line redraws; its card on the board too.
@@ -872,7 +877,10 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
       }
       if (event.type === "message.created") {
         if (event.message) cacheMessage(qc, orgId, event.message);
-        else {
+        // A return set, canceled or come: the bar's list reads again.
+        if (event.message && isReturnLine(event.message.meta))
+          void qc.invalidateQueries({ queryKey: keys.followUps(orgId, channelId) });
+        if (!event.message) {
           // Too big for its event: the open lists read it (its live block holds until it lands); a closed one, when
           // it opens again.
           void qc.invalidateQueries({ queryKey: ["org", orgId, "channel", channelId], refetchType: "none" });
@@ -884,6 +892,10 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
         if (threadId) refreshRepliedThread(qc, orgId, threadId);
       }
     });
+    return () => {
+      off();
+      close();
+    };
   }, [connection, enabled, orgId, channelId, qc, streams, api]);
 }
 
@@ -980,12 +992,15 @@ export function useLiveStore() {
   return useRealtime().streams;
 }
 
-/** Throttled "I'm typing" for a channel, or for one of its threads. */
+/**
+ * Throttled "I'm typing" for a channel, or for one of its threads; `voice` while recording a voice message, with
+ * `keepAlive` while it uploads (`typingThrottle`).
+ */
 export function useTypingSender(channelId: string, threadId?: string) {
   const { connection } = useRealtime();
   const throttle = useMemo(() => typingThrottle(), []);
-  return (text?: string) => {
-    if (connection && throttle(Date.now(), text)) connection.sendTyping(channelId, threadId);
+  return (text?: string, kind?: TypingKind, keepAlive?: boolean) => {
+    if (connection && throttle(Date.now(), text, kind, keepAlive)) connection.sendTyping(channelId, threadId, kind);
   };
 }
 
@@ -1006,6 +1021,8 @@ export interface BrowserLiveState {
   error: string | null;
   /** How many came, for what says each one: the same refusal again leaves `error` as it was. */
   errors: number;
+  /** Where the agent's pointer last went on the page; `n` counts its gestures (two clicks on one point are two). */
+  pointer: CountedPointer | null;
 }
 
 const EMPTY_LIVE: BrowserLiveState = {
@@ -1016,6 +1033,7 @@ const EMPTY_LIVE: BrowserLiveState = {
   endedBy: null,
   error: null,
   errors: 0,
+  pointer: null,
 };
 
 /**
@@ -1046,6 +1064,7 @@ export function useBrowserLive(agentId: string, enabled = true, maxFps?: number)
         setState((s) => ({ ...s, frame, unavailable: null, ended: false, endedBy: null, error: null })),
       onStatus: (status) =>
         setState((s) => ({ ...s, status, unavailable: null, ended: false, endedBy: null, error: null })),
+      onPointer: (pointer) => setState((s) => ({ ...s, pointer: nextPointer(s.pointer, pointer) })),
       onUnavailable: (reason, message) =>
         setState((s) => ({ ...s, unavailable: { reason, ...(message ? { message } : {}) } })),
       onEnded: (reason, _message, by) =>
@@ -1081,6 +1100,25 @@ export function useBrowserLive(agentId: string, enabled = true, maxFps?: number)
   const sendInput = useCallback((events: BrowserInputEvent[]) => liveRef.current?.sendInput(events) ?? false, []);
   const retry = useCallback(() => liveRef.current?.retry(), []);
   return { ...state, sendInput, retry };
+}
+
+/**
+ * Where the agent's pointer last went on its desktop (ADR 0062), while this view shows that screen: the server
+ * sends it to whoever has the screen open. `n` counts its gestures.
+ */
+export function useDesktopPointer(agentId: string, enabled = true) {
+  const { connection } = useRealtime();
+  const shared = useSeat(agentId) !== undefined;
+  const [pointer, setPointer] = useState<BrowserLiveState["pointer"]>(null);
+  useEffect(() => {
+    setPointer(null);
+    if (!connection || !enabled) return;
+    return connection.onUserEvent((event) => {
+      const to = desktopPointerOf(event, agentId, shared);
+      if (to) setPointer((was) => nextPointer(was, to));
+    });
+  }, [connection, agentId, enabled, shared]);
+  return pointer;
 }
 
 export function useConnectionStatus(): ConnectionStatus {

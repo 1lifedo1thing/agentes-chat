@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import type { ComputerQueue, Message, QueuePurpose, QueueWaiting, QueueWorking } from "../api/types";
 import type { MessageReceipt, ReceiptPhase, ReceiptsState } from "../realtime/receipts";
-import { joinNames, namesText, ordinalForm } from "./format";
+import { joinNames, ordinalForm } from "./format";
 import { agentGrammar } from "./grammar";
 
 /**
@@ -13,12 +13,13 @@ import { agentGrammar } from "./grammar";
 /** Whole minutes until `iso`, at least 1: an estimate never reads "0 min". */
 export const etaMinutes = (iso: string, now: number) => Math.max(1, Math.round((Date.parse(iso) - now) / 60_000));
 
-/** "3 min", "40 s", "2 h": how long something has gone on. */
+/** "3 min", "40 s", "2 h", "3 dias": how long something has gone on. */
 export function durationText(t: TFunction, ms: number) {
   if (ms < 60_000) return t("run.elapsedSeconds", { n: Math.max(1, Math.round(ms / 1000)) });
   const minutes = Math.round(ms / 60_000);
   if (minutes < 60) return t("format.inMinutes", { count: minutes });
-  return t("format.inHours", { count: Math.round(minutes / 60) });
+  const hours = Math.round(minutes / 60);
+  return hours < 48 ? t("format.inHours", { count: hours }) : t("format.inDays", { count: Math.round(hours / 24) });
 }
 
 /** "1st", "4º", "4." in the language's own ordinal form. */
@@ -35,10 +36,8 @@ export type QueueRow<T> = T & {
 export interface QueueView {
   working: QueueRow<QueueWorking>[];
   waiting: QueueRow<QueueWaiting>[];
-  /** Turns wait for room: the computer is full. */
+  /** Turns wait, for room on the computer or for their AI sign-in. */
   full: boolean;
-  /** When the next in line should start (null: no basis). */
-  nextStartAt: string | null;
   /** When the last in line should start, once every estimate is known. */
   allStartedAt: string | null;
 }
@@ -52,7 +51,6 @@ export function queueView(queue: ComputerQueue, viewerId: string): QueueView {
     working: queue.working.map((w) => ({ ...w, mine: mineOf(w.purpose, viewerId) })),
     waiting,
     full: waiting.length > 0,
-    nextStartAt: waiting[0]?.estimatedStartAt ?? null,
     allStartedAt: waiting.every((w) => w.estimatedStartAt) ? (last?.estimatedStartAt ?? null) : null,
   };
 }
@@ -70,11 +68,8 @@ export function queueFillText(t: TFunction, working: readonly Pick<QueueWorking,
 export const queueButtonText = (t: TFunction, queue: ComputerQueue | null | undefined) =>
   queue?.waiting.length ? t("queue.button", { count: queue.waiting.length }) : t("queue.buttonIdle");
 
-/** "Full · next starts in about 1 min", "Full", "Nobody in line". */
-export function queueStatusText(t: TFunction, view: QueueView, now: number) {
-  if (!view.full) return t("queue.free");
-  return view.nextStartAt ? t("queue.fullNext", { n: etaMinutes(view.nextStartAt, now) }) : t("queue.full");
-}
+/** "In line · starts soon" whatever holds the line, or "Nobody in line". */
+export const queueStatusText = (t: TFunction, view: QueueView) => t(view.full ? "queue.waiting" : "queue.free");
 
 /** "all started in ~6 min", or null with no basis or one in line (its row says it). */
 export const queueAllStartedText = (t: TFunction, view: QueueView, now: number) =>
@@ -148,32 +143,6 @@ export function queueStartText(
 }
 
 /**
- * The waiting agent's live row: "Waiting for the computer. Next up, in about 1 min" when the line can say when, else
- * "… Next up" alone, or "In line, 4th. After Ada, Kai and Ravi". Null when the run isn't in this computer's line.
- */
-export function queueLiveText(
-  t: TFunction,
-  locale: string,
-  queue: ComputerQueue | null | undefined,
-  runId: string,
-  agentName: (id: string) => string | undefined,
-  now: number,
-) {
-  const w = queue?.waiting.find((x) => x.runId === runId);
-  if (!w) return null;
-  const { context } = agentGrammar(agentName(w.agentId) ?? "");
-  if (w.position === 1) {
-    if (w.estimatedStartAt) return t("queue.live.nextEta", { n: etaMinutes(w.estimatedStartAt, now), context });
-    return t("queue.live.next", { context });
-  }
-  const names = w.after.flatMap((id) => agentName(id) ?? []);
-  const nth = nthText(t, locale, w.position);
-  return names.length
-    ? t("queue.live.behind", { nth, names: namesText(t, names, 3) })
-    : t("queue.live.position", { nth });
-}
-
-/**
  * An agent's place in line for a message: its run as the receipt follows it, else its one waiting turn in this
  * conversation (a new mention joins the turn already waiting).
  */
@@ -220,10 +189,6 @@ export function conversationWaits(
   }
   return [...waits.values()];
 }
-
-/** The receipt of a message whose agent is next in line: "Theo is in line for the computer · next". */
-export const queuedNextText = (t: TFunction, name: string) =>
-  t("receipts.queuedNext", { names: name, context: agentGrammar(name).context });
 
 /** The outage card's pill beside the time: "Away 3 min". */
 export const awayText = (t: TFunction, sinceIso: string, now: number) =>

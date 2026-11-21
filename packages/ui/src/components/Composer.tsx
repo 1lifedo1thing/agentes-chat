@@ -3,6 +3,7 @@ import {
   type DragEvent,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
   useEffect,
   useId,
   useImperativeHandle,
@@ -12,8 +13,8 @@ import {
 } from "react";
 import { channelQuery, insertChannelRef } from "../channel-refs";
 import { cx } from "../cx";
-import { onScreenKeyboard } from "../device";
-import { EDGE_ROOM } from "../floating";
+import { composes, onScreenKeyboard } from "../device";
+import { EDGE_ROOM, placeOverSelection } from "../floating";
 import {
   applyFormat,
   FORMAT_KINDS,
@@ -23,8 +24,9 @@ import {
   insertText,
   type TextEdit,
 } from "../format";
-import { useMatchMedia } from "../hooks/useMatchMedia";
+import { useScrollSides } from "../hooks/useScrollSides";
 import { Icon, type IconName } from "../icons/Icon";
+import { selectionRect } from "../selection-rect";
 import { Button } from "./Button";
 import { type EmojiPickerLabels, EmojiPickerPopover, type PickerTab } from "./EmojiPicker";
 import { useAutoGrow, useLocked } from "./Field";
@@ -107,24 +109,11 @@ export interface ComposerWorking {
   onStop: () => void;
 }
 
-/** What a message sent while an agent works does: joins what it is doing, or stops it to be read now. */
-export type SendChoice = "join" | "interrupt";
-
-/** Enter sends with the current choice; ⌘/Ctrl+Enter (`alt`) with the other one. */
-export const sendChoice = (current: SendChoice, alt: boolean): SendChoice =>
-  alt ? (current === "join" ? "interrupt" : "join") : current;
-
-/** The row above the box while an agent works and there is text: "Juntar ao que ele faz" / "Parar e mandar". */
-export interface ComposerChoice {
-  joinLabel: string;
-  interruptLabel: string;
-  /** Accessible name of the choice ("Ao mandar"). */
-  label: string;
-  /** Desktop hint next to it ("↵ junta · ⌘↵ para e manda"); `mod` is "⌘" or "Ctrl". */
-  hint?: (choice: SendChoice, mod: string) => ReactNode;
-}
-
-/** Voice messages in the box: what it says, and what the app does with a recording (ADR 0100). */
+/**
+ * Voice messages in the box: what it says, and what the app does with a recording (ADR 0100). A take is a row above
+ * the text, which stays usable: sending it sends what was typed and attached too, in one message (`onTake` reads them
+ * from the app's own draft and files).
+ */
 export interface ComposerVoice {
   /** Where this recording would go: when it changes, one under way is dropped. */
   scope: string;
@@ -132,6 +121,8 @@ export interface ComposerVoice {
   allowed?: () => Promise<boolean>;
   onTake: (take: VoiceTake) => void;
   onNotice: (notice: VoiceNotice) => void;
+  /** Each second it records, never while starting or paused: the others see "gravando áudio…". */
+  onRecording?: () => void;
   labels: {
     record: string;
     recording: string;
@@ -148,22 +139,31 @@ export interface ComposerVoice {
     keysPaused: string;
     /** The last seconds, counting down: "faltam 13 s". */
     left: (seconds: number) => string;
+    /** Esc with text in the box asks first, in the take's row: "Apagar o áudio? O texto fica." */
+    askDiscard: string;
+    askDelete: string;
+    askKeep: string;
   };
 }
-
-/** What takes its own click in the row under the text; a click anywhere else in it belongs to the text box. */
-const COMPOSER_CONTROLS = "button, a, input, select, textarea, label, [role='button'], [role='menuitem']";
 
 /** The clock counts down over the last seconds of the five minutes. */
 const VOICE_LIMIT_S = 300;
 const VOICE_COUNTDOWN_S = 15;
+
+/** The take's own buttons, which take its keys as they did when the take stood alone in the box. */
+const TAKE_CONTROLS = ".ac-composer__voice-trash, .ac-composer__mic, .ac-composer__send, .ac-composer__listen";
+/** Where a key is someone else's while there is a take: another field, a menu, a picker. */
+const OTHER_KEYS = "input, textarea, select, [contenteditable], [role='dialog'], [role='menu'], [role='listbox']";
+
+/** What takes its own click in the card; a click anywhere else in it belongs to the text box. */
+const COMPOSER_CONTROLS = "button, a, input, select, textarea, label, canvas, [role='button'], [role='menuitem']";
 
 export interface ComposerProps {
   value: string;
   onChange: (value: string) => void;
   /**
    * Called with the trimmed text on Enter (Shift+Enter adds a line) or the send button. While `working`
-   * or with a `choice`, `opts.interrupt` says whether the person chose "Parar e mandar".
+   * or with `agentBusy`, `opts.interrupt` says whether the person sent it with ⌘/Ctrl+Enter (stop and send).
    */
   onSend: (text: string, opts?: { interrupt?: boolean }) => void;
   /** Accessible name of the text box, e.g. "Mensagem para #eng". */
@@ -187,16 +187,11 @@ export interface ComposerProps {
   links?: ComposerMentions;
   /** "#" autocompletes channels: `insert` is the name put after the "#". */
   channels?: ComposerMentions;
-  /** Context pills under the text (the target agent, the active skill). */
+  /** Context pills on a line above the text (the target agent, the active skill, a select of who answers). */
   pills?: ReactNode;
-  /**
-   * The pills sit in the toolbar row, left of the formatting tools, after a
-   * hairline (a DM with an agent: its chip is context, not a second line).
-   */
-  inlinePills?: boolean;
   /** The send button's tooltip, with the key hint ("Enviar ↵"). */
   sendText?: string;
-  /** Formatting toolbar (bold, italic, lists…) and its ⌘/Ctrl shortcuts, writing Markdown. */
+  /** Formatting (bold, italic, lists…) in a bar that floats over selected text, and its ⌘/Ctrl shortcuts, writing Markdown. */
   format?: ComposerFormatLabels;
   /** The emoji button: the picker inserts at the caret. `button` names it ("Emoji"). */
   emoji?: EmojiPickerLabels & { button: string };
@@ -210,22 +205,34 @@ export interface ComposerProps {
   onFiles?: (files: File[]) => void;
   /** Inside the card, above the text (e.g. "Respondendo a Ana" with the quoted line). */
   header?: ReactNode;
-  /** Inside the card, under the text (e.g. files being uploaded, as `ComposerFile`). */
+  /** Inside the card, above the text's row (e.g. files being uploaded, as `ComposerFile`). */
   attachments?: ReactNode;
   /** Something is attached: the message may go without text. */
   canSendEmpty?: boolean;
   /** Not yet (e.g. uploads still running): Enter and the send button wait. */
   sendBlocked?: boolean;
+  /**
+   * Inside the card, above the text's row: why this text can't go and the way out (a draft past the length limit,
+   * with "Enviar como arquivo"). Given together with `sendBlocked`.
+   */
+  notice?: ReactNode;
   /** An agent is working in this conversation (send ↔ stop). */
   working?: ComposerWorking | null;
   /**
-   * While an agent works here and there is text: the choice row above the box. Given on its own (without
-   * `working`) to whoever may write but not stop it: they choose too, there is just no stop button.
+   * An agent works here: Enter adds the message to what it is doing, ⌘/Ctrl+Enter stops it to read the message now.
+   * Given on its own (without `working`) to whoever may write but not stop it: there is just no stop button.
    */
-  choice?: ComposerChoice;
+  agentBusy?: boolean;
   /** The microphone: absent, there is none. */
   voice?: ComposerVoice;
 }
+
+/**
+ * A thumbnail's address: only a local object URL (`blob:`), the only kind the apps make for a picked file, through
+ * `encodeURI` (which leaves such a URL as it is), so nothing from the file can reach the page as markup or as a
+ * script address. Any other address shows the file's icon instead.
+ */
+const thumbnailSrc = (url: string | undefined) => (url?.startsWith("blob:") ? encodeURI(url) : undefined);
 
 /**
  * A file in the composer, as a tile beside the others: an image shows its
@@ -244,7 +251,7 @@ export function ComposerFile({
 }: {
   name: string;
   icon?: IconName;
-  /** An image's thumbnail URL. */
+  /** An image's thumbnail: a local object URL (`blob:`). */
   preview?: string;
   /** Under the name ("1,2 MB"). */
   detail?: string;
@@ -260,7 +267,8 @@ export function ComposerFile({
       <Icon name="close" size={14} />
     </button>
   );
-  if (preview) {
+  const src = thumbnailSrc(preview);
+  if (src) {
     return (
       <span
         className="ac-composer__file ac-composer__file--image"
@@ -268,7 +276,7 @@ export function ComposerFile({
         aria-busy={status === "uploading" || undefined}
         title={name}
       >
-        <img src={preview} alt="" />
+        <img src={src} alt="" />
         <span className="ac-visually-hidden">{name}</span>
         {status !== "done" && (
           <span className="ac-composer__file-state" aria-hidden="true">
@@ -300,55 +308,132 @@ export function ComposerFile({
   );
 }
 
-/** The formatting buttons: one tab stop, arrows move between them (toolbar pattern). */
-function FormatBar({ labels, onFormat }: { labels: ComposerFormatLabels; onFormat: (kind: FormatKind) => void }) {
+/**
+ * The formatting buttons, floating over the text selected in the box (`range`, null while nothing is): inside the
+ * composer's card and placed from it, so it goes where the card goes, right after the text box for the Tab key. One tab stop, arrows move between them (toolbar pattern). Not in the page until the first selection, kept
+ * after it to fade out.
+ */
+function FormatBar({
+  labels,
+  onFormat,
+  range,
+  value,
+  field,
+  card,
+  barRef,
+  onLeave,
+}: {
+  labels: ComposerFormatLabels;
+  onFormat: (kind: FormatKind) => void;
+  range: [number, number] | null;
+  /** The box's text: the bar moves as the words do. */
+  value: string;
+  field: RefObject<HTMLTextAreaElement | null>;
+  card: RefObject<HTMLDivElement | null>;
+  barRef: RefObject<HTMLDivElement | null>;
+  /** The focus left the bar, or Escape was pressed in it (`back`: to the text box). */
+  onLeave: (to: EventTarget | null, back?: boolean) => void;
+}) {
   const [focus, setFocus] = useState(0);
-  const bar = useRef<HTMLDivElement>(null);
+  const used = useRef(false);
+  const open = range !== null;
+  if (open) used.current = true;
+  const start = range?.[0] ?? 0;
+  const end = range?.[1] ?? 0;
   const mod = modKey();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `value` is why it runs again, the words under it moved
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const el = barRef.current;
+      const text = field.current;
+      const column = card.current?.getBoundingClientRect();
+      const origin = el?.offsetParent?.getBoundingClientRect();
+      if (!el || !text || !column || !origin) return;
+      el.style.maxWidth = `min(${column.width}px, 100vw - ${2 * EDGE_ROOM}px)`;
+      // Its layout size: the entrance's transform would measure it smaller.
+      const size = { width: el.offsetWidth, height: el.offsetHeight };
+      const to = placeOverSelection(selectionRect(text, start, end), size, column, window.innerWidth);
+      el.style.left = `${to.left - origin.left}px`;
+      el.style.top = `${to.top - origin.top}px`;
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, start, end, value, field, card, barRef]);
+  if (!used.current) return null;
   const move = (i: number) => {
     const next = (i + FORMAT_KINDS.length) % FORMAT_KINDS.length;
     setFocus(next);
-    bar.current?.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
+    barRef.current?.querySelectorAll<HTMLButtonElement>("button")[next]?.focus();
   };
   return (
     <div
-      ref={bar}
-      className="ac-composer__format"
+      ref={barRef}
+      className="ac-formatbar"
       role="toolbar"
       aria-label={labels.toolbar}
+      data-open={open || undefined}
+      aria-hidden={!open || undefined}
+      inert={!open}
+      // Keep the text box's focus and selection, also on the room between the buttons.
+      onMouseDown={(e) => e.preventDefault()}
+      onBlur={(e) => onLeave(e.relatedTarget)}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") move(focus + 1);
         else if (e.key === "ArrowLeft") move(focus - 1);
         else if (e.key === "Home") move(0);
         else if (e.key === "End") move(FORMAT_KINDS.length - 1);
-        else return;
+        else if (e.key === "Escape") {
+          e.stopPropagation();
+          onLeave(null, true);
+        } else return;
         e.preventDefault();
       }}
     >
-      {FORMAT_KINDS.map((kind, i) => {
-        const hint = formatShortcutHint(kind, mod);
-        return (
-          <span
-            key={kind}
-            className="ac-composer__format-item"
-            data-group-end={FORMAT_GROUP_ENDS.includes(kind) || undefined}
-          >
-            <button
-              type="button"
-              className="ac-composer__format-btn"
-              aria-label={labels[kind]}
-              title={hint ? `${labels[kind]} (${hint})` : labels[kind]}
-              tabIndex={i === focus ? 0 : -1}
-              // Keep the text box's focus and selection.
-              onMouseDown={(e) => e.preventDefault()}
-              onFocus={() => setFocus(i)}
-              onClick={() => onFormat(kind)}
+      <FormatRow>
+        {FORMAT_KINDS.map((kind, i) => {
+          const hint = formatShortcutHint(kind, mod);
+          return (
+            <span
+              key={kind}
+              className="ac-formatbar__item"
+              data-group-end={FORMAT_GROUP_ENDS.includes(kind) || undefined}
             >
-              <Icon name={FORMAT_ICON[kind]} size={16} />
-            </button>
-          </span>
-        );
-      })}
+              <button
+                type="button"
+                className="ac-formatbar__btn"
+                aria-label={labels[kind]}
+                title={hint ? `${labels[kind]} (${hint})` : labels[kind]}
+                tabIndex={i === focus ? 0 : -1}
+                onFocus={() => setFocus(i)}
+                onClick={() => onFormat(kind)}
+              >
+                <Icon name={FORMAT_ICON[kind]} size={14} />
+              </button>
+            </span>
+          );
+        })}
+      </FormatRow>
+    </div>
+  );
+}
+
+/**
+ * The bar's one row of buttons, scrolling sideways with faded ends when the composer is narrower than it (a phone):
+ * wrapped, its last row ended short of the bar's edge. Its own component so its scroller exists when the hook first
+ * measures it: the bar renders nothing until the first selection.
+ */
+function FormatRow({ children }: { children: ReactNode }) {
+  const row = useRef<HTMLDivElement>(null);
+  const more = useScrollSides(row);
+  return (
+    <div ref={row} className="ac-formatbar__row" data-more={more}>
+      {children}
     </div>
   );
 }
@@ -371,7 +456,45 @@ export function mentionQuery(text: string, caret: number): { start: number; quer
   return { start: caret - query.length - 1, query };
 }
 
-/** The chat message box: attach on the left, send (primary, icon only) on the right, focus on the whole box. */
+/**
+ * The placeholder on one line, whatever the box's width (a phone, a task's side panel): the tip after its " · " goes
+ * when all of it doesn't fit, and what's left ends in "…" (CSS) if even that doesn't. Measured, not guessed from the
+ * window, because a focused field never ends it in "…" (the browser drops the ellipsis while editing).
+ */
+function useOneLinePlaceholder(ref: RefObject<HTMLTextAreaElement | null>, placeholder: string | undefined) {
+  const [fits, setFits] = useState(true);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !placeholder?.includes(" · ")) return;
+    const pen = document.createElement("canvas").getContext("2d");
+    if (!pen) return;
+    let live = true;
+    const measure = () => {
+      // Hidden (a closed panel): it keeps the last answer.
+      if (!live || !el.clientWidth) return;
+      const s = getComputedStyle(el);
+      pen.font = `${s.fontStyle} ${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+      // A style not computed yet gives "" (NaN), which would read as no room at all.
+      const room = el.clientWidth - (Number.parseFloat(s.paddingLeft) || 0) - (Number.parseFloat(s.paddingRight) || 0);
+      setFits(pen.measureText(placeholder).width + 2 <= room);
+    };
+    measure();
+    // The web font may land after the first measure, a little wider than the fallback.
+    void document.fonts?.ready.then(measure);
+    const watch = typeof ResizeObserver === "function" ? new ResizeObserver(measure) : null;
+    watch?.observe(el);
+    return () => {
+      live = false;
+      watch?.disconnect();
+    };
+  }, [ref, placeholder]);
+  return fits ? placeholder : placeholder?.split(" · ")[0];
+}
+
+/**
+ * The chat message box, one row: attach and emoji, the text, the microphone and send (primary, icon only). The row
+ * grows with the text, its buttons staying at the bottom. Formatting floats over selected text. Focus on the whole box.
+ */
 export function Composer({
   value,
   onChange,
@@ -391,7 +514,6 @@ export function Composer({
   links,
   channels,
   pills,
-  inlinePills,
   sendText,
   format,
   emoji,
@@ -400,30 +522,37 @@ export function Composer({
   onFiles,
   header,
   attachments,
+  notice,
   canSendEmpty,
   sendBlocked,
   working,
-  choice,
+  agentBusy,
   voice,
 }: ComposerProps) {
   const locked = useLocked();
   const disabled = off || locked;
-  // On a phone a long placeholder doesn't fit, and a focused field never ends it in "…" (the browser drops the ellipsis
-  // while editing): it says what goes there, without the tip after its " · ".
-  const phone = useMatchMedia("(max-width: 640px)");
-  const shownPlaceholder = phone ? placeholder?.split(" · ")[0] : placeholder;
   const ref = useRef<HTMLTextAreaElement>(null);
+  const shownPlaceholder = useOneLinePlaceholder(ref, placeholder);
   const wave = useRef<HTMLCanvasElement>(null);
-  const rec = useVoiceRecorder(voice, wave);
+  // The take's keys (Space, Enter, Esc) are the box's while the focus is in it with text there.
+  const [inField, setInField] = useState(false);
+  // Esc with text in the box: the take's row asks before deleting the audio.
+  const [asking, setAsking] = useState(false);
+  const keyOwner = useRef<(e: globalThis.KeyboardEvent) => boolean>(() => false);
+  const rec = useVoiceRecorder(voice && { ...voice, onKey: (e) => keyOwner.current(e) }, wave);
   const recording = rec.active;
-  // The box keeps its height while recording, whatever was typed, attached or hidden: read as it starts.
-  const [heldHeight, setHeldHeight] = useState<number | undefined>(undefined);
+  if (asking && !recording) setAsking(false);
   const { discard } = rec;
   const scope = voice?.scope;
   // biome-ignore lint/correctness/useExhaustiveDependencies: `scope` is why it runs
   useEffect(() => () => discard(false), [scope, discard]);
   const box = useRef<HTMLDivElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  // The text selected in the box, while the box (or the formatting bar over it) has the focus.
+  const [selected, setSelected] = useState<[number, number] | null>(null);
+  const notePicked = (start: number, end: number) =>
+    setSelected((was) => (start === end ? null : was?.[0] === start && was[1] === end ? was : [start, end]));
   const listId = useId();
   useImperativeHandle(textareaRef, () => ref.current as HTMLTextAreaElement, []);
   // The "@…" being typed, and the one the person closed with Esc.
@@ -464,6 +593,7 @@ export function Composer({
   /** Replaces the text and selection (formatting, emoji), keeping the focus in the box. */
   const edit = (next: TextEdit) => {
     const el = ref.current;
+    notePicked(next.start, next.end);
     if (next.value === value) {
       el?.focus();
       el?.setSelectionRange(next.start, next.end);
@@ -582,10 +712,9 @@ export function Composer({
   };
 
   const ready = Boolean(value.trim() || canSendEmpty) && !disabled && !sendBlocked;
+  const takeReady = recording && !sendBlocked;
   // An agent at work and nothing to send: the send button is the stop button.
   const stopMode = Boolean(working) && !disabled && !value.trim() && !canSendEmpty && !recording;
-  const showChoice = Boolean(choice) && Boolean(value.trim()) && !disabled;
-  const [chosen, setChosen] = useState<SendChoice>("join");
   const [pressed, setPressed] = useState(false);
   // The press flash; cleared if the composer goes away first (a stop that ends the run unmounts it).
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -602,13 +731,12 @@ export function Composer({
   };
   const send = (alt = false) => {
     if (recording) {
-      void rec.send();
+      if (!sendBlocked) void rec.send();
       return;
     }
     if (!ready) return;
-    if (working || choice) onSend(value.trim(), { interrupt: showChoice && sendChoice(chosen, alt) === "interrupt" });
+    if (working || agentBusy) onSend(value.trim(), { interrupt: Boolean(agentBusy) && alt });
     else onSend(value.trim());
-    setChosen("join");
     // Keep typing: focus stays in the box (also after clicking the send button).
     ref.current?.focus();
   };
@@ -625,6 +753,8 @@ export function Composer({
     );
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Choosing and confirming a word in an input method takes Enter, Tab, Esc and the arrows: none is the box's.
+    if (composes(e.nativeEvent)) return;
     // A layer above already closed on this Esc: the suggestions, or a card that opened under the pointer and left the
     // focus here. It is spent: it stops no agent, and the page's own Esc (an inbox reply closes on it) never sees it.
     if (e.key === "Escape" && e.defaultPrevented) {
@@ -632,8 +762,8 @@ export function Composer({
       return;
     }
     const kind = format ? formatShortcut(e) : null;
-    if (kind) {
-      // Also keeps ⌘K (link) from reaching the command palette.
+    // ⌘K links the selected words; with none selected it opens the command palette, as everywhere else.
+    if (kind && !(kind === "link" && e.currentTarget.selectionStart === e.currentTarget.selectionEnd)) {
       e.preventDefault();
       e.stopPropagation();
       applyKind(kind);
@@ -661,6 +791,13 @@ export function Composer({
         return;
       }
     }
+    // Esc with a take and text here: the take's row asks first (an empty box's Esc is the recorder's: it deletes).
+    if (e.key === "Escape" && recording) {
+      e.preventDefault();
+      e.stopPropagation();
+      setAsking(true);
+      return;
+    }
     // Esc in an empty box while an agent works: stop it right away.
     if (e.key === "Escape" && stopMode) {
       e.preventDefault();
@@ -669,21 +806,57 @@ export function Composer({
       return;
     }
     // On-screen keyboards: Enter is a new line; the send button sends.
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !onScreenKeyboard()) {
+    if (e.key === "Enter" && !e.shiftKey && !onScreenKeyboard()) {
       e.preventDefault();
       send(e.metaKey || e.ctrlKey);
     }
   };
 
-  useLayoutEffect(() => {
-    if (recording) setHeldHeight(box.current?.offsetHeight);
-    else setHeldHeight(undefined);
-  }, [recording]);
+  const typed = Boolean(value.trim());
+  const keepTake = () => {
+    setAsking(false);
+    ref.current?.focus();
+  };
+  keyOwner.current = (e) => {
+    const target = e.target instanceof Element ? e.target : null;
+    if (asking) {
+      if (e.key === "Escape" || (e.key === "Enter" && !target?.closest(".ac-composer__voice-ask button"))) {
+        e.preventDefault();
+        e.stopPropagation();
+        keepTake();
+      }
+      return true;
+    }
+    // Delete's own Enter deletes: from it, the take's Enter would send what the person meant to throw away.
+    if (target?.closest(".ac-composer__voice-trash") && e.key !== "Escape") return true;
+    if (target === ref.current) {
+      // The box's own Esc asks first; its Enter sends everything; its Space types.
+      if (typed) return true;
+    } else if (target && box.current?.contains(target) && target.closest("button, a") && !target.closest(TAKE_CONTROLS))
+      return true;
+    else {
+      const layer = target?.closest(OTHER_KEYS);
+      if (layer && !layer.contains(box.current)) return true;
+    }
+    if (e.key === "Escape" && typed) {
+      e.preventDefault();
+      e.stopPropagation();
+      setAsking(true);
+      return true;
+    }
+    if (e.key === "Enter" && sendBlocked) {
+      e.preventDefault();
+      e.stopPropagation();
+      return true;
+    }
+    return false;
+  };
   const hasMic = Boolean(voice) && !disabled && voiceRecordingSupported();
   const countdown = VOICE_LIMIT_S - rec.seconds;
+  const counting = recording && countdown <= VOICE_COUNTDOWN_S;
   const voiceHint = !voice
     ? ""
-    : recording && countdown <= VOICE_COUNTDOWN_S
+    : counting
       ? voice.labels.left(countdown)
       : rec.phase === "paused"
         ? voice.labels.keysPaused
@@ -697,6 +870,65 @@ export function Composer({
       : rec.phase === "rec" && !rec.hold
         ? voice.labels.pause
         : voice.labels.record;
+
+  /** The take, as a row above the text: play or the red dot, the time, the wave, the keys, delete. */
+  const take = (voice: ComposerVoice) =>
+    asking ? (
+      // biome-ignore lint/a11y/useSemanticElements: a question and its two answers, named as one
+      <div className="ac-composer__voice-ask ac-actline" role="group" aria-label={voice.labels.recording}>
+        <span aria-live="polite">{voice.labels.askDiscard}</span>
+        <span className="ac-acts">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ac-composer__voice-trash"
+            onClick={() => {
+              rec.discard(true);
+              ref.current?.focus();
+            }}
+          >
+            {voice.labels.askDelete}
+          </Button>
+          <Button size="sm" onClick={keepTake}>
+            {voice.labels.askKeep}
+          </Button>
+        </span>
+      </div>
+    ) : (
+      // biome-ignore lint/a11y/useSemanticElements: a recording's controls, named as one
+      <div className="ac-composer__voice" role="group" aria-label={voice.labels.recording}>
+        {rec.phase === "paused" ? (
+          <button
+            type="button"
+            className="ac-voice__play ac-composer__listen"
+            aria-label={rec.listening ? voice.labels.stopListening : voice.labels.listen}
+            onClick={() => void rec.toggleListening()}
+          >
+            <Icon name={rec.listening ? "pause" : "play"} size={14} />
+          </button>
+        ) : (
+          <span className="ac-composer__voice-dot" aria-hidden="true" />
+        )}
+        <span ref={rec.timer} className="ac-composer__voice-time">
+          0:00
+        </span>
+        <canvas ref={wave} className="ac-composer__wave" onPointerDown={rec.onWavePointerDown} />
+        {(counting || !(inField && typed)) && (
+          <span className="ac-composer__voice-hint" data-left={counting || undefined} aria-live="off">
+            {voiceHint}
+          </span>
+        )}
+        <Button
+          variant="ghost"
+          iconOnly
+          size="sm"
+          icon="trash"
+          className="ac-composer__voice-trash"
+          aria-label={voice.labels.discard}
+          onClick={() => rec.discard(true)}
+        />
+      </div>
+    );
 
   const optionId = (i: number) => `${listId}-${i}`;
   const textarea = (
@@ -713,8 +945,21 @@ export function Composer({
         if (dismissed === -1 && !e.target.value.startsWith("/")) setDismissed(null);
         onChange(e.target.value);
         track(e.target.value, e.target.selectionStart ?? e.target.value.length);
+        notePicked(e.target.selectionStart ?? 0, e.target.selectionEnd ?? 0);
       }}
-      onSelect={(e) => track(e.currentTarget.value, e.currentTarget.selectionStart ?? 0)}
+      onSelect={(e) => {
+        track(e.currentTarget.value, e.currentTarget.selectionStart ?? 0);
+        notePicked(e.currentTarget.selectionStart ?? 0, e.currentTarget.selectionEnd ?? 0);
+      }}
+      onFocus={(e) => {
+        setInField(true);
+        notePicked(e.currentTarget.selectionStart ?? 0, e.currentTarget.selectionEnd ?? 0);
+      }}
+      // To the formatting bar (the Tab key): the selection is still what it formats.
+      onBlur={(e) => {
+        setInField(false);
+        if (!(e.relatedTarget instanceof Node && bar.current?.contains(e.relatedTarget))) setSelected(null);
+      }}
       onKeyDown={onKeyDown}
       onPaste={(e) => {
         const pasted = files(e.clipboardData?.files);
@@ -734,39 +979,6 @@ export function Composer({
     />
   );
 
-  const choiceRow =
-    showChoice && choice ? (
-      <div className="ac-composer-choice">
-        <div className="ac-seg ac-seg--sm" role="radiogroup" aria-label={choice.label}>
-          {(["join", "interrupt"] as const).map((c) => (
-            // biome-ignore lint/a11y/useSemanticElements: a two-way segmented choice, styled like the app's other segments
-            <button
-              key={c}
-              type="button"
-              role="radio"
-              aria-checked={chosen === c}
-              data-on={chosen === c || undefined}
-              className="ac-seg__item"
-              // Keep the text box's focus and selection.
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                setChosen(c);
-                ref.current?.focus();
-              }}
-            >
-              {c === "join" ? <Icon name="arrowRight" size={14} /> : <Icon name="bolt" size={14} />}
-              {c === "join" ? choice.joinLabel : choice.interruptLabel}
-            </button>
-          ))}
-        </div>
-        {choice.hint && (
-          <span className="ac-composer-choice__hint" aria-hidden="true">
-            {choice.hint(chosen, modKey())}
-          </span>
-        )}
-      </div>
-    ) : null;
-
   const sendTitle = stopMode
     ? typeof working?.stopText === "string"
       ? working.stopText
@@ -776,126 +988,71 @@ export function Composer({
       : undefined;
 
   return (
-    <>
-      {choiceRow}
-      <RPopover.Root
-        open={open}
-        onOpenChange={(o) => {
-          if (!o && open) dismiss();
-        }}
-      >
-        <RPopover.Anchor asChild>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: files dropped anywhere on the card (the attach button is the accessible way) */}
-          <div
-            ref={box}
-            className={cx("ac-composer", inlinePills && "ac-composer--inline-pills", className)}
-            data-disabled={disabled || undefined}
-            data-dragging={dragging || undefined}
-            data-voice={recording ? rec.phase : undefined}
-            data-esc-layer={recording || attachments ? "" : undefined}
-            style={heldHeight ? { minHeight: heldHeight, maxHeight: heldHeight } : undefined}
-            onDragOver={
-              onFiles
-                ? (e) => {
-                    if (!hasFiles(e) || disabled) return;
-                    e.preventDefault();
-                    setDragging(true);
-                  }
-                : undefined
-            }
-            onDragLeave={
-              onFiles
-                ? (e) => {
-                    if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)))
-                      setDragging(false);
-                  }
-                : undefined
-            }
-            onDrop={
-              onFiles
-                ? (e) => {
+    <RPopover.Root
+      open={open}
+      onOpenChange={(o) => {
+        if (!o && open) dismiss();
+      }}
+    >
+      <RPopover.Anchor asChild>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: files dropped anywhere on the card (the attach button is the accessible way), and its empty room is part of the text box, as a mouse sees it */}
+        <div
+          ref={box}
+          className={cx("ac-composer", className)}
+          data-disabled={disabled || undefined}
+          data-dragging={dragging || undefined}
+          data-voice={recording ? rec.phase : undefined}
+          data-esc-layer={recording || attachments ? "" : undefined}
+          onMouseDown={(e) => {
+            if ((e.target as HTMLElement).closest(COMPOSER_CONTROLS)) return;
+            // Keeps the caret where it was.
+            e.preventDefault();
+            ref.current?.focus();
+          }}
+          onDragOver={
+            onFiles
+              ? (e) => {
+                  if (!hasFiles(e) || disabled) return;
+                  e.preventDefault();
+                  setDragging(true);
+                }
+              : undefined
+          }
+          onDragLeave={
+            onFiles
+              ? (e) => {
+                  if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)))
                     setDragging(false);
-                    const dropped = files(e.dataTransfer?.files);
-                    if (dropped.length === 0 || disabled) return;
-                    e.preventDefault();
-                    onFiles(dropped);
-                  }
-                : undefined
-            }
-          >
-            {header && <div className="ac-composer__header">{header}</div>}
-            <div className="ac-composer__text">
-              {textarea}
-              {voice && (
-                // biome-ignore lint/a11y/useSemanticElements: a recording's controls, named as one
-                <div className="ac-composer__voice" role="group" aria-label={voice.labels.recording}>
-                  {rec.phase === "paused" ? (
-                    <button
-                      type="button"
-                      className="ac-voice__play ac-composer__listen"
-                      aria-label={rec.listening ? voice.labels.stopListening : voice.labels.listen}
-                      onClick={() => void rec.toggleListening()}
-                    >
-                      <Icon name={rec.listening ? "pause" : "play"} size={14} />
-                    </button>
-                  ) : (
-                    <span className="ac-composer__voice-dot" aria-hidden="true" />
-                  )}
-                  <span ref={rec.timer} className="ac-composer__voice-time">
-                    0:00
-                  </span>
-                  <canvas ref={wave} className="ac-composer__wave" onPointerDown={rec.onWavePointerDown} />
-                </div>
-              )}
+                }
+              : undefined
+          }
+          onDrop={
+            onFiles
+              ? (e) => {
+                  setDragging(false);
+                  const dropped = files(e.dataTransfer?.files);
+                  if (dropped.length === 0 || disabled) return;
+                  e.preventDefault();
+                  onFiles(dropped);
+                }
+              : undefined
+          }
+        >
+          {header && <div className="ac-composer__header">{header}</div>}
+          {pills && <div className="ac-composer__pills">{pills}</div>}
+          {(attachments || (voice && recording)) && (
+            <div className="ac-composer__attachments">
+              {voice && recording && take(voice)}
+              {attachments}
             </div>
-            {attachments && <div className="ac-composer__attachments">{attachments}</div>}
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: the row's empty room is part of the text box, as a mouse sees it; the keyboard is already in the box */}
-            <div
-              className={cx("ac-composer__tools", format && "ac-composer__tools--format")}
-              onMouseDown={(e) => {
-                if ((e.target as HTMLElement).closest(COMPOSER_CONTROLS)) return;
-                // Keeps the caret where it was.
-                e.preventDefault();
-                ref.current?.focus();
-              }}
-            >
-              {voice && recording && (
-                <>
-                  <Button
-                    variant="ghost"
-                    iconOnly
-                    size="sm"
-                    icon="trash"
-                    className="ac-composer__voice-trash"
-                    aria-label={voice.labels.discard}
-                    onClick={() => rec.discard(true)}
-                  />
-                  <span
-                    className="ac-composer__voice-hint"
-                    data-left={countdown <= VOICE_COUNTDOWN_S || undefined}
-                    aria-live="off"
-                  >
-                    {voiceHint}
-                  </span>
-                </>
-              )}
-              {pills && <div className="ac-composer__pills">{pills}</div>}
-              {format && !disabled && <FormatBar labels={format} onFormat={applyKind} />}
-              {emoji && !disabled && (
-                <EmojiPickerPopover
-                  labels={emoji}
-                  onPick={insertEmoji}
-                  tabs={pickerTabs}
-                  tabLabels={pickerLabels}
-                  align="start"
-                  // Back to the text box (the caret after the emoji), not to the button.
-                  onCloseAutoFocus={(e) => {
-                    e.preventDefault();
-                    ref.current?.focus();
-                  }}
-                  trigger={<Button variant="ghost" iconOnly size="sm" icon="smile" aria-label={emoji.button} />}
-                />
-              )}
+          )}
+          {notice && (
+            <div className="ac-composer__notice" role="alert">
+              {notice}
+            </div>
+          )}
+          <div className="ac-composer__row">
+            <div className="ac-composer__tools">
               {attachLabel && (
                 <Button
                   variant="ghost"
@@ -922,6 +1079,42 @@ export function Composer({
                   }}
                 />
               )}
+              {emoji && !disabled && (
+                <EmojiPickerPopover
+                  labels={emoji}
+                  onPick={insertEmoji}
+                  tabs={pickerTabs}
+                  tabLabels={pickerLabels}
+                  align="start"
+                  // Back to the text box (the caret after the emoji), not to the button.
+                  onCloseAutoFocus={(e) => {
+                    e.preventDefault();
+                    ref.current?.focus();
+                  }}
+                  trigger={<Button variant="ghost" iconOnly size="sm" icon="smile" aria-label={emoji.button} />}
+                />
+              )}
+            </div>
+            <div className="ac-composer__text">
+              {textarea}
+              {format && !disabled && (
+                <FormatBar
+                  labels={format}
+                  onFormat={applyKind}
+                  range={open ? null : selected}
+                  value={value}
+                  field={ref}
+                  card={box}
+                  barRef={bar}
+                  onLeave={(to, back) => {
+                    if (back) ref.current?.focus();
+                    else if (to !== ref.current && !(to instanceof Node && bar.current?.contains(to)))
+                      setSelected(null);
+                  }}
+                />
+              )}
+            </div>
+            <div className="ac-composer__tools">
               {hasMic && (
                 <Button
                   variant="ghost"
@@ -942,7 +1135,7 @@ export function Composer({
                   variant="primary"
                   size="sm"
                   className="ac-composer__send ac-btn--icon"
-                  data-ready={ready || stopMode || recording ? "" : undefined}
+                  data-ready={ready || stopMode || takeReady ? "" : undefined}
                   data-mode={stopMode ? "stop" : "send"}
                   data-press={pressed || undefined}
                   aria-label={recording && voice ? voice.labels.send : stopMode ? working?.stopLabel : sendLabel}
@@ -954,7 +1147,7 @@ export function Composer({
                       send();
                     }
                   }}
-                  disabled={!ready && !stopMode && !recording}
+                  disabled={!ready && !stopMode && !takeReady}
                 >
                   <span className="ac-composer__glyph ac-composer__glyph--send" aria-hidden="true">
                     <Icon name="send" />
@@ -970,86 +1163,86 @@ export function Composer({
                   iconOnly
                   icon="send"
                   className="ac-composer__send"
-                  data-ready={ready || recording ? "" : undefined}
+                  data-ready={ready || takeReady ? "" : undefined}
                   aria-label={recording && voice ? voice.labels.send : sendLabel}
                   title={sendTitle}
                   onClick={() => send()}
-                  disabled={!ready && !recording}
+                  disabled={!ready && !takeReady}
                 />
               )}
             </div>
           </div>
-        </RPopover.Anchor>
-        {(mentions || commands || links || channels) && (
-          <RPopover.Portal>
-            <RPopover.Content
-              className={cx("ac-menu ac-suggest", isSlash && "ac-suggest--commands")}
-              side="top"
-              align="start"
-              sideOffset={6}
-              collisionPadding={EDGE_ROOM}
-              // Focus stays in the text box (combobox).
-              onOpenAutoFocus={(e) => e.preventDefault()}
-              onCloseAutoFocus={(e) => e.preventDefault()}
-              onInteractOutside={(e) => {
-                if (e.target instanceof Node && box.current?.contains(e.target)) e.preventDefault();
-              }}
+        </div>
+      </RPopover.Anchor>
+      {(mentions || commands || links || channels) && (
+        <RPopover.Portal>
+          <RPopover.Content
+            className={cx("ac-menu ac-suggest", isSlash && "ac-suggest--commands")}
+            side="top"
+            align="start"
+            sideOffset={6}
+            collisionPadding={EDGE_ROOM}
+            // Focus stays in the text box (combobox).
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onCloseAutoFocus={(e) => e.preventDefault()}
+            onInteractOutside={(e) => {
+              if (e.target instanceof Node && box.current?.contains(e.target)) e.preventDefault();
+            }}
+          >
+            <div
+              role="listbox"
+              id={listId}
+              aria-label={
+                isSlash
+                  ? (commands?.listLabel ?? "")
+                  : isLink
+                    ? (links?.listLabel ?? "")
+                    : isChannel
+                      ? (channels?.listLabel ?? "")
+                      : (mentions?.listLabel ?? "")
+              }
             >
-              <div
-                role="listbox"
-                id={listId}
-                aria-label={
-                  isSlash
-                    ? (commands?.listLabel ?? "")
-                    : isLink
-                      ? (links?.listLabel ?? "")
-                      : isChannel
-                        ? (channels?.listLabel ?? "")
-                        : (mentions?.listLabel ?? "")
-                }
-              >
-                {items.map((item, i) => {
-                  const heading = item.group && item.group !== items[i - 1]?.group;
-                  return (
-                    <div key={item.key} role="presentation">
-                      {heading && (
-                        <div className="ac-menu__heading" role="presentation">
-                          {item.group}
-                        </div>
-                      )}
-                      <div
-                        id={optionId(i)}
-                        role="option"
-                        tabIndex={-1}
-                        aria-selected={i === current}
-                        data-active={i === current || undefined}
-                        className="ac-menu__item ac-suggest__item"
-                        onPointerDown={(e) => {
-                          e.preventDefault();
-                          pick(item);
-                        }}
-                        onClick={() => pick(item)}
-                        onKeyDown={() => {}}
-                      >
-                        {item.leading && (
-                          <span className="ac-menu__leading" aria-hidden="true">
-                            {item.leading}
-                          </span>
-                        )}
-                        <span className="ac-menu__label">
-                          <span>{item.label}</span>
-                          {item.description && <span className="ac-menu__desc">{item.description}</span>}
-                        </span>
-                        {item.note && <span className="ac-suggest__note">{item.note}</span>}
+              {items.map((item, i) => {
+                const heading = item.group && item.group !== items[i - 1]?.group;
+                return (
+                  <div key={item.key} role="presentation">
+                    {heading && (
+                      <div className="ac-menu__heading" role="presentation">
+                        {item.group}
                       </div>
+                    )}
+                    <div
+                      id={optionId(i)}
+                      role="option"
+                      tabIndex={-1}
+                      aria-selected={i === current}
+                      data-active={i === current || undefined}
+                      className="ac-menu__item ac-suggest__item"
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        pick(item);
+                      }}
+                      onClick={() => pick(item)}
+                      onKeyDown={() => {}}
+                    >
+                      {item.leading && (
+                        <span className="ac-menu__leading" aria-hidden="true">
+                          {item.leading}
+                        </span>
+                      )}
+                      <span className="ac-menu__label">
+                        <span>{item.label}</span>
+                        {item.description && <span className="ac-menu__desc">{item.description}</span>}
+                      </span>
+                      {item.note && <span className="ac-suggest__note">{item.note}</span>}
                     </div>
-                  );
-                })}
-              </div>
-            </RPopover.Content>
-          </RPopover.Portal>
-        )}
-      </RPopover.Root>
-    </>
+                  </div>
+                );
+              })}
+            </div>
+          </RPopover.Content>
+        </RPopover.Portal>
+      )}
+    </RPopover.Root>
   );
 }

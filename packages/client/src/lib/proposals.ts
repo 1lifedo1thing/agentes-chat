@@ -1,17 +1,33 @@
 import type { TFunction } from "i18next";
 import type {
+  Agent,
   Memory,
   MemoryUpdate,
   OrgRole,
+  OrgSummary,
   Person,
   Proposal,
   ProposalAccessLine,
+  ProposalSettingField,
   ProposalSettingLine,
 } from "../api/types";
+import { audienceAdmits } from "./audience";
 import { formatTime, formatUsd, joinNames } from "./format";
 import { agentGrammar } from "./grammar";
 import { holdersOf } from "./roles";
 import { scopeText } from "./scopes";
+import { modeKey } from "./workspace-mode";
+
+/**
+ * The workspace a proposal is in, for its context's words: its name, or the workspace itself, whose mode says them. A
+ * personal workspace's context is what its person's agents know about them (ADR 0159), never "Personal context".
+ */
+export type ProposalWorkspace = string | Pick<OrgSummary, "name" | "mode">;
+
+/** The key of the context's words and the name they carry, for `ws`. */
+function contextWords<K extends string>(ws: ProposalWorkspace, key: K) {
+  return typeof ws === "string" ? { key, org: ws } : { key: modeKey(ws, key), org: ws.name };
+}
 
 /*
  * A card of proposed changes in the chat (`memory.updated`, `proposed`, ADR 0092): an agent asked to change its own
@@ -142,6 +158,21 @@ export function cardOutcome(t: TFunction, rows: Proposal[]): { accepted: boolean
   return { accepted: done > 0, label };
 }
 
+/**
+ * How a decided card ended and who did it: "Aplicado por você", "Recusado por Ana" when one person decided every row
+ * the same way, else how it ended (`cardOutcome`: a newer text took its place, or the rows ended apart).
+ */
+export function cardDecidedBy(t: TFunction, rows: Proposal[], meId: string): string {
+  const [first] = rows;
+  const by = first?.decidedBy;
+  const alike = rows.every((p) => !p.stale && p.status === first?.status && p.decidedBy?.userId === by?.userId);
+  if (!first || !by || !alike || first.status === "pending") return cardOutcome(t, rows).label;
+  const mine = by.userId === meId;
+  if (first.status === "accepted")
+    return mine ? t("rightHand.card.appliedByYou") : t("rightHand.card.appliedBy", { name: by.name });
+  return mine ? t("rightHand.card.declinedByYou") : t("rightHand.card.declinedBy", { name: by.name });
+}
+
 /** Rows a decision couldn't apply because what they were made against changed since (409). */
 export const staleCount = (failed: { error: unknown }[]) =>
   failed.filter((f) => (f.error as { status?: unknown } | null)?.status === 409).length;
@@ -152,9 +183,17 @@ export const appLabel = (t: TFunction, line: ProposalAccessLine) =>
     ? line.label
     : scopeText(t, { id: line.id, label: line.label, description: "", sensitive: false }).label;
 
-/** What one proposal changes, after "propõe ·": "instruções da Ada", "papel do Theo", "contexto da Acme". */
-export function proposalTarget(t: TFunction, p: Proposal, agentName: (id: string) => string, orgName: string) {
-  if (p.target.type === "org_context") return t("proposals.targetContext", { org: orgName });
+/** What one proposal changes, after "propõe ·": "instruções da Ada", "função do Theo", "contexto da Acme". */
+export function proposalTarget(
+  t: TFunction,
+  p: Proposal,
+  agentName: (id: string) => string,
+  orgName: ProposalWorkspace,
+) {
+  if (p.target.type === "org_context") {
+    const { key, org } = contextWords(orgName, "proposals.targetContext");
+    return t(key, { org });
+  }
   const g = agentGrammar(agentName(p.target.agentId));
   if (p.target.type === "agent_role") return t("proposals.targetRole", g);
   if (p.target.type === "agent_access") return t("proposals.targetAccess", g);
@@ -172,7 +211,7 @@ export function cardHead(
   rows: Proposal[],
   proposer: string,
   agentName: (id: string) => string,
-  orgName: string,
+  orgName: ProposalWorkspace,
 ): {
   key: "proposals.proposes" | "proposals.proposesMany" | "proposals.proposesManyChanges";
   values: Record<string, string | number>;
@@ -196,7 +235,8 @@ export function cardHead(
 
 /** Why it is proposed, in the person's language: the server's own reasons are codes, an agent's are its words. */
 export function proposalWhy(t: TFunction, p: Pick<Proposal, "why" | "whyCode">): string {
-  switch (p.whyCode) {
+  // As text: a server newer than this build may send a code its type does not list yet.
+  switch (p.whyCode as string | null | undefined) {
     case "refused":
       return t("proposals.whyCode.refused", { text: p.why });
     case "corrected":
@@ -211,6 +251,10 @@ export function proposalWhy(t: TFunction, p: Pick<Proposal, "why" | "whyCode">):
       return t("proposals.whyCode.budget");
     case "no_channel":
       return t("proposals.whyCode.noChannel");
+    case "idle":
+      return t("teamWeek.why.idle");
+    case "light_work":
+      return t("teamWeek.why.lightWork");
     default:
       return p.why;
   }
@@ -232,9 +276,17 @@ const TITLE_KEY = {
 } as const;
 
 /** Its title in the person's language (the server's is English). */
-export function proposalTitle(t: TFunction, p: Proposal, orgName: string, agentName: (id: string) => string) {
+export function proposalTitle(
+  t: TFunction,
+  p: Proposal,
+  orgName: ProposalWorkspace,
+  agentName: (id: string) => string,
+) {
   const tt = t as unknown as (key: string, options: Record<string, string | undefined>) => string;
-  if (p.target.type === "org_context") return tt("proposals.titleContext", { org: orgName, defaultValue: p.title });
+  if (p.target.type === "org_context") {
+    const { key, org } = contextWords(orgName, "proposals.titleContext");
+    return tt(key, { org, defaultValue: p.title });
+  }
   return tt(TITLE_KEY[p.target.type], {
     ...agentGrammar(agentName(p.target.agentId)),
     skill: p.target.type === "skill" ? p.target.name : "",
@@ -264,8 +316,8 @@ function lookWords(t: TFunction, value: unknown) {
 
 /**
  * One line of the right hand's settings card (ADR 0137) in the person's language: what it changes ("Modelo",
- * "#suporte") and the value then and proposed ("Haiku 4.5" → "Sonnet 4.5"). A seat in a channel reads as how the
- * agent answers there, or that it isn't in it.
+ * "#suporte", "Skill excel") and the value then and proposed ("Haiku 4.5" → "Sonnet 4.5"). A seat in a channel reads
+ * as how the agent answers there, or that it isn't in it.
  */
 export function settingLineText(
   t: TFunction,
@@ -297,10 +349,15 @@ export function settingLineText(
         return lookWords(t, v);
       case "reports_to":
         return typeof v === "string" ? (label ?? t("rightHand.value.anAgent")) : t("rightHand.value.none");
+      // The server stores its department's name: the card shows it as it is.
+      case "group":
+        return typeof v === "string" ? v : t("rightHand.value.none");
       case "archive":
         return v === true ? t("rightHand.value.archived") : t("rightHand.value.active");
       case "delete":
         return v === true ? t("rightHand.value.deleted") : t("rightHand.value.active");
+      case "skill":
+        return v === true ? t("rightHand.value.skillOn") : t("rightHand.value.skillOff");
       default:
         return v === null || v === undefined
           ? t("rightHand.value.notIn")
@@ -313,9 +370,11 @@ export function settingLineText(
       ? channel
         ? `#${channel}`
         : (line.label?.to ?? t("rightHand.field.channel"))
-      : (t as unknown as (key: string) => string)(
-          `rightHand.field.${line.field === "delete" ? "archive" : line.field}`,
-        );
+      : line.field === "skill"
+        ? t("rightHand.field.skill", { name: line.label?.to ?? "" })
+        : (t as unknown as (key: string) => string)(
+            `rightHand.field.${line.field === "delete" ? "archive" : line.field}`,
+          );
   return { field, from: value(line.from, "from"), to: value(line.to, "to") };
 }
 
@@ -341,18 +400,64 @@ export function onlyKey(p: Pick<Proposal, "settings">) {
 }
 
 /**
- * The people a row sent with "Pedir a um admin" went to, as the server picks them: who manages agents, with the agent's
- * owner where its owner decides too; an AI account's row only its owner (who owns the agent).
+ * The settings whose rows the agent's owner decides too, besides who manages it (the server's `SETTING_GROUP`:
+ * `admin_or_owner`, and `editor` for its skills, ADR 0085 addendum of 2026-11-17).
+ */
+const OWNER_DECIDES_TOO: ReadonlySet<ProposalSettingField> = new Set<ProposalSettingField>([
+  "audience",
+  "channel_add",
+  "channel_remove",
+  "reply_mode",
+  "look",
+  "skill",
+]);
+
+/** The agent a row's "Reports to" line puts its agent under (null: none), as the server's `supervisorOf` reads it. */
+const lineSupervisorId = (p: Pick<Proposal, "settings">) => {
+  const to = (p.settings ?? []).find((l) => l.field === "reports_to")?.to;
+  return typeof to === "string" ? to : null;
+};
+
+/**
+ * The people a row sent with "Pedir a um admin" went to, as the server picks them (`settingsDeciders`): who manages its
+ * agent, the "Edit agents" key where it reaches (every agent for the workspace's owners and administrators, else one
+ * with no owner or whose audience takes them, ADR 0085 addendum of 2026-11-17), with its owner where its owner decides
+ * too and, for its skills, who its "Who can edit" names; an AI account's row only its owner (who owns the agent). A row
+ * that puts its agent under another ("Reports to") goes only to who manages that one too, found with `agentOf` (the
+ * workspace's agents by id; one not found leaves the rest, as on the server). Nobody to name for an agent no longer
+ * here.
  */
 export function decidersOf<P extends Pick<Person, "userId" | "name" | "role" | "roleIds">>(
-  p: Pick<Proposal, "decider">,
+  p: Pick<Proposal, "decider" | "settings">,
   people: readonly P[],
   roles: readonly OrgRole[],
-  agentOwnerId: string | null | undefined,
+  agent: Agent | null | undefined,
+  agentOf: (agentId: string) => Agent | null | undefined,
 ): string[] {
-  if (p.decider.type === "account_owner") return people.filter((m) => m.userId === agentOwnerId).map((m) => m.name);
-  const admins = holdersOf(people, roles, "manage_agents").map((m) => m.name);
-  return p.decider.type === "user" ? [...new Set([p.decider.name, ...admins])] : admins;
+  if (!agent) return [];
+  if (p.decider.type === "account_owner")
+    return people.filter((m) => m.userId === agent.ownerUserId).map((m) => m.name);
+  const everyAgent = new Set(holdersOf(people, roles, "administrator").map((m) => m.userId));
+  const reaches = (a: Agent) => (m: P) =>
+    everyAgent.has(m.userId) || !a.ownerUserId || audienceAdmits(a, m.userId, m.roleIds ?? []);
+  // Putting the agent under another changes that one too: only who manages both decides it (ADR 0085 addendum).
+  const under = lineSupervisorId(p);
+  const supervisor = under ? agentOf(under) : null;
+  const managers = holdersOf(people, roles, "manage_agents").filter(
+    (m) => reaches(agent)(m) && (!supervisor || reaches(supervisor)(m)),
+  );
+  const ids = new Set(managers.map((m) => m.userId));
+  if (agent.ownerUserId && OWNER_DECIDES_TOO.has(p.settings?.[0]?.field ?? "model")) ids.add(agent.ownerUserId);
+  // A skill row (the server's `editor` group, one row per group) goes to who edits the agent too: the people and roles
+  // its "Who can edit" names (`agentEditorIds`, ADR 0085 addendum of 2026-11-17). `editors` comes empty to who
+  // doesn't see its details, so there it names only the rest.
+  if (p.settings?.[0]?.field === "skill" && agent.editors) {
+    const e = agent.editors;
+    for (const m of people)
+      if (e.userIds.includes(m.userId) || (m.roleIds ?? []).some((r) => e.roleIds.includes(r))) ids.add(m.userId);
+  }
+  const names = people.filter((m) => ids.has(m.userId)).map((m) => m.name);
+  return p.decider.type === "user" ? [...new Set([p.decider.name, ...names])] : names;
 }
 
 /** "Enviado para Ana e Bruno · 14:02" under a card someone sent on with "Pedir a um admin" (ADR 0137). */

@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { PHONES_PROTOCOL, parseRunnerFrame } from "../src/machine-protocol";
+import {
+  MACHINE_PROTOCOL_VERSION,
+  PHONE_PAIRING_PROTOCOL,
+  PHONE_SCREEN_PROTOCOL,
+  PHONE_VIEW,
+  PHONES_PROTOCOL,
+  parseRunnerFrame,
+  parseStreamControl,
+} from "../src/machine-protocol";
 
 const pixel = {
   platform: "android",
@@ -45,10 +53,61 @@ test("hello carries the phones and toolchains the host reports, each field check
   expect(frame.phones?.[2]).not.toHaveProperty("transport");
 });
 
+test("toolchains.changed carries the whole list, each field checked like hello's", () => {
+  expect(
+    parseRunnerFrame(
+      JSON.stringify({
+        type: "toolchains.changed",
+        toolchains: {
+          xcode: "27.0",
+          xcodeSdk: "27.0",
+          appleTeam: "Sam Rivera (Personal Team)",
+          appleAccount: "team",
+          rogue: "1",
+        },
+      }),
+    ),
+  ).toEqual({
+    type: "toolchains.changed",
+    toolchains: { xcode: "27.0", xcodeSdk: "27.0", appleTeam: "Sam Rivera (Personal Team)", appleAccount: "team" },
+  });
+  const odd = parseRunnerFrame(JSON.stringify({ type: "toolchains.changed", toolchains: { appleAccount: "maybe" } }));
+  expect(odd).toEqual({ type: "toolchains.changed", toolchains: {} });
+  // Xcode installed but blocked: one of the known reasons, nothing else.
+  const blocked = (xcodeBlocked: string) =>
+    parseRunnerFrame(JSON.stringify({ type: "toolchains.changed", toolchains: { xcodeBlocked } }));
+  expect(blocked("command_line_tools")).toEqual({
+    type: "toolchains.changed",
+    toolchains: { xcodeBlocked: "command_line_tools" },
+  });
+  expect(blocked("license")).toEqual({ type: "toolchains.changed", toolchains: { xcodeBlocked: "license" } });
+  expect(blocked("rm -rf /")).toEqual({ type: "toolchains.changed", toolchains: {} });
+  expect(parseRunnerFrame(JSON.stringify({ type: "toolchains.changed", toolchains: "nope" }))).toBeNull();
+});
+
 test("phones.changed carries the whole list; one without a list is no frame", () => {
   expect(parseRunnerFrame(JSON.stringify({ type: "phones.changed", phones: [] }))).toEqual({
     type: "phones.changed",
     phones: [],
   });
   expect(parseRunnerFrame(JSON.stringify({ type: "phones.changed" }))).toBeNull();
+});
+
+test("a phone screen's input: points as fractions of the screen, a swipe's length, text and the apps' keys only", () => {
+  const parse = (f: unknown) => parseStreamControl(JSON.stringify(f));
+  expect(parse({ type: "tap", x: 0.5, y: 1 })).toEqual({ type: "tap", x: 0.5, y: 1 });
+  expect(parse({ type: "tap", x: 1.2, y: 0 })).toBeNull();
+  expect(parse({ type: "tap", x: "0.5", y: 0 })).toBeNull();
+  expect(parse({ type: "swipe", x1: 0, y1: 0.9, x2: 0, y2: 0.1, ms: 300 })).toMatchObject({ type: "swipe", ms: 300 });
+  expect(parse({ type: "swipe", x1: 0, y1: 0.9, x2: 0, y2: 0.1, ms: 9000 })).toBeNull();
+  expect(parse({ type: "text", text: "it's 5 o'clock" })).toEqual({ type: "text", text: "it's 5 o'clock" });
+  expect(parse({ type: "text", text: "" })).toBeNull();
+  expect(parse({ type: "text", text: "x".repeat(PHONE_VIEW.text + 1) })).toBeNull();
+  expect(parse({ type: "key", key: "home" })).toEqual({ type: "key", key: "home" });
+  expect(parse({ type: "key", key: "reboot" })).toBeNull();
+});
+
+test("a runner of this version speaks every phone gate", () => {
+  for (const gate of [PHONES_PROTOCOL, PHONE_SCREEN_PROTOCOL, PHONE_PAIRING_PROTOCOL])
+    expect(MACHINE_PROTOCOL_VERSION).toBeGreaterThanOrEqual(gate);
 });

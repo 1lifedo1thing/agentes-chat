@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { Platform, Pressable, type PressableProps, StyleSheet, type TextStyle, View } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { haptics } from "./haptics";
+import { Platform, type PressableProps, StyleSheet, type TextStyle, View } from "react-native";
 import { Icon } from "./Icon";
+import { Disclosure } from "./RowMarks";
+import { RowPressable } from "./RowPressable";
 import { Text, textLineOf } from "./Text";
 import { useFontScale } from "./text-scale";
 import { useTheme } from "./theme";
@@ -59,6 +59,12 @@ export interface ListRowProps extends Omit<PressableProps, "style" | "children">
   background?: string;
   /** A chevron on the right, centered on the row: the row opens a screen of its own. */
   chevron?: boolean;
+  /**
+   * The row opens a screen (default true: a conversation, an agent, what happened): it stays lit while that screen
+   * comes in and goes out once covered, so the list is plain again on the way back. A press that opens nothing lets it
+   * go.
+   */
+  opens?: boolean;
   /** Pinned on top: a small pin before the time, so what the person pinned reads as pinned. */
   pinned?: boolean;
 }
@@ -67,8 +73,7 @@ export interface ListRowProps extends Omit<PressableProps, "style" | "children">
  * One full-width row of a list: no card, the
  * 52pt avatar, the semibold 17 name and the time (13) on line 1, the preview (15/20, up to two lines) with a badge or
  * state on line 2, hairlines inset to the text column at 80, 76pt tall with a one-line preview. Unread: bold name,
- * darker time and preview. Conversas, Atividade and Agentes use it. A row that opens something answers the finger: it
- * sinks 2% on the press spring and gives a light tap as the press lands (never while the list scrolls under the finger).
+ * darker time and preview. Conversas, Atividade and Agentes use it.
  */
 export function ListRow({
   leading,
@@ -85,90 +90,60 @@ export function ListRow({
   background,
   chevron = false,
   pinned = false,
-  onPress,
-  onPressIn,
-  onPressOut,
+  opens = true,
   ...press
 }: ListRowProps) {
-  const { colors: c, motion, reducedMotion } = useTheme();
-  const sink = useSharedValue(0);
-  const sunk = useAnimatedStyle(() => ({ transform: [{ scale: 1 - (1 - motion.rowPress) * sink.value }] }));
-  const moves = !!onPress && !reducedMotion;
+  const { colors: c } = useTheme();
   const fontScale = useFontScale();
   // The badge or state stays on the preview's first line: centred on a two-line preview it sat between lines.
   const previewLine = textLineOf("small", fontScale, LIST_PREVIEW).height;
   // The time likewise stays on the title's first line when the title takes two (Activity's sentences).
   const titleLine = textLineOf("title", fontScale).height;
   return (
-    <Animated.View style={sunk}>
-      <Pressable
-        {...press}
-        onPressIn={(e) => {
-          if (moves) sink.value = withSpring(1, motion.press);
-          onPressIn?.(e);
-        }}
-        onPressOut={(e) => {
-          if (moves) sink.value = withSpring(0, motion.press);
-          onPressOut?.(e);
-        }}
-        onPress={
-          onPress
-            ? (e) => {
-                haptics.light();
-                onPress(e);
-              }
-            : undefined
-        }
-        style={({ pressed }) => [
-          styles.row,
-          background ? { backgroundColor: background } : null,
-          pressed && { backgroundColor: c.sunken },
-        ]}
-      >
-        {divider ? <View style={[styles.divider, { backgroundColor: c.line2 }]} /> : null}
-        <View style={styles.avatar}>{leading}</View>
-        <View style={styles.tx}>
-          <View style={styles.l1}>
-            {typeof title === "string" ? (
-              <Text variant="title" numberOfLines={titleLines} style={[styles.shrink, unread && styles.unreadName]}>
-                {title}
+    <RowPressable {...press} hold={opens} style={[styles.row, background ? { backgroundColor: background } : null]}>
+      {divider ? <View style={[styles.divider, { backgroundColor: c.separator }]} /> : null}
+      <View style={styles.avatar}>{leading}</View>
+      <View style={styles.tx}>
+        <View style={styles.l1}>
+          {typeof title === "string" ? (
+            <Text variant="title" numberOfLines={titleLines} style={[styles.shrink, unread && styles.unreadName]}>
+              {title}
+            </Text>
+          ) : (
+            <View style={styles.shrink}>{title}</View>
+          )}
+          {time || pinned ? (
+            <View style={[styles.time, styles.timeRow, { minHeight: titleLine }]}>
+              {pinned ? <Icon name="pin" size={12} color={c.faint} /> : null}
+              <Text
+                variant={TIME_VARIANT}
+                tone={unread ? "ink2" : "faint"}
+                style={[LIST_TIME, unread && styles.unreadTime]}
+              >
+                {time}
               </Text>
-            ) : (
-              <View style={styles.shrink}>{title}</View>
-            )}
-            {time || pinned ? (
-              <View style={[styles.time, styles.timeRow, { minHeight: titleLine }]}>
-                {pinned ? <Icon name="pin" size={12} color={c.faint} /> : null}
-                <Text
-                  variant={TIME_VARIANT}
-                  tone={unread ? "ink2" : "faint"}
-                  style={[LIST_TIME, unread && styles.unreadTime]}
-                >
-                  {time}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-          {over}
-          {sub || trailing ? (
-            <View style={styles.l2}>
-              <View style={styles.grow}>
-                {typeof sub === "string" ? (
-                  <Text variant="small" tone={unread ? "ink2" : "muted"} numberOfLines={subLines} style={LIST_PREVIEW}>
-                    {sub}
-                  </Text>
-                ) : (
-                  sub
-                )}
-              </View>
-              {trailing ? <View style={[styles.trailing, { minHeight: previewLine }]}>{trailing}</View> : null}
             </View>
           ) : null}
         </View>
-        {dot ? <View style={[styles.dot, { backgroundColor: c.badge }]} /> : null}
-        {chevron ? <Icon name="right" size={15} color={c.faint} /> : null}
-      </Pressable>
-    </Animated.View>
+        {over}
+        {sub || trailing ? (
+          <View style={styles.l2}>
+            <View style={styles.grow}>
+              {typeof sub === "string" ? (
+                <Text variant="small" tone={unread ? "ink2" : "muted"} numberOfLines={subLines} style={LIST_PREVIEW}>
+                  {sub}
+                </Text>
+              ) : (
+                sub
+              )}
+            </View>
+            {trailing ? <View style={[styles.trailing, { minHeight: previewLine }]}>{trailing}</View> : null}
+          </View>
+        ) : null}
+      </View>
+      {dot ? <View style={[styles.dot, { backgroundColor: c.badge }]} /> : null}
+      {chevron ? <Disclosure /> : null}
+    </RowPressable>
   );
 }
 

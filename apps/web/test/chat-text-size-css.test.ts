@@ -83,8 +83,13 @@ test("the name, its time and the clocks beside the words follow the step too", (
   }
   // A grouped row's time and check, my bubble's bar and Compacta's clock and face sit on the words' first line.
   expect(last(".ac-msg__gutter-time", "line-height")).toBe("var(--msg-line)");
-  expect(last(".ac-msg__aside--floating", "line-height")).toBe("var(--msg-line)");
+  expect(last(".ac-msg__gutter--aside > .ac-msg__aside", "line-height")).toBe("var(--msg-line)");
   expect(last(".ac-msg__clock", "top")).toContain("var(--msg-line)");
+  // A time never takes two lines, at any size: Compacta's clock grows leftwards into the row's start instead.
+  expect(last(".ac-msg__clock", "white-space")).toBe("nowrap");
+  expect(last(".ac-msg__clock", "width")).toBeUndefined();
+  expect(last(".ac-msg__gutter-time", "white-space")).toBe("nowrap");
+  expect(last(".ac-msg__gutter--aside > .ac-msg__gutter-time", "white-space")).toBeUndefined();
   expect(last('.ac-msg[data-look="compact"] .ac-msg__avatar', "top")).toContain("var(--msg-line)");
   expect(last('.ac-msg[data-look="compact"]', "min-height")).toBe("var(--msg-line)");
   // Half of the kit's 28px icon button under that middle.
@@ -97,8 +102,8 @@ test("code in a message takes the step as its words do, the default keeping its 
   expect(block("line-height")).toBe("var(--msg-line-tight)");
   expect(STEPS.md[0] - 1.5).toBe(12.5);
   expect(STEPS.md[2]).toBe(20);
-  // Inline code is a share of the words; outside a message (a document), a card's code keeps its own size.
-  expect(last(".ac-msg__text code", "font-size")).toMatch(/em$/);
+  // Inline code is a share of the words, a message's or anyone's (one look); a card's code block keeps its own size.
+  expect(last(".ac-inlinecode", "font-size")).toMatch(/em$/);
   expect(last(".code-card__code", "font-size")).toBe("12.5px");
   expect(last(".code-card__code", "line-height")).toBe("20px");
 });

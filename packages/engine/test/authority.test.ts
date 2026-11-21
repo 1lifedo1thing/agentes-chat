@@ -16,6 +16,7 @@ import {
   runAuthorityById,
   untrustedBlock,
 } from "../src";
+import { lineLocale } from "../src/requester";
 import { addUser, type Fixture, setup } from "./fixtures";
 
 let f: Fixture;
@@ -125,6 +126,13 @@ describe("who is behind a run", () => {
       kind: "person",
       personId: f.owner.id,
     });
+    // By id, the stored transcript says it.
+    expect(await runAuthorityById(f.db, f.org.id, woken.id)).toMatchObject({ kind: "unattended" });
+    await f.db
+      .update(schema.agentRuns)
+      .set({ transcript: { steeredBy: f.owner.id } })
+      .where(eq(schema.agentRuns.id, woken.id));
+    expect(await runAuthorityById(f.db, f.org.id, woken.id)).toEqual({ kind: "person", personId: f.owner.id });
   });
 
   test("an answer, or a note's reply, continues the work of the run that sent it, for its person", async () => {
@@ -235,6 +243,21 @@ describe("who is behind a run", () => {
       personId: null,
       reason: "agent",
     });
+  });
+
+  test("the lines the server writes for a run: in its person's language, a routine's creator's, else English", async () => {
+    f = await setup();
+    const ines = await addUser(f.db, "ines");
+    await f.db.update(schema.users).set({ locale: "es" }).where(eq(schema.users.id, ines.id));
+    const asked = await runFor((await byPerson("@dev olha os PRs")).id);
+    expect(await lineLocale(f.db, f.org.id, null, asked.id)).toBe("pt-BR");
+    // Whom the line is for comes first.
+    expect(await lineLocale(f.db, f.org.id, ines.id, asked.id)).toBe("es");
+    const fired = await byPerson("Confira", { routineBrief: brief({ creatorUserId: ines.id }), background: true });
+    expect(await lineLocale(f.db, f.org.id, null, (await runFor(fired.id, { background: true })).id)).toBe("es");
+    const own = await runFor((await byAgent("@dev segue", null)).id);
+    expect(await lineLocale(f.db, f.org.id, null, own.id)).toBe("en");
+    expect(await lineLocale(f.db, f.org.id, null, null)).toBe("en");
   });
 });
 

@@ -12,11 +12,14 @@ import {
   workspaceHeadline,
 } from "@agenteschat/client/lib/notifications";
 import type { Words } from "@agenteschat/client/lib/routine-view";
+import { teamWatchLine } from "@agenteschat/client/lib/team-watch";
+import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { Avatar, ComputerIcon, cx, Icon } from "@agenteschat/ui";
 import type { TFunction } from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import { ActorAvatar, AgentAvatar } from "@/components/AgentAvatar";
 import { DeviceFace, DeviceHeadline } from "@/components/devices/DeviceNotice";
+import { useOrg } from "@/components/org-context";
 import type { useDirectory } from "@/hooks/useDirectory";
 import { TYPED_VALUES } from "@/i18n";
 
@@ -92,7 +95,7 @@ export function SystemFace({ n, className = "nt-av24" }: { n: AppNotification; c
         <ComputerIcon kind={WORKSPACE_COMPUTER_KIND} size={16} />
       </span>
     );
-  if (n.kind === "composio_limit" || n.kind === "connector_tool_changed")
+  if (n.kind === "composio_limit")
     return (
       <span className={cx("nt-sys", className)} aria-hidden="true">
         <Icon name="plug" size={16} />
@@ -179,13 +182,16 @@ type WhatKey =
   | "browserProfileRequest"
   | "desktopTaken"
   | "planLent"
+  | "planServes"
   | "planModelDropped"
   | "joinSuggestion"
+  | "joinOutside"
   | "invitationAccepted"
   | "invitationAcceptedAny"
   | "proposalWaiting"
   | "changeRequest"
   | "changeRequestAgent"
+  | "changeRequestAction"
   | "usageLimitWarning"
   | "usageLimitReachedSelf"
   | "usageLimitReached"
@@ -197,6 +203,9 @@ type WhatKey =
   | "approvalCoverEnded"
   | "rightHandDecided"
   | "rightHandPaused"
+  | "adminAskChannel"
+  | "adminAskCreate"
+  | "adminAskWebhook"
   | "reaction";
 
 /** The line on top of a row: who did what, where. */
@@ -210,6 +219,8 @@ export function Headline({
   channelName: (id: string) => string;
 }) {
   const { t, i18n } = useTranslation();
+  // A personal workspace (ADR 0159): its computer is its person's agents', and its name ("Personal") says no place.
+  const personal = isPersonal(useOrg().org);
   const name = nameOf(t, dir, n.actors[0]);
   const names = namesText(
     t,
@@ -225,6 +236,7 @@ export function Headline({
     <Trans i18nKey={`notifications.what.${key}`} values={values} components={{ b: <b /> }} {...TYPED_VALUES} />
   );
   const own = workspaceHeadline(n);
+  if (own === "computerSetup.notification.ready" && personal) return t("computerSetup.notification.readyPersonal");
   if (own) return t(own, { name: n.source.label });
   if (n.kind === "app_created") return appCreatedLine(t, n);
   if (deviceNoticeOf(n)) return <DeviceHeadline n={n} dir={dir} />;
@@ -242,6 +254,8 @@ export function Headline({
       <Trans i18nKey={key} values={{ name: agent, title: widget.title }} components={{ b: <b /> }} {...TYPED_VALUES} />
     );
   }
+  // What the right hand found (ADR 0177 §1): the problem itself. Who found it is the row's face and its top line.
+  if (n.kind === "team_watch") return <>{teamWatchLine(t, n)}</>;
   switch (n.kind) {
     case "mention":
       if (n.source.issueId) return k("mentionComment", { name });
@@ -294,6 +308,8 @@ export function Headline({
       const agent = n.source.label ?? "";
       return k("planLent", { name, agent, plan: n.latest.plan ?? "", context: agentGrammar(agent).context });
     }
+    case "plan_serves":
+      return k("planServes", { plan: n.latest.plan ?? "" });
     case "plan_model_dropped":
       return k("planModelDropped", {
         name,
@@ -328,12 +344,15 @@ export function Headline({
       // A member's suggestion says who suggested it (ADR 0090); a merged row counts everyone as asking.
       if (asked.total === 1 && n.latest.suggestedBy)
         return k("joinSuggestion", { by: n.latest.suggestedBy, name: asked.names[0] });
+      // An outside collaborator's request (ADR 0191): who they work for, and that they take no seat.
+      if (asked.total === 1 && n.latest.outsideOf)
+        return k("joinOutside", { name: asked.names[0], outsideOf: n.latest.outsideOf });
       return asked.total > 1
         ? k("joinRequestMany", { names: namesText(t, asked.names, 2, asked.total) })
         : k("joinRequest", { name: asked.names[0] });
     }
     case "invitation_accepted":
-      return n.source.label
+      return n.source.label && !personal
         ? k("invitationAccepted", { name: joinerOf(t, dir, n), org: n.source.label })
         : k("invitationAcceptedAny", { name: joinerOf(t, dir, n) });
     case "reaction":
@@ -341,6 +360,8 @@ export function Headline({
     case "proposal_waiting":
       return k("proposalWaiting", { names });
     case "change_request":
+      // A card of a workspace change sent on (`source.action`): neither about an agent nor a new one.
+      if (n.source.action) return k("changeRequestAction", { name });
       return k(n.source.proposalId ? "changeRequest" : "changeRequestAgent", { name, agent: n.source.label ?? "" });
     case "usage_limit": {
       // The person's own rows say a percent only; who decides reads the amount (ADR 0141).
@@ -366,6 +387,16 @@ export function Headline({
       return k("rightHandDecided", { name, count: n.count });
     case "right_hand_paused":
       return k("rightHandPaused", { name });
+    case "admin_ask":
+      return n.latest.reason === "channel_agent"
+        ? k("adminAskChannel", {
+            name,
+            agent: (n.source.agentId && dir.anyAgent(n.source.agentId)?.name) || t("channel.unknownAgent"),
+            label: n.source.label ?? "",
+          })
+        : n.latest.reason === "webhook"
+          ? k("adminAskWebhook", { name, service: n.latest.title ?? "" })
+          : k("adminAskCreate", { name });
     case "approval_cover":
       return k(
         n.latest.statusTo === "declined"

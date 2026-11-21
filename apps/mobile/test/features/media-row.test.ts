@@ -57,6 +57,57 @@ describe("MediaRow", () => {
     expect(screen).toContain("preview: { gap: 8, paddingHorizontal: 16, paddingVertical: 14 },");
   });
 
+  test("a grouped row with a lead and lines under its label: lead, label and end on one line, the rest under", () => {
+    const grouped = src("ui/Grouped.tsx");
+    expect(grouped).toContain("const flat = media && Boolean(icon || leading);");
+    // The head holds the lead, the label and what ends it; what was under the label goes under the head, whole width.
+    expect(grouped).toMatch(
+      /<View style=\{styles\.mediaHead\}>\s*\{lead\}\s*<View style=\{styles\.grow\}>\{labelText\}<\/View>\s*\{end\}\s*<\/View>\s*\{hasUnder \? <View>\{under\}<\/View> : null\}/,
+    );
+    expect(grouped).toContain('media: { flexDirection: "column", alignItems: "stretch", gap: MEDIA_ROW.under }');
+    expect(grouped).toContain('mediaHead: { flexDirection: "row", alignItems: "center", gap: 12 }');
+  });
+
+  test("release 13's rows, a lead beside three lines or more on the web, are media rows on the phone too", () => {
+    const uses: [string, number][] = [
+      // The computers' own rows are the devices list's now, a tree under each computer's portrait.
+      ["features/settings/ComputersScreen.tsx", 1],
+      ["features/settings/MachineScreen.tsx", 6],
+      ["features/chats/ArchivedChannelsScreen.tsx", 1],
+      ["features/routines/RoutineScreen.tsx", 1],
+      ["features/members/MembersPage.tsx", 1],
+      // Convites: who waits, the links and the e-mail invitations, the web's rows in two lines.
+      ["features/members/InvitesScreen.tsx", 3],
+      ["features/roles/RolesScreen.tsx", 3],
+      ["features/roles/RoleScreen.tsx", 1],
+      ["features/roles/PermissionsScreen.tsx", 1],
+      ["features/roles/ChannelsScreen.tsx", 2],
+      ["features/roles/AgentsScreen.tsx", 3],
+      ["features/roles/PeopleScreen.tsx", 3],
+      ["features/roles/LookScreen.tsx", 1],
+      ["features/vault/VaultScreen.tsx", 3],
+      ["features/vault/parts.tsx", 3],
+    ];
+    for (const [file, count] of uses)
+      expect([file, src(file).match(/^\s*media(: true,)?$/gm)?.length ?? 0]).toEqual([file, count]);
+    // An invitation's or a suggestion's address wraps instead of ending in "…".
+    // A 64-letter address takes three lines in a row's label column.
+    expect(src("features/members/InvitesScreen.tsx")).toMatch(/label=\{inv\.email\}\s*labelLines=\{3\}/);
+    expect(src("features/members/MembersPage.tsx")).toMatch(/label=\{s\.email\}\s*labelLines=\{2\}/);
+  });
+
+  test("usage: an agent's API row and a plan account's head keep their mark on the name's line, the rest under", () => {
+    const usage = src("features/usage/UsageScreen.tsx");
+    expect(usage).toMatch(
+      /<MediaRow\s+size="row"\s+face=\{<AgentFace agentId=\{a\.agentId\} size=\{MEDIA_ROW\.row\.face\}/,
+    );
+    expect(usage).toContain("api: { paddingVertical: 10 },");
+    const parts = src("features/usage/parts.tsx");
+    const head = parts.slice(parts.indexOf("export function AccountHead("), parts.indexOf("function Tag("));
+    // Whose it is comes after the head's row, not in the logo's column.
+    expect(head.indexOf("{sub}")).toBeGreaterThan(head.lastIndexOf("</View>\n      </View>"));
+  });
+
   test("screens import it from the design system", () => {
     expect(src("ui/index.ts")).toContain('export { MediaRow, type MediaRowProps } from "./MediaRow";');
   });

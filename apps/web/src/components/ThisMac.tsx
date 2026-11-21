@@ -1,17 +1,18 @@
 import { useConfirmDevice, useMe } from "@agenteschat/client";
-import { Button } from "@agenteschat/ui";
+import { Button, SettingNote } from "@agenteschat/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { desktopRevealsFiles, inDesktopApp, thisMac } from "@/lib/desktop";
+import { desktopRevealsFiles, inDesktopApp, type PrefsTab, thisMac } from "@/lib/desktop";
 import { useToast } from "@/lib/toast";
 
 /**
  * This computer, in the agentes.chat desktop app (ADR 0036, ADR 0066): the site knows which of its
  * organizations the computer it runs on works for, pairs it in one click (the app asks the person in its
  * own dialog, then hands the runner's code to the site, which confirms it with the person's session; no code
- * to read) and opens the app's Preferences where access is granted. Outside the app, and wherever agents
- * can't work on this computer (agentes.chat, a server on this computer, Windows), nothing.
+ * to read) and opens the app's Preferences where access is granted. agentes.chat included (ADR 0165). Outside the
+ * app, and where this computer is set up with a server of its own (a loopback address, the server the app runs
+ * here), nothing.
  */
 const THIS_MAC_KEY = ["desktop", "thisMac"] as const;
 /** Ask again this often while the runner picks up its token after the site confirmed. */
@@ -36,8 +37,8 @@ export function useIsThisMac(orgId: string, machineId: string) {
 }
 
 /**
- * Whether agents may work on this computer for this server; false until the app says so (apps from before it
- * said nothing, and allowed it everywhere).
+ * Whether agents may work on this computer for this server, agentes.chat included; false until the app says so
+ * (apps from before it said nothing, and allowed it everywhere).
  */
 export function useAgentsHere(): boolean {
   const here = useQuery({
@@ -50,16 +51,22 @@ export function useAgentsHere(): boolean {
   return inDesktopApp() && here.data === true;
 }
 
-/** "Show the folder": in an app that opens it (`desktopRevealsFiles`), on the server it runs on this computer. */
-export function useRevealsFiles(): boolean {
+/** Is the page the server this app runs on this computer (its Preferences › Servers keep it)? False outside the app. */
+export function useLocalServerHere(): boolean {
   const local = useQuery({
     queryKey: THIS_MAC_KEY,
     queryFn: thisMac.status,
-    enabled: desktopRevealsFiles(),
+    enabled: inDesktopApp(),
     select: (s) => s.local === true,
     meta: { quiet: true },
   });
-  return desktopRevealsFiles() && local.data === true;
+  return inDesktopApp() && local.data === true;
+}
+
+/** "Show the folder": in an app that opens it (`desktopRevealsFiles`), on the server it runs on this computer. */
+export function useRevealsFiles(): boolean {
+  const here = useLocalServerHere();
+  return desktopRevealsFiles() && here;
 }
 
 /** An organization's name, for the app's own dialog before it pairs this computer. */
@@ -137,8 +144,8 @@ export function ThisMacButton({
   );
 }
 
-/** "Abrir no app": Preferences on `tab`, for what is decided on this Mac itself (folders, tools, updates). */
-export function OpenPrefsButton({ tab, children }: { tab: "folders" | "tools" | "updates"; children: string }) {
+/** "Abrir no app": Preferences on `tab`, for what is decided on this Mac itself (folders, tools, updates, servers). */
+export function OpenPrefsButton({ tab, children }: { tab: PrefsTab; children: string }) {
   return (
     <Button
       size="sm"
@@ -147,6 +154,19 @@ export function OpenPrefsButton({ tab, children }: { tab: "folders" | "tools" | 
     >
       {children}
     </Button>
+  );
+}
+
+/** A tool switched off in this very Mac's Preferences, and the way there to turn it on. */
+export function ToolsOffHereNote() {
+  const { t } = useTranslation();
+  return (
+    <SettingNote icon="settings">
+      {t("machines.thisMac.toolsOff")}
+      <span style={{ display: "block", marginTop: "var(--space-2)" }}>
+        <OpenPrefsButton tab="tools">{t("machines.thisMac.openTools")}</OpenPrefsButton>
+      </span>
+    </SettingNote>
   );
 }
 

@@ -79,7 +79,8 @@ describe("whether agents can use apps on their desktops", () => {
   const card = () => screen().getByRole("region", { name: "Apps nas telas dos agentes" });
 
   test("a computer's page: what is missing and the command, Linux only, or the switches to turn on", async () => {
-    const api = createFakeApi(seedState());
+    const state = seedState();
+    const api = createFakeApi(state);
     const linux = computer(api, { name: "Servidor", desktopUse: { available: false, reason: MISSING } });
     const mac = computer(api, {
       name: "MacBook",
@@ -102,10 +103,13 @@ describe("whether agents can use apps on their desktops", () => {
       "Os agentes abrem e usam apps na própria tela aqui, como uma pessoa faria, e as pessoas assistem pela página de cada um.",
     );
     expect(card().textContent).toContain("Indisponível");
-    expect(card().textContent).toContain("missing: python3-gi");
+    // A runner from before reason codes: the app's own sentence, the command once, in its block to copy.
+    expect(card().textContent).toContain("Instale neste computador o que o uso da área de trabalho precisa:");
+    expect(card().textContent).not.toContain("Install what desktop use needs");
     expect(card().querySelector(".machine-command code")?.textContent).toBe(
       "sudo apt install --no-install-recommends python3-gi",
     );
+    expect(card().textContent?.split("sudo apt install").length).toBe(2);
 
     // Nothing to install on a Mac: the app's own words, not the computer's English.
     await page(mac);
@@ -118,6 +122,27 @@ describe("whether agents can use apps on their desktops", () => {
     expect(card().querySelector(".machine-command code")?.textContent).toBe(
       "agentes-runner tools enable desktop && agentes-runner tools enable commands",
     );
+
+    // Someone else's computer: one ask for both switches, never two buttons that say the same.
+    const theirs = computer(
+      api,
+      {
+        name: "Caixa da Bia",
+        desktopUse: { available: true, reason: null },
+        pairedBy: { id: "u-bia", name: "Bia Rocha" },
+        accessAllow: true,
+      },
+      false,
+    );
+    await page(theirs);
+    const asks = within(card()).getAllByRole("button", { name: "Pedir a Bia" });
+    expect(asks).toHaveLength(1);
+    await act(async () => fireEvent.click(asks[0] as HTMLElement));
+    await settle(4);
+    expect(state.calls.filter((c) => c.method === "machines.askTool").map((c) => c.args[2])).toEqual([
+      "desktop",
+      "commands",
+    ]);
 
     await page(ready);
     expect(card().textContent).toContain("Pronto");
@@ -143,7 +168,8 @@ describe("whether agents can use apps on their desktops", () => {
     const linux = { name: "Servidor", desktopUse: { available: false, reason: MISSING } };
     const page = await open(linux, true);
     expect(page).toContain("A Ada ainda não consegue usar apps na própria tela no Servidor.");
-    expect(page).toContain("sudo apt install --no-install-recommends python3-gi");
+    expect(page).toContain("Instale neste computador o que o uso da área de trabalho precisa:");
+    expect(page.split("sudo apt install --no-install-recommends python3-gi").length).toBe(2);
 
     expect(await open(linux, false)).not.toContain("ainda não consegue usar apps");
     const mac = { ...linux, name: "MacBook", os: "darwin" };

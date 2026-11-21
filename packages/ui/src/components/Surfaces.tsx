@@ -3,6 +3,7 @@ import {
   type CSSProperties,
   type HTMLAttributes,
   type ReactNode,
+  type Ref,
   useEffect,
   useState,
 } from "react";
@@ -51,8 +52,8 @@ export function CardHeader({
 }) {
   const heading = <h2 id={id}>{title}</h2>;
   return (
-    <div className="ac-card__head ac-actrow">
-      <div className={cx("ac-card__lead ac-actrow__text", (icon || mark) && "ac-iconline")}>
+    <div className="ac-card__head ac-actline">
+      <div className={cx("ac-card__lead", (icon || mark) && "ac-iconline")}>
         {(icon || mark) && (
           <span className="ac-card__key" aria-hidden="true">
             {mark ? <ProviderLogo id={mark} size="xs" /> : icon && <Icon name={icon} size={16} />}
@@ -100,9 +101,9 @@ export function List({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
 }
 
 export interface ListRowProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "title"> {
-  /** A small avatar or an icon. */
+  /** A small avatar or an icon, on the title's first line. */
   lead?: ReactNode;
-  /** One line, cut with an ellipsis (the whole of it on hover). */
+  /** Whole: a long one wraps. */
   title: string;
   /** A quiet second line ("Hoje · 21:00"). */
   meta?: ReactNode;
@@ -115,12 +116,10 @@ export interface ListRowProps extends Omit<ButtonHTMLAttributes<HTMLButtonElemen
  */
 export function ListRow({ lead, title, meta, trailing, className, type = "button", ...rest }: ListRowProps) {
   return (
-    <button type={type} className={cx("ac-row", className)} {...rest}>
+    <button type={type} className={cx("ac-row", lead ? "ac-iconline" : undefined, className)} {...rest}>
       {lead && <span className="ac-row__lead">{lead}</span>}
       <span className="ac-row__text">
-        <span className="ac-row__title" title={title}>
-          {title}
-        </span>
+        <span className="ac-row__title">{title}</span>
         {meta && <span className="ac-row__meta">{meta}</span>}
       </span>
       {trailing}
@@ -211,13 +210,15 @@ export function EmptyState({
   );
 }
 
-/** Inline error (or neutral notice) with an icon. */
+/** Inline error (or neutral notice) with an icon: `info` for a notice that suggests rather than warns. */
 export function Alert({
   tone = "danger",
+  icon = "alert",
   children,
   className,
 }: {
   tone?: "danger" | "neutral";
+  icon?: IconName;
   children: ReactNode;
   className?: string;
 }) {
@@ -226,7 +227,7 @@ export function Alert({
       role={tone === "danger" ? "alert" : "status"}
       className={cx("ac-alert ac-iconline", tone === "neutral" && "ac-alert--neutral", className)}
     >
-      <Icon name="alert" />
+      <Icon name={icon} />
       <span>{children}</span>
     </p>
   );
@@ -303,7 +304,8 @@ export function OptionCard({
   disabled,
   children,
   className,
-}: {
+  ...rest
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "onClick"> & {
   pressed: boolean;
   onClick: () => void;
   /** Cut corner: the option creates an agent. */
@@ -313,9 +315,12 @@ export function OptionCard({
   disabled?: boolean;
   children: ReactNode;
   className?: string;
+  /** A `Tip` in button mode hands its handlers and ref through here. */
+  ref?: Ref<HTMLButtonElement>;
 }) {
   return (
     <button
+      {...rest}
       type="button"
       aria-pressed={pressed}
       onClick={onClick}

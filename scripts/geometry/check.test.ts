@@ -11,6 +11,7 @@ import {
   edgesOf,
   keyOf,
   lasting,
+  PHONE_ONLY,
   playwrightChromes,
   SELF_TESTED,
 } from "./check";
@@ -79,11 +80,57 @@ describe("geometry check", () => {
     const rules = readFileSync(join(import.meta.dir, "rules.js"), "utf8");
     const check = readFileSync(join(import.meta.dir, "check.ts"), "utf8");
     for (const rule of ["floating", "inset", "icongap", "square"]) expect(SELF_TESTED).toContain(rule);
-    for (const rule of ["squarecol", "rim", "inlinebase", "iconmid", "fieldwidth", "corner", "clip", "cascadeorder"])
+    for (const rule of [
+      "squarecol",
+      "rim",
+      "inlinebase",
+      "iconmid",
+      "fieldwidth",
+      "corner",
+      "nest",
+      "clip",
+      "cascadeorder",
+    ])
       expect(SELF_TESTED).toContain(rule);
     for (const rule of ["pagetop", "groupedge", "menuitem", "rowpad", "emptyselect", "toolorder", "toolrow", "captop"])
       expect(SELF_TESTED).toContain(rule);
-    for (const rule of ["timeedge", "panefill"]) expect(SELF_TESTED).toContain(rule);
+    for (const rule of ["timeedge", "panefill", "bleed", "stampout", "stampover"]) expect(SELF_TESTED).toContain(rule);
+    // Words squeezed beside actions, a lone main button on a phone, buttons 8 apart and never split by words before
+    // them, one height in a row, a fact on one line, Desfazer in its sentence, a count that calls on someone readable
+    // on what's behind it.
+    for (const rule of [
+      "squeeze",
+      "loneprimary",
+      "btngap",
+      "btnsplit",
+      "toolheight",
+      "factwrap",
+      "undoinline",
+      "countfill",
+    ])
+      expect(SELF_TESTED).toContain(rule);
+    // A button row's state line starts at its name's words, wherever a rule moves it from.
+    for (const twin of ["bad-endline--status", "good-endline"]) expect(fixture).toContain(twin);
+    expect(rules).toContain('side: "status"');
+    // A calendar item never covers another: what meets sits beside it.
+    expect(SELF_TESTED).toContain("calstack");
+    // The working line's stop is at its end before its time comes, not beside its words.
+    expect(SELF_TESTED).toContain("barend");
+    // A task card's line of facts wraps between facts, never inside one.
+    for (const twin of ["bad-factwrap--line", "good-factwrap--line"]) expect(fixture).toContain(twin);
+    // A title in a row that wraps a word a line is squeezed; one long address wrapping its full lines is not.
+    for (const twin of ["bad-wordwrap--row", "good-wordwrap--url"]) expect(fixture).toContain(twin);
+    // A dialog's quiet line touches no bubble of the page behind it; on a bubble of its own dialog it does.
+    for (const twin of ["good-quiet--layers", "bad-quiet--dialog"]) expect(fixture).toContain(twin);
+    // A kit button's words sit in its label: cut by a box around it the button is named, ended by its own "…" nothing is.
+    for (const twin of ["bad-clipped--label", "good-clipped--label"]) expect(fixture).toContain(twin);
+    expect(rules).toContain('".ac-facts__value, .ac-factline__fact"');
+    // A word broken at its syllables in a box that hyphenates (a narrow calendar item's title) is no midword.
+    expect(fixture).toContain("good-midword--hyphens");
+    // The face on a menu's top that changes the photo (`MenuFace`) is no row: neither its height nor its room.
+    for (const twin of ["good-menuitem--face", "good-rim--face"]) expect(fixture).toContain(twin);
+    // A chip field grown to a second line of tokens is still the stack's height on its first.
+    expect(fixture).toContain("good-fieldwidth--grown");
     for (const rule of SELF_TESTED) {
       expect(fixture).toContain(`bad-${rule}`);
       expect(fixture).toContain(`good-${rule}`);
@@ -91,11 +138,26 @@ describe("geometry check", () => {
     }
   });
 
-  test("the self-test runs every rule at every checked width, but a desktop-only rule at the phone's", () => {
+  test("the self-test runs every rule at every checked width, but a desktop-only rule at the phone's and a phone-only one at a desktop's", () => {
     const check = readFileSync(join(import.meta.dir, "check.ts"), "utf8");
     expect(check).toMatch(/async function selfTest[\s\S]*for \(const width of WIDTHS\)/);
+    expect(check).toContain(
+      "const here = (r: string) => (width >= 640 ? !PHONE_ONLY.includes(r) : !DESKTOP_ONLY.includes(r));",
+    );
     expect(DESKTOP_ONLY).toEqual(["floating", "toolorder"]);
-    for (const rule of DESKTOP_ONLY) expect(SELF_TESTED).toContain(rule);
+    expect(PHONE_ONLY).toEqual(["loneprimary"]);
+    for (const rule of [...DESKTOP_ONLY, ...PHONE_ONLY]) expect(SELF_TESTED).toContain(rule);
+    // The rule itself says nothing at a desktop's width, so a screen never fails it there.
+    const rules = readFileSync(join(import.meta.dir, "rules.js"), "utf8");
+    expect(rules).toMatch(/loneprimary\(out\) \{\s*if \(innerWidth >= 640\) return;/);
+  });
+
+  test("the self-test opens a card, a popover, a dialog and a list over each other: each must be the topmost", () => {
+    const check = readFileSync(join(import.meta.dir, "check.ts"), "utf8");
+    const rules = readFileSync(join(import.meta.dir, "rules.js"), "utf8");
+    expect(check).toMatch(/async function selfTest[\s\S]*for \(const width of WIDTHS\)[\s\S]*geometry\.layers\(\)/);
+    expect(rules).toContain('["a dialog from the popover", dialog]');
+    expect(rules).toContain("document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)");
   });
 
   test("a captured toolbar stacks where the app's does: rules.js measures one row as Toolbar.tsx's fitsOneRow", () => {
@@ -115,7 +177,7 @@ describe("geometry check", () => {
     // Stacked, the top row keeps the search at its floor beside the actions, or the search takes it alone (`split`).
     for (const part of [
       'querySelector(":scope > .ac-toolbar__actions")',
-      "floor + gap + actions.getBoundingClientRect().width <= bar.clientWidth + 0.5",
+      "floor + gap + actions.getBoundingClientRect().width <= bar.clientWidth - 0.5",
       '"data-stack", topRowFits(',
     ]) {
       expect(rules).toContain(part);

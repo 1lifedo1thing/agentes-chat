@@ -14,9 +14,12 @@ import {
   INLINE_CODE_DENY_RULES,
   localVerdict,
   MISSION_DENY_RULES,
+  maskKeyShapes,
+  outboundCallProblem,
   PUSH_ASK_RULES,
   SECRET_BASH_DENY_RULES,
   SECRET_READ_DENY_RULES,
+  unaskedMessage,
 } from "@agenteschat/adapters/command-policy";
 import {
   isSafeRule,
@@ -87,6 +90,11 @@ export interface McpTaskInfo {
    */
   idle?: boolean;
   /**
+   * The agent a brain process thinks for: between turns its list is the one this agent's last run got, so a process
+   * started before its first turn (`brain.warm`) lists the agent's tools, as its turn will, not the fixed mission ones.
+   */
+  agentId?: string;
+  /**
    * A CLI with the delegated profile: Claude Code's own tools, served here (`delegated-tools.ts`). Its relay opens a
    * `session`, the only way to them; every other executor's list and calls stay as they are.
    */
@@ -94,7 +102,30 @@ export interface McpTaskInfo {
 }
 
 /** One block of a tool's result (MCP `content`). */
-export type McpContent = { type: "text"; text: string } | { type: "image"; data: string; mimeType: string };
+export type McpContent =
+  | { type: "text"; text: string }
+  | { type: "image"; data: string; mimeType: string }
+  /** A PDF a tool returned, as an embedded resource: the CLIs keep it as a file their own reader opens. */
+  | { type: "resource"; resource: { uri: string; mimeType: string; blob: string } };
+
+/** A picture or a PDF in a server tool's answer (`MCP_IMAGES_PROTOCOL`), base64. */
+export type McpImage = { mediaType: string; data: string; name?: string };
+
+/** A server tool's pictures as MCP content: images as `image`, a PDF as an embedded `resource`. */
+export function mcpImageContent(images: readonly McpImage[]): McpContent[] {
+  return images.map((i) =>
+    i.mediaType === "application/pdf"
+      ? {
+          type: "resource" as const,
+          resource: {
+            uri: `agentes://file/${encodeURIComponent(i.name ?? "file.pdf")}`,
+            mimeType: i.mediaType,
+            blob: i.data,
+          },
+        }
+      : { type: "image" as const, data: i.data, mimeType: i.mediaType },
+  );
+}
 export type McpToolResult = { content: McpContent[]; isError: boolean };
 
 /** What `delegated-tools.ts` serves on a session. */
@@ -104,6 +135,7 @@ export interface DelegatedSurface {
   profile: CommandProfile;
   branches?: readonly string[];
   /** `PromptContext`'s. */
+  asks?: "always" | "never";
   task?: boolean;
   local?: boolean;
   /** `id`: the JSON-RPC request's, for `cancel`. `ask`: the bridge, for the permission prompt. */
@@ -178,8 +210,14 @@ export interface IpcRequest {
  * answer. `memo`: a list the daemon answers again by itself for the same run (`LIST_MEMO_MS`), so asking often is free.
  */
 export type IpcReply =
-  | { ok: true; text: string; tools?: McpToolInfo[]; memo?: boolean }
+  | { ok: true; text: string; images?: McpImage[]; tools?: McpToolInfo[]; memo?: boolean }
   | { ok: false; error: string; transient?: boolean; idle?: boolean };
+
+/** A frame's pictures, when each is one (anything else in their place is dropped). */
+const validImages = (v: unknown): v is McpImage[] =>
+  Array.isArray(v) &&
+  v.length > 0 &&
+  v.every((i) => typeof i === "object" && i !== null && typeof i.mediaType === "string" && typeof i.data === "string");
 
 /** What a tool name may look like (the Tool Gateway's rule). */
 const TOOL_NAME = /^[a-zA-Z0-9_-]{1,64}$/;
@@ -268,12 +306,19 @@ export class McpBridge {
   private readonly waiting = new Map<string, { frame: RunnerFrame; tool: string }>();
   /** The list each MCP process got last (by its task or process id), for the run it was for. */
   private readonly lists = new Map<string, { run: string; at: number; reply: IpcReply }>();
+  /** The list each agent's brain run got last (`McpTaskInfo.agentId`), most recent last. */
+  private readonly agentLists = new Map<string, IpcReply>();
 
   constructor(
     private readonly opts: {
       socketPath: string;
       /** The task's MCP token and state (from the task journal). */
       task: (taskId: string) => McpTaskInfo | null;
+      /**
+       * A tool call of `taskId`'s starts being relayed (+1) or got its answer (-1): a brain process waits on us
+       * meanwhile, so its turn's silence isn't its own (`BrainManager.bridgeCall`).
+       */
+      onCall?: (taskId: string, delta: 1 | -1) => void;
       log?: (line: string) => void;
       callTimeoutMs?: number;
     },
@@ -393,7 +438,11 @@ export class McpBridge {
     if (!p) return;
     clearTimeout(p.timer);
     this.pending.delete(frame.callId);
-    p.resolve(frame.ok ? { ok: true, text: String(frame.text ?? "") } : { ok: false, error: frame.error.message });
+    p.resolve(
+      frame.ok
+        ? { ok: true, text: String(frame.text ?? ""), ...(validImages(frame.images) ? { images: frame.images } : {}) }
+        : { ok: false, error: frame.error.message },
+    );
   }
 
   /** The server's answer to a list (protocol 8). */
@@ -418,8 +467,11 @@ export class McpBridge {
     }
     if (!info.running) {
       // A brain process between turns: its background refresh waits for the next turn, quietly.
-      if (info.idle)
+      if (info.idle) {
+        const last = req.kind === "list" && info.agentId ? this.agentLists.get(info.agentId) : undefined;
+        if (last) return last;
         return { ok: false, error: "No turn is running right now. Try again in your next turn.", idle: true };
+      }
       return { ok: false, error: "This task has ended." };
     }
     if (req.kind === "list") {
@@ -442,6 +494,11 @@ export class McpBridge {
       for (const [id, l] of this.lists) if (now - l.at >= LIST_MEMO_MS) this.lists.delete(id);
       const kept: IpcReply = { ...reply, memo: true };
       this.lists.set(taskId, { run, at: now, reply: kept });
+      if (info.agentId) {
+        this.agentLists.delete(info.agentId);
+        this.agentLists.set(info.agentId, kept);
+        if (this.agentLists.size > AGENT_LISTS_KEPT) this.agentLists.delete(this.agentLists.keys().next().value ?? "");
+      }
       return kept;
     }
     const tool = typeof req.tool === "string" ? req.tool.slice(0, 64) : "";
@@ -484,7 +541,12 @@ export class McpBridge {
       args,
       ...(info.serverToken ? { token: info.serverToken } : {}),
     };
-    return this.relayAndWait(callId, tool, frame, !info.runId || RESEND_SAFE.has(tool));
+    this.opts.onCall?.(taskId, 1);
+    try {
+      return await this.relayAndWait(callId, tool, frame, !info.runId || RESEND_SAFE.has(tool));
+    } finally {
+      this.opts.onCall?.(taskId, -1);
+    }
   }
 
   private relayAndWait(callId: string, tool: string, frame: RunnerFrame, resend: boolean) {
@@ -571,6 +633,7 @@ export class McpBridge {
       profile: delegated.profile,
       context: {
         ...(delegated.branches ? { branches: delegated.branches } : {}),
+        ...(delegated.asks ? { asks: delegated.asks } : {}),
         ...(delegated.task ? { task: true } : {}),
         ...(delegated.local ? { local: true } : {}),
         delegated,
@@ -653,6 +716,8 @@ export const ALWAYS_LOADED: ReadonlySet<string> = new Set([
   "react",
   "ask_user",
   "ask_choices",
+  // The line before slow work (ADR 0207): in hand from the first round. The server also marks it `upFront`.
+  "say_now",
   "request_approval",
   "remember",
   "update_memory",
@@ -683,6 +748,9 @@ export type ToolCaller = (tool: string, args: Record<string, unknown>) => Promis
 /** The run's tools as the bridge knows them now (protocol 8). */
 export type ToolLister = () => Promise<readonly McpToolInfo[]>;
 
+/** Agents whose last list the daemon keeps for their brain processes between turns (`McpBridge.agentLists`). */
+const AGENT_LISTS_KEPT = 200;
+
 /** How long the MCP process trusts its list before asking again (a `tools/list` within this is answered locally). */
 export const TOOLS_CACHE_MS = 30_000;
 /** How long the daemon answers an MCP process's list for the same run by itself (`McpBridge`). */
@@ -712,6 +780,8 @@ export class McpToolCache {
   private asking: Promise<boolean> | null = null;
   /** The daemon answered the last ask by itself (between turns, or the same run's list): asking often is free. */
   local = false;
+  /** The executor was handed the fixed mission tools for want of a list: the first real one is announced. */
+  fellBack = false;
 
   constructor(
     private readonly fetch: () => Promise<IpcReply>,
@@ -726,7 +796,9 @@ export class McpToolCache {
     const now = (this.opts.now ?? Date.now)();
     if (this.list && now - this.loadedAt < (this.opts.ttlMs ?? TOOLS_CACHE_MS)) return this.list;
     await this.refresh();
-    return this.list ?? MISSION_MCP_TOOLS;
+    if (this.list) return this.list;
+    this.fellBack = true;
+    return MISSION_MCP_TOOLS;
   }
 
   /** Asks the server; true when the list differs from the one before (not on the first load). */
@@ -745,7 +817,8 @@ export class McpToolCache {
     if (idle) this.loadedAt = 0;
     if (!reply?.ok || !reply.tools) return false;
     const key = JSON.stringify(reply.tools);
-    const changed = this.list !== null && key !== this.key;
+    const changed = (this.list !== null && key !== this.key) || this.fellBack;
+    this.fellBack = false;
     this.list = reply.tools;
     this.key = key;
     this.loadedAt = (this.opts.now ?? Date.now)();
@@ -859,7 +932,10 @@ export async function handleMcpMessage(
         jsonrpc: "2.0",
         id,
         result: {
-          content: [{ type: "text", text: reply.ok ? reply.text : reply.error }],
+          content: [
+            { type: "text", text: reply.ok ? reply.text : reply.error },
+            ...(reply.ok && reply.images ? mcpImageContent(reply.images) : []),
+          ],
           isError: !reply.ok,
         },
       };
@@ -882,6 +958,12 @@ export interface PromptContext {
   task?: boolean;
   /** Nobody answers beyond this computer (a background task outside a mission): an ordinary push goes through here. */
   local?: boolean;
+  /**
+   * How much the agent asks, when it isn't the default (`BrainTurnRequest.permissions.asks`). `always`: nothing but a
+   * read is decided here, a push to its own branches included. `never`: a held command is refused with where it
+   * runs (`unaskedMessage`).
+   */
+  asks?: "always" | "never";
 }
 
 /** What an MCP process serves besides the server's tools. */
@@ -893,7 +975,7 @@ type McpContext = PromptContext & { delegated?: DelegatedSurface };
  * the runner asks the same for each of Codex's command and file approvals (ADR
  * 0053 §3): one decision for both. First what the computer decides by itself
  * (`localVerdict`): deny-list commands and secrets are refused at once (never
- * shown to anyone); plain reads (`ls` of any folder, read-only git, a GET with
+ * shown to anyone; the server is told, for the run's steps); plain reads (`ls` of any folder, read-only git, a GET with
  * curl in a work turn) are allowed at once, with no card and nothing posted;
  * in a `plan` turn everything else is refused. Then pushes, read with git
  * (`commandApproval`): one that waits for a person is refused here with why
@@ -927,17 +1009,30 @@ export async function permissionPrompt(
   if (!toolName) return { behavior: "deny", message: "Unknown tool." };
   const how = opts.task ? ASK_AFTER_TASK : ASK_IN_CHAT;
   const verdict = localVerdict(toolName, input, opts.scope, opts.profile ?? "work", how);
-  if (verdict?.behavior === "deny") return verdict;
+  // A background task's executor has no run_code to be pointed to: it keeps "stop and say so".
+  const said = (message: string) => (opts.asks === "never" && !opts.task ? unaskedMessage(message) : message);
+  const asked = {
+    tool_name: toolName.slice(0, 64),
+    input,
+    ...(typeof args.tool_use_id === "string" ? { tool_use_id: args.tool_use_id.slice(0, 128) } : {}),
+    ...(opts.scope ? { scope: opts.scope } : {}),
+  };
+  if (verdict?.behavior === "deny") {
+    const message = said(verdict.message);
+    reportRefusal(call, asked, { code: verdict.code, message });
+    return { behavior: "deny", message };
+  }
   if (verdict?.behavior === "allow") return { behavior: "allow", updatedInput: input };
   if (toolName === "Bash" && typeof input.command === "string") {
     const own = opts.branches ?? [];
     const cwd = opts.scope?.cwd ?? null;
     const held = await commandApproval(input.command, { cwd, own, how, script: true });
-    if (held) return { behavior: "deny", message: held.message };
+    if (held) return { behavior: "deny", message: held.never ? held.message : said(held.message) };
     // A push alone to its own branches, or through our git proxy (which decides someone else's branch with a
-    // person's grant, so no card here asks first).
+    // person's grant, so no card here asks first). An agent that always asks is asked for these too.
     const push = lonePush(input.command);
-    if (push && (opts.local || pushesOwnBranches(push, own) || (await pushThroughProxy(push, cwd)))) {
+    const alone = opts.local || opts.asks !== "always";
+    if (push && alone && (opts.local || pushesOwnBranches(push, own) || (await pushThroughProxy(push, cwd)))) {
       return { behavior: "allow", updatedInput: input };
     }
   }
@@ -958,12 +1053,7 @@ export async function permissionPrompt(
       return { error: "agentes.chat answered something unexpected." };
     }
   };
-  let out = await ask({
-    tool_name: toolName.slice(0, 64),
-    input,
-    ...(typeof args.tool_use_id === "string" ? { tool_use_id: args.tool_use_id.slice(0, 128) } : {}),
-    ...(opts.scope ? { scope: opts.scope } : {}),
-  });
+  let out = await ask(asked);
   const requestId = "request_id" in out && typeof out.request_id === "string" ? out.request_id : "";
   for (;;) {
     if ("error" in out && out.error) return { behavior: "deny", message: `Not allowed: ${out.error}` };
@@ -975,6 +1065,24 @@ export async function permissionPrompt(
     await sleep(opts.pollMs ?? PERMISSION_POLL_MS);
     out = await ask({ request_id: requestId });
   }
+}
+
+/**
+ * Tells the server of a call the computer refused by itself (`localVerdict`), so the run keeps a step of it: nothing
+ * is asked and the answer changes nothing. Not awaited: a runner that is reconnecting must not hold the refusal. A key
+ * the command carries (the reason for an `outbound.credential` refusal) never leaves the computer.
+ */
+export function reportRefusal(
+  call: ToolCaller,
+  asked: { tool_name: string; input: Record<string, unknown> } & Record<string, unknown>,
+  refused: { code: string; message: string },
+) {
+  const masked = redactDeep(asked.input, maskKeyShapes) as Record<string, unknown>;
+  // A key the policy still finds after masking (percent-encoded, a private key): the call goes without its input.
+  const input = outboundCallProblem(asked.tool_name, masked)?.code === "outbound.credential" ? {} : masked;
+  void call(PERMISSION_TOOL, { ...asked, input, refused: { code: refused.code, message: refused.message } }).catch(
+    () => undefined,
+  );
 }
 
 /**
@@ -1032,7 +1140,7 @@ export async function runMcpServer(options: {
     const often = !cache.loaded || cache.local;
     const ms = often ? (options.pollMs ?? TOOLS_POLL_MS) : (options.refreshMs ?? TOOLS_REFRESH_MS);
     refresher = setTimeout(() => {
-      if (!cache.loaded) refreshLater();
+      if (!cache.loaded && !cache.fellBack) refreshLater();
       else void cache.refresh().finally(refreshLater);
     }, ms);
     refresher.unref?.();
@@ -1120,13 +1228,24 @@ export function mcpScopeFromEnv(env: NodeJS.ProcessEnv): CommandScope | undefine
   if (!cwd || !path.isAbsolute(cwd)) return undefined;
   const folders = (env.AGENTES_MCP_FOLDERS ?? "").split(path.delimiter).filter((f) => f && path.isAbsolute(f));
   const runnerHome = env.AGENTES_RUNNER_HOME?.trim();
+  // Windows has no HOME, as a rule: the home is USERPROFILE (without one, `~` would read as the agent's folder).
+  const home = env.HOME || (process.platform === "win32" ? env.USERPROFILE : undefined);
+  const runtime = env.XDG_RUNTIME_DIR?.trim();
   return {
     cwd,
     folders: folders.length ? folders : [cwd],
-    ...(env.HOME ? { home: env.HOME } : {}),
+    ...(home ? { home } : {}),
     ...(runnerHome && path.isAbsolute(runnerHome) ? { runnerHome } : {}),
+    // A system-mode launch's engines live in the agent's runtime dir (`systemLauncher`).
+    ...(runtime && path.isAbsolute(runtime) && env.DOCKER_HOST?.startsWith(`unix://${runtime}/`)
+      ? { rootlessContainers: true }
+      : {}),
   };
 }
+
+/** `permissions.asks` of a turn, as the server sent it or as our MCP process's env carries it (`AGENTES_MCP_ASKS`). */
+export const turnAsks = (value: unknown): "always" | "never" | undefined =>
+  value === "always" || value === "never" ? value : undefined;
 
 /** The turn's permission profile for our MCP process (`AGENTES_MCP_PROFILE`): anything but `plan` is `work`. */
 export const mcpProfileFromEnv = (env: NodeJS.ProcessEnv): CommandProfile =>
@@ -1140,8 +1259,10 @@ export const mcpProfileFromEnv = (env: NodeJS.ProcessEnv): CommandProfile =>
 export function mcpContextFromEnv(env: NodeJS.ProcessEnv): PromptContext {
   const branches = (env.AGENTES_MCP_BRANCHES ?? "").split(",").filter((b) => /^[A-Za-z0-9/_.-]+\/$/.test(b));
   const task = env.AGENTES_MCP_TASK;
+  const asks = turnAsks(env.AGENTES_MCP_ASKS);
   return {
     ...(branches.length ? { branches } : {}),
+    ...(asks ? { asks } : {}),
     ...(task === "mission" || task === "local" ? { task: true } : {}),
     ...(task === "local" ? { local: true } : {}),
   };
@@ -1172,6 +1293,8 @@ export function claudeMcpConfig(input: {
   branches?: readonly string[];
   /** A background task's executor: a mission's, or one outside a mission (`local`: only the prompt, answered here). */
   task?: "mission" | "local";
+  /** `PromptContext.asks`. */
+  asks?: "always" | "never";
   /** A delegated CLI: the byte relay to the agent's worker, which serves MCP itself (`runMcpRelay`). */
   relay?: boolean;
 }) {
@@ -1192,6 +1315,7 @@ export function claudeMcpConfig(input: {
           ...(input.runnerHome ? { AGENTES_RUNNER_HOME: input.runnerHome } : {}),
           ...(input.branches?.length ? { AGENTES_MCP_BRANCHES: input.branches.join(",") } : {}),
           ...(input.task ? { AGENTES_MCP_TASK: input.task } : {}),
+          ...(input.asks ? { AGENTES_MCP_ASKS: input.asks } : {}),
         },
       },
     },
@@ -1362,16 +1486,20 @@ function toolsBreach(init: Record<string, unknown>, own: readonly string[]): str
 
 /**
  * Denied in every profile (Claude Code checks deny rules before allow rules):
- * the deny list, credential stores (shell and read tools) and code given
- * inline to an interpreter, which `Bash(node *)`, `Bash(python3 *)` would
- * otherwise allow (ADR 0053 §3).
+ * the deny list and credential stores (shell and read tools) (ADR 0053 §3).
  */
 export const ALWAYS_DENY_RULES: readonly string[] = [
   ...MISSION_DENY_RULES,
   ...SECRET_BASH_DENY_RULES,
   ...SECRET_READ_DENY_RULES,
-  ...INLINE_CODE_DENY_RULES,
 ];
+
+/**
+ * A `work` turn's `ask` rules, which outrank allow rules: every push, and code given inline to an interpreter, which
+ * `Bash(node *)`, `Bash(python3 *)` would otherwise allow. Both reach our prompt tool, so the server decides (a
+ * mission's card; outside one, ordinary work).
+ */
+const WORK_ASK_RULES: readonly string[] = [...PUSH_ASK_RULES, ...INLINE_CODE_DENY_RULES];
 
 /** What a `plan` turn never gets: edits. Reading the web is a read (ADR 0109). */
 const PLAN_DENY = ["Edit", "Write", "NotebookEdit"];
@@ -1384,8 +1512,8 @@ const PLAN_DENY = ["Edit", "Write", "NotebookEdit"];
  * also `git -C <path> …`; Claude Code checks each part of a pipeline). `work`: edits (`acceptEdits`), the same
  * read-only commands, plain file work, git work, pull requests, tests and
  * builds. Merges, deploys and publishing are denied (deny rules win over
- * allow rules); every push is `ask` (`PUSH_ASK_RULES`, which outranks allow
- * rules), so the prompt tool reads where it goes.
+ * allow rules); every push and inline code is `ask` (`WORK_ASK_RULES`, which outrank allow
+ * rules), so the prompt tool reads where it goes; `plan` and `chat` deny inline code.
  */
 export function claudePermissionSettings(
   mode: "plan" | "work" | "chat",
@@ -1400,6 +1528,11 @@ export function claudePermissionSettings(
     promptReads?: boolean;
     /** The runner's home when it isn't under `.agentes-runner` (system mode): read by no tool or command either. */
     runnerHome?: string;
+    /**
+     * The agent always asks (ADR 0173): a `work` turn allows only what reads, so every edit and every other command
+     * reaches our prompt tool, and from there the server.
+     */
+    asksFirst?: boolean;
   } = {},
 ) {
   const shellReads = opts.promptReads ? [] : readOnlyShell();
@@ -1408,7 +1541,10 @@ export function claudePermissionSettings(
   // The team's right hand on a person's plan (protocol 41): our tools only, every tool of Claude Code's own refused.
   if (mode === "chat") {
     return {
-      permissions: { allow: ["mcp__agentes"], deny: [...CHAT_DENIED_TOOLS, ...ALWAYS_DENY_RULES, ...homeDeny] },
+      permissions: {
+        allow: ["mcp__agentes"],
+        deny: [...CHAT_DENIED_TOOLS, ...ALWAYS_DENY_RULES, ...INLINE_CODE_DENY_RULES, ...homeDeny],
+      },
     };
   }
   if (mode === "plan") {
@@ -1427,7 +1563,16 @@ export function claudePermissionSettings(
           ...missionFolderRules(missionFolder, ["Read"]),
         ],
         ask: [...PUSH_ASK_RULES],
-        deny: [...PLAN_DENY, ...ALWAYS_DENY_RULES, ...homeDeny],
+        deny: [...PLAN_DENY, ...ALWAYS_DENY_RULES, ...INLINE_CODE_DENY_RULES, ...homeDeny],
+      },
+    };
+  }
+  if (opts.asksFirst) {
+    return {
+      permissions: {
+        allow: ["mcp__agentes", ...shellReads, ...missionFolderRules(missionFolder, ["Read"])],
+        ask: [...WORK_ASK_RULES],
+        deny: [...ALWAYS_DENY_RULES, ...homeDeny],
       },
     };
   }
@@ -1450,7 +1595,7 @@ export function claudePermissionSettings(
         // What a person allowed for the whole mission ("Aprovar sempre nesta missão").
         ...missionAllow.filter(isSafeRule).slice(0, 100),
       ],
-      ask: [...PUSH_ASK_RULES],
+      ask: [...WORK_ASK_RULES],
       deny: [...ALWAYS_DENY_RULES, ...homeDeny],
     },
   };

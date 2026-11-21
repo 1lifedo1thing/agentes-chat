@@ -95,6 +95,10 @@ describe("Toolbar", () => {
       ro.resize();
       // 160 + 8 + 112 fits: the search and the actions on top.
       expect(bar.getAttribute("data-stack")).toBe("");
+      width(actions as HTMLElement, 120.3);
+      ro.resize();
+      // 160 + 8 + 120.3 is a third of a pixel over: the row would wrap the actions under the search, a row of their own.
+      expect(bar.getAttribute("data-stack")).toBe("split");
     } finally {
       ro.restore();
     }
@@ -142,4 +146,15 @@ describe("FilterChip", () => {
     ]);
     expect(options.map((o) => o.querySelector(".ac-countchip")?.textContent ?? null)).toEqual(["3", "1", null]);
   });
+});
+
+test("a raised button in a toolbar takes the field look of the search beside it: nothing outside it for a scroller to cut", async () => {
+  const css = await Bun.file(new URL("../src/styles/components.css", import.meta.url).pathname).text();
+  const raised =
+    '.ac-toolbar .ac-btn:not(.ac-btn--primary, .ac-btn--ghost, .ac-btn--agent, .ac-btn--danger, [aria-pressed="true"])';
+  const look = css.split(`\n${raised} {`)[1]?.split("}")[0] ?? "";
+  expect(look).toContain("background: var(--field-bg)");
+  expect(look).toContain("box-shadow: inset 0 0 0 1px var(--field-line)");
+  // The search's own look, so the row reads as one kind of control.
+  expect(css.split("\n.ac-searchfield {")[1]?.split("}")[0]).toContain("box-shadow: inset 0 0 0 1px var(--field-line)");
 });

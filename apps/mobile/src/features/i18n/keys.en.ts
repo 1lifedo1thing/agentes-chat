@@ -15,7 +15,6 @@ export const featureKeysEn = {
     channelCount_one: "{{count}} channel",
     channelCount_other: "{{count}} channels",
     none: "No categories yet.",
-    manageHelp: "Tap a category to rename it, move it or delete it.",
     manageHint: "Order, names and delete",
     deleteTitle: "Delete {{name}}?",
     order: "Place in the list",
@@ -24,7 +23,6 @@ export const featureKeysEn = {
     position: "{{at}} of {{count}}.",
     channelPosition: "{{at}} of {{count}}.",
     itsChannels: "Channels",
-    seeAll: "See all",
   },
   blocks: {
     send: "Send",
@@ -59,9 +57,10 @@ export const featureKeysEn = {
     reopen: "Show again",
     answeredBy: "{{name}} picked",
     failed: "Your pick didn't go through. Try again.",
+    /** After the message's size and limit, when a written answer makes the reply too long. */
+    tooLongFix: "Shorten the answer.",
   },
   chart: {
-    pending: "Building the chart…",
     table: "Table",
     item: "Item",
     share: "Share",
@@ -139,6 +138,8 @@ export const featureKeysEn = {
     refuseAsk: "Decline the request?",
     /** On a high-risk request's top line, after its kind: it acts outside the workspace. */
     leaves: "goes outside the company",
+    /** The same in a personal workspace (ADR 0159): one person's, not a company's. */
+    leavesPersonal: "goes outside your workspace",
     refuseWhyF: "{{name}} learns from the reason. Optional.",
     refuseWhyM: "{{name}} learns from the reason. Optional.",
     /** The request's sheet: its title, its groups and the switch for next time. */
@@ -175,6 +176,7 @@ export const featureKeysEn = {
       irreversible: "Can't be undone",
       reversible: "Can be undone",
       external: "Leaves the company",
+      externalPersonal: "Leaves your workspace",
       unsent: "Nothing is sent",
       deletable: "Can be deleted",
     },
@@ -194,16 +196,14 @@ export const featureKeysEn = {
       text: "It may be down or outside your network. Your chats show up on their own when it's back.",
       kept: "Showing what was already in the app.",
     },
-    section: {
-      agents: "Agents",
-      channels: "Channels",
-      people: "People",
-    },
-    seeAll: {
-      agents: "See all agents",
-      channels: "See all channels",
-      people: "See all people",
-    },
+    /** Conversas' strip of what the person pinned (the web sidebar's pins), under Início's widgets. */
+    pinned: "Pinned",
+    /** Conversas' one list: every chat by its latest activity, with no grouping. */
+    recent: "Recent",
+    /** Under Recentes' first rows: the whole list. */
+    seeAll: "See all chats",
+    /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */
+    splitEmpty: "Your chats open here.",
     wait: {
       verb: {
         approval: "needs your ok",
@@ -245,6 +245,10 @@ export const featureKeysEn = {
     newChannelHint: "For a team or a topic",
     channelPlaceholder: "Channel name, e.g. marketing",
     createChannel: "Create channel",
+    /** A personal workspace's channels are its group conversations (ADR 0159). */
+    newChannelHintPersonal: "For one subject, with several agents",
+    channelPlaceholderPersonal: "Name, e.g. travel",
+    createChannelPersonal: "Create group conversation",
     waitIn: "in {{where}}",
     workingNowLine_one: "{{count}} agent working now",
     workingNowLine_other: "{{count}} agents working now",
@@ -253,8 +257,6 @@ export const featureKeysEn = {
     workingOne: "{{name}} is working",
     /** A conversation's row swiped left: the pane beside Pin, short so the word fits the pane. */
     swipe: { mute: "Mute", unmute: "Unmute" },
-    /** Conversas' one line back to the right hand's first-run checklist (ADR 0155 §6). */
-    firstRunLine: "{{name}} is setting up the team · {{done}} of {{total}}",
     first: {
       title: "Start with your first agent",
       subtitle: "Give it a name and say what it does. It shows up here, as a chat.",
@@ -283,19 +285,23 @@ export const featureKeysEn = {
     chat: "Chat with…",
     name: "Name",
     channelFine: "For a team or a topic.",
+    /** A personal workspace's (ADR 0159): the New sheet's row and the line under the name. */
+    channelPersonal: "Group conversation",
+    channelFinePersonal: "For one subject, with several agents.",
     chatSearch: "Search for a person or an agent",
     /** The field on top of the New sheet, as a new message's: whom it is for. */
     to: "To:",
     people: "People",
     search: "Person or agent",
-    create: "Create",
     agentHint: "A name and what it does",
+    create: "Create",
     chatShort: "Conversation",
     chatHint: "A person or an agent",
     taskHint: "With an assignee and a due date",
     routineHint: "An agent does it on its own, on schedule",
     wikiPage: "Wiki page",
     wikiHint: "For the team and the agents to read",
+    wikiHintPersonal: "For your agents to read",
     inviteHint: "By email or link",
     agent: {
       question: "What will it do?",
@@ -305,7 +311,7 @@ export const featureKeysEn = {
   /** The line over the tab bar that goes with you while an agent does long work or waits on you. */
   along: {
     agent: "An agent",
-    waits: "{{name}} is waiting for your ok",
+    waits: "{{name}} · waiting for you",
     on: "{{name}} · {{what}}",
     working: "{{name}} is working",
     more: "+{{count}}",
@@ -363,14 +369,23 @@ export const featureKeysEn = {
     replies_other: "{{count}} replies",
     repliesWord_one: "reply",
     repliesWord_other: "replies",
+    /** A conversation of bubbles says when it picks up again: "Today 15:35". */
+    dayAt: "{{day}} {{time}}",
     thread: "Thread",
     closed: "closed",
     options: "Options",
     profile: "Profile",
     here_one: "{{count}} here",
     here_other: "{{count}} here",
+    membersAdd: "Add",
+    membersAdded_one: "{{count}} added to #{{channel}}",
+    membersAdded_other: "{{count}} added to #{{channel}}",
+    memberRemoved: "{{name}} is out of #{{channel}}",
+    muted: "#{{channel}} muted",
+    unmuted: "#{{channel}} unmuted",
     headerAgent: "{{who}}. Open the profile",
     headerChannel: "{{who}}. Options",
+    headerMembers: "{{who}}. See who is here",
     switchHint: "Hold to switch conversations",
     switchTitle: "Switch conversation",
     switchSearch: "Search conversations",
@@ -381,18 +396,10 @@ export const featureKeysEn = {
     switchWorking: "working",
     join: "Join the channel",
     sending: "Sending…",
-    failed: "Not sent · Try again",
-    notSent: "The message wasn't sent.",
     toLatest: "Go to the latest messages",
     toLatestNew: "Go to the latest messages: {{text}}",
     stopAgent: "Stop {{name}}",
     offlineWait: "Goes out when the connection is back",
-    turn: {
-      thinking: "thinking",
-      working: "working",
-      writing: "writing",
-      stopped: "stopped",
-    },
     steer: {
       waiting: "{{name}} reads it at the next pause",
       /** Sent to an agent waiting for its computer: it has no pause, it reads it once it gets the computer. */
@@ -402,8 +409,6 @@ export const featureKeysEn = {
       held: "{{name}} reads it after your decision",
       read: "{{name}} read it",
       resolved: "{{name}} closed the help request",
-      well: "Read your note",
-      wellNow: "Stopped to read your note",
     },
     stopped: {
       byYou: "Stopped here",
@@ -464,29 +469,26 @@ export const featureKeysEn = {
     /** The emoji palette in a message's menu. */
     react: "React",
     attach: {
-      /** The dashed tile after the pictures waiting above the field. */
-      more: "Add another photo or file",
       remove: "Remove {{name}}",
       /** What a screen reader says of a picture waiting to be sent. */
       waiting: "{{name}}, waiting to be sent",
       /** While its upload runs. */
       sending: "{{name}}, sending",
+      /** One that didn't go: it stays, and send tries it again. */
+      failed: "{{name}}, didn't go: send to try again",
+      /** A picker still handing its files over (a video being converted). */
+      preparing: "Getting the files ready…",
       tooMany: "Up to {{count}} files per message.",
     },
     /** Swiping a message to the right. */
     swipeReply: "Swipe right to reply",
     // intentional: chat
     intent: {
-      suggest: {
-        merge: "Go ahead and merge",
-        review: "Ask {{name}} to review first",
-        seeChange: "Show me what changed",
-        summarize: "Sum it up in 3 points",
-        nextStep: "What's the next step?",
-      },
       arrived: "{{name}} joined the team",
       meet: "Your first conversation with {{name}}",
       roleIntro: "{{role}} on your team. Ask in plain words.",
+      /** In a personal workspace (ADR 0159): one person's agent, no team. */
+      roleIntroPersonal: "{{role}}, here for you. Ask in plain words.",
       noIntro: "Ask for what you need, in plain words.",
       firstTitle: "To start",
       sendHint: "Tap to send",
@@ -494,6 +496,7 @@ export const featureKeysEn = {
       hello: "Hi, {{person}}! I'm {{name}}.",
       helloNoName: "Hi! I'm {{name}}.",
       helloRole: "{{role}} on the team.",
+      helloRolePersonal: "{{role}}, here for you.",
       helloAsk: "Where do we start?",
       now: "now",
       /** The starts' short words on their buttons; a tap sends the whole request (`first.*`). */
@@ -598,11 +601,9 @@ export const featureKeysEn = {
     camera: "Camera",
     photos: "Photos",
     file: "File",
-    /** The fourth tile: the GIFs and stickers, out of the field so it only sends. */
+    /** The fourth tile: the GIFs and stickers (also beside the mic in the empty field). */
     media: "GIFs",
     noCamera: "No camera access. Allow it in the phone's Settings.",
-    mission: "Start a mission",
-    missionHint: "Long work, with a plan, from start to finish",
     summary: "Sum up the chat",
     summaryHint: "What happened while you were away",
     remind: "Remind me later",
@@ -631,7 +632,6 @@ export const featureKeysEn = {
     minuteLess: "{{n}} minutes earlier",
     minuteMore: "{{n}} minutes later",
     submit: "Remind me at this time",
-    quick: "See quick times",
     done: "Reminder set",
     error: {
       noAgent: "No agent here can remind you",
@@ -690,6 +690,7 @@ export const featureKeysEn = {
     title: "New mission",
     intro: "The agent makes a plan and only starts when you say so.",
     placeholder: "What needs to get done?",
+    who: "Who does it",
     submit: "Ask for a plan",
     created: "{{name}} is making the plan",
     noAgents: "No agent can run missions yet. Connect a computer on the website.",
@@ -802,9 +803,13 @@ export const featureKeysEn = {
       missions: "Missions",
       threads: "Threads",
     },
+    /** On a large screen (the iPhone Duo open), where the open thread stands beside the list while there is none yet. */
+    splitEmpty: "Your threads open here.",
   },
   agents: {
     title: "Agents",
+    /** On a large screen (the iPhone Duo open), where an agent's page stands beside the list while the team has none. */
+    splitEmpty: "Your agents' pages open here.",
     subtitle_one: "{{count}} on the team · {{working}} working",
     subtitle_other: "{{count}} on the team · {{working}} working",
     free: "Free",
@@ -820,11 +825,13 @@ export const featureKeysEn = {
     workingSection: "Working",
     /** The free agents, in no department: the team itself. */
     teamSection: "Team",
+    /** The same section in a personal workspace (ADR 0159). */
+    teamSectionPersonal: "Your agents",
     /** Under the task manager's row when nothing runs or waits. */
     managerQuiet: "Nothing in progress",
     /** A row's state, as text in the state's color (amber only for what waits on the person). */
     state: {
-      waitsYou: "waits for your OK",
+      waitsYou: "waiting for you",
       noAi: "No AI connected",
       connect: "Connect",
       archived: "Archived",
@@ -847,16 +854,14 @@ export const featureKeysEn = {
   agentEdit: {
     missing: "This agent no longer exists.",
     saved: "Changes saved",
-    adminsOnly: "Only admins change the name, role and instructions.",
+    /** Under the instructions, for who can't edit them: neither its owner, who manages it, nor its "Who can edit". */
+    adminsOnly: "Only whoever can edit this agent changes its role and instructions. Its name, only admins.",
     discardTitle: "Discard your changes?",
     discardText: "What you changed hasn't been saved yet.",
     discard: "Discard",
     keepEditing: "Keep editing",
   },
   newAgent: {
-    leaveTitle: "Leave without creating?",
-    leaveText: "The agent you started won't be created.",
-    keepGoing: "Keep creating",
     /** The second step asks who the agent is: a question and one line, as the other steps. */
     identityQuestion: "Who is the agent?",
     identityLead: "Its name, how to call it in the chat, and its face.",
@@ -864,7 +869,6 @@ export const featureKeysEn = {
     /** Under the name while it is typed: the @ follows the name until the person changes it. */
     handleFromName: "In the chat: @{{handle}}. It comes from the name. You can change it.",
     handleFromNameEmpty: "Its @ in the chat comes from the name.",
-    reviewLead: "Tap a line to change it.",
     planHint: "Or connect your AI plan: {{name}} then thinks with it, without spending the key.",
     planHint_female: "Or connect your AI plan: {{name}} then thinks with it, without spending the key.",
     partly: "The agent was created, but part of what its role brings didn't go through. Adjust it on its profile.",
@@ -875,9 +879,9 @@ export const featureKeysEn = {
         openmausbot:
           "In OpenMausBot: right-click the team\u00a0›\u00a0Share team…\u00a0›\u00a0Save file. Then pick that file here.",
         hermes:
-          "Hermes exports from a terminal (hermes profile export), as a .tar.gz the phone can't open. Import it on the computer, or pick the profile's .md and .yaml files here.",
+          "Hermes exports from a terminal (`hermes profile export`), as a .tar.gz the phone can't open. Import it on the computer, or pick the profile's .md and .yaml files here.",
         openclaw:
-          "OpenClaw keeps agents in the ~/.openclaw folder on the computer. Pick a workspace's .md files here, or import the whole folder on the computer.",
+          "OpenClaw keeps agents in the `~/.openclaw` folder on the computer. Pick a workspace's .md files here, or import the whole folder on the computer.",
         paperclip: "Paste the package's GitHub link below, or pick its COMPANY.md and the other .md files.",
         agenteschat:
           "In the other workspace: Settings\u00a0›\u00a0Import and export\u00a0›\u00a0Download the file. Then pick the .json here.",
@@ -891,7 +895,6 @@ export const featureKeysEn = {
         "The phone doesn't open .zip or .tar.gz files. In the Files app, tap the .zip to unzip it and pick the files inside, or import on the computer.",
       privacy: "Read on this phone. Key and login files are never opened.",
       also: "Also comes along",
-      change: "Change",
       arrived_one: "{{name}} arrived",
       arrived_other: "{{count}} agents arrived",
       partial: "{{done}} of {{total}} arrived. Importing again brings the rest.",
@@ -916,6 +919,12 @@ export const featureKeysEn = {
     taskPlaceholder: "What needs to get done?",
     sendTask: "Send task",
     taskSent: "Task sent",
+    /** Work nobody asked for: the confirmation before "Forget these answers" drops the remembered ones. */
+    brakes: {
+      forgetTitle: "Forget these answers?",
+      forgetText: "{{name}} asks again before this kind of work.",
+      forgetText_female: "{{name}} asks again before this kind of work.",
+    },
   },
   activity: {
     title: "Activity",
@@ -930,6 +939,9 @@ export const featureKeysEn = {
     /** The toast after a swipe marked an item done, with the way back. */
     doneToast: "Done",
     undo: "Undo",
+    /** The toast after "Clear all" (named after the Done pill), with the way back. */
+    doneAllToast_one: "{{count}} moved to Done",
+    doneAllToast_other: "{{count}} moved to Done",
     day: {
       today: "Today",
       yesterday: "Yesterday",
@@ -967,6 +979,9 @@ export const featureKeysEn = {
       routine_failed_other: "Routine failed",
       run_failed_one: "Couldn't finish",
       run_failed_other: "Couldn't finish",
+      admin_ask_channel_agent: "{{names}} asks you to add {{agent}} to #{{label}}",
+      admin_ask_create_agents: "{{names}} asks to be able to create agents",
+      admin_ask_webhook: "{{names}} asks you to set up the {{service}} webhook for routines",
       routine_paused_one: "Routine paused",
       routine_paused_other: "Routine paused",
       routine_stalled_one: "Routine waiting for the computer",
@@ -1027,11 +1042,11 @@ export const featureKeysEn = {
       plan_lent_other: "{{names}} connected your {{plan}} plan to {{agent}}",
       plan_lent_female_one: "{{names}} connected your {{plan}} plan to {{agent}}",
       plan_lent_female_other: "{{names}} connected your {{plan}} plan to {{agent}}",
+      plan_serves_one: "Your {{plan}} now serves the whole workspace",
+      plan_serves_other: "Your {{plan}} now serves the whole workspace",
       /** An agent's model left its plan's list (`plan_model_dropped`): `runs` the model it uses now. */
       plan_model_dropped_one: "{{model}} left {{plan}}. {{names}} is using {{runs}} for now",
       plan_model_dropped_other: "{{model}} left {{plan}}. {{names}} is using {{runs}} for now",
-      connector_tool_changed_one: "A connected server changed tools you approved",
-      connector_tool_changed_other: "A connected server changed tools you approved",
       computer_disk_full_one: "A computer's disk is almost full",
       computer_disk_full_other: "A computer's disk is almost full",
       computer_no_chrome_one: "A computer needs Google Chrome. Get it at google.com/chrome",
@@ -1098,6 +1113,9 @@ export const featureKeysEn = {
     role: {
       owner: "owner",
       member: "member",
+      /** Under a personal workspace's name (ADR 0159): whose it is, never a role. */
+      ownerPersonal: "your personal workspace",
+      memberPersonal: "a personal workspace shared with you",
     },
     appearance: "Appearance",
     notifications: "Notifications",
@@ -1140,7 +1158,6 @@ export const featureKeysEn = {
     proposalsWaiting_other: "{{count}} waiting",
     drive: "Drive",
     connectors: "Connectors and MCPs",
-    usage: "Usage",
     preferences: "Preferences",
     editProfile: "Edit profile",
     switchWorkspace: "Switch workspace",
@@ -1156,6 +1173,10 @@ export const featureKeysEn = {
     notificationsOnHint: "They also arrive in the browser and the desktop app, if they're on there.",
     notificationsOffHint: "Turn them on to get notifications here. The kinds below apply to all your devices.",
     notificationsKindsHint: "Activity keeps everything. This applies to this workspace, on all your devices.",
+    /** The switch for the agents' Live Activity (the iPhone's Dynamic Island and Lock Screen, ADR 0210). */
+    liveActivity: "Agents in the Dynamic Island",
+    liveActivityHint:
+      "When an agent works on something you asked for, it shows at the top of the screen, in any app, and on the Lock Screen. With the app closed, it needs iOS 17.2 or later.",
     version: "agentes.chat · version {{version}}",
     /** The bar's word on Você: it opens Conta. */
     edit: "Edit",
@@ -1177,8 +1198,7 @@ export const featureKeysEn = {
     agentStyle: "How agents talk",
     workspaces: "Workspaces",
     workspacesIn: "You're in",
-    workspacesFoot:
-      "You stay signed in to each one and get notifications from all of them. Tap a workspace to open it.",
+    workspacesFoot: "You stay signed in to each one and get notifications from all of them.",
     /** A server in Workspaces that didn't answer. */
     workspacesUnreachable: "No answer right now",
     addWorkspace: "Add workspace",
@@ -1195,6 +1215,11 @@ export const featureKeysEn = {
     addWorkspaceTeamShort: "Join your team's server",
     addWorkspaceTeamSubShort: "Address or the computer's QR code",
     addWorkspaceFoot: "You don't leave any workspace.",
+    /** Another account on the server the app is on, signed in beside this one (ADR 0183). */
+    addAccount: "Sign in to another account",
+    addAccountSub: "On {{host}}, without leaving this one",
+    /** In Workspaces, under an account of this phone that has no workspace. */
+    accountNoWorkspace: "No workspace yet",
     teamServerLeadShort: "What your team opens in the browser.",
     /** The team server's screen: the question is the title, in two lines on the sign-in's ruler. */
     teamServerQuestion: "What's your team's address?",
@@ -1213,6 +1238,9 @@ export const featureKeysEn = {
       name: "Name",
       namePlaceholder: "Your name",
       email: "Email",
+      /** E-mail, under the code: someone who can't open that inbox signs in again on the website instead. */
+      emailWebLead: "Sign in again on the website and change it there, without the code.",
+      emailWeb: "Sign in again on the website",
       inWorkspace: "In this workspace · {{org}}",
       handle: "Your @",
       timezone: "Time zone",
@@ -1249,6 +1277,8 @@ export const featureKeysEn = {
     /** No password, and no way to sign in again here: the website adds one. */
     addPasswordFirst: "Add a password to your account on the website first, then type it here.",
     addPasswordWeb: "Add a password on the website",
+    /** The owner of a server the desktop app runs, with no password: that app's sign-in is their proof. */
+    onThisComputer: "Delete it in the agentes.chat app on the computer that runs this server.",
     otherAccount: "You signed in to another account. Nothing was deleted.",
     hold: "Hold to delete",
   },
@@ -1265,10 +1295,14 @@ export const featureKeysEn = {
       diagram: "Diagram",
       page: "Page",
       text: "Text",
+      spreadsheet: "Spreadsheet",
+      slides: "Presentation",
+      canvas: "Canvas",
       file: "File",
     },
     more: "More options",
-    send: "Send",
+    /** The system's share sheet with the file itself (the file screen's bar, the picture viewer's row). */
+    sendCopy: "Send a copy",
     savePhotos: "Save to Photos",
     drive: "View in Drive",
     saved: "Saved to Photos",
@@ -1283,6 +1317,8 @@ export const featureKeysEn = {
     /** The picture viewer's buttons on the picture's sides. */
     previous: "Previous picture",
     next: "Next picture",
+    /** The file screen's heading for a type the app doesn't draw (the file's name is already the bar's title). */
+    noPreviewTitle: "No preview",
     noPreview: "This file doesn't open in the app. Send it to another app to open it.",
     /** The video player's controls (a message's video and the file screen). */
     video: {
@@ -1294,6 +1330,22 @@ export const featureKeysEn = {
       unmute: "Unmute",
       fullscreen: "Full screen",
       open: "Open",
+      /** A video this phone can't play, in the viewer: it can still be sent, shared or opened in the Drive. */
+      cantPlay: "This video can't play on this phone.",
+    },
+    /**
+     * A file's conversation in the sheet over it (ADR 0208): what a tap on the file does while the sheet is up, the
+     * video's tap target, a PDF's page, and a PDF that couldn't be drawn.
+     */
+    talk: {
+      hint: {
+        image: "Tap where you want to comment",
+        video: "Tap the video to comment on this moment",
+        pdf: "Tap the page to mark a point",
+      },
+      markVideo: "Comment on this moment of the video",
+      pdfPage: "Page {{page}} of {{count}}",
+      pdfFailed: "Couldn't show this PDF.",
     },
   },
   issues: {
@@ -1382,13 +1434,29 @@ export const featureKeysEn = {
   drive: {
     title: "Drive",
     search: "Search the Drive",
-    types: "File types",
-    type: { all: "All", documents: "Documents", images: "Images", tables: "Tables", diffs: "Diffs" },
+    type: {
+      all: "All",
+      documents: "Documents",
+      spreadsheets: "Spreadsheets",
+      presentations: "Presentations",
+      canvases: "Canvases",
+      images: "Images",
+      tables: "Tables",
+      diffs: "Diffs",
+    },
     section: { today: "Today", week: "This week" },
-    kind: { document: "Document", table: "Table", diff: "Diff", image: "Image", file: "File" },
+    kind: {
+      document: "Document",
+      table: "Table",
+      diff: "Diff",
+      image: "Image",
+      spreadsheet: "Spreadsheet",
+      slides: "Presentation",
+      canvas: "Canvas",
+      file: "File",
+    },
     by: "{{name}} · {{when}}",
     noResults: "Nothing with these filters.",
-    loadFailed: "Couldn't load the Drive.",
     more: "Show more",
   },
   // Wiki (the rest of its words are the web's, `wiki.*`).
@@ -1413,7 +1481,8 @@ export const featureKeysEn = {
     uses_one: "Used {{count}} time",
     uses_other: "Used {{count}} times",
     confirmed: "Confirmed by a person",
-    unconfirmed: "Not confirmed yet",
+    confirm: "Confirm",
+    confirmedToast: "Confirmed",
     details: "Technical details",
     before: "It used to say: {{text}}",
     fix: "Fix",
@@ -1460,8 +1529,6 @@ export const featureKeysEn = {
 
   // Rotinas (the rest of its words are the web's, `routines.*`).
   routines: {
-    loadFailed: "Couldn't load the routines.",
-    anyAgent: "All agents",
     create: "Create",
     /** The form's "when" as rows, each value picked from the system's list. */
     when: {
@@ -1502,7 +1569,7 @@ export const featureKeysEn = {
       plain: "finished a task",
     },
     rowWait: {
-      approval: "waits for your ok",
+      approval: "waiting for you",
       question: "waits for your answer",
       mission: "waits for your review",
     },
@@ -1520,15 +1587,11 @@ export const featureKeysEn = {
       browser: "Browser",
       secret: "Secret",
       join: "Members",
-      tools: "Tools",
       limit: "Limit",
     },
     review: "Review",
     answer: "Reply",
     open: "Open",
-    toolsTitle: "Changed tools you approved",
-    toolsWhy: "Agents keep the version you approved until you accept the new one.",
-    reviewChanges: "Review the changes",
     clear: {
       title: "Nothing waiting on you",
       text: "When an agent needs you, it shows up here first.",
@@ -1546,13 +1609,13 @@ export const featureKeysEn = {
   // intentional: agents
   intentAgents: {
     waitingSection: "Waiting on you",
-    waitingLine: "{{title}} · needs your ok",
+    waitingLine: "{{title}} · waiting for you",
     waitingMore_one: "{{title}} · and {{count}} more waiting on you",
     waitingMore_other: "{{title}} · and {{count}} more waiting on you",
-    waitingLabel: "{{name}}, needs your ok",
+    waitingLabel: "{{name}}, waiting for you",
     owner: "Owner: {{name}}",
     ownerYou: "Owner: you",
-    nowWaiting: "Needs your ok: {{title}}",
+    nowWaiting: "Waiting for you: {{title}}",
     did: {
       title: "What he did for you",
       title_female: "What she did for you",
@@ -1571,7 +1634,7 @@ export const featureKeysEn = {
         image: "Image",
         file: "File",
       },
-      waitingOnYou: "Needs your ok",
+      waitingOnYou: "Waiting for you",
       youApproved: "You approved",
       youRefused: "You declined",
       action: {
@@ -1644,9 +1707,9 @@ export const featureKeysEn = {
         setup: "Workspace setup",
         desktop: "Computer screen",
       },
-      asksYou: "Merging and publishing always ask for your approval, at any level.",
-      asksOwner: "Merging and publishing always ask for {{name}}'s approval, at any level.",
-      asksAdmins: "Merging and publishing always ask for an admin's approval, at any level.",
+      asksYou: "Merging and publishing ask for your approval, unless the agent never asks.",
+      asksOwner: "Merging and publishing ask for {{name}}'s approval, unless the agent never asks.",
+      asksAdmins: "Merging and publishing ask for an admin's approval, unless the agent never asks.",
       empty: "For now, only conversation.",
     },
   },
@@ -1733,32 +1796,16 @@ export const featureKeysEn = {
   // The agent's browser (ADR 0040).
   browser: {
     card: {
-      needs: "{{name}} needs help",
-      needsFor: "{{name}} needs help · {{time}}",
-      inControlAt: "You're in control · {{host}}",
-      doing: "{{name}} · {{doing}}",
-      startingF: "Opening {{name}}'s browser…",
-      startingM: "Opening {{name}}'s browser…",
       stopAskF: "Close {{name}}'s browser?",
       stopAskM: "Close {{name}}'s browser?",
-      whereF: "In {{name}}'s browser",
-      whereM: "In {{name}}'s browser",
       open: "Open",
-      expandHint: "Tap to expand",
       stop: "Stop",
       giveUp: "Give up",
-      done: "Done: {{title}}",
-      failed: "Couldn't: {{title}}",
-      failedNote: "Couldn't: {{note}}",
-      expired: "Nobody opened it in time: {{title}}",
-      cancelled: "Canceled: {{title}}",
-      withdrawn: "{{name}} no longer needs this: {{title}}",
     },
     live: {
       inControl: "You're in control",
       helping: "{{name}} is in control",
       watchOnly: "{{name}} is in control. You're only watching.",
-      takeOver: "Take over",
       done: "Done",
       handBack: "Hand back",
       couldnt: "Couldn't do it",
@@ -1779,7 +1826,6 @@ export const featureKeysEn = {
       closedHelpM: "Logins stay saved for next time.",
       stuckHelpF: "Try again restarts the browser. Logins stay saved.",
       stuckHelpM: "Try again restarts the browser. Logins stay saved.",
-      hidden: "{{name}} is in control · screen hidden",
       key: {
         Tab: "Tab",
         Enter: "Enter",
@@ -1809,6 +1855,8 @@ export const featureKeysEn = {
         offlineCloudM: "{{name}}'s computer isn't answering right now.",
         stuckF: "Couldn't open {{name}}'s browser.",
         stuckM: "Couldn't open {{name}}'s browser.",
+        noAnswerF: "{{name}}'s browser didn't answer.",
+        noAnswerM: "{{name}}'s browser didn't answer.",
         tooManyF: "Too many browsers open at once. This one shows when another one closes.",
         tooManyM: "Too many browsers open at once. This one shows when another one closes.",
       },
@@ -1866,13 +1914,24 @@ export const featureKeysEn = {
       ui_automation_off: "UI Automation is off",
       xcode_missing: "The Mac needs Xcode",
       xcode_too_old: "Xcode is too old for this iPhone",
+      ios_behind_xcode: "Update this iPhone's iOS",
       device_support: "The Mac is preparing this iPhone",
       helper_missing: "The test helper isn't set up yet",
       helper_expired: "The test helper needs renewing",
+      apple_account_missing: "Xcode on the Mac needs an Apple Account",
+      apple_team_missing: "Xcode on the Mac shows no team yet",
+      ui_not_authorized: "This iPhone refused the test helper's taps",
+      team_limit: "Remove an app you built from this iPhone",
+      helper_untrusted: "Trust the test helper on this iPhone",
       booting: "Starting up",
-      no_driver: "Windows needs this phone's USB driver",
+      no_driver: "Windows needs the phone maker's USB driver",
+      no_driverLinux: "Linux needs udev rules for this phone",
       os_too_old: "This phone's system is too old",
       adb_offline: "Unplug the cable and plug it in again",
+      wifi_away: "Join the Mac's Wi-Fi on this iPhone, or plug it in",
+      wifi_asleep: "Wake and unlock this iPhone, and keep it near the Mac",
+      tunnel_down: "The Wi-Fi link dropped. Keep this iPhone near the Mac, or plug it in",
+      wifi_untrusted: "Plug it in once and tap Trust",
       other: "Not ready yet",
     },
     os: { android: "Android {{version}}", ios: "iOS {{version}}" },
@@ -1941,8 +2000,15 @@ export const featureKeysEn = {
       server: "A server or VPS",
       serverText: "One line to paste in its terminal",
       computer: "Another computer",
-      computerText: "Mac, Windows or Linux",
+      computerText: "Install the app on it",
       appNote: "On a Mac or a PC you use, the agentes.chat desktop app connects it too.",
+      appStep1: "Get the agentes.chat app on it",
+      appStep2: "Open it and sign in as yourself",
+      appStep3: "Click Allow when it asks to let {{org}}'s agents use it",
+      appShows: "It shows up here by itself, only for you until you share it.",
+      appWaiting: "Waiting for a computer of yours…",
+      appConnected: "Connected: {{name}}",
+      appLine: "Can't install the app on it? Use a terminal line",
       unix: "Linux and macOS",
       windows: "Windows",
       once: "Works once, for 10 minutes. Run it on the computer, then let it join here.",
@@ -1961,13 +2027,13 @@ export const featureKeysEn = {
       noHost: "This phone works through a computer of yours. Connect one first.",
       hostOffline: "{{host}} is offline. Turn it on and open agentes.chat there.",
       step1: "Turn on Developer options",
-      step1Text: "Tap Build number 7 times, then enter your PIN.",
+      /** Android's own setting names; Samsung's own where its path differs. */
+      step1Text:
+        "Tap Build number 7 times, then enter your PIN. On Samsung: Software information\u00a0›\u00a0Build number.",
       openAbout: "Open About phone",
       step2: "Turn on USB debugging",
       openDev: "Open Developer options",
       step3: "Plug it into {{host}}",
-      step3Hint:
-        "Use a cable that carries data, not one that only charges. If the phone asks what the USB is for, pick File transfer.",
       looking: "Looking for this phone",
       step4: "Tap Allow on this phone",
       step4Text: "Check Always allow from this computer first.",
@@ -1984,9 +2050,15 @@ export const featureKeysEn = {
       wifiText: "Phone and computer on the same Wi-Fi",
       cable: "Use a cable instead",
       wifi1: "Turn on Wireless debugging",
-      wifi2: "Pair it from {{host}}",
+      wifi1Text: "Check Always allow on this network, then tap Allow.",
+      wifi2: "Scan the code on a computer",
       wifi2Text:
-        "In Android Studio on {{host}}, open Device Manager, then Pair Devices Using Wi-Fi. Scan its code here in Wireless debugging.",
+        "From Wireless debugging\u00a0›\u00a0Pair device with QR code. Don't use the camera: it reads the code as a Wi-Fi network and takes the phone off your Wi-Fi.",
+      wifi2Hint:
+        "In agentes.chat on a computer, open Connect a device\u00a0›\u00a0Android phone\u00a0›\u00a0Over Wi-Fi and pick {{host}}.",
+      codeHead: "Pair with a pairing code",
+      codeNote:
+        "From Wireless debugging\u00a0›\u00a0Pair device with pairing code. Open Settings and agentes.chat side by side so the code stays on screen.",
       wifiNote: "Wi-Fi can drop after a restart. A cable is more reliable.",
       done: "{{name}} is connected",
       openFailed: "This phone didn't open that screen. Find it in Settings.",
@@ -2013,6 +2085,52 @@ export const featureKeysEn = {
         "Settings\u00a0›\u00a0General\u00a0›\u00a0VPN & Device Management. Tap the developer's name, then Trust.",
       waiting: "Waiting for {{host}} to see it",
       footer: "Your Mac does the rest, and renews the test helper every 7 days while it's on.",
+      /** An iPhone below iOS 17: the guide ends here. */
+      tooOld:
+        "This iPhone runs iOS {{version}}, and agents need iOS 17 or newer. Update it if it can, or use a newer iPhone.",
+      /** The command stays as is in every language. */
+      xcodeOld:
+        "This iPhone runs iOS {{version}}, newer than Xcode on {{host}} knows. Install Xcode {{major}} there, then run xcrun devicectl manage ddis update in Terminal.",
+      /** Xcode's names (Signing & Capabilities) stay in English. */
+      teamMissing:
+        "Xcode is signed in but shows no team yet. In Xcode, make any iOS app, pick your team under Signing & Capabilities and run it on this iPhone once.",
+      uiRefused: "Agents see this iPhone's screen, but iOS refuses their taps.",
+      /** A button on step 1: the person says it's plugged in, and the guide says what to check. */
+      pluggedIn: "It's plugged in",
+      /** iPhones on the Mac's network that already trust it (they did over a cable once), offered, never used until picked. */
+      wifi: {
+        also: "Also on the Wi-Fi of {{host}}: {{name}}",
+        use: "Use over Wi-Fi",
+        hint: "Only an iPhone that trusted the Mac over a cable shows up here. The Mac reaches it through Apple's own encrypted link, the one Xcode uses.",
+        stop: "Stop using over Wi-Fi",
+        stopTitle: "Stop using {{name}} over Wi-Fi?",
+        stopText: "Agents can't reach it any more. Pick it again with {{host}} to use it.",
+        stopped: "{{name}} isn't used over Wi-Fi any more",
+      },
+      /** Under a step that sat unchanged for a while: what most likely holds it, and one way out. */
+      stall: {
+        plug: "{{host}} doesn't see this iPhone yet. Use a cable that carries data, not only power, keep this iPhone unlocked and tap Trust if it asks.",
+      },
+      /** Under Developer Mode, on the iPhone itself. */
+      devMode: {
+        /** It restarted to turn the mode on, and its Mac doesn't see it again yet. */
+        restarting: "{{host}} doesn't see this iPhone again yet after its restart. Keep it plugged in.",
+        /** Back from the restart with the mode still off: iOS shows its alert once unlocked. */
+        back: "Tap Turn On in the alert on this iPhone and enter your passcode.",
+        /** A button: the Mac looks at this iPhone again now. */
+        check: "I turned it on, check again",
+        stillOff: "{{host}} still sees Developer Mode off.",
+        /** Each reason the switch may be missing, with its one way out. */
+        missing: "Don't see the option?",
+        hidden: "This iPhone hides the option until Xcode asks to show it.",
+        /** For who can't open Xcode from here: someone who doesn't manage the Mac, or a Mac whose app is too old. */
+        hiddenOpen:
+          "This iPhone hides the option until Xcode asks to show it. Open Xcode on {{host}} with this iPhone plugged in.",
+        openXcode: "Open Xcode",
+        opened: "Xcode opened on {{host}}. Look in Settings again, then close Xcode there.",
+        unlock: "Turned it on and it restarted? The alert with Turn On shows once this iPhone is unlocked.",
+        outdated: "The agentes.chat app on {{host}} is out of date. Update it on that Mac.",
+      },
     },
     /**
      * Notifications about devices, in the inbox. `{{names}}`: the agent, drawn bold. No "your": device names are
@@ -2027,6 +2145,9 @@ export const featureKeysEn = {
       access_requestFor: "{{names}} asks to use {{device}} for {{person}}",
       waiting: "{{names}} is waiting for {{device}}",
       waitingFor: "{{names}} is waiting for {{device}} for {{person}}",
+      tool_request: "{{names}} asks you to turn on {{tool}} on your {{device}}",
+      cli_request: "{{names}} asks you to install {{tool}} on your {{device}}",
+      folder_request: "{{names}} asks for the folder {{path}} on your {{device}}",
       allowOnce: "Allow once",
       always: "Always allow {{name}}",
       no: "No",
@@ -2041,6 +2162,9 @@ export const featureKeysEn = {
       stop: "Stop waiting",
       useInstead: "Use {{name}} instead",
       none: "No other device you can use is ready.",
+      /** After "Try now" and "Stop waiting": what the button did, said at once. */
+      tried: "Trying {{device}} again.",
+      stopped: "No longer waiting for {{device}}.",
     },
   },
   connectors: {
@@ -2070,6 +2194,8 @@ export const featureKeysEn = {
     loadFailed: "Couldn't load the connectors.",
     connectedCheck: "{{name}}, connected",
     adminsOnly: "Only an admin of {{org}} connects services. Ask one of them.",
+    /** In a personal workspace (ADR 0159): its owner and whoever helps run it, never "an admin of Personal". */
+    adminsOnlyPersonal: "Only whoever runs this workspace connects apps. Ask them.",
     canTitle: "Agents will be able to",
     asks: "{{text}} · asks for your approval",
     connect: "Connect",
@@ -2089,13 +2215,13 @@ export const featureKeysEn = {
     failed: "Couldn't connect. Try again.",
     refused: "{{name}} didn't authorize. Nothing was connected.",
     connectedTitle: "{{name}} connected",
-    connectedSub: "Now check what agents can do on their own.",
     connectedDone: "Service connected.",
     levelFailed: "Couldn't change {{name}}'s access. Try again.",
     everyoneFailed: "Couldn't change everyone's access. Try again.",
     disconnectFailed: "Couldn't disconnect {{name}}. Try again.",
     needsReconnect: "The {{name}} account stopped working. Agents can't use it until someone reconnects it.",
-    noTools: "{{name}}'s tools couldn't be read. Agents go without them until they're read again, in Tools.",
+    noTools: "{{name}}'s tools couldn't be read. Agents go without them until they're read again.",
+    readAgain: "Read again",
     accountTitle: "Account",
     renameFailed: "Couldn't rename it. Try again.",
     whoTitle: "Who uses it",
@@ -2166,8 +2292,6 @@ export const featureKeysEn = {
   },
   joinRequests: {
     share: "Share the link",
-    roles: "Roles",
-    rolesHint: "They join with the roles turned on. With none, they may do what Everyone may.",
   },
   humanCheck: {
     title: "Quick check",
@@ -2175,16 +2299,9 @@ export const featureKeysEn = {
   },
   /** Convidar pessoas and the sent invitations' sheet (ADR 0090); the other words are the shared `members.*`. */
   invitePeople: {
-    emailsHelp: "Paste a list or type. Each person gets an email and joins right away.",
-    here: "Already here",
-    invited: "Already invited",
-    fix: "Check this",
-    channels: "Channels",
     optional: "Optional",
     ok: "OK",
     noteHelp: "It shows in the email with your name. Up to {{max}} characters.",
-    roleHelp: "Changes what the person gets on joining.",
-    remove: "Take off the list",
     sendAgain: "Send again",
     cancelTitle: "Cancel the invitation to {{email}}?",
     cancelText: "Its link stops opening.",
@@ -2223,10 +2340,14 @@ export const featureKeysEn = {
     zoneTitle: "Time zone",
     /** A second workspace from Adicionar workspace (ADR 0154): where it lives, and that nothing is left. */
     anotherTitle: "What's the new workspace called?",
+    /** Its first question (ADR 0159), before the name: "For me" or "For my team". */
+    anotherPurpose: "What's the new workspace for?",
     anotherLead: "On agentes.chat. You stay in {{org}} and can switch any time.",
     /** The first run's name, suggested from a work address's domain. */
     suggested: "From your {{domain}} e-mail, I suggested {{org}}.",
     create: "Create",
+    /** The onboarding's plan step on the phone, which can't take the plan: into the workspace, the team asleep. */
+    enter: "Go to the workspace",
     shareMessage: "Join {{org}} on agentes.chat: {{url}}",
     failed: "Couldn't save. Try again.",
   },
@@ -2262,12 +2383,10 @@ export const featureKeysEn = {
     planRowSub: "Signs in on the agent's computer, no key",
     keyRow: "A key",
     keyRowSub: "You pay per use, straight to the maker",
-    already: "Already at {{org}}",
     stepOf: "{{step}} of {{total}}",
   },
   crash: {
     title: "Something went wrong on this screen",
-    subtitle: "The app hit an error showing this. Try again.",
     retry: "Try again",
   },
   notFound: {
@@ -2283,8 +2402,6 @@ export const featureKeysEn = {
     group: {
       org: "Workspace",
       people: "People",
-      agents: "Agents",
-      costs: "Costs and data",
     },
     /** Shorter names for the rows whose group already says the rest (the web's are `settings.section.*`). */
     section: {
@@ -2292,7 +2409,6 @@ export const featureKeysEn = {
       roles: "Roles",
       access: "Agents' access",
       connectors: "Connectors",
-      usage: "Usage and budget",
     },
     /** The computers row's value: how many are on, of how many. */
     ofOnline: "{{online}} of {{count}}",
@@ -2300,32 +2416,203 @@ export const featureKeysEn = {
     deleteName: "Delete {{name}}",
     deleteFoot: "You have 7 days to change your mind.",
     /** The system alert's text; its title is `deleteOrg.title`. */
-    deleteAlert: "Everyone is out right away. It can be restored for 7 days.",
+    deleteAlert: "Everyone can only read it from now on. It can be restored for 7 days.",
     deleteAction: "Delete",
     /** The last step: what deleting it does, the proof it's you and the hold. */
-    deleteIntro: "{{name}} closes for everyone right away and is deleted for good in 7 days.",
+    deleteIntro: "{{name}} turns read-only for everyone right away and is deleted for good in 7 days.",
     holdDelete: "Hold to delete",
     deleteFailed: "Couldn't delete the workspace. Try again.",
-    access: {
-      how: "Tap a row to change its level: No access, Read, Read and write.",
-    },
+    holdReset: "Hold to reset",
+    resetFailed: "Couldn't reset the workspace. Try again.",
     logo: {
       failed: "Couldn't upload the logo",
       tooBig: "That image is too big. Try another one.",
     },
     machine: {
-      toolsHow: "Tap a tool that's on to turn it off. Turning it back on happens only on the computer itself.",
-    },
-    roles: {
-      /** Under the roles and a role's name and color: what only the web changes. */
-      onComputer: "The roles' order and each role's icon change on the computer.",
-      /** Over an area's permissions, each with its own switch. */
-      items: "Item by item",
-      create: "Create",
+      toolsHow:
+        "Tap a tool that's on to turn it off. To turn it back on: on the computer itself, or here by whoever connected it.",
+      /** For whoever connected the computer: a tap turns an off tool on, and one that is on off. */
+      toolsHowOwner: "Tap a tool to turn it on or off.",
     },
     import: {
       preparing: "Preparing the file…",
       failed: "Couldn't download the file. Try again.",
+    },
+  },
+  /** Configurações › Cargos (ADR 0085): the workspace's roles, what each adds, and who holds what. */
+  roles: {
+    create: "Create",
+    search: "Search roles",
+    /** The ⓘ on BASE: what Everyone is. */
+    baseHint: "Applies to every person in the workspace. Roles add to it.",
+    /** The ⓘ on ROLES: what the order means. */
+    orderHint:
+      "Whoever is higher manages the roles and the people below. Each person's name color comes from their highest role.",
+    /** The header word that shows ▲▼ on each role, and the one that saves the order. */
+    order: "Reorder",
+    orderDone: "Done",
+    up: "Move {{name}} up",
+    down: "Move {{name}} down",
+    orderChanged: "The roles changed while you were moving them. Reload and try again.",
+    none: "No roles yet. Create one to give some people more.",
+    noMatch: "No role matches “{{q}}”.",
+    tooMany: "This workspace already has 100 roles. Delete one to create another.",
+    loadFailed: "Couldn't load the roles. {{cause}}",
+    /** A role nobody holds yet, at the start of its glance line. */
+    nobody: "Nobody",
+    /** What a role adds to what Everyone can, under its name: "+3 permissions · +2 channels · +1 agent". */
+    reach: {
+      permissions_one: "{{count}} permission",
+      permissions_other: "{{count}} permissions",
+      channels_one: "{{count}} channel",
+      channels_other: "{{count}} channels",
+      agents_one: "{{count}} agent",
+      agents_other: "{{count}} agents",
+      /** Before what a role adds beyond Everyone: "+3 permissions". */
+      more: "+{{what}}",
+      all: "Can do everything",
+      owner: "Can do everything, always",
+      none: "Only what Everyone can",
+      /** Everyone with no permission, channel or agent at all. */
+      baseNone: "Read only",
+    },
+    tabs: {
+      permissions: "Permissions",
+      channels: "Channels",
+      agents: "Agents",
+    },
+    addOwners: "Add owners",
+    /** Each role icon's name, for screen readers on the icon grid. */
+    icons: {
+      shield: "Shield",
+      code: "Code",
+      wallet: "Wallet",
+      mail: "Email",
+      bolt: "Bolt",
+      flag: "Flag",
+      book: "Book",
+      chart: "Chart",
+      bulb: "Light bulb",
+      globe: "Globe",
+      pullRequest: "Pull request",
+      calendar: "Calendar",
+      message: "Message",
+      eye: "Eye",
+      plug: "Plug",
+      person: "Person",
+    },
+    inviteWith: "Invite with this role",
+    searchPermission: "Search permissions",
+    /** Under a permission everyone already has. */
+    everyoneCan: "Everyone can",
+    /** Some roles or people: "Only Support and Finance". */
+    only: "Only {{names}}",
+    notHeld: "You don't have this permission.",
+    noPermissionMatch: "No permission matches “{{q}}”.",
+    advanced: "Advanced",
+    peopleOnly: "Roles are for people. Each agent has its own permissions, on its page.",
+    nowAbove: "This role is now above yours. Only someone higher changes it.",
+    admin: {
+      title: "Turn on Administrator for {{name}}?",
+      text: "Everyone with {{name}} can then do everything but what only the owner does.",
+      count_one: "That's {{count}} person.",
+      count_other: "That's {{count}} people.",
+      on: "Turn on Administrator",
+      note: "With Administrator, {{name}} can do everything but what only the owner does.",
+    },
+    computers: {
+      title: "Agents' computers",
+      hint: "Browser: the browser and the sign-in requests. Computer: also the whole screen and the terminal. Their own agents: the ones the person looks after and the computers they connected.",
+      /** The five steps, lowest first: what people with the role use of the agents' computers. */
+      steps: {
+        "0": "Doesn't use",
+        "1": "Their own agents' browser",
+        "2": "Their own agents' computer",
+        "3": "Any agent's browser",
+        "4": "Any agent's computer",
+      },
+      /** The same steps inside a sentence ("Everyone gets their own agents' browser."). */
+      stepsIn: {
+        "1": "their own agents' browser",
+        "2": "their own agents' computer",
+        "3": "any agent's browser",
+        "4": "any agent's computer",
+      },
+      everyoneTo: "Everyone gets {{step}}.",
+      everyoneNone: "Everyone stops using the agents' computers.",
+    },
+    /** "Who can…": who keeps a permission, Everyone and the roles at once. */
+    whoCan: "Who can",
+    everyoneSub: "Every person in the workspace",
+    someRoles: "Only some roles",
+    losing: "Losing it: {{names}}.",
+    nobodyLoses: "Nobody loses it.",
+    everyoneGets: "Everyone gets it.",
+    ownersAlways: "Owners always can.",
+    noOtherRoles: "There are no other roles yet.",
+    channels: {
+      /** Over the channels a role opens: "People with Support see". */
+      header: "People with {{name}} see",
+      /** The same over Everyone's channels. */
+      headerBase: "Everyone sees",
+      hint: "This is about people. An agent joins a channel when someone adds it.",
+      search: "Search channels",
+      everyone: "Everyone sees it",
+      private: "Private",
+      general: "Everyone stays in #general.",
+      locked: "Only whoever created #{{channel}} or arranges channels changes who sees it.",
+      leaveTitle: "Remove #{{channel}} from {{name}}?",
+      leave_one: "{{names}} leaves the channel.",
+      leave_other: "{{names}} leave the channel.",
+      leaveAction: "Remove",
+      openTitle: "Open #{{channel}} to {{name}}?",
+      openText: "People with {{name}} see the channel and all its history, and can join.",
+      openAction: "Open",
+      openAllTitle: "Open #{{channel}} to everyone?",
+      openAllText: "All its history opens to the workspace.",
+      admin: "With Administrator, people with {{name}} see every channel.",
+      onlyGeneral: "There's only #general for now.",
+      noMatch: "No channel matches “{{q}}”.",
+      /** The channels in no category, first, as in the sidebar. */
+      ungrouped: "Channels",
+      /** "Who sees #channel": everyone, some roles, or only who is added. */
+      whoSees: "Who sees",
+      allSub: "Anyone in the workspace sees it and can join.",
+      invited: "Only who is added",
+      invitedSub: "Nobody new sees it. Who's in stays.",
+      unsee: "Who's in stays. No longer see it: {{names}}.",
+    },
+    agents: {
+      /** Over the agents a role talks to: "People with Support talk to". */
+      header: "People with {{name}} talk to",
+      /** The same over the agents Everyone talks to. */
+      headerBase: "Everyone talks to",
+      hint: "This is about people. What each agent does is on its page.",
+      everyone: "Everyone talks to it",
+      gate: "People with only {{name}} don't talk to agents.",
+      gateOn: "Turn on Talk to agents",
+      locked: "Only {{owner}}, who looks after {{name}}, or someone who edits agents changes it.",
+      locked_female: "Only {{owner}}, who looks after {{name}}, or someone who edits agents changes it.",
+      lockedNoOwner: "Only someone who edits agents changes it.",
+      none: "No agents yet.",
+      some: "Only some roles and people",
+      addPerson: "Add a person",
+      losing: "No longer talk to {{agent}}: {{names}}.",
+    },
+    people: {
+      removed: "{{person}} no longer has {{name}}",
+      selfTitle: "Take yourself out of {{name}}?",
+      selfText: "You lose what only {{name}} gives. Only someone above you gives it back.",
+    },
+    /** Before a role takes a mailbox from an agent: only a mailbox's owner gives an agent access to it. */
+    mail: {
+      title_one: "An agent loses a mailbox",
+      title_other: "Agents lose {{count}} mailboxes",
+      loses: "{{agent}} loses {{address}}, {{owner}}'s mailbox.",
+      losesAddress: "{{agent}} loses the mailbox {{address}}.",
+      only: "Only whoever gave a mailbox gives it again.",
+      addAnyway: "Add anyway",
+      giveAnyway: "Give it anyway",
     },
   },
   vault: {
@@ -2364,7 +2651,7 @@ export const featureKeysEn = {
     },
     import: {
       title: "Import from a computer",
-      text: "To bring passwords from a browser or a password manager, open Settings, Vault on the web and choose Import.",
+      text: "To bring passwords from a browser or a password manager, import them on the web.",
     },
     connections: {
       text: "Connect a password manager and your agents use the logins kept there. Nothing is copied: a password is read only when it's used.",
@@ -2382,8 +2669,7 @@ export const featureKeysEn = {
       guide: "Open the {{name}} guide",
       fields: "Details",
       private: "These details are kept encrypted and never shown again.",
-      teamHelp:
-        "Its items start visible to everyone in the workspace and used by no agent. You choose the agents next.",
+      teamHelp: "Everyone in the workspace sees its items and every agent can use them. You can adjust it next.",
       personalHelp: "Only you see its items, and your agents use them when you ask.",
       checking: "Checking with {{name}}…",
       connected: "{{name}} connected",
@@ -2394,6 +2680,7 @@ export const featureKeysEn = {
       ready: "Connected",
       syncing: "Syncing…",
       reads: "Reads {{label}}",
+      noWrites: "read-only",
       items_one: "{{count}} item",
       items_other: "{{count}} items",
       synced: "synced {{when}}",
@@ -2420,7 +2707,7 @@ export const featureKeysEn = {
       sealedHelp: "For safety, what's saved here never shows again. To change it, type it again.",
       changePassword: "Change password",
       changeValue: "Change value",
-      changeHelp: "Tap Save to keep it. Agents use the new one from then on.",
+      changeHelp: "Agents use the new one after you save.",
       hidden: "Hidden",
       saved: "Saved",
       delete: "Delete",
@@ -2439,7 +2726,7 @@ export const featureKeysEn = {
       newPassword: "New password",
       keyName: "Variable",
       keyNamePlaceholder: "ACME_API_KEY",
-      keyNameHelp: "Capital letters, digits and _, like ACME_API_KEY. Agents ask for the key by this name.",
+      keyNameHelp: "Capital letters, digits and _, like `ACME_API_KEY`. Agents ask for the key by this name.",
       value: "Value",
       newValue: "New value",
       description: "Description",
@@ -2567,10 +2854,7 @@ export const featureKeysEn = {
   },
   // Dashboards on the phone (ADR 0135); the rest of their words are the web's, `dashboards.*` and `widgets.*`.
   dashboards: {
-    homeRow: "Only you · your own widgets",
-    loadFailed: "Couldn't load the dashboards.",
-    /** Under "My Home" when the person sees no other board; "+" in the bar makes one. */
-    onlyHome: "Dashboards for the workspace or your roles show up here.",
+    homeRow: "Only you",
     create: "Create",
     routineTarget: "its widget",
     pin: {
@@ -2610,7 +2894,6 @@ export const featureKeysEn = {
     formatAuto: "{{name}} picks the best one",
     /** New widget's card, which is the form. */
     newWidget: {
-      titleHint: "Title · {{name}} suggests one when testing",
       alerts: "Alerts",
       realData: "Real data",
       editAsk: "Change the ask",
@@ -2645,6 +2928,11 @@ export const featureKeysEn = {
       text: "Each agent takes on a role and works with you right in the chat.",
       viewerTitle: "Your team of agents lives here",
       viewerText: "Whoever creates agents in this workspace adds the first one, and it shows up here.",
+      /** A personal workspace's words (ADR 0159), for one person: `firstUseCopy`'s `…Personal` siblings. */
+      titlePersonal: "Get help from your own agents",
+      textPersonal: "Each agent takes care of one thing for you, right in the chat.",
+      viewerTitlePersonal: "Your agents live here",
+      viewerTextPersonal: "Whoever creates agents here adds the first one, and it shows up here.",
     },
     agentsForYou: {
       title: "Your agents show up here",
@@ -2652,15 +2940,22 @@ export const featureKeysEn = {
     },
     drive: {
       title: "Everything the team makes, in one place",
-      text: "Reports, tables and files from agents and people stay here, easy to find.",
+      text: "Reports, tables and files from agents and people stay here.",
       viewerTitle: "Find what the team makes",
       viewerText: "What agents and people create in the chats shows up here.",
+      titlePersonal: "Everything your agents make, in one place",
+      textPersonal: "Reports, tables and files from your agents stay here.",
+      viewerTitlePersonal: "Find what your agents make",
+      viewerTextPersonal: "What agents create in your chats shows up here.",
     },
     tasks: {
       title: "Hand work to the team",
       text: "Create a task for an agent or a person and follow it to the end.",
       viewerTitle: "Follow the team's work",
       viewerText: "Tasks show up here as soon as someone creates the first one.",
+      titlePersonal: "Hand your to-dos to your agents",
+      textPersonal: "Create a task for an agent and follow it to the end.",
+      viewerTitlePersonal: "Follow your agents' work",
     },
     routines: {
       title: "Leave repeated work to your agents",
@@ -2673,6 +2968,9 @@ export const featureKeysEn = {
       text: "People and agents read these pages, so everyone works from the same facts.",
       viewerTitle: "Look up what the team knows",
       viewerText: "Whoever edits the wiki writes the first page, and it shows up here.",
+      titlePersonal: "Keep notes your agents can read",
+      textPersonal: "Your agents read these pages, so they work from what you wrote.",
+      viewerTitlePersonal: "Look up what's written here",
     },
     memory: {
       title: "Your agents learn as they work",
@@ -2696,15 +2994,23 @@ export const featureKeysEn = {
       viewerTitle: "The team's channels live here",
       viewerText: "Whoever creates channels opens the first one, and it shows up here.",
       action: "Create channel",
+      titlePersonal: "Talk to several agents at once",
+      textPersonal: "Each group conversation gathers the agents and people for one subject.",
+      viewerTitlePersonal: "Group conversations live here",
+      viewerTextPersonal: "Whoever creates group conversations opens the first one, and it shows up here.",
     },
     people: {
       title: "Work with your team here",
       text: "Invite people to talk to them and to your agents in one place.",
       viewerTitle: "Your team shows up here",
       viewerText: "Whoever invites people brings the rest of the team, and they show up here.",
+      titlePersonal: "Bring your family or friends in",
+      textPersonal: "Invite someone to talk to you and to your agents in one place.",
+      viewerTitlePersonal: "Family and friends show up here",
+      viewerTextPersonal: "When someone joins, they show up here.",
     },
     chat: {
-      title: "It all starts with a message",
+      title: "Start the conversation",
       text: "Write below and everyone here sees it.",
       viewerTitle: "Messages show up here",
       viewerText: "When someone writes, you read it here.",
@@ -2722,6 +3028,10 @@ export const featureKeysEn = {
       text: "Save the logins and keys your agents use for the team.",
       viewerTitle: "The team's logins show up here",
       viewerText: "When someone shares a login or a key with you, it shows up here.",
+      titlePersonal: "Keep shared logins in one place",
+      textPersonal: "Save the logins and keys your agents use for everyone here.",
+      viewerTitlePersonal: "Shared logins show up here",
+      viewerTextPersonal: "When someone here shares a login or a key with you, it shows up here.",
     },
     skills: {
       title: "Teach your agents how you do things",
@@ -2741,8 +3051,8 @@ export const featureKeysEn = {
     board: {
       title: "See what matters on one board",
       text: "Add a widget, ask an agent for one or pin a block from the chat.",
-      viewerTitle: "This board is taking shape",
-      viewerText: "Whoever edits this board adds the widgets, and they show up here.",
+      viewerTitle: "Widgets show up here",
+      viewerText: "Whoever edits this board adds them.",
     },
     computers: {
       title: "Bring another computer to your agents",
@@ -2751,7 +3061,7 @@ export const featureKeysEn = {
       viewerText: "Whoever connects computers adds them, and they show up here.",
     },
     connectors: {
-      title: "Give your agents real tools",
+      title: "Give your agents tools",
       text: "Connect a service and they start reading and acting in it.",
       viewerTitle: "Your agents' tools show up here",
       viewerText: "Whoever manages connectors connects the services below.",
@@ -2760,6 +3070,244 @@ export const featureKeysEn = {
       title: "Nothing to review",
       text: "When an agent does something outside the conversation, it shows up here.",
     },
+  },
+  /** Live files on the phone (ADR 0196): their bar, who is here, the spreadsheet. */
+  live: {
+    /** Under the file's name in its bar. */
+    status: {
+      opening: "Opening…",
+      saved: "Saved",
+      saving: "Saving…",
+      offline: "No connection",
+      offlineKept: "No connection · changes kept on this phone",
+      readOnly: "Read-only",
+    },
+    /** A file that can't open, and the way back. */
+    closed: {
+      missing: "This file doesn't exist or wasn't shared with you",
+      signedOut: "Sign in again to open this file",
+      broken: "This file can't be opened in the app",
+      toDrive: "Back to the Drive",
+    },
+    menu: { undo: "Undo", redo: "Redo" },
+    /** The faces in the bar and the list they open. */
+    here: {
+      title: "Who's here",
+      faces_one: "{{count}} more here. See who",
+      faces_other: "{{count}} more here. See who",
+      group: { editing: "Editing", viewing: "Looking" },
+      editing: "editing",
+      viewing: "viewing",
+      editingAt: "editing {{where}}",
+      viewingAt: "on {{where}}",
+      editingSlide: "editing slide {{n}}",
+      onSlide: "on slide {{n}}",
+      editingShapes_one: "editing {{count}} item",
+      editingShapes_other: "editing {{count}} items",
+      followingName: "Following {{name}}",
+      stop: "Stop",
+      alone: "Only you are here now",
+      aloneHint: "Whoever opens this file shows up here, with what they're doing.",
+    },
+    /** A live file's card on a message: how big it is. */
+    card: {
+      sheets_one: "{{count}} sheet",
+      sheets_other: "{{count}} sheets",
+      slides_one: "{{count}} slide",
+      slides_other: "{{count}} slides",
+      shapes_one: "{{count}} item",
+      shapes_other: "{{count}} items",
+    },
+    sheet: {
+      edit: "Edit",
+      editHint: "Type into this cell",
+      editing: "Editing {{cell}}",
+      placeholder: "Type a value or =",
+      empty: "Empty",
+      cancel: "Leave it as it was",
+      done: "Done",
+      /** The formula keys over the keyboard. */
+      typeKey: "Type {{key}}",
+      /** Several cells selected. */
+      stats: "Sum {{sum}} · Average {{average}} · Count {{count}}",
+      countOnly: "Count {{count}}",
+      cantDo: "That can't be done here",
+      copied: "Copied",
+      newSheet: "New sheet",
+      /** A new sheet's name before its number ("Sheet 2"). */
+      sheetWord: "Sheet",
+      duplicateSheet: "Duplicate sheet",
+      copyOf: "{{name}} (copy)",
+      deleteSheet: "Delete sheet",
+      deleteSheetTitle: "Delete {{name}}?",
+      deleteSheetText: "Everything in this sheet goes for everyone in the file. Undo brings it back.",
+      /** A long press on a cell. */
+      menu: {
+        copy: "Copy",
+        paste: "Paste",
+        clear: "Clear",
+        rowsAbove_one: "Insert a row above",
+        rowsAbove_other: "Insert {{count}} rows above",
+        rowsBelow_one: "Insert a row below",
+        rowsBelow_other: "Insert {{count}} rows below",
+        colsLeft_one: "Insert a column to the left",
+        colsLeft_other: "Insert {{count}} columns to the left",
+        colsRight_one: "Insert a column to the right",
+        colsRight_other: "Insert {{count}} columns to the right",
+        sortUp: "Sort A to Z",
+        sortDown: "Sort Z to A",
+        deleteRows_one: "Delete the row",
+        deleteRows_other: "Delete {{count}} rows",
+        deleteCols_one: "Delete the column",
+        deleteCols_other: "Delete {{count}} columns",
+      },
+      /** Why what was typed wasn't written. */
+      problem: {
+        empty: "Type something after =",
+        unexpected: "Something is off near {{text}}",
+        paren: "A parenthesis isn't closed",
+        quote: "A quote isn't closed",
+        sheetQuote: "A sheet name's quote isn't closed",
+        operand: "A value is missing beside a sign",
+        array: "This list of values isn't complete",
+        range: "This range isn't valid",
+        sheet: "There's no sheet called {{text}}",
+        args: "{{fn}} has the wrong number of values",
+        tooLong: "This is too long for a cell",
+        tooDeep: "This formula has too many levels",
+        tooFar: "This reference goes past the spreadsheet's limit",
+        limit: "The spreadsheet is at its size limit",
+        merged: "Merged cells are in the way",
+        failed: "That didn't work. Try again.",
+      },
+    },
+    /** A presentation on the phone: its slides, a slide opened large, its words, presenting. */
+    slides: {
+      /** What an empty box says while it can be edited. */
+      placeholder: {
+        title: "Tap to add a title",
+        text: "Tap to add text",
+        image: "Tap to add a photo",
+      },
+      /** What a text box is, as its screen and its menu name it. */
+      part: {
+        title: "Title",
+        subtitle: "Subtitle",
+        body: "Text",
+        caption: "Caption",
+        number: "Big number",
+        quote: "Quote",
+        shape: "Text in the shape",
+        text: "Text box",
+        note: "Note",
+      },
+      openHint: "Opens the slide",
+      editHint: "Edits its words",
+      place: "Slide {{n}} of {{count}}",
+      placeHidden: "Slide {{n}} of {{count}} · hidden when presenting",
+      deleteTitle: "Delete slide {{n}}?",
+      deleteText: "It goes for everyone in the file. Undo brings it back.",
+      notesPlaceholder: "Write what to say on this slide",
+      pickPhoto: "Choose a photo",
+      /** The tools under a slide opened large. */
+      tools: {
+        text: "Text",
+        photo: "Photo",
+        sending: "Sending…",
+      },
+    },
+    /** A text box's words on a screen of their own (a slide's, or a canvas's note). */
+    text: {
+      title: "Text",
+      noteTitle: "Note",
+      done: "Done",
+      placeholder: "Type the text",
+      titlePlaceholder: "Type the title",
+      hint: "Each line is a paragraph.",
+    },
+    /** Presenting. */
+    show: {
+      nothing: "Every slide is hidden, so there is nothing to show.",
+      upright: "Stand the phone up",
+      sideways: "Turn the phone sideways",
+    },
+    /** A canvas on the phone: its dock of tools, the shapes' menu, drawing and comments. */
+    canvas: {
+      tools: {
+        label: "Tools",
+        select: "Select",
+        pen: "Pen",
+        shapes: "Shapes",
+        arrow: "Arrow",
+        note: "Note",
+        text: "Text",
+        photo: "Photo",
+        comment: "Comment",
+      },
+      shapes: {
+        rect: "Rectangle",
+        ellipse: "Ellipse",
+        diamond: "Diamond",
+        triangle: "Triangle",
+        star: "Star",
+        line: "Line",
+      },
+      penHint: "Draw with your finger. Two fingers move the canvas.",
+      arrowHint: "Drag from one place to another",
+      commentHint: "Tap where you want to comment",
+      pin: "Comment {{n}} by {{name}}",
+      addToSelection: "Choose this too",
+      emptyText: "Add a note or a photo, or ask an agent in the conversation.",
+    },
+    /** A live file's own conversation, from the file: the line under it, its quote, where the file came from. */
+    talk: {
+      start: "Talk about {{what}}",
+      openHint: "Opens the conversation",
+      placeholder: {
+        spreadsheet: "Write on the spreadsheet…",
+        slides: "Write on the presentation…",
+        canvas: "Write on the canvas…",
+        document: "Write on the document…",
+      },
+      aboutPoint: "A comment on a spot of the canvas",
+      comment: "Comment",
+      imported: "Imported from {{file}} by <0>{{name}}</0>",
+      variationsText: "make variations of this image",
+    },
+    /** A document on the phone (ADR 0200): its blocks, edited one at a time, and the bar over the keyboard. */
+    doc: {
+      styles: {
+        paragraph: "Text",
+        h1: "Heading 1",
+        h2: "Heading 2",
+        h3: "Heading 3",
+        quote: "Quote",
+        code: "Code",
+      },
+      style: "Text style",
+      bold: "Bold",
+      italic: "Italic",
+      bullets: "Bulleted list",
+      numbers: "Numbered list",
+      quote: "Quote",
+      link: "Add a link",
+      linkChoose: "Choose the words for the link first",
+      linkBad: "That address can't be a link",
+      linkPlaceholder: "Link address",
+      linkApply: "Add the link",
+      placeholder: "Write here",
+      add: "Add a paragraph",
+      editHint: "Edits this part",
+      notHere: "This part is edited on the computer",
+    },
+  },
+  /** Linking the outside chat app in Notificações (ADR 0187). {{surface}} is that app's name, as the server sets it. */
+  surface: {
+    /** The row's state while a sender is linked. */
+    on: "On",
+    codeText: "Send the message that opens there, then come back here.",
+    openFailed: "Couldn't open {{surface}} on this phone. Send it the code below instead.",
+    orType: "Or send this code there",
   },
 };
 

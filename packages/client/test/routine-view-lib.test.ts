@@ -2,10 +2,11 @@ import { describe, expect, test } from "bun:test";
 import type { TFunction } from "i18next";
 import type { AgentAction, AppNotification, Routine, RoutineRun } from "../src/api/types";
 import { actionTextValues } from "../src/lib/actions";
-import { approvalOriginWords, approvalWhy } from "../src/lib/approval-origin";
+import { approvalOriginWords, approvalWhy, approvalWords } from "../src/lib/approval-origin";
 import { openTarget } from "../src/lib/notifications";
 import {
   busyOnComputer,
+  cronRule,
   healthWords,
   isStoppable,
   pausedFix,
@@ -96,7 +97,14 @@ describe("a routine's runs", () => {
     // A report it couldn't deliver says why, not "Não rodou"; every code the ledger writes has its words.
     expect(say(run({ status: "skipped", code: "creator_no_access" })).key).toBe("routines.code.creator_no_access");
     expect(say(run({ status: "canceled", code: "creator_left" })).key).toBe("routines.code.creator_left");
-    for (const code of ["empty_reply", "model_refused", "credential_wrong_provider", "model_unlisted", "gave_up"])
+    for (const code of [
+      "empty_reply",
+      "model_refused",
+      "credential_wrong_provider",
+      "model_unlisted",
+      "gave_up",
+      "cli_failed",
+    ])
       expect(say(run({ status: "failed", code })).key).toBe(`routines.code.${code}`);
     // Stopped by a person: their name; an unknown id as is; nobody named: "alguém".
     expect(say(run({ status: "canceled", code: "stopped", codeParams: { by: "u-joao" } }))).toEqual({
@@ -350,6 +358,10 @@ describe("approvals asked while nobody watched", () => {
     expect(approvalWhy({ why: "  O teste passou.  " })).toBe("O teste passou.");
     expect(approvalWhy({ why: "   " })).toBeNull();
     expect(approvalWhy({})).toBeNull();
+    // A card draws the agent's marks: its why on one line keeps them, where a preview's loses them.
+    expect(approvalWords({ why: "  Rodo `bun test`\n**agora**.  " })).toBe("Rodo `bun test` **agora**.");
+    expect(approvalWords({ why: "   " })).toBeNull();
+    expect(approvalWords({})).toBeNull();
   });
 });
 
@@ -445,4 +457,19 @@ test("a routine that couldn't call an agent opens the agent's page, where who ta
       source: { routineId: "r1", agentId: "a1", userId: "u1", channelId: "c1", messageId: "m1" },
     } as AppNotification),
   ).toEqual({ to: "/org/$orgId/agents/$agentId", params: { agentId: "a1" } });
+});
+
+test("a simple cron reads as the rule the server would keep, to say it in words; another one doesn't", () => {
+  expect(cronRule("15 8 * * 1,2,3,4,5", "UTC")).toEqual({
+    freq: "weekly",
+    byWeekday: ["MO", "TU", "WE", "TH", "FR"],
+    times: ["08:15"],
+    timezone: "UTC",
+  });
+  expect(cronRule("0 9 * * *", "")).toEqual({ freq: "daily", times: ["09:00"], timezone: "" });
+  expect(cronRule("0 9 1,15 * *", "UTC")).toMatchObject({ freq: "monthly", byMonthDay: [1, 15], times: ["09:00"] });
+  expect(cronRule("30 */2 * * 1-5", "UTC")).toMatchObject({ freq: "hourly", interval: 2, times: ["00:30"] });
+  expect(cronRule("0 10 30 12 *", "UTC")).toMatchObject({ freq: "yearly", byMonth: [12], byMonthDay: [30] });
+  expect(cronRule("*/15 * * * *", "UTC")).toBeNull();
+  expect(cronRule("0 9 1 * 1", "UTC")).toBeNull();
 });

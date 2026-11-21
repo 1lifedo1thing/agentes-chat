@@ -8,14 +8,18 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { BUTTON_SIZES, type ButtonSize, primaryLook } from "./Button";
+import { BUTTON_SIZES, type ButtonSize, primaryLook, slopOf } from "./Button";
 import { haptics } from "./haptics";
+import { PRESS_IN, PRESS_OUT } from "./PressScale";
 import { systemText } from "./Text";
-import { useTheme } from "./theme";
+import { motion, useTheme } from "./theme";
 import { CHROME_MAX_SCALE, weights } from "./type-scale";
+
+/** Let go early, the fill snaps back fast; once confirmed it drains a little slower, the decision made. */
+const LET_GO = { duration: motion.base, easing: motion.easeOut };
+const DRAIN = { duration: motion.panel, easing: motion.easeOut };
 
 export interface HoldButtonProps {
   /** "Segure para aprovar". One label: a shorter one while held would shrink the button under the finger. */
@@ -69,12 +73,12 @@ export function HoldButton({ label, onConfirm, durationMs = 700, disabled = fals
     stopTicks();
     if (!theme.reducedMotion) ticks.current = TICKS.map((share) => setTimeout(haptics.light, share * durationMs));
     fill.value = withTiming(1, { duration: durationMs, easing: theme.reducedMotion ? Easing.linear : HOLD_EASE });
-    press.value = theme.reducedMotion ? 1 : withSpring(1, theme.motion.press);
+    press.value = theme.reducedMotion ? 1 : withTiming(1, PRESS_IN);
     timer.current = setTimeout(() => {
       timer.current = null;
       ticks.current = [];
-      press.value = withTiming(0, { duration: 120 });
-      fill.value = withTiming(0, { duration: 250 });
+      press.value = theme.reducedMotion ? 0 : withTiming(0, PRESS_OUT);
+      fill.value = withTiming(0, DRAIN);
       haptics.success();
       confirmRef.current();
     }, durationMs);
@@ -85,8 +89,8 @@ export function HoldButton({ label, onConfirm, durationMs = 700, disabled = fals
     timer.current = null;
     stopTicks();
     cancelAnimation(fill);
-    fill.value = withTiming(0, { duration: 180, easing: Easing.bezier(...theme.motion.ease) });
-    press.value = theme.reducedMotion ? 0 : withSpring(0, theme.motion.press);
+    fill.value = withTiming(0, LET_GO);
+    press.value = theme.reducedMotion ? 0 : withTiming(0, PRESS_OUT);
   };
 
   const fillStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: fill.value }] }));
@@ -114,6 +118,7 @@ export function HoldButton({ label, onConfirm, durationMs = 700, disabled = fals
         accessibilityLabel={label}
         accessibilityHint={t("mobile.a11y.hold")}
         accessibilityState={{ disabled }}
+        hitSlop={slopOf(s.height)}
         style={[styles.face, { borderRadius: s.radius }]}
       >
         <LinearGradient

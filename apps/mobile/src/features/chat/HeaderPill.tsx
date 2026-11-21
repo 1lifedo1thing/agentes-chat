@@ -1,5 +1,5 @@
 import type { AgentColorName } from "@agenteschat/ui/agent/engine";
-import { type ReactNode, useEffect, useState } from "react";
+import { memo, type ReactNode, useEffect, useState } from "react";
 import { type LayoutChangeEvent, Platform, StyleSheet, useWindowDimensions, View } from "react-native";
 import Animated, {
   cancelAnimation,
@@ -9,16 +9,20 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withRepeat,
   withSequence,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
+import { LivePause } from "@/agent/live";
+import { needsHeaderBlur } from "@/lib/nav";
 import { Dither } from "@/sky/Dither";
 import { softTones } from "@/sky/math";
-import { Glass, haptics, PressScale, Text, useFaceSpot, useReducedMotion, useTheme } from "@/ui";
+import { Glass, haptics, motion, PressScale, Text, useReducedMotion, useTheme } from "@/ui";
+import { usePane } from "@/ui/pane";
+import { panePillRoom, pillRoom } from "./pill-room";
 
+/** iOS 26's bar, whose buttons are the system's glass ones; elsewhere our own 44-point buttons side by side. */
+const LIQUID = Platform.OS === "ios" && !needsHeaderBlur(Platform.OS, Platform.Version);
 /** The pill's own padding, the face's box and the gaps: the face sits in the capsule's curve. */
 const PAD_LEFT = 6;
 const PAD_RIGHT = 16;
@@ -28,28 +32,24 @@ const TRAILING_GAP = 2;
 const HEIGHT = 44;
 const BORDER = StyleSheet.hairlineWidth;
 const MIN_WIDTH = 120;
-const WIDTH_SPRING = { stiffness: 300, damping: 30, mass: 1 };
-const LINE_SPRING = { stiffness: 260, damping: 26, mass: 1 };
-const SKY_SPRING = { stiffness: 90, damping: 18, mass: 1 };
+/*
+ * No finger drives any of these, so they are timed, not sprung (springs carry a finger's velocity; there is none):
+ * the width morphs on screen (ease-in-out), a line enters and leaves (ease-out), the sky turns on and off (ease-in-out).
+ */
+const WIDTH = { duration: 260, easing: motion.easeInOut };
+const LINE_IN = { duration: 220, easing: motion.easeOut };
+const LINE_OUT = { duration: 140, easing: motion.easeOut };
+const SKY = { duration: 400, easing: motion.easeInOut };
 /** How far a line rolls in and out. */
 const ROLL = 15;
-/** Breathing while an agent works: a scale this small reads as alive, never as motion. */
-const BREATH_SCALE = 1.012;
-const BREATH_MS = 1400;
-const BREATH_EASE = Easing.bezier(0.77, 0, 0.175, 1);
-const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
-/** The words' arrival when the face flew in from the screen before: after it lands, from the face's side. */
-const ARRIVE_SHIFT = 8;
-const ARRIVE_MS = 260;
-const ARRIVE_DELAY_MS = 200;
 
 const rollIn: EntryExitAnimationFunction = () => {
   "worklet";
   return {
     initialValues: { opacity: 0, transform: [{ translateY: ROLL }] },
     animations: {
-      opacity: withTiming(1, { duration: 200 }),
-      transform: [{ translateY: withSpring(0, LINE_SPRING) }],
+      opacity: withTiming(1, LINE_IN),
+      transform: [{ translateY: withTiming(0, LINE_IN) }],
     },
   };
 };
@@ -59,30 +59,32 @@ const rollOut: EntryExitAnimationFunction = () => {
   return {
     initialValues: { opacity: 1, transform: [{ translateY: 0 }] },
     animations: {
-      opacity: withTiming(0, { duration: 140 }),
-      transform: [{ translateY: withSpring(-ROLL, LINE_SPRING) }],
+      opacity: withTiming(0, LINE_OUT),
+      transform: [{ translateY: withTiming(-ROLL, LINE_OUT) }],
     },
   };
 };
 
 /**
  * The conversation's title as a glass pill in the header: who or where on the left, the name and a quiet line
- * under it. It moves instead of jumping: a new line rolls in over the old one, the width follows the words on a
- * spring and an agent's sky turns into the pixel sweep that crosses the pill while it works (the sidebar's trail).
+ * under it. It moves instead of jumping: a new line rolls in over the old one, the width follows the words and an
+ * agent's sky turns into the pixel sweep that crosses the pill while it works (the sidebar's trail).
  * In a DM the face wears its presence badge and the quiet line says how the other side is: an agent's presence
  * and line, a person's status (ADR 0084). A channel shows who is in on the right. Held (`onHold`), it opens the
  * conversation switcher.
  *
  * The bar lays its title out once: the slot keeps the width of the room beside the buttons, and only the pill
- * inside it changes, on the UI thread, so the native bar never lays out again during a spring.
+ * inside it changes, on the UI thread, so the native bar never lays out again while it moves.
  *
  * Reading up the conversation (`collapsed`), the pill closes to its lead alone, a glass circle: the screen is only
- * messages. While an agent works it breathes (a scale too small to call motion), and the sky sweeps.
+ * messages. While an agent works its quiet line says each step, many a minute: the pill then holds the room's width
+ * (any step fits, cut with "…"), so a step only rolls its line in and never springs the width, and the line never
+ * slides to show its end; only a new title or closing moves the width. The sky sweeps meanwhile.
  *
- * An agent's face (`faceAgentId`) is the same one as in the row the conversation was opened from and on its profile:
- * it lands here from the row (the words follow it in), and a tap sends it on to the profile's cover.
+ * Memoized: the bar draws it outside the screen, and a screen that redraws often (a conversation while agents work)
+ * hands it the same props most of the time.
  */
-export function HeaderPill({
+export const HeaderPill = memo(function HeaderPill({
   lead,
   title,
   subtitle,
@@ -92,10 +94,11 @@ export function HeaderPill({
   onPress,
   label,
   extraActions = 0,
+  leadRoom = 0,
   onHold,
   holdHint,
   collapsed = false,
-  faceAgentId,
+  inView = true,
 }: {
   lead?: ReactNode;
   title: string;
@@ -110,19 +113,27 @@ export function HeaderPill({
   onPress?: () => void;
   /** What a screen reader says (name, state and what a tap does). */
   label: string;
-  /** Bar buttons beside "…" (an agent's computer): the pill gives up their 44 points each. */
+  /** The system's bar buttons beside "…" (an agent's computer, search): the pill makes room for each (`pillRoom`). */
   extraActions?: number;
+  /** The width of our own counted views first in the buttons' group (an agent's tasks, a computer's line), measured. */
+  leadRoom?: number;
   onHold?: () => void;
   /** What a screen reader says the hold does. */
   holdHint?: string;
-  /** An agent's DM: the lead is its face, and a tap opens its profile (the face travels between the screens). */
-  faceAgentId?: string | undefined;
+  /**
+   * Whether its screen shows: the bar draws the pill outside the screen's own pause (`FocusLive`), so its sky stops
+   * here while a screen is pushed over the conversation.
+   */
+  inView?: boolean;
 }) {
   const { colors, shadows } = useTheme();
   const reduced = useReducedMotion();
   const { width: screen } = useWindowDimensions();
-  // The bar's margins, the back and "…" circles and a gap on each side.
-  const room = Math.max(160, screen - 152 - extraActions * 44);
+  // In a pane (ADR 0212) the bar is the pane's: as wide as the pane, with no back button.
+  const pane = usePane();
+  const room = pane
+    ? panePillRoom(pane.width, extraActions, leadRoom)
+    : pillRoom(screen, extraActions, leadRoom, LIQUID);
 
   const [nameWidth, setNameWidth] = useState<number | null>(null);
   const [lineWidth, setLineWidth] = useState(0);
@@ -133,80 +144,37 @@ export function HeaderPill({
   const words = Math.max(nameWidth ?? 0, subtitle ? lineWidth : 0);
   // Closed, the pill is a circle around its lead (no lead to close around: it stays open).
   const closed = collapsed && Boolean(lead);
-  const target = nameWidth === null ? null : closed ? HEIGHT : Math.min(room, Math.max(MIN_WIDTH, chrome + words));
-  // Where the face is in the slot, from the width the pill was told to take: the slot never moves, while the pill is
-  // sized on the UI thread (centered in the slot on iOS, leading on Android).
-  const pillLeft = Platform.OS === "ios" && target !== null ? (room - target) / 2 : 0;
-  const spot = useFaceSpot(lead ? faceAgentId : undefined, {
-    size: LEAD,
-    framed: false,
-    role: "pill",
-    inset: target === null ? null : { x: pillLeft + BORDER + PAD_LEFT, y: (HEIGHT - LEAD) / 2 },
-  });
-  // Opened with the face on its way here: the words wait for it.
-  const [arrives] = useState(() => spot.hidden && !reduced);
+  // While an agent works, the room's width whatever its step says: the steps never move it.
+  const target =
+    nameWidth === null ? null : closed ? HEIGHT : working ? room : Math.min(room, Math.max(MIN_WIDTH, chrome + words));
 
   // -1 until the words are measured: the first width is set, not sprung.
   const pillWidth = useSharedValue(-1);
   const work = useSharedValue(working ? 1 : 0);
   // The words' presence: they fade before the width closes on them and come back as it opens.
   const open = useSharedValue(closed ? 0 : 1);
-  const breath = useSharedValue(1);
-  const arrived = useSharedValue(arrives ? 0 : 1);
-  useEffect(() => {
-    if (!arrives) return;
-    arrived.value = withDelay(ARRIVE_DELAY_MS, withTiming(1, { duration: ARRIVE_MS, easing: EASE_OUT }));
-  }, [arrives, arrived]);
   useEffect(() => {
     if (target === null) return;
-    pillWidth.value = reduced || pillWidth.value < 0 ? target : withSpring(target, WIDTH_SPRING);
+    pillWidth.value = reduced || pillWidth.value < 0 ? target : withTiming(target, WIDTH);
   }, [target, reduced, pillWidth]);
   useEffect(() => {
-    work.value = reduced ? (working ? 1 : 0) : withSpring(working ? 1 : 0, SKY_SPRING);
+    work.value = reduced ? (working ? 1 : 0) : withTiming(working ? 1 : 0, SKY);
   }, [working, reduced, work]);
   useEffect(() => {
-    open.value = withTiming(closed ? 0 : 1, { duration: closed ? 120 : 200, easing: EASE_OUT });
+    open.value = withTiming(closed ? 0 : 1, { duration: closed ? 120 : 200, easing: motion.easeOut });
   }, [closed, open]);
-  useEffect(() => {
-    if (working && !reduced) {
-      breath.value = withRepeat(
-        withSequence(
-          withTiming(BREATH_SCALE, { duration: BREATH_MS, easing: BREATH_EASE }),
-          withTiming(1, { duration: BREATH_MS, easing: BREATH_EASE }),
-        ),
-        -1,
-        false,
-      );
-      return;
-    }
-    cancelAnimation(breath);
-    breath.value = withTiming(1, { duration: 200, easing: EASE_OUT });
-  }, [working, reduced, breath]);
 
   const sized = useAnimatedStyle(() => ({
     width: pillWidth.value < 0 ? room : pillWidth.value,
     opacity: pillWidth.value < 0 ? 0 : 1,
   }));
-  // On the glass inside the press: the press's own scale lives on the outer view, and one transform would hide the other.
-  const breathing = useAnimatedStyle(() => ({ transform: [{ scale: breath.value }] }));
-  const wordsShown = useAnimatedStyle(() => ({
-    opacity: open.value * arrived.value,
-    transform: [{ translateX: (arrived.value - 1) * ARRIVE_SHIFT }],
-  }));
-  // The face leaves for the profile's cover as the tap opens it.
-  const press =
-    onPress && faceAgentId
-      ? () => {
-          spot.depart();
-          onPress();
-        }
-      : onPress;
+  const wordsShown = useAnimatedStyle(() => ({ opacity: open.value }));
 
   const measured = (set: (width: number) => void) => (e: LayoutChangeEvent) =>
     set(Math.ceil(e.nativeEvent.layout.width));
 
   return (
-    <View ref={spot.ref} collapsable={false} style={[styles.slot, { width: room }]} pointerEvents="box-none">
+    <View style={[styles.slot, { width: room }, pane && styles.centred]} pointerEvents="box-none">
       {/* What the words measure, whole, with no room limit. */}
       <View
         style={styles.measure}
@@ -225,8 +193,10 @@ export function HeaderPill({
       </View>
       <PressScale
         to={0.97}
-        onPress={press}
+        onPress={onPress}
         disabled={!onPress && !onHold}
+        // One buzz per gesture: a tap gets PressScale's light one (it fires on `onPress`, which a hold never reaches),
+        // a hold only its own firmer one.
         {...(onHold
           ? {
               delayLongPress: 300,
@@ -246,13 +216,9 @@ export function HeaderPill({
         ]}
       >
         {/* The same Liquid Glass as the bar's own buttons beside it (iOS 26); the blur and a hairline before. */}
-        <Animated.View style={breathing}>
-          <Glass
-            liquid
-            intensity={70}
-            style={[styles.pill, closed && styles.pillClosed, { borderColor: colors.line2 }]}
-          >
-            {color ? (
+        <Glass liquid intensity={70} style={[styles.pill, closed && styles.pillClosed, { borderColor: colors.line2 }]}>
+          {color ? (
+            <LivePause paused={!inView}>
               <Dither
                 kind="pill"
                 tones={softTones(color, colors.glassSolid)}
@@ -262,70 +228,78 @@ export function HeaderPill({
                 liveWork={work}
                 style={[styles.sky, { width: room }]}
               />
+            </LivePause>
+          ) : null}
+          {lead ? <View style={styles.lead}>{lead}</View> : null}
+          <Animated.View
+            style={[styles.text, wordsShown]}
+            importantForAccessibility="no-hide-descendants"
+            pointerEvents="none"
+          >
+            <Text variant="callout" numberOfLines={1} style={styles.title}>
+              {title}
+            </Text>
+            {subtitle ? (
+              <StatusLine
+                text={subtitle}
+                natural={lineWidth}
+                // Closed, the line is faded out: no sliding to read it.
+                box={(closed ? room : (target ?? room)) - chrome}
+                reduced={reduced}
+                // A step lasts a moment: it rests with "…", never sliding to show its end.
+                still={working}
+              />
             ) : null}
-            {lead ? <View style={[styles.lead, spot.hidden && styles.unseen]}>{lead}</View> : null}
-            <Animated.View
-              style={[styles.text, wordsShown]}
-              importantForAccessibility="no-hide-descendants"
-              pointerEvents="none"
-            >
-              <Text variant="callout" numberOfLines={1} style={styles.title}>
-                {title}
-              </Text>
-              {subtitle ? (
-                <StatusLine
-                  text={subtitle}
-                  natural={lineWidth}
-                  // Closed, the line is faded out: no sliding to read it.
-                  box={(closed ? room : (target ?? room)) - chrome}
-                  reduced={reduced}
-                />
-              ) : null}
+          </Animated.View>
+          {trailing ? (
+            <Animated.View style={[styles.trailing, wordsShown]} onLayout={measured(setTrailingWidth)}>
+              {trailing}
             </Animated.View>
-            {trailing ? (
-              <Animated.View style={[styles.trailing, wordsShown]} onLayout={measured(setTrailingWidth)}>
-                {trailing}
-              </Animated.View>
-            ) : null}
-          </Glass>
-        </Animated.View>
+          ) : null}
+        </Glass>
       </PressScale>
     </View>
   );
-}
+});
 
-/** The quiet line: each new one rolls in over the last. */
-function StatusLine({ text, natural, box, reduced }: { text: string; natural: number; box: number; reduced: boolean }) {
+/** The quiet line: each new one rolls in over the last. `still`: it never slides to show its end. */
+function StatusLine({
+  text,
+  natural,
+  box,
+  reduced,
+  still,
+}: {
+  text: string;
+  natural: number;
+  box: number;
+  reduced: boolean;
+  still: boolean;
+}) {
   return (
     <View style={styles.lineBox}>
       <LayoutAnimationConfig skipEntering>
         <Animated.View key={text} {...(reduced ? {} : { entering: rollIn, exiting: rollOut })} style={styles.line}>
-          <SlidingText text={text} natural={natural} box={box} reduced={reduced} />
+          <SlidingText text={text} natural={natural} box={box} still={reduced || still} />
         </Animated.View>
       </LayoutAnimationConfig>
     </View>
   );
 }
 
-/** A line longer than the pill slides once to its end and back, so all of it gets read; it rests with "…". */
-function SlidingText({
-  text,
-  natural,
-  box,
-  reduced,
-}: {
-  text: string;
-  natural: number;
-  box: number;
-  reduced: boolean;
-}) {
+/**
+ * A line longer than the pill slides once to its end and back, so all of it gets read; it rests with "…". `still`
+ * (reduced motion, an agent's passing step): it only rests.
+ */
+function SlidingText({ text, natural, box, still }: { text: string; natural: number; box: number; still: boolean }) {
   const x = useSharedValue(0);
   const [free, setFree] = useState(false);
   const over = natural - box;
   const long = over > 1;
   useEffect(() => {
-    if (!long || reduced) return;
-    const ease = Easing.inOut(Easing.quad);
+    if (!long || still) return;
+    // A marquee is constant motion: linear, so the words read at one pace.
+    const ease = Easing.linear;
     const timer = setTimeout(() => {
       setFree(true);
       const out = Math.max(1400, over * 32);
@@ -345,7 +319,7 @@ function SlidingText({
       x.value = 0;
       setFree(false);
     };
-  }, [long, over, reduced, x]);
+  }, [long, over, still, x]);
   const moved = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   return (
     <Animated.View style={[free && { width: natural + 2 }, moved]}>
@@ -358,6 +332,8 @@ function SlidingText({
 
 const styles = StyleSheet.create({
   slot: { alignItems: Platform.OS === "ios" ? "center" : "flex-start" },
+  // In a pane (ADR 0212) the pill stands in the middle of the bar on every platform: there is no back button beside it.
+  centred: { alignItems: "center" },
   measure: { position: "absolute", top: 0, left: 0, width: 1000, alignItems: "flex-start", opacity: 0 },
   pill: {
     flexDirection: "row",
@@ -375,8 +351,6 @@ const styles = StyleSheet.create({
   // The drawing keeps the room's width and reads the pill's as a uniform: no canvas resize during a spring.
   sky: { position: "absolute", top: 0, left: 0, height: HEIGHT },
   lead: { alignItems: "center", justifyContent: "center", width: LEAD },
-  // The real face while its copy flies in or out.
-  unseen: { opacity: 0 },
   text: { flex: 1, minWidth: 0 },
   title: { fontWeight: "600", lineHeight: 20 },
   lineBox: { height: 16, overflow: "hidden" },

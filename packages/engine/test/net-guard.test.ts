@@ -2,7 +2,15 @@ import { expect, test } from "bun:test";
 import { EventEmitter } from "node:events";
 import type { request as httpsRequest } from "node:https";
 import { OutboundAddressError } from "@agenteschat/adapters";
-import { assertPublicHttpsUrl, isBlockedAddress, publicHttpsFetch } from "../src/net-guard";
+import {
+  allowOutbound,
+  allowPrivateOutbound,
+  assertPublicHttpsUrl,
+  isBlockedAddress,
+  outboundFetch,
+  publicHostAddress,
+  publicHttpsFetch,
+} from "../src/net-guard";
 
 /**
  * The SSRF guard must classify an address by what the socket connects to, not by
@@ -55,7 +63,8 @@ test("assertPublicHttpsUrl still accepts a public host", async () => {
  * `node:https`'s `request` as far as the guarded fetch uses it: what it was asked (its options and body), answered
  * with `reply` once the request ends. Nothing touches the network.
  */
-function fakeHttps(reply: { status: number; headers?: Record<string, string>; body?: string }) {
+type FakeReply = { status: number; headers?: Record<string, string>; body?: string };
+function fakeHttps(answer: FakeReply | ((options: Record<string, unknown>) => FakeReply)) {
   const sent: { options: Record<string, unknown>; body: unknown }[] = [];
   const request = ((options: Record<string, unknown>, callback: (res: unknown) => void) => {
     const req = new EventEmitter() as EventEmitter & { end(body?: unknown): void; destroy(error?: Error): void };
@@ -65,6 +74,7 @@ function fakeHttps(reply: { status: number; headers?: Record<string, string>; bo
     };
     req.end = (body) => {
       sent.push({ options, body });
+      const reply = typeof answer === "function" ? answer(options) : answer;
       const res = Object.assign(new EventEmitter(), {
         statusCode: reply.status,
         headers: reply.headers ?? {},
@@ -156,4 +166,204 @@ test("publicHttpsFetch connects to the address it checked (IPv4 first), never fo
     request: fakeHttps({ status: 302, headers: { location: "https://169.254.169.254/" } }).request,
   });
   expect(await refusal(moved("https://vault.acme.example/api/sync"))).toBeInstanceOf(TypeError);
+});
+
+test("publicHttpsFetch hands a redirect back unfollowed when asked with redirect: manual", async () => {
+  const https = fakeHttps({ status: 301, headers: { location: "https://169.254.169.254/" }, body: "<Error/>" });
+  const guarded = publicHttpsFetch({
+    resolve: async () => [{ address: "93.184.216.34", family: 4 }],
+    request: https.request,
+  });
+  const res = await guarded("https://files.acme.example/bucket", { redirect: "manual" });
+  expect(res.status).toBe(301);
+  expect(res.headers.get("location")).toBe("https://169.254.169.254/");
+  expect(await res.text()).toBe("<Error/>");
+  expect(https.sent).toHaveLength(1);
+});
+
+test("outboundFetch checks the address at every request, with the caller's DNS", async () => {
+  allowPrivateOutbound(false);
+  const https = fakeHttps({ status: 200, body: "ok" });
+  // The name was public when it was saved; by now it answers with an address on our own network.
+  const addresses = [["93.184.216.34"], ["10.0.0.5"]];
+  const guarded = outboundFetch({
+    resolveHost: async () => addresses.shift() ?? ["10.0.0.5"],
+    request: https.request,
+  });
+  expect(await (await guarded("https://mcp.acme.example/mcp")).text()).toBe("ok");
+  expect(await refusal(guarded("https://mcp.acme.example/mcp"))).toBeInstanceOf(OutboundAddressError);
+  expect(https.sent).toHaveLength(1);
+});
+
+test("outboundFetch with ownRedirects follows a 307 or 308 on the same origin only", async () => {
+  allowPrivateOutbound(false);
+  const replies: Record<string, FakeReply> = {
+    "mcp.acme.example/mcp": { status: 308, headers: { location: "/mcp/" } },
+    "mcp.acme.example/mcp/": { status: 200, body: "here" },
+    "mcp.acme.example/away": { status: 307, headers: { location: "https://other.acme.example/mcp" } },
+    "mcp.acme.example/found": { status: 302, headers: { location: "/mcp/" } },
+  };
+  const https = fakeHttps((options) => replies[`${options.hostname}${options.path}`] ?? { status: 404 });
+  const guarded = outboundFetch({
+    resolveHost: async () => ["93.184.216.34"],
+    ownRedirects: true,
+    request: https.request,
+  });
+  const init = { method: "POST", headers: { authorization: "Bearer tk_fake" }, body: '{"jsonrpc":"2.0"}' };
+  const res = await guarded("https://mcp.acme.example/mcp", init);
+  expect(await res.text()).toBe("here");
+  // The second hop is the same request again: method, sign-in and body.
+  expect(https.sent.map((s) => [s.options.method, s.options.path])).toEqual([
+    ["POST", "/mcp"],
+    ["POST", "/mcp/"],
+  ]);
+  expect(new TextDecoder().decode(https.sent[1]?.body as Uint8Array)).toBe('{"jsonrpc":"2.0"}');
+  // Another origin, or a redirect that would change the method, comes back as it is.
+  expect((await guarded("https://mcp.acme.example/away", init)).status).toBe(307);
+  expect((await guarded("https://mcp.acme.example/found", init)).status).toBe(302);
+  expect(https.sent.some((s) => s.options.hostname === "other.acme.example")).toBe(false);
+});
+
+test("outboundFetch is the plain fetch where the operator lets workspaces reach this server's network", () => {
+  allowPrivateOutbound(false);
+  try {
+    allowPrivateOutbound();
+    expect(outboundFetch()).toBe(fetch);
+  } finally {
+    allowPrivateOutbound(false);
+  }
+  expect(outboundFetch()).not.toBe(fetch);
+});
+
+/**
+ * A self-hosted server on a private network (a Tailscale tailnet, a LAN) reaches the servers its operator names in
+ * `OUTBOUND_ALLOW_HOSTS` / `OUTBOUND_ALLOW_CIDRS` (ADR 0210); loopback and metadata addresses stay out regardless.
+ */
+const tailnet = async () => ["100.101.102.103"];
+
+test("an address in OUTBOUND_ALLOW_CIDRS passes the guard", async () => {
+  try {
+    allowOutbound({ cidrs: ["100.64.0.0/10", "fd7a:115c:a1e0::/48"] });
+    const url = await assertPublicHttpsUrl("https://executor.tail1234.ts.net/mcp", tailnet);
+    expect(url.hostname).toBe("executor.tail1234.ts.net");
+    await assertPublicHttpsUrl("https://[fd7a:115c:a1e0::1]/mcp");
+    // Outside the ranges: refused as before.
+    await expect(assertPublicHttpsUrl("https://nas.example/mcp", async () => ["10.0.0.5"])).rejects.toThrow();
+  } finally {
+    allowOutbound();
+  }
+  await expect(assertPublicHttpsUrl("https://executor.tail1234.ts.net/mcp", tailnet)).rejects.toThrow();
+});
+
+test("a host in OUTBOUND_ALLOW_HOSTS passes the guard with its private addresses", async () => {
+  try {
+    allowOutbound({ hosts: ["*.tail1234.ts.net", "nas.home.example"] });
+    await assertPublicHttpsUrl("https://executor.tail1234.ts.net/mcp", tailnet);
+    await assertPublicHttpsUrl("https://nas.home.example/mcp", async () => ["192.168.1.20"]);
+    // `*.` covers names under the suffix, not the suffix itself nor another tailnet.
+    await expect(assertPublicHttpsUrl("https://tail1234.ts.net/mcp", tailnet)).rejects.toThrow();
+    await expect(assertPublicHttpsUrl("https://executor.tail9999.ts.net/mcp", tailnet)).rejects.toThrow();
+  } finally {
+    allowOutbound();
+  }
+});
+
+test("loopback and metadata addresses stay refused whatever is allowed", async () => {
+  try {
+    allowOutbound({ hosts: ["*.ts.net", "localhost"], cidrs: ["0.0.0.0/0", "::/0"] });
+    allowPrivateOutbound();
+    for (const address of [
+      "127.0.0.1",
+      "169.254.169.254",
+      "100.100.100.200",
+      "::1",
+      "fd00:ec2::254",
+      "fe80::1",
+      "0.0.0.0",
+      "::ffff:7f00:1",
+    ])
+      await expect(assertPublicHttpsUrl("https://evil.ts.net/", async () => [address])).rejects.toThrow();
+    await expect(assertPublicHttpsUrl("https://localhost/")).rejects.toThrow();
+    await expect(assertPublicHttpsUrl("https://[::ffff:a9fe:a9fe]/")).rejects.toThrow();
+  } finally {
+    allowOutbound();
+    allowPrivateOutbound(false);
+  }
+});
+
+test("the private switch alone lets no private address through the check", async () => {
+  try {
+    allowPrivateOutbound();
+    await expect(assertPublicHttpsUrl("https://executor.tail1234.ts.net/mcp", tailnet)).rejects.toThrow();
+    await expect(assertPublicHttpsUrl("https://mcp.corp.internal/mcp", async () => ["10.0.0.5"])).rejects.toThrow();
+    expect(outboundFetch()).toBe(fetch);
+    // An allow-list makes every request pinned and checked again at connect time, even with the switch on.
+    allowOutbound({ cidrs: ["100.64.0.0/10"] });
+    expect(outboundFetch()).not.toBe(fetch);
+    const https = fakeHttps({ status: 200, body: "ok" });
+    let answer = "100.101.102.103";
+    const guarded = outboundFetch({ resolveHost: async () => [answer], request: https.request });
+    expect(await (await guarded("https://executor.tail1234.ts.net/mcp")).text()).toBe("ok");
+    // The name moves onto the metadata address after it was checked (DNS rebinding): refused at connect time.
+    answer = "169.254.169.254";
+    expect(await refusal(guarded("https://executor.tail1234.ts.net/mcp"))).toBeInstanceOf(OutboundAddressError);
+    expect(https.sent).toHaveLength(1);
+  } finally {
+    allowOutbound();
+    allowPrivateOutbound(false);
+  }
+});
+
+test("a refused private address names its host", async () => {
+  const error = await assertPublicHttpsUrl("https://executor.tail1234.ts.net/mcp", tailnet).catch((e) => e);
+  expect(error).toMatchObject({ code: "url.internal", params: { host: "executor.tail1234.ts.net" } });
+});
+
+test("the guarded fetch and the database host check follow the allow-lists, not the private switch", async () => {
+  const https = fakeHttps({ status: 200, body: "ok" });
+  const guarded = publicHttpsFetch({
+    resolve: async () => [{ address: "100.101.102.103", family: 4 }],
+    request: https.request,
+  });
+  try {
+    allowPrivateOutbound();
+    expect(await refusal(guarded("https://vault.tail1234.ts.net/"))).toBeInstanceOf(OutboundAddressError);
+    expect(await publicHostAddress("db.tail1234.ts.net", tailnet)).toEqual({ ok: false, reason: "blocked" });
+    allowOutbound({ cidrs: ["100.64.0.0/10"] });
+    expect(await (await guarded("https://vault.tail1234.ts.net/")).text()).toBe("ok");
+    expect(https.sent[0]?.options.lookup).toBeDefined();
+    expect(await publicHostAddress("db.tail1234.ts.net", tailnet)).toEqual({ ok: true, address: "100.101.102.103" });
+    allowOutbound({ hosts: ["*.corp.internal"] });
+    expect(await publicHostAddress("pg.corp.internal", async () => ["10.0.0.7"])).toEqual({
+      ok: true,
+      address: "10.0.0.7",
+    });
+    expect(await publicHostAddress("pg.corp.internal", async () => ["127.0.0.1"])).toEqual({
+      ok: false,
+      reason: "blocked",
+    });
+  } finally {
+    allowOutbound();
+    allowPrivateOutbound(false);
+  }
+});
+
+test("this server's own address on an allowed private network still isn't reachable from the internet", async () => {
+  try {
+    allowOutbound({ hosts: ["*.tail1234.ts.net", "chat.corp.internal"], cidrs: ["100.64.0.0/10"] });
+    const internet = { internet: true };
+    expect(await publicHostAddress("agentes.tail1234.ts.net", tailnet)).toMatchObject({ ok: true });
+    expect(await publicHostAddress("agentes.tail1234.ts.net", tailnet, internet)).toEqual({
+      ok: false,
+      reason: "blocked",
+    });
+    expect(await publicHostAddress("100.101.102.103", tailnet, internet)).toEqual({ ok: false, reason: "blocked" });
+    expect(await publicHostAddress("chat.corp.internal", tailnet, internet)).toEqual({ ok: false, reason: "blocked" });
+    expect(await publicHostAddress("chat.example.com", async () => ["93.184.216.34"], internet)).toEqual({
+      ok: true,
+      address: "93.184.216.34",
+    });
+  } finally {
+    allowOutbound();
+  }
 });

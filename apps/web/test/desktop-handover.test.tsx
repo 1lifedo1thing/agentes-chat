@@ -62,6 +62,38 @@ describe("/desktop/handover", () => {
     }
   });
 
+  test("after the app signed the window in again from a page, it goes back there once, and notes the sign-in", async () => {
+    const assign = recordAssign();
+    const { auth } = createFakeAuth();
+    const back = (to: string, at = Date.now()) =>
+      sessionStorage.setItem("agentes.thisMac.return", JSON.stringify({ to, at }));
+    try {
+      back("/org/acme/settings/general?delete=1");
+      window.history.replaceState(null, "", `/desktop/handover#token=${TOKEN}`);
+      await renderApp(`/desktop/handover#token=${TOKEN}`, { api: createFakeApi(seedState({ me: null })), auth });
+      await settle(6);
+      expect(assign.urls).toEqual(["/org/acme/settings/general?delete=1"]);
+      expect(sessionStorage.getItem("agentes.thisMac.return")).toBeNull();
+      expect(Date.now() - Number(sessionStorage.getItem("agentes.thisMac.signedInAt"))).toBeLessThan(60_000);
+
+      // Older than the app's sign-in lasts, or another site's: the app's first page.
+      for (const stale of [
+        () => back("/org/acme/settings?delete=1", Date.now() - 4 * 60_000),
+        () => back("//evil.example.com"),
+      ]) {
+        cleanup();
+        stale();
+        window.history.replaceState(null, "", `/desktop/handover#token=${TOKEN}`);
+        await renderApp(`/desktop/handover#token=${TOKEN}`, { api: createFakeApi(seedState({ me: null })), auth });
+        await settle(6);
+      }
+      expect(assign.urls.slice(1)).toEqual(["/", "/"]);
+    } finally {
+      assign.restore();
+      sessionStorage.clear();
+    }
+  });
+
   test("no token, or not one: nothing is traded", async () => {
     const { auth, calls } = createFakeAuth();
     window.history.replaceState(null, "", "/desktop/handover#token=<script>");
@@ -91,7 +123,21 @@ describe("the desktop app's notifications", () => {
       ...over,
     }) as AppNotification;
 
-  test("what a phone would get pushed, new and unread, opening the inbox", () => {
+  test("its click opens the message itself, where the inbox would open it", () => {
+    const fromAgent = { actors: [{ type: "agent" as const, id: "ag_lodi" }] };
+    expect(
+      desktopNotice(t, "o1", n({ kind: "agent_reply", ...fromAgent, source: { dmId: "d1", messageId: "m9" } }))?.path,
+    ).toBe("/org/o1/dm/agent/ag_lodi?m=m9");
+    expect(desktopNotice(t, "o1", n({ source: { channelId: "c1", threadId: "t1", messageId: "m9" } }))?.path).toBe(
+      "/org/o1/threads/t1?m=m9",
+    );
+    expect(desktopNotice(t, "o1", n({ source: { channelId: "c1", messageId: "m9" } }))?.path).toBe("/org/o1/c/c1?m=m9");
+    expect(desktopNotice(t, "o1", n({ kind: "approval", source: { approvalId: "ap1" } }))?.path).toBe(
+      "/org/o1/approvals?open=ap1",
+    );
+  });
+
+  test("what a phone would get pushed, new and unread; with no page of its own, the inbox", () => {
     expect(desktopNotice(t, "o1", n({}))).toEqual({
       title: "You were mentioned",
       body: "Can you look at the report?",
@@ -104,6 +150,26 @@ describe("the desktop app's notifications", () => {
       title: "Something is waiting for you",
     });
     expect(desktopNotice(t, "o1", n({ latest: { text: "x".repeat(400) } }))?.body).toHaveLength(180);
+  });
+
+  test("someone's agent on a phone of mine: who, what for whom, the phone's page and its Stop", () => {
+    const inUse = n({
+      kind: "device.in_use",
+      actors: [{ type: "agent", id: "ag_lia" }],
+      source: { phoneId: "p-1", machineId: "m-1", userId: "u_rui", label: "Pixel 8" },
+      latest: { title: "Rui Tanaka", text: "Recording a test video" },
+    });
+    expect(desktopNotice(t, "o1", inUse, (id) => (id === "ag_lia" ? "Lia" : undefined))).toEqual({
+      title: "Lia is using Pixel 8",
+      body: "Recording a test video for Rui",
+      path: "/org/o1/settings/devices/phones/p-1",
+      phoneId: "p-1",
+    });
+    // An agent this page doesn't know yet, and nothing said about what it does.
+    expect(desktopNotice(t, "o1", n({ ...inUse, latest: { title: "Rui Tanaka" } }))).toMatchObject({
+      title: "An agent is using Pixel 8",
+      body: "For Rui",
+    });
   });
 
   test("merged into one already shown, read, done, or not worth a notification: none", () => {

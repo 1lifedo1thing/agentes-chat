@@ -3,13 +3,16 @@ import {
   BROWSER_DEVICE_SIZES,
   BROWSER_DEVICES,
   BROWSER_FAST_PROTOCOL,
+  BROWSER_TABS_KEPT,
   BROWSER_VIEWPORT_PROTOCOL,
   BROWSER_VIEWPORT_SIDE,
   BROWSER_WARM_PROTOCOL,
   type BrowserBatchCommand,
   type BrowserSetup,
+  type BrowserTabs,
   type BrowserViewport,
   browserSetupOf,
+  browserTabsOf,
   browserViewportOf,
   chromeFailureKind,
   type ErrorReporter,
@@ -27,12 +30,15 @@ import {
 } from "@agenteschat/adapters";
 import { and, type Database, desc, eq, isNull, schema, sql } from "@agenteschat/db";
 import { getAgentCached } from "../agents";
+import { ToolOffError } from "../errors";
 import type { Judge } from "../judge";
 import { callWhenBack, type MachineCaller, MachineRequestError } from "../machine-hub";
 import { requestMadePassword, requestVaultKey, vaultUpdateText } from "../machine-provider";
 import { MachineOfflineError, MachinePausedError } from "../machines";
 import { missionOfRun } from "../mission-context";
-import { getSandboxSettings, SANDBOX_SCOPE, withConnectedMachine } from "../sandbox";
+import { isRightHand } from "../right-hand";
+import { machineScope, screenKey } from "../right-hand-seats";
+import { getSandboxSettings, SANDBOX_SCOPE, SandboxUnavailableError, withConnectedMachine } from "../sandbox";
 import {
   actsBeforeOpening,
   createLookMemory,
@@ -47,8 +53,10 @@ import {
   resolveTarget,
   runPlan,
   type ScreenImage,
+  type ScreenJudgmentShadow,
   type ScreenStep,
   type ScreenVerb,
+  screenJudgmentsData,
   screenRef,
   screenStepOf,
   type TargetCache,
@@ -80,6 +88,7 @@ import {
   type VaultDeps,
   VaultRefusal,
   vaultItemName,
+  vaultPlaceName,
 } from "../vault";
 import type { BrowserPageReader } from "../web-tools";
 import {
@@ -194,12 +203,13 @@ export async function warmAgentBrowser(
   },
 ): Promise<boolean> {
   const { orgId, agentId, threadRootId } = at;
-  if (!(await agentUsesScreen(db, orgId, agentId))) return false;
+  const agent = await getAgentCached(db, orgId, agentId);
+  // The right hand's Chrome is a seat's (ADR 0175), started by the first request that reaches that seat: never ahead.
+  if (isRightHand(agent) || !(await agentUsesScreen(db, orgId, agentId))) return false;
   const mission = !at.machineId && threadRootId ? await missionOfRun({ db, orgId, agentId, threadRootId }) : null;
   const status = await agentBrowserStatus(db, hub, orgId, agentId, at.machineId ?? mission?.machineId ?? null);
   if (!status.available || !status.online || status.protocol < BROWSER_WARM_PROTOCOL) return false;
   if (await openHandoffOn(db, orgId, agentId, "browser")) return false;
-  const agent = await getAgentCached(db, orgId, agentId);
   const desktop = await browserOnDesktop(db, orgId, agentId, status.machineId);
   const reply = await hub.call<"browser.warm">(status.machineId, {
     op: "browser.warm",
@@ -411,6 +421,9 @@ export function browserErrorText(error: string) {
  */
 export function runnerFailureText(error: string | undefined, code?: string): string {
   const said = error || "the command failed";
+  if (code === "browser_stuck") {
+    return `${said.replace(/\.$/, "")}. ${NOT_RESPONDING}`;
+  }
   if (code === "get_blocked") {
     return "The page tried to send the password in its address, and the computer stopped that request: nothing was sent. Don't type it on that page again; tell the person the site's sign-in looks wrong.";
   }
@@ -427,6 +440,10 @@ export function runnerFailureText(error: string | undefined, code?: string): str
   if (code && (VAULT_TYPE_REFUSALS as readonly string[]).includes(code)) return browserErrorText(`${code}: ${said}`);
   return browserErrorText(said);
 }
+
+/** After a browser that stopped answering: what the agent does, and doesn't, next. */
+const NOT_RESPONDING =
+  "Don't guess why and don't try again right away: tell the person the browser on that computer isn't responding, and that the agentes app's runner log there says why.";
 
 /** Why a secret can't be typed in the browser. */
 function secretMissingText(name: string, held: { site: string | null; gone?: boolean } | null) {
@@ -480,6 +497,15 @@ export function vaultTypingRefusal(text: string, site: string): string {
   }
 }
 
+/** The browser switched off on its computer mid-run: the whole call stops, carrying the switch for the reply's card. */
+function refuseIfOff(error: unknown, status: { machineId: string; machineName: string }) {
+  if (error instanceof MachineRequestError && error.code === "not_allowed")
+    throw new ToolOffError(explain(error, status.machineName), { machineId: status.machineId, tool: "browser" });
+}
+
+/** " within N s", from the hub's timeout words. */
+const secondsIn = (message: string) => / within \d+ s/.exec(message)?.[0] ?? "";
+
 /** Runner refusals → what the agent reads. */
 function explain(error: unknown, machineName: string): string {
   if (error instanceof MachineOfflineError || error instanceof MachinePausedError) return error.message;
@@ -488,11 +514,11 @@ function explain(error: unknown, machineName: string): string {
     case "browser_unavailable":
       return `The browser isn't available on the computer ${machineName}: ${error.message.replace(/\.$/, "")}. Tell the person.`;
     case "not_allowed":
-      return `The browser is turned off on the computer ${machineName}. Only the person at that computer can turn it on; tell the people.`;
+      return `The browser is turned off on the computer ${machineName}. Whoever connected it turns it on with the button under your reply; tell the people.`;
     case "paused":
       return `The owner paused the computer ${machineName}: nothing new can start there until they resume it. Tell the people.`;
     case "timeout":
-      return `The browser took too long (${error.message}). The page may still be loading: read it again, or wait for something specific with browser_wait.`;
+      return `The computer ${machineName} didn't answer${secondsIn(error.message)} and didn't say why. ${NOT_RESPONDING}`;
     case "canceled":
       return error.message;
     default:
@@ -535,6 +561,31 @@ function emulatedLine(v: NonNullable<BrowserViewport> | undefined): string {
   return v
     ? `\nEvery tab shows as a ${v.device} (${v.width}×${v.height}) until you open with viewport desktop and no size, or your browser closes.`
     : "";
+}
+
+/**
+ * The agent's tabs, when it has more than one or the runner closed some: how many, which one it is on, the others by
+ * title (the sites' words: data) and host.
+ */
+function tabsLine(t: BrowserTabs | undefined): string {
+  if (!t || (t.count <= 1 && !t.closed)) return "";
+  const name = (tab: BrowserTabs["open"][number]) => {
+    const title = neutralizeUntrusted(tab.title).replace(/\s+/g, " ").trim().slice(0, 80);
+    return title ? `"${title}" (${tab.host})` : tab.host;
+  };
+  const own = t.open.find((tab) => tab.current);
+  const others = t.open.filter((tab) => tab !== own).map(name);
+  const more = t.count - t.open.length;
+  const list = [
+    own ? `this one: ${name(own)}` : "",
+    others.length > 0 ? `others: ${others.join(", ")}${more > 0 ? ` and ${more} more` : ""}` : "",
+  ].filter(Boolean);
+  const counts = new Map<string, number>();
+  for (const host of t.closed ?? []) counts.set(host, (counts.get(host) ?? 0) + 1);
+  const closed = [...counts].map(([host, n]) => (n > 1 ? `${host} ×${n}` : host)).join(", ");
+  return `\nTabs open: ${t.count}${list.length > 0 ? ` (${list.join("; ")})` : ""}.${
+    closed ? ` Closed to keep your tabs tidy: ${closed}, so the tab numbers from list changed.` : ""
+  }`;
 }
 
 /** An image a judge can take (Jev: each side 280 to 1568 pixels), or null. */
@@ -707,7 +758,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
   const now = deps.now ?? Date.now;
   /** The page each agent last saw: what changes are counted from, and the first target found on. */
   const seen = createLookMemory(now);
-  const seenKey = (ctx: ToolContext) => `${ctx.orgId}:${ctx.agentId}`;
+  const seenKey = screenKey;
 
   /** Bia's card says she waits for Ada's profile, and stops saying it once she has it (or gave up). */
   const announceWait = (
@@ -742,7 +793,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
         if (t.ok) return t;
         if (t.reason === "busy") return { ok: false, text: await busyText(ctx.db, ctx.orgId, t) };
         await switchRunBrowser(ctx.db, ctx.runId, null);
-        seen.forget(seenKey(ctx));
+        seen.forget(await seenKey(ctx));
         return {
           ok: false,
           text:
@@ -781,6 +832,8 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
         profile: { id: string; name: string } | null;
         /** The page size its browser emulated at its last answer (protocol 52); undefined at its own. */
         emulated: () => NonNullable<BrowserViewport> | undefined;
+        /** Its tabs at its last answer; undefined from a runner that doesn't say. */
+        tabs: () => BrowserTabs | undefined;
       }
     | { ok: false; text: string }
   > {
@@ -808,7 +861,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       if (!got.ok) return got;
       turn = got;
       // Another agent (or a person) had it last: what this run knew of the page is gone.
-      if (turn.fresh) seen.forget(seenKey(ctx));
+      if (turn.fresh) seen.forget(await seenKey(ctx));
       status = {
         available: true,
         machineId: row.machineId,
@@ -823,7 +876,14 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       status = own;
     }
     const agent = await getAgentCached(ctx.db, ctx.orgId, ctx.agentId);
-    const scope = scopeOf(ctx.agentId, agent);
+    // The right hand's browser is the seat's its run works in, a person's own or the shared one (ADR 0175).
+    let scope: AgentScope;
+    try {
+      scope = await machineScope(caller, ctx, status.machineId);
+    } catch (error) {
+      if (error instanceof SandboxUnavailableError) return { ok: false, text: error.message };
+      throw error;
+    }
     const setup: BrowserSetup = {};
     const addSetup = (reply: { setup?: unknown }) => {
       const s = browserSetupOf(reply.setup) ?? {};
@@ -858,6 +918,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
     const fast = status.protocol >= BROWSER_FAST_PROTOCOL;
     let reached = false;
     let emulated: NonNullable<BrowserViewport> | undefined;
+    let tabs: BrowserTabs | undefined;
     // The live view, take over and Stop follow the computer the browser runs on (a mission's or the agent's own).
     const reachedOnce = async () => {
       if (reached || profileId) return;
@@ -886,10 +947,12 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
         );
       } catch (error) {
         await reportChromeFailure(deps.errors, hub, error, { ...ids(ctx), machineId: status.machineId });
+        refuseIfOff(error, status);
         return { ok: false, text: explain(error, status.machineName) };
       }
       addSetup(reply);
       emulated = emulatedOf(reply.emulated);
+      tabs = browserTabsOf(reply.tabs);
       await reachedOnce();
       return reply.success ? { ok: true, data: reply.data } : failed(reply.error, reply.code);
     };
@@ -927,10 +990,12 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
           );
         } catch (error) {
           await reportChromeFailure(deps.errors, hub, error, { ...ids(ctx), machineId: status.machineId });
+          refuseIfOff(error, status);
           return [{ ok: false, text: explain(error, status.machineName) }];
         }
         addSetup(reply);
         emulated = emulatedOf(reply.emulated);
+        tabs = browserTabsOf(reply.tabs);
         await reachedOnce();
         return reply.answers.map((a) => (a.success ? { ok: true, data: a.data } : failed(a.error, a.code)));
       },
@@ -975,6 +1040,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       setup,
       profile: turn ? { id: turn.profile.id, name: turn.profile.name } : null,
       emulated: () => emulated,
+      tabs: () => tabs,
     };
   }
 
@@ -991,7 +1057,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
     if (!r.ok) return { content: neutralizeUntrusted(r.text), isError: true };
     const url = urlOf(r.data);
     return {
-      content: `${done(r.data)}${emulatedLine(linked.emulated())}`,
+      content: `${done(r.data)}${emulatedLine(linked.emulated())}${tabsLine(linked.tabs())}`,
       data: { ...(url ? { url } : {}), ...profileData(linked.profile), ...(extra?.(r.data) ?? {}) },
     };
   }
@@ -1064,12 +1130,12 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       // The profile's grants are read again here: one given meanwhile counts before the value is read.
       const released = await releaseVaultLogin(vault, run, id, origin, await vaultProfile(ctx, profile));
       const rule = formatVaultRule(released.rule);
-      const agent = scopeOf(ctx.agentId, await getAgentCached(ctx.db, ctx.orgId, ctx.agentId));
+      const agent = await machineScope(hub, ctx, status.machineId);
       const key = await requestVaultKey(hub, status.machineId, agent, "type Vault logins", ctx.signal);
       const box = await sealSecret(
         key.publicKey,
         released.password,
-        vaultAad({ keyId: key.keyId, agentId: ctx.agentId, use: { kind: "fill", rule } }),
+        vaultAad({ keyId: key.keyId, agentId: agent.id, use: { kind: "fill", rule } }),
       ).catch(() => {
         // Never the sealing's own words (they could name the value's size), nor the login's title (ADR 0144 §4).
         throw new Error(`The Vault login ${id} couldn't be prepared for your computer.`);
@@ -1138,11 +1204,12 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       if (!held?.site || held.gone) return { content: secretMissingText(name, held), isError: true };
       sites.set(name, held.site);
     }
-    const key = seenKey(ctx);
+    const key = await seenKey(ctx);
     let paused: ToolOutput | null = null;
     // A take over that begins and ends within one step leaves no open handoff to see: it is checked too.
     const started = new Date();
     let handedBack = false;
+    const shadow: ScreenJudgmentShadow[] = [];
     const report = await runPlan(
       {
         judge,
@@ -1175,6 +1242,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
         before: seen.within(key, KNOWN_LOOK_MS),
         vision: deps.vision?.() === true && linked.status.protocol >= BROWSER_FAST_PROTOCOL,
         now,
+        shadow,
       },
       steps,
     );
@@ -1186,7 +1254,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
     }
     const f = formatPlanReport(report);
     // Said on every answer while it lasts: a later run, or another agent on a profile, didn't choose it.
-    const summary = `${f.summary}${emulatedLine(linked.emulated())}`;
+    const summary = `${f.summary}${emulatedLine(linked.emulated())}${tabsLine(linked.tabs())}`;
     const content = f.screen ? `${summary}\n${wrapPage(f.screen)}` : summary;
     const url = report.after?.url ?? null;
     const timing = {
@@ -1199,6 +1267,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       ...(options.trail ? { browserTrail: trailOf(report) } : {}),
       ...profileData(linked.profile),
       timing,
+      ...screenJudgmentsData(shadow),
     };
     const waiting = paused as ToolOutput | null;
     if (waiting) {
@@ -1246,10 +1315,19 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       if (!website?.startsWith("https://")) {
         return { content: "Open the site's HTTPS page with the password field first.", isError: true };
       }
-      const agent = scopeOf(ctx.agentId, await getAgentCached(ctx.db, ctx.orgId, ctx.agentId));
+      const agent = await machineScope(hub, ctx, linked.status.machineId);
       const value = await requestMadePassword(hub, linked.status.machineId, agent, input, ctx.signal);
       const profile = await vaultProfile(ctx, linked.profile);
-      const saved = await saveMadePassword(vault, run, { website, username }, value, profile);
+      const saved = await saveMadePassword(
+        vault,
+        run,
+        { website, username },
+        value,
+        profile,
+        str(input.save_in).trim() || undefined,
+      );
+      const place = vaultPlaceName(saved.item.place);
+      const where = `${place}${saved.why ? ` (${saved.why})` : ""}`;
       const fields = [str(input.target), str(input.confirm)].map((t) => t.trim()).filter(Boolean);
       let filled = false;
       const typed = await plan(
@@ -1264,17 +1342,24 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       );
       // A form with one field filled, or none (a person took the browser, the field moved), isn't sent.
       if (!filled) {
+        // Nothing is deleted from a person's password manager: a login made there stays, and the next call replaces it.
+        if (saved.outcome === "created" && saved.item.place.connectionId) {
+          return {
+            ...typed,
+            content: `${typed.content}\nNot every field took the password. Login ${saved.item.id} stays in ${place} with a password no site has: don't send the form, call this again and it takes the new one.`,
+          };
+        }
         await (saved.outcome === "created"
           ? deleteVaultItemByAgent(vault, run, saved.item.id)
           : restoreMadePassword(vault, run, saved.item.id, { discard: true }));
         return {
           ...typed,
-          content: `${typed.content}\nNot every field took the password, and the Vault is as it was. Don't send the form: call this again.`,
+          content: `${typed.content}\nNot every field took the password, and ${place} is as it was. Don't send the form: call this again.`,
         };
       }
       return {
         ...typed,
-        content: `${typed.content}\nThe Vault keeps this password as login ${saved.item.id}${saved.outcome === "updated" ? ", in place of the one it had" : ""}: sign in with it from now on. Now send the form. If the site turns the password down, call this again with the \`length\` and \`classes\` it asks for.${saved.outcome === "updated" ? ` If the old one stays in force, \`undo\` with this id brings it back.` : ""}`,
+        content: `${typed.content}\nSaved in ${where} as login ${saved.item.id}${saved.outcome === "updated" ? ", in place of the password it had" : ""}: sign in with it from now on. Now send the form. If the site turns the password down, call this again with the \`length\` and \`classes\` it asks for.${saved.outcome === "updated" ? ` If the old one stays in force, \`undo\` with this id brings it back.` : ""}`,
       };
     } catch (error) {
       return { content: vaultErrorText(error), isError: true };
@@ -1295,7 +1380,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
     const given = screenRef(target);
     if (given) return `@${given}`;
     if (CSS_SELECTOR.test(target.trim())) return target.trim();
-    const key = seenKey(ctx);
+    const key = await seenKey(ctx);
     let page = seen.within(key, FRESH_LOOK_MS);
     if (!page) {
       const r = await link.act(LOOK);
@@ -1487,7 +1572,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
     ),
     tool(
       "browser_tabs",
-      `${BROWSER_TOOL_INFO.browser_tabs.description} Links that open a new tab (sign-in windows) show up here: switch to it to read it.`,
+      `${BROWSER_TOOL_INFO.browser_tabs.description} Links that open a new tab (sign-in windows) show up here: switch to it to read it. browser_open and browser_do reuse the tab you are on: add a tab only to keep two sites at once, and close it when done. Your answers list your tabs; past ${BROWSER_TABS_KEPT}, the least recently used closes.`,
       {
         type: "object",
         properties: {
@@ -1561,10 +1646,11 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
         if (!r.ok) return { content: neutralizeUntrusted(r.text), isError: true };
         const url = urlOf(r.data);
         const page = whole ? observationOf(r.data) : null;
-        if (page) seen.remember(seenKey(ctx), page);
+        if (page) seen.remember(await seenKey(ctx), page);
         const sized = emulatedLine(linked.emulated()).slice(1);
         const head = `${url ? `Page: ${neutralizeUntrusted(url)}\n` : ""}${sized ? `${sized}\n` : ""}`;
         if (question && page && deps.judge) {
+          const shadow: ScreenJudgmentShadow[] = [];
           const found = await findInPage({
             judge,
             orgId: ctx.orgId,
@@ -1572,6 +1658,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
             runId: ctx.runId,
             question,
             observation: page,
+            shadow,
           }).catch(() => null);
           const part = found?.searched
             ? ` (searched ${found.searched.lines} of the page's ${found.searched.of} lines)`
@@ -1580,13 +1667,13 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
             const partly = found.answered === "partly" ? " (it may only partly answer it)" : "";
             return {
               content: `${head}Where the page answers "${question}"${partly}${part}:\n${wrapPage(found.text)}`,
-              data: { ...(url ? { url } : {}), ...profileData(linked.profile) },
+              data: { ...(url ? { url } : {}), ...profileData(linked.profile), ...screenJudgmentsData(shadow) },
             };
           }
           if (found) {
             return {
               content: `${head}Nothing on the page answers "${question}"${part}. Read the whole page (no \`find\`) to look yourself, or go where it would be.`,
-              data: { ...(url ? { url } : {}), ...profileData(linked.profile) },
+              data: { ...(url ? { url } : {}), ...profileData(linked.profile), ...screenJudgmentsData(shadow) },
             };
           }
         }
@@ -1744,7 +1831,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
     ),
     tool(
       "browser_make_password",
-      `For an account you are making, or a password you are changing, yourself: makes a strong password on your computer, keeps it in the Vault for this site and \`username\`, and types it into \`target\` and \`confirm\`. You never see it. Never ask a person to invent one. Then send the form yourself.`,
+      `For an account you are making, or a password you are changing, yourself: makes a strong password on your computer, keeps it for this site and \`username\`, and types it into \`target\` and \`confirm\`. It is kept where your logins live: the one connected password manager that takes new logins, else the Vault; the answer says where. You never see it. Never ask a person to invent one. Then send the form yourself.`,
       {
         type: "object",
         properties: {
@@ -1766,6 +1853,12 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
             type: "string",
             maxLength: 64,
             description: "A login's id: back to the password it had before you made this one, typing nothing.",
+          },
+          save_in: {
+            type: "string",
+            maxLength: 200,
+            description:
+              'Only when the person named where to keep it: `vault` (this workspace\'s Vault) or a connected password manager as vault_list names it (`1Password · "Agents"`).',
           },
         },
         additionalProperties: false,
@@ -1867,8 +1960,8 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
       "browser_close",
       `${BROWSER_TOOL_INFO.browser_close.description} To restart your browser, close it and open the page again with browser_open. While a person has your browser, close it only when the person using it asks you to restart it: that ends their turn. It also closes by itself after a while unused.`,
       { type: "object", properties: {}, additionalProperties: false },
-      (_input, ctx) => {
-        seen.forget(seenKey(ctx));
+      async (_input, ctx) => {
+        seen.forget(await seenKey(ctx));
         return run(
           ctx,
           { command: "close", args: [], timeoutSeconds: COMMAND_SECONDS },
@@ -1922,7 +2015,7 @@ export function createBrowserToolSource(deps: BrowserToolDeps): ToolSource & { r
     },
     async execute(input, ctx) {
       const name = str(input.name).trim();
-      seen.forget(seenKey(ctx));
+      seen.forget(await seenKey(ctx));
       if (name.toLowerCase() === "own") {
         await switchRunBrowser(ctx.db, ctx.runId, null);
         return { content: "Your browser calls go to your own browser now." };

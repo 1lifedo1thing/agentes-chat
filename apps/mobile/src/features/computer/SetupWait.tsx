@@ -13,11 +13,12 @@ import {
   useEtaNow,
   WORKSPACE_COMPUTER_KIND,
 } from "@agenteschat/client/lib/computer";
+import { modeKey, workspaceModeOf } from "@agenteschat/client/lib/workspace-mode";
 import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { ComputerIcon, ComputerPortrait } from "@/computer/ComputerPortrait";
 import { useOrg, useOrgMaybe } from "@/providers/org";
-import { Button, type IconName, InfoHint, LineIcon, SheetScreen, Text } from "@/ui";
+import { Button, type IconName, InfoHint, LineIcon, PressScale, SheetScreen, Text } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useColors, useOrgId } from "../shared/hooks";
 import { useSurface } from "../shared/parts";
@@ -41,7 +42,8 @@ export interface WaitWorkspace {
 /**
  * The time left now, on the clock every time line shares (`useEtaNow`), and whether "we'll email you" holds for
  * this person: only owners get the email. A workspace on hold shows neither: its provisioner waits too. `now`:
- * that clock's time, while it waits. `org`: the workspace's name.
+ * that clock's time, while it waits. `org`: the workspace's name; `mode`: its mode, whose words name the computer
+ * (a personal one's is its person's agents', ADR 0159).
  */
 export function useSetupWait(view: SetupView | null, workspace?: WaitWorkspace) {
   const chosen = useOrgMaybe();
@@ -58,6 +60,7 @@ export function useSetupWait(view: SetupView | null, workspace?: WaitWorkspace) 
     emailed: live !== null && org?.role === "owner" && promisesEmail(live, now),
     email: me?.user.email ?? "",
     org: org?.name ?? workspace?.name ?? "",
+    mode: workspaceModeOf(org),
   };
 }
 
@@ -109,7 +112,7 @@ export function SetupWait({
 }) {
   const { t } = useTranslation();
   const wait = useSetupWait(view, workspace);
-  const name = t("computerSetup.title", { org: wait.org });
+  const name = t(modeKey(wait, "computerSetup.title"), { org: wait.org });
   return (
     <View style={styles.wait}>
       <View style={styles.head}>
@@ -177,16 +180,19 @@ export function SetupNotice() {
   const view = useSetupView();
   const wait = useSetupWait(view);
   if (!setupPending(view)) return null;
-  const title = t(setupNoticeTitleKey(view), { org: org?.name ?? "" });
+  const title = t(modeKey(org, setupNoticeTitleKey(view)), { org: org?.name ?? "" });
   const line = setupNoticeLine(t, view, wait.eta, wait.emailed);
   return (
     <View style={styles.list}>
       {/* It opens a screen: the press shows, with no haptic (plain navigation). */}
-      <Pressable
+      <PressScale
+        haptic={false}
+        fill={false}
         onPress={() => router.push("/computer-setup")}
         accessibilityRole="button"
-        accessibilityLabel={`${title}. ${line}`}
-        style={({ pressed }) => [styles.card, surface, pressed && styles.pressed]}
+        accessibilityLabel={line ? `${title}. ${line}` : title}
+        style={[styles.card, surface]}
+        contentStyle={styles.cardIn}
       >
         <LineIcon variant="callout" size={22}>
           <ComputerIcon kind={WORKSPACE_COMPUTER_KIND} size={22} color={c.muted} />
@@ -195,13 +201,15 @@ export function SetupNotice() {
           <Text variant="callout" tone="ink" style={styles.bold} numberOfLines={2}>
             {title}
           </Text>
-          <Text variant="small" tone="muted" numberOfLines={2}>
-            {line}
-          </Text>
+          {line ? (
+            <Text variant="small" tone="muted" numberOfLines={2}>
+              {line}
+            </Text>
+          ) : null}
         </View>
         {/* On the title's line, as the icon on the left: in the card's middle it floated between the lines. */}
         <LineIcon variant="callout" name="right" size={16} color={c.faint} />
-      </Pressable>
+      </PressScale>
     </View>
   );
 }
@@ -216,13 +224,6 @@ const styles = StyleSheet.create({
   line: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   grow: { flex: 1, minWidth: 0 },
   list: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
-  card: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  pressed: { opacity: 0.85 },
+  card: { borderRadius: 20 },
+  cardIn: { paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", alignItems: "flex-start", gap: 10 },
 });

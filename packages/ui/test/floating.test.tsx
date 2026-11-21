@@ -13,12 +13,14 @@ import {
   MessageText,
   monthGrid,
   normalizeTime,
+  Popover,
   Select,
   Token,
   timeOptions,
 } from "../src";
 import { TIP_OPEN_MS } from "../src/components/Tip";
-import { EDGE_ROOM, placeTip, pullToFit, TIP_GAP } from "../src/floating";
+import { EDGE_ROOM, placeList, placeTip, pullToFit, TIP_GAP } from "../src/floating";
+import { HOVER_CLOSE_MS } from "../src/hooks/useHoverCard";
 
 const body = () => within(document.body);
 const key = async (el: Element, k: string) => {
@@ -32,10 +34,10 @@ const click = (el: Element) => act(async () => fireEvent.click(el));
 const css = (file: string) => Bun.file(new URL(`../src/styles/${file}`, import.meta.url).pathname).text();
 
 describe("floating layers", () => {
-  test("one layering scale: lists, menus and popovers sit above dialogs and sheets", async () => {
+  test("one layering scale: dialogs, sheets and what floats share one layer, so what opens later stacks above", async () => {
     const layers = await css("layers.css");
     const z = (name: string) => Number(layers.match(new RegExp(`--z-${name}:\\s*(\\d+)`))?.[1]);
-    expect(z("floating")).toBeGreaterThan(z("dialog"));
+    expect(z("floating")).toBe(z("dialog"));
     expect(z("scrim")).toBe(z("dialog"));
     expect(z("toast")).toBeGreaterThan(z("floating"));
     const components = await css("components.css");
@@ -46,6 +48,28 @@ describe("floating layers", () => {
     expect(rule(".ac-dialog")).toContain("z-index: var(--z-dialog)");
     expect(rule(".ac-details")).toContain("z-index: var(--z-dialog)");
     expect(await css("index.css")).toContain('@import "./layers.css"');
+  });
+
+  test("a dialog opened from a popover comes after it in the page, so on their one layer it paints above it", async () => {
+    function Card() {
+      const [asking, setAsking] = useState(false);
+      return (
+        <Popover open label="Bento" trigger={<button type="button">Bento</button>}>
+          <button type="button" onClick={() => setAsking(true)}>
+            Salvar
+          </button>
+          <Dialog open={asking} onOpenChange={setAsking} title="Usar o plano de Wagner?" closeLabel="Fechar">
+            <p>O Bento passa a pensar com ele.</p>
+          </Dialog>
+        </Popover>
+      );
+    }
+    render(<Card />);
+    const card = body().getByRole("dialog", { name: "Bento" });
+    await click(within(card).getByRole("button", { name: "Salvar" }));
+    const ask = body().getByRole("dialog", { name: "Usar o plano de Wagner?" });
+    expect(card.contains(ask)).toBe(false);
+    expect(card.compareDocumentPosition(ask) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   test("every anchored layer keeps room from the viewport's edges", async () => {
@@ -146,7 +170,9 @@ describe("floating layers", () => {
     expect(await css("components.css")).toMatch(
       /@media \(min-width: 641px\) \{\s*\.ac-msg__tip \{\s*max-width: 420px;/,
     );
+    // Left for elsewhere, it goes after the grace that lets the pointer reach it (`useHoverCard`).
     await act(async () => fireEvent.pointerLeave(time, { pointerType: "mouse" }));
+    await act(() => new Promise((r) => setTimeout(r, HOVER_CLOSE_MS + 10)));
     expect(document.querySelector(".ac-tip")).toBeNull();
     unmount();
   });
@@ -248,5 +274,41 @@ describe("Token", () => {
     );
     await click(body().getByRole("button", { name: "Remover Ada" }));
     expect(removed).toEqual(["ada"]);
+  });
+});
+
+describe("a list opened by typing (placeList)", () => {
+  const caret = { left: 100, top: 400, bottom: 420 };
+  const win = { width: 1280, height: 900 };
+  const list = (height: number) => ({ width: 300, height });
+  test("under the caret, as tall as the room under it, not a fixed cap", () => {
+    expect(placeList(caret, list(300), win)).toEqual({
+      left: 100,
+      top: 420 + TIP_GAP,
+      maxHeight: 900 - EDGE_ROOM - 420 - TIP_GAP,
+    });
+  });
+  test("over the caret when it doesn't fit under and over has more room, its foot on the caret", () => {
+    const low = { left: 100, top: 700, bottom: 720 };
+    expect(placeList(low, list(300), win)).toEqual({
+      left: 100,
+      top: 700 - TIP_GAP - 300,
+      maxHeight: 700 - TIP_GAP - EDGE_ROOM,
+    });
+  });
+  test("taller than the window: on the roomier side, held to its room, so it scrolls only then", () => {
+    const low = { left: 100, top: 700, bottom: 720 };
+    expect(placeList(low, list(2000), win)).toEqual({
+      left: 100,
+      top: EDGE_ROOM,
+      maxHeight: 700 - TIP_GAP - EDGE_ROOM,
+    });
+    expect(placeList(caret, list(2000), win).top).toBe(420 + TIP_GAP);
+  });
+  test("a caret at either side of a phone: the list moves along to stay EDGE_ROOM inside the window", () => {
+    const phone = { width: 320, height: 700 };
+    const narrow = { width: 200, height: 200 };
+    expect(placeList({ ...caret, left: 0 }, narrow, phone).left).toBe(EDGE_ROOM);
+    expect(placeList({ ...caret, left: 250 }, narrow, phone).left).toBe(320 - EDGE_ROOM - 200);
   });
 });

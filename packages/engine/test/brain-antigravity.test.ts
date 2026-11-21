@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test";
-import { ANTIGRAVITY_PROTOCOL, LOCKED_BRAIN_PROTOCOL } from "@agenteschat/adapters";
-import { ANTIGRAVITY_MODELS, GEMINI_ENTERPRISE_PROVIDER, signInProviderOf } from "@agenteschat/providers/plans";
+import { ANTIGRAVITY_PROTOCOL, LOCKED_BRAIN_PROTOCOL, SHARED_GEMINI_PROTOCOL } from "@agenteschat/adapters";
+import {
+  ANTIGRAVITY_MODELS,
+  GEMINI_ENTERPRISE_PROVIDER,
+  sharedSignIn,
+  signInProviderOf,
+} from "@agenteschat/providers/plans";
 import { antigravityModels, brainOptions, defaultBrainModel, isBrainKind } from "../src/brain-settings";
 import { AntigravityBrain, type BrainTurnRequest, type ComputerBrainLink } from "../src/brains/codex";
 import { computerBrainUnavailable, NO_AI_CODES, UNAVAILABLE_CODES } from "../src/brains/select";
@@ -127,6 +132,14 @@ test("Quem pensa: Gemini where its runner and CLI are, its models as the CLI lis
   expect(option(machine({ executors: { detectedAt: "x" } }))).toMatchObject({ reason: "not_installed" });
   expect(option(machine({ executors: {} }))).toMatchObject({ reason: "not_reported" });
   expect(antigravityModels([]).map((m) => m.value)).toEqual(ANTIGRAVITY_MODELS.map((m) => m.id));
+  // With none listed, Gemini 4 Neon leads, the CLI's own default; every level is its model, the extra one too.
+  expect(antigravityModels([])[0]).toEqual({
+    value: "gemini-4-neon-high",
+    label: "Gemini 4 Neon (High)",
+    modelId: "gemini-4-neon",
+  });
+  expect(antigravityModels([{ id: "gemini-4-neon-xhigh" }])[0]?.modelId).toBe("gemini-4-neon");
+  expect(antigravityModels([{ id: "gemini-4-hydrogen-xhigh" }])[0]?.modelId).toBe("gemini-4-hydrogen");
   expect(defaultBrainModel("antigravity")).toBeNull();
   expect(isBrainKind("antigravity") && isComputerBrain("antigravity")).toBe(true);
   expect([BRAIN_NAMES.antigravity, BRAIN_PLAN_NAMES.antigravity, defaultAccountLabel("antigravity")]).toEqual([
@@ -136,9 +149,14 @@ test("Quem pensa: Gemini where its runner and CLI are, its models as the CLI lis
   ]);
 });
 
-test("a Gemini sign-in is per agent, never made for all agents where each is its own OS user; Enterprise signs in again as Enterprise", () => {
-  const system = { protocol: ANTIGRAVITY_PROTOCOL, executors: { mode: "system" as const } };
-  expect(sharesSignIns(system as never, "antigravity")).toBe(false);
+test("a Gemini sign-in is made for all agents where each is its own OS user from protocol 58 on; Enterprise signs in again as Enterprise", () => {
+  const system = (protocol: number) => ({ protocol, executors: { mode: "system" as const } }) as never;
+  expect(sharesSignIns(system(SHARED_GEMINI_PROTOCOL), "antigravity")).toBe(true);
+  expect(sharesSignIns(system(SHARED_GEMINI_PROTOCOL - 1), "antigravity")).toBe(false);
+  expect(sharesSignIns(system(SHARED_GEMINI_PROTOCOL), "grok")).toBe(false);
+  // Where every agent is the runner's own user, any sign-in thinks for all of them, as before.
+  expect(sharesSignIns({ protocol: ANTIGRAVITY_PROTOCOL, executors: {} } as never, "antigravity")).toBe(true);
+  expect([sharedSignIn("antigravity"), sharedSignIn("antigravity", GEMINI_ENTERPRISE_PROVIDER)]).toEqual([true, true]);
   expect(signInProviderOf(GEMINI_ENTERPRISE_PROVIDER)).toBe("enterprise");
   expect(signInProviderOf("zai")).toBe("zai");
   expect(signInProviderOf(null)).toBeUndefined();

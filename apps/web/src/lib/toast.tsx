@@ -1,5 +1,5 @@
 import { splitAtNames } from "@agenteschat/client/lib/text";
-import { type AgentAppearance, Icon } from "@agenteschat/ui";
+import { type AgentAppearance, codeAndBold, Icon } from "@agenteschat/ui";
 import {
   createContext,
   type ReactNode,
@@ -135,47 +135,51 @@ export function ToastProvider({
           {toasts.map((toast) => (
             <div
               key={toast.id}
-              className={`ac-toast ac-actrow ac-toast--${toast.tone}`}
+              className={`ac-toast ac-toast--${toast.tone}`}
               role={toast.tone === "error" ? "alert" : "status"}
               data-leaving={toast.leaving || undefined}
             >
               <Icon name={toast.tone === "error" || toast.tone === "warning" ? "alert" : "check"} />
-              <span className="ac-toast__text ac-actrow__text">
-                {toast.detail ? (
-                  <>
-                    <b className="ac-toast__title">
-                      <ToastWords toast={toast} />
-                    </b>
-                    <small className="ac-toast__detail">{toast.detail}</small>
-                  </>
-                ) : (
-                  <ToastWords toast={toast} />
-                )}
+              {/* Actions that don't fit beside the words go under them, the × stays beside the first line. */}
+              <span className="ac-actline">
+                <span className="ac-toast__text">
+                  {toast.detail ? (
+                    <>
+                      <b className="ac-toast__title">
+                        <ToastWords toast={toast} />
+                      </b>
+                      <small className="ac-toast__detail">{codeAndBold(toast.detail)}</small>
+                    </>
+                  ) : (
+                    <ToastWords toast={toast} />
+                  )}
+                </span>
+                {toast.actions?.length ? (
+                  <span className="ac-toast__acts ac-acts">
+                    {toast.actions.map((action) => (
+                      <button
+                        key={action.label}
+                        type="button"
+                        className="ac-btn ac-btn--ghost ac-btn--sm"
+                        onClick={() => {
+                          action.run();
+                          store.dismiss(toast.id);
+                        }}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </span>
+                ) : null}
               </span>
-              {/* One item after the words (`.ac-actrow`): the action and the × go under them together, never the × alone. */}
-              <span className="ac-toast__acts">
-                {toast.actions?.map((action) => (
-                  <button
-                    key={action.label}
-                    type="button"
-                    className="ac-btn ac-btn--ghost ac-btn--sm"
-                    onClick={() => {
-                      action.run();
-                      store.dismiss(toast.id);
-                    }}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className="ac-btn ac-btn--ghost ac-btn--sm ac-btn--icon"
-                  aria-label={closeLabel}
-                  onClick={() => store.dismiss(toast.id)}
-                >
-                  <Icon name="close" size={16} />
-                </button>
-              </span>
+              <button
+                type="button"
+                className="ac-btn ac-btn--ghost ac-btn--sm ac-btn--icon ac-toast__close"
+                aria-label={closeLabel}
+                onClick={() => store.dismiss(toast.id)}
+              >
+                <Icon name="close" size={16} />
+              </button>
             </div>
           ))}
         </div>,
@@ -187,14 +191,21 @@ export function ToastProvider({
 
 export const useToast = () => useContext(ToastContext);
 
-/** A toast's words; the agent it names with its face before the name (`.ac-who`), as in the conversation. */
+/**
+ * A toast's words, a command or a setting in them as code; the agent it names with its face before the name
+ * (`.ac-who`), as in the conversation.
+ */
 function ToastWords({ toast }: { toast: Toast }) {
   const who = toast.who;
-  if (!who) return <>{toast.text}</>;
+  if (!who) return <>{codeAndBold(toast.text)}</>;
   return (
     <>
-      {splitAtNames(toast.text, [who.name]).map((part) =>
-        typeof part === "string" ? part : <AgentWho key="who" name={who.name} appearance={who.appearance} />,
+      {splitAtNames(toast.text, [who.name]).map((part, i) =>
+        typeof part === "string" ? (
+          codeAndBold(part, `w${i}`)
+        ) : (
+          <AgentWho key="who" name={who.name} appearance={who.appearance} />
+        ),
       )}
     </>
   );

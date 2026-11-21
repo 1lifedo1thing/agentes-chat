@@ -4,12 +4,14 @@ import {
   type MachineRequest,
   PHONES_PROTOCOL,
   type PubSub,
+  type RateLimiter,
   workspacePath,
 } from "@agenteschat/adapters";
 import { and, type Database, type Executor, eq, isNotNull, schema, sql } from "@agenteschat/db";
+import { serverText } from "@agenteschat/i18n";
 import { getAgentCached } from "./agents";
 import { type ArtifactDeps, cleanFileName, getArtifact, storedFileOfArtifact } from "./artifacts";
-import { sniffModelImage } from "./avatars";
+import { MODEL_IMAGE_BYTES, sniffModelImage } from "./avatars";
 import {
   checkDeviceUse,
   type DeviceComputer,
@@ -26,6 +28,7 @@ import {
   workspaceDevices,
 } from "./device-resolve";
 import { type DeviceWaitReason, startDeviceWait } from "./device-waits";
+import { IPHONE_REPAIR_LIMIT, sendIphoneRepair } from "./device-wifi";
 import { type MachinePhoneRow, phoneHolder, phoneStoppedBy, phoneTargetOf } from "./devices";
 import { copyToComputer } from "./file-pulls";
 import { formatBytes } from "./format";
@@ -33,6 +36,7 @@ import { fullMachinePath } from "./machine-access";
 import { type MachineCaller, MachineRequestError } from "./machine-hub";
 import { formatDuration } from "./machine-task-text";
 import { MachineDroppedError, MachineOfflineError, pausedMessage } from "./machines";
+import { lineLocale } from "./requester";
 import { runnerUpdateWay } from "./runner-update";
 import { replyThreadOf } from "./runs";
 import { SANDBOX_SCOPE, truncateOutput, withConnectedMachine } from "./sandbox";
@@ -56,15 +60,26 @@ export interface DeviceToolDeps {
   pubsub?: PubSub;
   artifacts: ArtifactDeps;
   publicUrl?: string;
+  /** Caps `phone_repair` per agent (`IPHONE_REPAIR_LIMIT`). */
+  rateLimiter?: RateLimiter;
 }
+
+/**
+ * What an agent must know of a real iPhone's test helper: agents were seen asking people to rebuild it in Xcode and to
+ * turn on terminal access, neither of which it ever needs.
+ */
+const IPHONE_HELPER_NOTE =
+  "Its Mac builds and renews the test helper by itself (also when Xcode or iOS changes): never ask the person to rebuild it or to turn on terminal access for it. When iOS refuses its taps, the answer says the person's steps on the iPhone; when it keeps failing or hangs anyway, use phone_repair.";
+
+/** The Maestro commands a real iPhone's test helper runs (the runner's `IOS_FLOW_COMMANDS`). */
+const IOS_FLOW_COMMAND_LIST =
+  "launchApp, stopApp, tapOn (text, id or point), inputText, eraseText, assertVisible, assertNotVisible, scrollUntilVisible, scroll, swipe, back, pressKey, waitForAnimationToEnd and takeScreenshot";
 
 /** Recordings fit the file limit at the host's bitrate: about 45 MB for this long. */
 export const MAX_RECORD_SECONDS = 170;
 /** A flow with its recording may run this long. */
 export const MAX_FLOW_SECONDS = 600;
 const MAX_LOG_LINES = 2000;
-/** A screenshot the model also sees, when its PNG is at most this big. */
-const MODEL_IMAGE_BYTES = 3_500_000;
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -203,7 +218,9 @@ export function createDeviceToolSource(deps: DeviceToolDeps): ToolSource {
     ) =>
     async (input: Record<string, unknown>, ctx: ToolContext): Promise<ToolOutput> => {
       try {
-        const label = str(input.label).trim() || defaultLabel;
+        // From a confidential thread (ADR 0190) the label is the tool's own words: the run's would be read by the
+        // phone's owner (their notification), by the computer the phone is on and by whoever reads the phone's status.
+        const label = (ctx.confidential ? "" : str(input.label).trim()) || defaultLabel;
         const r = await reach(ctx, str(input.phone), label);
         if (isOutput(r)) return r;
         return await body(ctx, r, input, label);
@@ -287,7 +304,7 @@ export function createDeviceToolSource(deps: DeviceToolDeps): ToolSource {
     },
     {
       name: "phone_flow",
-      description: `Run a Maestro flow (YAML) on a phone: the way to drive an app and test it end to end, the same every time. With record, the screen is recorded around it and the video comes into this conversation. With save_as, the flow is also saved in your folder on the phone's computer (in the repo: .maestro/<feature>.yaml) so it can run again after changes. A failed or cut flow re-runs from the start. Up to ${MAX_FLOW_SECONDS / 60} minutes.`,
+      description: `Run a Maestro flow (YAML) on a phone: the way to drive an app and test it end to end, the same every time. With record, the screen is recorded around it and the video comes into this conversation. With save_as, the flow is also saved in your folder on the phone's computer (in the repo: .maestro/<feature>.yaml) so it can run again after changes. A failed or cut flow re-runs from the start. Up to ${MAX_FLOW_SECONDS / 60} minutes. On a real iPhone the flow runs through its test helper, which takes these commands: ${IOS_FLOW_COMMAND_LIST}. ${IPHONE_HELPER_NOTE}`,
       scope: SANDBOX_SCOPE,
       inputSchema: {
         type: "object",
@@ -331,7 +348,7 @@ export function createDeviceToolSource(deps: DeviceToolDeps): ToolSource {
           content: [
             `The flow ${reply.passed ? "passed" : "failed"} on ${r.phone.name} (${formatDuration(Math.round(reply.seconds))}).`,
             saveAs ? `Saved at ${saveAs}.` : "",
-            reply.output ? untrustedBlock("maestro output", truncateOutput(reply.output, 8000)) : "",
+            reply.output ? untrustedBlock("flow output", truncateOutput(reply.output, 8000)) : "",
             input.record === true && !reply.video
               ? "The recording didn't hold (cut off): run the flow again to get one."
               : "",
@@ -389,6 +406,58 @@ export function createDeviceToolSource(deps: DeviceToolDeps): ToolSource {
           data: { phoneId: r.phone.id },
         });
         return images ? { ...shared, images } : shared;
+      }),
+    },
+    {
+      name: "phone_repair",
+      description:
+        "Repair a real iPhone's test helper when its taps or flows keep failing or hang while screenshots still work: its Mac stops the helper and whatever is left of it, builds it again with the Xcode installed there now and checks it on the iPhone, in a few minutes. No terminal access needed. It can't turn on what only the person can on the iPhone (Developer Mode, UI Automation, the passcode): the phone's status says those.",
+      scope: SANDBOX_SCOPE,
+      inputSchema: {
+        type: "object",
+        properties: { phone: phoneProp, label: labelProp },
+        required: ["phone"],
+        additionalProperties: false,
+      },
+      describe: (input) => ({ title: `Repair the test helper on ${str(input.phone)}` }),
+      execute: phoneTool("Repairing the test helper", async (ctx, r) => {
+        const name = r.phone.name;
+        if (r.phone.platform !== "ios" || r.phone.kind !== "device")
+          return refusal(`${name} has no test helper to repair: only a real iPhone has one.`, "device.unsupported");
+        const limit = await deps.rateLimiter?.consume(`iphone-repair:agent:${ctx.agentId}`, IPHONE_REPAIR_LIMIT);
+        if (limit && !limit.allowed)
+          return refusal(
+            `You repaired a test helper ${IPHONE_REPAIR_LIMIT.limit} times in the last minutes. Wait for this one: ${waitHint(name)}`,
+            "device.rate_limited",
+          );
+        const hub = hubOf() as MachineCaller;
+        const status = await hub.status(r.host.id);
+        let view: Awaited<ReturnType<typeof sendIphoneRepair>>;
+        try {
+          view = await sendIphoneRepair(
+            { db: deps.db, hub },
+            ctx.orgId,
+            { id: r.host.id, protocol: status?.protocol ?? 0 },
+            r.phone,
+            {
+              actor: { type: "agent", id: ctx.agentId },
+              runId: ctx.runId,
+              channelId: ctx.channelId,
+              onBehalfOfUserId: r.requester,
+            },
+          );
+        } catch (error) {
+          return phoneFailure(ctx.db, r, error);
+        }
+        if (view.update && status)
+          return refusal(
+            `The agentes app on ${r.host.name} is too old to repair the test helper. ${runnerUpdateWay(status)}`,
+            "device.runner_outdated",
+          );
+        return {
+          content: `${r.host.name} is repairing the test helper on ${name}: it stops it, builds it again with its Xcode and checks it on the iPhone, which takes a few minutes. ${waitHint(name)}`,
+          data: { phoneId: r.phone.id },
+        };
       }),
     },
     {
@@ -484,10 +553,17 @@ async function phoneFailure(db: Executor, r: Reached, error: unknown): Promise<T
       const who = agent
         ? `${agent.name}${person ? ` (${holder?.label ? `${holder.label} ` : ""}for ${person})` : ""}`
         : null;
+      // A person took control of its screen from the apps: they give it back when they're done.
+      if (!who && holder && person && !holder.runId) {
+        return refusal(
+          `${person} took control of ${name}, so it's theirs for now. ${waitHint(name)}`,
+          "device.phone_busy",
+        );
+      }
       return refusal(
         who && holder
           ? `${name} is in use by ${who} since ${seenAgo(holder.since).replace("last seen ", "")}. ${waitHint(name)}`
-          : `${name} is in use: ${error.message}. ${waitHint(name)}`,
+          : `${name} is in use: ${error.message} ${waitHint(name)}`,
         "device.phone_busy",
       );
     }
@@ -498,23 +574,11 @@ async function phoneFailure(db: Executor, r: Reached, error: unknown): Promise<T
         "device.phone_not_ready",
       );
     }
-    case "tool_missing": {
-      // A real iPhone records, screenshots and runs flows only once its test helper is set up: say so, and name the
-      // phones that can do it now.
-      if (r.phone.platform === "ios" && r.phone.kind === "device") {
-        const others = (await workspaceDevices(db, r.phone.orgId)).phones.filter(
-          (p) => p.id !== r.phone.id && p.machineId && (p.platform === "android" || p.kind === "simulator"),
-        );
-        return refusal(
-          `${error.message} Installing, opening apps and reading the log work on ${name}; screenshots, recordings and flows don't yet.${others.length > 0 ? ` These can do it now: ${others.map((p) => `"${p.name}"`).join(", ")}.` : " An iOS simulator on the Mac or an Android phone can."}`,
-          "device.tool_missing",
-        );
-      }
+    case "tool_missing":
       return refusal(
         `${error.message} (on ${r.host.name}). Ask the person to install it there; that step is theirs. ${waitHint(name)}`,
         "device.tool_missing",
       );
-    }
     case "not_found":
       return refusal(
         `That app isn't installed on ${name}: install it first with phone_install. (${error.message})`,
@@ -547,36 +611,37 @@ async function waitForDevice(deps: DeviceToolDeps, ctx: ToolContext, asked: stri
   const host = computer;
   const status = host && hub ? await hub.status(host.id) : null;
   const owner = check.ok ? null : await ownerName(ctx.db, target);
+  const locale = await lineLocale(ctx.db, ctx.orgId, check.requester, ctx.runId);
+  // The card's own words (`devices.wait.*`, as the apps' `waitText` says them), in the language of whom it works for.
+  const line = (key: string, vars: Record<string, string> = {}) =>
+    serverText(locale, `devices.wait.${key}`, { deviceName: name, ...vars });
   let body: string;
   if (!check.ok) {
     if (!check.requestId) return refusal(check.message, "device.not_allowed");
     reason = "asked";
-    body = `Waiting for ${owner ?? "its owner"} to let me use ${name}.`;
+    body = owner ? line("asked", { owner }) : line("askedOwner");
   } else if (!host || !status?.online) {
-    reason = "offline";
-    body = phone
-      ? host
-        ? `Waiting for ${host.name} to be back online (${name} is on it).`
-        : `Waiting for ${name} to be connected to a computer.`
-      : `Waiting for ${name} to be back online.`;
-    if (phone && !host) reason = "missing";
+    reason = phone && !host ? "missing" : "offline";
+    body = phone && host ? line("hostOffline", { host: host.name }) : line("offline");
   } else if (!phone) {
     if (!status.paused) return { content: `${name} is online now: go ahead.` };
     reason = "offline";
-    body = `Waiting for ${name} to be resumed by its owner.`;
+    body = line("offline");
   } else if (phone.state === "offline") {
     reason = "missing";
-    body = `Waiting for ${name} to be connected to ${host.name}.`;
+    body = line("missing", { host: host.name });
   } else if (phone.state === "needs_you" || phone.state === "preparing") {
     reason = phone.state;
     detail = phone.reason;
-    body = `Waiting for ${name}: ${phoneReasonText(phone.reason, name, host.name).text}`;
+    const key = `devices.reason.${phone.reason ?? "other"}`;
+    const said = serverText(locale, key);
+    body = line("needs", { reason: said === key ? serverText(locale, "devices.reason.other") : said });
   } else if (phone.state === "unsupported") {
     return refusal(phoneReasonText(phone.reason, name, host.name).text, "device.unsupported");
   } else if (phone.holder && phone.holder.runId !== ctx.runId) {
     reason = "busy";
     holder = { ...phone.holder, label: phone.holder.label ?? null };
-    body = `Waiting for ${name} to be free.`;
+    body = line("busy");
   } else {
     return { content: `${name} is ready now: go ahead.` };
   }

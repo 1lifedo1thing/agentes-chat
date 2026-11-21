@@ -4,8 +4,10 @@ import { eq, schema, sql } from "@agenteschat/db";
 import { type ModelRequest, systemText, textOf } from "@agenteschat/providers";
 import {
   ANSWER_NUDGE,
+  type Brain,
   createAgent,
   createAgentRuns,
+  createJobHandlers,
   createPassToolSource,
   drainOutbox,
   insertMessage,
@@ -42,11 +44,8 @@ const lastText = (req: ModelRequest) => {
 };
 const agentMessages = async () =>
   (await f.db.select().from(schema.messages)).filter((m) => m.authorType === "agent").map((m) => m.body);
-const deltasOf = (events: RealtimeEvent[]) =>
-  events
-    .filter((e) => e.type === "agent.delta")
-    .map((e) => (e as unknown as { text: string }).text)
-    .join("");
+/** What went out before its message: never its words (`agent.typing` only says it writes). */
+const beforeMessage = (events: RealtimeEvent[]) => JSON.stringify(events.filter((e) => e.type !== "message.created"));
 const runRow = async () => (await f.db.select().from(schema.agentRuns))[0];
 
 /** A person's message in #general without a mention, and the router bringing the agent in. */
@@ -82,7 +81,8 @@ describe("a run that must answer never posts the silence word", () => {
     expect(first.tools?.map((t) => t.name) ?? []).not.toContain("pass");
     expect(systemText(first.system)).not.toContain("# Why you were called");
     await Bun.sleep(5);
-    expect(deltasOf(events)).toBe("Aqui está.");
+    expect(beforeMessage(events)).not.toContain("NO_");
+    expect(beforeMessage(events)).not.toContain("Aqui");
     expect(events.some((e) => e.type === "agent.passed")).toBe(false);
     expect((await runRow())?.status).toBe("done");
   });
@@ -111,15 +111,15 @@ describe("a run that must answer never posts the silence word", () => {
     expect(await agentMessages()).toEqual(["Feito."]);
   });
 
-  test("the word glued to real text is cut, in the message and in the stream", async () => {
+  test("the word glued to real text is cut from the message, and none of it went out before", async () => {
     f = await setup({ reply: () => ({ chunks: ["NO_REP", "LY Claro", ", aqui está.", " NO_", "REPLY"] }) });
     const events = f.listen(f.general.id);
     await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, { body: "@dev oi" });
     await drainOutbox(f.db, f.handlers);
     expect(await agentMessages()).toEqual(["Claro, aqui está."]);
     await Bun.sleep(5);
-    expect(deltasOf(events)).not.toContain("NO");
-    expect(deltasOf(events).trim()).toBe("Claro, aqui está.");
+    expect(beforeMessage(events)).not.toContain("NO_");
+    expect(beforeMessage(events)).not.toContain("Claro");
   });
 });
 
@@ -248,7 +248,7 @@ describe("a run nobody called by name may stay quiet", () => {
     expect(f.provider.calls.length).toBe(1);
     await Bun.sleep(5);
     expect(events.some((e) => e.type === "agent.passed")).toBe(true);
-    expect(deltasOf(events)).not.toContain("NO_REPLY");
+    expect(beforeMessage(events)).not.toContain("NO_REPLY");
   });
 
   test("another agent's reply to the same message since is read before the first call", async () => {
@@ -416,4 +416,78 @@ test("sessionFor: a conversation never picks up a background or routine run's se
   const fresh = await resolveBrain({ db: f.db }, agent, background, f.general.id);
   expect(fresh.session?.id).not.toBe("s-conversation");
   expect(fresh.session?.resume).toBe(false);
+});
+
+describe("a pass leaves no words on its step line", () => {
+  const saidOf = (events: RealtimeEvent[]) =>
+    events.flatMap((e) => (e.type === "agent.tool" && "said" in e && e.said ? [e.said] : []));
+  const NOT_NEEDED = "O Theo já respondeu isso acima com o link dos builds.";
+
+  test("brought in by the router, it writes a sentence and passes: the sentence never shows", async () => {
+    f = await setup({
+      toolSources: [createPassToolSource()],
+      reply: () => ({ chunks: [NOT_NEEDED], toolUses: [{ name: "pass", input: { reason: "já respondido" } }] }),
+    });
+    const events = f.listen(f.general.id);
+    await routed("alguém sabe onde rodam os builds?");
+    await Bun.sleep(5);
+    expect(events.some((e) => e.type === "agent.tool")).toBe(true);
+    expect(saidOf(events)).toEqual([]);
+    expect(JSON.stringify(events)).not.toContain("Theo");
+    expect(events.some((e) => e.type === "agent.passed")).toBe(true);
+    expect(await agentMessages()).toEqual([]);
+  });
+
+  test("on a computer brain too", async () => {
+    const brain: Brain = {
+      kind: "claude_code",
+      async *run() {
+        yield { type: "text_delta", text: NOT_NEEDED };
+        yield { type: "tool_call", id: "p1", name: "pass", input: { reason: "já respondido" } };
+        yield { type: "done", text: NOT_NEEDED };
+      },
+    };
+    f = await setup({ toolSources: [createPassToolSource()] });
+    const events = f.listen(f.general.id);
+    const message = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: f.general.id,
+      author: { type: "person", userId: f.owner.id },
+      body: "alguém sabe onde rodam os builds?",
+    });
+    await f.db.transaction((tx) => createAgentRuns(tx, message, [f.agent.id], "router"));
+    await drainOutbox(f.db, createJobHandlers({ ...f.jobDeps, brains: { model: () => brain } }));
+    await Bun.sleep(5);
+    expect(events.some((e) => e.type === "agent.tool")).toBe(true);
+    expect(saidOf(events)).toEqual([]);
+    expect(events.some((e) => e.type === "agent.passed")).toBe(true);
+    expect(await agentMessages()).toEqual([]);
+  });
+
+  test("another tool keeps the words written before it", async () => {
+    const look: ToolSource = {
+      name: "work",
+      tools: async () => [
+        {
+          name: "look",
+          description: "Look at the builds",
+          scope: "",
+          inputSchema: { type: "object", properties: {} },
+          execute: async () => ({ content: "2 builds" }),
+        },
+      ],
+    };
+    f = await setup({
+      toolSources: [createPassToolSource(), look],
+      reply: (_req, n) =>
+        n === 1
+          ? { chunks: ["Vou olhar os builds."], toolUses: [{ name: "look", input: {} }] }
+          : { chunks: ["Dois na fila."] },
+    });
+    const events = f.listen(f.general.id);
+    await routed("como estão os builds?");
+    await Bun.sleep(5);
+    expect(saidOf(events).join(" ")).toContain("Vou olhar os builds");
+    expect(await agentMessages()).toEqual(["Dois na fila."]);
+  });
 });

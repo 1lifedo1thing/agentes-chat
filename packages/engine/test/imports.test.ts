@@ -17,7 +17,7 @@ import {
   updateMyProfile,
   ValidationError,
 } from "../src";
-import { addMember as addPerson, addUser, type Fixture, setup } from "./fixtures";
+import { addMember as addPerson, addUser, everyoneWithout, type Fixture, SECRET, setup } from "./fixtures";
 
 let f: Fixture;
 afterEach(async () => {
@@ -90,7 +90,12 @@ function bundle(over: Partial<MigrationBundle> = {}): MigrationBundle {
   };
 }
 
-const deps = () => ({ db: f.db, blobs: f.artifactDeps.blobs, pubsub: f.pubsub });
+const deps = () => ({
+  db: f.db,
+  blobs: f.artifactDeps.blobs,
+  pubsub: f.pubsub,
+  hooks: { publicUrl: "https://agentes.test", secret: SECRET },
+});
 const run = (input: Partial<ImportInput> & { bundle: MigrationBundle }, actor = f.owner.id) =>
   applyImport(deps(), actor, f.org.id, { dryRun: false, ...input }, { model: DEFAULT_MODEL });
 const byKey = <T extends { kind: string; key: string }>(items: T[]) =>
@@ -271,6 +276,55 @@ describe("planning and applying an import", () => {
     expect(after.filter((r) => r.enabled)).toEqual([]);
   });
 
+  test("an agent that comes back with no instructions never clears what an earlier import brought", async () => {
+    f = await setup();
+    const first = await run({ bundle: bundle() });
+    const scoutId = byKey(first.items).get("agent:scout")?.targetId ?? "";
+    const closerId = byKey(first.items).get("agent:closer")?.targetId ?? "";
+
+    const again = bundle();
+    const [scout, closer] = again.agents as [MigrationBundle["agents"][number], MigrationBundle["agents"][number]];
+    const kept = scout.instructions;
+    scout.instructions = "";
+    closer.instructions = "Close the deal.";
+    const items = byKey((await run({ bundle: again })).items);
+    expect(items.get("agent:scout")?.action).toBe("unchanged");
+    expect(items.get("agent:closer")?.action).toBe("update");
+    const rows = await f.db.select().from(schema.agents).where(eq(schema.agents.orgId, f.org.id));
+    expect(rows.find((a) => a.id === scoutId)?.instructions).toBe(kept);
+    expect(rows.find((a) => a.id === closerId)?.instructions).toBe("Close the deal.");
+    expect(rows.filter((a) => a.archivedAt === null && ["Scout", "Closer"].includes(a.name))).toHaveLength(2);
+  });
+
+  test("another app's reply is one package: asking again never makes the same agent twice", async () => {
+    f = await setup();
+    const reply = (ref: string) =>
+      bundle({
+        source: { app: "agenteschat", ref, name: "Grok Bot", files: [] },
+        skills: [],
+        channels: [],
+        routines: [],
+        notes: [],
+      });
+    // A reply imported when the package still carried the model's own name for the export.
+    const old = await run({ bundle: reply("grok-bot:my-bots") });
+    const scoutId = byKey(old.items).get("agent:scout")?.targetId ?? "";
+
+    const again = reply("grok-bot");
+    (again.agents[1] as MigrationBundle["agents"][number]).instructions = "Close the deal.";
+    const items = byKey((await run({ bundle: again })).items);
+    expect(items.get("agent:scout")).toMatchObject({ action: "unchanged", targetId: scoutId });
+    expect(items.get("agent:closer")?.action).toBe("update");
+    const third = byKey((await run({ bundle: again })).items);
+    expect(third.get("agent:closer")?.action).toBe("unchanged");
+    const rows = await f.db.select().from(schema.agents).where(eq(schema.agents.orgId, f.org.id));
+    expect(rows.filter((a) => ["Scout", "Closer"].includes(a.name))).toHaveLength(2);
+
+    // Another app's package is its own, and so is our export of another workspace.
+    const other = byKey((await run({ bundle: reply("chatgpt-dots") })).items);
+    expect(other.get("agent:scout")?.action).toBe("create");
+  });
+
   test("text that looks like a credential never comes; what depends on a skipped agent is skipped", async () => {
     f = await setup();
     const b = bundle();
@@ -370,6 +424,41 @@ describe("planning and applying an import", () => {
     expect(once?.rule).toMatchObject({ freq: "daily", count: 1, start: day, times: ["10:00"] });
   });
 
+  test("a routine another app started by a webhook gets an address of its own; one on a pull request waits for GitHub", async () => {
+    f = await setup();
+    const routine = (key: string, trigger: MigrationBundle["routines"][number]["trigger"]) => ({
+      key,
+      name: key,
+      agent: "scout",
+      prompt: `Faça ${key}.`,
+      channel: null,
+      trigger,
+    });
+    const plan = await run({
+      bundle: bundle({ routines: [routine("hook", { webhook: true }), routine("pr", { event: "github.pr_opened" })] }),
+    });
+    const items = byKey(plan.items);
+    const row = async (key: string) =>
+      (
+        await f.db
+          .select()
+          .from(schema.routines)
+          .where(eq(schema.routines.id, items.get(`routine:${key}`)?.targetId ?? ""))
+      )[0];
+    expect(items.get("routine:hook")?.action).toBe("create");
+    expect(items.get("routine:pr")?.action).toBe("create");
+    const hook = await row("hook");
+    expect(hook).toMatchObject({ triggerType: "event", event: "webhook.received" });
+    // A new address: the other app's never comes.
+    expect(
+      await f.db
+        .select()
+        .from(schema.routineHooks)
+        .where(eq(schema.routineHooks.routineId, hook?.id ?? "")),
+    ).toHaveLength(1);
+    expect(await row("pr")).toMatchObject({ triggerType: "event", event: "github.pr_opened" });
+  });
+
   test("routines past the agent's active limit still arrive, paused, with a note saying why", async () => {
     f = await setup();
     const routines = Array.from({ length: 22 }, (_, i) => ({
@@ -399,9 +488,10 @@ describe("planning and applying an import", () => {
     }
   });
 
-  test("admins only; one apply takes at most 200 writes (a dry run any size)", async () => {
+  test("who may create agents only; one apply takes at most 200 writes (a dry run any size)", async () => {
     f = await setup();
     const member = await addPerson(f.db, f.org.id, "member");
+    await everyoneWithout(f.db, f.org.id, "create_agents");
     await expect(run({ bundle: bundle(), dryRun: true }, member.id)).rejects.toThrow(ForbiddenError);
     await expect(run({ bundle: bundle() }, member.id)).rejects.toThrow(ForbiddenError);
 

@@ -1,5 +1,5 @@
 import { plural } from "@agenteschat/i18n/format";
-import { atHost } from "./en";
+import { atHost, sentences } from "./en";
 import type { EmailWords } from "./index";
 
 /**
@@ -45,12 +45,26 @@ export const words: EmailWords = {
             ` als ${role}.`,
           ]
         : ["Je bent uitgenodigd om lid te worden van ", { b: org }, ` als ${role}.`],
+    starts: (channels, agents) =>
+      sentences(channels && ["Je zit meteen in ", ...channels, "."], agents && ["Je werkt samen met ", ...agents, "."]),
+    more: (n) => `nog ${n}`,
     what: "Op agentes.chat werken mensen en AI-agents samen.",
     noteFrom: (inviter, note) => [{ b: inviter ? `${inviter}: ` : "Hun bericht: " }, `‘${note}’`],
     button: "Uitnodiging accepteren",
     small: "De uitnodiging werkt 7 dagen. Accepteer haar met dit e-mailadres.",
     why: (org) =>
       `Je krijgt deze e-mail omdat iemand bij ${org} dit adres heeft uitgenodigd. Ken je diegene niet? Negeer de e-mail dan. Er gebeurt niets tot je accepteert.`,
+    personal: {
+      body: (inviter, email) =>
+        inviter
+          ? [
+              { b: inviter },
+              `${email ? ` (${email})` : ""} nodigt je uit voor een persoonlijke werkruimte op agentes.chat.`,
+            ]
+          : "Je bent uitgenodigd voor een persoonlijke werkruimte op agentes.chat.",
+      why: () =>
+        "Je krijgt deze e-mail omdat iemand dit adres heeft uitgenodigd voor een persoonlijke werkruimte. Ken je diegene niet? Negeer de e-mail dan. Er gebeurt niets tot je accepteert.",
+    },
   },
   inviteRequest: {
     subject: "Iemand vraagt om een nieuwe uitnodiging",
@@ -63,6 +77,13 @@ export const words: EmailWords = {
     next: "Verwacht je deze persoon? Stuur dan een nieuwe uitnodiging vanuit Leden. Zo niet, dan hoef je niets te doen.",
     button: "Leden openen",
     why: (org) => `Je krijgt deze e-mail omdat je deze uitnodiging hebt gemaakt of de leden van ${org} beheert.`,
+    personal: {
+      body: (email) =>
+        email
+          ? [{ b: email }, " opende een verlopen uitnodiging voor je werkruimte en vraagt om een nieuwe."]
+          : "Iemand met een verlopen uitnodigingslink voor je werkruimte vraagt om een nieuwe.",
+      why: () => "Je krijgt deze e-mail omdat je deze uitnodiging hebt gemaakt of bepaalt wie er in je werkruimte zit.",
+    },
   },
   calendar: {
     subject: "Je bent uitgenodigd voor een afspraak",
@@ -72,6 +93,9 @@ export const words: EmailWords = {
     someone: "Iemand",
     button: "Afspraak bekijken",
     why: (org) => `Je krijgt deze e-mail omdat iemand bij ${org} je heeft uitgenodigd voor een afspraak.`,
+    personal: {
+      why: () => "Je krijgt deze e-mail omdat iemand in je werkruimte je heeft uitgenodigd voor een afspraak.",
+    },
   },
   waitlist: {
     subject: "Bevestig je plek op de wachtlijst van agentes.chat",
@@ -127,6 +151,13 @@ export const words: EmailWords = {
     button: "Budget bekijken",
     why: (org) =>
       `Je krijgt deze e-mail omdat je eigenaar bent van deze agent of beheerder van ${org}. We sturen hem bij 80% en bij 100%, elk één keer per maand.`,
+    personal: {
+      warning: "Bij 100% stopt hij en laat hij het je weten. Je kunt de limiet aanpassen op de pagina van de agent.",
+      exhausted:
+        "Hij antwoordt niet tot de nieuwe maand begint, of tot je de limiet verhoogt op de pagina van de agent.",
+      why: () =>
+        "Je krijgt deze e-mail omdat deze agent van jou is. We sturen hem bij 80% en bij 100%, elk één keer per maand.",
+    },
   },
   digest: {
     subject: (n) =>
@@ -149,6 +180,15 @@ export const words: EmailWords = {
     button: (n) => plural("nl", n, { one: "Verzoek bekijken", other: "Goedkeuringen openen" }),
     why: (org, hours) =>
       `Je krijgt deze e-mail omdat je deze verzoeken in ${org} kunt goedkeuren.${hours ? ` We sturen hem als een verzoek langer dan ${hours} uur wacht, één keer per verzoek.` : ""}`,
+    personal: {
+      body: (n) =>
+        plural("nl", n, {
+          one: "Een van je agents vroeg om iets te doen waarvoor je goedkeuring nodig is.",
+          other: "Je agents vroegen om dingen te doen waarvoor je goedkeuring nodig is.",
+        }),
+      why: (_org, hours) =>
+        `Je krijgt deze e-mail omdat je deze verzoeken kunt goedkeuren.${hours ? ` We sturen hem als een verzoek langer dan ${hours} uur wacht, één keer per verzoek.` : ""}`,
+    },
   },
   ready: {
     subject: "De computer van je agents staat klaar",
@@ -181,18 +221,37 @@ export const words: EmailWords = {
     button: { ai: "Je AI koppelen", task: "Eerste taak geven", create: "Agent aanmaken" },
     why: (org) =>
       `Je krijgt deze e-mail omdat je eigenaar bent van ${org} op agentes.chat. Het is de enige e-mail over deze computer.`,
+    personal: {
+      body: () =>
+        "Bedankt voor het wachten. De computer van je agents staat aan en is ingericht, met een eigen gebruiker voor elke agent. Hij blijft dag en nacht aan, zodat je agents altijd kunnen werken.",
+      steps: {
+        task: ["Geef een eerste taak.", "Open een gesprek met een van je agents en zeg wat je nodig hebt."],
+      },
+      why: () =>
+        "Je krijgt deze e-mail omdat deze werkruimte op agentes.chat van jou is. Het is de enige e-mail over deze computer.",
+    },
   },
   joinRequest: {
     subject: "Iemand wil lid worden van je werkruimte",
     preheader: "Keur het goed of weiger het in Leden. Er gebeurt niets tot je antwoordt.",
     headline: "Er wacht een verzoek om lid te worden",
     body: (org) => ["Diegene opende de uitnodigingslink van ", { b: org }, " en vraagt om lid te worden."],
+    outside: (by) => [
+      "Diegene werkt voor ",
+      { b: by },
+      " en vraagt om lid te worden als externe medewerker. Diegene neemt geen plek in je abonnement in, en je kunt diegene altijd verwijderen.",
+    ],
     note: "Keur alleen mensen goed die je verwacht. Ze worden lid, tenzij je op de pagina een andere rol kiest.",
     approve: "Goedkeuren",
     deny: "Weigeren",
     more: "Alle wachtende verzoeken staan in Leden.",
     why: (org) =>
       `Je krijgt deze e-mail omdat je eigenaar of beheerder bent van ${org}. We sturen hem hooguit één keer per uur.`,
+    personal: {
+      body: () => "Diegene opende de uitnodigingslink van je werkruimte en vraagt om lid te worden.",
+      why: () =>
+        "Je krijgt deze e-mail omdat jij bepaalt wie er lid wordt van je werkruimte. We sturen hem hooguit één keer per uur.",
+    },
   },
   joinAnswer: {
     someone: "Iemand",
@@ -224,6 +283,17 @@ export const words: EmailWords = {
       small: "Denk je dat het een vergissing is? Vraag iemand daar om je per e-mail uit te nodigen.",
     },
     why: (org) => `Je krijgt deze e-mail omdat dit adres heeft gevraagd om lid te worden van ${org} op agentes.chat.`,
+    personal: {
+      joined: { body: (who) => `${who} heeft je verzoek goedgekeurd. Je zit nu in de werkruimte.` },
+      invited: { body: (who) => `${who} heeft je verzoek om lid te worden van de werkruimte goedgekeurd.` },
+      denied: {
+        preheader: "Diegene heeft het bekeken en niet goedgekeurd.",
+        body: () => "De persoon aan wie je het vroeg, heeft je verzoek bekeken en niet goedgekeurd.",
+        small: "Denk je dat het een vergissing is? Vraag diegene om je per e-mail uit te nodigen.",
+      },
+      why: () =>
+        "Je krijgt deze e-mail omdat dit adres heeft gevraagd om lid te worden van een persoonlijke werkruimte op agentes.chat.",
+    },
   },
   joinCode: {
     subject: (code) => `${code} is je code voor agentes.chat`,
@@ -233,16 +303,29 @@ export const words: EmailWords = {
     small: ["Hij werkt 10 minuten. Heb je er niet om gevraagd? ", { nobr: "Negeer deze e-mail." }],
     why: (org) =>
       `Je krijgt deze e-mail omdat iemand dit adres heeft ingevuld om lid te worden van ${org} op agentes.chat.`,
+    personal: {
+      body: () => "Typ deze code op de pagina om te vragen of je lid mag worden van deze werkruimte.",
+      why: () =>
+        "Je krijgt deze e-mail omdat iemand dit adres heeft ingevuld om lid te worden van een persoonlijke werkruimte op agentes.chat.",
+    },
   },
   deletionCode: {
     subjectWorkspace: (code) => `${code} is je code om een werkruimte te verwijderen`,
     subjectAccount: (code) => `${code} is je code om je hele account te verwijderen`,
+    subjectReset: (code) => `${code} is je code om een werkruimte te resetten`,
+    reset: (org) => [
+      "Typ deze code om de werkruimte ",
+      { b: org },
+      " te resetten. Agents, gesprekken, bestanden en geheugen worden meteen en definitief gewist, en hij begint opnieuw als een nieuwe werkruimte.",
+    ],
+    whyReset: (org) =>
+      `Je krijgt deze e-mail omdat vanuit je account is gevraagd om ${org} op agentes.chat te resetten.`,
     preheader: "Typ hem in agentes.chat om te bevestigen. Hij werkt 10 minuten.",
     headline: "Je code",
     workspace: (org) => [
       "Typ deze code om de werkruimte ",
       { b: org },
-      " te verwijderen. Hij gaat meteen voor iedereen dicht en wordt 7 dagen later definitief verwijderd.",
+      " te verwijderen. Hij wordt meteen voor iedereen alleen-lezen en 7 dagen later definitief verwijderd.",
     ],
     account: (email) => [
       "Typ deze code om het hele account ",
@@ -259,21 +342,74 @@ export const words: EmailWords = {
     whyWorkspace: (org) =>
       `Je krijgt deze e-mail omdat vanuit je account is gevraagd om ${org} op agentes.chat te verwijderen.`,
     whyAccount: "Je krijgt deze e-mail omdat vanuit je account is gevraagd om het van agentes.chat te verwijderen.",
+    personal: {
+      workspace: (org) => [
+        "Typ deze code om je werkruimte ",
+        { b: org },
+        " te verwijderen. Hij wordt meteen alleen-lezen en 7 dagen later definitief verwijderd.",
+      ],
+    },
+  },
+  emailChange: {
+    code: {
+      subject: (code) => `${code} is je code om je e-mailadres te wijzigen`,
+      preheader: "Typ hem in agentes.chat om te bevestigen. Hij werkt 10 minuten.",
+      headline: "Je code",
+      body: (email, newEmail) => [
+        "Typ deze code om het e-mailadres van het account ",
+        { b: email },
+        " te wijzigen in ",
+        { b: newEmail },
+        ".",
+      ],
+      support: (address) => [
+        "Hij werkt 10 minuten, en zonder deze code blijft je e-mailadres hetzelfde. Was jij het niet? Deel hem dan niet en schrijf naar ",
+        { mail: address },
+        ".",
+      ],
+      noSupport:
+        "Hij werkt 10 minuten, en zonder deze code blijft je e-mailadres hetzelfde. Was jij het niet? Deel hem dan niet en laat het weten aan de mensen die deze server beheren.",
+      why: "Je krijgt deze e-mail omdat vanuit je account is gevraagd om het e-mailadres op agentes.chat te wijzigen.",
+    },
+    link: {
+      subject: "Bevestig je nieuwe e-mailadres voor agentes.chat",
+      preheader: "Eén klik en je logt voortaan in met dit adres. De link werkt een uur.",
+      headline: "Bevestig je nieuwe e-mailadres",
+      body: "Nog één stap: bevestig dat dit adres van jou is. Daarna logt je account ermee in.",
+      button: "Nieuw e-mailadres bevestigen",
+      small: "De link werkt een uur. Heb je hier niet om gevraagd? Dan kun je deze e-mail negeren.",
+      why: "Je krijgt deze e-mail omdat iemand dit adres wil gebruiken voor een agentes.chat-account.",
+    },
+    changed: {
+      subject: "Het e-mailadres van je agentes.chat-account is gewijzigd",
+      preheader: "Was jij het niet? Dan kun je dit adres 7 dagen lang terugzetten.",
+      headline: "Je e-mailadres is gewijzigd",
+      body: (email, newEmail) => ["Het account ", { b: email }, " logt nu in met ", { b: newEmail }, "."],
+      notYou:
+        "Was jij het niet? Druk binnen 7 dagen op de knop. Dit adres komt terug, alle sessies worden uitgelogd, de AI-apps worden ontkoppeld en inlogmethoden die sindsdien zijn toegevoegd, werken niet meer. Ook het wachtwoord wordt gewist, en met “Wachtwoord vergeten” stel je het volgende in.",
+      button: "Dit was ik niet",
+      small: "Was jij het wel? Dan hoef je niets te doen.",
+      why: "Je krijgt deze e-mail omdat dit adres het e-mailadres van een agentes.chat-account was.",
+    },
   },
   deleting: {
     subject: (day) => `Een werkruimte waar je in zit wordt op ${day} verwijderd`,
-    preheader: "Hij is nu gesloten. Tot dan kan een eigenaar hem nog herstellen.",
+    preheader: "Hij is nu alleen-lezen. Tot dan kan een eigenaar hem nog herstellen.",
     headline: "Een werkruimte wordt verwijderd",
     body: (by, org, day, time) => [
       { b: by },
       " heeft de werkruimte ",
       { b: org },
-      ` verwijderd. Hij is nu gesloten en verdwijnt definitief op ${day} om ${time}.`,
+      ` verwijderd. Hij is nu alleen-lezen en verdwijnt definitief op ${day} om ${time}.`,
     ],
     owner: "Toch van gedachten veranderd? Herstel hem voor die tijd.",
     button: "Werkruimte herstellen",
     member: "Is het een vergissing? Vraag een eigenaar om hem te herstellen.",
     why: (org) => `Je krijgt deze e-mail omdat je in ${org} op agentes.chat zit.`,
+    personal: {
+      member: "Is het een vergissing? Vraag degene die hem verwijderde om hem te herstellen.",
+      why: () => "Je krijgt deze e-mail omdat je in deze werkruimte op agentes.chat zit.",
+    },
   },
   restored: {
     subject: "Een werkruimte waar je in zit is terug",
@@ -282,6 +418,9 @@ export const words: EmailWords = {
     body: (by, org) => [{ b: by }, " heeft ", { b: org }, " hersteld. Hij werkt weer."],
     button: "Werkruimte openen",
     why: (org) => `Je krijgt deze e-mail omdat je in ${org} op agentes.chat zit.`,
+    personal: {
+      why: () => "Je krijgt deze e-mail omdat je in deze werkruimte op agentes.chat zit.",
+    },
   },
   appConnected: {
     subject: "Er is een app gekoppeld aan je agentes.chat-account",
@@ -291,6 +430,11 @@ export const words: EmailWords = {
     note: "Heb je hem niet gekoppeld? Ontkoppel hem nu en wijzig je wachtwoord.",
     button: "Gekoppelde apps bekijken",
     why: (org) => `Je krijgt deze e-mail omdat er een app is gekoppeld aan je account in ${org} op agentes.chat.`,
+    personal: {
+      body: (app) => [{ b: app }, " heeft nu toegang tot je account in je persoonlijke werkruimte."],
+      why: () =>
+        "Je krijgt deze e-mail omdat er een app is gekoppeld aan je account in je persoonlijke werkruimte op agentes.chat.",
+    },
   },
   accountDeleting: {
     subject: (day) => `Je agentes.chat-account wordt op ${day} verwijderd`,
@@ -381,6 +525,10 @@ export const words: EmailWords = {
     button: "Bekijk wie mag praten",
     why: (org) =>
       `Je krijgt deze e-mail omdat een agent van jou in ${org} met je abonnement denkt en iemand anders heeft gewijzigd wie met hem mag praten.`,
+    personal: {
+      why: () =>
+        "Je krijgt deze e-mail omdat een agent van jou met je abonnement denkt en iemand anders heeft gewijzigd wie met hem mag praten.",
+    },
   },
   planLent: {
     subject: (plan) => `Je ${plan}-abonnement denkt nu voor een andere agent`,
@@ -399,6 +547,9 @@ export const words: EmailWords = {
     note: "Neem het met één klik terug in je meldingen, dan denkt de agent niet meer met je abonnement.",
     button: "Meldingen openen",
     why: (org) => `Je krijgt deze e-mail omdat iemand in ${org} je abonnement aan een agent heeft gekoppeld.`,
+    personal: {
+      why: () => "Je krijgt deze e-mail omdat iemand in je werkruimte je abonnement aan een agent heeft gekoppeld.",
+    },
   },
   planWaiting: {
     subject: "Je team wacht",
@@ -415,5 +566,61 @@ export const words: EmailWords = {
     button: "agentes.chat-abonnementen bekijken",
     why: (org) =>
       `Je krijgt deze e-mail omdat je ${org} beheert op agentes.chat. We sturen maar twee van deze berichten.`,
+    personal: {
+      subject: "Je agents wachten",
+      headline: "Je agents wachten",
+      body: (agents, _channels, routines) => {
+        const a = plural("nl", agents, { one: `1 agent`, other: `${agents} agents` });
+        const r = plural("nl", routines, { one: `1 routine`, other: `${routines} routines` });
+        return `Klaar: ${routines > 0 ? `${a} en ${r}` : a}. Alleen een agentes.chat-abonnement ontbreekt nog.`;
+      },
+      why: () =>
+        "Je krijgt deze e-mail omdat deze werkruimte op agentes.chat van jou is. We sturen maar twee van deze berichten.",
+    },
+  },
+  surface: {
+    linked: {
+      subject: (surface) => `${surface} is gekoppeld aan je agentes.chat-account`,
+      preheader: "Je assistent antwoordt je daar nu. Was jij het niet? Ontkoppel het.",
+      headline: (surface) => `${surface} is gekoppeld`,
+      body: (surface, display, org) => [
+        { b: display },
+        ` op ${surface} praat nu met je assistent in `,
+        { b: org },
+        ".",
+      ],
+      notYou: "Was jij het niet? Ontkoppel het. Berichten van daar bereiken je account dan meteen niet meer.",
+      button: "Ontkoppelen",
+      small: "Was jij het wel? Dan hoef je niets te doen. Je kunt het altijd ontkoppelen in Instellingen.",
+      why: (surface) => `Je krijgt deze e-mail omdat ${surface} aan je agentes.chat-account is gekoppeld.`,
+      picture: "Je assistent, nu ook op je telefoon",
+    },
+    unlinked: {
+      subject: (surface) => `${surface} is ontkoppeld van je agentes.chat-account`,
+      preheader: "De identiteit is veranderd. Koppel het opnieuw in Instellingen als jij het was.",
+      headline: (surface) => `${surface} is ontkoppeld`,
+      body: (surface, display) => [{ b: display }, ` op ${surface} is ontkoppeld omdat de identiteit is veranderd.`],
+      small: "Koppel het opnieuw in Instellingen als jij het was.",
+      why: (surface) => `Je krijgt deze e-mail omdat ${surface} aan je agentes.chat-account gekoppeld was.`,
+      picture: "Je assistent, niet meer op je telefoon",
+    },
+  },
+  supportReply: {
+    subject: "Een antwoord op je hulpvraag",
+    preheader: "Over de hulp die je vroeg op agentes.chat.",
+    headline: "Een antwoord op je hulpvraag",
+    answers: {
+      received: "We hebben je vraag ontvangen en kijken ernaar.",
+      need_more: "We hebben meer informatie nodig om je te helpen: wat je deed, wat je verwachtte en wat er gebeurde.",
+      resolved: "Wat je meldde is opgelost.",
+      handed_over: "Een persoon heeft je vraag nu en geeft je antwoord.",
+    },
+    from: (host) =>
+      host
+        ? atHost("Beantwoord door de beheerders van de agentes.chat-server", "op", host)
+        : "Beantwoord door agentes.chat.",
+    ai: "Een AI-assistent schreef dit antwoord.",
+    reply: (address) => ["Wil je antwoorden? Schrijf naar ", { mail: address }, "."],
+    why: "Je krijgt deze e-mail omdat je om hulp vroeg op agentes.chat.",
   },
 };

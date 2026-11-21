@@ -1,5 +1,5 @@
 import type { ScreenKind } from "@agenteschat/adapters";
-import { cutText } from "../format";
+import { cutText, plainWords } from "../format";
 
 /**
  * What an agent sees on a screen (ADR 0054): the page or window as text, one
@@ -110,6 +110,8 @@ const PLACES = new Set([
 
 /** A table row has no name of its own in the snapshot: its cells say which row it is. */
 const ROWS = new Set(["row"]);
+/** A place's name, at most. */
+const PLACE_CHARS = 80;
 const CELLS = new Set(["cell", "gridcell", "rowheader", "columnheader"]);
 
 const unquote = (s: string) => s.replace(/\\(.)/g, "$1");
@@ -172,16 +174,37 @@ export function observeSnapshot(input: {
     if (parent >= 0) (children[parent] as number[]).push(index);
     open.push({ depth, index });
   });
+  /**
+   * A row's first named cells, once per row: enough of them for a place's characters with any one left out. Every
+   * element in a row reads it: joining all of its cells for each one would grow with the row's size squared, in time
+   * and in memory (a cut keeps its whole join alive).
+   */
+  const rowCells = new Map<number, { index: number; name: string }[]>();
+  const cellsOf = (row: number) => {
+    let cells = rowCells.get(row);
+    if (cells) return cells;
+    cells = [];
+    let size = 0;
+    for (const c of children[row] as number[]) {
+      const { role, name } = nodes[c] as Node;
+      if (!name || !CELLS.has(role)) continue;
+      cells.push({ index: c, name: name.slice(0, PLACE_CHARS) });
+      size += Math.min(name.length, PLACE_CHARS) + 3;
+      if (size >= 2 * (PLACE_CHARS + 3)) break;
+    }
+    rowCells.set(row, cells);
+    return cells;
+  };
   /** How a container reads as a place: its name, or for a row the other cells' text ("Invoice 42 · R$ 42,00"). */
   const placeOf = (i: number, via: number): string | null => {
     const n = nodes[i] as Node;
     if (!PLACES.has(n.role)) return null;
-    if (n.name) return `${n.role} "${cutText(n.name, 80)}"`;
+    if (n.name) return `${n.role} "${cutText(n.name, PLACE_CHARS)}"`;
     if (!ROWS.has(n.role)) return null;
-    const cells = (children[i] as number[])
-      .filter((c) => c !== via && CELLS.has((nodes[c] as Node).role) && (nodes[c] as Node).name)
-      .map((c) => (nodes[c] as Node).name as string);
-    return cells.length > 0 ? `${n.role} "${cutText(cells.join(" · "), 80)}"` : null;
+    const cells = cellsOf(i)
+      .filter((c) => c.index !== via)
+      .map((c) => c.name);
+    return cells.length > 0 ? `${n.role} "${cutText(cells.join(" · "), PLACE_CHARS)}"` : null;
   };
   const elements: ScreenElement[] = [];
   nodes.forEach((n, index) => {
@@ -225,7 +248,11 @@ export function observeSnapshot(input: {
 
 /** How an element reads to a judge: its line plus where it sits. */
 export function describeElement(e: ScreenElement, max = 220): string {
-  const own = e.line.replace(/^-\s+/, "").replace(/\s*\[ref=e\d+\]/, "");
+  // Only the head of a long line: the text is cut at `max` anyway, and the ref's pattern backtracks over long spaces.
+  const own = e.line
+    .slice(0, max + 64)
+    .replace(/^-\s+/, "")
+    .replace(/\s*\[ref=e\d+\]/, "");
   const where = e.context.length > 0 ? ` — in ${e.context.join(" › ")}` : "";
   const text = `${own}${where}`;
   return text.length > max ? `${cutText(text, max - 1)}…` : text;
@@ -236,7 +263,10 @@ export const FRESH_LOOK_MS = 8000;
 /** A look this recent is still what the agent knows of the screen: a plan's changes are counted from it. */
 export const KNOWN_LOOK_MS = 10 * 60_000;
 
-/** The last look at each agent's screen, by key, for the newest `max` keys: what its plans start from. */
+/**
+ * The last look at each agent's screen, by key, for the newest `max` keys: what its plans start from. A look older
+ * than `KNOWN_LOOK_MS` is dropped (nothing reads one), so idle agents' huge pages don't stay in memory.
+ */
 export function createLookMemory(now: () => number = Date.now, max = 1000) {
   const looks = new Map<string, ScreenObservation>();
   return {
@@ -244,6 +274,10 @@ export function createLookMemory(now: () => number = Date.now, max = 1000) {
       looks.delete(key);
       looks.set(key, o);
       if (looks.size > max) looks.delete(looks.keys().next().value as string);
+      for (const [k, old] of looks) {
+        if (now() - old.at < KNOWN_LOOK_MS) break;
+        looks.delete(k);
+      }
     },
     /** The last look, when it is younger than `ms`. */
     within(key: string, ms: number) {
@@ -343,7 +377,136 @@ export function clipLines(lines: string[], max: number): { text: string; omitted
   return { text: out.join("\n"), omitted: lines.length - out.length };
 }
 
-/** The page's text for a judge, at most `max` characters. */
-export function screenText(o: ScreenObservation, max = 60_000): string {
-  return clipLines(o.lines, max).text;
+/** What a judge reads of a page, at most (about 4-5k tokens): a longer page goes in part. */
+const JUDGE_TEXT_CHARS = 16_000;
+/** On a long page, the top always goes in (its title, header, who is signed in), and each line at most this long. */
+const HEAD_CHARS = 2000;
+const JUDGE_LINE_CHARS = 1000;
+/** Lines kept on each side of a changed line or of one with the question's words. */
+const NEAR = 2;
+/** What a page says of itself, wherever it is: kept last, while room is left. */
+const SIGNALS = new Set(["heading", "dialog", "alertdialog", "alert", "status"]);
+
+/** The indices of `changes.added` in `o` (a repeated line: its last copies, as `diffObservations` counts them). */
+function addedIndices(o: ScreenObservation, changes: ScreenChanges): number[] {
+  const left = new Map<string, number>();
+  for (const l of changes.added) left.set(l.trim(), (left.get(l.trim()) ?? 0) + 1);
+  const out: number[] = [];
+  for (let i = o.lines.length - 1; i >= 0; i--) {
+    const k = (o.lines[i] as string).trim();
+    const n = left.get(k) ?? 0;
+    if (n === 0) continue;
+    left.set(k, n - 1);
+    out.push(i);
+  }
+  return out.reverse();
+}
+
+/** Scripts written without spaces between words: their words are looked for as pairs of letters. */
+const UNSPACED =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
+
+/** What to look for of `words`: a word that starts a page's word, or a pair of letters anywhere (`UNSPACED`). */
+function termsOf(words: string): { text: string; anywhere: boolean }[] {
+  const out = new Map<string, boolean>();
+  for (const w of plainWords(words).split(" ")) {
+    if (UNSPACED.test(w)) {
+      const c = [...w];
+      if (c.length < 2) out.set(w, true);
+      for (let k = 0; k + 1 < c.length; k++) out.set(`${c[k]}${c[k + 1]}`, true);
+    } else if (w.length > 2 || (w.length === 2 && /[^\p{Script=Latin}\p{N}]/u.test(w))) out.set(w, false);
+  }
+  return [...out].map(([text, anywhere]) => ({ text, anywhere }));
+}
+
+/**
+ * The page's text for a judge. A page longer than `max` characters goes in part, in page order with `…` where lines
+ * are left out: its top, then the lines that changed (a change on the same page, not a new one) and the lines with
+ * the most of `words` (the condition, the target), each with a few around it, then headings, dialogs and alerts.
+ * A long line goes in pieces, so the piece with the words can go without the rest of the line.
+ */
+export function screenText(
+  o: ScreenObservation,
+  focus: { changes?: ScreenChanges | null; words?: string } = {},
+  max = JUDGE_TEXT_CHARS,
+): { text: string; omitted: number } {
+  const lines = o.lines;
+  if (lines.reduce((n, l) => n + l.length + 1, 0) <= max) return { text: lines.join("\n"), omitted: 0 };
+  const pieces: { text: string; line: number; first: boolean }[] = [];
+  const firstPiece: number[] = [];
+  lines.forEach((l, line) => {
+    firstPiece.push(pieces.length);
+    let k = 0;
+    do {
+      const text = cutText(l.slice(k), JUDGE_LINE_CHARS);
+      pieces.push({ text, line, first: k === 0 });
+      k += text.length;
+    } while (k < l.length);
+  });
+  const keep = new Set<number>();
+  let room = max;
+  const take = (i: number) => {
+    if (i < 0 || i >= pieces.length || keep.has(i)) return;
+    // The piece, and a `…` it may open after it.
+    const n = (pieces[i] as { text: string }).text.length + 3;
+    if (n > room) return;
+    keep.add(i);
+    room -= n;
+  };
+  const around = (i: number) => {
+    take(i);
+    for (let d = 1; d <= NEAR; d++) {
+      take(i - d);
+      take(i + d);
+    }
+  };
+  for (let i = 0, size = 0; i < pieces.length && size < HEAD_CHARS; i++) {
+    take(i);
+    size += (pieces[i] as { text: string }).text.length + 1;
+  }
+  if (focus.changes && !focus.changes.newPage) {
+    for (const i of addedIndices(o, focus.changes)) around(firstPiece[i] as number);
+  }
+  const terms = termsOf(focus.words ?? "");
+  if (terms.length > 0) {
+    // A word counts less the more pieces have it ("the" on every line, "declined" on one).
+    const said = pieces.map((p) => ` ${plainWords(p.text)} `);
+    const has = terms.map((t) => said.map((l) => l.includes(t.anywhere ? t.text : ` ${t.text}`)));
+    const weight = has.map((at) => 1 / Math.max(1, at.filter(Boolean).length));
+    const scored: { i: number; score: number }[] = [];
+    said.forEach((_, i) => {
+      const score = has.reduce((n, at, k) => n + (at[i] ? (weight[k] as number) : 0), 0);
+      if (score > 0) scored.push({ i, score });
+    });
+    for (const { i } of scored.sort((a, b) => b.score - a.score || a.i - b.i)) around(i);
+  }
+  pieces.forEach((p, i) => {
+    if (p.first && SIGNALS.has(headOf(p.text.trim()).role)) take(i);
+  });
+  const kept = [...keep].sort((a, b) => a - b);
+  const lineOf = (i: number) => (pieces[i] as { line: number }).line;
+  let text = "";
+  let prev = -1;
+  for (const i of kept) {
+    const p = pieces[i] as { text: string; line: number; first: boolean };
+    if (prev >= 0 && lineOf(prev) === p.line) text += i === prev + 1 ? p.text : `…${p.text}`;
+    else {
+      // The end of the line before, whole lines between, the start of this one: each left out is a `…`.
+      if (prev >= 0 && prev + 1 < pieces.length && lineOf(prev + 1) === lineOf(prev)) text += "…";
+      if (p.line > (prev >= 0 ? lineOf(prev) + 1 : 0)) text += prev >= 0 ? "\n…" : "…";
+      if (prev >= 0 || p.line > 0) text += "\n";
+      text += p.first ? p.text : `…${p.text}`;
+    }
+    prev = i;
+  }
+  if (prev >= 0 && prev + 1 < pieces.length) {
+    if (lineOf(prev + 1) === lineOf(prev)) text += "…";
+    if (lineOf(pieces.length - 1) > lineOf(prev)) text += "\n…";
+  }
+  const whole = new Map<number, number>();
+  for (const i of kept) whole.set(lineOf(i), (whole.get(lineOf(i)) ?? 0) + 1);
+  const omitted = lines.filter(
+    (_, line) => whole.get(line) !== (firstPiece[line + 1] ?? pieces.length) - (firstPiece[line] as number),
+  ).length;
+  return { text, omitted };
 }

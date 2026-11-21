@@ -24,10 +24,10 @@ import {
 import { relativeTime } from "@agenteschat/client/lib/format";
 import {
   Alert,
-  AvatarStack,
   Button,
   CheckboxPill,
   Chip,
+  codeAndBold,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -44,10 +44,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { ConnectedRow } from "@/components/ConnectedRow";
 import { DatabaseRulesPanel } from "@/components/DatabaseRules";
 import { FlowTitle } from "@/components/FlowTitle";
 import { LoadingList, useStepText } from "@/components/Loading";
-import { CommandBlock } from "@/components/Machines";
+import { CommandBlock } from "@/components/machine-bits";
 import { useOrg } from "@/components/org-context";
 import { reviewNote, ToolReview, type ToolReviewState } from "@/components/ToolReview";
 import { useEdited } from "@/hooks/useEdited";
@@ -165,7 +166,7 @@ export function ReadOnlyUserHelp({
       <span className="small muted">{t("database.howText")}</span>
       <ol className="mail-howto__steps small">
         {(["1", "2", "3"] as const).map((n) => (
-          <li key={n}>{t(`database.how.${provider}.${n}`)}</li>
+          <li key={n}>{codeAndBold(t(`database.how.${provider}.${n}`))}</li>
         ))}
       </ol>
       <CommandBlock command={readOnlyRoleSql(database || "postgres", { wholeServer })} />
@@ -375,7 +376,7 @@ function ConnectStep({
               </Field>
             </div>
           </details>
-          {error && <Alert>{t(`database.error.${error}`)}</Alert>}
+          {error && <Alert>{codeAndBold(t(`database.error.${error}`))}</Alert>}
         </DialogBody>
       </Locked>
       <DialogFooter bar note={testing ?? t("connectFlow.nothingYet")}>
@@ -581,7 +582,7 @@ function WhoStep({
               </ul>
             </>
           )}
-          <p className="small muted cflow__asks">
+          <p className="small muted cflow__asks ac-iconline">
             <Icon name="lock" />
             {t("database.readOnly")}
           </p>
@@ -834,13 +835,11 @@ export function DatabaseRow({
         relativeTime(t, i18n.language, connection.createdAt),
       ];
   return (
-    <div className="ac-list__row connected-row ac-mediarow">
-      <span className="ac-mediarow__face">
-        <DatabaseIcon />
-      </span>
-      <span className="ac-mediarow__head">
-        <span className="list-title">
-          <span>{name}</span>
+    <ConnectedRow
+      icon={<DatabaseIcon />}
+      name={name}
+      chips={
+        <>
           {connection.status === "needs_reconnect" ? (
             <Chip icon="alert" tone="waiting">
               {t("mail.status.needs_reconnect")}
@@ -851,33 +850,31 @@ export function DatabaseRow({
             </Chip>
           )}
           <Chip icon="eyeOff">{t("database.readOnlyChip")}</Chip>
-        </span>
-      </span>
-      <div className="ac-mediarow__body">
-        <span className="small muted">{meta.join(" · ")}</span>
-        <span className="connected-row__who small muted">
-          {using.length > 0 && (
-            <AvatarStack>
-              {using.slice(0, 5).map((a) => (
-                <AgentAvatar key={a.id} agentId={a.id} name={a.name} size="xs" />
-              ))}
-            </AvatarStack>
-          )}
-          {using.length > 0
-            ? t("connectors.usedBy", { count: using.length, total: agents.length })
-            : t("connectors.usedByNone")}
-        </span>
-        {admin && (
-          <div className="connected-row__actions">
+        </>
+      }
+      using={using}
+      total={agents.length}
+      details={[meta.join(" · ")]}
+      actions={
+        admin && (
+          <>
             {connection.status === "needs_reconnect" && (
               <Button size="sm" variant="primary" aria-label={t("mail.reconnectName", { name })} onClick={onReconnect}>
                 {t("mail.reconnect")}
               </Button>
             )}
+            <Button variant="link" aria-label={t("connectors.whoName", { name })} onClick={onWho}>
+              {t("connectors.who")}
+            </Button>
+            <Button variant="link" aria-label={t("connectors.toolsName", { name })} onClick={onTools}>
+              {t("connectors.tools")}
+            </Button>
+            <Button variant="link" aria-label={t("database.scopeEditName", { name })} onClick={onScope}>
+              {t("database.scopeEdit")}
+            </Button>
             {connection.wholeServer && (
               <Button
-                size="sm"
-                variant="ghost"
+                variant="link"
                 aria-label={t("database.refreshName", { name })}
                 disabled={servers.refresh.isPending}
                 loading={servers.refresh.isPending}
@@ -886,27 +883,13 @@ export function DatabaseRow({
                 {t("database.refresh")}
               </Button>
             )}
-            <Button size="sm" aria-label={t("connectors.whoName", { name })} onClick={onWho}>
-              {t("connectors.who")}
-            </Button>
-            <Button size="sm" variant="ghost" aria-label={t("database.scopeEditName", { name })} onClick={onScope}>
-              {t("database.scopeEdit")}
-            </Button>
-            <Button size="sm" variant="ghost" aria-label={t("connectors.toolsName", { name })} onClick={onTools}>
-              {t("connectors.tools")}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-label={t("connectors.disconnectName", { name })}
-              onClick={onDisconnect}
-            >
+            <Button variant="link" aria-label={t("connectors.disconnectName", { name })} onClick={onDisconnect}>
               {t("connectors.disconnect")}
             </Button>
-          </div>
-        )}
-      </div>
-    </div>
+          </>
+        )
+      }
+    />
   );
 }
 
@@ -1012,7 +995,7 @@ export function DatabaseScopeDialog({
                 }}
                 onPrefix={setPrefix}
               />
-              {error && <Alert>{t(`database.error.${error}`)}</Alert>}
+              {error && <Alert>{codeAndBold(t(`database.error.${error}`))}</Alert>}
             </DialogBody>
           </Locked>
           <DialogFooter>
@@ -1096,7 +1079,7 @@ export function DatabaseReconnectDialog({
                 onChange={(e) => setPassword(e.target.value)}
               />
             </Field>
-            {error && <Alert>{t(`database.error.${error}`)}</Alert>}
+            {error && <Alert>{codeAndBold(t(`database.error.${error}`))}</Alert>}
           </DialogBody>
         </Locked>
         <DialogFooter>

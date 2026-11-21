@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { resources } from "@agenteschat/i18n";
 import i18next, { type TFunction } from "i18next";
 import type { Message } from "../src/api/types";
-import { failedRunFix, runFailureLine } from "../src/lib/errors";
+import { failedRunFix, filesTextOnlyOf, runErrorWords, runFailureLine } from "../src/lib/errors";
 import { serverBody } from "../src/lib/message-body";
 import { applyReceiptEvent, seedReceipt } from "../src/realtime/receipts";
 
@@ -37,7 +37,7 @@ test("a run that failed for want of an AI, or didn't fail, keeps no reason", () 
   expect(applyReceiptEvent({}, { ...handled, status: "done" }).m1?.failures).toBeUndefined();
 });
 
-test("a failed run's one fix: a key for a missing, revoked or wrong one, another model for one gone, else none", () => {
+test("a failed run's one fix: a key for a missing, revoked or wrong one, another model or account for one gone, else none", () => {
   const everyone = { keys: true, admin: true, owner: true };
   for (const code of ["run.missing_credential", "run.credential_revoked", "run.credential_wrong_provider"])
     expect(failedRunFix(code, everyone)).toBe("useKey");
@@ -55,6 +55,12 @@ test("a failed run's one fix: a key for a missing, revoked or wrong one, another
   expect(failedRunFix("run.missing_credential", { ...nobody, owner: true })).toBeNull();
   expect(failedRunFix("run.model_unlisted", nobody)).toBeNull();
   expect(failedRunFix("run.model_unlisted", { ...nobody, owner: true })).toBe("changeModel");
+  // A reply whose file reached a text-only connection: another AI, for the same people.
+  expect(failedRunFix(filesTextOnlyOf({ filesTextOnly: true }), { ...nobody, admin: true })).toBe("changeModel");
+  expect(failedRunFix(filesTextOnlyOf({ filesTextOnly: true }), nobody)).toBeNull();
+  expect(filesTextOnlyOf({})).toBeNull();
+  expect(failedRunFix("run.account_missing", everyone)).toBe("changeAccount");
+  expect(failedRunFix("run.account_missing", nobody)).toBeNull();
 });
 
 describe("a failed run as one line (runFailureLine)", () => {
@@ -72,6 +78,33 @@ describe("a failed run as one line (runFailureLine)", () => {
     expect(runFailureLine(real, "Ada", { code: "run.account_missing" }, "pt-BR")).toContain(
       "a conta escolhida para este agente não está mais no computador dele",
     );
+  });
+
+  test("a CLI's own failure names the CLI and what it said, never the computer that ran it", () => {
+    const cli = (code: string, params: Record<string, string>) =>
+      runFailureLine(real, "Nick", { code, params }, "pt-BR");
+    expect(cli("run.cli_failed", { brain: "Claude Code", detail: "prompt is too long: 215000 tokens" })).toBe(
+      "Nick não conseguiu responder: o Claude Code parou com um erro: prompt is too long: 215000 tokens",
+    );
+    expect(cli("run.cli_stopped", { brain: "Claude Code" })).toBe(
+      "Nick não conseguiu responder: o Claude Code parou com um erro",
+    );
+    expect(cli("run.cli_closed", { brain: "Codex" })).toBe("Nick não conseguiu responder: o Codex fechou de repente");
+    for (const code of ["run.cli_failed", "run.cli_stopped", "run.cli_closed"])
+      expect(cli(code, { brain: "Claude Code", detail: "x" })).not.toContain("computador");
+    // The computer's own failure still says so.
+    expect(cli("run.computer_failed", { code: "runner_error" })).toContain("o computador teve um problema");
+    // English keeps the CLI's capitals, though the reason goes on as part of the sentence.
+    const en = i18next.createInstance();
+    void en.init({ lng: "en", resources, initAsync: false });
+    expect(
+      runFailureLine(
+        en.t.bind(en) as TFunction,
+        "Nick",
+        { code: "run.cli_stopped", params: { brain: "Claude Code" } },
+        "en",
+      ),
+    ).toBe("Nick couldn't answer: the Claude Code program stopped with an error");
   });
 
   test("a provider's failure names it and keeps its name's capitals; a wait note says the same in the chat", () => {
@@ -95,4 +128,12 @@ describe("a failed run as one line (runFailureLine)", () => {
     expect(runFailureLine(real, "Ada", { code: "run.failed", params: { detail: "x" } })).toBeNull();
     expect(runFailureLine(real, "Ada", {})).toBeNull();
   });
+});
+
+test("a failed run's stored text stands as its reason only when it's words, never a bare code", () => {
+  expect(runErrorWords("unsupported")).toBeNull();
+  expect(runErrorWords("tools_not_locked")).toBeNull();
+  expect(runErrorWords("run.cli_failed")).toBeNull();
+  expect(runErrorWords(null)).toBeNull();
+  expect(runErrorWords("OpenCode stopped the turn by itself.")).toBe("OpenCode stopped the turn by itself.");
 });

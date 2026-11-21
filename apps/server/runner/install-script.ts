@@ -16,6 +16,17 @@ export function shQuote(value: string): string {
 }
 
 /**
+ * `address` without the slashes it ends with, read from the end. Not by `/\/+$/`: the address comes from outside (the
+ * server's settings, a request), and that pattern reads each run of slashes that doesn't end the text again from each
+ * of its slashes, quadratic in the run's length.
+ */
+export function withoutTrailingSlashes(address: string): string {
+  let end = address.length;
+  while (end > 0 && address.charAt(end - 1) === "/") end--;
+  return address.slice(0, end);
+}
+
+/**
  * The Bun a system-mode runner runs on, and any runner whose computer has no
  * Bun with `Bun.Terminal` (1.3.5 or newer), which screens and terminals
  * need: the one the repo builds and tests with (`packageManager` in
@@ -75,10 +86,11 @@ export const DESKTOP_CJK_APT_PACKAGES = ["fonts-noto-cjk"] as const;
 export const DESKTOP_DOCK_APT_PACKAGES = ["xfce4-docklike-plugin"] as const;
 
 /**
- * What system mode's isolation runs (`--system`): `nft` for the loopback guard, which won't start without it, and
- * `ss` for the bind check.
+ * What system mode's isolation runs (`--system`): `nft` for the loopback guard, which won't start without it, `ss`
+ * for the bind check, and `setfacl` (`acl`), which lets each agent's user into the shared folder and the cached
+ * repositories (`shared-folder.ts`, `agent-users.ts`). Debian 13's minimal install has no `acl`.
  */
-export const ISOLATION_APT_PACKAGES = ["nftables", "iproute2"] as const;
+export const ISOLATION_APT_PACKAGES = ["nftables", "iproute2", "acl"] as const;
 
 /** System mode: the runner and its Bun (root's, readable by the agents' users), and the command on the PATH. */
 export const SYSTEM_RUNNER_DIR = "/opt/agentes-runner";
@@ -118,14 +130,20 @@ export const CHROMIUM_DESKTOP_ENTRY = "/usr/local/share/applications/chromium.de
 
 /**
  * `--requirements` (the self-host setup's step, ADR 0153 §6): what it can install, as root, alone. The coding CLIs go
- * to /usr/local/bin, on every agent's PATH in either mode.
+ * to /usr/local/bin, on every agent's PATH in either mode. On a Mac only the coding CLIs, for the person running it,
+ * in ~/.local/bin (the runner's PATH there has it, login-path.ts): no root.
  */
 export const REQUIREMENTS = ["browser", "desktop", "claude", "codex"] as const;
 export type Requirement = (typeof REQUIREMENTS)[number];
 /** Anthropic's installer for Claude Code (it checks what it downloads against its own manifest). */
 export const CLAUDE_INSTALL_URL = "https://claude.ai/install.sh";
+/** The same installer for Windows, in PowerShell: Claude Code's native build into `%USERPROFILE%\.local\bin`. */
+export const CLAUDE_INSTALL_PS1_URL = "https://claude.ai/install.ps1";
 export const CLAUDE_EXE = "/usr/local/bin/claude";
-/** OpenAI's Codex CLI: its latest release's static Linux build, `codex-<arch>-unknown-linux-musl.tar.gz`. */
+/**
+ * OpenAI's Codex CLI: its latest release's whole package, `codex-package-<arch>-unknown-linux-musl.tar.gz` (the CLI
+ * with the helpers it starts and its resources), checked against the release's `codex-package_SHA256SUMS`.
+ */
 export const CODEX_RELEASES = "https://github.com/openai/codex/releases/latest/download";
 export const CODEX_EXE = "/usr/local/bin/codex";
 
@@ -199,7 +217,7 @@ export const CODEX_EXE = "/usr/local/bin/codex";
  * whole computer as `--system` does; anywhere else, for the user who runs it.
  */
 export function installScript(publicUrl: string, options: { link?: string } = {}): string {
-  const server = shQuote(publicUrl.trim().replace(/\/+$/, ""));
+  const server = shQuote(withoutTrailingSlashes(publicUrl.trim()));
   const uids = DEFAULT_AGENT_UID_RANGE.join("-");
   const shaCases = Object.entries(RUNNER_BUN_SHA256)
     .map(([target, sha]) => `    ${target}) BUN_SHA256=${shQuote(sha)} ;;`)
@@ -264,6 +282,12 @@ die() {
   exit 1
 }
 need_value() { [ "$2" -ge 2 ] || die "$1 needs a value"; }
+# The end, with how long it took as term.ts's elapsed() writes it: "Done in 52s", "Done in 1m 04s".
+done_in() {
+  D_S=$(($(date +%s) - T_START))
+  if [ "$D_S" -ge 60 ]; then D_S="$((D_S / 60))m $((D_S % 60 / 10))$((D_S % 10))s"; else D_S="\${D_S}s"; fi
+  t_end "Done in $D_S"
+}
 quote() { printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\\\\\''/g")"; }
 sha256() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d ' ' -f 1
@@ -695,10 +719,19 @@ desktop_packages() {
 }
 
 # Claude Code for every user (an agent's PATH is /usr/local/bin:/usr/bin:/bin): Anthropic's installer, run in a home
-# of its own that is thrown away, then its binary copied to $CLAUDE_EXE.
+# of its own that is thrown away, then its binary copied to $CLAUDE_EXE. On a Mac, for this user: the installer as is,
+# into ~/.local/bin.
 install_claude() {
   command -v bash >/dev/null 2>&1 || return 1
   CL=$(mktemp -d) || return 1
+  if [ "$(uname -s)" = Darwin ]; then
+    if download "$CLAUDE_INSTALL_URL" "$CL/install.sh" && bash "$CL/install.sh" && [ -x "$CLAUDE_EXE" ]; then
+      rm -rf "$CL"
+      return 0
+    fi
+    rm -rf "$CL"
+    return 1
+  fi
   if download "$CLAUDE_INSTALL_URL" "$CL/install.sh" && HOME="$CL" CLAUDE_INSTALL_ALLOW_SUDO=1 bash "$CL/install.sh" &&
     BIN=$(readlink -f "$CL/.local/bin/claude") && [ -f "$BIN" ] && cp "$BIN" "$CLAUDE_EXE.new" &&
     chmod 755 "$CLAUDE_EXE.new" && mv -f "$CLAUDE_EXE.new" "$CLAUDE_EXE"; then
@@ -709,31 +742,70 @@ install_claude() {
   return 1
 }
 
-# Codex for every user: the latest release's static build for this processor, into $CODEX_EXE.
+# The SHA-256 of $1 in the sums file $2 (lines of "<sha256>  <name>").
+codex_sum() {
+  S="" N=""
+  while read -r S N || [ -n "$S" ]; do
+    if [ "$N" = "$1" ]; then
+      printf '%s\\n' "$S"
+      return 0
+    fi
+    S=""
+  done < "$2"
+  return 1
+}
+
+# Codex for every user: the latest release's whole package for this processor, checked against the release's SHA-256
+# sums and unpacked in lib/codex beside $CODEX_EXE's bin (/usr/local/lib/codex), $CODEX_EXE a link to its bin/codex.
+# Codex starts helpers from its package (codex-code-mode-host for code mode, codex-exec-server) and uses its resources
+# (bwrap, rg): its lone binary, which this installed before, fails code mode. The files are the installer's, not the
+# archive's owner's, and no one else can write them. On a Mac, its package for macOS, for this user
+# (~/.local/lib/codex), with codex-code-mode-host linked beside $CODEX_EXE too, as OpenAI's own installer does there.
 install_codex() {
   case "$(uname -m)" in
     x86_64 | amd64) CPU=x86_64 ;;
     aarch64 | arm64) CPU=aarch64 ;;
     *) return 1 ;;
   esac
+  BUILD=$CPU-unknown-linux-musl
+  if [ "$(uname -s)" = Darwin ]; then BUILD=$CPU-apple-darwin; fi
+  ASSET=codex-package-$BUILD.tar.gz PKG=\${CODEX_EXE%/*/*}/lib/codex
   CX=$(mktemp -d) || return 1
-  if download "$CODEX_RELEASES/codex-$CPU-unknown-linux-musl.tar.gz" "$CX/codex.tar.gz" &&
-    tar -xzf "$CX/codex.tar.gz" -C "$CX" && cp "$CX/codex-$CPU-unknown-linux-musl" "$CODEX_EXE.new" &&
-    chmod 755 "$CODEX_EXE.new" && mv -f "$CODEX_EXE.new" "$CODEX_EXE"; then
-    rm -rf "$CX"
+  mkdir -p "\${CODEX_EXE%/*}" "\${PKG%/*}" || return 1
+  rm -rf "$PKG.new" "$PKG.old"
+  if download "$CODEX_RELEASES/$ASSET" "$CX/codex.tar.gz" &&
+    download "$CODEX_RELEASES/codex-package_SHA256SUMS" "$CX/sums" && SUM=$(codex_sum "$ASSET" "$CX/sums") &&
+    [ "$(sha256 "$CX/codex.tar.gz")" = "$SUM" ] && mkdir "$PKG.new" &&
+    tar --no-same-owner -xzf "$CX/codex.tar.gz" -C "$PKG.new" && chmod -R go-w "$PKG.new" &&
+    [ -x "$PKG.new/bin/codex" ] && [ -x "$PKG.new/bin/codex-code-mode-host" ] &&
+    { { [ ! -e "$PKG" ] && [ ! -L "$PKG" ]; } || mv "$PKG" "$PKG.old"; } && mv "$PKG.new" "$PKG" &&
+    ln -sf "$PKG/bin/codex" "$CODEX_EXE.new" && mv -f "$CODEX_EXE.new" "$CODEX_EXE" &&
+    { [ "$(uname -s)" != Darwin ] ||
+      ln -sf "$PKG/bin/codex-code-mode-host" "\${CODEX_EXE%/*}/codex-code-mode-host"; }; then
+    rm -rf "$CX" "$PKG.old"
     return 0
   fi
-  rm -rf "$CX" "$CODEX_EXE.new"
+  rm -rf "$CX" "$PKG.new" "$CODEX_EXE.new"
+  if [ ! -e "$PKG" ] && [ -e "$PKG.old" ]; then mv "$PKG.old" "$PKG"; fi
   return 1
 }
 
-# $1 (claude or codex) at $2, named $3: kept when it is there (it updates itself), else installed with install_$1.
+# Whether $1 at $2 is whole: a Codex that is a lone file with no codex-code-mode-host beside it (what this installed
+# before) can't run code mode, so it is installed again. A Codex that is a link (this installer's, OpenAI's, npm's) is
+# kept, as is Claude Code.
+cli_whole() {
+  [ "$1" != codex ] || [ -L "$2" ] || [ -x "\${2%/*}/codex-code-mode-host" ]
+}
+
+# $1 (claude or codex) at $2, named $3: kept when it is there whole (it updates itself), else installed with install_$1.
 get_cli() {
-  if [ -x "$2" ]; then
+  if [ -x "$2" ] && cli_whole "$1" "$2"; then
     t_step "$3 $("$2" --version 2>/dev/null | head -n 1 | sed 's/^[^0-9]*//; s/ .*//')"
     return 0
   fi
-  if ! t_run "Installing $3" "install_$1"; then
+  WHAT="Installing $3"
+  [ ! -x "$2" ] || WHAT="Installing $3 again, whole: it lacked the helpers it starts"
+  if ! t_run "$WHAT" "install_$1"; then
     t_tail "$T_LOG"
     t_warn "Installing $3 failed: run this again, or install it yourself"
     return 0
@@ -742,10 +814,16 @@ get_cli() {
 }
 
 # --requirements: only what the agents need that was asked for, as root on Linux, then stop. The self-host setup runs
-# it for the requirements the person said yes to.
+# it for the requirements the person said yes to. On a Mac: Claude Code and Codex alone, for this user, in ~/.local/bin.
 install_requirements() {
-  [ "$(id -u)" -eq 0 ] || die "--requirements installs packages: run it as root"
-  [ "$(uname -s)" = Linux ] || die "--requirements is for Linux"
+  MAC_CLIS=0
+  if [ "$(uname -s)" = Darwin ]; then
+    MAC_CLIS=1
+    CLAUDE_EXE="$HOME/.local/bin/claude" CODEX_EXE="$HOME/.local/bin/codex"
+  else
+    [ "$(id -u)" -eq 0 ] || die "--requirements installs packages: run it as root"
+    [ "$(uname -s)" = Linux ] || die "--requirements is for Linux"
+  fi
   # The list, split on its commas by the shell alone.
   R_LIST="" REST="$REQUIREMENTS,"
   while [ -n "$REST" ]; do
@@ -753,6 +831,9 @@ install_requirements() {
     [ -z "$R" ] || R_LIST="$R_LIST $R"
   done
   for R in $R_LIST; do
+    case "$R" in
+      browser | desktop) [ "$MAC_CLIS" = 0 ] || die "--requirements on a Mac takes claude and codex: not $R" ;;
+    esac
     case "$R" in
       browser | claude | codex) ;;
       desktop) DESKTOP=1 ;;
@@ -789,7 +870,7 @@ finish() {
   t_info "The agentes-runner command is $LAUNCHER. To check this computer's connection:"
   t_cmd "$1 status"
   t_gap
-  t_end Done
+  done_in
 }
 
 install_system() {
@@ -923,10 +1004,11 @@ install_user() {
   t_info "To use the agentes-runner command, add it to your PATH:"
   t_cmd "export PATH=\\"$RUNNER_HOME/bin:\\$PATH\\""
   t_gap
-  t_end Done
+  done_in
 }
 
 main() {
+  T_START=$(date +%s)
   t_init 1
   # The waits' output (t_run): kept for a failure's last lines, removed when the installer exits.
   T_LOGS=$(mktemp -d 2>/dev/null) || T_LOGS=''
@@ -1078,12 +1160,13 @@ export const RUNNER_BUN_WINDOWS_SHA256 = {
  * ASCII only (`psText`).
  */
 export function installScriptPowerShell(publicUrl: string, options: { link?: string } = {}): string {
-  const server = psQuote(publicUrl.trim().replace(/\/+$/, ""));
+  const server = psQuote(withoutTrailingSlashes(publicUrl.trim()));
   const sha = RUNNER_BUN_WINDOWS_SHA256;
   return `# agentes.chat runner installer for Windows: connects this computer to your organization.
 # Usage, with a link made under Settings > Devices: irm <server>/i/<code>/ps | iex
 
 function Install-AgentesRunner {
+  $T0 = Get-Date
   $ErrorActionPreference = 'Stop'
   $ProgressPreference = 'SilentlyContinue'
   [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -1186,7 +1269,9 @@ function Install-AgentesRunner {
   Info "The agentes-runner command is $Launcher. To check this computer's connection:"
   Cmd "& $(Q $Launcher) status"
   Gap
-  Write-Host "$([char]0x2514)  Done" -ForegroundColor Green
+  $S = [int][math]::Floor(((Get-Date) - $T0).TotalSeconds)
+  $Took = if ($S -ge 60) { '{0}m {1:00}s' -f [math]::Floor($S / 60), ($S % 60) } else { "$($S)s" }
+  Write-Host "$([char]0x2514)  Done in $Took" -ForegroundColor Green
 }
 
 try { Install-AgentesRunner } catch { Write-Host "$([char]0x25A0)  $($_.Exception.Message)" -ForegroundColor Red }

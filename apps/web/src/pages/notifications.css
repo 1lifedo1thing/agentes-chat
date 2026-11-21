@@ -45,12 +45,13 @@
   align-items: center;
   justify-content: space-between;
 }
+/* Out over the page's side room: where the filters scroll, they slide under the work area's edges. */
 .nt-segwrap {
-  max-width: 100%;
+  max-width: calc(100% + 2 * var(--page-x));
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 2px;
-  margin: -2px;
+  padding: 2px var(--page-x);
+  margin: -2px calc(-1 * var(--page-x));
 }
 .nt-segwrap::-webkit-scrollbar {
   display: none;
@@ -120,10 +121,16 @@ html:not([data-pointer]) .nt-item:focus-visible {
   color: var(--warn);
   font-weight: 600;
 }
-/* Remind me later and Done end the footer, after the time. */
+/* Remind me later and Done end the footer, after the time. The last one's plate ends 8 from the card's edge, its
+   glyph on the edge the card's words keep. */
 .rq__end > .nt-tail.ac-acts {
   display: flex;
-  margin-right: -6px;
+}
+/* Its first plate reaches into the footer's gap (a ghost in `.ac-acts`): that room is given back here, so the plate
+   stands 8 from a button that grows up to it (a phone's Abrir). After a time left it is not the first, and the time
+   left keeps the footer's edge when it wraps under the buttons. */
+.rq__end:has(> .nt-tail:first-child) {
+  padding-inline-start: var(--ghost-plate);
 }
 
 /* ── What only points somewhere: a card of the requests' shape, opened by a click on it ── */
@@ -182,10 +189,8 @@ html:not([data-pointer]) .nt-item:focus-visible {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* Its spinner on the first line's capitals when the words wrap (`.ac-iconline`). */
 .nt-resolved {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--ink2);
@@ -193,7 +198,7 @@ html:not([data-pointer]) .nt-item:focus-visible {
 }
 
 /* ── Day groups and items ───────────────────────────────────────────────── */
-/* The shared list card, but tooltips under the last row must not be clipped. */
+/* The shared list card, unclipped. */
 .nt-list {
   overflow: visible;
 }
@@ -234,10 +239,6 @@ html:not([data-pointer]) .nt-item:focus-visible {
   font-size: 13.5px;
   color: var(--muted);
 }
-/* A source chip ("Devices", "Routine") never touches the headline above it: 8 under it, like the snippet under them. */
-.nt-item:has(> .ac-mediarow__body > .nt-tags:first-child) {
-  row-gap: var(--space-2);
-}
 /* In the body its parts stand the body's gap apart. */
 .nt-item > .ac-mediarow__body > * {
   margin-block: 0;
@@ -268,20 +269,8 @@ html:not([data-pointer]) .nt-item:focus-visible {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.nt-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.nt-tags .ac-chip {
-  height: 22px;
-  font-size: 11.5px;
-}
 .nt-chip-ink {
   color: var(--ink2);
-}
-.nt-chip-ok .ac-icon {
-  color: var(--ok);
 }
 .nt-chip-warn .ac-icon {
   color: var(--warn);
@@ -295,6 +284,10 @@ html:not([data-pointer]) .nt-item:focus-visible {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* Where it happened leads the snippet's line, quieter than the words after it. */
+.nt-where {
+  color: var(--muted);
 }
 /* A restriction's notice: its whole line, how to contest it included. */
 .nt-snip--whole {
@@ -375,7 +368,7 @@ html:not([data-pointer]) .nt-item:focus-visible {
   cursor: pointer;
 }
 .nt-more:hover {
-  background: rgba(127, 127, 127, 0.12);
+  color: var(--ink);
 }
 html:not([data-pointer]) .nt-more:focus-visible {
   outline: none;
@@ -476,6 +469,10 @@ html:not([data-pointer]) .nt-more:focus-visible {
   font-size: 12.5px;
   color: var(--muted);
 }
+/* A device notice's decisions on that line: the kit's line of actions keeps its own column gap, plated pairs 8 apart. */
+.nt-steprow.ac-acts {
+  column-gap: calc(2 * var(--ghost-plate));
+}
 
 /* ── Inline actions: on hover / focus (a floating bar), a row on phones ──── */
 .nt-acts {
@@ -549,24 +546,6 @@ html:not([data-pointer]) .nt-nb:focus-visible {
 .nt-nb__label {
   display: none;
 }
-.nt-nb[data-tip]:hover::after {
-  content: attr(data-tip);
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 5px 8px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  color: var(--bg);
-  background: var(--ink);
-  box-shadow: var(--e2);
-  pointer-events: none;
-  animation: nt-fi 0.15s var(--out);
-  z-index: 5;
-}
 
 /* ── The mini composer, opened in place ─────────────────────────────────── */
 .nt-cmp {
@@ -605,6 +584,14 @@ html:not([data-pointer]) .nt-nb:focus-visible {
   color: var(--muted);
   -webkit-text-fill-color: currentColor;
   cursor: not-allowed;
+}
+/* Why it takes nothing (the workspace is being deleted), where the text would start. */
+.nt-cmp__readonly {
+  margin: 0;
+  padding: 2px 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
 }
 .nt-cmp__row {
   display: flex;
@@ -707,17 +694,6 @@ html:not([data-pointer]) .nt-nb:focus-visible {
     -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent);
     mask-image: linear-gradient(90deg, #000 85%, transparent);
   }
-  /* A tap on the row opens it, so the words take Open's room. Open stays for screen readers and the keyboard. */
-  .nt-wr__open:not(:focus-visible) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
   .nt-item {
     padding: 12px 14px;
   }
@@ -763,9 +739,6 @@ html:not([data-pointer]) .nt-nb:focus-visible {
   .nt-nb[data-act="open"] .nt-nb__label {
     display: none;
   }
-  .nt-nb[data-tip]:hover::after {
-    display: none;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .nt-item,
@@ -776,7 +749,6 @@ html:not([data-pointer]) .nt-nb:focus-visible {
   .nt-wi.is-new,
   .nt-item.is-new::after,
   .nt-item.is-pulse,
-  .nt-nb[data-tip]:hover::after,
   .nt-acts,
   .nt-nb,
   .nt-nb::after,

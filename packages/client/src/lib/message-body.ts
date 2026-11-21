@@ -1,15 +1,16 @@
 import type { TFunction } from "i18next";
 import { toolActivity } from "./activity";
 import { previewOf } from "./consultations";
-import { joinNames, lowerFirst } from "./format";
+import { firstName, joinNames, lowerFirst } from "./format";
 import { autoUpdateText, talkerStatusText, workEndBody } from "./long-work";
 import { mediaKindOf, mediaWord } from "./media";
 import { RIGHT_HAND_PLAN_LINES } from "./no-ai";
+import { githubLineKey } from "./notices";
 import { brainName } from "./outages";
 import { usageWhen } from "./plan-usage";
 import { weekDay } from "./team-week";
 import { closedNoteText, usageWaitOf, usageWindowText } from "./usage-pause";
-import { isVoiceMeta, voiceLength, voiceWord } from "./voice";
+import { isVoiceMeta, voiceLength, voiceOf, voiceWord } from "./voice";
 import { stepLabel } from "./work";
 
 /** Notes of an agent waiting on its plan's limit or its budget (`meta.usageWait`): `{{when}}` from its reset. */
@@ -18,12 +19,16 @@ const USAGE_NOTES = new Set([
   "plan_limit_cut_unknown",
   "plan_limit_wait",
   "plan_limit_wait_unknown",
+  "plan_limit_all_wait",
+  "plan_limit_all_wait_unknown",
   "plan_model_limit_wait",
   "plan_model_limit_wait_unknown",
   "plan_model_region_wait",
   "plan_model_off_wait",
   "plan_inactive_wait",
   "budget_wait",
+  // A skipped ask's note where its run had none of its own to say it on: always `usageWait.closed`.
+  "catch_up_closed",
 ]);
 
 type Meta = Record<string, unknown> | undefined;
@@ -64,7 +69,7 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
   if (cut && typeof cut === "object" && typeof cut.text === "string") {
     const brain = brainName(typeof cut.brain === "string" ? cut.brain : null);
     const names = Array.isArray(cut.tools) ? cut.tools.filter((x): x is string => typeof x === "string") : [];
-    const done = names.map((tool) => lowerFirst(stepLabel(t, { ...toolActivity(tool), tool }), locale));
+    const done = names.map((tool) => lowerFirst(stepLabel(t, { ...toolActivity(tool), tool }, locale), locale));
     const tools = joinNames([...new Set(done)], t);
     const note = `_${t("chat.body.brain_interrupted", {
       brain,
@@ -88,11 +93,14 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
     m.bodyParams && typeof m.bodyParams === "object" ? (m.bodyParams as Record<string, unknown>) : ({} as const);
   // Waiting for room on a busy computer, not for one that went away; no AI because its sign-in ended, or because the
   // computer's own sign-in of that CLI isn't there (`own`), not none at all.
-  const waitNote =
-    code === "brain_unavailable" ? (m.brainUnavailable as { code?: unknown; long?: unknown } | undefined) : undefined;
+  const waitNote = code === "brain_unavailable" ? (m.brainUnavailable as { code?: unknown } | undefined) : undefined;
   const busy = waitNote?.code === "busy";
   const noAi =
-    code === "no_ai" ? (m.noAi as { reason?: unknown; own?: unknown; model?: unknown } | undefined) : undefined;
+    code === "no_ai"
+      ? (m.noAi as
+          | { reason?: unknown; own?: unknown; model?: unknown; why?: unknown; owner?: unknown; plan?: unknown }
+          | undefined)
+      : undefined;
   const signedOut = noAi?.reason === "not_signed_in";
   // The team's right hand on a plan (ADR 0137 §7): why its plan can't think now (`RIGHT_HAND_PLAN_LINES`); any agent's
   // computer with no such CLI, or no computer at all.
@@ -104,6 +112,8 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
       noAi.reason === "plan_hold")
       ? `no_ai_${noAi.reason}`
       : null;
+  // The plan's CLI failed: the line says what it said.
+  const cliSaid = noAi?.reason === "cli_failed" && typeof noAi.why === "string" && noAi.why ? noAi.why : null;
   const own =
     signedOut &&
     (noAi?.own === "codex" ||
@@ -158,9 +168,12 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
           })
       : body;
   // Long work's own update of a silent work (ADR 0121): what it does now, in the reader's words.
+  // The right hand answered with another AI than its plan (`postStandInLine`): its line in the reader's words.
+  if (code === "right_hand_stand_in" && typeof params.why === "string")
+    return t(`chat.standIn.${params.why}`, { via: params.via, plan: params.plan, defaultValue: body });
   if (code === "work_auto_update") return autoUpdateText(t, params);
   // The autonomy brakes (ADR 0131): a working agent's status line, a proposal of costly work, the noise digest.
-  if (code === "talker_status") return talkerStatusText(t, params);
+  if (code === "talker_status") return talkerStatusText(t, params, locale);
   if (code === "autonomy_proposal")
     return t(
       `chat.body.autonomy_proposal.${params.cost === "install" || params.cost === "long" ? params.cost : "pr"}`,
@@ -182,24 +195,28 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
   if (waitCause) return t(`chat.body.brain_unavailable_${waitCause}`, { ...params, defaultValue: body });
   // A secret request posted before the body named its agent.
   const anon = code === "secret_request" && typeof params.agent !== "string";
-  // Still in line after a long while (the only busy note posted now); older notes keep their words.
+  // Still in line after a long while, whatever holds the turn: one wording, older notes too.
   const shown = busy
-    ? waitNote?.long
-      ? "brain_queued"
-      : "brain_busy"
+    ? "brain_queued"
     : signedOut
       ? "no_ai_signed_out"
       : planLine
-        ? planLine
+        ? `${planLine}${cliSaid ? "Why" : ""}`
         : anon
           ? "secret_requestAnon"
           : code;
   const key = `chat.body.${shown}`;
   const model = typeof noAi?.model === "string" ? { model: noAi.model } : {};
+  const notYours =
+    noAi?.reason === "plans_not_yours" && typeof noAi.owner === "string"
+      ? { owner: firstName(noAi.owner), plan: typeof noAi.plan === "string" ? noAi.plan : "Claude" }
+      : {};
   // i18next takes the first key that exists: a body with no `…NoComputer` words keeps its own.
   return t(params.computer && !namesComputer ? [`${key}NoComputer`, key] : key, {
     ...params,
     ...model,
+    ...notYours,
+    ...(cliSaid ? { why: cliSaid } : {}),
     defaultValue: body,
   });
 }
@@ -210,8 +227,18 @@ export function serverBody(t: TFunction, body: string, meta: Meta, locale?: stri
  * or a sticker with no text as its word (ADR 0091: the list's `mediaKind`, or a kind its meta carries).
  */
 export function previewBody(t: TFunction, text: string, meta: Meta | null, mediaKind?: unknown): string {
-  // Never a voice message's words, even from a server that sent them (ADR 0100).
+  // Never a voice message's words, even from a server that sent them: what was typed beside them, else its name
+  // (ADR 0100).
+  const typed = voiceOf(meta)?.text;
+  if (typed) return previewOf(typed);
   if (isVoiceMeta(meta) || mediaKindOf(mediaKind) === "voice") return voiceWord(t, voiceLength(meta));
+  // What happened on GitHub, as the chat's line says it: someone's words alone, under the agent's name, would read as
+  // the agent's.
+  if (meta?.bodyCode === "github_event") {
+    const p = (meta.bodyParams ?? {}) as Record<string, string>;
+    const line = t(p.answerFor ? "chat.notice.github.asked" : githubLineKey(p), { ...p, name: p.agent ?? "" });
+    return previewOf(p.said ? `${line}: ${p.said}` : line);
+  }
   if (!text.trim()) {
     const kind = mediaKindOf(mediaKind) ?? mediaKindOf(meta?.mediaKind) ?? mediaKindOf(meta?.media);
     if (kind) return mediaWord(t, kind);

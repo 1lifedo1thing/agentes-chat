@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { pushPermission } from "@/lib/push";
 import { usePush } from "@/providers/push";
-import { Button, LineIcon, Text, useToast } from "@/ui";
+import { ACT_LINE, Button, LineIcon, Text, useToast } from "@/ui";
 import { useColors } from "../shared/hooks";
 
 /**
@@ -30,22 +30,32 @@ export function PushOfferLine({ agent, onDone }: { agent: string; onDone?: () =>
     setAsking(false);
     onDone?.();
     if (ok) toast({ title: t("mobile.push.ask.done"), icon: "bell" });
-    else if (allowed) toast({ title: t("mobile.push.ask.failed"), icon: "x" });
+    // Its way out right there: asking again registers this phone again.
+    else if (allowed)
+      toast({
+        title: t("mobile.push.ask.failed"),
+        icon: "x",
+        action: { label: t("mobile.common.retry"), onPress: () => void ask().catch(() => false) },
+      });
   };
 
   return (
     <View style={styles.line} accessibilityLiveRegion="polite">
       <LineIcon name="bell" size={16} color={c.ink2} variant="subhead" />
-      <Text variant="subhead" tone="ink2" style={styles.text}>
-        {t("mobile.push.offer.line", { name: agent })}
-      </Text>
-      <Button variant="primary" size="sm" label={t("mobile.push.offer.action")} loading={asking} onPress={turnOn} />
+      {/* Ativar under the words, from their edge, once they take more than their line. */}
+      <View style={[ACT_LINE.row, styles.text]}>
+        <Text variant="subhead" tone="ink2" style={ACT_LINE.text}>
+          {t("mobile.push.offer.line", { name: agent })}
+        </Text>
+        <Button variant="primary" size="sm" label={t("mobile.push.offer.action")} loading={asking} onPress={turnOn} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   // The event line's column: text starts at 62, like a message's.
-  line: { flexDirection: "row", alignItems: "center", gap: 12, paddingLeft: 62, paddingRight: 16, paddingTop: 12 },
-  text: { flex: 1, minWidth: 0 },
+  // From the top: the bell stays on the words' first line when Ativar drops under them.
+  line: { flexDirection: "row", alignItems: "flex-start", gap: 12, paddingLeft: 62, paddingRight: 16, paddingTop: 12 },
+  text: { flex: 1, minWidth: 0, alignItems: "center", columnGap: 16, rowGap: 8 },
 });

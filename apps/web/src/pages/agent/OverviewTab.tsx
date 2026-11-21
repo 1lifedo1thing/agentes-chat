@@ -2,12 +2,14 @@ import { useAgentDetail, useChannels, useProposals, useRuns } from "@agenteschat
 import { whenAt } from "@agenteschat/client/lib/format";
 import { pendingOnAgent, proposalTitle } from "@agenteschat/client/lib/proposals";
 import { excerpt } from "@agenteschat/client/lib/text";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { Button, Card, Icon } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { AgentSetupCard } from "@/components/AgentSetup";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { ownsOrManages } from "@/lib/agent-edit";
 import { CardHead, useAgentEdit } from "./context";
 import { Ficha } from "./Ficha";
 import { ReadOnlyNote, RunIcon, runWhere } from "./pieces";
@@ -30,12 +32,12 @@ export function OverviewTab() {
   const { agent, g, viewer, goTo, can, ownerFirst } = useAgentEdit();
   const detail = useAgentDetail(org.id, agent.id);
   const proposals = useProposals(org.id);
-  const runs = useRuns(org.id, agent.id, viewer !== "member");
+  const runs = useRuns(org.id, agent.id, ownsOrManages(viewer));
   const channels = useChannels(org.id);
   const pending = pendingOnAgent(proposals.data ?? [], agent.id);
   const approvals = detail.data?.pendingApprovals ?? 0;
   const recent = (runs.data ?? []).slice(0, RECENT);
-  const decides = viewer !== "member";
+  const decides = ownsOrManages(viewer);
   return (
     <>
       <ReadOnlyNote />
@@ -82,7 +84,7 @@ export function OverviewTab() {
                   </Button>
                 </span>
                 <span className="ac-mediarow__body agp-attn__sub">
-                  {proposalTitle(t, p, org.name, (id) => dir.agentById.get(id)?.name ?? agent.name)} ·{" "}
+                  {proposalTitle(t, p, org, (id) => dir.agentById.get(id)?.name ?? agent.name)} ·{" "}
                   {p.canDecide
                     ? t("approval.waitingYou")
                     : p.decider.type === "user"
@@ -101,15 +103,10 @@ export function OverviewTab() {
             title={t("agentPage.overview.does", g)}
             hint={{
               name: t("common.about", { label: t("agentPage.overview.does", g) }),
-              text: t("agent.instructionsHelp", { ...g, org: org.name }),
+              text: t(modeKey(org, "agent.instructionsHelp"), { ...g, org: org.name }),
             }}
             action={
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={can("instructions") ? "edit" : undefined}
-                onClick={() => goTo("instructions")}
-              >
+              <Button variant="link" onClick={() => goTo("instructions")}>
                 {can("instructions") ? t("agent.edit") : t("agentPage.overview.readAll")}
               </Button>
             }
@@ -132,7 +129,7 @@ export function OverviewTab() {
             title={t("agentPage.overview.recent")}
             action={
               decides ? (
-                <Button size="sm" variant="ghost" onClick={() => goTo("activity")}>
+                <Button variant="link" onClick={() => goTo("activity")}>
                   {t("agentPage.overview.seeAll")}
                 </Button>
               ) : null

@@ -22,6 +22,7 @@ import {
   passesFilter,
   taskConversationHref,
   taskListSections,
+  taskTitleText,
   waitsOnYou,
   workLines,
 } from "../../src/features/issues/logic";
@@ -36,7 +37,7 @@ function issue(over: Partial<Issue> & { number: number }): Issue {
     description: "",
     status: "todo",
     priority: "normal",
-    assignee: null,
+    assignees: [],
     labels: [],
     dueDate: null,
     criteria: [],
@@ -106,18 +107,23 @@ describe("issue filters and sections", () => {
       number: 134,
       status: "in_progress",
       priority: "high",
-      assignee: { type: "agent", id: "a1" },
+      assignees: [{ type: "agent", id: "a1" }],
       work: work("running"),
     }),
     issue({
       number: 131,
       status: "in_review",
-      assignee: { type: "agent", id: "a2" },
+      assignees: [{ type: "agent", id: "a2" }],
       pullRequests: [{ number: 212, url: "https://x", openedBy: null }],
     }),
-    issue({ number: 129, status: "in_progress", assignee: { type: "agent", id: "a3" }, work: work("waiting_input") }),
-    issue({ number: 127, dueDate: "2026-10-23", assignee: { type: "agent", id: "a4" } }),
-    issue({ number: 126, assignee: { type: "person", id: "me" } }),
+    issue({
+      number: 129,
+      status: "in_progress",
+      assignees: [{ type: "agent", id: "a3" }],
+      work: work("waiting_input"),
+    }),
+    issue({ number: 127, dueDate: "2026-10-23", assignees: [{ type: "agent", id: "a4" }] }),
+    issue({ number: 126, assignees: [{ type: "person", id: "me" }] }),
     issue({ number: 120, status: "done", updatedAt: at(5, NOW) }),
     issue({ number: 119, status: "canceled", updatedAt: at(50, NOW) }),
   ];
@@ -129,6 +135,26 @@ describe("issue filters and sections", () => {
     expect(nums("mine")).toEqual([129, 126]);
     expect(nums("agents")).toEqual([134, 131, 129, 127]);
     expect(nums("done")).toEqual([120, 119]);
+  });
+
+  test("a task several have is mine when I am one of them, and an agent's when one of them is an agent", () => {
+    const shared = issue({
+      number: 140,
+      assignees: [
+        { type: "person", id: "u2" },
+        { type: "agent", id: "a1" },
+        { type: "person", id: "me" },
+      ],
+    });
+    const people = issue({
+      number: 141,
+      assignees: [
+        { type: "person", id: "u2" },
+        { type: "person", id: "u3" },
+      ],
+    });
+    expect([shared, people].map((i) => passesFilter(i, "mine", "me"))).toEqual([true, false]);
+    expect([shared, people].map((i) => passesFilter(i, "agents", "me"))).toEqual([true, false]);
   });
 
   test("the board: always four columns in the web's order, what waits first, canceled under Feito", () => {
@@ -216,6 +242,30 @@ describe("issue filters and sections", () => {
         ],
       ],
     ]);
+  });
+
+  test('on the board a customized A fazer shows each of its columns, empty ones too, for their "+"', () => {
+    const board = [
+      col("backlog", "todo", 0, "Backlog"),
+      col("week", "todo", 1, "Esta semana"),
+      col("doing", "in_progress", 2),
+      col("later", "in_progress", 3, "Depois"),
+    ];
+    const tasks = [
+      issue({ number: 1, columnId: "week" }),
+      issue({ number: 2, status: "in_progress", columnId: "doing" }),
+    ];
+    const stages = issueBoard(tasks, board);
+    const todo = stages.find((b) => b.stage === "todo");
+    expect(todo?.showColumns).toBe(true);
+    expect(todo?.groups.map((g) => [g.column?.id, g.items.map((i) => i.number)])).toEqual([
+      ["backlog", []],
+      ["week", [1]],
+    ]);
+    // Only A fazer takes a new task in a column: elsewhere an empty column stays out, as in the list.
+    expect(stages.find((b) => b.stage === "in_progress")?.groups.map((g) => g.column?.id)).toEqual(["doing"]);
+    // The default board: no column names, nothing added.
+    expect(issueBoard([], plain).find((b) => b.stage === "todo")).toMatchObject({ showColumns: false, groups: [] });
   });
 
   test("a single column with its own name counts as customized", () => {
@@ -472,29 +522,184 @@ describe("a task's number and title on one row; its conversation on the card", (
     expect(conversationLine(issue({ number: 5, conversation: talk(2, true) }))?.working).toBe(true);
   });
 
-  test("the board card and the task's head: '#N' inside the title's line, the card's conversation last", async () => {
+  test("the board card in the web card's three parts: the title in the cards' type, one row of facts, who has it and one state", async () => {
     const parts = await read("issues/parts.tsx");
-    const card = parts.slice(parts.indexOf("export const BoardCard"), parts.indexOf("function CardConversation("));
-    expect(card).toMatch(
-      /<Text variant="callout" numberOfLines=\{3\} style=\{\[styles\.title, styles\.step\]\}>\s*<Text variant="callout" tone="faint" style=\{styles\.number\}>\s*#\{i\.number\}/,
+    const card = parts.slice(
+      parts.indexOf("export const BoardCard"),
+      parts.indexOf("const styles = StyleSheet.create("),
     );
-    // The unread mentions' count ends the title's row.
-    expect(card).toMatch(/\{i\.title\}\s*<\/Text>\s*<MentionCount count=\{mentions\} \/>/);
-    // Not again in the meta row.
-    expect(card.split("#{i.number}")).toHaveLength(2);
-    expect(card.indexOf("<AssigneeFace")).toBeLessThan(card.indexOf("<CardConversation issue={i} />"));
-    const talk = parts.slice(parts.indexOf("function CardConversation("));
-    expect(talk).toContain("conversationLine(issue)");
-    expect(talk).toContain('t("threads.status.working")');
-    expect(talk).toContain("{ color: c.agent }");
+    // The title in the cards' type (the Drive's subhead, semibold), three lines at most (its screen says it whole): no
+    // number in it, its `code` as the inline code pill (as the web's card).
+    expect(card).toContain(
+      '<TaskTitle title={i.title} variant="subhead" numberOfLines={CARD_TITLE_LINES} style={styles.title} />',
+    );
+    expect(card).toContain("const CARD_TITLE_LINES = 3;");
+    // It gives under the finger as the Drive's cards do, never a hand-made press.
+    expect(card).toContain("<PressScale");
+    expect(card).not.toContain("<Pressable");
+    const title = parts.slice(parts.indexOf("export function TaskTitle("), parts.indexOf("const STATE_ICON"));
+    expect(title).toContain("<CodeWords text={title} />");
+    expect(title).not.toContain("numberOfLines");
+    // Then its facts, then who has it with its state.
+    expect(card.indexOf("<CardFacts")).toBeGreaterThan(card.indexOf("{i.title}"));
+    expect(card.indexOf("<AssigneeFace issue={i} size={24}")).toBeGreaterThan(card.indexOf("<CardFacts"));
+    expect(card.indexOf("<StateWords")).toBeGreaterThan(card.indexOf("<AssigneeFace"));
+    // One state, from the client's shared cardState (the web's too); waiting on a person, the agent's sky on top.
+    expect(parts).toContain("cardState(i, Boolean(i.conversation?.working))");
+    expect(parts).toContain("cardStateText(t, state)");
+    expect(card).toContain("cardWaits(state) ?");
+    expect(card.indexOf("cardWaits(state) ?")).toBeLessThan(card.indexOf("{i.title}"));
+    // What the task's screen has leaves the card.
+    for (const gone of ["StateLine", "CriteriaTrack", "BoardWork", "CardConversation"])
+      expect(parts).not.toContain(gone);
+    const facts = parts.slice(parts.indexOf("function CardFacts("), parts.indexOf("export const BoardCard"));
+    // The number first, the label the only pill (+N after it in words), the date in words with its mark, GitHub's
+    // mark with the PR and with the linked item, the mentions beside the conversation's count.
+    expect(facts.indexOf("#{i.number}")).toBeLessThan(facts.indexOf("<Chip label={label} />"));
+    expect(facts.match(/<Chip\b/g)).toHaveLength(1);
+    expect(facts).toContain("+{labels.length}");
+    expect(facts).toMatch(
+      /<Icon name="clock" size=\{12\}[^>]*\/>\s*<Text[^>]*>\s*\{t\("mobile\.issues\.until", \{ date: due\.text \}\)\}/,
+    );
+    expect(facts).toContain("<MentionCount count={mentions} />");
+    expect(facts.match(/provider="github"/g)).toHaveLength(2);
+    expect(facts).toContain("{githubLinkLabel(i.githubUrl)}");
+    expect(facts).not.toContain("GithubChip");
     const screen = await read("issues/IssueScreen.tsx");
     const head = screen.slice(screen.indexOf("function Head("), screen.indexOf("function WorkCard("));
-    expect(head).toMatch(
-      /accessibilityRole="header"[^>]*>\s*<Text variant="display2" tone="faint"[^>]*>\s*#\{i\.number\}/,
-    );
+    // The number is the bar's ("#134"): the heading under it is the title alone, never the number said twice.
+    expect(head).toMatch(/accessibilityRole="header"[^>]*>\s*\{i\.title\}\s*<\/Text>/);
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the bar's own template, read as source text
+    expect(screen).toContain("title={`#${i.number}`}");
     // "Criada por…" under the title, the number no longer in it.
     expect(head.indexOf('accessibilityRole="header"')).toBeLessThan(head.indexOf("{line}"));
     expect(head).not.toMatch(/`#\$\{i\.number\}`,/);
+  });
+
+  test("who has it: the face never alone on a line, on the name's first line; the sky fades in", async () => {
+    const parts = await read("issues/parts.tsx");
+    const card = parts.slice(
+      parts.indexOf("export const BoardCard"),
+      parts.indexOf("const styles = StyleSheet.create("),
+    );
+    // The face and the name in one group that doesn't wrap (the name wraps beside the face), the state after it.
+    expect(card).toMatch(
+      /<View style=\{styles\.person\}>\s*<View style=\{\[styles\.face, \{ marginTop: axis\.face \}\]\}>\s*<AssigneeFace/,
+    );
+    expect(card).toContain("paddingTop: axis.words");
+    expect(card).toContain('mediaRowAxis(24, textLineOf("small", useFontScale()))');
+    expect(parts).toMatch(/person: \{ flexDirection: "row", alignItems: "flex-start", gap: 8, flexShrink: 1 \}/);
+    // An agent waiting on a person: its sky fades in over 200 ms, at once under reduced motion.
+    expect(card).toContain("entering={reduced ? undefined : FadeIn.duration(200)}");
+  });
+
+  test("a row in the list says the card's one state in its words, else its due date; the title in the rows' type", async () => {
+    const screen = await read("issues/IssuesScreen.tsx");
+    const row = screen.slice(screen.indexOf("function TaskRow("), screen.indexOf("function Board("));
+    expect(row).toContain("useCardState(i)");
+    expect(row).toContain("<StateWords issue={i} state={state} words={words} />");
+    expect(row).not.toContain("mobile.issues.waitsYou");
+    // The app's list row and its own title (no bold title of a size of its own), two lines at most, its marks left out.
+    expect(row).toContain("<ListRow");
+    expect(row).toContain("const title = taskTitleText(i.title);");
+    expect(row).toMatch(/title=\{title\}\s*titleLines=\{2\}/);
+    expect(row).not.toContain("TaskTitle");
+    expect(row).not.toContain("numberOfLines");
+    // The check in the lead column, where the app's other lists put a face.
+    expect(row).toContain(
+      'leading={<Icon name={done ? "checkc" : "circle"} size={CHECK} color={done ? c.ok : c.faint} />}',
+    );
+    expect(screen).toMatch(/subLine: \{ flexDirection: "row", flexWrap: "wrap",/);
+    expect(taskTitleText("Fix the `login` **now**")).toBe("Fix the login now");
+  });
+
+  test("one header in both views: the system's large title, the views first under it, never a title of its own", async () => {
+    const screen = await read("issues/IssuesScreen.tsx");
+    // Lista and Quadro share the one PushedLargeTitle: same place and type for the title, one pull to refresh.
+    expect(screen.match(/<PushedLargeTitle\b/g)).toHaveLength(1);
+    for (const gone of ["useHeaderHeight", 'variant="display"', "<PushedHeader", "paddingTop: Platform"])
+      expect([gone, screen.includes(gone)]).toEqual([gone, false]);
+    // The views first under the title, before Lista's search and Quadro's stages: the control never moves.
+    const views = screen.indexOf("<Segmented");
+    expect(views).toBeGreaterThan(-1);
+    expect(views).toBeLessThan(screen.indexOf("<Board issues={list}"));
+    expect(views).toBeLessThan(screen.indexOf("<TaskList issues={list}"));
+    const list = screen.slice(screen.indexOf("function TaskList("), screen.indexOf("function TaskRow("));
+    expect(list).toContain("<SearchField");
+    const board = screen.slice(screen.indexOf("function Board("), screen.indexOf("function Column("));
+    expect(board.indexOf("<Filters")).toBeLessThan(board.indexOf("ref={pager}"));
+    // A column is as long as its cards: the page scrolls it, with no scroll or refresh of its own.
+    const column = screen.slice(screen.indexOf("function Column("), screen.indexOf("const styles"));
+    expect(column).not.toContain("ScrollView");
+    expect(column).not.toContain("RefreshControl");
+    // A search or a project with nothing says so, with the way to clear it; a failed load offers to try again.
+    expect(list).toContain('label={t("filters.clearSearch")} onPress={() => setQ("")}');
+    expect(list).toContain('label={t("filters.clearAll")} onPress={onAllProjects}');
+    expect(screen).toContain("<LoadFailed onRetry={() => void issues.refetch()} />");
+    // A project just picked loads under the views: the control stays where it is.
+    expect(screen.indexOf("{issues.isLoading ? (")).toBeGreaterThan(screen.indexOf("<Segmented"));
+  });
+
+  test('A fazer\'s columns on the board take "+" for a task in them, for who may create tasks', async () => {
+    const parts = await read("issues/parts.tsx");
+    const header = parts.slice(
+      parts.indexOf("export function ColumnHeader("),
+      parts.indexOf("export function TaskTitle("),
+    );
+    expect(header).toContain(
+      '<IconButton small icon="plus" label={t("issues.newIn", { column: label })} onPress={onNew} />',
+    );
+    // The name whole, its first line on the button's middle.
+    expect(header).not.toContain("numberOfLines");
+    expect(header).toContain("paddingTop: Math.max(0, (TOOL_H - line) / 2)");
+    const screen = await read("issues/IssuesScreen.tsx");
+    expect(screen).toContain('{...(mayNew && g.column.stage === "todo" ? { onNew: newIn(g.column.id) } : {})}');
+    // From a project's tasks, the new one starts in that project too.
+    expect(screen).toContain('pathname: "/issues/new",');
+    expect(screen).toContain("params: { column, ...(project && project !== NO_PROJECT ? { project } : {}) },");
+    expect(screen).toContain("<Board issues={list} columns={columns.data ?? []} mayNew={mayNew} project={shown} />");
+    // Nova tarefa says the column and puts the task there (an agent picked starts it and moves it on).
+    const form = await read("issues/NewIssueForm.tsx");
+    expect(form).toContain("useLocalSearchParams<{ column?: string; project?: string }>()");
+    expect(form).toContain(
+      '<GroupedRow icon="circle" label={t("issues.column")} sub={columnLabel(column)} subLines={0} />',
+    );
+    expect(form).toMatch(
+      /if \(column && !starter && columnOfIssue\(issue, columns\.data \?\? \[\]\)\?\.id !== column\.id\)\s*action\.mutate\(\{ type: "update", id: issue\.id, patch: \{ columnId: column\.id \} \}\);/,
+    );
+  });
+
+  test("the task's head: its fields as the web's strip, in its order, each 32 high and opening its picker", async () => {
+    const screen = await read("issues/IssueScreen.tsx");
+    const head = screen.slice(screen.indexOf("function Head("), screen.indexOf("/** Pastes, changes or removes"));
+    const fields = [...head.matchAll(/<PropChip\s+label=\{t\("([\w.]+)"\)\}[\s\S]*?onPress=\{pickers\.(\w+)\}/g)].map(
+      (m) => [m[1], m[2]],
+    );
+    expect(fields).toEqual([
+      ["issues.projects.label", "pickProject"],
+      ["issues.column", "pickColumn"],
+      ["issues.form.assignee", "pickAssignee"],
+      ["issues.form.priority", "pickPriority"],
+      ["issues.due", "pickDue"],
+      ["whoSees.label", "pickWhoSees"],
+    ]);
+    // A control, not a pill: 32 high (the toolbar's), the web's control radius, its target grown to a finger's.
+    // The chip is the tasks' own part: the list's project filter wears it too.
+    const parts = await read("issues/parts.tsx");
+    expect(parts).toMatch(/prop: \{[^}]*minHeight: TOOL_H,[^}]*borderRadius: 10,/);
+    // A long value (a column's name, seven people, a project's) wraps inside it, never cut, its mark on the first line.
+    const chip = parts.slice(
+      parts.indexOf("export function PropChip("),
+      parts.indexOf("const styles = StyleSheet.create"),
+    );
+    expect(chip).not.toContain("numberOfLines");
+    expect(chip).toContain('<View style={{ height: line, justifyContent: "center" }}>');
+    expect(parts).toMatch(/prop: \{[^}]*alignItems: "flex-start",[^}]*paddingVertical: \(TOOL_H - PROP_LINE\) \/ 2,/);
+    expect(chip).toContain("hitSlop={{ top: (TOUCH - TOOL_H) / 2, bottom: (TOUCH - TOOL_H) / 2 }}");
+    // The head and "…" open the same pickers.
+    const menu = screen.slice(screen.indexOf("function useIssueMenu("));
+    for (const picker of ["pickColumn", "pickPriority", "pickAssignee", "pickWhoSees"])
+      expect(menu).toContain(`pickers.${picker}`);
   });
 });
 
@@ -509,25 +714,42 @@ describe("a task's GitHub link", () => {
 
   const source = (file: string) => readFileSync(join(import.meta.dir, "../../src/features/issues", file), "utf8");
 
-  test("the card and the task show the chip, the task's opens the link, and the menu edits it locked while saving", () => {
-    expect(source("parts.tsx")).toContain("<GithubChip url={i.githubUrl} />");
+  test("the card says the link with GitHub's mark, the task shows the chip and opens it, the menu edits it locked", () => {
+    const parts = source("parts.tsx");
+    const card = parts.slice(parts.indexOf("function CardFacts("), parts.indexOf("export const BoardCard"));
+    expect(card).toContain("{githubLinkLabel(i.githubUrl)}");
     const screen = source("IssueScreen.tsx");
     expect(screen).toContain("<GithubChip url={i.githubUrl} />");
     expect(screen).toContain("webUrl(i.githubUrl)");
+    // From the task's menu (the bar's "…"), the link's form opens in the screen's sheet.
     expect(screen).toContain("sheet.open(<GithubLinkForm issue={i} />)");
     expect(screen).toContain("<Locked when={action.isPending}>");
   });
 
-  test("on a narrow card the date, the chip and the face wrap onto the next line instead of running past its edge", () => {
-    expect(source("parts.tsx")).toMatch(/meta: \{ flexDirection: "row", flexWrap: "wrap",/);
+  test("on a narrow card the facts wrap between facts, and the state under the name, instead of running past its edge", () => {
+    expect(source("parts.tsx")).toMatch(/facts: \{ flexDirection: "row", flexWrap: "wrap",/);
+    expect(source("parts.tsx")).toMatch(/who: \{ flexDirection: "row", flexWrap: "wrap",/);
+    // A state longer than the card (a stopped run's reason) wraps inside it, never past the card's clipped edge.
+    expect(source("parts.tsx")).toContain('state: { flexShrink: 1, maxWidth: "100%" }');
+    expect(source("parts.tsx")).toContain("style={[styles.bold, styles.shrink,");
+    // A repository's link wider than the card wraps its words inside it, GitHub's mark on the first line's middle.
+    expect(source("parts.tsx")).toContain('wraps: { maxWidth: "100%", alignItems: "flex-start" }');
+    expect(source("parts.tsx")).toMatch(
+      /<View style=\{\[styles\.inline, styles\.wraps\]\}>\s*<View style=\{\{ marginTop: mark \}\}>\s*<SocialMark provider="github"[^>]*\/>\s*<\/View>\s*<Text variant="caption" tone="muted" style=\{styles\.shrink\}>\s*\{githubLinkLabel\(i\.githubUrl\)\}/,
+    );
   });
 });
 
 describe("an agent picked for a task that couldn't start", () => {
   test("Nova tarefa and Responsável start it through one hook, which says why with Pedir de novo", () => {
     const src = (f: string) => readFileSync(join(import.meta.dir, "../../src/features/issues", f), "utf8");
-    expect(src("NewIssueForm.tsx")).toContain("start.run(issue, who.id, { created: true })");
-    expect(src("IssueScreen.tsx")).toContain('start.run(i, who.id, { done: t("mobile.issues.changed") })');
+    // The first agent picked for a new task; on a task, the first agent it gets (the others it has stay).
+    expect(src("NewIssueForm.tsx")).toContain("start.run(issue, starter.id, { created: true })");
+    expect(src("NewIssueForm.tsx")).toContain('const starter = who.find((a) => a.type === "agent");');
+    expect(src("IssueScreen.tsx")).toContain("const starter = firstAgentAdded(was, next);");
+    expect(src("IssueScreen.tsx")).toContain(
+      'if (starter) return start.run({ ...i, assignees: was }, starter.id, { done: t("mobile.issues.changed") });',
+    );
     const hook = src("useStartAgent.ts");
     for (const piece of [
       "useStartAgentOnTask(",
@@ -541,10 +763,11 @@ describe("an agent picked for a task that couldn't start", () => {
 });
 
 describe("the Drive past what loaded", () => {
-  test("Mostrar mais brings the server's next page once the loaded files are shown", () => {
+  test("Mostrar mais shows more, and the server's next page comes by itself once the loaded files are shown", () => {
     const screen = readFileSync(join(import.meta.dir, "../../src/features/drive/DriveScreen.tsx"), "utf8");
-    expect(screen).toContain("void list.fetchNextPage()");
-    expect(screen).toContain("visible < total || list.hasNextPage");
+    expect(screen).toContain("if (looking) void fetchNextPage();");
+    expect(screen).toContain("visible < matches.length || hasNextPage");
+    expect(screen).toContain("onPress={() => {\n                    setShown((n) => n + PAGE);");
   });
 });
 
@@ -553,10 +776,10 @@ describe("Tarefas as one list", () => {
     const agent = { type: "agent" as const, id: "a1" };
     const me = { type: "person" as const, id: "me" };
     const list = [
-      issue({ number: 1, status: "in_progress", assignee: agent, work: work("running") }),
-      issue({ number: 2, status: "in_progress", assignee: agent, work: work("waiting_input") }),
-      issue({ number: 3, status: "todo", assignee: me }),
-      issue({ number: 4, status: "in_review", assignee: agent }),
+      issue({ number: 1, status: "in_progress", assignees: [agent], work: work("running") }),
+      issue({ number: 2, status: "in_progress", assignees: [agent], work: work("waiting_input") }),
+      issue({ number: 3, status: "todo", assignees: [me] }),
+      issue({ number: 4, status: "in_review", assignees: [agent] }),
       issue({ number: 5, status: "todo" }),
       issue({ number: 6, status: "done", updatedAt: at(30, NOW) }),
       issue({ number: 7, status: "done", updatedAt: new Date(2026, 9, 15, 10, 0).toISOString() }),

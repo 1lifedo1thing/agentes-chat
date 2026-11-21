@@ -3,15 +3,29 @@ import { and, type Database, type Executor, eq, isNotNull, ne, schema, sql } fro
 import { en } from "@agenteschat/i18n/en";
 import { enqueueAccountContact } from "./account-contacts";
 import { recordAudit } from "./audit";
+import { profileIdOfKey } from "./browser/profiles";
 import { caches } from "./cache";
 import { ForbiddenError } from "./errors";
 import { publishOrgEvent } from "./events";
 import type { Judge } from "./judge";
 import type { MachineHub } from "./machine-hub";
 import { notifyAgentHold, notifyOrgStanding, resolveAgentHold } from "./notification-producers";
+import { enqueue } from "./outbox";
+import { RIGHT_HAND } from "./right-hand";
+import { unlinkAllFor } from "./surfaces/links";
 import { isAgentesCloud } from "./telemetry";
 
-const { organizations, agents, users, sessions, pushDevices, organizationMembers, machineProvisioning } = schema;
+const {
+  organizations,
+  agents,
+  users,
+  sessions,
+  pushDevices,
+  liveActivityDevices,
+  organizationMembers,
+  machineProvisioning,
+  rightHandSeats,
+} = schema;
 
 let cloudNotices = false;
 
@@ -196,14 +210,22 @@ export class OrgDeletingError extends ForbiddenError {
 }
 
 /**
- * Why the workspace is closed to its people, or null while it is open: suspended (the operator's, which comes first),
- * else being deleted. The one check behind every way in; only reading who you are, restoring it and leaving it
- * stay open. `closedOrg` says the same in SQL.
+ * Why the workspace is closed to every change and to all work, or null while it is open: suspended (the operator's,
+ * which comes first), else being deleted. Restoring it and leaving it stay open, and its people still read one being
+ * deleted (`readRefusal`). `closedOrg` says the same in SQL.
  */
 export function closedRefusal(standing: WorkspaceStanding | undefined): OrgPausedError | OrgDeletingError | null {
   if (standing?.state === "suspended") return new OrgPausedError(standing);
   if (standing?.deletionDueAt) return new OrgDeletingError(standing.deletionDueAt);
   return null;
+}
+
+/**
+ * Why its people can't even read the workspace, or null: only a suspension. One being deleted stays readable to its
+ * members until it goes (ADR 0088 §7); the API refuses its changes (`readOnlyWhileDeleting`) and `workRefusal` its work.
+ */
+export function readRefusal(standing: WorkspaceStanding | undefined): OrgPausedError | null {
+  return standing?.state === "suspended" ? new OrgPausedError(standing) : null;
 }
 
 /** Why work in the workspace is refused now: `closedRefusal`, else a hold. Null while active. `openOrg` in SQL. */
@@ -219,9 +241,9 @@ export const closedOrg = sql<boolean>`(${organizations.standing} = 'suspended'
 /** `workRefusal` in SQL, for queries over `organizations`: active, and not being deleted. */
 export const openOrg = sql<boolean>`(${organizations.standing} = 'active' and ${organizations.deletionDueAt} is null)`;
 
-/** An org broadcast that closes the workspace to its people (a suspension, its deletion): their sockets close. */
+/** An org broadcast that closes the workspace to its people (a suspension): their sockets close. */
 export const closesWorkspace = (event: { type: string; state?: unknown }) =>
-  event.type === "org.deleting" || (event.type === "org.standing" && event.state === "suspended");
+  event.type === "org.standing" && event.state === "suspended";
 
 /**
  * A suspension, or a hold that isn't billing's: its people don't carry on in a new workspace, and its deletion waits
@@ -255,11 +277,17 @@ export async function billingHold(db: Executor, orgId: string): Promise<BillingH
 
 /** This agent's hold (its stored reason), or null while it isn't held: cached 5 s per process like the standing. */
 async function agentHold(db: Executor, orgId: string, agentId: string): Promise<{ reason: string | null } | null> {
+  // A shared browser profile's stream goes by "profile:<id>": no agent, so no hold of its own (and no row to ask for).
+  if (profileIdOfKey(agentId)) return null;
   return (await caches.standing.getOrLoad(`${orgId}:${agentId}`, async () => {
+    // A computer knows a seat of the right hand (a person's, the shared one) by the seat's id (ADR 0175): its hold is
+    // the right hand's.
+    const seatOfIt = sql`${agents.builtin} = ${RIGHT_HAND} and exists (select 1 from ${rightHandSeats} s
+      where s.id = ${agentId}::uuid and s.org_id = ${agents.orgId})`;
     const [row] = await db
       .select({ heldAt: agents.operatorHoldAt, reason: agents.operatorHoldReason })
       .from(agents)
-      .where(and(eq(agents.id, agentId), eq(agents.orgId, orgId)));
+      .where(and(eq(agents.orgId, orgId), sql`(${agents.id} = ${agentId}::uuid or (${seatOfIt}))`));
     return row?.heldAt ? { reason: row.reason } : null;
   })) as { reason: string | null } | null;
 }
@@ -335,9 +363,12 @@ export async function setOrgStanding(
   return done.after;
 }
 
+/** The team's hello in #general once it can work (`sayTeamHello` in team-templates, ADR 0162). */
+export const TEAM_HELLO_JOB = "team.hello";
+
 /**
  * Puts the billing service's hold on a workspace, moves it to another code, or lifts it (`null`), through the same
- * write as `setOrgStanding`. A suspension or any other hold is never replaced nor lifted from here: `applied` false,
+ * write as `setOrgStanding`. Lifting the first plan's hold queues the team's hello. A suspension or any other hold is never replaced nor lifted from here: `applied` false,
  * as when it is already so. Null when there is no such workspace.
  */
 export async function setBillingHold(
@@ -349,7 +380,15 @@ export async function setBillingHold(
     const [before] = await lockStanding(tx, orgId);
     if (!before) return null;
     const change = billingChange(before, hold);
-    return { before, written: change ? await writeStanding(tx, orgId, before, change) : null };
+    const written = change ? await writeStanding(tx, orgId, before, change) : null;
+    if (written && hold === null && before.reason === "payment")
+      await enqueue(tx, {
+        orgId,
+        kind: TEAM_HELLO_JOB,
+        payload: { how: "paid" },
+        dedupeKey: `${TEAM_HELLO_JOB}:${orgId}`,
+      });
+    return { before, written };
   });
   if (!done) return null;
   if (!done.written) return { applied: false, standing: done.before };
@@ -413,6 +452,7 @@ async function standingWritten(
   { notify = true }: { notify?: boolean } = {},
 ) {
   caches.standing.delete(`${orgId}:`);
+  caches.membership.deletePrefix(`${orgId}:`);
   if (seen) {
     await publishOrgEvent(deps.pubsub, {
       type: "org.broadcast",
@@ -517,8 +557,7 @@ export async function deletionPending(db: Executor, userId: string) {
 
 /**
  * Blocks an account, or lets it back (the operator API). Blocked, it can't sign in (`auth.ts`), its sessions
- * and phones are gone, and every membership check reads it as no member (`getMembership`): that bites on
- * its next request, even while a browser's cookie cache still holds the session for minutes. Its open
+ * and phones are gone, and every membership check reads it as no member (`getMembership`). Its open
  * sockets in every workspace close (`membership.revoked`). Null when there is no such account.
  */
 export async function setUserBlocked(
@@ -541,6 +580,8 @@ export async function setUserBlocked(
     if (!change.blocked) return { ...row, sessionsRevoked: 0, orgIds: [] };
     const revoked = await tx.delete(sessions).where(eq(sessions.userId, userId)).returning({ id: sessions.id });
     await tx.delete(pushDevices).where(eq(pushDevices.userId, userId));
+    await tx.delete(liveActivityDevices).where(eq(liveActivityDevices.userId, userId));
+    await unlinkAllFor(tx, userId);
     const orgs = await tx
       .select({ orgId: organizationMembers.orgId })
       .from(organizationMembers)
@@ -549,7 +590,9 @@ export async function setUserBlocked(
   });
   if (!done) return null;
   const { orgIds, ...state } = done;
-  for (const orgId of orgIds)
+  for (const orgId of orgIds) {
+    caches.membership.delete(`${orgId}:${userId}`);
     await publishOrgEvent(deps.pubsub, { type: "membership.revoked", orgId, userId, quiet: true });
+  }
   return state;
 }

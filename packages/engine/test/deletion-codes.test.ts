@@ -85,6 +85,18 @@ describe("the code that proves it's you before deleting (ADR 0088 §2)", () => {
     expect(await f.db.select().from(schema.verifications)).toEqual([]);
   });
 
+  test("a reset's code says it resets, and proves only the reset", async () => {
+    const c = clock();
+    const deps = await codes(c);
+    await sendDeletionCode(deps, f.owner.id, f.org.id, c.now(), true);
+    const mail = (await sentMail()).at(-1)?.payload.template ?? {};
+    expect(mail.reset).toBe(true);
+    expect(renderEmail(mail as Parameters<typeof renderEmail>[0]).subject).toContain("recomeçar");
+    const code = await lastCode();
+    expect(await answer(spendDeletionCode(deps, f.owner.id, f.org.id, code, c.now()))).toBe("reauth.code_wrong");
+    expect(await answer(spendDeletionCode(deps, f.owner.id, f.org.id, code, c.now(), true))).toBe("ok");
+  });
+
   test("five wrong tries use a code up, and an account gets ten wrong tries a day", async () => {
     const c = clock();
     const deps = await codes(c);
@@ -159,7 +171,7 @@ describe("the code that proves it's you before deleting (ADR 0088 §2)", () => {
     });
     expect(workspace.subject).toBe("482913 is your code to delete a workspace");
     expect(workspace.text).toContain(
-      "Type this code to delete the workspace Souza Bakery. It closes for everyone at once and is deleted for good 7 days later.",
+      "Type this code to delete the workspace Souza Bakery. It turns read-only for everyone at once and is deleted for good 7 days later.",
     );
     expect(workspace.text).toContain("If it wasn't you, don't share it and write to help@agentes.chat.");
     const account = renderEmail({

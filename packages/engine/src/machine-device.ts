@@ -19,8 +19,9 @@ import {
 import { notifyMachineConnected } from "./notification-producers";
 import { can, getMembership, requireActiveMembership } from "./organizations";
 import { closedRefusal } from "./standing";
+import { withoutTrailingSlashes } from "./url-text";
 
-const { agents, machineDeviceCodes, machines, organizations } = schema;
+const { agents, machineDeviceCodes, machines, organizations, users } = schema;
 
 /**
  * Connecting a computer (ADR 0036 §5): a device-code flow like OAuth's. The
@@ -168,7 +169,7 @@ export async function startDeviceCode(
         expiresAt,
         createdAt: now,
       });
-      const base = deps.publicUrl.replace(/\/+$/, "");
+      const base = withoutTrailingSlashes(deps.publicUrl);
       return {
         deviceCode,
         userCode,
@@ -205,7 +206,16 @@ async function provenPreviousMachine(db: Database, input: DeviceStartInput): Pro
 export type DeviceTokenError = "authorization_pending" | "slow_down" | "access_denied" | "expired_token";
 
 export type DeviceTokenResult =
-  | { ok: true; token: string; machineId: string; name: string; org: { id: string; name: string } }
+  | {
+      ok: true;
+      token: string;
+      machineId: string;
+      name: string;
+      org: { id: string; name: string };
+      /** Who may use it, as it joined, and the name of whoever connected it: the computer says so when it connects. */
+      audience: DeviceAudience["mode"];
+      owner: string | null;
+    }
   | { ok: false; error: DeviceTokenError };
 
 /**
@@ -262,7 +272,10 @@ export async function pollDeviceToken(deps: DeviceDeps, deviceCode: string): Pro
       .select({ id: organizations.id, name: organizations.name })
       .from(organizations)
       .where(eq(organizations.id, machine.orgId));
-    return { machine, org: org ?? { id: machine.orgId, name: "" } };
+    const [owner] = machine.pairedByUserId
+      ? await tx.select({ name: users.name }).from(users).where(eq(users.id, machine.pairedByUserId))
+      : [];
+    return { machine, org: org ?? { id: machine.orgId, name: "" }, owner: owner?.name ?? null };
   });
   if (!issued) return { ok: false, error: "expired_token" };
   await recordAudit(deps.db, {
@@ -273,7 +286,15 @@ export async function pollDeviceToken(deps: DeviceDeps, deviceCode: string): Pro
     target: { type: "machine", id: issued.machine.id },
     details: { name: issued.machine.name, hostname: issued.machine.hostname, os: issued.machine.os },
   });
-  return { ok: true, token, machineId: issued.machine.id, name: issued.machine.name, org: issued.org };
+  return {
+    ok: true,
+    token,
+    machineId: issued.machine.id,
+    name: issued.machine.name,
+    org: issued.org,
+    audience: issued.machine.audienceMode,
+    owner: issued.owner,
+  };
 }
 
 /** A machine whose code expired before the computer took its token: removed (it has no token to connect with). */

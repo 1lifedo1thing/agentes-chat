@@ -1,6 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, asc, type Database, eq, inArray, schema, sql } from "@agenteschat/db";
 import { requireChannelAccess } from "../channels";
+import { threadIsConfidential } from "../confidential";
 import { NotFoundError, ValidationError } from "../errors";
 import { publishChannelEvent } from "../events";
 import type { Judge } from "../judge";
@@ -31,6 +32,8 @@ export async function learnFromRefusal(
   approval: Approval,
 ): Promise<ConsolidateResult | null> {
   if (approval.status !== "refused") return null;
+  // Nothing of a confidential thread becomes memory (ADR 0190): the card's title and the reason given quote it.
+  if (await threadIsConfidential(deps.db, approval.orgId, approval.threadRootId)) return null;
   const outcome = await recordOutcome(deps.db, {
     orgId: approval.orgId,
     kind: "approval_refused",
@@ -275,20 +278,38 @@ export async function applyReactionFeedback(
   return used.length;
 }
 
-/** Logs which items a run's context included (feeds relevance). */
-export async function recordContextUse(db: Database, orgId: string, runId: string, itemIds: string[]) {
+/**
+ * Logs which items a run's context included (reactions' feedback reads it). Only `used` count as a use and raise
+ * relevance: what matched the request or was opened with `expand` (ADR 0167). The rest, sent whatever the request
+ * (the fixed core, rules), only stays fresh, so it doesn't decay away while every run reads it.
+ */
+export async function recordContextUse(
+  db: Database,
+  orgId: string,
+  runId: string,
+  itemIds: string[],
+  used: string[] = itemIds,
+) {
   if (itemIds.length === 0) return;
   await db
     .insert(contextUsage)
     .values(itemIds.map((itemId) => ({ orgId, runId, itemId })))
     .onConflictDoNothing();
-  await db
-    .update(contextItems)
-    .set({
-      useCount: sql`${contextItems.useCount} + 1`,
-      // Each use moves it less the more it already has, so the most used items stop climbing (ADR 0120).
-      relevance: sql`${contextItems.relevance} + 0.05 * (1 - ${contextItems.relevance})`,
-      lastUsedAt: new Date(),
-    })
-    .where(and(eq(contextItems.orgId, orgId), inArray(contextItems.id, itemIds)));
+  const counted = itemIds.filter((id) => used.includes(id));
+  const sent = itemIds.filter((id) => !used.includes(id));
+  if (counted.length > 0)
+    await db
+      .update(contextItems)
+      .set({
+        useCount: sql`${contextItems.useCount} + 1`,
+        // Each use moves it less the more it already has, so the most used items stop climbing (ADR 0120).
+        relevance: sql`${contextItems.relevance} + 0.05 * (1 - ${contextItems.relevance})`,
+        lastUsedAt: new Date(),
+      })
+      .where(and(eq(contextItems.orgId, orgId), inArray(contextItems.id, counted)));
+  if (sent.length > 0)
+    await db
+      .update(contextItems)
+      .set({ lastUsedAt: new Date() })
+      .where(and(eq(contextItems.orgId, orgId), inArray(contextItems.id, sent)));
 }

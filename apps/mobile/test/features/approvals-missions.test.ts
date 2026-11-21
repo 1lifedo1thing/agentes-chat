@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { MachineTask } from "@agenteschat/client";
 import {
   approvalCardItems,
   approvalCards,
+  approvalLine,
   approvalRuns,
   approveAllScope,
   approveAlwaysAlso,
@@ -12,6 +15,7 @@ import {
   itemOwnWords,
   runKeys,
 } from "@agenteschat/client/lib/approval-card";
+import { approvalEffects } from "@agenteschat/client/lib/approval-review";
 import { approvalRuleWords, approvalTitle } from "@agenteschat/client/lib/approval-words";
 import {
   approvalAction,
@@ -86,14 +90,16 @@ describe("requests to approve", () => {
     expect(approvalTraits({ tool: "update", scope: "x", params: { env: "production" } })).toEqual(["production"]);
   });
 
-  test("waiting on you: pending, yours to decide, not expired, closest to expiring first", () => {
+  test("waiting on you: pending, yours to decide, not expired, in the order the agents asked", () => {
     const now = Date.now();
-    const soon = approval({ id: "soon", expiresAt: new Date(now + 5 * 60_000).toISOString() });
-    const later = approval({ id: "later", expiresAt: new Date(now + 50 * 60_000).toISOString() });
+    const asked = (minutes: number) => new Date(now - minutes * 60_000).toISOString();
+    // Asked first, though it expires later (a request approved ahead expires at its routine's time).
+    const first = approval({ id: "first", createdAt: asked(30), expiresAt: new Date(now + 50 * 60_000).toISOString() });
+    const next = approval({ id: "next", createdAt: asked(20), expiresAt: new Date(now + 5 * 60_000).toISOString() });
     const notMine = approval({ id: "nm", canDecide: false });
     const gone = approval({ id: "gone", expiresAt: new Date(now - 60_000).toISOString() });
     const done = approval({ id: "done", status: "approved" });
-    expect(waitingApprovals([later, notMine, soon, gone, done], now).map((a) => a.id)).toEqual(["soon", "later"]);
+    expect(waitingApprovals([next, notMine, first, gone, done], now).map((a) => a.id)).toEqual(["first", "next"]);
   });
 });
 
@@ -105,14 +111,14 @@ describe("Aprovar sempre on the phone", () => {
     approveAlways: { tool: "COMPOSIO_MULTI_EXECUTE_TOOL", actions: ["GITHUB_CREATE_AN_ISSUE_COMMENT"] },
   });
 
-  test("the quiet third button: only where the server offers it, to who decides, never on a hold", () => {
+  test("the quiet third button: only where the server offers it, to who decides, on a high-risk request too", () => {
     expect(approveAlwaysOffered(offered)).toBe(true);
     expect(approveAlwaysOffered({ ...offered, canDecide: false })).toBe(false);
     expect(approveAlwaysOffered({ ...offered, approveAlways: null })).toBe(false);
     expect(approveAlwaysOffered({ ...offered, approveAlways: undefined })).toBe(false);
     expect(approveAlwaysOffered({ ...offered, status: "approved" })).toBe(false);
-    // High risk takes a hold, never a tap: it isn't approved for good.
-    expect(approveAlwaysOffered({ ...offered, tool: "deploy_production", scope: "vercel:deploy" })).toBe(false);
+    // What the server offers shows, whatever the action: a deploy may be approved for good.
+    expect(approveAlwaysOffered({ ...offered, tool: "deploy_production", scope: "vercel:deploy" })).toBe(true);
   });
 
   test("under the button, before the tap: what it approves for good, with any values, and where to undo it", async () => {
@@ -226,11 +232,12 @@ describe("git requests on the phone", () => {
     expect(approvalRuleWords(en, rule)).toBe("push to ana/fix in acme/app");
   });
 
-  test("deleting takes a hold and is never approved for good; the push is a tap with Aprovar sempre; the branches show", () => {
+  test("deleting takes a hold; it and the push show Aprovar sempre where the server offers it; the branches show", () => {
     expect(approvalRisk(remove)).toBe("high");
     expect(approvalAction(remove)).toBe("delete");
     expect(approvalTraits(remove)).toEqual(["irreversible"]);
-    expect(approveAlwaysOffered({ ...remove, approveAlways: { tool: "delete_branches", actions: [] } })).toBe(false);
+    expect(approveAlwaysOffered({ ...remove, approveAlways: { tool: "delete_branches", actions: [] } })).toBe(true);
+    expect(approveAlwaysOffered(remove)).toBe(false);
     expect(approvalRisk(push)).toBe("normal");
     expect(approveAlwaysOffered(push)).toBe(true);
     // The card's rows carry the branch names (the phone shows values, never the detail).
@@ -253,8 +260,10 @@ describe("git requests on the phone", () => {
     );
     expect(screen).toContain("const rules = useApprovalRules(orgId, agentId);");
     expect(screen).toContain("const what = approvalRuleWords(t, rule);");
-    expect(screen).toContain("mayRemove ? (");
+    // The row's own ×, as the system's lists take a row out: never a hand-made row around a button.
+    expect(screen).toContain("{...(mayRemove && !remove.isPending");
     expect(screen).toContain("remove.mutate(rule.id, {");
+    expect(screen).not.toContain("function ButtonRow");
     const pt = await translator("pt-BR");
     expect(pt("agentPage.access.always.title")).toBe("Aprovado sempre");
     expect(pt("agentPage.access.always.remove", { what: approvalRuleWords(pt, rule) })).toBe(
@@ -435,11 +444,53 @@ describe("several requests on one card", () => {
         goal("g4444", { approveAlways: null, canDecide: true }),
       ]),
     ]).toEqual(["g1", "g333"]);
-    // Aprovações: the card's requests together, one without a card alone.
+    // Aprovações, in the order asked: the card's requests together at its first, one without a card alone.
     expect(approvalCards(list).map((card) => card.map((a) => a.id))).toEqual([
-      ["g1", "g22", "g333", "g4444"],
       ["other"],
+      ["g1", "g22", "g333", "g4444"],
     ]);
+  });
+
+  test("a card's line: an approved action waits for what was asked before it, and runs from when that settled", () => {
+    // Run r1 asked g1, run r2 asked g22 later on the same card.
+    const r1 = goal("g1", { runId: "r1" });
+    const r2 = goal("g22", { runId: "r2", status: "approved", decidedAt: at(-1) });
+    // Approved first, while the one asked before it still waits: in line behind it.
+    let line = approvalLine([r1, r2]);
+    expect(line.get("g22")).toMatchObject({ position: 2, count: 2, waitsOnAt: 1, freeSince: null });
+    expect(line.get("g22")?.waitsOn?.id).toBe("g1");
+    expect(line.get("g1")).toMatchObject({ position: 1, waitsOn: null });
+    // The earlier one approved, or claimed by its run, but with no result yet: still before it.
+    const approved = goal("g1", { runId: "r1", status: "approved", decidedAt: at(-30) });
+    expect(approvalLine([approved, r2]).get("g22")?.waitsOn?.id).toBe("g1");
+    const claimed = goal("g1", { runId: "r1", status: "approved", decidedAt: at(-0.5), executedAt: at(-0.4) });
+    expect(approvalLine([claimed, r2]).get("g22")?.waitsOn?.id).toBe("g1");
+    // Done: free since it ran.
+    const ran = goal("g1", {
+      runId: "r1",
+      status: "approved",
+      decidedAt: at(-0.5),
+      executedAt: at(-0.2),
+      result: { ok: true, text: "ok" },
+    });
+    line = approvalLine([ran, r2]);
+    expect(line.get("g22")).toMatchObject({ waitsOn: null, freeSince: at(-0.2) });
+    // Its own run's other request, wherever it sits, holds it too: the run goes on once all of its are decided.
+    const sibling = goal("g333", { runId: "r2" });
+    expect(approvalLine([ran, r2, sibling]).get("g22")).toMatchObject({ waitsOn: { id: "g333" }, waitsOnAt: 3 });
+    // Held by both, it names the first in the line.
+    expect(approvalLine([r1, r2, sibling]).get("g22")?.waitsOn?.id).toBe("g1");
+    // Interleaved runs: a run's place is its earliest action still to do, so r1's later one goes with its first.
+    const a1 = goal("g1", { runId: "r1", status: "approved", decidedAt: at(-1) });
+    const a3 = goal("g333", { runId: "r1", status: "approved", decidedAt: at(-1) });
+    line = approvalLine([a1, r2, a3]);
+    expect(line.get("g333")?.waitsOn).toBeNull();
+    expect(line.get("g22")?.waitsOn?.id).toBe("g1");
+    // Approved ahead and a mission's requests stand outside the line.
+    const ahead = goal("g1", { runId: "r1", runAt: at(120) });
+    expect(approvalLine([ahead, r2]).get("g22")?.waitsOn).toBeNull();
+    const mission = goal("g1", { runId: null });
+    expect(approvalLine([mission, r2]).get("g22")?.waitsOn).toBeNull();
   });
 
   test("waiting requests of one kind in a row come together as one run, and Aprovar sempre takes the run's like ones", () => {
@@ -505,5 +556,48 @@ describe("several requests on one card", () => {
     expect(en("approval.all.partial", { mine: 3, count: 4, who: "Bia" })).toBe(
       "You can decide 3 of 4: Approve all covers only those. The rest wait for Bia.",
     );
+  });
+});
+
+describe("a request's sheet on the phone", () => {
+  const read = (path: string) => readFileSync(join(import.meta.dir, "../../src/features", path), "utf8");
+
+  test("whether it can be undone is a chip after the title, not a line in the foot; what it touches stays there", () => {
+    const sheet = read("approvals/ApprovalSheet.tsx");
+    const who = sheet.slice(sheet.indexOf("const who = ("), sheet.indexOf("const refusal = ("));
+    // The title, then the chip on its last line while it fits (a wrapping line), never cut.
+    expect(who.indexOf("<ApprovalUndoChip approval={a} />")).toBeGreaterThan(who.indexOf("approvalTitleText(t, a)"));
+    expect(who).not.toContain("numberOfLines");
+    expect(sheet).toContain('titleLine: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8');
+    // Where and the fuse go under the face and the title at the sheet's width: never a column beside them.
+    expect(who.indexOf("<View style={styles.whereRow}>")).toBeGreaterThan(who.indexOf("</View>\n        </View>"));
+    expect(sheet).toContain(".filter((tr) => tr !== undo)");
+    const parts = read("approvals/parts.tsx");
+    expect(parts).toContain("const { undo } = approvalEffects(a);");
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the component's own template, read as source text
+    expect(parts).toContain("label={t(`mobile.approval.trait.${undo}`)}");
+  });
+
+  test("Aprovar sempre's switch says what it covers behind its ⓘ: no paragraph under it, the sheet ends on its buttons", () => {
+    const sheet = read("approvals/ApprovalSheet.tsx");
+    const next = sheet.slice(sheet.indexOf('t("mobile.approval.sheet.nextTime")'), sheet.indexOf("{pending ? ("));
+    expect(next).toContain("toggle={always}");
+    expect(next).toContain('text: approveAlwaysHint(t, a, name || t("channel.unknownAgent"))');
+    expect(next).not.toContain("GroupedFooter");
+  });
+
+  test("the undo trait it shows: a merge can be undone, a delete can't, and the foot keeps what it touches", () => {
+    const merge = approval({ id: "m" });
+    expect(approvalEffects(merge).undo).toBe("reversible");
+    const drop = approval({ id: "d", tool: "github_delete_branch", scope: "github:refs.delete" });
+    expect(approvalEffects(drop).undo).toBe("irreversible");
+    const deploy = approval({ id: "p", tool: "vercel_deploy", scope: "vercel:deploy" });
+    expect(approvalTraits(deploy).filter((tr) => tr !== approvalEffects(deploy).undo)).toEqual(["production"]);
+  });
+
+  test("an approval's values in the card draw their code as code", () => {
+    const parts = read("approvals/parts.tsx");
+    const details = parts.slice(parts.indexOf("export function ApprovalDetails("));
+    expect(details).toContain("<Spans inline={parseInline(r.value)} />");
   });
 });

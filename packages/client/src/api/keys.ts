@@ -1,3 +1,4 @@
+import { hashKey } from "@tanstack/react-query";
 import type { ScreenKind } from "./types";
 
 /** React Query keys. Everything under ["org", orgId] is dropped when switching organizations. */
@@ -13,6 +14,8 @@ export const keys = {
   me: ["me"] as const,
   accountDeletion: ["account-deletion"] as const,
   phoneSignIn: ["phone-sign-in"] as const,
+  /** My outside chat surface links (ADR 0187): per account, not per workspace. */
+  surfaceLinks: ["surface-links"] as const,
   /** The server's Web Push key (ADR 0071); `null` = Web Push off on this server. */
   webPushKey: ["push", "web-key"] as const,
   models: ["models"] as const,
@@ -64,7 +67,6 @@ export const keys = {
   agentRepos: (orgId: string, agentId: string) => ["org", orgId, "agent", agentId, "repositories"] as const,
   agentMergeRepos: (orgId: string, agentId: string) => ["org", orgId, "agent", agentId, "merge-repositories"] as const,
   customServers: (orgId: string) => ["org", orgId, "custom-servers"] as const,
-  toolChanges: (orgId: string) => ["org", orgId, "tool-changes"] as const,
   scopes: (orgId: string, agentId: string) => ["org", orgId, "agent", agentId, "scopes"] as const,
   /** What the agent runs without asking ("Aprovar sempre"). */
   approvalCovers: (orgId: string) => ["org", orgId, "approval-covers"] as const,
@@ -84,6 +86,8 @@ export const keys = {
   /** Every single agent's reads (its page, its brain). */
   agentPages: (orgId: string) => ["org", orgId, "agent"] as const,
   aiAccounts: (orgId: string) => ["org", orgId, "ai-accounts"] as const,
+  /** Under `aiAccounts`: the same `machine.updated` event refetches it. */
+  accountOrder: (orgId: string) => ["org", orgId, "ai-accounts", "order"] as const,
   accountLogin: (orgId: string, machineId: string, loginId: string) =>
     ["org", orgId, "machine", machineId, "account-login", loginId] as const,
   agentChannels: (orgId: string, agentId: string) => ["org", orgId, "agent", agentId, "channels"] as const,
@@ -113,6 +117,7 @@ export const keys = {
   roster: (orgId: string, channelId: string) => ["org", orgId, "channel", channelId, "roster"] as const,
   /** All the agents' memories, for the workspace's map. */
   orgMemories: (orgId: string) => ["org", orgId, "memories"] as const,
+  teamMemories: (orgId: string) => ["org", orgId, "team-memories"] as const,
   memory: (orgId: string, agentId: string) => ["org", orgId, "agent", agentId, "memory"] as const,
   /** Under `memory`: invalidating an agent's memories also refreshes "O que sabe sobre você". */
   memoryAboutMe: (orgId: string, agentId: string) => ["org", orgId, "agent", agentId, "memory", "me"] as const,
@@ -133,6 +138,11 @@ export const keys = {
   machines: (orgId: string) => ["org", orgId, "machines"] as const,
   /** Devices (under `machines`: every computer event refetches them too). */
   devices: (orgId: string) => ["org", orgId, "machines", "devices"] as const,
+  /** Under `devices`: a phone picked over Wi-Fi leaves the offer when the list refetches. */
+  wifiIphones: (orgId: string, machineId: string) => ["org", orgId, "machines", "devices", "wifi", machineId] as const,
+  xcodeFix: (orgId: string, machineId: string) => ["org", orgId, "machines", "devices", "xcode", machineId] as const,
+  cliInstall: (orgId: string, machineId: string, tool: string) =>
+    ["org", orgId, "machines", "cli-install", machineId, tool] as const,
   connectLink: (orgId: string, linkId: string) => ["org", orgId, "machines", "devices", "link", linkId] as const,
   /** Under `machines`: a computer that changes refreshes what a new agent could think with. */
   brainMachines: (orgId: string) => ["org", orgId, "machines", "brains"] as const,
@@ -165,10 +175,12 @@ export const keys = {
   access: (orgId: string) => ["org", orgId, "access"] as const,
   agentAccess: (orgId: string, agentId: string) => ["org", orgId, "access", "agent", agentId] as const,
   issues: (orgId: string) => ["org", orgId, "issues"] as const,
-  issueList: (orgId: string, q: string) => ["org", orgId, "issues", "list", q] as const,
+  /** `project`: a project's id, `none`, or "" for every task. */
+  issueList: (orgId: string, q: string, project = "") => ["org", orgId, "issues", "list", q, project] as const,
   issue: (orgId: string, number: number) => ["org", orgId, "issues", "one", number] as const,
   issueActivity: (orgId: string, id: string) => ["org", orgId, "issues", "activity", id] as const,
   issueColumns: (orgId: string) => ["org", orgId, "issues", "columns"] as const,
+  issueProjects: (orgId: string) => ["org", orgId, "issues", "projects"] as const,
   /** Every thread view and list (prefix): a `thread.updated` refreshes them all. */
   threads: (orgId: string) => ["org", orgId, "threads"] as const,
   threadList: (orgId: string, filters: object) => ["org", orgId, "threads", "list", filters] as const,
@@ -176,6 +188,8 @@ export const keys = {
   /** How many threads I follow have an unread reply (the Threads entry's mark). */
   unreadThreads: (orgId: string) => ["org", orgId, "threads", "unread"] as const,
   unreadTasks: (orgId: string) => ["org", orgId, "issues", "unread"] as const,
+  /** Live files whose conversation has a reply I haven't read (ADR 0199): under the Drive's, read again with it. */
+  unreadFiles: (orgId: string) => ["org", orgId, "artifacts", "unread"] as const,
   channelThreads: (orgId: string, channelId: string, tab: string) =>
     ["org", orgId, "threads", "channel", channelId, tab] as const,
   /** The messages of a thread's context range (another channel's, or this one's). */
@@ -196,6 +210,7 @@ export const keys = {
   calendar: (orgId: string) => ["org", orgId, "calendar"] as const,
   calendarRange: (orgId: string, from: string) => ["org", orgId, "calendar", from] as const,
   artifactList: (orgId: string, filters: object) => ["org", orgId, "artifacts", "list", filters] as const,
+  driveFolders: (orgId: string) => ["org", orgId, "artifacts", "folders"] as const,
   artifact: (orgId: string, id: string, version?: number) =>
     ["org", orgId, "artifacts", "one", id, version ?? "latest"] as const,
   artifactVersions: (orgId: string, id: string) => ["org", orgId, "artifacts", "versions", id] as const,
@@ -209,6 +224,8 @@ export const keys = {
   notifications: (orgId: string) => ["org", orgId, "notifications"] as const,
   notificationList: (orgId: string, filter: string) => ["org", orgId, "notifications", "list", filter] as const,
   notificationCount: (orgId: string) => ["org", orgId, "notifications", "count"] as const,
+  /** "Esperando você": under the notifications prefix, so whatever refreshes the inbox refreshes it. */
+  waiting: (orgId: string) => ["org", orgId, "notifications", "waiting"] as const,
   noticePrefs: (orgId: string) => ["org", orgId, "notice-prefs"] as const,
   sidebarItems: (orgId: string) => ["org", orgId, "sidebar-items"] as const,
   sidebarOrder: (orgId: string) => ["org", orgId, "sidebar-order"] as const,
@@ -223,6 +240,7 @@ export const keys = {
   wikiReads: (orgId: string) => ["org", orgId, "wiki", "reads"] as const,
   wikiTrash: (orgId: string) => ["org", orgId, "wiki", "trash"] as const,
   pins: (orgId: string, channelId: string) => ["org", orgId, "channel", channelId, "pins"] as const,
+  followUps: (orgId: string, channelId: string) => ["org", orgId, "channel", channelId, "follow-ups"] as const,
   /** Every GIF search (prefix): the workspace's rating or its GIFs switch changing refreshes them all (ADR 0091). */
   gifs: (orgId: string) => ["org", orgId, "gifs"] as const,
   /** One search's pages: free text or a category (neither: what is trending), in the person's language. */
@@ -265,6 +283,8 @@ export const keys = {
   browserHandoff: (orgId: string, handoffId: string) => ["org", orgId, "browser", "handoff", handoffId] as const,
   /** The agent's desktop (ADR 0058): its state as this person sees it. */
   agentDesktop: (orgId: string, agentId: string) => ["org", orgId, "desktop", agentId] as const,
+  /** What the agent keeps running on its computer (ADR 0176). */
+  agentHolds: (orgId: string, agentId: string) => ["org", orgId, "holds", agentId] as const,
   agentDesktopPicture: (orgId: string, agentId: string) => ["org", orgId, "desktop", agentId, "picture"] as const,
   /** Every agent's screen (`agentDesktop`'s prefix). */
   agentDesktops: (orgId: string) => ["org", orgId, "desktop"] as const,
@@ -280,3 +300,6 @@ export const keys = {
   widgetSuggestions: (orgId: string, agentId: string) => ["org", orgId, "dashboards", "suggestions", agentId] as const,
   widgetPinnable: (orgId: string) => ["org", orgId, "dashboards", "pinnable"] as const,
 };
+
+/** `keys.me` as the query cache names it, for telling its events apart. */
+export const ME_HASH = hashKey(keys.me);

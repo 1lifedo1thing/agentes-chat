@@ -72,11 +72,58 @@ export interface PushStrings {
   deviceInUseBody: string;
   deviceAccessTitle: (agent: string, person: string, device: string) => string;
   deviceAccessBody: string;
+  /** `device.tool_request`: someone needs a tool on the person's computer (`a` who, `d` the computer). */
+  deviceToolTitle: (a: string, d: string) => string;
+  deviceToolBody: string;
+  /** `device.cli_request`: someone needs a coding CLI installed on the person's computer. */
+  deviceCliTitle: (a: string, d: string) => string;
+  deviceCliBody: string;
+  /**
+   * `device.folder_request`: an agent waits for a folder on the person's computer (`f` the folder, `d` the computer).
+   * The person allows it on the computer itself, so the body sends them there.
+   */
+  deviceFolderTitle: (a: string, f: string, d: string) => string;
+  deviceFolderBody: string;
+  /** `admin_ask`: `a` asks who may do it (`what`: channel_agent, create_agents, webhook; `l` the channel or service). */
+  adminAskTitle: (a: string, what: string, l: string) => string;
   deviceWaitingTitle: (person: string, device: string) => string;
   deviceWaitingBody: string;
   teamWeekReady: string;
   /** Lodi's daily card ("Resumo do dia") came. */
   teamDayReady: string;
+  /**
+   * A personal workspace's words (ADR 0159), where the team's would speak of a workspace, a team or its admins: one
+   * person and their agents (and maybe their family) read these. `renderPush` picks them for `personal`.
+   */
+  machineConnectedTitlePersonal: string;
+  computerReadyTitlePersonal: string;
+  agentUnreachedBodyPersonal: string;
+  /** Over `widgetFailedReasons`, by the same codes: only those that would read wrong. */
+  widgetFailedReasonsPersonal: Record<string, string>;
+  joinRequestTitlePersonal: (name: string) => string;
+  joinSuggestionTitlePersonal: (by: string, name: string) => string;
+  teamWeekReadyPersonal: string;
+  /** A reminder of what the person left unread in "Esperando você": how many things, over the oldest one's own line. */
+  teamWatchStill: (count: number) => string;
+  /**
+   * The Live Activity of the agents at work (ADR 0210): its first line when a request waits (`a` the agent), the word
+   * at the closed island's end in its place, how many agents work, what an agent does when it says nothing of its
+   * own, one still in line, and the last word once nothing is left. Short: the island is small.
+   */
+  liveActivityApproval: (a: string) => string;
+  liveActivityQuestion: (a: string) => string;
+  liveActivitySecret: (a: string) => string;
+  liveActivityApprovalShort: string;
+  liveActivityQuestionShort: string;
+  liveActivitySecretShort: string;
+  /** The request in one line when it has no words of its own to show (asked in a confidential thread, say). */
+  liveActivityApprovalStep: string;
+  liveActivityQuestionStep: string;
+  liveActivitySecretStep: string;
+  liveActivityWorking: (count: number) => string;
+  liveActivityWorkingStep: string;
+  liveActivityQueuedStep: string;
+  liveActivityDone: string;
 }
 
 export const en: PushStrings = {
@@ -159,8 +206,41 @@ export const en: PushStrings = {
   deviceInUseBody: "Tap to stop it.",
   deviceAccessTitle: (a, p, d) => (p ? `${a} (for ${p}) asks to use your ${d}` : `${a} asks to use your ${d}`),
   deviceAccessBody: "Tap to allow once, always, or say no.",
+  deviceToolTitle: (a, d) => `${a} asks you to turn on a tool on your ${d}`,
+  deviceToolBody: "Tap to turn it on in one click.",
+  deviceCliTitle: (a, d) => `${a} asks you to install a program on your ${d}`,
+  deviceCliBody: "Tap to install it in one click.",
+  deviceFolderTitle: (a, f, d) => (f ? `${a} asks for ${f} on your ${d}` : `${a} asks for a folder on your ${d}`),
+  deviceFolderBody: "Allow it in the app on that computer.",
+  adminAskTitle: (a, what, l) =>
+    what === "channel_agent"
+      ? `${a} asks you to add an agent to #${l}`
+      : what === "create_agents"
+        ? `${a} asks to be able to create agents`
+        : `${a} asks you to set up the ${l} webhook for routines`,
   deviceWaitingTitle: (p, d) => `${p}'s agent is waiting for your ${d}`,
   deviceWaitingBody: "It starts when it's back.",
   teamWeekReady: "Your team's week is ready",
   teamDayReady: "Your day's summary is ready",
+  machineConnectedTitlePersonal: "A new computer was connected",
+  computerReadyTitlePersonal: "Your agents' computer is ready",
+  agentUnreachedBodyPersonal: "Whoever made the routine can't talk to this agent yet. Tap to let them.",
+  widgetFailedReasonsPersonal: { creator_left: "Whoever set it up is no longer in your workspace." },
+  joinRequestTitlePersonal: (name) => `${name} asks to join your workspace`,
+  joinSuggestionTitlePersonal: (by, name) => `${by} suggested inviting ${name}`,
+  teamWeekReadyPersonal: "Your week is ready",
+  teamWatchStill: (n) => (n === 1 ? "1 thing still waits on you" : `${n} things still wait on you`),
+  liveActivityApproval: (a) => `${a} asks for approval`,
+  liveActivityQuestion: (a) => `${a} has a question`,
+  liveActivitySecret: (a) => `${a} needs a secret`,
+  liveActivityApprovalShort: "Approve?",
+  liveActivityQuestionShort: "Reply?",
+  liveActivitySecretShort: "Send?",
+  liveActivityApprovalStep: "Waiting for your approval",
+  liveActivityQuestionStep: "Waiting for your answer",
+  liveActivitySecretStep: "Waiting for a secret from you",
+  liveActivityWorking: (n) => `${n} working`,
+  liveActivityWorkingStep: "Working",
+  liveActivityQueuedStep: "In line",
+  liveActivityDone: "Done",
 };

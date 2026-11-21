@@ -60,6 +60,7 @@ describe("provider marks where a provider is named", () => {
       "Kimi",
       "Z.ai",
       "MiniMax",
+      "Command Code",
       // A workspace's own endpoint (ADR 0146), its line under its name.
       expect.stringContaining("Outro provedor"),
     ]);
@@ -116,6 +117,15 @@ describe("provider marks where a provider is named", () => {
     await open(`dm/agent/${ADA_ID}`, withBrain(undefined));
     expect(brainLine().textContent).toBe("Claude Sonnet 5.5");
     expect(marks(brainLine())).toEqual(["claude"]);
+    cleanup();
+
+    // Automático on the API: the maker its models come from, never the generic agent glyph.
+    const auto = withBrain({ kind: "model", model: null, maker: "openai" });
+    const ada = auto.agents.find((a) => a.id === ADA_ID);
+    if (ada) ada.model = "auto";
+    await open(`dm/agent/${ADA_ID}`, auto);
+    expect(brainLine().textContent).toBe("Automático");
+    expect(marks(brainLine())).toEqual(["openai"]);
   });
 
   test("missions: Claude Code and Codex by their makers' marks", () => {

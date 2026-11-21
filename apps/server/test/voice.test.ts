@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { eq, schema } from "@agenteschat/db";
+import { VOICE_MAX_BYTES } from "@agenteschat/engine";
 import { type Browser, browser, createTestServer, signUp, type TestServer } from "./harness";
 
 /** Voice messages over HTTP (ADR 0100): sending, playing, expiry, the switch and the owner's provider. */
@@ -164,4 +165,68 @@ test("on agentes.chat the provider can't be chosen", async () => {
     origin,
   });
   expect((await owner("/api/app/speech-key", { origin })).status).toBe(404);
+});
+
+test("a recording past the size is refused even when the request states no length", async () => {
+  const { owner, orgId, channelId } = await start();
+  const chunk = new Uint8Array(1024 * 1024);
+  let left = VOICE_MAX_BYTES / chunk.length + 2;
+  const res = await owner(`/api/app/organizations/${orgId}/channels/${channelId}/voice`, {
+    method: "POST",
+    headers: { "content-type": "multipart/form-data; boundary=x" },
+    body: new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (left-- > 0) controller.enqueue(chunk);
+        else controller.close();
+      },
+    }),
+  });
+  expect(res.status).toBe(413);
+  expect(await errorCode(res)).toBe("voice.too_large");
+});
+
+/** A file uploaded to a workspace's Drive, as the composer uploads one before sending. */
+async function uploadFile(b: Browser, orgId: string, name: string) {
+  const form = new FormData();
+  form.set("file", new File([new TextEncoder().encode("x")], name, { type: "text/plain" }));
+  form.set("title", name);
+  const res = await b(`/api/app/organizations/${orgId}/artifacts/files`, { method: "POST", body: form });
+  expect(res.status).toBe(201);
+  return ((await res.json()) as { id: string }).id;
+}
+
+test("typed text and files go with the take, in one message", async () => {
+  const { server, owner, orgId, channelId } = await start();
+  const fileId = await uploadFile(owner, orgId, "notas.txt");
+  const res = await send(owner, orgId, channelId, { text: "Olha o arquivo", attachments: JSON.stringify([fileId]) });
+  expect(res.status).toBe(202);
+  await server.drain();
+  const posted = await server.db.select().from(schema.messages).where(eq(schema.messages.channelId, channelId));
+  const voice = posted.filter((m) => m.meta.voice);
+  expect(voice).toHaveLength(1);
+  expect(voice[0]?.body).toBe("Olha o arquivo\n\nAda, oi");
+  expect(voice[0]?.meta.artifacts).toMatchObject([{ id: fileId, title: "notas.txt" }]);
+});
+
+test("the typed text and the files are refused as a typed message's would be, and nothing is stored", async () => {
+  const { server, owner, other, orgId, channelId } = await start();
+  const tooLong = await send(owner, orgId, channelId, { text: "x".repeat(100_001) });
+  expect(tooLong.status).toBe(400);
+  expect(await errorCode(tooLong)).toBe("message.too_long");
+  const elsewhere = (await (await other("/api/app/organizations", { json: { name: "Atlas" } })).json()) as {
+    organization: { id: string };
+  };
+  const theirs = await uploadFile(other, elsewhere.organization.id, "deles.txt");
+  const foreign = await send(owner, orgId, channelId, { attachments: JSON.stringify([theirs]) });
+  expect(foreign.status).toBe(400);
+  expect(await errorCode(foreign)).toBe("message.attachment_not_found");
+  const garbled = await send(owner, orgId, channelId, { attachments: "not json" });
+  expect(garbled.status).toBe(400);
+  const notIds = await send(owner, orgId, channelId, { attachments: JSON.stringify(["../x"]) });
+  expect(notIds.status).toBe(400);
+  const eleven = await Promise.all(Array.from({ length: 11 }, (_, i) => uploadFile(owner, orgId, `f${i}.txt`)));
+  const tooMany = await send(owner, orgId, channelId, { attachments: JSON.stringify(eleven) });
+  expect(tooMany.status).toBe(400);
+  expect(await errorCode(tooMany)).toBe("message.too_many_attachments");
+  expect(await server.db.select().from(schema.voiceClips)).toHaveLength(0);
 });

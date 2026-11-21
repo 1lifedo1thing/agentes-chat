@@ -1,80 +1,162 @@
 import {
-  useAgents,
-  useAiAccounts,
-  useAiStatus,
   useComputerSetup,
   useConnections,
-  useCredentials,
   useInvitations,
+  useJoinRequests,
   useMachines,
   useOverview,
-  usePlatformKey,
   useSkills,
   useStorage,
+  useWorkspaceUsesApi,
 } from "@agenteschat/client";
 import { computerEdition } from "@agenteschat/client/lib/computer";
 import { can } from "@agenteschat/client/lib/permissions";
-import { workspaceUsesApi } from "@agenteschat/client/lib/plan-usage";
-import { rightHandOf } from "@agenteschat/client/lib/right-hand";
-import { Fragment } from "react";
+import { settingsSectionNameKey } from "@agenteschat/client/lib/personal-view";
+import type { TFunction } from "i18next";
+import { Fragment, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert } from "react-native";
 import { useOrg } from "@/providers/org";
 import { GroupedFooter, GroupedHeader, GroupedList, GroupedRow, haptics } from "@/ui";
 import { router } from "@/ui/navigation";
-import { AgentFace } from "../shared/Face";
-import { useDirectory } from "../shared/hooks";
 import { OrgAvatar } from "../shared/OrgAvatar";
-import { areaValues, SETTINGS_GROUPS, type SettingsEntry, type SettingsSection, visibleSections } from "./logic";
-import { Gap, SettingsPage } from "./parts";
+import { useLitPage, useOpenPage } from "../shared/SplitPanes";
+import { usePersonalView } from "./hooks";
+import {
+  areaValues,
+  GROUP_LABEL,
+  PERSONAL_ICON,
+  personalSections,
+  SETTINGS_GROUPS,
+  type SettingsEntry,
+  type SettingsGroup,
+  type SettingsSection,
+  visibleSections,
+} from "./logic";
+import { confirmAction, Gap, SettingsPage } from "./parts";
 
 /** The rows whose group already says the rest get a shorter name (`mobile.settings.section.*`). */
 const SHORT: Partial<Record<SettingsSection, string>> = {
   computers: "mobile.devices.title",
   members: "mobile.settings.section.members",
+  invites: "settings.section.invites",
   roles: "mobile.settings.section.roles",
   access: "mobile.settings.section.access",
   connectors: "mobile.settings.section.connectors",
-  usage: "mobile.settings.section.usage",
 };
 
 /**
- * The workspace's settings, a screen pushed from Você on the grouped gray, as the phone's own settings: four groups,
- * each thing once. Workspace: the workspace itself (its mark, its name, what Geral holds), its right hand by its
- * face and name, GIFs. Pessoas, Agentes, Custos e dados: one neutral tile and one short value per row (a count or
- * a state), the area's own screen says the rest. Owners get "Apagar <nome>" alone in red at the end, behind the
- * system's alert (one firm haptic as it confirms), then the proof and the hold. Opened often, so nothing animates
- * here beyond the rows' press highlight and the platform's push.
+ * The workspace's settings, a screen pushed from Você on the grouped gray, as the phone's own settings: the web's
+ * entries as groups, each thing once. Workspace: the workspace itself (its mark, its name, what Geral holds) and GIFs.
+ * Pessoas, IA e uso, Conectores, Avançado: one neutral tile and one short value per row (a count or a state), the
+ * area's own screen says the rest. Owners get "Apagar <nome>" alone in red at the end, behind the
+ * system's alert (one firm haptic as it confirms), then the proof and the hold. A list of places to go, so it takes the
+ * pushed lists' large title. Opened often, so nothing animates here beyond the rows' press highlight and the
+ * platform's push. A personal workspace gets its short list instead
+ * (ADR 0159 §3, `PersonalSettingsList`). On a large screen (ADR 0212) this is the left pane of `SettingsScreen`: a row
+ * opens its screen beside the list (`useOpenPage`) and stays lit while it shows (`useLitPage`).
  */
 export function WorkspaceScreen() {
+  const { personal, others } = usePersonalView();
+  return personal ? <PersonalSettingsList others={others} /> : <TeamSettingsList />;
+}
+
+/** A team's workspace settings: every section this person opens, in the phone's groups, then deleting it. */
+function TeamSettingsList() {
   const { t } = useTranslation();
   const { org } = useOrg();
-  const areas = visibleSections(org);
-  const values = useAreaValues(areas);
-  // The right hand's row goes by its name and face (admins may rename it).
-  const rightHand = rightHandOf(useDirectory().agents);
-  const name = org?.name ?? "";
-  const confirmDelete = () =>
-    Alert.alert(t("deleteOrg.title", { name }), t("mobile.settings.deleteAlert"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("mobile.settings.deleteAction"),
-        style: "destructive",
-        onPress: () => {
-          // One firm tap as the destructive step is taken, in the same moment the next screen comes.
-          haptics.medium();
-          router.push("/settings/delete");
-        },
-      },
-    ]);
   return (
-    <SettingsPage title={t("settings.title")}>
+    <SettingsPage title={t("settings.title")} largeTitle>
+      <SectionGroups areas={visibleSections(org)} />
+      <DeleteWorkspaceRow />
+    </SettingsPage>
+  );
+}
+
+/**
+ * A personal workspace's settings (ADR 0159 §3): one list with no group names. Your account, then About you, AI and
+ * apps, Plan and usage, Vault and Computers (and People once someone else is a member), each opening the same screen
+ * as in a team's; then Advanced, a screen of its own with every other section, delegated approvals and deleting the
+ * workspace. Nothing here changes what anyone may open.
+ */
+function PersonalSettingsList({ others }: { others: number | undefined }) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const { main } = personalSections(org, others);
+  const values = useAreaValues(main);
+  // Pushed as always; beside the list on a large screen (ADR 0212), lit while it shows.
+  const open = useOpenPage();
+  const lit = useLitPage();
+  return (
+    <SettingsPage title={t("settings.title")} largeTitle>
+      <Gap />
+      <GroupedList>
+        <GroupedRow
+          key="account"
+          icon="person"
+          label={t("settings.section.account")}
+          {...lit("/me/account")}
+          chevron
+          onPress={() => open("/me/account")}
+        />
+        {main.map((s) => (
+          <GroupedRow
+            key={s.id}
+            icon={PERSONAL_ICON[s.id] ?? s.icon}
+            label={t(settingsSectionNameKey(org, s.id))}
+            {...(values[s.id] ? { value: values[s.id] } : {})}
+            {...lit(s.href)}
+            chevron
+            onPress={() => open(s.href)}
+          />
+        ))}
+      </GroupedList>
+      <Gap />
+      <GroupedList>
+        <GroupedRow
+          key="advanced"
+          icon="list"
+          label={t("settings.advanced")}
+          {...lit("/settings/advanced")}
+          chevron
+          onPress={() => open("/settings/advanced")}
+        />
+      </GroupedList>
+    </SettingsPage>
+  );
+}
+
+/**
+ * Sections in the phone's groups, each with its header: the workspace itself by its mark and name, the rest by a
+ * neutral tile, a short name and one value. `extra`: rows a group ends with (a
+ * personal workspace's delegated approvals under People); a group with none of either draws nothing.
+ */
+export function SectionGroups({
+  areas,
+  extra,
+  untitled,
+}: {
+  areas: readonly SettingsEntry[];
+  extra?: Partial<Record<SettingsGroup, ReactElement>>;
+  /** The group the screen's own title already names (Advanced on the Advanced screen): its rows, no header. */
+  untitled?: SettingsGroup;
+}) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const values = useAreaValues(areas);
+  const name = org?.name ?? "";
+  // Pushed as always (Advanced's own rows too); beside the settings' list on a large screen (ADR 0212), lit while it
+  // shows.
+  const open = useOpenPage();
+  const lit = useLitPage();
+  return (
+    <>
       {SETTINGS_GROUPS.map((group) => {
         const rows = areas.filter((s) => s.group === group);
-        if (rows.length === 0) return null;
+        const more = extra?.[group];
+        if (rows.length === 0 && !more) return null;
         return (
           <Fragment key={group}>
-            <GroupedHeader>{t(`mobile.settings.group.${group}`)}</GroupedHeader>
+            {group === untitled ? <Gap /> : <GroupedHeader>{t(GROUP_LABEL[group])}</GroupedHeader>}
             <GroupedList>
               {rows.map((s) =>
                 s.id === "general" ? (
@@ -83,17 +165,9 @@ export function WorkspaceScreen() {
                     leading={<OrgAvatar logo={org?.logo} size={36} />}
                     label={name}
                     sub={t("mobile.settings.editSub")}
+                    {...lit(s.href)}
                     chevron
-                    onPress={() => router.push(s.href as never)}
-                  />
-                ) : s.id === "right_hand" && rightHand ? (
-                  <GroupedRow
-                    key={s.id}
-                    leading={<AgentFace agentId={rightHand.id} size={36} live={false} />}
-                    label={rightHand.name}
-                    {...(rightHand.role ? { sub: rightHand.role } : {})}
-                    chevron
-                    onPress={() => router.push(s.href as never)}
+                    onPress={() => open(s.href)}
                   />
                 ) : (
                   <GroupedRow
@@ -101,26 +175,80 @@ export function WorkspaceScreen() {
                     icon={s.icon}
                     label={t(SHORT[s.id] ?? `settings.section.${s.id}`)}
                     {...(values[s.id] ? { value: values[s.id] } : {})}
+                    {...lit(s.href)}
                     chevron
-                    onPress={() => router.push(s.href as never)}
+                    onPress={() => open(s.href)}
                   />
                 ),
               )}
+              {more}
             </GroupedList>
           </Fragment>
         );
       })}
-      {org?.role === "owner" ? (
-        <>
-          <Gap />
-          <Gap />
-          <GroupedList>
-            <GroupedRow label={t("mobile.settings.deleteName", { name })} danger onPress={confirmDelete} />
-          </GroupedList>
-          <GroupedFooter>{t("mobile.settings.deleteFoot")}</GroupedFooter>
-        </>
-      ) : null}
-    </SettingsPage>
+    </>
+  );
+}
+
+/**
+ * Deleting the workspace starts with the system's confirmation (one firm haptic as it confirms), then the proof and the
+ * hold on a screen of their own: the same way from every row that offers it (here and on the owner's Account).
+ */
+export function confirmDeleteWorkspace(t: TFunction, name: string) {
+  confirmAction({
+    title: t("deleteOrg.title", { name }),
+    text: t("mobile.settings.deleteAlert"),
+    action: t("mobile.settings.deleteAction"),
+    cancel: t("common.cancel"),
+    onConfirm: () => {
+      // One firm tap as the destructive step is taken, in the same moment the next screen comes.
+      haptics.medium();
+      router.push("/settings/delete");
+    },
+  });
+}
+
+/** Resetting the workspace: the system's confirmation first, as deleting it, then its own screen. */
+export function confirmResetWorkspace(t: TFunction, name: string) {
+  confirmAction({
+    title: t("resetOrg.title", { name }),
+    text: t("resetOrg.now"),
+    action: t("resetOrg.submit"),
+    cancel: t("common.cancel"),
+    onConfirm: () => {
+      haptics.medium();
+      router.push("/settings/reset");
+    },
+  });
+}
+
+/**
+ * Owners: "Reset workspace", then "Delete <name>" in red, each behind the system's alert (`confirmResetWorkspace`,
+ * `confirmDeleteWorkspace`), then the proof and the hold on a screen of its own. Nothing for anyone else, nor while it is being deleted.
+ */
+export function DeleteWorkspaceRow() {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const name = org?.name ?? "";
+  if (org?.role !== "owner" || org.deletion) return null;
+  return (
+    <>
+      <Gap />
+      <Gap />
+      <GroupedList>
+        <GroupedRow label={t("resetOrg.row.title")} danger onPress={() => confirmResetWorkspace(t, name)} />
+      </GroupedList>
+      <GroupedFooter>{t("resetOrg.row.text")}</GroupedFooter>
+      <Gap />
+      <GroupedList>
+        <GroupedRow
+          label={t("mobile.settings.deleteName", { name })}
+          danger
+          onPress={() => confirmDeleteWorkspace(t, name)}
+        />
+      </GroupedList>
+      <GroupedFooter>{t("mobile.settings.deleteFoot")}</GroupedFooter>
+    </>
   );
 }
 
@@ -131,37 +259,23 @@ function useAreaValues(areas: readonly SettingsEntry[]) {
   const shown = (id: string) => areas.some((s) => s.id === id);
   const overview = useOverview(orgId);
   const invitations = useInvitations(orgId, can(org, "invite_people"));
+  const waiting = useJoinRequests(orgId, shown("invites"));
   const connections = useConnections(orgId);
   const skills = useSkills(orgId, shown("skills"));
   const machines = useMachines(orgId, shown("computers"));
-  const managesKeys = can(org, "manage_credentials");
-  const credentials = useCredentials(orgId, managesKeys);
-  const plans = useAiAccounts(orgId, shown("keys") && !managesKeys);
-  const platform = usePlatformKey(orgId);
   const storage = useStorage(orgId, shown("storage"));
   const edition = computerEdition(useComputerSetup(orgId, shown("storage")).data);
-  const agents = useAgents(orgId).data ?? [];
-  const aiStatus = useAiStatus(orgId).data;
+  const usesApi = useWorkspaceUsesApi(orgId);
   return areaValues(t, i18n.language, {
     overview: overview.data,
-    usesApi: overview.data && workspaceUsesApi(agents, aiStatus, overview.data.budgetUsedPercent),
+    usesApi,
     invitations: invitations.data?.length,
+    waiting: waiting.data?.length,
     connectors: connections.data?.filter((x) => !x.revokedAt).map((x) => x.label),
     skills: skills.data?.length,
     computers: machines.data
       ? { count: machines.data.length, online: machines.data.filter((m) => m.online).length }
       : undefined,
-    keys: managesKeys
-      ? credentials.data
-        ? {
-            manages: true,
-            live: credentials.data.filter((k) => !k.revokedAt).length,
-            platform: Boolean(platform.data),
-          }
-        : undefined
-      : plans.data
-        ? { manages: false, plans: plans.data.accounts.length }
-        : undefined,
     storage: storage.data && edition ? { kind: storage.data.kind, edition } : undefined,
   });
 }

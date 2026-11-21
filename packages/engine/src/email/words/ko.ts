@@ -1,4 +1,4 @@
-import type { Step } from "./en";
+import { type Step, sentences } from "./en";
 import type { EmailWords } from "./index";
 
 /**
@@ -43,12 +43,26 @@ export const words: EmailWords = {
       inviter
         ? [{ b: inviter }, `${email ? ` (${email})` : ""} 님이 `, { b: org }, `에 ${role}로 초대했어요.`]
         : [{ b: org }, `에 ${role}로 초대받았어요.`],
+    starts: (channels, agents) =>
+      sentences(
+        channels && [...channels, " 채널에 바로 참여해요."],
+        agents && ["함께 일할 에이전트: ", ...agents, "."],
+      ),
+    more: (n) => `${n}개 더`,
     what: "agentes.chat은 사람과 AI 에이전트가 함께 일하는 곳이에요.",
     noteFrom: (inviter, note) => [{ b: inviter ? `${inviter}: ` : "보낸 메시지: " }, `“${note}”`],
     button: "초대 수락",
     small: "초대는 7일 동안 유효해요. 이 이메일 주소로 수락하세요.",
     why: (org) =>
       `${org}의 누군가 이 주소를 초대해서 이 메일을 보내 드렸어요. 모르는 사람이라면 무시하세요. 수락하기 전에는 아무 일도 일어나지 않아요.`,
+    personal: {
+      body: (inviter, email) =>
+        inviter
+          ? [{ b: inviter }, `${email ? ` (${email})` : ""} 님이 agentes.chat의 개인 워크스페이스에 초대했어요.`]
+          : "agentes.chat의 개인 워크스페이스에 초대받았어요.",
+      why: () =>
+        "누군가 이 주소를 개인 워크스페이스에 초대해서 이 메일을 보내 드렸어요. 모르는 사람이라면 무시하세요. 수락하기 전에는 아무 일도 일어나지 않아요.",
+    },
   },
   inviteRequest: {
     subject: "누군가 새 초대를 요청했어요",
@@ -61,6 +75,13 @@ export const words: EmailWords = {
     next: "아는 사람이라면 멤버 페이지에서 새 초대를 보내세요. 아니라면 아무것도 하지 않아도 돼요.",
     button: "멤버 열기",
     why: (org) => `이 초대를 만들었거나 ${org}의 멤버를 관리하고 있어서 이 메일을 보내 드렸어요.`,
+    personal: {
+      body: (email) =>
+        email
+          ? [{ b: email }, " 님이 내 워크스페이스의 만료된 초대를 열고 새 초대를 요청했어요."]
+          : "내 워크스페이스의 만료된 초대 링크를 가진 사람이 새 초대를 요청했어요.",
+      why: () => "이 초대를 만들었거나 내 워크스페이스에 누가 있는지 관리하고 있어서 이 메일을 보내 드렸어요.",
+    },
   },
   calendar: {
     subject: "일정에 초대받았어요",
@@ -70,6 +91,9 @@ export const words: EmailWords = {
     someone: "누군가",
     button: "일정 보기",
     why: (org) => `${org}의 누군가 일정에 초대해서 이 메일을 보내 드렸어요.`,
+    personal: {
+      why: () => "내 워크스페이스의 누군가 일정에 초대해서 이 메일을 보내 드렸어요.",
+    },
   },
   waitlist: {
     subject: "agentes.chat 대기자 명단 등록을 확인해 주세요",
@@ -124,6 +148,11 @@ export const words: EmailWords = {
     button: "예산 보기",
     why: (org) =>
       `이 에이전트의 소유자이거나 ${org}의 관리자여서 이 메일을 보내 드렸어요. 80%와 100%에서 각각 한 달에 한 번 보내요.`,
+    personal: {
+      warning: "100%가 되면 멈추고 알려 드려요. 한도는 에이전트 페이지에서 바꿀 수 있어요.",
+      exhausted: "다음 달이 되거나 에이전트 페이지에서 한도를 올릴 때까지 답하지 않아요.",
+      why: () => "이 에이전트가 내 에이전트여서 이 메일을 보내 드렸어요. 80%와 100%에서 각각 한 달에 한 번 보내요.",
+    },
   },
   digest: {
     subject: (n) => (n === 1 ? "승인을 기다리는 요청이 있어요" : `승인을 기다리는 요청이 ${n}개 있어요`),
@@ -140,6 +169,11 @@ export const words: EmailWords = {
     button: (n) => (n === 1 ? "요청 검토" : "승인 열기"),
     why: (org, hours) =>
       `${org}에서 이 요청들을 승인할 수 있어서 이 메일을 보내 드렸어요.${hours ? ` 요청이 ${hours}시간 넘게 기다리면 요청마다 한 번 보내요.` : ""}`,
+    personal: {
+      body: () => "내 에이전트가 승인이 필요한 일을 요청했어요.",
+      why: (_org, hours) =>
+        `이 요청들을 승인할 수 있어서 이 메일을 보내 드렸어요.${hours ? ` 요청이 ${hours}시간 넘게 기다리면 요청마다 한 번 보내요.` : ""}`,
+    },
   },
   ready: {
     subject: "에이전트의 컴퓨터가 준비됐어요",
@@ -172,17 +206,35 @@ export const words: EmailWords = {
     button: { ai: "AI 연결", task: "첫 작업 맡기기", create: "에이전트 만들기" },
     why: (org) =>
       `agentes.chat에서 ${org}의 소유자여서 이 메일을 보내 드렸어요. 이 컴퓨터에 관한 메일은 이것 하나뿐이에요.`,
+    personal: {
+      body: () =>
+        "기다려 주셔서 감사해요. 내 에이전트의 컴퓨터가 켜졌고 설정도 끝났어요. 에이전트마다 전용 사용자가 있어요. 밤낮으로 켜져 있어서 에이전트가 언제든 일할 수 있어요.",
+      steps: {
+        task: ["첫 작업을 맡기세요.", "내 에이전트 중 하나와 대화를 열고 필요한 걸 말하세요."] as Step,
+      },
+      why: () =>
+        "agentes.chat의 이 워크스페이스가 내 것이어서 이 메일을 보내 드렸어요. 이 컴퓨터에 관한 메일은 이것 하나뿐이에요.",
+    },
   },
   joinRequest: {
     subject: "누군가 워크스페이스에 참여하고 싶어 해요",
     preheader: "멤버 페이지에서 승인하거나 거절하세요. 답하기 전에는 아무 일도 일어나지 않아요.",
     headline: "참여 요청이 기다리고 있어요",
     body: (org) => [{ b: org }, "의 초대 링크를 열고 참여를 요청했어요."],
+    outside: (by) => [
+      { b: by },
+      "의 외부 협력자로 참여를 요청했어요. 요금제 자리를 차지하지 않으며, 언제든지 내보낼 수 있어요.",
+    ],
     note: "아는 사람만 승인하세요. 페이지에서 다른 역할을 고르지 않으면 멤버로 참여해요.",
     approve: "승인",
     deny: "거절",
     more: "기다리는 요청은 모두 멤버 페이지에 있어요.",
     why: (org) => `${org}의 소유자 또는 관리자여서 이 메일을 보내 드렸어요. 최대 1시간에 한 번 보내요.`,
+    personal: {
+      body: () => "내 워크스페이스의 초대 링크를 열고 참여를 요청했어요.",
+      why: () =>
+        "내 워크스페이스에 누가 참여하는지 관리하고 있어서 이 메일을 보내 드렸어요. 최대 1시간에 한 번 보내요.",
+    },
   },
   joinAnswer: {
     someone: "누군가",
@@ -210,6 +262,16 @@ export const words: EmailWords = {
       small: "착오라고 생각되면 그곳의 누군가에게 이메일로 초대해 달라고 하세요.",
     },
     why: (org) => `이 주소로 agentes.chat의 ${org}에 참여를 요청해서 이 메일을 보내 드렸어요.`,
+    personal: {
+      joined: { body: (who) => `${who} 님이 요청을 승인했어요. 이제 워크스페이스에 참여했어요.` },
+      invited: { body: (who) => `${who} 님이 워크스페이스 참여 요청을 승인했어요.` },
+      denied: {
+        preheader: "요청을 확인했지만 승인하지 않았어요.",
+        body: () => "요청을 받은 사람이 확인했지만 승인하지 않았어요.",
+        small: "착오라고 생각되면 그 사람에게 이메일로 초대해 달라고 하세요.",
+      },
+      why: () => "이 주소로 agentes.chat의 개인 워크스페이스에 참여를 요청해서 이 메일을 보내 드렸어요.",
+    },
   },
   joinCode: {
     subject: (code) => `agentes.chat 인증 코드: ${code}`,
@@ -218,16 +280,27 @@ export const words: EmailWords = {
     body: (org) => ["이 코드를 페이지에 입력하면 ", { b: org }, "에 참여를 요청할 수 있어요."],
     small: ["10분 동안 유효해요. 요청한 적이 없다면 ", { nobr: "이 메일은 무시하세요." }],
     why: (org) => `누군가 agentes.chat의 ${org}에 참여하려고 이 주소를 입력해서 이 메일을 보내 드렸어요.`,
+    personal: {
+      body: () => "이 코드를 페이지에 입력하면 이 워크스페이스에 참여를 요청할 수 있어요.",
+      why: () => "누군가 agentes.chat의 개인 워크스페이스에 참여하려고 이 주소를 입력해서 이 메일을 보내 드렸어요.",
+    },
   },
   deletionCode: {
     subjectWorkspace: (code) => `워크스페이스 삭제 코드: ${code}`,
     subjectAccount: (code) => `계정 전체 삭제 코드: ${code}`,
+    subjectReset: (code) => `워크스페이스 초기화 코드: ${code}`,
+    reset: (org) => [
+      "이 코드를 입력하면 워크스페이스 ",
+      { b: org },
+      "이(가) 초기화돼요. 에이전트, 대화, 파일, 메모리가 즉시 영구 삭제되고 새 워크스페이스처럼 다시 시작해요.",
+    ],
+    whyReset: (org) => `내 계정에서 agentes.chat의 ${org} 초기화를 요청해서 이 메일을 보내 드렸어요.`,
     preheader: "agentes.chat에 입력해서 확인하세요. 10분 동안 유효해요.",
     headline: "인증 코드",
     workspace: (org) => [
       "이 코드를 입력하면 워크스페이스 ",
       { b: org },
-      "이(가) 삭제돼요. 모두에게 즉시 닫히고, 7일 후에 완전히 삭제돼요.",
+      "이(가) 삭제돼요. 모두에게 즉시 읽기 전용이 되고, 7일 후에 완전히 삭제돼요.",
     ],
     account: (email) => [
       "이 코드를 입력하면 계정 ",
@@ -243,21 +316,74 @@ export const words: EmailWords = {
       "10분 동안 유효하고, 이 코드 없이는 아무것도 삭제되지 않아요. 본인이 아니라면 공유하지 말고 이 서버 운영자에게 알려 주세요.",
     whyWorkspace: (org) => `내 계정에서 agentes.chat의 ${org} 삭제를 요청해서 이 메일을 보내 드렸어요.`,
     whyAccount: "내 계정에서 agentes.chat 계정 삭제를 요청해서 이 메일을 보내 드렸어요.",
+    personal: {
+      workspace: (org) => [
+        "이 코드를 입력하면 내 워크스페이스 ",
+        { b: org },
+        "이(가) 삭제돼요. 즉시 읽기 전용이 되고, 7일 후에 완전히 삭제돼요.",
+      ],
+    },
+  },
+  emailChange: {
+    code: {
+      subject: (code) => `이메일 변경 코드: ${code}`,
+      preheader: "agentes.chat에 입력해서 확인하세요. 10분 동안 유효해요.",
+      headline: "인증 코드",
+      body: (email, newEmail) => [
+        "이 코드를 입력하면 계정 ",
+        { b: email },
+        "의 이메일이 ",
+        { b: newEmail },
+        "(으)로 바뀌어요.",
+      ],
+      support: (address) => [
+        "10분 동안 유효하고, 이 코드 없이는 이메일이 바뀌지 않아요. 본인이 아니라면 공유하지 말고 ",
+        { mail: address },
+        "(으)로 연락해 주세요.",
+      ],
+      noSupport:
+        "10분 동안 유효하고, 이 코드 없이는 이메일이 바뀌지 않아요. 본인이 아니라면 공유하지 말고 이 서버 운영자에게 알려 주세요.",
+      why: "내 계정에서 agentes.chat 이메일 변경을 요청해서 이 메일을 보내 드렸어요.",
+    },
+    link: {
+      subject: "agentes.chat 새 이메일을 인증해 주세요",
+      preheader: "한 번만 누르면 앞으로 이 주소로 로그인해요. 링크는 1시간 동안 유효해요.",
+      headline: "새 이메일을 인증해 주세요",
+      body: "한 단계만 남았어요. 이 주소가 내 것인지 확인해 주세요. 그다음부터 계정은 이 주소로 로그인해요.",
+      button: "새 이메일 인증",
+      small: "링크는 1시간 동안 유효해요. 요청한 적이 없다면 이 메일은 무시해도 돼요.",
+      why: "누군가 agentes.chat 계정에 이 주소를 쓰겠다고 요청해서 이 메일을 보내 드렸어요.",
+    },
+    changed: {
+      subject: "agentes.chat 계정의 이메일이 바뀌었어요",
+      preheader: "본인이 아니라면 7일 안에 이 주소를 되돌릴 수 있어요.",
+      headline: "이메일이 바뀌었어요",
+      body: (email, newEmail) => ["계정 ", { b: email }, "은(는) 이제 ", { b: newEmail }, "(으)로 로그인해요."],
+      notYou:
+        "본인이 아닌가요? 7일 안에 버튼을 누르세요. 이 주소로 되돌리고, 모든 세션에서 로그아웃하고, AI 앱 연결을 끊고, 그 후에 추가된 로그인 방법을 쓸 수 없게 해요. 비밀번호도 지워지고, 다음 비밀번호는 “비밀번호를 잊었어요”에서 정해요.",
+      button: "제가 아니에요",
+      small: "본인이 바꿨다면 아무것도 하지 않아도 돼요.",
+      why: "이 주소가 agentes.chat 계정의 이메일이었기 때문에 이 메일을 보내 드렸어요.",
+    },
   },
   deleting: {
     subject: (day) => `참여 중인 워크스페이스가 ${day}에 삭제돼요`,
-    preheader: "지금은 닫혀 있어요. 그때까지는 소유자가 복원할 수 있어요.",
+    preheader: "지금은 읽기 전용이에요. 그때까지는 소유자가 복원할 수 있어요.",
     headline: "워크스페이스가 삭제되고 있어요",
     body: (by, org, day, time) => [
       { b: by },
       " 님이 워크스페이스 ",
       { b: org },
-      `을(를) 삭제했어요. 지금은 닫혀 있고, ${day} ${time}에 완전히 삭제돼요.`,
+      `을(를) 삭제했어요. 지금은 읽기 전용이고, ${day} ${time}에 완전히 삭제돼요.`,
     ],
     owner: "마음이 바뀌었나요? 그 전에 복원하세요.",
     button: "워크스페이스 복원",
     member: "착오라면 소유자에게 복원을 요청하세요.",
     why: (org) => `agentes.chat의 ${org}에 참여 중이어서 이 메일을 보내 드렸어요.`,
+    personal: {
+      member: "착오라면 삭제한 사람에게 복원을 요청하세요.",
+      why: () => "agentes.chat의 이 워크스페이스에 참여 중이어서 이 메일을 보내 드렸어요.",
+    },
   },
   restored: {
     subject: "참여 중인 워크스페이스가 돌아왔어요",
@@ -266,6 +392,9 @@ export const words: EmailWords = {
     body: (by, org) => [{ b: by }, " 님이 ", { b: org }, "을(를) 복원했어요. 다시 사용할 수 있어요."],
     button: "워크스페이스 열기",
     why: (org) => `agentes.chat의 ${org}에 참여 중이어서 이 메일을 보내 드렸어요.`,
+    personal: {
+      why: () => "agentes.chat의 이 워크스페이스에 참여 중이어서 이 메일을 보내 드렸어요.",
+    },
   },
   appConnected: {
     subject: "agentes.chat 계정에 앱이 연결됐어요",
@@ -275,6 +404,10 @@ export const words: EmailWords = {
     note: "직접 연결하지 않았나요? 지금 연결을 끊고 비밀번호를 바꾸세요.",
     button: "연결된 앱 보기",
     why: (org) => `agentes.chat의 ${org}에서 내 계정에 앱이 연결되어 이 메일을 보내 드렸어요.`,
+    personal: {
+      body: (app) => [{ b: app }, "에서 이제 개인 워크스페이스의 내 계정에 접근할 수 있어요."],
+      why: () => "agentes.chat 개인 워크스페이스에서 내 계정에 앱이 연결되어 이 메일을 보내 드렸어요.",
+    },
   },
   accountDeleting: {
     subject: (day) => `agentes.chat 계정이 ${day}에 삭제돼요`,
@@ -351,6 +484,10 @@ export const words: EmailWords = {
     button: "대화할 수 있는 사람 보기",
     why: (org) =>
       `${org}에 있는 내 에이전트가 내 플랜으로 생각하고, 다른 사람이 그 에이전트와 대화할 수 있는 사람을 바꿔서 이 메일을 보내 드렸어요.`,
+    personal: {
+      why: () =>
+        "내 에이전트가 내 플랜으로 생각하고, 다른 사람이 그 에이전트와 대화할 수 있는 사람을 바꿔서 이 메일을 보내 드렸어요.",
+    },
   },
   planLent: {
     subject: (plan) => `내 ${plan} 플랜이 이제 다른 에이전트를 위해 생각해요`,
@@ -368,6 +505,9 @@ export const words: EmailWords = {
     note: "알림에서 한 번의 클릭으로 되돌려 받으면 에이전트가 더 이상 내 플랜으로 생각하지 않아요.",
     button: "알림 열기",
     why: (org) => `${org}에서 누군가 내 플랜을 에이전트에 연결해서 이 이메일을 받았어요.`,
+    personal: {
+      why: () => "내 워크스페이스에서 누군가 내 플랜을 에이전트에 연결해서 이 메일을 보내 드렸어요.",
+    },
   },
   planWaiting: {
     subject: "팀이 기다리고 있어요",
@@ -383,5 +523,61 @@ export const words: EmailWords = {
     },
     button: "agentes.chat 요금제 보기",
     why: (org) => `agentes.chat에서 ${org}을(를) 운영하고 있어서 이 메일을 보내드려요. 이런 알림은 두 번만 보내요.`,
+    personal: {
+      subject: "내 에이전트가 기다리고 있어요",
+      headline: "내 에이전트가 기다리고 있어요",
+      body: (agents, _channels, routines) => {
+        const a = `에이전트 ${agents}개`;
+        const r = `루틴 ${routines}개`;
+        return `${routines > 0 ? `${a}와 ${r}` : a}가 준비됐어요. 이제 agentes.chat 요금제만 있으면 돼요.`;
+      },
+      why: () => "agentes.chat의 이 워크스페이스가 내 것이어서 이 메일을 보내 드렸어요. 이런 알림은 두 번만 보내요.",
+    },
+  },
+  surface: {
+    linked: {
+      subject: (surface) => `${surface}이(가) agentes.chat 계정에 연결되었습니다`,
+      preheader: "이제 어시스턴트가 그곳에서 답합니다. 본인이 아니라면 연결을 해제하세요.",
+      headline: (surface) => `${surface} 연결됨`,
+      body: (surface, display, org) => [
+        { b: display },
+        `(${surface})이(가) 이제 `,
+        { b: org },
+        "의 어시스턴트와 대화합니다.",
+      ],
+      notYou: "본인이 아닌가요? 연결을 해제하세요. 그곳에서 보낸 메시지가 바로 계정에 닿지 않게 됩니다.",
+      button: "연결 해제",
+      small: "본인이라면 아무것도 하지 않아도 됩니다. 언제든 설정에서 연결을 해제할 수 있습니다.",
+      why: (surface) => `${surface}이(가) agentes.chat 계정에 연결되어 이 이메일을 보내드립니다.`,
+      picture: "이제 휴대폰에서도 만나는 어시스턴트",
+    },
+    unlinked: {
+      subject: (surface) => `${surface}이(가) agentes.chat 계정에서 연결 해제되었습니다`,
+      preheader: "신원이 바뀌었습니다. 본인이라면 설정에서 다시 연결하세요.",
+      headline: (surface) => `${surface} 연결 해제됨`,
+      body: (surface, display) => [{ b: display }, `(${surface})은(는) 신원이 바뀌어 연결이 해제되었습니다.`],
+      small: "본인이라면 설정에서 다시 연결하세요.",
+      why: (surface) => `${surface}이(가) agentes.chat 계정에 연결되어 있었기 때문에 이 이메일을 보내드립니다.`,
+      picture: "더 이상 휴대폰에 없는 어시스턴트",
+    },
+  },
+  supportReply: {
+    subject: "도움 요청에 대한 답변",
+    preheader: "agentes.chat에서 요청하신 도움에 대한 답변이에요.",
+    headline: "도움 요청에 대한 답변",
+    answers: {
+      received: "요청을 받았고 지금 살펴보고 있어요.",
+      need_more:
+        "도와드리려면 정보가 더 필요해요. 무엇을 하고 있었는지, 어떻게 되길 기대했는지, 실제로 어떻게 됐는지가 필요해요.",
+      resolved: "알려 주신 문제를 고쳤어요.",
+      handed_over: "이제 담당자가 요청을 맡아 답변드릴 거예요.",
+    },
+    from: (host) =>
+      host
+        ? ["이 답변은 ", { nobr: host }, "의 agentes.chat 서버 운영자가 보냈어요."]
+        : "이 답변은 agentes.chat에서 보냈어요.",
+    ai: "이 답변은 AI 어시스턴트가 작성했어요.",
+    reply: (address) => ["답장하려면 ", { mail: address }, "(으)로 연락해 주세요."],
+    why: "agentes.chat에서 도움을 요청하셔서 이 메일을 보내 드렸어요.",
   },
 };

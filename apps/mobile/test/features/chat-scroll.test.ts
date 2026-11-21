@@ -1,18 +1,33 @@
 import { describe, expect, test } from "bun:test";
+import { createDockHeight } from "../../src/features/chat/dock-height";
 import {
   appendedKeys,
-  type HeldRun,
-  HOLD_FINISHED_RUN_MS,
+  bandAim,
   lastSeenKey,
   type Place,
   placeCorrection,
-  runsToShow,
   type ScrollRow,
-  type TurnKey,
-  turnKeys,
-  turnRowByRun,
   unseenBelow,
 } from "../../src/features/chat/scroll";
+
+describe("the dock's height", () => {
+  test("tells who reads it when it changes, and only then", () => {
+    const dock = createDockHeight();
+    let told = 0;
+    const stop = dock.subscribe(() => told++);
+    expect(dock.get()).toBe(0);
+    dock.set(96);
+    dock.set(96);
+    expect(dock.get()).toBe(96);
+    expect(told).toBe(1);
+    dock.set(130);
+    expect(told).toBe(2);
+    stop();
+    dock.set(96);
+    expect(told).toBe(2);
+    expect(dock.get()).toBe(96);
+  });
+});
 
 describe("appendedKeys", () => {
   test("new rows at the bottom", () => {
@@ -28,8 +43,8 @@ describe("appendedKeys", () => {
     expect(appendedKeys([], ["a", "b"])).toEqual([]);
     expect(appendedKeys(["x"], ["a", "b"])).toEqual([]);
   });
-  test("a streaming row swapped for its message: the message is the new one", () => {
-    expect(appendedKeys(["a", "run-1"], ["a", "m2"])).toEqual(["m2"]);
+  test("the last row swapped for another: the new one is new", () => {
+    expect(appendedKeys(["a", "card-1"], ["a", "m2"])).toEqual(["m2"]);
   });
 });
 
@@ -42,10 +57,10 @@ const row = (key: string, kind: ScrollRow["kind"] = "message", mine = false, who
 
 describe("what arrived below", () => {
   test("the last message row is where the person read up to", () => {
-    expect(lastSeenKey([row("day", "other"), row("a"), row("run-1", "run")])).toBe("a");
+    expect(lastSeenKey([row("day", "other"), row("a"), row("card-1", "other")])).toBe("a");
     expect(lastSeenKey([row("day", "other")])).toBeNull();
   });
-  test("new messages from others after the seen one, who wrote them, who is at work", () => {
+  test("new messages from others after the seen one, and who wrote them", () => {
     const rows = [
       row("a"),
       row("day2", "other"),
@@ -53,23 +68,21 @@ describe("what arrived below", () => {
       row("mine", "message", true, "person:me"),
       row("c", "message", false, "agent:ada"),
       row("d", "message", false, "person:marina"),
-      row("turn-1", "run", false, "agent:theo"),
     ];
     expect(unseenBelow(rows, "a")).toEqual({
       messages: 3,
       firstKey: "b",
       authors: ["person:marina", "agent:ada"],
-      working: ["agent:theo"],
+      working: [],
       mentionsMe: false,
     });
     expect(unseenBelow(rows, "c").messages).toBe(1);
     expect(unseenBelow(rows, "c").firstKey).toBe("d");
   });
-  test("an agent at work below is not a message yet, but the line goes before it", () => {
-    const u = unseenBelow([row("a"), row("turn-1", "run", false, "agent:theo")], "a");
+  test("an agent at work has no row: nothing below counts until its reply is posted", () => {
+    const u = unseenBelow([row("a"), row("card-1", "other", false, "agent:theo")], "a");
     expect(u.messages).toBe(0);
-    expect(u.firstKey).toBe("turn-1");
-    expect(u.working).toEqual(["agent:theo"]);
+    expect(u.firstKey).toBeNull();
   });
   test("a new message that mentions me turns the round button's count red; one I already saw doesn't", () => {
     const called = { ...row("b", "message", false, "person:marina"), mentionsMe: true };
@@ -83,106 +96,21 @@ describe("what arrived below", () => {
     expect(unseenBelow([row("a"), row("b")], null).messages).toBe(0);
     expect(unseenBelow([row("a"), row("b")], "zz").firstKey).toBeNull();
   });
-});
-
-describe("turnKeys", () => {
-  const run = (runId: string, agentId = "theo", threadId = "t1", provisional = false) => ({
-    runId,
-    agentId,
-    channelId: "c1",
-    threadId,
-    provisional,
-  });
-  const none = new Map<string, TurnKey>();
-
-  test("a run keeps its key", () => {
-    const first = turnKeys(none, [run("r1")]);
-    expect(first.get("r1")?.key).toBe("turn-r1");
-    expect(turnKeys(first, [run("r1")]).get("r1")?.key).toBe("turn-r1");
-  });
-  test("the real run takes the key of the guessed 'pensando…' once the guess is gone", () => {
-    const guessed = turnKeys(none, [run("p:theo", "theo", "t1", true)]);
-    const real = turnKeys(guessed, [run("r1")]);
-    expect(real.get("r1")?.key).toBe(guessed.get("p:theo")?.key);
-    expect(real.get("r1")?.key).toStartWith("turn-p:theo");
-    expect(real.has("p:theo")).toBe(false);
-  });
-  test("the same agent asked again in the same thread: a new guess, a new key", () => {
-    const guessed = turnKeys(none, [run("p:theo", "theo", "t1", true)]);
-    const real = turnKeys(guessed, [run("r1")]);
-    const again = turnKeys(real, [run("p:theo", "theo", "t1", true)]);
-    expect(again.get("p:theo")?.key).not.toBe(real.get("r1")?.key);
-  });
-  test("while the guess is still shown, or for another agent, the run gets its own key", () => {
-    const guessed = turnKeys(none, [run("p:theo", "theo", "t1", true)]);
-    expect(turnKeys(guessed, [run("p:theo", "theo", "t1", true), run("r1")]).get("r1")?.key).toBe("turn-r1");
-    expect(turnKeys(guessed, [run("r2", "ada")]).get("r2")?.key).toBe("turn-r2");
-  });
-  test("a guess in another thread of the same conversation still hands over (a DM's flat reply)", () => {
-    const guessed = turnKeys(none, [run("p:theo", "theo", "m1", true)]);
-    expect(turnKeys(guessed, [run("r1", "theo", "t9")]).get("r1")?.key).toBe(guessed.get("p:theo")?.key);
-  });
-});
-
-describe("turnRowByRun", () => {
-  const msg = (key: string, agentRunId: string | null) => ({ kind: "message", key, message: { agentRunId } });
-  const rows = [msg("m1", "r1"), { kind: "day", key: "d" }, msg("m2", null), msg("m3", "r1"), msg("m4", "r2")];
-  test("only a run's last message takes its block key", () => {
-    expect(turnRowByRun(rows, new Set())).toEqual(
-      new Map([
-        ["r1", "m3"],
-        ["r2", "m4"],
-      ]),
-    );
-  });
-  test("none while the run still draws its own block", () => {
-    expect(turnRowByRun(rows, new Set(["r1"]))).toEqual(new Map([["r2", "m4"]]));
-  });
-});
-
-describe("runsToShow", () => {
-  const run = (runId: string) => ({ runId, text: `words of ${runId}` });
-  const none = new Map<string, HeldRun<ReturnType<typeof run>>>();
-
-  test("writing runs show", () => {
-    const r = runsToShow(none, [], [run("1")], new Set(), 0);
-    expect(r.shown.map((x) => x.runId)).toEqual(["1"]);
-    expect(r.nextExpiry).toBeNull();
-  });
-  test("a run that stopped writing stays, with its last words, until its message arrives", () => {
-    const first = runsToShow(none, [run("1")], [], new Set(), 1000);
-    expect(first.shown).toEqual([run("1")]);
-    expect(first.nextExpiry).toBe(1000 + HOLD_FINISHED_RUN_MS);
-    const arrived = runsToShow(first.held, first.shown, [], new Set(["1"]), 1200);
-    expect(arrived.shown).toEqual([]);
-    expect(arrived.held.size).toBe(0);
-  });
-  test("a held run goes after the hold even without its message, and is not held again", () => {
-    const first = runsToShow(none, [run("1")], [], new Set(), 0);
-    const late = runsToShow(first.held, first.shown, [], new Set(), HOLD_FINISHED_RUN_MS + 1);
-    expect(late.shown).toEqual([]);
-    const again = runsToShow(late.held, late.shown, [], new Set(), HOLD_FINISHED_RUN_MS + 2);
-    expect(again.shown).toEqual([]);
-  });
-  test("a run resumed after an approval or a question shows again, though its card is listed", () => {
-    // The card landed and the run left the live store: its block goes (the card takes its place).
-    const gone = runsToShow(none, [run("1")], [], new Set(["1"]), 0);
-    expect(gone.shown).toEqual([]);
-    // Approved: the same run works again, its card still in the list.
-    const resumed = runsToShow(gone.held, gone.shown, [run("1")], new Set(["1"]), 100);
-    expect(resumed.shown).toEqual([run("1")]);
-    // Done: its reply is listed and the run left the store: no block, nothing held.
-    const done = runsToShow(resumed.held, resumed.shown, [], new Set(["1"]), 200);
-    expect(done.shown).toEqual([]);
-    expect(done.held.size).toBe(0);
-  });
-  test("a run that wrote nothing is not held", () => {
-    const first = runsToShow(none, [run("1")], [], new Set(), 0, HOLD_FINISHED_RUN_MS, () => false);
-    expect(first.shown).toEqual([]);
-  });
-  test("held rows come before the ones still writing", () => {
-    const first = runsToShow(none, [run("1"), run("2")], [run("2")], new Set(), 0);
-    expect(first.shown.map((x) => x.runId)).toEqual(["1", "2"]);
+  test("a message posted since I was at the end but placed above what I saw last is new too; the line goes before it", () => {
+    // Ids sort in the order the server posted them. At the end "b" (v2) was the newest; "r" (v3) was posted later
+    // with an earlier place (`PLACE_KEPT_MS`).
+    const said = (key: string, id: string, who?: string) => ({ ...row(key, "message", false, who), id });
+    const rows = [said("a", "v1"), said("r", "v3", "agent:ada"), said("b", "v2", "person:marina")];
+    expect(unseenBelow(rows, "b", "v2")).toEqual({
+      messages: 1,
+      firstKey: "r",
+      authors: ["agent:ada"],
+      working: [],
+      mentionsMe: false,
+    });
+    // One posted before I left the end isn't new, wherever it sits.
+    const old = [said("a", "v1"), said("r", "v0", "agent:ada"), said("b", "v2", "person:marina")];
+    expect(unseenBelow(old, "b", "v2").firstKey).toBeNull();
   });
 });
 
@@ -216,5 +144,57 @@ describe("placeCorrection", () => {
     expect(placeCorrection({ end: true }, list(900, 0))).toBeNull();
     expect(placeCorrection({ end: true }, list(900, 30))).toBeNull();
     expect(placeCorrection({ end: true }, list(0, 900))).toBe("end");
+  });
+});
+
+describe("bandAim", () => {
+  // A list 800 tall whose top 110 runs under the floating bar, with 100 of dock (and keyboard) at its foot: the room
+  // rows show in is 590 tall, from 110 to 700.
+  const LIST = 800;
+  const DOCK = 100;
+  const room = { band: LIST - 110 - DOCK, top: 110 };
+  // Where Legend List puts a row's top in its frame for `scrollToIndex` (`calculateOffsetWithOffsetPosition`): the
+  // offset, then the share of what is left beside the row over the dock.
+  const rowTop = (aim: { viewPosition: number; viewOffset: number }, size: number) =>
+    aim.viewOffset + aim.viewPosition * (LIST - DOCK - size);
+
+  test("a row sent to the top lands under the bar, not behind it", () => {
+    const aim = bandAim({ ...room, viewPosition: 0, size: 60, tall: "start" });
+    expect(aim).toEqual({ viewPosition: 0, viewOffset: 110 });
+    expect(rowTop(aim, 60)).toBe(110);
+  });
+  test("centred in the room, not in the list's whole height", () => {
+    const aim = bandAim({ ...room, viewPosition: 0.5, size: 60, tall: "end" });
+    expect(rowTop(aim, 60) + 30).toBe(110 + room.band / 2);
+  });
+  test("its end on the dock takes no offset", () => {
+    const aim = bandAim({ ...room, viewPosition: 1, size: 60, tall: "end" });
+    expect(aim).toEqual({ viewPosition: 1, viewOffset: 0 });
+    expect(rowTop(aim, 60) + 60).toBe(LIST - DOCK);
+  });
+  test("a row taller than the room shows its start under the bar, or its end on the dock", () => {
+    const start = bandAim({ ...room, viewPosition: 0.5, size: 650, tall: "start" });
+    expect(rowTop(start, 650)).toBe(110);
+    const end = bandAim({ ...room, viewPosition: 0.5, size: 650, tall: "end" });
+    expect(rowTop(end, 650) + 650).toBe(LIST - DOCK);
+  });
+  test("a row not measured yet gets the list's fallback: a tall one shows its start under the bar or its end on the dock", () => {
+    const start = bandAim({ ...room, viewPosition: 0.4, size: undefined, tall: "start" });
+    expect(start).toEqual({ viewPosition: 0.4, viewOffset: 110, viewPositionFallback: "start" });
+    // Short, it lands in the room; taller than the list, the fallback puts its start under the bar (the offset).
+    expect(rowTop(start, 60)).toBeGreaterThanOrEqual(110);
+    expect(rowTop({ viewPosition: 0, viewOffset: start.viewOffset }, 900)).toBe(110);
+    // "Ver" on the requests: no offset, so the fallback's end lands on the dock, never under it.
+    const end = bandAim({ ...room, viewPosition: 0.5, size: undefined, tall: "end" });
+    expect(end).toEqual({ viewPosition: 0.5, viewOffset: 0, viewPositionFallback: "end" });
+    expect(rowTop({ viewPosition: 1, viewOffset: end.viewOffset }, 900) + 900).toBe(LIST - DOCK);
+    // Short, its end (the request's card) stays over the dock.
+    expect(rowTop(end, 400) + 400).toBeLessThanOrEqual(LIST - DOCK);
+  });
+  test("under a pinned card the list starts below the bar: no offset", () => {
+    expect(bandAim({ band: 500, top: 0, viewPosition: 0, size: 60, tall: "start" })).toEqual({
+      viewPosition: 0,
+      viewOffset: 0,
+    });
   });
 });

@@ -1,3 +1,4 @@
+import { usdToNanoUsd } from "@agenteschat/providers";
 import { cutText } from "./format";
 import { callJev, type JevKeySource, JevOffError } from "./jev-key";
 import {
@@ -35,6 +36,8 @@ export interface JevUsage {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  /** What the call cost, from `jevCostOf`. */
+  costNanoUsd: number;
 }
 
 /**
@@ -43,6 +46,15 @@ export interface JevUsage {
  */
 export const JEV_NANO_USD_PER_INPUT_TOKEN = 42;
 export const jevCostNanoUsd = (inputTokens: number) => Math.round(inputTokens * JEV_NANO_USD_PER_INPUT_TOKEN);
+
+/**
+ * What a Jev call cost: OpenRouter's charge for it (`usage.cost`, in USD, as its models' calls record it, ADR 0087
+ * §6), else Jev's price for its input tokens (TypeSafe reports no cost).
+ */
+export const jevCostOf = (usage?: { input_tokens?: number; cost?: unknown }) =>
+  typeof usage?.cost === "number" && Number.isFinite(usage.cost) && usage.cost >= 0
+    ? usdToNanoUsd(usage.cost)
+    : jevCostNanoUsd(usage?.input_tokens ?? 0);
 
 const NONE = "none";
 
@@ -53,6 +65,11 @@ const NONE = "none";
  */
 const whoFor = () =>
   `People are written by name, agents as @handle, and \`names\` lists who a message names, by @ or by name. \`latest_message\` may hold a few messages the same person sent in a row, one per line: they are one message. Messages a person sends in a row continue the same address: after "boa tarde walter", "como está hoje" is still for Walter. A message to a person, by @ or by name, is for that person, not for an agent. Greetings and small talk between people get no agent. When \`alone_with\` names an agent, the author is the only person in the channel with it: what they write to the room is for it. ${SPOKEN_TO}`;
+
+/** Who talks to whom (ADR 0159): in a personal workspace the person mostly talks to their agents. */
+const TEAM_CHAT = "People in a team chat mostly talk among themselves";
+const PERSONAL_CHAT =
+  "Here one person (and maybe their family) mostly talks to their agents, though family members may also talk among themselves";
 
 interface JevAnswer {
   type: "noul" | "choice" | "score";
@@ -98,7 +115,7 @@ export function createJevRouterStrategy(options: {
       const questions: Record<string, unknown> = {
         needs_agent: {
           type: "noul",
-          instructions: `Should any AI agent reply to \`latest_message\`? ${whoFor()} People in a team chat mostly talk among themselves: an agent should reply only when the message speaks to an agent (by @, by name or by its role), asks the agents or anyone something an agent can help with ("does anyone know…", "alguém sabe…"), speaks to the agents as a group, or continues a conversation with an agent. Also yes when the person insists or complains that nobody answered ("alô???", "ninguém vai responder?", a greeting again after nobody answered the first): they want an agent's reply. Otherwise, when unsure, no.`,
+          instructions: `Should any AI agent reply to \`latest_message\`? ${whoFor()} ${input.personal ? PERSONAL_CHAT : TEAM_CHAT}: an agent should reply only when the message speaks to an agent (by @, by name or by its role), asks the agents or anyone something an agent can help with ("does anyone know…", "alguém sabe…"), speaks to the agents as a group, or continues a conversation with an agent. Also yes when the person insists or complains that nobody answered ("alô???", "ninguém vai responder?", a greeting again after nobody answered the first): they want an agent's reply. Otherwise, when unsure, no.`,
           criteria: {
             true: "The message is for an agent or needs an agent's answer, or the person insists that nobody answered.",
             false: "People talking to each other, or unclear; no agent should interrupt.",
@@ -177,7 +194,7 @@ export function createJevRouterStrategy(options: {
       const body = await callJev<{
         model?: string;
         answers?: Record<string, JevAnswer>;
-        usage?: { input_tokens?: number; output_tokens?: number };
+        usage?: { input_tokens?: number; output_tokens?: number; cost?: number };
       }>(options.key, {
         fetch: options.fetch,
         baseURL: options.baseURL,
@@ -190,6 +207,7 @@ export function createJevRouterStrategy(options: {
           model: body.model ?? options.model ?? "jev-latest",
           inputTokens: body.usage?.input_tokens ?? 0,
           outputTokens: body.usage?.output_tokens ?? 0,
+          costNanoUsd: jevCostOf(body.usage),
         })
         .catch(() => {});
       const answers = body.answers ?? {};

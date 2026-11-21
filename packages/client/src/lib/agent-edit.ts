@@ -1,4 +1,5 @@
 import type { AgentAudience, BrainKind, Run } from "../api/types";
+import type { EditorsValue } from "./audience";
 import { readBudget } from "./new-agent";
 
 /*
@@ -17,17 +18,19 @@ export const AGENT_TABS = [
   "usage",
   "activity",
   "settings",
+  "advanced",
 ] as const;
 export type AgentTab = (typeof AGENT_TABS)[number];
 export const isAgentTab = (v: unknown): v is AgentTab => AGENT_TABS.includes(v as AgentTab);
 
-/** Configurações' sections, in order. */
+/** Configurações' sections, in order: "Quem pode editar" after "Quem pode falar" (ADR 0085 addendum of 2026-11-17). */
 export const AGENT_SECTIONS = [
   "identity",
   "brain",
   "budget",
   "owner",
   "audience",
+  "editors",
   "channels",
   "computer",
   "danger",
@@ -35,14 +38,47 @@ export const AGENT_SECTIONS = [
 export type AgentSection = (typeof AGENT_SECTIONS)[number];
 export const isAgentSection = (v: unknown): v is AgentSection => AGENT_SECTIONS.includes(v as AgentSection);
 
+/** The screens "Quem pensa" can open on from a link, past its first one (ADR 0032 §5, addendum 2026-11-10). */
+export const BRAIN_SCREENS = ["model", "more", "switch"] as const;
+export type BrainScreen = (typeof BRAIN_SCREENS)[number];
+export const isBrainScreen = (v: unknown): v is BrainScreen => BRAIN_SCREENS.includes(v as BrainScreen);
+
+/*
+ * A personal workspace's agent page (ADR 0159 §3): the same page, simpler. Its bar keeps what one person uses
+ * (Overview, Instructions, Memory, the apps it can use, its name and look) and an Advanced tab holds the rest: who owns
+ * it and talks to it, its conversations, computer, brakes and danger zone, its built-in areas, databases, skills and
+ * rules, with Activity, Files and Usage a click away. Every tab and section keeps its address.
+ */
+
+/** The bar in a personal workspace; Activity, Files or Usage join it while open. */
+export const PERSONAL_AGENT_TABS = ["overview", "instructions", "memory", "access", "settings", "advanced"] as const;
+
+/** Configurações' sections that a personal workspace shows in Advanced. */
+export const ADVANCED_SECTIONS: readonly AgentSection[] = [
+  "owner",
+  "audience",
+  "editors",
+  "channels",
+  "computer",
+  "danger",
+];
+
+/** The tab that shows for an address: a personal workspace's advanced sections in Advanced; a team's has no Advanced. */
+export function shownAgentTab(tab: AgentTab, sec: AgentSection | undefined, personal: boolean): AgentTab {
+  if (!personal) return tab === "advanced" ? "settings" : tab;
+  return tab === "settings" && sec && ADVANCED_SECTIONS.includes(sec) ? "advanced" : tab;
+}
+
 /**
- * `?tab=settings&sec=brain` (unknown values are dropped; the old `sec=model` lands on "Quem pensa").
+ * `?tab=settings&sec=brain` (unknown values are dropped; the old `sec=model` lands on "Quem pensa"), with `&brain=model`
+ * (or `more`, `switch`) opening "Quem pensa" on that screen.
  * `?computer=1` opens the agent's computer; `?browser=1`, `?desktop=1` and `?terminal=1` are older links to it
  * (notifications, the Mac app's tray).
  */
 export function agentSearch(search: Record<string, unknown>): {
   tab?: AgentTab;
   sec?: AgentSection;
+  brain?: BrainScreen;
   computer?: 1;
 } {
   const sec = search.sec === "model" ? "brain" : search.sec;
@@ -50,25 +86,42 @@ export function agentSearch(search: Record<string, unknown>): {
   return {
     tab: isAgentTab(search.tab) ? search.tab : undefined,
     sec: isAgentSection(sec) ? sec : undefined,
+    ...(sec === "brain" && isBrainScreen(search.brain) ? { brain: search.brain } : {}),
     ...([search.computer, search.browser, search.desktop, search.terminal].some(on) ? { computer: 1 as const } : {}),
   };
 }
 
-/** "Quem pensa": the brain, its model (null = the brain's default) and the fallback to the API. */
+/** "Quem pensa": the brain and its model (null = the brain's default). */
 export interface BrainChoice {
   brain: BrainKind;
   model: string | null;
-  fallback: boolean;
 }
 export const sameBrain = (a: BrainChoice, b: BrainChoice) =>
-  a.brain === b.brain && (a.brain === "model" || a.model === b.model) && a.fallback === b.fallback;
+  a.brain === b.brain && (a.brain === "model" || a.model === b.model);
 
-const sorted = (list: string[]) => [...list].sort();
-export const sameList = (a: string[], b: string[]) => sorted(a).join("\n") === sorted(b).join("\n");
+const sorted = (list: readonly string[]) => [...list].sort();
+export const sameList = (a: readonly string[], b: readonly string[]) => sorted(a).join("\n") === sorted(b).join("\n");
 export const sameAudience = (a: AgentAudience, b: AgentAudience) =>
   (a.consultable ?? true) === (b.consultable ?? true) &&
   a.mode === b.mode &&
   (a.mode !== "people" || (sameList(a.userIds, b.userIds) && sameList(a.roleIds ?? [], b.roleIds ?? [])));
+
+const sameSet = (a: readonly string[], b: readonly string[]) => {
+  const x = new Set(a);
+  const y = new Set(b);
+  return x.size === y.size && [...x].every((id) => y.has(id));
+};
+/** The people and roles a "Quem pode editar" choice names: none under "owner". */
+const editorIds = (e: EditorsValue) => (e.mode === "people" ? e : { userIds: [], roleIds: [] });
+/**
+ * Whether two "Quem pode editar" choices name the same people and roles, as sets: "Também algumas pessoas ou cargos"
+ * with nobody picked names nobody, as "owner" does.
+ */
+export const sameEditors = (a: EditorsValue, b: EditorsValue) => {
+  const x = editorIds(a);
+  const y = editorIds(b);
+  return sameSet(x.userIds, y.userIds) && sameSet(x.roleIds, y.roleIds);
+};
 
 /** The budget typed, as the API takes it (null = the default); undefined when it isn't a valid amount. */
 export const budgetValue = (text: string): number | null | undefined => {

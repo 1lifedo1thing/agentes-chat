@@ -4,7 +4,7 @@
  * control protocol's events.
  * A tiny external store (`useSyncExternalStore`), no framework.
  */
-import type { RunnerAccess } from "@agenteschat/adapters/machine-protocol";
+import type { RunnerAccess, RunnerTools } from "@agenteschat/adapters/machine-protocol";
 import {
   CONTROL_PROTOCOL_VERSION,
   type ControlAccessRequest,
@@ -28,6 +28,8 @@ export interface Home {
   access: RunnerAccess | null;
   /** The organization's logo as a `data:` URL (asked again when `status.org.logoEtag` changes); null: the initial. */
   logo: string | null;
+  /** A tool its owner turned on from the apps (`access.allowed`), shown with Undo until dismissed. */
+  allowed?: { tool: keyof RunnerTools; byName: string } | null;
 }
 
 export interface Snapshot {
@@ -38,6 +40,8 @@ export interface Snapshot {
 /** The runner speaks a control protocol this app doesn't know (development builds only). */
 export const isIncompatible = (h: Home) => !!h.hello && h.hello.control !== CONTROL_PROTOCOL_VERSION;
 export const isPairedHome = (h: Home) => h.status?.paired === true;
+/** A home whose runner said it is paired with nothing: one still starting is neither (it may be paired). */
+export const isUnpairedHome = (h: Home) => h.status?.paired === false;
 export const orgName = (h: Home) => h.status?.org?.name ?? "";
 
 /**
@@ -57,6 +61,8 @@ export type StoreEventListener = (homeId: string, event: ControlEvent) => void;
 export interface StoreOptions {
   /** A new folder request arrived (the popover window raises the macOS notification). */
   onAccessRequested?: (home: Home, request: ControlAccessRequest) => void;
+  /** Its owner turned a tool on from the apps (the popover window raises the macOS notification). */
+  onToolAllowed?: (home: Home, allowed: { tool: keyof RunnerTools; byName: string }) => void;
   idPrefix?: string;
 }
 
@@ -145,6 +151,8 @@ export class DesktopStore {
     return () => {
       for (const s of this.stops) s();
       this.stops = [];
+      // No reply can reach a request still open now: it fails at once, not on its timer seconds after its window.
+      this.client.close();
     };
   }
 
@@ -197,6 +205,11 @@ export class DesktopStore {
 
   request<R extends ControlRequest>(homeId: string, req: R): Promise<ControlReplies[R["type"]]> {
     return this.client.request(homeId, req);
+  }
+
+  /** The "turned on from the apps" note goes away (seen, or undone). */
+  dismissAllowed(homeId: string) {
+    this.patch(homeId, { allowed: null });
   }
 
   /** The same request to every paired home (pause, tools, limits are for the whole computer). */
@@ -269,6 +282,13 @@ export class DesktopStore {
       case "access.changed":
         this.patch(homeId, { access: event.access });
         break;
+      case "access.allowed": {
+        const allowed = { tool: event.tool, byName: event.byName };
+        this.patch(homeId, { allowed });
+        const fresh = this.home(homeId);
+        if (fresh) this.options.onToolAllowed?.(fresh, allowed);
+        break;
+      }
       case "pair.done":
         void this.refresh(homeId);
         break;

@@ -83,8 +83,29 @@ export const strings: Partial<PushStrings> = {
   deviceAccessTitle: (a, p, d) =>
     p ? `${a} (для ${p}) просит доступ к вашему устройству ${d}` : `${a} просит доступ к вашему устройству ${d}`,
   deviceAccessBody: "Нажмите, чтобы разрешить один раз, всегда или отказать.",
+  deviceToolTitle: (a, d) => `${a} просит включить инструмент на вашем ${d}`,
+  deviceToolBody: "Нажмите, чтобы включить в один клик.",
+  deviceCliTitle: (a, d) => `${a} просит установить программу на вашем ${d}`,
+  deviceCliBody: "Нажмите, чтобы установить в один клик.",
+  deviceFolderTitle: (a, f, d) => (f ? `${a} просит ${f} на вашем ${d}` : `${a} просит папку на вашем ${d}`),
+  deviceFolderBody: "Разрешите её в приложении на этом компьютере.",
+  adminAskTitle: (a, what, l) =>
+    what === "channel_agent"
+      ? `${a} просит добавить агента в #${l}`
+      : what === "create_agents"
+        ? `${a} просит разрешить создавать агентов`
+        : `${a} просит настроить вебхук ${l} для рутин`,
   deviceWaitingTitle: (p, d) => `Агент для ${p} ждёт ваше устройство ${d}`,
   deviceWaitingBody: "Начнёт, когда оно вернётся.",
   teamWeekReady: "Итоги недели команды готовы",
   teamDayReady: "Итоги дня готовы",
+  machineConnectedTitlePersonal: "Подключён новый компьютер",
+  computerReadyTitlePersonal: "Компьютер ваших агентов готов",
+  agentUnreachedBodyPersonal:
+    "Тот, кто создал регулярную задачу, пока не может говорить с этим агентом. Нажмите, чтобы разрешить.",
+  widgetFailedReasonsPersonal: { creator_left: "Того, кто его настроил, больше нет в вашем рабочем пространстве." },
+  joinRequestTitlePersonal: (name) => `${name} просит доступ в ваше рабочее пространство`,
+  joinSuggestionTitlePersonal: (by, name) => `${by} предлагает пригласить ${name}`,
+  teamWeekReadyPersonal: "Итоги вашей недели готовы",
+  teamWatchStill: (n) => `Вас всё ещё ждёт: ${n}`,
 };

@@ -1,7 +1,8 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, desc, eq, gt, gte, isNull, ne, or, schema, sql } from "@agenteschat/db";
 import { actionsFor, actionView, describeAction, publishMessageActions, UNDO_WINDOW_MS } from "./agent-actions";
-import { getAgentCached } from "./agents";
+import { getAgent } from "./agents";
+import { editsAgent, managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import { caches } from "./cache";
 import { addChannelMember, archiveChannel, removeChannelMember, unarchiveChannel } from "./channels";
@@ -56,8 +57,9 @@ export function issueSnapshot(i: IssueView): Record<string, unknown> {
     description: i.description,
     status: i.status,
     priority: i.priority,
-    assignee: i.assignee ? { type: i.assignee.type, id: i.assignee.id } : null,
+    assignees: i.assignees.map((a) => ({ type: a.type, id: a.id })),
     labels: i.labels,
+    project: i.project?.id ?? null,
     dueDate: i.dueDate,
     githubUrl: i.githubUrl,
     criteria: i.criteria.map((c) => ({ id: c.id, done: c.done })),
@@ -96,8 +98,9 @@ async function applyIssueFields(
   if ("description" in values) patch.description = String(values.description ?? "");
   if ("status" in values) patch.status = values.status as IssueView["status"];
   if ("priority" in values) patch.priority = values.priority as IssueView["priority"];
-  if ("assignee" in values) patch.assignee = (values.assignee as WorkActor | null) ?? null;
+  if ("assignees" in values) patch.assignees = (values.assignees as WorkActor[] | null) ?? [];
   if ("labels" in values) patch.labels = (values.labels as string[]) ?? [];
+  if ("project" in values) patch.projectId = (values.project as string | null) ?? null;
   if ("dueDate" in values) patch.dueDate = (values.dueDate as string | null) ?? null;
   if ("githubUrl" in values) patch.githubUrl = (values.githubUrl as string | null) ?? null;
   if (Array.isArray(values.files)) {
@@ -579,13 +582,28 @@ async function loadAction(db: Database, orgId: string, id: string) {
   return row;
 }
 
-/** The person the agent worked for, an admin, or the agent's owner. */
+/**
+ * The person the agent worked for, who manages the agent (`managesAgent`, ADR 0085 addendum of 2026-11-17; with the
+ * agent gone, who holds "Editar qualquer agente"), or its owner. A change to its skills: who edits it (`editsAgent`),
+ * as on its page.
+ */
 async function requireMayUndo(db: Database, userId: string, a: Row) {
   const membership = await getMembership(db, userId, a.orgId);
   if (!membership) throw new NotFoundError("Action not found", "action.not_found");
   assertActiveMembership(membership);
-  if (a.requestedByUserId === userId || can(membership, "manage_agents")) return;
-  const agent = await getAgentCached(db, a.orgId, a.agentId);
+  // A settings change is on its target (the right hand's card changes another agent's): rights are that agent's, not
+  // those of the agent that wrote the card (ADR 0085 addendum of 2026-11-17).
+  const subjectId =
+    a.kind === "agent.settings_changed" && a.targetType === "agent" && a.targetId ? a.targetId : a.agentId;
+  const agent = await getAgent(db, a.orgId, subjectId);
+  if (agent ? managesAgent(agent, userId, membership) : can(membership, "manage_agents")) return;
+  // Which skills it has is who edits it (`SETTING_GROUP`), as `setAgentSkills` takes.
+  const fields = (a.params as { fields?: unknown }).fields;
+  if (a.kind === "agent.settings_changed" && Array.isArray(fields) && fields.includes("skill")) {
+    if (agent && editsAgent(agent, userId, membership)) return;
+    throw new ForbiddenError("Only an admin can undo or redo a change to an agent's skills", "action.skills_admins");
+  }
+  if (a.requestedByUserId === userId) return;
   if (agent?.ownerUserId === userId) return;
   throw new ForbiddenError(
     "Only the person the agent worked for, its owner or an admin can undo this",
@@ -693,9 +711,11 @@ export async function undoMessageActions(deps: AgentUndoDeps, userId: string, or
     .where(and(eq(agentActions.orgId, orgId), eq(agentActions.messageId, messageId)))
     .orderBy(desc(agentActions.createdAt));
   if (rows.length === 0) throw new NotFoundError("This message has no changes to undo", "action.not_found");
+  const open = rows.filter((a) => !a.undoneAt && a.undoableUntil.getTime() > now.getTime());
+  // A card's receipts can differ in who may undo them (a skill's is only an admin's): refused before any is undone.
+  for (const a of open) await requireMayUndo(deps.db, userId, a);
   const failed: { id: string; code: string; message: string }[] = [];
-  for (const a of rows) {
-    if (a.undoneAt || a.undoableUntil.getTime() <= now.getTime()) continue;
+  for (const a of open) {
     try {
       await toggle(deps, userId, orgId, a.id, "undo");
     } catch (error) {

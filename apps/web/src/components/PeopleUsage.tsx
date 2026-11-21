@@ -36,11 +36,13 @@ import {
   type PeopleChip,
   type PeopleSort,
   type PersonRow,
+  personAmount,
   sortPeople,
   USAGE_PERIODS,
   type UsagePeriodKind,
   usagePeriod,
 } from "@agenteschat/client/lib/person-usage";
+import { rolePicksInSight, settingsSectionNameKey } from "@agenteschat/client/lib/personal-view";
 import { parseAmount } from "@agenteschat/client/lib/text";
 import {
   AvatarStack,
@@ -84,6 +86,7 @@ import { useOrg } from "@/components/org-context";
 import { RequestDone, RequestOpen } from "@/components/RequestCard";
 import { colorOf } from "@/components/Sky";
 import { useDirectory } from "@/hooks/useDirectory";
+import { usePersonalView } from "@/hooks/usePersonalView";
 import { useRightHandLook } from "@/hooks/useRightHandLook";
 import { useToast } from "@/lib/toast";
 import "./people-usage.css";
@@ -102,20 +105,26 @@ const partStyle = (dir: Dir, agentId: string) =>
 
 const agentName = (t: TFunction, dir: Dir, id: string) => dir.anyAgent(id)?.name ?? t("channel.unknownAgent");
 
-/** The tabs of Orçamento e uso: Resumo (what was there) and Pessoas for who sees money, else Seu uso. */
+/**
+ * The tabs of Orçamento e uso: Resumo (what was there) and Pessoas for who sees money, else Seu uso. Alone in a
+ * personal workspace, only Resumo, without tabs (ADR 0159): an owner has no limit and nobody else uses it. A link to a
+ * person still opens Pessoas.
+ */
 export function UsageTabs({ summary, person }: { summary: ReactNode; person?: string }) {
   const { t } = useTranslation();
   const { org } = useOrg();
+  const { solo } = usePersonalView();
   const money = can(org, "view_usage");
   const [tab, setTab] = useState<"summary" | "people">(person ? "people" : "summary");
   useEffect(() => {
     if (person) setTab("people");
   }, [person]);
+  if (solo && !person) return <>{summary}</>;
   return (
     <Tabs
       value={tab}
       onValueChange={setTab}
-      label={t("settings.section.usage")}
+      label={t(settingsSectionNameKey(org, "usage"))}
       items={[
         { value: "summary", label: t("peopleUsage.tabs.summary") },
         { value: "people", label: money ? t("peopleUsage.tabs.people") : t("peopleUsage.tabs.mine") },
@@ -168,10 +177,9 @@ function placeLine(t: TFunction, place: UsagePlace, agent: string) {
 }
 
 /** A month's use against a limit: the amount, of the limit, the bar amber from 80% and red at it. */
-function UseMeter({ p, plansOnly }: { p: PersonRow; plansOnly: boolean }) {
+function UseMeter({ p }: { p: PersonRow }) {
   const { t, i18n } = useTranslation();
-  const amount = formatUsd(i18n.language, p.monthUsd);
-  const shown = plansOnly ? t("peopleUsage.meter.approx", { amount }) : amount;
+  const shown = personAmount(t, i18n.language, p.estimated, p.monthUsd);
   return (
     <div className="pu-meter" data-state={p.state}>
       <span className="pu-meter__line">
@@ -225,8 +233,8 @@ function PeopleView({ switcher, person, onLimits }: { switcher: ReactNode; perso
     i18n.language,
   );
   const month = capitalize(formatMonth(i18n.language, new Date(`${data.month}-15T12:00:00`)), i18n.language);
-  const head = (by: PeopleSort, label: string, className?: string) => (
-    <th className={className} aria-sort={sort.by === by ? (sort.desc ? "descending" : "ascending") : undefined}>
+  const head = (by: PeopleSort, label: string, className?: string, hint?: ReactNode) => {
+    const sorter = (
       <button
         type="button"
         className="pu-sort"
@@ -235,8 +243,20 @@ function PeopleView({ switcher, person, onLimits }: { switcher: ReactNode; perso
         {label}
         {sort.by === by && <Icon name={sort.desc ? "chevronDown" : "chevronUp"} size={14} />}
       </button>
-    </th>
-  );
+    );
+    return (
+      <th className={className} aria-sort={sort.by === by ? (sort.desc ? "descending" : "ascending") : undefined}>
+        {hint ? (
+          <span className="ac-hintline">
+            {sorter}
+            {hint}
+          </span>
+        ) : (
+          sorter
+        )}
+      </th>
+    );
+  };
   const nobody = data.people.every((p) => p.runs === 0);
   return (
     <>
@@ -367,7 +387,17 @@ function PeopleView({ switcher, person, onLimits }: { switcher: ReactNode; perso
                 <th>{t("peopleUsage.columns.now")}</th>
                 {head("runs", t("peopleUsage.columns.runs"), "pu-num")}
                 <th>{t("peopleUsage.columns.agents")}</th>
-                {head("usage", t("peopleUsage.columns.usage"))}
+                {head(
+                  "usage",
+                  t("peopleUsage.columns.usage"),
+                  undefined,
+                  // A ≈ in any row: what an estimate is, beside the column's name.
+                  rows.some((p) => p.estimated) && (
+                    <InfoHint name={t("common.about", { label: t("usageViews.apiPrice") })}>
+                      {t("usageViews.apiPriceHint")}
+                    </InfoHint>
+                  ),
+                )}
                 <th>{t("peopleUsage.columns.caresFor")}</th>
                 {head("created", t("peopleUsage.columns.created"), "pu-num")}
               </tr>
@@ -411,7 +441,7 @@ function PeopleView({ switcher, person, onLimits }: { switcher: ReactNode; perso
                       />
                     </td>
                     <td className="pu-use">
-                      <UseMeter p={p} plansOnly={data.plansOnly} />
+                      <UseMeter p={p} />
                     </td>
                     <td>
                       <Faces ids={p.caresFor} />
@@ -685,10 +715,10 @@ function PersonDrawer({ userId, onClose }: { userId: string | null; onClose: () 
                 {l.reachedAt
                   ? t("peopleUsage.drawer.reached", {
                       date: formatShortDate(i18n.language, l.reachedAt),
-                      used: formatUsd(i18n.language, l.monthUsd ?? 0),
+                      used: personAmount(t, i18n.language, data.estimated, l.monthUsd ?? 0),
                     })
                   : t("peopleUsage.drawer.used", {
-                      used: formatUsd(i18n.language, l.monthUsd ?? 0),
+                      used: personAmount(t, i18n.language, data.estimated, l.monthUsd ?? 0),
                       percent: Math.round(l.percent ?? 0),
                     })}
               </span>
@@ -872,7 +902,11 @@ function LimitsView({ switcher }: { switcher: ReactNode }) {
       <LoadingList count={4} avatar={false} trailing />
     );
   }
-  const roleList = (roles.data?.roles ?? []).filter((r) => r.kind === "custom");
+  // Limits per role, in a personal workspace only once a role is worth it or one already has a limit (ADR 0159).
+  const allRoles = roles.data?.roles ?? [];
+  const roleList = rolePicksInSight(org, allRoles, Object.keys(limits.data?.roles ?? {}))
+    ? allRoles.filter((r) => r.kind === "custom")
+    : [];
   const people = dir.members.filter((m) => m.userId in draft.people);
   const others = dir.members.filter((m) => !(m.userId in draft.people) && m.role !== "owner");
   const set = (patch: Partial<PersonLimits>) => setDraft((d) => (d ? { ...d, ...patch } : d));

@@ -1,27 +1,27 @@
 import {
   type AppNotification,
   type Approval,
+  type NotificationCounts,
   type Routine,
   useAiStatus,
   useNotificationAction,
+  useNotificationBulkPending,
   useNotifications,
   useRoutines,
-  useToolChanges,
 } from "@agenteschat/client";
 import { approvalDetail, approvalSummary, approvalTitle } from "@agenteschat/client/lib/approval-words";
-import { restrictionLine } from "@agenteschat/client/lib/errors";
-import { timeLeft, upperFirst } from "@agenteschat/client/lib/format";
+import { errorText, restrictionLine } from "@agenteschat/client/lib/errors";
+import { dateFormat, timeLeft, upperFirst } from "@agenteschat/client/lib/format";
 import { mediaWord } from "@agenteschat/client/lib/media";
 import { latestText } from "@agenteschat/client/lib/message-body";
-import { can } from "@agenteschat/client/lib/permissions";
+import { canClearAll, teamWatchOf } from "@agenteschat/client/lib/notifications";
 import { usageLimitLine } from "@agenteschat/client/lib/person-usage";
 import { useLocalSearchParams } from "expo-router";
 import type { TFunction } from "i18next";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
-  Easing,
   type EntryExitAnimationFunction,
   FadeIn,
   LayoutAnimationConfig,
@@ -29,11 +29,11 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useOrg } from "@/providers/org";
-import { BurstProvider, useBurst, useBurstHost } from "@/sky/PixelBurst";
 import {
   Button,
   EmptyState,
   Filters,
+  type HeaderAction,
   HoldButton,
   type IconName,
   LargeTitleScreen,
@@ -42,8 +42,6 @@ import {
   ListRow,
   motion,
   PersonAvatar,
-  PULL_TINT,
-  PullOrbit,
   SectionHeader,
   SkeletonList,
   SwipeRow,
@@ -54,18 +52,19 @@ import {
 import { router } from "@/ui/navigation";
 import { approvalAction } from "../approvals/logic";
 import { ApprovalMark, ApprovalWhy, useApprovalSource, useApproveNow } from "../approvals/parts";
+import { WhenAsksLink } from "../approvals/when-asks";
 import type { AskKind } from "../chat/ask-store";
-import { ApproveSpot, ASK_ICON, AskButtons } from "../chat/asks";
-import { ConnectorIcon } from "../connectors/ConnectorIcon";
+import { ASK_ICON, AskButtons } from "../chat/asks";
 import { dashboardWaitingCard } from "../dashboards/logic";
-import { isDeviceNotice } from "../devices/logic";
+import { deviceNoticeOf, isDeviceNotice } from "../devices/logic";
 import { DeviceNoticeActions, DeviceNoticeCard } from "../devices/notices";
-import { notificationHref, notificationWebPath, routineHref } from "../links/logic";
+import { type AppHref, notificationHref, notificationWebPath, routineHref } from "../links/logic";
 import { openWebPath } from "../links/open-web";
 import { ChangeRequestCard } from "../right-hand/SettingsCard";
+import { AdminAskAdd } from "../shared/AdminAsk";
 import { AgentFace, Face } from "../shared/Face";
+import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useNow, useOrgId, usePullRefresh, useWhen } from "../shared/hooks";
-import { agentLook } from "../shared/logic";
 import { Tile } from "../shared/parts";
 import { useWaitingApprovals } from "../shared/queries";
 import { RetryLine, TeamSkyEmpty } from "../shared/TeamSkyEmpty";
@@ -96,7 +95,7 @@ import { useNoticeTitle } from "./noticeTitle";
  * Swipe a row right to mark read or unread, left for "Feito" (a toast offers Desfazer). Tapping opens where it
  * happened. Loading: rows of the list's own shape; a load that failed is one gray line over what was kept.
  * A card decided or a row marked done leaves (fading, a little smaller) and what is under it moves up to its place;
- * a request approved here bursts in its agent's tones, and the last one cleared brings the team in cheering.
+ * the last thing waiting cleared brings the team in cheering.
  */
 export function ActivityScreen() {
   const { t } = useTranslation();
@@ -111,29 +110,25 @@ export function ActivityScreen() {
   const list = useNotifications(orgId, filter);
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
   const counts = list.data?.pages[0]?.counts;
-  // What waits on a connector admin among changed tools: a server's card shows only while one of its tools waits.
-  const manages = can(useOrg().org, "manage_connectors");
-  const changes = useToolChanges(orgId, manages).data;
-  const pending = useMemo(
-    () =>
-      changes
-        ? { ids: new Set(changes.map((c) => c.connectionId)), labels: new Set(changes.map((c) => c.connectionLabel)) }
-        : null,
-    [changes],
-  );
-  const { waiting, days, merged, settled } = activitySections(items, filter, undefined, pending);
-  // The server counts each repeated notice of a server, and one with nothing left to review; the screen shows one
-  // card, or none.
-  const waitingCount = Math.max(waiting.length, (counts?.waiting ?? waiting.length) - merged - settled);
+  const { waiting, days } = activitySections(items, filter);
+  const waitingCount = Math.max(waiting.length, counts?.waiting ?? waiting.length);
   const pull = usePullRefresh(list.refetch);
-  const header = useTabHeader();
+  const tabHeader = useTabHeader();
+  // What every row reads alike, read once here and handed down as plain values: a row's read, done and their undo
+  // (one function), whether "Clear all" or its undo is under way, and the AIs a "computer ready" row opens by.
+  const { mutate: act } = useNotificationAction(orgId);
+  const busy = useNotificationBulkPending(orgId);
+  const ai = useAiStatus(
+    orgId,
+    items.some((n) => n.kind === "computer_ready"),
+  ).data;
+  const clearAll = useClearAll(filter, counts, items, busy);
+  const header = clearAll ? { ...tabHeader, actions: [clearAll, ...tabHeader.actions] } : tabHeader;
   const reduced = useReducedMotion();
   // A card decided while the page shows leaves and the rest close up; a new one fades in. Rows and the days under
   // them likewise, so nothing on the page jumps.
   const cardMotion = reduced ? {} : { entering: CARD_IN, exiting: LEAVE, layout: MOVE };
   const rowMotion = reduced ? {} : { exiting: LEAVE, layout: MOVE };
-  // Where an approval's burst plays: over the page's content, so the card that started it may leave meanwhile.
-  const { burst, layer } = useBurstHost();
   // The clear page cheers only when the person saw something waiting here and it is gone now, not when the tab
   // opens with nothing waiting.
   const clear =
@@ -145,88 +140,80 @@ export function ActivityScreen() {
     if (clear) hadWaiting.current = false;
   }, [clear]);
   return (
-    <BurstProvider value={burst}>
-      <LargeTitleScreen
-        title={t("mobile.activity.title")}
-        {...header}
-        refreshControl={
-          <RefreshControl refreshing={pull.refreshing} onRefresh={pull.onRefresh} tintColor={PULL_TINT} />
-        }
-        pullMark={<PullOrbit refreshing={pull.refreshing} />}
-      >
-        <Filters
-          items={[
-            { key: "all", label: t("mobile.activity.filter.all") },
-            // The count is the section's, once.
-            { key: "waiting", label: t("mobile.activity.filter.waiting") },
-            { key: "done", label: t("mobile.activity.filter.done") },
-          ]}
-          value={filter}
-          onChange={(key) => setFilter(key as ActivityFilter)}
-        />
-        {waiting.length > 0 ? (
-          <>
-            <SectionHeader title={t("mobile.home.waiting")} count={waitingCount} />
-            <LayoutAnimationConfig skipEntering skipExiting>
-              <View style={styles.cards}>
-                {waiting.map((n, i) => (
-                  <Animated.View key={n.id} {...cardMotion}>
-                    {isDeviceNotice(n.kind) ? (
-                      <DeviceNoticeCard item={n} first={i === 0} />
-                    ) : (
-                      <WaitingCardView item={n} first={i === 0} />
-                    )}
-                  </Animated.View>
-                ))}
-              </View>
-            </LayoutAnimationConfig>
-          </>
-        ) : list.isLoading ? (
-          <>
-            <SectionHeader title={t("mobile.activity.day.today")} />
-            <SkeletonList rows={3} />
-            <SectionHeader title={t("mobile.activity.day.yesterday")} />
-            <SkeletonList rows={1} />
-          </>
-        ) : list.isError && !list.data ? (
-          <RetryLine onRetry={() => void list.refetch()} />
-        ) : filter !== "done" ? (
-          <AllClear cheer={cheer} />
-        ) : days.length === 0 ? (
-          <EmptyState size="inline" title={t("mobile.activity.noneDone")} />
-        ) : null}
-        {/* Kept rows under a load that failed: the line says so, what loaded stays readable. */}
-        {list.isError && list.data && !list.isLoading ? <RetryLine onRetry={() => void list.refetch()} /> : null}
-        {/* Another filter is another list: it comes whole, with no row of the last one leaving through it. */}
-        <LayoutAnimationConfig key={filter} skipEntering skipExiting>
-          {days.map(([group, groupItems]) => (
-            <Animated.View key={group} {...rowMotion}>
-              <SectionHeader title={t(`mobile.activity.day.${group satisfies DayGroup}`)} />
-              {/* Loose rows on the page, as Conversas' (no card around them). */}
-              {groupItems.map((n, i) => (
-                <Animated.View key={n.id} {...rowMotion}>
-                  <ActivityRow item={n} divider={i > 0} />
+    <LargeTitleScreen title={t("mobile.activity.title")} {...header} pull={pull}>
+      <Filters
+        items={[
+          { key: "all", label: t("mobile.activity.filter.all") },
+          // The count is the section's, once.
+          { key: "waiting", label: t("mobile.activity.filter.waiting") },
+          { key: "done", label: t("mobile.activity.filter.done") },
+        ]}
+        value={filter}
+        onChange={(key) => setFilter(key as ActivityFilter)}
+      />
+      {waiting.length > 0 ? (
+        <>
+          <SectionHeader title={t("mobile.home.waiting")} count={waitingCount} />
+          <LayoutAnimationConfig skipEntering skipExiting>
+            <View style={styles.cards}>
+              {waiting.map((n, i) => (
+                <Animated.View key={n.id} {...cardMotion}>
+                  {isDeviceNotice(n.kind) ? (
+                    <DeviceNoticeCard item={n} first={i === 0} />
+                  ) : (
+                    <WaitingCardView item={n} first={i === 0} />
+                  )}
                 </Animated.View>
               ))}
-            </Animated.View>
-          ))}
-          {list.hasNextPage ? (
-            <Animated.View layout={reduced ? undefined : MOVE}>
-              <Pressable
-                onPress={() => void list.fetchNextPage()}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.more, pressed && styles.morePressed]}
-              >
-                <Text variant="small" tone="muted">
-                  {t("mobile.activity.more")}
-                </Text>
-              </Pressable>
-            </Animated.View>
-          ) : null}
-        </LayoutAnimationConfig>
-        {layer}
-      </LargeTitleScreen>
-    </BurstProvider>
+            </View>
+          </LayoutAnimationConfig>
+        </>
+      ) : list.isLoading ? (
+        <>
+          <SectionHeader title={t("mobile.activity.day.today")} />
+          <SkeletonList rows={3} />
+          <SectionHeader title={t("mobile.activity.day.yesterday")} />
+          <SkeletonList rows={1} />
+        </>
+      ) : list.isError && !list.data ? (
+        // Nothing kept to read: the list's error, with the way to ask again.
+        <LoadFailed onRetry={() => void list.refetch()} />
+      ) : filter !== "done" ? (
+        <AllClear cheer={cheer} />
+      ) : days.length === 0 ? (
+        <EmptyState size="inline" title={t("mobile.activity.noneDone")} />
+      ) : null}
+      {/* Kept rows under a load that failed: the line says so, what loaded stays readable. */}
+      {list.isError && list.data && !list.isLoading ? <RetryLine onRetry={() => void list.refetch()} /> : null}
+      {/* Another filter is another list: it comes whole, with no row of the last one leaving through it. */}
+      <LayoutAnimationConfig key={filter} skipEntering skipExiting>
+        {days.map(([group, groupItems]) => (
+          <Animated.View key={group} {...rowMotion}>
+            <SectionHeader title={t(`mobile.activity.day.${group satisfies DayGroup}`)} />
+            {/* Loose rows on the page, as Conversas' (no card around them). */}
+            {groupItems.map((n, i) => (
+              <Animated.View key={n.id} {...rowMotion}>
+                <ActivityRow item={n} divider={i > 0} href={notificationHref(n, ai)} busy={busy} act={act} />
+              </Animated.View>
+            ))}
+          </Animated.View>
+        ))}
+      </LayoutAnimationConfig>
+      {/* The next page, as Drive's "Mostrar mais": the kit's button, centered, its wheel while the page comes. */}
+      {list.hasNextPage ? (
+        <Animated.View layout={reduced ? undefined : MOVE} style={styles.more}>
+          <Button
+            variant="secondary"
+            size="sm"
+            label={t("mobile.activity.more")}
+            loading={list.isFetchingNextPage}
+            onPress={() => {
+              if (!list.isFetchingNextPage) void list.fetchNextPage();
+            }}
+          />
+        </Animated.View>
+      ) : null}
+    </LargeTitleScreen>
   );
 }
 
@@ -234,21 +221,8 @@ export function ActivityScreen() {
  * One thing waiting on you, as the chat's request card (`WaitingCard`): who asks and the kind in the chat's words
  * and icons (amber, the waiting color), the deadline or where and when at the right, the exact request in words, why
  * in muted, what it goes through on one quiet line, and the decision on the card: an approval decided here
- * (Aprovar or Agora não), a server's changed tools opening their review, a question Responder. The whole card opens
- * it too.
+ * (Aprovar or Agora não), a question Responder. The whole card opens it too.
  */
-/**
- * Where a notice opens. A server's changed tools open its Ferramentas; a notice from before notices named their
- * server finds it by its name among the changes waiting (once the server names them all, by id alone).
- */
-function useNoticeHref(n: AppNotification, ai: Parameters<typeof notificationHref>[1]) {
-  const { org, orgId } = useOrg();
-  const unnamed = n.kind === "connector_tool_changed" && !n.source.connectionId;
-  const changes = useToolChanges(orgId, unnamed && can(org, "manage_connectors")).data;
-  const id = unnamed ? changes?.find((c) => c.connectionLabel === n.source.label)?.connectionId : undefined;
-  return id ? `/connectors/tools?id=${id}` : notificationHref(n, ai);
-}
-
 /** `first`: the page's first card carries its one primary; the others decide or open in secondary. */
 function WaitingCardView({ item: n, first = false }: { item: AppNotification; first?: boolean }) {
   const { t } = useTranslation();
@@ -270,6 +244,8 @@ function WaitingCardView({ item: n, first = false }: { item: AppNotification; fi
   // Someone asking to join: who asked (the first names, how many in all), with their faces.
   const join = card.kind === "join" ? joinRequestLine(t, n) : null;
   const notice = useNoticeTitle(n);
+  // What the right hand found (ADR 0177 §1): the problem in the reader's language, and its way out on the button.
+  const found = teamWatchOf(n);
   const title =
     card.kind === "approval" && request
       ? [approvalTitle(t, request), onCard > 1 ? t("approval.all.waitingCount", { count: onCard }) : null]
@@ -277,15 +253,12 @@ function WaitingCardView({ item: n, first = false }: { item: AppNotification; fi
           .join(" · ")
       : join
         ? join.text
-        : card.kind === "limit"
+        : card.kind === "limit" || found
           ? notice.title
-          : // The server is named over it, so the title says only what it did; its tools are on the line below.
-            card.kind === "tools"
-            ? t("mobile.activityNow.toolsTitle")
-            : (dash?.title ?? card.title);
+          : (dash?.title ?? card.title);
   // A routine's trouble opens the routine; the computer being ready, Connect an AI while no agent has one.
   const ai = useAiStatus(orgId, n.kind === "computer_ready").data;
-  const href = useNoticeHref(n, ai);
+  const href = notificationHref(n, ai);
   // No screen of its own in the app (the workspace's billing hold): its page on the web, so a tap is never a dead end.
   const web = href ? null : notificationWebPath(n, orgId);
   const actor = n.actors[0];
@@ -293,22 +266,21 @@ function WaitingCardView({ item: n, first = false }: { item: AppNotification; fi
   const name = dir.nameOf(who);
   const kind = dash ? { icon: "chart" as const, label: dash.kind } : kindOf(t, card.kind, n.source.screen);
   const left = card.expiresAt ? timeLeft(t, card.expiresAt, new Date(now)) : null;
-  // The server is already named over the title.
-  const place = card.kind === "tools" ? null : placeOf(n);
+  const place = placeOf(n);
   const where = [place ? t("mobile.chats.waitIn", { where: place }) : null, when.short(n.updatedAt)]
     .filter(Boolean)
     .join(" · ");
-  const button = dash
-    ? t("mobile.activityNow.open")
-    : card.kind === "tools"
-      ? t("mobile.activityNow.reviewChanges")
+  const button = found?.act
+    ? (t as unknown as (key: string) => string)(found.act)
+    : dash
+      ? t("mobile.activityNow.open")
       : t(`mobile.activityNow.${card.action}`);
   const open = () => {
     if (n.readAt === null) act.mutate({ type: "read", item: n, read: true });
     if (href) router.push(href);
     else if (web) openWebPath(web);
   };
-  // Whoever asks leads the card: an agent (with its sky), a person, the people asking to join, or the server.
+  // Whoever asks leads the card: an agent (with its sky), a person, or the people asking to join.
   const leading =
     who && who.type !== "agent" ? (
       <Face who={who} size={36} live={false} />
@@ -321,15 +293,12 @@ function WaitingCardView({ item: n, first = false }: { item: AppNotification; fi
           </View>
         ))}
       </View>
-    ) : card.kind === "tools" ? (
-      <ConnectorIcon def={null} label={n.source.label ?? ""} size={36} />
     ) : null;
-  const tools = card.kind === "tools" ? n.latest.title : null;
   return (
     <WaitingCard
       agentId={who?.type === "agent" ? who.id : null}
       leading={leading}
-      name={name || (card.kind === "tools" ? (n.source.label ?? "") : "")}
+      name={name}
       kind={kind}
       title={title}
       onPress={href || web ? open : undefined}
@@ -348,17 +317,6 @@ function WaitingCardView({ item: n, first = false }: { item: AppNotification; fi
         <ApprovalWhy approval={{ origin: n.latest.origin ?? null, why: n.latest.text ?? null }} name={name} />
       ) : null}
       {card.kind === "approval" && request && onCard <= 1 ? <ApprovalSource approval={request} /> : null}
-      {card.kind === "tools" ? (
-        <>
-          <Text variant="small" tone="muted">
-            {t("mobile.activityNow.toolsWhy")}
-          </Text>
-          {tools ? (
-            // The server's mark already leads the card: the tools that changed, on their own.
-            <WaitingSource text={tools.split(", ").join(" · ")} />
-          ) : null}
-        </>
-      ) : null}
       {card.kind === "limit" ? (
         <>
           <Text variant="footnote" tone="muted">
@@ -373,7 +331,7 @@ function WaitingCardView({ item: n, first = false }: { item: AppNotification; fi
 
 /**
  * Each kind in the chat request card's words and icons ("Pede sua aprovação" with the shield, "Pergunta", "Precisa de
- * você no navegador" or "no computador"); what the chat never asks keeps Atividade's (Membros, Ferramentas, Limite).
+ * você no navegador" or "no computador"); what the chat never asks keeps Atividade's (Membros, Limite).
  */
 function kindOf(t: TFunction, kind: WaitingCardKind, screen?: string): { icon: IconName; label: string } {
   const ask: AskKind | null =
@@ -388,7 +346,7 @@ function kindOf(t: TFunction, kind: WaitingCardKind, screen?: string): { icon: I
   return { icon: OWN_ICON[kind as keyof typeof OWN_ICON], label: t(`mobile.activityNow.kind.${kind}`) };
 }
 
-const OWN_ICON = { join: "members", tools: "bolt", limit: "chart" } as const;
+const OWN_ICON = { join: "members", limit: "chart" } as const;
 
 /**
  * The request's decision on the card, as the chat's: Aprovar (held to approve when it is high risk; the page's
@@ -397,17 +355,12 @@ const OWN_ICON = { join: "members", tools: "bolt", limit: "chart" } as const;
  */
 function ApproveHere({ approval: a, primary }: { approval: Approval; primary: boolean }) {
   const { t } = useTranslation();
-  const dir = useDirectory();
-  const burst = useBurst();
-  // Approved: a burst from the button, in the agent's tones (the page's host plays it while the card leaves).
-  const { approve, pending, high } = useApproveNow(a, () => {
-    burst?.fire(agentLook(dir.anyAgent(a.agentId)).color);
-  });
+  const { approve, pending, high } = useApproveNow(a);
   return (
-    <AskButtons
-      primary={
-        <ApproveSpot off={pending && !high}>
-          {high ? (
+    <View style={styles.decision}>
+      <AskButtons
+        primary={
+          high ? (
             <HoldButton size="card" label={t("mobile.approval.hold")} onConfirm={() => approve()} />
           ) : (
             <Button
@@ -418,19 +371,20 @@ function ApproveHere({ approval: a, primary }: { approval: Approval; primary: bo
               disabled={pending}
               onPress={() => approve()}
             />
-          )}
-        </ApproveSpot>
-      }
-      secondary={
-        <Button
-          variant="secondary"
-          size="card"
-          wide
-          label={t("mobile.approval.refuse")}
-          onPress={() => router.push(`/approval/${a.id}?mode=refuse`)}
-        />
-      }
-    />
+          )
+        }
+        secondary={
+          <Button
+            variant="secondary"
+            size="card"
+            wide
+            label={t("mobile.approval.refuse")}
+            onPress={() => router.push(`/approval/${a.id}?mode=refuse`)}
+          />
+        }
+      />
+      <WhenAsksLink approval={a} />
+    </View>
   );
 }
 
@@ -455,9 +409,11 @@ function ApprovalSource({ approval: a }: { approval: Approval }) {
 function AllClear({ cheer }: { cheer: boolean }) {
   const { t } = useTranslation();
   const orgId = useOrgId();
+  const deleting = Boolean(useOrg().org?.deletion);
   const dir = useDirectory();
   const routines = useRoutines(orgId);
-  const next = useMemo(() => nextRoutine<Routine>(routines.data ?? []), [routines.data]);
+  // Being deleted, its routines' slots pass: none is next (the server says so too, once the list is read again).
+  const next = useMemo(() => (deleting ? null : nextRoutine<Routine>(routines.data ?? [])), [deleting, routines.data]);
   const nextAgent = next ? dir.agentById.get(next.agentId) : undefined;
   const when = useWhen();
   const date = next?.nextRunAt ? nextRunWords(t, when, next.nextRunAt) : null;
@@ -510,7 +466,7 @@ function nextRunWords(t: TFunction, when: ReturnType<typeof useWhen>, iso: strin
       : day === "tomorrow"
         ? t("mobile.activityNow.next.tomorrow", { time })
         : t("mobile.activityNow.next.later", {
-            day: new Intl.DateTimeFormat(when.locale, { weekday: "short", day: "numeric", month: "short" })
+            day: dateFormat(when.locale, { weekday: "short", day: "numeric", month: "short" })
               .format(new Date(iso))
               .replace(/\./g, ""),
             time,
@@ -519,20 +475,74 @@ function nextRunWords(t: TFunction, when: ReturnType<typeof useWhen>, iso: strin
 }
 
 /**
+ * "Clear all" in the bar, as the web's: everything listed goes to Feitas but what waits on you, and the toast offers
+ * Desfazer. Only in Tudo, and only with something to move.
+ */
+function useClearAll(
+  filter: ActivityFilter,
+  counts: NotificationCounts | undefined,
+  items: AppNotification[],
+  busy: boolean,
+): HeaderAction | null {
+  const { t } = useTranslation();
+  const orgId = useOrgId();
+  // Its own: the toast's undo follows this call's answer, which a row's action (the rows share one) would replace.
+  const act = useNotificationAction(orgId);
+  const toast = useToast();
+  if (!canClearAll(filter, counts, items)) return null;
+  const run = () =>
+    act.mutate(
+      { type: "doneAll", filter: "all" },
+      {
+        onSuccess: (res) => {
+          if (!res.ids.length) return;
+          toast({
+            title: t("mobile.activity.doneAllToast", { count: res.ids.length }),
+            action: {
+              label: t("mobile.activity.undo"),
+              onPress: () =>
+                act.mutate(
+                  { type: "undoneMany", ids: res.ids },
+                  { onError: (e) => toast({ title: errorText(t, e), icon: "x" }) },
+                ),
+            },
+          });
+        },
+        onError: (e) => toast({ title: errorText(t, e), icon: "x" }),
+      },
+    );
+  return { icon: "check", sf: "checkmark.circle", label: t("notifications.doneAll"), disabled: busy, onPress: run };
+}
+
+/**
  * One item, in Conversas' row: the faces, who did what (the names bold)
  * and when, the snippet and where; a red dot on the right while unread. Swipe right to mark read or unread,
  * left for "Feito"; tapping opens where it happened.
  */
-const ActivityRow = memo(function ActivityRow({ item: n, divider }: { item: AppNotification; divider: boolean }) {
+const ActivityRow = memo(function ActivityRow({
+  item: n,
+  divider,
+  href,
+  busy,
+  act,
+}: {
+  item: AppNotification;
+  divider: boolean;
+  /**
+   * Where a tap opens (`notificationHref`): a routine's trouble opens the routine; the computer being ready, Connect an
+   * AI while no agent has one.
+   */
+  href: AppHref | null;
+  /** "Clear all" or its undo is under way: the row doesn't swipe. */
+  busy: boolean;
+  /** The screen's read and done (`useNotificationAction`). */
+  act: NotificationAct;
+}) {
   const { t, i18n } = useTranslation();
   const orgId = useOrgId();
   const c = useColors();
   const when = useWhen();
   const toast = useToast();
-  const act = useNotificationAction(orgId);
-  // A routine's trouble opens the routine; the computer being ready, Connect an AI while no agent has one.
-  const ai = useAiStatus(orgId, n.kind === "computer_ready").data;
-  const href = useNoticeHref(n, ai);
   // No screen of its own in the app (the workspace's billing hold): its page on the web, so a tap is never a dead end.
   const web = href ? null : notificationWebPath(n, orgId);
   const unread = n.readAt === null;
@@ -555,12 +565,16 @@ const ActivityRow = memo(function ActivityRow({ item: n, divider }: { item: AppN
     ? restrictionLine(t, restriction.code, restriction.facts)
     : n.kind === "usage_limit"
       ? usageLimitLine(t, n)
-      : failed
-        ? failed.sub
-        : // A widget's or routine's name is often its line too: said once ("Assinaturas hoje", not twice).
-          [emojisOf(n).join(" "), [...new Set([line, placeOf(n)].filter(Boolean))].join(" · ")]
-            .filter(Boolean)
-            .join(" ");
+      : // What the right hand found (ADR 0177 §1) is the title itself: nothing under it says it again.
+        n.kind === "team_watch"
+        ? ""
+        : failed
+          ? failed.sub
+          : // Where first, then the words, as the web inbox ("#canal · snippet"). A widget's or routine's name is
+            // often its line too: said once ("Assinaturas hoje", not twice).
+            [emojisOf(n).join(" "), [...new Set([placeOf(n), line].filter(Boolean))].join(" · ")]
+              .filter(Boolean)
+              .join(" ");
   const time = when.short(n.updatedAt);
   // As Conversas' rows: line 1 who (the names alone, one line, the time on their baseline), line 2 what they did and
   // where. A sentence that doesn't open with the names (or has none) is line 1 itself, on one line too.
@@ -570,21 +584,24 @@ const ActivityRow = memo(function ActivityRow({ item: n, divider }: { item: AppN
   const second = byNames ? [action, sub].filter(Boolean).join(" · ") : sub;
 
   // The swipe taps on its own (SwipeRow); VoiceOver's actions call these too.
-  const toggleRead = () => act.mutate({ type: "read", item: n, read: unread });
+  const toggleRead = () => {
+    if (!busy) act({ type: "read", item: n, read: unread });
+  };
   // In "Feitas" the same swipe moves it back to the inbox. Marked done, a toast offers the way back for a moment.
   const isDone = Boolean(n.doneAt);
   const done = () => {
-    act.mutate({ type: "done", item: n, done: !isDone });
+    if (busy) return;
+    act({ type: "done", item: n, done: !isDone });
     if (!isDone)
       toast({
         title: t("mobile.activity.doneToast"),
         subtitle: title,
-        action: { label: t("mobile.activity.undo"), onPress: () => act.mutate({ type: "done", item: n, done: false }) },
+        action: { label: t("mobile.activity.undo"), onPress: () => act({ type: "done", item: n, done: false }) },
       });
   };
   const doneLabel = isDone ? t("mobile.activity.restore") : t("mobile.activity.done");
   const open = () => {
-    if (unread) act.mutate({ type: "read", item: n, read: true });
+    if (unread) act({ type: "read", item: n, read: true });
     if (href) router.push(href);
     else if (web) openWebPath(web);
   };
@@ -608,15 +625,24 @@ const ActivityRow = memo(function ActivityRow({ item: n, divider }: { item: AppN
   return (
     <View>
       <SwipeRow
-        left={{
-          label: unread ? t("mobile.activity.markRead") : t("mobile.activity.markUnread"),
-          icon: unread ? "check" : "bell",
-          color: c.agent,
-          ink: c.onAgent,
-          onAction: toggleRead,
-        }}
+        // While "Clear all" or its undo is under way, a row doesn't swipe.
+        left={
+          busy
+            ? undefined
+            : {
+                label: unread ? t("mobile.activity.markRead") : t("mobile.activity.markUnread"),
+                icon: unread ? "check" : "bell",
+                color: c.agent,
+                ink: c.onAgent,
+                onAction: toggleRead,
+              }
+        }
         // On the green, the page's color reads in both themes (white in light, near black on dark's light green).
-        right={{ label: doneLabel, icon: isDone ? "undo" : "archive", color: c.ok, ink: c.bg, onAction: done }}
+        right={
+          busy
+            ? undefined
+            : { label: doneLabel, icon: isDone ? "undo" : "archive", color: c.ok, ink: c.bg, onAction: done }
+        }
       >
         <View style={{ backgroundColor: c.bg }}>
           <ListRow
@@ -650,10 +676,16 @@ const ActivityRow = memo(function ActivityRow({ item: n, divider }: { item: AppN
           <Button variant="secondary" size="sm" label={t("mobile.activity.chooseModel")} onPress={open} />
         </View>
       ) : null}
-      {/* An agent holds the person's phone: Stop, right here. */}
-      {isDeviceNotice(n.kind) ? (
+      {/* An agent holds the person's phone: Stop, right here (nothing, and no room for it, once it let go). */}
+      {deviceStoppable(n) ? (
         <View style={styles.change}>
           <DeviceNoticeActions item={n} />
+        </View>
+      ) : null}
+      {/* Someone asks to add an agent to a channel: added right here. */}
+      {n.kind === "admin_ask" && n.latest.reason === "channel_agent" && !n.doneAt ? (
+        <View style={styles.change}>
+          <AdminAskAdd n={n} />
         </View>
       ) : null}
       {/* A person asks for more (ADR 0141): raised or refused right here. */}
@@ -667,31 +699,37 @@ const ActivityRow = memo(function ActivityRow({ item: n, divider }: { item: AppN
   );
 });
 
+/** A notification's read, done and their undo, as the screen hands it to its rows. */
+type NotificationAct = ReturnType<typeof useNotificationAction>["mutate"];
+
+/** Whether a phone notice still has its Stop under the row (`DeviceNoticeActions` draws it only then). */
+function deviceStoppable(n: AppNotification): boolean {
+  if (!isDeviceNotice(n.kind) || n.doneAt) return false;
+  const d = deviceNoticeOf(n);
+  return d?.kind === "device.in_use" && Boolean(d.phoneId);
+}
+
 /** Two faces share the avatar box (grouped items: reactions, replies). */
 const STACKED = 36;
 const faceOf = (a: AppNotification["actors"][number] | undefined) =>
   a ? { type: a.type === "agent" ? "agent" : "person", id: a.id } : null;
 
 const styles = StyleSheet.create({
+  // The decision, then "Mudar quando perguntar" on its own line at the card's words' edge.
+  decision: { gap: 4 },
   // Cards 12 apart, at the screen's margin.
   cards: { gap: 12, paddingHorizontal: 16 },
-  change: { paddingHorizontal: 16, paddingBottom: 12 },
-  wpressed: { opacity: 0.85 },
+  // What is decided right under a row starts at the row's words (the text column at 80), not under its face.
+  change: { paddingLeft: LIST_INSET, paddingRight: 16, paddingBottom: 12 },
   faces: { flexDirection: "row" },
   overlap: { marginLeft: -6 },
-  grow: { flex: 1, minWidth: 0 },
-  // Nothing waiting, on the page itself: the sky band edge to edge, its crew, the words, the next event's line.
-  // One event line: the 16-point mark on the first line, the words, when at the end.
   stack: { width: LIST_AVATAR, height: LIST_AVATAR },
   back: { position: "absolute", top: 0, left: 0 },
   front: { position: "absolute", right: -2, bottom: -2, padding: 2 },
-  bold: { fontWeight: "600" },
   divider: { position: "absolute", top: 0, left: LIST_INSET, right: 0, height: StyleSheet.hairlineWidth },
-  more: { alignItems: "center", paddingVertical: 16 },
-  morePressed: { opacity: 0.6 },
+  more: { alignItems: "center", paddingTop: 20, paddingBottom: 8 },
 });
 
-const EASE_OUT = Easing.bezier(...motion.ease);
 const CARD_IN = FadeIn.duration(160);
 /** What was decided or done leaves: fading, a little smaller, never to nothing. */
 const LEAVE: EntryExitAnimationFunction = () => {
@@ -699,10 +737,10 @@ const LEAVE: EntryExitAnimationFunction = () => {
   return {
     initialValues: { opacity: 1, transform: [{ scale: 1 }] },
     animations: {
-      opacity: withTiming(0, { duration: 240, easing: EASE_OUT }),
-      transform: [{ scale: withTiming(0.94, { duration: 240, easing: EASE_OUT }) }],
+      opacity: withTiming(0, { duration: 240, easing: motion.easeOut }),
+      transform: [{ scale: withTiming(0.94, { duration: 240, easing: motion.easeOut }) }],
     },
   };
 };
-/** What stays moves to its new place on the ruler's `nav` spring: no overshoot. */
+/** What stays moves to its new place on the `nav` spring: no overshoot. */
 const MOVE = LinearTransition.springify().damping(motion.nav.damping).stiffness(motion.nav.stiffness);

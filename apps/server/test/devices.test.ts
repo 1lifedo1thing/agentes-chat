@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import { MACHINE_PROTOCOL_VERSION, type ServerFrame } from "@agenteschat/adapters/machine-protocol";
 import { eq, schema } from "@agenteschat/db";
 import { syncMachinePhones } from "@agenteschat/engine";
 import { browser, createTestServer, joinByInvitation, pairComputer, seedOrg, signUp, type TestServer } from "./harness";
@@ -70,6 +71,10 @@ test("connect link over HTTP: the one-line install, the computer asking to join,
   const { machineId } = (await approved.json()) as { machineId: string };
   const token = await runnerPost("/api/machines/device/token", { deviceCode: started.deviceCode });
   expect(token.status).toBe(200);
+  // The computer says who may use it and where that changes, as it connects.
+  const granted = (await token.json()) as { org: { id: string }; audience: string; owner: string; url: string };
+  expect(granted).toMatchObject({ machineId, audience: "everyone", owner: "sam" });
+  expect(granted.url).toBe(`${t.config.PUBLIC_URL}/org/${granted.org.id}/settings/devices/${machineId}`);
   const devices = (await (await rui("/devices")).json()) as {
     devices: { id: string; name: string; audience: { mode: string }; mayUse: boolean; mayManage: boolean }[];
     requests: unknown[];
@@ -78,6 +83,40 @@ test("connect link over HTTP: the one-line install, the computer asking to join,
     { id: machineId, name: "Build server", audience: { mode: "everyone" }, mayUse: true, mayManage: false },
   ]);
   expect(devices.requests).toEqual([]);
+});
+
+test("a connect link's info, with no session: the workspace and its maker; one 404 for unknown and used; limited", async () => {
+  const { owner } = await start();
+  const link = (await (await owner("/devices/connect-links", { json: { kind: "computer" } })).json()) as {
+    code: string;
+    expiresAt: string;
+  };
+  const info = (code: string, ip = "203.0.113.40") =>
+    t.app.request(`/api/machines/connect-links/${code}`, { headers: { "x-forwarded-for": ip } });
+
+  const live = await info(link.code);
+  expect(live.status).toBe(200);
+  expect(await live.json()).toEqual({
+    org: { name: "Acme" },
+    by: { name: "sam" },
+    kind: "computer",
+    expiresAt: link.expiresAt,
+  });
+  expect((await info(link.code.replace("-", "").toLowerCase())).status).toBe(200);
+
+  const unknown = await info("ABCD-EFGH");
+  expect(unknown.status).toBe(404);
+  const gone = await unknown.json();
+  expect(gone).toEqual({ error: "link_expired" });
+  await runnerPost("/api/machines/device", { name: "build-box", ...RUNNER, link: link.code });
+  const used = await info(link.code);
+  expect(used.status).toBe(404);
+  expect(await used.json()).toEqual(gone);
+
+  // 30 a minute from one address, like the install line; another address still gets its answer.
+  for (let i = 0; i < 26; i++) await info("ABCD-EFGH");
+  expect((await info("ABCD-EFGH")).status).toBe(429);
+  expect((await info("ABCD-EFGH", "203.0.113.41")).status).toBe(404);
 });
 
 test("a computer and its phones over HTTP: rename, who can use it, stop, forget, remove", async () => {
@@ -116,4 +155,122 @@ test("a computer and its phones over HTTP: rename, who can use it, stop, forget,
 
   expect((await owner(`/devices/computers/${machine.id}`, { method: "DELETE" })).status).toBe(204);
   expect(((await (await owner("/devices")).json()) as { devices: unknown[] }).devices).toEqual([]);
+});
+
+test("Wi-Fi pairing over HTTP: the computer's owner only, a checked address and code, its computer reached", async () => {
+  const { owner, rui } = await start();
+  const paired = await pairComputer(t, owner, { ...RUNNER, exec: true }, { name: "MacBook" });
+  const path = `/devices/computers/${paired.machineId}/wifi-pairings`;
+  expect((await rui(path, { json: {} })).status).toBe(403);
+  for (const bad of [
+    { address: "192.168.1.20:37099" },
+    { address: "192.168.1.20:37099", code: "12345" },
+    { address: "-s 1", code: "123456" },
+    { address: "192.168.1.300:37099", code: "123456" },
+  ])
+    expect((await owner(path, { json: bad })).status).toBe(400);
+  // Not connected now: the person is told it's offline (no runner here to pair with).
+  const offline = await owner(path, { json: { address: "192.168.1.20:37099", code: "123456" } });
+  expect(offline.status).toBe(409);
+  expect(((await offline.json()) as { error: { code: string } }).error.code).toBe("machine.offline");
+  expect((await owner(`${path}/${crypto.randomUUID()}`)).status).toBe(409);
+  expect((await rui(`${path}/${crypto.randomUUID()}`, { method: "DELETE" })).status).toBe(403);
+  // Cancel never fails on a computer that's gone.
+  expect((await owner(`${path}/${crypto.randomUUID()}`, { method: "DELETE" })).status).toBe(204);
+});
+
+test("iPhones over Wi-Fi over HTTP: the Mac's owner only; an offline Mac offers none and can't pick one", async () => {
+  const { owner, rui } = await start();
+  const paired = await pairComputer(t, owner, { ...RUNNER, os: "darwin", exec: true }, { name: "MacBook" });
+  const path = `/devices/computers/${paired.machineId}/wifi-iphones`;
+  // A member who doesn't manage the Mac is never told which phones are near it.
+  expect((await rui(path)).status).toBe(403);
+  expect((await rui(`${path}/00008120-000A1B2C3D4E5F60`, { method: "PUT", json: {} })).status).toBe(403);
+  const offer = await owner(path);
+  expect(offer.status).toBe(200);
+  expect(await offer.json()).toEqual({ available: [] });
+  const picked = await owner(`${path}/00008120-000A1B2C3D4E5F60`, { method: "PUT", json: {} });
+  expect(picked.status).toBe(409);
+  expect(((await picked.json()) as { error: { code: string } }).error.code).toBe("machine.offline");
+  expect((await owner(`${path}/${"x".repeat(201)}`, { method: "PUT", json: {} })).status).toBe(400);
+});
+
+test("fixing a Mac's Xcode over HTTP: its owner only, a kind it knows; an old app gets the Terminal way", async () => {
+  const { owner, rui } = await start();
+  const paired = await pairComputer(t, owner, { ...RUNNER, os: "darwin", exec: true }, { name: "MacBook" });
+  const path = `/devices/computers/${paired.machineId}/xcode-fix`;
+  expect((await rui(path, { json: { kind: "select" } })).status).toBe(403);
+  expect((await rui(path)).status).toBe(403);
+  expect((await owner(path, { json: { kind: "sudo rm" } })).status).toBe(400);
+  expect((await owner(path, { json: { kind: "select", command: "x" } })).status).toBe(400);
+  // This Mac's app (protocol 54) predates the fix.
+  const old = await owner(path, { json: { kind: "select" } });
+  expect(old.status).toBe(200);
+  expect(await old.json()).toEqual({ fix: null, update: true });
+  expect(await (await owner(path)).json()).toEqual({ fix: null, update: true });
+  expect((await owner(path, { method: "DELETE" })).status).toBe(200);
+});
+
+test("opening Xcode on a Mac over HTTP: its owner only; an app too old opens nothing", async () => {
+  const { owner, rui } = await start();
+  const paired = await pairComputer(t, owner, { ...RUNNER, os: "darwin", exec: true }, { name: "MacBook" });
+  const path = `/devices/computers/${paired.machineId}/xcode-open`;
+  expect((await rui(path, { json: {} })).status).toBe(403);
+  // This Mac's app (protocol 54) predates it, and the list says so.
+  const old = await owner(path, { json: {} });
+  expect(old.status).toBe(200);
+  expect(await old.json()).toEqual({ opened: false });
+  const list = (await (await owner("/devices")).json()) as { devices: { id: string; opensXcode: boolean }[] };
+  expect(list.devices.find((d) => d.id === paired.machineId)?.opensXcode).toBe(false);
+});
+
+test("tasks at once over HTTP: the computer says its limit, its owner changes it there, an old or offline one can't", async () => {
+  const { owner, rui } = await start();
+  const runner = { ...RUNNER, protocol: MACHINE_PROTOCOL_VERSION, exec: true };
+  const paired = await pairComputer(t, owner, runner, { name: "MacBook" });
+  const hub = t.engine.machineHub;
+  const sent: number[] = [];
+  const conn = hub.open({
+    send(text: string) {
+      const frame = JSON.parse(text) as ServerFrame;
+      if (frame.type !== "request" || frame.op !== "limits.set") return;
+      sent.push(frame.maxTasks);
+      const result = JSON.stringify({ type: "result", id: frame.id, ok: true, data: { maxTasks: frame.maxTasks } });
+      setTimeout(() => void hub.message(conn, result), 1);
+    },
+    close() {},
+  });
+  const size = { cpus: 10, memoryGb: 16, diskGb: 500, maxTasks: 5 };
+  await hub.message(conn, JSON.stringify({ type: "hello", token: paired.token, ...runner, size }));
+  const maxTasks = async () =>
+    ((await (await owner("/devices")).json()) as { devices: { id: string; maxTasks: number | null }[] }).devices.find(
+      (d) => d.id === paired.machineId,
+    )?.maxTasks;
+  expect(await maxTasks()).toBe(5);
+
+  const path = `/devices/computers/${paired.machineId}`;
+  expect((await rui(path, { method: "PATCH", json: { maxTasks: 8 } })).status).toBe(403);
+  expect((await owner(path, { method: "PATCH", json: { maxTasks: 21 } })).status).toBe(400);
+  expect((await owner(path, { method: "PATCH", json: { maxTasks: 0 } })).status).toBe(400);
+  const changed = await owner(path, { method: "PATCH", json: { maxTasks: 8 } });
+  expect(changed.status).toBe(200);
+  expect(await changed.json()).toMatchObject({ maxTasks: 8 });
+  expect(sent).toEqual([8]);
+
+  // Changed on the computer itself (its app, its config file): the list follows it.
+  await hub.message(conn, JSON.stringify({ type: "runner.state", paused: { paused: false }, maxTasks: 2 }));
+  expect(await maxTasks()).toBe(2);
+
+  // Not connected: nothing would apply it.
+  const away = await pairComputer(t, owner, runner, { name: "Away box" });
+  const offline = await owner(`/devices/computers/${away.machineId}`, { method: "PATCH", json: { maxTasks: 4 } });
+  expect(offline.status).toBe(409);
+  expect(((await offline.json()) as { error: { code: string } }).error.code).toBe("machine.offline");
+
+  // An app before the limit came from the apps: no limit shown, and asking says to update it.
+  const old = await pairComputer(t, owner, { ...RUNNER, exec: true }, { name: "Old box" });
+  const outdated = await owner(`/devices/computers/${old.machineId}`, { method: "PATCH", json: { maxTasks: 4 } });
+  expect(outdated.status).toBe(400);
+  expect(((await outdated.json()) as { error: { code: string } }).error.code).toBe("machine.outdated");
+  expect(sent).toEqual([8]);
 });

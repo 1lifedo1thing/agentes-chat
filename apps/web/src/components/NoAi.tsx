@@ -1,8 +1,9 @@
 import type { Message } from "@agenteschat/client";
 import { useAiStatus, useAuthConfig, useMessages, useThreadMessages } from "@agenteschat/client";
-import { withoutApiKeys } from "@agenteschat/client/lib/api-key-text";
+import { type FoundKey, withoutApiKeys } from "@agenteschat/client/lib/api-key-text";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import type { BillingHold } from "@agenteschat/client/lib/billing";
-import { failedRunFix } from "@agenteschat/client/lib/errors";
+import { FIX_BRAIN_SCREEN, failedRunFix } from "@agenteschat/client/lib/errors";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import {
   aiStateOf,
@@ -15,27 +16,33 @@ import {
   noAiStatusKey,
   opensByItself,
   planLineFix,
+  planLineKey,
   planLinePasses,
   planOfKind,
   type RightHandPlanLine,
+  type StandIn,
   signInAgainPlan,
+  standInKey,
 } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
-import { Button, Chip, Dialog, DialogFooter, EventPillAction, Icon, InfoHint } from "@agenteschat/ui";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
+import { Button, Chip, Dialog, DialogFooter, EventPill, EventPillAction, Icon, InfoHint } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePlanHold } from "@/components/ai/ConnectAiSteps";
 import { useOpenBilling } from "@/components/BillingLinkButton";
 import { type ConnectAiRequest, useConnectAi } from "@/components/ConnectAi";
 import { useOrg } from "@/components/org-context";
-import { RequestDone, RequestOpen } from "@/components/RequestCard";
+import { RequestDone, RequestNote, RequestOpen } from "@/components/RequestCard";
 import { TeamTemplatesDialog } from "@/components/TeamPlan";
+import { VaultNewDialog } from "@/components/vault/VaultNewDialog";
 import { useDirectory } from "@/hooks/useDirectory";
 import { usePaidReturn } from "@/lib/paid-return";
 import { STORAGE_KEYS, sessionStore } from "@/lib/storage";
+import { useToast } from "@/lib/toast";
 import { useChannelEvents } from "@/realtime/context";
 import "./no-ai.css";
 
@@ -62,13 +69,13 @@ export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgen
     const agent = dir.agentById.get(dmAgentId);
     const name = agent?.name ?? t("channel.unknownAgent");
     return (
-      <div className="noai-banner ac-actrow" role="status">
-        <span className="noai-banner__text ac-iconline ac-actrow__text">
+      <div className="noai-banner ac-actline" role="status">
+        <span className="noai-banner__text ac-iconline">
           <Icon name="plug" size={16} />
           <b>{t(noAiStatusKey(status.data, dmAgentId), agentGrammar(name))}</b>
         </span>
         {mayConnectAi(agent, me.user.id, org) && (
-          <Button size="sm" onClick={() => connect.open({ agentId: dmAgentId })}>
+          <Button size="sm" onClick={() => connect.open({ agentId: dmAgentId, chat: true })}>
             {t("noAi.action")}
           </Button>
         )}
@@ -77,9 +84,13 @@ export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgen
   }
   if (status.data.any || agentIds.length === 0) return null;
   const action = t("noAi.banner.orgAction");
+  // The workspace has no AI at all: Connect for the whole team, whoever is in the channel (ADR 0160, "For the whole
+  // team"). Only someone else's agent alone in it opens its own dialog, which says who connects it.
+  const lone = agentIds.length === 1 ? dir.agentById.get(agentIds[0] ?? "") : undefined;
+  const theirs = lone !== undefined && lone.ownerUserId !== me.user.id && !isRightHand(lone);
   return (
-    <div className="noai-banner ac-actrow" role="status">
-      <span className="noai-banner__text ac-iconline ac-actrow__text">
+    <div className="noai-banner ac-actline" role="status">
+      <span className="noai-banner__text ac-iconline">
         <Icon name="plug" size={16} />
         {/* Asking in the chat is understood only where Jev reads the message (`ai-intent.ts`). */}
         {status.data.routing?.by === "jev" ? (
@@ -92,7 +103,7 @@ export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgen
           <b>{t("noAi.banner.org")}</b>
         )}
       </span>
-      <Button size="sm" onClick={() => connect.open({ agentId: agentIds.length === 1 ? agentIds[0] : undefined })}>
+      <Button size="sm" onClick={() => connect.open(theirs ? { agentId: lone.id } : {})}>
         {action}
       </Button>
     </div>
@@ -113,10 +124,21 @@ export function NoAiCard({ message }: { message: Message }) {
   const hold = usePlanHold();
   const card = noAiCardOf(message.meta);
   if (!card) return null;
+  if (card.standIn) return <StandInLine agentId={card.agentId} standIn={card.standIn} />;
   // Any card on a billing hold is the wall: a Connect or a key from before it leads nowhere until the plan.
   if (card.held || hold) return <KeptCard message={message} card={card} hold={hold} />;
   if (card.planLine)
-    return <PlanLineCard message={message} agentId={card.agentId} line={card.planLine} model={card.model} />;
+    return (
+      <PlanLineCard
+        message={message}
+        agentId={card.agentId}
+        line={card.planLine}
+        model={card.model}
+        why={card.why}
+        owner={card.owner}
+        plan={card.plan}
+      />
+    );
   const agent = dir.agentById.get(card.agentId);
   const name = agent?.name ?? t("channel.unknownAgent");
   const again = signInAgainPlan(card, agent);
@@ -126,8 +148,8 @@ export function NoAiCard({ message }: { message: Message }) {
   const answering = answer === "answering";
   const state = aiStateOf(status.data, card.agentId);
   const ready = state !== undefined && state !== "no_ai" && answer !== "still_missing";
-  // The same people as "Continuar": who asked, the agent's owner or an admin.
-  const mayAnswer = card.forUserId === me.user.id || agent?.ownerUserId === me.user.id || can(org, "manage_agents");
+  // The same people as "Continuar": who asked, the agent's owner or who manages it.
+  const mayAnswer = card.forUserId === me.user.id || agent?.ownerUserId === me.user.id || managesAgent(agent);
   const owner = agent?.ownerUserId ? dir.memberById.get(agent.ownerUserId)?.name.split(" ")[0] : undefined;
   const title = answering
     ? t("noAi.card.answering", { name })
@@ -188,8 +210,8 @@ export function NoAiCard({ message }: { message: Message }) {
 
 /**
  * The wall (ADR 0079 §6): an agent kept the person's message for after the plan. It follows the message from there
- * (`keptCardState`): the way to the plans, then Connect for the whole team, and once an AI is there, from wherever it
- * was connected, opening the conversation starts the answer with no click.
+ * (`keptCardState`): a note with the way to the plans, then one with Connect for the whole team, and once an AI is
+ * there, from wherever it was connected, opening the conversation starts the answer with no click.
  */
 function KeptCard({ message, card, hold }: { message: Message; card: NoAiCardMeta; hold: BillingHold | null }) {
   const { t } = useTranslation();
@@ -210,7 +232,7 @@ function KeptCard({ message, card, hold }: { message: Message; card: NoAiCardMet
   const ai = aiStateOf(status.data, card.agentId);
   const state = keptCardState({ hold, paid, ready: ai !== undefined && ai !== "no_ai" });
   const answer = connect?.answered[message.id];
-  const mayAnswer = card.forUserId === me.user.id || agent?.ownerUserId === me.user.id || can(org, "manage_agents");
+  const mayAnswer = card.forUserId === me.user.id || agent?.ownerUserId === me.user.id || managesAgent(agent);
   const replied = messages?.some(
     (m) => m.author.id === card.agentId && m.createdAt > message.createdAt && !noAiCardOf(m.meta),
   );
@@ -246,57 +268,90 @@ function KeptCard({ message, card, hold }: { message: Message; card: NoAiCardMet
   if (state === "connect") {
     const mine = connect !== null && mayConnectAi(agent, me.user.id, org);
     return (
-      <RequestOpen
-        mine={mine}
-        icon="plug"
-        action={
+      <RequestNote
+        agent={agent}
+        title={t("noAi.kept.activeTitle")}
+        actions={
           connect && mine ? (
-            <EventPillAction primary onClick={() => connect.open({ from: message.id })}>
+            <Button size="sm" variant="primary" onClick={() => connect.open({ from: message.id })}>
               {t("noAi.action")}
-            </EventPillAction>
+            </Button>
           ) : undefined
         }
-        below={connect && !mine ? <span>{t("noAi.lockedAdmins")}</span> : undefined}
       >
-        {t("noAi.kept.active", { name })}
-      </RequestOpen>
+        {connect && !mine ? t("noAi.lockedAdmins") : t("noAi.kept.activeLine", { name })}
+      </RequestNote>
     );
   }
   const code = hold ?? "payment";
   const canPay = can(org, "manage_billing") && Boolean(billingUrl);
   // With no team yet, the way to one needs no model.
   const noTeam = state === "held" && isRightHand(agent) && can(org, "create_agents") && dir.agents.every(isRightHand);
+  const pays = state === "held" && canPay;
   return (
     <>
-      <RequestOpen
-        mine={state === "held" && canPay}
-        icon="waiting"
-        action={
-          state === "held" && (canPay || noTeam) ? (
+      <RequestNote
+        agent={agent}
+        title={t("noAi.kept.title")}
+        hint={t(code === "payment" ? "noAi.kept.plan" : "standing.billing.sub")}
+        actions={
+          pays || noTeam ? (
             <>
-              {canPay && (
-                <EventPillAction primary disabled={billing.isPending} onClick={() => billing.mutate()}>
+              {pays && (
+                <Button size="sm" variant="primary" loading={billing.isPending} onClick={() => billing.mutate()}>
                   {t(`standing.billing.cta.${code}`)}
-                </EventPillAction>
+                </Button>
               )}
               {noTeam && (
-                <EventPillAction onClick={() => setTemplates(true)}>{t("teamPlan.start.templates")}</EventPillAction>
+                <Button
+                  size="sm"
+                  variant={pays ? "ghost" : "primary"}
+                  disabled={billing.isPending}
+                  onClick={() => setTemplates(true)}
+                >
+                  {t(modeKey(org, "teamPlan.start.templates"))}
+                </Button>
               )}
             </>
           ) : undefined
         }
-        below={
-          <>
-            <p>{code === "payment" ? t("noAi.kept.line") : t(`standing.billing.${code}`)}</p>
-            {code === "payment" && <p>{t("noAi.kept.plan")}</p>}
-            {state === "held" && !canPay && <p>{t("standing.billing.askAdmin")}</p>}
-          </>
-        }
       >
-        {t("noAi.kept.title")}
-      </RequestOpen>
+        {state === "held" && !canPay ? t("noAi.kept.askAdmin") : t(`noAi.kept.wait.${code}`)}
+      </RequestNote>
       {noTeam && <TeamTemplatesDialog open={templates} onClose={() => setTemplates(false)} />}
     </>
+  );
+}
+
+/**
+ * The right hand answered with another AI than its plan (ADR 0137 §7, amended 2026-11-15): a quiet pill under its
+ * reply saying with what and why, and "Change", which opens its page where each person sets their own AI and admins
+ * the workspace's.
+ */
+function StandInLine({ agentId, standIn }: { agentId: string; standIn: StandIn }) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const navigate = useNavigate();
+  return (
+    <EventPill
+      className="noai-standin"
+      mark={<Icon name="info" size={14} />}
+      actions={
+        <EventPillAction
+          onClick={() =>
+            void navigate({
+              to: "/org/$orgId/agents/$agentId",
+              params: { orgId: org.id, agentId },
+              search: { tab: "settings" },
+            })
+          }
+        >
+          {t("chat.standIn.change")}
+        </EventPillAction>
+      }
+    >
+      {t(standInKey(standIn.why), { via: standIn.via, plan: standIn.plan })}
+    </EventPill>
   );
 }
 
@@ -310,11 +365,17 @@ function PlanLineCard({
   agentId,
   line,
   model,
+  why,
+  owner,
+  plan,
 }: {
   message: Message;
   agentId: string;
   line: RightHandPlanLine;
   model?: string;
+  why?: string;
+  owner?: string;
+  plan?: string;
 }) {
   const { t } = useTranslation();
   const { org, me } = useOrg();
@@ -340,7 +401,7 @@ function PlanLineCard({
         {t("noAi.card.connected", { name })}
       </RequestDone>
     );
-  const sentence = t(`noAi.rightHand.${line}`, { name, model });
+  const sentence = t(planLineKey(line, why), { name, model, why, owner, plan });
   const mine = connect !== null && (fix === "connectMine" || fix === "useKey");
   return (
     <RequestOpen
@@ -367,8 +428,8 @@ function PlanLineCard({
 }
 
 /**
- * Beside a failed run's reason: the one thing that fixes it, for who can do it, a key (the Connect dialog) or another
- * model (its AI settings).
+ * Beside a failed run's reason: the one thing that fixes it, for who can do it, a key (the Connect dialog), another
+ * model or another account ("Quem pensa" on that screen).
  */
 export function FailedRunFix({ code, agentId }: { code: string | undefined; agentId: string }) {
   const { t } = useTranslation();
@@ -376,10 +437,11 @@ export function FailedRunFix({ code, agentId }: { code: string | undefined; agen
   const dir = useDirectory(org.id);
   const connect = useConnectAi();
   const held = usePlanHold() !== null;
+  const agent = dir.agentById.get(agentId);
   const fix = failedRunFix(code, {
     keys: can(org, "manage_credentials") && !held,
-    admin: can(org, "manage_agents"),
-    owner: dir.agentById.get(agentId)?.ownerUserId === me.user.id,
+    admin: managesAgent(agent),
+    owner: agent?.ownerUserId === me.user.id,
   });
   if (fix === "useKey" && connect)
     return (
@@ -387,15 +449,15 @@ export function FailedRunFix({ code, agentId }: { code: string | undefined; agen
         {t("noAi.rightHand.useKey")}
       </Button>
     );
-  if (fix !== "changeModel") return null;
+  if (fix !== "changeModel" && fix !== "changeAccount") return null;
   return (
     <Link
       to="/org/$orgId/agents/$agentId"
       params={{ orgId: org.id, agentId }}
-      search={{ tab: "settings", sec: "brain" }}
+      search={{ tab: "settings", sec: "brain", brain: FIX_BRAIN_SCREEN[fix] }}
       className="ac-btn ac-btn--sm"
     >
-      {t("usageCard.changeModel")}
+      {t(`usageCard.${fix}`)}
     </Link>
   );
 }
@@ -422,8 +484,9 @@ export function NoAiChip({ agentId }: { agentId: string }) {
 }
 
 /**
- * "Isso parece uma chave de API": before a message with a key goes out (everyone in the chat would read
- * it). Nothing is sent until the person picks; an admin can save it as the organization's key instead.
+ * "Isso parece uma chave de API": before a message with a key goes out (everyone in the chat would read it). Nothing
+ * is sent until the person picks. "Salvar no Cofre" (anyone) opens the Vault's new key on it, its name guessed from
+ * its shape; an AI provider's key can instead become the workspace's AI key, for who manages those.
  */
 export function KeyGuardDialog({
   ask,
@@ -431,7 +494,7 @@ export function KeyGuardDialog({
   onEdit,
   onClose,
 }: {
-  ask: { text: string; key: string } | null;
+  ask: { text: string; found: FoundKey } | null;
   onSend: () => void;
   /** The text without the key, back in the composer. */
   onEdit: (text: string) => void;
@@ -439,38 +502,70 @@ export function KeyGuardDialog({
 }) {
   const { t } = useTranslation();
   const { org } = useOrg();
+  const toast = useToast();
   const connect = useConnectAi();
   const held = usePlanHold() !== null;
-  const admin = connect !== null && can(org, "manage_credentials") && !held;
+  const [vault, setVault] = useState<FoundKey | null>(null);
+  // The last key asked about: the dialog keeps its title and width while it animates closed.
+  const last = useRef(ask);
+  if (ask) last.current = ask;
+  const found = last.current?.found;
+  const ai = found?.ai === true && connect !== null && can(org, "manage_credentials") && !held;
   return (
-    <Dialog
-      open={ask !== null}
-      onOpenChange={(o) => !o && onClose()}
-      title={t("keyGuard.title")}
-      description={admin ? t("keyGuard.text") : t("keyGuard.textMember")}
-      closeLabel={t("common.close")}
-      width={480}
-    >
-      <DialogFooter>
-        <Button onClick={onSend}>{t("keyGuard.send")}</Button>
-        <Button variant={admin ? "default" : "primary"} onClick={() => ask && onEdit(withoutApiKeys(ask.text))}>
-          {t("keyGuard.remove")}
-        </Button>
-        {admin && (
+    <>
+      <Dialog
+        open={ask !== null}
+        onOpenChange={(o) => !o && onClose()}
+        title={t(found?.ai ? "keyGuard.title" : "keyGuard.titleSecret")}
+        description={t("keyGuard.vaultText")}
+        closeLabel={t("common.close")}
+        width={ai ? 600 : 480}
+      >
+        <DialogFooter>
+          <Button onClick={onSend}>{t("keyGuard.send")}</Button>
+          <Button onClick={() => ask && onEdit(withoutApiKeys(ask.text))}>{t("keyGuard.remove")}</Button>
+          {ai && (
+            <Button
+              onClick={() => {
+                if (!ask) return;
+                onEdit(withoutApiKeys(ask.text));
+                connect.open({ intent: "api_key", apiKey: ask.found.key });
+              }}
+            >
+              {t("keyGuard.useAsAi")}
+            </Button>
+          )}
           <Button
             variant="primary"
-            icon="key"
+            icon="lock"
             onClick={() => {
               if (!ask) return;
               onEdit(withoutApiKeys(ask.text));
-              connect.open({ intent: "api_key", apiKey: ask.key });
+              setVault(ask.found);
             }}
           >
-            {t("keyGuard.save")}
+            {t("keyGuard.vault")}
           </Button>
-        )}
-      </DialogFooter>
-    </Dialog>
+        </DialogFooter>
+      </Dialog>
+      {vault && (
+        <VaultNewDialog
+          canManageTeam={can(org, "manage_credentials")}
+          scope="personal"
+          initial={{ keyName: vault.name, secret: vault.key }}
+          onClose={() => setVault(null)}
+          onCreated={(item) => {
+            setVault(null);
+            toast.show(
+              t("vault.new.saved"),
+              "success",
+              undefined,
+              t("keyGuard.saved", { name: item.keyName ?? item.title }),
+            );
+          }}
+        />
+      )}
+    </>
   );
 }
 

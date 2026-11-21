@@ -1,12 +1,14 @@
 import { type Issue, type Message, useChannels, type WorkView } from "@agenteschat/client";
+import { managesAgent } from "@agenteschat/client/lib/audience";
 import { heldBack } from "@agenteschat/client/lib/issues";
-import { blockedText, workLine, workPlanProgress, workWaitsOnPerson } from "@agenteschat/client/lib/long-work";
+import { handedLine, workLine, workPlanProgress, workWaitsOnPerson } from "@agenteschat/client/lib/long-work";
 import { can } from "@agenteschat/client/lib/permissions";
-import { Icon, WorkLine, WorkLineAction, WorkPlan } from "@agenteschat/ui";
+import { WorkLine, WorkLineAction, WorkPlan } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
+import { AgentAvatar } from "@/components/AgentAvatar";
 import { useChannelActions } from "@/components/channel-actions";
 import { useNow } from "@/components/missions/MissionBits";
 import { useOrg } from "@/components/org-context";
@@ -25,24 +27,74 @@ function useWorkLine(work: WorkView, inUpdatesThread = false) {
   // A live work's minutes move every half minute.
   const now = new Date(useNow(live, 30_000));
   const agent = dir.agentById.get(work.agentId);
-  // As `mayStopRun` decides (who asked, the agent's owner, an admin); the server has the last word, said in a toast.
-  const canStop =
-    can(org, "manage_agents") || agent?.ownerUserId === me.user.id || work.requestedByUserId === me.user.id;
+  // As `mayStopRun` decides (who asked, the agent's owner, who manages it); the server has the last word, said in a
+  // toast.
+  const canStop = managesAgent(agent) || agent?.ownerUserId === me.user.id || work.requestedByUserId === me.user.id;
   const stop = useMutation({
     mutationFn: (runId: string) => api.agents.cancelRun(org.id, runId),
     onError: () => toast.show(t("work.stopFailed"), "error"),
     onSettled: () => void qc.invalidateQueries({ queryKey: ["org", org.id, "channel", work.channelId] }),
   });
-  const view = workLine(t, work, {
+  const context = {
     locale: i18n.language,
     now,
     meId: me.user.id,
     agentName: agent?.name ?? t("channel.unknownAgent"),
-    nameOf: (id) => dir.memberById.get(id)?.name ?? null,
+    nameOf: (id: string) => dir.memberById.get(id)?.name ?? null,
+    agentNameOf: (id: string) => dir.anyAgent(id)?.name,
     canStop,
     inUpdatesThread,
-  });
-  return { view, stop, t };
+  };
+  const view = workLine(t, work, context);
+  return { view, handed: () => handedLine(t, work, context), agent, stop, t };
+}
+
+/**
+ * Under the reply of the agent that handed work over: "Handed to Atlas · working on it · step 3 of 5 · 2 min", the
+ * state word in the agent's colour while it works and amber while it waits on someone. Stop while it isn't over,
+ * See the result once done. Its updates and report are the delegate's own messages right below.
+ */
+export function HandedWorkLine({ work }: { work: WorkView }) {
+  const actions = useChannelActions();
+  const { handed, agent, stop, t } = useWorkLine(work, true);
+  const h = handed();
+  const name = agent?.name ?? t("channel.unknownAgent");
+  return (
+    <WorkLine
+      tone={h.tone}
+      className="handed-line"
+      text={
+        <>
+          <Trans
+            i18nKey="work.handed.lead"
+            values={{ name }}
+            components={[
+              <span key="who" className="handed-line__who">
+                <AgentAvatar agentId={work.agentId} name={name} state="idle" size="xs" />
+              </span>,
+            ]}
+          />
+          {" · "}
+          <span className="handed-line__state">{h.state}</span>
+          {h.facts.map((fact) => ` · ${fact}`).join("")}
+        </>
+      }
+      actions={
+        <>
+          {h.result && (
+            <WorkLineAction onClick={() => actions?.jumpTo?.(h.result?.messageId as string)}>
+              {h.result.label}
+            </WorkLineAction>
+          )}
+          {h.stop && (
+            <WorkLineAction danger disabled={stop.isPending} onClick={() => stop.mutate(h.stop?.runId as string)}>
+              {t("work.stop")}
+            </WorkLineAction>
+          )}
+        </>
+      }
+    />
+  );
 }
 
 /**
@@ -186,47 +238,5 @@ function CardBlock({ issue, work }: { issue: Issue; work: WorkView }) {
         />
       )}
     </div>
-  );
-}
-
-/**
- * On a board card: the blocked badge, how far its plan is with the step it is on (the full plan is on the task's
- * page) and its last update. While blocked, that step waits too.
- */
-export function IssueCardWork({ issue }: { issue: Issue }) {
-  const { t } = useTranslation();
-  const work = issue.backgroundWork;
-  const blocked = blockedText(t, issue.blocked);
-  if (!work && !blocked) return null;
-  const progress = work ? workPlanProgress(work) : null;
-  const live = work && (work.status === "live" || work.status === "queued");
-  const step = live ? (work.plan.find((p) => p.state === "doing") ?? work.plan.find((p) => p.state === "todo")) : null;
-  return (
-    <span className="issue-card__work">
-      {blocked && (
-        <span className="ac-iconline issue-card__blocked">
-          <Icon name={issue.blocked?.reason === "failed" ? "alert" : "waiting"} size={14} />
-          <span>{blocked}</span>
-        </span>
-      )}
-      {live && progress && (
-        <span className="issue-card__plan">
-          <span className="issue-card__plan-head">
-            {t("work.plan")} · {t("work.planProgress", progress)}
-          </span>
-          {step && (
-            <span className="ac-iconline issue-card__step" data-state={issue.blocked ? "blocked" : step.state}>
-              <span className="issue-card__step-mark" aria-hidden="true" />
-              {step.text}
-            </span>
-          )}
-        </span>
-      )}
-      {live && work.lastUpdate && (
-        <span className="issue-card__update">
-          <b>{t("work.lastUpdate")}:</b> {work.lastUpdate.text}
-        </span>
-      )}
-    </span>
   );
 }

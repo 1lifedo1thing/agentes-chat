@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { ACCOUNTS_PROTOCOL, type MailAdapters, type PubSub, type RateLimiter } from "@agenteschat/adapters";
 import {
   and,
@@ -22,20 +21,8 @@ import { orgMessageCount } from "./billing-link";
 import { caches } from "./cache";
 import { stopOrgWork } from "./cancel";
 import { type ConnectorDeps, revokeAtProvider } from "./connectors/connections";
-import { sha256 } from "./crypto";
-import { emailLocale, queueEmail } from "./email";
-import {
-  CODE_LIMITS,
-  CODE_RESEND_SECONDS,
-  CODE_TRIES,
-  CODE_TTL_MS,
-  codeLimit,
-  codeRefusal,
-  codeVerdict,
-  codeWait,
-  codeWaitMs,
-  newCode,
-} from "./email-codes";
+import { emailLocale, modeStamp, queueEmail } from "./email";
+import { sendProofCode, spendProofCode } from "./email-codes";
 import { ConflictError, ForbiddenError, NotFoundError } from "./errors";
 import { type OrgDeletingEvent, publishOrgEvent } from "./events";
 import { forgetInstallationTokens, uninstallInstallation } from "./git/github-app";
@@ -81,6 +68,7 @@ const {
   users,
   sessions,
   pushDevices,
+  liveActivityDevices,
   machineProvisioning,
   machines,
   machineAccounts,
@@ -90,6 +78,7 @@ const {
   usageRecords,
   wikiLinks,
   contextUsage,
+  feedbackFiles,
   mailAccounts,
   mailWatches,
   connectorConnections,
@@ -103,14 +92,15 @@ const {
 
 /*
  * Deleting a workspace: an owner asks, with proof that it's them (a code emailed to them, `spendDeletionCode`), and
- * the workspace closes to everyone at once, like a suspended one (`closedRefusal`). Any owner may restore it until its
+ * the workspace turns read-only for everyone at once: its people still read it, but every change and all its work are
+ * refused (`closedRefusal`, `readRefusal`). Any owner may restore it until its
  * date. At the date the `org.delete` job deletes it for good: its computers' AI sign-ins first, then the grants it
  * holds at Composio and GitHub, then its rows in one transaction. The date is the point of no return, by the database's clock: restoring
  * works only before it and the purge only after it, each checked under the workspace's `org-members` lock once it has
  * it, so neither can undo the other.
  */
 
-/** Days a deleted workspace stays closed, and restorable by any owner, before it goes for good. */
+/** Days a deleted workspace stays read-only, and restorable by any owner, before it goes for good. */
 export const WORKSPACE_DELETION_DAYS = 7;
 /** The job that deletes a workspace at its date (`purgeWorkspace`). */
 export const ORG_DELETE_JOB = "org.delete";
@@ -125,6 +115,7 @@ export const PURGED_BY_HAND = [
   "usage_records",
   "wiki_links",
   "context_usage",
+  "feedback_files",
 ] as const;
 /** How long the purge waits for a workspace's online computers to sign its AI accounts out. */
 const ACCOUNTS_WAIT_MS = 60_000;
@@ -134,14 +125,14 @@ export type DeletionVia = "owner" | "account";
 
 /**
  * A deletion past its date still waits while the workspace is suspended, on a hold that isn't billing's, or under the
- * operator's deletion hold (a legal hold), so evidence outlives a deletion. It never refuses one: the workspace closes
- * at once either way.
+ * operator's deletion hold (a legal hold), so evidence outlives a deletion. It never refuses one: the workspace turns
+ * read-only at once either way.
  */
 export const keptFromDeletion = (
   org: Pick<OrgStanding, "state" | "reason" | "notice"> & { deletionHoldAt: Date | null },
 ) => refusesNewWorkspace(org) || org.deletionHoldAt !== null;
 /** `keptFromDeletion` in SQL. */
-const keptOrg = sql<boolean>`(${heldOrg} or ${organizations.deletionHoldAt} is not null)`;
+export const keptOrg = sql<boolean>`(${heldOrg} or ${organizations.deletionHoldAt} is not null)`;
 /**
  * Its date passed, by the database's clock when the statement runs: after the lock it waited for, never when its
  * transaction began. Restoring reads the same clock the same way (`restorable`).
@@ -192,167 +183,61 @@ export async function requireOwnerToDelete(db: Database, userId: string, orgId: 
   return membership;
 }
 
-const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
-/** One per person and what it deletes, in Better Auth's `verifications`: a code proves only that deletion. */
-const deletionCodeId = (userId: string, orgId: string | null) =>
-  `deletion-code:${userId}:${orgId ? `workspace:${orgId}` : "account"}`;
-const deletionCodeHash = (id: string, code: string) => sha256(`${id}:${code}`);
-/** A person's codes are sent and checked one at a time, whatever they delete: their wrong tries are counted together. */
-const lockDeletionCodes = (tx: Executor, userId: string) =>
-  tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`deletion-code:${userId}`}))`);
-/** The account's wrong tries in its day (`CODE_LIMITS.wrongDay`): one `verifications` row, the count till the day ends. */
-const wrongTriesId = (userId: string) => `deletion-code:${userId}:wrong`;
-async function wrongTries(tx: Executor, userId: string, now: Date) {
-  const [row] = await tx
-    .select()
-    .from(verifications)
-    .where(eq(verifications.identifier, wrongTriesId(userId)));
-  return row && row.expiresAt > now
-    ? { count: Number(row.value), until: row.expiresAt }
-    : { count: 0, until: new Date(now.getTime() + DAY_MS) };
-}
-const triesSpent = async (tx: Executor, userId: string, now: Date) =>
-  (await wrongTries(tx, userId, now)).count >= CODE_LIMITS.wrongDay;
-async function countWrongTry(tx: Executor, userId: string, now: Date) {
-  const id = wrongTriesId(userId);
-  const { count, until } = await wrongTries(tx, userId, now);
-  await tx.delete(verifications).where(eq(verifications.identifier, id));
-  await tx.insert(verifications).values({
-    id: randomUUID(),
-    identifier: id,
-    value: String(count + 1),
-    expiresAt: until,
-    createdAt: now,
-    updatedAt: now,
-  });
-}
-/** A code waiting, in its row's `value`: its hash and wrong tries, never the code. */
-type WaitingCode = { hash: string; tries: number };
-const waitingCode = (value: string): WaitingCode | null => {
-  try {
-    const v = JSON.parse(value) as Partial<WaitingCode>;
-    return typeof v.hash === "string" && typeof v.tries === "number" ? { hash: v.hash, tries: v.tries } : null;
-  } catch {
-    return null;
-  }
-};
 
 /**
  * Emails `userId` a code that proves it's them before deleting the workspace `orgId`, or their account when it is null
- * (ADR 0088 §2), with the rules of every emailed code (`email-codes.ts`): it works for 10 minutes, a new one replaces it
- * after 60 s at the soonest, and an account gets `CODE_LIMITS` an hour and a day, and none once its wrong tries for the
- * day are spent, since no code would be taken then. The email says what it deletes and whom to write to if it wasn't
- * them. Only where the server sends email: the routes check it.
+ * (ADR 0088 §2), with the rules of every emailed code (`sendProofCode`). The email says what it deletes and whom to write
+ * to if it wasn't them. With `reset`, before resetting the workspace instead, a code for that only. Only where the
+ * server sends email: the routes check it.
  */
 export async function sendDeletionCode(
   deps: { db: Database; rateLimiter: RateLimiter; emails: { publicUrl: string; support?: string | null } },
   userId: string,
   orgId: string | null,
   now = new Date(),
+  reset = false,
 ) {
-  const { db } = deps;
-  const [account] = await db
-    .select({ email: users.email, locale: users.locale, blockedAt: users.blockedAt })
-    .from(users)
-    .where(eq(users.id, userId));
-  if (!account || account.blockedAt) throw new ForbiddenError();
-  const org = orgId ? await getOrganization(db, orgId) : null;
+  const org = orgId ? await getOrganization(deps.db, orgId) : null;
   if (orgId && !org) throw new NotFoundError("This workspace no longer exists");
-  const id = deletionCodeId(userId, orgId);
-  return db.transaction(async (tx) => {
-    await lockDeletionCodes(tx, userId);
-    if (await triesSpent(tx, userId, now)) throw codeLimit("reauth");
-    const [row] = await tx
-      .select({ sentAt: verifications.createdAt })
-      .from(verifications)
-      .where(eq(verifications.identifier, id));
-    const wait = codeWaitMs(row?.sentAt, now);
-    if (wait > 0) throw codeWait("reauth", wait);
-    // ponytail: counted in the rate limiter (in memory on a self-hosted server), so a restart resets them; count them
-    // in the database, as asking to join does, if that ever matters.
-    const caps = [
-      ["hour", CODE_LIMITS.hour, HOUR_MS],
-      ["day", CODE_LIMITS.day, DAY_MS],
-    ] as const;
-    for (const [span, limit, windowMs] of caps) {
-      const spent = await deps.rateLimiter.consume(`deletion-code:${span}:${userId}`, { limit, windowMs });
-      if (!spent.allowed) throw codeLimit("reauth");
-    }
-    const code = newCode();
-    await tx.delete(verifications).where(eq(verifications.identifier, id));
-    await tx.insert(verifications).values({
-      id: randomUUID(),
-      identifier: id,
-      value: JSON.stringify({ hash: deletionCodeHash(id, code), tries: 0 } satisfies WaitingCode),
-      expiresAt: new Date(now.getTime() + CODE_TTL_MS),
-      createdAt: now,
-      updatedAt: now,
-    });
-    await queueEmail(tx, {
-      orgId: null,
-      key: `deletion-code:${sha256(id)}:${now.getTime()}`,
-      to: [account.email],
-      template: {
+  const stamp = org ? { orgName: org.name, ...(await modeStamp(deps.db, org.id)) } : {};
+  return sendProofCode(
+    deps,
+    userId,
+    proofPurpose(orgId, reset),
+    {
+      template: (code, account) => ({
         kind: "deletion_code",
-        locale: emailLocale(account.locale),
+        locale: account.locale,
         code,
         email: account.email,
-        ...(org ? { orgName: org.name } : {}),
+        ...stamp,
+        ...(reset ? { reset: true as const } : {}),
         support: deps.emails.support ?? null,
         url: deps.emails.publicUrl.replace(/\/$/, ""),
-      },
-      maxAttempts: 3,
-      runAt: now,
-    });
-    return { email: account.email, resendIn: CODE_RESEND_SECONDS };
-  });
+      }),
+    },
+    now,
+  );
 }
 
+const proofPurpose = (orgId: string | null, reset: boolean) =>
+  orgId ? (reset ? (`reset:${orgId}` as const) : (`workspace:${orgId}` as const)) : ("account" as const);
+
 /**
- * Spends the code that proves it's `userId` before deleting the workspace `orgId` (their account when null): right, it
- * is used up, so it proves one deletion. A wrong one counts against it (`CODE_TRIES`) and against the account's day
- * (`CODE_LIMITS.wrongDay`): once that is spent, every code is refused unread until the day ends, so a guess past it
- * learns nothing. A code sent for anything else, or to anyone else, is wrong here. Throws `reauth.code_wrong`,
- * `reauth.code_expired`, `reauth.code_tries` or, for the day's, `reauth.code_limit`.
+ * Spends the code that proves it's `userId` before deleting the workspace `orgId` (their account when null), or with
+ * `reset` before resetting it, once (`spendProofCode`): a code sent for anything else, or to anyone else, is wrong here.
  */
-export async function spendDeletionCode(
+export const spendDeletionCode = (
   deps: { db: Database },
   userId: string,
   orgId: string | null,
   code: string,
   now = new Date(),
-) {
-  const id = deletionCodeId(userId, orgId);
-  const refused = await deps.db.transaction(async (tx) => {
-    await lockDeletionCodes(tx, userId);
-    if (await triesSpent(tx, userId, now)) return "limit";
-    const [row] = await tx.select().from(verifications).where(eq(verifications.identifier, id));
-    const waiting = row ? waitingCode(row.value) : null;
-    const verdict = codeVerdict(
-      waiting && row ? { ...waiting, expiresAt: row.expiresAt } : null,
-      deletionCodeHash(id, code),
-      now,
-    );
-    if (verdict === "right") {
-      await tx.delete(verifications).where(eq(verifications.identifier, id));
-      return null;
-    }
-    if (verdict === "none" || !waiting) return "wrong";
-    if (verdict !== "miss") return verdict;
-    const tries = waiting.tries + 1;
-    await tx
-      .update(verifications)
-      .set({ value: JSON.stringify({ ...waiting, tries } satisfies WaitingCode), updatedAt: now })
-      .where(eq(verifications.identifier, id));
-    await countWrongTry(tx, userId, now);
-    return tries >= CODE_TRIES ? "tries" : "wrong";
-  });
-  if (refused === "limit") throw codeLimit("reauth");
-  if (refused) throw codeRefusal("reauth", refused);
-}
+  reset = false,
+) => spendProofCode(deps, userId, proofPurpose(orgId, reset), code, "", now);
 
-/** Deletion codes that ran out a day ago: their rows go (the hourly `deletions` tick). */
+/** Codes that ran out a day ago, whatever they proved: their rows go (the hourly `deletions` tick). */
 export async function pruneDeletionCodes(db: Database, now = new Date()) {
   await db
     .delete(verifications)
@@ -365,8 +250,8 @@ export async function pruneDeletionCodes(db: Database, now = new Date()) {
 }
 
 /**
- * Deletes a workspace after `WORKSPACE_DELETION_DAYS` (`org.delete` then): it closes to everyone now, and its work
- * stops. `owner`: an owner asked (read again under the lock), refused while it is suspended, and its members are
+ * Deletes a workspace after `WORKSPACE_DELETION_DAYS` (`org.delete` then): it turns read-only for everyone now, and
+ * its work stops. `owner`: an owner asked (read again under the lock), refused while it is suspended, and its members are
  * emailed. `account`: its only member deleted their account, whatever its standing. Already being deleted, it keeps
  * its date (`scheduled` false) and nobody is told again.
  */
@@ -439,6 +324,7 @@ export async function closeForDeletion(
   const by = { id: actorId, name: await nameOf(tx, actorId) };
   if (input.emails && via === "owner") {
     const url = workspaceUrl(input.emails.publicUrl, orgId);
+    const mode = await modeStamp(tx, orgId);
     for (const member of await membersToTell(tx, orgId)) {
       await queueEmail(tx, {
         orgId: null,
@@ -453,6 +339,7 @@ export async function closeForDeletion(
           timeZone: member.timeZone,
           owner: member.role === "owner",
           url,
+          ...mode,
         },
       });
     }
@@ -467,9 +354,13 @@ export async function closeForDeletion(
   return { dueAt, closed: { orgId, dueAt, by } };
 }
 
-/** What follows a deletion's commit: the cached standing goes, its people's apps hear it and close, and its work stops. */
+/**
+ * What follows a deletion's commit: the cached standing goes, its people's apps hear it and turn read-only, and its
+ * work stops.
+ */
 export async function afterClosing(deps: DeletionDeps, closed: Closed) {
   caches.standing.delete(`${closed.orgId}:`);
+  caches.membership.deletePrefix(`${closed.orgId}:`);
   const event: OrgDeletingEvent = {
     type: "org.deleting",
     orgId: closed.orgId,
@@ -559,6 +450,7 @@ export async function restoreWorkspace(
     if (!deps.emails || options.account) return;
     const url = workspaceUrl(deps.emails.publicUrl, orgId);
     const byName = await nameOf(tx, actorId);
+    const mode = await modeStamp(tx, orgId);
     for (const member of await membersToTell(tx, orgId)) {
       await queueEmail(tx, {
         orgId: null,
@@ -570,11 +462,13 @@ export async function restoreWorkspace(
           orgName: org.name,
           byName,
           url,
+          ...mode,
         },
       });
     }
   });
   caches.standing.delete(`${orgId}:`);
+  caches.membership.deletePrefix(`${orgId}:`);
 }
 
 const nameOf = async (tx: Executor, userId: string) =>
@@ -636,7 +530,7 @@ export async function purgeWorkspace(deps: PurgeDeps, orgId: string, options: { 
   if (!org || keptFromDeletion(org)) return false;
 
   const released = await db.transaction((tx) => releaseOrgAccounts(tx, orgId));
-  await announceReleasedAccounts(deps.pubsub, released);
+  await announceReleasedAccounts(deps, released, { wakeWaits: false });
   await accountsSignedOut(db, orgId, released);
 
   const left = await revokeGrants(deps, orgId);
@@ -665,6 +559,8 @@ export async function purgeWorkspace(deps: PurgeDeps, orgId: string, options: { 
     // By its org_id, not through the runs: a run deleted earlier (a restarted one) leaves its rows behind.
     // ponytail: no index on context_usage.org_id, one scan per purge; index it if purges get slow.
     await tx.delete(contextUsage).where(eq(contextUsage.orgId, orgId));
+    // Its row only: the feedback sweep removes bytes with no row left (`sweepFeedbackFiles`).
+    await tx.delete(feedbackFiles).where(eq(feedbackFiles.orgId, orgId));
     const via = await requestedVia(tx, orgId);
     await recordOperatorEvent(tx, {
       type: "organization.deleted",
@@ -693,6 +589,7 @@ export async function purgeWorkspace(deps: PurgeDeps, orgId: string, options: { 
   }
   for (const install of gone.installs) forgetInstallationTokens(install.id);
   caches.standing.delete(`${orgId}:`);
+  caches.membership.deletePrefix(`${orgId}:`);
   // On a server without the operator API, the only trace it leaves.
   deps.log?.info("workspace deleted", { orgId, requestedBy: gone.requestedBy, via: gone.via });
   return true;
@@ -982,8 +879,11 @@ export interface AccountDeletionPlan {
   closes: { id: string; name: string; dueAt: Date | null }[];
   /** Others are in it: they leave it. */
   leaves: { id: string; name: string; role: MemberRole }[];
-  /** They are its only owner, others are in it, and it isn't being deleted: the account can't go yet. */
-  soleOwner: { id: string; name: string }[];
+  /**
+   * They are its only owner, others are in it, and it isn't being deleted: the account can't go yet. `onlyOutside`:
+   * those others are all outside collaborators (ADR 0191), who can't be owners, so someone else has to join first.
+   */
+  soleOwner: { id: string; name: string; onlyOutside: boolean }[];
   /** The computers they connected in the workspaces they leave (`personalMachines`): they go with the account. */
   computers: { orgId: string; id: string; name: string }[];
   /** Keys, connections and mailboxes they added to the workspaces they leave: those are the workspace's, and stay. */
@@ -1013,6 +913,7 @@ export async function accountDeletionPlan(db: Executor, userId: string): Promise
       orgId: organizationMembers.orgId,
       others: sql<number>`count(*)::int`,
       owners: sql<number>`(count(*) filter (where ${organizationMembers.role} = 'owner'))::int`,
+      ordinary: sql<number>`(count(*) filter (where ${organizationMembers.outsideOf} is null))::int`,
     })
     .from(organizationMembers)
     .innerJoin(users, eq(users.id, organizationMembers.userId))
@@ -1036,7 +937,7 @@ export async function accountDeletionPlan(db: Executor, userId: string): Promise
     }
     plan.leaves.push({ id: org.id, name: org.name, role: org.role });
     if (org.role === "owner" && Number(count?.owners ?? 0) === 0 && org.dueAt === null) {
-      plan.soleOwner.push({ id: org.id, name: org.name });
+      plan.soleOwner.push({ id: org.id, name: org.name, onlyOutside: Number(count?.ordinary ?? 0) === 0 });
     }
   }
   const left = plan.leaves.map((o) => o.id);
@@ -1060,6 +961,8 @@ export async function accountDeletionPlan(db: Executor, userId: string): Promise
         inArray(connectorConnections.orgId, left),
         eq(connectorConnections.createdByUserId, userId),
         isNull(connectorConnections.revokedAt),
+        // Their own connections go with them.
+        isNull(connectorConnections.ownerUserId),
       ),
     );
   const databases = await db
@@ -1089,13 +992,19 @@ export async function accountDeletionPlan(db: Executor, userId: string): Promise
   return plan;
 }
 
-/** `sole_owner`, with the names and ids of the workspaces that keep the account from going; null when none does. */
+/**
+ * `sole_owner`, with the names and ids of the workspaces that keep the account from going; null when none does.
+ * `onlyOutside`: in every one of them the others are outside collaborators, who can't be owners (ADR 0191).
+ */
 export function soleOwnerRefusal(plan: Pick<AccountDeletionPlan, "soleOwner">) {
   if (plan.soleOwner.length === 0) return null;
+  const onlyOutside = plan.soleOwner.every((o) => o.onlyOutside);
   return new ConflictError(
-    "You are the only owner of a workspace that has other members. Make someone else an owner, or delete the workspace, first.",
+    onlyOutside
+      ? "You are the only owner of a workspace whose other people are outside collaborators, who can't be owners. Invite a member and make them an owner, or delete the workspace, first."
+      : "You are the only owner of a workspace that has other members. Make someone else an owner, or delete the workspace, first.",
     "sole_owner",
-    { organizations: plan.soleOwner.map((o) => o.name), orgIds: plan.soleOwner.map((o) => o.id) },
+    { organizations: plan.soleOwner.map((o) => o.name), orgIds: plan.soleOwner.map((o) => o.id), onlyOutside },
   );
 }
 
@@ -1144,6 +1053,7 @@ export async function scheduleAccountDeletion(deps: DeletionDeps, userId: string
     if (!dueAt) throw new NotFoundError("This account no longer exists");
     await tx.delete(sessions).where(eq(sessions.userId, userId));
     await tx.delete(pushDevices).where(eq(pushDevices.userId, userId));
+    await tx.delete(liveActivityDevices).where(eq(liveActivityDevices.userId, userId));
     for (const m of mine) await followOwner(tx, m.orgId);
     await recordOperatorEvent(tx, { type: "user.deletion_requested", userId, data: { dueAt: dueAt.toISOString() } });
     await enqueueAccountContact(tx, userId);
@@ -1196,6 +1106,7 @@ export async function scheduleAccountDeletion(deps: DeletionDeps, userId: string
   });
   // Their open sockets lose every subscription now.
   for (const m of orgs) {
+    caches.membership.delete(`${m.orgId}:${userId}`);
     await publishOrgEvent(deps.pubsub, { type: "membership.revoked", orgId: m.orgId, userId, quiet: true });
     await announceMembers(deps.pubsub, m.orgId);
   }
@@ -1207,8 +1118,8 @@ export async function scheduleAccountDeletion(deps: DeletionDeps, userId: string
  * Brings back an account waiting for its deletion: only before its date (`account.not_restorable` after), by the same
  * clock and under the same lock as `deleteAccount`, so neither can undo the other. No proof: it destroys nothing, and
  * only its own session gets here. Workspaces that closed with it (same date, asked by them) come back; one that can't
- * yet (suspended, or waiting for a plan another of theirs waits for) stays on its closing screen, where its Restaurar
- * says why. Plans that stopped renewing stay stopped: nothing charges until the person turns one on.
+ * yet stays as it was: suspended, on its screen, or waiting for a plan another of theirs waits for, read-only under its
+ * line, where its Restaurar says why. Plans that stopped renewing stay stopped: nothing charges until the person turns one on.
  */
 export async function restoreAccount(deps: DeletionDeps, userId: string) {
   const { closed, mine } = await deps.db.transaction(async (tx) => {

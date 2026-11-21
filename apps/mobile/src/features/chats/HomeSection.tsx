@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated, {
-  Easing,
   FadeIn,
   FadeOut,
   LayoutAnimationConfig,
@@ -13,20 +12,27 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { readValueSync, STORED, writeValue } from "@/lib/storage";
-import { Count, Icon, LIST_INSET, motion, SCREEN_X, Text, useReducedMotion, weights } from "@/ui";
-import { useColors } from "../shared/hooks";
 import {
-  HOME_SECTIONS,
-  type HomeSection,
-  parseCollapsed,
-  parseHomeCollapsed,
-  toggleCollapsed,
-  toggleHomeCollapsed,
-} from "./logic";
+  Count,
+  Disclosure,
+  Icon,
+  IconButton,
+  LIST_INSET,
+  motion,
+  ROW_PRESS_DELAY,
+  RowPressable,
+  SCREEN_X,
+  Text,
+  useReducedMotion,
+  weights,
+} from "@/ui";
+import { useColors } from "../shared/hooks";
+import { HOME_SECTIONS, type HomeSection, parseCollapsed, toggleCollapsed } from "./logic";
 
 /**
- * The sections the person collapsed, remembered across launches: Conversas' by default, or another list's
- * (`store`, `keys`: the Threads tab's Missões and Threads; null `keys`: any ids, Agentes' groups).
+ * The sections the person collapsed, remembered across launches: Conversas' by default (Início's widgets, the pinned
+ * strip, Recentes, the other channels; a key it no longer has is dropped), or another list's (`store`, `keys`: the
+ * Threads tab's Missões and Threads; null `keys`: any ids, Agentes' groups).
  */
 export function useCollapsedSections<K extends string = HomeSection>(
   store: string = STORED.homeCollapsed,
@@ -46,22 +52,9 @@ export function useCollapsedSections<K extends string = HomeSection>(
   return { collapsed, toggle };
 }
 
-/** Conversas' closed sections, remembered: the fixed ones and the channel categories (any key, ADR 0080). */
-export function useHomeCollapsed() {
-  const [collapsed, setCollapsed] = useState<string[]>(() => parseHomeCollapsed(readValueSync(STORED.homeCollapsed)));
-  const toggle = useCallback((key: string) => {
-    setCollapsed((list) => {
-      const next = toggleHomeCollapsed(list, key);
-      void writeValue(STORED.homeCollapsed, next.length > 0 ? JSON.stringify(next) : null);
-      return next;
-    });
-  }, []);
-  return { collapsed, toggle };
-}
-
 /**
  * What changes place in a list travels there (a conversation that goes to the top with a new message, the sections
- * under one that closes): the ruler's spring for things moving to a new place, which settles with no overshoot.
+ * under one that closes): the spring for things moving to a new place, which settles with no overshoot.
  */
 export const LIST_MOVE = LinearTransition.springify().damping(motion.nav.damping).stiffness(motion.nav.stiffness);
 
@@ -96,11 +89,11 @@ export function LandRow({
   const shown = useSharedValue(arrives ? 0 : 1);
   useEffect(() => {
     if (!arrives) return;
-    shown.value = withDelay(delay, withTiming(1, { duration: LAND_MS, easing: Easing.bezier(...motion.ease) }));
+    shown.set(withDelay(delay, withTiming(1, { duration: LAND_MS, easing: motion.easeOut })));
   }, [arrives, delay, shown]);
   const look = useAnimatedStyle(() => ({
-    opacity: shown.value,
-    transform: [{ translateY: (1 - shown.value) * LAND_RISE }],
+    opacity: shown.get(),
+    transform: [{ translateY: (1 - shown.get()) * LAND_RISE }],
   }));
   return (
     // Only a row that arrives carries a style; the rest stay plain views.
@@ -112,28 +105,26 @@ export function LandRow({
 
 /**
  * A section of Conversas: the title, its count (medium, faint) and a chevron that
- * turns when collapsed; tapping the header collapses or opens it.
+ * turns when collapsed; tapping the header collapses or opens it. No `count` while its rows load: a "0" that turns
+ * into the real count a moment later is a number that lied.
  */
 export function CollapsibleSection({
   title,
   count,
   collapsed,
   onToggle,
-  onLongPress,
-  holdLabel,
-  kept,
+  menu,
   children,
 }: {
   title: string;
-  count: number;
+  count?: number;
   collapsed: boolean;
   onToggle: () => void;
-  /** A channel category's header: its menu (admins). */
-  onLongPress?: () => void;
-  /** What the long press does, for screen readers. */
-  holdLabel?: string;
-  /** Shown while closed (a category's unread channels). */
-  kept?: ReactNode;
+  /**
+   * A setor's menu, for who may change it: a long press on the header, and a "…" before the chevron, so it is found
+   * without knowing the long press.
+   */
+  menu?: { label: string; onPress: () => void };
   children: ReactNode;
 }) {
   const c = useColors();
@@ -144,15 +135,17 @@ export function CollapsibleSection({
   return (
     // The section travels when one above it closes or opens, instead of jumping there.
     <Animated.View layout={reduced ? undefined : LIST_MOVE}>
+      {/* A full-width row: it lights a beat after the finger lands, as the list's rows do (not when a scroll starts). */}
       <Pressable
+        unstable_pressDelay={ROW_PRESS_DELAY}
         onPress={onToggle}
-        {...(onLongPress
+        {...(menu
           ? {
-              onLongPress,
+              onLongPress: menu.onPress,
               delayLongPress: 380,
-              accessibilityActions: [{ name: "menu", label: holdLabel ?? title }],
+              accessibilityActions: [{ name: "menu", label: menu.label }],
               onAccessibilityAction: (e: { nativeEvent: { actionName: string } }) => {
-                if (e.nativeEvent.actionName === "menu") onLongPress();
+                if (e.nativeEvent.actionName === "menu") menu.onPress();
               },
             }
           : {})}
@@ -164,13 +157,17 @@ export function CollapsibleSection({
         <Text variant="small" tone="ink" style={styles.title} accessibilityRole="header" numberOfLines={1}>
           {title}
         </Text>
-        <Count value={count} size={15} weight={weights.medium} color={c.faint} />
+        {count === undefined ? null : <Count value={count} size={15} weight={weights.medium} color={c.faint} />}
         <View style={styles.grow} />
+        {menu ? (
+          <View style={styles.menu}>
+            <IconButton icon="more" small label={menu.label} onPress={menu.onPress} />
+          </View>
+        ) : null}
         <Animated.View style={chevron}>
           <Icon name="chev" size={15} color={c.faint} />
         </Animated.View>
       </Pressable>
-      {collapsed ? (kept ?? null) : null}
       {/* Opened while the list shows, its rows fade in; open when the list mounts, they just show. Closed, they fade
           out where they were while what is under the section comes up. */}
       <LayoutAnimationConfig skipEntering>
@@ -187,20 +184,19 @@ export function CollapsibleSection({
   );
 }
 
-/** "Ver todos os agentes" under a section's first rows, aligned with the text column (`.more`). */
+/**
+ * "Ver todas as conversas" under a section's first rows, aligned with the text column (`.more`). A full-width row: it
+ * lights a beat after the finger lands, as the list's rows do, so a scroll starting on it never flashes it.
+ */
 export function SeeAllRow({ label, onPress }: { label: string; onPress: () => void }) {
   const c = useColors();
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => [styles.more, pressed && { backgroundColor: c.sunken }]}
-    >
+    <RowPressable onPress={onPress} hold accessibilityRole="button" style={styles.more}>
       <Text variant="small" tone="muted" style={styles.medium}>
         {label}
       </Text>
-      <Icon name="right" size={15} color={c.muted} />
-    </Pressable>
+      <Disclosure color={c.muted} />
+    </RowPressable>
   );
 }
 
@@ -216,6 +212,8 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.6 },
   title: { fontWeight: "600", flexShrink: 1 },
+  // The toolbar's 32 over the title's 20-point line: the header keeps its height.
+  menu: { marginVertical: -6 },
   grow: { flex: 1 },
   more: {
     flexDirection: "row",

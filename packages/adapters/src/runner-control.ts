@@ -12,11 +12,19 @@
 import type {
   AccountKind,
   AccountLoginState,
+  CliInstall,
+  CliName,
+  InstallableCli,
   RunnerAccess,
   RunnerAccountInfo,
   RunnerExecutorInfo,
   RunnerPause,
+  RunnerPhone,
+  RunnerReportParts,
   RunnerTools,
+  XcodeBlocked,
+  XcodeFix,
+  XcodeFixKind,
 } from "./machine-protocol";
 
 /** Bumped on breaking changes; the app refuses a runner whose `hello.control` it doesn't know. */
@@ -92,7 +100,8 @@ export interface ControlStatus {
   version: string;
   protocol: number;
   paused: RunnerPause;
-  executors: { claude?: RunnerExecutorInfo; codex?: RunnerExecutorInfo };
+  /** The coding CLIs found here, as `hello.executors` lists them. */
+  executors: Partial<Record<CliName, RunnerExecutorInfo>> & { broken?: Partial<Record<CliName, string>> };
   /** Absolute path of the workspace (the agents' folders live inside it). */
   workspace?: string;
   /** Agents of the organization that use this computer. */
@@ -101,6 +110,10 @@ export interface ControlStatus {
   access?: RunnerAccess;
   /** The agents' browsers that are open or have a person's turn (absent: older runner). */
   browsers?: ControlBrowser[];
+  /** The phones this computer reaches now, as the server hears them (absent: older runner, or no phones looked for). */
+  phones?: RunnerPhone[];
+  /** The OS user agents' commands run as here (absent: older runner). */
+  user?: string;
   /**
    * Grows by one for every status the runner reports (events and `status` replies alike), from 1
    * when the process starts; the app keeps the newest and drops anything older. Absent: older runner.
@@ -170,7 +183,35 @@ export interface ControlConfigPatch {
 /** Settings as `config.get` returns them. */
 export interface ControlConfig extends Required<ControlConfigPatch> {
   workspace: string;
+  /** The runner's own `maxConcurrentTasks` when the config has none, sized to the computer; absent: an older one (3). */
+  defaultMaxConcurrentTasks?: number;
   managedBy?: "desktop";
+}
+
+/**
+ * What a Mac needs before agents can use an iPhone through it, as the desktop app's iPhone setup shows it: Xcode, the
+ * iOS platform Xcode builds for an iPhone with, and an Apple Account in Xcode. The iPhone's own steps (plugged in,
+ * trusted, Developer Mode, UI Automation, the test helper) are its reason in `ControlStatus.phones`.
+ */
+export interface ControlIphoneSetup {
+  /** Xcode's version ("26.3"); null: no Xcode (or only the command line tools). */
+  xcode: string | null;
+  /** The iOS platform: installed (its version), being downloaded (`iphone.download`), missing, or a download failed. */
+  platform:
+    | { state: "installed"; version: string }
+    | { state: "missing" }
+    | { state: "downloading"; percent: number | null; done?: string; total?: string }
+    | { state: "failed"; message: string };
+  /** The Apple Account in Xcode › Settings › Apple Accounts, by its team (a free one is a Personal Team); null: none. */
+  account: { name: string; personal: boolean } | null;
+  /** With `account: null`: Xcode lists an Apple Account that shows no team yet (an older app shows it missing). */
+  noTeam?: true;
+  /** The iPhone SDK's version ("26.2"): an iPhone on a newer iOS needs a newer Xcode. */
+  sdk?: string;
+  /** With `xcode: null`: Xcode is installed but blocked, for a reason `iphone.fixXcode` fixes (`select`). */
+  xcodeBlocked?: XcodeBlocked;
+  /** The last Xcode fix started here (from this window or the web), where it stands. */
+  fix?: XcodeFix;
 }
 
 /** App → runner requests. Every request is answered by exactly one `reply` with the same `id`. */
@@ -197,11 +238,18 @@ export type ControlRequest =
        * unless chosen). Commands always start off from the app. Absent: both off.
        */
       tools?: { claude?: boolean; codex?: boolean };
+      /**
+       * A connect link's code (`agenteschat://pair`): the server asks the link's maker to let this computer in, as
+       * `agentes-runner pair --link` does, and nobody confirms the device code. `pair.code` still comes first.
+       */
+      link?: string;
     }
   | { type: "pair.cancel" }
   /** Forgets the pairing (the token is deleted; the server side is the site's "Desconectar"). */
   | { type: "unpair" }
   | { type: "diagnostics" }
+  /** `PROBLEM_REPORT_PROTOCOL`: what a problem report adds from this computer, scrubbed. Older runners: `bad_request`. */
+  | { type: "report" }
   /** The organization's logo, fetched by the runner with its token (the app never sees the token). */
   | { type: "org.logo" }
   /** Protocol 10. */
@@ -210,6 +258,8 @@ export type ControlRequest =
   | { type: "folders.remove"; path: string; agentId?: string }
   | { type: "folders.setAgents"; path: string; agents: string[] }
   | { type: "tools.set"; tool: keyof RunnerTools; on: boolean }
+  /** Looks for Claude Code and Codex now, not at the next scheduled look. An older runner answers `bad_request`. */
+  | { type: "executors.check" }
   | { type: "access.pending" }
   | { type: "access.answer"; requestId: string; decision: "granted" | "denied"; scope: "agent" | "all" }
   /**
@@ -231,6 +281,23 @@ export type ControlRequest =
   | { type: "account.status"; loginId: string }
   | { type: "account.cancel"; loginId: string }
   | { type: "account.remove"; kind: AccountKind; accountId: string }
+  /** The Mac's side of setting up an iPhone (macOS; elsewhere nothing is found). */
+  | { type: "iphone.setup" }
+  /** Starts downloading the iOS platform when Xcode lacks it; the reply and `iphone.setup` show its progress. */
+  | { type: "iphone.download" }
+  /** Opens Xcode (its Accounts are only there), or Xcode's page in the App Store. */
+  | { type: "iphone.open"; app: "xcode" | "appStore" }
+  /** Fixes the Mac's Xcode (macOS asks for the Mac's password for `select`), or stops the fix; answers the setup. */
+  | { type: "iphone.fixXcode"; action: "start" | "cancel"; kind: XcodeFixKind }
+  /**
+   * `CLI_INSTALL_PROTOCOL` (the status's `protocol`): installs a coding CLI here through its vendor's installer, or says
+   * where the install stands, or stops it. The machine op `cli.install`, for the app on this computer.
+   */
+  | { type: "cli.install"; action: "start" | "status" | "cancel"; tool: InstallableCli }
+  /** Reads the plugged iPhone again now; answers once the status carries what it found. */
+  | { type: "iphone.look" }
+  /** Repairs the test helper of the iPhone `serial` here (machine op `phone.repair`); the status shows its rebuild. */
+  | { type: "iphone.repair"; serial: string }
   /** Finish what's running briefly, then exit 0 (the app quits). */
   | { type: "shutdown" };
 
@@ -250,6 +317,7 @@ export interface ControlReplies {
   unpair: { unpaired: true };
   /** Redacted: versions, OS, recent log lines with secrets removed. Safe to paste in a support chat. */
   diagnostics: { text: string };
+  report: RunnerReportParts;
   /** A `data:image/png|jpeg|webp;base64,…` URL; null without a logo (the app draws the initial). */
   "org.logo": { logo: string | null };
   "access.get": RunnerAccess;
@@ -257,6 +325,7 @@ export interface ControlReplies {
   "folders.remove": RunnerAccess;
   "folders.setAgents": RunnerAccess;
   "tools.set": RunnerAccess;
+  "executors.check": ControlStatus;
   "access.pending": { requests: ControlAccessRequest[] };
   "access.answer": { access: RunnerAccess };
   reconnect: { reconnecting: boolean };
@@ -267,6 +336,13 @@ export interface ControlReplies {
   "account.status": { state: AccountLoginState; account?: RunnerAccountInfo; error?: string };
   "account.cancel": { canceled: boolean };
   "account.remove": { removed: boolean };
+  "iphone.setup": ControlIphoneSetup;
+  "iphone.download": ControlIphoneSetup;
+  "iphone.open": { opened: boolean };
+  "iphone.fixXcode": ControlIphoneSetup;
+  "cli.install": { install: CliInstall | null };
+  "iphone.look": { looking: boolean };
+  "iphone.repair": { repairing: boolean };
   shutdown: { stopping: true };
 }
 
@@ -287,10 +363,13 @@ export type ControlEvent =
   | { kind: "activity"; entry: ActivityEntry }
   | { kind: "pair.code"; userCode: string; verificationUrl: string; expiresAt: string }
   | { kind: "pair.done"; org: { id: string; name: string }; machine: { id: string; name: string } }
-  | { kind: "pair.failed"; code: "expired" | "denied" | "network" | "internal"; message: string }
+  /** `link_invalid`: the link expired or was used (an older runner says `internal`). */
+  | { kind: "pair.failed"; code: "expired" | "denied" | "network" | "internal" | "link_invalid"; message: string }
   | { kind: "access.requested"; request: ControlAccessRequest }
   | { kind: "access.resolved"; requestId: string; decision: "granted" | "denied" | "expired" }
-  | { kind: "access.changed"; access: RunnerAccess };
+  | { kind: "access.changed"; access: RunnerAccess }
+  /** The computer's owner turned `tool` on from the apps (`access.allow`): the app says so, with Undo. */
+  | { kind: "access.allowed"; tool: keyof RunnerTools; byName: string };
 
 /** Runner → app. */
 export type ControlOut =

@@ -1,4 +1,10 @@
-import type { ConnectOutcome, ConnectorDef, CustomConnectStart, CustomServer } from "@agenteschat/client";
+import type {
+  ConnectOutcome,
+  ConnectorDef,
+  CustomConnectStart,
+  CustomServer,
+  RequestHeader,
+} from "@agenteschat/client";
 import {
   keys,
   useAgents,
@@ -19,21 +25,41 @@ import {
   type Level,
   type LevelState,
   levelIn,
+  resourcesOf,
   saveLevels,
   sharedLevel,
 } from "@agenteschat/client/lib/access-levels";
+import { canEditAudience, managesAgent } from "@agenteschat/client/lib/audience";
 import { composioConnectText } from "@agenteschat/client/lib/composio";
 import {
   accountUnchecked,
+  asksCount,
   type ConnectedItem,
+  connectedSummary,
   fromConnection,
   fromServer,
   itemName,
   orgAccessChange,
   outcomeText,
+  personalAllowed,
 } from "@agenteschat/client/lib/connected";
 import { humanize, isHttpsUrl, sameServer } from "@agenteschat/client/lib/custom-tools";
 import { errorText } from "@agenteschat/client/lib/errors";
+import { useHeldWhile } from "@agenteschat/client/lib/hold";
+import { can } from "@agenteschat/client/lib/permissions";
+import {
+  BLANK_HEADER,
+  connectsWithoutKey,
+  HEADER_NAME_EXAMPLE,
+  type HeaderRefused,
+  type HeaderRow,
+  headerRefused,
+  headersToSend,
+  MAX_HEADER_NAME,
+  MAX_REQUEST_HEADERS,
+  savedHeadersLine,
+  savedHeadersUnreadable,
+} from "@agenteschat/client/lib/request-headers";
 import { connectorBrand, connectorDescription, connectorName } from "@agenteschat/client/lib/scopes";
 import {
   partsOf,
@@ -50,6 +76,7 @@ import {
   DialogBody,
   DialogFooter,
   Field,
+  HintLine,
   Icon,
   Input,
   Locked,
@@ -59,15 +86,17 @@ import {
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { FlowTitle } from "@/components/FlowTitle";
 import { LoadingList, useStepText } from "@/components/Loading";
+import { ForWhom, type OwnerTab } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
 import { useAgentsAccess } from "@/hooks/useAgentsAccess";
+import { useDirectory } from "@/hooks/useDirectory";
 import { oauthReturnPath } from "@/lib/desktop";
 import { forgetGithubOrgs, keepGithubOrgs, readGithubOrgs } from "@/lib/github-orgs";
 import { navigateAway } from "@/lib/navigate";
@@ -75,16 +104,17 @@ import { useToast } from "@/lib/toast";
 import { reviewNote, ToolLevelsView, ToolReview, type ToolReviewState } from "./ToolReview";
 
 /**
- * Connecting a service, in one dialog and three steps: (1) connect (OAuth
- * or an API key), (2) what it does (each tool reads, writes or always asks
- * for approval; off = never offered), (3) who can use it (one level per
- * agent). Rows of "Conectados" open steps 2 and 3 again.
+ * Connecting a service, in one dialog: connect (OAuth or an API key), then a short confirmation ("done": every agent
+ * can use it, so many actions ask) that ends the flow. "Ajustar" there, and the rows of "Conectados", open the two
+ * steps of detail: what it does (each tool reads, writes or always asks for approval; off = never offered) and who can
+ * use it (one level per agent).
  */
 export type FlowState =
   /**
    * Step 1: a catalog entry, or `null` for any MCP server by address. `add`: another account of `item`'s server
    * (an MCP server takes several); `reconnect`: a new sign-in for `item`, whose name, tools and agents stay. `url`: the
    * address already typed in (an agent's card). `account`: GitHub's sign-in alone, without the agentes.chat app first.
+   * `personal`: where "Para quem" starts (Pessoal for who may not add the team's, whatever this says).
    */
   | {
       step: 0;
@@ -93,9 +123,10 @@ export type FlowState =
       item?: ConnectedItem;
       url?: string;
       account?: boolean;
+      personal?: boolean;
     }
   /** `naming`: a new account the provider didn't name ("Stripe 2"): its name comes first, above its tools. */
-  | { step: 1 | 2; item: ConnectedItem; naming?: boolean };
+  | { step: "done" | 1 | 2; item: ConnectedItem; naming?: boolean };
 
 /** Back from OAuth the app lands here; the server adds `?connected=…`. In the desktop app, through its window. */
 const returnPath = (orgId: string) => oauthReturnPath(`/org/${orgId}/settings/connectors`);
@@ -130,11 +161,15 @@ export function ConnectFlow({
         : name
           ? t(flow.mode === "add" ? "connectFlow.addTitle" : "connectFlow.connectTitle", { name })
           : t("connectFlow.customTitle")
-      : flow.step === 1
-        ? flow.item.server
-          ? t("toolReview.title")
-          : t("connectFlow.toolsTitle", { name })
-        : t("connectFlow.whoTitle", { name });
+      : flow.step === "done"
+        ? t("connectFlow.done.title", { name })
+        : flow.step === 1
+          ? flow.item.server
+            ? t("toolReview.title")
+            : t("connectFlow.toolsTitle", { name })
+          : t("connectFlow.whoTitle", { name });
+  // The confirmation is no step of the dots.
+  const at = flow.step === "done" ? null : flow.step;
   return (
     <Dialog
       open
@@ -158,13 +193,15 @@ export function ConnectFlow({
       width={620}
       className="cflow"
     >
-      <ol className="cflow__steps" aria-label={t("connectFlow.steps")}>
-        {([0, 1, 2] as const).map((i) => (
-          <li key={i} data-on={i <= flow.step || undefined} aria-current={i === flow.step ? "step" : undefined}>
-            <span className="ac-visually-hidden">{t(`connectFlow.step.${i}`)}</span>
-          </li>
-        ))}
-      </ol>
+      {at !== null && (
+        <ol className="cflow__steps" aria-label={t("connectFlow.steps")}>
+          {([0, 1, 2] as const).map((i) => (
+            <li key={i} data-on={i <= at || undefined} aria-current={i === at ? "step" : undefined}>
+              <span className="ac-visually-hidden">{t(`connectFlow.step.${i}`)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
       {flow.step === 0 && (
         <ConnectStep
           def={flow.def}
@@ -173,7 +210,16 @@ export function ConnectFlow({
           item={flow.item}
           initialUrl={flow.url}
           accountOnly={flow.account === true}
-          onConnected={(item, naming) => onChange({ step: 1, item, naming })}
+          startPersonal={flow.personal}
+          onConnected={(item, naming) => onChange({ step: "done", item, naming })}
+          onClose={onClose}
+        />
+      )}
+      {flow.step === "done" && (
+        <DoneStep
+          key={flow.item.id}
+          item={flow.item}
+          onAdjust={() => onChange({ step: 1, item: flow.item, naming: flow.naming })}
           onClose={onClose}
         />
       )}
@@ -200,9 +246,12 @@ export function ConnectFlow({
 
 /**
  * Step 1: OAuth ("Continuar no Linear"), or an API key. A service through Composio signs in on Composio's page
- * ("Continuar na Composio"): no key field of ours. A new account goes on to its tools; a new sign-in for an account,
+ * ("Continuar na Composio"): no key field of ours. A new account goes on to its confirmation; a new sign-in for an account,
  * or the same account again, ends here with a toast saying which. GitHub, where the server has the agentes.chat app
  * (ADR 0156), offers the app first (installed on GitHub's page, which comes back to Conectores) and an account second.
+ * A server by address the catalog doesn't list also takes request headers (ADR 0186), with a key or alone.
+ * Where the workspace has more than one person, a new connection asks "Para quem": the person's own (Pessoal, which
+ * any member adds) or the team's (who manages connectors). Another account or a new sign-in keeps its owner.
  */
 function ConnectStep({
   def,
@@ -211,6 +260,7 @@ function ConnectStep({
   item,
   initialUrl,
   accountOnly,
+  startPersonal,
   onConnected,
   onClose,
 }: {
@@ -220,16 +270,21 @@ function ConnectStep({
   item?: ConnectedItem;
   initialUrl?: string;
   accountOnly?: boolean;
+  startPersonal?: boolean;
   /** `naming`: another account of a server the provider didn't name ("Stripe 2"). */
   onConnected: (item: ConnectedItem, naming: boolean) => void;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
-  const { org } = useOrg();
+  const { t, i18n } = useTranslation();
+  const { org, me } = useOrg();
   const toast = useToast();
+  const admin = can(org, "manage_connectors");
+  const members = useDirectory(org.id).members.length;
+  const [scope, setScope] = useState<OwnerTab>((startPersonal ?? !admin) ? "personal" : "team");
   const catalog = useCatalog();
-  const connections = useConnections(org.id);
-  const servers = useCustomServers(org.id);
+  // The lists Conectores reads (others' rows for who manages connectors): already in hand, and `sameOwner` skips them.
+  const connections = useConnections(org.id, true, { others: admin });
+  const servers = useCustomServers(org.id, true, { others: admin });
   const { connect } = useCustomServerAction(org.id);
   const withKey = useConnectWithKey(org.id);
   const oauth = useStartOAuth(org.id);
@@ -242,6 +297,14 @@ function ConnectStep({
   const [keyOpen, setKeyOpen] = useState(false);
   const [needsKey, setNeedsKey] = useState<Extract<CustomConnectStart, { status: "needs_key" }> | null>(null);
   const [touched, setTouched] = useState<"oauth" | "key" | null>(null);
+  // Reconectar: the headers the account has, by name. They stay unless new ones are typed or "Remover" drops them.
+  const savedHeaders = (mode === "reconnect" && item?.server?.headerNames) || [];
+  const [headerRows, setHeaderRows] = useState<HeaderRow[]>(savedHeaders.length > 0 ? [] : [BLANK_HEADER]);
+  const [dropSaved, setDropSaved] = useState(false);
+  const [headersOpen, setHeadersOpen] = useState(savedHeaders.length > 0);
+  const [refused, setRefused] = useState<HeaderRefused | null>(null);
+  // The saved headers couldn't be read: kept until the form closes, so nothing brings "they stay" back.
+  const [unreadable, setUnreadable] = useState<HeaderRefused | null>(null);
 
   // An account of a server by address: its own address, whatever the catalog says.
   const fixed = item?.server?.serverUrl ?? null;
@@ -258,16 +321,38 @@ function ConnectStep({
       ? def
       : (catalog.data?.connectors.find((c) => c.kind === "remote_mcp" && sameServer(c.serverUrl, fixed)) ?? null);
   const canKey = !viaComposio && (listed === null || listed.auth.includes("api_key") || needsKey !== null);
+  const canHeaders = byAddress && !viaComposio && (listed === null || savedHeaders.length > 0);
+  const headers = canHeaders ? headersToSend(headerRows, dropSaved) : undefined;
+  const sendsHeaders = canHeaders && (headers ? headers.length > 0 : savedHeaders.length > 0);
+  // Headers alone connect, and an account's saved ones are removed with no key: with none typed, the key's button
+  // would only ask for one.
+  const keyed =
+    canKey &&
+    (keyOpen || !canOAuth) &&
+    !(canHeaders && connectsWithoutKey(headers, savedHeaders) && apiKey.trim() === "");
   const serverUrl = fixed ?? (def?.kind === "remote_mcp" ? def.serverUrl : url.trim());
+  const teamOnly = !personalAllowed(def?.id ?? item?.def?.id);
+  const personal = mode ? Boolean(item?.ownerUserId) : !teamOnly && (scope === "personal" || !admin);
+  const forWhom = !mode && !teamOnly && members > 1;
+  const mine = personal ? { personal: true } : {};
+  // The accounts this one joins or replaces: the person's own for a personal one, else the team's.
+  const sameOwner = (owner: string | null | undefined) => (personal ? owner === me.user.id : !owner);
   const appOffered =
     def?.id === "github" && !viaComposio && !mode && !accountOnly && githubApp.data?.installable === true;
   const viaApp = appOffered && how === "app";
   const busy = connect.isPending || withKey.isPending || oauth.isPending || installApp.isPending;
+  const sent = busy || withKey.isSuccess || connect.data?.status === "connected";
   // As the server does: a server by address takes another account, a catalog connector a new sign-in.
-  const accounts = (servers.data ?? []).filter((s) => sameServer(s.serverUrl, serverUrl));
-  const again = byAddress
-    ? accounts.length > 0
-    : (connections.data ?? []).some((c) => c.connector === def?.id && !c.revokedAt);
+  const accounts = useHeldWhile(
+    (servers.data ?? []).filter((s) => sameServer(s.serverUrl, serverUrl) && sameOwner(s.ownerUserId)),
+    sent,
+  );
+  const again = useHeldWhile(
+    byAddress
+      ? accounts.length > 0
+      : (connections.data ?? []).some((c) => c.connector === def?.id && !c.revokedAt && sameOwner(c.ownerUserId)),
+    sent,
+  );
   const replacing = mode === "reconnect" || (!byAddress && again);
   const connectionId = mode === "reconnect" && item?.custom ? item.id : undefined;
   const unchecked = byAddress && accountUnchecked(accounts);
@@ -281,17 +366,31 @@ function ConnectStep({
   const keyError = touched === "key" && apiKey.trim().length < 8 ? t("connectors.apiKeyInvalid") : undefined;
 
   const done = (next: ConnectedItem, outcome: ConnectOutcome) => {
+    // A new account's confirmation says it connected; any other ending is a toast.
+    if (outcome === "connected") return onConnected(next, byAddress && again && !next.server?.accountLabel);
     toast.show(outcomeText(t, outcome, next));
-    if (outcome === "connected") onConnected(next, byAddress && again && !next.server?.accountLabel);
-    else onClose();
+    onClose();
   };
   const byAddressResult = (result: Awaited<ReturnType<typeof connect.mutateAsync>>) => {
     if (result.status === "oauth") navigateAway(result.authorizeUrl);
     else if (result.status === "needs_key") {
       setNeedsKey(result);
       setKeyOpen(true);
+      // "Check their values": the headers it sent are in sight.
+      if (sendsHeaders) setHeadersOpen(true);
       setTouched(null);
     } else done(fromServer(result.server, catalog.data?.connectors ?? []), result.outcome ?? "connected");
+  };
+  const failed = (error: unknown) => {
+    const refusal = headerRefused(headerRows, headers, error);
+    if (!refusal) return toast.show(errorText(t, error, i18n.language), "error");
+    setHeadersOpen(true);
+    // Its words stand where the saved names were said to stay. Nothing is removed for the person: connecting again
+    // is refused again until they type the headers or choose Remover.
+    // With no saved names in this form (its list is older than the account's headers) they have no line to stand in:
+    // they show under the rows, as any refusal does.
+    if (savedHeadersUnreadable(error) && savedHeaders.length > 0) setUnreadable(refusal);
+    else setRefused(refusal);
   };
   // The service's name: the server names another account after it ("Stripe 2"). A catalog entry's goes in English,
   // so each viewer reads a name nobody changed in their own language.
@@ -305,9 +404,13 @@ function ConnectStep({
     if (askUrl && !isHttpsUrl(url)) return;
     if (githubOrgs && access.data?.orgs) keepGithubOrgs(access.data.orgs);
     if (byAddress) {
-      connect.mutate({ serverUrl, label: name, returnTo: back, connectionId }, { onSuccess: byAddressResult });
+      setRefused(null);
+      connect.mutate(
+        { serverUrl, label: name, returnTo: back, connectionId, headers, ...mine },
+        { onSuccess: byAddressResult, onError: failed },
+      );
     } else if (def) {
-      oauth.mutate({ connector: def.id, returnTo: back }, { onSuccess: (to) => navigateAway(to) });
+      oauth.mutate({ connector: def.id, returnTo: back, ...mine }, { onSuccess: (to) => navigateAway(to) });
     }
   };
   const startApp = () => installApp.mutate(back, { onSuccess: (to) => navigateAway(to) });
@@ -315,13 +418,14 @@ function ConnectStep({
     setTouched("key");
     if ((askUrl && !isHttpsUrl(url)) || apiKey.trim().length < 8) return;
     if (byAddress) {
+      setRefused(null);
       connect.mutate(
-        { serverUrl, label: name, apiKey: apiKey.trim(), returnTo: back, connectionId },
-        { onSuccess: byAddressResult },
+        { serverUrl, label: name, apiKey: apiKey.trim(), returnTo: back, connectionId, headers, ...mine },
+        { onSuccess: byAddressResult, onError: failed },
       );
     } else if (def) {
       withKey.mutate(
-        { connector: def.id, apiKey: apiKey.trim() },
+        { connector: def.id, apiKey: apiKey.trim(), ...mine },
         {
           onSuccess: (c) =>
             done(fromConnection(c, catalog.data?.connectors ?? []), again ? "reconnected" : "connected"),
@@ -335,7 +439,8 @@ function ConnectStep({
       className="cflow__key"
       onSubmit={(e) => {
         e.preventDefault();
-        submitKey();
+        if (keyed) submitKey();
+        else startOAuth();
       }}
     >
       {needsKey && (
@@ -350,7 +455,7 @@ function ConnectStep({
               )}
             </>
           ) : (
-            t("connectFlow.needsKey")
+            t(sendsHeaders ? "connectFlow.headers.refused" : "connectFlow.needsKey")
           )}
         </Alert>
       )}
@@ -408,6 +513,15 @@ function ConnectStep({
               />
             </Field>
           )}
+          {forWhom && (
+            <ForWhom
+              label={t("connectors.personal.forWhom")}
+              value={personal ? "personal" : "team"}
+              locked={!admin}
+              note={t("connectors.personal.teamLocked")}
+              onValueChange={setScope}
+            />
+          )}
           {githubOrgs && <GithubOrgs />}
           {appOffered && (
             <OptionList
@@ -440,6 +554,27 @@ function ConnectStep({
             </details>
           )}
           {!viaApp && !canOAuth && canKey && keyForm}
+          {!viaApp && canHeaders && (
+            <details
+              className="cflow__more"
+              open={headersOpen}
+              onToggle={(e) => setHeadersOpen((e.currentTarget as HTMLDetailsElement).open)}
+            >
+              <summary>{t("connectFlow.headers.title")}</summary>
+              <HeaderRows
+                rows={headerRows}
+                saved={savedHeaders}
+                dropSaved={dropSaved}
+                refused={refused}
+                unreadable={unreadable}
+                onChange={(rows, drop) => {
+                  setHeaderRows(rows);
+                  setDropSaved(drop);
+                  setRefused(null);
+                }}
+              />
+            </details>
+          )}
         </DialogBody>
       </Locked>
       <DialogFooter
@@ -451,9 +586,11 @@ function ConnectStep({
               ? t("connectFlow.github.appNote")
               : replacing
                 ? t(unchecked ? "connectFlow.replaceUnchecked" : "connectFlow.replace")
-                : again
-                  ? t(unchecked ? "connectFlow.newAccountUnchecked" : "connectFlow.newAccount")
-                  : t("connectFlow.allCanUse")
+                : again && unchecked
+                  ? t("connectFlow.newAccountUnchecked")
+                  : personal
+                    ? t("connectors.personal.done")
+                    : t("connectFlow.allCanUse")
         }
       >
         <Button onClick={onClose}>{t("common.cancel")}</Button>
@@ -461,7 +598,7 @@ function ConnectStep({
           <Button variant="primary" disabled={busy} loading={installApp.isPending} onClick={startApp}>
             {t("githubApp.install")}
           </Button>
-        ) : canKey && (keyOpen || !canOAuth) ? (
+        ) : keyed ? (
           <Button
             variant="primary"
             disabled={busy}
@@ -488,6 +625,176 @@ function ConnectStep({
         )}
       </DialogFooter>
     </>
+  );
+}
+
+/**
+ * Header names as a person says a list ("X-API-Key e X-Tenant"), each one as code: a name is one word of up to 64
+ * characters, which breaks wherever its line ends.
+ */
+export function HeaderNames({ names }: { names: string[] }) {
+  const { i18n } = useTranslation();
+  return new Intl.ListFormat(i18n.language).formatToParts(names).map((part, i) =>
+    part.type === "element" ? (
+      // biome-ignore lint/suspicious/noArrayIndexKey: the list never changes while it shows
+      <code key={i}>{part.value}</code>
+    ) : (
+      // biome-ignore lint/suspicious/noArrayIndexKey: separators have no identity of their own
+      <Fragment key={i}>{part.value}</Fragment>
+    ),
+  );
+}
+
+/**
+ * The request headers of a server by address: a name and a value per row, the value typed as a secret. On Reconectar
+ * the saved ones come first, by name: "Remover" sends none of them any more, and typing a row replaces them all, which
+ * their line then says. Saved ones that couldn't be read (`unreadable`) are no longer said to stay: that refusal takes
+ * the line, with "Remover" at its end.
+ */
+function HeaderRows({
+  rows,
+  saved,
+  dropSaved,
+  refused,
+  unreadable,
+  onChange,
+}: {
+  rows: HeaderRow[];
+  saved: string[];
+  dropSaved: boolean;
+  refused: HeaderRefused | null;
+  unreadable: HeaderRefused | null;
+  onChange: (rows: HeaderRow[], dropSaved: boolean) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const nextId = useRef(1);
+  const addButton = useRef<HTMLButtonElement>(null);
+  const removed = useRef(false);
+  // A removed row takes the focus with it: it goes to the button that adds one, once that button is on again.
+  useEffect(() => {
+    if (!removed.current) return;
+    removed.current = false;
+    addButton.current?.focus();
+  });
+  const box = useRef<HTMLDivElement>(null);
+  // With many rows a refusal lands below what the dialog shows.
+  useEffect(() => {
+    if (refused || unreadable) box.current?.querySelector('[role="alert"]')?.scrollIntoView?.({ block: "nearest" });
+  }, [refused, unreadable]);
+  const full = rows.length >= MAX_REQUEST_HEADERS;
+  const line = savedHeadersLine(rows, dropSaved, unreadable !== null);
+  const set = (id: number, patch: Partial<RequestHeader>) =>
+    onChange(
+      rows.map((row) => (row.id === id ? { ...row, ...patch } : row)),
+      dropSaved,
+    );
+  return (
+    <div ref={box} className="cflow__headers">
+      <p className="small muted">{t("connectFlow.headers.help")}</p>
+      {saved.length > 0 && (
+        <p className="small">
+          {line.says === "unreadable" && unreadable ? (
+            // The alert is the refusal alone: the link ends its line, outside what a screen reader announces.
+            <span className="ac-field__error" role="alert">
+              {errorText(t, unreadable.error, i18n.language)}
+            </span>
+          ) : (
+            <Trans
+              i18nKey={line.says === "saved" ? "connectFlow.headers.saved" : "connectFlow.headers.dropping"}
+              count={saved.length}
+              components={{ names: <HeaderNames names={saved} /> }}
+            />
+          )}
+          {line.action && (
+            <>
+              {" "}
+              <Button variant="link" onClick={() => onChange(rows, line.action === "drop")}>
+                {t(line.action === "drop" ? "connectFlow.headers.drop" : "connectFlow.headers.undo")}
+              </Button>
+            </>
+          )}
+        </p>
+      )}
+      {rows.length > 0 && (
+        <div className="cflow__hgroup">
+          <div className="cflow__hrow" aria-hidden="true">
+            <span className="ac-field__label">{t("connectFlow.name")}</span>
+            <span className="ac-field__label">{t("connectFlow.headers.value")}</span>
+          </div>
+          <ul className="cflow__hrows">
+            {rows.map((row, i) => {
+              const wrong = refused?.row === row.id ? refused : null;
+              const errorId = `cflow-header-${row.id}-error`;
+              return (
+                <li key={row.id} className="cflow__hrow">
+                  <Input
+                    value={row.name}
+                    placeholder={HEADER_NAME_EXAMPLE}
+                    maxLength={MAX_HEADER_NAME}
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    aria-label={t("connectFlow.headers.nameOf", { n: i + 1 })}
+                    aria-describedby={wrong ? errorId : undefined}
+                    invalid={wrong?.field === "name"}
+                    onChange={(e) => set(row.id, { name: e.target.value })}
+                  />
+                  <Input
+                    type="password"
+                    value={row.value}
+                    autoComplete="off"
+                    aria-label={t("connectFlow.headers.valueOf", { n: i + 1 })}
+                    aria-describedby={wrong ? errorId : undefined}
+                    invalid={wrong?.field === "value"}
+                    onChange={(e) => set(row.id, { value: e.target.value })}
+                  />
+                  <Button
+                    variant="ghost"
+                    iconOnly
+                    icon="close"
+                    aria-label={t("connectFlow.headers.remove", { n: i + 1 })}
+                    onClick={() => {
+                      removed.current = true;
+                      onChange(
+                        rows.filter((other) => other.id !== row.id),
+                        dropSaved,
+                      );
+                    }}
+                  />
+                  {wrong && (
+                    <span id={errorId} className="ac-field__error" role="alert">
+                      {errorText(t, wrong.error, i18n.language)}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+      {refused && refused.row === null && (
+        <span className="ac-field__error" role="alert">
+          {errorText(t, refused.error, i18n.language)}
+        </span>
+      )}
+      <div className="cflow__hadd">
+        <Button
+          ref={addButton}
+          size="sm"
+          icon="plus"
+          disabled={full}
+          aria-describedby={full ? "cflow-headers-full" : undefined}
+          onClick={() => onChange([...rows, { id: nextId.current++, name: "", value: "" }], dropSaved)}
+        >
+          {t("connectFlow.headers.add")}
+        </Button>
+        {full && (
+          <span id="cflow-headers-full" className="small muted">
+            {t("errors.connector.headersTooMany", { max: MAX_REQUEST_HEADERS })}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -536,11 +843,19 @@ function GithubOrgs() {
       )}
       {manageUrl && (
         <>
-          <p className="small muted">{t("connectFlow.githubOrgs.lead")}</p>
+          <p className="small muted">
+            <HintLine
+              name={t("common.about", { label: t("connectFlow.githubOrgs.title") })}
+              hint={t("connectFlow.githubOrgs.lead")}
+            >
+              {t("connectFlow.githubOrgs.short")}
+            </HintLine>
+          </p>
           <Button
             asChild
             size="sm"
-            onClick={() => {
+            // In a dialog, the desktop app's link routing (lib/desktop.ts) takes the click before React's `onClick`.
+            onClickCapture={() => {
               if (orgs) setOpened(orgs);
             }}
           >
@@ -551,6 +866,89 @@ function GithubOrgs() {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * The end of connecting: who can use it and how many actions ask, in a sentence, with "Pronto". A server whose tools
+ * no one gave a level yet says so instead, and "Continuar" saves the levels we suggest: agents get none before that.
+ * Tools that couldn't be read are said too, as their step under "Ajustar" says them.
+ */
+function DoneStep({ item, onAdjust, onClose }: { item: ConnectedItem; onAdjust: () => void; onClose: () => void }) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const { save } = useCustomServerAction(org.id);
+  const waiting = item.pending > 0 ? item.server : null;
+  return (
+    <ConnectedDone
+      text={item.ownerUserId ? t("connectors.personal.done") : connectedSummary(t, item)}
+      busy={save.isPending}
+      onAdjust={onAdjust}
+      onClose={onClose}
+      primary={
+        waiting && (
+          <Button
+            variant="primary"
+            disabled={save.isPending}
+            loading={save.isPending}
+            onClick={() =>
+              save.mutate(
+                {
+                  id: waiting.id,
+                  label: waiting.label,
+                  tools: reviewDecisions(reviewToolsOf(t, waiting), {}, new Set()),
+                },
+                { onSuccess: onClose },
+              )
+            }
+          >
+            {t("connectFlow.next")}
+          </Button>
+        )
+      }
+    >
+      {item.toolsError && <Alert>{t("toolReview.unreadable", { reason: item.toolsError })}</Alert>}
+    </ConnectedDone>
+  );
+}
+
+/**
+ * How connecting anything ends, inside its dialog: one sentence on who can use it, then "Ajustar" (the detail) and
+ * "Pronto", or `primary` in its place.
+ */
+export function ConnectedDone({
+  text,
+  children,
+  busy,
+  primary,
+  onAdjust,
+  onClose,
+}: {
+  text: string;
+  children?: ReactNode;
+  busy?: boolean;
+  primary?: ReactNode;
+  onAdjust: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <DialogBody className="cflow__body">
+        <p className="cflow__text">{text}</p>
+        {children}
+      </DialogBody>
+      <DialogFooter bar>
+        <Button disabled={busy} onClick={onAdjust}>
+          {t("connectFlow.done.adjust")}
+        </Button>
+        {primary || (
+          <Button variant="primary" onClick={onClose}>
+            {t("connectFlow.done.ok")}
+          </Button>
+        )}
+      </DialogFooter>
+    </>
   );
 }
 
@@ -712,12 +1110,16 @@ function ToolsStep({
  */
 function WhoStep({ item, onBack, onClose }: { item: ConnectedItem; onBack: () => void; onClose: () => void }) {
   const { t } = useTranslation();
-  const { org } = useOrg();
+  const { org, me } = useOrg();
   const api = useApi();
   const qc = useQueryClient();
   const toast = useToast();
   const agents = useAgents(org.id);
-  const list = agents.data ?? [];
+  // A personal connection goes on for the agents its person may change (their own, and the ones they manage); a team
+  // one for the agents the person manages (ADR 0085 addendum of 2026-11-17): the server refuses the rest.
+  const list = (agents.data ?? []).filter((a) =>
+    item.ownerUserId ? canEditAudience(org, a, me.user.id) : managesAgent(a),
+  );
   const access = useAgentsAccess(list);
   const resourceId = `connector:${item.id}`;
   const current = (agentId: string) => levelIn(access.byAgent.get(agentId), resourceId);
@@ -731,14 +1133,15 @@ function WhoStep({ item, onBack, onClose }: { item: ConnectedItem; onBack: () =>
   const ready = who !== null;
   const picked = (agentId: string) => who?.[agentId] ?? "none";
   const levelLabel = (l: LevelState) => t(`access.level.${l}`);
+  // The connection's own levels (no "Ler" when none of its tools only reads), from any agent's fresh tree.
+  const tree = list.map((a) => access.byAgent.get(a.id)).find((x) => x !== undefined);
+  const levels = (tree && resourcesOf(tree).find((r) => r.id === resourceId)?.levels) ?? LEVELS;
   const options = (agentId: string) => [
-    ...LEVELS.map((l) => ({ value: l as LevelState, label: levelLabel(l) })),
+    ...levels.map((l) => ({ value: l as LevelState, label: levelLabel(l) })),
     // Granted tool by tool before: shown as is until a level is picked.
     ...(current(agentId) === "custom" ? [{ value: "custom" as LevelState, label: levelLabel("custom") }] : []),
   ];
-  const asks = item.server
-    ? item.server.tools.filter((x) => x.access === "approval").length
-    : (item.def?.tools ?? []).filter((x) => x.sensitive).length;
+  const asks = asksCount(t, item);
 
   const grant = useMutation({
     mutationFn: async () => {
@@ -787,7 +1190,7 @@ function WhoStep({ item, onBack, onClose }: { item: ConnectedItem; onBack: () =>
                     onValueChange={(l) => {
                       if (l) setWho(Object.fromEntries(list.map((a) => [a.id, l])));
                     }}
-                    options={LEVELS.map((l) => ({ value: l, label: levelLabel(l) }))}
+                    options={levels.map((l) => ({ value: l, label: levelLabel(l) }))}
                   />
                 </div>
               )}
@@ -811,7 +1214,7 @@ function WhoStep({ item, onBack, onClose }: { item: ConnectedItem; onBack: () =>
               </ul>
             </>
           )}
-          <p className="small muted cflow__asks">
+          <p className="small muted cflow__asks ac-iconline">
             <Icon name="lock" />
             {asks > 0 ? t("connectFlow.asksCount", { count: asks }) : t("connectFlow.asksDefault")}
           </p>

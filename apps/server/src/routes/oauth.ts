@@ -1,3 +1,4 @@
+import { retryInSeconds } from "@agenteschat/adapters";
 import {
   APP_SCOPES,
   appPrincipal,
@@ -30,6 +31,12 @@ import type { AppDeps } from "./app/context";
 /** The largest MCP request body. */
 export const MCP_MAX_BODY = 128 * 1024;
 const REGISTER_MAX_BODY = 16 * 1024;
+/** A token or revocation form: a few short fields, read before anything says who is asking. */
+const FORM_MAX_BODY = 64 * 1024;
+const formLimit = bodyLimit({
+  maxSize: FORM_MAX_BODY,
+  onError: (c) => oauthError(c, 413, "invalid_request", "Body too large"),
+});
 
 const LIMITS = {
   authorize: { limit: 30, windowMs: 60_000 },
@@ -169,7 +176,7 @@ export function registerAppsRoot(app: OpenAPIHono, deps: AppDeps, options: AppsR
         ] as const) {
           const r = await deps.adapters.rateLimiter.consume(`mcp:${suffix}:${row.grant.id}`, rule);
           if (!r.allowed) {
-            const retry = Math.max(1, Math.ceil((r.resetAt.getTime() - Date.now()) / 1000));
+            const retry = retryInSeconds(r.resetAt);
             return c.json(
               {
                 jsonrpc: "2.0",
@@ -249,7 +256,7 @@ export function registerOauthRoutes(api: OpenAPIHono, deps: AppDeps, options: Ap
     return c.redirect(await startAuthorization(oauthDeps(deps, options), c.req.query()), 302);
   });
 
-  api.post("/oauth/token", async (c) => {
+  api.post("/oauth/token", formLimit, async (c) => {
     if (!(c.req.header("content-type") ?? "").startsWith("application/x-www-form-urlencoded"))
       return oauthError(c, 400, "invalid_request", "Send application/x-www-form-urlencoded");
     const form = Object.fromEntries(new URLSearchParams(await c.req.text()));
@@ -296,7 +303,7 @@ export function registerOauthRoutes(api: OpenAPIHono, deps: AppDeps, options: Ap
     },
   );
 
-  api.post("/oauth/revoke", async (c) => {
+  api.post("/oauth/revoke", formLimit, async (c) => {
     const type = c.req.header("content-type") ?? "";
     const form = type.startsWith("application/json")
       ? ((await c.req.json().catch(() => ({}))) as Record<string, string>)

@@ -1,6 +1,7 @@
 import type { Issue, IssueColumn, IssueConversationRef, IssueStatus, IssueWork } from "@agenteschat/client";
 import { toYmd } from "@agenteschat/client/lib/format";
-import { BOARD, isOpen, STATUSES } from "@agenteschat/client/lib/issues";
+import { BOARD, isAssignee, isOpen, STATUSES } from "@agenteschat/client/lib/issues";
+import { codeAndBoldParts } from "@agenteschat/client/lib/markdown";
 import { foldSteps, stepPhrase } from "@agenteschat/client/lib/work";
 import type { TFunction } from "i18next";
 import { chatHref } from "../links/logic";
@@ -12,6 +13,15 @@ import { chatHref } from "../links/logic";
  * "committed"; it moves by itself (in progress when an agent starts, in review when it links a PR),
  * "trabalhando" comes from the agent's live run, and in progress with no run alive is stalled.
  */
+
+/**
+ * A task's title as plain words, its `code` and **bold** marks left out: a list row's title is the row's own type, as
+ * every list's (the card and the task's screen keep the marks).
+ */
+export const taskTitleText = (title: string) =>
+  codeAndBoldParts(title)
+    .map((part) => part.text)
+    .join("");
 
 /** What a row shows as its state (the chip). */
 export type IssueState = "running" | "waiting" | "stalled" | "review" | "progress" | "todo" | "done" | "canceled";
@@ -46,7 +56,7 @@ export const waitsOnYou = (i: Pick<Issue, "status" | "work">) => issueState(i) =
 export type IssueFilter = "open" | "mine" | "agents" | "done";
 
 export function passesFilter(
-  i: Pick<Issue, "status" | "work" | "assignee">,
+  i: Pick<Issue, "status" | "work" | "assignees">,
   filter: IssueFilter,
   meId: string | null,
 ): boolean {
@@ -54,9 +64,9 @@ export function passesFilter(
     case "open":
       return isOpen(i);
     case "mine":
-      return isOpen(i) && ((i.assignee?.type === "person" && meId !== null && i.assignee.id === meId) || waitsOnYou(i));
+      return isOpen(i) && ((meId !== null && isAssignee(i, "person", meId)) || waitsOnYou(i));
     case "agents":
-      return isOpen(i) && i.assignee?.type === "agent";
+      return isOpen(i) && i.assignees.some((a) => a.type === "agent");
     case "done":
       return !isOpen(i);
   }
@@ -176,21 +186,33 @@ export interface BoardColumn {
   groups: IssueColumnGroup<Issue>[];
 }
 
-/** The board: each stage with its tasks, canceled ones in "Feito"; a stage with nothing stays as an empty column. */
+/**
+ * The board: each stage with its tasks, canceled ones in "Feito"; a stage with nothing stays as an empty column. A
+ * customized A fazer shows each of its columns, empty ones too, since each takes a new task from its "+".
+ */
 export function issueBoard(list: Issue[], columns: IssueColumn[] = []): BoardColumn[] {
   const sections = [...issueSections(list, "open", null, columns), ...issueSections(list, "done", null, columns)];
+  const todo = stageColumns(columns, "todo");
   return BOARD_STAGES.map((stage) => {
     const here = sections.filter((s) => s.key === stage || (stage === "done" && s.key === "canceled"));
+    const count = here.reduce((n, s) => n + s.count, 0);
+    const groups = here.flatMap((s) =>
+      s.groups.map((g) => ({
+        ...g,
+        items: [...g.items].sort((x, y) => urgency(x) - urgency(y)),
+      })),
+    );
+    if (stage !== "todo" || !stageCustomized(todo))
+      return { stage, count, showColumns: here.some((s) => s.showColumns), groups };
+    const byColumn = new Map(groups.map((g) => [g.column?.id ?? null, g]));
     return {
       stage,
-      count: here.reduce((n, s) => n + s.count, 0),
-      showColumns: here.some((s) => s.showColumns),
-      groups: here.flatMap((s) =>
-        s.groups.map((g) => ({
-          ...g,
-          items: [...g.items].sort((x, y) => urgency(x) - urgency(y)),
-        })),
-      ),
+      count,
+      showColumns: true,
+      groups: [
+        ...groups.filter((g) => g.column === null),
+        ...todo.map((c) => byColumn.get(c.id) ?? { key: c.id, column: c, items: [] }),
+      ],
     };
   });
 }
@@ -218,8 +240,8 @@ export const currentStep = (w: Pick<IssueWork, "steps" | "state"> | null | undef
  * last one's time. The last line is the step the agent is on while the run works (`going`), and reads as going on
  * ("…") unless its command was refused or waits on a person.
  */
-export function workLines(t: TFunction, steps: IssueWork["steps"], running: boolean) {
-  const lines = foldSteps(steps, (s) => stepPhrase(t, s));
+export function workLines(t: TFunction, steps: IssueWork["steps"], running: boolean, locale?: string) {
+  const lines = foldSteps(steps, (s) => stepPhrase(t, s, locale));
   return lines.map(({ step, text, count }, k) => {
     const last = k === lines.length - 1;
     const going = last && running;

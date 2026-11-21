@@ -53,10 +53,6 @@ describe("buttons and kbd", () => {
     ])
       expect(hidden).toContain(hint);
     expect(narrow).toMatch(/\.ac-mo__kbd \{\s*display: none;/);
-    // The send choice's line of keys goes with them.
-    expect(css).toMatch(
-      /@media \(max-width: 760px\), \(hover: none\), \(pointer: coarse\) \{\s*\.ac-composer-choice__hint \{\s*display: none;/,
-    );
   });
 
   test("a Button that toggles stays pushed in while on (aria-pressed), hovered or not; a ghost one keeps its plate", async () => {
@@ -315,7 +311,9 @@ describe("list toolbars", () => {
     expect(rule(".ac-filter--active")).toContain("background: var(--ink)");
     // A phone's toolbar: the search fills its row beside the actions, the filters under them scroll sideways.
     expect(css).toMatch(/\.ac-toolbar > \.ac-toolbar__search \{\s*flex: 1 1 0;/);
-    expect(css).toMatch(/\.ac-toolbar__filters \{\s*max-width: calc\(100% \+ 8px\);[^}]*overflow-x: auto;/);
+    expect(css).toMatch(
+      /\.ac-toolbar__filters \{\s*max-width: calc\(100% \+ 2 \* var\(--bleed\)\);[^}]*overflow-x: auto;/,
+    );
   });
 
   test("one height: the search, the toggles and the chips all read --tool-h, so a row lines up", async () => {
@@ -419,6 +417,16 @@ describe("command palette", () => {
     expect(filterPalette(items, "config").map((i) => i.key)).toEqual(["s1", "s2"]);
     expect(filterPalette(items, "CONFIGURACOES skills").map((i) => i.key)).toEqual(["s2"]);
     expect(filterPalette(items, "").length).toBe(4);
+    // A search-only item (an agent's tab) stays out of the open palette and shows once typed.
+    const tab: PaletteItem = {
+      key: "t1",
+      group: "Agents",
+      label: "Ada · Instructions",
+      searchOnly: true,
+      onSelect() {},
+    };
+    expect(filterPalette([...items, tab], "").map((i) => i.key)).not.toContain("t1");
+    expect(filterPalette([...items, tab], "ada instr").map((i) => i.key)).toEqual(["t1"]);
   });
   test("type, arrows, Enter goes; the query-built item comes last; nothing → empty text", async () => {
     picked.length = 0;
@@ -499,7 +507,7 @@ describe("composer", () => {
         label="Mensagem para Theo"
         sendLabel="Enviar"
         sendText="Enviar"
-        pills={<span className="ac-composer__agent">Theo</span>}
+        pills={<span className="ac-composer__pill">Theo</span>}
         commands={{
           listLabel: "Comandos",
           list: [

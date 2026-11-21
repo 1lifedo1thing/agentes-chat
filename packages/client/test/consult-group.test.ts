@@ -2,8 +2,12 @@ import { describe, expect, test } from "bun:test";
 import type { TFunction } from "i18next";
 import type { RunConsultation } from "../src/api/types";
 import {
+  asExchanges,
   consultAskedKey,
   consultBlocksNearEnd,
+  consultChoiceKey,
+  consultChoiceOf,
+  consultChoices,
   consultGroupSummary,
   consultLineKey,
   consultLineState,
@@ -13,6 +17,8 @@ import {
   consultPair,
   consultSeconds,
   consultsForLine,
+  EXCHANGE_GAP_MS,
+  exchangeIds,
   firstOfRun,
   foldsNotice,
   groupsByRun,
@@ -102,6 +108,58 @@ describe("groupsByRun", () => {
     ]);
     expect([...groups.keys()]).toEqual(["r1", "r2"]);
     expect(groups.get("r1")?.map((c) => c.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("an exchange between two agents: one row, one conversation", () => {
+  // Lia asks Theo, Theo hands Lia a note while answering, Lia hands Theo a note into that same run: three asking runs.
+  const exchange = [
+    q({ id: "ask", runId: "r1", status: "answered", answer: "ok", answeredAt: iso(187) }),
+    q({
+      id: "back",
+      kind: "note",
+      runId: "r2",
+      agentId: "theo",
+      consultedAgentId: "lia",
+      status: "answered",
+      answer: "ok",
+      createdAt: iso(41),
+      answeredAt: iso(97),
+    }),
+    q({
+      id: "into",
+      kind: "note",
+      runId: "r3",
+      status: "answered",
+      answer: "ok",
+      createdAt: iso(55),
+      answeredAt: iso(187),
+    }),
+  ];
+
+  test("its questions draw on the first asking run's reply, with the whole exchange's time and the other face", () => {
+    const groups = groupsByRun(asExchanges(exchange));
+    expect([...groups.keys()]).toEqual(["r1"]);
+    expect(groups.get("r1")?.map((c) => c.id)).toEqual(["ask", "back", "into"]);
+    const pair = consultPair(groups.get("r1") ?? [], T0 + 300_000, "lia");
+    expect(pair?.faces).toEqual([{ agentId: "theo", off: false }]);
+    expect(pair?.seconds).toBe(187);
+  });
+
+  test("its row opens all of it, whichever question opens it", () => {
+    expect(exchangeIds(exchange, "into")).toEqual(["ask", "back", "into"]);
+    expect(exchangeIds(exchange, "missing")).toEqual(["missing"]);
+  });
+
+  test("another pair, or the same pair a while after it ended, is its own row", () => {
+    const later = q({ id: "later", runId: "r4", createdAt: iso(187 + EXCHANGE_GAP_MS / 1000 + 1) });
+    const others = q({ id: "others", runId: "r5", agentId: "lia", consultedAgentId: "rio", createdAt: iso(60) });
+    const groups = groupsByRun(asExchanges([...exchange, later, others]));
+    expect([...groups.keys()].sort()).toEqual(["r1", "r4", "r5"]);
+    // While one is still out, the next between the same two joins it.
+    const open = q({ id: "open", runId: "r6", createdAt: iso(1000) });
+    const joins = q({ id: "joins", runId: "r7", agentId: "theo", consultedAgentId: "lia", createdAt: iso(5000) });
+    expect(asExchanges([open, joins]).map((c) => c.runId)).toEqual(["r6", "r6"]);
   });
 });
 
@@ -284,6 +342,48 @@ describe("consultsForLine", () => {
     ];
     expect(consultsForLine(live, new Set(["r1"]))).toEqual([{ runId: "r2", agentId: "dev" }]);
     expect(consultsForLine(live, new Set())).toBe(live);
+  });
+});
+
+describe("consultChoices (the dialog of a row of several)", () => {
+  const now = T0 + 60_000;
+  test("one choice per asked agent, in the order asked, the one still out first: every agent the row shows", () => {
+    const group = [
+      q({ status: "answered", answer: "Up 6 bp.", answeredAt: iso(30) }),
+      q({ id: "q2", consultedAgentId: "iris", consultedRunId: "r-iris" }),
+      q({ id: "q3", status: "answered", answer: "Done.", answeredAt: iso(40) }),
+      q({ id: "q4", status: "open", createdAt: iso(45) }),
+    ];
+    const choices = consultChoices(group, now, "lia");
+    expect(choices.map((c) => [c.agentId, c.opens, c.state])).toEqual([
+      ["theo", "q4", "working"],
+      ["iris", "q2", "working"],
+    ]);
+    expect(consultPair(group, now, "lia")?.faces.map((f) => f.agentId)).toEqual(choices.map((c) => c.agentId));
+  });
+
+  test("in an exchange the other agent asked back: it is still that agent's choice, not the asker's", () => {
+    const back = q({ id: "q2", agentId: "theo", consultedAgentId: "lia", createdAt: iso(10) });
+    expect(consultChoices([q(), back], now, "lia").map((c) => c.agentId)).toEqual(["theo"]);
+  });
+
+  test("it opens on a question the asker asked, even while the other agent's question back is still out", () => {
+    const asked = q({ status: "answered", answer: "Up 6 bp.", answeredAt: iso(30) });
+    const back = q({ id: "q2", agentId: "theo", consultedAgentId: "lia", createdAt: iso(10) });
+    const group = [back, asked];
+    const choices = consultChoices(group, now, "lia");
+    expect(choices.map((c) => [c.agentId, c.opens])).toEqual([["theo", "q1"]]);
+    // The row may open on the question back: it is still that agent's choice.
+    expect(consultChoiceOf(choices, group, "q2")?.agentId).toBe("theo");
+    expect(consultChoiceOf(choices, group, "nope")).toBeUndefined();
+  });
+
+  test("each says where it stands in a word: answered, at work, waiting, unanswered", () => {
+    expect(consultChoiceKey("answered", q())).toBe("chat.consultPair.answered");
+    expect(consultChoiceKey("working", q())).toBe("chat.consultPair.working");
+    expect(consultChoiceKey("waiting", q({ waiting: "approval" }))).toBe("chat.consultPair.waitingApproval");
+    expect(consultChoiceKey("expired", q())).toBe("chat.consultPair.noAnswer");
+    expect(consultChoiceKey("failed", q({ kind: "note" }))).toBe("chat.consultPair.notFinished");
   });
 });
 

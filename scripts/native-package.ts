@@ -36,6 +36,7 @@ export const EXTERNAL = [
   "@electric-sql/pglite-pgvector",
   "@electric-sql/pglite-tools",
   "libpg-query",
+  "@resvg/resvg-wasm",
 ];
 
 /** Package targets, and the name of Bun's build for each (install.sh pins the same ones). */
@@ -160,7 +161,8 @@ export async function buildFolders(out: string, version: string) {
 
   const server = join(base, "server");
   const built = await Bun.build({
-    entrypoints: [join(ROOT, "apps/server/src/native.ts")],
+    // The freeze watch's thread is a file of its own, loaded beside `native.js` (`startFreezeWatch`).
+    entrypoints: [join(ROOT, "apps/server/src/native.ts"), join(ROOT, "apps/server/src/freeze-watch-worker.ts")],
     target: "bun",
     outdir: join(server, "lib"),
     external: EXTERNAL,
@@ -171,7 +173,10 @@ export async function buildFolders(out: string, version: string) {
   // Read beside the bundle, as from the packages' own folders (`../migrations`, `../assets`).
   cpSync(join(ROOT, "packages/db/migrations"), join(server, "migrations"), runtimeOnly);
   cpSync(join(ROOT, "packages/engine/assets"), join(server, "assets"), { recursive: true });
-  const from = { "libpg-query": join(ROOT, "packages/engine") } as Record<string, string>;
+  const from = {
+    "libpg-query": join(ROOT, "packages/engine"),
+    "@resvg/resvg-wasm": join(ROOT, "packages/engine"),
+  } as Record<string, string>;
   for (const name of EXTERNAL) copyPackage(name, from[name] ?? join(ROOT, "packages/db"), server);
 
   mkdirSync(join(base, "bin"));

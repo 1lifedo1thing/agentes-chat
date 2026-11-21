@@ -79,3 +79,25 @@ About 7 of 74 routed person messages in a day got no agent. In a channel with tw
 ## Addendum (2026-11-03): the receipt doesn't name the AI that picked
 
 The receipt's last line said "Escolhido pelo Jev", "Escolhido pelo Claude Haiku 5.5" or "Escolhido pelo seu plano do Claude". People who don't know what Jev or a small model is read it as noise. `deciderOf` now returns a line only for a rule's pick ("Uma resposta para a Ada", "Só a Ada responde aqui sem menção", "Segue a conversa com a Ada", "A Ada coordena o time", "Ninguém foi chamado, então a Ada respondeu"), on the web and the phone. The decision is still stored and sent as before (`decidedBy`, `routing_decisions.strategy`); only the words are gone, in every language.
+
+## Addendum (2026-11-10): an answer to an agent's question reaches it
+
+A short answer to an agent's question ("pode sim") reads like an ok: the step hears no need for an agent, and R5 skips an ok, so the yes reached nobody. Now, when the latest message of the conversation (the channel's main timeline, or the thread with its root) that isn't the person's own is an agent's that mentions them and asks something (a question mark), within `ASKED_REPLY_WINDOW_MS` (2 hours), the person's next message there is a reply to that agent, as a quote reply is (`repliedAgentId`): it goes to that agent whatever the scores, marked `follow-up`, and R1 decides it when no step can read it. A message from anyone else in between ends it. An agent that needs an answer before it goes on still asks with `ask_user`, whose card holds the run and resumes it; a question in the text no longer gets lost, it starts a new run with the conversation.
+
+## Addendum (2026-11-10): a rule never answers for the step
+
+The reply rule (a quote or thread reply to an agent, a short follow-up) picked the agent whatever the step heard. A thread reply that only @mentioned another person, with a need the step scored near zero, went to the agent that answered last, which asked what the person needed; an "ok, I'll wait" under an agent's update got a run that reacted and wrote a line too.
+
+1. **People first.** A message that @mentions people and no agent is for them: no rule gives it to an agent, and none answers (`for people` in the decision's reason). Only an answer to an agent's own question to this person (the addendum above) still goes to that agent, and never one that is nothing but the mentions.
+2. **An ok gets a reaction.** When the step hears the message as purely social (`social.react`, else `isAck`: a few words, no question mark, little need), the agent a rule or the step would pick gets no run; it reacts instead, with the step's emoji (`held back`). Not when that agent's last words in the conversation asked something: then an ok is an answer.
+3. **No agent needed.** A follow-up the rule alone picks, for a message the step needs no agent for (`needsAgent` under `NO_AGENT_NEED`, 0.1), gets nobody, and R5 doesn't pick one after it. The same two exceptions hold.
+
+## Addendum (2026-11-18): a person's plan picks only on installations that already let it
+
+The plan step no longer runs on new installations: the cheap pick of who answers never spends a person's Claude or ChatGPT plan. Installations that had a workspace when this shipped keep it as before. Migration 0304 sets `instance_telemetry.router_plan_fallback` only where a workspace exists; `planSignInsOf` returns no sign-in without it, so the step skips and the status reads the rules, as on the Cloud. Without Jev or a key for a small model, a new installation's messages nobody mentioned go to the rules.
+
+## Addendum (2026-11-19): a message the triage found for someone else gets no agent by rule
+
+A person's message that went into an agent's task in a channel, and that the triage then found for someone else (ADR 0112 addendum of 2026-11-19, 2), comes back to the router (`ROUTE_RELEASED_JOB`) with two differences (`routeMessage`'s options):
+- **`except`:** the agent whose task it left isn't a candidate. The lower bar for the agent the person was just talking to would hand it straight back.
+- **`forSomeoneElse`:** only an agent the message speaks to answers it: the step's `addressee`, or an agent the message names. Not the agent the step finds best placed to answer, and no rule supplies one: not R5's "a message for the agents always gets one", the channel's one agent (R2), a follow-up, or the fallback after a step's failure. Otherwise a line to a person the workspace doesn't know went to the best placed agent.

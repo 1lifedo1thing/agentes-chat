@@ -1,5 +1,5 @@
 import { plural } from "@agenteschat/i18n/format";
-import { atHost } from "./en";
+import { atHost, sentences } from "./en";
 import type { EmailWords } from "./index";
 
 /**
@@ -45,12 +45,29 @@ export const words: EmailWords = {
             ` jako ${role}.`,
           ]
         : ["Masz zaproszenie do przestrzeni roboczej ", { b: org }, ` jako ${role}.`],
+    starts: (channels, agents, count) =>
+      sentences(
+        channels && ["Od razu dołączysz do ", ...channels, "."],
+        agents && [`${count.agents === 1 ? "Będzie" : "Będą"} z tobą pracować `, ...agents, "."],
+      ),
+    more: (n) => plural("pl", n, { one: `${n} inny`, few: `${n} inne`, many: `${n} innych`, other: `${n} innych` }),
     what: "agentes.chat to miejsce, w którym osoby i agenci AI pracują razem.",
     noteFrom: (inviter, note) => [{ b: inviter ? `${inviter}: ` : "Wiadomość: " }, `„${note}”`],
     button: "Przyjmij zaproszenie",
     small: "Zaproszenie jest ważne przez 7 dni. Przyjmij je z tego adresu e-mail.",
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ ktoś z przestrzeni roboczej ${org} zaprosił ten adres. Jeśli nie znasz tej osoby, zignoruj tę wiadomość. Nic się nie stanie, dopóki nie przyjmiesz zaproszenia.`,
+    personal: {
+      body: (inviter, email) =>
+        inviter
+          ? [
+              { b: inviter },
+              `${email ? ` (${email})` : ""} zaprasza cię do swojej osobistej przestrzeni roboczej w agentes.chat.`,
+            ]
+          : "Masz zaproszenie do osobistej przestrzeni roboczej w agentes.chat.",
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ ktoś zaprosił ten adres do swojej osobistej przestrzeni roboczej. Jeśli nie znasz tej osoby, zignoruj tę wiadomość. Nic się nie stanie, dopóki nie przyjmiesz zaproszenia.",
+    },
   },
   inviteRequest: {
     subject: "Ktoś prosi o nowe zaproszenie",
@@ -70,6 +87,18 @@ export const words: EmailWords = {
     button: "Otwórz listę członków",
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ to zaproszenie pochodzi od ciebie albo zarządzasz członkami przestrzeni roboczej ${org}.`,
+    personal: {
+      body: (email) =>
+        email
+          ? [
+              "Z adresu ",
+              { b: email },
+              " otwarto wygasłe zaproszenie do twojej przestrzeni roboczej i poproszono o nowe.",
+            ]
+          : "Ktoś z wygasłym linkiem z zaproszeniem do twojej przestrzeni roboczej prosi o nowy.",
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ to zaproszenie pochodzi od ciebie albo decydujesz, kto jest w twojej przestrzeni roboczej.",
+    },
   },
   calendar: {
     subject: "Masz zaproszenie na wydarzenie",
@@ -79,6 +108,9 @@ export const words: EmailWords = {
     someone: "Ktoś",
     button: "Zobacz wydarzenie",
     why: (org) => `Otrzymujesz tę wiadomość, ponieważ ktoś z przestrzeni roboczej ${org} zaprosił cię na wydarzenie.`,
+    personal: {
+      why: () => "Otrzymujesz tę wiadomość, ponieważ ktoś z twojej przestrzeni roboczej zaprosił cię na wydarzenie.",
+    },
   },
   waitlist: {
     subject: "Potwierdź swoje miejsce na liście oczekujących agentes.chat",
@@ -133,6 +165,12 @@ export const words: EmailWords = {
     button: "Zobacz budżet",
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ jesteś właścicielem tego agenta albo administratorem przestrzeni roboczej ${org}. Przychodzi przy 80% i przy 100%, każda raz w miesiącu.`,
+    personal: {
+      warning: "Przy 100% zatrzyma się i da ci znać. Limit możesz zmienić na stronie agenta.",
+      exhausted: "Nie odpowie do początku nowego miesiąca albo do czasu, aż podniesiesz limit na stronie agenta.",
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ to twój agent. Przychodzi przy 80% i przy 100%, każda raz w miesiącu.",
+    },
   },
   digest: {
     subject: (n) =>
@@ -163,6 +201,15 @@ export const words: EmailWords = {
     button: (n) => plural("pl", n, { one: "Zobacz prośbę", other: "Otwórz zatwierdzenia" }),
     why: (org, hours) =>
       `Otrzymujesz tę wiadomość, ponieważ możesz zatwierdzać te prośby w przestrzeni roboczej ${org}.${hours ? ` Przychodzi, gdy prośba czeka dłużej niż ${hours} godz., raz na każdą prośbę.` : ""}`,
+    personal: {
+      body: (n) =>
+        plural("pl", n, {
+          one: "Jeden z twoich agentów prosi o coś, co wymaga twojego zatwierdzenia.",
+          other: "Twoi agenci proszą o rzeczy, które wymagają twojego zatwierdzenia.",
+        }),
+      why: (_org, hours) =>
+        `Otrzymujesz tę wiadomość, ponieważ możesz zatwierdzać te prośby.${hours ? ` Przychodzi, gdy prośba czeka dłużej niż ${hours} godz., raz na każdą prośbę.` : ""}`,
+    },
   },
   ready: {
     subject: "Komputer twoich agentów jest gotowy",
@@ -195,6 +242,15 @@ export const words: EmailWords = {
     button: { ai: "Połącz swoje AI", task: "Daj pierwsze zadanie", create: "Utwórz agenta" },
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ jesteś właścicielem przestrzeni roboczej ${org} w agentes.chat. To jedyna wiadomość o tym komputerze.`,
+    personal: {
+      body: () =>
+        "Dziękujemy za cierpliwość. Komputer twoich agentów jest włączony i skonfigurowany, z osobnym użytkownikiem dla każdego agenta. Działa dzień i noc, więc twoi agenci mogą pracować o każdej porze.",
+      steps: {
+        task: ["Daj pierwsze zadanie.", "Otwórz rozmowę z jednym ze swoich agentów i napisz, czego potrzebujesz."],
+      },
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ ta przestrzeń robocza w agentes.chat należy do ciebie. To jedyna wiadomość o tym komputerze.",
+    },
   },
   joinRequest: {
     subject: "Ktoś prosi o dołączenie do twojej przestrzeni roboczej",
@@ -205,12 +261,22 @@ export const words: EmailWords = {
       { b: org },
       " i prosi o dołączenie.",
     ],
+    outside: (by) => [
+      "Ta osoba pracuje dla ",
+      { b: by },
+      " i prosi o dołączenie jako współpracownik zewnętrzny. Nie zajmuje miejsca w twoim planie i możesz ją usunąć w każdej chwili.",
+    ],
     note: "Zatwierdzaj tylko osoby, których się spodziewasz. Ta osoba dołączy jako członek, chyba że wybierzesz na stronie inną rolę.",
     approve: "Zatwierdź",
     deny: "Odrzuć",
     more: "Wszystkie oczekujące prośby znajdziesz w sekcji Członkowie.",
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ jesteś właścicielem lub administratorem przestrzeni roboczej ${org}. Przychodzi najwyżej raz na godzinę.`,
+    personal: {
+      body: () => "Ta osoba otworzyła link z zaproszeniem do twojej przestrzeni roboczej i prosi o dołączenie.",
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ decydujesz, kto dołącza do twojej przestrzeni roboczej. Przychodzi najwyżej raz na godzinę.",
+    },
   },
   joinAnswer: {
     someone: "Ktoś",
@@ -243,6 +309,17 @@ export const words: EmailWords = {
     },
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ z tego adresu poproszono o dołączenie do przestrzeni roboczej ${org} w agentes.chat.`,
+    personal: {
+      joined: { body: (who) => `${who} zatwierdza twoją prośbę. Jesteś teraz w tej przestrzeni roboczej.` },
+      invited: { body: (who) => `${who} zatwierdza twoją prośbę o dołączenie do tej przestrzeni roboczej.` },
+      denied: {
+        preheader: "Ta osoba ją przejrzała i nie zatwierdziła.",
+        body: () => "Osoba, do której trafiła twoja prośba, przejrzała ją i nie zatwierdziła.",
+        small: "Jeśli to pomyłka, poproś tę osobę o zaproszenie e-mailem.",
+      },
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ z tego adresu poproszono o dołączenie do osobistej przestrzeni roboczej w agentes.chat.",
+    },
   },
   joinCode: {
     subject: (code) => `${code} to twój kod do agentes.chat`,
@@ -252,16 +329,29 @@ export const words: EmailWords = {
     small: ["Działa przez 10 minut. Jeśli to nie ty, ", { nobr: "zignoruj tę wiadomość." }],
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ ktoś wpisał ten adres, żeby poprosić o dołączenie do przestrzeni roboczej ${org} w agentes.chat.`,
+    personal: {
+      body: () => "Wpisz ten kod na stronie, żeby poprosić o dołączenie do tej przestrzeni roboczej.",
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ ktoś wpisał ten adres, żeby poprosić o dołączenie do osobistej przestrzeni roboczej w agentes.chat.",
+    },
   },
   deletionCode: {
     subjectWorkspace: (code) => `${code} to twój kod do usunięcia przestrzeni roboczej`,
     subjectAccount: (code) => `${code} to twój kod do usunięcia całego konta`,
+    subjectReset: (code) => `${code} to twój kod do zresetowania przestrzeni roboczej`,
+    reset: (org) => [
+      "Wpisz ten kod, żeby zresetować przestrzeń roboczą ",
+      { b: org },
+      ". Jej agenci, rozmowy, pliki i pamięć zostaną od razu usunięte na dobre, a ona zacznie od nowa jak nowa przestrzeń.",
+    ],
+    whyReset: (org) =>
+      `Otrzymujesz tę wiadomość, ponieważ z twojego konta poproszono o zresetowanie ${org} w agentes.chat.`,
     preheader: "Wpisz go w agentes.chat, żeby potwierdzić. Działa przez 10 minut.",
     headline: "Twój kod",
     workspace: (org) => [
       "Wpisz ten kod, żeby usunąć przestrzeń roboczą ",
       { b: org },
-      ". Od razu zamknie się dla wszystkich, a po 7 dniach zostanie usunięta na dobre.",
+      ". Od razu stanie się dla wszystkich tylko do odczytu, a po 7 dniach zostanie usunięta na dobre.",
     ],
     account: (email) => [
       "Wpisz ten kod, żeby usunąć całe konto ",
@@ -278,21 +368,74 @@ export const words: EmailWords = {
     whyWorkspace: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ z twojego konta poproszono o usunięcie przestrzeni roboczej ${org} w agentes.chat.`,
     whyAccount: "Otrzymujesz tę wiadomość, ponieważ z twojego konta poproszono o jego usunięcie w agentes.chat.",
+    personal: {
+      workspace: (org) => [
+        "Wpisz ten kod, żeby usunąć swoją przestrzeń roboczą ",
+        { b: org },
+        ". Od razu stanie się tylko do odczytu, a po 7 dniach zostanie usunięta na dobre.",
+      ],
+    },
+  },
+  emailChange: {
+    code: {
+      subject: (code) => `${code} to twój kod do zmiany adresu e-mail`,
+      preheader: "Wpisz go w agentes.chat, żeby potwierdzić. Działa przez 10 minut.",
+      headline: "Twój kod",
+      body: (email, newEmail) => [
+        "Wpisz ten kod, żeby zmienić adres e-mail konta ",
+        { b: email },
+        " na ",
+        { b: newEmail },
+        ".",
+      ],
+      support: (address) => [
+        "Działa przez 10 minut i bez niego twój adres e-mail się nie zmieni. Jeśli to nie ty, nikomu go nie podawaj i napisz na ",
+        { mail: address },
+        ".",
+      ],
+      noSupport:
+        "Działa przez 10 minut i bez niego twój adres e-mail się nie zmieni. Jeśli to nie ty, nikomu go nie podawaj i daj znać osobom, które prowadzą ten serwer.",
+      why: "Otrzymujesz tę wiadomość, ponieważ z twojego konta poproszono o zmianę adresu e-mail w agentes.chat.",
+    },
+    link: {
+      subject: "Potwierdź swój nowy e-mail w agentes.chat",
+      preheader: "Jedno kliknięcie i od teraz logujesz się tym adresem. Link działa przez godzinę.",
+      headline: "Potwierdź swój nowy e-mail",
+      body: "Został jeden krok: potwierdź, że ten adres należy do ciebie. Potem twoje konto będzie się logować tym adresem.",
+      button: "Potwierdź nowy e-mail",
+      small: "Link działa przez godzinę. Jeśli to nie twoja prośba, możesz zignorować tę wiadomość.",
+      why: "Otrzymujesz tę wiadomość, ponieważ ktoś chce użyć tego adresu w koncie agentes.chat.",
+    },
+    changed: {
+      subject: "Adres e-mail twojego konta agentes.chat się zmienił",
+      preheader: "Jeśli to nie ty, przez 7 dni możesz przywrócić ten adres.",
+      headline: "Twój adres e-mail się zmienił",
+      body: (email, newEmail) => ["Konto ", { b: email }, " loguje się teraz adresem ", { b: newEmail }, "."],
+      notYou:
+        "To nie ty? Naciśnij przycisk w ciągu 7 dni. Ten adres wróci, wszystkie sesje zostaną wylogowane, aplikacje AI odłączone, a sposoby logowania dodane od tego czasu przestaną działać. Hasło też zostanie usunięte, a następne ustawisz przez „Nie pamiętam hasła”.",
+      button: "To nie ja",
+      small: "Jeśli to ty, nie musisz nic robić.",
+      why: "Otrzymujesz tę wiadomość, ponieważ ten adres był adresem e-mail konta agentes.chat.",
+    },
   },
   deleting: {
     subject: (day) => `Przestrzeń robocza, w której jesteś, zostanie usunięta ${day}`,
-    preheader: "Jest już zamknięta. Do tego czasu właściciel może ją jeszcze przywrócić.",
+    preheader: "Jest już tylko do odczytu. Do tego czasu właściciel może ją jeszcze przywrócić.",
     headline: "Przestrzeń robocza jest usuwana",
     body: (by, org, day, time) => [
       { b: by },
       " usuwa przestrzeń roboczą ",
       { b: org },
-      `. Jest już zamknięta i zniknie na dobre ${day} o ${time}.`,
+      `. Jest już tylko do odczytu i zniknie na dobre ${day} o ${time}.`,
     ],
     owner: "Zmiana planów? Przywróć ją przed tym terminem.",
     button: "Przywróć przestrzeń roboczą",
     member: "Jeśli to pomyłka, poproś właściciela o jej przywrócenie.",
     why: (org) => `Otrzymujesz tę wiadomość, ponieważ jesteś w przestrzeni roboczej ${org} w agentes.chat.`,
+    personal: {
+      member: "Jeśli to pomyłka, poproś osobę, która ją usunęła, o jej przywrócenie.",
+      why: () => "Otrzymujesz tę wiadomość, ponieważ jesteś w tej przestrzeni roboczej w agentes.chat.",
+    },
   },
   restored: {
     subject: "Przestrzeń robocza, w której jesteś, wróciła",
@@ -301,6 +444,9 @@ export const words: EmailWords = {
     body: (by, org) => [{ b: by }, " przywraca przestrzeń roboczą ", { b: org }, ". Znów działa."],
     button: "Otwórz przestrzeń roboczą",
     why: (org) => `Otrzymujesz tę wiadomość, ponieważ jesteś w przestrzeni roboczej ${org} w agentes.chat.`,
+    personal: {
+      why: () => "Otrzymujesz tę wiadomość, ponieważ jesteś w tej przestrzeni roboczej w agentes.chat.",
+    },
   },
   appConnected: {
     subject: "Do twojego konta agentes.chat podłączono aplikację",
@@ -311,6 +457,11 @@ export const words: EmailWords = {
     button: "Zobacz podłączone aplikacje",
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ do twojego konta w przestrzeni roboczej ${org} w agentes.chat podłączono aplikację.`,
+    personal: {
+      body: (app) => [{ b: app }, " ma teraz dostęp do twojego konta w twojej osobistej przestrzeni roboczej."],
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ do twojego konta w twojej osobistej przestrzeni roboczej w agentes.chat podłączono aplikację.",
+    },
   },
   accountDeleting: {
     subject: (day) => `Twoje konto agentes.chat zostanie usunięte ${day}`,
@@ -402,6 +553,10 @@ export const words: EmailWords = {
     button: "Zobacz, kto może rozmawiać",
     why: (org) =>
       `Otrzymujesz tę wiadomość, ponieważ twój agent w ${org} myśli w ramach twojego planu, a ktoś inny zmienił, kto może z nim rozmawiać.`,
+    personal: {
+      why: () =>
+        "Otrzymujesz tę wiadomość, ponieważ twój agent myśli w ramach twojego planu, a ktoś inny zmienił, kto może z nim rozmawiać.",
+    },
   },
   planLent: {
     subject: (plan) => `Twój plan ${plan} myśli teraz dla innego agenta`,
@@ -419,6 +574,9 @@ export const words: EmailWords = {
     note: "Odbierz go jednym kliknięciem w powiadomieniach, a agent przestanie myśleć z twoim planem.",
     button: "Otwórz powiadomienia",
     why: (org) => `Dostajesz ten e-mail, bo ktoś w ${org} połączył twój plan z agentem.`,
+    personal: {
+      why: () => "Dostajesz ten e-mail, bo w twojej przestrzeni roboczej połączono twój plan z agentem.",
+    },
   },
   planWaiting: {
     subject: "Twój zespół czeka",
@@ -449,5 +607,71 @@ export const words: EmailWords = {
     },
     button: "Zobacz plany agentes.chat",
     why: (org) => `Ten e-mail przyszedł, bo prowadzisz ${org} w agentes.chat. Wysyłamy tylko dwa takie powiadomienia.`,
+    personal: {
+      subject: "Twoi agenci czekają",
+      headline: "Twoi agenci czekają",
+      body: (agents, _channels, routines) => {
+        const a = plural("pl", agents, {
+          one: `1 agent`,
+          few: `${agents} agenci`,
+          many: `${agents} agentów`,
+          other: `${agents} agenta`,
+        });
+        const r = plural("pl", routines, {
+          one: `1 rutyna`,
+          few: `${routines} rutyny`,
+          many: `${routines} rutyn`,
+          other: `${routines} rutyny`,
+        });
+        return `Gotowe: ${routines > 0 ? `${a} i ${r}` : a}. Brakuje tylko planu agentes.chat.`;
+      },
+      why: () =>
+        "Ten e-mail przyszedł, bo ta przestrzeń robocza w agentes.chat należy do ciebie. Wysyłamy tylko dwa takie powiadomienia.",
+    },
+  },
+  surface: {
+    linked: {
+      subject: (surface) => `${surface} połączono z Twoim kontem agentes.chat`,
+      preheader: "Twój asystent odpowiada Ci teraz tam. Jeśli to nie Ty, odłącz to.",
+      headline: (surface) => `${surface} połączono`,
+      body: (surface, display, org) => [
+        { b: display },
+        ` w ${surface} rozmawia teraz z Twoim asystentem w `,
+        { b: org },
+        ".",
+      ],
+      notYou: "To nie Ty? Odłącz to. Wiadomości stamtąd od razu przestaną trafiać na Twoje konto.",
+      button: "Odłącz",
+      small: "Jeśli to Ty, nic nie musisz robić. Możesz to odłączyć w każdej chwili w Ustawieniach.",
+      why: (surface) => `Otrzymujesz tego e-maila, bo ${surface} połączono z Twoim kontem agentes.chat.`,
+      picture: "Twój asystent, teraz także w telefonie",
+    },
+    unlinked: {
+      subject: (surface) => `${surface} odłączono od Twojego konta agentes.chat`,
+      preheader: "Tożsamość się zmieniła. Połącz ponownie w Ustawieniach, jeśli to Ty.",
+      headline: (surface) => `${surface} odłączono`,
+      body: (surface, display) => [{ b: display }, ` w ${surface} odłączono, bo zmieniła się tożsamość.`],
+      small: "Połącz ponownie w Ustawieniach, jeśli to Ty.",
+      why: (surface) => `Otrzymujesz tego e-maila, bo ${surface} było połączone z Twoim kontem agentes.chat.`,
+      picture: "Twój asystent, już nie w telefonie",
+    },
+  },
+  supportReply: {
+    subject: "Odpowiedź na twoją prośbę o pomoc",
+    preheader: "W sprawie twojej prośby o pomoc w agentes.chat.",
+    headline: "Odpowiedź na twoją prośbę o pomoc",
+    answers: {
+      received: "Dostaliśmy twoją prośbę i już się nią zajmujemy.",
+      need_more: "Żeby pomóc, musimy wiedzieć więcej: jakie były twoje kroki, jaki miał być wynik i co się stało.",
+      resolved: "Zgłoszony problem został naprawiony.",
+      handed_over: "Twoją prośbą zajmuje się teraz człowiek, który ci odpowie.",
+    },
+    from: (host) =>
+      host
+        ? atHost("Odpowiedź od osób, które prowadzą serwer agentes.chat pod", "adresem", host)
+        : "Odpowiedź od agentes.chat.",
+    ai: "Tę odpowiedź napisał asystent AI.",
+    reply: (address) => ["Aby odpowiedzieć, napisz na ", { mail: address }, "."],
+    why: "Otrzymujesz tę wiadomość w odpowiedzi na twoją prośbę o pomoc w agentes.chat.",
   },
 };

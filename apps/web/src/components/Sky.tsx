@@ -7,6 +7,9 @@ import {
   agentTones,
   cloudAt,
   cx,
+  drawSprite,
+  EYE,
+  formingField,
   HEADER_AREA,
   headerField,
   Icon,
@@ -14,6 +17,7 @@ import {
   Logo,
   mix,
   PixelSky,
+  parseColor,
   pixelBurst,
   pixelOf,
   SKY_TONES,
@@ -29,8 +33,9 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
+import { useCloseAfterUse } from "@/hooks/useCloseAfterUse";
 import { useDirectory } from "@/hooks/useDirectory";
-import { usePrefersReducedMotion } from "@/hooks/useRevealedText";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { lookOf } from "@/lib/look";
 import { agentActivitySince, dayPart, isNewDay, lastVisit, markVisit } from "@/lib/welcome";
 
@@ -63,7 +68,10 @@ function claimGreeting(orgId: string, channelId: string) {
   return g;
 }
 
-/** The sky band at the top of a channel on the first visit of the day: a greeting and what its agents did since. */
+/**
+ * The sky band at the top of a channel on the first visit of the day: a greeting and what its agents did since. It
+ * closes by itself a while after the person starts using the page, never under the pointer, gliding shut.
+ */
 export function ChannelWelcome({
   channelId,
   messages,
@@ -79,14 +87,33 @@ export function ChannelWelcome({
   const overview = useOverview(org.id);
   const [greeting] = useState(() => claimGreeting(org.id, channelId));
   const [closed, setClosed] = useState(greeting.closed ?? false);
+  const reduced = usePrefersReducedMotion();
+  const box = useRef<HTMLElement>(null);
   const text = useRef<HTMLDivElement>(null);
   const faces = useRef<HTMLDivElement>(null);
   const shut = useRef<HTMLButtonElement>(null);
-  if (!greeting.show || greeting.channelId !== channelId || closed || !messages || greeting.last === null) return null;
+  const shows =
+    greeting.show && greeting.channelId === channelId && !closed && messages !== undefined && greeting.last !== null;
+  // Glides shut: its height and the room above it fold to nothing as it fades, the conversation takes the room (the
+  // list keeps what is read in place), then it leaves. With reduced motion it only fades.
   const close = () => {
+    if (greeting.closed) return;
     greeting.closed = true;
-    setClosed(true);
+    const el = box.current;
+    if (!el || typeof el.animate !== "function") return setClosed(true);
+    const gone = () => setClosed(true);
+    const fold = [
+      { height: `${el.offsetHeight}px`, minHeight: "0px", marginTop: getComputedStyle(el).marginTop, opacity: 1 },
+      { height: "0px", minHeight: "0px", marginTop: "0px", opacity: 0 },
+    ];
+    el.animate(reduced ? [{ opacity: 1 }, { opacity: 0 }] : fold, {
+      duration: reduced ? 160 : 240,
+      easing: "ease-out",
+      fill: "forwards",
+    }).finished.then(gone, gone);
   };
+  useCloseAfterUse(box, close, shows);
+  if (!shows || greeting.last === null || !messages) return null;
   const since = greeting.last;
   const activity = agentActivitySince(messages, since);
   const names = joinNames(
@@ -97,7 +124,7 @@ export function ChannelWelcome({
   const firstName = me.user.name.split(/\s+/)[0] ?? me.user.name;
   const crew = (activity.agentIds.length ? activity.agentIds : agents.map((a) => a.id)).slice(0, 3);
   return (
-    <section className="sky-welcome" aria-label={t("sky.welcome.label")}>
+    <section className="sky-welcome" aria-label={t("sky.welcome.label")} ref={box}>
       <PixelSky
         options={{
           pixel: 4,
@@ -173,44 +200,85 @@ export function AgentCover({
   clear?: Clear;
 }) {
   const host = useRef<HTMLDivElement>(null);
-  /** Where the face is, in shares of the cover (its upper quarter, which sits on the sky). */
-  const pool = (): [number, number] => {
+  return (
+    <div className="agp-cover__sky" data-busy={busy || undefined} aria-hidden="true" ref={host}>
+      <PixelSky options={agentCoverOptions(color, { busy, clear, pool: facePool(host, clear, at) })} />
+    </div>
+  );
+}
+
+/** A deep navy the cover's tones are pulled toward at night (a new agent waiting for its AI, ADR 0164). */
+const NIGHT_NAVY = "#040818";
+
+/**
+ * Where a cover's face is, in shares of its box (the face's upper quarter, which sits on the sky): the first element
+ * `clear` gives; without one, `at` across near the bottom.
+ */
+export function facePool(
+  host: { current: HTMLElement | null },
+  clear: Clear | undefined,
+  at = 0.1,
+): () => [number, number] {
+  return () => {
     const face = clear?.()[0];
     const box = host.current?.getBoundingClientRect();
     if (!face || !box?.width || !box.height) return [at, 0.83];
     const f = face.getBoundingClientRect();
     return [(f.left + f.width / 2 - box.left) / box.width, (f.top + f.height / 4 - box.top) / box.height];
   };
-  return (
-    <div className="agp-cover__sky" data-busy={busy || undefined} aria-hidden="true" ref={host}>
-      <PixelSky
-        options={{
-          pixel: 2,
-          surface: "--bg",
-          // Mid to near white, then most of the way to the page: no deep tones on the cover.
-          palette: (surface) => {
-            const tones = agentTones(color);
-            const light = tones.slice(3);
-            return [...light, mix(light[light.length - 1] ?? surface, surface, 0.6)];
-          },
-          body: spriteTone(color),
-          speed: busy ? 2.6 : 1,
-          rise: busy ? 2.4 : 1,
-          near: 0,
-          faint: 1,
-          sprites: busy ? { area: 5300, max: 14 } : { area: 10560, max: 8 },
-          clear,
-          light: 0,
-          // Lighter toward the bottom and the right, where the page's text starts.
-          base: (u, v, tt) => 0.28 + 0.3 * u + 0.62 * v * v + 0.05 * S(u * 4 + tt * 0.5),
-          blobs: () => {
-            const [x, y] = pool();
-            return [[x, y, 0.3, 0.75]];
-          },
-        }}
-      />
-    </div>
-  );
+}
+
+/**
+ * The agent page's cover sky (AgentCover), as options: only the light tones of its color, fading into the page at the
+ * bottom, a pool of light behind its face so the face's own dither never melts into the sky's, 2 px pixels and a few
+ * faint pixel agents. The new agent's card and its conversation's band use it too (ADR 0164): `night` (0..1, read on
+ * every frame) pulls the tones toward a deep navy while the agent has no AI, and back as it gets one.
+ *
+ * `surface` is the token of what the sky sits on (the page by default; the card's well, the chat card's face), so its
+ * last tone is that color and it ends with no seam. On a dark surface it is the window's surface rising into its
+ * color, as the app's other skies are there (`softTones`): the color near the top and as a glow behind the face, the
+ * rest melting into the dark below. The light theme's sky is the same as before.
+ */
+export function agentCoverOptions(
+  color: AgentColor,
+  o: { busy?: boolean; clear?: Clear; pool: () => [number, number]; night?: () => number; surface?: string },
+): SkyOptions {
+  const busy = o.busy ?? false;
+  // Read with the tones on each frame (the theme can change), before the field is drawn.
+  let dark = false;
+  return {
+    pixel: 2,
+    surface: o.surface ?? "--bg",
+    palette: (surface) => {
+      dark = isDarkSurface(surface);
+      const night = o.night?.() ?? 0;
+      const toNight = (tones: string[]) =>
+        night <= 0.001 ? tones : tones.map((tone, i) => mix(tone, NIGHT_NAVY, night * (0.9 - i * 0.07)));
+      // Dark: from the surface (0) up to the color (last); the field puts the color on top and behind the face.
+      if (dark) return toNight(softTones(color, surface));
+      // Light: mid to near white, then most of the way to the surface: no deep tones on the cover.
+      const light = agentTones(color).slice(3);
+      return toNight([...light, mix(light[light.length - 1] ?? surface, surface, 0.6)]);
+    },
+    body: spriteTone(color),
+    speed: busy ? 2.6 : 1,
+    rise: busy ? 2.4 : 1,
+    near: 0,
+    faint: 1,
+    sprites: busy ? { area: 5300, max: 14 } : { area: 10560, max: 8 },
+    clear: o.clear,
+    light: 0,
+    // Light: lighter toward the bottom and the right, where the page's text starts. Dark: the color at the top, the
+    // surface at the bottom (the pool lifts the face's glow back toward the color).
+    base: (u, v, tt) =>
+      dark
+        ? 0.86 - 0.16 * u - 0.82 * v + 0.05 * S(u * 4 + tt * 0.5)
+        : 0.28 + 0.3 * u + 0.62 * v * v + 0.05 * S(u * 4 + tt * 0.5),
+    blobs: () => {
+      const [x, y] = o.pool();
+      return [[x, y, 0.3, dark ? 0.55 : 0.75]];
+    },
+  };
 }
 
 /**
@@ -299,26 +367,56 @@ export function AuthHorizon({ clear }: { clear?: Clear }) {
   );
 }
 
+/**
+ * The `/download` page's sky: the sign-in horizon turned over, soft tones at the top fading into the page, where the
+ * app (the agents' home on this computer) is offered. Two agents pass; the title and the button stay clear.
+ */
+export function DownloadSky({ clear }: { clear?: Clear }) {
+  const opts: SkyOptions = {
+    pixel: 4,
+    surface: "--bg",
+    palette: (bg) => softTones("sky", bg),
+    body: spriteTone("sky"),
+    near: 0,
+    ceil: 0.05,
+    light: 0.06,
+    sprites: 2,
+    clear,
+    base: (u, v, tt) => {
+      const s = Math.max(0, 1 - v / 0.9);
+      const e = s * s * (3 - 2 * s);
+      return 0.72 * e + 0.05 * S(u * 4 + tt * 0.4) * e;
+    },
+    blobs: (tt) => [
+      [0.15 + 0.08 * C(tt * 0.15), 0.08, 0.07, 0.07],
+      [0.85 + 0.08 * S(tt * 0.12), 0.1, 0.07, 0.07],
+    ],
+  };
+  return (
+    <span className="dlp__sky" aria-hidden="true">
+      <PixelSky options={opts} />
+    </span>
+  );
+}
+
 /* ---------- Small moments ---------- */
 
-/** A thin dithered strip sweeping in the agent's color behind the activity bar ("Theo está pensando…"). */
-export function ActivitySky({ color }: { color: AgentColor }) {
+/**
+ * Where a picture an agent is making will show (`ImageMaking`): the picture forming out of the agent's sky, in its
+ * soft tones over the conversation's background (`formingField`); whole and still with reduced motion.
+ */
+export function ImageSky({ color }: { color: AgentColor }) {
+  const reduced = usePrefersReducedMotion();
   return (
-    <span className="ac-typing__sky" aria-hidden="true">
-      <PixelSky
-        options={{
-          pixel: 3,
-          surface: "--raised",
-          palette: (bg) => softTones(color, bg),
-          light: 0,
-          base: (u, _v, tt) => {
-            const c = ((tt * 0.32) % 1.6) - 0.3;
-            const d = u - c;
-            return 0.08 + 0.5 * Math.exp(-(d * d) / 0.035);
-          },
-        }}
-      />
-    </span>
+    <PixelSky
+      options={{
+        pixel: 4,
+        surface: "--bg",
+        palette: (bg) => softTones(color, bg),
+        light: 0,
+        base: (u, v, t) => formingField(u, v, reduced ? null : t),
+      }}
+    />
   );
 }
 
@@ -597,9 +695,9 @@ export function MenuHorizon() {
 
 /**
  * The onboarding rail's horizon: soft tones rising from the rail's surface into
- * the sky (no edge), a little higher with each step done; the guide sits on it.
+ * the sky (no edge), a little higher with each step done; the guide sits on it, its sprites kept off it (`clear`).
  */
-export function OnboardingHorizon({ progress }: { progress: number }) {
+export function OnboardingHorizon({ progress, clear }: { progress: number; clear?: Clear }) {
   const target = 0.45 + 0.4 * Math.max(0, Math.min(1, progress));
   const reduced = usePrefersReducedMotion();
   const level = useRef({ now: target, target });
@@ -615,6 +713,7 @@ export function OnboardingHorizon({ progress }: { progress: number }) {
     light: 0.06,
     // Three on a full horizon, fewer on the short one under the steps of a short window.
     sprites: { area: 2000, max: 3 },
+    clear,
     base: (u, v, tt) => {
       const s = Math.max(0, (v - 0.08) / 0.92);
       const e = s * s * (3 - 2 * s);
@@ -632,6 +731,102 @@ export function OnboardingHorizon({ progress }: { progress: number }) {
   return (
     <span className="onb__horizon" aria-hidden="true">
       <PixelSky options={opts} />
+    </span>
+  );
+}
+
+/**
+ * Behind the onboarding on a wide window, where the rail is a card in the middle of the window (onboarding.css): the
+ * agents' sky as the whole window's horizon, low and in soft tones, with no agents of its own (Lodi stands on the
+ * card's). Hidden below that width, where it draws nothing.
+ */
+export function OnboardingStageSky() {
+  const opts: SkyOptions = {
+    pixel: 4,
+    surface: "--pane",
+    // On a dark window the soft tones climb to the sky's light blue, far louder than in light: there it stops at the
+    // surface's mix at 42%, as quiet as the light one.
+    palette: (bg) => {
+      const tones = softTones("sky", bg);
+      const [r, g, b] = parseColor(bg);
+      return r * 0.3 + g * 0.59 + b * 0.11 < 128 ? tones.slice(0, 4) : tones;
+    },
+    light: 0.04,
+    base: (u, v, tt) => {
+      const s = Math.max(0, (v - 0.05) / 0.95);
+      const e = s * s * (3 - 2 * s);
+      return 0.78 * e + 0.05 * S(u * 9 + tt * 0.3) * e + 0.03 * S(u * 23 - tt * 0.2) * e;
+    },
+  };
+  return (
+    <span className="onb__stage-sky" aria-hidden="true">
+      <PixelSky options={opts} />
+    </span>
+  );
+}
+
+/**
+ * The onboarding's progress at the top of the rail: a strip of pixel sky that fills as steps get done, with a pixel
+ * agent walking at its front. `progress` is 0..1.
+ */
+export function OnboardingProgress({ progress }: { progress: number }) {
+  const target = Math.max(0, Math.min(1, progress));
+  const reduced = usePrefersReducedMotion();
+  const level = useRef({ now: target, target });
+  level.current.target = target;
+  if (reduced) level.current.now = target;
+  const body = pixelOf(spriteTone("sky"));
+  const eye = pixelOf(EYE);
+  const opts: SkyOptions = {
+    pixel: 3,
+    surface: "--sunken",
+    light: 0,
+    palette: (bg) => {
+      const [r, g, b] = parseColor(bg);
+      const dark = r * 0.3 + g * 0.59 + b * 0.11 < 128;
+      const sky = dark ? ["#0f56c4", "#2b74e6", "#4b93ff", "#78b4ff"] : ["#a6cfff", "#78b4ff", "#4b93ff", "#2b74e6"];
+      return [bg, mix(bg, "#78b4ff", dark ? 0.1 : 0.14), ...sky];
+    },
+    // Called once per frame, before the field: eases the fill toward the target.
+    blobs: () => {
+      const l = level.current;
+      l.now += (l.target - l.now) * 0.06;
+      return [];
+    },
+    base: (u, v, t) => {
+      const now = level.current.now;
+      // What is still to go is the bare track: no dotted fill, and no lit first column before a step is done.
+      if (now < 0.01 || u > now) return 0;
+      const head = Math.max(0, 1 - (now - u) * 12);
+      return Math.min(1, 0.45 + 0.4 * v + 0.08 * S(u * 22 + t * 1.2) + 0.2 * head);
+    },
+    after: (f) => {
+      const now = level.current.now;
+      if (now < 0.01) return;
+      const x = Math.max(0, Math.min(f.w - 9, Math.round(now * f.w) - 6));
+      drawSprite(f, x, Math.round((f.h - 9) / 2), 1, body, eye, f.t % 3.6 > 3.46);
+    },
+  };
+  return (
+    <span className="onb__progress-sky" aria-hidden="true">
+      <PixelSky options={opts} />
+    </span>
+  );
+}
+
+/** Behind the team asleep until its plan (the onboarding's last step): the agents' sky, rising from the card. */
+export function TeamAsleepSky() {
+  return (
+    <span className="onb__plan-sky" aria-hidden="true">
+      <PixelSky
+        options={{
+          pixel: 4,
+          surface: "--raised",
+          palette: (bg) => softTones("sky", bg),
+          light: 0,
+          base: (u, v, tt) => 0.18 + 0.62 * v + 0.04 * S(u * 5 + tt * 0.4),
+        }}
+      />
     </span>
   );
 }

@@ -20,6 +20,7 @@ import {
   listAgentMemoryRows,
   memoriesFor,
   normalizeSubject,
+  openPersonAgentDm,
   postPersonMessage,
   recordContextUse,
   retrieveForRun,
@@ -264,7 +265,7 @@ describe("agents learn on their own (ADR 0120)", () => {
     expect(none.get(other.id) ?? []).toEqual([]);
   });
 
-  test("a second similar task brings the how-to in with room for its method; fresh beats merely popular", async () => {
+  test("a second similar task brings the how-to in with room for its method; of its other notes, fresh comes first", async () => {
     f = await setup();
     const { run } = await personRun();
     const method = `GET ${MODELS_URL} with the bearer key. ${"Then page through with ?cursor= until next is null. ".repeat(12)}`;
@@ -284,7 +285,8 @@ describe("agents learn on their own (ADR 0120)", () => {
     expect(line.length).toBeGreaterThan(600);
     expect(line.length).toBeLessThan(800);
 
-    // Two of its own facts: the old one used a lot, the new one fresh. With room for one, the fresh one goes in.
+    // Two of its own facts: the old one used a lot, the new one fresh. Off the request, they come in only by name
+    // (ADR 0167), the fresh one first.
     const fact = (content: string, relevance: number, daysAgo: number) => ({
       orgId: f.org.id,
       kind: "fact" as const,
@@ -301,15 +303,16 @@ describe("agents learn on their own (ADR 0120)", () => {
     await f.db
       .insert(schema.contextItems)
       .values([fact("The office wifi is called Orbit.", 0.9, 200), fact("The staging host is new-box.", 0.6, 0)]);
-    const narrow = await retrieveForRun(f.context, {
+    const offTopic = await retrieveForRun(f.context, {
       orgId: f.org.id,
       agentId: f.agent.id,
       channelId: f.general.id,
       text: "",
-      budgetChars: 120,
     });
-    expect(narrow.text).toContain("new-box");
-    expect(narrow.text).not.toContain("Orbit");
+    expect(offTopic.itemIds).toEqual([]);
+    const also = offTopic.text.split("\n").find((l) => l.startsWith("- Also in your memory")) ?? "";
+    expect(also.indexOf("new-box")).toBeGreaterThan(-1);
+    expect(also.indexOf("new-box")).toBeLessThan(also.indexOf("Orbit"));
   });
 
   test("a how-to reused in three finished turns becomes the agent's skill; a bad outcome keeps it a note", async () => {
@@ -344,6 +347,33 @@ describe("agents learn on their own (ADR 0120)", () => {
     expect(on.map((a) => [a.agentId, a.enabled])).toEqual([[f.agent.id, true]]);
     expect((await items())[0]?.status).toBe("archived");
     expect((await receipts()).map((r) => r.kind)).toContain("skill.created");
+  });
+
+  test("how-tos learned only in one person's DMs become that person's skill where the workspace has more", async () => {
+    f = await setup();
+    const member = await addMember(f.db, f.org.id, "member", "walter");
+    const dm = await openPersonAgentDm(f.db, f.org.id, member.id, f.agent.id);
+    const { run } = await personRun();
+    await invoke(run, "save_how_to", {
+      title: "List the Northwind models",
+      key: "List the Northwind models",
+      how: `GET ${MODELS_URL} with the key`,
+    });
+    const [note] = await items();
+    if (!note) throw new Error("no note");
+    await f.db
+      .update(schema.contextItems)
+      .set({ channelIds: [dm.id] })
+      .where(eq(schema.contextItems.id, note.id));
+    for (let i = 0; i < 3; i++) {
+      const { run: used } = await personRun("@dev the northwind models again");
+      await addRunStep(f.db, used, "context", { memoryItems: [note.id] });
+      await recordContextUse(f.db, f.org.id, used.id, [note.id]);
+      await afterTurnDone(f.context, used, { judged: true, signal: "none" });
+    }
+    await consolidateOrg(f.context, f.org.id);
+    const [skill] = await f.db.select().from(schema.skills).where(eq(schema.skills.orgId, f.org.id));
+    expect([skill?.slug, skill?.ownerUserId]).toEqual(["northwind-api", member.id]);
   });
 
   test("a negative outcome on a run that used the how-to keeps it from becoming a skill", async () => {
@@ -419,7 +449,12 @@ describe("agents learn on their own (ADR 0120)", () => {
     ]);
     const all = await items();
     expect(all.length).toBe(4);
-    expect(all.every((i) => i.trust === "low" && !i.verified && i.agentId === f.agent.id)).toBe(true);
+    // What the person asked is theirs to vouch for (ADR 0167): kept in their own words, never in the page's.
+    const said = all.find((i) => i.createdByKind === "person");
+    expect([said?.trust, said?.content]).toEqual(["high", "@dev read the vendor page and keep what matters"]);
+    expect(
+      all.filter((i) => i !== said).every((i) => i.trust === "low" && !i.verified && i.agentId === f.agent.id),
+    ).toBe(true);
 
     // Mail counts as outside too.
     const { run: mail } = await personRun("@dev what did the supplier say?");
@@ -506,6 +541,38 @@ describe("agents learn on their own (ADR 0120)", () => {
     await learnAccess("@dev is signed in to the Ads Console in its browser");
     const ads = (await items()).find((i) => i.content.includes("Ads Console"));
     expect([ads?.agentId, ads?.channelIds]).toEqual([null, [f.general.id]]);
+  });
+
+  test("a turn that sets up SSH keeps how to reach the server (host, port, user, key path), never the password", async () => {
+    f = await setup();
+    const { run } = await personRun("@dev configure o acesso SSH ao vps.example.com, porta 2222, usuário deploy");
+    await step(run, "computer_run", { command: "ssh-keygen -t ed25519 -f ~/.ssh/vps_example" }, "ok");
+    const ssh = "@dev reaches vps.example.com over SSH on port 2222 as deploy with the key at ~/.ssh/vps_example";
+    const access = (title: string, key: string, content: string) => ({
+      kind: "access",
+      scope: "own",
+      about_person: "",
+      title,
+      key,
+      content,
+      refs: ["m1", "s1"],
+    });
+    learnOutput = {
+      items: [
+        access(ssh, "@dev ssh vps.example.com", ssh),
+        access("deploy password", "@dev ssh password", "password: Fake-Pa55word-not-real"),
+      ],
+      skill_fixes: [],
+    };
+    const out = await learnRun(f.context, { orgId: f.org.id, runId: run.id });
+    const prompt = systemText(
+      f.provider.calls.find((c) => isLearn(systemText(c.request.system)))?.request.system ?? "",
+    );
+    expect(prompt).toContain("the path of a key file on the agent's own computer as an access");
+    expect(out.rejected.map((r) => r.reason)).toEqual(["secret"]);
+    const saved = await items();
+    expect(saved.map((i) => [i.kind, i.content])).toEqual([["fact", ssh]]);
+    for (const part of ["port 2222", "as deploy", "~/.ssh/vps_example"]) expect(saved[0]?.content).toContain(part);
   });
 
   test("guards: daily cap, a live run, credentials, a person's item, update_skill rules, a run that saved already", async () => {
@@ -740,7 +807,8 @@ describe("learning guards", () => {
       .where(eq(schema.agentRuns.id, harness.id));
     expect(await trust(harness)).toBe("low");
     await invoke(harness, "remember", { kind: "fact", content: "The vendor API is on v9.", basis: "person_said" });
-    expect((await items()).map((i) => i.trust)).toEqual(["low"]);
+    // The person's own words are theirs to vouch for (ADR 0167); what the fetch said never becomes the memory.
+    expect((await items()).map((i) => [i.trust, i.content])).toEqual([["high", "@dev look into the vendor"]]);
 
     // A screen read: the envelope is stripped from the step, only the gateway's `outside` mark is left.
     const { run: screen } = await personRun("@dev check the dashboard");

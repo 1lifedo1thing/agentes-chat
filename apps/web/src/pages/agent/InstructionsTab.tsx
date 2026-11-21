@@ -1,10 +1,14 @@
 import { useProposals } from "@agenteschat/client";
-import { Button, Card, Diff, diffLines, Icon, Textarea } from "@agenteschat/ui";
+import { FIELD_LIMITS } from "@agenteschat/client/lib/field-limits";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
+import { Button, Card, diffLines, Icon, Textarea } from "@agenteschat/ui";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { InstructionTips } from "@/components/AgentFields";
 import { useOrg } from "@/components/org-context";
+import { ProseDiff } from "@/components/ProseDiff";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useTextLimit } from "@/hooks/useTextLimit";
 import { Markdown } from "@/lib/markdown";
 import { CardHead, useAgentEdit } from "./context";
 import { ReadOnlyNote } from "./pieces";
@@ -18,6 +22,7 @@ export function InstructionsTab() {
   const proposals = useProposals(org.id);
   const [showDiff, setShowDiff] = useState(false);
   const area = useRef<HTMLTextAreaElement>(null);
+  const limit = useTextLimit(FIELD_LIMITS.instructions);
   const editable = can("instructions");
   const changed = Boolean(changeOf("instructions"));
   const pending = (proposals.data ?? []).filter(
@@ -37,7 +42,7 @@ export function InstructionsTab() {
               title={t("agent.howWorks", g)}
               hint={{
                 name: t("common.about", { label: t("agent.howWorks", g) }),
-                text: t("agent.instructionsHelp", { ...g, org: org.name }),
+                text: t(modeKey(org, "agent.instructionsHelp"), { ...g, org: org.name }),
               }}
               changeKeys={["instructions"]}
               lock="instructions"
@@ -48,7 +53,7 @@ export function InstructionsTab() {
                   ref={area}
                   className="newag__textarea agp-instructions"
                   rows={14}
-                  maxLength={50_000}
+                  limit={limit}
                   aria-label={t("agent.instructions")}
                   placeholder={t("newAgent.instructionsPlaceholder")}
                   value={draft.instructions}
@@ -73,10 +78,8 @@ export function InstructionsTab() {
                       {showDiff ? t("agentPage.instructions.hideDiff") : t("agentPage.instructions.showDiff")}
                     </Button>
                     {showDiff && (
-                      <Diff
-                        aria-label={t("agentPage.instructions.diff")}
-                        addedLabel={t("proposals.added")}
-                        removedLabel={t("proposals.removed")}
+                      <ProseDiff
+                        label={t("agentPage.instructions.diff")}
                         lines={diffLines(saved.instructions.split("\n"), draft.instructions.split("\n"))}
                       />
                     )}

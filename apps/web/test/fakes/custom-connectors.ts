@@ -2,25 +2,22 @@
  * Test fake — custom MCP servers ("Outro servidor MCP" in "Adicionar conector").
  * Mirrors these endpoints:
  * - GET    /api/app/organizations/{orgId}/connectors/custom
- * - POST   /api/app/organizations/{orgId}/connectors/custom { serverUrl, apiKey?, label?, returnTo, connectionId? }
+ * - POST   /api/app/organizations/{orgId}/connectors/custom { serverUrl, apiKey?, label?, returnTo, connectionId?, headers? }
  *          → { status: "connected", server, outcome } | { status: "oauth", authorizeUrl } | { status: "needs_key" }
  *          (the same address again is another account, "Name 2", which no agent uses; `connectionId`
- *          reconnects that account in place)
+ *          reconnects that account in place; `headers` alone connect, are refused with a sign-in, and on a
+ *          reconnect stay when absent, go with `[]` and are replaced by a list)
  * - POST   /api/app/organizations/{orgId}/connectors/custom/{id}/refresh (re-list tools)
  * - PUT    /api/app/organizations/{orgId}/connectors/custom/{id}/tools { label, tools: [{ name, access, label, confirmed? }] }
  *          (`access`: read | write | approval | off; sensitive tools only approval | off)
  * - DELETE /api/app/organizations/{orgId}/connectors/custom/{id}
- * - GET    /api/app/organizations/{orgId}/connectors/tool-changes → { changes } (seeded with `addToolChange`)
- * - POST   /api/app/organizations/{orgId}/connectors/{connectionId}/tools/{toolName}/accept-change
- * - POST   /api/app/organizations/{orgId}/connectors/{connectionId}/tool-changes/accept → { accepted }
  * The mock never talks to the URL: it pretends the server offers a ticket
  * tool set, needs an API key unless the URL contains "oauth", and gains one
  * new tool on the first refresh. Tools come classified as the backend does
  * (annotations, the verb; `close_ticket` is ambiguous: the judge suggests
  * "write" and it waits for a decision; `delete_customer` is sensitive).
  */
-import type { ApiClient, CustomServer, CustomTool, ToolAccess, ToolChange } from "@agenteschat/client";
-import { sameServer } from "@agenteschat/client/lib/custom-tools";
+import { type ApiClient, ApiError, type CustomServer, type CustomTool, type ToolAccess } from "@agenteschat/client";
 import { partsOf } from "@agenteschat/client/lib/tool-review";
 import { clone, type MockContext, MockNotFoundError, mockId } from "./context";
 
@@ -68,15 +65,14 @@ const tool = ([name, description, readOnly]: [string, string, boolean | null], n
 export function createMockCustomConnectors(
   ctx: MockContext,
   log: (method: string, ...args: unknown[]) => void = () => {},
-  /** A server's first account connected (the backend gives it to every agent). */
+  /** An account connected (the backend gives it to every agent). */
   onConnected: (orgId: string, serverId: string) => Promise<void> = async () => {},
+  /** Who is asking: lists hold the team's servers and theirs, and everyone's with `others`, as the backend's do. */
+  meId: () => string | null = () => null,
 ): ApiClient["customConnectors"] & {
   rename(orgId: string, id: string, label: string): CustomServer | null;
-  /** A server changed an approved tool (ADR 0117): what `toolChanges` lists until it is accepted. */
-  addToolChange(orgId: string, change: ToolChange): void;
 } {
   const byOrg = new Map<string, CustomServer[]>();
-  const changesByOrg = new Map<string, ToolChange[]>();
   const refreshed = new Set<string>();
   const list = (orgId: string) => {
     let l = byOrg.get(orgId);
@@ -92,21 +88,30 @@ export function createMockCustomConnectors(
     return s;
   };
   return {
-    list: async (orgId) => clone(list(orgId)),
+    list: async (orgId, options) =>
+      clone(list(orgId).filter((s) => options?.others || !s.ownerUserId || s.ownerUserId === meId())),
     connect: async (orgId, input) => {
-      log("customConnectors.connect", orgId, { ...input, apiKey: input.apiKey ? "[redacted]" : undefined });
+      log("customConnectors.connect", orgId, {
+        ...input,
+        apiKey: input.apiKey ? "[redacted]" : undefined,
+        ...(input.headers ? { headers: input.headers.map((h) => ({ name: h.name, value: "[redacted]" })) } : {}),
+      });
       // Through Composio: its page signs in, back to the callback.
       if (input.serverUrl.startsWith("https://backend.composio.dev/")) {
         return { status: "oauth", authorizeUrl: "https://composio.example/connect/ca_1?state=s" };
       }
       const oauth = input.serverUrl.includes("oauth");
-      if (!oauth && !input.apiKey) return { status: "needs_key" };
-      if (input.connectionId) {
-        return { status: "connected", server: clone(find(orgId, input.connectionId)), outcome: "reconnected" };
+      const target = input.connectionId ? find(orgId, input.connectionId) : null;
+      const headerNames = input.headers?.map((h) => h.name) ?? target?.headerNames ?? [];
+      if (oauth && !input.apiKey && headerNames.length > 0) {
+        throw new ApiError(400, "connector.headers_with_sign_in", "This server asks for a sign-in");
+      }
+      if (!oauth && !input.apiKey && headerNames.length === 0) return { status: "needs_key" };
+      if (target) {
+        target.headerNames = headerNames;
+        return { status: "connected", server: clone(target), outcome: "reconnected" };
       }
       const now = ctx.now();
-      // The same server as the backend tells it (`serverKey`): a trailing slash or case doesn't make another.
-      const first = !list(orgId).some((s) => sameServer(s.serverUrl, input.serverUrl));
       const base = input.label?.trim() || new URL(input.serverUrl).hostname;
       const taken = new Set(list(orgId).map((s) => s.label.toLowerCase()));
       let label = base;
@@ -117,12 +122,14 @@ export function createMockCustomConnectors(
         label,
         accountLabel: null,
         authType: oauth ? "oauth" : "api_key",
+        headerNames,
         tools: TOOLS.map((t) => tool(t, now)),
         reviewedAt: null,
         createdAt: now.toISOString(),
+        ...(input.personal ? { ownerUserId: meId() } : {}),
       };
       list(orgId).push(server);
-      if (first) await onConnected(orgId, server.id);
+      await onConnected(orgId, server.id);
       // A real OAuth flow leaves for the provider; the mock connects at once.
       return { status: "connected", server: clone(server), outcome: "connected" };
     },
@@ -159,32 +166,6 @@ export function createMockCustomConnectors(
       }
       s.reviewedAt = ctx.now().toISOString();
       return clone(s);
-    },
-    addToolChange: (orgId, change) => {
-      changesByOrg.set(orgId, [...(changesByOrg.get(orgId) ?? []), change]);
-    },
-    toolChanges: async (orgId) => clone(changesByOrg.get(orgId) ?? []),
-    acceptToolChange: async (orgId, connectionId, toolName) => {
-      log("customConnectors.acceptToolChange", orgId, connectionId, toolName);
-      const list = changesByOrg.get(orgId) ?? [];
-      if (!list.some((c) => c.connectionId === connectionId && c.toolName === toolName)) {
-        throw new MockNotFoundError("No change waits for this tool");
-      }
-      changesByOrg.set(
-        orgId,
-        list.filter((c) => c.connectionId !== connectionId || c.toolName !== toolName),
-      );
-    },
-    acceptConnectionToolChanges: async (orgId, connectionId) => {
-      log("customConnectors.acceptConnectionToolChanges", orgId, connectionId);
-      const list = changesByOrg.get(orgId) ?? [];
-      const accepted = list.filter((c) => c.connectionId === connectionId).length;
-      if (accepted === 0) throw new MockNotFoundError("No change waits on this connection");
-      changesByOrg.set(
-        orgId,
-        list.filter((c) => c.connectionId !== connectionId),
-      );
-      return { accepted };
     },
     disconnect: async (orgId, id) => {
       log("customConnectors.disconnect", orgId, id);

@@ -2,14 +2,7 @@ import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from "react-native-reanimated";
 import { haptics, Icon, Sky, Text, useTheme } from "@/ui";
 import { AgentFace } from "./Face";
 import { useColors, useDirectory } from "./hooks";
@@ -53,13 +46,13 @@ export function TeamSkyEmpty({
   useEffect(() => {
     if (!cheer) return;
     haptics.success();
-    words.value = withDelay(380, withTiming(1, { duration: 360, easing: Easing.bezier(...motion.ease) }));
+    words.set(withDelay(380, withTiming(1, { duration: 360, easing: motion.easeOut })));
     const timer = setTimeout(() => setHappy(false), HAPPY_MS);
     return () => clearTimeout(timer);
   }, [cheer, motion, words]);
   const wordsStyle = useAnimatedStyle(() => ({
-    opacity: words.value,
-    transform: [{ translateY: (1 - words.value) * 8 }],
+    opacity: words.get(),
+    transform: [{ translateY: (1 - words.get()) * 8 }],
   }));
   const dir = useDirectory();
   const lodi = rightHandOf(dir.agents);
@@ -97,9 +90,9 @@ function HopIn({ on, index, children }: { on: boolean; index: number; children: 
   const { motion } = useTheme();
   const y = useSharedValue(on ? HOP_FROM : 0);
   useEffect(() => {
-    if (on) y.value = withDelay(index * HOP_APART_MS, withSpring(0, motion.bounce));
+    if (on) y.set(withDelay(index * HOP_APART_MS, withSpring(0, motion.bounce)));
   }, [on, index, motion, y]);
-  const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+  const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.get() }] }));
   return <Animated.View style={on ? style : undefined}>{children}</Animated.View>;
 }
 

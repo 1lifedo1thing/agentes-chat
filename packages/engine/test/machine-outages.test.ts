@@ -184,6 +184,30 @@ test("outages: the workspace's own computer is marked managed, its system never 
   });
 });
 
+test("outages: the workspace's own computer in standby is asleep by design, never one (ADR 0161)", async () => {
+  const s = await scene();
+  await f.db
+    .update(schema.machines)
+    .set({ kind: "managed", standbyAt: new Date() })
+    .where(eq(schema.machines.id, s.air));
+  const { outages, targets } = await listMachineOutages(s.outageDeps, f.owner.id, f.org.id);
+  expect(outages).toEqual([]);
+  // A place to move agents to, ready as people see it.
+  expect(targets.find((t) => t.machineId === s.air)).toMatchObject({ managed: true, online: true });
+  // A wake of it overdue: down, an outage.
+  await f.db
+    .update(schema.machines)
+    .set({ wakeWantedAt: new Date(Date.now() - 3 * 60_000) })
+    .where(eq(schema.machines.id, s.air));
+  const overdue = await listMachineOutages(s.outageDeps, f.owner.id, f.org.id);
+  expect(overdue.outages.map((o) => o.machineId)).toEqual([s.air]);
+  await f.db.update(schema.machines).set({ wakeWantedAt: null }).where(eq(schema.machines.id, s.air));
+  // Out of standby and still away: an outage like any other.
+  await f.db.update(schema.machines).set({ standbyAt: null }).where(eq(schema.machines.id, s.air));
+  const after = await listMachineOutages(s.outageDeps, f.owner.id, f.org.id);
+  expect(after.outages.map((o) => o.machineId)).toEqual([s.air]);
+});
+
 test("outages: a computer just gone isn't one yet (a restart, a blip), unless a run already said it waits", async () => {
   const s = await scene();
   const waitCode = async (code: string) => {

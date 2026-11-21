@@ -1,10 +1,12 @@
-import type { PubSub } from "@agenteschat/adapters";
+import type { ErrorReporter, PubSub } from "@agenteschat/adapters";
 import { type Database, ensureMessagePartitions, schema } from "@agenteschat/db";
 import {
   type ArtifactDeps,
   type BrowserLive,
   type ContextDeps,
+  claimStuckPhoneSetups,
   clearOldOutboxPayloads,
+  consolidateRunAt,
   createOutboxPump,
   type DesktopControl,
   enqueue,
@@ -13,9 +15,10 @@ import {
   enqueueIdleReflections,
   enqueueOverdueAccountDeletions,
   enqueueOverdueDeletions,
+  enqueueRightHandChecks,
   enqueueSkillUpdates,
-  enqueueTeamWeeks,
   enqueueVaultSyncs,
+  enqueueWaitingResets,
   enqueueWaitlistContacts,
   expireAgentProposalAsks,
   expireApprovals,
@@ -23,24 +26,35 @@ import {
   expireConsultations,
   expireQuestions,
   expireSecretRequests,
+  type FeedbackFileDeps,
   fireDueRoutines,
   isHandback,
   type JobHandlers,
+  LANE_SLOW_FOR_MS,
+  LANE_SLOW_MS,
+  type Lane,
+  type LaneLimits,
+  LOOP_LATE_MS,
   listenForRunCancels,
+  type MachineCaller,
   type MailDeps,
   type OutboxJob,
   pollMailWatches,
   postAutonomyDigests,
+  pruneConfidential,
   pruneDeletionCodes,
+  pruneEmailChanges,
   pruneJoinRequests,
   pruneMessageClientIds,
   pruneOperatorEvents,
   pruneRoutineHookCalls,
+  pruneSurfaceRows,
   purgeApps,
   purgeDeletedArtifacts,
   purgeDeletedWikiPages,
   queueApprovalDigests,
   reapRoutineRuns,
+  recheckStuckPlans,
   reconcileComposioAccounts,
   reconcileComposioConnectors,
   reconcileWorks,
@@ -49,12 +63,34 @@ import {
   releaseJobs,
   sweepEndedInboxes,
   sweepExpiredVoice,
+  sweepFeedbackFiles,
+  sweepSupportRequests,
   sweepWidgetDrafts,
   type VoiceDeps,
   wakeSnoozedNotifications,
 } from "@agenteschat/engine";
 import { isExpectedError } from "./http/errors";
 import type { Logger } from "./logger";
+
+/** What each lane's jobs are, as an alarm says it. */
+const LANE_WORDS: Record<Lane, string> = {
+  quick: "Quick jobs (messages' routing, notifications, emails)",
+  long: "Agents' runs",
+  background: "Routines",
+};
+
+/**
+ * The alarm of a lane whose jobs kept waiting for a slot (`laneAlarm`): which lane, and what to do. A worker process
+ * shares a PostgreSQL database; the built-in one belongs to one process.
+ */
+export function slowLaneMessage(lane: Lane, builtInDatabase = false) {
+  const ms = LANE_SLOW_MS[lane];
+  const wait = ms >= 60_000 ? `${ms / 60_000} minutes` : `${ms / 1000} s`;
+  const what = builtInDatabase
+    ? "raise OUTBOX_MAX_IN_FLIGHT, or move to PostgreSQL to add worker processes"
+    : "add a worker process (SERVER_ROLE=worker) on the same database";
+  return `${LANE_WORDS[lane]} waited over ${wait} for a slot for ${LANE_SLOW_FOR_MS / 60_000} minutes: ${what}`;
+}
 
 /** An id from a job's payload, never the rest of it (it can hold people's text). */
 const idOf = (value: unknown) => (typeof value === "string" ? value : undefined);
@@ -88,6 +124,8 @@ export interface WorkerDeps {
   context?: ContextDeps;
   /** Drive files (purging deleted ones after 30 days). */
   artifacts?: ArtifactDeps;
+  /** Feedback's pictures and videos (ADR 0160): the sweep under their purge jobs. */
+  feedbackFiles?: FeedbackFileDeps;
   /** Voice recordings (deleting them past their retention, ADR 0100). */
   voice?: VoiceDeps;
   /** Approval reminder emails. */
@@ -96,10 +134,21 @@ export interface WorkerDeps {
   mail?: { deps: MailDeps; pollSeconds: number };
   /** The agent browser's live view (ADR 0040): expired handoffs are told to its viewers. */
   browserLive?: BrowserLive;
+  /** Connected computers: plans stuck at their limit are read again there (`recheckStuckPlans`). */
+  machines?: Pick<MachineCaller, "call" | "status">;
   /** Agents' desktops (ADR 0058): the ones with an open handoff stay up. */
   desktops?: Pick<DesktopControl, "keepAlive">;
   /** The daily stall-and-noise report (`OPS_REPORT_EMAIL`); absent: none. */
   opsReport?: { to: string[]; publicUrl: string };
+  /**
+   * Job slots (`OUTBOX_MAX_IN_FLIGHT`, `OUTBOX_QUICK_SLOTS`), how far they grow (`laneLimits`) and the kinds left to
+   * the app (a worker process: `APP_JOB_KINDS`); absent: the pump's own.
+   */
+  outbox?: { maxInFlight: number; quickSlots: number; limits?: LaneLimits; memoryBytes?: number; skipKinds?: string[] };
+  /** Error reports (ADR 0104): phones whose setup stays stuck on one step go there, one each. */
+  errors?: ErrorReporter;
+  /** The database is the built-in one (one process): the alarms advise what fits it. */
+  builtInDatabase?: boolean;
   log: Logger;
   workerId?: string;
 }
@@ -110,12 +159,17 @@ export const WAKE_TOPIC = "system:outbox-wake";
 /** How often each background job runs. */
 export const WORKER_INTERVALS_MS = {
   outbox: 1_000,
+  /** The job slots follow what each lane waited since the last look (`OutboxPump.tune`). */
+  outboxTune: 30_000,
+  /** The beat that counts how often the process's timers fire late (`OutboxPump.tune`'s `lateBeats`). */
+  loopBeat: 100,
   partitions: 24 * 3600_000,
   approvals: 60_000,
   approvalDigest: 15 * 60_000,
   reflections: 10 * 60_000,
   consolidation: 24 * 3600_000,
-  routines: 30_000,
+  /** Often enough that the routines of one minute fire as the ramp their offsets make (`fireDueRoutines`). */
+  routines: 5_000,
   /** Snoozed notifications whose time came back to the inbox. */
   notifications: 30_000,
   /** Runs whose worker died (deploy, crash): also once at boot. */
@@ -124,9 +178,15 @@ export const WORKER_INTERVALS_MS = {
   inboxes: 30_000,
   /** Deleted files past 30 days lose their contents. */
   artifactPurge: 6 * 3600_000,
+  /** Feedback files their purge job missed (it failed for good, or its row went first). */
+  feedbackFiles: 6 * 3600_000,
   /** Wiki pages in the trash past 30 days are removed with their history. */
   wikiPurge: 6 * 3600_000,
   voiceExpiry: 24 * 3600_000,
+  /** Support requests past 90 days lose their words, past a year their row. */
+  supportRequests: 24 * 3600_000,
+  /** Confidential threads past their time lose their words (ADR 0190). */
+  confidentialPrune: 24 * 3600_000,
   /** How often watched IMAP folders are looked at (each is checked every `MAIL_POLL_SECONDS`). */
   mailPoll: 30_000,
   /** Composio accounts' state: mailboxes (expired → "Reconnect") and connectors marked to reconnect (working again → active). */
@@ -145,10 +205,17 @@ export const WORKER_INTERVALS_MS = {
   skillUpdates: 3600_000,
   /** Vault connections last read over 10 minutes ago, queued once per 10-minute window (ADR 0144). */
   vaultSyncs: 5 * 60_000,
-  /** Lodi's weekly card of admins whose slot just passed (ADR 0137 §9; one per person and week: its dedupe key). */
-  teamWeek: 10 * 60_000,
+  /**
+   * What the right hand does by itself: the day's and the week's cards of whoever's slot just passed (ADR 0137 §9; one
+   * per person and day or week: its dedupe key), then each of its lanes' sweeps.
+   */
+  rightHand: 10 * 60_000,
   /** The coding plans' public lists of models, each replica for itself: also at boot. */
   planModels: 3600_000,
+  /** Plans stuck at their limit, read again on their computers (each at most every 5 or 10 minutes). */
+  planRechecks: 60_000,
+  /** Phones whose setup sat on one step for 10 minutes, each reported once (`claimStuckPhoneSetups`). */
+  phoneSetups: 60_000,
 };
 
 /**
@@ -192,8 +259,10 @@ export function startWorkers(deps: WorkerDeps) {
     void tick();
   };
 
-  // A pool, not batches: a slow job (a long agent run) doesn't hold back the ones claimed after it.
+  // A pool, not batches: a slow job (a long agent run) doesn't hold back the ones claimed after it, and quick jobs
+  // keep slots of their own.
   const outboxPump = createOutboxPump(db, deps.handlers, {
+    ...deps.outbox,
     workerId,
     onSlotFree: () => void ticks.get("outbox")?.(),
     onError: (job, error, outcome) => logJobFailure(log, job, error, outcome),
@@ -203,9 +272,54 @@ export function startWorkers(deps: WorkerDeps) {
   every("outbox", WORKER_INTERVALS_MS.outbox, async () => {
     while (!stopped && (await outboxPump.pump()) > 0) {}
   });
+  // Beats that fired late since the last look at the slots, each beat a long block swallowed included: a busy
+  // processor keeps them from growing. A count, so one pause (a full collection) doesn't hold them for a step.
+  let lateBeats = 0;
+  let beat = performance.now();
+  timers.push(
+    setInterval(() => {
+      const now = performance.now();
+      lateBeats += Math.floor(Math.max(0, now - beat - WORKER_INTERVALS_MS.loopBeat) / LOOP_LATE_MS);
+      beat = now;
+    }, WORKER_INTERVALS_MS.loopBeat),
+  );
+  every("outboxTune", WORKER_INTERVALS_MS.outboxTune, async () => {
+    const t = await outboxPump.tune({ lateBeats });
+    const lanes = { quick: t.quick, long: t.long, waits: t.waits, braked: t.braked, lateBeats };
+    lateBeats = 0;
+    if (t.resized) {
+      log.info("job slots resized", lanes);
+      void ticks.get("outbox")?.();
+    }
+    for (const lane of t.slow) {
+      const message = slowLaneMessage(lane, deps.builtInDatabase);
+      log.error(message, { job: "outbox", lane, ...lanes, error: new Error(message) });
+    }
+  });
 
   every("apps", WORKER_INTERVALS_MS.apps, () => purgeApps(db));
+  const errors = deps.errors;
+  if (errors) {
+    every("phoneSetups", WORKER_INTERVALS_MS.phoneSetups, async () => {
+      const now = Date.now();
+      for (const p of await claimStuckPhoneSetups(db)) {
+        // One issue per platform and step: never the phone's name or serial.
+        errors.capture(new Error(`Device setup stuck: ${p.platform} ${p.reason ?? p.state}`), {
+          org_id: p.orgId,
+          machine_id: p.machineId,
+          phone_state: p.state,
+          os_version: p.osVersion,
+          waited_s: Math.round((now - p.stateSince.getTime()) / 1000),
+        });
+      }
+    });
+  }
   every("planModels", WORKER_INTERVALS_MS.planModels, () => refreshPlanModels());
+  const machines = deps.machines;
+  if (machines)
+    every("planRechecks", WORKER_INTERVALS_MS.planRechecks, async () => {
+      await recheckStuckPlans({ db, hub: machines });
+    });
   every("skillUpdates", WORKER_INTERVALS_MS.skillUpdates, async () => {
     if ((await enqueueSkillUpdates(db)) > 0) void ticks.get("outbox")?.();
   });
@@ -218,6 +332,8 @@ export function startWorkers(deps: WorkerDeps) {
     // Old send ids (idempotent resends) are no longer needed.
     const pruned = await pruneMessageClientIds(db);
     if (pruned > 0) log.info("pruned message client ids", { pruned });
+    const surfaceRows = await pruneSurfaceRows(db);
+    if (surfaceRows > 0) log.info("pruned surface rows", { pruned: surfaceRows });
     const events = await pruneOperatorEvents(db);
     if (events > 0) log.info("pruned operator events", { pruned: events });
     const cleared = await clearOldOutboxPayloads(db);
@@ -231,10 +347,12 @@ export function startWorkers(deps: WorkerDeps) {
 
   every("deletions", WORKER_INTERVALS_MS.deletions, async () => {
     await pruneDeletionCodes(db);
+    await pruneEmailChanges(db);
     const accounts = await enqueueOverdueAccountDeletions(db);
     const due = await enqueueOverdueDeletions(db);
-    if (due + accounts > 0) {
-      log.info("workspace deletions due", { due, accounts });
+    const resets = await enqueueWaitingResets(db);
+    if (due + accounts + resets > 0) {
+      log.info("workspace deletions due", { due, accounts, resets });
       void ticks.get("outbox")?.();
     }
   });
@@ -270,7 +388,10 @@ export function startWorkers(deps: WorkerDeps) {
   });
 
   every("recovery", WORKER_INTERVALS_MS.recovery, async () => {
-    const r = await recoverStaleRuns({ db, pubsub: deps.pubsub });
+    const r = await recoverStaleRuns(
+      { db, pubsub: deps.pubsub },
+      { onError: (runId, error) => log.warn("a stale run couldn't be recovered", { runId, error: String(error) }) },
+    );
     if (r.resumed.length + r.failed.length + r.requeued.length > 0) log.info("stale runs recovered", r);
     // Long work whose run ended without closing it (a crash between the two) gets its end, once (ADR 0121 §7).
     const closed = await reconcileWorks({ db, pubsub: deps.pubsub });
@@ -290,6 +411,14 @@ export function startWorkers(deps: WorkerDeps) {
     every("artifactPurge", WORKER_INTERVALS_MS.artifactPurge, async () => {
       const purged = await purgeDeletedArtifacts(files);
       if (purged > 0) log.info("deleted files purged", { versions: purged });
+    });
+  }
+
+  const feedbackFiles = deps.feedbackFiles;
+  if (feedbackFiles) {
+    every("feedbackFiles", WORKER_INTERVALS_MS.feedbackFiles, async () => {
+      const swept = await sweepFeedbackFiles(feedbackFiles);
+      if (swept > 0) log.info("feedback files past their time swept", { files: swept });
     });
   }
 
@@ -316,13 +445,23 @@ export function startWorkers(deps: WorkerDeps) {
     });
   }
 
+  every("supportRequests", WORKER_INTERVALS_MS.supportRequests, async () => {
+    const { blanked, deleted } = await sweepSupportRequests(db);
+    if (blanked + deleted > 0) log.info("old support requests swept", { blanked, deleted });
+  });
+
+  every("confidentialPrune", WORKER_INTERVALS_MS.confidentialPrune, async () => {
+    const pruned = await pruneConfidential({ db, pubsub: deps.pubsub, blobs: voice?.blobs });
+    if (pruned.sealed + pruned.messages + pruned.runs > 0) log.info("confidential threads pruned", pruned);
+  });
+
   every("notifications", WORKER_INTERVALS_MS.notifications, async () => {
     const woke = await wakeSnoozedNotifications({ db, pubsub: deps.pubsub });
     if (woke > 0) log.info("snoozed notifications back", { woke });
   });
 
-  every("teamWeek", WORKER_INTERVALS_MS.teamWeek, async () => {
-    if ((await enqueueTeamWeeks(db)) > 0) void ticks.get("outbox")?.();
+  every("rightHand", WORKER_INTERVALS_MS.rightHand, async () => {
+    if ((await enqueueRightHandChecks(db)) > 0) void ticks.get("outbox")?.();
   });
 
   every("routines", WORKER_INTERVALS_MS.routines, async () => {
@@ -368,15 +507,18 @@ export function startWorkers(deps: WorkerDeps) {
       const queued = await enqueueIdleReflections(context);
       if (queued > 0) log.info("idle threads queued for reflection", { queued });
     });
-    // One consolidation job per organization per day (dedupe key = org + date: replicas don't double it).
+    // One consolidation job per organization per day (dedupe key = org + date: replicas don't double it), spread
+    // over hours: they share the long lane with agent runs.
     every("consolidation", WORKER_INTERVALS_MS.consolidation, async () => {
-      const day = new Date().toISOString().slice(0, 10);
+      const now = new Date();
+      const day = now.toISOString().slice(0, 10);
       for (const org of await db.select({ id: schema.organizations.id }).from(schema.organizations)) {
         await enqueue(db, {
           orgId: org.id,
           kind: "context.consolidate",
           payload: {},
           dedupeKey: `context.consolidate:${org.id}:${day}`,
+          runAt: consolidateRunAt(org.id, now),
         });
       }
     });

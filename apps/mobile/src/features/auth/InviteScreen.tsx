@@ -21,6 +21,7 @@ import {
   typedCode,
 } from "@agenteschat/client/lib/join-requests";
 import { emailTypoFix, isEmail } from "@agenteschat/client/lib/text";
+import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type ComponentRef, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -41,7 +42,7 @@ import { useHumanCheck } from "./HumanCheck";
 import { CheckCancelled, failureText } from "./human-check";
 import { InviteGone, InviteLoadFailed, InviteLoading } from "./InviteGone";
 import { forgetInvite, keepAsk, rememberInvite, waitingAsk } from "./invite";
-import { AgentsThere, DidYouMean, LeaveButton, Said, useLeaveInvite } from "./invite-parts";
+import { AgentsThere, CloseIfFirst, DidYouMean, LeaveButton, Said } from "./invite-parts";
 import type { Asked } from "./invite-steps";
 import { LinkSteps } from "./LinkSteps";
 
@@ -106,7 +107,7 @@ function Invitation({ token, mail, onAsked }: { token: string; mail?: string; on
   const org = invitation.orgName;
   if (invitation.full) {
     return (
-      <AuthScaffold title={t("invite.fullTitle", { org })} subtitle={t("invite.fullLead")}>
+      <AuthScaffold title={t(modeKey(invitation, "invite.fullTitle"), { org })} subtitle={t("invite.fullLead")}>
         <Text variant="small" tone="muted" style={CENTER}>
           {t("invite.fullFine")}
         </Text>
@@ -145,9 +146,16 @@ function Invitation({ token, mail, onAsked }: { token: string; mail?: string; on
     );
   }
 
-  const title = invitation.invitedBy
-    ? t("mobile.invite.invitedBy", { name: invitation.invitedBy.split(/\s+/)[0], org })
-    : t("mobile.invite.invited", { org });
+  const by = invitation.invitedBy ? invitation.invitedBy.split(/\s+/)[0] : null;
+  // A personal workspace's name ("Personal") says nothing to who is invited: who invited does (ADR 0159).
+  const personal = isPersonal(invitation);
+  const title = personal
+    ? by
+      ? t("invite.calledYouPersonal", { name: by })
+      : t("invite.calledYouNoNamePersonal")
+    : by
+      ? t("mobile.invite.invitedBy", { name: by, org })
+      : t("mobile.invite.invited", { org });
   const role = t(`roles.${invitation.role}Lower`);
   const user = me.data?.user;
   const matches = user ? user.email.toLowerCase() === invitation.email.toLowerCase() : false;
@@ -171,8 +179,8 @@ function Invitation({ token, mail, onAsked }: { token: string; mail?: string; on
         <Button
           variant="primary"
           wide
-          label={t("mobile.invite.accept", { org })}
-          disabled={joining}
+          label={personal ? t("invite.enterPersonal") : t("mobile.invite.accept", { org })}
+          loading={joining}
           onPress={() => void join()}
         />
       ) : (
@@ -248,7 +256,6 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
   const [asking, setAsking] = useState(false);
   // The code that proved the account's address (for 30 minutes).
   const [proof, setProof] = useState<string | null>(null);
-  const leave = useLeaveInvite();
   const emailField = useRef<ComponentRef<typeof AuthField>>(null);
   const noteField = useRef<ComponentRef<typeof AuthField>>(null);
 
@@ -305,13 +312,15 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
       break;
     case "in": {
       const orgId = view.orgId;
-      title = view.already ? t("invite.ask.memberTitle", { org }) : t("invite.ask.inTitle", { org });
+      title = view.already
+        ? t(modeKey(preview, "invite.ask.memberTitle"), { org })
+        : t(modeKey(preview, "invite.ask.inTitle"), { org });
       expression = "happy";
       body = orgId ? (
         <Button
           variant="primary"
           wide
-          label={t("invite.ask.open", { org })}
+          label={t(modeKey(preview, "invite.ask.open"), { org })}
           onPress={() =>
             void qc.invalidateQueries({ queryKey: keys.me }).then(() => {
               gate.choose(orgId);
@@ -335,11 +344,11 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
           <>
             <Said reason={view.reason} />
             <Text variant="callout" tone="muted" style={CENTER}>
-              {t("invite.ask.deniedText", { org })}
+              {t(modeKey(preview, "invite.ask.deniedText"), { org })}
             </Text>
           </>
         );
-      else subtitle = t("invite.ask.deniedText", { org });
+      else subtitle = t(modeKey(preview, "invite.ask.deniedText"), { org });
       break;
     case "sent":
       title = t("invite.ask.sentTitle");
@@ -351,7 +360,7 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
       expression = "happy";
       break;
     case "form":
-      title = t("invite.ask.title", { org });
+      title = t(modeKey(preview, "invite.ask.title"), { org });
       subtitle = preview.invitedBy
         ? t("invite.ask.lead", { name: preview.invitedBy.split(/\s+/)[0], org })
         : t("invite.ask.leadNoName", { org });
@@ -377,7 +386,9 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
                 autoCapitalize="words"
                 autoComplete="name"
                 textContentType="name"
+                // Return moves to the next field; the keyboard stays and the screen doesn't move.
                 returnKeyType="next"
+                submitBehavior="submit"
                 onSubmitEditing={() => emailField.current?.focus()}
               />
             </Locked>
@@ -402,7 +413,9 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
                 autoCorrect={false}
                 autoComplete="email"
                 textContentType="emailAddress"
-                returnKeyType="done"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => noteField.current?.focus()}
               />
               {fix ? <DidYouMean fix={fix} onFix={setEmail} /> : null}
             </Locked>
@@ -457,12 +470,15 @@ function AskToJoin({ token, preview }: { token: string; preview: InvitationPrevi
       title={title}
       subtitle={subtitle}
       stepKey={view.state}
-      onBack={leave}
+      // The form's fields (name, e-mail, the note): the bar over the keyboard walks them, as the link's steps do.
+      toolbar={view.state === "form"}
       agentMode={asking ? "run" : "idle"}
       expression={expression}
       overlay={human.view}
     >
       {body}
+      {/* Closed and let in have their own way on; the rest leave by the system's back, or Close with nothing under. */}
+      {view.state === "closed" || view.state === "in" || asking ? null : <CloseIfFirst />}
     </AuthScaffold>
   );
 }
@@ -510,7 +526,6 @@ function EmailProof({
 }) {
   const { t } = useTranslation();
   const api = useApi();
-  const { colors: c } = useTheme();
   const key = email.trim().toLowerCase();
   const [sent, setSent] = useState<{ email: string; resendAt: number } | null>(null);
   const [code, setCode] = useState("");
@@ -522,12 +537,8 @@ function EmailProof({
   const [slotWidth, setSlotWidth] = useState(0);
   const codeField = useRef<ComponentRef<typeof AuthField>>(null);
   const out = sent?.email === key;
-  const left = out && sent ? Math.max(0, sent.resendAt - Date.now()) : 0;
-  // A repaint every second while the countdown runs; the time itself is read just above.
-  useNow(left > 0 && !proven ? 1000 : 60_000);
   const said = error?.email === key ? error.text : null;
   const showCode = out && !proven;
-  const slot: Slot = proven ? "verified" : !out ? "verify" : left > 0 ? "wait" : "resend";
 
   // Each code that goes out takes the focus once.
   useEffect(() => {
@@ -603,57 +614,15 @@ function EmailProof({
             returnKeyType="done"
             paddingRight={slotWidth + 12}
           />
-          <View style={styles.slot} onLayout={(e) => setSlotWidth(Math.ceil(e.nativeEvent.layout.width))}>
-            {SLOTS.map((s) => {
-              const shown = s === slot;
-              const press = s === "verify" || s === "resend";
-              const off = capped === key;
-              return (
-                <Pressable
-                  key={s}
-                  onPress={() => void send()}
-                  disabled={!shown || !press || off || sending}
-                  hitSlop={6}
-                  accessibilityRole={press ? "button" : "text"}
-                  accessibilityLabel={
-                    s === "wait"
-                      ? t("invite.ask.resendIn", { count: Math.ceil(left / 1000) })
-                      : s === "verified"
-                        ? t("invite.ask.verified")
-                        : undefined
-                  }
-                  accessibilityState={press ? { disabled: off || sending, busy: sending } : undefined}
-                  accessibilityElementsHidden={!shown}
-                  importantForAccessibility={shown ? "auto" : "no-hide-descendants"}
-                  style={({ pressed }) => [
-                    styles.slotItem,
-                    shown ? null : styles.slotHidden,
-                    pressed && press ? styles.pressed : null,
-                  ]}
-                >
-                  {s === "verified" ? (
-                    <Icon name="check" size={20} color={c.ok} />
-                  ) : s === "wait" ? (
-                    <Text variant="subhead" tone="muted" style={styles.tabular}>
-                      {formatTimeLeft(left)}
-                    </Text>
-                  ) : (
-                    <>
-                      {/* Sending, the label keeps its width under the spinner. */}
-                      <Text
-                        variant="subhead"
-                        tone={off ? "faint" : "ink"}
-                        style={[styles.link, shown && sending ? styles.ghost : null]}
-                      >
-                        {t(s === "verify" ? "invite.ask.verify" : "invite.ask.resend")}
-                      </Text>
-                      {shown && sending ? <ActivityIndicator color={c.muted} style={StyleSheet.absoluteFill} /> : null}
-                    </>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
+          <ProofSlot
+            resendAt={out && sent ? sent.resendAt : 0}
+            out={out}
+            proven={proven}
+            off={capped === key}
+            sending={sending}
+            onSend={() => void send()}
+            onWidth={setSlotWidth}
+          />
         </View>
         {said && !showCode ? errorLine(said) : null}
         {children}
@@ -680,6 +649,90 @@ function EmailProof({
         </Locked>
       ) : null}
     </>
+  );
+}
+
+/**
+ * The slot inside the email's right edge: Verify, the countdown to another code, Resend or Verified. Its own clock,
+ * so only the slot repaints each second while it counts down, never the fields around it.
+ */
+function ProofSlot({
+  resendAt,
+  out,
+  proven,
+  off,
+  sending,
+  onSend,
+  onWidth,
+}: {
+  /** When another code may go (ms since the epoch), for the address shown. */
+  resendAt: number;
+  /** A code went to the address shown. */
+  out: boolean;
+  proven: boolean;
+  /** Past the address's cap: Verify and Resend can't be pressed. */
+  off: boolean;
+  sending: boolean;
+  onSend: () => void;
+  onWidth: (width: number) => void;
+}) {
+  const { t } = useTranslation();
+  const { colors: c } = useTheme();
+  const left = out ? Math.max(0, resendAt - Date.now()) : 0;
+  // A repaint every second while the countdown runs; the time itself is read just above.
+  useNow(left > 0 && !proven ? 1000 : 60_000);
+  const slot: Slot = proven ? "verified" : !out ? "verify" : left > 0 ? "wait" : "resend";
+  return (
+    <View style={styles.slot} onLayout={(e) => onWidth(Math.ceil(e.nativeEvent.layout.width))}>
+      {SLOTS.map((s) => {
+        const shown = s === slot;
+        const press = s === "verify" || s === "resend";
+        return (
+          <Pressable
+            key={s}
+            onPress={onSend}
+            disabled={!shown || !press || off || sending}
+            hitSlop={6}
+            accessibilityRole={press ? "button" : "text"}
+            accessibilityLabel={
+              s === "wait"
+                ? t("invite.ask.resendIn", { count: Math.ceil(left / 1000) })
+                : s === "verified"
+                  ? t("invite.ask.verified")
+                  : undefined
+            }
+            accessibilityState={press ? { disabled: off || sending, busy: sending } : undefined}
+            accessibilityElementsHidden={!shown}
+            importantForAccessibility={shown ? "auto" : "no-hide-descendants"}
+            style={({ pressed }) => [
+              styles.slotItem,
+              shown ? null : styles.slotHidden,
+              pressed && press ? styles.pressed : null,
+            ]}
+          >
+            {s === "verified" ? (
+              <Icon name="check" size={20} color={c.ok} />
+            ) : s === "wait" ? (
+              <Text variant="subhead" tone="muted" style={styles.tabular}>
+                {formatTimeLeft(left)}
+              </Text>
+            ) : (
+              <>
+                {/* Sending, the label keeps its width under the spinner. */}
+                <Text
+                  variant="subhead"
+                  tone={off ? "faint" : "ink"}
+                  style={[styles.link, shown && sending ? styles.ghost : null]}
+                >
+                  {t(s === "verify" ? "invite.ask.verify" : "invite.ask.resend")}
+                </Text>
+                {shown && sending ? <ActivityIndicator color={c.muted} style={StyleSheet.absoluteFill} /> : null}
+              </>
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 

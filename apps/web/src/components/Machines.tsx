@@ -1,7 +1,7 @@
-import type { Machine, MachineAccessReduce, MachineOs, MachinePause, MachineToolName } from "@agenteschat/client";
+import type { Machine, MachineAccessReduce, MachinePause, MachineToolName } from "@agenteschat/client";
 import {
   profilesApply,
-  useAgents,
+  useAllAgents,
   useAuthConfig,
   useDesktopStatus,
   useHostComputer,
@@ -28,17 +28,19 @@ import {
   sharedFolderOf,
 } from "@agenteschat/client/lib/machines";
 import { can } from "@agenteschat/client/lib/permissions";
+import { type Seat, SHARED_SEAT } from "@agenteschat/client/lib/seat";
+import { SeatContext, useSeat } from "@agenteschat/client/lib/seat-context";
 import {
   AvatarStack,
   Button,
   Card,
   CardHeader,
   Chip,
-  ComputerIcon,
   ComputerPortrait,
   Dialog,
   DialogBody,
   DialogFooter,
+  Disclosure,
   EmptyState,
   Field,
   Icon,
@@ -53,41 +55,22 @@ import {
 } from "@agenteschat/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import type { TFunction } from "i18next";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOpenComputer } from "@/components/computer/open";
+import { MachineToolButton, useToolOneClick } from "@/components/devices/ToolOneClick";
 import { HelpLink } from "@/components/HelpLink";
 import { ErrorState, LoadingList } from "@/components/Loading";
 import { useOrg } from "@/components/org-context";
-import { OpenPrefsButton, useIsThisMac } from "@/components/ThisMac";
+import { OpenPrefsButton, ToolsOffHereNote, useIsThisMac } from "@/components/ThisMac";
 import { useToast } from "@/lib/toast";
 import { BrowserProfilesCard } from "./browser/BrowserProfiles";
 import { MachineBrowserCard } from "./browser/MachineBrowserCard";
 import { Egress } from "./computer/Egress";
 import { MachineDesktopUseCard } from "./desktop/MachineDesktopUseCard";
+import { CommandBlock, MachineChip, osOf } from "./machine-bits";
 import { ComputerTitle, SetupFacts, useSetupView } from "./WorkspaceComputer";
-
-const OSES: MachineOs[] = ["linux", "darwin", "windows", "other"];
-export const osOf = (os: string): MachineOs => (OSES.includes(os as MachineOs) ? (os as MachineOs) : "other");
-
-/** A connected computer's line icon by its id (its kind from the computers list); the generic one until known. */
-export function MachineIcon({ machineId, size = 14 }: { machineId: string | null | undefined; size?: 14 | 16 }) {
-  const { org } = useOrg();
-  const machines = useMachines(org.id, Boolean(machineId));
-  const m = machineId ? machines.data?.find((x) => x.id === machineId) : undefined;
-  return m ? <ComputerIcon kind={computerKind(m.os)} size={size} /> : <Icon name="computer" size={size} />;
-}
-
-/** Online / Offline, with an icon (never a colored dot). */
-export function MachineChip({ online }: { online: boolean }) {
-  const { t } = useTranslation();
-  return (
-    <Chip icon={online ? "check" : "dash"} className="machine-chip">
-      {online ? t("machines.online") : t("machines.offline")}
-    </Chip>
-  );
-}
 
 /** "Pausado até 16:24" (another day: "Pausado até 18 out 09:00"), "Pausado"; null when not paused now. */
 export function pauseText(t: TFunction, locale: string, paused: MachinePause | null | undefined, now = new Date()) {
@@ -106,91 +89,6 @@ export function PausedChip({ paused }: { paused: MachinePause | null | undefined
     <Chip icon="pause" className="machine-chip">
       {text}
     </Chip>
-  );
-}
-
-function useCopy() {
-  const { t } = useTranslation();
-  const toast = useToast();
-  return async (text: string, done: string | null) => {
-    try {
-      await navigator.clipboard?.writeText(text);
-      if (done) toast.show(done);
-      return true;
-    } catch {
-      toast.show(t("common.unknownError"), "error");
-      return false;
-    }
-  };
-}
-
-/**
- * A terminal command (or anything to paste) in a code block, with Copiar; `copied`: what the toast says, `onCopied`:
- * after it reached the clipboard. `labelled`: the screen's main thing (a one-line install): Copy in words, which
- * says Copied for a moment instead of a toast, and a long line wraps instead of scrolling.
- */
-export function CommandBlock({
-  command,
-  copied,
-  copyLabel,
-  onCopied,
-  labelled = false,
-}: {
-  command: string;
-  copied?: string;
-  copyLabel?: string;
-  onCopied?: () => void;
-  labelled?: boolean;
-}) {
-  const { t } = useTranslation();
-  const copy = useCopy();
-  const [done, setDone] = useState(false);
-  useEffect(() => {
-    if (!done) return;
-    const timer = setTimeout(() => setDone(false), 2000);
-    return () => clearTimeout(timer);
-  }, [done]);
-  const label = copyLabel ?? t("common.copy");
-  return (
-    <div className={labelled ? "machine-command dv-cmd" : "machine-command"}>
-      <pre className="machine-command__code">
-        <code>{command}</code>
-      </pre>
-      {labelled ? (
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={done ? "check" : "copy"}
-          className="machine-command__copy dv-cmd__copy"
-          data-copied={done || undefined}
-          aria-live="polite"
-          onClick={() =>
-            void copy(command, null).then((ok) => {
-              if (!ok) return;
-              setDone(true);
-              onCopied?.();
-            })
-          }
-        >
-          {done ? t("common.copied") : label}
-        </Button>
-      ) : (
-        <Button
-          size="sm"
-          variant="ghost"
-          iconOnly
-          icon="copy"
-          className="machine-command__copy"
-          aria-label={label}
-          title={label}
-          onClick={() =>
-            void copy(command, copied ?? t("machines.commandCopied")).then((ok) => {
-              if (ok) onCopied?.();
-            })
-          }
-        />
-      )}
-    </div>
   );
 }
 
@@ -574,7 +472,7 @@ function ReduceDialog({ machine, reduce, onClose }: { machine: Machine; reduce: 
 function FoldersCard({ machine: m, onReduce }: { machine: Machine; onReduce: (r: Reduce) => void }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
-  const agents = useAgents(org.id);
+  const agents = useAllAgents(org.id);
   const nameOf = (id: string) =>
     agents.data?.find((a) => a.id === id)?.name ?? m.agents.find((a) => a.id === id)?.name ?? "";
   const access = m.access;
@@ -687,17 +585,22 @@ function FoldersCard({ machine: m, onReduce }: { machine: Machine; onReduce: (r:
 /** Ferramentas: on/off chips; the owner can turn one off (never on), except on the workspace's own computer. */
 function ToolsCard({ machine: m, onReduce }: { machine: Machine; onReduce: (r: Reduce) => void }) {
   const { t } = useTranslation();
+  const { org } = useOrg();
+  // Whoever connected it turns a tool on from here too; anyone else only turns one off (ADR 0036 §8).
+  const oneClick = useToolOneClick(m);
+  const here = useIsThisMac(org.id, m.id);
   const access = m.access;
   if (!access) return null;
+  const isOn = (tool: (typeof MACHINE_TOOLS)[number]) =>
+    tool === "cursor" || tool === "opencode" || tool === "grok" || tool === "antigravity"
+      ? (access.tools[tool] ?? access.tools.codex)
+      : access.tools[tool];
   return (
     <Card aria-labelledby="sec-machine-tools">
       <CardHeader id="sec-machine-tools" icon="cog" title={t("machines.access.tools")} />
       <List className="machine-list" aria-label={t("machines.access.tools")}>
         {MACHINE_TOOLS.map((tool) => {
-          const on =
-            tool === "cursor" || tool === "opencode" || tool === "grok" || tool === "antigravity"
-              ? (access.tools[tool] ?? access.tools.codex)
-              : access.tools[tool];
+          const on = isOn(tool);
           const name = t(`machines.access.tool.${tool}`);
           // Commands, on, has a line under its name: the name rises to its tile's top and its state stays on the
           // name's line. A name alone centres on the tile, its state with it.
@@ -722,6 +625,15 @@ function ToolsCard({ machine: m, onReduce }: { machine: Machine; onReduce: (r: R
               {warn && <span className="ac-mediarow__body small muted">{t("machines.access.commandsWarn")}</span>}
               <span className="machine-tool__tail ac-mediarow__end ac-mediarow__end--wrap">
                 <Chip icon={on ? "check" : "dash"}>{on ? t("machines.access.on") : t("machines.access.off")}</Chip>
+                {!on && oneClick?.kind === "allow" && (
+                  <MachineToolButton
+                    machine={m}
+                    tool={tool}
+                    variant="default"
+                    label={t("machines.access.enable")}
+                    ariaLabel={t("machines.access.enableLabel", { tool: name })}
+                  />
+                )}
                 {on && canReduceAccess(m) && (
                   <Button
                     size="sm"
@@ -736,6 +648,7 @@ function ToolsCard({ machine: m, onReduce }: { machine: Machine; onReduce: (r: R
           );
         })}
       </List>
+      {here && oneClick?.kind !== "allow" && !MACHINE_TOOLS.every(isOn) && <ToolsOffHereNote />}
     </Card>
   );
 }
@@ -789,10 +702,12 @@ function GrantCard({ machine: m }: { machine: Machine }) {
  * Open beside each agent on a computer's page: the agent's computer in its dialog, in place. Only for whoever may
  * watch it (its screen's state answers them; anyone else gets a 403), as on the agent's page.
  */
-function OpenComputerButton({ agentId, name }: { agentId: string; name: string }) {
+function OpenComputerButton({ agentId, name, shown }: { agentId: string; name: string; shown?: string }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const openComputer = useOpenComputer();
+  // Inside the row of the right hand's shared place (`SeatContext`), it is that place this asks about and opens.
+  const seat = useSeat(agentId);
   if (!useDesktopStatus(org.id, agentId).isSuccess) return null;
   return (
     <Button
@@ -800,11 +715,55 @@ function OpenComputerButton({ agentId, name }: { agentId: string; name: string }
       variant="ghost"
       icon="computer"
       className="machine-page__screen"
-      aria-label={`${t("agentComputer.open")}: ${t("agentComputer.title", agentGrammar(name))}`}
-      onClick={() => openComputer(agentId)}
+      aria-label={`${t("agentComputer.open")}: ${t("agentComputer.title", agentGrammar(name, shown))}`}
+      onClick={() => openComputer(agentId, seat)}
     >
       {t("agentComputer.open")}
     </Button>
+  );
+}
+
+/**
+ * One row of a computer's agents: the agent's face and name, a link to its page, a line under them, and Open beside
+ * it for whoever may watch its computer. `seat`: the row is the right hand's shared place there (ADR 0175), named
+ * for what it is, and Open opens that place; the right hand's own row opens the viewer's own.
+ */
+function MachineAgentRow({
+  agent: a,
+  body,
+  seat,
+}: {
+  agent: Machine["agents"][number];
+  body?: ReactNode;
+  seat?: Seat;
+}) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const name = seat ? t("rightHand.sharedName", { name: a.name }) : a.name;
+  const seatOf = useMemo(() => (seat ? { agentId: a.id, seat } : undefined), [a.id, seat]);
+  return (
+    <div className="machine-page__agent-row">
+      <Link
+        to="/org/$orgId/agents/$agentId"
+        params={{ orgId: org.id, agentId: a.id }}
+        className="machine-page__agent ac-mediarow"
+      >
+        <span className="ac-mediarow__face">
+          <AgentAvatar agentId={a.id} size="md" name={a.name} />
+        </span>
+        <span className="ac-mediarow__head machine-page__agent-name">
+          <b>{name}</b>
+          <span className="ac-mediarow__meta">@{a.handle}</span>
+        </span>
+        <span className="ac-mediarow__end">
+          <Icon name="chevronRight" />
+        </span>
+        {body && <span className="ac-mediarow__body small muted">{body}</span>}
+      </Link>
+      <SeatContext.Provider value={seatOf}>
+        <OpenComputerButton agentId={a.id} name={a.name} shown={name} />
+      </SeatContext.Provider>
+    </div>
   );
 }
 
@@ -814,8 +773,9 @@ function OpenComputerButton({ agentId, name }: { agentId: string; name: string }
  */
 export function MachineAgents({ machine: m }: { machine: Machine }) {
   const { t } = useTranslation();
-  const { org } = useOrg();
   const managed = m.kind === "managed";
+  // The right hand's shared place here, for whoever may open it (the server says so).
+  const shared = m.agents.find((a) => a.id === m.sharedSeatOf);
   if (m.agents.length === 0) return null;
   return (
     <div className="stack-4" style={{ gap: 6 }}>
@@ -824,39 +784,16 @@ export function MachineAgents({ machine: m }: { machine: Machine }) {
         {m.agents.map((a) => {
           // What this agent may use here, beyond its own folder (only who may see the access knows).
           const folders = m.access?.folders.filter((f) => f.agents.includes(a.id)).map((f) => folderName(f.path));
-          return (
-            <div key={a.id} className="machine-page__agent-row">
-              <Link
-                to="/org/$orgId/agents/$agentId"
-                params={{ orgId: org.id, agentId: a.id }}
-                className="machine-page__agent ac-mediarow"
-              >
-                <span className="ac-mediarow__face">
-                  <AgentAvatar agentId={a.id} size="md" name={a.name} />
-                </span>
-                <span className="ac-mediarow__head machine-page__agent-name">
-                  <b>{a.name}</b>
-                  <span className="ac-mediarow__meta">@{a.handle}</span>
-                </span>
-                <span className="ac-mediarow__end">
-                  <Icon name="chevronRight" />
-                </span>
-                {/* On the workspace's own computer, each agent's own folder is its name's ⓘ. */}
-                {folders && (folders.length > 0 || !managed) && (
-                  <span className="ac-mediarow__body small muted">
-                    {folders.length > 0
-                      ? t("machines.page.agentFolders", {
-                          ...agentGrammar(a.name),
-                          folders: joinNames(folders, t),
-                        })
-                      : t("machines.page.agentOwnFolder", agentGrammar(a.name))}
-                  </span>
-                )}
-              </Link>
-              <OpenComputerButton agentId={a.id} name={a.name} />
-            </div>
-          );
+          // On the workspace's own computer, each agent's own folder is its name's ⓘ.
+          const body =
+            folders && (folders.length > 0 || !managed)
+              ? folders.length > 0
+                ? t("machines.page.agentFolders", { ...agentGrammar(a.name), folders: joinNames(folders, t) })
+                : t("machines.page.agentOwnFolder", agentGrammar(a.name))
+              : undefined;
+          return <MachineAgentRow key={a.id} agent={a} body={body} />;
         })}
+        {shared && <MachineAgentRow agent={shared} body={t("rightHand.sharedPlace")} seat={SHARED_SEAT} />}
       </div>
     </div>
   );
@@ -937,6 +874,40 @@ export function MachinePage({ machineId }: { machineId: string }) {
   // The workspace's own computer (ADR 0056 §10): its size and one user per agent, never its system or folder.
   const managed = m.kind === "managed";
   const title = machineTitle(m, t("machines.host.label"));
+  // What most people never need, behind "Detalhes": the host's description, the version, the way out to the internet,
+  // where agents work and who connected it.
+  const details = [
+    m.kind === "host" && (
+      <span key="host" className="small">
+        {t(`machines.host.${hostDescKey(m.os)}`)}
+      </span>
+    ),
+    !managed && m.runnerVersion && (
+      <span key="version" className="small muted">
+        {t("machines.versionShort", { version: m.runnerVersion })}
+      </span>
+    ),
+    // Egress draws nothing without an observation, a wait or a move: only then does it count as a detail.
+    managed && (m.networkTransition || (m.online && (m.egressWaiting || m.egress?.ip))) && (
+      <Egress key="egress" machine={m} />
+    ),
+    // System mode: each agent works in its own home, never in the folder the computer was connected from.
+    m.mode === "system" && !managed && m.kind !== "host" && (
+      <span key="users" className="small muted">
+        {t("machines.agentUsers")}
+      </span>
+    ),
+    m.workspace && m.mode !== "system" && (
+      <span key="workspace" className="small muted machine-row__workspace">
+        {t("machines.workspace")} <code>{m.workspace}</code>
+      </span>
+    ),
+    m.pairedBy && (
+      <span key="paired" className="small muted">
+        {t("machines.pairedBy", { name: m.pairedBy.name })}
+      </span>
+    ),
+  ].filter(Boolean);
   const heading = (
     <h2 id="sec-machine" className="ac-card__title">
       {title}
@@ -955,17 +926,14 @@ export function MachinePage({ machineId }: { machineId: string }) {
           />
           <span className="list-col machine-page__title">
             {managed ? <ComputerTitle name={title}>{heading}</ComputerTitle> : heading}
+            {/* One status word: paused outranks online. */}
             <span className="row" style={{ gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-              {m.kind === "host" && m.name && <Chip icon="computer">{t("machines.host.label")}</Chip>}
-              <MachineChip online={m.online} />
-              <PausedChip paused={m.paused} />
-              {m.pairedBy && <Chip icon="person">{t("machines.pairedBy", { name: m.pairedBy.name })}</Chip>}
+              {paused ? <PausedChip paused={m.paused} /> : <MachineChip online={m.online} />}
             </span>
           </span>
           {m.canManage && <MachineMenu machine={m} onRename={() => setRenaming(m)} onRemove={() => setRemoving(m)} />}
         </div>
         <div className="machine-page__facts">
-          {m.kind === "host" && <span className="small">{t(`machines.host.${hostDescKey(m.os)}`)}</span>}
           {managed ? (
             <>
               {setup && <SetupFacts view={setup} />}
@@ -973,26 +941,16 @@ export function MachinePage({ machineId }: { machineId: string }) {
             </>
           ) : (
             <span className="small muted">
-              {t("machines.details", {
-                os: t(`machines.os.${osOf(m.os)}`),
-                arch: m.arch,
-                version: m.runnerVersion,
-                seen: seenText(t, i18n.language, m),
-              })}
+              {[t(`machines.os.${osOf(m.os)}`), m.arch, seenText(t, i18n.language, m)].filter(Boolean).join(" · ")}
             </span>
           )}
-          <Egress machine={m} />
           {paused && <span className="small muted">{t("machines.pausedHint")}</span>}
-          {/* System mode: each agent works in its own home, never in the folder the computer was connected from. */}
-          {m.mode === "system" && !managed && m.kind !== "host" && (
-            <span className="small muted">{t("machines.agentUsers")}</span>
-          )}
-          {m.workspace && m.mode !== "system" && (
-            <span className="small muted machine-row__workspace">
-              {t("machines.workspace")} <code>{m.workspace}</code>
-            </span>
-          )}
         </div>
+        {details.length > 0 && (
+          <Disclosure summary={t("common.details")} className="machine-page__more">
+            <div className="machine-page__facts">{details}</div>
+          </Disclosure>
+        )}
         <MachineAgents machine={m} />
       </Card>
       {/* Nobody in the workspace changes what its own computer allows, admins included. */}

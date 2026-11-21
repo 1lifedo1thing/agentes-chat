@@ -22,6 +22,10 @@ describe("the channel header, as Discord's", () => {
     const header = await open();
     expect(within(header).getByRole("heading", { level: 1, name: "eng" })).toBeTruthy();
     expect(within(header).getByText("Código, erros e deploys")).toBeTruthy();
+    // The name and the glyphs are an action line: the glyphs go under a name that can't keep its row beside them.
+    const line = header.querySelector(":scope > .ac-actline.channel__line") as HTMLElement;
+    expect(line.firstElementChild?.matches(".channel__head-text")).toBe(true);
+    expect(line.lastElementChild?.matches(".channel__acts")).toBe(true);
     const icons = [...header.querySelectorAll<HTMLElement>(".channel__acts > .channel__icon")]
       .filter((b) => !b.classList.contains("channel__search-icon"))
       .map((b) => b.getAttribute("aria-label"));
@@ -30,8 +34,9 @@ describe("the channel header, as Discord's", () => {
       "Mensagens fixadas",
       "Configurações do canal",
       "Membros do canal (4)",
+      "Mais opções",
     ] as never);
-    expect(within(header).getByRole("combobox", { name: "Buscar" })).toBeTruthy();
+    expect(within(header).getByRole("button", { name: "Buscar" })).toBeTruthy();
     expect(header.querySelectorAll(".ac-avatar")).toHaveLength(0);
     expect(within(header).queryByRole("button", { name: "Detalhes do canal" })).toBeNull();
     expect(within(header).queryByRole("link", { name: "Buscar nesta conversa" })).toBeNull();

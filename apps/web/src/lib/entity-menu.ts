@@ -37,7 +37,7 @@ export function entityMenu(build: () => MenuEntry[]) {
       const entries = build();
       if (!entries.length) return;
       e.preventDefault();
-      openContextMenu(e.clientX, e.clientY, entries);
+      openContextMenu(e.clientX, e.clientY, entries, e.target);
     },
     onKeyDown: (e: KeyboardEvent<HTMLElement>) => {
       if (e.defaultPrevented || !opensMenuKey(e) || outside(e) || keepsBrowserMenu(e.target)) return;
@@ -45,7 +45,8 @@ export function entityMenu(build: () => MenuEntry[]) {
       if (!entries.length) return;
       e.preventDefault();
       keyed = { el: e.currentTarget, at: Date.now() };
-      const r = e.currentTarget.getBoundingClientRect();
+      // Under what has focus: a row's own button, or the button inside a page that has a menu of its own.
+      const r = (e.target instanceof Element ? e.target : e.currentTarget).getBoundingClientRect();
       openContextMenu(r.left + 12, r.bottom, entries);
     },
   };

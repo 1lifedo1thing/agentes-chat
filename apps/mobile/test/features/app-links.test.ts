@@ -44,6 +44,9 @@ describe("web addresses → the app's screens", () => {
     expect(to("/drive?artifact=a1&v=3")).toBe("/file/a1?v=3");
     expect(to("/drive?artifact=a1&v=x")).toBe("/file/a1");
     expect(to("/drive?artifact=..%2Fsettings")).toBe("/drive");
+    // A live file's own page (ADR 0196): the file, which opens on its kind's screen.
+    expect(to("/drive/f1")).toBe("/file/f1");
+    expect(to("/drive/f1?sheet=s1")).toBe("/file/f1");
   });
 
   test("a conversation with a thread in its panel opens that thread's screen, at its message", () => {
@@ -57,7 +60,7 @@ describe("web addresses → the app's screens", () => {
     const to = (path: string) => (linkOf(`${W}/org/${O}${path}`) as { to?: string }).to;
     expect(to("")).toBe("/");
     expect(to("/home")).toBe("/");
-    expect(to("/threads")).toBe("/threads");
+    expect(to("/threads")).toBe("/conversations/threads");
     expect(to("/agents/a1")).toBe("/agent/a1");
     expect(to("/agents/a1/memory")).toBe("/memory?agent=a1");
     expect(to("/agents/new")).toBe("/new-agent");
@@ -79,7 +82,8 @@ describe("web addresses → the app's screens", () => {
     expect(to("/settings/connectors")).toBe("/connectors");
     expect(to("/settings/members?request=r1&do=approve")).toBe("/join-requests?request=r1");
     expect(to("/settings/members")).toBe("/me/members");
-    expect(to("/settings/keys")).toBe("/ai-accounts");
+    // AI accounts became part of AI and usage: its old address lands there.
+    expect(to("/settings/keys")).toBe("/usage");
     expect(to("/settings/usage")).toBe("/usage");
     // Computadores became Dispositivos: its old addresses land there.
     expect(to("/settings/computers")).toBe("/settings/devices");
@@ -89,6 +93,7 @@ describe("web addresses → the app's screens", () => {
     // The web's QR code opens this phone's guide for the computer it plugs into.
     expect(to("/settings/devices/android-setup?machine=k1")).toBe("/settings/devices/android-setup?machine=k1");
     expect(to("/settings/devices/iphone-setup")).toBe("/settings/devices/iphone-setup");
+    expect(to("/settings/devices/iphone-setup?computer=k1")).toBe("/settings/devices/iphone-setup?machine=k1");
     expect(to("/settings/account")).toBe("/me/account");
     expect(to("/settings/approvals")).toBe("/me/approvals");
     expect(to("/settings/right_hand")).toBe("/settings/right-hand");

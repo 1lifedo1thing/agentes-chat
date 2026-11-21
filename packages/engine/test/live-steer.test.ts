@@ -18,7 +18,6 @@ import {
   drainOutbox,
   executeToolForRun,
   listMessages,
-  liveTurnOf,
   type MachineStatus,
   postPersonMessage,
   type SteerMessage,
@@ -26,6 +25,7 @@ import {
 } from "../src";
 import { deliverLive, listenLiveSteering } from "../src/live-steer";
 import { takeInbox } from "../src/run-inbox";
+import { addRunStep } from "../src/runs";
 import { type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 
@@ -146,6 +146,9 @@ test("a message during a computer turn is handed to it live; read ones join it, 
   await post(fx, "@dev roda os testes");
   const drained = drainOutbox(fx.db, handlers);
   await started.promise;
+  // The turn runs the tests (a tool): its answer is a result, which goes out as it is (ADR 0112 addendum of 2026-11-19).
+  const [atWork] = await fx.db.select().from(schema.agentRuns);
+  if (atWork) await addRunStep(fx.db, atWork, "tool_call", { toolUseId: "c-1", name: "Bash", input: {} });
 
   const first = await post(fx, "@dev e atualiza a doc");
   const second = await post(fx, "@dev e o changelog");
@@ -195,7 +198,9 @@ test("a message during a computer turn is handed to it live; read ones join it, 
 });
 
 test("a burst before the first computer turn (ADR 0112): one turn whose prompt has all of it, as conversation lines", async () => {
-  f = await setup({ quietMs: 400 });
+  // The window is measured from the message's own time, and a run claimed after it ends skips it: it has to outlast
+  // the claim on a loaded runner, or the follow-ups come after a turn already over.
+  f = await setup({ quietMs: 2000 });
   const fx = f;
   await computerAgent(fx);
   const seen: BrainTurn[] = [];
@@ -214,8 +219,11 @@ test("a burst before the first computer turn (ADR 0112): one turn whose prompt h
   await post(fx, "@dev oi");
   const drained = drainOutbox(fx.db, handlers);
   const start = Date.now();
-  while (!(await fx.db.select().from(schema.agentRuns)).some((r) => r.status === "running")) {
-    if (Date.now() - start > 5000) throw new Error("the run never started");
+  for (;;) {
+    const status = (await fx.db.select().from(schema.agentRuns))[0]?.status;
+    if (status === "running") break;
+    if (status === "done") throw new Error("the run was claimed after its quiet window and answered alone");
+    if (Date.now() - start > 15000) throw new Error("the run never started");
     await new Promise((r) => setTimeout(r, 5));
   }
   // No @ needed: the same person's follow-ups go to the agent still answering them (the floor).
@@ -331,10 +339,10 @@ test("a message sent before the turn is steerable is handed to it as soon as it 
   expect((run?.transcript as { request?: string } | null)?.request).toContain("e atualiza a doc");
 });
 
-/** Past `WORKING_TEXT_MAX`: a stretch this long shows while it's written, a shorter one waits for the turn's end. */
+/** Past `WORKING_TEXT_MAX`: a stretch this long is read as the answer (a stopped reply keeps it). */
 const LONG = "Vou olhar cada arquivo do projeto antes de mexer em qualquer coisa. ".repeat(5);
 
-test("text a brain kept back past a call's start goes out as that stretch's, and a message read mid-answer opens a paragraph", async () => {
+test("a computer brain's stretches, a call and a message read mid-answer: none of its words go out before its reply", async () => {
   f = await setup({
     toolSources: [
       {
@@ -354,7 +362,6 @@ test("text a brain kept back past a call's start goes out as that stretch's, and
   const fx = f;
   const machineId = await computerAgent(fx);
   const events = fx.listen(fx.general.id);
-  const seen: (ReturnType<typeof liveTurnOf> | null)[] = [];
   let runId = "";
   const handed: SteerMessage[][] = [];
   const sent = gate();
@@ -374,20 +381,16 @@ test("text a brain kept back past a call's start goes out as that stretch's, and
         yield { type: "text_delta", text: `${LONG}Vou olhar o build.gra` };
         await pause();
         await executeToolForRun(fx.jobDeps, id, { id: "c-1", name: "check_env", input: {} });
-        seen.push(liveTurnOf(runId) ?? null);
         yield { type: "text_delta", text: "dle primeiro." };
         await pause();
-        seen.push(liveTurnOf(runId) ?? null);
         yield { type: "tool_call", id: "c-1", name: "check_env", input: {}, executed: { content: "ok" } };
         yield { type: "text_delta", text: `${LONG}A resposta.` };
         await pause();
-        seen.push(liveTurnOf(runId) ?? null);
         sent.open();
         await waitUntil(() => handed.length > 0);
         yield { type: "steer_read", uuids: handed[0]?.map((m) => m.uuid) ?? [] };
         yield { type: "text_delta", text: "E sobre o recado." };
         await pause();
-        seen.push(liveTurnOf(runId) ?? null);
         yield { type: "done", text: `${LONG}A resposta.\n\nE sobre o recado.` };
       } finally {
         io.steerable?.(null);
@@ -405,27 +408,20 @@ test("text a brain kept back past a call's start goes out as that stretch's, and
   await post(fx, "@dev e o recado?");
   await drained;
 
-  const deltas = events.filter((e) => e.type === "agent.delta") as unknown as {
-    at: number;
-    from: number;
-    text: string;
-  }[];
-  const first = `${LONG}Vou olhar o build.gradle primeiro.`;
-  const second = `${LONG}A resposta.`;
-  // The stretch each piece belongs to, past the call's start or not.
-  expect(deltas.map((d) => [d.from, d.text]).filter(([, text]) => String(text).trim())).toEqual([
-    [0, `${LONG}Vou olhar o build.gra`],
-    [0, "dle primeiro."],
-    [first.length, second],
-    [first.length, "\n\nE sobre o recado."],
-  ]);
-  expect(deltas.map((d) => d.text).join("")).toBe(`${first}${second}\n\nE sobre o recado.`);
-  // An app opening now never starts on the end of a text it can't see the start of.
-  expect(seen.map((l) => l?.text)).toEqual(["", "", second, `${second}\n\nE sobre o recado.`]);
-  expect(seen[1]?.at).toBe(first.length);
+  expect(handed).toHaveLength(1);
+  // It said it writes; its step lines aside, none of its words went out but in its reply.
+  expect(events.some((e) => e.type === "agent.typing")).toBe(true);
+  const before = JSON.stringify(
+    events.filter((e) => e.type !== "message.created"),
+    (k, v) => (k === "said" ? undefined : v),
+  );
+  for (const words of ["build.gra", "dle primeiro", "A resposta", "E sobre o recado"])
+    expect([words, before.includes(words)]).toEqual([words, false]);
+  const main = await listMessages(fx.db, fx.owner.id, fx.org.id, fx.general.id);
+  expect(main.at(-1)?.body).toBe(`${LONG}A resposta.\n\nE sobre o recado.`.trim());
 });
 
-test("a stretch's last word held back while it could still grow goes out with it when the call ends", async () => {
+test("a long stretch a call ended is never posted: the reply is what it said after its last call", async () => {
   f = await setup();
   const fx = f;
   await computerAgent(fx);
@@ -433,8 +429,7 @@ test("a stretch's last word held back while it could still grow goes out with it
   const brain: Brain = {
     kind: "claude_code",
     async *run() {
-      // A last "N" could still become the silence word, so it waits; the call ending says the stretch is over.
-      yield { type: "text_delta", text: `${LONG}Vou seguir o plano N` };
+      yield { type: "text_delta", text: `${LONG}Vou seguir o plano` };
       yield { type: "tool_call", id: "c-1", name: "Bash", input: {}, executed: { content: "ok" } };
       yield { type: "text_delta", text: "Pronto." };
       yield { type: "done", text: "Pronto." };
@@ -447,45 +442,9 @@ test("a stretch's last word held back while it could still grow goes out with it
   });
   await post(fx, "@dev segue o plano");
   await drainOutbox(fx.db, handlers);
-  const deltas = events.filter((e) => e.type === "agent.delta") as unknown as { from: number; text: string }[];
-  const first = `${LONG}Vou seguir o plano N`;
-  expect(
-    deltas
-      .filter((d) => d.from === 0)
-      .map((d) => d.text)
-      .join(""),
-  ).toBe(first);
-  expect(
-    deltas
-      .filter((d) => d.from === first.length)
-      .map((d) => d.text)
-      .join(""),
-  ).toBe("Pronto.");
-});
-
-test("a short stretch a call ended never shows, and the next one starts where the shown text ends", async () => {
-  f = await setup();
-  const fx = f;
-  await computerAgent(fx);
-  const events = fx.listen(fx.general.id);
-  const brain: Brain = {
-    kind: "claude_code",
-    async *run() {
-      yield { type: "text_delta", text: "Vou seguir o plano" };
-      yield { type: "tool_call", id: "c-1", name: "Bash", input: {}, executed: { content: "ok" } };
-      yield { type: "text_delta", text: "Pronto." };
-      yield { type: "done", text: "Pronto." };
-    },
-  };
-  const handlers = createJobHandlers({
-    ...fx.jobDeps,
-    brains: { claude_code: () => brain },
-    machines: { status: async (id) => statusOf(id) },
-  });
-  await post(fx, "@dev segue o plano");
-  await drainOutbox(fx.db, handlers);
-  const deltas = events.filter((e) => e.type === "agent.delta") as unknown as { from: number; text: string }[];
-  expect(deltas.map((d) => [d.from, d.text])).toEqual([[0, "Pronto."]]);
+  const main = await listMessages(fx.db, fx.owner.id, fx.org.id, fx.general.id);
+  expect(main.map((m) => m.body)).toEqual(["@dev segue o plano", "Pronto."]);
+  expect(JSON.stringify(events.filter((e) => e.type !== "message.created"))).not.toContain("Pronto");
 });
 
 /** A queued run with one message in its inbox, and a listener for it that retries fast. */
@@ -732,4 +691,113 @@ test("Claude Code brain: a runner on protocol 15 takes brain.steer for the turn;
     // drain
   }
   expect(handedOff).toEqual([]);
+});
+
+/**
+ * A computer brain that answers the first message, finds the second one queued as its turn ends, and answers it (as
+ * the runner reports it with `answers: "each"`: the first answer as its own event, the read, then the rest). Its
+ * later turns answer at once.
+ */
+function answeringBrain(fx: Fixture, first: string, second: string) {
+  const handed: SteerMessage[][] = [];
+  const sent = gate();
+  /** Whether the first answer was in the conversation before the brain read on. */
+  let outBeforeRead = false;
+  let turns = 0;
+  const brain: Brain = {
+    kind: "claude_code",
+    async *run(_turn: BrainTurn, io: BrainIO) {
+      turns++;
+      if (turns > 1) {
+        yield { type: "done", text: `Turn ${turns}.` };
+        return;
+      }
+      io.steerable?.(async (messages) => {
+        handed.push(messages);
+        return { status: "accepted", accepted: messages.map((m) => m.uuid) };
+      });
+      try {
+        yield { type: "text_delta", text: first };
+        sent.open();
+        await waitUntil(() => handed.length > 0);
+        yield { type: "answer", text: first };
+        const main = await listMessages(fx.db, fx.owner.id, fx.org.id, fx.general.id);
+        outBeforeRead = main.at(-1)?.body === first;
+        yield { type: "steer_read", uuids: handed[0]?.map((m) => m.uuid) ?? [] };
+        yield { type: "text_delta", text: second };
+        yield { type: "done", text: second };
+      } finally {
+        io.steerable?.(null);
+      }
+    },
+  };
+  return { brain, handed, sent, outBeforeRead: () => outBeforeRead };
+}
+
+test("an answer the brain finished before reading a message goes out at once, on its own: the next one under it (ADR 0112)", async () => {
+  f = await setup();
+  const fx = f;
+  await computerAgent(fx);
+  const b = answeringBrain(fx, "Oi! Tudo certo por aqui.", "Recebi: já olho o deploy.");
+  const handlers = createJobHandlers({
+    ...fx.jobDeps,
+    brains: { claude_code: () => b.brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  await post(fx, "@dev oi, tudo bem?");
+  const drained = drainOutbox(fx.db, handlers);
+  await b.sent.promise;
+  await post(fx, "@dev e o deploy?");
+  await drained;
+
+  expect(b.handed).toHaveLength(1);
+  // Out while the next one was still being written, never held for it.
+  expect(b.outBeforeRead()).toBe(true);
+  const main = await listMessages(fx.db, fx.owner.id, fx.org.id, fx.general.id);
+  // Two messages, in the order written: never one with both.
+  expect(main.filter((m) => m.author.type === "agent").map((m) => m.body)).toEqual([
+    "Oi! Tudo certo por aqui.",
+    "Recebi: já olho o deploy.",
+  ]);
+  // The run's conversation keeps them apart too, the message it read between them.
+  const [run] = await fx.db.select().from(schema.agentRuns);
+  const kept = run?.transcript as { messages: { role: string; content: unknown }[] } | undefined;
+  const said = (kept?.messages ?? []).map((m) => ({ role: m.role, text: JSON.stringify(m.content) }));
+  const first = said.findIndex((m) => m.role === "assistant" && m.text.includes("Oi! Tudo certo"));
+  const read = said.findIndex((m) => m.role === "user" && m.text.includes("e o deploy?"));
+  const last = said.findIndex((m) => m.role === "assistant" && m.text.includes("já olho o deploy"));
+  expect(first).toBeGreaterThanOrEqual(0);
+  expect(first).toBeLessThan(read);
+  expect(read).toBeLessThan(last);
+  expect(said[last]?.text).not.toContain("Oi! Tudo certo");
+});
+
+test("an answer the turn's end would hold back (a secret asked in the chat) never goes out early", async () => {
+  const judged: string[] = [];
+  f = await setup({
+    judge: (kind, id, state) => {
+      if (kind !== "follow_through" || id !== "verdict") return undefined;
+      judged.push(String(state.reply));
+      return String(state.reply).includes("senha") ? "secret" : undefined;
+    },
+  });
+  const fx = f;
+  await computerAgent(fx);
+  const b = answeringBrain(fx, "Me passa a senha do banco aqui no chat.", "Já olho o deploy.");
+  const handlers = createJobHandlers({
+    ...fx.jobDeps,
+    brains: { claude_code: () => b.brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  await post(fx, "@dev conecta no banco");
+  const drained = drainOutbox(fx.db, handlers);
+  await b.sent.promise;
+  await post(fx, "@dev e o deploy?");
+  await drained;
+
+  // The judge read it before anything went out, and it stayed for the turn's end, where it is held back as ever.
+  expect(judged[0]).toBe("Me passa a senha do banco aqui no chat.");
+  expect(b.outBeforeRead()).toBe(false);
+  const main = await listMessages(fx.db, fx.owner.id, fx.org.id, fx.general.id);
+  expect(main.some((m) => m.author.type === "agent" && m.body.includes("senha"))).toBe(false);
 });

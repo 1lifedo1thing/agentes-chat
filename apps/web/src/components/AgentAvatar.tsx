@@ -1,6 +1,6 @@
-import type { AgentPresence } from "@agenteschat/client";
+import type { Actor } from "@agenteschat/client";
 import { agentStateIn } from "@agenteschat/client";
-import { isOutOfOffice } from "@agenteschat/client/lib/presence";
+import { type AgentFace, agentFaceWord, isOutOfOffice } from "@agenteschat/client/lib/presence";
 import { splitAtNames } from "@agenteschat/client/lib/text";
 import {
   type AgentAppearance,
@@ -37,7 +37,7 @@ type AgentAvatarProps = Omit<AvatarProps, "kind" | "running" | "state" | "appear
    * Its presence badge (ADR 0084): `true` reads it live (from its work, offline with no AI), a value draws that one.
    * Only where presence matters (the sidebar, member lists, profile cards, messages), never on the tiny receipts.
    */
-  presence?: boolean | AgentPresence | null;
+  presence?: boolean | AgentFace | null;
 };
 
 /**
@@ -81,6 +81,43 @@ export function AgentWho({
   );
 }
 
+/**
+ * Anyone named in a line of text: an agent's face or a person's, at the text's size, then their name (`.ac-who`).
+ * `faceOnly` where the words after it say who, or say what it is (a calendar item's title after its owner's face).
+ * `size` draws a face larger than the text (`--who-face` sets its box); an agent at `work` moves, or rests stopped.
+ */
+export function ActorWho({
+  actor,
+  name,
+  faceOnly,
+  size = "xs",
+  work,
+}: {
+  actor: Actor;
+  name: string;
+  faceOnly?: boolean;
+  size?: "xs" | "sm";
+  work?: "running" | "stalled";
+}) {
+  return (
+    <span className="ac-who" ref={markLead}>
+      {actor.type === "agent" && work ? (
+        <AgentAvatar
+          agentId={actor.id}
+          size={size}
+          name={name}
+          running={work === "running"}
+          state={work === "running" ? "writing" : undefined}
+          expression={work === "stalled" ? "closed" : undefined}
+        />
+      ) : (
+        <ActorAvatar actor={actor} size={size} name={name} />
+      )}
+      {!faceOnly && <b>{name}</b>}
+    </span>
+  );
+}
+
 const markLead = (el: HTMLElement | null) => {
   el?.toggleAttribute("data-lead", opensItsBlock(el));
 };
@@ -118,7 +155,7 @@ function PresentAgentAvatar(props: AgentAvatarProps & { agentId: string }) {
       {...props}
       asleep={props.asleep ?? isOutOfOffice(shown?.line)}
       presence={shown?.presence ?? null}
-      presenceLabel={shown ? t(`presence.${shown.presence}`) : undefined}
+      presenceLabel={shown ? agentFaceWord(t, shown.presence) : undefined}
     />
   );
 }
@@ -133,7 +170,7 @@ function LiveAgentAvatar({
   presence,
   asleep,
   ...rest
-}: Omit<AgentAvatarProps, "presence"> & { agentId: string; presence: AgentPresence | null }) {
+}: Omit<AgentAvatarProps, "presence"> & { agentId: string; presence: AgentFace | null }) {
   const live = useStreams((s) => agentStateIn(s, agentId, channelId));
   const { org } = useOrg();
   const dir = useDirectory(org.id);

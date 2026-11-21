@@ -4,7 +4,16 @@ import { LogicalSize } from "@tauri-apps/api/dpi";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Candidate } from "../control/first-run";
-import type { LocalServerStatus, ReachResult, ReachStage, StepChange, Tailnet } from "../control/local-server";
+import type {
+  KeepRunning,
+  LocalServerStatus,
+  ReachResult,
+  ReachStage,
+  StepChange,
+  Tailnet,
+} from "../control/local-server";
+import type { LinkInfo } from "../control/pair";
+import type { SetupState } from "../control/permissions";
 import { platformOf } from "../control/platform";
 import type { ServerList, ServerWorkspaces } from "../control/server";
 import type { ThisMacRequest } from "../control/this-mac";
@@ -12,11 +21,13 @@ import type { TrayState } from "../control/tray";
 import {
   type AppInfo,
   type BadgeCounts,
+  type CompatMode,
   type Host,
   type MenuAction,
   type NotchInfo,
   type RunnerInfo,
   type RunnerStateChange,
+  type SiteAnswer,
   WINDOW_NAMES,
   type WindowName,
 } from "./types";
@@ -58,7 +69,14 @@ export function createTauriHost(): Host {
     removeServer: (server) => invoke<void>("server_remove", { server }),
     signOutServer: (server) => invoke<void>("server_sign_out", { server }),
     workspaces: () => invoke<ServerWorkspaces[]>("workspaces_get"),
-    welcomeMode: () => invoke<string | null>("welcome_mode_take").then((m) => (m === "add" ? "add" : null)),
+    onWorkspaces: (cb) => subscribe<null>("workspaces://changed", () => cb()),
+    pairLinkInfo: (server, code) => invoke<LinkInfo>("pair_link_info", { server, code }),
+    askToPair: (server, org) => invoke<boolean>("pair_ask", { server, org }),
+    siteFetch: (server, method, path, body) =>
+      invoke<SiteAnswer>("site_fetch", { server, method, path, body: body ?? null }),
+    welcomeMode: () =>
+      invoke<string | null>("welcome_mode_take").then((m) => (m === "add" || m === "owner" ? m : null)),
+    addWorkspace: () => invoke<void>("welcome_add"),
     discover: () => invoke<Candidate[]>("discover"),
     // From the web view itself: every server answers `/api/instance` to any origin (it is public).
     checkServer: (server) => checkServer(server),
@@ -72,6 +90,9 @@ export function createTauriHost(): Host {
     hideWindow: (w) => invoke<void>("hide_window", { name: w }),
     quit: () => invoke<void>("quit_app"),
     appInfo: () => invoke<AppInfo>("app_info"),
+    compatMode: () => invoke<CompatMode>("compat_get"),
+    setCompatMode: (on) => invoke<void>("compat_set", { on }),
+    reopen: () => invoke<void>("app_reopen"),
     autostart: () => invoke<boolean>("autostart_get"),
     setAutostart: (on) => invoke<void>("autostart_set", { on }),
     notify: (title, body) => invoke<void>("notify", { title, body }),
@@ -88,7 +109,6 @@ export function createTauriHost(): Host {
     setAppMenu: (labels) => invoke<void>("app_menu_set", { labels }),
     onMenuAction: (cb) => subscribe<MenuAction>("menu://action", cb),
     thisMacListening: () => invoke<void>("this_mac_listening"),
-    setDock: (show) => invoke<void>("dock_set", { show }),
     setSiteNotify: (on) => invoke<void>("notify_site_set", { on }),
     onBadge: (cb) => subscribe<BadgeCounts>("badge://counts", cb),
     localServer: () => invoke<LocalServerStatus>("local_server_status"),
@@ -104,10 +124,22 @@ export function createTauriHost(): Host {
     stopLocalReach: () => invoke<void>("local_server_reach_stop"),
     setLocalUsage: (on) => invoke<void>("local_server_usage", { on }),
     backupLocalServer: () => invoke<string>("local_server_backup"),
+    setLocalBackups: (nightly, copyTo) => invoke<void>("local_server_backups_set", { nightly, copyTo }),
+    restoreLocalServer: (file) => invoke<void>("local_server_restore", { file }),
+    eraseLocalServer: () => invoke<string>("local_server_erase"),
+    keepRunning: () => invoke<KeepRunning>("keep_running"),
+    openSystemSettings: (page) => invoke<void>("open_system_settings", { page }),
     localDiagnostics: () => invoke<string>("local_server_diagnostics"),
     syncLocalHomes: (rotate) => invoke<void>("local_server_sync", { rotate }),
     tailscale: () => invoke<Tailnet>("tailscale_status"),
     openTailscale: (page) => invoke<void>("tailscale_open", { page }),
     onNewHostHome: (cb) => subscribe<string>("host://new", cb),
+    screenAccess: () => invoke<boolean>("screen_access"),
+    requestScreenAccess: () => invoke<boolean>("screen_request"),
+    diskAccess: () => invoke<boolean>("disk_access"),
+    askLocalNetwork: () => invoke<void>("network_ask"),
+    openPrivacy: (pane) => invoke<void>("privacy_open", { pane }),
+    setupState: () => invoke<SetupState | null>("setup_state_get"),
+    setSetupState: (state) => invoke<void>("setup_state_set", { state }),
   };
 }

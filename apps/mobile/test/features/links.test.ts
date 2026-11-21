@@ -26,7 +26,7 @@ describe("deep links", () => {
     expect(hrefFromUrl("agenteschat://approval/a1")).toBe("/approval/a1");
     expect(hrefFromUrl("agenteschat://mission/m1")).toBe("/mission/m1");
     expect(hrefFromUrl("agenteschat://activity")).toBe("/activity");
-    expect(hrefFromUrl("agenteschat://threads")).toBe("/threads");
+    expect(hrefFromUrl("agenteschat://threads")).toBe("/conversations/threads");
     expect(hrefFromUrl("/agent/x1")).toBe("/agent/x1");
     expect(hrefFromUrl("agenteschat://chat/../../etc")).toBeNull();
     expect(hrefFromUrl("agenteschat://chat")).toBeNull();
@@ -111,6 +111,11 @@ describe("inbox items", () => {
     expect(notificationHref(notification({ id: "n", kind: "mission_finished", source: { missionId: "m1" } }))).toBe(
       "/mission/m1",
     );
+    // The right hand paused what it does without asking: its own settings. Who approves for whom: Perfil › Aprovações.
+    expect(notificationHref(notification({ id: "n", kind: "right_hand_paused", source: {} }))).toBe(
+      "/settings/right-hand",
+    );
+    expect(notificationHref(notification({ id: "n", kind: "approval_cover", source: {} }))).toBe("/me/approvals");
     expect(
       notificationHref(notification({ id: "n", kind: "thread_reply", source: { channelId: "c1", threadId: "t1" } })),
     ).toBe("/chat/c1?thread=t1");
@@ -144,13 +149,6 @@ describe("inbox items", () => {
     const joined = notification({ id: "n", kind: "invitation_accepted", source: { label: "Acme" } });
     expect(notificationHref(joined)).toBe("/me/members");
     expect(notificationHref(notification({ id: "n", kind: "approval_cover", source: {} }))).toBe("/me/approvals");
-    expect(notificationHref(notification({ id: "n", kind: "connector_tool_changed", source: {} }))).toBe("/connectors");
-    const tools = notification({
-      id: "n",
-      kind: "connector_tool_changed",
-      source: { connectionId: "c1", label: "TikTok" },
-    });
-    expect(notificationHref(tools)).toBe("/connectors/tools?id=c1");
     expect(notificationHref(notification({ id: "n", kind: "skill_update", source: { skillId: "s1" } }))).toBe(
       "/settings/skills/s1",
     );

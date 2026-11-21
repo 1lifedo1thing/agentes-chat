@@ -1,12 +1,13 @@
 import { ApiError, keys } from "@agenteschat/client";
 import { formatTimeLeft } from "@agenteschat/client/lib/actions";
 import { connectLink, isLoopback, isTailnet } from "@agenteschat/client/lib/server";
-import { Alert, Button, Dialog, DialogBody, PixelSpinner } from "@agenteschat/ui";
+import { Alert, Button, Chip, Dialog, DialogBody, PixelSpinner, QrCode } from "@agenteschat/ui";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { encode } from "uqr";
 import { useApi } from "@/api/context";
 import { useNow } from "@/components/missions/MissionBits";
+import { OpenPrefsButton } from "@/components/ThisMac";
+import { inDesktopApp } from "@/lib/desktop";
 
 /** A new code this long before the one on screen expires, so a scan never meets an expired one. */
 const RENEW_BEFORE_MS = 20_000;
@@ -69,7 +70,14 @@ function PhoneCode() {
     return (
       <div className="stack-4" style={{ gap: 12 }}>
         <Alert>{t("openOnPhone.localOnly")}</Alert>
-        <span className="small muted">{t("openOnPhone.localOnlyHow")}</span>
+        {inDesktopApp() ? (
+          <div className="ac-actline">
+            <span className="small muted">{t("openOnPhone.localOnlyHere")}</span>
+            <OpenPrefsButton tab="servers">{t("machines.thisMac.openServers")}</OpenPrefsButton>
+          </div>
+        ) : (
+          <span className="small muted">{t("openOnPhone.localOnlyHow")}</span>
+        )}
       </div>
     );
 
@@ -98,39 +106,38 @@ function PhoneCode() {
         </span>
       )}
       <ol className="machine-pair__steps small">
-        <li>{t("openOnPhone.stepApp")}</li>
+        <li>
+          {/* The phone app is in neither store yet: each store disabled, with "Em breve". */}
+          <span className="phone-code__step">
+            <span>{t("openOnPhone.stepApp")}</span>
+            <span className="row">
+              {(["appStore", "googlePlay"] as const).map((store) => (
+                <Button key={store} size="sm" disabled>
+                  {t(`openOnPhone.${store}`)}
+                  <Chip icon="lock">{t("common.soon")}</Chip>
+                </Button>
+              ))}
+            </span>
+          </span>
+        </li>
         {isTailnet(server) && (
           <li>
-            {t("openOnPhone.stepTailscale")}{" "}
-            <a className="ac-link" href={TAILSCALE_STORES.appStore} target="_blank" rel="noreferrer">
-              App Store
-            </a>
-            {" · "}
-            <a className="ac-link" href={TAILSCALE_STORES.googlePlay} target="_blank" rel="noreferrer">
-              Google Play
-            </a>
+            {/* One grid cell: loose, each link would take the next cell, the number's narrow column. */}
+            <span>
+              {t("openOnPhone.stepTailscale")}{" "}
+              <a className="ac-link" href={TAILSCALE_STORES.appStore} target="_blank" rel="noreferrer">
+                {t("openOnPhone.appStore")}
+              </a>
+              {" · "}
+              <a className="ac-link" href={TAILSCALE_STORES.googlePlay} target="_blank" rel="noreferrer">
+                {t("openOnPhone.googlePlay")}
+              </a>
+            </span>
           </li>
         )}
         <li>{t("openOnPhone.stepScan")}</li>
       </ol>
       <span className="small muted">{t("openOnPhone.private")}</span>
     </div>
-  );
-}
-
-/** Dark modules on white whatever the theme: phone cameras read that best. */
-export function QrCode({ text, label }: { text: string; label: string }) {
-  const { size, data } = encode(text, { ecc: "M", border: 2 });
-  let path = "";
-  data.forEach((row, y) => {
-    row.forEach((dark, x) => {
-      if (dark) path += `M${x} ${y}h1v1h-1z`;
-    });
-  });
-  return (
-    <svg viewBox={`0 0 ${size} ${size}`} role="img" aria-label={label} shapeRendering="crispEdges">
-      <rect width={size} height={size} fill="#fff" />
-      <path d={path} fill="#000" />
-    </svg>
   );
 }

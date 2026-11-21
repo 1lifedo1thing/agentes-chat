@@ -1,34 +1,48 @@
 import type { Channel, Run } from "@agenteschat/client";
 import { useChannels, useDms } from "@agenteschat/client";
+import { keeperKey } from "@agenteschat/client/lib/personal-view";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { Chip, Icon } from "@agenteschat/ui";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { AgentSpinner } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
+import { useKeeperName } from "@/hooks/usePersonalView";
 import type { Field } from "@/lib/agent-edit";
 import { useAgentEdit } from "./context";
 
 /**
- * Who edits here, for those who can't edit everything: members read; the
- * owner (responsável) changes the look, audience and computer.
+ * Who edits here, for those who can't edit everything: members read; who edits how it works (its "Quem pode editar",
+ * ADR 0085 addendum of 2026-11-17) changes its instructions, role and skills; the owner (responsável) those too, and
+ * the look, audience and computer. Giving it more (what it may use) stays admins'.
  * `field`: only when that part is read-only for the viewer.
+ * A personal workspace names who runs it instead of "admins" (`keeperKey`, ADR 0159).
  */
 export function ReadOnlyNote({ field }: { field?: Field }) {
   const { t } = useTranslation();
+  const { org } = useOrg();
+  const keeper = useKeeperName();
   const { viewer, g, ownerFirst, can } = useAgentEdit();
   if (viewer === "admin") return null;
   if (field && can(field)) return null;
+  if (viewer === "editor") {
+    if (field !== "levels") return null;
+    return (
+      <p className="agp-readonly ac-iconline">
+        <Icon name="info" size={16} />
+        <span>{t(keeperKey(org, keeper, "agentPage.readOnly.ownerAccess"), { keeper })}</span>
+      </p>
+    );
+  }
   if (viewer === "owner") {
-    if (field && field !== "instructions" && field !== "levels") return null;
+    if (field && field !== "levels") return null;
     return (
       <p className="agp-readonly ac-iconline">
         <Icon name="person" size={16} />
         <span>
-          {field === "instructions"
-            ? t("agentPage.readOnly.ownerInstructions")
-            : field === "levels"
-              ? t("agentPage.readOnly.ownerAccess")
-              : t("agentPage.readOnly.owner", g)}
+          {field === "levels"
+            ? t(keeperKey(org, keeper, "agentPage.readOnly.ownerAccess"), { keeper })
+            : t(keeperKey(org, keeper, "agentPage.readOnly.owner"), { ...g, keeper })}
         </span>
       </p>
     );
@@ -38,8 +52,8 @@ export function ReadOnlyNote({ field }: { field?: Field }) {
       <Icon name="info" size={16} />
       <span>
         {ownerFirst
-          ? t("agentPage.readOnly.memberOwner", { ...g, owner: ownerFirst })
-          : t("agentPage.readOnly.member", g)}
+          ? t(modeKey(org, "agentPage.readOnly.memberOwner"), { ...g, owner: ownerFirst })
+          : t(keeperKey(org, keeper, "agentPage.readOnly.member"), { ...g, keeper })}
       </span>
     </p>
   );

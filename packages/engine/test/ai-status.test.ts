@@ -82,9 +82,11 @@ test("a model brain: ready with a key of its provider, no_ai without; no key is 
 test("auto: the provider its runs would pick decides, with or without a key", async () => {
   f = await setup();
   const deps = { db: f.db, gateway: f.gateway };
-  // `auto` isn't in the catalog: before, every new agent read as "no AI".
-  expect(await agentAiState(deps, { ...f.agent, model: "auto" })).toEqual({ state: "ready" });
-  expect(await agentAiState(deps, { ...f.agent, model: "auto", credentialId: null })).toEqual({ state: "ready" });
+  // `auto` isn't in the catalog: before, every new agent read as "no AI". Ready, it names the maker of the key it
+  // thinks with, which the apps say instead of "Automático".
+  const claude = { state: "ready", provider: "anthropic" } as const;
+  expect(await agentAiState(deps, { ...f.agent, model: "auto" })).toEqual(claude);
+  expect(await agentAiState(deps, { ...f.agent, model: "auto", credentialId: null })).toEqual(claude);
   await revokeKeys();
   expect(await agentAiState(deps, { ...f.agent, model: "auto", credentialId: null })).toEqual({
     state: "no_ai",
@@ -96,10 +98,13 @@ test("auto: the provider its runs would pick decides, with or without a key", as
     label: "oa",
     apiKey: "sk-proj-test-key-12345678",
   });
-  expect(await agentAiState(deps, { ...f.agent, model: "auto", credentialId: null })).toEqual({ state: "ready" });
+  expect(await agentAiState(deps, { ...f.agent, model: "auto", credentialId: null })).toEqual({
+    state: "ready",
+    provider: "openai",
+  });
 });
 
-test("a computer brain: signed out, missing or no computer is no_ai unless it may fall back; away is waiting", async () => {
+test("a computer brain: signed out, missing or no computer is no_ai, the API never standing in; away is waiting", async () => {
   f = await setup();
   let status: MachineStatus | null = statusOf();
   const deps = { db: f.db, gateway: f.gateway, machines: { status: async () => status } };
@@ -107,12 +112,10 @@ test("a computer brain: signed out, missing or no computer is no_ai unless it ma
   expect(await agentAiState(deps, computer)).toEqual({ state: "ready" });
 
   status = statusOf({ executors: { claude: { version: "2.1.300", loggedIn: false } } });
-  // The model brain stands in (ADR 0032 §5)…
-  expect(await agentAiState(deps, computer)).toEqual({ state: "ready" });
-  // …unless the owner turned the fallback off, or it's background work. With no account of its own, it's the
-  // computer's own sign-in of Claude Code that isn't there.
+  // The workspace has a key, and still nothing thinks for it. With no account of its own, it's the computer's own
+  // sign-in of Claude Code that isn't there.
   const ownOut = { state: "no_ai", reason: "not_signed_in", own: "claude_code" } as const;
-  expect(await agentAiState(deps, { ...computer, brainFallback: false })).toEqual(ownOut);
+  expect(await agentAiState(deps, computer)).toEqual(ownOut);
   const routine = {
     id: crypto.randomUUID(),
     orgId: f.org.id,
@@ -129,9 +132,15 @@ test("a computer brain: signed out, missing or no computer is no_ai unless it ma
   expect(await agentAiState(deps, computer)).toEqual({ state: "no_ai", reason: "cli_missing" });
   expect(await agentAiState(deps, { ...computer, brain: "codex" })).toEqual({ state: "no_ai", reason: "cli_missing" });
   expect(await agentAiState(deps, { ...computer, machineId: null })).toEqual({ state: "no_ai", reason: "no_computer" });
-  // Offline or paused is "not now": the existing waiting card, not "no AI".
+  // Offline or paused is "not now": the existing waiting card, not "no AI", with a key or without one.
   status = statusOf({ online: false });
   expect(await agentAiState(deps, computer)).toEqual({ state: "waiting" });
+});
+
+test("a computer brain whose computer is away waits though the workspace has a key", async () => {
+  f = await setup();
+  const deps = { db: f.db, gateway: f.gateway, machines: { status: async () => statusOf({ online: false }) } };
+  expect(await agentAiState(deps, { ...f.agent, brain: "claude_code", machineId: "m1" })).toEqual({ state: "waiting" });
 });
 
 test("the computer's own sign-in on a computer nobody connected (the workspace's): not signed in, never a wait", async () => {
@@ -201,6 +210,23 @@ test("the organization: any agent ready or waiting; archived ones don't count", 
   });
 });
 
+test("the organization: a computer agent signed out has no AI, for a chat and for background work alike", async () => {
+  f = await setup();
+  let status: MachineStatus | null = statusOf();
+  const deps = { db: f.db, gateway: f.gateway, machines: { status: async () => status } };
+  const paired = await pairMachine({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, { name: "MacBook" });
+  const set = (fields: Partial<typeof schema.agents.$inferInsert>) =>
+    f.db.update(schema.agents).set(fields).where(eq(schema.agents.id, f.agent.id));
+  const agents = async () => (await orgAiStatus(deps, f.org.id)).agents;
+  await set({ brain: "claude_code", machineId: paired.machineId });
+  expect(await agents()).toEqual([{ agentId: f.agent.id, state: "ready" }]);
+  // Signed out: the workspace's key stands in for neither, so no `background` that differs.
+  status = statusOf({ executors: { claude: { version: "2.1.300", loggedIn: false } } });
+  expect(await agents()).toEqual([
+    { agentId: f.agent.id, state: "no_ai", reason: "not_signed_in", own: "claude_code" },
+  ]);
+});
+
 describe("who picks the agents (ADR 0074)", () => {
   /** The router as `message.posted` builds it, on a computer hub that reports `status`. */
   const routingOf = (over: Partial<NonNullable<JobDeps["router"]>>, status: Partial<MachineStatus> = {}) => {
@@ -224,7 +250,9 @@ describe("who picks the agents (ADR 0074)", () => {
     orgRouting({ db: f.db, gateway: f.gateway }, routing, f.org.id, userId);
 
   /** Ana's own Claude account on her computer, lent to Dev; no API key; Bruna in the workspace. */
-  async function plans() {
+  async function plans(fallback = true) {
+    // An installation from before people's plans left routing (migration 0300); a new one has none.
+    if (fallback) await f.db.insert(schema.instanceTelemetry).values({ routerPlanFallback: true });
     await revokeKeys();
     const bruna = await addMember(f.db, f.org.id, "member", "Bruna");
     const { machineId } = await pairMachine({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, { name: "Mac" });
@@ -300,6 +328,12 @@ describe("who picks the agents (ADR 0074)", () => {
     expect((await who(cloud)).routing.by).toBe("rules");
     await f.db.update(schema.machineAccounts).set({ provider: "zai" }).where(eq(schema.machineAccounts.id, accountId));
     expect((await who(routing)).routing).toMatchObject({ by: "rules", mine: "rules" });
+  });
+
+  test("a new installation never picks on a person's plan: the rules", async () => {
+    f = await setup();
+    await plans(false);
+    expect((await who(routingOf({}))).routing).toMatchObject({ by: "rules", mine: "rules" });
   });
 
   test("the computer's own sign-in counts only when made with a plan", async () => {

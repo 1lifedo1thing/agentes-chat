@@ -30,15 +30,22 @@ describe("who gets the first step", () => {
     }
   });
 
-  test("a routine: who manages routines, or the owner of an agent", () => {
-    expect(mayCreate({ permissions: ["manage_routines"] }, "routine")).toBe(true);
-    expect(mayCreate({ permissions: ["read"] }, "routine", { ownsAgent: true })).toBe(true);
+  test("a routine: who may make one for some agent, its owner or editors included, never the permission alone", () => {
+    expect(mayCreate({ permissions: ["read"] }, "routine", { createsRoutines: true })).toBe(true);
+    // "Create routines" reaches only the agents whose audience takes the person, and a routine asks its agent on its
+    // creator's behalf (ADR 0085 addendum of 2026-11-17): the server says which on each agent (`canManageRoutines`,
+    // `canTalk`: `createsRoutinesFor`), so the key with none of them starts nothing.
+    expect(mayCreate({ permissions: ["manage_routines"] }, "routine")).toBe(false);
+    expect(mayCreate({ permissions: ["manage_routines"] }, "routine", { createsRoutines: false })).toBe(false);
     expect(mayCreate({ permissions: ["read"] }, "routine")).toBe(false);
   });
 
   test("New offers the same as the empty states", () => {
     const org = { permissions: ["post", "edit_wiki"] };
-    expect(createItems(org, { ownsAgent: true })).toEqual(["task", "routine", "wiki"]);
+    expect(createItems(org, { createsRoutines: true })).toEqual(["task", "routine", "wiki"]);
+    // Both read it from the agents the same way.
+    for (const file of ["new/NewScreen.tsx", "routines/RoutinesScreen.tsx"])
+      expect(source(file)).toContain("const createsRoutines = dir.agents.some((a) => createsRoutinesFor(a));");
   });
 
   test.each([
@@ -46,14 +53,13 @@ describe("who gets the first step", () => {
     ["chats/Greeting.tsx", 'place="agents"', 'if (!mayCreate(org, "agent"))'],
     ["drive/DriveScreen.tsx", 'place="drive"', 'can(useOrg().org, "upload_files")'],
     ["issues/IssuesScreen.tsx", 'place="tasks"', 'mayCreate(useOrg().org, "task")'],
-    ["routines/RoutinesScreen.tsx", 'place="routines"', 'mayCreate(useOrg().org, "routine", { ownsAgent })'],
+    ["routines/RoutinesScreen.tsx", 'place="routines"', 'mayCreate(useOrg().org, "routine", { createsRoutines })'],
     ["wiki/WikiScreen.tsx", 'place="wiki"', 'can(org, "edit_wiki")'],
-    ["chats/ConversationListScreen.tsx", '"channels" as const', 'mayCreate(org, "channel")'],
-    ["chats/ConversationListScreen.tsx", '"people" as const', 'mayCreate(org, "invite")'],
     ["new/ChatTargets.tsx", 'place="people"', 'mayCreate(org, "invite")'],
-    ["settings/AccessScreen.tsx", 'place="access"', 'acts={can(org, "manage_connectors")}'],
+    ["settings/AccessScreen.tsx", 'place="access"', "acts={addsConnectors(org)}"],
     ["devices/DevicesScreen.tsx", 'firstUseCopy("computers", pairs)', 'can(org, "pair_computers")'],
-    ["connectors/ConnectorsScreen.tsx", 'firstUseCopy("connectors", acts)', "<EmptyHint acts={admin} />"],
+    // Every member adds their own on Pessoal: the team's side stays with who manages connectors.
+    ["connectors/ConnectorsScreen.tsx", 'place="connectors"', "acts={mayAdd}"],
   ])("%s gates %s on the permission", (file, place, gate) => {
     const code = source(file);
     expect(code).toContain(place);
@@ -71,8 +77,9 @@ describe("who gets the first step", () => {
 
   test("the button only ever shows with `acts`, and a screen's own add buttons follow the same gate", () => {
     expect(source("shared/FirstUse.tsx")).toContain("acts && label && onPress");
-    expect(source("issues/IssuesScreen.tsx")).toContain('const right = mayNew ? <IconButton icon="plus"');
-    expect(source("routines/RoutinesScreen.tsx")).toContain('{...(mayNew ? { right: <IconButton icon="plus"');
+    // The bar's "+" (the system's own button) shows only when the server says the person may add.
+    expect(source("issues/IssuesScreen.tsx")).toContain('{...(mayNew ? { actions: [{ icon: "plus", sf: "plus"');
+    expect(source("routines/RoutinesScreen.tsx")).toContain('{...(mayNew ? { actions: [{ icon: "plus", sf: "plus"');
   });
 });
 
@@ -100,6 +107,40 @@ describe("the words", () => {
           expect(typeof at(tree, title)).toBe("string");
           expect(typeof at(tree, text)).toBe("string");
           expect(at(tree, title)).not.toMatch(/^(No |Nenhum|Nada ainda|Sem )/);
+        }
+      }
+  });
+
+  test("a personal workspace reads its own words where the place has them, the usual ones otherwise (ADR 0159)", () => {
+    expect(firstUseCopy("agents", true, true)).toEqual({
+      title: "mobile.empty.agents.titlePersonal",
+      text: "mobile.empty.agents.textPersonal",
+    });
+    expect(firstUseCopy("people", false, true)).toEqual({
+      title: "mobile.empty.people.viewerTitlePersonal",
+      text: "mobile.empty.people.viewerTextPersonal",
+    });
+    // A word with no personal sibling keeps the team's (Tasks' viewer line fits both).
+    expect(firstUseCopy("tasks", false, true)).toEqual({
+      title: "mobile.empty.tasks.viewerTitlePersonal",
+      text: "mobile.empty.tasks.viewerText",
+    });
+    expect(firstUseCopy("routines", true, true)).toEqual(firstUseCopy("routines", true));
+    // A team's workspace never reads them.
+    expect(firstUseCopy("agents", true)).toEqual({
+      title: "mobile.empty.agents.title",
+      text: "mobile.empty.agents.text",
+    });
+    expect(source("shared/FirstUse.tsx")).toContain("firstUseCopy(place, acts, isPersonal(");
+  });
+
+  test("every personal word is in both languages", () => {
+    for (const place of places)
+      for (const acts of [true, false]) {
+        const { title, text } = firstUseCopy(place, acts, true);
+        for (const tree of [featureKeysEn, featureKeysPtBR]) {
+          expect({ key: title, has: typeof at(tree, title) }).toEqual({ key: title, has: "string" });
+          expect({ key: text, has: typeof at(tree, text) }).toEqual({ key: text, has: "string" });
         }
       }
   });
@@ -136,7 +177,7 @@ describe("a list that didn't load is not an empty one", () => {
     };
     before("chats/ThreadsScreen.tsx", "list.failed", "<TeamSkyEmpty");
     before("chats/ConversationListScreen.tsx", "list.failed", "<FirstUse {...firstStep}");
-    before("activity/ActivityScreen.tsx", "list.isError && !list.data", "<AllClear />");
+    before("activity/ActivityScreen.tsx", "list.isError && !list.data", "<AllClear cheer={cheer} />");
     before("team/TeamScreen.tsx", "!groups.data ? null", "title={t(noSectors.title)}");
   });
 });

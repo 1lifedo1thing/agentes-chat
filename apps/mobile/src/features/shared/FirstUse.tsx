@@ -1,6 +1,8 @@
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
+import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import type { StickerLook, StickerMood } from "@agenteschat/ui/agent/stickers";
 import { useTranslation } from "react-i18next";
+import { useOrgMaybe } from "@/providers/org";
 import { Button, EmptyState, type EmptyStateProps, type IconName } from "@/ui";
 import { type EmptyPlace, firstUseCopy } from "./first-use";
 import { useDirectory } from "./hooks";
@@ -38,6 +40,7 @@ export function FirstUse({
   size = "page",
   look,
   mood,
+  copy: words,
 }: {
   place: EmptyPlace;
   acts: boolean;
@@ -49,10 +52,14 @@ export function FirstUse({
   size?: EmptyStateProps["size"];
   look?: StickerLook;
   mood?: StickerMood;
+  /** Words of a side of the place that has its own (as a list's Pessoal tab), in place of the place's. */
+  copy?: { title: string; text: string };
 }) {
   const { t } = useTranslation();
   const fallback = useEmptyLook();
-  const copy = firstUseCopy(place, acts);
+  // A personal workspace's places speak to one person (ADR 0159).
+  const placeCopy = firstUseCopy(place, acts, isPersonal(useOrgMaybe()?.org));
+  const copy = words ?? placeCopy;
   return (
     <EmptyState
       size={size}

@@ -15,7 +15,7 @@ import { objectUrls } from "@/components/artifacts/FileView";
 import { createI18n } from "@/i18n";
 import { ADA_ID, createFakeApi, ENG_ID, fakeMachinesOf, ORG_ID, seedState } from "./fake-api";
 import { hintOf, shownText } from "./hint";
-import { renderApp, screen, settle } from "./render";
+import { renderApp, screen, settle, showIn } from "./render";
 
 const saved: { url: string; name: string }[] = [];
 const realSave = fileSaver.save;
@@ -115,7 +115,8 @@ describe("uploaded files in the Drive", () => {
     expect(tiles).toHaveLength(2);
     const [thumb, row] = tiles as [HTMLElement, HTMLElement];
     expect(thumb.querySelector(".artifact-tile__picture img")?.getAttribute("src")).toMatch(/^blob:preview-/);
-    expect(thumb.querySelector(".artifact-tile__title")?.textContent).toBe("contato.jpg");
+    // A picture is only the picture (its name and size are in its tip and the viewer's header, below).
+    expect(thumb.querySelector(".artifact-tile__foot")).toBeNull();
     expect(row.querySelector(".artifact-tile__title")?.textContent).toBe("carrossel.zip");
     expect(row.querySelector(".artifact-tile__type")?.textContent).toBe("ZIP");
     expect(row.querySelector(".artifact-tile__meta")?.textContent).toMatch(/^ZIP · /);
@@ -127,6 +128,63 @@ describe("uploaded files in the Drive", () => {
     await click(within(thumb).getByRole("button", { name: "Abrir contato.jpg" }));
     await settle(4);
     expect(screen().getByRole("dialog", { name: "contato.jpg" })).toBeTruthy();
+  });
+
+  test("pictures side by side are only the pictures: each name and size in its tip and in the viewer (#51)", async () => {
+    const state = seedState();
+    const api = createFakeApi(state);
+    const long = "IMG_20250914_183022_HDR_portrait_edited_edited.HEIC";
+    const pictures = await Promise.all(
+      [long, "depoimentos-desktop-pt.png", "banner.png", "foto.png"].map((name) =>
+        api.artifacts.upload(ORG_ID, png(name)),
+      ),
+    );
+    const report = "Relatorio_Financeiro_Consolidado_Q3_2025_versao_final_revisada.zip";
+    const zip = await api.artifacts.upload(
+      ORG_ID,
+      new File([new Uint8Array([80, 75, 3, 4])], report, { type: "application/zip" }),
+    );
+    const base = state.messages[0] as (typeof state.messages)[number];
+    state.messages.push({
+      ...base,
+      id: "m-pictures",
+      threadId: null,
+      body: "As fotos do evento.",
+      mentionedAgentIds: [],
+      meta: { artifacts: [...pictures, zip].map((p) => ({ id: p.id, version: 1 })) },
+      createdAt: new Date().toISOString(),
+    });
+    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api });
+    await settle(10);
+    const tiles = Array.from(document.querySelectorAll<HTMLElement>(".artifact-cards > .artifact-tile[data-media]"));
+    expect(tiles).toHaveLength(4);
+    // No name or size drawn on either picture.
+    for (const tile of tiles) expect(tile.querySelector(".artifact-tile__foot")).toBeNull();
+    // A file beside them keeps its name under its cover, whole (it wraps, never ends in "…").
+    const file = document.querySelector(".artifact-cards > .artifact-tile:not([data-media])");
+    expect(file?.querySelector(".artifact-tile__title")?.textContent).toBe(report);
+    expect(file?.querySelector(".artifact-tile__title")?.getAttribute("title")).toBeNull();
+    const open = within(tiles[0] as HTMLElement).getByRole("button", { name: `Abrir ${long}` });
+    // A screen reader hears its size as the button's description.
+    expect(document.getElementById(open.getAttribute("aria-describedby") ?? "")?.textContent).toMatch(
+      /^HEIC · 7\s?(byte|B)/,
+    );
+    // The keys' focus shows the name, whole, and the size in its tip.
+    expect(document.querySelector(".ac-tip")).toBeNull();
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "Tab" });
+      open.focus();
+    });
+    expect(document.querySelector(".ac-tip.ac-msg__tip")?.textContent).toMatch(
+      new RegExp(`^${long.replace(/\./g, "\\.")} · HEIC · 7\\s?(byte|B)`),
+    );
+    await act(async () => open.blur());
+    expect(document.querySelector(".ac-tip")).toBeNull();
+    // The viewer's header says both.
+    await click(open);
+    await settle(4);
+    const dialog = screen().getByRole("dialog", { name: long });
+    expect(dialog.querySelector(".ac-details__subtitle")?.textContent).toMatch(/7\s?(byte|B)/);
   });
 
   test("SVG and other types are download-only; small text files show their text, read-only", async () => {
@@ -153,6 +211,26 @@ describe("uploaded files in the Drive", () => {
     dialog = screen().getByRole("dialog", { name: "notas.txt" });
     expect(dialog.querySelector(".file-view__text")?.textContent).toBe("linha 1\nlinha 2");
     expect(dialog.querySelector("textarea")).toBeNull();
+  });
+
+  test("a Markdown file reads as a document and a code file in a code card", async () => {
+    const api = createFakeApi(seedState());
+    const md = await api.artifacts.upload(
+      ORG_ID,
+      new File(["# Plano\n\nUm **passo** por vez"], "plano.md", { type: "text/markdown" }),
+    );
+    const ts = await api.artifacts.upload(ORG_ID, new File(["const total = 1;"], "soma.ts", { type: "text/plain" }));
+    await renderApp(`/org/${ORG_ID}/drive?artifact=${md.id}`, { api });
+    await settle(8);
+    let dialog = screen().getByRole("dialog", { name: "plano.md" });
+    expect(dialog.querySelector(".file-view__doc strong")?.textContent).toBe("passo");
+    expect(dialog.querySelector(".file-view__text")).toBeNull();
+    cleanup();
+    await renderApp(`/org/${ORG_ID}/drive?artifact=${ts.id}`, { api });
+    await settle(8);
+    dialog = screen().getByRole("dialog", { name: "soma.ts" });
+    expect(dialog.querySelector(".code-card .code-card__code")?.textContent).toBe("const total = 1;");
+    expect(dialog.querySelector(".file-view__text")).toBeNull();
   });
 
   test("a JSON file reads formatted in a code card, the text as written one press away", async () => {
@@ -257,8 +335,9 @@ test("a picture (an agent's screenshot): a big viewer, its details in the header
   // The title, its icon and details on the bar with the buttons, the size among the details.
   const bar = dialog.querySelector(".ac-details__bar") as HTMLElement;
   expect(bar.querySelector(".ac-details__title")?.textContent).toBe("tela.png");
+  // Each fact whole (no-break spaces inside one): a narrow head breaks the line between facts.
   expect(bar.querySelector(".ac-details__subtitle")?.textContent).toBe(
-    "Arquivo · Walter · sem canal · agora · 7 bytes",
+    "Arquivo · Walter · sem\u00a0canal · agora · 7\u00a0bytes",
   );
   expect(within(bar).getByRole("button", { name: "Baixar" })).toBeTruthy();
   expect(dialog.querySelector(".file-view__head, .file-summary")).toBeNull();
@@ -373,6 +452,121 @@ describe("Configurações → Dispositivos (self-host)", () => {
     );
     expect(within(dialog).getByRole("button", { name: "Outros sistemas" })).toBeTruthy();
     expect(dialog.textContent).not.toMatch(/instalado|installed/i);
+  });
+
+  const WINDOWS_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0";
+  const IPHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148";
+  /** Another computer's flow, on a browser on `ua`, with builds for Mac and Linux only (or `builds`). */
+  const computerFlow = async (ua: string, api = createFakeApi(seedState()), builds = ["darwin", "linux"]) => {
+    fakeMachinesOf.get(api)?.setRelease(
+      {
+        version: "0.6.0",
+        url: "/api/desktop/download/0.6.0/agentes_0.6.0_aarch64.dmg",
+        sha256: "",
+        publishedAt: "2026-11-10T12:00:00.000Z",
+      },
+      builds,
+    );
+    asBrowserOn(ua);
+    const app = await renderApp(`/org/${ORG_ID}/settings/devices`, { api });
+    await settle(8);
+    await click(screen().getByRole("button", { name: "Conectar um dispositivo" }));
+    await settle(4);
+    await click(
+      within(screen().getByRole("dialog", { name: "Conectar um dispositivo" })).getByText("Outro computador"),
+    );
+    await settle(4);
+    return Object.assign(screen().getByRole("dialog", { name: "Conectar outro computador" }), { app });
+  };
+  const menuItems = (menu: HTMLElement) =>
+    within(menu)
+      .getAllByRole("menuitem")
+      .map((i) => [i.textContent, i.hasAttribute("data-disabled")]);
+
+  test("download: a system with no build yet is offered disabled, marked Em breve, in the menu", async () => {
+    const dialog = await computerFlow(MAC_UA);
+    expect(within(dialog).getByRole("link", { name: "Baixar para macOS" })).toBeTruthy();
+    const menu = await openMenu(within(dialog).getByRole("button", { name: "Outros sistemas" }));
+    expect(menuItems(menu)).toEqual([
+      ["Baixar para WindowsEm breve", true],
+      ["Baixar para Linux", false],
+    ]);
+  });
+
+  test("download: on a system with no build yet, its button stays, disabled and marked Em breve", async () => {
+    const dialog = await computerFlow(WINDOWS_UA);
+    const mine = within(dialog).getByRole("button", { name: "Baixar para Windows" }) as HTMLButtonElement;
+    expect([mine.disabled, mine.nextElementSibling?.textContent]).toEqual([true, "Em breve"]);
+    const menu = await openMenu(within(dialog).getByRole("button", { name: "Outros sistemas" }));
+    expect(menuItems(menu)).toEqual([
+      ["Baixar para macOS", false],
+      ["Baixar para Linux", false],
+    ]);
+  });
+
+  test("download: while the builds are asked for, the button waits disabled and nothing says Em breve", async () => {
+    const api = createFakeApi(seedState());
+    api.machines.desktopLatest = () => new Promise(() => {});
+    const dialog = await computerFlow(WINDOWS_UA, api);
+    const mine = within(dialog).getByRole("button", { name: /^Baixar para Windows/ }) as HTMLButtonElement;
+    expect([mine.disabled, mine.getAttribute("aria-busy")]).toEqual([true, "true"]);
+    const menu = await openMenu(within(dialog).getByRole("button", { name: "Outros sistemas" }));
+    expect(menuItems(menu)).toEqual([
+      ["Baixar para macOS", true],
+      ["Baixar para Linux", true],
+    ]);
+    expect(screen().queryByText("Em breve")).toBeNull();
+  });
+
+  test("download: the longest words (Dutch) for the button, its mark and the menu, for the layout check", async () => {
+    const dialog = await computerFlow(WINDOWS_UA);
+    await showIn(dialog.app.services, "nl");
+    const mine = within(dialog).getByRole("button", { name: "Downloaden voor Windows" });
+    expect(mine.nextElementSibling?.textContent).toBe("Binnenkort");
+    const menu = await openMenu(within(dialog).getByRole("button", { name: "Andere systemen" }));
+    expect(menuItems(menu)).toEqual([
+      ["Downloaden voor macOS", false],
+      ["Downloaden voor Linux", false],
+    ]);
+  });
+
+  test("download: on a phone, the menu alone, Windows marked, in the longest words (Dutch) for the layout check", async () => {
+    const dialog = await computerFlow(IPHONE_UA);
+    await showIn(dialog.app.services, "nl");
+    expect(within(dialog).queryByRole("button", { name: /^Downloaden voor/ })).toBeNull();
+    const menu = await openMenu(within(dialog).getByRole("button", { name: "De app downloaden" }));
+    expect(menuItems(menu)).toEqual([
+      ["Downloaden voor macOS", false],
+      ["Downloaden voor WindowsBinnenkort", true],
+      ["Downloaden voor Linux", false],
+    ]);
+  });
+
+  test("download: an ARM build is offered once it has a release; Windows on ARM takes x64 until then", async () => {
+    // A Linux on ARM with its build out: its own button, and the others in the menu.
+    const linuxArm = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0";
+    const dialog = await computerFlow(linuxArm, createFakeApi(seedState()), ["darwin", "linux", "linux-arm64"]);
+    expect(within(dialog).getByRole("link", { name: "Baixar para Linux (ARM)" })).toBeTruthy();
+    const menu = await openMenu(within(dialog).getByRole("button", { name: "Outros sistemas" }));
+    // No Windows on ARM release yet: not listed; Windows itself says Em breve.
+    expect(menuItems(menu)).toEqual([
+      ["Baixar para macOS", false],
+      ["Baixar para WindowsEm breve", true],
+      ["Baixar para Linux", false],
+    ]);
+  });
+
+  test("download: a Windows on ARM (as its browser reports the chip) gets the x64 build while ARM64 has none", async () => {
+    Object.defineProperty(navigator, "userAgentData", {
+      configurable: true,
+      value: { getHighEntropyValues: async () => ({ architecture: "arm" }) },
+    });
+    try {
+      const dialog = await computerFlow(WINDOWS_UA, createFakeApi(seedState()), ["darwin", "windows"]);
+      expect(within(dialog).getByRole("link", { name: "Baixar para Windows" })).toBeTruthy();
+    } finally {
+      Reflect.deleteProperty(navigator, "userAgentData");
+    }
   });
 
   test("a row: its state and whose it is; it opens the computer's page", async () => {
@@ -562,9 +756,12 @@ describe("the computer page: pause, folders and tools (ADR 0036)", () => {
       socket.push(orgEvent({ type: "machine.updated", machineId: m.id, paused: { until, timezone: null } })),
     );
     await settle(2);
-    // "Pausado", "até 16:24" (past midnight the date comes first).
-    expect(head.querySelector(".dv-statusline")?.textContent).toContain("Pausado");
-    expect(head.querySelector(".dv-statusline")?.textContent).toContain(`até ${time}`);
+    // "Pausado", "até 16:24" (past midnight the date comes first: "até 10 nov 00:08").
+    const sameDay = new Date(until).toDateString() === new Date().toDateString();
+    const line = head.querySelector(".dv-statusline")?.textContent ?? "";
+    expect(head.querySelector(".dv-headchips")?.textContent).toContain("Pausado");
+    expect(line).toContain(sameDay ? `até ${time}` : "até ");
+    expect(line).toContain(time);
     expect(head.textContent).toContain("Pausado no próprio computador por quem o conectou.");
     // The server says "not paused" with null.
     await act(async () => socket.push(orgEvent({ type: "machine.updated", machineId: m.id, paused: null })));
@@ -672,19 +869,55 @@ describe("the computer page: pause, folders and tools (ADR 0036)", () => {
     );
   });
 
-  test("the browser off: whoever is at the computer turns it on in the app, or on Linux with the command", async () => {
+  test("the browser off on an app too old to switch from here: update it there, on Linux the command too", async () => {
     const card = () => document.querySelector('[aria-labelledby="sec-machine-browser"]') as HTMLElement;
     await open();
-    expect(card().textContent).toContain(
-      "Só quem está no computador liga, no app do agentes.chat: Preferências → Ferramentas.",
-    );
+    expect(card().textContent).toMatch(/Atualize o app do agentes\.chat no .+ para ligar daqui\./);
+    expect(card().textContent).not.toContain("Preferências");
     expect(card().querySelector(".machine-command__code")).toBeNull();
     cleanup();
     await open({ os: "linux", name: "Servidor", mode: "system" });
-    expect(card().textContent).toContain("Sem o app? No terminal do computador:");
+    expect(card().textContent).toContain("Prefiro no Terminal");
     expect(card().querySelector(".machine-command__code")?.textContent).toBe(
       "sudo agentes-runner tools enable browser",
     );
+  });
+
+  test("its owner turns the browser and a coding CLI on from here; someone else's computer offers to ask them", async () => {
+    const card = () => document.querySelector('[aria-labelledby="sec-machine-browser"]') as HTMLElement;
+    const allowCalls = (state: ReturnType<typeof seedState>) =>
+      state.calls.filter((c) => c.method === "machines.allowTool").map((c) => c.args);
+    const mine = await open({
+      pairedBy: { id: "u-walter", name: "Walter White" },
+      accessAllow: true,
+      access: { folders: [], tools: { claude: true, codex: false, commands: true, browser: false } },
+    });
+    await click(within(card()).getByRole("button", { name: "Ligar o navegador" }));
+    await settle(4);
+    expect(allowCalls(mine.state)).toEqual([[ORG_ID, mine.m.id, "browser"]]);
+    // An off coding CLI in the tools list gets its own Ligar.
+    const codex = document.querySelector('[data-tool="codex"]') as HTMLElement;
+    await click(within(codex).getByRole("button", { name: "Ligar Codex" }));
+    expect(allowCalls(mine.state).at(-1)).toEqual([ORG_ID, mine.m.id, "codex"]);
+    cleanup();
+    const theirs = await open({ pairedBy: { id: "u-rui", name: "Rui Tanaka" }, accessAllow: true });
+    expect(within(card()).queryByRole("button", { name: "Ligar o navegador" })).toBeNull();
+    await click(within(card()).getByRole("button", { name: "Pedir a Rui" }));
+    expect(theirs.state.calls.filter((c) => c.method === "machines.askTool").map((c) => c.args)).toEqual([
+      [ORG_ID, theirs.m.id, "browser"],
+    ]);
+    // Offline: the button waits for it, and one line says so.
+    cleanup();
+    await open({ pairedBy: { id: "u-walter", name: "Walter White" }, accessAllow: true, online: false });
+    expect(card().textContent).toContain("está offline. Assim que ele voltar, o botão liga o navegador.");
+    expect((within(card()).getByRole("button", { name: "Ligar o navegador" }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    // An app too old for it: update it there.
+    cleanup();
+    await open({ pairedBy: { id: "u-walter", name: "Walter White" }, accessAllow: false });
+    expect(within(card()).queryByRole("button", { name: "Ligar o navegador" })).toBeNull();
+    expect(card().textContent).toContain("para ligar daqui.");
   });
 
   test("to allow more: the app on a Mac or a PC, the computer's terminal on Linux", async () => {

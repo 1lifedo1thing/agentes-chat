@@ -104,11 +104,22 @@ const size = (r: ModelRequest) =>
  * (no assumption on what can't be undone), nothing offered or promised beyond the list and files on `send_dm`, 45,475
  * with `request_permission` down to one reason (`why`) and the task board on by default, 45,803 with `ask_user`'s
  * `person` and the rule that what is said in a DM stays there, 45,216 with the `ask_user` rule leaving to its
- * description what that says already, and 45,437 with each choice question's written answer (`ask_choices`, its
- * other words tightened for it); the ceiling leaves a little room. Where each workspace gets its own computer,
- * `workspaceComputerText` adds its 441 to that.
+ * description what that says already, 45,437 with each choice question's written answer (`ask_choices`, its
+ * other words tightened for it), 45,482 with feedback named in the rarer tools' label (ADR 0160 §11), about 46,450
+ * with an approval asked by the action itself, a question answered directly, numbers computed with code, a chart for
+ * compared numbers, earlier messages linked, mentions only to ask, an ok answered by a reaction alone and a question
+ * card's question never written twice (ADR 0089 addendum 2026-11-10), and about 46,770 with team memory (`remember`'s
+ * `for: "team"`) and a result claimed only when a call made it (ADR 0167), and about 46,970 with an agent asking for
+ * its own settings on its card (`request_settings_change` named, its definition on demand: up front it would add 3,800,
+ * ADR 0137), and 47,631 with recall reading the asker's own DM with the agent from anywhere they ask, an empty search
+ * never told as "the first time", and the DM rule saying what may be said of it elsewhere. Where each workspace gets its
+ * own computer, `workspaceComputerText` adds 447 to that (48,078); and a sign-in whose link or
+ * code goes to a mailbox the agent reads being its own work adds 360; the live files' group (ADR 0196 §6) named with
+ * the others, in the prompt and in `find_tools`, adds about 170 (48,834 on the Cloud), and `ignore_usage_limit`, for a person telling the agent to go past
+ * its usage pause, adds 356 (49,190), and `say_now`, one short line before slow work (ADR 0207), its definition and
+ * its line in "# How you work" add about 765 (about 49,955); the ceiling leaves a little room above them.
  */
-const OI_CEILING_CHARS = 45_900;
+const OI_CEILING_CHARS = 50_200;
 
 test("a DM 'oi' stays under the size ceiling", async () => {
   const [request] = await play(TURNS.find((t) => t.id === "greet-dm") as ScriptedTurn);

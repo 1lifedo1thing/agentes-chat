@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { waitingCardOf } from "@agenteschat/client/lib/notifications";
-import { usageLimitLine } from "@agenteschat/client/lib/person-usage";
+import { personAmount, usageLimitLine } from "@agenteschat/client/lib/person-usage";
 import { notificationHref } from "../../src/features/links/logic";
-import { peopleMonthLine, personAmount } from "../../src/features/usage/logic";
+import { peopleMonthLine } from "../../src/features/usage/logic";
 import { notification, translator } from "./fixtures";
 
 // The words as keys with their values, so the line's pieces show without the strings loaded.
@@ -68,5 +70,36 @@ describe("Uso por pessoa's amounts on plans (#24)", () => {
       "Novembro · 2 pessoas · US$ 12,51 de IA",
     );
     expect(plain(personAmount(pt, "pt-BR", false, 3.1))).toBe("US$ 3,10");
+  });
+
+  test("with plans and API keys in one month, each person's amount is marked by their own use, the ⓘ by anyone's", () => {
+    const list = readFileSync(join(import.meta.dir, "../../src/features/usage/people.tsx"), "utf8");
+    expect(list).toContain("personAmount(t, i18n.language, p.estimated, p.monthUsd)");
+    expect(list).toContain("data.people.some((p) => p.estimated) ? (");
+    expect(list).not.toContain("data.plansOnly");
+  });
+});
+
+describe("an account's use by kind on the phone (the web's KindShares)", () => {
+  // The account's agents and its kinds are on its own pushed screen, opened from its row on Uso.
+  const screen = readFileSync(join(import.meta.dir, "../../src/features/usage/UsageAccountScreen.tsx"), "utf8");
+
+  test("the kind rows sit under the agents, inside Detalhes, from the shared order and whole cells", () => {
+    const detail = screen.slice(screen.indexOf("function Detail("), screen.indexOf("function HandoffNudge("));
+    expect(detail.indexOf('<GroupedHeader>{t("usage.kinds.label")}</GroupedHeader>')).toBeGreaterThan(
+      detail.indexOf('<GroupedHeader>{t("shell.agents")}</GroupedHeader>'),
+    );
+    expect(detail.indexOf('<GroupedHeader>{t("shell.agents")}</GroupedHeader>')).toBeGreaterThan(
+      detail.indexOf("{details ? ("),
+    );
+    expect(screen).toContain("accountKinds(account)");
+    expect(screen).toContain("shareCells(t, i18n.language, window, { share: k.percent, tokens: k.tokens })");
+  });
+
+  test("near the limit only, the hint says why and its row opens the DM with that agent, ready to type", () => {
+    expect(screen).toContain("{near ? <HandoffNudge account={account} /> : null}");
+    expect(screen).toContain('<GroupedFooter>{t("usage.hint.handoffs")}</GroupedFooter>');
+    expect(screen).toContain("openDm({ agentId: target.id }, { compose: true })");
+    expect(screen).toContain('t("usage.hint.message", { name: target.name })');
   });
 });

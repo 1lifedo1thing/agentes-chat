@@ -1,7 +1,10 @@
 import type { TFunction } from "i18next";
 import type { Connection, ConnectOutcome, ConnectorDef, CustomServer } from "../api/types";
 import { exposedTools, sameServer, toolsToReview } from "./custom-tools";
+import { isolate } from "./format";
+import { type Owned, ownerScopeOf, ownerSplit, ownerTabOf } from "./owner-split";
 import { connectorName } from "./scopes";
+import { reviewToolsOf } from "./tool-review";
 
 /** A one-color mark the web app serves, drawn in its brand color. Only a file of ours by name, never any URL. */
 export const CONNECTOR_MARK = /^\/connectors\/[a-z0-9-]+\.svg$/;
@@ -49,6 +52,10 @@ export interface ConnectedItem {
   /** Never reviewed, or new tools to review. */
   needsReview: boolean;
   server: CustomServer | null;
+  /** A personal connection's person; null: the team's (older servers say nothing: the team's). */
+  ownerUserId: string | null;
+  /** Someone else's personal connection: the agents that hold it (the only detail its row may show). */
+  agentIds: string[];
 }
 
 const host = (url: string) => {
@@ -82,6 +89,8 @@ export function fromConnection(c: Connection, catalog: ConnectorDef[]): Connecte
     pending: 0,
     needsReview: false,
     server: null,
+    ownerUserId: c.ownerUserId ?? null,
+    agentIds: c.agentIds ?? [],
   };
 }
 
@@ -104,6 +113,8 @@ export function fromServer(s: CustomServer, catalog: ConnectorDef[]): ConnectedI
     pending,
     needsReview: !s.reviewedAt || pending > 0,
     server: s,
+    ownerUserId: s.ownerUserId ?? null,
+    agentIds: s.agentIds ?? [],
   };
 }
 
@@ -185,6 +196,28 @@ export function outcomeText(t: TFunction, outcome: ConnectOutcome, item: Connect
     : t("connectors.outcome.already", { name });
 }
 
+/**
+ * How many of a connection's actions ask in the chat at the levels it has: a server's tools at "pede aprovação" (the
+ * decision, else our suggestion, which is what applying them saves), a catalog connector's sensitive ones.
+ */
+export function asksCount(t: TFunction, item: Pick<ConnectedItem, "server" | "def">) {
+  return item.server
+    ? reviewToolsOf(t, item.server).filter((x) => x.level === "approval").length
+    : (item.def?.tools ?? []).filter((x) => x.sensitive).length;
+}
+
+/**
+ * What a connection just made is, in a sentence or two: every agent has it and how many actions ask ("Todos os
+ * agentes podem usar. 4 ações pedem aprovação no chat."). A server whose tools no one gave a level yet says
+ * that instead: agents get none of them until someone does (`pending`). Nothing asking adds no second sentence.
+ */
+export function connectedSummary(t: TFunction, item: Pick<ConnectedItem, "server" | "def" | "pending">) {
+  const lead =
+    item.pending > 0 ? t("connectFlow.done.waiting", { count: item.pending }) : t("connectFlow.done.everyone");
+  const asks = asksCount(t, item);
+  return asks > 0 ? t("common.joinSentences", { a: lead, b: t("connectFlow.done.asks", { count: asks }) }) : lead;
+}
+
 /** What changed in the GitHub organizations we reach since `before`, in a sentence; it says so when nothing did. */
 export function orgAccessChange(t: TFunction, before: readonly string[], now: readonly string[]) {
   const added = now.filter((o) => !before.includes(o));
@@ -206,3 +239,88 @@ export function orgAccessChange(t: TFunction, before: readonly string[], now: re
 export function accountUnchecked(accounts: readonly (Pick<CustomServer, "accountLabel"> | null | undefined)[]) {
   return !accounts.some((a) => a?.accountLabel);
 }
+
+/**
+ * Connectors that connect for the team only: GitHub's git proxy, repository lists and webhooks read the workspace's
+ * one GitHub connection (mirror of `requireConnect` in the engine).
+ */
+export const TEAM_ONLY_CONNECTORS: ReadonlySet<string> = new Set(["github"]);
+
+/** Whether "Para quem: Pessoal" is offered for a catalog entry (any server by address may be personal). */
+export const personalAllowed = (connectorId: string | null | undefined) =>
+  !connectorId || !TEAM_ONLY_CONNECTORS.has(connectorId);
+
+/**
+ * What a viewer may do with a connection's row (mirror of `mayConnection` in the engine). Their own: everything, and
+ * moving it to the team when they manage connectors. Someone else's personal one: who manages connectors removes it
+ * or takes it off an agent, never opens it. The team's: every member sees it, who manages connectors changes it.
+ */
+export function connectionActs(item: Owned & { viaComposio?: boolean }, userId: string, managesConnectors: boolean) {
+  const scope = ownerScopeOf(item, userId);
+  const mine = scope === "mine";
+  const team = scope === "team";
+  return {
+    /** See its details (tools, account, address) and open its sheet. */
+    open: scope !== "others",
+    rename: mine || (team && managesConnectors),
+    /** Reconnect, classify its tools, set its headers. */
+    change: mine || (team && managesConnectors),
+    remove: mine || managesConnectors,
+    /** Turn it on for an agent. */
+    giveToAgents: mine || (team && managesConnectors),
+    /** "Tirar de um agente". */
+    takeOffAgent: mine || managesConnectors,
+    /** A one-click account lives under its person's own id at the hosted adapter: it connects again for the team. */
+    moveToTeam: mine && managesConnectors && !item.viaComposio,
+  };
+}
+
+export type ConnectionTab = "team" | "personal";
+
+/**
+ * Conectores split as the Vault's (ADR 0099 addendum), on the web and the phone: "Equipe | Pessoal" where the
+ * workspace has more than one person or someone has a personal connection. A mailbox is always its person's, so in a
+ * workspace of one it never splits the list: it stays in the one list. It opens as Skills does
+ * (`ownerTabOf`). Each tab's connections and mailboxes, and other people's
+ * personal ones (who manages connectors gets those from the server) for the group under Equipe. `databases`: the
+ * team's databases the list shows on Equipe, counted there.
+ */
+export function connectionTabs<I extends Owned, M extends Owned>(input: {
+  items: readonly I[];
+  mailboxes: readonly M[];
+  me: string;
+  members: number;
+  manages: boolean;
+  picked: ConnectionTab | null;
+  databases?: number;
+}) {
+  const byOwner = ownerSplit(input.items, input.me);
+  const mail = ownerSplit(input.mailboxes, input.me);
+  const shown = input.members > 1 || input.items.some((i) => i.ownerUserId);
+  const team = byOwner.team.length + mail.team.length + (input.databases ?? 0);
+  const mine = byOwner.mine.length + mail.mine.length;
+  const tab: ConnectionTab = ownerTabOf(shown, input.picked, input.manages, { team, mine });
+  const personal = tab === "personal";
+  return {
+    shown,
+    tab,
+    team,
+    mine,
+    items: personal ? byOwner.mine : byOwner.team,
+    mailboxes: !shown ? [...mail.team, ...mail.mine] : personal ? mail.mine : mail.team,
+    others: input.manages && !personal ? byOwner.others : [],
+    othersMail: input.manages && !personal ? mail.others : [],
+  };
+}
+
+/** "Pessoal de <name>": whose someone else's connection or mailbox is, the name kept in its own direction. */
+export const personalOfText = (t: TFunction, name: string) => t("connectors.personal.of", { name: isolate(name) });
+
+/**
+ * "Pessoal de <name>" as the words before and after the name, in the language's order, so a screen can cut the name
+ * alone in its own direction (a right-to-left name keeps its start).
+ */
+export const personalOfParts = (t: TFunction) => {
+  const [before = "", after = ""] = t("connectors.personal.of", { name: "\u0000" }).split("\u0000");
+  return { before, after };
+};

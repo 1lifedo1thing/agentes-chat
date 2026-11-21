@@ -28,6 +28,7 @@ import { allItems, waitingCardOf, widgetNoticeOf } from "@agenteschat/client/lib
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import { dayPart } from "@agenteschat/client/lib/welcome";
 import { WORKING_POLL_MS, type WorkItem, workByAgent, workingNow } from "@agenteschat/client/lib/working";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { Composer, EmptyState, GroupHeading, Icon, PageHeader, Select } from "@agenteschat/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, type RefObject, useRef, useState } from "react";
@@ -82,7 +83,8 @@ export function HomePage() {
   const working = workByAgent(
     workingNow(runs.data, active.data?.missions).filter((w) => !w.waiting && listed(w.agentId)),
   );
-  const upcoming = upcomingRoutines(routines.data ?? [], now);
+  // Being deleted, its routines' slots pass: none is ahead (the server says so too, once the list is read again).
+  const upcoming = org.deletion ? [] : upcomingRoutines(routines.data ?? [], now);
   const waitingCount = waiting.length + failures.length + missions.length + mentions.length;
 
   // Who I may ask, the one I talked to last first.
@@ -93,14 +95,14 @@ export function HomePage() {
 
   // The right hand's first-run checklist (ADR 0155 §6), while a row is left: one line back to it, never a second list.
   const lodi = dir.agents.find(isRightHand);
-  const firstRun = useFirstRun(lodi, null);
+  const firstRun = useFirstRun(lodi);
   const showSteps = firstRun.ready && firstRun.state === "open";
   const loaded = waitingList.isSuccess && inbox.isSuccess && missionList.isSuccess && !runs.isLoading;
   const calm = loaded && !showSteps && waitingCount === 0 && working.length === 0 && done.length === 0;
 
   const summary =
     waitingCount === 0 && working.length === 0
-      ? t(showSteps ? "home.summary.new" : "home.summary.calm")
+      ? t(showSteps ? modeKey(org, "home.summary.new") : "home.summary.calm")
       : [
           waitingCount > 0 ? t("home.summary.waiting", { count: waitingCount }) : "",
           working.length > 0 ? t("sky.working", { count: working.length }) : "",
@@ -137,7 +139,8 @@ export function HomePage() {
         </Link>
       )}
 
-      {askable.length > 0 && <AskAgent agents={askable} composer={composer} />}
+      {/* Being deleted, the workspace takes no message: the line on top says why. */}
+      {askable.length > 0 && !org.deletion && <AskAgent agents={askable} composer={composer} />}
 
       <HomeMural
         orgId={org.id}
@@ -510,12 +513,17 @@ function MissionRow({ m, dir }: { m: Mission; dir: Dir }) {
   );
 }
 
-/** An agent at work: its line (ADR 0084), else what it is on, where and since when. It opens the conversation. */
+/**
+ * An agent at work: whom it helps (work another agent handed it, listed where it was handed off), else its line (ADR
+ * 0084), else what it is on, where and since when. It opens the conversation, at the reply that handed it off.
+ */
 function WorkRow({ w, dir, now }: { w: WorkItem; dir: Dir; now: number }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const agent = dir.agentById.get(w.agentId);
   const shown = useAgentPresence(w.agentId);
+  const forName = w.forAgentId ? dir.anyAgent(w.forAgentId)?.name : undefined;
+  const helping = forName ? t("chat.consultPanel.helping", agentGrammar(forName)) : null;
   const line = agentLine(t, shown?.line ?? null, i18n.language);
   const name = agent?.name ?? t("channel.unknownAgent");
   const where =
@@ -531,7 +539,7 @@ function WorkRow({ w, dir, now }: { w: WorkItem; dir: Dir; now: number }) {
     <RowBody
       face={<AgentAvatar agentId={w.agentId} name={name} channelId={w.channelId} />}
       title={<b>{name}</b>}
-      sub={line ? [line.emoji, line.text].filter(Boolean).join(" ") : w.what}
+      sub={helping ?? (line ? [line.emoji, line.text].filter(Boolean).join(" ") : w.what)}
       meta={meta}
     />
   );
@@ -542,14 +550,16 @@ function WorkRow({ w, dir, now }: { w: WorkItem; dir: Dir; now: number }) {
           className="home-row ac-mediarow ac-mediarow--row"
           to="/org/$orgId/threads/$threadId"
           params={{ orgId: org.id, threadId: w.threadId }}
+          search={w.messageId ? { m: w.messageId } : {}}
         >
           {body}
         </Link>
       ) : w.where.kind === "dm" ? (
+        // A DM with the agent it works for, when it was handed the work there.
         <Link
           className="home-row ac-mediarow ac-mediarow--row"
           to="/org/$orgId/dm/agent/$agentId"
-          params={{ orgId: org.id, agentId: w.agentId }}
+          params={{ orgId: org.id, agentId: w.forAgentId ?? w.agentId }}
         >
           {body}
         </Link>
@@ -558,6 +568,7 @@ function WorkRow({ w, dir, now }: { w: WorkItem; dir: Dir; now: number }) {
           className="home-row ac-mediarow ac-mediarow--row"
           to="/org/$orgId/c/$channelId"
           params={{ orgId: org.id, channelId: w.channelId }}
+          search={w.messageId ? { m: w.messageId } : {}}
         >
           {body}
         </Link>

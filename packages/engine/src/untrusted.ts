@@ -1,5 +1,5 @@
 import { cleanOutside, replaceDisguised } from "@agenteschat/adapters";
-import { cutText } from "./format";
+import { cutMarked, cutText } from "./format";
 
 export { cleanOutside };
 
@@ -11,8 +11,12 @@ export { cleanOutside };
  * and long text is cut with a note. Every place that hands outside text to a model uses this.
  */
 
-/** Markers of every envelope the engine writes, old and current: none may appear inside a block. */
-const MARKERS = /<\s*\/?\s*(?:external_data|email_content|database_rows|untrusted_data|page_content|thread)\b[^>]*>/gi;
+/**
+ * Markers of every envelope the engine writes, old and current: none may appear inside a block. Spaces after the
+ * slash are only looked for after a slash: `\s*\/?\s*` splits a long run of spaces every way before it fails.
+ */
+const MARKERS =
+  /<\s*(?:\/\s*)?(?:external_data|email_content|database_rows|untrusted_data|page_content|thread)\b[^>]*>/gi;
 
 /** Said once when outside text carried characters that hide or reorder it (bidi overrides, tag characters). */
 export const HIDDEN_CHARS_NOTE = "[hidden characters removed]";
@@ -45,3 +49,17 @@ export function untrustedBlock(source: string, text: string, maxChars = UNTRUSTE
     clean.length > maxChars ? `${cutText(clean, maxChars)}\n[… ${clean.length - maxChars} more characters cut]` : clean;
   return `<external_data source="${sourceLabel(source)}">\n${body}\n</external_data>`;
 }
+
+/**
+ * Another agent's words quoted on one line of a prompt, neutralised, cut to `max` with a mark, and with their own
+ * quotes escaped so they cannot close the quote: read as data, never as a block.
+ */
+export const quotedUntrusted = (text: string, max: number) =>
+  JSON.stringify(
+    cutMarked(
+      neutralizeUntrusted(text)
+        .replace(/[\s\u0085]+/g, " ")
+        .trim(),
+      max,
+    ),
+  );

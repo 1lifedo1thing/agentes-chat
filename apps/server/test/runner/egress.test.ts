@@ -84,13 +84,25 @@ test("system probe ignores user curl settings and inherited proxy or loader vari
   const user = { id: "agent1", user: "ag-a1b2c3d4", uid: 21000 };
   expect(await probeEgress("https://example.test", user, fetch, run, false)).toEqual({ ip: "8.8.8.8" });
   expect(captured?.options.env?.AGENTES_NETWORK_OBSERVATION).toBe("1");
-  expect(captured?.file).toBe("/usr/sbin/runuser");
-  expect(captured?.args.slice(0, 7)).toEqual(["-u", user.user, "--", "/usr/bin/curl", "-q", "--noproxy", "*"]);
+  expect(captured?.file).toBe("/usr/bin/setpriv");
+  expect(captured?.args.slice(0, 8)).toEqual([
+    "--reuid=ag-a1b2c3d4",
+    "--regid=ag-a1b2c3d4",
+    "--init-groups",
+    "--",
+    "/usr/bin/curl",
+    "-q",
+    "--noproxy",
+    "*",
+  ]);
   await probeEgress("https://example.test", user, fetch, run, true);
   expect(captured?.file).toBe("/usr/bin/systemd-run");
   expect(captured?.args).toContain("--slice=agents-21000.slice");
   expect(captured?.args).toContain("/usr/bin/curl");
-  expect(Object.keys(captured?.options.env ?? {}).sort()).toEqual([
+  // A host with rootless Podman adds the agent's containers service (CONTAINER_HOST, DOCKER_HOST, XDG_RUNTIME_DIR).
+  const containers = new Set(["CONTAINER_HOST", "DOCKER_HOST", "XDG_RUNTIME_DIR"]);
+  const keys = Object.keys(captured?.options.env ?? {}).filter((k) => !containers.has(k));
+  expect(keys.sort()).toEqual([
     "AGENTES_NETWORK_OBSERVATION",
     "AGENTES_SHARED_BIN",
     "ANDROID_ADB_SERVER_PORT",

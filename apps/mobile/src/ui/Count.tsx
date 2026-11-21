@@ -1,4 +1,6 @@
+import { formatInt } from "@agenteschat/client/lib/format";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
@@ -29,11 +31,14 @@ const ROLL = 6;
 /**
  * Every counter in the app: the system font, semibold, tabular figures (badges, section counts). Doto only
  * for the rare hero number (`hero`). When the number changes it rolls: the old figures leave upward and the new ones
- * arrive from below on the press spring, so a change reads as a change (still with reduced motion, and on mount).
+ * arrive from below on a spring, so a change reads as a change (never with reduced motion, nor on mount).
  */
 export function Count({ value, size = 14, inverted = false, color, fill, max, hero = false, weight }: CountProps) {
   const { colors, fonts, motion, reducedMotion } = useTheme();
-  const label = max !== undefined && value > max ? `${max}+` : String(value);
+  const { i18n } = useTranslation();
+  // In the person's language ("1.284" in Portuguese).
+  const label =
+    max !== undefined && value > max ? `${formatInt(i18n.language, max)}+` : formatInt(i18n.language, value);
   const [shown, setShown] = useState(label);
   // -1: the old figures gone upward; 1: the new ones below, about to arrive; 0: at rest.
   const k = useSharedValue(0);
@@ -41,8 +46,8 @@ export function Count({ value, size = 14, inverted = false, color, fill, max, he
   next.current = label;
   const arrive = () => {
     setShown(next.current);
-    k.value = 1;
-    k.value = withSpring(0, motion.press);
+    k.set(1);
+    k.set(withSpring(0, motion.snap));
   };
   // biome-ignore lint/correctness/useExhaustiveDependencies: only a new label starts a roll
   useEffect(() => {
@@ -51,13 +56,15 @@ export function Count({ value, size = 14, inverted = false, color, fill, max, he
       setShown(label);
       return;
     }
-    k.value = withTiming(-1, { duration: 110 }, (done) => {
-      if (done) scheduleOnRN(arrive);
-    });
+    k.set(
+      withTiming(-1, { duration: 110 }, (done) => {
+        if (done) scheduleOnRN(arrive);
+      }),
+    );
   }, [label, reducedMotion]);
   const roll = useAnimatedStyle(() => ({
-    opacity: 1 - Math.min(1, Math.abs(k.value)),
-    transform: [{ translateY: k.value * ROLL }],
+    opacity: 1 - Math.min(1, Math.abs(k.get())),
+    transform: [{ translateY: k.get() * ROLL }],
   }));
   const face = hero
     ? { fontFamily: fonts.dot, fontSize: size, lineHeight: Math.round(size * 1.2) }

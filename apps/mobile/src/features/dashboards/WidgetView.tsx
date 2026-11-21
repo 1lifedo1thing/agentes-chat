@@ -9,7 +9,9 @@ import type {
   WidgetSchedule,
   WidgetSpec,
   WidgetStatus,
+  WidgetWait,
 } from "@agenteschat/client";
+import { widgetCardStatus } from "@agenteschat/client";
 import type { ChartSpec } from "@agenteschat/client/lib/chart";
 import type { AgentColorName } from "@agenteschat/ui/agent/engine";
 import {
@@ -22,23 +24,28 @@ import {
   smoothPath,
 } from "@agenteschat/ui/sky/chart";
 import { Canvas, Path, Rect, Skia } from "@shopify/react-native-skia";
-import { type ComponentRef, memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ComponentRef, memo, type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, StyleSheet, View } from "react-native";
-import Animated, {
-  cancelAnimation,
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from "react-native-reanimated";
-import { CardHorizon, CHROME_MAX_SCALE, Icon, PixelOrbit, PressScale, Text, useReducedMotion, useTheme } from "@/ui";
+import Animated, { Easing, useAnimatedStyle } from "react-native-reanimated";
+import { useLivePaused } from "@/agent/live";
+import { useDrawingClock } from "@/sky/clock";
+import {
+  CardHorizon,
+  CHROME_MAX_SCALE,
+  Icon,
+  LineIcon,
+  PixelOrbit,
+  PressScale,
+  Text,
+  useReducedMotion,
+  useTheme,
+} from "@/ui";
 import { Line } from "../chat/ChartCard";
 import { AgentFace } from "../shared/Face";
 import { useSurface } from "../shared/parts";
 import { DitherShape } from "./Dither";
-import { useAgentLook, useWidgetWords } from "./hooks";
+import { useAgentLook, useWidgetAiWay, useWidgetWords } from "./hooks";
 import {
   barValueText,
   barWords,
@@ -67,6 +74,9 @@ import {
 /** The card's padding: the edge-to-edge chart cancels it. */
 const PAD_X = 18;
 const PAD_Y = 16;
+/** The build's band crosses the field once in this long, easing in and out. */
+const SWEEP_MS = 1400;
+const SWEEP_EASE = Easing.inOut(Easing.quad);
 
 function useWidth(): [number, (e: LayoutChangeEvent) => void] {
   const [width, setWidth] = useState(0);
@@ -94,6 +104,7 @@ export const WidgetBody = memo(function WidgetBody({
   spec,
   status,
   agentId,
+  needsAi = false,
   big = false,
   bleed = false,
   compact = false,
@@ -102,6 +113,8 @@ export const WidgetBody = memo(function WidgetBody({
   spec: WidgetSpec | null;
   status: WidgetStatus;
   agentId: string;
+  /** Its agent has no AI to build it with (`widgetNeedsAi`): with no data yet, the line says it builds once one is there. */
+  needsAi?: boolean;
   /** The widget's own screen and the previews: bigger numbers and charts. */
   big?: boolean;
   /** The card draws the trend (or the bare line) along its bottom (`bleedSeries`): not here. */
@@ -114,6 +127,12 @@ export const WidgetBody = memo(function WidgetBody({
   const { t } = useTranslation();
   const look = useAgentLook(agentId);
   if (!spec) {
+    if (needsAi)
+      return (
+        <Text variant="footnote" tone="muted">
+          {t("widgets.needsAi.body", { name: look.name })}
+        </Text>
+      );
     if (status === "failed")
       return (
         <Text variant="footnote" tone="faint">
@@ -193,15 +212,24 @@ function Kpi({
   );
   return (
     <View>
-      <Text
-        variant="display"
-        numberOfLines={1}
-        style={[styles.num, big ? styles.numBig : compact ? styles.numCompact : null, { color: c.ink }]}
-      >
-        {spec.prefix ? <Text style={[styles.affix, { color: c.muted }]}>{`${spec.prefix} `}</Text> : null}
-        {formatWidgetNumber(spec.value, i18n.language)}
-        {spec.suffix ? <Text style={[styles.affix, { color: c.muted }]}>{` ${spec.suffix}`}</Text> : null}
-      </Text>
+      {/* What comes before the number ("US$") is a text of its own on the number's baseline: as the first, smaller
+          part of the number's text, Android set the line's height by it and cut the top off the digits. */}
+      <View style={styles.figure}>
+        {spec.prefix ? <Text style={[styles.affix, { color: c.muted }]}>{spec.prefix}</Text> : null}
+        <Text
+          variant="display"
+          numberOfLines={1}
+          style={[
+            styles.num,
+            big ? styles.numBig : compact ? styles.numCompact : null,
+            styles.shrink,
+            { color: c.ink },
+          ]}
+        >
+          {formatWidgetNumber(spec.value, i18n.language)}
+          {spec.suffix ? <Text style={[styles.affix, { color: c.muted }]}>{` ${spec.suffix}`}</Text> : null}
+        </Text>
+      </View>
       {spec.delta || spec.note ? (
         <Text variant="footnote" tone="ink2" numberOfLines={compact ? 1 : 2}>
           {/* On the strip the change is a quiet word (one accent per screen: the waiting strip's); on a board, its color. */}
@@ -547,25 +575,35 @@ function Summary({ spec, color, compact = false }: { spec: TextWidgetSpec; color
 
 /**
  * The first build: a field of the agent's dither with a denser band sweeping across it (still with reduced
- * motion), and what is happening under it.
+ * motion, or while its run waits: `still`), and what is happening under it.
  */
-export function BuildingSweep({ color, text, height = 56 }: { color: AgentColorName; text: string; height?: number }) {
+export function BuildingSweep({
+  color,
+  text,
+  height = 56,
+  still = false,
+}: {
+  color: AgentColorName;
+  text: string;
+  height?: number;
+  still?: boolean;
+}) {
   const { scheme } = useTheme();
-  const reduced = useReducedMotion();
+  const reduced = useReducedMotion() || still;
   const tones = widgetTones(color, scheme === "dark");
   const [width, onLayout] = useWidth();
   const band = Math.max(24, Math.round(width * 0.4));
-  const at = useSharedValue(0);
-  useEffect(() => {
-    if (reduced || width === 0) return;
-    at.value = 0;
-    at.value = withRepeat(withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.quad) }), -1, false);
-    return () => cancelAnimation(at);
-  }, [reduced, width, at]);
-  const sweep = useAnimatedStyle(() => ({ transform: [{ translateX: -band + at.value * (width + band) }] }));
+  // Off screen (a tab not shown, a screen pushed over the home) its time stops where it was, and it carries on from
+  // there when it shows again: each pass is the eased crossing of `SWEEP_MS` on that time.
+  const paused = useLivePaused();
+  const clock = useDrawingClock(!reduced && !paused && width > 0);
+  const sweep = useAnimatedStyle(() => {
+    const at = SWEEP_EASE((clock.get() % SWEEP_MS) / SWEEP_MS);
+    return { transform: [{ translateX: -band + at * (width + band) }] };
+  });
   const box = roundRectPath(0, 0, width, height, 6);
   return (
-    <View style={styles.building} accessibilityRole="progressbar" accessibilityLabel={text}>
+    <View style={styles.building} accessibilityRole={still ? "text" : "progressbar"} accessibilityLabel={text}>
       <View onLayout={onLayout} style={[styles.field, { height }]}>
         {width > 0 ? (
           <>
@@ -609,6 +647,10 @@ export interface WidgetCardData {
   w: 1 | 2;
   /** Its height on the board: 2 (L) stands taller on the phone. */
   h?: 1 | 2;
+  /** Its agent has no AI to build it with (`widgetNeedsAi`): it says so, and builds once one is connected. */
+  needsAi?: boolean;
+  /** What its refresh waits on: said in place of its sweep or "updating…". */
+  wait?: WidgetWait | null;
 }
 
 /** The card's soft surface (no border, no shadow): its background, by theme. */
@@ -660,10 +702,20 @@ export function WidgetCard({
   // The home's strip: the app's card (lit top, cut corner), as every card that stands on the page.
   const surface = compact ? [card, styles.compact] : soft;
   const look = useAgentLook(w.agentId);
+  const words = useWidgetWords();
   // A 2-high (L) widget on a board draws its data big, as on its own screen.
   const large = big || isTall(w.h ?? 1);
   const title = shownWidgetTitle(w.title, w.kind, (key) => t(key));
-  const drawn = body === undefined && (w.status === "ok" || w.status === "updating" || w.status === "failed");
+  // A refresh that waits stands still and says what for: its data as it was, or (with none yet) under a still sweep.
+  const status = widgetCardStatus({ status: w.status, wait: w.wait ?? null }, words.now);
+  const waits = status !== w.status;
+  const shownBody =
+    body !== undefined ? (
+      body
+    ) : waits && !w.spec ? (
+      <BuildingSweep still color={look.color} text={words.wait(w)} />
+    ) : undefined;
+  const drawn = shownBody === undefined && (status === "ok" || status === "updating" || status === "failed");
   const bleed = drawn ? bleedSeries(w.spec, large) : null;
   const bleedHeight = compact ? 34 : w.spec?.kind === "line" ? (large ? 120 : 76) : large ? 72 : 48;
   const foot = footer !== undefined ? footer : compact ? null : <WidgetFoot widget={w} />;
@@ -711,9 +763,10 @@ export function WidgetCard({
           <Text variant="caption" tone="muted" numberOfLines={large ? 2 : 1} style={[styles.title, styles.grow]}>
             {title}
           </Text>
-          {/* The strip has no footer: updating is its orbit, a failure its mark, on the title line. */}
-          {compact && w.status === "updating" ? <PixelOrbit color={look.color} size={16} /> : null}
-          {compact && w.status === "failed" ? <Icon name="info" size={13} color={c.warn} /> : null}
+          {/* The strip has no footer: updating is its orbit, a wait or a failure its mark, on the title line. */}
+          {compact && status === "updating" ? <PixelOrbit color={look.color} size={16} /> : null}
+          {compact && waits ? <Icon name="pause" size={13} color={c.muted} /> : null}
+          {compact && status === "failed" ? <Icon name={w.needsAi ? "bolt" : "info"} size={13} color={c.warn} /> : null}
         </View>
       ) : (
         head
@@ -723,23 +776,24 @@ export function WidgetCard({
         style={compact ? [styles.bodyCompact, w.spec?.kind === "bars" && styles.toEdge] : styles.body}
         onLayout={horizon ? (e) => setBodyTop(e.nativeEvent.layout.y) : undefined}
       >
-        {body === undefined ? (
+        {shownBody === undefined ? (
           <WidgetBody
             spec={w.spec}
-            status={w.status}
+            status={status}
             agentId={w.agentId}
+            needsAi={w.needsAi}
             big={large}
             bleed={Boolean(bleed)}
             compact={compact}
             {...(horizon ? { onLayout: (e: LayoutChangeEvent) => setDataHeight(e.nativeEvent.layout.height) } : {})}
           />
         ) : (
-          body
+          shownBody
         )}
       </View>
       {foot}
       {bleed ? (
-        <View style={[styles.bleedBox, w.status === "ok" || compact ? null : styles.dim]}>
+        <View style={[styles.bleedBox, status === "ok" || compact ? null : styles.dim]}>
           <BleedLine values={bleed} color={look.color} height={bleedHeight} />
         </View>
       ) : null}
@@ -761,13 +815,33 @@ export function WidgetCard({
   );
 }
 
-/** "12 min ago · every hour" (how often only when there's room), "Theo updating…", or "Didn't update · Resolve". */
+/** "Needs an AI · Connect", Connect only for whoever may connect it (`useWidgetAiWay`): its screen has both. */
+function NeedsAiFootWords({ agentId }: { agentId: string }) {
+  const { t } = useTranslation();
+  const way = useWidgetAiWay(agentId);
+  return way && "connect" in way ? `${t("widgets.needsAi.short")} · ${t("noAi.action")}` : t("widgets.needsAi.short");
+}
+
+/**
+ * "12 min ago · every hour" (how often only when there's room), "Theo updating…", what its refresh waits for,
+ * "Didn't update · Resolve", or "Needs an AI · Connect" (`NeedsAiFootWords`).
+ */
 function WidgetFoot({ widget: w }: { widget: WidgetCardData }) {
   const { t } = useTranslation();
   const { colors: c } = useTheme();
   const look = useAgentLook(w.agentId);
   const words = useWidgetWords();
   if (w.status === "building") return null;
+  const wait = words.wait(w);
+  if (wait)
+    return (
+      <View style={styles.waitFoot}>
+        <LineIcon variant="caption" name="pause" size={13} color={c.muted} />
+        <Text variant="caption" tone="muted" style={styles.grow}>
+          {wait}
+        </Text>
+      </View>
+    );
   if (w.status === "updating")
     return (
       <View style={styles.foot}>
@@ -780,9 +854,13 @@ function WidgetFoot({ widget: w }: { widget: WidgetCardData }) {
   if (w.status === "failed")
     return (
       <View style={styles.foot}>
-        <Icon name="info" size={13} color={c.warn} />
+        <Icon name={w.needsAi ? "bolt" : "info"} size={13} color={c.warn} />
         <Text variant="caption" numberOfLines={1} style={[styles.grow, { color: c.warn }]}>
-          {`${t("widgets.status.failed")} · ${t("widgets.failure.resolve")}`}
+          {w.needsAi ? (
+            <NeedsAiFootWords agentId={w.agentId} />
+          ) : (
+            `${t("widgets.status.failed")} · ${t("widgets.failure.resolve")}`
+          )}
         </Text>
       </View>
     );
@@ -825,6 +903,10 @@ const styles = StyleSheet.create({
   num: { fontSize: 30, lineHeight: 34, fontWeight: "700", letterSpacing: -0.9, fontVariant: ["tabular-nums"] },
   numBig: { fontSize: 40, lineHeight: 44, letterSpacing: -1.2 },
   affix: { fontSize: 15, fontWeight: "600", letterSpacing: 0 },
+  // The prefix and the number on one baseline, a space's width apart.
+  figure: { flexDirection: "row", alignItems: "baseline", gap: 4 },
+  // A long number gives way (and ends in "…"), never the prefix beside it.
+  shrink: { flexShrink: 1, minWidth: 0 },
   strong: { fontWeight: "600" },
   spark: { marginTop: 6 },
   track: {
@@ -860,6 +942,7 @@ const styles = StyleSheet.create({
   field: { borderRadius: 6, overflow: "hidden" },
   band: { position: "absolute", top: 0, bottom: 0 },
   foot: { flexDirection: "row", alignItems: "center", gap: 6 },
+  waitFoot: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   // Out to the card's edges and its bottom: the card's padding cancelled.
   bleedBox: { marginHorizontal: -PAD_X, marginBottom: -PAD_Y, marginTop: -4 },
   bleed: { width: "100%" },

@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type { CatchUpClosed, UsageQueue, UsageQueueRow } from "../api/types";
-import { joinNames, relativeTime } from "./format";
+import { joinNames, keepWhole, relativeTime } from "./format";
 import { usageWhen } from "./plan-usage";
 
 /**
@@ -30,6 +30,10 @@ export const usageQueueShared = (t: TFunction, plan: string | null, others: stri
     ? say(t)("usageQueue.shared", { agents: joinNames(others, t), plan: plan ?? "", count: others.length })
     : null;
 
+/** Behind the title's ⓘ with every account of the order at its limit: "As 3 contas do Claude chegaram ao limite." */
+export const usageQueueChain = (t: TFunction, q: Pick<UsageQueue, "chain" | "plan">) =>
+  q.chain && q.plan ? say(t)("usageQueue.chain", { accounts: String(q.chain), plan: q.plan }) : null;
+
 /** Where it waits: "DM com Ana", "Sua DM", "#suporte", "Conversa em #suporte", "Rotina Resumo diário". */
 export function usageQueueWhere(t: TFunction, row: UsageQueueRow, viewerId: string, person: (id: string) => string) {
   if (row.kind === "routine") return say(t)("usageQueue.routine", { name: row.title ?? "" });
@@ -56,7 +60,7 @@ export function usageQueueWho(
   now = new Date(),
 ) {
   // "há 40 min" never breaks across lines: a long name before it wraps instead.
-  const ago = relativeTime(t, locale, row.since, now).replace(/ /g, "\u00a0");
+  const ago = keepWhole(relativeTime(t, locale, row.since, now));
   if (row.channelKind === "dm" || row.askers.length === 0) return ago;
   return `${joinNames(row.askers.map(person), t)} · ${ago}`;
 }

@@ -79,8 +79,12 @@ describe("who can't act gets an honest line and no button that fails", () => {
     expect(screen().queryByRole("button", { name: "Enviar arquivo" })).toBeNull();
   });
 
-  test("Conectores without manage_connectors", async () => {
+  test("Conectores without manage_connectors: their own to add on Pessoal, the team's to look at", async () => {
     await go(fresh(["read"]), "settings/connectors");
+    expect(title()).toBe("Conecte suas próprias contas");
+    expect(buttons().map((b) => b.textContent)).toEqual(["Adicionar conector"]);
+    await act(async () => fireEvent.click(screen().getByRole("radio", { name: /Equipe/ })));
+    await settle(2);
     expect(title()).toBe("Veja o que os agentes podem usar");
     expect(buttons()).toEqual([]);
   });
@@ -250,7 +254,11 @@ describe("the right words for the right empty", () => {
     await click(screen().getByRole("radio", { name: "Agenda" }));
     expect(title()).toBe("Agenda livre nos próximos 30 dias");
     expect(screen().getAllByRole("button", { name: /Novo evento/ })).toHaveLength(1);
+    // Under 1440 the side panel starts closed, so the sources are in the Filtros popover.
+    await click(screen().getByRole("button", { name: "Filtros" }));
     await click(screen().getByRole("button", { name: /^Pessoas/ }));
+    await act(async () => fireEvent.keyDown(document.activeElement ?? window, { key: "Escape" }));
+    await settle(2);
     expect(empty().querySelector(".ac-empty__agent")).toBeNull();
     await click(within(empty()).getByRole("button", { name: "Limpar filtros" }));
     expect(title()).toBe("Agenda livre nos próximos 30 dias");
@@ -276,7 +284,10 @@ describe("the right words for the right empty", () => {
   });
 
   test("a plain member connects a plan for their right hand", async () => {
-    await go(fresh(["read", "talk_to_agents"]), "settings/keys");
+    const api = createFakeApi(fresh(["read", "talk_to_agents"]), { seed: false });
+    api.orgs.planUsage = async () => ({ month: "2026-10", money: false, accounts: [], api: [] });
+    await renderApp(`/org/${ORG_ID}/settings/usage`, { api });
+    await settle(8);
     expect(within(empty()).getByRole("button", { name: "Conectar uma IA" })).toBeDefined();
   });
 

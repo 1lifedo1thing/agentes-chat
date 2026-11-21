@@ -1,7 +1,6 @@
 import { useAnswerChoices, useArtifact, useChoices } from "@agenteschat/client";
 import {
   answeredFirst,
-  CHOICE_OTHER_MAX,
   type ChoiceDraft,
   choiceLetter,
   choiceOfKey,
@@ -11,12 +10,15 @@ import {
   otherChoice,
   pickChoice,
 } from "@agenteschat/client/lib/choices";
-import { Button, Spinner, Textarea } from "@agenteschat/ui";
+import { MAX_MESSAGE_LENGTH, tooLongRefusal } from "@agenteschat/client/lib/message-length";
+import { Button, codeAndBold, overLimit, Spinner, Textarea } from "@agenteschat/ui";
 import { type KeyboardEvent, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
 import { CardSky, colorOf } from "@/components/Sky";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useTextLimit } from "@/hooks/useTextLimit";
+import { inlineWords } from "@/lib/markdown";
 import { useToast } from "@/lib/toast";
 import "./blocks.css";
 
@@ -27,7 +29,7 @@ import "./blocks.css";
  * sent with Enviar (or Enter). The app's own card, like a vote: a pick is an act of the person's.
  */
 export function ChoicesCard({ id, version }: { id: string; version?: number }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const dir = useDirectory(org.id);
   const toast = useToast();
@@ -40,6 +42,7 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
   const [writing, setWriting] = useState(false);
   const [text, setText] = useState("");
   const list = useRef<HTMLFieldSetElement>(null);
+  const limit = useTextLimit(MAX_MESSAGE_LENGTH, "choices.tooLongFix");
   const a = artifact.data;
   if (a?.content.kind !== "choices" || !query.data) {
     return (
@@ -67,13 +70,13 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
         <ul className="choices__summary">
           {choiceSummary(questions, answered.picks, answered.others).map((s) => (
             <li key={s.question}>
-              {questions.length > 1 && <span className="choices__asked">{s.question}</span>}
+              {questions.length > 1 && <span className="choices__asked">{inlineWords(s.question, "sq")}</span>}
               <span className="choices__picked">
                 <span className="choices__letter" aria-hidden="true">
                   {s.letter}
                 </span>
                 <span className="choices__said" data-written={s.written ? "" : undefined}>
-                  {s.label}
+                  {codeAndBold(s.label, "s")}
                 </span>
               </span>
             </li>
@@ -113,7 +116,8 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
     if (next.send)
       answer.mutate(next.send, {
         onError: (e) => {
-          if (!answeredFirst(e)) toast.show(t("choices.failed"), "error");
+          if (!answeredFirst(e))
+            toast.show(tooLongRefusal(t, i18n.language, e, t("choices.tooLongFix")) ?? t("choices.failed"), "error");
           void query.refetch();
         },
       });
@@ -124,9 +128,10 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
     setText(d.others[d.step] ?? "");
     setWriting(true);
   };
+  const tooLong = overLimit(text, limit);
   const send = () => {
     const words = text.trim();
-    if (words) pick(other, words);
+    if (words && !tooLong) pick(other, words);
   };
   const go = (next: ChoiceDraft) => {
     setDraft(next);
@@ -162,18 +167,20 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
           <b>{a.title}</b>
           {questions.length > 1 && <small>{t("choices.step", { step: d.step + 1, total: questions.length })}</small>}
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          iconOnly
-          icon="close"
-          aria-label={t("choices.close")}
-          title={t("choices.close")}
-          onClick={() => setClosed(true)}
-        />
+        <span className="ac-acts">
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon="close"
+            aria-label={t("choices.close")}
+            title={t("choices.close")}
+            onClick={() => setClosed(true)}
+          />
+        </span>
       </header>
       <p className="choices__question" id={`choices-${id}-q`}>
-        {q.question}
+        {inlineWords(q.question, "q")}
       </p>
       <fieldset
         ref={list}
@@ -197,11 +204,11 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
               </span>
             </span>
             <span className="ac-mediarow__head">
-              <span className="choices__label">{o.label}</span>
+              <span className="choices__label">{codeAndBold(o.label, "l")}</span>
             </span>
             {o.description && (
               <span className="ac-mediarow__body">
-                <span className="choices__description">{o.description}</span>
+                <span className="choices__description">{codeAndBold(o.description, "d")}</span>
               </span>
             )}
           </button>
@@ -236,7 +243,7 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
             autoGrow
             autoFocus
             value={text}
-            maxLength={CHOICE_OTHER_MAX}
+            limit={limit}
             placeholder={t("question.placeholder")}
             aria-label={t("question.placeholder")}
             disabled={answer.isPending}
@@ -252,7 +259,7 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
             <Button
               size="sm"
               variant="primary"
-              disabled={!text.trim() || answer.isPending}
+              disabled={!text.trim() || tooLong || answer.isPending}
               loading={answer.isPending}
               onClick={send}
             >

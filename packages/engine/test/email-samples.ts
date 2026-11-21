@@ -38,6 +38,23 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
     url: `${APP}/invite/T7xQ2mVb9KpL`,
     role: "owner",
   },
+  /** One that gives a cargo, channels and agents (ADR 0184): their names, and its agents first in the picture. */
+  "invitation-starts.en": {
+    kind: "invitation",
+    locale: "en",
+    orgName: "Acme Logística",
+    inviterName: "Carla Dias",
+    inviterEmail: "carla@example.com",
+    crew: [
+      { color: "amber", eyes: "round", accessory: "none" },
+      { color: "sky", eyes: "round", accessory: "none" },
+    ],
+    url: `${APP}/invite/T7xQ2mVb9KpL`,
+    role: "member",
+    roles: ["Suporte"],
+    channels: ["suporte", "chamados-urgentes"],
+    agents: ["Max"],
+  },
   "invite_request.en": {
     kind: "invite_request",
     locale: "en",
@@ -225,6 +242,16 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
     url: `${APP}/org/${ORG}/settings/members?request=jr_7&do=approve`,
     denyUrl: `${APP}/org/${ORG}/settings/members?request=jr_7&do=deny`,
   },
+  "join_request-outside.en": {
+    kind: "join_request",
+    locale: "en",
+    orgName: "Alves Studio",
+    name: "Bruno Lima",
+    email: "bruno@example.com",
+    url: `${APP}/org/${ORG}/settings/members?request=jr_8&do=approve`,
+    denyUrl: `${APP}/org/${ORG}/settings/members?request=jr_8&do=deny`,
+    outsideOf: "Northwind Consulting",
+  },
   "join_answer-joined.en": {
     kind: "join_answer",
     locale: "en",
@@ -269,6 +296,76 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
     code: "482913",
     email: "ana@padariasouza.com.br",
     support: null,
+    url: APP,
+  },
+  /** Before the account's address changes, to its current one: the code, and the new address it is for. */
+  "email_change_code.en": {
+    kind: "email_change_code",
+    locale: "en",
+    code: "482913",
+    email: "ana@souzabakery.com",
+    newEmail: "ana.souza@example.com",
+    support: "help@agentes.chat",
+    url: APP,
+  },
+  /** The same, on a server with no support address. */
+  "email_change_code.pt-BR": {
+    kind: "email_change_code",
+    locale: "pt-BR",
+    code: "482913",
+    email: "ana@padariasouza.com.br",
+    newEmail: "ana.souza@example.com",
+    support: null,
+    url: APP,
+  },
+  /** To the new address: its link makes it the account's. */
+  "email_change_link.en": { kind: "email_change_link", locale: "en", url: VERIFY },
+  "email_change_link.pt-BR": { kind: "email_change_link", locale: "pt-BR", url: VERIFY },
+  /** To the address the account left: "This wasn't me". */
+  "email_changed.en": {
+    kind: "email_changed",
+    locale: "en",
+    email: "ana@souzabakery.com",
+    newEmail: "ana.souza@example.com",
+    url: `${APP}/email-undo?token=Hk2dQ9xWm4Lp7Rt1Vb8Nc3Zs6Yf0Ja5Ue`,
+  },
+  "email_changed.pt-BR": {
+    kind: "email_changed",
+    locale: "pt-BR",
+    email: "ana@padariasouza.com.br",
+    newEmail: "ana.souza@example.com",
+    url: `${APP}/email-undo?token=Hk2dQ9xWm4Lp7Rt1Vb8Nc3Zs6Yf0Ja5Ue`,
+  },
+  /** An outside chat surface linked: "Not you? Unlink it". */
+  "surface_linked.en": {
+    kind: "surface_linked",
+    locale: "en",
+    surface: "Example Chat",
+    display: "12025550123",
+    orgName: "Souza Bakery",
+    url: `${APP}/email-undo?kind=surface&token=Hk2dQ9xWm4Lp7Rt1Vb8Nc3Zs6Yf0Ja5Ue`,
+  },
+  "surface_linked.pt-BR": {
+    kind: "surface_linked",
+    locale: "pt-BR",
+    surface: "Example Chat",
+    display: "5511900000001",
+    orgName: "Padaria Souza",
+    url: `${APP}/email-undo?kind=surface&token=Hk2dQ9xWm4Lp7Rt1Vb8Nc3Zs6Yf0Ja5Ue`,
+  },
+  /** Unlinked because the sender's identity there changed. */
+  "surface_unlinked.en": {
+    kind: "surface_unlinked",
+    locale: "en",
+    surface: "Example Chat",
+    display: "12025550123",
+    url: APP,
+  },
+  "surface_unlinked.pt-BR": {
+    kind: "surface_unlinked",
+    locale: "pt-BR",
+    surface: "Example Chat",
+    display: "5511900000001",
     url: APP,
   },
   /** To an owner: a button to restore it. */
@@ -393,6 +490,33 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
     support: "help@agentes.chat",
     url: APP,
   },
+  /** One of our own sentences, written by an AI assistant, on a server with a support address. */
+  "support_reply.en": {
+    kind: "support_reply",
+    locale: "en",
+    reply: "received",
+    assistedByAi: true,
+    support: "help@agentes.chat",
+    url: APP,
+  },
+  /** Another of them, by a person; the server has no support address. */
+  "support_reply.pt-BR": {
+    kind: "support_reply",
+    locale: "pt-BR",
+    reply: "resolved",
+    assistedByAi: false,
+    support: null,
+    url: APP,
+  },
+  /** The operator's own words, in two paragraphs. */
+  "support_reply-text.en": {
+    kind: "support_reply",
+    locale: "en",
+    text: "The export stopped because the file was over the size limit.\nThe limit is higher now, so the same export works.",
+    assistedByAi: true,
+    support: "help@agentes.chat",
+    url: APP,
+  },
   "autonomy_report.en": {
     kind: "autonomy_report",
     locale: "en",
@@ -436,3 +560,39 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
     url: APP,
   },
 };
+
+/**
+ * A personal workspace's emails (ADR 0159): the samples whose words differ there, stamped as their jobs are, in a
+ * workspace named as onboarding names it. Apart from `EMAIL_SAMPLES` (each of which keeps a snapshot); the preview
+ * shows them too.
+ */
+export const PERSONAL_EMAIL_SAMPLES: Record<string, EmailTemplate> = Object.fromEntries(
+  [
+    "invitation.en",
+    "invite_request.en",
+    "invite_request-link.en",
+    "calendar_invite.en",
+    "budget-warning.en",
+    "budget-exhausted.pt-BR",
+    "approval_digest-one.en",
+    "approval_digest-many.pt-BR",
+    "computer_ready-task.en",
+    "computer_ready-ai.pt-BR",
+    "join_request.en",
+    "join_answer-joined.en",
+    "join_answer-invited.en",
+    "join_answer-denied.pt-BR",
+    "join_code.en",
+    "deletion_code-workspace.en",
+    "workspace_deleting-member.pt-BR",
+    "workspace_restored.en",
+    "app_connected.en",
+    "plan_opened.en",
+    "plan_lent.pt-BR",
+    "plan_waiting.pt-BR",
+  ].map((id) => {
+    const sample = EMAIL_SAMPLES[id] as EmailTemplate;
+    const orgName = sample.locale === "pt-BR" ? "Pessoal" : "Personal";
+    return [id.replace(".", "-personal."), { ...sample, orgName, personal: true } as EmailTemplate];
+  }),
+);

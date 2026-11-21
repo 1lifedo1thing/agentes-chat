@@ -23,6 +23,26 @@
 .dv-status[data-status="paused"] {
   color: var(--ink-muted);
 }
+/* On a computer's page a phone's pill carries its detail in a tip (`StatusTip`): a button when it opens the fix, else a
+   stop for the keys. Only the pill shows, its ring round the pill. */
+.dv-status-tip {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+}
+button.dv-status-tip {
+  cursor: pointer;
+}
+html:not([data-pointer]) .dv-status-tip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 
 /* ---------- Portrait (img.ac-computer) ---------------------------------------------
    The engine draws on a 48-cell grid, so only 48 (rows) and 96 (the page header) stay crisp.
@@ -113,6 +133,14 @@ a.dv-row__detail {
   flex: none;
   color: var(--faint);
 }
+/* A phone is drawn 23 wide in its 48 box: its row keeps only the drawing's width, so its words sit right beside it. */
+.ac-list__row.dv-row--phone {
+  grid-template-columns: 24px minmax(0, 1fr) var(--dv-col-status) var(--dv-col-people) var(--control-h-sm);
+}
+.dv-row--phone > .dv-pic {
+  width: 24px;
+  overflow: hidden;
+}
 /* A row's name rises to the portrait's top (`.ac-captop`) only where it leads lines under it (a phone's width, a
    computer asking to join): on a wide row it centres on its status pill's line. */
 @media (width > 640px) {
@@ -124,11 +152,6 @@ a.dv-row__detail {
   display: flex;
   justify-content: flex-end;
   margin-block-start: calc((48px - var(--control-h-sm)) / 2);
-}
-@media (pointer: coarse) {
-  .dv-row__end {
-    margin-block-start: calc((48px - var(--control-h-md)) / 2);
-  }
 }
 
 /* A phone under its host: indented to the host's text column, with an elbow from the host's portrait,
@@ -147,7 +170,7 @@ a.dv-row__detail {
   left: calc(var(--space-4) + 24px);
   top: calc(-1 * var(--row-py));
   height: calc(2 * var(--row-py) + 24px);
-  width: calc(24px + var(--space-3) + var(--space-2));
+  width: calc(24px + var(--space-3) - 4px);
   border-left: 1.5px solid var(--line2);
   border-bottom: 1.5px solid var(--line2);
   border-bottom-left-radius: var(--radius-md);
@@ -166,8 +189,9 @@ a.dv-row__detail {
 }
 
 /* Phone width: the name beside the 48 portrait, its capitals at the portrait's top, and the status pill with its detail
-   under both at the row's full width (a portrait never owns a column of three lines). Kind and people live on the
-   device's page. Phones indent less, the elbow keeps its 4.5 gap to the phone. */
+   under both at the row's full width (a portrait never owns a column of three lines). A phone's narrow drawing owns
+   no wide column: its pill and detail stack under its name, beside it. Kind and people live on the device's page.
+   Phones indent less, the elbow keeps its 4.5 gap to the phone. */
 @media (width <= 640px) {
   .ac-list__row.dv-row {
     grid-template-columns: 48px minmax(0, 1fr) var(--control-h-sm);
@@ -197,9 +221,20 @@ a.dv-row__detail {
     grid-column: 3;
     grid-row: 1;
   }
+  .ac-list__row.dv-row--phone {
+    grid-template-columns: 24px minmax(0, 1fr) var(--control-h-sm);
+    row-gap: 2px;
+  }
+  .dv-row--phone > .dv-pic,
+  .dv-row--phone > .dv-row__end {
+    grid-row: 1 / span 2;
+  }
+  .dv-row--phone > .dv-row__status {
+    grid-column: 2;
+  }
   .ac-list__row.dv-row--child {
-    padding-left: calc(var(--space-4) + 36px);
-    background-size: calc(100% - var(--space-4) - 36px) 1px;
+    padding-left: calc(var(--space-4) + 48px);
+    background-size: calc(100% - var(--space-4) - 48px) 1px;
   }
   .dv-row--child::before {
     width: 20px;
@@ -207,16 +242,17 @@ a.dv-row__detail {
 }
 
 /* ---------- Status line (the device page, under its header) ---------------------------
-   The state, its reason as words, and its one action. Needs-you tints it. */
+   The state's reason as words and its one action, the pill being in the header's chips. Needs-you tints it. */
 .dv-statusline {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+}
+.dv-statusline[data-status="needs"] {
   min-height: calc(var(--control-h-sm) + 2 * var(--action-clear));
   box-sizing: border-box;
   padding: var(--action-clear) var(--action-clear) var(--action-clear) var(--space-3);
   border-radius: var(--radius-lg);
-  box-shadow: inset 0 0 0 1px var(--line2);
 }
 .dv-statusline__text {
   flex: 1;
@@ -225,6 +261,9 @@ a.dv-row__detail {
   line-height: 20px;
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+.dv-statusline:not([data-status="needs"]) > .dv-statusline__text {
+  color: var(--ink2);
 }
 .dv-statusline__text > small {
   color: var(--ink-muted);
@@ -237,14 +276,12 @@ a.dv-row__detail {
   background: var(--attention-soft);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--attention) 22%, transparent);
 }
-.dv-statusline[data-status="needs"] > .dv-status {
-  background: var(--raised);
-}
 
 /* ---------- Live checklist ----------------------------------------------------------
    ol.dv-steps > li.dv-step[data-state=done|current|waiting|needs]: a 24 mark, the title over one line,
    then optional extras (actions, a setting drawing, a path, a command, a QR). The mark centres on the
-   title and its line. The current step sits on a plate, so the eye lands on it. */
+   title and its line. No plates: every mark lines up with the controls above the list, and the current step reads as
+   current by its live mark and ink title. */
 .dv-steps {
   display: flex;
   flex-direction: column;
@@ -262,8 +299,7 @@ a.dv-row__detail {
   column-gap: var(--space-3);
   row-gap: 0;
   align-items: center;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-lg);
+  padding: var(--space-2) 0;
 }
 .dv-step__mark {
   grid-area: mark;
@@ -305,6 +341,9 @@ a.dv-row__detail {
   color: var(--ink-muted);
   overflow-wrap: anywhere;
 }
+.dv-step__title + .dv-step__text {
+  margin-top: var(--space-1);
+}
 .dv-step__text code,
 .dv-step__title code {
   font-family: var(--font-mono);
@@ -322,11 +361,115 @@ a.dv-row__detail {
 .dv-step__more > .machine-command {
   align-self: stretch;
 }
+/* A step's command wraps between words on a phone: a line's end (an `&&` that chains the next) stays in sight. */
+.dv-step__more > .machine-command > .machine-command__code {
+  white-space: pre-wrap;
+}
 .dv-step__acts {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+/* A Mac fixing its own Xcode: its three commands on one line, each ticked once done, wrapping on a phone. */
+.dv-fix-phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-muted);
+}
+.dv-fix-phases > [data-done] {
+  color: var(--ink);
+}
+.dv-fix-phases > [data-done] > .ac-icon {
+  color: var(--ok);
+}
+/* macOS's password window as the Mac shows it: a picture, nothing in it is pressed here. */
+.dv-mac-ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 300px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--raised-2);
+  box-shadow: var(--e2);
+  font-size: var(--text-xs);
+  color: var(--ink-muted);
+  pointer-events: none;
+  user-select: none;
+}
+.dv-mac-ask > b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.dv-mac-ask__lock {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--sunken);
+  color: var(--ink);
+}
+.dv-mac-ask__field {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.dv-mac-ask__buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.dv-mac-ask__buttons > span {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--sunken);
+  color: var(--ink);
+}
+.dv-mac-ask__buttons > [data-default] {
+  background: var(--agent);
+  color: var(--on-agent);
+}
+/* This computer from a browser: Open the app with its words, then getting the app, under a line. */
+.dv-app {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.dv-app > p,
+.dv-app > .ac-grouphead {
+  margin: 0;
+}
+.dv-app--get {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+/* The six-digit way: the address over the code, both the step's full width, Pair under them (full width on a phone). */
+.dv-pair-code {
+  align-self: stretch;
+}
+.dv-pair-code > .ac-btn {
+  align-self: flex-start;
+}
+@media (width <= 640px) {
+  .dv-pair-code > .ac-btn {
+    align-self: stretch;
+  }
+}
+/* What only a phone-sized screen says (the Wi-Fi QR is shown on computers alone). */
+@media (width > 640px) {
+  .dv-narrow {
+    display: none;
+  }
 }
 
 .dv-step[data-state="done"] .dv-step__mark {
@@ -337,11 +480,6 @@ a.dv-row__detail {
 .dv-step[data-state="done"] .dv-step__title {
   color: var(--ink2);
   font-weight: 500;
-}
-.dv-step[data-state="current"] {
-  background: var(--surface-sunken);
-  box-shadow: inset 0 0 0 1px var(--line);
-  padding-block: var(--space-3);
 }
 .dv-step[data-state="current"] .dv-step__mark {
   color: var(--ink);
@@ -357,10 +495,6 @@ a.dv-row__detail {
   color: var(--ink-muted);
   font-weight: 500;
 }
-.dv-step[data-state="needs"] {
-  background: var(--attention-soft);
-  padding-block: var(--space-3);
-}
 .dv-step[data-state="needs"] .dv-step__mark {
   color: var(--attention);
   background: var(--raised);
@@ -372,6 +506,81 @@ a.dv-row__detail {
 .dv-step__mark > .ac-icon {
   width: 14px;
   height: 14px;
+}
+/* A folded step: its title alone, a button that opens it (a done step to look again, a later one to read ahead). It
+   takes the row's height, the step's own padding, so a finger finds it. */
+.dv-step__open {
+  justify-self: stretch;
+  margin-block: calc(-1 * var(--space-2));
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.dv-step__open:hover {
+  color: var(--ink);
+}
+/* Why a plugged phone may not show up: a title over a short list, under the cable step it waits on. */
+.dv-slow {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.dv-slow__title {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+/* 12 between causes, more than the 8 under a cause's words to its own button, so each button reads as its cause's. */
+.dv-slow__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  line-height: 18px;
+  color: var(--ink2);
+  overflow-wrap: anywhere;
+}
+/* The bullets sit on the heading's edge and the words hang after them, so the list starts where its heading does. */
+.dv-slow__list > li {
+  position: relative;
+  padding-inline-start: var(--space-4);
+}
+.dv-slow__list > li::before {
+  content: "•";
+  position: absolute;
+  inset-inline-start: 0;
+  color: var(--faint);
+}
+.dv-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
+  line-height: 18px;
+}
+.dv-slow__list .dv-links {
+  margin-top: var(--space-1);
+}
+/* A cause's one line of words, and its bullet, stand on the middle of the small button beside it, as a dialog's title does. */
+.dv-slow__list .ac-actline > :first-child:not(:only-child) {
+  padding-block: calc((var(--control-h-sm) - 18px) / 2);
+}
+.dv-slow__list > li:has(> .ac-actline > :nth-child(2))::before {
+  top: calc((var(--control-h-sm) - 18px) / 2);
+}
+/* A cause's command under its action line, 8 below as the line's own rows stand. */
+.dv-slow__list .machine-command {
+  margin-top: var(--space-2);
 }
 
 /* A tiny drawing of the phone's own setting row, in the app's look: the row to find is ringed, with a
@@ -493,51 +702,15 @@ a.dv-row__detail {
 }
 
 /* A path through the phone's own Settings, when no button can open it (iPhone, a web page). */
-.dv-path {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--text-sm);
-  line-height: 18px;
-}
-.dv-path > li {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-}
-/* The › ends a segment, so a path that wraps ends its line with it instead of starting the next one. */
-.dv-path > li:not(:last-child)::after {
-  content: "›";
-  color: var(--faint);
-  font-weight: 600;
-  margin-inline: var(--space-1);
-}
-.dv-path__seg {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--raised);
-  box-shadow: inset 0 0 0 1px var(--line);
-  color: var(--ink2);
-  font-weight: 600;
-}
-.dv-path > li:last-child > .dv-path__seg {
-  color: var(--ink);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--agent) 45%, transparent);
-}
-
 /* ---------- Steps with a QR beside them (connect dialogs) ------------------------------------ */
 .dv-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 200px;
   align-items: start;
   gap: var(--space-6);
+}
+.dv-split:not(:has(> .dv-qr)) {
+  grid-template-columns: minmax(0, 1fr);
 }
 .dv-split > .dv-qr {
   position: sticky;
@@ -549,7 +722,7 @@ a.dv-row__detail {
     min-height: 490px;
   }
 }
-/* Narrow: one column. A code meant for a phone's camera can't be scanned from the phone showing it, so it goes. */
+/* Narrow: one column. A code the phone scans can't be scanned from the phone showing it, so it goes. */
 @media (width <= 640px) {
   .dv-split {
     grid-template-columns: minmax(0, 1fr);
@@ -632,6 +805,14 @@ a.dv-row__detail {
 .dv-qr--used .dv-qr__code {
   opacity: 0.35;
 }
+/* The code still on its way from the computer. */
+.dv-qr__wait {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--raised);
+}
 
 /* ---------- Connect options (the chooser) ---------------------------------------------
    Grouped under .ac-grouphead. A whole row is the link (a.dv-option). A row with its own buttons is a
@@ -673,6 +854,40 @@ button.dv-option {
 }
 html:not([data-pointer]) :is(a, button).dv-option:focus-visible {
   outline: none;
+  box-shadow: var(--focus-ring-inset);
+}
+/* A row with a link in its line: the title's button covers the row, the link stays above it. */
+.dv-option--stretch {
+  position: relative;
+}
+.dv-option__hit {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.dv-option__hit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.dv-option--stretch .ac-link {
+  position: relative;
+  z-index: 1;
+}
+.dv-option--stretch:has(.dv-option__hit:hover) {
+  background: var(--plate-soft);
+}
+.dv-option--stretch:has(.dv-option__hit:hover) .dv-option__arrow {
+  color: var(--ink);
+}
+html:not([data-pointer]) .dv-option__hit:focus-visible {
+  outline: none;
+}
+html:not([data-pointer]) .dv-option--stretch:has(.dv-option__hit:focus-visible) {
   box-shadow: var(--focus-ring-inset);
 }
 .dv-option__text {
@@ -906,12 +1121,13 @@ html:not([data-pointer]) :is(a, button).dv-option:focus-visible {
 .dv-title > .ac-btn {
   margin-block: calc((24px - var(--control-h-sm)) / 2);
 }
-@media (pointer: coarse) {
-  .dv-title > .ac-btn {
-    margin-block: calc((24px - var(--control-h-md)) / 2);
-  }
+.dv-headacts {
+  flex: none;
+  gap: var(--space-2);
+  align-items: center;
 }
 .dv-headchips {
+  min-width: 0;
   gap: var(--space-2);
   align-items: center;
   flex-wrap: wrap;
@@ -954,11 +1170,6 @@ a.dv-chiplink:hover {
   grid-column: 1 / -1;
   grid-row: 2;
 }
-.dv-row__acts {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
 .dv-row--ask > .dv-row__acts {
   grid-column: 3;
   grid-row: 1;
@@ -999,6 +1210,14 @@ a.dv-chiplink:hover {
   }
   .dv-head > :last-child:not(.machine-page__title) {
     margin-inline-start: auto;
+  }
+  /* Beside the portrait, the pause button is its icon: words there would be a second line of text next to it. */
+  .dv-pausebtn {
+    width: var(--control-h-sm);
+    padding: 0;
+  }
+  .dv-pausebtn .ac-btn__label {
+    display: none;
   }
   .dv-statusline {
     flex-wrap: wrap;
@@ -1056,4 +1275,121 @@ a.dv-chiplink:hover {
   .dv-connected__text > .dv-connected__facts {
     flex-basis: 100%;
   }
+}
+
+/* ---------- A phone's screen, live (PhoneLive) --------------------------------------
+   The phone's own shape (its pictures' size), centred, never taller than the window leaves for it. A cover says why
+   it can't show; the last picture stays dimmed under it. In control the screen takes the pointer and the keys. */
+/* A status line with no action of its own: the same room on both sides. */
+.dv-screen__banner {
+  padding-inline: var(--space-3);
+}
+.dv-screen__acts {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.dv-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--screen-bg);
+  padding: var(--space-4);
+  outline: none;
+}
+html:not([data-pointer]) .dv-screen:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+.dv-screen__frame {
+  --dv-screen-h: min(70vh, 40rem);
+  position: relative;
+  width: min(100%, calc(var(--dv-screen-h) * var(--dv-ratio)));
+  aspect-ratio: var(--dv-ratio);
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--surface-sunken);
+}
+.dv-screen[data-full] {
+  justify-content: center;
+}
+.dv-screen[data-full] > .dv-screen__frame {
+  --dv-screen-h: calc(100vh - 2 * var(--space-4));
+}
+.dv-screen[data-full]:has(> .dv-screen__keys) > .dv-screen__frame {
+  --dv-screen-h: calc(100vh - 2 * var(--space-4) - var(--control-h-sm) - var(--space-3));
+}
+.dv-screen__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--dur-base) ease;
+  touch-action: none;
+  user-select: none;
+}
+.dv-screen__canvas[data-shown] {
+  opacity: 1;
+}
+.dv-screen[data-control] .dv-screen__canvas {
+  cursor: pointer;
+}
+.dv-screen__cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--on-dark);
+  background: color-mix(in srgb, var(--screen-bg) 78%, transparent);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.dv-screen__cover > strong {
+  font-size: var(--text-md);
+}
+.dv-screen__cover > span {
+  color: var(--on-dark-soft);
+}
+.dv-screen__keys {
+  justify-content: center;
+}
+@media (width <= 480px) {
+  .dv-screen {
+    padding: var(--space-3);
+  }
+  .dv-screen__frame {
+    --dv-screen-h: min(60vh, 35rem);
+  }
+}
+/* What most likely holds a step that sat unchanged, and the one way out. */
+.dv-step__stall {
+  margin: 0;
+  color: var(--ink2);
+}
+
+/* iPhones on a Mac's Wi-Fi it could use: one line each, the phone's name and its button, wrapping under on a phone. */
+.dv-wifi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dv-wifi__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+.dv-wifi__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

@@ -1,6 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, type Executor, eq, schema, sql } from "@agenteschat/db";
 import { getAgentCached } from "./agents";
+import { managesAgent } from "./audience";
 import { type DeviceTarget, firstNames, targetMachineId, targetName, targetRule } from "./device-resolve";
 import type { MachinePhoneRow } from "./devices";
 import { ForbiddenError, NotFoundError } from "./errors";
@@ -122,7 +123,7 @@ export async function startDeviceWait(
     note?: string;
     /** What the tool answers the model now. */
     content: string;
-    /** The card's words (English; the apps say them from the fields). */
+    /** The card's words in the language of whom the agent works for (the apps say them again from the fields). */
     body: string;
   },
 ): Promise<ToolOutput> {
@@ -341,17 +342,21 @@ export async function resumeComputerWaits(deps: DeviceWaitDeps, machineId: strin
   return resumed;
 }
 
-/** A host's phones changed: runs waiting on a phone now ready and free go on. */
+/**
+ * A host's phones changed: runs waiting on a phone now ready and free go on, and so does a run a person gave its phone
+ * back to (it holds it again).
+ */
 export async function resumePhoneWaits(
   deps: DeviceWaitDeps,
   machine: { id: string; orgId: string },
   phones: Pick<MachinePhoneRow, "id" | "state" | "holder" | "machineId">[],
 ): Promise<string[]> {
-  const free = new Set(phones.filter((p) => p.state === "ready" && !p.holder).map((p) => p.id));
-  if (free.size === 0) return [];
+  const ready = phones.filter((p) => p.state === "ready");
+  if (ready.length === 0) return [];
   const resumed: string[] = [];
   for (const w of await openDeviceWaits(deps.db, machine.orgId, { machineId: machine.id })) {
-    if (!w.phoneId || !free.has(w.phoneId)) continue;
+    const p = ready.find((x) => x.id === w.phoneId);
+    if (!p || (p.holder && p.holder.runId !== w.run.id)) continue;
     const ok = await endWait(
       deps,
       w,
@@ -436,8 +441,8 @@ export async function expireDeviceWait(deps: DeviceWaitDeps, runId: string, wait
 }
 
 /**
- * Try now or Stop waiting on a run's device card: whom the agent works for, the agent's owner, or whoever manages
- * agents. Null: the run waits on no device.
+ * Try now or Stop waiting on a run's device card: whom the agent works for, the agent's owner, or who manages the
+ * agent (`managesAgent`, ADR 0085 addendum of 2026-11-17). Null: the run waits on no device.
  */
 export async function deviceWaitAction(
   deps: DeviceWaitDeps,
@@ -453,7 +458,9 @@ export async function deviceWaitAction(
   const found = await cardOf(deps.db, w.run, w.waitId);
   const agent = await getAgentCached(deps.db, orgId, w.run.agentId);
   const mayAct =
-    found?.card.requesterUserId === actorId || agent?.ownerUserId === actorId || can(membership, "manage_agents");
+    found?.card.requesterUserId === actorId ||
+    agent?.ownerUserId === actorId ||
+    (agent ? managesAgent(agent, actorId, membership) : can(membership, "manage_agents"));
   if (!mayAct) throw new ForbiddenError("Only the person it works for, the agent's owner or an admin can do this");
   const who = (await firstNames(deps.db, [actorId])).get(actorId) ?? "A person";
   const resumed =

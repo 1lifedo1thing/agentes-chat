@@ -2,8 +2,9 @@ import { useNotificationCount } from "@agenteschat/client";
 import { workspaceLabel, workspaceNotes } from "@agenteschat/client/lib/deletion";
 import { MenuAt, MenuHeading, MenuItem, MenuReactions, MenuSeparator } from "@agenteschat/ui";
 import { useRouter } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NEW_AGENT_EVENT } from "@/components/new-agent/NewAgentDialog";
 import {
   copyText,
   keepsSystemMenu,
@@ -16,6 +17,7 @@ import {
 import { inDesktopApp, thisMac } from "@/lib/desktop";
 import { useToast } from "@/lib/toast";
 import { openPalette } from "./CommandMenu";
+import { useNavDrawer } from "./NavDrawer";
 import { useOrg } from "./org-context";
 import { NEW_CHANNEL_EVENT, toggleSidebar } from "./Sidebar";
 
@@ -43,7 +45,7 @@ export function ContextMenuHost() {
       const link = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>("a[href]") : null;
       const entries: MenuEntry[] = selected ? selectionEntries(selected) : link ? linkEntries(link) : pageEntries();
       e.preventDefault();
-      openContextMenu(e.clientX, e.clientY, entries);
+      openContextMenu(e.clientX, e.clientY, entries, e.target);
     };
     const selectionEntries = (text: string): MenuEntry[] => [
       {
@@ -156,6 +158,10 @@ const ECHO_MS = 400;
 export function MenuBarActions({ orgId }: { orgId: string }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  // A window narrow enough for the drawer: View → sidebar opens and closes it, as the title bar's button does.
+  const navDrawer = useNavDrawer();
+  const drawer = useRef(navDrawer);
+  drawer.current = navDrawer;
   useEffect(() => {
     const keyed = new Map<string, number>();
     const onKey = (e: KeyboardEvent) => {
@@ -166,11 +172,12 @@ export function MenuBarActions({ orgId }: { orgId: string }) {
     const org = `/org/${orgId}`;
     const actions: Record<string, () => void> = {
       newChannel: () => window.dispatchEvent(new Event(NEW_CHANNEL_EVENT)),
-      newAgent: to(`${org}/agents/new`),
+      // The new agent's dialog, over whatever is open (ADR 0164).
+      newAgent: () => window.dispatchEvent(new Event(NEW_AGENT_EVENT)),
       search: openPalette,
       back: () => router.history.back(),
       forward: () => router.history.forward(),
-      toggleSidebar,
+      toggleSidebar: () => (drawer.current?.compact ? drawer.current.toggle() : toggleSidebar()),
       goHome: to(org),
       goWaiting: to(`${org}/notifications`),
       goTasks: to(`${org}/issues`),

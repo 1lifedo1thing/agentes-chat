@@ -2,15 +2,19 @@ import { describe, expect, test } from "bun:test";
 import type { FetchLike } from "../src/api/http";
 import {
   APP_API,
+  appPairsWith,
   checkServer,
   connectLink,
   helpUrl,
   isLoopback,
   isTailnet,
   normalizeServer,
+  pairLink,
   parseConnectLink,
   readInstance,
   serverHost,
+  webSettingsUrl,
+  withoutTrailingSlashes,
 } from "../src/lib/server";
 
 const instance = (over: Record<string, unknown> = {}) => ({
@@ -34,6 +38,18 @@ function fakeFetch(answers: Record<string, { status: number; body?: unknown } | 
 }
 
 describe("server addresses", () => {
+  test("an address loses the slashes it ends with, read once however long a run of them inside it", () => {
+    expect(withoutTrailingSlashes("https://a.example//")).toBe("https://a.example");
+    expect(withoutTrailingSlashes("https://a.example//x")).toBe("https://a.example//x");
+    expect(withoutTrailingSlashes("///")).toBe("");
+    expect(webSettingsUrl("https://a.example/", "o 1", "devices")).toBe("https://a.example/org/o%201/settings/devices");
+    const started = performance.now();
+    const run = `https://a.example${"/".repeat(200_000)}x`;
+    expect(withoutTrailingSlashes(run)).toBe(run);
+    expect(withoutTrailingSlashes(`${run}//`)).toBe(run);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   test("a host or a full URL becomes the server's origin", () => {
     expect(normalizeServer("agentes.tail1234.ts.net")).toBe("https://agentes.tail1234.ts.net");
     expect(normalizeServer("  https://Chat.Example.com/login?x=1 ")).toBe("https://chat.example.com");
@@ -146,6 +162,22 @@ describe("connect links", () => {
       "WIFI:S:office;T:WPA;P:secret;;",
     ])
       expect(parseConnectLink(other)).toBeNull();
+  });
+
+  test("the desktop app's pair link: the server and the connect link's code", () => {
+    expect(pairLink("https://app.agentes.chat", "K7QM-4ZPA")).toBe(
+      "agenteschat://pair?server=https%3A%2F%2Fapp.agentes.chat&link=K7QM-4ZPA",
+    );
+    expect(parseConnectLink(pairLink("https://app.agentes.chat", "K7QM-4ZPA"))).toBeNull();
+    // Only where the app takes it: https, not on this computer.
+    expect(["https://app.agentes.chat", "https://chat.example.com:8443"].map(appPairsWith)).toEqual([true, true]);
+    for (const other of [
+      "http://192.168.1.20:3000",
+      "http://chat.example.com",
+      "http://localhost:3000",
+      "https://localhost",
+    ])
+      expect(appPairsWith(other)).toBe(false);
   });
 });
 

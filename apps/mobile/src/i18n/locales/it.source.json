@@ -17,6 +17,9 @@
   "common.retry": {
     "value": "Try again"
   },
+  "common.openSettings": {
+    "value": "Open Settings"
+  },
   "common.loading": {
     "value": "Loading"
   },
@@ -92,11 +95,8 @@
   "auth.server.footLanguage": {
     "value": "Language"
   },
-  "auth.server.footTeam": {
-    "value": "Use your team's server?"
-  },
-  "auth.server.footTeamAction": {
-    "value": "Sign in through it"
+  "auth.server.footCloud": {
+    "value": "Signing in to agentes.chat Cloud"
   },
   "auth.server.footOn": {
     "value": "Signing in on {{host}}"
@@ -114,7 +114,7 @@
     "value": "We can't reach {{host}}. Check the address and your connection, and try again."
   },
   "auth.server.unreachableTailscale": {
-    "value": "We can't reach {{host}}. It's on Tailscale: open the Tailscale app, connect and try again."
+    "value": "We can't reach {{host}}. It's on Tailscale: open the Tailscale app, connect and try again. Connected already? The computer it runs on may be asleep, or its app closed."
   },
   "auth.server.certificate": {
     "value": "The certificate of {{host}} isn't valid. Talk to whoever runs the server."
@@ -255,7 +255,7 @@
     "value": "Notifications on"
   },
   "push.ask.failed": {
-    "value": "Couldn't turn on notifications. Try again in You › Notifications."
+    "value": "Couldn't turn on notifications on this phone."
   },
   "push.ask.someone": {
     "value": "An agent"

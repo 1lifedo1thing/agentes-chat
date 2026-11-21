@@ -1,5 +1,6 @@
 import { invitationQuery, keys, useApi } from "@agenteschat/client";
 import { ANSWER_POLL_MS } from "@agenteschat/client/lib/join-requests";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIsFocused } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -16,7 +17,7 @@ import { router } from "@/ui/navigation";
 import { LAST_EMAIL } from "./AuthFlow";
 import { arriveIn } from "./arrive";
 import { forgetAsk, rememberInvite } from "./invite";
-import { InviteCrew, Said, useLeaveInvite } from "./invite-parts";
+import { CloseIfFirst, InviteCrew, Said } from "./invite-parts";
 import { type Answer, type Asked, claimAnswer, claimFailedForNow } from "./invite-steps";
 
 /** How long "Aprovado" shows before the workspace opens: long enough to read it. */
@@ -40,7 +41,6 @@ export function AskWaiting({ asked }: { asked: Asked }) {
   const qc = useQueryClient();
   const session = useSession();
   const gate = useOrgGate();
-  const leave = useLeaveInvite();
   const focused = useIsFocused();
   const started = useRef(false);
   const opened = useRef(false);
@@ -52,6 +52,8 @@ export function AskWaiting({ asked }: { asked: Asked }) {
   // it, they rise in when it comes.
   const preview = useQuery({ ...invitationQuery(api, token), retry: false });
   const agents = preview.data?.agents ?? [];
+  // A personal workspace's words once its invitation is read (ADR 0159): never its name ("Personal").
+  const words = preview.data ?? null;
   const crew = (happy: boolean) => (agents.length > 0 ? <InviteCrew agents={agents} happy={happy} /> : undefined);
   const claim = useQuery({
     // The key stays out of the query's key, and its answer out of the cache once read: one signs in, for now.
@@ -129,8 +131,13 @@ export function AskWaiting({ asked }: { asked: Asked }) {
 
   if (answer?.state === "in")
     return (
-      <AuthScaffold title={t("invite.ask.approvedIn", { org })} stepKey="in" expression="happy" hero={crew(true)}>
-        <WaitCard title={t("invite.entering", { org })} sub={t("invite.enteringReady")} />
+      <AuthScaffold
+        title={t(modeKey(words, "invite.ask.approvedIn"), { org })}
+        stepKey="in"
+        expression="happy"
+        hero={crew(true)}
+      >
+        <WaitCard title={t(modeKey(words, "invite.entering"), { org })} sub={t("invite.enteringReady")} />
       </AuthScaffold>
     );
   if (answer?.state === "signIn")
@@ -143,39 +150,36 @@ export function AskWaiting({ asked }: { asked: Asked }) {
     return (
       <AuthScaffold
         title={t("invite.ask.deniedTitle")}
-        subtitle={t("invite.ask.deniedText", { org })}
+        subtitle={t(modeKey(words, "invite.ask.deniedText"), { org })}
         stepKey="denied"
         expression="closed"
-        onBack={leave}
       >
         {answer.reason ? <Said reason={answer.reason} /> : null}
+        <CloseIfFirst />
       </AuthScaffold>
     );
   if (answer?.state === "ended")
     return (
-      <AuthScaffold
-        title={t("invite.ask.endedTitle")}
-        subtitle={t("invite.ask.endedLead")}
-        stepKey="ended"
-        onBack={leave}
-      >
+      <AuthScaffold title={t("invite.ask.endedTitle")} subtitle={t("invite.ask.endedLead")} stepKey="ended">
         <Button variant="primary" wide label={t("auth.signIn")} onPress={() => signInByHand(true)} />
+        <CloseIfFirst />
       </AuthScaffold>
     );
   return (
     <AuthScaffold
-      title={t("invite.ask.waitTitle", { org })}
+      title={t(modeKey(words, "invite.ask.waitTitle"), { org })}
       subtitle={t("mobile.invite.join.waitLeadOpen")}
       stepKey="wait"
       expression="happy"
-      onBack={leave}
       hero={crew(false)}
     >
       <WaitCard
-        title={t("invite.ask.waitCard", { org })}
+        title={t(modeKey(words, "invite.ask.waitCard"), { org })}
         sub={asked.name ? t("invite.ask.waitBy", { name: asked.name, email: asked.email }) : asked.email}
       />
       <LockLine text={t("invite.ask.waitLock")} />
+      {/* Leaving keeps the request waiting: reopening the app returns here. */}
+      <CloseIfFirst />
     </AuthScaffold>
   );
 }
@@ -185,7 +189,7 @@ function WaitCard({ title, sub }: { title: string; sub: string }) {
   return (
     <Card>
       <View style={styles.wait}>
-        <LineIcon variant="subhead" size={16}>
+        <LineIcon variant="subhead" size={16} mark>
           <PixelOrbit color="sky" size={16} />
         </LineIcon>
         <View style={styles.grow}>

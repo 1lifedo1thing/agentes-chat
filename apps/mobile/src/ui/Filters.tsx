@@ -3,7 +3,7 @@ import { Pressable, Text as RNText, ScrollView, type ScrollViewInstance, View } 
 import { Count } from "./Count";
 import { haptics } from "./haptics";
 import type { IconName } from "./icons.data";
-import { TOOL_H, TOUCH } from "./rhythm";
+import { SCREEN_X, TOOL_H, TOUCH } from "./rhythm";
 import { systemText } from "./Text";
 import { useTheme } from "./theme";
 import { CHROME_MAX_SCALE, weights } from "./type-scale";
@@ -20,6 +20,8 @@ export interface FilterItem {
   icon?: IconName;
   /** What a screen reader says where the label doesn't say it in words (Segmented only). */
   accessibilityLabel?: string;
+  /** Can't be chosen here; the screen says why beside it (Segmented only). */
+  disabled?: boolean;
 }
 
 export interface FiltersProps {
@@ -46,7 +48,7 @@ export function Filters({ items, value, onChange }: FiltersProps) {
       // A ScrollView grows and shrinks by default: in a screen's column beside another one, the chips took half the
       // height, and under a list that fills the rest (the tasks board) they were squeezed and cut at the bottom.
       style={{ flexGrow: 0, flexShrink: 0 }}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: 16, paddingBottom: 4 }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: SCREEN_X, paddingBottom: 4 }}
     >
       {items.map((item) => {
         const on = item.key === value;
@@ -70,7 +72,8 @@ export function Filters({ items, value, onChange }: FiltersProps) {
                 minHeight: TOOL_H,
                 paddingHorizontal: 14,
                 borderRadius: 999,
-                backgroundColor: on ? colors.ink : colors.sunken,
+                // Off, the search field's fill: `sunken` is darker than the dark page, and the pill vanished.
+                backgroundColor: on ? colors.ink : colors.plate,
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 6,

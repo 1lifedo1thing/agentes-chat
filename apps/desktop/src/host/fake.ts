@@ -6,18 +6,23 @@
  * Scenarios (`?scenario=`): `first` (a Mac, nothing chosen yet), `windows` and `linux` (the same there),
  * `cloud` (agentes.chat, nothing on this computer), `selfhost` (the default: a server on Tailscale with two
  * organizations whose agents work here), `link` (a claim link waiting) and `here` (agentes.chat runs on this
- * computer, its organization's agents too); `?link=` makes any scenario start with that link waiting.
+ * computer, its organization's agents too); `?link=` makes any scenario start with that link waiting. A pair link
+ * (`agenteschat://pair?server=…&link=ABCDEFGH`) joins Estúdio Norte once its maker lets it in, `HGFEDCBA`'s maker
+ * says no, and any other code expired.
+ * `?mac=ready`: Screen Recording and Full Disk Access allowed already (with Local Network asked, Prepare this Mac
+ * is skipped).
  * Servers answer by host: agentes.tail1234.ts.net, agentes.chat and http://127.0.0.1:4310 are servers;
  * noowner.tail1234.ts.net waits for its owner; old.example.com is too old; chat.example.com doesn't answer;
  * anything else isn't agentes.chat. `?found=0` makes discovery find nothing.
  * The server here: `?phase=` (starting, updating, stopped, failing), `?reach=1`, `?back=<version>` (an update
- * went back), `?run=0` (it stopped running here, its data kept), `?usage=0` (usage statistics off),
+ * went back), `?run=0` (it stopped running here, its data kept), `?owner=0` (it runs with no account left, and the
+ * welcome window opens on Run here's form), `?usage=0` (usage statistics off),
  * `?tailscale=` (on, off, missing), `?installed=terminal` (one from the terminal; `&claim=1` waits for its owner,
  * `&serving=0` isn't running), `?fail=` (database, start, account, reach: that setup step fails), `?hold=<step>`
  * (setting up stops there). Cancel ends a setup at once, held or not (it rejects with "cancelled", as the app's
  * does). An update downloads in about 1.5 s with its progress, and Cancel drops it.
  */
-import { CLOUD_SERVER, readInstance, type ServerCheck } from "@agenteschat/client/lib/server";
+import { CLOUD_SERVER, isLoopback, readInstance, type ServerCheck } from "@agenteschat/client/lib/server";
 import type { Candidate } from "../control/first-run";
 import {
   type LocalPhase,
@@ -30,11 +35,15 @@ import {
   setupSteps,
   type Tailnet,
 } from "../control/local-server";
+import type { LinkInfo } from "../control/pair";
+import type { MacPermission, SetupState } from "../control/permissions";
 import type { Platform } from "../control/platform";
-import type { ServerList, ServerWorkspaces } from "../control/server";
+import type { ServerList, ServerWorkspace, ServerWorkspaces } from "../control/server";
+import type { ThisMacRequest } from "../control/this-mac";
 import type { TrayState } from "../control/tray";
-import { acmeSeed, FAKE_SERVER, FakeRunner, horizonteSeed } from "../dev/fake-runner";
-import type { AppInfo, Host, RunnerInfo, RunnerStateChange, WindowName } from "./types";
+import { acmeSeed, FAKE_LINKS, FAKE_SERVER, FakeRunner, horizonteSeed } from "../dev/fake-runner";
+import { createFakeSite, type FakeSite } from "../dev/fake-site";
+import type { AppInfo, CompatMode, Host, RunnerInfo, RunnerStateChange, WindowName } from "./types";
 
 export type Scenario = "first" | "windows" | "linux" | "cloud" | "selfhost" | "link" | "here";
 export const SCENARIOS: readonly Scenario[] = ["first", "windows", "linux", "cloud", "selfhost", "link", "here"];
@@ -45,6 +54,8 @@ export interface HereOptions {
   reach?: boolean;
   back?: string | null;
   run?: boolean;
+  /** False: it runs, but its owner deleted their account and nobody else has one. */
+  owner?: boolean;
   usage?: boolean;
   tailscale?: Tailnet["state"];
   installed?: "terminal";
@@ -60,15 +71,44 @@ export interface HereOptions {
 
 const LOCAL_URL = "http://127.0.0.1:4310";
 const TAILNET_URL = "https://ana-mac.tail1234.ts.net";
+const LOCAL_BUNDLE_VERSION = "0.8.5";
+const LOCAL_SERVER_VERSION = "0.1.1";
 
 export interface FakeHost extends Host {
   window: WindowName;
+  /** Linux's Compatibility mode as `compatMode` answers it (`fellBack` once). */
+  compat: CompatMode;
   readonly runners: Map<string, FakeRunner>;
   readonly tray: TrayState;
   readonly list: ServerList;
+  /** The server's devices API behind `siteFetch`. */
+  readonly site: FakeSite;
   onDev(cb: () => void): () => void;
   setVersion(version: string): void;
+  /**
+   * This Mac's permissions: Screen Recording, Full Disk Access, the Local Network prompts raised, the setup kept, the
+   * panes opened.
+   */
+  readonly mac: {
+    screen: boolean;
+    disk: boolean;
+    networkAsks: number;
+    setup: SetupState | null;
+    panes: (MacPermission | "microphone")[];
+  };
+  /** The site in the main window asks this computer (ADR 0036): resolves with the popover's reply. */
+  askThisMac(request: ThisMacRequest): Promise<{ ok: boolean; data: unknown }>;
 }
+
+/**
+ * The first server's workspaces: the two this computer works for in `selfhost`, and Estúdio Norte, which it doesn't
+ * yet. Every other server has Oficina.
+ */
+const FIRST_ORGS: ServerWorkspace[] = [
+  { id: "org_acme", name: "Acme", logo: null, unread: 0, waiting: 0, pair: true },
+  { id: "org_horizonte", name: "Horizonte", logo: null, unread: 0, waiting: 0, pair: true },
+  { id: "o-norte", name: "Estúdio Norte", logo: null, unread: 3, waiting: 0, pair: true },
+];
 
 /** A 14" MacBook Pro's notch. */
 const FAKE_NOTCH = { width: 186, height: 32 };
@@ -106,6 +146,8 @@ export function createFakeHost(
     here?: HereOptions;
     someCommands?: boolean;
     welcomeAdd?: boolean;
+    /** Screen Recording and Full Disk Access allowed already (`?mac=ready`). */
+    macReady?: boolean;
   } = {},
 ): FakeHost {
   const runners = new Map<string, FakeRunner>();
@@ -113,6 +155,9 @@ export function createFakeHost(
   const stateListeners = new Set<(c: RunnerStateChange) => void>();
   const shownListeners = new Set<(n: WindowName) => void>();
   const devListeners = new Set<() => void>();
+  const thisMacListeners = new Set<(id: number, request: ThisMacRequest) => void>();
+  const thisMacReplies = new Map<number, (reply: { ok: boolean; data: unknown }) => void>();
+  let thisMacAsked = 0;
   let signIns = 0;
   /** Servers the app signed out of (`signOutServer`): listed with no workspaces. */
   const signedOut = new Set<string>();
@@ -121,6 +166,8 @@ export function createFakeHost(
   let version = "0.6.0";
   const platform: Platform = scenario === "windows" ? "windows" : scenario === "linux" ? "linux" : "mac";
   const here = options.here ?? {};
+  // With no account left, the app opens the welcome window on Run here's form once.
+  let ownerMode = here.owner === false;
   const tailnet: Tailnet =
     here.tailscale === "missing"
       ? { state: "missing" }
@@ -137,19 +184,29 @@ export function createFakeHost(
       ? {
           installed: "app" as const,
           run: running,
-          owner: true,
+          owner: here.owner !== false,
           phase: running ? (here.phase ?? "running") : "off",
           url: LOCAL_URL,
           publicUrl: here.reach ? TAILNET_URL : LOCAL_URL,
           reach: !!here.reach,
-          version: "1.4.0",
+          installedVersion: LOCAL_BUNDLE_VERSION,
+          serverVersion: running && (here.phase ?? "running") === "running" ? LOCAL_SERVER_VERSION : null,
           backTo: here.back ?? null,
+          awake: running,
+          eraseTo: "/Users/voce/agentes.chat erased 2026-11-14",
+          backups: {
+            nightly: true,
+            copyTo: null,
+            files: [
+              { path: "/Users/voce/.agentes/backups/agentes-2026-10-25-030000.tar.gz", at: Date.UTC(2026, 9, 25, 6) },
+            ],
+            problem: null,
+          },
         }
       : here.installed === "terminal"
         ? {
             installed: "terminal" as const,
             url: LOCAL_URL,
-            version: "1.4.0",
             serving: here.serving !== false,
             claim: here.claim && here.serving !== false ? "b3duZXItY2xhaW0tYWJjZGVmZ2hpamtsbW5vcHFy" : null,
           }
@@ -167,6 +224,7 @@ export function createFakeHost(
   let dropUpdate: (() => void) | null = null;
   const setLocal = (next: Partial<LocalServerStatus>) => {
     local = { ...local, ...next };
+    local.serverVersion = local.phase === "running" ? LOCAL_SERVER_VERSION : null;
     for (const l of localListeners) l(local);
     devChanged();
   };
@@ -203,7 +261,7 @@ export function createFakeHost(
 
   if (scenario === "selfhost") {
     spawn("a1b2c3d4", acmeSeed());
-    // `?commands=some`: the second organization joined after commands were on, and starts without them.
+    // `?commands=some`: the second organization joined with commands turned off.
     const horizonte = horizonteSeed();
     if (options.someCommands) horizonte.access.tools.commands = false;
     spawn("e5f6a7b8", horizonte);
@@ -215,12 +273,28 @@ export function createFakeHost(
     signIns = 1;
   }
 
+  const orgsOf = (i: number): ServerWorkspace[] =>
+    i === 0 ? FIRST_ORGS : [{ id: `o-${i}`, name: "Oficina", logo: null, unread: 1, waiting: 0, pair: true }];
+  const site = createFakeSite(
+    (orgId) => {
+      const ids = [...runners.values()].map((r) => r.ids()).find((i) => i?.orgId === orgId);
+      return ids ? { machineId: ids.machineId, name: ids.name } : null;
+    },
+    (orgId, userCode) => {
+      const org = list.servers.flatMap((_, i) => orgsOf(i)).find((o) => o.id === orgId);
+      const runner = [...runners.values()].find((r) => r.pendingCode === userCode);
+      return org && runner ? runner.confirm({ id: org.id, name: org.name }) : null;
+    },
+  );
+
   const host: FakeHost = {
     window: initial,
+    compat: { on: true, fellBack: false, own: false },
     fake: true,
     platform,
     runners,
     list,
+    site,
     get tray() {
       return tray;
     },
@@ -278,16 +352,37 @@ export function createFakeHost(
       list.servers.map((server, i) => ({
         server,
         signedIn: !signedOut.has(server),
-        orgs: signedOut.has(server)
-          ? []
-          : i === 0
-            ? [
-                { id: "o-acme", name: "Acme", logo: null, unread: 0, waiting: 0 },
-                { id: "o-norte", name: "Estúdio Norte", logo: null, unread: 3, waiting: 0 },
-              ]
-            : [{ id: `o-${i}`, name: "Oficina", logo: null, unread: 1, waiting: 0 }],
+        agentsHere: !isLoopback(server),
+        orgs: signedOut.has(server) ? [] : orgsOf(i),
       })),
-    welcomeMode: async () => (options.welcomeAdd ? "add" : null),
+    // The fake reads nothing again by itself: an offer never takes the one window over while designing.
+    onWorkspaces: () => () => {},
+    pairLinkInfo: async (_server, code): Promise<LinkInfo> => {
+      await wait(300);
+      if (code !== FAKE_LINKS.live && code !== FAKE_LINKS.denied) throw "link_expired";
+      return {
+        org: "Estúdio Norte",
+        by: "Sam Rivera",
+        kind: "computer",
+        expiresAt: new Date(Date.now() + 600_000).toISOString(),
+        computer: "Sam's MacBook Pro",
+      };
+    },
+    askToPair: async () => true,
+    welcomeMode: async () => {
+      if (options.welcomeAdd) return "add";
+      if (!ownerMode) return null;
+      ownerMode = false;
+      return "owner";
+    },
+    addWorkspace: async () => {
+      options.welcomeAdd = true;
+      await host.showWindow("welcome");
+    },
+    siteFetch: async (server, method, path, body) => {
+      if (!list.servers.includes(server)) throw "not a server of this app";
+      return site.answer(method, path, body);
+    },
     removeServer: async (server) => {
       list.servers = list.servers.filter((s) => s !== server);
       if (list.current === server) list.current = list.servers[0] ?? null;
@@ -344,19 +439,46 @@ export function createFakeHost(
       version,
       os: platform === "mac" ? "macos" : platform,
       arch: platform === "mac" ? "aarch64" : "x86_64",
+      system: platform === "mac" ? "15.5" : null,
+      details:
+        platform === "linux"
+          ? `agentes.chat ${version} · Linux · Ubuntu 26.04 LTS · wayland (GNOME) · WebKitGTK 2.50.4 · Intel (i915) · CPU (chosen) · AppImage`
+          : `agentes.chat ${version} · ${platform === "mac" ? "macOS 15.5" : "Windows"}`,
     }),
+    compatMode: async () => {
+      const now = { ...host.compat };
+      host.compat.fellBack = false;
+      return now;
+    },
+    setCompatMode: async (on) => {
+      host.compat.on = on;
+    },
+    reopen: async () => {
+      console.info("[fake] reopen");
+    },
     autostart: async () => autostart,
     setAutostart: async (on) => {
       autostart = on;
     },
-    // No main window in the browser: nobody asks.
-    onThisMac: () => () => {},
-    thisMacReply: async () => {},
+    // No main window in the browser: only tests ask (`askThisMac`).
+    onThisMac: (cb) => {
+      thisMacListeners.add(cb);
+      return () => thisMacListeners.delete(cb);
+    },
+    thisMacReply: async (id, ok, data) => {
+      thisMacReplies.get(id)?.({ ok, data });
+      thisMacReplies.delete(id);
+    },
+    askThisMac: (request) =>
+      new Promise((resolve) => {
+        const id = ++thisMacAsked;
+        thisMacReplies.set(id, resolve);
+        for (const l of thisMacListeners) l(id, request);
+      }),
     // No menu bar in the browser.
     setAppMenu: async () => {},
     onMenuAction: () => () => {},
     thisMacListening: async () => {},
-    setDock: async () => {},
     setSiteNotify: async () => {},
     onBadge: (cb) => {
       const timer = setTimeout(() => cb({ waiting: 3, unread: 5 }), 50);
@@ -442,7 +564,7 @@ export function createFakeHost(
         publicUrl: reach ? TAILNET_URL : LOCAL_URL,
         reach,
         usage: choice.usage,
-        version: "1.4.0",
+        installedVersion: LOCAL_BUNDLE_VERSION,
       });
       cancelSetup = null;
       await host.chooseServer(local.publicUrl ?? LOCAL_URL, "/desktop/handover#token=fake");
@@ -496,7 +618,36 @@ export function createFakeHost(
     },
     backupLocalServer: async () => {
       await wait(1100);
-      return "/Users/voce/.agentes/backups/agentes-2026-10-25-101500.tar.gz";
+      const path = "/Users/voce/.agentes/backups/agentes-2026-10-25-101500.tar.gz";
+      setLocal({
+        backups: { ...local.backups, files: [{ path, at: Date.now() }, ...local.backups.files].slice(0, 2) },
+      });
+      return path;
+    },
+    setLocalBackups: async (nightly, copyTo) => {
+      setLocal({ backups: { ...local.backups, nightly, copyTo } });
+    },
+    restoreLocalServer: async () => {
+      setLocal({ phase: "starting" });
+      await wait(1500);
+      setLocal({ phase: "running" });
+    },
+    eraseLocalServer: async () => {
+      // As the app does: it stops first, still the server here, and only then its folder moves.
+      if (local.run) setLocal({ phase: "stopped", awake: false });
+      await wait(600);
+      const to = local.eraseTo ?? "";
+      // Its agents' homes on this computer go with it.
+      for (const [homeId, runner] of runners) if (runner.server === LOCAL_URL) await host.removeRunner(homeId);
+      for (const server of new Set([local.publicUrl, local.url])) if (server) await host.removeServer(server);
+      setLocal({ ...NO_SERVER, bundled: true, dir: local.dir, systemName: "Ana Souza", erased: to });
+      ownerMode = true;
+      await host.showWindow("welcome");
+      return to;
+    },
+    keepRunning: async () => ({ autoLogin: false, autoRestart: false }),
+    openSystemSettings: async (page) => {
+      console.info("[fake] open System Settings:", page);
     },
     localDiagnostics: async () => `agentes.chat app ${version} (macos aarch64)\nserver here: ${local.phase}`,
     syncLocalHomes: async () => {},
@@ -512,6 +663,27 @@ export function createFakeHost(
       console.info("[fake] open Tailscale:", page);
     },
     onNewHostHome: () => () => {},
+    // Screen Recording and Full Disk Access take effect once the app opens again, as on a Mac.
+    mac: {
+      screen: options.macReady === true,
+      disk: options.macReady === true,
+      networkAsks: 0,
+      setup: null,
+      panes: [],
+    },
+    screenAccess: async () => platform !== "mac" || host.mac.screen,
+    requestScreenAccess: async () => host.mac.screen,
+    diskAccess: async () => platform !== "mac" || host.mac.disk,
+    askLocalNetwork: async () => {
+      host.mac.networkAsks++;
+    },
+    openPrivacy: async (pane) => {
+      host.mac.panes.push(pane);
+    },
+    setupState: async () => host.mac.setup,
+    setSetupState: async (state) => {
+      host.mac.setup = state && { ...state, resumed: false };
+    },
     onDev: (cb) => {
       devListeners.add(cb);
       return () => devListeners.delete(cb);

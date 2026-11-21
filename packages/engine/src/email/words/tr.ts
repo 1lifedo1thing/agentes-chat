@@ -1,5 +1,5 @@
 import { plural } from "@agenteschat/i18n/format";
-import { atHost } from "./en";
+import { atHost, sentences } from "./en";
 import type { EmailWords } from "./index";
 
 /**
@@ -47,12 +47,26 @@ export const words: EmailWords = {
             ` çalışma alanına ${role} olarak davet etti.`,
           ]
         : [{ b: org }, ` çalışma alanına ${role} olarak davet edildiniz.`],
+    starts: (channels, agents, count) =>
+      sentences(
+        channels && ["Doğrudan ", ...channels, ` ${count.channels === 1 ? "kanalına" : "kanallarına"} katılacaksınız.`],
+        agents && [...agents, " ile birlikte çalışacaksınız."],
+      ),
+    more: (n) => `${n} tane daha`,
     what: "agentes.chat, kişilerin ve yapay zeka ajanlarının birlikte çalıştığı yer.",
     noteFrom: (inviter, note) => [{ b: inviter ? `${inviter}: ` : "Davet notu: " }, `“${note}”`],
     button: "Daveti kabul et",
     small: "Davet 7 gün geçerli. Bu e-posta adresiyle kabul edin.",
     why: (org) =>
       `Bu e-postayı, ${org} çalışma alanından biri bu adresi davet ettiği için aldınız. Bu kişiyi tanımıyorsanız yok sayın. Siz kabul edene kadar hiçbir şey olmaz.`,
+    personal: {
+      body: (inviter, email) =>
+        inviter
+          ? [{ b: inviter }, `${email ? ` (${email})` : ""} sizi agentes.chat'teki kişisel çalışma alanına davet etti.`]
+          : "agentes.chat'te kişisel bir çalışma alanına davet edildiniz.",
+      why: () =>
+        "Bu e-postayı, biri bu adresi kendi kişisel çalışma alanına davet ettiği için aldınız. Bu kişiyi tanımıyorsanız yok sayın. Siz kabul edene kadar hiçbir şey olmaz.",
+    },
   },
   inviteRequest: {
     subject: "Biri yeni bir davet istedi",
@@ -66,6 +80,14 @@ export const words: EmailWords = {
     button: "Üyeler sayfasını aç",
     why: (org) =>
       `Bu e-postayı, bu daveti siz oluşturduğunuz ya da ${org} çalışma alanının üyelerini yönettiğiniz için aldınız.`,
+    personal: {
+      body: (email) =>
+        email
+          ? [{ b: email }, " çalışma alanınıza ait süresi dolmuş bir daveti açtı ve yenisini istedi."]
+          : "Çalışma alanınıza ait süresi dolmuş bir davet bağlantısı olan biri yenisini istedi.",
+      why: () =>
+        "Bu e-postayı, bu daveti siz oluşturduğunuz ya da çalışma alanınızda kimlerin olacağına siz karar verdiğiniz için aldınız.",
+    },
   },
   calendar: {
     subject: "Bir etkinliğe davet edildiniz",
@@ -75,6 +97,9 @@ export const words: EmailWords = {
     someone: "Biri",
     button: "Etkinliği gör",
     why: (org) => `Bu e-postayı, ${org} çalışma alanından biri sizi bir etkinliğe davet ettiği için aldınız.`,
+    personal: {
+      why: () => "Bu e-postayı, çalışma alanınızdan biri sizi bir etkinliğe davet ettiği için aldınız.",
+    },
   },
   waitlist: {
     subject: "agentes.chat bekleme listesindeki yerinizi onaylayın",
@@ -129,6 +154,12 @@ export const words: EmailWords = {
     button: "Bütçeyi gör",
     why: (org) =>
       `Bu e-postayı, bu ajanın sahibi ya da ${org} çalışma alanının yöneticisi olduğunuz için aldınız. %80'de ve %100'de, her biri ayda bir kez gönderilir.`,
+    personal: {
+      warning: "%100'de durur ve size haber verir. Limiti ajanın sayfasından değiştirebilirsiniz.",
+      exhausted: "Yeni ay başlayana ya da siz limiti ajanın sayfasından artırana kadar yanıt vermeyecek.",
+      why: () =>
+        "Bu e-postayı, bu ajan sizin olduğu için aldınız. %80'de ve %100'de, her biri ayda bir kez gönderilir.",
+    },
   },
   digest: {
     subject: (n) =>
@@ -150,6 +181,15 @@ export const words: EmailWords = {
     button: (n) => plural("tr", n, { one: "İsteği incele", other: "Onayları aç" }),
     why: (org, hours) =>
       `Bu e-postayı, ${org} çalışma alanında bu istekleri onaylayabildiğiniz için aldınız.${hours ? ` Bir istek ${hours} saatten uzun beklediğinde, her istek için bir kez gönderilir.` : ""}`,
+    personal: {
+      body: (n) =>
+        plural("tr", n, {
+          one: "Ajanlarınızdan biri onayınızı gerektiren bir şey yapmak istedi.",
+          other: "Ajanlarınız onayınızı gerektiren şeyler yapmak istedi.",
+        }),
+      why: (_org, hours) =>
+        `Bu e-postayı, bu istekleri onaylayabildiğiniz için aldınız.${hours ? ` Bir istek ${hours} saatten uzun beklediğinde, her istek için bir kez gönderilir.` : ""}`,
+    },
   },
   ready: {
     subject: "Ajanlarınızın bilgisayarı hazır",
@@ -182,18 +222,37 @@ export const words: EmailWords = {
     button: { ai: "Yapay zekayı bağla", task: "İlk görevi ver", create: "Ajan oluştur" },
     why: (org) =>
       `Bu e-postayı, agentes.chat'teki ${org} çalışma alanının sahibi olduğunuz için aldınız. Bu bilgisayarla ilgili gönderilen tek e-posta bu.`,
+    personal: {
+      body: () =>
+        "Beklediğiniz için teşekkürler. Ajanlarınızın bilgisayarı açık ve kurulu, her ajan için ayrı bir kullanıcısı var. Gece gündüz açık kalır, böylece ajanlarınız her an çalışabilir.",
+      steps: {
+        task: ["İlk görevi verin.", "Ajanlarınızdan biriyle bir konuşma açın ve neye ihtiyacınız olduğunu söyleyin."],
+      },
+      why: () =>
+        "Bu e-postayı, agentes.chat'teki bu çalışma alanı size ait olduğu için aldınız. Bu bilgisayarla ilgili gönderilen tek e-posta bu.",
+    },
   },
   joinRequest: {
     subject: "Biri çalışma alanınıza katılmak istiyor",
     preheader: "Üyeler sayfasında onaylayın ya da reddedin. Siz yanıt verene kadar hiçbir şey olmaz.",
     headline: "Bir katılma isteği bekliyor",
     body: (org) => ["Biri ", { b: org }, " davet bağlantısını açıp katılmak istedi."],
+    outside: (by) => [
+      "Bu kişi ",
+      { b: by },
+      " için çalışıyor ve harici çalışan olarak katılmak istiyor. Planınızda yer kaplamaz ve istediğiniz zaman çıkarabilirsiniz.",
+    ],
     note: "Yalnızca beklediğiniz kişileri onaylayın. Sayfada başka bir rol seçmezseniz üye olarak katılırlar.",
     approve: "Onayla",
     deny: "Reddet",
     more: "Bekleyen tüm istekler Üyeler sayfasında.",
     why: (org) =>
       `Bu e-postayı, ${org} çalışma alanının sahibi ya da yöneticisi olduğunuz için aldınız. En fazla saatte bir gönderilir.`,
+    personal: {
+      body: () => "Biri çalışma alanınızın davet bağlantısını açıp katılmak istedi.",
+      why: () =>
+        "Bu e-postayı, çalışma alanınıza kimlerin katılacağına siz karar verdiğiniz için aldınız. En fazla saatte bir gönderilir.",
+    },
   },
   joinAnswer: {
     someone: "Biri",
@@ -226,6 +285,17 @@ export const words: EmailWords = {
     },
     why: (org) =>
       `Bu e-postayı, bu adresle agentes.chat'te ${org} çalışma alanına katılma isteği gönderildiği için aldınız.`,
+    personal: {
+      joined: { body: (who) => `${who} isteğinizi onayladı. Artık onun çalışma alanındasınız.` },
+      invited: { body: (who) => `${who}, kendi çalışma alanına katılma isteğinizi onayladı.` },
+      denied: {
+        preheader: "İsteğinize baktı ve onaylamadı.",
+        body: () => "İstek gönderdiğiniz kişi isteğinize baktı ve onaylamadı.",
+        small: "Bir yanlışlık olduğunu düşünüyorsanız bu kişiden sizi e-postayla davet etmesini isteyin.",
+      },
+      why: () =>
+        "Bu e-postayı, bu adresle agentes.chat'te kişisel bir çalışma alanına katılma isteği gönderildiği için aldınız.",
+    },
   },
   joinCode: {
     subject: (code) => `agentes.chat kodunuz: ${code}`,
@@ -235,15 +305,27 @@ export const words: EmailWords = {
     small: ["10 dakika geçerli. Siz istemediyseniz ", { nobr: "bu e-postayı yok sayın." }],
     why: (org) =>
       `Bu e-postayı, biri agentes.chat'te ${org} çalışma alanına katılmak için bu adresi yazdığı için aldınız.`,
+    personal: {
+      body: () => "Bu çalışma alanına katılma isteği göndermek için bu kodu sayfaya yazın.",
+      why: () =>
+        "Bu e-postayı, biri agentes.chat'te kişisel bir çalışma alanına katılmak için bu adresi yazdığı için aldınız.",
+    },
   },
   deletionCode: {
     subjectWorkspace: (code) => `Çalışma alanı silme kodunuz: ${code}`,
     subjectAccount: (code) => `Hesabınızın tamamını silme kodunuz: ${code}`,
+    subjectReset: (code) => `Çalışma alanı sıfırlama kodunuz: ${code}`,
+    reset: (org) => [
+      { b: org },
+      " çalışma alanını sıfırlamak için bu kodu yazın. Ajanları, konuşmaları, dosyaları ve belleği hemen ve kalıcı olarak silinir ve yeni bir çalışma alanı gibi baştan başlar.",
+    ],
+    whyReset: (org) =>
+      `Bu e-postayı, hesabınızdan agentes.chat'te ${org} çalışma alanının sıfırlanması istendiği için aldınız.`,
     preheader: "Onaylamak için agentes.chat'e yazın. 10 dakika geçerli.",
     headline: "Kodunuz",
     workspace: (org) => [
       { b: org },
-      " çalışma alanını silmek için bu kodu yazın. Çalışma alanı herkes için hemen kapanır ve 7 gün sonra kalıcı olarak silinir.",
+      " çalışma alanını silmek için bu kodu yazın. Çalışma alanı herkes için hemen salt okunur olur ve 7 gün sonra kalıcı olarak silinir.",
     ],
     account: (email) => [
       { b: email },
@@ -259,21 +341,72 @@ export const words: EmailWords = {
     whyWorkspace: (org) =>
       `Bu e-postayı, hesabınızdan agentes.chat'te ${org} çalışma alanının silinmesi istendiği için aldınız.`,
     whyAccount: "Bu e-postayı, hesabınızdan agentes.chat'te hesabın silinmesi istendiği için aldınız.",
+    personal: {
+      workspace: (org) => [
+        { b: org },
+        " çalışma alanınızı silmek için bu kodu yazın. Hemen salt okunur olur ve 7 gün sonra kalıcı olarak silinir.",
+      ],
+    },
+  },
+  emailChange: {
+    code: {
+      subject: (code) => `E-posta adresinizi değiştirme kodunuz: ${code}`,
+      preheader: "Onaylamak için agentes.chat'e yazın. 10 dakika geçerli.",
+      headline: "Kodunuz",
+      body: (email, newEmail) => [
+        { b: email },
+        " hesabının e-posta adresini ",
+        { b: newEmail },
+        " olarak değiştirmek için bu kodu yazın.",
+      ],
+      support: (address) => [
+        "10 dakika geçerli ve bu kod olmadan e-posta adresiniz değişmez. Bu siz değilseniz kodu kimseyle paylaşmayın ve ",
+        { mail: address },
+        " adresine yazın.",
+      ],
+      noSupport:
+        "10 dakika geçerli ve bu kod olmadan e-posta adresiniz değişmez. Bu siz değilseniz kodu kimseyle paylaşmayın ve bu sunucuyu yönetenlere haber verin.",
+      why: "Bu e-postayı, hesabınızdan agentes.chat'te e-posta adresinin değiştirilmesi istendiği için aldınız.",
+    },
+    link: {
+      subject: "agentes.chat için yeni e-postanızı onaylayın",
+      preheader: "Tek tıkla bundan sonra bu adresle giriş yaparsınız. Bağlantı bir saat geçerli.",
+      headline: "Yeni e-postanızı onaylayın",
+      body: "Bir adım kaldı: bu adresin size ait olduğunu onaylayın. Bundan sonra hesabınız bu adresle giriş yapar.",
+      button: "Yeni e-postayı onayla",
+      small: "Bağlantı bir saat geçerli. Bunu siz istemediyseniz bu e-postayı yok sayabilirsiniz.",
+      why: "Bu e-postayı, biri bu adresi bir agentes.chat hesabında kullanmak istediği için aldınız.",
+    },
+    changed: {
+      subject: "agentes.chat hesabınızın e-posta adresi değişti",
+      preheader: "Bu siz değilseniz bu adresi 7 gün içinde geri alabilirsiniz.",
+      headline: "E-posta adresiniz değişti",
+      body: (email, newEmail) => [{ b: email }, " hesabı artık ", { b: newEmail }, " ile giriş yapıyor."],
+      notYou:
+        "Siz değil miydiniz? 7 gün içinde düğmeye basın. Bu adres geri gelir, tüm oturumlar kapatılır, yapay zekâ uygulamalarının bağlantısı kesilir ve o zamandan beri eklenen giriş yolları artık çalışmaz. Şifre de silinir, sonrakini “Şifremi unuttum” ile belirlersiniz.",
+      button: "Bu ben değildim",
+      small: "Bunu siz yaptıysanız bir şey yapmanıza gerek yok.",
+      why: "Bu e-postayı, bu adres bir agentes.chat hesabının e-posta adresi olduğu için aldınız.",
+    },
   },
   deleting: {
     subject: (day) => `Bulunduğunuz bir çalışma alanı ${day} tarihinde silinecek`,
-    preheader: "Şu anda kapalı. Bir sahip o zamana kadar geri yükleyebilir.",
+    preheader: "Şu anda salt okunur. Bir sahip o zamana kadar geri yükleyebilir.",
     headline: "Bir çalışma alanı siliniyor",
     body: (by, org, day, time) => [
       { b: by },
       ", ",
       { b: org },
-      ` çalışma alanını sildi. Şu anda kapalı ve ${day} ${time} itibarıyla kalıcı olarak silinecek.`,
+      ` çalışma alanını sildi. Şu anda salt okunur ve ${day} ${time} itibarıyla kalıcı olarak silinecek.`,
     ],
     owner: "Fikrinizi mi değiştirdiniz? O zamana kadar geri yükleyin.",
     button: "Çalışma alanını geri yükle",
     member: "Bir yanlışlık varsa bir sahipten geri yüklemesini isteyin.",
     why: (org) => `Bu e-postayı, agentes.chat'te ${org} çalışma alanında bulunduğunuz için aldınız.`,
+    personal: {
+      member: "Bir yanlışlık varsa silen kişiden geri yüklemesini isteyin.",
+      why: () => "Bu e-postayı, agentes.chat'teki bu çalışma alanında bulunduğunuz için aldınız.",
+    },
   },
   restored: {
     subject: "Bulunduğunuz bir çalışma alanı geri geldi",
@@ -282,6 +415,9 @@ export const words: EmailWords = {
     body: (by, org) => [{ b: by }, ", ", { b: org }, " çalışma alanını geri yükledi. Yeniden çalışıyor."],
     button: "Çalışma alanını aç",
     why: (org) => `Bu e-postayı, agentes.chat'te ${org} çalışma alanında bulunduğunuz için aldınız.`,
+    personal: {
+      why: () => "Bu e-postayı, agentes.chat'teki bu çalışma alanında bulunduğunuz için aldınız.",
+    },
   },
   appConnected: {
     subject: "agentes.chat hesabınıza bir uygulama bağlandı",
@@ -292,6 +428,11 @@ export const words: EmailWords = {
     button: "Bağlı uygulamaları gör",
     why: (org) =>
       `Bu e-postayı, agentes.chat'te ${org} çalışma alanındaki hesabınıza bir uygulama bağlandığı için aldınız.`,
+    personal: {
+      body: (app) => [{ b: app }, " artık kişisel çalışma alanınızdaki hesabınıza erişebiliyor."],
+      why: () =>
+        "Bu e-postayı, agentes.chat'teki kişisel çalışma alanınızda hesabınıza bir uygulama bağlandığı için aldınız.",
+    },
   },
   accountDeleting: {
     subject: (day) => `agentes.chat hesabınız ${day} tarihinde silinecek`,
@@ -381,6 +522,10 @@ export const words: EmailWords = {
     button: "Kimlerin konuşabildiğini gör",
     why: (org) =>
       `Bu e-postayı, ${org} içindeki bir ajanın senin planınla düşündüğü ve başka biri onunla kimlerin konuşabileceğini değiştirdiği için aldın.`,
+    personal: {
+      why: () =>
+        "Bu e-postayı, ajanlarından biri senin planınla düşündüğü ve başka biri onunla kimlerin konuşabileceğini değiştirdiği için aldın.",
+    },
   },
   planLent: {
     subject: (plan) => `${plan} planın artık başka bir ajan için düşünüyor`,
@@ -398,6 +543,9 @@ export const words: EmailWords = {
     note: "Bildirimlerinden tek tıkla geri al, ajan artık planınla düşünmez.",
     button: "Bildirimleri aç",
     why: (org) => `Bu e-postayı ${org} içinde biri planını bir ajana bağladığı için aldın.`,
+    personal: {
+      why: () => "Bu e-postayı çalışma alanında biri planını bir ajana bağladığı için aldın.",
+    },
   },
   planWaiting: {
     subject: "Ekibin bekliyor",
@@ -414,5 +562,60 @@ export const words: EmailWords = {
     button: "agentes.chat planlarını gör",
     why: (org) =>
       `Bu e-postayı agentes.chat üzerinde ${org} alanını yönettiğin için aldın. Bu bildirimden yalnızca iki tane gönderiyoruz.`,
+    personal: {
+      subject: "Ajanların bekliyor",
+      headline: "Ajanların bekliyor",
+      body: (agents, _channels, routines) => {
+        const a = plural("tr", agents, { one: `1 ajan`, other: `${agents} ajan` });
+        const r = plural("tr", routines, { one: `1 rutin`, other: `${routines} rutin` });
+        return `Hazır: ${routines > 0 ? `${a} ve ${r}` : a}. Eksik olan tek şey bir agentes.chat planı.`;
+      },
+      why: () =>
+        "Bu e-postayı, agentes.chat'teki bu çalışma alanı sana ait olduğu için aldın. Bu bildirimden yalnızca iki tane gönderiyoruz.",
+    },
+  },
+  surface: {
+    linked: {
+      subject: (surface) => `${surface} agentes.chat hesabına bağlandı`,
+      preheader: "Asistanın artık sana orada yanıt veriyor. Sen değilsen bağlantıyı kaldır.",
+      headline: (surface) => `${surface} bağlandı`,
+      body: (surface, display, org) => [
+        { b: display },
+        ` (${surface}) artık `,
+        { b: org },
+        " içinde asistanınla konuşuyor.",
+      ],
+      notYou: "Sen değil misin? Bağlantıyı kaldır. Oradan gelen mesajlar hesabına hemen ulaşmaz olur.",
+      button: "Bağlantıyı kaldır",
+      small: "Sensen yapman gereken bir şey yok. Bağlantıyı istediğin zaman Ayarlar'dan kaldırabilirsin.",
+      why: (surface) => `Bu e-postayı ${surface} agentes.chat hesabına bağlandığı için aldın.`,
+      picture: "Asistanın, artık telefonunda da",
+    },
+    unlinked: {
+      subject: (surface) => `${surface} agentes.chat hesabından ayrıldı`,
+      preheader: "Kimliği değişti. Sensen Ayarlar'dan yeniden bağla.",
+      headline: (surface) => `${surface} ayrıldı`,
+      body: (surface, display) => [{ b: display }, ` (${surface}) kimliği değiştiği için ayrıldı.`],
+      small: "Sensen Ayarlar'dan yeniden bağla.",
+      why: (surface) => `Bu e-postayı ${surface} agentes.chat hesabına bağlı olduğu için aldın.`,
+      picture: "Asistanın, artık telefonunda değil",
+    },
+  },
+  supportReply: {
+    subject: "Yardım talebinize bir yanıt",
+    preheader: "agentes.chat'te istediğiniz yardım hakkında.",
+    headline: "Yardım talebinize bir yanıt",
+    answers: {
+      received: "Talebinizi aldık ve inceliyoruz.",
+      need_more:
+        "Yardımcı olabilmemiz için daha fazla bilgiye ihtiyacımız var: ne yaptığınız, ne beklediğiniz ve ne olduğu.",
+      resolved: "Bildirdiğiniz sorun düzeltildi.",
+      handed_over: "Talebinizle artık bir kişi ilgileniyor ve size yanıt verecek.",
+    },
+    from: (host) =>
+      host ? atHost("agentes.chat sunucusunu yönetenler yanıtladı.", "Sunucu:", host) : "agentes.chat yanıtladı.",
+    ai: "Bu yanıtı bir yapay zeka asistanı yazdı.",
+    reply: (address) => ["Yanıtlamak için ", { mail: address }, " adresine yazın."],
+    why: "Bu e-postayı, agentes.chat'te yardım istediğiniz için aldınız.",
   },
 };

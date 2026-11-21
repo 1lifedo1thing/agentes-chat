@@ -1,7 +1,7 @@
 import { useRoles, type VaultAccess, type VaultScope } from "@agenteschat/client";
-import { useMemo, useState } from "react";
+import { type Ref, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, TextInput, type TextInputProps, View } from "react-native";
+import { StyleSheet, TextInput, type TextInputInstance, type TextInputProps, View } from "react-native";
 import {
   Button,
   fieldText,
@@ -45,7 +45,10 @@ export function usePickableAgents() {
   return useMemo(() => dir.agents.filter((a) => !a.former), [dir.agents]);
 }
 
-/** A labeled field row with its input (read-only as plain text when it can't change). */
+/**
+ * A labeled field row with its input (read-only as plain text when it can't change). Its return key and `ref` pass
+ * through, so a form walks its fields (`NEXT_FIELD`) and focuses one.
+ */
 export function InputField({
   label,
   value,
@@ -53,6 +56,7 @@ export function InputField({
   editable = true,
   mono = false,
   hint,
+  ref,
   ...input
 }: {
   label: string;
@@ -63,6 +67,7 @@ export function InputField({
   mono?: boolean;
   /** What the field is for, behind an ⓘ beside its label. */
   hint?: { name: string; text: string };
+  ref?: Ref<TextInputInstance | null>;
 } & Pick<
   TextInputProps,
   | "placeholder"
@@ -74,6 +79,9 @@ export function InputField({
   | "autoComplete"
   | "autoFocus"
   | "inputMode"
+  | "returnKeyType"
+  | "submitBehavior"
+  | "onSubmitEditing"
 >) {
   const c = useColors();
   const font = mono ? styles.mono : fieldText("callout");
@@ -81,6 +89,7 @@ export function InputField({
     <GroupedField label={label} {...(hint ? { hint } : {})}>
       {editable ? (
         <TextInput
+          ref={ref}
           value={value}
           onChangeText={onChange}
           autoCorrect={false}
@@ -119,6 +128,7 @@ export function ScopeRows({
           label={t("mobile.vault.scope.personal")}
           sub={t("mobile.vault.scope.personalText")}
           subLines={2}
+          media
           checked={scope === "personal"}
           onPress={() => onChange("personal")}
         />
@@ -127,6 +137,7 @@ export function ScopeRows({
           label={t("mobile.vault.scope.team")}
           sub={canTeam ? t("mobile.vault.scope.teamText") : t("mobile.vault.scope.teamLocked")}
           subLines={2}
+          media
           checked={scope === "team"}
           disabled={!canTeam}
           faint={!canTeam}
@@ -170,6 +181,7 @@ export function AgentRows({
           label={t("mobile.vault.access.allAgents")}
           sub={t("mobile.vault.agents.allText")}
           subLines={2}
+          media
           toggle={access.allAgents}
           disabled={disabled}
           onPress={() => onChange({ ...access, allAgents: !access.allAgents })}

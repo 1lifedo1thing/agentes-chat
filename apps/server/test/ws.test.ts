@@ -1,12 +1,17 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { orgTopic } from "@agenteschat/adapters";
+import { listenResumedTopic, orgTopic } from "@agenteschat/adapters";
+import { schema } from "@agenteschat/db";
 import { createLogger } from "../src/logger";
 import {
   authorizeSubscription,
+  type BrowserSocketData,
   createRealtime,
   currentSubscriptions,
+  MEMBERSHIP_RECHECK_TICKS,
   parseClientFrame,
+  SESSION_RECHECK_MS,
   type SocketData,
+  sessionRecheckPeriod,
 } from "../src/realtime/ws";
 import {
   browser,
@@ -198,6 +203,34 @@ test("a subscribe whose check can't run (the database is away) answers an error 
   again.ws.close();
 });
 
+/** The test server's realtime on its own port, rechecking every `ms` (membership every `MEMBERSHIP_RECHECK_TICKS`). */
+function fastRecheckServer(db: TestServer["db"], ms: number) {
+  const realtime = createRealtime({
+    db,
+    auth: t.auth,
+    config: t.config,
+    log: createLogger("error"),
+    ...t.adapters,
+    sessionRecheckMs: ms,
+  });
+  return Bun.serve<SocketData>({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: (req, srv) => realtime.fetch(req, srv, (r) => t.app.fetch(r)),
+    websocket: realtime.websocket,
+  });
+}
+
+test("an open socket rechecks its session every minute plus its own jitter of up to 15 s, its channels every 5th time", () => {
+  expect(SESSION_RECHECK_MS).toBe(60_000);
+  expect(sessionRecheckPeriod(SESSION_RECHECK_MS, () => 0)).toBe(60_000);
+  expect(sessionRecheckPeriod(SESSION_RECHECK_MS, () => 0.999_999)).toBe(74_999);
+  const periods = new Set(Array.from({ length: 20 }, () => sessionRecheckPeriod(SESSION_RECHECK_MS)));
+  expect(periods.size).toBeGreaterThan(1);
+  for (const p of periods) expect(p >= 60_000 && p < 75_000).toBe(true);
+  expect(MEMBERSHIP_RECHECK_TICKS).toBe(5);
+});
+
 /** `db` whose queries settle a couple of ms later, on a timer. */
 function answersLater<T extends object>(target: T): T {
   return new Proxy(target, {
@@ -226,20 +259,7 @@ test("a channel subscribed while the periodic membership check runs stays subscr
   const { orgId, channelId } = await seedOrg(owner);
   // The same server with the periodic check every few ms, so subscribes keep landing inside its query, and each
   // query answering a moment later, as over a network (PGlite answers before any frame can come in between).
-  const realtime = createRealtime({
-    db: answersLater(t.db),
-    auth: t.auth,
-    config: t.config,
-    log: createLogger("error"),
-    ...t.adapters,
-    sessionRecheckMs: 5,
-  });
-  const fast = Bun.serve<SocketData>({
-    port: 0,
-    hostname: "127.0.0.1",
-    fetch: (req, srv) => realtime.fetch(req, srv, (r) => t.app.fetch(r)),
-    websocket: realtime.websocket,
-  });
+  const fast = fastRecheckServer(answersLater(t.db), 1);
   try {
     const c = connect(`ws://127.0.0.1:${fast.port}/api/ws?orgId=${orgId}`, { origin: ORIGIN, cookie: owner.cookie() });
     await c.opened;
@@ -260,6 +280,113 @@ test("a channel subscribed while the periodic membership check runs stays subscr
     c.ws.close();
   } finally {
     await Promise.race([fast.stop(true), Bun.sleep(500)]);
+  }
+}, 30_000);
+
+test("a removal that lands while two subscribes to the channel are being checked refuses it: nothing is streamed", async () => {
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const { orgId, channelId } = await seedOrg(owner);
+  const ana = await joinByInvitation(t, owner, orgId, "ana@example.com");
+  const { user } = (await (await ana("/api/app/me")).json()) as { user: { id: string } };
+  // The channel's membership check answers only when the test lets it: both subscribes are in flight at the removal.
+  const held: (() => void)[] = [];
+  const holds = <T extends object>(query: T): T =>
+    new Proxy(query, {
+      get(target, key) {
+        const value = Reflect.get(target, key) as unknown;
+        if (typeof value !== "function") return value;
+        if (key === "then")
+          return (ok: (v: unknown) => void, fail: (e: unknown) => void) =>
+            value.call(target, (rows: unknown) => held.push(() => ok(rows)), fail);
+        return (...args: unknown[]) => {
+          const out = value.apply(target, args) as unknown;
+          return out !== null && typeof out === "object" ? holds(out) : out;
+        };
+      },
+    });
+  const db = new Proxy(t.db, {
+    get(target, key) {
+      const value = Reflect.get(target, key) as unknown;
+      if (key === "select")
+        return (fields?: Record<string, unknown>) => {
+          const query = (value as (f?: unknown) => object).call(target, fields);
+          return fields?.channel === schema.channels ? holds(query) : query;
+        };
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+  // The periodic recheck far away: only the removal's own event may refuse the channel here.
+  const realtime = createRealtime({
+    db,
+    auth: t.auth,
+    config: t.config,
+    log: createLogger("error"),
+    ...t.adapters,
+    sessionRecheckMs: 60_000,
+  });
+  let data: SocketData | undefined;
+  const refused = await realtime.upgrade(
+    new Request(`${ORIGIN}/api/ws?orgId=${orgId}`, { headers: { origin: ORIGIN, cookie: ana.cookie() } }),
+    {
+      upgrade(_request: Request, options: { data: SocketData }) {
+        data = options.data;
+        return true;
+      },
+    } as unknown as Parameters<typeof realtime.upgrade>[1],
+  );
+  expect(refused).toBeUndefined();
+  const frames: Record<string, unknown>[] = [];
+  let readyState = 1;
+  const socket = {
+    data,
+    get readyState() {
+      return readyState;
+    },
+    send(text: string) {
+      frames.push(JSON.parse(text) as Record<string, unknown>);
+      return 1;
+    },
+    close() {
+      readyState = 3;
+    },
+  } as unknown as Parameters<typeof realtime.websocket.open>[0];
+  const until = async (done: () => boolean) => {
+    const deadline = Date.now() + 3000;
+    while (!done() && Date.now() < deadline) await Bun.sleep(1);
+    expect(done()).toBe(true);
+  };
+  const pending: Promise<unknown>[] = [];
+  try {
+    await realtime.websocket.open(socket);
+    const subscribe = JSON.stringify({ type: "subscribe", channelId });
+    pending.push(Promise.resolve(realtime.websocket.message(socket, subscribe)));
+    await until(() => held.length === 1);
+    let answered = false;
+    pending.push(Promise.resolve(realtime.websocket.message(socket, subscribe)).then(() => (answered = true)));
+    await until(() => answered || held.length === 2);
+
+    const removed = await owner(`/api/app/organizations/${orgId}/channels/${channelId}/members/people/${user.id}`, {
+      method: "DELETE",
+    });
+    expect(removed.status).toBe(204);
+    for (const release of held.splice(0).reverse()) release();
+    await Promise.all(pending);
+
+    expect(frames.filter((f) => f.channelId === channelId)).toEqual([{ type: "error", code: "forbidden", channelId }]);
+    const browser = data as BrowserSocketData | undefined;
+    expect(browser?.subscriptions.has(channelId)).toBe(false);
+    expect(browser?.pending.has(channelId)).toBe(false);
+    const posted = await owner(`/api/app/organizations/${orgId}/channels/${channelId}/messages`, {
+      json: { body: "after the removal" },
+    });
+    expect(posted.status).toBe(201);
+    expect(frames.filter((f) => f.type === "event" && f.channelId === channelId)).toEqual([]);
+  } finally {
+    for (const release of held.splice(0)) release();
+    await Promise.allSettled(pending);
+    readyState = 3;
+    await realtime.websocket.close(socket, 1000);
   }
 }, 30_000);
 
@@ -289,7 +416,6 @@ test("end to end: a subscriber sees the message, the streamed deltas and the age
     "message.claimed",
     "agent.run",
     "agent.typing",
-    "agent.delta",
     "message.created",
     "agent.run",
     "agent.idle",
@@ -299,13 +425,9 @@ test("end to end: a subscriber sees the message, the streamed deltas and the age
   // The agent's presence moved with its run, for the whole workspace (ADR 0084 §11).
   const org = c.frames.filter((f) => f.type === "event" && f.scope === "org").map((f) => f.event);
   expect(org).toContainEqual(expect.objectContaining({ type: "agent.status", agentId }));
-  expect(
-    events
-      .filter((e) => e.type === "agent.delta")
-      .map((e) => e.text)
-      .join(""),
-  ).toBe("Hello there");
-  const reply = events[8] as {
+  // Its words come whole, in its message.
+  expect(JSON.stringify(events.slice(0, 7))).not.toContain("Hello there");
+  const reply = events[7] as {
     message: { body: string; threadId: string | null; author: { type: string; id: string } };
   };
   // Asked in the channel, answered in the channel.
@@ -441,26 +563,31 @@ test("a missed revocation event is reconciled from durable membership", async ()
       ? Promise.resolve()
       : publish(topic, event);
 
-  const a = connect(wsUrl(orgId), { origin: ORIGIN, cookie: ana.cookie() });
-  await a.opened;
-  a.send({ type: "subscribe", channelId });
-  await a.next((f) => f.type === "subscribed" && f.channelId === channelId);
-  expect((await currentSubscriptions(t.db, anaId, orgId, [channelId]))?.has(channelId)).toBe(true);
+  const fast = fastRecheckServer(t.db, 20);
+  try {
+    const a = connect(`ws://127.0.0.1:${fast.port}/api/ws?orgId=${orgId}`, { origin: ORIGIN, cookie: ana.cookie() });
+    await a.opened;
+    a.send({ type: "subscribe", channelId });
+    await a.next((f) => f.type === "subscribed" && f.channelId === channelId);
+    expect((await currentSubscriptions(t.db, anaId, orgId, [channelId]))?.has(channelId)).toBe(true);
 
-  expect(
-    (
-      await owner(`/api/app/organizations/${orgId}/channels/${channelId}/members/people/${anaId}`, {
-        method: "DELETE",
-      })
-    ).status,
-  ).toBe(204);
-  expect((await currentSubscriptions(t.db, anaId, orgId, [channelId]))?.has(channelId)).toBe(false);
-  expect(await a.next((f) => f.type === "unsubscribed" && f.channelId === channelId, 20_000)).toMatchObject({
-    reason: "revoked",
-  });
-  const closed = new Promise<number>((resolve) => a.ws.addEventListener("close", (e) => resolve(e.code)));
-  expect((await owner(`/api/app/organizations/${orgId}/members/${anaId}`, { method: "DELETE" })).status).toBe(204);
-  expect(await Promise.race([closed, Bun.sleep(20_000).then(() => -1)])).toBe(4403);
+    expect(
+      (
+        await owner(`/api/app/organizations/${orgId}/channels/${channelId}/members/people/${anaId}`, {
+          method: "DELETE",
+        })
+      ).status,
+    ).toBe(204);
+    expect((await currentSubscriptions(t.db, anaId, orgId, [channelId]))?.has(channelId)).toBe(false);
+    expect(await a.next((f) => f.type === "unsubscribed" && f.channelId === channelId, 20_000)).toMatchObject({
+      reason: "revoked",
+    });
+    const closed = new Promise<number>((resolve) => a.ws.addEventListener("close", (e) => resolve(e.code)));
+    expect((await owner(`/api/app/organizations/${orgId}/members/${anaId}`, { method: "DELETE" })).status).toBe(204);
+    expect(await Promise.race([closed, Bun.sleep(20_000).then(() => -1)])).toBe(4403);
+  } finally {
+    await Promise.race([fast.stop(true), Bun.sleep(500)]);
+  }
 }, 60_000);
 
 test("a new message reaches the other members' sockets as `channel.activity` (no content), never the author's", async () => {
@@ -536,4 +663,37 @@ test("a socket subscribed to no channel hears of the agents and channels the wor
     event: { type: "channels.changed" },
   });
   c.ws.close();
+});
+
+test("the server's LISTEN back after a gap: every app socket closes as a restart, so the app reconnects and reads again", async () => {
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const { orgId, channelId } = await seedOrg(owner);
+  const c = connect(wsUrl(orgId), { origin: ORIGIN, cookie: owner.cookie() });
+  await c.opened;
+  c.send({ type: "subscribe", channelId });
+  await c.next((f) => f.type === "subscribed" && f.channelId === channelId);
+  const closed = new Promise<number>((resolve) => c.ws.addEventListener("close", (e) => resolve(e.code)));
+  await t.adapters.pubsub.publish(listenResumedTopic, { type: "pubsub.resumed" });
+  expect(await Promise.race([closed, Bun.sleep(5000).then(() => -1)])).toBe(1012);
+});
+
+test("an event Bun drops past its backpressure limit closes the socket, so the app reconnects and reads what it missed", async () => {
+  const realtime = createRealtime({
+    db: t.db,
+    auth: t.auth,
+    config: t.config,
+    log: createLogger("error"),
+    ...t.adapters,
+  });
+  const closed: number[] = [];
+  // A frozen tab: Bun's buffer for it is full, so every send is dropped (0).
+  const frozen = {
+    readyState: 1,
+    data: { kind: "browser", connectionId: "frozen-tab", sessionValidatedAt: Date.now(), sessionCheckInFlight: null },
+    send: () => 0,
+    close: (code: number) => closed.push(code),
+  };
+  await realtime.websocket.message(frozen as unknown as Bun.ServerWebSocket<SocketData>, '{"type":"ping"}');
+  expect(closed).toEqual([1013]);
 });

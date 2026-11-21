@@ -197,6 +197,10 @@ describe("the prompt's rules", () => {
     expect(text).toContain(
       "A service with no connector but a web version (a messaging app, a social network, a bank): use it in your browser, the person signing in.",
     );
+    // A sign-in whose link or code goes to a mailbox the agent reads is the agent's own work.
+    expect(text).toContain(
+      "when the site sends a link or a code to a mailbox you can read (yours, a webmail in your browser, a connected one), get it there and go on;",
+    );
     expect(text).toContain(
       "ask it yourself (ask_agent) when you need its answer, or hand it work or news (tell_agent): what comes of either reaches you here by itself.",
     );
@@ -324,7 +328,7 @@ describe("# This turn", () => {
     };
     const parts = [
       `[ana]: (replying to bia: "o deploy")\n@dev olha isso\n\nlong paste`,
-      `[ana]: @dev olha isso\n\nlong paste\n(attached files: "log.txt" (artifact 1))`,
+      `[ana]: @dev olha isso\n\nlong paste\n(attached files: "log.txt" (artifact 1); open each with read_artifact before you answer about it; if one is unreadable to you, give the reason and way out the tool gave)`,
       `[ana]: @dev olha isso\n\nlong paste\n(sent by ana through Phone, an app connected to agentes.chat; the reply is read there)`,
     ];
     for (const part of parts) {
@@ -475,6 +479,24 @@ describe("# This turn", () => {
       '# Sharing "MacBook"\nAll the agents on "MacBook" share its 4 CPUs and most of its 8 GB',
     );
     expect(seen).toHaveLength(6);
+    expect(seen[5]?.system).not.toContain("# Containers");
+
+    // Its runner found Podman: each agent has its containers there (ADR 0169), which Cursor's sandbox keeps it from.
+    await f.db
+      .update(schema.machines)
+      .set({ executors: { ...row?.executors, mode: "system", toolchains: { podman: "5.4.2" } } })
+      .where(eq(schema.machines.id, paired.machineId));
+    const turn = async () => {
+      await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, { body: "@dev oi" });
+      await drainOutbox(f.db, handlers);
+      return seen.at(-1)?.system ?? "";
+    };
+    expect(await turn()).not.toContain("# Containers");
+    await f.db.update(schema.agents).set({ brain: "claude_code" }).where(eq(schema.agents.id, f.agent.id));
+    expect(await turn()).toContain(
+      '# Containers on "MacBook"\ndocker, docker compose, docker buildx and podman work there, rootless, as your own user',
+    );
+    expect(seen).toHaveLength(8);
   });
 });
 
@@ -646,7 +668,9 @@ describe("a routine's background run", () => {
     const { text } = await routineRun({ access: "act", report: "always", lateMinutes: 310 });
     expect(text).toContain("What it may do: what you can do in any other run.");
     expect(text).toContain("agentes/dev/");
-    expect(text).toContain("Any change in a connected app asks a person first: an approval card in #general");
+    expect(text).toContain(
+      "A send, a delete, a payment, an invite or another change in a connected app that its tool marks as asking asks a person first: an approval card in #general",
+    );
     expect(text).toContain("When it speaks: every run.");
     expect(text).toContain("# When this run is\nDue ");
     expect(text).toContain("(UTC), 5 h 10 min late; cover everything since your last run at ");

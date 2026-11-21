@@ -8,7 +8,7 @@ import {
   useMailSuggestedAddresses,
 } from "@agenteschat/client";
 import { LEVELS, type Level } from "@agenteschat/client/lib/access-levels";
-import { canTalk } from "@agenteschat/client/lib/audience";
+import { canTalk, managesAgent } from "@agenteschat/client/lib/audience";
 import { errorText, knownErrorText } from "@agenteschat/client/lib/errors";
 import { relativeTime } from "@agenteschat/client/lib/format";
 import {
@@ -23,24 +23,27 @@ import {
   mailAccessOf,
   mailActionsChanged,
   mailActionsFrom,
+  mailboxName,
+  mailChoiceName,
   mailErrorOf,
   mailReviewTools,
   normalizePolicy,
   notIcloudMail,
+  onlyForOwner,
   setMailLevel,
   splitEmails,
 } from "@agenteschat/client/lib/mail";
-import { can } from "@agenteschat/client/lib/permissions";
 import {
   Alert,
-  AvatarStack,
   Button,
   Chip,
   Dialog,
   DialogBody,
   DialogFooter,
   Field,
+  HintLine,
   Icon,
+  InfoHint,
   Input,
   Locked,
   Segmented,
@@ -48,16 +51,17 @@ import {
   useUnsavedInDialog,
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { AddressList } from "@/components/AddressList";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { ConnectedRow } from "@/components/ConnectedRow";
 import { ConnectorIcon } from "@/components/ConnectorCatalog";
 import { FlowTitle } from "@/components/FlowTitle";
 import { LoadingList, useStepText } from "@/components/Loading";
 import { MailRulesPanel } from "@/components/MailRules";
+import { ForWhom } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
 import { reviewNote, ToolLevelsView, ToolReview, type ToolReviewState } from "@/components/ToolReview";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -75,7 +79,7 @@ import { useToast } from "@/lib/toast";
  * addresses the mailbox has (replies go out from the one the email arrived at).
  */
 
-export const mailChoiceName = (t: TFunction, choice: MailChoice) => t(`mail.choice.${choice}.name`);
+export { mailChoiceName };
 
 /** The catalog cards this server can connect (Gmail/Outlook need Composio; the rest IMAP). */
 export function mailChoices(providers: MailProviders | undefined): MailChoice[] {
@@ -208,6 +212,7 @@ function OAuthStep({ provider, onClose }: { provider: "gmail" | "outlook"; onClo
         <p className="muted cflow__text">
           {t(`mail.choice.${provider}.text`)} {t("mail.oauthText", { company })}
         </p>
+        <MailForWhom />
       </DialogBody>
       <DialogFooter bar note={t("connectFlow.nothingYet")}>
         <Button onClick={onClose}>{t("common.cancel")}</Button>
@@ -226,6 +231,23 @@ function OAuthStep({ provider, onClose }: { provider: "gmail" | "outlook"; onClo
         </Button>
       </DialogFooter>
     </>
+  );
+}
+
+/** "Para quem" on connecting a mailbox, where the workspace has more than one person: always its person's. */
+function MailForWhom() {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const members = useDirectory(org.id).members.length;
+  if (members <= 1) return null;
+  return (
+    <ForWhom
+      label={t("connectors.personal.forWhom")}
+      value="personal"
+      locked
+      note={t("connectors.personal.mailLocked")}
+      onValueChange={() => {}}
+    />
   );
 }
 
@@ -439,6 +461,7 @@ export function ImapStep({
               </div>
             </details>
           )}
+          <MailForWhom />
           {error && (
             <Alert>
               {t(error === "auth" && choice === "icloud" ? "mail.error.auth_icloud" : `mail.error.${error}`)}
@@ -552,7 +575,11 @@ function AddressesStep({
     <>
       <Locked when={update.isPending}>
         <DialogBody className="cflow__body">
-          <p className="muted cflow__text">{t("mail.addresses.lead")}</p>
+          <p className="muted cflow__text">
+            <HintLine name={t("common.about", { label: t("mail.addresses.button") })} hint={t("mail.addresses.lead")}>
+              {t("mail.addresses.short")}
+            </HintLine>
+          </p>
           <AddressesFields account={account} draft={draft} />
           {update.isError && <Alert>{knownErrorText(t, update.error) ?? t("mail.actionsError")}</Alert>}
         </DialogBody>
@@ -575,7 +602,10 @@ export function MailAddressesDialog({ account, onClose }: { account: MailAccount
       open={account !== null}
       onOpenChange={(o) => !o && onClose()}
       title={t("mail.addresses.title", { address: account?.address ?? "" })}
-      description={t("mail.addresses.lead")}
+      description={t("mail.addresses.short")}
+      descriptionAside={
+        <InfoHint name={t("common.about", { label: t("mail.addresses.button") })}>{t("mail.addresses.lead")}</InfoHint>
+      }
       closeLabel={t("common.close")}
       width={520}
     >
@@ -658,7 +688,14 @@ function ActionsStep({ account, onNext, onClose }: { account: MailAccount; onNex
     <>
       <Locked when={update.isPending}>
         <DialogBody className="cflow__body tr-body">
-          <p className="muted cflow__text">{t("mail.toolsLead", { name: account.address })}</p>
+          <p className="muted cflow__text">
+            <HintLine
+              name={t("common.about", { label: account.address })}
+              hint={t("mail.toolsLead", { name: account.address })}
+            >
+              {t("mail.toolsShort")}
+            </HintLine>
+          </p>
           {mine ? (
             <ToolReview
               name={account.address}
@@ -714,7 +751,7 @@ function WhoStep({
     const may = mailAccessOf(account, {
       userId: me.user.id,
       talks: canTalk(a),
-      managesAgent: can(org, "manage_agents") || a.ownerUserId === me.user.id,
+      managesAgent: managesAgent(a) || a.ownerUserId === me.user.id,
     });
     if (may.gives) return LEVELS;
     return may.removes ? LEVELS.slice(0, LEVELS.indexOf(current(a.id)) + 1) : [current(a.id)];
@@ -769,7 +806,14 @@ function WhoStep({
                   <li key={a.id} className="cflow-agent">
                     <AgentAvatar agentId={a.id} name={a.name} size="sm" />
                     <span className="cflow-agent__name">
-                      <span>{a.name}</span>
+                      <span className="ac-hintline">
+                        <span>{a.name}</span>
+                        {onlyForOwner(account, a, me.user.id) && (
+                          <InfoHint name={t("common.about", { label: a.name })}>
+                            {t("mail.agent.onlyYou", { name: a.name })}
+                          </InfoHint>
+                        )}
+                      </span>
                       {a.role && <span className="small muted">{a.role}</span>}
                     </span>
                     <Segmented
@@ -784,7 +828,7 @@ function WhoStep({
               </ul>
             </>
           )}
-          <p className="small muted cflow__asks">
+          <p className="small muted cflow__asks ac-iconline">
             <Icon name="lock" />
             {t("connectFlow.asksCount", { count: MAIL_ACTIONS.approval.length })}
           </p>
@@ -951,75 +995,51 @@ export function MailRow({
     relativeTime(t, i18n.language, account.createdAt),
   ];
   return (
-    <div className="ac-list__row connected-row ac-mediarow">
-      <span className="ac-mediarow__face">
-        <MailIcon choice={choice} />
-      </span>
-      <span className="ac-mediarow__head">
-        <span className="list-title">
-          <span>{mailChoiceName(t, choice)}</span>
-          {account.status === "needs_reconnect" ? (
-            <Chip icon="alert" tone="waiting">
-              {t("mail.status.needs_reconnect")}
-            </Chip>
-          ) : account.status === "pending" ? (
-            <Chip icon="waiting" tone="waiting">
-              {t("mail.status.pending")}
-            </Chip>
-          ) : (
-            <Chip icon="check" tone="done">
-              {t("mail.status.active")}
-            </Chip>
-          )}
-        </span>
-      </span>
-      <div className="ac-mediarow__body">
-        <span className="small muted">{meta.join(" · ")}</span>
-        <span className="connected-row__who small muted">
-          {using.length > 0 && (
-            <AvatarStack>
-              {using.slice(0, 5).map((a) => (
-                <AgentAvatar key={a.id} agentId={a.id} name={a.name} size="xs" />
-              ))}
-            </AvatarStack>
-          )}
-          {using.length > 0
-            ? t("connectors.usedBy", { count: using.length, total: agents.length })
-            : t("connectors.usedByNone")}
-        </span>
-        {admin && (
-          <div className="connected-row__actions">
+    <ConnectedRow
+      icon={<MailIcon choice={choice} />}
+      name={mailChoiceName(t, choice)}
+      chips={
+        account.status === "needs_reconnect" ? (
+          <Chip icon="alert" tone="waiting">
+            {t("mail.status.needs_reconnect")}
+          </Chip>
+        ) : account.status === "pending" ? (
+          <Chip icon="waiting" tone="waiting">
+            {t("mail.status.pending")}
+          </Chip>
+        ) : (
+          <Chip icon="check" tone="done">
+            {t("mail.status.active")}
+          </Chip>
+        )
+      }
+      using={using}
+      total={agents.length}
+      details={[meta.join(" · ")]}
+      actions={
+        admin && (
+          <>
             {account.status === "needs_reconnect" && (
               <Button size="sm" variant="primary" aria-label={t("mail.reconnectName", { name })} onClick={onReconnect}>
                 {t("mail.reconnect")}
               </Button>
             )}
-            <Button size="sm" aria-label={t("connectors.whoName", { name })} onClick={onWho}>
+            <Button variant="link" aria-label={t("connectors.whoName", { name })} onClick={onWho}>
               {t("connectors.who")}
             </Button>
-            <Button size="sm" variant="ghost" aria-label={t("connectors.toolsName", { name })} onClick={onTools}>
+            <Button variant="link" aria-label={t("connectors.toolsName", { name })} onClick={onTools}>
               {t("connectors.tools")}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-label={t("mail.addresses.buttonName", { name })}
-              onClick={onAddresses}
-            >
+            <Button variant="link" aria-label={t("mail.addresses.buttonName", { name })} onClick={onAddresses}>
               {t("mail.addresses.button")}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-label={t("connectors.disconnectName", { name })}
-              onClick={onDisconnect}
-            >
+            <Button variant="link" aria-label={t("connectors.disconnectName", { name })} onClick={onDisconnect}>
               {t("connectors.disconnect")}
             </Button>
-          </div>
-        )}
-      </div>
-    </div>
+          </>
+        )
+      }
+    />
   );
 }
 
@@ -1114,13 +1134,15 @@ export function MailDisconnectDialog({ account, onClose }: { account: MailAccoun
   const { org } = useOrg();
   const toast = useToast();
   const { disconnect } = useMailAction(org.id);
-  const name = account?.address ?? "";
+  // Someone else's mailbox comes without its address: its service names it, and it reads "Remover" as its row does.
+  const theirs = account !== null && !account.address;
+  const name = account ? account.address || mailboxName(t, account) : "";
   const using = account?.agents.length ?? 0;
   return (
     <Dialog
       open={account !== null}
       onOpenChange={(o) => !o && onClose()}
-      title={t("connectors.disconnectTitle", { name })}
+      title={t(theirs ? "connectors.personal.removeTitle" : "connectors.disconnectTitle", { name })}
       description={using > 0 ? t("connectors.disconnectText", { count: using }) : t("connectors.disconnectTextNone")}
       closeLabel={t("common.close")}
       width={440}
@@ -1141,7 +1163,7 @@ export function MailDisconnectDialog({ account, onClose }: { account: MailAccoun
             })
           }
         >
-          {t("connectors.disconnect")}
+          {t(theirs ? "connectors.personal.remove" : "connectors.disconnect")}
         </Button>
       </DialogFooter>
     </Dialog>

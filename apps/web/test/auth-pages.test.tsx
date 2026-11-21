@@ -14,7 +14,7 @@ import { STORAGE_KEYS, storage } from "@/lib/storage";
 import { ADA_ID, createFakeApi, fakeMachinesOf, ORG_ID, seedState } from "./fake-api";
 import { createFakeAuth } from "./fake-auth";
 import { installTurnstile, removeTurnstile } from "./fake-turnstile";
-import { renderApp, screen, settle } from "./render";
+import { renderApp, screen, settle, showIn } from "./render";
 
 afterEach(() => {
   cleanup();
@@ -102,6 +102,36 @@ describe("the sign-in forms when the server doesn't answer", () => {
   });
 });
 
+describe("an account out of password tries", () => {
+  test("says when to try again, in minutes from the server's wait, never as a wrong password", async () => {
+    const real = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      Response.json(
+        { code: "TOO_MANY_PASSWORD_TRIES", message: "Too many password tries for this account.", retryIn: 790 },
+        { status: 429, headers: { "retry-after": "790" } },
+      )) as unknown as typeof fetch;
+    try {
+      const { api } = authApi(ACCOUNT);
+      const { services } = await renderApp("/login", { api, auth: createBetterAuthClient("http://localhost:3000") });
+      await type("E-mail", "marina@example.com");
+      await press(/^Continuar(?! com)/);
+      await type("Senha", "correct horse");
+      await press(/^Entrar/);
+      expect(screen().getByRole("alert").textContent).toBe(
+        "Muitas tentativas de senha nesta conta. Tente de novo em 14 minutos.",
+      );
+      expect(heading()).toBe("Bom te ver de novo.");
+      await showIn(services, "en");
+      await press(/^Sign in/);
+      expect(screen().getByRole("alert").textContent).toBe(
+        "Too many password tries on this account. Try again in 14 minutes.",
+      );
+    } finally {
+      globalThis.fetch = real;
+    }
+  });
+});
+
 describe("Entrar (e-mail primeiro)", () => {
   test("the e-mail has a password: a wrong one frowns and offers a link; the right one enters", async () => {
     const state = seedState({ me: null });
@@ -135,7 +165,7 @@ describe("Entrar (e-mail primeiro)", () => {
 
     await type("Senha", "senha-errada");
     await press(/^Entrar/);
-    expect(heading()).toBe("Hmm, essa senha não bateu.");
+    expect(heading()).toBe("Essa senha não bateu.");
     // The field, Entrar and "Esqueci a senha" sit right under it: no line between.
     expect(lead()).toBeNull();
     expect(screen().getByLabelText("Senha").getAttribute("aria-invalid")).toBe("true");
@@ -156,11 +186,14 @@ describe("Entrar (e-mail primeiro)", () => {
     const { auth } = createFakeAuth({ onSignIn: () => (state.me = signedIn) });
     const { api } = authApi(ACCOUNT, { state });
     const target = `/org/${ORG_ID}/agents/${ADA_ID}?tab=settings&sec=budget`;
+    // Signed out by hand before: any sign-in here takes that mark away.
+    storage.set(STORAGE_KEYS.signedOut, "1");
     const { router } = await renderApp(`/login?redirect=${encodeURIComponent(target)}`, { api, auth });
     await type("E-mail", "marina@acme.com.br");
     await press(/^Continuar(?! com)/);
     await type("Senha", "correct horse");
     await press(/^Entrar/);
+    expect(storage.get(STORAGE_KEYS.signedOut)).toBeNull();
     expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/agents/${ADA_ID}`);
     expect(router.state.location.search).toEqual({ tab: "settings", sec: "budget" });
   });
@@ -187,7 +220,10 @@ describe("Entrar (e-mail primeiro)", () => {
     await press(/^Entrar/, 10);
     expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/home`);
     expect(router.state.location.search).toEqual({});
-    const dialog = screen().getByRole("dialog", { name: "Conectar uma IA" });
+    // Asked for no agent in particular: Connect for the team (ADR 0160, addendum), whose Claude says it's ready.
+    const dialog = screen().getByRole("dialog", { name: "Conectar uma IA para o time" });
+    await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: /^Claude/ })));
+    await settle(4);
     const panel = within(dialog).getByRole("region", { name: "Seu plano do Claude" });
     expect(panel.textContent).toContain("O computador está pronto.");
   });
@@ -204,13 +240,92 @@ describe("Entrar (e-mail primeiro)", () => {
     expect(calls[0]).toEqual({ method: "signInSocial", args: ["github", "/"] });
   });
 
-  test("the provider used last is marked on a line under its button, which keeps only its mark and words", async () => {
+  test("the way used last is marked on its button's corner: a provider's, or the e-mail's Continuar", async () => {
     rememberSignIn("github");
     try {
       await renderApp("/login", { api: authApi(ACCOUNT).api, auth: createFakeAuth().auth });
       expect(screen().getByRole("button", { name: "Continuar com GitHub", description: "Último usado" })).toBeTruthy();
+      expect(
+        document.querySelector(".auth-last")?.closest(".auth-last-host")?.querySelector("button")?.textContent,
+      ).toBe("Continuar com GitHub");
+      cleanup();
+      rememberSignIn("email");
+      await renderApp("/login", { api: authApi(ACCOUNT).api, auth: createFakeAuth().auth });
+      expect(screen().getByRole("button", { name: /^Continuar(?! com)/, description: "Último usado" })).toBeTruthy();
+      expect(screen().queryByRole("button", { name: "Continuar com GitHub", description: "Último usado" })).toBeNull();
     } finally {
       storage.remove(STORAGE_KEYS.lastSignIn);
+    }
+  });
+
+  test("every sign-in says which server it goes to, and Trocar picks another: the Cloud or one's own", async () => {
+    const asked: string[] = [];
+    const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async (url: string) => {
+      asked.push(String(url));
+      if (String(url).startsWith("https://agentes.example.com/"))
+        return new Response(JSON.stringify({ name: "agentes.chat", api: 1, minApi: 1 }), { status: 200 });
+      throw new TypeError("Failed to fetch");
+    }) as unknown as typeof fetch);
+    const went: string[] = [];
+    const assign = spyOn(window.location, "assign").mockImplementation((to: string | URL) => {
+      went.push(String(to));
+    });
+    try {
+      await renderApp("/login", { api: authApi(ACCOUNT).api, auth: createFakeAuth().auth });
+      await settle(4);
+      const line = document.querySelector(".auth__place") as HTMLElement;
+      expect(line.textContent).toContain("Entrando no agentes.chat Cloud");
+      await act(async () => fireEvent.click(within(line).getByRole("button", { name: "Trocar de servidor" })));
+      await settle(2);
+      const sheet = screen().getByRole("dialog", { name: "Onde fica o seu workspace?" });
+      const cloud = within(sheet).getByRole("radio", { name: /agentes\.chat Cloud/ });
+      expect(cloud.getAttribute("aria-checked")).toBe("true");
+      expect(cloud.textContent).toContain("Recomendado");
+      expect(cloud.textContent).toContain("Computador dos agentes sempre ligado");
+      // No radio dot: the chosen card's border says it.
+      expect(sheet.querySelector(".ac-optrow__dot")).toBeNull();
+      await act(async () => fireEvent.click(within(sheet).getByRole("radio", { name: /No seu servidor/ })));
+      expect(sheet.textContent).toContain("Os agentes param quando ele desliga");
+      expect(sheet.textContent).toContain("Grátis · código aberto");
+      // "Ainda não tem um?": a server for a team, or the app on one's own computer.
+      await act(async () =>
+        fireEvent.click(within(sheet).getByRole("button", { name: "Veja como ter o seu, grátis" })),
+      );
+      await settle(2);
+      const get = screen().getByRole("dialog", { name: "Ter o seu próprio servidor" });
+      expect(within(get).getByRole("link", { name: "Baixar o app" }).getAttribute("href")).toBe(
+        "https://agentes.chat/download",
+      );
+      expect(within(get).getByRole("link", { name: "Como funciona" }).getAttribute("href")).toBe(
+        "https://agentes.chat/pt/docs/run-on-your-computer",
+      );
+      expect(within(get).getByRole("link", { name: "Ver o passo a passo" }).getAttribute("href")).toBe(
+        "https://agentes.chat/pt/docs/install-on-a-server",
+      );
+      await act(async () => fireEvent.click(within(get).getByRole("button", { name: "Use o Cloud" })));
+      await settle(2);
+      expect(
+        within(sheet)
+          .getByRole("radio", { name: /agentes\.chat Cloud/ })
+          .getAttribute("aria-checked"),
+      ).toBe("true");
+      await act(async () => fireEvent.click(within(sheet).getByRole("radio", { name: /No seu servidor/ })));
+      const field = within(sheet).getByLabelText("Endereço do servidor");
+      await act(async () => fireEvent.change(field, { target: { value: "not an address" } }));
+      await act(async () => fireEvent.click(within(sheet).getByRole("button", { name: "Conectar" })));
+      await settle(2);
+      expect(sheet.textContent).toContain("Isso não é um endereço.");
+      await act(async () => fireEvent.change(field, { target: { value: "nowhere.example.org" } }));
+      await act(async () => fireEvent.click(within(sheet).getByRole("button", { name: "Conectar" })));
+      await settle(4);
+      expect(sheet.textContent).toContain("Não achamos o agentes.chat em nowhere.example.org.");
+      await act(async () => fireEvent.change(field, { target: { value: "agentes.example.com" } }));
+      await act(async () => fireEvent.click(within(sheet).getByRole("button", { name: "Conectar" })));
+      await settle(4);
+      expect(went).toEqual(["https://agentes.example.com/login"]);
+    } finally {
+      fetchSpy.mockRestore();
+      assign.mockRestore();
     }
   });
 
@@ -745,6 +860,23 @@ describe("Aceitar convite", () => {
     return { ...r, state };
   };
 
+  test("an invitation that gives a cargo and agents says them: the cargo in the hello, its agents as who works with you", async () => {
+    await openInvite({
+      roles: [{ name: "Suporte", color: "teal", icon: "headset" }],
+      yours: 1,
+      agents: [
+        { id: "agent-max", name: "Max", appearance: { color: "teal", eyes: "dots", accessory: "headset" } },
+        { id: ADA_ID, name: "Ada", appearance: { color: "amber", eyes: "dots", accessory: "beanie" } },
+      ],
+    });
+    expect(heading()).toBe("Oi. Ana chamou você para a Acme, como Suporte.");
+    const org = document.querySelector(".invite__org")?.textContent;
+    expect(org).toContain("Max vai trabalhar com você");
+    expect(org).not.toContain("trabalham lá");
+    // The invitation's first agent is the host.
+    expect(document.querySelector(".auth__ask .ac-avatar")?.getAttribute("data-accessory")).toBe("headset");
+  });
+
   test("a new address: its name, then a password; signing up accepts and opens the workspace", async () => {
     const { auth, calls } = createFakeAuth();
     // Opened from its email: the link carries the proof only the message has (ADR 0090).
@@ -820,6 +952,22 @@ describe("Aceitar convite", () => {
     expect(screen().getByRole("alert").textContent).toBe("Esse é o seu nome? É igual à senha que você digitou.");
   });
 
+  test("a personal workspace's invitation goes by whose it is, never by its name (ADR 0159)", async () => {
+    await openInvite({ orgName: "Pessoal", mode: "personal" });
+    // On top: whose workspace it is, which already says who invited.
+    const org = document.querySelector(".invite__org")?.textContent ?? "";
+    expect(org).toContain("Workspace de Ana Souza");
+    expect(org).not.toContain("Pessoal");
+    expect(org).not.toContain("Convite de");
+    expect(heading()).toBe("Oi. Ana chamou você para entrar.");
+    expect(lead()).toBe("Para começar: como os agentes devem te chamar?");
+    await type("Seu nome", "Rafael Costa");
+    await press(/^Continuar(?! com)/, 2);
+    expect(lead()).toBe("Com ela você entra agora e nas próximas vezes.");
+    expect(screen().getByRole("button", { name: "Entrar" })).toBeTruthy();
+    expect(document.body.textContent).not.toContain("Pessoal");
+  });
+
   test("an account with a password: only its password, Esqueci a senha in place, its provider too; then in", async () => {
     let tries = 0;
     const { auth, calls } = createFakeAuth();
@@ -847,7 +995,7 @@ describe("Aceitar convite", () => {
     expect(screen().getByRole("button", { name: /Continuar com GitHub/ })).toBeTruthy();
     await type("Senha", "senha-errada");
     await press("Entrar na Acme");
-    expect(heading()).toBe("Hmm, essa senha não bateu.");
+    expect(heading()).toBe("Essa senha não bateu.");
     expect(lead()).toBeNull();
     expect(screen().getByLabelText("Senha").getAttribute("aria-invalid")).toBe("true");
     expect(state.calls.some((c) => c.method === "orgs.acceptInvitation")).toBe(false);
@@ -966,6 +1114,17 @@ describe("Aceitar convite", () => {
     expect(router.state.location.pathname.startsWith(`/org/${ORG_ID}`)).toBe(true);
     cleanup();
 
+    // A member of a personal workspace: never its name (ADR 0159).
+    const mine = seedState({ invitationStates: { used: { ...used, orgName: "Pessoal" } } });
+    const membership = mine.me?.organizations[0];
+    if (membership) membership.mode = "personal";
+    await renderApp("/invite/used", { api: createFakeApi(mine) });
+    await settle(4);
+    expect(heading()).toBe("Você já entrou.");
+    expect(screen().getByRole("button", { name: "Abrir" })).toBeTruthy();
+    expect(document.body.textContent).not.toContain("Pessoal");
+    cleanup();
+
     // Signed out: signing in on the way.
     const out = await renderApp("/invite/used", {
       api: createFakeApi(seedState({ me: null, invitationStates: { used } })),
@@ -1012,7 +1171,9 @@ describe("Aceitar convite", () => {
     await renderApp("/invite/old", { api: createFakeApi(state) });
     await settle(4);
     await press("Pedir um novo convite");
-    expect(screen().getByRole("alert").textContent).toMatch(/trocado por um convite mais novo ou cancelado/);
+    expect(screen().getByRole("alert").textContent).toMatch(
+      /Alguém pode ter cancelado este link ou mandado um convite mais novo/,
+    );
     expect(screen().queryByRole("button", { name: "Pedido enviado" })).toBeNull();
     expect(screen().getByRole("button", { name: "Pedir um novo convite" }).hasAttribute("disabled")).toBe(false);
   });
@@ -1235,23 +1396,33 @@ describe("Onboarding: the workspace's name", () => {
     state.authConfig = { workspaceComputer: false, billingUrl, ...patch.authConfig };
     const api = createFakeApi(state);
     const r = await renderApp("/onboarding", { api });
+    // First what it is for (ADR 0159): a company or team names it next. Where no workspace may be made, no question.
+    const team = screen().queryByRole("radio", { name: /Para meu time/ });
+    if (team) {
+      await click(team, 8);
+      await click(button("Continuar"), 8);
+    }
     return { ...r, api, state };
   };
   const button = (name: string | RegExp) => screen().getByRole("button", { name });
-  const click = async (el: HTMLElement, rounds = 4) => {
+  /** What it is for: a company or team, then its name (ADR 0159). */
+  const toName = async () => {
+    await click(screen().getByRole("radio", { name: /Para meu time/ }), 8);
+    await click(button("Continuar"), 8);
+  };
+  async function click(el: HTMLElement, rounds = 4) {
     await act(async () => fireEvent.click(el));
     await settle(rounds);
-  };
+  }
   const next = () => click(button("Continuar"), 8);
   const calls = (state: ReturnType<typeof seedState>, method: string) => state.calls.filter((c) => c.method === method);
 
-  test("one question, asked by the right hand, not a guide among the presets; no steps to count", async () => {
+  test("the name, step 1 on the rail, Lodi's line on its horizon, never a guide among the presets", async () => {
     await start();
     expect(screen().getByRole("heading", { name: "Como se chama o seu workspace?" })).toBeTruthy();
-    expect(document.querySelector(".onb__host-name")?.textContent).toBe("Lodi");
+    expect(screen().getByRole("navigation", { name: "Passos para começar" })).toBeTruthy();
+    expect(document.querySelector(".onb__say")?.textContent).toContain("Eu sou o Lodi.");
     expect(document.body.textContent).not.toContain("Oi, eu sou a Ada");
-    expect(screen().queryByRole("navigation", { name: "Passos para começar" })).toBeNull();
-    expect(document.querySelector(".onb__progress")).toBeNull();
     // A name is no misspelling.
     expect(screen().getByLabelText("Nome").getAttribute("spellcheck")).toBe("false");
     expect(button("Continuar").hasAttribute("disabled")).toBe(true);
@@ -1268,19 +1439,26 @@ describe("Onboarding: the workspace's name", () => {
     expect(bar.contains(note)).toBe(false);
     expect(note.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect([...bar.children].map((b) => b.textContent)).toEqual([expect.stringMatching(/^Continuar/)]);
-    // It holds the screen's bottom, clear of a phone's home bar, and a field being typed in scrolls clear of it.
+    // Right under the step, it holds the screen's bottom only while the step is taller than the screen, clear of a
+    // phone's home bar, and a field being typed in scrolls clear of it.
     const css = readFileSync(join(import.meta.dir, "../src/pages/onboarding.css"), "utf8");
     const rule = (selector: string, from = 0) => css.slice(css.indexOf(`${selector} {`, from)).split("}")[0] ?? "";
     expect(rule("\n.onb__actions")).toContain("position: sticky");
     expect(rule("\n.onb__actions")).toContain("bottom: 0");
     expect(rule("\n.onb__body")).not.toMatch(/(^|\n)\s*margin:/);
-    expect(rule("\n.onb__actions")).toContain("margin: auto calc(-1 * var(--onb-gutter)) 0");
-    expect(rule("\n.onb__body")).toContain("--onb-gutter: clamp(16px, 4vw, 32px)");
+    expect(rule("\n.onb__actions")).toContain("margin: 0 calc(-1 * var(--onb-gutter))");
+    expect(rule("\n.onb__cols")).toContain("--onb-gutter: clamp(16px, 4vw, 32px)");
     expect(rule("\n.onb__actions")).toContain(
-      "padding: 0 var(--onb-gutter) calc(env(safe-area-inset-bottom, 0px) + 24px)",
+      "padding: var(--space-1) var(--onb-gutter) calc(env(safe-area-inset-bottom, 0px) + var(--space-6))",
     );
     expect(rule("\n.onb__actions")).toContain("background: var(--pane)");
-    expect(rule("\nhtml:has(.onb)")).toContain("scroll-padding-bottom: 104px");
+    // The onboarding scrolls itself, never the document (the Linux app doesn't wheel-scroll the document there).
+    const layout = readFileSync(join(import.meta.dir, "../src/layout.css"), "utf8");
+    const onb = layout.slice(layout.indexOf("\n.onb {")).split("}")[0] ?? "";
+    expect(onb).toContain("height: var(--onb-h, 100dvh)");
+    expect(onb).toContain("overflow-y: auto");
+    expect(onb).toContain("scroll-padding-bottom: 104px");
+    expect(css).not.toContain("100vw - 100%");
   });
 
   test("Sair: the account signs out, to sign-in", async () => {
@@ -1294,9 +1472,20 @@ describe("Onboarding: the workspace's name", () => {
     };
     const { router } = await renderApp("/onboarding", { api: createFakeApi(state), auth });
     await settle(4);
-    await click(button("Sair"), 6);
+    // In the account menu on the rail (Radix: keyboard).
+    const me = button("Sua conta");
+    me.focus();
+    await act(async () => {
+      fireEvent.keyDown(me, { key: "Enter" });
+      fireEvent.keyUp(me, { key: "Enter" });
+    });
+    await settle(2);
+    await click(screen().getByRole("menuitem", { name: "Sair" }), 6);
     expect(authCalls.map((c) => c.method)).toEqual(["signOut"]);
     expect(router.state.location.pathname).toBe("/login");
+    // By hand: the desktop app's own server waits for its owner's click instead of signing them in again.
+    expect(storage.get(STORAGE_KEYS.signedOut)).toBe("1");
+    storage.remove(STORAGE_KEYS.signedOut);
   });
 
   test("where new workspaces take an invitation: says so, with whom to ask, and doesn't continue", async () => {
@@ -1309,10 +1498,14 @@ describe("Onboarding: the workspace's name", () => {
     expect([...document.querySelectorAll(".onb__note")].map((n) => n.textContent)).toEqual([
       "Novos workspaces precisam de convite por enquanto. Peça um em suporte@agentes.chat.",
     ]);
-    await type("Nome", "Acme Saúde");
+    // It stops at what the workspace is for (ADR 0159): the answer is picked, and Continuar stays off.
+    expect(
+      screen()
+        .getByRole("radio", { name: /Para meu time/ })
+        .getAttribute("aria-checked"),
+    ).toBe("true");
     expect(button("Continuar").hasAttribute("disabled")).toBe(true);
-    await act(async () => fireEvent.keyDown(screen().getByLabelText("Nome"), { key: "Enter" }));
-    await settle(4);
+    expect(screen().queryByLabelText("Nome")).toBeNull();
     expect(calls(state, "orgs.create")).toEqual([]);
   });
 
@@ -1361,7 +1554,14 @@ describe("Onboarding: the workspace's name", () => {
     const css = sheet("pages/onboarding.css");
     const desktop = sheet("desktop.css");
     const rule = (from: string, selector: string) => from.slice(from.indexOf(`${selector} {`)).split("}")[0] ?? "";
-    const px = (decls: string, prop: string) => Number(decls.match(new RegExp(`\\n\\s*${prop}: (-?[\\d.]+)px`))?.[1]);
+    const tokens = readFileSync(join(import.meta.dir, "../../../packages/ui/src/styles/tokens.css"), "utf8");
+    // A length in px, through the kit's token where the rule names one (`var(--control-h-sm)`).
+    const px = (decls: string, prop: string) => {
+      const value = decls.match(new RegExp(`\\n\\s*${prop}: ([^;\\s]+)`))?.[1] ?? "";
+      const token = value.match(/^var\((--[\w-]+)\)$/)?.[1];
+      const raw = token ? tokens.match(new RegExp(`${token}: (-?[\\d.]+)px`))?.[1] : value.match(/^(-?[\d.]+)px/)?.[1];
+      return Number(raw);
+    };
     // No room above the step that follows what's in it, centring it or pinned as it opens.
     const rows = css.match(/\.onb__body[^{]*::before \{[^}]*\}/g) ?? [];
     expect(rows.filter((r) => /auto|--onb-lead/.test(r))).toEqual([]);
@@ -1409,7 +1609,26 @@ describe("Onboarding: the workspace's name", () => {
     expect(document.body.textContent?.split(said)).toHaveLength(2);
     await click(button("Ver planos do agentes.chat"), 6);
     expect(calls(state, "orgs.billingLink")[0]?.args).toEqual(["org-unpaid", "new_workspace"]);
-    expect(left).toEqual(["https://billing.example.com/link?t=new_workspace"]);
+    expect(left).toEqual(["https://billing.example.com/link?t=new_workspace&theme=light"]);
+  });
+
+  test("back on the question with a workspace that waits for its plan: the refusal opens that workspace", async () => {
+    const state = seedState();
+    const mine = state.me?.organizations[0];
+    if (!mine) throw new Error("no workspace");
+    const api = createFakeApi(state);
+    api.orgs.create = async () => {
+      throw new ApiError(403, "org.create_unpaid", "You already have a workspace waiting for a plan", {
+        orgId: mine.id,
+      });
+    };
+    const { router } = await renderApp("/onboarding", { api });
+    await settle(4);
+    await click(screen().getByRole("radio", { name: /Para mim/ }), 8);
+    await next();
+    expect(screen().getByRole("alert")).toBeTruthy();
+    await click(button(`Abrir ${mine.name}`), 8);
+    expect(router.state.location.pathname.startsWith(`/org/${mine.id}`)).toBe(true);
   });
 
   test("the confirmation email: where it went, a new link, and once it's confirmed no line", async () => {
@@ -1427,6 +1646,7 @@ describe("Onboarding: the workspace's name", () => {
       expect(note()).toBe("Mandamos um link de confirmação para walter@acme.com.br.Mandar outro link");
       // Nothing waits for it.
       expect(button("Continuar").hasAttribute("disabled")).toBe(true);
+      await toName();
       await type("Nome", "Acme");
       expect(button("Continuar").hasAttribute("disabled")).toBe(false);
 
@@ -1454,6 +1674,8 @@ describe("Onboarding: the workspace's name", () => {
     state.me.user.emailVerified = false;
     await renderApp("/onboarding", { api: createFakeApi(state) });
     await settle(4);
+    expect(document.querySelector(".onb__note")).toBeNull();
+    await toName();
     expect(screen().getByRole("heading", { name: "Como se chama o seu workspace?" })).toBeTruthy();
     expect(document.querySelector(".onb__note")).toBeNull();
   });

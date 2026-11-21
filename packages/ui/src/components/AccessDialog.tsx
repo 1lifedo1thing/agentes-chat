@@ -14,7 +14,7 @@ export interface AccessLevel<L extends string = string> {
 export interface AccessSubject {
   id: string;
   name: string;
-  /** The line under the name ("Papel · 4 pessoas", an email). */
+  /** The line under the name ("Cargo · 4 pessoas", an email). */
   detail?: string;
   /** Their face or mark. */
   lead: ReactNode;
@@ -188,8 +188,8 @@ export function AccessDialog<L extends string = string>({
           </div>
         </DialogBody>
       </Locked>
-      <DialogFooter>
-        {footerStart && <span className="ac-access__start">{footerStart}</span>}
+      {/* Another way to go is the footer's note: Cancelar and Salvar stay one group, never split by it. */}
+      <DialogFooter note={footerStart || undefined}>
         <Button onClick={onClose}>{labels.cancel}</Button>
         <Button variant="primary" loading={saving} disabled={saving} onClick={onSave}>
           {labels.save}

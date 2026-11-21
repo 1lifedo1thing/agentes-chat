@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -14,7 +15,9 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { agents } from "./agents";
 import { users } from "./auth";
+import { channels } from "./chat";
 import { organizations } from "./tenancy";
 
 /**
@@ -76,6 +79,11 @@ export const connectorConnections = pgTable(
     /** A service through Composio: its connected account (`ca_…`). */
     composioAccountId: text(),
     /**
+     * A server by address: the names of the request headers a person typed for it (ADR 0186), in their order. Their
+     * values are in the sealed secret only; the names are here so a screen says what is sent without opening it.
+     */
+    headerNames: text().array(),
+    /**
      * A catalog connector's OAuth sign-in: the scopes it granted, space-separated. Fewer than the catalog asks for
      * now: Reconectar adds the rest. Null: a key, a server's own sign-in or Composio.
      */
@@ -85,12 +93,20 @@ export const connectorConnections = pgTable(
     /** Why it needs reconnecting. */
     lastError: text(),
     createdByUserId: text().references(() => users.id, { onDelete: "set null" }),
+    /**
+     * A personal connection's person (the Vault's split, ADR 0144; ADR 0099 addendum): only they see its details and
+     * give it to agents, and its tools serve only runs they are behind. Null: the team's. It leaves with them.
+     */
+    ownerUserId: text().references(() => users.id, { onDelete: "cascade" }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     revokedAt: timestamp({ withTimezone: true }),
   },
   (t) => [
-    uniqueIndex("connector_connections_one_active").on(t.orgId, t.connector).where(sql`${t.revokedAt} is null`),
+    // One live connection per catalog connector for the team, and one for each person.
+    uniqueIndex("connector_connections_one_active")
+      .on(t.orgId, t.connector, sql`coalesce(${t.ownerUserId}, '')`)
+      .where(sql`${t.revokedAt} is null`),
     uniqueIndex("connector_connections_tool_prefix").on(t.orgId, t.toolPrefix).where(sql`${t.revokedAt} is null`),
     index().on(t.orgId),
     index().on(t.composioAccountId),
@@ -130,6 +146,8 @@ export const oauthStates = pgTable(
     connectionId: uuid(),
     /** A Composio sign-in: the connected account its Connect Link made, the only one the return may complete. */
     composioAccountId: text(),
+    /** The connection it makes is its person's own (`user_id`), not the team's. */
+    personal: boolean().notNull().default(false),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
     usedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -212,9 +230,10 @@ export const customTools = pgTable(
 );
 
 /**
- * An MCP tool's description and input schema as first listed (ADR 0117): the model sees these, not what the server
- * says later, until an admin accepts a change. `pending_*`: the server's newer version, kept from its first listing
- * (`changed_at`) and replaced if it changes again. Composio's tools and the ones we serve are never pinned.
+ * An MCP tool's description and input schema as last listed (ADR 0117): a listing that differs is a change, which
+ * applies itself, moves the pin and goes to the audit log. `pending_*` and `changed_at` are no longer written: a
+ * row that still has them is settled by its connection's next listing. Composio's tools and the ones we serve are
+ * never pinned.
  */
 export const connectorToolPins = pgTable(
   "connector_tool_pins",
@@ -285,6 +304,41 @@ export const githubAppInstallations = pgTable(
     updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index().on(t.orgId)],
+);
+
+/**
+ * The GitHub items agents opened or wrote on (pull requests, issues, discussions, their reviews and comments), with the
+ * conversation each came from: what happens on one later wakes that agent there. Issues, pull requests and
+ * discussions share a repository's numbers, so `repo` and `number` name one item. The agent that opened an item keeps
+ * it; one it only wrote on goes to whichever agent wrote on it last.
+ */
+export const githubItems = pgTable(
+  "github_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    orgId: uuid()
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    /** `owner/name`, lowercased: GitHub's names don't tell case apart. */
+    repo: text().notNull(),
+    number: integer().notNull(),
+    agentId: uuid().notNull(),
+    /** The agent opened it: its being merged or closed tells the agent. */
+    authored: boolean().notNull().default(false),
+    channelId: uuid()
+      .notNull()
+      .references(() => channels.id, { onDelete: "cascade" }),
+    /** Where the run's replies went: a thread's root, or null for the conversation's main timeline. */
+    threadId: uuid(),
+    /** The last run on a task that wrote on it, else the last that did: its task is what a merge or a close changes. */
+    runId: uuid(),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({ columns: [t.orgId, t.agentId], foreignColumns: [agents.orgId, agents.id] }).onDelete("cascade"),
+    unique().on(t.orgId, t.repo, t.number),
+  ],
 );
 
 /** How a connector's tools reach it: our own code, an MCP server, or this server's Composio project. */

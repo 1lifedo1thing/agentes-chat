@@ -33,6 +33,8 @@ export interface BillingLinkClaims {
   role: "owner" | "admin";
   locale: UserLocale;
   from: BillingFrom;
+  /** The plan the person picked in the app (the billing service's own key, `PLAN_CLAIM`), to open its Checkout. */
+  plan?: string;
   /** The path on this server the billing service sends the person back to. */
   return: string;
   /**
@@ -53,16 +55,38 @@ export interface BillingLinkClaims {
   };
 }
 
+/** A plan's key as the billing service names it: this server passes it on and never reads it. */
+export const PLAN_CLAIM = /^[a-z][a-z0-9_]{0,31}$/;
+
 /** How long a link opens the billing service: minted on click, it only has to reach the next page. */
 export const BILLING_LINK_SECONDS = 300;
 
 /**
- * `v1.<claims as base64url JSON>.<base64url HMAC-SHA256 of "v1.<claims>">`. The billing service checks the
- * signature over the payload exactly as sent, never over claims it serialized again.
+ * `v1.<claims as base64url JSON>.<base64url HMAC-SHA256 of "v1.<claims>">`, the token of every signed link to an
+ * outside service (the billing service, the referral service). The service checks the signature over the payload
+ * exactly as sent, never over claims it serialized again.
  */
-export function signBillingLink(secret: string, claims: BillingLinkClaims): string {
+export function signLinkToken(secret: string, claims: object): string {
   const signed = `v1.${Buffer.from(JSON.stringify(claims)).toString("base64url")}`;
   return `${signed}.${createHmac("sha256", secret).update(signed).digest("base64url")}`;
+}
+
+export const signBillingLink = (secret: string, claims: BillingLinkClaims) => signLinkToken(secret, claims);
+
+/**
+ * The only `return` an outside service accepts: `/org/<uuid>` plus lowercase path segments, no search, no hash (the
+ * billing service adds `?paid=1` itself). Null for any other shape.
+ */
+export function linkReturnPath(returnTo: string | undefined): string | null {
+  const path = returnTo?.split(/[?#]/)[0];
+  return path && /^\/org\/[0-9a-f-]{36}(\/[a-z0-9/-]*)?$/.test(path) ? path : null;
+}
+
+/** `<base>/link?t=<token>`, keeping any path in the base, with no doubled slash. */
+export function linkUrl(baseUrl: string, token: string) {
+  let end = baseUrl.length;
+  while (end > 0 && baseUrl[end - 1] === "/") end--;
+  return `${baseUrl.slice(0, end)}/link?t=${token}`;
 }
 
 /** Where under the workspace each entry point sends people back (the onboarding's opens it again at its AI step). */
@@ -76,12 +100,12 @@ const RETURN_TO: Partial<Record<BillingFrom, string>> = {
 /**
  * The page the person opened the link from (`returnTo`), when it is one of this workspace's: they land back there,
  * not on the entry point's default. Never another workspace or host. The billing service refuses the whole link
- * unless `return` is `/org/<uuid>` plus lowercase path segments (no search, no hash; it adds `?paid=1` itself), so
- * the page's search and hash are dropped and any other shape falls back to the default.
+ * over any other `return` (`linkReturnPath`), so the page's search and hash are dropped and any other shape falls
+ * back to the default.
  */
 const placeIn = (orgId: string, returnTo: string | undefined) => {
-  const path = returnTo?.split(/[?#]/)[0];
-  return path?.startsWith(`/org/${orgId}/`) && /^\/org\/[0-9a-f-]{36}(\/[a-z0-9/-]*)?$/.test(path) ? path : null;
+  const path = linkReturnPath(returnTo);
+  return path?.startsWith(`/org/${orgId}/`) ? path : null;
 };
 
 /**
@@ -112,7 +136,8 @@ const totalsOf = (orgId: string) => ({
 
 /**
  * A signed link to the workspace's plan and billing on the billing service, for its owners and admins. A
- * suspended workspace refuses it (`org.suspended`); a held one doesn't, since paying is how a billing hold ends.
+ * suspended workspace refuses it (`org.suspended`); a held one doesn't, since paying is how a billing hold ends, nor
+ * one being deleted, whose payer still reaches its invoices and card.
  */
 export async function mintBillingLink(
   db: Database,
@@ -124,6 +149,8 @@ export async function mintBillingLink(
     from: BillingFrom;
     /** The page it was opened from, to come back to (`placeIn`). */
     returnTo?: string;
+    /** The plan picked in the app (`PLAN_CLAIM`); anything else is left out. */
+    plan?: string;
     now?: Date;
   },
 ): Promise<{ url: string; expiresAt: Date }> {
@@ -153,6 +180,7 @@ export async function mintBillingLink(
     role: membership.role === "owner" ? "owner" : "admin",
     locale: appLocale([user.locale], true) ?? "en",
     from,
+    ...(input.plan && PLAN_CLAIM.test(input.plan) ? { plan: input.plan } : {}),
     return: placeIn(orgId, input.returnTo) ?? `/org/${orgId}${RETURN_TO[from] ?? ""}`,
     usage: {
       members: org.counts.members,
@@ -162,5 +190,5 @@ export async function mintBillingLink(
       since: Math.floor(org.createdAt.getTime() / 1000),
     },
   });
-  return { url: `${input.baseUrl.replace(/\/+$/, "")}/link?t=${token}`, expiresAt: new Date(exp * 1000) };
+  return { url: linkUrl(input.baseUrl, token), expiresAt: new Date(exp * 1000) };
 }

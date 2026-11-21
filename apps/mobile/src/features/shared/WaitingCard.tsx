@@ -1,8 +1,7 @@
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
 import { Button, Icon, type IconName, Sky, Text, weights } from "@/ui";
-import { AskButtons, CardPressProvider, ExpiryLine, useCardPress } from "../chat/asks";
+import { AskButtons, ExpiryLine } from "../chat/asks";
 import { AgentFace } from "./Face";
 import { useColors, useDirectory } from "./hooks";
 import { agentLook } from "./logic";
@@ -22,7 +21,7 @@ export interface WaitingCardProps {
   title?: string;
   /** Under the title: why it was asked in muted, then what it goes through (`WaitingSource`), what it costs. */
   children?: ReactNode;
-  /** Its deadline: the amber fuse and the time left, at the top line's right (`ExpiryLine`). */
+  /** Its deadline: the amber fuse and the time left, under the action from the card's edge (`ExpiryLine`). */
   expires?: { createdAt?: string | null; expiresAt: string } | null;
   /** Without a deadline, at the top line's right: where and when ("#marketing · 19:58"). */
   where?: string;
@@ -40,13 +39,12 @@ export interface WaitingCardProps {
 }
 
 /**
- * One thing waiting on you, as Atividade, Conversas' strip and an agent's profile show it, read as the chat's request
+ * One thing waiting on you, as Atividade and an agent's profile show it, read as the chat's request
  * card: the card with its cut corner (square bottom left, as the chat's blocks), the asking agent's sky faint across
  * the top (gray when no agent asks), its face with the name (15, regular: the request is the card's one bold) and
  * the kind under it (its icon quiet: no "waiting for you" mark, the card itself is the ask) and, at the right, where
  * and when; then the request in words (17 semibold), why in muted, what it goes through on one quiet line, the
- * decision (or its one action) wide under it and, at its end, the fuse to its deadline. While a finger is on its
- * approving button (`ApproveSpot`) the card sinks a little and its sky brightens, as the chat's card does.
+ * decision (or its one action) wide under it and, at its end, the fuse to its deadline.
  */
 export function WaitingCard({
   agentId,
@@ -66,7 +64,6 @@ export function WaitingCard({
   const c = useColors();
   const dir = useDirectory();
   const surface = useSurface();
-  const press = useCardPress();
   const agent = agentId ? dir.agentById.get(agentId) : undefined;
   const foot =
     decision ??
@@ -84,18 +81,16 @@ export function WaitingCard({
       />
     ) : null);
   return (
-    <Animated.View style={[styles.card, surface, press.sink]}>
+    <View style={[styles.card, surface]}>
       <View style={styles.clip}>
         {/* The asking agent's sky; a gray one when no agent asks (a server, people), so every card reads the same. */}
-        <Animated.View pointerEvents="none" style={[styles.sky, press.glow]}>
-          <Sky
-            color={agent ? agentLook(agent).color : "graphite"}
-            depth={0.55}
-            fade={0.15}
-            surface="raised"
-            style={StyleSheet.absoluteFill}
-          />
-        </Animated.View>
+        <Sky
+          color={agent ? agentLook(agent).color : "graphite"}
+          depth={0.55}
+          fade={0.15}
+          surface="raised"
+          style={styles.sky}
+        />
         <Pressable
           onPress={onPress}
           disabled={!onPress}
@@ -133,7 +128,7 @@ export function WaitingCard({
         </Pressable>
         {foot || expires ? (
           <View style={styles.ft}>
-            <CardPressProvider value={press.held}>{foot}</CardPressProvider>
+            {foot}
             {expires ? (
               <View style={styles.expiry}>
                 <ExpiryLine createdAt={expires.createdAt} expiresAt={expires.expiresAt} />
@@ -143,7 +138,7 @@ export function WaitingCard({
         ) : null}
         {footer ? <View style={[styles.footer, { borderTopColor: c.line2 }]}>{footer}</View> : null}
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -175,11 +170,12 @@ const styles = StyleSheet.create({
   sourceMark: { flexShrink: 0 },
   // The decision under the request, as the chat card's foot (its 8 + 4 points above).
   ft: { paddingHorizontal: 16, paddingTop: 12 },
-  // The deadline at the foot's end, right-aligned under the decision (as the chat's card).
-  expiry: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
+  // The deadline under the decision, from the card's edge (as the chat's card).
+  expiry: { flexDirection: "row", marginTop: 10 },
   when: { fontVariant: ["tabular-nums"] },
-  // Where and when never take the name's room: at most half the line.
-  where: { flexShrink: 1, maxWidth: "50%" },
+  // Where and when never take the name's room: at most half the line. On the name's line, not between it and the
+  // kind under it.
+  where: { flexShrink: 1, maxWidth: "50%", alignSelf: "flex-start", paddingTop: 1 },
   footer: { marginTop: 12, marginHorizontal: 16, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth },
   medium: { fontWeight: weights.medium },
   grow: { flex: 1, minWidth: 0 },

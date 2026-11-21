@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { eq, schema } from "@agenteschat/db";
+import { eq, schema, sql } from "@agenteschat/db";
 import type { FakeReply } from "@agenteschat/providers/testing";
 import {
   activeRunsIn,
@@ -15,6 +15,7 @@ import {
   listMessages,
   postPersonMessage,
   processOutbox,
+  RESUME_MAX_AGE_MS,
   RUN_STALE_MS,
   recoverStaleRuns,
   releaseJobs,
@@ -501,13 +502,94 @@ describe("server restarts", () => {
     const old = await jobOf(run.id);
     await f.db
       .update(schema.outbox)
-      .set({ attempts: old?.maxAttempts ?? 4 })
+      .set({ attempts: old?.maxAttempts ?? 4, lastError: "an earlier attempt's refusal (503)", lastErrorStatus: 503 })
       .where(eq(schema.outbox.id, old?.id ?? ""));
     expect((await recoverStaleRuns({ db: f.db, pubsub: f.pubsub })).resumed).toEqual([run.id]);
     const jobs = (await f.db.select().from(schema.outbox)).filter((j) => j.kind === "agent_run.execute");
     expect(jobs.map((j) => j.status).sort()).toEqual(["failed", "pending"]);
+    // The status was that earlier error's: the words that replace it carry none.
+    expect(jobs.find((j) => j.id === old?.id)).toMatchObject({ status: "failed", lastErrorStatus: null });
     await drainOutbox(f.db, f.handlers);
     expect((await runRow(run.id))?.status).toBe("done");
+  });
+
+  test("an orphan whose reply thread is gone still fails with its notice, posted in the channel itself", async () => {
+    const { run } = await interruptedRun();
+    await orphan(run.id);
+    await addRunStep(f.db, run, "tool_call", { toolUseId: "toolu_cut", name: "long_task", input: {} });
+    // Its thread root is no top-level message of this channel any more.
+    await f.db
+      .update(schema.agentRuns)
+      .set({ threadRootId: crypto.randomUUID() })
+      .where(eq(schema.agentRuns.id, run.id));
+
+    expect((await recoverStaleRuns({ db: f.db, pubsub: f.pubsub })).failed).toEqual([run.id]);
+    expect(await runRow(run.id)).toMatchObject({ status: "failed", error: INTERRUPTED_BY_RESTART });
+    const timeline = await listMessages(f.db, f.owner.id, f.org.id, f.general.id);
+    expect(timeline.at(-1)).toMatchObject({ threadId: null });
+    expect(timeline.at(-1)?.body).toContain(INTERRUPTED_BY_RESTART);
+  });
+
+  test("an orphan dead for longer than the resume window fails with its notice instead of resuming", async () => {
+    const { run } = await interruptedRun();
+    await orphan(run.id);
+    await f.db
+      .update(schema.agentRuns)
+      .set({ heartbeatAt: new Date(Date.now() - RESUME_MAX_AGE_MS - 60_000) })
+      .where(eq(schema.agentRuns.id, run.id));
+    await f.db
+      .update(schema.outbox)
+      .set({ lastError: "an earlier attempt's refusal (503)", lastErrorStatus: 503 })
+      .where(eq(schema.outbox.id, (await jobOf(run.id))?.id ?? ""));
+
+    expect(await recoverStaleRuns({ db: f.db, pubsub: f.pubsub })).toEqual({
+      resumed: [],
+      failed: [run.id],
+      requeued: [],
+    });
+    // Its job ends with the interruption's words, and the status an earlier error left goes with that error.
+    expect(await jobOf(run.id)).toMatchObject({
+      status: "failed",
+      lastError: INTERRUPTED_BY_RESTART,
+      lastErrorStatus: null,
+    });
+    await drainOutbox(f.db, f.handlers);
+    expect(f.provider.calls).toHaveLength(1);
+  });
+
+  test("an orphan cut while it wrote again a reply held for its wording posts that reply with the notice", async () => {
+    const { run } = await interruptedRun();
+    await orphan(run.id);
+    await f.db
+      .update(schema.agentRuns)
+      .set({
+        heartbeatAt: new Date(Date.now() - RESUME_MAX_AGE_MS - 60_000),
+        transcript: sql`jsonb_set(${schema.agentRuns.transcript}, '{postedUpTo}', to_jsonb(jsonb_array_length(${schema.agentRuns.transcript} -> 'messages'))) || '{"heldWording": "O relatório está pronto."}'::jsonb`,
+      })
+      .where(eq(schema.agentRuns.id, run.id));
+
+    expect((await recoverStaleRuns({ db: f.db, pubsub: f.pubsub })).failed).toEqual([run.id]);
+    const timeline = await listMessages(f.db, f.owner.id, f.org.id, f.general.id);
+    expect(timeline.at(-1)?.body).toStartWith("O relatório está pronto.\n\n");
+    expect(timeline.at(-1)?.body).toContain(INTERRUPTED_BY_RESTART);
+  });
+
+  test("a reply held for its wording wins over the working text its rewrite wrote with a tool call since", async () => {
+    // Its first step wrote "Trabalhando nisso." with a tool call, after the held reply, and was never posted.
+    const { run } = await interruptedRun();
+    await orphan(run.id);
+    await f.db
+      .update(schema.agentRuns)
+      .set({
+        heartbeatAt: new Date(Date.now() - RESUME_MAX_AGE_MS - 60_000),
+        transcript: sql`${schema.agentRuns.transcript} || '{"heldWording": "O relatório está pronto."}'::jsonb`,
+      })
+      .where(eq(schema.agentRuns.id, run.id));
+
+    expect((await recoverStaleRuns({ db: f.db, pubsub: f.pubsub })).failed).toEqual([run.id]);
+    const last = (await listMessages(f.db, f.owner.id, f.org.id, f.general.id)).at(-1)?.body ?? "";
+    expect(last).toStartWith("O relatório está pronto.\n\n");
+    expect(last).not.toContain("Trabalhando nisso.");
   });
 
   test("an orphan cut in the middle of a tool call fails with the notice, keeps its text, and the app hears it", async () => {

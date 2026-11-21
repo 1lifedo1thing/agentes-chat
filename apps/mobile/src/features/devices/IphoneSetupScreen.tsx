@@ -1,15 +1,35 @@
-import type { ComputerDevice, PhoneDevice } from "@agenteschat/client";
+import {
+  type ComputerDevice,
+  type PhoneDevice,
+  useIphoneDevMode,
+  useIphoneRepair,
+  useWifiIphones,
+} from "@agenteschat/client";
 import { computerName } from "@agenteschat/client/lib/computer";
+import { iosMajor, iphoneOverWifi, tooOldVersion, useIphoneRestart, useStalled } from "@agenteschat/client/lib/devices";
+import { errorText } from "@agenteschat/client/lib/errors";
+import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import * as Device from "expo-device";
-import { Fragment, useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, GroupedFooter, GroupedList, GroupedRow, Icon, InkOrbit, Text, useTheme } from "@/ui";
+import {
+  ACT_LINE,
+  Button,
+  GroupedFooter,
+  GroupedList,
+  GroupedRow,
+  Icon,
+  InkOrbit,
+  Text,
+  useTheme,
+  useToast,
+} from "@/ui";
 import { router } from "@/ui/navigation";
 import { Note, Step, StepsCard, StepText } from "../ai/parts";
 import { Gap, SettingsPage } from "../settings/parts";
-import { useMeId } from "../shared/hooks";
+import { useMeId, useOrgId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
 import { goBack } from "../shared/parts";
 import {
@@ -39,12 +59,35 @@ export function IphoneSetupScreen({ machineId }: { machineId?: string }) {
   const macs = phoneHosts(devices, meId, "ios");
   const seeing = devices.find((d) => thisPhoneOn(d.phones, "ios", Device.modelName));
   const host = devices.find((d) => d.id === picked) ?? seeing ?? (macs.length === 1 ? macs[0] : undefined);
-  const hostName = host ? computerName(t, org?.name ?? "", { kind: host.machineKind, name: host.name }) : "";
+  const hostName = host
+    ? computerName(t, org?.name ?? "", { kind: host.machineKind, name: host.name }, isPersonal(org))
+    : "";
   const phone = host ? thisPhoneOn(host.phones, "ios", Device.modelName) : null;
-  const step = iphoneStep(phone);
+  const reason = phone && phone.status.kind !== "offline" && "reason" in phone.status ? phone.status.reason : null;
+  const restart = useIphoneRestart(phone && phone.status.kind !== "offline" ? { key: phone.id, reason } : null);
+  const step = restart === "restarting" ? IPHONE_STEPS.indexOf("devmode") : iphoneStep(phone);
+  const tooOld = phone?.status.kind === "unsupported";
+  // A step that sits unchanged gets what most likely holds it, except over Wi-Fi: those lines are about the cable.
+  const overWifi = phone ? iphoneOverWifi(phone) : false;
+  const stalled = useStalled(host && !tooOld && !overWifi ? [host.id, step, phone?.id, reason].join(":") : null);
+  const [plugged, setPlugged] = useState(false);
   if (host && phone && step === IPHONE_STEPS.length)
     return <IphoneDone phone={phone} host={host} hostName={hostName} />;
-  const reason = phone && phone.status.kind !== "offline" && "reason" in phone.status ? phone.status.reason : null;
+  /** The reason's own words where a step's text doesn't say it, with its way out. */
+  const note = (r: string) =>
+    r === "apple_team_missing"
+      ? t("mobile.devices.iphone.teamMissing")
+      : r === "ui_not_authorized"
+        ? t("mobile.devices.iphone.uiRefused")
+        : r === "xcode_too_old" && phone?.osVersion
+          ? t("mobile.devices.iphone.xcodeOld", {
+              version: phone.osVersion,
+              major: iosMajor(phone.osVersion),
+              host: hostName,
+            })
+          : r === "ios_behind_xcode" && phone?.osVersion && host?.toolchains.xcodeSdk
+            ? t("devices.iphone.iosBehind", { ios: phone.osVersion, sdk: host.toolchains.xcodeSdk })
+            : reasonText(t, r);
   const state = (i: number) => (i < step ? "done" : i === step ? "now" : "later");
   const choose = async () => {
     const key = await pickOne({
@@ -59,6 +102,10 @@ export function IphoneSetupScreen({ machineId }: { machineId?: string }) {
       {t("mobile.devices.iphone.waiting", { host: hostName })}
     </Note>
   );
+  const stall = (key: "plug") =>
+    stalled || (key === "plug" && plugged) ? (
+      <Note icon="info">{t(`mobile.devices.iphone.stall.${key}`, { host: hostName })}</Note>
+    ) : null;
   return (
     <SettingsPage
       title={t("mobile.devices.iphone.title")}
@@ -88,15 +135,41 @@ export function IphoneSetupScreen({ machineId }: { machineId?: string }) {
           />
         </View>
       ) : null}
-      {host ? (
+      {host && tooOld && phone ? (
+        <View style={styles.block}>
+          <Note icon="x">{t("mobile.devices.iphone.tooOld", { version: tooOldVersion(t, phone.osVersion) })}</Note>
+        </View>
+      ) : null}
+      {host && !tooOld ? (
         <>
           <View style={styles.steps}>
             <StepsCard>
               <Step n={1} title={t("mobile.devices.iphone.step1", { host: hostName })} state={state(0)}>
-                {step === 0 ? waiting : null}
+                {step === 0 && phone && reason ? (
+                  <Note icon="info">{reasonText(t, reason)}</Note>
+                ) : step === 0 ? (
+                  <>
+                    {waiting}
+                    {stall("plug")}
+                    {!stalled && !plugged ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        label={t("mobile.devices.iphone.pluggedIn")}
+                        onPress={() => setPlugged(true)}
+                      />
+                    ) : null}
+                    <WifiOffer host={host} hostName={hostName} />
+                  </>
+                ) : null}
               </Step>
               <Step n={2} divider title={t("mobile.devices.iphone.step2")} state={state(1)}>
-                {step === 1 ? <StepText>{t("mobile.devices.iphone.step2Text")}</StepText> : null}
+                {step === 1 ? (
+                  <>
+                    {reason === "wifi_untrusted" ? <Note icon="info">{reasonText(t, reason)}</Note> : null}
+                    <StepText>{t("mobile.devices.iphone.step2Text")}</StepText>
+                  </>
+                ) : null}
               </Step>
               <Step
                 n={3}
@@ -105,21 +178,50 @@ export function IphoneSetupScreen({ machineId }: { machineId?: string }) {
                 hint={t("mobile.devices.iphone.step3Hint")}
                 state={state(2)}
               >
-                {step === 2 ? (
+                {step === 2 && restart === "restarting" ? (
+                  <Note icon={<InkOrbit size={15} />} live>
+                    {t("mobile.devices.iphone.devMode.restarting", { host: hostName })}
+                  </Note>
+                ) : step === 2 ? (
                   <>
-                    <SettingsPath />
-                    <DevModeSwitch />
-                    <StepText>{t("mobile.devices.iphone.step3Text")}</StepText>
-                    {reason && !IPHONE_STEP_REASONS.has(reason) ? (
-                      <Note icon="info">{reasonText(t, reason)}</Note>
+                    {restart === "back" ? (
+                      <StepText>{t("mobile.devices.iphone.devMode.back")}</StepText>
                     ) : (
-                      waiting
+                      <>
+                        <SettingsPath
+                          label={t("mobile.devices.iphone.pathA11y")}
+                          steps={[
+                            t("mobile.devices.iphone.path.settings"),
+                            t("mobile.devices.iphone.path.privacy"),
+                            t("mobile.devices.iphone.path.devMode"),
+                          ]}
+                        />
+                        <DevModeSwitch />
+                        <StepText>{t("mobile.devices.iphone.step3Text")}</StepText>
+                      </>
+                    )}
+                    {reason && !IPHONE_STEP_REASONS.has(reason) ? (
+                      <Note icon="info">{note(reason)}</Note>
+                    ) : (
+                      <>
+                        {waiting}
+                        <DevModeHelp host={host} hostName={hostName} open={stalled} />
+                      </>
                     )}
                   </>
                 ) : null}
               </Step>
               <Step n={4} divider title={t("mobile.devices.iphone.step4")} state={state(3)}>
-                {step <= 3 ? <StepText>{t("mobile.devices.iphone.step4Text")}</StepText> : null}
+                {step === 3 && phone && (reason === "ui_not_authorized" || reason === "ui_automation_off") ? (
+                  <UiAutomationHelp
+                    host={host}
+                    hostName={hostName}
+                    phone={phone}
+                    refused={reason === "ui_not_authorized"}
+                  />
+                ) : step <= 3 ? (
+                  <StepText>{t("mobile.devices.iphone.step4Text")}</StepText>
+                ) : null}
               </Step>
               <Step
                 n={5}
@@ -129,6 +231,9 @@ export function IphoneSetupScreen({ machineId }: { machineId?: string }) {
                 state={state(4)}
               >
                 <StepText>{t("mobile.devices.iphone.step5Text")}</StepText>
+                {step === 4 && reason && !IPHONE_STEP_REASONS.has(reason) ? (
+                  <Note icon="info">{note(reason)}</Note>
+                ) : null}
               </Step>
             </StepsCard>
           </View>
@@ -139,22 +244,190 @@ export function IphoneSetupScreen({ machineId }: { machineId?: string }) {
   );
 }
 
-/** Settings › Privacy & Security › Developer Mode, as the iPhone's own rows read, each step with its chevron. */
-function SettingsPath() {
+/**
+ * Under Developer Mode: "check again" (the Mac looks at this iPhone now), and why the switch may be missing, each with
+ * its one way out: hidden until Xcode asks (Xcode opened on the Mac by who manages it), not unlocked after the restart
+ * (check again), or a Mac whose app can't open Xcode (update it there). Open once the step sits unchanged, or asked.
+ */
+function DevModeHelp({ host, hostName, open }: { host: ComputerDevice; hostName: string; open: boolean }) {
   const { t } = useTranslation();
-  const c = useTheme().colors;
-  const steps = [
-    t("mobile.devices.iphone.path.settings"),
-    t("mobile.devices.iphone.path.privacy"),
-    t("mobile.devices.iphone.path.devMode"),
-  ];
+  const toast = useToast();
+  const orgId = useOrgId();
+  const { look, openXcode } = useIphoneDevMode(orgId, host.id);
+  const [asked, setAsked] = useState(false);
+  const outdated = host.opensXcode === false;
+  const mayOpen = host.mayManage && !outdated && openXcode.data?.opened !== false;
+  const fail = (err: unknown) => toast({ title: errorText(t, err), icon: "x" });
   return (
-    <View
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={t("mobile.devices.iphone.pathA11y")}
-      style={styles.path}
-    >
+    <>
+      <Button
+        size="sm"
+        variant="secondary"
+        label={t("mobile.devices.iphone.devMode.check")}
+        loading={look.isPending}
+        disabled={look.isPending}
+        onPress={() => look.mutate(undefined, { onError: fail })}
+      />
+      {look.isSuccess ? (
+        <Note icon="info">{t("mobile.devices.iphone.devMode.stillOff", { host: hostName })}</Note>
+      ) : null}
+      {open || asked ? (
+        <View style={styles.causes}>
+          <Text variant="small" tone="ink" style={styles.bold} accessibilityRole="header">
+            {t("mobile.devices.iphone.devMode.missing")}
+          </Text>
+          <Cause
+            text={
+              openXcode.data?.opened
+                ? t("mobile.devices.iphone.devMode.opened", { host: hostName })
+                : mayOpen
+                  ? t("mobile.devices.iphone.devMode.hidden")
+                  : t("mobile.devices.iphone.devMode.hiddenOpen", { host: hostName })
+            }
+          >
+            {mayOpen && !openXcode.data?.opened ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                label={t("mobile.devices.iphone.devMode.openXcode")}
+                loading={openXcode.isPending}
+                disabled={openXcode.isPending}
+                onPress={() => openXcode.mutate(undefined, { onError: fail })}
+              />
+            ) : null}
+          </Cause>
+          <Cause text={t("mobile.devices.iphone.devMode.unlock")} />
+          {outdated ? <Cause text={t("mobile.devices.iphone.devMode.outdated", { host: hostName })} /> : null}
+        </View>
+      ) : (
+        <Button
+          size="sm"
+          variant="text"
+          label={t("mobile.devices.iphone.devMode.missing")}
+          onPress={() => setAsked(true)}
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * UI Automation refused or off: the person's steps on this iPhone (both switches, the passcode, unlocked), "check
+ * again" (the Mac asks the iPhone now) and, for who manages the Mac, a repair of the test helper there.
+ */
+function UiAutomationHelp({
+  host,
+  hostName,
+  phone,
+  refused,
+}: {
+  host: ComputerDevice;
+  hostName: string;
+  phone: PhoneDevice;
+  refused: boolean;
+}) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const orgId = useOrgId();
+  const { look } = useIphoneDevMode(orgId, host.id);
+  const repair = useIphoneRepair(orgId);
+  const fail = (err: unknown) => toast({ title: errorText(t, err), icon: "x" });
+  const path = (steps: string[]) => (
+    <SettingsPath label={[t("devices.onTheIphone"), ...steps].join(", ")} steps={steps} />
+  );
+  const pending = look.isPending || repair.isPending;
+  return (
+    <>
+      {refused ? <Note icon="info">{t("mobile.devices.iphone.uiRefused")}</Note> : null}
+      <StepText>{t("devices.iphone.uiTurnOn")}</StepText>
+      {path([
+        t("mobile.devices.iphone.path.settings"),
+        t("mobile.devices.iphone.path.privacy"),
+        t("mobile.devices.iphone.path.devMode"),
+      ])}
+      {path([
+        t("mobile.devices.iphone.path.settings"),
+        t("devices.iphone.path.developer"),
+        t("devices.iphone.path.uiAutomation"),
+      ])}
+      <StepText>{t("devices.iphone.uiPasscode")}</StepText>
+      <Button
+        size="sm"
+        variant="secondary"
+        label={t("devices.iphone.uiCheck")}
+        loading={look.isPending}
+        disabled={pending}
+        onPress={() => look.mutate(undefined, { onError: fail })}
+      />
+      {host.mayManage ? (
+        <Cause
+          text={
+            repair.data?.update
+              ? t("mobile.devices.iphone.devMode.outdated", { host: hostName })
+              : t("devices.iphone.repairHint")
+          }
+        >
+          <Button
+            size="sm"
+            variant="secondary"
+            label={t("devices.iphone.repair")}
+            loading={repair.isPending}
+            disabled={pending}
+            onPress={() => repair.mutate(phone.id, { onError: fail })}
+          />
+        </Cause>
+      ) : null}
+    </>
+  );
+}
+
+/** One reason with its action: beside the words while they fit on one line, else under them (`ACT_LINE`). */
+function Cause({ text, children }: { text: string; children?: ReactNode }) {
+  return (
+    <View style={[ACT_LINE.row, styles.cause]}>
+      <View style={ACT_LINE.text}>
+        <StepText>{text}</StepText>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+/**
+ * The iPhones on the Mac's Wi-Fi that already trust it (this one, if it did over a cable once), offered to who may
+ * manage the Mac: Use over Wi-Fi.
+ */
+function WifiOffer({ host, hostName }: { host: ComputerDevice; hostName: string }) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const orgId = useOrgId();
+  const { available, pick } = useWifiIphones(orgId, host.id, host.mayManage && host.status.kind !== "offline");
+  if (available.length === 0) return null;
+  return (
+    <>
+      {available.map((p) => (
+        <View key={p.serial} style={styles.wifi}>
+          <StepText>{t("mobile.devices.iphone.wifi.also", { host: hostName, name: p.name ?? p.model })}</StepText>
+          <Button
+            size="sm"
+            variant="secondary"
+            label={t("mobile.devices.iphone.wifi.use")}
+            loading={pick.isPending && pick.variables === p.serial}
+            disabled={pick.isPending}
+            onPress={() => pick.mutate(p.serial, { onError: (err) => toast({ title: errorText(t, err), icon: "x" }) })}
+          />
+        </View>
+      ))}
+      <Note icon="info">{t("mobile.devices.iphone.wifi.hint")}</Note>
+    </>
+  );
+}
+
+/** A path in the iPhone's Settings (Settings › Privacy & Security › Developer Mode), as its own rows read, each step with its chevron. */
+function SettingsPath({ steps, label }: { steps: string[]; label: string }) {
+  const c = useTheme().colors;
+  return (
+    <View accessible accessibilityRole="image" accessibilityLabel={label} style={styles.path}>
       {steps.map((label, i) => (
         <Fragment key={label}>
           <View style={styles.crumbStep}>
@@ -232,6 +505,9 @@ function IphoneDone({ phone, host, hostName }: { phone: PhoneDevice; host: Compu
 
 const styles = StyleSheet.create({
   block: { paddingHorizontal: 4, paddingTop: 16, gap: 12, alignItems: "flex-start" },
+  wifi: { gap: 8, alignItems: "flex-start" },
+  causes: { gap: 8, alignSelf: "stretch" },
+  cause: { alignItems: "flex-start", gap: 8 },
   steps: { paddingTop: 12 },
   path: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 4, rowGap: 4, marginTop: 4 },
   crumbStep: { flexDirection: "row", alignItems: "center", gap: 4 },

@@ -1,8 +1,6 @@
 import { connectorOAuthApps } from "@agenteschat/config";
 import {
-  acceptConnectionToolChanges,
   acceptCustomSuggestion,
-  acceptToolChange,
   CONNECTOR_EVENTS,
   type CustomDeps,
   composioConnectorsOf,
@@ -11,7 +9,6 @@ import {
   connectorIconFile,
   connectorListing,
   listCustomServers,
-  listToolChanges,
   MCP_PRESETS,
   mcpPreset,
   NotFoundError,
@@ -43,6 +40,23 @@ const Decision = z.enum(["read", "write", "approval", "off"]);
 /** What connecting did: a new account, a new sign-in for one, or the same account again (nothing new). */
 export const Outcome = z.enum(["connected", "reconnected", "same_account"]);
 
+/** The person's own connection, which any member adds, instead of the team's (who manages connectors). */
+export const Personal = z.boolean().optional().openapi({
+  description:
+    "The person's own connection, which any member adds (who manages connectors adds the team's): only they see its details, and agents use it for them. GitHub connects for the team only.",
+});
+
+/**
+ * `others=1`: also everyone else's personal connections (who manages connectors only), as read-only rows. A client
+ * that doesn't send it (an older app) never gets one, so it can't show someone's as the team's.
+ */
+export const OthersQuery = z.object({
+  others: z
+    .enum(["0", "1"])
+    .optional()
+    .openapi({ description: "`1`: also everyone else's personal ones, for who manages connectors." }),
+});
+
 const CustomServer = z
   .object({
     id: z.uuid(),
@@ -52,6 +66,10 @@ const CustomServer = z
       description: "The account as the provider names it, when it says (refreshed when tools are listed).",
     }),
     authType: z.enum(["oauth", "api_key"]),
+    headerNames: z.array(z.string()).openapi({
+      description:
+        "The request headers typed for it (ADR 0186), by name: their values are never returned. Empty when it has none, and for a reader who doesn't manage connectors.",
+    }),
     iconUrl: z
       .string()
       .nullable()
@@ -100,22 +118,17 @@ const CustomServer = z
     ),
     reviewedAt: z.string().nullable(),
     createdAt: z.string(),
+    ownerUserId: z.string().nullable().openapi({
+      description:
+        "A personal connection's person (ADR 0099 addendum): only they see its details and give it to agents, and its tools serve runs that person is behind. Someone else's comes with its name, service and person only, to who manages connectors. Null: the team's.",
+    }),
+    agentIds: z.array(z.uuid()).optional().openapi({
+      description: "A personal connection's agents (a grant of their own on it), in the list only.",
+    }),
   })
   .openapi("CustomServer");
 
 const ServerParams = OrgParams.extend({ serverId: z.uuid() });
-
-const ToolVersion = z.object({ description: z.string(), inputSchema: z.record(z.string(), z.unknown()) });
-const ToolChange = z
-  .object({
-    connectionId: z.uuid(),
-    connectionLabel: z.string(),
-    toolName: z.string(),
-    before: ToolVersion.openapi({ description: "What agents see now: the approved version." }),
-    after: ToolVersion.openapi({ description: "What the server lists now." }),
-    changedAt: z.string(),
-  })
-  .openapi("ToolChange");
 
 const ConnectStart = z.union([
   z.object({ status: z.literal("connected"), server: CustomServer, outcome: Outcome }),
@@ -182,10 +195,18 @@ export function customConnectorRoutes(deps: AppDeps) {
       tags,
       security,
       summary: "Custom MCP servers and their tools",
-      request: { params: OrgParams },
+      request: { params: OrgParams, query: OthersQuery },
       responses: { 200: json(z.object({ servers: z.array(CustomServer) })), ...errors },
     }),
-    async (c) => c.json({ servers: await listCustomServers(db, c.get("user").id, c.req.valid("param").orgId) }, 200),
+    async (c) =>
+      c.json(
+        {
+          servers: await listCustomServers(db, c.get("user").id, c.req.valid("param").orgId, {
+            others: c.req.valid("query").others === "1",
+          }),
+        },
+        200,
+      ),
   );
 
   app.openapi(
@@ -196,7 +217,7 @@ export function customConnectorRoutes(deps: AppDeps) {
       security,
       summary: "Connect an https MCP server: connected, OAuth to finish, or an API key is needed",
       description:
-        "A server's first account is every agent's, whole (`connector:*`): its tools reach them once classified, and sensitive ones still ask for approval. The same address again is another account (\"Stripe 2\"), which no agent uses until someone gives it; the same account again (the provider says) refreshes its sign-in (`outcome: same_account`). With `connectionId`, that account gets the new sign-in in place (`reconnected`); signing in to another account there is a 409 `connector.other_account`, and a sign-in whose account can't be checked a 409 `connector.account_unknown` (try again).",
+        "A server's account is every agent's, whole (`connector:*`): its tools reach them once classified, and sensitive ones still ask for approval. The same address again is another account (\"Stripe 2\"), every agent's too; the same account again (the provider says) refreshes its sign-in (`outcome: same_account`). With `connectionId`, that account gets the new sign-in in place (`reconnected`); signing in to another account there is a 409 `connector.other_account`, and a sign-in whose account can't be checked a 409 `connector.account_unknown` (try again). `headers` (ADR 0186) are sent with every request to the server, the key's `Authorization` on top; without a key, a server that answers with them is connected by them alone, and one that asks for a sign-in is a 400 `connector.headers_with_sign_in`. A header that isn't taken is a 400 whose `params` name it (`header`, and `index`, its place in the list): `connector.header_name`, `connector.header_value`, `connector.header_reserved`, `connector.header_twice`, `connector.header_and_key` (`Authorization` beside a key), or `connector.headers_too_many`. With `connectionId` and no `headers`, saved ones that can no longer be read are a 400 `connector.headers_unreadable`: send them again, or `[]`.",
       request: {
         params: OrgParams,
         body: body(
@@ -206,6 +227,14 @@ export function customConnectorRoutes(deps: AppDeps) {
             label: z.string().max(80).optional(),
             returnTo: z.string().max(500).optional(),
             connectionId: ReconnectId,
+            personal: Personal,
+            headers: z
+              .array(z.object({ name: z.string(), value: z.string() }))
+              .optional()
+              .openapi({
+                description:
+                  "Request headers for a server by address: at most 10, each an HTTP token for a name (64 characters) and a one-line value of printable ASCII (2,000). With `connectionId`: absent keeps the ones the account has, an empty list removes them, a list replaces them.",
+              }),
           }),
         ),
       },
@@ -262,12 +291,15 @@ export function customConnectorRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/connectors/presets/{presetId}/connect",
       tags,
       security,
-      summary: "Connect a one-click connector (admins): returns the OAuth URL to open",
+      summary:
+        "Connect a one-click connector (the team's by admins, a personal one by any member): returns the OAuth URL to open",
       description:
         "After the OAuth, our suggested classification is applied to its tools (admins can change it). No app registration needed. Accounts and `connectionId` as in `POST …/connectors/custom`. It connects by the way the catalog lists for it (the vendor's server, or Composio, ADR 0107). A `soon` one Composio doesn't serve here is refused (400 `connector.not_approved`): its vendor hasn't approved agentes.chat yet.",
       request: {
         params: OrgParams.extend({ presetId: z.string().max(60) }),
-        body: body(z.object({ returnTo: z.string().max(500).optional(), connectionId: ReconnectId })),
+        body: body(
+          z.object({ returnTo: z.string().max(500).optional(), connectionId: ReconnectId, personal: Personal }),
+        ),
       },
       responses: { 200: json(ConnectStart), ...errors },
     }),
@@ -281,12 +313,13 @@ export function customConnectorRoutes(deps: AppDeps) {
           connector: preset.id,
         });
       }
-      const { returnTo, connectionId } = c.req.valid("json");
+      const { returnTo, connectionId, personal } = c.req.valid("json");
       const started = await connectCustomServer(custom, c.get("user").id, orgId, {
         serverUrl: way?.serverUrl ?? preset.serverUrl,
         label: preset.label,
         returnTo,
         connectionId,
+        personal,
       });
       return c.json(started, 200);
     },
@@ -385,21 +418,21 @@ export function customConnectorRoutes(deps: AppDeps) {
     },
   );
 
+  // A changed tool applies itself (ADR 0117, addendum), so nothing ever waits here. The three routes stay for
+  // installed apps that still ask: the list is empty and accepting succeeds without doing anything.
+  const changes = { tags, security, deprecated: true, description: "Nothing waits: a changed tool applies itself." };
   app.openapi(
     createRoute({
       method: "get",
       path: "/organizations/{orgId}/connectors/tool-changes",
-      tags,
-      security,
-      summary: "Approved MCP tools whose server changed their description or input (connector admins)",
-      description:
-        "Agents keep the approved text (`before`) until an admin accepts the change (ADR 0117). Composio's tools and ours are never listed.",
+      ...changes,
+      summary: "MCP tools waiting for a review of their change: always none",
       request: { params: OrgParams },
-      responses: { 200: json(z.object({ changes: z.array(ToolChange) })), ...errors },
+      responses: { 200: json(z.object({ changes: z.array(z.unknown()) })), ...errors },
     }),
     async (c) => {
-      const { orgId } = c.req.valid("param");
-      return c.json({ changes: await listToolChanges(db, c.get("user").id, orgId) }, 200);
+      await requirePermission(db, c.get("user").id, c.req.valid("param").orgId, "manage_connectors");
+      return c.json({ changes: [] }, 200);
     },
   );
 
@@ -407,27 +440,13 @@ export function customConnectorRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/organizations/{orgId}/connectors/{connectionId}/tools/{toolName}/accept-change",
-      tags,
-      security,
-      summary: "Accept a tool's new description and input: agents get it now, and a custom server is classified again",
+      ...changes,
+      summary: "Accept a tool's change: does nothing",
       request: { params: OrgParams.extend({ connectionId: z.uuid(), toolName: z.string().min(1).max(200) }) },
       responses: { 204: noContent[204], ...errors },
     }),
     async (c) => {
-      const { orgId, connectionId, toolName } = c.req.valid("param");
-      const actor = c.get("user").id;
-      await acceptToolChange(
-        {
-          db,
-          pubsub: adapters.pubsub,
-          // A catalog connection isn't custom: nothing to classify, and the refresh's not-found is ignored.
-          resync: (id) => refreshCustomServer(custom, actor, orgId, id),
-        },
-        actor,
-        orgId,
-        connectionId,
-        toolName,
-      );
+      await requirePermission(db, c.get("user").id, c.req.valid("param").orgId, "manage_connectors");
       return c.body(null, 204);
     },
   );
@@ -436,26 +455,14 @@ export function customConnectorRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/organizations/{orgId}/connectors/{connectionId}/tool-changes/accept",
-      tags,
-      security,
-      summary: "Accept every change waiting on one connection's tools at once (connector admins)",
+      ...changes,
+      summary: "Accept every change on a connection: does nothing",
       request: { params: OrgParams.extend({ connectionId: z.uuid() }) },
       responses: { 200: json(z.object({ accepted: z.number().int() })), ...errors },
     }),
     async (c) => {
-      const { orgId, connectionId } = c.req.valid("param");
-      const actor = c.get("user").id;
-      const accepted = await acceptConnectionToolChanges(
-        {
-          db,
-          pubsub: adapters.pubsub,
-          resync: (id) => refreshCustomServer(custom, actor, orgId, id),
-        },
-        actor,
-        orgId,
-        connectionId,
-      );
-      return c.json({ accepted }, 200);
+      await requirePermission(db, c.get("user").id, c.req.valid("param").orgId, "manage_connectors");
+      return c.json({ accepted: 0 }, 200);
     },
   );
 

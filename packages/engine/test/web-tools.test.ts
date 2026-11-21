@@ -4,6 +4,7 @@ import {
   createWebToolSource,
   HOW_YOU_WORK,
   type Judge,
+  type JudgeRequest,
   parseDuckDuckGoHtml,
   presentTools,
   type ToolContext,
@@ -11,7 +12,14 @@ import {
   toolPolicy,
   turnMeans,
 } from "../src";
-import { advance, type ContinuationVerdict, callLine, decideTurnEnd, type TurnEnd } from "../src/continuation";
+import {
+  advance,
+  type ContinuationVerdict,
+  callLine,
+  continuationVerdict,
+  decideTurnEnd,
+  type TurnEnd,
+} from "../src/continuation";
 
 // ADR 0109: web reading for every agent, the general means, and the controller's `untried` verdict.
 
@@ -61,6 +69,27 @@ describe("web_search", () => {
     ]);
     expect(out.content).toContain("1. Notícia A\n   https://news.example.com/a\n   Texto & mais");
     expect(out.data).toMatchObject({ provider: "duckduckgo" });
+  });
+
+  test("DuckDuckGo's page is read in linear time, however its tags are left open", () => {
+    const page = (body: string) => `<div class="result x">${body}`;
+    // The tag's last address that a `>` and a `</a>` follow; the snippet up to its first `</a>`.
+    expect(
+      parseDuckDuckGoHtml(
+        page(
+          '<a class="result__a" href="//x.example/" href="https://b.example/p">B</a><a class="result__snippet">S <b>s</b></a>',
+        ),
+      ),
+    ).toEqual([{ title: "B", url: "https://b.example/p", snippet: "S s" }]);
+    const started = performance.now();
+    for (const body of [
+      'class="result__a"'.repeat(20_000),
+      `class="result__a"${'href="!"'.repeat(30_000)}`,
+      'class="result__a"href="!">a'.repeat(10_000),
+      `<a class="result__a" href="https://a.example/">t</a>${'class="result__snippet">a'.repeat(10_000)}`,
+    ])
+      parseDuckDuckGoHtml(page(body));
+    expect(performance.now() - started).toBeLessThan(1000);
   });
 
   test("Brave first when its key is set; on its failure, the next provider", async () => {
@@ -215,6 +244,36 @@ describe("the controller's untried verdict", () => {
       outcome: "done",
       rule: "ask_elsewhere",
     });
+  });
+
+  test("an answer with a caveat is done: untried must read as more likely than done", async () => {
+    const asked: JudgeRequest[] = [];
+    const judgeSaying = (probabilities: Record<string, number>): Judge => ({
+      name: "fake",
+      ask: async (request) => {
+        asked.push(request);
+        return { verdict: { choice: "done", probabilities } };
+      },
+    });
+    const input = {
+      orgId: "o",
+      agentId: "a",
+      runId: "r",
+      request: "Quanto vendemos em novembro no Stripe?",
+      reply: "R$ 48.200 brutos em 312 cobranças, R$ 47.050 líquidos. A API não separa por produto.",
+      means: ["the web: `web_search`"],
+      tried: ["stripe_analytics(novembro) → 312 cobranças"],
+      runKind: "conversation" as const,
+    };
+    expect(await continuationVerdict(judgeSaying({ done: 0.52, untried: 0.48 }), input)).toBe("done");
+    expect(await continuationVerdict(judgeSaying({ done: 0.5, untried: 0.5 }), input)).toBe("done");
+    // A give-up read as more likely untried is still held for another try.
+    expect(await continuationVerdict(judgeSaying({ done: 0.35, untried: 0.65 }), input)).toBe("untried");
+    // The judge reads that a caveat beside the answer is no give-up.
+    const verdict = asked[0]?.questions.verdict as { criteria: Record<string, string> } | undefined;
+    const criteria = verdict?.criteria ?? {};
+    expect(criteria.done).toContain("also when it adds a caveat");
+    expect(criteria.untried).toStartWith("What `request` asked for is still missing");
   });
 
   test("a call as the judge reads it", () => {

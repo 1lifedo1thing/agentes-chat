@@ -11,13 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AutorizarRouteImport } from './routes/autorizar'
+import { Route as BaixarRouteImport } from './routes/baixar'
 import { Route as ConectandoRouteImport } from './routes/conectando'
 import { Route as ConectarRouteImport } from './routes/conectar'
+import { Route as DownloadRouteImport } from './routes/download'
+import { Route as EmailUndoRouteImport } from './routes/email-undo'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ReferRouteImport } from './routes/refer'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermosRouteImport } from './routes/termos'
@@ -43,11 +47,13 @@ import { Route as OrgOrgIdSearchRouteImport } from './routes/org.$orgId.search'
 import { Route as OrgOrgIdSettingsRouteImport } from './routes/org.$orgId.settings'
 import { Route as OrgOrgIdTaskManagerRouteImport } from './routes/org.$orgId.task-manager'
 import { Route as OrgOrgIdTeamRouteImport } from './routes/org.$orgId.team'
+import { Route as OrgOrgIdWaitingRouteImport } from './routes/org.$orgId.waiting'
 import { Route as OrgOrgIdWikiRouteImport } from './routes/org.$orgId.wiki'
 import { Route as OrgOrgIdAgentsNewRouteImport } from './routes/org.$orgId.agents.new'
 import { Route as OrgOrgIdCChannelIdRouteImport } from './routes/org.$orgId.c.$channelId'
 import { Route as OrgOrgIdDashboardsIndexRouteImport } from './routes/org.$orgId.dashboards.index'
 import { Route as OrgOrgIdDashboardsDashboardIdRouteImport } from './routes/org.$orgId.dashboards.$dashboardId'
+import { Route as OrgOrgIdDriveFileIdRouteImport } from './routes/org.$orgId.drive_.$fileId'
 import { Route as OrgOrgIdIssuesIndexRouteImport } from './routes/org.$orgId.issues.index'
 import { Route as OrgOrgIdIssuesNumberRouteImport } from './routes/org.$orgId.issues.$number'
 import { Route as OrgOrgIdSettingsSectionRouteImport } from './routes/org.$orgId.settings_.$section'
@@ -61,6 +67,8 @@ import { Route as OrgOrgIdDmPersonUserIdRouteImport } from './routes/org.$orgId.
 import { Route as OrgOrgIdSettingsComputersMachineIdRouteImport } from './routes/org.$orgId.settings_.computers.$machineId'
 import { Route as OrgOrgIdSettingsDevicesDeviceIdRouteImport } from './routes/org.$orgId.settings_.devices.$deviceId'
 import { Route as OrgOrgIdSettingsDevicesAndroidSetupRouteImport } from './routes/org.$orgId.settings_.devices.android-setup'
+import { Route as OrgOrgIdSettingsDevicesIphoneSetupRouteImport } from './routes/org.$orgId.settings_.devices.iphone-setup'
+import { Route as OrgOrgIdSettingsRolesRoleIdRouteImport } from './routes/org.$orgId.settings_.roles.$roleId'
 import { Route as OrgOrgIdSettingsDevicesPhonesPhoneIdRouteImport } from './routes/org.$orgId.settings_.devices.phones.$phoneId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -73,6 +81,11 @@ const AutorizarRoute = AutorizarRouteImport.update({
   path: '/autorizar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BaixarRoute = BaixarRouteImport.update({
+  id: '/baixar',
+  path: '/baixar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConectandoRoute = ConectandoRouteImport.update({
   id: '/conectando',
   path: '/conectando',
@@ -81,6 +94,16 @@ const ConectandoRoute = ConectandoRouteImport.update({
 const ConectarRoute = ConectarRouteImport.update({
   id: '/conectar',
   path: '/conectar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUndoRoute = EmailUndoRouteImport.update({
+  id: '/email-undo',
+  path: '/email-undo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -106,6 +129,11 @@ const PrivacidadeRoute = PrivacidadeRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReferRoute = ReferRouteImport.update({
+  id: '/refer',
+  path: '/refer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -233,6 +261,11 @@ const OrgOrgIdTeamRoute = OrgOrgIdTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => OrgOrgIdRoute,
 } as any)
+const OrgOrgIdWaitingRoute = OrgOrgIdWaitingRouteImport.update({
+  id: '/waiting',
+  path: '/waiting',
+  getParentRoute: () => OrgOrgIdRoute,
+} as any)
 const OrgOrgIdWikiRoute = OrgOrgIdWikiRouteImport.update({
   id: '/wiki',
   path: '/wiki',
@@ -259,6 +292,11 @@ const OrgOrgIdDashboardsDashboardIdRoute =
     path: '/dashboards/$dashboardId',
     getParentRoute: () => OrgOrgIdRoute,
   } as any)
+const OrgOrgIdDriveFileIdRoute = OrgOrgIdDriveFileIdRouteImport.update({
+  id: '/drive_/$fileId',
+  path: '/drive/$fileId',
+  getParentRoute: () => OrgOrgIdRoute,
+} as any)
 const OrgOrgIdIssuesIndexRoute = OrgOrgIdIssuesIndexRouteImport.update({
   id: '/issues/',
   path: '/issues/',
@@ -329,6 +367,18 @@ const OrgOrgIdSettingsDevicesAndroidSetupRoute =
     path: '/settings/devices/android-setup',
     getParentRoute: () => OrgOrgIdRoute,
   } as any)
+const OrgOrgIdSettingsDevicesIphoneSetupRoute =
+  OrgOrgIdSettingsDevicesIphoneSetupRouteImport.update({
+    id: '/settings_/devices/iphone-setup',
+    path: '/settings/devices/iphone-setup',
+    getParentRoute: () => OrgOrgIdRoute,
+  } as any)
+const OrgOrgIdSettingsRolesRoleIdRoute =
+  OrgOrgIdSettingsRolesRoleIdRouteImport.update({
+    id: '/settings_/roles/$roleId',
+    path: '/settings/roles/$roleId',
+    getParentRoute: () => OrgOrgIdRoute,
+  } as any)
 const OrgOrgIdSettingsDevicesPhonesPhoneIdRoute =
   OrgOrgIdSettingsDevicesPhonesPhoneIdRouteImport.update({
     id: '/settings_/devices/phones/$phoneId',
@@ -339,13 +389,17 @@ const OrgOrgIdSettingsDevicesPhonesPhoneIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/autorizar': typeof AutorizarRoute
+  '/baixar': typeof BaixarRoute
   '/conectando': typeof ConectandoRoute
   '/conectar': typeof ConectarRoute
+  '/download': typeof DownloadRoute
+  '/email-undo': typeof EmailUndoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/owner': typeof OwnerRoute
   '/privacidade': typeof PrivacidadeRoute
   '/privacy': typeof PrivacyRoute
+  '/refer': typeof ReferRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/termos': typeof TermosRoute
@@ -370,11 +424,13 @@ export interface FileRoutesByFullPath {
   '/org/$orgId/settings': typeof OrgOrgIdSettingsRoute
   '/org/$orgId/task-manager': typeof OrgOrgIdTaskManagerRoute
   '/org/$orgId/team': typeof OrgOrgIdTeamRoute
+  '/org/$orgId/waiting': typeof OrgOrgIdWaitingRoute
   '/org/$orgId/wiki': typeof OrgOrgIdWikiRoute
   '/org/$orgId/': typeof OrgOrgIdIndexRoute
   '/org/$orgId/agents/new': typeof OrgOrgIdAgentsNewRoute
   '/org/$orgId/c/$channelId': typeof OrgOrgIdCChannelIdRoute
   '/org/$orgId/dashboards/$dashboardId': typeof OrgOrgIdDashboardsDashboardIdRoute
+  '/org/$orgId/drive/$fileId': typeof OrgOrgIdDriveFileIdRoute
   '/org/$orgId/issues/$number': typeof OrgOrgIdIssuesNumberRoute
   '/org/$orgId/settings/$section': typeof OrgOrgIdSettingsSectionRoute
   '/org/$orgId/threads/$threadId': typeof OrgOrgIdThreadsThreadIdRoute
@@ -388,19 +444,25 @@ export interface FileRoutesByFullPath {
   '/org/$orgId/settings/computers/$machineId': typeof OrgOrgIdSettingsComputersMachineIdRoute
   '/org/$orgId/settings/devices/$deviceId': typeof OrgOrgIdSettingsDevicesDeviceIdRoute
   '/org/$orgId/settings/devices/android-setup': typeof OrgOrgIdSettingsDevicesAndroidSetupRoute
+  '/org/$orgId/settings/devices/iphone-setup': typeof OrgOrgIdSettingsDevicesIphoneSetupRoute
+  '/org/$orgId/settings/roles/$roleId': typeof OrgOrgIdSettingsRolesRoleIdRoute
   '/org/$orgId/agents/$agentId/': typeof OrgOrgIdAgentsAgentIdIndexRoute
   '/org/$orgId/settings/devices/phones/$phoneId': typeof OrgOrgIdSettingsDevicesPhonesPhoneIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/autorizar': typeof AutorizarRoute
+  '/baixar': typeof BaixarRoute
   '/conectando': typeof ConectandoRoute
   '/conectar': typeof ConectarRoute
+  '/download': typeof DownloadRoute
+  '/email-undo': typeof EmailUndoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/owner': typeof OwnerRoute
   '/privacidade': typeof PrivacidadeRoute
   '/privacy': typeof PrivacyRoute
+  '/refer': typeof ReferRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/termos': typeof TermosRoute
@@ -424,11 +486,13 @@ export interface FileRoutesByTo {
   '/org/$orgId/settings': typeof OrgOrgIdSettingsRoute
   '/org/$orgId/task-manager': typeof OrgOrgIdTaskManagerRoute
   '/org/$orgId/team': typeof OrgOrgIdTeamRoute
+  '/org/$orgId/waiting': typeof OrgOrgIdWaitingRoute
   '/org/$orgId/wiki': typeof OrgOrgIdWikiRoute
   '/org/$orgId': typeof OrgOrgIdIndexRoute
   '/org/$orgId/agents/new': typeof OrgOrgIdAgentsNewRoute
   '/org/$orgId/c/$channelId': typeof OrgOrgIdCChannelIdRoute
   '/org/$orgId/dashboards/$dashboardId': typeof OrgOrgIdDashboardsDashboardIdRoute
+  '/org/$orgId/drive/$fileId': typeof OrgOrgIdDriveFileIdRoute
   '/org/$orgId/issues/$number': typeof OrgOrgIdIssuesNumberRoute
   '/org/$orgId/settings/$section': typeof OrgOrgIdSettingsSectionRoute
   '/org/$orgId/threads/$threadId': typeof OrgOrgIdThreadsThreadIdRoute
@@ -442,6 +506,8 @@ export interface FileRoutesByTo {
   '/org/$orgId/settings/computers/$machineId': typeof OrgOrgIdSettingsComputersMachineIdRoute
   '/org/$orgId/settings/devices/$deviceId': typeof OrgOrgIdSettingsDevicesDeviceIdRoute
   '/org/$orgId/settings/devices/android-setup': typeof OrgOrgIdSettingsDevicesAndroidSetupRoute
+  '/org/$orgId/settings/devices/iphone-setup': typeof OrgOrgIdSettingsDevicesIphoneSetupRoute
+  '/org/$orgId/settings/roles/$roleId': typeof OrgOrgIdSettingsRolesRoleIdRoute
   '/org/$orgId/agents/$agentId': typeof OrgOrgIdAgentsAgentIdIndexRoute
   '/org/$orgId/settings/devices/phones/$phoneId': typeof OrgOrgIdSettingsDevicesPhonesPhoneIdRoute
 }
@@ -449,13 +515,17 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/autorizar': typeof AutorizarRoute
+  '/baixar': typeof BaixarRoute
   '/conectando': typeof ConectandoRoute
   '/conectar': typeof ConectarRoute
+  '/download': typeof DownloadRoute
+  '/email-undo': typeof EmailUndoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/owner': typeof OwnerRoute
   '/privacidade': typeof PrivacidadeRoute
   '/privacy': typeof PrivacyRoute
+  '/refer': typeof ReferRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/termos': typeof TermosRoute
@@ -480,11 +550,13 @@ export interface FileRoutesById {
   '/org/$orgId/settings': typeof OrgOrgIdSettingsRoute
   '/org/$orgId/task-manager': typeof OrgOrgIdTaskManagerRoute
   '/org/$orgId/team': typeof OrgOrgIdTeamRoute
+  '/org/$orgId/waiting': typeof OrgOrgIdWaitingRoute
   '/org/$orgId/wiki': typeof OrgOrgIdWikiRoute
   '/org/$orgId/': typeof OrgOrgIdIndexRoute
   '/org/$orgId/agents/new': typeof OrgOrgIdAgentsNewRoute
   '/org/$orgId/c/$channelId': typeof OrgOrgIdCChannelIdRoute
   '/org/$orgId/dashboards/$dashboardId': typeof OrgOrgIdDashboardsDashboardIdRoute
+  '/org/$orgId/drive_/$fileId': typeof OrgOrgIdDriveFileIdRoute
   '/org/$orgId/issues/$number': typeof OrgOrgIdIssuesNumberRoute
   '/org/$orgId/settings_/$section': typeof OrgOrgIdSettingsSectionRoute
   '/org/$orgId/threads/$threadId': typeof OrgOrgIdThreadsThreadIdRoute
@@ -498,6 +570,8 @@ export interface FileRoutesById {
   '/org/$orgId/settings_/computers/$machineId': typeof OrgOrgIdSettingsComputersMachineIdRoute
   '/org/$orgId/settings_/devices/$deviceId': typeof OrgOrgIdSettingsDevicesDeviceIdRoute
   '/org/$orgId/settings_/devices/android-setup': typeof OrgOrgIdSettingsDevicesAndroidSetupRoute
+  '/org/$orgId/settings_/devices/iphone-setup': typeof OrgOrgIdSettingsDevicesIphoneSetupRoute
+  '/org/$orgId/settings_/roles/$roleId': typeof OrgOrgIdSettingsRolesRoleIdRoute
   '/org/$orgId/agents/$agentId/': typeof OrgOrgIdAgentsAgentIdIndexRoute
   '/org/$orgId/settings_/devices/phones/$phoneId': typeof OrgOrgIdSettingsDevicesPhonesPhoneIdRoute
 }
@@ -506,13 +580,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/autorizar'
+    | '/baixar'
     | '/conectando'
     | '/conectar'
+    | '/download'
+    | '/email-undo'
     | '/login'
     | '/onboarding'
     | '/owner'
     | '/privacidade'
     | '/privacy'
+    | '/refer'
     | '/reset-password'
     | '/signup'
     | '/termos'
@@ -537,11 +615,13 @@ export interface FileRouteTypes {
     | '/org/$orgId/settings'
     | '/org/$orgId/task-manager'
     | '/org/$orgId/team'
+    | '/org/$orgId/waiting'
     | '/org/$orgId/wiki'
     | '/org/$orgId/'
     | '/org/$orgId/agents/new'
     | '/org/$orgId/c/$channelId'
     | '/org/$orgId/dashboards/$dashboardId'
+    | '/org/$orgId/drive/$fileId'
     | '/org/$orgId/issues/$number'
     | '/org/$orgId/settings/$section'
     | '/org/$orgId/threads/$threadId'
@@ -555,19 +635,25 @@ export interface FileRouteTypes {
     | '/org/$orgId/settings/computers/$machineId'
     | '/org/$orgId/settings/devices/$deviceId'
     | '/org/$orgId/settings/devices/android-setup'
+    | '/org/$orgId/settings/devices/iphone-setup'
+    | '/org/$orgId/settings/roles/$roleId'
     | '/org/$orgId/agents/$agentId/'
     | '/org/$orgId/settings/devices/phones/$phoneId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/autorizar'
+    | '/baixar'
     | '/conectando'
     | '/conectar'
+    | '/download'
+    | '/email-undo'
     | '/login'
     | '/onboarding'
     | '/owner'
     | '/privacidade'
     | '/privacy'
+    | '/refer'
     | '/reset-password'
     | '/signup'
     | '/termos'
@@ -591,11 +677,13 @@ export interface FileRouteTypes {
     | '/org/$orgId/settings'
     | '/org/$orgId/task-manager'
     | '/org/$orgId/team'
+    | '/org/$orgId/waiting'
     | '/org/$orgId/wiki'
     | '/org/$orgId'
     | '/org/$orgId/agents/new'
     | '/org/$orgId/c/$channelId'
     | '/org/$orgId/dashboards/$dashboardId'
+    | '/org/$orgId/drive/$fileId'
     | '/org/$orgId/issues/$number'
     | '/org/$orgId/settings/$section'
     | '/org/$orgId/threads/$threadId'
@@ -609,19 +697,25 @@ export interface FileRouteTypes {
     | '/org/$orgId/settings/computers/$machineId'
     | '/org/$orgId/settings/devices/$deviceId'
     | '/org/$orgId/settings/devices/android-setup'
+    | '/org/$orgId/settings/devices/iphone-setup'
+    | '/org/$orgId/settings/roles/$roleId'
     | '/org/$orgId/agents/$agentId'
     | '/org/$orgId/settings/devices/phones/$phoneId'
   id:
     | '__root__'
     | '/'
     | '/autorizar'
+    | '/baixar'
     | '/conectando'
     | '/conectar'
+    | '/download'
+    | '/email-undo'
     | '/login'
     | '/onboarding'
     | '/owner'
     | '/privacidade'
     | '/privacy'
+    | '/refer'
     | '/reset-password'
     | '/signup'
     | '/termos'
@@ -646,11 +740,13 @@ export interface FileRouteTypes {
     | '/org/$orgId/settings'
     | '/org/$orgId/task-manager'
     | '/org/$orgId/team'
+    | '/org/$orgId/waiting'
     | '/org/$orgId/wiki'
     | '/org/$orgId/'
     | '/org/$orgId/agents/new'
     | '/org/$orgId/c/$channelId'
     | '/org/$orgId/dashboards/$dashboardId'
+    | '/org/$orgId/drive_/$fileId'
     | '/org/$orgId/issues/$number'
     | '/org/$orgId/settings_/$section'
     | '/org/$orgId/threads/$threadId'
@@ -664,6 +760,8 @@ export interface FileRouteTypes {
     | '/org/$orgId/settings_/computers/$machineId'
     | '/org/$orgId/settings_/devices/$deviceId'
     | '/org/$orgId/settings_/devices/android-setup'
+    | '/org/$orgId/settings_/devices/iphone-setup'
+    | '/org/$orgId/settings_/roles/$roleId'
     | '/org/$orgId/agents/$agentId/'
     | '/org/$orgId/settings_/devices/phones/$phoneId'
   fileRoutesById: FileRoutesById
@@ -671,13 +769,17 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AutorizarRoute: typeof AutorizarRoute
+  BaixarRoute: typeof BaixarRoute
   ConectandoRoute: typeof ConectandoRoute
   ConectarRoute: typeof ConectarRoute
+  DownloadRoute: typeof DownloadRoute
+  EmailUndoRoute: typeof EmailUndoRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   OwnerRoute: typeof OwnerRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   PrivacyRoute: typeof PrivacyRoute
+  ReferRoute: typeof ReferRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   TermosRoute: typeof TermosRoute
@@ -707,6 +809,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AutorizarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/baixar': {
+      id: '/baixar'
+      path: '/baixar'
+      fullPath: '/baixar'
+      preLoaderRoute: typeof BaixarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/conectando': {
       id: '/conectando'
       path: '/conectando'
@@ -719,6 +828,20 @@ declare module '@tanstack/react-router' {
       path: '/conectar'
       fullPath: '/conectar'
       preLoaderRoute: typeof ConectarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email-undo': {
+      id: '/email-undo'
+      path: '/email-undo'
+      fullPath: '/email-undo'
+      preLoaderRoute: typeof EmailUndoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -754,6 +877,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refer': {
+      id: '/refer'
+      path: '/refer'
+      fullPath: '/refer'
+      preLoaderRoute: typeof ReferRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -931,6 +1061,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgOrgIdTeamRouteImport
       parentRoute: typeof OrgOrgIdRoute
     }
+    '/org/$orgId/waiting': {
+      id: '/org/$orgId/waiting'
+      path: '/waiting'
+      fullPath: '/org/$orgId/waiting'
+      preLoaderRoute: typeof OrgOrgIdWaitingRouteImport
+      parentRoute: typeof OrgOrgIdRoute
+    }
     '/org/$orgId/wiki': {
       id: '/org/$orgId/wiki'
       path: '/wiki'
@@ -964,6 +1101,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboards/$dashboardId'
       fullPath: '/org/$orgId/dashboards/$dashboardId'
       preLoaderRoute: typeof OrgOrgIdDashboardsDashboardIdRouteImport
+      parentRoute: typeof OrgOrgIdRoute
+    }
+    '/org/$orgId/drive_/$fileId': {
+      id: '/org/$orgId/drive_/$fileId'
+      path: '/drive/$fileId'
+      fullPath: '/org/$orgId/drive/$fileId'
+      preLoaderRoute: typeof OrgOrgIdDriveFileIdRouteImport
       parentRoute: typeof OrgOrgIdRoute
     }
     '/org/$orgId/issues/': {
@@ -1057,6 +1201,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrgOrgIdSettingsDevicesAndroidSetupRouteImport
       parentRoute: typeof OrgOrgIdRoute
     }
+    '/org/$orgId/settings_/devices/iphone-setup': {
+      id: '/org/$orgId/settings_/devices/iphone-setup'
+      path: '/settings/devices/iphone-setup'
+      fullPath: '/org/$orgId/settings/devices/iphone-setup'
+      preLoaderRoute: typeof OrgOrgIdSettingsDevicesIphoneSetupRouteImport
+      parentRoute: typeof OrgOrgIdRoute
+    }
+    '/org/$orgId/settings_/roles/$roleId': {
+      id: '/org/$orgId/settings_/roles/$roleId'
+      path: '/settings/roles/$roleId'
+      fullPath: '/org/$orgId/settings/roles/$roleId'
+      preLoaderRoute: typeof OrgOrgIdSettingsRolesRoleIdRouteImport
+      parentRoute: typeof OrgOrgIdRoute
+    }
     '/org/$orgId/settings_/devices/phones/$phoneId': {
       id: '/org/$orgId/settings_/devices/phones/$phoneId'
       path: '/settings/devices/phones/$phoneId'
@@ -1081,11 +1239,13 @@ interface OrgOrgIdRouteChildren {
   OrgOrgIdSettingsRoute: typeof OrgOrgIdSettingsRoute
   OrgOrgIdTaskManagerRoute: typeof OrgOrgIdTaskManagerRoute
   OrgOrgIdTeamRoute: typeof OrgOrgIdTeamRoute
+  OrgOrgIdWaitingRoute: typeof OrgOrgIdWaitingRoute
   OrgOrgIdWikiRoute: typeof OrgOrgIdWikiRoute
   OrgOrgIdIndexRoute: typeof OrgOrgIdIndexRoute
   OrgOrgIdAgentsNewRoute: typeof OrgOrgIdAgentsNewRoute
   OrgOrgIdCChannelIdRoute: typeof OrgOrgIdCChannelIdRoute
   OrgOrgIdDashboardsDashboardIdRoute: typeof OrgOrgIdDashboardsDashboardIdRoute
+  OrgOrgIdDriveFileIdRoute: typeof OrgOrgIdDriveFileIdRoute
   OrgOrgIdIssuesNumberRoute: typeof OrgOrgIdIssuesNumberRoute
   OrgOrgIdSettingsSectionRoute: typeof OrgOrgIdSettingsSectionRoute
   OrgOrgIdThreadsThreadIdRoute: typeof OrgOrgIdThreadsThreadIdRoute
@@ -1099,6 +1259,8 @@ interface OrgOrgIdRouteChildren {
   OrgOrgIdSettingsComputersMachineIdRoute: typeof OrgOrgIdSettingsComputersMachineIdRoute
   OrgOrgIdSettingsDevicesDeviceIdRoute: typeof OrgOrgIdSettingsDevicesDeviceIdRoute
   OrgOrgIdSettingsDevicesAndroidSetupRoute: typeof OrgOrgIdSettingsDevicesAndroidSetupRoute
+  OrgOrgIdSettingsDevicesIphoneSetupRoute: typeof OrgOrgIdSettingsDevicesIphoneSetupRoute
+  OrgOrgIdSettingsRolesRoleIdRoute: typeof OrgOrgIdSettingsRolesRoleIdRoute
   OrgOrgIdAgentsAgentIdIndexRoute: typeof OrgOrgIdAgentsAgentIdIndexRoute
   OrgOrgIdSettingsDevicesPhonesPhoneIdRoute: typeof OrgOrgIdSettingsDevicesPhonesPhoneIdRoute
 }
@@ -1117,11 +1279,13 @@ const OrgOrgIdRouteChildren: OrgOrgIdRouteChildren = {
   OrgOrgIdSettingsRoute: OrgOrgIdSettingsRoute,
   OrgOrgIdTaskManagerRoute: OrgOrgIdTaskManagerRoute,
   OrgOrgIdTeamRoute: OrgOrgIdTeamRoute,
+  OrgOrgIdWaitingRoute: OrgOrgIdWaitingRoute,
   OrgOrgIdWikiRoute: OrgOrgIdWikiRoute,
   OrgOrgIdIndexRoute: OrgOrgIdIndexRoute,
   OrgOrgIdAgentsNewRoute: OrgOrgIdAgentsNewRoute,
   OrgOrgIdCChannelIdRoute: OrgOrgIdCChannelIdRoute,
   OrgOrgIdDashboardsDashboardIdRoute: OrgOrgIdDashboardsDashboardIdRoute,
+  OrgOrgIdDriveFileIdRoute: OrgOrgIdDriveFileIdRoute,
   OrgOrgIdIssuesNumberRoute: OrgOrgIdIssuesNumberRoute,
   OrgOrgIdSettingsSectionRoute: OrgOrgIdSettingsSectionRoute,
   OrgOrgIdThreadsThreadIdRoute: OrgOrgIdThreadsThreadIdRoute,
@@ -1137,6 +1301,9 @@ const OrgOrgIdRouteChildren: OrgOrgIdRouteChildren = {
   OrgOrgIdSettingsDevicesDeviceIdRoute: OrgOrgIdSettingsDevicesDeviceIdRoute,
   OrgOrgIdSettingsDevicesAndroidSetupRoute:
     OrgOrgIdSettingsDevicesAndroidSetupRoute,
+  OrgOrgIdSettingsDevicesIphoneSetupRoute:
+    OrgOrgIdSettingsDevicesIphoneSetupRoute,
+  OrgOrgIdSettingsRolesRoleIdRoute: OrgOrgIdSettingsRolesRoleIdRoute,
   OrgOrgIdAgentsAgentIdIndexRoute: OrgOrgIdAgentsAgentIdIndexRoute,
   OrgOrgIdSettingsDevicesPhonesPhoneIdRoute:
     OrgOrgIdSettingsDevicesPhonesPhoneIdRoute,
@@ -1149,13 +1316,17 @@ const OrgOrgIdRouteWithChildren = OrgOrgIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AutorizarRoute: AutorizarRoute,
+  BaixarRoute: BaixarRoute,
   ConectandoRoute: ConectandoRoute,
   ConectarRoute: ConectarRoute,
+  DownloadRoute: DownloadRoute,
+  EmailUndoRoute: EmailUndoRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   OwnerRoute: OwnerRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   PrivacyRoute: PrivacyRoute,
+  ReferRoute: ReferRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   TermosRoute: TermosRoute,

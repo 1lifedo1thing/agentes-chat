@@ -1,11 +1,13 @@
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
+import { installTitleTips, switchTheme } from "@agenteschat/ui";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
 import "./styles.css";
 import { AppProvider } from "./app";
+import { toolWords } from "./control/activity";
 import type { LocalPhase, ServeProblem, SetupStep, Tailnet } from "./control/local-server";
-import { DesktopStore } from "./control/store";
+import { DesktopStore, orgName } from "./control/store";
 import { DevFrame } from "./dev/DevFrame";
 import { readPref } from "./hooks";
 import { createFakeHost, SCENARIOS, type Scenario } from "./host/fake";
@@ -28,11 +30,13 @@ const fakeHost = inTauri()
         link: params.get("link"),
         found: params.get("found") !== "0",
         someCommands: params.get("commands") === "some",
+        macReady: params.get("mac") === "ready",
         here: {
           phase: (params.get("phase") as LocalPhase | null) ?? undefined,
           reach: params.get("reach") === "1",
           back: params.get("back"),
           run: params.get("run") !== "0",
+          owner: params.get("owner") !== "0",
           usage: params.get("usage") !== "0",
           tailscale: (params.get("tailscale") as Tailnet["state"] | null) ?? undefined,
           installed: params.get("installed") === "terminal" ? "terminal" : undefined,
@@ -61,8 +65,7 @@ window.addEventListener("storage", (e) => {
 const dark = window.matchMedia("(prefers-color-scheme: dark)");
 const forced = fakeHost ? params.get("theme") : null;
 const applyTheme = () => {
-  document.documentElement.dataset.theme =
-    forced === "dark" || forced === "light" ? forced : dark.matches ? "dark" : "light";
+  switchTheme(forced === "dark" || forced === "light" ? forced : dark.matches ? "dark" : "light");
 };
 applyTheme();
 dark.addEventListener("change", applyTheme);
@@ -75,9 +78,16 @@ const store = new DesktopStore(host, {
     const org = home.status?.org?.name;
     void host.notify(title, org ? `${org} · ${request.reason}` : request.reason).catch(() => {});
   },
+  // Always told, whatever the notification preference: a tool turned on from elsewhere must never go unseen.
+  onToolAllowed: (home, allowed) => {
+    if (host.window !== "popover") return;
+    const values = { name: allowed.byName || orgName(home), tool: toolWords(i18n.t, allowed.tool) };
+    void host.notify(i18n.t("desktop.tray.allowedTitle", values), i18n.t("desktop.tray.allowedBody")).catch(() => {});
+  },
 });
 store.start();
 
+installTitleTips();
 const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(

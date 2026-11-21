@@ -3,6 +3,7 @@ import {
   type AgentScope,
   type DesktopMode,
   type MachineRequest,
+  type PhoneTarget,
   parseStreamControl,
   parseStreamHello,
   STREAM_CLOSE,
@@ -28,6 +29,7 @@ export interface StreamSocket {
 export interface StreamInput {
   userId: string;
   orgId: string;
+  /** The agent whose desktop or terminal it is; empty for a phone's screen (`request.phoneId`). */
   agentId: string;
   request: StreamRequest;
   /** The person's session behind the viewer socket (its token): the recheck ends the stream once it is gone. */
@@ -36,6 +38,10 @@ export interface StreamInput {
   switches?: boolean;
   /** A browser card's view (ADR 0058 §7): watch only, never starts the desktop, yields to full viewers. */
   preview?: boolean;
+  /** A phone's screen for the phone app: its pictures go as base64 text frames (React Native draws them so). */
+  text?: boolean;
+  /** The right hand's shared seat (ADR 0175) is asked for, not the person's own; it means nothing for another agent. */
+  shared?: boolean;
 }
 
 /**
@@ -43,7 +49,15 @@ export interface StreamInput {
  * the agent or its workspace is held, so a desktop that runs may be watched but none is started for it.
  */
 export type StreamTarget =
-  | { machineId: string; agent: AgentScope; held?: boolean; switches?: boolean }
+  | {
+      machineId: string;
+      agent?: AgentScope;
+      held?: boolean;
+      switches?: boolean;
+      phone?: PhoneTarget;
+      /** The right hand's seat for this person isn't made yet (a screen's state was asked, nothing opened). */
+      unmade?: boolean;
+    }
   | { refused: number; reason: string };
 
 export interface Stream extends StreamInput {
@@ -52,6 +66,8 @@ export interface Stream extends StreamInput {
   readonly viewer: StreamSocket;
   /** The computer, once `authorize` let it open. */
   machineId: string | null;
+  /** Who the computer takes its agent for, once it opened: the agent, or a seat of the right hand (ADR 0175). */
+  scope?: AgentScope;
   /** The runner's data socket, once its hello named this stream. */
   runner: StreamSocket | null;
   /** Bytes from the person (keys, pointer, a resize) and to them (the screen, the shell's output). */
@@ -61,6 +77,9 @@ export interface Stream extends StreamInput {
   readyAt: number | null;
   closed: boolean;
 }
+
+/** Whose screen or shell a stream is, as its computer knows it: the agent, or the seat of the right hand it opened. */
+export const screenOf = (s: Pick<Stream, "agentId" | "scope">) => s.scope?.id ?? s.agentId;
 
 /**
  * A data socket that serves something else than a person's stream: an agent browser's live view (ADR 0040 §7.1),
@@ -204,19 +223,25 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
   function full(s: OpenStream, machineId: string) {
     let agent = 0;
     let machine = 0;
+    const phoneId = s.request.kind === "phone" ? s.request.phoneId : null;
     for (const o of streams.values()) {
       if (o === s || o.machineId === null || o.request.kind !== s.request.kind) continue;
-      if (o.agentId === s.agentId) agent++;
+      if (phoneId !== null) {
+        if (o.request.kind === "phone" && o.request.phoneId === phoneId) agent++;
+        continue;
+      }
+      if (screenOf(o) === screenOf(s)) agent++;
       if (o.machineId === machineId) machine++;
     }
     if (s.request.kind === "desktop") return agent >= limits.viewersPerDesktop - (s.preview ? 1 : 0);
+    if (s.request.kind === "phone") return agent >= limits.viewersPerDesktop;
     return agent >= limits.terminalsPerAgent || machine >= limits.terminalsPerMachine;
   }
 
   /** The agent's oldest browser card view sent to its computer, which gives its room to a full viewer. */
   function oldestPreview(s: OpenStream) {
     for (const o of streams.values()) {
-      if (o !== s && o.preview && o.machineId !== null && o.agentId === s.agentId && o.request.kind === "desktop") {
+      if (o !== s && o.preview && o.machineId !== null && screenOf(o) === screenOf(s) && o.request.kind === "desktop") {
         return o;
       }
     }
@@ -247,6 +272,8 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
     }
     if (s.closed) return;
     if ("refused" in target) return close(s, target.refused, target.reason);
+    // Before the caps: each seat of the right hand is another screen, counted by itself.
+    if (target.agent) s.scope = target.agent;
     // A person opening the screen itself takes a browser card's room (ADR 0058 §7): the card shows frames again.
     let yielded = false;
     if (s.request.kind === "desktop" && !s.preview && full(s, target.machineId)) {
@@ -264,10 +291,14 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
     const held = target.held === true;
     // A card's view never starts a stopped screen: only someone opening it does.
     const starts = s.request.kind === "desktop" && !held && !s.preview ? { start: true } : {};
-    const request = { op: "stream.open", streamId: s.id, ...s.request, agent, ...starts } as Extract<
-      MachineRequest,
-      { op: "stream.open" }
-    >;
+    const request = {
+      op: "stream.open",
+      streamId: s.id,
+      ...s.request,
+      ...(agent ? { agent } : {}),
+      ...(target.phone ? { phone: target.phone } : {}),
+      ...starts,
+    } as Extract<MachineRequest, { op: "stream.open" }>;
     const open = () => deps.hub.call(machineId, request, { timeoutMs: limits.openTimeoutMs });
     const first = async () => {
       try {
@@ -427,8 +458,10 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
         agentId: input.agentId,
         request: input.request,
         sessionToken: input.sessionToken,
+        ...(input.text ? { text: true } : {}),
         switches: input.switches === true && input.preview !== true,
         ...(input.preview ? { preview: true } : {}),
+        ...(input.shared ? { shared: true } : {}),
         wanted: null,
         switching: false,
         discarding: null,
@@ -465,7 +498,15 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
         return close(s, STREAM_CLOSE.badRequest, "too much input");
       }
       let frame = data;
-      if (typeof data === "string") {
+      if (s.request.kind === "phone") {
+        // A phone's viewer acknowledges pictures and, in control, sends its input: text frames only.
+        const control = typeof data === "string" ? parseStreamControl(data) : null;
+        const type = control?.type;
+        const input = type === "tap" || type === "swipe" || type === "text" || type === "key";
+        if (type !== "ack" && !(input && s.request.mode === "control"))
+          return close(s, STREAM_CLOSE.badRequest, "bad frame");
+        frame = JSON.stringify(control);
+      } else if (typeof data === "string") {
         const control = s.request.kind === "terminal" || s.switches ? parseStreamControl(data) : null;
         // The viewer took the switch: what it sends from here is the new session's.
         if (s.switches && control?.type === "mode") {
@@ -510,7 +551,8 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
           return;
         }
         s.bytesOut += data.byteLength;
-        return relay(s, s.viewer, data, limits.viewerBufferedMax);
+        const out = s.text ? Buffer.from(data.buffer, data.byteOffset, data.byteLength).toString("base64") : data;
+        return relay(s, s.viewer, out, limits.viewerBufferedMax);
       }
       const hello = typeof data === "string" && !link.authing ? parseStreamHello(data) : null;
       if (!hello) return endLink(link, STREAM_CLOSE.badRequest, "send stream.hello, then wait for stream.ready");
@@ -534,7 +576,9 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
         return;
       }
       if (link.stream) {
-        const ended = code === STREAM_CLOSE.normal ? code : STREAM_CLOSE.unreachable;
+        // Control ended on the computer (a phone taken back): the viewer opens again as a watcher.
+        const ended =
+          code === STREAM_CLOSE.normal || code === STREAM_CLOSE.controlEnded ? code : STREAM_CLOSE.unreachable;
         close(link.stream, ended, "the computer closed the stream");
       }
     },
@@ -577,11 +621,28 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
       return false;
     },
 
-    /** An agent's streams of a kind sent to its computer (ready or still opening). */
-    count(agentId: string, kind: StreamRequest["kind"]) {
+    /**
+     * The streams of a kind sent to a computer for one screen (ready or still opening): an agent's, by its id, or one
+     * seat's of the right hand, by the seat's.
+     */
+    count(screenId: string, kind: StreamRequest["kind"]) {
       let n = 0;
-      for (const s of streams.values()) if (s.agentId === agentId && s.request.kind === kind && s.machineId) n++;
+      for (const s of streams.values()) if (screenOf(s) === screenId && s.request.kind === kind && s.machineId) n++;
       return n;
+    },
+
+    /**
+     * Who has a screen open from that computer now (an agent's, by its id, or one seat's of the right hand, by the
+     * seat's), each person once per agent they opened it as: the agent's pointer goes to them under that agent's id.
+     */
+    desktopViewers(screenId: string, machineId: string) {
+      const seen = new Map<string, { orgId: string; userId: string; agentId: string; shared?: true }>();
+      for (const s of streams.values()) {
+        if (screenOf(s) !== screenId || s.machineId !== machineId || s.request.kind !== "desktop") continue;
+        const { orgId, userId, agentId } = s;
+        seen.set(`${orgId}:${userId}:${agentId}`, { orgId, userId, agentId, ...(s.shared ? { shared: true } : {}) });
+      }
+      return [...seen.values()];
     },
 
     /** Ends every stream and data socket (the server restarts: viewers open again on the next one). */

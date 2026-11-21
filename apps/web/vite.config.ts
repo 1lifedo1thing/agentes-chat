@@ -3,6 +3,7 @@ import babel from "@rolldown/plugin-babel";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { preloadLocale } from "./vite-locale-preload";
 
 // In development the web app runs on Vite (port 5173) and proxies /api,
 // including the WebSocket at /api/ws, to the server (port 3000). In
@@ -15,8 +16,13 @@ export default defineConfig({
     tanstackRouter({ target: "react", autoCodeSplitting: true }),
     react(),
     babel({ presets: [reactCompilerPreset()] }),
+    preloadLocale(),
   ],
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  // One copy of Yjs: it checks its own types with instanceof (live files, ADR 0196).
+  resolve: {
+    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+    dedupe: ["yjs", "lib0", "y-protocols", "prosemirror-model", "prosemirror-state", "prosemirror-view"],
+  },
   server: { port: 5173, proxy: { "/api": { target: "http://localhost:3000", ws: true } } },
   // `screen.html`: the agent's screen for the phone app (ADR 0098), a small page of its own, not the web app.
   build: {
