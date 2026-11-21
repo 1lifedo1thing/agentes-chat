@@ -191,8 +191,7 @@ export function createCodeSuggestionToolSource(): ToolSource {
       if (elsewhere) return refused(elsewhere);
       if ((await runAuthority(ctx.db, run)).kind !== "person") return refused(REFUSED.nobody);
       const agent = await getAgentCached(ctx.db, run.orgId, run.agentId);
-      if (!agent || !(await worksInSessions(ctx.db, agent)))
-        return refused(REFUSED.noComputer);
+      if (!agent || !(await worksInSessions(ctx.db, agent))) return refused(REFUSED.noComputer);
       const asked = await getMessage(ctx.db, run.orgId, run.triggerMessageId);
       if (asked?.authorType !== "person" || !asked.authorUserId) return refused(REFUSED.notPerson);
       const request = asked.body.trim().slice(0, REQUEST_MAX_CHARS);

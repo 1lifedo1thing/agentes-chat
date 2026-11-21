@@ -85,11 +85,14 @@ const ctxOf = (run: Awaited<ReturnType<typeof runOver>>["run"]): ToolContext => 
   ...(run.background ? { background: true } : {}),
 });
 
+/** The tool as a conversation of the main timeline lists it, called from `ctx` (where a stale list may still have it). */
 async function suggest(ctx: ToolContext, input: Record<string, unknown>) {
-  const [tool] = await createCodeSuggestionToolSource().tools(ctx);
+  const [tool] = await createCodeSuggestionToolSource().tools({ ...ctx, channelId: f.general.id, threadRootId: "" });
   if (!tool) throw new Error("the tool isn't listed");
   return tool.execute(input, ctx);
 }
+
+const listed = async (ctx: ToolContext) => (await createCodeSuggestionToolSource().tools(ctx)).map((t) => t.name);
 
 /** A channel of kind `code` (a session's conversation), Dev in it. */
 async function codeChannel() {
@@ -155,6 +158,7 @@ describe("suggest_code_session", () => {
     f = await setup();
     await programmer();
     const session = await runOver((await codeChannel()).id);
+    expect(await listed(ctxOf(session.run))).toEqual([]);
     expect((await suggest(ctxOf(session.run), { project: "tarefas", title: "X" })).isError).toBe(true);
     const fromAgent = await runOver(f.general.id, { byAgent: true });
     expect((await suggest(ctxOf(fromAgent.run), { project: "tarefas", title: "X" })).isError).toBe(true);
@@ -181,6 +185,7 @@ describe("suggest_code_session", () => {
       .returning();
     const inTask = await runOver(task?.id ?? "");
     expect(await codeSuggestionApplies(f.db, inTask.run)).toBe(false);
+    expect(await listed(ctxOf(inTask.run))).toEqual([]);
     const fromTask = await suggest(ctxOf(inTask.run), { project: "tarefas", title: "X" });
     expect(fromTask.isError).toBe(true);
     expect(fromTask.content).toContain("do the change here");
@@ -197,6 +202,7 @@ describe("suggest_code_session", () => {
       mainSessionId: crypto.randomUUID(),
     });
     expect(await codeSuggestionApplies(f.db, inMission.run)).toBe(false);
+    expect(await listed(ctxOf(inMission.run))).toEqual([]);
     expect((await suggest(ctxOf(inMission.run), { project: "tarefas", title: "X" })).isError).toBe(true);
     // The same request in the channel, outside the mission: suggested.
     expect(await codeSuggestionApplies(f.db, (await runOver(f.general.id)).run)).toBe(true);

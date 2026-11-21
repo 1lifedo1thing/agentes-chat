@@ -125,8 +125,7 @@ async function runRow(channelId: string) {
 }
 
 const pair = async (name: string) =>
-  (await pairMachine({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, { name, ...RUNNER, exec: true }))
-    .machineId;
+  (await pairMachine({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, { name, ...RUNNER, exec: true })).machineId;
 
 const call = async (ctx: ToolContext, name: string, input: Record<string, unknown>) => {
   const outcome = await f.tools?.invoke(ctx, { toolUseId: crypto.randomUUID(), name, input });

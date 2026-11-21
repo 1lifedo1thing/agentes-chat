@@ -271,19 +271,13 @@ export function createDesktopToolSource(deps: DesktopToolDeps): ToolSource {
     granted?: Set<string>,
   ): Promise<{ refused: string } | { approvals: boolean }> {
     const running = await codeRunning(ctx.db, ctx.orgId, ctx.agentId, granted);
-    if (running.refused === "grant") {
-      return {
-        refused:
-          "Using your desktop runs commands on your computer, and you may not run code. An admin or your owner can give you Run code; say so.",
-      };
-    }
-    if (running.refused === "off") {
-      return {
-        refused:
-          "Using your desktop runs commands on your computer, and running code is turned off for this organization. Tell the people.",
-      };
-    }
-    return { approvals: running.approvals };
+    if (running.refused === null) return { approvals: running.approvals };
+    return {
+      refused:
+        running.refused === "grant"
+          ? "Using your desktop runs commands on your computer, and you may not run code. An admin or your owner can give you Run code; say so."
+          : "Using your desktop runs commands on your computer, and running code is turned off for this organization. Tell the people.",
+    };
   }
 
   /** The agent's desktop for this call (its computer and agent bound), or why it can't be used. */

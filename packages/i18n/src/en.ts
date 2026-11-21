@@ -15765,7 +15765,8 @@ export const en = {
     /** A code session (ADR 0214): what keeps one from starting, or its panel from reading the agent's computer. */
     codeSession: {
       noComputer: "This agent has no computer yet. Give it one in its settings to code with it.",
-      cannotCode: "This agent can't code on its computer. Give it a coding app in its settings, or let it run code there.",
+      cannotCode:
+        "This agent can't code on its computer. Give it a coding app in its settings, or let it run code there.",
       repoNotAllowed: "This agent can't work in that repository. Pick another one, or add it in the agent's settings.",
       notYours: "Only who opened the session, or an admin, closes it.",
       notReady: "The session's worktree isn't ready yet. Try again in a moment.",

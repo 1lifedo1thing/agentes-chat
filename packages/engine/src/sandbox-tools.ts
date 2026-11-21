@@ -1500,7 +1500,11 @@ export function createSandboxToolSource(
             async (c) => {
               // In a code session's worktree the default is out of git (`.agentes/`), never a change of the session.
               const at = sessionFolder(ctx, c);
-              const path = toolPath(str(input.path).trim() || `${at ? ".agentes/" : ""}imports/${name}`, computerInfo, at);
+              const path = toolPath(
+                str(input.path).trim() || `${at ? ".agentes/" : ""}imports/${name}`,
+                computerInfo,
+                at,
+              );
               if (raw) await copyToComputer({ ...deps.artifacts, publicUrl: deps.publicUrl }, ctx, c, path, raw);
               else await c.provider.writeFile(c.id, path, new TextEncoder().encode(file?.text ?? ""));
               return shownPath(path, at);
@@ -1690,8 +1694,7 @@ export function createSandboxToolSource(
           // A code session's task works on the session's own branch, in its worktree (ADR 0214).
           if (ctx.codeSession?.place && !elsewhere && str(input.branch).trim())
             return {
-              content:
-                "In a code session a task works in the session's worktree, on its branch: leave `branch` out.",
+              content: "In a code session a task works in the session's worktree, on its branch: leave `branch` out.",
               isError: true,
             };
           const row = await run(
@@ -2127,7 +2130,9 @@ export function createSandboxToolSource(
     holds = "",
   ): ToolDefinition[] => [
     ...baseTools(requireApproval, execTimeout, computerInfo, sessionId, devices),
-    ...(computerInfo.kind === "machine" && tasksOn(computerInfo) ? taskTools(requireApproval, computerInfo, devices) : []),
+    ...(computerInfo.kind === "machine" && tasksOn(computerInfo)
+      ? taskTools(requireApproval, computerInfo, devices)
+      : []),
     ...(computerInfo.kind === "machine" && computerInfo.protocol >= ACCESS_PROTOCOL
       ? [folderAccessTool(computerInfo)]
       : []),
@@ -2186,14 +2191,7 @@ export function createSandboxToolSource(
         ? await holdsText({ db: ctx.db, ...(deps.pubsub ? { pubsub: deps.pubsub } : {}) }, ctx.orgId, ctx.agentId)
         : "";
       const tools = keep(
-        build(
-          settings.requireApproval,
-          settings.execTimeoutSeconds,
-          computer,
-          ctx.threadRootId,
-          devices,
-          holds,
-        ),
+        build(settings.requireApproval, settings.execTimeoutSeconds, computer, ctx.threadRootId, devices, holds),
       );
       if (!mission) return tools;
       return tools.map((t) => ({

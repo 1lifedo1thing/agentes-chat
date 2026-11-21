@@ -136,7 +136,16 @@ describe("what agents did under each reply (a person's own setting, off by defau
     const org = state.me?.organizations[0];
     if (org) org.showActivity = false;
     const work = [
-      { kind: "call", id: "1", tool: "write_file", connector: null, detail: null, code: null, output: [], running: true },
+      {
+        kind: "call",
+        id: "1",
+        tool: "write_file",
+        connector: null,
+        detail: null,
+        code: null,
+        output: [],
+        running: true,
+      },
     ] as unknown as LiveWork[];
     const meta = { work: { steps: 2, calls: [{ name: "write_file" }, { name: "run_code" }], durationMs: 4000 } };
     await renderPage(

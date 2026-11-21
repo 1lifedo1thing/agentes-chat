@@ -257,7 +257,8 @@ export interface CodeSessionContext {
   unavailable?: string;
 }
 
-const PLACE_PREPARING = "This session's worktree is still being prepared on your computer: nothing can run or change yet.";
+const PLACE_PREPARING =
+  "This session's worktree is still being prepared on your computer: nothing can run or change yet.";
 const PLACE_GONE =
   "This session's worktree is gone (the session was closed, or its worktree failed or was removed): nothing runs here any more. Tell the person; they can retry the session or open a new one.";
 const PLACE_MOVED =
@@ -968,7 +969,12 @@ export async function retryCodeSession(deps: CodeSessionDeps, userId: string, or
 /** The workspace's agents a session can start with (`worksInSessions`), oldest first; `first`: stop at one. */
 async function sessionAgentsIn(db: Database, orgId: string, first = false): Promise<string[]> {
   const rows = await db
-    .select({ id: schema.agents.id, orgId: schema.agents.orgId, brain: schema.agents.brain, machineId: schema.agents.machineId })
+    .select({
+      id: schema.agents.id,
+      orgId: schema.agents.orgId,
+      brain: schema.agents.brain,
+      machineId: schema.agents.machineId,
+    })
     .from(schema.agents)
     .where(
       and(

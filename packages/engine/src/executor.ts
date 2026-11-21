@@ -5726,9 +5726,11 @@ async function executeRunInner(
           }
           // A code session's worktree gone from its computer: the session says so and its retry makes it again.
           if (gone && plan.session?.codeSession)
-            await loseCodeWorktree({ db, ...(deps.pubsub ? { pubsub: deps.pubsub } : {}) }, run.orgId, run.channelId).catch(
-              () => {},
-            );
+            await loseCodeWorktree(
+              { db, ...(deps.pubsub ? { pubsub: deps.pubsub } : {}) },
+              run.orgId,
+              run.channelId,
+            ).catch(() => {});
           // The plan refused the rest of a turn that worked (the runner says so; an older one is taken as having
           // worked): never ended there nor handed to the API, which can't see what it did. It waits for the plan and
           // the same session finishes the turn.
