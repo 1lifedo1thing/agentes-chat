@@ -3242,6 +3242,14 @@
       "antigravity": "이 컴퓨터에서 Gemini에 로그인되어 있지 않아요. {{name}}의 페이지에서 Gemini 계정을 연결하세요.",
       "opencode": "이 컴퓨터에서 OpenCode가 생각할 수 없어요. {{name}}의 페이지에서 OpenCode 키를 연결하세요."
     },
+    "notSignedInOn": {
+      "claude_code": "{{computer}}에서 Claude Code에 로그인되어 있지 않아요. {{name}}의 페이지에서 Claude 계정을 연결하세요.",
+      "codex": "{{computer}}에서 Codex에 로그인되어 있지 않아요. {{name}}의 페이지에서 ChatGPT 계정을 연결하세요.",
+      "cursor": "{{computer}}에서 Cursor에 로그인되어 있지 않아요. {{name}}의 페이지에서 Cursor 계정을 연결하세요.",
+      "grok": "{{computer}}에서 Grok에 로그인되어 있지 않아요. {{name}}의 페이지에서 Grok 계정을 연결하세요.",
+      "antigravity": "{{computer}}에서 Gemini에 로그인되어 있지 않아요. {{name}}의 페이지에서 Gemini 계정을 연결하세요.",
+      "opencode": "{{computer}}에서 OpenCode가 생각할 수 없어요. {{name}}의 페이지에서 OpenCode 키를 연결하세요."
+    },
     "card": {
       "connected": "이제 {{name}}에게 AI가 있어요.",
       "answerNow": "지금 답하기",
@@ -14606,6 +14614,12 @@
     }
   },
   "errors": {
+    "planMove": {
+      "notPayer": "요금제를 결제하는 사람만 옮길 수 있어요.",
+      "same": "요금제를 옮길 다른 워크스페이스를 골라 주세요.",
+      "targetHasPlan": "그 워크스페이스에는 이미 요금제가 있어요. 새로고침해서 지금 상태를 확인하세요.",
+      "targetDeleting": "그 워크스페이스는 삭제 중이에요. 먼저 복원하거나 다른 곳을 고르세요."
+    },
     "surface": {
       "off": "채팅 앱 연결이 꺼졌어요. 새로고침해서 지금 설정을 확인하세요.",
       "notAllowed": "채팅 앱 연결은 아직 내 계정에 열리지 않았어요. 열릴 때까지 여기 앱을 계속 사용하세요.",
@@ -15940,6 +15954,8 @@
       "none": "컴퓨터를 바꾼 에이전트가 없어요.",
       "resumed_other": "작업 {{count}}개를 다시 시작했어요",
       "stillWaiting_other": "{{count}}개가 아직 {{name}}을(를) 기다려요",
+      "planDropped": "{{name}}의 {{plan}} 플랜은 {{from}}에 로그인되어 있어요. {{to}}에서도 로그인하거나 {{from}}을 계속 사용하세요.",
+      "signIn": "{{name}}에서 로그인",
       "skipped": "{{name}}은(는) 그대로예요: {{reason}}",
       "skip": {
         "other": "지금은 바꿀 수 없어요",
@@ -18757,6 +18773,13 @@
     "deleteOrg": "{{name}} 삭제",
     "submit": "계정 삭제",
     "deleted": "계정은 {{date}}에 영구적으로 사라져요. 그 전에 로그인하면 복원할 수 있어요."
+  },
+  "planMove": {
+    "warning": "요금제는 이 워크스페이스에 남고 더 이상 갱신되지 않아요. 먼저 다른 워크스페이스로 옮길까요?",
+    "deleting": "요금제가 함께 더 이상 갱신되지 않아요. 다른 워크스페이스로 옮길 수 있어요.",
+    "how": "같은 카드와 이미 결제한 기간이 그대로 옮겨가요. 다시 청구되지 않고 환불도 없어요.",
+    "button": "내 요금제를 {{name}}(으)로 옮기기",
+    "moving": "요금제를 {{name}}(으)로 옮기는 중이에요. 1분 정도 걸려요."
   },
   "billing": {
     "open": "요금제 및 결제 열기",

@@ -3668,6 +3668,14 @@
       "antigravity": "Gemini nie jest zalogowany na tym komputerze. Podłącz konto Gemini na stronie agenta {{name}}.",
       "opencode": "OpenCode nie może myśleć na tym komputerze. Połącz klucz OpenCode na stronie agenta {{name}}."
     },
+    "notSignedInOn": {
+      "claude_code": "Claude Code nie jest zalogowany na komputerze {{computer}}. Podłącz konto Claude na stronie agenta {{name}}.",
+      "codex": "Codex nie jest zalogowany na komputerze {{computer}}. Podłącz konto ChatGPT na stronie agenta {{name}}.",
+      "cursor": "Cursor nie jest zalogowany na komputerze {{computer}}. Podłącz konto Cursor na stronie agenta {{name}}.",
+      "grok": "Grok nie jest zalogowany na komputerze {{computer}}. Podłącz konto Grok na stronie agenta {{name}}.",
+      "antigravity": "Gemini nie jest zalogowany na komputerze {{computer}}. Podłącz konto Gemini na stronie agenta {{name}}.",
+      "opencode": "OpenCode nie może myśleć na komputerze {{computer}}. Połącz klucz OpenCode na stronie agenta {{name}}."
+    },
     "card": {
       "connected": "{{name}} ma teraz AI.",
       "answerNow": "Odpowiedz teraz",
@@ -16283,6 +16291,12 @@
     }
   },
   "errors": {
+    "planMove": {
+      "notPayer": "Tylko osoba, która płaci za plan, może go przenieść.",
+      "same": "Wybierz inną przestrzeń roboczą, do której przeniesiesz plan.",
+      "targetHasPlan": "Ta przestrzeń robocza ma już plan. Odśwież, aby zobaczyć aktualny stan swoich przestrzeni.",
+      "targetDeleting": "Ta przestrzeń robocza jest usuwana. Najpierw ją przywróć albo wybierz inną."
+    },
     "surface": {
       "off": "Łączenie aplikacji czatu zostało wyłączone. Odśwież stronę, aby zobaczyć aktualne ustawienia.",
       "notAllowed": "Łączenie aplikacji czatu nie jest jeszcze dostępne dla twojego konta. Do tego czasu korzystaj z aplikacji tutaj.",
@@ -17661,6 +17675,8 @@
       "stillWaiting_few": "{{count}} wciąż czekają na {{name}}",
       "stillWaiting_many": "{{count}} wciąż czeka na {{name}}",
       "stillWaiting_other": "{{count}} wciąż czekają na {{name}}",
+      "planDropped": "Plan {{plan}} agenta {{name}} jest zalogowany na komputerze {{from}}. Zaloguj się też na {{to}} albo zostaw {{from}}.",
+      "signIn": "Zaloguj się na {{name}}",
       "skipped": "{{name}} zostaje: {{reason}}",
       "skip": {
         "other": "nie można teraz przenieść",
@@ -20642,6 +20658,13 @@
     "deleteOrg": "Usuń {{name}}",
     "submit": "Usuń konto",
     "deleted": "Twoje konto zniknie na dobre {{date}}. Zaloguj się wcześniej, aby je przywrócić."
+  },
+  "planMove": {
+    "warning": "Twój plan zostaje przy tej przestrzeni roboczej i nie będzie odnawiany. Przenieść go najpierw do innej Twojej przestrzeni?",
+    "deleting": "Twój plan nie będzie odnawiany razem z nią. Możesz przenieść go do innej przestrzeni roboczej.",
+    "how": "Ta sama karta i opłacony okres przechodzą razem z nim. Nic nie zostanie pobrane ponownie ani zwrócone.",
+    "button": "Przenieś mój plan do {{name}}",
+    "moving": "Twój plan jest przenoszony do {{name}}. Będzie tam za około minutę."
   },
   "billing": {
     "open": "Otwórz plan i płatności",

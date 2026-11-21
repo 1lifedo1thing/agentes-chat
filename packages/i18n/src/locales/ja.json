@@ -3244,6 +3244,14 @@
       "antigravity": "このコンピューターでGeminiにログインしていません。{{name}}のページでGeminiアカウントを接続してください。",
       "opencode": "このコンピューターではOpenCodeが動きません。{{name}}のページでOpenCodeのキーを接続してください。"
     },
+    "notSignedInOn": {
+      "claude_code": "{{computer}}でClaude Codeにログインしていません。{{name}}のページでClaudeアカウントを接続してください。",
+      "codex": "{{computer}}でCodexにログインしていません。{{name}}のページでChatGPTアカウントを接続してください。",
+      "cursor": "{{computer}}でCursorにログインしていません。{{name}}のページでCursorアカウントを接続してください。",
+      "grok": "{{computer}}でGrokにログインしていません。{{name}}のページでGrokアカウントを接続してください。",
+      "antigravity": "{{computer}}でGeminiにログインしていません。{{name}}のページでGeminiアカウントを接続してください。",
+      "opencode": "{{computer}}ではOpenCodeが動きません。{{name}}のページでOpenCodeのキーを接続してください。"
+    },
     "card": {
       "connected": "{{name}}にAIが接続されました。",
       "answerNow": "今すぐ返信させる",
@@ -14612,6 +14620,12 @@
     }
   },
   "errors": {
+    "planMove": {
+      "notPayer": "プランを移せるのは支払っている人だけです。",
+      "same": "プランの移動先にほかのワークスペースを選んでください。",
+      "targetHasPlan": "そのワークスペースにはすでにプランがあります。再読み込みして最新の状態を確認してください。",
+      "targetDeleting": "そのワークスペースは削除中です。先に復元するか、ほかを選んでください。"
+    },
     "surface": {
       "off": "チャットアプリの連携はオフになりました。再読み込みして現在の設定を確認してください。",
       "notAllowed": "チャットアプリの連携はまだあなたのアカウントで使えません。それまではこのアプリをお使いください。",
@@ -15948,6 +15962,8 @@
       "none": "コンピューターを切り替えたエージェントはいません。",
       "resumed_other": "{{count}}件のタスクを再開しました",
       "stillWaiting_other": "{{count}}件はまだ{{name}}を待っています",
+      "planDropped": "{{name}}の{{plan}}プランは{{from}}でログインしています。{{to}}でもログインするか、{{from}}のままにしてください。",
+      "signIn": "{{name}}でログイン",
       "skipped": "{{name}}は切り替えませんでした: {{reason}}",
       "skip": {
         "other": "今は切り替えられませんでした",
@@ -18765,6 +18781,13 @@
     "deleteOrg": "{{name}}を削除",
     "submit": "アカウントを削除",
     "deleted": "アカウントは{{date}}に完全に削除されます。それまでにログインすると復元できます。"
+  },
+  "planMove": {
+    "warning": "プランはこのワークスペースに残り、更新されなくなります。先にほかのワークスペースへ移しますか？",
+    "deleting": "プランはこのワークスペースと一緒に更新されなくなります。ほかのワークスペースへ移せます。",
+    "how": "同じカードと支払い済みの期間がそのまま移ります。追加の請求も返金もありません。",
+    "button": "プランを{{name}}に移す",
+    "moving": "プランを{{name}}に移しています。1分ほどで反映されます。"
   },
   "billing": {
     "open": "プランと請求を開く",

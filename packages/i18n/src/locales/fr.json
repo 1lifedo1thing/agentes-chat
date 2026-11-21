@@ -3529,6 +3529,14 @@
       "antigravity": "Gemini n'est pas connecté sur cet ordinateur. Connectez un compte Gemini sur la page de {{name}}.",
       "opencode": "OpenCode ne peut pas réfléchir sur cet ordinateur. Connectez une clé OpenCode sur la page de {{name}}."
     },
+    "notSignedInOn": {
+      "claude_code": "Claude Code n'est pas connecté sur {{computer}}. Connectez un compte Claude sur la page de {{name}}.",
+      "codex": "Codex n'est pas connecté sur {{computer}}. Connectez un compte ChatGPT sur la page de {{name}}.",
+      "cursor": "Cursor n'est pas connecté sur {{computer}}. Connectez un compte Cursor sur la page de {{name}}.",
+      "grok": "Grok n'est pas connecté sur {{computer}}. Connectez un compte Grok sur la page de {{name}}.",
+      "antigravity": "Gemini n'est pas connecté sur {{computer}}. Connectez un compte Gemini sur la page de {{name}}.",
+      "opencode": "OpenCode ne peut pas réfléchir sur {{computer}}. Connectez une clé OpenCode sur la page de {{name}}."
+    },
     "card": {
       "connected": "{{name}} a maintenant une IA.",
       "answerNow": "Répondre maintenant",
@@ -15732,6 +15740,12 @@
     }
   },
   "errors": {
+    "planMove": {
+      "notPayer": "Seule la personne qui paie l'abonnement peut le déplacer.",
+      "same": "Choisis un autre espace de travail où déplacer l'abonnement.",
+      "targetHasPlan": "Cet espace de travail a déjà un abonnement. Recharge pour voir tes espaces de travail tels qu'ils sont.",
+      "targetDeleting": "Cet espace de travail est en cours de suppression. Restaure-le d'abord, ou choisis-en un autre."
+    },
     "surface": {
       "off": "La liaison des apps de chat a été désactivée. Rechargez pour voir vos paramètres tels qu'ils sont maintenant.",
       "notAllowed": "Relier une app de chat n'est pas encore ouvert à votre compte. Continuez à utiliser l'app ici en attendant.",
@@ -17096,6 +17110,8 @@
       "stillWaiting_one": "{{count}} attend toujours {{name}}",
       "stillWaiting_many": "{{count}} attendent toujours {{name}}",
       "stillWaiting_other": "{{count}} attendent toujours {{name}}",
+      "planDropped": "Le forfait {{plan}} de {{name}} est connecté sur {{from}}. Connectez-vous aussi sur {{to}}, ou gardez {{from}}.",
+      "signIn": "Se connecter sur {{name}}",
       "skipped": "{{name}} n'a pas changé : {{reason}}",
       "skip": {
         "other": "impossible de changer pour l'instant",
@@ -20046,6 +20062,13 @@
     "deleteOrg": "Supprimer {{name}}",
     "submit": "Supprimer le compte",
     "deleted": "Votre compte disparaît définitivement le {{date}}. Connectez-vous avant pour le restaurer."
+  },
+  "planMove": {
+    "warning": "Ton abonnement reste avec cet espace de travail et n'est plus renouvelé. Le déplacer d'abord vers un autre de tes espaces ?",
+    "deleting": "Ton abonnement n'est plus renouvelé avec lui. Tu peux le déplacer vers un autre espace de travail.",
+    "how": "La même carte et la période déjà payée le suivent. Rien n'est facturé à nouveau et rien n'est remboursé.",
+    "button": "Déplacer mon abonnement vers {{name}}",
+    "moving": "Ton abonnement est en route vers {{name}}. Il y sera dans une minute environ."
   },
   "billing": {
     "open": "Ouvrir l'abonnement et la facturation",

@@ -3542,6 +3542,26 @@ export const ptBR = {
       opencode_female:
         "O OpenCode não consegue pensar neste computador. Conecte uma chave do OpenCode na página da\u00a0{{name}}.",
     },
+    /** The same, naming the computer it isn't signed in on (`NoAiCard.computer`). */
+    notSignedInOn: {
+      claude_code:
+        "O Claude Code está sem login no {{computer}}. Conecte uma conta do Claude na página do\u00a0{{name}}.",
+      claude_code_female:
+        "O Claude Code está sem login no {{computer}}. Conecte uma conta do Claude na página da\u00a0{{name}}.",
+      codex: "O Codex está sem login no {{computer}}. Conecte uma conta do ChatGPT na página do\u00a0{{name}}.",
+      codex_female: "O Codex está sem login no {{computer}}. Conecte uma conta do ChatGPT na página da\u00a0{{name}}.",
+      cursor: "O Cursor está sem login no {{computer}}. Conecte uma conta do Cursor na página do\u00a0{{name}}.",
+      cursor_female: "O Cursor está sem login no {{computer}}. Conecte uma conta do Cursor na página da\u00a0{{name}}.",
+      grok: "O Grok está sem login no {{computer}}. Conecte uma conta do Grok na página do\u00a0{{name}}.",
+      grok_female: "O Grok está sem login no {{computer}}. Conecte uma conta do Grok na página da\u00a0{{name}}.",
+      antigravity: "O Gemini está sem login no {{computer}}. Conecte uma conta do Gemini na página do\u00a0{{name}}.",
+      antigravity_female:
+        "O Gemini está sem login no {{computer}}. Conecte uma conta do Gemini na página da\u00a0{{name}}.",
+      opencode:
+        "O OpenCode não consegue pensar no {{computer}}. Conecte uma chave do OpenCode na página do\u00a0{{name}}.",
+      opencode_female:
+        "O OpenCode não consegue pensar no {{computer}}. Conecte uma chave do OpenCode na página da\u00a0{{name}}.",
+    },
     card: {
       connected: "{{name}} já tem uma IA.",
       answerNow: "Responder agora",
@@ -15401,6 +15421,13 @@ export const ptBR = {
     },
   },
   errors: {
+    /** Moving a plan to another workspace (ADR 0079). */
+    planMove: {
+      notPayer: "Só quem paga o plano pode mover.",
+      same: "Escolha outro workspace para onde mover o plano.",
+      targetHasPlan: "Esse workspace já tem um plano. Recarregue para ver seus workspaces como estão agora.",
+      targetDeleting: "Esse workspace está sendo apagado. Restaure antes, ou escolha outro.",
+    },
     surface: {
       off: "A vinculação de apps de chat foi desligada. Recarregue para ver suas configurações como estão agora.",
       notAllowed: "Vincular um app de chat ainda não está aberto para sua conta. Continue usando o app aqui até abrir.",
@@ -16819,6 +16846,9 @@ export const ptBR = {
       resumed_other: "{{count}} tarefas recomeçaram",
       stillWaiting_one: "{{count}} ainda espera o {{name}}",
       stillWaiting_other: "{{count}} ainda esperam o {{name}}",
+      planDropped:
+        "O plano do {{plan}} de {{name}} está conectado no {{from}}. Entre também no {{to}}, ou mantenha o {{from}}.",
+      signIn: "Entrar no {{name}}",
       skipped: "{{name}} ficou: {{reason}}",
       skip: {
         other: "não deu para trocar agora",
@@ -19898,6 +19928,20 @@ export const ptBR = {
     deleteOrg: "Apagar {{name}}",
     submit: "Apagar conta",
     deleted: "Sua conta some de vez em {{date}}. Entre antes disso para restaurar.",
+  },
+  /**
+   * Moving a plan to another workspace (ADR 0079), offered to its payer where it would be lost: deleting the workspace,
+   * and the line of one being deleted. `{{name}}`: the workspace it goes to.
+   */
+  planMove: {
+    /** In the dialog that deletes the workspace. */
+    warning: "Seu plano fica com este workspace e para de renovar. Quer mover para outro seu antes?",
+    /** On the line of a workspace being deleted. */
+    deleting: "Seu plano para de renovar com ele. Você pode mover para outro workspace.",
+    /** Behind the ⓘ beside either line. */
+    how: "O mesmo cartão e o período já pago vão junto. Nada é cobrado de novo e nada é reembolsado.",
+    button: "Mover meu plano para {{name}}",
+    moving: "Seu plano está indo para {{name}}. Chega em cerca de um minuto.",
   },
   /** The billing service (ADR 0079): this server shows no plan, price or currency, only the way there. */
   billing: {

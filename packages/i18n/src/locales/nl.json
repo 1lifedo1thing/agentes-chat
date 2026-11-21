@@ -3389,6 +3389,20 @@
       "opencode": "OpenCode kan niet denken op deze computer. Koppel een OpenCode-sleutel op de pagina van {{name}}.",
       "opencode_female": "OpenCode kan niet denken op deze computer. Koppel een OpenCode-sleutel op de pagina van {{name}}."
     },
+    "notSignedInOn": {
+      "claude_code": "Claude Code is niet ingelogd op {{computer}}. Koppel een Claude-account op de pagina van {{name}}.",
+      "claude_code_female": "Claude Code is niet ingelogd op {{computer}}. Koppel een Claude-account op de pagina van {{name}}.",
+      "codex": "Codex is niet ingelogd op {{computer}}. Koppel een ChatGPT-account op de pagina van {{name}}.",
+      "codex_female": "Codex is niet ingelogd op {{computer}}. Koppel een ChatGPT-account op de pagina van {{name}}.",
+      "cursor": "Cursor is niet ingelogd op {{computer}}. Koppel een Cursor-account op de pagina van {{name}}.",
+      "cursor_female": "Cursor is niet ingelogd op {{computer}}. Koppel een Cursor-account op de pagina van {{name}}.",
+      "grok": "Grok is niet ingelogd op {{computer}}. Koppel een Grok-account op de pagina van {{name}}.",
+      "grok_female": "Grok is niet ingelogd op {{computer}}. Koppel een Grok-account op de pagina van {{name}}.",
+      "antigravity": "Gemini is niet ingelogd op {{computer}}. Koppel een Gemini-account op de pagina van {{name}}.",
+      "antigravity_female": "Gemini is niet ingelogd op {{computer}}. Koppel een Gemini-account op de pagina van {{name}}.",
+      "opencode": "OpenCode kan niet denken op {{computer}}. Koppel een OpenCode-sleutel op de pagina van {{name}}.",
+      "opencode_female": "OpenCode kan niet denken op {{computer}}. Koppel een OpenCode-sleutel op de pagina van {{name}}."
+    },
     "card": {
       "connected": "{{name}} heeft nu een AI.",
       "answerNow": "Nu antwoorden",
@@ -15256,6 +15270,12 @@
     }
   },
   "errors": {
+    "planMove": {
+      "notPayer": "Alleen wie het abonnement betaalt, kan het verplaatsen.",
+      "same": "Kies een andere werkruimte om het abonnement naartoe te verplaatsen.",
+      "targetHasPlan": "Die werkruimte heeft al een abonnement. Herlaad om je werkruimtes te zien zoals ze nu zijn.",
+      "targetDeleting": "Die werkruimte wordt verwijderd. Zet hem eerst terug of kies een andere."
+    },
     "surface": {
       "off": "Het koppelen van chat-apps is uitgezet. Laad opnieuw om je instellingen te zien zoals ze nu zijn.",
       "notAllowed": "Een chat-app koppelen is nog niet open voor je account. Gebruik de app hier tot het opengaat.",
@@ -16606,6 +16626,8 @@
       "resumed_other": "{{count}} taken weer gestart",
       "stillWaiting_one": "{{count}} wacht nog op {{name}}",
       "stillWaiting_other": "{{count}} wachten nog op {{name}}",
+      "planDropped": "Het {{plan}}-abonnement van {{name}} is ingelogd op {{from}}. Log ook in op {{to}}, of houd {{from}}.",
+      "signIn": "Inloggen op {{name}}",
       "skipped": "{{name}} bleef: {{reason}}",
       "skip": {
         "other": "kon nu niet overstappen",
@@ -19513,6 +19535,13 @@
     "deleteOrg": "{{name}} verwijderen",
     "submit": "Account verwijderen",
     "deleted": "Je account verdwijnt op {{date}} definitief. Log daarvoor in om het te herstellen."
+  },
+  "planMove": {
+    "warning": "Je abonnement blijft bij deze werkruimte en wordt niet meer verlengd. Eerst naar een andere werkruimte van je verplaatsen?",
+    "deleting": "Je abonnement wordt hiermee niet meer verlengd. Je kunt het naar een andere werkruimte verplaatsen.",
+    "how": "Dezelfde kaart en de al betaalde periode gaan mee. Er wordt niets opnieuw in rekening gebracht en niets terugbetaald.",
+    "button": "Mijn abonnement naar {{name}} verplaatsen",
+    "moving": "Je abonnement gaat naar {{name}}. Het is er over ongeveer een minuut."
   },
   "billing": {
     "open": "Abonnement en facturatie openen",

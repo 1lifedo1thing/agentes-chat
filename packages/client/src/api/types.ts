@@ -429,6 +429,8 @@ export interface OrgSummary {
   onboarding?: OrgOnboarding;
   /** From `GET /me` while an owner's deletion is pending, set at once by `org.deleting`: the workspace is read-only. */
   deletion?: OrgDeletion;
+  /** From `GET /me`: I pay for its plan (ADR 0079), so I may move it to another workspace. Absent otherwise. */
+  paysPlan?: true;
   /** From `GET /me`: what opens when the app starts here (ADR 0108). Absent from older servers: the home. */
   start?: StartChoice;
   /** From `GET /me`: whether I see what agents did under each reply. Absent (an older server): off. */
@@ -5454,6 +5456,15 @@ export interface MoveAgentsResult {
   resumed: number;
   /** Runs that keep waiting for the old computer (they already changed files there). */
   stillWaiting: number;
+  /** Moved agents whose plan is signed in only on the old computer (`kind`, a coding plan's `provider`). */
+  planDropped?: PlanDropped[];
+}
+
+/** An agent moved without its plan: it stays signed in on the computer it left. */
+export interface PlanDropped {
+  agentId: string;
+  kind: MachineAccountKind;
+  provider: string | null;
 }
 
 /** Org events about connected computers. */

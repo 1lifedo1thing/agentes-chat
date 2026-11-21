@@ -3524,6 +3524,14 @@
       "antigravity": "Gemini no tiene la sesión iniciada en esta computadora. Conecta una cuenta de Gemini en la página de {{name}}.",
       "opencode": "OpenCode no puede pensar en esta computadora. Conecta una clave de OpenCode en la página de {{name}}."
     },
+    "notSignedInOn": {
+      "claude_code": "Claude Code no tiene la sesión iniciada en {{computer}}. Conecta una cuenta de Claude en la página de {{name}}.",
+      "codex": "Codex no tiene la sesión iniciada en {{computer}}. Conecta una cuenta de ChatGPT en la página de {{name}}.",
+      "cursor": "Cursor no tiene la sesión iniciada en {{computer}}. Conecta una cuenta de Cursor en la página de {{name}}.",
+      "grok": "Grok no tiene la sesión iniciada en {{computer}}. Conecta una cuenta de Grok en la página de {{name}}.",
+      "antigravity": "Gemini no tiene la sesión iniciada en {{computer}}. Conecta una cuenta de Gemini en la página de {{name}}.",
+      "opencode": "OpenCode no puede pensar en {{computer}}. Conecta una clave de OpenCode en la página de {{name}}."
+    },
     "card": {
       "connected": "{{name}} ya tiene una IA.",
       "answerNow": "Responder ahora",
@@ -15657,6 +15665,12 @@
     }
   },
   "errors": {
+    "planMove": {
+      "notPayer": "Solo la persona que paga el plan puede moverlo.",
+      "same": "Elige otro espacio de trabajo al que mover el plan.",
+      "targetHasPlan": "Ese espacio de trabajo ya tiene un plan. Recarga para ver tus espacios de trabajo como están ahora.",
+      "targetDeleting": "Ese espacio de trabajo se está eliminando. Restáuralo primero o elige otro."
+    },
     "surface": {
       "off": "Se desactivó la vinculación de apps de chat. Recarga para ver tu configuración como está ahora.",
       "notAllowed": "Vincular una app de chat todavía no está abierto para tu cuenta. Sigue usando la app aquí hasta que se abra.",
@@ -17021,6 +17035,8 @@
       "stillWaiting_one": "{{count}} sigue esperando a {{name}}",
       "stillWaiting_many": "{{count}} siguen esperando a {{name}}",
       "stillWaiting_other": "{{count}} siguen esperando a {{name}}",
+      "planDropped": "El plan de {{plan}} de {{name}} tiene la sesión iniciada en {{from}}. Inicia sesión también en {{to}} o quédate con {{from}}.",
+      "signIn": "Iniciar sesión en {{name}}",
       "skipped": "{{name}} se quedó: {{reason}}",
       "skip": {
         "other": "no se pudo cambiar ahora",
@@ -19912,6 +19928,13 @@
     "deleteOrg": "Eliminar {{name}}",
     "submit": "Eliminar cuenta",
     "deleted": "Tu cuenta desaparece para siempre el {{date}}. Inicia sesión antes para restaurarla."
+  },
+  "planMove": {
+    "warning": "Tu plan se queda con este espacio de trabajo y deja de renovarse. ¿Quieres moverlo antes a otro tuyo?",
+    "deleting": "Tu plan deja de renovarse con él. Puedes moverlo a otro espacio de trabajo.",
+    "how": "La misma tarjeta y el periodo ya pagado van con él. No se cobra nada de nuevo y no se reembolsa nada.",
+    "button": "Mover mi plan a {{name}}",
+    "moving": "Tu plan se está moviendo a {{name}}. Llega en un minuto aproximadamente."
   },
   "billing": {
     "open": "Abrir plan y facturación",
