@@ -4,6 +4,7 @@ import { createWriteStream, existsSync } from "node:fs";
 import { chmod, mkdir, readdir, rename, rm } from "node:fs/promises";
 import path from "node:path";
 import { cliVersionAtLeast } from "@agenteschat/providers/plans";
+import { RunnerError } from "./errors";
 import { isExecutable, ownCommand, setAgyPick } from "./executors";
 
 /**
@@ -106,6 +107,7 @@ function versionOf(file: string): Promise<string | null> {
 export class AgyCopy {
   private readonly pin: AgyPin;
   private running: Promise<void> | null = null;
+  private fetching: Promise<void> | null = null;
   private failedAt = 0;
   private picked: string | undefined;
 
@@ -136,13 +138,40 @@ export class AgyCopy {
     const now = (this.opts.now ?? Date.now)();
     if (this.failedAt && now - this.failedAt < AGY_RETRY_MS) return;
     try {
-      await this.download(file);
+      await this.fetch(file);
       this.failedAt = 0;
     } catch (err) {
       this.failedAt = now;
       throw err;
     }
     await this.use(file);
+  }
+
+  /**
+   * The runner's `agy` now, for a Gemini sign-in on a computer with none new enough: downloaded at once if due (no
+   * waiting out an earlier failure). Throws, in words for the person, when it can't be brought.
+   */
+  async ensure(): Promise<void> {
+    const own = await (this.opts.own ?? ownAgy)();
+    if (own && cliVersionAtLeast(own.version, this.pin.version) !== false) return;
+    const file = this.file();
+    if (!isExecutable(file)) {
+      try {
+        await this.fetch(file);
+      } catch (err) {
+        const why = err instanceof Error ? err.message : String(err);
+        throw new RunnerError("internal", `Couldn't get the Antigravity CLI ready on this computer: ${why}`);
+      }
+    }
+    await this.use(file);
+  }
+
+  /** One download at a time, whoever asks. */
+  private fetch(file: string): Promise<void> {
+    this.fetching ??= this.download(file).finally(() => {
+      this.fetching = null;
+    });
+    return this.fetching;
   }
 
   private async use(file: string | undefined) {

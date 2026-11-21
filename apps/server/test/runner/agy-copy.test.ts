@@ -101,6 +101,23 @@ test("a download that doesn't match Google's checksum is never used, and waits b
   expect(fetched).toHaveLength(2);
 });
 
+test("a Gemini sign-in on a computer with no agy: the copy at once, whoever else uses Gemini there; a failure in words", async () => {
+  const { agy, fetched } = copy({ inUse: () => false });
+  await agy.ensure();
+  expect(fetched).toHaveLength(1);
+  expect(pickedAgy()).toBe(agy.file());
+  await agy.ensure();
+  expect(fetched).toHaveLength(1);
+  setAgyPick(undefined);
+  const broken = copy({ inUse: () => false, sha512: "0".repeat(128), bytes: build("6.6.6").bytes });
+  await expect(broken.agy.ensure()).rejects.toThrow("Couldn't get the Antigravity CLI ready on this computer");
+  expect(pickedAgy()).toBeUndefined();
+  // The person's own, new enough: nothing to bring.
+  const own = copy({ own: async () => ({ file: "/usr/local/bin/agy", version: "agy 9.9.9" }) });
+  await own.agy.ensure();
+  expect(own.fetched).toHaveLength(0);
+});
+
 test("an older copy the runner brought goes once the new one runs", async () => {
   const { agy, home } = copy();
   const old = path.join(home, "bin", "agy-1.0.0");

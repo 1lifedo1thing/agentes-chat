@@ -616,6 +616,10 @@ export class RunnerDaemon implements RequestObserver {
     this.accountUsers = accountUsers;
     this.accounts = new AccountManager({
       root: lent?.root ?? path.join(opts.home, "accounts"),
+      // A Gemini sign-in on a computer with no Antigravity CLI new enough: the runner brings its own first.
+      prepare: async (kind) => {
+        if (kind === "antigravity") await this.agy?.ensure();
+      },
       ...(lent ? { lending: { chown: lent.chown } } : {}),
       ...(lent?.grokRoot ? { grokRoot: lent.grokRoot } : {}),
       ...(lent && !opts.systemAccounts && process.platform === "linux"

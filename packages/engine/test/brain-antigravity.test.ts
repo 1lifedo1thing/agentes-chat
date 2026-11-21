@@ -210,6 +210,26 @@ test("the Gemini plan's models: Gemini only, Neon where the CLI runs it, and why
   expect(option({ version: "agy 1.5.0", models: older }, { kind: "managed" })?.missing).toBeUndefined();
   expect(option({ version: "1.5.14", models: free })?.missing).toEqual({ ...neon, why: "plan" });
   expect(option({ version: "1.5.14", models: older })?.missing).toBeUndefined();
+  // No CLI at all: where the runner brings its own (protocol 76, macOS or Linux, the person's computer), Gemini can
+  // be connected and the first sign-in downloads it; anywhere else the CLI has to be installed first.
+  const bare = (over: { protocol?: number; os?: string; kind?: string; mode?: "system" } = {}) =>
+    brainOptions({
+      id: "m2",
+      name: "mac",
+      execAllowed: true,
+      protocol: over.protocol ?? AGY_COPY_PROTOCOL,
+      os: over.os ?? "darwin",
+      online: true,
+      lastSeenAt: new Date(),
+      ...(over.kind ? { kind: over.kind } : {}),
+      executors: { detectedAt: new Date().toISOString(), ...(over.mode ? { mode: over.mode } : {}) },
+    } as never).find((o) => o.kind === "antigravity");
+  expect(bare()).toMatchObject({ available: true, models: expect.arrayContaining([expect.anything()]) });
+  expect(bare()?.missing).toBeUndefined();
+  expect(bare({ os: "linux" })?.available).toBe(true);
+  expect(bare({ protocol: AGY_COPY_PROTOCOL - 1 })).toMatchObject({ available: false, reason: "not_installed" });
+  expect(bare({ mode: "system", os: "linux" })).toMatchObject({ available: false, reason: "not_installed" });
+  expect(bare({ kind: "managed", os: "linux" })).toMatchObject({ available: false, reason: "not_installed" });
   // Nothing listed yet (no account signed in): the reserve, with nothing to explain.
   expect(option({ version: "1.5.14" })?.missing).toBeUndefined();
 });
