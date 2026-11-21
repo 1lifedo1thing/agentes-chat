@@ -540,7 +540,7 @@ export const envVars = {
       (host) => host.toLowerCase(),
     ),
     description:
-      "Comma-separated host names, or `*.` suffixes, that addresses a workspace types (custom MCP servers and their sign-in, its own bucket, a database, a mail server, a password manager) may reach on a private network, such as a Tailscale tailnet or a LAN, whatever they resolve to, checked again at every connection. Loopback and cloud metadata addresses stay refused, and agentes.chat Cloud ignores it. Name a narrow suffix: everyone who can make a name under it can point it at your network. Unset: none.",
+      "Comma-separated host names, or `*.` suffixes, that addresses a workspace types (custom MCP servers and their sign-in, its own bucket, a database, a mail server, a password manager, the pages its agents read) may reach on a private network, such as a Tailscale tailnet or a LAN, whatever they resolve to, checked again at every connection. Loopback and cloud metadata addresses stay refused, and agentes.chat Cloud ignores it. Name a narrow suffix: everyone who can make a name under it can point it at your network. Unset: none.",
     section: "Security",
     example: "*.tail1234.ts.net,nas.example.com",
   },

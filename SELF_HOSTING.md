@@ -837,8 +837,9 @@ tools. A model without prices costs nothing in budgets (its tokens are still cou
 `MODEL_ENDPOINTS_PRIVATE` to choose (`false` allows only public https ones, what agentes.chat Cloud does).
 
 **Servers on your private network.** Other addresses a workspace types (a custom MCP server and its sign-in,
-its own bucket, a database, a mail server, a password manager) must be public, whatever the switch above says,
-until you name the private ones they may reach. For a custom MCP server on a Tailscale tailnet or a LAN:
+its own bucket, a database, a mail server, a password manager, the pages its agents read) must be public,
+whatever the switch above says, until you name the private ones they may reach. For a custom MCP server
+on a Tailscale tailnet or a LAN:
 
 ```bash
 # Tailscale's ranges, or your LAN's (192.168.1.0/24)

@@ -242,18 +242,25 @@ export function isPublicHostName(host: string): boolean {
  * A host a person typed for a direct connection (a database): an address
  * to connect to that is not private, loopback, link-local or metadata.
  * Resolved on every new connection (DNS rebinding); the caller connects to
- * the returned address, never to the name again.
+ * the returned address, never to the name again. `internet`: whether people
+ * and services on the internet reach it (this server's own address), so the
+ * operator's allow-lists (`allowOutbound`) don't make a private one count.
  */
 export async function publicHostAddress(
   host: string,
   resolve: ResolveHost = resolveHostDns,
+  options: { internet?: boolean } = {},
 ): Promise<{ ok: true; address: string } | { ok: false; reason: "blocked" | "unreachable" }> {
   const h = host
     .trim()
     .toLowerCase()
     .replace(/^\[|\]$/g, "");
-  if (internalNameRefused(h)) return { ok: false, reason: "blocked" };
-  if (isIP(h)) return refusedAddress(h, h) ? { ok: false, reason: "blocked" } : { ok: true, address: h };
+  const refused = (address: string) => (options.internet ? isBlockedAddress(address) : refusedAddress(address, h));
+  const nameRefused = options.internet
+    ? loopbackName(h) || h.endsWith(".local") || h.endsWith(".internal")
+    : internalNameRefused(h);
+  if (nameRefused) return { ok: false, reason: "blocked" };
+  if (isIP(h)) return refused(h) ? { ok: false, reason: "blocked" } : { ok: true, address: h };
   if (!HOST_NAME.test(h)) return { ok: false, reason: "blocked" };
   let addresses: string[];
   try {
@@ -263,7 +270,7 @@ export async function publicHostAddress(
   }
   const first = addresses[0];
   if (!first) return { ok: false, reason: "unreachable" };
-  if (addresses.some((address) => refusedAddress(address, h))) return { ok: false, reason: "blocked" };
+  if (addresses.some(refused)) return { ok: false, reason: "blocked" };
   return { ok: true, address: first };
 }
 
@@ -498,8 +505,9 @@ const MAX_OWN_REDIRECTS = 3;
  * The `fetch` for an address a workspace's people, agents or connected servers named (a custom MCP server and its
  * token endpoint, the workspace's own bucket, a page an agent reads), never for one the operator set by env:
  * `publicHttpsFetch`, so the address is checked and pinned at every request, not only when it was saved, unless
- * `allowPrivateOutbound` is on and `allowOutbound` named nothing. `ownRedirects` follows a 307 or 308 that stays on the same origin (a trailing slash,
- * a moved path), each hop checked and pinned again: what the request carries never leaves the host it was meant for.
+ * `allowPrivateOutbound` is on and `allowOutbound` named nothing. `ownRedirects` follows a 307 or 308 that stays on
+ * the same origin (a trailing slash, a moved path), each hop checked and pinned again: what the request carries never
+ * leaves the host it was meant for.
  */
 export function outboundFetch(
   options: { resolveHost?: ResolveHost; ownRedirects?: boolean; request?: typeof httpsRequest } = {},

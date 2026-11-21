@@ -45,7 +45,9 @@ it. A server open to sign-up had no way to allow one network without opening all
    and `*.localhost` stay refused even inside an allowed range or behind an allowed name, also with the switch on.
    An IPv4 address carried in IPv6 is judged as the IPv4 address.
 5. **Addresses named by someone outside stay public.** An OAuth client's metadata document (`fetchPublicDocument`),
-   named by whoever registers a client, follows neither the switch nor the lists.
+   named by whoever registers a client, follows neither the switch nor the lists. Nor does the question whether
+   the internet reaches this server's own address (`publicHostAddress` with `internet`: pictures in emails,
+   apps that call from their own servers): a server on its tailnet stays private to those.
 6. **The refusal says why.** `url.internal` carries the host. The server logs it as a warning with the route and the
    two settings, and the apps say the address is on a private network: use a public one, or on a self-hosted server allow it with
    `OUTBOUND_ALLOW_CIDRS`.

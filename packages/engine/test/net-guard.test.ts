@@ -347,3 +347,23 @@ test("the guarded fetch and the database host check follow the allow-lists, not 
     allowPrivateOutbound(false);
   }
 });
+
+test("this server's own address on an allowed private network still isn't reachable from the internet", async () => {
+  try {
+    allowOutbound({ hosts: ["*.tail1234.ts.net", "chat.corp.internal"], cidrs: ["100.64.0.0/10"] });
+    const internet = { internet: true };
+    expect(await publicHostAddress("agentes.tail1234.ts.net", tailnet)).toMatchObject({ ok: true });
+    expect(await publicHostAddress("agentes.tail1234.ts.net", tailnet, internet)).toEqual({
+      ok: false,
+      reason: "blocked",
+    });
+    expect(await publicHostAddress("100.101.102.103", tailnet, internet)).toEqual({ ok: false, reason: "blocked" });
+    expect(await publicHostAddress("chat.corp.internal", tailnet, internet)).toEqual({ ok: false, reason: "blocked" });
+    expect(await publicHostAddress("chat.example.com", async () => ["93.184.216.34"], internet)).toEqual({
+      ok: true,
+      address: "93.184.216.34",
+    });
+  } finally {
+    allowOutbound();
+  }
+});
