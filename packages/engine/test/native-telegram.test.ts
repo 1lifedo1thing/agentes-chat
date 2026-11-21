@@ -29,8 +29,10 @@ function fakeTelegram(answers: Record<string, (body: Record<string, unknown>) =>
   const calls: { method: string; body: Record<string, unknown> }[] = [];
   const http = (async (url: string | URL | Request, init?: RequestInit) => {
     const [, token, method = ""] = /\/bot([^/]+)\/(\w+)$/.exec(String(url)) ?? [];
-    const body =
-      init?.body instanceof FormData ? Object.fromEntries(init.body) : JSON.parse(String(init?.body ?? "{}"));
+    const body: Record<string, unknown> =
+      init?.body instanceof FormData
+        ? Object.fromEntries([...(init.body as unknown as Iterable<[string, unknown]>)])
+        : JSON.parse(String(init?.body ?? "{}"));
     calls.push({ method, body });
     if (token !== TOKEN)
       return Response.json({ ok: false, error_code: 401, description: "Unauthorized" }, { status: 401 });
@@ -189,11 +191,10 @@ test("a sensitive tool asks, and a token Telegram stops taking marks the bot to 
   // The token was revoked in @BotFather: the next call says who fixes it.
   const revoked = fakeTelegram();
   await f.close();
-  const ctx2 = await world(async (url, init) =>
+  const ctx2 = await world((async (url: string | URL | Request, init?: RequestInit) =>
     String(url).includes("sendMessage")
       ? Response.json({ ok: false, error_code: 401, description: "Unauthorized" }, { status: 401 })
-      : revoked.http(url, init),
-  );
+      : revoked.http(url, init)) as typeof fetch);
   const bot = await createApiKeyConnection(deps(revoked.http), f.owner.id, f.org.id, {
     connector: "telegram",
     apiKey: TOKEN,
