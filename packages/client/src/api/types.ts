@@ -938,6 +938,8 @@ export interface Agent {
   instructions: string;
   model: string;
   ownerUserId: string | null;
+  /** A role that answers for it instead of a person (ADR 0085, addendum of 2026-11-21); absent from older servers. */
+  ownerRoleId?: string | null;
   hasCredential: boolean;
   /** Admins only: its own monthly budget; null = the workspace default. Absent for members. */
   monthlyBudgetUsd?: number | null;
@@ -1110,6 +1112,8 @@ export interface TeamAgent {
   role: string;
   appearance: AgentLookInput | null;
   ownerUserId: string | null;
+  /** A role that answers for it instead of a person (absent from an older server). */
+  ownerRoleId?: string | null;
   /** Responde a: the agent it reports to (absent from an older server). */
   reportsToAgentId?: string | null;
   /** What it can do, as stable group keys (`drive`, `github`, `calendar`, `custom`…). */
@@ -1180,6 +1184,8 @@ export interface AgentInput {
   model?: string;
   credentialId?: string | null;
   ownerUserId?: string | null;
+  /** A role that answers for it instead of a person: naming it clears `ownerUserId`, and a person clears it. */
+  ownerRoleId?: string | null;
   monthlyBudgetUsd?: number | null;
   audience?: AgentAudience;
   /** With `audience`: the mailboxes the person agreed it loses; losing another refuses the save (409). */
@@ -2296,6 +2302,8 @@ export interface Approval {
   routine?: boolean;
   /** The agent's owner (they and admins may decide). */
   ownerUserId?: string | null;
+  /** Its owner role instead: whoever holds it decides (absent from older servers). */
+  ownerRoleId?: string | null;
   /** When the approved action ran; null while it runs (or if it never did). */
   executedAt?: string | null;
   /**
@@ -3023,6 +3031,8 @@ export interface AgentDetail {
   instructions: string;
   model: string;
   ownerUserId: string | null;
+  /** A role that answers for it instead of a person (absent from older servers). */
+  ownerRoleId?: string | null;
   /** Null = platform key (Cloud). */
   credentialId: string | null;
   /** This month's spend over its budget (its own, else the workspace default), in %. */

@@ -4,7 +4,7 @@ import { MODEL_TIERS, type ModelTier } from "@agenteschat/providers";
 import { othersPersonalTools } from "./agent-audit";
 import { getAgent } from "./agents";
 import { decidableBySql } from "./approvals";
-import { listsAgentSql, managesAgent } from "./audience";
+import { listsAgentSql, managesAgent, ownsAgent } from "./audience";
 import { recordAudit } from "./audit";
 import type { AutoModels } from "./auto-model";
 import { resolveDefaultBudgetPaused } from "./budget-paused-rows";
@@ -455,7 +455,7 @@ export async function setAgentChannels(
   const agent = await getAgent(db, orgId, agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
   const admin = managesAgent(agent, actorId, membership);
-  if (!admin && agent.ownerUserId !== actorId) {
+  if (!admin && !ownsAgent(agent, actorId, membership.roleIds)) {
     throw new ForbiddenError("Only an admin or the agent's owner can change where it works");
   }
   if (input.length > 0 && isRightHand(agent)) throw rightHandPermanent("added to a channel");
@@ -670,7 +670,7 @@ export async function requireUsageAccess(db: Database, actorId: string, orgId: s
   if (can(membership, "view_usage")) return;
   if (agentId) {
     const agent = await getAgent(db, orgId, agentId);
-    if (agent?.ownerUserId === actorId) return;
+    if (agent && ownsAgent(agent, actorId, membership.roleIds)) return;
   }
   throw new ForbiddenError();
 }

@@ -614,6 +614,12 @@ export const approvals = pgTable(
     origin: jsonb().$type<Record<string, unknown>>(),
     status: approvalStatusEnum().notNull().default("pending"),
     ownerUserId: text(),
+    /**
+     * The agent's owner role when it asked (`agents.owner_role_id`, ADR 0085 addendum of 2026-11-21), beside
+     * `owner_user_id`: whoever holds it when deciding decides. No foreign key, like `owner_user_id`: a deleted role
+     * simply matches nobody.
+     */
+    ownerRoleId: uuid(),
     decidedByUserId: text(),
     decidedAt: timestamp({ withTimezone: true }),
     /** Why it was refused (fed back to the model and to agent lessons). */
