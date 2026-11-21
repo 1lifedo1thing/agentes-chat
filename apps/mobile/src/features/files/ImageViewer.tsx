@@ -54,7 +54,6 @@ import {
   picturePins,
   pinUnder,
   pointMark,
-  stageAbove,
 } from "../live-files/talk/logic";
 import { PicturePins } from "../live-files/talk/PicturePins";
 import {
@@ -263,7 +262,6 @@ function Viewer({
   useEffect(() => {
     if (sheetUp) setChrome(true);
   }, [sheetUp]);
-  const stage = sheetUp ? stageAbove(screen, bars.top, sheet.reserve) : screen;
 
   // Zoomed in, the pager holds still (the fingers move the picture), the side buttons step aside and the bars go.
   const onZoom = useCallback((now: boolean) => {
@@ -381,13 +379,14 @@ function Viewer({
         </View>
       ) : null}
 
-      {/* Gone while zoomed, as the swipe is: the fingers move the picture then. In the middle of the room the picture
-          has, above the sheet while it is up. */}
+      {/* Gone while zoomed, as the swipe is: the fingers move the picture then. Gone too while the conversation's sheet
+          is up, fading where they stand (a swipe still turns the page, the sheet following it): moved above the sheet,
+          they jumped as it came up and again as it settled. */}
       {files.length > 1 ? (
         <Chrome
-          visible={chrome && !zoomed}
+          visible={chrome && !zoomed && !shownSheet}
           drag={drag}
-          style={[styles.sides, { top: (sheetUp ? bars.top + stage.height / 2 : height / 2) - ROUND / 2 }]}
+          style={[styles.sides, { top: height / 2 - ROUND / 2 }]}
         >
           {prev !== null ? (
             <View style={[styles.side, { left: insets.left + 12 }]}>

@@ -113,7 +113,9 @@ the file's talk line is the one way in, and the conversation comes up in the sys
 sheet, `file-talk/[channelId]`), at half the screen with nothing behind it dimmed, so the file stays in sight and in
 reach above it; pulled up it fills the screen and dims the file, down it goes. The sheet holds the conversation
 itself (the chat in its sheet mode: the sheet's bar with the title and ×, the messages, the composer with the file's
-quote); the field raises the sheet to its full height as the person types. The file behind follows the sheet through
+quote); the keyboard raises the sheet as the person types, on the keyboard's own curve, and lowers it when it goes
+(sent to the full height as well, the sheet moved twice at once and the dimmed full height shrank the file behind it).
+The file behind follows the sheet through
 a small store (which file it is over, at which height, how much of the screen it takes): the sheet slides over the
 picture, which keeps its size and place (laid out anew above the sheet, it jumped as the sheet came up and moved), the
 viewer hides its line and actions, and a tap on the picture marks a point (the quote "About point 4 of the

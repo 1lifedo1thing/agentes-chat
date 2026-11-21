@@ -802,8 +802,9 @@ function Chat({
               )}
             </>
           )}
-          {/* The messages on their way, or the list still placing itself at its end: their shape, never a blank screen. */}
-          {loading || (showList && !placed) ? (
+          {/* The messages on their way, or the list still placing itself at its end: their shape, never a blank screen.
+              In a file's sheet only while they are on their way: the ones in memory show as they are placed. */}
+          {loading || (showList && !placed && !inSheet) ? (
             <DockRoom dock={dock}>
               {(dockHeight) => <ChatSkeleton look={rowLook} top={hasPin ? 0 : headerHeight} bottom={dockHeight} />}
             </DockRoom>
