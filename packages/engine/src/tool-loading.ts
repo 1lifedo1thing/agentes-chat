@@ -1,4 +1,5 @@
 import { and, type Database, desc, eq, gt, isNull, ne, or, schema, sql } from "@agenteschat/db";
+import { transcriptKeys } from "./authority";
 import { isConfidentialRun } from "./confidential";
 import { cutText } from "./format";
 import { JevOffError } from "./jev-key";
@@ -191,46 +192,13 @@ export async function recentForJudge(
 
 /**
  * The groups a run keeps without asking the judge (ADR 0043, token-trim B1): those of the tools the agent's previous
- * run in this conversation called (the thread; in a channel's or DM's main timeline, its previous run there). Only
- * what that one run used, so a group comes along for the next message and drops once a run goes without it: a
- * greeting after computer work no longer carries the computer's tools. A miss costs one `find_tools` search.
+ * run in this conversation called (`previousRunHere`). Only what that one run used, so a group comes along for the
+ * next message and drops once a run goes without it: a greeting after computer work no longer carries the computer's
+ * tools. A miss costs one `find_tools` search.
  */
-export async function keptToolGroups(
-  db: Database,
-  run: {
-    id: string;
-    orgId: string;
-    agentId: string;
-    channelId: string;
-    threadRootId: string;
-    triggerMessageId: string;
-  },
-  tools: ToolDefinition[],
-): Promise<string[]> {
-  const r = schema.agentRuns;
-  const st = schema.agentRunSteps;
-  const flat = run.threadRootId === run.triggerMessageId;
-  const [previous] = await db
-    .select({ id: r.id })
-    .from(r)
-    .where(
-      and(
-        eq(r.orgId, run.orgId),
-        eq(r.agentId, run.agentId),
-        eq(r.channelId, run.channelId),
-        flat ? sql`${r.threadRootId} = ${r.triggerMessageId}` : eq(r.threadRootId, run.threadRootId),
-        ne(r.id, run.id),
-      ),
-    )
-    .orderBy(desc(r.createdAt))
-    .limit(1);
+export function keptToolGroups(previous: PreviousRun | null, tools: ToolDefinition[]): string[] {
   if (!previous) return [];
-  const used = await db
-    .selectDistinct({ name: sql<string>`${st.data}->>'name'` })
-    .from(st)
-    .where(and(eq(st.runId, previous.id), eq(st.kind, "tool_call")))
-    .limit(200);
-  const names = new Set(used.map((u) => u.name));
+  const names = new Set(previous.calledTools);
   return [...new Set(tools.filter((t) => names.has(t.name)).map(toolGroupKey))];
 }
 
@@ -243,6 +211,8 @@ export interface PreviousRun {
   toolGroups: string[] | null;
   /** Its "Automático" choice (`Transcript.autoModel`). */
   autoModel: { tier?: unknown; effort?: unknown } | null;
+  /** The tools it called (at most 200 names). */
+  calledTools: string[];
 }
 
 /** The agent's previous run in this conversation: the thread; in a channel's or DM's main timeline, its last run there. */
@@ -258,13 +228,16 @@ export async function previousRunHere(
   },
 ): Promise<PreviousRun | null> {
   const r = schema.agentRuns;
+  const st = schema.agentRunSteps;
   const flat = run.threadRootId === run.triggerMessageId;
   const [row] = await db
     .select({
       id: r.id,
       updatedAt: sql<Date>`coalesce(${r.finishedAt}, ${r.updatedAt})`.mapWith(r.updatedAt),
-      toolGroups: sql<unknown>`${r.transcript}->'toolGroups'`,
-      autoModel: sql<unknown>`${r.transcript}->'autoModel'`,
+      transcript: transcriptKeys("toolGroups", "autoModel"),
+      // `agent_runs.id` spelled out: a column in a select renders unqualified, and would resolve to the steps' own `id`.
+      calledTools: sql<string[]>`array(select distinct ${st.data}->>'name' from ${st}
+        where ${st.runId} = agent_runs.id and ${st.kind} = 'tool_call' limit 200)`,
     })
     .from(r)
     .where(
@@ -279,9 +252,8 @@ export async function previousRunHere(
     .orderBy(desc(r.createdAt))
     .limit(1);
   if (!row) return null;
-  const groups = Array.isArray(row.toolGroups)
-    ? row.toolGroups.filter((g): g is string => typeof g === "string")
-    : null;
-  const auto = row.autoModel && typeof row.autoModel === "object" ? (row.autoModel as PreviousRun["autoModel"]) : null;
-  return { id: row.id, updatedAt: row.updatedAt, toolGroups: groups, autoModel: auto };
+  const { toolGroups, autoModel } = row.transcript ?? {};
+  const groups = Array.isArray(toolGroups) ? toolGroups.filter((g): g is string => typeof g === "string") : null;
+  const auto = autoModel && typeof autoModel === "object" ? (autoModel as PreviousRun["autoModel"]) : null;
+  return { id: row.id, updatedAt: row.updatedAt, toolGroups: groups, autoModel: auto, calledTools: row.calledTools };
 }

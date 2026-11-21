@@ -31,7 +31,10 @@ export const viewSpeedFits = (view: Pick<AgentBrain, "brain" | "account" | "acco
   });
 
 export interface Advanced {
-  /** Null only on an API key with none chosen: high where the model takes an effort (`turnEffort`), else the provider's default. */
+  /**
+   * Null only on an API key with none chosen: high where the model takes an effort and its output limit is known
+   * (`turnEffort`), else the provider's default.
+   */
   effort: EffortLevel | null;
   /** Always `standard` where Velocidade doesn't show (`viewSpeedFits`). */
   speed: BrainSpeed;

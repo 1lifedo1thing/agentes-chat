@@ -154,12 +154,13 @@ export class ModelBrain implements Brain {
 /**
  * The effort a turn is sent: the agent's, or "Automático"'s, as set (the provider adapter sends `xhigh` and `max` as
  * `high` to a model without them). None set: `high` on a model that takes an effort, since some APIs default lower
- * (Claude Opus 5.5 at medium) and an agent's work is long tool loops.
+ * (Claude Opus 5.5 at medium) and an agent's work is long tool loops; only where the row knows its output limit,
+ * since the call gets 16K otherwise (`agentOutputTokens`) and high thinking inside 16K cuts replies.
  */
 export function turnEffort(model: string, effort: BrainTurn["effort"]): ModelRequest["effort"] {
   if (effort) return effort;
   const info = modelInfo(model);
-  return info?.efforts || info?.reasoning ? "high" : undefined;
+  return info?.maxOutputTokens && (info.efforts || info.reasoning) ? "high" : undefined;
 }
 
 /**

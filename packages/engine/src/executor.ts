@@ -2063,14 +2063,14 @@ async function executeRunInner(
   const judging: Promise<void> | null =
     groupsJudged && judge
       ? (async () => {
-          const [recent, kept, live, previous] = await Promise.all([
+          const [recent, live, previous] = await Promise.all([
             recentMessages(),
-            keptToolGroups(db, run, granted).catch(() => [] as string[]),
             // Asked from inside a live file, one attached, or in a file's own conversation: its own tools come with
             // it (ADR 0196 §6, ADR 0199).
             carriesLiveFile(db, run.orgId, trigger?.meta, run.channelId).catch(() => false),
             previousHere(),
           ]);
+          const kept = keptToolGroups(previous, granted);
           // A picture's, a video's or a PDF's conversation sees the file with the Drive's tools too (ADR 0208).
           const media = live && (await isMediaConversation(db, run.orgId, run.channelId).catch(() => false));
           const keep = live

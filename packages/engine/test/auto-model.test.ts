@@ -117,7 +117,7 @@ describe("chooseAutoModel", () => {
   });
 });
 
-test("keptAutoChoice: a conversation keeps its tier and effort for the hour; only a sure, bigger tier replaces them", () => {
+test("keptAutoChoice: a conversation keeps its tier and effort for the hour; a sure, bigger tier or a small one replaces them", () => {
   const now = Date.parse("2026-11-21T12:00:00Z");
   const prev = (tier: string, effort: string, minutesAgo = 10) => ({
     updatedAt: new Date(now - minutesAgo * 60_000),
@@ -130,12 +130,14 @@ test("keptAutoChoice: a conversation keeps its tier and effort for the hour; onl
     source: "judge" as const,
     ...(tierP === undefined ? {} : { tierP }),
   });
-  // A downgrade, or the same tier at another effort, waits for the hour.
-  expect(keptAutoChoice(judged("small", "low"), prev("large", "high"), now)).toMatchObject({
+  // A downgrade to medium, or the same tier at another effort, waits for the hour.
+  expect(keptAutoChoice(judged("medium", "low"), prev("large", "high"), now)).toMatchObject({
     tier: "large",
     effort: "high",
     source: "conversation",
   });
+  // A judged small tier goes through: cheaper than the big tier even with its cache.
+  expect(keptAutoChoice(judged("small", "low"), prev("large", "high"), now)).toEqual(judged("small", "low"));
   expect(keptAutoChoice(judged("medium", "high"), prev("medium", "low"), now)).toMatchObject({
     effort: "low",
     source: "conversation",
@@ -476,7 +478,8 @@ describe("a run of an agent on Automático", () => {
     const asked = (f.context.judge as ReturnType<typeof createFakeJudge>).calls.filter((c) => c.kind === "auto_model");
     expect(asked).toHaveLength(1);
 
-    // A new run here within the hour keeps the conversation's model: a smaller one would read it all uncached.
+    // A new run here within the hour keeps the conversation's model: a medium one would read it all uncached.
+    tier.current = "medium";
     await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
       body: "@dev obrigado!",
     });
@@ -484,7 +487,7 @@ describe("a run of an agent on Automático", () => {
     expect(f.provider.calls.at(-1)?.request).toMatchObject({ model: "claude-opus-5-5", effort: "high" });
   });
 
-  test("a conversation keeps its model for the hour: a sure, bigger tier upgrades it, a smaller one waits", async () => {
+  test("a conversation keeps its model for the hour: a sure, bigger tier upgrades it, medium waits, small goes", async () => {
     const tier = { current: "medium" };
     f = await setup({ judge: judgeAnswers(tier), reply: () => ({ chunks: ["Oi!"] }) });
     await updateAgent(f.db, f.owner.id, f.org.id, f.agent.id, { model: AUTO_MODEL });
@@ -496,16 +499,21 @@ describe("a run of an agent on Automático", () => {
     expect(await ask("@dev revisa o PR")).toBe("claude-sonnet-5-5");
     tier.current = "large";
     expect(await ask("@dev agora refatora a cobrança toda")).toBe("claude-opus-5-5");
+    tier.current = "medium";
+    expect(await ask("@dev e o teste?")).toBe("claude-opus-5-5");
     tier.current = "small";
-    expect(await ask("@dev valeu")).toBe("claude-opus-5-5");
+    expect(await ask("@dev valeu")).toBe("claude-haiku-5-5");
     const steps = await f.db.select().from(schema.agentRunSteps).where(eq(schema.agentRunSteps.kind, "context"));
     const kept = steps
       .map((s) => s.data.autoModel as { source?: string } | undefined)
       .filter((a) => a?.source === "conversation");
     expect(kept).toEqual([expect.objectContaining({ tier: "large", model: "claude-opus-5-5" })]);
+    tier.current = "large";
+    expect(await ask("@dev refatora o resto")).toBe("claude-opus-5-5");
     const hoursAgo = new Date(Date.now() - 2 * 3600_000);
     await f.db.update(schema.agentRuns).set({ finishedAt: hoursAgo, updatedAt: hoursAgo });
-    expect(await ask("@dev oi de novo")).toBe("claude-haiku-5-5");
+    tier.current = "medium";
+    expect(await ask("@dev oi de novo")).toBe("claude-sonnet-5-5");
   });
 
   test("a quick turn (small tier, low effort) is told to answer from what it has; any other turn is not", async () => {

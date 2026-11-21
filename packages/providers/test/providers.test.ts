@@ -19,6 +19,7 @@ import {
   pricesAt,
   providerCause,
   routerModelOf,
+  setListedModels,
   setOpenRouterModels,
   summedCostNanoUsd,
   usdToNanoUsd,
@@ -290,6 +291,19 @@ test("effortWithin and agentOutputTokens: a model gets the effort and the output
   // No known limit: the old 16K, since more than a model takes is refused.
   expect(agentOutputTokens("deepseek-v4-pro", "max")).toBe(16_000);
   expect(agentOutputTokens("not-a-model")).toBe(16_000);
+  // A listed row whose output limit is its whole window: a quarter of it, so the input keeps room.
+  setListedModels({
+    "test/small-window": {
+      provider: "openrouter",
+      label: "Small window",
+      prices: { input: 100, output: 500, cacheRead: 10, cacheWrite: 125 },
+      contextWindow: 65_536,
+      maxOutputTokens: 65_536,
+      serverSideFallback: false,
+    },
+  });
+  expect(agentOutputTokens("test/small-window", "max")).toBe(16_384);
+  setListedModels({});
 });
 
 describe("models listed at run time (OpenRouter's)", () => {

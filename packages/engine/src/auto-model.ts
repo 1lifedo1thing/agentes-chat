@@ -223,8 +223,9 @@ export const AUTO_UPGRADE_P = 0.6;
 
 /**
  * Within `AUTO_KEEP_MS` of the agent's previous run in this conversation, that run's tier and effort stand: another
- * model or effort reads the whole prompt again uncached. Only a bigger tier the judge is sure of replaces them (an
- * upgrade); a smaller one, another effort or a judge that didn't answer waits for the hour.
+ * model or effort reads the whole prompt again uncached. A bigger tier the judge is sure of replaces them (an
+ * upgrade), and so does a judged small tier: its uncached read costs about what the big tier's cached one does, and
+ * its output a fortieth. A medium one, another effort or a judge that didn't answer waits for the hour.
  */
 export function keptAutoChoice(
   choice: AutoChoice,
@@ -236,6 +237,7 @@ export function keptAutoChoice(
   if (!previous || now - previous.updatedAt.getTime() >= AUTO_KEEP_MS) return choice;
   if (!MODEL_TIERS.includes(tier) || !AUTO_EFFORTS.includes(effort)) return choice;
   if (tier === choice.tier && effort === choice.effort) return choice;
+  if (choice.source === "judge" && choice.tier === "small") return choice;
   const bigger = MODEL_TIERS.indexOf(choice.tier) > MODEL_TIERS.indexOf(tier);
   if (choice.source === "judge" && bigger && (choice.tierP ?? 1) >= AUTO_UPGRADE_P) return choice;
   return {

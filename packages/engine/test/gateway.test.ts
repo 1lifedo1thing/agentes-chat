@@ -18,6 +18,7 @@ import {
   updateAgent,
   usageSummary,
 } from "../src";
+import { turnEffort } from "../src/brains/model";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 let f: Fixture;
@@ -50,6 +51,12 @@ test("an agent's call with no server cap gets the model's room at its effort, wi
   expect(tight?.maxTokens).toBeGreaterThan(1000);
   expect(tight?.maxTokens).toBeLessThan(25_000);
   f = undefined as unknown as Fixture;
+});
+
+test("no effort set: high only where the model's output limit is known, else the provider's default", () => {
+  expect(turnEffort("claude-opus-5-5", undefined)).toBe("high");
+  expect(turnEffort("gpt-6.2-sol", undefined)).toBeUndefined();
+  expect(turnEffort("gpt-6.2-sol", "low")).toBe("low");
 });
 
 test("decrypts the org credential, streams, and records tokens and cost with org and agent", async () => {
