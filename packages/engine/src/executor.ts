@@ -182,7 +182,14 @@ import { rulesForRun } from "./context/rules";
 import { memoryArmOf } from "./context/scorecard";
 import { type ContextDeps, ensureThreadSummary } from "./context/summaries";
 import { EXPAND_TOOL, itemLabel, retrieveForRun } from "./context/tools";
-import { compactToolResults, cutOldToolSteps, cutResultIds, dropOldImages, fitContextWindow } from "./context-budget";
+import {
+  compactToolResults,
+  cutOldToolSteps,
+  cutResultIds,
+  dropOldImages,
+  fitContextWindow,
+  sentToolSteps,
+} from "./context-budget";
 import {
   advance as advanceContinuation,
   type ContinuationState,
@@ -2071,6 +2078,7 @@ async function executeRunInner(
             // The message's words may not mention its file (it may have none), and the agent has to open it.
             keep: Array.isArray(trigger?.meta.artifacts) ? [...keep, toolGroupKey({ scope: "drive:read" })] : keep,
             group: startGroup,
+            lean: Boolean(channelRow && isAgentOnlyDm(channelRow)),
           });
           toolChoice = choice;
           ctx.loadedGroups = choice.groups;
@@ -5224,7 +5232,7 @@ async function executeRunInner(
           transcript.messages = pictured;
           await saveTranscript(db, transcript);
         }
-        const view = cutOldToolSteps(transcript.messages, turnTools);
+        const view = sentToolSteps(transcript.messages, turnTools, thinker.model);
         const fitted = await fitContextWindow(judge, {
           orgId: run.orgId,
           agentId: agent.id,

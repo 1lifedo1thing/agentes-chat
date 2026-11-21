@@ -54,7 +54,7 @@ const describeGroup = (g: ToolGroup) =>
  * and in a confidential thread, where no run is ever judged. When the judge refuses or fails, every group: a
  * judge that is down (or refused for the month) would otherwise leave each run
  * with only what the previous one used, its other tools a search it may not
- * think of.
+ * think of. A run another agent started (`lean`) keeps to `keep` then, as on a timeout.
  */
 export async function chooseToolGroups(
   judge: Judge,
@@ -75,6 +75,8 @@ export async function chooseToolGroups(
     timeoutMs?: number;
     /** Asked with the run's other start judgments (`JudgeGroup`). */
     group?: JudgeGroup;
+    /** A run another agent started (a note or a question between agents): a judge that fails loads only `keep`. */
+    lean?: boolean;
   },
 ): Promise<ToolGroupChoice> {
   const all = deferrableGroups(input.tools);
@@ -137,6 +139,8 @@ export async function chooseToolGroups(
     // A confidential thread's run is never judged (ADR 0190): its refusal is no outage.
     if (error instanceof JevOffError || isConfidentialRun(input.runId)) return none("error");
     const reason = cutText(error instanceof Error ? error.message : String(error), 200);
+    // Another agent's words name the task, and every group would be most of a wake's prompt (each note pays it).
+    if (input.lean) return { ...none("error"), reason };
     return { groups: [...kept, ...groups.map((g) => g.key)], scores: {}, source: "error", kept, reason };
   } finally {
     clearTimeout(timer);

@@ -2,7 +2,7 @@ import type { BrainEffort } from "@agenteschat/adapters";
 import { type ModelMessage, modelProvider, type SystemBlock, type ToolSpec } from "@agenteschat/providers";
 import type { Agent } from "../agents";
 import { turnNotes } from "../context";
-import { cutOldToolSteps } from "../context-budget";
+import { sentToolSteps } from "../context-budget";
 import type { GatewayResult, ModelGateway } from "../gateway";
 import type { Brain, BrainEvent, BrainIO, BrainTurn } from "./types";
 
@@ -67,7 +67,7 @@ export class ModelBrain implements Brain {
     const { agent } = this.options;
     const conversation = this.options.conversation();
     const { system, notesAt } = conversation;
-    const messages = cutOldToolSteps(conversation.messages, turn.tools);
+    const messages = sentToolSteps(conversation.messages, turn.tools, agent.model);
     const laid = turnNotes(system, notesAt, messages);
     const specs: ToolSpec[] = turn.tools.map((t) => ({
       name: t.name,
