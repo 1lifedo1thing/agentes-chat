@@ -465,7 +465,7 @@ export function createFindAgentToolSource(deps: { machines?: Pick<MachineCaller,
       const text = agent.instructions.trim();
       const shown =
         text.length > READ_INSTRUCTIONS_CHARS
-          ? `${cutText(text, READ_INSTRUCTIONS_CHARS)}\n[cut: ${text.length} characters in all]`
+          ? `${cutText(text, READ_INSTRUCTIONS_CHARS)}\n[cut: ${text.length} characters in all, so change them with replaces, never rewrite them whole]`
           : text || "(none)";
       const edits = editsAgent(agent, person, membership);
       return {

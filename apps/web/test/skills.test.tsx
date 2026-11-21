@@ -126,6 +126,9 @@ describe("Configurações → Skills", () => {
 
   test("detail: which agents have it, and Escolher agentes gives it or takes it away, one call per agent changed", async () => {
     const { state, section } = await settings();
+    // The library's row already shows who has it, face by face.
+    const row = within(section()).getByRole("button", { name: "Revisão de PR" }).closest(".skill-row") as HTMLElement;
+    expect(within(row).getByRole("img", { name: "Ada" })).toBeTruthy();
     await click(within(section()).getByRole("button", { name: "Revisão de PR" }));
     await settle(4);
     const sheet = screen().getByRole("dialog", { name: "Revisão de PR" });

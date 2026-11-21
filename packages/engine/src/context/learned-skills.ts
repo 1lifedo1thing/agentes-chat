@@ -156,7 +156,7 @@ export async function changeSkillAsAgent(
   slug: string,
   change: string | { body?: string; files?: SkillFileEdit[] },
   trust: "high" | "low",
-  asked?: { person: string | null; decides: boolean },
+  asked?: { person: string | null; decides: boolean; words?: string | null },
 ): Promise<SkillChange> {
   const name = slug.trim().toLowerCase();
   const { body: rawBody, files = [] } = typeof change === "string" ? { body: change } : change;
@@ -176,6 +176,8 @@ export async function changeSkillAsAgent(
   const own = skill.origin === "agent" && skill.ownerAgentId === ctx.agentId;
   if (skill.origin === "agent" && !own && !managed) throw new ForbiddenError("That skill belongs to another agent.");
   if (own && skill.locked) throw new ForbiddenError("A person locked this skill, so it can't be changed.");
+  // Their own personal skill, asked in their own words: theirs to decide, as on its page.
+  const decides = asked?.decides || (managed && !!skill.ownerUserId && skill.ownerUserId === asked?.words);
   const existing = new Map((await skillFilesOf(ctx.db, skill)).map((f) => [f.path, f]));
   const kept =
     edits.length > 0 && deps.blobs
@@ -216,7 +218,7 @@ export async function changeSkillAsAgent(
   const why =
     trust === "low"
       ? "outside"
-      : own || asked?.decides
+      : own || decides
         ? undefined
         : managed
           ? "person"

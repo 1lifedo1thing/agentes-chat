@@ -154,7 +154,18 @@ function SourceChip({ skill }: { skill: Skill }) {
   );
 }
 
-function SkillRow({ skill, users, onOpen }: { skill: Skill; users: number | null; onOpen: () => void }) {
+/** Faces a library row shows of the agents that have its skill on, before its count. */
+const ROW_FACES = 5;
+
+function SkillRow({
+  skill,
+  users,
+  onOpen,
+}: {
+  skill: Skill;
+  users: { id: string; name: string }[] | null;
+  onOpen: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <div className="ac-list__row skill-row">
@@ -172,8 +183,15 @@ function SkillRow({ skill, users, onOpen }: { skill: Skill; users: number | null
         )}
         <span className="small muted tabular">
           {t("skills.version", { version: skill.version })}
-          {users !== null && <> · {t("skills.usedBy", { count: users })}</>}
+          {users !== null && <> · {t("skills.usedBy", { count: users.length })}</>}
         </span>
+        {users && users.length > 0 && (
+          <AvatarStack>
+            {users.slice(0, ROW_FACES).map((a) => (
+              <AgentAvatar key={a.id} agentId={a.id} name={a.name} size="xs" labelled title={a.name} />
+            ))}
+          </AvatarStack>
+        )}
       </span>
       <span className="small muted">{inlineWords(skill.description)}</span>
     </div>
@@ -301,7 +319,7 @@ export function SkillsSection({
       {list.length > 0 && (
         <List aria-label={t("skills.title")}>
           {list.slice(0, INLINE).map((s) => (
-            <SkillRow key={s.id} skill={s} users={usage.get(s.id)?.length ?? 0} onOpen={() => setOpen(s.id)} />
+            <SkillRow key={s.id} skill={s} users={usage.get(s.id) ?? []} onOpen={() => setOpen(s.id)} />
           ))}
         </List>
       )}
@@ -326,7 +344,7 @@ export function SkillsSection({
             <SkillRow
               key={s.id}
               skill={s}
-              users={usage.get(s.id)?.length ?? 0}
+              users={usage.get(s.id) ?? []}
               onOpen={() => {
                 setAll(false);
                 setOpen(s.id);

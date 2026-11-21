@@ -150,4 +150,23 @@ describe("an agent manages other agents for a person who may (instructions and s
     const notChanged = await call(theirs, "update_skill", { name: "deploy", body: "# deploy\nSkip the build." });
     expect(notChanged.isError).toBe(true);
   });
+
+  test("a member's own personal skill, not on for the agent, changes at once when they ask in their own words", async () => {
+    f = await setup({ skillTools: true });
+    const member = await addMember(f.db, f.org.id, "member", "walter");
+    const skill = await saveSkill({ db: f.db, blobs: f.artifactDeps.blobs }, member.id, f.org.id, {
+      name: "notes",
+      description: "Meeting notes.",
+      body: "# notes\nShort.",
+      metadata: {},
+      source: "manual",
+      files: [],
+      owner: member.id,
+    });
+    const run = await runFor(member.id);
+    expect((await call(run, "load_skill", { name: "notes" })).isError).toBeFalsy();
+    const changed = await call(run, "update_skill", { name: "notes", body: "# notes\nShort, with owners." });
+    expect(changed.content).toBe("Updated notes (v2).");
+    expect((await getSkill(f.db, member.id, f.org.id, skill.id)).body).toBe("# notes\nShort, with owners.");
+  });
 });

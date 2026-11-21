@@ -322,7 +322,7 @@ export function createSkillToolSource(
             str(input.name),
             { body: typeof input.body === "string" ? input.body : undefined, files },
             trust,
-            { person, decides },
+            { person, decides, words },
           );
           const waits = change.scripts.length
             ? ` ${change.scripts.join(", ")} run${change.scripts.length === 1 ? "s" : ""} as code, so that change waits for a person who manages agents (a proposal).`
