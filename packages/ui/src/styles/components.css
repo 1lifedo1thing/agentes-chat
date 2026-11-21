@@ -10797,8 +10797,10 @@ html:not([data-pointer]) .ac-filter__option:focus-visible {
     --composer-line: 22px;
     --composer-row: 36px;
   }
+  /* 8 apart: each icon's target grows 4 past its sides, so two targets touch and never overlap. */
   .ac-composer__tools {
     min-height: var(--composer-row);
+    gap: var(--space-2);
   }
   .ac-composer__file-remove {
     width: 32px;

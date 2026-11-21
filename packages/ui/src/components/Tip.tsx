@@ -156,6 +156,12 @@ export function Tip({
         aria-hidden="true"
         onPointerEnter={hover.content.onPointerEnter}
         onPointerLeave={hover.content.onPointerLeave}
+        // A button's tip is no child of its button, so the focus leaving the tip's link never reaches the button's blur.
+        onBlur={(e) => {
+          const to = e.relatedTarget;
+          if (to instanceof Node && (bubble.current?.contains(to) || anchor.current?.contains(to))) return;
+          setOpen(false);
+        }}
       >
         {tip}
       </span>,

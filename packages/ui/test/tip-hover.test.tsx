@@ -122,4 +122,18 @@ describe("a tip the pointer can enter", () => {
     await step(() => fireEvent.blur(trigger, { relatedTarget: document.body }));
     expect(tip()).toBeNull();
   });
+
+  test("a button's tip the keys opened closes when the focus leaves its link", async () => {
+    const trigger = view({ count: 0 }, true);
+    await act(async () => {
+      fireEvent.keyDown(document.body, { key: "Tab" });
+      trigger.focus();
+    });
+    const link = tip()?.querySelector("button") as HTMLButtonElement;
+    expect(link).toBeTruthy();
+    await step(() => fireEvent.blur(trigger, { relatedTarget: link }));
+    expect(tip()).not.toBeNull();
+    await step(() => fireEvent.blur(link, { relatedTarget: document.body }));
+    expect(tip()).toBeNull();
+  });
 });
