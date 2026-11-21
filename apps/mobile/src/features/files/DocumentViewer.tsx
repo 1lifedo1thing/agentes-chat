@@ -1,6 +1,6 @@
 import { type ArtifactDetail, isLiveFileKind, useApi, useArtifact } from "@agenteschat/client";
 import { formatJson, highlightCode } from "@agenteschat/client/lib/code";
-import { isJsonFile } from "@agenteschat/client/lib/files";
+import { isJsonFile, mediaKindOfArtifact } from "@agenteschat/client/lib/files";
 import { isolatedPage } from "@agenteschat/client/lib/isolated-page";
 import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
@@ -13,14 +13,17 @@ import { router } from "@/ui/navigation";
 import { ISOLATED_WEB_VIEW, STORAGE_STANDINS } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
 import { MessageText } from "../chat/MessageText";
+import { chatHref } from "../links/logic";
 import { DeckPage, EditAs, SheetPage, useOfficeHtml } from "../live-files/office/OfficePages";
 import { liveRoute } from "../live-files/routes";
+import { useTalkFocus } from "../live-files/talk/hooks";
+import { FileTalkLine } from "../live-files/talk/TalkLine";
 import { chooseAction } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
-import { copyText, MONO, PushedHeader, successHaptic } from "../shared/parts";
+import { copyText, PushedHeader, successHaptic } from "../shared/parts";
 import { useFileActions } from "./actions";
-import { fileInfo, isCodeName, textChunks } from "./logic";
+import { extensionOf, fileInfo, isCodeName, textChunks } from "./logic";
 import { useFileLine } from "./MessageFiles";
 import { openFile } from "./open";
 import { PageBones } from "./PageBones";
@@ -35,7 +38,8 @@ import { fileText, useRemoteFile } from "./source";
  * natively there), an Office file as the server read it (ADR 0198: a workbook in the spreadsheet's grid, a deck's
  * slides, a Word document's page) and an old table in the same grid, anything else says it opens in another app.
  * Pictures and videos open straight in the picture viewer (`openFile`), live files on their own screens (ADR 0196);
- * one reached here anyway (a file's link that didn't say what it was) goes on there.
+ * one reached here anyway (a file's link that didn't say what it was) goes on there, and a link to a message of a
+ * picture's or a video's conversation opens that conversation at it (ADR 0208). A PDF has its conversation under it.
  */
 export function DocumentViewer({
   id,
@@ -44,7 +48,10 @@ export function DocumentViewer({
 }: {
   id: string;
   version?: number;
-  /** A live file's conversation message to open at (`?m=`, ADR 0199), handed on to the file's own screen. */
+  /**
+   * A message of the file's conversation to open at (`?m=`, ADR 0199): handed on to a live file's own screen, opened
+   * over a PDF, or the conversation itself for a picture or a video (ADR 0208).
+   */
   focusId?: string | null;
 }) {
   const { t } = useTranslation();
@@ -67,9 +74,16 @@ export function DocumentViewer({
   const media = info?.view === "image" || info?.view === "video" || info?.view === "live";
   useEffect(() => {
     if (!media || !detail) return;
+    const talk = detail.conversation;
     if (isLiveFileKind(detail.kind)) router.replace(liveRoute(detail.kind, detail.id, focusId));
+    // The viewer is a modal no conversation can be pushed over: the conversation takes this screen's place.
+    else if (focusId && talk && mediaKindOfArtifact(detail))
+      router.replace(chatHref(talk.channelId, talk.rootId, focusId));
     else openFile({ id: detail.id, detail }, undefined, { replace: true });
   }, [media, detail, focusId]);
+  // A PDF's conversation (ADR 0208): its line under it, and a link to one of its messages opens it over the PDF.
+  const pdfTalk = !media && mediaKindOfArtifact(detail) === "pdf" ? detail : undefined;
+  useTalkFocus(pdfTalk, focusId);
 
   const copy = () => {
     if (text.data === undefined) return;
@@ -168,6 +182,7 @@ export function DocumentViewer({
           }
         />
       )}
+      {pdfTalk ? <FileTalkLine file={pdfTalk} /> : null}
     </>
   );
 }
@@ -190,8 +205,9 @@ function useFileText(detail: ArtifactDetail | undefined, enabled: boolean) {
 }
 
 /**
- * Markdown with the messages' renderer, code in mono and any other text in the app's, across the screen as a page
- * reads. JSON formatted and colored as a code block reads it, the text as written one press away ("Original").
+ * Markdown with the messages' renderer, code colored by its extension and any other text in the app's, across the
+ * screen as a page reads. JSON formatted and colored as a code block reads it, the text as written one press away
+ * ("Original").
  */
 function TextPage({ detail, markdown, json }: { detail: ArtifactDetail; markdown: boolean; json: boolean }) {
   const c = useColors();
@@ -219,12 +235,18 @@ function TextPage({ detail, markdown, json }: { detail: ArtifactDetail; markdown
         </View>
       ) : (
         // In pieces: a long file in one text view was taller than the phone draws, and showed blank.
-        textChunks(text.data).map((piece, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
-          <RNText key={i} selectable style={[code ? styles.mono : styles.prose, { color: c.ink2 }]}>
-            {piece}
-          </RNText>
-        ))
+        // Code is colored piece by piece: a block comment across two pieces loses its color in the second.
+        textChunks(text.data).map((piece, i) =>
+          code ? (
+            // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
+            <CodeText key={i} lines={highlightCode(piece, extensionOf(fileInfo(detail).name))} wrap />
+          ) : (
+            // biome-ignore lint/suspicious/noArrayIndexKey: the pieces of one fixed text, in order
+            <RNText key={i} selectable style={[styles.prose, { color: c.ink2 }]}>
+              {piece}
+            </RNText>
+          ),
+        )
       )}
     </ScrollView>
   );
@@ -326,7 +348,6 @@ const styles = StyleSheet.create({
   middle: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: SCREEN_X },
   page: { paddingHorizontal: SCREEN_X, paddingTop: 12 },
   white: { backgroundColor: "#fff" },
-  mono: { fontFamily: MONO, fontSize: 13, lineHeight: 19 },
   // The app's body, as a message's words.
   prose: systemText("body"),
   json: { gap: 10, alignItems: "flex-start" },

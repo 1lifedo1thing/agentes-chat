@@ -2768,6 +2768,8 @@ export const ptBR = {
     uploading: "enviando…",
     uploadFailed: "não foi enviado",
     removeFile: "Remover {{name}}",
+    dropFileTitle: "Solte para anexar",
+    dropFileNote: "Os arquivos ficam no rascunho desta conversa até você enviar.",
     tooManyFiles: "Até {{max}} arquivos por mensagem.",
     reminder: "Lembrete",
     reactions: "Reações",
@@ -4682,6 +4684,21 @@ export const ptBR = {
   adminAsk: {
     ask: "Pedir a um admin",
     sent: "Pedido enviado a quem pode fazer isso.",
+  },
+  /** An AI account named in a run's details: a pill, its card on hover or a press (provider, whose, which computer, usage). */
+  accountRef: {
+    label: "Conta {{name}}",
+    card: "Sobre a conta {{name}}",
+    mine: "Sua conta",
+    of: "Conta de {{name}}",
+    on: "No computador {{computer}}",
+    gone: "Esta conta não está mais no workspace.",
+  },
+  /** A run that went on with another account than its agent's own, in its details and Atividade (never a chat line). */
+  accountSwitch: {
+    limit: "Seguiu na conta <to/> porque a conta <from/> chegou ao limite",
+    line: "Seguiu na conta <to/> porque a conta <from/> está perto do limite",
+    extra: "Seguiu na conta <to/> porque a conta <from/> entraria no uso extra pago",
   },
   channelRefs: {
     list: "Canais",
@@ -6770,6 +6787,8 @@ export const ptBR = {
         /** The agent's CLI couldn't start its sandbox on its computer (bubblewrap refused), before the model was asked. */
         cli_sandbox:
           "O {{brain}} não consegue abrir a sandbox dele neste computador. Escolha outra IA nas configurações do agente.",
+        cli_system:
+          "O {{brain}} ainda não roda no sistema deste computador. Escolha outra IA nas configurações do agente.",
         account_missing:
           "A conta escolhida para este agente não está mais no computador dele. Escolha outra nas configurações do agente ou adicione de novo.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
@@ -15323,6 +15342,41 @@ export const ptBR = {
       exitFullscreen: "Sair da tela cheia",
       open: "Abrir",
     },
+    comments: {
+      title: "Comentários",
+      resolve: "Resolver",
+      reopen: "Reabrir",
+      resolvedBy: "Resolvido por {{name}} · {{time}}",
+      resolvedCount_one: "{{count}} resolvido",
+      resolvedCount_other: "{{count}} resolvidos",
+      showResolved: "Mostrar os resolvidos",
+      hideResolved: "Esconder os resolvidos",
+      fromVersion: "Da versão {{version}}",
+      peekOpen: "Clique para abrir na conversa",
+      markAt: "Comentário {{n}} em {{time}}, de {{name}}",
+      page: "Página {{page}}",
+      pageOf: "{{page}} de {{count}}",
+      pdfFailed: "Não deu para mostrar este PDF aqui. Baixe para abrir.",
+      loadFailed: "Não deu para mostrar esta imagem aqui.",
+      hint: {
+        image: "Clique para marcar um ponto ou arraste para marcar uma área",
+        video: "Clique no vídeo para comentar neste momento, ou arraste para marcar uma área",
+        pdf: "Clique numa página para marcar um ponto ou arraste para marcar uma área",
+      },
+      line: {
+        image_one: "{{count}} comentário na imagem",
+        image_other: "{{count}} comentários na imagem",
+        video_one: "{{count}} comentário no vídeo",
+        video_other: "{{count}} comentários no vídeo",
+        pdf_one: "{{count}} comentário no PDF",
+        pdf_other: "{{count}} comentários no PDF",
+      },
+      write: {
+        image: "Escrever sobre a imagem…",
+        video: "Escrever sobre o vídeo…",
+        pdf: "Escrever sobre o PDF…",
+      },
+    },
     zoom: {
       toolbar: "Zoom",
       in: "Ampliar",
@@ -15387,6 +15441,8 @@ export const ptBR = {
       tooMany: "É mais do que cabe aqui. Tire alguns e tente de novo.",
       fillIn: "Preencha o que falta e tente de novo.",
       checkAddress: "Confira o endereço e tente de novo.",
+      privateNetwork:
+        "Este endereço está numa rede privada. Use um endereço público ou, num servidor próprio, libere-o com `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "Ficou longo demais. Encurte e tente de novo.",
       updateComputerApp: "O app do computador é antigo demais para isso. Atualize e tente de novo.",
       computerUpdatesItself: "O computador do workspace se atualiza sozinho para isso. Tente de novo daqui a pouco.",
@@ -22039,6 +22095,9 @@ export const ptBR = {
         slides: "Conversa da apresentação",
         document: "Conversa do documento",
         file: "Conversa do arquivo",
+        image: "Conversa da imagem",
+        video: "Conversa do vídeo",
+        pdf: "Conversa do PDF",
       },
       placeholder: {
         canvas: "Escrever no quadro · use @ para chamar um agente",
@@ -22046,17 +22105,25 @@ export const ptBR = {
         slides: "Escrever na apresentação · use @ para chamar um agente",
         document: "Escrever no documento · use @ para chamar um agente",
         file: "Escrever sobre o arquivo · use @ para chamar um agente",
+        image: "Escrever sobre a imagem · use @ para chamar um agente",
+        video: "Escrever sobre o vídeo · use @ para chamar um agente",
+        pdf: "Escrever sobre o PDF · use @ para chamar um agente",
       },
       this: {
         canvas: "este quadro",
         spreadsheet: "esta planilha",
         slides: "esta apresentação",
         document: "este documento",
+        image: "esta imagem",
+        video: "este vídeo",
+        pdf: "este PDF",
       },
       origin: {
         from: "<0>{{name}}</0> criou {{what}} a partir da <1>{{place}}</1>",
         made: "<0>{{name}}</0> criou {{what}}",
         imported: "Importado de <1>{{file}}</1> por {{name}}",
+        sentIn: "<0>{{name}}</0> enviou {{what}} na <1>{{place}}</1>",
+        sent: "<0>{{name}}</0> enviou {{what}}",
       },
       about: {
         range: "Sobre {{range}} em {{sheet}}",
@@ -22065,6 +22132,25 @@ export const ptBR = {
         text: "Sobre o trecho selecionado",
         point: "Sobre um ponto do quadro",
         other: "Sobre {{label}}",
+        imageArea: "Sobre a área {{n}} da imagem",
+        imagePoint: "Sobre o ponto {{n}} da imagem",
+        videoAt: "Sobre {{time}} do vídeo",
+        pdfPage: "Sobre a página {{page}} do PDF",
+        image: "Sobre a imagem",
+        video: "Sobre o vídeo",
+        pdf: "Sobre o PDF",
+      },
+      what: {
+        area: "Área {{n}}",
+        point: "Ponto {{n}}",
+        anArea: "Uma área",
+        aPoint: "Um ponto",
+        page: "Página {{page}}",
+      },
+      where: {
+        image: "na imagem",
+        video: "no vídeo",
+        pdf: "no PDF",
       },
       drop: "Não mandar a seleção",
       aboutLine: "Mostrar {{what}} ({{where}}) no arquivo",

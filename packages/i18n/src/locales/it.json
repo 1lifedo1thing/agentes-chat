@@ -2810,6 +2810,8 @@
     "uploading": "caricamento…",
     "uploadFailed": "non è stato caricato",
     "removeFile": "Rimuovi {{name}}",
+    "dropFileTitle": "Rilascia per allegare",
+    "dropFileNote": "I file restano nella bozza di questa conversazione finché non li invii.",
     "tooManyFiles": "Fino a {{max}} file per messaggio.",
     "reminder": "Promemoria",
     "reactions": "Reazioni",
@@ -4600,6 +4602,19 @@
   "adminAsk": {
     "ask": "Chiedi a un admin",
     "sent": "Inviato a chi può farlo."
+  },
+  "accountRef": {
+    "label": "Account {{name}}",
+    "card": "Informazioni sull’account {{name}}",
+    "mine": "Il tuo account",
+    "of": "Account di {{name}}",
+    "on": "Su {{computer}}",
+    "gone": "Questo account non è più nel workspace."
+  },
+  "accountSwitch": {
+    "limit": "Ha continuato con l’account <to/> perché l’account <from/> ha raggiunto il limite",
+    "line": "Ha continuato con l’account <to/> perché l’account <from/> è vicino al limite",
+    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento"
   },
   "channelRefs": {
     "list": "Canali",
@@ -6641,6 +6656,7 @@
         "cli_stopped": "Il programma {{brain}} si è fermato con un errore.",
         "cli_closed": "Il programma {{brain}} si è chiuso all'improvviso.",
         "cli_sandbox": "Il programma {{brain}} non riesce ad avviare la sua sandbox su questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
+        "cli_system": "Il programma {{brain}} non funziona ancora sul sistema di questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "account_missing": "L'account scelto per questo agente non è più sul suo computer. Scegline un altro nelle impostazioni dell'agente o aggiungilo di nuovo.",
         "windows_sandbox": "Questo computer Windows non riesce a isolare i comandi di Codex: serve Windows 11 24H2 o più recente. Aggiorna Windows, scegli Claude o una chiave API per questo agente, oppure spostalo su un computer Linux.",
         "our_error": "Qualcosa è andato storto da parte nostra e l'attività si è fermata. Richiedilo tra poco.",
@@ -15669,6 +15685,45 @@
       "exitFullscreen": "Esci da schermo intero",
       "open": "Apri"
     },
+    "comments": {
+      "title": "Commenti",
+      "resolve": "Risolvi",
+      "reopen": "Riapri",
+      "resolvedBy": "Risolto da {{name}} · {{time}}",
+      "resolvedCount_one": "{{count}} risolto",
+      "resolvedCount_many": "{{count}} risolti",
+      "resolvedCount_other": "{{count}} risolti",
+      "showResolved": "Mostra i risolti",
+      "hideResolved": "Nascondi i risolti",
+      "fromVersion": "Dalla versione {{version}}",
+      "peekOpen": "Fai clic per aprire nella conversazione",
+      "markAt": "Commento {{n}} a {{time}}, di {{name}}",
+      "page": "Pagina {{page}}",
+      "pageOf": "{{page}} di {{count}}",
+      "pdfFailed": "Questo PDF non si può mostrare qui. Scaricalo per aprirlo.",
+      "loadFailed": "Questa immagine non si può mostrare qui.",
+      "hint": {
+        "image": "Fai clic per segnare un punto o trascina per segnare una zona",
+        "video": "Fai clic sul video per commentare questo momento, o trascina per segnare una zona",
+        "pdf": "Fai clic su una pagina per segnare un punto o trascina per segnare una zona"
+      },
+      "line": {
+        "image_one": "{{count}} commento sull'immagine",
+        "image_many": "{{count}} commenti sull'immagine",
+        "image_other": "{{count}} commenti sull'immagine",
+        "video_one": "{{count}} commento sul video",
+        "video_many": "{{count}} commenti sul video",
+        "video_other": "{{count}} commenti sul video",
+        "pdf_one": "{{count}} commento sul PDF",
+        "pdf_many": "{{count}} commenti sul PDF",
+        "pdf_other": "{{count}} commenti sul PDF"
+      },
+      "write": {
+        "image": "Scrivi sull'immagine…",
+        "video": "Scrivi sul video…",
+        "pdf": "Scrivi sul PDF…"
+      }
+    },
     "zoom": {
       "toolbar": "Zoom",
       "in": "Ingrandisci",
@@ -15724,6 +15779,7 @@
       "tooMany": "È più di quanto ci sta qui. Togline alcuni e riprova.",
       "fillIn": "Compila ciò che manca e riprova.",
       "checkAddress": "Controlla l'indirizzo e riprova.",
+      "privateNetwork": "Questo indirizzo è su una rete privata. Usa un indirizzo pubblico oppure, su un server self-hosted, consentilo con `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "È troppo lungo. Accorcialo e riprova.",
       "updateComputerApp": "L'app del computer è troppo vecchia per questo. Aggiornala e riprova.",
       "computerUpdatesItself": "Il computer dello spazio di lavoro si aggiorna da solo per questo. Riprova tra poco.",
@@ -22192,25 +22248,36 @@
         "spreadsheet": "Conversazione del foglio di calcolo",
         "slides": "Conversazione della presentazione",
         "document": "Conversazione del documento",
-        "file": "Conversazione del file"
+        "file": "Conversazione del file",
+        "image": "Conversazione dell'immagine",
+        "video": "Conversazione del video",
+        "pdf": "Conversazione del PDF"
       },
       "placeholder": {
         "canvas": "Scrivi su questa lavagna · usa @ per chiamare un agente",
         "spreadsheet": "Scrivi su questo foglio di calcolo · usa @ per chiamare un agente",
         "slides": "Scrivi su questa presentazione · usa @ per chiamare un agente",
         "document": "Scrivi su questo documento · usa @ per chiamare un agente",
-        "file": "Scrivi su questo file · usa @ per chiamare un agente"
+        "file": "Scrivi su questo file · usa @ per chiamare un agente",
+        "image": "Scrivi su questa immagine · usa @ per chiamare un agente",
+        "video": "Scrivi su questo video · usa @ per chiamare un agente",
+        "pdf": "Scrivi su questo PDF · usa @ per chiamare un agente"
       },
       "this": {
         "canvas": "questa lavagna",
         "spreadsheet": "questo foglio di calcolo",
         "slides": "questa presentazione",
-        "document": "questo documento"
+        "document": "questo documento",
+        "image": "questa immagine",
+        "video": "questo video",
+        "pdf": "questo PDF"
       },
       "origin": {
         "from": "<0>{{name}}</0> ha creato {{what}} dalla <1>{{place}}</1>",
         "made": "<0>{{name}}</0> ha creato {{what}}",
-        "imported": "{{name}} l'ha importato da <1>{{file}}</1>"
+        "imported": "{{name}} l'ha importato da <1>{{file}}</1>",
+        "sentIn": "<0>{{name}}</0> ha inviato {{what}} nella <1>{{place}}</1>",
+        "sent": "<0>{{name}}</0> ha inviato {{what}}"
       },
       "about": {
         "range": "Su {{range}} in {{sheet}}",
@@ -22218,7 +22285,26 @@
         "canvas": "Su {{label}} sulla lavagna",
         "text": "Sul testo selezionato",
         "point": "Su un punto della lavagna",
-        "other": "Su {{label}}"
+        "other": "Su {{label}}",
+        "imageArea": "Sulla zona {{n}} dell'immagine",
+        "imagePoint": "Sul punto {{n}} dell'immagine",
+        "videoAt": "Sul momento {{time}} del video",
+        "pdfPage": "Sulla pagina {{page}} del PDF",
+        "image": "Sull'immagine",
+        "video": "Sul video",
+        "pdf": "Sul PDF"
+      },
+      "what": {
+        "area": "Zona {{n}}",
+        "point": "Punto {{n}}",
+        "anArea": "Una zona",
+        "aPoint": "Un punto",
+        "page": "Pagina {{page}}"
+      },
+      "where": {
+        "image": "sull'immagine",
+        "video": "nel video",
+        "pdf": "nel PDF"
       },
       "drop": "Non inviare la selezione",
       "aboutLine": "Mostra {{what}} ({{where}}) nel file",
