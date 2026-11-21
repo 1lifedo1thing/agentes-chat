@@ -659,9 +659,12 @@ export const isAntigravityGemini = (id: string) => id.startsWith("gemini-");
 /** An Antigravity model's name from the reserve (`gemini-4-argon-high` → "Gemini 4 Argon (High)"); else the slug. */
 export const antigravityLabel = (id: string) => ANTIGRAVITY_MODELS.find((m) => m.id === id)?.label ?? id;
 
-/** A CLI's version as numbers, read anywhere in its `--version` line (`agy 1.5.0`, `1.5.14`); null without one. */
+/**
+ * A CLI's version as numbers, read anywhere in its `--version` line (`agy 1.5.0`, `1.5.14`); null without one. Each
+ * part at most nine digits: the line comes from the computer, and an unbounded run of digits would be slow to search.
+ */
 export function cliVersionOf(line: string | null | undefined): [number, number, number] | null {
-  const m = /(\d+)\.(\d+)\.(\d+)/.exec(line ?? "");
+  const m = /(\d{1,9})\.(\d{1,9})\.(\d{1,9})/.exec(line ?? "");
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
 }
 
