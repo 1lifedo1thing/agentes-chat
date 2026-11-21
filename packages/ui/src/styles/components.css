@@ -7372,7 +7372,8 @@ html:not([data-pointer]) .ac-react:focus-visible {
   align-items: center;
   gap: var(--space-1);
 }
-.ac-composer__tools .ac-btn--icon {
+/* Send is its own square (below): on touch it is taller than the tools. */
+.ac-composer__tools .ac-btn--icon:not(.ac-composer__send) {
   width: var(--composer-btn);
   height: var(--composer-btn);
 }
