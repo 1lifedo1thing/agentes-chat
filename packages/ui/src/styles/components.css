@@ -7473,6 +7473,10 @@ html:not([data-pointer]) .ac-react:focus-visible {
     padding 0.25s var(--spring),
     transform 0.18s var(--spring);
 }
+/* Its square at the composer's size, not the kit's small icon button's width. */
+.ac-composer__send.ac-btn--icon {
+  width: var(--composer-row);
+}
 .ac-composer__send .ac-icon {
   width: var(--composer-icon);
   height: var(--composer-icon);
