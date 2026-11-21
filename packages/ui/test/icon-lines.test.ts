@@ -284,10 +284,10 @@ describe("a picture beside lines, a bubble beside a face, a row of actions", () 
     );
   });
 
-  test("buttons side by side stand 8 apart, two icons 16 between their glyphs, by the first's end so a wrapped one starts on the edge", async () => {
-    // The row's gap is two ghost plates (16): a pair of plates gives back 8 of it; a pair of icons keeps it between
-    // their glyphs, the first reaching into it by its plate and glyph air, so the plates meet. On touch the icons'
-    // plates stand 8 apart, their grown targets never overlapping.
+  test("buttons side by side stand 8 apart, two small icons 8 between their glyphs with a pointer, a wrapped one on the edge", async () => {
+    // The row's gap is two ghost plates (16): a pair of plates gives back 8 of it; a pair of icons' plates meet. With a
+    // pointer two small icons give up 4 each on their inner sides: glyphs 8 apart, two 28-wide targets that touch. On
+    // touch the icons' plates stand 8 apart, their grown targets never overlapping.
     const plates = await kitRule(".ac-acts > .ac-btn:not(.ac-btn--ghost):has(+ .ac-btn:not(.ac-btn--ghost))");
     expect(plates).toContain("margin-inline-end: calc(var(--space-2) - 2 * var(--ghost-plate))");
     // Its selector holds a comma inside `:is()`, which the rule list splits on: read from the sheet itself.
@@ -298,7 +298,16 @@ describe("a picture beside lines, a bubble beside a face, a row of actions", () 
     expect(css).toContain(
       `@media (pointer: coarse) {\n  ${pair}\n    margin-inline-end: calc(var(--space-2) - var(--ghost-plate) - var(--glyph-air, 0px));\n  }`,
     );
-    // Never by the second's start: on a line of its own it would stick out of the row.
+    const pointer = css.slice(css.indexOf("@media not (pointer: coarse) {"));
+    expect(pointer).toContain("width: calc(var(--control-h-sm) - var(--space-1));");
+    expect(pointer).toContain(
+      "padding-inline-start: var(--ghost-plate);\n    margin-inline: calc(-1 * var(--ghost-plate)) calc(var(--space-1) - 2 * var(--ghost-plate));",
+    );
+    // The second reaches out by no more than its own padding: on a line of its own its glyph starts on the row's edge.
+    expect(pointer).toContain(
+      "padding-inline-start: var(--space-1);\n    margin-inline-start: calc(-1 * var(--space-1));",
+    );
+    // Never by the second's start alone: on a line of its own it would stick out of the row.
     expect(css).not.toMatch(/\.ac-acts > [^{]*\+ [^{]*\{\s*margin-inline-start/);
   });
 
