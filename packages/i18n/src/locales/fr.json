@@ -2811,6 +2811,8 @@
     "uploading": "envoi…",
     "uploadFailed": "n'a pas été envoyé",
     "removeFile": "Retirer {{name}}",
+    "dropFileTitle": "Déposez pour joindre",
+    "dropFileNote": "Les fichiers restent dans le brouillon de cette conversation jusqu’à ce que vous les envoyiez.",
     "tooManyFiles": "Jusqu'à {{max}} fichiers par message.",
     "reminder": "Rappel",
     "reactions": "Réactions",

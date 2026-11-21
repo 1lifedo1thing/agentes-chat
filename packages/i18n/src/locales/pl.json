@@ -2911,6 +2911,8 @@
     "uploading": "przesyłanie…",
     "uploadFailed": "nie został przesłany",
     "removeFile": "Usuń {{name}}",
+    "dropFileTitle": "Upuść, aby załączyć",
+    "dropFileNote": "Pliki zostają w wersji roboczej tej rozmowy, dopóki ich nie wyślesz.",
     "tooManyFiles": "Do {{max}} plików na wiadomość.",
     "reminder": "Przypomnienie",
     "reactions": "Reakcje",

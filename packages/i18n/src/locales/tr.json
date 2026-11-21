@@ -2710,6 +2710,8 @@
     "uploading": "yükleniyor…",
     "uploadFailed": "yüklenmedi",
     "removeFile": "{{name}} kaldır",
+    "dropFileTitle": "Eklemek için bırakın",
+    "dropFileNote": "Dosyalar siz gönderene kadar bu konuşmanın taslağında kalır.",
     "tooManyFiles": "Mesaj başına en fazla {{max}} dosya.",
     "reminder": "Hatırlatıcı",
     "reactions": "Tepkiler",

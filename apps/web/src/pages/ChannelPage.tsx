@@ -412,6 +412,7 @@ import { BarAlsoTyping, BarPhrase, BarStep, ConsultClock, TypingMark, WorkingSta
 import { useChannelSearch } from "@/hooks/useChannelSearch";
 import { useComposerDraft } from "@/hooks/useComposerDraft";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useFileDrop } from "@/hooks/useFileDrop";
 import { useDmSidebar, useMembersColumn } from "@/hooks/useMembersColumn";
 import { useMentionSearch } from "@/hooks/useMentionSearch";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
@@ -421,7 +422,7 @@ import { useHeaderSearch } from "@/hooks/useWorkspaceSearch";
 import { TYPED_VALUES } from "@/i18n";
 import { onAgentPanel, takeAgentPanel } from "@/lib/agent-panel-ask";
 import { onChannelDetails, takeChannelDetails } from "@/lib/channel-details";
-import { selectingIn } from "@/lib/context-menu";
+import { inTextField, selectingIn } from "@/lib/context-menu";
 import { desktopPlatform, thisMac, useDocumentTitle } from "@/lib/desktop";
 import { holdOnScreen } from "@/lib/island";
 import { composes, typingInField } from "@/lib/keys";
@@ -2173,6 +2174,33 @@ function ChannelView({
     }
     composer.current?.focus();
   };
+  const canAttach =
+    isMember &&
+    !adjustThreadId &&
+    !org.deletion &&
+    !chrome?.composerReplacement &&
+    !chrome?.locked &&
+    channel.can?.post !== false;
+  const fileDrop = useFileDrop(addFiles, canAttach);
+  const column = useRef<HTMLDivElement>(null);
+  const addFilesNow = useRef(addFiles);
+  addFilesNow.current = addFiles;
+  // A picture pasted after a click in the history (focus on the page, not the box) still joins the draft. The
+  // composer's own paste runs first and takes its files.
+  useEffect(() => {
+    if (!canAttach) return;
+    const paste = (e: globalThis.ClipboardEvent) => {
+      const target = e.target;
+      if (e.defaultPrevented || !(target instanceof Element) || inTextField(target)) return;
+      if (target !== document.body && !column.current?.contains(target)) return;
+      const pasted = Array.from(e.clipboardData?.files ?? []);
+      if (pasted.length === 0) return;
+      e.preventDefault();
+      addFilesNow.current(pasted);
+    };
+    document.addEventListener("paste", paste);
+    return () => document.removeEventListener("paste", paste);
+  }, [canAttach]);
   // A draft past the length limit goes as a text file instead, which agents open like any other.
   const draftAsFile = () => {
     addFiles([new File([draft], t("channel.tooLong.fileName"), { type: "text/plain" })]);
@@ -2628,7 +2656,24 @@ function ChannelView({
                 )}
                 {/* Under the header: the conversation, and the members beside it (the header spans both, as Discord's). */}
                 <div className="channel__body">
-                  <div className="channel__col" data-wallpaper={wallpaper?.wallpaper.kind} style={wallpaper?.vars}>
+                  <div
+                    ref={column}
+                    className="channel__col"
+                    data-wallpaper={wallpaper?.wallpaper.kind}
+                    style={wallpaper?.vars}
+                    {...fileDrop.props}
+                  >
+                    {fileDrop.over && (
+                      <div className="channel__file-drop" role="status">
+                        <div className="channel__file-drop-card">
+                          <span className="channel__file-drop-icon" aria-hidden="true">
+                            <Icon name="upload" size={20} />
+                          </span>
+                          <strong>{t("channel.dropFileTitle")}</strong>
+                          <span>{t("channel.dropFileNote")}</span>
+                        </div>
+                      </div>
+                    )}
                     {wallpaper && <ChatWallpaper wallpaper={wallpaper.wallpaper} strength={wallpaper.strength} />}
                     {isMember && (
                       <ChannelPinnedBar
@@ -2975,7 +3020,7 @@ function ChannelView({
                                       ))
                                     : undefined
                                 }
-                                onFiles={chrome?.locked ? undefined : addFiles}
+                                onFiles={canAttach ? addFiles : undefined}
                                 canSendEmpty={attached.length > 0}
                                 sendBlocked={uploading || tooLongToSend(draft)}
                                 notice={

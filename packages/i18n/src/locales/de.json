@@ -2710,6 +2710,8 @@
     "uploading": "wird hochgeladen…",
     "uploadFailed": "wurde nicht hochgeladen",
     "removeFile": "{{name}} entfernen",
+    "dropFileTitle": "Loslassen zum Anhängen",
+    "dropFileNote": "Die Dateien bleiben im Entwurf dieser Unterhaltung, bis du sie sendest.",
     "tooManyFiles": "Bis zu {{max}} Dateien pro Nachricht.",
     "reminder": "Erinnerung",
     "reactions": "Reaktionen",
