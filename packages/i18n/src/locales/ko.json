@@ -2534,6 +2534,7 @@
     "working_other": "에이전트 {{count}}명 작업 중"
   },
   "channel": {
+    "teamStalled": "팀 작업 중단",
     "settingsNav": {
       "label": "채널 설정",
       "overview": "개요",
@@ -2992,6 +2993,7 @@
       "anAgent": "에이전트",
       "none": "없음",
       "budgetDefault": "워크스페이스 기본값",
+      "pausesNow": "바로 일시 중지돼요",
       "anAccount": "AI 계정 하나",
       "everyone": "모두",
       "ownerOnly": "담당자만",

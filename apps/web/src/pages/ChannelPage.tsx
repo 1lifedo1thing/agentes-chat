@@ -391,6 +391,7 @@ import { isStoppable, StopButton, useContinueRun, useStopRun, useWasContinued } 
 import { SearchResultsPanel } from "@/components/search/SearchResultsPanel";
 import { TeamChecks } from "@/components/TeamChecks";
 import { ReplyChips } from "@/components/TeamPlan";
+import { TeamStalledBanner } from "@/components/TeamStalled";
 import { ToLatest } from "@/components/ToLatest";
 import { LiveTools, SavedTools } from "@/components/ToolCalls";
 import { AgentTasksPanel } from "@/components/tasks/AgentTasksPanel";
@@ -2919,6 +2920,9 @@ function ChannelView({
                           <ConnectionBanner status={status} />
                           {!chrome?.intro && !org.deletion && (
                             <NoAiBanner agentIds={channelAgents.map((a) => a.id)} dmAgentId={chrome?.dmAgentId} />
+                          )}
+                          {channel.name === "general" && !thread && !chrome?.dmAgentId && !org.deletion && (
+                            <TeamStalledBanner />
                           )}
                           <ActivityBar
                             channelId={channel.id}

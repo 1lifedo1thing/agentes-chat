@@ -109,6 +109,8 @@ import {
 import { agentBrowserProfiles } from "./browser/profiles";
 import { browsersPrompt } from "./browser/tools";
 import { BROWSER_SCOPE } from "./browser/types";
+import { tellBudgetPause } from "./budget-pause";
+import { resolveEarlierBudgetPaused } from "./budget-paused-rows";
 import { typingLogFor, waitForBurst } from "./burst";
 import {
   isShutdown,
@@ -1527,6 +1529,8 @@ async function executeRunInner(
   // At work now (its start, or back from a wait): the phone of the person behind it shows it (ADR 0210).
   if (fresh || backFromWait) await queueLiveActivityRun(db, run).catch(() => {});
   if (waitedOn && USAGE_WAIT_CODES.has(waitedOn)) await usageWaitNoteEnded(deps, run, true).catch(() => {});
+  if (waitedOn === "budget" || waitedOn === "usage_pause")
+    await resolveEarlierBudgetPaused(deps, run.orgId, run.agentId).catch(() => {});
   if (backFromWait && channelRow && answersHandOffs(channelRow)) {
     await announceConsultationChange({ db, pubsub: deps.pubsub }, run).catch(() => {});
   }
@@ -4733,6 +4737,10 @@ async function executeRunInner(
       if (view) await publishMessageCreated(deps.pubsub, view);
     }
     if (joined) await publishMessageCreated(deps.pubsub, messageView(joined));
+    if (budget && !u.soon)
+      await tellBudgetPause(deps, run, agent, u.pause?.used ?? 100, !(run.background || viaRoutine !== null)).catch(
+        () => {},
+      );
     // A routine's run says nothing in the conversation: its people hear it once per outage instead, and a widget's
     // refresh says on its widget what it waits for.
     if (firstPark && !budget) await routineRunWaitingForPlan({ db, pubsub: deps.pubsub }, run).catch(() => {});

@@ -2630,6 +2630,7 @@
     "working_other": "{{count}} agents aan het werk"
   },
   "channel": {
+    "teamStalled": "Team staat stil",
     "settingsNav": {
       "label": "Kanaalinstellingen",
       "overview": "Overzicht",
@@ -3107,6 +3108,7 @@
       "anAgent": "Een agent",
       "none": "Geen",
       "budgetDefault": "Standaard van de workspace",
+      "pausesNow": "pauzeert meteen",
       "anAccount": "Een AI-account",
       "everyone": "Iedereen",
       "ownerOnly": "Alleen de verantwoordelijke",

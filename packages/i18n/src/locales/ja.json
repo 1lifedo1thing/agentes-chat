@@ -2534,6 +2534,7 @@
     "working_other": "{{count}}体のエージェントが作業中"
   },
   "channel": {
+    "teamStalled": "チームが停止中",
     "settingsNav": {
       "label": "チャンネル設定",
       "overview": "概要",
@@ -2992,6 +2993,7 @@
       "anAgent": "エージェント",
       "none": "なし",
       "budgetDefault": "ワークスペースの既定",
+      "pausesNow": "すぐに一時停止します",
       "anAccount": "AIアカウント",
       "everyone": "全員",
       "ownerOnly": "責任者だけ",

@@ -2630,6 +2630,7 @@
     "working_other": "{{count}} ajan çalışıyor"
   },
   "channel": {
+    "teamStalled": "Ekip durdu",
     "settingsNav": {
       "label": "Kanal ayarları",
       "overview": "Genel bakış",
@@ -3104,6 +3105,7 @@
       "anAgent": "Bir ajan",
       "none": "Yok",
       "budgetDefault": "Çalışma alanı varsayılanı",
+      "pausesNow": "hemen duraklar",
       "anAccount": "Bir yapay zekâ hesabı",
       "everyone": "Herkes",
       "ownerOnly": "Yalnızca sorumlusu",

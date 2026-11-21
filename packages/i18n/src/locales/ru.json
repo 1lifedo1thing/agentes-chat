@@ -2826,6 +2826,7 @@
     "working_other": "{{count}} агента работают"
   },
   "channel": {
+    "teamStalled": "Команда стоит",
     "settingsNav": {
       "label": "Настройки канала",
       "overview": "Обзор",
@@ -3340,6 +3341,7 @@
       "anAgent": "Агент",
       "none": "Нет",
       "budgetDefault": "По умолчанию в workspace",
+      "pausesNow": "сразу встанет на паузу",
       "anAccount": "Аккаунт ИИ",
       "everyone": "Все",
       "ownerOnly": "Только ответственный",

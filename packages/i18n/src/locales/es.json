@@ -2727,6 +2727,7 @@
     "working_other": "{{count}} agentes trabajando"
   },
   "channel": {
+    "teamStalled": "Equipo detenido",
     "settingsNav": {
       "label": "Configuración del canal",
       "overview": "General",
@@ -3224,6 +3225,7 @@
       "anAgent": "Un agente",
       "none": "Ninguno",
       "budgetDefault": "Predeterminado del workspace",
+      "pausesNow": "se pausa al instante",
       "anAccount": "Una cuenta de IA",
       "everyone": "Todos",
       "ownerOnly": "Solo su responsable",

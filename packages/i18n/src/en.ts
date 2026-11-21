@@ -2813,6 +2813,8 @@ export const en = {
     working_other: "{{count}} agents working",
   },
   channel: {
+    /** Above #general's composer, before who is out of budget (`notifications.teamWatch.budget_out`). */
+    teamStalled: "Team stalled",
     /** Channel settings' sections, for who manages it (ADR 0134). */
     settingsNav: {
       label: "Channel settings",
@@ -3353,6 +3355,8 @@ export const en = {
       anAgent: "An agent",
       none: "None",
       budgetDefault: "Workspace default",
+      /** After a budget on a settings card that is at or below the agent's spend this month. */
+      pausesNow: "pauses at once",
       anAccount: "An AI account",
       everyone: "Everyone",
       ownerOnly: "Only its owner",
