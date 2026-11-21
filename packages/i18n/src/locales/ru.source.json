@@ -27296,6 +27296,9 @@
   "codeSessions.home.mode": {
     "value": "Coding mode"
   },
+  "codeSessions.home.was": {
+    "value": "Chat mode"
+  },
   "codeSessions.home.beta": {
     "value": "Beta"
   },

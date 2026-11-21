@@ -11656,6 +11656,8 @@ export const en = {
     home: {
       /** The home's title, under the agent in cubes (the mode's name, the same in every language). */
       mode: "Coding mode",
+      /** What the title's block knocks off as the home opens (decoration, the same in every language). */
+      was: "Chat mode",
       /** Beside the mode's name: the page is still a beta. */
       beta: "Beta",
       /** Under the title, over the field. */

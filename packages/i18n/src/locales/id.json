@@ -10814,6 +10814,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "Apa yang dikerjakan di {{repo}}?",
       "aRepo": "sebuah proyek",

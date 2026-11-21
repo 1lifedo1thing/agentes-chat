@@ -105,7 +105,19 @@ export function CodeHome() {
       <form className={cx("code-mid", pickedAgent && "code-mid--agent", placed && "is-in")} onSubmit={submit}>
         {pickedAgent && <CodeHomeAgent agent={pickedAgent} name={pickedAgent.name} area={home} />}
         <div className="code-mid__head">
-          <h2 className="code-mid__t code-mid__t--brand">{t("codeSessions.home.mode")}</h2>
+          <span className="code-title">
+            <span className="code-block code-block--add">
+              <span className="code-block__sig" aria-hidden="true">
+                +
+              </span>
+              <h2 className="code-mid__t code-mid__t--brand">{t("codeSessions.home.mode")}</h2>
+            </span>
+            {/* What the page was before: knocked off by the title as the home opens. Decoration only. */}
+            <span className="code-block code-block--del" aria-hidden="true">
+              <span className="code-block__sig">−</span>
+              <span className="code-mid__t code-mid__t--brand">{t("codeSessions.home.was")}</span>
+            </span>
+          </span>
           <span className="code-mid__beta">{t("codeSessions.home.beta")}</span>
         </div>
         <span className="code-mid__s code-mid__s--ask">{t("codeSessions.home.title", { repo: repoName })}</span>

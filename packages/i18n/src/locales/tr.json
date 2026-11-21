@@ -11147,6 +11147,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "{{repo}} üzerinde ne yapalım?",
       "aRepo": "Bir proje",

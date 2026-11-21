@@ -11995,6 +11995,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "Что делаем в {{repo}}?",
       "aRepo": "проекте",

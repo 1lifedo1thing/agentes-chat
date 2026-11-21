@@ -225,7 +225,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 20px;
 }
 /* Opening the home: the agent builds itself (`CodeHomeAgent`) while its words rise into place under it, the title
    first, then the question and the field, overlapping by less each time; nothing waits for the build and the field
@@ -253,10 +253,167 @@
     transform: translateY(var(--rise, 8px));
   }
 }
+/* The title as a line of a diff, in the agent's own material (ADR 0214 §4): a block with a top and a side, each face
+   in two tones through a 4 px checker, as the agent's cubes are. As the home opens the line it replaces ("− Chat
+   mode") stands there, the title's block drops on it from above, lands with a squash and knocks it off; Beta comes in
+   last. With reduced motion the title's block is simply there. */
+.code-title {
+  position: relative;
+  display: inline-flex;
+  --blk-d: 9px;
+  --blk-px: 4px;
+  --add-a: #c9efd6;
+  --add-b: #d9f6e3;
+  --add-top-a: #e9fbef;
+  --add-top-b: #f6fff9;
+  --add-side-a: #7cc79a;
+  --add-side-b: #8fd3aa;
+  --add-ink: #151514;
+  --add-sig: #1a7f45;
+  --del-a: #f7ccc7;
+  --del-b: #fcdcd8;
+  --del-top-a: #fdeae7;
+  --del-top-b: #fff5f3;
+  --del-side-a: #d98980;
+  --del-side-b: #e39a92;
+  --del-ink: #b3261e;
+}
+[data-theme="dark"] .code-title {
+  --add-a: #17482c;
+  --add-b: #1c5535;
+  --add-top-a: #2a7a4c;
+  --add-top-b: #328a57;
+  --add-side-a: #0d2c1a;
+  --add-side-b: #113722;
+  --add-ink: #eef7f1;
+  --add-sig: #6fd69a;
+  --del-a: #4a1f1b;
+  --del-b: #582621;
+  --del-top-a: #7a3832;
+  --del-top-b: #88413a;
+  --del-side-a: #2c110e;
+  --del-side-b: #371612;
+  --del-ink: #f2a79f;
+}
+.code-block {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 0 10px;
+  white-space: nowrap;
+  background: repeating-conic-gradient(var(--f-a) 0 25%, var(--f-b) 0 50%) 0 0 / var(--blk-px) var(--blk-px);
+}
+.code-block::before,
+.code-block::after {
+  content: "";
+  position: absolute;
+}
+.code-block::before {
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--blk-d);
+  transform-origin: bottom;
+  transform: skewX(-45deg);
+  background: repeating-conic-gradient(var(--t-a) 0 25%, var(--t-b) 0 50%) 0 0 / var(--blk-px) var(--blk-px);
+}
+.code-block::after {
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: var(--blk-d);
+  transform-origin: left;
+  transform: skewY(-45deg);
+  background: repeating-conic-gradient(var(--s-a) 0 25%, var(--s-b) 0 50%) 0 0 / var(--blk-px) var(--blk-px);
+}
+.code-block--add {
+  --f-a: var(--add-a);
+  --f-b: var(--add-b);
+  --t-a: var(--add-top-a);
+  --t-b: var(--add-top-b);
+  --s-a: var(--add-side-a);
+  --s-b: var(--add-side-b);
+}
+.code-block--add .code-mid__t {
+  color: var(--add-ink);
+}
+.code-block--add .code-block__sig {
+  color: var(--add-sig);
+}
+.code-block--del {
+  --f-a: var(--del-a);
+  --f-b: var(--del-b);
+  --t-a: var(--del-top-a);
+  --t-b: var(--del-top-b);
+  --s-a: var(--del-side-a);
+  --s-b: var(--del-side-b);
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  color: var(--del-ink);
+  display: none;
+}
+.code-block--del .code-mid__t {
+  color: inherit;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+.code-block__sig {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 40px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .code-block--del {
+    display: inline-flex;
+  }
+  .code-mid.is-in .code-block--add {
+    animation: code-drop 640ms 760ms both;
+  }
+  .code-mid.is-in .code-block--del {
+    animation: code-knock 640ms cubic-bezier(0.45, 0, 0.9, 0.55) 1110ms forwards;
+  }
+  .code-mid.is-in .code-mid__beta {
+    animation: code-rise 320ms ease 1500ms both;
+    --rise: 0px;
+  }
+}
+@keyframes code-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-280px);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  }
+  8% {
+    opacity: 1;
+  }
+  58% {
+    transform: translateY(0) scale(1.05, 0.86);
+    animation-timing-function: ease-out;
+  }
+  76% {
+    transform: translateY(-12px) scale(0.98, 1.04);
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes code-knock {
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-20%, 360px) rotate(26deg);
+  }
+}
 /* Beta, as a tag of the title's own: its face in capitals, on a line of the info color, the sky showing through. */
 .code-mid__beta {
-  align-self: flex-start;
-  margin-top: 4px;
+  align-self: center;
   padding: 3px 7px 2px;
   border: 1.5px solid color-mix(in srgb, var(--info) 45%, transparent);
   border-radius: 6px;
@@ -271,7 +428,7 @@
 /* The title in the brand's face, in today's title box (40 tall), so the field stays where it is; the question under it. */
 .code-mid__t--brand {
   font-family: var(--font-brand);
-  font-size: 26px;
+  font-size: 31px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }

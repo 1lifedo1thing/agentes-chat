@@ -11212,6 +11212,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "Was gibt es in {{repo}} zu tun?",
       "aRepo": "einem Projekt",

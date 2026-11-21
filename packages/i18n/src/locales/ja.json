@@ -10757,6 +10757,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "{{repo}}で何をしますか？",
       "aRepo": "プロジェクト",

@@ -11576,6 +11576,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "¿Qué hacer en {{repo}}?",
       "aRepo": "un proyecto",

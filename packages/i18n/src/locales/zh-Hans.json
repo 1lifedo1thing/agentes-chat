@@ -10828,6 +10828,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "要在 {{repo}} 里做什么？",
       "aRepo": "某个项目",

@@ -338,6 +338,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
@@ -626,6 +627,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
@@ -1146,6 +1148,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.home.agent",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
@@ -1641,6 +1644,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.home.agent",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
@@ -2045,6 +2049,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.gitTab.label",
       "codeSessions.files.count",
       "cliTools.files"
@@ -2717,6 +2722,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.home.agent",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
@@ -2904,6 +2910,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.gitTab.label"
     ],
     "ko": [
@@ -3079,6 +3086,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.gitTab.label"
     ],
     "zh-Hans": [
@@ -3242,6 +3250,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.gitTab.label"
     ],
     "id": [
@@ -3576,6 +3585,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeTerminal.label"
@@ -3792,6 +3802,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeTerminal.label"
@@ -4125,6 +4136,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.home.agent",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
@@ -4308,6 +4320,7 @@
       "codeSessions.state.pr",
       "codeSessions.home.beta",
       "codeSessions.home.mode",
+      "codeSessions.home.was",
       "codeSessions.gitTab.label"
     ]
   },

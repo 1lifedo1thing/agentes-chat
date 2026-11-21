@@ -11671,6 +11671,8 @@ export const ptBR = {
     home: {
       /** O título da casa, embaixo do agente em cubos (o nome do modo, igual em toda língua). */
       mode: "Coding mode",
+      /** O que o bloco do título derruba quando a casa abre (enfeite, igual em toda língua). */
+      was: "Chat mode",
       /** Ao lado do nome do modo: a página ainda é beta. */
       beta: "Beta",
       /** Embaixo do título, sobre o campo. */

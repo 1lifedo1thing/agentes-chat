@@ -11282,6 +11282,7 @@
     },
     "home": {
       "mode": "Coding mode",
+      "was": "Chat mode",
       "beta": "Beta",
       "title": "Wat doen we in {{repo}}?",
       "aRepo": "een project",
