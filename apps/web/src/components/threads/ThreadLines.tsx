@@ -1,5 +1,5 @@
 import type { Actor, Message, ThreadInfo, ThreadStartMeta } from "@agenteschat/client";
-import { runsInChannel, useChannelThreads } from "@agenteschat/client";
+import { repliesUnder, runsInChannel, useChannelThreads } from "@agenteschat/client";
 import {
   returnClock,
   type ThreadWorkState,
@@ -134,15 +134,11 @@ export function ThreadReplyingLine({ messageId, channelId }: { messageId: string
   const { t } = useTranslation();
   const actors = useActors();
   const view = useChannelThreadsView();
-  // The server's runs only: the app's own guess for a message sent here ("pensando…") shows in the channel itself. A
-  // run the active-run list brought back says whether it answers in the thread (its `threadId` is its root either way).
   const agentIds = useStreams((s) =>
     [
       ...new Set(
         runsInChannel(s, channelId)
-          .filter(
-            (r) => r.threadId === messageId && r.replyInThread !== false && !r.provisional && r.status !== "failed",
-          )
+          .filter((r) => repliesUnder(r, messageId))
           .map((r) => r.agentId),
       ),
     ].join(","),

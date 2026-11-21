@@ -14,7 +14,8 @@
   `channels.ts` (`listChannels`);
   server `routes/app/channels.ts`, `chat.ts`; client `realtime/streams.ts` (`LiveRun.replyInThread`); web
   `ChannelPage.tsx` (the switch in the channel's details), `components/threads/ThreadLines.tsx`
-  (`ThreadReplyingLine`)
+  (`ThreadReplyingLine`); phone `features/chat/sheets.tsx` (`ChannelOptions`), `features/chat/cards.tsx`
+  (`ThreadReplyingLink`)
 
 ## Context
 
@@ -91,9 +92,9 @@ in the thread under the message that made it, as bots do in other chat apps (iss
 - The person who asked keeps their run however it went on, because the thread's root names them; nothing new is
   stored for it.
 - The active-run list gains `replyInThread`. Its `threadId` keeps its meaning for every client.
-- The phone app has no switch yet. There such a run's replies show as any thread's (a link under the root), and its
-  live row, filtered by `inMainTimeline` like the web's, stays in the thread: until the first reply nothing shows
-  under the message.
+- The phone app does the same: the switch in the channel's ⋯ sheet, for who may change the channel, and
+  `ThreadReplyingLink` under the message until the thread has its link. Both apps pick those runs with
+  `repliesUnder` (client `realtime/streams.ts`).
 
 ## Alternatives considered
 

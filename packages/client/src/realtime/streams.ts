@@ -854,6 +854,28 @@ export const inMainTimeline = (
   topLevelIds: ReadonlySet<string>,
 ) => r.threadId === null || Boolean(r.provisional && topLevelIds.has(r.triggerMessageId ?? r.threadId));
 
+/**
+ * A run that says "Ada is replying in the thread" under the message of the main timeline that asked it (ADR 0214),
+ * `threadId` being that message, until the thread has a reply. Not the app's own guess: that one shows in the channel.
+ */
+export const repliesUnder = (r: LiveRun, messageId: string) =>
+  r.threadId === messageId && r.replyInThread !== false && !r.provisional && r.status !== "failed";
+
+/** The agents replying under each message of the main timeline (`repliesUnder`) whose thread has no line yet. */
+export function replyingUnder(
+  runs: readonly LiveRun[],
+  topLevelIds: ReadonlySet<string>,
+  lined: { has: (threadId: string) => boolean },
+): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const r of runs) {
+    if (!topLevelIds.has(r.threadId) || lined.has(r.threadId) || !repliesUnder(r, r.threadId)) continue;
+    const ids = out.get(r.threadId) ?? [];
+    if (!ids.includes(r.agentId)) out.set(r.threadId, [...ids, r.agentId]);
+  }
+  return out;
+}
+
 /** Runs to show in a channel, oldest first. */
 export const runsInChannel = (state: StreamsState, channelId: string) =>
   Object.values(state.runs).filter((r) => r.channelId === channelId);
