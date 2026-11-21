@@ -1,6 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
 import { getAgent } from "./agents";
+import { managesAgent, REACH_COLUMNS } from "./audience";
 import { recordAudit } from "./audit";
 import { brainOf, brainOptions } from "./brain-settings";
 import type { ComputerBrainKind } from "./brains/types";
@@ -11,16 +12,15 @@ import { publishOrgEvent } from "./events";
 import { TASK_OFFLINE_GRACE_MS } from "./machine-tasks";
 import {
   getMachine,
-  inStandby,
   type MachineRow,
-  machineOnline,
   machinePause,
   mayBeHome,
   type PlanDropped,
   setAgentComputerTarget,
+  shownOnline,
 } from "./machines";
 import { missionTurnFor } from "./missions-engine";
-import { can, requirePermission } from "./organizations";
+import { requirePermission } from "./organizations";
 import { enqueue } from "./outbox";
 import { missStaleRoutineRun } from "./routine-firing";
 
@@ -121,8 +121,8 @@ async function waitingRunsFor(db: Database, orgId: string, machineIds: string[],
 /**
  * `GET …/machines/outages`: each offline computer that some agents think on
  * (computer brain pointed at it) or that runs wait for, with only the agents
- * this person may move (admins with `manage_agents`: all; others: their own
- * agents); and every other computer as a place to move them.
+ * this person may move (the ones they manage, `managesAgent`, ADR 0085 addendum
+ * of 2026-11-17, and their own); and every other computer as a place to move them.
  */
 export async function listMachineOutages(
   deps: OutageDeps,
@@ -132,14 +132,13 @@ export async function listMachineOutages(
   const { db } = deps;
   const now = deps.now?.() ?? new Date();
   const membership = await requirePermission(db, actorId, orgId, "read");
-  const admin = can(membership, "manage_agents");
   const rows = await db
     .select()
     .from(machines)
     .where(and(eq(machines.orgId, orgId), isNull(machines.deletedAt)))
     .orderBy(machines.createdAt);
-  // One in standby is asleep by design, never an outage (ADR 0161).
-  const offline = rows.filter((m) => !machineOnline(m, now) && !inStandby(m));
+  // One in standby is asleep by design, never an outage, until a wake of it is overdue (ADR 0161).
+  const offline = rows.filter((m) => !shownOnline(m, now));
   const offlineIds = offline.map((m) => m.id);
 
   const [onMachines, waiting] = offlineIds.length
@@ -148,10 +147,9 @@ export async function listMachineOutages(
           .select({
             id: agents.id,
             name: agents.name,
-            brain: agents.brain,
             machineId: agents.machineId,
-            ownerUserId: agents.ownerUserId,
             createdAt: agents.createdAt,
+            ...REACH_COLUMNS,
           })
           .from(agents)
           .where(and(eq(agents.orgId, orgId), inArray(agents.machineId, offlineIds), isNull(agents.archivedAt))),
@@ -166,16 +164,16 @@ export async function listMachineOutages(
         .select({
           id: agents.id,
           name: agents.name,
-          brain: agents.brain,
           machineId: agents.machineId,
-          ownerUserId: agents.ownerUserId,
           createdAt: agents.createdAt,
+          ...REACH_COLUMNS,
         })
         .from(agents)
         .where(and(eq(agents.orgId, orgId), inArray(agents.id, extraIds), isNull(agents.archivedAt)))
     : [];
   const byId = new Map([...onMachines, ...extra].map((a) => [a.id, a]));
-  const mayMove = (a: { ownerUserId: string | null }) => admin || a.ownerUserId === actorId;
+  const mayMove = (a: Parameters<typeof managesAgent>[0]) =>
+    a.ownerUserId === actorId || managesAgent(a, actorId, membership);
 
   const outages: MachineOutage[] = [];
   for (const m of offline) {
@@ -227,7 +225,7 @@ export async function listMachineOutages(
   const targets: OutageTarget[] = rows
     .filter((m) => !out.has(m.id) && mayBeHome(m))
     .map((m) => {
-      const online = machineOnline(m, now);
+      const online = shownOnline(m, now);
       return {
         kind: "machine" as const,
         machineId: m.id,
@@ -272,7 +270,6 @@ export async function moveAgentsFromMachine(
   const { db } = deps;
   const now = deps.now?.() ?? new Date();
   const membership = await requirePermission(db, actorId, orgId, "read");
-  const admin = can(membership, "manage_agents");
   const from = await getMachine(db, orgId, machineId);
   if (!from) throw new NotFoundError("Computer not found", "machine.not_found");
   const agentIds = [...new Set(input.agentIds)];
@@ -284,7 +281,7 @@ export async function moveAgentsFromMachine(
   }
   const to = await getMachine(db, orgId, target.machineId);
   if (!to) throw new ConflictError("That computer isn't in this organization", "machine.target_not_found");
-  if (!machineOnline(to, now)) {
+  if (!shownOnline(to, now)) {
     throw new ConflictError(`${to.name} is offline`, "machine.target_offline", { name: to.name });
   }
   if (machinePause(to, now)) {
@@ -303,7 +300,7 @@ export async function moveAgentsFromMachine(
       skipped.push({ agentId, reason: "not_found" });
       continue;
     }
-    if (!admin && agent.ownerUserId !== actorId) {
+    if (agent.ownerUserId !== actorId && !managesAgent(agent, actorId, membership)) {
       skipped.push({ agentId, reason: "forbidden" });
       continue;
     }
@@ -313,7 +310,7 @@ export async function moveAgentsFromMachine(
       continue;
     }
     try {
-      const set = await setAgentComputerTarget(deps, actorId, orgId, agentId, to.id);
+      const set = await setAgentComputerTarget(deps, actorId, orgId, agentId, to.id, { wakeWaits: false });
       moved.push(agentId);
       if (set.planDropped) planDropped.push({ agentId, ...set.planDropped });
     } catch (error) {
