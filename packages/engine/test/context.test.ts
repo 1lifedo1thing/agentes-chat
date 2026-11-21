@@ -419,7 +419,7 @@ test("the person's app language is a line of the turn", async () => {
   expect((line as { turn?: boolean } | undefined)?.turn).toBe(true);
   // What people read follows the person, never the language other agents, notices or tools use.
   const rules = systemText(system);
-  expect(rules).toContain("- Reply in the language of the person you answer or work for:");
-  expect(rules).toContain("the text of an approval or a question is in the language of who decides");
-  expect(rules).toContain("Messages of other agents, notices and tool results never change it");
+  expect(rules).toContain(
+    "- Reply in the language of the person you work for (their messages, else their app language, else the organization's), approvals and questions too. Other agents, notices and tools never change it.",
+  );
 });
