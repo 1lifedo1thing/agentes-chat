@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useApi } from "../api/context";
-import type { CodeDiffScope, CodeSession, CreateCodeSessionInput } from "./types";
+import { cacheMessageMeta } from "../api/queries";
+import type { CodeDiffScope, CodeSession, CodeSuggestion, CreateCodeSessionInput } from "./types";
 
 /**
  * React Query hooks for code sessions (ADR 0213). The user event `code_session.updated` (a session's row changed:
@@ -158,5 +159,68 @@ export const useCloseCodeSession = (orgId: string) => {
   return useMutation({
     mutationFn: (sessionId: string) => api.code.close(orgId, sessionId),
     onSuccess: () => void qc.invalidateQueries({ queryKey: codeKeys.all(orgId) }),
+  });
+};
+
+/**
+ * A suggested session's card on the agent's reply (ADR 0213 §11), as the server says it (`code.suggestion`) or as a
+ * decision here makes it: in every loaded list of its channel.
+ */
+export function cacheCodeSuggestion(
+  qc: QC,
+  orgId: string,
+  channelId: string,
+  messageId: string,
+  suggestion: CodeSuggestion,
+) {
+  cacheMessageMeta(qc, orgId, channelId, messageId, () => ({ codeSuggestion: suggestion }));
+}
+
+/** What a decision on a suggestion names: its message, where it is, and the card as it was. */
+export interface CodeSuggestionDecision {
+  channelId: string;
+  messageId: string;
+  suggestion: CodeSuggestion;
+  /** Who decides (the viewer): the card says it at once. */
+  userId: string;
+}
+
+/** "Abrir sessão": the card says it is opening at once; the session comes back (the apps open it). */
+export const useOpenCodeSuggestion = (orgId: string) => {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: CodeSuggestionDecision) => api.code.openSuggestion(orgId, d.messageId),
+    onMutate: (d) =>
+      cacheCodeSuggestion(qc, orgId, d.channelId, d.messageId, { ...d.suggestion, status: "opening", by: d.userId }),
+    onSuccess: (session, d) => {
+      cacheCodeSession(qc, orgId, session);
+      cacheCodeSuggestion(qc, orgId, d.channelId, d.messageId, {
+        ...d.suggestion,
+        status: "opened",
+        sessionId: session.id,
+        by: d.userId,
+        at: new Date().toISOString(),
+      });
+    },
+    onError: (_error, d) => cacheCodeSuggestion(qc, orgId, d.channelId, d.messageId, d.suggestion),
+  });
+};
+
+/** "Fazer aqui": the card says it at once; the agent goes on in the conversation. */
+export const useKeepCodeSuggestionHere = (orgId: string) => {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: CodeSuggestionDecision) => api.code.keepHere(orgId, d.messageId),
+    onMutate: (d) =>
+      cacheCodeSuggestion(qc, orgId, d.channelId, d.messageId, {
+        ...d.suggestion,
+        status: "here",
+        by: d.userId,
+        at: new Date().toISOString(),
+      }),
+    onSuccess: (res, d) => cacheCodeSuggestion(qc, orgId, d.channelId, d.messageId, res.suggestion),
+    onError: (_error, d) => cacheCodeSuggestion(qc, orgId, d.channelId, d.messageId, d.suggestion),
   });
 };

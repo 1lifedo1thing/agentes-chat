@@ -26,6 +26,7 @@ import {
   browserHandoffOf,
   browserTrailOf,
   type ConnectionStatus,
+  codeSuggestionOf,
   consultsIn,
   desktopTrailOf,
   fileConversationOf,
@@ -317,6 +318,7 @@ import {
 } from "@/components/ConsultGroup";
 import { CorrectionAsk } from "@/components/CorrectionAsk";
 import { type ChannelActions, ChannelActionsContext, useChannelActions } from "@/components/channel-actions";
+import { CodeSuggestionCard } from "@/components/code/CodeSuggestionCard";
 import { DatePill, type DatePillHandle } from "@/components/DatePill";
 import { DeleteChannelDialog } from "@/components/DeleteChannelDialog";
 import { MenuEntries } from "@/components/DesktopMenus";
@@ -4623,6 +4625,8 @@ export const TimelineMessage = memo(function TimelineMessage({
   const missionSuggestion = m.author.type === "person" ? missionSuggestionOf(meta) : null;
   // A mission proposed from here whose thread lives elsewhere: its link card under the reply.
   const missionLink = m.author.type === "agent" ? missionLinkOf(meta) : null;
+  // A code session it suggested for a change asked here (ADR 0213 §11): the person's card under the reply.
+  const codeSuggestion = m.author.type === "agent" && !m.local ? codeSuggestionOf(meta) : null;
   // Preparing the mission's copy of the project failed (ADR 0044): the card with "Tentar de novo".
   const missionSetup = missionSetupOf(meta);
   const missionCard = Boolean(
@@ -5034,6 +5038,7 @@ export const TimelineMessage = memo(function TimelineMessage({
             {missionReport && <MissionReportExtras report={missionReport} message={m} />}
             {missionStart && <MissionStartLink message={m} />}
             {missionLink && <MissionLinkCard link={missionLink} />}
+            {codeSuggestion && <CodeSuggestionCard message={m} suggestion={codeSuggestion} />}
             {issueWork && (
               <IssueWorkCard work={issueWork} authorId={m.author.type === "person" ? (m.author.id ?? null) : null} />
             )}

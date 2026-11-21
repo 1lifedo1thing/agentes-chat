@@ -61,7 +61,12 @@ export const CODE_BRAINS = ["claude_code", "codex"] as const;
  * What a computer brain isn't given in a code session: sharing a file to the Drive and onto its reply. The person sees
  * the worktree's files and the agent's screen in the session's panel.
  */
-export const CODE_SESSION_HIDDEN_TOOLS: ReadonlySet<string> = new Set(["upload_file", "export_file"]);
+export const CODE_SESSION_HIDDEN_TOOLS: ReadonlySet<string> = new Set([
+  "upload_file",
+  "export_file",
+  // Suggesting a session is for a conversation outside one (`code-suggestions.ts`).
+  "suggest_code_session",
+]);
 
 /** `ensure` copies `.env*` files and may prune: more than a plain request (as for a mission). */
 const ENSURE_TIMEOUT_MS = 120_000;
@@ -75,7 +80,9 @@ const DIFF_MAX_CHARS = 1_500_000;
 /** What a failed worktree keeps of the reason. */
 const ERROR_CHARS = 2_000;
 /** The request: as long as a chat message may be. */
-const REQUEST_MAX_CHARS = 20_000;
+export const REQUEST_MAX_CHARS = 20_000;
+/** A session's name: what fits a row of the list. */
+const TITLE_MAX_CHARS = 72;
 
 export interface CodeSessionDeps {
   db: Database;
@@ -89,17 +96,47 @@ export interface CodeSessionDeps {
   log?: { warn(message: string, data?: Record<string, unknown>): void };
 }
 
+/** The conversation a session was opened from (a suggestion in it, ADR 0213 §11): its message, for the way back. */
+export interface CodeSessionFrom {
+  channelId: string;
+  messageId: string;
+  threadId: string | null;
+}
+
 /** The root message's `meta.codeSession`: never drawn, never routed. */
 export interface CodeSessionMeta {
   sessionId: string;
   repo: string;
   title: string;
+  from?: CodeSessionFrom;
 }
+
+const fromOf = (v: unknown): CodeSessionFrom | undefined => {
+  const f = v as Partial<CodeSessionFrom> | null | undefined;
+  return f && typeof f.channelId === "string" && typeof f.messageId === "string"
+    ? { channelId: f.channelId, messageId: f.messageId, threadId: typeof f.threadId === "string" ? f.threadId : null }
+    : undefined;
+};
 
 export function codeSessionOf(meta: unknown): CodeSessionMeta | null {
   const v = (meta as { codeSession?: unknown } | null)?.codeSession as Partial<CodeSessionMeta> | undefined;
   if (!v || typeof v.sessionId !== "string" || typeof v.repo !== "string") return null;
-  return { sessionId: v.sessionId, repo: v.repo, title: typeof v.title === "string" ? v.title : "" };
+  const from = fromOf(v.from);
+  return {
+    sessionId: v.sessionId,
+    repo: v.repo,
+    title: typeof v.title === "string" ? v.title : "",
+    ...(from ? { from } : {}),
+  };
+}
+
+/** A name someone gave a session (an agent's suggestion): one line, cut at a word to fit the list's row. */
+export function sessionTitle(raw: string | undefined): string {
+  const line = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (line.length <= TITLE_MAX_CHARS) return line;
+  const cut = line.slice(0, TITLE_MAX_CHARS);
+  const space = cut.lastIndexOf(" ");
+  return `${space > 0 ? cut.slice(0, space) : cut}…`;
 }
 
 const shortId = (id: string) => id.replace(/-/g, "").slice(-8);
@@ -293,6 +330,14 @@ export interface CodeSessionView {
   createdBy: string | null;
   createdAt: string;
   lastAt: string;
+  /** The conversation it was opened from (ADR 0213 §11), on the session's own page only, for whoever can see it. */
+  from?: CodeSessionOrigin;
+}
+
+/** Where a session was opened from: "your conversation with Leo" (a DM) or "#general" (a channel's name). */
+export interface CodeSessionOrigin extends CodeSessionFrom {
+  kind: "dm" | "channel";
+  name: string;
 }
 
 function viewOf(
@@ -422,7 +467,25 @@ export async function requireCodeSession(db: Database, userId: string, orgId: st
 export async function getCodeSession(db: Database, userId: string, orgId: string, sessionId: string) {
   const row = await requireCodeSession(db, userId, orgId, sessionId);
   const facts = await factsFor(db, orgId, userId, [row]);
-  return viewOf(row, facts.get(row.channelId) ?? { working: false, waiting: false, lastAt: null });
+  const view = viewOf(row, facts.get(row.channelId) ?? { working: false, waiting: false, lastAt: null });
+  const from = await originOf(db, userId, row);
+  return from ? { ...view, from } : view;
+}
+
+/**
+ * The conversation a session was opened from (its root's `meta.codeSession.from`, ADR 0213 §11), named the way the
+ * apps say it, for whoever can open it: nothing for a person it isn't shared with.
+ */
+async function originOf(db: Database, userId: string, row: CodeSessionRow): Promise<CodeSessionOrigin | null> {
+  const from = codeSessionOf((await getMessage(db, row.orgId, row.rootMessageId))?.meta)?.from;
+  if (!from) return null;
+  const channel = (await requireChannelAccess(db, userId, row.orgId, from.channelId).catch(() => null))?.channel;
+  if (!channel) return null;
+  if (channel.kind === "dm") {
+    const agent = await getAgentCached(db, row.orgId, row.agentId);
+    return { ...from, kind: "dm", name: agent?.name ?? "" };
+  }
+  return { ...from, kind: "channel", name: channel.name };
 }
 
 /** Tells the session's people its row changed (the list and the header refetch). */
@@ -459,6 +522,10 @@ export interface CreateCodeSessionInput {
   repo: string;
   /** The request: the conversation's first message. */
   text: string;
+  /** Its name, when someone gave one (an agent's suggestion); else the request's first sentence. */
+  title?: string;
+  /** The conversation it was opened from (a suggestion in it, ADR 0213 §11). */
+  from?: CodeSessionFrom;
 }
 
 /**
@@ -501,7 +568,7 @@ export async function createCodeSession(
     });
 
   const id = Bun.randomUUIDv7();
-  const title = titleOfRequest(text);
+  const title = sessionTitle(input.title) || titleOfRequest(text);
   const row = await deps.db.transaction(async (tx) => {
     const [channel] = await tx
       .insert(channels)
@@ -524,7 +591,14 @@ export async function createCodeSession(
         authorType: "person",
         authorUserId: userId,
         body: `Code session: ${title}`.slice(0, 2_000),
-        meta: { codeSession: { sessionId: id, repo, title } satisfies CodeSessionMeta },
+        meta: {
+          codeSession: {
+            sessionId: id,
+            repo,
+            title,
+            ...(input.from ? { from: input.from } : {}),
+          } satisfies CodeSessionMeta,
+        },
       })
       .returning({ id: messages.id });
     if (!root) throw new Error("root insert returned nothing");

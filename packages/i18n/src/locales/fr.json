@@ -5152,7 +5152,8 @@
       "proposal": "Propose une modification",
       "agent": "Propose un nouvel agent",
       "team": "Propose une équipe",
-      "firstTask": "Première tâche"
+      "firstTask": "Première tâche",
+      "code": "Suggère une session de code"
     },
     "waitingYou": "vous attend",
     "waitingFor": "attend {{name}}",
@@ -5169,6 +5170,7 @@
       "agent": "<b>{{name}}</b> propose un nouvel agent · {{what}}",
       "team": "<b>{{name}}</b> propose une équipe · {{what}}",
       "firstTask": "<b>{{name}}</b> suggère une première tâche · {{what}}",
+      "code": "<b>{{name}}</b> suggère une session de code · {{what}}",
       "more": "+{{count}}",
       "here_one": "{{count}} vous attend ici",
       "here_many": "{{count}} vous attendent ici",
@@ -11738,6 +11740,24 @@
     "screenLine": {
       "show": "Voir dans Écran",
       "held": "Une personne a pris le contrôle de l'écran"
+    },
+    "suggestion": {
+      "label": "Suggestion de session de code",
+      "detail": "{{repo}} · sur l'ordinateur de {{name}}",
+      "more": "Voir la demande",
+      "open": "Ouvrir la session",
+      "here": "Le faire ici",
+      "opening": "Ouverture de la session…",
+      "opened": "Vous avez ouvert la session",
+      "openedBy": "{{name}} a ouvert la session",
+      "keptHere": "Vous avez choisi de le faire ici",
+      "keptHereBy": "{{name}} a choisi de le faire ici",
+      "see": "Voir la session"
+    },
+    "from": {
+      "dm": "Ouverte depuis votre conversation avec {{name}}",
+      "channel": "Ouverte depuis #{{name}}",
+      "see": "Voir la conversation"
     }
   },
   "code": {
@@ -15956,7 +15976,9 @@
       "noComputerBrain": "Cet agent ne réfléchit pas sur un ordinateur. Choisissez-en un qui le fait, ou donnez-lui Claude Code ou Codex dans ses paramètres.",
       "repoNotAllowed": "Cet agent ne peut pas travailler dans ce dépôt. Choisissez-en un autre, ou ajoutez celui-ci dans les paramètres de l'agent.",
       "notYours": "Seule la personne qui a ouvert la session ou un administrateur peut la fermer.",
-      "notReady": "Le worktree de la session n'est pas encore prêt. Réessayez dans un instant."
+      "notReady": "Le worktree de la session n'est pas encore prêt. Réessayez dans un instant.",
+      "suggestionGone": "Cette suggestion a déjà reçu une réponse.",
+      "suggestionNotYours": "Seule la personne qui a demandé décide d'ouvrir la session."
     },
     "webhook": {
       "githubNoAccess": "Le GitHub de ce workspace ne peut pas créer de webhooks dans {{repo}}. Suis les étapes ci-dessous pour le créer à la main.",

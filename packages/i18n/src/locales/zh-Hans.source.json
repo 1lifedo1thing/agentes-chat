@@ -12241,6 +12241,9 @@
   "ask.kind.firstTask": {
     "value": "First task"
   },
+  "ask.kind.code": {
+    "value": "Suggests a code session"
+  },
   "ask.waitingYou": {
     "value": "waiting for you"
   },
@@ -12282,6 +12285,9 @@
   },
   "ask.bar.firstTask": {
     "value": "<b>{{name}}</b> suggests a first task · {{what}}"
+  },
+  "ask.bar.code": {
+    "value": "<b>{{name}}</b> suggests a code session · {{what}}"
   },
   "ask.bar.more": {
     "value": "+{{count}}"
@@ -27508,6 +27514,48 @@
   "codeSessions.screenLine.held": {
     "value": "A person has the screen"
   },
+  "codeSessions.suggestion.label": {
+    "value": "Code session suggestion"
+  },
+  "codeSessions.suggestion.detail": {
+    "value": "{{repo}} · on {{name}}'s computer"
+  },
+  "codeSessions.suggestion.more": {
+    "value": "See the request"
+  },
+  "codeSessions.suggestion.open": {
+    "value": "Open session"
+  },
+  "codeSessions.suggestion.here": {
+    "value": "Do it here"
+  },
+  "codeSessions.suggestion.opening": {
+    "value": "Opening the session…"
+  },
+  "codeSessions.suggestion.opened": {
+    "value": "You opened the session"
+  },
+  "codeSessions.suggestion.openedBy": {
+    "value": "{{name}} opened the session"
+  },
+  "codeSessions.suggestion.keptHere": {
+    "value": "You chose to do it here"
+  },
+  "codeSessions.suggestion.keptHereBy": {
+    "value": "{{name}} chose to do it here"
+  },
+  "codeSessions.suggestion.see": {
+    "value": "See session"
+  },
+  "codeSessions.from.dm": {
+    "value": "Opened from your conversation with {{name}}"
+  },
+  "codeSessions.from.channel": {
+    "value": "Opened from #{{name}}"
+  },
+  "codeSessions.from.see": {
+    "value": "See conversation"
+  },
   "code.ranSummary": {
     "value": {
       "one": "Ran {{count}} line of {{language}} · output {{size}}",
@@ -37903,6 +37951,12 @@
   },
   "errors.codeSession.notReady": {
     "value": "The session's worktree isn't ready yet. Try again in a moment."
+  },
+  "errors.codeSession.suggestionGone": {
+    "value": "This suggestion was answered already."
+  },
+  "errors.codeSession.suggestionNotYours": {
+    "value": "Only who asked decides whether to open the session."
   },
   "errors.webhook.githubNoAccess": {
     "value": "This workspace's GitHub can't add webhooks to {{repo}}. Follow the steps below to add it by hand."

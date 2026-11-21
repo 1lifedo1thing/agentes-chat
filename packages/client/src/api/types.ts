@@ -1,6 +1,7 @@
 /** Types of the private web-app API (`/api/app/*`, apps/server/src/routes/app). */
 
 import type { CanvasPreview, DocumentPreview, SheetPreview, SlidesPreview } from "@agenteschat/live";
+import type { CodeSuggestion } from "../code/types";
 import type { ChatPrefs } from "../lib/chat-look";
 import type { RoleId } from "../lib/new-agent";
 import type { OnboardingStepId } from "../lib/onboarding";
@@ -1852,6 +1853,14 @@ export type ChannelEvent =
   | { type: "block.state"; channelId: string; block: BlockState }
   /** A choice card was answered (ADR 0124). */
   | { type: "choices.updated"; channelId: string; choices: Choices }
+  /** A suggested code session was opened, kept in the chat, or waits again (ADR 0213 §11): the reply's card. */
+  | {
+      type: "code.suggestion";
+      channelId: string;
+      threadId: string | null;
+      messageId: string;
+      suggestion: CodeSuggestion;
+    }
   /** A long work changed (ADR 0121): moved, updated, waiting, queued or ended. Its anchor's line redraws. */
   | {
       type: "agent.work";

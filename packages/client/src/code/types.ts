@@ -30,6 +30,42 @@ export interface CodeSession {
   createdBy: string | null;
   createdAt: string;
   lastAt: string;
+  /** The conversation it was opened from (a suggestion there, ADR 0213 §11), on the session's own read only. */
+  from?: CodeSessionOrigin;
+}
+
+/** Where a session was opened from: a DM (`name` its agent's) or a channel (`name` the channel's). */
+export interface CodeSessionOrigin {
+  channelId: string;
+  messageId: string;
+  threadId: string | null;
+  kind: "dm" | "channel";
+  name: string;
+}
+
+/** Waiting for the person; being opened; opened as a session; kept in the chat. */
+export type CodeSuggestionStatus = "pending" | "opening" | "opened" | "here";
+
+/**
+ * A code session an agent suggested in the chat (ADR 0213 §11), on its reply's `meta.codeSuggestion`: the person who
+ * asked opens it (their words start it) or keeps the work in the conversation.
+ */
+export interface CodeSuggestion {
+  id: string;
+  agentId: string;
+  /** `owner/name` on GitHub, or a project's name on the agent's computer. */
+  repo: string;
+  title: string;
+  /** The person's words the session starts with ("Ver o pedido"). */
+  request: string;
+  requestMessageId: string;
+  /** The person who asked: the one who decides. */
+  askerId: string;
+  status: CodeSuggestionStatus;
+  sessionId?: string;
+  /** Who decided, and when. */
+  by?: string;
+  at?: string;
 }
 
 /** Where a session can start: the agents that think on a computer, each with the repositories it may use. */

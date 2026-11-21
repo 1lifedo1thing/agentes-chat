@@ -44,6 +44,7 @@ import {
   cacheAgentProposal,
   cacheApproval,
   cacheCardDelegate,
+  cacheCodeSuggestion,
   cacheDmRead,
   cacheMessage,
   cacheMessageActions,
@@ -865,6 +866,10 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
       // A comment on a picture, a video or a PDF was resolved or opened again (ADR 0208): its pin and line follow.
       if (event.type === "message.resolved") {
         cacheResolved(qc, orgId, event.channelId, event.messageId, event.resolved);
+      }
+      // A suggested code session was opened, kept here, or waits again (ADR 0213 §11): its card under the reply.
+      if (event.type === "code.suggestion") {
+        cacheCodeSuggestion(qc, orgId, event.channelId, event.messageId, event.suggestion);
       }
       // Act with undo: an agent message's receipts changed (made, undone, redone): replace the list.
       // A long work moved, updated or ended (ADR 0121): its anchor's line redraws; its card on the board too.

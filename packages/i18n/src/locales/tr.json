@@ -4976,7 +4976,8 @@
       "proposal": "Bir değişiklik öneriyor",
       "agent": "Yeni bir ajan öneriyor",
       "team": "Bir ekip öneriyor",
-      "firstTask": "İlk görev"
+      "firstTask": "İlk görev",
+      "code": "Bir kod oturumu öneriyor"
     },
     "waitingYou": "sizi bekliyor",
     "waitingFor": "{{name}} bekleniyor",
@@ -4993,6 +4994,7 @@
       "agent": "<b>{{name}}</b> yeni bir ajan öneriyor · {{what}}",
       "team": "<b>{{name}}</b> bir ekip öneriyor · {{what}}",
       "firstTask": "<b>{{name}}</b> ilk görevi öneriyor · {{what}}",
+      "code": "<b>{{name}}</b> bir kod oturumu öneriyor · {{what}}",
       "more": "+{{count}}",
       "here_one": "Burada sizi bekleyen {{count}} şey var",
       "here_other": "Burada sizi bekleyen {{count}} şey var",
@@ -11232,6 +11234,24 @@
     "screenLine": {
       "show": "Ekranda gör",
       "held": "Ekranın kontrolü bir kişide"
+    },
+    "suggestion": {
+      "label": "Kod oturumu önerisi",
+      "detail": "{{repo}} · {{name}} adlı ajanın bilgisayarında",
+      "more": "İsteği gör",
+      "open": "Oturumu aç",
+      "here": "Burada yap",
+      "opening": "Oturum açılıyor…",
+      "opened": "Oturumu açtınız",
+      "openedBy": "{{name}} oturumu açtı",
+      "keptHere": "Burada yapmayı seçtiniz",
+      "keptHereBy": "{{name}} burada yapmayı seçti",
+      "see": "Oturumu gör"
+    },
+    "from": {
+      "dm": "{{name}} ile konuşmanızdan açıldı",
+      "channel": "#{{name}} kanalından açıldı",
+      "see": "Konuşmayı gör"
     }
   },
   "code": {
@@ -15343,7 +15363,9 @@
       "noComputerBrain": "Bu ajan bir bilgisayarda düşünmüyor. Bilgisayarda düşünen bir ajan seçin ya da ayarlarından ona Claude Code veya Codex verin.",
       "repoNotAllowed": "Bu ajan o depoda çalışamaz. Başka bir depo seçin ya da ajanın ayarlarından bu depoyu ekleyin.",
       "notYours": "Oturumu yalnızca açan kişi veya bir yönetici kapatabilir.",
-      "notReady": "Oturumun worktree'si henüz hazır değil. Birazdan tekrar deneyin."
+      "notReady": "Oturumun worktree'si henüz hazır değil. Birazdan tekrar deneyin.",
+      "suggestionGone": "Bu öneri zaten yanıtlandı.",
+      "suggestionNotYours": "Oturumun açılıp açılmayacağına yalnızca isteyen kişi karar verir."
     },
     "webhook": {
       "githubNoAccess": "Bu çalışma alanının GitHub'ı {{repo}} içinde webhook oluşturamıyor. Elle oluşturmak için aşağıdaki adımları izle.",

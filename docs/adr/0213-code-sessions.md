@@ -204,6 +204,29 @@ The phone app has Code as a row of You, with the same API and the conversation a
   changes and its commits. Folders, read-only files, diffs and who is in the session are screens of their own.
 - The app hears `code_session.updated`, as the web does.
 
+### 11. A session suggested in the chat
+
+When a person asks an agent that programs on a computer (Claude Code or Codex) to change code in a project (fix a bug,
+build or refactor something) in a conversation outside a session, the agent suggests a session instead of changing the
+project there. Questions, explanations and quick looks it still answers in the conversation.
+
+- `suggest_code_session` (`code-suggestions.ts`) takes the project (`owner/name` on GitHub or a project's name on the
+  computer) and a short title, and is checked as a session would be (the agent's repository list, a project's name).
+  It is listed only for those agents, in runs a person can answer, and hidden in a session (`CODE_SESSION_HIDDEN_TOOLS`);
+  "How you work" says when to use it only where it applies (`CODE_SESSION_LINE`). It talks, it doesn't work: it isn't
+  a step of the reply's work, and a run that only suggested hasn't started the change.
+- The suggestion rides on the agent's reply (`meta.codeSuggestion`, as a mission's link does): the project, the title,
+  the words of the message the run answered and who wrote them. The apps draw it as the chat's request card, kind
+  `code` ("Sugere uma sessão de código"), with "Ver o pedido" opening those words, "Abrir sessão" and "Fazer aqui".
+- Only the person who asked decides; anyone else reads who it waits for. "Abrir sessão" makes the session as that
+  person, their words its first message and the suggestion's title its name, and remembers the message it came from
+  (`meta.codeSession.from` on the root): the session's page leads back to it ("Aberta da sua conversa com o Leo"), for
+  whoever can open that conversation. The suggestion is taken first (`opening`), so a second click opens nothing; a
+  session that can't open leaves it waiting again, and the error says why.
+- "Fazer aqui" keeps the work in the conversation: the agent is told and woken there. Either way the agent reads what
+  was chosen as a `proposal_result` notice, which people never see (the card says it). Each change of the card reaches
+  the apps as `code.suggestion`.
+
 ## Consequences
 
 - No new runner op for the worktree or the diff: the session reuses `mission.worktree` and `exec`. The terminal's

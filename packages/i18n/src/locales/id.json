@@ -4815,7 +4815,8 @@
       "proposal": "Mengusulkan perubahan",
       "agent": "Mengusulkan agen baru",
       "team": "Mengusulkan tim",
-      "firstTask": "Tugas pertama"
+      "firstTask": "Tugas pertama",
+      "code": "Menyarankan sesi kode"
     },
     "waitingYou": "menunggumu",
     "waitingFor": "menunggu {{name}}",
@@ -4832,6 +4833,7 @@
       "agent": "<b>{{name}}</b> mengusulkan agen baru · {{what}}",
       "team": "<b>{{name}}</b> mengusulkan tim · {{what}}",
       "firstTask": "<b>{{name}}</b> menyarankan tugas pertama · {{what}}",
+      "code": "<b>{{name}}</b> menyarankan sesi kode · {{what}}",
       "more": "+{{count}}",
       "here_other": "{{count}} menunggumu di sini",
       "see": "Lihat"
@@ -10889,6 +10891,24 @@
     "screenLine": {
       "show": "Lihat di Layar",
       "held": "Seseorang sedang mengendalikan layar"
+    },
+    "suggestion": {
+      "label": "Saran sesi kode",
+      "detail": "{{repo}} · di komputer {{name}}",
+      "more": "Lihat permintaan",
+      "open": "Buka sesi",
+      "here": "Kerjakan di sini",
+      "opening": "Membuka sesi…",
+      "opened": "Kamu membuka sesi",
+      "openedBy": "{{name}} membuka sesi",
+      "keptHere": "Kamu memilih mengerjakannya di sini",
+      "keptHereBy": "{{name}} memilih mengerjakannya di sini",
+      "see": "Lihat sesi"
+    },
+    "from": {
+      "dm": "Dibuka dari percakapanmu dengan {{name}}",
+      "channel": "Dibuka dari #{{name}}",
+      "see": "Lihat percakapan"
     }
   },
   "code": {
@@ -14881,7 +14901,9 @@
       "noComputerBrain": "Agen ini tidak berpikir di komputer. Pilih agen yang berpikir di komputer, atau beri Claude Code atau Codex lewat pengaturannya.",
       "repoNotAllowed": "Agen ini tidak bisa bekerja di repositori itu. Pilih yang lain, atau tambahkan di pengaturan agen.",
       "notYours": "Hanya pembuka sesi atau administrator yang bisa menutupnya.",
-      "notReady": "Worktree sesi belum siap. Coba lagi sebentar lagi."
+      "notReady": "Worktree sesi belum siap. Coba lagi sebentar lagi.",
+      "suggestionGone": "Saran ini sudah dijawab.",
+      "suggestionNotYours": "Hanya yang meminta yang memutuskan apakah sesi dibuka."
     },
     "webhook": {
       "githubNoAccess": "GitHub workspace ini tidak bisa membuat webhook di {{repo}}. Ikuti langkah di bawah untuk membuatnya manual.",

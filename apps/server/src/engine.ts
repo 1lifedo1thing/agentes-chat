@@ -38,6 +38,7 @@ import {
   createChatToolSource,
   createClaudeCodeBrain,
   createCoAuthorToolSource,
+  createCodeSuggestionToolSource,
   createCommentToolSource,
   createConnectorToolSource,
   createContextToolSource,
@@ -470,6 +471,8 @@ export function buildEngine(o: EngineOptions) {
       }),
       createReactToolSource({ pubsub: adapters.pubsub }),
       createSayNowToolSource({ pubsub: adapters.pubsub }),
+      // An agent that programs on a computer suggests a code session for a change asked in the chat (ADR 0213 §11).
+      createCodeSuggestionToolSource(),
       // A GIF or the agent's sticker when asked (ADR 0091): listed by the workspace's switches and the agent's.
       createMediaToolSource({ pubsub: adapters.pubsub, gifs: adapters.gifs ?? null }),
       // Long work goes to the background and reports back by itself, on every brain (ADR 0121).

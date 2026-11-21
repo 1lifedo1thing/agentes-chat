@@ -149,6 +149,22 @@ describe("a session's screens", () => {
   });
 });
 
+describe("a session suggested in the chat (ADR 0213 §11)", () => {
+  test("the agent's reply carries the card; a session opened from it leads back to where it came from", () => {
+    expect(src("features/chat/MessageRow.tsx")).toContain(
+      "{suggestion ? <CodeSuggestionCard message={m} suggestion={suggestion} /> : null}",
+    );
+    expect(src("features/chat/screen/useChatRows.ts")).toContain(
+      '? [{ kind: "codeOrigin", key: "code-origin", sessionId: code.sessionId }]',
+    );
+    expect(src("features/chat/screen/ChatList.tsx")).toContain("return <CodeOrigin sessionId={item.sessionId} />;");
+    // Only the person who asked decides: anyone else reads who it waits for.
+    const card = src("features/coding/SuggestionCard.tsx");
+    expect(card).toContain("suggestion.askerId === meId");
+    expect(card).toContain('waitsFor={t("ask.waitingFor", { name: asker })}');
+  });
+});
+
 describe("the session's conversation", () => {
   test("its root is never shown; its pill opens its code, its bar holds its agent's computer and its menu", () => {
     expect(src("features/chat/screen/useChatRows.ts")).toContain(

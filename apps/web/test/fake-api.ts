@@ -108,7 +108,7 @@ import type {
   UsageQueue,
   WorkspaceLimits,
 } from "@agenteschat/client";
-import { ApiError } from "@agenteschat/client";
+import { ApiError, codeSuggestionOf } from "@agenteschat/client";
 import { moveInGroups } from "@agenteschat/client/lib/agent-groups";
 import { answersOthers, audienceOf, listsAllAgents } from "@agenteschat/client/lib/audience";
 import type { ChatPrefs } from "@agenteschat/client/lib/chat-look";
@@ -4636,6 +4636,40 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
         size: 0,
         truncated: false,
       }),
+      // A session an agent suggested in the chat (ADR 0213 §11): opened (just started, preparing) or kept here.
+      openSuggestion: async (orgId: string, messageId: string) => {
+        state.calls.push({ method: "code.openSuggestion", args: [orgId, messageId] });
+        const s = codeSuggestionOf(state.messages.find((m) => m.id === messageId)?.meta);
+        if (s?.status !== "pending") throw new ApiError(409, "code_session.suggestion_gone", "Answered already");
+        const now = new Date().toISOString();
+        return {
+          id: "0193f1a2-7b3c-7d4e-8f90-1a2b3c4d5e6f",
+          channelId: "ch-code-1",
+          rootId: "m-code-root-1",
+          title: s.title,
+          repo: s.repo,
+          branch: null,
+          baseBranch: null,
+          agentId: s.agentId,
+          machineId: null,
+          worktree: { state: "preparing" as const, error: null, errorCode: null },
+          local: !s.repo.includes("/"),
+          pr: null,
+          stat: { files: 0, added: 0, removed: 0, at: null },
+          work: "preparing" as const,
+          createdBy: state.me?.user.id ?? null,
+          createdAt: now,
+          lastAt: now,
+        };
+      },
+      keepHere: async (orgId: string, messageId: string) => {
+        state.calls.push({ method: "code.keepHere", args: [orgId, messageId] });
+        const s = codeSuggestionOf(state.messages.find((m) => m.id === messageId)?.meta);
+        if (s?.status !== "pending") throw new ApiError(409, "code_session.suggestion_gone", "Answered already");
+        return {
+          suggestion: { ...s, status: "here" as const, by: state.me?.user.id ?? "", at: new Date().toISOString() },
+        };
+      },
     },
     browser: browser.client,
     desktop: browser.desktop,

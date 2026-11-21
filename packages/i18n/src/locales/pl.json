@@ -5342,7 +5342,8 @@
       "proposal": "Proponuje zmianę",
       "agent": "Proponuje nowego agenta",
       "team": "Proponuje zespół",
-      "firstTask": "Pierwsze zadanie"
+      "firstTask": "Pierwsze zadanie",
+      "code": "Proponuje sesję kodu"
     },
     "waitingYou": "czeka na ciebie",
     "waitingFor": "czeka na: {{name}}",
@@ -5359,6 +5360,7 @@
       "agent": "<b>{{name}}</b> proponuje nowego agenta · {{what}}",
       "team": "<b>{{name}}</b> proponuje zespół · {{what}}",
       "firstTask": "<b>{{name}}</b> proponuje pierwsze zadanie · {{what}}",
+      "code": "<b>{{name}}</b> proponuje sesję kodu · {{what}}",
       "more": "+{{count}}",
       "here_one": "{{count}} czeka tu na ciebie",
       "here_few": "{{count}} czekają tu na ciebie",
@@ -12143,6 +12145,24 @@
     "screenLine": {
       "show": "Zobacz na Ekranie",
       "held": "Ekranem steruje osoba"
+    },
+    "suggestion": {
+      "label": "Propozycja sesji kodu",
+      "detail": "{{repo}} · na komputerze agenta {{name}}",
+      "more": "Zobacz prośbę",
+      "open": "Otwórz sesję",
+      "here": "Zrób to tutaj",
+      "opening": "Otwieranie sesji…",
+      "opened": "Otworzono sesję",
+      "openedBy": "Sesja otwarta przez: {{name}}",
+      "keptHere": "Wybrano pracę tutaj",
+      "keptHereBy": "Pracę tutaj wybrał(a): {{name}}",
+      "see": "Zobacz sesję"
+    },
+    "from": {
+      "dm": "Otwarta z rozmowy z agentem {{name}}",
+      "channel": "Otwarta z #{{name}}",
+      "see": "Zobacz rozmowę"
     }
   },
   "code": {
@@ -16511,7 +16531,9 @@
       "noComputerBrain": "Ten agent nie myśli na komputerze. Wybierz takiego, który myśli, albo daj mu Claude Code lub Codex w jego ustawieniach.",
       "repoNotAllowed": "Ten agent nie może pracować w tym repozytorium. Wybierz inne albo dodaj je w ustawieniach agenta.",
       "notYours": "Sesję może zamknąć tylko osoba, która ją otworzyła, lub administrator.",
-      "notReady": "Worktree sesji nie jest jeszcze gotowy. Spróbuj ponownie za chwilę."
+      "notReady": "Worktree sesji nie jest jeszcze gotowy. Spróbuj ponownie za chwilę.",
+      "suggestionGone": "Na tę propozycję już odpowiedziano.",
+      "suggestionNotYours": "Tylko osoba, która prosiła, decyduje, czy otworzyć sesję."
     },
     "webhook": {
       "githubNoAccess": "GitHub tego workspace’u nie może tworzyć webhooków w {{repo}}. Wykonaj kroki poniżej, żeby utworzyć go ręcznie.",

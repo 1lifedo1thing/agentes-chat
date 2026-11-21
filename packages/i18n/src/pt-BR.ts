@@ -5249,6 +5249,7 @@ export const ptBR = {
       agent: "Propõe um novo agente",
       team: "Propõe um time",
       firstTask: "Primeira tarefa",
+      code: "Sugere uma sessão de código",
     },
     waitingYou: "esperando você",
     waitingFor: "esperando {{name}}",
@@ -5266,6 +5267,7 @@ export const ptBR = {
       agent: "<b>{{name}}</b> propõe um novo agente · {{what}}",
       team: "<b>{{name}}</b> propõe um time · {{what}}",
       firstTask: "<b>{{name}}</b> sugere uma primeira tarefa · {{what}}",
+      code: "<b>{{name}}</b> sugere uma sessão de código · {{what}}",
       more: "+{{count}}",
       /** What waits on me here with its card not loaded (older, or in a thread): "Ver" goes to the oldest. */
       here_one: "{{count}} esperando você aqui",
@@ -11748,6 +11750,29 @@ export const ptBR = {
       show: "Ver na Tela",
       held: "Uma pessoa está no controle da tela",
     },
+    /** An agent suggests a session for a change asked in the chat (ADR 0213 §11): the card under its reply. */
+    suggestion: {
+      label: "Sugestão de sessão de código",
+      /** The project, and whose computer it works on. */
+      detail: "{{repo}} · no computador do {{name}}",
+      detail_female: "{{repo}} · no computador da {{name}}",
+      more: "Ver o pedido",
+      open: "Abrir sessão",
+      here: "Fazer aqui",
+      opening: "Abrindo a sessão…",
+      opened: "Você abriu a sessão",
+      openedBy: "{{name}} abriu a sessão",
+      keptHere: "Você preferiu fazer aqui",
+      keptHereBy: "{{name}} preferiu fazer aqui",
+      see: "Ver sessão",
+    },
+    /** At the top of a session opened from a suggestion: where it came from. */
+    from: {
+      dm: "Aberta da sua conversa com o {{name}}",
+      dm_female: "Aberta da sua conversa com a {{name}}",
+      channel: "Aberta de #{{name}}",
+      see: "Ver conversa",
+    },
   },
   code: {
     ranSummary_one: "Rodou {{count}} linha de {{language}} · saída {{size}}",
@@ -15659,6 +15684,8 @@ export const ptBR = {
         "Este agente não pode trabalhar nesse repositório. Escolha outro, ou adicione esse nas configurações do agente.",
       notYours: "Só quem abriu a sessão, ou um admin, fecha a sessão.",
       notReady: "A worktree da sessão ainda não está pronta. Tente de novo daqui a pouco.",
+      suggestionGone: "Essa sugestão já foi respondida.",
+      suggestionNotYours: "Só quem pediu decide se abre a sessão.",
     },
     webhook: {
       githubNoAccess:

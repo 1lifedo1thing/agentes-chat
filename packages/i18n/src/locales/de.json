@@ -4992,7 +4992,8 @@
       "proposal": "Schlägt eine Änderung vor",
       "agent": "Schlägt einen neuen Agenten vor",
       "team": "Schlägt ein Team vor",
-      "firstTask": "Erste Aufgabe"
+      "firstTask": "Erste Aufgabe",
+      "code": "Schlägt eine Code-Sitzung vor"
     },
     "waitingYou": "wartet auf dich",
     "waitingFor": "wartet auf {{name}}",
@@ -5009,6 +5010,7 @@
       "agent": "<b>{{name}}</b> schlägt einen neuen Agenten vor · {{what}}",
       "team": "<b>{{name}}</b> schlägt ein Team vor · {{what}}",
       "firstTask": "<b>{{name}}</b> schlägt eine erste Aufgabe vor · {{what}}",
+      "code": "<b>{{name}}</b> schlägt eine Code-Sitzung vor · {{what}}",
       "more": "+{{count}}",
       "here_one": "{{count}} wartet hier auf dich",
       "here_other": "{{count}} warten hier auf dich",
@@ -11291,6 +11293,24 @@
     "screenLine": {
       "show": "Auf dem Bildschirm ansehen",
       "held": "Eine Person steuert den Bildschirm"
+    },
+    "suggestion": {
+      "label": "Vorschlag für eine Code-Sitzung",
+      "detail": "{{repo}} · auf dem Computer von {{name}}",
+      "more": "Anfrage ansehen",
+      "open": "Sitzung öffnen",
+      "here": "Hier erledigen",
+      "opening": "Sitzung wird geöffnet…",
+      "opened": "Du hast die Sitzung geöffnet",
+      "openedBy": "{{name}} hat die Sitzung geöffnet",
+      "keptHere": "Du wolltest es hier erledigen",
+      "keptHereBy": "{{name}} wollte es hier erledigen",
+      "see": "Sitzung ansehen"
+    },
+    "from": {
+      "dm": "Aus deinem Gespräch mit {{name}} geöffnet",
+      "channel": "Aus #{{name}} geöffnet",
+      "see": "Gespräch ansehen"
     }
   },
   "code": {
@@ -15408,7 +15428,9 @@
       "noComputerBrain": "Dieser Agent denkt nicht auf einem Computer. Wähl einen, der es tut, oder gib ihm in seinen Einstellungen Claude Code oder Codex.",
       "repoNotAllowed": "Dieser Agent kann nicht in diesem Repository arbeiten. Wähl ein anderes oder füge es in den Einstellungen des Agenten hinzu.",
       "notYours": "Nur wer die Sitzung geöffnet hat oder ein Administrator kann sie schließen.",
-      "notReady": "Der Worktree der Sitzung ist noch nicht bereit. Versuch es gleich noch einmal."
+      "notReady": "Der Worktree der Sitzung ist noch nicht bereit. Versuch es gleich noch einmal.",
+      "suggestionGone": "Dieser Vorschlag wurde schon beantwortet.",
+      "suggestionNotYours": "Nur wer gefragt hat, entscheidet, ob die Sitzung geöffnet wird."
     },
     "webhook": {
       "githubNoAccess": "Das GitHub dieses Workspace kann keine Webhooks in {{repo}} anlegen. Folge den Schritten unten, um ihn von Hand anzulegen.",

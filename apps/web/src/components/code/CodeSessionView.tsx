@@ -1,5 +1,6 @@
 import {
   type CodeSession,
+  type CodeSessionOrigin,
   keys,
   useApi,
   useChannelMembers,
@@ -9,9 +10,22 @@ import {
   useThreadInfo,
 } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
+import { agentGrammar } from "@agenteschat/client/lib/grammar";
+import { messagePath } from "@agenteschat/client/lib/message-links";
 import { can } from "@agenteschat/client/lib/permissions";
 import { planMeterText, usageShown } from "@agenteschat/client/lib/plan-usage";
-import { AvatarStack, Button, Icon, Menu, MenuItem, Popover, planLevel, planLine } from "@agenteschat/ui";
+import {
+  AvatarStack,
+  Button,
+  EventPill,
+  EventPillMore,
+  Icon,
+  Menu,
+  MenuItem,
+  Popover,
+  planLevel,
+  planLine,
+} from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
@@ -29,10 +43,10 @@ import { CodeDockSky } from "./CodeSky";
 import { useCodeKey } from "./shortcuts";
 
 /**
- * One code session (ADR 0213): the conversation with its agent under the session's header (name, state and branch,
- * the git button), the chat's own thread screen (tool rows, steering, stop, approvals), and the side panel. The
- * gutter between them drags (double click puts it back). The screen is the panel's: the conversation's browser cards
- * are a line that opens it, and it turns to the screen as the agent starts using it.
+ * One code session (ADR 0213): the conversation with its agent under the session's header (its name), the chat's own
+ * thread screen (tool rows, steering, stop, approvals), and the side panel. The gutter between them drags (double
+ * click puts it back). The screen is the panel's: the conversation's browser cards are a line that opens it, and it
+ * turns to the screen as the agent starts using it.
  */
 export function CodeSessionView({ sessionId }: { sessionId: string }) {
   const { t } = useTranslation();
@@ -93,11 +107,44 @@ function CodeConversation({ session }: { session: CodeSession }) {
         composerLabel: t("codeSessions.view.composer"),
         composerNote: <AgentStatus session={session} />,
         composerSky: <CodeDockSky />,
+        ...(session.from ? { top: <CodeOrigin from={session.from} /> } : {}),
         panel: true,
         openThread: false,
         task: true,
       }}
     />
+  );
+}
+
+/**
+ * Where the session came from (a suggestion in a conversation, ADR 0213 §11): one line at its top, with the way back
+ * to that message. Only for whoever can open that conversation (the server leaves it out for anyone else).
+ */
+function CodeOrigin({ from }: { from: CodeSessionOrigin }) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const navigate = useNavigate();
+  return (
+    <EventPill
+      className="cn-pill"
+      mark={<Icon name="message" size={14} />}
+      actions={
+        <EventPillMore
+          open={false}
+          onClick={() =>
+            void navigate({
+              href: messagePath(org.id, { id: from.messageId, channelId: from.channelId, threadId: from.threadId }),
+            })
+          }
+        >
+          {t("codeSessions.from.see")}
+        </EventPillMore>
+      }
+    >
+      {from.kind === "dm"
+        ? t("codeSessions.from.dm", agentGrammar(from.name))
+        : t("codeSessions.from.channel", { name: from.name })}
+    </EventPill>
   );
 }
 

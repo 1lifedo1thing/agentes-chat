@@ -147,6 +147,7 @@ import {
   cliToolSummary,
   verbOfTool,
 } from "./cli-tools";
+import { type CodeSuggestion, codeSuggestionApplies, SUGGEST_CODE_SESSION_TOOL } from "./code-suggestions";
 import {
   kickRoomQueue,
   publishQueueChanged,
@@ -502,8 +503,11 @@ const ASKED_GRACE_MS = 250;
 const DECIDED_LINE_MAX = 2000;
 /** How many apps a reply's `meta.work.calls` names: its closed block stacks only a few logos. */
 const WORK_CALLS = 12;
-/** The calls a reply's `meta.work` never counts, by name: a reaction, and looking a tool up. */
-const UNCOUNTED_TOOLS = `^(${REACT_TOOL}|${SAY_NOW_TOOL}|${ON_DEMAND_FIND}|${ON_DEMAND_USE})$|_${ON_DEMAND_FIND}$`;
+/**
+ * The calls a reply's `meta.work` never counts, by name: a reaction, looking a tool up, and a suggested code session
+ * (its card is on the reply, ADR 0213 §11), also by a computer brain's bridge name.
+ */
+const UNCOUNTED_TOOLS = `^(${REACT_TOOL}|${SAY_NOW_TOOL}|${ON_DEMAND_FIND}|${ON_DEMAND_USE}|${SUGGEST_CODE_SESSION_TOOL})$|_(${ON_DEMAND_FIND}|${SUGGEST_CODE_SESSION_TOOL})$`;
 
 /**
  * What the agent engine needs (ADR 0032). The engine is this file: it owns the
@@ -660,6 +664,8 @@ export interface Transcript {
   artifacts?: ArtifactLink[];
   /** A mission proposed with its home elsewhere (a flat DM's new thread): the reply carries its link card (`meta.missionLink`). */
   missionLink?: { missionId: string; threadId: string } | null;
+  /** A code session it suggested (ADR 0213 §11): the reply carries the person's card (`meta.codeSuggestion`). */
+  codeSuggestion?: CodeSuggestion | null;
   /** Agents it consulted (`ask_agent`, ADR 0034), not yet shown on a posted message (`meta.consulted`). */
   consulted?: { agentId: string; consultationId: string; status: string; question?: string; answer?: string | null }[];
   /** Its browser calls since the last post, for the card of where it browsed (`meta.browser`). */
@@ -2538,11 +2544,15 @@ async function executeRunInner(
       ? browsersPrompt(await agentBrowserProfiles(db, run.orgId, agent.id), agent.browserProfileId)
       : "";
     // Listed in every run of the agent (`EVERY_TOOL`): the prompt speaks of them only where they apply.
-    const [workApplies, choicesApply, sayNowHere] = await Promise.all([
+    const [workApplies, choicesApply, sayNowHere, codeHere] = await Promise.all([
       every ? workMayStart(ctx) : true,
       every ? someoneAnswers(ctx) : true,
       // Listed in every run with an id: the line before slow work is spoken of only where people read it as it goes.
       tools.some((t) => t.name === SAY_NOW_TOOL) ? sayNowApplies(db, run, sealedAtClaim).catch(() => false) : false,
+      // A session is suggested to a person's request outside one (ADR 0213 §11): spoken of only there.
+      tools.some((t) => t.name === SUGGEST_CODE_SESSION_TOOL)
+        ? codeSuggestionApplies(db, run).catch(() => false)
+        : false,
     ]);
     const [context, memory, wikiPages, rules] = await Promise.all([
       buildRunContext(db, run, agent, {
@@ -2553,6 +2563,7 @@ async function executeRunInner(
         followUp: tools.some((t) => t.name === FOLLOW_UP_TOOL),
         work: workApplies && tools.some((t) => t.name === WORK_IN_BACKGROUND_TOOL),
         sayNow: sayNowHere,
+        codeSessions: codeHere,
         blocks: tools.some((t) => t.name === SHOW_BLOCK_TOOL),
         // Granted is enough: on demand their group is one `use_tool` away (ADR 0196 §6). `image_search` is every
         // agent's (no scope), so it says nothing about the Drive's.
@@ -7404,9 +7415,9 @@ function createTurnText(
 const FEEDBACK_SEND = "feedbackSend";
 
 /**
- * Moves pending memory updates, artifacts, a proposed mission's link, the
+ * Moves pending memory updates, artifacts, a proposed mission's link, a suggested code session, the
  * agents it consulted, where it browsed and what it did on its desktop onto the
- * message being posted (the "memory updated", file preview, mission link,
+ * message being posted (the "memory updated", file preview, mission link, code session,
  * "message from @agent", browser and desktop cards), a report it offered about the app (its row under the reply), and
  * that a file it opened reached it as text only.
  */
@@ -7414,6 +7425,7 @@ function takeMemoryUpdates(t: Transcript): Record<string, unknown> | undefined {
   const updates = t.memoryUpdates ?? [];
   const files = t.artifacts ?? [];
   const link = t.missionLink ?? null;
+  const suggestion = t.codeSuggestion ?? null;
   const consulted = t.consulted ?? [];
   const browser = t.browser ?? [];
   const desktop = t.desktop ?? [];
@@ -7428,6 +7440,7 @@ function takeMemoryUpdates(t: Transcript): Record<string, unknown> | undefined {
     updates.length === 0 &&
     files.length === 0 &&
     !link &&
+    !suggestion &&
     consulted.length === 0 &&
     browser.length === 0 &&
     desktop.length === 0 &&
@@ -7437,6 +7450,7 @@ function takeMemoryUpdates(t: Transcript): Record<string, unknown> | undefined {
   t.memoryUpdates = [];
   t.artifacts = [];
   t.missionLink = null;
+  t.codeSuggestion = null;
   t.consulted = [];
   t.browser = [];
   t.desktop = [];
@@ -7451,6 +7465,7 @@ function takeMemoryUpdates(t: Transcript): Record<string, unknown> | undefined {
   if (updates.length > 0) meta.memoryUpdates = updates;
   if (files.length > 0) meta.artifacts = files;
   if (link) meta.missionLink = link;
+  if (suggestion) meta.codeSuggestion = suggestion;
   if (consulted.length > 0) meta.consulted = consulted;
   if (browser.length > 0) meta.browser = { steps: browser };
   if (desktop.length > 0) meta.desktop = { steps: desktop };

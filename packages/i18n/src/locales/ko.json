@@ -4803,7 +4803,8 @@
       "proposal": "변경을 제안해요",
       "agent": "새 에이전트를 제안해요",
       "team": "팀을 제안해요",
-      "firstTask": "첫 작업"
+      "firstTask": "첫 작업",
+      "code": "코드 세션을 제안해요"
     },
     "waitingYou": "내 확인 대기",
     "waitingFor": "{{name}}님 대기 중",
@@ -4820,6 +4821,7 @@
       "agent": "<b>{{name}}</b>이(가) 새 에이전트를 제안해요 · {{what}}",
       "team": "<b>{{name}}</b>가 팀을 제안해요 · {{what}}",
       "firstTask": "<b>{{name}}</b>가 첫 작업을 제안해요 · {{what}}",
+      "code": "<b>{{name}}</b>가 코드 세션을 제안해요 · {{what}}",
       "more": "+{{count}}",
       "here_other": "여기서 내 확인을 기다리는 항목 {{count}}개",
       "see": "보기"
@@ -10832,6 +10834,24 @@
     "screenLine": {
       "show": "화면에서 보기",
       "held": "사람이 화면을 제어 중이에요"
+    },
+    "suggestion": {
+      "label": "코드 세션 제안",
+      "detail": "{{repo}} · {{name}}의 컴퓨터",
+      "more": "요청 보기",
+      "open": "세션 열기",
+      "here": "여기서 하기",
+      "opening": "세션을 여는 중…",
+      "opened": "세션을 열었어요",
+      "openedBy": "{{name}}님이 세션을 열었어요",
+      "keptHere": "여기서 하기로 했어요",
+      "keptHereBy": "{{name}}님이 여기서 하기로 했어요",
+      "see": "세션 보기"
+    },
+    "from": {
+      "dm": "{{name}}와의 대화에서 열었어요",
+      "channel": "#{{name}}에서 열었어요",
+      "see": "대화 보기"
     }
   },
   "code": {
@@ -14822,7 +14842,9 @@
       "noComputerBrain": "이 에이전트는 컴퓨터에서 생각하지 않아요. 컴퓨터에서 생각하는 에이전트를 고르거나, 에이전트 설정에서 Claude Code나 Codex를 지정하세요.",
       "repoNotAllowed": "이 에이전트는 그 저장소에서 작업할 수 없어요. 다른 저장소를 고르거나, 에이전트 설정에서 추가하세요.",
       "notYours": "세션은 연 사람이나 관리자만 닫을 수 있어요.",
-      "notReady": "세션의 워크트리가 아직 준비되지 않았어요. 잠시 후 다시 시도하세요."
+      "notReady": "세션의 워크트리가 아직 준비되지 않았어요. 잠시 후 다시 시도하세요.",
+      "suggestionGone": "이 제안에는 이미 답했어요.",
+      "suggestionNotYours": "세션을 열지는 요청한 사람만 정할 수 있어요."
     },
     "webhook": {
       "githubNoAccess": "이 워크스페이스의 GitHub은 {{repo}}에 웹훅을 만들 수 없어요. 아래 단계를 따라 직접 만들어 주세요.",

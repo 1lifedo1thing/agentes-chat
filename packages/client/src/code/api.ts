@@ -8,6 +8,7 @@ import type {
   CodeGitLog,
   CodeSession,
   CodeStartOptions,
+  CodeSuggestion,
   CreateCodeSessionInput,
 } from "./types";
 
@@ -37,6 +38,10 @@ export interface CodeApi {
   files(orgId: string, sessionId: string): Promise<CodeFiles>;
   /** One file, read-only. */
   file(orgId: string, sessionId: string, path: string): Promise<CodeFile>;
+  /** "Abrir sessão" on a suggestion in the chat (ADR 0213 §11): the session, started with the asker's words. */
+  openSuggestion(orgId: string, messageId: string): Promise<CodeSession>;
+  /** "Fazer aqui": the agent goes on in the conversation. */
+  keepHere(orgId: string, messageId: string): Promise<{ suggestion: CodeSuggestion }>;
 }
 
 export function createCodeApi(request: Requester): CodeApi {
@@ -56,5 +61,11 @@ export function createCodeApi(request: Requester): CodeApi {
     gitLog: (orgId, sessionId) => request<CodeGitLog>(`${one(orgId, sessionId)}/git/log`),
     files: (orgId, sessionId) => request<CodeFiles>(`${one(orgId, sessionId)}/files`),
     file: (orgId, sessionId, path) => request<CodeFile>(`${one(orgId, sessionId)}/file`, { query: { path } }),
+    openSuggestion: (orgId, messageId) =>
+      request<CodeSession>(`${org(orgId)}/code-sessions/suggestions/${enc(messageId)}/open`, { json: {} }),
+    keepHere: (orgId, messageId) =>
+      request<{ suggestion: CodeSuggestion }>(`${org(orgId)}/code-sessions/suggestions/${enc(messageId)}/here`, {
+        json: {},
+      }),
   };
 }

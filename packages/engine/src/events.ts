@@ -10,6 +10,7 @@ import type { ChoicesView, PollView } from "./blocks";
 import type { BrowserHandoffView } from "./browser/handoff";
 import type { CalendarEventView, CalendarProposalView } from "./calendar";
 import type { CliProgress, CliToolSummary } from "./cli-tools";
+import type { CodeSuggestion } from "./code-suggestions";
 import type { FeedbackOfferView } from "./feedback-offers";
 import type { IssueActivityView, IssueView } from "./issues";
 import type { MachineTaskView } from "./machine-tasks";
@@ -612,6 +613,14 @@ export type ChannelEvent =
   | { type: "block.state"; channelId: string; block: BlockStateView }
   /** A choice card was answered (ADR 0124). */
   | { type: "choices.updated"; channelId: string; choices: ChoicesView }
+  /** A suggested code session was opened, kept in the chat, or is waiting again (ADR 0213 §11): the reply's card. */
+  | {
+      type: "code.suggestion";
+      channelId: string;
+      threadId: string | null;
+      messageId: string;
+      suggestion: CodeSuggestion;
+    }
   /** A message was pinned in this channel (`GET …/channels/{id}/pins` lists them, newest first). */
   | {
       type: "message.pinned";

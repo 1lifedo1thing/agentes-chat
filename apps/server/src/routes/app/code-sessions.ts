@@ -10,7 +10,9 @@ import {
   codeStartOptions,
   createCodeSession,
   getCodeSession,
+  keepCodeSuggestionHere,
   listCodeSessions,
+  openCodeSuggestion,
   postPersonMessage,
   renameCodeSession,
   retryCodeSession,
@@ -53,10 +55,39 @@ const CodeSession = z
     createdBy: z.string().nullable(),
     createdAt: z.string(),
     lastAt: z.string(),
+    from: z
+      .object({
+        channelId: z.uuid(),
+        messageId: z.uuid(),
+        threadId: z.uuid().nullable(),
+        kind: z.enum(["dm", "channel"]),
+        name: z.string().openapi({ description: "The agent's name for a DM, else the channel's." }),
+      })
+      .optional()
+      .openapi({
+        description: "The conversation it was opened from (a suggestion there), on the session's own read only.",
+      }),
   })
   .openapi("CodeSession");
 
 const SessionParams = OrgParams.extend({ sessionId: z.uuid() });
+const SuggestionParams = OrgParams.extend({ messageId: z.uuid() });
+
+const CodeSuggestion = z
+  .object({
+    id: z.string(),
+    agentId: z.uuid(),
+    repo: z.string(),
+    title: z.string(),
+    request: z.string().openapi({ description: "The person's words the session starts with." }),
+    requestMessageId: z.uuid(),
+    askerId: z.string().openapi({ description: "The person who asked: the one who decides." }),
+    status: z.enum(["pending", "opening", "opened", "here"]),
+    sessionId: z.uuid().optional(),
+    by: z.string().optional(),
+    at: z.string().optional(),
+  })
+  .openapi("CodeSuggestion");
 
 const CodeDiff = z
   .object({
@@ -154,6 +185,24 @@ export function codeSessionRoutes(deps: AppDeps) {
     git: deps.extras?.sandbox?.git ?? null,
     ...(deps.log ? { log: deps.log } : {}),
   });
+  // A session opened by `userId`: its request goes in as their own message, through the chat's path.
+  const openingAs = (userId: string, orgId: string) => ({
+    ...sessions(),
+    postRequest: (channelId: string, rootId: string, text: string) =>
+      postPersonMessage(
+        {
+          db,
+          pubsub: adapters.pubsub,
+          judge: deps.extras?.context?.judge,
+          talker: deps.extras?.talker,
+          gifs: adapters.gifs,
+        },
+        userId,
+        orgId,
+        channelId,
+        { body: text, threadId: rootId },
+      ),
+  });
 
   app.openapi(
     createRoute({
@@ -230,30 +279,53 @@ export function codeSessionRoutes(deps: AppDeps) {
     async (c) => {
       const { orgId } = c.req.valid("param");
       const user = c.get("user");
-      const session = await createCodeSession(
-        {
-          ...sessions(),
-          postRequest: (channelId, rootId, text) =>
-            postPersonMessage(
-              {
-                db,
-                pubsub: adapters.pubsub,
-                judge: deps.extras?.context?.judge,
-                talker: deps.extras?.talker,
-                gifs: adapters.gifs,
-              },
-              user.id,
-              orgId,
-              channelId,
-              { body: text, threadId: rootId },
-            ),
-        },
-        user.id,
-        orgId,
-        c.req.valid("json"),
-      );
+      const session = await createCodeSession(openingAs(user.id, orgId), user.id, orgId, c.req.valid("json"));
       deps.wakeWorkers?.();
       return c.json(session, 201);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/code-sessions/suggestions/{messageId}/open",
+      tags,
+      security,
+      summary: "Opens the session an agent suggested in the chat (ADR 0213 §11): only the person who asked",
+      description:
+        "The session starts with the asker's own words and the suggestion's title, and remembers the conversation it came from. The reply's card says it was opened (`code.suggestion`).",
+      request: { params: SuggestionParams },
+      responses: { 201: json(CodeSession), ...errors },
+    }),
+    async (c) => {
+      const { orgId, messageId } = c.req.valid("param");
+      const user = c.get("user");
+      const session = await openCodeSuggestion(openingAs(user.id, orgId), user.id, orgId, messageId);
+      deps.wakeWorkers?.();
+      return c.json(session, 201);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/organizations/{orgId}/code-sessions/suggestions/{messageId}/here",
+      tags,
+      security,
+      summary: "Keeps a suggested session's work in the chat: the agent is told to go on there",
+      request: { params: SuggestionParams },
+      responses: { 200: json(z.object({ suggestion: CodeSuggestion })), ...errors },
+    }),
+    async (c) => {
+      const { orgId, messageId } = c.req.valid("param");
+      const suggestion = await keepCodeSuggestionHere(
+        { db, pubsub: adapters.pubsub },
+        c.get("user").id,
+        orgId,
+        messageId,
+      );
+      deps.wakeWorkers?.();
+      return c.json({ suggestion }, 200);
     },
   );
 

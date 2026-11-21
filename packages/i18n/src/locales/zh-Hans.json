@@ -4804,7 +4804,8 @@
       "proposal": "提议一项更改",
       "agent": "提议创建新智能体",
       "team": "提议一个团队",
-      "firstTask": "第一个任务"
+      "firstTask": "第一个任务",
+      "code": "建议开一个代码会话"
     },
     "waitingYou": "等你处理",
     "waitingFor": "等待 {{name}}",
@@ -4821,6 +4822,7 @@
       "agent": "<b>{{name}}</b> 提议创建新智能体 · {{what}}",
       "team": "<b>{{name}}</b> 提议了一个团队 · {{what}}",
       "firstTask": "<b>{{name}}</b> 建议了第一个任务 · {{what}}",
+      "code": "<b>{{name}}</b> 建议开一个代码会话 · {{what}}",
       "more": "+{{count}}",
       "here_other": "这里有 {{count}} 件事等你处理",
       "see": "查看"
@@ -10909,6 +10911,24 @@
     "screenLine": {
       "show": "在“屏幕”中查看",
       "held": "有人正在控制屏幕"
+    },
+    "suggestion": {
+      "label": "代码会话建议",
+      "detail": "{{repo}} · {{name}} 的电脑",
+      "more": "查看请求",
+      "open": "打开会话",
+      "here": "在这里做",
+      "opening": "正在打开会话…",
+      "opened": "你打开了会话",
+      "openedBy": "{{name}}打开了会话",
+      "keptHere": "你选择在这里做",
+      "keptHereBy": "{{name}}选择在这里做",
+      "see": "查看会话"
+    },
+    "from": {
+      "dm": "从你和 {{name}} 的对话中打开",
+      "channel": "从 #{{name}} 打开",
+      "see": "查看对话"
     }
   },
   "code": {
@@ -14897,7 +14917,9 @@
       "noComputerBrain": "这个智能体不在电脑上思考。换一个在电脑上思考的智能体，或者在它的设置里给它配上 Claude Code 或 Codex。",
       "repoNotAllowed": "这个智能体不能在那个仓库里工作。换一个仓库，或者在智能体的设置里添加它。",
       "notYours": "只有打开这个会话的人或管理员可以关闭它。",
-      "notReady": "会话的工作树还没准备好。请稍后再试。"
+      "notReady": "会话的工作树还没准备好。请稍后再试。",
+      "suggestionGone": "这条建议已经有人回应了。",
+      "suggestionNotYours": "只有提出请求的人能决定是否打开会话。"
     },
     "webhook": {
       "githubNoAccess": "这个工作区的 GitHub 无法在 {{repo}} 中创建 Webhook。请按下面的步骤手动创建。",

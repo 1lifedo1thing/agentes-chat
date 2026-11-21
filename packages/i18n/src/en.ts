@@ -5409,6 +5409,7 @@ export const en = {
       agent: "Proposes a new agent",
       team: "Proposes a team",
       firstTask: "First task",
+      code: "Suggests a code session",
     },
     waitingYou: "waiting for you",
     waitingFor: "waiting for {{name}}",
@@ -5426,6 +5427,7 @@ export const en = {
       agent: "<b>{{name}}</b> proposes a new agent · {{what}}",
       team: "<b>{{name}}</b> proposes a team · {{what}}",
       firstTask: "<b>{{name}}</b> suggests a first task · {{what}}",
+      code: "<b>{{name}}</b> suggests a code session · {{what}}",
       more: "+{{count}}",
       /** What waits on me here with its card not loaded (older, or in a thread): "Ver" goes to the oldest. */
       here_one: "{{count}} waiting on you here",
@@ -11745,6 +11747,27 @@ export const en = {
       show: "See on Screen",
       held: "A person has the screen",
     },
+    /** An agent suggests a session for a change asked in the chat (ADR 0213 §11): the card under its reply. */
+    suggestion: {
+      label: "Code session suggestion",
+      /** The project, and whose computer it works on. */
+      detail: "{{repo}} · on {{name}}'s computer",
+      more: "See the request",
+      open: "Open session",
+      here: "Do it here",
+      opening: "Opening the session…",
+      opened: "You opened the session",
+      openedBy: "{{name}} opened the session",
+      keptHere: "You chose to do it here",
+      keptHereBy: "{{name}} chose to do it here",
+      see: "See session",
+    },
+    /** At the top of a session opened from a suggestion: where it came from. */
+    from: {
+      dm: "Opened from your conversation with {{name}}",
+      channel: "Opened from #{{name}}",
+      see: "See conversation",
+    },
   },
   code: {
     ranSummary_one: "Ran {{count}} line of {{language}} · output {{size}}",
@@ -15711,6 +15734,8 @@ export const en = {
       repoNotAllowed: "This agent can't work in that repository. Pick another one, or add it in the agent's settings.",
       notYours: "Only who opened the session, or an admin, closes it.",
       notReady: "The session's worktree isn't ready yet. Try again in a moment.",
+      suggestionGone: "This suggestion was answered already.",
+      suggestionNotYours: "Only who asked decides whether to open the session.",
     },
     webhook: {
       githubNoAccess:

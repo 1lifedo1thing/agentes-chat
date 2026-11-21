@@ -4991,7 +4991,8 @@
       "proposal": "Stelt een wijziging voor",
       "agent": "Stelt een nieuwe agent voor",
       "team": "Stelt een team voor",
-      "firstTask": "Eerste taak"
+      "firstTask": "Eerste taak",
+      "code": "Stelt een codesessie voor"
     },
     "waitingYou": "wacht op jou",
     "waitingFor": "wacht op {{name}}",
@@ -5008,6 +5009,7 @@
       "agent": "<b>{{name}}</b> stelt een nieuwe agent voor · {{what}}",
       "team": "<b>{{name}}</b> stelt een team voor · {{what}}",
       "firstTask": "<b>{{name}}</b> stelt een eerste taak voor · {{what}}",
+      "code": "<b>{{name}}</b> stelt een codesessie voor · {{what}}",
       "more": "+{{count}}",
       "here_one": "{{count}} wacht hier op jou",
       "here_other": "{{count}} wachten hier op jou",
@@ -11361,6 +11363,24 @@
     "screenLine": {
       "show": "Bekijk op Scherm",
       "held": "Een mens bedient het scherm"
+    },
+    "suggestion": {
+      "label": "Voorstel voor een codesessie",
+      "detail": "{{repo}} · op de computer van {{name}}",
+      "more": "Verzoek bekijken",
+      "open": "Sessie openen",
+      "here": "Hier doen",
+      "opening": "Sessie wordt geopend…",
+      "opened": "Je hebt de sessie geopend",
+      "openedBy": "{{name}} heeft de sessie geopend",
+      "keptHere": "Je koos ervoor het hier te doen",
+      "keptHereBy": "{{name}} koos ervoor het hier te doen",
+      "see": "Sessie bekijken"
+    },
+    "from": {
+      "dm": "Geopend vanuit je gesprek met {{name}}",
+      "channel": "Geopend vanuit #{{name}}",
+      "see": "Gesprek bekijken"
     }
   },
   "code": {
@@ -15476,7 +15496,9 @@
       "noComputerBrain": "Deze agent denkt niet op een computer. Kies er een die dat wel doet, of geef de agent Claude Code of Codex in de instellingen.",
       "repoNotAllowed": "Deze agent kan niet in die repository werken. Kies een andere, of voeg hem toe in de instellingen van de agent.",
       "notYours": "Alleen wie de sessie heeft geopend, of een admin, kan hem sluiten.",
-      "notReady": "De worktree van de sessie is nog niet klaar. Probeer het zo opnieuw."
+      "notReady": "De worktree van de sessie is nog niet klaar. Probeer het zo opnieuw.",
+      "suggestionGone": "Dit voorstel is al beantwoord.",
+      "suggestionNotYours": "Alleen wie het vroeg, beslist of de sessie opent."
     },
     "webhook": {
       "githubNoAccess": "De GitHub van deze workspace kan geen webhooks maken in {{repo}}. Volg de stappen hieronder om hem met de hand te maken.",
