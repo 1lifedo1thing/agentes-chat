@@ -25,6 +25,7 @@ import {
   oneCall,
   quietLine,
   quietWork,
+  replySteps,
   savedOneLine,
   showsActivity,
   type ToolItem,
@@ -391,16 +392,20 @@ export function TaskStepsBlock({
 /**
  * The tools of a saved reply: closed, "Usou 4 ferramentas · 12 s" with the apps' logos from `meta.work`; its
  * steps load from `GET …/runs/{id}` only when opened (one request per opened message). A single call is its own
- * line from `meta.work` ("Criou uma rotina"), opening on what it was given and answered.
+ * line from `meta.work` ("Criou uma rotina"), opening on what it was given and answered. A run that answered on the
+ * way lists under each reply only the work that led to it (`replySteps`).
  */
 export function SavedTools({
   runId,
+  messageId,
   meta,
   agentName,
   color,
   skipScreens = [],
 }: {
   runId: string;
+  /** The reply it is under: its own part of the run's steps. */
+  messageId: string;
   meta: Record<string, unknown> | undefined;
   agentName: string;
   color?: AgentColor;
@@ -414,12 +419,14 @@ export function SavedTools({
   const logo = useCallLogo();
   const compact = workMeta(meta);
   const onCard = (name: unknown) => skipScreens.some((screen) => isScreenTool(String(name ?? ""), screen));
-  const work = run.data
-    ? workFromSteps(
-        run.data.steps.filter((s) => !(s.kind === "tool_call" && onCard(s.data.name))),
-        run.data.run,
-      )
-    : null;
+  const mine = run.data ? replySteps(run.data.steps, messageId) : null;
+  const work =
+    run.data && mine
+      ? workFromSteps(
+          mine.steps.filter((s) => !(s.kind === "tool_call" && onCard(s.data.name))),
+          mine.whole ? run.data.run : undefined,
+        )
+      : null;
   const items = work ? toolItemsSaved(work) : [];
   const blockItems = useBlockItems(items);
   // Nothing more to show than the message does: no tools (lookups and reactions aren't counted), or only the ones

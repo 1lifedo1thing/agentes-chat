@@ -3,7 +3,7 @@ import { ptBR } from "@agenteschat/i18n";
 import i18next from "i18next";
 import { applyChannelEvent, emptyStreams } from "../src/index";
 import { cliLineOf, cliMetaWords } from "../src/lib/cli-tools";
-import { savedOneLine, toolItemsLive, waitStep, workFromSteps } from "../src/lib/work";
+import { replySteps, savedOneLine, toolItemsLive, waitStep, workFromSteps } from "../src/lib/work";
 
 /**
  * A computer brain's own tool calls in a code session (ADR 0208): one line each, live and saved, as its terminal shows
@@ -77,6 +77,31 @@ test("saved, each of its own calls is a line with what it gave back", () => {
     { key: "cli-b1", tool: "Bash", failed: true, ms: null, cli: { verb: "run", target: "bun test" } },
   ]);
   expect(work.steps[0]?.cli?.meta).toEqual({ added: 2, removed: 1 });
+});
+
+test("a run that answered on the way lists each piece of work under the reply it led to", () => {
+  const at = "2026-11-20T21:00:00.000Z";
+  const later = "2026-11-20T21:01:30.000Z";
+  const cli = (id: string, name: string, verb: string) => ({ id, name, verb, ok: true });
+  const steps = [
+    { seq: 1, kind: "context", data: { cliTool: cli("r1", "Read", "read") }, createdAt: at },
+    { seq: 2, kind: "message", data: { messageId: "running" }, createdAt: at },
+    { seq: 3, kind: "context", data: { cliTool: cli("w1", "Workflow", "workflow") }, createdAt: later },
+    { seq: 4, kind: "message", data: { messageId: "result" }, createdAt: later },
+  ];
+  const first = replySteps(steps, "running");
+  expect(first.whole).toBe(false);
+  expect(workFromSteps(first.steps).steps.map((s) => s.tool)).toEqual(["Read"]);
+  const second = replySteps(steps, "result");
+  expect(workFromSteps(second.steps).steps.map((s) => s.tool)).toEqual(["Workflow"]);
+  // Timed from the reply before it.
+  expect(workFromSteps(second.steps).durationMs).toBe(90_000);
+  // Its only reply, or one saved without its step: the whole run.
+  expect(replySteps(steps.slice(0, 2), "running")).toEqual({ steps: steps.slice(0, 2), whole: true });
+  expect(replySteps(steps, "elsewhere").whole).toBe(true);
+  // Work after its last reply stays with it.
+  const after = [...steps, { seq: 5, kind: "context", data: { cliTool: cli("b1", "Bash", "run") }, createdAt: later }];
+  expect(workFromSteps(replySteps(after, "result").steps).steps.map((s) => s.tool)).toEqual(["Workflow", "Bash"]);
 });
 
 test("a reply's lone call of its own reads as its line before its steps load", () => {

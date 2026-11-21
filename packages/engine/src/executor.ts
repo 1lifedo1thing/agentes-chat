@@ -145,6 +145,7 @@ import {
   cliToolShown,
   cliToolStep,
   cliToolSummary,
+  verbOfTool,
 } from "./cli-tools";
 import {
   kickRoomQueue,
@@ -2284,6 +2285,15 @@ async function executeRunInner(
     const said = note ? body : await publishable(tx, threadId, body);
     // Team actions (ADR 0064): what the run didn't repeat because the team already did it rides on its reply.
     const teamChecks = note ? [] : await runChecksForReply(tx, run.orgId, run.id);
+    // A run that answered on the way (ADR 0112) counts from its reply before: each reply lists the work that led to
+    // it, never what one before it already listed (the apps read its steps the same way, `replySteps`).
+    const [before] = await tx
+      .select({ seq: agentRunSteps.seq, at: agentRunSteps.createdAt })
+      .from(agentRunSteps)
+      .where(and(eq(agentRunSteps.runId, run.id), eq(agentRunSteps.kind, "message")))
+      .orderBy(desc(agentRunSteps.seq))
+      .limit(1);
+    const since = before?.seq ?? -1;
     // "Ver o que ele fez" under the reply: how many tool calls so far, so the apps leave it out at 0, and one call
     // per logo of the closed block, in order of first use: per service, else app, else screen, else tool (a
     // connector's dozens of tools would push the next apps past the few kept). A reaction already shows on the
@@ -2310,6 +2320,7 @@ async function executeRunInner(
       .where(
         and(
           eq(agentRunSteps.runId, run.id),
+          gt(agentRunSteps.seq, since),
           or(eq(agentRunSteps.kind, "tool_call"), sql`(${cliTool})`),
           sql`coalesce(${name}, '') !~ ${UNCOUNTED_TOOLS}`,
           sql`(${agentRunSteps.data}->>'name' is distinct from ${PERMISSION_TOOL} or ${agentRunSteps.data}->'input'->>'request_id' is null)`,
@@ -2320,14 +2331,14 @@ async function executeRunInner(
     // The one call beside the screens' (their cards show those steps): its time and outcome, for its own line.
     const besideScreens = tools.length > 1 ? tools.filter((t) => !SCREEN_TOOL.test(t.name)) : [];
     const leftover = besideScreens.length === 1 && besideScreens[0]?.n === 1 ? besideScreens[0] : null;
-    const leftoverCall = leftover ? await loneCall(tx, run.id, leftover.name) : {};
+    const leftoverCall = leftover ? await loneCall(tx, run.id, leftover.name, since) : {};
     // The brain's own calls in a code session: its work shows whoever turned the summary off (ADR 0208).
     const cliCalls = tools.reduce((n, t) => n + Number(t.own), 0);
     const work = {
       steps: tools.reduce((n, t) => n + t.n, 0),
-      durationMs: Math.max(0, Date.now() - run.createdAt.getTime()),
+      durationMs: Math.max(0, Date.now() - (before?.at ?? run.createdAt).getTime()),
       ...(cliCalls > 0 ? { cliCalls } : {}),
-      ...(tools.length === 1 && tools[0]?.n === 1 ? await loneCall(tx, run.id, tools[0].name) : {}),
+      ...(tools.length === 1 && tools[0]?.n === 1 ? await loneCall(tx, run.id, tools[0].name, since) : {}),
       calls: tools.slice(0, WORK_CALLS).map((t) => ({
         name: t.name,
         n: t.n,
@@ -3429,6 +3440,8 @@ async function executeRunInner(
       }).catch(() => null);
       if (verdict === "secret" || verdict === "unbacked" || verdict === "untried") return false;
     }
+    // The steps it took so far are written first: they are the work this reply lists.
+    await deferred;
     const posted = await db.transaction(async (tx) => {
       const m = await post(tx, replyThreadId, said, withFallback(t, undefined));
       await addRunStep(tx, run, "message", { messageId: m.id });
@@ -5181,6 +5194,12 @@ async function executeRunInner(
       /** Its subagents and workflows still at work (`tool_progress` not ended), by the call that started them. */
       const working = new Set<string>();
       /**
+       * Its calls whose work went on in the background (a workflow, a subagent it didn't wait for): their line goes on
+       * the trail once that work ended, timed to its end, so it lists under the reply that came after it, not under the
+       * "it's running" one (each reply lists the work that led to it).
+       */
+      const backgroundCalls = new Map<string, { call: OwnCall; startedAt: number | undefined }>();
+      /**
        * A code session reads like its CLI in a terminal (ADR 0208): each call of the brain's own is a line of the run's
        * work, live and on its trail. Elsewhere they stay off the trail (ADR 0032: a write for every call).
        */
@@ -5193,7 +5212,7 @@ async function executeRunInner(
        * A call of its own (not ours through the bridge, which says its step as it starts) is the step line now: as it
        * starts, else once it ended. In a code session its end is said too, with what it came to (ADR 0208).
        */
-      const ownStep = (call: { id: string; name: string; input?: unknown; result?: ToolResult }, ended = false) => {
+      const ownStep = (call: OwnCall, ended = false) => {
         if (run.background || turnTools.some((t) => t.name === call.name)) return;
         const told = ended && stepTold.has(call.id);
         const cli = cliLine(call.name)
@@ -5209,6 +5228,17 @@ async function executeRunInner(
           ...(cli ? { toolUseId: call.id, cli } : {}),
           ...(cli && ended ? { ended: true as const, ...(call.result?.isError ? { failed: true as const } : {}) } : {}),
         }).catch(() => {});
+      };
+      /** A call of its own in a code session on the run's trail (`cliTool`), timed from its start. */
+      const cliStepNow = (call: OwnCall, startedAt: number | undefined) => {
+        const ms = startedAt === undefined ? undefined : Date.now() - startedAt;
+        const cliTool = cliToolStep(call, { cwd: cliFolder, ...(ms !== undefined ? { ms } : {}) });
+        later(() => addRunStep(db, run, "context", { cliTool }));
+      };
+      /** The turn ended: calls whose background work never said it ended go on the trail as they are. */
+      const flushBackground = () => {
+        for (const { call, startedAt } of backgroundCalls.values()) cliStepNow(call, startedAt);
+        backgroundCalls.clear();
       };
       // Context budget: a request that wouldn't fit the model's window sends old tool results as a
       // placeholder (the judge picks which). Saved on the transcript, so later turns and resumes agree.
@@ -5321,8 +5351,12 @@ async function executeRunInner(
             },
             // A subagent or a workflow of its own while it works: live in a code session, as its calls are.
             onProgress: (p) => {
-              if (p.ended) working.delete(p.id);
-              else working.add(p.id);
+              if (p.ended) {
+                working.delete(p.id);
+                const held = backgroundCalls.get(p.id);
+                backgroundCalls.delete(p.id);
+                if (held) cliStepNow(held.call, held.startedAt);
+              } else working.add(p.id);
               if (!cliLines || run.background) return;
               void publishChannelEvent(deps.pubsub, {
                 type: "agent.tool.progress",
@@ -5339,11 +5373,14 @@ async function executeRunInner(
               ownStep(call, true);
               const startedAt = stepTold.get(call.id);
               stepTold.delete(call.id);
-              // In a code session each call of its own is a step, where its reply's work lists it (ADR 0208).
+              // In a code session each call of its own is a step, where its reply's work lists it (ADR 0208). One
+              // whose work goes on in the background (its progress started and not ended; a workflow always does)
+              // waits for that work's end.
               if (cliLine(call.name)) {
-                const ms = startedAt === undefined ? undefined : Date.now() - startedAt;
-                const cliTool = cliToolStep(call, { cwd: cliFolder, ...(ms !== undefined ? { ms } : {}) });
-                later(() => addRunStep(db, run, "context", { cliTool }));
+                const background =
+                  working.has(call.id) || (verbOfTool(call.name) === "workflow" && !call.result?.isError);
+                if (background) backgroundCalls.set(call.id, { call, startedAt });
+                else cliStepNow(call, startedAt);
               }
               // The text it streams next is another model call's: never one reply with what it wrote before.
               deltas.toolEnded();
@@ -5399,7 +5436,10 @@ async function executeRunInner(
           },
           // Before anything reads the inbox again (the next step, a failure's redispatch): what the turn
           // was handed and never confirmed reading goes back there.
-        ).finally(() => live.endTurn());
+        ).finally(() => {
+          live.endTurn();
+          flushBackground();
+        });
         const ownExecuted = turnPlan.kind === "model" ? result.executedCount : ownExecutedNow();
         // Its line on the way (`say_now`) is talk: never counted as progress (a nudged run must do the work).
         const worked = result.toolCalls.filter((c) => !isSayNow(c.name)).length;
@@ -7061,10 +7101,14 @@ function closingSummary(t: Transcript, anythingPosted: boolean): string {
 /** The screens' tools (`browser_*`, `desktop_*`), as the work summary groups them. */
 const SCREEN_TOOL = /^(?:mcp__agentes__)?(?:browser|desktop)_/;
 
+/** A call the computer brain made with its own tools, as its events say it (started, then ended with a result). */
+type OwnCall = { id: string; name: string; input?: unknown; result?: ToolResult };
+
 async function loneCall(
   tx: Executor,
   runId: string,
   name: string,
+  since: number,
 ): Promise<{ ms?: number; failed?: true; cli?: CliToolSummary }> {
   const steps = await tx
     .select({ kind: agentRunSteps.kind, data: agentRunSteps.data, createdAt: agentRunSteps.createdAt })
@@ -7072,6 +7116,7 @@ async function loneCall(
     .where(
       and(
         eq(agentRunSteps.runId, runId),
+        gt(agentRunSteps.seq, since),
         or(
           inArray(agentRunSteps.kind, ["tool_call", "tool_result"]),
           sql`(${agentRunSteps.kind} = 'context' and ${agentRunSteps.data} ? 'cliTool')`,

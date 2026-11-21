@@ -471,7 +471,8 @@ export interface CliProgress {
 }
 
 /** A tool's verb by its name alone (a workflow's agent's latest call). */
-const verbOfTool = (name: string): CliVerb => {
+/** What a CLI's own tool does, by its name ("other" for one this table doesn't know). */
+export const verbOfTool = (name: string): CliVerb => {
   const key = name.trim().toLowerCase();
   return Object.hasOwn(VERBS, key) ? (VERBS[key] ?? "other") : "other";
 };

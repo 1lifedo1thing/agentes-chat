@@ -10,6 +10,7 @@ import {
   oneCall,
   quietLine,
   quietWork,
+  replySteps,
   savedOneLine,
   showsActivity,
   type ToolItem,
@@ -721,6 +722,7 @@ export function TurnTools({
  */
 export function SavedTools({
   runId,
+  messageId,
   meta,
   agentName,
   color,
@@ -728,6 +730,8 @@ export function SavedTools({
   keep,
 }: {
   runId: string;
+  /** The reply it is under: its own part of the run's steps (`replySteps`). */
+  messageId: string;
   meta: Record<string, unknown> | undefined;
   agentName: string;
   color: AgentColorName;
@@ -744,12 +748,14 @@ export function SavedTools({
   const logo = useCallLogo();
   const compact = workMeta(meta);
   const onCard = (name: unknown) => skipScreens.some((screen) => isScreenTool(String(name ?? ""), screen));
-  const work = run.data
-    ? workFromSteps(
-        run.data.steps.filter((s) => !(s.kind === "tool_call" && onCard(s.data.name))),
-        run.data.run,
-      )
-    : null;
+  const mine = run.data ? replySteps(run.data.steps, messageId) : null;
+  const work =
+    run.data && mine
+      ? workFromSteps(
+          mine.steps.filter((s) => !(s.kind === "tool_call" && onCard(s.data.name))),
+          mine.whole ? run.data.run : undefined,
+        )
+      : null;
   const items = work ? toolItemsSaved(work) : [];
   const blockItems = blockItemsOf(items, t, i18n.language, logo);
   // Nothing more to show than the message does: no tools (lookups and reactions aren't counted), or only the ones

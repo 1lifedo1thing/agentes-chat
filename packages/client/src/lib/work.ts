@@ -351,6 +351,22 @@ export function workFromSteps(steps: RunStep[], run?: Pick<Run, "createdAt" | "f
   return { steps: items, narration, connectors, durationMs };
 }
 
+/**
+ * The steps behind one reply of a run: a run that answered on the way (ADR 0112) lists each piece of work once, under
+ * the reply it led to. Each reply the run posted is a `message` step: this reply's steps are those after the reply
+ * before it (kept first, so the time counts from there), up to its own, and for its last reply whatever came after
+ * too. `whole`: the run's every step (its only reply, or one saved without its step), timed by the run itself.
+ */
+export function replySteps(steps: RunStep[], messageId: string): { steps: RunStep[]; whole: boolean } {
+  const at = steps.findIndex((s) => s.kind === "message" && s.data.messageId === messageId);
+  if (at < 0) return { steps, whole: true };
+  let before = at - 1;
+  while (before >= 0 && steps[before]?.kind !== "message") before--;
+  const next = steps.findIndex((s, i) => i > at && s.kind === "message");
+  if (before < 0 && next < 0) return { steps, whole: true };
+  return { steps: steps.slice(Math.max(before, 0), next < 0 ? steps.length : at + 1), whole: false };
+}
+
 /** Calls that read as the same line ("Usou o navegador") with the same logo; an unknown tool's line names the tool. */
 export const sameActivity = (a: Activity & { tool: string }, b: Activity & { tool: string }) =>
   a.kind === b.kind &&

@@ -1053,6 +1053,7 @@ function RowBody({
             ) : steps && m.agentRunId && !meta?.workUpdate ? (
               <SavedTools
                 runId={m.agentRunId}
+                messageId={m.id}
                 meta={meta}
                 agentName={agent?.name ?? name}
                 color={color}

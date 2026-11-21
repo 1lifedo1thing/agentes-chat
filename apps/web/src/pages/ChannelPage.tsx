@@ -5006,6 +5006,7 @@ export const TimelineMessage = memo(function TimelineMessage({
               !m.meta?.workUpdate && (
                 <SavedTools
                   runId={replyRun}
+                  messageId={m.id}
                   meta={m.meta}
                   agentName={agent?.name ?? name}
                   color={colorOf(agent)}
