@@ -1,8 +1,11 @@
+import { useNavigate } from "@tanstack/react-router";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageRoom } from "@/components/live/room";
+import { useOrg } from "@/components/org-context";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodeList } from "./CodeList";
+import { useCodeKey, useCodeKeys } from "./shortcuts";
 import "./code.css";
 
 /**
@@ -18,8 +21,13 @@ const SESSION_ROOM_MIN = 860;
  */
 export function CodePage({ activeId, children }: { activeId: string | null; children: ReactNode }) {
   const { t } = useTranslation();
+  const { org } = useOrg();
+  const navigate = useNavigate();
   const list = useStoredSize("code:listWidth", 220, 460, 296);
   const [main, setMain] = useState<HTMLElement | null>(null);
+  // Its keys (`shortcuts.ts`); ⌥⌘N is the home's field, where a session starts.
+  useCodeKeys();
+  useCodeKey("newSession", () => void navigate({ to: "/org/$orgId/code", params: { orgId: org.id } }));
   usePageRoom(main, activeId !== null, SESSION_ROOM_MIN);
   return (
     <main className="shell__main shell__main--chat code-page">

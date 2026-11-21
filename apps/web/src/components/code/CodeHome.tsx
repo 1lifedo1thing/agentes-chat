@@ -10,6 +10,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { CodeHomeAgent } from "./CodeHomeAgent";
 import { WaitMark } from "./CodeList";
 import { CodeHomeSky } from "./CodeSky";
+import { takeCodeKey, useCodeKey } from "./shortcuts";
 
 const LAST_PICK = "code:lastPick";
 
@@ -68,6 +69,15 @@ export function CodeHome() {
     [sessions, agentId],
   );
   const home = useRef<HTMLDivElement>(null);
+  // ⌥⌘N: the caret in the field, here already or brought here by the key.
+  const field = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (takeCodeKey("newSession")) field.current?.focus();
+  }, []);
+  useCodeKey("newSession", () => {
+    takeCodeKey("newSession");
+    field.current?.focus();
+  });
   const pickedAgent = agentId ? dir.agentById.get(agentId) : undefined;
   const pickAgent = (id: string) => {
     setAgentId(id);
@@ -108,6 +118,7 @@ export function CodeHome() {
         ) : (
           <div className="ac-composer code-start">
             <textarea
+              ref={field}
               className="code-start__text"
               rows={2}
               value={text}

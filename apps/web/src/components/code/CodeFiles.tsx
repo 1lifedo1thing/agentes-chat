@@ -8,6 +8,7 @@ import { CodeLines } from "@/components/CodeBlock";
 import { formatBytes } from "@/components/LiveCode";
 import { useOrg } from "@/components/org-context";
 import { ChangeLetter } from "./CodeGit";
+import { takeCodeKey, useCodeKey, withKey } from "./shortcuts";
 
 /** Most files the search lists for one query (a narrower one finds the rest), and with none typed. */
 const FOUND_MAX = 60;
@@ -81,7 +82,12 @@ export function FilesPane({ session }: { session: CodeSession }) {
   const { org } = useOrg();
   const ready = session.worktree.state === "ready";
   const list = useCodeFiles(org.id, session.id, ready, session.work === "working");
-  const [finding, setFinding] = useState(false);
+  // ⌘P opens the search: on screen already, or shown by that same key (the panel was on another tab).
+  const [finding, setFinding] = useState(() => takeCodeKey("files"));
+  useCodeKey("files", () => {
+    takeCodeKey("files");
+    setFinding(true);
+  });
   const [shown, setShown] = useState<string | null>(null);
   const [open, setOpen] = useState<Set<string> | null>(null);
   const paths = list.data?.paths;
@@ -142,7 +148,7 @@ export function FilesPane({ session }: { session: CodeSession }) {
             icon="search"
             iconOnly
             aria-label={t("codeSessions.files.search")}
-            title={t("codeSessions.files.search")}
+            title={withKey(t("codeSessions.files.search"), "files")}
             disabled={!paths?.length}
             onClick={() => setFinding(true)}
           />

@@ -2,13 +2,14 @@ import { type CodeSession, useCodeSessions } from "@agenteschat/client";
 import { subagentsNow } from "@agenteschat/client/lib/cli-tools";
 import { subagentsTail } from "@agenteschat/client/lib/work";
 import { cx, Icon } from "@agenteschat/ui";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar, AgentSpinner } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useStreams } from "@/realtime/context";
+import { useCodeKey, withKey } from "./shortcuts";
 
 /** The quiet mark of a session that waits on me (the requests' own mark). */
 export const WaitMark = () => (
@@ -96,6 +97,17 @@ export function CodeList({ activeId }: { activeId: string | null }) {
     for (const s of list.data ?? []) by.set(s.repo, [...(by.get(s.repo) ?? []), s]);
     return [...by.entries()];
   }, [list.data]);
+  // ⌥⌘↑ and ⌥⌘↓: the session above or below the open one, as the list shows them (the home is above the first).
+  const navigate = useNavigate();
+  const go = (step: -1 | 1) => {
+    const order = groups.flatMap(([, sessions]) => sessions.map((s) => s.id));
+    const at = activeId === null ? -1 : order.indexOf(activeId);
+    const next = order[at + step];
+    if (step === -1 && at === 0) void navigate({ to: "/org/$orgId/code", params: { orgId: org.id } });
+    else if (next) void navigate({ to: "/org/$orgId/code/$sessionId", params: { orgId: org.id, sessionId: next } });
+  };
+  useCodeKey("prevSession", () => go(-1));
+  useCodeKey("nextSession", () => go(1));
   return (
     <aside className="code-list" aria-label={t("codeSessions.list.label")}>
       <div className="code-list__h">
@@ -105,7 +117,7 @@ export function CodeList({ activeId }: { activeId: string | null }) {
           params={{ orgId: org.id }}
           className="ac-btn ac-btn--ghost ac-btn--sm ac-btn--icon code-list__new"
           aria-label={t("codeSessions.list.new")}
-          title={t("codeSessions.list.new")}
+          title={withKey(t("codeSessions.list.new"), "newSession")}
         >
           <Icon name="plus" size={16} />
         </Link>

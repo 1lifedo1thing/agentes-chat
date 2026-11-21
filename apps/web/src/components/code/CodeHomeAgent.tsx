@@ -121,7 +121,10 @@ export function CodeHomeAgent({
 
   // Where its cursor waits: right of the figure, at its head's height (the anchor's px).
   const spot = ink
-    ? { x: Math.round(ink.right - (ink.left + ink.right) / 2 + 14), y: Math.round(ink.top - ink.bottom + (ink.bottom - ink.top) * 0.42) }
+    ? {
+        x: Math.round(ink.right - (ink.left + ink.right) / 2 + 14),
+        y: Math.round(ink.top - ink.bottom + (ink.bottom - ink.top) * 0.42),
+      }
     : null;
   const cursor = useCursorGlide(spot, reduced);
   const [, deep] = gradientOf(look.color);

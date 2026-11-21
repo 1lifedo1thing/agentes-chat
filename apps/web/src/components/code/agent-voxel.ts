@@ -79,8 +79,30 @@ function rampsOf(color: string) {
   const ramps = [
     [dark(deep, 0.55), dark(deep, 0.28), ...T, light(top, 0.35), light(top, 0.6), light(top, 0.82)],
     [0.46, 0.38, 0.3, 0.23, 0.17, 0.12, 0.08, 0.05, 0.02, 0].map((d) => dark(EYE_COLOR, d)),
-    ["#000000", dark(K, 0.6), dark(K, 0.3), K, mixHex(K, k, 0.5), k, light(k, 0.08), light(k, 0.16), light(k, 0.26), light(k, 0.38)],
-    [dark(R, 0.7), dark(R, 0.55), dark(R, 0.4), dark(R, 0.25), dark(R, 0.12), R, light(R, 0.18), light(R, 0.34), light(R, 0.5), light(R, 0.68)],
+    [
+      "#000000",
+      dark(K, 0.6),
+      dark(K, 0.3),
+      K,
+      mixHex(K, k, 0.5),
+      k,
+      light(k, 0.08),
+      light(k, 0.16),
+      light(k, 0.26),
+      light(k, 0.38),
+    ],
+    [
+      dark(R, 0.7),
+      dark(R, 0.55),
+      dark(R, 0.4),
+      dark(R, 0.25),
+      dark(R, 0.12),
+      R,
+      light(R, 0.18),
+      light(R, 0.34),
+      light(R, 0.5),
+      light(R, 0.68),
+    ],
   ];
   const inks: Ink[] = [
     ...T.map((hex, i) => ({ hex, ramp: 0, level: 2 + i })),
@@ -247,11 +269,66 @@ function geometry(cubes: Cube[], dither: number) {
     const xy = (p: number[]) => [(p[0] ?? 0) * d, -(p[1] ?? 0) * d];
     const xz = (p: number[]) => [(p[0] ?? 0) * d, (p[2] ?? 0) * d];
     const zy = (p: number[]) => [(p[2] ?? 0) * d, -(p[1] ?? 0) * d];
-    quad([[x0, y0, zf], [x1, y0, zf], [x1, y1, zf], [x0, y1, zf]], [0, 0, 1], xy, c.front, c);
-    quad([[x0, y1, zf], [x1, y1, zf], [x1, y1, zb], [x0, y1, zb]], [0, 1, 0], xz, c.top, c);
-    quad([[x0, y0, zb], [x1, y0, zb], [x1, y0, zf], [x0, y0, zf]], [0, -1, 0], xz, c.bottom, c);
-    quad([[x0, y0, zb], [x0, y0, zf], [x0, y1, zf], [x0, y1, zb]], [-1, 0, 0], zy, c.left, c);
-    quad([[x1, y0, zf], [x1, y0, zb], [x1, y1, zb], [x1, y1, zf]], [1, 0, 0], zy, c.right, c);
+    quad(
+      [
+        [x0, y0, zf],
+        [x1, y0, zf],
+        [x1, y1, zf],
+        [x0, y1, zf],
+      ],
+      [0, 0, 1],
+      xy,
+      c.front,
+      c,
+    );
+    quad(
+      [
+        [x0, y1, zf],
+        [x1, y1, zf],
+        [x1, y1, zb],
+        [x0, y1, zb],
+      ],
+      [0, 1, 0],
+      xz,
+      c.top,
+      c,
+    );
+    quad(
+      [
+        [x0, y0, zb],
+        [x1, y0, zb],
+        [x1, y0, zf],
+        [x0, y0, zf],
+      ],
+      [0, -1, 0],
+      xz,
+      c.bottom,
+      c,
+    );
+    quad(
+      [
+        [x0, y0, zb],
+        [x0, y0, zf],
+        [x0, y1, zf],
+        [x0, y1, zb],
+      ],
+      [-1, 0, 0],
+      zy,
+      c.left,
+      c,
+    );
+    quad(
+      [
+        [x1, y0, zf],
+        [x1, y0, zb],
+        [x1, y1, zb],
+        [x1, y1, zf],
+      ],
+      [1, 0, 0],
+      zy,
+      c.right,
+      c,
+    );
   }
   return { pos, nor, dit, lev, ramp, show, idx };
 }
@@ -275,7 +352,24 @@ const rotation = (pitch: number, yaw: number): Mat4 => {
 const mat3Of = (m: Mat4) => [m[0], m[1], m[2], m[4], m[5], m[6], m[8], m[9], m[10]] as number[];
 const perspective = (fov: number, aspect: number, near: number, far: number): Mat4 => {
   const f = 1 / Math.tan(fov / 2);
-  return [f / aspect, 0, 0, 0, 0, f, 0, 0, 0, 0, (far + near) / (near - far), -1, 0, 0, (2 * far * near) / (near - far), 0];
+  return [
+    f / aspect,
+    0,
+    0,
+    0,
+    0,
+    f,
+    0,
+    0,
+    0,
+    0,
+    (far + near) / (near - far),
+    -1,
+    0,
+    0,
+    (2 * far * near) / (near - far),
+    0,
+  ];
 };
 
 export interface VoxelView {
@@ -293,7 +387,13 @@ export interface VoxelView {
 export function voxelView(
   canvas: HTMLCanvasElement,
   shape: ReturnType<typeof agentCubes>,
-  { width, height, unit, dither, rest }: {
+  {
+    width,
+    height,
+    unit,
+    dither,
+    rest,
+  }: {
     width: number;
     height: number;
     unit: number;
@@ -321,6 +421,7 @@ export function voxelView(
   gl.attachShader(program, fs);
   gl.linkProgram(program);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return null;
+  // biome-ignore lint/correctness/useHookAtTopLevel: WebGL's own method, not a React hook.
   gl.useProgram(program);
 
   const g = geometry(shape.cubes, dither);
@@ -347,12 +448,11 @@ export function voxelView(
 
   // The ramps as a texture: a row of RAMP tones each, deep to light, read by the nearest texel.
   const tones = new Uint8Array(RAMP * shape.ramps.length * 4);
-  shape.ramps.forEach((row, r) =>
-    row.forEach((hex, i) => {
+  for (const [r, row] of shape.ramps.entries())
+    for (const [i, hex] of row.entries()) {
       const [cr, cg, cb] = rgbOf(hex);
       tones.set([cr, cg, cb, 255], (r * RAMP + i) * 4);
-    }),
-  );
+    }
   const texture = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, RAMP, shape.ramps.length, 0, gl.RGBA, gl.UNSIGNED_BYTE, tones);

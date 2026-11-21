@@ -26,6 +26,7 @@ import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodePanel, useCodeTab } from "./CodePanel";
 import { CodeDockSky } from "./CodeSky";
+import { useCodeKey } from "./shortcuts";
 
 /**
  * One code session (ADR 0208): the conversation with its agent under the session's header (name, state and branch,
@@ -40,6 +41,8 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
   const talk = useStoredSize("code:talkWidth", 360, 1100, 620);
   const [tab, setTab] = useCodeTab();
   const screen = useMemo(() => ({ show: () => setTab("screen") }), [setTab]);
+  // ⌘P: the Files tab, whose search opens with it (`CodeFiles`).
+  useCodeKey("files", () => setTab("files"));
   if (session.isPending) return <ChannelSkeleton thread panel />;
   if (!session.data)
     return (

@@ -8,6 +8,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { FilesPane } from "./CodeFiles";
 import { GitPane } from "./CodeGit";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
+import { useCodeKey, withKey } from "./shortcuts";
 import { CodeScreen } from "./CodeScreen";
 import { CodeHorizon } from "./CodeSky";
 import { TerminalPane } from "./TerminalPane";
@@ -93,6 +94,7 @@ export function CodePanel({
       localStorage.setItem(TERMINAL_KEY, open ? "open" : "closed");
     } catch {}
   };
+  useCodeKey("terminal", () => setTerminal(!terminal));
   const [panel, setPanel] = useState<HTMLElement | null>(null);
   const width = useWidth(panel);
   const narrow = width > 0 && width < ROW_NARROW;
@@ -159,7 +161,7 @@ export function CodePanel({
         className="code-ptoggle"
         aria-pressed={terminal}
         aria-label={narrow ? t("codeSessions.panel.terminal") : undefined}
-        title={narrow ? t("codeSessions.panel.terminal") : undefined}
+        title={withKey(t("codeSessions.panel.terminal"), "terminal")}
         onClick={() => setTerminal(!terminal)}
       >
         {t("codeSessions.panel.terminal")}
