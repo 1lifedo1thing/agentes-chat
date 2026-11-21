@@ -2,7 +2,7 @@ import { and, asc, eq, inArray, isNotNull, isNull, rowsOf, schema, sql } from "@
 import { appLocale } from "@agenteschat/i18n/locale";
 import type { PlanModel } from "@agenteschat/providers/plans";
 import { approvalCardThreads, approvalOriginOf, notifiedIds } from "./approvals";
-import { agentManagerIds } from "./audience";
+import { agentManagerIds, agentOwnerIds, OWNER_COLUMNS } from "./audience";
 import { accountablePerson, runAuthorityById } from "./authority";
 import { autonomyNoteFor, proposalCardOf } from "./brakes";
 import { readableChannelIds } from "./channels";
@@ -118,9 +118,22 @@ async function isOrgMember(deps: Pick<NotificationDeps, "db">, orgId: string, us
   return Boolean(row);
 }
 
+/** The agent's owner as one person: null when nobody, or a role, answers for it. */
 async function agentOwner(deps: Pick<NotificationDeps, "db">, agentId: string) {
   const [a] = await deps.db.select({ owner: agents.ownerUserId }).from(agents).where(eq(agents.id, agentId));
   return a?.owner ?? null;
+}
+
+/**
+ * Who answers for the agent now (`agentOwnerIds`): its owner, or everyone holding its owner role (ADR 0085, addendum
+ * of 2026-11-21). Empty with neither.
+ */
+async function agentOwners(deps: Pick<NotificationDeps, "db">, agentId: string): Promise<string[]> {
+  const [a] = await deps.db
+    .select({ orgId: agents.orgId, ...OWNER_COLUMNS })
+    .from(agents)
+    .where(eq(agents.id, agentId));
+  return a ? agentOwnerIds(deps.db, a.orgId, a) : [];
 }
 
 // ── Chat: mentions, thread replies, DMs ───────────────────────────────────────
@@ -413,16 +426,16 @@ export async function notifyReaction(
 
 /** An agent asked (`ask_user`) and waits: the person it is for, else the person behind the run, else the agent's owner. */
 export async function notifyQuestion(deps: NotificationDeps, q: QuestionRow) {
-  const to =
-    q.requestedForUserId ?? (await requesterOfRun(deps, q.orgId, q.runId)) ?? (await agentOwner(deps, q.agentId));
-  if (!to) return;
+  const asked = q.requestedForUserId ?? (await requesterOfRun(deps, q.orgId, q.runId));
+  const to = asked ? [asked] : await agentOwners(deps, q.agentId);
+  if (to.length === 0) return;
   const [channel] = await deps.db
     .select({ kind: channels.kind, name: channels.name })
     .from(channels)
     .where(eq(channels.id, q.channelId));
   await notify(deps, {
     orgId: q.orgId,
-    userIds: [to],
+    userIds: to,
     kind: "agent_question",
     groupKey: `agent_question:${q.id}`,
     waiting: true,
@@ -857,7 +870,7 @@ async function routineAudience(deps: Pick<NotificationDeps, "db">, orgId: string
     .from(routines)
     .where(and(eq(routines.id, routineId), eq(routines.orgId, orgId)));
   if (!r) return null;
-  return { ...r, owner: await agentOwner(deps, r.agentId) };
+  return { ...r, owners: await agentOwners(deps, r.agentId) };
 }
 
 /**
@@ -873,7 +886,7 @@ export async function notifyRoutineFailed(
   if (!r) return;
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [r.creator ?? r.owner],
+    userIds: r.creator ? [r.creator] : r.owners,
     kind: "routine_failed",
     groupKey: `routine_failed:${input.routineId}:${input.streakKey}`,
     actor: agent(r.agentId),
@@ -901,10 +914,10 @@ export async function notifyAgentUnreached(
     messageId?: string;
   },
 ) {
-  const owner = await agentOwner(deps, input.agentId);
+  const owners = await agentOwners(deps, input.agentId);
   await notify(deps, {
     orgId: input.orgId,
-    userIds: owner ? [owner] : await agentManagerIds(deps.db, input.orgId, input.agentId),
+    userIds: owners.length > 0 ? owners : await agentManagerIds(deps.db, input.orgId, input.agentId),
     kind: "agent_unreached",
     groupKey: `agent_unreached:${input.routineId}:${input.agentId}`,
     actor: agent(input.agentId),
@@ -946,7 +959,7 @@ export async function notifyRoutinePaused(
   if (r?.type === "widget") return;
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [input.creatorUserId, await agentOwner(deps, input.agentId)],
+    userIds: [input.creatorUserId, ...(await agentOwners(deps, input.agentId))],
     kind: "routine_paused",
     groupKey: `routine_paused:${input.routineId}:${input.key}`,
     actor: agent(input.agentId),
@@ -968,7 +981,7 @@ export async function notifyRoutineStalled(
   if (!r || r.draft) return;
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [r.creator, r.owner],
+    userIds: [r.creator, ...r.owners],
     kind: "routine_stalled",
     groupKey: `routine_stalled:${input.routineId}:${input.machineId}:${input.outageKey}`,
     actor: agent(r.agentId),
@@ -989,7 +1002,7 @@ export async function notifyRoutineWaitingPlan(
   if (!r || r.draft) return;
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [r.creator, r.owner],
+    userIds: [r.creator, ...r.owners],
     kind: "routine_waiting_plan",
     groupKey: `routine_waiting_plan:${input.routineId}:${input.outageKey}`,
     actor: agent(r.agentId),
@@ -1017,7 +1030,7 @@ export async function notifyPlanResetUnknown(
 ) {
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [await agentOwner(deps, input.agentId)],
+    userIds: await agentOwners(deps, input.agentId),
     kind: "plan_reset_unknown",
     groupKey: `plan_reset_unknown:${input.waitKey}`,
     actor: agent(input.agentId),
@@ -1043,7 +1056,7 @@ export async function notifyPlanModelDropped(
 ) {
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [await agentOwner(deps, input.agentId)],
+    userIds: await agentOwners(deps, input.agentId),
     kind: "plan_model_dropped",
     groupKey: planModelDroppedGroup(input.agentId, input.model.id),
     actor: agent(input.agentId),
@@ -1070,12 +1083,16 @@ export async function notifyCatchUpClosed(
     askers?: string[];
   },
 ) {
-  const owner = await agentOwner(deps, input.agentId);
-  if (!owner || input.askers?.includes(owner)) return;
-  if (!(await readableChannelIds(deps.db, input.orgId, owner, [input.channelId])).has(input.channelId)) return;
+  const owners: string[] = [];
+  for (const owner of await agentOwners(deps, input.agentId)) {
+    if (input.askers?.includes(owner)) continue;
+    if ((await readableChannelIds(deps.db, input.orgId, owner, [input.channelId])).has(input.channelId))
+      owners.push(owner);
+  }
+  if (owners.length === 0) return;
   await notify(deps, {
     orgId: input.orgId,
-    userIds: [owner],
+    userIds: owners,
     kind: "catch_up_closed",
     groupKey: `catch_up_closed:${input.agentId}:${input.waitKey}`,
     actor: agent(input.agentId),
@@ -1178,8 +1195,8 @@ export async function notifyRunFailed(
   reason: string,
   cause?: { code?: string; plan?: string },
 ) {
-  const to = userId ?? (await agentOwner(deps, run.agentId));
-  if (!to) return;
+  const told = userId ? [userId] : await agentOwners(deps, run.agentId);
+  if (told.length === 0) return;
   const [channel] = await deps.db.select({ name: channels.name }).from(channels).where(eq(channels.id, run.channelId));
   const groupKey = runFailedGroup(run);
   const source = {
@@ -1191,20 +1208,22 @@ export async function notifyRunFailed(
   };
   const said = { reason: cause?.code ?? reason.split(":")[0] ?? reason, ...(cause?.plan ? { plan: cause.plan } : {}) };
   // One at a time per person, so a burst of failures finds the row the first one made.
-  await deps.db.transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`run-failed:${run.orgId}:${to}`}))`);
-    const d = { ...deps, db: tx };
-    if (await joinRunFailure(d, run.orgId, to, { key: groupKey, ...source }, said)) return;
-    await notify(d, {
-      orgId: run.orgId,
-      userIds: [to],
-      kind: "run_failed",
-      groupKey,
-      actor: agent(run.agentId),
-      source,
-      latest: { ...said, failures: [{ key: groupKey, ...source }] },
+  for (const to of told) {
+    await deps.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`run-failed:${run.orgId}:${to}`}))`);
+      const d = { ...deps, db: tx };
+      if (await joinRunFailure(d, run.orgId, to, { key: groupKey, ...source }, said)) return;
+      await notify(d, {
+        orgId: run.orgId,
+        userIds: [to],
+        kind: "run_failed",
+        groupKey,
+        actor: agent(run.agentId),
+        source,
+        latest: { ...said, failures: [{ key: groupKey, ...source }] },
+      });
     });
-  });
+  }
 }
 
 /** The agent's run in that conversation ended well: its failure there is done (it leaves a shared row). */
@@ -1658,7 +1677,7 @@ export async function notifyAgentHold(
 ) {
   await notify(deps, {
     orgId: hold.orgId,
-    userIds: [await agentOwner(deps, hold.agentId), ...(await agentManagerIds(deps.db, hold.orgId, hold.agentId))],
+    userIds: [...(await agentOwners(deps, hold.agentId)), ...(await agentManagerIds(deps.db, hold.orgId, hold.agentId))],
     kind: "org_standing",
     groupKey: `${agentHoldGroup(hold.agentId)}${hold.at.getTime()}:${hold.kind}`,
     source: { agentId: hold.agentId, label: hold.name },
@@ -1682,7 +1701,7 @@ export async function browserHandoffRecipient(
   runId: string | null,
   agentId: string,
 ) {
-  const asked = [await requesterOfRun(deps, orgId, runId), await agentOwner(deps, agentId)];
+  const asked = [await requesterOfRun(deps, orgId, runId), ...(await agentOwners(deps, agentId))];
   const may = await mayOf(deps, orgId, asked, "own_browsers");
   return asked.find((id) => id && may.includes(id)) ?? null;
 }
@@ -1726,7 +1745,8 @@ export async function notifyBrowserHandoff(
   // give them the agents' browsers.
   const userIds = [
     ...new Set(
-      to ?? (await mayOf(deps, h.orgId, [h.requestedForUserId, await agentOwner(deps, h.agentId)], "own_browsers")),
+      to ??
+        (await mayOf(deps, h.orgId, [h.requestedForUserId, ...(await agentOwners(deps, h.agentId))], "own_browsers")),
     ),
   ];
   if (userIds.length === 0) return;

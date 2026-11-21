@@ -43,7 +43,7 @@ const holdsRules = (db: Executor, orgId: string, agentId: string) =>
  */
 export async function rulesForPerson(
   db: Executor,
-  input: { orgId: string; agentId: string; ownerUserId: string | null; personId: string | null },
+  input: { orgId: string; agentId: string; ownerUserId: string | null; ownerRoleId?: string | null; personId: string | null },
 ) {
   const rows = await db
     .select({
@@ -72,7 +72,7 @@ export async function rulesForPerson(
     await Promise.all(
       givers.map(
         async (by) =>
-          [by, by === input.personId || (await decidesAgentApprovals(db, input.orgId, by, input.ownerUserId))] as const,
+          [by, by === input.personId || (await decidesAgentApprovals(db, input.orgId, by, input))] as const,
       ),
     ),
   );
@@ -83,7 +83,7 @@ export async function rulesForPerson(
 export async function rulesForRun(
   db: Executor,
   run: AuthorityRun,
-  agent: { id: string; ownerUserId: string | null },
+  agent: { id: string; ownerUserId: string | null; ownerRoleId?: string | null },
 ): Promise<{ text: string; itemIds: string[] }> {
   if (!(await holdsRules(db, run.orgId, agent.id))) return { text: "", itemIds: [] };
   const authority = await runAuthority(db, run);
@@ -91,6 +91,7 @@ export async function rulesForRun(
     orgId: run.orgId,
     agentId: agent.id,
     ownerUserId: agent.ownerUserId,
+    ownerRoleId: agent.ownerRoleId ?? null,
     personId: ruleReaderOf(authority),
   });
   if (rules.length === 0) return { text: "", itemIds: [] };

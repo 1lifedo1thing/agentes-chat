@@ -22,6 +22,7 @@ import { decidesAgentApprovals, MAX_OWN_ACTIONS, OWN_ACTION_NAME } from "./appro
 import { cancelRoutineAhead, type RoutineAheadView, routinesAhead } from "./approvals";
 import {
   audienceError,
+  type AgentOwnerFields,
   audienceSql,
   canTalkTo,
   managesRoutinesOf,
@@ -1413,8 +1414,8 @@ export function ownActionsOf(list: readonly string[]): string[] {
 }
 
 /** A routine acts on its own only by the word of someone who could approve those actions themselves. */
-async function requireActionApprover(db: Database, actorId: string, orgId: string, ownerUserId: string | null) {
-  if (await decidesAgentApprovals(db, orgId, actorId, ownerUserId)) return;
+async function requireActionApprover(db: Database, actorId: string, orgId: string, owner: AgentOwnerFields) {
+  if (await decidesAgentApprovals(db, orgId, actorId, owner)) return;
   throw new ForbiddenError(
     "Only the agent's owner or someone who approves its actions can let a routine act on its own",
     "routine.actions_need_approver",
@@ -1449,7 +1450,7 @@ export async function createRoutine(
   if (input.trigger.type === "connector") await checkConnectorTrigger(db, orgId, agent.id, input.trigger, actorId);
   const hooks = input.trigger.type === "webhook" || input.trigger.type === "connector" ? hooksOf(deps) : null;
   const ownActions = ownActionsOf(input.ownActions ?? []);
-  if (ownActions.length > 0) await requireActionApprover(db, actorId, orgId, agent.ownerUserId);
+  if (ownActions.length > 0) await requireActionApprover(db, actorId, orgId, agent);
   const name = input.name?.trim().slice(0, 120) || prompt.split("\n")[0]?.slice(0, 60) || "Routine";
   const [row] = await db
     .insert(routines)
@@ -1760,7 +1761,7 @@ export async function updateRoutine(
             "routine.act_take_over",
           );
         }
-        await requireActionApprover(db, actorId, orgId, agent.ownerUserId);
+        await requireActionApprover(db, actorId, orgId, agent);
       }
       set.ownActions = ownActions;
     }

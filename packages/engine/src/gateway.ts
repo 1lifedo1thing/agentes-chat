@@ -50,6 +50,7 @@ import {
   type ToolSpec,
 } from "@agenteschat/providers";
 import { type Agent, getAgent } from "./agents";
+import { agentOwnerIds } from "./audience";
 import { caches } from "./cache";
 import { decryptCredential, usableCredentialRow } from "./credentials";
 import { loadEndpointModels } from "./endpoints";
@@ -1341,12 +1342,13 @@ export async function agentBudgetState(db: Database, orgId: string, agentId: str
 
 /**
  * Budget hook that tells the agent's owner over the WebSocket
- * (`budget.warning` / `budget.exhausted`); an agent without an owner tells
+ * (`budget.warning` / `budget.exhausted`), or everyone holding its owner role; an agent with neither tells
  * the organization's admins.
  */
 export function notifyOwnerOnBudget(pubsub: PubSub, db?: Database): NonNullable<ModelGatewayDeps["onBudgetThreshold"]> {
   return async ({ agent, level, spentNanoUsd, budgetNanoUsd }) => {
-    const recipients = agent.ownerUserId ? [agent.ownerUserId] : db ? await adminIds(db, agent.orgId) : [];
+    const owners = db ? await agentOwnerIds(db, agent.orgId, agent) : agent.ownerUserId ? [agent.ownerUserId] : [];
+    const recipients = owners.length > 0 ? owners : db ? await adminIds(db, agent.orgId) : [];
     for (const userId of recipients) {
       // A percentage only: owners who aren't admins never see money.
       await publishUserEvent(pubsub, agent.orgId, userId, {

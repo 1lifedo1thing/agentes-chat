@@ -1481,7 +1481,12 @@ async function takeOut(
   if (heir && handed.length) {
     const { handOver } = await import("./agents");
     for (const agent of handed) {
-      await handOver({ db, pubsub: options.pubsub }, actorId, { ...agent, ownerUserId: targetUserId }, heir);
+      await handOver(
+        { db, pubsub: options.pubsub },
+        actorId,
+        { ...agent, ownerUserId: targetUserId },
+        { ownerUserId: heir, ownerRoleId: null },
+      );
     }
   }
   await announceReleasedAccounts({ db, pubsub: options.pubsub }, released);
