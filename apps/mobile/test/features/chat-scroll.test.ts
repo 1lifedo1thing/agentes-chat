@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { createDockHeight } from "../../src/features/chat/dock-height";
 import {
+  ARRIVING_SLACK_MS,
   appendedKeys,
   arrivesNow,
-  ARRIVING_SLACK_MS,
   bandAim,
   lastSeenKey,
   type Place,

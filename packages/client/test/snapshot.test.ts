@@ -237,7 +237,10 @@ test("the conversation list's threads are kept, their first page only: a launch 
   qc.setQueryData(keys.me, me("u1"));
   const list = keys.threadList("o1", { tab: "all", mine: true, limit: 50 });
   qc.setQueryData(list, {
-    pages: [{ threads: [{ id: "t1" }], nextCursor: "a" }, { threads: [{ id: "t2" }], nextCursor: null }],
+    pages: [
+      { threads: [{ id: "t1" }], nextCursor: "a" },
+      { threads: [{ id: "t2" }], nextCursor: null },
+    ],
     pageParams: ["", "a"],
   });
   await createSnapshot(qc, store).flush();
