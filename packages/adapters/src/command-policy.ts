@@ -1291,6 +1291,22 @@ export interface LoneMerge {
 /** What a merge the agent may do on its own touched, for its receipt: `pr` for a pull request, else `ref`. */
 export type MergeDone = Pick<LoneMerge, "pr" | "ref"> & { repo: string };
 
+/**
+ * A code session's local project in the "merge without asking" list (ADR 0208): `local:<folder>#<branch>`, the
+ * project's folder (in the agent's own) and the one branch that may be merged into it, the session's.
+ */
+export const LOCAL_MERGE_PREFIX = "local:";
+
+/** A `local:<folder>#<branch>` entry, read; null for any other (a GitHub repository). */
+export function localMergeTarget(entry: string): { dir: string; branch: string } | null {
+  if (!entry.startsWith(LOCAL_MERGE_PREFIX)) return null;
+  const rest = entry.slice(LOCAL_MERGE_PREFIX.length);
+  const cut = rest.lastIndexOf("#");
+  const dir = cut > 0 ? rest.slice(0, cut) : "";
+  const branch = cut > 0 ? rest.slice(cut + 1) : "";
+  return dir && branch ? { dir, branch } : null;
+}
+
 const GITHUB_REPO = /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/;
 
 /**

@@ -20504,6 +20504,11 @@ export const en = {
       agents_one: "{{count}} subagent",
       agents_other: "{{count}} subagents",
       done: "{{done}} of {{total}} done",
+      /** The bar above the composer while subagents work (the agent's name before it). */
+      asking_one: "Asking a subagent",
+      asking_other: "Asking {{count}} subagents",
+      /** After the agent's own step in the bar, and after "working" in the session list. */
+      workflowShort: "workflow {{done}} of {{total}}",
     },
   },
   agentComputer: {

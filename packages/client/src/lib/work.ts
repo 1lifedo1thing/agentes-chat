@@ -2,7 +2,15 @@ import type { TFunction } from "i18next";
 import type { ConnectorDef, Message, OrgSummary, Run, RunStep } from "../api/types";
 import type { LiveCode, LiveOutput, LiveRun, LiveStep, LiveWork } from "../realtime/streams";
 import { type Activity, type ActivityKind, activityVerb, appLabel, PERMISSION_TOOL, toolActivity } from "./activity";
-import { type CliLine, cliLineOf, cliStepOf, cliVerbWord } from "./cli-tools";
+import {
+  type CliLine,
+  cliLineOf,
+  cliStepOf,
+  cliVerbWord,
+  type SubagentsNow,
+  subagentsNow,
+  subagentsWords,
+} from "./cli-tools";
 import { appConnector } from "./connected";
 import { POSTGRES_MARK } from "./databases";
 import { capitalize, joinNames, lowerFirst, shortTarget } from "./format";
@@ -813,6 +821,14 @@ export function toolPhrase(t: TFunction, l: Pick<ToolLine, "kind" | "app" | "too
   return t(`chat.work.step.${l.kind}`, { app: appLabel(l), tool: toolWords(t, l.tool, locale) });
 }
 
+const lowerStart = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+
+/** Subagents still at work behind the agent's own call, in a few words: "2 subagentes", "workflow 2 de 3". */
+export const subagentsTail = (t: TFunction, busy: SubagentsNow) =>
+  busy.workflow && busy.workflow.total > 0
+    ? t("cliTools.progress.workflowShort", { done: busy.workflow.done, total: busy.workflow.total })
+    : t("cliTools.progress.agents", { count: Math.max(1, busy.agents) });
+
 /** A turn quicker than this shows nothing new: its step line says the agent's own words only past it. */
 export const STEP_WORDS_AFTER_MS = 5000;
 
@@ -827,18 +843,21 @@ export function waitStep(t: TFunction, work: LiveWork[] | undefined, step?: Live
   if (last?.kind === "call" && last.held) return t("chat.wait.held");
   if (step?.said) return t("chat.wait.said", { text: step.said });
   const now = toolNow(toolItemsLive(work ?? []));
+  // Its subagents and workflows at work (ADR 0208): what they do, while it waits on them (the call that started them
+  // still running, or over with them going on in the background).
+  const busy = subagentsNow(work);
+  const starting = now?.cli?.verb === "delegate" || now?.cli?.verb === "workflow";
+  if (busy && (now?.state !== "run" || starting)) return `${capitalize(subagentsWords(t, busy, lowerStart))}…`;
   if (now?.state !== "run") {
-    // A workflow or a subagent it started still at work, its call over (ADR 0208): that is what it does meanwhile.
-    const busy = (work ?? []).findLast((w) => w.kind === "call" && w.progress !== undefined && !w.progress.ended);
-    if (busy?.kind === "call" && busy.progress)
-      return `${capitalize(cliVerbWord(t, busy.progress.kind === "workflow" ? "workflow" : "delegate", true))}…`;
     return step?.tool ? `${capitalize(activityVerb(t, toolActivity(step.tool)))}…` : t("chat.wait.thinking");
   }
-  // A computer brain's own call in a code session (ADR 0208): its CLI's verb and what it works on.
+  // A computer brain's own call in a code session (ADR 0208): its CLI's verb and what it works on, and its subagents
+  // still at work behind it.
   if (now.cli) {
     const on = now.cli.target ? shortTarget(now.cli.target) : "";
     const doing = capitalize(cliVerbWord(t, now.cli.verb, true));
-    return on ? `${doing} · ${on}…` : `${doing}…`;
+    const behind = busy ? ` · ${subagentsTail(t, busy)}` : "";
+    return on ? `${doing} · ${on}${behind}…` : `${doing}${behind}…`;
   }
   const verb = capitalize(activityVerb(t, now));
   // The folded line keeps its first call's hint; the step line names the call running now, one the block lists: a call

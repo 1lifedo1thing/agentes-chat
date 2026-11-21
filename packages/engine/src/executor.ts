@@ -3398,7 +3398,11 @@ async function executeRunInner(
     if (run.workId || !found) return [];
     return (await liveWorksHere(db, run).catch(() => [])).map((w) => w.title || "untitled background work");
   };
-  const answerNow = async (answer: string): Promise<boolean> => {
+  /**
+   * `working`: a subagent or a workflow the brain started still works (`tool_progress`): what it said meanwhile ("the
+   * workflow is running") is no promise left untried, so no judge holds it back to join its outcome.
+   */
+  const answerNow = async (answer: string, working = false): Promise<boolean> => {
     const t = transcript as Transcript;
     const betweenAgents = Boolean(channelRow && isAgentOnlyDm(channelRow));
     if (run.background || run.workId || plan.missionId || betweenAgents) return false;
@@ -3411,7 +3415,7 @@ async function executeRunInner(
     const plain = !t.repo && !t.system.some((b) => b.text === TECHNICAL_STYLE_LINE);
     const names = [...granted, ...tools].map((x) => x.name);
     if (plain && toolsNamed(said, names, request).length > 0) return false;
-    if (judge) {
+    if (judge && !working) {
       const verdict = await continuationVerdict(judge, {
         orgId: run.orgId,
         agentId: run.agentId,
@@ -5174,6 +5178,8 @@ async function executeRunInner(
       const sharing: Promise<void>[] = [];
       /** Its own calls whose step line went out as they started (`tool_started`), and when: not again as they end. */
       const stepTold = new Map<string, number>();
+      /** Its subagents and workflows still at work (`tool_progress` not ended), by the call that started them. */
+      const working = new Set<string>();
       /**
        * A code session reads like its CLI in a terminal (ADR 0208): each call of the brain's own is a line of the run's
        * work, live and on its trail. Elsewhere they stay off the trail (ADR 0032: a write for every call).
@@ -5315,6 +5321,8 @@ async function executeRunInner(
             },
             // A subagent or a workflow of its own while it works: live in a code session, as its calls are.
             onProgress: (p) => {
+              if (p.ended) working.delete(p.id);
+              else working.add(p.id);
               if (!cliLines || run.background) return;
               void publishChannelEvent(deps.pubsub, {
                 type: "agent.tool.progress",
@@ -5373,7 +5381,7 @@ async function executeRunInner(
             },
             // An answer it finished before reading on goes out now, as a model brain's does (ADR 0112).
             onAnswer: async (answer) => {
-              if (!(await answerNow(answer))) return false;
+              if (!(await answerNow(answer, working.size > 0))) return false;
               deltas.answered();
               return true;
             },

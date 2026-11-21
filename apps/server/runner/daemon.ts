@@ -734,7 +734,7 @@ export class RunnerDaemon implements RequestObserver {
   /** As whom a terminal on the agent's computer runs, like its desktop; `cwd`: a folder inside the agent's (ADR 0208). */
   private async terminalUser(agent: AgentScope, cwd?: string): Promise<TerminalUser> {
     const agentUser = this.session?.agentUser;
-    if (!agentUser) return runnerTerminalUser(await this.agentFolder(agent), cwd);
+    if (!agentUser) return runnerTerminalUser(await this.agentFolder(agent), cwd, this.shared);
     const u = agentUser(agent);
     this.startContainers(u);
     return systemTerminalUser(systemLauncher(u), agent, cwd);
@@ -1226,6 +1226,8 @@ export class RunnerDaemon implements RequestObserver {
       maxProcesses: config.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
       accounts: this.accounts,
       claudeVersion: () => this.executors().claude?.version ?? null,
+      // Single-user mode only: in system mode each agent is its own user, and the shared bin/ stays off every PATH.
+      sharedFolder: () => (this.session?.agentUser != null ? null : this.shared),
       log,
     });
     const codexRuns = new Map<string, McpTaskInfo>();

@@ -178,3 +178,52 @@ export function mergeCliProgress(before: CliProgress | undefined, next: CliProgr
     ...(calls ? { calls } : {}),
   };
 }
+
+/** A run's subagents and workflows at work now (`subagentsNow`): what a line about them says. */
+export interface SubagentsNow {
+  /** Subagents at work (each `Agent` call whose subagent hasn't ended). */
+  agents: number;
+  /** The one subagent's call running now, when a single one works. */
+  now?: CliLine;
+  /** A workflow at work: its agents done, and in all. */
+  workflow?: { done: number; total: number };
+}
+
+/** What a run's live work says of its subagents and workflows still at work; null when none is. */
+export function subagentsNow(
+  work: readonly { kind: string; progress?: CliProgress }[] | undefined,
+): SubagentsNow | null {
+  let agents = 0;
+  let now: CliLine | undefined;
+  let workflow: SubagentsNow["workflow"];
+  for (const w of work ?? []) {
+    const p = w.kind === "call" ? w.progress : undefined;
+    if (!p || p.ended) continue;
+    if (p.kind === "workflow") {
+      const list = p.agents ?? [];
+      workflow ??= { done: list.filter((a) => a.state !== "running").length, total: list.length };
+    } else {
+      agents += 1;
+      now = agents === 1 ? p.now : undefined;
+    }
+  }
+  if (!agents && !workflow) return null;
+  return { agents, ...(now ? { now } : {}), ...(workflow ? { workflow } : {}) };
+}
+
+/**
+ * Those subagents in words, as a step line: "Rodando um workflow · 2 de 3 prontos", "Pedindo a um subagente · lendo
+ * todo.js", "Pedindo a 3 subagentes".
+ */
+export function subagentsWords(t: TFunction, busy: SubagentsNow, lower: (s: string) => string = (s) => s): string {
+  if (busy.workflow) {
+    const verb = cliVerbWord(t, "workflow", true);
+    return busy.workflow.total > 0
+      ? `${verb} · ${t("cliTools.progress.done", { done: busy.workflow.done, total: busy.workflow.total })}`
+      : verb;
+  }
+  const asking = t("cliTools.progress.asking", { count: busy.agents });
+  if (!busy.now) return asking;
+  const doing = lower(cliVerbWord(t, busy.now.verb, true));
+  return `${asking} · ${busy.now.target ? `${doing} ${busy.now.target.split("/").pop() ?? busy.now.target}` : doing}`;
+}

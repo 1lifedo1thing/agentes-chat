@@ -14,6 +14,7 @@ import { type DesktopSystem, NOT_AS_ROOT, runnerEnv } from "./desktop-session";
 import { RunnerError } from "./errors";
 import { hasBunTerminal, runtimeName } from "./launch";
 import { agentFolderName, normalizeRequestPath, resolveInWorkspace } from "./paths";
+import { withSharedBin } from "./shared-folder";
 import type { DataSocket } from "./streams";
 
 /**
@@ -63,13 +64,22 @@ export async function terminalFolder(agentFolder: string, cwd: string): Promise<
 
 /**
  * Single-user mode: the runner's own user, HOME as the agent's commands have it, in the agent's folder, or in `cwd`
- * inside it (`terminalFolder`).
+ * inside it (`terminalFolder`); the shared folder's tools by name, as the agent's own commands find them
+ * (`withSharedBin`).
  */
-export const runnerTerminalUser = async (agentFolder: string, cwd?: string): Promise<TerminalUser> => ({
-  prefix: [],
-  env: { ...runnerEnv(os.homedir()), LANG: process.env.LANG || "C.UTF-8" },
-  cwd: cwd ? await terminalFolder(agentFolder, cwd) : agentFolder,
-});
+export const runnerTerminalUser = async (
+  agentFolder: string,
+  cwd?: string,
+  shared?: string | null,
+): Promise<TerminalUser> => {
+  const env: Record<string, string> = { ...runnerEnv(os.homedir()), LANG: process.env.LANG || "C.UTF-8" };
+  const PATH = withSharedBin(env.PATH, shared);
+  return {
+    prefix: [],
+    env: PATH ? { ...env, PATH } : env,
+    cwd: cwd ? await terminalFolder(agentFolder, cwd) : agentFolder,
+  };
+};
 
 /**
  * System mode: the agent's own OS user through its launcher, in the agent's folder in its home once its

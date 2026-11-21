@@ -1,4 +1,6 @@
 import { type CodeSession, useCodeSessions } from "@agenteschat/client";
+import { subagentsNow } from "@agenteschat/client/lib/cli-tools";
+import { subagentsTail } from "@agenteschat/client/lib/work";
 import { cx, Icon } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
@@ -6,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { AgentAvatar, AgentSpinner } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useStreams } from "@/realtime/context";
 
 /** The quiet mark of a session that waits on me (the requests' own mark). */
 export const WaitMark = () => (
@@ -15,9 +18,26 @@ export const WaitMark = () => (
 );
 
 /** One session's state in words, in its color: what the list, the header and the home say. */
+/**
+ * Its subagents and workflows at work now, from its conversation's live runs (ADR 0208): "3 subagentes", "workflow 2
+ * de 3". Read as one string, so the list redraws only when the words change.
+ */
+function useSubagentsLine(channelId: string): string | null {
+  const { t } = useTranslation();
+  return useStreams((s) => {
+    for (const run of Object.values(s.runs)) {
+      if (run.channelId !== channelId) continue;
+      const busy = subagentsNow(run.work);
+      if (busy) return subagentsTail(t, busy);
+    }
+    return null;
+  });
+}
+
 export function SessionState({ session }: { session: CodeSession }) {
   const { t } = useTranslation();
   const work = session.work;
+  const subagents = useSubagentsLine(session.channelId);
   if (work === "waiting")
     return (
       <span className="code-st code-st--wait">
@@ -29,7 +49,10 @@ export function SessionState({ session }: { session: CodeSession }) {
     return (
       <span className="code-st code-st--work">
         <AgentSpinner agentId={session.agentId} size={14} />
-        <span>{t(work === "working" ? "codeSessions.state.working" : "codeSessions.state.preparing")}</span>
+        <span>
+          {t(work === "working" ? "codeSessions.state.working" : "codeSessions.state.preparing")}
+          {work === "working" && subagents ? ` · ${subagents}` : ""}
+        </span>
       </span>
     );
   if (work === "failed")

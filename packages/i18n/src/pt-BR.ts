@@ -20421,6 +20421,11 @@ export const ptBR = {
       agents_one: "{{count}} subagente",
       agents_other: "{{count}} subagentes",
       done: "{{done}} de {{total}} prontos",
+      /** The bar above the composer while subagents work (the agent's name before it). */
+      asking_one: "Pedindo a um subagente",
+      asking_other: "Pedindo a {{count}} subagentes",
+      /** After the agent's own step in the bar, and after "trabalhando" in the session list. */
+      workflowShort: "workflow {{done}} de {{total}}",
     },
   },
   agentComputer: {
