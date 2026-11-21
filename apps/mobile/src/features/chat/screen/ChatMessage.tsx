@@ -127,13 +127,7 @@ export const ChatMessage = memo(function ChatMessage({
           around it either way, so it isn't drawn again when it turns sent. The menu brings the plain view it lifts (the
           row can be a fragment: a pair row, a quote). */}
       <SwipeReply enabled={canReply && !m.local} onReply={reply}>
-        {NATIVE_MENU ? (
-          <MessageMenuFor context={menu}>
-            {row}
-          </MessageMenuFor>
-        ) : (
-          row
-        )}
+        {NATIVE_MENU ? <MessageMenuFor context={menu}>{row}</MessageMenuFor> : row}
       </SwipeReply>
       <LayoutAnimationConfig skipEntering>
         {m.author.type === "agent" && m.mentionedAgentIds.length > 1 ? (

@@ -38,7 +38,7 @@ describe("swiping a message to answer it", () => {
     expect(swipe).toContain("{marked ? <ReplyMark x={x} armed={armed} /> : null}");
     const chat = chatScreenSource();
     expect(chat).toContain("<SwipeReply enabled={canReply && !m.local} onReply={reply}>");
-    expect(chat).toMatch(/\{NATIVE_MENU \? \(\s*<MessageMenuFor/);
+    expect(chat).toMatch(/\{NATIVE_MENU \? \(?\s*<MessageMenuFor/);
     expect(chat).not.toContain("NATIVE_MENU && !m.local");
     // Its menu then holds what works before the server has it: no reactions, no empty palette.
     const menu = src("features/chat/MessageMenu.tsx");

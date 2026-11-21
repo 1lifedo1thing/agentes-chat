@@ -90,7 +90,13 @@ export function MessageMenu({
       <NativeLinkPreviewAction identifier="menu" title="" onSelected={noop}>
         {groups === null ? <NativeLinkPreviewAction identifier="building" title="" hidden onSelected={noop} /> : null}
         {reactions.length > 0 ? (
-          <NativeLinkPreviewAction identifier="react" title={reactLabel} displayAsPalette displayInline onSelected={noop}>
+          <NativeLinkPreviewAction
+            identifier="react"
+            title={reactLabel}
+            displayAsPalette
+            displayInline
+            onSelected={noop}
+          >
             {reactions.map((emoji) => (
               <NativeLinkPreviewAction
                 key={emoji}
