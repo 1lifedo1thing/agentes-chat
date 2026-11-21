@@ -230,6 +230,20 @@
 .code-mid__s--ask {
   font-size: 15px;
 }
+/* With the agent over the title, the three (agent, title and field) stand in the middle of the sky over the team: the
+   field's middle 14 above the home's (the team takes 163 at the foot, the agent 136 over the title). A window too short
+   for them shows the title and the field alone. */
+.code-mid--agent {
+  top: calc(50% - 14px);
+}
+@media (max-height: 600px) {
+  .code-mid--agent {
+    top: 37%;
+  }
+  .code-agent {
+    display: none;
+  }
+}
 /* The picked agent in cubes (`CodeHomeAgent`): a point 12 over the title's box, on the field's middle, where the
    figure's drawn foot stands; the canvas and the cursor are placed from it. Never in the way of a click. */
 .code-agent {

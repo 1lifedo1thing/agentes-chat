@@ -1,6 +1,6 @@
 import { CURSOR_IDLE_MS, glideMs, glidePoint } from "@agenteschat/client";
 import { gradientOf, idlePose } from "@agenteschat/ui";
-import { type CSSProperties, type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { CursorMark } from "@/components/browser/AgentCursor";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
@@ -47,6 +47,7 @@ export function CodeHomeAgent({
   const reduced = usePrefersReducedMotion();
   const canvas = useRef<HTMLCanvasElement>(null);
   const look = fullLook(lookOf(agent));
+  const shapeKey = `${look.color}|${look.eyes}|${look.accessory}`;
   const shape = useMemo(
     () => agentCubes({ color: String(look.color), eyes: String(look.eyes), accessory: String(look.accessory) }),
     [look.color, look.eyes, look.accessory],
@@ -55,7 +56,7 @@ export function CodeHomeAgent({
   const [ink, setInk] = useState<Box | null>(null);
   const [flat, setFlat] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = canvas.current;
     const home = area.current;
     if (!el) return;
@@ -138,7 +139,8 @@ export function CodeHomeAgent({
           <AgentAvatar agent={agent} agentId={agent.id} name={name} size="xl" state="idle" />
         </span>
       ) : (
-        <canvas ref={canvas} className="code-agent__art" style={place} />
+        // A new canvas for each look: a WebGL context lost on its way out can't draw the next one.
+        <canvas key={shapeKey} ref={canvas} className="code-agent__art" style={place} />
       )}
       {!flat && cursor && (
         <span

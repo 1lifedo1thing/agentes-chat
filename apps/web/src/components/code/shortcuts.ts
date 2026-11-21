@@ -74,17 +74,21 @@ export function useCodeKey(key: CodeKey, handler: () => void) {
   }, [key]);
 }
 
-/** The page's listener: a key of its own goes to its pieces, never to the browser (⌘P would print). */
+/**
+ * The page's listener: a key of its own goes to its pieces and nowhere else. Caught on its way down, before the focused
+ * control's own keys (a picker would open on ⌥⌘↓) and the browser's (⌘P would print).
+ */
 export function useCodeKeys() {
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.isComposing) return;
+      if (e.isComposing) return;
       const key = codeKeyOf(e);
       if (!key) return;
       e.preventDefault();
+      e.stopPropagation();
       emitCodeKey(key);
     };
-    window.addEventListener("keydown", on);
-    return () => window.removeEventListener("keydown", on);
+    window.addEventListener("keydown", on, true);
+    return () => window.removeEventListener("keydown", on, true);
   }, []);
 }

@@ -109,7 +109,7 @@ export function CodeHome() {
       <div className="code-stage" aria-hidden="true">
         <CodeHomeSky />
       </div>
-      <form className="code-mid" onSubmit={submit}>
+      <form className={cx("code-mid", pickedAgent && "code-mid--agent")} onSubmit={submit}>
         {pickedAgent && <CodeHomeAgent agent={pickedAgent} name={pickedAgent.name} area={home} />}
         <h2 className="code-mid__t code-mid__t--brand">{t("codeSessions.home.mode")}</h2>
         <span className="code-mid__s code-mid__s--ask">{t("codeSessions.home.title", { repo: repoName })}</span>
