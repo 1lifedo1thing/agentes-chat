@@ -117,7 +117,7 @@ describe("suggest_code_session", () => {
       SUGGEST_CODE_SESSION_TOOL,
     ]);
     expect(await createCodeSuggestionToolSource().tools({ ...ctxOf(run), background: true })).toEqual([]);
-    // In a session it is a computer brain's hidden tool, and the prompt never speaks of it there.
+    // In a session the gateway hides it from every brain, and the prompt never speaks of it there.
     expect(CODE_SESSION_HIDDEN_TOOLS.has(SUGGEST_CODE_SESSION_TOOL)).toBe(true);
     expect(await codeSuggestionApplies(f.db, run)).toBe(true);
     const inSession = await runOver((await codeChannel()).id);

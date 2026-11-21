@@ -1132,7 +1132,7 @@ export async function buildRunContext(
   // now. Its first turn is told to install the project when the worktree is new.
   const codeBrief =
     channel.kind === "code"
-      ? await codeSessionBrief(db, channel.id, agent.id, {
+      ? await codeSessionBrief(db, run.orgId, channel.id, agent.id, {
           first: !history.some((m) => m.authorType === "agent"),
         }).catch(() => null)
       : null;

@@ -27,7 +27,6 @@ import {
   quietWork,
   replySteps,
   savedOneLine,
-  showsActivity,
   type ToolItem,
   type ToolLine,
   toolApps,
@@ -43,6 +42,7 @@ import {
   workMeta,
   workSteps,
 } from "@agenteschat/client/lib/work";
+import { useShowsWork } from "@agenteschat/client/lib/work-context";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import {
   type AgentColor,
@@ -288,10 +288,10 @@ export function LiveTools({
   const blockItems = useBlockItems(items);
   const logo = useCallLogo();
   const calls = toolCalls(items);
-  // Done, its tools are the summary the person chose not to see (`showActivity`); a code session's CLI work is the
-  // conversation itself, as in a terminal (ADR 0214).
-  const terminal = items.some((i) => i.kind === "call" && i.line.cli);
-  if (done && !showsActivity(org) && !terminal) return null;
+  // Done, its tools are the summary the person chose not to see (`showActivity`), but in a code session's
+  // conversation, where they are the conversation itself (ADR 0214).
+  const shows = useShowsWork(org);
+  if (done && !shows) return null;
   // A lone quick read that only fed the answer: no card, as if it called nothing (once done, what it said on the way
   // is in its reply).
   const quiet = quietWork(items);
@@ -419,6 +419,7 @@ export function SavedTools({
   const [open, setOpen] = useState(false);
   const run = useRun(org.id, open ? runId : null);
   const logo = useCallLogo();
+  const shows = useShowsWork(org);
   const compact = workMeta(meta);
   const onCard = (name: unknown) => skipScreens.some((screen) => isScreenTool(String(name ?? ""), screen));
   const mine = run.data ? replySteps(run.data.steps, messageId) : null;
@@ -441,8 +442,7 @@ export function SavedTools({
   // its own cards show (where it browsed).
   // No `meta.work` (a reply saved before it): a block that loads the run's steps when opened, gone if it called none.
   const shown = compact ? workSteps(compact, onCard) : null;
-  // A code session's CLI work shows whoever turned the summary off: it is the conversation (ADR 0214).
-  if (shown === 0 || !(showsActivity(org) || (compact?.cliCalls ?? 0) > 0)) return null;
+  if (shown === 0 || !shows) return null;
   const calls = work ? toolCalls(items) : (shown ?? 0);
   const lone = savedOneLine(meta, onCard);
   // Its one call (beside the screens' on their cards) only fed the answer (`quietLine`): the reply says it. Time

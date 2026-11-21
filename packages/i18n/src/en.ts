@@ -11622,7 +11622,8 @@ export const en = {
       /** Under the title, over the field. */
       title: "What to do in {{repo}}?",
       aRepo: "a project",
-      noAgents: "No agent thinks on a computer yet. Give one Claude Code or Codex on a computer, in its settings.",
+      noAgents:
+        "No agent codes on a computer yet. In an agent's settings, give it a computer and a coding app, or let it run code there.",
       placeholder: "Describe the change, the bug or the question",
       label: "What to do",
       agent: "Agent",
@@ -15729,8 +15730,7 @@ export const en = {
     /** A code session (ADR 0214): what keeps one from starting, or its panel from reading the agent's computer. */
     codeSession: {
       noComputer: "This agent has no computer yet. Give it one in its settings to code with it.",
-      noComputerBrain:
-        "This agent doesn't think on a computer. Pick one that does, or give it Claude Code or Codex in its settings.",
+      cannotCode: "This agent can't code on its computer. Give it a coding app in its settings, or let it run code there.",
       repoNotAllowed: "This agent can't work in that repository. Pick another one, or add it in the agent's settings.",
       notYours: "Only who opened the session, or an admin, closes it.",
       notReady: "The session's worktree isn't ready yet. Try again in a moment.",

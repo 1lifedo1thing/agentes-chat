@@ -11180,7 +11180,7 @@
       "mode": "Vibecoding mode",
       "title": "Was gibt es in {{repo}} zu tun?",
       "aRepo": "einem Projekt",
-      "noAgents": "Noch denkt kein Agent auf einem Computer. Gib einem in seinen Einstellungen Claude Code oder Codex auf einem Computer.",
+      "noAgents": "Noch programmiert kein Agent auf einem Computer. Gib einem Agenten in seinen Einstellungen einen Computer und eine Coding-App, oder lass ihn dort Code ausführen.",
       "placeholder": "Beschreib die Änderung, den Bug oder die Frage",
       "label": "Was zu tun ist",
       "agent": "Agent",
@@ -15425,7 +15425,7 @@
     },
     "codeSession": {
       "noComputer": "Dieser Agent hat noch keinen Computer. Gib ihm in seinen Einstellungen einen, um mit ihm zu programmieren.",
-      "noComputerBrain": "Dieser Agent denkt nicht auf einem Computer. Wähl einen, der es tut, oder gib ihm in seinen Einstellungen Claude Code oder Codex.",
+      "cannotCode": "Dieser Agent kann auf seinem Computer nicht programmieren. Gib ihm in seinen Einstellungen eine Coding-App, oder lass ihn dort Code ausführen.",
       "repoNotAllowed": "Dieser Agent kann nicht in diesem Repository arbeiten. Wähl ein anderes oder füge es in den Einstellungen des Agenten hinzu.",
       "notYours": "Nur wer die Sitzung geöffnet hat oder ein Administrator kann sie schließen.",
       "notReady": "Der Worktree der Sitzung ist noch nicht bereit. Versuch es gleich noch einmal.",

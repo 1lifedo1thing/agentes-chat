@@ -24,7 +24,7 @@ import {
 } from "@agenteschat/providers/plans";
 import { planFull, planState } from "@agenteschat/ui/plan-state";
 import type { Agent } from "../agents";
-import { codeSessionCwd } from "../code-sessions";
+import type { CodeSessionContext } from "../code-sessions";
 import type { ModelGateway } from "../gateway";
 import type { MachineStatus } from "../machine-hub";
 import { pausedMessage } from "../machines";
@@ -784,9 +784,17 @@ export async function resolveBrain(
   /**
    * `fresh`: a new computer session whatever the conversation had (routine runs). `promptKey`: the run's
    * (`Transcript.promptKey`); the conversation's session is picked up only when it started with the same. `peek`:
-   * nothing is kept on the run (the session it would most likely get, before its prompt key is known).
+   * nothing is kept on the run (the session it would most likely get, before its prompt key is known). `codeSession`:
+   * the run's code session, as its executor read it (`codeSessionContext`): none, a turn in the agent's own folder.
    */
-  options: { fresh?: boolean; now?: Date; promptKey?: string; thinker?: Agent; peek?: boolean } = {},
+  options: {
+    fresh?: boolean;
+    now?: Date;
+    promptKey?: string;
+    thinker?: Agent;
+    peek?: boolean;
+    codeSession?: CodeSessionContext | null;
+  } = {},
 ): Promise<BrainPlan> {
   const mission: MissionTurn | null = await missionTurnFor(deps.db, run).catch(() => null);
   // The right hand: the AI of the person whose DM this is, else the workspace's; on a plan, its computer and owner.
@@ -799,7 +807,10 @@ export async function resolveBrain(
     return { kind, ...base, ...(effort ? { effort } : {}) };
   }
   const model = brainModelFor(kind, agent, mission);
-  const machineId = mission?.session?.machineId ?? agent.machineId ?? null;
+  // A code session's conversation (ADR 0214) is pinned to the session's computer and worktree, like a mission's main
+  // session: its own agent's turn runs there (an agent called in, or a mission's thread, keeps its own).
+  const place = mission?.session ? null : (options.codeSession?.place ?? null);
+  const machineId = mission?.session?.machineId ?? place?.machineId ?? agent.machineId ?? null;
   const [status, account] = await Promise.all([
     machineId && deps.machines ? deps.machines.status(machineId).catch(() => null) : null,
     brainAccountFor(deps.db, agent, kind, machineId),
@@ -899,10 +910,6 @@ export async function resolveBrain(
           .limit(1)
           .then(([last]) => Boolean(last && last.key !== options.promptKey))
       : false;
-  // A code session's conversation works in the session's worktree (ADR 0214); any other chat turn starts in the
-  // agent's folder.
-  const codeCwd =
-    !mission?.session && machineId ? await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null) : null;
   const session: BrainSession | undefined =
     mission?.session ??
     (machineId
@@ -919,8 +926,9 @@ export async function resolveBrain(
             options.now ?? new Date(),
           )),
           machineId,
-          cwd: codeCwd ?? "",
-          ...(codeCwd ? { codeSession: true } : {}),
+          // Any other chat turn starts in the agent's folder.
+          cwd: place?.cwd ?? "",
+          ...(place ? { codeSession: true } : {}),
         }
       : undefined);
   return {

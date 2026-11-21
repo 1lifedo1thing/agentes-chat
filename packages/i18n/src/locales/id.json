@@ -10782,7 +10782,7 @@
       "mode": "Vibecoding mode",
       "title": "Apa yang dikerjakan di {{repo}}?",
       "aRepo": "sebuah proyek",
-      "noAgents": "Belum ada agen yang berpikir di komputer. Beri salah satunya Claude Code atau Codex di komputer, lewat pengaturannya.",
+      "noAgents": "Belum ada agen yang memprogram di komputer. Di pengaturan agen, beri dia komputer dan aplikasi coding, atau izinkan dia menjalankan kode di sana.",
       "placeholder": "Jelaskan perubahan, bug, atau pertanyaannya",
       "label": "Yang dikerjakan",
       "agent": "Agen",
@@ -14898,7 +14898,7 @@
     },
     "codeSession": {
       "noComputer": "Agen ini belum punya komputer. Beri satu lewat pengaturannya untuk menulis kode bersamanya.",
-      "noComputerBrain": "Agen ini tidak berpikir di komputer. Pilih agen yang berpikir di komputer, atau beri Claude Code atau Codex lewat pengaturannya.",
+      "cannotCode": "Agen ini tidak bisa memprogram di komputernya. Beri dia aplikasi coding di pengaturannya, atau izinkan dia menjalankan kode di sana.",
       "repoNotAllowed": "Agen ini tidak bisa bekerja di repositori itu. Pilih yang lain, atau tambahkan di pengaturan agen.",
       "notYours": "Hanya pembuka sesi atau administrator yang bisa menutupnya.",
       "notReady": "Worktree sesi belum siap. Coba lagi sebentar lagi.",

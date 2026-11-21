@@ -11250,7 +11250,7 @@
       "mode": "Vibecoding mode",
       "title": "Wat doen we in {{repo}}?",
       "aRepo": "een project",
-      "noAgents": "Nog geen agent denkt op een computer. Geef er een Claude Code of Codex op een computer, in de instellingen van de agent.",
+      "noAgents": "Nog geen agent programmeert op een computer. Geef een agent in de instellingen een computer en een codeerapp, of laat hem daar code uitvoeren.",
       "placeholder": "Beschrijf de wijziging, de bug of de vraag",
       "label": "Wat er moet gebeuren",
       "agent": "Agent",
@@ -15493,7 +15493,7 @@
     },
     "codeSession": {
       "noComputer": "Deze agent heeft nog geen computer. Geef er een in de instellingen van de agent om ermee te programmeren.",
-      "noComputerBrain": "Deze agent denkt niet op een computer. Kies er een die dat wel doet, of geef de agent Claude Code of Codex in de instellingen.",
+      "cannotCode": "Deze agent kan niet programmeren op zijn computer. Geef hem een codeerapp in de instellingen, of laat hem daar code uitvoeren.",
       "repoNotAllowed": "Deze agent kan niet in die repository werken. Kies een andere, of voeg hem toe in de instellingen van de agent.",
       "notYours": "Alleen wie de sessie heeft geopend, of een admin, kan hem sluiten.",
       "notReady": "De worktree van de sessie is nog niet klaar. Probeer het zo opnieuw.",

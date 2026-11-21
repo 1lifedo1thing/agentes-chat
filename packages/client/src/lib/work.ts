@@ -136,8 +136,6 @@ export interface WorkMeta {
    */
   calls: WorkCall[];
   durationMs: number | null;
-  /** How many were the computer brain's own in a code session (ADR 0214): that work shows with the summary off too. */
-  cliCalls?: number;
 }
 
 export function workMeta(meta: Record<string, unknown> | undefined): WorkMeta | null {
@@ -149,7 +147,6 @@ export function workMeta(meta: Record<string, unknown> | undefined): WorkMeta | 
       ? w.calls.filter((c): c is WorkCall => typeof (c as Partial<WorkCall> | null)?.name === "string")
       : [],
     durationMs: typeof w.durationMs === "number" ? w.durationMs : null,
-    ...(typeof w.cliCalls === "number" && w.cliCalls > 0 ? { cliCalls: w.cliCalls } : {}),
   };
 }
 

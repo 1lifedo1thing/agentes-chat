@@ -179,7 +179,8 @@ import { usageWaitOf } from "@agenteschat/client/lib/usage-pause";
 import { appVia, surfaceVia } from "@agenteschat/client/lib/via";
 import { listedText, voiceOf } from "@agenteschat/client/lib/voice";
 import { waitingAway, waitingNotification } from "@agenteschat/client/lib/waiting";
-import { barStep, makingImage, showsActivity, splitCanceled } from "@agenteschat/client/lib/work";
+import { barStep, makingImage, splitCanceled } from "@agenteschat/client/lib/work";
+import { CodeConversation, useShowsWork } from "@agenteschat/client/lib/work-context";
 import {
   AffixInput,
   Avatar,
@@ -2740,6 +2741,7 @@ function ChannelView({
                             rightHandId,
                             dm: Boolean(chrome?.dmAgentId || chrome?.dmPersonId || thread?.channelKind === "dm"),
                           }}
+                          code={thread?.channelKind === "code"}
                         >
                           <section
                             ref={scroller}
@@ -3792,29 +3794,34 @@ const RowStopContext = createContext<string | undefined>(undefined);
 const RowDrawnContext = createContext<(() => void) | undefined>(undefined);
 
 /**
- * What the conversation's rows read from their view: the requests' registry, which row stops, "a row drew", and
- * which place the right hand's cards in them show (`seat`: its work here is on that one, not on the viewer's own).
+ * What the conversation's rows read from their view: the requests' registry, which row stops, "a row drew", which
+ * place the right hand's cards in them show (`seat`: its work here is on that one, not on the viewer's own) and
+ * whether it is a code session's (`code`: the agents' work always shows, ADR 0214).
  */
 function RowsProvider({
   asks,
   stop,
   drawn,
   seat,
+  code,
   children,
 }: {
   asks: AskRegistry;
   stop: string | undefined;
   drawn: () => void;
   seat: Omit<Parameters<typeof ConversationSeat>[0], "children">;
+  code: boolean;
   children: ReactNode;
 }) {
   return (
     <ConversationSeat {...seat}>
-      <AskRegistryProvider value={asks}>
-        <RowDrawnContext.Provider value={drawn}>
-          <RowStopContext.Provider value={stop}>{children}</RowStopContext.Provider>
-        </RowDrawnContext.Provider>
-      </AskRegistryProvider>
+      <CodeConversation.Provider value={code}>
+        <AskRegistryProvider value={asks}>
+          <RowDrawnContext.Provider value={drawn}>
+            <RowStopContext.Provider value={stop}>{children}</RowStopContext.Provider>
+          </RowDrawnContext.Provider>
+        </AskRegistryProvider>
+      </CodeConversation.Provider>
     </ConversationSeat>
   );
 }
@@ -4589,7 +4596,8 @@ export const TimelineMessage = memo(function TimelineMessage({
   // Step summaries, no picture: activity, so the person's setting hides them like the tool block.
   // A code session's screen line (ADR 0214) is its way to the panel's screen: shown whatever that setting says.
   const screenPanel = useContext(ScreenPanelContext);
-  const trailsShown = m.author.type === "agent" && (showsActivity(org) || screenPanel !== null);
+  const shows = useShowsWork(org);
+  const trailsShown = m.author.type === "agent" && (shows || screenPanel !== null);
   const browserTrail = useMemo(() => (trailsShown ? browserTrailOf(m.meta) : []), [trailsShown, m.meta]);
   const desktopTrail = useMemo(() => (trailsShown ? desktopTrailOf(m.meta) : []), [trailsShown, m.meta]);
   const onCards = useMemo(

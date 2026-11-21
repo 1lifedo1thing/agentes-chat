@@ -12,7 +12,6 @@ import {
   quietWork,
   replySteps,
   savedOneLine,
-  showsActivity,
   type ToolItem,
   type ToolLine,
   type ToolState,
@@ -28,6 +27,7 @@ import {
   workMeta,
   workSteps,
 } from "@agenteschat/client/lib/work";
+import { useShowsWork } from "@agenteschat/client/lib/work-context";
 import type { AgentColorName } from "@agenteschat/ui/agent/engine";
 import type { TFunction } from "i18next";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -668,10 +668,11 @@ export function TurnTools({
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const logo = useCallLogo();
+  const shows = useShowsWork(org);
   const blockItems = blockItemsOf(items, t, i18n.language, logo);
   // A lone quick read that only fed the answer: no card, as if it called nothing. Done, its tools are the summary
-  // the person chose not to see (`showActivity`) unless they turned it on.
-  const now = quietWork(items) || (done && !showsActivity(org)) ? null : toolNow(items);
+  // the person chose not to see (`showActivity`) unless they turned it on, or in a code session (ADR 0214).
+  const now = quietWork(items) || (done && !shows) ? null : toolNow(items);
   if (!now) {
     // Done without a call: its words are the reply now.
     const said = done ? [] : items.flatMap((i) => (i.kind === "say" ? [i] : []));
@@ -748,6 +749,7 @@ export function SavedTools({
   const [open, setOpen] = useState(() => keptOpen(keep));
   const run = useRun(orgId, open ? runId : null);
   const logo = useCallLogo();
+  const shows = useShowsWork(org);
   const compact = workMeta(meta);
   const onCard = (name: unknown) => skipScreens.some((screen) => isScreenTool(String(name ?? ""), screen));
   const mine = run.data ? replySteps(run.data.steps, messageId) : null;
@@ -769,7 +771,7 @@ export function SavedTools({
   // Nothing more to show than the message does: no tools (lookups and reactions aren't counted), or only the ones
   // its own cards show (where it browsed).
   const shown = compact ? workSteps(compact, onCard) : 0;
-  if (!compact || shown === 0 || !showsActivity(org)) return null;
+  if (!compact || shown === 0 || !shows) return null;
   const calls = work ? toolCalls(items) : shown;
   const lone = savedOneLine(meta, onCard);
   // Its one call (beside the screens' on their cards) only fed the answer (`quietLine`): the reply says it. Time

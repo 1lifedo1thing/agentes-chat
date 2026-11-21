@@ -2,17 +2,21 @@
 
 - Status: Proposed (being built)
 - Date: 2026-11-20
-- Extends: 0025 (connected computers), 0032 (computer brains), 0044 (a mission's worktree), 0058 and 0065 (the agent's
-  desktop and terminal), 0042 (phones), 0145 (a task's conversation is a thread of its own), 0156 (the GitHub App)
+- Extends: 0021 and 0077 (code tools on the agent's computer), 0025 (connected computers), 0032 (computer brains),
+  0044 (a mission's worktree), 0058 and 0065 (the agent's desktop and terminal), 0042 (phones), 0145 (a task's
+  conversation is a thread of its own), 0156 (the GitHub App)
 - Code: db `packages/db/src/schema/code.ts` (`code_sessions`), migration `0311_code_sessions.sql` (`channel_kind`
   gains `code`); engine `packages/engine/src/code-sessions.ts` (`createCodeSession`, `prepareCodeSession`,
-  `ensureCodeSessionsOn`, `codeAgentSql`, `codeSessionCwd`, `codeSessionBrief`, `admitCodeMembers`,
+  `ensureCodeSessionsOn`, `codeAgentSql`, `worksInSessions`, `codeSessionContext`, `codeSessionBrief`, `admitCodeMembers`,
   `codeSessionDiff`, `codeSessionGit`, `codeSessionGitLog`, `codeSessionFiles`, `codeSessionFile`,
   `recordCodeSessionPr`, `codeStartOptions`), `messages.ts` (the session's agent
-  answers like a DM; who is named joins), `jobs.ts` (never routed), `brains/select.ts` (the worktree as the brain's
-  folder), `context.ts` (the session's brief), `notification-producers.ts` (`codeSessionId`); server
+  answers like a DM; who is named joins), `jobs.ts` (never routed), `executor.ts` and `run-tools.ts` (the run's place),
+  `brains/select.ts` (the place as a computer brain's computer and folder), `sandbox-tools.ts` (the code tools in the
+  place), `tools/gateway.ts` (`CODE_SESSION_HIDDEN_TOOLS`), `sandbox.ts` (`codeRunning`), `context.ts` (the session's
+  brief), `notification-producers.ts` (`codeSessionId`); server
   `apps/server/src/routes/app/code-sessions.ts`, `engine.ts` (the computer-online hook); client
-  `packages/client/src/code/*`; web `apps/web/src/components/code/*`, routes `org.$orgId.code.index.tsx` and
+  `packages/client/src/code/*`, `lib/work-context.ts` (`CodeConversation`); web `apps/web/src/components/code/*`,
+  routes `org.$orgId.code.index.tsx` and
   `org.$orgId.code.$sessionId.tsx`, the sidebar tool `code`
 
 ## Context
@@ -20,7 +24,8 @@
 People who program with agents work today in a tool of their own beside the chat: one terminal or window per task,
 each in its own git worktree, the diff and the running app beside the conversation with the coding CLI. agentes.chat
 already has every hard part of that: computers connected to the workspace with an OS user per agent (0025, 0057), the
-agents' brains being Claude Code or Codex on them (0032), a mission's own worktree and branch (0044), the agent's
+agents thinking there with a coding CLI (0032) or with the workspace's models and their code tools (0021, 0077), a
+mission's own worktree and branch (0044), the agent's
 screen live with take-over (0058, 0065), phones the agents use (0042), PRs and approvals (0156). What is missing is a
 place that puts them together around one request, and is as simple as typing into the CLI.
 
@@ -64,9 +69,26 @@ agent's computer. Offline, paused or an older runner: it stays `preparing` and `
 the computer is back. The project's install is not run by the server: the agent's first turn is told the runner's
 setup command (from the lockfile) and runs it like a person would.
 
-A run in the session gets the worktree as its folder (`codeSessionCwd`, read by `resolveBrain`; the pre-turn checkout
-sync of chat turns then doesn't apply) and a brief naming the repository, branch, base and folder, and how to work
-there (`codeSessionBrief`): among it, that its screen is the session's preview, so what can be looked at it serves on
+A run in the session works in the worktree, whichever brain it thinks with: the session is the run's place
+(`codeSessionContext`: the session's computer, from its row, and the worktree, relative to the agent's folder), read
+once when the run starts (the executor, or the bridge for a computer brain's calls) and carried on its tool context
+(`ToolContext.codeSession`). Every piece that runs something reads that place, never the brain's kind:
+
+- a computer brain's turn (`resolveBrain`) runs on that computer and opens in that folder, like a mission's, and the
+  missing-folder retry and the pre-turn checkout sync of chat turns don't apply;
+- our code tools (`run_code`, `start_task`, `read_file`, `write_file`, `list_files`, `import_file`) run on that
+  computer, in that folder: a relative path is inside the worktree, never climbs out of it, and comes back relative
+  to it, and a script runs from there;
+- the Tool Gateway hides what doesn't belong in a session from every brain (`CODE_SESSION_HIDDEN_TOOLS`, §6, §11).
+
+An agent called in works in its own folder (no place), and so does the session's agent until the worktree is ready.
+Who may have a session is one check (`worksInSessions`): a computer for the worktree, and a way to work in it there:
+a computer brain brings its own shell, any other brain needs to be allowed to run code (`codeRunning`, the same rule
+`run_code` and the desktop's tools apply: the grant, the workspace's code environment, the agent's computer). A
+session takes any model.
+
+The run also gets a brief naming the repository, branch, base and folder, and how to work there
+(`codeSessionBrief`, the same for every brain; each tool's own description says how to use it): among it, that its screen is the session's preview, so what can be looked at it serves on
 localhost and opens in its browser itself, looks at and fixes before saying it's done (the browser opens only http
 and https), never asking the person to open it. Where the repository has no name for commits, the agent's goes in its
 config once the worktree is made (`ensureGitIdentity`): the CLI commits with plain `git commit`.
@@ -153,9 +175,9 @@ a workflow's agents and how many are done; the line over the composer and the li
 the work it started in the background (up to an hour), so its result reaches the conversation. A call whose work goes
 on in the background ends, live and on the trail, when that work ends, with that time.
 
-Files and pictures stay in the session's panel: `upload_file` and `export_file` aren't given to a computer brain in
-a session (`CODE_SESSION_HIDDEN_TOOLS`), a screenshot taken with `share` isn't shown there (`shareSavedFile`), and
-its brief says not to paste screenshots.
+Files and pictures stay in the session's panel: `upload_file` and `export_file` aren't given to any brain in a
+session (`CODE_SESSION_HIDDEN_TOOLS`, applied by the Tool Gateway's list and call), a screenshot taken with `share`
+isn't shown there (`shareSavedFile`), and its brief says not to paste screenshots.
 
 ### 7. The brain's own tool calls, one line each
 
@@ -164,8 +186,9 @@ work, as in a terminal: a `context` step `cliTool` (`packages/engine/src/cli-too
 worktree, counts such as lines added and removed or tests passed, an output excerpt masked), written when the call
 ends. A `context` row keeps them out of every Tool Gateway reader (cost brakes, outbound checks, other runs' context,
 continuation). Live, `agent.step` carries the line at its start (the runner now sends the input with `tool_started`)
-and at its end (`ended`, `failed`); `meta.work.cliCalls` counts them and they show with the work summary off, in a
-block closed like every other (the diff and the screen say what changed). Elsewhere they stay off the trail (ADR 0032
+and at its end (`ended`, `failed`). In a session's conversation the agent's work is the conversation itself: it
+shows with the work summary off, whichever brain did it (`CodeConversation` around the conversation's rows,
+`useShowsWork` in the apps), in a block closed like every other (the diff and the screen say what changed). Elsewhere they stay off the trail (ADR 0032
 addendum: a row per call on every turn of every chat is not worth its writes). A run that answers on the way lists
 under each reply only the work that led to it (`replySteps`, and the reply's own summary counted from the reply
 before), and in a session the computer's permission check that let a command through at once is no line of its own
@@ -206,7 +229,7 @@ The phone app has Code as a row of You, with the same API and the conversation a
 
 ### 11. A session suggested in the chat
 
-When a person asks an agent that programs on a computer (Claude Code or Codex) to change code in a project (fix a bug,
+When a person asks an agent that can have a session (`worksInSessions`) to change code in a project (fix a bug,
 build or refactor something) in a conversation outside a session, the agent suggests a session instead of changing the
 project there. Questions, explanations and quick looks it still answers in the conversation. A task's conversation
 and a mission's thread are already the place for their work (a mission has a worktree of its own): there it never
@@ -232,8 +255,8 @@ suggests one and makes the change as before.
 ### 12. Code only where it has anything
 
 Most workspaces have no agent that programs, and for them Code would be an empty page in every menu. The overview says
-whether it has anything for the person (`OrgOverview.code`, `hasCodeWork`): an agent a session can start with (Claude
-Code or Codex, on a computer, not archived) or an open session they take part in, whose agent may have left since.
+whether it has anything for the person (`OrgOverview.code`, `hasCodeWork`): an agent a session can start with
+(`worksInSessions`, not archived) or an open session they take part in, whose agent may have left since.
 Only then do the apps offer it (`offersCode`, `offeredTools`): the sidebar's More and its setup dialog, ⌘K, and Eu on
 the phone. A person who put Code in the sidebar's list keeps it there. The address still opens the page, which says
 what is missing, and a session's links keep working.
@@ -246,7 +269,13 @@ what is missing, and a session's links keep working.
   before.
 - Apps registered before this need "Check run" ticked on GitHub; until then no check comes back (Settings says so).
 - A branch that keeps failing wakes the agent at each push that fails again, within its budgets; no other cap yet.
-- Sessions need an agent whose brain is Claude Code or Codex on a computer with git access to the repository.
+- Sessions need an agent on a computer with git access to the repository, thinking there with a coding CLI or with
+  any model allowed to run code.
+- Cursor, Grok Build and the Antigravity CLI run their shells in a sandbox that writes only in the turn's folder and
+  temp: in a session that is the worktree, whose git data stays in the checkout beside it, so a commit from their
+  shell may be refused (they still read, change and run in the worktree, and the person commits in the terminal).
+  Codex's sandbox takes the agent's whole folder, checkout included, and Claude Code and OpenCode have none of their
+  own.
 - The conversation is a thread like a task's: the phone app shows it with its own thread screen (§10), so a session
   reached from a notification opens the same way as from Code.
 - Out of this first version: several agents writing in one session at once (one writes, the others read and review),

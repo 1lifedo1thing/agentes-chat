@@ -1,6 +1,7 @@
 import { isMediaKind, MESSAGES_PAGE, useAiStatus, useApi } from "@agenteschat/client";
 import { workIsOver } from "@agenteschat/client/lib/long-work";
 import { pinsIn } from "@agenteschat/client/lib/pins";
+import { CodeConversation } from "@agenteschat/client/lib/work-context";
 import type { LegendListRef } from "@legendapp/list/react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { HeaderHeightContext } from "expo-router/react-navigation";
@@ -597,6 +598,7 @@ function Chat({
   }, [seekAt?.at]);
 
   return (
+    <CodeConversation.Provider value={codeId !== null}>
     <AskStoreProvider store={asks}>
       <AskProbes messages={shownMessages} />
       {/* Seen up to the message posted last (`ReadMark`, drawn with the screen). Peeked at from the list (iOS's long
@@ -926,6 +928,7 @@ function Chat({
         </DockGestureArea>
       </View>
     </AskStoreProvider>
+    </CodeConversation.Provider>
   );
 }
 

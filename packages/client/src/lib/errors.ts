@@ -167,7 +167,7 @@ const KNOWN = {
   "code_session.bad_repo": "errors.webhook.invalidRepo",
   "code_session.offline": "errors.mission.computerOffline",
   "code_session.no_computer": "errors.codeSession.noComputer",
-  "code_session.no_computer_brain": "errors.codeSession.noComputerBrain",
+  "code_session.cannot_code": "errors.codeSession.cannotCode",
   "code_session.repo_not_allowed": "errors.codeSession.repoNotAllowed",
   "code_session.not_yours": "errors.codeSession.notYours",
   "code_session.not_ready": "errors.codeSession.notReady",

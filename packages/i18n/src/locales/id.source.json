@@ -27234,7 +27234,7 @@
     "value": "a project"
   },
   "codeSessions.home.noAgents": {
-    "value": "No agent thinks on a computer yet. Give one Claude Code or Codex on a computer, in its settings."
+    "value": "No agent codes on a computer yet. In an agent's settings, give it a computer and a coding app, or let it run code there."
   },
   "codeSessions.home.placeholder": {
     "value": "Describe the change, the bug or the question"
@@ -37940,8 +37940,8 @@
   "errors.codeSession.noComputer": {
     "value": "This agent has no computer yet. Give it one in its settings to code with it."
   },
-  "errors.codeSession.noComputerBrain": {
-    "value": "This agent doesn't think on a computer. Pick one that does, or give it Claude Code or Codex in its settings."
+  "errors.codeSession.cannotCode": {
+    "value": "This agent can't code on its computer. Give it a coding app in its settings, or let it run code there."
   },
   "errors.codeSession.repoNotAllowed": {
     "value": "This agent can't work in that repository. Pick another one, or add it in the agent's settings."

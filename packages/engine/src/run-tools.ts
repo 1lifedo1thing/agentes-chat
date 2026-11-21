@@ -6,10 +6,11 @@ import { openApprovalCard, publishApproval, supersedeApprovals } from "./approva
 import { runAuthorityById } from "./authority";
 import type { BrainTool, ToolResult } from "./brains/types";
 import { readableChannelIds } from "./channels";
-import { CODE_SESSION_HIDDEN_TOOLS, codeSessionOfChannel } from "./code-sessions";
+import { codeSessionContext } from "./code-sessions";
 import { type CodeSuggestion, codeSuggestionOf } from "./code-suggestions";
 import { isConfidential, threadIsConfidential } from "./confidential";
 import { announceConsultationChange, consultationCardThread, consultationOrigin } from "./consultations";
+import { getChannelCached } from "./context";
 import { NotFoundError } from "./errors";
 import { type MemoryUpdate, publishChannelEvent, publishMessageCreated, takeStepWords } from "./events";
 import { type PendingFeedbackOffer, pendingFeedbackOfferOf } from "./feedback-offers";
@@ -648,6 +649,11 @@ async function locate(db: Database, id: BridgeIdentity): Promise<Located> {
     .from(agentRuns)
     .where(and(eq(agentRuns.id, id.runId), eq(agentRuns.orgId, id.orgId), eq(agentRuns.agentId, id.agentId)));
   if (!run) throw new NotFoundError("Run not found");
+  // A code session's conversation (ADR 0214): the same place the run's own turn got, for the tools it calls.
+  const codeSession =
+    (await getChannelCached(db, run.orgId, run.channelId))?.kind === "code"
+      ? await codeSessionContext(db, run.orgId, run.channelId, run.agentId)
+      : null;
   return {
     run,
     ctx: {
@@ -658,6 +664,7 @@ async function locate(db: Database, id: BridgeIdentity): Promise<Located> {
       channelId: run.channelId,
       threadRootId: run.threadRootId,
       triggerMessageId: run.triggerMessageId,
+      ...(codeSession ? { codeSession } : {}),
       ...(id.machineId ? { bridge: { machineId: id.machineId } } : {}),
       ...(run.brain ? { thinksWith: run.brain } : {}),
       // Tools on demand (ADR 0043): the same list the run's turns see.
@@ -683,10 +690,8 @@ const loadedGroupsOf = (transcript: unknown): string[] | null => {
 export async function bridgeToolsFor(deps: RunToolsDeps, id: BridgeIdentity): Promise<BrainTool[]> {
   if (!deps.tools) return [];
   const { ctx, run } = await locate(deps.db, id);
-  // A code session (ADR 0214): the person sees the worktree's files and the agent's screen in its panel, so no file
-  // goes to the Drive or onto a reply from there.
-  const inCode = run ? await codeSessionOfChannel(deps.db, run.channelId) : null;
-  const tools = (await deps.tools.list(ctx)).filter((t) => !(inCode && CODE_SESSION_HIDDEN_TOOLS.has(t.name)));
+  // A code session's hidden tools are left out by the gateway itself, for every brain (`ctx.codeSession`).
+  const tools = await deps.tools.list(ctx);
   // Our own tools before the connectors': a cap on the list (`MCP_TOOLS_MAX`) only ever drops connector tools.
   const ordered = [...tools.filter((t) => !t.connectionId), ...tools.filter((t) => t.connectionId)];
   const authority = run ? await runAuthorityById(deps.db, run.orgId, run.id) : null;

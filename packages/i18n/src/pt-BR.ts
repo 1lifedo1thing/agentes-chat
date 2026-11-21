@@ -11625,7 +11625,7 @@ export const ptBR = {
       title: "O que fazer em {{repo}}?",
       aRepo: "um projeto",
       noAgents:
-        "Nenhum agente pensa num computador ainda. Dê a um deles o Claude Code ou o Codex num computador, nas configurações dele.",
+        "Nenhum agente programa num computador ainda. Nas configurações de um agente, dê a ele um computador e um app de programação, ou deixe ele rodar código lá.",
       placeholder: "Descreva a mudança, o bug ou a dúvida",
       label: "O que fazer",
       agent: "Agente",
@@ -15678,8 +15678,8 @@ export const ptBR = {
     /** Uma sessão de código (ADR 0214): o que impede de começar uma, ou o painel de ler o computador do agente. */
     codeSession: {
       noComputer: "Este agente ainda não tem computador. Dê um a ele nas configurações dele para programar com ele.",
-      noComputerBrain:
-        "Este agente não pensa num computador. Escolha um que pense, ou dê a ele o Claude Code ou o Codex nas configurações dele.",
+      cannotCode:
+        "Este agente não programa no computador dele. Dê a ele um app de programação nas configurações, ou deixe ele rodar código lá.",
       repoNotAllowed:
         "Este agente não pode trabalhar nesse repositório. Escolha outro, ou adicione esse nas configurações do agente.",
       notYours: "Só quem abriu a sessão, ou um admin, fecha a sessão.",

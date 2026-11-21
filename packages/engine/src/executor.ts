@@ -147,6 +147,7 @@ import {
   cliToolSummary,
   verbOfTool,
 } from "./cli-tools";
+import { type CodeSessionContext, codeSessionContext } from "./code-sessions";
 import { type CodeSuggestion, codeSuggestionApplies, SUGGEST_CODE_SESSION_TOOL } from "./code-suggestions";
 import {
   kickRoomQueue,
@@ -1881,6 +1882,17 @@ async function executeRunInner(
       : {}),
   };
   /**
+   * A code session's conversation (ADR 0214): where the session works, read once for the run's turn (`resolveBrain`)
+   * and for the tools it calls (`ctx.codeSession`), and again when the run moves to another conversation.
+   */
+  const readCodeSession = async () => {
+    const session =
+      channelRow?.kind === "code" ? await codeSessionContext(db, run.orgId, run.channelId, run.agentId) : null;
+    if (session) ctx.codeSession = session;
+    else delete ctx.codeSession;
+  };
+  await readCodeSession();
+  /**
    * A result this run read made its thread confidential (the gateway says so on `ctx`, ADR 0190): from then on it
    * answers under the message that asked it, its cards and events with it.
    */
@@ -1923,6 +1935,7 @@ async function executeRunInner(
       ctx.channelId = row.channelId;
       where.channelId = row.channelId;
       channelRow = await getChannelCached(db, run.orgId, row.channelId);
+      await readCodeSession();
     }
     if (row.workId) bg = { background: true };
     await loadWorkHome();
@@ -1997,7 +2010,7 @@ async function executeRunInner(
       brainOf(agent.brain) === "claude_code" &&
       !runMessageMeta(run, trigger).viaRoutine
     ) {
-      void warmAtClaim(deps, agent, run, replyThreadId ?? run.channelId).catch(() => {});
+      void warmAtClaim(deps, agent, run, replyThreadId ?? run.channelId, ctx.codeSession ?? null).catch(() => {});
     }
   }
   if (!askingForRoom) await publishChannelEvent(deps.pubsub, event("running"));
@@ -2372,7 +2385,6 @@ async function executeRunInner(
         service: sql<string | null>`min(${agentRunSteps.data}->>'service')`,
         serviceIcon: sql<string | null>`min(${agentRunSteps.data}->>'serviceIcon')`,
         n: count(),
-        own: sql<number>`(count(*) filter (where ${cliTool}))::int`,
         since: sql<number>`${lastReply}`,
         sinceAt: lastReplyAt,
       })
@@ -2399,12 +2411,9 @@ async function executeRunInner(
     const since = Number(tools[0]?.since ?? -1);
     const sinceAt = tools[0]?.sinceAt ? new Date(tools[0].sinceAt) : run.createdAt;
     const leftoverCall = leftover ? await loneCall(tx, run.id, leftover.name, since) : {};
-    // The brain's own calls in a code session: its work shows whoever turned the summary off (ADR 0214).
-    const cliCalls = tools.reduce((n, t) => n + Number(t.own), 0);
     const work = {
       steps: tools.reduce((n, t) => n + t.n, 0),
       durationMs: Math.max(0, Date.now() - sinceAt.getTime()),
-      ...(cliCalls > 0 ? { cliCalls } : {}),
       ...(tools.length === 1 && tools[0]?.n === 1 ? await loneCall(tx, run.id, tools[0].name, since) : {}),
       calls: tools.slice(0, WORK_CALLS).map((t) => ({
         name: t.name,
@@ -3238,6 +3247,7 @@ async function executeRunInner(
     // A routine's or any background run's work never continues a conversation's session, nor the other way.
     fresh: Boolean(viaRoutine) || run.background,
     promptKey: transcript.promptKey,
+    codeSession: ctx.codeSession ?? null,
   });
   if (brainPlan.standIn) {
     standInUsed = brainPlan.standIn;
@@ -5650,9 +5660,17 @@ async function executeRunInner(
           }
           // The folder its session works in isn't on the computer anymore: every later turn would be refused the
           // same way. A fresh session takes the turn in the agent's own folder, told the one before was lost. A
-          // mission's folder is the mission's to make again.
+          // mission's folder is the mission's to make again, and a code session's worktree is the session's (ADR
+          // 0214): its run fails with the computer's own words instead of working outside it.
           const gone = error instanceof BrainFailure ? missingTurnFolder(error.message) : null;
-          if (gone && executed.length === 0 && plan.session && !plan.missionId && !transcript.sessionLost) {
+          if (
+            gone &&
+            executed.length === 0 &&
+            plan.session &&
+            !plan.missionId &&
+            !plan.session.codeSession &&
+            !transcript.sessionLost
+          ) {
             const fresh = Bun.randomUUIDv7();
             await db.update(agentRuns).set({ brainSessionId: fresh }).where(eq(agentRuns.id, run.id));
             plan = { ...plan, session: { ...plan.session, id: fresh, resume: false } };
@@ -6643,10 +6661,16 @@ async function executeRunInner(
  * its session picked without the prompt key (nothing kept on the run), "Automático" at the medium tier it falls back
  * to. A different launch at the turn only costs that start.
  */
-async function warmAtClaim(deps: EngineDeps, agent: Agent, run: AgentRun, conversation: string) {
+async function warmAtClaim(
+  deps: EngineDeps,
+  agent: Agent,
+  run: AgentRun,
+  conversation: string,
+  codeSession: CodeSessionContext | null,
+) {
   const factory = deps.brains?.claude_code;
   if (!factory) return;
-  let plan = await resolveBrain(deps, agent, run, conversation, { peek: true });
+  let plan = await resolveBrain(deps, agent, run, conversation, { peek: true, codeSession });
   if (plan.kind !== "claude_code" || plan.unavailable || !plan.session) return;
   if (needsAutoChoice(agent, plan)) {
     // As the turn does: a pinned model stays, only "Automático" gives way to a held plan model's stand-in.
