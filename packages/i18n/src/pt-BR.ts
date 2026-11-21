@@ -11625,7 +11625,7 @@ export const ptBR = {
       title: "O que fazer em {{repo}}?",
       aRepo: "um projeto",
       noAgents:
-        "Nenhum agente programa num computador ainda. Em “Quem pensa”, nas configurações de um agente, escolha um app de programação no computador dele.",
+        "Nenhum agente pensa num computador ainda. Dê a um deles o Claude Code ou o Codex num computador, nas configurações dele.",
       placeholder: "Descreva a mudança, o bug ou a dúvida",
       label: "O que fazer",
       agent: "Agente",
@@ -14783,7 +14783,6 @@ export const ptBR = {
       export_file: "Exportar arquivo",
       read_file: "Ler arquivo",
       write_file: "Escrever arquivo",
-      edit_file: "Editar arquivo",
       list_files: "Listar arquivos",
       run_code: "Rodar código",
       run_skill_script: "Rodar script da skill",
@@ -19355,10 +19354,6 @@ export const ptBR = {
     write_file: {
       label: "Escrever no ambiente",
       description: "Grava um arquivo no ambiente de código.",
-    },
-    edit_file: {
-      label: "Editar no ambiente",
-      description: "Troca um trecho de um arquivo no ambiente de código.",
     },
     read_file: {
       label: "Ler do ambiente",

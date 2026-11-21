@@ -31,13 +31,11 @@ import {
 import { computerPrompt, systemWithConversation } from "./prompt";
 import {
   askingPermissions,
-  BRAINS,
   type Brain,
   type BrainEvent,
   type BrainIO,
   type BrainTurn,
   brainRunsOn,
-  type ComputerBrainKind,
   type SteerMessage,
   type SteerReply,
   SYSTEM_REFUSED,
@@ -176,7 +174,8 @@ function channel<T>() {
  * protocol 36, no version gate, no live steering). Everything else, from the request to the events, is shared.
  */
 interface CliBrainSpec {
-  kind: Exclude<ComputerBrainKind, "claude_code">;
+  kind: "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+  name: string;
   /** The runner protocol it needs. */
   protocol: number;
   /** The runner protocol it needs on Windows, where an older runner refuses its turns. */
@@ -193,6 +192,7 @@ interface CliBrainSpec {
 
 const CODEX_CLI: CliBrainSpec = {
   kind: "codex",
+  name: "Codex",
   protocol: BRAIN_PROTOCOL,
   windowsProtocol: CODEX_WINDOWS_PROTOCOL,
   check({ codex }) {
@@ -210,6 +210,7 @@ const CODEX_CLI: CliBrainSpec = {
 
 const CURSOR_CLI: CliBrainSpec = {
   kind: "cursor",
+  name: "Cursor",
   protocol: CURSOR_PROTOCOL,
   check: ({ cursor }) =>
     cursor
@@ -224,6 +225,7 @@ const CURSOR_CLI: CliBrainSpec = {
 
 const OPENCODE_CLI: CliBrainSpec = {
   kind: "opencode",
+  name: "OpenCode",
   protocol: OPENCODE_PROTOCOL,
   windowsProtocol: OPENCODE_ACP_PROTOCOL,
   check: ({ opencode }) =>
@@ -239,6 +241,7 @@ const OPENCODE_CLI: CliBrainSpec = {
 
 const GROK_CLI: CliBrainSpec = {
   kind: "grok",
+  name: "Grok Build",
   protocol: GROK_PROTOCOL,
   check: ({ grok }) =>
     grok
@@ -253,6 +256,7 @@ const GROK_CLI: CliBrainSpec = {
 
 const ANTIGRAVITY_CLI: CliBrainSpec = {
   kind: "antigravity",
+  name: "Antigravity CLI",
   protocol: ANTIGRAVITY_PROTOCOL,
   check: ({ antigravity }) =>
     antigravity
@@ -280,7 +284,7 @@ const REFUSED_MODEL_MS = 6 * 60 * 60_000;
 const refusedModels = new Map<string, number>();
 
 export class CodexBrain implements Brain {
-  readonly kind: Exclude<ComputerBrainKind, "claude_code">;
+  readonly kind: "codex" | "cursor" | "opencode" | "grok" | "antigravity";
 
   constructor(
     private readonly deps: CodexBrainDeps,
@@ -303,7 +307,7 @@ export class CodexBrain implements Brain {
 
   private async *attempt(turn: BrainTurn, io: BrainIO): AsyncIterable<BrainEvent> {
     const session = turn.session;
-    const { name } = BRAINS[this.kind];
+    const { name } = this.cli;
     if (!session) {
       yield { type: "error", code: "no_session", message: `The ${name} brain needs a session on a computer.` };
       return;
@@ -383,7 +387,7 @@ export class CodexBrain implements Brain {
       return;
     }
     // No brain here sends each call of its own tools to our prompt: one that always asks reads only.
-    const permissions = askingPermissions(await this.deps.permissions?.(turn), BRAINS[this.kind].caps.asksEachCall);
+    const permissions = askingPermissions(await this.deps.permissions?.(turn), false);
     // An older runner ignores the profile (no approvals, network on): never more power than asked for.
     if (permissions && status.protocol !== undefined && status.protocol < BRAIN_PROFILES_PROTOCOL) {
       yield {

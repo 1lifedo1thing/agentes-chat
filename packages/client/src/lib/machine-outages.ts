@@ -1,5 +1,4 @@
-import { BRAIN_EXECUTORS, isComputerBrain } from "@agenteschat/providers/brains";
-import type { ComputerBrain, MachineTool } from "../api/types";
+import type { MachineTool } from "../api/types";
 import { brainTool } from "./machines";
 
 /**
@@ -14,7 +13,7 @@ import { brainTool } from "./machines";
  */
 
 /** The brains a computer runs. */
-export type { ComputerBrain };
+export type ComputerBrain = "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
 
 export interface OutageAgentLike {
   agentId: string;
@@ -235,7 +234,14 @@ export function brainUnavailableOf(meta: Record<string, unknown> | null | undefi
   if (!b || typeof b !== "object") return null;
   const x = b as Record<string, unknown>;
   return {
-    brain: isComputerBrain(x.brain) ? x.brain : "claude_code",
+    brain:
+      x.brain === "codex" ||
+      x.brain === "cursor" ||
+      x.brain === "opencode" ||
+      x.brain === "grok" ||
+      x.brain === "antigravity"
+        ? x.brain
+        : "claude_code",
     code: str(x.code) ?? "",
     machineId: str(x.machineId),
     agentId: str(x.agentId),
@@ -256,7 +262,18 @@ export function waitToolOff(
   return { machineId: info.machineId, tool: brainTool(info.brain) };
 }
 
-const SWITCHES: readonly string[] = [...BRAIN_EXECUTORS, "commands", "browser", "desktop", "terminal"];
+const SWITCHES: readonly string[] = [
+  "claude",
+  "codex",
+  "cursor",
+  "opencode",
+  "grok",
+  "antigravity",
+  "commands",
+  "browser",
+  "desktop",
+  "terminal",
+];
 
 /**
  * The switches an agent's message needs turned on on its computer, for its one-click card: its wait note's

@@ -23,7 +23,6 @@ import {
   TASK_LIMIT_BOUNDS,
 } from "@agenteschat/adapters/machine-protocol";
 import { redactSecrets } from "@agenteschat/adapters/secret-box";
-import { BRAINS, type ComputerBrainKind, isComputerBrain } from "@agenteschat/providers/brains";
 import { realFoldersFor } from "./access";
 import type { AccountBrains } from "./account-brains";
 import type { AccountFolders, AccountGrant, AccountManager } from "./accounts";
@@ -1322,8 +1321,14 @@ async function doBrainTurn(
   scope: RequestScope,
   secrets: Secrets,
 ): Promise<MachineReplies["brain.turn"]> {
-  // Claude Code runs on this runner's own brain manager; every other computer brain on its CLI driver (ADR 0215).
-  const cli = isComputerBrain(req.kind) && req.kind !== "claude_code" ? req.kind : null;
+  const cli =
+    req.kind === "codex" ||
+    req.kind === "cursor" ||
+    req.kind === "opencode" ||
+    req.kind === "grok" ||
+    req.kind === "antigravity"
+      ? req.kind
+      : null;
   requireTool(ctx, cli ?? "claude");
   if (!req.agent) throw new RunnerError("bad_request", "A brain turn belongs to an agent");
   const runId = requireString(req.runId, "runId");
@@ -1365,10 +1370,10 @@ async function doHostedTurn(
 }
 
 /**
- * Turns in progress of a brain that reads messages only between turns (`BrainCaps.steer`), by run, with its name:
- * `brain.steer` answers `unsupported` for them.
+ * Cursor, Grok and Antigravity turns in progress, by run: `brain.steer` answers `unsupported` for them (`agent -p`,
+ * `grok -p` and `agy -p` take nothing mid-turn).
  */
-const turnOnlyRuns = new Map<string, string>();
+const turnOnlyRuns = new Map<string, "Cursor" | "Grok Build" | "Antigravity CLI">();
 
 /** OpenCode turns in progress, by run: `no_turn` until the turn can take messages (`steerOpencodeTurn`). */
 const opencodeRuns = new Set<string>();
@@ -1426,7 +1431,14 @@ function signedOut(
   const accounts = ctx.accounts;
   if (!accounts || typeof req.account !== "string" || !req.account || final?.type !== "error") return;
   if (final.code !== "not_logged_in" && final.code !== "account_missing") return;
-  const kind = isComputerBrain(req.kind) ? req.kind : "claude_code";
+  const kind =
+    req.kind === "codex" ||
+    req.kind === "cursor" ||
+    req.kind === "opencode" ||
+    req.kind === "grok" ||
+    req.kind === "antigravity"
+      ? req.kind
+      : "claude_code";
   void (final.code === "not_logged_in" ? accounts.refused(kind, req.account) : Promise.resolve())
     .catch(() => undefined)
     .then(() => {
@@ -1435,21 +1447,6 @@ function signedOut(
     })
     .catch(() => undefined);
 }
-
-type CliBrainKind = Exclude<ComputerBrainKind, "claude_code">;
-type CliTurnContext = Parameters<typeof handleCodexBrainTurn>[0] & { grant?: AccountGrant };
-type BrainTurnReq = Extract<MachineRequest, { op: "brain.turn" }>;
-type CliTurnScope = { signal: AbortSignal; emit: (event: CodexBrainEvent) => void };
-
-/** Each CLI brain's turn on this computer (ADR 0215 §2): its own driver, after what every turn starts with. */
-const CLI_TURNS: Record<CliBrainKind, (ctx: CliTurnContext, req: BrainTurnReq, scope: CliTurnScope) => Promise<void>> =
-  {
-    codex: (c, r, s) => handleCodexBrainTurn(c, r as unknown as CodexBrainTurnRequest, s),
-    cursor: (c, r, s) => handleCursorBrainTurn(c, r as unknown as CursorBrainTurnRequest, s),
-    opencode: (c, r, s) => handleOpencodeBrainTurn(c, r as unknown as OpencodeBrainTurnRequest, s),
-    grok: (c, r, s) => handleGrokBrainTurn(c, r as unknown as GrokBrainTurnRequest, s),
-    antigravity: (c, r, s) => handleAntigravityBrainTurn(c, r as unknown as AntigravityBrainTurnRequest, s),
-  };
 
 /**
  * The Codex branch of `brain.turn`: on the session's `codex app-server`
@@ -1466,12 +1463,15 @@ async function doCodexTurn(
   chat: boolean,
 ): Promise<MachineReplies["brain.turn"]> {
   const codex = ctx.codex;
+  const cursor = req.kind === "cursor";
   const opencode = req.kind === "opencode";
-  const { name } = BRAINS[req.kind];
+  const grok = req.kind === "grok";
+  const agy = req.kind === "antigravity";
+  const name = cursor ? "Cursor" : opencode ? "OpenCode" : grok ? "Grok Build" : agy ? "Antigravity CLI" : "Codex";
   if (!codex) throw new RunnerError("bad_request", `This runner runs no ${name} brain turns`);
   let final: CodexBrainEvent = {
     type: "error",
-    code: `${req.kind}_failed`,
+    code: `${cursor ? "cursor" : opencode ? "opencode" : grok ? "grok" : agy ? "antigravity" : "codex"}_failed`,
     message: `${name} ended without an answer.`,
   };
   let ended = false;
@@ -1498,22 +1498,87 @@ async function doCodexTurn(
     scope.emit?.({ type: "brain.event", runId, event });
   };
   if (opencode) opencodeRuns.add(runId);
-  else if (BRAINS[req.kind].caps.steer === "between_turns") turnOnlyRuns.set(runId, BRAINS[req.kind].name);
+  else if (cursor || grok || agy) turnOnlyRuns.set(runId, cursor ? "Cursor" : grok ? "Grok Build" : "Antigravity CLI");
   try {
-    // Every CLI's turn gets the same context (ADR 0215 §2); each takes what it needs from it.
-    const turnCtx = {
-      folder,
-      exec: toolOn(ctx, BRAINS[req.kind].executor),
-      runnerHome: codex.runnerHome,
-      ...(ctx.secretsDir && !chat ? { secretsDir: ctx.secretsDir } : {}),
-      ...(codex.mcp ? { mcp: codex.mcp } : {}),
-      ...(ctx.grants && !chat ? { grants: ctx.grants } : {}),
-      ...(ctx.accounts || codex.accounts ? { accounts: ctx.accounts ?? codex.accounts } : {}),
-      ...(codex.app ? { app: codex.app } : {}),
-      ...(codex.spawn ? { spawn: codex.spawn } : {}),
-      ...(ctx.grant ? { grant: ctx.grant } : {}),
-    };
-    await CLI_TURNS[req.kind as CliBrainKind](turnCtx, req, { signal: scope.signal, emit });
+    if (agy) {
+      await handleAntigravityBrainTurn(
+        {
+          folder,
+          exec: toolOn(ctx, "antigravity"),
+          runnerHome: codex.runnerHome,
+          ...(ctx.secretsDir && !chat ? { secretsDir: ctx.secretsDir } : {}),
+          ...(codex.mcp ? { mcp: codex.mcp } : {}),
+          ...(ctx.grants && !chat ? { grants: ctx.grants } : {}),
+          ...(ctx.accounts || codex.accounts ? { accounts: ctx.accounts ?? codex.accounts } : {}),
+          ...(codex.spawn ? { spawn: codex.spawn } : {}),
+          ...(ctx.grant ? { grant: ctx.grant } : {}),
+        },
+        req as unknown as AntigravityBrainTurnRequest,
+        { signal: scope.signal, emit },
+      );
+    } else if (grok) {
+      await handleGrokBrainTurn(
+        {
+          folder,
+          exec: toolOn(ctx, "grok"),
+          runnerHome: codex.runnerHome,
+          ...(ctx.secretsDir && !chat ? { secretsDir: ctx.secretsDir } : {}),
+          ...(codex.mcp ? { mcp: codex.mcp } : {}),
+          ...(ctx.grants && !chat ? { grants: ctx.grants } : {}),
+          ...(ctx.accounts || codex.accounts ? { accounts: ctx.accounts ?? codex.accounts } : {}),
+          ...(codex.spawn ? { spawn: codex.spawn } : {}),
+          ...(ctx.grant ? { grant: ctx.grant } : {}),
+        },
+        req as unknown as GrokBrainTurnRequest,
+        { signal: scope.signal, emit },
+      );
+    } else if (opencode) {
+      await handleOpencodeBrainTurn(
+        {
+          folder,
+          exec: toolOn(ctx, "opencode"),
+          runnerHome: codex.runnerHome,
+          ...(ctx.secretsDir && !chat ? { secretsDir: ctx.secretsDir } : {}),
+          ...(codex.mcp ? { mcp: codex.mcp } : {}),
+          ...(ctx.grants && !chat ? { grants: ctx.grants } : {}),
+          ...(ctx.accounts || codex.accounts ? { accounts: ctx.accounts ?? codex.accounts } : {}),
+          ...(codex.spawn ? { spawn: codex.spawn } : {}),
+        },
+        req as unknown as OpencodeBrainTurnRequest,
+        { signal: scope.signal, emit },
+      );
+    } else if (cursor) {
+      await handleCursorBrainTurn(
+        {
+          folder,
+          exec: toolOn(ctx, "cursor"),
+          runnerHome: codex.runnerHome,
+          ...(ctx.secretsDir && !chat ? { secretsDir: ctx.secretsDir } : {}),
+          ...(codex.mcp ? { mcp: codex.mcp } : {}),
+          ...(ctx.grants && !chat ? { grants: ctx.grants } : {}),
+          ...(ctx.accounts || codex.accounts ? { accounts: ctx.accounts ?? codex.accounts } : {}),
+          ...(codex.spawn ? { spawn: codex.spawn } : {}),
+        },
+        req as unknown as CursorBrainTurnRequest,
+        { signal: scope.signal, emit },
+      );
+    } else
+      await handleCodexBrainTurn(
+        {
+          folder,
+          exec: toolOn(ctx, "codex"),
+          runnerHome: codex.runnerHome,
+          ...(ctx.secretsDir && !chat ? { secretsDir: ctx.secretsDir } : {}),
+          ...(codex.mcp ? { mcp: codex.mcp } : {}),
+          ...(ctx.grants && !chat ? { grants: ctx.grants } : {}),
+          ...(ctx.accounts || codex.accounts ? { accounts: ctx.accounts ?? codex.accounts } : {}),
+          ...(codex.app ? { app: codex.app } : {}),
+          ...(codex.spawn ? { spawn: codex.spawn } : {}),
+          ...(ctx.grant ? { grant: ctx.grant } : {}),
+        },
+        req as unknown as CodexBrainTurnRequest,
+        { signal: scope.signal, emit },
+      );
   } finally {
     codex.runs.delete(runId);
     turnOnlyRuns.delete(runId);

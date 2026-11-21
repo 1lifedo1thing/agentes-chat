@@ -1,6 +1,6 @@
 import { BRAIN_COLD_CAUSES, BRAIN_TURN_MEASURES } from "@agenteschat/adapters";
 import { type Database, rowsOf, type SQL, type schema, sql } from "@agenteschat/db";
-import { BRAIN_KINDS } from "./brains/types";
+import { BRAIN_KINDS } from "./brain-settings";
 import { ValidationError } from "./errors";
 import { isJsonObject, numberIn, wholeOrNull } from "./format";
 import { instantOf } from "./operator-paging";

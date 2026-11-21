@@ -4,9 +4,9 @@ import { getAgentCached } from "./agents";
 import { runAuthority } from "./authority";
 import { requireChannelAccess } from "./channels";
 import {
+  CODE_BRAINS,
   type CodeSessionDeps,
   type CodeSessionView,
-  codeAgent,
   createCodeSession,
   localProjectName,
   REQUEST_MAX_CHARS,
@@ -27,8 +27,8 @@ import type { ToolContext, ToolDefinition, ToolOutput, ToolSource } from "./tool
 const { agentRuns, messages, users } = schema;
 
 /*
- * A code session suggested in the chat (ADR 0214 §11). When a person asks an agent that programs on a computer (any
- * code brain, ADR 0215) to change code in a project, the agent suggests a session instead of changing it there:
+ * A code session suggested in the chat (ADR 0214 §11). When a person asks an agent that programs on a computer (Claude
+ * Code or Codex) to change code in a project, the agent suggests a session instead of changing it in the conversation:
  * its reply carries the suggestion (`meta.codeSuggestion`), the person's card with "Abrir sessão" and "Fazer aqui". The
  * session opens with the person's own words as its first message, posted as them; "Fazer aqui" tells the agent to go
  * on in the conversation. Only the person who asked decides.
@@ -100,7 +100,7 @@ const REFUSED = {
   ownWork: "This is a task's or a mission's conversation, already the place for its work: do the change here.",
   notPerson: "The message you answer isn't a person's request: suggest a session only when a person asks for a change.",
   empty: "The message you answer has no words to start a session with: ask them what to change.",
-  noComputer: "You can't program on a computer, so there's no session to suggest: just answer.",
+  noComputer: "You don't program on a computer, so there's no session to suggest: just answer.",
   project:
     "Not suggested: give the project as `owner/name` of a GitHub repository you may use, or a short name (letters, digits, dots, dashes, underscores) for a project on your computer.",
   notAllowed: (repo: string) =>
@@ -145,7 +145,7 @@ async function workPlace(db: Database, run: AgentRun): Promise<string | null> {
 export async function codeSuggestionApplies(db: Database, run: AgentRun): Promise<boolean> {
   if (run.background || run.workId) return false;
   const agent = await getAgentCached(db, run.orgId, run.agentId);
-  if (!agent || !(await codeAgent(db, agent))) return false;
+  if (!agent || !(CODE_BRAINS as readonly string[]).includes(agent.brain) || !agent.machineId) return false;
   if (await workPlace(db, run)) return false;
   return (await runAuthority(db, run)).kind === "person";
 }
@@ -188,7 +188,8 @@ export function createCodeSuggestionToolSource(): ToolSource {
       if (elsewhere) return refused(elsewhere);
       if ((await runAuthority(ctx.db, run)).kind !== "person") return refused(REFUSED.nobody);
       const agent = await getAgentCached(ctx.db, run.orgId, run.agentId);
-      if (!agent || !(await codeAgent(ctx.db, agent))) return refused(REFUSED.noComputer);
+      if (!agent || !(CODE_BRAINS as readonly string[]).includes(agent.brain) || !agent.machineId)
+        return refused(REFUSED.noComputer);
       const asked = await getMessage(ctx.db, run.orgId, run.triggerMessageId);
       if (asked?.authorType !== "person" || !asked.authorUserId) return refused(REFUSED.notPerson);
       const request = asked.body.trim().slice(0, REQUEST_MAX_CHARS);
@@ -222,7 +223,7 @@ export function createCodeSuggestionToolSource(): ToolSource {
     async tools(ctx) {
       if (!ctx.runId || ctx.background) return [];
       const agent = await getAgentCached(ctx.db, ctx.orgId, ctx.agentId);
-      return agent && (await codeAgent(ctx.db, agent)) ? [tool] : [];
+      return agent && (CODE_BRAINS as readonly string[]).includes(agent.brain) && agent.machineId ? [tool] : [];
     },
   };
 }

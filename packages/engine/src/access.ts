@@ -119,7 +119,6 @@ export const BUILTIN_TOOLS: Record<string, string[]> = {
   "sandbox:run": [
     "run_code",
     "write_file",
-    "edit_file",
     "read_file",
     "list_files",
     "export_file",
@@ -353,7 +352,6 @@ export const BUILTIN_TOOL_INFO: Record<string, { label: string; description: str
   },
   run_code: { label: "Run code", description: "Runs Python, Node or bash on the agent's computer." },
   write_file: { label: "Write to environment", description: "Writes a file in the code environment." },
-  edit_file: { label: "Edit in environment", description: "Changes a piece of a file in the code environment." },
   read_file: { label: "Read from environment", description: "Reads a file from the code environment." },
   list_files: { label: "List environment", description: "Lists the files in the code environment." },
   export_file: { label: "Save to Drive", description: "Takes a file from the environment to the Drive." },

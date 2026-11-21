@@ -11622,7 +11622,7 @@ export const en = {
       /** Under the title, over the field. */
       title: "What to do in {{repo}}?",
       aRepo: "a project",
-      noAgents: "No agent programs on a computer yet. In an agent's “Who thinks”, choose a coding app on its computer.",
+      noAgents: "No agent thinks on a computer yet. Give one Claude Code or Codex on a computer, in its settings.",
       placeholder: "Describe the change, the bug or the question",
       label: "What to do",
       agent: "Agent",
@@ -14826,7 +14826,6 @@ export const en = {
       export_file: "Export file",
       read_file: "Read file",
       write_file: "Write file",
-      edit_file: "Edit file",
       list_files: "List files",
       run_code: "Run code",
       run_skill_script: "Run skill script",
@@ -19520,10 +19519,6 @@ export const en = {
     write_file: {
       label: "Write to environment",
       description: "Writes a file in the code environment.",
-    },
-    edit_file: {
-      label: "Edit in environment",
-      description: "Changes a piece of a file in the code environment.",
     },
     read_file: {
       label: "Read from environment",

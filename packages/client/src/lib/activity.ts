@@ -195,7 +195,6 @@ const BUILTIN: Record<string, ActivityKind> = {
   // The agent's PC (sandbox).
   run_code: "runningCode",
   write_file: "pcFiles",
-  edit_file: "pcFiles",
   read_file: "pcFiles",
   list_files: "pcFiles",
   export_file: "exportingFile",

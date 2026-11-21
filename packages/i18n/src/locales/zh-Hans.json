@@ -10802,7 +10802,7 @@
       "mode": "Vibecoding mode",
       "title": "要在 {{repo}} 里做什么？",
       "aRepo": "某个项目",
-      "noAgents": "还没有在电脑上编程的智能体。在某个智能体的“思考方式”里，选择它电脑上的编程应用。",
+      "noAgents": "还没有在电脑上思考的智能体。在某个智能体的设置里，给它配上电脑上的 Claude Code 或 Codex。",
       "placeholder": "描述要做的改动、bug 或问题",
       "label": "要做什么",
       "agent": "智能体",
@@ -14003,7 +14003,6 @@
       "export_file": "导出文件",
       "read_file": "读取文件",
       "write_file": "写入文件",
-      "edit_file": "编辑文件",
       "list_files": "列出文件",
       "run_code": "运行代码",
       "run_skill_script": "运行技能脚本",
@@ -18375,10 +18374,6 @@
     "write_file": {
       "label": "写入环境",
       "description": "在代码环境中写入文件。"
-    },
-    "edit_file": {
-      "label": "在环境中编辑",
-      "description": "修改代码环境中文件的一部分。"
     },
     "read_file": {
       "label": "从环境读取",

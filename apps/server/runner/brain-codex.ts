@@ -25,16 +25,6 @@ import {
 } from "./accounts";
 import { CODEX_ROUTE_OFF } from "./brain-route";
 import {
-  requireBrainSwitch,
-  sessionStore,
-  turnBridge,
-  turnFolder,
-  turnIds,
-  turnInput,
-  turnRunOptions,
-  turnSecrets,
-} from "./cli-turn";
-import {
   CODEX_WINDOWS_CONFIG,
   codexLaunch,
   codexStdinPrompt,
@@ -45,8 +35,9 @@ import { RunnerError } from "./errors";
 import { killTree } from "./exec";
 import { cachedCodexVersion, envValue } from "./executors";
 import { CODEX_MCP_ENV, CODEX_MCP_SERVER, codexWritableRoots } from "./mcp";
-import { isInside } from "./paths";
+import { isInside, resolveForAgent } from "./paths";
 import type { Spawn } from "./scope-gate";
+import { agentSecrets } from "./secrets";
 
 /**
  * The Codex branch of `brain.turn` (ADR 0032, ADR 0029 "Codex"): one agent
@@ -228,8 +219,16 @@ export function codexChatBreach(ev: Record<string, unknown>): string | null {
   return `Codex used a tool of its own (${what}), so the turn stopped.`;
 }
 
-/** The folder a `chat` turn starts in (`cli-turn.ts`, where every CLI brain's turn starts). */
-export { chatFolder } from "./cli-turn";
+/**
+ * The folder a `chat` turn starts in (Codex's and Cursor's): one per agent under the runner home (Cursor finds a chat
+ * again by its folder), emptied on every turn, so no project config, rules or instructions are there to read.
+ */
+export function chatFolder(runnerHome: string, agentId: string): string {
+  const dir = path.join(runnerHome, "brain", "chat", agentId.replace(/[^\w-]/g, "_"));
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  for (const name of readdirSync(dir)) rmSync(path.join(dir, name), { recursive: true, force: true });
+  return dir;
+}
 
 /** The profile a request asks for: anything but `plan` is `work`. */
 export const codexProfileOf = (req: { permissions?: { mode?: unknown } }): CommandProfile =>
@@ -1110,11 +1109,30 @@ export async function handleCodexBrainTurn(
   req: CodexBrainTurnRequest,
   scope: { signal: AbortSignal; emit: (event: CodexBrainEvent) => void },
 ): Promise<void> {
-  requireBrainSwitch("codex", ctx.exec);
-  const ids = turnIds(req);
+  if (!ctx.exec) {
+    throw new RunnerError(
+      "exec_disabled",
+      "Commands are turned off on this computer (the runner was paired with --no-exec)",
+    );
+  }
+  if (!req.agent) throw new RunnerError("bad_request", "A brain turn belongs to an agent");
+  if (typeof req.runId !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.runId)) {
+    throw new RunnerError("bad_request", "runId is invalid");
+  }
+  if (typeof req.session?.id !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.session.id)) {
+    throw new RunnerError("bad_request", "session.id is invalid");
+  }
+  if (typeof req.mcp?.token !== "string" || !req.mcp.token)
+    throw new RunnerError("bad_request", "mcp.token is required");
   const folder = ctx.folder;
   // A `chat` turn starts in an empty folder of its own, whatever the request names, with no grants nor secrets.
-  const { chat, cwd } = await turnFolder(ctx, req, String(ids.agent.id));
+  const chat = req.permissions?.mode === "chat";
+  let cwd = chat ? chatFolder(ctx.runnerHome, String(req.agent.id)) : folder;
+  if (!chat && typeof req.cwd === "string" && req.cwd.trim() !== "") {
+    const resolved = await resolveForAgent(folder, ctx.grants, req.cwd);
+    if (!resolved.exists) throw new RunnerError("not_found", `The folder ${req.cwd} doesn't exist`);
+    cwd = resolved.abs;
+  }
   // ADR 0041: the account's folder or nothing (never the machine's own sign-in instead).
   let account: { id: string; home: string } | undefined;
   let release: (() => void) | undefined;
@@ -1137,34 +1155,49 @@ export async function handleCodexBrainTurn(
   const writableRoots = chat
     ? []
     : [...(cwd !== folder ? [folder] : []), ...(ctx.grants ?? []).filter((g) => !isInside(g, cwd))];
-  const secrets = await turnSecrets(ctx.secretsDir, ids.agent, chat);
-  const threads = sessionStore(threadStores, codexThreadsFile(ctx.runnerHome), ctx.threads, (f) => new CodexThreads(f));
+  const secrets = chat ? null : await agentSecrets(ctx.secretsDir, req.agent);
+  const file = codexThreadsFile(ctx.runnerHome);
+  const threads = ctx.threads ?? threadStores.get(file) ?? new CodexThreads(file);
+  threadStores.set(file, threads);
   try {
     await runCodexTurn(
       {
-        ...turnInput(req, ids, cwd, chat),
+        runId: req.runId,
+        sessionId: req.session.id,
+        cwd,
+        ...(typeof req.model === "string" && req.model ? { model: req.model } : {}),
+        system: typeof req.system === "string" ? req.system : "",
+        prompt: typeof req.prompt === "string" ? req.prompt : "",
         mcp: {
-          ...turnBridge(ids.token, req),
-          ...(typeof req.mcp?.tools === "string" && req.mcp.tools ? { tools: req.mcp.tools.slice(0, 64_000) } : {}),
+          token: req.mcp.token,
+          ...(typeof req.mcp.url === "string" && req.mcp.url ? { url: req.mcp.url } : {}),
+          ...(typeof req.mcp.tools === "string" && req.mcp.tools ? { tools: req.mcp.tools.slice(0, 64_000) } : {}),
         },
         ...(writableRoots.length ? { writableRoots } : {}),
         ...(account ? { account } : {}),
         ...(isBrainEffort(req.effort) ? { effort: req.effort } : {}),
         ...(req.speed === "fast" && !chat ? { speed: "fast" as const } : {}),
         ...(isContextTokens(req.contextTokens) ? { contextTokens: req.contextTokens } : {}),
-        agentId: String(ids.agent.id),
+        agentId: String(req.agent.id),
         folder,
         profile: codexProfileOf(req),
         ...(req.permissions?.asks === "never" ? { asks: "never" as const } : {}),
         ...(req.keepAlive === false ? { keepAlive: false } : {}),
+        ...(chat ? { chat } : {}),
         ...(req.answers === "each" ? { answers: "each" as const } : {}),
       },
       {
         threads,
-        workDir: path.join(ctx.runnerHome, "brain", "turns", ids.runId),
-        ...turnRunOptions(ctx, scope, secrets),
+        workDir: path.join(ctx.runnerHome, "brain", "turns", req.runId),
+        emit: scope.emit,
+        signal: scope.signal,
+        runnerHome: ctx.runnerHome,
+        ...(ctx.mcp ? { mcpCommand: ctx.mcp.command, socketPath: ctx.mcp.socketPath } : {}),
+        ...(secrets ? { env: secrets.env, redact: secrets.redact, redactHold: secrets.hold } : {}),
         ...(ctx.codexVersion ? { codexVersion: ctx.codexVersion } : {}),
+        ...(ctx.bin ? { bin: ctx.bin } : {}),
         ...(ctx.app ? { app: ctx.app } : {}),
+        ...(ctx.spawn ? { spawn: ctx.spawn } : {}),
       },
     );
   } finally {

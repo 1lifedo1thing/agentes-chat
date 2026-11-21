@@ -16,21 +16,13 @@ import {
   codexProfileOf,
   codexThreadKey,
 } from "./brain-codex";
-import {
-  requireBrainSwitch,
-  sessionStore,
-  turnBridge,
-  turnFolder,
-  turnIds,
-  turnInput,
-  turnRunOptions,
-  turnSecrets,
-} from "./cli-turn";
 import { RunnerError } from "./errors";
 import { killTree } from "./exec";
 import { cliSpawn, envValue, OPENCODE_BIN } from "./executors";
 import { CODEX_MCP_ENV, CODEX_MCP_SERVER, redactDeep } from "./mcp";
+import { resolveForAgent } from "./paths";
 import type { Spawn } from "./scope-gate";
+import { agentSecrets } from "./secrets";
 
 /**
  * The OpenCode branch of `brain.turn` (protocol 39, ADR 0132; over the Agent Client Protocol since protocol 64): one
@@ -897,8 +889,16 @@ export async function handleOpencodeBrainTurn(
   req: OpencodeBrainTurnRequest,
   scope: { signal: AbortSignal; emit: (event: CodexBrainEvent) => void },
 ): Promise<void> {
-  requireBrainSwitch("opencode", ctx.exec);
-  const ids = turnIds(req);
+  if (!ctx.exec) throw new RunnerError("not_allowed", "OpenCode is turned off on this computer");
+  if (!req.agent) throw new RunnerError("bad_request", "A brain turn belongs to an agent");
+  if (typeof req.runId !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.runId)) {
+    throw new RunnerError("bad_request", "runId is invalid");
+  }
+  if (typeof req.session?.id !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.session.id)) {
+    throw new RunnerError("bad_request", "session.id is invalid");
+  }
+  if (typeof req.mcp?.token !== "string" || !req.mcp.token)
+    throw new RunnerError("bad_request", "mcp.token is required");
   if (typeof req.model === "string" && req.model && !/^[\w.-]{1,40}\/[\w.:-]{1,79}$/.test(req.model)) {
     throw new RunnerError("bad_request", "model is provider/model");
   }
@@ -906,8 +906,14 @@ export async function handleOpencodeBrainTurn(
   if (freeTier && typeof req.model === "string" && req.model && !req.model.startsWith("opencode/")) {
     throw new RunnerError("bad_request", "OpenCode's free tier thinks only with OpenCode's own models");
   }
+  const chat = req.permissions?.mode === "chat";
+  let cwd = ctx.folder;
   // A `chat` turn starts in the agent's own folder, whatever the request names.
-  const { chat, cwd } = await turnFolder(ctx, req, String(ids.agent.id), "own");
+  if (!chat && typeof req.cwd === "string" && req.cwd.trim() !== "") {
+    const resolved = await resolveForAgent(ctx.folder, ctx.grants, req.cwd);
+    if (!resolved.exists) throw new RunnerError("not_found", `The folder ${req.cwd} doesn't exist`);
+    cwd = resolved.abs;
+  }
   // ADR 0041: the account's folder or nothing (never the machine's own sign-in instead).
   let account: OpencodeTurnInput["account"];
   const accountId: unknown = req.account;
@@ -926,23 +932,34 @@ export async function handleOpencodeBrainTurn(
     const key = await opencodeKeyOf(home);
     account = { id: accountId, home, ...(key ? { key } : {}) };
   }
-  const secrets = await turnSecrets(ctx.secretsDir, ids.agent, chat);
-  const sessions = sessionStore(
-    sessionStores,
-    opencodeSessionsFile(ctx.runnerHome),
-    ctx.sessions,
-    (f) => new CodexThreads(f),
-  );
+  const secrets = chat ? null : await agentSecrets(ctx.secretsDir, req.agent);
+  const file = opencodeSessionsFile(ctx.runnerHome);
+  const sessions = ctx.sessions ?? sessionStores.get(file) ?? new CodexThreads(file);
+  sessionStores.set(file, sessions);
   await runOpencodeTurn(
     {
-      ...turnInput(req, ids, cwd, chat),
-      mcp: turnBridge(ids.token, req),
+      runId: req.runId,
+      sessionId: req.session.id,
+      cwd,
+      ...(typeof req.model === "string" && req.model ? { model: req.model } : {}),
+      system: typeof req.system === "string" ? req.system : "",
+      prompt: typeof req.prompt === "string" ? req.prompt : "",
+      mcp: { token: req.mcp.token, ...(typeof req.mcp.url === "string" && req.mcp.url ? { url: req.mcp.url } : {}) },
       ...(account ? { account } : {}),
       profile: codexProfileOf(req),
       ...(freeTier ? { freeTier } : {}),
-      agentId: String(ids.agent.id),
+      ...(chat ? { chat } : {}),
+      agentId: String(req.agent.id),
     },
-    // Its options take no `redactHold`.
-    { sessions, ...turnRunOptions(ctx, scope, secrets, { hold: false }) },
+    {
+      sessions,
+      emit: scope.emit,
+      signal: scope.signal,
+      runnerHome: ctx.runnerHome,
+      ...(ctx.mcp ? { mcpCommand: ctx.mcp.command, socketPath: ctx.mcp.socketPath } : {}),
+      ...(secrets ? { env: secrets.env, redact: secrets.redact } : {}),
+      ...(ctx.bin ? { bin: ctx.bin } : {}),
+      ...(ctx.spawn ? { spawn: ctx.spawn } : {}),
+    },
   );
 }

@@ -12,24 +12,17 @@ import {
   CODEX_TOOL_OUTPUT_MAX,
   type CodexBrainEvent,
   CodexThreads,
+  chatFolder,
   codexProfileOf,
   codexThreadKey,
 } from "./brain-codex";
-import {
-  requireBrainSwitch,
-  sessionStore,
-  turnBridge,
-  turnFolder,
-  turnIds,
-  turnInput,
-  turnRunOptions,
-  turnSecrets,
-} from "./cli-turn";
 import { RunnerError } from "./errors";
 import { killTree } from "./exec";
 import { CURSOR_BIN, resolveCommand } from "./executors";
 import { CODEX_MCP_ENV, CODEX_MCP_SERVER, redactDeep } from "./mcp";
+import { resolveForAgent } from "./paths";
 import type { Spawn } from "./scope-gate";
+import { agentSecrets } from "./secrets";
 
 /**
  * The Cursor branch of `brain.turn` (protocol 36, ADR 0114): one agent turn as
@@ -592,10 +585,25 @@ export async function handleCursorBrainTurn(
   req: CursorBrainTurnRequest,
   scope: { signal: AbortSignal; emit: (event: CodexBrainEvent) => void },
 ): Promise<void> {
-  requireBrainSwitch("cursor", ctx.exec);
-  const ids = turnIds(req);
+  if (!ctx.exec) throw new RunnerError("not_allowed", "Cursor is turned off on this computer");
+  if (!req.agent) throw new RunnerError("bad_request", "A brain turn belongs to an agent");
+  if (typeof req.runId !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.runId)) {
+    throw new RunnerError("bad_request", "runId is invalid");
+  }
+  if (typeof req.session?.id !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.session.id)) {
+    throw new RunnerError("bad_request", "session.id is invalid");
+  }
+  if (typeof req.mcp?.token !== "string" || !req.mcp.token)
+    throw new RunnerError("bad_request", "mcp.token is required");
   // A `chat` turn starts in an empty folder of its own (then our `.cursor` alone), whatever the request names.
-  const { chat, base, cwd } = await turnFolder(ctx, req, String(ids.agent.id));
+  const chat = req.permissions?.mode === "chat";
+  const folder = chat ? chatFolder(ctx.runnerHome, String(req.agent.id)) : ctx.folder;
+  let cwd = folder;
+  if (!chat && typeof req.cwd === "string" && req.cwd.trim() !== "") {
+    const resolved = await resolveForAgent(folder, ctx.grants, req.cwd);
+    if (!resolved.exists) throw new RunnerError("not_found", `The folder ${req.cwd} doesn't exist`);
+    cwd = resolved.abs;
+  }
   // ADR 0041: the account's folder or nothing (never the machine's own sign-in instead).
   let account: CursorTurnInput["account"];
   const accountId: unknown = req.account;
@@ -609,16 +617,33 @@ export async function handleCursorBrainTurn(
     const key = await cursorKeyOf(home);
     account = { id: accountId, home, ...(key ? { key } : {}) };
   }
-  const secrets = await turnSecrets(ctx.secretsDir, ids.agent, chat);
-  const chats = sessionStore(chatStores, cursorChatsFile(ctx.runnerHome), ctx.chats, (f) => new CodexThreads(f));
+  const secrets = chat ? null : await agentSecrets(ctx.secretsDir, req.agent);
+  const file = cursorChatsFile(ctx.runnerHome);
+  const chats = ctx.chats ?? chatStores.get(file) ?? new CodexThreads(file);
+  chatStores.set(file, chats);
   await runCursorTurn(
     {
-      ...turnInput(req, ids, cwd, chat),
-      folder: base,
-      mcp: turnBridge(ids.token, req),
+      runId: req.runId,
+      sessionId: req.session.id,
+      cwd,
+      folder,
+      ...(typeof req.model === "string" && req.model ? { model: req.model } : {}),
+      system: typeof req.system === "string" ? req.system : "",
+      prompt: typeof req.prompt === "string" ? req.prompt : "",
+      mcp: { token: req.mcp.token, ...(typeof req.mcp.url === "string" && req.mcp.url ? { url: req.mcp.url } : {}) },
       ...(account ? { account } : {}),
       profile: codexProfileOf(req),
+      ...(chat ? { chat } : {}),
     },
-    { chats, ...turnRunOptions(ctx, scope, secrets) },
+    {
+      chats,
+      emit: scope.emit,
+      signal: scope.signal,
+      runnerHome: ctx.runnerHome,
+      ...(ctx.mcp ? { mcpCommand: ctx.mcp.command, socketPath: ctx.mcp.socketPath } : {}),
+      ...(secrets ? { env: secrets.env, redact: secrets.redact, redactHold: secrets.hold } : {}),
+      ...(ctx.bin ? { bin: ctx.bin } : {}),
+      ...(ctx.spawn ? { spawn: ctx.spawn } : {}),
+    },
   );
 }

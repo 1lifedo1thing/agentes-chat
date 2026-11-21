@@ -10782,7 +10782,7 @@
       "mode": "Vibecoding mode",
       "title": "Apa yang dikerjakan di {{repo}}?",
       "aRepo": "sebuah proyek",
-      "noAgents": "Belum ada agen yang memprogram di komputer. Di “Siapa yang berpikir” milik agen, pilih aplikasi coding di komputernya.",
+      "noAgents": "Belum ada agen yang berpikir di komputer. Beri salah satunya Claude Code atau Codex di komputer, lewat pengaturannya.",
       "placeholder": "Jelaskan perubahan, bug, atau pertanyaannya",
       "label": "Yang dikerjakan",
       "agent": "Agen",
@@ -13987,7 +13987,6 @@
       "export_file": "Ekspor file",
       "read_file": "Baca file",
       "write_file": "Tulis file",
-      "edit_file": "Edit file",
       "list_files": "Daftar file",
       "run_code": "Jalankan kode",
       "run_skill_script": "Jalankan skrip skill",
@@ -18353,10 +18352,6 @@
     "write_file": {
       "label": "Tulis ke lingkungan",
       "description": "Menulis file di lingkungan kode."
-    },
-    "edit_file": {
-      "label": "Edit di lingkungan",
-      "description": "Mengubah sebagian file di lingkungan kode."
     },
     "read_file": {
       "label": "Baca dari lingkungan",

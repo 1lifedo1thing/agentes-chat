@@ -23,7 +23,7 @@ import type { AiStatusDeps } from "./ai-status";
 import { findsAgent, NO_PERSON, speakerFor, viaAgent } from "./audience";
 import { runAuthority, UUID } from "./authority";
 import { type BlockSpecReader, blockStateNotes } from "./block-state";
-import { BRAINS, isComputerBrain, isSandboxedBrain } from "./brains/types";
+import { isSandboxedBrain } from "./brains/types";
 import { caches } from "./cache";
 import { summarizeScopes } from "./capabilities";
 import { peopleAllIn } from "./channels";
@@ -1134,7 +1134,6 @@ export async function buildRunContext(
     channel.kind === "code"
       ? await codeSessionBrief(db, channel.id, agent.id, {
           first: !history.some((m) => m.authorType === "agent"),
-          brain: agent.brain,
         }).catch(() => null)
       : null;
 
@@ -1326,9 +1325,13 @@ export async function buildRunContext(
           a
             ? [
                 { text: machineAccessText(a) },
-                // A CLI whose sandbox or permissions keep its shell in the turn's workspace couldn't use a folder
-                // outside it (`BrainCaps.outsideFolders`); the agent's own tools can.
-                ...(a.shared && (!isComputerBrain(agent.brain) || BRAINS[agent.brain].caps.outsideFolders)
+                // Cursor's, Grok's and Antigravity's sandboxes (ADR 0114, 0142, 0143) and OpenCode's permissions (ADR
+                // 0132) keep its shell out of a folder outside the turn's workspace, so it couldn't use it.
+                ...(a.shared &&
+                agent.brain !== "cursor" &&
+                agent.brain !== "opencode" &&
+                agent.brain !== "grok" &&
+                agent.brain !== "antigravity"
                   ? [{ text: sharedFolderText(a.name, a.shared) }]
                   : []),
                 ...(a.shares && a.tools.commands ? [{ text: sharingText(a.name, a.size) }] : []),

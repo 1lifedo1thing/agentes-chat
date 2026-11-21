@@ -11623,7 +11623,7 @@
       "mode": "Vibecoding mode",
       "title": "Que faire dans {{repo}} ?",
       "aRepo": "un projet",
-      "noAgents": "Aucun agent ne programme encore sur un ordinateur. Dans « Qui réfléchit » d'un agent, choisissez une app de code sur son ordinateur.",
+      "noAgents": "Aucun agent ne réfléchit encore sur un ordinateur. Donnez à l'un d'eux Claude Code ou Codex sur un ordinateur, dans ses paramètres.",
       "placeholder": "Décrivez le changement, le bug ou la question",
       "label": "Que faire",
       "agent": "Agent",
@@ -14988,7 +14988,6 @@
       "export_file": "Exporter un fichier",
       "read_file": "Lire un fichier",
       "write_file": "Écrire un fichier",
-      "edit_file": "Modifier un fichier",
       "list_files": "Lister les fichiers",
       "run_code": "Exécuter du code",
       "run_skill_script": "Exécuter un script de compétence",
@@ -19528,10 +19527,6 @@
     "write_file": {
       "label": "Écrire dans l'environnement",
       "description": "Écrit un fichier dans l'environnement de code."
-    },
-    "edit_file": {
-      "label": "Modifier dans l'environnement",
-      "description": "Change une partie d'un fichier dans l'environnement de code."
     },
     "read_file": {
       "label": "Lire depuis l'environnement",

@@ -1,7 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, desc, type Executor, eq, gte, inArray, rowsOf, schema, sql } from "@agenteschat/db";
 import { publishApproval } from "./approvals";
-import { type BrainKind, type BrainSession, type BrainTurn, isBrainKind, type ToolResult } from "./brains/types";
+import type { BrainKind, BrainSession, BrainTurn, ToolResult } from "./brains/types";
 import { abortLocalRun, RUN_CANCEL_TOPIC } from "./cancel";
 import { publishChannelEvent, publishMessageCreated } from "./events";
 import type { RunIdentity } from "./executor";
@@ -128,6 +128,7 @@ export const engineOf = (deps: MissionDeps): MissionEngine => deps.missionEngine
 // ── Which brain, which session ───────────────────────────────────────────────
 
 const BRAIN_OF_EXECUTOR: Record<string, BrainKind> = { claude: "claude_code", codex: "codex", agent: "model" };
+const BRAINS: readonly BrainKind[] = ["model", "claude_code", "codex", "cursor", "opencode", "grok", "antigravity"];
 
 /** Mission columns block 3a adds (`missions.brain`, `missions.brain_model`): read when present. */
 type BrainOverride = { brain?: string | null; brainModel?: string | null };
@@ -141,8 +142,8 @@ export function missionBrain(mission: Pick<MissionRow, "executor"> & BrainOverri
   brain: BrainKind;
   model?: string;
 } {
-  const override = isBrainKind(mission.brain) ? mission.brain : null;
-  const brain = override ?? BRAIN_OF_EXECUTOR[mission.executor] ?? "model";
+  const override = mission.brain && (BRAINS as readonly string[]).includes(mission.brain) ? mission.brain : null;
+  const brain = (override as BrainKind | null) ?? BRAIN_OF_EXECUTOR[mission.executor] ?? "model";
   return mission.brainModel ? { brain, model: mission.brainModel } : { brain };
 }
 

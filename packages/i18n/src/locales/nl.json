@@ -11250,7 +11250,7 @@
       "mode": "Vibecoding mode",
       "title": "Wat doen we in {{repo}}?",
       "aRepo": "een project",
-      "noAgents": "Nog geen agent programmeert op een computer. Kies bij ‘Wie denkt’ van een agent een programmeerapp op zijn computer.",
+      "noAgents": "Nog geen agent denkt op een computer. Geef er een Claude Code of Codex op een computer, in de instellingen van de agent.",
       "placeholder": "Beschrijf de wijziging, de bug of de vraag",
       "label": "Wat er moet gebeuren",
       "agent": "Agent",
@@ -14544,7 +14544,6 @@
       "export_file": "Bestand exporteren",
       "read_file": "Bestand lezen",
       "write_file": "Bestand schrijven",
-      "edit_file": "Bestand bewerken",
       "list_files": "Bestanden weergeven",
       "run_code": "Code uitvoeren",
       "run_skill_script": "Skillscript uitvoeren",
@@ -18998,10 +18997,6 @@
     "write_file": {
       "label": "Schrijven naar omgeving",
       "description": "Schrijft een bestand in de code-omgeving."
-    },
-    "edit_file": {
-      "label": "Bewerken in omgeving",
-      "description": "Wijzigt een deel van een bestand in de code-omgeving."
     },
     "read_file": {
       "label": "Lezen uit omgeving",

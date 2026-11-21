@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { GROK_PROTOCOL, LOCKED_BRAIN_PROTOCOL, SHARED_GROK_PROTOCOL } from "@agenteschat/adapters";
 import { GROK_BUILD_MODELS, loginPerAgent, sharedSignIn } from "@agenteschat/providers/plans";
-import { brainOptions, defaultBrainModel, grokModels } from "../src/brain-settings";
+import { brainOptions, defaultBrainModel, grokModels, isBrainKind } from "../src/brain-settings";
 import { type BrainTurnRequest, type ComputerBrainLink, GrokBrain } from "../src/brains/codex";
 import { computerBrainUnavailable, NO_AI_CODES, UNAVAILABLE_CODES } from "../src/brains/select";
 import {
@@ -9,7 +9,6 @@ import {
   BRAIN_PLAN_NAMES,
   type BrainEvent,
   type BrainTurn,
-  isBrainKind,
   isComputerBrain,
   SYSTEM_REFUSED,
 } from "../src/brains/types";

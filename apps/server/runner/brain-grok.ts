@@ -6,26 +6,26 @@ import { createInterface } from "node:readline";
 import type { CommandProfile } from "@agenteschat/adapters/command-policy";
 import type { AgentScope, BrainEffort } from "@agenteschat/adapters/machine-protocol";
 import { isAccountId } from "@agenteschat/adapters/machine-protocol";
-import { type AccountFolders, type AccountGrant, accountEnv, withoutContainers, withoutSignIns } from "./accounts";
-import { ClaudeStreamParser, LIMIT_TEXT } from "./brain";
-import { type CodexBrainEvent, CodexThreads, codexProfileOf, codexThreadKey } from "./brain-codex";
-import { cursorPrompt } from "./brain-cursor";
 import {
-  requireBrainSwitch,
-  sessionStore,
-  turnBridge,
-  turnFolder,
-  turnIds,
-  turnInput,
-  turnRunOptions,
-  turnSecrets,
-  turnSignIn,
-} from "./cli-turn";
+  ACCOUNT_MISSING_MESSAGE,
+  ACCOUNT_SIGNED_OUT,
+  type AccountFolders,
+  type AccountGrant,
+  accountEnv,
+  accountSignIn,
+  withoutContainers,
+  withoutSignIns,
+} from "./accounts";
+import { ClaudeStreamParser, LIMIT_TEXT } from "./brain";
+import { type CodexBrainEvent, CodexThreads, chatFolder, codexProfileOf, codexThreadKey } from "./brain-codex";
+import { cursorPrompt } from "./brain-cursor";
 import { RunnerError } from "./errors";
 import { killTree } from "./exec";
 import { GROK_BIN, resolveCommand } from "./executors";
 import { CODEX_MCP_ENV, CODEX_MCP_SERVER, redactDeep } from "./mcp";
+import { resolveForAgent } from "./paths";
 import type { Spawn } from "./scope-gate";
+import { agentSecrets } from "./secrets";
 
 /**
  * The Grok branch of `brain.turn` (protocol 43, ADR 0142): one agent turn as one run of xAI's Grok Build CLI
@@ -510,8 +510,16 @@ export async function handleGrokBrainTurn(
   req: GrokBrainTurnRequest,
   scope: { signal: AbortSignal; emit: (event: CodexBrainEvent) => void },
 ): Promise<void> {
-  requireBrainSwitch("grok", ctx.exec);
-  const ids = turnIds(req);
+  if (!ctx.exec) throw new RunnerError("not_allowed", "Grok Build is turned off on this computer");
+  if (!req.agent) throw new RunnerError("bad_request", "A brain turn belongs to an agent");
+  if (typeof req.runId !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.runId)) {
+    throw new RunnerError("bad_request", "runId is invalid");
+  }
+  if (typeof req.session?.id !== "string" || !/^[a-zA-Z0-9-]{8,64}$/.test(req.session.id)) {
+    throw new RunnerError("bad_request", "session.id is invalid");
+  }
+  if (typeof req.mcp?.token !== "string" || !req.mcp.token)
+    throw new RunnerError("bad_request", "mcp.token is required");
   // ADR 0041: the account's folder or nothing (the computer's own `~/.grok` would need our bridge in its config).
   const accountId: unknown = req.account;
   if (accountId === undefined || accountId === null || accountId === "") {
@@ -524,23 +532,65 @@ export async function handleGrokBrainTurn(
     return;
   }
   if (!isAccountId(accountId)) throw new RunnerError("bad_request", "Invalid account id");
-  const signIn = await turnSignIn(ctx, "grok", accountId, scope);
-  if (!signIn) return;
+  let signIn: Awaited<ReturnType<typeof accountSignIn>>;
+  try {
+    signIn = await accountSignIn(ctx.accounts, "grok", accountId, ctx.grant);
+  } catch (err) {
+    scope.emit({
+      type: "error",
+      code: "grok_failed",
+      message: `This computer couldn't hand the agent its Grok sign-in (${(err as Error).message}). Try again.`,
+      retryable: true,
+    });
+    return;
+  }
+  if (signIn === "signed_out") {
+    scope.emit({ type: "error", code: "not_logged_in", message: ACCOUNT_SIGNED_OUT, retryable: true });
+    return;
+  }
+  if (signIn === "missing") {
+    scope.emit({ type: "error", code: "account_missing", message: ACCOUNT_MISSING_MESSAGE.grok, retryable: false });
+    return;
+  }
   const home = signIn.home;
   try {
     // A `chat` turn starts in an empty folder of its own, whatever the request names.
-    const { chat, cwd } = await turnFolder(ctx, req, String(ids.agent.id));
-    const secrets = await turnSecrets(ctx.secretsDir, ids.agent, chat);
-    const chats = sessionStore(chatStores, grokChatsFile(ctx.runnerHome), ctx.chats, (f) => new CodexThreads(f));
+    const chat = req.permissions?.mode === "chat";
+    const folder = chat ? chatFolder(ctx.runnerHome, String(req.agent.id)) : ctx.folder;
+    let cwd = folder;
+    if (!chat && typeof req.cwd === "string" && req.cwd.trim() !== "") {
+      const resolved = await resolveForAgent(folder, ctx.grants, req.cwd);
+      if (!resolved.exists) throw new RunnerError("not_found", `The folder ${req.cwd} doesn't exist`);
+      cwd = resolved.abs;
+    }
+    const secrets = chat ? null : await agentSecrets(ctx.secretsDir, req.agent);
+    const file = grokChatsFile(ctx.runnerHome);
+    const chats = ctx.chats ?? chatStores.get(file) ?? new CodexThreads(file);
+    chatStores.set(file, chats);
     await runGrokTurn(
       {
-        ...turnInput(req, ids, cwd, chat),
+        runId: req.runId,
+        sessionId: req.session.id,
+        cwd,
+        ...(typeof req.model === "string" && req.model ? { model: req.model } : {}),
         ...(req.effort ? { effort: req.effort } : {}),
-        mcp: turnBridge(ids.token, req),
+        system: typeof req.system === "string" ? req.system : "",
+        prompt: typeof req.prompt === "string" ? req.prompt : "",
+        mcp: { token: req.mcp.token, ...(typeof req.mcp.url === "string" && req.mcp.url ? { url: req.mcp.url } : {}) },
         account: { id: accountId, home },
         profile: codexProfileOf(req),
+        ...(chat ? { chat } : {}),
       },
-      { chats, ...turnRunOptions(ctx, scope, secrets) },
+      {
+        chats,
+        emit: scope.emit,
+        signal: scope.signal,
+        runnerHome: ctx.runnerHome,
+        ...(ctx.mcp ? { mcpCommand: ctx.mcp.command, socketPath: ctx.mcp.socketPath } : {}),
+        ...(secrets ? { env: secrets.env, redact: secrets.redact, redactHold: secrets.hold } : {}),
+        ...(ctx.bin ? { bin: ctx.bin } : {}),
+        ...(ctx.spawn ? { spawn: ctx.spawn } : {}),
+      },
     );
   } finally {
     signIn.release?.();

@@ -12024,7 +12024,7 @@
       "mode": "Vibecoding mode",
       "title": "Co robimy w {{repo}}?",
       "aRepo": "projekcie",
-      "noAgents": "Żaden agent nie programuje jeszcze na komputerze. W „Kto myśli” agenta wybierz aplikację do programowania na jego komputerze.",
+      "noAgents": "Żaden agent nie myśli jeszcze na komputerze. Daj jednemu z nich Claude Code albo Codex na komputerze, w jego ustawieniach.",
       "placeholder": "Opisz zmianę, błąd albo pytanie",
       "label": "Co zrobić",
       "agent": "Agent",
@@ -15503,7 +15503,6 @@
       "export_file": "Eksportuj plik",
       "read_file": "Przeczytaj plik",
       "write_file": "Zapisz plik",
-      "edit_file": "Edytuj plik",
       "list_files": "Wyświetl pliki",
       "run_code": "Uruchom kod",
       "run_skill_script": "Uruchom skrypt umiejętności",
@@ -20122,10 +20121,6 @@
     "write_file": {
       "label": "Zapisz w środowisku",
       "description": "Zapisuje plik w środowisku kodu."
-    },
-    "edit_file": {
-      "label": "Edytuj w środowisku",
-      "description": "Zmienia fragment pliku w środowisku kodu."
     },
     "read_file": {
       "label": "Czytaj ze środowiska",

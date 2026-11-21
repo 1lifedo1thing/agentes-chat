@@ -27234,7 +27234,7 @@
     "value": "a project"
   },
   "codeSessions.home.noAgents": {
-    "value": "No agent programs on a computer yet. In an agent's “Who thinks”, choose a coding app on its computer."
+    "value": "No agent thinks on a computer yet. Give one Claude Code or Codex on a computer, in its settings."
   },
   "codeSessions.home.placeholder": {
     "value": "Describe the change, the bug or the question"
@@ -35626,9 +35626,6 @@
   },
   "toolNames.label.write_file": {
     "value": "Write file"
-  },
-  "toolNames.label.edit_file": {
-    "value": "Edit file"
   },
   "toolNames.label.list_files": {
     "value": "List files"
@@ -46508,12 +46505,6 @@
   },
   "builtinTools.write_file.description": {
     "value": "Writes a file in the code environment."
-  },
-  "builtinTools.edit_file.label": {
-    "value": "Edit in environment"
-  },
-  "builtinTools.edit_file.description": {
-    "value": "Changes a piece of a file in the code environment."
   },
   "builtinTools.read_file.label": {
     "value": "Read from environment"

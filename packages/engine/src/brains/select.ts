@@ -40,16 +40,10 @@ import {
 import { runnerUpdateWay } from "../runner-update";
 import type { AgentRun } from "../runs";
 import { accountUnavailable, brainSessionId, claudeCodeAvailability, cliMissingMessage, toolOff } from "./claude-code";
-import {
-  BRAIN_NAMES,
-  BRAIN_PLAN_NAMES,
-  type BrainAccount,
-  type BrainKind,
-  type BrainSession,
-  isBrainKind,
-} from "./types";
+import { BRAIN_NAMES, BRAIN_PLAN_NAMES, type BrainAccount, type BrainKind, type BrainSession } from "./types";
 
-const kindOf = (v: unknown): BrainKind => (isBrainKind(v) ? v : "model");
+const KINDS: readonly BrainKind[] = ["model", "claude_code", "codex", "cursor", "opencode", "grok", "antigravity"];
+const kindOf = (v: unknown): BrainKind => (KINDS.includes(v as BrainKind) ? (v as BrainKind) : "model");
 
 /** A mission's choice for a run in its thread (`missionTurnFor`). */
 export interface MissionTurn {
@@ -908,9 +902,7 @@ export async function resolveBrain(
   // A code session's conversation works in the session's worktree (ADR 0214); any other chat turn starts in the
   // agent's folder.
   const codeCwd =
-    !mission?.session && machineId
-      ? await codeSessionCwd(deps.db, run.orgId, run.channelId, agent.id).catch(() => null)
-      : null;
+    !mission?.session && machineId ? await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null) : null;
   const session: BrainSession | undefined =
     mission?.session ??
     (machineId
