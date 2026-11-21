@@ -2,28 +2,15 @@ import { EmptyState } from "@agenteschat/ui";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist";
 import { type PointerEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { pdfJs } from "@/lib/pdf";
 import { DraftMark } from "./DraftMark";
 import { MediaPins } from "./MediaPins";
 import { type Mark, type MediaPin, markOf, type StageMarks } from "./marks";
 
 /*
- * A PDF on its page (ADR 0208): drawn by pdf.js, loaded only here (never in the app's first load), page under page.
+ * A PDF on its page (ADR 0208): drawn by pdf.js (`@/lib/pdf`), page under page.
  * Comments point at a page and, when marked, a point or an area of it.
  */
-
-type PdfLib = typeof import("pdfjs-dist");
-let loading: Promise<PdfLib> | null = null;
-
-/** pdf.js and its worker, once. */
-function loadPdfJs(): Promise<PdfLib> {
-  loading ??= Promise.all([import("pdfjs-dist"), import("pdfjs-dist/build/pdf.worker.min.mjs?url")]).then(
-    ([lib, worker]) => {
-      lib.GlobalWorkerOptions.workerSrc = (worker as { default: string }).default;
-      return lib;
-    },
-  );
-  return loading;
-}
 
 /** The widest a page is drawn at the zoom of 1 (pixels). */
 const PAGE_MAX_W = 880;
@@ -73,7 +60,8 @@ export function PdfStage({
     let gone = false;
     let task: { destroy(): Promise<void> } | null = null;
     setFailed(false);
-    loadPdfJs()
+    pdfJs
+      .load()
       .then((lib) => {
         const loading = lib.getDocument({ url: src });
         task = loading;

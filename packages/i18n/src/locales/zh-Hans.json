@@ -2612,6 +2612,8 @@
     "uploading": "上传中…",
     "uploadFailed": "未上传",
     "removeFile": "移除 {{name}}",
+    "dropFileTitle": "松开即可添加附件",
+    "dropFileNote": "文件会留在此对话的草稿中，直到你发送。",
     "tooManyFiles": "每条消息最多 {{max}} 个文件。",
     "reminder": "提醒",
     "reactions": "回应",
@@ -4274,6 +4276,19 @@
   "adminAsk": {
     "ask": "请管理员处理",
     "sent": "已发送给能处理的人。"
+  },
+  "accountRef": {
+    "label": "{{name}} 账号",
+    "card": "关于 {{name}} 账号",
+    "mine": "你的账号",
+    "of": "{{name}} 的账号",
+    "on": "在 {{computer}} 上",
+    "gone": "此账号已不在工作区中。"
+  },
+  "accountSwitch": {
+    "limit": "因 <from/> 账号已达上限，改用 <to/> 账号继续",
+    "line": "因 <from/> 账号接近上限，改用 <to/> 账号继续",
+    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续"
   },
   "channelRefs": {
     "list": "频道",
@@ -6169,6 +6184,7 @@
         "cli_stopped": "因为出错，{{brain}} 程序已停止。",
         "cli_closed": "程序 {{brain}} 意外关闭。",
         "cli_sandbox": "程序 {{brain}} 无法在这台电脑上启动它的沙盒。请在智能体设置中选择其他 AI。",
+        "cli_system": "程序 {{brain}} 暂时还不能在这台电脑的系统上运行。请在智能体设置中选择其他 AI。",
         "account_missing": "为这个智能体选择的账号已不在它的电脑上。请在智能体设置中选择另一个账号，或重新添加。",
         "windows_sandbox": "这台 Windows 电脑无法隔离 Codex 的命令：需要 Windows 11 24H2 或更高版本。请更新 Windows，为这个智能体选择 Claude 或 API 密钥，或把它移到一台 Linux 电脑上。",
         "our_error": "我们这边出了点问题，任务已停止。请稍后再提一次。",
@@ -9990,6 +10006,13 @@
     "noResults": "没有与“{{q}}”匹配的技能。",
     "version": "v{{version}}",
     "usedBy_other": "{{count}} 个智能体在使用",
+    "agents": {
+      "title": "拥有此技能的智能体",
+      "none": "还没有智能体。",
+      "choose": "选择智能体",
+      "dialogTitle": "拥有 {{name}} 的智能体",
+      "dialogText": "每个开启的智能体都会在任务需要时使用它。"
+    },
     "updated": "{{when}}更新",
     "source": {
       "github": "GitHub",
@@ -13793,6 +13816,7 @@
       "ask_agent": "询问其他智能体",
       "tell_agent": "通知其他智能体",
       "find_agent": "查找智能体",
+      "read_agent": "读取智能体设置",
       "ask_user": "提出问题",
       "ask_choices": "提供选项",
       "request_approval": "请求审批",
@@ -14688,6 +14712,7 @@
       "tooMany": "超出了这里的容量。请移除一些后重试。",
       "fillIn": "请补全缺少的内容后重试。",
       "checkAddress": "请检查地址后重试。",
+      "privateNetwork": "此地址位于私有网络。请使用公网地址，或在自托管服务器上通过 `OUTBOUND_ALLOW_CIDRS` 允许它。",
       "tooLong": "内容太长。请缩短后重试。",
       "updateComputerApp": "电脑上的应用版本太旧。请更新后重试。",
       "computerUpdatesItself": "工作区的电脑会为此自动更新。请稍后再试。",
@@ -14978,6 +15003,7 @@
       "notLinkMaker": "只有创建链接的人才能让这台电脑加入。",
       "widenForbidden": "管理员只能缩小可以使用他人个人设备的人员范围。",
       "spillOwnerOnly": "只有连接这台电脑的人才能让回复在这里思考。你可以把它关掉。",
+      "tasksOwnerOnly": "只有连接这台电脑的人才能更改它同时运行的任务数。",
       "notHome": "智能体住在工作区的电脑上，点名时才使用这台电脑。"
     },
     "machine": {
@@ -15464,6 +15490,9 @@
     "line": {
       "ready": "智能体现在就可以使用它。",
       "busy_other": "{{max}} 个任务中有 {{count}} 个正在运行",
+      "tasksChange": "这里同时运行的任务数：{{max}}。在下方更改。",
+      "tasksOwner": "这里同时运行的任务数：{{max}}。连接它的人可以更改。",
+      "tasksUpdate": "这里同时运行的任务数：{{max}}。更新它的应用后即可在这里更改。",
       "offline": "智能体会等它回来。",
       "offlineSeen": "上次在线 {{time}}。智能体会等它回来。",
       "offlineWithHost": "{{host}} 已离线。智能体会等它回来。",

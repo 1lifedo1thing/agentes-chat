@@ -2768,6 +2768,8 @@ export const ptBR = {
     uploading: "enviando…",
     uploadFailed: "não foi enviado",
     removeFile: "Remover {{name}}",
+    dropFileTitle: "Solte para anexar",
+    dropFileNote: "Os arquivos ficam no rascunho desta conversa até você enviar.",
     tooManyFiles: "Até {{max}} arquivos por mensagem.",
     reminder: "Lembrete",
     reactions: "Reações",
@@ -4682,6 +4684,21 @@ export const ptBR = {
   adminAsk: {
     ask: "Pedir a um admin",
     sent: "Pedido enviado a quem pode fazer isso.",
+  },
+  /** An AI account named in a run's details: a pill, its card on hover or a press (provider, whose, which computer, usage). */
+  accountRef: {
+    label: "Conta {{name}}",
+    card: "Sobre a conta {{name}}",
+    mine: "Sua conta",
+    of: "Conta de {{name}}",
+    on: "No computador {{computer}}",
+    gone: "Esta conta não está mais no workspace.",
+  },
+  /** A run that went on with another account than its agent's own, in its details and Atividade (never a chat line). */
+  accountSwitch: {
+    limit: "Seguiu na conta <to/> porque a conta <from/> chegou ao limite",
+    line: "Seguiu na conta <to/> porque a conta <from/> está perto do limite",
+    extra: "Seguiu na conta <to/> porque a conta <from/> entraria no uso extra pago",
   },
   channelRefs: {
     list: "Canais",
@@ -6770,6 +6787,8 @@ export const ptBR = {
         /** The agent's CLI couldn't start its sandbox on its computer (bubblewrap refused), before the model was asked. */
         cli_sandbox:
           "O {{brain}} não consegue abrir a sandbox dele neste computador. Escolha outra IA nas configurações do agente.",
+        cli_system:
+          "O {{brain}} ainda não roda no sistema deste computador. Escolha outra IA nas configurações do agente.",
         account_missing:
           "A conta escolhida para este agente não está mais no computador dele. Escolha outra nas configurações do agente ou adicione de novo.",
         /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
@@ -10732,6 +10751,13 @@ export const ptBR = {
     usedBy_zero: "nenhum agente usa",
     usedBy_one: "{{count}} agente usa",
     usedBy_other: "{{count}} agentes usam",
+    agents: {
+      title: "Agentes com esta skill",
+      none: "Nenhum agente ainda.",
+      choose: "Escolher agentes",
+      dialogTitle: "Agentes com {{name}}",
+      dialogText: "Cada agente ligado usa a skill sempre que uma tarefa pedir.",
+    },
     updated: "atualizada {{when}}",
     source: { github: "GitHub", url: "Link", upload: "Enviada", manual: "Criada aqui" },
     defaultChip: "Em agentes novos",
@@ -14543,6 +14569,7 @@ export const ptBR = {
       ask_agent: "Perguntar a outro agente",
       tell_agent: "Avisar outro agente",
       find_agent: "Encontrar agente",
+      read_agent: "Ler configuração do agente",
       ask_user: "Fazer uma pergunta",
       ask_choices: "Oferecer opções",
       request_approval: "Pedir aprovação",
@@ -15414,6 +15441,8 @@ export const ptBR = {
       tooMany: "É mais do que cabe aqui. Tire alguns e tente de novo.",
       fillIn: "Preencha o que falta e tente de novo.",
       checkAddress: "Confira o endereço e tente de novo.",
+      privateNetwork:
+        "Este endereço está numa rede privada. Use um endereço público ou, num servidor próprio, libere-o com `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "Ficou longo demais. Encurte e tente de novo.",
       updateComputerApp: "O app do computador é antigo demais para isso. Atualize e tente de novo.",
       computerUpdatesItself: "O computador do workspace se atualiza sozinho para isso. Tente de novo daqui a pouco.",
@@ -15731,6 +15760,7 @@ export const ptBR = {
       notLinkMaker: "Só quem gerou o link pode deixar este computador entrar.",
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
       spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
+      tasksOwnerOnly: "Só quem conectou este computador pode mudar quantas tarefas ele roda ao mesmo tempo.",
       notHome: "Os agentes moram no computador do workspace e usam este quando o citam pelo nome.",
     },
     machine: {
@@ -16218,6 +16248,9 @@ export const ptBR = {
       ready: "Os agentes já podem usá-lo.",
       busy_one: "{{count}} de {{max}} tarefas rodando",
       busy_other: "{{count}} de {{max}} tarefas rodando",
+      tasksChange: "Tarefas ao mesmo tempo aqui: {{max}}. Mude abaixo.",
+      tasksOwner: "Tarefas ao mesmo tempo aqui: {{max}}. Quem conectou este computador pode mudar isso.",
+      tasksUpdate: "Tarefas ao mesmo tempo aqui: {{max}}. Atualize o app dele para mudar isso daqui.",
       offline: "Os agentes esperam ele voltar.",
       offlineSeen: "Visto às {{time}}. Os agentes esperam ele voltar.",
       offlineWithHost: "{{host}} está offline. Os agentes esperam ele voltar.",

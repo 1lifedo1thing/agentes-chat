@@ -3050,6 +3050,23 @@ export interface Run {
   repo?: string | null;
   /** A GitHub repository it was refused (not in the agent's repositories). */
   deniedRepo?: string | null;
+  /** It went on with another account than its agent's own, and why (absent: an older server). */
+  accountSwitch?: RunAccountSwitch | null;
+}
+
+/** An account a run thought with: its id, and the name it went by then (with its owner's when not the agent owner's). */
+export interface RunAccount {
+  id: string;
+  name: string;
+}
+
+export interface RunAccountSwitch {
+  /** The first account it left. */
+  from: RunAccount;
+  /** The last one it moved to. */
+  to: RunAccount;
+  /** Its plan's limit, the pause line (99%) of long work, or the paid extra usage `from` would go into. */
+  cause: "limit" | "line" | "extra";
 }
 
 export interface RunStep {

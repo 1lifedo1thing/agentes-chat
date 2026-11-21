@@ -2710,6 +2710,8 @@
     "uploading": "uploaden…",
     "uploadFailed": "is niet geüpload",
     "removeFile": "{{name}} verwijderen",
+    "dropFileTitle": "Loslaten om bij te voegen",
+    "dropFileNote": "De bestanden blijven in het concept van dit gesprek tot je ze verstuurt.",
     "tooManyFiles": "Maximaal {{max}} bestanden per bericht.",
     "reminder": "Herinnering",
     "reactions": "Reacties",
@@ -4441,6 +4443,19 @@
   "adminAsk": {
     "ask": "Een admin vragen",
     "sent": "Verstuurd naar wie het kan doen."
+  },
+  "accountRef": {
+    "label": "Account {{name}}",
+    "card": "Over het account {{name}}",
+    "mine": "Jouw account",
+    "of": "Account van {{name}}",
+    "on": "Op {{computer}}",
+    "gone": "Dit account zit niet meer in de workspace."
+  },
+  "accountSwitch": {
+    "limit": "Ging verder met het account <to/> omdat het account <from/> zijn limiet bereikte",
+    "line": "Ging verder met het account <to/> omdat het account <from/> bijna aan zijn limiet zit",
+    "extra": "Ging verder met het account <to/> omdat het account <from/> in betaald extra gebruik zou gaan"
   },
   "channelRefs": {
     "list": "Kanalen",
@@ -6418,6 +6433,7 @@
         "cli_stopped": "Het programma {{brain}} is gestopt met een fout.",
         "cli_closed": "Het programma {{brain}} werd onverwacht afgesloten.",
         "cli_sandbox": "Het programma {{brain}} kan zijn sandbox niet starten op deze computer. Kies een andere AI in de instellingen van de agent.",
+        "cli_system": "Het programma {{brain}} werkt nog niet op het systeem van deze computer. Kies een andere AI in de instellingen van de agent.",
         "account_missing": "Het account dat voor deze agent gekozen is staat niet meer op zijn computer. Kies een ander in de instellingen van de agent of voeg het opnieuw toe.",
         "windows_sandbox": "Deze Windows-computer kan de opdrachten van Codex niet isoleren: hij heeft Windows 11 24H2 of nieuwer nodig. Werk Windows bij, kies Claude of een API-sleutel voor deze agent, of verplaats hem naar een Linux-computer.",
         "our_error": "Er ging iets mis aan onze kant en de taak is gestopt. Vraag het over een poosje opnieuw.",
@@ -10418,6 +10434,13 @@
     "version": "v{{version}}",
     "usedBy_one": "{{count}} agent gebruikt hem",
     "usedBy_other": "{{count}} agents gebruiken hem",
+    "agents": {
+      "title": "Agents met deze skill",
+      "none": "Nog geen agent.",
+      "choose": "Agents kiezen",
+      "dialogTitle": "Agents met {{name}}",
+      "dialogText": "Elke ingeschakelde agent gebruikt hem wanneer een taak erom vraagt."
+    },
     "updated": "bijgewerkt {{when}}",
     "source": {
       "github": "GitHub",
@@ -14330,6 +14353,7 @@
       "ask_agent": "Een andere agent vragen",
       "tell_agent": "Een andere agent informeren",
       "find_agent": "Agent vinden",
+      "read_agent": "Agentinstellingen lezen",
       "ask_user": "Een vraag stellen",
       "ask_choices": "Keuzes aanbieden",
       "request_approval": "Goedkeuring vragen",
@@ -15263,6 +15287,7 @@
       "tooMany": "Dat is meer dan hier past. Haal er een paar weg en probeer het opnieuw.",
       "fillIn": "Vul in wat ontbreekt en probeer het opnieuw.",
       "checkAddress": "Controleer het adres en probeer het opnieuw.",
+      "privateNetwork": "Dit adres ligt op een privénetwerk. Gebruik een openbaar adres, of sta het op een zelfgehoste server toe met `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "Dat is te lang. Maak het korter en probeer het opnieuw.",
       "updateComputerApp": "De app op de computer is hiervoor te oud. Werk hem bij en probeer het opnieuw.",
       "computerUpdatesItself": "De computer van de werkruimte werkt zichzelf hiervoor bij. Probeer het zo opnieuw.",
@@ -15553,6 +15578,7 @@
       "notLinkMaker": "Alleen wie de link heeft gemaakt, kan deze computer laten deelnemen.",
       "widenForbidden": "Admins kunnen alleen beperken wie iemands eigen apparaat mag gebruiken.",
       "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan antwoorden hier laten denken. Uitzetten kan wel.",
+      "tasksOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan wijzigen hoeveel taken hij tegelijk uitvoert.",
       "notHome": "Agents wonen op de computer van de workspace en gebruiken deze als ze hem bij naam noemen."
     },
     "machine": {
@@ -16042,6 +16068,9 @@
       "ready": "Agents kunnen het nu gebruiken.",
       "busy_one": "{{count}} van {{max}} taken bezig",
       "busy_other": "{{count}} van {{max}} taken bezig",
+      "tasksChange": "Taken tegelijk hier: {{max}}. Wijzig het hieronder.",
+      "tasksOwner": "Taken tegelijk hier: {{max}}. Wie hem heeft gekoppeld, kan dat wijzigen.",
+      "tasksUpdate": "Taken tegelijk hier: {{max}}. Werk zijn app bij om het hiervandaan te wijzigen.",
       "offline": "Agents wachten tot het terug is.",
       "offlineSeen": "Laatst gezien {{time}}. Agents wachten tot het terug is.",
       "offlineWithHost": "{{host}} is offline. Agents wachten tot het terug is.",

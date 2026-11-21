@@ -2809,6 +2809,8 @@
     "uploading": "subiendo…",
     "uploadFailed": "no se subió",
     "removeFile": "Quitar {{name}}",
+    "dropFileTitle": "Suelta para adjuntar",
+    "dropFileNote": "Los archivos quedan en el borrador de esta conversación hasta que los envíes.",
     "tooManyFiles": "Hasta {{max}} archivos por mensaje.",
     "reminder": "Recordatorio",
     "reactions": "Reacciones",
@@ -4594,6 +4596,19 @@
   "adminAsk": {
     "ask": "Pedírselo a un admin",
     "sent": "Enviado a quien puede hacerlo."
+  },
+  "accountRef": {
+    "label": "Cuenta {{name}}",
+    "card": "Sobre la cuenta {{name}}",
+    "mine": "Tu cuenta",
+    "of": "Cuenta de {{name}}",
+    "on": "En {{computer}}",
+    "gone": "Esta cuenta ya no está en el espacio de trabajo."
+  },
+  "accountSwitch": {
+    "limit": "Siguió con la cuenta <to/> porque la cuenta <from/> llegó a su límite",
+    "line": "Siguió con la cuenta <to/> porque la cuenta <from/> está cerca de su límite",
+    "extra": "Siguió con la cuenta <to/> porque la cuenta <from/> entraría en el uso extra de pago"
   },
   "channelRefs": {
     "list": "Canales",
@@ -6600,6 +6615,7 @@
         "cli_stopped": "El programa {{brain}} se detuvo con un error.",
         "cli_closed": "El programa {{brain}} se cerró de repente.",
         "cli_sandbox": "El programa {{brain}} no puede iniciar su sandbox en esta computadora. Elige otra IA en la configuración del agente.",
+        "cli_system": "El programa {{brain}} todavía no funciona en el sistema de esta computadora. Elige otra IA en la configuración del agente.",
         "account_missing": "La cuenta elegida para este agente ya no está en su computadora. Elige otra en la configuración del agente o agrégala de nuevo.",
         "windows_sandbox": "Esta computadora con Windows no puede aislar los comandos de Codex: necesita Windows 11 24H2 o una versión más reciente. Actualiza Windows, elige Claude o una clave de API para este agente, o muévelo a una computadora con Linux.",
         "our_error": "Algo salió mal de nuestro lado y la tarea se detuvo. Pide de nuevo en un rato.",
@@ -10725,6 +10741,13 @@
     "usedBy_one": "la usa {{count}} agente",
     "usedBy_many": "la usan {{count}} agentes",
     "usedBy_other": "la usan {{count}} agentes",
+    "agents": {
+      "title": "Agentes con esta habilidad",
+      "none": "Ningún agente todavía.",
+      "choose": "Elegir agentes",
+      "dialogTitle": "Agentes con {{name}}",
+      "dialogText": "Cada agente activado la usa siempre que una tarea lo pida."
+    },
     "updated": "actualizada {{when}}",
     "source": {
       "github": "GitHub",
@@ -14695,6 +14718,7 @@
       "ask_agent": "Preguntar a otro agente",
       "tell_agent": "Avisar a otro agente",
       "find_agent": "Encontrar agente",
+      "read_agent": "Leer configuración del agente",
       "ask_user": "Hacer una pregunta",
       "ask_choices": "Ofrecer opciones",
       "request_approval": "Pedir aprobación",
@@ -15664,6 +15688,7 @@
       "tooMany": "Es más de lo que cabe aquí. Quita algunos e inténtalo de nuevo.",
       "fillIn": "Completa lo que falta e inténtalo de nuevo.",
       "checkAddress": "Revisa la dirección e inténtalo de nuevo.",
+      "privateNetwork": "Esta dirección está en una red privada. Usa una dirección pública o, en un servidor propio, permítela con `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "Es demasiado largo. Acórtalo e inténtalo de nuevo.",
       "updateComputerApp": "La app de la computadora es demasiado antigua para esto. Actualízala e inténtalo de nuevo.",
       "computerUpdatesItself": "La computadora del espacio de trabajo se actualiza sola para esto. Vuelve a intentarlo en un rato.",
@@ -15954,6 +15979,7 @@
       "notLinkMaker": "Solo quien creó el enlace puede dejar entrar a esta computadora.",
       "widenForbidden": "Los admins solo pueden restringir quién usa el dispositivo propio de alguien.",
       "spillOwnerOnly": "Solo quien conectó esta computadora puede dejar que las respuestas piensen en ella. Tú puedes apagarlo.",
+      "tasksOwnerOnly": "Solo quien conectó esta computadora puede cambiar cuántas tareas ejecuta a la vez.",
       "notHome": "Los agentes viven en la computadora del workspace y usan esta cuando la nombran."
     },
     "machine": {
@@ -16446,6 +16472,9 @@
       "busy_one": "{{count}} de {{max}} tareas en curso",
       "busy_many": "{{count}} de {{max}} tareas en curso",
       "busy_other": "{{count}} de {{max}} tareas en curso",
+      "tasksChange": "Tareas a la vez aquí: {{max}}. Cámbialo abajo.",
+      "tasksOwner": "Tareas a la vez aquí: {{max}}. Quien la conectó puede cambiarlo.",
+      "tasksUpdate": "Tareas a la vez aquí: {{max}}. Actualiza su app para cambiarlo desde aquí.",
       "offline": "Los agentes esperan a que vuelva.",
       "offlineSeen": "Visto por última vez {{time}}. Los agentes esperan a que vuelva.",
       "offlineWithHost": "{{host}} está sin conexión. Los agentes esperan a que vuelva.",
