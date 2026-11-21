@@ -36,7 +36,7 @@ import { router } from "@/ui/navigation";
 import { openPage } from "../ai/parts";
 import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
-import { useColors, useDirectory, useMeId } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, useOwnsAgent } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { pickOne } from "../shared/PickerSheet";
 import { FocusLive, goBack, MentionCount, PushedHeader } from "../shared/parts";
@@ -192,6 +192,7 @@ function MePage() {
   const appIcon = useAppIcon();
   const appIconName = useAppIconName(appIcon.icon ?? PHONE_APP_ICON);
   const dir = useDirectory();
+  const owns = useOwnsAgent();
   const c = useColors();
   const insets = useSafeAreaInsets();
   const headerHeight = useHeaderHeight();
@@ -234,7 +235,8 @@ function MePage() {
   // Threads with something new, the badge their tab has in a team's workspace.
   const unreadThreads = useUnreadThreads();
   const version = Constants.expoConfig?.version ?? "";
-  const myAgents = dir.agents.filter((a) => a.ownerUserId === meId);
+  // Mine: its owner, or holding the role that answers for it (ADR 0085, addendum of 2026-11-21).
+  const myAgents = dir.agents.filter((a) => owns(a));
   const handle = mine?.handle ? `@${mine.handle}` : null;
   // A personal workspace's name ("Personal") says nothing after your @.
   const headline = [handle, personal ? null : org.org?.name].filter(Boolean).join(" · ");

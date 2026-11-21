@@ -400,8 +400,11 @@ describe("a picture's, a video's and a PDF's conversation (ADR 0208)", () => {
     expect(viewer).toContain("{talkFile ? <FileTalkLine file={talkFile} bare /> : null}");
     expect(viewer).not.toContain('icon="comment"');
     expect(viewer).not.toContain("commenting");
-    // With the sheet up: the picture above it, the line and the actions aside, a tap marks, the draft's pin on it.
-    expect(viewer).toContain("const stage = sheet ? stageAbove(screen, bars.top, sheet.reserve) : screen;");
+    // With the sheet up: the picture stays the whole screen's under it (never laid out again as the sheet moves), the
+    // line and the actions aside, a tap marks, the draft's pin on it.
+    expect(viewer).toMatch(/<ZoomPicture\s+source=\{link\.data\}\s+cacheKey=\{key\}\s+screen=\{screen\}/);
+    expect(viewer).not.toContain("screen={stage}");
+    expect(viewer).not.toContain("paddingTop: bars.top");
     expect(viewer).toContain("visible={chrome && !shownSheet}");
     expect(viewer).toContain("<PicturePins pins={shownPins} zoom={zoom} draft={draft} />");
     expect(viewer).toContain('t(media === "video" ? "mobile.files.talk.hint.video" : "mobile.files.talk.hint.image")');
