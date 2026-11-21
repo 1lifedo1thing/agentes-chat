@@ -337,7 +337,8 @@ html[data-pointer] :focus-visible {
  * With a pointer two small icon buttons stand as close as an icon and its words: their glyphs 8 apart (`--icon-gap`).
  * Each box keeps 8 on its outer side and gives up 4 on the inner one, so each target stays 28 wide and the two only
  * touch. The plate is drawn around the glyph (`::before`), the 32 square of every small icon button, reaching 4 into
- * the neighbour's box: only one shows at a time. The second reaches out by its own padding, so on a line of its own
+ * the neighbour's box: only one shows at a time, and it takes no clicks, so neither steals the other's edge (a pseudo
+ * element hit-tests as its button). The second reaches out by its own padding, so on a line of its own
  * it still starts on the row's edge. A middle one of three keeps the second's shape: 8 then 12 between the glyphs.
  */
 @media not (pointer: coarse) {
@@ -378,6 +379,7 @@ html[data-pointer] :focus-visible {
     inset-inline: 0 calc(-1 * var(--space-1));
     border-radius: inherit;
     transition: inherit;
+    pointer-events: none;
   }
   .ac-acts
     > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
