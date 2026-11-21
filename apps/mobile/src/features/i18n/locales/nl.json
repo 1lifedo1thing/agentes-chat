@@ -1235,6 +1235,16 @@
       "fullscreen": "Volledig scherm",
       "open": "Openen",
       "cantPlay": "Deze video kan niet op deze telefoon worden afgespeeld."
+    },
+    "talk": {
+      "hint": {
+        "image": "Tik waar je een opmerking wilt plaatsen",
+        "video": "Tik op de video om bij dit moment een opmerking te plaatsen",
+        "pdf": "Tik op de pagina om een punt te markeren"
+      },
+      "markVideo": "Opmerking bij dit moment van de video",
+      "pdfPage": "Pagina {{page}} van {{count}}",
+      "pdfFailed": "Deze pdf kan niet worden weergegeven."
     }
   },
   "issues": {

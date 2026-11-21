@@ -308,7 +308,7 @@ export function pinUnder(
 
 const fraction = (v: number) => Math.round(v * 10_000) / 10_000;
 
-/** A tap with Comment on, as a comment's point in fractions of the picture; null off it (the black around it). */
+/** A tap that marks, as a comment's point in fractions of the picture; null off it (the black around it). */
 export function pointMark(at: { x: number; y: number }): Mark | null {
   if (!(at.x >= 0 && at.x <= 1 && at.y >= 0 && at.y <= 1)) return null;
   return { x: fraction(at.x), y: fraction(at.y) };
@@ -316,19 +316,130 @@ export function pointMark(at: { x: number; y: number }): Mark | null {
 
 /**
  * The quote a new comment opens its conversation with (ADR 0208): the next pin's number, where it points (a point on
- * the picture, a video's moment to the tenth of a second) and the version on screen.
+ * the picture, a video's moment to the tenth of a second with the point on its frame, a PDF's page from 1 with the
+ * point on it) and the version on screen.
  */
 export function commentSelection(
   pins: readonly MediaPin[],
-  where: { mark?: Mark; time?: number },
+  where: { mark?: Mark; time?: number; page?: number },
   version: number,
 ): LiveSelection {
   return {
     label: String(pins.length + 1),
     ...(where.mark ? { mark: where.mark } : {}),
     ...(where.time !== undefined ? { time: Math.round(Math.max(0, where.time) * 10) / 10 } : {}),
+    ...(where.page !== undefined ? { page: Math.max(1, Math.round(where.page)) } : {}),
     version,
   };
+}
+
+/** The draft's pin key: it stands for no message yet. */
+export const DRAFT_PIN = "draft";
+
+/**
+ * The comment being written, as a pin on the file (ADR 0208): the person's face and the number it will take, where
+ * they tapped, while the quote over the composer is about a point of this file. Null when the quote is about no point
+ * of it (or nothing is quoted).
+ */
+export function draftPin(about: LiveRef | null | undefined, fileId: string, me: Who | null): MediaPin | null {
+  const selection = about?.artifactId === fileId ? about.selection : undefined;
+  if (!me || !selection?.mark) return null;
+  const n = Number(pinNumber(selection));
+  return { messageId: DRAFT_PIN, author: me, n: n > 0 ? n : 0, selection, resolved: null, old: false };
+}
+
+/** A PDF page's pins (`page` from 1): its open comments with a mark there. */
+export const pagePins = (pins: readonly MediaPin[], page: number) =>
+  pins.filter((p) => p.selection.page === page && p.selection.mark && !p.resolved);
+
+/** How near a video's moment a comment's pin shows on its frame, in seconds either way. */
+export const MOMENT_NEAR = 1;
+
+/** The pins on a video's frame at `time`: its open comments with a mark, made within `MOMENT_NEAR` of it. */
+export const momentPins = (pins: readonly MediaPin[], time: number) =>
+  pins.filter(
+    (p) =>
+      p.selection.mark !== undefined &&
+      !p.resolved &&
+      p.selection.time !== undefined &&
+      Math.abs(p.selection.time - time) <= MOMENT_NEAR,
+  );
+
+/**
+ * Where a video shows in its frame: whole and centered (`contain`), black bands on the sides it doesn't fill.
+ * `video`: its own size, unknown until it loads (the whole frame then).
+ */
+export function containRect(
+  frame: { width: number; height: number },
+  video: { width: number; height: number } | null | undefined,
+): { left: number; top: number; width: number; height: number } {
+  const aspect = video && video.width > 0 && video.height > 0 ? video.width / video.height : null;
+  const shown =
+    !aspect || frame.height <= 0
+      ? frame
+      : aspect > frame.width / frame.height
+        ? { width: frame.width, height: frame.width / aspect }
+        : { width: frame.height * aspect, height: frame.height };
+  return {
+    left: (frame.width - shown.width) / 2,
+    top: (frame.height - shown.height) / 2,
+    width: shown.width,
+    height: shown.height,
+  };
+}
+
+/** A tap on a video's frame (`at`, from the frame's corner), in fractions of the picture it shows (`containRect`). */
+export function frameTap(
+  at: { x: number; y: number },
+  frame: { width: number; height: number },
+  video: { width: number; height: number } | null | undefined,
+): { x: number; y: number; width: number; height: number } {
+  const shown = containRect(frame, video);
+  return {
+    x: shown.width > 0 ? (at.x - shown.left) / shown.width : -1,
+    y: shown.height > 0 ? (at.y - shown.top) / shown.height : -1,
+    width: shown.width,
+    height: shown.height,
+  };
+}
+
+// ── The conversation's sheet over the file ───────────────────────────────────────────────────────────────────────
+
+/**
+ * The sheet a file's conversation opens in over the file (ADR 0208): its channel and root, the file it is about, and
+ * the message to open at (`m`, a pin or a notice).
+ */
+export function fileTalkHref(channelId: string, rootId: string, fileId: string, messageId?: string | null): string {
+  const params = [`thread=${rootId}`, `file=${fileId}`, messageId ? `m=${messageId}` : null].filter(Boolean);
+  return `/file-talk/${channelId}?${params.join("&")}`;
+}
+
+/** The sheet's heights (ADR 0208): half the screen at first, the file in sight and in reach above it; then all of it. */
+export const TALK_SHEET_DETENTS = [0.5, 1];
+/** At its first height nothing behind it dims (the file stays usable); pulled to the full height, it dims. */
+export const TALK_SHEET_DIMMED = 1;
+
+/**
+ * How much of the screen's bottom the sheet takes at its first height, which the file behind keeps clear (a picture
+ * laid out above it, a page scrolling up past it): from where the sheet's top stands (`top`, from the screen's top, as
+ * the sheet tells it), else the first height's share of the screen and the home indicator's room the sheet adds to it.
+ */
+export function talkSheetReserve(screenHeight: number, top: number | null | undefined, bottomInset = 0): number {
+  if (top !== null && top !== undefined && Number.isFinite(top) && top > 0 && top < screenHeight)
+    return Math.round(screenHeight - top);
+  return Math.round(screenHeight * (TALK_SHEET_DETENTS[0] ?? 0.5) + Math.max(0, bottomInset));
+}
+
+/**
+ * The box a picture or a video lays out in while the sheet is up at its first height: from under the viewer's bar
+ * (`top`) down to the sheet's top, never less than nothing.
+ */
+export function stageAbove(
+  screen: { width: number; height: number },
+  top: number,
+  reserve: number,
+): { width: number; height: number } {
+  return { width: screen.width, height: Math.max(0, Math.round(screen.height - top - reserve)) };
 }
 
 // ── Where the conversation opens ─────────────────────────────────────────────────────────────────────────────────

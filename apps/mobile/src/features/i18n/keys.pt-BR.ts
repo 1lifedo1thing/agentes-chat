@@ -1294,6 +1294,16 @@ export const featureKeysPtBR = {
       open: "Abrir",
       cantPlay: "Este vídeo não toca neste celular.",
     },
+    talk: {
+      hint: {
+        image: "Toque onde quer comentar",
+        video: "Toque no vídeo para comentar neste momento",
+        pdf: "Toque na página para marcar um ponto",
+      },
+      markVideo: "Comentar neste momento do vídeo",
+      pdfPage: "Página {{page}} de {{count}}",
+      pdfFailed: "Não deu para mostrar este PDF.",
+    },
   },
   issues: {
     title: "Tarefas",

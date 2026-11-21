@@ -1311,6 +1311,16 @@
       "fullscreen": "Plein écran",
       "open": "Ouvrir",
       "cantPlay": "Cette vidéo ne peut pas être lue sur ce téléphone."
+    },
+    "talk": {
+      "hint": {
+        "image": "Touchez l'endroit à commenter",
+        "video": "Touchez la vidéo pour commenter ce moment",
+        "pdf": "Touchez la page pour marquer un point"
+      },
+      "markVideo": "Commenter ce moment de la vidéo",
+      "pdfPage": "Page {{page}} sur {{count}}",
+      "pdfFailed": "Impossible d'afficher ce PDF."
     }
   },
   "issues": {

@@ -1333,6 +1333,20 @@ export const featureKeysEn = {
       /** A video this phone can't play, in the viewer: it can still be sent, shared or opened in the Drive. */
       cantPlay: "This video can't play on this phone.",
     },
+    /**
+     * A file's conversation in the sheet over it (ADR 0208): what a tap on the file does while the sheet is up, the
+     * video's tap target, a PDF's page, and a PDF that couldn't be drawn.
+     */
+    talk: {
+      hint: {
+        image: "Tap where you want to comment",
+        video: "Tap the video to comment on this moment",
+        pdf: "Tap the page to mark a point",
+      },
+      markVideo: "Comment on this moment of the video",
+      pdfPage: "Page {{page}} of {{count}}",
+      pdfFailed: "Couldn't show this PDF.",
+    },
   },
   issues: {
     title: "Tasks",

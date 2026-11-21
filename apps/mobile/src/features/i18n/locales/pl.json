@@ -1393,6 +1393,16 @@
       "fullscreen": "Pełny ekran",
       "open": "Otwórz",
       "cantPlay": "Tego filmu nie można odtworzyć na tym telefonie."
+    },
+    "talk": {
+      "hint": {
+        "image": "Stuknij tam, gdzie chcesz dodać komentarz",
+        "video": "Stuknij film, aby skomentować ten moment",
+        "pdf": "Stuknij stronę, aby zaznaczyć punkt"
+      },
+      "markVideo": "Skomentuj ten moment filmu",
+      "pdfPage": "Strona {{page}} z {{count}}",
+      "pdfFailed": "Nie udało się wyświetlić tego pliku PDF."
     }
   },
   "issues": {

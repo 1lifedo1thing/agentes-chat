@@ -4,25 +4,44 @@ import Animated, { type SharedValue, useAnimatedStyle } from "react-native-reani
 import { Text, useTheme } from "@/ui";
 import { Face } from "../../shared/Face";
 import { useDirectory } from "../../shared/hooks";
-import { MEDIA_PIN_H, type MediaPin, pinAnchor } from "./logic";
+import { DRAFT_PIN, MEDIA_PIN_H, type MediaPin, pinAnchor } from "./logic";
 
 /**
  * The comments pinned on a picture (ADR 0208), over it in the viewer, in its box as it zooms: each one the canvas's
  * pin (ADR 0199), a raised bubble with its author's face and its number, its cut corner on the spot it points at (an
  * area's top right corner). It stays the screen's own size at any zoom (`zoom`, the picture's now). The viewer reads a
- * tap on one (`pinUnder`): the pins take no touch of their own.
+ * tap on one (`pinUnder`): the pins take no touch of their own. `draft`: the comment being written in the sheet over
+ * the file (`draftPin`), the person's face and the number it will take, ringed, over the others. The same pins stand
+ * on a video's frame and on a PDF's page.
  */
-export function PicturePins({ pins, zoom }: { pins: readonly MediaPin[]; zoom: Readonly<SharedValue<number>> }) {
+export function PicturePins({
+  pins,
+  zoom,
+  draft = null,
+}: {
+  pins: readonly MediaPin[];
+  zoom: Readonly<SharedValue<number>>;
+  draft?: MediaPin | null;
+}) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       {pins.map((pin) => (
         <PicturePin key={pin.messageId} pin={pin} zoom={zoom} />
       ))}
+      {draft ? <PicturePin key={DRAFT_PIN} pin={draft} zoom={zoom} draft /> : null}
     </View>
   );
 }
 
-function PicturePin({ pin, zoom }: { pin: MediaPin; zoom: Readonly<SharedValue<number>> }) {
+function PicturePin({
+  pin,
+  zoom,
+  draft = false,
+}: {
+  pin: MediaPin;
+  zoom: Readonly<SharedValue<number>>;
+  draft?: boolean;
+}) {
   const { t } = useTranslation();
   const { colors: c, shadows } = useTheme();
   const name = useDirectory().nameOf(pin.author);
@@ -37,7 +56,13 @@ function PicturePin({ pin, zoom }: { pin: MediaPin; zoom: Readonly<SharedValue<n
       accessibilityLabel={t("mobile.live.canvas.pin", { n: pin.n, name })}
       style={[
         styles.pin,
-        { left: `${at.x * 100}%`, bottom: `${(1 - at.y) * 100}%`, backgroundColor: c.raised, boxShadow: shadows.e2 },
+        {
+          left: `${at.x * 100}%`,
+          bottom: `${(1 - at.y) * 100}%`,
+          backgroundColor: c.raised,
+          // The draft is ringed in ink, a ring of its own white around that: it reads as the one being written.
+          boxShadow: draft ? `${shadows.e2}, 0px 0px 0px 2px ${c.ink}, 0px 0px 0px 4px ${c.raised}` : shadows.e2,
+        },
         pin.old && styles.old,
         steady,
       ]}
