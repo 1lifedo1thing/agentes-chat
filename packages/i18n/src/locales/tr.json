@@ -15437,6 +15437,7 @@
       "notLinkMaker": "Bu bilgisayarı yalnızca bağlantıyı oluşturan kişi katılmaya izin verebilir.",
       "widenForbidden": "Yöneticiler birinin kendi cihazını kimin kullanabileceğini yalnızca daraltabilir.",
       "spillOwnerOnly": "Yanıtların bu bilgisayarda düşünmesine yalnızca onu bağlayan kişi izin verebilir. Kapatmak senin elinde.",
+      "tasksOwnerOnly": "Bu bilgisayarın aynı anda kaç görev çalıştıracağını yalnızca onu bağlayan kişi değiştirebilir.",
       "notHome": "Ajanlar workspace bilgisayarında yaşar ve adını söylediklerinde bunu kullanır."
     },
     "machine": {
@@ -15926,6 +15927,9 @@
       "ready": "Ajanlar onu şimdi kullanabilir.",
       "busy_one": "{{max}} görevden {{count}} tanesi çalışıyor",
       "busy_other": "{{max}} görevden {{count}} tanesi çalışıyor",
+      "tasksChange": "Burada aynı anda görev: {{max}}. Aşağıdan değiştir.",
+      "tasksOwner": "Burada aynı anda görev: {{max}}. Onu bağlayan kişi bunu değiştirebilir.",
+      "tasksUpdate": "Burada aynı anda görev: {{max}}. Buradan değiştirmek için uygulamasını güncelle.",
       "offline": "Ajanlar geri gelmesini bekliyor.",
       "offlineSeen": "Son görülme: {{time}}. Ajanlar geri gelmesini bekliyor.",
       "offlineWithHost": "{{host}} çevrimdışı. Ajanlar geri gelmesini bekliyor.",

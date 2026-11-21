@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 74;
+export const MACHINE_PROTOCOL_VERSION = 75;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -290,6 +290,8 @@ export interface MachineSize {
   memoryGb: number;
   diskGb: number;
   limit?: { cpus: number; memoryGb: number };
+  /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once. */
+  maxTasks?: number;
 }
 
 /**
@@ -2348,6 +2350,15 @@ export const ROUTE_LIMITS = { system: 8000, prompt: 32_000, schema: 8000 } as co
  */
 export const BRAIN_WARM_PROTOCOL = 74;
 
+/**
+ * Background tasks at once, from the apps (protocol 75): `hello.size.maxTasks` and `runner.state.maxTasks` say the
+ * computer's limit, and `limits.set` changes it as its owner asked. An older runner says none: it runs 3, its old
+ * default, unless its config says otherwise.
+ */
+export const TASK_LIMIT_PROTOCOL = 75;
+/** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
+export const TASK_LIMIT_BOUNDS = [1, 20] as const;
+
 /** What `brain.turn` would start its CLI with, without the turn's own words (no prompt, system text or run). */
 export type BrainWarmRequest = Pick<
   BrainTurnRequest,
@@ -2837,6 +2848,8 @@ export type MachineRequest = (
   | { op: "phone.pair.cancel"; pairingId: string }
   /** `REMOTE_PAUSE_PROTOCOL`: pause (until `until`, null: until resumed) or resume, for the person `by`. */
   | { op: "pause.set"; paused: boolean; until?: string | null; by: string }
+  /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once, from now on (stored in its config). */
+  | { op: "limits.set"; maxTasks: number }
   /**
    * A phone guide is open and waits for a phone: for the next minute, a Windows runner also looks for a plugged phone
    * Windows has no USB driver for (adb never lists one) and reports it as `no_driver`. From `IPHONE_DEV_MODE_PROTOCOL`
@@ -2942,6 +2955,7 @@ export const MACHINE_OPS: readonly MachineOp[] = [
   "phone.pair.status",
   "phone.pair.cancel",
   "pause.set",
+  "limits.set",
   "phone.look",
   "phone.wifi",
   "keep.start",
@@ -3115,6 +3129,7 @@ export interface MachineReplies {
   "phone.pair.status": PhonePairing;
   "phone.pair.cancel": { canceled: boolean };
   "pause.set": { paused: RunnerPause };
+  "limits.set": { maxTasks: number };
   "phone.look": { looking: boolean };
   "phone.wifi": { available: WifiIphone[] };
   "keep.start": { held: true };
@@ -3313,7 +3328,12 @@ export type RunnerFrame =
   /** Protocol 8: a `brain.turn` sent its last event. */
   | { type: "brain.done"; runId: string }
   /** Protocol 9: the pause state changed on the machine (paused, resumed, new `until`). */
-  | { type: "runner.state"; paused: RunnerPause }
+  | {
+      type: "runner.state";
+      paused: RunnerPause;
+      /** `TASK_LIMIT_PROTOCOL`: the tasks it runs at once, sent when that changed on the computer. */
+      maxTasks?: number;
+    }
   /** Protocol 10: what the machine allows changed (the person granted, removed, or turned a tool on or off). */
   | { type: "access.changed"; access: RunnerAccess }
   /**
@@ -3921,7 +3941,8 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
     }
     case "runner.state": {
       const paused = parsePause(f.paused);
-      return paused ? { type: "runner.state", paused } : null;
+      if (!paused) return null;
+      return { type: "runner.state", paused, ...(taskLimit(f.maxTasks) ? { maxTasks: f.maxTasks } : {}) };
     }
     case "access.changed": {
       const access = parseAccess(f.access);
@@ -4588,8 +4609,16 @@ export function parseMachineSize(v: unknown): MachineSize | null {
     isObject(l) && inRange(l.cpus, [1, v.cpus]) && between(l.memoryGb, 0, v.memoryGb)
       ? { limit: { cpus: l.cpus, memoryGb: l.memoryGb } }
       : {};
-  return { cpus: v.cpus, memoryGb: v.memoryGb, diskGb: v.diskGb, ...limit };
+  return {
+    cpus: v.cpus,
+    memoryGb: v.memoryGb,
+    diskGb: v.diskGb,
+    ...limit,
+    ...(taskLimit(v.maxTasks) ? { maxTasks: v.maxTasks } : {}),
+  };
 }
+
+const taskLimit = (v: unknown): v is number => inRange(v, TASK_LIMIT_BOUNDS);
 
 /** `pong.load` (protocol 22): sane numbers, else none. */
 export function parseMachineLoad(v: unknown): MachineLoad | null {

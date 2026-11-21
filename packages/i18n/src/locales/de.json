@@ -15502,6 +15502,7 @@
       "notLinkMaker": "Nur die Person, die den Link erstellt hat, kann diesen Computer beitreten lassen.",
       "widenForbidden": "Admins können nur einschränken, wer das eigene Gerät einer Person nutzen darf.",
       "spillOwnerOnly": "Nur wer diesen Computer verbunden hat, kann Antworten hier denken lassen. Ausschalten kannst du es.",
+      "tasksOwnerOnly": "Nur wer diesen Computer verbunden hat, kann ändern, wie viele Aufgaben er gleichzeitig ausführt.",
       "notHome": "Agenten leben auf dem Computer des Workspace und nutzen diesen, wenn sie ihn beim Namen nennen."
     },
     "machine": {
@@ -15991,6 +15992,9 @@
       "ready": "Agenten können es jetzt nutzen.",
       "busy_one": "{{count}} von {{max}} Aufgaben läuft",
       "busy_other": "{{count}} von {{max}} Aufgaben laufen",
+      "tasksChange": "Aufgaben gleichzeitig hier: {{max}}. Unten änderst du das.",
+      "tasksOwner": "Aufgaben gleichzeitig hier: {{max}}. Wer ihn verbunden hat, kann das ändern.",
+      "tasksUpdate": "Aufgaben gleichzeitig hier: {{max}}. Aktualisiere seine App, um das von hier zu ändern.",
       "offline": "Agenten warten, bis es zurück ist.",
       "offlineSeen": "Zuletzt gesehen {{time}}. Agenten warten, bis es zurück ist.",
       "offlineWithHost": "{{host}} ist offline. Agenten warten, bis es zurück ist.",

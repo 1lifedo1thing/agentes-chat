@@ -14979,6 +14979,7 @@
       "notLinkMaker": "Hanya orang yang membuat tautan ini yang bisa mengizinkan komputer ini bergabung.",
       "widenForbidden": "Admin hanya bisa mempersempit siapa yang boleh memakai perangkat milik seseorang.",
       "spillOwnerOnly": "Hanya orang yang menghubungkan komputer ini yang bisa membiarkan balasan berpikir di sini. Kamu bisa mematikannya.",
+      "tasksOwnerOnly": "Hanya orang yang menghubungkan komputer ini yang bisa mengubah berapa tugas yang dijalankannya sekaligus.",
       "notHome": "Agen tinggal di komputer workspace dan memakai komputer ini saat menyebut namanya."
     },
     "machine": {
@@ -15465,6 +15466,9 @@
     "line": {
       "ready": "Agen bisa memakainya sekarang.",
       "busy_other": "{{count}} dari {{max}} tugas berjalan",
+      "tasksChange": "Tugas sekaligus di sini: {{max}}. Ubah di bawah.",
+      "tasksOwner": "Tugas sekaligus di sini: {{max}}. Orang yang menghubungkannya bisa mengubahnya.",
+      "tasksUpdate": "Tugas sekaligus di sini: {{max}}. Perbarui aplikasinya untuk mengubahnya dari sini.",
       "offline": "Agen menunggu sampai perangkat ini kembali.",
       "offlineSeen": "Terakhir terlihat {{time}}. Agen menunggu sampai perangkat ini kembali.",
       "offlineWithHost": "{{host}} sedang offline. Agen menunggu sampai komputer itu kembali.",

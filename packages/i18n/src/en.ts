@@ -15820,6 +15820,7 @@ export const en = {
       notLinkMaker: "Only the person who made the link can let this computer join.",
       widenForbidden: "Admins can only narrow who can use someone's own device.",
       spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
+      tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
     },
     machine: {
@@ -16319,6 +16320,10 @@ export const en = {
       ready: "Agents can use it now.",
       busy_one: "{{count}} of {{max}} tasks running",
       busy_other: "{{count}} of {{max}} tasks running",
+      /** Under a busy computer's pill, for whoever may change its limit: the row "Tasks at once" is under it on the page. */
+      tasksChange: "Tasks at once here: {{max}}. Change it below.",
+      tasksOwner: "Tasks at once here: {{max}}. The person who connected it can change that.",
+      tasksUpdate: "Tasks at once here: {{max}}. Update its app to change that from here.",
       offline: "Agents wait for it to come back.",
       offlineSeen: "Last seen {{time}}. Agents wait for it to come back.",
       offlineWithHost: "{{host}} is offline. Agents wait for it to come back.",

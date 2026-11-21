@@ -16046,6 +16046,7 @@
       "notLinkMaker": "Seule la personne qui a créé le lien peut laisser cet ordinateur rejoindre.",
       "widenForbidden": "Les admins peuvent seulement restreindre qui utilise l'appareil personnel de quelqu'un.",
       "spillOwnerOnly": "Seule la personne qui a connecté cet ordinateur peut y laisser penser les réponses. Toi, tu peux le désactiver.",
+      "tasksOwnerOnly": "Seule la personne qui a connecté cet ordinateur peut changer le nombre de tâches qu'il exécute en même temps.",
       "notHome": "Les agents vivent sur l'ordinateur du workspace et utilisent celui-ci quand ils le nomment."
     },
     "machine": {
@@ -16538,6 +16539,9 @@
       "busy_one": "{{count}} tâche sur {{max}} en cours",
       "busy_many": "{{count}} tâches sur {{max}} en cours",
       "busy_other": "{{count}} tâches sur {{max}} en cours",
+      "tasksChange": "Tâches simultanées ici : {{max}}. Change-le plus bas.",
+      "tasksOwner": "Tâches simultanées ici : {{max}}. La personne qui l'a connecté peut le changer.",
+      "tasksUpdate": "Tâches simultanées ici : {{max}}. Mets à jour son app pour le changer d'ici.",
       "offline": "Les agents attendent son retour.",
       "offlineSeen": "Vu pour la dernière fois {{time}}. Les agents attendent son retour.",
       "offlineWithHost": "{{host}} est hors ligne. Les agents attendent son retour.",

@@ -179,6 +179,23 @@ describe("Settings › Devices", () => {
     ]);
   });
 
+  test("a busy computer's page says its tasks at once and where that changes, for its owner or anyone else", async () => {
+    await open(`/org/${ORG_ID}/settings/devices/${BUILD_PC}`);
+    expect(screen().getByText("Tasks at once here: 1. The person who connected it can change that.")).toBeTruthy();
+    cleanup();
+    await open(`/org/${ORG_ID}/settings/devices/${MAC}`, (devices) => {
+      const list = acmeDevices();
+      devices.set({
+        ...list,
+        devices: list.devices.map((d) =>
+          d.id === MAC ? { ...d, status: { kind: "busy", running: 1, max: 1 }, maxTasks: 1 } : d,
+        ),
+      });
+    });
+    expect(screen().getByText("Tasks at once here: 1. Change it below.")).toBeTruthy();
+    expect(screen().getByRole("combobox", { name: "Tasks at once" })).toBeTruthy();
+  });
+
   test("a computer's phones: each state a pill alone, its detail in its tip; one that needs me opens its fix", async () => {
     await open(`/org/${ORG_ID}/settings/devices/${MAC}`);
     const list = screen().getByRole("list", { name: "Phones on this computer" });
