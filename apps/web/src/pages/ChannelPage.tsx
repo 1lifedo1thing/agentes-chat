@@ -1407,7 +1407,7 @@ function ChannelView({
       // moved messages (written before the root; the context block lists them).
       const mine = (channelMessages.data ?? []).filter((m) => m.local && m.threadId === thread.id);
       // A task's conversation: not its root, which stands for the task beside it (ADR 0145); a live file's and a code
-      // session's the same (ADR 0199, 0208).
+      // session's the same (ADR 0199, 0213).
       const list = mergeTimeline(threadMessages.data ?? [], [mine]).filter(
         (m) =>
           !taskConversationOf(m.meta) &&
