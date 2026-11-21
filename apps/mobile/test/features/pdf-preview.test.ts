@@ -65,6 +65,8 @@ describe("a PDF's first page on its cards", () => {
     // The composer: read from the phone's file, in the type tile's box.
     const strip = src("features/chat/AttachmentStrip.tsx");
     expect(strip).toContain("<LocalPdfPage uri={f.uri} />");
+    // And on its message while it uploads, from the same file on the phone.
+    expect(src("features/files/MessageFiles.tsx")).toContain("<LocalPdfPage uri={file.uri} />");
     expect(strip).toContain("isLocalPdf(f)");
   });
 
