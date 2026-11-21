@@ -19,11 +19,11 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActorAvatar, AgentAvatar } from "@/components/AgentAvatar";
+import { artifactLink, useAuthorName } from "@/components/artifacts/viewer-context";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { copyText } from "@/lib/context-menu";
 import { useToast } from "@/lib/toast";
-import { artifactLink, useAuthorName } from "./ArtifactViewer";
 
 /**
  * Compartilhar, for any file (ADR 0157), and Copiar link: a link copies at once when everyone it may reach opens it;
