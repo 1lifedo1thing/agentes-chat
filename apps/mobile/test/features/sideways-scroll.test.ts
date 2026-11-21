@@ -10,10 +10,14 @@ describe("a message's sideways scrollers never grow downward", () => {
     // an empty block under the words that never ended.
     const spans = src("features/chat/MessageSpans.tsx");
     expect(spans).toContain("sideways: { flexGrow: 0 },");
-    expect(spans).toMatch(/<ScrollView horizontal scrollEnabled=\{false\} showsHorizontalScrollIndicator=\{false\} style=\{styles\.sideways\}>/);
+    expect(spans).toMatch(
+      /<ScrollView horizontal scrollEnabled=\{false\} showsHorizontalScrollIndicator=\{false\} style=\{styles\.sideways\}>/,
+    );
     expect(spans).toMatch(/<GestureScrollView\s+ref=\{scroller\}\s+horizontal\s+style=\{styles\.sideways\}/);
     const code = src("features/chat/CodeCard.tsx");
     expect(code).toContain("sideways: { flexGrow: 0 },");
-    expect(code).toMatch(/<ScrollView\s+horizontal\s+showsHorizontalScrollIndicator=\{false\}\s+style=\{styles\.sideways\}\s+contentContainerStyle=\{styles\.body\}/);
+    expect(code).toMatch(
+      /<ScrollView\s+horizontal\s+showsHorizontalScrollIndicator=\{false\}\s+style=\{styles\.sideways\}\s+contentContainerStyle=\{styles\.body\}/,
+    );
   });
 });
