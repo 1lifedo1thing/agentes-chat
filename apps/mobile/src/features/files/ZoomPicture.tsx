@@ -258,8 +258,8 @@ function SystemZoom({ picture, screen, max, pull, enabled, reduced, onTap, onZoo
   const gesture = useExclusiveGestures(pull, doubleTap, tap);
   // A picture smaller than the screen sits centered, as taps and pins count it (`tapOnZoomed`). `centerContent` gives
   // the scroll view insets from its content's size, so the content is the picture's own box (`contentContainerStyle`):
-  // a vertical scroll view's content otherwise stretches to its width, and a picture narrower than the screen (one
-  // shown above the conversation's sheet, or a tall one) sat at that content's left edge, with no inset to center it.
+  // a vertical scroll view's content otherwise stretches to its width, and a picture narrower than the screen (a tall
+  // one) sat at that content's left edge, with no inset to center it.
   // The insets don't move what is already scrolled to: not zoomed, the scroll view is put at them each time the
   // picture or the screen changes size.
   useEffect(() => {

@@ -98,8 +98,8 @@ import {
  * zooming in hides them. With reduced motion a closing picture fades instead of flying off. A picture or a video has
  * its conversation (ADR 0208), as a live file does: its line over the actions, the one way into it, and its open
  * comments pinned on a picture (a tap on one opens the conversation there). The conversation comes up in the system's
- * sheet over the viewer, half the screen: the picture moves into the room above it (the line and the actions step
- * aside), still zooming and swiping, and a tap on it marks a point ("About point 4 of the image" over the composer,
+ * sheet over the viewer, half the screen: it slides over the picture, which stays as it is (the line and the actions
+ * step aside), still zooming and swiping, and a tap on it marks a point ("About point 4 of the image" over the composer,
  * the person's pin on the spot); a video pauses there, and a tap on its frame marks that moment and that point, the
  * comments made near the moment pinned on the frame. Turning to another picture with the sheet up, the sheet takes
  * that picture's conversation. `focusId`: a message of the conversation to open at (a link or a notice), once the
@@ -443,9 +443,9 @@ function Viewer({
  * swiped away as a picture is. The picture stays under the finger (`pulledPlacement`) and can be caught again while it
  * springs back; let go, where it would come to rest decides (`pullCloses`), and it leaves or springs back from the
  * speed it was let go at. A picture's open comments are pinned on it (ADR 0208): a tap on a pin opens its message.
- * With the conversation's sheet up (`sheet`, on the page in sight) the page lays out in the room above it, a tap marks a
- * point (the draft's pin on it) and the pull to close rests (the sheet goes down first); else a tap shows or hides the
- * bars.
+ * With the conversation's sheet up (`sheet`, on the page in sight) a picture stays as it is, the sheet over it (a video
+ * keeps between the bar and the sheet, its controls in sight), a tap marks a point (the draft's pin on it) and the pull
+ * to close rests (the sheet goes down first); else a tap shows or hides the bars.
  */
 function Page({
   id,
@@ -519,8 +519,6 @@ function Page({
     },
     [shownPins, marking, onPin, onMark, onTap],
   );
-  // The room the picture has: above the sheet while it is up, else the whole screen.
-  const stage = sheet ? stageAbove(screen, bars.top, sheet.reserve) : screen;
   const draft = sheet?.draft ?? null;
   // A comment's line about a moment of this video opened it: it starts there, once.
   const waiting = useRevealFor(id);
@@ -610,24 +608,24 @@ function Page({
           </View>
         </GestureDetector>
       ) : video === false && link.data ? (
-        <View style={sheet ? { paddingTop: bars.top } : null}>
-          <ZoomPicture
-            source={link.data}
-            cacheKey={key}
-            screen={stage}
-            pull={pull}
-            enabled={!paging}
-            active={active}
-            onTap={tapped}
-            onZoom={zoomChanged}
-            onRetry={() => void link.refetch()}
-            overlay={
-              shownPins.length > 0 || draft
-                ? (zoom) => <PicturePins pins={shownPins} zoom={zoom} draft={draft} />
-                : undefined
-            }
-          />
-        </View>
+        // The whole screen's, the sheet up or not: the sheet slides over the picture, which never lays out again under
+        // it (laid out anew above the sheet, it jumped and jittered as the sheet came up and moved).
+        <ZoomPicture
+          source={link.data}
+          cacheKey={key}
+          screen={screen}
+          pull={pull}
+          enabled={!paging}
+          active={active}
+          onTap={tapped}
+          onZoom={zoomChanged}
+          onRetry={() => void link.refetch()}
+          overlay={
+            shownPins.length > 0 || draft
+              ? (zoom) => <PicturePins pins={shownPins} zoom={zoom} draft={draft} />
+              : undefined
+          }
+        />
       ) : (
         <GestureDetector gesture={pull}>
           <View style={screen} collapsable={false}>
