@@ -3,6 +3,7 @@ import {
   contextWindowOf,
   contextWindowWithin,
   type ModelMessage,
+  modelProvider,
   type SystemBlock,
   type ToolSpec,
   textOf,
@@ -299,6 +300,15 @@ export function cutOldToolSteps(messages: ModelMessage[], tools: readonly { name
     return changed ? { ...m, content } : m;
   });
 }
+
+/**
+ * The messages an API-brain call sends: `cutOldToolSteps`, except on Claude's own API. It reads a thinking block back
+ * only while every byte before it is what it was written after, so each move of the cut dropped every later thinking
+ * block of the run (`prefix_binding_mismatch`) and wrote the history after the cut to the cache again. There the run's
+ * history stays as sent; `fitContextWindow` still keeps it within the window.
+ */
+export const sentToolSteps = (messages: ModelMessage[], tools: readonly { name: string }[], model: string) =>
+  modelProvider(model) === "anthropic" ? messages : cutOldToolSteps(messages, tools);
 
 /**
  * Base64 of the images one request carries, newest kept first: under the smallest request the APIs take (Gemini's
