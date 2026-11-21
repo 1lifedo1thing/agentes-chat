@@ -15661,7 +15661,7 @@
     },
     "telegram": {
       "token": "Token bota",
-      "steps": "W Telegramie otwórz @BotFather, wyślij /newbot, wybierz nazwę i nazwę użytkownika kończącą się na „bot”, a potem wklej tu otrzymany token. Aby czytać grupę, dodaj do niej bota; aby publikować na kanale, zrób go tam administratorem."
+      "steps": "W Telegramie otwórz @BotFather, wyślij /newbot, wybierz nazwę i nazwę użytkownika kończącą się na „bot”, a potem wklej tu otrzymany token. Aby czytać grupę, dodaj do niej bota. Aby publikować na kanale, zrób go tam administratorem."
     }
   },
   "database": {

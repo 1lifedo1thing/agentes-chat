@@ -14600,7 +14600,7 @@
     },
     "telegram": {
       "token": "Bot-Token",
-      "steps": "Öffne in Telegram @BotFather, sende /newbot, wähle einen Namen und einen Benutzernamen, der auf „bot“ endet, und füge hier das Token ein, das er dir gibt. Um eine Gruppe zu lesen, füge den Bot hinzu; um in einem Kanal zu posten, mach ihn dort zum Admin."
+      "steps": "Öffne in Telegram @BotFather, sende /newbot, wähle einen Namen und einen Benutzernamen, der auf „bot“ endet, und füge hier das Token ein, das er dir gibt. Um eine Gruppe zu lesen, füge den Bot hinzu. Um in einem Kanal zu posten, mach ihn dort zum Admin."
     }
   },
   "database": {

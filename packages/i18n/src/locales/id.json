@@ -14094,7 +14094,7 @@
     },
     "telegram": {
       "token": "Token bot",
-      "steps": "Di Telegram, buka @BotFather, kirim /newbot, pilih nama dan username yang berakhiran “bot”, lalu tempel token yang diberikannya di sini. Untuk membaca grup, tambahkan bot ke grup itu; untuk memposting di kanal, jadikan admin di sana."
+      "steps": "Di Telegram, buka @BotFather, kirim /newbot, pilih nama dan username yang berakhiran “bot”, lalu tempel token yang diberikannya di sini. Untuk membaca grup, tambahkan bot ke grup itu. Untuk memposting di kanal, jadikan admin di sana."
     }
   },
   "database": {

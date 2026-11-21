@@ -14535,7 +14535,7 @@
     },
     "telegram": {
       "token": "Bot token'ı",
-      "steps": "Telegram'da @BotFather'ı açın, /newbot gönderin, bir ad ve “bot” ile biten bir kullanıcı adı seçin, sonra verdiği token'ı buraya yapıştırın. Bir grubu okumak için botu gruba ekleyin; bir kanalda paylaşmak için orada yönetici yapın."
+      "steps": "Telegram'da @BotFather'ı açın, /newbot gönderin, bir ad ve “bot” ile biten bir kullanıcı adı seçin, sonra verdiği token'ı buraya yapıştırın. Bir grubu okumak için botu gruba ekleyin. Bir kanalda paylaşmak için orada yönetici yapın."
     }
   },
   "database": {

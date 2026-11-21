@@ -14872,7 +14872,7 @@ export const ptBR = {
     telegram: {
       token: "Token do bot",
       steps:
-        "No Telegram, abra o @BotFather, envie /newbot, escolha um nome e um usuário que termine em “bot” e cole aqui o token que ele der. Para ler um grupo, adicione o bot a ele; para postar num canal, torne-o admin lá.",
+        "No Telegram, abra o @BotFather, envie /newbot, escolha um nome e um usuário que termine em “bot” e cole aqui o token que ele der. Para ler um grupo, adicione o bot a ele. Para postar num canal, torne-o admin lá.",
     },
   },
   database: {

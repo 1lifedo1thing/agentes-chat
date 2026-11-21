@@ -15127,7 +15127,7 @@
     },
     "telegram": {
       "token": "Jeton du bot",
-      "steps": "Dans Telegram, ouvrez @BotFather, envoyez /newbot, choisissez un nom et un identifiant qui finit par « bot », puis collez ici le jeton qu'il vous donne. Pour lire un groupe, ajoutez-y le bot ; pour publier dans un canal, faites-en un admin."
+      "steps": "Dans Telegram, ouvrez @BotFather, envoyez /newbot, choisissez un nom et un identifiant qui finit par « bot », puis collez ici le jeton qu'il vous donne. Pour lire un groupe, ajoutez-y le bot. Pour publier dans un canal, faites-en un admin."
     }
   },
   "database": {

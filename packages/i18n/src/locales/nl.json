@@ -14668,7 +14668,7 @@
     },
     "telegram": {
       "token": "Bottoken",
-      "steps": "Open in Telegram @BotFather, stuur /newbot, kies een naam en een gebruikersnaam die op “bot” eindigt en plak hier de token die je krijgt. Om een groep te lezen, voeg je de bot toe; om in een kanaal te posten, maak je hem daar admin."
+      "steps": "Open in Telegram @BotFather, stuur /newbot, kies een naam en een gebruikersnaam die op “bot” eindigt en plak hier de token die je krijgt. Om een groep te lezen, voeg je de bot toe. Om in een kanaal te posten, maak je hem daar admin."
     }
   },
   "database": {

@@ -14926,7 +14926,7 @@ export const en = {
     telegram: {
       token: "Bot token",
       steps:
-        "In Telegram, open @BotFather, send /newbot, pick a name and a username that ends in “bot”, then paste the token it gives you here. To read a group, add the bot to it; to post in a channel, make it an admin there.",
+        "In Telegram, open @BotFather, send /newbot, pick a name and a username that ends in “bot”, then paste the token it gives you here. To read a group, add the bot to it. To post in a channel, make it an admin there.",
     },
   },
   database: {

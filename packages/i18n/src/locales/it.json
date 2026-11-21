@@ -15143,7 +15143,7 @@
     },
     "telegram": {
       "token": "Token del bot",
-      "steps": "In Telegram apri @BotFather, invia /newbot, scegli un nome e un username che finisca con “bot”, poi incolla qui il token che ti dà. Per leggere un gruppo aggiungi il bot; per pubblicare in un canale rendilo admin."
+      "steps": "In Telegram apri @BotFather, invia /newbot, scegli un nome e un username che finisca con “bot”, poi incolla qui il token che ti dà. Per leggere un gruppo aggiungi il bot. Per pubblicare in un canale rendilo admin."
     }
   },
   "database": {
