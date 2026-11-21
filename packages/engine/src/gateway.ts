@@ -1,5 +1,5 @@
 import type { ErrorReporter, KeyWrapper, PlatformCredentials, PubSub, SearchKind } from "@agenteschat/adapters";
-import { and, type Database, desc, type Executor, eq, gte, isNull, lt, rowsOf, schema, sql } from "@agenteschat/db";
+import { and, type Database, desc, type Executor, eq, isNull, lt, rowsOf, schema, sql } from "@agenteschat/db";
 import {
   costNanoUsd,
   customModelOf,
