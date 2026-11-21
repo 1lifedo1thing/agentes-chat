@@ -5998,6 +5998,8 @@ export const ptBR = {
       undo: "Desfazer",
       deadline: "Prazo",
       decides: "Quem decide",
+      /** A request of an agent a role answers for (ADR 0085, addendum of 2026-11-21): the first decision counts. */
+      decidesRole: "Qualquer pessoa de {{role}}",
       state: "Situação",
       why: "Por que {{name}} pede",
       email: "O e-mail",
@@ -7581,6 +7583,11 @@ export const ptBR = {
     noOwnerShort: "Os admins recebem os avisos e aprovam",
     noOwnerHelp: "Sem responsável, os admins recebem os avisos e aprovam as ações sensíveis.",
     ownerHelp: "Recebe os avisos de orçamento e aprova as ações sensíveis.",
+    /** A role as its owner (ADR 0085, addendum of 2026-11-21): whoever holds it gets them, any of them decides. */
+    ownerRoleHelp:
+      "Quem tem {{role}} recebe os pedidos de aprovação e os avisos dele. Qualquer um decide, inclusive quem entrar no cargo depois.",
+    ownerRoleHelp_female:
+      "Quem tem {{role}} recebe os pedidos de aprovação e os avisos dela. Qualquer um decide, inclusive quem entrar no cargo depois.",
     ownerYours: "Quem cria o agente é o responsável. Um admin pode passar para outra pessoa depois.",
     accessAdmins: "Só admins dão acesso a apps e caixas de email. Depois de criar, peça a um admin.",
     accessAdminsKeeper: "Só {{keeper}} dá acesso a apps e caixas de email. Depois de criar, peça a {{keeper}}.",
@@ -11303,6 +11310,8 @@ export const ptBR = {
       everyone: "Todos do workspace",
       people: "Só algumas pessoas ou cargos",
       owner: "Só o responsável",
+      /** "Só o responsável" when a role answers for it (ADR 0085, addendum of 2026-11-21). */
+      ownerRole: "Só quem tem {{role}}",
       everyonePersonal: "Todos daqui",
       peoplePersonal: "Só algumas pessoas",
     },
@@ -11316,6 +11325,10 @@ export const ptBR = {
       owner_female:
         "Só {{owner}} fala com a {{name}}. Nas listas, a {{name}} aparece só para {{owner}}, admins e quem pode editar.",
       noOwner: "Defina um responsável para usar esta opção.",
+      ownerRole:
+        "Só quem tem {{role}} fala com o {{name}}. Nas listas, o {{name}} aparece só para quem tem {{role}}, admins e quem pode editar.",
+      ownerRole_female:
+        "Só quem tem {{role}} fala com a {{name}}. Nas listas, a {{name}} aparece só para quem tem {{role}}, admins e quem pode editar.",
       everyonePersonal: "Qualquer pessoa daqui pode chamar o {{name}}.",
       everyonePersonal_female: "Qualquer pessoa daqui pode chamar a {{name}}.",
       peoplePersonal: "Escolha as pessoas que podem falar com o {{name}}.",
@@ -11328,8 +11341,11 @@ export const ptBR = {
     roleMembers_other: "{{count}} pessoas",
     picked: "Escolhidos",
     ownerAlways: "{{name}} sempre pode, como responsável.",
+    ownerRoleAlways: "Quem tem {{role}} sempre pode, como responsável.",
+    whoHolds: "quem tem {{role}}",
     onlyYouForNow: "Só você, por enquanto",
     onlyOwnerForNow: "Só {{name}}, por enquanto",
+    onlyOwnerRoleForNow: "Só quem tem {{role}}, por enquanto",
     search: "Buscar cargos e pessoas",
     searchPeople: "Buscar pessoas",
     noMatch: "Nenhum cargo ou pessoa com esse nome.",
@@ -11340,6 +11356,7 @@ export const ptBR = {
       everyone: "Todos do workspace",
       everyonePersonal: "Todos daqui",
       owner: "Só {{name}}",
+      ownerRole: "Só quem tem {{role}}",
       nobody: "Ninguém por enquanto",
       someone: "Algumas pessoas",
       people: "{{names}}",
@@ -11372,6 +11389,11 @@ export const ptBR = {
       owner_female: "{{owner}}, responsável, os administradores e quem edita agentes e fala com a {{name}}.",
       noOwner: "Os administradores e quem edita agentes e fala com o {{name}}.",
       noOwner_female: "Os administradores e quem edita agentes e fala com a {{name}}.",
+      /** A role as its owner (ADR 0085, addendum of 2026-11-21). */
+      ownerRole:
+        "Quem tem {{role}} (o cargo responsável), os administradores e quem edita agentes e fala com o {{name}}.",
+      ownerRole_female:
+        "Quem tem {{role}} (o cargo responsável), os administradores e quem edita agentes e fala com a {{name}}.",
       people: "Escolha quem mais pode mudar como o {{name}} trabalha.",
       people_female: "Escolha quem mais pode mudar como a {{name}} trabalha.",
     },
@@ -15880,6 +15902,10 @@ export const ptBR = {
       detailsHidden: "Só quem conversa com {{agentName}} vê como funciona.",
       undoForbidden: "Só a pessoa para quem o agente trabalhou, o dono dele ou um admin pode desfazer isso.",
       undoSkillsAdmins: "Só quem pode editar o agente desfaz ou refaz uma mudança nas skills dele.",
+      /** `agent.owner_both` (ADR 0085, addendum of 2026-11-21): a person or a role answers for an agent, never both. */
+      ownerBoth: "O responsável é uma pessoa ou um cargo, não os dois. Escolha um.",
+      /** `agent.owner_role_unknown`: the role picked as owner is gone. */
+      ownerRoleUnknown: "Esse cargo não existe mais neste workspace. Escolha outro responsável.",
     },
     account: {
       notRestorable: "Esta conta não pode mais ser restaurada.",

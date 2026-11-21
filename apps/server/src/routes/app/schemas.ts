@@ -595,6 +595,9 @@ export const Agent = z
     instructions: z.string(),
     model: z.string(),
     ownerUserId: z.string().nullable(),
+    ownerRoleId: z.uuid().nullable().openapi({
+      description: "A role that answers for it instead of a person (ADR 0085, addendum of 2026-11-21).",
+    }),
     hasCredential: z.boolean(),
     monthlyBudgetUsd: z
       .number()

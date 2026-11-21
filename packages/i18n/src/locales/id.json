@@ -5490,6 +5490,7 @@
       "undo": "Batalkan",
       "deadline": "Sisa waktu",
       "decides": "Siapa yang memutuskan",
+      "decidesRole": "Siapa pun dengan peran {{role}}",
       "state": "Status",
       "why": "Mengapa {{name}} meminta",
       "email": "Email-nya",
@@ -6916,6 +6917,8 @@
     "noOwnerShort": "Admin menerima peringatan dan menyetujui",
     "noOwnerHelp": "Tanpa pemilik, admin menerima peringatan dan menyetujui tindakan sensitif.",
     "ownerHelp": "Menerima peringatan anggaran dan menyetujui tindakan sensitif.",
+    "ownerRoleHelp": "Siapa pun dengan peran {{role}} menerima permintaan persetujuan dan pemberitahuannya. Siapa pun dari mereka bisa memutuskan, termasuk yang mendapat peran itu nanti.",
+    "ownerRoleHelp_female": "Siapa pun dengan peran {{role}} menerima permintaan persetujuan dan pemberitahuannya. Siapa pun dari mereka bisa memutuskan, termasuk yang mendapat peran itu nanti.",
     "ownerYours": "Yang membuat agen adalah pemiliknya. Admin bisa menyerahkannya ke orang lain nanti.",
     "accessAdmins": "Hanya admin yang memberi agen akses ke aplikasi dan kotak surat. Setelah agen dibuat, minta pada admin.",
     "accessAdminsKeeper": "Hanya {{keeper}} yang memberi agen akses ke aplikasi dan kotak surat. Setelah agen dibuat, minta pada {{keeper}}.",
@@ -10482,6 +10485,7 @@
       "everyone": "Semua orang di ruang kerja",
       "people": "Hanya beberapa orang atau peran",
       "owner": "Hanya pemilik",
+      "ownerRole": "Hanya yang punya peran {{role}}",
       "everyonePersonal": "Semua orang di sini",
       "peoplePersonal": "Hanya beberapa orang"
     },
@@ -10490,6 +10494,8 @@
       "people": "Pilih orang dan peran yang bisa bicara dengan {{name}}.",
       "owner": "Hanya {{owner}} yang bicara dengan {{name}}. Di daftar, {{name}} hanya terlihat oleh {{owner}}, admin, dan yang boleh mengedit.",
       "noOwner": "Tetapkan pemilik untuk memakai opsi ini.",
+      "ownerRole": "Hanya yang punya peran {{role}} yang bicara dengan {{name}}. Di daftar, {{name}} hanya terlihat oleh yang punya peran {{role}}, admin, dan yang bisa mengedit.",
+      "ownerRole_female": "Hanya yang punya peran {{role}} yang bicara dengan {{name}}. Di daftar, {{name}} hanya terlihat oleh yang punya peran {{role}}, admin, dan yang bisa mengedit.",
       "everyonePersonal": "Siapa pun di sini bisa memanggil {{name}}.",
       "peoplePersonal": "Pilih orang yang bisa bicara dengan {{name}}."
     },
@@ -10499,8 +10505,11 @@
     "roleMembers_other": "{{count}} orang",
     "picked": "Dipilih",
     "ownerAlways": "{{name}} selalu bisa, sebagai pemilik.",
+    "ownerRoleAlways": "Yang punya peran {{role}} selalu bisa, sebagai pemilik.",
+    "whoHolds": "yang punya peran {{role}}",
     "onlyYouForNow": "Hanya kamu, untuk saat ini",
     "onlyOwnerForNow": "Hanya {{name}}, untuk saat ini",
+    "onlyOwnerRoleForNow": "Hanya yang punya peran {{role}}, untuk saat ini",
     "search": "Cari peran dan orang",
     "searchPeople": "Cari orang",
     "noMatch": "Tidak ada peran atau orang dengan nama itu.",
@@ -10515,6 +10524,7 @@
       "everyone": "Semua orang di ruang kerja",
       "everyonePersonal": "Semua orang di sini",
       "owner": "Hanya {{name}}",
+      "ownerRole": "Hanya yang punya peran {{role}}",
       "nobody": "Belum ada siapa pun",
       "someone": "Beberapa orang",
       "people": "{{names}}",
@@ -10537,6 +10547,8 @@
     "modeText": {
       "owner": "{{owner}} (pemilik), admin, dan siapa pun yang mengedit agen dan bisa bicara dengan {{name}}.",
       "noOwner": "Admin dan siapa pun yang mengedit agen dan bisa bicara dengan {{name}}.",
+      "ownerRole": "Yang punya peran {{role}} (peran pemilik), admin, dan siapa pun yang mengedit agen dan bisa bicara dengan {{name}}.",
+      "ownerRole_female": "Yang punya peran {{role}} (peran pemilik), admin, dan siapa pun yang mengedit agen dan bisa bicara dengan {{name}}.",
       "people": "Pilih siapa lagi yang bisa mengubah cara kerja {{name}}."
     },
     "rolesHint": "Siapa pun dengan peran ini bisa mengedit, termasuk yang mendapatkannya nanti.",
@@ -15087,7 +15099,9 @@
       "ownerOrAdmin": "Hanya pemilik agen atau Admin yang bisa melakukan ini.",
       "detailsHidden": "Hanya orang yang berbicara dengan {{agentName}} yang bisa melihat cara kerjanya.",
       "undoForbidden": "Hanya orang yang dibantu agen, pemiliknya, atau Admin yang bisa membatalkan ini.",
-      "undoSkillsAdmins": "Hanya yang bisa mengedit agen yang bisa membatalkan atau mengulang perubahan pada skill-nya."
+      "undoSkillsAdmins": "Hanya yang bisa mengedit agen yang bisa membatalkan atau mengulang perubahan pada skill-nya.",
+      "ownerBoth": "Pemiliknya orang atau peran, bukan keduanya. Pilih salah satu.",
+      "ownerRoleUnknown": "Peran itu sudah tidak ada di ruang kerja ini. Pilih pemilik lain."
     },
     "account": {
       "notRestorable": "Akun ini sudah tidak bisa dipulihkan.",

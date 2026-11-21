@@ -58,6 +58,9 @@ const KNOWN = {
   "agent.not_owner": "errors.agent.ownerOrAdmin",
   "usage_queue.cancel_forbidden": "errors.agent.ownerOrAdmin",
   "agent.details_hidden": "errors.agent.detailsHidden",
+  // Who answers for an agent (ADR 0085, addendum of 2026-11-21): a person or a role, never both.
+  "agent.owner_both": "errors.agent.ownerBoth",
+  "agent.owner_role_unknown": "errors.agent.ownerRoleUnknown",
   "action.not_allowed": "errors.agent.undoForbidden",
   "action.skills_admins": "errors.agent.undoSkillsAdmins",
   "account.not_owner": "errors.account.notOwner",

@@ -44,6 +44,7 @@ export async function continueRun(
     .select({
       run: agentRuns,
       ownerUserId: agents.ownerUserId,
+      ownerRoleId: agents.ownerRoleId,
       requester: runRequester,
       request: messages.body,
       channelKind: channels.kind,

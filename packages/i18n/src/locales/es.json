@@ -5884,6 +5884,7 @@
       "undo": "Deshacer",
       "deadline": "Tiempo restante",
       "decides": "Quién decide",
+      "decidesRole": "Cualquier persona con el rol {{role}}",
       "state": "Estado",
       "why": "Por qué {{name}} lo pide",
       "email": "El correo",
@@ -7381,6 +7382,8 @@
     "noOwnerShort": "Los admins reciben las alertas y aprueban",
     "noOwnerHelp": "Sin responsable, los admins reciben las alertas y aprueban las acciones sensibles.",
     "ownerHelp": "Recibe las alertas de presupuesto y aprueba las acciones sensibles.",
+    "ownerRoleHelp": "Quien tenga el rol {{role}} recibe sus solicitudes de aprobación y avisos. Cualquiera decide, incluso quien reciba el rol después.",
+    "ownerRoleHelp_female": "Quien tenga el rol {{role}} recibe sus solicitudes de aprobación y avisos. Cualquiera decide, incluso quien reciba el rol después.",
     "ownerYours": "Quien crea el agente es su responsable. Un admin puede pasárselo a otra persona después.",
     "accessAdmins": "Solo los admins dan a los agentes acceso a apps y buzones. Cuando esté creado, pídeselo a un admin.",
     "accessAdminsKeeper": "Solo {{keeper}} da a los agentes acceso a apps y buzones. Cuando esté creado, pídeselo a {{keeper}}.",
@@ -11240,6 +11243,7 @@
       "everyone": "Todo el espacio de trabajo",
       "people": "Solo algunas personas o roles",
       "owner": "Solo su responsable",
+      "ownerRole": "Solo quien tenga el rol {{role}}",
       "everyonePersonal": "Todos aquí",
       "peoplePersonal": "Solo algunas personas"
     },
@@ -11248,6 +11252,8 @@
       "people": "Elige las personas y los roles que pueden hablar con {{name}}.",
       "owner": "Solo {{owner}} habla con {{name}}. En las listas, solo {{owner}}, los admins y quien puede editar ven a {{name}}.",
       "noOwner": "Define un responsable para usar esta opción.",
+      "ownerRole": "Solo quien tenga el rol {{role}} habla con {{name}}. En las listas, {{name}} solo aparece para quien tenga el rol {{role}}, los admins y quien puede editar.",
+      "ownerRole_female": "Solo quien tenga el rol {{role}} habla con {{name}}. En las listas, {{name}} solo aparece para quien tenga el rol {{role}}, los admins y quien puede editar.",
       "everyonePersonal": "Cualquiera de aquí puede llamar a {{name}}.",
       "peoplePersonal": "Elige las personas que pueden hablar con {{name}}."
     },
@@ -11259,8 +11265,11 @@
     "roleMembers_other": "{{count}} personas",
     "picked": "Elegidos",
     "ownerAlways": "{{name}} siempre puede, como responsable.",
+    "ownerRoleAlways": "Quien tenga el rol {{role}} siempre puede, como responsable.",
+    "whoHolds": "quien tenga el rol {{role}}",
     "onlyYouForNow": "Solo tú, por ahora",
     "onlyOwnerForNow": "Solo {{name}}, por ahora",
+    "onlyOwnerRoleForNow": "Solo quien tenga el rol {{role}}, por ahora",
     "search": "Buscar roles y personas",
     "searchPeople": "Buscar personas",
     "noMatch": "Ningún rol ni persona con ese nombre.",
@@ -11275,6 +11284,7 @@
       "everyone": "Todo el espacio de trabajo",
       "everyonePersonal": "Todos aquí",
       "owner": "Solo {{name}}",
+      "ownerRole": "Solo quien tenga el rol {{role}}",
       "nobody": "Nadie por ahora",
       "someone": "Algunas personas",
       "people": "{{names}}",
@@ -11299,6 +11309,8 @@
     "modeText": {
       "owner": "{{owner}} (responsable), los admins y quien edita agentes y habla con {{name}}.",
       "noOwner": "Los admins y quien edita agentes y habla con {{name}}.",
+      "ownerRole": "Quien tenga el rol {{role}} (el rol responsable), los admins y quien edita agentes y habla con {{name}}.",
+      "ownerRole_female": "Quien tenga el rol {{role}} (el rol responsable), los admins y quien edita agentes y habla con {{name}}.",
       "people": "Elige quién más puede cambiar cómo trabaja {{name}}."
     },
     "rolesHint": "Cualquiera con el rol puede editar, incluso quien lo reciba después.",
@@ -16077,7 +16089,9 @@
       "ownerOrAdmin": "Solo el dueño del agente o un admin puede hacer esto.",
       "detailsHidden": "Solo quien habla con {{agentName}} ve cómo funciona.",
       "undoForbidden": "Solo la persona para quien trabajó el agente, su dueño o un admin puede deshacer esto.",
-      "undoSkillsAdmins": "Solo quien puede editar el agente puede deshacer o rehacer un cambio en sus habilidades."
+      "undoSkillsAdmins": "Solo quien puede editar el agente puede deshacer o rehacer un cambio en sus habilidades.",
+      "ownerBoth": "El responsable es una persona o un rol, no ambos. Elige uno.",
+      "ownerRoleUnknown": "Ese rol ya no existe en este espacio de trabajo. Elige otro responsable."
     },
     "account": {
       "notRestorable": "Esta cuenta ya no se puede restaurar.",

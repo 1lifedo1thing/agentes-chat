@@ -5676,6 +5676,7 @@
       "undo": "Geri alma",
       "deadline": "Kalan süre",
       "decides": "Kim karar verir",
+      "decidesRole": "{{role}} rolüne sahip herkes",
       "state": "Durum",
       "why": "{{name}} neden istiyor",
       "email": "E-posta",
@@ -7125,6 +7126,8 @@
     "noOwnerShort": "Uyarıları yöneticiler alır ve onaylar",
     "noOwnerHelp": "Sahip olmadan uyarıları yöneticiler alır ve hassas işlemleri onaylar.",
     "ownerHelp": "Bütçe uyarılarını alır ve hassas işlemleri onaylar.",
+    "ownerRoleHelp": "{{role}} rolüne sahip olanlar onay isteklerini ve bildirimleri alır. İçlerinden herkes karar verebilir, rolü sonradan alanlar da dahil.",
+    "ownerRoleHelp_female": "{{role}} rolüne sahip olanlar onay isteklerini ve bildirimleri alır. İçlerinden herkes karar verebilir, rolü sonradan alanlar da dahil.",
     "ownerYours": "Ajanı oluşturan kişi onun sahibidir. Bir yönetici daha sonra başka birine devredebilir.",
     "accessAdmins": "Ajanlara uygulama ve posta kutusu erişimini yalnızca yöneticiler verir. Oluşturulduktan sonra bir yöneticiye sorun.",
     "accessAdminsKeeper": "Ajanlara uygulama ve posta kutusu erişimini yalnızca {{keeper}} verir. Oluşturulduktan sonra {{keeper}} ile konuşun.",
@@ -10816,6 +10819,7 @@
       "everyone": "Çalışma alanındaki herkes",
       "people": "Yalnızca bazı kişiler veya roller",
       "owner": "Yalnızca sahibi",
+      "ownerRole": "Yalnızca {{role}} rolüne sahip olanlar",
       "everyonePersonal": "Buradaki herkes",
       "peoplePersonal": "Yalnızca bazı kişiler"
     },
@@ -10824,6 +10828,8 @@
       "people": "{{name}} ile konuşabilecek kişileri ve rolleri seçin.",
       "owner": "{{name}} ile yalnızca {{owner}} konuşur. Listelerde {{name}} ajanını yalnızca {{owner}}, yöneticiler ve düzenleyebilenler görür.",
       "noOwner": "Bu seçeneği kullanmak için bir sahip belirleyin.",
+      "ownerRole": "{{name}} ile yalnızca {{role}} rolüne sahip olanlar konuşur. Listelerde {{name}} yalnızca {{role}} rolüne sahip olanlara, yöneticilere ve düzenleyebilenlere görünür.",
+      "ownerRole_female": "{{name}} ile yalnızca {{role}} rolüne sahip olanlar konuşur. Listelerde {{name}} yalnızca {{role}} rolüne sahip olanlara, yöneticilere ve düzenleyebilenlere görünür.",
       "everyonePersonal": "Buradaki herkes {{name}} ajanına seslenebilir.",
       "peoplePersonal": "{{name}} ile konuşabilecek kişileri seçin."
     },
@@ -10834,8 +10840,11 @@
     "roleMembers_other": "{{count}} kişi",
     "picked": "Seçilenler",
     "ownerAlways": "{{name}}, sahibi olarak her zaman konuşabilir.",
+    "ownerRoleAlways": "{{role}} rolüne sahip olanlar, sahip olarak her zaman konuşabilir.",
+    "whoHolds": "{{role}} rolüne sahip olanlar",
     "onlyYouForNow": "Şimdilik yalnızca siz",
     "onlyOwnerForNow": "Şimdilik yalnızca {{name}}",
+    "onlyOwnerRoleForNow": "Şimdilik yalnızca {{role}} rolüne sahip olanlar",
     "search": "Rol ve kişi ara",
     "searchPeople": "Kişi ara",
     "noMatch": "Bu adda bir rol veya kişi yok.",
@@ -10850,6 +10859,7 @@
       "everyone": "Çalışma alanındaki herkes",
       "everyonePersonal": "Buradaki herkes",
       "owner": "Yalnızca {{name}}",
+      "ownerRole": "Yalnızca {{role}} rolüne sahip olanlar",
       "nobody": "Şimdilik kimse",
       "someone": "Bazı kişiler",
       "people": "{{names}}",
@@ -10873,6 +10883,8 @@
     "modeText": {
       "owner": "{{owner}} (sahip), yöneticiler ve ajanları düzenleyip {{name}} ile konuşabilen herkes.",
       "noOwner": "Yöneticiler ve ajanları düzenleyip {{name}} ile konuşabilen herkes.",
+      "ownerRole": "{{role}} rolüne sahip olanlar (sahip rolü), yöneticiler ve ajanları düzenleyip {{name}} ile konuşabilen herkes.",
+      "ownerRole_female": "{{role}} rolüne sahip olanlar (sahip rolü), yöneticiler ve ajanları düzenleyip {{name}} ile konuşabilen herkes.",
       "people": "{{name}} ajanının çalışma şeklini başka kimlerin değiştirebileceğini seçin."
     },
     "rolesHint": "Bu role sahip herkes düzenleyebilir, rolü sonradan alanlar da dahil.",
@@ -15541,7 +15553,9 @@
       "ownerOrAdmin": "Bunu yalnızca ajanın sahibi veya bir yönetici yapabilir.",
       "detailsHidden": "Nasıl çalıştığını yalnızca {{agentName}} ile konuşanlar görür.",
       "undoForbidden": "Bunu yalnızca ajanın çalıştığı kişi, sahibi veya bir yönetici geri alabilir.",
-      "undoSkillsAdmins": "Becerilerindeki bir değişikliği yalnızca ajanı düzenleyebilenler geri alabilir veya yineleyebilir."
+      "undoSkillsAdmins": "Becerilerindeki bir değişikliği yalnızca ajanı düzenleyebilenler geri alabilir veya yineleyebilir.",
+      "ownerBoth": "Sahip bir kişi ya da bir roldür, ikisi birden olamaz. Birini seçin.",
+      "ownerRoleUnknown": "Bu rol artık bu çalışma alanında yok. Başka bir sahip seçin."
     },
     "account": {
       "notRestorable": "Bu hesap artık geri yüklenemez.",

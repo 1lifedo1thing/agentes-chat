@@ -5700,6 +5700,7 @@
       "undo": "Rückgängig",
       "deadline": "Verbleibende Zeit",
       "decides": "Wer entscheidet",
+      "decidesRole": "Alle mit der Rolle {{role}}",
       "state": "Status",
       "why": "Warum {{name}} fragt",
       "email": "Die E-Mail",
@@ -7168,6 +7169,8 @@
     "noOwnerShort": "Admins bekommen die Warnungen und geben frei",
     "noOwnerHelp": "Ohne Inhaber bekommen Admins die Warnungen und geben heikle Aktionen frei.",
     "ownerHelp": "Bekommt die Budget-Warnungen und gibt heikle Aktionen frei.",
+    "ownerRoleHelp": "Alle mit der Rolle {{role}} bekommen die Freigabeanfragen und Hinweise. Entscheiden darf jede Person davon, auch wer die Rolle später bekommt.",
+    "ownerRoleHelp_female": "Alle mit der Rolle {{role}} bekommen die Freigabeanfragen und Hinweise. Entscheiden darf jede Person davon, auch wer die Rolle später bekommt.",
     "ownerYours": "Wer den Agenten erstellt, ist sein Inhaber. Ein Admin kann ihn später jemand anderem übergeben.",
     "accessAdmins": "Nur Admins geben Agenten Zugriff auf Apps und Postfächer. Sobald er erstellt ist, frag einen Admin.",
     "accessAdminsKeeper": "Nur {{keeper}} gibt Agenten Zugriff auf Apps und Postfächer. Sobald er erstellt ist, frag {{keeper}}.",
@@ -10879,6 +10882,7 @@
       "everyone": "Alle im Workspace",
       "people": "Nur bestimmte Personen oder Rollen",
       "owner": "Nur der Inhaber",
+      "ownerRole": "Nur Personen mit der Rolle {{role}}",
       "everyonePersonal": "Alle hier",
       "peoplePersonal": "Nur bestimmte Personen"
     },
@@ -10887,6 +10891,8 @@
       "people": "Wähle die Personen und Rollen, die mit {{name}} schreiben dürfen.",
       "owner": "Nur {{owner}} schreibt mit {{name}}. In Listen sehen {{name}} nur {{owner}}, Admins und wer bearbeiten darf.",
       "noOwner": "Leg einen Inhaber fest, um diese Option zu nutzen.",
+      "ownerRole": "Nur Personen mit der Rolle {{role}} schreiben mit {{name}}. In Listen sehen {{name}} nur Personen mit der Rolle {{role}}, Admins und wer bearbeiten darf.",
+      "ownerRole_female": "Nur Personen mit der Rolle {{role}} schreiben mit {{name}}. In Listen sehen {{name}} nur Personen mit der Rolle {{role}}, Admins und wer bearbeiten darf.",
       "everyonePersonal": "Alle hier können {{name}} rufen.",
       "peoplePersonal": "Wähle die Personen, die mit {{name}} schreiben dürfen."
     },
@@ -10897,8 +10903,11 @@
     "roleMembers_other": "{{count}} Personen",
     "picked": "Ausgewählt",
     "ownerAlways": "{{name}} darf es als Inhaber immer.",
+    "ownerRoleAlways": "Personen mit der Rolle {{role}} dürfen es als Inhaber immer.",
+    "whoHolds": "Personen mit der Rolle {{role}}",
     "onlyYouForNow": "Vorerst nur du",
     "onlyOwnerForNow": "Vorerst nur {{name}}",
+    "onlyOwnerRoleForNow": "Vorerst nur Personen mit der Rolle {{role}}",
     "search": "Rollen und Personen suchen",
     "searchPeople": "Personen suchen",
     "noMatch": "Keine Rolle oder Person mit diesem Namen.",
@@ -10913,6 +10922,7 @@
       "everyone": "Alle im Workspace",
       "everyonePersonal": "Alle hier",
       "owner": "Nur {{name}}",
+      "ownerRole": "Nur Personen mit der Rolle {{role}}",
       "nobody": "Vorerst niemand",
       "someone": "Einige Personen",
       "people": "{{names}}",
@@ -10936,6 +10946,8 @@
     "modeText": {
       "owner": "{{owner}} (Inhaber), Admins und alle, die Agenten bearbeiten und mit {{name}} schreiben dürfen.",
       "noOwner": "Admins und alle, die Agenten bearbeiten und mit {{name}} schreiben dürfen.",
+      "ownerRole": "Personen mit der Rolle {{role}} (Inhaber-Rolle), Admins und alle, die Agenten bearbeiten und mit {{name}} schreiben dürfen.",
+      "ownerRole_female": "Personen mit der Rolle {{role}} (Inhaber-Rolle), Admins und alle, die Agenten bearbeiten und mit {{name}} schreiben dürfen.",
       "people": "Wähle, wer sonst noch ändern darf, wie {{name}} arbeitet."
     },
     "rolesHint": "Alle mit dieser Rolle dürfen bearbeiten, auch wer sie später bekommt.",
@@ -15612,7 +15624,9 @@
       "ownerOrAdmin": "Nur der Inhaber des Agenten oder ein Admin kann das tun.",
       "detailsHidden": "Nur wer mit {{agentName}} spricht, sieht, wie es funktioniert.",
       "undoForbidden": "Nur die Person, für die der Agent gearbeitet hat, sein Inhaber oder ein Admin kann das rückgängig machen.",
-      "undoSkillsAdmins": "Nur wer den Agenten bearbeiten darf, kann eine Änderung an seinen Skills rückgängig machen oder wiederholen."
+      "undoSkillsAdmins": "Nur wer den Agenten bearbeiten darf, kann eine Änderung an seinen Skills rückgängig machen oder wiederholen.",
+      "ownerBoth": "Inhaber ist eine Person oder eine Rolle, nicht beides. Wähle eins aus.",
+      "ownerRoleUnknown": "Diese Rolle gibt es in diesem Workspace nicht mehr. Wähle einen anderen Inhaber."
     },
     "account": {
       "notRestorable": "Dieses Konto kann nicht mehr wiederhergestellt werden.",

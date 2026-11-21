@@ -5388,7 +5388,8 @@ function ChannelDetails({
     handle: m.handle ?? "",
     email: m.type === "person" ? (dir.memberById.get(m.id)?.email ?? "") : "",
     autoReply: Boolean(m.autoReply),
-    setsReply: m.type === "agent" && setsAutoReply(channel, dir.agentById.get(m.id), me.user.id, org),
+    setsReply:
+      m.type === "agent" && setsAutoReply(channel, dir.agentById.get(m.id), me.user.id, org, dir.rolesOf(me.user.id)),
   }));
   const shown = all.filter((r) => !needle || `${r.name} ${r.handle} ${r.email}`.toLowerCase().includes(needle));
   const agents = shown.filter((r) => r.kind === "agent");

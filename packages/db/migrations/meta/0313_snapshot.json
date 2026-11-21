@@ -1,5 +1,5 @@
 {
-  "id": "0e558069-128a-490f-b17f-50c9a70c02ab",
+  "id": "ea8443e5-775c-4d16-9b6d-77163e244477",
   "prevId": "7f0b1f4b-42f2-4bcb-bf40-457b0c3ae94f",
   "version": "7",
   "dialect": "postgresql",
@@ -203,6 +203,12 @@
         "owner_user_id": {
           "name": "owner_user_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_role_id": {
+          "name": "owner_role_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -603,6 +609,19 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
+        "agents_owner_role_id_org_roles_id_fk": {
+          "name": "agents_owner_role_id_org_roles_id_fk",
+          "tableFrom": "agents",
+          "tableTo": "org_roles",
+          "columnsFrom": [
+            "owner_role_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "agents_group_id_agent_groups_id_fk": {
           "name": "agents_group_id_agent_groups_id_fk",
           "tableFrom": "agents",
@@ -680,7 +699,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "agents_one_owner": {
+          "name": "agents_one_owner",
+          "value": "\"agents\".\"owner_user_id\" is null or \"agents\".\"owner_role_id\" is null"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.organization_settings": {
@@ -3609,13 +3633,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "reply_in_threads": {
-          "name": "reply_in_threads",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
       "indexes": {},
@@ -16891,13 +16908,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "reply_in_thread": {
-          "name": "reply_in_thread",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "trigger": {
           "name": "trigger",
           "type": "agent_run_trigger",
@@ -18101,6 +18111,12 @@
         "owner_user_id": {
           "name": "owner_user_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_role_id": {
+          "name": "owner_role_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },

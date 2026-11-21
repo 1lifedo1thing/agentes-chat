@@ -13990,6 +13990,9 @@
   "approvals.review.decides": {
     "value": "Who decides"
   },
+  "approvals.review.decidesRole": {
+    "value": "Anyone in {{role}}"
+  },
   "approvals.review.state": {
     "value": "Status"
   },
@@ -17532,6 +17535,9 @@
   },
   "newAgent.ownerHelp": {
     "value": "Gets the budget alerts and approves sensitive actions."
+  },
+  "newAgent.ownerRoleHelp": {
+    "value": "Whoever holds {{role}} gets its approval requests and notices. Any of them decides, including people who join the role later."
   },
   "newAgent.ownerYours": {
     "value": "Whoever creates the agent is its owner. An admin can hand it to someone else later."
@@ -26486,6 +26492,9 @@
   "audience.mode.owner": {
     "value": "Only the owner"
   },
+  "audience.mode.ownerRole": {
+    "value": "Only whoever holds {{role}}"
+  },
   "audience.mode.everyonePersonal": {
     "value": "Everyone here"
   },
@@ -26503,6 +26512,9 @@
   },
   "audience.modeText.noOwner": {
     "value": "Set an owner to use this option."
+  },
+  "audience.modeText.ownerRole": {
+    "value": "Only whoever holds {{role}} talks to {{name}}. Lists show {{name}} only to whoever holds {{role}}, admins and whoever can edit."
   },
   "audience.modeText.everyonePersonal": {
     "value": "Anyone here can call {{name}}."
@@ -26531,11 +26543,20 @@
   "audience.ownerAlways": {
     "value": "{{name}} always can, as the owner."
   },
+  "audience.ownerRoleAlways": {
+    "value": "Whoever holds {{role}} always can, as the owner."
+  },
+  "audience.whoHolds": {
+    "value": "whoever holds {{role}}"
+  },
   "audience.onlyYouForNow": {
     "value": "Only you, for now"
   },
   "audience.onlyOwnerForNow": {
     "value": "Only {{name}}, for now"
+  },
+  "audience.onlyOwnerRoleForNow": {
+    "value": "Only whoever holds {{role}}, for now"
   },
   "audience.search": {
     "value": "Search roles and people"
@@ -26569,6 +26590,9 @@
   },
   "audience.summary.owner": {
     "value": "Only {{name}}"
+  },
+  "audience.summary.ownerRole": {
+    "value": "Only whoever holds {{role}}"
   },
   "audience.summary.nobody": {
     "value": "No one for now"
@@ -26614,6 +26638,9 @@
   },
   "editors.modeText.noOwner": {
     "value": "Admins and whoever edits agents and talks to {{name}}."
+  },
+  "editors.modeText.ownerRole": {
+    "value": "Whoever holds {{role}} (the owner role), admins and whoever edits agents and talks to {{name}}."
   },
   "editors.modeText.people": {
     "value": "Pick who else can change how {{name}} works."
@@ -38363,6 +38390,12 @@
   },
   "errors.agent.undoSkillsAdmins": {
     "value": "Only whoever can edit the agent can undo or redo a change to its skills."
+  },
+  "errors.agent.ownerBoth": {
+    "value": "The owner is a person or a role, not both. Pick one."
+  },
+  "errors.agent.ownerRoleUnknown": {
+    "value": "That role no longer exists in this workspace. Pick another owner."
   },
   "errors.account.notRestorable": {
     "value": "This account can't be restored anymore."
