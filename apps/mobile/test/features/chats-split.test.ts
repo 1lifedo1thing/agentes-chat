@@ -5,6 +5,8 @@ import type { ConversationRow } from "../../src/features/chats/logic";
 import {
   chatOfHref,
   chatOfRow,
+  chatOwner,
+  chatSplit,
   chooseChat,
   chosenChat,
   chosenKey,
@@ -12,6 +14,7 @@ import {
   handoffOf,
   pushedChatOf,
   sameChat,
+  threadSplit,
 } from "../../src/features/chats/split";
 import { featureKeysEn } from "../../src/features/i18n/keys.en";
 import { featureKeysPtBR } from "../../src/features/i18n/keys.pt-BR";
@@ -120,9 +123,22 @@ describe("Conversas in two panes (ADR 0212)", () => {
     expect(top).toContain("<SplitHandoff wide={wide} />");
     expect(top).toMatch(/\) : \(\s*<SheetHostProvider>\s*<Home \/>\s*<\/SheetHostProvider>\s*\)\}/);
     const split = src("chats/ChatsSplit.tsx");
-    expect(split).toContain('list={<Pane testID="chats-split-list">{list}</Pane>}');
-    expect(split).toContain('<Pane ownInsets testID="chats-split-detail">');
-    expect(split).toContain("{key && chat ? <ConversationPane key={key} chat={chat} /> : <NoChat />}");
+    expect(split).toContain(
+      '<ChatSplit store={chatSplit} list={list} testID="chats-split" empty={t("mobile.chats.splitEmpty")} />',
+    );
+    // The panes every split shares: the list's, then the detail's, keyed by the open conversation in its boundary.
+    expect(split).toMatch(/<SplitPanes\s+testID=\{testID\}\s+list=\{list\}/);
+    expect(split).toContain("ownInsets");
+    expect(split).toContain("detailKey={key && chat ? key : null}");
+    expect(split).toContain("detail={chat ? <ConversationPane chat={chat} /> : null}");
+    const panes = src("shared/SplitPanes.tsx");
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the panes' source
+    expect(panes).toContain("list={<Pane testID={`${testID}-list`}>{list}</Pane>}");
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the panes' source
+    expect(panes).toContain("<Pane ownInsets={ownInsets} testID={`${testID}-detail`}>");
+    expect(panes).toContain(
+      "{detailKey !== null ? <PaneBoundary key={detailKey}>{detail}</PaneBoundary> : <NothingOpen text={empty} />}",
+    );
     // The open conversation is the conversation's own screen, remembered as the place to reopen (ADR 0108).
     expect(split).toContain("<ChatScreen channelId={chat.channelId} threadId={chat.threadId} />");
     expect(split).toContain("useRememberPlace(chatHref(chat.channelId, chat.threadId));");
@@ -137,6 +153,8 @@ describe("Conversas in two panes (ADR 0212)", () => {
       "{opener ? <OpenFirstChat channelId={first?.channelId ?? null} threadId={first?.threadId ?? null} /> : null}",
     );
     const split = src("chats/ChatsSplit.tsx");
+    // In the split the list is in (Conversas' or Threads').
+    expect(split).toContain('const key = (opener?.store ?? chatSplit).useShownKey(opener?.orgId ?? "");');
     expect(split).toContain("if (opener && !key && channelId) opener.open({ channelId, threadId });");
     expect(split).toContain('{t("mobile.chats.splitEmpty")}');
     expect(featureKeysEn.chats.splitEmpty).toBe("Your chats open here.");
@@ -145,7 +163,11 @@ describe("Conversas in two panes (ADR 0212)", () => {
 
   test("a row opens its conversation beside the list instead of pushing it, and stays lit while it is open", () => {
     const rows = src("chats/ConversationRowView.tsx");
-    expect(rows).toContain("const chosen = useIsChosen(opener?.orgId ?? null, chatOfRow(r));");
+    // Lit in the split it is in: Conversas and Threads each keep their own.
+    expect(rows).toContain("const chosen = useIsChosen(opener, chatOfRow(r));");
+    expect(src("chats/split.ts")).toContain(
+      "return (opener?.store ?? chatSplit).useIsShown(opener?.orgId ?? null, target);",
+    );
     expect(rows).toContain("opens={!opener}");
     expect(rows).toContain("background: withAlpha(c.ink, CHOSEN_TINT), accessibilityState: { selected: true }");
     expect(rows).toMatch(
@@ -170,13 +192,31 @@ describe("Conversas in two panes (ADR 0212)", () => {
 
   test("the window changing size class hands the conversation and its reading place over", () => {
     const split = src("chats/ChatsSplit.tsx");
-    const handoff = split.slice(split.indexOf("export function SplitHandoff("));
-    expect(handoff).toContain("const step = handoffOf(before, wide, { splitShown, chosen: chosenChat(org), pushed });");
+    expect(split).toContain('return <ChatHandoff wide={wide} store={chatSplit} owner="chats" home="/" />;');
+    const handoff = split.slice(split.indexOf("export function ChatHandoff("));
     expect(handoff).toContain("handPlace(place, readingPlace(place));");
+    // A conversation pushed from the Threads tab is Threads' to take back; Conversas takes any other.
+    expect(handoff).toContain("pushed: chatOwner(selectedTab()) === owner ? pushedChatOf(segments, params) : null,");
     // Closing: pushed in place, without the slide (the conversation was already on screen).
-    expect(handoff).toContain("router.push(stillHref(chatHref(step.chat.channelId, step.chat.threadId)) as never);");
-    // Opening: afresh in the pane at the place handed over, then back to the tabs.
-    expect(handoff).toMatch(/chooseChat\(org, step\.chat, true\);\s*landOn\("\/"\);/);
-    expect(handoff).toContain("}, [wide]);");
+    expect(handoff).toContain("router.push(stillHref(chatHref(chat.channelId, chat.threadId)) as never);");
+    // Opening: afresh in the pane at the place handed over, then back to its tab.
+    expect(handoff).toMatch(/store\.choose\(orgId, chat, true\);\s*landOn\(home\);/);
+    const shared = src("shared/SplitPanes.tsx");
+    const moving = shared.slice(shared.indexOf("export function useSplitHandoff<T>("));
+    expect(moving).toContain("const step = splitHandoff(before, wide, latest.current.read());");
+    expect(moving).toContain("}, [wide]);");
+  });
+
+  test("the tab under a pushed conversation decides whose split takes it back", () => {
+    expect(chatOwner("threads")).toBe("threads");
+    expect(chatOwner("(chats)")).toBe("chats");
+    expect(chatOwner("agents")).toBe("chats");
+    expect(chatOwner(null)).toBe("chats");
+    // Threads' own choice, never Conversas'.
+    chooseChat("org-split-c", { channelId: "c1", threadId: null });
+    threadSplit.choose("org-split-c", { channelId: "c9", threadId: "t9" });
+    expect(chosenChat("org-split-c")).toEqual({ channelId: "c1", threadId: null });
+    expect(threadSplit.chosen("org-split-c")).toEqual({ channelId: "c9", threadId: "t9" });
+    expect(chatSplit.chosen("org-split-c")).toEqual({ channelId: "c1", threadId: null });
   });
 });

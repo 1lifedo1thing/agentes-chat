@@ -21,8 +21,8 @@ import { aiStateOf } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
 import { isOutOfOffice } from "@agenteschat/client/lib/presence";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
-import { useIsFocused } from "expo-router";
-import { Fragment, memo, useEffect, useMemo, useRef, useState } from "react";
+import { Stack, useIsFocused } from "expo-router";
+import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -51,9 +51,11 @@ import {
   Text,
   useReducedMotion,
   useToast,
+  useWide,
   weights,
 } from "@/ui";
 import { router } from "@/ui/navigation";
+import { withAlpha } from "@/ui/palette";
 import { usePlanHold } from "../ai/parts";
 import { CollapsibleSection, useCollapsedSections } from "../chats/HomeSection";
 import { usePins } from "../chats/pins";
@@ -71,13 +73,20 @@ import { channelNameIn, useChannelNames, usePresenceOf } from "../status/hooks";
 import { useTasksToday } from "../task-manager/hooks";
 import { useSectorMenu } from "../team/SectorScreen";
 import { TeamEntry } from "../team/TeamEntry";
+import { AgentsHandoff, AgentsSplit } from "./AgentsSplit";
 import { ARRIVAL_LOOK_MS, clearArrived, useArrived } from "./arrival";
 import { openAgentDelete } from "./DeleteAgentScreen";
 import { agoOf, freeSections, plainRole, type TeamLine, teamLines } from "./logic";
+import { agentSplit, useAgentOpener } from "./split";
 import { agoShort, workTitle } from "./work";
 
 /** Rows whose agent moves (a long team stays light). */
 const LIVE_ROWS = 8;
+/** The chosen agent's row beside the list (ADR 0212): the ink this faint over the page, as Conversas' open row. */
+const CHOSEN_TINT = 0.08;
+/** Said either way: a screen's options merge, so the bar the split hid stays hidden until it is shown again. */
+const SPLIT_OPTIONS = { headerShown: false };
+const LIST_OPTIONS = { headerShown: true };
 /** While Agentes is on screen, how often it asks whether the task manager is there (the manager itself: seconds). */
 const TASKS_POLL_MS = 15_000;
 /**
@@ -95,9 +104,23 @@ const FACE_IN = FadeIn.duration(280).easing(Easing.bezier(0.23, 1, 0.32, 1));
  * in plain words), split by the workspace's departments when it has some. Each row says its state as text in the
  * state's color (amber only for what waits on you; no badges, no dots), one fact per line, and the face is the state
  * too: running at work, asleep without an AI or while its computer is away. Tapping an agent opens its profile; the
- * bar's "+" creates one; an archived agent restores with a swipe.
+ * bar's "+" creates one; an archived agent restores with a swipe. On a large screen (ADR 0212: the iPhone Duo's inner
+ * display) the profile opens beside the list instead (`AgentsSplit`), each pane with its own bar: the tab's bar would
+ * stand over both. A compact window shows the list alone, as before.
  */
 export function AgentsScreen() {
+  const wide = useWide();
+  return (
+    <>
+      <Stack.Screen options={wide ? SPLIT_OPTIONS : LIST_OPTIONS} />
+      <AgentsHandoff wide={wide} />
+      {wide ? <AgentsSplit list={<AgentsList />} /> : <AgentsList />}
+    </>
+  );
+}
+
+/** Agentes' list (see `AgentsScreen`). */
+function AgentsList() {
   const { t, i18n } = useTranslation();
   const dir = useDirectory();
   const header = useTabHeader();
@@ -154,6 +177,13 @@ export function AgentsScreen() {
     ],
     [waiting, working, free, groups.data, pins.pins.agents],
   );
+  // Beside the list (ADR 0212) the first agent's page shows while none is chosen; before the frame is shown, so the
+  // pane doesn't say "nothing open" first.
+  const opener = useAgentOpener();
+  const firstId = order[0] ?? null;
+  useLayoutEffect(() => {
+    if (opener) agentSplit.offer(opener.orgId, firstId);
+  }, [opener, firstId]);
   const greeting = useGreeting(order);
   const gazeOf = (id: string): Gaze | undefined => {
     if (!greeting || id === greeting) return undefined;
@@ -551,6 +581,9 @@ const AgentRow = memo(function AgentRow({
   const { t } = useTranslation();
   const c = useColors();
   const reduced = useReducedMotion();
+  // Beside the list (ADR 0212) a press opens its page there, and the row stays lit while that page shows.
+  const opener = useAgentOpener();
+  const chosen = agentSplit.useIsShown(opener?.orgId ?? null, a.id);
   const approval = approvalTitle !== null;
   // At work also where I don't read: its face is at work, so is its row.
   const works = Boolean(w) || atWork;
@@ -662,7 +695,9 @@ const AgentRow = memo(function AgentRow({
     // Only the newcomer's row carries a style; the rest stay plain views.
     <Animated.View style={arriving ? entrance : undefined}>
       <ListRow
-        onPress={() => router.push(`/agent/${a.id}`)}
+        onPress={() => (opener ? opener.open(a.id) : router.push(`/agent/${a.id}`))}
+        opens={!opener}
+        {...(chosen ? { background: withAlpha(c.ink, CHOSEN_TINT), accessibilityState: { selected: true } } : {})}
         accessibilityRole="button"
         accessibilityLabel={[
           said,

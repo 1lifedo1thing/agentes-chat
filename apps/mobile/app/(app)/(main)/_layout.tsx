@@ -1,7 +1,7 @@
 import { type ErrorBoundaryProps, type NativeStackNavigationOptions, Stack } from "expo-router";
 import { useMemo } from "react";
 import { slideListeners } from "@/agent/live";
-import { isStill } from "@/features/links/landing";
+import { isStill, STILL_PARAM } from "@/features/links/landing";
 import { ScreenError } from "@/features/shared/ScreenError";
 import { coverBarOptions, usePushedOptions, useScrollUnderPushedOptions, useSideInsets, useTheme } from "@/ui";
 
@@ -23,6 +23,26 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
  * never ships without a bar and a way back. A screen opened in place (`stillHref`: the start screen at launch) comes
  * in without its slide.
  */
+/**
+ * The stack's listeners: the slide's hold on the shared clock (`slideListeners`), and a screen opened in place
+ * (`stillHref`) dropping that mark once it is up, so going back slides as from any pushed screen. A conversation drops
+ * it itself too (`useSettleStill`); the pages a split pushes in place when an iPhone Duo closes (ADR 0212: You's, the
+ * settings' sections, an agent's) and a start screen that isn't a conversation have only this.
+ */
+const stackListeners = ({
+  navigation,
+  route,
+}: {
+  navigation: { setParams: (params: object) => void };
+  route: { params?: object | undefined };
+}) => ({
+  transitionStart: slideListeners.transitionStart,
+  transitionEnd: (e: { data?: { closing?: boolean } }) => {
+    slideListeners.transitionEnd();
+    if (!e.data?.closing && isStill(route.params)) navigation.setParams({ [STILL_PARAM]: undefined });
+  },
+});
+
 /** Create an agent's steps (`new-agent/*`), one pushed screen each. */
 const NEW_AGENT_ROUTES = [
   "new-agent/index",
@@ -124,7 +144,7 @@ export default function MainStack() {
     };
   }, [colors, pushed, scrollUnder, side]);
   return (
-    <Stack screenOptions={screenOptions} screenListeners={slideListeners}>
+    <Stack screenOptions={screenOptions} screenListeners={stackListeners}>
       <Stack.Screen name="(tabs)" />
     </Stack>
   );

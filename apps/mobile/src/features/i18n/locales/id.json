@@ -737,10 +737,12 @@
     "section": {
       "missions": "Misi",
       "threads": "Utas"
-    }
+    },
+    "splitEmpty": "Utasmu terbuka di sini."
   },
   "agents": {
     "title": "Agen",
+    "splitEmpty": "Halaman agenmu terbuka di sini.",
     "subtitle_other": "{{count}} di tim · {{working}} sedang bekerja",
     "free": "Senggang",
     "workingLabel": "{{name}}, sedang bekerja",

@@ -34,6 +34,7 @@ import {
 } from "@/ui";
 import { withAlpha } from "@/ui/palette";
 import { usePane, usePaneHeader } from "@/ui/pane";
+import { usePaneBack } from "@/ui/pane-back";
 import { useFontScale } from "@/ui/text-scale";
 import { leadBox } from "@/ui/type-scale";
 import { useBubblePart } from "./bubble-part";
@@ -247,8 +248,9 @@ export function PushedHeader(props: PushedHeaderProps) {
 
 /**
  * `PushedHeader` in a pane (ADR 0212): its title, line and buttons in the pane's bar, our own views (`usePaneHeader`),
- * with no back button: the list it was opened from stands beside it. Nothing of its own in the screen either. A clear
- * bar (`plate`: a cover, a conversation) floats over the screen, which keeps its room under it as under the
+ * with no back button in a detail pane: the list it was opened from stands beside it. A pushed screen's list (You, the
+ * workspace's settings) has the way back its hidden bar had (`usePaneBack`). Nothing of its own in the screen either. A
+ * clear bar (`plate`: a cover, a conversation) floats over the screen, which keeps its room under it as under the
  * navigator's (`useHeaderHeight` is the pane bar's height); any other stands above the screen in its color, so content
  * that left its top room to the system's insets lays out below it.
  */
@@ -264,6 +266,10 @@ function PaneHeader({
   subtitleColor,
 }: PushedHeaderProps) {
   const { colors } = useTheme();
+  const back = usePaneBack();
+  const leftActions: HeaderAction[] | undefined = back
+    ? [{ icon: "back", sf: "chevron.left", label: back.label, onPress: back.onPress }]
+    : undefined;
   usePaneHeader({
     title,
     subtitle,
@@ -272,6 +278,7 @@ function PaneHeader({
     lead,
     actions,
     word: action,
+    leftActions,
     over: plate,
     tone: grouped ? colors.grouped : colors.bg,
   });

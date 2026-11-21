@@ -33,10 +33,10 @@ const i18n = setupI18n();
 const SNAPSHOT_EVERY_MS = 30_000;
 
 /**
- * Everything the screens rely on, outermost first: gestures, the window's size class (`useWide`), safe areas, the
- * keyboard (its height and position on the UI thread, for the chat), theme, i18n, React Query, the API
- * client (`useApi`), the session, the current organization (`useOrg`), realtime (`useRealtime`), push and
- * toasts (`useToast`). Living agents pause while the app is in the background.
+ * Everything the screens rely on, outermost first: gestures, the window's size class and fold (`useWide`,
+ * `useWindowFold`), safe areas, the keyboard (its height and position on the UI thread, for the chat), theme, i18n,
+ * React Query, the API client (`useApi`), the session, the current organization (`useOrg`), realtime (`useRealtime`),
+ * push and toasts (`useToast`). Living agents pause while the app is in the background.
  */
 export function AppProviders({ children }: { children: ReactNode }) {
   // The place: a server, or one of its accounts (ADR 0183).
@@ -88,7 +88,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     // Every touch passes here: a tap away from an open ⓘ hint closes it.
     <GestureHandlerRootView style={{ flex: 1 }} {...hintTouches}>
-      {/* The window's size class for two panes (`useWide`, ADR 0212), read by a hidden view filling the root. */}
+      {/* The window's size class and fold (`useWide`, `useWindowFold`, ADR 0212): a hidden view filling the root. */}
       <DuoProvider>
         <SafeAreaProvider>
           <KeyboardProvider>

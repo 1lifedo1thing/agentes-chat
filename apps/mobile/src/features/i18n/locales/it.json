@@ -783,10 +783,12 @@
     "section": {
       "missions": "Missioni",
       "threads": "Thread"
-    }
+    },
+    "splitEmpty": "I tuoi thread si aprono qui."
   },
   "agents": {
     "title": "Agenti",
+    "splitEmpty": "Le pagine dei tuoi agenti si aprono qui.",
     "subtitle_one": "{{count}} nel team · {{working}} al lavoro",
     "subtitle_many": "{{count}} nel team · {{working}} al lavoro",
     "subtitle_other": "{{count}} nel team · {{working}} al lavoro",

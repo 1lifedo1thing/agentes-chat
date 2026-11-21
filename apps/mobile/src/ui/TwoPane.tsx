@@ -1,6 +1,16 @@
 import { requireNativeView, requireOptionalNativeModule } from "expo";
-import { type ComponentType, createContext, type ReactNode, useCallback, useContext, useState } from "react";
+import { type ComponentType, createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
 import { type LayoutChangeEvent, Platform, StyleSheet, useWindowDimensions, View, type ViewProps } from "react-native";
+import {
+  activeWindowFold,
+  type FoldRoom,
+  foldRoom,
+  NO_FOLD,
+  sameWindowFold,
+  type WindowFold,
+  windowFoldOf,
+} from "./fold-room";
+import { usePane } from "./pane";
 import { useTheme } from "./theme";
 import { activeFold, type DuoRegions, type Fold, foldInside, paneFrames, WIDE_MIN } from "./two-pane";
 
@@ -33,18 +43,57 @@ export function useWide(): boolean {
   return wide ?? width >= WIDE_MIN;
 }
 
+/** The window's fold as the native view filling the root reports it; none where there is no module. */
+const FoldContext = createContext<WindowFold>(NO_FOLD);
+
 /**
- * Reads the window's size class once for the whole app (`useWide`), through a hidden native view filling the root.
- * Mounted once, in `AppProviders`.
+ * The iPhone Duo's fold across the whole window, in its points (ADR 0212): where it is, whether it divides the window
+ * now (`active`: the device folded like a book) and whether there is one at all (`hasFold`, active or not: for a
+ * decision that should not change as the device bends). No fold on a phone, on Android, in a build without the module
+ * and before it reports. Inside two panes the fold is theirs (`TwoPane`); a control floating over a whole screen reads
+ * `useFoldRoom`.
+ */
+export function useWindowFold(): WindowFold {
+  return useContext(FoldContext);
+}
+
+/** Whether the tree is inside a `TwoPane`, whose panes already keep to one side of the fold. */
+const InTwoPaneContext = createContext(false);
+
+/**
+ * The side of the window a control floating over a whole screen keeps to while the fold divides it (ADR 0212):
+ * `foldRoom` of the window's active fold, as insets from its edges. Null when nothing has to move: no active fold, or a
+ * screen inside two panes (`Pane`, `TwoPane`), which already keep to one side of it.
+ */
+export function useFoldRoom(): FoldRoom | null {
+  const windowFold = useWindowFold();
+  const pane = usePane();
+  const inTwoPane = useContext(InTwoPaneContext);
+  const { width } = useWindowDimensions();
+  const fold = pane || inTwoPane ? null : activeWindowFold(windowFold);
+  return useMemo(() => foldRoom(width, fold), [width, fold]);
+}
+
+/**
+ * Reads the window's size class (`useWide`) and its fold (`useWindowFold`) once for the whole app, through a hidden
+ * native view filling the root: the fold comes in the window's points. Mounted once, in `AppProviders`.
  */
 export function DuoProvider({ children }: { children: ReactNode }) {
   const [wide, setWide] = useState<boolean | null>(null);
-  const onRegions = useCallback((event: RegionsEvent) => setWide(event.nativeEvent.wide), []);
+  const [windowFold, setWindowFold] = useState<WindowFold>(NO_FOLD);
+  const onRegions = useCallback((event: RegionsEvent) => {
+    setWide(event.nativeEvent.wide);
+    // A report that changed only the size class keeps the fold as it was: nothing that reads it redraws.
+    const next = windowFoldOf(event.nativeEvent.fold);
+    setWindowFold((was) => (sameWindowFold(was, next) ? was : next));
+  }, []);
   return (
-    <WideContext.Provider value={wide}>
+    <>
       {RegionsView ? <RegionsView pointerEvents="none" style={StyleSheet.absoluteFill} onRegions={onRegions} /> : null}
-      {children}
-    </WideContext.Provider>
+      <WideContext.Provider value={wide}>
+        <FoldContext.Provider value={windowFold}>{children}</FoldContext.Provider>
+      </WideContext.Provider>
+    </>
   );
 }
 
@@ -71,7 +120,7 @@ export function TwoPane({ list, detail, testID }: { list: ReactNode; detail: Rea
     const next = activeFold(event.nativeEvent.fold);
     setFold((was) => (sameFold(was, next) ? was : next));
   }, []);
-  return (
+  const row = (
     <View testID={testID} style={styles.row} onLayout={onLayout}>
       {RegionsView ? <RegionsView pointerEvents="none" style={StyleSheet.absoluteFill} onRegions={onRegions} /> : null}
       <View style={[styles.pane, { width: frames.list.width }]}>{list}</View>
@@ -84,6 +133,8 @@ export function TwoPane({ list, detail, testID }: { list: ReactNode; detail: Rea
       <View style={[styles.pane, styles.detail]}>{detail}</View>
     </View>
   );
+  // What floats inside the panes stays where it is (`useFoldRoom`): they already keep to one side of the fold.
+  return <InTwoPaneContext.Provider value>{row}</InTwoPaneContext.Provider>;
 }
 
 const styles = StyleSheet.create({

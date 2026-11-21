@@ -155,8 +155,9 @@ describe("the panes in the app (ADR 0212)", () => {
   test("useWide takes the system's size class, and the window's width before it reports or without it", () => {
     const pane = src("src/ui/TwoPane.tsx");
     expect(pane).toContain("return wide ?? width >= WIDE_MIN;");
-    expect(pane).toContain(
-      "const onRegions = useCallback((event: RegionsEvent) => setWide(event.nativeEvent.wide), []);",
+    // The provider's view reports the size class and the window's fold together (fold-room.test.ts has the fold).
+    expect(pane).toMatch(
+      /const onRegions = useCallback\(\(event: RegionsEvent\) => \{\s*setWide\(event\.nativeEvent\.wide\);/,
     );
   });
 
@@ -189,6 +190,8 @@ describe("the panes in the app (ADR 0212)", () => {
       }
     }
     expect(mounts).toEqual(["src/providers/AppProviders.tsx"]);
-    expect(src("src/ui/index.ts")).toContain('export { DuoProvider, TwoPane, useWide } from "./TwoPane";');
+    expect(src("src/ui/index.ts")).toContain(
+      'export { DuoProvider, TwoPane, useFoldRoom, useWide, useWindowFold } from "./TwoPane";',
+    );
   });
 });

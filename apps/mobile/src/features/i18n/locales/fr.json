@@ -783,10 +783,12 @@
     "section": {
       "missions": "Missions",
       "threads": "Fils"
-    }
+    },
+    "splitEmpty": "Vos fils s'ouvrent ici."
   },
   "agents": {
     "title": "Agents",
+    "splitEmpty": "Les pages de vos agents s'ouvrent ici.",
     "subtitle_one": "{{count}} dans l'équipe · {{working}} au travail",
     "subtitle_many": "{{count}} dans l'équipe · {{working}} au travail",
     "subtitle_other": "{{count}} dans l'équipe · {{working}} au travail",

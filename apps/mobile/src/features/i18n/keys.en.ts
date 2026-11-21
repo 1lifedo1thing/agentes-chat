@@ -803,9 +803,13 @@ export const featureKeysEn = {
       missions: "Missions",
       threads: "Threads",
     },
+    /** On a large screen (the iPhone Duo open), where the open thread stands beside the list while there is none yet. */
+    splitEmpty: "Your threads open here.",
   },
   agents: {
     title: "Agents",
+    /** On a large screen (the iPhone Duo open), where an agent's page stands beside the list while the team has none. */
+    splitEmpty: "Your agents' pages open here.",
     subtitle_one: "{{count}} on the team · {{working}} working",
     subtitle_other: "{{count}} on the team · {{working}} working",
     free: "Free",

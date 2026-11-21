@@ -79,8 +79,9 @@ export const ConversationItem = memo(function ConversationItem({
   const { t } = useTranslation();
   const c = useColors();
   // Beside the list (ADR 0212) the open conversation's row stays lit, and a press opens it there: nothing is pushed.
+  // Conversas and Threads each light their own (the opener's split).
   const opener = useChatOpener();
-  const chosen = useIsChosen(opener?.orgId ?? null, chatOfRow(r));
+  const chosen = useIsChosen(opener, chatOfRow(r));
   const agentDm = r.kind === "dm" && r.with.type === "agent";
   const leading =
     r.kind === "dm" ? (

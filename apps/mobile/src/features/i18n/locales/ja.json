@@ -737,10 +737,12 @@
     "section": {
       "missions": "ミッション",
       "threads": "スレッド"
-    }
+    },
+    "splitEmpty": "スレッドはここに表示されます。"
   },
   "agents": {
     "title": "エージェント",
+    "splitEmpty": "エージェントのページはここに表示されます。",
     "subtitle_other": "チームに{{count}}人 · {{working}}人が作業中",
     "free": "空き",
     "workingLabel": "{{name}}、作業中",

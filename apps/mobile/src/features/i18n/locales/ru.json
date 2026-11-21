@@ -806,10 +806,12 @@
     "section": {
       "missions": "Миссии",
       "threads": "Ветки"
-    }
+    },
+    "splitEmpty": "Здесь открываются ваши ветки."
   },
   "agents": {
     "title": "Агенты",
+    "splitEmpty": "Здесь открываются страницы ваших агентов.",
     "subtitle_one": "{{count}} в команде · работают: {{working}}",
     "subtitle_few": "{{count}} в команде · работают: {{working}}",
     "subtitle_many": "{{count}} в команде · работают: {{working}}",
