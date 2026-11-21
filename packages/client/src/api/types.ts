@@ -2734,6 +2734,11 @@ export interface OrgOverview {
   approvalsWaitingForMe: number;
   /** Open proposals the viewer can see and decide. */
   proposalsWaitingForMe?: number;
+  /**
+   * Whether Code has anything for the viewer (ADR 0214 §12): an agent that programs on a computer, or an open session
+   * they take part in. Absent (a server without Code): no.
+   */
+  code?: boolean;
 }
 
 export interface Person {

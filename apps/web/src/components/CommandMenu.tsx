@@ -1,4 +1,4 @@
-import { useAuthConfig, useChannels, useWikiTree } from "@agenteschat/client";
+import { useAuthConfig, useChannels, useOverview, useSidebarItems, useWikiTree } from "@agenteschat/client";
 import { AGENT_SECTIONS, AGENT_TABS, PERSONAL_AGENT_TABS } from "@agenteschat/client/lib/agent-edit";
 import { canTalk, listsAgent, managesAgent, opensDm } from "@agenteschat/client/lib/audience";
 import { joinable } from "@agenteschat/client/lib/channel-access";
@@ -6,6 +6,7 @@ import { setDraftFor } from "@agenteschat/client/lib/drafts";
 import { can, makesAgents } from "@agenteschat/client/lib/permissions";
 import { settingsSectionNameKey } from "@agenteschat/client/lib/personal-view";
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
+import { offersCode } from "@agenteschat/client/lib/sidebar-items";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { Avatar, CommandPalette, Icon, type PaletteItem } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
@@ -40,6 +41,8 @@ export function CommandMenu() {
   const dir = useDirectory(org.id);
   const channels = useChannels(org.id);
   const server = useAuthConfig().data;
+  // Code only where it has anything for me, as in the sidebar (ADR 0214 §12).
+  const code = offersCode(useOverview(org.id).data?.code, useSidebarItems(org.id).data);
   const navigate = useNavigate();
   const invite = useInviteDialog();
   const newAgent = useNewAgent();
@@ -123,6 +126,7 @@ export function CommandMenu() {
       { key: "search", to: "/org/$orgId/search", icon: "search", label: t("shell.searchWorkspace") },
     ] as const;
     for (const p of pages) {
+      if (p.key === "code" && !code) continue;
       list.push({
         key: `g:${p.key}`,
         group: goTo,
@@ -312,6 +316,7 @@ export function CommandMenu() {
     me.user.id,
     org,
     server,
+    code,
     navigate,
     t,
     goTo,

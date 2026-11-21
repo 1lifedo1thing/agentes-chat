@@ -502,6 +502,8 @@ export interface FakeState {
   idRefs?: Record<string, IdRef>;
   /** The sidebar's tools in my order (`orgs.sidebarToolOrder`); unset = the default. */
   sidebarToolOrder?: SidebarItem[];
+  /** Whether Code has anything for me (`OrgOverview.code`, ADR 0214 §12); unset = no. */
+  codeWork?: boolean;
   /** How my sidebar shows the agents and what I pinned (`orgs.sidebarView`); unset = never changed. */
   sidebarView?: SidebarView;
   /**
@@ -2249,6 +2251,7 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         budgetUsedPercent: workspacePercent(),
         approvalsWaitingForMe: state.approvals.filter((a) => a.status === "pending" && a.canDecide).length,
         proposalsWaitingForMe: state.proposals.filter((p) => p.status === "pending" && !p.stale && p.canDecide).length,
+        code: state.codeWork ?? false,
       }),
       people: async () =>
         state.members.map((m) => ({

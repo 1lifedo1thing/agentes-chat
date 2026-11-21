@@ -779,6 +779,10 @@ export function managementRoutes(deps: AppDeps) {
             proposalsWaitingForMe: z.number().openapi({
               description: "Open proposals the viewer can see and decide (`GET …/proposals`, `canDecide`).",
             }),
+            code: z.boolean().openapi({
+              description:
+                "Whether Code has anything for the viewer (ADR 0214): an agent that programs on a computer, or an open session they take part in. The apps offer Code only then.",
+            }),
           }),
         ),
         ...errors,

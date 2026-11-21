@@ -217,7 +217,8 @@ function MePage() {
   // `PULL_ROOM` higher, out of sight, so a pull down shows more sky (it clips its foot, where the photo hangs).
   const band = insets.top + 62 + PHOTO_OVERLAP;
   const issues = useIssues(org.orgId);
-  const proposals = useOverview(org.orgId).data?.proposalsWaitingForMe ?? 0;
+  const overview = useOverview(org.orgId).data;
+  const proposals = overview?.proposalsWaitingForMe ?? 0;
   const archived = useArchivedChannels(org.orgId).data?.length ?? 0;
   const push = usePushSwitch().on;
   const server = useAuthConfig().data;
@@ -286,8 +287,11 @@ function MePage() {
     routines: (
       <GroupedRow key="routines" icon="clock" label={t("routines.title")} chevron onPress={() => open("/routines")} />
     ),
-    // Code (ADR 0214): the sessions where agents program, as the web's sidebar tool.
-    code: <GroupedRow key="code" icon="code" label={t("shell.code")} chevron onPress={() => open("/coding")} />,
+    // Code (ADR 0214): the sessions where agents program, as the web's sidebar tool; only where it has anything for me
+    // (§12: an agent that programs on a computer, or an open session of mine).
+    code: overview?.code ? (
+      <GroupedRow key="code" icon="code" label={t("shell.code")} chevron onPress={() => open("/coding")} />
+    ) : null,
     wiki: <GroupedRow key="wiki" icon="file" label={t("wiki.title")} chevron onPress={() => open("/wiki")} />,
     drive: <GroupedRow key="drive" icon="drive" label={t("mobile.me.drive")} chevron onPress={() => open("/drive")} />,
     dashboards: (

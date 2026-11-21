@@ -1,8 +1,15 @@
 import type { SidebarItem, SidebarPlace } from "@agenteschat/client";
-import { useSetSidebarItem, useSetSidebarToolOrder, useSidebarItems, useSidebarToolOrder } from "@agenteschat/client";
+import {
+  useOverview,
+  useSetSidebarItem,
+  useSetSidebarToolOrder,
+  useSidebarItems,
+  useSidebarToolOrder,
+} from "@agenteschat/client";
 import {
   moveSection,
   moveShownTool,
+  offeredTools,
   placeTool,
   SIDEBAR_COUNTED,
   sameOrder,
@@ -166,6 +173,8 @@ export function SidebarSetupDialog({ open, onClose }: { open: boolean; onClose: 
   const save = useSetSidebarItem(org.id, personal);
   const sections = useSectionOrder(org.id, personal);
   const tools = useToolOrder(org.id, personal);
+  // Code only where it has anything for me (ADR 0214 §12); the arrows move a tool past its shown neighbour.
+  const shown = offeredTools(tools.order, useOverview(org.id).data?.code, items);
   // What another device changed since this one loaded shows as the dialog opens.
   useEffect(() => {
     if (open) void refetch();
@@ -188,7 +197,7 @@ export function SidebarSetupDialog({ open, onClose }: { open: boolean; onClose: 
     >
       <DialogBody>
         <ul className="sidebar-setup">
-          {tools.order.map((id, i) => (
+          {shown.map((id, i) => (
             <li key={id} className="sidebar-setup__row">
               <span className="settings-row__icon" aria-hidden="true">
                 <Icon name={SIDEBAR_TOOLS[id].icon} size={16} />
@@ -211,7 +220,7 @@ export function SidebarSetupDialog({ open, onClose }: { open: boolean; onClose: 
                   aria-label={`${t("contextMenu.moveUp")}: ${t(`shell.${id}`)}`}
                   data-move
                   disabled={i === 0}
-                  onClick={(e) => tools.put(moveSection(tools.order, id, -1), e.currentTarget)}
+                  onClick={(e) => tools.put(moveShownTool(tools.order, shown, id, -1), e.currentTarget)}
                 />
                 <Button
                   size="sm"
@@ -220,8 +229,8 @@ export function SidebarSetupDialog({ open, onClose }: { open: boolean; onClose: 
                   icon="chevronDown"
                   aria-label={`${t("contextMenu.moveDown")}: ${t(`shell.${id}`)}`}
                   data-move
-                  disabled={i === tools.order.length - 1}
-                  onClick={(e) => tools.put(moveSection(tools.order, id, 1), e.currentTarget)}
+                  disabled={i === shown.length - 1}
+                  onClick={(e) => tools.put(moveShownTool(tools.order, shown, id, 1), e.currentTarget)}
                 />
               </span>
             </li>

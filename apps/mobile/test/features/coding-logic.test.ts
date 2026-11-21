@@ -147,6 +147,10 @@ describe("a session's screens", () => {
       expect(layout).toContain(`"${name}"`);
     expect(layout).toContain("...Object.fromEntries(CODING_GROUPED_ROUTES.map((name) => [name, connectAi]))");
   });
+
+  test("Eu offers Code only where it has anything for me, as the web's sidebar (ADR 0214 §12)", () => {
+    expect(src("features/me/MeScreen.tsx")).toContain("code: overview?.code ? (");
+  });
 });
 
 describe("a session suggested in the chat (ADR 0214 §11)", () => {

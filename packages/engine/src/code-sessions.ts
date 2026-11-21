@@ -876,6 +876,35 @@ export async function retryCodeSession(deps: CodeSessionDeps, userId: string, or
   return getCodeSession(deps.db, userId, orgId, row.id);
 }
 
+/** The workspace's agents a session can start with: they think on a computer (Claude Code, Codex) and have one. */
+const codeAgentsIn = (orgId: string) =>
+  and(
+    eq(schema.agents.orgId, orgId),
+    isNull(schema.agents.archivedAt),
+    isNull(schema.agents.deletedAt),
+    inArray(schema.agents.brain, [...CODE_BRAINS]),
+    isNotNull(schema.agents.machineId),
+  );
+
+/**
+ * Whether Code has anything for this person (ADR 0214 §12): an agent a session can start with, or an open session they
+ * take part in (its agent may have left since). The apps offer Code only then; the caller checked the membership.
+ */
+export async function hasCodeWork(db: Database, userId: string, orgId: string): Promise<boolean> {
+  const [agent] = await db.select({ id: schema.agents.id }).from(schema.agents).where(codeAgentsIn(orgId)).limit(1);
+  if (agent) return true;
+  const [session] = await db
+    .select({ id: codeSessions.id })
+    .from(codeSessions)
+    .innerJoin(
+      channelMembers,
+      and(eq(channelMembers.channelId, codeSessions.channelId), eq(channelMembers.userId, userId)),
+    )
+    .where(and(eq(codeSessions.orgId, orgId), isNull(codeSessions.archivedAt)))
+    .limit(1);
+  return Boolean(session);
+}
+
 /**
  * Where a person can start a session: the workspace's agents that think on a computer (Claude Code, Codex) and have
  * one, each with the repositories it may work in (`any`: its list allows more than it names, so any `owner/name` the
@@ -883,18 +912,7 @@ export async function retryCodeSession(deps: CodeSessionDeps, userId: string, or
  */
 export async function codeStartOptions(db: Database, userId: string, orgId: string) {
   await requireMember(db, userId, orgId);
-  const rows = await db
-    .select({ id: schema.agents.id })
-    .from(schema.agents)
-    .where(
-      and(
-        eq(schema.agents.orgId, orgId),
-        isNull(schema.agents.archivedAt),
-        isNull(schema.agents.deletedAt),
-        inArray(schema.agents.brain, [...CODE_BRAINS]),
-        isNotNull(schema.agents.machineId),
-      ),
-    );
+  const rows = await db.select({ id: schema.agents.id }).from(schema.agents).where(codeAgentsIn(orgId));
   const agents = [];
   for (const a of rows) {
     const list = await agentRepositoryList(db, orgId, a.id);

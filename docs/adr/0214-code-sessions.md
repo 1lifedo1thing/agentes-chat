@@ -227,6 +227,15 @@ project there. Questions, explanations and quick looks it still answers in the c
   was chosen as a `proposal_result` notice, which people never see (the card says it). Each change of the card reaches
   the apps as `code.suggestion`.
 
+### 12. Code only where it has anything
+
+Most workspaces have no agent that programs, and for them Code would be an empty page in every menu. The overview says
+whether it has anything for the person (`OrgOverview.code`, `hasCodeWork`): an agent a session can start with (Claude
+Code or Codex, on a computer, not archived) or an open session they take part in, whose agent may have left since.
+Only then do the apps offer it (`offersCode`, `offeredTools`): the sidebar's More and its setup dialog, ⌘K, and Eu on
+the phone. A person who put Code in the sidebar's list keeps it there. The address still opens the page, which says
+what is missing, and a session's links keep working.
+
 ## Consequences
 
 - No new runner op for the worktree or the diff: the session reuses `mission.worktree` and `exec`. The terminal's
