@@ -1378,11 +1378,17 @@ describe("Message on touch", () => {
           (what) => did.push(what),
         ),
       );
-      await tapOn(words(container));
-      await tapOn(container.querySelector("a") as HTMLElement);
-      await tapOn(container.querySelector("video") as HTMLElement);
-      await tapOn(body().getByRole("button", { name: "Conectar" }));
-      expect(body().queryByRole("menu")).toBeNull();
+      const targets = [
+        words(container),
+        container.querySelector("a") as HTMLElement,
+        container.querySelector("video") as HTMLElement,
+        body().getByRole("button", { name: "Conectar" }),
+      ];
+      for (const el of targets) {
+        await tapOn(el);
+        // After each tap: the next tap would close a menu this one opened.
+        expect(body().queryByRole("menu")).toBeNull();
+      }
       expect(did).toEqual(["row", "link", "row", "video", "row", "row"]);
     } finally {
       restore();
