@@ -374,6 +374,9 @@ const QUIET_TOOLS = [
 
 /** One line of "# What other agents asked of you" (`handedFor`): the other agent's words never read as instructions. */
 function handedLine(h: HandedFor) {
+  const asked = h.question === null ? "(it relayed text it read outside, not shown)" : quotedUntrusted(h.question, 200);
+  if (h.headsUp)
+    return `- @${h.askerHandle} told you, ${ago(h.createdAt)}, as news (nothing to do or answer): ${asked}`;
   const what = h.kind === "note" ? "handed you" : "asked you";
   const came =
     h.status === "open"
@@ -389,7 +392,6 @@ function handedLine(h: HandedFor) {
           : h.stopped
             ? "it was stopped before you finished"
             : "you couldn't finish it";
-  const asked = h.question === null ? "(it relayed text it read outside, not shown)" : quotedUntrusted(h.question, 200);
   return `- @${h.askerHandle} ${what}, ${ago(h.createdAt)}: ${asked} → ${came}`;
 }
 
@@ -846,8 +848,13 @@ export async function buildRunContext(
   // The thread comes first; earlier channel messages (or the range) fill what's left.
   // A range longer than that loses its oldest messages (the thread summary, when the
   // thread itself is long, covers the thread, not the range).
+  const threadCut = thread.length >= options.maxMessages;
+  // A thread longer than the window slides by one message with every reply: it starts at an anchor too.
+  if (threadCut && thread.length > HISTORY_ANCHOR_WINDOW) {
+    thread.splice(thread.length - historyStart([...thread].reverse().map((m) => m.id)));
+  }
   const fetched = before.length;
-  before.splice(Math.max(0, options.maxMessages - thread.length - 1));
+  before.splice(threadCut ? 0 : Math.max(0, options.maxMessages - thread.length - 1));
   // Older messages were left out: start at an anchor, so the history's start (and its cached prefix) stays the same
   // for several runs instead of moving by one message every time (token-trim B8).
   if (!range && fetched >= Math.max(1, options.maxMessages - 1)) {
@@ -1369,7 +1376,7 @@ export async function buildRunContext(
               `A private conversation between agents: ${memberList}. Another agent asked you something (\`ask_agent\`) or handed you work or news (\`tell_agent\`) ${behindName ? `for ${behindName}` : "on its own, for no person"}. Your last message is your answer: it goes back up to that agent, and on to ${behindName ?? "the people"}. No person reads this conversation. Don't also answer where ${behindName ?? "they"} asked, and never ask another agent to pass something on to a person.${asksBehind ? ` When ${behindName} should hear something from you directly, \`send_dm\` reaches them, even unasked.` : ""} You see only the exchanges here made for ${behindName ?? "no person"}.`,
               "- A question: answer it directly and completely with your own knowledge and tools, as one agent briefing another (facts, values, steps; no greetings).",
               "- Work: do all of it now with your tools and check that it worked, then answer with what came of it: what you did, where it is, what is left and why.",
-              "- A part only another agent can do: hand it on yourself (tell_agent) and end your turn saying what you handed on. What comes of it goes back with your answer. News for an agent outside this request goes with `heads_up: true`: your answer then neither waits for it nor carries its reply.",
+              "- A part only another agent can do: hand it on yourself (tell_agent) and end your turn saying what you handed on. What comes of it goes back with your answer. News for an agent outside this request goes with `heads_up: true`: it starts no work, and your answer neither waits for it nor carries a reply. Don't answer a heads-up with another note: it needs no reply.",
               "- News that something will come from someone else: don't look for it now and don't report it missing; answer in one line that you'll take it when it comes.",
               behindName
                 ? `- Before saying something is missing (a destination, an approval), check your rules and your conversations with ${behindName} (\`search_context\`). Still missing: ${asksBehind ? `ask ${behindName} with \`ask_user\`, saying` : "say in your answer"} exactly what; never ask the other agent back or blame it.`
@@ -1386,7 +1393,7 @@ export async function buildRunContext(
               )}`
             : `# Where you are\n${channel.kind === "file" ? "A live file's own conversation (# This conversation says which)" : `Channel #${channel.name}${channel.topic ? ` (topic: ${channel.topic})` : ""}`}, replying ${flat ? "in the channel" : "in a thread"}. Members: ${memberList}.${
                 otherAgents
-                  ? `\nOther agents here and what they can do: ${otherAgents}. Never answer for another agent or guess its permissions: say what this list shows, or ask it yourself (ask_agent) when you need its answer, or hand it work or news (tell_agent): what comes of either reaches you here by itself. Never relay to another agent what the person asked that agent directly: it got the message and answers it itself. Ask another agent with ask_agent and hand it work with tell_agent, not with an @mention here: a mention is credit or a reference, and wakes it only when it plainly asks it to act${options.followUp ? " (to wait for something use follow_up, not a mention)" : ""}. Never restate or confirm another agent's answer to the person: add only what is new, linking its message, and tell an agent whose answer is wrong privately (tell_agent), not here. Never name your tools to people.`
+                  ? `\nOther agents here and what they can do: ${otherAgents}. Never answer for another agent or guess its permissions: say what this list shows, or ask it yourself (ask_agent) when you need its answer, or hand it work (tell_agent): what comes of either reaches you here by itself. News another agent only needs to know goes with \`heads_up: true\`, to the one it concerns, never to every agent. Never relay to another agent what the person asked that agent directly: it got the message and answers it itself. Ask another agent with ask_agent and hand it work with tell_agent, not with an @mention here: a mention is credit or a reference, and wakes it only when it plainly asks it to act${options.followUp ? " (to wait for something use follow_up, not a mention)" : ""}. Never restate or confirm another agent's answer to the person: add only what is new, linking its message, and tell an agent whose answer is wrong privately (tell_agent), not here. Never name your tools to people.`
                   : ""
               }${
                 alsoAnswering.length > 0
@@ -1431,7 +1438,7 @@ export async function buildRunContext(
       blocks: await blockStateNotes(db, run.orgId, history, zone, options.blockSpec),
       personal,
     }),
-    stats: { historyMessages: history.length, systemChars, truncated: thread.length >= options.maxMessages },
+    stats: { historyMessages: history.length, systemChars, truncated: threadCut },
     issueId:
       workIssueId ??
       (taskAsked && taskHere ? taskHere.issueId : null) ??
