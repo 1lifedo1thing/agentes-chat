@@ -97,6 +97,7 @@ const DESCRIPTION =
 const REFUSED = {
   nobody: "Only a person's request in a conversation gets a session suggested: just answer.",
   inSession: "You are in a code session already: do the work here.",
+  ownWork: "This is a task's or a mission's conversation, already the place for its work: do the change here.",
   notPerson: "The message you answer isn't a person's request: suggest a session only when a person asks for a change.",
   empty: "The message you answer has no words to start a session with: ask them what to change.",
   noComputer: "You don't program on a computer, so there's no session to suggest: just answer.",
@@ -120,15 +121,32 @@ async function runOf(ctx: ToolContext) {
 }
 
 /**
+ * Why no session is suggested where the run works, or null where one may be: a code session's own conversation, a
+ * task's, or a mission's thread is already the place for that work (a mission has a worktree of its own).
+ */
+async function workPlace(db: Database, run: AgentRun): Promise<string | null> {
+  const channel = await getChannelCached(db, run.orgId, run.channelId);
+  if (!channel) return REFUSED.nobody;
+  if (channel.kind === "code") return REFUSED.inSession;
+  if (channel.kind === "task") return REFUSED.ownWork;
+  if (!run.threadRootId) return null;
+  const [mission] = await db
+    .select({ id: schema.missions.id })
+    .from(schema.missions)
+    .where(and(eq(schema.missions.orgId, run.orgId), eq(schema.missions.threadRootId, run.threadRootId)))
+    .limit(1);
+  return mission ? REFUSED.ownWork : null;
+}
+
+/**
  * Whether the agent can suggest a session in this run: it programs on a computer, a person asked, and the conversation
- * isn't a code session already. The prompt speaks of the tool only then.
+ * isn't the place of some work already (`workPlace`). The prompt speaks of the tool only then.
  */
 export async function codeSuggestionApplies(db: Database, run: AgentRun): Promise<boolean> {
   if (run.background || run.workId) return false;
   const agent = await getAgentCached(db, run.orgId, run.agentId);
   if (!agent || !(CODE_BRAINS as readonly string[]).includes(agent.brain) || !agent.machineId) return false;
-  const channel = await getChannelCached(db, run.orgId, run.channelId);
-  if (!channel || channel.kind === "code") return false;
+  if (await workPlace(db, run)) return false;
   return (await runAuthority(db, run)).kind === "person";
 }
 
@@ -166,9 +184,8 @@ export function createCodeSuggestionToolSource(): ToolSource {
     async execute(input, ctx) {
       const run = await runOf(ctx);
       if (!run || run.workId) return refused(REFUSED.nobody);
-      const channel = await getChannelCached(ctx.db, run.orgId, run.channelId);
-      if (!channel) return refused(REFUSED.nobody);
-      if (channel.kind === "code") return refused(REFUSED.inSession);
+      const elsewhere = await workPlace(ctx.db, run);
+      if (elsewhere) return refused(elsewhere);
       if ((await runAuthority(ctx.db, run)).kind !== "person") return refused(REFUSED.nobody);
       const agent = await getAgentCached(ctx.db, run.orgId, run.agentId);
       if (!agent || !(CODE_BRAINS as readonly string[]).includes(agent.brain) || !agent.machineId)

@@ -208,7 +208,9 @@ The phone app has Code as a row of You, with the same API and the conversation a
 
 When a person asks an agent that programs on a computer (Claude Code or Codex) to change code in a project (fix a bug,
 build or refactor something) in a conversation outside a session, the agent suggests a session instead of changing the
-project there. Questions, explanations and quick looks it still answers in the conversation.
+project there. Questions, explanations and quick looks it still answers in the conversation. A task's conversation
+and a mission's thread are already the place for their work (a mission has a worktree of its own): there it never
+suggests one and makes the change as before.
 
 - `suggest_code_session` (`code-suggestions.ts`) takes the project (`owner/name` on GitHub or a project's name on the
   computer) and a short title, and is checked as a session would be (the agent's repository list, a project's name).

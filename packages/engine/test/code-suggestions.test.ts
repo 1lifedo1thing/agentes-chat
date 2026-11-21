@@ -165,6 +165,42 @@ describe("suggest_code_session", () => {
       expect(bad.data?.codeSuggestion).toBeUndefined();
     }
   });
+
+  test("never in a task's conversation or a mission's thread: the change is made there, as before", async () => {
+    f = await setup();
+    await programmer();
+    const [task] = await f.db
+      .insert(schema.channels)
+      .values({
+        orgId: f.org.id,
+        name: "task-1234abcd",
+        kind: "task",
+        visibility: "private",
+        createdByUserId: f.owner.id,
+      })
+      .returning();
+    const inTask = await runOver(task?.id ?? "");
+    expect(await codeSuggestionApplies(f.db, inTask.run)).toBe(false);
+    const fromTask = await suggest(ctxOf(inTask.run), { project: "tarefas", title: "X" });
+    expect(fromTask.isError).toBe(true);
+    expect(fromTask.content).toContain("do the change here");
+
+    const inMission = await runOver(f.general.id);
+    await f.db.insert(schema.missions).values({
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      channelId: f.general.id,
+      threadRootId: inMission.run.threadRootId as string,
+      ownerId: f.owner.id,
+      title: "Filtro das tarefas",
+      goal: "Concluir salva com o filtro ligado",
+      mainSessionId: crypto.randomUUID(),
+    });
+    expect(await codeSuggestionApplies(f.db, inMission.run)).toBe(false);
+    expect((await suggest(ctxOf(inMission.run), { project: "tarefas", title: "X" })).isError).toBe(true);
+    // The same request in the channel, outside the mission: suggested.
+    expect(await codeSuggestionApplies(f.db, (await runOver(f.general.id)).run)).toBe(true);
+  });
 });
 
 describe("the person's answer", () => {
