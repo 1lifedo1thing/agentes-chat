@@ -11644,11 +11644,11 @@ export const en = {
       more: "More",
       openPr: "Open PR #{{number}}",
       close: "Close the session",
-      closeHint: "It leaves the list; the worktree is removed and the branch stays",
+      closeHint: "It leaves the list: the worktree goes, the branch stays",
       failed: "The worktree couldn't be prepared.",
       retry: "Try again",
       githubAccess:
-        "This workspace has no GitHub access for this repository. Connect GitHub in Settings › Connectors, or start a session on a project on the computer (just a name).",
+        "This workspace has no GitHub access for this repository. Connect GitHub in Settings\u00a0›\u00a0Connectors, or start a session on a project on the computer (just a name).",
     },
     panel: {
       label: "Session panel",
@@ -11681,7 +11681,7 @@ export const en = {
       back: "Back",
       split: "Side by side",
       none: "Nothing changed here.",
-      tooLarge: "Too large to show here; the files that changed are listed.",
+      tooLarge: "Too large to show here. The files that changed are listed.",
       /** A change's letter, in words. */
       status: {
         modified: "Modified",
@@ -20667,7 +20667,7 @@ export const en = {
     openAgain: "Open again",
     ended: "The shell ended",
     dropped: "The connection to the terminal dropped",
-    screening: "Terminals are off on this server",
+    screening: "Terminals are off here",
     forbidden: "Only whoever may use this computer opens a terminal",
     offline: "The computer is offline",
     outdated: "Update the computer to open the terminal in the session's folder",

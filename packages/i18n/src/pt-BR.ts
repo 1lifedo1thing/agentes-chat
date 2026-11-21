@@ -11647,11 +11647,11 @@ export const ptBR = {
       more: "Mais",
       openPr: "Abrir o PR #{{number}}",
       close: "Fechar a sessão",
-      closeHint: "Sai da lista; a worktree é removida e a branch fica",
+      closeHint: "Sai da lista: a worktree vai embora, a branch fica",
       failed: "Não deu para preparar a worktree.",
       retry: "Tentar de novo",
       githubAccess:
-        "Este workspace não tem acesso ao GitHub para esse repositório. Conecte o GitHub em Configurações › Conectores, ou comece uma sessão num projeto no computador (só um nome).",
+        "Este workspace não tem acesso ao GitHub para esse repositório. Conecte o GitHub em Configurações\u00a0›\u00a0Conectores, ou comece uma sessão num projeto no computador (só um nome).",
     },
     panel: {
       label: "Painel da sessão",
@@ -11684,7 +11684,7 @@ export const ptBR = {
       back: "Voltar",
       split: "Lado a lado",
       none: "Nada mudou aqui.",
-      tooLarge: "Grande demais para mostrar aqui; os arquivos que mudaram estão listados.",
+      tooLarge: "Grande demais para mostrar aqui. Os arquivos que mudaram estão listados.",
       /** A letra de uma mudança, em palavras. */
       status: {
         modified: "Modificado",
@@ -20587,7 +20587,7 @@ export const ptBR = {
     openAgain: "Abrir de novo",
     ended: "O shell terminou",
     dropped: "A conexão com o terminal caiu",
-    screening: "O terminal está desligado neste servidor",
+    screening: "O terminal está desligado aqui",
     forbidden: "Só quem pode usar esse computador abre o terminal",
     offline: "Computador offline",
     outdated: "Atualize o computador para abrir o terminal na pasta da sessão",
