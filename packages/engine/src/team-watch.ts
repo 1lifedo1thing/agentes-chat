@@ -27,7 +27,7 @@ import { lastGoodRun, outsideRoutineFailure, routineResumeKey } from "./routine-
 import { ROUTINE_FATIGUE_LIMIT } from "./routine-state";
 import { resumeRoutineBySystem } from "./routines";
 import { openOrg } from "./standing";
-import { DEFAULT_AGENT_BUDGET_NANO_USD, monthStartUtc } from "./usage";
+import { DEFAULT_AGENT_BUDGET_NANO_USD, monthStartUtc, budgetPeriodOf as periodOf } from "./usage";
 
 /**
  * "Cuidar da equipe": the right hand looks for what stops the team and acts. It calls no model.
@@ -116,9 +116,6 @@ const {
   routineRuns,
   routines,
 } = schema;
-
-/** A budget's month, as `agent_budget_periods.period_start` holds it. */
-const periodOf = (now: Date) => monthStartUtc(now).toISOString().slice(0, 10);
 
 // ── The sweep ─────────────────────────────────────────────────────────────────
 
@@ -385,8 +382,9 @@ const saidElsewhere = {
       and exists (select 1 from agents a where a.org_id = ${orgId} and a.brain_account_id = ${accountId}
         and ${namesAgent(sql`a.id`)}))`,
   budget: (agentId: string) =>
-    sql`(${notifications.kind} in ('run_failed', 'routine_failed', 'widget_failed')
-      and ${notifications.latest}->>'reason' = 'budget_exceeded' and ${namesAgent(agentId)})`,
+    sql`((${notifications.kind} in ('run_failed', 'routine_failed', 'widget_failed')
+        and ${notifications.latest}->>'reason' = 'budget_exceeded' and ${namesAgent(agentId)})
+      or (${notifications.kind} = 'budget_paused' and ${notifications.source}->>'agentId' = ${agentId}))`,
   computer: (orgId: string, machineId: string) =>
     sql`((${notifications.kind} in ('routine_stalled', 'device.waiting')
         and ${notifications.source}->>'machineId' = ${machineId})

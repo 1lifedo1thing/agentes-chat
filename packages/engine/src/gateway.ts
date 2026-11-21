@@ -59,7 +59,7 @@ import { maySql, type RolePermission } from "./permissions";
 import { addPersonSpend, assertPersonUnderLimit, personSpendAdded } from "./person-usage";
 import { assertCanWork, standingRefusal } from "./standing";
 import { maskValues, redactCredentials } from "./tool-detail";
-import { budgetPercent, monthStartUtc, withEffectiveBudget } from "./usage";
+import { budgetPercent, monthStartUtc, budgetPeriodOf as periodOf, withEffectiveBudget } from "./usage";
 
 const {
   usageRecords,
@@ -217,8 +217,6 @@ export type KeyCheck =
   | { state: "ok"; record(credentialId: string): Promise<void> }
   | { state: "unchecked" }
   | { state: "refused"; refusal: KeyRefusal; said: string };
-
-const periodOf = (now: Date) => monthStartUtc(now).toISOString().slice(0, 10);
 
 /** The call's own key first: a key of an unusual shape is one no pattern knows. */
 const withoutKey = (text: string, apiKey: string) => redactCredentials(maskValues(text, [apiKey]));

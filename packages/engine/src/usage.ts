@@ -100,6 +100,9 @@ export async function workspaceBudgetPercent(db: Database, orgId: string, now = 
 /** Start of the calendar month (UTC) containing `now`: budgets reset then. */
 export const monthStartUtc = (now: Date) => new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
+/** A budget's month, as `agent_budget_periods.period_start` holds it (`2026-11-01`). */
+export const budgetPeriodOf = (now: Date) => monthStartUtc(now).toISOString().slice(0, 10);
+
 /** What an agent's own calls spent this month, in nano-USD: what its budget pays (`agentBudgetsThisMonth`). */
 export async function agentSpendThisMonth(db: Database, orgId: string, agentId: string, now = new Date()) {
   const [row] = await db

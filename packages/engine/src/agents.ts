@@ -43,6 +43,7 @@ import {
 import { recordAudit } from "./audit";
 import { type AutonomySettings, autonomySettings, chosenAutonomy } from "./autonomy-settings";
 import { isComputerBrain } from "./brains/types";
+import { resolveBudgetPaused } from "./budget-pause";
 import { caches } from "./cache";
 import { modelInfoFor, usableCredentialRow } from "./credentials";
 import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, ValidationError } from "./errors";
@@ -699,6 +700,7 @@ export async function updateAgent(
     await resyncBudgetCounter(db, orgId, agentId);
     // Its runs that wait for the budget look again now: one that still doesn't fit parks again quietly.
     await resumeBudgetWaits(db, orgId, agentId);
+    await resolveBudgetPaused({ db, pubsub: options.pubsub }, orgId, [agentId]);
   }
   // Its API model or key is "Quem pensa" only while it thinks through the API.
   const thinking = input.model !== undefined || input.credentialId !== undefined;

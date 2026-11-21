@@ -2630,6 +2630,7 @@
     "working_other": "{{count}} Agenten arbeiten"
   },
   "channel": {
+    "teamStalled": "Team steht still",
     "settingsNav": {
       "label": "Kanaleinstellungen",
       "overview": "Übersicht",
@@ -3108,6 +3109,7 @@
       "anAgent": "Ein Agent",
       "none": "Keins",
       "budgetDefault": "Standard des Workspace",
+      "pausesNow": "pausiert sofort",
       "anAccount": "Ein KI-Konto",
       "everyone": "Alle",
       "ownerOnly": "Nur der Verantwortliche",

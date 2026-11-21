@@ -2728,6 +2728,7 @@
     "working_other": "{{count}} agenti al lavoro"
   },
   "channel": {
+    "teamStalled": "Team fermo",
     "settingsNav": {
       "label": "Impostazioni del canale",
       "overview": "Panoramica",
@@ -3224,6 +3225,7 @@
       "anAgent": "Un agente",
       "none": "Nessuno",
       "budgetDefault": "Predefinito del workspace",
+      "pausesNow": "si mette subito in pausa",
       "anAccount": "Un account di IA",
       "everyone": "Tutti",
       "ownerOnly": "Solo il responsabile",

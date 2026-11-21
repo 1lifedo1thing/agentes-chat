@@ -2534,6 +2534,7 @@
     "working_other": "{{count}} 个智能体正在工作"
   },
   "channel": {
+    "teamStalled": "团队停滞",
     "settingsNav": {
       "label": "频道设置",
       "overview": "概览",
@@ -2991,6 +2992,7 @@
       "anAgent": "一个智能体",
       "none": "无",
       "budgetDefault": "工作区默认",
+      "pausesNow": "会立即暂停",
       "anAccount": "一个 AI 账户",
       "everyone": "所有人",
       "ownerOnly": "只有负责人",

@@ -64,6 +64,7 @@ import {
   settingLines,
   settingsDeciders,
   settingsGroup,
+  settingsHold,
   settingsRows,
   type WantedLine,
 } from "../settings-proposals";
@@ -469,8 +470,9 @@ export async function listProposals(
 }
 
 /**
- * Open rows accepting can only fail: their text changed since, or their agent was archived (a settings row can still
- * delete it). They show as stale, and nobody is asked to decide.
+ * Open rows accepting can only fail: their text or a setting's value changed since, a budget would now stop the agent
+ * without the card saying so, or their agent was archived (a settings row can still delete it). They show as stale,
+ * and nobody is asked to decide.
  */
 async function outdatedIds(db: Database, orgId: string, rows: Proposal[]) {
   const open = rows.filter((r) => r.status === "pending");
@@ -491,7 +493,7 @@ async function outdatedIds(db: Database, orgId: string, rows: Proposal[]) {
     if (r.target === "agent_role") return byId.get(r.agentId ?? "")?.role;
     return undefined;
   };
-  return new Set(
+  const out = new Set(
     open
       .filter((r) => {
         if (r.target !== "agent_settings" && byId.get(r.agentId ?? "")?.archivedAt) return true;
@@ -500,6 +502,12 @@ async function outdatedIds(db: Database, orgId: string, rows: Proposal[]) {
       })
       .map((r) => r.id),
   );
+  for (const r of open) {
+    if (r.target !== "agent_settings" || !r.agentId || deletes(r)) continue;
+    const agent = await getAgent(db, orgId, r.agentId);
+    if (agent && !agent.archivedAt && !(await settingsHold(db, agent, r.settings ?? []))) out.add(r.id);
+  }
+  return out;
 }
 
 /**

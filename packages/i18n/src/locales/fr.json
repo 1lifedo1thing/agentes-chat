@@ -2729,6 +2729,7 @@
     "working_other": "{{count}} agents au travail"
   },
   "channel": {
+    "teamStalled": "Équipe bloquée",
     "settingsNav": {
       "label": "Paramètres du canal",
       "overview": "Vue d’ensemble",
@@ -3229,6 +3230,7 @@
       "anAgent": "Un agent",
       "none": "Aucun",
       "budgetDefault": "Par défaut du workspace",
+      "pausesNow": "se met en pause aussitôt",
       "anAccount": "Un compte d’IA",
       "everyone": "Tout le monde",
       "ownerOnly": "Seulement son responsable",

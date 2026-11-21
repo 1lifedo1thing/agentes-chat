@@ -2827,6 +2827,7 @@
     "working_other": "{{count}} agentów pracuje"
   },
   "channel": {
+    "teamStalled": "Zespół stoi",
     "settingsNav": {
       "label": "Ustawienia kanału",
       "overview": "Przegląd",
@@ -3344,6 +3345,7 @@
       "anAgent": "Agent",
       "none": "Brak",
       "budgetDefault": "Domyślny workspace",
+      "pausesNow": "od razu wstrzymuje pracę",
       "anAccount": "Konto AI",
       "everyone": "Wszyscy",
       "ownerOnly": "Tylko opiekun",

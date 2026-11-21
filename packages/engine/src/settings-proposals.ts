@@ -12,12 +12,14 @@ import { addChannelMember, removeChannelMember, setChannelAgentAutoReply } from 
 import { sha256 } from "./crypto";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishAgentsChanged } from "./events";
+import { agentBudgetState } from "./gateway";
 import { setAgentComputerTarget } from "./machines";
 import { can, getMembership, requirePermission } from "./organizations";
 import { reportsToRefusal, setReportsTo } from "./reporting";
 import { isRightHand } from "./right-hand";
 import { setAgentSkills } from "./skills";
 import { canonicalJson } from "./tools/json-schema";
+import { orgDefaultAgentBudget } from "./usage";
 
 const {
   agentActions,
@@ -442,7 +444,9 @@ export async function settingLines(
       w.field === "reports_to" && typeof from === "string"
         ? { ...w.label, from: (await getAgent(db, orgId, from))?.name }
         : w.label;
-    lines.push({ ...w, to, from, ...(label ? { label } : {}) });
+    const { pausesNow: _, ...asked } = w;
+    const pausesNow = w.field === "budget" && (await spentPast(db, agent, to)) !== null;
+    lines.push({ ...asked, to, from, ...(label ? { label } : {}), ...(pausesNow ? { pausesNow } : {}) });
   }
   return { lines, skipped };
 }
@@ -468,10 +472,14 @@ async function refusal(db: Database, orgId: string, requesterId: string, agent: 
         return error instanceof Error ? error.message : "unknown model";
       }
       return null;
-    case "budget":
-      return w.to === null || (typeof w.to === "number" && Number.isFinite(w.to) && w.to >= 0)
-        ? null
-        : "a budget is 0 or more, or the workspace's default.";
+    case "budget": {
+      if (w.to !== null && !(typeof w.to === "number" && Number.isFinite(w.to) && w.to >= 0))
+        return "a budget is 0 or more, or the workspace's default.";
+      const spent = await spentPast(db, agent, w.to);
+      if (spent === null || w.pausesNow) return null;
+      const usd = `US$ ${(spent / 1e9).toFixed(2)}`;
+      return `that is at or below the ${usd} it spent this month, so it would stop at once. Ask for more than ${usd}, or send budget_cut: true when stopping it is the point.`;
+    }
     case "owner":
       return typeof w.to === "string" && (await getMembership(db, w.to, orgId))
         ? null
@@ -541,6 +549,28 @@ async function refusal(db: Database, orgId: string, requesterId: string, agent: 
   }
 }
 
+/**
+ * This month's spend when a budget of `to` (null: the workspace's default) leaves the agent nothing, so it stops at
+ * once; null when it doesn't.
+ */
+async function spentPast(db: Executor, agent: Agent, to: unknown): Promise<number | null> {
+  const budget = typeof to === "number" ? to : await orgDefaultAgentBudget(db as Database, agent.orgId);
+  const { spentNanoUsd: spent } = await agentBudgetState(db as Database, agent.orgId, agent.id);
+  return budget <= spent ? spent : null;
+}
+
+/**
+ * Whether a row still applies as its card shows it: each `from` is the agent's value now, and a budget the card
+ * didn't say stops the agent still doesn't (the month's spend grows while a card waits).
+ */
+export async function settingsHold(db: Executor, agent: Agent, lines: SettingLine[]) {
+  for (const l of lines) {
+    if (!same(await valueNow(db, agent, l), l.from)) return false;
+    if (l.field === "budget" && !l.pausesNow && (await spentPast(db, agent, l.to)) !== null) return false;
+  }
+  return true;
+}
+
 /** The rows for one agent's lines: one per decider group, each with the hash of what it was made against. */
 export function settingsRows(lines: SettingLine[]) {
   const groups = new Map<string, SettingLine[]>();
@@ -563,7 +593,7 @@ export async function applySettings(
   agent: Agent,
 ) {
   const lines = p.settings ?? [];
-  for (const l of lines) if (!same(await valueNow(deps.db, agent, l), l.from)) return false;
+  if (!(await settingsHold(deps.db, agent, lines))) return false;
   for (const l of lines) await setValue(deps, actorId, p.orgId, agent.id, l, l.to);
   return true;
 }

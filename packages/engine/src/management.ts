@@ -7,6 +7,7 @@ import { decidableBySql } from "./approvals";
 import { listsAgentSql, managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import type { AutoModels } from "./auto-model";
+import { resolveDefaultBudgetPaused } from "./budget-pause";
 import { caches } from "./cache";
 import {
   announceChannelLeavers,
@@ -280,7 +281,10 @@ export async function updateOrgSettings(
   caches.membership.deletePrefix(`${orgId}:`);
   caches.orgs.delete(`${orgId}:agent-budget`);
   // Agents on the default budget whose runs wait for it look again now (the rest park again quietly).
-  if (input.defaultAgentBudgetNanoUsd !== undefined) await resumeBudgetWaits(db, orgId, null);
+  if (input.defaultAgentBudgetNanoUsd !== undefined) {
+    await resumeBudgetWaits(db, orgId, null);
+    await resolveDefaultBudgetPaused({ db }, orgId);
+  }
   caches.orgs.delete(`${orgId}:action-check`);
   caches.orgs.delete(`${orgId}:auto-models`);
   caches.orgs.delete(mediaSettingsCacheKey(orgId));

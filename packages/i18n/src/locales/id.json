@@ -2534,6 +2534,7 @@
     "working_other": "{{count}} agen bekerja"
   },
   "channel": {
+    "teamStalled": "Tim terhenti",
     "settingsNav": {
       "label": "Pengaturan kanal",
       "overview": "Ringkasan",
@@ -2992,6 +2993,7 @@
       "anAgent": "Sebuah agen",
       "none": "Tidak ada",
       "budgetDefault": "Bawaan workspace",
+      "pausesNow": "langsung berhenti sementara",
       "anAccount": "Sebuah akun AI",
       "everyone": "Semua orang",
       "ownerOnly": "Hanya penanggung jawabnya",

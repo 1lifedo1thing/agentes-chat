@@ -2686,6 +2686,7 @@ export const ptBR = {
     working_other: "{{count}} agentes trabalhando",
   },
   channel: {
+    teamStalled: "Time parado",
     /** Channel settings' sections, for who manages it (ADR 0134). */
     settingsNav: {
       label: "Configurações do canal",
@@ -3231,6 +3232,7 @@ export const ptBR = {
       lookDefault: "A aparência padrão",
       none: "Nenhum",
       budgetDefault: "Padrão do workspace",
+      pausesNow: "pausa na hora",
       anAccount: "Uma conta de IA",
       everyone: "Todos",
       ownerOnly: "Só o responsável",

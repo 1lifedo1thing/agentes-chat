@@ -2606,6 +2606,8 @@ export interface ProposalSettingLine {
   channelId?: string;
   skillId?: string;
   label?: { from?: string; to?: string };
+  /** `budget`: at or below the agent's spend this month, so applying it stops the agent at once. */
+  pausesNow?: boolean;
 }
 
 export interface Proposal {
@@ -2881,6 +2883,8 @@ export interface AgentStatus {
   working?: boolean;
   /** Its most important work for you, with where it shows when you read it (ADR 0084). Absent from older servers. */
   work?: AgentWork | null;
+  /** Work of its waits on its monthly budget: #general's team-stalled line names it. */
+  budgetPaused?: true;
 }
 
 /**
@@ -7115,7 +7119,9 @@ export type NotificationKind =
    * `latest.names` the first things it is about and `count` how many, `latest.text` the whole sentence in the
    * person's language. `source.agentId`, `machineId` or `accountId` when it is about one. Done once fixed.
    */
-  | "team_watch";
+  | "team_watch"
+  /** An agent's work stopped on its monthly budget: `source.agentId`, `latest.percent`. */
+  | "budget_paused";
 
 /** "O Gerente aprova por você" (ADR 0139 §2): what the person let the workspace's right hand approve. */
 export interface RightHandApprovals {
