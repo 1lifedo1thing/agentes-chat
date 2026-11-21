@@ -170,6 +170,7 @@ function Chat({
     join,
     lineStop,
     linkThreads,
+    replying,
     list,
     live,
     loadNewer,
@@ -684,6 +685,7 @@ function Chat({
                 isFresh={isFresh}
                 isThread={isThread}
                 linkThreads={linkThreads}
+                replying={replying}
                 quiet={quiet}
                 rhythm={rhythm}
                 seenBy={seenBy}

@@ -217,10 +217,12 @@ import {
   OPEN_LAYER,
   PixelSpinner,
   SavedNote,
+  SettingRow,
   Skeleton,
   SkeletonConversationRows,
   SkeletonGroup,
   Spinner,
+  Switch,
   skeletonOnScreen,
   type VoiceNotice,
 } from "@agenteschat/ui";
@@ -402,6 +404,7 @@ import {
   ChannelThreadsContext,
   type ChannelThreadsView,
   ClosedThreadLine,
+  ThreadReplyingLine,
   ThreadReplyLine,
   ThreadStartLine,
   useChannelThreadsView,
@@ -5112,6 +5115,10 @@ export const TimelineMessage = memo(function TimelineMessage({
             ))}
             {/* A "Responder" thread went on from here: its line (opens the panel). */}
             {threadLine && <ThreadReplyLine thread={threadLine.thread} count={threadLine.count} />}
+            {/* Its agents answer in its thread (ADR 0214) and no reply is there yet: who is replying. */}
+            {threadsView && !threadLine && !m.threadId && !m.local && !threadsView.byId.has(m.id) && (
+              <ThreadReplyingLine messageId={m.id} channelId={m.channelId} />
+            )}
             {/* A comment on a picture, a video or a PDF that was resolved (ADR 0208): by whom, when. */}
             {liveRef && <ResolvedLine message={m} />}
             {feedback && (
@@ -5644,6 +5651,29 @@ function ChannelDetails({
                   <Field label={t("channelCategories.category")} id="channel-edit-category">
                     <CategorySelect value={channel.categoryId ?? null} onChange={moveTo} canCreate={editable} />
                   </Field>
+                  <SettingRow
+                    title={t("channel.replyInThreads")}
+                    hint={{
+                      name: t("common.about", { label: t("channel.replyInThreads") }),
+                      text: t("channel.replyInThreadsHelp"),
+                    }}
+                    htmlFor="channel-edit-threads"
+                  >
+                    <Switch
+                      id="channel-edit-threads"
+                      checked={Boolean(channel.replyInThreads)}
+                      onCheckedChange={(on) =>
+                        update.mutate(
+                          { replyInThreads: on },
+                          {
+                            onSuccess: () => setSaved(true),
+                            onError: (e) => toast.show(errorText(t, e), "error"),
+                          },
+                        )
+                      }
+                      disabled={!editable || update.isPending}
+                    />
+                  </SettingRow>
                 </DialogBody>
               )}
               {section === "permissions" && (

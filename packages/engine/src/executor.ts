@@ -1296,6 +1296,7 @@ async function executeRunInner(
         channelId: agentRuns.channelId,
         threadRootId: agentRuns.threadRootId,
         triggerMessageId: agentRuns.triggerMessageId,
+        replyInThread: agentRuns.replyInThread,
         workId: agentRuns.workId,
         since: sql<
           string | null
@@ -1875,6 +1876,7 @@ async function executeRunInner(
     channelId: run.channelId,
     threadRootId: run.threadRootId,
     triggerMessageId: run.triggerMessageId,
+    replyInThread: run.replyInThread,
     signal,
     // A resumed run keeps the tools it started with (the list, and the prompt cache, stay the same).
     loadedGroups: (run.transcript as unknown as Transcript | null)?.toolGroups ?? null,
