@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { View } from "react-native";
 import { NoticeIsland } from "@/features/island/NoticeIsland";
 import { noteWorkspaceOnScreen } from "@/features/links/on-screen";
+import { LiveActivityWork } from "@/features/live-activity/LiveActivityWork";
 import { TALK_SHEET_DETENTS, TALK_SHEET_DIMMED } from "@/features/live-files/talk/logic";
 import { ShareInbox } from "@/features/share/ShareInbox";
 import { useConnection, useRememberAgentLooks } from "@/features/shared/hooks";
@@ -43,6 +44,8 @@ export default function AppLayout() {
     <>
       <AppSheets />
       <AppWork />
+      {/* The agents at work in the iPhone's Dynamic Island and on its Lock Screen (ADR 0210). */}
+      <LiveActivityWork />
       {/* What reaches me while the app is open, out of the camera's island (ADR 0071 §9). */}
       <NoticeIsland />
       {/* What other apps share through the system's share sheet opens "Compartilhar com…". */}
