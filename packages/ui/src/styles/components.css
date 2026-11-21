@@ -400,7 +400,15 @@ html[data-pointer] :focus-visible {
         + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
       ),
       :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
-    ):is(:hover, [aria-pressed="true"], :focus-visible) {
+    ):is(:hover, [aria-pressed="true"]),
+  html:not([data-pointer])
+    .ac-acts
+    > :is(
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm:has(
+        + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)
+      ),
+      :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph) + :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph).ac-btn--sm
+    ):focus-visible {
     background: transparent;
     box-shadow: none;
   }
