@@ -430,6 +430,8 @@ export interface OrgSummary {
   onboarding?: OrgOnboarding;
   /** From `GET /me` while an owner's deletion is pending, set at once by `org.deleting`: the workspace is read-only. */
   deletion?: OrgDeletion;
+  /** From `GET /me`: I pay for its plan (ADR 0079), so I may move it to another workspace. Absent otherwise. */
+  paysPlan?: true;
   /** From `GET /me`: what opens when the app starts here (ADR 0108). Absent from older servers: the home. */
   start?: StartChoice;
   /** From `GET /me`: whether I see what agents did under each reply. Absent (an older server): off. */
@@ -2613,6 +2615,8 @@ export interface ProposalSettingLine {
   channelId?: string;
   skillId?: string;
   label?: { from?: string; to?: string };
+  /** `budget`: at or below the agent's spend this month, so applying it stops the agent at once. */
+  pausesNow?: boolean;
 }
 
 export interface Proposal {
@@ -2893,6 +2897,8 @@ export interface AgentStatus {
   working?: boolean;
   /** Its most important work for you, with where it shows when you read it (ADR 0084). Absent from older servers. */
   work?: AgentWork | null;
+  /** Work of its waits on its monthly budget: #general's team-stalled line names it. */
+  budgetPaused?: true;
 }
 
 /**
@@ -4004,6 +4010,10 @@ export interface Artifact {
   audience: ArtifactAudience;
   /** Who sees it on top of that conversation (ADR 0157); absent from an older server. */
   sharing?: ArtifactSharing;
+  /** Who sees and who edits it, people, roles and agents (ADR 0202); absent from an older server. */
+  access?: ArtifactAccess;
+  /** What its access lets me do (ADR 0202): `view` is read only; absent from an older server (edit). */
+  myAccess?: "view" | "edit";
   /**
    * I may change `sharing`: it lives in a conversation not everyone reads, and I read it there; or it is a file of the
    * Drive itself (ADR 0157, amendment 2026-11-17), and I made it or I'm an administrator.
@@ -4058,6 +4068,31 @@ export interface ArtifactSharing {
   mode: "conversation" | "people" | "everyone";
   userIds: string[];
   roleIds: string[];
+}
+
+/** What someone may do with a file (ADR 0202). */
+export type AccessLevel = "none" | "view" | "edit";
+
+/** Someone named on a file's access: a person, a role or an agent by id. */
+export interface ArtifactAccessRow {
+  id: string;
+  level: "view" | "edit";
+}
+
+/**
+ * Who sees and who edits a file (ADR 0202), row by row as Compartilhar shows it: who reads it where it lives (`place`:
+ * a conversation's readers; a file of the Drive itself has its maker, who always edits), the whole workspace, people,
+ * roles, every agent (a file of the Drive) or the agents where it lives, and agents by name. Administrators always see
+ * and edit. `limited`: someone who sees it only reads it.
+ */
+export interface ArtifactAccess {
+  place: "view" | "edit";
+  workspace: AccessLevel;
+  users: ArtifactAccessRow[];
+  roles: ArtifactAccessRow[];
+  agents: AccessLevel;
+  agentRows: ArtifactAccessRow[];
+  limited: boolean;
 }
 
 export type ArtifactAudience =
@@ -5468,6 +5503,15 @@ export interface MoveAgentsResult {
   resumed: number;
   /** Runs that keep waiting for the old computer (they already changed files there). */
   stillWaiting: number;
+  /** Moved agents whose plan is signed in only on the old computer (`kind`, a coding plan's `provider`). */
+  planDropped?: PlanDropped[];
+}
+
+/** An agent moved without its plan: it stays signed in on the computer it left. */
+export interface PlanDropped {
+  agentId: string;
+  kind: MachineAccountKind;
+  provider: string | null;
 }
 
 /** Org events about connected computers. */
@@ -6267,6 +6311,12 @@ export interface BrainOption {
   reason?: BrainUnavailable;
   models: BrainModelOption[];
   defaultModel: string | null;
+  /**
+   * Antigravity: the newest Gemini isn't among its models, and why: the computer's agentes.chat is too old to bring a
+   * CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no
+   * account there has a plan that includes it (`plan`).
+   */
+  missing?: { modelId: string; label: string; why: "app_old" | "cli_old" | "plan" };
 }
 
 /** A computer the caller may give an agent, with what it offers. */
@@ -7118,7 +7168,9 @@ export type NotificationKind =
    * `latest.names` the first things it is about and `count` how many, `latest.text` the whole sentence in the
    * person's language. `source.agentId`, `machineId` or `accountId` when it is about one. Done once fixed.
    */
-  | "team_watch";
+  | "team_watch"
+  /** An agent's work stopped on its monthly budget: `source.agentId`, `latest.percent`. */
+  | "budget_paused";
 
 /** "O Gerente aprova por você" (ADR 0139 §2): what the person let the workspace's right hand approve. */
 export interface RightHandApprovals {
@@ -8258,7 +8310,7 @@ export interface AgentPlanUsage {
 
 /**
  * What a connected app or a personal token may do: `read` only reads, `write` also sends tasks, `manage` also creates
- * and edits agents, routines and skills.
+ * and edits agents, routines and skills and writes wiki pages.
  */
 export type AppAccess = "read" | "write" | "manage";
 

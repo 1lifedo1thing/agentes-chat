@@ -295,6 +295,10 @@ export const Organization = z
     start: StartChoice.optional().openapi({
       description: "In `GET /me`: what opens when the app starts here (`PUT …/me/start`). Absent elsewhere.",
     }),
+    paysPlan: z.literal(true).optional().openapi({
+      description:
+        "In `GET /me`: you pay for the workspace's plan, as the billing service said, and may move it to another workspace (`POST …/plan-move`). Absent otherwise.",
+    }),
     showActivity: z.boolean().optional().openapi({
       description:
         "In `GET /me`: whether you see what agents did under each reply (`PUT …/me/activity`), off by default. Absent elsewhere.",
@@ -1125,6 +1129,17 @@ export const BrainOption = z
       }),
     ),
     defaultModel: z.string().nullable(),
+    missing: z
+      .object({
+        modelId: z.string(),
+        label: z.string(),
+        why: z.enum(["app_old", "cli_old", "plan"]),
+      })
+      .optional()
+      .openapi({
+        description:
+          "Antigravity: the newest Gemini isn't among its models because the computer's agentes.chat is too old to bring a CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no account there has a plan with it (`plan`).",
+      }),
   })
   .openapi("BrainOption");
 

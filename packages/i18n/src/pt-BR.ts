@@ -1146,6 +1146,7 @@ export const ptBR = {
     },
     back: "Voltar",
     leave: "Voltar para {{name}}",
+    leaveLater: "Voltar para {{name}} e terminar depois",
     actions: {
       continue: "Continuar",
       create_one: "Criar {{count}} agente",
@@ -1157,15 +1158,18 @@ export const ptBR = {
     yourCompany: "sua empresa",
     purpose: {
       title: "Para que você vai usar o agentes.chat?",
-      lead: "Dá para mudar depois, nada se perde.",
+      lead: "Você pode trocar o modo do workspace a qualquer hora nas Configurações, sem perder nada.",
+      pick: "Escolha como você quer ver o agentes.chat.",
+      switchTitle: "Troque quando quiser.",
+      switchText: "O modo do workspace muda nas Configurações, e nada se perde.",
       personal: "Para mim",
       personalText: "Agentes que cuidam do seu dia.",
       team: "Para meu time",
       teamText: "Pessoas e agentes trabalham juntos, com canais, cargos e aprovações.",
       personalExamples: "O seu dia às 7h · Contas · Treino",
       teamExamples: "Atendimento · Financeiro · Relatórios",
-      personalLine: "Agentes que cuidam do seu dia.",
-      teamLine: "Pessoas e agentes no mesmo lugar.",
+      personalLine: "Uma visão mais simples, com todos os recursos.",
+      teamLine: "A visão completa, com canais e pessoas.",
       activities: {
         agenda: "Agenda do dia",
         home: "Casa",
@@ -2685,6 +2689,7 @@ export const ptBR = {
     working_other: "{{count}} agentes trabalhando",
   },
   channel: {
+    teamStalled: "Time parado",
     /** Channel settings' sections, for who manages it (ADR 0134). */
     settingsNav: {
       label: "Configurações do canal",
@@ -3230,6 +3235,7 @@ export const ptBR = {
       lookDefault: "A aparência padrão",
       none: "Nenhum",
       budgetDefault: "Padrão do workspace",
+      pausesNow: "pausa na hora",
       anAccount: "Uma conta de IA",
       everyone: "Todos",
       ownerOnly: "Só o responsável",
@@ -3541,6 +3547,26 @@ export const ptBR = {
       opencode_female:
         "O OpenCode não consegue pensar neste computador. Conecte uma chave do OpenCode na página da\u00a0{{name}}.",
     },
+    /** The same, naming the computer it isn't signed in on (`NoAiCard.computer`). */
+    notSignedInOn: {
+      claude_code:
+        "O Claude Code está sem login no {{computer}}. Conecte uma conta do Claude na página do\u00a0{{name}}.",
+      claude_code_female:
+        "O Claude Code está sem login no {{computer}}. Conecte uma conta do Claude na página da\u00a0{{name}}.",
+      codex: "O Codex está sem login no {{computer}}. Conecte uma conta do ChatGPT na página do\u00a0{{name}}.",
+      codex_female: "O Codex está sem login no {{computer}}. Conecte uma conta do ChatGPT na página da\u00a0{{name}}.",
+      cursor: "O Cursor está sem login no {{computer}}. Conecte uma conta do Cursor na página do\u00a0{{name}}.",
+      cursor_female: "O Cursor está sem login no {{computer}}. Conecte uma conta do Cursor na página da\u00a0{{name}}.",
+      grok: "O Grok está sem login no {{computer}}. Conecte uma conta do Grok na página do\u00a0{{name}}.",
+      grok_female: "O Grok está sem login no {{computer}}. Conecte uma conta do Grok na página da\u00a0{{name}}.",
+      antigravity: "O Gemini está sem login no {{computer}}. Conecte uma conta do Gemini na página do\u00a0{{name}}.",
+      antigravity_female:
+        "O Gemini está sem login no {{computer}}. Conecte uma conta do Gemini na página da\u00a0{{name}}.",
+      opencode:
+        "O OpenCode não consegue pensar no {{computer}}. Conecte uma chave do OpenCode na página do\u00a0{{name}}.",
+      opencode_female:
+        "O OpenCode não consegue pensar no {{computer}}. Conecte uma chave do OpenCode na página da\u00a0{{name}}.",
+    },
     card: {
       connected: "{{name}} já tem uma IA.",
       answerNow: "Responder agora",
@@ -3660,6 +3686,7 @@ export const ptBR = {
     chat: {
       mine: "Suas",
       yours: "Sua",
+      free: "Grátis",
       keys: "Chave do workspace",
       /** A group of the switch screen's accounts by AI: the workspace's API keys. */
       apiKeys: "Chaves de API",
@@ -12698,6 +12725,13 @@ export const ptBR = {
     free: "Grátis",
     /** Under OpenCode Go's models: OpenCode's free tier answers only its own CLI (ADR 0132 §7). */
     opencodeFreeHint: "Outros modelos grátis rodam pelo OpenCode no computador do agente.",
+    /** Under the Gemini plan's models: why its newest model isn't there (`BrainOption.missing`). */
+    missingModel: {
+      app_old: "Atualize o app do agentes.chat no computador do agente para usar o {{model}}.",
+      cli_old:
+        "O {{model}} precisa de uma versão mais nova do Antigravity CLI no computador do agente. Rode agy update nele.",
+      plan: "O {{model}} vem com o Google AI Pro e o Ultra. Nenhuma conta do Gemini no computador do agente tem esse plano.",
+    },
     modelHelp: "Os modelos maiores pensam mais e gastam o plano mais rápido.",
     hidden: "{{owner}} ou um admin escolhe quem pensa.",
     hiddenAdmins: "Só admins escolhem quem pensa.",
@@ -15583,6 +15617,13 @@ export const ptBR = {
     },
   },
   errors: {
+    /** Moving a plan to another workspace (ADR 0079). */
+    planMove: {
+      notPayer: "Só quem paga o plano pode mover.",
+      same: "Escolha outro workspace para onde mover o plano.",
+      targetHasPlan: "Esse workspace já tem um plano. Recarregue para ver seus workspaces como estão agora.",
+      targetDeleting: "Esse workspace está sendo apagado. Restaure antes, ou escolha outro.",
+    },
     surface: {
       off: "A vinculação de apps de chat foi desligada. Recarregue para ver suas configurações como estão agora.",
       notAllowed: "Vincular um app de chat ainda não está aberto para sua conta. Continue usando o app aqui até abrir.",
@@ -15928,6 +15969,8 @@ export const ptBR = {
       sharingEmpty: "Escolha quem vê.",
       sharingTooMany: "Escolha até {{max}} pessoas e {{max}} cargos.",
       notInDrive: "Isto vive só na conversa e não pode ser compartilhado.",
+      viewOnly: "Você pode ver este arquivo, mas não alterar. Peça acesso de edição a quem o criou.",
+      accessInvalid: "Não deu para salvar este acesso. Confira quem vê e quem edita e tente de novo.",
     },
     drive: {
       folderIntoItself: "Uma pasta não pode ir para dentro dela mesma nem de uma pasta dentro dela.",
@@ -17013,6 +17056,9 @@ export const ptBR = {
       resumed_other: "{{count}} tarefas recomeçaram",
       stillWaiting_one: "{{count}} ainda espera o {{name}}",
       stillWaiting_other: "{{count}} ainda esperam o {{name}}",
+      planDropped:
+        "O plano do {{plan}} de {{name}} está conectado no {{from}}. Entre também no {{to}}, ou mantenha o {{from}}.",
+      signIn: "Entrar no {{name}}",
       skipped: "{{name}} ficou: {{reason}}",
       skip: {
         other: "não deu para trocar agora",
@@ -17279,14 +17325,16 @@ export const ptBR = {
       write: "Ler e mandar tarefas aos agentes",
       writeHelp: "Manda mensagens em seu nome e lê as respostas.",
       manage: "Criar e editar agentes, rotinas e skills",
-      manageHelp: "Também cria agentes, rotinas, skills e memórias em seu nome, com as suas permissões.",
+      manageHelp:
+        "Também cria agentes, rotinas, skills e memórias e escreve páginas da wiki em seu nome, com as suas permissões.",
       read: "Só ler",
-      readHelp: "Vê agentes, canais e respostas, sem mandar nada.",
+      readHelp: "Vê agentes, canais, páginas da wiki e respostas, sem mandar nada.",
       can: "Pode",
-      canSee: "Ver os agentes e os canais que você vê.",
+      canSee: "Ver os agentes, os canais e as páginas da wiki que você vê.",
       canSend: "Mandar mensagens como você, marcadas com via {{app}}.",
       canRead: "Ler as respostas e o que os agentes estão fazendo.",
-      canManage: "Criar e editar agentes, rotinas e skills como você. Você recebe um aviso do que ele criar.",
+      canManage:
+        "Criar e editar agentes, rotinas e skills como você, com um aviso do que ele criar. Escrever páginas da wiki e mandá-las para a lixeira como você.",
       never: "Nunca",
       neverApprove: "Aprovar ações dos agentes. Aprovações ficam com pessoas no agentes.chat.",
       neverSettings: "Mudar configurações, membros ou permissões.",
@@ -20097,6 +20145,20 @@ export const ptBR = {
     submit: "Apagar conta",
     deleted: "Sua conta some de vez em {{date}}. Entre antes disso para restaurar.",
   },
+  /**
+   * Moving a plan to another workspace (ADR 0079), offered to its payer where it would be lost: deleting the workspace,
+   * and the line of one being deleted. `{{name}}`: the workspace it goes to.
+   */
+  planMove: {
+    /** In the dialog that deletes the workspace. */
+    warning: "Seu plano fica com este workspace e para de renovar. Quer mover para outro seu antes?",
+    /** On the line of a workspace being deleted. */
+    deleting: "Seu plano para de renovar com ele. Você pode mover para outro workspace.",
+    /** Behind the ⓘ beside either line. */
+    how: "O mesmo cartão e o período já pago vão junto. Nada é cobrado de novo e nada é reembolsado.",
+    button: "Mover meu plano para {{name}}",
+    moving: "Seu plano está indo para {{name}}. Chega em cerca de um minuto.",
+  },
   /** The billing service (ADR 0079): this server shows no plan, price or currency, only the way there. */
   billing: {
     open: "Abrir plano e cobrança",
@@ -21416,9 +21478,6 @@ export const ptBR = {
   share: {
     button: "Compartilhar",
     title: "Compartilhar {{name}}",
-    conversation: "Só a conversa",
-    people: "Pessoas e cargos que você escolher",
-    peoplePersonal: "Pessoas que você escolher",
     everyone: "Todos no workspace",
     everyonePersonal: "Todos daqui",
     whereDm: "A DM com {{name}}",
@@ -21426,14 +21485,9 @@ export const ptBR = {
     /** Para quem não está na DM e recebeu o arquivo por Compartilhar. */
     whereDmBetween: "A DM entre {{names}}",
     whereChannel: "Membros de #{{name}}",
-    add: "Adicionar pessoa ou cargo",
-    addPersonal: "Adicionar pessoa",
-    addSearch: "Buscar pessoas e cargos",
-    addSearchPersonal: "Buscar pessoas",
     noResults: "Ninguém com esse nome",
     groupPeople: "Pessoas",
     groupRoles: "Cargos",
-    access: "Quem tem acesso",
     you: "{{name}} (você)",
     agent: "Agente",
     role: "Cargo",
@@ -21442,35 +21496,48 @@ export const ptBR = {
     adminsPersonal: "Quem cuida daqui também vê.",
     copyLink: "Copiar link",
     copied: "Link copiado.",
-    done: "Concluir",
     /** Ao lado de Copiar link enquanto só uma conversa privada vê o arquivo. */
     onlyHere: "Quem não está nesta conversa não vai abrir o link.",
-    choosePeople: "Escolher pessoas",
     readOnly: "Só quem está na conversa muda quem vê.",
-    open: "Todos no workspace veem este arquivo.",
-    openPersonal: "Todos daqui veem este arquivo.",
-    savedEveryone: "Agora todos no workspace veem o arquivo.",
-    savedEveryonePersonal: "Agora todos daqui veem o arquivo.",
-    savedPeople: "Agora as pessoas escolhidas veem o arquivo.",
-    savedConversation: "Agora só a conversa vê o arquivo.",
     /**
-     * Um arquivo do próprio Drive fica com quem o criou (ADR 0157): a primeira escolha, quem tem acesso, o aviso do
-     * link, quem pode mudar e o aviso de salvo. `Maker`: outra pessoa abre (um administrador), `name` é quem criou.
+     * Um arquivo do próprio Drive fica com quem o criou (ADR 0157): o aviso do link e quem pode mudar quem vê.
+     * `Maker`: outra pessoa abre (um administrador), `name` é quem criou.
      */
-    onlyYou: "Só você",
-    onlyMaker: "Só {{name}}",
     onlyYouLink: "Só você abre este link.",
     onlyMakerLink: "Só {{name}} abre este link.",
     readOnlyDrive: "Só quem criou o arquivo e os administradores mudam quem vê.",
-    savedOnlyYou: "Agora só você vê o arquivo.",
-    savedOnlyMaker: "Agora só {{name}} vê o arquivo.",
-    undo: "Desfazer",
     fileRef: "Arquivo {{title}}",
     fileRefNone: "Arquivo sem acesso",
     /** Quem vê o arquivo (`text`, sem ponto final) e quem o Compartilhar acrescentou. */
     also: "{{text}}. Também compartilhado com {{who}}.",
     /** Copiar links de vários arquivos, alguns abertos só na própria conversa: o aviso, com Compartilhar. */
     someOnlyHere: "Alguns desses links só abrem para quem já vê o arquivo.",
+    /**
+     * Compartilhar com níveis (ADR 0202): o que cada um pode fazer com o arquivo, as linhas que sempre estão lá (quem o
+     * lê onde ele está, todos, os agentes) e suas frases, adicionar alguém e o aviso de salvo.
+     */
+    level: {
+      none: "Sem acesso",
+      view: "Ver",
+      edit: "Editar",
+    },
+    levelOf: "O que {{name}} pode fazer",
+    madeIt: "Criou o arquivo",
+    placeText: "Onde o arquivo está",
+    everyoneText: "Qualquer pessoa deste workspace",
+    everyoneTextPersonal: "Qualquer pessoa daqui",
+    agentsAll: "Todos os agentes",
+    agentsAllText: "Qualquer agente do workspace",
+    agentsHere: "Agentes desta conversa",
+    agentsHereText: "Os agentes de onde o arquivo está",
+    addAll: "Adicionar pessoa, cargo ou agente",
+    addAllPersonal: "Adicionar pessoa ou agente",
+    addAllSearch: "Buscar pessoas, cargos e agentes",
+    addAllSearchPersonal: "Buscar pessoas e agentes",
+    groupAgents: "Agentes",
+    /** No celular, ao lado de uma linha enquanto todos editam: um toque a adiciona (e limita). */
+    addRow: "Adicionar",
+    saved: "Acesso salvo.",
   },
   /**
    * Um link aberto no navegador que o servidor recusa (ADR 0157): o título e o texto de cada causa, o botão que leva
@@ -21789,7 +21856,8 @@ export const ptBR = {
     mark: "Beta",
     open: "Enviar feedback",
     ask: "O que faltou, quebrou ou incomodou?",
-    goesCloud: "O que você escrever vai por e-mail para o time do agentes.chat.",
+    goesCloud:
+      "O que você escrever vai por e-mail para o time do agentes.chat, que pode usar um assistente de IA para analisar.",
     goesServer: "O que você escrever vai por e-mail para quem administra este servidor.",
     placeholder: "Escreva do seu jeito",
     report: "Reportar um problema aqui",
@@ -22234,6 +22302,13 @@ export const ptBR = {
         inTrash: "Na lixeira. Restaure para mudar.",
         closing: "O workspace está sendo excluído. Os arquivos só podem ser lidos.",
       },
+      /**
+       * Ao lado de Só leitura quando o acesso do arquivo me deixa só ver (ADR 0202): a conversa do arquivo abre com estas
+       * palavras para quem o criou (o @ dele), ou para quem estiver lá quando nenhuma pessoa o criou.
+       */
+      requestEdit: "Pedir para editar",
+      requestEditText: "pode me dar acesso para editar este arquivo?",
+      requestEditAnyone: "Alguém pode me dar acesso para editar este arquivo?",
       present: "Apresentar",
       download: "Baixar",
       formats: {

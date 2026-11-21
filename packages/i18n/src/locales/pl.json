@@ -1146,6 +1146,7 @@
     },
     "back": "Wstecz",
     "leave": "Wróć do {{name}}",
+    "leaveLater": "Wróć do {{name}} i dokończ później",
     "actions": {
       "continue": "Dalej",
       "create_one": "Utwórz {{count}} agenta",
@@ -1161,15 +1162,18 @@
     "yourCompany": "twoja firma",
     "purpose": {
       "title": "Do czego będziesz używać agentes.chat?",
-      "lead": "Możesz to później zmienić, nic nie przepadnie.",
+      "lead": "Tryb przestrzeni roboczej możesz zmienić w każdej chwili w Ustawieniach, nic nie tracąc.",
+      "pick": "Wybierz, jak chcesz widzieć agentes.chat.",
+      "switchTitle": "Zmień, kiedy chcesz.",
+      "switchText": "Tryb przestrzeni roboczej zmienisz w Ustawieniach i nic nie przepadnie.",
       "personal": "Dla mnie",
       "personalText": "Agenci, którzy dbają o twój dzień.",
       "team": "Dla mojego zespołu",
       "teamText": "Ludzie i agenci pracują razem, z kanałami, rolami i zatwierdzeniami.",
       "personalExamples": "Twój dzień o 7 · Rachunki · Trening",
       "teamExamples": "Obsługa klienta · Finanse · Raporty",
-      "personalLine": "Agenci, którzy dbają o Twój dzień.",
-      "teamLine": "Ludzie i agenci w jednym miejscu.",
+      "personalLine": "Prostszy widok, ze wszystkimi funkcjami.",
+      "teamLine": "Pełny widok, z kanałami i ludźmi.",
       "activities": {
         "agenda": "Plan dnia",
         "home": "Dom",
@@ -2826,6 +2830,7 @@
     "working_other": "{{count}} agentów pracuje"
   },
   "channel": {
+    "teamStalled": "Zespół stoi",
     "settingsNav": {
       "label": "Ustawienia kanału",
       "overview": "Przegląd",
@@ -3343,6 +3348,7 @@
       "anAgent": "Agent",
       "none": "Brak",
       "budgetDefault": "Domyślny workspace",
+      "pausesNow": "od razu wstrzymuje pracę",
       "anAccount": "Konto AI",
       "everyone": "Wszyscy",
       "ownerOnly": "Tylko opiekun",
@@ -3667,6 +3673,14 @@
       "antigravity": "Gemini nie jest zalogowany na tym komputerze. Podłącz konto Gemini na stronie agenta {{name}}.",
       "opencode": "OpenCode nie może myśleć na tym komputerze. Połącz klucz OpenCode na stronie agenta {{name}}."
     },
+    "notSignedInOn": {
+      "claude_code": "Claude Code nie jest zalogowany na komputerze {{computer}}. Podłącz konto Claude na stronie agenta {{name}}.",
+      "codex": "Codex nie jest zalogowany na komputerze {{computer}}. Podłącz konto ChatGPT na stronie agenta {{name}}.",
+      "cursor": "Cursor nie jest zalogowany na komputerze {{computer}}. Podłącz konto Cursor na stronie agenta {{name}}.",
+      "grok": "Grok nie jest zalogowany na komputerze {{computer}}. Podłącz konto Grok na stronie agenta {{name}}.",
+      "antigravity": "Gemini nie jest zalogowany na komputerze {{computer}}. Podłącz konto Gemini na stronie agenta {{name}}.",
+      "opencode": "OpenCode nie może myśleć na komputerze {{computer}}. Połącz klucz OpenCode na stronie agenta {{name}}."
+    },
     "card": {
       "connected": "{{name}} ma teraz AI.",
       "answerNow": "Odpowiedz teraz",
@@ -3760,6 +3774,7 @@
     "chat": {
       "mine": "Twoje",
       "yours": "Twoje",
+      "free": "Darmowe",
       "keys": "Klucz przestrzeni roboczej",
       "apiKeys": "Klucze API",
       "best": "Teraz z największym zapasem",
@@ -13203,6 +13218,11 @@
     "recommended": "Zalecany",
     "free": "Darmowy",
     "opencodeFreeHint": "Inne darmowe modele działają przez OpenCode na komputerze agenta.",
+    "missingModel": {
+      "app_old": "Zaktualizuj aplikację agentes.chat na komputerze agenta, aby używać {{model}}.",
+      "cli_old": "{{model}} wymaga nowszej wersji Antigravity CLI na komputerze agenta. Uruchom tam agy update.",
+      "plan": "{{model}} jest w planach Google AI Pro i Ultra. Żadne konto Gemini na komputerze agenta nie ma tego planu."
+    },
     "modelHelp": "Większe modele myślą więcej i szybciej zużywają plan.",
     "hidden": "Kto myśli, wybiera {{owner}} lub administrator.",
     "hiddenAdmins": "Kto myśli, wybierają tylko administratorzy.",
@@ -16450,6 +16470,12 @@
     }
   },
   "errors": {
+    "planMove": {
+      "notPayer": "Tylko osoba, która płaci za plan, może go przenieść.",
+      "same": "Wybierz inną przestrzeń roboczą, do której przeniesiesz plan.",
+      "targetHasPlan": "Ta przestrzeń robocza ma już plan. Odśwież, aby zobaczyć aktualny stan swoich przestrzeni.",
+      "targetDeleting": "Ta przestrzeń robocza jest usuwana. Najpierw ją przywróć albo wybierz inną."
+    },
     "surface": {
       "off": "Łączenie aplikacji czatu zostało wyłączone. Odśwież stronę, aby zobaczyć aktualne ustawienia.",
       "notAllowed": "Łączenie aplikacji czatu nie jest jeszcze dostępne dla twojego konta. Do tego czasu korzystaj z aplikacji tutaj.",
@@ -16754,7 +16780,9 @@
       "sharingForbidden": "Tylko osoby z rozmowy, w której jest plik, zmieniają, kto go widzi.",
       "sharingEmpty": "Wybierz, kto to widzi.",
       "sharingTooMany": "Wybierz najwyżej {{max}} osób i {{max}} ról.",
-      "notInDrive": "To istnieje tylko w swojej rozmowie, więc nie da się tego udostępnić."
+      "notInDrive": "To istnieje tylko w swojej rozmowie, więc nie da się tego udostępnić.",
+      "viewOnly": "Możesz oglądać ten plik, ale nie zmieniać go. Poproś osobę, która go utworzyła, o dostęp do edycji.",
+      "accessInvalid": "Nie udało się zapisać tego dostępu. Sprawdź, kto go widzi i kto go edytuje, i spróbuj ponownie."
     },
     "drive": {
       "folderIntoItself": "Folder nie może trafić do samego siebie ani do folderu w środku."
@@ -17837,6 +17865,8 @@
       "stillWaiting_few": "{{count}} wciąż czekają na {{name}}",
       "stillWaiting_many": "{{count}} wciąż czeka na {{name}}",
       "stillWaiting_other": "{{count}} wciąż czekają na {{name}}",
+      "planDropped": "Plan {{plan}} agenta {{name}} jest zalogowany na komputerze {{from}}. Zaloguj się też na {{to}} albo zostaw {{from}}.",
+      "signIn": "Zaloguj się na {{name}}",
       "skipped": "{{name}} zostaje: {{reason}}",
       "skip": {
         "other": "nie można teraz przenieść",
@@ -18107,14 +18137,14 @@
       "write": "Czytanie i zlecanie zadań agentom",
       "writeHelp": "Wysyła wiadomości w twoim imieniu i czyta odpowiedzi.",
       "manage": "Tworzenie i edycja agentów, rutyn i umiejętności",
-      "manageHelp": "Tworzy też dla ciebie agentów, rutyny, umiejętności i wspomnienia, z twoimi uprawnieniami.",
+      "manageHelp": "Tworzy też dla ciebie agentów, rutyny, umiejętności i wspomnienia oraz pisze strony wiki, z twoimi uprawnieniami.",
       "read": "Tylko odczyt",
-      "readHelp": "Widzi agentów, kanały i odpowiedzi, nic nie wysyłając.",
+      "readHelp": "Widzi agentów, kanały, strony wiki i odpowiedzi, nic nie wysyłając.",
       "can": "Może",
-      "canSee": "Widzieć agentów i kanały, które ty widzisz.",
+      "canSee": "Widzieć agentów, kanały i strony wiki, które ty widzisz.",
       "canSend": "Wysyłać wiadomości w twoim imieniu, oznaczone jako wysłane przez {{app}}.",
       "canRead": "Czytać odpowiedzi i to, co robią agenci.",
-      "canManage": "Tworzyć i edytować agentów, rutyny i umiejętności w twoim imieniu. Dostaniesz powiadomienie o tym, co utworzy.",
+      "canManage": "Tworzyć i edytować agentów, rutyny i umiejętności w twoim imieniu, z powiadomieniem o tym, co utworzy. Pisać strony wiki i przenosić je do kosza w twoim imieniu.",
       "never": "Nigdy",
       "neverApprove": "Zatwierdzać akcji agentów. Zatwierdzenia zostają w rękach ludzi w agentes.chat.",
       "neverSettings": "Zmieniać ustawień, członków ani uprawnień.",
@@ -20823,6 +20853,13 @@
     "submit": "Usuń konto",
     "deleted": "Twoje konto zniknie na dobre {{date}}. Zaloguj się wcześniej, aby je przywrócić."
   },
+  "planMove": {
+    "warning": "Twój plan zostaje przy tej przestrzeni roboczej i nie będzie odnawiany. Przenieść go najpierw do innej Twojej przestrzeni?",
+    "deleting": "Twój plan nie będzie odnawiany razem z nią. Możesz przenieść go do innej przestrzeni roboczej.",
+    "how": "Ta sama karta i opłacony okres przechodzą razem z nim. Nic nie zostanie pobrane ponownie ani zwrócone.",
+    "button": "Przenieś mój plan do {{name}}",
+    "moving": "Twój plan jest przenoszony do {{name}}. Będzie tam za około minutę."
+  },
   "billing": {
     "open": "Otwórz plan i płatności",
     "opening": "Otwieranie…",
@@ -22147,23 +22184,15 @@
   "share": {
     "button": "Udostępnij",
     "title": "Udostępnij {{name}}",
-    "conversation": "Tylko rozmowa",
-    "people": "Osoby i role, które wybierzesz",
-    "peoplePersonal": "Osoby, które wybierzesz",
     "everyone": "Cała przestrzeń robocza",
     "everyonePersonal": "Wszyscy tutaj",
     "whereDm": "Wiadomość bezpośrednia z: {{name}}",
     "whereDmGone": "Wiadomość bezpośrednia",
     "whereDmBetween": "Wiadomość bezpośrednia między: {{names}}",
     "whereChannel": "Członkowie #{{name}}",
-    "add": "Dodaj osobę lub rolę",
-    "addPersonal": "Dodaj osobę",
-    "addSearch": "Szukaj osób i ról",
-    "addSearchPersonal": "Szukaj osób",
     "noResults": "Nikt o takim imieniu",
     "groupPeople": "Osoby",
     "groupRoles": "Role",
-    "access": "Kto ma dostęp",
     "you": "{{name}} (ty)",
     "agent": "Agent",
     "role": "Rola",
@@ -22172,28 +22201,36 @@
     "adminsPersonal": "Osoby, które zarządzają tą przestrzenią, też to widzą.",
     "copyLink": "Kopiuj link",
     "copied": "Skopiowano link.",
-    "done": "Gotowe",
     "onlyHere": "Osoby spoza tej rozmowy nie otworzą linku.",
-    "choosePeople": "Wybierz osoby",
     "readOnly": "Tylko osoby z rozmowy zmieniają, kto to widzi.",
-    "open": "Cała przestrzeń robocza widzi ten plik.",
-    "openPersonal": "Wszyscy tutaj widzą ten plik.",
-    "savedEveryone": "Teraz cała przestrzeń robocza widzi plik.",
-    "savedEveryonePersonal": "Teraz wszyscy tutaj widzą plik.",
-    "savedPeople": "Teraz wybrane osoby widzą plik.",
-    "savedConversation": "Teraz plik widzi tylko rozmowa.",
-    "onlyYou": "Tylko ty",
-    "onlyMaker": "Tylko {{name}}",
     "onlyYouLink": "Tylko ty możesz otworzyć ten link.",
     "onlyMakerLink": "Tylko {{name}} może otworzyć ten link.",
     "readOnlyDrive": "Tylko osoba, która utworzyła plik, i administratorzy decydują, kto go widzi.",
-    "savedOnlyYou": "Teraz tylko ty widzisz ten plik.",
-    "savedOnlyMaker": "Teraz tylko {{name}} widzi ten plik.",
-    "undo": "Cofnij",
     "fileRef": "Plik {{title}}",
     "fileRefNone": "Plik bez dostępu",
     "also": "{{text}}. Udostępniono też: {{who}}.",
-    "someOnlyHere": "Niektóre z tych linków otworzą tylko osoby, które już widzą plik."
+    "someOnlyHere": "Niektóre z tych linków otworzą tylko osoby, które już widzą plik.",
+    "level": {
+      "none": "Brak dostępu",
+      "view": "Podgląd",
+      "edit": "Edycja"
+    },
+    "levelOf": "Co może robić {{name}}",
+    "madeIt": "Utworzył(a) plik",
+    "placeText": "Tam, gdzie jest plik",
+    "everyoneText": "Każdy w tej przestrzeni roboczej",
+    "everyoneTextPersonal": "Każdy tutaj",
+    "agentsAll": "Wszyscy agenci",
+    "agentsAllText": "Dowolny agent w przestrzeni roboczej",
+    "agentsHere": "Agenci w tej rozmowie",
+    "agentsHereText": "Agenci tam, gdzie jest plik",
+    "addAll": "Dodaj osobę, rolę lub agenta",
+    "addAllPersonal": "Dodaj osobę lub agenta",
+    "addAllSearch": "Szukaj osób, ról i agentów",
+    "addAllSearchPersonal": "Szukaj osób i agentów",
+    "groupAgents": "Agenci",
+    "addRow": "Dodaj",
+    "saved": "Zapisano dostęp."
   },
   "linkErrors": {
     "signIn": {
@@ -22503,7 +22540,7 @@
     "mark": "Beta",
     "open": "Wyślij opinię",
     "ask": "Czego zabrakło, co się zepsuło albo przeszkadzało?",
-    "goesCloud": "To, co napiszesz, trafi e-mailem do zespołu agentes.chat.",
+    "goesCloud": "To, co napiszesz, trafi e-mailem do zespołu agentes.chat, który może skorzystać z asystenta AI, żeby się temu przyjrzeć.",
     "goesServer": "To, co napiszesz, trafi e-mailem do osoby, która prowadzi ten serwer.",
     "placeholder": "Napisz po swojemu",
     "report": "Zgłoś problem tutaj",
@@ -22956,6 +22993,9 @@
         "inTrash": "W koszu. Przywróć, żeby wprowadzić zmiany.",
         "closing": "Przestrzeń robocza jest usuwana. Jej pliki można tylko czytać."
       },
+      "requestEdit": "Poproś o edycję",
+      "requestEditText": "czy możesz dać mi dostęp do edycji tego pliku?",
+      "requestEditAnyone": "Czy ktoś może dać mi dostęp do edycji tego pliku?",
       "present": "Prezentuj",
       "download": "Pobierz",
       "formats": {

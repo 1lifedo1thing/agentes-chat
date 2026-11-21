@@ -21,13 +21,13 @@ import { steeredByOthers } from "../authority";
 import { isConfidentialRun, threadIsConfidential } from "../confidential";
 import { callLine, type LearnSignal, type RunCall, runCalls } from "../continuation";
 import { cutText, cutTextEnd } from "../format";
-import { agentBudgetState } from "../gateway";
 import { enqueue } from "../outbox";
 import { runReadOutsideById } from "../outside";
 import { personBehindCall } from "../requester";
 import { isRightHand } from "../right-hand";
 import { addRunStep } from "../runs";
 import type { ToolContext } from "../tools/types";
+import { agentBudgetState } from "../usage";
 import { isPersonalWorkspace } from "../workspace-mode";
 import {
   accessSubject,

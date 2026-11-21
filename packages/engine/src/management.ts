@@ -7,6 +7,7 @@ import { decidableBySql } from "./approvals";
 import { listsAgentSql, managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import type { AutoModels } from "./auto-model";
+import { resolveDefaultBudgetPaused } from "./budget-paused-rows";
 import { caches } from "./cache";
 import {
   announceChannelLeavers,
@@ -22,7 +23,6 @@ import { proposalsWaitingFor } from "./context/proposals";
 import { invalidateDefaults, modelInfoFor } from "./credentials";
 import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, ValidationError } from "./errors";
 import { publishChannelEvent, publishChannelsChanged } from "./events";
-import { agentBudgetState } from "./gateway";
 import {
   AGENT_MEDIA_LEVELS,
   type AgentMediaLevel,
@@ -37,6 +37,7 @@ import { isRightHand, rightHandPermanent } from "./right-hand";
 import type { AccountSwitch } from "./spill";
 import { type ApprovalsLevel, DEFAULT_APPROVALS_LEVEL } from "./tools/run-policy";
 import {
+  agentBudgetState,
   agentBudgetsThisMonth,
   budgetPercent,
   DEFAULT_AGENT_BUDGET_NANO_USD,
@@ -281,7 +282,10 @@ export async function updateOrgSettings(
   caches.membership.deletePrefix(`${orgId}:`);
   caches.orgs.delete(`${orgId}:agent-budget`);
   // Agents on the default budget whose runs wait for it look again now (the rest park again quietly).
-  if (input.defaultAgentBudgetNanoUsd !== undefined) await resumeBudgetWaits(db, orgId, null);
+  if (input.defaultAgentBudgetNanoUsd !== undefined) {
+    await resumeBudgetWaits(db, orgId, null);
+    await resolveDefaultBudgetPaused({ db }, orgId);
+  }
   caches.orgs.delete(`${orgId}:action-check`);
   caches.orgs.delete(`${orgId}:auto-models`);
   caches.orgs.delete(mediaSettingsCacheKey(orgId));

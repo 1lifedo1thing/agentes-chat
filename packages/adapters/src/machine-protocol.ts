@@ -2453,6 +2453,13 @@ export const BRAIN_WARM_PROTOCOL = 74;
  * default, unless its config says otherwise.
  */
 export const TASK_LIMIT_PROTOCOL = 75;
+
+/**
+ * Protocol 76 (ADR 0143): outside system mode the runner brings its own Antigravity CLI (`AGY_PIN`, at least that
+ * version) where the person's is older or missing and Gemini thinks there, so a computer's Gemini models follow the
+ * app's version. An older runner runs whatever `agy` the person installed.
+ */
+export const AGY_COPY_PROTOCOL = 76;
 /** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
 export const TASK_LIMIT_BOUNDS = [1, 20] as const;
 

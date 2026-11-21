@@ -1217,6 +1217,8 @@ export const en = {
     },
     back: "Back",
     leave: "Back to {{name}}",
+    /** The onboarding rail's back arrow, for someone with another workspace: this one stays, to finish later. */
+    leaveLater: "Back to {{name}}, finish later",
     actions: {
       continue: "Continue",
       create_one: "Create {{count}} agent",
@@ -1229,7 +1231,11 @@ export const en = {
     /** The first question (ADR 0159): who the workspace is for. "For me" makes a personal one at once. */
     purpose: {
       title: "What will you use agentes.chat for?",
-      lead: "You can change this later, nothing is lost.",
+      lead: "You can switch the workspace mode anytime in Settings, without losing anything.",
+      /** The web's lead, short: the note under the answers says the choice can change (`switchTitle`, `switchText`). */
+      pick: "Choose how you want to see agentes.chat.",
+      switchTitle: "Switch anytime.",
+      switchText: "The workspace mode changes in Settings, and nothing is lost.",
       personal: "For me",
       personalText: "Agents that look after your day.",
       team: "For my team",
@@ -1237,9 +1243,9 @@ export const en = {
       /** A quiet line of what it does, under each answer. */
       personalExamples: "Your day at 7 · Bills · Training",
       teamExamples: "Customer support · Finance · Reports",
-      /** The web's cards (ADR 0162): one line under the title, then a pill per agent of the drawing. */
-      personalLine: "Agents that look after your day.",
-      teamLine: "People and agents in one place.",
+      /** The web's answers (ADR 0162): what each view is, under its title (the simpler keeps every feature). */
+      personalLine: "A simpler view, with every feature.",
+      teamLine: "The full view, with channels and people.",
       /** What each agent of a card's drawing does, on its pill: a few words. */
       activities: {
         agenda: "Daily agenda",
@@ -2810,6 +2816,8 @@ export const en = {
     working_other: "{{count}} agents working",
   },
   channel: {
+    /** Above #general's composer, before who is out of budget (`notifications.teamWatch.budget_out`). */
+    teamStalled: "Team stalled",
     /** Channel settings' sections, for who manages it (ADR 0134). */
     settingsNav: {
       label: "Channel settings",
@@ -3350,6 +3358,8 @@ export const en = {
       anAgent: "An agent",
       none: "None",
       budgetDefault: "Workspace default",
+      /** After a budget on a settings card that is at or below the agent's spend this month. */
+      pausesNow: "pauses at once",
       anAccount: "An AI account",
       everyone: "Everyone",
       ownerOnly: "Only its owner",
@@ -3661,6 +3671,15 @@ export const en = {
       antigravity: "Gemini isn't signed in on this computer. Connect a Gemini account on {{name}}'s\u00a0page.",
       opencode: "OpenCode can't think on this computer. Connect an OpenCode key on {{name}}'s\u00a0page.",
     },
+    /** The same, naming the computer it isn't signed in on (`NoAiCard.computer`). */
+    notSignedInOn: {
+      claude_code: "Claude Code isn't signed in on {{computer}}. Connect a Claude account on {{name}}'s\u00a0page.",
+      codex: "Codex isn't signed in on {{computer}}. Connect a ChatGPT account on {{name}}'s\u00a0page.",
+      cursor: "Cursor isn't signed in on {{computer}}. Connect a Cursor account on {{name}}'s\u00a0page.",
+      grok: "Grok isn't signed in on {{computer}}. Connect a Grok account on {{name}}'s\u00a0page.",
+      antigravity: "Gemini isn't signed in on {{computer}}. Connect a Gemini account on {{name}}'s\u00a0page.",
+      opencode: "OpenCode can't think on {{computer}}. Connect an OpenCode key on {{name}}'s\u00a0page.",
+    },
     card: {
       connected: "{{name}} has an AI now.",
       answerNow: "Answer now",
@@ -3783,6 +3802,8 @@ export const en = {
     chat: {
       mine: "Yours",
       yours: "Yours",
+      /** A free tier nobody owns (OpenCode's free models), where a plan says whose it is. */
+      free: "Free",
       keys: "Workspace key",
       /** A group of the switch screen's accounts by AI: the workspace's API keys. */
       apiKeys: "API keys",
@@ -12695,6 +12716,12 @@ export const en = {
     free: "Free",
     /** Under OpenCode Go's models: OpenCode's free tier answers only its own CLI (ADR 0132 §7). */
     opencodeFreeHint: "Other free models run through OpenCode on the agent's computer.",
+    /** Under the Gemini plan's models: why its newest model isn't there (`BrainOption.missing`). */
+    missingModel: {
+      app_old: "Update the agentes.chat app on the agent's computer to use {{model}}.",
+      cli_old: "{{model}} needs a newer Antigravity CLI on the agent's computer. Run agy update there.",
+      plan: "{{model}} comes with Google AI Pro and Ultra. No Gemini account on the agent's computer has that plan.",
+    },
     modelHelp: "Bigger models think more and use up the plan faster.",
     hidden: "{{owner}} or an admin chooses who thinks.",
     hiddenAdmins: "Only admins choose who thinks.",
@@ -15638,6 +15665,13 @@ export const en = {
     },
   },
   errors: {
+    /** Moving a plan to another workspace (ADR 0079). */
+    planMove: {
+      notPayer: "Only the person who pays for the plan can move it.",
+      same: "Pick another workspace to move the plan to.",
+      targetHasPlan: "That workspace has a plan already. Reload to see your workspaces as they are now.",
+      targetDeleting: "That workspace is being deleted. Restore it first, or pick another one.",
+    },
     /** Linking an outside chat app (ADR 0187). The server's refusals carry no app name, so none is said. */
     surface: {
       off: "Linking chat apps was turned off. Reload to see your settings as they are now.",
@@ -15989,6 +16023,8 @@ export const en = {
       sharingEmpty: "Choose who sees it.",
       sharingTooMany: "Choose at most {{max}} people and {{max}} roles.",
       notInDrive: "This lives only in its conversation, so it can't be shared.",
+      viewOnly: "You can view this file but not change it. Ask whoever made it for edit access.",
+      accessInvalid: "This access couldn't be saved. Check who sees and who edits it and try again.",
     },
     drive: {
       folderIntoItself: "A folder can't go inside itself or a folder inside it.",
@@ -17132,6 +17168,9 @@ export const en = {
       resumed_other: "{{count}} tasks started again",
       stillWaiting_one: "{{count}} still waits for {{name}}",
       stillWaiting_other: "{{count}} still wait for {{name}}",
+      /** An agent moved without its plan: a sign-in is a folder on one computer (ADR 0041). */
+      planDropped: "{{name}}'s {{plan}} plan is signed in on {{from}}. Sign in on {{to}} too, or keep {{from}}.",
+      signIn: "Sign in on {{name}}",
       skipped: "{{name}} stayed: {{reason}}",
       skip: {
         other: "couldn't switch right now",
@@ -17406,14 +17445,16 @@ export const en = {
       write: "Read and send tasks to agents",
       writeHelp: "Sends messages as you and reads the replies.",
       manage: "Create and edit agents, routines and skills",
-      manageHelp: "Also creates agents, routines, skills and memories for you, with your permissions.",
+      manageHelp:
+        "Also creates agents, routines, skills and memories and writes wiki pages for you, with your permissions.",
       read: "Read only",
-      readHelp: "Sees agents, channels and replies, without sending anything.",
+      readHelp: "Sees agents, channels, wiki pages and replies, without sending anything.",
       can: "Can",
-      canSee: "See the agents and channels you see.",
+      canSee: "See the agents, channels and wiki pages you see.",
       canSend: "Send messages as you, marked via {{app}}.",
       canRead: "Read the replies and what agents are doing.",
-      canManage: "Create and edit agents, routines and skills as you. You get a notice of what it creates.",
+      canManage:
+        "Create and edit agents, routines and skills as you, with a notice of what it creates. Write wiki pages and move them to the trash as you.",
       never: "Never",
       neverApprove: "Approve agents' actions. Approvals stay with people in agentes.chat.",
       neverSettings: "Change settings, members or permissions.",
@@ -20222,6 +20263,20 @@ export const en = {
     submit: "Delete account",
     deleted: "Your account goes for good on {{date}}. Sign in before then to restore it.",
   },
+  /**
+   * Moving a plan to another workspace (ADR 0079), offered to its payer where it would be lost: deleting the workspace,
+   * and the line of one being deleted. `{{name}}`: the workspace it goes to.
+   */
+  planMove: {
+    /** In the dialog that deletes the workspace. */
+    warning: "Your plan stays with this workspace and stops renewing. Move it to another one of yours first?",
+    /** On the line of a workspace being deleted. */
+    deleting: "Your plan stops renewing with it. You can move it to another workspace.",
+    /** Behind the ⓘ beside either line. */
+    how: "The same card and paid period go with it. Nothing is charged again and nothing is refunded.",
+    button: "Move my plan to {{name}}",
+    moving: "Your plan is moving to {{name}}. It's there in about a minute.",
+  },
   /** The billing service (ADR 0079): this server shows no plan, price or currency, only the way there. */
   billing: {
     open: "Open plan and billing",
@@ -21529,13 +21584,7 @@ export const en = {
   share: {
     button: "Share",
     title: "Share {{name}}",
-    conversation: "Only the conversation",
-    people: "People and roles you choose",
-    /**
-     * `<key>Personal`: a personal workspace's words (ADR 0159); its people choice and its Add, while there is no role
-     * worth picking, name people only.
-     */
-    peoplePersonal: "People you choose",
+    /** `<key>Personal`: a personal workspace's words (ADR 0159). */
     everyone: "Everyone in the workspace",
     everyonePersonal: "Everyone here",
     whereDm: "The DM with {{name}}",
@@ -21543,14 +21592,9 @@ export const en = {
     /** For someone who isn't in the DM and got the file through Compartilhar. */
     whereDmBetween: "The DM between {{names}}",
     whereChannel: "Members of #{{name}}",
-    add: "Add a person or a role",
-    addPersonal: "Add a person",
-    addSearch: "Search people and roles",
-    addSearchPersonal: "Search people",
     noResults: "Nobody with that name",
     groupPeople: "People",
     groupRoles: "Roles",
-    access: "Who has access",
     you: "{{name}} (you)",
     agent: "Agent",
     role: "Role",
@@ -21559,35 +21603,48 @@ export const en = {
     adminsPersonal: "The people who run this space see it too.",
     copyLink: "Copy link",
     copied: "Link copied.",
-    done: "Done",
     /** Beside Copiar link while only a private conversation sees the file. */
     onlyHere: "People outside this conversation won't open the link.",
-    choosePeople: "Choose people",
     readOnly: "Only who's in the conversation changes who sees it.",
-    open: "Everyone in the workspace sees this file.",
-    openPersonal: "Everyone here sees this file.",
-    savedEveryone: "Everyone in the workspace sees the file now.",
-    savedEveryonePersonal: "Everyone here sees the file now.",
-    savedPeople: "The people you chose see the file now.",
-    savedConversation: "Only the conversation sees the file now.",
     /**
-     * A file of the Drive itself lives with its maker (ADR 0157): its first choice, who has access, the link's warning,
-     * who may change it and the saved toast. `Maker`: someone else opens it (an administrator), `name` is its maker.
+     * A file of the Drive itself lives with its maker (ADR 0157): the link's warning and who may change who sees it.
+     * `Maker`: someone else opens it (an administrator), `name` is its maker.
      */
-    onlyYou: "Only you",
-    onlyMaker: "Only {{name}}",
     onlyYouLink: "Only you can open this link.",
     onlyMakerLink: "Only {{name}} can open this link.",
     readOnlyDrive: "Only who made the file and administrators change who sees it.",
-    savedOnlyYou: "Only you see the file now.",
-    savedOnlyMaker: "Only {{name}} sees the file now.",
-    undo: "Undo",
     fileRef: "File {{title}}",
     fileRefNone: "File without access",
     /** Who sees the file (`text`, no full stop) and who Compartilhar added. */
     also: "{{text}}. Also shared with {{who}}.",
     /** Copiar links of several files, some only their conversation opens: the toast, with Compartilhar. */
     someOnlyHere: "Some of these links open only for who already sees the file.",
+    /**
+     * Compartilhar with levels (ADR 0202): what someone may do with the file, the rows always there (who reads it where
+     * it lives, everyone, the agents) and their words, adding someone, and the saved toast.
+     */
+    level: {
+      none: "No access",
+      view: "View",
+      edit: "Edit",
+    },
+    levelOf: "What {{name}} can do",
+    madeIt: "Made the file",
+    placeText: "Where the file lives",
+    everyoneText: "Anyone in this workspace",
+    everyoneTextPersonal: "Anyone here",
+    agentsAll: "All agents",
+    agentsAllText: "Any agent in the workspace",
+    agentsHere: "Agents in this conversation",
+    agentsHereText: "The agents where the file lives",
+    addAll: "Add a person, role or agent",
+    addAllPersonal: "Add a person or agent",
+    addAllSearch: "Search people, roles and agents",
+    addAllSearchPersonal: "Search people and agents",
+    groupAgents: "Agents",
+    /** On the phone, beside a row while everyone edits: a tap adds them (and limits it). */
+    addRow: "Add",
+    saved: "Access saved.",
   },
   /**
    * A link a person opens in a browser that the server refuses (ADR 0157): each cause's title and words, the button
@@ -21913,7 +21970,7 @@ export const en = {
     mark: "Beta",
     open: "Send feedback",
     ask: "What was missing, broke or got in your way?",
-    goesCloud: "What you write goes by email to the agentes.chat team.",
+    goesCloud: "What you write goes by email to the agentes.chat team, who may use an AI assistant to look into it.",
     goesServer: "What you write goes by email to whoever runs this server.",
     placeholder: "Write it your way",
     /** The last entry of a right-click menu: it opens this form about what was clicked. */
@@ -22398,6 +22455,13 @@ export const en = {
         inTrash: "In the trash. Restore it to change it.",
         closing: "The workspace is being deleted. Its files can only be read.",
       },
+      /**
+       * Beside Read-only when the file's access lets me only view it (ADR 0202): the file's conversation opens with these
+       * words for who made it (`name`'s @), or for anyone there when no person made it.
+       */
+      requestEdit: "Ask to edit",
+      requestEditText: "can you give me edit access to this file?",
+      requestEditAnyone: "Can someone give me edit access to this file?",
       present: "Present",
       download: "Download",
       /** What a live file downloads as (ADR 0198). */

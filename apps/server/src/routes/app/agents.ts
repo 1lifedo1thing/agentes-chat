@@ -865,6 +865,9 @@ export function agentRoutes(deps: AppDeps) {
                   description:
                     "Something of its own thinks now (a run, or long work at work): drawn at work whatever its AI reads as for the viewer.",
                 }),
+                budgetPaused: z.literal(true).optional().openapi({
+                  description: "Work of its waits on its monthly budget: #general's team-stalled line names it.",
+                }),
                 work: z
                   .object({
                     state: WorkState.openapi({

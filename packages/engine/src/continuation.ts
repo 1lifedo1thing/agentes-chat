@@ -344,6 +344,12 @@ export const verdictRecord = (v: ContinuationVerdict) =>
   v === "continue" || v === "untried" || v === "unbacked" ? "unkept" : v === "ask" || v === "secret" ? "waiting" : v;
 
 /**
+ * Above the other verdicts' 0.45: a false "unbacked" holds back a true reply and costs a turn, and agents learn to pad
+ * every reply against it.
+ */
+const UNBACKED_SURE = 0.65;
+
+/**
  * One judge call on a turn's end (kind `follow_through`, recorded on the agent's and the workspace's usage like
  * every judgment, not billed to the agent's budget). `continue` at p ≥ 0.45 and at least p(ask); `untried` at
  * p ≥ 0.45, above p(done) and at least p(continue) and p(ask); `ask` at p ≥ 0.45; otherwise done. A missed
@@ -394,7 +400,7 @@ export async function continuationVerdict(
         request: cutText(input.request, 2000),
         reply: cutTextEnd(input.reply, 3000),
         means: input.means,
-        tried: input.tried.slice(-20).map(neutralizeUntrusted),
+        tried: shownTried(input.tried),
         runKind: input.runKind,
         ...(input.unreached ? { unreached: input.unreached } : {}),
         ...(input.backgroundWork?.length
@@ -416,7 +422,7 @@ export async function continuationVerdict(
             secret:
               "It asks a person to type or paste a secret into the chat (a password, an API key, a token, a private key), or the work `request` asked it to do can't go on without one only a person has and it hasn't asked for it through a secure request (`tried` has no request_secret call). Not when it only names the key a step it offers would need.",
             unbacked:
-              "Its reply says it made, sent, created, posted, saved or did something (an image, a file, a message or an email sent, a task opened, a change made, 'done', 'here it is') that no call in `tried` did. Not when the reply only plans, offers or asks, says plainly it couldn't, or reports what someone did before and says so. Work a subagent or a workflow of its own did (an Agent, Task or Workflow call in `tried`) is backed: their report is the call that did it.",
+              "Its reply says it made, sent, created, posted, saved or did something (an image, a file, a message or an email sent, a task opened, a change made, 'done', 'here it is') that plainly no call in `tried` did. A command, script or code run in `tried` that would produce it (a render, a conversion, a file written, an upload) did it. Not when `tried` starts with earlier calls not shown (one of those may have done it), nor when the reply only plans, offers or asks, says plainly it couldn't, or reports what a teammate, an earlier turn or `request` says was done. Work a subagent or a workflow of its own did (an Agent, Task or Workflow call in `tried`) is backed: their report is the call that did it.",
           },
         },
         ...(learn ? { learn: input.personal ? LEARN_QUESTION_PERSONAL : LEARN_QUESTION } : {}),
@@ -443,7 +449,7 @@ export async function continuationVerdict(
   const verdict: ContinuationVerdict =
     p("secret") >= 0.45 && (["untried", "continue", "ask", "unbacked"] as const).every((k) => p("secret") >= p(k))
       ? "secret"
-      : p("unbacked") >= 0.45 && (["untried", "continue", "ask"] as const).every((k) => p("unbacked") >= p(k))
+      : p("unbacked") >= UNBACKED_SURE && (["untried", "continue", "ask"] as const).every((k) => p("unbacked") >= p(k))
         ? "unbacked"
         : p("untried") >= 0.45 && p("untried") > p("done") && p("untried") >= p("continue") && p("untried") >= p("ask")
           ? "untried"
@@ -454,7 +460,7 @@ export async function continuationVerdict(
               : "done";
   // What failed was only refused for safety: no way is left to try for that data. Work it said it will still do
   // (`continue`) goes on.
-  return verdict === "untried" && onlySafetyRefusals(input.tried) ? "done" : verdict;
+  return verdict === "untried" && onlySafetyRefusals(input.tried.slice(-TRIED_SHOWN)) ? "done" : verdict;
 }
 
 /** What a finished turn taught, as the turn-end judgment reads it (ADR 0120): `none` starts no learning. */
@@ -515,7 +521,16 @@ export async function triedCalls(db: Database, run: { id: string; orgId: string 
   return [
     ...calls.map((c) => tag(callLine(c.name, c.input, c.result), c.safety)),
     ...harness.map((l) => tag(l, !l.startsWith(SAFETY_TAG) && HARNESS_SAFETY.test(l))),
-  ].slice(-20);
+  ];
+}
+
+const TRIED_SHOWN = 20;
+
+/** The tried lines a judge reads: the newest 20, told how many came before (a long run's render may be one of those). */
+export function shownTried(tried: string[]): string[] {
+  const earlier = tried.length - TRIED_SHOWN;
+  const shown = tried.slice(-TRIED_SHOWN).map(neutralizeUntrusted);
+  return earlier > 0 ? [`(${earlier} earlier calls of this run not shown)`, ...shown] : shown;
 }
 
 /** A run's tool calls through the gateway, oldest first, each with its result once it came. */
