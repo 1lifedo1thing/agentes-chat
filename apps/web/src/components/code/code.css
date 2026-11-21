@@ -352,8 +352,13 @@
   left: 50%;
   top: 0;
   transform: translateX(-50%);
+  /* Its own width: placed from the title's middle, it would otherwise be squeezed into half of it and wrap. */
+  width: max-content;
   color: var(--del-ink);
   display: none;
+}
+.code-block .code-mid__t {
+  white-space: nowrap;
 }
 .code-block--del .code-mid__t {
   color: inherit;
