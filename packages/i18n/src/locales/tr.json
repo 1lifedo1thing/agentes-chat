@@ -11146,7 +11146,8 @@
       "empty": "Açtığınız ya da çağrıldığınız oturumlar burada görünür."
     },
     "home": {
-      "mode": "Vibecoding mode",
+      "mode": "Coding mode",
+      "beta": "Beta",
       "title": "{{repo}} üzerinde ne yapalım?",
       "aRepo": "Bir proje",
       "noAgents": "Henüz bilgisayarda kod yazan bir ajan yok. Bir ajanın ayarlarından ona bir bilgisayar ve bir kodlama uygulaması verin ya da orada kod çalıştırmasına izin verin.",

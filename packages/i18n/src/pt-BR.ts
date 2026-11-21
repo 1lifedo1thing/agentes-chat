@@ -11670,7 +11670,9 @@ export const ptBR = {
     },
     home: {
       /** O título da casa, embaixo do agente em cubos (o nome do modo, igual em toda língua). */
-      mode: "Vibecoding mode",
+      mode: "Coding mode",
+      /** Ao lado do nome do modo: a página ainda é beta. */
+      beta: "Beta",
       /** Embaixo do título, sobre o campo. */
       title: "O que fazer em {{repo}}?",
       aRepo: "um projeto",

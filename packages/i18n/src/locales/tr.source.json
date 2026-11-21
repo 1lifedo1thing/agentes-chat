@@ -27294,7 +27294,10 @@
     "value": "The sessions you open, or are called into, show here."
   },
   "codeSessions.home.mode": {
-    "value": "Vibecoding mode"
+    "value": "Coding mode"
+  },
+  "codeSessions.home.beta": {
+    "value": "Beta"
   },
   "codeSessions.home.title": {
     "value": "What to do in {{repo}}?"

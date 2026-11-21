@@ -1,6 +1,6 @@
 import { type CodeSession, useCodeSessions, useCodeStart, useCreateCodeSession } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { Button, cx, Icon, Popover, SearchField, Select } from "@agenteschat/ui";
+import { Button, Chip, cx, Icon, Popover, SearchField, Select } from "@agenteschat/ui";
 import { useNavigate } from "@tanstack/react-router";
 import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -111,7 +111,10 @@ export function CodeHome() {
       </div>
       <form className={cx("code-mid", pickedAgent && "code-mid--agent")} onSubmit={submit}>
         {pickedAgent && <CodeHomeAgent agent={pickedAgent} name={pickedAgent.name} area={home} />}
-        <h2 className="code-mid__t code-mid__t--brand">{t("codeSessions.home.mode")}</h2>
+        <div className="code-mid__head">
+          <h2 className="code-mid__t code-mid__t--brand">{t("codeSessions.home.mode")}</h2>
+          <Chip>{t("codeSessions.home.beta")}</Chip>
+        </div>
         <span className="code-mid__s code-mid__s--ask">{t("codeSessions.home.title", { repo: repoName })}</span>
         {agents.length === 0 && start.isSuccess ? (
           <p className="code-mid__none">{t("codeSessions.home.noAgents")}</p>

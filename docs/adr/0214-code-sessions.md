@@ -110,7 +110,7 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
 - **List**: the sessions I take part in, grouped by repository, with their state in words (`preparing`, `working`,
   `waiting for you`, `ready`, the PR) and the change's size.
 - **Home**: the field in the middle of the agents' fine sky (the agent page's cover sky), the agents that program
-  standing on its horizon saying what they do. Over the field the page's title ("Vibecoding mode", in the brand's face)
+  standing on its horizon saying what they do. Over the field the page's title ("Coding mode", in the brand's face, with a Beta mark)
   and the question, and over them the agent picked in the field drawn in cubes from its own avatar (each pixel of the
   engine's drawing a cube, the avatar's tones through the sky's dither, plain WebGL: `agent-voxel.ts`,
   `CodeHomeAgent`): it turns a little toward the pointer, blinks with its face, and its cursor (the browser's, ADR 0040

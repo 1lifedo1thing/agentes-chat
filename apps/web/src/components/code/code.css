@@ -220,6 +220,13 @@
   font-size: 14px;
   text-align: center;
 }
+/* The mode's name and its Beta mark on one line, in the middle (the name is one short line, so the mark sits on it). */
+.code-mid__head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
 /* The title in the brand's face, in today's title box (40 tall), so the field stays where it is; the question under it. */
 .code-mid__t--brand {
   font-family: var(--font-brand);

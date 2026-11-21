@@ -11281,7 +11281,8 @@
       "empty": "De sessies die je opent, of waar je bij wordt geroepen, verschijnen hier."
     },
     "home": {
-      "mode": "Vibecoding mode",
+      "mode": "Coding mode",
+      "beta": "Beta",
       "title": "Wat doen we in {{repo}}?",
       "aRepo": "een project",
       "noAgents": "Nog geen agent programmeert op een computer. Geef een agent in de instellingen een computer en een codeerapp, of laat hem daar code uitvoeren.",

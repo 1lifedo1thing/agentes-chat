@@ -11648,7 +11648,8 @@
       "empty": "Les sessions que vous ouvrez, ou qu'on vous fait rejoindre, apparaissent ici."
     },
     "home": {
-      "mode": "Vibecoding mode",
+      "mode": "Coding mode",
+      "beta": "Beta",
       "title": "Que faire dans {{repo}} ?",
       "aRepo": "un projet",
       "noAgents": "Aucun agent ne code sur un ordinateur pour l'instant. Dans les paramètres d'un agent, donnez-lui un ordinateur et une app de code, ou laissez-le y exécuter du code.",

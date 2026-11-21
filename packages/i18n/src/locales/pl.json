@@ -12049,7 +12049,8 @@
       "empty": "Tu pojawiają się sesje, które otwierasz albo do których cię zawołano."
     },
     "home": {
-      "mode": "Vibecoding mode",
+      "mode": "Coding mode",
+      "beta": "Beta",
       "title": "Co robimy w {{repo}}?",
       "aRepo": "projekcie",
       "noAgents": "Żaden agent nie programuje jeszcze na komputerze. W ustawieniach agenta daj mu komputer i aplikację do programowania albo pozwól mu tam uruchamiać kod.",

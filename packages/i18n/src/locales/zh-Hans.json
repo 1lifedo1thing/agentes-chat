@@ -10827,7 +10827,8 @@
       "empty": "你打开的会话和被叫去参与的会话会显示在这里。"
     },
     "home": {
-      "mode": "Vibecoding mode",
+      "mode": "Coding mode",
+      "beta": "Beta",
       "title": "要在 {{repo}} 里做什么？",
       "aRepo": "某个项目",
       "noAgents": "还没有能在电脑上编程的智能体。在智能体的设置里给它一台电脑和一个编程应用，或者允许它在那里运行代码。",

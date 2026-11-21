@@ -10813,7 +10813,8 @@
       "empty": "Sesi yang kamu buka, atau tempat kamu dipanggil, muncul di sini."
     },
     "home": {
-      "mode": "Vibecoding mode",
+      "mode": "Coding mode",
+      "beta": "Beta",
       "title": "Apa yang dikerjakan di {{repo}}?",
       "aRepo": "sebuah proyek",
       "noAgents": "Belum ada agen yang memprogram di komputer. Di pengaturan agen, beri dia komputer dan aplikasi coding, atau izinkan dia menjalankan kode di sana.",
