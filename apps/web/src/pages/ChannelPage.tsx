@@ -217,6 +217,7 @@ import {
   OPEN_LAYER,
   PixelSpinner,
   SavedNote,
+  SettingRow,
   Skeleton,
   SkeletonConversationRows,
   SkeletonGroup,
@@ -365,7 +366,6 @@ import { NewMissionDialog } from "@/components/missions/MissionDialogs";
 import { NavToggle } from "@/components/NavDrawer";
 import { CHANNEL_NAME, ChannelAccessChoice, toChannelName } from "@/components/NewChannelDialog";
 import { FailedRunFix, KeyGuardDialog, NoAiBanner, NoAiCard, useNoAiAutoOpen } from "@/components/NoAi";
-import { PrefRow } from "@/components/NoticePrefs";
 import { useNotificationOpener } from "@/components/NotificationOpen";
 import { useNewAgent } from "@/components/new-agent/NewAgentDialog";
 import { OpensAgent } from "@/components/OpensAgent";
@@ -5644,27 +5644,29 @@ function ChannelDetails({
                   <Field label={t("channelCategories.category")} id="channel-edit-category">
                     <CategorySelect value={channel.categoryId ?? null} onChange={moveTo} canCreate={editable} />
                   </Field>
-                  <PrefRow
-                    id="channel-edit-threads"
-                    icon="thread"
-                    label={t("channel.replyInThreads")}
-                    hint={t("channel.replyInThreadsHelp")}
-                    control={
-                      <Switch
-                        checked={Boolean(channel.replyInThreads)}
-                        onCheckedChange={(on) =>
-                          update.mutate(
-                            { replyInThreads: on },
-                            {
-                              onSuccess: () => setSaved(true),
-                              onError: (e) => toast.show(errorText(t, e), "error"),
-                            },
-                          )
-                        }
-                        disabled={!editable || update.isPending}
-                      />
-                    }
-                  />
+                  <SettingRow
+                    title={t("channel.replyInThreads")}
+                    hint={{
+                      name: t("common.about", { label: t("channel.replyInThreads") }),
+                      text: t("channel.replyInThreadsHelp"),
+                    }}
+                    htmlFor="channel-edit-threads"
+                  >
+                    <Switch
+                      id="channel-edit-threads"
+                      checked={Boolean(channel.replyInThreads)}
+                      onCheckedChange={(on) =>
+                        update.mutate(
+                          { replyInThreads: on },
+                          {
+                            onSuccess: () => setSaved(true),
+                            onError: (e) => toast.show(errorText(t, e), "error"),
+                          },
+                        )
+                      }
+                      disabled={!editable || update.isPending}
+                    />
+                  </SettingRow>
                 </DialogBody>
               )}
               {section === "permissions" && (
