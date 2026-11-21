@@ -14,6 +14,7 @@ import { agentLook } from "../../shared/logic";
 import { MentionCount } from "../../shared/parts";
 import { useOpenFileTalk, useTalkMessages, useTalkRuns } from "./hooks";
 import { talkKindOf, talkLine } from "./logic";
+import { useTalkSheet } from "./store";
 
 /** The line's height, and the least room under it (over a phone with no home indicator). */
 export const TALK_LINE_H = 56;
@@ -37,10 +38,12 @@ export function useTalkLineRoom(): number {
  * The conversation under a live file (ADR 0199, the task's conversation row in glass), a picture, a video or a PDF
  * (ADR 0208): the faces of who took part, then what an agent is doing there now in its color with the pixel orbit
  * ("Atlas is making images…"), else the last message ("Atlas: Done, summed by status."), else "Talk about this
- * canvas"; how many, my mentions in red, and the chevron. A tap pushes the conversation. It floats over the file at
- * the bottom (`floating`), sits in a bar of the screen's own (`bare`: the picture viewer's, which keeps the home
- * indicator's room) or closes the screen's column; with the keyboard up it goes, and comes back when it goes down.
- * `onOpen`: what a tap does instead (the viewer closes before the conversation opens).
+ * canvas"; how many, my mentions in red, and the chevron. A tap opens the conversation in its sheet over the file
+ * (ADR 0208), the only way into it from the file. It floats over the file at the bottom (`floating`), sits in a bar of
+ * the screen's own (`bare`: the picture viewer's, which keeps the home indicator's room) or closes the screen's
+ * column; with the keyboard up it goes, and comes back when it goes down. While the sheet is up over the file the line
+ * goes too, and in a column its place holds the sheet's room, so what the file shows ends above the sheet and the
+ * person reaches all of it there. `onOpen`: what a tap does instead.
  */
 export function FileTalkLine({
   file,
@@ -64,6 +67,7 @@ export function FileTalkLine({
   const runs = useTalkRuns(file?.id ?? "", talk);
   const { mentions } = useFileUnread(orgId, file?.id ?? "");
   const open = useOpenFileTalk(file);
+  const sheet = useTalkSheet(file?.id);
 
   const line = useMemo(() => {
     const entries = workingEntries(runs, [], (id) => dir.anyAgent(id)?.name ?? "");
@@ -76,6 +80,7 @@ export function FileTalkLine({
     });
   }, [runs, messages, talk?.count, dir, t]);
 
+  if (sheet) return floating || bare ? null : <View style={{ height: sheet.reserve, backgroundColor: c.bg }} />;
   if (keyboardUp) return null;
   const kind = talkKindOf(file);
   // Not known yet: the home indicator's room, where the line will be (a floating one waits unseen).

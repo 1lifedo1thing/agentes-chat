@@ -18,7 +18,11 @@
   `pages/ChannelPage.tsx`, `pages/ThreadPage.tsx` (`headless`), `pages/DrivePage.tsx` (`?m=`),
   `components/artifacts/ArtifactViewer.tsx`, `ImageZoom.tsx` (`overlay`, `marking`, `tools`), `packages/ui`
   `VideoPlayer.tsx` (`onTime`, `onVideo`, `marks`); phone `features/files/ImageViewer.tsx`, `ZoomPicture.tsx`,
-  `DocumentViewer.tsx`, `features/live-files/talk/*` (`PicturePins`, `logic.ts`), `features/chat/sheets.tsx`
+  `VideoPlayer.tsx` (`onMoment`), `DocumentViewer.tsx`, `PdfPages.tsx` (`react-native-pdf-light`), `source.ts`
+  (`pdfCopy`), `features/live-files/talk/*` (`PicturePins`, `logic.ts`, `store.ts` (`showTalkSheet`, `askTalkSheet`),
+  `TalkSheet.tsx` (`FileTalkSheet`), `TalkLine.tsx`), `app/(app)/file-talk/[channelId].tsx`, `app/(app)/_layout.tsx`
+  (`fileTalk`), `features/chat/ChatScreen.tsx` (`sheet`), `features/chat/screen/sheet-mode.tsx`,
+  `features/chat/sheets.tsx`
 
 ## Context
 
@@ -104,9 +108,21 @@ Under a file with comments the chat shows their line (who, how many, when), the 
 viewer with the comments open, as does a link to one (the Drive's `?artifact=…&m=…`; the file's page address of a
 live file, `/drive/<id>?m=…`, sends a picture, a video or a PDF there).
 
-The phone follows its live files: the viewer pins a picture's open comments on it and ends with the file's talk line;
-its Comment marks a point on a picture or the moment a video is paused at and opens the conversation with it; a PDF
-has the talk line. Resolve and Reopen are in the message's menu.
+The phone opens a file's conversation the same way for every file, a picture, a video, a PDF and a live file alike:
+the file's talk line is the one way in, and the conversation comes up in the system's sheet over the file (a route
+sheet, `file-talk/[channelId]`), at half the screen with nothing behind it dimmed, so the file stays in sight and in
+reach above it; pulled up it fills the screen and dims the file, down it goes. The sheet holds the conversation
+itself (the chat in its sheet mode: the sheet's bar with the title and ×, the messages, the composer with the file's
+quote); the field raises the sheet to its full height as the person types. The file behind follows the sheet through
+a small store (which file it is over, at which height, how much of the screen it takes): the viewer lays the picture
+out above it, hides its line and actions, and a tap on the picture marks a point (the quote "About point 4 of the
+image", the person's pin on the spot); a video pauses and a tap on its frame marks that moment and that point, the
+comments made near the moment pinned on the frame (the system's player draws its own timeline, so they are not on
+it); a PDF is drawn page by page by the system's renderer (`react-native-pdf-light`, on Android too, where the web
+view had none) and a tap marks a page and a point; a live file keeps the sheet's room under its content and its own
+tools. Pins open the sheet at their message; a message's line about the file brings the sheet down to show it; a
+link or a notice to one of the messages opens the file with the sheet at it. Resolve and Reopen are in the message's
+menu.
 
 ## Consequences
 
@@ -117,3 +133,5 @@ has the talk line. Resolve and Reopen are in the message's menu.
 - The web app gains pdf.js, out of its first load (about 136 KB, and its worker about 379 KB, compressed, once).
 - A video's comment is as good as the frame the person marked: the agent still never watches the video.
 - Phone comments carry no pictures and no areas; their agents read the file itself.
+- The phone gains `react-native-pdf-light` (MIT, native renderers, no web view) for PDFs; there is no pinch zoom on a
+  PDF's pages, so its pins stand where the page is laid out.

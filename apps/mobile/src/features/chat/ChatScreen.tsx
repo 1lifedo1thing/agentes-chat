@@ -3,8 +3,8 @@ import { workIsOver } from "@agenteschat/client/lib/long-work";
 import { pinsIn } from "@agenteschat/client/lib/pins";
 import type { LegendListRef } from "@legendapp/list/react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useHeaderHeight } from "expo-router/react-navigation";
-import { type ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { HeaderHeightContext } from "expo-router/react-navigation";
+import { type ComponentRef, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type LayoutChangeEvent, ScrollView, StyleSheet, View } from "react-native";
 import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
@@ -43,6 +43,7 @@ import { DOCK_SIDE } from "./screen/constants";
 import { useLatest } from "./screen/hooks";
 import { useSettled } from "./screen/opening";
 import { ChannelGreeting, DockGestureArea, DockRoom, ReadMark } from "./screen/parts";
+import { ChatSheetBar, ChatSheetContext, type ChatSheetMode } from "./screen/sheet-mode";
 import { useChatData } from "./screen/useChatData";
 import { useChatRows, useRowReceipts } from "./screen/useChatRows";
 import { useChatSend } from "./screen/useChatSend";
@@ -70,19 +71,23 @@ const OFFER_DONE = "done";
 
 /**
  * A conversation: a channel, a DM, a thread or a mission's thread (`threadId`). `handoffId`: a request
- * for help a push or the inbox opened it for (its card opens in place, in control).
+ * for help a push or the inbox opened it for (its card opens in place, in control). `sheet`: a file's conversation in
+ * the sheet over its file (ADR 0208): the sheet's bar in place of the pushed screen's, and the composer raising the
+ * sheet while the person types.
  */
 export function ChatScreen({
   channelId,
   threadId,
   handoffId,
   focusId,
+  sheet,
 }: {
   channelId: string;
   threadId?: string | null;
   handoffId?: string | null;
   /** Open at this message: paged in, scrolled to and lit for a moment (a pin). */
   focusId?: string | null;
+  sheet?: ChatSheetMode;
 }) {
   // Its rows read the agents' questions once for the conversation (`ConversationRowData`), its sheets included.
   return (
@@ -90,7 +95,9 @@ export function ChatScreen({
       <SheetHostProvider>
         <FocusLive>
           <OpenHandoffProvider handoffId={handoffId ?? null}>
-            <Chat channelId={channelId} threadId={threadId ?? null} focusId={focusId ?? null} />
+            <ChatSheetContext.Provider value={sheet ?? null}>
+              <Chat channelId={channelId} threadId={threadId ?? null} focusId={focusId ?? null} sheet={sheet ?? null} />
+            </ChatSheetContext.Provider>
           </OpenHandoffProvider>
         </FocusLive>
       </SheetHostProvider>
@@ -102,10 +109,12 @@ function Chat({
   channelId,
   threadId,
   focusId,
+  sheet: inSheet,
 }: {
   channelId: string;
   threadId: string | null;
   focusId: string | null;
+  sheet: ChatSheetMode | null;
 }) {
   const { t, i18n } = useTranslation();
   const orgId = useOrgId();
@@ -453,9 +462,11 @@ function Chat({
   const bottomPad = Math.max(insets.bottom, 10);
   // The header floats over the conversation (glass on iOS 26, a blur before; round plates on Android), which
   // fades under it.
-  // Peeked at from the list (iOS's long press): no bar over it and no composer, so no room for either.
-  const barHeight = useHeaderHeight();
-  const headerHeight = peeking ? 0 : barHeight;
+  // Peeked at from the list (iOS's long press): no bar over it and no composer, so no room for either. In a file's
+  // sheet the sheet's bar sits above the conversation, not over it (no stack's header there to measure: read without
+  // `useHeaderHeight`, which throws where there is none).
+  const barHeight = useContext(HeaderHeightContext) ?? 0;
+  const headerHeight = peeking || inSheet ? 0 : barHeight;
   // How far down the fade under the header stays solid: through the status bar and the bar (a message scrolled up
   // showed through the bar's pill and between its buttons), fading out in the 28 points under it.
   const topFadeSolid = headerHeight > 0 ? Math.min(1, headerHeight / (headerHeight + 28)) : 0;
@@ -552,6 +563,12 @@ function Chat({
     });
   const openPinsHere = useLatest(openPins);
   const goToPinHere = useLatest(goToPin);
+  // A pin tapped on the file behind the sheet: its message, paged in, scrolled to and lit, as `?m=` does.
+  const seekAt = inSheet?.seek;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: each ask once, by its `at`
+  useEffect(() => {
+    if (seekAt) setSeek(seekAt.messageId);
+  }, [seekAt?.at]);
 
   return (
     <AskStoreProvider store={asks}>
@@ -580,33 +597,37 @@ function Chat({
             style={styles.wallpaper}
           />
         ) : null}
-        <ChatHeader
-          channelId={channelId}
-          threadId={threadId}
-          title={title}
-          subtitle={subtitle}
-          info={info}
-          isThread={isThread}
-          dm={dm}
-          dmAgent={dmAgent}
-          dmAgentId={dmAgentId}
-          channel={channel}
-          roster={roster}
-          member={member}
-          runs={runs}
-          lineBase={lineBase}
-          consultData={consultData}
-          far={far}
-          unseen={unseen}
-          focused={focused}
-          peeking={peeking}
-          searchPlace={searchPlace}
-          openOptions={openOptions}
-          openMembers={openMembers}
-          openSearch={openSearch}
-          onHoldPill={onHoldPill}
-          leavePlace={leavePlace}
-        />
+        {inSheet ? (
+          <ChatSheetBar title={title} onClose={inSheet.onClose} />
+        ) : (
+          <ChatHeader
+            channelId={channelId}
+            threadId={threadId}
+            title={title}
+            subtitle={subtitle}
+            info={info}
+            isThread={isThread}
+            dm={dm}
+            dmAgent={dmAgent}
+            dmAgentId={dmAgentId}
+            channel={channel}
+            roster={roster}
+            member={member}
+            runs={runs}
+            lineBase={lineBase}
+            consultData={consultData}
+            far={far}
+            unseen={unseen}
+            focused={focused}
+            peeking={peeking}
+            searchPlace={searchPlace}
+            openOptions={openOptions}
+            openMembers={openMembers}
+            openSearch={openSearch}
+            onHoldPill={onHoldPill}
+            leavePlace={leavePlace}
+          />
+        )}
         {hasPin ? (
           // The bar is see-through (the conversation runs under it): an open mission's card starts below it. Pinned
           // messages have no bar here: they wait above the first message, revealed by pulling down (`PinnedLines`).
