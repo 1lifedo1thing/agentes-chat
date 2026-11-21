@@ -104,6 +104,32 @@ test("a run that answered on the way lists each piece of work under the reply it
   expect(workFromSteps(replySteps(after, "result").steps).steps.map((s) => s.tool)).toEqual(["Workflow", "Bash"]);
 });
 
+test("in a code session a check that let a command through at once is no line; a refused one is", () => {
+  const at = "2026-11-20T21:00:00.000Z";
+  const check = (seq: number, id: string, content: string) => [
+    { seq, kind: "tool_call", data: { name: "permission_prompt", toolUseId: id, input: { tool_name: "Bash" } }, createdAt: at },
+    { seq: seq + 1, kind: "tool_result", data: { name: "permission_prompt", toolUseId: id, content }, createdAt: at },
+  ];
+  const steps = [
+    { seq: 1, kind: "context", data: { cliTool: { id: "w1", name: "Workflow", verb: "workflow", ok: true } }, createdAt: at },
+    ...check(2, "p1", '{"behavior":"allow"}'),
+    ...check(4, "p2", '{"behavior":"deny","message":"Not here"}'),
+  ];
+  const mine = replySteps(steps, undefined);
+  expect(mine.cli).toBe(true);
+  const quiet = workFromSteps(mine.steps, undefined, { quietChecks: mine.cli });
+  expect(quiet.steps.map((s) => [s.tool, s.failed])).toEqual([
+    ["Workflow", false],
+    ["permission_prompt", true],
+  ]);
+  // Elsewhere the check is the command's only line.
+  expect(workFromSteps(steps).steps).toHaveLength(3);
+  // Live, the same: a code session's run leaves out the check that let its command through.
+  const allowed = { type: "agent.step", ...base, tool: "permission_prompt", toolUseId: "p1" } as unknown as Ev;
+  const work = live([step("w1", "Workflow", { verb: "workflow" }), allowed])?.work ?? [];
+  expect(toolItemsLive(work).map((i) => (i.kind === "call" ? i.line.tool : null))).toEqual(["Workflow"]);
+});
+
 test("a reply's lone call of its own reads as its line before its steps load", () => {
   const cli = { verb: "search", target: "parseRoute", meta: { found: 3 } };
   const meta = { work: { steps: 1, durationMs: 900, ms: 120, cli, calls: [{ name: "Grep", n: 1 }] } };

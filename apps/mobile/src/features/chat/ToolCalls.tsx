@@ -754,6 +754,7 @@ export function SavedTools({
       ? workFromSteps(
           mine.steps.filter((s) => !(s.kind === "tool_call" && onCard(s.data.name))),
           mine.whole ? run.data.run : undefined,
+          { quietChecks: mine.cli },
         )
       : null;
   const items = work ? toolItemsSaved(work) : [];

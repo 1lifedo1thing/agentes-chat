@@ -2324,6 +2324,11 @@ async function executeRunInner(
           or(eq(agentRunSteps.kind, "tool_call"), sql`(${cliTool})`),
           sql`coalesce(${name}, '') !~ ${UNCOUNTED_TOOLS}`,
           sql`(${agentRunSteps.data}->>'name' is distinct from ${PERMISSION_TOOL} or ${agentRunSteps.data}->'input'->>'request_id' is null)`,
+          // In a code session a check that let a command through at once is no call (the command is the brain's own
+          // line, or its subagent's work: `quietCheck` in the apps); one that waited on a person or refused is.
+          channelRow?.kind === "code"
+            ? sql`not (${agentRunSteps.data}->>'name' = ${PERMISSION_TOOL} and exists (select 1 from ${agentRunSteps} answer where answer.run_id = ${agentRunSteps.runId} and answer.kind = 'tool_result' and answer.data->>'toolUseId' = ${agentRunSteps.data}->>'toolUseId' and answer.data->>'content' like '{"behavior":"allow"%'))`
+            : undefined,
         ),
       )
       .groupBy(app)
@@ -5235,10 +5240,18 @@ async function executeRunInner(
         const cliTool = cliToolStep(call, { cwd: cliFolder, ...(ms !== undefined ? { ms } : {}) });
         later(() => addRunStep(db, run, "context", { cliTool }));
       };
-      /** The turn ended: calls whose background work never said it ended go on the trail as they are. */
+      /** A call whose work went on in the background ends now: its line live, then its step. */
+      const endBackground = (id: string) => {
+        const held = backgroundCalls.get(id);
+        if (!held) return;
+        backgroundCalls.delete(id);
+        ownStep(held.call, true);
+        stepTold.delete(id);
+        cliStepNow(held.call, held.startedAt);
+      };
+      /** The turn ended: calls whose background work never said it ended end as they are. */
       const flushBackground = () => {
-        for (const { call, startedAt } of backgroundCalls.values()) cliStepNow(call, startedAt);
-        backgroundCalls.clear();
+        for (const id of [...backgroundCalls.keys()]) endBackground(id);
       };
       // Context budget: a request that wouldn't fit the model's window sends old tool results as a
       // placeholder (the judge picks which). Saved on the transcript, so later turns and resumes agree.
@@ -5353,9 +5366,7 @@ async function executeRunInner(
             onProgress: (p) => {
               if (p.ended) {
                 working.delete(p.id);
-                const held = backgroundCalls.get(p.id);
-                backgroundCalls.delete(p.id);
-                if (held) cliStepNow(held.call, held.startedAt);
+                endBackground(p.id);
               } else working.add(p.id);
               if (!cliLines || run.background) return;
               void publishChannelEvent(deps.pubsub, {
@@ -5368,19 +5379,20 @@ async function executeRunInner(
             onExecuted: (call) => {
               // Its line on the way (`say_now`) is talk, not work: a turn that fails after it did nothing to keep.
               if (!isSayNow(call.name)) executedNow.push(call);
-              // A brain that tells its calls only once they ended (Codex, an older runner) says the step now; in a code
-              // session the end of one told as it started is said too.
-              ownStep(call, true);
               const startedAt = stepTold.get(call.id);
-              stepTold.delete(call.id);
               // In a code session each call of its own is a step, where its reply's work lists it (ADR 0208). One
               // whose work goes on in the background (its progress started and not ended; a workflow always does)
-              // waits for that work's end.
-              if (cliLine(call.name)) {
-                const background =
-                  working.has(call.id) || (verbOfTool(call.name) === "workflow" && !call.result?.isError);
-                if (background) backgroundCalls.set(call.id, { call, startedAt });
-                else cliStepNow(call, startedAt);
+              // ends, live and on the trail, when that work ends: its line runs until then.
+              const background =
+                cliLine(call.name) &&
+                (working.has(call.id) || (verbOfTool(call.name) === "workflow" && !call.result?.isError));
+              if (background) backgroundCalls.set(call.id, { call, startedAt });
+              else {
+                // A brain that tells its calls only once they ended (Codex, an older runner) says the step now; in a
+                // code session the end of one told as it started is said too.
+                ownStep(call, true);
+                stepTold.delete(call.id);
+                if (cliLine(call.name)) cliStepNow(call, startedAt);
               }
               // The text it streams next is another model call's: never one reply with what it wrote before.
               deltas.toolEnded();

@@ -203,7 +203,12 @@ const DRIVE: ActivityKind[] = ["readingDrive", "writingDrive", "exportingFile", 
 const time = (iso: string) => new Date(iso).getTime();
 
 /** Tool calls of a run (paired with their results), the apps it used and how long it took. */
-export function workFromSteps(steps: RunStep[], run?: Pick<Run, "createdAt" | "finishedAt">): Work {
+export function workFromSteps(
+  steps: RunStep[],
+  run?: Pick<Run, "createdAt" | "finishedAt">,
+  /** `quietChecks`: a code session's run, where a check that let a command through at once is no line (`quietCheck`). */
+  options: { quietChecks?: boolean } = {},
+): Work {
   const results = new Map<string, RunStep>();
   for (const s of steps) {
     const id = s.data.toolUseId;
@@ -276,6 +281,7 @@ export function workFromSteps(steps: RunStep[], run?: Pick<Run, "createdAt" | "f
         }
       continue;
     }
+    if (options.quietChecks && check && result && !check.refused && !check.request) continue;
     const source =
       typeof input.code === "string" ? input.code : typeof input.command === "string" ? input.command : null;
     const failed = result?.data.isError === true || check?.refused === true;
@@ -358,15 +364,28 @@ export function workFromSteps(steps: RunStep[], run?: Pick<Run, "createdAt" | "f
  * too. `whole`: the run's every step (its only reply, no reply named, or one saved without its step), timed by the run
  * itself.
  */
-export function replySteps(steps: RunStep[], messageId: string | undefined): { steps: RunStep[]; whole: boolean } {
+export function replySteps(
+  steps: RunStep[],
+  messageId: string | undefined,
+): { steps: RunStep[]; whole: boolean; cli: boolean } {
+  // A code session's run (its brain's own calls are lines of their own): its checks are quiet (`workFromSteps`).
+  const cli = steps.some((s) => s.kind === "context" && cliStepOf(s.data) !== null);
   const at = messageId ? steps.findIndex((s) => s.kind === "message" && s.data.messageId === messageId) : -1;
-  if (at < 0) return { steps, whole: true };
+  if (at < 0) return { steps, whole: true, cli };
   let before = at - 1;
   while (before >= 0 && steps[before]?.kind !== "message") before--;
   const next = steps.findIndex((s, i) => i > at && s.kind === "message");
-  if (before < 0 && next < 0) return { steps, whole: true };
-  return { steps: steps.slice(Math.max(before, 0), next < 0 ? steps.length : at + 1), whole: false };
+  if (before < 0 && next < 0) return { steps, whole: true, cli };
+  return { steps: steps.slice(Math.max(before, 0), next < 0 ? steps.length : at + 1), whole: false, cli };
 }
+
+/**
+ * In a code session (ADR 0208) the computer's permission check before a command is no line of its own once it let the
+ * command through at once: the command is the brain's own line, or its subagent's or workflow's work. One that
+ * waits on a person, refused or failed stays a line.
+ */
+export const quietCheck = (w: LiveWork) =>
+  w.kind === "call" && w.tool === PERMISSION_TOOL && !w.held && !w.requestId && !w.failed && !w.why && !w.refusal;
 
 /** Calls that read as the same line ("Usou o navegador") with the same logo; an unknown tool's line names the tool. */
 export const sameActivity = (a: Activity & { tool: string }, b: Activity & { tool: string }) =>
@@ -660,13 +679,14 @@ const sameLine = (a: ToolLine, b: Activity & { tool: string }) =>
 export function toolItemsLive(work: LiveWork[], stopped = false): ToolItem[] {
   const items: ToolItem[] = [];
   const listed = work.filter(listedCall);
+  const cliRun = work.some((w) => w.kind === "call" && w.cli !== undefined);
   work.forEach((w) => {
     if (w.kind === "steer") {
       items.push({ kind: "steer", key: `steer-${w.messageId}`, messageId: w.messageId, now: w.now === true });
       return;
     }
     const a = toolActivity(w.tool, w.connector, w.detail, w);
-    if (unlisted(w.tool, a)) return;
+    if (unlisted(w.tool, a) || (cliRun && quietCheck(w))) return;
     const later = listed.slice(listed.indexOf(w) + 1);
     const atIt = !stopped && later.every((c) => c.slip && c.tool === w.tool);
     const trying = w.slip === true && atIt && later.length === 0;
