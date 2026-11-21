@@ -1,6 +1,6 @@
 # 0215. The brains' table: every computer brain once, with what it can do
 
-- Status: Accepted (steps 1 and 5 built; steps 2 to 4 planned)
+- Status: Accepted (steps 1, 2 and 5 built; steps 3 and 4 planned)
 - Date: 2026-11-21
 - Extends: 0032 (computer brains), 0114 (Cursor), 0132 (OpenCode), 0142 (Grok), 0143 (Antigravity), 0214 (code
   sessions)
@@ -41,11 +41,15 @@ A capability is what the brain does on an up-to-date runner; an older runner or 
 list of kinds and every rule above is read from the table, and a test keeps the wire's lists (`ACCOUNT_KINDS`,
 `CLI_NAMES`) equal to it. A code session takes every brain with `folder`: all six.
 
-### 2. One turn pipeline in the runner (planned)
+### 2. One start for every CLI's turn in the runner (built)
 
-Each CLI keeps a driver with only what is its own: how it starts, how its events read, how it takes a message
-mid-turn. The checks, the folder, the account, the secrets, the session file and where a mid-turn message goes are
-written once, instead of in each brain's handler.
+Every CLI brain's turn starts in `apps/server/runner/cli-turn.ts`: the computer's switch for its program
+(`requireBrainSwitch`), the request's ids (`turnIds`), the folder it works in (`turnFolder`: a chat turn's own, the
+agent's, or the folder the turn names in it or in a granted one), the agent's secrets (`turnSecrets`), what the turn
+takes from the request (`turnInput`, `turnBridge`), the options its process starts with (`turnRunOptions`), its session
+file (`sessionStore`) and, for a CLI that thinks only with an account of the agent's, its sign-in (`turnSignIn`). Each
+brain's file keeps only its account and how its CLI starts and reads; the handler hands each kind its turn through one
+table (`CLI_TURNS`) with the same context for all. Where a mid-turn message goes reads `BrainCaps.steer`.
 
 ### 3. One engine for ACP agents (planned)
 
@@ -72,5 +76,5 @@ its own subagents where it has them (`BrainCaps.subagents`), these tools for the
 - A new computer brain is a row in the table and a driver; no list elsewhere names the kinds.
 - Code sessions and their suggestion in the chat (0214 §11) work with every computer brain, and with the API where
   the agent's code tools are on.
-- Steps 2 to 4 change the path every turn of a computer brain takes, in the chat as well: they keep its behavior and
-  go in a change of their own, checked in the chat on a real computer before it lands.
+- Step 2 changes the path every CLI turn takes, in the chat as well, keeping its behavior: each brain's runner tests
+  pass unchanged. Steps 3 and 4 wait for each CLI's agent protocol to be checked on a real computer.
