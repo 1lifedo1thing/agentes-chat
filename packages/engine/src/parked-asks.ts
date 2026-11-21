@@ -31,6 +31,7 @@ import { publishChannelEvent, publishMessageCreated } from "./events";
 import type { Transcript } from "./executor";
 import { cutText, fromNow, pgSafeJson, stringsOf } from "./format";
 import type { Judge } from "./judge";
+import { queueLiveActivityRun } from "./live-activity-queue";
 import { getMessage, insertMessage, type Message, messageView } from "./messages";
 import { notifyCatchUpClosed, notifyCatchUpClosedAsker } from "./notification-producers";
 import { openRequestsOf } from "./open-requests";
@@ -87,7 +88,7 @@ export async function scheduleParkedChecks(db: Executor, m: Message) {
   const slot = Math.floor(now / EARLY_CHECK_MS);
   const thread = m.threadId;
   // In the main timeline it reaches the runs it may join (`joinsRun`). It called several agents when it started runs of
-  // more than one (in a channel that replies in threads each answers under it, joining none, ADR 0208 §5).
+  // more than one (in a channel that replies in threads each answers under it, joining none, ADR 0214 §5).
   const several = sql`((select count(*) from ${agentRuns} sr where sr.org_id = ${m.orgId}::uuid
     and sr.trigger_message_id = ${m.id}::uuid) > 1)`;
   await db.execute(sql`insert into ${outbox} (id, org_id, kind, payload, dedupe_key, max_attempts, next_attempt_at)
@@ -311,6 +312,7 @@ async function closeParked(deps: ParkedDeps, run: AgentRun, r: Release): Promise
       passed: true,
     });
   await announceAgentStatus(deps.pubsub, run.orgId, run.agentId).catch(() => {});
+  await queueLiveActivityRun(db, run).catch(() => {});
   const line = lineMachineOf(run);
   if (line) await publishQueueChanged(deps.pubsub, run.orgId, line);
   // A note that also speaks for later turns waiting here is theirs now; this run's says why it didn't answer.

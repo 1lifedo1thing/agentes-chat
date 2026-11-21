@@ -713,7 +713,7 @@ export async function insertMessageWithRuns(
   options: { startRuns: boolean; deliver?: boolean },
 ): Promise<{
   message: Message;
-  /** `replyInThread`: it answers under the message (ADR 0208). */
+  /** `replyInThread`: it answers under the message (ADR 0214). */
   runs: { id: string; agentId: string; replyInThread: boolean }[];
   blocked: string[];
   /** Runs already active in this conversation that will read the message at their next step. */
@@ -799,7 +799,7 @@ export async function insertMessageWithRuns(
       (select rm.author_agent_id from ${messages} rm where rm.org_id = ${input.orgId}::uuid
         and rm.id = ${threadId}::uuid))))`;
   // Where it reaches runs from (`joinsRun`) when it is new in the main timeline. It calls several agents: where it
-  // answers in the thread under it, it joins none of their runs (ADR 0208 §5).
+  // answers in the thread under it, it joins none of their runs (ADR 0214 §5).
   const main: Arrival = { main: { userId, several: sql`((select count(*) from answering) > 1)` } };
   // Idempotent send: a person's `clientId` is claimed with the message; a resend finds it taken.
   const clientId = person ? normalizeClientId(input.clientId) : null;
@@ -1102,7 +1102,7 @@ export async function insertMessageWithRuns(
           and exists (select 1 from fresh)
         returning *
       ), opened as (
-        -- What a run that answers under its trigger (ADR 0208) first posts there opens that thread, as "Responder"
+        -- What a run that answers under its trigger (ADR 0214) first posts there opens that thread, as "Responder"
         -- does: from then on the channel shows one line for it.
         insert into ${threads} (id, org_id, channel_id, root_message_id, opened_by_reply_at)
         select gen_random_uuid(), m.org_id, m.channel_id, m.thread_id, m.created_at from m
@@ -1507,7 +1507,7 @@ export async function postPersonMessage(
       strategy: channel.kind === "dm" && message.mentionedAgentIds.length === 0 ? "dm" : "mention",
     });
   }
-  // The runs answer where the message is, or under it when its channel replies in threads (ADR 0208).
+  // The runs answer where the message is, or under it when its channel replies in threads (ADR 0214).
   for (const run of runs) {
     await publishChannelEvent(deps.pubsub, {
       type: "agent.thinking",

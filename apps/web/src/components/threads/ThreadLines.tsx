@@ -127,7 +127,7 @@ export function ThreadReplyLine({ thread, count }: { thread: ThreadInfo; count: 
 }
 
 /**
- * Under a message in a channel that replies in threads (ADR 0208), while its agents work and no reply exists yet:
+ * Under a message in a channel that replies in threads (ADR 0214), while its agents work and no reply exists yet:
  * "Ada está respondendo na thread", opening the thread. Once a reply lands, the thread's own line takes its place.
  */
 export function ThreadReplyingLine({ messageId, channelId }: { messageId: string; channelId: string }) {

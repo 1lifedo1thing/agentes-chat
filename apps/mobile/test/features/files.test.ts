@@ -53,6 +53,7 @@ import {
 } from "../../src/features/files/zoom";
 import { ICONS } from "../../src/ui/icons.data";
 import { ownOptionsOf } from "../main-stack";
+import { chatScreenSource } from "./chat-screen-source";
 
 const src = (file: string) => readFileSync(join(import.meta.dir, "../../src", file), "utf8");
 
@@ -252,7 +253,7 @@ describe("viewer", () => {
 
   test("photos, videos and files go up as parts Expo's fetch sends, never React Native's { uri } part", () => {
     // Expo's fetch refuses `{ uri, name, type }` ("Unsupported FormDataPart implementation"): no upload ever left.
-    const chat = src("features/chat/ChatScreen.tsx");
+    const chat = chatScreenSource();
     expect(chat).toContain("api.artifacts.upload(orgId, uploadPart(file), {");
     expect(chat).not.toContain("as unknown as Parameters<typeof api.artifacts.upload>[1]");
     expect(src("features/drive/useDriveUpload.ts")).toContain(
@@ -280,7 +281,7 @@ describe("viewer", () => {
   });
 
   test("sending with files is optimistic: the message shows at once with its files, the field is free", () => {
-    const chat = src("features/chat/ChatScreen.tsx");
+    const chat = chatScreenSource();
     // In the conversation at once, under the clientId the real message comes back with.
     expect(chat).toContain(
       "qc.setQueryData<Message[]>(keys.messages(orgId, channelId), (list) => upsertMessage(list, local));",
@@ -464,7 +465,8 @@ describe("viewer", () => {
     expect(viewer).toContain("if (leaving.value) return;");
     expect(viewer).toContain("if (closed.current) return;");
     // Only the picture in sight, at 1×, while the pages are still.
-    expect(viewer).toContain("enabled: active && !zoomed && !paging,");
+    // With the conversation's sheet up the pull rests: the sheet goes down first (ADR 0208).
+    expect(viewer).toContain("enabled: active && !zoomed && !paging && !marking,");
     // It shrinks around the spot the finger took, from rest; caught mid-spring, around the one before.
     expect(viewer).toContain("if (resting)");
     expect(viewer).toContain("pulledPlacement(pullX.value, pullY.value, screen, grab.value)");
@@ -546,7 +548,7 @@ describe("viewer", () => {
     expect(zoom).toContain("{pixels ? null : <PageWait failed={failed} onRetry={retry} />}");
   });
 
-  test("a video and a PDF read their link once: the app coming back or a new link never starts them over", () => {
+  test("a video and a PDF read their file once: the app coming back or a new link never starts them over", () => {
     const source = src("features/files/source.ts");
     expect(source).toContain('staleTime: "static" as const,');
     expect(source).toContain("refetchOnWindowFocus: false,");
@@ -558,9 +560,11 @@ describe("viewer", () => {
     const message = src("features/files/MessageFiles.tsx");
     expect(message).toContain("useRemoteFile(orgId, file.id, file.version, { once: true })");
     expect(message).toMatch(/key=\{`\$\{file\.id\}@\$\{file\.version \?\? "latest"\}`\}/);
-    expect(src("features/files/DocumentViewer.tsx")).toContain(
-      "useRemoteFile(orgId, detail.id, detail.shownVersion, { once: true })",
-    );
+    // A PDF: a copy in the cache per version, drawn from there (ADR 0208), read once while the screen stays.
+    const pdf = src("features/files/PdfPages.tsx");
+    expect(pdf).toContain("const path = await pdfCopy(api, orgId, detail);");
+    expect(pdf).toContain("staleTime: Number.POSITIVE_INFINITY,");
+    expect(source).toContain("if (file.exists && (file.size ?? 0) > 0) return file.uri;");
     // Never keyed on the link itself, which changes every few minutes.
     for (const file of ["features/files/ImageViewer.tsx", "features/files/MessageFiles.tsx"])
       expect({ file, uri: /key=\{(video)?[sS]ource\.uri\}/.test(src(file)) }).toEqual({ file, uri: false });

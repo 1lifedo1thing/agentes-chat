@@ -119,7 +119,7 @@ export interface LiveRun {
   channelId: string;
   threadId: string;
   /**
-   * It answers in the thread under the message that asked it (ADR 0208), as the server's active-run list says. Unknown
+   * It answers in the thread under the message that asked it (ADR 0214), as the server's active-run list says. Unknown
    * for a row only live events made: their `threadId` is already where it answers.
    */
   replyInThread?: boolean;

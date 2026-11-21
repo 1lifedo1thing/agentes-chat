@@ -222,7 +222,7 @@ export async function deliverNoticeToRun(
     body: forPeople(notice),
     trigger: run.trigger === "dm" ? ("dm" as const) : ("mention" as const),
     forRunId: run.id,
-    // Where the run answered, the agent goes on where it did (ADR 0208); elsewhere, as a request made there.
+    // Where the run answered, the agent goes on where it did (ADR 0214); elsewhere, as a request made there.
     ...(report ? {} : { after: run }),
   };
   if (!wake) return deliverNotice(tx, { ...into, wake: false });

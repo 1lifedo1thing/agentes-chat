@@ -62,7 +62,7 @@ const origin = (ctx: ToolContext) => ({
 
 /** Posting where the run already is: a reply. */
 const SAME_CONVERSATION = "That is this conversation: just reply.";
-/** `move_here` refused where a channel replies in threads (ADR 0208): the run's own, or the one it would move to. */
+/** `move_here` refused where a channel replies in threads (ADR 0214): the run's own, or the one it would move to. */
 const threadsOnlyText = (own: boolean, channel: string) =>
   `${own ? "Agents reply in threads here: this work stays in the thread under the message that asked you" : `Agents reply in threads in #${channel}: no work moves to its top level`}. Post without \`move_here\`.`;
 
@@ -263,7 +263,7 @@ export function createChatToolSource(deps: {
           }
           const moving = input.move_here === true;
           const [run] = await ctx.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.id, ctx.runId));
-          // A channel that replies in threads keeps a run there (ADR 0208): it never moves to a main timeline.
+          // A channel that replies in threads keeps a run there (ADR 0214): it never moves to a main timeline.
           const threadsOnly = Boolean(run?.replyInThread || channel.replyInThreads);
           if (moving && threadsOnly)
             return { content: threadsOnlyText(Boolean(run?.replyInThread), channel.name), isError: true };
@@ -565,7 +565,7 @@ const REACT_LOOKBACK = 50;
 
 /**
  * The run's conversation, newest first, with who wrote each message as the agent sees them: its thread when the run
- * is in one (`threadRootId` is the root) or answers under its trigger (ADR 0208), else the channel's main timeline.
+ * is in one (`threadRootId` is the root) or answers under its trigger (ADR 0214), else the channel's main timeline.
  * `id`: that one message only.
  */
 function conversationMessages(ctx: ToolContext, id?: string) {

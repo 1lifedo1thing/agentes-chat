@@ -4,7 +4,7 @@ import type { AgentRun } from "./runs";
 /**
  * SQL: the run `r` answers in the channel itself (it was asked there), not in
  * a thread, a range thread, a mission's thread or the thread under its trigger
- * (`reply_in_thread`, ADR 0208). A new message in the channel
+ * (`reply_in_thread`, ADR 0214). A new message in the channel
  * for that agent joins such a run (ADR 0029) instead of starting a second one
  * beside it. Same rule as `replyThreadOf`.
  */
@@ -13,7 +13,7 @@ export const inChannelRun = (r: SQL) =>
 
 /**
  * SQL: a run asked by a message in `channelId` (in the thread `threadId`, null for the main timeline) answers in the
- * thread under that message (`agent_runs.reply_in_thread`, ADR 0208): asked in a regular channel's main timeline
+ * thread under that message (`agent_runs.reply_in_thread`, ADR 0214): asked in a regular channel's main timeline
  * while the channel replies in threads. Read once, when the run is created.
  */
 export const repliesInThreadSql = (channelId: string, threadId: string | null) =>
@@ -21,7 +21,7 @@ export const repliesInThreadSql = (channelId: string, threadId: string | null) =
     and rc.kind = 'channel' and rc.reply_in_threads))`;
 
 /**
- * Where a run that goes on from `from` answers, `message` being its trigger (the place rule, ADR 0208: Continuar, a
+ * Where a run that goes on from `from` answers, `message` being its trigger (the place rule, ADR 0214: Continuar, a
  * restart after "Parar e mandar", a hand-on of what `from` didn't read, "Tentar de novo", Continuar on a stretch's pause
  * card, asks let go while it waits, work that comes back after it ended): in the thread under the message that asked
  * `from` when that one answers there, whatever its channel says now; otherwise where `message` is, as before.
@@ -37,7 +37,7 @@ export const placeAfter = (
 /**
  * SQL: `userId` asked the run `r`: they wrote the message its conversation started from (`thread_root_id`). For a run
  * that answers in the channel itself that is its trigger; for one that answers under a message of the main timeline
- * (ADR 0208) it is that message, however the run went on from it.
+ * (ADR 0214) it is that message, however the run went on from it.
  */
 export const askedBy = (r: SQL, userId: string | null) =>
   sql`exists (select 1 from messages ja where ja.org_id = ${r}.org_id and ja.id = ${r}.thread_root_id
@@ -53,7 +53,7 @@ export type Arrival =
   | { main: "handed" };
 
 /**
- * SQL: the join rule (ADR 0208 §5). A message that arrives `at` may join the run `r`; each caller adds which states of
+ * SQL: the join rule (ADR 0214 §5). A message that arrives `at` may join the run `r`; each caller adds which states of
  * a run take it. In a thread, the runs of that thread. Handed on in the main timeline, only the runs that answer there
  * (`inChannelRun`). New in the main timeline, those runs too, and a run that answers under a message of the main
  * timeline when `userId` asked it (`askedBy`), however it went on; anyone else's call starts a run under their own.

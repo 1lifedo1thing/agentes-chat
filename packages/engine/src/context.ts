@@ -754,7 +754,7 @@ export async function buildRunContext(
   // was posted after it.
   const upToTrigger = postedBySql(messages, trigger);
   const rootIsTrigger = run.threadRootId === trigger.id;
-  // Asked in the main timeline: the run answers there, not in a thread, unless its channel replies in threads (ADR 0208).
+  // Asked in the main timeline: the run answers there, not in a thread, unless its channel replies in threads (ADR 0214).
   const flat = rootIsTrigger && !run.replyInThread;
   const heldElsewhere = run.background ? null : heldHere(db, run).catch(() => null);
   const surface = surfaceOn();
@@ -2339,7 +2339,8 @@ export function sharingText(computer: string, size: { cpus: number; memoryGb: nu
 export function containersText(computer: string) {
   return [
     `# Containers on "${computer}"`,
-    "docker, docker compose and podman work there: rootless Podman as your own user, your images and volumes in your home and your share of the computer. Containers reach the network as you do and never another agent's containers or files.",
+    "docker, docker compose, docker buildx and podman work there, rootless, as your own user: your images and volumes in your home and your share of the computer. Containers reach the network as you do and never another agent's containers or files.",
+    "- Root inside a container is yours (docker run -it debian, then apt there; --privileged too), but it isn't root on the computer: sudo there doesn't work.",
     "- Publish ports above 1024 (-p 8080:80).",
     "- Containers keep running after your command ends, until the computer restarts; those with restart: always come back.",
   ].join("\n");

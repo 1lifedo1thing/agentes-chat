@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { browser, createTestServer, joinByInvitation, seedOrg, signUp, type TestServer } from "./harness";
 
-/** A channel's "Agents reply in threads" (ADR 0208): read with the channel, changed as its topic is. */
+/** A channel's "Agents reply in threads" (ADR 0214): read with the channel, changed as its topic is. */
 
 let t: TestServer;
 beforeEach(async () => {

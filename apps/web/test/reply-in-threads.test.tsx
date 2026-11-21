@@ -7,7 +7,7 @@ import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { ADA_ID, createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
-/** "Agentes respondem em threads" (ADR 0208): the switch in the channel's details, and the channel while they work. */
+/** "Agentes respondem em threads" (ADR 0214): the switch in the channel's details, and the channel while they work. */
 
 afterEach(() => cleanup());
 

@@ -35,7 +35,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 
 /**
- * A channel that replies in threads (ADR 0208): an agent called in its main timeline answers in the thread under that
+ * A channel that replies in threads (ADR 0214): an agent called in its main timeline answers in the thread under that
  * message, whatever it posts there, and the channel shows one line for it.
  */
 

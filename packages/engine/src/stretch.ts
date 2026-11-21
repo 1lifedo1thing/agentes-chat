@@ -143,7 +143,7 @@ export interface StretchHold {
    * (the card says whose money it is; Continuar still wakes the agent that was refused).
    */
   stoppedAgentId?: string;
-  /** The run the wake-up goes on from: Continuar starts it where that run answered (`placeAfter`, ADR 0208). */
+  /** The run the wake-up goes on from: Continuar starts it where that run answered (`placeAfter`, ADR 0214). */
   after?: Pick<AgentRun, "threadRootId" | "replyInThread">;
 }
 

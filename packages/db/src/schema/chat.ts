@@ -84,7 +84,7 @@ export const channels = pgTable(
     /** Order inside its category (or among the channels with none), from 0. */
     position: integer().notNull().default(0),
     /**
-     * Agents asked in the main timeline answer in the thread under the message that called them (ADR 0208). Regular
+     * Agents asked in the main timeline answer in the thread under the message that called them (ADR 0214). Regular
      * channels only; each run keeps the value it was created with (`agent_runs.reply_in_thread`).
      */
     replyInThreads: boolean().notNull().default(false),

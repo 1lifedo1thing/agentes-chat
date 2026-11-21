@@ -336,7 +336,7 @@ async function restartFailedRun(deps: AnswerNowDeps, userId: string, failed: Age
       .returning({ id: agentRuns.id });
     if (!gone) return null;
     // A person's click: an agent's message it answers starts a stretch of its own (ADR 0089). It answers where the
-    // failed run did (ADR 0208).
+    // failed run did (ADR 0214).
     const next = await startOrJoinRun(tx, trigger, failed.agentId, failed.trigger, {
       after: failed,
       ...(trigger.hop >= 1 ? { granted: Bun.randomUUIDv7() } : {}),

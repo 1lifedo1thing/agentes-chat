@@ -550,11 +550,11 @@ async function handOn(
             eq(agentConsultations.status, "open"),
           ),
         );
-    // Where the run answered (ADR 0208): what it took goes on there.
+    // Where the run answered (ADR 0214): what it took goes on there.
     const out = await startOrJoinRun(tx, last, run.agentId, trigger, { after: run });
     if (!out) return out;
     const taker = "created" in out ? out.created.id : out.joined;
-    // A new run that answers under the message that asked (ADR 0208) reads that thread, not the main timeline.
+    // A new run that answers under the message that asked (ADR 0214) reads that thread, not the main timeline.
     const thread = "created" in out && out.created.replyInThread ? out.created.threadRootId : null;
     const taken = [last.id];
     for (const m of rows) {

@@ -260,7 +260,7 @@ export interface ChannelListItem {
   categoryId: string | null;
   /** Order inside its category. */
   position: number;
-  /** Agents asked in its main timeline answer in the thread under that message (ADR 0208). */
+  /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
   replyInThreads: boolean;
   isMember: boolean;
   /** Listed only because I'm an administrator (ADR 0151): the apps keep it off the sidebar until opened or joined. */

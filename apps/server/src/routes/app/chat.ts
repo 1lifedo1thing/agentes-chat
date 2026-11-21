@@ -445,7 +445,7 @@ export function chatRoutes(deps: AppDeps) {
                 }),
                 replyInThread: z.boolean().openapi({
                   description:
-                    "Asked in the main timeline, it answers in the thread under that message, as its channel said when it was asked (ADR 0208). `threadId` stays its conversation's root either way.",
+                    "Asked in the main timeline, it answers in the thread under that message, as its channel said when it was asked (ADR 0214). `threadId` stays its conversation's root either way.",
                 }),
               }),
             ),

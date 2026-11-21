@@ -602,7 +602,7 @@ export async function wakeForAccessDecision(deps: AccessDeps, requestId: string,
     });
     const runs =
       eligible.length > 0 && !(await hopLimitReached(tx, message, options.maxHops))
-        ? // The run that asked goes on where it answered (ADR 0208).
+        ? // The run that asked goes on where it answered (ADR 0214).
           await createAgentRuns(tx, message, [row.agentId], "mention", origin ? { after: origin } : {})
         : [];
     return { message, runs };

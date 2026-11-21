@@ -28,7 +28,7 @@ export interface ToolContext {
   threadRootId: string;
   triggerMessageId: string;
   /**
-   * Set by whoever runs the run, never from a call's input: its `reply_in_thread` (ADR 0208), so what it posts goes
+   * Set by whoever runs the run, never from a call's input: its `reply_in_thread` (ADR 0214), so what it posts goes
    * under the message that asked it (`replyThreadOf`).
    */
   replyInThread?: boolean;

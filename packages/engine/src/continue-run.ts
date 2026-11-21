@@ -320,7 +320,7 @@ export async function restartAfterStopAndSend(
   if (!said) return null;
   const [person] = await db.select({ name: users.name }).from(users).where(eq(users.id, by));
   const line = `[${person?.name ?? "A person"} stopped you to say this:]\n\n${said.body}`;
-  // It goes on where the stopped run answers, wherever the message that stopped it is (ADR 0208).
+  // It goes on where the stopped run answers, wherever the message that stopped it is (ADR 0214).
   const place = placeAfter(stopped, said);
   const newRunId = Bun.randomUUIDv7();
   const created = await db

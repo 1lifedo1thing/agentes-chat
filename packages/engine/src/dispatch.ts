@@ -122,7 +122,7 @@ export interface StartRunOptions {
   routerMs?: number;
   /**
    * The message calls other agents too (`createAgentRuns` with several, as the router's pick of two): where it would
-   * answer in the thread under it (ADR 0208 §5), it joins no run in the channel, so every agent it calls answers there.
+   * answer in the thread under it (ADR 0214 §5), it joins no run in the channel, so every agent it calls answers there.
    */
   several?: boolean;
   /**

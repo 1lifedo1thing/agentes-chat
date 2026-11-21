@@ -1403,7 +1403,7 @@ export async function wakeConversationForTask(deps: TaskDeps, taskId: string, op
     });
     const runs =
       !blocked && eligible.length > 0 && !(await hopLimitReached(tx, message, options.maxHops))
-        ? // Where the origin run answered, the agent goes on where it did (ADR 0208).
+        ? // Where the origin run answered, the agent goes on where it did (ADR 0214).
           await createAgentRuns(tx, message, [row.agentId], "mention", origin && !report ? { after: origin } : {})
         : [];
     return { message, runs };

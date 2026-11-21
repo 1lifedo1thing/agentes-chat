@@ -268,7 +268,7 @@ export function channelRoutes(deps: AppDeps) {
             }),
             replyInThreads: z.boolean().optional().openapi({
               description:
-                "Agents asked in its main timeline answer in the thread under that message (ADR 0208). Runs already working stay where they are. 400 `channel.reply_in_threads` outside a regular channel.",
+                "Agents asked in its main timeline answer in the thread under that message (ADR 0214). Runs already working stay where they are. 400 `channel.reply_in_threads` outside a regular channel.",
             }),
           }),
         ),
