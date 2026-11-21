@@ -785,9 +785,22 @@ export const contextWindowOf = (model: string) => modelInfo(model)?.contextWindo
 
 export const isKnownModel = (model: string) => modelInfo(model) !== undefined;
 
+/**
+ * `name` without a closing `[…]` (`claude-opus-5-5[1m]` → `claude-opus-5-5`), as `/\[[^\]]*\]$/` would cut it: from
+ * the first `[` after the last `]` before the final one. By index, since the name may come from a computer and that
+ * pattern backtracks on a long run of `[`.
+ */
+function withoutBracketSuffix(name: string): string {
+  if (!name.endsWith("]")) return name;
+  const end = name.length - 1;
+  const lastClose = end > 0 ? name.lastIndexOf("]", end - 1) : -1;
+  const open = name.indexOf("[", lastClose + 1);
+  return open >= 0 && open < end ? name.slice(0, open) : name;
+}
+
 /** The catalog id of a model a CLI named (`claude-opus-5-5[1m]`, a dated `…-20261001`); null when it has no price. */
 export function catalogModelOf(model: string | null | undefined): string | null {
-  const base = model?.replace(/\[[^\]]*\]$/, "").replace(/-\d{8}$/, "");
+  const base = model ? withoutBracketSuffix(model).replace(/-\d{8}$/, "") : model;
   return base && isKnownModel(base) ? base : null;
 }
 
