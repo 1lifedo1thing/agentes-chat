@@ -15472,6 +15472,8 @@ export const en = {
       tooMany: "That's more than fits here. Remove some and try again.",
       fillIn: "Fill in what's missing and try again.",
       checkAddress: "Check the address and try again.",
+      privateNetwork:
+        "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "That's too long. Shorten it and try again.",
       updateComputerApp: "The computer's app is too old for this. Update it and try again.",
       computerUpdatesItself: "The workspace's computer updates itself for this. Try again in a little while.",
