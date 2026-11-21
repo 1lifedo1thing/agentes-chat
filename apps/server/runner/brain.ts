@@ -1911,6 +1911,7 @@ interface Live {
 /** What the bridge needs for one process's MCP server: its local token, and the run it works for now. */
 interface BridgeEntry {
   token: string;
+  agentId: string;
   cwd: string;
   folder: string;
   runId: string | null;
@@ -2115,6 +2116,7 @@ export class BrainManager {
       running: b.runId !== null,
       // Between turns the process lives on, but nothing is relayed (never with an ended run's token).
       ...(b.runId === null ? { idle: true } : {}),
+      agentId: b.agentId,
       cwd: b.cwd,
       folder: b.folder,
       ...(b.runId ? { runId: b.runId } : {}),
@@ -2838,7 +2840,7 @@ export class BrainManager {
         ...(delegated.task ? { task: delegated.task.kind } : {}),
         ...(persistent ? {} : { oneShot: true as const }),
       };
-      this.bridge.set(id, { token, cwd, folder: ctx.folder, runId: null, runToken: null });
+      this.bridge.set(id, { token, agentId: ctx.agent.id, cwd, folder: ctx.folder, runId: null, runToken: null });
       bridged = { frame, to: delegated };
       // The worker has it before the CLI's relay can dial.
       await delegated.bridge(frame);
@@ -2870,6 +2872,7 @@ export class BrainManager {
       );
       this.bridge.set(id, {
         token,
+        agentId: ctx.agent.id,
         cwd,
         folder: ctx.folder,
         runId: null,
