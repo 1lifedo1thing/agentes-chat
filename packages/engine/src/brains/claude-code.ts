@@ -19,6 +19,7 @@ import {
   type WireBrainEvent,
 } from "@agenteschat/adapters";
 import { type Database, schema } from "@agenteschat/db";
+import { type BrainExecutor, brainOfExecutor } from "@agenteschat/providers/brains";
 import { autoContextFor } from "@agenteschat/providers/context-limits";
 import { getAgentCached } from "../agents";
 import type { CodeSetup } from "../git/machine";
@@ -30,13 +31,14 @@ import { runnerUpdateWay } from "../runner-update";
 import { computerPrompt, systemWithConversation } from "./prompt";
 import {
   askingPermissions,
-  BRAIN_NAMES,
   BRAIN_PLAN_NAMES,
+  BRAINS,
   type Brain,
   type BrainAccount,
   type BrainEvent,
   type BrainIO,
   type BrainTurn,
+  type ComputerBrainKind,
   type SteerMessage,
   type SteerReply,
 } from "./types";
@@ -178,7 +180,7 @@ const err = (code: string, message: string, retryable: boolean): BrainEvent => (
 export function accountUnavailable(
   status: { name?: string; protocol?: number; kind?: string; executors?: { mode?: string } } | null,
   account: BrainAccount | undefined,
-  kind: "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity",
+  kind: ComputerBrainKind,
 ): { code: string; message: string } | null {
   if (!account) return null;
   const name = BRAIN_PLAN_NAMES[kind];
@@ -282,10 +284,10 @@ export function claudeCodeAvailability(status: MachineStatus | null, account?: B
  */
 export function toolOff(
   status: Pick<MachineStatus, "name" | "execAllowed" | "access">,
-  tool: "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity",
+  tool: BrainExecutor,
 ): { code: string; message: string } | null {
   const tools = status.access?.tools;
-  const name = tool === "claude" ? "Claude Code" : BRAIN_NAMES[tool];
+  const name = BRAINS[brainOfExecutor(tool)].name;
   if (tools) {
     // A runner before Cursor's switch (protocol 36) reports none: Cursor follows Codex's there, as on the runner.
     return (tool === "claude" || tool === "codex" ? tools[tool] : (tools[tool] ?? tools.codex)) === true
@@ -397,7 +399,7 @@ export function createClaudeCodeBrain(deps: ClaudeCodeBrainDeps): Brain {
           Promise.resolve(deps.personalMcp?.(turn) ?? false),
           deps.permissions?.(turn),
         ]);
-        const permissions = askingPermissions(asked, true);
+        const permissions = askingPermissions(asked, BRAINS.claude_code.caps.asksEachCall);
         if (permissions?.mode === "chat") return;
         await deps.hub.call<"brain.warm">(
           session.machineId,
@@ -446,7 +448,10 @@ export function createClaudeCodeBrain(deps: ClaudeCodeBrainDeps): Brain {
           deps.agentScope(turn),
           Promise.resolve(deps.personalMcp?.(turn) ?? false),
         ]);
-        const permissions = askingPermissions(await deps.permissions?.(turn), (status?.protocol ?? 0) >= ASKS_PROTOCOL);
+        const permissions = askingPermissions(
+          await deps.permissions?.(turn),
+          BRAINS.claude_code.caps.asksEachCall && (status?.protocol ?? 0) >= ASKS_PROTOCOL,
+        );
         // The team's right hand on a plan (ADR 0137 §4): only a runner that locks the CLI down to our tools gets it,
         // in its own empty folder, with no checkout and none of the owner's servers.
         const chat = permissions?.mode === "chat";

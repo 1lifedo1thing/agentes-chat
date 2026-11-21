@@ -1,3 +1,4 @@
+import { BRAIN_EXECUTORS } from "@agenteschat/providers/brains";
 import type { TFunction } from "i18next";
 import type {
   AccountLoginFailure,
@@ -237,15 +238,7 @@ export function folderName(path: string): string {
   return parts[parts.length - 1] || path;
 }
 
-export const MACHINE_TOOLS: MachineToolName[] = [
-  "claude",
-  "codex",
-  "cursor",
-  "opencode",
-  "grok",
-  "antigravity",
-  "commands",
-];
+export const MACHINE_TOOLS: MachineToolName[] = [...BRAIN_EXECUTORS, "commands"];
 
 /** The folders of a machine an agent may use (beyond its own folder). */
 export const foldersOfAgent = (access: MachineAccess | null | undefined, agentId: string): MachineFolderGrant[] =>

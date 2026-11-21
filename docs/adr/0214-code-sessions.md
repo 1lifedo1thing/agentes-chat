@@ -20,7 +20,7 @@
 People who program with agents work today in a tool of their own beside the chat: one terminal or window per task,
 each in its own git worktree, the diff and the running app beside the conversation with the coding CLI. agentes.chat
 already has every hard part of that: computers connected to the workspace with an OS user per agent (0025, 0057), the
-agents' brains being Claude Code or Codex on them (0032), a mission's own worktree and branch (0044), the agent's
+agents' brains being coding CLIs on them (0032, 0215), a mission's own worktree and branch (0044), the agent's
 screen live with take-over (0058, 0065), phones the agents use (0042), PRs and approvals (0156). What is missing is a
 place that puts them together around one request, and is as simple as typing into the CLI.
 
@@ -206,7 +206,7 @@ The phone app has Code as a row of You, with the same API and the conversation a
 
 ### 11. A session suggested in the chat
 
-When a person asks an agent that programs on a computer (Claude Code or Codex) to change code in a project (fix a bug,
+When a person asks an agent that programs on a computer (any code brain, 0215) to change code in a project (fix a bug,
 build or refactor something) in a conversation outside a session, the agent suggests a session instead of changing the
 project there. Questions, explanations and quick looks it still answers in the conversation. A task's conversation
 and a mission's thread are already the place for their work (a mission has a worktree of its own): there it never
@@ -246,7 +246,8 @@ what is missing, and a session's links keep working.
   before.
 - Apps registered before this need "Check run" ticked on GitHub; until then no check comes back (Settings says so).
 - A branch that keeps failing wakes the agent at each push that fails again, within its budgets; no other cap yet.
-- Sessions need an agent whose brain is Claude Code or Codex on a computer with git access to the repository.
+- Sessions need an agent whose brain works in the folder its turn names (`BrainCaps.folder`, 0215: every computer
+  brain) on a computer with git access to the repository. An agent that thinks through the API has no session yet.
 - The conversation is a thread like a task's: the phone app shows it with its own thread screen (§10), so a session
   reached from a notification opens the same way as from Code.
 - Out of this first version: several agents writing in one session at once (one writes, the others read and review),

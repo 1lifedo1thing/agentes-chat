@@ -11250,7 +11250,7 @@
       "mode": "Vibecoding mode",
       "title": "Wat doen we in {{repo}}?",
       "aRepo": "een project",
-      "noAgents": "Nog geen agent denkt op een computer. Geef er een Claude Code of Codex op een computer, in de instellingen van de agent.",
+      "noAgents": "Nog geen agent programmeert op een computer. Kies bij ‘Wie denkt’ van een agent een programmeerapp op zijn computer.",
       "placeholder": "Beschrijf de wijziging, de bug of de vraag",
       "label": "Wat er moet gebeuren",
       "agent": "Agent",

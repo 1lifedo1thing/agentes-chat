@@ -11625,7 +11625,7 @@ export const ptBR = {
       title: "O que fazer em {{repo}}?",
       aRepo: "um projeto",
       noAgents:
-        "Nenhum agente pensa num computador ainda. Dê a um deles o Claude Code ou o Codex num computador, nas configurações dele.",
+        "Nenhum agente programa num computador ainda. Em “Quem pensa”, nas configurações de um agente, escolha um app de programação no computador dele.",
       placeholder: "Descreva a mudança, o bug ou a dúvida",
       label: "O que fazer",
       agent: "Agente",

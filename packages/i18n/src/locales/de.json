@@ -11180,7 +11180,7 @@
       "mode": "Vibecoding mode",
       "title": "Was gibt es in {{repo}} zu tun?",
       "aRepo": "einem Projekt",
-      "noAgents": "Noch denkt kein Agent auf einem Computer. Gib einem in seinen Einstellungen Claude Code oder Codex auf einem Computer.",
+      "noAgents": "Noch programmiert kein Agent auf einem Computer. Wähle unter „Wer denkt“ eines Agenten eine Coding-App auf seinem Computer.",
       "placeholder": "Beschreib die Änderung, den Bug oder die Frage",
       "label": "Was zu tun ist",
       "agent": "Agent",

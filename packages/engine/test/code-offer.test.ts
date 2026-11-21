@@ -1,6 +1,13 @@
 import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import { eq, schema } from "@agenteschat/db";
-import { insertMessage, orgOverview } from "../src";
+import {
+  codeStartOptions,
+  createCodeSuggestionToolSource,
+  insertMessage,
+  orgOverview,
+  SUGGEST_CODE_SESSION_TOOL,
+  type ToolContext,
+} from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /** Whether the apps offer Code (ADR 0214 §12): `OrgOverview.code`, read by the sidebar, ⌘K and the phone's Eu. */
@@ -83,4 +90,19 @@ test("Code has something only with an agent that programs on a computer, or an o
   // Closed: nothing left.
   await f.db.update(schema.codeSessions).set({ archivedAt: new Date() }).where(eq(schema.codeSessions.id, session.id));
   expect(await code(f.owner.id)).toBe(false);
+});
+
+test("any coding CLI on a computer counts (ADR 0215): its agent starts sessions and suggests them", async () => {
+  f = await setup();
+  const [machine] = await f.db.insert(schema.machines).values({ orgId: f.org.id, name: "Mac" }).returning();
+  for (const brain of ["cursor", "opencode", "grok", "antigravity"] as const) {
+    await f.db.update(schema.agents).set({ brain, machineId: machine?.id }).where(eq(schema.agents.id, f.agent.id));
+    expect((await orgOverview(f.db, f.owner.id, f.org.id)).code).toBe(true);
+    expect((await codeStartOptions(f.db, f.owner.id, f.org.id)).agents.map((a) => a.agentId)).toEqual([f.agent.id]);
+    const ctx = { db: f.db, orgId: f.org.id, agentId: f.agent.id, runId: "r", background: false } as ToolContext;
+    expect((await createCodeSuggestionToolSource().tools(ctx)).map((t) => t.name)).toEqual([SUGGEST_CODE_SESSION_TOOL]);
+  }
+  // Thinking through the API, it has no session to start yet.
+  await f.db.update(schema.agents).set({ brain: "model" }).where(eq(schema.agents.id, f.agent.id));
+  expect((await codeStartOptions(f.db, f.owner.id, f.org.id)).agents).toEqual([]);
 });

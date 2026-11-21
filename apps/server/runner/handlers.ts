@@ -23,6 +23,7 @@ import {
   TASK_LIMIT_BOUNDS,
 } from "@agenteschat/adapters/machine-protocol";
 import { redactSecrets } from "@agenteschat/adapters/secret-box";
+import { BRAINS, isComputerBrain } from "@agenteschat/providers/brains";
 import { realFoldersFor } from "./access";
 import type { AccountBrains } from "./account-brains";
 import type { AccountFolders, AccountGrant, AccountManager } from "./accounts";
@@ -1321,14 +1322,8 @@ async function doBrainTurn(
   scope: RequestScope,
   secrets: Secrets,
 ): Promise<MachineReplies["brain.turn"]> {
-  const cli =
-    req.kind === "codex" ||
-    req.kind === "cursor" ||
-    req.kind === "opencode" ||
-    req.kind === "grok" ||
-    req.kind === "antigravity"
-      ? req.kind
-      : null;
+  // Claude Code runs on this runner's own brain manager; every other computer brain on its CLI driver (ADR 0215).
+  const cli = isComputerBrain(req.kind) && req.kind !== "claude_code" ? req.kind : null;
   requireTool(ctx, cli ?? "claude");
   if (!req.agent) throw new RunnerError("bad_request", "A brain turn belongs to an agent");
   const runId = requireString(req.runId, "runId");
@@ -1370,10 +1365,10 @@ async function doHostedTurn(
 }
 
 /**
- * Cursor, Grok and Antigravity turns in progress, by run: `brain.steer` answers `unsupported` for them (`agent -p`,
- * `grok -p` and `agy -p` take nothing mid-turn).
+ * Turns in progress of a brain that reads messages only between turns (`BrainCaps.steer`), by run, with its name:
+ * `brain.steer` answers `unsupported` for them.
  */
-const turnOnlyRuns = new Map<string, "Cursor" | "Grok Build" | "Antigravity CLI">();
+const turnOnlyRuns = new Map<string, string>();
 
 /** OpenCode turns in progress, by run: `no_turn` until the turn can take messages (`steerOpencodeTurn`). */
 const opencodeRuns = new Set<string>();
@@ -1431,14 +1426,7 @@ function signedOut(
   const accounts = ctx.accounts;
   if (!accounts || typeof req.account !== "string" || !req.account || final?.type !== "error") return;
   if (final.code !== "not_logged_in" && final.code !== "account_missing") return;
-  const kind =
-    req.kind === "codex" ||
-    req.kind === "cursor" ||
-    req.kind === "opencode" ||
-    req.kind === "grok" ||
-    req.kind === "antigravity"
-      ? req.kind
-      : "claude_code";
+  const kind = isComputerBrain(req.kind) ? req.kind : "claude_code";
   void (final.code === "not_logged_in" ? accounts.refused(kind, req.account) : Promise.resolve())
     .catch(() => undefined)
     .then(() => {
@@ -1467,11 +1455,11 @@ async function doCodexTurn(
   const opencode = req.kind === "opencode";
   const grok = req.kind === "grok";
   const agy = req.kind === "antigravity";
-  const name = cursor ? "Cursor" : opencode ? "OpenCode" : grok ? "Grok Build" : agy ? "Antigravity CLI" : "Codex";
+  const { name } = BRAINS[req.kind];
   if (!codex) throw new RunnerError("bad_request", `This runner runs no ${name} brain turns`);
   let final: CodexBrainEvent = {
     type: "error",
-    code: `${cursor ? "cursor" : opencode ? "opencode" : grok ? "grok" : agy ? "antigravity" : "codex"}_failed`,
+    code: `${req.kind}_failed`,
     message: `${name} ended without an answer.`,
   };
   let ended = false;
@@ -1498,7 +1486,7 @@ async function doCodexTurn(
     scope.emit?.({ type: "brain.event", runId, event });
   };
   if (opencode) opencodeRuns.add(runId);
-  else if (cursor || grok || agy) turnOnlyRuns.set(runId, cursor ? "Cursor" : grok ? "Grok Build" : "Antigravity CLI");
+  else if (BRAINS[req.kind].caps.steer === "between_turns") turnOnlyRuns.set(runId, BRAINS[req.kind].name);
   try {
     if (agy) {
       await handleAntigravityBrainTurn(

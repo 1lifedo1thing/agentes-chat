@@ -10782,7 +10782,7 @@
       "mode": "Vibecoding mode",
       "title": "Apa yang dikerjakan di {{repo}}?",
       "aRepo": "sebuah proyek",
-      "noAgents": "Belum ada agen yang berpikir di komputer. Beri salah satunya Claude Code atau Codex di komputer, lewat pengaturannya.",
+      "noAgents": "Belum ada agen yang memprogram di komputer. Di “Siapa yang berpikir” milik agen, pilih aplikasi coding di komputernya.",
       "placeholder": "Jelaskan perubahan, bug, atau pertanyaannya",
       "label": "Yang dikerjakan",
       "agent": "Agen",

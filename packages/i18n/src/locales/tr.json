@@ -11121,7 +11121,7 @@
       "mode": "Vibecoding mode",
       "title": "{{repo}} üzerinde ne yapalım?",
       "aRepo": "Bir proje",
-      "noAgents": "Henüz hiçbir ajan bir bilgisayarda düşünmüyor. Bir ajanın ayarlarından ona bir bilgisayarda Claude Code veya Codex verin.",
+      "noAgents": "Henüz hiçbir ajan bir bilgisayarda kod yazmıyor. Bir ajanın “Düşünen yapay zeka” bölümünde, bilgisayarındaki bir kodlama uygulamasını seçin.",
       "placeholder": "Değişikliği, hatayı veya soruyu anlatın",
       "label": "Ne yapılacak",
       "agent": "Ajan",

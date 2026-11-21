@@ -1,3 +1,4 @@
+import { isComputerBrain } from "@agenteschat/providers/brains";
 import type { TFunction } from "i18next";
 import type { Agent, AgentBrainLine, AiStatus, BrainKind, BrainOption, Model } from "../api/types";
 import { type PlanChoice, planLabel, planOfAccount } from "./no-ai";
@@ -16,11 +17,7 @@ export type EngineState = "idle" | "working" | "off";
 /** An agent's brain (`agents.brain`: model, claude_code, codex) as its engine; anything else is the agent (API). */
 export function engineOfBrain(brain: BrainKind | string | null | undefined): EngineKind {
   // ponytail: Cursor, OpenCode, Grok and Antigravity draw Codex's terminal until they have a portrait of their own (`portrait.js`).
-  return brain === "claude_code" || brain === "codex"
-    ? brain
-    : brain === "cursor" || brain === "opencode" || brain === "grok" || brain === "antigravity"
-      ? "codex"
-      : "agent";
+  return brain === "claude_code" || brain === "codex" ? brain : isComputerBrain(brain) ? "codex" : "agent";
 }
 
 /** A mission's executor (claude, codex, agent) as its engine. */

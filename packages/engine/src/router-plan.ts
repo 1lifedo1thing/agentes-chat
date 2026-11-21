@@ -1,6 +1,7 @@
 import { type AccountKind, isAccountKind, type PubSub, ROUTE_PROTOCOL, ROUTE_TIMEOUT_MS } from "@agenteschat/adapters";
 import { and, asc, type Database, type Executor, eq, isNotNull, isNull, schema } from "@agenteschat/db";
 import { recordPlanUsage, toolOff } from "./brains/claude-code";
+import { brainCan } from "./brains/types";
 import { publishChannelEvent } from "./events";
 import type { MachineCaller } from "./machine-hub";
 import { parseRouterJson, RouterSkip, type RouterStrategy, routerPrompt, scoresOf } from "./router";
@@ -112,14 +113,11 @@ export async function planSignInsOf(
   const found: (PlanSignIn & { usedAt: number })[] = [];
   for (const r of lent) {
     // One per account: one made for all agents thinks for several of them (protocol 29).
-    // Cursor's, OpenCode's, Grok's and Antigravity's CLIs pick nobody (`brain.route` is Claude Code's and Codex's).
+    // Only a CLI that routes picks who answers (`BrainCaps.routes`, `brain.route`).
     if (
       !r.ownerId ||
       !isAccountKind(r.kind) ||
-      r.kind === "cursor" ||
-      r.kind === "opencode" ||
-      r.kind === "grok" ||
-      r.kind === "antigravity" ||
+      !brainCan(r.kind, "routes") ||
       found.some((s) => s.accountId === r.accountId)
     )
       continue;

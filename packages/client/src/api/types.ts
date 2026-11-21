@@ -1,6 +1,7 @@
 /** Types of the private web-app API (`/api/app/*`, apps/server/src/routes/app). */
 
 import type { CanvasPreview, DocumentPreview, SheetPreview, SlidesPreview } from "@agenteschat/live";
+import type { BrainKind as AnyBrain, BrainExecutor, ComputerBrainKind } from "@agenteschat/providers/brains";
 import type { CodeSuggestion } from "../code/types";
 import type { ChatPrefs } from "../lib/chat-look";
 import type { RoleId } from "../lib/new-agent";
@@ -1215,7 +1216,7 @@ export type CostlyDecision = "go" | "not_now" | "never" | "always";
 export type SuggestedAi =
   | {
       kind: "account";
-      brain: "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+      brain: ComputerBrainKind;
       machineId: string;
       accountId: string;
       label: string;
@@ -5203,7 +5204,7 @@ export interface MachinePause {
 }
 
 /** A tool the person turns on or off on the machine. */
-export type MachineToolName = "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity" | "commands";
+export type MachineToolName = BrainExecutor | "commands";
 
 /** A folder allowed on the machine and the agents (ids) that may use it; empty: allowed, no agent yet. */
 export interface MachineFolderGrant {
@@ -5281,8 +5282,8 @@ export interface DesktopRelease {
   appImage?: { url: string; sha256: string } | null;
 }
 
-/** A computer brain that runs on a connected machine. */
-export type ComputerBrain = "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+/** A computer brain that runs on a connected machine (the brains' table, ADR 0215). */
+export type ComputerBrain = ComputerBrainKind;
 
 /** An agent waiting for an offline computer, and what it has waiting. */
 export interface OutageAgent {
@@ -6230,8 +6231,8 @@ export interface MissionSettings {
   agentDefault: { commandApproval: CommandApproval; canSet: boolean; ownerId: string | null };
 }
 
-/** "Quem pensa" (ADR 0032): the API, or Claude Code / Codex on the agent's computer with a person's plan. */
-export type BrainKind = "model" | "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+/** "Quem pensa" (ADR 0032): the API, or a coding CLI on the agent's computer with a person's plan (ADR 0215). */
+export type BrainKind = AnyBrain;
 
 /** Why a computer brain can't be chosen now. */
 export type BrainUnavailable =
@@ -6353,7 +6354,7 @@ export type BrainEffortSetting = BrainEffort | "auto";
 
 export type BrainSpeed = "standard" | "fast";
 
-export type MachineAccountKind = "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+export type MachineAccountKind = ComputerBrainKind;
 
 /** ADR 0041 §3, ADR 0059: a Claude Code or Codex account signed in on a connected computer (metadata only). */
 export interface MachineAccount {

@@ -66,7 +66,14 @@ import {
   planOpened,
 } from "./audience";
 import { recordAudit } from "./audit";
-import { BRAIN_NAMES, type BrainKind, brainRunsOn, type ComputerBrainKind, isComputerBrain } from "./brains/types";
+import {
+  BRAIN_NAMES,
+  type BrainKind,
+  brainRunsOn,
+  type ComputerBrainKind,
+  isBrainKind,
+  isComputerBrain,
+} from "./brains/types";
 import { caches } from "./cache";
 import { defaultCredentials, providerKeyOf } from "./credentials";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "./errors";
@@ -122,17 +129,6 @@ import { agentsMovedOnto, paysExtraUsage, wakeAgentsBrainWaits } from "./usage-p
  * resolves it per run (`brainFor`).
  */
 
-export const BRAIN_KINDS: readonly BrainKind[] = [
-  "model",
-  "claude_code",
-  "codex",
-  "cursor",
-  "opencode",
-  "grok",
-  "antigravity",
-];
-export const isBrainKind = (v: unknown): v is BrainKind =>
-  typeof v === "string" && (BRAIN_KINDS as readonly string[]).includes(v);
 /** An effort as stored: a level, or `auto` (the judge picks it per run). */
 export type BrainEffortSetting = BrainEffort | typeof AUTO_MODEL;
 export const isBrainEffortSetting = (v: unknown): v is BrainEffortSetting =>

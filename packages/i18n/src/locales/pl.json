@@ -12024,7 +12024,7 @@
       "mode": "Vibecoding mode",
       "title": "Co robimy w {{repo}}?",
       "aRepo": "projekcie",
-      "noAgents": "Żaden agent nie myśli jeszcze na komputerze. Daj jednemu z nich Claude Code albo Codex na komputerze, w jego ustawieniach.",
+      "noAgents": "Żaden agent nie programuje jeszcze na komputerze. W „Kto myśli” agenta wybierz aplikację do programowania na jego komputerze.",
       "placeholder": "Opisz zmianę, błąd albo pytanie",
       "label": "Co zrobić",
       "agent": "Agent",

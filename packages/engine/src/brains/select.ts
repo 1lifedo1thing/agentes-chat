@@ -40,10 +40,16 @@ import {
 import { runnerUpdateWay } from "../runner-update";
 import type { AgentRun } from "../runs";
 import { accountUnavailable, brainSessionId, claudeCodeAvailability, cliMissingMessage, toolOff } from "./claude-code";
-import { BRAIN_NAMES, BRAIN_PLAN_NAMES, type BrainAccount, type BrainKind, type BrainSession } from "./types";
+import {
+  BRAIN_NAMES,
+  BRAIN_PLAN_NAMES,
+  type BrainAccount,
+  type BrainKind,
+  type BrainSession,
+  isBrainKind,
+} from "./types";
 
-const KINDS: readonly BrainKind[] = ["model", "claude_code", "codex", "cursor", "opencode", "grok", "antigravity"];
-const kindOf = (v: unknown): BrainKind => (KINDS.includes(v as BrainKind) ? (v as BrainKind) : "model");
+const kindOf = (v: unknown): BrainKind => (isBrainKind(v) ? v : "model");
 
 /** A mission's choice for a run in its thread (`missionTurnFor`). */
 export interface MissionTurn {

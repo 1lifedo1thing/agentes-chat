@@ -20,12 +20,11 @@ import {
   CLAUDE_CODE_MODELS,
   defaultBrainModel,
   isBrainEffortSetting,
-  isBrainKind,
   normalizeBrainModel,
   setAgentBrain,
 } from "./brain-settings";
 import { planIsOwners } from "./brains/select";
-import type { BrainKind } from "./brains/types";
+import { type BrainKind, isBrainKind } from "./brains/types";
 import { caches } from "./cache";
 import { ValidationError } from "./errors";
 import { defaultAccountLabel, listMachineAccounts, type MachineAccountView } from "./machine-accounts";

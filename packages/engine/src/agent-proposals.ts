@@ -13,6 +13,7 @@ import {
   sql,
 } from "@agenteschat/db";
 import { AUTO_MODEL } from "@agenteschat/providers";
+import { COMPUTER_BRAIN_KINDS, type ComputerBrainKind } from "@agenteschat/providers/brains";
 import { orgToolCatalog, setAgentAccess } from "./access";
 import { type Agent, createAgent, getAgent, HANDLE_PATTERN, NEW_AGENT_DEFAULTS, takenHandles } from "./agents";
 import { type AiStatusDeps, agentAiState } from "./ai-status";
@@ -73,7 +74,7 @@ export const AGENT_PROPOSAL_CARD = "agent_proposal";
 export type SuggestedAi =
   | {
       kind: "account";
-      brain: "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+      brain: ComputerBrainKind;
       machineId: string;
       accountId: string;
       label: string;
@@ -596,7 +597,7 @@ export async function suggestAgentAi(
           eq(machineAccounts.orgId, orgId),
           eq(machineAccounts.createdBy, userId),
           eq(machineAccounts.status, "active"),
-          inArray(machineAccounts.kind, ["claude_code", "codex", "cursor", "opencode", "grok", "antigravity"]),
+          inArray(machineAccounts.kind, [...COMPUTER_BRAIN_KINDS]),
           notInArray(machineAccounts.id, used),
         ),
       )

@@ -19,6 +19,7 @@ import {
   sql,
 } from "@agenteschat/db";
 import { getAgentCached } from "./agents";
+import { brainCan, brainsWith } from "./brains/types";
 import { caches } from "./cache";
 import { requireChannelAccess } from "./channels";
 import { createAgentRuns } from "./dispatch";
@@ -52,10 +53,11 @@ export const codeWorktreeStateOf = (v: unknown): CodeWorktreeState =>
     : "failed";
 
 /**
- * The brains a code session can have: those that work on the agent's computer in the folder their turn names (the
- * worktree, `codeSessionCwd`). The other CLI brains start in the agent's folder whatever the turn says.
+ * The brains a code session can have: every computer brain that works in the folder its turn names (`BrainCaps.folder`,
+ * ADR 0215), there the session's worktree (`codeSessionCwd`).
  */
-export const CODE_BRAINS = ["claude_code", "codex"] as const;
+export const CODE_BRAINS = brainsWith("folder");
+export const isCodeBrain = (brain: unknown) => brainCan(brain, "folder");
 
 /**
  * What a computer brain isn't given in a code session: sharing a file to the Drive and onto its reply. The person sees
@@ -555,7 +557,7 @@ export async function createCodeSession(
   const repo = parsed ? `${parsed.owner}/${parsed.repo}` : (local as string);
   const agent = await getAgentCached(deps.db, orgId, input.agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
-  if (!(CODE_BRAINS as readonly string[]).includes(agent.brain))
+  if (!isCodeBrain(agent.brain))
     throw new ValidationError("This agent doesn't think on a computer", "code_session.no_computer_brain", {
       agent: agent.name,
     });
@@ -876,7 +878,7 @@ export async function retryCodeSession(deps: CodeSessionDeps, userId: string, or
   return getCodeSession(deps.db, userId, orgId, row.id);
 }
 
-/** The workspace's agents a session can start with: they think on a computer (Claude Code, Codex) and have one. */
+/** The workspace's agents a session can start with: a code brain (`CODE_BRAINS`) and a computer to run it on. */
 const codeAgentsIn = (orgId: string) =>
   and(
     eq(schema.agents.orgId, orgId),
@@ -906,8 +908,8 @@ export async function hasCodeWork(db: Database, userId: string, orgId: string): 
 }
 
 /**
- * Where a person can start a session: the workspace's agents that think on a computer (Claude Code, Codex) and have
- * one, each with the repositories it may work in (`any`: its list allows more than it names, so any `owner/name` the
+ * Where a person can start a session: the workspace's agents with a code brain and a computer (`codeAgentsIn`), each
+ * with the repositories it may work in (`any`: its list allows more than it names, so any `owner/name` the
  * person types is tried).
  */
 export async function codeStartOptions(db: Database, userId: string, orgId: string) {

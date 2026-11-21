@@ -32,7 +32,7 @@ import {
 import { recordAudit } from "./audit";
 import { UUID } from "./authority";
 import { brainOf } from "./brain-settings";
-import { BRAIN_PLAN_NAMES, type BrainKind, isComputerBrain } from "./brains/types";
+import { BRAIN_PLAN_NAMES, type BrainKind, isBrainKind, isComputerBrain } from "./brains/types";
 import { caches, type TtlCache } from "./cache";
 import { canceledBy } from "./cancel";
 import { requireChannelAccess } from "./channels";
@@ -827,8 +827,7 @@ async function viewerRights(
   return out;
 }
 
-const BRAINS: readonly BrainKind[] = ["model", "claude_code", "codex", "cursor", "opencode", "grok", "antigravity"];
-const brainKindOf = (v: unknown): BrainKind => (BRAINS.includes(v as BrainKind) ? (v as BrainKind) : "model");
+const brainKindOf = (v: unknown): BrainKind => (isBrainKind(v) ? v : "model");
 
 /** Who paid the week: a computer brain's plan, the API, or both; no usage yet: what its brain would bill. */
 function billedTo(

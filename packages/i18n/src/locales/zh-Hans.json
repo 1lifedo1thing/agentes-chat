@@ -10802,7 +10802,7 @@
       "mode": "Vibecoding mode",
       "title": "要在 {{repo}} 里做什么？",
       "aRepo": "某个项目",
-      "noAgents": "还没有在电脑上思考的智能体。在某个智能体的设置里，给它配上电脑上的 Claude Code 或 Codex。",
+      "noAgents": "还没有在电脑上编程的智能体。在某个智能体的“思考方式”里，选择它电脑上的编程应用。",
       "placeholder": "描述要做的改动、bug 或问题",
       "label": "要做什么",
       "agent": "智能体",

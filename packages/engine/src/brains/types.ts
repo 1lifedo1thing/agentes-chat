@@ -9,47 +9,50 @@ import type {
   WireWorkflowAgent,
 } from "@agenteschat/adapters";
 import type { ToolImage } from "@agenteschat/providers";
+import {
+  BRAINS,
+  type BrainKind,
+  COMPUTER_BRAIN_KINDS,
+  type ComputerBrainKind,
+  isComputerBrain,
+} from "@agenteschat/providers/brains";
 import { planOf } from "@agenteschat/providers/plans";
 import type { CodeSetup } from "../git/machine";
 
-export type BrainKind = "model" | "claude_code" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+// The brains and what each can do are one table (ADR 0215): every list and rule here is read from it.
+export {
+  BRAIN_KINDS,
+  BRAINS,
+  type BrainCaps,
+  type BrainKind,
+  type BrainSpec,
+  brainCan,
+  brainsWith,
+  COMPUTER_BRAIN_KINDS,
+  type ComputerBrainKind,
+  isBrainKind,
+  isComputerBrain,
+} from "@agenteschat/providers/brains";
 
-/** A brain that runs on the agent's computer with a person's plan (ADR 0114 adds Cursor). */
-export type ComputerBrainKind = Exclude<BrainKind, "model">;
+const byKind = <T>(pick: (spec: (typeof BRAINS)[ComputerBrainKind]) => T) =>
+  Object.fromEntries(COMPUTER_BRAIN_KINDS.map((k) => [k, pick(BRAINS[k])])) as Readonly<Record<ComputerBrainKind, T>>;
 
 /** What people call each computer brain's CLI, in messages. */
-export const BRAIN_NAMES: Readonly<Record<ComputerBrainKind, string>> = {
-  claude_code: "Claude Code",
-  codex: "Codex",
-  cursor: "Cursor",
-  opencode: "OpenCode",
-  grok: "Grok Build",
-  antigravity: "Antigravity CLI",
-};
+export const BRAIN_NAMES = byKind((b) => b.name);
 
 /**
- * Whether a computer brain runs on a computer's system (`hello.os`), as its runner allows: Cursor, Grok Build and the
- * Antigravity CLI not on Windows yet (ADR 0143: there it keeps its sign-in in the computer user's one Credential
- * Manager). A system nobody reported passes: the runner says.
+ * Whether a computer brain runs on a computer's system (`hello.os`), as its runner allows (`BrainSpec.windows`). A
+ * system nobody reported passes: the runner says.
  */
 export function brainRunsOn(kind: ComputerBrainKind, os: string | null | undefined): boolean {
-  if (!os) return true;
-  if (kind === "cursor" || kind === "grok" || kind === "antigravity") return os !== "windows";
-  return true;
+  return !os || os !== "windows" || BRAINS[kind].windows;
 }
 
 /** A turn refused because its brain doesn't run on its computer's system (`brainRunsOn`): no runner asked, no retry. */
 export const SYSTEM_REFUSED = "brain_system";
 
 /** The plan each computer brain thinks with, as people buy it. */
-export const BRAIN_PLAN_NAMES: Readonly<Record<ComputerBrainKind, string>> = {
-  claude_code: "Claude",
-  codex: "ChatGPT",
-  cursor: "Cursor",
-  opencode: "OpenCode",
-  grok: "Grok",
-  antigravity: "Gemini",
-};
+export const BRAIN_PLAN_NAMES = byKind((b) => b.plan);
 
 /**
  * A turn's permissions as its brain can keep them for an agent that always asks (ADR 0173). `prompts`: every call of
@@ -64,15 +67,11 @@ export function askingPermissions(
   return { ...permissions, mode: "plan" };
 }
 
-/** Brains that run on the agent's computer with a person's plan. */
-export const isComputerBrain = (v: unknown): v is ComputerBrainKind =>
-  v === "claude_code" || v === "codex" || v === "cursor" || v === "opencode" || v === "grok" || v === "antigravity";
-
 /**
- * Brains whose shell runs in a sandbox of the CLI's own (ADR 0053 §3, 0114, 0142, 0143), the limit of what their turns
- * do. Claude Code's own sandbox is never switched on here, and OpenCode has none.
+ * Brains whose shell runs in a sandbox of the CLI's own (`BrainSpec.sandboxed`), the limit of what their turns do.
+ * Claude Code's own sandbox is never switched on here, and OpenCode has none.
  */
-export const isSandboxedBrain = (v: unknown) => v === "codex" || v === "cursor" || v === "grok" || v === "antigravity";
+export const isSandboxedBrain = (v: unknown) => isComputerBrain(v) && BRAINS[v].sandboxed;
 
 /** The plan's name in a note: the coding plan's maker, else Claude's or ChatGPT's. */
 export function planName(kind: BrainKind, provider?: string): string {

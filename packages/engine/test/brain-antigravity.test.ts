@@ -6,10 +6,17 @@ import {
   sharedSignIn,
   signInProviderOf,
 } from "@agenteschat/providers/plans";
-import { antigravityModels, brainOptions, defaultBrainModel, isBrainKind } from "../src/brain-settings";
+import { antigravityModels, brainOptions, defaultBrainModel } from "../src/brain-settings";
 import { AntigravityBrain, type BrainTurnRequest, type ComputerBrainLink } from "../src/brains/codex";
 import { computerBrainUnavailable, NO_AI_CODES, UNAVAILABLE_CODES } from "../src/brains/select";
-import { BRAIN_NAMES, BRAIN_PLAN_NAMES, type BrainEvent, type BrainTurn, isComputerBrain } from "../src/brains/types";
+import {
+  BRAIN_NAMES,
+  BRAIN_PLAN_NAMES,
+  type BrainEvent,
+  type BrainTurn,
+  isBrainKind,
+  isComputerBrain,
+} from "../src/brains/types";
 import { defaultAccountLabel, sharesSignIns } from "../src/machine-accounts";
 import type { MachineStatus } from "../src/machine-hub";
 import { scrubSignIns } from "../src/tool-detail";

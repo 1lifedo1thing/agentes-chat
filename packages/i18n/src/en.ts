@@ -11622,7 +11622,7 @@ export const en = {
       /** Under the title, over the field. */
       title: "What to do in {{repo}}?",
       aRepo: "a project",
-      noAgents: "No agent thinks on a computer yet. Give one Claude Code or Codex on a computer, in its settings.",
+      noAgents: "No agent programs on a computer yet. In an agent's “Who thinks”, choose a coding app on its computer.",
       placeholder: "Describe the change, the bug or the question",
       label: "What to do",
       agent: "Agent",
