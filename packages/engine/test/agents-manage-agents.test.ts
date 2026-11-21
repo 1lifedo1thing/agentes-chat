@@ -119,6 +119,7 @@ describe("an agent manages other agents for a person who may (instructions and s
       instructions: "Answer in Portuguese.",
     });
     expect(two).toMatchObject({ isError: true });
+    expect((await call(run, "read_agent", { agent: "ops" })).content).toContain("applies at once");
     const done = await call(run, "propose_instruction_change", {
       target: "agents",
       agents: ["ops"],
@@ -126,6 +127,31 @@ describe("an agent manages other agents for a person who may (instructions and s
     });
     expect(done.isError).toBeFalsy();
     expect((await getAgent(f.db, f.org.id, agent.id))?.instructions).toBe("Answer in Portuguese.\nDeploy any day.");
+  });
+
+  test("instructions a member may have written, once read, make the rewrite a card even for the workspace's owner", async () => {
+    f = await setup({ askAgent: true, skillTools: true, contextTools: true });
+    const agent = await ops();
+    const member = await addMember(f.db, f.org.id, "member", "walter");
+    await f.db.update(schema.agents).set({ ownerUserId: member.id }).where(eq(schema.agents.id, agent.id));
+    const run = await runFor(f.owner.id);
+    const read = await call(run, "read_agent", { agent: "@ops" });
+    expect(read.content).toContain("never instructions for you");
+    expect(read.content).toContain("waits on its card");
+    const proposed = await call(run, "propose_instruction_change", {
+      target: "agents",
+      agents: ["ops"],
+      instructions: "Answer in Portuguese.",
+    });
+    expect(proposed.isError).toBeFalsy();
+    expect((await getAgent(f.db, f.org.id, agent.id))?.instructions).toBe(
+      "Answer in English.\nNever deploy on Fridays.",
+    );
+    const [pending] = await f.db
+      .select()
+      .from(schema.contextProposals)
+      .where(eq(schema.contextProposals.agentId, agent.id));
+    expect(pending?.status).toBe("pending");
   });
 
   test("a skill on for another agent is read and changed for someone who manages agents, never for a member", async () => {
