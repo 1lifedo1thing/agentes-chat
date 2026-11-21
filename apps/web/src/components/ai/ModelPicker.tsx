@@ -198,7 +198,10 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
   const platform = usePlatformKey(org.id);
   const all = models.data?.models ?? [];
   const choices = modelChoices(all, credentials.data ?? view.keys ?? [], platform.data ?? false);
-  const tiles = modelPickerTiles(t, view, agent.ownerUserId, choices, agent.model, all);
+  // The computer's own sign-ins as its runner reported them: a plan's tile offers one only where it is signed in.
+  const aiAccounts = useAiAccounts(org.id);
+  const computerRow = aiAccounts.data?.computers.find((c) => c.machineId === view.computer?.machineId);
+  const tiles = modelPickerTiles(t, view, agent.ownerUserId, choices, agent.model, all, computerRow);
   const [tileKey, setTileKey] = useState(() => (tiles.find((x) => x.current) ?? tiles[0])?.key);
   const tile = tiles.find((x) => x.key === tileKey) ?? tiles[0];
   const [accountId, setAccountId] = useState<string | null | undefined>(undefined);

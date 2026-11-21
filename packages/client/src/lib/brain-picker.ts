@@ -581,6 +581,8 @@ export function modelPickerTiles(
   api: [string, ModelChoice[]][],
   apiModel: string | null,
   models: readonly Model[],
+  /** The agent's computer's row of `GET …/ai-accounts`: its own sign-ins, as "Quem pensa" lists them. */
+  computer?: Parameters<typeof ownSignInReady>[1],
 ): PickerTile[] {
   const runs = (k: MachineAccountKind) => view.options.some((o) => o.kind === k && (o.available || view.brain === k));
   const byChoice = new Map<PlanChoice, PickerAccount[]>();
@@ -594,7 +596,9 @@ export function modelPickerTiles(
     if (o.kind === "model" || !runs(o.kind)) continue;
     const k = o.kind as MachineAccountKind;
     const own = view.brain === k && view.account === null;
-    if (own || (view.ownSignIn && o.available))
+    // The computer's own sign-in only where its runner reported it signed in (`ownSignInReady`): a CLI being there, or
+    // coming with the first sign-in (the Antigravity CLI the runner brings), isn't a sign-in.
+    if (own || (o.available && ownSignInReady(view, computer, k)))
       add(planOfKind(k), {
         id: null,
         label: t("brain.picker.ownSignIn"),
