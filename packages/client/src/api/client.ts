@@ -1578,7 +1578,7 @@ export interface ApiClient {
   dashboards: DashboardsApi;
   /** Spreadsheets, presentations and canvases edited together (ADR 0196), their pictures and Office previews. */
   live: LiveApi;
-  /** Code sessions (ADR 0213): a request in its own worktree on an agent's computer, with its conversation. */
+  /** Code sessions (ADR 0214): a request in its own worktree on an agent's computer, with its conversation. */
   code: CodeApi;
   /** Missions (ADR 0029): long work by the agent's executor on a connected computer, in one thread. */
   missions: {

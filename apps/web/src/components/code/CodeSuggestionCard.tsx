@@ -17,7 +17,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import "./code-suggestion.css";
 
 /**
- * A code session an agent suggested under its reply (ADR 0213 §11): the request card of the chat, kind `code`. The
+ * A code session an agent suggested under its reply (ADR 0214 §11): the request card of the chat, kind `code`. The
  * project and whose computer it runs on, "Ver o pedido" opening the person's words it starts with, and the decision:
  * "Abrir sessão" (the session opens with those words, and the page goes to it) or "Fazer aqui". Only the person who
  * asked decides; anyone else reads who it waits for. Decided, the footer says how it ended, with the way to the

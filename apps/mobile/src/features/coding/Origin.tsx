@@ -9,7 +9,7 @@ import { chatHref } from "../links/logic";
 import { useColors, useOrgId } from "../shared/hooks";
 
 /**
- * At the top of a code session opened from a suggestion (ADR 0213 §11), as a file's conversation says where it was
+ * At the top of a code session opened from a suggestion (ADR 0214 §11), as a file's conversation says where it was
  * made: "Aberta da sua conversa com o Leo · Ver conversa", the way back to that message. Nothing for a person the
  * conversation isn't shared with (the server leaves `from` out), nor for a session opened on its own.
  */

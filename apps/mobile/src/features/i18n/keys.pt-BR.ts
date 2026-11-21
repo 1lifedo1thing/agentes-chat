@@ -1488,7 +1488,7 @@ export const featureKeysPtBR = {
       lastDay: "Último dia",
     },
   },
-  // Código (ADR 0213; the rest of its words are the web's, `codeSessions.*`).
+  // Código (ADR 0214; the rest of its words are the web's, `codeSessions.*`).
   coding: {
     pill: "{{who}}. Ver o código",
     seeChanges: "Ver as mudanças",

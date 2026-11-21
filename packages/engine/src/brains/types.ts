@@ -116,7 +116,7 @@ export interface BrainSession {
   cwd: string;
   /** Start in the agent's own folder, never one of its checkouts: the folder of its session before was gone. */
   ownFolder?: boolean;
-  /** A code session's turn (ADR 0213): `cwd` is its worktree. */
+  /** A code session's turn (ADR 0214): `cwd` is its worktree. */
   codeSession?: boolean;
 }
 
@@ -251,7 +251,7 @@ export type BrainEvent =
   | { type: "speed_fallback"; message: string }
   /**
    * A computer brain started a call of its own: shown only, its `tool_call` with `executed` follows. `input`: what it
-   * was given, from a newer runner (a code session shows its line while it runs, ADR 0213).
+   * was given, from a newer runner (a code session shows its line while it runs, ADR 0214).
    */
   | { type: "tool_started"; id: string; name: string; input?: unknown }
   /** A file a tool of the brain's own made, in the agent's folder (Codex's image generation): shown with the reply. */
@@ -262,7 +262,7 @@ export type BrainEvent =
    */
   | { type: "stalled"; phase: BrainStallPhase; tool?: string; label?: string; silentMs: number; resumed: boolean }
   /**
-   * A call of the brain's own that runs subagents (Claude Code's `Agent`, `Workflow`, ADR 0213) while they work: the
+   * A call of the brain's own that runs subagents (Claude Code's `Agent`, `Workflow`, ADR 0214) while they work: the
    * subagent's latest call, how many it made, a workflow's agents, `ended` once over. Shown live only.
    */
   | {

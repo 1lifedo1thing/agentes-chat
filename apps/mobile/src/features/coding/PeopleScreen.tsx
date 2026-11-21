@@ -12,7 +12,7 @@ import { PushedHeader } from "../shared/parts";
 import { CODING_HREF } from "./logic";
 
 /**
- * Who is in a session (ADR 0213), pushed from its "…": its agent first ("trabalha na worktree"), whoever opened it,
+ * Who is in a session (ADR 0214), pushed from its "…": its agent first ("trabalha na worktree"), whoever opened it,
  * then whoever an @ brought in. Whoever opened it, or an admin, takes someone out (the row's button, as the app's
  * lists remove); anyone else leaves (and goes back to Code). Bringing someone in is an @ in the conversation.
  */

@@ -761,7 +761,7 @@ export class RunnerDaemon implements RequestObserver {
     return session.browser.show(agent, await this.agentFolder(agent), installing);
   }
 
-  /** As whom a terminal on the agent's computer runs, like its desktop; `cwd`: a folder inside the agent's (ADR 0213). */
+  /** As whom a terminal on the agent's computer runs, like its desktop; `cwd`: a folder inside the agent's (ADR 0214). */
   private async terminalUser(agent: AgentScope, cwd?: string): Promise<TerminalUser> {
     const agentUser = this.session?.agentUser;
     if (!agentUser) return runnerTerminalUser(await this.agentFolder(agent), cwd, this.shared);

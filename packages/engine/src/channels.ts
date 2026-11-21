@@ -930,7 +930,7 @@ export async function listChannelMembers(db: Database, actorId: string, orgId: s
 /**
  * Removes a person or an agent from a channel. Allowed for yourself (leave),
  * the channel's creator, and admins; an agent also for whoever may put it
- * there (`requirePlacesAgent`). A code session's conversation (ADR 0213) can be
+ * there (`requirePlacesAgent`). A code session's conversation (ADR 0214) can be
  * left too, and keeps its own agent and whoever opened it. Publishes
  * `membership.revoked` so open WebSocket subscriptions of that person end
  * immediately.
@@ -997,7 +997,7 @@ export async function removeChannelMember(
   await publishChannelsChanged(options.pubsub, orgId);
 }
 
-/** A code session (ADR 0213) keeps its own agent and whoever opened it: they are the session. */
+/** A code session (ADR 0214) keeps its own agent and whoever opened it: they are the session. */
 async function keepCodeSessionCore(db: Database, channelId: string, member: { userId: string } | { agentId: string }) {
   const [session] = await db
     .select({ agentId: schema.codeSessions.agentId, createdBy: schema.codeSessions.createdBy })

@@ -1,4 +1,4 @@
-# 0213. Code sessions: a request in its own worktree, on the Code page
+# 0214. Code sessions: a request in its own worktree, on the Code page
 
 - Status: Proposed (being built)
 - Date: 2026-11-20

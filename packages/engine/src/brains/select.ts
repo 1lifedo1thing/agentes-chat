@@ -899,7 +899,7 @@ export async function resolveBrain(
           .limit(1)
           .then(([last]) => Boolean(last && last.key !== options.promptKey))
       : false;
-  // A code session's conversation works in the session's worktree (ADR 0213); any other chat turn starts in the
+  // A code session's conversation works in the session's worktree (ADR 0214); any other chat turn starts in the
   // agent's folder.
   const codeCwd =
     !mission?.session && machineId ? await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null) : null;

@@ -4594,7 +4594,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
     databases: databases.client,
     dashboards: dashboards.client,
     live: live.client,
-    // Code sessions (ADR 0213): none in these tests.
+    // Code sessions (ADR 0214): none in these tests.
     code: {
       list: async () => [],
       start: async () => ({ agents: [] }),
@@ -4636,7 +4636,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
         size: 0,
         truncated: false,
       }),
-      // A session an agent suggested in the chat (ADR 0213 §11): opened (just started, preparing) or kept here.
+      // A session an agent suggested in the chat (ADR 0214 §11): opened (just started, preparing) or kept here.
       openSuggestion: async (orgId: string, messageId: string) => {
         state.calls.push({ method: "code.openSuggestion", args: [orgId, messageId] });
         const s = codeSuggestionOf(state.messages.find((m) => m.id === messageId)?.meta);

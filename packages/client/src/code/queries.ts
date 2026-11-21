@@ -4,7 +4,7 @@ import { cacheMessageMeta } from "../api/queries";
 import type { CodeDiffScope, CodeSession, CodeSuggestion, CreateCodeSessionInput } from "./types";
 
 /**
- * React Query hooks for code sessions (ADR 0213). The user event `code_session.updated` (a session's row changed:
+ * React Query hooks for code sessions (ADR 0214). The user event `code_session.updated` (a session's row changed:
  * its worktree, title, PR) refetches them (`applyCodeSessionEvent`); the conversation itself is the chat's.
  */
 export const codeKeys = {
@@ -163,7 +163,7 @@ export const useCloseCodeSession = (orgId: string) => {
 };
 
 /**
- * A suggested session's card on the agent's reply (ADR 0213 §11), as the server says it (`code.suggestion`) or as a
+ * A suggested session's card on the agent's reply (ADR 0214 §11), as the server says it (`code.suggestion`) or as a
  * decision here makes it: in every loaded list of its channel.
  */
 export function cacheCodeSuggestion(

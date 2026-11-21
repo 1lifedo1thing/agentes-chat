@@ -1409,12 +1409,12 @@ function ChannelView({
       // moved messages (written before the root; the context block lists them).
       const mine = (channelMessages.data ?? []).filter((m) => m.local && m.threadId === thread.id);
       // A task's conversation: not its root, which stands for the task beside it (ADR 0145); a live file's and a code
-      // session's the same (ADR 0199, 0213).
+      // session's the same (ADR 0199, 0214).
       const list = mergeTimeline(threadMessages.data ?? [], [mine]).filter(
         (m) =>
           !taskConversationOf(m.meta) &&
           !fileConversationOf(m.meta) &&
-          // A code session's root stands for the session, whose page is around it (ADR 0213).
+          // A code session's root stands for the session, whose page is around it (ADR 0214).
           !(m.meta && "codeSession" in m.meta) &&
           (!thread.context || m.local || (m.id !== thread.id && m.createdAt > thread.createdAt)),
       );
@@ -4587,7 +4587,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   // Where it browsed (`meta.browser`) and what it did on its desktop (`meta.desktop`): each card stays
   // after the run, and its steps leave the work list.
   // Step summaries, no picture: activity, so the person's setting hides them like the tool block.
-  // A code session's screen line (ADR 0213) is its way to the panel's screen: shown whatever that setting says.
+  // A code session's screen line (ADR 0214) is its way to the panel's screen: shown whatever that setting says.
   const screenPanel = useContext(ScreenPanelContext);
   const trailsShown = m.author.type === "agent" && (showsActivity(org) || screenPanel !== null);
   const browserTrail = useMemo(() => (trailsShown ? browserTrailOf(m.meta) : []), [trailsShown, m.meta]);
@@ -4625,7 +4625,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   const missionSuggestion = m.author.type === "person" ? missionSuggestionOf(meta) : null;
   // A mission proposed from here whose thread lives elsewhere: its link card under the reply.
   const missionLink = m.author.type === "agent" ? missionLinkOf(meta) : null;
-  // A code session it suggested for a change asked here (ADR 0213 §11): the person's card under the reply.
+  // A code session it suggested for a change asked here (ADR 0214 §11): the person's card under the reply.
   const codeSuggestion = m.author.type === "agent" && !m.local ? codeSuggestionOf(meta) : null;
   // Preparing the mission's copy of the project failed (ADR 0044): the card with "Tentar de novo".
   const missionSetup = missionSetupOf(meta);
@@ -4891,7 +4891,7 @@ export const TimelineMessage = memo(function TimelineMessage({
           <Parts resetKey={m}>
             <LiveRunStatus run={live} />
             {makingImage(live) && <ImageMaking color={colorOf(agent)} />}
-            {/* Its subagents and workflows at work, in a code session (ADR 0213). */}
+            {/* Its subagents and workflows at work, in a code session (ADR 0214). */}
             <LiveSubagents work={live.work ?? []} agentName={name} color={colorOf(agent)} />
             <RunBrowserCard run={live} name={name} />
             <span className="ac-visually-hidden">{t("channel.writing")}</span>

@@ -471,7 +471,7 @@ export function buildEngine(o: EngineOptions) {
       }),
       createReactToolSource({ pubsub: adapters.pubsub }),
       createSayNowToolSource({ pubsub: adapters.pubsub }),
-      // An agent that programs on a computer suggests a code session for a change asked in the chat (ADR 0213 §11).
+      // An agent that programs on a computer suggests a code session for a change asked in the chat (ADR 0214 §11).
       createCodeSuggestionToolSource(),
       // A GIF or the agent's sticker when asked (ADR 0091): listed by the workspace's switches and the agent's.
       createMediaToolSource({ pubsub: adapters.pubsub, gifs: adapters.gifs ?? null }),
@@ -613,7 +613,7 @@ export function buildEngine(o: EngineOptions) {
     online: async (machineId: string) => {
       await missionHooks.online?.(machineId);
       await deviceWaits.online(machineId).catch(() => undefined);
-      // Code sessions whose worktree waited for this computer (ADR 0213) are prepared now.
+      // Code sessions whose worktree waited for this computer (ADR 0214) are prepared now.
       await ensureCodeSessionsOn({ db, pubsub: adapters.pubsub, hub: machineHub, git: sandbox.git }, machineId).catch(
         () => undefined,
       );

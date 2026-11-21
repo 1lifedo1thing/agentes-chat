@@ -2,7 +2,7 @@ import type { CodeChangeStatus, CodeSession } from "@agenteschat/client";
 import { chatHref } from "../links/logic";
 
 /*
- * Code sessions on the phone (ADR 0213): the web's Code page as pushed screens. The list, a new session, its
+ * Code sessions on the phone (ADR 0214): the web's Code page as pushed screens. The list, a new session, its
  * conversation (the chat's own thread screen, its root standing for the session), and the session's Git and Files.
  */
 

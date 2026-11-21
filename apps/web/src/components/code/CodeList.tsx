@@ -20,7 +20,7 @@ export const WaitMark = () => (
 
 /** One session's state in words, in its color: what the list, the header and the home say. */
 /**
- * Its subagents and workflows at work now, from its conversation's live runs (ADR 0213): "3 subagentes", "workflow 2
+ * Its subagents and workflows at work now, from its conversation's live runs (ADR 0214): "3 subagentes", "workflow 2
  * de 3". Read as one string, so the list redraws only when the words change.
  */
 function useSubagentsLine(channelId: string): string | null {
@@ -84,7 +84,7 @@ export function StatCount({ session }: { session: CodeSession }) {
 }
 
 /**
- * The page's list (ADR 0213): the sessions I take part in, grouped by repository, each with its agent, name, state in
+ * The page's list (ADR 0214): the sessions I take part in, grouped by repository, each with its agent, name, state in
  * words and the change's size. Who waits on me reads in the waiting color; the open one is marked.
  */
 export function CodeList({ activeId }: { activeId: string | null }) {

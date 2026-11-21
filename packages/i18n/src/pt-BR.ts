@@ -11598,7 +11598,7 @@ export const ptBR = {
     createKeywords: "criar novo adicionar",
     empty: "Nada com “{{q}}”.",
   },
-  /** Código (ADR 0213): sessões em que um pedido é trabalhado numa worktree própria no computador de um agente. */
+  /** Código (ADR 0214): sessões em que um pedido é trabalhado numa worktree própria no computador de um agente. */
   codeSessions: {
     title: "Código",
     state: {
@@ -11750,7 +11750,7 @@ export const ptBR = {
       show: "Ver na Tela",
       held: "Uma pessoa está no controle da tela",
     },
-    /** An agent suggests a session for a change asked in the chat (ADR 0213 §11): the card under its reply. */
+    /** An agent suggests a session for a change asked in the chat (ADR 0214 §11): the card under its reply. */
     suggestion: {
       label: "Sugestão de sessão de código",
       /** The project, and whose computer it works on. */
@@ -15675,7 +15675,7 @@ export const ptBR = {
       computer: "O computador não conseguiu fazer isso agora. Confira se ele está ligado e tente de novo.",
     },
     /** Setting up a GitHub or Sentry routine's webhook: `repo` is owner/name, `status` GitHub's HTTP status. */
-    /** Uma sessão de código (ADR 0213): o que impede de começar uma, ou o painel de ler o computador do agente. */
+    /** Uma sessão de código (ADR 0214): o que impede de começar uma, ou o painel de ler o computador do agente. */
     codeSession: {
       noComputer: "Este agente ainda não tem computador. Dê um a ele nas configurações dele para programar com ele.",
       noComputerBrain:
@@ -20464,7 +20464,7 @@ export const ptBR = {
     write: "Escreveu",
     run: "Rodou",
     fetch: "Abriu",
-    /** Um subagente do próprio CLI (ADR 0213): "Pediu a um subagente · Revisar o HTML". */
+    /** Um subagente do próprio CLI (ADR 0214): "Pediu a um subagente · Revisar o HTML". */
     delegate: "Pediu a um subagente",
     skill: "Usou a skill",
     workflow: "Rodou um workflow",
@@ -20492,7 +20492,7 @@ export const ptBR = {
     failedTests_one: "{{count}} falhou",
     failedTests_other: "{{count}} falharam",
     exit: "saiu com {{code}}",
-    /** A code session's subagents and workflows while they work (ADR 0213), live in the agent's row. */
+    /** A code session's subagents and workflows while they work (ADR 0214), live in the agent's row. */
     progress: {
       block: "Subagentes do {{name}}",
       block_female: "Subagentes da {{name}}",
@@ -20617,7 +20617,7 @@ export const ptBR = {
       message: "Mensagem para {{name}}",
     },
   },
-  /** A code session's Terminal tab (ADR 0213): a shell on the agent's computer, in the session's folder. */
+  /** A code session's Terminal tab (ADR 0214): a shell on the agent's computer, in the session's folder. */
   codeTerminal: {
     label: "Terminal",
     opening: "Abrindo o terminal…",

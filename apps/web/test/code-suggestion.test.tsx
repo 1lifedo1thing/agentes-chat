@@ -9,7 +9,7 @@ import { ADA_ID, createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
 /*
- * A code session an agent suggested under its reply (ADR 0213 §11): the request card says what it opens and on whose
+ * A code session an agent suggested under its reply (ADR 0214 §11): the request card says what it opens and on whose
  * computer, keeps the person's words behind "Ver o pedido", and only the person who asked decides.
  */
 

@@ -14,7 +14,7 @@ import type {
 
 const org = (orgId: string) => `/api/app/organizations/${enc(orgId)}`;
 
-/** Code sessions' routes (ADR 0213), `/api/app/organizations/{orgId}/code-sessions…`. */
+/** Code sessions' routes (ADR 0214), `/api/app/organizations/{orgId}/code-sessions…`. */
 export interface CodeApi {
   /** The sessions I take part in, most recent activity first. */
   list(orgId: string): Promise<CodeSession[]>;
@@ -38,7 +38,7 @@ export interface CodeApi {
   files(orgId: string, sessionId: string): Promise<CodeFiles>;
   /** One file, read-only. */
   file(orgId: string, sessionId: string, path: string): Promise<CodeFile>;
-  /** "Abrir sessão" on a suggestion in the chat (ADR 0213 §11): the session, started with the asker's words. */
+  /** "Abrir sessão" on a suggestion in the chat (ADR 0214 §11): the session, started with the asker's words. */
   openSuggestion(orgId: string, messageId: string): Promise<CodeSession>;
   /** "Fazer aqui": the agent goes on in the conversation. */
   keepHere(orgId: string, messageId: string): Promise<{ suggestion: CodeSuggestion }>;

@@ -21,7 +21,7 @@ import {
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
- * A code session suggested in the chat (ADR 0213 §11): who gets the tool, what it leaves on the reply, where it refuses,
+ * A code session suggested in the chat (ADR 0214 §11): who gets the tool, what it leaves on the reply, where it refuses,
  * and the person's two answers, "Abrir sessão" and "Fazer aqui".
  */
 

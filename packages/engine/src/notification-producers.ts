@@ -188,7 +188,7 @@ export async function notifyMessage(deps: NotificationDeps, orgId: string, messa
   // A live file's conversation (ADR 0199): named by its file, and the apps open the file with it at this message.
   const file = channel.kind === "file" ? await fileOfConversation(db, orgId, message.channelId) : null;
   if (channel.kind === "file" && !file) return;
-  // A code session's conversation (ADR 0213): named by the session, and the apps open it on the Code page.
+  // A code session's conversation (ADR 0214): named by the session, and the apps open it on the Code page.
   const codeSession = channel.kind === "code" ? await codeSessionOfChannel(db, message.channelId) : null;
   const label = channel.kind === "channel" ? channel.name : (file?.title ?? codeSession?.title);
   const where: NotificationSource = {

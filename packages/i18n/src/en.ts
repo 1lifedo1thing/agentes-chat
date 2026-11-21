@@ -11596,7 +11596,7 @@ export const en = {
     createKeywords: "create new add",
     empty: "Nothing for “{{q}}”.",
   },
-  /** Code (ADR 0213): sessions where a request is worked on in its own git worktree on an agent's computer. */
+  /** Code (ADR 0214): sessions where a request is worked on in its own git worktree on an agent's computer. */
   codeSessions: {
     title: "Code",
     state: {
@@ -11747,7 +11747,7 @@ export const en = {
       show: "See on Screen",
       held: "A person has the screen",
     },
-    /** An agent suggests a session for a change asked in the chat (ADR 0213 §11): the card under its reply. */
+    /** An agent suggests a session for a change asked in the chat (ADR 0214 §11): the card under its reply. */
     suggestion: {
       label: "Code session suggestion",
       /** The project, and whose computer it works on. */
@@ -15726,7 +15726,7 @@ export const en = {
       computer: "The computer couldn't do this now. Check that it's on and try again.",
     },
     /** Setting up a GitHub or Sentry routine's webhook: `repo` is owner/name, `status` GitHub's HTTP status. */
-    /** A code session (ADR 0213): what keeps one from starting, or its panel from reading the agent's computer. */
+    /** A code session (ADR 0214): what keeps one from starting, or its panel from reading the agent's computer. */
     codeSession: {
       noComputer: "This agent has no computer yet. Give it one in its settings to code with it.",
       noComputerBrain:
@@ -20543,10 +20543,10 @@ export const en = {
     write: "Wrote",
     run: "Ran",
     fetch: "Fetched",
-    /** The CLI's own subagent (ADR 0213): "Asked a subagent · Review the HTML". */
+    /** The CLI's own subagent (ADR 0214): "Asked a subagent · Review the HTML". */
     delegate: "Asked a subagent",
     skill: "Used the skill",
-    /** A workflow of the CLI's own subagents (ADR 0213): "Ran a workflow · Review every page". */
+    /** A workflow of the CLI's own subagents (ADR 0214): "Ran a workflow · Review every page". */
     workflow: "Ran a workflow",
     other: "Used",
     /** While the call runs. */
@@ -20577,7 +20577,7 @@ export const en = {
     failedTests_other: "{{count}} failed",
     /** A failed command's exit code. */
     exit: "exit {{code}}",
-    /** A code session's subagents and workflows while they work (ADR 0213), live in the agent's row. */
+    /** A code session's subagents and workflows while they work (ADR 0214), live in the agent's row. */
     progress: {
       block: "{{name}}'s subagents",
       subagent: "Subagent",
@@ -20692,7 +20692,7 @@ export const en = {
     },
   },
   /**
-   * A code session's Terminal tab (ADR 0213): a shell on the agent's computer, in the session's folder. One line under
+   * A code session's Terminal tab (ADR 0214): a shell on the agent's computer, in the session's folder. One line under
    * it says why it closed; "Open again" opens a new shell.
    */
   codeTerminal: {

@@ -396,7 +396,7 @@ test("a provider refused this server's own OAuth app: what's wrong and who fixes
  * hit goes in `KNOWN` instead.
  */
 const PLAIN_LINE = new Set([
-  // A code session (ADR 0213): the apps start one only with words in the field and rename one only to a name, build
+  // A code session (ADR 0214): the apps start one only with words in the field and rename one only to a name, build
   // its git and file requests themselves, never offer removing who must stay, and retry only a failed worktree.
   "code_session.empty",
   "code_session.empty_title",

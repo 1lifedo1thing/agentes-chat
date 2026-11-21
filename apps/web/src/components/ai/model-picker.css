@@ -186,7 +186,7 @@
     display: none;
   }
 }
-/* A code session's status line (ADR 0213): quiet words under the composer, a plate only under the pointer or open. */
+/* A code session's status line (ADR 0214): quiet words under the composer, a plate only under the pointer or open. */
 .mp-trigger[data-size="status"],
 .mp-label[data-size="status"] {
   min-width: 0;

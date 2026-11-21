@@ -625,7 +625,7 @@ test("profiles (ADR 0053 §3): plan has our tools only, no settings files, no ed
   expect(asks).toContain("--permission-prompt-tool");
   expect(brainProfileLaunch("work", false, true, true).permissionMode).toBe("default");
   expect(brainProfileLaunch("work", false, true).permissionMode).toBe("acceptEdits");
-  // A code session's turn (ADR 0213): Claude Code's subagents and skills too, still no settings of the checkout.
+  // A code session's turn (ADR 0214): Claude Code's subagents and skills too, still no settings of the checkout.
   const code = claudeBrainArgs({
     ...base,
     ...brainProfileLaunch("work", false, false, false, true),

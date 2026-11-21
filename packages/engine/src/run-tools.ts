@@ -116,7 +116,7 @@ export interface ToolSideEffects {
   artifacts?: ArtifactLink[];
   /** A mission proposed with its home elsewhere: its link card (`meta.missionLink`). */
   missionLink?: { missionId: string; threadId: string } | null;
-  /** A code session it suggested (`suggest_code_session`, ADR 0213 §11): the person's card on its reply. */
+  /** A code session it suggested (`suggest_code_session`, ADR 0214 §11): the person's card on its reply. */
   codeSuggestion?: CodeSuggestion | null;
   /** The agent reacted (`react`) instead of replying. */
   reacted?: boolean;
@@ -250,7 +250,7 @@ export function absorbToolData(t: ToolSideEffects, data: Record<string, unknown>
   if (several.length > 0) t.artifacts = withArtifacts(t.artifacts, several);
   const link = data.missionLink as { missionId: string; threadId: string } | undefined;
   if (link?.missionId && link.threadId) t.missionLink = link;
-  // A code session it suggested (ADR 0213 §11): the newest one rides on the reply.
+  // A code session it suggested (ADR 0214 §11): the newest one rides on the reply.
   const suggestion = codeSuggestionOf({ codeSuggestion: data.codeSuggestion });
   if (suggestion) t.codeSuggestion = suggestion;
   if (data.reacted) t.reacted = true;
@@ -683,7 +683,7 @@ const loadedGroupsOf = (transcript: unknown): string[] | null => {
 export async function bridgeToolsFor(deps: RunToolsDeps, id: BridgeIdentity): Promise<BrainTool[]> {
   if (!deps.tools) return [];
   const { ctx, run } = await locate(deps.db, id);
-  // A code session (ADR 0213): the person sees the worktree's files and the agent's screen in its panel, so no file
+  // A code session (ADR 0214): the person sees the worktree's files and the agent's screen in its panel, so no file
   // goes to the Drive or onto a reply from there.
   const inCode = run ? await codeSessionOfChannel(deps.db, run.channelId) : null;
   const tools = (await deps.tools.list(ctx)).filter((t) => !(inCode && CODE_SESSION_HIDDEN_TOOLS.has(t.name)));

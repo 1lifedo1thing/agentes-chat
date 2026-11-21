@@ -43,7 +43,7 @@ import { CodeDockSky } from "./CodeSky";
 import { useCodeKey } from "./shortcuts";
 
 /**
- * One code session (ADR 0213): the conversation with its agent under the session's header (its name), the chat's own
+ * One code session (ADR 0214): the conversation with its agent under the session's header (its name), the chat's own
  * thread screen (tool rows, steering, stop, approvals), and the side panel. The gutter between them drags (double
  * click puts it back). The screen is the panel's: the conversation's browser cards are a line that opens it, and it
  * turns to the screen as the agent starts using it.
@@ -117,7 +117,7 @@ function CodeConversation({ session }: { session: CodeSession }) {
 }
 
 /**
- * Where the session came from (a suggestion in a conversation, ADR 0213 §11): one line at its top, with the way back
+ * Where the session came from (a suggestion in a conversation, ADR 0214 §11): one line at its top, with the way back
  * to that message. Only for whoever can open that conversation (the server leaves it out for anyone else).
  */
 function CodeOrigin({ from }: { from: CodeSessionOrigin }) {

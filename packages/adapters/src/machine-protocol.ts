@@ -690,7 +690,7 @@ export const ANTIGRAVITY_MAC_PROTOCOL = 68;
  */
 export const PHONE_REPAIR_PROTOCOL = 73;
 /**
- * A code session's terminal (ADR 0213): `stream.open` of a terminal may carry `cwd`, a folder inside the agent's own
+ * A code session's terminal (ADR 0214): `stream.open` of a terminal may carry `cwd`, a folder inside the agent's own
  * (relative to it, the session's worktree), where the shell starts. One that isn't there starts it in the agent's
  * folder; one that leaves the agent's folder is refused. The server sends `cwd` to no older runner, which opens the
  * terminal in the agent's folder.
@@ -1667,7 +1667,7 @@ export const STREAM_CLOSE = {
  */
 export type StreamRequest =
   | { kind: "desktop"; mode: DesktopMode }
-  /** `cwd` (`TERMINAL_CWD_PROTOCOL`): where the shell starts, a folder relative to the agent's own (ADR 0213). */
+  /** `cwd` (`TERMINAL_CWD_PROTOCOL`): where the shell starts, a folder relative to the agent's own (ADR 0214). */
   | { kind: "terminal"; cols: number; rows: number; cwd?: string }
   /** A phone's screen (`PHONES_PROTOCOL`): `stream.open` carries the phone itself as `phone`, its holder the person. */
   | { kind: "phone"; mode: DesktopMode; phoneId: string };
@@ -1705,7 +1705,7 @@ export type StreamControl =
   | { type: "resize"; cols: number; rows: number }
   | { type: "exit"; code: number | null }
   /**
-   * Server → viewer, once a terminal is ready (ADR 0213): its computer is too old for the folder it was asked to start
+   * Server → viewer, once a terminal is ready (ADR 0214): its computer is too old for the folder it was asked to start
    * in (`TERMINAL_CWD_PROTOCOL`), so the shell started in the agent's folder.
    */
   | { type: "cwd_ignored" }
@@ -2196,7 +2196,7 @@ export type WireBrainEvent =
   | { type: "speed_fallback"; message: string }
   /**
    * A call the brain starts on its own (Claude Code's Read, Bash, Task): its `tool_call` follows once it ended.
-   * `input`: what it was given, masked (a code session shows the call's line while it runs, ADR 0213); an older runner
+   * `input`: what it was given, masked (a code session shows the call's line while it runs, ADR 0214); an older runner
    * sends none, an older server drops it.
    */
   | { type: "tool_started"; id: string; name: string; input?: unknown }
@@ -2221,7 +2221,7 @@ export type WireBrainEvent =
     }
   /**
    * How a call of the brain's own that runs subagents goes while they work (Claude Code's `Agent`, `Task` and
-   * `Workflow`, ADR 0213), by that call's id: its subagent's latest call (`step`: the tool, and its input cut as a
+   * `Workflow`, ADR 0214), by that call's id: its subagent's latest call (`step`: the tool, and its input cut as a
    * `tool_call`'s when the CLI shows it), how many calls it made so far, a workflow's agents, and `ended` once it is
    * over (a workflow ends after its own call did). An older server drops it.
    */
@@ -2340,7 +2340,7 @@ export interface BrainTurnRequest {
   /** Also load the machine owner's own MCP servers (default false: `--strict-mcp-config`; never in a `plan` turn). */
   personalMcp?: boolean;
   /**
-   * A code session's turn (ADR 0213), Claude Code: its own subagents and skills too, and the worktree's `.claude`
+   * A code session's turn (ADR 0214), Claude Code: its own subagents and skills too, and the worktree's `.claude`
    * agents, skills and commands as a plugin, without their hooks, MCP servers or allowed tools. An older runner
    * ignores it.
    */

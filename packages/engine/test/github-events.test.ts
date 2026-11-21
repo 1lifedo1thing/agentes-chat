@@ -66,7 +66,7 @@ async function world(options: { rightHand?: boolean } = {}) {
   return { root, ctx };
 }
 
-/** A code session's branch (ADR 0213) and a commit on it. */
+/** A code session's branch (ADR 0214) and a commit on it. */
 const BRANCH = "agentes/dev/fix-login-1a2b";
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 
@@ -591,7 +591,7 @@ describe("reading what GitHub sent", () => {
     expect(of("issue_comment", { ...commentOn(3, "x"), installation: undefined })).toBeNull();
   });
 
-  test("on an agent's own branch: a check that failed there, and a pull request opened from it (ADR 0213)", () => {
+  test("on an agent's own branch: a check that failed there, and a pull request opened from it (ADR 0214)", () => {
     const of = (event: string, payload: Record<string, unknown>) => githubAppEventOf(event, payload, SLUG);
     // A bot ran it, and it is news all the same: what the agent pushed doesn't pass.
     expect(of("check_run", checkRun())).toEqual({

@@ -8,7 +8,7 @@ import type { Message } from "@agenteschat/client";
 
 /**
  * What a request asks (`proposal`: a change to the context or to an agent's instructions; `agent`: a new agent;
- * `code`: a code session for a change asked in the chat, ADR 0213 §11).
+ * `code`: a code session for a change asked in the chat, ADR 0214 §11).
  */
 export type AskKind =
   | "approval"

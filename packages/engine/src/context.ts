@@ -208,7 +208,7 @@ export const SAY_NOW_LINE =
   "- Before work that takes more than a few seconds, first tell them in one short line what you'll do (say_now, in the same response as your first work call), then work: your final message brings the result. Once per request; never for a quick answer, nor with work_in_background (its `say` is that line).";
 
 /**
- * A code session suggested in the chat (ADR 0213 §11): the line of "How you work" for an agent that programs on a
+ * A code session suggested in the chat (ADR 0214 §11): the line of "How you work" for an agent that programs on a
  * computer, answering a person outside a session, with `suggest_code_session` listed.
  */
 export const CODE_SESSION_LINE =
@@ -362,7 +362,7 @@ const QUIET_TOOLS = [
   "react",
   // The line before slow work (ADR 0207) is in its conversation already.
   "say_now",
-  // A suggested code session (ADR 0213 §11) is its reply's card already.
+  // A suggested code session (ADR 0214 §11) is its reply's card already.
   "suggest_code_session",
   // A GIF or a sticker (ADR 0091) is in its conversation already: not work to recall elsewhere.
   "send_gif",
@@ -655,7 +655,7 @@ export async function buildRunContext(
     work?: boolean;
     /** `say_now` is available and people read this conversation as it goes (ADR 0207): one line before slow work. */
     sayNow?: boolean;
-    /** `suggest_code_session` applies (ADR 0213 §11): a change to a project's code gets a session suggested first. */
+    /** `suggest_code_session` applies (ADR 0214 §11): a change to a project's code gets a session suggested first. */
     codeSessions?: boolean;
     /** `show_block` and `start_poll` are available: when to use them (a routine's run is refused them). */
     blocks?: boolean;
@@ -1128,7 +1128,7 @@ export async function buildRunContext(
     root && channel.kind === "file"
       ? await fileConversationBrief(db, run.orgId, root.meta, agent.id).catch(() => null)
       : null;
-  // A code session's conversation (ADR 0213): the repository, branch and worktree it works in, read from the session
+  // A code session's conversation (ADR 0214): the repository, branch and worktree it works in, read from the session
   // now. Its first turn is told to install the project when the worktree is new.
   const codeBrief =
     channel.kind === "code"

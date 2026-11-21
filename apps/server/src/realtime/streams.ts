@@ -26,7 +26,7 @@ import { personUpgrade, UUID } from "./ws";
  *   switched, ADR 0058 §7) and
  *   `GET /api/terminal?orgId&agentId&cols&rows` (the shell's bytes; text
  *   frames: `resize` out, `exit` in; `session`: a code session of that agent,
- *   whose worktree it starts in, ADR 0213) and
+ *   whose worktree it starts in, ADR 0214) and
  *   `GET /api/phone-screen?orgId&phoneId&mode=watch|control` (a phone's screen: its pictures, binary or with
  *   `text=1` base64 text for the phone app; text frames: `ack`, and in control `tap`, `swipe`, `text`, `key`)
  *   are a person's sockets (`seat=shared` on the first two: the right hand's shared place instead of the person's
@@ -96,7 +96,7 @@ function viewerRequest(path: string, q: URLSearchParams): StreamRequest | null {
 }
 
 /**
- * A code session's terminal (ADR 0213, `session=`): the folder it starts in, the session's worktree relative to the
+ * A code session's terminal (ADR 0214, `session=`): the folder it starts in, the session's worktree relative to the
  * agent's folder, for whoever reads the session, of that agent, once its worktree is ready; or why not, before the
  * upgrade like the rest of the address. Who may open the terminal at all is the stream's own check after it.
  */
@@ -184,7 +184,7 @@ export function createStreamSockets(deps: { db: Database; auth: Auth; config: Co
           status: 400,
         });
       }
-      // A code session's terminal starts in the session's worktree (ADR 0213).
+      // A code session's terminal starts in the session's worktree (ADR 0214).
       const session = q.get("session");
       if (request.kind === "terminal" && session !== null) {
         const cwd = await sessionFolder(deps.db, user.id, orgId, agentId, session);

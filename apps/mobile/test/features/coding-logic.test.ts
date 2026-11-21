@@ -149,7 +149,7 @@ describe("a session's screens", () => {
   });
 });
 
-describe("a session suggested in the chat (ADR 0213 §11)", () => {
+describe("a session suggested in the chat (ADR 0214 §11)", () => {
   test("the agent's reply carries the card; a session opened from it leads back to where it came from", () => {
     expect(src("features/chat/MessageRow.tsx")).toContain(
       "{suggestion ? <CodeSuggestionCard message={m} suggestion={suggestion} /> : null}",

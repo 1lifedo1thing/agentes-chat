@@ -30,7 +30,7 @@ const seedOf = (name: string) => {
 type Box = { left: number; top: number; right: number; bottom: number };
 
 /**
- * The Code home's agent (ADR 0213): the agent picked in the field, in cubes from its own avatar, standing over the
+ * The Code home's agent (ADR 0214): the agent picked in the field, in cubes from its own avatar, standing over the
  * title. It turns a little toward the pointer anywhere over the home (`area`) and blinks when its avatar does; its
  * cursor glides in and waits beside it. Decoration (the field says who works): hidden from screen readers. Without
  * WebGL it is the flat avatar.

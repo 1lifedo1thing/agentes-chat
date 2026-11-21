@@ -289,7 +289,7 @@ export function ComputerDialog({ agent, open, onClose }: { agent: Agent; open: b
 
 /**
  * What the stage shows, by `surfaceOf`, with the banners over a live one. The head's sub-line says only what a cover or
- * a banner doesn't: the window says each thing once. Also the Code page's Screen tab (ADR 0213), with its own slots.
+ * a banner doesn't: the window says each thing once. Also the Code page's Screen tab (ADR 0214), with its own slots.
  */
 export function ComputerStage({
   agent,

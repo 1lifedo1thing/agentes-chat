@@ -3,7 +3,7 @@ import { createContext } from "react";
 import { useTranslation } from "react-i18next";
 
 /**
- * A page that shows the agent's screen in a panel of its own (a code session's Screen, ADR 0213): there the
+ * A page that shows the agent's screen in a panel of its own (a code session's Screen, ADR 0214): there the
  * conversation's browser and desktop cards are one line that opens it, and the panel turns to the screen as the agent
  * starts using it.
  */

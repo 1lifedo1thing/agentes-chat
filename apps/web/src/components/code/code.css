@@ -1,5 +1,5 @@
 /*
- * The Code page (ADR 0213): the list, the home and a session as surfaces on the app's background with 8 px gutters
+ * The Code page (ADR 0214): the list, the home and a session as surfaces on the app's background with 8 px gutters
  * between them; corners 14 px with the cut corner (4 px) like every card; heights on the 56/40/36 rule.
  */
 
@@ -905,7 +905,7 @@
   line-height: 16px;
 }
 
-/* ── the panel's Git and Files tabs (ADR 0213): one row of head, rows like the list's, a diff or a file in place ── */
+/* ── the panel's Git and Files tabs (ADR 0214): one row of head, rows like the list's, a diff or a file in place ── */
 .code-vcs,
 .code-tree {
   /* Over the sky that rises behind the Git tab from the panel's foot. */

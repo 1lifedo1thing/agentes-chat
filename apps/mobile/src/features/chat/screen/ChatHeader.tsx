@@ -37,7 +37,7 @@ const NO_RUNS: LiveRun[] = [];
 const NO_LINE: LiveConsult[] = [];
 
 /**
- * A code session's line under its name (ADR 0213): its state in words and its branch, as the web's header says them
+ * A code session's line under its name (ADR 0214): its state in words and its branch, as the web's header says them
  * (the branch without its agent's prefix: the room is the pill's).
  */
 function codeSessionLine(t: ReturnType<typeof useTranslation>["t"], s: CodeSession) {
@@ -84,7 +84,7 @@ export function useChatTitle({
   // A live file's (ADR 0199): "Canvas conversation", who took part under it (the file's name until someone writes).
   const rootFile = fileConversationOf(root?.meta);
   const fileTalk = useArtifact(orgId, rootFile?.artifactId ?? null).data?.conversation;
-  // A code session's (ADR 0213): its name, and its project under it. The bar reads the session itself (its name as
+  // A code session's (ADR 0214): its name, and its project under it. The bar reads the session itself (its name as
   // renamed, its state and branch), so a change of state redraws the bar alone.
   const rootCode = codeSessionOf(root?.meta);
   const title = isThread
@@ -193,7 +193,7 @@ export function ChatHeader({
     threadId: string | null;
     title: string;
     subtitle: string | undefined;
-    /** The code session this thread is (ADR 0213), if it is one's. */
+    /** The code session this thread is (ADR 0214), if it is one's. */
     codeId: string | null;
     info: ChatData["thread"]["data"];
     searchPlace: ConversationActions["searchPlace"];
@@ -206,7 +206,7 @@ export function ChatHeader({
   const { t } = useTranslation();
   const dir = useDirectory();
   const orgId = useOrgId();
-  // A code session's conversation (ADR 0213): the session's name and its state and branch in the pill, which opens its
+  // A code session's conversation (ADR 0214): the session's name and its state and branch in the pill, which opens its
   // code (its mark the code's); in the bar its agent's computer (where it shows what it builds) and the session's "…".
   // One button besides "…" at most: with two, the pill kept room for a few letters of the name on a 393-point phone.
   const codeQuery = useCodeSession(orgId, codeId);

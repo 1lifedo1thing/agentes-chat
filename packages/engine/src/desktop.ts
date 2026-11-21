@@ -65,7 +65,7 @@ export const requireDesktopAccess = (db: Database, userId: string, orgId: string
  * servers), on protocol 18 or later, its switch for that kind on and the
  * runner able to serve it; for a desktop, an agent that may use one. A
  * terminal's `takesCwd`: the computer starts it in a folder it is asked for
- * (`TERMINAL_CWD_PROTOCOL`, a code session's worktree, ADR 0213).
+ * (`TERMINAL_CWD_PROTOCOL`, a code session's worktree, ADR 0214).
  */
 export async function desktopTarget(
   db: Database,

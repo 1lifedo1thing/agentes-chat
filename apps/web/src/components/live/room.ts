@@ -36,7 +36,7 @@ interface RoomState {
 /**
  * Watches the page's width (`page`: its element): `narrow` for the header, and, while the conversation is `docked`,
  * the sidebar folded to its rail when the file would get less than `min` (a live file's toolbars, `FILE_ROOM_MIN`;
- * a code session's conversation and panel, ADR 0213), back once it would keep `min + FILE_ROOM_SLACK` with it open.
+ * a code session's conversation and panel, ADR 0214), back once it would keep `min + FILE_ROOM_SLACK` with it open.
  * Never stored, and never against the person: a sidebar they folded themselves stays folded, and once they use its
  * toggle here the page leaves it alone.
  */

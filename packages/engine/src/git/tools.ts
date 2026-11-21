@@ -341,7 +341,7 @@ export function createGitToolSource(deps: GitToolDeps): ToolSource {
                   number: body.number,
                   authored: true,
                 }).catch(() => {});
-                // From a code session's branch: the session keeps its pull request (ADR 0213).
+                // From a code session's branch: the session keeps its pull request (ADR 0214).
                 await recordCodeSessionPr(
                   { db: c.db, pubsub: deps.pubsub },
                   c.orgId,

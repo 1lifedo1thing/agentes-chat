@@ -35,7 +35,7 @@ import { can, getMembership } from "./organizations";
 import { withoutTrailingSlashes } from "./url-text";
 
 /*
- * Code sessions (ADR 0213): a request worked on in its own git worktree on the agent's computer. The session's
+ * Code sessions (ADR 0214): a request worked on in its own git worktree on the agent's computer. The session's
  * conversation is a thread in a channel of kind `code` (the task conversation's model, ADR 0145): runs, steering,
  * stop, approvals, live events and the thread screens work unchanged. Its agent answers there like in a DM, and its
  * computer brain works with the worktree as its folder (`codeSessionCwd`, read by `resolveBrain`).
@@ -96,7 +96,7 @@ export interface CodeSessionDeps {
   log?: { warn(message: string, data?: Record<string, unknown>): void };
 }
 
-/** The conversation a session was opened from (a suggestion in it, ADR 0213 §11): its message, for the way back. */
+/** The conversation a session was opened from (a suggestion in it, ADR 0214 §11): its message, for the way back. */
 export interface CodeSessionFrom {
   channelId: string;
   messageId: string;
@@ -142,7 +142,7 @@ export function sessionTitle(raw: string | undefined): string {
 const shortId = (id: string) => id.replace(/-/g, "").slice(-8);
 
 /**
- * A project only on the agent's computer, with no remote yet (ADR 0213): named like a folder (letters, digits, dots,
+ * A project only on the agent's computer, with no remote yet (ADR 0214): named like a folder (letters, digits, dots,
  * dashes, underscores, not starting with a dot), it lives in `projects/<name>` in the agent's folder, a git repository
  * of its own made on first use. A session on it has `repo` = that name (no slash), so `isLocalSession` tells it apart
  * from a GitHub repository's (`owner/name`).
@@ -193,7 +193,7 @@ export const codeAgentSql = (channelId: SQL) =>
     where cs.channel_id = ${channelId} and cs.archived_at is null and cs.worktree_state = 'ready' limit 1)`;
 
 /**
- * Who a person names in a session's conversation joins it (ADR 0213): an agent of the workspace by its handle (so the
+ * Who a person names in a session's conversation joins it (ADR 0214): an agent of the workspace by its handle (so the
  * mention wakes it there), a person of the workspace too (they see and talk in the session from then on; what they
  * may do on the computer stays the computer's rule). Returns nothing; the members cache is dropped.
  */
@@ -330,7 +330,7 @@ export interface CodeSessionView {
   createdBy: string | null;
   createdAt: string;
   lastAt: string;
-  /** The conversation it was opened from (ADR 0213 §11), on the session's own page only, for whoever can see it. */
+  /** The conversation it was opened from (ADR 0214 §11), on the session's own page only, for whoever can see it. */
   from?: CodeSessionOrigin;
 }
 
@@ -473,7 +473,7 @@ export async function getCodeSession(db: Database, userId: string, orgId: string
 }
 
 /**
- * The conversation a session was opened from (its root's `meta.codeSession.from`, ADR 0213 §11), named the way the
+ * The conversation a session was opened from (its root's `meta.codeSession.from`, ADR 0214 §11), named the way the
  * apps say it, for whoever can open it: nothing for a person it isn't shared with.
  */
 async function originOf(db: Database, userId: string, row: CodeSessionRow): Promise<CodeSessionOrigin | null> {
@@ -524,7 +524,7 @@ export interface CreateCodeSessionInput {
   text: string;
   /** Its name, when someone gave one (an agent's suggestion); else the request's first sentence. */
   title?: string;
-  /** The conversation it was opened from (a suggestion in it, ADR 0213 §11). */
+  /** The conversation it was opened from (a suggestion in it, ADR 0214 §11). */
   from?: CodeSessionFrom;
 }
 
@@ -1184,7 +1184,7 @@ export async function recordCodeSessionPr(
   return setSession(deps, row, { prNumber: pr.number, prUrl: pr.url });
 }
 
-/* ───────── the panel's Git and Files tabs (ADR 0213) ───────── */
+/* ───────── the panel's Git and Files tabs (ADR 0214) ───────── */
 
 /** Most commits the Git tab lists, the newest first. */
 const LOG_MAX = 100;

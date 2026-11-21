@@ -221,7 +221,7 @@ function Line({
 }
 
 /**
- * A card of one line that leads somewhere instead of opening (a code session's line to its screen, ADR 0213): a tool
+ * A card of one line that leads somewhere instead of opening (a code session's line to its screen, ADR 0214): a tool
  * line's look and size (`.ac-tools--one`), so it lines up with the tools block beside it; the whole line is the
  * button, and what it does reads on the right, where a call's time goes.
  */

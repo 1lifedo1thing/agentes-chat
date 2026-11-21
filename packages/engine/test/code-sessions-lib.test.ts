@@ -12,7 +12,7 @@ import {
 } from "../src/code-sessions";
 import { branchSlug } from "../src/mission-worktree";
 
-// Code sessions (ADR 0213): the pure pieces (names, the branch, the diff's split).
+// Code sessions (ADR 0214): the pure pieces (names, the branch, the diff's split).
 
 describe("titleOfRequest", () => {
   test("the first sentence of the first line, capitalized, without its period", () => {

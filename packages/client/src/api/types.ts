@@ -1853,7 +1853,7 @@ export type ChannelEvent =
   | { type: "block.state"; channelId: string; block: BlockState }
   /** A choice card was answered (ADR 0124). */
   | { type: "choices.updated"; channelId: string; choices: Choices }
-  /** A suggested code session was opened, kept in the chat, or waits again (ADR 0213 §11): the reply's card. */
+  /** A suggested code session was opened, kept in the chat, or waits again (ADR 0214 §11): the reply's card. */
   | {
       type: "code.suggestion";
       channelId: string;
@@ -7225,7 +7225,7 @@ export interface NotificationSource {
   widgetId?: string;
   /** A message in a live file's conversation (ADR 0199): the file, opened with it at `messageId`. */
   artifactId?: string;
-  /** A message in a code session's conversation (ADR 0213): the session, opened on the Code page. */
+  /** A message in a code session's conversation (ADR 0214): the session, opened on the Code page. */
   codeSessionId?: string;
   /** Channel name, thread title, issue title, topic title, mission or routine name (or the computer's name). */
   label?: string;

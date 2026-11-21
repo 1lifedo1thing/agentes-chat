@@ -18,7 +18,7 @@ import { CodeScreenSky } from "./CodeSky";
 type ScreenPick = { kind: "computer" } | { kind: "phone"; phoneId: string };
 
 /**
- * The session panel's Screen tab (ADR 0213): the agent's computer as its computer dialog shows it (live, "Take
+ * The session panel's Screen tab (ADR 0214): the agent's computer as its computer dialog shows it (live, "Take
  * control", full screen; a Mac's browser page), or one of the phones the person may use, picked from a menu. The
  * worktree's server runs on that computer, on a port only the agent reaches, so its screen is the preview.
  */

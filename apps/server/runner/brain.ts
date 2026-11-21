@@ -243,7 +243,7 @@ export const STEER_FOLLOW_UP_MS = 30_000;
  */
 export const STEER_BACKGROUND_WAIT_MS = 10 * 60_000;
 /**
- * A result came while a workflow or a subagent this request started still runs in the background (ADR 0213): how
+ * A result came while a workflow or a subagent this request started still runs in the background (ADR 0214): how
  * long the request waits for it and the turn the CLI then runs with its outcome, the run "working" meanwhile, its
  * progress live (`tool_progress`), its commands still checked as this turn's. Past it, as above.
  */
@@ -385,7 +385,7 @@ export interface ParsedTask {
   backgrounded?: boolean;
   /**
    * Its end is what the answer waits for (`AWAITED_TASKS`: a workflow, a subagent): a request it runs past the result
-   * of goes on until it ended and the CLI answered it, as for work moved aside (ADR 0213).
+   * of goes on until it ended and the CLI answered it, as for work moved aside (ADR 0214).
    */
   awaited?: boolean;
   /** Over (`task_notification`, or `task_updated` with a final status). */
@@ -647,7 +647,7 @@ export class ClaudeStreamParser {
           if (block.type === "tool_use" && str(block.id) && str(block.name)) {
             this.tools.set(str(block.id), { name: str(block.name), input: block.input ?? {} });
             // Ours run through the bridge, which tells the engine as they start. Its input goes too (masked on the
-            // way out): a code session shows the call's line while it runs (ADR 0213).
+            // way out): a code session shows the call's line while it runs (ADR 0214).
             if (!str(block.name).startsWith(OUR_TOOL_PREFIX))
               events.push({
                 type: "tool_started",
@@ -710,7 +710,7 @@ export class ClaudeStreamParser {
 
   /**
    * A task that runs subagents (`system/task_*` of a workflow or a subagent) as the progress of the main
-   * conversation's call that started it (ADR 0213): its start, its calls so far (a subagent's latest tool, a
+   * conversation's call that started it (ADR 0214): its start, its calls so far (a subagent's latest tool, a
    * workflow's agents) and its end. A subagent's own subagents are its business: never a line here.
    */
   private taskProgress(ev: Record<string, unknown>): WireBrainEvent | undefined {
@@ -1033,7 +1033,7 @@ export interface ClaudeLaunch {
   permissionMode: "acceptEdits" | "dontAsk" | "default";
   /** Protocol 10: folders allowed for the agent besides its own (`--add-dir` each). */
   addDirs?: string[];
-  /** A code session's turn (ADR 0213): the worktree's own agents, skills and commands as a plugin (`repoPlugin`). */
+  /** A code session's turn (ADR 0214): the worktree's own agents, skills and commands as a plugin (`repoPlugin`). */
   pluginDirs?: string[];
   /** Protocol 13: `--effort` (anything else is left out). */
   effort?: BrainEffort;
@@ -1048,7 +1048,7 @@ export interface ClaudeLaunch {
   builtinTools?: readonly string[];
   /**
    * Its own tools allowed without our prompt tool (`--allowedTools`, beside our MCP's): a code session's workflows,
-   * which the CLI would ask about though there is nothing in them for our rules to check (ADR 0213).
+   * which the CLI would ask about though there is nothing in them for our rules to check (ADR 0214).
    */
   allowedTools?: readonly string[];
   /** Claude Code's own tools taken away (`--disallowedTools`), where `builtinTools` can't be set. */
@@ -1071,7 +1071,7 @@ export interface ClaudeLaunch {
  */
 export const BRAIN_BUILTIN_TOOLS = ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "ToolSearch"] as const;
 /**
- * A code session's turn (ADR 0213) also starts Claude Code's own subagents (`Agent`, `Task` before 2.1.63), which get
+ * A code session's turn (ADR 0214) also starts Claude Code's own subagents (`Agent`, `Task` before 2.1.63), which get
  * the turn's tools and permission mode, uses skills (`Skill`: the worktree's own, loaded as a plugin) and runs
  * workflows of subagents (`Workflow`) where the account's plan has them.
  */
@@ -1130,7 +1130,7 @@ export function brainProfileLaunch(
   personalMcp: boolean,
   delegated = false,
   asksFirst = false,
-  /** A code session's turn (ADR 0213): Claude Code's subagents and skills too. */
+  /** A code session's turn (ADR 0214): Claude Code's subagents and skills too. */
   code = false,
 ): Pick<
   ClaudeLaunch,
@@ -1750,7 +1750,7 @@ export function runTurnOnProcess(
     const foreground = new Set<string>();
     /**
      * Its tasks running in the background, by why the request waits for them: moved there mid-turn, or a workflow or
-     * a subagent whose end the answer waits for (`awaited`, ADR 0213); one the model started there (a dev server) not.
+     * a subagent whose end the answer waits for (`awaited`, ADR 0214); one the model started there (a dev server) not.
      */
     const background = new Map<string, "moved" | "awaited" | "started">();
     /** Its tasks the answer waits for (`ParsedTask.awaited`), from their start: also once moved to the background. */
@@ -2981,7 +2981,7 @@ export class BrainManager {
     const systemFile = path.join(dir, "system.txt");
     const mode = req.permissions?.mode === "plan" || req.permissions?.mode === "chat" ? req.permissions.mode : "work";
     const asks = mode === "work" ? turnAsks(req.permissions?.asks) : undefined;
-    // A code session's turn (ADR 0213) on the agent's own Claude Code: its subagents and skills, and the worktree's.
+    // A code session's turn (ADR 0214) on the agent's own Claude Code: its subagents and skills, and the worktree's.
     const codeTurn = req.codeSession === true && mode === "work" && !delegated && req.personalMcp !== true;
     const launch = brainProfileLaunch(
       mode,
@@ -3131,7 +3131,7 @@ export class BrainManager {
               ...(asks === "always" ? { asksFirst: true } : {}),
             },
           ),
-          // A code session's workflows (ADR 0213): on wherever the account's plan has them (the CLI still gates them).
+          // A code session's workflows (ADR 0214): on wherever the account's plan has them (the CLI still gates them).
           ...(codeTurn ? { enableWorkflows: true } : {}),
           // With the owner's own settings loaded (`personalMcp`), theirs decide the computer's own sign-in.
           ...(ctx.accountHome

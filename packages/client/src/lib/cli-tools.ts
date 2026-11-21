@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 
 /**
- * A computer brain's own tool calls in a code session (ADR 0213: Claude Code's Read, Grep, Edit, Bash…, Codex's
+ * A computer brain's own tool calls in a code session (ADR 0214: Claude Code's Read, Grep, Edit, Bash…, Codex's
  * commands and file changes) as the quiet lines a terminal shows: what it did, on what, and what it came to. The
  * server says them (`packages/engine/src/cli-tools.ts`): live on `agent.step` (`cli`), saved as the run's `context`
  * steps (`cliTool`) and, for a reply's lone call, on `meta.work`.
@@ -122,7 +122,7 @@ export interface CliProgressAgent {
 }
 
 /**
- * A subagent's or a workflow's progress while it works (ADR 0213), live from the server (`agent.tool.progress`): the
+ * A subagent's or a workflow's progress while it works (ADR 0214), live from the server (`agent.tool.progress`): the
  * subagent's call running now as its line, how many calls it made, a workflow's agents, and its end.
  */
 export interface CliProgress {

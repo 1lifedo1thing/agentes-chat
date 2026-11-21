@@ -47,7 +47,7 @@ export async function sayNowApplies(db: Executor, run: AgentRun, confidential?: 
   if (run.background || run.workId) return false;
   // Known to the run already (`sealedAtClaim`): no read of the thread's row on its way to the model.
   if (confidential ?? (await threadIsConfidential(db, run.orgId, run.threadRootId))) return false;
-  // A code session (ADR 0213) is read as it goes, though its runs never move to the background.
+  // A code session (ADR 0214) is read as it goes, though its runs never move to the background.
   const channel = await getChannelCached(db as Database, run.orgId, run.channelId);
   if (channel?.kind === "code") return (await runAuthority(db, run)).kind === "person";
   return movableRun(db, run);

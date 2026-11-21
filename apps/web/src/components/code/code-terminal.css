@@ -1,5 +1,5 @@
 /*
- * A code session's terminal (ADR 0213, `TerminalPane`): xterm.js on the agent's screen's dark ground, the same in both
+ * A code session's terminal (ADR 0214, `TerminalPane`): xterm.js on the agent's screen's dark ground, the same in both
  * themes. The terminal reads its colors from these properties once it opens; its face is the app's mono.
  */
 .code-term {

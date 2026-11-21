@@ -286,7 +286,7 @@ function MePage() {
     routines: (
       <GroupedRow key="routines" icon="clock" label={t("routines.title")} chevron onPress={() => open("/routines")} />
     ),
-    // Code (ADR 0213): the sessions where agents program, as the web's sidebar tool.
+    // Code (ADR 0214): the sessions where agents program, as the web's sidebar tool.
     code: <GroupedRow key="code" icon="code" label={t("shell.code")} chevron onPress={() => open("/coding")} />,
     wiki: <GroupedRow key="wiki" icon="file" label={t("wiki.title")} chevron onPress={() => open("/wiki")} />,
     drive: <GroupedRow key="drive" icon="drive" label={t("mobile.me.drive")} chevron onPress={() => open("/drive")} />,

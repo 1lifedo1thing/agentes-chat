@@ -17,7 +17,7 @@ import { useColors, useOrgId } from "../shared/hooks";
 import { sessionChatHref } from "./logic";
 
 /**
- * A code session an agent suggested under its reply (ADR 0213 §11), the web's card on the phone: the request card of
+ * A code session an agent suggested under its reply (ADR 0214 §11), the web's card on the phone: the request card of
  * the chat, kind `code`. The project and whose computer it runs on, "Ver o pedido" opening the person's words it starts
  * with, and the decision: "Abrir sessão" (the session's conversation opens) or "Fazer aqui". Only the person who asked
  * decides; anyone else reads who it waits for. Decided, it says how it ended, with the way to the session it opened.

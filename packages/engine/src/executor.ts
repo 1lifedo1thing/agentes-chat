@@ -505,7 +505,7 @@ const DECIDED_LINE_MAX = 2000;
 const WORK_CALLS = 12;
 /**
  * The calls a reply's `meta.work` never counts, by name: a reaction, looking a tool up, and a suggested code session
- * (its card is on the reply, ADR 0213 §11), also by a computer brain's bridge name.
+ * (its card is on the reply, ADR 0214 §11), also by a computer brain's bridge name.
  */
 const UNCOUNTED_TOOLS = `^(${REACT_TOOL}|${SAY_NOW_TOOL}|${ON_DEMAND_FIND}|${ON_DEMAND_USE}|${SUGGEST_CODE_SESSION_TOOL})$|_(${ON_DEMAND_FIND}|${SUGGEST_CODE_SESSION_TOOL})$`;
 
@@ -664,7 +664,7 @@ export interface Transcript {
   artifacts?: ArtifactLink[];
   /** A mission proposed with its home elsewhere (a flat DM's new thread): the reply carries its link card (`meta.missionLink`). */
   missionLink?: { missionId: string; threadId: string } | null;
-  /** A code session it suggested (ADR 0213 §11): the reply carries the person's card (`meta.codeSuggestion`). */
+  /** A code session it suggested (ADR 0214 §11): the reply carries the person's card (`meta.codeSuggestion`). */
   codeSuggestion?: CodeSuggestion | null;
   /** Agents it consulted (`ask_agent`, ADR 0034), not yet shown on a posted message (`meta.consulted`). */
   consulted?: { agentId: string; consultationId: string; status: string; question?: string; answer?: string | null }[];
@@ -2359,7 +2359,7 @@ async function executeRunInner(
     // `use_tool` that named none), the line before slow work is a message already (`say_now`, ADR 0207), and the runner
     // asking again about a command waiting on a person is that command's line (`promptPoll`): none is counted, as the
     // apps leave them out of the opened block (`UNLISTED`). In a code session the brain's own calls are steps of their
-    // own (`cliTool`, ADR 0213), counted here by their CLI's name.
+    // own (`cliTool`, ADR 0214), counted here by their CLI's name.
     const cliTool = sql`${agentRunSteps.kind} = 'context' and ${agentRunSteps.data} ? 'cliTool'`;
     const cliName = sql`${agentRunSteps.data}->'cliTool'->>'name'`;
     const name = sql<string>`case when ${cliTool} then ${cliName} else ${agentRunSteps.data}->>'name' end`;
@@ -2399,7 +2399,7 @@ async function executeRunInner(
     const since = Number(tools[0]?.since ?? -1);
     const sinceAt = tools[0]?.sinceAt ? new Date(tools[0].sinceAt) : run.createdAt;
     const leftoverCall = leftover ? await loneCall(tx, run.id, leftover.name, since) : {};
-    // The brain's own calls in a code session: its work shows whoever turned the summary off (ADR 0213).
+    // The brain's own calls in a code session: its work shows whoever turned the summary off (ADR 0214).
     const cliCalls = tools.reduce((n, t) => n + Number(t.own), 0);
     const work = {
       steps: tools.reduce((n, t) => n + t.n, 0),
@@ -2549,7 +2549,7 @@ async function executeRunInner(
       every ? someoneAnswers(ctx) : true,
       // Listed in every run with an id: the line before slow work is spoken of only where people read it as it goes.
       tools.some((t) => t.name === SAY_NOW_TOOL) ? sayNowApplies(db, run, sealedAtClaim).catch(() => false) : false,
-      // A session is suggested to a person's request outside one (ADR 0213 §11): spoken of only there.
+      // A session is suggested to a person's request outside one (ADR 0214 §11): spoken of only there.
       tools.some((t) => t.name === SUGGEST_CODE_SESSION_TOOL)
         ? codeSuggestionApplies(db, run).catch(() => false)
         : false,
@@ -5260,7 +5260,7 @@ async function executeRunInner(
        */
       const backgroundCalls = new Map<string, { call: OwnCall; startedAt: number | undefined }>();
       /**
-       * A code session reads like its CLI in a terminal (ADR 0213): each call of the brain's own is a line of the run's
+       * A code session reads like its CLI in a terminal (ADR 0214): each call of the brain's own is a line of the run's
        * work, live and on its trail. Elsewhere they stay off the trail (ADR 0032: a write for every call).
        */
       const cliLines = turnPlan.kind !== "model" && channelRow?.kind === "code";
@@ -5270,7 +5270,7 @@ async function executeRunInner(
       const cliLine = (name: string) => cliLines && cliToolShown(name) && !turnTools.some((t) => t.name === name);
       /**
        * A call of its own (not ours through the bridge, which says its step as it starts) is the step line now: as it
-       * starts, else once it ended. In a code session its end is said too, with what it came to (ADR 0213).
+       * starts, else once it ended. In a code session its end is said too, with what it came to (ADR 0214).
        */
       const ownStep = (call: OwnCall, ended = false) => {
         if (run.background || turnTools.some((t) => t.name === call.name)) return;
@@ -5435,7 +5435,7 @@ async function executeRunInner(
               // Its line on the way (`say_now`) is talk, not work: a turn that fails after it did nothing to keep.
               if (!isSayNow(call.name)) executedNow.push(call);
               const startedAt = stepTold.get(call.id);
-              // In a code session each call of its own is a step, where its reply's work lists it (ADR 0213). One
+              // In a code session each call of its own is a step, where its reply's work lists it (ADR 0214). One
               // whose work goes on in the background (its progress started and not ended; a workflow always does)
               // ends, live and on the trail, when that work ends: its line runs until then.
               const background =
@@ -6902,7 +6902,7 @@ async function thinkOnce(
     onExecuted?(call: { id: string; name: string; input: unknown; result?: ToolResult }): void;
     /** A call of its own the brain started (`tool_started`; a newer runner says its input): `onExecuted` follows. */
     onStarted?(call: { id: string; name: string; input?: unknown }): void;
-    /** A subagent or a workflow of its own while it works (`tool_progress`, ADR 0213). */
+    /** A subagent or a workflow of its own while it works (`tool_progress`, ADR 0214). */
     onProgress?(progress: Extract<BrainEvent, { type: "tool_progress" }>): void;
     /** A file a tool of the brain's own made in the agent's folder (`file`). */
     onFile?(path: string): void;
@@ -7239,7 +7239,7 @@ async function loneCall(
       ),
     )
     .orderBy(agentRunSteps.seq);
-  // A call of the brain's own in a code session (ADR 0213): its step has its line, its time and how it went.
+  // A call of the brain's own in a code session (ADR 0214): its step has its line, its time and how it went.
   const own = steps.find((s) => s.kind === "context" && (s.data.cliTool as CliToolStep | undefined)?.name === name);
   if (own) {
     const { verb, target, about, meta, ok, ms } = own.data.cliTool as CliToolStep;

@@ -20,7 +20,7 @@ const LIVE_ROWS = 8;
 type Presence = ReturnType<typeof usePresenceOf>;
 
 /**
- * Code, pushed from You (ADR 0213, the web's Code page on the phone): the large title, "New session" as the bar's
+ * Code, pushed from You (ADR 0214, the web's Code page on the phone): the large title, "New session" as the bar's
  * "+" (with none yet, the empty state's own button). What waits on me comes first, in a group of its own (each with its
  * project), then the rest by project, the newest first, as the web's list reads them: the project, and "on the computer"
  * for one only on the agent's computer, as the group's head. Each session: its agent's face (working while it works),

@@ -265,7 +265,7 @@ export type ChannelEvent =
       tool: string;
       said?: string;
       /**
-       * In a code session (ADR 0213), the call's line in the run's work: its id and what it does and on what (`cli`),
+       * In a code session (ADR 0214), the call's line in the run's work: its id and what it does and on what (`cli`),
        * as it starts and again once it ended (`ended`; `failed` when its result was an error), then with what it came
        * to. The end of a call told as it started carries no words.
        */
@@ -275,7 +275,7 @@ export type ChannelEvent =
       failed?: true;
     }
   /**
-   * A subagent or a workflow of a computer brain's own while it works (ADR 0213), by the call that started it: what
+   * A subagent or a workflow of a computer brain's own while it works (ADR 0214), by the call that started it: what
    * it does now, how many calls it made, a workflow's agents, its end. Never stored.
    */
   | {
@@ -613,7 +613,7 @@ export type ChannelEvent =
   | { type: "block.state"; channelId: string; block: BlockStateView }
   /** A choice card was answered (ADR 0124). */
   | { type: "choices.updated"; channelId: string; choices: ChoicesView }
-  /** A suggested code session was opened, kept in the chat, or is waiting again (ADR 0213 §11): the reply's card. */
+  /** A suggested code session was opened, kept in the chat, or is waiting again (ADR 0214 §11): the reply's card. */
   | {
       type: "code.suggestion";
       channelId: string;

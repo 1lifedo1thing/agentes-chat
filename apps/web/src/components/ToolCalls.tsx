@@ -151,7 +151,7 @@ export function useCallLogo() {
   };
 }
 
-/** A computer brain's own calls in a code session by what they did (ADR 0213): their icon on the line. */
+/** A computer brain's own calls in a code session by what they did (ADR 0214): their icon on the line. */
 const CLI_ICON: Record<CliVerb, IconName> = {
   read: "file",
   search: "search",
@@ -166,7 +166,7 @@ const CLI_ICON: Record<CliVerb, IconName> = {
 };
 
 /**
- * A computer brain's own call in a code session as its terminal shows it (ADR 0213): its verb, what it worked on in
+ * A computer brain's own call in a code session as its terminal shows it (ADR 0214): its verb, what it worked on in
  * mono, what it came to on the right; it opens on what it gave back (an edit's changed lines).
  */
 function cliBlockLine(t: TFunction, locale: string, l: ToolLine, cli: CliLine): ToolBlockLine {
@@ -288,7 +288,7 @@ export function LiveTools({
   const logo = useCallLogo();
   const calls = toolCalls(items);
   // Done, its tools are the summary the person chose not to see (`showActivity`); a code session's CLI work is the
-  // conversation itself, as in a terminal (ADR 0213).
+  // conversation itself, as in a terminal (ADR 0214).
   const terminal = items.some((i) => i.kind === "call" && i.line.cli);
   if (done && !showsActivity(org) && !terminal) return null;
   // A lone quick read that only fed the answer: no card, as if it called nothing (once done, what it said on the way
@@ -440,7 +440,7 @@ export function SavedTools({
   // its own cards show (where it browsed).
   // No `meta.work` (a reply saved before it): a block that loads the run's steps when opened, gone if it called none.
   const shown = compact ? workSteps(compact, onCard) : null;
-  // A code session's CLI work shows whoever turned the summary off: it is the conversation (ADR 0213).
+  // A code session's CLI work shows whoever turned the summary off: it is the conversation (ADR 0214).
   if (shown === 0 || !(showsActivity(org) || (compact?.cliCalls ?? 0) > 0)) return null;
   const calls = work ? toolCalls(items) : (shown ?? 0);
   const lone = savedOneLine(meta, onCard);
@@ -511,7 +511,7 @@ function nowWords(t: TFunction, locale: string, now: CliLine | undefined) {
 }
 
 /**
- * The subagents and workflows of a computer brain's own while they work (ADR 0213), live in its row: each subagent a
+ * The subagents and workflows of a computer brain's own while they work (ADR 0214), live in its row: each subagent a
  * line with what it was asked, what it does now and its calls so far; a workflow a block of its agents, open, its
  * head saying how many are done. They stay until the run ends, done ones marked.
  */

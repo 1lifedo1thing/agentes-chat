@@ -5,7 +5,7 @@ import { LandOn } from "@/ui/navigation";
 
 const SHA = /^[0-9a-f]{7,40}$/i;
 
-/** A diff in a session (ADR 0213): `?scope=base`, `?scope=uncommitted&path=<path>` or `?scope=commit&sha=<sha>`. */
+/** A diff in a session (ADR 0214): `?scope=base`, `?scope=uncommitted&path=<path>` or `?scope=commit&sha=<sha>`. */
 export default function SessionDiffRoute() {
   const { sessionId, scope, path, sha } = useLocalSearchParams<{
     sessionId: string;

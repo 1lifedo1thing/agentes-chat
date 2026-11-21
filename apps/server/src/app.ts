@@ -231,7 +231,7 @@ export function createApp(options: AppOptions) {
     api.route("/app", issueRoutes(deps));
     api.route("/app", threadRoutes(deps));
     api.route("/app", missionRoutes(deps));
-    // Code sessions (ADR 0213): a request in its own worktree on the agent's computer, with its conversation.
+    // Code sessions (ADR 0214): a request in its own worktree on the agent's computer, with its conversation.
     api.route("/app", codeSessionRoutes(deps));
     api.route("/app", wikiRoutes(deps));
     api.route("/app", routineRoutes(deps));

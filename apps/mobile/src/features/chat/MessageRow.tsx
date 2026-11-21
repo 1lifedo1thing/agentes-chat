@@ -441,7 +441,7 @@ function RowBody({
   // Preparing the mission's copy of the project failed (ADR 0044): the card with "Tentar de novo".
   const setup = missionSetupOf(meta);
   const link = missionLinkOf(meta);
-  // A code session it suggested for a change asked here (ADR 0213 §11): the person's card under the reply.
+  // A code session it suggested for a change asked here (ADR 0214 §11): the person's card under the reply.
   const suggestion = m.author.type === "agent" && !m.local ? codeSuggestionOf(meta) : null;
   const files = artifactsOf(meta);
   // Mine, just sent: drawn from the phone while they upload.

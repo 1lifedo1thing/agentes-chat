@@ -924,7 +924,7 @@ export async function insertMessageWithRuns(
         -- A task's conversation is a DM with the task's agent: what names nobody there is for it, an ok or a status
         -- line too ("feito", "pago"), never the router's to drop. Naming a person or quoting another agent goes to
         -- the router.
-        -- A code session's conversation (ADR 0213) is the same with the session's agent, once its worktree is ready
+        -- A code session's conversation (ADR 0214) is the same with the session's agent, once its worktree is ready
         -- (codeAgentSql); before that what names nobody waits for it (prepareCodeSession hands it over).
         select t.agent_id from (select coalesce(${taskAgentSql(sql`${input.channelId}::uuid`)},
           ${codeAgentSql(sql`${input.channelId}::uuid`)}) as agent_id) t
@@ -1328,7 +1328,7 @@ export async function postPersonMessage(
       taskAgent: true,
     });
   }
-  // A code session's conversation (ADR 0213): who is named there (an agent, a person of the workspace) joins it.
+  // A code session's conversation (ADR 0214): who is named there (an agent, a person of the workspace) joins it.
   if (channel.kind === "code") {
     await admitCodeMembers(
       deps.db,

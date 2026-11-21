@@ -487,7 +487,7 @@ export function RealtimeProvider({
       }
       // A proposal I may decide: the sidebar's count and Aprovações' tab.
       if (event.type === "proposal.created") void refreshProposals(qc, orgId);
-      // A code session I'm in changed (ADR 0213): its worktree, name or pull request.
+      // A code session I'm in changed (ADR 0214): its worktree, name or pull request.
       applyCodeSessionEvent(qc, orgId, event);
       // Unread marks: a message where I am, and my reads and mutes from any device.
       applyUnreadEvent(qc, orgId, event);
@@ -867,7 +867,7 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
       if (event.type === "message.resolved") {
         cacheResolved(qc, orgId, event.channelId, event.messageId, event.resolved);
       }
-      // A suggested code session was opened, kept here, or waits again (ADR 0213 §11): its card under the reply.
+      // A suggested code session was opened, kept here, or waits again (ADR 0214 §11): its card under the reply.
       if (event.type === "code.suggestion") {
         cacheCodeSuggestion(qc, orgId, event.channelId, event.messageId, event.suggestion);
       }
