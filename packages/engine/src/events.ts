@@ -9,7 +9,7 @@ import type { BlockStateView } from "./block-state";
 import type { ChoicesView, PollView } from "./blocks";
 import type { BrowserHandoffView } from "./browser/handoff";
 import type { CalendarEventView, CalendarProposalView } from "./calendar";
-import type { CliToolSummary } from "./cli-tools";
+import type { CliProgress, CliToolSummary } from "./cli-tools";
 import type { FeedbackOfferView } from "./feedback-offers";
 import type { IssueActivityView, IssueView } from "./issues";
 import type { MachineTaskView } from "./machine-tasks";
@@ -272,6 +272,19 @@ export type ChannelEvent =
       cli?: CliToolSummary;
       ended?: true;
       failed?: true;
+    }
+  /**
+   * A subagent or a workflow of a computer brain's own while it works (ADR 0208), by the call that started it: what
+   * it does now, how many calls it made, a workflow's agents, its end. Never stored.
+   */
+  | {
+      type: "agent.tool.progress";
+      channelId: string;
+      threadId: string | null;
+      runId: string;
+      agentId: string;
+      toolUseId: string;
+      progress: CliProgress;
     }
   /** What a computer command prints while it runs (throttled, ≤ 64 KB per call). */
   | {

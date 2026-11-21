@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { newerVersion } from "./executors";
@@ -93,4 +94,36 @@ export function repoPlugin(worktree: string, into: string, fileMode = 0o600): st
   };
   for (const part of PARTS) copy(path.join(worktree, ".claude", part), path.join(into, part), 0);
   return files > 0 ? into : null;
+}
+
+/**
+ * What the worktree's agents, skills and commands are now, cheaply: their paths, sizes and times, nothing read ("":
+ * none). A process started on another print never saw what the agent or a person added since (ADR 0208).
+ */
+export function repoPluginPrint(worktree: string): string {
+  const seen: string[] = [];
+  const walk = (dir: string, depth: number) => {
+    if (depth > MAX_DEPTH || seen.length >= REPO_PLUGIN_MAX_FILES) return;
+    let names: string[];
+    try {
+      names = readdirSync(dir).sort();
+    } catch {
+      return;
+    }
+    for (const name of names) {
+      if (seen.length >= REPO_PLUGIN_MAX_FILES) return;
+      const at = path.join(dir, name);
+      let st: ReturnType<typeof lstatSync>;
+      try {
+        st = lstatSync(at);
+      } catch {
+        continue;
+      }
+      if (st.isSymbolicLink()) continue;
+      if (st.isDirectory()) walk(at, depth + 1);
+      else if (st.isFile()) seen.push(`${path.relative(worktree, at)}:${st.size}:${Math.floor(st.mtimeMs)}`);
+    }
+  };
+  for (const part of PARTS) walk(path.join(worktree, ".claude", part), 0);
+  return seen.length > 0 ? createHash("sha256").update(seen.join("\n")).digest("hex").slice(0, 16) : "";
 }

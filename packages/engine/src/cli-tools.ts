@@ -173,11 +173,21 @@ const SKILL_KEYS = ["skill", "name", "command"] as const;
 const WORKFLOW_KEYS = ["name", "description"] as const;
 const WORKFLOW_META = (key: "description" | "name") => new RegExp(`\\b${key}\\s*:\\s*(["'\`])([^"'\`\\n]{1,200})\\1`);
 
-/** What a workflow does: its name, else its script's `meta` description or name, else its script's file. */
-function workflowAbout(i: Record<string, unknown>): string {
+/** A JSON text's escapes undone (`\n`, `\"`, `ó`…), for a string the runner cut before its end. */
+const unescaped = (text: string) =>
+  text.replace(/\\(u[0-9a-fA-F]{4}|.)/g, (_, c: string) =>
+    c.length === 5 ? String.fromCharCode(Number.parseInt(c.slice(1), 16)) : c === "n" ? "\n" : c === "t" ? "\t" : c,
+  );
+
+/**
+ * What a workflow does: its name, else its script's `meta` description or name, else its script's file. A script
+ * longer than the runner forwards whole comes cut (`{ truncated }`), its `meta` at its start all the same.
+ */
+function workflowAbout(i: Record<string, unknown>, raw: unknown): string {
   const named = first(i, WORKFLOW_KEYS);
   if (named) return named;
-  const script = typeof i.script === "string" ? i.script : "";
+  const cut = isJsonObject(raw) && typeof raw.truncated === "string" ? unescaped(raw.truncated) : "";
+  const script = typeof i.script === "string" ? i.script : cut;
   const meta = WORKFLOW_META("description").exec(script)?.[2] ?? WORKFLOW_META("name").exec(script)?.[2];
   if (meta) return meta;
   return typeof i.scriptPath === "string" ? i.scriptPath : "";
@@ -392,7 +402,7 @@ export function cliToolSummary(
       target = first(i, SKILL_KEYS);
       break;
     case "workflow":
-      about = workflowAbout(i);
+      about = workflowAbout(i, input);
       break;
     case "other":
       target = shownName(name);
@@ -431,5 +441,68 @@ export function cliToolStep(
     ok: call.result?.isError !== true,
     ...(output ? { output } : {}),
     ...(options.ms !== undefined && Number.isFinite(options.ms) ? { ms: Math.max(0, Math.round(options.ms)) } : {}),
+  };
+}
+
+/** A workflow's agent as the apps show it (`CliProgress.agents`). */
+export interface CliProgressAgent {
+  /** What the workflow calls it. */
+  label: string;
+  /** The title of its phase. */
+  phase?: string;
+  state: "running" | "done" | "failed";
+  /** Calls it made so far. */
+  calls?: number;
+  /** What its latest call does: its tool's verb only (the workflow doesn't tell its input). */
+  verb?: CliVerb;
+}
+
+/**
+ * A subagent's or a workflow's progress while it works (ADR 0208), as the apps show it live (`agent.tool.progress`):
+ * the subagent's call running now as its line, how many calls it made, a workflow's agents, and its end.
+ */
+export interface CliProgress {
+  kind: "agent" | "workflow";
+  now?: CliToolSummary;
+  calls?: number;
+  agents?: CliProgressAgent[];
+  ended?: true;
+  failed?: true;
+}
+
+/** A tool's verb by its name alone (a workflow's agent's latest call). */
+const verbOfTool = (name: string): CliVerb => {
+  const key = name.trim().toLowerCase();
+  return Object.hasOwn(VERBS, key) ? (VERBS[key] ?? "other") : "other";
+};
+
+/** The progress a computer brain told (`tool_progress`), as the apps show it: lines read as the call's own are. */
+export function cliProgress(
+  p: {
+    kind: "agent" | "workflow";
+    step?: { name: string; input?: unknown };
+    calls?: number;
+    agents?: { label: string; phase?: string; state: "running" | "done" | "failed"; calls?: number; tool?: string }[];
+    ended?: { failed?: boolean };
+  },
+  cwd = "",
+): CliProgress {
+  const now = p.step && cliToolShown(p.step.name) ? cliToolSummary(p.step.name, p.step.input ?? {}, null, cwd) : null;
+  return {
+    kind: p.kind,
+    ...(now ? { now } : {}),
+    ...(p.calls ? { calls: p.calls } : {}),
+    ...(p.agents
+      ? {
+          agents: p.agents.map((a) => ({
+            label: masked(a.label, ABOUT_MAX),
+            ...(a.phase ? { phase: masked(a.phase, ABOUT_MAX) } : {}),
+            state: a.state,
+            ...(a.calls ? { calls: a.calls } : {}),
+            ...(a.tool ? { verb: verbOfTool(a.tool) } : {}),
+          })),
+        }
+      : {}),
+    ...(p.ended ? { ended: true as const, ...(p.ended.failed ? { failed: true as const } : {}) } : {}),
   };
 }

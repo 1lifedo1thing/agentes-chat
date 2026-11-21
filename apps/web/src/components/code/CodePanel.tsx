@@ -108,6 +108,7 @@ export function CodePanel({
         value={tab}
         onValueChange={onTab}
         label={t("codeSessions.panel.label")}
+        variant="segmented"
         items={[
           {
             value: "git",

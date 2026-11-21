@@ -1,10 +1,12 @@
 import type {
   BrainEffort,
+  BrainProgressKind,
   BrainSpeed,
   BrainStallPhase,
   BrainTurnRequest,
   BrainTurnTimings,
   ProviderFailureCause,
+  WireWorkflowAgent,
 } from "@agenteschat/adapters";
 import type { ToolImage } from "@agenteschat/providers";
 import { planOf } from "@agenteschat/providers/plans";
@@ -251,7 +253,20 @@ export type BrainEvent =
    * The computer stopped the brain's CLI for its silence (where it was, the tool that ran and on what, how long): the
    * turn goes on in a resumed session (`resumed`), or ends (`brain_stalled`). Kept on the run's trail.
    */
-  | { type: "stalled"; phase: BrainStallPhase; tool?: string; label?: string; silentMs: number; resumed: boolean };
+  | { type: "stalled"; phase: BrainStallPhase; tool?: string; label?: string; silentMs: number; resumed: boolean }
+  /**
+   * A call of the brain's own that runs subagents (Claude Code's `Agent`, `Workflow`, ADR 0208) while they work: the
+   * subagent's latest call, how many it made, a workflow's agents, `ended` once over. Shown live only.
+   */
+  | {
+      type: "tool_progress";
+      id: string;
+      kind: BrainProgressKind;
+      step?: { name: string; input?: unknown };
+      calls?: number;
+      agents?: WireWorkflowAgent[];
+      ended?: { failed?: boolean };
+    };
 
 export interface Brain {
   kind: BrainKind;

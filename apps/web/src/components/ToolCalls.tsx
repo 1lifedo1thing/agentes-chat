@@ -8,7 +8,14 @@ import {
   useRun,
 } from "@agenteschat/client";
 import type { Activity, ActivityKind } from "@agenteschat/client/lib/activity";
-import { type CliLine, type CliVerb, cliMetaWords, cliVerbWord } from "@agenteschat/client/lib/cli-tools";
+import {
+  type CliLine,
+  type CliProgress,
+  type CliVerb,
+  cliMetaWords,
+  cliVerbWord,
+} from "@agenteschat/client/lib/cli-tools";
+import { lowerFirst, shortTarget } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import {
   appKey,
@@ -473,5 +480,121 @@ export function SavedTools({
       label={t("chat.work.block", agentGrammar(agentName))}
       onToggle={setOpen}
     />
+  );
+}
+
+type ProgressCall = Extract<LiveWork, { kind: "call" }> & { progress: CliProgress };
+
+/** A line's mark for a subagent or a workflow's agent: at work, done, failed, or stopped with the run. */
+const progressState = (ended: boolean | undefined, failed: boolean | undefined, stopped: boolean) =>
+  failed ? "fail" : ended ? "done" : stopped ? "stop" : "run";
+
+/** What a subagent does now, in words after what it was asked: "lendo todo.js". */
+function nowWords(t: TFunction, locale: string, now: CliLine | undefined) {
+  if (!now) return null;
+  const verb = lowerFirst(cliVerbWord(t, now.verb, true), locale);
+  return now.target ? `${verb} ${shortTarget(now.target)}` : verb;
+}
+
+/**
+ * The subagents and workflows of a computer brain's own while they work (ADR 0208), live in its row: each subagent a
+ * line with what it was asked, what it does now and its calls so far; a workflow a block of its agents, open, its
+ * head saying how many are done. They stay until the run ends, done ones marked.
+ */
+export function LiveSubagents({
+  work,
+  agentName,
+  color,
+  stopped = false,
+}: {
+  work: LiveWork[];
+  agentName: string;
+  color?: AgentColor;
+  stopped?: boolean;
+}) {
+  const { t, i18n } = useTranslation();
+  const calls = work.filter((w): w is ProgressCall => w.kind === "call" && w.progress !== undefined);
+  if (calls.length === 0) return null;
+  const logo = (
+    <span className="tool-logo" aria-hidden="true">
+      <Icon name="agent" size={14} />
+    </span>
+  );
+  const label = t("cliTools.progress.block", agentGrammar(agentName));
+  const agents = calls.filter((c) => c.progress.kind === "agent");
+  const workflows = calls.filter((c) => c.progress.kind === "workflow");
+  const agentLines: ToolBlockLine[] = agents.map((c) => {
+    const p = c.progress;
+    const state = progressState(p.ended, p.failed, stopped);
+    return {
+      key: c.id,
+      state,
+      logo,
+      label: c.cli?.about ?? t("cliTools.progress.subagent"),
+      hint: state === "run" ? nowWords(t, i18n.language, p.now) : null,
+      ...(p.calls ? { meta: t("chat.work.steps", { count: p.calls }) } : {}),
+    };
+  });
+  const running = agentLines.filter((l) => l.state === "run").length;
+  return (
+    <>
+      {agentLines.length > 0 && (
+        <ToolBlock
+          className="live-subagents"
+          logos={[]}
+          head={{
+            text: t("cliTools.progress.agents", { count: agentLines.length }),
+            state: running > 0 ? "run" : undefined,
+            ...(running > 0 && running < agentLines.length
+              ? { count: t("cliTools.progress.done", { done: agentLines.length - running, total: agentLines.length }) }
+              : {}),
+          }}
+          items={agentLines.map((line) => ({ kind: "line" as const, line }))}
+          color={color}
+          label={label}
+          one={agentLines.length === 1}
+          defaultOpen
+        />
+      )}
+      {workflows.map((c) => {
+        const p = c.progress;
+        const list = p.agents ?? [];
+        const done = list.filter((a) => a.state !== "running").length;
+        const over = p.ended === true;
+        const lines: ToolBlockItem[] = list.map((a, i) => {
+          const state = progressState(a.state !== "running", a.state === "failed", stopped && !over);
+          const doing = a.verb && state === "run" ? lowerFirst(cliVerbWord(t, a.verb, true), i18n.language) : null;
+          return {
+            kind: "line",
+            line: {
+              key: `${c.id}:${i}`,
+              state,
+              logo,
+              label: a.label,
+              hint: [a.phase, doing].filter(Boolean).join(" · ") || null,
+              ...(a.calls ? { meta: t("chat.work.steps", { count: a.calls }) } : {}),
+            },
+          };
+        });
+        const about = c.cli?.about;
+        const verb = cliVerbWord(t, "workflow", !over);
+        return (
+          <ToolBlock
+            key={c.id}
+            className="live-subagents"
+            logos={[]}
+            head={{
+              text: about ? `${verb} · ${about}` : verb,
+              state: over ? (p.failed ? "fail" : "done") : stopped ? "stop" : "run",
+              ...(list.length > 0 ? { count: t("cliTools.progress.done", { done, total: list.length }) } : {}),
+            }}
+            items={lines}
+            color={color}
+            label={label}
+            defaultOpen
+          />
+        );
+      })}
+    </>
   );
 }

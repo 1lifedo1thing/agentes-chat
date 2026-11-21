@@ -12540,6 +12540,8 @@ export const en = {
       textOnly: "Reads text only",
       search: "Search models",
       account: "Account",
+      /** The AIs it may think with, as a row of their marks. */
+      ais: "AI",
       connect: "Connect an AI",
       applies: "Applies from the next reply.",
       more: "More options",
@@ -20488,6 +20490,14 @@ export const en = {
     failedTests_other: "{{count}} failed",
     /** A failed command's exit code. */
     exit: "exit {{code}}",
+    /** A code session's subagents and workflows while they work (ADR 0208), live in the agent's row. */
+    progress: {
+      block: "{{name}}'s subagents",
+      subagent: "Subagent",
+      agents_one: "{{count}} subagent",
+      agents_other: "{{count}} subagents",
+      done: "{{done}} of {{total}} done",
+    },
   },
   agentComputer: {
     title: "{{name}}'s computer",

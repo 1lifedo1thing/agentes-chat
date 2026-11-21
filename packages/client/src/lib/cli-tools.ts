@@ -110,3 +110,71 @@ export function cliMetaWords(t: TFunction, meta: CliMeta | undefined): string | 
   if (meta.exit !== undefined && parts.length === 0) parts.push(t("cliTools.exit", { code: meta.exit }));
   return parts.length > 0 ? parts.join(" · ") : null;
 }
+
+/** A workflow's agent while it works (`CliProgress.agents`). */
+export interface CliProgressAgent {
+  label: string;
+  phase?: string;
+  state: "running" | "done" | "failed";
+  calls?: number;
+  /** What its latest call does (its tool's verb only). */
+  verb?: CliVerb;
+}
+
+/**
+ * A subagent's or a workflow's progress while it works (ADR 0208), live from the server (`agent.tool.progress`): the
+ * subagent's call running now as its line, how many calls it made, a workflow's agents, and its end.
+ */
+export interface CliProgress {
+  kind: "agent" | "workflow";
+  now?: CliLine;
+  calls?: number;
+  agents?: CliProgressAgent[];
+  ended?: boolean;
+  failed?: boolean;
+}
+
+const AGENT_STATES = ["running", "done", "failed"] as const;
+
+/** A `progress` value from the server, checked: null when it isn't one. */
+export function cliProgressOf(value: unknown): CliProgress | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+  if (v.kind !== "agent" && v.kind !== "workflow") return null;
+  const now = cliLineOf(v.now);
+  const calls = count(v.calls);
+  const agents = Array.isArray(v.agents)
+    ? v.agents.flatMap((a): CliProgressAgent[] => {
+        if (!a || typeof a !== "object") return [];
+        const x = a as Record<string, unknown>;
+        const label = text(x.label);
+        const state = AGENT_STATES.find((s) => s === x.state);
+        if (!label || !state) return [];
+        const phase = text(x.phase);
+        const n = count(x.calls);
+        const verb = CLI_VERBS.find((w) => w === x.verb);
+        return [{ label, ...(phase ? { phase } : {}), state, ...(n ? { calls: n } : {}), ...(verb ? { verb } : {}) }];
+      })
+    : undefined;
+  return {
+    kind: v.kind,
+    ...(now ? { now } : {}),
+    ...(calls ? { calls } : {}),
+    ...(agents ? { agents } : {}),
+    ...(v.ended === true ? { ended: true } : {}),
+    ...(v.failed === true ? { failed: true } : {}),
+  };
+}
+
+/** A later progress over the one kept: what it says now, its counts never going back. */
+export function mergeCliProgress(before: CliProgress | undefined, next: CliProgress): CliProgress {
+  if (!before) return next;
+  const calls = Math.max(before.calls ?? 0, next.calls ?? 0);
+  return {
+    ...before,
+    ...next,
+    ...(next.now ? {} : before.now ? { now: before.now } : {}),
+    ...(next.agents ? {} : before.agents ? { agents: before.agents } : {}),
+    ...(calls ? { calls } : {}),
+  };
+}

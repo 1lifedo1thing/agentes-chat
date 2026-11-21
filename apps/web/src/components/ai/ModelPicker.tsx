@@ -37,6 +37,7 @@ import {
   Popover,
   ProviderLogo,
   planLine,
+  Segmented,
   Select,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
@@ -317,37 +318,40 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
           </>
         )}
       </TeamScene>
+      {/* The AIs as the kit's segmented control, each by its maker's bare mark (its name is the line under it), and
+          connecting another beside it. */}
       <div className="mp__tiles">
-        {tiles.map((x) => (
-          <button
-            key={x.key}
-            type="button"
-            className="mp__tile"
-            aria-pressed={x.key === tile?.key}
-            aria-label={x.name}
-            title={x.name}
-            onClick={() => {
-              setTileKey(x.key);
+        {tile && (
+          <Segmented
+            size="sm"
+            className="mp__ais"
+            label={t("brain.picker.ais")}
+            value={tile.key}
+            onValueChange={(key) => {
+              setTileKey(key);
               setAccountId(undefined);
               setQ("");
             }}
-          >
-            <ProviderLogo id={x.mark} size="sm" />
-          </button>
-        ))}
+            options={tiles.map((x) => ({
+              value: x.key,
+              label: <ProviderLogo id={x.mark} size="xs" label={x.name} />,
+              title: x.name,
+            }))}
+          />
+        )}
         {connect && (
-          <button
-            type="button"
-            className="mp__tile mp__tile--add"
+          <Button
+            size="sm"
+            variant="ghost"
+            icon="plus"
+            iconOnly
             aria-label={t("brain.picker.connect")}
             title={t("brain.picker.connect")}
             onClick={() => {
               onClose();
               connect.open({ agentId: agent.id, chat: true });
             }}
-          >
-            <Icon name="plus" size={16} />
-          </button>
+          />
         )}
       </div>
       {tile && (

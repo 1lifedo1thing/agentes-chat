@@ -12545,6 +12545,8 @@ export const ptBR = {
       textOnly: "Só lê texto",
       search: "Buscar modelos",
       account: "Conta",
+      /** The AIs it may think with, as a row of their marks. */
+      ais: "IA",
       connect: "Conectar uma IA",
       applies: "Vale a partir da próxima resposta.",
       more: "Mais opções",
@@ -20404,6 +20406,15 @@ export const ptBR = {
     failedTests_one: "{{count}} falhou",
     failedTests_other: "{{count}} falharam",
     exit: "saiu com {{code}}",
+    /** A code session's subagents and workflows while they work (ADR 0208), live in the agent's row. */
+    progress: {
+      block: "Subagentes do {{name}}",
+      block_female: "Subagentes da {{name}}",
+      subagent: "Subagente",
+      agents_one: "{{count}} subagente",
+      agents_other: "{{count}} subagentes",
+      done: "{{done}} de {{total}} prontos",
+    },
   },
   agentComputer: {
     title: "Computador do {{name}}",

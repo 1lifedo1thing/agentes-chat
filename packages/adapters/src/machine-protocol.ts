@@ -2214,11 +2214,63 @@ export type WireBrainEvent =
       label?: string;
       silentMs: number;
       resumed: boolean;
+    }
+  /**
+   * How a call of the brain's own that runs subagents goes while they work (Claude Code's `Agent`, `Task` and
+   * `Workflow`, ADR 0208), by that call's id: its subagent's latest call (`step`: the tool, and its input cut as a
+   * `tool_call`'s when the CLI shows it), how many calls it made so far, a workflow's agents, and `ended` once it is
+   * over (a workflow ends after its own call did). An older server drops it.
+   */
+  | {
+      type: "tool_progress";
+      id: string;
+      kind: BrainProgressKind;
+      step?: { name: string; input?: unknown };
+      calls?: number;
+      agents?: WireWorkflowAgent[];
+      ended?: { failed?: boolean };
     };
 
 /** Where a stalled brain turn was (`stalled`). */
 export const BRAIN_STALL_PHASES = ["model", "compacting", "tool"] as const;
 export type BrainStallPhase = (typeof BRAIN_STALL_PHASES)[number];
+
+/** What a call that runs subagents started (`tool_progress`): one subagent, or a workflow of them. */
+export type BrainProgressKind = "agent" | "workflow";
+/** How a workflow's agent is doing. */
+export const WORKFLOW_AGENT_STATES = ["running", "done", "failed"] as const;
+export type WorkflowAgentState = (typeof WORKFLOW_AGENT_STATES)[number];
+
+/** A workflow's agent as its progress says it (`tool_progress`). */
+export interface WireWorkflowAgent {
+  /** What the workflow calls it (`reviewer:index.html`). */
+  label: string;
+  /** The title of the phase it belongs to. */
+  phase?: string;
+  state: WorkflowAgentState;
+  /** Calls it made so far. */
+  calls?: number;
+  /** The tool of its latest call (`Read`). */
+  tool?: string;
+}
+
+/** Most agents one `tool_progress` names (the latest), and the longest label and phase title. */
+export const PROGRESS_LIMITS = { agents: 24, label: 120, phase: 80 } as const;
+
+/** A workflow's agent from a `tool_progress`, checked and cut; null when it isn't one. */
+function parseWorkflowAgent(v: unknown): WireWorkflowAgent | null {
+  if (!isObject(v) || !isString(v.label) || !v.label.trim()) return null;
+  const state = WORKFLOW_AGENT_STATES.find((s) => s === v.state);
+  if (!state) return null;
+  const calls = finite(v.calls);
+  return {
+    label: v.label.trim().slice(0, PROGRESS_LIMITS.label),
+    ...(isString(v.phase) && v.phase.trim() ? { phase: v.phase.trim().slice(0, PROGRESS_LIMITS.phase) } : {}),
+    state,
+    ...(calls !== undefined && calls > 0 ? { calls: Math.round(calls) } : {}),
+    ...(isString(v.tool) && v.tool ? { tool: v.tool.slice(0, BRAIN_LIMITS.toolName) } : {}),
+  };
+}
 
 /**
  * `brain.steer` (protocol 15): messages for the turn of `runId` in progress.
@@ -3775,6 +3827,31 @@ export function parseBrainEvent(v: unknown): WireBrainEvent | null {
         : null;
     case "file":
       return isString(v.path) && v.path.length > 0 && v.path.length <= 1024 ? { type: "file", path: v.path } : null;
+    case "tool_progress": {
+      if (!isString(v.id) || !v.id || (v.kind !== "agent" && v.kind !== "workflow")) return null;
+      const step =
+        isObject(v.step) && isString(v.step.name) && v.step.name
+          ? {
+              name: v.step.name.slice(0, BRAIN_LIMITS.toolName),
+              ...(v.step.input !== undefined ? { input: cutJson(v.step.input, BRAIN_LIMITS.toolText) } : {}),
+            }
+          : undefined;
+      const agents = Array.isArray(v.agents)
+        ? v.agents
+            .slice(-PROGRESS_LIMITS.agents)
+            .map(parseWorkflowAgent)
+            .filter((a): a is WireWorkflowAgent => a !== null)
+        : undefined;
+      return {
+        type: "tool_progress",
+        id: v.id.slice(0, 128),
+        kind: v.kind,
+        ...(step ? { step } : {}),
+        ...(num(v.calls) > 0 ? { calls: num(v.calls) } : {}),
+        ...(agents ? { agents } : {}),
+        ...(isObject(v.ended) ? { ended: v.ended.failed === true ? { failed: true } : {} } : {}),
+      };
+    }
     case "stalled": {
       const phase = BRAIN_STALL_PHASES.find((p) => p === v.phase);
       if (!phase) return null;

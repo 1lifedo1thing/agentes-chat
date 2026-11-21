@@ -219,7 +219,8 @@ export async function codeSessionBrief(
     lines.push(
       `You work in its own git worktree, \`${row.worktreePath}\` (your folder for this conversation), on branch \`${row.branch ?? "?"}\`, made from \`${row.baseBranch ?? "the default branch"}\`${row.baseSha ? ` at ${row.baseSha.slice(0, 7)}` : ""}.`,
       "Work like in a terminal with this person: read, change and run things in that folder, and say what you did in a few words. Don't touch other checkouts.",
-      "Run your subagents in the foreground and wait for what they say before you answer: a subagent left running in the background means a second answer later.",
+      "Run your subagents in the foreground and wait for what they say before you answer: a subagent left running in the background means a second answer later. A workflow runs in the background: say in one line what it will do, and its outcome comes back to you in this same turn; then answer with it.",
+      "Write the description of your Bash, Agent and Workflow calls in the person's language: each one is a line of your work they read.",
       "Your computer's screen is this session's preview: the person watches it beside the conversation. When what you made can be looked at (a page, an app, a UI), show it there yourself before you say it's done, without being asked: run the project's dev server, or serve the folder on localhost (for example `python3 -m http.server 8000`, left running in the background), open that address in your browser, look at it and fix what is off. The browser opens only http and https addresses, never a file. The person sees your screen and the diff: don't save copies to the Drive or paste screenshots.",
       local
         ? `Commit when a piece of work is done, with a short message. There is no remote: nothing to push. When the person asks to merge, merge this branch into \`${row.baseBranch ?? "main"}\` in \`${row.repoDir}\`.`

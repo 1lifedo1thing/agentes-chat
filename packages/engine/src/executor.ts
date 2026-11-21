@@ -138,7 +138,14 @@ import {
   triageSnapshot,
 } from "./catch-up-triage";
 import { REACT_TOOL } from "./chat-tools";
-import { type CliToolStep, type CliToolSummary, cliToolShown, cliToolStep, cliToolSummary } from "./cli-tools";
+import {
+  type CliToolStep,
+  type CliToolSummary,
+  cliProgress,
+  cliToolShown,
+  cliToolStep,
+  cliToolSummary,
+} from "./cli-tools";
 import {
   kickRoomQueue,
   publishQueueChanged,
@@ -5306,6 +5313,16 @@ async function executeRunInner(
               stepTold.set(call.id, Date.now());
               ownStep(call);
             },
+            // A subagent or a workflow of its own while it works: live in a code session, as its calls are.
+            onProgress: (p) => {
+              if (!cliLines || run.background) return;
+              void publishChannelEvent(deps.pubsub, {
+                type: "agent.tool.progress",
+                ...where,
+                toolUseId: p.id,
+                progress: cliProgress(p, cliFolder),
+              }).catch(() => {});
+            },
             onExecuted: (call) => {
               // Its line on the way (`say_now`) is talk, not work: a turn that fails after it did nothing to keep.
               if (!isSayNow(call.name)) executedNow.push(call);
@@ -6723,6 +6740,8 @@ async function thinkOnce(
     onExecuted?(call: { id: string; name: string; input: unknown; result?: ToolResult }): void;
     /** A call of its own the brain started (`tool_started`; a newer runner says its input): `onExecuted` follows. */
     onStarted?(call: { id: string; name: string; input?: unknown }): void;
+    /** A subagent or a workflow of its own while it works (`tool_progress`, ADR 0208). */
+    onProgress?(progress: Extract<BrainEvent, { type: "tool_progress" }>): void;
     /** A file a tool of the brain's own made in the agent's folder (`file`). */
     onFile?(path: string): void;
     /** Messages handed to the turn mid-turn that it read (live steering). */
@@ -6784,6 +6803,7 @@ async function thinkOnce(
     }
     if (event.type === "text_delta") onDelta(event.text);
     else if (event.type === "tool_started") hooks.onStarted?.(event);
+    else if (event.type === "tool_progress") hooks.onProgress?.(event);
     else if (event.type === "stalled") hooks.onStalled?.(event);
     else if (event.type === "tool_call") {
       // Executed elsewhere (a computer brain through the runner bridge, which recorded its steps): shown only.

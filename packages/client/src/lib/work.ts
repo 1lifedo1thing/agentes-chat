@@ -828,6 +828,10 @@ export function waitStep(t: TFunction, work: LiveWork[] | undefined, step?: Live
   if (step?.said) return t("chat.wait.said", { text: step.said });
   const now = toolNow(toolItemsLive(work ?? []));
   if (now?.state !== "run") {
+    // A workflow or a subagent it started still at work, its call over (ADR 0208): that is what it does meanwhile.
+    const busy = (work ?? []).findLast((w) => w.kind === "call" && w.progress !== undefined && !w.progress.ended);
+    if (busy?.kind === "call" && busy.progress)
+      return `${capitalize(cliVerbWord(t, busy.progress.kind === "workflow" ? "workflow" : "delegate", true))}…`;
     return step?.tool ? `${capitalize(activityVerb(t, toolActivity(step.tool)))}…` : t("chat.wait.thinking");
   }
   // A computer brain's own call in a code session (ADR 0208): its CLI's verb and what it works on.
