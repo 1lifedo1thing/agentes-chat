@@ -189,6 +189,7 @@
     "pinned": "Vastgezet",
     "recent": "Recent",
     "seeAll": "Alle gesprekken bekijken",
+    "splitEmpty": "Je gesprekken openen hier.",
     "wait": {
       "verb": {
         "approval": "heeft je akkoord nodig",
@@ -276,8 +277,8 @@
     "to": "Aan:",
     "people": "Mensen",
     "search": "Persoon of agent",
-    "create": "Maken",
     "agentHint": "Een naam en wat hij doet",
+    "create": "Maken",
     "chatShort": "Gesprek",
     "chatHint": "Een persoon of een agent",
     "taskHint": "Met een verantwoordelijke en een deadline",
@@ -759,10 +760,12 @@
     "section": {
       "missions": "Missies",
       "threads": "Threads"
-    }
+    },
+    "splitEmpty": "Je threads openen hier."
   },
   "agents": {
     "title": "Agents",
+    "splitEmpty": "De pagina's van je agents openen hier.",
     "subtitle_one": "{{count}} in het team · {{working}} aan het werk",
     "subtitle_other": "{{count}} in het team · {{working}} aan het werk",
     "free": "Vrij",

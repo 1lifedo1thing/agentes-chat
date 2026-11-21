@@ -21,7 +21,17 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { scheduleOnRN } from "react-native-worklets";
-import { Icon, type IconName, PressScale, SCREEN_X, Text, useTheme } from "@/ui";
+import {
+  Icon,
+  type IconName,
+  insetPastFold,
+  PressScale,
+  padPastFold,
+  SCREEN_X,
+  Text,
+  useFoldRoom,
+  useTheme,
+} from "@/ui";
 import { type OpenTalk, useMediaPins, useOpenFileTalk } from "../live-files/talk/hooks";
 import { commentSelection, type Mark, picturePins, pinUnder, pointMark } from "../live-files/talk/logic";
 import { PicturePins } from "../live-files/talk/PicturePins";
@@ -122,6 +132,9 @@ function Viewer({
   const { reducedMotion } = useTheme();
   const { width, height } = useWindowDimensions();
   const screen = useMemo(() => ({ width, height }), [width, height]);
+  // Folded like a book (ADR 0212), the bottom bar's line and actions and the Comment hint keep to the half past the
+  // fold; the picture passes under it, the buttons at the screen's edges stay where they are.
+  const foldSide = useFoldRoom();
   const pager = useRef<PagerView>(null);
   const files = decodeFileList(rawFiles);
   const first = Math.min(Math.max(Number(at) || 0, 0), Math.max(files.length - 1, 0));
@@ -316,7 +329,10 @@ function Viewer({
 
       {/* With Comment on: what a tap does now, under the bar (the canvas's hint). */}
       {commenting ? (
-        <View pointerEvents="none" style={[styles.hintAt, { top: bars.top + 8 }]}>
+        <View
+          pointerEvents="none"
+          style={[styles.hintAt, { top: bars.top + 8 }, foldSide && insetPastFold(foldSide, SCREEN_X)]}
+        >
           <View style={styles.hint}>
             <Text variant="footnote" style={{ color: WHITE }} numberOfLines={2}>
               {t("mobile.live.canvas.commentHint")}
@@ -344,7 +360,7 @@ function Viewer({
       <Chrome
         visible={chrome}
         drag={drag}
-        style={[styles.bottom, { paddingBottom: insets.bottom + 14 }]}
+        style={[styles.bottom, { paddingBottom: insets.bottom + 14 }, foldSide ? padPastFold(foldSide, 0) : {}]}
         onHeight={(bottom) => setBars((b) => (b.bottom === bottom ? b : { ...b, bottom }))}
       >
         <LinearGradient pointerEvents="none" colors={SHADE_UP} locations={SHADE_STOPS} style={styles.shadeBottom} />

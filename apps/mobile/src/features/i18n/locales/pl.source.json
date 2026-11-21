@@ -458,6 +458,9 @@
   "chats.seeAll": {
     "value": "See all chats"
   },
+  "chats.splitEmpty": {
+    "value": "Your chats open here."
+  },
   "chats.wait.verb.approval": {
     "value": "needs your ok"
   },
@@ -653,11 +656,11 @@
   "new.search": {
     "value": "Person or agent"
   },
-  "new.create": {
-    "value": "Create"
-  },
   "new.agentHint": {
     "value": "A name and what it does"
+  },
+  "new.create": {
+    "value": "Create"
   },
   "new.chatShort": {
     "value": "Conversation"
@@ -1805,8 +1808,14 @@
   "threads.section.threads": {
     "value": "Threads"
   },
+  "threads.splitEmpty": {
+    "value": "Your threads open here."
+  },
   "agents.title": {
     "value": "Agents"
+  },
+  "agents.splitEmpty": {
+    "value": "Your agents' pages open here."
   },
   "agents.subtitle": {
     "value": {

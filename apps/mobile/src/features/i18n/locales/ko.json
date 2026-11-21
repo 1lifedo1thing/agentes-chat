@@ -183,6 +183,7 @@
     "pinned": "고정됨",
     "recent": "최근",
     "seeAll": "모든 채팅 보기",
+    "splitEmpty": "채팅이 여기에 열려요.",
     "wait": {
       "verb": {
         "approval": "승인을 기다려요",
@@ -267,8 +268,8 @@
     "to": "받는 사람:",
     "people": "사람",
     "search": "사람 또는 에이전트",
-    "create": "만들기",
     "agentHint": "이름과 하는 일",
+    "create": "만들기",
     "chatShort": "대화",
     "chatHint": "사람 또는 에이전트",
     "taskHint": "담당자와 마감일 포함",
@@ -736,10 +737,12 @@
     "section": {
       "missions": "미션",
       "threads": "스레드"
-    }
+    },
+    "splitEmpty": "스레드가 여기에 열려요."
   },
   "agents": {
     "title": "에이전트",
+    "splitEmpty": "에이전트 페이지가 여기에 열려요.",
     "subtitle_other": "팀에 {{count}}명 · {{working}}명 작업 중",
     "free": "대기 중",
     "workingLabel": "{{name}}, 작업 중",

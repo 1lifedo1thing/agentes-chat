@@ -183,6 +183,7 @@
     "pinned": "已置顶",
     "recent": "最近",
     "seeAll": "查看所有聊天",
+    "splitEmpty": "你的聊天会在这里打开。",
     "wait": {
       "verb": {
         "approval": "需要你确认",
@@ -267,8 +268,8 @@
     "to": "发给：",
     "people": "成员",
     "search": "成员或智能体",
-    "create": "创建",
     "agentHint": "名称和职责",
+    "create": "创建",
     "chatShort": "对话",
     "chatHint": "一位成员或一个智能体",
     "taskHint": "附负责人和截止日期",
@@ -736,10 +737,12 @@
     "section": {
       "missions": "专项任务",
       "threads": "话题"
-    }
+    },
+    "splitEmpty": "你的话题会在这里打开。"
   },
   "agents": {
     "title": "智能体",
+    "splitEmpty": "你的智能体页面会在这里打开。",
     "subtitle_other": "团队中 {{count}} 个 · {{working}} 个工作中",
     "free": "空闲",
     "workingLabel": "{{name}}，工作中",

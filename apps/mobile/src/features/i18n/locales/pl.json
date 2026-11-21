@@ -201,6 +201,7 @@
     "pinned": "Przypięte",
     "recent": "Ostatnie",
     "seeAll": "Zobacz wszystkie czaty",
+    "splitEmpty": "Tutaj otwierają się Twoje czaty.",
     "wait": {
       "verb": {
         "approval": "potrzebuje twojej zgody",
@@ -294,8 +295,8 @@
     "to": "Do:",
     "people": "Osoby",
     "search": "Osoba lub agent",
-    "create": "Utwórz",
     "agentHint": "Nazwa i czym się zajmuje",
+    "create": "Utwórz",
     "chatShort": "Rozmowa",
     "chatHint": "Osoba lub agent",
     "taskHint": "Z osobą odpowiedzialną i terminem",
@@ -805,10 +806,12 @@
     "section": {
       "missions": "Misje",
       "threads": "Wątki"
-    }
+    },
+    "splitEmpty": "Tutaj otwierają się Twoje wątki."
   },
   "agents": {
     "title": "Agenci",
+    "splitEmpty": "Tutaj otwierają się strony Twoich agentów.",
     "subtitle_one": "{{count}} w zespole · pracuje: {{working}}",
     "subtitle_few": "{{count}} w zespole · pracuje: {{working}}",
     "subtitle_many": "{{count}} w zespole · pracuje: {{working}}",
