@@ -188,6 +188,13 @@ describe("a screen of rows", () => {
     );
   });
 
+  test("a scroll that drifts sideways stays a scroll: a row slides only once the drag is clearly sideways", () => {
+    const swipe = readFileSync(join(import.meta.dir, "../../src/ui/SwipeRow.tsx"), "utf8");
+    expect(swipe).toContain("const SIDEWAYS = 24;");
+    expect(swipe).toContain("dragOffsetFromLeft={SIDEWAYS}");
+    expect(swipe).toContain("dragOffsetFromRight={-SIDEWAYS}");
+  });
+
   test("the home never sways: lists glide to a new place in a set time, rows fade in where they stand, no hop", () => {
     const section = src("chats/HomeSection.tsx");
     expect(section).toContain(
