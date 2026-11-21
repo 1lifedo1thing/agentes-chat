@@ -44,7 +44,7 @@ export function ClippedBody({
         {folded && (
           <button
             type="button"
-            className="ac-link ac-link--action msg-clip__more"
+            className="ac-link msg-clip__more"
             onClick={() => {
               reveal();
               actions?.letGo?.();
@@ -52,7 +52,7 @@ export function ClippedBody({
             }}
           >
             {t("channel.long.more")}
-            <Icon name="chevronDown" size={16} />
+            <Icon name="chevronDown" size={16} inline />
           </button>
         )}
       </div>

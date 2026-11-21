@@ -3763,6 +3763,10 @@ html:not([data-pointer]) .channel-ref:focus-visible {
   font-size: 13px;
   text-decoration-color: transparent;
 }
+.msg-clip__more > .ac-icon,
+.folded-body__more > .ac-icon {
+  margin-inline-start: 2px;
+}
 .folded-body__text[data-cut] + .folded-body__more {
   position: relative;
   margin-top: -1.25em;
@@ -3783,6 +3787,7 @@ html:not([data-pointer]) .channel-ref:focus-visible {
   mask-image: linear-gradient(#000 calc(100% - 128px), transparent calc(100% - 20px));
 }
 .msg-clip__more {
+  display: inline-block;
   margin-top: var(--space-1);
   font-size: var(--text-sm);
   color: inherit;

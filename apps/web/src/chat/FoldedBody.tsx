@@ -33,14 +33,14 @@ export function FoldedBody({ body }: { body: string }) {
       {cut && !open && (
         <button
           type="button"
-          className="ac-link ac-link--action folded-body__more"
+          className="ac-link folded-body__more"
           onClick={() => {
             reveal();
             setOpen(true);
           }}
         >
           {t("channel.long.more")}
-          <Icon name="chevronDown" size={16} />
+          <Icon name="chevronDown" size={16} inline />
         </button>
       )}
     </div>
