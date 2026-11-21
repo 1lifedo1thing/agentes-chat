@@ -4277,6 +4277,19 @@
     "ask": "请管理员处理",
     "sent": "已发送给能处理的人。"
   },
+  "accountRef": {
+    "label": "{{name}} 账号",
+    "card": "关于 {{name}} 账号",
+    "mine": "你的账号",
+    "of": "{{name}} 的账号",
+    "on": "在 {{computer}} 上",
+    "gone": "此账号已不在工作区中。"
+  },
+  "accountSwitch": {
+    "limit": "因 <from/> 账号已达上限，改用 <to/> 账号继续",
+    "line": "因 <from/> 账号接近上限，改用 <to/> 账号继续",
+    "extra": "因 <from/> 账号将进入付费额外用量，改用 <to/> 账号继续"
+  },
   "channelRefs": {
     "list": "频道",
     "label": "频道 #{{name}}",

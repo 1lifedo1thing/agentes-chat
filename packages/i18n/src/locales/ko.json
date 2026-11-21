@@ -4275,6 +4275,19 @@
     "ask": "관리자에게 요청",
     "sent": "할 수 있는 사람에게 보냈어요."
   },
+  "accountRef": {
+    "label": "{{name}} 계정",
+    "card": "{{name}} 계정 정보",
+    "mine": "내 계정",
+    "of": "{{name}} 님의 계정",
+    "on": "{{computer}}에서",
+    "gone": "이 계정은 더 이상 워크스페이스에 없어요."
+  },
+  "accountSwitch": {
+    "limit": "<from/> 계정이 한도에 도달해서 <to/> 계정으로 이어서 했어요",
+    "line": "<from/> 계정이 한도에 가까워서 <to/> 계정으로 이어서 했어요",
+    "extra": "<from/> 계정이 유료 추가 사용량으로 넘어가게 되어 <to/> 계정으로 이어서 했어요"
+  },
   "channelRefs": {
     "list": "채널",
     "label": "채널 #{{name}}",

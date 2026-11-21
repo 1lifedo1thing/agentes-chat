@@ -4287,6 +4287,19 @@
     "ask": "Minta ke admin",
     "sent": "Terkirim ke yang bisa melakukannya."
   },
+  "accountRef": {
+    "label": "Akun {{name}}",
+    "card": "Tentang akun {{name}}",
+    "mine": "Akunmu",
+    "of": "Akun {{name}}",
+    "on": "Di {{computer}}",
+    "gone": "Akun ini sudah tidak ada di workspace."
+  },
+  "accountSwitch": {
+    "limit": "Lanjut dengan akun <to/> karena akun <from/> mencapai batasnya",
+    "line": "Lanjut dengan akun <to/> karena akun <from/> hampir mencapai batasnya",
+    "extra": "Lanjut dengan akun <to/> karena akun <from/> akan masuk ke penggunaan tambahan berbayar"
+  },
   "channelRefs": {
     "list": "Kanal",
     "label": "Kanal #{{name}}",

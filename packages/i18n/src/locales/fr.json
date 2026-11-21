@@ -4602,6 +4602,19 @@
     "ask": "Demander à un admin",
     "sent": "Envoyé à qui peut le faire."
   },
+  "accountRef": {
+    "label": "Compte {{name}}",
+    "card": "À propos du compte {{name}}",
+    "mine": "Ton compte",
+    "of": "Compte de {{name}}",
+    "on": "Sur {{computer}}",
+    "gone": "Ce compte n’est plus dans l’espace de travail."
+  },
+  "accountSwitch": {
+    "limit": "A continué avec le compte <to/> car le compte <from/> a atteint sa limite",
+    "line": "A continué avec le compte <to/> car le compte <from/> approche de sa limite",
+    "extra": "A continué avec le compte <to/> car le compte <from/> passerait en usage supplémentaire payant"
+  },
   "channelRefs": {
     "list": "Canaux",
     "label": "Canal #{{name}}",

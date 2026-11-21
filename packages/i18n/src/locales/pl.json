@@ -4755,6 +4755,19 @@
     "ask": "Poproś admina",
     "sent": "Wysłano do osób, które mogą to zrobić."
   },
+  "accountRef": {
+    "label": "Konto {{name}}",
+    "card": "Informacje o koncie {{name}}",
+    "mine": "Twoje konto",
+    "of": "Konto użytkownika {{name}}",
+    "on": "Na komputerze {{computer}}",
+    "gone": "Tego konta nie ma już w obszarze roboczym."
+  },
+  "accountSwitch": {
+    "limit": "Kontynuował na koncie <to/>, bo konto <from/> osiągnęło limit",
+    "line": "Kontynuował na koncie <to/>, bo konto <from/> jest blisko limitu",
+    "extra": "Kontynuował na koncie <to/>, bo konto <from/> weszłoby w płatne dodatkowe użycie"
+  },
   "channelRefs": {
     "list": "Kanały",
     "label": "Kanał #{{name}}",

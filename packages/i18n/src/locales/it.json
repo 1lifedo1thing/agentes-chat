@@ -4603,6 +4603,19 @@
     "ask": "Chiedi a un admin",
     "sent": "Inviato a chi può farlo."
   },
+  "accountRef": {
+    "label": "Account {{name}}",
+    "card": "Informazioni sull’account {{name}}",
+    "mine": "Il tuo account",
+    "of": "Account di {{name}}",
+    "on": "Su {{computer}}",
+    "gone": "Questo account non è più nel workspace."
+  },
+  "accountSwitch": {
+    "limit": "Ha continuato con l’account <to/> perché l’account <from/> ha raggiunto il limite",
+    "line": "Ha continuato con l’account <to/> perché l’account <from/> è vicino al limite",
+    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento"
+  },
   "channelRefs": {
     "list": "Canali",
     "label": "Canale #{{name}}",
