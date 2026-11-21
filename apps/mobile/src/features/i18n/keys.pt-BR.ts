@@ -204,6 +204,8 @@ export const featureKeysPtBR = {
     recent: "Recentes",
     /** Under Recentes' first rows: the whole list. */
     seeAll: "Ver todas as conversas",
+    /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */
+    splitEmpty: "Suas conversas abrem aqui.",
     wait: {
       verb: {
         approval: "precisa do seu ok",

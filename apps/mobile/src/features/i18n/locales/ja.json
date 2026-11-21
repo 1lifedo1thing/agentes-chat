@@ -183,6 +183,7 @@
     "pinned": "ピン留め",
     "recent": "最近",
     "seeAll": "すべてのチャットを表示",
+    "splitEmpty": "チャットはここに表示されます。",
     "wait": {
       "verb": {
         "approval": "があなたのOKを待っています",
@@ -267,8 +268,8 @@
     "to": "宛先:",
     "people": "人",
     "search": "人またはエージェント",
-    "create": "作成",
     "agentHint": "名前と役割",
+    "create": "作成",
     "chatShort": "会話",
     "chatHint": "人またはエージェント",
     "taskHint": "担当者と期限つき",

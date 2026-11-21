@@ -195,6 +195,7 @@
     "pinned": "Fissati",
     "recent": "Recenti",
     "seeAll": "Vedi tutte le chat",
+    "splitEmpty": "Le tue chat si aprono qui.",
     "wait": {
       "verb": {
         "approval": "ha bisogno del tuo ok",
@@ -285,8 +286,8 @@
     "to": "A:",
     "people": "Persone",
     "search": "Persona o agente",
-    "create": "Crea",
     "agentHint": "Un nome e cosa fa",
+    "create": "Crea",
     "chatShort": "Conversazione",
     "chatHint": "Una persona o un agente",
     "taskHint": "Con responsabile e scadenza",

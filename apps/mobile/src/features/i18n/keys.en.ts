@@ -202,6 +202,8 @@ export const featureKeysEn = {
     recent: "Recent",
     /** Under Recentes' first rows: the whole list. */
     seeAll: "See all chats",
+    /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */
+    splitEmpty: "Your chats open here.",
     wait: {
       verb: {
         approval: "needs your ok",

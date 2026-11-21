@@ -189,6 +189,7 @@
     "pinned": "Sabitlenenler",
     "recent": "Son sohbetler",
     "seeAll": "Tüm sohbetleri gör",
+    "splitEmpty": "Sohbetlerin burada açılır.",
     "wait": {
       "verb": {
         "approval": "onayınızı bekliyor",
@@ -276,8 +277,8 @@
     "to": "Kime:",
     "people": "Kişiler",
     "search": "Kişi veya ajan",
-    "create": "Oluştur",
     "agentHint": "Adı ve ne yaptığı",
+    "create": "Oluştur",
     "chatShort": "Sohbet",
     "chatHint": "Bir kişi veya bir ajan",
     "taskHint": "Sorumlu kişi ve son tarihle",

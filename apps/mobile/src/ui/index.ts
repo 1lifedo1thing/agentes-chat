@@ -86,6 +86,7 @@ export {
   useNavigationTheme,
   usePushedOptions,
   useScrollUnderPushedOptions,
+  useSideInsets,
 } from "./navigation";
 export { OptionTile } from "./OptionTile";
 export { OPTION_ROW } from "./option-row";
@@ -136,6 +137,7 @@ export {
 export { ToastHost, type ToastInput, useToast } from "./Toast";
 export { Toggle, type ToggleProps, ToggleSwitch } from "./Toggle";
 export { TOKEN_GAP, TOKEN_H, Token, type TokenProps, TokenWrap } from "./Token";
+export { DuoProvider, TwoPane, useWide } from "./TwoPane";
 export { TextScaleProvider, useFontScale, useTextScale } from "./text-scale";
 export {
   type AppColors,

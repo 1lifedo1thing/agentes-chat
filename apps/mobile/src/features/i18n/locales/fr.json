@@ -195,6 +195,7 @@
     "pinned": "Épinglés",
     "recent": "Récents",
     "seeAll": "Voir toutes les discussions",
+    "splitEmpty": "Vos discussions s'ouvrent ici.",
     "wait": {
       "verb": {
         "approval": "a besoin de votre accord",
@@ -285,8 +286,8 @@
     "to": "À :",
     "people": "Personnes",
     "search": "Personne ou agent",
-    "create": "Créer",
     "agentHint": "Un nom et ce qu'il fait",
+    "create": "Créer",
     "chatShort": "Conversation",
     "chatHint": "Une personne ou un agent",
     "taskHint": "Avec un responsable et une échéance",

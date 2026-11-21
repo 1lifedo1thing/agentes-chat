@@ -189,6 +189,7 @@
     "pinned": "Angepinnt",
     "recent": "Zuletzt",
     "seeAll": "Alle Chats ansehen",
+    "splitEmpty": "Deine Chats öffnen sich hier.",
     "wait": {
       "verb": {
         "approval": "braucht dein Okay",
@@ -276,8 +277,8 @@
     "to": "An:",
     "people": "Personen",
     "search": "Person oder Agent",
-    "create": "Erstellen",
     "agentHint": "Ein Name und was er tut",
+    "create": "Erstellen",
     "chatShort": "Unterhaltung",
     "chatHint": "Eine Person oder ein Agent",
     "taskHint": "Mit verantwortlicher Person und Frist",
