@@ -305,10 +305,20 @@ export function cutOldToolSteps(messages: ModelMessage[], tools: readonly { name
  * 20 MB), so a run that read several large pictures still goes out.
  */
 export const IMAGES_PER_REQUEST_CHARS = 15_000_000;
+/** Images one request carries, newest kept first: Anthropic takes at most 100 (`review_media` gives up to 40 a call). */
+export const IMAGES_PER_REQUEST = 90;
 
-/** The messages with older tool results' images dropped (a note says so) past `maxChars` of base64, else the same array. */
-export function dropOldImages(messages: ModelMessage[], maxChars = IMAGES_PER_REQUEST_CHARS): ModelMessage[] {
+/**
+ * The messages with older tool results' images dropped (a note says so) past `maxChars` of base64 or `maxImages`
+ * images, else the same array.
+ */
+export function dropOldImages(
+  messages: ModelMessage[],
+  maxChars = IMAGES_PER_REQUEST_CHARS,
+  maxImages = IMAGES_PER_REQUEST,
+): ModelMessage[] {
   let total = 0;
+  let count = 0;
   let changed = false;
   const out = [...messages];
   for (let i = out.length - 1; i >= 0; i--) {
@@ -318,7 +328,8 @@ export function dropOldImages(messages: ModelMessage[], maxChars = IMAGES_PER_RE
     const content = m.content.map((b) => {
       if (b.type !== "tool_result" || !b.images?.length) return b;
       total += b.images.reduce((n, img) => n + img.data.length, 0);
-      if (total <= maxChars) return b;
+      count += b.images.length;
+      if (total <= maxChars && count <= maxImages) return b;
       dropped = true;
       const { images: _images, ...rest } = b;
       return { ...rest, content: `${b.content}\n[Image removed to save space. Read the file again if you need it.]` };
@@ -432,7 +443,7 @@ export async function fitContextWindow(
     model: string;
     /** Overrides the catalog's window (tests). */
     windowTokens?: number;
-    /** The agent's limit (`agents.context_tokens`): the window when smaller, and no `MAX_CONTEXT_TOKENS` cap. */
+    /** The agent's limit (`agents.context_tokens`): the most input it reads, in place of `MAX_CONTEXT_TOKENS`. */
     limitTokens?: number | null;
     maxOutputTokens: number;
     system: SystemBlock[];
@@ -443,11 +454,13 @@ export async function fitContextWindow(
     timeoutMs?: number;
   },
 ): Promise<{ messages: ModelMessage[]; removed: Set<string>; report: ContextBudgetReport } | null> {
-  const windowTokens = contextWindowWithin(input.windowTokens ?? contextWindowOf(input.model), input.limitTokens);
+  const modelWindow = input.windowTokens ?? contextWindowOf(input.model);
+  const windowTokens = contextWindowWithin(modelWindow, input.limitTokens);
+  // The agent's limit caps what it reads; the output is held back from the model's window, not from that limit.
   const budgetTokens = contextBudgetTokens(
-    windowTokens,
+    modelWindow,
     input.maxOutputTokens,
-    input.limitTokens ? Number.POSITIVE_INFINITY : MAX_CONTEXT_TOKENS,
+    input.limitTokens && input.limitTokens > 0 ? input.limitTokens : MAX_CONTEXT_TOKENS,
   );
   const estimatedTokens = estimateRequestTokens(input);
   if (estimatedTokens <= budgetTokens) return null;

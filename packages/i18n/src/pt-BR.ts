@@ -12538,6 +12538,13 @@ export const ptBR = {
     free: "Grátis",
     /** Under OpenCode Go's models: OpenCode's free tier answers only its own CLI (ADR 0132 §7). */
     opencodeFreeHint: "Outros modelos grátis rodam pelo OpenCode no computador do agente.",
+    /** Under the Gemini plan's models: why its newest model isn't there (`BrainOption.missing`). */
+    missingModel: {
+      app_old: "Atualize o app do agentes.chat no computador do agente para usar o {{model}}.",
+      cli_old:
+        "O {{model}} precisa de uma versão mais nova do Antigravity CLI no computador do agente. Rode agy update nele.",
+      plan: "O {{model}} vem com o Google AI Pro e o Ultra. Nenhuma conta do Gemini no computador do agente tem esse plano.",
+    },
     modelHelp: "Os modelos maiores pensam mais e gastam o plano mais rápido.",
     hidden: "{{owner}} ou um admin escolhe quem pensa.",
     hiddenAdmins: "Só admins escolhem quem pensa.",
@@ -21568,7 +21575,8 @@ export const ptBR = {
     mark: "Beta",
     open: "Enviar feedback",
     ask: "O que faltou, quebrou ou incomodou?",
-    goesCloud: "O que você escrever vai por e-mail para o time do agentes.chat.",
+    goesCloud:
+      "O que você escrever vai por e-mail para o time do agentes.chat, que pode usar um assistente de IA para analisar.",
     goesServer: "O que você escrever vai por e-mail para quem administra este servidor.",
     placeholder: "Escreva do seu jeito",
     report: "Reportar um problema aqui",
