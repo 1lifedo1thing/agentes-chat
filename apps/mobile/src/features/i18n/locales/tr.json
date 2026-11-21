@@ -189,6 +189,7 @@
     "pinned": "Sabitlenenler",
     "recent": "Son sohbetler",
     "seeAll": "Tüm sohbetleri gör",
+    "splitEmpty": "Sohbetlerin burada açılır.",
     "wait": {
       "verb": {
         "approval": "onayınızı bekliyor",
@@ -759,10 +760,12 @@
     "section": {
       "missions": "Misyonlar",
       "threads": "İleti dizileri"
-    }
+    },
+    "splitEmpty": "İleti dizilerin burada açılır."
   },
   "agents": {
     "title": "Ajanlar",
+    "splitEmpty": "Ajanlarının sayfaları burada açılır.",
     "subtitle_one": "Ekipte {{count}} ajan · {{working}} çalışıyor",
     "subtitle_other": "Ekipte {{count}} ajan · {{working}} çalışıyor",
     "free": "Boşta",

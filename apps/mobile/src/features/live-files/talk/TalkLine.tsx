@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Platform, StyleSheet, View } from "react-native";
 import { useKeyboardState } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Glass, Icon, PixelOrbit, PressScale, SCREEN_X, Text, useTheme } from "@/ui";
+import { Glass, Icon, PixelOrbit, PressScale, padPastFold, SCREEN_X, Text, useFoldRoom, useTheme } from "@/ui";
 import { nameInk, workingEntries } from "../../chat/logic";
 import { Face } from "../../shared/Face";
 import { useDirectory, useOrgId } from "../../shared/hooks";
@@ -43,7 +43,8 @@ export function useTalkLineRoom(): number {
  * the screen's own (`bare`: the picture viewer's, which keeps the home indicator's room) or closes the screen's
  * column; with the keyboard up it goes, and comes back when it goes down. While the sheet is up over the file the line
  * goes too, and in a column its place holds the sheet's room, so what the file shows ends above the sheet and the
- * person reaches all of it there. `onOpen`: what a tap does instead.
+ * person reaches all of it there. `onOpen`: what a tap does instead. Folded like a book, the line keeps to the half
+ * past the fold rather than across it (ADR 0212); a bar it sits in keeps it there itself.
  */
 export function FileTalkLine({
   file,
@@ -68,6 +69,7 @@ export function FileTalkLine({
   const { mentions } = useFileUnread(orgId, file?.id ?? "");
   const open = useOpenFileTalk(file);
   const sheet = useTalkSheet(file?.id);
+  const foldSide = useFoldRoom();
 
   const line = useMemo(() => {
     const entries = workingEntries(runs, [], (id) => dir.anyAgent(id)?.name ?? "");
@@ -109,6 +111,7 @@ export function FileTalkLine({
         floating && styles.floating,
         !bare && { paddingBottom: Math.max(insets.bottom, SIDE) },
         !floating && !bare && { backgroundColor: c.bg },
+        !bare && foldSide && padPastFold(foldSide, SCREEN_X),
       ]}
     >
       <PressScale

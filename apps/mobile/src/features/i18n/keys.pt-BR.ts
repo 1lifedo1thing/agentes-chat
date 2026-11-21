@@ -204,6 +204,8 @@ export const featureKeysPtBR = {
     recent: "Recentes",
     /** Under Recentes' first rows: the whole list. */
     seeAll: "Ver todas as conversas",
+    /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */
+    splitEmpty: "Suas conversas abrem aqui.",
     wait: {
       verb: {
         approval: "precisa do seu ok",
@@ -785,9 +787,13 @@ export const featureKeysPtBR = {
       missions: "Missões",
       threads: "Threads",
     },
+    /** On a large screen (the iPhone Duo open), where the open thread stands beside the list while there is none yet. */
+    splitEmpty: "Suas threads abrem aqui.",
   },
   agents: {
     title: "Agentes",
+    /** On a large screen (the iPhone Duo open), where an agent's page stands beside the list while the team has none. */
+    splitEmpty: "As páginas dos seus agentes abrem aqui.",
     subtitle_one: "{{count}} na equipe · {{working}} trabalhando",
     subtitle_other: "{{count}} na equipe · {{working}} trabalhando",
     free: "Livre",

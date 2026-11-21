@@ -195,6 +195,7 @@
     "pinned": "Fissati",
     "recent": "Recenti",
     "seeAll": "Vedi tutte le chat",
+    "splitEmpty": "Le tue chat si aprono qui.",
     "wait": {
       "verb": {
         "approval": "ha bisogno del tuo ok",
@@ -782,10 +783,12 @@
     "section": {
       "missions": "Missioni",
       "threads": "Thread"
-    }
+    },
+    "splitEmpty": "I tuoi thread si aprono qui."
   },
   "agents": {
     "title": "Agenti",
+    "splitEmpty": "Le pagine dei tuoi agenti si aprono qui.",
     "subtitle_one": "{{count}} nel team · {{working}} al lavoro",
     "subtitle_many": "{{count}} nel team · {{working}} al lavoro",
     "subtitle_other": "{{count}} nel team · {{working}} al lavoro",

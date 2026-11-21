@@ -15,6 +15,7 @@ import { usePush } from "@/providers/push";
 import { useRealtime } from "@/providers/realtime";
 import { useToast } from "@/ui";
 import { createComposerFloat } from "@/ui/Composer";
+import { usePane } from "@/ui/pane";
 import { AgentSetupIntro } from "../agents/setup/SetupCard";
 import { OpenHandoffProvider } from "../browser/open";
 import { MissionCardView } from "../missions/cards";
@@ -34,6 +35,7 @@ import { openingDockHeight, rememberDockHeight } from "./dock-height";
 import { FirstDay } from "./FirstDay";
 import { useListEnd } from "./list-end";
 import { endsOnNoAiCard, noAiBanner } from "./no-ai-banner";
+import { placeKey, placeMessage, takeHandedPlace, useReadingPlace } from "./reading-place";
 import { ConversationRowData } from "./row-data";
 import { ChatDock } from "./screen/ChatDock";
 import { ChatHeader, useChatTitle } from "./screen/ChatHeader";
@@ -89,6 +91,9 @@ export function ChatScreen({
   focusId?: string | null;
   sheet?: ChatSheetMode;
 }) {
+  // Where the same conversation was being read on the other display (ADR 0212: an iPhone Duo opened or closed), taken
+  // once as it opens, when no message was asked for: it opens there, as a pin opens at its message, without the light.
+  const [handed] = useState(() => (focusId ? null : takeHandedPlace(placeKey(channelId, threadId ?? null))));
   // Its rows read the agents' questions once for the conversation (`ConversationRowData`), its sheets included.
   return (
     <ConversationRowData channelId={channelId}>
@@ -96,7 +101,13 @@ export function ChatScreen({
         <FocusLive>
           <OpenHandoffProvider handoffId={handoffId ?? null}>
             <ChatSheetContext.Provider value={sheet ?? null}>
-              <Chat channelId={channelId} threadId={threadId ?? null} focusId={focusId ?? null} sheet={sheet ?? null} />
+              <Chat
+                channelId={channelId}
+                threadId={threadId ?? null}
+                focusId={focusId ?? handed}
+                quietFocus={!focusId && handed !== null}
+                sheet={sheet ?? null}
+              />
             </ChatSheetContext.Provider>
           </OpenHandoffProvider>
         </FocusLive>
@@ -109,11 +120,14 @@ function Chat({
   channelId,
   threadId,
   focusId,
+  quietFocus,
   sheet: inSheet,
 }: {
   channelId: string;
   threadId: string | null;
   focusId: string | null;
+  /** `focusId` is a place handed from the other display (ADR 0212): gone to without the light. */
+  quietFocus: boolean;
   sheet: ChatSheetMode | null;
 }) {
   const { t, i18n } = useTranslation();
@@ -235,7 +249,7 @@ function Chat({
     waitingHere,
     markTouched,
   } = follow;
-  const { freeze, leavePlace, stickers } = useKeepPlace({ sheet, follow });
+  const { freeze, leavePlace, placeNow, stickers } = useKeepPlace({ sheet, follow });
   const {
     afterVoice,
     canAttach,
@@ -308,6 +322,7 @@ function Chat({
     channelId,
     threadId,
     focusId,
+    quietFocus,
     orgId,
     api,
     t,
@@ -342,6 +357,9 @@ function Chat({
         t("mobile.chat.messageTo", { name: dm.with.name })
       : t("mobile.chat.messageIn", { channel: channel ? `#${channel.name}` : "" });
   rowsRef.current = rows;
+  // Where the person reads, for this conversation opened on the other display (ADR 0212); in a pane, kept as it leaves.
+  const pane = usePane();
+  useReadingPlace(placeKey(channelId, threadId), () => placeMessage(placeNow(), rowsRef.current), pane !== null);
   const pinned = mission && isOpenMission(mission) ? mission : null;
   const hasPins = useMemo(() => pinsIn(pinsData ?? [], threadId).length > 0, [pinsData, threadId]);
 
@@ -470,7 +488,9 @@ function Chat({
   // How far down the fade under the header stays solid: through the status bar and the bar (a message scrolled up
   // showed through the bar's pill and between its buttons), fading out in the 28 points under it.
   const topFadeSolid = headerHeight > 0 ? Math.min(1, headerHeight / (headerHeight + 28)) : 0;
-  const lift = Math.max(0, bottomPad - KEYBOARD_GAP);
+  // In a pane whose foot stands above the window's (ADR 0212; Android's tabs end above their bar) the keyboard, rising
+  // from the window's edge, covers that much less of the conversation.
+  const lift = Math.max(0, bottomPad - KEYBOARD_GAP) + (pane?.below ?? 0);
   // The list ends where the composer starts: the dock's height plus whatever part of the keyboard the composer rides
   // over that the list's own keyboard room missed (a height iOS changed with no notification).
   const {
