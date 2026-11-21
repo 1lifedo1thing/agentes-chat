@@ -172,10 +172,10 @@
 }
 
 /* Why a model the plan has isn't in the list (the computer's program too old, the account's plan): one quiet line,
-   or the kit's note with its update button. */
+   or the kit's note with its update button; on the models' own left edge (the menu rows' inset). */
 .mp__missing {
   margin: var(--space-2) 0 0;
-  padding-inline: var(--space-3);
+  padding-inline: var(--space-2);
 }
 p.mp__missing {
   color: var(--muted);
