@@ -149,6 +149,50 @@ test("Quem pensa: Gemini where its runner and CLI are, its models as the CLI lis
   ]);
 });
 
+test("the Gemini plan's models: Gemini only, Neon where the CLI runs it, and why it's missing elsewhere", () => {
+  const values = (listed: { id: string; label?: string }[], version?: string) =>
+    antigravityModels(listed, version).map((m) => m.value);
+  const free = [
+    { id: "gemini-3.8-flash-high", label: "Gemini 3.8 Flash (High)" },
+    { id: "claude-sonnet-4-6-thinking", label: "Claude Sonnet 4.6 (Thinking)" },
+    { id: "claude-opus-4-6-thinking", label: "Claude Opus 4.6 (Thinking)" },
+    { id: "gpt-oss-120b-medium", label: "GPT-OSS 120B (Medium)" },
+  ];
+  // The CLI also lists other makers' models: the Gemini plan offers Gemini's alone.
+  expect(values(free, "1.5.14")).toEqual(["gemini-3.8-flash-high"]);
+  // Another maker's model only: as if nothing were listed.
+  expect(values([{ id: "claude-opus-4-6-thinking" }], "1.5.14")).toEqual(ANTIGRAVITY_MODELS.map((m) => m.id));
+  // A paid account's listing from 1.5.0 (Argon, no Neon): once the CLI runs Neon, Neon and Hydrogen come first.
+  const older = [{ id: "gemini-4-argon-high" }, { id: "gemini-3.8-flash-medium" }];
+  expect(values(older, "1.5.14").slice(0, 2)).toEqual(["gemini-4-neon-high", "gemini-4-neon-xhigh"]);
+  expect(values(older, "1.5.14").slice(-2)).toEqual(["gemini-4-argon-high", "gemini-3.8-flash-medium"]);
+  expect(values(older, "agy 1.5.0")).toEqual(["gemini-4-argon-high", "gemini-3.8-flash-medium"]);
+  // A listing the new CLI took stands as it is.
+  expect(values([{ id: "gemini-4-neon-high" }, { id: "gemini-4-argon-high" }], "1.5.14")).toEqual([
+    "gemini-4-neon-high",
+    "gemini-4-argon-high",
+  ]);
+  // Nothing listed by a CLI that predates Neon: no reserve row it can't run.
+  expect(values([], "1.5.0").some((v) => v.includes("neon") || v.includes("hydrogen"))).toBe(false);
+
+  const option = (antigravity: { version: string; models?: { id: string; label?: string }[] }) =>
+    brainOptions({
+      id: "m1",
+      name: "box",
+      execAllowed: true,
+      protocol: ANTIGRAVITY_PROTOCOL,
+      online: true,
+      lastSeenAt: new Date(),
+      executors: { antigravity },
+    } as never).find((o) => o.kind === "antigravity");
+  const neon = { modelId: "gemini-4-neon", label: "Gemini 4 Neon" };
+  expect(option({ version: "agy 1.5.0", models: older })?.missing).toEqual({ ...neon, why: "cli_old" });
+  expect(option({ version: "1.5.14", models: free })?.missing).toEqual({ ...neon, why: "plan" });
+  expect(option({ version: "1.5.14", models: older })?.missing).toBeUndefined();
+  // Nothing listed yet (no account signed in): the reserve, with nothing to explain.
+  expect(option({ version: "1.5.14" })?.missing).toBeUndefined();
+});
+
 test("a Gemini sign-in is made for all agents where each is its own OS user from protocol 58 on; Enterprise signs in again as Enterprise", () => {
   const system = (protocol: number) => ({ protocol, executors: { mode: "system" as const } }) as never;
   expect(sharesSignIns(system(SHARED_GEMINI_PROTOCOL), "antigravity")).toBe(true);

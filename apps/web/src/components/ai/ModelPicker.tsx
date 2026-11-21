@@ -22,7 +22,7 @@ import {
 } from "@agenteschat/client/lib/brain-picker";
 import { can } from "@agenteschat/client/lib/permissions";
 import { modelStandInKey, planMeterText } from "@agenteschat/client/lib/plan-usage";
-import { planOf } from "@agenteschat/client/lib/plans";
+import { brainMissingHint, planOf } from "@agenteschat/client/lib/plans";
 import { modelChoices } from "@agenteschat/client/lib/providers";
 import { isRightHand } from "@agenteschat/client/lib/right-hand";
 import {
@@ -204,6 +204,14 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
   const [accountId, setAccountId] = useState<string | null | undefined>(undefined);
   const account = tile?.accounts.find((a) => a.id === accountId) ?? tile?.accounts[0];
   const rows = tile ? modelPickerModels(t, i18n.language, view, tile, account, choices, agent.model) : [];
+  // Gemini's newest model missing from the computer's list: why, under the list.
+  const missing =
+    tile && tile.kind !== "model" && !planOf(account?.provider)
+      ? brainMissingHint(
+          t,
+          view.options.find((o) => o.kind === tile.kind),
+        )
+      : undefined;
   const [q, setQ] = useState("");
   const shown = q.trim() ? rows.filter((r) => r.label.toLowerCase().includes(q.trim().toLowerCase())) : rows;
   const [busy, setBusy] = useState(false);
@@ -378,6 +386,7 @@ function PickerBody({ agent, view, onClose }: { agent: Agent; view: AgentBrain; 
           </button>
         ))}
       </div>
+      {missing && <p className="mp__missing">{missing}</p>}
       {effortOn && tile && (
         <div className="mp__effort">
           <EffortPixels

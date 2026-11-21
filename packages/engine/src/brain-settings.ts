@@ -44,9 +44,14 @@ import {
 } from "@agenteschat/providers";
 import {
   ANTIGRAVITY_MODELS,
+  ANTIGRAVITY_NEON_CLI,
+  ANTIGRAVITY_NEW_MODEL,
+  ANTIGRAVITY_PAID_MODEL,
   antigravityBaseModel,
   claudeCodeModel,
+  cliVersionAtLeast,
   GROK_BUILD_MODELS,
+  isAntigravityGemini,
   isPlanModelId,
   OPENCODE_FREE_MODELS,
   planModel,
@@ -206,15 +211,55 @@ export const grokModels = (listed: readonly { id: string; label?: string }[] = [
     ...(catalogModelOf(m.id) ? { modelId: m.id } : {}),
   }));
 
+/** The newest Gemini the plan offers: the picker says why when it isn't among an Antigravity computer's models. */
+const ANTIGRAVITY_NEON = "gemini-4-neon";
+
 /**
- * The Antigravity CLI's models (ADR 0143): what it listed on the agent's computer (`agy models`), else
- * `ANTIGRAVITY_MODELS`. A slug is a model at one thinking level (`gemini-4-argon-high`): its catalog model is the base.
+ * The Antigravity CLI's Gemini models (ADR 0143): what it listed on the agent's computer (`agy models`), its other
+ * makers' models left out, else `ANTIGRAVITY_MODELS`. A listing an older CLI took (a folder lent to an agent is never
+ * looked at again) shows a paid plan by its Argon and has no Neon or Hydrogen: with a CLI that runs them now
+ * (`version`, its `--version` line) they come first. A CLI known to predate them gets no reserve row it can't run. A
+ * slug is a model at one thinking level (`gemini-4-argon-high`): its catalog model is the base.
  */
-export const antigravityModels = (listed: readonly { id: string; label?: string }[] = []): BrainModelOption[] =>
-  (listed.length ? listed : ANTIGRAVITY_MODELS).map((m) => {
+export function antigravityModels(
+  listed: readonly { id: string; label?: string }[] = [],
+  version?: string | null,
+): BrainModelOption[] {
+  const knowsNew = cliVersionAtLeast(version, ANTIGRAVITY_NEON_CLI) !== false;
+  const reserve = ANTIGRAVITY_MODELS.filter((m) => knowsNew || !ANTIGRAVITY_NEW_MODEL.test(m.id));
+  const gemini = listed.filter((m) => isAntigravityGemini(m.id));
+  const olderListing =
+    knowsNew &&
+    gemini.some((m) => ANTIGRAVITY_PAID_MODEL.test(m.id)) &&
+    !gemini.some((m) => ANTIGRAVITY_NEW_MODEL.test(m.id));
+  const list = !gemini.length
+    ? reserve
+    : olderListing
+      ? [...reserve.filter((r) => ANTIGRAVITY_NEW_MODEL.test(r.id)), ...gemini]
+      : gemini;
+  return list.map((m) => {
     const base = antigravityBaseModel(m.id);
     return { value: m.id, label: m.label || m.id, ...(catalogModelOf(base) ? { modelId: base } : {}) };
   });
+}
+
+/**
+ * Why the newest Gemini isn't among an Antigravity computer's models (`BrainOption.missing`): its CLI predates it, or
+ * what the accounts there listed has no paid Gemini 4 model. None while nothing was listed (the reserve shows).
+ */
+function antigravityMissing(
+  models: readonly BrainModelOption[],
+  machine: { executors?: schema.MachineExecutors | null } | null,
+): BrainOption["missing"] {
+  const cli = machine?.executors?.antigravity;
+  if (!cli || models.some((m) => m.modelId === ANTIGRAVITY_NEON)) return undefined;
+  const label = MODEL_CATALOG[ANTIGRAVITY_NEON]?.label ?? ANTIGRAVITY_NEON;
+  if (cliVersionAtLeast(cli.version, ANTIGRAVITY_NEON_CLI) === false)
+    return { modelId: ANTIGRAVITY_NEON, label, why: "cli_old" };
+  return cli.models?.some((m) => isAntigravityGemini(m.id))
+    ? { modelId: ANTIGRAVITY_NEON, label, why: "plan" }
+    : undefined;
+}
 
 /**
  * Claude Code's aliases (`--model fable|opus|sonnet|haiku`), mapped to today's ids in the catalog. Each is named by
@@ -255,7 +300,8 @@ function modelChoices(kind: BrainKind, machine?: { executors?: schema.MachineExe
   if (kind === "cursor") return cursorModels(machine?.executors?.cursor?.models);
   if (kind === "opencode") return opencodeModels(machine?.executors?.opencode?.models);
   if (kind === "grok") return grokModels(machine?.executors?.grok?.models);
-  if (kind === "antigravity") return antigravityModels(machine?.executors?.antigravity?.models);
+  if (kind === "antigravity")
+    return antigravityModels(machine?.executors?.antigravity?.models, machine?.executors?.antigravity?.version);
   return [];
 }
 
@@ -331,6 +377,11 @@ export interface BrainOption {
   reason?: BrainUnavailable;
   models: BrainModelOption[];
   defaultModel: string | null;
+  /**
+   * Antigravity: the newest Gemini (`ANTIGRAVITY_NEON`) isn't among its models, and why: the computer's CLI predates
+   * it (`cli_old`), or no account signed in there has a plan that includes it (`plan`).
+   */
+  missing?: { modelId: string; label: string; why: "cli_old" | "plan" };
 }
 
 type MachineLike = Parameters<typeof machineExecutors>[0] & {
@@ -428,12 +479,15 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
   else if (!brainRunsOn(kind, machine.os)) reason = "system";
   else if (!machine.executors?.[kind]) reason = missingCli(machine, kind);
   else if (tools && (tools[kind] ?? tools.codex) !== true) reason = "tool_off";
+  const models = brainModelOptions(kind, machine);
+  const missing = kind === "antigravity" ? antigravityMissing(models, machine) : undefined;
   return {
     kind,
     available: !reason,
     ...(reason ? { reason } : {}),
-    models: brainModelOptions(kind, machine),
+    models,
     defaultModel: null,
+    ...(missing ? { missing } : {}),
   };
 }
 

@@ -24,6 +24,7 @@ import {
   planSearchNames,
 } from "./no-ai";
 import {
+  antigravityLabel,
   type BrainModelChoice,
   brainModelChoice,
   brainModelChoices,
@@ -436,7 +437,10 @@ export function modelRows(
   const rows: Omit<ModelRow, "checked">[] = [
     { value: AUTO, label: t("brain.auto.label"), sub: t("brain.auto.hint") },
     // The model it runs stays a row when its list doesn't have it, as the web's picker keeps it: one row is checked.
-    ...(!chosen || isAuto(chosen) || models.some((m) => m.value === chosen) ? [] : [{ value: chosen, label: chosen }]),
+    // Gemini's by its name ("Gemini 4 Argon (High)"), never its slug.
+    ...(!chosen || isAuto(chosen) || models.some((m) => m.value === chosen)
+      ? []
+      : [{ value: chosen, label: view.brain === "antigravity" ? antigravityLabel(chosen) : chosen }]),
     ...models.map((m) => {
       // What each is for (Claude's own), sold as, or costs: the agent's page's line.
       const sub = brainModelLine(t, view.brain, plan, m, cursorSays);
