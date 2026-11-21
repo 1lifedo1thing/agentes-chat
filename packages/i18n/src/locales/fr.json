@@ -14988,6 +14988,7 @@
       "export_file": "Exporter un fichier",
       "read_file": "Lire un fichier",
       "write_file": "Écrire un fichier",
+      "edit_file": "Modifier un fichier",
       "list_files": "Lister les fichiers",
       "run_code": "Exécuter du code",
       "run_skill_script": "Exécuter un script de compétence",
@@ -19527,6 +19528,10 @@
     "write_file": {
       "label": "Écrire dans l'environnement",
       "description": "Écrit un fichier dans l'environnement de code."
+    },
+    "edit_file": {
+      "label": "Modifier dans l'environnement",
+      "description": "Change une partie d'un fichier dans l'environnement de code."
     },
     "read_file": {
       "label": "Lire depuis l'environnement",

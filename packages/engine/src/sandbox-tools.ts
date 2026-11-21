@@ -1,3 +1,4 @@
+import { posix } from "node:path";
 import {
   ACCESS_PROTOCOL,
   badActorCode,
@@ -40,6 +41,7 @@ import {
 import { recordAudit } from "./audit";
 import { fedByRoutine, runAuthorityById } from "./authority";
 import { sniffModelImage } from "./avatars";
+import { codeSessionCwd } from "./code-sessions";
 import { deviceRoster, devicesForRequester, rosterFacts, secretsMayGo } from "./device-resolve";
 import { ToolOffError } from "./errors";
 import { publishChannelEvent } from "./events";
@@ -471,9 +473,14 @@ export function computerSentence(info: ComputerInfo) {
  * A file tool's path: relative to the agent's folder, or absolute on a
  * connected computer that grants folders (protocol 10), where the runner
  * checks it against the folders allowed for this agent (`not_allowed`).
+ * In a code session's conversation (`folder`, its worktree: ADR 0215 §5) a
+ * relative path is inside the worktree, and never climbs out of it.
  */
-export function toolPath(raw: string, info: ComputerInfo): string {
-  return (info.kind === "machine" && info.protocol >= ACCESS_PROTOCOL && fullMachinePath(raw)) || workspacePath(raw);
+export function toolPath(raw: string, info: ComputerInfo, folder?: string | null): string {
+  const full = info.kind === "machine" && info.protocol >= ACCESS_PROTOCOL && fullMachinePath(raw);
+  if (full) return full;
+  const path = workspacePath(raw);
+  return folder ? (path ? `${folder}/${path}` : folder) : path;
 }
 
 /** What the model sees from a command: exit code first (it is the line kept in "Recent actions"). */
@@ -863,6 +870,9 @@ export function createSandboxToolSource(
     sessionId?: string,
     devices = false,
     maxTimeout = SANDBOX_LIMITS.machineMaxTimeoutSeconds,
+    /** A code session's worktree, where the conversation's code tools work (ADR 0215 §5); null elsewhere. */
+    folder: string | null = null,
+    pathOf = (raw: string) => toolPath(raw, computerInfo, folder),
   ): ToolDefinition[] => [
     {
       name: "run_code",
@@ -930,7 +940,9 @@ export function createSandboxToolSource(
               let r: ExecResult;
               try {
                 r = await execLive(ctx, computer, {
-                  command: scriptCommand(runner.bin, file),
+                  // In a session the command runs in its worktree, the script reached from there.
+                  command: scriptCommand(runner.bin, folder ? posix.relative(folder, file) : file),
+                  ...(folder ? { cwd: folder } : {}),
                   timeoutSeconds: timeout,
                   ...(ctx.approved ? { approved: true } : {}),
                   ...(keys ? { vault: keys.vault } : {}),
@@ -960,7 +972,7 @@ export function createSandboxToolSource(
     requestSecretTool({
       scope: SANDBOX_SCOPE,
       browserOnly: false,
-      toolPath: (raw) => toolPath(raw, computerInfo),
+      toolPath: pathOf,
       ...(deps.pubsub ? { pubsub: deps.pubsub } : {}),
       onComputer: (ctx, fn) => run(ctx, fn),
     }),
@@ -1025,11 +1037,67 @@ export function createSandboxToolSource(
       },
       async execute(input, ctx) {
         try {
-          const path = toolPath(str(input.path), computerInfo);
+          const path = pathOf(str(input.path));
           if (!path) return { content: "path is required", isError: true };
           const data = new TextEncoder().encode(str(input.content));
           await run(ctx, (c) => c.provider.writeFile(c.id, path, data), input);
           return { content: `Wrote ${path} (${data.byteLength} bytes).` };
+        } catch (error) {
+          return failed(error);
+        }
+      },
+    },
+    {
+      name: "edit_file",
+      description:
+        "Change a text file in your computer's workspace by replacing an exact piece of it: `old_text` as it is in the file (spaces and line breaks included), found once unless `all` replaces every place. Read the file first. For a new file or a whole rewrite, use write_file.",
+      scope: SANDBOX_SCOPE,
+      inputSchema: {
+        type: "object",
+        properties: {
+          path: pathProp,
+          old_text: { type: "string", minLength: 1, maxLength: 200_000 },
+          new_text: { type: "string", maxLength: 1_000_000 },
+          all: { type: "boolean", description: "Replace every place old_text is in" },
+          ...computerProp(devices),
+        },
+        required: ["path", "old_text", "new_text"],
+        additionalProperties: false,
+      },
+      describe: (input) => ({ title: `Edit ${str(input.path)}` }),
+      async execute(input, ctx) {
+        try {
+          const path = pathOf(str(input.path));
+          if (!path) return { content: "path is required", isError: true };
+          const before = str(input.old_text);
+          const after = str(input.new_text);
+          const every = input.all === true;
+          return await run(
+            ctx,
+            async (c): Promise<ToolOutput> => {
+              await refuseSecretPath(ctx, c, path);
+              const data = await c.provider.readFile(c.id, path);
+              if (!data) return { content: `No file ${path}.`, isError: true };
+              const text = textOfBytes(data);
+              if (text === null) return { content: `${path} isn't a text file: not changed.`, isError: true };
+              const places = text.split(before).length - 1;
+              if (places === 0)
+                return {
+                  content: `The text to replace isn't in ${path}: read the file again and give it exactly as it is.`,
+                  isError: true,
+                };
+              if (places > 1 && !every)
+                return {
+                  content: `The text to replace is in ${path} ${places} times: give more of it so it is found once, or set all.`,
+                  isError: true,
+                };
+              // A function, so `$&` and the like in the new text stay as written.
+              const next = every ? text.split(before).join(after) : text.replace(before, () => after);
+              await c.provider.writeFile(c.id, path, new TextEncoder().encode(next));
+              return { content: `Edited ${path}: replaced ${places === 1 ? "one place" : `${places} places`}.` };
+            },
+            input,
+          );
         } catch (error) {
           return failed(error);
         }
@@ -1048,7 +1116,7 @@ export function createSandboxToolSource(
       },
       async execute(input, ctx) {
         try {
-          const path = toolPath(str(input.path), computerInfo);
+          const path = pathOf(str(input.path));
           const data = await run(
             ctx,
             async (c) => {
@@ -1092,7 +1160,7 @@ export function createSandboxToolSource(
       },
       async execute(input, ctx) {
         try {
-          const path = toolPath(str(input.path), computerInfo);
+          const path = pathOf(str(input.path));
           const files = await run(ctx, (c) => c.provider.listFiles(c.id, path, 3), input);
           const shown = files.filter((f) => !f.path.startsWith(".agentes/") && f.path !== ".agentes").slice(0, 300);
           if (shown.length === 0) return { content: `${path || "workspace"}: empty.` };
@@ -1126,7 +1194,7 @@ export function createSandboxToolSource(
       },
       async execute(input, ctx) {
         try {
-          const path = toolPath(str(input.path), computerInfo);
+          const path = pathOf(str(input.path));
           const data = await run(
             ctx,
             async (c) => {
@@ -1188,7 +1256,7 @@ export function createSandboxToolSource(
       describe: (input) => ({ title: `Send ${str(input.path)} to the Drive` }),
       async execute(input, ctx) {
         try {
-          const path = toolPath(str(input.path), computerInfo);
+          const path = pathOf(str(input.path));
           if (!path) return { content: "path is required (a file or folder inside the workspace)", isError: true };
           const targetArtifactId = str(input.artifact_id) || null;
           if (targetArtifactId) {
@@ -1252,7 +1320,9 @@ export function createSandboxToolSource(
           if (!file) {
             // An uploaded file: its bytes as they are, under its original name.
             const raw = await storedFileOfArtifact(deps.artifacts, actorOf(ctx), ctx.orgId, a.id);
-            const path = toolPath(str(input.path), computerInfo) || `imports/${cleanFileName(raw.name)}`;
+            const path = str(input.path).trim()
+              ? pathOf(str(input.path))
+              : pathOf(`imports/${cleanFileName(raw.name)}`);
             await run(
               ctx,
               (c) => copyToComputer({ ...deps.artifacts, publicUrl: deps.publicUrl }, ctx, c, path, raw),
@@ -1262,7 +1332,9 @@ export function createSandboxToolSource(
               content: `Copied "${a.title}" (v${raw.version}, ${raw.name}) to ${path} (${formatBytes(raw.size)}).`,
             };
           }
-          const path = toolPath(str(input.path), computerInfo) || `imports/${slug(a.title)}.${file.ext}`;
+          const path = str(input.path).trim()
+            ? pathOf(str(input.path))
+            : pathOf(`imports/${slug(a.title)}.${file.ext}`);
           const data = new TextEncoder().encode(file.text);
           await run(ctx, (c) => c.provider.writeFile(c.id, path, data), input);
           return { content: `Copied "${a.title}" (v${a.version}) to ${path} (${data.byteLength} bytes).` };
@@ -1871,8 +1943,9 @@ export function createSandboxToolSource(
     sessionId?: string,
     devices = false,
     holds = "",
+    folder: string | null = null,
   ): ToolDefinition[] => [
-    ...baseTools(requireApproval, execTimeout, computerInfo, sessionId, devices),
+    ...baseTools(requireApproval, execTimeout, computerInfo, sessionId, devices, undefined, folder),
     ...(computerInfo.kind === "machine" && tasksOn(computerInfo)
       ? taskTools(requireApproval, computerInfo, devices)
       : []),
@@ -1893,6 +1966,7 @@ export function createSandboxToolSource(
           "run_code",
           "run_skill_script",
           "write_file",
+          "edit_file",
           "read_file",
           "list_files",
           "export_file",
@@ -1930,8 +2004,21 @@ export function createSandboxToolSource(
       const holds = keepsRunning(computer)
         ? await holdsText({ db: ctx.db, ...(deps.pubsub ? { pubsub: deps.pubsub } : {}) }, ctx.orgId, ctx.agentId)
         : "";
+      // A code session's conversation (ADR 0215 §5): its worktree on the agent's own computer, where these tools work.
+      const folder =
+        !mission && computer.kind === "machine"
+          ? await codeSessionCwd(ctx.db, ctx.orgId, ctx.channelId, ctx.agentId).catch(() => null)
+          : null;
       const tools = keep(
-        build(settings.requireApproval, settings.execTimeoutSeconds, computer, ctx.threadRootId, devices, holds),
+        build(
+          settings.requireApproval,
+          settings.execTimeoutSeconds,
+          computer,
+          ctx.threadRootId,
+          devices,
+          holds,
+          folder,
+        ),
       );
       if (!mission) return tools;
       return tools.map((t) => ({

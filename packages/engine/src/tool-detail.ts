@@ -146,6 +146,7 @@ export function toolDetail(name: string, input: Record<string, unknown> | undefi
     case "run_code":
       return short(i.language);
     case "write_file":
+    case "edit_file":
     case "read_file":
     case "list_files":
     case "export_file":

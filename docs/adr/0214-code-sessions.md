@@ -246,8 +246,9 @@ what is missing, and a session's links keep working.
   before.
 - Apps registered before this need "Check run" ticked on GitHub; until then no check comes back (Settings says so).
 - A branch that keeps failing wakes the agent at each push that fails again, within its budgets; no other cap yet.
-- Sessions need an agent whose brain works in the folder its turn names (`BrainCaps.folder`, 0215: every computer
-  brain) on a computer with git access to the repository. An agent that thinks through the API has no session yet.
+- Sessions need an agent on a computer with git access to the repository, whose brain works in the folder its turn
+  names (`BrainCaps.folder`, 0215: every computer brain) or who thinks through the API with its code tools on (0215
+  §5).
 - The conversation is a thread like a task's: the phone app shows it with its own thread screen (§10), so a session
   reached from a notification opens the same way as from Code.
 - Out of this first version: several agents writing in one session at once (one writes, the others read and review),

@@ -908,7 +908,9 @@ export async function resolveBrain(
   // A code session's conversation works in the session's worktree (ADR 0214); any other chat turn starts in the
   // agent's folder.
   const codeCwd =
-    !mission?.session && machineId ? await codeSessionCwd(deps.db, run.channelId, agent.id).catch(() => null) : null;
+    !mission?.session && machineId
+      ? await codeSessionCwd(deps.db, run.orgId, run.channelId, agent.id).catch(() => null)
+      : null;
   const session: BrainSession | undefined =
     mission?.session ??
     (machineId

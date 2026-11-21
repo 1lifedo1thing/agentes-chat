@@ -1,6 +1,6 @@
 # 0215. The brains' table: every computer brain once, with what it can do
 
-- Status: Accepted (step 1 built; steps 2 to 5 planned)
+- Status: Accepted (steps 1 and 5 built; steps 2 to 4 planned)
 - Date: 2026-11-21
 - Extends: 0032 (computer brains), 0114 (Cursor), 0132 (OpenCode), 0142 (Grok), 0143 (Antigravity), 0214 (code
   sessions)
@@ -57,14 +57,20 @@ gaining live events and, where the CLI allows, messages mid-turn, and any furthe
 Claude Code's adapter and the one Codex shares with the other CLIs become one, led by the table, with optional hooks
 (starting the CLI ahead, a model the plan refuses).
 
-### 5. The API in a code session (planned)
+### 5. The API in a code session (built)
 
-An agent that thinks through the API works in the session's worktree with code tools of our own (read, edit, search,
-run) through the runner, under the same approvals, so a session takes any model.
+An agent that thinks through the API has a session when it has a computer and its code tools (`sandbox:run`, or
+`run_code` alone, not denied) with the workspace's code environment on (`apiCodes`, `codeAgent`). In the session's
+conversation those tools work in its worktree (`codeSessionCwd`, `createSandboxToolSource`): a relative path in
+`read_file`, `write_file`, `edit_file` and `list_files` is inside it and never climbs out, and `run_code` runs there,
+its script reached from it. `edit_file`, new for every agent with code tools, replaces an exact piece of a file (once,
+or every place with `all`), so a change never rewrites the whole file. The session's brief says what fits the brain:
+its own subagents where it has them (`BrainCaps.subagents`), these tools for the API. A session takes any model.
 
 ## Consequences
 
 - A new computer brain is a row in the table and a driver; no list elsewhere names the kinds.
-- Code sessions and their suggestion in the chat (0214 §11) work with every computer brain.
+- Code sessions and their suggestion in the chat (0214 §11) work with every computer brain, and with the API where
+  the agent's code tools are on.
 - Steps 2 to 4 change the path every turn of a computer brain takes, in the chat as well: they keep its behavior and
   go in a change of their own, checked in the chat on a real computer before it lands.

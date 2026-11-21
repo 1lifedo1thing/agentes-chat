@@ -14544,6 +14544,7 @@
       "export_file": "Bestand exporteren",
       "read_file": "Bestand lezen",
       "write_file": "Bestand schrijven",
+      "edit_file": "Bestand bewerken",
       "list_files": "Bestanden weergeven",
       "run_code": "Code uitvoeren",
       "run_skill_script": "Skillscript uitvoeren",
@@ -18997,6 +18998,10 @@
     "write_file": {
       "label": "Schrijven naar omgeving",
       "description": "Schrijft een bestand in de code-omgeving."
+    },
+    "edit_file": {
+      "label": "Bewerken in omgeving",
+      "description": "Wijzigt een deel van een bestand in de code-omgeving."
     },
     "read_file": {
       "label": "Lezen uit omgeving",

@@ -13934,6 +13934,7 @@
       "export_file": "ファイルをエクスポート",
       "read_file": "ファイルを読み取り",
       "write_file": "ファイルを書き込み",
+      "edit_file": "ファイルを編集",
       "list_files": "ファイルを一覧表示",
       "run_code": "コードを実行",
       "run_skill_script": "スキルのスクリプトを実行",
@@ -18299,6 +18300,10 @@
     "write_file": {
       "label": "環境に書き込む",
       "description": "コード環境にファイルを書き込みます。"
+    },
+    "edit_file": {
+      "label": "環境で編集",
+      "description": "コード環境のファイルの一部を書き換えます。"
     },
     "read_file": {
       "label": "環境から読む",

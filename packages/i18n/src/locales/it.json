@@ -15004,6 +15004,7 @@
       "export_file": "Esporta file",
       "read_file": "Leggi file",
       "write_file": "Scrivi file",
+      "edit_file": "Modifica file",
       "list_files": "Elenca file",
       "run_code": "Esegui codice",
       "run_skill_script": "Esegui script della skill",
@@ -19537,6 +19538,10 @@
     "write_file": {
       "label": "Scrivi nell'ambiente",
       "description": "Scrive un file nell'ambiente di codice."
+    },
+    "edit_file": {
+      "label": "Modifica nell'ambiente",
+      "description": "Cambia una parte di un file nell'ambiente di codice."
     },
     "read_file": {
       "label": "Leggi dall'ambiente",

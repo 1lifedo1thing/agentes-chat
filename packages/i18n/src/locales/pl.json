@@ -15503,6 +15503,7 @@
       "export_file": "Eksportuj plik",
       "read_file": "Przeczytaj plik",
       "write_file": "Zapisz plik",
+      "edit_file": "Edytuj plik",
       "list_files": "Wyświetl pliki",
       "run_code": "Uruchom kod",
       "run_skill_script": "Uruchom skrypt umiejętności",
@@ -20121,6 +20122,10 @@
     "write_file": {
       "label": "Zapisz w środowisku",
       "description": "Zapisuje plik w środowisku kodu."
+    },
+    "edit_file": {
+      "label": "Edytuj w środowisku",
+      "description": "Zmienia fragment pliku w środowisku kodu."
     },
     "read_file": {
       "label": "Czytaj ze środowiska",

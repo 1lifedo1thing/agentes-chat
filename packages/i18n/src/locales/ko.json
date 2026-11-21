@@ -13928,6 +13928,7 @@
       "export_file": "파일 내보내기",
       "read_file": "파일 읽기",
       "write_file": "파일 쓰기",
+      "edit_file": "파일 편집",
       "list_files": "파일 목록 조회",
       "run_code": "코드 실행",
       "run_skill_script": "스킬 스크립트 실행",
@@ -18291,6 +18292,10 @@
     "write_file": {
       "label": "환경에 쓰기",
       "description": "코드 환경에 파일을 써요."
+    },
+    "edit_file": {
+      "label": "환경에서 편집",
+      "description": "코드 환경의 파일 일부를 바꿔요."
     },
     "read_file": {
       "label": "환경에서 읽기",

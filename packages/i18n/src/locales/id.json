@@ -13987,6 +13987,7 @@
       "export_file": "Ekspor file",
       "read_file": "Baca file",
       "write_file": "Tulis file",
+      "edit_file": "Edit file",
       "list_files": "Daftar file",
       "run_code": "Jalankan kode",
       "run_skill_script": "Jalankan skrip skill",
@@ -18352,6 +18353,10 @@
     "write_file": {
       "label": "Tulis ke lingkungan",
       "description": "Menulis file di lingkungan kode."
+    },
+    "edit_file": {
+      "label": "Edit di lingkungan",
+      "description": "Mengubah sebagian file di lingkungan kode."
     },
     "read_file": {
       "label": "Baca dari lingkungan",

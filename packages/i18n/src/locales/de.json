@@ -14476,6 +14476,7 @@
       "export_file": "Datei exportieren",
       "read_file": "Datei lesen",
       "write_file": "Datei schreiben",
+      "edit_file": "Datei bearbeiten",
       "list_files": "Dateien auflisten",
       "run_code": "Code ausführen",
       "run_skill_script": "Skill-Skript ausführen",
@@ -18923,6 +18924,10 @@
     "write_file": {
       "label": "In die Umgebung schreiben",
       "description": "Schreibt eine Datei in die Code-Umgebung."
+    },
+    "edit_file": {
+      "label": "In der Umgebung bearbeiten",
+      "description": "Ändert einen Teil einer Datei in der Code-Umgebung."
     },
     "read_file": {
       "label": "Aus der Umgebung lesen",

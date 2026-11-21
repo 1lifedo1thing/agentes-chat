@@ -14913,6 +14913,7 @@
       "export_file": "Exportar archivo",
       "read_file": "Leer archivo",
       "write_file": "Escribir archivo",
+      "edit_file": "Editar archivo",
       "list_files": "Listar archivos",
       "run_code": "Ejecutar código",
       "run_skill_script": "Ejecutar script de habilidad",
@@ -19440,6 +19441,10 @@
     "write_file": {
       "label": "Escribir en el entorno",
       "description": "Escribe un archivo en el entorno de código."
+    },
+    "edit_file": {
+      "label": "Editar en el entorno",
+      "description": "Cambia una parte de un archivo en el entorno de código."
     },
     "read_file": {
       "label": "Leer del entorno",

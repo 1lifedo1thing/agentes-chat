@@ -2523,6 +2523,7 @@ export const MISSION_TOOL_NAMES = [
   "upload_file",
   "read_file",
   "write_file",
+  "edit_file",
   "list_files",
   "list_tasks",
   "task_status",

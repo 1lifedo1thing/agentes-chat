@@ -14411,6 +14411,7 @@
       "export_file": "Dosyayı dışa aktar",
       "read_file": "Dosyayı oku",
       "write_file": "Dosya yaz",
+      "edit_file": "Dosyayı düzenle",
       "list_files": "Dosyaları listele",
       "run_code": "Kod çalıştır",
       "run_skill_script": "Beceri betiğini çalıştır",
@@ -18852,6 +18853,10 @@
     "write_file": {
       "label": "Ortama yaz",
       "description": "Kod ortamına bir dosya yazar."
+    },
+    "edit_file": {
+      "label": "Ortamda düzenle",
+      "description": "Kod ortamındaki bir dosyanın bir kısmını değiştirir."
     },
     "read_file": {
       "label": "Ortamdan oku",

@@ -14783,6 +14783,7 @@ export const ptBR = {
       export_file: "Exportar arquivo",
       read_file: "Ler arquivo",
       write_file: "Escrever arquivo",
+      edit_file: "Editar arquivo",
       list_files: "Listar arquivos",
       run_code: "Rodar código",
       run_skill_script: "Rodar script da skill",
@@ -19354,6 +19355,10 @@ export const ptBR = {
     write_file: {
       label: "Escrever no ambiente",
       description: "Grava um arquivo no ambiente de código.",
+    },
+    edit_file: {
+      label: "Editar no ambiente",
+      description: "Troca um trecho de um arquivo no ambiente de código.",
     },
     read_file: {
       label: "Ler do ambiente",

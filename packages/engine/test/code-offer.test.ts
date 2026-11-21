@@ -3,6 +3,7 @@ import { eq, schema } from "@agenteschat/db";
 import {
   codeStartOptions,
   createCodeSuggestionToolSource,
+  grantScopes,
   insertMessage,
   orgOverview,
   SUGGEST_CODE_SESSION_TOOL,
@@ -102,7 +103,10 @@ test("any coding CLI on a computer counts (ADR 0215): its agent starts sessions 
     const ctx = { db: f.db, orgId: f.org.id, agentId: f.agent.id, runId: "r", background: false } as ToolContext;
     expect((await createCodeSuggestionToolSource().tools(ctx)).map((t) => t.name)).toEqual([SUGGEST_CODE_SESSION_TOOL]);
   }
-  // Thinking through the API, it has no session to start yet.
+  // Thinking through the API, it starts them with its code tools (ADR 0215 §5); without them, it doesn't.
   await f.db.update(schema.agents).set({ brain: "model" }).where(eq(schema.agents.id, f.agent.id));
+  await grantScopes(f.db, f.org.id, f.agent.id, [{ connectionId: null, scope: "sandbox:run" }]);
+  expect((await codeStartOptions(f.db, f.owner.id, f.org.id)).agents.map((a) => a.agentId)).toEqual([f.agent.id]);
+  await f.db.delete(schema.agentScopes).where(eq(schema.agentScopes.agentId, f.agent.id));
   expect((await codeStartOptions(f.db, f.owner.id, f.org.id)).agents).toEqual([]);
 });

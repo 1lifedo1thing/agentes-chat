@@ -29,6 +29,8 @@ export interface BrainCaps {
   outsideFolders: boolean;
   /** Picks who answers a message nobody mentioned, with a person's own plan (`brain.route`, ADR 0074). */
   routes: boolean;
+  /** Runs subagents and workflows of its own, told live while they work (ADR 0214 §6). */
+  subagents: boolean;
 }
 
 export interface BrainSpec {
@@ -53,7 +55,7 @@ export const BRAINS: Readonly<Record<ComputerBrainKind, BrainSpec>> = {
     executor: "claude",
     windows: true,
     sandboxed: false,
-    caps: { folder: true, steer: "live", asksEachCall: true, outsideFolders: true, routes: true },
+    caps: { folder: true, steer: "live", asksEachCall: true, outsideFolders: true, routes: true, subagents: true },
   },
   codex: {
     kind: "codex",
@@ -63,7 +65,7 @@ export const BRAINS: Readonly<Record<ComputerBrainKind, BrainSpec>> = {
     windows: true,
     sandboxed: true,
     // Live on its app-server; a turn run by `codex exec` reads messages between turns.
-    caps: { folder: true, steer: "live", asksEachCall: false, outsideFolders: true, routes: true },
+    caps: { folder: true, steer: "live", asksEachCall: false, outsideFolders: true, routes: true, subagents: false },
   },
   cursor: {
     kind: "cursor",
@@ -72,7 +74,14 @@ export const BRAINS: Readonly<Record<ComputerBrainKind, BrainSpec>> = {
     executor: "cursor",
     windows: false,
     sandboxed: true,
-    caps: { folder: true, steer: "between_turns", asksEachCall: false, outsideFolders: false, routes: false },
+    caps: {
+      folder: true,
+      steer: "between_turns",
+      asksEachCall: false,
+      outsideFolders: false,
+      routes: false,
+      subagents: false,
+    },
   },
   opencode: {
     kind: "opencode",
@@ -82,7 +91,7 @@ export const BRAINS: Readonly<Record<ComputerBrainKind, BrainSpec>> = {
     windows: true,
     sandboxed: false,
     // Live from OpenCode 2; its permissions keep the shell in the turn's workspace (ADR 0132).
-    caps: { folder: true, steer: "live", asksEachCall: false, outsideFolders: false, routes: false },
+    caps: { folder: true, steer: "live", asksEachCall: false, outsideFolders: false, routes: false, subagents: false },
   },
   grok: {
     kind: "grok",
@@ -91,7 +100,14 @@ export const BRAINS: Readonly<Record<ComputerBrainKind, BrainSpec>> = {
     executor: "grok",
     windows: false,
     sandboxed: true,
-    caps: { folder: true, steer: "between_turns", asksEachCall: false, outsideFolders: false, routes: false },
+    caps: {
+      folder: true,
+      steer: "between_turns",
+      asksEachCall: false,
+      outsideFolders: false,
+      routes: false,
+      subagents: false,
+    },
   },
   antigravity: {
     kind: "antigravity",
@@ -100,7 +116,14 @@ export const BRAINS: Readonly<Record<ComputerBrainKind, BrainSpec>> = {
     executor: "antigravity",
     windows: false,
     sandboxed: true,
-    caps: { folder: true, steer: "between_turns", asksEachCall: false, outsideFolders: false, routes: false },
+    caps: {
+      folder: true,
+      steer: "between_turns",
+      asksEachCall: false,
+      outsideFolders: false,
+      routes: false,
+      subagents: false,
+    },
   },
 };
 

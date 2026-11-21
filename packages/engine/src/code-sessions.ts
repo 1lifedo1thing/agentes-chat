@@ -33,6 +33,9 @@ import { MachineOfflineError, MachinePausedError } from "./machines";
 import { getMessage } from "./messages";
 import { branchSlug } from "./mission-worktree";
 import { can, getMembership } from "./organizations";
+import { getSandboxSettings } from "./sandbox";
+import { SANDBOX_SCOPE } from "./sandbox-scope";
+import { grantedScopeKeys, grantKey, toolAllowScope } from "./tools/scopes";
 import { withoutTrailingSlashes } from "./url-text";
 
 /*
@@ -58,6 +61,33 @@ export const codeWorktreeStateOf = (v: unknown): CodeWorktreeState =>
  */
 export const CODE_BRAINS = brainsWith("folder");
 export const isCodeBrain = (brain: unknown) => brainCan(brain, "folder");
+
+/**
+ * Whether an agent that thinks through the API works in a session (ADR 0215 §5): its code tools granted (`sandbox:run`,
+ * or `run_code` alone) and not denied, and the workspace's code environment on. In the session's conversation those
+ * tools work in its worktree (`createSandboxToolSource`).
+ */
+export async function apiCodes(db: Database, orgId: string, agentId: string): Promise<boolean> {
+  return runsCode(await grantedScopeKeys(db, orgId, agentId)) && (await getSandboxSettings(db, orgId)).enabled;
+}
+
+/** The agent's grants (`grantedScopeKeys`) let it run code: `sandbox:run` or `run_code` alone, and no `deny:run_code`. */
+const runsCode = (keys: Set<string>) =>
+  !keys.has(grantKey(null, "deny:run_code")) &&
+  (keys.has(grantKey(null, SANDBOX_SCOPE)) || keys.has(grantKey(null, toolAllowScope("run_code"))));
+
+/**
+ * Whether an agent can have a session: a computer, and a code brain to work in the session's folder there, or the
+ * API with its code tools (`apiCodes`).
+ */
+export async function codeAgent(
+  db: Database,
+  agent: { id: string; orgId: string; brain: string; machineId: string | null },
+): Promise<boolean> {
+  if (!agent.machineId) return false;
+  if (isCodeBrain(agent.brain)) return true;
+  return agent.brain === "model" && (await apiCodes(db, agent.orgId, agent.id));
+}
 
 /**
  * What a computer brain isn't given in a code session: sharing a file to the Drive and onto its reply. The person sees
@@ -225,11 +255,16 @@ export async function codeSessionOfChannel(db: Executor, channelId: string): Pro
  * Where a computer brain's turn in this conversation works: the session's worktree once it is ready (relative to the
  * agent's folder, as the runner resolves it), else null (not a session's conversation, or its folder isn't there).
  */
-export async function codeSessionCwd(db: Executor, channelId: string, agentId: string): Promise<string | null> {
+export async function codeSessionCwd(
+  db: Executor,
+  orgId: string,
+  channelId: string,
+  agentId: string,
+): Promise<string | null> {
   const [row] = await db
     .select({ path: codeSessions.worktreePath, state: codeSessions.worktreeState, agentId: codeSessions.agentId })
     .from(codeSessions)
-    .where(and(eq(codeSessions.channelId, channelId), isNull(codeSessions.archivedAt)))
+    .where(and(eq(codeSessions.orgId, orgId), eq(codeSessions.channelId, channelId), isNull(codeSessions.archivedAt)))
     .limit(1);
   if (row?.state !== "ready" || !row.path) return null;
   // Another agent called into the session works in its own folder: the worktree is on the session agent's computer.
@@ -245,7 +280,8 @@ export async function codeSessionBrief(
   db: Executor,
   channelId: string,
   agentId: string,
-  options: { first?: boolean } = {},
+  /** `brain`: the agent's (`agents.brain`), which says what it is told about its tools. */
+  options: { first?: boolean; brain?: string } = {},
 ): Promise<string | null> {
   const row = await codeSessionOfChannel(db, channelId);
   if (!row || row.archivedAt) return null;
@@ -258,11 +294,22 @@ export async function codeSessionBrief(
       : `A person opened this session to work on ${row.repo}: "${row.title}".`,
   ];
   if (own && row.worktreeState === "ready" && row.worktreePath) {
+    // What each brain is told follows what it can do (ADR 0215): its own subagents, or the API's code tools.
+    const brain = options.brain;
     lines.push(
       `You work in its own git worktree, \`${row.worktreePath}\` (your folder for this conversation), on branch \`${row.branch ?? "?"}\`, made from \`${row.baseBranch ?? "the default branch"}\`${row.baseSha ? ` at ${row.baseSha.slice(0, 7)}` : ""}.`,
       "Work like in a terminal with this person: read, change and run things in that folder, and say what you did in a few words. Don't touch other checkouts.",
-      "Run your subagents in the foreground and wait for what they say before you answer: a subagent left running in the background means a second answer later. A workflow runs in the background: say in one line what it will do, and its outcome comes back to you in this same turn; then answer with it.",
-      "Write the description of your Bash, Agent and Workflow calls in the person's language: each one is a line of your work they read.",
+      ...(brainCan(brain, "subagents")
+        ? [
+            "Run your subagents in the foreground and wait for what they say before you answer: a subagent left running in the background means a second answer later. A workflow runs in the background: say in one line what it will do, and its outcome comes back to you in this same turn; then answer with it.",
+            "Write the description of your Bash, Agent and Workflow calls in the person's language: each one is a line of your work they read.",
+          ]
+        : []),
+      ...(brain === "model"
+        ? [
+            "Your code tools work in that folder: a relative path in read_file, write_file, edit_file and list_files is inside it, and run_code runs there (git too, with bash). Change a file with edit_file, giving the exact text it replaces; write_file is for a new file or a whole rewrite. Read a file before you change it.",
+          ]
+        : []),
       "Your computer's screen is this session's preview: the person watches it beside the conversation. When what you made can be looked at (a page, an app, a UI), show it there yourself before you say it's done, without being asked: run the project's dev server, or serve the folder on localhost (for example `python3 -m http.server 8000`, left running in the background), open that address in your browser, look at it and fix what is off. The browser opens only http and https addresses, never a file. The person sees your screen and the diff: don't save copies to the Drive or paste screenshots.",
       local
         ? "Commit when a piece of work is done, with a short message. There is no remote: nothing to push."
@@ -557,12 +604,12 @@ export async function createCodeSession(
   const repo = parsed ? `${parsed.owner}/${parsed.repo}` : (local as string);
   const agent = await getAgentCached(deps.db, orgId, input.agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
-  if (!isCodeBrain(agent.brain))
-    throw new ValidationError("This agent doesn't think on a computer", "code_session.no_computer_brain", {
-      agent: agent.name,
-    });
   if (!agent.machineId)
     throw new ValidationError("This agent has no computer", "code_session.no_computer", { agent: agent.name });
+  if (!(await codeAgent(deps.db, agent)))
+    throw new ValidationError("This agent can't program on its computer", "code_session.no_computer_brain", {
+      agent: agent.name,
+    });
   if (parsed && !repoInList(await agentRepositoryList(deps.db, orgId, agent.id), parsed.owner, parsed.repo))
     throw new ValidationError("This agent can't work in that repository", "code_session.repo_not_allowed", {
       agent: agent.name,
@@ -878,23 +925,43 @@ export async function retryCodeSession(deps: CodeSessionDeps, userId: string, or
   return getCodeSession(deps.db, userId, orgId, row.id);
 }
 
-/** The workspace's agents a session can start with: a code brain (`CODE_BRAINS`) and a computer to run it on. */
-const codeAgentsIn = (orgId: string) =>
-  and(
-    eq(schema.agents.orgId, orgId),
-    isNull(schema.agents.archivedAt),
-    isNull(schema.agents.deletedAt),
-    inArray(schema.agents.brain, [...CODE_BRAINS]),
-    isNotNull(schema.agents.machineId),
-  );
+/**
+ * The workspace's agents a session can start with (`codeAgent`): a computer and a code brain, or the API with its code
+ * tools on (read per agent: `apiCodes`).
+ */
+async function codeAgentsIn(db: Database, orgId: string, first = false) {
+  const rows = await db
+    .select({ id: schema.agents.id, brain: schema.agents.brain })
+    .from(schema.agents)
+    .where(
+      and(
+        eq(schema.agents.orgId, orgId),
+        isNull(schema.agents.archivedAt),
+        isNull(schema.agents.deletedAt),
+        inArray(schema.agents.brain, [...CODE_BRAINS, "model"]),
+        isNotNull(schema.agents.machineId),
+      ),
+    )
+    .orderBy(schema.agents.createdAt);
+  const found: string[] = [];
+  let codeOn: boolean | undefined;
+  for (const row of rows) {
+    if (!isCodeBrain(row.brain)) {
+      codeOn ??= (await getSandboxSettings(db, orgId)).enabled;
+      if (!codeOn || !runsCode(await grantedScopeKeys(db, orgId, row.id))) continue;
+    }
+    found.push(row.id);
+    if (first) break;
+  }
+  return found;
+}
 
 /**
  * Whether Code has anything for this person (ADR 0214 §12): an agent a session can start with, or an open session they
  * take part in (its agent may have left since). The apps offer Code only then; the caller checked the membership.
  */
 export async function hasCodeWork(db: Database, userId: string, orgId: string): Promise<boolean> {
-  const [agent] = await db.select({ id: schema.agents.id }).from(schema.agents).where(codeAgentsIn(orgId)).limit(1);
-  if (agent) return true;
+  if ((await codeAgentsIn(db, orgId, true)).length > 0) return true;
   const [session] = await db
     .select({ id: codeSessions.id })
     .from(codeSessions)
@@ -914,12 +981,11 @@ export async function hasCodeWork(db: Database, userId: string, orgId: string): 
  */
 export async function codeStartOptions(db: Database, userId: string, orgId: string) {
   await requireMember(db, userId, orgId);
-  const rows = await db.select({ id: schema.agents.id }).from(schema.agents).where(codeAgentsIn(orgId));
   const agents = [];
-  for (const a of rows) {
-    const list = await agentRepositoryList(db, orgId, a.id);
+  for (const agentId of await codeAgentsIn(db, orgId)) {
+    const list = await agentRepositoryList(db, orgId, agentId);
     const repos = list.filter((r) => !r.endsWith("/*"));
-    agents.push({ agentId: a.id, repos, any: list.length === 0 || repos.length < list.length });
+    agents.push({ agentId, repos, any: list.length === 0 || repos.length < list.length });
   }
   return { agents };
 }

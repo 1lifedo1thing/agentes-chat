@@ -65,6 +65,7 @@ describe("the brains' table", () => {
     expect(brainsWith("routes")).toEqual(["claude_code", "codex"]);
     expect(brainsWith("outsideFolders")).toEqual(["claude_code", "codex"]);
     expect(brainsWith("asksEachCall")).toEqual(["claude_code"]);
+    expect(brainsWith("subagents")).toEqual(["claude_code"]);
     expect(COMPUTER_BRAIN_KINDS.filter((k) => BRAINS[k].caps.steer === "between_turns")).toEqual([
       "cursor",
       "grok",
@@ -72,7 +73,7 @@ describe("the brains' table", () => {
     ]);
   });
 
-  test("a code session takes every computer brain that works in its folder, never the API", () => {
+  test("a code session's brains are every computer brain that works in its folder (the API joins by its code tools)", () => {
     expect(CODE_BRAINS).toEqual([...COMPUTER_BRAIN_KINDS]);
     expect(isCodeBrain("antigravity")).toBe(true);
     expect(isCodeBrain("model")).toBe(false);

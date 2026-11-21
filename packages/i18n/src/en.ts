@@ -14826,6 +14826,7 @@ export const en = {
       export_file: "Export file",
       read_file: "Read file",
       write_file: "Write file",
+      edit_file: "Edit file",
       list_files: "List files",
       run_code: "Run code",
       run_skill_script: "Run skill script",
@@ -19519,6 +19520,10 @@ export const en = {
     write_file: {
       label: "Write to environment",
       description: "Writes a file in the code environment.",
+    },
+    edit_file: {
+      label: "Edit in environment",
+      description: "Changes a piece of a file in the code environment.",
     },
     read_file: {
       label: "Read from environment",

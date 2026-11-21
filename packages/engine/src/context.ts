@@ -1134,6 +1134,7 @@ export async function buildRunContext(
     channel.kind === "code"
       ? await codeSessionBrief(db, channel.id, agent.id, {
           first: !history.some((m) => m.authorType === "agent"),
+          brain: agent.brain,
         }).catch(() => null)
       : null;
 
