@@ -85,8 +85,13 @@ export function toSystem(entries: MenuEntry[]): { items: SystemItem[]; runs: Map
  */
 export function keepsSystemMenu(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
-  if (target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']")) return true;
+  if (inTextField(target)) return true;
   return !inDesktopApp() && Boolean(target.closest("a[href], img, video, pre, code"));
+}
+
+/** Inside something that takes typing (a field, a select, an editable block). */
+export function inTextField(target: Element): boolean {
+  return target.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']") !== null;
 }
 
 /** The text selected where the right click landed (empty when the click was elsewhere). */

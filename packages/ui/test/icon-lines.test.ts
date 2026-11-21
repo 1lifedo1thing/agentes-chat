@@ -284,15 +284,19 @@ describe("a picture beside lines, a bubble beside a face, a row of actions", () 
     );
   });
 
-  test("buttons side by side stand 8 apart: two plates, and two icons' plates, by the first's end so a wrapped one starts on the edge", async () => {
-    // The row's gap is two ghost plates (16): a pair of plates gives back 8 of it, a pair of icons the 8 their plates
-    // reach into it, less the first's glyph air.
+  test("buttons side by side stand 8 apart, two icons 16 between their glyphs, by the first's end so a wrapped one starts on the edge", async () => {
+    // The row's gap is two ghost plates (16): a pair of plates gives back 8 of it; a pair of icons keeps it between
+    // their glyphs, the first reaching into it by its plate and glyph air, so the plates meet. On touch the icons'
+    // plates stand 8 apart, their grown targets never overlapping.
     const plates = await kitRule(".ac-acts > .ac-btn:not(.ac-btn--ghost):has(+ .ac-btn:not(.ac-btn--ghost))");
     expect(plates).toContain("margin-inline-end: calc(var(--space-2) - 2 * var(--ghost-plate))");
     // Its selector holds a comma inside `:is()`, which the rule list splits on: read from the sheet itself.
     const css = await Bun.file(join(ROOT, "packages/ui/src/styles/components.css")).text();
+    const pair =
+      ".ac-acts > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph):has(+ :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)) {";
+    expect(css).toContain(`${pair}\n  margin-inline-end: calc(-1 * (var(--ghost-plate) + var(--glyph-air, 0px)));\n}`);
     expect(css).toContain(
-      ".ac-acts > :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph):has(+ :is(.ac-btn--ghost.ac-btn--icon, .ac-btn--glyph)) {\n  margin-inline-end: calc(var(--space-2) - var(--ghost-plate) - var(--glyph-air, 0px));\n}",
+      `@media (pointer: coarse) {\n  ${pair}\n    margin-inline-end: calc(var(--space-2) - var(--ghost-plate) - var(--glyph-air, 0px));\n  }`,
     );
     // Never by the second's start: on a line of its own it would stick out of the row.
     expect(css).not.toMatch(/\.ac-acts > [^{]*\+ [^{]*\{\s*margin-inline-start/);
