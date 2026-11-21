@@ -7,7 +7,7 @@ import { decidableBySql } from "./approvals";
 import { listsAgentSql, managesAgent } from "./audience";
 import { recordAudit } from "./audit";
 import type { AutoModels } from "./auto-model";
-import { resolveDefaultBudgetPaused } from "./budget-pause";
+import { resolveDefaultBudgetPaused } from "./budget-paused-rows";
 import { caches } from "./cache";
 import {
   announceChannelLeavers,
@@ -22,7 +22,6 @@ import { proposalsWaitingFor } from "./context/proposals";
 import { invalidateDefaults, modelInfoFor } from "./credentials";
 import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, ValidationError } from "./errors";
 import { publishChannelEvent, publishChannelsChanged } from "./events";
-import { agentBudgetState } from "./gateway";
 import {
   AGENT_MEDIA_LEVELS,
   type AgentMediaLevel,
@@ -37,6 +36,7 @@ import { isRightHand, rightHandPermanent } from "./right-hand";
 import type { AccountSwitch } from "./spill";
 import { type ApprovalsLevel, DEFAULT_APPROVALS_LEVEL } from "./tools/run-policy";
 import {
+  agentBudgetState,
   agentBudgetsThisMonth,
   budgetPercent,
   DEFAULT_AGENT_BUDGET_NANO_USD,

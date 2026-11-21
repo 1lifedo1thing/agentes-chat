@@ -4,7 +4,7 @@ import { can, getMembership, requirePermission } from "./organizations";
 import { readRefusal } from "./standing";
 import { WEB_USAGE_PROVIDER } from "./web-tools";
 
-const { usageRecords, agents, organizationSettings } = schema;
+const { agentBudgetPeriods, usageRecords, agents, organizationSettings } = schema;
 
 /** What an agent's budget pays for: its own model calls and the pictures it makes (ADR 0197). */
 export const BUDGET_KINDS: ("agent" | "image")[] = ["agent", "image"];
@@ -166,4 +166,19 @@ export async function resyncBudgetCounter(db: Database, orgId: string, agentId: 
       target: [schema.agentBudgetPeriods.agentId, schema.agentBudgetPeriods.periodStart],
       set: { spentNanoUsd: spent, updatedAt: now },
     });
+}
+
+/** Reserved and spent amounts of an agent this month (from the gateway's counter). */
+export async function agentBudgetState(db: Database, orgId: string, agentId: string, at = new Date()) {
+  const [row] = await db
+    .select()
+    .from(agentBudgetPeriods)
+    .where(
+      and(
+        eq(agentBudgetPeriods.orgId, orgId),
+        eq(agentBudgetPeriods.agentId, agentId),
+        gte(agentBudgetPeriods.periodStart, budgetPeriodOf(at)),
+      ),
+    );
+  return { spentNanoUsd: row?.spentNanoUsd ?? 0, reservedNanoUsd: row?.reservedNanoUsd ?? 0 };
 }

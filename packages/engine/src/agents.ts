@@ -43,7 +43,7 @@ import {
 import { recordAudit } from "./audit";
 import { type AutonomySettings, autonomySettings, chosenAutonomy } from "./autonomy-settings";
 import { isComputerBrain } from "./brains/types";
-import { resolveBudgetPaused } from "./budget-pause";
+import { resolveBudgetPaused } from "./budget-paused-rows";
 import { caches } from "./cache";
 import { modelInfoFor, usableCredentialRow } from "./credentials";
 import { ConflictError, ForbiddenError, isUniqueViolation, NotFoundError, ValidationError } from "./errors";

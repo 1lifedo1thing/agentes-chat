@@ -12,14 +12,13 @@ import { addChannelMember, removeChannelMember, setChannelAgentAutoReply } from 
 import { sha256 } from "./crypto";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { publishAgentsChanged } from "./events";
-import { agentBudgetState } from "./gateway";
 import { setAgentComputerTarget } from "./machines";
 import { can, getMembership, requirePermission } from "./organizations";
 import { reportsToRefusal, setReportsTo } from "./reporting";
 import { isRightHand } from "./right-hand";
 import { setAgentSkills } from "./skills";
 import { canonicalJson } from "./tools/json-schema";
-import { orgDefaultAgentBudget } from "./usage";
+import { agentBudgetState, orgDefaultAgentBudget } from "./usage";
 
 const {
   agentActions,

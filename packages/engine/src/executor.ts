@@ -107,7 +107,8 @@ import {
 import { agentBrowserProfiles } from "./browser/profiles";
 import { browsersPrompt } from "./browser/tools";
 import { BROWSER_SCOPE } from "./browser/types";
-import { resolveEarlierBudgetPaused, tellBudgetPause } from "./budget-pause";
+import { tellBudgetPause } from "./budget-pause";
+import { resolveEarlierBudgetPaused } from "./budget-paused-rows";
 import { typingLogFor, waitForBurst } from "./burst";
 import {
   isShutdown,

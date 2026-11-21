@@ -1322,21 +1322,6 @@ export function createModelGateway(deps: ModelGatewayDeps) {
 
 export type ModelGateway = ReturnType<typeof createModelGateway>;
 
-/** Reserved and spent amounts of an agent this month (from the gateway's counter). */
-export async function agentBudgetState(db: Database, orgId: string, agentId: string, at = new Date()) {
-  const [row] = await db
-    .select()
-    .from(agentBudgetPeriods)
-    .where(
-      and(
-        eq(agentBudgetPeriods.orgId, orgId),
-        eq(agentBudgetPeriods.agentId, agentId),
-        gte(agentBudgetPeriods.periodStart, periodOf(at)),
-      ),
-    );
-  return { spentNanoUsd: row?.spentNanoUsd ?? 0, reservedNanoUsd: row?.reservedNanoUsd ?? 0 };
-}
-
 /**
  * Budget hook that tells the agent's owner over the WebSocket
  * (`budget.warning` / `budget.exhausted`); an agent without an owner tells
