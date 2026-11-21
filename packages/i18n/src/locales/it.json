@@ -21713,7 +21713,7 @@
     "mark": "Beta",
     "open": "Invia feedback",
     "ask": "Cosa è mancato, si è rotto o ha dato fastidio?",
-    "goesCloud": "Quello che scrivi arriva via email al team di agentes.chat.",
+    "goesCloud": "Quello che scrivi arriva via email al team di agentes.chat, che può usare un assistente IA per esaminarlo.",
     "goesServer": "Quello che scrivi arriva via email a chi gestisce questo server.",
     "placeholder": "Scrivilo a modo tuo",
     "report": "Segnala un problema qui",

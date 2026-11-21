@@ -73,6 +73,7 @@ import {
   Segmented,
   StepTrack,
   type StepTrackStep,
+  settleOnNextFrame,
   Tip,
   Toolbar,
   WorkSweep,
@@ -106,7 +107,7 @@ import {
 } from "@/components/ApprovalItem";
 import { WhenAsksLink } from "@/components/ApprovalsLevelDialog";
 import { ApprovalsTabs } from "@/components/ApprovalsTabs";
-import { ConnectorIcon } from "@/components/ConnectorCatalog";
+import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { EmailLetter } from "@/components/EmailLetter";
 import { HelpLink } from "@/components/HelpLink";
 import { ErrorState, LoadingCards } from "@/components/Loading";
@@ -444,6 +445,7 @@ export function ApprovalsPage() {
             <div className={cx("ap-split", !missionsBelow && "page-split")}>
               <nav
                 className="ap-list"
+                ref={settleOnNextFrame}
                 data-scroll-restoration-id="approvals-list"
                 aria-label={t("approvals.review.list")}
               >

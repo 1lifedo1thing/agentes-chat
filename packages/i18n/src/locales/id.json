@@ -20404,7 +20404,7 @@
     "mark": "Beta",
     "open": "Kirim masukan",
     "ask": "Apa yang kurang, rusak, atau mengganggu?",
-    "goesCloud": "Yang kamu tulis dikirim lewat email ke tim agentes.chat.",
+    "goesCloud": "Yang kamu tulis dikirim lewat email ke tim agentes.chat, yang mungkin memakai asisten AI untuk memeriksanya.",
     "goesServer": "Yang kamu tulis dikirim lewat email ke pengelola server ini.",
     "placeholder": "Tulis dengan caramu",
     "report": "Laporkan masalah di sini",

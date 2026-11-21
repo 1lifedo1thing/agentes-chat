@@ -21549,7 +21549,7 @@
     "mark": "Beta",
     "open": "Enviar feedback",
     "ask": "¿Qué faltó, se rompió o molestó?",
-    "goesCloud": "Lo que escribas va por correo al equipo de agentes.chat.",
+    "goesCloud": "Lo que escribas va por correo al equipo de agentes.chat, que puede usar un asistente de IA para revisarlo.",
     "goesServer": "Lo que escribas va por correo a quien administra este servidor.",
     "placeholder": "Escríbelo a tu manera",
     "report": "Reportar un problema aquí",

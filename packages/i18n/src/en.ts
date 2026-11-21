@@ -21689,7 +21689,7 @@ export const en = {
     mark: "Beta",
     open: "Send feedback",
     ask: "What was missing, broke or got in your way?",
-    goesCloud: "What you write goes by email to the agentes.chat team.",
+    goesCloud: "What you write goes by email to the agentes.chat team, who may use an AI assistant to look into it.",
     goesServer: "What you write goes by email to whoever runs this server.",
     placeholder: "Write it your way",
     /** The last entry of a right-click menu: it opens this form about what was clicked. */
