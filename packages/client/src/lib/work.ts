@@ -355,10 +355,11 @@ export function workFromSteps(steps: RunStep[], run?: Pick<Run, "createdAt" | "f
  * The steps behind one reply of a run: a run that answered on the way (ADR 0112) lists each piece of work once, under
  * the reply it led to. Each reply the run posted is a `message` step: this reply's steps are those after the reply
  * before it (kept first, so the time counts from there), up to its own, and for its last reply whatever came after
- * too. `whole`: the run's every step (its only reply, or one saved without its step), timed by the run itself.
+ * too. `whole`: the run's every step (its only reply, no reply named, or one saved without its step), timed by the run
+ * itself.
  */
-export function replySteps(steps: RunStep[], messageId: string): { steps: RunStep[]; whole: boolean } {
-  const at = steps.findIndex((s) => s.kind === "message" && s.data.messageId === messageId);
+export function replySteps(steps: RunStep[], messageId: string | undefined): { steps: RunStep[]; whole: boolean } {
+  const at = messageId ? steps.findIndex((s) => s.kind === "message" && s.data.messageId === messageId) : -1;
   if (at < 0) return { steps, whole: true };
   let before = at - 1;
   while (before >= 0 && steps[before]?.kind !== "message") before--;

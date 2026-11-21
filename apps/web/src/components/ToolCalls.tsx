@@ -404,8 +404,8 @@ export function SavedTools({
   skipScreens = [],
 }: {
   runId: string;
-  /** The reply it is under: its own part of the run's steps. */
-  messageId: string;
+  /** The reply it is under: its own part of the run's steps (none: the whole run). */
+  messageId?: string;
   meta: Record<string, unknown> | undefined;
   agentName: string;
   color?: AgentColor;
