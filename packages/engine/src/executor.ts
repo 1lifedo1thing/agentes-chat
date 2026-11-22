@@ -2654,6 +2654,7 @@ async function executeRunInner(
             {
               orgId: run.orgId,
               text: trigger?.body ?? "",
+              channelText: channelRow?.topic ?? "",
               queryEmbedding,
               reader: async () => ({
                 type: "agent",
