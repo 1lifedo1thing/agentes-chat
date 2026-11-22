@@ -1183,8 +1183,9 @@ function catalogReviewTools(t: TFunction, item: ConnectedItem): ReviewTool[] {
 
 /**
  * A server by address's own instructions (MCP's `instructions`, ADR 0016 addendum of 2026-11-22): a setting whose
- * switch says whether agents get them, saved with the step's Continuar, then the text as agents read it, formatted and
- * folded as an agent's long text on a page is (`FoldedBody`). A server that sends none says so, with no switch.
+ * switch says whether agents get them, saved with the step's Continuar, then the text as agents read it in a well,
+ * formatted and folded as an agent's long text on a page is (`FoldedBody`). A server that sends none says so, with no
+ * switch.
  */
 function ServerInstructions({
   server,

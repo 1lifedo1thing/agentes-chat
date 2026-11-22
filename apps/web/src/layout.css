@@ -5614,8 +5614,9 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
 .cflow__lead > .cflow__text {
   flex: 1 1 260px;
 }
-/* A server by address's own instructions under its tools: the setting, then the text as agents read it, folded as an
-   agent's long text on a page is (FoldedBody). Muted while agents don't get it. */
+/* A server by address's own instructions under its tools: the setting, then the text as agents read it in a well,
+   folded as an agent's long text on a page is (FoldedBody), "Ver mais" inside the well. Muted while agents don't get
+   it. */
 .cflow-notes {
   display: flex;
   flex-direction: column;
@@ -5623,6 +5624,9 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
   min-width: 0;
 }
 .cflow-notes .folded-body {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--sunken);
   transition: color var(--dur-base) var(--out);
 }
 /* Its line breaks kept, as a message's are: a server's rules often go one per line. Only the breaks (pre-line, as the
