@@ -643,6 +643,14 @@
     "emailLinkExpired": "Ten link potwierdzający jest już nieważny. Twoje konto działa normalnie.",
     "sendNewLink": "Wyślij nowy link",
     "newLinkSent": "Wysłaliśmy nowy link na {{email}}.",
+    "confirm": {
+      "title": "Sprawdź skrzynkę",
+      "lead": "Otwórz link, który wysłaliśmy na {{email}}, aby przejść dalej.",
+      "wrongAddress": "Zły adres? Zmień go",
+      "banner": "Potwierdź swój e-mail",
+      "bannerSub": "Otwórz link, który wysłaliśmy na {{email}}.",
+      "change": "Zmień adres"
+    },
     "unconfirmed": "Ten e-mail ma już konto z hasłem, które nie zostało jeszcze potwierdzone. Zaloguj się hasłem albo utwórz nowe przez e-mail.",
     "unconfirmedReset": "Utwórz nowe hasło",
     "unconfirmedNoEmail": "Ten e-mail ma już konto z hasłem. Zaloguj się hasłem.",
@@ -16639,6 +16647,7 @@
     },
     "org": {
       "createInviteOnly": "Nowe przestrzenie robocze wymagają na razie zaproszenia.",
+      "createUnconfirmed": "Najpierw otwórz link, który wysłaliśmy na Twój e-mail. Potem utwórz przestrzeń roboczą.",
       "membersFull": "Wszystkie miejsca w tej przestrzeni roboczej są teraz zajęte. Poproś osobę, która cię zaprosiła, o zwolnienie miejsca.",
       "deleting": "Ta przestrzeń robocza jest usuwana.",
       "notRestorable": "Tej przestrzeni roboczej nie da się już przywrócić.",

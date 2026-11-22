@@ -628,6 +628,14 @@
     "emailLinkExpired": "Este enlace de confirmación ya no es válido. Tu cuenta funciona como siempre.",
     "sendNewLink": "Enviar un nuevo enlace",
     "newLinkSent": "Enviamos un nuevo enlace a {{email}}.",
+    "confirm": {
+      "title": "Revisa tu correo",
+      "lead": "Abre el enlace que enviamos a {{email}} para continuar.",
+      "wrongAddress": "¿Dirección incorrecta? Cámbiala",
+      "banner": "Confirma tu correo",
+      "bannerSub": "Abre el enlace que enviamos a {{email}}.",
+      "change": "Cambiar dirección"
+    },
     "unconfirmed": "Este correo ya tiene una cuenta con una contraseña que todavía no está confirmada. Inicia sesión con la contraseña o crea una nueva por correo.",
     "unconfirmedReset": "Crear una nueva contraseña",
     "unconfirmedNoEmail": "Este correo ya tiene una cuenta con contraseña. Inicia sesión con la contraseña.",
@@ -16011,6 +16019,7 @@
     },
     "org": {
       "createInviteOnly": "Por ahora, los espacios de trabajo nuevos necesitan una invitación.",
+      "createUnconfirmed": "Primero abre el enlace que enviamos a tu correo. Luego crea el espacio de trabajo.",
       "membersFull": "Todos los lugares de este espacio de trabajo están ocupados ahora. Pide a quien te invitó que libere un lugar.",
       "deleting": "Este espacio de trabajo se está eliminando.",
       "notRestorable": "Este espacio de trabajo ya no se puede restaurar.",

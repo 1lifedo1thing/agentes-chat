@@ -1460,6 +1460,24 @@
   "auth.newLinkSent": {
     "value": "We sent a new link to {{email}}."
   },
+  "auth.confirm.title": {
+    "value": "Check your inbox"
+  },
+  "auth.confirm.lead": {
+    "value": "Open the link we sent to {{email}} to go on."
+  },
+  "auth.confirm.wrongAddress": {
+    "value": "Wrong address? Change it"
+  },
+  "auth.confirm.banner": {
+    "value": "Confirm your email"
+  },
+  "auth.confirm.bannerSub": {
+    "value": "Open the link we sent to {{email}}."
+  },
+  "auth.confirm.change": {
+    "value": "Change address"
+  },
   "auth.unconfirmed": {
     "value": "This email already has an account with a password that isn't confirmed yet. Sign in with the password, or create a new one by email."
   },
@@ -37943,6 +37961,9 @@
   },
   "errors.org.createInviteOnly": {
     "value": "New workspaces need an invitation for now."
+  },
+  "errors.org.createUnconfirmed": {
+    "value": "Open the link we sent to your email first. Then create the workspace."
   },
   "errors.org.membersFull": {
     "value": "Every seat in this workspace is taken right now. Ask whoever invited you to open a seat."
