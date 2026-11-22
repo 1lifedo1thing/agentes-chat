@@ -15185,7 +15185,7 @@
       "title": "Utiliser votre propre app OAuth",
       "notApproved": "{{name}} n'accepte que les apps qu'il a approuvées, et agentes.chat n'en fait pas encore partie. Vous pouvez le connecter avec votre propre app chez lui.",
       "askAdmin": "Un admin peut le connecter avec l'app propre au workspace.",
-      "help": "Créez une app chez le fournisseur, enregistrez-y cette URI de redirection et collez son ID client. Chaque connexion à ce serveur dans le workspace utilise alors votre app.",
+      "help": "Créez une app chez le fournisseur, enregistrez-y cette URI de redirection et collez son ID client. Chaque connexion depuis le workspace utilise alors votre app.",
       "guide": {
         "metaAds": "Dans Meta for Developers, créez une app avec le cas d'usage Marketing API. Ajoutez cette URI de redirection à ses URI de redirection OAuth valides, puis collez l'ID de l'app, et la clé secrète de l'app si elle en demande une."
       },
@@ -16012,7 +16012,7 @@
       "headersTooMany": "Un serveur accepte {{max}} en-têtes au plus. Retirez-en un pour en ajouter un autre.",
       "headersWithSignIn": "Ce serveur demande une connexion à un compte, et celle-ci ne peut pas encore transmettre d'en-têtes. Retirez les en-têtes pour vous connecter, ou connectez-le avec une clé API.",
       "headersUnreadable": "Les en-têtes enregistrés n'ont pas pu être lus. Saisissez-les à nouveau ou retirez-les.",
-      "noOAuth": "Ce serveur ne se connecte pas par OAuth, il n'accepte donc pas d'app de votre part. Connectez-le avec une clé d'API.",
+      "noOAuth": "Le serveur MCP ne se connecte pas par OAuth, il n'accepte donc pas d'app de votre part. Connectez-le avec une clé d'API.",
       "ownClientInUse": "Des comptes se connectent encore avec l'app enregistrée avant. Déconnectez-les d'abord, puis changez-la.",
       "ownClientId": "Vérifiez l'ID client : un seul mot, tel que le fournisseur l'affiche."
     },

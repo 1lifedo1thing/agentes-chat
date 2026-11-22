@@ -36088,7 +36088,7 @@
     "value": "An admin can connect it with the workspace's own app."
   },
   "connectFlow.ownClient.help": {
-    "value": "Create an app at the provider, register this redirect URI in it and paste its client ID. Every sign-in to this server in the workspace then uses your app."
+    "value": "Create an app at the provider, register this redirect URI in it and paste its client ID. Every sign-in there from the workspace then uses your app."
   },
   "connectFlow.ownClient.guide.metaAds": {
     "value": "In Meta for Developers, create an app with the Marketing API use case. Add this redirect URI to its valid OAuth redirect URIs, then paste the App ID, and the App Secret if your app requires it."
@@ -38002,7 +38002,7 @@
     "value": "The saved headers couldn't be read. Type them again, or remove them."
   },
   "errors.connector.noOAuth": {
-    "value": "This server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key."
+    "value": "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key."
   },
   "errors.connector.ownClientInUse": {
     "value": "Accounts still sign in with the app saved before. Disconnect them first, then change it."

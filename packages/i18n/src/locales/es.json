@@ -15110,7 +15110,7 @@
       "title": "Usar tu propia app OAuth",
       "notApproved": "{{name}} solo deja entrar apps que aprobó, y agentes.chat todavía no es una de ellas. Puedes conectarlo con tu propia app allí.",
       "askAdmin": "Un admin puede conectarlo con la app propia del workspace.",
-      "help": "Crea una app en el proveedor, registra en ella este URI de redirección y pega su ID de cliente. Desde entonces, cada inicio de sesión en este servidor dentro del workspace usa tu app.",
+      "help": "Crea una app en el proveedor, registra en ella este URI de redirección y pega su ID de cliente. Desde entonces, cada inicio de sesión allí desde el workspace usa tu app.",
       "guide": {
         "metaAds": "En Meta for Developers, crea una app con el caso de uso Marketing API. Agrega este URI de redirección a sus URI de redirección de OAuth válidos y luego pega el ID de la app, y el secreto de la app si tu app lo pide."
       },
@@ -15937,7 +15937,7 @@
       "headersTooMany": "Un servidor admite como máximo {{max}} encabezados. Quita uno para agregar otro.",
       "headersWithSignIn": "Este servidor pide iniciar sesión, y un inicio de sesión todavía no puede llevar encabezados. Quita los encabezados para iniciar sesión, o conéctalo con una clave de API.",
       "headersUnreadable": "No se pudieron leer los encabezados guardados. Escríbelos de nuevo o quítalos.",
-      "noOAuth": "Este servidor no inicia sesión con OAuth, así que no acepta una app tuya. Conéctalo con una clave de API.",
+      "noOAuth": "El servidor MCP no inicia sesión con OAuth, así que no acepta una app tuya. Conéctalo con una clave de API.",
       "ownClientInUse": "Todavía hay cuentas que inician sesión con la app guardada antes. Desconéctalas primero y luego cámbiala.",
       "ownClientId": "Revisa el ID de cliente: una sola palabra, tal como lo muestra el proveedor."
     },

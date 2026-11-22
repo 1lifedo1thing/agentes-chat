@@ -14667,7 +14667,7 @@
       "title": "Eigene OAuth-App verwenden",
       "notApproved": "{{name}} lässt nur Apps herein, die es freigegeben hat, und agentes.chat gehört noch nicht dazu. Du kannst es mit deiner eigenen App dort verbinden.",
       "askAdmin": "Ein Admin kann es mit der eigenen App des Workspace verbinden.",
-      "help": "Erstelle beim Anbieter eine App, trage dort diese Weiterleitungs-URI ein und füge ihre Client-ID hier ein. Jede Anmeldung bei diesem Server im Workspace nutzt dann deine App.",
+      "help": "Erstelle beim Anbieter eine App, trage dort diese Weiterleitungs-URI ein und füge ihre Client-ID hier ein. Jede Anmeldung dort aus dem Workspace nutzt dann deine App.",
       "guide": {
         "metaAds": "Erstelle in Meta for Developers eine App mit dem Anwendungsfall Marketing API. Füge diese Weiterleitungs-URI zu ihren gültigen OAuth-Weiterleitungs-URIs hinzu und füge dann die App-ID ein, und das App-Geheimnis, falls deine App eines verlangt."
       },
@@ -15473,7 +15473,7 @@
       "headersTooMany": "Ein Server nimmt höchstens {{max}} Header. Entferne einen, um einen weiteren hinzuzufügen.",
       "headersWithSignIn": "Dieser Server verlangt eine Anmeldung, und eine Anmeldung kann noch keine Header mitsenden. Entferne die Header, um dich anzumelden, oder verbinde ihn mit einem API-Schlüssel.",
       "headersUnreadable": "Die gespeicherten Header konnten nicht gelesen werden. Gib sie neu ein oder entferne sie.",
-      "noOAuth": "Dieser Server meldet sich nicht per OAuth an und nimmt daher keine eigene App. Verbinde ihn mit einem API-Schlüssel.",
+      "noOAuth": "Der MCP-Server meldet sich nicht per OAuth an und nimmt daher keine eigene App. Verbinde ihn mit einem API-Schlüssel.",
       "ownClientInUse": "Es melden sich noch Konten mit der zuvor gespeicherten App an. Trenne sie zuerst und ändere sie dann.",
       "ownClientId": "Prüfe die Client-ID: ein einziges Wort, so wie der Anbieter sie anzeigt."
     },

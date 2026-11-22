@@ -14596,7 +14596,7 @@
       "title": "Kendi OAuth uygulamanı kullan",
       "notApproved": "{{name}} yalnızca onayladığı uygulamaları kabul ediyor ve agentes.chat henüz bunlardan biri değil. Orada kendi uygulamanla bağlayabilirsin.",
       "askAdmin": "Bir yönetici, çalışma alanının kendi uygulamasıyla bağlayabilir.",
-      "help": "Sağlayıcıda bir uygulama oluştur, bu yönlendirme URI'sini oraya kaydet ve istemci kimliğini buraya yapıştır. Bundan sonra çalışma alanında bu sunucuya her giriş senin uygulamanı kullanır.",
+      "help": "Sağlayıcıda bir uygulama oluştur, bu yönlendirme URI'sini oraya kaydet ve istemci kimliğini buraya yapıştır. Bundan sonra çalışma alanından oraya her giriş senin uygulamanı kullanır.",
       "guide": {
         "metaAds": "Meta for Developers'da Marketing API kullanım senaryosuyla bir uygulama oluştur. Bu yönlendirme URI'sini geçerli OAuth yönlendirme URI'lerine ekle, ardından Uygulama Kimliğini ve uygulaman istiyorsa Uygulama Gizli Anahtarını yapıştır."
       },
@@ -15402,7 +15402,7 @@
       "headersTooMany": "Bir sunucu en çok {{max}} başlık alır. Yenisini eklemek için birini kaldırın.",
       "headersWithSignIn": "Bu sunucu giriş istiyor ve giriş henüz başlık taşıyamıyor. Giriş yapmak için başlıkları kaldırın ya da API anahtarıyla bağlayın.",
       "headersUnreadable": "Kayıtlı başlıklar okunamadı. Yeniden yazın ya da kaldırın.",
-      "noOAuth": "Bu sunucu OAuth ile giriş yapmıyor, bu yüzden kendi uygulamanı kabul etmez. Bir API anahtarıyla bağla.",
+      "noOAuth": "MCP sunucusu OAuth ile giriş yapmıyor, bu yüzden kendi uygulamanı kabul etmez. Bir API anahtarıyla bağla.",
       "ownClientInUse": "Önceden kaydedilen uygulamayla giriş yapan hesaplar hâlâ var. Önce onların bağlantısını kes, sonra değiştir.",
       "ownClientId": "İstemci kimliğini kontrol et: sağlayıcının gösterdiği gibi tek bir kelime."
     },

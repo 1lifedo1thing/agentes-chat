@@ -14735,7 +14735,7 @@
       "title": "Je eigen OAuth-app gebruiken",
       "notApproved": "{{name}} laat alleen apps toe die het heeft goedgekeurd, en agentes.chat hoort daar nog niet bij. Je kunt het verbinden met je eigen app daar.",
       "askAdmin": "Een beheerder kan het verbinden met de eigen app van de workspace.",
-      "help": "Maak een app bij de aanbieder, registreer daar deze redirect-URI en plak de client-ID hier. Elke aanmelding bij deze server in de workspace gebruikt dan jouw app.",
+      "help": "Maak een app bij de aanbieder, registreer daar deze redirect-URI en plak de client-ID hier. Elke aanmelding daar vanuit de workspace gebruikt dan jouw app.",
       "guide": {
         "metaAds": "Maak in Meta for Developers een app met de use case Marketing API. Voeg deze redirect-URI toe aan de geldige OAuth-redirect-URI's en plak dan de app-ID, en het app-geheim als je app erom vraagt."
       },
@@ -15541,7 +15541,7 @@
       "headersTooMany": "Een server neemt hooguit {{max}} headers. Verwijder er één om een andere toe te voegen.",
       "headersWithSignIn": "Deze server vraagt om in te loggen, en een login kan nog geen headers meesturen. Verwijder de headers om in te loggen, of koppel met een API-sleutel.",
       "headersUnreadable": "De opgeslagen headers konden niet worden gelezen. Vul ze opnieuw in of verwijder ze.",
-      "noOAuth": "Deze server meldt niet aan met OAuth en neemt dus geen eigen app aan. Verbind hem met een API-sleutel.",
+      "noOAuth": "De MCP-server meldt niet aan met OAuth en neemt dus geen eigen app aan. Verbind hem met een API-sleutel.",
       "ownClientInUse": "Er melden nog accounts aan met de eerder opgeslagen app. Verbreek die eerst en wijzig hem dan.",
       "ownClientId": "Controleer de client-ID: één woord, zoals de aanbieder hem toont."
     },

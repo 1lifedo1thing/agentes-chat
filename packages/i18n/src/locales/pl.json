@@ -15712,7 +15712,7 @@
       "title": "Użyj własnej aplikacji OAuth",
       "notApproved": "{{name}} wpuszcza tylko zatwierdzone przez siebie aplikacje, a agentes.chat jeszcze do nich nie należy. Możesz połączyć się własną aplikacją.",
       "askAdmin": "Administrator może połączyć to aplikacją własną workspace'u.",
-      "help": "Utwórz aplikację u dostawcy, zarejestruj w niej ten URI przekierowania i wklej jej identyfikator klienta. Od tej pory każde logowanie do tego serwera w workspace używa Twojej aplikacji.",
+      "help": "Utwórz aplikację u dostawcy, zarejestruj w niej ten URI przekierowania i wklej jej identyfikator klienta. Od tej pory każde logowanie tam z workspace'u używa Twojej aplikacji.",
       "guide": {
         "metaAds": "W Meta for Developers utwórz aplikację z przypadkiem użycia Marketing API. Dodaj ten URI przekierowania do prawidłowych URI przekierowania OAuth, a następnie wklej identyfikator aplikacji oraz klucz tajny aplikacji, jeśli aplikacja go wymaga."
       },
@@ -16564,7 +16564,7 @@
       "headersTooMany": "Serwer przyjmuje najwyżej {{max}} nagłówków. Usuń jeden, aby dodać kolejny.",
       "headersWithSignIn": "Ten serwer wymaga logowania, a logowanie nie może jeszcze przenosić nagłówków. Usuń nagłówki, aby się zalogować, albo połącz go kluczem API.",
       "headersUnreadable": "Nie udało się odczytać zapisanych nagłówków. Wpisz je ponownie albo usuń.",
-      "noOAuth": "Ten serwer nie loguje przez OAuth, więc nie przyjmie Twojej aplikacji. Połącz go kluczem API.",
+      "noOAuth": "Serwer MCP nie loguje przez OAuth, więc nie przyjmie Twojej aplikacji. Połącz go kluczem API.",
       "ownClientInUse": "Konta wciąż logują się aplikacją zapisaną wcześniej. Najpierw je odłącz, a potem ją zmień.",
       "ownClientId": "Sprawdź identyfikator klienta: jedno słowo, tak jak pokazuje go dostawca."
     },

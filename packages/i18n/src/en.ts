@@ -15000,7 +15000,7 @@ export const en = {
       notApproved:
         "{{name}} only lets in apps it approved, and agentes.chat isn't one yet. You can connect it with your own app there.",
       askAdmin: "An admin can connect it with the workspace's own app.",
-      help: "Create an app at the provider, register this redirect URI in it and paste its client ID. Every sign-in to this server in the workspace then uses your app.",
+      help: "Create an app at the provider, register this redirect URI in it and paste its client ID. Every sign-in there from the workspace then uses your app.",
       guide: {
         metaAds:
           "In Meta for Developers, create an app with the Marketing API use case. Add this redirect URI to its valid OAuth redirect URIs, then paste the App ID, and the App Secret if your app requires it.",
@@ -15792,7 +15792,7 @@ export const en = {
         "This server asks for a sign-in, and a sign-in can't carry headers yet. Remove the headers to sign in, or connect with an API key.",
       /** Reconnecting an account whose saved headers, kept encrypted, could no longer be opened. */
       headersUnreadable: "The saved headers couldn't be read. Type them again, or remove them.",
-      noOAuth: "This server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key.",
+      noOAuth: "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key.",
       ownClientInUse: "Accounts still sign in with the app saved before. Disconnect them first, then change it.",
       ownClientId: "Check the client ID: one word, as the provider shows it.",
     },

@@ -14962,7 +14962,7 @@ export const ptBR = {
       notApproved:
         "{{name}} só deixa entrar apps que aprovou, e o agentes.chat ainda não foi aprovado. Dá para conectar com um app seu lá.",
       askAdmin: "Um admin pode conectar com um app próprio do workspace.",
-      help: "Crie um app no provedor, cadastre nele esta URI de redirecionamento e cole o ID do cliente. Toda entrada nesse servidor no workspace passa a usar o seu app.",
+      help: "Crie um app no provedor, cadastre nele esta URI de redirecionamento e cole o ID do cliente. Toda entrada lá pelo workspace passa a usar o seu app.",
       guide: {
         metaAds:
           "No Meta for Developers, crie um app com o caso de uso da API de Marketing. Adicione esta URI de redirecionamento às URIs de redirecionamento OAuth válidas dele e cole o ID do app, e a chave secreta do app se ele pedir.",
@@ -15739,7 +15739,7 @@ export const ptBR = {
       headersWithSignIn:
         "Este servidor pede login, e o login ainda não leva cabeçalhos. Remova os cabeçalhos para entrar, ou conecte com uma chave de API.",
       headersUnreadable: "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.",
-      noOAuth: "Este servidor não entra por OAuth, então não usa um app seu. Conecte com uma chave de API.",
+      noOAuth: "O servidor MCP não entra por OAuth, então não usa um app seu. Conecte com uma chave de API.",
       ownClientInUse: "Ainda há contas entrando com o app salvo antes. Desconecte-as primeiro e depois troque.",
       ownClientId: "Confira o ID do cliente: uma palavra só, como o provedor mostra.",
     },
