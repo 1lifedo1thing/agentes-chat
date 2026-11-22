@@ -3,7 +3,8 @@ import { personalAllowed } from "@agenteschat/client/lib/connected";
 import { connectorDescription, connectorName, scopeText } from "@agenteschat/client/lib/scopes";
 import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useTranslation } from "react-i18next";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Dither } from "@/sky/Dither";
 import {
@@ -15,10 +16,12 @@ import {
   Icon,
   type IconName,
   LineIcon,
+  SideScroll,
   SkeletonList,
   Text,
   useTheme,
 } from "@/ui";
+import { CoverParallax, useCoverScroll } from "@/ui/cover";
 import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useDirectory } from "../shared/hooks";
@@ -129,25 +132,32 @@ function Page({ def, g }: { def: ConnectorDef; g: ReturnType<typeof useGallery> 
   const related = relatedServices(def, offered);
   const users = (existing?.agentIds ?? []).filter((a) => dir.agentById.has(a));
   const connect = () => sheet.open(<ConnectSheet def={def} personal={personal} fromPage />);
+  // The sky moves with the page as every cover does: slower as it scrolls up, stretched into a pull down (never a
+  // still band that leaves the page's gray above it).
+  const { y, onScroll } = useCoverScroll();
 
   return (
     <View style={[styles.fill, { backgroundColor: c.grouped }]}>
       {/* The clear bar over the sky: the system's back alone (nothing of ours in it). */}
       <PushedHeader title="" plate solid={false} grouped />
-      <ScrollView
+      <Animated.ScrollView
         style={styles.fill}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         contentInsetAdjustmentBehavior="never"
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
       >
         <View>
-          <Dither
-            kind="card"
-            tones={serviceSkyTones(c.grouped, def.brandColor, scheme === "dark")}
-            pixel={6}
-            animated={false}
-            extra={{ reach: SKY_REACH }}
-            style={styles.sky}
-          />
+          <CoverParallax y={y} style={styles.sky}>
+            <Dither
+              kind="card"
+              tones={serviceSkyTones(c.grouped, def.brandColor, scheme === "dark")}
+              pixel={6}
+              animated={false}
+              extra={{ reach: SKY_REACH }}
+              style={StyleSheet.absoluteFill}
+            />
+          </CoverParallax>
           <View style={[styles.hero, { paddingTop: insets.top + 58 }]}>
             <View style={[styles.mark, { boxShadow: MARK_SHADOW }]}>
               <ConnectorIcon def={def} label={name} size={MARK} />
@@ -216,12 +226,9 @@ function Page({ def, g }: { def: ConnectorDef; g: ReturnType<typeof useGallery> 
           </View>
         </View>
 
-        {/* The facts, sliding sideways: what it is, what it brings, who connects it, how one signs in. */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={[styles.facts, { borderColor: c.separator }]}
-        >
+        {/* The facts, sliding sideways (a fade at the edge where more of them waits): what it is, what it brings,
+            who connects it, how one signs in. */}
+        <SideScroll fade={c.grouped} style={[styles.facts, { borderColor: c.separator }]}>
           <Fact
             label={t("mobile.connectors.page.category")}
             icon={categoryIcon(def.category) as IconName}
@@ -247,7 +254,7 @@ function Page({ def, g }: { def: ConnectorDef; g: ReturnType<typeof useGallery> 
             sub={how}
             divider
           />
-        </ScrollView>
+        </SideScroll>
 
         <View style={styles.section}>
           <Text variant="title2">{t("mobile.connectors.page.canTitle")}</Text>
@@ -280,7 +287,7 @@ function Page({ def, g }: { def: ConnectorDef; g: ReturnType<typeof useGallery> 
             onOpen={(d) => openService(d.id, personal)}
           />
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }

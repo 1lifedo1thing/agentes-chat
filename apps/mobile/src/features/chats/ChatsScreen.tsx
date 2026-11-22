@@ -167,7 +167,8 @@ function Home() {
   const tabHeader = useTabHeader();
   const dir = useDirectory();
   // A team's Conversas lists its conversations by latest activity or by sector: the choice is a glass button beside
-  // "+" that opens the system's menu (Android: the app's picker), its icon the view in effect.
+  // "+" that opens the system's menu (Android: the app's picker). Its icon stays the same whichever view is on (one
+  // that changed with the choice read as a different button each time); the menu's check says which.
   const personal = isPersonal(org);
   const [view, setView] = useHomeView(personal);
   const viewTitle = t("mobile.chats.view.title");
@@ -176,8 +177,8 @@ function Home() {
   const header = useMemo(() => {
     if (personal) return tabHeader;
     const viewAction: HeaderAction = {
-      icon: view === "sectors" ? "members" : "list",
-      sf: view === "sectors" ? "person.2" : "list.bullet",
+      icon: "list",
+      sf: "line.3.horizontal.decrease",
       label: viewTitle,
       menuTitle: viewTitle,
       onPress: () => {

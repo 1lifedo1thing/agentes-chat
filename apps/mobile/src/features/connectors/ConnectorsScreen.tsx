@@ -30,7 +30,7 @@ import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { RefreshControl, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -46,6 +46,7 @@ import {
   SearchField,
   SectionHeader,
   Segmented,
+  SideScroll,
   SkeletonList,
   Text,
   useToast,
@@ -739,6 +740,7 @@ export function ShelfRow({
 }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
+  const c = useColors();
   const column = Math.min(width - SHELF_PEEK, SHELF_MAX);
   const columns = shelfColumns(defs);
   return (
@@ -747,10 +749,10 @@ export function ShelfRow({
         title={title}
         {...(onAll ? { action: { label: t("mobile.connectors.seeAll"), onPress: onAll } } : {})}
       />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        // A column at a time, as the system's shelves move: snapped to the screen's side, never left between two.
+      <SideScroll
+        fade={c.grouped}
+        // A column at a time, as the system's shelves move: snapped to the screen's side, never left between two; a
+        // fade at the edge where more columns wait.
         snapToInterval={column + SHELF_GAP}
         decelerationRate="fast"
         disableIntervalMomentum
@@ -772,7 +774,7 @@ export function ShelfRow({
             ))}
           </View>
         ))}
-      </ScrollView>
+      </SideScroll>
     </View>
   );
 }

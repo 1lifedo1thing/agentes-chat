@@ -1,7 +1,7 @@
 import type { ConnectorDef } from "@agenteschat/client";
-import { ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { StyleSheet, useWindowDimensions, View } from "react-native";
 import { Dither } from "@/sky/Dither";
-import { PressScale, Text, useTheme } from "@/ui";
+import { PressScale, SideScroll, Text, useTheme } from "@/ui";
 import { useSurface } from "../shared/parts";
 import { ConnectorIcon } from "./ConnectorIcon";
 import { serviceSkyTones } from "./logic";
@@ -36,13 +36,13 @@ export function FeaturedCards({
   onOpen: (d: ConnectorDef) => void;
 }) {
   const { width } = useWindowDimensions();
+  const { colors } = useTheme();
   const card = Math.min(CARD_MAX, Math.max(240, width - SIDE - PEEK - GAP));
   if (defs.length === 0) return null;
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      // A card at a time, snapped to the screen's side, as the shelves' columns.
+    <SideScroll
+      fade={colors.grouped}
+      // A card at a time, snapped to the screen's side, as the shelves' columns; a fade at the edge where more wait.
       snapToInterval={card + GAP}
       snapToAlignment="start"
       decelerationRate="fast"
@@ -52,7 +52,7 @@ export function FeaturedCards({
       {defs.map((d) => (
         <FeaturedCard key={d.id} def={d} width={card} name={name(d)} text={text(d)} onOpen={() => onOpen(d)} />
       ))}
-    </ScrollView>
+    </SideScroll>
   );
 }
 

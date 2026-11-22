@@ -129,6 +129,7 @@ export {
 export { SheetBar, type SheetBarProps } from "./SheetBar";
 export { SheetScreen, type SheetScreenProps } from "./SheetScreen";
 export { SheetSurface } from "./SheetSurface";
+export { SideScroll, type SideScrollProps } from "./SideScroll";
 export { SkeletonList, SkeletonOver, SkeletonRow, useFirstLoad, usePulse } from "./Skeleton";
 export { type SwipeAction, SwipeRow } from "./SwipeRow";
 export { searchCancelVisible, searchShowsResults } from "./searchMode";

@@ -107,8 +107,9 @@ export function useConsultById(channelId: string, id: string | undefined): RunCo
 
 /**
  * The questions a reply's agent asked other agents first, quoted at the top of the reply (as a reply quotes a
- * message): a bar in the consulted agent's color, its face and name with how it went ("· levou 58 s", "· perguntando
- * 12 s" in blue), the question's subject in up to two lines, and a chevron; a tap opens the two agents' conversation,
+ * message): the consulted agent's face and its name in its color with how it went ("· levou 58 s", "· perguntando
+ * 12 s" in blue), the question's subject in up to two lines, and a chevron, on a plate a step off the bubble (no
+ * colored bar at its left edge); a tap opens the two agents' conversation,
  * read only (`ConsultationScreen`). Several asked: the first agent's color and face, "Atlas e mais 2". `alone`: with no
  * reply to sit in (an answer farther up, a hand-off on a reach line), the quote stands on its own and says who asked
  * ("Theo perguntou").
@@ -171,7 +172,6 @@ export function ConsultQuote({
         alone && quote.alone,
       ]}
     >
-      <View style={[quote.bar, { backgroundColor: ink }]} />
       <View style={quote.inner}>
         <View style={quote.head}>
           {alone ? (
@@ -222,7 +222,7 @@ export function ConsultQuote({
 const QUOTE_FACE = 16;
 
 const quote = StyleSheet.create({
-  // The words' column, a step off the bubble's own fill; the bar at its left edge, the chevron at its right.
+  // The words' column, a step off the bubble's own fill, the chevron at its right.
   box: {
     flexDirection: "row",
     alignItems: "center",
@@ -230,13 +230,13 @@ const quote = StyleSheet.create({
     marginTop: 2,
     marginBottom: 6,
     paddingVertical: 7,
+    paddingLeft: 10,
     paddingRight: 8,
     borderRadius: 12,
     overflow: "hidden",
   },
   // On its own (no reply here): as wide as a bubble's words, under the conversation's quiet lines' inset.
   alone: { marginTop: 0, marginBottom: 0, alignSelf: "flex-start", maxWidth: "100%" },
-  bar: { alignSelf: "stretch", width: 3, borderTopRightRadius: 2, borderBottomRightRadius: 2 },
   inner: { flex: 1, minWidth: 0, gap: 1 },
   head: { flexDirection: "row", alignItems: "center", gap: 5 },
   asker: { fontWeight: "600", flexShrink: 1 },

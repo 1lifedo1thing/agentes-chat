@@ -721,3 +721,28 @@ describe("a service's own page", () => {
     expect(layout).toContain('"connectors/service/[id]": cover,');
   });
 });
+
+describe("strips that scroll sideways say so", () => {
+  test("the kit's strip fades at the edge where more waits; the service page's sky moves as every cover", () => {
+    const strip = readFileSync(join(import.meta.dir, "../../src/ui/SideScroll.tsx"), "utf8");
+    expect(strip).toContain("return { opacity: Math.min(1, Math.max(0, past / FADE)) };");
+    expect(strip).toContain(
+      "const left = useAnimatedStyle(() => ({ opacity: Math.min(1, Math.max(0, x.value / FADE)) }));",
+    );
+    for (const file of [
+      "features/connectors/ServicePage.tsx",
+      "features/connectors/ConnectorsScreen.tsx",
+      "features/connectors/FeaturedCards.tsx",
+      "features/chats/PinnedStrip.tsx",
+      "features/chats/HomeWidgets.tsx",
+      "features/search/SearchFilters.tsx",
+      "features/team/TeamScreen.tsx",
+    ]) {
+      const source = readFileSync(join(import.meta.dir, "../../src", file), "utf8");
+      expect({ file, strip: source.includes("<SideScroll") }).toEqual({ file, strip: true });
+    }
+    const page = readFileSync(join(import.meta.dir, "../../src/features/connectors/ServicePage.tsx"), "utf8");
+    expect(page).toContain("<CoverParallax y={y} style={styles.sky}>");
+    expect(page).toContain("onScroll={onScroll}");
+  });
+});
