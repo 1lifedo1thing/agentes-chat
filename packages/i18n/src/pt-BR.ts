@@ -9035,6 +9035,12 @@ export const ptBR = {
         "O endereço só responde aos métodos marcados. Num GET, os parâmetros da URL viram os dados da chamada.",
       /** After "Roda a cada chamada…" on the routine's page: `methods` are HTTP methods ("GET, POST"). */
       methodsLine: "Aceita {{methods}}.",
+      groupBy: "Agrupar chamadas por",
+      groupByHelp:
+        "Um campo dos dados de cada chamada, como conversation.id. Chamadas com o mesmo valor rodam uma de cada vez, em ordem. Valores diferentes rodam ao mesmo tempo.",
+      groupByOff: "Todas as chamadas esperam numa fila só, em ordem.",
+      groupByOn: "Chamadas com o mesmo {{path}} rodam em ordem. As outras rodam ao mesmo tempo.",
+      groupBySaved: "Agrupamento salvo.",
       address: "Endereço",
       addressHelp: "Quem tiver o endereço aciona o agente. Guarde como uma senha e gere outro se vazar.",
       copied: "Endereço copiado.",
@@ -15878,6 +15884,7 @@ export const ptBR = {
       takeOverNoAccess: "Entre na conversa da rotina antes de assumi-la.",
       agentNotInChannel: "Adicione o agente à conversa antes.",
       webhookPaused: "Ligue a rotina para testar.",
+      groupByInvalid: "Escreva um caminho como conversation.id, com um nome de campo entre cada ponto.",
       continueExtraOff:
         "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago do plano. Ele retoma depois que o limite renovar.",
       continueExtraUsedUp:
