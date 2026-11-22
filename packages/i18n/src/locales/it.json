@@ -11741,7 +11741,8 @@
         "deleted": "Eliminato",
         "renamed": "Rinominato",
         "untracked": "Nuovo, non ancora in git"
-      }
+      },
+      "openFile": "Apri il file"
     },
     "files": {
       "label": "File",

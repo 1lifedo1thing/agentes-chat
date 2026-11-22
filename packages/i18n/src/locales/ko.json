@@ -10813,7 +10813,8 @@
         "deleted": "삭제됨",
         "renamed": "이름 변경됨",
         "untracked": "새 파일, 아직 git에 없음"
-      }
+      },
+      "openFile": "파일 열기"
     },
     "files": {
       "label": "파일",

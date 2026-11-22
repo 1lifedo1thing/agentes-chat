@@ -10819,7 +10819,8 @@
         "deleted": "削除",
         "renamed": "名前を変更",
         "untracked": "新規（gitに未追加）"
-      }
+      },
+      "openFile": "ファイルを開く"
     },
     "files": {
       "label": "ファイル",

@@ -12115,7 +12115,8 @@
         "deleted": "Usunięty",
         "renamed": "Przemianowany",
         "untracked": "Nowy, jeszcze poza gitem"
-      }
+      },
+      "openFile": "Otwórz plik"
     },
     "files": {
       "label": "Pliki",

@@ -55714,5 +55714,8 @@
   },
   "codeSessions.tabs.add": {
     "value": "New tab"
+  },
+  "codeSessions.gitTab.openFile": {
+    "value": "Open the file"
   }
 }

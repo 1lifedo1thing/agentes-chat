@@ -11640,7 +11640,8 @@
         "deleted": "Eliminado",
         "renamed": "Renombrado",
         "untracked": "Nuevo, todavía fuera de git"
-      }
+      },
+      "openFile": "Abrir el archivo"
     },
     "files": {
       "label": "Archivos",

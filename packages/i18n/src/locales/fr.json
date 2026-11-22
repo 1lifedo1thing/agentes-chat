@@ -11713,7 +11713,8 @@
         "deleted": "Supprimé",
         "renamed": "Renommé",
         "untracked": "Nouveau, pas encore dans git"
-      }
+      },
+      "openFile": "Ouvrir le fichier"
     },
     "files": {
       "label": "Fichiers",

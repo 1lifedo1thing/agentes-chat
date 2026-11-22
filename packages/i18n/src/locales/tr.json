@@ -11210,7 +11210,8 @@
         "deleted": "Silindi",
         "renamed": "Adı değişti",
         "untracked": "Yeni, henüz git'te değil"
-      }
+      },
+      "openFile": "Dosyayı aç"
     },
     "files": {
       "label": "Dosyalar",

@@ -11345,7 +11345,8 @@
         "deleted": "Verwijderd",
         "renamed": "Hernoemd",
         "untracked": "Nieuw, nog niet in git"
-      }
+      },
+      "openFile": "Bestand openen"
     },
     "files": {
       "label": "Bestanden",

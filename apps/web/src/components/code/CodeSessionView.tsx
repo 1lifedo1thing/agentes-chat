@@ -38,6 +38,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
 import { CodeFileTab } from "./CodeFileTab";
+import { GitDiff, type GitOpened } from "./CodeGit";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodePanel, useCodeTab } from "./CodePanel";
 import { CodeDockSky } from "./CodeSky";
@@ -47,7 +48,7 @@ import { TerminalPane } from "./TerminalPane";
 /**
  * One code session (ADR 0214): the conversation with its agent under the session's header (its name), the chat's own
  * thread screen (tool rows, steering, stop, approvals), and the side panel. Under the header, tabs: the conversation,
- * each file opened from the Files tab (an editor) and each terminal opened there; the ones off screen stay as they
+ * each file opened from the Files tab (an editor), each diff opened from the Git tab and each terminal opened there; the ones off screen stay as they
  * are (what was typed, a shell's output). The gutter between them drags (double
  * click puts it back). The screen is the panel's: the conversation's browser cards are a line that opens it, and it
  * turns to the screen as the agent starts using it.
@@ -84,7 +85,9 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
           </div>
           {tabs.open.map((key) => (
             <div key={key} className="code-tabview" hidden={tabs.active !== key}>
-              {isTerminal(key) ? (
+              {tabs.diffs.get(key) ? (
+                <GitDiff session={s} opened={tabs.diffs.get(key) as GitOpened} onOpenFile={tabs.openFile} />
+              ) : isTerminal(key) ? (
                 <TerminalPane
                   orgId={org.id}
                   agentId={s.agentId}
@@ -107,7 +110,14 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
           ))}
         </section>
         <CodeGutter label={t("codeSessions.view.resize")} size={talk} />
-        <CodePanel session={s} tab={tab} onTab={setTab} openFile={tabs.openFile} shownFile={tabs.active} />
+        <CodePanel
+          session={s}
+          tab={tab}
+          onTab={setTab}
+          openFile={tabs.openFile}
+          openDiff={tabs.openDiff}
+          shownFile={tabs.active}
+        />
       </div>
     </div>
   );
@@ -127,12 +137,19 @@ interface Tabs {
   dirty: Set<string>;
   show: (key: string) => void;
   openFile: (path: string) => void;
+  /** What each diff's tab shows, by its key. */
+  diffs: Map<string, GitOpened>;
+  openDiff: (opened: GitOpened) => void;
   openTerminal: () => void;
   /** Closes a tab; one with something unsaved asks first, unless `sure`. */
   close: (key: string, sure?: boolean) => void;
   stay: () => void;
   setDirty: (key: string, dirty: boolean) => void;
 }
+
+/** A diff's tab: one per change, commit, or the whole branch. */
+const diffKey = (o: GitOpened) =>
+  o.kind === "change" ? `:diff:${o.change.path}` : o.kind === "commit" ? `:commit:${o.commit.sha}` : ":all";
 
 const tabsKey = (sessionId: string) => `code:tabs:${sessionId}`;
 
@@ -151,15 +168,17 @@ function useSessionTabs(sessionId: string): Tabs {
   const [state, setState] = useState(() => ({ sessionId, open: keptFiles(sessionId), active: TALK, terminals: 0 }));
   const [asking, setAsking] = useState<string | null>(null);
   const [dirty, setDirtySet] = useState<Set<string>>(() => new Set());
+  const [diffs, setDiffs] = useState<Map<string, GitOpened>>(() => new Map());
   // Another session on the same screen: its own tabs.
   if (state.sessionId !== sessionId) {
     setState({ sessionId, open: keptFiles(sessionId), active: TALK, terminals: 0 });
     setAsking(null);
     setDirtySet(new Set());
+    setDiffs(new Map());
   }
   useEffect(() => {
     try {
-      localStorage.setItem(tabsKey(state.sessionId), JSON.stringify(state.open.filter((k) => !isTerminal(k))));
+      localStorage.setItem(tabsKey(state.sessionId), JSON.stringify(state.open.filter((k) => !k.startsWith(":"))));
     } catch {}
   }, [state.sessionId, state.open]);
   const show = useCallback((key: string) => setState((s) => ({ ...s, active: key })), []);
@@ -168,6 +187,12 @@ function useSessionTabs(sessionId: string): Tabs {
       setState((s) => ({ ...s, open: s.open.includes(path) ? s.open : [...s.open, path], active: path })),
     [],
   );
+  const openDiff = useCallback((opened: GitOpened) => {
+    const key = diffKey(opened);
+    // The row as it is now: a change's letter and a commit's words are the tab's.
+    setDiffs((was) => new Map(was).set(key, opened));
+    setState((s) => ({ ...s, open: s.open.includes(key) ? s.open : [...s.open, key], active: key }));
+  }, []);
   const openTerminal = useCallback(
     () =>
       setState((s) => {
@@ -207,7 +232,20 @@ function useSessionTabs(sessionId: string): Tabs {
     [dirty, setDirty],
   );
   const stay = useCallback(() => setAsking(null), []);
-  return { open: state.open, active: state.active, asking, dirty, show, openFile, openTerminal, close, stay, setDirty };
+  return {
+    open: state.open,
+    active: state.active,
+    asking,
+    dirty,
+    diffs,
+    show,
+    openFile,
+    openDiff,
+    openTerminal,
+    close,
+    stay,
+    setDirty,
+  };
 }
 
 /** The session's tabs, under its header: the conversation, the open files and terminals, and "+" for a new one (a terminal). */
@@ -229,11 +267,18 @@ function SessionTabs({ session, tabs }: { session: CodeSession; tabs: Tabs }) {
       {tabs.open.map((key) => {
         const term = isTerminal(key);
         if (term) terminals += 1;
-        const name = term
-          ? terminals > 1
-            ? t("codeSessions.tabs.terminalN", { n: terminals })
-            : t("codeTerminal.label")
-          : key.slice(key.lastIndexOf("/") + 1);
+        const diff = tabs.diffs.get(key);
+        const name = diff
+          ? diff.kind === "change"
+            ? diff.change.path.slice(diff.change.path.lastIndexOf("/") + 1)
+            : diff.kind === "commit"
+              ? diff.commit.short
+              : t("codeSessions.gitTab.all", { base: session.baseBranch ?? "main" })
+          : term
+            ? terminals > 1
+              ? t("codeSessions.tabs.terminalN", { n: terminals })
+              : t("codeTerminal.label")
+            : key.slice(key.lastIndexOf("/") + 1);
         return (
           <span key={key} className="code-tabs__tab" data-selected={tabs.active === key || undefined}>
             <button
@@ -241,10 +286,18 @@ function SessionTabs({ session, tabs }: { session: CodeSession; tabs: Tabs }) {
               role="tab"
               className="code-tabs__open"
               aria-selected={tabs.active === key}
-              title={term ? undefined : key}
+              title={
+                diff?.kind === "change"
+                  ? diff.change.path
+                  : diff?.kind === "commit"
+                    ? diff.commit.subject
+                    : term
+                      ? undefined
+                      : key
+              }
               onClick={() => tabs.show(key)}
             >
-              <Icon name={term ? "codeBlock" : "file"} size={14} />
+              <Icon name={diff ? "gitPull" : term ? "codeBlock" : "file"} size={14} />
               <span className="code-tabs__name">{name}</span>
               {tabs.dirty.has(key) && (
                 <span className="code-tabs__dot" role="img" aria-label={t("codeSessions.files.unsaved")} />

@@ -6,7 +6,7 @@ import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { FilesPane } from "./CodeFiles";
-import { GitPane } from "./CodeGit";
+import { type GitOpened, GitPane } from "./CodeGit";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodeScreen } from "./CodeScreen";
 import { CodeHorizon } from "./CodeSky";
@@ -75,6 +75,7 @@ export function CodePanel({
   tab,
   onTab,
   openFile,
+  openDiff,
   shownFile,
 }: {
   session: CodeSession;
@@ -82,6 +83,8 @@ export function CodePanel({
   onTab: (tab: CodeTab) => void;
   /** Opens a file in a tab beside the conversation. */
   openFile: (path: string) => void;
+  /** Opens a diff (a change, a commit, the whole branch) in a tab beside the conversation. */
+  openDiff: (opened: GitOpened) => void;
   /** The tab on screen there: a file's path marks its row in the tree. */
   shownFile: string;
 }) {
@@ -132,7 +135,7 @@ export function CodePanel({
         ]}
       >
         <TabPanel value="git">
-          <GitPane session={session} />
+          <GitPane session={session} onOpen={openDiff} />
           {/* The sky rises from the panel's foot; with the terminal open, the foot is the terminal's. */}
           {agent && !terminal && (
             <div className="code-hz" aria-hidden="true">

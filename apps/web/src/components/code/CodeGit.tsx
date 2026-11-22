@@ -15,7 +15,10 @@ import { DiffView } from "@/components/artifacts/views";
 import { useOrg } from "@/components/org-context";
 
 /** What the Git tab opened: one change not committed, one commit, or the whole branch since its base. */
-type Opened = { kind: "change"; change: CodeChange } | { kind: "commit"; commit: CodeCommit } | { kind: "all" };
+export type GitOpened =
+  | { kind: "change"; change: CodeChange }
+  | { kind: "commit"; commit: CodeCommit }
+  | { kind: "all" };
 
 /** The letter `git status` gives each kind of change ("U": new, not tracked yet), in its color. */
 const LETTER: Record<CodeChangeStatus, string> = {
@@ -59,16 +62,14 @@ function splitPath(path: string) {
 /**
  * The session panel's Git tab (ADR 0214): the branch and its base, the whole change since the base, what isn't
  * committed (as `git status` lists it) and the branch's commits, read in the worktree as its agent and again while it
- * works. Any row opens its diff in place; back returns to the list.
+ * works. Any row opens its diff in a tab beside the conversation (`onOpen`).
  */
-export function GitPane({ session }: { session: CodeSession }) {
+export function GitPane({ session, onOpen }: { session: CodeSession; onOpen: (opened: GitOpened) => void }) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const ready = session.worktree.state === "ready";
   const log = useCodeGitLog(org.id, session.id, ready, session.work === "working");
-  const [opened, setOpened] = useState<Opened | null>(null);
   if (!ready) return <p className="code-empty">{t("codeSessions.panel.notReady")}</p>;
-  if (opened) return <GitDiff session={session} opened={opened} onBack={() => setOpened(null)} />;
   const base = session.baseBranch ?? "main";
   const data = log.data;
   const ahead = data?.commits.length ?? 0;
@@ -105,11 +106,7 @@ export function GitPane({ session }: { session: CodeSession }) {
           <p className="code-empty">{errorText(t, log.error)}</p>
         ) : data ? (
           <>
-            <button
-              type="button"
-              className="code-vcs__row code-vcs__row--all"
-              onClick={() => setOpened({ kind: "all" })}
-            >
+            <button type="button" className="code-vcs__row code-vcs__row--all" onClick={() => onOpen({ kind: "all" })}>
               <Icon name="layers" size={16} />
               <span className="code-vcs__name">{t("codeSessions.gitTab.all", { base })}</span>
               {session.stat.at && <Counts added={session.stat.added} removed={session.stat.removed} />}
@@ -132,7 +129,7 @@ export function GitPane({ session }: { session: CodeSession }) {
                         type="button"
                         className="code-vcs__row"
                         title={c.from ? `${c.from} → ${c.path}` : c.path}
-                        onClick={() => setOpened({ kind: "change", change: c })}
+                        onClick={() => onOpen({ kind: "change", change: c })}
                       >
                         <ChangeLetter status={c.status} />
                         <span className="code-vcs__name" data-status={c.status}>
@@ -167,7 +164,7 @@ export function GitPane({ session }: { session: CodeSession }) {
                       type="button"
                       className="code-vcs__row code-vcs__row--commit"
                       title={`${c.subject}\n${c.short} · ${c.author}`}
-                      onClick={() => setOpened({ kind: "commit", commit: c })}
+                      onClick={() => onOpen({ kind: "commit", commit: c })}
                     >
                       <span className="code-vcs__node" aria-hidden="true" />
                       <span className="code-vcs__name">{c.subject}</span>
@@ -189,10 +186,19 @@ export function GitPane({ session }: { session: CodeSession }) {
 }
 
 /**
- * What a row of the Git tab opened, in place: one uncommitted file's diff, a commit's (`git show`), or everything since
- * the base. Unified or side by side from its own head.
+ * What a row of the Git tab opened, in a tab beside the conversation: one uncommitted file's diff, a commit's
+ * (`git show`), or everything since the base. Unified or side by side from its own head; a file's diff opens the file
+ * itself, to edit it (`onOpenFile`).
  */
-function GitDiff({ session, opened, onBack }: { session: CodeSession; opened: Opened; onBack: () => void }) {
+export function GitDiff({
+  session,
+  opened,
+  onOpenFile,
+}: {
+  session: CodeSession;
+  opened: GitOpened;
+  onOpenFile: (path: string) => void;
+}) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const [split, setSplit] = useState(false);
@@ -224,18 +230,14 @@ function GitDiff({ session, opened, onBack }: { session: CodeSession; opened: Op
   return (
     <div className="code-vcs">
       <div className="code-fhead">
-        <Button
-          size="sm"
-          variant="ghost"
-          icon="chevronLeft"
-          iconOnly
-          aria-label={t("codeSessions.gitTab.back")}
-          title={t("codeSessions.gitTab.back")}
-          onClick={onBack}
-        />
         {title}
         {diff.data && <Counts added={added} removed={removed} />}
         <span className="code-fhead__r">
+          {opened.kind === "change" && opened.change.status !== "deleted" && (
+            <Button size="sm" variant="ghost" icon="file" onClick={() => onOpenFile(opened.change.path)}>
+              {t("codeSessions.gitTab.openFile")}
+            </Button>
+          )}
           <Button size="sm" variant="ghost" aria-pressed={split} onClick={() => setSplit((s) => !s)}>
             {t("codeSessions.gitTab.split")}
           </Button>

@@ -10876,7 +10876,8 @@
         "deleted": "Dihapus",
         "renamed": "Diganti nama",
         "untracked": "Baru, belum masuk git"
-      }
+      },
+      "openFile": "Buka file"
     },
     "files": {
       "label": "File",

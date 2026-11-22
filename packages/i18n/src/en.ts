@@ -11702,6 +11702,8 @@ export const en = {
     },
     /** The panel's Git tab: the branch, what isn't committed, its commits, each diff in place. */
     gitTab: {
+      /** On a file's diff: opens the file itself, to edit it. */
+      openFile: "Open the file",
       label: "Git",
       /** After the branch's name in the tab's head. */
       from: "from {{base}}",

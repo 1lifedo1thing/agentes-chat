@@ -11717,6 +11717,8 @@ export const ptBR = {
     },
     /** A aba Git do painel: a branch, o que não foi commitado, os commits, cada diff no lugar. */
     gitTab: {
+      /** On a file's diff: opens the file itself, to edit it. */
+      openFile: "Abrir o arquivo",
       label: "Git",
       /** Depois do nome da branch, no topo da aba. */
       from: "de {{base}}",

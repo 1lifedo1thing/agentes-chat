@@ -138,8 +138,8 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
     by path. A file opens in a tab beside the conversation (`codeSessionFile`): never one git ignores, a `.env` one or
     one reached through a link out of the worktree (each step resolved on the computer), only its first 512 KB, and a
     binary one only said to be one.
-- **Tabs beside the conversation.** Under the session's header: the conversation, each open file and each terminal
-  the person opens there (a shell of its own, as the drawer's); the ones off screen stay as they are, and the open
+- **Tabs beside the conversation.** Under the session's header: the conversation, each open file, each diff opened from the Git tab (a change, a commit, the whole branch; a file's diff
+  opens the file itself) and each terminal the person opens there (a shell of its own, as the drawer's); the ones off screen stay as they are, and the open
   files come back with the session on that browser.
 - **A person edits a file.** A file's tab is an editor (CodeMirror 6, loaded with the first file: line numbers, the
   language its name says, undo, search). Whoever is in the session saves (`saveCodeSessionFile`, `PUT …/file`), since

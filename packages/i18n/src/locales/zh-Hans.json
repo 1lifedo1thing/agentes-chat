@@ -10890,7 +10890,8 @@
         "deleted": "已删除",
         "renamed": "已重命名",
         "untracked": "新文件，尚未加入 git"
-      }
+      },
+      "openFile": "打开文件"
     },
     "files": {
       "label": "文件",

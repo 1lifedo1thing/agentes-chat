@@ -11275,7 +11275,8 @@
         "deleted": "Gelöscht",
         "renamed": "Umbenannt",
         "untracked": "Neu, noch nicht in Git"
-      }
+      },
+      "openFile": "Datei öffnen"
     },
     "files": {
       "label": "Dateien",
