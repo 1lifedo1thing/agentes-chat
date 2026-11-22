@@ -2439,7 +2439,8 @@ export const en = {
     searchWorkspace: "Search the workspace",
     summary_one: "{{people}} member · {{agents}} agents",
     summary_other: "{{people}} members · {{agents}} agents",
-    waiting: "Waiting on you",
+    /** The sidebar's one entry for everything that involves me: what waits on me, what is new, what I decided. */
+    waiting: "Inbox",
     approvals: "Approvals",
     proposals: "Improvement proposals",
     issues: "Tasks",
@@ -5716,7 +5717,7 @@ export const en = {
     firstRun: "Pick up where you left off · {{done}} of {{total}}",
   },
   notifications: {
-    title: "Notifications",
+    title: "Inbox",
     /** "Tirar de volta" on `plan_lent`: the person's plan leaves the agent someone else gave it to, or all of them. */
     planLent: {
       takeBack: "Take it back",
@@ -5753,7 +5754,7 @@ export const en = {
         computer: "Switch computer",
       },
     },
-    docTitleUnread: "({{count}}) Notifications",
+    docTitleUnread: "({{count}}) Inbox",
     summaryWaiting_one: "{{count}} thing waiting on you",
     summaryWaiting_other: "{{count}} things waiting on you",
     summaryUnread_one: "{{count}} unread",
@@ -5770,6 +5771,8 @@ export const en = {
       waiting: "Waiting on you",
       unread: "Unread",
       reactions: "Reactions",
+      /** The requests already decided: approved, refused, expired. */
+      requests: "Decided requests",
       done: "Done",
     },
     keys: {
@@ -6011,6 +6014,7 @@ export const en = {
     noneUnread: "All read.",
     noneHere: "Nothing here for now.",
     noneDone: "Nothing marked done in the last 30 days.",
+    noneRequests: "No request decided yet.",
     more: "Show more",
   },
   approvals: {
