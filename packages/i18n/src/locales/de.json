@@ -2839,8 +2839,6 @@
       "mentionsYou": "du wurdest erwähnt"
     },
     "unreadDivider": "Neu",
-    "offline": "Keine Verbindung. Was du sendest, geht von selbst raus, sobald sie wieder da ist.",
-    "backOnline": "Wieder verbunden",
     "sendingOffline": "geht raus, sobald die Verbindung wieder da ist",
     "endOfReply": "Ende der Antwort",
     "mentionSuggestions": "Vorschläge für Erwähnungen"
@@ -18162,10 +18160,6 @@
       "whereDm": "Unter Agenten",
       "messages_one": "{{count}} Nachricht",
       "messages_other": "{{count}} Nachrichten",
-      "origin": "{{from}} hat {{to}} in #{{channel}} gefragt · {{time}}",
-      "originDm": "{{from}} hat {{to}} gefragt · {{time}}",
-      "originNote": "{{from}} hat {{to}} in #{{channel}} Arbeit übergeben · {{time}}",
-      "originNoteDm": "{{from}} hat {{to}} Arbeit übergeben · {{time}}",
       "readOnly": "Nur lesen.",
       "steer": "Um die Richtung zu ändern, sprich mit {{name}}.",
       "talk": "Mit {{name}} sprechen",

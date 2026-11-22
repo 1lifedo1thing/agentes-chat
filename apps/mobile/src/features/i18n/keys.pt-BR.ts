@@ -420,10 +420,6 @@ export const featureKeysPtBR = {
       mentionsYou: "mencionaram você",
       divider: "Novas",
     },
-    connection: {
-      down: "Sem conexão. O que você mandar sai sozinho quando voltar.",
-      back: "Conectado de novo",
-    },
     longPressHint: "Segure para reagir e ver mais ações",
     file: "Arquivo",
     fileOpen: "Toque para abrir",

@@ -12,7 +12,6 @@ import { useAnimatedStyle, useDerivedValue, useSharedValue } from "react-native-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { holdOpenConversation } from "@/lib/push";
 import { usePush } from "@/providers/push";
-import { useRealtime } from "@/providers/realtime";
 import { useToast } from "@/ui";
 import { createComposerFloat } from "@/ui/Composer";
 import { usePane } from "@/ui/pane";
@@ -294,7 +293,6 @@ function Chat({
     leavePlace,
     data,
   });
-  const realtime = useRealtime().status;
   const { info, personDm, rootFile, rootTask, subtitle, title } = useChatTitle({ threadId, orgId, t, dir, data });
   const {
     canMission,
@@ -869,7 +867,6 @@ function Chat({
               wallSize={wallSize}
               backdrop={backdrop}
               keyboardAt={keyboardAt}
-              realtime={realtime}
               banner={banner}
               org={org}
               notices={notices}

@@ -383,10 +383,6 @@
       "mentionsYou": "有人提及了你",
       "divider": "新消息"
     },
-    "connection": {
-      "down": "没有网络连接。恢复后你发送的内容会自动发出。",
-      "back": "已重新连接"
-    },
     "longPressHint": "长按以回应并查看更多操作",
     "file": "文件",
     "fileOpen": "点按打开",

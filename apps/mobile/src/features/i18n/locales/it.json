@@ -415,10 +415,6 @@
       "mentionsYou": "ti hanno menzionato",
       "divider": "Nuovi"
     },
-    "connection": {
-      "down": "Nessuna connessione. Quello che invii parte da solo appena torna.",
-      "back": "Di nuovo connesso"
-    },
     "longPressHint": "Tieni premuto per reagire e vedere altre azioni",
     "file": "File",
     "fileOpen": "Tocca per aprire",

@@ -2738,8 +2738,6 @@
       "mentionsYou": "kamu disebut"
     },
     "unreadDivider": "Baru",
-    "offline": "Tidak ada koneksi. Apa pun yang kamu kirim akan terkirim sendiri saat koneksi kembali.",
-    "backOnline": "Terhubung lagi",
     "sendingOffline": "terkirim saat koneksi kembali",
     "endOfReply": "Akhir balasan",
     "mentionSuggestions": "Saran sebutan"
@@ -17599,10 +17597,6 @@
       "where": "#{{channel}} · antar-agen",
       "whereDm": "Antar-agen",
       "messages_other": "{{count}} pesan",
-      "origin": "{{from}} bertanya ke {{to}} di #{{channel}} · {{time}}",
-      "originDm": "{{from}} bertanya ke {{to}} · {{time}}",
-      "originNote": "{{from}} menyerahkan pekerjaan ke {{to}} di #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} menyerahkan pekerjaan ke {{to}} · {{time}}",
       "readOnly": "Hanya baca.",
       "steer": "Untuk mengubah arah, bicaralah dengan {{name}}.",
       "talk": "Bicara dengan {{name}}",

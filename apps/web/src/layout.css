@@ -13921,27 +13921,6 @@ html:not([data-pointer]) .channel__latest-btn.ac-btn:focus-visible {
   }
 }
 
-/* Above the box when the connection drops, then "Conectado de novo". */
-.channel__conn {
-  min-height: 30px;
-  margin: 0 4px 6px;
-  padding: 4px 10px;
-  border-radius: 10px 10px 10px 3px;
-  background: var(--warn-soft);
-  color: var(--warn);
-  font-size: 12.5px;
-  font-weight: 600;
-}
-.channel__conn[data-back] {
-  background: color-mix(in srgb, var(--ok) 14%, transparent);
-  color: var(--ok);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .channel__conn {
-    animation: ac-msg-enter 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-}
-
 /* The line above the composer for a block out of view: "· 12 s · Ver · Esc para parar". */
 /* Quiet as the words before it: the counts' weight (`.ac-num`) would make the seconds the loudest thing on the line. */
 .ac-typing__elapsed {

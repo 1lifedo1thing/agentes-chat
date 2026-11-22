@@ -1431,10 +1431,11 @@ html:not([data-pointer]) .ac-msg--grouped:focus-within .ac-msg__gutter-time {
   content-visibility: visible;
 }
 /*
- * A grouped row's receipt in its gutter: always seen, on the words' first line, its end 4px short of them (into the
- * row's gap). The time shows on its left on hover, overflowing the gutter leftwards, capped at 12px so at the larger
- * text sizes it stays inside the row's own padding. Never on two lines: the gutter gets the clock without its day
- * period (`gutterTime`), which fits in every language.
+ * A grouped row's receipt in its gutter: on hover or focus with its time, as quiet as the time at rest (the group's
+ * first row shows its own always), on the words' first line, its end 4px short of them (into the row's gap). The time
+ * shows on its left, overflowing the gutter leftwards, capped at 12px so at the larger text sizes it stays inside the
+ * row's own padding. Never on two lines: the gutter gets the clock without its day period (`gutterTime`), which fits
+ * in every language. Hidden by opacity, not visibility, so the keys still reach its popover (the row's focus shows it).
  */
 .ac-msg__gutter--aside {
   justify-content: flex-end;
@@ -1458,6 +1459,15 @@ html:not([data-pointer]) .ac-msg--grouped:focus-within .ac-msg__gutter-time {
   .ac-msg__gutter--aside > .ac-msg__aside {
     translate: 0 calc(0.5lh - var(--cap-mid) - 50%);
   }
+}
+.ac-msg--grouped:not([data-look="compact"]) .ac-msg__gutter--aside > .ac-msg__aside {
+  opacity: 0;
+  pointer-events: none;
+}
+.ac-msg--grouped:hover .ac-msg__gutter--aside > .ac-msg__aside,
+html:not([data-pointer]) .ac-msg--grouped:focus-within .ac-msg__gutter--aside > .ac-msg__aside {
+  opacity: 1;
+  pointer-events: auto;
 }
 .ac-msg__body {
   min-width: 0;
@@ -3192,12 +3202,12 @@ html:not([data-pointer]) .ac-tab:focus-visible {
   gap: var(--space-2);
   padding: var(--dialog-pad);
 }
+/* A footer on its line: its words and buttons as far under the line as over the dialog's bottom edge, 12 each. */
 .ac-dialog__foot--bar {
-  padding: 12px var(--dialog-pad) var(--dialog-pad);
+  padding: var(--space-3) var(--dialog-pad);
   border-top: 1px solid var(--line);
 }
-/* Over that line, the body ends as far above it as the buttons start under it (it kept only its 4px of room for focus
-   rings). */
+/* Over that line, the body ends 12 above it (it kept only its 4px of room for focus rings). */
 .ac-dialog__body:has(+ .ac-dialog__foot--bar),
 .ac-locked:has(+ .ac-dialog__foot--bar) > .ac-dialog__body {
   padding-bottom: 12px;
@@ -4081,7 +4091,8 @@ html:not([data-pointer]) .ac-back:focus-visible {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px var(--details-pad) var(--details-pad);
+  /* As far under its line as over the bottom edge. */
+  padding: var(--space-3) var(--details-pad);
   border-top: 1px solid var(--line);
 }
 
@@ -4155,9 +4166,15 @@ html:not([data-pointer]) .ac-msg:focus-within .ac-msg__actions,
   border-bottom-left-radius: var(--radius-cut);
 }
 
-/* Optimistic message: pending is quieter; failed keeps its words */
-.ac-msg--pending .ac-msg__text {
-  color: var(--ink-muted);
+/* Optimistic message, on its way: in place at once, its content at half strength (the name, time and sending line
+   stay as they are), whole once the server has it. Not sent: its words kept, at full strength. */
+.ac-msg--pending > .ac-msg__body > :not(.ac-msg__head, .ac-msg__own-foot, .ac-msg__foot, .ac-visually-hidden) {
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ac-msg--local > .ac-msg__body > * {
+    transition: opacity 0.15s ease-out;
+  }
 }
 
 /* Agent receipts under a person's message: muted, small; only the avatars carry color */
@@ -6912,11 +6929,7 @@ html:not([data-pointer]) .ac-msg:focus-within .ac-msg__actions,
 .ac-msg--own .ac-msg__text :is(.ac-mention:not(.ac-mention--agent), code:not(pre code)) {
   background: rgb(127 127 127 / 0.16);
 }
-/* Sending: the bubble waits, quieter; not sent: a danger outline, the words kept. */
-.ac-msg--own.ac-msg--pending .ac-msg__text {
-  color: var(--ink);
-  opacity: 0.6;
-}
+/* Not sent: a danger outline, the words kept (sending: half strength, as anyone's, `.ac-msg--pending`). */
 .ac-msg--own.ac-msg--failed .ac-msg__text {
   box-shadow: inset 0 0 0 1px var(--danger);
 }

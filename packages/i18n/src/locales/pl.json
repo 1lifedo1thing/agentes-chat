@@ -3049,8 +3049,6 @@
       "mentionsYou": "ktoś cię wspomniał"
     },
     "unreadDivider": "Nowe",
-    "offline": "Brak połączenia. To, co wyślesz, wyjdzie samo, gdy połączenie wróci.",
-    "backOnline": "Ponownie połączono",
     "sendingOffline": "wyjdzie, gdy wróci połączenie",
     "endOfReply": "Koniec odpowiedzi",
     "mentionSuggestions": "Podpowiedzi wzmianek"
@@ -19334,10 +19332,6 @@
       "messages_few": "{{count}} wiadomości",
       "messages_many": "{{count}} wiadomości",
       "messages_other": "{{count}} wiadomości",
-      "origin": "Pytanie od {{from}} do {{to}} na #{{channel}} · {{time}}",
-      "originDm": "Pytanie od {{from}} do {{to}} · {{time}}",
-      "originNote": "Praca od {{from}} dla {{to}} na #{{channel}} · {{time}}",
-      "originNoteDm": "Praca od {{from}} dla {{to}} · {{time}}",
       "readOnly": "Tylko do odczytu.",
       "steer": "Aby zmienić kierunek, porozmawiaj z {{name}}.",
       "steer_female": "Aby zmienić kierunek, porozmawiaj z {{name}}.",

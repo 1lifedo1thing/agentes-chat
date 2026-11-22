@@ -974,12 +974,6 @@
   "chat.unseen.divider": {
     "value": "New"
   },
-  "chat.connection.down": {
-    "value": "No connection. What you send goes out on its own when it's back."
-  },
-  "chat.connection.back": {
-    "value": "Connected again"
-  },
   "chat.longPressHint": {
     "value": "Hold to react and see more actions"
   },

@@ -2738,8 +2738,6 @@
       "mentionsYou": "나를 멘션했어요"
     },
     "unreadDivider": "새 메시지",
-    "offline": "연결이 끊겼어요. 보낸 내용은 연결되면 자동으로 전송돼요.",
-    "backOnline": "다시 연결됐어요",
     "sendingOffline": "연결되면 전송돼요",
     "endOfReply": "답변 끝",
     "mentionSuggestions": "멘션 추천"
@@ -17532,10 +17530,6 @@
       "where": "#{{channel}} · 에이전트 간",
       "whereDm": "에이전트 간",
       "messages_other": "메시지 {{count}}개",
-      "origin": "{{from}}이(가) #{{channel}}에서 {{to}}에게 물었어요 · {{time}}",
-      "originDm": "{{from}}이(가) {{to}}에게 물었어요 · {{time}}",
-      "originNote": "{{from}}이(가) #{{channel}}에서 {{to}}에게 작업을 넘겼어요 · {{time}}",
-      "originNoteDm": "{{from}}이(가) {{to}}에게 작업을 넘겼어요 · {{time}}",
       "readOnly": "읽기 전용.",
       "steer": "방향을 바꾸려면 {{name}}과(와) 대화하세요.",
       "talk": "{{name}}과(와) 대화",

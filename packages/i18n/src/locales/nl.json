@@ -2842,8 +2842,6 @@
       "mentionsYou": "je bent vermeld"
     },
     "unreadDivider": "Nieuw",
-    "offline": "Geen verbinding. Wat je verstuurt, gaat vanzelf weg zodra de verbinding terug is.",
-    "backOnline": "Weer verbonden",
     "sendingOffline": "gaat weg zodra de verbinding terug is",
     "endOfReply": "Einde van het antwoord",
     "mentionSuggestions": "Suggesties voor vermeldingen"
@@ -18232,10 +18230,6 @@
       "whereDm": "Tussen agents",
       "messages_one": "{{count}} bericht",
       "messages_other": "{{count}} berichten",
-      "origin": "{{from}} vroeg {{to}} iets in #{{channel}} · {{time}}",
-      "originDm": "{{from}} vroeg {{to}} iets · {{time}}",
-      "originNote": "{{from}} gaf {{to}} werk in #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} gaf {{to}} werk · {{time}}",
       "readOnly": "Alleen lezen.",
       "steer": "Wil je bijsturen? Praat dan met {{name}}.",
       "steer_female": "Wil je bijsturen? Praat dan met {{name}}.",
