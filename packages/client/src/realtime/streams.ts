@@ -144,6 +144,13 @@ export interface LiveRun {
    * brain's own that no `agent.tool` told (`tool`, `agent.step`). The next call replaces it.
    */
   step?: LiveStep;
+  /**
+   * What it is about to do, in a few words the server wrote when it started (`agent.intent`): the bar's line instead of
+   * "escrevendo…" until its own line on the way (`say_now`) or its reply comes.
+   */
+  intent?: string;
+  /** Its line on the way (`say_now`) is in the conversation: a late `agent.intent` says nothing more. */
+  said?: boolean;
   /** "Parar" was pressed and the server hasn't confirmed yet. */
   stopping?: boolean;
   /** Its browser command waits for a shared profile someone else has (ADR 0110). */
@@ -307,6 +314,16 @@ export interface AgentStepEvent {
   said?: string | null;
 }
 
+/** What a run started on a person's message is about to do (`LiveRun.intent`). */
+export interface AgentIntentEvent {
+  type: "agent.intent";
+  channelId: string;
+  threadId: string;
+  runId: string;
+  agentId: string;
+  text: string;
+}
+
 export interface StreamsState {
   runs: Record<string, LiveRun>;
   /** Runs heard to stop, and when: late deltas for them are ignored. */
@@ -430,6 +447,7 @@ type StreamEvent =
   | ChannelEvent
   | AgentToolEvent
   | AgentStepEvent
+  | AgentIntentEvent
   | AgentToolOutputEvent
   | RunCanceledEvent
   | RunSteeredEvent
@@ -590,6 +608,12 @@ function applyEvent(state: StreamsState, event: StreamEvent): StreamsState {
       if (state.finished[event.runId] || !state.runs[event.runId]) return state;
       return upsert(state, event, { step: { tool: event.tool, ...(event.said ? { said: event.said } : {}) } });
     }
+    case "agent.intent": {
+      const r = state.runs[event.runId];
+      // Its own words came first: the line it said on the way, or its reply.
+      if (state.finished[event.runId] || !r || r.said) return state;
+      return { ...state, runs: { ...state.runs, [event.runId]: { ...r, intent: event.text } } };
+    }
     case "agent.tool.output": {
       if (state.finished[event.runId]) return state;
       const current = state.runs[event.runId];
@@ -612,6 +636,12 @@ function applyEvent(state: StreamsState, event: StreamEvent): StreamsState {
     }
     case "message.created": {
       const m = event.message;
+      const saidFor = (m?.meta?.sayNow as { runId?: unknown } | undefined)?.runId;
+      if (typeof saidFor === "string") {
+        const r = state.runs[saidFor];
+        // Its own line on the way is the words the bar waited for.
+        return r ? { ...state, runs: { ...state.runs, [saidFor]: { ...r, intent: undefined, said: true } } } : state;
+      }
       // Too big for its event, it comes as its run and thread only (read over HTTP), and ends the run all the same: its
       // block waits for that read (`landing`) instead of going blank.
       const runId = m ? m.agentRunId : event.agentRunId;

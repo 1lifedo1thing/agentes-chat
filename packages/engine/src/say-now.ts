@@ -61,7 +61,7 @@ export function sayNowText(raw: unknown): string {
 }
 
 /** What a line for a person never holds: code-ish names (a tool, a function), a file path on a computer, backticks. */
-const NOT_FOR_PEOPLE =
+export const NOT_FOR_PEOPLE =
   /`|\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b|(?:^|\s)(?:~\/|\/(?:Users|home|tmp|var|etc|opt)\/|[A-Za-z]:\\)/;
 
 const REFUSED = {

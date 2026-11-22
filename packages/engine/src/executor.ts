@@ -247,6 +247,7 @@ import type { ModelGateway } from "./gateway";
 import { type CodeSetup, codeStart } from "./git/machine";
 import { agentRepositoryList, repositoriesPrompt } from "./git/repos";
 import { askVerdict, handOffHolds, repeatedAsk, saysNeedsNothing } from "./hand-off";
+import { announceIntent } from "./intent-line";
 import { UPDATE_ISSUE_TOOL } from "./issue-tools";
 import { linkRunToIssue, mirrorReplyToIssue } from "./issues";
 import { type Judge, JudgeGroup, judgeCallOf, TURN_END_CHECK_BUDGET_MS, withJudgeBudget } from "./judge";
@@ -2163,6 +2164,24 @@ async function executeRunInner(
   ) {
     ctx.confidential = true;
     noteConfidentialRun(run.id);
+  }
+  // What it is about to do, on the bar a second or two in, while its first turn still thinks (ADR 0207 addendum).
+  const intents = deps.context?.intents;
+  if (
+    intents &&
+    fresh &&
+    needsContext &&
+    !askingForRoom &&
+    !run.background &&
+    !run.workId &&
+    !ctx.confidential &&
+    triggerMessage?.authorType === "person"
+  ) {
+    void announceIntent({ db, pubsub: deps.pubsub, intents }, run, {
+      agent: { name: agent.name, role: agent.role },
+      message: triggerMessage,
+      threadId: replyThreadId,
+    }).catch(() => {});
   }
   // The routine that called it (`viaRoutine`) and whether the router brought it in after another agent
   // spoke (`joined`, ADR 0034): every message it posts says so, cards included (`runMessageMeta`).

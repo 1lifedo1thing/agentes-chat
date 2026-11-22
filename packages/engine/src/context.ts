@@ -207,7 +207,7 @@ export const WORK_IN_BACKGROUND_LINE =
  * `say_now` listed. The result still goes in the reply; a quick answer gets no line first.
  */
 export const SAY_NOW_LINE =
-  "- Before work that takes more than a few seconds, first tell them in one short line what you'll do (say_now, in the same response as your first work call), then work: your final message brings the result. Once per request; never for a quick answer, nor with work_in_background (its `say` is that line).";
+  "- Before work that takes more than a few seconds, make say_now your very first call: one short line on what you'll do, in the same response as your first work call, then work: your final message brings the result. Once per request; never for a quick answer, nor with work_in_background (its `say` is that line).";
 
 export const finishWhatYouStart = (followUp: boolean) =>
   `- Finish what you start. Never end your turn on a promise you don't keep in it ('I'll send the numbers', 'vou checar de novo', 'te aviso quando terminar'): do it now. ${
