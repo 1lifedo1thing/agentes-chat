@@ -76,15 +76,17 @@ export function TerminalPane({
   const createSocket = useContext(SocketFactoryContext);
   const hostRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<Terminal | null>(null);
-  const wantsKeys = useRef(focused === true);
-  wantsKeys.current = focused === true;
-  useEffect(() => {
-    if (focused) shellRef.current?.focus();
-  }, [focused]);
   const [state, setState] = useState<PaneState>("opening");
   /** Its computer is too old for the session's folder: the shell started in the agent's folder. */
   const [agentFolder, setAgentFolder] = useState(false);
   const [round, setRound] = useState(0);
+  // A terminal in a tab takes the keys once its shell is live and whenever its tab comes back on screen, a frame
+  // later: whatever opened it (a menu) has given the focus back to its own button by then.
+  useEffect(() => {
+    if (!focused || state !== "live") return;
+    const frame = requestAnimationFrame(() => shellRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [focused, state]);
   // Refused for want of the computer's switch: the computer, for the way to turn the terminal on.
   const machines = useMachines(orgId, state === "unavailable" && machineId !== null);
   const machine = machines.data?.find((m) => m.id === machineId) ?? null;
@@ -132,7 +134,6 @@ export function TerminalPane({
       shell.loadAddon(fit);
       shell.open(host);
       shellRef.current = shell;
-      if (wantsKeys.current) shell.focus();
       // The pane's room in cells, within the sizes the server takes. A room it can't read (a hidden pane) is no new
       // size: the terminal keeps its own, as xterm's own fit does.
       const fitted = () => {
