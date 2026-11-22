@@ -49,19 +49,19 @@ export function accountActions(
   return item.custom ? ["rename", "reconnect", "add"] : ["rename", "reconnect"];
 }
 
-/** A shelf of the catalog: the suggestions, or one category's services. */
+/** A shelf of the catalog: one category's services. */
 export interface Shelf {
-  key: "suggested" | ConnectorCategory;
+  key: ConnectorCategory;
   defs: ConnectorDef[];
 }
 
 /**
- * The catalog as shelves (Conectores): the suggestions first, then each category in `CATEGORIES`' order with the
- * services offered in it; a category with none has no shelf. A suggested service is on its category's shelf too: each
- * shelf is the whole of what it names.
+ * The catalog as shelves (Conectores): each category in `CATEGORIES`' order with the services offered in it; a
+ * category with none has no shelf. The suggested services are the featured cards above (`FeaturedCards`), and are on
+ * their category's shelf too: each shelf is the whole of what it names.
  */
-export function catalogShelves(offered: readonly ConnectorDef[], suggestions: readonly ConnectorDef[]): Shelf[] {
-  const shelves: Shelf[] = suggestions.length > 0 ? [{ key: "suggested", defs: [...suggestions] }] : [];
+export function catalogShelves(offered: readonly ConnectorDef[]): Shelf[] {
+  const shelves: Shelf[] = [];
   for (const key of CATEGORIES) {
     const defs = offered.filter((d) => d.category === key);
     if (defs.length > 0) shelves.push({ key, defs });

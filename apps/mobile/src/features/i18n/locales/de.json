@@ -2090,7 +2090,6 @@
     "toolsWait_other": "{{count}} brauchen dich",
     "connectedState": "Verbunden",
     "connected": "Verbunden",
-    "suggested": "Vorgeschlagen für {{org}}",
     "seeAll": "Alle anzeigen",
     "noResults": "Kein Dienst mit diesem Namen. Versuch es mit seiner Adresse.",
     "soon": "Bald",

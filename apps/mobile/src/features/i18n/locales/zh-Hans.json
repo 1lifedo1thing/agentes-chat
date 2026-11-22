@@ -1988,7 +1988,6 @@
     "toolsWait_other": "{{count}} 个需要你处理",
     "connectedState": "已连接",
     "connected": "已连接",
-    "suggested": "为 {{org}} 推荐",
     "seeAll": "查看全部",
     "noResults": "没有这个名称的服务。试试它的地址。",
     "soon": "即将推出",

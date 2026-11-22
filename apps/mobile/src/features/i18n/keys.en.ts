@@ -2242,7 +2242,6 @@ export const featureKeysEn = {
     /** Under the account's address on a connection's screen. */
     connectedState: "Connected",
     connected: "Connected",
-    suggested: "Suggested for {{org}}",
     /** A category's shelf: its whole list, on a screen of its own. */
     seeAll: "See all",
     noResults: "No service by that name. Try its address.",

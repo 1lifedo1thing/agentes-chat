@@ -5164,9 +5164,6 @@
   "connectors.connected": {
     "value": "Connected"
   },
-  "connectors.suggested": {
-    "value": "Suggested for {{org}}"
-  },
   "connectors.seeAll": {
     "value": "See all"
   },

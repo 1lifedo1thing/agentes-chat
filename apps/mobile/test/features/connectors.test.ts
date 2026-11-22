@@ -123,19 +123,17 @@ describe("connectors gallery", () => {
     expect(suggestionsOf(catalog, items).map((d) => d.id)).toEqual(["linear", "drive", "sentry"]);
   });
 
-  test("the catalog in shelves: the suggestions first, then each category in order, none empty", () => {
+  test("the catalog in shelves: each category in order, none empty", () => {
     const linear = def("linear", { category: "product" });
     const stripe = def("stripe", { category: "payments" });
     const github = def("github");
     const offered = [stripe, linear, github];
-    expect(catalogShelves(offered, [linear]).map((s) => [s.key, s.defs.map((d) => d.id)])).toEqual([
-      ["suggested", ["linear"]],
+    expect(catalogShelves(offered).map((s) => [s.key, s.defs.map((d) => d.id)])).toEqual([
       ["dev", ["github"]],
       ["product", ["linear"]],
       ["payments", ["stripe"]],
     ]);
-    // Nothing suggested: no shelf for it.
-    expect(catalogShelves([github], []).map((s) => s.key)).toEqual(["dev"]);
+    expect(catalogShelves([])).toEqual([]);
     // Columns of three, sliding sideways.
     expect(shelfColumns([1, 2, 3, 4, 5, 6, 7])).toEqual([[1, 2, 3], [4, 5, 6], [7]]);
     expect(shelfColumns([])).toEqual([]);
@@ -144,7 +142,19 @@ describe("connectors gallery", () => {
   test("the gallery: what is connected a grouped list, the catalog in shelves of rows that open the service", () => {
     const gallery = readFileSync(join(import.meta.dir, "../../src/features/connectors/ConnectorsScreen.tsx"), "utf8");
     expect(gallery).toMatch(/<GroupedHeader>\{`\$\{t\("mobile\.connectors\.connected"\)\} · \$\{connectedCount\}`\}/);
-    expect(gallery).toContain("catalogShelves(offered, suggestionsOf(list, items, SUGGESTIONS))");
+    expect(gallery).toContain("const shelves = useMemo(() => catalogShelves(offered), [offered]);");
+    // The suggested services are featured cards above what is connected: those that open here, three at most, each
+    // opening its page (no button of their own).
+    expect(gallery).toContain("return suggestionsOf(list, items, FEATURED * 2)");
+    expect(gallery).toContain(".filter((d) => opens.has(d.id))");
+    expect(gallery).toMatch(/<FeaturedCards\s+defs=\{featured\}[\s\S]*?onOpen=\{open\}/);
+    const cards = readFileSync(join(import.meta.dir, "../../src/features/connectors/FeaturedCards.tsx"), "utf8");
+    expect(cards).toContain("snapToInterval={card + GAP}");
+    expect(cards).toContain('kind="card"');
+    expect(cards).toContain("tones={serviceSkyTones(colors.raised, def.brandColor, dark)}");
+    expect(cards).not.toContain("<Button");
+    // Its sky and words clipped to the card's corners, the card's shadow outside them.
+    expect(cards).toMatch(/clip: \{[^}]*borderRadius: 20,\s*borderBottomLeftRadius: 6,\s*overflow: "hidden",/);
     // A column at a time, snapped to the screen's side, the next one's edge in sight.
     expect(gallery).toContain("snapToInterval={column + SHELF_GAP}");
     // A row opens its service (no button of its own in the list): its chevron says so.

@@ -2148,7 +2148,6 @@ export const featureKeysPtBR = {
     toolsWait_other: "{{count}} precisam de você",
     connectedState: "Conectada",
     connected: "Conectados",
-    suggested: "Sugeridos para a {{org}}",
     seeAll: "Ver todos",
     noResults: "Nenhum serviço com esse nome. Tente pelo endereço.",
     soon: "Em breve",

@@ -2185,7 +2185,6 @@
     "toolsWait_other": "{{count}} ont besoin de vous",
     "connectedState": "Connecté",
     "connected": "Connectés",
-    "suggested": "Suggérés pour {{org}}",
     "seeAll": "Tout voir",
     "noResults": "Aucun service à ce nom. Essayez son adresse.",
     "soon": "Bientôt",

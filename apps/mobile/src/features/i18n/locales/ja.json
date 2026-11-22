@@ -1988,7 +1988,6 @@
     "toolsWait_other": "{{count}}個があなたの対応待ち",
     "connectedState": "接続済み",
     "connected": "接続済み",
-    "suggested": "{{org}}へのおすすめ",
     "seeAll": "すべて表示",
     "noResults": "その名前のサービスはありません。アドレスで試してください。",
     "soon": "近日公開",

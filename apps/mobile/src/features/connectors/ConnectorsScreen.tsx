@@ -26,7 +26,7 @@ import { settingsFrozen } from "@agenteschat/client/lib/deletion";
 import { choiceOf, MAIL_BRANDS, mailboxName } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorDescription, connectorName } from "@agenteschat/client/lib/scopes";
-import { isPersonal, modeKey } from "@agenteschat/client/lib/workspace-mode";
+import { modeKey } from "@agenteschat/client/lib/workspace-mode";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -61,6 +61,7 @@ import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { openConnection } from "./ConnectionScreen";
 import { ConnectorIcon } from "./ConnectorIcon";
 import { AddressSheet, ConnectSheet, ServerSheet } from "./ConnectSheet";
+import { FeaturedCards } from "./FeaturedCards";
 import {
   type ConnectionTab,
   catalogShelves,
@@ -83,8 +84,8 @@ const LOCKUP_MARK = 44;
 const LOCKUP_GAP = 12;
 /** A connected row's mark, the grouped list's leading size. */
 const ROW_MARK = 30;
-/** The suggestions' shelf: two columns of three. */
-const SUGGESTIONS = SHELF_ROWS * 2;
+/** The featured cards at the top: the suggested services that open here, not connected yet (`suggestionsOf`). */
+const FEATURED = 3;
 /** Between a shelf's columns, and how much of the next one shows past the screen's edge (the shelf slides on). */
 const SHELF_GAP = 16;
 const SHELF_PEEK = 78;
@@ -216,10 +217,15 @@ function Gallery() {
         .map((x) => x.def),
     [list, items],
   );
-  const shelves = useMemo(
-    () => catalogShelves(offered, suggestionsOf(list, items, SUGGESTIONS)),
-    [offered, list, items],
-  );
+  // The suggested services are the featured cards above what is connected (each opens its page); the shelves under
+  // them are the catalog by category.
+  const featured = useMemo(() => {
+    const opens = new Set(offered.map((d) => d.id));
+    return suggestionsOf(list, items, FEATURED * 2)
+      .filter((d) => opens.has(d.id))
+      .slice(0, FEATURED);
+  }, [offered, list, items]);
+  const shelves = useMemo(() => catalogShelves(offered), [offered]);
   // A search finds what is connected too (it opens its connection).
   const results = useMemo(
     () =>
@@ -286,13 +292,7 @@ function Gallery() {
       ),
     );
   }, [connected, connections.data, servers.data, catalog.data, everything, me, manages, frozen, sheet]);
-  const shelfTitle = (shelf: Shelf) =>
-    shelf.key === "suggested"
-      ? // A personal workspace's are suggested for its person, never "for Personal" (ADR 0159).
-        isPersonal(org) || personal
-        ? t("connectors.suggestedPersonal")
-        : t("mobile.connectors.suggested", { org: org?.name ?? "" })
-      : t(`connectors.category.${shelf.key}`);
+  const shelfTitle = (shelf: Shelf) => t(`connectors.category.${shelf.key}`);
 
   return (
     <PushedLargeTitle
@@ -373,6 +373,9 @@ function Gallery() {
         </>
       ) : (
         <>
+          <Locked when={frozen} readable keepKeyboard>
+            <FeaturedCards defs={featured} name={name} text={(d) => connectorDescription(t, d)} onOpen={open} />
+          </Locked>
           {/* On Pessoal a person's mailboxes are a group of their own: they keep their own rule (ADR 0038). */}
           {personal && mailboxes.length > 0 ? (
             <View style={styles.group}>
@@ -424,7 +427,7 @@ function Gallery() {
                 text={(d) => connectorDescription(t, d)}
                 onOpen={open}
                 // The whole category on a screen of its own, when the shelf has more than its first column.
-                {...(shelf.key !== "suggested" && shelf.defs.length > SHELF_ROWS
+                {...(shelf.defs.length > SHELF_ROWS
                   ? {
                       onAll: () =>
                         router.push({
