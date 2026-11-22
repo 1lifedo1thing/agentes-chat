@@ -1160,11 +1160,8 @@
     },
     "talk": {
       "hint": {
-        "image": "Ketuk tempat yang ingin kamu komentari",
-        "video": "Ketuk video untuk mengomentari momen ini",
-        "pdf": "Ketuk halaman untuk menandai satu titik"
+        "pdf": "Sentuh lama halaman untuk menandai satu titik"
       },
-      "markVideo": "Komentari momen video ini",
       "pdfPage": "Halaman {{page}} dari {{count}}",
       "pdfFailed": "PDF ini tidak bisa ditampilkan."
     }

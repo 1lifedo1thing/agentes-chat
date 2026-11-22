@@ -1239,11 +1239,8 @@
     },
     "talk": {
       "hint": {
-        "image": "Yorum yapmak istediğiniz yere dokunun",
-        "video": "Bu ana yorum yapmak için videoya dokunun",
-        "pdf": "Bir nokta işaretlemek için sayfaya dokunun"
+        "pdf": "Bir noktayı işaretlemek için sayfaya basılı tutun"
       },
-      "markVideo": "Videonun bu anına yorum yap",
       "pdfPage": "Sayfa {{page}} / {{count}}",
       "pdfFailed": "Bu PDF gösterilemedi."
     }

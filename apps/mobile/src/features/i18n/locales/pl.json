@@ -1397,11 +1397,8 @@
     },
     "talk": {
       "hint": {
-        "image": "Stuknij tam, gdzie chcesz dodać komentarz",
-        "video": "Stuknij film, aby skomentować ten moment",
-        "pdf": "Stuknij stronę, aby zaznaczyć punkt"
+        "pdf": "Przytrzymaj stronę, aby zaznaczyć punkt"
       },
-      "markVideo": "Skomentuj ten moment filmu",
       "pdfPage": "Strona {{page}} z {{count}}",
       "pdfFailed": "Nie udało się wyświetlić tego pliku PDF."
     }

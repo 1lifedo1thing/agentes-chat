@@ -1315,11 +1315,8 @@
     },
     "talk": {
       "hint": {
-        "image": "Touchez l'endroit à commenter",
-        "video": "Touchez la vidéo pour commenter ce moment",
-        "pdf": "Touchez la page pour marquer un point"
+        "pdf": "Maintenez le doigt sur la page pour marquer un point"
       },
-      "markVideo": "Commenter ce moment de la vidéo",
       "pdfPage": "Page {{page}} sur {{count}}",
       "pdfFailed": "Impossible d'afficher ce PDF."
     }

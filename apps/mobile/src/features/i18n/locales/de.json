@@ -1239,11 +1239,8 @@
     },
     "talk": {
       "hint": {
-        "image": "Tippe dort, wo du kommentieren willst",
-        "video": "Tippe auf das Video, um diesen Moment zu kommentieren",
-        "pdf": "Tippe auf die Seite, um einen Punkt zu markieren"
+        "pdf": "Halte die Seite gedrückt, um einen Punkt zu markieren"
       },
-      "markVideo": "Diesen Moment des Videos kommentieren",
       "pdfPage": "Seite {{page}} von {{count}}",
       "pdfFailed": "Dieses PDF lässt sich nicht anzeigen."
     }

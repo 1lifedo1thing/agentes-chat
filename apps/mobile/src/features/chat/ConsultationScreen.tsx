@@ -7,7 +7,6 @@ import {
   consultOriginKey,
   openableConsultation,
 } from "@agenteschat/client/lib/consult-group";
-import { consultSubject } from "@agenteschat/client/lib/consultations";
 import { namesText } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { groupsWith } from "@agenteschat/client/lib/timeline";
@@ -156,14 +155,6 @@ function Consultation({
                   })
                 : ""
             }
-            subtitle={[
-              // What the exchange is about, ahead of where it is and how many messages it has.
-              consultSubject(q?.question),
-              channelName ? t("chat.consultPanel.where", { channel: channelName }) : t("chat.consultPanel.whereDm"),
-              ...(list.length > 0 ? [t("chat.consultPanel.messages", { count: list.length })] : []),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
           />
         </View>
         {choices.length > 1 && picked ? (
@@ -281,8 +272,9 @@ function Consultation({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  // Under the sheet's grabber at every sheet's top (`useSheetBody`), at every sheet's sides.
-  head: { paddingHorizontal: SHEET_X, paddingTop: 24, paddingBottom: 12 },
+  // At every sheet's sides; well clear of the grabber (every sheet's 24 put the title right under it, the list's
+  // first line pinned up there with it), the name of the two agents alone: where it was asked is the line under it.
+  head: { paddingHorizontal: SHEET_X, paddingTop: 40, paddingBottom: 12 },
   list: { gap: 2 },
   pad: { paddingHorizontal: SCREEN_X },
   // Room for a few turns of the skeleton, which sits at the bottom of what it is given (cut at its top).

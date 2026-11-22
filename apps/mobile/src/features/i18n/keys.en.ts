@@ -1335,16 +1335,13 @@ export const featureKeysEn = {
       cantPlay: "This video can't play on this phone.",
     },
     /**
-     * A file's conversation in the sheet over it (ADR 0208): what a tap on the file does while the sheet is up, the
-     * video's tap target, a PDF's page, and a PDF that couldn't be drawn.
+     * A file's conversation (ADR 0208): what a touch held on a PDF's page does (the screen reader's hint), a PDF's
+     * page, and a PDF that couldn't be drawn.
      */
     talk: {
       hint: {
-        image: "Tap where you want to comment",
-        video: "Tap the video to comment on this moment",
-        pdf: "Tap the page to mark a point",
+        pdf: "Touch and hold the page to mark a point",
       },
-      markVideo: "Comment on this moment of the video",
       pdfPage: "Page {{page}} of {{count}}",
       pdfFailed: "Couldn't show this PDF.",
     },

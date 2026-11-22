@@ -364,7 +364,7 @@ function MePage() {
         plate
         solid={false}
         grouped
-        action={{ label: t("mobile.me.edit"), onPress: () => open("/me/account") }}
+        action={{ label: t("mobile.me.edit"), onPress: () => open("/me/account"), opens: true }}
       />
       <Animated.ScrollView
         style={styles.fill}

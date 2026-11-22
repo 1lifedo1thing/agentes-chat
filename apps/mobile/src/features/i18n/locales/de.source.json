@@ -3066,17 +3066,8 @@
   "files.video.cantPlay": {
     "value": "This video can't play on this phone."
   },
-  "files.talk.hint.image": {
-    "value": "Tap where you want to comment"
-  },
-  "files.talk.hint.video": {
-    "value": "Tap the video to comment on this moment"
-  },
   "files.talk.hint.pdf": {
-    "value": "Tap the page to mark a point"
-  },
-  "files.talk.markVideo": {
-    "value": "Comment on this moment of the video"
+    "value": "Touch and hold the page to mark a point"
   },
   "files.talk.pdfPage": {
     "value": "Page {{page}} of {{count}}"
