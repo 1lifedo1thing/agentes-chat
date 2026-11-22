@@ -66,14 +66,16 @@ export function CodeBetaDialog() {
           onClick={close}
         />
       </div>
-      <DialogBody className="code-beta__body">
-        {/* The dialog's name is its hidden title; this is the same sentence, drawn. */}
+      {/* The dialog's name is its hidden title; this is the same sentence, drawn. */}
+      <div className="code-beta__lede">
         <p className="code-beta__title" style={step(0)} aria-hidden="true">
           {t("codeSessions.beta.title")}
         </p>
         <p className="code-beta__text" style={step(1)}>
           {t("codeSessions.beta.text")}
         </p>
+      </div>
+      <DialogBody>
         <ul className="code-beta__diff">
           {ADDED.map((key, n) => (
             <li key={key} data-kind="add" style={step(2 + n)}>
