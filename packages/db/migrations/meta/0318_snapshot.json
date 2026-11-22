@@ -1,5 +1,5 @@
 {
-  "id": "ab59d853-5283-4b2c-8587-430224bb5513",
+  "id": "6370c92a-b9b1-48e7-ba7a-a43be08c37cf",
   "prevId": "8849c43a-5884-4181-9569-43fdbda45ccf",
   "version": "7",
   "dialect": "postgresql",
@@ -5976,13 +5976,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "provided_by_person": {
-          "name": "provided_by_person",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -17474,6 +17467,22 @@
           ],
           "isUnique": false,
           "where": "\"agent_runs\".\"status\" = 'done'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "agent_runs_inbox_idx": {
+          "name": "agent_runs_inbox_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "cardinality(\"agent_runs\".\"pending_message_ids\") + cardinality(\"agent_runs\".\"after_message_ids\") > 0",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -29502,6 +29511,28 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "routine_runs_open_idx": {
+          "name": "routine_runs_open_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"routine_runs\".\"finished_at\" is null",
           "concurrently": false,
           "method": "btree",
           "with": {}

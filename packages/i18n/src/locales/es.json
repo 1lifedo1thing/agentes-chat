@@ -628,6 +628,14 @@
     "emailLinkExpired": "Este enlace de confirmación ya no es válido. Tu cuenta funciona como siempre.",
     "sendNewLink": "Enviar un nuevo enlace",
     "newLinkSent": "Enviamos un nuevo enlace a {{email}}.",
+    "confirm": {
+      "title": "Revisa tu correo",
+      "lead": "Abre el enlace que enviamos a {{email}} para continuar.",
+      "wrongAddress": "¿Dirección incorrecta? Cámbiala",
+      "banner": "Confirma tu correo",
+      "bannerSub": "Abre el enlace que enviamos a {{email}}.",
+      "change": "Cambiar dirección"
+    },
     "unconfirmed": "Este correo ya tiene una cuenta con una contraseña que todavía no está confirmada. Inicia sesión con la contraseña o crea una nueva por correo.",
     "unconfirmedReset": "Crear una nueva contraseña",
     "unconfirmedNoEmail": "Este correo ya tiene una cuenta con contraseña. Inicia sesión con la contraseña.",
@@ -2485,7 +2493,7 @@
     "howTo": "Cómo instalarla",
     "phone": "Teléfono",
     "phoneText": "Los avisos en el bolsillo, para responder desde cualquier lugar.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -8789,7 +8797,14 @@
       "empty": "Arrastra archivos aquí, pega una captura o envíalos en la conversación de la tarea.",
       "fromCreation": "Al crearla · {{when}}",
       "fromComment": "Comentario de {{name}} · {{when}}",
-      "linked": "Vinculado por {{name}}"
+      "linked": "Vinculado por {{name}}",
+      "remove": "Quitar {{name}} de la tarea",
+      "removeShort": "Quitar de la tarea",
+      "removed": "{{name}} salió de la tarea. Sigue en el Drive.",
+      "added_one": "Archivo en los adjuntos",
+      "added_many": "{{count}} archivos en los adjuntos",
+      "added_other": "{{count}} archivos en los adjuntos",
+      "see": "Ver adjuntos"
     },
     "history": {
       "commented": "comentó",
@@ -16025,6 +16040,7 @@
     },
     "org": {
       "createInviteOnly": "Por ahora, los espacios de trabajo nuevos necesitan una invitación.",
+      "createUnconfirmed": "Primero abre el enlace que enviamos a tu correo. Luego crea el espacio de trabajo.",
       "membersFull": "Todos los lugares de este espacio de trabajo están ocupados ahora. Pide a quien te invitó que libere un lugar.",
       "deleting": "Este espacio de trabajo se está eliminando.",
       "notRestorable": "Este espacio de trabajo ya no se puede restaurar.",

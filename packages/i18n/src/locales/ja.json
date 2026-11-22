@@ -598,6 +598,14 @@
     "emailLinkExpired": "この確認リンクは無効になっています。アカウントは通常どおり使えます。",
     "sendNewLink": "新しいリンクを送信",
     "newLinkSent": "{{email}}に新しいリンクを送信しました。",
+    "confirm": {
+      "title": "受信トレイを確認してください",
+      "lead": "続けるには、{{email}}に送信したリンクを開いてください。",
+      "wrongAddress": "アドレスが違いますか？変更する",
+      "banner": "メールアドレスを確認してください",
+      "bannerSub": "{{email}}に送信したリンクを開いてください。",
+      "change": "アドレスを変更"
+    },
     "unconfirmed": "このメールアドレスには、まだ確認されていないパスワード付きのアカウントがあります。そのパスワードでログインするか、メールで新しいパスワードを作成してください。",
     "unconfirmedReset": "新しいパスワードを作成",
     "unconfirmedNoEmail": "このメールアドレスにはパスワード付きのアカウントがあります。パスワードでログインしてください。",
@@ -2316,7 +2324,7 @@
     "howTo": "インストール方法",
     "phone": "スマートフォン",
     "phoneText": "通知をポケットに。どこからでも返信できます。",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -8201,7 +8209,12 @@
       "empty": "ここにファイルをドロップするか、スクリーンショットを貼り付けるか、タスクの会話で送ってください。",
       "fromCreation": "作成時 · {{when}}",
       "fromComment": "{{name}}のコメント · {{when}}",
-      "linked": "{{name}}がリンク"
+      "linked": "{{name}}がリンク",
+      "remove": "{{name}}をタスクから外す",
+      "removeShort": "タスクから外す",
+      "removed": "{{name}}をタスクから外しました。Driveには残っています。",
+      "added_other": "{{count}}件のファイルを添付ファイルに追加しました",
+      "see": "添付ファイルを見る"
     },
     "history": {
       "commented": "がコメントしました",
@@ -14978,6 +14991,7 @@
     },
     "org": {
       "createInviteOnly": "新しいワークスペースの作成には、現在招待が必要です。",
+      "createUnconfirmed": "まずメールに送信したリンクを開いてから、ワークスペースを作成してください。",
       "membersFull": "このワークスペースの席は現在すべて埋まっています。招待した人に席を空けてもらってください。",
       "deleting": "このワークスペースは削除中です。",
       "notRestorable": "このワークスペースはもう復元できません。",

@@ -633,6 +633,15 @@ export const ptBR = {
     emailLinkExpired: "Este link de confirmação não vale mais. Sua conta funciona normalmente.",
     sendNewLink: "Mandar outro link",
     newLinkSent: "Mandamos outro link para {{email}}.",
+    /** An address never confirmed (ADR 0006, addendum 2026-11-22): the screen before a first workspace, the line in one. */
+    confirm: {
+      title: "Confira seu e-mail",
+      lead: "Abra o link que mandamos para {{email}} para continuar.",
+      wrongAddress: "Endereço errado? Trocar",
+      banner: "Confirme seu e-mail",
+      bannerSub: "Abra o link que mandamos para {{email}}.",
+      change: "Trocar endereço",
+    },
     unconfirmed:
       "Este e-mail já tem uma conta com senha que ainda não foi confirmada. Entre com a senha ou crie uma nova pelo e-mail.",
     unconfirmedReset: "Criar uma senha nova",
@@ -2451,7 +2460,8 @@ export const ptBR = {
     howTo: "Como instalar",
     phone: "Celular",
     phoneText: "Os avisos no bolso, para responder de qualquer lugar.",
-    appStore: "App Store",
+    /** The iPhone app's public beta, only on agentes.chat's own servers. */
+    testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
   openOnPhone: {
@@ -8968,6 +8978,12 @@ export const ptBR = {
       fromCreation: "Na criação · {{when}}",
       fromComment: "Comentário de {{name}} · {{when}}",
       linked: "Ligado por {{name}}",
+      remove: "Tirar {{name}} da tarefa",
+      removeShort: "Tirar da tarefa",
+      removed: "{{name}} saiu da tarefa. Continua no Drive.",
+      added_one: "Arquivo nos anexos",
+      added_other: "{{count}} arquivos nos anexos",
+      see: "Ver anexos",
     },
     history: { commented: "comentou", commentedFiles: "comentou com anexos" },
     event: {
@@ -15833,6 +15849,7 @@ export const ptBR = {
     },
     org: {
       createInviteOnly: "Novos workspaces precisam de convite por enquanto.",
+      createUnconfirmed: "Abra primeiro o link que mandamos para seu e-mail. Depois, crie o workspace.",
       membersFull:
         "Todas as vagas deste workspace estão ocupadas agora. Peça a quem convidou você para abrir uma vaga.",
       deleting: "Este workspace está sendo apagado.",

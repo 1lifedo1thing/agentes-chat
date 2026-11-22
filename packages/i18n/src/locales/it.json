@@ -628,6 +628,14 @@
     "emailLinkExpired": "Questo link di conferma non è più valido. Il tuo account funziona come sempre.",
     "sendNewLink": "Invia un nuovo link",
     "newLinkSent": "Abbiamo inviato un nuovo link a {{email}}.",
+    "confirm": {
+      "title": "Controlla la tua email",
+      "lead": "Apri il link che abbiamo inviato a {{email}} per continuare.",
+      "wrongAddress": "Indirizzo sbagliato? Cambialo",
+      "banner": "Conferma la tua email",
+      "bannerSub": "Apri il link che abbiamo inviato a {{email}}.",
+      "change": "Cambia indirizzo"
+    },
     "unconfirmed": "Questa email ha già un account con una password non ancora confermata. Accedi con la password, oppure creane una nuova via email.",
     "unconfirmedReset": "Crea una nuova password",
     "unconfirmedNoEmail": "Questa email ha già un account con password. Accedi con la password.",
@@ -2486,7 +2494,7 @@
     "howTo": "Come installarla",
     "phone": "Telefono",
     "phoneText": "Le notifiche in tasca, per rispondere da ovunque.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -8856,7 +8864,14 @@
       "empty": "Trascina qui i file, incolla uno screenshot o inviali nella conversazione dell'attività.",
       "fromCreation": "Alla creazione · {{when}}",
       "fromComment": "Commento di {{name}} · {{when}}",
-      "linked": "Collegato da {{name}}"
+      "linked": "Collegato da {{name}}",
+      "remove": "Togli {{name}} dall'attività",
+      "removeShort": "Togli dall'attività",
+      "removed": "{{name}} non fa più parte dell'attività. Resta nel Drive.",
+      "added_one": "File negli allegati",
+      "added_many": "{{count}} file negli allegati",
+      "added_other": "{{count}} file negli allegati",
+      "see": "Vedi allegati"
     },
     "history": {
       "commented": "ha commentato",
@@ -16122,6 +16137,7 @@
     },
     "org": {
       "createInviteOnly": "Per ora i nuovi spazi di lavoro richiedono un invito.",
+      "createUnconfirmed": "Prima apri il link che abbiamo inviato alla tua email. Poi crea lo spazio di lavoro.",
       "membersFull": "Tutti i posti di questo spazio di lavoro sono occupati al momento. Chiedi a chi ti ha invitato di liberare un posto.",
       "deleting": "Questo spazio di lavoro è in eliminazione.",
       "notRestorable": "Questo spazio di lavoro non si può più ripristinare.",

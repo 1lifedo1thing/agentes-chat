@@ -598,6 +598,14 @@
     "emailLinkExpired": "Tautan konfirmasi ini sudah tidak berlaku. Akunmu tetap berfungsi seperti biasa.",
     "sendNewLink": "Kirim tautan baru",
     "newLinkSent": "Kami mengirim tautan baru ke {{email}}.",
+    "confirm": {
+      "title": "Periksa kotak masuk",
+      "lead": "Buka tautan yang kami kirim ke {{email}} untuk melanjutkan.",
+      "wrongAddress": "Alamat salah? Ubah",
+      "banner": "Konfirmasi email",
+      "bannerSub": "Buka tautan yang kami kirim ke {{email}}.",
+      "change": "Ubah alamat"
+    },
     "unconfirmed": "Email ini sudah punya akun dengan kata sandi yang belum dikonfirmasi. Masuk dengan kata sandi itu, atau buat yang baru lewat email.",
     "unconfirmedReset": "Buat kata sandi baru",
     "unconfirmedNoEmail": "Email ini sudah punya akun dengan kata sandi. Masuk dengan kata sandi itu.",
@@ -2316,7 +2324,7 @@
     "howTo": "Cara memasang",
     "phone": "Ponsel",
     "phoneText": "Notifikasi di saku, untuk membalas dari mana saja.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -8243,7 +8251,12 @@
       "empty": "Seret file ke sini, tempel tangkapan layar, atau kirim di percakapan tugas.",
       "fromCreation": "Saat dibuat · {{when}}",
       "fromComment": "Komentar {{name}} · {{when}}",
-      "linked": "Ditautkan oleh {{name}}"
+      "linked": "Ditautkan oleh {{name}}",
+      "remove": "Keluarkan {{name}} dari tugas",
+      "removeShort": "Keluarkan dari tugas",
+      "removed": "{{name}} dikeluarkan dari tugas. File masih ada di Drive.",
+      "added_other": "{{count}} file masuk ke lampiran",
+      "see": "Lihat lampiran"
     },
     "history": {
       "commented": "berkomentar",
@@ -15037,6 +15050,7 @@
     },
     "org": {
       "createInviteOnly": "Untuk saat ini, ruang kerja baru membutuhkan undangan.",
+      "createUnconfirmed": "Buka dulu tautan yang kami kirim ke email. Lalu buat ruang kerjanya.",
       "membersFull": "Semua kursi di ruang kerja ini sedang terisi. Minta orang yang mengundangmu untuk membuka kursi.",
       "deleting": "Ruang kerja ini sedang dihapus.",
       "notRestorable": "Ruang kerja ini sudah tidak bisa dipulihkan.",

@@ -613,6 +613,14 @@
     "emailLinkExpired": "Dieser Bestätigungslink ist nicht mehr gültig. Dein Konto funktioniert wie gewohnt.",
     "sendNewLink": "Neuen Link senden",
     "newLinkSent": "Wir haben einen neuen Link an {{email}} gesendet.",
+    "confirm": {
+      "title": "Schau in dein Postfach",
+      "lead": "Öffne den Link, den wir an {{email}} gesendet haben, um weiterzumachen.",
+      "wrongAddress": "Falsche Adresse? Ändern",
+      "banner": "Bestätige deine E-Mail",
+      "bannerSub": "Öffne den Link, den wir an {{email}} gesendet haben.",
+      "change": "Adresse ändern"
+    },
     "unconfirmed": "Für diese E-Mail gibt es schon ein Konto mit einem Passwort, das noch nicht bestätigt ist. Melde dich mit dem Passwort an oder erstelle per E-Mail ein neues.",
     "unconfirmedReset": "Neues Passwort erstellen",
     "unconfirmedNoEmail": "Für diese E-Mail gibt es schon ein Konto mit Passwort. Melde dich mit dem Passwort an.",
@@ -2400,7 +2408,7 @@
     "howTo": "So installierst du sie",
     "phone": "Handy",
     "phoneText": "Benachrichtigungen in der Tasche, um von überall zu antworten.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -8527,7 +8535,13 @@
       "empty": "Zieh Dateien hierher, füg einen Screenshot ein oder schick sie in der Unterhaltung der Aufgabe.",
       "fromCreation": "Beim Erstellen · {{when}}",
       "fromComment": "Kommentar von {{name}} · {{when}}",
-      "linked": "Verknüpft von {{name}}"
+      "linked": "Verknüpft von {{name}}",
+      "remove": "{{name}} aus der Aufgabe entfernen",
+      "removeShort": "Aus der Aufgabe entfernen",
+      "removed": "{{name}} ist nicht mehr in der Aufgabe. Die Datei bleibt im Drive.",
+      "added_one": "Datei bei den Anhängen",
+      "added_other": "{{count}} Dateien bei den Anhängen",
+      "see": "Anhänge ansehen"
     },
     "history": {
       "commented": "hat kommentiert",
@@ -15561,6 +15575,7 @@
     },
     "org": {
       "createInviteOnly": "Neue Workspaces brauchen vorerst eine Einladung.",
+      "createUnconfirmed": "Öffne zuerst den Link, den wir an deine E-Mail gesendet haben. Dann erstelle den Workspace.",
       "membersFull": "Alle Plätze in diesem Workspace sind gerade belegt. Bitte die Person, die dich eingeladen hat, einen Platz freizumachen.",
       "deleting": "Dieser Workspace wird gerade gelöscht.",
       "notRestorable": "Dieser Workspace kann nicht mehr wiederhergestellt werden.",

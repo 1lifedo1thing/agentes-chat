@@ -643,6 +643,14 @@
     "emailLinkExpired": "Ten link potwierdzający jest już nieważny. Twoje konto działa normalnie.",
     "sendNewLink": "Wyślij nowy link",
     "newLinkSent": "Wysłaliśmy nowy link na {{email}}.",
+    "confirm": {
+      "title": "Sprawdź skrzynkę",
+      "lead": "Otwórz link, który wysłaliśmy na {{email}}, aby przejść dalej.",
+      "wrongAddress": "Zły adres? Zmień go",
+      "banner": "Potwierdź swój e-mail",
+      "bannerSub": "Otwórz link, który wysłaliśmy na {{email}}.",
+      "change": "Zmień adres"
+    },
     "unconfirmed": "Ten e-mail ma już konto z hasłem, które nie zostało jeszcze potwierdzone. Zaloguj się hasłem albo utwórz nowe przez e-mail.",
     "unconfirmedReset": "Utwórz nowe hasło",
     "unconfirmedNoEmail": "Ten e-mail ma już konto z hasłem. Zaloguj się hasłem.",
@@ -2571,7 +2579,7 @@
     "howTo": "Jak zainstalować",
     "phone": "Telefon",
     "phoneText": "Powiadomienia w kieszeni, by odpowiadać z każdego miejsca.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -9129,7 +9137,15 @@
       "empty": "Przeciągnij tu pliki, wklej zrzut ekranu albo wyślij je w rozmowie zadania.",
       "fromCreation": "Przy tworzeniu · {{when}}",
       "fromComment": "Komentarz: {{name}} · {{when}}",
-      "linked": "Połączone przez: {{name}}"
+      "linked": "Połączone przez: {{name}}",
+      "remove": "Usuń {{name}} z zadania",
+      "removeShort": "Usuń z zadania",
+      "removed": "{{name}} nie jest już w zadaniu. Plik zostaje na Drive.",
+      "added_one": "Plik trafił do załączników",
+      "added_few": "{{count}} pliki trafiły do załączników",
+      "added_many": "{{count}} plików trafiło do załączników",
+      "added_other": "{{count}} pliku trafiło do załączników",
+      "see": "Zobacz załączniki"
     },
     "history": {
       "commented": "dodaje komentarz",
@@ -16652,6 +16668,7 @@
     },
     "org": {
       "createInviteOnly": "Nowe przestrzenie robocze wymagają na razie zaproszenia.",
+      "createUnconfirmed": "Najpierw otwórz link, który wysłaliśmy na Twój e-mail. Potem utwórz przestrzeń roboczą.",
       "membersFull": "Wszystkie miejsca w tej przestrzeni roboczej są teraz zajęte. Poproś osobę, która cię zaprosiła, o zwolnienie miejsca.",
       "deleting": "Ta przestrzeń robocza jest usuwana.",
       "notRestorable": "Tej przestrzeni roboczej nie da się już przywrócić.",

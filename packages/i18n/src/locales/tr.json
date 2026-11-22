@@ -613,6 +613,14 @@
     "emailLinkExpired": "Bu doğrulama bağlantısı artık geçerli değil. Hesabınız her zamanki gibi çalışıyor.",
     "sendNewLink": "Yeni bağlantı gönder",
     "newLinkSent": "{{email}} adresine yeni bir bağlantı gönderdik.",
+    "confirm": {
+      "title": "Gelen kutunuza bakın",
+      "lead": "Devam etmek için {{email}} adresine gönderdiğimiz bağlantıyı açın.",
+      "wrongAddress": "Adres yanlış mı? Değiştirin",
+      "banner": "E-postanızı onaylayın",
+      "bannerSub": "{{email}} adresine gönderdiğimiz bağlantıyı açın.",
+      "change": "Adresi değiştir"
+    },
     "unconfirmed": "Bu e-postanın, şifresi henüz doğrulanmamış bir hesabı zaten var. Şifreyle giriş yapın veya e-postayla yeni bir şifre oluşturun.",
     "unconfirmedReset": "Yeni şifre oluştur",
     "unconfirmedNoEmail": "Bu e-postanın şifreli bir hesabı zaten var. Şifreyle giriş yapın.",
@@ -2400,7 +2408,7 @@
     "howTo": "Nasıl kurulur",
     "phone": "Telefon",
     "phoneText": "Bildirimler cebinizde, her yerden yanıt vermek için.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -8480,7 +8488,13 @@
       "empty": "Dosyaları buraya sürükleyin, bir ekran görüntüsü yapıştırın ya da görevin sohbetinde gönderin.",
       "fromCreation": "Oluşturulurken · {{when}}",
       "fromComment": "{{name}} yorumu · {{when}}",
-      "linked": "{{name}} bağladı"
+      "linked": "{{name}} bağladı",
+      "remove": "{{name}} dosyasını görevden çıkar",
+      "removeShort": "Görevden çıkar",
+      "removed": "{{name}} görevden çıkarıldı. Dosya Drive'da duruyor.",
+      "added_one": "Dosya eklere eklendi",
+      "added_other": "{{count}} dosya eklere eklendi",
+      "see": "Ekleri gör"
     },
     "history": {
       "commented": "yorum yaptı",
@@ -15490,6 +15504,7 @@
     },
     "org": {
       "createInviteOnly": "Yeni çalışma alanları şimdilik davet gerektiriyor.",
+      "createUnconfirmed": "Önce e-postanıza gönderdiğimiz bağlantıyı açın. Sonra çalışma alanını oluşturun.",
       "membersFull": "Bu çalışma alanındaki tüm yerler şu anda dolu. Sizi davet eden kişiden bir yer açmasını isteyin.",
       "deleting": "Bu çalışma alanı siliniyor.",
       "notRestorable": "Bu çalışma alanı artık geri yüklenemez.",

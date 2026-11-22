@@ -640,6 +640,15 @@ export const en = {
     emailLinkExpired: "This confirmation link is no longer valid. Your account works as usual.",
     sendNewLink: "Send a new link",
     newLinkSent: "We sent a new link to {{email}}.",
+    /** An address never confirmed (ADR 0006, addendum 2026-11-22): the screen before a first workspace, the line in one. */
+    confirm: {
+      title: "Check your inbox",
+      lead: "Open the link we sent to {{email}} to go on.",
+      wrongAddress: "Wrong address? Change it",
+      banner: "Confirm your email",
+      bannerSub: "Open the link we sent to {{email}}.",
+      change: "Change address",
+    },
     unconfirmed:
       "This email already has an account with a password that isn't confirmed yet. Sign in with the password, or create a new one by email.",
     unconfirmedReset: "Create a new password",
@@ -2553,13 +2562,14 @@ export const en = {
     howTo: "How to install",
     phone: "Phone",
     phoneText: "Notifications in your pocket, to answer from anywhere.",
-    appStore: "App Store",
+    /** The iPhone app's public beta, only on agentes.chat's own servers. */
+    testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
     making: "Making the code…",
-    /** Followed by the App Store and Google Play, each marked Soon until the app is in it. */
+    /** Followed by where to get the app (`usePhoneStores`); the App Store marked Soon where the iPhone app is not offered. */
     stepApp: "Install the agentes app on your phone.",
     stepTailscale: "Install Tailscale on your phone and sign in with the same Tailscale account as this server.",
     /** The links to Tailscale in each store, after the step: the store's own name. */
@@ -9014,6 +9024,12 @@ export const en = {
       fromCreation: "At creation · {{when}}",
       fromComment: "{{name}}'s comment · {{when}}",
       linked: "Linked by {{name}}",
+      remove: "Remove {{name}} from the task",
+      removeShort: "Remove from the task",
+      removed: "{{name}} removed from the task. It's still in the Drive.",
+      added_one: "File added to the attachments",
+      added_other: "{{count}} files added to the attachments",
+      see: "See attachments",
     },
     history: { commented: "commented", commentedFiles: "commented with attachments" },
     event: {
@@ -15888,6 +15904,7 @@ export const en = {
     },
     org: {
       createInviteOnly: "New workspaces need an invitation for now.",
+      createUnconfirmed: "Open the link we sent to your email first. Then create the workspace.",
       membersFull: "Every seat in this workspace is taken right now. Ask whoever invited you to open a seat.",
       deleting: "This workspace is being deleted.",
       notRestorable: "This workspace can't be restored anymore.",
