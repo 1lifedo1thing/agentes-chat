@@ -154,6 +154,10 @@
 .mp__search {
   margin-top: var(--space-3);
 }
+/* The kit's field is as wide as its box: here the box's margins come off that width. */
+.mp__body > .mp__search {
+  width: calc(100% - 2 * var(--space-3));
+}
 
 /* The models: the kit's menu rows (`.ac-menu__item`), Automático first, the one it runs checked, a
    refused one dimmed. */
