@@ -3327,7 +3327,10 @@
       "getGit": "下载 Git for Windows",
       "cantStart": "{{program}} 在 {{computer}} 上，但无法启动：{{message}}",
       "outdated": "更新 {{computer}} 上的 agentes.chat 应用，即可从这里安装。",
-      "asked": "请求已发送。{{name}} 会收到一个安装按钮。"
+      "asked": "请求已发送。{{name}} 会收到一个安装按钮。",
+      "runThis": "在那里运行这条命令来安装。",
+      "missingSystem": "{{computer}} 上还没有给智能体用的 {{program}}，每个智能体都以自己的用户身份工作。在那里运行这条命令，为所有智能体安装。",
+      "homeOnly": "{{computer}} 上的 {{program}} 只为 root 安装了。每个智能体都以自己的用户身份工作，访问不到它。在那里运行这条命令，为所有智能体安装。"
     },
     "titleFor": "为 {{name}} 连接 AI",
     "titleFor_female": "为 {{name}} 连接 AI",
@@ -11723,7 +11726,8 @@
       "cant_start": "{{program}} 在 {{computer}} 上，但无法启动。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
-      "no_computerCloud": "{{computer}} 一就绪即可使用。"
+      "no_computerCloud": "{{computer}} 一就绪即可使用。",
+      "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。"
     },
     "notAvailableNow": "已选择，但目前不可用。",
     "offline": "{{computer}} 当前离线。",

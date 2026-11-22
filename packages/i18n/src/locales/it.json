@@ -3620,7 +3620,10 @@
       "getGit": "Scarica Git for Windows",
       "cantStart": "{{program}} è su {{computer}}, ma non si avvia: {{message}}",
       "outdated": "Aggiorna l'app agentes.chat su {{computer}} per installare da qui.",
-      "asked": "Richiesta inviata. {{name}} riceve un pulsante per installarlo."
+      "asked": "Richiesta inviata. {{name}} riceve un pulsante per installarlo.",
+      "runThis": "Esegui questo comando lì per installarlo.",
+      "missingSystem": "{{program}} non è ancora su {{computer}} per gli agenti, che lavorano ognuno come un proprio utente. Esegui questo comando lì per installarlo per tutti.",
+      "homeOnly": "{{program}} è installato solo per root su {{computer}}. Ogni agente lavora come un proprio utente e non ci arriva. Esegui questo comando lì per installarlo per tutti."
     },
     "titleFor": "Collega un'IA per {{name}}",
     "titleFor_female": "Collega un'IA per {{name}}",
@@ -12648,7 +12651,8 @@
       "cant_start": "{{program}} è su {{computer}}, ma non si avvia.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
-      "no_computerCloud": "Pronto appena lo è {{computer}}."
+      "no_computerCloud": "Pronto appena lo è {{computer}}.",
+      "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano."
     },
     "notAvailableNow": "Scelto, ma non disponibile in questo momento.",
     "offline": "{{computer}} è offline in questo momento.",

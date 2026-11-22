@@ -17,7 +17,7 @@ import { brainModelLine, brainPickText } from "@agenteschat/client/lib/brain-pic
 import { contextSize } from "@agenteschat/client/lib/context-limits";
 import { keyRefusal } from "@agenteschat/client/lib/errors";
 import { namesText, rosterText } from "@agenteschat/client/lib/format";
-import { brainTool, installableCli } from "@agenteschat/client/lib/machines";
+import { brainTool, cliCommandWayOut, installableCli } from "@agenteschat/client/lib/machines";
 import { type AiChoice, planMark } from "@agenteschat/client/lib/no-ai";
 import { usageWhen } from "@agenteschat/client/lib/plan-usage";
 import {
@@ -652,9 +652,9 @@ function BrainFlow({ view, onClose, at }: { view: AgentBrain; onClose: () => voi
   const missingCli =
     view.brain !== "model" &&
     (missingReason === "not_installed" || missingReason === "cant_start") &&
-    installableCli(view.brain) &&
     offOn &&
-    offOn.kind !== "managed"
+    offOn.kind !== "managed" &&
+    (installableCli(view.brain) || cliCommandWayOut(t, view.brain, offOn, missingReason, offOn.name))
       ? { kind: view.brain, reason: missingReason, machine: offOn }
       : null;
   const lendsAny = view.canUseOthersPlans === true && s.listed.some((a) => !a.mine && a.ownerId !== agent.ownerUserId);

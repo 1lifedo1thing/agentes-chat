@@ -3340,7 +3340,10 @@
       "getGit": "Unduh Git for Windows",
       "cantStart": "{{program}} ada di {{computer}}, tetapi tidak mau berjalan: {{message}}",
       "outdated": "Perbarui aplikasi agentes.chat di {{computer}} untuk memasang dari sini.",
-      "asked": "Permintaan terkirim. {{name}} mendapat tombol untuk memasangnya."
+      "asked": "Permintaan terkirim. {{name}} mendapat tombol untuk memasangnya.",
+      "runThis": "Jalankan perintah ini di sana untuk memasangnya.",
+      "missingSystem": "{{program}} belum ada di {{computer}} untuk para agen, yang masing-masing bekerja sebagai pengguna sendiri. Jalankan perintah ini di sana untuk memasangnya bagi semuanya.",
+      "homeOnly": "{{program}} hanya terpasang untuk root di {{computer}}. Setiap agen bekerja sebagai pengguna sendiri dan tidak bisa menjangkaunya. Jalankan perintah ini di sana untuk memasangnya bagi semuanya."
     },
     "titleFor": "Hubungkan AI untuk {{name}}",
     "titleFor_female": "Hubungkan AI untuk {{name}}",
@@ -11709,7 +11712,8 @@
       "cant_start": "{{program}} ada di {{computer}}, tetapi tidak mau berjalan.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
-      "no_computerCloud": "Siap begitu {{computer}} siap."
+      "no_computerCloud": "Siap begitu {{computer}} siap.",
+      "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen."
     },
     "notAvailableNow": "Dipilih, tapi sedang tidak tersedia.",
     "offline": "{{computer}} sedang offline.",

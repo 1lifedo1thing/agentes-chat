@@ -3328,7 +3328,10 @@
       "getGit": "Git for Windows をダウンロード",
       "cantStart": "{{program}} は {{computer}} にありますが、起動しません: {{message}}",
       "outdated": "ここからインストールするには、{{computer}} の agentes.chat アプリを更新してください。",
-      "asked": "依頼を送りました。{{name}} さんにインストールのボタンが届きます。"
+      "asked": "依頼を送りました。{{name}} さんにインストールのボタンが届きます。",
+      "runThis": "インストールするには、そこでこのコマンドを実行してください。",
+      "missingSystem": "{{computer}} にはまだエージェント用の {{program}} がありません。エージェントはそれぞれ専用のユーザーとして動きます。全員用にインストールするには、そこでこのコマンドを実行してください。",
+      "homeOnly": "{{computer}} の {{program}} は root 専用にインストールされています。エージェントはそれぞれ専用のユーザーとして動くため、届きません。全員用にインストールするには、そこでこのコマンドを実行してください。"
     },
     "titleFor": "{{name}}のAIを接続",
     "have": {
@@ -11651,7 +11654,8 @@
       "cant_start": "{{program}} は {{computer}} にありますが、起動しません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
-      "no_computerCloud": "{{computer}}の準備ができ次第使えます。"
+      "no_computerCloud": "{{computer}}の準備ができ次第使えます。",
+      "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。"
     },
     "notAvailableNow": "選択済みですが、現在は利用できません。",
     "offline": "{{computer}}は現在オフラインです。",

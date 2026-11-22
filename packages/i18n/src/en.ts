@@ -3781,6 +3781,14 @@ export const en = {
       cantStart: "{{program}} is on {{computer}}, but it won't start: {{message}}",
       outdated: "Update the agentes.chat app on {{computer}} to install from here.",
       asked: "Request sent. {{name}} gets a button to install it.",
+      /** A CLI the apps don't install: the line to run follows, after `missing`. */
+      runThis: "Run this command there to install it.",
+      /** System mode: each agent is its own OS user, so the CLI goes where all of them run it. The line follows. */
+      missingSystem:
+        "{{program}} isn't on {{computer}} for its agents yet, who each work as their own user. Run this command there to install it for all of them.",
+      /** System mode: the CLI is only in root's `~/.local/bin`. The line follows. */
+      homeOnly:
+        "{{program}} is installed only for root on {{computer}}. Each agent works as its own user and can't reach it. Run this command there to install it for all of them.",
     },
     titleFor: "Connect an AI for {{name}}",
     /** What the person already has, before the new sign-ins: accounts on the agent's computer, the workspace's keys. */
@@ -12569,6 +12577,8 @@ export const en = {
       tool_offOne: "{{program}} is turned off on {{computer}}.",
       not_installed: "{{program}} isn't installed on {{computer}}.",
       cant_start: "{{program}} is on {{computer}}, but it won't start.",
+      /** System mode: the CLI is only in root's `~/.local/bin`. */
+      home_only: "{{program}} is installed only for root on {{computer}}, where the agents can't reach it.",
       /** Its runner hasn't said which CLIs it has yet: nobody knows whether this one is there. */
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
