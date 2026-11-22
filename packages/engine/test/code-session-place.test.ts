@@ -22,7 +22,7 @@ import { addMember, type Fixture, setup } from "./fixtures";
 import { connectedComputer, type FakeRunnerOptions, pairMachine, RUNNER } from "./machine-fixtures";
 
 /**
- * A code session is the run's place (ADR 0214 §3): the session's computer and worktree, read once, where a computer
+ * A code session is the run's place (ADR 0215 §3): the session's computer and worktree, read once, where a computer
  * brain's turn opens and the engine's code tools work, whichever brain thinks. Who may have a session, and what a
  * session hides from every brain.
  */

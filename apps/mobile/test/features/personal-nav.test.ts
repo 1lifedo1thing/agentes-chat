@@ -84,7 +84,7 @@ describe("You in a personal workspace", () => {
       "archived",
     ]);
     expect(me).toContain('onPress={() => open("/team")}');
-    // Código (ADR 0214): the sessions, pushed as their own screen.
+    // Código (ADR 0215): the sessions, pushed as their own screen.
     expect(me).toContain('onPress={() => open("/coding")}');
   });
 

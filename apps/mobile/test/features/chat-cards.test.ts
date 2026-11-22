@@ -170,7 +170,7 @@ describe("what agents did under each reply: the person's own setting, off by def
   test("off, a done reply draws nothing and a saved one no block; the live block stays", () => {
     const tools = source("ToolCalls.tsx");
     // Done and off: no call is "now", so nothing shows (the branch for a reply with no call: its words are the reply).
-    // The setting is read through `useShowsWork`: in a code session's conversation the work always shows (ADR 0214).
+    // The setting is read through `useShowsWork`: in a code session's conversation the work always shows (ADR 0215).
     expect(tools).toContain("const shows = useShowsWork(org);");
     expect(tools).toContain("(done && !shows) ? null : toolNow(items);");
     expect(tools).toContain('const said = done ? [] : items.flatMap((i) => (i.kind === "say" ? [i] : []));');

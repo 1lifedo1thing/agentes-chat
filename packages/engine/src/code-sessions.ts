@@ -37,7 +37,7 @@ import { codeRunning } from "./sandbox";
 import { withoutTrailingSlashes } from "./url-text";
 
 /*
- * Code sessions (ADR 0214): a request worked on in its own git worktree on the agent's computer. The session's
+ * Code sessions (ADR 0215): a request worked on in its own git worktree on the agent's computer. The session's
  * conversation is a thread in a channel of kind `code` (the task conversation's model, ADR 0145): runs, steering,
  * stop, approvals, live events and the thread screens work unchanged. Its agent answers there like in a DM, pinned
  * to the session's computer and worktree like a mission's main session (`codeSessionContext`): a computer brain gets
@@ -98,7 +98,7 @@ export interface CodeSessionDeps {
   log?: { warn(message: string, data?: Record<string, unknown>): void };
 }
 
-/** The conversation a session was opened from (a suggestion in it, ADR 0214 §11): its message, for the way back. */
+/** The conversation a session was opened from (a suggestion in it, ADR 0215 §11): its message, for the way back. */
 export interface CodeSessionFrom {
   channelId: string;
   messageId: string;
@@ -144,7 +144,7 @@ export function sessionTitle(raw: string | undefined): string {
 const shortId = (id: string) => id.replace(/-/g, "").slice(-8);
 
 /**
- * A project only on the agent's computer, with no remote yet (ADR 0214): named like a folder (letters, digits, dots,
+ * A project only on the agent's computer, with no remote yet (ADR 0215): named like a folder (letters, digits, dots,
  * dashes, underscores, not starting with a dot), it lives in `projects/<name>` in the agent's folder, a git repository
  * of its own made on first use. A session on it has `repo` = that name (no slash), so `isLocalSession` tells it apart
  * from a GitHub repository's (`owner/name`).
@@ -195,7 +195,7 @@ export const codeAgentSql = (channelId: SQL) =>
     where cs.channel_id = ${channelId} and cs.archived_at is null and cs.worktree_state = 'ready' limit 1)`;
 
 /**
- * Who a person names in a session's conversation joins it (ADR 0214): an agent of the workspace by its handle (so the
+ * Who a person names in a session's conversation joins it (ADR 0215): an agent of the workspace by its handle (so the
  * mention wakes it there), a person of the workspace too (they see and talk in the session from then on; what they
  * may do on the computer stays the computer's rule). Returns nothing; the members cache is dropped.
  */
@@ -408,7 +408,7 @@ export interface CodeSessionView {
   createdBy: string | null;
   createdAt: string;
   lastAt: string;
-  /** The conversation it was opened from (ADR 0214 §11), on the session's own page only, for whoever can see it. */
+  /** The conversation it was opened from (ADR 0215 §11), on the session's own page only, for whoever can see it. */
   from?: CodeSessionOrigin;
 }
 
@@ -551,7 +551,7 @@ export async function getCodeSession(db: Database, userId: string, orgId: string
 }
 
 /**
- * The conversation a session was opened from (its root's `meta.codeSession.from`, ADR 0214 §11), named the way the
+ * The conversation a session was opened from (its root's `meta.codeSession.from`, ADR 0215 §11), named the way the
  * apps say it, for whoever can open it: nothing for a person it isn't shared with.
  */
 async function originOf(db: Database, userId: string, row: CodeSessionRow): Promise<CodeSessionOrigin | null> {
@@ -602,7 +602,7 @@ export interface CreateCodeSessionInput {
   text: string;
   /** Its name, when someone gave one (an agent's suggestion); else the request's first sentence. */
   title?: string;
-  /** The conversation it was opened from (a suggestion in it, ADR 0214 §11). */
+  /** The conversation it was opened from (a suggestion in it, ADR 0215 §11). */
   from?: CodeSessionFrom;
 }
 
@@ -995,7 +995,7 @@ async function sessionAgentsIn(db: Database, orgId: string, first = false): Prom
 }
 
 /**
- * Whether Code has anything for this person (ADR 0214 §12): an agent a session can start with, or an open session they
+ * Whether Code has anything for this person (ADR 0215 §12): an agent a session can start with, or an open session they
  * take part in (its agent may have left since). The apps offer Code only then; the caller checked the membership.
  */
 export async function hasCodeWork(db: Database, userId: string, orgId: string): Promise<boolean> {
@@ -1308,7 +1308,7 @@ export async function recordCodeSessionPr(
   return setSession(deps, row, { prNumber: pr.number, prUrl: pr.url });
 }
 
-/* ───────── the panel's Git and Files tabs (ADR 0214) ───────── */
+/* ───────── the panel's Git and Files tabs (ADR 0215) ───────── */
 
 /** Most commits the Git tab lists, the newest first. */
 const LOG_MAX = 100;
@@ -1650,7 +1650,7 @@ async function readWorktreeFile(deps: CodeSessionDeps, row: CodeSessionRow, path
 }
 
 /**
- * A person saves a file of the worktree (ADR 0214): whoever is in the session, since they could ask its agent for the
+ * A person saves a file of the worktree (ADR 0215): whoever is in the session, since they could ask its agent for the
  * same change. Only a file the session shows (never one git ignores, a `.env` one, a link out, a binary or a cut
  * one), written as the agent by the runner's own file op (its mode kept, never into a `.git` folder). `rev` is what
  * the person started from: the file holding something else by now (the agent wrote it meanwhile) is refused with

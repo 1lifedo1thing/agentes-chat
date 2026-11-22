@@ -52,6 +52,7 @@ import { ENTER } from "./constants";
 import { createValueStore, useValueOf, type ValueStore } from "./hooks";
 import { REACH_LAST, reachOf, whenIdle } from "./reach";
 import { DIVIDER_KEY, type Row, rowKey, rowType, STICKER_VIEW } from "./rows";
+import { useChatSheet } from "./sheet-mode";
 import type { ChatData } from "./useChatData";
 import type { ChatRows, useRowReceipts } from "./useChatRows";
 import type { ConversationActions } from "./useConversationActions";
@@ -205,6 +206,9 @@ export function useListPlacement({
   const listShown = useSharedValue(0.05);
   const listFade = useAnimatedStyle(() => ({ opacity: listShown.value }));
   // Until then the conversation's skeleton stands where the messages will (`ChatSkeleton`), and leaves as they fade in.
+  // In a file's sheet (ADR 0208) the conversation is the one the file's line already read: it shows the moment it is
+  // placed, with no fade and no skeleton before it (`ChatScreen`), as the sheet comes up.
+  const inSheet = useChatSheet() !== null;
   const [placed, setPlaced] = useState(false);
   // Opening at the latest message (no "Novas" line to open at, no message asked for): set once the lists say so.
   const opensAtEnd = useRef(false);
@@ -213,7 +217,7 @@ export function useListPlacement({
     if (revealing.current) return;
     revealing.current = true;
     const show = () => {
-      listShown.value = withTiming(1, { duration: 120 });
+      listShown.value = inSheet ? 1 : withTiming(1, { duration: 120 });
       listPlaced.current = true;
       setPlaced(true);
       watchList();
@@ -233,7 +237,7 @@ export function useListPlacement({
         show();
       });
     });
-  }, [listShown, watchList, listRef]);
+  }, [listShown, watchList, listRef, inSheet]);
   useEffect(() => {
     if (!showList) return;
     const timer = setTimeout(revealList, SHOW_LIST_MS);
@@ -499,6 +503,7 @@ export function ChatList({
   isFresh,
   isThread,
   linkThreads,
+  replying,
   quiet,
   rhythm,
   seenBy,
@@ -559,6 +564,7 @@ export function ChatList({
   ChatData,
   | "isThread"
   | "linkThreads"
+  | "replying"
   | "quiet"
   | "rhythm"
   | "seenBy"
@@ -736,8 +742,11 @@ export function ChatList({
               canReply={canReply}
               canMission={canMission}
               thread={isThread ? undefined : linkThreads.get(item.message.id)}
+              replying={replying.get(item.message.id)?.join(",")}
               menuThread={linkThreads.get(item.message.threadId ?? item.message.id)}
-              aboveThread={item.above && !isThread ? linkThreads.has(item.above.id) : false}
+              aboveThread={
+                item.above && !isThread ? linkThreads.has(item.above.id) || replying.has(item.above.id) : false
+              }
               markReceipt={item.message.id === markAt ? receipt : undefined}
               seenBy={item.message.id === seenId ? seenBy : undefined}
               fanReceipt={receipts[item.message.id]}
@@ -771,6 +780,7 @@ export function ChatList({
       canReply,
       canMission,
       linkThreads,
+      replying,
       offerAt,
       hands,
       dir,

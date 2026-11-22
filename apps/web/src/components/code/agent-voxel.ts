@@ -12,7 +12,7 @@ import {
 } from "@agenteschat/ui/agent/engine";
 
 /*
- * An agent in cubes, the Code home's one 3D piece (ADR 0214). The agents' engine draws the avatar (body, eyes and
+ * An agent in cubes, the Code home's one 3D piece (ADR 0215). The agents' engine draws the avatar (body, eyes and
  * accessory on its 16×16 grid) and each pixel of that drawing becomes a cube: no shape of its own, so it is always the
  * agent people see everywhere else. Each face takes one of the agent's own tones through the 4×4 Bayer dither the sky
  * and the avatars use, laid on the cubes (it turns with them and never swims). The light comes from the top left.

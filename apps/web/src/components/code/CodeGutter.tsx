@@ -20,7 +20,7 @@ export function useStoredSize(key: string, min: number, max: number, start: numb
 }
 
 /**
- * The drag between two of the Code page's surfaces (ADR 0214). Upright (`x`), it sets the width of the one on its
+ * The drag between two of the Code page's surfaces (ADR 0215). Upright (`x`), it sets the width of the one on its
  * left; across (`y`), the height of the one under it (the terminal). Arrows move it by 24 px, double click puts it
  * back; the size is kept on this device.
  */

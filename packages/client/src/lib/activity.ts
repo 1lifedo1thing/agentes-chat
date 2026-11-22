@@ -210,7 +210,7 @@ const BUILTIN: Record<string, ActivityKind> = {
   update_skill: "consultingSkill",
   // Missions (the agent's tools and the executor's MCP tools).
   propose_mission: "proposingMission",
-  // A code session suggested for a change asked in the chat (ADR 0214 §11).
+  // A code session suggested for a change asked in the chat (ADR 0215 §11).
   suggest_code_session: "suggestingCodeSession",
   send_to_mission: "messagingMission",
   update_plan: "updatingPlan",

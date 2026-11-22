@@ -60,7 +60,7 @@ export function endKeptTerminal(keep: string) {
 }
 
 /**
- * A code session's terminal (ADR 0214): a shell on the agent's computer, as its agent's user, started in the session's
+ * A code session's terminal (ADR 0215): a shell on the agent's computer, as its agent's user, started in the session's
  * worktree, for the person's own scripts (the agent doesn't work in it). xterm.js fills the pane and follows its size;
  * keys go to the shell as bytes (binary frames), its output comes back the same way, and a new size goes as a `resize`
  * text frame. Who may open it is who may drive that computer (ADR 0058 §6). Its shell's end, or a refusal, says why

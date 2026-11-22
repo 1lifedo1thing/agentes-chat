@@ -1543,7 +1543,7 @@ export const featureKeysEn = {
       lastDay: "Last day",
     },
   },
-  // Código (ADR 0214; the rest of its words are the web's, `codeSessions.*`).
+  // Código (ADR 0215; the rest of its words are the web's, `codeSessions.*`).
   coding: {
     /** A session's pill in its conversation, which opens its code. */
     pill: "{{who}}. See the code",

@@ -36,7 +36,7 @@ export function CommandMenu() {
   const dir = useDirectory(org.id);
   const channels = useChannels(org.id);
   const server = useAuthConfig().data;
-  // Code only where it has anything for me, as in the sidebar (ADR 0214 §12).
+  // Code only where it has anything for me, as in the sidebar (ADR 0215 §12).
   const code = offersCode(useOverview(org.id).data?.code, useSidebarItems(org.id).data);
   const navigate = useNavigate();
   const invite = useInviteDialog();

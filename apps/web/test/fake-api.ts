@@ -502,7 +502,7 @@ export interface FakeState {
   idRefs?: Record<string, IdRef>;
   /** The sidebar's tools in my order (`orgs.sidebarToolOrder`); unset = the default. */
   sidebarToolOrder?: SidebarItem[];
-  /** Whether Code has anything for me (`OrgOverview.code`, ADR 0214 §12); unset = no. */
+  /** Whether Code has anything for me (`OrgOverview.code`, ADR 0215 §12); unset = no. */
   codeWork?: boolean;
   /** How my sidebar shows the agents and what I pinned (`orgs.sidebarView`); unset = never changed. */
   sidebarView?: SidebarView;
@@ -4600,7 +4600,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
     databases: databases.client,
     dashboards: dashboards.client,
     live: live.client,
-    // Code sessions (ADR 0214): none in these tests.
+    // Code sessions (ADR 0215): none in these tests.
     code: {
       list: async () => [],
       start: async () => ({ agents: [] }),
@@ -4651,7 +4651,7 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
         truncated: false,
         rev: "saved",
       }),
-      // A session an agent suggested in the chat (ADR 0214 §11): opened (just started, preparing) or kept here.
+      // A session an agent suggested in the chat (ADR 0215 §11): opened (just started, preparing) or kept here.
       openSuggestion: async (orgId: string, messageId: string) => {
         state.calls.push({ method: "code.openSuggestion", args: [orgId, messageId] });
         const s = codeSuggestionOf(state.messages.find((m) => m.id === messageId)?.meta);

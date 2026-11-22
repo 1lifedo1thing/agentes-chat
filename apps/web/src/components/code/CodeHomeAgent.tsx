@@ -30,7 +30,7 @@ const seedOf = (name: string) => {
 type Box = { left: number; top: number; right: number; bottom: number };
 
 /**
- * The Code home's agent (ADR 0214): the agent picked in the field, in cubes from its own avatar, standing over the
+ * The Code home's agent (ADR 0215): the agent picked in the field, in cubes from its own avatar, standing over the
  * title. It builds itself as it shows (each cube dropping into place from its foot up, `BUILD_MS`), turns a little
  * toward the pointer anywhere over the home (`area`) and blinks when its avatar does; its cursor glides in as the last
  * cube lands and waits beside it. Decoration (the field says who works): hidden from screen readers. Without

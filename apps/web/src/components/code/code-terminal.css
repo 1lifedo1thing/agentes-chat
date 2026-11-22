@@ -1,5 +1,5 @@
 /*
- * A code session's terminal (ADR 0214, `TerminalPane`): xterm.js in the app's theme, on the page's own ground. The
+ * A code session's terminal (ADR 0215, `TerminalPane`): xterm.js in the app's theme, on the page's own ground. The
  * terminal reads its colors from these properties when it opens and again when the theme changes; its face is the
  * app's mono. The sixteen colors programs ask for by number (`--code-term-0` to `-15`: black, red, green, yellow,
  * blue, magenta, cyan, white, then their bright ones) are a set for each ground, each readable on it.

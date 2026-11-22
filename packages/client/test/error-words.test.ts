@@ -396,7 +396,7 @@ test("a provider refused this server's own OAuth app: what's wrong and who fixes
  * hit goes in `KNOWN` instead.
  */
 const PLAIN_LINE = new Set([
-  // A code session (ADR 0214): the apps start one only with words in the field and rename one only to a name, build
+  // A code session (ADR 0215): the apps start one only with words in the field and rename one only to a name, build
   // its git and file requests themselves, never offer removing who must stay, and retry only a failed worktree.
   "code_session.empty",
   "code_session.empty_title",
@@ -410,6 +410,8 @@ const PLAIN_LINE = new Set([
   "channel.file_conversation",
   "channel.task_conversation",
   "message.live_ref",
+  // The apps offer "Agents reply in threads" only in a regular channel's details (ADR 0214).
+  "channel.reply_in_threads",
   // The apps offer Resolve only on a comment with a pin on a picture, a video or a PDF (ADR 0208).
   "message.not_comment",
   // Only an agent writes an SVG picture (ADR 0196 §8): the refusal goes back to its tool call, never to a person.

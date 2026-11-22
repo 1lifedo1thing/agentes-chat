@@ -782,7 +782,7 @@ export function managementRoutes(deps: AppDeps) {
             }),
             code: z.boolean().openapi({
               description:
-                "Whether Code has anything for the viewer (ADR 0214): an agent that programs on a computer, or an open session they take part in. The apps offer Code only then.",
+                "Whether Code has anything for the viewer (ADR 0215): an agent that programs on a computer, or an open session they take part in. The apps offer Code only then.",
             }),
           }),
         ),

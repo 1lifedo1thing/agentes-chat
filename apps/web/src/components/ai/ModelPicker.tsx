@@ -65,7 +65,7 @@ const SEARCH_FROM = 8;
 /**
  * The agent's AI and model, changed in place (a DM's header, its profile card, its side panel): a button saying what
  * it thinks with, opening the picker under the agent's sky. Whoever can't change it (not an admin, not its owner)
- * reads the same words, with nothing to press. `status`: a code session's status line under its composer (ADR 0214),
+ * reads the same words, with nothing to press. `status`: a code session's status line under its composer (ADR 0215),
  * quiet words with `after` (its plan's limits) in them, a plate only under the pointer.
  */
 export function ModelPickerButton({

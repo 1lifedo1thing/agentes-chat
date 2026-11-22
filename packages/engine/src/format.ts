@@ -82,6 +82,12 @@ export const wholeIn = (value: unknown, min: number, max: number): number | null
 export const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/** What sits at a dot path in a JSON value (`conversation.id`, `items.0.id`), else undefined. */
+export const valueAtPath = (value: unknown, path: string) =>
+  path
+    .split(".")
+    .reduce<unknown>((v, k) => (v && typeof v === "object" ? (v as Record<string, unknown>)[k] : undefined), value);
+
 /** `value` when it is a finite number from `min` to `max`, else null: a stored measure that may hold anything. */
 export const numberIn = (value: unknown, min: number, max: number): number | null =>
   typeof value === "number" && Number.isFinite(value) && value >= min && value <= max ? value : null;

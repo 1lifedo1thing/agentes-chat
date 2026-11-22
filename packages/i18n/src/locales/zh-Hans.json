@@ -2663,6 +2663,8 @@
     "noTopic": "无描述",
     "nameLabel": "名称",
     "nameHelp": "对所有人生效。旧链接仍然有效。",
+    "replyInThreads": "智能体在话题中回复",
+    "replyInThreadsHelp": "在频道中被叫到的智能体会在该消息下的话题中回答，频道只为它显示一行。已在进行的工作保持原处。",
     "nameTaken": "已存在 #{{name}}。",
     "generalName": "#general 的名称不能更改。",
     "archive": "归档频道",
@@ -7831,6 +7833,46 @@
     "custom_write": {
       "label": "写入类工具",
       "description": "使用写入类工具。标记为敏感的工具始终需要审批。"
+    },
+    "telegram_messages_read": {
+      "label": "读取消息",
+      "description": "列出机器人的聊天，读取别人发给它或在它所在之处写的内容。"
+    },
+    "telegram_messages_write": {
+      "label": "发送消息",
+      "description": "以机器人身份发送、编辑和置顶消息与文件。删除消息、封禁成员和邀请链接需要审批。"
+    },
+    "x_posts_read": {
+      "label": "读取帖子",
+      "description": "读取账号的帖子和提及、按 id 查看帖子，以及搜索最近的帖子。"
+    },
+    "x_posts_write": {
+      "label": "发帖",
+      "description": "在账号上发帖，可附 Drive 中的图片或视频。删除帖子需要审批。"
+    },
+    "threads_posts_read": {
+      "label": "读取帖子",
+      "description": "读取账号的帖子、回复、提及和数据。"
+    },
+    "threads_posts_write": {
+      "label": "发帖和回复",
+      "description": "发帖可附 Drive 中的图片或视频，回复和隐藏回复。删除帖子需要审批。"
+    },
+    "meta_ads_ads_read": {
+      "label": "读取广告",
+      "description": "列出广告账户、广告系列、广告组和广告，并读取数据。"
+    },
+    "meta_ads_ads_write": {
+      "label": "管理广告",
+      "description": "创建广告系列、广告组和广告（始终为暂停状态），编辑和暂停。开启和修改预算始终需要审批。归档和删除也需要审批。"
+    },
+    "tiktok_videos_read": {
+      "label": "读取视频",
+      "description": "读取创作者的资料、公开视频和可发布的内容。"
+    },
+    "tiktok_videos_write": {
+      "label": "把视频发到草稿",
+      "description": "把 Drive 中的视频发到创作者的 TikTok 草稿，由其在那里完成发布。每次上传都需要审批。"
     }
   },
   "issues": {
@@ -8277,6 +8319,11 @@
       "methods": "接受的方法",
       "methodsHelp": "该地址只响应勾选的方法。使用 GET 时，URL 的查询参数就是这次调用的数据。",
       "methodsLine": "接受 {{methods}}。",
+      "groupBy": "调用分组依据",
+      "groupByHelp": "每次调用数据中的一个字段，例如 conversation.id。值相同的调用按顺序逐个运行，值不同的调用同时运行。",
+      "groupByOff": "所有调用在同一队列中按顺序等待。",
+      "groupByOn": "{{path}} 相同的调用按顺序运行，其他调用同时运行。",
+      "groupBySaved": "分组已保存。",
       "address": "地址",
       "addressHelp": "任何拥有此地址的人都能启动智能体。请像密码一样保管它，泄露后请生成新地址。",
       "copied": "地址已复制。",
@@ -8686,6 +8733,9 @@
       },
       "deploy": {
         "succeeded": "部署完成"
+      },
+      "telegram": {
+        "message": "发给 Telegram 机器人的消息"
       }
     },
     "when": {
@@ -9621,6 +9671,7 @@
       "openShort": "打开",
       "reply": "回复",
       "replies_other": "{{count}} 条回复",
+      "replying_other": "{{names}} 正在话题中回复",
       "closed_other": "话题已关闭 · {{title}} · {{count}} 条消息",
       "archived_other": "这里没有显示 {{count}} 个已归档的话题",
       "see": "查看"
@@ -13015,7 +13066,8 @@
       },
       "meta_ads": {
         "1": "查看广告系列和效果",
-        "2": "创建和调整广告系列"
+        "2": "创建和调整广告系列",
+        "ask": "开启广告和修改预算始终需要你的审批"
       },
       "google_docs": {
         "1": "搜索和读取文档",
@@ -13147,6 +13199,26 @@
         "1": "查看数据表",
         "2": "查询数据来回答问题",
         "3": "从不更改任何内容"
+      },
+      "telegram": {
+        "1": "读取别人发给机器人的内容",
+        "2": "以机器人身份发送消息和文件",
+        "ask": "删除、封禁和邀请链接始终需要你的审批"
+      },
+      "x": {
+        "1": "读取账号的帖子和提及",
+        "2": "附图片或视频发帖",
+        "ask": "删除帖子始终需要你的审批"
+      },
+      "threads": {
+        "1": "查看帖子、回复和数据",
+        "2": "附图片或视频发帖并回复",
+        "ask": "删除帖子始终需要你的审批"
+      },
+      "tiktok": {
+        "1": "查看资料和视频",
+        "2": "把视频发到草稿，在 TikTok 中完成",
+        "ask": "每次上传始终需要你的审批"
       }
     },
     "connectedList": "已连接",
@@ -13289,8 +13361,13 @@
       "youtube": "YouTube 频道的视频、评论、播放列表和数据分析。",
       "pinterest": "Pinterest 的 Pin 图、图板和数据分析。",
       "reddit": "Reddit 的帖子、评论和社区。",
-      "whatsapp": "WhatsApp Business 消息和模板。"
-    }
+      "whatsapp": "WhatsApp Business 消息和模板。",
+      "telegram": "你自己的 Telegram 机器人：它的聊天、群组和频道。",
+      "x": "你的 X 账号上的帖子：发帖、查看提及和搜索。",
+      "threads": "你的 Threads 账号上的帖子和回复。",
+      "tiktok": "你的 TikTok 资料和视频，以及发到草稿的视频。"
+    },
+    "needsApp": "此服务器还没有 {{name}} 应用：运维者需在 {{name}} 注册一个应用并设置其变量（docs/social-apps-checklist.md）。"
   },
   "toolNames": {
     "order": "modifiers-first",
@@ -14120,7 +14197,39 @@
       "get_my_usage": "查看我的用量",
       "ignore_usage_limit": "忽略用量上限",
       "send_feedback": "发送反馈",
-      "offer_feedback": "提议报告问题"
+      "offer_feedback": "提议报告问题",
+      "list_chats": "列出聊天",
+      "read_messages": "读取消息",
+      "get_chat": "查看聊天",
+      "send_file": "发送文件",
+      "edit_message": "编辑消息",
+      "pin_message": "置顶消息",
+      "ban_member": "封禁成员",
+      "create_invite_link": "创建邀请链接",
+      "get_my_posts": "查看我的帖子",
+      "get_mentions": "查看提及",
+      "search_recent": "搜索最近的帖子",
+      "get_replies": "查看回复",
+      "get_insights": "查看数据",
+      "reply": "回复",
+      "hide_reply": "隐藏回复",
+      "list_ad_accounts": "列出广告账户",
+      "list_campaigns": "列出广告系列",
+      "list_ad_sets": "列出广告组",
+      "list_ads": "列出广告",
+      "create_campaign": "创建广告系列",
+      "create_ad_set": "创建广告组",
+      "create_ad": "创建广告",
+      "update": "更新",
+      "pause": "暂停",
+      "activate": "开启",
+      "set_budget": "设置预算",
+      "archive": "归档",
+      "delete": "删除",
+      "list_videos": "列出视频",
+      "get_creator_info": "查看发布选项",
+      "get_post_status": "查看上传状态",
+      "upload_draft": "发到草稿"
     }
   },
   "toolReview": {
@@ -14301,6 +14410,13 @@
       "asks_other": "{{count}} 项操作会在聊天中请求审批。",
       "adjust": "调整",
       "ok": "完成"
+    },
+    "telegram": {
+      "token": "机器人令牌",
+      "steps": "在 Telegram 中打开 @BotFather，发送 /newbot，取一个名字和以“bot”结尾的用户名，然后把它给你的令牌粘贴到这里。要读取群组，把机器人加进去。要在频道发帖，把它设为那里的管理员。"
+    },
+    "x": {
+      "consent": "获得 X 权限的智能体会自行在此账号发帖。删除帖子前会先询问，每个智能体的页面可以限制它能做的事。一个 X 账号同一时间只能在一个工作区使用。"
     }
   },
   "database": {
@@ -15177,6 +15293,7 @@
       "takeOverNoAccess": "接手例行工作之前，请先加入它所在的对话。",
       "agentNotInChannel": "请先把智能体添加到对话中。",
       "webhookPaused": "请开启例行工作后再测试。",
+      "groupByInvalid": "请输入类似 conversation.id 的路径，每个点之间都要有字段名。",
       "continueExtraOff": "这个套餐的时间窗口额度已用完，而这个智能体的长时间工作不使用套餐的付费额外用量。会在额度重置后继续。",
       "continueExtraUsedUp": "这个套餐的时间窗口额度已用完，付费额外用量也已用完或不可用。它会在额度重置后继续。",
       "actionsNeedApprover": "只有智能体负责人或批准其操作的人可以让例行工作自行执行。",
@@ -19147,7 +19264,9 @@
     "usedOf": "{{used}} / {{limit}}",
     "seatsPaid_other": "已付费 {{count}} 个席位",
     "noLimit": "无限制",
-    "ownBucket": "在你自己的存储桶上，我们不设限制"
+    "ownBucket": "在你自己的存储桶上，我们不设限制",
+    "connectors": "本月 X",
+    "shareUsed": "已用 {{share}}"
   },
   "referrals": {
     "open": "推荐有奖",

@@ -1,11 +1,11 @@
-# 0214. Code sessions: a request in its own worktree, on the Code page
+# 0215. Code sessions: a request in its own worktree, on the Code page
 
 - Status: Proposed (being built)
 - Date: 2026-11-20
 - Extends: 0021 and 0077 (code tools on the agent's computer), 0025 (connected computers), 0032 (computer brains),
   0044 (a mission's worktree), 0058 and 0065 (the agent's desktop and terminal), 0042 (phones), 0145 (a task's
   conversation is a thread of its own), 0156 (the GitHub App)
-- Code: db `packages/db/src/schema/code.ts` (`code_sessions`), migration `0314_code_sessions.sql` (`channel_kind`
+- Code: db `packages/db/src/schema/code.ts` (`code_sessions`), migration `0318_code_sessions.sql` (`channel_kind`
   gains `code`); engine `packages/engine/src/code-sessions.ts` (`createCodeSession`, `prepareCodeSession`,
   `ensureCodeSessionsOn`, `codeAgentSql`, `worksInSessions`, `codeSessionContext`, `codeSessionBrief`, `admitCodeMembers`,
   `codeSessionDiff`, `codeSessionGit`, `codeSessionGitLog`, `codeSessionFiles`, `codeSessionFile`,

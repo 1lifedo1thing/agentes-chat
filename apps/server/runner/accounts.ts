@@ -2944,7 +2944,7 @@ export class AccountManager {
   }
 
   /**
-   * What a terminal as the agent that thinks with this account adds to its shell (ADR 0214): the one variable that
+   * What a terminal as the agent that thinks with this account adds to its shell (ADR 0215): the one variable that
    * points the account's CLI at its folder, so `claude` or `codex` typed there is signed in as the agent's turns
    * are. Only a Claude Code or Codex sign-in made for that agent: their folder is one variable of the CLI's own.
    * The other CLIs keep theirs under the XDG folders, which a shell's other programs read too, and an account root

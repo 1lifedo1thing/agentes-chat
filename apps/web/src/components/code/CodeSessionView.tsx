@@ -46,7 +46,7 @@ import { useCodeKey } from "./shortcuts";
 import { endKeptTerminal, TerminalPane } from "./TerminalPane";
 
 /**
- * One code session (ADR 0214): the conversation with its agent under the session's header (its name), the chat's own
+ * One code session (ADR 0215): the conversation with its agent under the session's header (its name), the chat's own
  * thread screen (tool rows, steering, stop, approvals), and the side panel. Under the header, tabs: the conversation,
  * each file opened from the Files tab (an editor), each diff opened from the Git tab and each terminal opened there; the ones off screen stay as they
  * are (what was typed, a shell's output). The gutter between them drags (double
@@ -396,7 +396,7 @@ function CodeConversation({ session }: { session: CodeSession }) {
 }
 
 /**
- * Where the session came from (a suggestion in a conversation, ADR 0214 §11): one line at its top, with the way back
+ * Where the session came from (a suggestion in a conversation, ADR 0215 §11): one line at its top, with the way back
  * to that message. Only for whoever can open that conversation (the server leaves it out for anyone else).
  */
 function CodeOrigin({ from }: { from: CodeSessionOrigin }) {

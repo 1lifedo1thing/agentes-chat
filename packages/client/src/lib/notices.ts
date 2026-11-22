@@ -224,7 +224,7 @@ export function noticeView(
       if (r.answerFor) return line("chat.notice.github.asked", values, detail);
       return { ...line(githubLineKey(r), values, detail), answer: r.outside === "1" && !r.answeredBy };
     }
-    // A check that failed on a code session's branch (ADR 0214): which, and on which pull request or commit. "Ver"
+    // A check that failed on a code session's branch (ADR 0215): which, and on which pull request or commit. "Ver"
     // opens what the check itself said and its page; the agent's reply says what it does about it.
     case "github_check": {
       const r = notice.refs;

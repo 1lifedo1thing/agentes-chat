@@ -435,6 +435,10 @@ function ConnectStep({
     }
   };
 
+  // A Telegram bot connects with the token @BotFather gives, not an API key.
+  const telegram = def?.id === "telegram";
+  const keyLabel = telegram ? t("connectFlow.telegram.token") : t("connectors.apiKey");
+  const keyHelp = telegram ? t("connectFlow.telegram.steps") : t("connectors.apiKeyHelp");
   const keyForm = (
     <form
       className="cflow__key"
@@ -461,9 +465,9 @@ function ConnectStep({
         </Alert>
       )}
       <Field
-        label={t("connectors.apiKey")}
+        label={keyLabel}
         id="cflow-key"
-        hint={{ name: t("common.about", { label: t("connectors.apiKey") }), text: t("connectors.apiKeyHelp") }}
+        hint={{ name: t("common.about", { label: keyLabel }), text: keyHelp }}
         error={keyError}
       >
         <Input type="password" autoComplete="off" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
@@ -484,6 +488,8 @@ function ConnectStep({
           ) : def ? (
             <p className="muted cflow__text">
               {connectorDescription(t, def)} {canOAuth && t("connectFlow.oauthHelp", { name: connectorBrand(def) })}
+              {/* X wants the account owner's express consent before agents post for them: connecting after this is it. */}
+              {def.id === "x" && <span className="cflow__said">{t("connectFlow.x.consent")}</span>}
             </p>
           ) : viaComposio ? (
             <p className="muted cflow__text">{t("connectors.composio.via")}</p>

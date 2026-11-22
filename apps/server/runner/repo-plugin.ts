@@ -4,7 +4,7 @@ import path from "node:path";
 import { newerVersion } from "./executors";
 
 /*
- * A code session's turn (ADR 0214): the worktree's own Claude Code agents, skills and commands (`.claude/agents`,
+ * A code session's turn (ADR 0215): the worktree's own Claude Code agents, skills and commands (`.claude/agents`,
  * `.claude/skills`, `.claude/commands`) copied into a plugin folder the turn loads with `--plugin-dir`, since the
  * checkout's settings are never read (`--setting-sources ""`, ADR 0117: the agent can edit them). What could act
  * outside the turn's checks is taken out of each file's frontmatter: hooks, MCP servers, a permission mode and tools
@@ -98,7 +98,7 @@ export function repoPlugin(worktree: string, into: string, fileMode = 0o600): st
 
 /**
  * What the worktree's agents, skills and commands are now, cheaply: their paths, sizes and times, nothing read ("":
- * none). A process started on another print never saw what the agent or a person added since (ADR 0214).
+ * none). A process started on another print never saw what the agent or a person added since (ADR 0215).
  */
 export function repoPluginPrint(worktree: string): string {
   const seen: string[] = [];

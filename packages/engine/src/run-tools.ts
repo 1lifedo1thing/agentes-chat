@@ -78,7 +78,7 @@ export interface RunWhere {
 
 /** Where a run's events and cards go (`replyThreadOf`). */
 export function runWhere(
-  run: Pick<AgentRun, "id" | "agentId" | "channelId" | "threadRootId" | "triggerMessageId">,
+  run: Pick<AgentRun, "id" | "agentId" | "channelId" | "threadRootId" | "triggerMessageId" | "replyInThread">,
 ): RunWhere {
   return { channelId: run.channelId, threadId: replyThreadOf(run), agentId: run.agentId, runId: run.id };
 }
@@ -117,7 +117,7 @@ export interface ToolSideEffects {
   artifacts?: ArtifactLink[];
   /** A mission proposed with its home elsewhere: its link card (`meta.missionLink`). */
   missionLink?: { missionId: string; threadId: string } | null;
-  /** A code session it suggested (`suggest_code_session`, ADR 0214 §11): the person's card on its reply. */
+  /** A code session it suggested (`suggest_code_session`, ADR 0215 §11): the person's card on its reply. */
   codeSuggestion?: CodeSuggestion | null;
   /** The agent reacted (`react`) instead of replying. */
   reacted?: boolean;
@@ -251,7 +251,7 @@ export function absorbToolData(t: ToolSideEffects, data: Record<string, unknown>
   if (several.length > 0) t.artifacts = withArtifacts(t.artifacts, several);
   const link = data.missionLink as { missionId: string; threadId: string } | undefined;
   if (link?.missionId && link.threadId) t.missionLink = link;
-  // A code session it suggested (ADR 0214 §11): the newest one rides on the reply.
+  // A code session it suggested (ADR 0215 §11): the newest one rides on the reply.
   const suggestion = codeSuggestionOf({ codeSuggestion: data.codeSuggestion });
   if (suggestion) t.codeSuggestion = suggestion;
   if (data.reacted) t.reacted = true;
@@ -617,7 +617,7 @@ export async function invokeWithChip(
 type Located = { ctx: ToolContext; run: AgentRun | null };
 
 /**
- * The code session of a conversation, for a tool context (ADR 0214): read only in a session's conversation, the same
+ * The code session of a conversation, for a tool context (ADR 0215): read only in a session's conversation, the same
  * place the run's own turn got.
  */
 const codeSessionOf = async (db: Database, orgId: string, channelId: string, agentId: string) =>
@@ -672,6 +672,7 @@ async function locate(db: Database, id: BridgeIdentity): Promise<Located> {
       threadRootId: run.threadRootId,
       triggerMessageId: run.triggerMessageId,
       ...(codeSession ? { codeSession } : {}),
+      replyInThread: run.replyInThread,
       ...(id.machineId ? { bridge: { machineId: id.machineId } } : {}),
       ...(run.brain ? { thinksWith: run.brain } : {}),
       // Tools on demand (ADR 0043): the same list the run's turns see.

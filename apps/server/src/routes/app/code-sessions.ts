@@ -167,12 +167,14 @@ const CodeFile = z
     content: z.string(),
     size: z.number().int(),
     truncated: z.boolean(),
-    rev: z.string().openapi({ description: "What it holds, as git's blob hash: a save sends the one it started from." }),
+    rev: z
+      .string()
+      .openapi({ description: "What it holds, as git's blob hash: a save sends the one it started from." }),
   })
   .openapi("CodeFile");
 
 /**
- * Code sessions (ADR 0214): a request worked on in its own git worktree on the agent's computer, with its own
+ * Code sessions (ADR 0215): a request worked on in its own git worktree on the agent's computer, with its own
  * conversation. The conversation itself goes through the chat's routes (`…/channels/{channelId}/messages` with the
  * root as the thread); these routes open, list, rename and close sessions and read git in their worktree.
  */
@@ -293,7 +295,7 @@ export function codeSessionRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/code-sessions/suggestions/{messageId}/open",
       tags,
       security,
-      summary: "Opens the session an agent suggested in the chat (ADR 0214 §11): only the person who asked",
+      summary: "Opens the session an agent suggested in the chat (ADR 0215 §11): only the person who asked",
       description:
         "The session starts with the asker's own words and the suggestion's title, and remembers the conversation it came from. The reply's card says it was opened (`code.suggestion`).",
       request: { params: SuggestionParams },

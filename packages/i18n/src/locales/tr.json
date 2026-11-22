@@ -2761,6 +2761,8 @@
     "noTopic": "Açıklama yok",
     "nameLabel": "Ad",
     "nameHelp": "Herkes için değişir. Eski bağlantılar çalışmaya devam eder.",
+    "replyInThreads": "Ajanlar ileti dizilerinde yanıtlar",
+    "replyInThreadsHelp": "Kanalda çağrılan bir ajan, o mesajın altındaki ileti dizisinde yanıt verir ve kanal bunun için tek satır gösterir. Süren işler olduğu yerde kalır.",
     "nameTaken": "#{{name}} zaten var.",
     "generalName": "#general adını korur.",
     "archive": "Kanalı arşivle",
@@ -8060,6 +8062,46 @@
     "custom_write": {
       "label": "Yazma araçları",
       "description": "Yazma araçlarını kullanma. Hassas olarak işaretlenenler her zaman onay ister."
+    },
+    "telegram_messages_read": {
+      "label": "Mesajları okuma",
+      "description": "Botun sohbetlerini listeler, ona veya bulunduğu yerde yazılanları okur."
+    },
+    "telegram_messages_write": {
+      "label": "Mesaj gönderme",
+      "description": "Bot olarak mesaj ve dosya gönderir, düzenler ve sabitler. Mesaj silme, kişi yasaklama ve davet bağlantıları onay ister."
+    },
+    "x_posts_read": {
+      "label": "Gönderileri okuma",
+      "description": "Hesabın gönderilerini ve bahsetmelerini, kimliğe göre gönderileri ve aramayla son gönderileri okur."
+    },
+    "x_posts_write": {
+      "label": "Paylaşma",
+      "description": "Drive'dan görseller veya bir videoyla hesapta paylaşır. Gönderi silmek onay ister."
+    },
+    "threads_posts_read": {
+      "label": "Gönderileri okuma",
+      "description": "Hesabın gönderilerini, yanıtlarını, bahsetmelerini ve sonuçlarını okur."
+    },
+    "threads_posts_write": {
+      "label": "Paylaşma ve yanıtlama",
+      "description": "Drive'dan görsel veya videolarla paylaşır, yanıtlar ve yanıtları gizler. Gönderi silmek onay ister."
+    },
+    "meta_ads_ads_read": {
+      "label": "Reklamları okuma",
+      "description": "Reklam hesaplarını, kampanyaları, reklam setlerini ve reklamları listeler, sonuçlarını okur."
+    },
+    "meta_ads_ads_write": {
+      "label": "Reklamları yönetme",
+      "description": "Kampanya, reklam seti ve reklam oluşturur (her zaman duraklatılmış), düzenler ve duraklatır. Etkinleştirmek ve bütçe değiştirmek her zaman onay ister. Arşivleme ve silme de ister."
+    },
+    "tiktok_videos_read": {
+      "label": "Videoları okuma",
+      "description": "Üreticinin profilini, herkese açık videolarını ve neleri paylaşabileceğini okur."
+    },
+    "tiktok_videos_write": {
+      "label": "Videoları taslaklara gönderme",
+      "description": "Drive'daki bir videoyu üreticinin TikTok taslaklarına gönderir, paylaşımı orada tamamlar. Her yükleme onay ister."
     }
   },
   "issues": {
@@ -8510,6 +8552,11 @@
       "methods": "Kabul edilen yöntemler",
       "methodsHelp": "Adres yalnızca işaretli yöntemlere yanıt verir. GET ile URL'nin sorgu parametreleri çağrının verisi olur.",
       "methodsLine": "{{methods}} kabul eder.",
+      "groupBy": "Çağrıları şuna göre grupla",
+      "groupByHelp": "Her çağrının verisindeki bir alan, örneğin conversation.id. Aynı değere sahip çağrılar sırayla, tek tek çalışır. Farklı değerler aynı anda çalışır.",
+      "groupByOff": "Tüm çağrılar tek bir sırada, sırayla bekler.",
+      "groupByOn": "Aynı {{path}} değerine sahip çağrılar sırayla çalışır. Diğerleri aynı anda çalışır.",
+      "groupBySaved": "Gruplama kaydedildi.",
       "address": "Adres",
       "addressHelp": "Adrese sahip olan herkes ajanı başlatabilir. Onu bir şifre gibi saklayın ve sızarsa yenisini oluşturun.",
       "copied": "Adres kopyalandı.",
@@ -8924,6 +8971,9 @@
       },
       "deploy": {
         "succeeded": "Dağıtım tamamlandı"
+      },
+      "telegram": {
+        "message": "Telegram botuna mesaj"
       }
     },
     "when": {
@@ -9926,6 +9976,8 @@
       "reply": "Yanıtla",
       "replies_one": "{{count}} yanıt",
       "replies_other": "{{count}} yanıt",
+      "replying_one": "{{names}} ileti dizisinde yanıtlıyor",
+      "replying_other": "{{names}} ileti dizisinde yanıtlıyor",
       "closed_one": "İleti dizisi kapatıldı · {{title}} · {{count}} mesaj",
       "closed_other": "İleti dizisi kapatıldı · {{title}} · {{count}} mesaj",
       "archived_one": "Arşivlenmiş {{count}} ileti dizisi burada gösterilmiyor",
@@ -13418,7 +13470,8 @@
       },
       "meta_ads": {
         "1": "Kampanyaları ve sonuçları görür",
-        "2": "Kampanya oluşturur ve ayarlar"
+        "2": "Kampanya oluşturur ve ayarlar",
+        "ask": "Reklamları etkinleştirmek ve bütçe değiştirmek her zaman onayınızı ister"
       },
       "google_docs": {
         "1": "Belgeleri arar ve okur",
@@ -13550,6 +13603,26 @@
         "1": "Tabloları görür",
         "2": "Yanıt vermek için verileri sorgular",
         "3": "Hiçbir şeyi değiştirmez"
+      },
+      "telegram": {
+        "1": "İnsanların bota yazdıklarını okuma",
+        "2": "Bot olarak mesaj ve dosya gönderme",
+        "ask": "Silme, yasaklama ve davet bağlantıları her zaman onayınızı ister"
+      },
+      "x": {
+        "1": "Hesabın gönderilerini ve bahsetmelerini okuma",
+        "2": "Görsel veya videoyla paylaşma",
+        "ask": "Gönderi silmek her zaman onayınızı ister"
+      },
+      "threads": {
+        "1": "Gönderileri, yanıtları ve sonuçları görme",
+        "2": "Görsel veya videoyla paylaşma ve yanıtlama",
+        "ask": "Gönderi silmek her zaman onayınızı ister"
+      },
+      "tiktok": {
+        "1": "Profili ve videoları görme",
+        "2": "Videoları TikTok'ta tamamlamak için taslaklara gönderme",
+        "ask": "Her yükleme her zaman onayınızı ister"
       }
     },
     "connectedList": "Bağlı",
@@ -13697,8 +13770,13 @@
       "youtube": "YouTube kanalının videoları, yorumları, oynatma listeleri ve analizleri.",
       "pinterest": "Pinterest pinleri, panoları ve analizleri.",
       "reddit": "Reddit gönderileri, yorumları ve toplulukları.",
-      "whatsapp": "WhatsApp Business mesajları ve şablonları."
-    }
+      "whatsapp": "WhatsApp Business mesajları ve şablonları.",
+      "telegram": "Size ait bir Telegram botu: sohbetleri, grupları ve kanalları.",
+      "x": "X hesabınızdaki gönderiler: yazma, bahsetmeleri okuma ve arama.",
+      "threads": "Threads hesabınızdaki gönderiler ve yanıtlar.",
+      "tiktok": "TikTok profiliniz ve videolarınız, taslaklarınıza gönderilen videolar."
+    },
+    "needsApp": "Bu sunucunun henüz bir {{name}} uygulaması yok: sunucuyu yöneten kişi {{name}}'de bir uygulama kaydeder ve değişkenlerini ayarlar (docs/social-apps-checklist.md)."
   },
   "toolNames": {
     "order": "modifiers-first",
@@ -14528,7 +14606,39 @@
       "get_my_usage": "Kullanımımı görüntüle",
       "ignore_usage_limit": "Kullanım sınırını yok say",
       "send_feedback": "Geri bildirim gönder",
-      "offer_feedback": "Sorun bildirmeyi öner"
+      "offer_feedback": "Sorun bildirmeyi öner",
+      "list_chats": "Sohbetleri listele",
+      "read_messages": "Mesajları oku",
+      "get_chat": "Sohbeti gör",
+      "send_file": "Dosya gönder",
+      "edit_message": "Mesajı düzenle",
+      "pin_message": "Mesajı sabitle",
+      "ban_member": "Üyeyi yasakla",
+      "create_invite_link": "Davet bağlantısı oluştur",
+      "get_my_posts": "Gönderilerimi gör",
+      "get_mentions": "Bahsetmeleri gör",
+      "search_recent": "Son gönderileri ara",
+      "get_replies": "Yanıtları gör",
+      "get_insights": "Sonuçları gör",
+      "reply": "Yanıtla",
+      "hide_reply": "Yanıtı gizle",
+      "list_ad_accounts": "Reklam hesaplarını listele",
+      "list_campaigns": "Kampanyaları listele",
+      "list_ad_sets": "Reklam setlerini listele",
+      "list_ads": "Reklamları listele",
+      "create_campaign": "Kampanya oluştur",
+      "create_ad_set": "Reklam seti oluştur",
+      "create_ad": "Reklam oluştur",
+      "update": "Güncelle",
+      "pause": "Duraklat",
+      "activate": "Etkinleştir",
+      "set_budget": "Bütçe belirle",
+      "archive": "Arşivle",
+      "delete": "Sil",
+      "list_videos": "Videoları listele",
+      "get_creator_info": "Paylaşım seçeneklerini gör",
+      "get_post_status": "Yükleme durumunu gör",
+      "upload_draft": "Taslaklara gönder"
     }
   },
   "toolReview": {
@@ -14730,6 +14840,13 @@
       "asks_other": "{{count}} işlem sohbette onay ister.",
       "adjust": "Ayarla",
       "ok": "Tamam"
+    },
+    "telegram": {
+      "token": "Bot token'ı",
+      "steps": "Telegram'da @BotFather'ı açın, /newbot gönderin, bir ad ve “bot” ile biten bir kullanıcı adı seçin, sonra verdiği token'ı buraya yapıştırın. Bir grubu okumak için botu gruba ekleyin. Bir kanalda paylaşmak için orada yönetici yapın."
+    },
+    "x": {
+      "consent": "X verilen ajanlar bu hesapta kendi başına paylaşım yapar. Gönderi silmek önce sorar ve her ajanın sayfası neler yapabileceğini daraltır. Bir X hesabı aynı anda tek bir çalışma alanında çalışır."
     }
   },
   "database": {
@@ -15623,6 +15740,7 @@
       "takeOverNoAccess": "Rutini devralmadan önce onun konuşmasına katılın.",
       "agentNotInChannel": "Önce ajanı konuşmaya ekleyin.",
       "webhookPaused": "Test etmek için rutini açın.",
+      "groupByInvalid": "conversation.id gibi, her noktanın arasında bir alan adı olan bir yol yazın.",
       "continueExtraOff": "Bu planın kullanım dönemi doldu ve bu ajanın uzun işleri planın ücretli ek kullanımını kullanmıyor. Sıfırlamadan sonra kaldığı yerden sürer.",
       "continueExtraUsedUp": "Bu planın kullanım dönemi doldu ve ücretli ek kullanımı da bitti ya da kullanılamıyor. Sıfırlamadan sonra kaldığı yerden sürer.",
       "actionsNeedApprover": "Bir rutinin kendi başına hareket etmesine yalnızca ajanın sahibi veya eylemlerini onaylayan kişi izin verebilir.",
@@ -19586,7 +19704,9 @@
     "seatsPaid_one": "{{count}} ücreti ödenmiş yer",
     "seatsPaid_other": "{{count}} ücreti ödenmiş yer",
     "noLimit": "Sınırsız",
-    "ownBucket": "Kendi depolama alanınızda, bizden bir sınır olmadan"
+    "ownBucket": "Kendi depolama alanınızda, bizden bir sınır olmadan",
+    "connectors": "Bu ay X",
+    "shareUsed": "{{share}} kullanıldı"
   },
   "referrals": {
     "open": "Önerin ve kazanın",

@@ -20,7 +20,7 @@ import type { DataSocket } from "./streams";
 /**
  * Terminals people open on an agent's computer (ADR 0058 §6): the login
  * shell of the agent's OS user in a PTY (`Bun.Terminal`), in the agent's
- * folder (or a folder inside it: a code session's worktree, ADR 0214), with
+ * folder (or a folder inside it: a code session's worktree, ADR 0215), with
  * none of the agent's secrets in its environment. Its bytes go
  * both ways over the stream's data socket; a resize comes as a control frame,
  * and how the shell ended goes back as `exit` before the socket closes.
@@ -286,7 +286,7 @@ export class Terminals {
    * size, then its data socket (`dial`); resolves once both are up, and the
    * bytes go on flowing until either ends. What the shell prints before the
    * socket is ready waits for it. `cwd` (`TERMINAL_CWD_PROTOCOL`): a folder
-   * inside the agent's own to start in (a code session's worktree, ADR 0214).
+   * inside the agent's own to start in (a code session's worktree, ADR 0215).
    *
    * `keep` (`TERMINAL_KEEP_PROTOCOL`) names the terminal: its shell stays when the viewer's socket drops, and an open
    * with the same name comes back to it, shown what it printed last (`replayMax`) and sized again so a full-screen

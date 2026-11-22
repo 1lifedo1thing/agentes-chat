@@ -2820,6 +2820,9 @@ export const ptBR = {
     noTopic: "Sem descrição",
     nameLabel: "Nome",
     nameHelp: "Muda para todo mundo. Os links antigos continuam funcionando.",
+    replyInThreads: "Agentes respondem em threads",
+    replyInThreadsHelp:
+      "O agente chamado no canal responde na thread abaixo da mensagem, e o canal mostra uma linha para ela. O que já está em andamento fica onde está.",
     nameTaken: "Já existe #{{name}}.",
     generalName: "O #general mantém o nome.",
     archive: "Arquivar canal",
@@ -8556,6 +8559,49 @@ export const ptBR = {
       label: "Ferramentas de escrita",
       description: "Usar as ferramentas de escrita. As marcadas como sensíveis sempre pedem aprovação.",
     },
+    telegram_messages_read: {
+      label: "Ler mensagens",
+      description: "Listar as conversas do bot e ler o que as pessoas escreveram para ele ou onde ele está.",
+    },
+    telegram_messages_write: {
+      label: "Enviar mensagens",
+      description:
+        "Enviar, editar e fixar mensagens e arquivos como o bot. Apagar mensagens, banir pessoas e links de convite pedem aprovação.",
+    },
+    x_posts_read: {
+      label: "Ler posts",
+      description: "Ler os posts e as menções da conta, posts pelo id e posts recentes por busca.",
+    },
+    x_posts_write: {
+      label: "Postar",
+      description: "Postar na conta, com fotos ou um vídeo do Drive. Apagar um post pede aprovação.",
+    },
+    threads_posts_read: {
+      label: "Ler posts",
+      description: "Ler os posts da conta, as respostas, menções e resultados.",
+    },
+    threads_posts_write: {
+      label: "Postar e responder",
+      description: "Postar com fotos ou vídeos do Drive, responder e ocultar respostas. Apagar um post pede aprovação.",
+    },
+    meta_ads_ads_read: {
+      label: "Ler anúncios",
+      description: "Listar contas de anúncio, campanhas, conjuntos de anúncios e anúncios, e ler os resultados.",
+    },
+    meta_ads_ads_write: {
+      label: "Gerenciar anúncios",
+      description:
+        "Criar campanhas, conjuntos de anúncios e anúncios (sempre pausados), editar e pausar. Ativar e mudar um orçamento sempre pedem aprovação. Arquivar e apagar pedem.",
+    },
+    tiktok_videos_read: {
+      label: "Ler vídeos",
+      description: "Ler o perfil, os vídeos públicos e o que o criador pode postar.",
+    },
+    tiktok_videos_write: {
+      label: "Enviar vídeos aos rascunhos",
+      description:
+        "Enviar um vídeo do Drive aos rascunhos do TikTok do criador, que termina o post lá. Cada envio pede aprovação.",
+    },
   },
   issues: {
     handedBy: "passada por <0/>{{name}}",
@@ -8995,6 +9041,12 @@ export const ptBR = {
         "O endereço só responde aos métodos marcados. Num GET, os parâmetros da URL viram os dados da chamada.",
       /** After "Roda a cada chamada…" on the routine's page: `methods` are HTTP methods ("GET, POST"). */
       methodsLine: "Aceita {{methods}}.",
+      groupBy: "Agrupar chamadas por",
+      groupByHelp:
+        "Um campo dos dados de cada chamada, como conversation.id. Chamadas com o mesmo valor rodam uma de cada vez, em ordem. Valores diferentes rodam ao mesmo tempo.",
+      groupByOff: "Todas as chamadas esperam numa fila só, em ordem.",
+      groupByOn: "Chamadas com o mesmo {{path}} rodam em ordem. As outras rodam ao mesmo tempo.",
+      groupBySaved: "Agrupamento salvo.",
       address: "Endereço",
       addressHelp: "Quem tiver o endereço aciona o agente. Guarde como uma senha e gere outro se vazar.",
       copied: "Endereço copiado.",
@@ -9414,6 +9466,7 @@ export const ptBR = {
       "github.pr_opened": "PR aberto no GitHub",
       "issue.created": "Tarefa criada no agentes",
       "deploy.succeeded": "Deploy concluído",
+      "telegram.message": "Mensagem para o bot do Telegram",
     },
     when: { event: "Quando: {{event}}" },
     form: {
@@ -10411,6 +10464,8 @@ export const ptBR = {
       reply: "Responder",
       replies_one: "{{count}} resposta",
       replies_other: "{{count}} respostas",
+      replying_one: "{{names}} está respondendo na thread",
+      replying_other: "{{names}} estão respondendo na thread",
       closed_one: "Thread fechada · {{title}} · {{count}} mensagem",
       closed_other: "Thread fechada · {{title}} · {{count}} mensagens",
       archived_one: "{{count}} thread arquivada não aparece aqui",
@@ -11648,7 +11703,7 @@ export const ptBR = {
     createKeywords: "criar novo adicionar",
     empty: "Nada com “{{q}}”.",
   },
-  /** Código (ADR 0214): sessões em que um pedido é trabalhado numa worktree própria no computador de um agente. */
+  /** Código (ADR 0215): sessões em que um pedido é trabalhado numa worktree própria no computador de um agente. */
   codeSessions: {
     /** The beta notice, once, the first time the Code page opens: what the mode is, as a diff. */
     beta: {
@@ -11831,7 +11886,7 @@ export const ptBR = {
       show: "Ver na Tela",
       held: "Uma pessoa está no controle da tela",
     },
-    /** An agent suggests a session for a change asked in the chat (ADR 0214 §11): the card under its reply. */
+    /** An agent suggests a session for a change asked in the chat (ADR 0215 §11): the card under its reply. */
     suggestion: {
       label: "Sugestão de sessão de código",
       /** The project, and whose computer it works on. */
@@ -13881,7 +13936,11 @@ export const ptBR = {
       mixpanel: { "1": "Consultar eventos, relatórios e funis" },
       amplitude: { "1": "Ver gráficos e dashboards", "2": "Criar gráficos" },
       himetrica: { "1": "Ver visitas, funis e receita", "2": "Criar e editar funis" },
-      meta_ads: { "1": "Ver campanhas e resultados", "2": "Criar e ajustar campanhas" },
+      meta_ads: {
+        "1": "Ver campanhas e resultados",
+        "2": "Criar e ajustar campanhas",
+        ask: "Ativar anúncios e mudar orçamentos sempre pedem sua aprovação",
+      },
       google_docs: { "1": "Buscar e ler documentos", "2": "Criar e editar documentos" },
       google_sheets: { "1": "Ler planilhas", "2": "Adicionar linhas e atualizar células" },
       google_calendar: {
@@ -13948,6 +14007,26 @@ export const ptBR = {
         ask: "Enviar mensagens sempre pede sua aprovação",
       },
       database: { "1": "Ver as tabelas", "2": "Consultar os dados para responder", "3": "Nunca altera nada" },
+      telegram: {
+        "1": "Ler o que as pessoas escrevem para o bot",
+        "2": "Enviar mensagens e arquivos como o bot",
+        ask: "Apagar, banir e links de convite sempre pedem sua aprovação",
+      },
+      x: {
+        "1": "Ler os posts e as menções da conta",
+        "2": "Postar com fotos ou um vídeo",
+        ask: "Apagar posts sempre pede sua aprovação",
+      },
+      threads: {
+        "1": "Ver posts, respostas e resultados",
+        "2": "Postar com fotos ou vídeos e responder",
+        ask: "Apagar posts sempre pede sua aprovação",
+      },
+      tiktok: {
+        "1": "Ver o perfil e os vídeos",
+        "2": "Enviar vídeos aos seus rascunhos para terminar no TikTok",
+        ask: "Cada envio sempre pede sua aprovação",
+      },
     },
     connectedList: "Conectados",
     connected: "Conectado",
@@ -14098,7 +14177,13 @@ export const ptBR = {
       pinterest: "Pins, pastas e métricas do Pinterest.",
       reddit: "Posts, comentários e comunidades do Reddit.",
       whatsapp: "Mensagens e modelos do WhatsApp Business.",
+      telegram: "Um bot seu do Telegram: suas conversas, grupos e canais.",
+      x: "Posts na sua conta do X: escrever, ler menções e buscar.",
+      threads: "Posts e respostas na sua conta do Threads.",
+      tiktok: "Seu perfil e vídeos do TikTok, e vídeos enviados aos seus rascunhos.",
     },
+    needsApp:
+      "Este servidor ainda não tem um app do {{name}}: quem o administra registra um no {{name}} e define as variáveis (docs/social-apps-checklist.md).",
   },
   toolNames: {
     order: "head-first",
@@ -14929,6 +15014,38 @@ export const ptBR = {
       ignore_usage_limit: "Ignorar o limite de uso",
       send_feedback: "Enviar feedback",
       offer_feedback: "Oferecer um relato de problema",
+      list_chats: "Listar conversas",
+      read_messages: "Ler mensagens",
+      get_chat: "Ver conversa",
+      send_file: "Enviar arquivo",
+      edit_message: "Editar mensagem",
+      pin_message: "Fixar mensagem",
+      ban_member: "Banir membro",
+      create_invite_link: "Criar link de convite",
+      get_my_posts: "Ver meus posts",
+      get_mentions: "Ver menções",
+      search_recent: "Buscar posts recentes",
+      get_replies: "Ver respostas",
+      get_insights: "Ver resultados",
+      reply: "Responder",
+      hide_reply: "Ocultar resposta",
+      list_ad_accounts: "Listar contas de anúncio",
+      list_campaigns: "Listar campanhas",
+      list_ad_sets: "Listar conjuntos de anúncios",
+      list_ads: "Listar anúncios",
+      create_campaign: "Criar campanha",
+      create_ad_set: "Criar conjunto de anúncios",
+      create_ad: "Criar anúncio",
+      update: "Atualizar",
+      pause: "Pausar",
+      activate: "Ativar",
+      set_budget: "Definir orçamento",
+      archive: "Arquivar",
+      delete: "Apagar",
+      list_videos: "Listar vídeos",
+      get_creator_info: "Ver opções de postagem",
+      get_post_status: "Ver status do envio",
+      upload_draft: "Enviar aos rascunhos",
     },
   },
   toolReview: {
@@ -15118,6 +15235,15 @@ export const ptBR = {
       asks_other: "{{count}} ações pedem aprovação no chat.",
       adjust: "Ajustar",
       ok: "Pronto",
+    },
+    telegram: {
+      token: "Token do bot",
+      steps:
+        "No Telegram, abra o @BotFather, envie /newbot, escolha um nome e um usuário que termine em “bot” e cole aqui o token que ele der. Para ler um grupo, adicione o bot a ele. Para postar num canal, torne-o admin lá.",
+    },
+    x: {
+      consent:
+        "Os agentes com acesso ao X postam nesta conta por conta própria. Apagar um post pede antes, e a página de cada agente limita o que ele pode fazer. Uma conta do X funciona em um workspace por vez.",
     },
   },
   database: {
@@ -15770,7 +15896,7 @@ export const ptBR = {
       computer: "O computador não conseguiu fazer isso agora. Confira se ele está ligado e tente de novo.",
     },
     /** Setting up a GitHub or Sentry routine's webhook: `repo` is owner/name, `status` GitHub's HTTP status. */
-    /** Uma sessão de código (ADR 0214): o que impede de começar uma, ou o painel de ler o computador do agente. */
+    /** Uma sessão de código (ADR 0215): o que impede de começar uma, ou o painel de ler o computador do agente. */
     codeSession: {
       noComputer: "Este agente ainda não tem computador. Dê um a ele nas configurações dele para programar com ele.",
       cannotCode:
@@ -15990,6 +16116,7 @@ export const ptBR = {
       takeOverNoAccess: "Entre na conversa da rotina antes de assumi-la.",
       agentNotInChannel: "Adicione o agente à conversa antes.",
       webhookPaused: "Ligue a rotina para testar.",
+      groupByInvalid: "Escreva um caminho como conversation.id, com um nome de campo entre cada ponto.",
       continueExtraOff:
         "A janela deste plano acabou e o trabalho longo deste agente não usa o uso extra pago do plano. Ele retoma depois que o limite renovar.",
       continueExtraUsedUp:
@@ -20233,6 +20360,8 @@ export const ptBR = {
     seatsPaid_other: "{{count}} vagas pagas",
     noLimit: "Sem limite",
     ownBucket: "No seu próprio bucket, sem limite nosso",
+    connectors: "X neste mês",
+    shareUsed: "{{share}} usado",
   },
   /** The referral service (ADR 0192): this server knows nothing of the program, only the way there. */
   referrals: {
@@ -20588,7 +20717,7 @@ export const ptBR = {
     write: "Escreveu",
     run: "Rodou",
     fetch: "Abriu",
-    /** Um subagente do próprio CLI (ADR 0214): "Pediu a um subagente · Revisar o HTML". */
+    /** Um subagente do próprio CLI (ADR 0215): "Pediu a um subagente · Revisar o HTML". */
     delegate: "Pediu a um subagente",
     skill: "Usou a skill",
     workflow: "Rodou um workflow",
@@ -20616,7 +20745,7 @@ export const ptBR = {
     failedTests_one: "{{count}} falhou",
     failedTests_other: "{{count}} falharam",
     exit: "saiu com {{code}}",
-    /** A code session's subagents and workflows while they work (ADR 0214), live in the agent's row. */
+    /** A code session's subagents and workflows while they work (ADR 0215), live in the agent's row. */
     progress: {
       block: "Subagentes do {{name}}",
       block_female: "Subagentes da {{name}}",
@@ -20741,7 +20870,7 @@ export const ptBR = {
       message: "Mensagem para {{name}}",
     },
   },
-  /** A code session's Terminal tab (ADR 0214): a shell on the agent's computer, in the session's folder. */
+  /** A code session's Terminal tab (ADR 0215): a shell on the agent's computer, in the session's folder. */
   codeTerminal: {
     label: "Terminal",
     opening: "Abrindo o terminal…",

@@ -31,7 +31,7 @@ export const SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   team: "always",
   dashboards: "more",
   taskManager: "more",
-  // Code sessions (ADR 0214): in More, and only where it has anything (`offersCode`).
+  // Code sessions (ADR 0215): in More, and only where it has anything (`offersCode`).
   code: "more",
 };
 
@@ -53,7 +53,7 @@ export const PERSONAL_SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   team: "more",
   dashboards: "more",
   taskManager: "more",
-  // Code sessions (ADR 0214): in More, and only where it has anything (`offersCode`).
+  // Code sessions (ADR 0215): in More, and only where it has anything (`offersCode`).
   code: "more",
 };
 
@@ -84,7 +84,7 @@ export const PERSONAL_SIDEBAR_ITEMS: readonly SidebarItem[] = [
 export const sidebarItemOrder = (personal = false) => (personal ? PERSONAL_SIDEBAR_ITEMS : SIDEBAR_ITEMS);
 
 /**
- * Whether the apps offer Code (ADR 0214 §12): where it has anything for the person (`OrgOverview.code`: an agent that
+ * Whether the apps offer Code (ADR 0215 §12): where it has anything for the person (`OrgOverview.code`: an agent that
  * programs on a computer, or an open session of theirs), or where they put it in the sidebar's list themselves.
  */
 export const offersCode = (code: boolean | undefined, saved?: SidebarItems) =>

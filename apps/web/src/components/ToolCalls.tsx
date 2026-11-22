@@ -152,7 +152,7 @@ export function useCallLogo() {
   };
 }
 
-/** A computer brain's own calls in a code session by what they did (ADR 0214): their icon on the line. */
+/** A computer brain's own calls in a code session by what they did (ADR 0215): their icon on the line. */
 const CLI_ICON: Record<CliVerb, IconName> = {
   read: "file",
   search: "search",
@@ -167,7 +167,7 @@ const CLI_ICON: Record<CliVerb, IconName> = {
 };
 
 /**
- * A computer brain's own call in a code session as its terminal shows it (ADR 0214): its verb, what it worked on in
+ * A computer brain's own call in a code session as its terminal shows it (ADR 0215): its verb, what it worked on in
  * mono, what it came to on the right; it opens on what it gave back (an edit's changed lines).
  */
 function cliBlockLine(t: TFunction, locale: string, l: ToolLine, cli: CliLine): ToolBlockLine {
@@ -289,7 +289,7 @@ export function LiveTools({
   const logo = useCallLogo();
   const calls = toolCalls(items);
   // Done, its tools are the summary the person chose not to see (`showActivity`), but in a code session's
-  // conversation, where they are the conversation itself (ADR 0214).
+  // conversation, where they are the conversation itself (ADR 0215).
   const shows = useShowsWork(org);
   if (done && !shows) return null;
   // A lone quick read that only fed the answer: no card, as if it called nothing (once done, what it said on the way
@@ -512,7 +512,7 @@ function nowWords(t: TFunction, locale: string, now: CliLine | undefined) {
 }
 
 /**
- * The subagents and workflows of a computer brain's own while they work (ADR 0214), live in its row: each subagent a
+ * The subagents and workflows of a computer brain's own while they work (ADR 0215), live in its row: each subagent a
  * line with what it was asked, what it does now and its calls so far; a workflow a block of its agents, open, its
  * head saying how many are done. They stay until the run ends, done ones marked.
  */

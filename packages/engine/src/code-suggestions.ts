@@ -27,7 +27,7 @@ import type { ToolContext, ToolDefinition, ToolOutput, ToolSource } from "./tool
 const { agentRuns, messages, users } = schema;
 
 /*
- * A code session suggested in the chat (ADR 0214 §11). When a person asks an agent that can have a session
+ * A code session suggested in the chat (ADR 0215 §11). When a person asks an agent that can have a session
  * (`worksInSessions`) to change code in a project, the agent suggests one instead of changing it in the conversation:
  * its reply carries the suggestion (`meta.codeSuggestion`), the person's card with "Abrir sessão" and "Fazer aqui". The
  * session opens with the person's own words as its first message, posted as them; "Fazer aqui" tells the agent to go

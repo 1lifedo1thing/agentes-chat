@@ -65,7 +65,7 @@ function readTerminal() {
 }
 
 /**
- * The session's side panel (ADR 0214): its git (what changed, the commits, each diff), its files, or the agent's
+ * The session's side panel (ADR 0215): its git (what changed, the commits, each diff), its files, or the agent's
  * computer or a phone (Screen), and under any of them, when opened, a shell in the worktree (Terminal) whose height
  * drags. The agents' sky rises behind the git tab from its foot, with the session's agent standing on it, and fills
  * the screen's stage.

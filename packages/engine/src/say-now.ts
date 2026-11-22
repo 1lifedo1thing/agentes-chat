@@ -49,7 +49,7 @@ export async function sayNowApplies(db: Executor, run: AgentRun, confidential?: 
   if (run.background || run.workId) return false;
   // Known to the run already (`sealedAtClaim`): no read of the thread's row on its way to the model.
   if (confidential ?? (await threadIsConfidential(db, run.orgId, run.threadRootId))) return false;
-  // A code session (ADR 0214) is read as it goes, though its runs never move to the background.
+  // A code session (ADR 0215) is read as it goes, though its runs never move to the background.
   const channel = await getChannelCached(db as Database, run.orgId, run.channelId);
   if (channel?.kind === "code") return (await runAuthority(db, run)).kind === "person";
   return movableRun(db, run);
@@ -66,7 +66,7 @@ export function sayNowText(raw: unknown): string {
 }
 
 /** What a line for a person never holds: code-ish names (a tool, a function), a file path on a computer, backticks. */
-const NOT_FOR_PEOPLE =
+export const NOT_FOR_PEOPLE =
   /`|\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b|(?:^|\s)(?:~\/|\/(?:Users|home|tmp|var|etc|opt)\/|[A-Za-z]:\\)/;
 
 const REFUSED = {

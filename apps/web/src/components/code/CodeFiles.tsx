@@ -70,7 +70,7 @@ function foldersAbove(paths: Iterable<string>): Set<string> {
 }
 
 /**
- * The session panel's Files tab (ADR 0214): the worktree's files as a tree (tracked ones and new ones git doesn't
+ * The session panel's Files tab (ADR 0215): the worktree's files as a tree (tracked ones and new ones git doesn't
  * ignore), the changed ones marked as the Git tab marks them and their folders open at first, a search by path; a file
  * opens in a tab beside the conversation (`onOpen`), the one on screen there marked here (`shown`).
  */

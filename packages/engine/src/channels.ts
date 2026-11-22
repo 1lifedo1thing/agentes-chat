@@ -260,6 +260,8 @@ export interface ChannelListItem {
   categoryId: string | null;
   /** Order inside its category. */
   position: number;
+  /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
+  replyInThreads: boolean;
   isMember: boolean;
   /** Listed only because I'm an administrator (ADR 0151): the apps keep it off the sidebar until opened or joined. */
   seenAsAdmin: boolean;
@@ -298,6 +300,7 @@ interface ChannelListRow {
   created_at: Date | string;
   category_id: string | null;
   position: number | string;
+  reply_in_threads: boolean | string;
   is_member: boolean;
   seen_as_admin: boolean;
   unread_count: number | string | null;
@@ -343,7 +346,7 @@ export async function listChannels(db: Database, userId: string, orgId: string):
     and u.meta->>'mediaAfter' is null`;
   const rows = rowsOf<ChannelListRow>(
     await db.execute(sql`select c.id, c.org_id, c.name, c.topic, c.visibility, c.audience_role_ids, c.created_by_user_id, c.created_at,
-        c.category_id, c.position,
+        c.category_id, c.position, c.reply_in_threads,
         (cm.id is not null) as is_member,
         (cm.id is null and c.visibility <> 'public' and not ${channelAudienceSql("c", sql`${userId}`)}) as seen_as_admin,
         coalesce(un.n, 0) as unread_count, coalesce(un.m, 0) as mention_count,
@@ -398,6 +401,7 @@ export async function listChannels(db: Database, userId: string, orgId: string):
       createdAt: asDate(r.created_at),
       categoryId: r.category_id,
       position: Number(r.position),
+      replyInThreads: r.reply_in_threads === true || r.reply_in_threads === "t",
       isMember: r.is_member === true,
       seenAsAdmin: r.seen_as_admin === true,
       unreadCount: Number(r.unread_count ?? 0),
@@ -930,7 +934,7 @@ export async function listChannelMembers(db: Database, actorId: string, orgId: s
 /**
  * Removes a person or an agent from a channel. Allowed for yourself (leave),
  * the channel's creator, and admins; an agent also for whoever may put it
- * there (`requirePlacesAgent`). A code session's conversation (ADR 0214) can be
+ * there (`requirePlacesAgent`). A code session's conversation (ADR 0215) can be
  * left too, and keeps its own agent and whoever opened it. Publishes
  * `membership.revoked` so open WebSocket subscriptions of that person end
  * immediately.
@@ -997,7 +1001,7 @@ export async function removeChannelMember(
   await publishChannelsChanged(options.pubsub, orgId);
 }
 
-/** A code session (ADR 0214) keeps its own agent and whoever opened it: they are the session. */
+/** A code session (ADR 0215) keeps its own agent and whoever opened it: they are the session. */
 async function keepCodeSessionCore(db: Database, channelId: string, member: { userId: string } | { agentId: string }) {
   const [session] = await db
     .select({ agentId: schema.codeSessions.agentId, createdBy: schema.codeSessions.createdBy })

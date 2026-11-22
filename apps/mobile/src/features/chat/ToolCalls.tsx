@@ -671,7 +671,7 @@ export function TurnTools({
   const shows = useShowsWork(org);
   const blockItems = blockItemsOf(items, t, i18n.language, logo);
   // A lone quick read that only fed the answer: no card, as if it called nothing. Done, its tools are the summary
-  // the person chose not to see (`showActivity`) unless they turned it on, or in a code session (ADR 0214).
+  // the person chose not to see (`showActivity`) unless they turned it on, or in a code session (ADR 0215).
   const now = quietWork(items) || (done && !shows) ? null : toolNow(items);
   if (!now) {
     // Done without a call: its words are the reply now.

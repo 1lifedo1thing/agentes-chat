@@ -51,7 +51,7 @@ describe("the tools' order", () => {
   });
 });
 
-describe("Code, only where it has anything (ADR 0214 §12)", () => {
+describe("Code, only where it has anything (ADR 0215 §12)", () => {
   test("offered with an agent that programs or a session of mine, or where I put it in the list myself", () => {
     expect(offersCode(true)).toBe(true);
     expect(offersCode(false)).toBe(false);

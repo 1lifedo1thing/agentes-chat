@@ -28,7 +28,7 @@ function saveLastPick(orgId: string, pick: { agentId: string; repo: string }) {
 }
 
 /**
- * The Code page's home (ADR 0214): the field in the middle of the agents' sky, the picked agent in cubes over its title
+ * The Code page's home (ADR 0215): the field in the middle of the agents' sky, the picked agent in cubes over its title
  * (`CodeHomeAgent`). Writing and Enter opens a session with the picked agent in the picked
  * repository (the last ones used come back); the computer is the agent's own, so there is nothing else to choose.
  */
@@ -172,7 +172,7 @@ export function CodeHome() {
   );
 }
 
-/** The shapes the server takes (ADR 0214 §1): a GitHub repository, or a local project's name (no owner). */
+/** The shapes the server takes (ADR 0215 §1): a GitHub repository, or a local project's name (no owner). */
 const GITHUB_REPO = /^[\w.-]+\/[\w.-]+$/;
 const LOCAL_NAME = /^(?!\.)[A-Za-z0-9._-]{1,64}$/;
 

@@ -11,7 +11,7 @@ import { untrustedBlock } from "./untrusted";
  * a change (`proposal_result`), how a vote it started came out (`poll_result`), its own follow-up (`follow_up`: the line it set, and at
  * its time the notice that wakes it, `refs.wake`), agents its @mention couldn't wake (`wake_skipped`, ADR 0097), a person stopping one of its tasks (`run_stopped`, ADR 0128),
  * something that happened on GitHub to an item it worked on or that names the app (`github_event`, `git/github-events.ts`), a check
- * that failed on the branch of the code session it works in (`github_check`, ADR 0214), its background
+ * that failed on the branch of the code session it works in (`github_check`, ADR 0215), its background
  * work ending after people's messages were passed on to it (`work_follow_up`, `works.ts`). Stored on the notice
  * message as `meta.notice`; the agent's context reads it as an event, never
  * as a person's words.
@@ -66,7 +66,7 @@ export const agentOnlyNoticeSql = (meta: SQL): SQL =>
 /**
  * Notices people see in the conversation but that are never news: a person stopping a task is a receipt (ADR 0128), a
  * follow-up's line and the notice that wakes it are followed by the agent's own reply, as a check that failed on a
- * code session's branch is (ADR 0214), and an @mention that couldn't wake an agent is said under the message that
+ * code session's branch is (ADR 0215), and an @mention that couldn't wake an agent is said under the message that
  * named it (`meta.reach`). Their text is written for the agent, in English. Conversation previews, unread counts, a
  * thread's activity, notifications and search skip them, like the agent-only ones.
  */
@@ -253,7 +253,7 @@ export function noticeText(
 }
 
 /**
- * A check that failed on the branch of the code session the agent works in (`git/github-events.ts`, ADR 0214): the
+ * A check that failed on the branch of the code session the agent works in (`git/github-events.ts`, ADR 0215): the
  * server's line with the check's page, the check's own words inside the outside-content envelope, and on the notice
  * that woke the agent what to do.
  */

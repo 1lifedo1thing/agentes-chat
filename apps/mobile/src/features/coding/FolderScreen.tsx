@@ -8,7 +8,7 @@ import { splitPath } from "./logic";
 import { FilesPane } from "./SessionCodeScreen";
 
 /**
- * A folder of a session's worktree (ADR 0214), pushed from Files as the system's Files app goes into a folder: its
+ * A folder of a session's worktree (ADR 0215), pushed from Files as the system's Files app goes into a folder: its
  * name in the bar and where it is under it, its folders and files, and the search over the whole worktree.
  */
 export function FolderScreen({ sessionId, dir }: { sessionId: string; dir: string }) {

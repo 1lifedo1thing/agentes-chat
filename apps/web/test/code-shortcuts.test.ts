@@ -15,7 +15,7 @@ const press = (key: string, code: string, held: Partial<Record<"meta" | "ctrl" |
   shiftKey: held.shift ?? false,
 });
 
-describe("the Code page's keys (ADR 0214)", () => {
+describe("the Code page's keys (ADR 0215)", () => {
   test("⌘ on Apple platforms, Ctrl elsewhere, never both", () => {
     expect(codeKeyOf(press("p", "KeyP", { meta: true }), true)).toBe("files");
     expect(codeKeyOf(press("p", "KeyP", { ctrl: true }), true)).toBeNull();

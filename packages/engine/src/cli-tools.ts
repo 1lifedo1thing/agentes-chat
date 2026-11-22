@@ -3,7 +3,7 @@ import { cutMarked, cutText, isJsonObject } from "./format";
 import { redactCredentials } from "./tool-detail";
 
 /**
- * A computer brain's own tool calls (ADR 0214: Claude Code's Read, Grep, Edit, Bash…, Codex's commands and file
+ * A computer brain's own tool calls (ADR 0215: Claude Code's Read, Grep, Edit, Bash…, Codex's commands and file
  * changes, the other CLIs' alike) as the quiet lines a terminal shows: what it did (`verb`), on what (`target`: a file
  * relative to the folder it works in, a pattern, a command, an address) and what it came to (`meta`), read from the
  * call's input and its result as the runner forwards them (`tool_call` with `executed`). Pure: the executor keeps each
@@ -66,7 +66,7 @@ const ABOUT_MAX = 120;
 
 /** The CLIs' own tool names (lower-cased) by what they do: Claude Code's, Codex's, then the other CLIs'. */
 const VERBS: Record<string, CliVerb> = {
-  // A subagent of its own (`Agent`, `Task` before Claude Code 2.1.63), a skill and a workflow of subagents (ADR 0214).
+  // A subagent of its own (`Agent`, `Task` before Claude Code 2.1.63), a skill and a workflow of subagents (ADR 0215).
   agent: "delegate",
   task: "delegate",
   skill: "skill",
@@ -115,7 +115,7 @@ const VERBS: Record<string, CliVerb> = {
 /** Its own calls that are no line of its work: looking our deferred tools up, the computer's own permission check. */
 const UNSHOWN = new Set(["toolsearch", PERMISSION_TOOL]);
 
-/** Whether a call of the brain's own is a line of its work (ADR 0214). */
+/** Whether a call of the brain's own is a line of its work (ADR 0215). */
 export const cliToolShown = (name: string) => name.trim() !== "" && !UNSHOWN.has(name.trim().toLowerCase());
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -428,7 +428,7 @@ function outputOf(verb: CliVerb, input: unknown, result: { content: string; isEr
 }
 
 /**
- * One call of the brain's own as its run keeps it (ADR 0214). `ms`: how long it ran, when the brain said its start.
+ * One call of the brain's own as its run keeps it (ADR 0215). `ms`: how long it ran, when the brain said its start.
  * `background`: its work went on after the call (a workflow, a subagent it didn't wait for), so the call only answered
  * that it started, in words for the model: nothing of it to open.
  */
@@ -462,7 +462,7 @@ export interface CliProgressAgent {
 }
 
 /**
- * A subagent's or a workflow's progress while it works (ADR 0214), as the apps show it live (`agent.tool.progress`):
+ * A subagent's or a workflow's progress while it works (ADR 0215), as the apps show it live (`agent.tool.progress`):
  * the subagent's call running now as its line, how many calls it made, a workflow's agents, and its end.
  */
 export interface CliProgress {

@@ -2663,6 +2663,8 @@
     "noTopic": "Tanpa deskripsi",
     "nameLabel": "Nama",
     "nameHelp": "Berubah untuk semua orang. Tautan lama tetap berfungsi.",
+    "replyInThreads": "Agen membalas di utas",
+    "replyInThreadsHelp": "Agen yang dipanggil di kanal menjawab di utas di bawah pesan itu, dan kanal menampilkan satu baris untuk utas itu. Pekerjaan yang sudah berjalan tetap di tempatnya.",
     "nameTaken": "Sudah ada #{{name}}.",
     "generalName": "#general tetap dengan namanya.",
     "archive": "Arsipkan kanal",
@@ -7827,6 +7829,46 @@
     "custom_write": {
       "label": "Alat tulis",
       "description": "Pakai alat tulis. Yang ditandai sensitif selalu minta persetujuan."
+    },
+    "telegram_messages_read": {
+      "label": "Baca pesan",
+      "description": "Daftar obrolan bot dan baca apa yang orang tulis kepadanya atau di tempat ia berada."
+    },
+    "telegram_messages_write": {
+      "label": "Kirim pesan",
+      "description": "Kirim, ubah, dan sematkan pesan dan file sebagai bot. Menghapus pesan, memblokir orang, dan tautan undangan meminta persetujuan."
+    },
+    "x_posts_read": {
+      "label": "Baca postingan",
+      "description": "Baca postingan dan sebutan akun, postingan menurut id, dan postingan terbaru lewat pencarian."
+    },
+    "x_posts_write": {
+      "label": "Posting",
+      "description": "Posting di akun, dengan gambar atau video dari Drive. Menghapus postingan meminta persetujuan."
+    },
+    "threads_posts_read": {
+      "label": "Baca postingan",
+      "description": "Baca postingan akun, balasannya, sebutan, dan hasilnya."
+    },
+    "threads_posts_write": {
+      "label": "Posting dan balas",
+      "description": "Posting dengan gambar atau video dari Drive, membalas, dan menyembunyikan balasan. Menghapus postingan meminta persetujuan."
+    },
+    "meta_ads_ads_read": {
+      "label": "Baca iklan",
+      "description": "Daftar akun iklan, kampanye, set iklan, dan iklan, serta baca hasilnya."
+    },
+    "meta_ads_ads_write": {
+      "label": "Kelola iklan",
+      "description": "Buat kampanye, set iklan, dan iklan (selalu dijeda), ubah dan jeda. Mengaktifkan dan mengubah anggaran selalu meminta persetujuan. Mengarsipkan dan menghapus meminta."
+    },
+    "tiktok_videos_read": {
+      "label": "Baca video",
+      "description": "Baca profil, video publik, dan apa yang boleh diposting kreator."
+    },
+    "tiktok_videos_write": {
+      "label": "Kirim video ke draf",
+      "description": "Kirim video Drive ke draf TikTok kreator, yang menyelesaikan postingannya di sana. Setiap unggahan meminta persetujuan."
     }
   },
   "issues": {
@@ -8273,6 +8315,11 @@
       "methods": "Metode yang diterima",
       "methodsHelp": "Alamat ini hanya menjawab metode yang dicentang. Dengan GET, parameter kueri URL menjadi data panggilan.",
       "methodsLine": "Menerima {{methods}}.",
+      "groupBy": "Kelompokkan panggilan menurut",
+      "groupByHelp": "Sebuah kolom di data setiap panggilan, misalnya conversation.id. Panggilan dengan nilai yang sama berjalan satu per satu, sesuai urutan. Nilai yang berbeda berjalan bersamaan.",
+      "groupByOff": "Semua panggilan menunggu dalam satu antrean, sesuai urutan.",
+      "groupByOn": "Panggilan dengan {{path}} yang sama berjalan sesuai urutan. Yang lain berjalan bersamaan.",
+      "groupBySaved": "Pengelompokan disimpan.",
       "address": "Alamat",
       "addressHelp": "Siapa pun yang punya alamat ini bisa memulai agen. Jaga seperti kata sandi dan buat yang baru kalau bocor.",
       "copied": "Alamat disalin.",
@@ -8685,6 +8732,9 @@
       },
       "deploy": {
         "succeeded": "Deploy selesai"
+      },
+      "telegram": {
+        "message": "Pesan ke bot Telegram"
       }
     },
     "when": {
@@ -9632,6 +9682,7 @@
       "openShort": "Buka",
       "reply": "Balas",
       "replies_other": "{{count}} balasan",
+      "replying_other": "{{names}} sedang membalas di utas",
       "closed_other": "Utas ditutup · {{title}} · {{count}} pesan",
       "archived_other": "{{count}} utas yang diarsipkan tidak ditampilkan di sini",
       "see": "Lihat"
@@ -13005,7 +13056,8 @@
       },
       "meta_ads": {
         "1": "Melihat kampanye dan hasilnya",
-        "2": "Membuat dan menyesuaikan kampanye"
+        "2": "Membuat dan menyesuaikan kampanye",
+        "ask": "Mengaktifkan iklan dan mengubah anggaran selalu meminta persetujuan Anda"
       },
       "google_docs": {
         "1": "Mencari dan membaca dokumen",
@@ -13137,6 +13189,26 @@
         "1": "Melihat tabel",
         "2": "Menjalankan query ke data untuk menjawab",
         "3": "Tidak pernah mengubah apa pun"
+      },
+      "telegram": {
+        "1": "Baca apa yang orang tulis ke bot",
+        "2": "Kirim pesan dan file sebagai bot",
+        "ask": "Menghapus, memblokir, dan tautan undangan selalu meminta persetujuan Anda"
+      },
+      "x": {
+        "1": "Baca postingan dan sebutan akun",
+        "2": "Posting dengan gambar atau video",
+        "ask": "Menghapus postingan selalu meminta persetujuan Anda"
+      },
+      "threads": {
+        "1": "Lihat postingan, balasan, dan hasil",
+        "2": "Posting dengan gambar atau video dan membalas",
+        "ask": "Menghapus postingan selalu meminta persetujuan Anda"
+      },
+      "tiktok": {
+        "1": "Lihat profil dan video",
+        "2": "Kirim video ke draf untuk diselesaikan di TikTok",
+        "ask": "Setiap unggahan selalu meminta persetujuan Anda"
       }
     },
     "connectedList": "Terhubung",
@@ -13279,8 +13351,13 @@
       "youtube": "Video, komentar, playlist, dan analitik kanal YouTube.",
       "pinterest": "Pin, papan, dan analitik Pinterest.",
       "reddit": "Postingan, komentar, dan komunitas Reddit.",
-      "whatsapp": "Pesan dan template WhatsApp Business."
-    }
+      "whatsapp": "Pesan dan template WhatsApp Business.",
+      "telegram": "Bot Telegram milik Anda: obrolan, grup, dan kanalnya.",
+      "x": "Postingan di akun X Anda: menulis, membaca sebutan, dan mencari.",
+      "threads": "Postingan dan balasan di akun Threads Anda.",
+      "tiktok": "Profil dan video TikTok Anda, serta video yang dikirim ke draf Anda."
+    },
+    "needsApp": "Server ini belum punya aplikasi {{name}}: pengelolanya mendaftarkan satu di {{name}} dan mengatur variabelnya (docs/social-apps-checklist.md)."
   },
   "toolNames": {
     "order": "head-first",
@@ -14110,7 +14187,39 @@
       "get_my_usage": "Lihat pemakaian saya",
       "ignore_usage_limit": "Abaikan batas penggunaan",
       "send_feedback": "Kirim masukan",
-      "offer_feedback": "Tawarkan laporan masalah"
+      "offer_feedback": "Tawarkan laporan masalah",
+      "list_chats": "Daftar obrolan",
+      "read_messages": "Baca pesan",
+      "get_chat": "Lihat obrolan",
+      "send_file": "Kirim file",
+      "edit_message": "Ubah pesan",
+      "pin_message": "Sematkan pesan",
+      "ban_member": "Blokir anggota",
+      "create_invite_link": "Buat tautan undangan",
+      "get_my_posts": "Lihat postingan saya",
+      "get_mentions": "Lihat sebutan",
+      "search_recent": "Cari postingan terbaru",
+      "get_replies": "Lihat balasan",
+      "get_insights": "Lihat hasil",
+      "reply": "Balas",
+      "hide_reply": "Sembunyikan balasan",
+      "list_ad_accounts": "Daftar akun iklan",
+      "list_campaigns": "Daftar kampanye",
+      "list_ad_sets": "Daftar set iklan",
+      "list_ads": "Daftar iklan",
+      "create_campaign": "Buat kampanye",
+      "create_ad_set": "Buat set iklan",
+      "create_ad": "Buat iklan",
+      "update": "Perbarui",
+      "pause": "Jeda",
+      "activate": "Aktifkan",
+      "set_budget": "Atur anggaran",
+      "archive": "Arsipkan",
+      "delete": "Hapus",
+      "list_videos": "Daftar video",
+      "get_creator_info": "Lihat opsi posting",
+      "get_post_status": "Lihat status unggahan",
+      "upload_draft": "Kirim ke draf"
     }
   },
   "toolReview": {
@@ -14291,6 +14400,13 @@
       "asks_other": "{{count}} tindakan meminta persetujuan di chat.",
       "adjust": "Sesuaikan",
       "ok": "Selesai"
+    },
+    "telegram": {
+      "token": "Token bot",
+      "steps": "Di Telegram, buka @BotFather, kirim /newbot, pilih nama dan username yang berakhiran “bot”, lalu tempel token yang diberikannya di sini. Untuk membaca grup, tambahkan bot ke grup itu. Untuk memposting di kanal, jadikan admin di sana."
+    },
+    "x": {
+      "consent": "Agen yang diberi X memposting di akun ini sendiri. Menghapus postingan bertanya dulu, dan halaman tiap agen membatasi apa yang boleh dilakukannya. Satu akun X berfungsi di satu workspace dalam satu waktu."
     }
   },
   "database": {
@@ -15167,6 +15283,7 @@
       "takeOverNoAccess": "Bergabunglah ke percakapan rutinitas sebelum mengambil alihnya.",
       "agentNotInChannel": "Tambahkan agen ke percakapan dulu.",
       "webhookPaused": "Aktifkan rutinitas untuk mengujinya.",
+      "groupByInvalid": "Tulis jalur seperti conversation.id, dengan nama kolom di antara setiap titik.",
       "continueExtraOff": "Jatah periode paket ini sudah habis dan pekerjaan panjang agen ini tidak memakai pemakaian tambahan berbayar dari paket. Agen melanjutkan setelah reset.",
       "continueExtraUsedUp": "Jatah periode paket ini sudah habis dan pemakaian tambahan berbayarnya juga habis atau tidak tersedia. Agen melanjutkan setelah reset.",
       "actionsNeedApprover": "Hanya pemilik agen atau orang yang menyetujui tindakannya yang bisa membiarkan rutinitas bertindak sendiri.",
@@ -19084,7 +19201,9 @@
     "usedOf": "{{used}} dari {{limit}}",
     "seatsPaid_other": "{{count}} kursi berbayar",
     "noLimit": "Tanpa batas",
-    "ownBucket": "Di bucket milikmu sendiri, tanpa batas dari kami"
+    "ownBucket": "Di bucket milikmu sendiri, tanpa batas dari kami",
+    "connectors": "X bulan ini",
+    "shareUsed": "{{share}} terpakai"
   },
   "referrals": {
     "open": "Ajak teman dan dapatkan hadiah",

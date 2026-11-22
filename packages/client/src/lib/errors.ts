@@ -173,7 +173,7 @@ const KNOWN = {
   "mission.agent_unavailable": "errors.mission.agentUnavailable",
   "mission.no_computer": "errors.mission.noComputer",
   "mission.computer_offline": "errors.mission.computerOffline",
-  // A code session (ADR 0214): starting one, and what its panel reads on the agent's computer.
+  // A code session (ADR 0215): starting one, and what its panel reads on the agent's computer.
   "code_session.too_long": "errors.said.tooLong",
   "code_session.bad_repo": "errors.webhook.invalidRepo",
   "code_session.offline": "errors.mission.computerOffline",
@@ -227,6 +227,7 @@ const KNOWN = {
   "routine.widget_fixed": "errors.routine.widgetFixed",
   "routine.agent_not_in_channel": "errors.routine.agentNotInChannel",
   "routine.webhook_paused": "errors.routine.webhookPaused",
+  "routine.group_by_invalid": "errors.routine.groupByInvalid",
   "routine.continue_extra_off": "errors.routine.continueExtraOff",
   "run.continue_extra_off": "errors.routine.continueExtraOff",
   "routine.continue_extra_used_up": "errors.routine.continueExtraUsedUp",

@@ -42,7 +42,7 @@ export const ThreadPill = memo(function ThreadPill({
   subtitle: string | undefined;
   label: string;
   extraActions: number;
-  /** Its mark: a thread's reply, a code session's code (ADR 0214), whose pill opens its code. */
+  /** Its mark: a thread's reply, a code session's code (ADR 0215), whose pill opens its code. */
   icon?: IconName;
 }) {
   const c = useColors();

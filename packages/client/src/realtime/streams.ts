@@ -119,6 +119,11 @@ export interface LiveRun {
   agentId: string;
   channelId: string;
   threadId: string;
+  /**
+   * It answers in the thread under the message that asked it (ADR 0214), as the server's active-run list says. Unknown
+   * for a row only live events made: their `threadId` is already where it answers.
+   */
+  replyInThread?: boolean;
   status: LiveStatus;
   error?: string;
   /** `run.finished`'s code for the error (`run.org_paused`…) and its values. */
@@ -140,6 +145,13 @@ export interface LiveRun {
    * brain's own that no `agent.tool` told (`tool`, `agent.step`). The next call replaces it.
    */
   step?: LiveStep;
+  /**
+   * What it is about to do, in a few words the server wrote when it started (`agent.intent`): the bar's line instead of
+   * "escrevendo…" until its own line on the way (`say_now`) or its reply comes.
+   */
+  intent?: string;
+  /** Its line on the way (`say_now`) is in the conversation: a late `agent.intent` says nothing more. */
+  said?: boolean;
   /** "Parar" was pressed and the server hasn't confirmed yet. */
   stopping?: boolean;
   /** Its browser command waits for a shared profile someone else has (ADR 0110). */
@@ -200,7 +212,7 @@ export type LiveWork =
       requestId?: string;
       /** A rule ("Aprovar sempre") let it run without asking: whose person, a reads one or not. */
       autoApproved?: { by: string | null; reads: boolean };
-      /** A call of the computer brain's own in a code session (`agent.step`, ADR 0214): its line, as in a terminal. */
+      /** A call of the computer brain's own in a code session (`agent.step`, ADR 0215): its line, as in a terminal. */
       cli?: CliLine;
       /**
        * A subagent or a workflow it started, while it works (`agent.tool.progress`): what it does now, its calls, a
@@ -234,7 +246,7 @@ export interface AgentToolOutputEvent {
   text: string;
 }
 
-/** A subagent or a workflow of a computer brain's own while it works (ADR 0214), by the call that started it. */
+/** A subagent or a workflow of a computer brain's own while it works (ADR 0215), by the call that started it. */
 export interface AgentToolProgressEvent {
   type: "agent.tool.progress";
   channelId: string;
@@ -320,13 +332,23 @@ export interface AgentStepEvent {
   tool: string;
   said?: string | null;
   /**
-   * In a code session (ADR 0214), the call's line in the work: its id and what it does (`cli`), as it starts and again
+   * In a code session (ADR 0215), the call's line in the work: its id and what it does (`cli`), as it starts and again
    * once it ended (`ended`, `failed`), then with what it came to.
    */
   toolUseId?: string;
   cli?: CliLine | null;
   ended?: boolean;
   failed?: boolean;
+}
+
+/** What a run started on a person's message is about to do (`LiveRun.intent`). */
+export interface AgentIntentEvent {
+  type: "agent.intent";
+  channelId: string;
+  threadId: string;
+  runId: string;
+  agentId: string;
+  text: string;
 }
 
 export interface StreamsState {
@@ -452,6 +474,7 @@ type StreamEvent =
   | ChannelEvent
   | AgentToolEvent
   | AgentStepEvent
+  | AgentIntentEvent
   | AgentToolOutputEvent
   | AgentToolProgressEvent
   | RunCanceledEvent
@@ -613,7 +636,7 @@ function applyEvent(state: StreamsState, event: StreamEvent): StreamsState {
       const current = state.runs[event.runId];
       if (state.finished[event.runId] || !current) return state;
       const step = { tool: event.tool, ...(event.said ? { said: event.said } : {}) };
-      // In a code session (ADR 0214) the call is a line of the work too: its start adds it, its end closes it.
+      // In a code session (ADR 0215) the call is a line of the work too: its start adds it, its end closes it.
       const cli = cliLineOf(event.cli);
       if (!cli || !event.toolUseId) return upsert(state, event, { step });
       const work = current.work ?? [];
@@ -658,6 +681,12 @@ function applyEvent(state: StreamsState, event: StreamEvent): StreamsState {
         runs: { ...state.runs, [event.runId]: { ...current, work: work.map((w, i) => (i === at ? next : w)) } },
       };
     }
+    case "agent.intent": {
+      const r = state.runs[event.runId];
+      // Its own words came first: the line it said on the way, or its reply.
+      if (state.finished[event.runId] || !r || r.said) return state;
+      return { ...state, runs: { ...state.runs, [event.runId]: { ...r, intent: event.text } } };
+    }
     case "agent.tool.output": {
       if (state.finished[event.runId]) return state;
       const current = state.runs[event.runId];
@@ -680,6 +709,12 @@ function applyEvent(state: StreamsState, event: StreamEvent): StreamsState {
     }
     case "message.created": {
       const m = event.message;
+      const saidFor = (m?.meta?.sayNow as { runId?: unknown } | undefined)?.runId;
+      if (typeof saidFor === "string") {
+        const r = state.runs[saidFor];
+        // Its own line on the way is the words the bar waited for.
+        return r ? { ...state, runs: { ...state.runs, [saidFor]: { ...r, intent: undefined, said: true } } } : state;
+      }
       // Too big for its event, it comes as its run and thread only (read over HTTP), and ends the run all the same: its
       // block waits for that read (`landing`) instead of going blank.
       const runId = m ? m.agentRunId : event.agentRunId;
@@ -805,7 +840,7 @@ const postedOnTheWay = (state: StreamsState, m: Pick<Message, "agentRunId" | "me
   Boolean(
     m.agentRunId &&
       state.runs[m.agentRunId]?.work?.some(
-        // A call still running, or a subagent or a workflow it started still at work (ADR 0214): the answer it
+        // A call still running, or a subagent or a workflow it started still at work (ADR 0215): the answer it
         // wrote meanwhile is on the way, its outcome comes after.
         (w) => w.kind === "call" && (w.running || (w.progress !== undefined && !w.progress.ended)),
       ),
@@ -890,6 +925,7 @@ export function reconcileRuns(
           [a.runId]: {
             ...r,
             ...(a.triggerMessageId ? { triggerMessageId: a.triggerMessageId } : {}),
+            ...(a.replyInThread !== undefined ? { replyInThread: a.replyInThread } : {}),
             ...(startedAt ? { startedAt } : {}),
             ...(workingSince !== undefined ? { workingSince } : {}),
             ...(lastEventAt ? { lastEventAt } : {}),
@@ -907,6 +943,7 @@ export function reconcileRuns(
       workingSince: served ?? startedAt ?? now,
       lastEventAt: now,
       ...(a.triggerMessageId ? { triggerMessageId: a.triggerMessageId } : {}),
+      ...(a.replyInThread !== undefined ? { replyInThread: a.replyInThread } : {}),
     });
   }
   return s;
@@ -926,6 +963,28 @@ export const inMainTimeline = (
   r: { threadId: string | null; provisional?: boolean; triggerMessageId?: string | null },
   topLevelIds: ReadonlySet<string>,
 ) => r.threadId === null || Boolean(r.provisional && topLevelIds.has(r.triggerMessageId ?? r.threadId));
+
+/**
+ * A run that says "Ada is replying in the thread" under the message of the main timeline that asked it (ADR 0214),
+ * `threadId` being that message, until the thread has a reply. Not the app's own guess: that one shows in the channel.
+ */
+export const repliesUnder = (r: LiveRun, messageId: string) =>
+  r.threadId === messageId && r.replyInThread !== false && !r.provisional && r.status !== "failed";
+
+/** The agents replying under each message of the main timeline (`repliesUnder`) whose thread has no line yet. */
+export function replyingUnder(
+  runs: readonly LiveRun[],
+  topLevelIds: ReadonlySet<string>,
+  lined: { has: (threadId: string) => boolean },
+): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const r of runs) {
+    if (!topLevelIds.has(r.threadId) || lined.has(r.threadId) || !repliesUnder(r, r.threadId)) continue;
+    const ids = out.get(r.threadId) ?? [];
+    if (!ids.includes(r.agentId)) out.set(r.threadId, [...ids, r.agentId]);
+  }
+  return out;
+}
 
 /** Runs to show in a channel, oldest first. */
 export const runsInChannel = (state: StreamsState, channelId: string) =>

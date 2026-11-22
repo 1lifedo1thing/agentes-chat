@@ -2761,6 +2761,8 @@
     "noTopic": "Keine Beschreibung",
     "nameLabel": "Name",
     "nameHelp": "Ändert sich für alle. Alte Links funktionieren weiter.",
+    "replyInThreads": "Agenten antworten in Threads",
+    "replyInThreadsHelp": "Ein Agent, der im Kanal gerufen wird, antwortet im Thread unter dieser Nachricht, und der Kanal zeigt dafür eine Zeile. Laufende Arbeit bleibt, wo sie ist.",
     "nameTaken": "#{{name}} gibt es schon.",
     "generalName": "#general behält seinen Namen.",
     "archive": "Kanal archivieren",
@@ -8107,6 +8109,46 @@
     "custom_write": {
       "label": "Schreib-Tools",
       "description": "Die Schreib-Tools nutzen. Als sensibel markierte fragen immer nach Freigabe."
+    },
+    "telegram_messages_read": {
+      "label": "Nachrichten lesen",
+      "description": "Die Chats des Bots auflisten und lesen, was Leute ihm oder dort geschrieben haben, wo er ist."
+    },
+    "telegram_messages_write": {
+      "label": "Nachrichten senden",
+      "description": "Nachrichten und Dateien als Bot senden, bearbeiten und anheften. Nachrichten löschen, Leute sperren und Einladungslinks fragen nach Freigabe."
+    },
+    "x_posts_read": {
+      "label": "Beiträge lesen",
+      "description": "Die Beiträge und Erwähnungen des Kontos lesen, Beiträge per ID und neue Beiträge per Suche."
+    },
+    "x_posts_write": {
+      "label": "Posten",
+      "description": "Auf dem Konto posten, mit Bildern oder einem Video aus dem Drive. Einen Beitrag löschen fragt nach Freigabe."
+    },
+    "threads_posts_read": {
+      "label": "Beiträge lesen",
+      "description": "Die Beiträge des Kontos, ihre Antworten, Erwähnungen und Ergebnisse lesen."
+    },
+    "threads_posts_write": {
+      "label": "Posten und antworten",
+      "description": "Mit Bildern oder Videos aus dem Drive posten, antworten und Antworten ausblenden. Einen Beitrag löschen fragt nach Freigabe."
+    },
+    "meta_ads_ads_read": {
+      "label": "Anzeigen lesen",
+      "description": "Werbekonten, Kampagnen, Anzeigengruppen und Anzeigen auflisten und ihre Ergebnisse lesen."
+    },
+    "meta_ads_ads_write": {
+      "label": "Anzeigen verwalten",
+      "description": "Kampagnen, Anzeigengruppen und Anzeigen anlegen (immer pausiert), bearbeiten und pausieren. Einschalten und Budget ändern fragen immer. Archivieren und Löschen fragen."
+    },
+    "tiktok_videos_read": {
+      "label": "Videos lesen",
+      "description": "Das Profil, die öffentlichen Videos und die Post-Optionen der Person lesen."
+    },
+    "tiktok_videos_write": {
+      "label": "Videos in die Entwürfe senden",
+      "description": "Ein Video aus dem Drive in die TikTok-Entwürfe senden, wo die Person den Post fertigstellt. Jeder Upload fragt nach Freigabe."
     }
   },
   "issues": {
@@ -8557,6 +8599,11 @@
       "methods": "Akzeptierte Methoden",
       "methodsHelp": "Die Adresse antwortet nur auf die markierten Methoden. Bei GET sind die Query-Parameter der URL die Daten des Aufrufs.",
       "methodsLine": "Akzeptiert {{methods}}.",
+      "groupBy": "Aufrufe gruppieren nach",
+      "groupByHelp": "Ein Feld in den Daten jedes Aufrufs, etwa conversation.id. Aufrufe mit demselben Wert laufen nacheinander, in ihrer Reihenfolge. Verschiedene Werte laufen gleichzeitig.",
+      "groupByOff": "Alle Aufrufe warten in einer Reihe, in ihrer Reihenfolge.",
+      "groupByOn": "Aufrufe mit demselben {{path}} laufen in ihrer Reihenfolge. Die anderen laufen gleichzeitig.",
+      "groupBySaved": "Gruppierung gespeichert.",
       "address": "Adresse",
       "addressHelp": "Wer die Adresse hat, kann den Agenten starten. Behandle sie wie ein Passwort und erstelle eine neue, falls sie bekannt wird.",
       "copied": "Adresse kopiert.",
@@ -8974,6 +9021,9 @@
       },
       "deploy": {
         "succeeded": "Deploy abgeschlossen"
+      },
+      "telegram": {
+        "message": "Nachricht an den Telegram-Bot"
       }
     },
     "when": {
@@ -9988,6 +10038,8 @@
       "reply": "Antworten",
       "replies_one": "{{count}} Antwort",
       "replies_other": "{{count}} Antworten",
+      "replying_one": "{{names}} antwortet im Thread",
+      "replying_other": "{{names}} antworten im Thread",
       "closed_one": "Thread geschlossen · {{title}} · {{count}} Nachricht",
       "closed_other": "Thread geschlossen · {{title}} · {{count}} Nachrichten",
       "archived_one": "{{count}} archivierter Thread wird hier nicht angezeigt",
@@ -13489,7 +13541,8 @@
       },
       "meta_ads": {
         "1": "Kampagnen und Ergebnisse ansehen",
-        "2": "Kampagnen erstellen und anpassen"
+        "2": "Kampagnen erstellen und anpassen",
+        "ask": "Anzeigen einschalten und Budgets ändern fragt immer nach deiner Freigabe"
       },
       "google_docs": {
         "1": "Dokumente suchen und lesen",
@@ -13621,6 +13674,26 @@
         "1": "Tabellen ansehen",
         "2": "Daten abfragen, um zu antworten",
         "3": "Ändert nie etwas"
+      },
+      "telegram": {
+        "1": "Lesen, was Leute dem Bot schreiben",
+        "2": "Nachrichten und Dateien als Bot senden",
+        "ask": "Löschen, Sperren und Einladungslinks fragen immer nach deiner Freigabe"
+      },
+      "x": {
+        "1": "Beiträge und Erwähnungen des Kontos lesen",
+        "2": "Mit Bildern oder einem Video posten",
+        "ask": "Beiträge löschen fragt immer nach deiner Freigabe"
+      },
+      "threads": {
+        "1": "Beiträge, Antworten und Ergebnisse ansehen",
+        "2": "Mit Bildern oder Videos posten und antworten",
+        "ask": "Beiträge löschen fragt immer nach deiner Freigabe"
+      },
+      "tiktok": {
+        "1": "Profil und Videos ansehen",
+        "2": "Videos in deine Entwürfe senden, fertig in TikTok",
+        "ask": "Jeder Upload fragt immer nach deiner Freigabe"
       }
     },
     "connectedList": "Verbunden",
@@ -13768,8 +13841,13 @@
       "youtube": "Videos, Kommentare, Playlists und Statistiken des YouTube-Kanals.",
       "pinterest": "Pins, Pinnwände und Statistiken auf Pinterest.",
       "reddit": "Beiträge, Kommentare und Communitys auf Reddit.",
-      "whatsapp": "Nachrichten und Vorlagen von WhatsApp Business."
-    }
+      "whatsapp": "Nachrichten und Vorlagen von WhatsApp Business.",
+      "telegram": "Ein eigener Telegram-Bot: seine Chats, Gruppen und Kanäle.",
+      "x": "Beiträge auf deinem X-Konto: schreiben, Erwähnungen lesen und suchen.",
+      "threads": "Beiträge und Antworten auf deinem Threads-Konto.",
+      "tiktok": "Dein TikTok-Profil und deine Videos, und Videos in deinen Entwürfen."
+    },
+    "needsApp": "Dieser Server hat noch keine {{name}}-App: Wer ihn betreibt, registriert eine bei {{name}} und setzt ihre Variablen (docs/social-apps-checklist.md)."
   },
   "toolNames": {
     "order": "head-first",
@@ -14599,7 +14677,39 @@
       "get_my_usage": "Meine Nutzung anzeigen",
       "ignore_usage_limit": "Nutzungslimit ignorieren",
       "send_feedback": "Feedback senden",
-      "offer_feedback": "Problemmeldung anbieten"
+      "offer_feedback": "Problemmeldung anbieten",
+      "list_chats": "Chats auflisten",
+      "read_messages": "Nachrichten lesen",
+      "get_chat": "Chat ansehen",
+      "send_file": "Datei senden",
+      "edit_message": "Nachricht bearbeiten",
+      "pin_message": "Nachricht anheften",
+      "ban_member": "Mitglied sperren",
+      "create_invite_link": "Einladungslink erstellen",
+      "get_my_posts": "Meine Beiträge ansehen",
+      "get_mentions": "Erwähnungen ansehen",
+      "search_recent": "Neue Beiträge suchen",
+      "get_replies": "Antworten ansehen",
+      "get_insights": "Ergebnisse ansehen",
+      "reply": "Antworten",
+      "hide_reply": "Antwort ausblenden",
+      "list_ad_accounts": "Werbekonten auflisten",
+      "list_campaigns": "Kampagnen auflisten",
+      "list_ad_sets": "Anzeigengruppen auflisten",
+      "list_ads": "Anzeigen auflisten",
+      "create_campaign": "Kampagne anlegen",
+      "create_ad_set": "Anzeigengruppe anlegen",
+      "create_ad": "Anzeige anlegen",
+      "update": "Aktualisieren",
+      "pause": "Pausieren",
+      "activate": "Einschalten",
+      "set_budget": "Budget festlegen",
+      "archive": "Archivieren",
+      "delete": "Löschen",
+      "list_videos": "Videos auflisten",
+      "get_creator_info": "Post-Optionen ansehen",
+      "get_post_status": "Upload-Status ansehen",
+      "upload_draft": "In die Entwürfe senden"
     }
   },
   "toolReview": {
@@ -14801,6 +14911,13 @@
       "asks_other": "{{count}} Aktionen fragen im Chat nach Freigabe.",
       "adjust": "Anpassen",
       "ok": "Fertig"
+    },
+    "telegram": {
+      "token": "Bot-Token",
+      "steps": "Öffne in Telegram @BotFather, sende /newbot, wähle einen Namen und einen Benutzernamen, der auf „bot“ endet, und füge hier das Token ein, das er dir gibt. Um eine Gruppe zu lesen, füge den Bot hinzu. Um in einem Kanal zu posten, mach ihn dort zum Admin."
+    },
+    "x": {
+      "consent": "Agenten mit Zugriff auf X posten selbstständig auf diesem Konto. Einen Beitrag löschen fragt vorher, und die Seite jedes Agenten schränkt ein, was er darf. Ein X-Konto funktioniert in jeweils einem Workspace."
     }
   },
   "database": {
@@ -15694,6 +15811,7 @@
       "takeOverNoAccess": "Tritt der Unterhaltung der Routine bei, bevor du sie übernimmst.",
       "agentNotInChannel": "Füg den Agent zuerst zur Unterhaltung hinzu.",
       "webhookPaused": "Schalte die Routine ein, um sie zu testen.",
+      "groupByInvalid": "Gib einen Pfad wie conversation.id ein, mit einem Feldnamen zwischen jedem Punkt.",
       "continueExtraOff": "Das Zeitfenster dieses Abos ist aufgebraucht, und die lange Arbeit dieses Agenten nutzt keine bezahlte Zusatznutzung des Abos. Sie geht nach dem Zurücksetzen weiter.",
       "continueExtraUsedUp": "Das Zeitfenster dieses Abos ist aufgebraucht, und seine bezahlte Zusatznutzung ist aufgebraucht oder nicht verfügbar. Es geht nach dem Zurücksetzen weiter.",
       "actionsNeedApprover": "Nur der Inhaber des Agenten oder wer seine Aktionen genehmigt, kann eine Routine selbstständig handeln lassen.",
@@ -19663,7 +19781,9 @@
     "seatsPaid_one": "{{count}} bezahlter Platz",
     "seatsPaid_other": "{{count}} bezahlte Plätze",
     "noLimit": "Kein Limit",
-    "ownBucket": "In deinem eigenen Bucket, ohne Limit von uns"
+    "ownBucket": "In deinem eigenen Bucket, ohne Limit von uns",
+    "connectors": "X diesen Monat",
+    "shareUsed": "{{share}} verbraucht"
   },
   "referrals": {
     "open": "Empfehlen und verdienen",

@@ -603,7 +603,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       await dispatchDm(deps.db, message, { maxHops: deps.maxHops }); // idempotent safety net
       return;
     }
-    // A code session's conversation (ADR 0214): what names nobody is for the session's agent, which got it at post
+    // A code session's conversation (ADR 0215): what names nobody is for the session's agent, which got it at post
     // time once its worktree was ready (`codeAgentSql`) or gets it when the worktree becomes ready; never the router's.
     if (where?.kind === "code") return;
     if (!routing) return routed("none", [], []);

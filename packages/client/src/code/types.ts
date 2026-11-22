@@ -1,5 +1,5 @@
 /**
- * Code sessions (ADR 0214): a request worked on in its own git worktree on an agent's computer, with its own
+ * Code sessions (ADR 0215): a request worked on in its own git worktree on an agent's computer, with its own
  * conversation (a thread in a channel of kind `code`: `channelId` + `rootId`). The same shapes as the server's.
  */
 
@@ -30,7 +30,7 @@ export interface CodeSession {
   createdBy: string | null;
   createdAt: string;
   lastAt: string;
-  /** The conversation it was opened from (a suggestion there, ADR 0214 §11), on the session's own read only. */
+  /** The conversation it was opened from (a suggestion there, ADR 0215 §11), on the session's own read only. */
   from?: CodeSessionOrigin;
 }
 
@@ -47,7 +47,7 @@ export interface CodeSessionOrigin {
 export type CodeSuggestionStatus = "pending" | "opening" | "opened" | "here";
 
 /**
- * A code session an agent suggested in the chat (ADR 0214 §11), on its reply's `meta.codeSuggestion`: the person who
+ * A code session an agent suggested in the chat (ADR 0215 §11), on its reply's `meta.codeSuggestion`: the person who
  * asked opens it (their words start it) or keeps the work in the conversation.
  */
 export interface CodeSuggestion {

@@ -278,7 +278,7 @@ const unprefixed = (text: string, folder?: string | null) => (folder ? text.spli
 /** Live output of one call: at most this much, at most this often. */
 export const LIVE_OUTPUT_CHARS = 64 * 1024;
 const LIVE_OUTPUT_EVERY_MS = 250;
-/** `folder`: a code session's worktree, left out of the paths the error names (ADR 0214). */
+/** `folder`: a code session's worktree, left out of the paths the error names (ADR 0215). */
 const failed = (error: unknown, folder?: string | null): ToolOutput => ({
   content: `Failed: ${unprefixed(error instanceof Error ? error.message : String(error), folder)}`,
   isError: true,
@@ -287,9 +287,9 @@ const failed = (error: unknown, folder?: string | null): ToolOutput => ({
 });
 
 /**
- * `why` on the tools that run commands on the computer: given only to ask a person first, when the computer
- * held the command for them (`approval_needed`); the call then waits for their decision (ADR 0053 §3). Where
- * every call asks anyway (the organization's setting), the gateway's own required `why` stands instead.
+ * `why` on the tools that run commands on the computer: the reason a person reads on the card when the computer
+ * holds the command for them (`approval_needed`, ADR 0053 §3). It never makes a call ask: the command itself does.
+ * Where every call asks anyway (the organization's setting), the gateway's own required `why` stands instead.
  */
 const whyAsks = (requireApproval: boolean) =>
   requireApproval
@@ -299,7 +299,7 @@ const whyAsks = (requireApproval: boolean) =>
           type: "string",
           maxLength: WHY_MAX_CHARS,
           description:
-            "Only when the computer answered that a person approves this first: your reason, for them (what you found and why it's needed). The call then waits for their decision in the chat.",
+            "Your reason, for a person: shown on the approval card only if the computer holds this command for them (what you found and why it's needed). It never makes the call ask: what the command does decides that.",
         },
       };
 
@@ -350,7 +350,7 @@ function runnerCode(error: unknown): string | null {
 export const VAULT_KEY_EXPIRED =
   "The computer's one-use key for the Vault expired before the command ran. Nothing ran. Run it again.";
 
-/** A code session's worktree missing on its computer (ADR 0214): nothing ran, and running it again won't help. */
+/** A code session's worktree missing on its computer (ADR 0215): nothing ran, and running it again won't help. */
 export const WORKTREE_GONE =
   "This session's worktree isn't on the computer any more: nothing ran. Tell the person; they can retry the session or open a new one.";
 
@@ -502,7 +502,7 @@ export function computerSentence(info: ComputerInfo) {
  * connected computer that grants folders (protocol 10), where the runner
  * checks it against the folders allowed for this agent (`not_allowed`).
  * `folder`: where the call works inside the agent's folder (a code session's
- * worktree, ADR 0214): a relative path is inside it, and never climbs out. A
+ * worktree, ADR 0215): a relative path is inside it, and never climbs out. A
  * path that already starts with the folder is taken as it is.
  */
 export function toolPath(raw: string, info: ComputerInfo, folder?: string | null): string {
@@ -521,7 +521,7 @@ export function shownPath(path: string, folder?: string | null): string {
 }
 
 /**
- * Where a call works on `computer` (ADR 0214): a code session's worktree when the call runs on the session's computer,
+ * Where a call works on `computer` (ADR 0215): a code session's worktree when the call runs on the session's computer,
  * else the agent's folder (null).
  */
 export const sessionFolder = (ctx: Pick<ToolContext, "codeSession">, computer: { machineId: string }) => {
@@ -996,7 +996,7 @@ export function createSandboxToolSource(
                 // time): their use is recorded. Not when it never reached the computer or the runner refused it before
                 // opening them (ADR 0144 §4).
                 if (keysMayHaveRun(error)) await keys?.used();
-                // The session's worktree missing on the computer is refused before any key is opened (ADR 0214).
+                // The session's worktree missing on the computer is refused before any key is opened (ADR 0215).
                 if (worktreeGone(error, sessionFolder(ctx, computer))) throw new Error(WORKTREE_GONE, { cause: error });
                 if (keys && runnerCode(error) === "not_found") throw new Error(VAULT_KEY_EXPIRED, { cause: error });
                 throw error;
@@ -1691,7 +1691,7 @@ export function createSandboxToolSource(
           const hub = hubOf();
           // On another device (`computer`), a full one keeps the task in its line instead of refusing it.
           const elsewhere = str(input.computer).trim() !== "";
-          // A code session's task works on the session's own branch, in its worktree (ADR 0214).
+          // A code session's task works on the session's own branch, in its worktree (ADR 0215).
           if (ctx.codeSession?.place && !elsewhere && str(input.branch).trim())
             return {
               content: "In a code session a task works in the session's worktree, on its branch: leave `branch` out.",
@@ -2173,7 +2173,7 @@ export function createSandboxToolSource(
       if (!granted) return keep(build(false, 60));
       const settings = await getSandboxSettings(ctx.db, ctx.orgId);
       if (!settings.enabled) return [];
-      // A mission's thread: its computer, and its rules (ADR 0029). A code session's (ADR 0214): its computer, where
+      // A mission's thread: its computer, and its rules (ADR 0029). A code session's (ADR 0215): its computer, where
       // each call works in the worktree (`sessionFolder`), as the agent's CLI does.
       const mission = await missionOfRun(ctx);
       const place = mission ? null : (ctx.codeSession?.place ?? null);

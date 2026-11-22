@@ -554,7 +554,7 @@ export function openTarget(n: AppNotification): OpenTarget | null {
     return { to: "/org/$orgId/issues/$number", params: { number: String(s.issueNumber) }, ...at };
   // One in a live file's conversation (ADR 0199) opens the file with its conversation at that message.
   if (s.artifactId) return { to: "/org/$orgId/drive/$fileId", params: { fileId: s.artifactId }, ...at };
-  // One in a code session's conversation (ADR 0214) opens the session on the Code page.
+  // One in a code session's conversation (ADR 0215) opens the session on the Code page.
   if (s.codeSessionId) return { to: "/org/$orgId/code/$sessionId", params: { sessionId: s.codeSessionId } };
   // A routine that failed, paused or waits for its computer: the routine in Rotinas (its state and fix).
   // What a routine found opens the agent's message in its conversation (below); without one, the routine.

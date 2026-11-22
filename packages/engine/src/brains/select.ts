@@ -807,7 +807,7 @@ export async function resolveBrain(
     return { kind, ...base, ...(effort ? { effort } : {}) };
   }
   const model = brainModelFor(kind, agent, mission);
-  // A code session's conversation (ADR 0214) is pinned to the session's computer and worktree, like a mission's main
+  // A code session's conversation (ADR 0215) is pinned to the session's computer and worktree, like a mission's main
   // session: its own agent's turn runs there (an agent called in, or a mission's thread, keeps its own).
   const place = mission?.session ? null : (options.codeSession?.place ?? null);
   const machineId = mission?.session?.machineId ?? place?.machineId ?? agent.machineId ?? null;

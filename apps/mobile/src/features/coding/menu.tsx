@@ -8,7 +8,7 @@ import { showActionSheet } from "../shared/PickerSheet";
 import { CODING_HREF, sessionPeopleHref } from "./logic";
 
 /**
- * A session's "…" (ADR 0214), in its conversation's bar and on its code screen: what the web's header holds, as the
+ * A session's "…" (ADR 0215), in its conversation's bar and on its code screen: what the web's header holds, as the
  * system's menu from the bar's button (the app's sheet on Android): who is in it, its pull request, and closing it
  * (red). A commit or a merge is asked in the conversation, in the person's own words. Null until the session is known.
  */

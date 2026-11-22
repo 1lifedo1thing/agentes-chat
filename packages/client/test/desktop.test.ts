@@ -205,7 +205,7 @@ describe("a terminal on the agent's computer", () => {
     expect(terminalSize(132.9, Number.NaN)).toEqual({ cols: 132, rows: 5 });
   });
 
-  test("its socket's address: its size, and a code session's id to start in its worktree (ADR 0214)", () => {
+  test("its socket's address: its size, and a code session's id to start in its worktree (ADR 0215)", () => {
     const base = { protocol: "https:", host: "agentes.chat" };
     expect(terminalSocketUrl(base, { orgId: "o1", agentId: "a1", cols: 80, rows: 24 })).toBe(
       "wss://agentes.chat/api/terminal?orgId=o1&agentId=a1&cols=80&rows=24",

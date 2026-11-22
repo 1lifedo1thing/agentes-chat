@@ -379,7 +379,7 @@ export async function shareSavedFile(
   path: string,
   saved: ToolOutput,
 ): Promise<ToolOutput> {
-  // A code session's conversation (ADR 0214): the person sees the agent's screen beside it, in the session's panel.
+  // A code session's conversation (ADR 0215): the person sees the agent's screen beside it, in the session's panel.
   if (ctx.codeSession)
     return {
       ...saved,

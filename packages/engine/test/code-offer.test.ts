@@ -3,7 +3,7 @@ import { eq, schema } from "@agenteschat/db";
 import { insertMessage, orgOverview } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
 
-/** Whether the apps offer Code (ADR 0214 §12): `OrgOverview.code`, read by the sidebar, ⌘K and the phone's Eu. */
+/** Whether the apps offer Code (ADR 0215 §12): `OrgOverview.code`, read by the sidebar, ⌘K and the phone's Eu. */
 
 setDefaultTimeout(30_000);
 

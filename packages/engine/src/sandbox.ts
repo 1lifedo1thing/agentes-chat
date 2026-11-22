@@ -197,7 +197,7 @@ export async function withSandbox<T>(
       options,
     );
   }
-  // In a code session (ADR 0214) the work runs on the session's computer, where its worktree is; with no worktree
+  // In a code session (ADR 0215) the work runs on the session's computer, where its worktree is; with no worktree
   // there for its own agent, nothing runs in the agent's own folder instead.
   if (ctx.codeSession?.unavailable) throw new SandboxUnavailableError(ctx.codeSession.unavailable);
   const machineId = ctx.codeSession?.place?.machineId ?? (await toolMachineId(deps.db, agent));

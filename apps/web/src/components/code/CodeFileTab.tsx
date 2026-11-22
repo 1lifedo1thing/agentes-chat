@@ -12,7 +12,7 @@ import type { CodeEditorHandle } from "./CodeEditor";
 const CodeEditor = lazy(() => import("./CodeEditor"));
 
 /**
- * One file of the session's worktree, in a tab beside the conversation (ADR 0214): an editor whoever is in the session
+ * One file of the session's worktree, in a tab beside the conversation (ADR 0215): an editor whoever is in the session
  * saves from (the button, ⌘S), as the agent on its computer. While nothing is unsaved the file follows the computer
  * (the agent may be writing it); with something unsaved, a file that changed there asks which one stays. A file the
  * session can't show says why; one too long to come whole is read-only.

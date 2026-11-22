@@ -173,7 +173,7 @@ export function SidebarSetupDialog({ open, onClose }: { open: boolean; onClose: 
   const save = useSetSidebarItem(org.id, personal);
   const sections = useSectionOrder(org.id, personal);
   const tools = useToolOrder(org.id, personal);
-  // Code only where it has anything for me (ADR 0214 §12); the arrows move a tool past its shown neighbour.
+  // Code only where it has anything for me (ADR 0215 §12); the arrows move a tool past its shown neighbour.
   const shown = offeredTools(tools.order, useOverview(org.id).data?.code, items);
   // What another device changed since this one loaded shows as the dialog opens.
   useEffect(() => {

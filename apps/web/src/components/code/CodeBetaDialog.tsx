@@ -17,7 +17,7 @@ function seen() {
 }
 
 /**
- * The Code page's beta notice (ADR 0214), once per browser, the first time a person opens the page: the title's block
+ * The Code page's beta notice (ADR 0215), once per browser, the first time a person opens the page: the title's block
  * drops on the sky, and what the mode is reads as a diff, the lines it adds and the ones it takes away. Every way out
  * goes on: there is nothing to refuse.
  */

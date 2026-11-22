@@ -316,7 +316,7 @@ function applyToCache(qc: QueryClient, orgId: string, channelId: string, event: 
       cachePinned(qc, orgId, channelId, event.messageId, event.type === "message.pinned");
       void qc.invalidateQueries({ queryKey: keys.pins(orgId, channelId) });
       break;
-    // A suggested code session was opened, kept here, or waits again (ADR 0214 §11): its card under the reply.
+    // A suggested code session was opened, kept here, or waits again (ADR 0215 §11): its card under the reply.
     case "code.suggestion":
       cacheCodeSuggestion(qc, orgId, event.channelId, event.messageId, event.suggestion);
       break;

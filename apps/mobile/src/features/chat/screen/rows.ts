@@ -16,7 +16,7 @@ export type Row =
   | { kind: "marker"; key: string; text: string }
   /** A file's conversation (ADR 0199, 0208): where the file was made or sent from, at its top. */
   | { kind: "origin"; key: string; artifactId: string; fileKind: TalkKind }
-  /** A code session's conversation (ADR 0214 §11): where a suggestion opened it from, at its top. */
+  /** A code session's conversation (ADR 0215 §11): where a suggestion opened it from, at its top. */
   | { kind: "codeOrigin"; key: string; sessionId: string }
   /** A run in line for its computer (`conversationWaits`): no live row of its own, this one for all its messages. */
   | { kind: "wait"; key: string; wait: ConversationWait }

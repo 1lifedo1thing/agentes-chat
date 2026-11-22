@@ -8,7 +8,7 @@ import Constants from "expo-constants";
 import { useHeaderHeight } from "expo-router/react-navigation";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "@/features/account";
@@ -170,7 +170,7 @@ let horizonArrived = false;
  * under it. Your agents, alive (a working one says what it does), "Ver todos" to the Agentes tab. Your work (Tarefas,
  * Propostas, Rotinas, Wiki, Drive, Painéis, Memória): what belongs to the workspace lives in Configurações, once. The
  * preferences; Sons and Aparência (a few fixed choices) change in their row through the app's short menu, Idioma (one of
- * many) on its own pushed list. Sair alone in red; the version is in Sobre. A settings page is opened many times a day,
+ * many) on its own pushed list. Sair alone in red; the version and build at the foot. Opened many times a day,
  * so nothing here animates beyond the presses and the platform's push, but for your agents rising onto the horizon the
  * first time it opens in a session. A personal workspace
  * (ADR 0159) is yours: no workspace name after your @, your face as its mark, and its work led by what its sidebar
@@ -247,7 +247,10 @@ function MePage() {
   const tasksUnread = useTasksUnreadMarks();
   // Threads with something new, the badge their tab has in a team's workspace.
   const unreadThreads = useUnreadThreads();
-  const version = Constants.expoConfig?.version ?? "";
+  // The app's version and its build ("0.1.0 (104)"): what someone reporting a problem reads out.
+  const build =
+    Platform.OS === "ios" ? Constants.expoConfig?.ios?.buildNumber : Constants.expoConfig?.android?.versionCode;
+  const version = [Constants.expoConfig?.version, build ? `(${build})` : null].filter(Boolean).join(" ");
   // Mine: its owner, or holding the role that answers for it (ADR 0085, addendum of 2026-11-21).
   const myAgents = dir.agents.filter((a) => owns(a));
   const handle = mine?.handle ? `@${mine.handle}` : null;
@@ -289,7 +292,7 @@ function MePage() {
     routines: (
       <GroupedRow key="routines" icon="clock" label={t("routines.title")} chevron onPress={() => open("/routines")} />
     ),
-    // Code (ADR 0214): the sessions where agents program, as the web's sidebar tool; only where it has anything for me
+    // Code (ADR 0215): the sessions where agents program, as the web's sidebar tool; only where it has anything for me
     // (§12: an agent that programs on a computer, or an open session of mine).
     code: overview?.code ? (
       <GroupedRow key="code" icon="code" label={t("shell.code")} chevron onPress={() => open("/coding")} />
@@ -620,8 +623,8 @@ function MePage() {
           <GroupedList>
             <GroupedRow key="signOut" label={t("mobile.me.signOut")} danger onPress={confirmSignOut} />
           </GroupedList>
-          {/* Sobre says the version; without it (a server that hides it), the version stays here. */}
-          {!about && version ? <GroupedFooter>{t("mobile.me.version", { version })}</GroupedFooter> : null}
+          {/* At the menu's foot, always (Sobre says it too): the first place anyone looks for it. */}
+          {version ? <GroupedFooter>{t("mobile.me.version", { version })}</GroupedFooter> : null}
         </View>
       </Animated.ScrollView>
       {/* The bar takes the page's gray only once the sky has gone from under it: over the sky it stays clear. */}

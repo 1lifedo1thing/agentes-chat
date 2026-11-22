@@ -793,7 +793,7 @@ export class RunnerDaemon implements RequestObserver {
   }
 
   /**
-   * As whom a terminal on the agent's computer runs, like its desktop; `cwd`: a folder inside the agent's (ADR 0214).
+   * As whom a terminal on the agent's computer runs, like its desktop; `cwd`: a folder inside the agent's (ADR 0215).
    * Its shell knows the sign-in the agent thinks with.
    */
   private async terminalUser(agent: AgentScope, cwd?: string): Promise<TerminalUser> {

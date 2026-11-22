@@ -3,7 +3,7 @@ import type { OrgSummary } from "../api/types";
 import { showsActivity } from "./work";
 
 /**
- * Around a code session's conversation (ADR 0214): the agent's work there is the conversation itself, as in a
+ * Around a code session's conversation (ADR 0215): the agent's work there is the conversation itself, as in a
  * terminal, whichever brain did it.
  */
 export const CodeConversation = createContext(false);

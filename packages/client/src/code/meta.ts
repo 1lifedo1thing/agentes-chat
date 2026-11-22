@@ -1,6 +1,6 @@
 import type { CodeSuggestion, CodeSuggestionStatus } from "./types";
 
-/** A code session's root message (ADR 0214, `meta.codeSession`): which session its thread is. */
+/** A code session's root message (ADR 0215, `meta.codeSession`): which session its thread is. */
 export interface CodeSessionRoot {
   sessionId: string;
   repo: string;
@@ -22,7 +22,7 @@ export function codeSessionOf(meta: unknown): CodeSessionRoot | null {
 
 const STATUSES: readonly CodeSuggestionStatus[] = ["pending", "opening", "opened", "here"];
 
-/** The code session an agent's reply suggests (`meta.codeSuggestion`, ADR 0214 §11), or null. */
+/** The code session an agent's reply suggests (`meta.codeSuggestion`, ADR 0215 §11), or null. */
 export function codeSuggestionOf(meta: unknown): CodeSuggestion | null {
   if (!meta || typeof meta !== "object") return null;
   const s = (meta as { codeSuggestion?: unknown }).codeSuggestion;

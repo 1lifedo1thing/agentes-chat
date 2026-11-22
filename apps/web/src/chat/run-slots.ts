@@ -118,7 +118,7 @@ export function waitingLast<S extends Pick<RunSlot, "runId">>(
   return [...slots.filter((s) => !waiting(s.runId)), ...slots.filter((s) => waiting(s.runId))];
 }
 
-/** A subagent or a workflow its brain started, with its progress (a code session's, ADR 0214): its card shows. */
+/** A subagent or a workflow its brain started, with its progress (a code session's, ADR 0215): its card shows. */
 const subagentsShown = (r: LiveRun) => (r.work ?? []).some((w) => w.kind === "call" && w.progress !== undefined);
 
 /**

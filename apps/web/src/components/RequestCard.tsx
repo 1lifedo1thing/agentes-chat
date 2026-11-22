@@ -32,7 +32,7 @@ import "./request-card.css";
 /**
  * What an agent can ask of a person in the conversation: each says so in the card's header and in the bar.
  * "proposal": a change to the workspace's context or an agent's instructions; "agent": a new agent; "code": a code
- * session for a change asked in the chat (ADR 0214 §11).
+ * session for a change asked in the chat (ADR 0215 §11).
  */
 export type RequestKind =
   | "approval"

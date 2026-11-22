@@ -130,10 +130,11 @@ import { tapHaptic } from "../shared/parts";
 import { VoiceMessage } from "../voice/VoiceMessage";
 import { FilesTextOnlyFix, ReceiptMark } from "./AgentReceipts";
 import { secretRequestOf } from "./ask-store";
+import { useBubbleCap } from "./bubble-cap";
 import { ChatMedia } from "./ChatMedia";
 import { ClippedMessage, OpenedMessagesContext } from "./ClippedMessage";
 import { ConsultPairRow, useRunConsults } from "./ConsultGroup";
-import { ApprovalInline, QuestionCard, ThreadLink } from "./cards";
+import { ApprovalInline, QuestionCard, ThreadLink, ThreadReplyingLink } from "./cards";
 import { FeedbackOfferRow } from "./FeedbackOffer";
 import { HandedTaskChips, IssueWorkCard } from "./issue-work";
 import { keepOpen, keptOpen } from "./kept-sizes";
@@ -228,6 +229,8 @@ interface RowProps {
   meId: string | null;
   /** Its thread, when it is the root of one the conversation shows as a link. */
   thread?: ThreadInfo;
+  /** With no `thread` yet: the agents replying in the thread under it, comma-joined (ADR 0214). */
+  replying?: string | undefined;
   /** Absent where it is read only. */
   onLongPress?: (m: Message) => void;
   onRetry?: (m: Message) => void;
@@ -249,6 +252,7 @@ function RowBody({
   newTurn,
   meId,
   thread,
+  replying,
   onLongPress,
   onRetry,
   onQuote,
@@ -464,7 +468,7 @@ function RowBody({
   // Preparing the mission's copy of the project failed (ADR 0044): the card with "Tentar de novo".
   const setup = missionSetupOf(meta);
   const link = missionLinkOf(meta);
-  // A code session it suggested for a change asked here (ADR 0214 §11): the person's card under the reply.
+  // A code session it suggested for a change asked here (ADR 0215 §11): the person's card under the reply.
   const suggestion = m.author.type === "agent" && !m.local ? codeSuggestionOf(meta) : null;
   const files = artifactsOf(meta);
   // Mine, just sent: drawn from the phone while they upload.
@@ -483,7 +487,7 @@ function RowBody({
   const run = runAround(
     runAt,
     above ? hangsUnder(above, aboveThread, aboveReactions, meId) : false,
-    hangsUnder(m, Boolean(thread), cachedReactions.data, meId),
+    hangsUnder(m, Boolean(thread || replying), cachedReactions.data, meId),
   );
   // A card in a row of its own under the same author's words stands as far off them as in the same row.
   const cardRow = !body && !media && postedCard;
@@ -578,6 +582,10 @@ function RowBody({
         <View style={onRight ? styles.meEnd : undefined}>
           <ThreadLink thread={thread} />
         </View>
+      ) : replying ? (
+        <View style={onRight ? styles.meEnd : undefined}>
+          <ThreadReplyingLink channelId={m.channelId} threadId={m.id} agentIds={replying.split(",")} />
+        </View>
       ) : null}
       {readOnly ? null : (
         <Reactions message={m} reactions={reactions} meId={meId} end={onRight} onToggle={toggle.mutate} />
@@ -612,6 +620,8 @@ function RowBody({
   // Someone else's bubble gives way to the times only when it is too wide for them (`useGiveWay`): its bubbles end
   // sooner than mine at the screen's edge, so that much room is there before it moves.
   const giveWay = useGiveWay(ROW_BODY_INSET.bubbles.right - BUBBLES_EDGE);
+  // Someone else's bubble never taller than what it holds (`useBubbleCap`).
+  const bubbleCap = useBubbleCap();
   // A compact row runs to the screen's edge: its face and words slide over with the pull, for its time.
   const slide = useSwipeSlide(compact);
 
@@ -893,7 +903,13 @@ function RowBody({
   ) : choiceReply ? (
     choiceReply
   ) : body ? (
-    <ClippedMessage id={m.id} behind={behindWords} lead={talk ? saying(talk.lead) : undefined}>
+    <ClippedMessage
+      id={m.id}
+      behind={behindWords}
+      lead={talk ? saying(talk.lead) : undefined}
+      // In a bubble, where its words end keeps the bubble no taller than them (`useBubbleCap`).
+      onEnd={bubbled ? bubbleCap.onEnd : undefined}
+    >
       {saying(body)}
     </ClippedMessage>
   ) : null;
@@ -1001,8 +1017,17 @@ function RowBody({
                     {pinLine}
                     {reportOpened}
                     <View
-                      onLayout={giveWay.onBubble}
-                      style={[lookRows.bubble, OTHER_RUN[run], { backgroundColor: otherBubble }, bubbleEdge]}
+                      onLayout={(e) => {
+                        giveWay.onBubble(e);
+                        bubbleCap.onBubble(e);
+                      }}
+                      style={[
+                        lookRows.bubble,
+                        OTHER_RUN[run],
+                        { backgroundColor: otherBubble },
+                        bubbleEdge,
+                        bubbleCap.capStyle,
+                      ]}
                     >
                       {!grouped && (look.names || tagged) ? who(true) : null}
                       {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}

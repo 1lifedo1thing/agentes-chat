@@ -60,7 +60,7 @@ function splitPath(path: string) {
 }
 
 /**
- * The session panel's Git tab (ADR 0214): the branch and its base, the whole change since the base, what isn't
+ * The session panel's Git tab (ADR 0215): the branch and its base, the whole change since the base, what isn't
  * committed (as `git status` lists it) and the branch's commits, read in the worktree as its agent and again while it
  * works. Any row opens its diff in a tab beside the conversation (`onOpen`).
  */

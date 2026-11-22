@@ -2862,6 +2862,8 @@
     "noTopic": "Aucune description",
     "nameLabel": "Nom",
     "nameHelp": "Change pour tout le monde. Les anciens liens continuent de fonctionner.",
+    "replyInThreads": "Les agents répondent dans des fils",
+    "replyInThreadsHelp": "Un agent appelé dans le canal répond dans le fil sous ce message, et le canal affiche une ligne pour ce fil. Le travail déjà en cours reste où il est.",
     "nameTaken": "#{{name}} existe déjà.",
     "generalName": "#general garde son nom.",
     "archive": "Archiver le canal",
@@ -8397,6 +8399,46 @@
     "custom_write": {
       "label": "Outils d'écriture",
       "description": "Utiliser les outils d'écriture. Ceux marqués sensibles demandent toujours une approbation."
+    },
+    "telegram_messages_read": {
+      "label": "Lire les messages",
+      "description": "Lister les discussions du bot et lire ce qu'on lui a écrit ou là où il se trouve."
+    },
+    "telegram_messages_write": {
+      "label": "Envoyer des messages",
+      "description": "Envoyer, modifier et épingler des messages et des fichiers en tant que bot. Supprimer des messages, bannir des personnes et les liens d'invitation demandent une approbation."
+    },
+    "x_posts_read": {
+      "label": "Lire les posts",
+      "description": "Lire les posts et mentions du compte, des posts par identifiant et les posts récents par recherche."
+    },
+    "x_posts_write": {
+      "label": "Publier",
+      "description": "Publier sur le compte, avec des images ou une vidéo du Drive. Supprimer un post demande une approbation."
+    },
+    "threads_posts_read": {
+      "label": "Lire les posts",
+      "description": "Lire les posts du compte, leurs réponses, les mentions et les résultats."
+    },
+    "threads_posts_write": {
+      "label": "Publier et répondre",
+      "description": "Publier avec des images ou des vidéos du Drive, répondre et masquer des réponses. Supprimer un post demande une approbation."
+    },
+    "meta_ads_ads_read": {
+      "label": "Lire les publicités",
+      "description": "Lister les comptes publicitaires, campagnes, ensembles de publicités et publicités, et lire leurs résultats."
+    },
+    "meta_ads_ads_write": {
+      "label": "Gérer les publicités",
+      "description": "Créer des campagnes, ensembles de publicités et publicités (toujours en pause), les modifier et les mettre en pause. Activer et changer un budget demandent toujours. Archiver et supprimer demandent."
+    },
+    "tiktok_videos_read": {
+      "label": "Lire les vidéos",
+      "description": "Lire le profil, les vidéos publiques et ce que le créateur peut publier."
+    },
+    "tiktok_videos_write": {
+      "label": "Envoyer des vidéos aux brouillons",
+      "description": "Envoyer une vidéo du Drive dans les brouillons TikTok du créateur, qui termine le post là-bas. Chaque envoi demande une approbation."
     }
   },
   "issues": {
@@ -8869,6 +8911,11 @@
       "methods": "Méthodes acceptées",
       "methodsHelp": "L’adresse ne répond qu’aux méthodes cochées. Avec GET, les paramètres de l’URL sont les données de l’appel.",
       "methodsLine": "Accepte {{methods}}.",
+      "groupBy": "Regrouper les appels par",
+      "groupByHelp": "Un champ des données de chaque appel, comme conversation.id. Les appels ayant la même valeur s'exécutent un par un, dans l'ordre. Les valeurs différentes s'exécutent en même temps.",
+      "groupByOff": "Tous les appels attendent dans une seule file, dans l'ordre.",
+      "groupByOn": "Les appels ayant le même {{path}} s'exécutent dans l'ordre. Les autres s'exécutent en même temps.",
+      "groupBySaved": "Regroupement enregistré.",
       "address": "Adresse",
       "addressHelp": "Toute personne qui a l'adresse peut lancer l'agent. Gardez-la comme un mot de passe et créez-en une nouvelle si elle fuite.",
       "copied": "Adresse copiée.",
@@ -9291,6 +9338,9 @@
       },
       "deploy": {
         "succeeded": "Déploiement terminé"
+      },
+      "telegram": {
+        "message": "Message au bot Telegram"
       }
     },
     "when": {
@@ -10360,6 +10410,9 @@
       "replies_one": "{{count}} réponse",
       "replies_many": "{{count}} réponses",
       "replies_other": "{{count}} réponses",
+      "replying_one": "{{names}} répond dans le fil",
+      "replying_many": "{{names}} répondent dans le fil",
+      "replying_other": "{{names}} répondent dans le fil",
       "closed_one": "Fil fermé · {{title}} · {{count}} message",
       "closed_many": "Fil fermé · {{title}} · {{count}} messages",
       "closed_other": "Fil fermé · {{title}} · {{count}} messages",
@@ -13990,7 +14043,8 @@
       },
       "meta_ads": {
         "1": "Voir les campagnes et les résultats",
-        "2": "Créer et ajuster des campagnes"
+        "2": "Créer et ajuster des campagnes",
+        "ask": "Activer des publicités et changer des budgets demande toujours votre approbation"
       },
       "google_docs": {
         "1": "Rechercher et lire des documents",
@@ -14122,6 +14176,26 @@
         "1": "Voir les tables",
         "2": "Interroger les données pour répondre",
         "3": "Ne modifie jamais rien"
+      },
+      "telegram": {
+        "1": "Lire ce qu'on écrit au bot",
+        "2": "Envoyer des messages et des fichiers en tant que bot",
+        "ask": "Supprimer, bannir et les liens d'invitation demandent toujours votre approbation"
+      },
+      "x": {
+        "1": "Lire les posts et mentions du compte",
+        "2": "Publier avec des images ou une vidéo",
+        "ask": "Supprimer des posts demande toujours votre approbation"
+      },
+      "threads": {
+        "1": "Voir les posts, réponses et résultats",
+        "2": "Publier avec des images ou vidéos et répondre",
+        "ask": "Supprimer des posts demande toujours votre approbation"
+      },
+      "tiktok": {
+        "1": "Voir le profil et les vidéos",
+        "2": "Envoyer des vidéos à vos brouillons, à finir dans TikTok",
+        "ask": "Chaque envoi demande toujours votre approbation"
       }
     },
     "connectedList": "Connectés",
@@ -14274,8 +14348,13 @@
       "youtube": "Vidéos, commentaires, playlists et statistiques de la chaîne YouTube.",
       "pinterest": "Épingles, tableaux et statistiques Pinterest.",
       "reddit": "Publications, commentaires et communautés Reddit.",
-      "whatsapp": "Messages et modèles WhatsApp Business."
-    }
+      "whatsapp": "Messages et modèles WhatsApp Business.",
+      "telegram": "Un bot Telegram à vous : ses discussions, groupes et canaux.",
+      "x": "Les posts de votre compte X : écrire, lire les mentions et chercher.",
+      "threads": "Les posts et réponses de votre compte Threads.",
+      "tiktok": "Votre profil et vos vidéos TikTok, et des vidéos envoyées à vos brouillons."
+    },
+    "needsApp": "Ce serveur n'a pas encore d'app {{name}} : la personne qui l'administre en enregistre une chez {{name}} et définit ses variables (docs/social-apps-checklist.md)."
   },
   "toolNames": {
     "order": "head-first",
@@ -15105,7 +15184,39 @@
       "get_my_usage": "Voir mon utilisation",
       "ignore_usage_limit": "Ignorer la limite d'utilisation",
       "send_feedback": "Envoyer un retour",
-      "offer_feedback": "Proposer de signaler un problème"
+      "offer_feedback": "Proposer de signaler un problème",
+      "list_chats": "Lister les discussions",
+      "read_messages": "Lire les messages",
+      "get_chat": "Voir la discussion",
+      "send_file": "Envoyer un fichier",
+      "edit_message": "Modifier le message",
+      "pin_message": "Épingler le message",
+      "ban_member": "Bannir un membre",
+      "create_invite_link": "Créer un lien d'invitation",
+      "get_my_posts": "Voir mes posts",
+      "get_mentions": "Voir les mentions",
+      "search_recent": "Chercher des posts récents",
+      "get_replies": "Voir les réponses",
+      "get_insights": "Voir les résultats",
+      "reply": "Répondre",
+      "hide_reply": "Masquer la réponse",
+      "list_ad_accounts": "Lister les comptes publicitaires",
+      "list_campaigns": "Lister les campagnes",
+      "list_ad_sets": "Lister les ensembles de publicités",
+      "list_ads": "Lister les publicités",
+      "create_campaign": "Créer une campagne",
+      "create_ad_set": "Créer un ensemble de publicités",
+      "create_ad": "Créer une publicité",
+      "update": "Mettre à jour",
+      "pause": "Mettre en pause",
+      "activate": "Activer",
+      "set_budget": "Définir le budget",
+      "archive": "Archiver",
+      "delete": "Supprimer",
+      "list_videos": "Lister les vidéos",
+      "get_creator_info": "Voir les options de publication",
+      "get_post_status": "Voir l'état de l'envoi",
+      "upload_draft": "Envoyer aux brouillons"
     }
   },
   "toolReview": {
@@ -15326,6 +15437,13 @@
       "asks_other": "{{count}} actions demandent une approbation dans le chat.",
       "adjust": "Ajuster",
       "ok": "Terminé"
+    },
+    "telegram": {
+      "token": "Jeton du bot",
+      "steps": "Dans Telegram, ouvrez @BotFather, envoyez /newbot, choisissez un nom et un identifiant qui finit par « bot », puis collez ici le jeton qu'il vous donne. Pour lire un groupe, ajoutez-y le bot. Pour publier dans un canal, faites-en un admin."
+    },
+    "x": {
+      "consent": "Les agents qui ont accès à X publient seuls sur ce compte. Supprimer un post demande d'abord, et la page de chaque agent limite ce qu'il peut faire. Un compte X fonctionne dans un seul workspace à la fois."
     }
   },
   "database": {
@@ -16236,6 +16354,7 @@
       "takeOverNoAccess": "Rejoignez la conversation de la routine avant de la reprendre.",
       "agentNotInChannel": "Ajoutez d'abord l'agent à la conversation.",
       "webhookPaused": "Activez la routine pour la tester.",
+      "groupByInvalid": "Saisissez un chemin comme conversation.id, avec un nom de champ entre chaque point.",
       "continueExtraOff": "La fenêtre de cet abonnement est épuisée et le travail long de cet agent n'utilise pas l'usage supplémentaire payant de l'abonnement. Il reprendra après la réinitialisation.",
       "continueExtraUsedUp": "La fenêtre de cet abonnement est épuisée et son usage supplémentaire payant est épuisé ou indisponible. Il reprendra après la réinitialisation.",
       "actionsNeedApprover": "Seuls le responsable de l'agent ou une personne qui approuve ses actions peuvent laisser une routine agir seule.",
@@ -20316,7 +20435,9 @@
     "seatsPaid_many": "{{count}} places payées",
     "seatsPaid_other": "{{count}} places payées",
     "noLimit": "Sans limite",
-    "ownBucket": "Sur votre propre bucket, sans limite de notre part"
+    "ownBucket": "Sur votre propre bucket, sans limite de notre part",
+    "connectors": "X ce mois-ci",
+    "shareUsed": "{{share}} utilisé"
   },
   "referrals": {
     "open": "Parrainer et gagner",

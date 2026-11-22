@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { CLI_OUTPUT_MAX, changedLines, cliToolShown, cliToolStep, cliToolSummary, workingPath } from "../src/cli-tools";
 
 /**
- * A computer brain's own tool calls in a code session (ADR 0214), one line each as its terminal shows them: the verb,
+ * A computer brain's own tool calls in a code session (ADR 0215), one line each as its terminal shows them: the verb,
  * what it worked on and what it came to, from the call as the runner forwards it.
  */
 
@@ -105,7 +105,7 @@ describe("Claude Code's own tools", () => {
   });
 
   test("a tool with no verb of its own says its name and what for", () => {
-    // A subagent, by either of its names, says what it was asked; a skill names itself (ADR 0214).
+    // A subagent, by either of its names, says what it was asked; a skill names itself (ADR 0215).
     const task = cliToolSummary("Task", { description: "Explore the router", prompt: "Look at…" });
     expect(task).toEqual({ verb: "delegate", about: "Explore the router" });
     expect(cliToolSummary("Agent", { prompt: "Review the HTML\nthen say" })).toEqual({

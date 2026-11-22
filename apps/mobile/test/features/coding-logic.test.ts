@@ -148,12 +148,12 @@ describe("a session's screens", () => {
     expect(layout).toContain("...Object.fromEntries(CODING_GROUPED_ROUTES.map((name) => [name, connectAi]))");
   });
 
-  test("Eu offers Code only where it has anything for me, as the web's sidebar (ADR 0214 §12)", () => {
+  test("Eu offers Code only where it has anything for me, as the web's sidebar (ADR 0215 §12)", () => {
     expect(src("features/me/MeScreen.tsx")).toContain("code: overview?.code ? (");
   });
 });
 
-describe("a session suggested in the chat (ADR 0214 §11)", () => {
+describe("a session suggested in the chat (ADR 0215 §11)", () => {
   test("the agent's reply carries the card; a session opened from it leads back to where it came from", () => {
     expect(src("features/chat/MessageRow.tsx")).toContain(
       "{suggestion ? <CodeSuggestionCard message={m} suggestion={suggestion} /> : null}",

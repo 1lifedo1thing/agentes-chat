@@ -408,7 +408,7 @@ export function createClaudeCodeBrain(deps: ClaudeCodeBrainDeps): Brain {
             cwd: session.cwd,
             ...(turn.model ? { model: turn.model } : {}),
             personalMcp,
-            // A code session's turn starts with its own tools (ADR 0214 §6): the warm process the same, or it isn't
+            // A code session's turn starts with its own tools (ADR 0215 §6): the warm process the same, or it isn't
             // the one the turn takes.
             ...(session.codeSession ? { codeSession: true } : {}),
             ...(permissions ? { permissions } : {}),

@@ -23,6 +23,7 @@ import {
   CursorBrain,
   composioConnectorsOf,
   connectOverHttp,
+  connectorMediaLinks,
   createAgentGifPoster,
   createAgentStyleToolSource,
   createApprovalRequestToolSource,
@@ -61,6 +62,7 @@ import {
   createLiveDocs,
   createLiveFileToolSource,
   createLiveImages,
+  createLlmIntentWriter,
   createLlmJudge,
   createMachineHub,
   createMailToolSource,
@@ -69,6 +71,7 @@ import {
   createMissionRunToolSource,
   createMissionToolSource,
   createModelGateway,
+  createNativeConnectorToolSource,
   createPassToolSource,
   createPermissionToolSource,
   createReactToolSource,
@@ -103,6 +106,7 @@ import {
   GrokBrain,
   getAgentCached,
   hubBrainLink,
+  type IntentWriter,
   isAgentesCloud,
   isRightHand,
   type JobDeps,
@@ -177,6 +181,8 @@ export interface EngineOptions {
   routerQuietMs?: number;
   /** Tests: a fake judge (no model calls for "is this a stop?" and the like). */
   judge?: Judge;
+  /** Tests: a fake writer of the working line's first words, or null for none (no model call at a run's start). */
+  intents?: IntentWriter | null;
   /** Tests: a fake schedule reader (no model calls for "toda segunda às 9h" and the like). */
   schedules?: ScheduleReader;
   /** Tests: fake S3 server and DNS for org buckets. */
@@ -293,6 +299,10 @@ export function buildEngine(o: EngineOptions) {
       () => jevKey.usable(),
     );
   }
+  context.intents =
+    o.intents === undefined
+      ? createLlmIntentWriter({ gateway, resolveModel: (orgId) => smallModelFor({ db, gateway }, orgId, smallModels) })
+      : (o.intents ?? undefined);
   // Screenshots go only to Jev's vision model: with a fake judge (tests) nothing looks at them.
   const vision = o.judge ? undefined : () => jevKey.usable();
   // Nothing is judged for a workspace on hold or suspended: Jev bills the server, not the workspace.
@@ -471,7 +481,7 @@ export function buildEngine(o: EngineOptions) {
       }),
       createReactToolSource({ pubsub: adapters.pubsub }),
       createSayNowToolSource({ pubsub: adapters.pubsub }),
-      // An agent that programs on a computer suggests a code session for a change asked in the chat (ADR 0214 §11).
+      // An agent that programs on a computer suggests a code session for a change asked in the chat (ADR 0215 §11).
       createCodeSuggestionToolSource(),
       // A GIF or the agent's sticker when asked (ADR 0091): listed by the workspace's switches and the agent's.
       createMediaToolSource({ pubsub: adapters.pubsub, gifs: adapters.gifs ?? null }),
@@ -533,6 +543,17 @@ export function buildEngine(o: EngineOptions) {
         judge: context.judge,
         githubApp: githubAppAccess,
         callerIdentity: mcpCallerIdentity(config),
+      }),
+      // Connectors of our own (ADR 0170): no MCP server, every tool served here.
+      createNativeConnectorToolSource({
+        ...connectorDeps,
+        artifacts,
+        monthlyCaps: { x: config.CONNECTOR_X_CALLS_PER_MONTH },
+        media: connectorMediaLinks({
+          secret: config.AGENTES_SECRET,
+          publicUrl: config.PUBLIC_URL,
+          resolveHost: o.resolveHost,
+        }),
       }),
       // People's mailboxes (ADR 0038): only when the server has a mail path (Composio, IMAP).
       createMailToolSource({
@@ -613,7 +634,7 @@ export function buildEngine(o: EngineOptions) {
     online: async (machineId: string) => {
       await missionHooks.online?.(machineId);
       await deviceWaits.online(machineId).catch(() => undefined);
-      // Code sessions whose worktree waited for this computer (ADR 0214) are prepared now.
+      // Code sessions whose worktree waited for this computer (ADR 0215) are prepared now.
       await ensureCodeSessionsOn({ db, pubsub: adapters.pubsub, hub: machineHub, git: sandbox.git }, machineId).catch(
         () => undefined,
       );

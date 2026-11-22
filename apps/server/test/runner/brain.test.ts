@@ -625,7 +625,7 @@ test("profiles (ADR 0053 §3): plan has our tools only, no settings files, no ed
   expect(asks).toContain("--permission-prompt-tool");
   expect(brainProfileLaunch("work", false, true, true).permissionMode).toBe("default");
   expect(brainProfileLaunch("work", false, true).permissionMode).toBe("acceptEdits");
-  // A code session's turn (ADR 0214): Claude Code's subagents and skills too, still no settings of the checkout.
+  // A code session's turn (ADR 0215): Claude Code's subagents and skills too, still no settings of the checkout.
   const code = claudeBrainArgs({
     ...base,
     ...brainProfileLaunch("work", false, false, false, true),
@@ -703,7 +703,9 @@ function setup(over: Partial<BrainManagerOptions> = {}) {
         .trim()
         .split("\n")
         .filter(Boolean)
-        .map((l) => JSON.parse(l) as { pid: number; args: string[]; system: string | null });
+        .map(
+          (l) => JSON.parse(l) as { pid: number; args: string[]; system: string | null; autoMemoryOff: string | null },
+        );
     } catch {
       return [];
     }
@@ -1364,6 +1366,8 @@ test.if(posix)(
     await turn(1, "do");
     const args = spawns()[0]?.args ?? [];
     expect(args[args.indexOf("--setting-sources") + 1]).toBe("");
+    // Claude Code's auto memory too: it lived in the sign-in's folder, which the agent's own tools can't list.
+    expect(spawns()[0]?.autoMemoryOff).toBe("1");
     expect(args.join(" ")).not.toContain("collect.example.net");
     const system = readFileSync(args[args.indexOf("--append-system-prompt-file") + 1] as string, "utf8");
     expect(system.startsWith("You are dev.")).toBe(true);
@@ -1375,6 +1379,7 @@ test.if(posix)(
     await own.turn(1, "do", { personalMcp: true });
     const oargs = own.spawns()[0]?.args ?? [];
     expect(oargs).not.toContain("--setting-sources");
+    expect(own.spawns()[0]?.autoMemoryOff).toBeNull();
     expect(readFileSync(oargs[oargs.indexOf("--append-system-prompt-file") + 1] as string, "utf8")).toBe(
       "You are dev.",
     );

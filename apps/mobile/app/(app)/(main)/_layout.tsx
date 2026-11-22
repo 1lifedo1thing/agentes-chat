@@ -54,7 +54,7 @@ const NEW_AGENT_ROUTES = [
   "new-agent/import-preview",
 ];
 
-/** Código's screens on the grouped gray (ADR 0214): the list, a new session and where it works, a session's Git and
+/** Código's screens on the grouped gray (ADR 0215): the list, a new session and where it works, a session's Git and
  * Files, a folder, a diff and who is in it. */
 const CODING_GROUPED_ROUTES = [
   "coding/index",

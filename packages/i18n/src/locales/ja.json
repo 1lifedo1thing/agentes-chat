@@ -2663,6 +2663,8 @@
     "noTopic": "説明なし",
     "nameLabel": "名前",
     "nameHelp": "全員に対して変更されます。古いリンクも引き続き使えます。",
+    "replyInThreads": "エージェントはスレッドで返信",
+    "replyInThreadsHelp": "チャンネルで呼ばれたエージェントは、そのメッセージの下のスレッドで答え、チャンネルにはそのスレッドが1行で表示されます。進行中の作業はそのままです。",
     "nameTaken": "#{{name}}はすでにあります。",
     "generalName": "#generalの名前は変更できません。",
     "archive": "チャンネルをアーカイブ",
@@ -7794,6 +7796,46 @@
     "custom_write": {
       "label": "書き込みツール",
       "description": "書き込みツールを使います。重要とマークされたものは必ず承認を求めます。"
+    },
+    "telegram_messages_read": {
+      "label": "メッセージを読む",
+      "description": "ボットのチャットを一覧し、ボット宛てやボットがいる場所で書かれた内容を読みます。"
+    },
+    "telegram_messages_write": {
+      "label": "メッセージを送る",
+      "description": "ボットとしてメッセージやファイルを送信・編集・ピン留めします。メッセージの削除、メンバーのBAN、招待リンクは承認が必要です。"
+    },
+    "x_posts_read": {
+      "label": "ポストを読む",
+      "description": "アカウントのポストとメンション、IDによるポスト、検索による最近のポストを読みます。"
+    },
+    "x_posts_write": {
+      "label": "ポストする",
+      "description": "Driveの画像や動画を付けてアカウントにポストします。ポストの削除は承認が必要です。"
+    },
+    "threads_posts_read": {
+      "label": "投稿を読む",
+      "description": "アカウントの投稿、返信、メンション、結果を読みます。"
+    },
+    "threads_posts_write": {
+      "label": "投稿と返信",
+      "description": "Driveの画像や動画付きで投稿し、返信し、返信を非表示にします。投稿の削除は承認が必要です。"
+    },
+    "meta_ads_ads_read": {
+      "label": "広告を読む",
+      "description": "広告アカウント、キャンペーン、広告セット、広告を一覧し、結果を読みます。"
+    },
+    "meta_ads_ads_write": {
+      "label": "広告を管理",
+      "description": "キャンペーン、広告セット、広告を作成（常に停止状態）、編集、停止します。有効化と予算の変更は必ず承認が必要です。アーカイブと削除も承認が必要です。"
+    },
+    "tiktok_videos_read": {
+      "label": "動画を読む",
+      "description": "クリエイターのプロフィール、公開動画、投稿できる内容を読みます。"
+    },
+    "tiktok_videos_write": {
+      "label": "動画を下書きに送る",
+      "description": "Driveの動画をクリエイターのTikTok下書きに送り、そこで投稿を仕上げてもらいます。アップロードごとに承認が必要です。"
     }
   },
   "issues": {
@@ -8231,6 +8273,11 @@
       "methods": "受け付けるメソッド",
       "methodsHelp": "このアドレスはチェックしたメソッドにだけ応答します。GET の場合は URL のクエリパラメータが呼び出しのデータになります。",
       "methodsLine": "{{methods}} を受け付けます。",
+      "groupBy": "呼び出しのグループ化",
+      "groupByHelp": "各呼び出しのデータ内のフィールド（例: conversation.id）。同じ値の呼び出しは順番に1件ずつ実行され、異なる値の呼び出しは同時に実行されます。",
+      "groupByOff": "すべての呼び出しが1つの列で順番に待ちます。",
+      "groupByOn": "同じ{{path}}の呼び出しは順番に実行され、それ以外は同時に実行されます。",
+      "groupBySaved": "グループ化を保存しました。",
       "address": "アドレス",
       "addressHelp": "アドレスを知っている人は誰でもエージェントを起動できます。パスワードのように扱い、漏れた場合は新しいアドレスを作成してください。",
       "copied": "アドレスをコピーしました。",
@@ -8643,6 +8690,9 @@
       },
       "deploy": {
         "succeeded": "デプロイが完了したとき"
+      },
+      "telegram": {
+        "message": "Telegramボットへのメッセージ"
       }
     },
     "when": {
@@ -9578,6 +9628,7 @@
       "openShort": "開く",
       "reply": "返信",
       "replies_other": "{{count}}件の返信",
+      "replying_other": "{{names}}がスレッドで返信中",
       "closed_other": "スレッドを閉じました · {{title}} · {{count}}件のメッセージ",
       "archived_other": "アーカイブした{{count}}件のスレッドはここに表示されません",
       "see": "見る"
@@ -12946,7 +12997,8 @@
       },
       "meta_ads": {
         "1": "キャンペーンと成果を見る",
-        "2": "キャンペーンを作成・調整する"
+        "2": "キャンペーンを作成・調整する",
+        "ask": "広告の有効化と予算の変更は必ずあなたの承認を求めます"
       },
       "google_docs": {
         "1": "ドキュメントを検索して読む",
@@ -13078,6 +13130,26 @@
         "1": "テーブルを見る",
         "2": "データにクエリして答える",
         "3": "何も変更しません"
+      },
+      "telegram": {
+        "1": "ボット宛てのメッセージを読む",
+        "2": "ボットとしてメッセージやファイルを送る",
+        "ask": "削除、BAN、招待リンクは必ずあなたの承認を求めます"
+      },
+      "x": {
+        "1": "アカウントのポストとメンションを読む",
+        "2": "画像や動画付きでポストする",
+        "ask": "ポストの削除は必ずあなたの承認を求めます"
+      },
+      "threads": {
+        "1": "投稿、返信、結果を見る",
+        "2": "画像や動画付きで投稿し返信する",
+        "ask": "投稿の削除は必ずあなたの承認を求めます"
+      },
+      "tiktok": {
+        "1": "プロフィールと動画を見る",
+        "2": "動画を下書きに送り、TikTokで仕上げる",
+        "ask": "アップロードごとに必ずあなたの承認を求めます"
       }
     },
     "connectedList": "接続済み",
@@ -13220,8 +13292,13 @@
       "youtube": "YouTubeチャンネルの動画、コメント、再生リスト、アナリティクス。",
       "pinterest": "Pinterestのピン、ボード、アナリティクス。",
       "reddit": "Redditの投稿、コメント、コミュニティ。",
-      "whatsapp": "WhatsApp Businessのメッセージとテンプレート。"
-    }
+      "whatsapp": "WhatsApp Businessのメッセージとテンプレート。",
+      "telegram": "あなたのTelegramボット：そのチャット、グループ、チャンネル。",
+      "x": "Xアカウントのポスト：投稿、メンションの確認、検索。",
+      "threads": "Threadsアカウントの投稿と返信。",
+      "tiktok": "TikTokのプロフィールと動画、下書きに送られた動画。"
+    },
+    "needsApp": "このサーバーにはまだ{{name}}のアプリがありません。運用者が{{name}}でアプリを登録し、変数を設定します（docs/social-apps-checklist.md）。"
   },
   "toolNames": {
     "order": "verb-last",
@@ -14051,7 +14128,39 @@
       "get_my_usage": "自分の使用量を表示",
       "ignore_usage_limit": "利用上限を無視",
       "send_feedback": "フィードバックを送信",
-      "offer_feedback": "問題の報告を提案"
+      "offer_feedback": "問題の報告を提案",
+      "list_chats": "チャットを一覧",
+      "read_messages": "メッセージを読む",
+      "get_chat": "チャットを見る",
+      "send_file": "ファイルを送る",
+      "edit_message": "メッセージを編集",
+      "pin_message": "メッセージをピン留め",
+      "ban_member": "メンバーをBAN",
+      "create_invite_link": "招待リンクを作成",
+      "get_my_posts": "自分のポストを見る",
+      "get_mentions": "メンションを見る",
+      "search_recent": "最近のポストを検索",
+      "get_replies": "返信を見る",
+      "get_insights": "結果を見る",
+      "reply": "返信する",
+      "hide_reply": "返信を非表示",
+      "list_ad_accounts": "広告アカウントを一覧",
+      "list_campaigns": "キャンペーンを一覧",
+      "list_ad_sets": "広告セットを一覧",
+      "list_ads": "広告を一覧",
+      "create_campaign": "キャンペーンを作成",
+      "create_ad_set": "広告セットを作成",
+      "create_ad": "広告を作成",
+      "update": "更新",
+      "pause": "停止",
+      "activate": "有効にする",
+      "set_budget": "予算を設定",
+      "archive": "アーカイブ",
+      "delete": "削除",
+      "list_videos": "動画を一覧",
+      "get_creator_info": "投稿オプションを見る",
+      "get_post_status": "アップロード状況を見る",
+      "upload_draft": "下書きに送る"
     }
   },
   "toolReview": {
@@ -14232,6 +14341,13 @@
       "asks_other": "{{count}}件の操作は、チャットで承認を求めます。",
       "adjust": "調整",
       "ok": "完了"
+    },
+    "telegram": {
+      "token": "ボットのトークン",
+      "steps": "Telegramで@BotFatherを開き、/newbotを送信し、名前と「bot」で終わるユーザー名を決めて、表示されたトークンをここに貼り付けます。グループを読むにはボットを追加し、チャンネルに投稿するにはそこで管理者にします。"
+    },
+    "x": {
+      "consent": "Xを使えるエージェントはこのアカウントに自分でポストします。ポストの削除は事前に確認し、各エージェントのページでできることを絞り込めます。Xアカウントは一度に1つのワークスペースでのみ使えます。"
     }
   },
   "database": {
@@ -15108,6 +15224,7 @@
       "takeOverNoAccess": "引き継ぐ前に、ルーティンの会話に参加してください。",
       "agentNotInChannel": "先にエージェントを会話に追加してください。",
       "webhookPaused": "テストするにはルーティンをオンにしてください。",
+      "groupByInvalid": "conversation.id のように、各ドットの間にフィールド名があるパスを入力してください。",
       "continueExtraOff": "このプランの利用枠を使い切りました。このエージェントの長い作業にはプランの有料の追加利用が使われません。リセット後に再開します。",
       "continueExtraUsedUp": "このプランの利用枠を使い切り、有料の追加利用も使い切ったか利用できません。リセット後に再開します。",
       "actionsNeedApprover": "ルーティンに自動で実行させられるのは、エージェントのオーナーか、そのアクションを承認する人だけです。",
@@ -19025,7 +19142,9 @@
     "usedOf": "{{used}} / {{limit}}",
     "seatsPaid_other": "支払い済み {{count}}席",
     "noLimit": "上限なし",
-    "ownBucket": "自前のバケットを使用、こちらの上限はありません"
+    "ownBucket": "自前のバケットを使用、こちらの上限はありません",
+    "connectors": "今月の X",
+    "shareUsed": "{{share}} 使用済み"
   },
   "referrals": {
     "open": "紹介して特典を獲得",

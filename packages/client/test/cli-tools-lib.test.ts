@@ -6,7 +6,7 @@ import { cliLineOf, cliMetaWords } from "../src/lib/cli-tools";
 import { replySteps, savedOneLine, toolItemsLive, waitStep, workFromSteps } from "../src/lib/work";
 
 /**
- * A computer brain's own tool calls in a code session (ADR 0214): one line each, live and saved, as its terminal shows
+ * A computer brain's own tool calls in a code session (ADR 0215): one line each, live and saved, as its terminal shows
  * them.
  */
 

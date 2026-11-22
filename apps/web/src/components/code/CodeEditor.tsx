@@ -35,7 +35,7 @@ const look = EditorView.theme({
 });
 
 /**
- * A file of a code session's worktree in an editor (ADR 0214): line numbers, the language its name says (loaded when
+ * A file of a code session's worktree in an editor (ADR 0215): line numbers, the language its name says (loaded when
  * the file opens), undo, search, Tab indents. ⌘S (Ctrl+S) asks to save; `onDirty` says whether it differs from the
  * text it started from. A file with Windows line endings keeps them.
  */
