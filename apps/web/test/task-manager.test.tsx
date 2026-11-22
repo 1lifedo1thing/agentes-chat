@@ -50,10 +50,15 @@ const click = async (el: Element) => {
   await settle(3);
 };
 /** A header's meta line, its parts without the "·" between them (`MetaLine`). */
-const metaParts = (panel: Element) =>
-  [...(panel.querySelector(".thread-head__meta")?.children ?? [])].flatMap((c) =>
-    c.getAttribute("aria-hidden") === "true" ? [] : [c.textContent],
-  );
+const metaParts = (panel: Element) => {
+  const meta = panel.querySelector(".thread-head__meta");
+  if (!meta) return [];
+  const walker = document.createTreeWalker(meta, NodeFilter.SHOW_TEXT);
+  const out: string[] = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode())
+    if (!n.parentElement?.closest("[aria-hidden='true'], .thread-head__dot")) out.push(n.textContent ?? "");
+  return out;
+};
 const type = (el: Element, value: string) => act(async () => fireEvent.change(el, { target: { value } }));
 
 const using = (tool: string, detail: string | null, connector: string | null = null) => ({

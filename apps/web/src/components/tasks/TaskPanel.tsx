@@ -135,7 +135,11 @@ export function TaskPanel({
           <h2 className="channel__title thread-title">
             <span className="thread-title__text">{title}</span>
           </h2>
-          <MetaLine parts={[name, taskPlace(t, source), !source.background && (chain ?? asked)]} />
+          <MetaLine
+            where={[name, taskPlace(t, source), source.background ? null : (chain ?? asked)]
+              .filter(Boolean)
+              .join(" · ")}
+          />
         </div>
         <Button size="sm" variant="ghost" iconOnly icon="close" aria-label={t("common.close")} onClick={onClose} />
       </header>

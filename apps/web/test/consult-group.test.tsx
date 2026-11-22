@@ -215,14 +215,12 @@ describe("the pair row before the reply that asked (ConsultPairRow)", () => {
     // The question is the conversation's first message: the header doesn't say its first sentence again.
     expect(side.querySelector(".thread-head__subject")).toBeNull();
     expect(side.querySelector(".ac-dialog__sub, .thread-head__meta")?.textContent).not.toContain(subject);
-    // Every part of the meta line its own piece, one "·" between each (the place's own "·" too, at the same gap).
-    const meta = [...(side.querySelector(".thread-head__meta")?.children ?? [])].map((n) => n.textContent);
-    expect(meta.filter((_, i) => i % 2 === 1).every((d) => d === "·")).toBe(true);
-    expect(meta.filter((_, i) => i % 2 === 0)).toEqual([
-      "#eng",
-      "conversa entre agentes",
-      expect.stringMatching(/mensage/),
-    ]);
+    // One "·" between the meta line's parts, and the place's own "·" drawn as one too (`MetaLine`), at the same gap.
+    const where = side.querySelector(".thread-head__meta > .thread-head__where");
+    expect(where?.querySelector(".thread-head__dot")?.textContent).toBe("·");
+    expect([...(where?.childNodes ?? [])].map((n) => n.textContent)).toEqual(["#eng", "·", "conversa entre agentes"]);
+    expect(where?.nextElementSibling?.getAttribute("aria-hidden")).toBe("true");
+    expect(where?.nextElementSibling?.nextElementSibling?.textContent).toMatch(/mensage/);
     // The participants and the kind stay, after it.
     expect(side.querySelector(".consult-title")?.textContent).toContain("Ada");
     expect(side.textContent).toContain("entre agentes");
