@@ -2126,7 +2126,8 @@ html:not([data-pointer]) .issue-file--saved:has(> .issue-file__main:focus-visibl
   text-align: left;
   cursor: pointer;
 }
-.issue-file__main:focus-visible {
+/* The card draws the ring (above): none on the button inside it, whose corners the card clips. */
+html:not([data-pointer]) .issue-file__main:focus-visible {
   outline: none;
 }
 .issue-file[data-status="failed"] {
