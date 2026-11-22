@@ -4438,6 +4438,8 @@ export interface RoutineWebhookTrigger {
   signed: boolean;
   /** The HTTP methods its address answers (POST by default; GET passes its query string as the run's data). */
   methods: RoutineHookMethod[];
+  /** "Group calls by": a dot path into each call's data; the same value runs in order, others side by side. */
+  groupBy: string | null;
 }
 
 export const ROUTINE_HOOK_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
@@ -4464,6 +4466,7 @@ export interface RoutineHook {
   url: string;
   signed: boolean;
   methods: RoutineHookMethod[];
+  groupBy: string | null;
   calls: RoutineHookCall[];
 }
 
@@ -4682,7 +4685,7 @@ export interface RoutineInput {
     | { type: "event"; event: RoutineEvent }
     | { type: "once"; at: string; timezone?: string }
     | Omit<RoutineEmailTrigger, "status">
-    | { type: "webhook"; methods?: RoutineHookMethod[] }
+    | { type: "webhook"; methods?: RoutineHookMethod[]; groupBy?: string | null }
     | Omit<RoutineConnectorTrigger, "status" | "lastError">;
   /** Ignored: every routine acts (ADR 0109). */
   access?: RoutineAccess;
