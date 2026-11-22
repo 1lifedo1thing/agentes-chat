@@ -323,20 +323,20 @@ html:not([data-pointer]) .tm-more:focus-visible {
 /* No room for the columns (a phone, a small window beside the sidebar): no column names, and each row is still one
    line: its words, its time and its stop. A task's mark says how it stands; an agent's row, one that ended and one its
    agent's face leads (`flat`) show theirs as a mark after the words. Estado and Usando agora are in the row's tip, and
-   Ver passos in the toolbar, for the row chosen. Abrir na conversa stays on the row. */
+   Ver passos in the toolbar for the row chosen, its panel with Abrir na conversa: the words keep the room. */
 @container tm (max-width: 760px) {
   .tm-row--head {
     display: none;
   }
   .tm-row {
-    --tm-act: calc(2 * var(--control-h-sm) + var(--space-2) + 2 * var(--action-clear));
+    --tm-act: calc(var(--control-h-sm) + 2 * var(--action-clear));
     grid-template-columns: minmax(0, 1fr) auto var(--tm-act);
   }
   .tm-row--agent,
   .tm-row[data-look="flat"] {
     grid-template-columns: minmax(0, 1fr) auto auto var(--tm-act);
   }
-  .tm-cell--act > .tm-steps {
+  .tm-cell--act > :is(.tm-open, .tm-steps) {
     display: none;
   }
   .tm-row--ended {
