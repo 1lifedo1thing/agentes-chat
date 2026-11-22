@@ -14993,6 +14993,7 @@ export const ptBR = {
       web_search: "Buscar na web",
       web_fetch: "Ler página da web",
       image_search: "Buscar imagens",
+      show_image: "Mostrar imagens da web",
       create_routine: "Criar rotina",
       update_routine: "Alterar rotina",
       delete_routine: "Apagar rotina",

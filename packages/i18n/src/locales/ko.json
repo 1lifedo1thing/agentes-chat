@@ -14093,6 +14093,7 @@
       "web_search": "웹 검색",
       "web_fetch": "웹 페이지 읽기",
       "image_search": "이미지 검색",
+      "show_image": "웹의 이미지 보여 주기",
       "create_routine": "루틴 생성",
       "update_routine": "루틴 업데이트",
       "delete_routine": "루틴 삭제",

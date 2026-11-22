@@ -35532,6 +35532,9 @@
   "toolNames.label.image_search": {
     "value": "Search for pictures"
   },
+  "toolNames.label.show_image": {
+    "value": "Show pictures from the web"
+  },
   "toolNames.label.create_routine": {
     "value": "Create routine"
   },

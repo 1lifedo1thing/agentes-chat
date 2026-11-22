@@ -15026,6 +15026,7 @@ export const en = {
       web_search: "Search the web",
       web_fetch: "Read web page",
       image_search: "Search for pictures",
+      show_image: "Show pictures from the web",
       create_routine: "Create routine",
       update_routine: "Change routine",
       delete_routine: "Delete routine",

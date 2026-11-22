@@ -15082,6 +15082,7 @@
       "web_search": "Buscar en la web",
       "web_fetch": "Leer página web",
       "image_search": "Buscar imágenes",
+      "show_image": "Mostrar imágenes de la web",
       "create_routine": "Crear rutina",
       "update_routine": "Actualizar rutina",
       "delete_routine": "Borrar rutina",

@@ -14099,6 +14099,7 @@
       "web_search": "Webを検索",
       "web_fetch": "Webページを読み取り",
       "image_search": "画像を検索",
+      "show_image": "ウェブの画像を表示",
       "create_routine": "ルーティンを作成",
       "update_routine": "ルーティンを更新",
       "delete_routine": "ルーティンを削除",
