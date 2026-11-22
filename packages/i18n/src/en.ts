@@ -640,6 +640,15 @@ export const en = {
     emailLinkExpired: "This confirmation link is no longer valid. Your account works as usual.",
     sendNewLink: "Send a new link",
     newLinkSent: "We sent a new link to {{email}}.",
+    /** An address never confirmed (ADR 0006, addendum 2026-11-22): the screen before a first workspace, the line in one. */
+    confirm: {
+      title: "Check your inbox",
+      lead: "Open the link we sent to {{email}} to go on.",
+      wrongAddress: "Wrong address? Change it",
+      banner: "Confirm your email",
+      bannerSub: "Open the link we sent to {{email}}.",
+      change: "Change address",
+    },
     unconfirmed:
       "This email already has an account with a password that isn't confirmed yet. Sign in with the password, or create a new one by email.",
     unconfirmedReset: "Create a new password",
@@ -1995,6 +2004,9 @@ export const en = {
     open: "Open",
     openInBrowser: "Open in browser",
     download: "Download",
+    copyImage: "Copy image",
+    imageCopied: "Image copied.",
+    copyImageFailed: "The image couldn't be copied. Use Download instead.",
     conversation: "Message",
     agentPage: "View page",
     back: "Back",
@@ -2556,13 +2568,14 @@ export const en = {
     howTo: "How to install",
     phone: "Phone",
     phoneText: "Notifications in your pocket, to answer from anywhere.",
-    appStore: "App Store",
+    /** The iPhone app's public beta, only on agentes.chat's own servers. */
+    testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
     making: "Making the code…",
-    /** Followed by the App Store and Google Play, each marked Soon until the app is in it. */
+    /** Followed by where to get the app (`usePhoneStores`); the App Store marked Soon where the iPhone app is not offered. */
     stepApp: "Install the agentes app on your phone.",
     stepTailscale: "Install Tailscale on your phone and sign in with the same Tailscale account as this server.",
     /** The links to Tailscale in each store, after the step: the store's own name. */
@@ -3783,6 +3796,14 @@ export const en = {
       cantStart: "{{program}} is on {{computer}}, but it won't start: {{message}}",
       outdated: "Update the agentes.chat app on {{computer}} to install from here.",
       asked: "Request sent. {{name}} gets a button to install it.",
+      /** A CLI the apps don't install: the line to run follows, after `missing`. */
+      runThis: "Run this command there to install it.",
+      /** System mode: each agent is its own OS user, so the CLI goes where all of them run it. The line follows. */
+      missingSystem:
+        "{{program}} isn't on {{computer}} for its agents yet, who each work as their own user. Run this command there to install it for all of them.",
+      /** System mode: the CLI is only in root's `~/.local/bin`. The line follows. */
+      homeOnly:
+        "{{program}} is installed only for root on {{computer}}. Each agent works as its own user and can't reach it. Run this command there to install it for all of them.",
     },
     titleFor: "Connect an AI for {{name}}",
     /** What the person already has, before the new sign-ins: accounts on the agent's computer, the workspace's keys. */
@@ -9020,6 +9041,12 @@ export const en = {
       fromCreation: "At creation · {{when}}",
       fromComment: "{{name}}'s comment · {{when}}",
       linked: "Linked by {{name}}",
+      remove: "Remove {{name}} from the task",
+      removeShort: "Remove from the task",
+      removed: "{{name}} removed from the task. It's still in the Drive.",
+      added_one: "File added to the attachments",
+      added_other: "{{count}} files added to the attachments",
+      see: "See attachments",
     },
     history: { commented: "commented", commentedFiles: "commented with attachments" },
     event: {
@@ -12778,6 +12805,8 @@ export const en = {
       tool_offOne: "{{program}} is turned off on {{computer}}.",
       not_installed: "{{program}} isn't installed on {{computer}}.",
       cant_start: "{{program}} is on {{computer}}, but it won't start.",
+      /** System mode: the CLI is only in root's `~/.local/bin`. */
+      home_only: "{{program}} is installed only for root on {{computer}}, where the agents can't reach it.",
       /** Its runner hasn't said which CLIs it has yet: nobody knows whether this one is there. */
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
@@ -15215,6 +15244,34 @@ export const en = {
       "{{name}} only lets apps it approved sign in, and agentes.chat isn't approved yet. If it gives you an API key, you can connect with that.",
     serverSaid: "The server answered: {{detail}}",
     /**
+     * A server that lets in only OAuth apps it approved (Meta Ads): an admin registers an app of the workspace's own
+     * there and pastes its client ID (and secret). "Redirect URI", "Client ID", "Client secret" and "Scopes" are the
+     * names providers' consoles use.
+     */
+    ownClient: {
+      title: "Use your own OAuth app",
+      notApproved:
+        "{{name}} only lets in apps it approved, and agentes.chat isn't one yet. You can connect it with your own app there.",
+      askAdmin: "An admin can connect it with the workspace's own app.",
+      help: "Create an app at the provider, register this redirect URI in it and paste its client ID. Every sign-in there from the workspace then uses your app.",
+      guide: {
+        metaAds:
+          "In Meta for Developers, create an app with the Marketing API use case. Add this redirect URI to its valid OAuth redirect URIs, then paste the App ID, and the App Secret if your app requires it.",
+      },
+      redirectUri: "Redirect URI",
+      copied: "Redirect URI copied.",
+      clientId: "Client ID",
+      clientIdMissing: "Paste the app's client ID.",
+      clientSecret: "Client secret",
+      clientSecretHelp: "Only if the app requires one. It's kept encrypted and never shown again.",
+      secretSaved: "A secret is saved. Leave this empty to keep it.",
+      scopes: "Scopes",
+      scopesHelp: "What every sign-in asks for, separated by spaces. Leave it empty for what the server lists.",
+      save: "Save and continue",
+      remove: "Remove",
+      removed: "Your app was removed.",
+    },
+    /**
      * A server by address: HTTP request headers an admin types once (a name and a value each), sent with every request
      * to that server. `{{n}}` is a row's number; `<names/>` is the list of header names, such as X-API-Key.
      */
@@ -16001,6 +16058,9 @@ export const en = {
         "This server asks for a sign-in, and a sign-in can't carry headers yet. Remove the headers to sign in, or connect with an API key.",
       /** Reconnecting an account whose saved headers, kept encrypted, could no longer be opened. */
       headersUnreadable: "The saved headers couldn't be read. Type them again, or remove them.",
+      noOAuth: "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key.",
+      ownClientInUse: "Accounts still sign in with the app saved before. Disconnect them first, then change it.",
+      ownClientId: "Check the client ID: one word, as the provider shows it.",
     },
     wiki: {
       githubNoNotes: "No Markdown notes in this link.",
@@ -16086,6 +16146,7 @@ export const en = {
     },
     org: {
       createInviteOnly: "New workspaces need an invitation for now.",
+      createUnconfirmed: "Open the link we sent to your email first. Then create the workspace.",
       membersFull: "Every seat in this workspace is taken right now. Ask whoever invited you to open a seat.",
       deleting: "This workspace is being deleted.",
       notRestorable: "This workspace can't be restored anymore.",

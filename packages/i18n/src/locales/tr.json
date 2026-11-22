@@ -613,6 +613,14 @@
     "emailLinkExpired": "Bu doğrulama bağlantısı artık geçerli değil. Hesabınız her zamanki gibi çalışıyor.",
     "sendNewLink": "Yeni bağlantı gönder",
     "newLinkSent": "{{email}} adresine yeni bir bağlantı gönderdik.",
+    "confirm": {
+      "title": "Gelen kutunuza bakın",
+      "lead": "Devam etmek için {{email}} adresine gönderdiğimiz bağlantıyı açın.",
+      "wrongAddress": "Adres yanlış mı? Değiştirin",
+      "banner": "E-postanızı onaylayın",
+      "bannerSub": "{{email}} adresine gönderdiğimiz bağlantıyı açın.",
+      "change": "Adresi değiştir"
+    },
     "unconfirmed": "Bu e-postanın, şifresi henüz doğrulanmamış bir hesabı zaten var. Şifreyle giriş yapın veya e-postayla yeni bir şifre oluşturun.",
     "unconfirmedReset": "Yeni şifre oluştur",
     "unconfirmedNoEmail": "Bu e-postanın şifreli bir hesabı zaten var. Şifreyle giriş yapın.",
@@ -1853,6 +1861,9 @@
     "open": "Aç",
     "openInBrowser": "Tarayıcıda aç",
     "download": "İndir",
+    "copyImage": "Görseli kopyala",
+    "imageCopied": "Görsel kopyalandı.",
+    "copyImageFailed": "Görsel kopyalanamadı. Bunun yerine İndir'i kullanın.",
     "conversation": "Mesaj gönder",
     "agentPage": "Sayfayı gör",
     "back": "Geri",
@@ -2403,7 +2414,7 @@
     "howTo": "Nasıl kurulur",
     "phone": "Telefon",
     "phoneText": "Bildirimler cebinizde, her yerden yanıt vermek için.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -3467,7 +3478,10 @@
       "getGit": "Git for Windows'u indir",
       "cantStart": "{{program}}, {{computer}} üzerinde var ama açılmıyor: {{message}}",
       "outdated": "Buradan kurmak için {{computer}} üzerindeki agentes.chat uygulamasını güncelleyin.",
-      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır."
+      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır.",
+      "runThis": "Kurmak için bu komutu orada çalıştırın.",
+      "missingSystem": "{{program}}, {{computer}} üzerinde her biri kendi kullanıcısıyla çalışan ajanlar için henüz yok. Hepsine kurmak için bu komutu orada çalıştırın.",
+      "homeOnly": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu. Her ajan kendi kullanıcısıyla çalışır ve ona erişemez. Hepsine kurmak için bu komutu orada çalıştırın."
     },
     "titleFor": "{{name}} için bir yapay zeka bağlayın",
     "have": {
@@ -8486,7 +8500,13 @@
       "empty": "Dosyaları buraya sürükleyin, bir ekran görüntüsü yapıştırın ya da görevin sohbetinde gönderin.",
       "fromCreation": "Oluşturulurken · {{when}}",
       "fromComment": "{{name}} yorumu · {{when}}",
-      "linked": "{{name}} bağladı"
+      "linked": "{{name}} bağladı",
+      "remove": "{{name}} dosyasını görevden çıkar",
+      "removeShort": "Görevden çıkar",
+      "removed": "{{name}} görevden çıkarıldı. Dosya Drive'da duruyor.",
+      "added_one": "Dosya eklere eklendi",
+      "added_other": "{{count}} dosya eklere eklendi",
+      "see": "Ekleri gör"
     },
     "history": {
       "commented": "yorum yaptı",
@@ -12273,7 +12293,8 @@
       "cant_start": "{{program}}, {{computer}} üzerinde var ama açılmıyor.",
       "not_reported": "{{computer}} hangi programların olduğunu hâlâ kontrol ediyor. Bittiğinde bu kendiliğinden değişir.",
       "system": "{{program}} henüz {{computer}} sisteminde çalışmıyor.",
-      "no_computerCloud": "{{computer}} hazır olur olmaz hazır."
+      "no_computerCloud": "{{computer}} hazır olur olmaz hazır.",
+      "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez."
     },
     "notAvailableNow": "Seçildi ama şu anda kullanılamıyor.",
     "offline": "{{computer}} şu anda çevrimdışı.",
@@ -14788,6 +14809,27 @@
     "needsKey": "Bu sunucu OAuth desteklemiyor. API anahtarıyla bağlayın.",
     "notApproved": "{{name}} yalnızca onayladığı uygulamaların giriş yapmasına izin veriyor ve agentes.chat henüz onaylanmadı. Size bir API anahtarı veriyorsa onunla bağlanabilirsiniz.",
     "serverSaid": "Sunucunun yanıtı: {{detail}}",
+    "ownClient": {
+      "title": "Kendi OAuth uygulamanı kullan",
+      "notApproved": "{{name}} yalnızca onayladığı uygulamaları kabul ediyor ve agentes.chat henüz bunlardan biri değil. Orada kendi uygulamanla bağlayabilirsin.",
+      "askAdmin": "Bir yönetici, çalışma alanının kendi uygulamasıyla bağlayabilir.",
+      "help": "Sağlayıcıda bir uygulama oluştur, bu yönlendirme URI'sini oraya kaydet ve istemci kimliğini buraya yapıştır. Bundan sonra çalışma alanından oraya her giriş senin uygulamanı kullanır.",
+      "guide": {
+        "metaAds": "Meta for Developers'da Marketing API kullanım senaryosuyla bir uygulama oluştur. Bu yönlendirme URI'sini geçerli OAuth yönlendirme URI'lerine ekle, ardından Uygulama Kimliğini ve uygulaman istiyorsa Uygulama Gizli Anahtarını yapıştır."
+      },
+      "redirectUri": "Yönlendirme URI'si",
+      "copied": "Yönlendirme URI'si kopyalandı.",
+      "clientId": "İstemci kimliği",
+      "clientIdMissing": "Uygulamanın istemci kimliğini yapıştır.",
+      "clientSecret": "İstemci gizli anahtarı",
+      "clientSecretHelp": "Yalnızca uygulama istiyorsa. Şifreli saklanır ve bir daha gösterilmez.",
+      "secretSaved": "Kayıtlı bir gizli anahtar var. Korumak için boş bırak.",
+      "scopes": "Kapsamlar",
+      "scopesHelp": "Her girişte istenenler, boşlukla ayrılmış. Sunucunun listelediklerini kullanmak için boş bırak.",
+      "save": "Kaydet ve devam et",
+      "remove": "Kaldır",
+      "removed": "Uygulaman kaldırıldı."
+    },
     "headers": {
       "title": "İstek başlıkları",
       "help": "Başka bir başlıkta gönderilen bir anahtar ya da sunucunun önündeki bir ağ geçidi için. Çoğu sunucunun buna ihtiyacı yoktur.",
@@ -15587,7 +15629,10 @@
       "headerAndKey": "API anahtarı zaten Authorization olarak gönderiliyor. Anahtarı silin ya da bu başlığı kaldırın.",
       "headersTooMany": "Bir sunucu en çok {{max}} başlık alır. Yenisini eklemek için birini kaldırın.",
       "headersWithSignIn": "Bu sunucu giriş istiyor ve giriş henüz başlık taşıyamıyor. Giriş yapmak için başlıkları kaldırın ya da API anahtarıyla bağlayın.",
-      "headersUnreadable": "Kayıtlı başlıklar okunamadı. Yeniden yazın ya da kaldırın."
+      "headersUnreadable": "Kayıtlı başlıklar okunamadı. Yeniden yazın ya da kaldırın.",
+      "noOAuth": "MCP sunucusu OAuth ile giriş yapmıyor, bu yüzden kendi uygulamanı kabul etmez. Bir API anahtarıyla bağla.",
+      "ownClientInUse": "Önceden kaydedilen uygulamayla giriş yapan hesaplar hâlâ var. Önce onların bağlantısını kes, sonra değiştir.",
+      "ownClientId": "İstemci kimliğini kontrol et: sağlayıcının gösterdiği gibi tek bir kelime."
     },
     "wiki": {
       "githubNoNotes": "Bu bağlantıda Markdown notu yok.",
@@ -15668,6 +15713,7 @@
     },
     "org": {
       "createInviteOnly": "Yeni çalışma alanları şimdilik davet gerektiriyor.",
+      "createUnconfirmed": "Önce e-postanıza gönderdiğimiz bağlantıyı açın. Sonra çalışma alanını oluşturun.",
       "membersFull": "Bu çalışma alanındaki tüm yerler şu anda dolu. Sizi davet eden kişiden bir yer açmasını isteyin.",
       "deleting": "Bu çalışma alanı siliniyor.",
       "notRestorable": "Bu çalışma alanı artık geri yüklenemez.",

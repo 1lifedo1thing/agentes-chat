@@ -598,6 +598,14 @@
     "emailLinkExpired": "Tautan konfirmasi ini sudah tidak berlaku. Akunmu tetap berfungsi seperti biasa.",
     "sendNewLink": "Kirim tautan baru",
     "newLinkSent": "Kami mengirim tautan baru ke {{email}}.",
+    "confirm": {
+      "title": "Periksa kotak masuk",
+      "lead": "Buka tautan yang kami kirim ke {{email}} untuk melanjutkan.",
+      "wrongAddress": "Alamat salah? Ubah",
+      "banner": "Konfirmasi email",
+      "bannerSub": "Buka tautan yang kami kirim ke {{email}}.",
+      "change": "Ubah alamat"
+    },
     "unconfirmed": "Email ini sudah punya akun dengan kata sandi yang belum dikonfirmasi. Masuk dengan kata sandi itu, atau buat yang baru lewat email.",
     "unconfirmedReset": "Buat kata sandi baru",
     "unconfirmedNoEmail": "Email ini sudah punya akun dengan kata sandi. Masuk dengan kata sandi itu.",
@@ -1781,6 +1789,9 @@
     "open": "Buka",
     "openInBrowser": "Buka di browser",
     "download": "Unduh",
+    "copyImage": "Salin gambar",
+    "imageCopied": "Gambar disalin.",
+    "copyImageFailed": "Gambar tidak bisa disalin. Gunakan Unduh.",
     "conversation": "Kirim pesan",
     "agentPage": "Lihat halaman",
     "back": "Kembali",
@@ -2319,7 +2330,7 @@
     "howTo": "Cara memasang",
     "phone": "Ponsel",
     "phoneText": "Notifikasi di saku, untuk membalas dari mana saja.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -3343,7 +3354,10 @@
       "getGit": "Unduh Git for Windows",
       "cantStart": "{{program}} ada di {{computer}}, tetapi tidak mau berjalan: {{message}}",
       "outdated": "Perbarui aplikasi agentes.chat di {{computer}} untuk memasang dari sini.",
-      "asked": "Permintaan terkirim. {{name}} mendapat tombol untuk memasangnya."
+      "asked": "Permintaan terkirim. {{name}} mendapat tombol untuk memasangnya.",
+      "runThis": "Jalankan perintah ini di sana untuk memasangnya.",
+      "missingSystem": "{{program}} belum ada di {{computer}} untuk para agen, yang masing-masing bekerja sebagai pengguna sendiri. Jalankan perintah ini di sana untuk memasangnya bagi semuanya.",
+      "homeOnly": "{{program}} hanya terpasang untuk root di {{computer}}. Setiap agen bekerja sebagai pengguna sendiri dan tidak bisa menjangkaunya. Jalankan perintah ini di sana untuk memasangnya bagi semuanya."
     },
     "titleFor": "Hubungkan AI untuk {{name}}",
     "titleFor_female": "Hubungkan AI untuk {{name}}",
@@ -8249,7 +8263,12 @@
       "empty": "Seret file ke sini, tempel tangkapan layar, atau kirim di percakapan tugas.",
       "fromCreation": "Saat dibuat · {{when}}",
       "fromComment": "Komentar {{name}} · {{when}}",
-      "linked": "Ditautkan oleh {{name}}"
+      "linked": "Ditautkan oleh {{name}}",
+      "remove": "Keluarkan {{name}} dari tugas",
+      "removeShort": "Keluarkan dari tugas",
+      "removed": "{{name}} dikeluarkan dari tugas. File masih ada di Drive.",
+      "added_other": "{{count}} file masuk ke lampiran",
+      "see": "Lihat lampiran"
     },
     "history": {
       "commented": "berkomentar",
@@ -11891,7 +11910,8 @@
       "cant_start": "{{program}} ada di {{computer}}, tetapi tidak mau berjalan.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
-      "no_computerCloud": "Siap begitu {{computer}} siap."
+      "no_computerCloud": "Siap begitu {{computer}} siap.",
+      "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen."
     },
     "notAvailableNow": "Dipilih, tapi sedang tidak tersedia.",
     "offline": "{{computer}} sedang offline.",
@@ -14354,6 +14374,27 @@
     "needsKey": "Server ini tidak mendukung OAuth. Hubungkan dengan kunci API.",
     "notApproved": "{{name}} hanya mengizinkan aplikasi yang sudah disetujuinya untuk masuk, dan agentes.chat belum disetujui. Kalau {{name}} memberimu kunci API, kamu bisa menghubungkan dengan kunci itu.",
     "serverSaid": "Jawaban server: {{detail}}",
+    "ownClient": {
+      "title": "Pakai aplikasi OAuth Anda sendiri",
+      "notApproved": "{{name}} hanya mengizinkan aplikasi yang sudah disetujuinya, dan agentes.chat belum termasuk. Anda bisa menghubungkannya dengan aplikasi Anda sendiri di sana.",
+      "askAdmin": "Admin bisa menghubungkannya dengan aplikasi milik workspace.",
+      "help": "Buat aplikasi di penyedia, daftarkan URI pengalihan ini di sana, lalu tempel client ID-nya. Setiap masuk ke sana dari workspace akan memakai aplikasi Anda.",
+      "guide": {
+        "metaAds": "Di Meta for Developers, buat aplikasi dengan kasus penggunaan Marketing API. Tambahkan URI pengalihan ini ke URI pengalihan OAuth yang valid, lalu tempel App ID, dan App Secret jika aplikasi Anda memintanya."
+      },
+      "redirectUri": "URI pengalihan",
+      "copied": "URI pengalihan disalin.",
+      "clientId": "Client ID",
+      "clientIdMissing": "Tempel client ID aplikasi.",
+      "clientSecret": "Client secret",
+      "clientSecretHelp": "Hanya jika aplikasi memintanya. Disimpan terenkripsi dan tidak pernah ditampilkan lagi.",
+      "secretSaved": "Secret sudah tersimpan. Biarkan kosong untuk tetap memakainya.",
+      "scopes": "Scope",
+      "scopesHelp": "Yang diminta setiap kali masuk, dipisahkan spasi. Biarkan kosong untuk memakai yang dicantumkan server.",
+      "save": "Simpan dan lanjutkan",
+      "remove": "Hapus",
+      "removed": "Aplikasi Anda sudah dihapus."
+    },
     "headers": {
       "title": "Header permintaan",
       "help": "Untuk kunci yang dikirim di header lain, atau gateway di depan server. Kebanyakan server tidak memerlukannya.",
@@ -15130,7 +15171,10 @@
       "headerAndKey": "Kunci API sudah dikirim sebagai Authorization. Kosongkan kuncinya, atau hapus header ini.",
       "headersTooMany": "Satu server menerima paling banyak {{max}} header. Hapus satu untuk menambah yang lain.",
       "headersWithSignIn": "Server ini meminta proses masuk, dan proses masuk belum bisa membawa header. Hapus header untuk masuk, atau hubungkan dengan kunci API.",
-      "headersUnreadable": "Header yang tersimpan tidak bisa dibaca. Ketik lagi, atau hapus."
+      "headersUnreadable": "Header yang tersimpan tidak bisa dibaca. Ketik lagi, atau hapus.",
+      "noOAuth": "Server MCP tersebut tidak masuk dengan OAuth, jadi tidak menerima aplikasi Anda. Hubungkan dengan kunci API.",
+      "ownClientInUse": "Masih ada akun yang masuk dengan aplikasi yang disimpan sebelumnya. Putuskan dulu, lalu ganti.",
+      "ownClientId": "Periksa client ID: satu kata, seperti yang ditampilkan penyedia."
     },
     "wiki": {
       "githubNoNotes": "Tidak ada catatan Markdown di tautan ini.",
@@ -15211,6 +15255,7 @@
     },
     "org": {
       "createInviteOnly": "Untuk saat ini, ruang kerja baru membutuhkan undangan.",
+      "createUnconfirmed": "Buka dulu tautan yang kami kirim ke email. Lalu buat ruang kerjanya.",
       "membersFull": "Semua kursi di ruang kerja ini sedang terisi. Minta orang yang mengundangmu untuk membuka kursi.",
       "deleting": "Ruang kerja ini sedang dihapus.",
       "notRestorable": "Ruang kerja ini sudah tidak bisa dipulihkan.",

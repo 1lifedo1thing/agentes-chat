@@ -628,6 +628,14 @@
     "emailLinkExpired": "Ce lien de confirmation n'est plus valide. Votre compte fonctionne normalement.",
     "sendNewLink": "Envoyer un nouveau lien",
     "newLinkSent": "Nous avons envoyé un nouveau lien à {{email}}.",
+    "confirm": {
+      "title": "Consultez votre boîte mail",
+      "lead": "Ouvrez le lien envoyé à {{email}} pour continuer.",
+      "wrongAddress": "Mauvaise adresse ? Changez-la",
+      "banner": "Confirmez votre e-mail",
+      "bannerSub": "Ouvrez le lien envoyé à {{email}}.",
+      "change": "Changer d'adresse"
+    },
     "unconfirmed": "Cet e-mail a déjà un compte avec un mot de passe qui n'est pas encore confirmé. Connectez-vous avec le mot de passe, ou créez-en un nouveau par e-mail.",
     "unconfirmedReset": "Créer un nouveau mot de passe",
     "unconfirmedNoEmail": "Cet e-mail a déjà un compte avec un mot de passe. Connectez-vous avec le mot de passe.",
@@ -1927,6 +1935,9 @@
     "open": "Ouvrir",
     "openInBrowser": "Ouvrir dans le navigateur",
     "download": "Télécharger",
+    "copyImage": "Copier l'image",
+    "imageCopied": "Image copiée.",
+    "copyImageFailed": "Impossible de copier l'image. Utilisez Télécharger.",
     "conversation": "Envoyer un message",
     "agentPage": "Voir la page",
     "back": "Précédent",
@@ -2489,7 +2500,7 @@
     "howTo": "Comment l'installer",
     "phone": "Téléphone",
     "phoneText": "Les notifications dans la poche, pour répondre de partout.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -3616,7 +3627,10 @@
       "getGit": "Télécharger Git for Windows",
       "cantStart": "{{program}} est sur {{computer}}, mais ne démarre pas : {{message}}",
       "outdated": "Mettez à jour l'app agentes.chat sur {{computer}} pour installer d'ici.",
-      "asked": "Demande envoyée. {{name}} reçoit un bouton pour l'installer."
+      "asked": "Demande envoyée. {{name}} reçoit un bouton pour l'installer.",
+      "runThis": "Lancez cette commande là-bas pour l'installer.",
+      "missingSystem": "{{program}} n'est pas encore sur {{computer}} pour les agents, qui travaillent chacun avec leur propre utilisateur. Lancez cette commande là-bas pour l'installer pour tous.",
+      "homeOnly": "{{program}} est installé uniquement pour root sur {{computer}}. Chaque agent travaille avec son propre utilisateur et n'y a pas accès. Lancez cette commande là-bas pour l'installer pour tous."
     },
     "titleFor": "Connecter une IA pour {{name}}",
     "titleFor_female": "Connecter une IA pour {{name}}",
@@ -8845,7 +8859,14 @@
       "empty": "Glissez des fichiers ici, collez une capture ou envoyez-les dans la conversation de la tâche.",
       "fromCreation": "À la création · {{when}}",
       "fromComment": "Commentaire de {{name}} · {{when}}",
-      "linked": "Lié par {{name}}"
+      "linked": "Lié par {{name}}",
+      "remove": "Retirer {{name}} de la tâche",
+      "removeShort": "Retirer de la tâche",
+      "removed": "{{name}} ne fait plus partie de la tâche. Le fichier reste dans le Drive.",
+      "added_one": "Fichier dans les pièces jointes",
+      "added_many": "{{count}} fichiers dans les pièces jointes",
+      "added_other": "{{count}} fichiers dans les pièces jointes",
+      "see": "Voir les pièces jointes"
     },
     "history": {
       "commented": "a commenté",
@@ -12810,7 +12831,8 @@
       "cant_start": "{{program}} est sur {{computer}}, mais ne démarre pas.",
       "not_reported": "{{computer}} vérifie encore quels programmes il a. Ceci change tout seul une fois terminé.",
       "system": "{{program}} ne fonctionne pas encore sur le système de {{computer}}.",
-      "no_computerCloud": "Prêt dès que {{computer}} l'est."
+      "no_computerCloud": "Prêt dès que {{computer}} l'est.",
+      "home_only": "{{program}} est installé uniquement pour root sur {{computer}}, où les agents n'ont pas accès."
     },
     "notAvailableNow": "Choisi, mais indisponible pour le moment.",
     "offline": "{{computer}} est hors ligne pour le moment.",
@@ -15381,6 +15403,27 @@
     "needsKey": "Ce serveur ne prend pas en charge OAuth. Connectez-le avec une clé API.",
     "notApproved": "{{name}} n'autorise la connexion qu'aux applications qu'il a approuvées, et agentes.chat ne l'est pas encore. S'il vous fournit une clé API, vous pouvez vous connecter avec.",
     "serverSaid": "Le serveur a répondu : {{detail}}",
+    "ownClient": {
+      "title": "Utiliser votre propre app OAuth",
+      "notApproved": "{{name}} n'accepte que les apps qu'il a approuvées, et agentes.chat n'en fait pas encore partie. Vous pouvez le connecter avec votre propre app chez lui.",
+      "askAdmin": "Un admin peut le connecter avec l'app propre au workspace.",
+      "help": "Créez une app chez le fournisseur, enregistrez-y cette URI de redirection et collez son ID client. Chaque connexion depuis le workspace utilise alors votre app.",
+      "guide": {
+        "metaAds": "Dans Meta for Developers, créez une app avec le cas d'usage Marketing API. Ajoutez cette URI de redirection à ses URI de redirection OAuth valides, puis collez l'ID de l'app, et la clé secrète de l'app si elle en demande une."
+      },
+      "redirectUri": "URI de redirection",
+      "copied": "URI de redirection copiée.",
+      "clientId": "ID client",
+      "clientIdMissing": "Collez l'ID client de l'app.",
+      "clientSecret": "Secret client",
+      "clientSecretHelp": "Seulement si l'app en demande un. Il est conservé chiffré et n'est plus jamais affiché.",
+      "secretSaved": "Un secret est enregistré. Laissez ce champ vide pour le garder.",
+      "scopes": "Scopes",
+      "scopesHelp": "Ce que demande chaque connexion, séparé par des espaces. Laissez vide pour ce que le serveur indique.",
+      "save": "Enregistrer et continuer",
+      "remove": "Retirer",
+      "removed": "Votre app a été retirée."
+    },
     "headers": {
       "title": "En-têtes de requête",
       "help": "Pour une clé à envoyer dans un autre en-tête, ou une passerelle placée devant le serveur. La plupart des serveurs n'en ont pas besoin.",
@@ -16201,7 +16244,10 @@
       "headerAndKey": "La clé API est déjà envoyée dans Authorization. Effacez la clé, ou retirez cet en-tête.",
       "headersTooMany": "Un serveur accepte {{max}} en-têtes au plus. Retirez-en un pour en ajouter un autre.",
       "headersWithSignIn": "Ce serveur demande une connexion à un compte, et celle-ci ne peut pas encore transmettre d'en-têtes. Retirez les en-têtes pour vous connecter, ou connectez-le avec une clé API.",
-      "headersUnreadable": "Les en-têtes enregistrés n'ont pas pu être lus. Saisissez-les à nouveau ou retirez-les."
+      "headersUnreadable": "Les en-têtes enregistrés n'ont pas pu être lus. Saisissez-les à nouveau ou retirez-les.",
+      "noOAuth": "Le serveur MCP ne se connecte pas par OAuth, il n'accepte donc pas d'app de votre part. Connectez-le avec une clé d'API.",
+      "ownClientInUse": "Des comptes se connectent encore avec l'app enregistrée avant. Déconnectez-les d'abord, puis changez-la.",
+      "ownClientId": "Vérifiez l'ID client : un seul mot, tel que le fournisseur l'affiche."
     },
     "wiki": {
       "githubNoNotes": "Aucune note Markdown dans ce lien.",
@@ -16282,6 +16328,7 @@
     },
     "org": {
       "createInviteOnly": "Les nouveaux espaces de travail nécessitent une invitation pour le moment.",
+      "createUnconfirmed": "Ouvrez d'abord le lien envoyé à votre e-mail. Créez ensuite l'espace de travail.",
       "membersFull": "Toutes les places de cet espace de travail sont prises pour le moment. Demandez à la personne qui vous a invité de libérer une place.",
       "deleting": "Cet espace de travail est en cours de suppression.",
       "notRestorable": "Cet espace de travail ne peut plus être restauré.",

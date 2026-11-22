@@ -52,6 +52,7 @@ import {
   DialogFooter,
   GroupHeading,
   Icon,
+  type IconName,
   Input,
   ProviderLogo,
   Switch,
@@ -204,11 +205,11 @@ export function RightHandMineRow({ agent }: { agent: Agent }) {
       .finally(() => setBusy(false));
   };
   const back = () => setMine({ brain: "model" }, () => setOpen(false));
-  // Connecting is a dialog of its own: this one closes for it.
+  // Connecting is a dialog of its own: this one closes for it, and its Back opens this one again.
   const connectMine = connect
     ? () => {
         setOpen(false);
-        connect.open({ agentId: agent.id });
+        connect.open({ agentId: agent.id, onBack: () => setOpen(true) });
       }
     : null;
   let face: ReactNode = null;
@@ -272,13 +273,13 @@ export function RightHandMineRow({ agent }: { agent: Agent }) {
   const links: RightHandLink[] = [];
   if (connectMine && !held)
     links.push({
-      icon: "plus",
+      opensDialog: true,
       label: own
         ? t("connectAi.chat.other")
         : t(status.kind === "nobody" ? "rightHand.settings.connectMine" : "rightHand.settings.useMine"),
       onClick: connectMine,
     });
-  if (own) links.push({ icon: "undo", label: t("rightHand.settings.useWorkspace"), onClick: back });
+  if (own) links.push({ label: t("rightHand.settings.useWorkspace"), onClick: back });
   // The AI's mark beside the right hand under the sky: its maker's, a key's, or none while nothing answers.
   let mineMark: ReactNode;
   if (logoId) mineMark = <ProviderLogo id={logoId} size="tile" />;
@@ -561,14 +562,15 @@ function RightHandForm({ agent }: { agent: Agent }) {
   };
   // Another AI: the Connect dialog, with every provider to pick from, over this one. On a billing hold nothing connects
   // before the plan (ADR 0162).
-  const connectOther: RightHandLink | null =
+  const connectOther: (RightHandLink & { icon: IconName }) | null =
     connect && !hold
       ? {
           icon: "plus",
           label: t("connectAi.chat.other"),
+          opensDialog: true,
           onClick: () => {
             setChoosing(false);
-            connect.open({ agentId: agent.id });
+            connect.open({ agentId: agent.id, onBack: () => setChoosing(true) });
           },
         }
       : null;

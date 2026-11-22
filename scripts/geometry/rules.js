@@ -2168,9 +2168,8 @@
     },
     /**
      * Buttons side by side stand 8 apart (rule 8): two plated ones, or two icon buttons' plates (a glyph's plate is its
-     * box less its air, `.ac-btn--glyph`). In a row of actions (`.ac-acts`) two icon buttons' plates meet, and two
-     * small ones' glyphs stand 8 apart as an icon and its words do, their boxes only touching; on touch their plates
-     * stand 8 apart. A ghost with words reads by its words (`.ac-acts`), and the parts of one
+     * box less its air, `.ac-btn--glyph`), in a row of actions (`.ac-acts`) too. A ghost with words reads by its words
+     * (`.ac-acts`), and the parts of one
      * control (a split button, a segmented control, a token's ×, an event pill's actions, a message's bar) are drawn
      * as one, and so are the strips of format toggles (the composer's and the wiki editor's) and the composer's own
      * tools, 4 apart.
@@ -2200,23 +2199,8 @@
           if (!k || k !== kind(b)) continue;
           const [ra, rb] = [plateOf(a), plateOf(b)];
           if (!sameLine(ra, rb)) continue;
-          let gap = rb.left - ra.right;
-          let want = 8;
-          if (k === "icon" && row.matches(".ac-acts") && !matchMedia("(pointer: coarse)").matches) {
-            const [ga, gb] = [a, b].map((el) => el.querySelector("svg")?.getBoundingClientRect());
-            const small = a.matches(".ac-btn--sm") && b.matches(".ac-btn--sm") && ga && gb;
-            // Two targets that overlap would leave a click between the glyphs to whichever is on top. A `::before` that
-            // takes clicks and reaches past its box is part of its button's target.
-            const reach = (el, side) => {
-              const s = getComputedStyle(el, "::before");
-              return s.content === "none" || s.pointerEvents === "none" ? 0 : Math.max(0, -parseFloat(s[side]) || 0);
-            };
-            const touch =
-              b.getBoundingClientRect().left - a.getBoundingClientRect().right - reach(a, "right") - reach(b, "left");
-            if (small && touch > -0.5) [gap, want] = [gb.left - ga.right, 8];
-            else if (small) [gap, want] = [touch, 0];
-            else want = 0;
-          }
+          const gap = rb.left - ra.right;
+          const want = 8;
           if (Math.abs(gap - want) > 0.5)
             out.push({
               rule: "btngap",

@@ -574,9 +574,22 @@ export function createMockPlanning(
         const i = await findIssue(orgId, id);
         const author = await me();
         const s = await columnsOf(orgId);
-        const { columnId, criteria, projectId, ...rest } = patch;
-        let change: Omit<IssuePatch, "columnId" | "criteria" | "projectId"> = rest;
+        const { columnId, criteria, projectId, removeFiles, ...rest } = patch;
+        let change: Omit<IssuePatch, "columnId" | "criteria" | "projectId" | "removeFiles"> = rest;
         if (projectId !== undefined) i.project = (await store(orgId)).projects.find((p) => p.id === projectId) ?? null;
+        // As the server does: off the task's attachments, still in the Drive.
+        const taken = i.artifacts.filter((f) => removeFiles?.includes(f.id));
+        if (taken.length) {
+          i.artifacts = i.artifacts.filter((f) => !taken.includes(f));
+          await log(orgId, i, {
+            kind: "event",
+            author,
+            event: "artifact_unlinked",
+            text: "removeu um arquivo",
+            textCode: "files_removed",
+            textParams: { names: taken.map((f) => f.title).join(", ") },
+          });
+        }
         // The whole list, as the backend takes it: an id keeps that criterion (and its check), none is a new one.
         if (criteria) {
           const list = criteria.filter((c) => c.text.trim());

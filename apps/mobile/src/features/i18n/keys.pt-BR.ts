@@ -587,6 +587,8 @@ export const featureKeysPtBR = {
     camera: "Câmera",
     photos: "Fotos",
     file: "Arquivo",
+    paste: "Colar",
+    pasteGone: "Não deu para ler a imagem copiada. Copie de novo e toque em Colar.",
     /** The fourth tile: the GIFs and stickers (also beside the mic in the empty field). */
     media: "GIFs",
     noCamera: "Sem acesso à câmera. Libere nos Ajustes do celular.",

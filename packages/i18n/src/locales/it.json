@@ -628,6 +628,14 @@
     "emailLinkExpired": "Questo link di conferma non è più valido. Il tuo account funziona come sempre.",
     "sendNewLink": "Invia un nuovo link",
     "newLinkSent": "Abbiamo inviato un nuovo link a {{email}}.",
+    "confirm": {
+      "title": "Controlla la tua email",
+      "lead": "Apri il link che abbiamo inviato a {{email}} per continuare.",
+      "wrongAddress": "Indirizzo sbagliato? Cambialo",
+      "banner": "Conferma la tua email",
+      "bannerSub": "Apri il link che abbiamo inviato a {{email}}.",
+      "change": "Cambia indirizzo"
+    },
     "unconfirmed": "Questa email ha già un account con una password non ancora confermata. Accedi con la password, oppure creane una nuova via email.",
     "unconfirmedReset": "Crea una nuova password",
     "unconfirmedNoEmail": "Questa email ha già un account con password. Accedi con la password.",
@@ -1927,6 +1935,9 @@
     "open": "Apri",
     "openInBrowser": "Apri nel browser",
     "download": "Scarica",
+    "copyImage": "Copia immagine",
+    "imageCopied": "Immagine copiata.",
+    "copyImageFailed": "Non è stato possibile copiare l'immagine. Usa Scarica.",
     "conversation": "Messaggio",
     "agentPage": "Vedi pagina",
     "back": "Indietro",
@@ -2489,7 +2500,7 @@
     "howTo": "Come installarla",
     "phone": "Telefono",
     "phoneText": "Le notifiche in tasca, per rispondere da ovunque.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -3623,7 +3634,10 @@
       "getGit": "Scarica Git for Windows",
       "cantStart": "{{program}} è su {{computer}}, ma non si avvia: {{message}}",
       "outdated": "Aggiorna l'app agentes.chat su {{computer}} per installare da qui.",
-      "asked": "Richiesta inviata. {{name}} riceve un pulsante per installarlo."
+      "asked": "Richiesta inviata. {{name}} riceve un pulsante per installarlo.",
+      "runThis": "Esegui questo comando lì per installarlo.",
+      "missingSystem": "{{program}} non è ancora su {{computer}} per gli agenti, che lavorano ognuno come un proprio utente. Esegui questo comando lì per installarlo per tutti.",
+      "homeOnly": "{{program}} è installato solo per root su {{computer}}. Ogni agente lavora come un proprio utente e non ci arriva. Esegui questo comando lì per installarlo per tutti."
     },
     "titleFor": "Collega un'IA per {{name}}",
     "titleFor_female": "Collega un'IA per {{name}}",
@@ -8862,7 +8876,14 @@
       "empty": "Trascina qui i file, incolla uno screenshot o inviali nella conversazione dell'attività.",
       "fromCreation": "Alla creazione · {{when}}",
       "fromComment": "Commento di {{name}} · {{when}}",
-      "linked": "Collegato da {{name}}"
+      "linked": "Collegato da {{name}}",
+      "remove": "Togli {{name}} dall'attività",
+      "removeShort": "Togli dall'attività",
+      "removed": "{{name}} non fa più parte dell'attività. Resta nel Drive.",
+      "added_one": "File negli allegati",
+      "added_many": "{{count}} file negli allegati",
+      "added_other": "{{count}} file negli allegati",
+      "see": "Vedi allegati"
     },
     "history": {
       "commented": "ha commentato",
@@ -12836,7 +12857,8 @@
       "cant_start": "{{program}} è su {{computer}}, ma non si avvia.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
-      "no_computerCloud": "Pronto appena lo è {{computer}}."
+      "no_computerCloud": "Pronto appena lo è {{computer}}.",
+      "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano."
     },
     "notAvailableNow": "Scelto, ma non disponibile in questo momento.",
     "offline": "{{computer}} è offline in questo momento.",
@@ -15403,6 +15425,27 @@
     "needsKey": "Questo server non supporta OAuth. Collegalo con una chiave API.",
     "notApproved": "{{name}} consente l'accesso solo alle app che ha approvato, e agentes.chat non è ancora approvato. Se ti fornisce una chiave API, puoi collegarti con quella.",
     "serverSaid": "Il server ha risposto: {{detail}}",
+    "ownClient": {
+      "title": "Usa la tua app OAuth",
+      "notApproved": "{{name}} fa entrare solo le app che ha approvato, e agentes.chat non è ancora tra queste. Puoi collegarlo con la tua app.",
+      "askAdmin": "Un admin può collegarlo con l'app propria del workspace.",
+      "help": "Crea un'app presso il provider, registra lì questo URI di reindirizzamento e incolla il suo ID client. Da quel momento ogni accesso lì dal workspace usa la tua app.",
+      "guide": {
+        "metaAds": "In Meta for Developers, crea un'app con il caso d'uso Marketing API. Aggiungi questo URI di reindirizzamento agli URI di reindirizzamento OAuth validi, poi incolla l'ID app, e la chiave segreta dell'app se la tua app la richiede."
+      },
+      "redirectUri": "URI di reindirizzamento",
+      "copied": "URI di reindirizzamento copiato.",
+      "clientId": "ID client",
+      "clientIdMissing": "Incolla l'ID client dell'app.",
+      "clientSecret": "Segreto client",
+      "clientSecretHelp": "Solo se l'app lo richiede. Viene conservato cifrato e non viene più mostrato.",
+      "secretSaved": "C'è un segreto salvato. Lascia vuoto per mantenerlo.",
+      "scopes": "Scope",
+      "scopesHelp": "Cosa chiede ogni accesso, separato da spazi. Lascia vuoto per usare quello che indica il server.",
+      "save": "Salva e continua",
+      "remove": "Rimuovi",
+      "removed": "La tua app è stata rimossa."
+    },
     "headers": {
       "title": "Intestazioni della richiesta",
       "help": "Per una chiave che va in un'altra intestazione, o un gateway davanti al server. La maggior parte dei server non ne ha bisogno.",
@@ -16223,7 +16266,10 @@
       "headerAndKey": "La chiave API viene già inviata come Authorization. Cancella la chiave, oppure rimuovi questa intestazione.",
       "headersTooMany": "Un server accetta al massimo {{max}} intestazioni. Rimuovine una per aggiungerne un'altra.",
       "headersWithSignIn": "Questo server chiede un accesso, e un accesso non può ancora portare intestazioni. Rimuovi le intestazioni per accedere, oppure collegalo con una chiave API.",
-      "headersUnreadable": "Non è stato possibile leggere le intestazioni salvate. Scrivile di nuovo oppure rimuovile."
+      "headersUnreadable": "Non è stato possibile leggere le intestazioni salvate. Scrivile di nuovo oppure rimuovile.",
+      "noOAuth": "Il server MCP non accede con OAuth, quindi non accetta una tua app. Collegalo con una chiave API.",
+      "ownClientInUse": "Ci sono ancora account che accedono con l'app salvata prima. Scollegali prima, poi cambiala.",
+      "ownClientId": "Controlla l'ID client: una sola parola, come lo mostra il provider."
     },
     "wiki": {
       "githubNoNotes": "Nessuna nota Markdown in questo link.",
@@ -16304,6 +16350,7 @@
     },
     "org": {
       "createInviteOnly": "Per ora i nuovi spazi di lavoro richiedono un invito.",
+      "createUnconfirmed": "Prima apri il link che abbiamo inviato alla tua email. Poi crea lo spazio di lavoro.",
       "membersFull": "Tutti i posti di questo spazio di lavoro sono occupati al momento. Chiedi a chi ti ha invitato di liberare un posto.",
       "deleting": "Questo spazio di lavoro è in eliminazione.",
       "notRestorable": "Questo spazio di lavoro non si può più ripristinare.",

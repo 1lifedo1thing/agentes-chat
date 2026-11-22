@@ -376,6 +376,11 @@ export interface User {
   /** Opened the link that confirms the email address. */
   emailVerified?: boolean;
   /**
+   * On a server that sends email, an address never confirmed: `required` while in no workspace (the apps show only
+   * "check your inbox", and none can be made), `reminder` once in one (a line asks for it). Null or absent: nothing.
+   */
+  emailConfirmation?: "required" | "reminder" | null;
+  /**
    * The installation's owner on the desktop app's own server: a sign-in in the last 10 minutes through Continue on this
    * Mac is their proof before a deletion (absent from an older server: false).
    */
@@ -3267,6 +3272,17 @@ export type CustomConnectStart =
    */
   | { status: "needs_key"; reason?: "not_approved"; detail?: string };
 
+/**
+ * A workspace's own OAuth client (its app at the provider) for an MCP server that takes only clients it approved: one
+ * per authorization server (`issuer`). Its secret is never returned.
+ */
+export interface OwnOAuthClient {
+  /** The redirect URI to register in that app. */
+  redirectUri: string;
+  issuer: string;
+  client: { clientId: string; hasSecret: boolean; scopes: string | null } | null;
+}
+
 // ── Knowledge (phase 5: apps/server/src/routes/app/knowledge.ts) ─────────────
 
 export type SearchKind = "message" | "context_item" | "issue" | "file" | "wiki" | "action";
@@ -4353,6 +4369,8 @@ export type IssuePatch = Partial<
    * one without is new, one left out is removed.
    */
   criteria?: { id?: string; text: string }[];
+  /** Files to take off the task ("Anexos" ×): they stay in the Drive. */
+  removeFiles?: string[];
 };
 
 /** A task's project as its card shows it: a name and one of the roles' colors. Archived: offered to no new task. */

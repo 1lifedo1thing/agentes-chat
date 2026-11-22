@@ -175,8 +175,16 @@ test("Sua IA on a plan of mine: the dialog goes back to the workspace's AI, and 
   expect(inUse?.textContent).toContain("Trabalho");
   expect(inUse?.textContent).toContain("seu plano");
   expect(within(dialog).queryAllByRole("radio")).toHaveLength(0);
-  expect(within(dialog).getByRole("button", { name: "Conectar outra IA" })).toBeTruthy();
-  await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Usar a do workspace" })));
+  // Connecting another AI takes this dialog's place, and its Back brings this one again.
+  await act(async () => fireEvent.click(within(dialog).getByRole("button", { name: "Conectar outra IA" })));
+  await settle(6);
+  expect(screen().queryByRole("dialog", { name: "Quem pensa pelo Lodi para você" })).toBeNull();
+  const connect = screen().getByRole("dialog", { name: "Conectar uma IA para o Lodi" });
+  await act(async () => fireEvent.click(within(connect).getByRole("button", { name: "Voltar" })));
+  await settle(4);
+  expect(screen().queryByRole("dialog", { name: "Conectar uma IA para o Lodi" })).toBeNull();
+  const again = screen().getByRole("dialog", { name: "Quem pensa pelo Lodi para você" });
+  await act(async () => fireEvent.click(within(again).getByRole("button", { name: "Usar a do workspace" })));
   await settle(8);
   expect(sent).toEqual([{ scope: "mine", brain: "model" }]);
   expect(screen().queryByRole("dialog", { name: "Quem pensa pelo Lodi para você" })).toBeNull();

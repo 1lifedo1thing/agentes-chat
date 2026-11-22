@@ -598,6 +598,14 @@
     "emailLinkExpired": "この確認リンクは無効になっています。アカウントは通常どおり使えます。",
     "sendNewLink": "新しいリンクを送信",
     "newLinkSent": "{{email}}に新しいリンクを送信しました。",
+    "confirm": {
+      "title": "受信トレイを確認してください",
+      "lead": "続けるには、{{email}}に送信したリンクを開いてください。",
+      "wrongAddress": "アドレスが違いますか？変更する",
+      "banner": "メールアドレスを確認してください",
+      "bannerSub": "{{email}}に送信したリンクを開いてください。",
+      "change": "アドレスを変更"
+    },
     "unconfirmed": "このメールアドレスには、まだ確認されていないパスワード付きのアカウントがあります。そのパスワードでログインするか、メールで新しいパスワードを作成してください。",
     "unconfirmedReset": "新しいパスワードを作成",
     "unconfirmedNoEmail": "このメールアドレスにはパスワード付きのアカウントがあります。パスワードでログインしてください。",
@@ -1781,6 +1789,9 @@
     "open": "開く",
     "openInBrowser": "ブラウザで開く",
     "download": "ダウンロード",
+    "copyImage": "画像をコピー",
+    "imageCopied": "画像をコピーしました。",
+    "copyImageFailed": "画像をコピーできませんでした。代わりにダウンロードを使ってください。",
     "conversation": "メッセージ",
     "agentPage": "ページを見る",
     "back": "戻る",
@@ -2319,7 +2330,7 @@
     "howTo": "インストール方法",
     "phone": "スマートフォン",
     "phoneText": "通知をポケットに。どこからでも返信できます。",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {
@@ -3331,7 +3342,10 @@
       "getGit": "Git for Windows をダウンロード",
       "cantStart": "{{program}} は {{computer}} にありますが、起動しません: {{message}}",
       "outdated": "ここからインストールするには、{{computer}} の agentes.chat アプリを更新してください。",
-      "asked": "依頼を送りました。{{name}} さんにインストールのボタンが届きます。"
+      "asked": "依頼を送りました。{{name}} さんにインストールのボタンが届きます。",
+      "runThis": "インストールするには、そこでこのコマンドを実行してください。",
+      "missingSystem": "{{computer}} にはまだエージェント用の {{program}} がありません。エージェントはそれぞれ専用のユーザーとして動きます。全員用にインストールするには、そこでこのコマンドを実行してください。",
+      "homeOnly": "{{computer}} の {{program}} は root 専用にインストールされています。エージェントはそれぞれ専用のユーザーとして動くため、届きません。全員用にインストールするには、そこでこのコマンドを実行してください。"
     },
     "titleFor": "{{name}}のAIを接続",
     "have": {
@@ -8207,7 +8221,12 @@
       "empty": "ここにファイルをドロップするか、スクリーンショットを貼り付けるか、タスクの会話で送ってください。",
       "fromCreation": "作成時 · {{when}}",
       "fromComment": "{{name}}のコメント · {{when}}",
-      "linked": "{{name}}がリンク"
+      "linked": "{{name}}がリンク",
+      "remove": "{{name}}をタスクから外す",
+      "removeShort": "タスクから外す",
+      "removed": "{{name}}をタスクから外しました。Driveには残っています。",
+      "added_other": "{{count}}件のファイルを添付ファイルに追加しました",
+      "see": "添付ファイルを見る"
     },
     "history": {
       "commented": "がコメントしました",
@@ -11833,7 +11852,8 @@
       "cant_start": "{{program}} は {{computer}} にありますが、起動しません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
-      "no_computerCloud": "{{computer}}の準備ができ次第使えます。"
+      "no_computerCloud": "{{computer}}の準備ができ次第使えます。",
+      "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。"
     },
     "notAvailableNow": "選択済みですが、現在は利用できません。",
     "offline": "{{computer}}は現在オフラインです。",
@@ -14295,6 +14315,27 @@
     "needsKey": "このサーバーはOAuthに対応していません。APIキーで接続してください。",
     "notApproved": "{{name}}は承認済みのアプリしかログインを許可しておらず、agentes.chatはまだ承認されていません。APIキーが発行されれば、それで接続できます。",
     "serverSaid": "サーバーの応答: {{detail}}",
+    "ownClient": {
+      "title": "自分の OAuth アプリを使う",
+      "notApproved": "{{name}} は承認したアプリしか受け付けず、agentes.chat はまだ承認されていません。自分のアプリで接続できます。",
+      "askAdmin": "管理者がワークスペース独自のアプリで接続できます。",
+      "help": "プロバイダーでアプリを作成し、このリダイレクト URI を登録して、クライアント ID を貼り付けてください。以後、このワークスペースからのサインインはすべてあなたのアプリを使います。",
+      "guide": {
+        "metaAds": "Meta for Developers で、Marketing API のユースケースを持つアプリを作成します。このリダイレクト URI を有効な OAuth リダイレクト URI に追加し、App ID を貼り付けます。アプリが求める場合は App Secret も貼り付けてください。"
+      },
+      "redirectUri": "リダイレクト URI",
+      "copied": "リダイレクト URI をコピーしました。",
+      "clientId": "クライアント ID",
+      "clientIdMissing": "アプリのクライアント ID を貼り付けてください。",
+      "clientSecret": "クライアントシークレット",
+      "clientSecretHelp": "アプリが求める場合のみ。暗号化して保存され、二度と表示されません。",
+      "secretSaved": "シークレットは保存済みです。そのままにするには空欄のままにしてください。",
+      "scopes": "スコープ",
+      "scopesHelp": "サインインのたびに求めるもの。スペースで区切ります。空欄ならサーバーが示すものを使います。",
+      "save": "保存して続ける",
+      "remove": "削除",
+      "removed": "アプリを削除しました。"
+    },
     "headers": {
       "title": "リクエストヘッダー",
       "help": "キーを別のヘッダーで送る場合や、サーバーの前にゲートウェイがある場合に使います。ほとんどのサーバーでは不要です。",
@@ -15071,7 +15112,10 @@
       "headerAndKey": "APIキーはすでにAuthorizationとして送信されます。キーを消すか、このヘッダーを削除してください。",
       "headersTooMany": "1つのサーバーに設定できるヘッダーは{{max}}個までです。追加するには、どれかを削除してください。",
       "headersWithSignIn": "このサーバーはログインを求めていますが、ログインではまだヘッダーを送れません。ヘッダーを削除してログインするか、APIキーで接続してください。",
-      "headersUnreadable": "保存済みのヘッダーを読み込めませんでした。もう一度入力するか、削除してください。"
+      "headersUnreadable": "保存済みのヘッダーを読み込めませんでした。もう一度入力するか、削除してください。",
+      "noOAuth": "この MCP サーバーは OAuth でサインインしないため、独自のアプリは使えません。API キーで接続してください。",
+      "ownClientInUse": "以前保存したアプリでサインインしているアカウントがまだあります。先に接続を解除してから変更してください。",
+      "ownClientId": "クライアント ID を確認してください。プロバイダーの表示どおりの 1 語です。"
     },
     "wiki": {
       "githubNoNotes": "このリンクにMarkdownノートはありません。",
@@ -15152,6 +15196,7 @@
     },
     "org": {
       "createInviteOnly": "新しいワークスペースの作成には、現在招待が必要です。",
+      "createUnconfirmed": "まずメールに送信したリンクを開いてから、ワークスペースを作成してください。",
       "membersFull": "このワークスペースの席は現在すべて埋まっています。招待した人に席を空けてもらってください。",
       "deleting": "このワークスペースは削除中です。",
       "notRestorable": "このワークスペースはもう復元できません。",
