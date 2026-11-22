@@ -9,7 +9,7 @@ import type {
   Model,
   PlanUsage,
 } from "../api/types";
-import { accountChoices, accountTitle, ownSignInReady } from "./ai-accounts";
+import { ACCOUNT_ONLY_BRAINS, accountChoices, accountTitle, ownSignInReady } from "./ai-accounts";
 import { thinksWith } from "./brain";
 import { isClaudeAlias } from "./brain-advanced";
 import { namesComputers } from "./machines";
@@ -565,8 +565,8 @@ export interface PickerModel {
   textOnly: boolean;
 }
 
-/** How full an account is: its tightest window's use, unknown as empty. */
-const usedOf = (u: PlanUsage | null) => Math.max(0, ...(u?.windows.map((w) => w.usedPercent) ?? []));
+/** How full an account is: its tightest window's use; unmeasured ranks behind measured accounts. */
+const usedOf = (u: PlanUsage | null) => (u ? Math.max(0, ...u.windows.map((w) => w.usedPercent)) : 101);
 
 /**
  * The picker's tiles (web and phone): the plans the agent's computer runs that it has an account for (its owner's, or
@@ -595,6 +595,7 @@ export function modelPickerTiles(
   for (const o of view.options) {
     if (o.kind === "model" || !runs(o.kind)) continue;
     const k = o.kind as MachineAccountKind;
+    if (ACCOUNT_ONLY_BRAINS.has(k)) continue;
     const own = view.brain === k && view.account === null;
     // The computer's own sign-in only where its runner reported it signed in (`ownSignInReady`): a CLI being there, or
     // coming with the first sign-in (the Antigravity CLI the runner brings), isn't a sign-in.
@@ -611,7 +612,10 @@ export function modelPickerTiles(
     if (!accounts?.length) return [];
     const inUse = (a: PickerAccount) => view.brain !== "model" && (a.id ?? null) === (view.account ?? null);
     const sorted = [...accounts].sort(
-      (a, b) => Number(inUse(b)) - Number(inUse(a)) || usedOf(a.usage) - usedOf(b.usage),
+      (a, b) =>
+        Number(inUse(b)) - Number(inUse(a)) ||
+        usedOf(a.usage) - usedOf(b.usage) ||
+        Number(a.id === null) - Number(b.id === null),
     );
     return [
       {

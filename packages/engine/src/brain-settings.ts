@@ -1048,6 +1048,9 @@ async function setPersonalSignIn(
   current: Awaited<ReturnType<typeof personalBrain>>,
   audit: (to: unknown) => Promise<unknown>,
 ): Promise<AgentBrainView> {
+  if (requiresAccount(brain)) {
+    throw new ValidationError("Choose an account of this brain", "account.invalid", { brain });
+  }
   const { db } = deps;
   // The computers they paired, the one it already uses first: the first where this plan is available.
   const theirs = await db
@@ -1534,6 +1537,9 @@ export async function setAgentBrain(
  * connected it. The agent's owner or an admin chooses. Another person's account (`lent`) is never taken from an
  * agent that thinks with it.
  */
+/** Computer brains that always require a connected account on the machine (never `account: null`). */
+const requiresAccount = (brain: BrainKind) => brain === "antigravity" || brain === "grok";
+
 async function nextBrainAccount(
   db: Database,
   userId: string,
@@ -1546,11 +1552,23 @@ async function nextBrainAccount(
   options: { move: boolean; admin: boolean },
 ): Promise<{ id: string | null; lent?: boolean; from?: { accountId: string; agentId: string } }> {
   const kept = changed ? null : agent.brainAccountId;
-  if (input === undefined) return { id: kept };
+  if (input === undefined) {
+    if (kept === null && requiresAccount(brain)) {
+      throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
+        brain,
+      });
+    }
+    return { id: kept };
+  }
   if (input !== null && typeof input !== "string") {
     throw new ValidationError("Choose an account on the agent's computer", "account.invalid");
   }
   const wanted = input || null;
+  if (wanted === null && requiresAccount(brain)) {
+    throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
+      brain,
+    });
+  }
   if (wanted === kept) return { id: kept };
   const owner = agent.ownerUserId;
   const chooses = options.admin || owner === userId;
