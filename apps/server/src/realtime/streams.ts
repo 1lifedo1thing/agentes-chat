@@ -191,6 +191,13 @@ export function createStreamSockets(deps: { db: Database; auth: Auth; config: Co
         if (cwd instanceof Response) return cwd;
         request.cwd = cwd;
       }
+      // A terminal the app named keeps its shell (`TERMINAL_KEEP_PROTOCOL`): the person's id in front, so a name
+      // reaches only that person's own.
+      const keep = q.get("keep");
+      if (request.kind === "terminal" && keep !== null) {
+        if (!/^[A-Za-z0-9_-]{8,64}$/.test(keep)) return new Response("keep is a terminal's name", { status: 400 });
+        request.keep = `${user.id}.${keep}`;
+      }
       // A browser card's view of the screen (ADR 0058 §7) only watches, so it never takes a mode change either.
       const preview = request.kind === "desktop" && q.get("preview") === "1";
       if (preview && request.mode !== "watch") return new Response("A preview only watches", { status: 400 });

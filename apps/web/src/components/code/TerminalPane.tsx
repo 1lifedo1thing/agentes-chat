@@ -50,6 +50,14 @@ function bytesOf(data: unknown): Uint8Array | null {
   return null;
 }
 
+/** The kept terminals on screen, by name: how each tells its computer the person closed it. */
+const enders = new Map<string, () => void>();
+
+/** The person closed a kept terminal: its shell ends now, not when nobody comes back to it. */
+export function endKeptTerminal(keep: string) {
+  enders.get(keep)?.();
+}
+
 /**
  * A code session's terminal (ADR 0214): a shell on the agent's computer, as its agent's user, started in the session's
  * worktree, for the person's own scripts (the agent doesn't work in it). xterm.js fills the pane and follows its size;
@@ -63,6 +71,7 @@ export function TerminalPane({
   machineId,
   sessionId,
   focused,
+  keep,
 }: {
   orgId: string;
   agentId: string;
@@ -71,6 +80,11 @@ export function TerminalPane({
   sessionId: string;
   /** A terminal in a tab: the keys are its own whenever its tab comes on screen. */
   focused?: boolean;
+  /**
+   * The terminal's name on this browser: its shell stays on the computer when the page is read again or the pane
+   * goes off screen, and the same name comes back to it (`endKeptTerminal` ends it, when the person closes it).
+   */
+  keep?: string;
 }) {
   const { t } = useTranslation();
   const createSocket = useContext(SocketFactoryContext);
@@ -145,9 +159,17 @@ export function TerminalPane({
       shell.resize(first.cols, first.rows);
 
       const ws = createSocket(
-        terminalSocketUrl(window.location, { orgId, agentId, cols: first.cols, rows: first.rows, session: sessionId }),
+        terminalSocketUrl(window.location, {
+          orgId,
+          agentId,
+          cols: first.cols,
+          rows: first.rows,
+          session: sessionId,
+          ...(keep ? { keep } : {}),
+        }),
       );
       socket = ws;
+      if (keep) enders.set(keep, () => ws.readyState === 1 && ws.send(JSON.stringify({ type: "end" })));
       ws.binaryType = "arraybuffer";
       // The size the shell has: a new one goes once the socket is open (frames before it would be lost).
       let shellSize = first;
@@ -222,10 +244,11 @@ export function TerminalPane({
         socket.onmessage = null;
         socket.close(1000);
       }
+      if (keep) enders.delete(keep);
       term?.dispose();
       shellRef.current = null;
     };
-  }, [orgId, agentId, sessionId, createSocket, round]);
+  }, [orgId, agentId, sessionId, createSocket, round, keep]);
 
   return (
     <section className="code-term" aria-label={t("codeTerminal.label")}>

@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 76;
+export const MACHINE_PROTOCOL_VERSION = 77;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -696,6 +696,16 @@ export const PHONE_REPAIR_PROTOCOL = 73;
  * terminal in the agent's folder.
  */
 export const TERMINAL_CWD_PROTOCOL = 76;
+/**
+ * A terminal that outlives its viewer (ADR 0214): `stream.open` of a terminal may carry `keep`, a name the person's
+ * app gave that terminal. Its shell stays on the computer when the viewer's socket drops (a page read again, a
+ * connection lost) and the next `stream.open` with the same name, for the same agent, comes back to it with what it
+ * printed last; nobody back within `STREAM_LIMITS.terminalKeptMs` ends it, and so does the viewer's `end` frame (the
+ * person closed it). The server sends `keep` to no older runner, where each open is a new shell.
+ */
+export const TERMINAL_KEEP_PROTOCOL = 77;
+/** A kept terminal's name: the server puts the person's id in front of the app's, so each person reaches only theirs. */
+export const isTerminalKeep = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9_.-]{8,128}$/.test(v);
 /**
  * From this protocol on, the runner sends `room.freed` once there is room again after it refused a turn (`no_slot`): a
  * turn ended there, or its memory came back over the agents' floor. The server asks its line again at once; an older
@@ -1613,6 +1623,10 @@ export const STREAM_LIMITS = {
   terminalsPerMachine: 10,
   terminalIdleMs: 30 * 60_000,
   terminalMaxMs: 12 * 3_600_000,
+  /** A kept terminal with nobody watching ends after this long (`TERMINAL_KEEP_PROTOCOL`). */
+  terminalKeptMs: 30 * 60_000,
+  /** The last output a kept terminal shows again to whoever comes back to it. */
+  terminalReplayMax: 256 << 10,
   /** Streams a person may open in a minute. */
   opensPerMinute: 30,
   /** The server checks this often that whoever has an open stream may still have it. */
@@ -1667,8 +1681,11 @@ export const STREAM_CLOSE = {
  */
 export type StreamRequest =
   | { kind: "desktop"; mode: DesktopMode }
-  /** `cwd` (`TERMINAL_CWD_PROTOCOL`): where the shell starts, a folder relative to the agent's own (ADR 0214). */
-  | { kind: "terminal"; cols: number; rows: number; cwd?: string }
+  /**
+   * `cwd` (`TERMINAL_CWD_PROTOCOL`): where the shell starts, a folder relative to the agent's own (ADR 0214). `keep`
+   * (`TERMINAL_KEEP_PROTOCOL`): the terminal's name, whose shell outlives the viewer.
+   */
+  | { kind: "terminal"; cols: number; rows: number; cwd?: string; keep?: string }
   /** A phone's screen (`PHONES_PROTOCOL`): `stream.open` carries the phone itself as `phone`, its holder the person. */
   | { kind: "phone"; mode: DesktopMode; phoneId: string };
 
@@ -1704,6 +1721,8 @@ export interface StreamHello {
 export type StreamControl =
   | { type: "resize"; cols: number; rows: number }
   | { type: "exit"; code: number | null }
+  /** Viewer → runner (`TERMINAL_KEEP_PROTOCOL`): the person closed a kept terminal, so its shell ends now. */
+  | { type: "end" }
   /**
    * Server → viewer, once a terminal is ready (ADR 0214): its computer is too old for the folder it was asked to start
    * in (`TERMINAL_CWD_PROTOCOL`), so the shell started in the agent's folder.
@@ -4846,6 +4865,7 @@ export function parseStreamControl(raw: string): StreamControl | null {
   if (f.type === "exit" && (f.code === null || Number.isInteger(f.code))) {
     return { type: "exit", code: f.code as number | null };
   }
+  if (f.type === "end") return { type: "end" };
   if (f.type === "mode" && (f.mode === "watch" || f.mode === "control")) return { type: "mode", mode: f.mode };
   if (f.type === "ack") return { type: "ack" };
   return null;

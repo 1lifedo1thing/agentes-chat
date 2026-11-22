@@ -43,7 +43,7 @@ import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodePanel, useCodeTab } from "./CodePanel";
 import { CodeDockSky } from "./CodeSky";
 import { useCodeKey } from "./shortcuts";
-import { TerminalPane } from "./TerminalPane";
+import { endKeptTerminal, TerminalPane } from "./TerminalPane";
 
 /**
  * One code session (ADR 0214): the conversation with its agent under the session's header (its name), the chat's own
@@ -94,6 +94,7 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
                   machineId={s.machineId}
                   sessionId={s.id}
                   focused={tabs.active === key}
+                  keep={terminalKeep(key)}
                 />
               ) : (
                 <CodeFileTab
@@ -125,8 +126,11 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
 
 /** The conversation's tab. No file is named so: a path never starts with a colon. */
 const TALK = ":talk";
-/** A terminal's tab, by the order it was opened in (":term:2"). */
+/** A terminal's tab, by the name its shell is kept under on the computer (":term:<name>"). */
 const isTerminal = (key: string) => key.startsWith(":term:");
+const terminalKeep = (key: string) => key.slice(":term:".length);
+/** A name nobody else's terminal has. */
+const newTerminalKey = () => `:term:${crypto.randomUUID()}`;
 
 interface Tabs {
   /** The tabs after the conversation's: a file's path, or a terminal's key. */
@@ -153,11 +157,18 @@ const diffKey = (o: GitOpened) =>
 
 const tabsKey = (sessionId: string) => `code:tabs:${sessionId}`;
 
-/** The files a session had open on this browser (terminals are new shells each time: not kept). */
+/**
+ * The files and terminals a session had open on this browser: a terminal's shell stays on the computer for a while
+ * with nobody watching, so its tab comes back to it (a diff is read again from the Git tab).
+ */
 function keptFiles(sessionId: string): string[] {
   try {
     const kept: unknown = JSON.parse(localStorage.getItem(tabsKey(sessionId)) ?? "[]");
-    return Array.isArray(kept) ? kept.filter((p): p is string => typeof p === "string" && !p.startsWith(":")) : [];
+    return Array.isArray(kept)
+      ? kept.filter(
+          (p): p is string => typeof p === "string" && (!p.startsWith(":") || /^:term:[A-Za-z0-9-]{8,64}$/.test(p)),
+        )
+      : [];
   } catch {
     return [];
   }
@@ -165,20 +176,23 @@ function keptFiles(sessionId: string): string[] {
 
 /** A session's tabs: which are open and which is on screen; its open files come back with the session. */
 function useSessionTabs(sessionId: string): Tabs {
-  const [state, setState] = useState(() => ({ sessionId, open: keptFiles(sessionId), active: TALK, terminals: 0 }));
+  const [state, setState] = useState(() => ({ sessionId, open: keptFiles(sessionId), active: TALK }));
   const [asking, setAsking] = useState<string | null>(null);
   const [dirty, setDirtySet] = useState<Set<string>>(() => new Set());
   const [diffs, setDiffs] = useState<Map<string, GitOpened>>(() => new Map());
   // Another session on the same screen: its own tabs.
   if (state.sessionId !== sessionId) {
-    setState({ sessionId, open: keptFiles(sessionId), active: TALK, terminals: 0 });
+    setState({ sessionId, open: keptFiles(sessionId), active: TALK });
     setAsking(null);
     setDirtySet(new Set());
     setDiffs(new Map());
   }
   useEffect(() => {
     try {
-      localStorage.setItem(tabsKey(state.sessionId), JSON.stringify(state.open.filter((k) => !k.startsWith(":"))));
+      localStorage.setItem(
+        tabsKey(state.sessionId),
+        JSON.stringify(state.open.filter((k) => !k.startsWith(":") || isTerminal(k))),
+      );
     } catch {}
   }, [state.sessionId, state.open]);
   const show = useCallback((key: string) => setState((s) => ({ ...s, active: key })), []);
@@ -196,8 +210,8 @@ function useSessionTabs(sessionId: string): Tabs {
   const openTerminal = useCallback(
     () =>
       setState((s) => {
-        const key = `:term:${s.terminals + 1}`;
-        return { ...s, terminals: s.terminals + 1, open: [...s.open, key], active: key };
+        const key = newTerminalKey();
+        return { ...s, open: [...s.open, key], active: key };
       }),
     [],
   );
@@ -221,6 +235,8 @@ function useSessionTabs(sessionId: string): Tabs {
       }
       setAsking(null);
       setDirty(key, false);
+      // Its shell ends with its tab.
+      if (isTerminal(key)) endKeptTerminal(terminalKeep(key));
       setState((s) => {
         const at = s.open.indexOf(key);
         const open = s.open.filter((k) => k !== key);

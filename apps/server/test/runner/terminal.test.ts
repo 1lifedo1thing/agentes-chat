@@ -379,3 +379,58 @@ test.skipIf(!hasBunTerminal())("a real shell in a PTY: its size, a resize, its o
   expect(data.bytes().toString()).toContain(`SIZE=40 132 in ${folder}`);
   expect(exitFrames(data)).toEqual([{ type: "exit", code: 7 }]);
 });
+
+test("a named terminal keeps its shell when its viewer leaves, and the same name comes back to it", async () => {
+  const { terminals, fake, logs } = setup({ keptMs: 60, replayMax: 64 });
+  const first = memoryDataSocket();
+  await terminals.open(dev, SIZE, async () => first.socket, undefined, "person.tab-0001");
+  const shell = fake.shells[0] as FakePty;
+  shell.print("one\r\n");
+  expect(first.bytes().toString()).toBe("one\r\n");
+  // The page is read again: the socket drops, the shell stays and goes on printing.
+  first.end();
+  expect(shell.hungUp).toBe(false);
+  shell.print("two\r\n");
+  expect(terminals.count(dev.id)).toBe(1);
+
+  const second = memoryDataSocket();
+  await terminals.open(dev, { cols: 100, rows: 30 }, async () => second.socket, undefined, "person.tab-0001");
+  // The same shell, shown what it printed, and told to draw itself at the new size.
+  expect(fake.shells).toHaveLength(1);
+  expect(second.bytes().toString()).toBe("one\r\ntwo\r\n");
+  expect(shell.sizes.at(-1)).toEqual([100, 30]);
+  second.send("ls\n");
+  expect(Buffer.concat(shell.written).toString()).toBe("ls\n");
+  expect(logs.some((l) => l.includes("opened again"))).toBe(true);
+
+  // Another name, or another agent with this name, is a shell of its own.
+  await terminals.open(dev, SIZE, async () => memoryDataSocket().socket, undefined, "person.tab-0002");
+  await terminals.open(ops, SIZE, async () => memoryDataSocket().socket, undefined, "person.tab-0001");
+  expect(fake.shells).toHaveLength(3);
+
+  // A third viewer takes it from the second, which closes without ending the shell.
+  const third = memoryDataSocket();
+  await terminals.open(dev, SIZE, async () => third.socket, undefined, "person.tab-0001");
+  expect(second.closed).not.toBeNull();
+  expect(shell.hungUp).toBe(false);
+  // The person closes its tab: the shell ends now.
+  third.control({ type: "end" });
+  expect(shell.hungUp).toBe(true);
+});
+
+test("a named terminal nobody comes back to ends; one without a name ends with its viewer", async () => {
+  const { terminals, fake } = setup({ keptMs: 30 });
+  const kept = memoryDataSocket();
+  await terminals.open(dev, SIZE, async () => kept.socket, undefined, "person.tab-0003");
+  const plain = memoryDataSocket();
+  await terminals.open(dev, SIZE, async () => plain.socket);
+  plain.end();
+  expect((fake.shells[1] as FakePty).hungUp).toBe(true);
+  kept.end();
+  expect((fake.shells[0] as FakePty).hungUp).toBe(false);
+  await waitFor(() => (fake.shells[0] as FakePty).hungUp);
+  // Its name is free again: the next open is a new shell.
+  await waitFor(() => terminals.count(dev.id) === 0);
+  await terminals.open(dev, SIZE, async () => memoryDataSocket().socket, undefined, "person.tab-0003");
+  expect(fake.shells).toHaveLength(3);
+});

@@ -60,6 +60,8 @@ export type StreamTarget =
       unmade?: boolean;
       /** A terminal: the computer starts it in the folder the request asks for (`TERMINAL_CWD_PROTOCOL`, ADR 0214). */
       takesCwd?: boolean;
+      /** A terminal: the computer keeps its shell for whoever comes back to it (`TERMINAL_KEEP_PROTOCOL`). */
+      keeps?: boolean;
     }
   | { refused: number; reason: string };
 
@@ -300,8 +302,17 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
     // opens it in the agent's folder, and the person hears so once it is ready.
     const asked = s.request;
     s.cwdIgnored = asked.kind === "terminal" && asked.cwd !== undefined && target.takesCwd !== true;
+    // A name for the shell goes only to a computer that keeps shells: an older one opens a new shell each time.
     const sent: StreamRequest =
-      asked.kind === "terminal" && s.cwdIgnored ? { kind: "terminal", cols: asked.cols, rows: asked.rows } : asked;
+      asked.kind === "terminal"
+        ? {
+            kind: "terminal",
+            cols: asked.cols,
+            rows: asked.rows,
+            ...(asked.cwd !== undefined && !s.cwdIgnored ? { cwd: asked.cwd } : {}),
+            ...(asked.keep !== undefined && target.keeps === true ? { keep: asked.keep } : {}),
+          }
+        : asked;
     const request = {
       op: "stream.open",
       streamId: s.id,
@@ -526,7 +537,7 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
           if (s.discarding === control.mode) s.discarding = null;
           return;
         }
-        if (s.request.kind !== "terminal" || control?.type !== "resize") {
+        if (s.request.kind !== "terminal" || (control?.type !== "resize" && control?.type !== "end")) {
           return close(s, STREAM_CLOSE.badRequest, "bad frame");
         }
         frame = JSON.stringify(control);

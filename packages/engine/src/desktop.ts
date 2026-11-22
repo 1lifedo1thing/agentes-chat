@@ -8,6 +8,7 @@ import {
   STREAM_LIMITS,
   type StreamRequest,
   TERMINAL_CWD_PROTOCOL,
+  TERMINAL_KEEP_PROTOCOL,
 } from "@agenteschat/adapters";
 import { and, type Database, eq, gt, inArray, isNull, schema } from "@agenteschat/db";
 import { recordAudit } from "./audit";
@@ -114,6 +115,7 @@ export async function desktopTarget(
     ...(agent.scope ? { agent: agent.scope } : { unmade: true }),
     ...(kind === "desktop" && machine.protocol >= DESKTOP_SWITCH_PROTOCOL ? { switches: true } : {}),
     ...(kind === "terminal" && machine.protocol >= TERMINAL_CWD_PROTOCOL ? { takesCwd: true } : {}),
+    ...(kind === "terminal" && machine.protocol >= TERMINAL_KEEP_PROTOCOL ? { keeps: true } : {}),
   };
 }
 

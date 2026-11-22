@@ -140,13 +140,18 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
     binary one only said to be one.
 - **Tabs beside the conversation.** Under the session's header: the conversation, each open file, each diff opened from the Git tab (a change, a commit, the whole branch; a file's diff
   opens the file itself) and each terminal the person opens there (a shell of its own, as the drawer's); the ones off screen stay as they are, and the open
-  files come back with the session on that browser.
+  files and terminals come back with the session on that browser.
 - **A terminal knows the agent's sign-in.** A terminal as the agent (the drawer's, a tab's) starts with the one
   variable that points Claude Code or Codex at the account the agent thinks with (`AccountManager.terminalEnv`), so
   the CLI typed there is signed in as its turns are; who may open that terminal already is who may reach that
   sign-in (0059 §8). Read when the shell starts: after the agent's account changes, a new terminal has the new one.
   Not for an account root keeps for several agents or a plan's key (they never leave root for a shell), nor for the
   CLIs that keep their sign-in under the XDG folders, which the shell's other programs read too.
+- **A terminal outlives the page.** Each terminal of a session has a name on the person's browser (its tab's, the
+  drawer's), sent with its open (`keep`, protocol 77, the person's id put in front by the server): the runner keeps
+  its shell when the viewer's socket drops and the same name comes back to it, shown its last output (256 KB) and
+  sized again so a full-screen program redraws. Closing the tab ends the shell (`end`); nobody back in 30 minutes
+  ends it too, and the limits per agent count it meanwhile. The tabs of terminals come back with the session's.
 - **A person edits a file.** A file's tab is an editor (CodeMirror 6, loaded with the first file: line numbers, the
   language its name says, undo, search). Whoever is in the session saves (`saveCodeSessionFile`, `PUT …/file`), since
   they could ask its agent for the same change: written as the agent by the runner's own file op (the file's mode

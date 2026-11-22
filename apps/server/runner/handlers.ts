@@ -9,6 +9,7 @@ import {
   type FileEntry,
   inRange,
   isStreamId,
+  isTerminalKeep,
   isTerminalSize,
   MAX_INLINE_FILE_BYTES,
   type MachineErrorCode,
@@ -1063,7 +1064,9 @@ async function handleStream(
     // A code session's terminal (ADR 0214): a folder inside the agent's own, checked where the shell starts.
     if (req.cwd !== undefined && (typeof req.cwd !== "string" || req.cwd.length > TERMINAL_CWD_MAX))
       throw new RunnerError("bad_request", "The terminal's folder must be a path inside the agent's folder");
-    await ctx.terminals.open(agent, { cols: req.cols, rows: req.rows }, dial, req.cwd);
+    if (req.keep !== undefined && !isTerminalKeep(req.keep))
+      throw new RunnerError("bad_request", "The terminal's name isn't one");
+    await ctx.terminals.open(agent, { cols: req.cols, rows: req.rows }, dial, req.cwd, req.keep);
   } else {
     throw new RunnerError("bad_request", "A stream shows a desktop, a terminal or a phone");
   }

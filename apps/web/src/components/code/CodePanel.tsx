@@ -184,6 +184,7 @@ export function CodePanel({
               agentId={session.agentId}
               machineId={session.machineId}
               sessionId={session.id}
+              keep={`drawer-${session.id}`}
             />
           ) : (
             <p className="code-empty">{t("codeSessions.panel.notReady")}</p>

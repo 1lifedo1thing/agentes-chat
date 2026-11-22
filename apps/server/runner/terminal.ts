@@ -181,6 +181,10 @@ export interface TerminalLimits {
   bufferMax: number;
   idleMs: number;
   maxMs: number;
+  /** A kept terminal with nobody watching ends after this long. */
+  keptMs: number;
+  /** The last output a kept terminal shows again to whoever comes back. */
+  replayMax: number;
   perAgent: number;
   perMachine: number;
 }
@@ -206,8 +210,13 @@ interface Live {
   end(why: string): void;
 }
 
+/** A terminal that outlives its viewer (`TERMINAL_KEEP_PROTOCOL`): a new viewer takes it, at its own size. */
+type Attach = (size: { cols: number; rows: number }, dial: () => Promise<DataSocket>) => Promise<void>;
+
 export class Terminals {
   private readonly live = new Set<Live>();
+  /** The kept terminals, by agent and name. */
+  private readonly kept = new Map<string, Attach>();
   private readonly limits: TerminalLimits;
 
   constructor(private readonly opts: TerminalsOptions) {
@@ -215,6 +224,8 @@ export class Terminals {
       bufferMax: STREAM_LIMITS.terminalBufferMax,
       idleMs: STREAM_LIMITS.terminalIdleMs,
       maxMs: STREAM_LIMITS.terminalMaxMs,
+      keptMs: STREAM_LIMITS.terminalKeptMs,
+      replayMax: STREAM_LIMITS.terminalReplayMax,
       perAgent: STREAM_LIMITS.terminalsPerAgent,
       perMachine: STREAM_LIMITS.terminalsPerMachine,
       ...opts.limits,
@@ -276,10 +287,25 @@ export class Terminals {
    * bytes go on flowing until either ends. What the shell prints before the
    * socket is ready waits for it. `cwd` (`TERMINAL_CWD_PROTOCOL`): a folder
    * inside the agent's own to start in (a code session's worktree, ADR 0214).
+   *
+   * `keep` (`TERMINAL_KEEP_PROTOCOL`) names the terminal: its shell stays when the viewer's socket drops, and an open
+   * with the same name comes back to it, shown what it printed last (`replayMax`) and sized again so a full-screen
+   * program draws itself. One viewer at a time: a new one takes it from the one before. It ends as any other (its
+   * shell exits, nothing typed or shown for `idleMs`, `maxMs`), when its viewer says `end`, or `keptMs` after its
+   * viewer left with nobody back.
    */
-  async open(agent: AgentScope, size: { cols: number; rows: number }, dial: () => Promise<DataSocket>, cwd?: string) {
+  async open(
+    agent: AgentScope,
+    size: { cols: number; rows: number },
+    dial: () => Promise<DataSocket>,
+    cwd?: string,
+    keep?: string,
+  ) {
     const info = this.info();
     if (!info.available) throw new RunnerError("terminal_unavailable", info.reason ?? "No terminal here");
+    const name = keep === undefined ? null : `${agent.id} ${keep}`;
+    const back = name === null ? undefined : this.kept.get(name);
+    if (back) return back(size, dial);
     const limits = this.limits;
     if (this.count(agent.id) >= limits.perAgent || this.live.size >= limits.perMachine) {
       throw new RunnerError("too_many_streams", "As many terminals are open here as this computer takes");
@@ -301,6 +327,9 @@ export class Terminals {
       let socketOpen = false;
       const early: Uint8Array[] = [];
       let earlyBytes = 0;
+      // A kept terminal's last output, for whoever comes back to it.
+      const replay: Uint8Array[] = [];
+      let replayBytes = 0;
       let skipping = false;
       let drain: ReturnType<typeof setInterval> | undefined;
       let last = Date.now();
@@ -313,6 +342,13 @@ export class Terminals {
       };
       const output = (bytes: Uint8Array) => {
         last = Date.now();
+        if (name !== null) {
+          replay.push(bytes.slice());
+          replayBytes += bytes.byteLength;
+          while (replayBytes > limits.replayMax && replay.length > 1) replayBytes -= replay.shift()?.byteLength ?? 0;
+          // Nobody watching: it is kept for the next viewer.
+          if (!socketOpen) return;
+        }
         // Skipping, or the person left and the shell is hanging up.
         if (skipping || (socket && !socketOpen)) return;
         if ((socket ? socket.bufferedAmount : earlyBytes) > limits.bufferMax) {
@@ -334,24 +370,69 @@ export class Terminals {
         data: output,
       });
       const shellPty = pty;
-      socket = await dial();
-      const data = socket;
-      socketOpen = true;
-      for (const chunk of early.splice(0)) data.send(chunk);
-      earlyBytes = 0;
-
       let ending: string | null = null;
       let exited = false;
       let idleTimer: ReturnType<typeof setTimeout> | undefined;
       let killTimer: ReturnType<typeof setTimeout> | undefined;
+      let keptTimer: ReturnType<typeof setTimeout> | undefined;
       const end = (why: string) => {
         if (ending !== null || exited) return;
         ending = why;
-        if (socketOpen) data.send(encode(`\r\n[${why}]\r\n`));
+        if (socket && socketOpen) socket.send(encode(`\r\n[${why}]\r\n`));
         shellPty.hangup();
         killTimer = setTimeout(() => shellPty.kill(), KILL_GRACE_MS);
       };
+      /** A viewer's socket takes the terminal: what waited for it first, then the bytes both ways. */
+      const attach = (data: DataSocket) => {
+        const before = socket;
+        if (before && socketOpen) {
+          // Before its own `closed` runs: it finds another viewer here and leaves the shell alone.
+          socket = data;
+          before.close(STREAM_CLOSE.normal, "opened again elsewhere");
+        }
+        socket = data;
+        socketOpen = true;
+        clearTimeout(keptTimer);
+        clearInterval(drain);
+        drain = undefined;
+        skipping = false;
+        for (const chunk of name === null ? early.splice(0) : replay) data.send(chunk);
+        earlyBytes = 0;
+        data.listen({
+          bytes: (bytes) => {
+            last = Date.now();
+            shellPty.write(bytes);
+          },
+          control: (frame) => {
+            if (frame.type === "resize") shellPty.resize(frame.cols, frame.rows);
+            if (frame.type === "end") end("the person closed it");
+          },
+          closed: () => {
+            if (socket !== data) return;
+            socketOpen = false;
+            if (name === null || ending !== null || exited) return end("the person closed it");
+            const minutes = Math.round(limits.keptMs / 60_000);
+            keptTimer = setTimeout(() => end(`closed: nobody came back to it in ${minutes} minutes`), limits.keptMs);
+          },
+        });
+      };
+      attach(await dial());
+      // From here an ending says why on the socket; one asked for while it opened ends it below (`endWhenUp`).
       live.end = end;
+      if (name !== null) {
+        this.kept.set(name, async (next, again) => {
+          const data = await again();
+          if (ending !== null || exited) {
+            data.close(STREAM_CLOSE.normal, "the shell ended");
+            return;
+          }
+          attach(data);
+          // A size of one row less, then its own: a program that fills the screen is told to draw itself again.
+          shellPty.resize(next.cols, Math.max(1, next.rows - 1));
+          shellPty.resize(next.cols, next.rows);
+          this.opts.log(`the terminal as ${agent.handle} was opened again (${next.cols}×${next.rows})`);
+        });
+      }
       const idle = () => {
         const left = limits.idleMs - (Date.now() - last);
         if (left > 0) idleTimer = setTimeout(idle, left);
@@ -362,19 +443,6 @@ export class Terminals {
         () => end(`closed: a terminal stays open ${Math.round(limits.maxMs / 3_600_000)} hours at most`),
         limits.maxMs,
       );
-      data.listen({
-        bytes: (bytes) => {
-          last = Date.now();
-          shellPty.write(bytes);
-        },
-        control: (frame) => {
-          if (frame.type === "resize") shellPty.resize(frame.cols, frame.rows);
-        },
-        closed: () => {
-          socketOpen = false;
-          end("the person closed it");
-        },
-      });
       this.opts.log(`a terminal as ${agent.handle} opened${cwd ? ` in ${cwd}` : ""} (${size.cols}×${size.rows})`);
       if (endWhenUp !== null) end(endWhenUp);
       const openedAt = Date.now();
@@ -383,12 +451,14 @@ export class Terminals {
         clearTimeout(idleTimer);
         clearTimeout(maxTimer);
         clearTimeout(killTimer);
+        clearTimeout(keptTimer);
         clearInterval(drain);
         this.live.delete(live);
-        if (socketOpen) {
+        if (name !== null) this.kept.delete(name);
+        if (socket && socketOpen) {
           socketOpen = false;
-          data.send(JSON.stringify({ type: "exit", code }));
-          data.close(STREAM_CLOSE.normal, "the shell ended");
+          socket.send(JSON.stringify({ type: "exit", code }));
+          socket.close(STREAM_CLOSE.normal, "the shell ended");
         }
         const minutes = Math.round((Date.now() - openedAt) / 60_000);
         this.opts.log(

@@ -490,12 +490,14 @@ export function terminalSize(cols: number, rows: number) {
  */
 export function terminalSocketUrl(
   base: SocketBase,
-  v: { orgId: string; agentId: string; cols: number; rows: number; session?: string; seat?: Seat },
+  v: { orgId: string; agentId: string; cols: number; rows: number; session?: string; seat?: Seat; keep?: string },
 ) {
   // One key at a time: an optional key may not be undefined in the address's parameters.
   const params: Record<string, string | number> = { orgId: v.orgId, agentId: v.agentId, cols: v.cols, rows: v.rows };
   if (v.session) params.session = v.session;
   if (v.seat) params.seat = v.seat;
+  // The terminal's name: its shell stays for whoever comes back with it (a page read again).
+  if (v.keep) params.keep = v.keep;
   return socketUrl(base, "/api/terminal", params);
 }
 
