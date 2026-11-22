@@ -135,9 +135,20 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
     the panel's foot, with the agent standing on it.
   - **Files**: the worktree's tree, the files git tracks and the new ones it doesn't ignore (`ls-files -co
     --exclude-standard`), changed ones marked with the Git tab's letters and their folders open at first, and a search
-    by path. A file opens in place, read-only, with line numbers and the shared highlighter's colors
-    (`codeSessionFile`): never one git ignores, a `.env` one or one reached through a link out of the worktree (each
-    step resolved on the computer), only its first 512 KB, and a binary one only said to be one.
+    by path. A file opens in a tab beside the conversation (`codeSessionFile`): never one git ignores, a `.env` one or
+    one reached through a link out of the worktree (each step resolved on the computer), only its first 512 KB, and a
+    binary one only said to be one.
+- **Tabs beside the conversation.** Under the session's header: the conversation, each open file and each terminal
+  the person opens there (a shell of its own, as the drawer's); the ones off screen stay as they are, and the open
+  files come back with the session on that browser.
+- **A person edits a file.** A file's tab is an editor (CodeMirror 6, loaded with the first file: line numbers, the
+  language its name says, undo, search). Whoever is in the session saves (`saveCodeSessionFile`, `PUT …/file`), since
+  they could ask its agent for the same change: written as the agent by the runner's own file op (the file's mode
+  kept, never into a `.git` folder), only over a file the session shows whole. A read says what the file holds
+  (`rev`, git's blob hash) and a save says which one it started from: a file the agent wrote meanwhile is refused
+  (`code_session.file_changed`) and the person chooses, theirs over it or the computer's. With nothing unsaved the
+  tab follows the computer while the agent works. The agent isn't told of a save: the change is in the worktree and
+  in `git status`, where its tools read it.
   - **Screen**: the agent's computer as its computer dialog shows it (live, "Take control", full screen; a Mac's
     browser page). The worktree's server runs there on a port only that agent reaches (0096), so its screen is the
     preview. It stands in the agents' fine sky; where the person may use phones (0042), a picker offers them. The

@@ -11761,9 +11761,17 @@ export const ptBR = {
       truncated_one: "Mostrando o primeiro {{formatted}} arquivo.",
       truncated_other: "Mostrando os primeiros {{formatted}} arquivos.",
       hasChanges: "Tem mudanças",
-      back: "Voltar aos arquivos",
       opening: "Abrindo o arquivo…",
       cut: "Só os primeiros {{size}} aparecem aqui.",
+      save: "Salvar",
+      unsaved: "Não salvo",
+      tooLong: "Grande demais para editar aqui",
+      moved: "Este arquivo mudou no computador depois que você abriu.",
+      reload: "Carregar o de lá",
+      overwrite: "Salvar o meu por cima",
+      unsavedAsk: "Este arquivo tem mudanças que você não salvou.",
+      keepEditing: "Continuar editando",
+      discard: "Descartar",
       /** Por que um arquivo não aparece. */
       state: {
         binary: "Arquivo binário: não dá para mostrar aqui.",
@@ -11772,6 +11780,14 @@ export const ptBR = {
         secret: "Arquivos .env não aparecem aqui: costumam ter segredos.",
         outside: "Este arquivo é um atalho para fora da worktree.",
       },
+    },
+    /** The session's tabs under its header: the conversation, open files, terminals. */
+    tabs: {
+      label: "Abas da sessão",
+      talk: "Conversa",
+      terminalN: "Terminal {{n}}",
+      close: "Fechar {{name}}",
+      newTerminal: "Novo terminal",
     },
     screen: {
       computer: "Computador do {{name}}",
@@ -15746,6 +15762,8 @@ export const ptBR = {
         "Este agente não pode trabalhar nesse repositório. Escolha outro, ou adicione esse nas configurações do agente.",
       notYours: "Só quem abriu a sessão, ou um admin, fecha a sessão.",
       notReady: "A worktree da sessão ainda não está pronta. Tente de novo daqui a pouco.",
+      fileChanged: "Este arquivo mudou no computador depois que você abriu.",
+      fileLocked: "Este arquivo não pode ser editado aqui.",
       suggestionGone: "Essa sugestão já foi respondida.",
       suggestionNotYours: "Só quem pediu decide se abre a sessão.",
     },

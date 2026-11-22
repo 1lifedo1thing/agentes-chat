@@ -28,7 +28,7 @@ import {
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useActors } from "@/components/actors";
 import { ModelPickerButton } from "@/components/ai/ModelPicker";
@@ -37,14 +37,18 @@ import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useToast } from "@/lib/toast";
 import { ChannelPage, ChannelSkeleton } from "@/pages/ChannelPage";
+import { CodeFileTab } from "./CodeFileTab";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodePanel, useCodeTab } from "./CodePanel";
 import { CodeDockSky } from "./CodeSky";
 import { useCodeKey } from "./shortcuts";
+import { TerminalPane } from "./TerminalPane";
 
 /**
  * One code session (ADR 0214): the conversation with its agent under the session's header (its name), the chat's own
- * thread screen (tool rows, steering, stop, approvals), and the side panel. The gutter between them drags (double
+ * thread screen (tool rows, steering, stop, approvals), and the side panel. Under the header, tabs: the conversation,
+ * each file opened from the Files tab (an editor) and each terminal opened there; the ones off screen stay as they
+ * are (what was typed, a shell's output). The gutter between them drags (double
  * click puts it back). The screen is the panel's: the conversation's browser cards are a line that opens it, and it
  * turns to the screen as the agent starts using it.
  */
@@ -55,6 +59,7 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
   const talk = useStoredSize("code:talkWidth", 360, 1100, 620);
   const [tab, setTab] = useCodeTab();
   const screen = useMemo(() => ({ show: () => setTab("screen") }), [setTab]);
+  const tabs = useSessionTabs(sessionId);
   // ⌘P: the Files tab, whose search opens with it (`CodeFiles`).
   useCodeKey("files", () => setTab("files"));
   if (session.isPending) return <ChannelSkeleton thread panel />;
@@ -70,14 +75,198 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
       <div className="code-panes">
         <section className="code-pane code-pane--talk">
           <CodeHeader session={s} />
+          <SessionTabs session={s} tabs={tabs} />
           {s.worktree.state === "failed" && <FailedBar session={s} />}
-          <ScreenPanelContext.Provider value={screen}>
-            <CodeConversation session={s} />
-          </ScreenPanelContext.Provider>
+          <div className="code-tabview" hidden={tabs.active !== TALK}>
+            <ScreenPanelContext.Provider value={screen}>
+              <CodeConversation session={s} />
+            </ScreenPanelContext.Provider>
+          </div>
+          {tabs.open.map((key) => (
+            <div key={key} className="code-tabview" hidden={tabs.active !== key}>
+              {isTerminal(key) ? (
+                <TerminalPane orgId={org.id} agentId={s.agentId} machineId={s.machineId} sessionId={s.id} />
+              ) : (
+                <CodeFileTab
+                  session={s}
+                  path={key}
+                  active={tabs.active === key}
+                  asking={tabs.asking === key}
+                  onDirty={(dirty) => tabs.setDirty(key, dirty)}
+                  onClose={() => tabs.close(key, true)}
+                  onStay={() => tabs.stay()}
+                />
+              )}
+            </div>
+          ))}
         </section>
         <CodeGutter label={t("codeSessions.view.resize")} size={talk} />
-        <CodePanel session={s} tab={tab} onTab={setTab} />
+        <CodePanel session={s} tab={tab} onTab={setTab} openFile={tabs.openFile} shownFile={tabs.active} />
       </div>
+    </div>
+  );
+}
+
+/** The conversation's tab. No file is named so: a path never starts with a colon. */
+const TALK = ":talk";
+/** A terminal's tab, by the order it was opened in (":term:2"). */
+const isTerminal = (key: string) => key.startsWith(":term:");
+
+interface Tabs {
+  /** The tabs after the conversation's: a file's path, or a terminal's key. */
+  open: string[];
+  active: string;
+  /** The file whose close waits for an answer (something unsaved in it). */
+  asking: string | null;
+  dirty: Set<string>;
+  show: (key: string) => void;
+  openFile: (path: string) => void;
+  openTerminal: () => void;
+  /** Closes a tab; one with something unsaved asks first, unless `sure`. */
+  close: (key: string, sure?: boolean) => void;
+  stay: () => void;
+  setDirty: (key: string, dirty: boolean) => void;
+}
+
+const tabsKey = (sessionId: string) => `code:tabs:${sessionId}`;
+
+/** The files a session had open on this browser (terminals are new shells each time: not kept). */
+function keptFiles(sessionId: string): string[] {
+  try {
+    const kept: unknown = JSON.parse(localStorage.getItem(tabsKey(sessionId)) ?? "[]");
+    return Array.isArray(kept) ? kept.filter((p): p is string => typeof p === "string" && !p.startsWith(":")) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** A session's tabs: which are open and which is on screen; its open files come back with the session. */
+function useSessionTabs(sessionId: string): Tabs {
+  const [state, setState] = useState(() => ({ sessionId, open: keptFiles(sessionId), active: TALK, terminals: 0 }));
+  const [asking, setAsking] = useState<string | null>(null);
+  const [dirty, setDirtySet] = useState<Set<string>>(() => new Set());
+  // Another session on the same screen: its own tabs.
+  if (state.sessionId !== sessionId) {
+    setState({ sessionId, open: keptFiles(sessionId), active: TALK, terminals: 0 });
+    setAsking(null);
+    setDirtySet(new Set());
+  }
+  useEffect(() => {
+    try {
+      localStorage.setItem(tabsKey(state.sessionId), JSON.stringify(state.open.filter((k) => !isTerminal(k))));
+    } catch {}
+  }, [state.sessionId, state.open]);
+  const show = useCallback((key: string) => setState((s) => ({ ...s, active: key })), []);
+  const openFile = useCallback(
+    (path: string) =>
+      setState((s) => ({ ...s, open: s.open.includes(path) ? s.open : [...s.open, path], active: path })),
+    [],
+  );
+  const openTerminal = useCallback(
+    () =>
+      setState((s) => {
+        const key = `:term:${s.terminals + 1}`;
+        return { ...s, terminals: s.terminals + 1, open: [...s.open, key], active: key };
+      }),
+    [],
+  );
+  const setDirty = useCallback(
+    (key: string, now: boolean) =>
+      setDirtySet((was) => {
+        if (was.has(key) === now) return was;
+        const next = new Set(was);
+        if (now) next.add(key);
+        else next.delete(key);
+        return next;
+      }),
+    [],
+  );
+  const close = useCallback(
+    (key: string, sure = false) => {
+      if (!sure && dirty.has(key)) {
+        setState((s) => ({ ...s, active: key }));
+        setAsking(key);
+        return;
+      }
+      setAsking(null);
+      setDirty(key, false);
+      setState((s) => {
+        const at = s.open.indexOf(key);
+        const open = s.open.filter((k) => k !== key);
+        // The tab on screen closed: the one that takes its place, else the one before it.
+        const active = s.active !== key ? s.active : (open[at] ?? open[at - 1] ?? TALK);
+        return { ...s, open, active };
+      });
+    },
+    [dirty, setDirty],
+  );
+  const stay = useCallback(() => setAsking(null), []);
+  return { open: state.open, active: state.active, asking, dirty, show, openFile, openTerminal, close, stay, setDirty };
+}
+
+/** The session's tabs, under its header: the conversation, the open files and terminals, and "+" for a terminal. */
+function SessionTabs({ session, tabs }: { session: CodeSession; tabs: Tabs }) {
+  const { t } = useTranslation();
+  let terminals = 0;
+  return (
+    <div className="code-tabs" role="tablist" aria-label={t("codeSessions.tabs.label")}>
+      <button
+        type="button"
+        role="tab"
+        className="code-tabs__tab"
+        aria-selected={tabs.active === TALK}
+        onClick={() => tabs.show(TALK)}
+      >
+        <Icon name="message" size={14} />
+        <span className="code-tabs__name">{t("codeSessions.tabs.talk")}</span>
+      </button>
+      {tabs.open.map((key) => {
+        const term = isTerminal(key);
+        if (term) terminals += 1;
+        const name = term
+          ? terminals > 1
+            ? t("codeSessions.tabs.terminalN", { n: terminals })
+            : t("codeTerminal.label")
+          : key.slice(key.lastIndexOf("/") + 1);
+        return (
+          <span key={key} className="code-tabs__tab" data-selected={tabs.active === key || undefined}>
+            <button
+              type="button"
+              role="tab"
+              className="code-tabs__open"
+              aria-selected={tabs.active === key}
+              title={term ? undefined : key}
+              onClick={() => tabs.show(key)}
+            >
+              <Icon name={term ? "codeBlock" : "file"} size={14} />
+              <span className="code-tabs__name">{name}</span>
+              {tabs.dirty.has(key) && (
+                <span className="code-tabs__dot" role="img" aria-label={t("codeSessions.files.unsaved")} />
+              )}
+            </button>
+            <button
+              type="button"
+              className="code-tabs__x"
+              aria-label={t("codeSessions.tabs.close", { name })}
+              title={t("codeSessions.tabs.close", { name })}
+              onClick={() => tabs.close(key)}
+            >
+              <Icon name="close" size={14} />
+            </button>
+          </span>
+        );
+      })}
+      <Button
+        size="sm"
+        variant="ghost"
+        icon="codeBlock"
+        className="code-tabs__new"
+        disabled={session.worktree.state !== "ready"}
+        title={t("codeSessions.tabs.newTerminal")}
+        onClick={tabs.openTerminal}
+      >
+        {t("codeSessions.tabs.newTerminal")}
+      </Button>
     </div>
   );
 }

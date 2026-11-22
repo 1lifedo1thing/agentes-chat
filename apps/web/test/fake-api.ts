@@ -4641,6 +4641,15 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
         content: "",
         size: 0,
         truncated: false,
+        rev: "",
+      }),
+      saveFile: async (_orgId: string, _sessionId: string, input: { path: string; content: string }) => ({
+        path: input.path,
+        state: "ok" as const,
+        content: input.content,
+        size: input.content.length,
+        truncated: false,
+        rev: "saved",
       }),
       // A session an agent suggested in the chat (ADR 0214 §11): opened (just started, preparing) or kept here.
       openSuggestion: async (orgId: string, messageId: string) => {

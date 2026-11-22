@@ -27503,14 +27503,8 @@
   "codeSessions.files.hasChanges": {
     "value": "Has changes"
   },
-  "codeSessions.files.back": {
-    "value": "Back to the files"
-  },
   "codeSessions.files.opening": {
     "value": "Opening the file…"
-  },
-  "codeSessions.files.cut": {
-    "value": "Only the first {{size}} show here."
   },
   "codeSessions.files.state.binary": {
     "value": "A binary file: nothing to show here."
@@ -55669,5 +55663,56 @@
   },
   "live.shell.requestEditAnyone": {
     "value": "Can someone give me edit access to this file?"
+  },
+  "codeSessions.files.save": {
+    "value": "Save"
+  },
+  "codeSessions.files.unsaved": {
+    "value": "Not saved"
+  },
+  "codeSessions.files.tooLong": {
+    "value": "Too long to edit here"
+  },
+  "codeSessions.files.moved": {
+    "value": "This file changed on the computer after you opened it."
+  },
+  "codeSessions.files.reload": {
+    "value": "Load that one"
+  },
+  "codeSessions.files.overwrite": {
+    "value": "Save mine over it"
+  },
+  "codeSessions.files.unsavedAsk": {
+    "value": "This file has changes you didn't save."
+  },
+  "codeSessions.files.keepEditing": {
+    "value": "Keep editing"
+  },
+  "codeSessions.files.discard": {
+    "value": "Discard"
+  },
+  "codeSessions.tabs.label": {
+    "value": "The session's tabs"
+  },
+  "codeSessions.tabs.talk": {
+    "value": "Conversation"
+  },
+  "codeSessions.tabs.terminalN": {
+    "value": "Terminal {{n}}"
+  },
+  "codeSessions.tabs.close": {
+    "value": "Close {{name}}"
+  },
+  "codeSessions.tabs.newTerminal": {
+    "value": "New terminal"
+  },
+  "errors.codeSession.fileChanged": {
+    "value": "This file changed on the computer after you opened it."
+  },
+  "errors.codeSession.fileLocked": {
+    "value": "This file can't be edited here."
+  },
+  "codeSessions.files.cut": {
+    "value": "Only the first {{size}} show here."
   }
 }

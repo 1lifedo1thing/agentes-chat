@@ -11226,16 +11226,24 @@
       "truncated_one": "İlk {{formatted}} dosya gösteriliyor.",
       "truncated_other": "İlk {{formatted}} dosya gösteriliyor.",
       "hasChanges": "Değişiklik var",
-      "back": "Dosyalara dön",
       "opening": "Dosya açılıyor…",
-      "cut": "Burada yalnızca ilk {{size}} gösteriliyor.",
       "state": {
         "binary": "İkili bir dosya: burada gösterilecek bir şey yok.",
         "missing": "Bu dosya artık yok.",
         "ignored": "Git bu dosyayı yok sayıyor, bu yüzden burada görünmüyor.",
         "secret": ".env dosyaları burada görünmez: genellikle gizli bilgiler içerirler.",
         "outside": "Bu dosya, worktree dışına giden bir bağlantı."
-      }
+      },
+      "save": "Kaydet",
+      "unsaved": "Kaydedilmedi",
+      "tooLong": "Burada düzenlemek için çok uzun",
+      "moved": "Bu dosya siz açtıktan sonra bilgisayarda değişti.",
+      "reload": "Oradakini yükle",
+      "overwrite": "Benimkini üzerine kaydet",
+      "unsavedAsk": "Bu dosyada kaydetmediğiniz değişiklikler var.",
+      "keepEditing": "Düzenlemeye devam et",
+      "discard": "Vazgeç",
+      "cut": "Burada yalnızca ilk {{size}} gösteriliyor."
     },
     "screen": {
       "computer": "{{name}} bilgisayarı",
@@ -11277,6 +11285,13 @@
       "dm": "{{name}} ile konuşmanızdan açıldı",
       "channel": "#{{name}} kanalından açıldı",
       "see": "Konuşmayı gör"
+    },
+    "tabs": {
+      "label": "Oturum sekmeleri",
+      "talk": "Sohbet",
+      "terminalN": "Terminal {{n}}",
+      "close": "{{name}} sekmesini kapat",
+      "newTerminal": "Yeni terminal"
     }
   },
   "code": {
@@ -15401,7 +15416,9 @@
       "notYours": "Oturumu yalnızca açan kişi veya bir yönetici kapatabilir.",
       "notReady": "Oturumun worktree'si henüz hazır değil. Birazdan tekrar deneyin.",
       "suggestionGone": "Bu öneri zaten yanıtlandı.",
-      "suggestionNotYours": "Oturumun açılıp açılmayacağına yalnızca isteyen kişi karar verir."
+      "suggestionNotYours": "Oturumun açılıp açılmayacağına yalnızca isteyen kişi karar verir.",
+      "fileChanged": "Bu dosya siz açtıktan sonra bilgisayarda değişti.",
+      "fileLocked": "Bu dosya burada düzenlenemez."
     },
     "webhook": {
       "githubNoAccess": "Bu çalışma alanının GitHub'ı {{repo}} içinde webhook oluşturamıyor. Elle oluşturmak için aşağıdaki adımları izle.",

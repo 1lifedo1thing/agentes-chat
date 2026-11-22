@@ -1,11 +1,8 @@
-import { type CodeChangeStatus, type CodeSession, useCodeFile, useCodeFiles } from "@agenteschat/client";
-import { codeLangOfPath, highlightCode } from "@agenteschat/client/lib/code";
+import { type CodeChangeStatus, type CodeSession, useCodeFiles } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { Button, CommandPalette, cx, Icon, type PaletteItem } from "@agenteschat/ui";
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CodeLines } from "@/components/CodeBlock";
-import { formatBytes } from "@/components/LiveCode";
 import { useOrg } from "@/components/org-context";
 import { ChangeLetter } from "./CodeGit";
 import { takeCodeKey, useCodeKey, withKey } from "./shortcuts";
@@ -75,9 +72,17 @@ function foldersAbove(paths: Iterable<string>): Set<string> {
 /**
  * The session panel's Files tab (ADR 0214): the worktree's files as a tree (tracked ones and new ones git doesn't
  * ignore), the changed ones marked as the Git tab marks them and their folders open at first, a search by path; a file
- * opens in place, read-only, with line numbers and colors.
+ * opens in a tab beside the conversation (`onOpen`), the one on screen there marked here (`shown`).
  */
-export function FilesPane({ session }: { session: CodeSession }) {
+export function FilesPane({
+  session,
+  onOpen,
+  shown,
+}: {
+  session: CodeSession;
+  onOpen: (path: string) => void;
+  shown: string;
+}) {
   const { t, i18n } = useTranslation();
   const { org } = useOrg();
   const ready = session.worktree.state === "ready";
@@ -88,7 +93,6 @@ export function FilesPane({ session }: { session: CodeSession }) {
     takeCodeKey("files");
     setFinding(true);
   });
-  const [shown, setShown] = useState<string | null>(null);
   const [open, setOpen] = useState<Set<string> | null>(null);
   const paths = list.data?.paths;
   const tree = useMemo(() => buildTree(paths ?? []), [paths]);
@@ -103,8 +107,8 @@ export function FilesPane({ session }: { session: CodeSession }) {
   }, [list.data, open, changedFolders]);
   // The search (the app's palette, as ⌘K): the changed files first, then any file whose path holds every word typed.
   const changedItems = useMemo(
-    () => [...changed.keys()].sort(byName).map((p) => fileItem(p, t("codeSessions.files.changedGroup"), setShown)),
-    [changed, t],
+    () => [...changed.keys()].sort(byName).map((p) => fileItem(p, t("codeSessions.files.changedGroup"), onOpen)),
+    [changed, t, onOpen],
   );
   const findMore = useCallback(
     (query: string) => {
@@ -114,15 +118,13 @@ export function FilesPane({ session }: { session: CodeSession }) {
         if (found.length >= (words.length ? FOUND_MAX : FIRST_MAX)) break;
         if (changed.has(p)) continue;
         const low = p.toLowerCase();
-        if (words.every((w) => low.includes(w))) found.push(fileItem(p, t("codeSessions.files.label"), setShown));
+        if (words.every((w) => low.includes(w))) found.push(fileItem(p, t("codeSessions.files.label"), onOpen));
       }
       return found;
     },
-    [paths, changed, t],
+    [paths, changed, t, onOpen],
   );
   if (!ready) return <p className="code-empty">{t("codeSessions.panel.notReady")}</p>;
-  if (shown)
-    return <FileView session={session} path={shown} status={changed.get(shown)} onBack={() => setShown(null)} />;
   const toggle = (path: string) =>
     setOpen((was) => {
       const next = new Set(was ?? []);
@@ -190,7 +192,8 @@ export function FilesPane({ session }: { session: CodeSession }) {
               changed={changed}
               changedFolders={changedFolders}
               onToggle={toggle}
-              onOpen={setShown}
+              onOpen={onOpen}
+              shown={shown}
             />
           </ul>
         )}
@@ -216,6 +219,7 @@ function FolderItems({
   changedFolders,
   onToggle,
   onOpen,
+  shown,
 }: {
   folder: Folder;
   depth: number;
@@ -224,6 +228,7 @@ function FolderItems({
   changedFolders: Set<string>;
   onToggle: (path: string) => void;
   onOpen: (path: string) => void;
+  shown: string;
 }) {
   const { t } = useTranslation();
   const style = { "--depth": depth } as CSSProperties;
@@ -259,6 +264,7 @@ function FolderItems({
                   changedFolders={changedFolders}
                   onToggle={onToggle}
                   onOpen={onOpen}
+                  shown={shown}
                 />
               </ul>
             )}
@@ -267,7 +273,7 @@ function FolderItems({
       })}
       {folder.files.map((path) => (
         <li key={`f:${path}`}>
-          <FileRow path={path} status={changed.get(path)} depth={depth} onOpen={onOpen} />
+          <FileRow path={path} status={changed.get(path)} depth={depth} current={path === shown} onOpen={onOpen} />
         </li>
       ))}
     </>
@@ -280,12 +286,15 @@ function FileRow({
   status,
   depth = 0,
   withFolder = false,
+  current = false,
   onOpen,
 }: {
   path: string;
   status: CodeChangeStatus | undefined;
   depth?: number;
   withFolder?: boolean;
+  /** Its tab is the one on screen. */
+  current?: boolean;
   onOpen: (path: string) => void;
 }) {
   const cut = path.lastIndexOf("/");
@@ -296,6 +305,7 @@ function FileRow({
       className={cx("code-tree__row", withFolder && "code-tree__row--found")}
       style={{ "--depth": depth } as CSSProperties}
       title={path}
+      aria-current={current || undefined}
       onClick={() => onOpen(path)}
     >
       <span className="code-tree__chev" aria-hidden="true" />
@@ -306,69 +316,5 @@ function FileRow({
       {withFolder && cut > 0 && <span className="code-tree__dir">{path.slice(0, cut)}</span>}
       {status && <ChangeLetter status={status} />}
     </button>
-  );
-}
-
-/** One file, read-only, with its path, its letter when changed, line numbers and the shared highlighter's colors. */
-function FileView({
-  session,
-  path,
-  status,
-  onBack,
-}: {
-  session: CodeSession;
-  path: string;
-  status: CodeChangeStatus | undefined;
-  onBack: () => void;
-}) {
-  const { t, i18n } = useTranslation();
-  const { org } = useOrg();
-  const file = useCodeFile(org.id, session.id, path);
-  const data = file.data;
-  const lines = useMemo(
-    () => (data?.state === "ok" ? highlightCode(data.content, codeLangOfPath(path)) : []),
-    [data, path],
-  );
-  return (
-    <div className="code-tree">
-      <div className="code-fhead">
-        <Button
-          size="sm"
-          variant="ghost"
-          icon="chevronLeft"
-          iconOnly
-          aria-label={t("codeSessions.files.back")}
-          title={t("codeSessions.files.back")}
-          onClick={onBack}
-        />
-        <span className="code-vcs__title" title={path}>
-          {status && <ChangeLetter status={status} />}
-          <code>{path}</code>
-        </span>
-        {data?.state === "ok" && <span className="code-fhead__n tabular">{formatBytes(i18n.language, data.size)}</span>}
-      </div>
-      <div className="code-fscroll code-fview">
-        {file.isPending ? (
-          <p className="code-empty">{t("codeSessions.files.opening")}</p>
-        ) : file.error ? (
-          <p className="code-empty">{errorText(t, file.error)}</p>
-        ) : data && data.state !== "ok" ? (
-          <p className="code-empty">{t(`codeSessions.files.state.${data.state}`)}</p>
-        ) : data ? (
-          <>
-            <pre className="code-viewer__code code-fview__code">
-              <code>
-                <CodeLines lines={lines} numbered />
-              </code>
-            </pre>
-            {data.truncated && (
-              <p className="code-tree__note">
-                {t("codeSessions.files.cut", { size: formatBytes(i18n.language, data.content.length) })}
-              </p>
-            )}
-          </>
-        ) : null}
-      </div>
-    </div>
   );
 }

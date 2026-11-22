@@ -10827,16 +10827,24 @@
       "noMatch": "“{{query}}”에 해당하는 파일이 없어요.",
       "truncated_other": "처음 {{formatted}}개 파일을 표시하고 있어요.",
       "hasChanges": "변경 사항 있음",
-      "back": "파일 목록으로 돌아가기",
       "opening": "파일을 여는 중…",
-      "cut": "여기에는 처음 {{size}}만 표시돼요.",
       "state": {
         "binary": "바이너리 파일이라 여기에 표시할 내용이 없어요.",
         "missing": "이 파일은 더 이상 없어요.",
         "ignored": "git이 이 파일을 무시해서 여기에 표시되지 않아요.",
         "secret": ".env 파일은 여기에 표시되지 않아요. 보통 비밀 정보가 들어 있어요.",
         "outside": "이 파일은 워크트리 밖을 가리키는 링크예요."
-      }
+      },
+      "save": "저장",
+      "unsaved": "저장 안 됨",
+      "tooLong": "너무 길어서 여기서 편집할 수 없습니다",
+      "moved": "이 파일은 연 뒤에 컴퓨터에서 변경되었습니다.",
+      "reload": "그쪽 파일 불러오기",
+      "overwrite": "내 내용으로 덮어쓰기",
+      "unsavedAsk": "이 파일에 저장하지 않은 변경 사항이 있습니다.",
+      "keepEditing": "계속 편집",
+      "discard": "버리기",
+      "cut": "여기에는 처음 {{size}}만 표시돼요."
     },
     "screen": {
       "computer": "{{name}}의 컴퓨터",
@@ -10877,6 +10885,13 @@
       "dm": "{{name}}와의 대화에서 열었어요",
       "channel": "#{{name}}에서 열었어요",
       "see": "대화 보기"
+    },
+    "tabs": {
+      "label": "세션 탭",
+      "talk": "대화",
+      "terminalN": "터미널 {{n}}",
+      "close": "{{name}} 닫기",
+      "newTerminal": "새 터미널"
     }
   },
   "code": {
@@ -14880,7 +14895,9 @@
       "notYours": "세션은 연 사람이나 관리자만 닫을 수 있어요.",
       "notReady": "세션의 워크트리가 아직 준비되지 않았어요. 잠시 후 다시 시도하세요.",
       "suggestionGone": "이 제안에는 이미 답했어요.",
-      "suggestionNotYours": "세션을 열지는 요청한 사람만 정할 수 있어요."
+      "suggestionNotYours": "세션을 열지는 요청한 사람만 정할 수 있어요.",
+      "fileChanged": "이 파일은 연 뒤에 컴퓨터에서 변경되었습니다.",
+      "fileLocked": "이 파일은 여기서 편집할 수 없습니다."
     },
     "webhook": {
       "githubNoAccess": "이 워크스페이스의 GitHub은 {{repo}}에 웹훅을 만들 수 없어요. 아래 단계를 따라 직접 만들어 주세요.",

@@ -182,6 +182,8 @@ const KNOWN = {
   "code_session.repo_not_allowed": "errors.codeSession.repoNotAllowed",
   "code_session.not_yours": "errors.codeSession.notYours",
   "code_session.not_ready": "errors.codeSession.notReady",
+  "code_session.file_changed": "errors.codeSession.fileChanged",
+  "code_session.file_locked": "errors.codeSession.fileLocked",
   "code_session.suggestion_gone": "errors.codeSession.suggestionGone",
   "code_session.suggestion_not_yours": "errors.codeSession.suggestionNotYours",
   "mission.exec_disabled": "errors.mission.execDisabled",

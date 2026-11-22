@@ -11759,16 +11759,24 @@
       "truncated_many": "Vengono mostrati i primi {{formatted}} file.",
       "truncated_other": "Vengono mostrati i primi {{formatted}} file.",
       "hasChanges": "Contiene modifiche",
-      "back": "Torna ai file",
       "opening": "Apertura del file…",
-      "cut": "Qui si vedono solo i primi {{size}}.",
       "state": {
         "binary": "Un file binario: niente da mostrare qui.",
         "missing": "Questo file non c'è più.",
         "ignored": "Git ignora questo file, quindi non compare qui.",
         "secret": "I file .env non compaiono qui: di solito contengono segreti.",
         "outside": "Questo file è un collegamento fuori dal worktree."
-      }
+      },
+      "save": "Salva",
+      "unsaved": "Non salvato",
+      "tooLong": "Troppo lungo per modificarlo qui",
+      "moved": "Questo file è cambiato sul computer dopo che l'hai aperto.",
+      "reload": "Carica quello",
+      "overwrite": "Salva il mio sopra",
+      "unsavedAsk": "Questo file ha modifiche che non hai salvato.",
+      "keepEditing": "Continua a modificare",
+      "discard": "Scarta",
+      "cut": "Qui si vedono solo i primi {{size}}."
     },
     "screen": {
       "computer": "Il computer di {{name}}",
@@ -11811,6 +11819,13 @@
       "dm": "Aperta dalla tua conversazione con {{name}}",
       "channel": "Aperta da #{{name}}",
       "see": "Vedi conversazione"
+    },
+    "tabs": {
+      "label": "Schede della sessione",
+      "talk": "Conversazione",
+      "terminalN": "Terminale {{n}}",
+      "close": "Chiudi {{name}}",
+      "newTerminal": "Nuovo terminale"
     }
   },
   "code": {
@@ -16036,7 +16051,9 @@
       "notYours": "Solo chi ha aperto la sessione o un admin può chiuderla.",
       "notReady": "Il worktree della sessione non è ancora pronto. Riprova tra un momento.",
       "suggestionGone": "Questo suggerimento ha già una risposta.",
-      "suggestionNotYours": "Solo chi l'ha chiesto decide se aprire la sessione."
+      "suggestionNotYours": "Solo chi l'ha chiesto decide se aprire la sessione.",
+      "fileChanged": "Questo file è cambiato sul computer dopo che l'hai aperto.",
+      "fileLocked": "Questo file non può essere modificato qui."
     },
     "webhook": {
       "githubNoAccess": "Il GitHub di questo workspace non può creare webhook in {{repo}}. Segui i passaggi qui sotto per crearlo a mano.",

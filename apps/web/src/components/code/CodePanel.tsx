@@ -74,10 +74,16 @@ export function CodePanel({
   session,
   tab,
   onTab,
+  openFile,
+  shownFile,
 }: {
   session: CodeSession;
   tab: CodeTab;
   onTab: (tab: CodeTab) => void;
+  /** Opens a file in a tab beside the conversation. */
+  openFile: (path: string) => void;
+  /** The tab on screen there: a file's path marks its row in the tree. */
+  shownFile: string;
 }) {
   const { t } = useTranslation();
   const { org } = useOrg();
@@ -149,7 +155,7 @@ export function CodePanel({
           )}
         </TabPanel>
         <TabPanel value="files">
-          <FilesPane session={session} />
+          <FilesPane session={session} onOpen={openFile} shown={shownFile} />
         </TabPanel>
         <TabPanel value="screen">{agent && <CodeScreen agent={agent} />}</TabPanel>
       </Tabs>

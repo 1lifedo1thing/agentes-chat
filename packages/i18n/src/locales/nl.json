@@ -11361,16 +11361,24 @@
       "truncated_one": "Het eerste {{formatted}} bestand wordt getoond.",
       "truncated_other": "De eerste {{formatted}} bestanden worden getoond.",
       "hasChanges": "Heeft wijzigingen",
-      "back": "Terug naar de bestanden",
       "opening": "Het bestand openen…",
-      "cut": "Alleen de eerste {{size}} worden hier getoond.",
       "state": {
         "binary": "Een binair bestand: hier valt niets te tonen.",
         "missing": "Dit bestand is er niet meer.",
         "ignored": "Git negeert dit bestand, dus het staat hier niet.",
         "secret": ".env-bestanden worden hier niet getoond: ze bevatten meestal geheimen.",
         "outside": "Dit bestand is een link naar buiten de worktree."
-      }
+      },
+      "save": "Opslaan",
+      "unsaved": "Niet opgeslagen",
+      "tooLong": "Te lang om hier te bewerken",
+      "moved": "Dit bestand is op de computer gewijzigd nadat je het opende.",
+      "reload": "Die versie laden",
+      "overwrite": "Mijn versie eroverheen opslaan",
+      "unsavedAsk": "Dit bestand heeft wijzigingen die je niet hebt opgeslagen.",
+      "keepEditing": "Verder bewerken",
+      "discard": "Weggooien",
+      "cut": "Alleen de eerste {{size}} worden hier getoond."
     },
     "screen": {
       "computer": "Computer van {{name}}",
@@ -11412,6 +11420,13 @@
       "dm": "Geopend vanuit je gesprek met {{name}}",
       "channel": "Geopend vanuit #{{name}}",
       "see": "Gesprek bekijken"
+    },
+    "tabs": {
+      "label": "Tabbladen van de sessie",
+      "talk": "Gesprek",
+      "terminalN": "Terminal {{n}}",
+      "close": "{{name}} sluiten",
+      "newTerminal": "Nieuwe terminal"
     }
   },
   "code": {
@@ -15540,7 +15555,9 @@
       "notYours": "Alleen wie de sessie heeft geopend, of een admin, kan hem sluiten.",
       "notReady": "De worktree van de sessie is nog niet klaar. Probeer het zo opnieuw.",
       "suggestionGone": "Dit voorstel is al beantwoord.",
-      "suggestionNotYours": "Alleen wie het vroeg, beslist of de sessie opent."
+      "suggestionNotYours": "Alleen wie het vroeg, beslist of de sessie opent.",
+      "fileChanged": "Dit bestand is op de computer gewijzigd nadat je het opende.",
+      "fileLocked": "Dit bestand kan hier niet worden bewerkt."
     },
     "webhook": {
       "githubNoAccess": "De GitHub van deze workspace kan geen webhooks maken in {{repo}}. Volg de stappen hieronder om hem met de hand te maken.",

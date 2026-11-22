@@ -4,6 +4,7 @@ import {
   bridgeToolsFor,
   CODE_SESSION_HIDDEN_TOOLS,
   codeSessionContext,
+  codeSessionFile,
   codeStartOptions,
   createCodeSuggestionToolSource,
   drainOutbox,
@@ -12,11 +13,12 @@ import {
   postPersonMessage,
   resolveBrain,
   SUGGEST_CODE_SESSION_TOOL,
+  saveCodeSessionFile,
   type ToolContext,
   updateSandboxSettings,
   worksInSessions,
 } from "../src";
-import { type Fixture, setup } from "./fixtures";
+import { addMember, type Fixture, setup } from "./fixtures";
 import { connectedComputer, type FakeRunnerOptions, pairMachine, RUNNER } from "./machine-fixtures";
 
 /**
@@ -317,5 +319,70 @@ describe("the engine's code tools in the session", () => {
     );
     expect(bridged.map((t) => t.name).filter((n) => CODE_SESSION_HIDDEN_TOOLS.has(n))).toEqual([]);
     expect(bridged.map((t) => t.name)).toContain("run_code");
+  });
+});
+
+describe("a person edits a file of the session", () => {
+  /** A computer whose worktree holds `src/a.ts` at `rev`; `dist/out.js` is ignored by git. */
+  async function editing(rev: string) {
+    f = await setup({ machines: true });
+    const { paired, runner } = await connectedComputer(f, {
+      exec: (req) => {
+        if (req.command.includes("'dist/out.js'")) return { exitCode: 0, stdout: "ignored\n", stderr: "" };
+        return { exitCode: 0, stdout: `ok 12 ${rev}\nexport const a = 1;\n`, stderr: "" };
+      },
+    });
+    const channelId = await session(paired.machineId);
+    const [row] = await f.db.select().from(schema.codeSessions).where(eq(schema.codeSessions.channelId, channelId));
+    const deps = { db: f.db, pubsub: f.pubsub, hub: f.machineHub };
+    const save = (input: { path: string; content: string; rev: string; overwrite?: boolean }) =>
+      saveCodeSessionFile(deps, f.owner.id, f.org.id, row?.id ?? "", input);
+    const written = (path: string) => {
+      const data = runner.files.get(`${WORKTREE}/${path}`);
+      return data ? new TextDecoder().decode(data) : null;
+    };
+    return { deps, row, save, written };
+  }
+
+  test("the file as read comes with what it holds, and a save from it lands in the worktree as the agent", async () => {
+    const { deps, row, save, written } = await editing("abc123");
+    const read = await codeSessionFile(deps, f.owner.id, f.org.id, row?.id ?? "", "src/a.ts");
+    expect(read).toMatchObject({ state: "ok", rev: "abc123", content: "export const a = 1;\n" });
+    const saved = await save({ path: "src/a.ts", content: "export const a = 2;\r\n", rev: read.rev });
+    expect(written("src/a.ts")).toBe("export const a = 2;\r\n");
+    expect(saved.state).toBe("ok");
+  });
+
+  test("a file that changed since it was opened is refused, unless the person says theirs wins", async () => {
+    const { save, written } = await editing("newer");
+    await expect(save({ path: "src/a.ts", content: "mine", rev: "older" })).rejects.toMatchObject({
+      code: "code_session.file_changed",
+    });
+    expect(written("src/a.ts")).toBeNull();
+    await save({ path: "src/a.ts", content: "mine", rev: "older", overwrite: true });
+    expect(written("src/a.ts")).toBe("mine");
+  });
+
+  test("never a `.env` file, one git ignores, a path out of the worktree, or for someone outside the session", async () => {
+    const { deps, row, save, written } = await editing("abc123");
+    const locked = { code: "code_session.file_locked" };
+    const outsider = await addMember(f.db, f.org.id, "member", "Rafa");
+    await expect(save({ path: ".env.local", content: "KEY=1", rev: "abc123" })).rejects.toMatchObject(locked);
+    await expect(save({ path: "dist/out.js", content: "x", rev: "abc123" })).rejects.toMatchObject(locked);
+    await expect(save({ path: "../a.ts", content: "x", rev: "abc123" })).rejects.toMatchObject({
+      code: "code_session.file_path",
+    });
+    await expect(save({ path: ".git/config", content: "x", rev: "abc123" })).rejects.toMatchObject({
+      code: "code_session.file_path",
+    });
+    await expect(
+      saveCodeSessionFile(deps, outsider.id, f.org.id, row?.id ?? "", {
+        path: "src/a.ts",
+        content: "x",
+        rev: "abc123",
+      }),
+    ).rejects.toThrow();
+    expect(written("src/a.ts")).toBeNull();
+    expect(written(".env.local")).toBeNull();
   });
 });

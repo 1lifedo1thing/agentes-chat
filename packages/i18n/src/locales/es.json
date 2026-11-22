@@ -11658,16 +11658,24 @@
       "truncated_many": "Mostrando los primeros {{formatted}} archivos.",
       "truncated_other": "Mostrando los primeros {{formatted}} archivos.",
       "hasChanges": "Tiene cambios",
-      "back": "Volver a los archivos",
       "opening": "Abriendo el archivo…",
-      "cut": "Aquí solo se muestran los primeros {{size}}.",
       "state": {
         "binary": "Un archivo binario: no hay nada que mostrar aquí.",
         "missing": "Este archivo ya no está.",
         "ignored": "Git ignora este archivo, así que no aparece aquí.",
         "secret": "Los archivos .env no aparecen aquí: suelen tener secretos.",
         "outside": "Este archivo es un enlace que sale del worktree."
-      }
+      },
+      "save": "Guardar",
+      "unsaved": "Sin guardar",
+      "tooLong": "Demasiado largo para editarlo aquí",
+      "moved": "Este archivo cambió en el ordenador después de que lo abrieras.",
+      "reload": "Cargar el de allí",
+      "overwrite": "Guardar el mío encima",
+      "unsavedAsk": "Este archivo tiene cambios que no guardaste.",
+      "keepEditing": "Seguir editando",
+      "discard": "Descartar",
+      "cut": "Aquí solo se muestran los primeros {{size}}."
     },
     "screen": {
       "computer": "Computadora de {{name}}",
@@ -11710,6 +11718,13 @@
       "dm": "Abierta desde tu conversación con {{name}}",
       "channel": "Abierta desde #{{name}}",
       "see": "Ver conversación"
+    },
+    "tabs": {
+      "label": "Pestañas de la sesión",
+      "talk": "Conversación",
+      "terminalN": "Terminal {{n}}",
+      "close": "Cerrar {{name}}",
+      "newTerminal": "Nuevo terminal"
     }
   },
   "code": {
@@ -15939,7 +15954,9 @@
       "notYours": "Solo quien abrió la sesión o un administrador puede cerrarla.",
       "notReady": "El worktree de la sesión todavía no está listo. Inténtalo de nuevo en un momento.",
       "suggestionGone": "Esta sugerencia ya fue respondida.",
-      "suggestionNotYours": "Solo quien la pidió decide si se abre la sesión."
+      "suggestionNotYours": "Solo quien la pidió decide si se abre la sesión.",
+      "fileChanged": "Este archivo cambió en el ordenador después de que lo abrieras.",
+      "fileLocked": "Este archivo no se puede editar aquí."
     },
     "webhook": {
       "githubNoAccess": "El GitHub de este workspace no puede crear webhooks en {{repo}}. Sigue los pasos de abajo para crearlo a mano.",

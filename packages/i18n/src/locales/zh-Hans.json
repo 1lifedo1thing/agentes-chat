@@ -10904,16 +10904,24 @@
       "noMatch": "没有与“{{query}}”匹配的文件。",
       "truncated_other": "显示前 {{formatted}} 个文件。",
       "hasChanges": "有改动",
-      "back": "返回文件列表",
       "opening": "正在打开文件…",
-      "cut": "这里只显示前 {{size}}。",
       "state": {
         "binary": "二进制文件：这里无法显示。",
         "missing": "这个文件已经不在了。",
         "ignored": "git 忽略了这个文件，所以这里不显示。",
         "secret": ".env 文件不会在这里显示：它们通常包含机密信息。",
         "outside": "这个文件是指向工作树之外的链接。"
-      }
+      },
+      "save": "保存",
+      "unsaved": "未保存",
+      "tooLong": "太长，无法在这里编辑",
+      "moved": "这个文件在你打开之后在电脑上被改动了。",
+      "reload": "载入电脑上的",
+      "overwrite": "用我的覆盖",
+      "unsavedAsk": "这个文件有你没保存的改动。",
+      "keepEditing": "继续编辑",
+      "discard": "放弃",
+      "cut": "这里只显示前 {{size}}。"
     },
     "screen": {
       "computer": "{{name}} 的电脑",
@@ -10954,6 +10962,13 @@
       "dm": "从你和 {{name}} 的对话中打开",
       "channel": "从 #{{name}} 打开",
       "see": "查看对话"
+    },
+    "tabs": {
+      "label": "会话的标签页",
+      "talk": "对话",
+      "terminalN": "终端 {{n}}",
+      "close": "关闭 {{name}}",
+      "newTerminal": "新建终端"
     }
   },
   "code": {
@@ -14955,7 +14970,9 @@
       "notYours": "只有打开这个会话的人或管理员可以关闭它。",
       "notReady": "会话的工作树还没准备好。请稍后再试。",
       "suggestionGone": "这条建议已经有人回应了。",
-      "suggestionNotYours": "只有提出请求的人能决定是否打开会话。"
+      "suggestionNotYours": "只有提出请求的人能决定是否打开会话。",
+      "fileChanged": "这个文件在你打开之后在电脑上被改动了。",
+      "fileLocked": "这个文件不能在这里编辑。"
     },
     "webhook": {
       "githubNoAccess": "这个工作区的 GitHub 无法在 {{repo}} 中创建 Webhook。请按下面的步骤手动创建。",

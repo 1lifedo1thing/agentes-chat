@@ -12135,16 +12135,24 @@
       "truncated_many": "Pokazano pierwszych {{formatted}} plików.",
       "truncated_other": "Pokazano pierwsze {{formatted}} pliku.",
       "hasChanges": "Ma zmiany",
-      "back": "Wróć do plików",
       "opening": "Otwieranie pliku…",
-      "cut": "Pokazujemy tu tylko pierwsze {{size}}.",
       "state": {
         "binary": "Plik binarny: nie ma tu nic do pokazania.",
         "missing": "Tego pliku już nie ma.",
         "ignored": "Git ignoruje ten plik, więc go tu nie widać.",
         "secret": "Pliki .env nie są tu pokazywane: zwykle zawierają sekrety.",
         "outside": "Ten plik to link prowadzący poza worktree."
-      }
+      },
+      "save": "Zapisz",
+      "unsaved": "Niezapisane",
+      "tooLong": "Za długi, by edytować go tutaj",
+      "moved": "Ten plik zmienił się na komputerze po tym, jak go otwarto.",
+      "reload": "Wczytaj tamten",
+      "overwrite": "Zapisz mój na wierzch",
+      "unsavedAsk": "Ten plik ma zmiany, których nie zapisano.",
+      "keepEditing": "Edytuj dalej",
+      "discard": "Odrzuć",
+      "cut": "Pokazujemy tu tylko pierwsze {{size}}."
     },
     "screen": {
       "computer": "Komputer agenta {{name}}",
@@ -12188,6 +12196,13 @@
       "dm": "Otwarta z rozmowy z agentem {{name}}",
       "channel": "Otwarta z #{{name}}",
       "see": "Zobacz rozmowę"
+    },
+    "tabs": {
+      "label": "Karty sesji",
+      "talk": "Rozmowa",
+      "terminalN": "Terminal {{n}}",
+      "close": "Zamknij {{name}}",
+      "newTerminal": "Nowy terminal"
     }
   },
   "code": {
@@ -16569,7 +16584,9 @@
       "notYours": "Sesję może zamknąć tylko osoba, która ją otworzyła, lub administrator.",
       "notReady": "Worktree sesji nie jest jeszcze gotowy. Spróbuj ponownie za chwilę.",
       "suggestionGone": "Na tę propozycję już odpowiedziano.",
-      "suggestionNotYours": "Tylko osoba, która prosiła, decyduje, czy otworzyć sesję."
+      "suggestionNotYours": "Tylko osoba, która prosiła, decyduje, czy otworzyć sesję.",
+      "fileChanged": "Ten plik zmienił się na komputerze po tym, jak go otwarto.",
+      "fileLocked": "Tego pliku nie można tutaj edytować."
     },
     "webhook": {
       "githubNoAccess": "GitHub tego workspace’u nie może tworzyć webhooków w {{repo}}. Wykonaj kroki poniżej, żeby utworzyć go ręcznie.",

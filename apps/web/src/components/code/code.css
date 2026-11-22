@@ -660,9 +660,206 @@
   flex: 0 1 var(--code-talk, 620px);
   min-width: 320px;
 }
-.code-pane--talk > .shell__main {
+.code-tabview {
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.code-tabview[hidden] {
+  display: none;
+}
+.code-tabview > .shell__main {
+  flex: 1;
+  min-height: 0;
+}
+/* The session's tabs, under its header: the conversation, then each open file and terminal. A row that scrolls
+   sideways when they don't fit; the tab on screen is the page's own ground, the others the sunken one. */
+.code-tabs {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  height: 36px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: var(--sunken);
+  border-bottom: 1px solid var(--line);
+}
+.code-tabs__tab {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+/* A file's or a terminal's tab: the name opens it, the x closes it. */
+span.code-tabs__tab {
+  padding: 0 6px 0 0;
+  gap: 0;
+}
+.code-tabs__open {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 100%;
+  padding: 0 4px 0 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.code-tabs__tab:is([aria-selected="true"], [data-selected]) {
+  background: var(--bg);
+  color: var(--ink);
+  /* Over the row's own hairline: the tab opens into what is under it. */
+  box-shadow: 0 1px 0 var(--bg);
+}
+.code-tabs__tab:not([aria-selected="true"], [data-selected]):hover {
+  color: var(--ink);
+}
+.code-tabs__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.code-tabs__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+.code-tabs__x {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--faint);
+  cursor: pointer;
+}
+.code-tabs__x:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+.code-tabs :is(.code-tabs__tab, .code-tabs__open, .code-tabs__x):focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+.code-tabs__new {
+  flex: none;
+  align-self: center;
+  margin: 0 6px;
+  color: var(--muted);
+}
+/* A file's tab: its editor fills it, its foot says the path and holds "Save". */
+.code-ftab {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  --code-editor-line: rgba(127, 127, 120, 0.08);
+  --code-editor-sel: rgba(90, 140, 240, 0.24);
+}
+.code-editor {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.code-ftab__foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px 0 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.code-ftab__path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.code-ftab__n {
+  flex: none;
+}
+.code-ftab__r {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.code-ftab__note {
+  color: var(--warn);
+}
+/* Asked over the editor: a file that changed on the computer, or a tab closing with something unsaved. */
+.code-ftab__ask {
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 8px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--warn-soft);
+  font-size: var(--text-sm);
+}
+.code-ftab__askt {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+/* The editor's tokens, in the colors code has in messages (`.code-tok--*`). */
+.code-editor :is(.tok-keyword, .tok-operatorKeyword, .tok-modifier, .tok-atom, .tok-bool) {
+  color: var(--code-keyword);
+}
+.code-editor :is(.tok-string, .tok-string2, .tok-url) {
+  color: var(--code-string);
+}
+.code-editor :is(.tok-number, .tok-literal) {
+  color: var(--code-number);
+}
+.code-editor :is(.tok-propertyName, .tok-typeName, .tok-className, .tok-namespace, .tok-macroName, .tok-labelName),
+.code-editor .tok-variableName.tok-definition {
+  color: var(--code-function);
+}
+.code-editor :is(.tok-comment, .tok-meta) {
+  color: var(--faint);
+  font-style: italic;
+}
+.code-editor .tok-heading {
+  font-weight: 650;
+}
+.code-editor .tok-inserted {
+  color: var(--ok);
+}
+.code-editor .tok-deleted {
+  color: var(--danger);
+}
+.code-editor .tok-invalid {
+  color: var(--danger);
+}
+/* The tree's row of the file on screen in a tab. */
+.code-tree__row[aria-current="true"] {
+  background: var(--line);
 }
 /* The side panel: the tabs and the terminal's switch on one row, the tab under them, the terminal's drawer at the
    foot (its height drags). */
@@ -1351,11 +1548,4 @@ html:not([data-pointer]) .code-tree__row:focus-visible {
   margin: 10px;
   color: var(--muted);
   font-size: 12.5px;
-}
-/* A file shown: the code viewer's own look, line numbers in the margin. */
-.code-fview {
-  padding: 6px 0 24px;
-}
-.code-fview__code {
-  padding: 0 14px 0 6px;
 }

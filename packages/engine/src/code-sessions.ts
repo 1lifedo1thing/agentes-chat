@@ -1570,7 +1570,7 @@ export async function codeSessionFiles(
 }
 
 /**
- * A file shown read-only in the Files tab, or why not: `binary`, `missing` (gone, or a folder), `ignored` (git ignores
+ * A file the session shows, or why not: `binary`, `missing` (gone, or a folder), `ignored` (git ignores
  * it: build output, a key), `secret` (a `.env` file), `outside` (a link out of the worktree).
  */
 export type CodeFileState = "ok" | "binary" | "missing" | "ignored" | "secret" | "outside";
@@ -1584,6 +1584,8 @@ export interface CodeFile {
   size: number;
   /** Only its start is here. */
   truncated: boolean;
+  /** What it holds, as git names it (its blob hash): a save says which one it started from. Empty unless `ok`. */
+  rev: string;
 }
 
 /**
@@ -1596,8 +1598,21 @@ export function codeFilePathOk(path: string): boolean {
 }
 
 /**
+ * Says what a path is before it is read or written: `ignored`, `outside` (a link, or a folder that resolves out of the
+ * worktree), `missing`, else nothing (each step resolved, POSIX `sh` on any computer).
+ */
+const fileGuard = (path: string) => [
+  `p=${shellQuote(path)}`,
+  `if git check-ignore -q -- "$p" 2>/dev/null; then echo ignored; exit 0; fi`,
+  `if [ -L "$p" ]; then echo outside; exit 0; fi`,
+  `if [ ! -f "$p" ]; then echo missing; exit 0; fi`,
+  `d=$(cd -- "$(dirname -- "$p")" 2>/dev/null && pwd -P) || { echo missing; exit 0; }`,
+  `case "$d/" in "$(pwd -P)/"*) ;; *) echo outside; exit 0 ;; esac`,
+];
+
+/**
  * One file of the worktree as its agent reads it, for whoever reads the session: never a file git ignores, a `.env`
- * one, or one reached through a link out of the worktree (each step resolved, POSIX `sh` on any computer).
+ * one, or one reached through a link out of the worktree.
  */
 export async function codeSessionFile(
   deps: CodeSessionDeps,
@@ -1609,16 +1624,15 @@ export async function codeSessionFile(
   const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
   if (!codeFilePathOk(path))
     throw new ValidationError("A path inside the worktree is needed", "code_session.file_path");
-  const none = (state: CodeFileState): CodeFile => ({ path, state, content: "", size: 0, truncated: false });
+  return readWorktreeFile(deps, row, path);
+}
+
+async function readWorktreeFile(deps: CodeSessionDeps, row: CodeSessionRow, path: string): Promise<CodeFile> {
+  const none = (state: CodeFileState): CodeFile => ({ path, state, content: "", size: 0, truncated: false, rev: "" });
   if (SECRET_FILE.test(path.split("/").pop() ?? "")) return none("secret");
   const command = [
-    `p=${shellQuote(path)}`,
-    `if git check-ignore -q -- "$p" 2>/dev/null; then echo ignored; exit 0; fi`,
-    `if [ -L "$p" ]; then echo outside; exit 0; fi`,
-    `if [ ! -f "$p" ]; then echo missing; exit 0; fi`,
-    `d=$(cd -- "$(dirname -- "$p")" 2>/dev/null && pwd -P) || { echo missing; exit 0; }`,
-    `case "$d/" in "$(pwd -P)/"*) ;; *) echo outside; exit 0 ;; esac`,
-    `echo "ok $(wc -c < "$p" | tr -d ' ')"`,
+    ...fileGuard(path),
+    `echo "ok $(wc -c < "$p" | tr -d ' ') $(git hash-object -- "$p")"`,
     `head -c ${CODE_FILE_MAX_BYTES} -- "$p"`,
   ].join("\n");
   const out = await worktreeShell(deps, row, command);
@@ -1626,11 +1640,62 @@ export async function codeSessionFile(
     throw new ConflictError(out.stderr.trim() || "The file couldn't be read", "code_session.file_failed");
   const cut = out.stdout.indexOf("\n");
   const head = cut < 0 ? out.stdout.trim() : out.stdout.slice(0, cut);
-  const [word = "", bytes = "0"] = head.split(" ");
+  const [word = "", bytes = "0", rev = ""] = head.split(" ");
   if (word !== "ok") return none(word === "ignored" || word === "outside" ? word : "missing");
   const content = cut < 0 ? "" : out.stdout.slice(cut + 1);
   const size = Number(bytes) || content.length;
   // A NUL early on is a binary file: nothing to read as text.
   if (content.slice(0, 8000).includes("\0")) return { ...none("binary"), size };
-  return { path, state: "ok", content, size, truncated: size > CODE_FILE_MAX_BYTES };
+  return { path, state: "ok", content, size, truncated: size > CODE_FILE_MAX_BYTES, rev };
+}
+
+/**
+ * A person saves a file of the worktree (ADR 0214): whoever is in the session, since they could ask its agent for the
+ * same change. Only a file the session shows (never one git ignores, a `.env` one, a link out, a binary or a cut
+ * one), written as the agent by the runner's own file op (its mode kept, never into a `.git` folder). `rev` is what
+ * the person started from: the file holding something else by now (the agent wrote it meanwhile) is refused with
+ * `code_session.file_changed`, unless `overwrite` says theirs wins.
+ */
+export async function saveCodeSessionFile(
+  deps: CodeSessionDeps,
+  userId: string,
+  orgId: string,
+  sessionId: string,
+  input: { path: string; content: string; rev: string; overwrite?: boolean },
+): Promise<CodeFile> {
+  const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
+  const { path, content } = input;
+  if (!codeFilePathOk(path))
+    throw new ValidationError("A path inside the worktree is needed", "code_session.file_path");
+  const data = Buffer.from(content, "utf8");
+  const locked = () => new ConflictError("This file can't be edited here", "code_session.file_locked");
+  if (SECRET_FILE.test(path.split("/").pop() ?? "") || data.byteLength > CODE_FILE_MAX_BYTES || content.includes("\0"))
+    throw locked();
+  const check = await worktreeShell(
+    deps,
+    row,
+    [...fileGuard(path), `echo "ok $(wc -c < "$p" | tr -d ' ') $(git hash-object -- "$p")"`].join("\n"),
+  );
+  if (check.exitCode !== 0)
+    throw new ConflictError(check.stderr.trim() || "The file couldn't be read", "code_session.file_failed");
+  const [word = "", bytes = "0", rev = ""] = (check.stdout.split("\n")[0] ?? "").trim().split(" ");
+  // Nothing to save over: gone, ignored, a link out, or longer than the session shows whole.
+  if (word !== "ok" || Number(bytes) > CODE_FILE_MAX_BYTES) throw locked();
+  if (rev !== input.rev && !input.overwrite)
+    throw new ConflictError("The file changed since it was opened", "code_session.file_changed");
+  const agent = await getAgentCached(deps.db, row.orgId, row.agentId);
+  if (!agent || !deps.hub || !row.machineId || !row.worktreePath) throw new NotFoundError("Agent not found");
+  try {
+    await deps.hub.call<"write">(row.machineId, {
+      op: "write",
+      path: `${row.worktreePath}/${path}`,
+      base64: data.toString("base64"),
+      agent: { id: agent.id, handle: agent.handle },
+    });
+  } catch (error) {
+    if (error instanceof MachineOfflineError || error instanceof MachinePausedError)
+      throw new ConflictError("This session's computer isn't reachable", "code_session.offline");
+    throw error;
+  }
+  return readWorktreeFile(deps, row, path);
 }

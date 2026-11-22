@@ -342,7 +342,8 @@
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.terminalN"
     ],
     "es": [
       "devices.iphone.path.general",
@@ -631,7 +632,8 @@
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.terminalN"
     ],
     "fr": [
       "usage.kinds.routines",
@@ -1153,7 +1155,9 @@
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.talk",
+      "codeSessions.tabs.terminalN"
     ],
     "de": [
       "live.sheet.args.k",
@@ -1650,7 +1654,8 @@
       "codeSessions.gitTab.label",
       "codeSessions.gitTab.commits",
       "cliTools.progress.subagent",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.terminalN"
     ],
     "it": [
       "live.sheet.args.a1",
@@ -2729,7 +2734,8 @@
       "codeSessions.gitTab.commits",
       "cliTools.progress.subagent",
       "cliTools.progress.agents",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.terminalN"
     ],
     "ja": [
       "live.sheet.args.k",
@@ -3588,7 +3594,8 @@
       "codeSessions.home.was",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.terminalN"
     ],
     "tr": [
       "live.canvas.inspector.model",
@@ -3805,7 +3812,8 @@
       "codeSessions.home.was",
       "codeSessions.panel.terminal",
       "codeSessions.gitTab.label",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.terminalN"
     ],
     "pl": [
       "drive.folder",
@@ -4142,7 +4150,8 @@
       "codeSessions.gitTab.label",
       "cliTools.progress.subagent",
       "cliTools.progress.agents",
-      "codeTerminal.label"
+      "codeTerminal.label",
+      "codeSessions.tabs.terminalN"
     ],
     "ru": [
       "live.canvas.sizes.short.s",

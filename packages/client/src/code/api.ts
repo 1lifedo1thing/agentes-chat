@@ -38,6 +38,12 @@ export interface CodeApi {
   files(orgId: string, sessionId: string): Promise<CodeFiles>;
   /** One file, read-only. */
   file(orgId: string, sessionId: string, path: string): Promise<CodeFile>;
+  /** Saves a file over the one read with `rev`; a file that changed since then is refused unless `overwrite`. */
+  saveFile(
+    orgId: string,
+    sessionId: string,
+    input: { path: string; content: string; rev: string; overwrite?: boolean },
+  ): Promise<CodeFile>;
   /** "Abrir sessão" on a suggestion in the chat (ADR 0214 §11): the session, started with the asker's words. */
   openSuggestion(orgId: string, messageId: string): Promise<CodeSession>;
   /** "Fazer aqui": the agent goes on in the conversation. */
@@ -61,6 +67,8 @@ export function createCodeApi(request: Requester): CodeApi {
     gitLog: (orgId, sessionId) => request<CodeGitLog>(`${one(orgId, sessionId)}/git/log`),
     files: (orgId, sessionId) => request<CodeFiles>(`${one(orgId, sessionId)}/files`),
     file: (orgId, sessionId, path) => request<CodeFile>(`${one(orgId, sessionId)}/file`, { query: { path } }),
+    saveFile: (orgId, sessionId, input) =>
+      request<CodeFile>(`${one(orgId, sessionId)}/file`, { method: "PUT", json: input }),
     openSuggestion: (orgId, messageId) =>
       request<CodeSession>(`${org(orgId)}/code-sessions/suggestions/${enc(messageId)}/open`, { json: {} }),
     keepHere: (orgId, messageId) =>

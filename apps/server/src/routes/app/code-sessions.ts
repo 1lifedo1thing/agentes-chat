@@ -16,6 +16,7 @@ import {
   postPersonMessage,
   renameCodeSession,
   retryCodeSession,
+  saveCodeSessionFile,
 } from "@agenteschat/engine";
 import { createRoute, z } from "@hono/zod-openapi";
 import { type AppDeps, createAppRouter, errors, json, OrgParams, requireSession, security } from "./context";
@@ -166,6 +167,7 @@ const CodeFile = z
     content: z.string(),
     size: z.number().int(),
     truncated: z.boolean(),
+    rev: z.string().openapi({ description: "What it holds, as git's blob hash: a save sends the one it started from." }),
   })
   .openapi("CodeFile");
 
@@ -469,7 +471,7 @@ export function codeSessionRoutes(deps: AppDeps) {
       path: "/organizations/{orgId}/code-sessions/{sessionId}/file",
       tags,
       security,
-      summary: "One file of the worktree, read-only (never one git ignores, a `.env` file or a link out of it)",
+      summary: "One file of the worktree (never one git ignores, a `.env` file or a link out of it)",
       request: {
         params: SessionParams,
         query: z.object({ path: z.string().min(1).max(1024).openapi({ description: "Relative to the worktree." }) }),
@@ -480,6 +482,40 @@ export function codeSessionRoutes(deps: AppDeps) {
       const { orgId, sessionId } = c.req.valid("param");
       const { path } = c.req.valid("query");
       return c.json(await codeSessionFile(sessions(), c.get("user").id, orgId, sessionId, path), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/organizations/{orgId}/code-sessions/{sessionId}/file",
+      tags,
+      security,
+      summary:
+        "Saves one file of the worktree, as its agent (409 `code_session.file_changed` when it changed since `rev`)",
+      request: {
+        params: SessionParams,
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                path: z.string().min(1).max(1024).openapi({ description: "Relative to the worktree." }),
+                content: z.string().max(600_000),
+                rev: z.string().max(64).openapi({ description: "The `rev` the file was read with." }),
+                overwrite: z.boolean().optional().openapi({ description: "Save even if it changed since `rev`." }),
+              }),
+            },
+          },
+        },
+      },
+      responses: { 200: json(CodeFile), ...errors },
+    }),
+    async (c) => {
+      const { orgId, sessionId } = c.req.valid("param");
+      return c.json(
+        await saveCodeSessionFile(sessions(), c.get("user").id, orgId, sessionId, c.req.valid("json")),
+        200,
+      );
     },
   );
 

@@ -102,15 +102,32 @@ export const useCodeFiles = (orgId: string, sessionId: string, enabled: boolean,
   });
 };
 
-/** One file of the worktree, read-only; nothing asked without a path. */
-export const useCodeFile = (orgId: string, sessionId: string, path: string | null) => {
+/** One file of the worktree, read again every few seconds while its agent works (`live`); nothing asked without a path. */
+export const useCodeFile = (orgId: string, sessionId: string, path: string | null, live = false) => {
   const api = useApi();
   return useQuery({
     queryKey: codeKeys.file(orgId, sessionId, path ?? ""),
     queryFn: () => api.code.file(orgId, sessionId, path ?? ""),
     enabled: path !== null,
     staleTime: 3_000,
+    refetchInterval: live ? 5_000 : false,
     retry: false,
+  });
+};
+
+/** Saves a file of the worktree: what it holds now replaces what was read, and the lists of changes read again. */
+export const useSaveCodeFile = (orgId: string, sessionId: string) => {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { path: string; content: string; rev: string; overwrite?: boolean }) =>
+      api.code.saveFile(orgId, sessionId, input),
+    onSuccess: (file) => {
+      qc.setQueryData(codeKeys.file(orgId, sessionId, file.path), file);
+      void qc.invalidateQueries({ queryKey: codeKeys.files(orgId, sessionId) });
+      void qc.invalidateQueries({ queryKey: codeKeys.git(orgId, sessionId) });
+      void qc.invalidateQueries({ queryKey: codeKeys.gitLog(orgId, sessionId) });
+    },
   });
 };
 

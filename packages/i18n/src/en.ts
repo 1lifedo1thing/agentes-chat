@@ -11746,9 +11746,17 @@ export const en = {
       truncated_one: "Showing the first {{formatted}} file.",
       truncated_other: "Showing the first {{formatted}} files.",
       hasChanges: "Has changes",
-      back: "Back to the files",
       opening: "Opening the file…",
       cut: "Only the first {{size}} show here.",
+      save: "Save",
+      unsaved: "Not saved",
+      tooLong: "Too long to edit here",
+      moved: "This file changed on the computer after you opened it.",
+      reload: "Load that one",
+      overwrite: "Save mine over it",
+      unsavedAsk: "This file has changes you didn't save.",
+      keepEditing: "Keep editing",
+      discard: "Discard",
       /** Why a file isn't shown. */
       state: {
         binary: "A binary file: nothing to show here.",
@@ -11757,6 +11765,14 @@ export const en = {
         secret: ".env files don't show here: they usually hold secrets.",
         outside: "This file is a link out of the worktree.",
       },
+    },
+    /** The session's tabs under its header: the conversation, open files, terminals. */
+    tabs: {
+      label: "The session's tabs",
+      talk: "Conversation",
+      terminalN: "Terminal {{n}}",
+      close: "Close {{name}}",
+      newTerminal: "New terminal",
     },
     screen: {
       computer: "{{name}}'s computer",
@@ -15783,6 +15799,8 @@ export const en = {
       repoNotAllowed: "This agent can't work in that repository. Pick another one, or add it in the agent's settings.",
       notYours: "Only who opened the session, or an admin, closes it.",
       notReady: "The session's worktree isn't ready yet. Try again in a moment.",
+      fileChanged: "This file changed on the computer after you opened it.",
+      fileLocked: "This file can't be edited here.",
       suggestionGone: "This suggestion was answered already.",
       suggestionNotYours: "Only who asked decides whether to open the session.",
     },

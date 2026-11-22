@@ -170,4 +170,6 @@ export interface CodeFile {
   size: number;
   /** Only its start came. */
   truncated: boolean;
+  /** What it holds, as git names it: a save sends the one it started from. Empty unless `ok`. */
+  rev: string;
 }

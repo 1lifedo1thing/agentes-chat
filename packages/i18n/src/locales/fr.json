@@ -11731,16 +11731,24 @@
       "truncated_many": "Affichage des {{formatted}} premiers fichiers.",
       "truncated_other": "Affichage des {{formatted}} premiers fichiers.",
       "hasChanges": "Contient des modifications",
-      "back": "Retour aux fichiers",
       "opening": "Ouverture du fichier…",
-      "cut": "Seuls les premiers {{size}} s'affichent ici.",
       "state": {
         "binary": "Un fichier binaire : rien à afficher ici.",
         "missing": "Ce fichier n'est plus là.",
         "ignored": "Git ignore ce fichier, il ne s'affiche donc pas ici.",
         "secret": "Les fichiers .env ne s'affichent pas ici : ils contiennent souvent des secrets.",
         "outside": "Ce fichier est un lien vers l'extérieur du worktree."
-      }
+      },
+      "save": "Enregistrer",
+      "unsaved": "Non enregistré",
+      "tooLong": "Trop long pour être modifié ici",
+      "moved": "Ce fichier a changé sur l'ordinateur après que vous l'avez ouvert.",
+      "reload": "Charger celui de l'ordinateur",
+      "overwrite": "Enregistrer le mien par-dessus",
+      "unsavedAsk": "Ce fichier contient des modifications non enregistrées.",
+      "keepEditing": "Continuer à modifier",
+      "discard": "Abandonner",
+      "cut": "Seuls les premiers {{size}} s'affichent ici."
     },
     "screen": {
       "computer": "Ordinateur de {{name}}",
@@ -11783,6 +11791,13 @@
       "dm": "Ouverte depuis votre conversation avec {{name}}",
       "channel": "Ouverte depuis #{{name}}",
       "see": "Voir la conversation"
+    },
+    "tabs": {
+      "label": "Onglets de la session",
+      "talk": "Conversation",
+      "terminalN": "Terminal {{n}}",
+      "close": "Fermer {{name}}",
+      "newTerminal": "Nouveau terminal"
     }
   },
   "code": {
@@ -16014,7 +16029,9 @@
       "notYours": "Seule la personne qui a ouvert la session ou un administrateur peut la fermer.",
       "notReady": "Le worktree de la session n'est pas encore prêt. Réessayez dans un instant.",
       "suggestionGone": "Cette suggestion a déjà reçu une réponse.",
-      "suggestionNotYours": "Seule la personne qui a demandé décide d'ouvrir la session."
+      "suggestionNotYours": "Seule la personne qui a demandé décide d'ouvrir la session.",
+      "fileChanged": "Ce fichier a changé sur l'ordinateur après que vous l'avez ouvert.",
+      "fileLocked": "Ce fichier ne peut pas être modifié ici."
     },
     "webhook": {
       "githubNoAccess": "Le GitHub de ce workspace ne peut pas créer de webhooks dans {{repo}}. Suis les étapes ci-dessous pour le créer à la main.",

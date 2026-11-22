@@ -10890,16 +10890,24 @@
       "noMatch": "Tidak ada file yang cocok dengan “{{query}}”.",
       "truncated_other": "Menampilkan {{formatted}} file pertama.",
       "hasChanges": "Ada perubahan",
-      "back": "Kembali ke file",
       "opening": "Membuka file…",
-      "cut": "Hanya {{size}} pertama yang tampil di sini.",
       "state": {
         "binary": "File biner: tidak ada yang bisa ditampilkan di sini.",
         "missing": "File ini sudah tidak ada.",
         "ignored": "Git mengabaikan file ini, jadi tidak tampil di sini.",
         "secret": "File .env tidak tampil di sini: biasanya berisi rahasia.",
         "outside": "File ini adalah tautan ke luar worktree."
-      }
+      },
+      "save": "Simpan",
+      "unsaved": "Belum disimpan",
+      "tooLong": "Terlalu panjang untuk diedit di sini",
+      "moved": "File ini berubah di komputer setelah Anda membukanya.",
+      "reload": "Muat yang di sana",
+      "overwrite": "Simpan milik saya di atasnya",
+      "unsavedAsk": "File ini punya perubahan yang belum Anda simpan.",
+      "keepEditing": "Lanjut mengedit",
+      "discard": "Buang",
+      "cut": "Hanya {{size}} pertama yang tampil di sini."
     },
     "screen": {
       "computer": "Komputer {{name}}",
@@ -10940,6 +10948,13 @@
       "dm": "Dibuka dari percakapanmu dengan {{name}}",
       "channel": "Dibuka dari #{{name}}",
       "see": "Lihat percakapan"
+    },
+    "tabs": {
+      "label": "Tab sesi",
+      "talk": "Percakapan",
+      "terminalN": "Terminal {{n}}",
+      "close": "Tutup {{name}}",
+      "newTerminal": "Terminal baru"
     }
   },
   "code": {
@@ -14945,7 +14960,9 @@
       "notYours": "Hanya pembuka sesi atau administrator yang bisa menutupnya.",
       "notReady": "Worktree sesi belum siap. Coba lagi sebentar lagi.",
       "suggestionGone": "Saran ini sudah dijawab.",
-      "suggestionNotYours": "Hanya yang meminta yang memutuskan apakah sesi dibuka."
+      "suggestionNotYours": "Hanya yang meminta yang memutuskan apakah sesi dibuka.",
+      "fileChanged": "File ini berubah di komputer setelah Anda membukanya.",
+      "fileLocked": "File ini tidak bisa diedit di sini."
     },
     "webhook": {
       "githubNoAccess": "GitHub workspace ini tidak bisa membuat webhook di {{repo}}. Ikuti langkah di bawah untuk membuatnya manual.",
