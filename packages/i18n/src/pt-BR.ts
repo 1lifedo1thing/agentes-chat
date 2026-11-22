@@ -3210,6 +3210,7 @@ export const ptBR = {
       onlyCreators: "Só admins criam agentes",
       only: {
         model: "Só admins mudam o modelo de um agente",
+        effort: "Só admins mudam o esforço de um agente",
         budget: "Só admins mudam o orçamento de um agente",
         owner: "Só admins mudam o responsável por um agente",
         archive: "Só admins arquivam um agente",
@@ -3229,6 +3230,7 @@ export const ptBR = {
     },
     field: {
       model: "Modelo",
+      effort: "Esforço",
       ai_account: "Conta de IA",
       budget: "Orçamento mensal",
       owner: "Responsável",

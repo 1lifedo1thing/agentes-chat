@@ -3202,6 +3202,7 @@
       "onlyCreators": "Solo gli admin creano agenti",
       "only": {
         "model": "Solo gli admin cambiano il modello di un agente",
+        "effort": "Solo gli admin cambiano l’impegno di un agente",
         "budget": "Solo gli admin cambiano il budget di un agente",
         "owner": "Solo gli admin cambiano il responsabile di un agente",
         "archive": "Solo gli admin archiviano un agente",
@@ -3219,6 +3220,7 @@
     },
     "field": {
       "model": "Modello",
+      "effort": "Impegno",
       "ai_account": "Account di IA",
       "budget": "Budget mensile",
       "owner": "Responsabile",

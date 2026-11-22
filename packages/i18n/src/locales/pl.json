@@ -3322,6 +3322,7 @@
       "onlyCreators": "Tylko admini tworzą agentów",
       "only": {
         "model": "Tylko admini zmieniają model agenta",
+        "effort": "Tylko admini zmieniają wysiłek agenta",
         "budget": "Tylko admini zmieniają budżet agenta",
         "owner": "Tylko admini zmieniają opiekuna agenta",
         "archive": "Tylko admini archiwizują agenta",
@@ -3339,6 +3340,7 @@
     },
     "field": {
       "model": "Model",
+      "effort": "Wysiłek",
       "ai_account": "Konto AI",
       "budget": "Budżet miesięczny",
       "owner": "Opiekun",

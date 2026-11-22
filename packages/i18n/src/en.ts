@@ -3335,6 +3335,7 @@ export const en = {
       onlyCreators: "Only admins create agents",
       only: {
         model: "Only admins change an agent's model",
+        effort: "Only admins change an agent's effort",
         budget: "Only admins change an agent's budget",
         owner: "Only admins change who owns an agent",
         archive: "Only admins archive an agent",
@@ -3352,6 +3353,7 @@ export const en = {
     },
     field: {
       model: "Model",
+      effort: "Effort",
       ai_account: "AI account",
       budget: "Monthly budget",
       owner: "Owner",
