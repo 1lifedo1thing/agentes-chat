@@ -2495,7 +2495,7 @@
       "sectors": "Afdelingen",
       "usage": "Beheer en gebruik"
     },
-    "noOwner": "Niemand verantwoordelijk",
+    "noOwner": "Beheerders",
     "workingNow": "Nu aan het werk",
     "available": "Beschikbaar",
     "archived": "Gearchiveerd",
@@ -2515,7 +2515,7 @@
         "mine": "Mijn",
         "working": "Nu aan het werk",
         "waiting": "Wacht op jou",
-        "noOwner": "Niemand verantwoordelijk"
+        "noOwner": "Bij de beheerders"
       },
       "groupBy": "Groeperen op",
       "by": {
@@ -3938,7 +3938,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · eigenaar {{owner}}",
-    "subtitleNoOwner": "{{role}} · geen eigenaar",
+    "subtitleNoOwner": "{{role}} · eigenaar: de beheerders",
     "emptyAgent": "Vraag hem iets te onthouden, te vergeten of anders te werken.",
     "emptyAgent_female": "Vraag haar iets te onthouden, te vergeten of anders te werken.",
     "opening": "Het gesprek openen…",
@@ -4319,7 +4319,7 @@
     "viewProfile": "Profiel bekijken",
     "agent": "Agent",
     "owner": "Eigenaar",
-    "noOwner": "geen eigenaar",
+    "noOwner": "Beheerders",
     "model": "Model",
     "can": "Kan",
     "budgetUsed": "{{percent}} van het budget gebruikt deze maand",
@@ -7217,9 +7217,9 @@
     "noChannels": "Je zit nog in geen enkel kanaal. Je kunt de agent later aan een kanaal toevoegen.",
     "owner": "Eigenaar",
     "you": "{{name}} (jij)",
-    "noOwnerOption": "Geen eigenaar",
-    "noOwnerShort": "Beheerders krijgen de meldingen en keuren goed",
-    "noOwnerHelp": "Zonder eigenaar krijgen beheerders de meldingen en keuren zij gevoelige acties goed.",
+    "noOwnerOption": "Beheerders",
+    "noOwnerShort": "Krijgen de meldingen en keuren goed",
+    "noOwnerHelp": "De beheerders krijgen de meldingen en keuren gevoelige acties goed.",
     "ownerHelp": "Krijgt de budgetmeldingen en keurt gevoelige acties goed.",
     "ownerRoleHelp": "Iedereen met de rol {{role}} krijgt de goedkeuringsverzoeken en meldingen. Ieder van hen beslist, ook wie de rol later krijgt.",
     "ownerRoleHelp_female": "Iedereen met de rol {{role}} krijgt de goedkeuringsverzoeken en meldingen. Ieder van hen beslist, ook wie de rol later krijgt.",
@@ -7277,7 +7277,6 @@
     "noTools": "Geen tools",
     "onlyContext": "Alleen de context van de werkruimte",
     "noChannelsReview": "Geen kanalen: roep hem aan met @ of een direct bericht",
-    "noOwnerAdmins": "Geen eigenaar (beheerders)",
     "editSection": "{{section}} bewerken",
     "hints": {
       "role": "Kies een startpunt",
@@ -7833,7 +7832,7 @@
       "none": "Geen actieve link."
     },
     "ownerLine": "Eigenaar: {{name}}",
-    "noOwner": "Geen eigenaar",
+    "noOwner": "Eigenaar: beheerders",
     "budgetLine": "{{percent}} van het budget van {{month}}",
     "noAgents": "Nog geen agents."
   },
@@ -12238,10 +12237,10 @@
       "tool_offOne": "{{program}} staat uit op {{computer}}.",
       "not_installed": "{{program}} is niet geïnstalleerd op {{computer}}.",
       "cant_start": "{{program}} staat op {{computer}}, maar start niet.",
+      "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen.",
       "not_reported": "{{computer}} controleert nog welke programma's erop staan. Dit verandert vanzelf als het klaar is.",
       "system": "{{program}} werkt nog niet op het systeem van {{computer}}.",
-      "no_computerCloud": "Klaar zodra {{computer}} klaar is.",
-      "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen."
+      "no_computerCloud": "Klaar zodra {{computer}} klaar is."
     },
     "notAvailableNow": "Gekozen, maar nu niet beschikbaar.",
     "offline": "{{computer}} is nu offline.",

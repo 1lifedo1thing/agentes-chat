@@ -2408,7 +2408,7 @@
       "sectors": "部门",
       "usage": "治理与用量"
     },
-    "noOwner": "无负责人",
+    "noOwner": "管理员",
     "workingNow": "正在工作",
     "available": "空闲",
     "archived": "已归档",
@@ -2428,7 +2428,7 @@
         "mine": "我的",
         "working": "正在工作",
         "waiting": "等你处理",
-        "noOwner": "无负责人"
+        "noOwner": "由管理员负责"
       },
       "groupBy": "分组方式",
       "by": {
@@ -3772,7 +3772,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · 负责人：{{owner}}",
-    "subtitleNoOwner": "{{role}} · 无负责人",
+    "subtitleNoOwner": "{{role}} · 负责人：管理员",
     "emptyAgent": "让他记住、忘记某些事，或换种方式工作。",
     "emptyAgent_female": "让她记住、忘记某些事，或换种方式工作。",
     "opening": "正在打开对话…",
@@ -4147,7 +4147,7 @@
     "viewProfile": "查看个人资料",
     "agent": "智能体",
     "owner": "负责人",
-    "noOwner": "无负责人",
+    "noOwner": "管理员",
     "model": "模型",
     "can": "可以",
     "budgetUsed": "本月已用预算的 {{percent}}",
@@ -6934,9 +6934,9 @@
     "noChannels": "你还没有加入任何频道。之后可以把智能体加到频道中。",
     "owner": "负责人",
     "you": "{{name}}（你）",
-    "noOwnerOption": "无负责人",
-    "noOwnerShort": "由管理员接收提醒并审批",
-    "noOwnerHelp": "没有负责人时，由管理员接收提醒并审批敏感操作。",
+    "noOwnerOption": "管理员",
+    "noOwnerShort": "接收提醒并审批",
+    "noOwnerHelp": "由管理员接收提醒并审批敏感操作。",
     "ownerHelp": "接收预算提醒并审批敏感操作。",
     "ownerRoleHelp": "拥有 {{role}} 角色的人会收到它的审批请求和提醒。其中任何人都可以决定，包括之后获得该角色的人。",
     "ownerRoleHelp_female": "拥有 {{role}} 角色的人会收到它的审批请求和提醒。其中任何人都可以决定，包括之后获得该角色的人。",
@@ -6991,7 +6991,6 @@
     "noTools": "没有工具",
     "onlyContext": "只有工作区的背景信息",
     "noChannelsReview": "没有频道：通过 @ 或私信叫它",
-    "noOwnerAdmins": "无负责人（管理员）",
     "editSection": "编辑{{section}}",
     "hints": {
       "role": "选一个起点",
@@ -7527,7 +7526,7 @@
       "none": "没有有效的链接。"
     },
     "ownerLine": "所有者：{{name}}",
-    "noOwner": "无所有者",
+    "noOwner": "所有者：管理员",
     "budgetLine": "已用 {{month}} 预算的 {{percent}}",
     "noAgents": "还没有智能体。"
   },
@@ -11735,10 +11734,10 @@
       "tool_offOne": "{{computer}} 上的 {{program}} 已关闭。",
       "not_installed": "{{computer}} 上没有安装 {{program}}。",
       "cant_start": "{{program}} 在 {{computer}} 上，但无法启动。",
+      "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
-      "no_computerCloud": "{{computer}} 一就绪即可使用。",
-      "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。"
+      "no_computerCloud": "{{computer}} 一就绪即可使用。"
     },
     "notAvailableNow": "已选择，但目前不可用。",
     "offline": "{{computer}} 当前离线。",

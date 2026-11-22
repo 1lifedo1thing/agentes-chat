@@ -2584,7 +2584,7 @@
       "sectors": "Services",
       "usage": "Gouvernance et usage"
     },
-    "noOwner": "Aucun responsable",
+    "noOwner": "Administrateurs",
     "workingNow": "Au travail en ce moment",
     "available": "Disponible",
     "archived": "Archivé",
@@ -2605,7 +2605,7 @@
         "mine": "Les miens",
         "working": "Au travail en ce moment",
         "waiting": "Vous attend",
-        "noOwner": "Aucun responsable"
+        "noOwner": "Avec les administrateurs"
       },
       "groupBy": "Regrouper par",
       "by": {
@@ -4084,7 +4084,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · géré par {{owner}}",
-    "subtitleNoOwner": "{{role}} · sans responsable",
+    "subtitleNoOwner": "{{role}} · géré par les administrateurs",
     "emptyAgent": "Demandez-lui de retenir, d'oublier ou de travailler autrement.",
     "emptyAgent_female": "Demandez-lui de retenir, d'oublier ou de travailler autrement.",
     "opening": "Ouverture de la conversation…",
@@ -4471,7 +4471,7 @@
     "viewProfile": "Voir le profil",
     "agent": "Agent",
     "owner": "Propriétaire",
-    "noOwner": "aucun propriétaire",
+    "noOwner": "Administrateurs",
     "model": "Modèle",
     "can": "Peut",
     "budgetUsed": "{{percent}} du budget utilisé ce mois-ci",
@@ -7443,9 +7443,9 @@
     "noChannels": "Vous n'êtes encore dans aucun canal. Vous pourrez ajouter l'agent à un canal plus tard.",
     "owner": "Responsable",
     "you": "{{name}} (vous)",
-    "noOwnerOption": "Aucun responsable",
-    "noOwnerShort": "Les admins reçoivent les alertes et approuvent",
-    "noOwnerHelp": "Sans responsable, les admins reçoivent les alertes et approuvent les actions sensibles.",
+    "noOwnerOption": "Administrateurs",
+    "noOwnerShort": "Reçoivent les alertes et approuvent",
+    "noOwnerHelp": "Les administrateurs reçoivent les alertes et approuvent les actions sensibles.",
     "ownerHelp": "Reçoit les alertes de budget et approuve les actions sensibles.",
     "ownerRoleHelp": "Les personnes ayant le rôle {{role}} reçoivent ses demandes d'approbation et ses alertes. N'importe laquelle décide, y compris celles qui obtiendront le rôle plus tard.",
     "ownerRoleHelp_female": "Les personnes ayant le rôle {{role}} reçoivent ses demandes d'approbation et ses alertes. N'importe laquelle décide, y compris celles qui obtiendront le rôle plus tard.",
@@ -7500,7 +7500,6 @@
     "noTools": "Aucun outil",
     "onlyContext": "Uniquement le contexte de l'espace de travail",
     "noChannelsReview": "Aucun canal : appelez-le par @ ou par message direct",
-    "noOwnerAdmins": "Aucun responsable (admins)",
     "editSection": "Modifier {{section}}",
     "hints": {
       "role": "Choisissez un point de départ",
@@ -8077,7 +8076,7 @@
       "none": "Aucun lien actif."
     },
     "ownerLine": "Responsable : {{name}}",
-    "noOwner": "Aucun responsable",
+    "noOwner": "Responsable : administrateurs",
     "budgetLine": "{{percent}} du budget de {{month}}",
     "noAgents": "Pas encore d'agents."
   },
@@ -12634,10 +12633,10 @@
       "tool_offOne": "{{program}} est désactivé sur {{computer}}.",
       "not_installed": "{{program}} n'est pas installé sur {{computer}}.",
       "cant_start": "{{program}} est sur {{computer}}, mais ne démarre pas.",
+      "home_only": "{{program}} est installé uniquement pour root sur {{computer}}, où les agents n'ont pas accès.",
       "not_reported": "{{computer}} vérifie encore quels programmes il a. Ceci change tout seul une fois terminé.",
       "system": "{{program}} ne fonctionne pas encore sur le système de {{computer}}.",
-      "no_computerCloud": "Prêt dès que {{computer}} l'est.",
-      "home_only": "{{program}} est installé uniquement pour root sur {{computer}}, où les agents n'ont pas accès."
+      "no_computerCloud": "Prêt dès que {{computer}} l'est."
     },
     "notAvailableNow": "Choisi, mais indisponible pour le moment.",
     "offline": "{{computer}} est hors ligne pour le moment.",

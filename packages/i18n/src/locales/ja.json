@@ -2408,7 +2408,7 @@
       "sectors": "部署",
       "usage": "ガバナンスと利用状況"
     },
-    "noOwner": "担当者なし",
+    "noOwner": "管理者",
     "workingNow": "作業中",
     "available": "対応可能",
     "archived": "アーカイブ済み",
@@ -2428,7 +2428,7 @@
         "mine": "自分の",
         "working": "作業中",
         "waiting": "あなたの対応待ち",
-        "noOwner": "担当者なし"
+        "noOwner": "管理者が担当"
       },
       "groupBy": "グループ分け",
       "by": {
@@ -3770,7 +3770,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · オーナー: {{owner}}",
-    "subtitleNoOwner": "{{role}} · オーナーなし",
+    "subtitleNoOwner": "{{role}} · オーナー: 管理者",
     "emptyAgent": "覚えてほしいこと、忘れてほしいこと、やり方の変更をお願いしてみましょう。",
     "emptyAgent_female": "覚えてほしいこと、忘れてほしいこと、やり方の変更をお願いしてみましょう。",
     "opening": "会話を開いています…",
@@ -4147,7 +4147,7 @@
     "viewProfile": "プロフィールを見る",
     "agent": "エージェント",
     "owner": "オーナー",
-    "noOwner": "オーナーなし",
+    "noOwner": "管理者",
     "model": "モデル",
     "can": "できること",
     "budgetUsed": "今月の予算の{{percent}}を使用",
@@ -6897,9 +6897,9 @@
     "noChannels": "まだどのチャンネルにも参加していません。エージェントはあとでチャンネルに追加できます。",
     "owner": "オーナー",
     "you": "{{name}}（あなた）",
-    "noOwnerOption": "オーナーなし",
-    "noOwnerShort": "管理者がアラートを受け取り、承認します",
-    "noOwnerHelp": "オーナーがいない場合、管理者がアラートを受け取り、重要な操作を承認します。",
+    "noOwnerOption": "管理者",
+    "noOwnerShort": "アラートを受け取り、承認します",
+    "noOwnerHelp": "管理者がアラートを受け取り、重要な操作を承認します。",
     "ownerHelp": "予算のアラートを受け取り、重要な操作を承認します。",
     "ownerRoleHelp": "{{role}}ロールを持つ人が承認リクエストと通知を受け取り、誰でも決められます。あとからロールを得た人も含みます。",
     "ownerRoleHelp_female": "{{role}}ロールを持つ人が承認リクエストと通知を受け取り、誰でも決められます。あとからロールを得た人も含みます。",
@@ -6954,7 +6954,6 @@
     "noTools": "ツールなし",
     "onlyContext": "ワークスペースのコンテキストのみ",
     "noChannelsReview": "チャンネルなし: @またはダイレクトメッセージで呼びます",
-    "noOwnerAdmins": "オーナーなし（管理者）",
     "editSection": "{{section}}を編集",
     "hints": {
       "role": "出発点を選ぶ",
@@ -7490,7 +7489,7 @@
       "none": "有効なリンクはありません。"
     },
     "ownerLine": "オーナー: {{name}}",
-    "noOwner": "オーナーなし",
+    "noOwner": "オーナー: 管理者",
     "budgetLine": "{{month}}の予算の{{percent}}",
     "noAgents": "エージェントはまだいません。"
   },
@@ -11663,10 +11662,10 @@
       "tool_offOne": "{{computer}} では {{program}} がオフです。",
       "not_installed": "{{computer}}に{{program}}がインストールされていません。",
       "cant_start": "{{program}} は {{computer}} にありますが、起動しません。",
+      "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
-      "no_computerCloud": "{{computer}}の準備ができ次第使えます。",
-      "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。"
+      "no_computerCloud": "{{computer}}の準備ができ次第使えます。"
     },
     "notAvailableNow": "選択済みですが、現在は利用できません。",
     "offline": "{{computer}}は現在オフラインです。",

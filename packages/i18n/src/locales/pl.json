@@ -2672,7 +2672,7 @@
       "sectors": "Działy",
       "usage": "Nadzór i użycie"
     },
-    "noOwner": "Bez odpowiedzialnej osoby",
+    "noOwner": "Administratorzy",
     "workingNow": "Pracuje teraz",
     "available": "Dostępny",
     "archived": "Zarchiwizowany",
@@ -2694,7 +2694,7 @@
         "mine": "Moi",
         "working": "Pracuje teraz",
         "waiting": "Czeka na ciebie",
-        "noOwner": "Bez odpowiedzialnej osoby"
+        "noOwner": "U administratorów"
       },
       "groupBy": "Grupuj według",
       "by": {
@@ -4234,7 +4234,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · odpowiada: {{owner}}",
-    "subtitleNoOwner": "{{role}} · bez opiekuna",
+    "subtitleNoOwner": "{{role}} · odpowiadają: administratorzy",
     "emptyAgent": "Poproś go, żeby coś zapamiętał, zapomniał albo pracował inaczej.",
     "emptyAgent_female": "Poproś ją, żeby coś zapamiętała, zapomniała albo pracowała inaczej.",
     "opening": "Otwieramy rozmowę…",
@@ -4624,7 +4624,7 @@
     "viewProfile": "Zobacz profil",
     "agent": "Agent",
     "owner": "Właściciel",
-    "noOwner": "bez właściciela",
+    "noOwner": "Administratorzy",
     "model": "Model",
     "can": "Może",
     "budgetUsed": "{{percent}} budżetu wykorzystane w tym miesiącu",
@@ -7699,9 +7699,9 @@
     "noChannels": "Nie jesteś jeszcze na żadnym kanale. Agenta możesz dodać do kanału później.",
     "owner": "Opiekun",
     "you": "{{name}} (ty)",
-    "noOwnerOption": "Bez opiekuna",
-    "noOwnerShort": "Alerty dostają i zatwierdzają administratorzy",
-    "noOwnerHelp": "Bez opiekuna alerty dostają administratorzy, oni też zatwierdzają wrażliwe akcje.",
+    "noOwnerOption": "Administratorzy",
+    "noOwnerShort": "Dostają alerty i zatwierdzają",
+    "noOwnerHelp": "Administratorzy dostają alerty i zatwierdzają wrażliwe akcje.",
     "ownerHelp": "Dostaje alerty o budżecie i zatwierdza wrażliwe akcje.",
     "ownerRoleHelp": "Osoby z rolą {{role}} dostają prośby o zatwierdzenie i powiadomienia. Decydować może każda z nich, także ta, która dostanie rolę później.",
     "ownerRoleHelp_female": "Osoby z rolą {{role}} dostają prośby o zatwierdzenie i powiadomienia. Decydować może każda z nich, także ta, która dostanie rolę później.",
@@ -7756,7 +7756,6 @@
     "noTools": "Brak narzędzi",
     "onlyContext": "Tylko kontekst przestrzeni roboczej",
     "noChannelsReview": "Brak kanałów: wołaj go przez @ lub wiadomością bezpośrednią",
-    "noOwnerAdmins": "Bez opiekuna (administratorzy)",
     "editSection": "Edytuj: {{section}}",
     "hints": {
       "role": "Wybierz punkt wyjścia",
@@ -8353,7 +8352,7 @@
       "none": "Brak aktywnego linku."
     },
     "ownerLine": "Właściciel: {{name}}",
-    "noOwner": "Brak właściciela",
+    "noOwner": "Właściciel: administratorzy",
     "budgetLine": "{{percent}} budżetu na {{month}}",
     "noAgents": "Na razie brak agentów."
   },
@@ -13104,10 +13103,10 @@
       "tool_offOne": "{{program}} jest wyłączony na {{computer}}.",
       "not_installed": "{{program}} nie jest zainstalowany na komputerze {{computer}}.",
       "cant_start": "{{program}} jest na {{computer}}, ale się nie uruchamia.",
+      "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu.",
       "not_reported": "{{computer}} wciąż sprawdza, jakie ma programy. To zmieni się samo, gdy skończy.",
       "system": "{{program}} nie działa jeszcze w systemie komputera {{computer}}.",
-      "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy.",
-      "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu."
+      "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy."
     },
     "notAvailableNow": "Wybrane, ale teraz niedostępne.",
     "offline": "{{computer}} jest teraz offline.",

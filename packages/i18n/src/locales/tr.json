@@ -2495,7 +2495,7 @@
       "sectors": "Departmanlar",
       "usage": "Yönetişim ve kullanım"
     },
-    "noOwner": "Sorumlu yok",
+    "noOwner": "Yöneticiler",
     "workingNow": "Şu anda çalışıyor",
     "available": "Müsait",
     "archived": "Arşivlenenler",
@@ -2515,7 +2515,7 @@
         "mine": "Benimkiler",
         "working": "Şu anda çalışıyor",
         "waiting": "Sizi bekliyor",
-        "noOwner": "Sorumlu yok"
+        "noOwner": "Yöneticilerde"
       },
       "groupBy": "Gruplama",
       "by": {
@@ -3919,7 +3919,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · sahibi: {{owner}}",
-    "subtitleNoOwner": "{{role}} · sahibi yok",
+    "subtitleNoOwner": "{{role}} · sahibi: yöneticiler",
     "emptyAgent": "Bir şeyi hatırlamasını, unutmasını ya da farklı çalışmasını isteyin.",
     "emptyAgent_female": "Bir şeyi hatırlamasını, unutmasını ya da farklı çalışmasını isteyin.",
     "opening": "Konuşma açılıyor…",
@@ -4299,7 +4299,7 @@
     "viewProfile": "Profili gör",
     "agent": "Ajan",
     "owner": "Sorumlu",
-    "noOwner": "sorumlu yok",
+    "noOwner": "Yöneticiler",
     "model": "Model",
     "can": "Yapabilir",
     "budgetUsed": "Bu ay bütçenin {{percent}} kadarı kullanıldı",
@@ -7136,9 +7136,9 @@
     "noChannels": "Henüz hiçbir kanalda değilsiniz. Ajanı daha sonra bir kanala ekleyebilirsiniz.",
     "owner": "Sahip",
     "you": "{{name}} (siz)",
-    "noOwnerOption": "Sahip yok",
-    "noOwnerShort": "Uyarıları yöneticiler alır ve onaylar",
-    "noOwnerHelp": "Sahip olmadan uyarıları yöneticiler alır ve hassas işlemleri onaylar.",
+    "noOwnerOption": "Yöneticiler",
+    "noOwnerShort": "Uyarıları alır ve onaylar",
+    "noOwnerHelp": "Uyarıları yöneticiler alır ve hassas işlemleri onaylar.",
     "ownerHelp": "Bütçe uyarılarını alır ve hassas işlemleri onaylar.",
     "ownerRoleHelp": "{{role}} rolüne sahip olanlar onay isteklerini ve bildirimleri alır. İçlerinden herkes karar verebilir, rolü sonradan alanlar da dahil.",
     "ownerRoleHelp_female": "{{role}} rolüne sahip olanlar onay isteklerini ve bildirimleri alır. İçlerinden herkes karar verebilir, rolü sonradan alanlar da dahil.",
@@ -7193,7 +7193,6 @@
     "noTools": "Araç yok",
     "onlyContext": "Yalnızca çalışma alanı bağlamı",
     "noChannelsReview": "Kanal yok: @ ile veya doğrudan mesajla çağırın",
-    "noOwnerAdmins": "Sahip yok (yöneticiler)",
     "editSection": "Düzenle: {{section}}",
     "hints": {
       "role": "Bir başlangıç noktası seçin",
@@ -7748,7 +7747,7 @@
       "none": "Etkin bağlantı yok."
     },
     "ownerLine": "Sahip: {{name}}",
-    "noOwner": "Sahip yok",
+    "noOwner": "Sahip: yöneticiler",
     "budgetLine": "{{month}} bütçesinin {{percent}} kadarı",
     "noAgents": "Henüz ajan yok."
   },
@@ -12100,10 +12099,10 @@
       "tool_offOne": "{{program}}, {{computer}} üzerinde kapalı.",
       "not_installed": "{{program}}, {{computer}} üzerinde yüklü değil.",
       "cant_start": "{{program}}, {{computer}} üzerinde var ama açılmıyor.",
+      "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez.",
       "not_reported": "{{computer}} hangi programların olduğunu hâlâ kontrol ediyor. Bittiğinde bu kendiliğinden değişir.",
       "system": "{{program}} henüz {{computer}} sisteminde çalışmıyor.",
-      "no_computerCloud": "{{computer}} hazır olur olmaz hazır.",
-      "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez."
+      "no_computerCloud": "{{computer}} hazır olur olmaz hazır."
     },
     "notAvailableNow": "Seçildi ama şu anda kullanılamıyor.",
     "offline": "{{computer}} şu anda çevrimdışı.",

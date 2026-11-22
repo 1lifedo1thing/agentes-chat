@@ -2408,7 +2408,7 @@
       "sectors": "Departemen",
       "usage": "Tata kelola dan penggunaan"
     },
-    "noOwner": "Tanpa penanggung jawab",
+    "noOwner": "Admin",
     "workingNow": "Sedang bekerja",
     "available": "Tersedia",
     "archived": "Diarsipkan",
@@ -2428,7 +2428,7 @@
         "mine": "Milikku",
         "working": "Sedang bekerja",
         "waiting": "Menunggumu",
-        "noOwner": "Tanpa penanggung jawab"
+        "noOwner": "Dipegang admin"
       },
       "groupBy": "Kelompokkan menurut",
       "by": {
@@ -3785,7 +3785,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · milik {{owner}}",
-    "subtitleNoOwner": "{{role}} · tanpa pemilik",
+    "subtitleNoOwner": "{{role}} · milik admin",
     "emptyAgent": "Minta dia mengingat, melupakan, atau bekerja dengan cara lain.",
     "emptyAgent_female": "Minta dia mengingat, melupakan, atau bekerja dengan cara lain.",
     "opening": "Membuka percakapan…",
@@ -4163,7 +4163,7 @@
     "viewProfile": "Lihat profil",
     "agent": "Agen",
     "owner": "Pemilik",
-    "noOwner": "tanpa pemilik",
+    "noOwner": "Admin",
     "model": "Model",
     "can": "Bisa",
     "budgetUsed": "{{percent}} anggaran terpakai bulan ini",
@@ -6927,9 +6927,9 @@
     "noChannels": "Kamu belum ada di kanal mana pun. Kamu bisa menambahkan agen ke kanal nanti.",
     "owner": "Pemilik",
     "you": "{{name}} (kamu)",
-    "noOwnerOption": "Tanpa pemilik",
-    "noOwnerShort": "Admin menerima peringatan dan menyetujui",
-    "noOwnerHelp": "Tanpa pemilik, admin menerima peringatan dan menyetujui tindakan sensitif.",
+    "noOwnerOption": "Admin",
+    "noOwnerShort": "Menerima peringatan dan menyetujui",
+    "noOwnerHelp": "Admin menerima peringatan dan menyetujui tindakan sensitif.",
     "ownerHelp": "Menerima peringatan anggaran dan menyetujui tindakan sensitif.",
     "ownerRoleHelp": "Siapa pun dengan peran {{role}} menerima permintaan persetujuan dan pemberitahuannya. Siapa pun dari mereka bisa memutuskan, termasuk yang mendapat peran itu nanti.",
     "ownerRoleHelp_female": "Siapa pun dengan peran {{role}} menerima permintaan persetujuan dan pemberitahuannya. Siapa pun dari mereka bisa memutuskan, termasuk yang mendapat peran itu nanti.",
@@ -6987,7 +6987,6 @@
     "noTools": "Tanpa alat",
     "onlyContext": "Hanya konteks ruang kerja",
     "noChannelsReview": "Tanpa kanal: panggil lewat @ atau pesan langsung",
-    "noOwnerAdmins": "Tanpa pemilik (admin)",
     "editSection": "Ubah {{section}}",
     "hints": {
       "role": "Pilih titik awal",
@@ -7523,7 +7522,7 @@
       "none": "Tidak ada tautan aktif."
     },
     "ownerLine": "Pemilik: {{name}}",
-    "noOwner": "Tanpa pemilik",
+    "noOwner": "Pemilik: admin",
     "budgetLine": "{{percent}} dari anggaran {{month}}",
     "noAgents": "Belum ada agen."
   },
@@ -11721,10 +11720,10 @@
       "tool_offOne": "{{program}} mati di {{computer}}.",
       "not_installed": "{{program}} belum terpasang di {{computer}}.",
       "cant_start": "{{program}} ada di {{computer}}, tetapi tidak mau berjalan.",
+      "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
-      "no_computerCloud": "Siap begitu {{computer}} siap.",
-      "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen."
+      "no_computerCloud": "Siap begitu {{computer}} siap."
     },
     "notAvailableNow": "Dipilih, tapi sedang tidak tersedia.",
     "offline": "{{computer}} sedang offline.",
