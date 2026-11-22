@@ -2937,7 +2937,7 @@
     "computerNoHome": "Belum ada komputer. Komputer tersedia setelah workspace ini punya komputer sendiri.",
     "computerNoHomeServer": "Belum ada browser. Siapkan <guide>server ini sebagai komputer para agen</guide> agar ia punya satu.",
     "addComputer": "Tambahkan komputer",
-    "computerOneUser": "Tidak ada komputer di sini. Komputer workspace menjalankan semua agen sebagai satu pengguna, jadi tidak bisa memisahkan tempat tiap orang. Server Linux yang dipasang dengan opsi --system dari penginstal bisa.",
+    "computerOneUser": "Folder dan browser milikmu sendiri di komputer workspace. Komputer ini menjalankan semua agen sebagai satu pengguna: perintah agen lain di sana bisa membacanya, dan hanya orang yang menghubungkannya yang bisa mengambil kendali. Server Linux yang dipasang dengan --system memisahkan setiap tempat.",
     "powers": {
       "title": "Kemampuan di workspace",
       "help": "Hanya tangan kanan Anda yang melakukan ini.",

@@ -3169,7 +3169,7 @@
     "computerNoHome": "Aún sin computadora. Tendrá una cuando este workspace tenga una computadora propia.",
     "computerNoHomeServer": "Todavía sin navegador. Configura <guide>este servidor como la computadora de los agentes</guide> para que tenga uno.",
     "addComputer": "Agregar una computadora",
-    "computerOneUser": "Aquí no hay computadora. La computadora del workspace ejecuta todos los agentes como un solo usuario, así que no puede separar el espacio de cada persona. Un servidor Linux instalado con la opción --system del instalador sí puede.",
+    "computerOneUser": "Tu propia carpeta y tu navegador en la computadora del workspace. Ejecuta todos los agentes como un solo usuario: los comandos de otros agentes allí pueden leerlos, y solo quien la conectó toma el control. Un servidor Linux instalado con --system mantiene cada espacio separado.",
     "powers": {
       "title": "Poderes del workspace",
       "help": "Solo tu mano derecha hace esto.",

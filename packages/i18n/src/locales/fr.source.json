@@ -7605,7 +7605,7 @@
     "value": "Add a computer"
   },
   "rightHand.computerOneUser": {
-    "value": "No computer here. The workspace's computer runs every agent as one user, so it can't keep each person's place apart. A Linux server set up with the installer's --system option can."
+    "value": "Your own folder and browser on the workspace's computer. It runs every agent as one user: other agents' commands there can read them, and only who connected it takes control. A Linux server set up with --system keeps each place apart."
   },
   "rightHand.powers.title": {
     "value": "Workspace powers"
