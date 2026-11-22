@@ -1,6 +1,7 @@
 import {
   type AgentQuestion,
   type Approval,
+  type FileConversation,
   type ThreadInfo,
   useApi,
   useApproval,
@@ -989,6 +990,54 @@ export function ThreadLink({ thread }: { thread: ThreadInfo }) {
               : ""
             : ` · ${when.short(thread.lastActivityAt)}`}
       </Text>
+      <Disclosure />
+    </PressScale>
+  );
+}
+
+/**
+ * Under a picture, a video or a PDF posted in a conversation, once it has comments (ADR 0208): who commented,
+ * "3 comments on the image" and when, the look of a thread's link; a tap opens the file, its conversation under it.
+ */
+export function FileCommentsLink({
+  talk,
+  media,
+  onPress,
+}: {
+  talk: Pick<FileConversation, "count" | "lastAt" | "participants">;
+  media: "image" | "video" | "pdf";
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const surface = useSurface();
+  const when = useWhen();
+  const faces = threadFaces(talk.participants, 2);
+  const label = t(`files.comments.line.${media}` as "files.comments.line.image", { count: talk.count });
+  return (
+    <PressScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={{ top: (TOUCH - THREAD_LINK) / 2, bottom: (TOUCH - THREAD_LINK) / 2 }}
+      fill={false}
+      style={[styles.tlinkBox, surface]}
+      contentStyle={styles.tlink}
+    >
+      <View style={styles.faces}>
+        {faces.map((f, i) => (
+          <View key={`${f.type}:${f.id}`} style={i > 0 ? styles.overlap : undefined}>
+            <Face who={f} size={20} live={false} />
+          </View>
+        ))}
+      </View>
+      <Text variant="small" tone="ink2" numberOfLines={1} style={[styles.bold, styles.shrink]}>
+        {label}
+      </Text>
+      {talk.lastAt ? (
+        <Text variant="small" tone="faint" numberOfLines={1}>
+          {` · ${when.short(talk.lastAt)}`}
+        </Text>
+      ) : null}
       <Disclosure />
     </PressScale>
   );
