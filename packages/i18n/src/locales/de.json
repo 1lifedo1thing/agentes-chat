@@ -14682,6 +14682,27 @@
     "needsKey": "Dieser Server unterstützt kein OAuth. Verbinde ihn mit einem API-Schlüssel.",
     "notApproved": "{{name}} lässt nur freigegebene Apps zur Anmeldung zu, und agentes.chat ist noch nicht freigegeben. Wenn du dort einen API-Schlüssel bekommst, kannst du dich damit verbinden.",
     "serverSaid": "Der Server hat geantwortet: {{detail}}",
+    "ownClient": {
+      "title": "Eigene OAuth-App verwenden",
+      "notApproved": "{{name}} lässt nur Apps herein, die es freigegeben hat, und agentes.chat gehört noch nicht dazu. Du kannst es mit deiner eigenen App dort verbinden.",
+      "askAdmin": "Ein Admin kann es mit der eigenen App des Workspace verbinden.",
+      "help": "Erstelle beim Anbieter eine App, trage dort diese Weiterleitungs-URI ein und füge ihre Client-ID hier ein. Jede Anmeldung dort aus dem Workspace nutzt dann deine App.",
+      "guide": {
+        "metaAds": "Erstelle in Meta for Developers eine App mit dem Anwendungsfall Marketing API. Füge diese Weiterleitungs-URI zu ihren gültigen OAuth-Weiterleitungs-URIs hinzu und füge dann die App-ID ein, und das App-Geheimnis, falls deine App eines verlangt."
+      },
+      "redirectUri": "Weiterleitungs-URI",
+      "copied": "Weiterleitungs-URI kopiert.",
+      "clientId": "Client-ID",
+      "clientIdMissing": "Füge die Client-ID der App ein.",
+      "clientSecret": "Client-Geheimnis",
+      "clientSecretHelp": "Nur wenn die App eines verlangt. Es wird verschlüsselt gespeichert und nie wieder angezeigt.",
+      "secretSaved": "Ein Geheimnis ist gespeichert. Lass das Feld leer, um es zu behalten.",
+      "scopes": "Scopes",
+      "scopesHelp": "Was jede Anmeldung anfragt, durch Leerzeichen getrennt. Leer lassen für das, was der Server angibt.",
+      "save": "Speichern und weiter",
+      "remove": "Entfernen",
+      "removed": "Deine App wurde entfernt."
+    },
     "headers": {
       "title": "Anfrage-Header",
       "help": "Für einen Schlüssel, der in einen anderen Header gehört, oder ein Gateway vor dem Server. Die meisten Server brauchen keine.",
@@ -15470,7 +15491,10 @@
       "headerAndKey": "Der API-Schlüssel wird schon als Authorization gesendet. Lösch den Schlüssel oder entferne diesen Header.",
       "headersTooMany": "Ein Server nimmt höchstens {{max}} Header. Entferne einen, um einen weiteren hinzuzufügen.",
       "headersWithSignIn": "Dieser Server verlangt eine Anmeldung, und eine Anmeldung kann noch keine Header mitsenden. Entferne die Header, um dich anzumelden, oder verbinde ihn mit einem API-Schlüssel.",
-      "headersUnreadable": "Die gespeicherten Header konnten nicht gelesen werden. Gib sie neu ein oder entferne sie."
+      "headersUnreadable": "Die gespeicherten Header konnten nicht gelesen werden. Gib sie neu ein oder entferne sie.",
+      "noOAuth": "Der MCP-Server meldet sich nicht per OAuth an und nimmt daher keine eigene App. Verbinde ihn mit einem API-Schlüssel.",
+      "ownClientInUse": "Es melden sich noch Konten mit der zuvor gespeicherten App an. Trenne sie zuerst und ändere sie dann.",
+      "ownClientId": "Prüfe die Client-ID: ein einziges Wort, so wie der Anbieter sie anzeigt."
     },
     "wiki": {
       "githubNoNotes": "Unter diesem Link gibt es keine Markdown-Notizen.",

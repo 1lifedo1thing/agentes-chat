@@ -15015,6 +15015,34 @@ export const en = {
       "{{name}} only lets apps it approved sign in, and agentes.chat isn't approved yet. If it gives you an API key, you can connect with that.",
     serverSaid: "The server answered: {{detail}}",
     /**
+     * A server that lets in only OAuth apps it approved (Meta Ads): an admin registers an app of the workspace's own
+     * there and pastes its client ID (and secret). "Redirect URI", "Client ID", "Client secret" and "Scopes" are the
+     * names providers' consoles use.
+     */
+    ownClient: {
+      title: "Use your own OAuth app",
+      notApproved:
+        "{{name}} only lets in apps it approved, and agentes.chat isn't one yet. You can connect it with your own app there.",
+      askAdmin: "An admin can connect it with the workspace's own app.",
+      help: "Create an app at the provider, register this redirect URI in it and paste its client ID. Every sign-in there from the workspace then uses your app.",
+      guide: {
+        metaAds:
+          "In Meta for Developers, create an app with the Marketing API use case. Add this redirect URI to its valid OAuth redirect URIs, then paste the App ID, and the App Secret if your app requires it.",
+      },
+      redirectUri: "Redirect URI",
+      copied: "Redirect URI copied.",
+      clientId: "Client ID",
+      clientIdMissing: "Paste the app's client ID.",
+      clientSecret: "Client secret",
+      clientSecretHelp: "Only if the app requires one. It's kept encrypted and never shown again.",
+      secretSaved: "A secret is saved. Leave this empty to keep it.",
+      scopes: "Scopes",
+      scopesHelp: "What every sign-in asks for, separated by spaces. Leave it empty for what the server lists.",
+      save: "Save and continue",
+      remove: "Remove",
+      removed: "Your app was removed.",
+    },
+    /**
      * A server by address: HTTP request headers an admin types once (a name and a value each), sent with every request
      * to that server. `{{n}}` is a row's number; `<names/>` is the list of header names, such as X-API-Key.
      */
@@ -15788,6 +15816,9 @@ export const en = {
         "This server asks for a sign-in, and a sign-in can't carry headers yet. Remove the headers to sign in, or connect with an API key.",
       /** Reconnecting an account whose saved headers, kept encrypted, could no longer be opened. */
       headersUnreadable: "The saved headers couldn't be read. Type them again, or remove them.",
+      noOAuth: "The MCP server doesn't sign in with OAuth, so it takes no app of yours. Connect it with an API key.",
+      ownClientInUse: "Accounts still sign in with the app saved before. Disconnect them first, then change it.",
+      ownClientId: "Check the client ID: one word, as the provider shows it.",
     },
     wiki: {
       githubNoNotes: "No Markdown notes in this link.",

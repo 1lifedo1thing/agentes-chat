@@ -88,6 +88,7 @@ import {
   needsKeyText,
   stateOf,
 } from "./logic";
+import { OwnClient } from "./OwnClient";
 import { Problem } from "./Problem";
 import { RequestHeaders } from "./RequestHeaders";
 import { ADDRESS_STEPS, CATALOG_STEPS, doneSummary, firstStep, reviewTarget, STEP_KEYS, type Step } from "./review";
@@ -747,6 +748,9 @@ function ConnectStep({
   const sendsHeaders = canHeaders && (headers ? headers.length > 0 : savedHeaders.length > 0);
   const [key, setKey] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // The workspace's own OAuth app, for a server that lets in only apps it approved: who manages connectors sets it.
+  const ownOffered = admin && byAddress && !viaComposio;
+  const [own, setOwn] = useState(false);
   const busy = start.isPending || complete.isPending || withKey.isPending || connect.isPending || installer.busy;
   const serverUrl = fixed ?? (def?.kind === "remote_mcp" ? def.serverUrl : url.trim());
   const shownName = name || serverUrl.replace(/^https:\/\//, "").split("/")[0] || "";
@@ -841,10 +845,12 @@ function ConnectStep({
         });
         if (res.status === "oauth") return void (await signInWith(res.authorizeUrl));
         if (res.status === "needs_key") {
-          setMode("key");
+          const ownWay = ownOffered && res.reason === "not_approved";
+          if (ownWay) setOwn(true);
+          else setMode("key");
           // "Check their values": the headers it sent are in sight.
           if (sendsHeaders) setHeadersOpen(true);
-          return oops(needsKeyText(t, res, shownName, sendsHeaders));
+          return oops(needsKeyText(t, res, shownName, sendsHeaders, ownWay));
         }
         return await connected(res.server.id, res.server.label, res.outcome);
       }
@@ -894,6 +900,34 @@ function ConnectStep({
     else if (done.error) oops(done.error);
   };
   const field = [styles.field, { backgroundColor: c.raised, color: c.ink, borderColor: c.line }];
+  if (own) {
+    // A one-click server whose vendor's steps we know (Meta Ads, where this server has no Meta app of its own).
+    const preset = catalog.data?.connectors.find((d) => d.kind === "remote_mcp" && sameServer(d.serverUrl, serverUrl));
+    return (
+      <>
+        {error ? <Problem key={error} text={error} /> : null}
+        <OwnClient
+          serverUrl={serverUrl}
+          guide={preset?.id === "meta-ads" ? t("connectFlow.ownClient.guide.metaAds") : null}
+          busy={busy}
+          onSaved={() => {
+            setOwn(false);
+            void signIn();
+          }}
+        />
+        <Button
+          variant="text"
+          size="sm"
+          label={t("mobile.connectors.useSignIn")}
+          disabled={busy}
+          onPress={() => {
+            setError(null);
+            setOwn(false);
+          }}
+        />
+      </>
+    );
+  }
   if (appOffered && via === "app") {
     return (
       <>
@@ -1034,6 +1068,18 @@ function ConnectStep({
           label={mode === "signIn" ? t("mobile.connectors.useKey") : t("mobile.connectors.useSignIn")}
           disabled={busy}
           onPress={() => setMode(mode === "signIn" ? "key" : "signIn")}
+        />
+      ) : null}
+      {ownOffered && (!askUrl || isHttpsUrl(url)) ? (
+        <Button
+          variant="text"
+          size="sm"
+          label={t("connectFlow.ownClient.title")}
+          disabled={busy}
+          onPress={() => {
+            setError(null);
+            setOwn(true);
+          }}
         />
       ) : null}
       {appOffered ? (

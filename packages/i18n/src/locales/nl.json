@@ -14750,6 +14750,27 @@
     "needsKey": "Deze server ondersteunt geen OAuth. Koppel met een API-sleutel.",
     "notApproved": "{{name}} laat alleen goedgekeurde apps inloggen, en agentes.chat is nog niet goedgekeurd. Krijg je er een API-sleutel, dan kun je daarmee koppelen.",
     "serverSaid": "De server antwoordde: {{detail}}",
+    "ownClient": {
+      "title": "Je eigen OAuth-app gebruiken",
+      "notApproved": "{{name}} laat alleen apps toe die het heeft goedgekeurd, en agentes.chat hoort daar nog niet bij. Je kunt het verbinden met je eigen app daar.",
+      "askAdmin": "Een beheerder kan het verbinden met de eigen app van de workspace.",
+      "help": "Maak een app bij de aanbieder, registreer daar deze redirect-URI en plak de client-ID hier. Elke aanmelding daar vanuit de workspace gebruikt dan jouw app.",
+      "guide": {
+        "metaAds": "Maak in Meta for Developers een app met de use case Marketing API. Voeg deze redirect-URI toe aan de geldige OAuth-redirect-URI's en plak dan de app-ID, en het app-geheim als je app erom vraagt."
+      },
+      "redirectUri": "Redirect-URI",
+      "copied": "Redirect-URI gekopieerd.",
+      "clientId": "Client-ID",
+      "clientIdMissing": "Plak de client-ID van de app.",
+      "clientSecret": "Clientgeheim",
+      "clientSecretHelp": "Alleen als de app erom vraagt. Het wordt versleuteld bewaard en nooit meer getoond.",
+      "secretSaved": "Er is een geheim opgeslagen. Laat dit leeg om het te houden.",
+      "scopes": "Scopes",
+      "scopesHelp": "Wat elke aanmelding vraagt, gescheiden door spaties. Laat leeg voor wat de server opgeeft.",
+      "save": "Opslaan en doorgaan",
+      "remove": "Verwijderen",
+      "removed": "Je app is verwijderd."
+    },
     "headers": {
       "title": "Headers van het verzoek",
       "help": "Voor een sleutel die in een andere header hoort, of een gateway vóór de server. De meeste servers hebben er geen nodig.",
@@ -15538,7 +15559,10 @@
       "headerAndKey": "De API-sleutel wordt al als Authorization meegestuurd. Wis de sleutel, of verwijder deze header.",
       "headersTooMany": "Een server neemt hooguit {{max}} headers. Verwijder er één om een andere toe te voegen.",
       "headersWithSignIn": "Deze server vraagt om in te loggen, en een login kan nog geen headers meesturen. Verwijder de headers om in te loggen, of koppel met een API-sleutel.",
-      "headersUnreadable": "De opgeslagen headers konden niet worden gelezen. Vul ze opnieuw in of verwijder ze."
+      "headersUnreadable": "De opgeslagen headers konden niet worden gelezen. Vul ze opnieuw in of verwijder ze.",
+      "noOAuth": "De MCP-server meldt niet aan met OAuth en neemt dus geen eigen app aan. Verbind hem met een API-sleutel.",
+      "ownClientInUse": "Er melden nog accounts aan met de eerder opgeslagen app. Verbreek die eerst en wijzig hem dan.",
+      "ownClientId": "Controleer de client-ID: één woord, zoals de aanbieder hem toont."
     },
     "wiki": {
       "githubNoNotes": "Geen Markdown-notities in deze link.",

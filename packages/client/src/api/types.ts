@@ -3258,6 +3258,17 @@ export type CustomConnectStart =
    */
   | { status: "needs_key"; reason?: "not_approved"; detail?: string };
 
+/**
+ * A workspace's own OAuth client (its app at the provider) for an MCP server that takes only clients it approved: one
+ * per authorization server (`issuer`). Its secret is never returned.
+ */
+export interface OwnOAuthClient {
+  /** The redirect URI to register in that app. */
+  redirectUri: string;
+  issuer: string;
+  client: { clientId: string; hasSecret: boolean; scopes: string | null } | null;
+}
+
 // ── Knowledge (phase 5: apps/server/src/routes/app/knowledge.ts) ─────────────
 
 export type SearchKind = "message" | "context_item" | "issue" | "file" | "wiki" | "action";
