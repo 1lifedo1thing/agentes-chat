@@ -267,6 +267,8 @@ export interface WorkspaceLimits {
   /** `ownStorage`: new files go to the workspace's own bucket, which no limit counts. */
   storage: { usedBytes: number; limitBytes: number | null; ownStorage: boolean };
   uploads: { usedBytes24h: number; limitBytesPerDay: number | null };
+  /** What vendors that bill per call (X) charged this month, against the month's limit, in US$. Absent from older servers. */
+  connectors?: { usedUsd: number; limitUsd: number | null };
 }
 
 /** Where in the app a billing link is opened from: the billing service opens on what it came for (ADR 0079). */

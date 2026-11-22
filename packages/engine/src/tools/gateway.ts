@@ -729,7 +729,16 @@ export function createToolGateway(deps: {
     if (tool.connector) {
       const { orgId, agentId } = ctx;
       const errors = output.isError ? 1 : 0;
-      await countToolCall(ctx.db, { orgId, agentId, connector: tool.connector, calls: 1, errors, approvalsGiven });
+      const costNanoUsd = output.costNanoUsd;
+      await countToolCall(ctx.db, {
+        orgId,
+        agentId,
+        connector: tool.connector,
+        calls: 1,
+        errors,
+        approvalsGiven,
+        costNanoUsd,
+      });
     }
     return output;
   }

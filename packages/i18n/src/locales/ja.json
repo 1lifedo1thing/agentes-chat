@@ -18934,7 +18934,9 @@
     "usedOf": "{{used}} / {{limit}}",
     "seatsPaid_other": "支払い済み {{count}}席",
     "noLimit": "上限なし",
-    "ownBucket": "自前のバケットを使用、こちらの上限はありません"
+    "ownBucket": "自前のバケットを使用、こちらの上限はありません",
+    "connectors": "今月の X",
+    "shareUsed": "{{share}} 使用済み"
   },
   "referrals": {
     "open": "紹介して特典を獲得",

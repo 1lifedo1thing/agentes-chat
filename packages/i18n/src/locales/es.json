@@ -20085,7 +20085,9 @@
     "seatsPaid_many": "{{count}} lugares pagados",
     "seatsPaid_other": "{{count}} lugares pagados",
     "noLimit": "Sin límite",
-    "ownBucket": "En tu propio bucket, sin límite de nuestra parte"
+    "ownBucket": "En tu propio bucket, sin límite de nuestra parte",
+    "connectors": "X este mes",
+    "shareUsed": "{{share}} usado"
   },
   "referrals": {
     "open": "Recomienda y gana",

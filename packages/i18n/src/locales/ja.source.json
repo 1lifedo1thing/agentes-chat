@@ -55319,5 +55319,11 @@
   },
   "connectors.can.meta_ads.ask": {
     "value": "Turning ads on and changing budgets always ask for your approval"
+  },
+  "billing.connectors": {
+    "value": "X this month"
+  },
+  "billing.shareUsed": {
+    "value": "{{share}} used"
   }
 }
