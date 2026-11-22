@@ -20259,7 +20259,9 @@
     "seatsPaid_many": "{{count}} posti pagati",
     "seatsPaid_other": "{{count}} posti pagati",
     "noLimit": "Nessun limite",
-    "ownBucket": "Sul tuo bucket, senza limiti da parte nostra"
+    "ownBucket": "Sul tuo bucket, senza limiti da parte nostra",
+    "connectors": "X questo mese",
+    "shareUsed": "{{share}} usato"
   },
   "referrals": {
     "open": "Invita e guadagna",

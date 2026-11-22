@@ -19017,7 +19017,9 @@
     "usedOf": "{{used}} dari {{limit}}",
     "seatsPaid_other": "{{count}} kursi berbayar",
     "noLimit": "Tanpa batas",
-    "ownBucket": "Di bucket milikmu sendiri, tanpa batas dari kami"
+    "ownBucket": "Di bucket milikmu sendiri, tanpa batas dari kami",
+    "connectors": "X bulan ini",
+    "shareUsed": "{{share}} terpakai"
   },
   "referrals": {
     "open": "Ajak teman dan dapatkan hadiah",

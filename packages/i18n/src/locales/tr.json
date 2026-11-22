@@ -19516,7 +19516,9 @@
     "seatsPaid_one": "{{count}} ücreti ödenmiş yer",
     "seatsPaid_other": "{{count}} ücreti ödenmiş yer",
     "noLimit": "Sınırsız",
-    "ownBucket": "Kendi depolama alanınızda, bizden bir sınır olmadan"
+    "ownBucket": "Kendi depolama alanınızda, bizden bir sınır olmadan",
+    "connectors": "Bu ay X",
+    "shareUsed": "{{share}} kullanıldı"
   },
   "referrals": {
     "open": "Önerin ve kazanın",

@@ -1,5 +1,5 @@
 {
-  "id": "e7d58e67-fb21-4717-be3d-505a137fc439",
+  "id": "cbf031d5-fb2e-425b-b79e-132b346fe90f",
   "prevId": "dd235a23-9a95-468d-9a73-05132e3bf497",
   "version": "7",
   "dialect": "postgresql",
@@ -5431,6 +5431,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "cost_nano_usd": {
+          "name": "cost_nano_usd",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
         }
       },
       "indexes": {
@@ -5969,13 +5976,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "provided_by_person": {
-          "name": "provided_by_person",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -25591,6 +25591,12 @@
         },
         "limit_platform_nano_usd": {
           "name": "limit_platform_nano_usd",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "limit_connector_nano_usd": {
+          "name": "limit_connector_nano_usd",
           "type": "bigint",
           "primaryKey": false,
           "notNull": false

@@ -48047,6 +48047,12 @@
   "billing.ownBucket": {
     "value": "On your own bucket, with no limit from us"
   },
+  "billing.connectors": {
+    "value": "X this month"
+  },
+  "billing.shareUsed": {
+    "value": "{{share}} used"
+  },
   "referrals.open": {
     "value": "Refer and earn"
   },

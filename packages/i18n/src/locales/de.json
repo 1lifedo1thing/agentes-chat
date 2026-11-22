@@ -19593,7 +19593,9 @@
     "seatsPaid_one": "{{count}} bezahlter Platz",
     "seatsPaid_other": "{{count}} bezahlte Plätze",
     "noLimit": "Kein Limit",
-    "ownBucket": "In deinem eigenen Bucket, ohne Limit von uns"
+    "ownBucket": "In deinem eigenen Bucket, ohne Limit von uns",
+    "connectors": "X diesen Monat",
+    "shareUsed": "{{share}} verbraucht"
   },
   "referrals": {
     "open": "Empfehlen und verdienen",

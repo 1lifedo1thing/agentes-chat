@@ -381,6 +381,8 @@ export const connectorUsageDays = pgTable(
     approvalsAsked: integer().notNull().default(0),
     /** Approved actions that ran. */
     approvalsGiven: integer().notNull().default(0),
+    /** What the vendor bills this server for the calls, as estimated from its price list (X), in nano-US$. */
+    costNanoUsd: bigint({ mode: "number" }).notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.day, t.connector, t.via, t.orgId, t.agentId, t.tool] }), index().on(t.orgId)],
 );
