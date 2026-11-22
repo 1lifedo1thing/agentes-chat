@@ -30,6 +30,7 @@ import {
   BrainIcon,
   Button,
   cx,
+  Dialog,
   EffortPixels,
   EventPill,
   EventPillAction,
@@ -39,13 +40,14 @@ import {
   MenuItem,
   MenuRadioGroup,
   MenuSeparator,
-  Popover,
   ProviderLogo,
   planLine,
   Segmented,
+  Skeleton,
+  SkeletonGroup,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
-import { type CSSProperties, type ReactElement, type ReactNode, useState } from "react";
+import { type CSSProperties, cloneElement, type ReactElement, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOpenAgentPanel } from "@/components/agent-panel-context";
 import { TeamScene } from "@/components/arrival/TeamScene";
@@ -117,22 +119,41 @@ export function ModelPickerButton({
   );
 }
 
-/** The picker, opened from `trigger` (the header's button, a reply's "Escolher modelo"). */
+/**
+ * The picker, opened from `trigger` (the header's button, a reply's "Escolher modelo"): a dialog of its own, the
+ * agent's sky at its top with the way out over it.
+ */
 function ModelPickerPopover({ agent, trigger }: { agent: Agent; trigger: (open: boolean) => ReactElement }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <Popover
-      open={open}
-      onOpenChange={setOpen}
-      side="bottom"
-      align="end"
-      label={t("brain.picker.open", { agent: agent.name })}
-      className="mp"
-      trigger={trigger(open)}
-    >
-      {open && <ModelPickerPanel agent={agent} onClose={() => setOpen(false)} />}
-    </Popover>
+    <>
+      {cloneElement(trigger(open) as ReactElement<{ onClick?: () => void; "aria-haspopup"?: string }>, {
+        onClick: () => setOpen(true),
+        "aria-haspopup": "dialog",
+      })}
+      <Dialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t("brain.picker.open", { agent: agent.name })}
+        closeLabel={t("common.close")}
+        width={440}
+        bare
+        className="mp"
+      >
+        <Button
+          size="sm"
+          variant="ghost"
+          iconOnly
+          icon="close"
+          className="mp__close"
+          aria-label={t("common.close")}
+          title={t("common.close")}
+          onClick={() => setOpen(false)}
+        />
+        {open && <ModelPickerPanel agent={agent} onClose={() => setOpen(false)} />}
+      </Dialog>
+    </>
   );
 }
 
@@ -191,8 +212,24 @@ export function ModelStandInLine({
 }
 
 function ModelPickerPanel({ agent, onClose }: { agent: Agent; onClose: () => void }) {
+  const { t } = useTranslation();
   const brain = useAgentBrain(useOrg().org.id, agent.id);
-  if (!brain.data) return <div className="mp__loading" aria-busy="true" />;
+  // Still reading what the agent thinks with: its sky already, and the picker's own shape under it.
+  if (!brain.data)
+    return (
+      <div className="mp__body mp__loading" aria-busy="true">
+        <TeamScene className="mp__sky" agents={[{ id: agent.id, name: agent.name }]} lead={agent.id} />
+        <SkeletonGroup label={t("common.loading")}>
+          <Skeleton shape="block" width={212} height={40} />
+          <Skeleton shape="block" width={180} height={36} />
+          <Skeleton width={140} />
+          {[150, 96, 104, 110].map((w) => (
+            <Skeleton key={w} width={w} height={18} />
+          ))}
+          <Skeleton shape="block" width="100%" height={72} />
+        </SkeletonGroup>
+      </div>
+    );
   return <PickerBody agent={agent} view={brain.data} onClose={onClose} />;
 }
 

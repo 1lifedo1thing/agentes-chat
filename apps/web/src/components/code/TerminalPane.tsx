@@ -114,6 +114,7 @@ export function TerminalPane({
     let term: Terminal | null = null;
     let socket: ReturnType<typeof createSocket> | null = null;
     let observer: ResizeObserver | null = null;
+    let themes: MutationObserver | null = null;
     let frame = 0;
     setState("opening");
     setAgentFolder(false);
@@ -128,21 +129,50 @@ export function TerminalPane({
       // Cells measured in a face that isn't loaded yet would all be off once it is.
       await Promise.race([document.fonts?.load(`${FONT_SIZE}px ${fontFamily}`), sleep(FONT_WAIT_MS)]).catch(() => {});
       if (done) return;
-      const background = token("--code-term-bg");
+      const ANSI = [
+        "black",
+        "red",
+        "green",
+        "yellow",
+        "blue",
+        "magenta",
+        "cyan",
+        "white",
+        "brightBlack",
+        "brightRed",
+        "brightGreen",
+        "brightYellow",
+        "brightBlue",
+        "brightMagenta",
+        "brightCyan",
+        "brightWhite",
+      ] as const;
+      /** The terminal's colors as the theme has them now. */
+      const colors = () => {
+        const background = token("--code-term-bg");
+        return {
+          background,
+          foreground: token("--code-term-ink"),
+          cursor: token("--code-term-cursor"),
+          cursorAccent: background,
+          selectionBackground: token("--code-term-selection"),
+          ...Object.fromEntries(ANSI.map((name, n) => [name, token(`--code-term-${n}`)])),
+        };
+      };
       const shell = new xterm.Terminal({
         fontFamily,
         fontSize: FONT_SIZE,
         lineHeight: LINE_HEIGHT,
         cursorBlink: true,
         scrollback: SCROLLBACK,
-        theme: {
-          background,
-          foreground: token("--code-term-ink"),
-          cursor: token("--code-term-cursor"),
-          cursorAccent: background,
-          selectionBackground: token("--code-term-selection"),
-        },
+        theme: colors(),
       });
+      // The app's theme changed (its attribute, on the page's root or its body): the terminal's colors with it.
+      themes = new MutationObserver(() => {
+        shell.options.theme = colors();
+      });
+      for (const el of [document.documentElement, document.body])
+        themes.observe(el, { attributes: true, attributeFilter: ["data-theme", "class"] });
       term = shell;
       const fit = new FitAddon();
       shell.loadAddon(fit);
@@ -244,6 +274,7 @@ export function TerminalPane({
         socket.onmessage = null;
         socket.close(1000);
       }
+      themes?.disconnect();
       if (keep) enders.delete(keep);
       term?.dispose();
       shellRef.current = null;

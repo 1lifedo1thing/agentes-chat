@@ -56,16 +56,30 @@
   color: var(--muted);
 }
 
-/* The popover: wider than a menu, never past the window, scrolling inside past its room. */
-.ac-popover.mp {
-  width: min(420px, calc(100vw - 32px));
-  max-width: min(420px, calc(100vw - 32px));
+/* The dialog: the agent's sky at its top, scrolling inside past its room. */
+.ac-dialog.mp {
   padding: 0;
   overflow: hidden auto;
-  border-radius: var(--radius-lg, 16px);
 }
-.mp__loading {
-  height: 220px;
+/* The way out, over the sky: white, whatever the theme. */
+.mp__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  color: #fff;
+}
+.mp__close:hover {
+  background: #ffffff2e;
+  color: #fff;
+}
+/* Still reading: the picker's own shape (its AIs, its account, its models, its effort), so nothing jumps. */
+.mp__loading .ac-skeleton-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-block: var(--space-3) var(--space-4);
 }
 .mp__body {
   display: flex;
