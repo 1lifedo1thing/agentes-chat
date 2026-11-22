@@ -250,7 +250,7 @@ export async function refusedAtLimit(db: Database, run: ToolRun, wakes: string):
     // Continuar wakes it again where it answered; a routine's run, where the routine reports.
     ...(report ? {} : { after: { threadRootId: at.threadRootId, replyInThread: at.replyInThread } }),
   });
-  return { content: STRETCH_REFUSAL, isError: true };
+  return { content: STRETCH_REFUSAL, isError: true, data: { code: "stretch.limit" } };
 }
 
 /**
