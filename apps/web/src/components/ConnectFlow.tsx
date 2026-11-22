@@ -762,10 +762,8 @@ function OwnClient({
       {alert}
       <p className="small muted">{guide ?? t("connectFlow.ownClient.help")}</p>
       {/* A value to copy, not a field to fill: labelled like one, as tall as its words. A long address wraps whole. */}
-      <div className="cflow__hgroup" role="group" aria-labelledby="cflow-redirect">
-        <span className="ac-field__label" id="cflow-redirect">
-          {t("connectFlow.ownClient.redirectUri")}
-        </span>
+      <div className="cflow__hgroup">
+        <span className="ac-field__label">{t("connectFlow.ownClient.redirectUri")}</span>
         <CommandBlock command={redirectUri} labelled />
       </div>
       <Field label={t("connectFlow.ownClient.clientId")} id="cflow-client-id" error={idError}>
