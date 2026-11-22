@@ -61,6 +61,7 @@ import {
   createLiveDocs,
   createLiveFileToolSource,
   createLiveImages,
+  createLlmIntentWriter,
   createLlmJudge,
   createMachineHub,
   createMailToolSource,
@@ -103,6 +104,7 @@ import {
   GrokBrain,
   getAgentCached,
   hubBrainLink,
+  type IntentWriter,
   isAgentesCloud,
   isRightHand,
   type JobDeps,
@@ -177,6 +179,8 @@ export interface EngineOptions {
   routerQuietMs?: number;
   /** Tests: a fake judge (no model calls for "is this a stop?" and the like). */
   judge?: Judge;
+  /** Tests: a fake writer of the working line's first words, or null for none (no model call at a run's start). */
+  intents?: IntentWriter | null;
   /** Tests: a fake schedule reader (no model calls for "toda segunda às 9h" and the like). */
   schedules?: ScheduleReader;
   /** Tests: fake S3 server and DNS for org buckets. */
@@ -293,6 +297,10 @@ export function buildEngine(o: EngineOptions) {
       () => jevKey.usable(),
     );
   }
+  context.intents =
+    o.intents === undefined
+      ? createLlmIntentWriter({ gateway, resolveModel: (orgId) => smallModelFor({ db, gateway }, orgId, smallModels) })
+      : (o.intents ?? undefined);
   // Screenshots go only to Jev's vision model: with a fake judge (tests) nothing looks at them.
   const vision = o.judge ? undefined : () => jevKey.usable();
   // Nothing is judged for a workspace on hold or suspended: Jev bills the server, not the workspace.
