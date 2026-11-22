@@ -2942,8 +2942,6 @@
       "mentionsYou": "ti hanno menzionato"
     },
     "unreadDivider": "Nuovi",
-    "offline": "Nessuna connessione. Quello che invii parte da solo quando torna.",
-    "backOnline": "Di nuovo connesso",
     "sendingOffline": "parte quando torna la connessione",
     "endOfReply": "Fine della risposta",
     "mentionSuggestions": "Suggerimenti di menzione"
@@ -18733,10 +18731,6 @@
       "messages_one": "{{count}} messaggio",
       "messages_many": "{{count}} messaggi",
       "messages_other": "{{count}} messaggi",
-      "origin": "{{from}} ha chiesto a {{to}} in #{{channel}} · {{time}}",
-      "originDm": "{{from}} ha chiesto a {{to}} · {{time}}",
-      "originNote": "{{from}} ha passato del lavoro a {{to}} in #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} ha passato del lavoro a {{to}} · {{time}}",
       "readOnly": "Sola lettura.",
       "steer": "Per cambiare direzione, parla con {{name}}.",
       "steer_female": "Per cambiare direzione, parla con {{name}}.",

@@ -2836,8 +2836,6 @@
       "mentionsYou": "sizden bahsedildi"
     },
     "unreadDivider": "Yeni",
-    "offline": "Bağlantı yok. Gönderdikleriniz bağlantı gelince kendiliğinden gider.",
-    "backOnline": "Yeniden bağlandı",
     "sendingOffline": "bağlantı gelince gönderilir",
     "endOfReply": "Yanıtın sonu",
     "mentionSuggestions": "Bahsetme önerileri"
@@ -18054,10 +18052,6 @@
       "whereDm": "Ajanlar arasında",
       "messages_one": "{{count}} mesaj",
       "messages_other": "{{count}} mesaj",
-      "origin": "{{from}}, #{{channel}} kanalında {{to}} ajanına sordu · {{time}}",
-      "originDm": "{{from}}, {{to}} ajanına sordu · {{time}}",
-      "originNote": "{{from}}, #{{channel}} kanalında {{to}} ajanına iş devretti · {{time}}",
-      "originNoteDm": "{{from}}, {{to}} ajanına iş devretti · {{time}}",
       "readOnly": "Yalnızca okuma.",
       "steer": "Yönü değiştirmek için {{name}} ile konuşun.",
       "talk": "{{name}} ile konuş",

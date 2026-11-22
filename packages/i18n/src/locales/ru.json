@@ -3042,8 +3042,6 @@
       "mentionsYou": "вас упомянули"
     },
     "unreadDivider": "Новые",
-    "offline": "Нет соединения. Всё, что вы отправите, уйдёт само, когда оно вернётся.",
-    "backOnline": "Снова на связи",
     "sendingOffline": "уйдёт, когда вернётся соединение",
     "endOfReply": "Конец ответа",
     "mentionSuggestions": "Варианты упоминания"
@@ -19238,10 +19236,6 @@
       "messages_few": "{{count}} сообщения",
       "messages_many": "{{count}} сообщений",
       "messages_other": "{{count}} сообщения",
-      "origin": "{{from}} спросил {{to}} в #{{channel}} · {{time}}",
-      "originDm": "{{from}} спросил {{to}} · {{time}}",
-      "originNote": "{{from}} передал работу {{to}} в #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} передал работу {{to}} · {{time}}",
       "readOnly": "Только чтение.",
       "steer": "Чтобы изменить курс, напишите {{name}}.",
       "talk": "Написать {{name}}",

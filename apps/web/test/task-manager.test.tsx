@@ -49,6 +49,11 @@ const click = async (el: Element) => {
   await act(async () => fireEvent.click(el));
   await settle(3);
 };
+/** A header's meta line, its parts without the "·" between them (`MetaLine`). */
+const metaParts = (panel: Element) =>
+  [...(panel.querySelector(".thread-head__meta")?.children ?? [])].flatMap((c) =>
+    c.getAttribute("aria-hidden") === "true" ? [] : [c.textContent],
+  );
 const type = (el: Element, value: string) => act(async () => fireEvent.change(el, { target: { value } }));
 
 const using = (tool: string, detail: string | null, connector: string | null = null) => ({
@@ -514,7 +519,7 @@ describe("the task manager page", () => {
     await click(screen().getByRole("button", { name: "Ver passos" }));
     await settle(4);
     const panel = screen().getByRole("complementary", { name: "Corrigir o link de cancelar" });
-    expect(panel.querySelector(".thread-head__meta")?.textContent).toBe("Ada · Conversa direta · Você pediu");
+    expect(metaParts(panel)).toEqual(["Ada", "Conversa direta", "Você pediu"]);
     // Estado, Tempo, Usando agora; where it runs is nowhere, and no cost.
     const facts = [...panel.querySelectorAll(".tm-panel__facts dt")].map((d) => d.textContent);
     expect(facts).toEqual(["Estado", "Tempo", "Usando agora"]);
@@ -1082,7 +1087,7 @@ describe("an agent's tasks beside its DM", () => {
     expect(pill.getAttribute("aria-expanded")).toBe("true");
     const panel = screen().getByRole("complementary", { name: "Tarefas de Ada" });
     expect(panel.classList.contains("thread-panel")).toBe(true);
-    expect(panel.querySelector(".thread-head__meta")?.textContent).toBe("3 agora · 1 espera você");
+    expect(metaParts(panel)).toEqual(["3 agora", "1 espera você"]);
     const wells = [...panel.querySelectorAll(".tm-agentpanel__wells > div")].map((w) => w.textContent);
     expect(wells).toEqual(["Agora3", "Esperam você1", "Feitas hoje1"]);
     // People's tasks first, oldest first, then her routine's; this conversation's is marked.

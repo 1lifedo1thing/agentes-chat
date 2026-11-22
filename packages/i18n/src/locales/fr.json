@@ -2943,8 +2943,6 @@
       "mentionsYou": "on vous a mentionné"
     },
     "unreadDivider": "Nouveau",
-    "offline": "Pas de connexion. Ce que vous envoyez partira tout seul au retour de la connexion.",
-    "backOnline": "De nouveau connecté",
     "sendingOffline": "partira au retour de la connexion",
     "endOfReply": "Fin de la réponse",
     "mentionSuggestions": "Suggestions de mention"
@@ -18717,10 +18715,6 @@
       "messages_one": "{{count}} message",
       "messages_many": "{{count}} messages",
       "messages_other": "{{count}} messages",
-      "origin": "{{from}} a interrogé {{to}} dans #{{channel}} · {{time}}",
-      "originDm": "{{from}} a interrogé {{to}} · {{time}}",
-      "originNote": "{{from}} a confié du travail à {{to}} dans #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} a confié du travail à {{to}} · {{time}}",
       "readOnly": "Lecture seule.",
       "steer": "Pour changer de cap, parlez à {{name}}.",
       "steer_female": "Pour changer de cap, parlez à {{name}}.",

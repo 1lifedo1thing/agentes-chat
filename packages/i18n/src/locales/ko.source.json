@@ -7061,12 +7061,6 @@
   "channel.unreadDivider": {
     "value": "New"
   },
-  "channel.offline": {
-    "value": "No connection. Whatever you send goes out on its own when it's back."
-  },
-  "channel.backOnline": {
-    "value": "Connected again"
-  },
   "channel.sendingOffline": {
     "value": "goes out when the connection is back"
   },
@@ -44350,18 +44344,6 @@
       "one": "{{count}} message",
       "other": "{{count}} messages"
     }
-  },
-  "chat.consultPanel.origin": {
-    "value": "{{from}} asked {{to}} in #{{channel}} · {{time}}"
-  },
-  "chat.consultPanel.originDm": {
-    "value": "{{from}} asked {{to}} · {{time}}"
-  },
-  "chat.consultPanel.originNote": {
-    "value": "{{from}} handed {{to}} work in #{{channel}} · {{time}}"
-  },
-  "chat.consultPanel.originNoteDm": {
-    "value": "{{from}} handed {{to}} work · {{time}}"
   },
   "chat.consultPanel.readOnly": {
     "value": "Read only."

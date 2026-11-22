@@ -2738,8 +2738,6 @@
       "mentionsYou": "有人提及了你"
     },
     "unreadDivider": "新",
-    "offline": "没有网络连接。你发送的内容会在恢复连接后自动发出。",
-    "backOnline": "已重新连接",
     "sendingOffline": "恢复连接后发出",
     "endOfReply": "回复结束",
     "mentionSuggestions": "提及建议"
@@ -17580,10 +17578,6 @@
       "where": "#{{channel}} · 智能体之间",
       "whereDm": "智能体之间",
       "messages_other": "{{count}} 条消息",
-      "origin": "{{from}} 在 #{{channel}} 中询问了 {{to}} · {{time}}",
-      "originDm": "{{from}} 询问了 {{to}} · {{time}}",
-      "originNote": "{{from}} 在 #{{channel}} 中把工作交给了 {{to}} · {{time}}",
-      "originNoteDm": "{{from}} 把工作交给了 {{to}} · {{time}}",
       "readOnly": "只读。",
       "steer": "要调整方向，请和 {{name}} 对话。",
       "steer_female": "要调整方向，请和 {{name}} 对话。",

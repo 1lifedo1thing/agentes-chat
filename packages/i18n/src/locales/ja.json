@@ -2735,8 +2735,6 @@
       "mentionsYou": "メンションされました"
     },
     "unreadDivider": "新着",
-    "offline": "接続されていません。送信したものは、接続が戻ると自動で送られます。",
-    "backOnline": "再接続しました",
     "sendingOffline": "接続が戻ると送信されます",
     "endOfReply": "返信の終わり",
     "mentionSuggestions": "メンションの候補"
@@ -17509,10 +17507,6 @@
       "where": "#{{channel}} · エージェント間",
       "whereDm": "エージェント間",
       "messages_other": "{{count}}件のメッセージ",
-      "origin": "#{{channel}}で{{from}}が{{to}}に質問 · {{time}}",
-      "originDm": "{{from}}が{{to}}に質問 · {{time}}",
-      "originNote": "#{{channel}}で{{from}}が{{to}}に作業を引き継ぎ · {{time}}",
-      "originNoteDm": "{{from}}が{{to}}に作業を引き継ぎ · {{time}}",
       "readOnly": "閲覧のみです。",
       "steer": "方向を変えるには{{name}}と話してください。",
       "talk": "{{name}}と話す",

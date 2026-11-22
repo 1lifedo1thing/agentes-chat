@@ -427,10 +427,6 @@ export const featureKeysEn = {
       mentionsYou: "you were mentioned",
       divider: "New",
     },
-    connection: {
-      down: "No connection. What you send goes out on its own when it's back.",
-      back: "Connected again",
-    },
     longPressHint: "Hold to react and see more actions",
     file: "File",
     fileOpen: "Tap to open",

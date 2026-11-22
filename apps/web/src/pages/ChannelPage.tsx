@@ -25,7 +25,6 @@ import {
   agentStateOfRun,
   browserHandoffOf,
   browserTrailOf,
-  type ConnectionStatus,
   consultsIn,
   desktopTrailOf,
   fileConversationOf,
@@ -255,7 +254,6 @@ import { ClippedBody } from "@/chat/ClippedBody";
 import { LongDraftNotice } from "@/chat/LongDraftNotice";
 import { useConversationLook, useConversationWallpaper } from "@/chat/look";
 import { MessageBody } from "@/chat/MessageBody";
-import { useBrowserOffline } from "@/chat/offline";
 import { readingLanding } from "@/chat/reading";
 import {
   blockRowByRun,
@@ -437,7 +435,6 @@ import { useToast } from "@/lib/toast";
 import {
   reconcileChannelRuns,
   useChannelRealtime,
-  useConnectionStatus,
   useDismissRun,
   useLive,
   useLiveStore,
@@ -1240,7 +1237,6 @@ function ChannelView({
     onRefused: (error) =>
       toast.show(errorCode(error) === "voice_limit" ? t("voice.limit") : errorText(t, error), "error"),
   });
-  const status = useConnectionStatus();
 
   const api = useApi();
   // Reading the channel marks it read: the sidebar's badges (channel and DM) clear at once. Only while the tab is
@@ -2920,7 +2916,6 @@ function ChannelView({
                           </div>
                         )}
                         <div className="channel__composer">
-                          <ConnectionBanner status={status} />
                           {!chrome?.intro && !org.deletion && (
                             <NoAiBanner agentIds={channelAgents.map((a) => a.id)} dmAgentId={chrome?.dmAgentId} />
                           )}
@@ -3993,48 +3988,6 @@ function useAfter(ms: number, on: boolean) {
     return () => clearTimeout(timer);
   }, [ms, on]);
   return on && late;
-}
-
-/**
- * Above the composer when the connection drops: "Sem conexão. O que você mandar sai sozinho quando
- * voltar." (what is sent meanwhile waits and goes out on its own), then "Conectado de novo" for 1.6 s.
- * A socket that only reconnects for a moment says nothing.
- */
-function ConnectionBanner({ status }: { status: ConnectionStatus }) {
-  const { t } = useTranslation();
-  const offline = useBrowserOffline();
-  const reconnecting = status === "reconnecting";
-  const [longReconnect, setLongReconnect] = useState(false);
-  useEffect(() => {
-    if (!reconnecting) {
-      setLongReconnect(false);
-      return;
-    }
-    const timer = setTimeout(() => setLongReconnect(true), 1500);
-    return () => clearTimeout(timer);
-  }, [reconnecting]);
-  const down = offline || (reconnecting && longReconnect);
-  const [back, setBack] = useState(false);
-  const wasDown = useRef(false);
-  useEffect(() => {
-    if (down) {
-      wasDown.current = true;
-      setBack(false);
-      return;
-    }
-    if (!wasDown.current) return;
-    wasDown.current = false;
-    setBack(true);
-    const timer = setTimeout(() => setBack(false), 1600);
-    return () => clearTimeout(timer);
-  }, [down]);
-  if (!down && !back) return null;
-  return (
-    <p className="channel__conn ac-iconline" data-back={!down || undefined} role="status">
-      <Icon name={down ? "cloud" : "check"} size={16} />
-      {down ? t("channel.offline") : t("channel.backOnline")}
-    </p>
-  );
 }
 
 const sameSet = (a: Set<string>, b: Set<string>) => a.size === b.size && [...a].every((x) => b.has(x));

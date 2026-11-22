@@ -415,10 +415,6 @@
       "mentionsYou": "on vous a mentionné",
       "divider": "Nouveau"
     },
-    "connection": {
-      "down": "Pas de connexion. Ce que vous envoyez partira tout seul à son retour.",
-      "back": "De nouveau connecté"
-    },
     "longPressHint": "Maintenez pour réagir et voir plus d'actions",
     "file": "Fichier",
     "fileOpen": "Touchez pour ouvrir",
