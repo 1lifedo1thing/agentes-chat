@@ -7947,8 +7947,9 @@ button.ac-voice__play:active {
   box-shadow: 0 0 0 1px var(--line);
 }
 /* One box from the first paint, the video whole inside it: its own proportions are known only once its metadata
-   loads, and a tile that took them then would move every row under it. */
-.ac-video--tile .ac-video__media {
+   loads, and a tile that took them then would move every row under it. Full screen stretches the player itself over
+   the screen (the browser's :fullscreen rules), so there the box would leave the video small in its corner. */
+.ac-video--tile:not([data-full]) .ac-video__media {
   width: 320px;
   max-width: 100%;
   height: 180px;
@@ -7961,6 +7962,11 @@ button.ac-voice__play:active {
 }
 .ac-video[data-full] {
   border-radius: 0;
+  box-shadow: none;
+}
+/* Over the whole screen, anything they open (the viewer, a menu) would land behind it. */
+.ac-video[data-full] .ac-video__acts {
+  display: none;
 }
 .ac-video[data-hide] {
   cursor: none;
@@ -8108,7 +8114,7 @@ button.ac-voice__play:active {
   transform: translateY(6px);
   pointer-events: none;
 }
-.ac-video--tile .ac-video__bar {
+.ac-video--tile:not([data-full]) .ac-video__bar {
   left: 8px;
   right: 8px;
   bottom: 8px;
@@ -8260,7 +8266,7 @@ button.ac-voice__play:active {
   width: 64px;
 }
 /* A small tile, or a phone (the device's buttons set the volume): only the total time and the mute button go. */
-.ac-video--tile .ac-video__total {
+.ac-video--tile:not([data-full]) .ac-video__total {
   display: none;
 }
 /* The bar fits the player's width, wherever it is (a chat column, a dialog, a phone): the timeline keeps its room and
