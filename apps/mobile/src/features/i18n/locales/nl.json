@@ -189,6 +189,12 @@
     },
     "pinned": "Vastgezet",
     "recent": "Recent",
+    "view": {
+      "title": "Gesprekken tonen",
+      "sectors": "Afdelingen",
+      "dms": "Directe berichten",
+      "channels": "Kanalen"
+    },
     "seeAll": "Alle gesprekken bekijken",
     "splitEmpty": "Je gesprekken openen hier.",
     "wait": {

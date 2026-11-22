@@ -195,6 +195,12 @@
     },
     "pinned": "Épinglés",
     "recent": "Récents",
+    "view": {
+      "title": "Afficher les conversations",
+      "sectors": "Secteurs",
+      "dms": "Messages directs",
+      "channels": "Canaux"
+    },
     "seeAll": "Voir toutes les discussions",
     "splitEmpty": "Vos discussions s'ouvrent ici.",
     "wait": {

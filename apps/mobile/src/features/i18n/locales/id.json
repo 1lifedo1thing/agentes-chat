@@ -183,6 +183,12 @@
     },
     "pinned": "Disematkan",
     "recent": "Terbaru",
+    "view": {
+      "title": "Tampilkan percakapan",
+      "sectors": "Sektor",
+      "dms": "Pesan langsung",
+      "channels": "Kanal"
+    },
     "seeAll": "Lihat semua obrolan",
     "splitEmpty": "Obrolanmu terbuka di sini.",
     "wait": {

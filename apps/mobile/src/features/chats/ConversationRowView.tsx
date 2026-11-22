@@ -83,6 +83,9 @@ export const ConversationItem = memo(function ConversationItem({
   const opener = useChatOpener();
   const chosen = useIsChosen(opener, chatOfRow(r));
   const agentDm = r.kind === "dm" && r.with.type === "agent";
+  // An agent's role (its Função) on a line of its own under its name, as the team knows it ("Redator"): read once for
+  // the list with the row's other facts, never by the row itself.
+  const role = facts.role;
   const leading =
     r.kind === "dm" ? (
       agentDm ? (
@@ -150,6 +153,7 @@ export const ConversationItem = memo(function ConversationItem({
   const { badge, mention } = facts;
   const a11y = [
     name,
+    role,
     meta ?? null,
     facts.presence,
     facts.status,
@@ -191,9 +195,9 @@ export const ConversationItem = memo(function ConversationItem({
           dot={fresh && badge === 0}
           over={
             // A closed thread isn't marked here: it goes to the end of its list, and screen readers hear it.
-            facts.place ? (
+            facts.place || role ? (
               <Text variant="footnote" tone="faint" numberOfLines={1}>
-                {facts.place}
+                {facts.place ?? role}
               </Text>
             ) : null
           }

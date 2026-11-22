@@ -183,6 +183,12 @@
     },
     "pinned": "ピン留め",
     "recent": "最近",
+    "view": {
+      "title": "会話の表示",
+      "sectors": "部署",
+      "dms": "ダイレクトメッセージ",
+      "channels": "チャンネル"
+    },
     "seeAll": "すべてのチャットを表示",
     "splitEmpty": "チャットはここに表示されます。",
     "wait": {

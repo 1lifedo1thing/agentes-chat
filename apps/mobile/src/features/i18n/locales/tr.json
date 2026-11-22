@@ -189,6 +189,12 @@
     },
     "pinned": "Sabitlenenler",
     "recent": "Son sohbetler",
+    "view": {
+      "title": "Sohbetleri göster",
+      "sectors": "Bölümler",
+      "dms": "Doğrudan mesajlar",
+      "channels": "Kanallar"
+    },
     "seeAll": "Tüm sohbetleri gör",
     "splitEmpty": "Sohbetlerin burada açılır.",
     "wait": {

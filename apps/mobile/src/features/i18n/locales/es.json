@@ -195,6 +195,12 @@
     },
     "pinned": "Fijados",
     "recent": "Recientes",
+    "view": {
+      "title": "Ver las conversaciones",
+      "sectors": "Sectores",
+      "dms": "Mensajes directos",
+      "channels": "Canales"
+    },
     "seeAll": "Ver todos los chats",
     "splitEmpty": "Tus chats se abren aquí.",
     "wait": {

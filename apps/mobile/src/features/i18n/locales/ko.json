@@ -183,6 +183,12 @@
     },
     "pinned": "고정됨",
     "recent": "최근",
+    "view": {
+      "title": "대화 보기",
+      "sectors": "부서",
+      "dms": "다이렉트 메시지",
+      "channels": "채널"
+    },
     "seeAll": "모든 채팅 보기",
     "splitEmpty": "채팅이 여기에 열려요.",
     "wait": {

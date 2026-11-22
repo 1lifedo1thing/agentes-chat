@@ -201,6 +201,16 @@ export const featureKeysEn = {
     pinned: "Pinned",
     /** Conversas' one list: every chat by its latest activity, with no grouping. */
     recent: "Recent",
+    /**
+     * A team's Conversas lists its chats by latest activity or by the agents' sectors (as the web's sidebar): the bar
+     * button's menu title, the second choice, and the sections Setores ends with.
+     */
+    view: {
+      title: "Show chats",
+      sectors: "Sectors",
+      dms: "Direct messages",
+      channels: "Channels",
+    },
     /** Under Recentes' first rows: the whole list. */
     seeAll: "See all chats",
     /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */

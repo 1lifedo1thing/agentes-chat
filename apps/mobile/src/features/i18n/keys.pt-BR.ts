@@ -203,6 +203,12 @@ export const featureKeysPtBR = {
     pinned: "Fixados",
     /** Conversas' one list: every chat by its latest activity, with no grouping. */
     recent: "Recentes",
+    view: {
+      title: "Ver as conversas",
+      sectors: "Setores",
+      dms: "Mensagens diretas",
+      channels: "Canais",
+    },
     /** Under Recentes' first rows: the whole list. */
     seeAll: "Ver todas as conversas",
     /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */

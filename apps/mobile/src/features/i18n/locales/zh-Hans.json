@@ -183,6 +183,12 @@
     },
     "pinned": "已置顶",
     "recent": "最近",
+    "view": {
+      "title": "显示对话",
+      "sectors": "部门",
+      "dms": "私信",
+      "channels": "频道"
+    },
     "seeAll": "查看所有聊天",
     "splitEmpty": "你的聊天会在这里打开。",
     "wait": {

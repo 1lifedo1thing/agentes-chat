@@ -201,6 +201,12 @@
     },
     "pinned": "Przypięte",
     "recent": "Ostatnie",
+    "view": {
+      "title": "Pokaż rozmowy",
+      "sectors": "Działy",
+      "dms": "Wiadomości bezpośrednie",
+      "channels": "Kanały"
+    },
     "seeAll": "Zobacz wszystkie czaty",
     "splitEmpty": "Tutaj otwierają się Twoje czaty.",
     "wait": {

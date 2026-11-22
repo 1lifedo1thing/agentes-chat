@@ -189,6 +189,12 @@
     },
     "pinned": "Angepinnt",
     "recent": "Zuletzt",
+    "view": {
+      "title": "Unterhaltungen anzeigen",
+      "sectors": "Bereiche",
+      "dms": "Direktnachrichten",
+      "channels": "Kanäle"
+    },
     "seeAll": "Alle Chats ansehen",
     "splitEmpty": "Deine Chats öffnen sich hier.",
     "wait": {

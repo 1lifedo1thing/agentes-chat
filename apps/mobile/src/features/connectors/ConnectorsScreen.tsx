@@ -35,6 +35,7 @@ import { useOrg } from "@/providers/org";
 import {
   Button,
   CodeWords,
+  Disclosure,
   EmptyState,
   GroupedHeader,
   GroupedList,
@@ -774,8 +775,8 @@ function ShelfRow({
 }
 
 /**
- * One service of the catalog: its mark at 44, its name, one line of what it is, and the kit's small "Conectar" (a check
- * on the mark, and no button, once it is connected). The whole row opens it too: the button is where the eye lands.
+ * One service of the catalog: its mark at 44 (a check on it once it is connected), its name, one line of what it is,
+ * and the chevron: the whole row opens it, as a store's row opens its app (no button of its own in the list).
  */
 function Lockup({
   def,
@@ -792,7 +793,6 @@ function Lockup({
   divider: boolean;
   onPress: () => void;
 }) {
-  const { t } = useTranslation();
   const c = useColors();
   return (
     // A row of a list: it lights as the settings' rows do, a beat late so a scroll never flashes it.
@@ -812,9 +812,7 @@ function Lockup({
           {text}
         </Text>
       </View>
-      {connected ? null : (
-        <Button variant="secondary" size="sm" label={t("mobile.connectors.connect")} onPress={onPress} />
-      )}
+      <Disclosure />
     </RowPressable>
   );
 }

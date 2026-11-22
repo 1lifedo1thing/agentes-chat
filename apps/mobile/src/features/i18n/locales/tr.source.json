@@ -458,6 +458,18 @@
   "chats.recent": {
     "value": "Recent"
   },
+  "chats.view.title": {
+    "value": "Show chats"
+  },
+  "chats.view.sectors": {
+    "value": "Sectors"
+  },
+  "chats.view.dms": {
+    "value": "Direct messages"
+  },
+  "chats.view.channels": {
+    "value": "Channels"
+  },
   "chats.seeAll": {
     "value": "See all chats"
   },

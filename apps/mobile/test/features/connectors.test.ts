@@ -137,15 +137,16 @@ describe("connectors gallery", () => {
     expect(shelfColumns([])).toEqual([]);
   });
 
-  test("the gallery: what is connected a grouped list, the catalog in shelves with the kit's Conectar", () => {
+  test("the gallery: what is connected a grouped list, the catalog in shelves of rows that open the service", () => {
     const gallery = readFileSync(join(import.meta.dir, "../../src/features/connectors/ConnectorsScreen.tsx"), "utf8");
     expect(gallery).toMatch(/<GroupedHeader>\{`\$\{t\("mobile\.connectors\.connected"\)\} · \$\{connectedCount\}`\}/);
     expect(gallery).toContain("catalogShelves(offered, suggestionsOf(list, items, SUGGESTIONS))");
     // A column at a time, snapped to the screen's side, the next one's edge in sight.
     expect(gallery).toContain("snapToInterval={column + SHELF_GAP}");
-    expect(gallery).toContain(
-      '<Button variant="secondary" size="sm" label={t("mobile.connectors.connect")} onPress={onPress} />',
-    );
+    // A row opens its service (no button of its own in the list): its chevron says so.
+    const row = gallery.slice(gallery.indexOf("function Lockup("), gallery.indexOf("const styles = StyleSheet.create"));
+    expect(row).toContain("<Disclosure />");
+    expect(row).not.toContain("<Button");
     // No filter chips and no flat list of every service under them: the shelves are the catalog.
     expect(gallery).not.toContain("<Filters");
     expect(gallery).not.toContain("mobile.connectors.allServices");
