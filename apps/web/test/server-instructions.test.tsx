@@ -41,15 +41,38 @@ const saved = (state: ReturnType<typeof seedState>) =>
   state.calls.find((c) => c.method === "customConnectors.saveTools")?.args[2] as Record<string, unknown> | undefined;
 
 describe("a server's own instructions in its review", () => {
-  test("the worst a server sends: its first 4,000 characters as they are, cut, in the well (first: the screen CI measures)", async () => {
-    await review("https://oauth.worst.example.com/mcp");
-    const notes = within(flow()).getByRole("region", { name: "Instruções do servidor" });
-    expect(notes.textContent).toContain("Cortado em 4.000 caracteres");
-    const text = notes.querySelector(".cflow-notes__text") as HTMLElement;
-    expect(WORST_INSTRUCTIONS.length).toBeGreaterThan(4000);
-    expect(text.textContent).toBe(WORST_INSTRUCTIONS.slice(0, 4000));
-    // Long, it scrolls inside: the keys reach it in every browser.
-    expect(text.tabIndex).toBe(0);
+  test("the worst a server sends: its first 4,000 characters formatted, folded until Ver mais (first: the screen CI measures)", async () => {
+    // The DOM here lays nothing out: the folded text holds more than it shows, as a browser measures it.
+    const own = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollHeight");
+    Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.classList.contains("folded-body__text") ? 1000 : 0;
+      },
+    });
+    try {
+      await review("https://oauth.worst.example.com/mcp");
+      const notes = within(flow()).getByRole("region", { name: "Instruções do servidor" });
+      expect(notes.textContent).toContain("Cortado em 4.000 caracteres");
+      expect(WORST_INSTRUCTIONS.length).toBeGreaterThan(4000);
+      // Formatted, as an agent's own instructions are where they can't be changed: no Markdown marks left.
+      const text = notes.querySelector(".folded-body__text") as HTMLElement;
+      expect(text.querySelector("strong")?.textContent).toBe(
+        "Northwind Industries Holdings — Billing & Subscriptions MCP server (v2026.07.28-rc.3)",
+      );
+      expect(text.querySelector("table")).not.toBeNull();
+      expect(text.textContent).not.toContain("# Northwind");
+      expect(text.textContent).not.toContain("**every**");
+      expect(text.textContent).toContain("Mehrwertsteuer");
+      // Folded until Ver mais opens it in place, for good.
+      expect(text.hasAttribute("data-folded")).toBe(true);
+      await click(within(notes).getByRole("button", { name: "Ver mais" }));
+      expect(text.hasAttribute("data-folded")).toBe(false);
+      expect(within(notes).queryByRole("button", { name: "Ver mais" })).toBeNull();
+    } finally {
+      if (own) Object.defineProperty(HTMLElement.prototype, "scrollHeight", own);
+      else Reflect.deleteProperty(HTMLElement.prototype, "scrollHeight");
+    }
   });
 
   test("the setting under the tools: on, its size, the text as agents read it; turned off, saved with Continuar", async () => {
@@ -60,17 +83,18 @@ describe("a server's own instructions in its review", () => {
     expect(use.getAttribute("aria-checked")).toBe("true");
     expect(within(notes).getByRole("button", { name: "Sobre Instruções do servidor" })).toBeTruthy();
     expect(notes.textContent).toContain(`${MOCK_INSTRUCTIONS.length} de 4.000 caracteres`);
-    const text = notes.querySelector(".cflow-notes__text") as HTMLElement;
-    expect(text.textContent).toBe(MOCK_INSTRUCTIONS);
-    expect(text.hasAttribute("data-off")).toBe(false);
+    const text = notes.querySelector(".folded-body__text") as HTMLElement;
+    const lines = MOCK_INSTRUCTIONS.split("\n");
+    for (const line of lines) expect(text.textContent).toContain(line);
+    expect(notes.hasAttribute("data-off")).toBe(false);
 
     await click(use);
     expect(use.getAttribute("aria-checked")).toBe("false");
     expect(notes.textContent).toContain("Os agentes não recebem este texto.");
     expect(notes.textContent).not.toContain("de 4.000 caracteres");
     // Still there, faded.
-    expect(text.textContent).toBe(MOCK_INSTRUCTIONS);
-    expect(text.hasAttribute("data-off")).toBe(true);
+    for (const line of lines) expect(text.textContent).toContain(line);
+    expect(notes.hasAttribute("data-off")).toBe(true);
 
     await click(within(flow()).getByRole("button", { name: "Continuar" }));
     await settle(6);
@@ -98,7 +122,7 @@ describe("a server's own instructions in its review", () => {
     expect(flow().textContent).toContain("Instruções do servidor");
     expect(flow().textContent).toContain("O servidor não manda instruções.");
     expect(within(flow()).queryByRole("switch", { name: "Instruções do servidor" })).toBeNull();
-    expect(flow().querySelector(".cflow-notes__text")).toBeNull();
+    expect(flow().querySelector(".cflow-notes .folded-body")).toBeNull();
     await click(within(flow()).getByRole("button", { name: "Continuar" }));
     await settle(6);
     expect(saved(state)).toBeDefined();

@@ -93,6 +93,7 @@ import type { TFunction } from "i18next";
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
+import { FoldedBody } from "@/chat/FoldedBody";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { FlowTitle } from "@/components/FlowTitle";
@@ -1182,8 +1183,8 @@ function catalogReviewTools(t: TFunction, item: ConnectedItem): ReviewTool[] {
 
 /**
  * A server by address's own instructions (MCP's `instructions`, ADR 0016 addendum of 2026-11-22): a setting whose
- * switch says whether agents get them, saved with the step's Continuar, then the text as agents read it. A server
- * that sends none says so, with no switch.
+ * switch says whether agents get them, saved with the step's Continuar, then the text as agents read it, formatted and
+ * folded as an agent's long text on a page is (`FoldedBody`). A server that sends none says so, with no switch.
  */
 function ServerInstructions({
   server,
@@ -1207,7 +1208,7 @@ function ServerInstructions({
       ? t("toolReview.instructions.cut", { max })
       : t("toolReview.instructions.chars", { used: formatInt(i18n.language, said.text.length), max });
   return (
-    <section className="cflow-notes" aria-label={title}>
+    <section className="cflow-notes" aria-label={title} data-off={on ? undefined : true}>
       <SettingRow
         title={title}
         hint={{ name: t("common.about", { label: title }), text: t("toolReview.instructions.hint") }}
@@ -1216,10 +1217,7 @@ function ServerInstructions({
       >
         <Switch id="cflow-notes-use" checked={on} onCheckedChange={onChange} />
       </SettingRow>
-      {/* biome-ignore lint/a11y/noNoninteractiveTabindex: a long text scrolls inside, and the keys scroll it once it has focus (Safari never focuses a scroller by itself) */}
-      <div className="cflow-notes__text" data-off={on ? undefined : true} tabIndex={0}>
-        {said.text}
-      </div>
+      <FoldedBody body={said.text} />
     </section>
   );
 }

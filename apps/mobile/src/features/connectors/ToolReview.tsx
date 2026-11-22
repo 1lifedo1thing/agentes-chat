@@ -23,10 +23,10 @@ import {
   type IconName,
   InfoHint,
   Locked,
-  RADIUS,
   SearchField,
   Text,
 } from "@/ui";
+import { FoldedBody } from "../chat/FoldedBody";
 import { RowBones } from "../roles/parts";
 import { useColors, useOrgId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
@@ -236,8 +236,9 @@ function ServerReview({
 
 /**
  * A server by address's own instructions under its tools (the web's `ServerInstructions`, ADR 0016 addendum of
- * 2026-11-22): the setting (its title the switch's row, its ⓘ, its status) with the text in a well under it in the same
- * card, faded while agents don't get it; saved with Continuar. A server that sends none says so in one row, no switch.
+ * 2026-11-22): the setting (its title the switch's row, its ⓘ, its status) with the text under it in the same card,
+ * formatted and folded as an agent's long text on a page is (`FoldedBody`), faded while agents don't get it; saved with
+ * Continuar. A server that sends none says so in one row, no switch.
  */
 function ServerInstructions({
   server,
@@ -251,7 +252,6 @@ function ServerInstructions({
   busy: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const c = useColors();
   const view = instructionsView(t, i18n.language, server, on);
   if (view.kind === "hidden") return null;
   if (view.kind === "none") {
@@ -273,12 +273,8 @@ function ServerInstructions({
           onPress={() => onChange(!on)}
           hint={{ name: t("common.about", { label: view.title }), text: view.hint }}
         />
-        <View style={styles.notesRoom}>
-          <View style={[styles.notes, { backgroundColor: c.sunken }]}>
-            <Text variant="body" selectable style={{ color: view.faded ? c.muted : c.ink }}>
-              {view.text}
-            </Text>
-          </View>
+        <View style={styles.notes}>
+          <FoldedBody body={view.text} muted={view.faded} />
         </View>
       </GroupedList>
     </Locked>
@@ -481,7 +477,6 @@ const styles = StyleSheet.create({
   accept: { paddingTop: 12 },
   // A header's room above a group with none.
   again: { paddingTop: 20 },
-  // The well sits a row's side room inside the card, its corners the card's less that room (26 − 16).
-  notesRoom: { padding: GROUPED_ROW.padX },
-  notes: { paddingVertical: 12, paddingHorizontal: 16, borderRadius: RADIUS.md, borderCurve: "continuous" },
+  // The text under its setting, at a row's side room, as a routine's blocks sit in theirs.
+  notes: { paddingHorizontal: GROUPED_ROW.padX, paddingBottom: 12 },
 });

@@ -5614,34 +5614,24 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
 .cflow__lead > .cflow__text {
   flex: 1 1 260px;
 }
-/* A server by address's own instructions under its tools: the setting, then the text as agents read it in a well. It
-   is prose, so the app's type. Past a few paragraphs it scrolls inside, its thumb only on hover. Muted while agents
-   don't get it. */
+/* A server by address's own instructions under its tools: the setting, then the text as agents read it, folded as an
+   agent's long text on a page is (FoldedBody). Muted while agents don't get it. */
 .cflow-notes {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
 }
-.cflow-notes__text {
-  max-height: 240px;
-  overflow-y: auto;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--sunken);
-  line-height: 1.5;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.cflow-notes .folded-body {
   transition: color var(--dur-base) var(--out);
 }
-.cflow-notes__text:not(:hover, :focus-visible) {
-  --scroll-thumb: transparent;
+/* Its line breaks kept, as a message's are: a server's rules often go one per line. Only the breaks (pre-line, as the
+   request cards' words): spaces a line ends on would stand past its edge. */
+.cflow-notes .folded-body__text {
+  overflow-wrap: anywhere;
+  white-space: pre-line;
 }
-html:not([data-pointer]) .cflow-notes__text:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
-.cflow-notes__text[data-off] {
+.cflow-notes[data-off] .folded-body {
   color: var(--muted);
 }
 .cflow-tools {

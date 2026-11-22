@@ -43,9 +43,9 @@ const LATER: [string, string, boolean | null] = ["export_tickets", "Export ticke
 export const MOCK_INSTRUCTIONS = "Call get_ticket before close_ticket.\nAsk the person before delete_customer.";
 
 /**
- * The worst instructions a real server sends (an address that says "worst"): Markdown agents read as it is, an address
- * and a token with no place to break, a table, other scripts, emoji, runs of blank lines, and more than agents read, so
- * the screen shows its first 4,000 characters, cut.
+ * The worst instructions a real server sends (an address that says "worst"): Markdown (agents read it as it is, the
+ * screen formats it), an address and a token with no place to break, a table, other scripts, emoji, runs of blank
+ * lines, and more than agents read, so the screen shows its first 4,000 characters, cut.
  */
 export const WORST_INSTRUCTIONS = [
   "# Northwind Industries Holdings — Billing & Subscriptions MCP server (v2026.07.28-rc.3)",
