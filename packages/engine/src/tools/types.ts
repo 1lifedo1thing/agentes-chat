@@ -167,8 +167,8 @@ export interface ToolDefinition {
    */
   asksNobody?(input: Record<string, unknown>): boolean;
   /**
-   * A call that carries `why` (in the tool's own schema) asks a person's approval first: how an agent asks for
-   * a command the computer held for a person (ADR 0053 §3, amended 2026-10-30).
+   * A command the computer held for a person (`command.approval_needed`) asks their approval with the call's `why`
+   * (in the tool's own schema) on the card (ADR 0053 §3). The `why` alone never makes a call ask.
    */
   whyAsks?: boolean;
   /**

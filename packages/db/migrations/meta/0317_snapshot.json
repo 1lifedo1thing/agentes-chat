@@ -1,5 +1,5 @@
 {
-  "id": "2e1a1f88-9c6b-4e4b-b8a6-b4dcda2ac734",
+  "id": "8849c43a-5884-4181-9569-43fdbda45ccf",
   "prevId": "cbf031d5-fb2e-425b-b79e-132b346fe90f",
   "version": "7",
   "dialect": "postgresql",
@@ -5976,13 +5976,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "provided_by_person": {
-          "name": "provided_by_person",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -29319,6 +29312,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{POST}'::text[]"
+        },
+        "group_by": {
+          "name": "group_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

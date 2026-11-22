@@ -20883,6 +20883,21 @@
   "routines.webhook.methodsLine": {
     "value": "Accepts {{methods}}."
   },
+  "routines.webhook.groupBy": {
+    "value": "Group calls by"
+  },
+  "routines.webhook.groupByHelp": {
+    "value": "A field in each call's data, like conversation.id. Calls with the same value run one at a time, in order. Different values run side by side."
+  },
+  "routines.webhook.groupByOff": {
+    "value": "Every call waits in one line, in order."
+  },
+  "routines.webhook.groupByOn": {
+    "value": "Calls with the same {{path}} run in order. Others run side by side."
+  },
+  "routines.webhook.groupBySaved": {
+    "value": "Grouping saved."
+  },
   "routines.webhook.address": {
     "value": "Address"
   },
@@ -38369,6 +38384,9 @@
   },
   "errors.routine.webhookPaused": {
     "value": "Turn the routine on to test it."
+  },
+  "errors.routine.groupByInvalid": {
+    "value": "Write a path such as conversation.id, with a field name between each dot."
   },
   "errors.routine.continueExtraOff": {
     "value": "This plan's window is used up and this agent's long work doesn't use the plan's paid extra usage. It picks up after the reset."
