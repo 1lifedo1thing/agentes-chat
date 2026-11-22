@@ -2571,7 +2571,7 @@
     "howTo": "Как установить",
     "phone": "Телефон",
     "phoneText": "Уведомления в кармане, чтобы отвечать откуда угодно.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {

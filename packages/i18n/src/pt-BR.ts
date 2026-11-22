@@ -2451,7 +2451,8 @@ export const ptBR = {
     howTo: "Como instalar",
     phone: "Celular",
     phoneText: "Os avisos no bolso, para responder de qualquer lugar.",
-    appStore: "App Store",
+    /** The iPhone app's public beta, only on agentes.chat's own servers. */
+    testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
   openOnPhone: {
