@@ -126,7 +126,7 @@ describe("agents it asked first: one pair row right before the reply, never insi
     expect(reach).not.toContain("reach.see");
     // One older than the conversation's list goes back is loaded on its own, never the "Entregue ao" text.
     expect(source("ConsultGroup.tsx")).toContain(
-      "useConsultationConversation(orgId, channelId, id && list.loaded && !listed ? id : null)",
+      "useConsultationConversation(orgId, channelId, id && loaded && !listed ? id : null)",
     );
     const row = source("MessageRow.tsx");
     expect(row).toContain("const reached = useMemo(() => reachHandoffs(m.meta), [m.meta]);");

@@ -229,4 +229,3 @@ export function useRowConsultsPart<T>(
   };
   return useSyncExternalStore(store?.subscribe ?? noSubscription, read, read);
 }
-
