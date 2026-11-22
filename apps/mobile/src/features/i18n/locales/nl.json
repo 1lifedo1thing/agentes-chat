@@ -2143,6 +2143,31 @@
     "disconnected": "{{name}} losgekoppeld.",
     "usedBy_one": "{{names}} gebruikt het",
     "usedBy_other": "{{names}} gebruiken het",
+    "page": {
+      "missing": "Deze dienst staat niet meer in de catalogus.",
+      "connected": "Verbonden",
+      "open": "Verbinding openen",
+      "category": "Categorie",
+      "tools": "Hulpmiddelen",
+      "toolsAsk_one": "{{count}} vraagt om goedkeuring",
+      "toolsAsk_other": "{{count}} vragen om goedkeuring",
+      "toolsAskNone": "geen enkele vraagt om goedkeuring",
+      "toolsLater": "na het verbinden",
+      "who": "Wie verbindt",
+      "whoAdmins": "Beheerders van {{org}}",
+      "whoRuns": "Wie de workspace beheert",
+      "whoYou": "Jij, voor jezelf",
+      "signIn": "Inloggen met",
+      "how": {
+        "signIn": "Je account",
+        "key": "Een sleutel",
+        "either": "Account of sleutel"
+      },
+      "canTitle": "Wat agents ermee doen",
+      "info": "Informatie",
+      "host": "Verbindt met",
+      "more": "Meer in {{category}}"
+    },
     "fromAgent": "Een dienst koppelen",
     "githubApp": {
       "useApp": "De agentes.chat-app gebruiken",

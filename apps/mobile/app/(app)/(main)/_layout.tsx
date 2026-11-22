@@ -84,6 +84,8 @@ export default function MainStack() {
       // The wiki's graph: its night fills the screen behind the bar.
       "wiki-map": cover,
       "connectors/[id]": cover,
+      // A service's own page: its sky under a clear bar, the system's back over it.
+      "connectors/service/[id]": cover,
       // Você: a pushed page with a clear bar over its sky; its screens pushed over it on the grouped gray.
       "me/index": cover,
       // On the sign-in's ruler, its own sky (the scanner: the camera): a clear bar, the system's back over it.

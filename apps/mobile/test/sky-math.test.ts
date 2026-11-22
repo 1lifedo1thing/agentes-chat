@@ -111,6 +111,7 @@ test("every shader declares the uniforms the component passes", () => {
     "horizon",
     "workspace",
     "forming",
+    "card",
   ] as const) {
     const src = shaderSource(kind);
     for (const u of ["size", "px", "t", "last", "fade", "clear", "pal"])

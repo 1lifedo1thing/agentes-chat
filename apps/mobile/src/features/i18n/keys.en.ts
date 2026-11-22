@@ -2298,6 +2298,36 @@ export const featureKeysEn = {
     usedBy_zero: "No agent uses it",
     usedBy_one: "{{names}} uses it",
     usedBy_other: "{{names}} use it",
+    /**
+     * A catalog service's own page: connected, the way to its connection; its facts (category, how many tools and
+     * how many ask for approval, or that they show once connected; who connects it; how one signs in), what agents do
+     * with it, the same facts as a list, and the others of its category.
+     */
+    page: {
+      missing: "This service isn't in the catalog anymore.",
+      connected: "Connected",
+      open: "Open the connection",
+      category: "Category",
+      tools: "Tools",
+      toolsAsk_one: "{{count}} asks for approval",
+      toolsAsk_other: "{{count}} ask for approval",
+      toolsAskNone: "none asks for approval",
+      toolsLater: "once connected",
+      who: "Who connects",
+      whoAdmins: "{{org}} admins",
+      whoRuns: "Who runs the workspace",
+      whoYou: "You, for yourself",
+      signIn: "Signs in with",
+      how: {
+        signIn: "Your account",
+        key: "A key",
+        either: "Account or key",
+      },
+      canTitle: "What agents do with it",
+      info: "Information",
+      host: "Connects to",
+      more: "More in {{category}}",
+    },
     fromAgent: "Connect a service",
     /** GitHub with the agentes.chat app (ADR 0156): the app first, an account as the other way. */
     githubApp: {

@@ -2040,6 +2040,30 @@
     "disconnect": "断开连接",
     "disconnected": "{{name}} 已断开连接。",
     "usedBy_other": "{{names}} 在使用",
+    "page": {
+      "missing": "此服务已不在目录中。",
+      "connected": "已连接",
+      "open": "打开连接",
+      "category": "类别",
+      "tools": "工具",
+      "toolsAsk_other": "{{count}} 个需要批准",
+      "toolsAskNone": "没有需要批准的",
+      "toolsLater": "连接后显示",
+      "who": "谁可以连接",
+      "whoAdmins": "{{org}} 的管理员",
+      "whoRuns": "管理工作区的人",
+      "whoYou": "你自己",
+      "signIn": "登录方式",
+      "how": {
+        "signIn": "你的账户",
+        "key": "密钥",
+        "either": "账户或密钥"
+      },
+      "canTitle": "智能体能用它做什么",
+      "info": "信息",
+      "host": "连接到",
+      "more": "{{category}} 中的更多"
+    },
     "fromAgent": "连接服务",
     "githubApp": {
       "useApp": "使用 agentes.chat 应用",

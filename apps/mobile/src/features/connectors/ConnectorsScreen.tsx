@@ -64,7 +64,6 @@ import { AddressSheet, ConnectSheet, ServerSheet } from "./ConnectSheet";
 import {
   type ConnectionTab,
   catalogShelves,
-  connectionOf,
   connectionTabs,
   galleryTiles,
   isHttpsUrl,
@@ -92,6 +91,10 @@ const SHELF_PEEK = 78;
 /** A shelf's column on a wide screen: never wider than a phone's. */
 const SHELF_MAX = 360;
 
+/** A service's own page (`ServicePage`), from Pessoal (`personal`) or the team's. */
+export const openService = (id: string, personal: boolean) =>
+  router.push({ pathname: "/connectors/service/[id]", params: { id, ...(personal ? { personal: "1" } : {}) } });
+
 /**
  * Conectores on the phone, the large title and the search of the system with "+" in the bar, on the grouped gray of
  * the system's settings: what is connected as a grouped list (its mark, its name, its account or how many tools; what
@@ -111,10 +114,11 @@ export function ConnectorsScreen() {
 }
 
 /**
- * What the gallery and a category's screen read: the catalog, what is connected (the team's and one's own, others'
- * for who manages connectors), and what a service's row does when tapped (its connection, or the sheet to connect it).
+ * What the gallery, a category's screen and a service's page read: the catalog, what is connected (the team's and
+ * one's own, others' for who manages connectors), and what a service's row does when tapped: its page, pushed
+ * (connected or not; the page says which and leads to the connection).
  */
-function useGallery(picked: ConnectionTab | null) {
+export function useGallery(picked: ConnectionTab | null) {
   const orgId = useOrgId();
   const { org } = useOrg();
   const sheet = useSheet();
@@ -150,11 +154,7 @@ function useGallery(picked: ConnectionTab | null) {
     () => (catalog.data?.connectors ?? []).filter((d) => !personal || personalAllowed(d.id)),
     [catalog.data, personal],
   );
-  const open = (def: ConnectorDef) => {
-    const existing = connectionOf(def, tabs.items);
-    if (existing) openConnection(existing.id);
-    else sheet.open(<ConnectSheet def={def} personal={personal} />);
-  };
+  const open = (def: ConnectorDef) => openService(def.id, personal);
   return {
     org,
     sheet,
@@ -719,7 +719,7 @@ function ConnectedRow({
  * column), then its columns of three sliding sideways, each snapping to the screen's side with the next one's edge in
  * sight, so the shelf reads as going on.
  */
-function ShelfRow({
+export function ShelfRow({
   title,
   defs,
   name,

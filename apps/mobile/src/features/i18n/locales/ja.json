@@ -2040,6 +2040,30 @@
     "disconnect": "接続を解除",
     "disconnected": "{{name}}の接続を解除しました。",
     "usedBy_other": "{{names}}が使用中",
+    "page": {
+      "missing": "このサービスはカタログにありません。",
+      "connected": "接続済み",
+      "open": "接続を開く",
+      "category": "カテゴリ",
+      "tools": "ツール",
+      "toolsAsk_other": "{{count}}件は承認が必要",
+      "toolsAskNone": "承認が必要なものはありません",
+      "toolsLater": "接続後に表示",
+      "who": "接続できる人",
+      "whoAdmins": "{{org}}の管理者",
+      "whoRuns": "ワークスペースの管理者",
+      "whoYou": "あなた自身",
+      "signIn": "サインイン方法",
+      "how": {
+        "signIn": "あなたのアカウント",
+        "key": "キー",
+        "either": "アカウントまたはキー"
+      },
+      "canTitle": "エージェントができること",
+      "info": "情報",
+      "host": "接続先",
+      "more": "{{category}}のその他"
+    },
     "fromAgent": "サービスを接続",
     "githubApp": {
       "useApp": "agentes.chat アプリを使う",

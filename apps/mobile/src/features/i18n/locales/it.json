@@ -2239,6 +2239,32 @@
     "usedBy_one": "{{names}} lo usa",
     "usedBy_many": "{{names}} lo usano",
     "usedBy_other": "{{names}} lo usano",
+    "page": {
+      "missing": "Questo servizio non è più nel catalogo.",
+      "connected": "Connesso",
+      "open": "Apri la connessione",
+      "category": "Categoria",
+      "tools": "Strumenti",
+      "toolsAsk_one": "{{count}} chiede l'approvazione",
+      "toolsAsk_many": "{{count}} chiedono l'approvazione",
+      "toolsAsk_other": "{{count}} chiedono l'approvazione",
+      "toolsAskNone": "nessuno chiede l'approvazione",
+      "toolsLater": "dopo la connessione",
+      "who": "Chi connette",
+      "whoAdmins": "Admin di {{org}}",
+      "whoRuns": "Chi gestisce il workspace",
+      "whoYou": "Tu, per te",
+      "signIn": "Accede con",
+      "how": {
+        "signIn": "Il tuo account",
+        "key": "Una chiave",
+        "either": "Account o chiave"
+      },
+      "canTitle": "Cosa ci fanno gli agenti",
+      "info": "Informazioni",
+      "host": "Si connette a",
+      "more": "Altro in {{category}}"
+    },
     "fromAgent": "Collega un servizio",
     "githubApp": {
       "useApp": "Usa l'app agentes.chat",

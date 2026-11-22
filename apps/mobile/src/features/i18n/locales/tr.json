@@ -2143,6 +2143,31 @@
     "disconnected": "{{name}} bağlantısı kesildi.",
     "usedBy_one": "{{names}} kullanıyor",
     "usedBy_other": "{{names}} kullanıyor",
+    "page": {
+      "missing": "Bu hizmet artık katalogda değil.",
+      "connected": "Bağlandı",
+      "open": "Bağlantıyı aç",
+      "category": "Kategori",
+      "tools": "Araçlar",
+      "toolsAsk_one": "{{count}} onay istiyor",
+      "toolsAsk_other": "{{count}} onay istiyor",
+      "toolsAskNone": "hiçbiri onay istemiyor",
+      "toolsLater": "bağlandıktan sonra",
+      "who": "Kim bağlar",
+      "whoAdmins": "{{org}} yöneticileri",
+      "whoRuns": "Workspace'i yöneten kişi",
+      "whoYou": "Sen, kendin için",
+      "signIn": "Giriş yöntemi",
+      "how": {
+        "signIn": "Hesabın",
+        "key": "Bir anahtar",
+        "either": "Hesap veya anahtar"
+      },
+      "canTitle": "Ajanlar bununla ne yapar",
+      "info": "Bilgiler",
+      "host": "Bağlandığı adres",
+      "more": "{{category}} kategorisinde daha fazlası"
+    },
     "fromAgent": "Bir hizmet bağla",
     "githubApp": {
       "useApp": "agentes.chat uygulamasını kullan",

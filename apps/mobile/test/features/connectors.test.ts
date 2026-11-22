@@ -27,6 +27,7 @@ import {
   brandOf,
   capabilityLines,
   catalogShelves,
+  categoryIcon,
   connectHow,
   connectionOf,
   doneFinishing,
@@ -39,7 +40,10 @@ import {
   monogram,
   needsKeyText,
   ownMarkUri,
+  relatedServices,
   searchConnectors,
+  serviceFacts,
+  serviceSkyTones,
   shelfColumns,
   shownMailboxes,
   stateOf,
@@ -641,5 +645,69 @@ describe("a connection that stopped working", () => {
     // Its way out right under it, for whoever manages connectors: read the server's tools again.
     expect(screen).toContain('label={t("mobile.connectors.readAgain")}');
     expect(screen).toContain("refresh.mutate(server.id, {");
+  });
+});
+
+describe("a service's own page", () => {
+  test("its facts: our connector's tools and how many ask, a vendor's server's only once connected, its host", () => {
+    const ours = def("github", {
+      tools: [
+        { name: "read", scope: "repo:read", sensitive: false },
+        { name: "merge", scope: "repo:write", sensitive: true },
+        { name: "deploy", scope: "deploy", sensitive: true },
+      ],
+    });
+    expect(serviceFacts(ours)).toEqual({ tools: 3, asks: 2, how: "either", host: null });
+    const vendor = def("notion", { kind: "remote_mcp", serverUrl: "https://mcp.notion.example/mcp" });
+    expect(serviceFacts(vendor)).toEqual({ tools: null, asks: 0, how: "signIn", host: "mcp.notion.example" });
+    expect(serviceFacts(def("keyonly", { auth: ["api_key"], oauthConfigured: false })).how).toBe("key");
+    expect(categoryIcon("payments")).toBe("wallet");
+    expect(categoryIcon("dev")).toBe("code");
+  });
+
+  test("more in its category: the others it could connect, never itself, up to six", () => {
+    const offered = [
+      def("a"),
+      def("b", { category: "docs" }),
+      def("c"),
+      def("d"),
+      def("e"),
+      def("f"),
+      def("g"),
+      def("h"),
+    ];
+    expect(relatedServices(def("a"), offered).map((d) => d.id)).toEqual(["c", "d", "e", "f", "g", "h"]);
+    expect(relatedServices(def("b", { category: "docs" }), offered)).toEqual([]);
+  });
+
+  test("its sky: the page's surface at the foot up to its color, softer in the dark; an untrusted color is the sky's", () => {
+    const light = serviceSkyTones("#f2f2f7", "#635bff", false);
+    expect(light).toHaveLength(7);
+    expect(light[0]).toBe("#f2f2f7");
+    const dark = serviceSkyTones("#000000", "#635bff", true);
+    expect(dark).toHaveLength(6);
+    expect(dark[0]).toBe("#000000");
+    expect(serviceSkyTones("#ffffff", "red", false)).toEqual(serviceSkyTones("#ffffff", null, false));
+  });
+
+  test("a catalog row pushes the page; the page connects straight, or says who does, and leads to the connection", () => {
+    const gallery = readFileSync(join(import.meta.dir, "../../src/features/connectors/ConnectorsScreen.tsx"), "utf8");
+    expect(gallery).toContain("const open = (def: ConnectorDef) => openService(def.id, personal);");
+    expect(gallery).toContain(
+      'router.push({ pathname: "/connectors/service/[id]", params: { id, ...(personal ? { personal: "1" } : {}) } });',
+    );
+    const page = readFileSync(join(import.meta.dir, "../../src/features/connectors/ServicePage.tsx"), "utf8");
+    expect(page).toContain("sheet.open(<ConnectSheet def={def} personal={personal} fromPage />)");
+    // The sheet skips what the page already said: a new one starts on connecting.
+    expect(readFileSync(join(import.meta.dir, "../../src/features/connectors/ConnectSheet.tsx"), "utf8")).toContain(
+      'connecting || (fromPage && !existing && mayConnect) ? "connect" : firstStep(existing, mayConnect, start),',
+    );
+    expect(page).toContain('t(modeKey(org, "mobile.connectors.adminsOnly"), { org: org?.name ?? "" })');
+    expect(page).toContain("onPress={() => openConnection(existing.id)}");
+    expect(page).toContain('kind="card"');
+    // Nothing of ours in its bar: the system's back over a clear bar.
+    expect(page).toContain('<PushedHeader title="" plate solid={false} grouped />');
+    const layout = readFileSync(join(import.meta.dir, "../../app/(app)/(main)/_layout.tsx"), "utf8");
+    expect(layout).toContain('"connectors/service/[id]": cover,');
   });
 });

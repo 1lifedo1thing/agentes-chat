@@ -5312,6 +5312,69 @@
       "other": "{{names}} use it"
     }
   },
+  "connectors.page.missing": {
+    "value": "This service isn't in the catalog anymore."
+  },
+  "connectors.page.connected": {
+    "value": "Connected"
+  },
+  "connectors.page.open": {
+    "value": "Open the connection"
+  },
+  "connectors.page.category": {
+    "value": "Category"
+  },
+  "connectors.page.tools": {
+    "value": "Tools"
+  },
+  "connectors.page.toolsAsk": {
+    "value": {
+      "one": "{{count}} asks for approval",
+      "other": "{{count}} ask for approval"
+    }
+  },
+  "connectors.page.toolsAskNone": {
+    "value": "none asks for approval"
+  },
+  "connectors.page.toolsLater": {
+    "value": "once connected"
+  },
+  "connectors.page.who": {
+    "value": "Who connects"
+  },
+  "connectors.page.whoAdmins": {
+    "value": "{{org}} admins"
+  },
+  "connectors.page.whoRuns": {
+    "value": "Who runs the workspace"
+  },
+  "connectors.page.whoYou": {
+    "value": "You, for yourself"
+  },
+  "connectors.page.signIn": {
+    "value": "Signs in with"
+  },
+  "connectors.page.how.signIn": {
+    "value": "Your account"
+  },
+  "connectors.page.how.key": {
+    "value": "A key"
+  },
+  "connectors.page.how.either": {
+    "value": "Account or key"
+  },
+  "connectors.page.canTitle": {
+    "value": "What agents do with it"
+  },
+  "connectors.page.info": {
+    "value": "Information"
+  },
+  "connectors.page.host": {
+    "value": "Connects to"
+  },
+  "connectors.page.more": {
+    "value": "More in {{category}}"
+  },
   "connectors.fromAgent": {
     "value": "Connect a service"
   },

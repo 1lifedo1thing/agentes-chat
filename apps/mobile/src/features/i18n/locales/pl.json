@@ -2349,6 +2349,33 @@
     "usedBy_few": "{{names}} korzystają",
     "usedBy_many": "{{names}} korzystają",
     "usedBy_other": "{{names}} korzystają",
+    "page": {
+      "missing": "Tej usługi nie ma już w katalogu.",
+      "connected": "Połączono",
+      "open": "Otwórz połączenie",
+      "category": "Kategoria",
+      "tools": "Narzędzia",
+      "toolsAsk_one": "{{count}} wymaga zatwierdzenia",
+      "toolsAsk_few": "{{count}} wymagają zatwierdzenia",
+      "toolsAsk_many": "{{count}} wymaga zatwierdzenia",
+      "toolsAsk_other": "{{count}} wymaga zatwierdzenia",
+      "toolsAskNone": "żadne nie wymaga zatwierdzenia",
+      "toolsLater": "po połączeniu",
+      "who": "Kto łączy",
+      "whoAdmins": "Administratorzy {{org}}",
+      "whoRuns": "Kto zarządza workspace",
+      "whoYou": "Ty, dla siebie",
+      "signIn": "Logowanie przez",
+      "how": {
+        "signIn": "Twoje konto",
+        "key": "Klucz",
+        "either": "Konto lub klucz"
+      },
+      "canTitle": "Co agenci z tym robią",
+      "info": "Informacje",
+      "host": "Łączy się z",
+      "more": "Więcej w kategorii {{category}}"
+    },
     "fromAgent": "Połącz usługę",
     "githubApp": {
       "useApp": "Użyj aplikacji agentes.chat",

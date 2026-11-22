@@ -2143,6 +2143,31 @@
     "disconnected": "{{name}} getrennt.",
     "usedBy_one": "{{names}} nutzt es",
     "usedBy_other": "{{names}} nutzen es",
+    "page": {
+      "missing": "Dieser Dienst ist nicht mehr im Katalog.",
+      "connected": "Verbunden",
+      "open": "Verbindung öffnen",
+      "category": "Kategorie",
+      "tools": "Werkzeuge",
+      "toolsAsk_one": "{{count}} braucht eine Freigabe",
+      "toolsAsk_other": "{{count}} brauchen eine Freigabe",
+      "toolsAskNone": "keines braucht eine Freigabe",
+      "toolsLater": "nach dem Verbinden",
+      "who": "Wer verbindet",
+      "whoAdmins": "Admins von {{org}}",
+      "whoRuns": "Wer den Workspace verwaltet",
+      "whoYou": "Du, für dich",
+      "signIn": "Anmeldung mit",
+      "how": {
+        "signIn": "Deinem Konto",
+        "key": "Einem Schlüssel",
+        "either": "Konto oder Schlüssel"
+      },
+      "canTitle": "Was Agenten damit machen",
+      "info": "Informationen",
+      "host": "Verbindet mit",
+      "more": "Mehr in {{category}}"
+    },
     "fromAgent": "Dienst verbinden",
     "githubApp": {
       "useApp": "agentes.chat-App nutzen",

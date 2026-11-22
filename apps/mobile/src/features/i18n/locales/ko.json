@@ -2040,6 +2040,30 @@
     "disconnect": "연결 해제",
     "disconnected": "{{name}} 연결을 해제했어요.",
     "usedBy_other": "{{names}}이(가) 사용 중",
+    "page": {
+      "missing": "이 서비스는 더 이상 카탈로그에 없습니다.",
+      "connected": "연결됨",
+      "open": "연결 열기",
+      "category": "카테고리",
+      "tools": "도구",
+      "toolsAsk_other": "{{count}}개는 승인이 필요",
+      "toolsAskNone": "승인이 필요한 도구 없음",
+      "toolsLater": "연결 후 표시",
+      "who": "연결할 수 있는 사람",
+      "whoAdmins": "{{org}} 관리자",
+      "whoRuns": "워크스페이스 관리자",
+      "whoYou": "나 자신",
+      "signIn": "로그인 방식",
+      "how": {
+        "signIn": "내 계정",
+        "key": "키",
+        "either": "계정 또는 키"
+      },
+      "canTitle": "에이전트가 하는 일",
+      "info": "정보",
+      "host": "연결 대상",
+      "more": "{{category}}의 다른 서비스"
+    },
     "fromAgent": "서비스 연결",
     "githubApp": {
       "useApp": "agentes.chat 앱 사용",

@@ -2040,6 +2040,30 @@
     "disconnect": "Putuskan",
     "disconnected": "{{name}} diputus.",
     "usedBy_other": "{{names}} memakainya",
+    "page": {
+      "missing": "Layanan ini sudah tidak ada di katalog.",
+      "connected": "Terhubung",
+      "open": "Buka koneksi",
+      "category": "Kategori",
+      "tools": "Alat",
+      "toolsAsk_other": "{{count}} perlu persetujuan",
+      "toolsAskNone": "tidak ada yang perlu persetujuan",
+      "toolsLater": "setelah terhubung",
+      "who": "Siapa yang menghubungkan",
+      "whoAdmins": "Admin {{org}}",
+      "whoRuns": "Pengelola workspace",
+      "whoYou": "Anda, untuk diri sendiri",
+      "signIn": "Masuk dengan",
+      "how": {
+        "signIn": "Akun Anda",
+        "key": "Sebuah kunci",
+        "either": "Akun atau kunci"
+      },
+      "canTitle": "Apa yang dilakukan agen dengannya",
+      "info": "Informasi",
+      "host": "Terhubung ke",
+      "more": "Lainnya di {{category}}"
+    },
     "fromAgent": "Hubungkan layanan",
     "githubApp": {
       "useApp": "Pakai aplikasi agentes.chat",
