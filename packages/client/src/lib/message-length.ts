@@ -57,8 +57,10 @@ export const shownWhole = new Set<string>();
  * reader's own latest (the answer they wait for). `messages` oldest first.
  */
 export function answerIds(messages: readonly { id: string; mine: boolean }[]): Set<string> {
-  const from = messages.findLastIndex((m) => m.mine) + 1;
-  const ids = new Set(from > 0 ? messages.slice(from).map((m) => m.id) : []);
+  const ids = new Set<string>();
+  // Back from the newest to the reader's own latest; none of theirs here: only the newest.
+  for (let i = messages.length - 1; i >= 0 && !messages[i]?.mine; i--) ids.add(messages[i]?.id as string);
+  if (ids.size === messages.length) ids.clear();
   const newest = messages.at(-1);
   if (newest) ids.add(newest.id);
   return ids;
