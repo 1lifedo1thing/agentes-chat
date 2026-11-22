@@ -149,7 +149,8 @@ function ServerReview({
   const [server, setServer] = useState(first);
   const [state, setState] = useState<ReviewState>(emptyReview);
   // Saved with Continuar, beside the tools' levels. An older server leaves it out: on.
-  const startedOn = first.useInstructions ?? true;
+  // Kept from when the screen opened: a refetched list must not move it under the draft.
+  const [startedOn] = useState(first.useInstructions ?? true);
   const [useInstructions, setUseInstructions] = useState(startedOn);
   const [failed, setFailed] = useState<string | null>(null);
   const tools = useMemo(() => reviewToolsOf(t, server), [t, server]);

@@ -1253,7 +1253,8 @@ function ToolsStep({
   const tools = server ? reviewToolsOf(t, server) : [];
   const [state, setState] = useState<ToolReviewState>({ levels: {}, decided: new Set() });
   // Saved with Continuar, beside the tools' levels. An older server leaves it out: on.
-  const startedOn = item.server?.useInstructions ?? true;
+  // Kept from when the step opened: fresher data must not move it under the draft.
+  const [startedOn] = useState(item.server?.useInstructions ?? true);
   const [useInstructions, setUseInstructions] = useState(startedOn);
   const next = (saved?: CustomServer) => onNext(saved ? fromServer(saved, catalog.data?.connectors ?? []) : item);
   const name = itemName(t, item);

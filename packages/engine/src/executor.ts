@@ -2876,9 +2876,12 @@ async function executeRunInner(
       postedCount: 0,
     };
     const t0 = transcript;
-    later(() => saveTranscript(db, t0));
-    // On the row before any model call: a tool's check by run id (`runReadOutsideById`) reads it there.
-    if (serverNotes) await deferred;
+    if (serverNotes) {
+      // On the row before any model call, written here so a failed write stops the run: a tool's check by run id
+      // (`runReadOutsideById`) reads it there. What was queued before lands first, so it can't overwrite it.
+      await deferred;
+      await saveTranscript(db, t0);
+    } else later(() => saveTranscript(db, t0));
   }
 
   prof.mark("context");
