@@ -375,6 +375,11 @@ export interface User {
   /** Opened the link that confirms the email address. */
   emailVerified?: boolean;
   /**
+   * On a server that sends email, an address never confirmed: `required` while in no workspace (the apps show only
+   * "check your inbox", and none can be made), `reminder` once in one (a line asks for it). Null or absent: nothing.
+   */
+  emailConfirmation?: "required" | "reminder" | null;
+  /**
    * The installation's owner on the desktop app's own server: a sign-in in the last 10 minutes through Continue on this
    * Mac is their proof before a deletion (absent from an older server: false).
    */

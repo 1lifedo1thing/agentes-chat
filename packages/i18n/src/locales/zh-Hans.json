@@ -598,6 +598,14 @@
     "emailLinkExpired": "这个确认链接已失效。你的账号照常可用。",
     "sendNewLink": "发送新链接",
     "newLinkSent": "新链接已发送到 {{email}}。",
+    "confirm": {
+      "title": "请查看收件箱",
+      "lead": "打开我们发送到 {{email}} 的链接即可继续。",
+      "wrongAddress": "地址不对？更改",
+      "banner": "请确认邮箱",
+      "bannerSub": "打开我们发送到 {{email}} 的链接。",
+      "change": "更改地址"
+    },
     "unconfirmed": "这个邮箱已有一个账号，其密码尚未确认。请用密码登录，或通过邮件设置新密码。",
     "unconfirmedReset": "设置新密码",
     "unconfirmedNoEmail": "这个邮箱已有一个带密码的账号。请用密码登录。",
@@ -15028,6 +15036,7 @@
     },
     "org": {
       "createInviteOnly": "目前创建新工作区需要邀请。",
+      "createUnconfirmed": "请先打开我们发送到你邮箱的链接，然后再创建工作区。",
       "membersFull": "这个工作区的席位目前已全部占满。请邀请你的人空出一个席位。",
       "deleting": "这个工作区正在删除中。",
       "notRestorable": "这个工作区已无法恢复。",
