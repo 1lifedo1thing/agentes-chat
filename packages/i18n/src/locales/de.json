@@ -2495,7 +2495,7 @@
       "sectors": "Abteilungen",
       "usage": "Steuerung und Nutzung"
     },
-    "noOwner": "Niemand verantwortlich",
+    "noOwner": "Administratoren",
     "workingNow": "Arbeitet gerade",
     "available": "Verfügbar",
     "archived": "Archiviert",
@@ -2515,7 +2515,7 @@
         "mine": "Meine",
         "working": "Arbeitet gerade",
         "waiting": "Wartet auf dich",
-        "noOwner": "Niemand verantwortlich"
+        "noOwner": "Bei den Administratoren"
       },
       "groupBy": "Gruppieren nach",
       "by": {
@@ -3934,7 +3934,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · gehört {{owner}}",
-    "subtitleNoOwner": "{{role}} · kein Inhaber",
+    "subtitleNoOwner": "{{role}} · gehört den Administratoren",
     "emptyAgent": "Bitte ihn, sich etwas zu merken, etwas zu vergessen oder anders zu arbeiten.",
     "emptyAgent_female": "Bitte sie, sich etwas zu merken, etwas zu vergessen oder anders zu arbeiten.",
     "opening": "Unterhaltung wird geöffnet…",
@@ -4317,7 +4317,7 @@
     "viewProfile": "Profil ansehen",
     "agent": "Agent",
     "owner": "Inhaber",
-    "noOwner": "kein Inhaber",
+    "noOwner": "Administratoren",
     "model": "Modell",
     "can": "Darf",
     "budgetUsed": "{{percent}} des Budgets diesen Monat verbraucht",
@@ -7177,9 +7177,9 @@
     "noChannels": "Du bist noch in keinem Kanal. Du kannst den Agenten später zu einem Kanal hinzufügen.",
     "owner": "Inhaber",
     "you": "{{name}} (du)",
-    "noOwnerOption": "Kein Inhaber",
-    "noOwnerShort": "Admins bekommen die Warnungen und geben frei",
-    "noOwnerHelp": "Ohne Inhaber bekommen Admins die Warnungen und geben heikle Aktionen frei.",
+    "noOwnerOption": "Administratoren",
+    "noOwnerShort": "Bekommen die Warnungen und geben frei",
+    "noOwnerHelp": "Die Administratoren bekommen die Warnungen und geben heikle Aktionen frei.",
     "ownerHelp": "Bekommt die Budget-Warnungen und gibt heikle Aktionen frei.",
     "ownerRoleHelp": "Alle mit der Rolle {{role}} bekommen die Freigabeanfragen und Hinweise. Entscheiden darf jede Person davon, auch wer die Rolle später bekommt.",
     "ownerRoleHelp_female": "Alle mit der Rolle {{role}} bekommen die Freigabeanfragen und Hinweise. Entscheiden darf jede Person davon, auch wer die Rolle später bekommt.",
@@ -7237,7 +7237,6 @@
     "noTools": "Keine Tools",
     "onlyContext": "Nur der Kontext des Workspace",
     "noChannelsReview": "Keine Kanäle: per @ oder Direktnachricht rufen",
-    "noOwnerAdmins": "Kein Inhaber (Admins)",
     "editSection": "{{section}} bearbeiten",
     "hints": {
       "role": "Wähle einen Ausgangspunkt",
@@ -7793,7 +7792,7 @@
       "none": "Kein aktiver Link."
     },
     "ownerLine": "Inhaber: {{name}}",
-    "noOwner": "Kein Inhaber",
+    "noOwner": "Inhaber: Administratoren",
     "budgetLine": "{{percent}} des Budgets für {{month}}",
     "noAgents": "Noch keine Agenten."
   },
@@ -12165,10 +12164,10 @@
       "tool_offOne": "{{program}} ist auf {{computer}} ausgeschaltet.",
       "not_installed": "{{program}} ist auf {{computer}} nicht installiert.",
       "cant_start": "{{program}} ist auf {{computer}}, startet aber nicht.",
+      "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen.",
       "not_reported": "{{computer}} prüft noch, welche Programme vorhanden sind. Das ändert sich von selbst, wenn es so weit ist.",
       "system": "{{program}} läuft noch nicht auf dem System von {{computer}}.",
-      "no_computerCloud": "Bereit, sobald {{computer}} es ist.",
-      "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen."
+      "no_computerCloud": "Bereit, sobald {{computer}} es ist."
     },
     "notAvailableNow": "Ausgewählt, aber gerade nicht verfügbar.",
     "offline": "{{computer}} ist gerade offline.",

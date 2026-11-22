@@ -6207,7 +6207,7 @@
     "value": "Governance and usage"
   },
   "team.noOwner": {
-    "value": "No one responsible"
+    "value": "Admins"
   },
   "team.workingNow": {
     "value": "Working now"
@@ -6261,7 +6261,7 @@
     "value": "Waiting for you"
   },
   "team.list.filter.noOwner": {
-    "value": "No one responsible"
+    "value": "With the admins"
   },
   "team.list.groupBy": {
     "value": "Group by"
@@ -9651,7 +9651,7 @@
     "value": "{{role}} · owned by {{owner}}"
   },
   "dm.subtitleNoOwner": {
-    "value": "{{role}} · no owner"
+    "value": "{{role}} · owned by the admins"
   },
   "dm.emptyAgent": {
     "value": "Ask him to remember, forget or work differently.",
@@ -10577,7 +10577,7 @@
     "value": "Owner"
   },
   "profile.noOwner": {
-    "value": "no owner"
+    "value": "Admins"
   },
   "profile.model": {
     "value": "Model"
@@ -17555,13 +17555,13 @@
     "value": "{{name}} (you)"
   },
   "newAgent.noOwnerOption": {
-    "value": "No owner"
+    "value": "Admins"
   },
   "newAgent.noOwnerShort": {
-    "value": "Admins get the alerts and approve"
+    "value": "Get the alerts and approve"
   },
   "newAgent.noOwnerHelp": {
-    "value": "Without an owner, admins get the alerts and approve sensitive actions."
+    "value": "The admins get the alerts and approve sensitive actions."
   },
   "newAgent.ownerHelp": {
     "value": "Gets the budget alerts and approves sensitive actions."
@@ -17707,9 +17707,6 @@
   },
   "newAgent.noChannelsReview": {
     "value": "No channels: call it by @ or direct message"
-  },
-  "newAgent.noOwnerAdmins": {
-    "value": "No owner (admins)"
   },
   "newAgent.editSection": {
     "value": "Edit {{section}}"
@@ -19063,7 +19060,7 @@
     "value": "Owner: {{name}}"
   },
   "members.noOwner": {
-    "value": "No owner"
+    "value": "Owner: admins"
   },
   "members.budgetLine": {
     "value": "{{percent}} of the {{month}} budget"

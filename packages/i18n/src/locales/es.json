@@ -2583,7 +2583,7 @@
       "sectors": "Departamentos",
       "usage": "Gobernanza y uso"
     },
-    "noOwner": "Sin responsable",
+    "noOwner": "Administradores",
     "workingNow": "Trabajando ahora",
     "available": "Disponible",
     "archived": "Archivado",
@@ -2603,7 +2603,7 @@
         "mine": "Míos",
         "working": "Trabajando ahora",
         "waiting": "Esperándote",
-        "noOwner": "Sin responsable"
+        "noOwner": "Con los administradores"
       },
       "groupBy": "Agrupar por",
       "by": {
@@ -4077,7 +4077,7 @@
   },
   "dm": {
     "subtitle": "{{role}} · de {{owner}}",
-    "subtitleNoOwner": "{{role}} · sin dueño",
+    "subtitleNoOwner": "{{role}} · de los administradores",
     "emptyAgent": "Pídele que recuerde, olvide o trabaje de otra forma.",
     "emptyAgent_female": "Pídele que recuerde, olvide o trabaje de otra forma.",
     "opening": "Abriendo la conversación…",
@@ -4464,7 +4464,7 @@
     "viewProfile": "Ver perfil",
     "agent": "Agente",
     "owner": "Responsable",
-    "noOwner": "sin responsable",
+    "noOwner": "Administradores",
     "model": "Modelo",
     "can": "Puede",
     "budgetUsed": "{{percent}} del presupuesto usado este mes",
@@ -7390,9 +7390,9 @@
     "noChannels": "Todavía no estás en ningún canal. Puedes añadir el agente a un canal después.",
     "owner": "Responsable",
     "you": "{{name}} (tú)",
-    "noOwnerOption": "Sin responsable",
-    "noOwnerShort": "Los admins reciben las alertas y aprueban",
-    "noOwnerHelp": "Sin responsable, los admins reciben las alertas y aprueban las acciones sensibles.",
+    "noOwnerOption": "Administradores",
+    "noOwnerShort": "Reciben las alertas y aprueban",
+    "noOwnerHelp": "Los administradores reciben las alertas y aprueban las acciones sensibles.",
     "ownerHelp": "Recibe las alertas de presupuesto y aprueba las acciones sensibles.",
     "ownerRoleHelp": "Quien tenga el rol {{role}} recibe sus solicitudes de aprobación y avisos. Cualquiera decide, incluso quien reciba el rol después.",
     "ownerRoleHelp_female": "Quien tenga el rol {{role}} recibe sus solicitudes de aprobación y avisos. Cualquiera decide, incluso quien reciba el rol después.",
@@ -7447,7 +7447,6 @@
     "noTools": "Sin herramientas",
     "onlyContext": "Solo el contexto del espacio de trabajo",
     "noChannelsReview": "Sin canales: llámalo con @ o por mensaje directo",
-    "noOwnerAdmins": "Sin responsable (admins)",
     "editSection": "Editar {{section}}",
     "hints": {
       "role": "Elige un punto de partida",
@@ -8025,7 +8024,7 @@
       "none": "No hay enlace activo."
     },
     "ownerLine": "Responsable: {{name}}",
-    "noOwner": "Sin responsable",
+    "noOwner": "Responsable: administradores",
     "budgetLine": "{{percent}} del presupuesto de {{month}}",
     "noAgents": "Aún no hay agentes."
   },
@@ -12557,10 +12556,10 @@
       "tool_offOne": "{{program}} está desactivado en {{computer}}.",
       "not_installed": "{{program}} no está instalado en {{computer}}.",
       "cant_start": "{{program}} está en {{computer}}, pero no abre.",
+      "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan.",
       "not_reported": "{{computer}} todavía está comprobando qué programas tiene. Esto cambia solo cuando termine.",
       "system": "{{program}} todavía no funciona en el sistema de {{computer}}.",
-      "no_computerCloud": "Listo en cuanto {{computer}} lo esté.",
-      "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan."
+      "no_computerCloud": "Listo en cuanto {{computer}} lo esté."
     },
     "notAvailableNow": "Elegido, pero no disponible ahora.",
     "offline": "{{computer}} está desconectada ahora.",
