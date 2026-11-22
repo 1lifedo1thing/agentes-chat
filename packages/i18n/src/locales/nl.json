@@ -3041,7 +3041,7 @@
     "computerNoHome": "Nog geen computer. Die komt er zodra deze workspace een eigen computer heeft.",
     "computerNoHomeServer": "Nog geen browser. Stel <guide>deze server in als computer van de agents</guide> om er een te krijgen.",
     "addComputer": "Computer toevoegen",
-    "computerOneUser": "Hier geen computer. De computer van de workspace draait alle agents als één gebruiker en kan de plek van elke persoon dus niet gescheiden houden. Een Linux-server die met de optie --system van het installatieprogramma is ingericht, kan dat wel.",
+    "computerOneUser": "Je eigen map en browser op de computer van de workspace. Die draait alle agents als één gebruiker: commando's van andere agents daar kunnen ze lezen, en alleen wie hem heeft gekoppeld neemt de besturing over. Een Linux-server die met --system is ingericht, houdt elke plek gescheiden.",
     "powers": {
       "title": "Bevoegdheden in de workspace",
       "help": "Alleen je rechterhand doet dit.",

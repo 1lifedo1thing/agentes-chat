@@ -1497,17 +1497,21 @@ With `--system`, what an agent clones or builds stays in its own home, which no 
 path handed from one agent to another leads nowhere. Hand work over as a git branch or pull request (each agent
 clones the repository itself), or put it in the shared folder (`~/shared`, below). Agents there are told so.
 
-**Lodi's computer.** Lodi, the built-in agent every member talks to, works on the workspace's own computer (the
-server's own, set up with `--system`), where each person gets a place of their own: a separate user with its
-own files, browser, desktop and sign-ins, which only that person can watch or take control of, from Lodi's
-page. A computer that runs every agent as one user (the simple mode, a Mac, a computer a person connected)
-can't keep people's places apart, so Lodi has no computer there, and its page says so. Turn its commands,
-browser or desktop off for everyone on its page, under what it can use. The computer's shared folder is
-still shared: every agent and every person's Lodi reads and writes it. Lodi's browser needs that setup
-(This server as the agents' computer, below): without it, Lodi has no browser, and its page links here.
+**Lodi's computer.** Lodi, the built-in agent every member talks to, works on the workspace's own computer (this
+server's own, This server as the agents' computer, below), where each person gets a place of their own. With
+`--system` that place is a separate user with its own files, browser, desktop and sign-ins, which only that
+person can watch or take control of, from Lodi's page. On a computer that runs every agent as one user (the
+simple mode, a Mac) each place is a folder and a browser profile of that one user, as every agent's there is:
+Lodi keeps each person's work in their own place and is told never to look outside it, but other agents'
+commands there can read it, and only the person who connected the computer takes control of its desktop or
+opens its terminal. Lodi's page says which of the two a place is. For places nobody else can read, set the
+server up with `--system`. A computer a person connected is never Lodi's. Turn its commands, browser or desktop
+off for everyone on its page, under what it can use. The computer's shared folder is still shared: every agent
+and every person's Lodi reads and writes it. Without a computer of the workspace's own, Lodi has no computer,
+and its page links here.
 
 Where others read what Lodi does (a channel, a dashboard widget, a routine that reports to a channel) it works in
-one more place, shared by the whole workspace: one more user on that computer, "Lodi (shared)". Nothing of a
+one more place, shared by the whole workspace: "Lodi (shared)" on that computer (a user of its own with `--system`). Nothing of a
 person's own place reaches it. A person's own place is used only for what that person asks Lodi in their own
 conversation with it: a routine that reports there, or anything else nobody asked for there, has no computer.
 Whoever may open any agent's computer (the admins of computers) opens it from the computer's page in Settings,

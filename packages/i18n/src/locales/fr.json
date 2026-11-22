@@ -3163,7 +3163,7 @@
     "computerNoHome": "Pas encore d'ordinateur. Il en aura un quand ce workspace aura son propre ordinateur.",
     "computerNoHomeServer": "Pas encore de navigateur. Configurez <guide>ce serveur comme ordinateur des agents</guide> pour lui en donner un.",
     "addComputer": "Ajouter un ordinateur",
-    "computerOneUser": "Pas d'ordinateur ici. L'ordinateur du workspace exécute tous les agents sous un seul utilisateur et ne peut donc pas séparer l'espace de chaque personne. Un serveur Linux installé avec l'option --system de l'installateur le peut.",
+    "computerOneUser": "Ton propre dossier et ton navigateur sur l'ordinateur du workspace. Il exécute tous les agents sous un seul utilisateur : les commandes des autres agents peuvent les lire, et seule la personne qui l'a connecté en prend le contrôle. Un serveur Linux installé avec --system sépare chaque espace.",
     "powers": {
       "title": "Pouvoirs dans le workspace",
       "help": "Seul votre bras droit fait cela.",

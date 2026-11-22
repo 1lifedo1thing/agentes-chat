@@ -3158,7 +3158,7 @@
     "computerNoHome": "Ancora nessun computer. Ne avrà uno quando questo workspace avrà un computer proprio.",
     "computerNoHomeServer": "Ancora nessun browser. Configura <guide>questo server come computer degli agenti</guide> per dargliene uno.",
     "addComputer": "Aggiungi un computer",
-    "computerOneUser": "Qui nessun computer. Il computer del workspace esegue tutti gli agenti come un solo utente, quindi non può tenere separato lo spazio di ogni persona. Un server Linux installato con l'opzione --system dell'installer può farlo.",
+    "computerOneUser": "La tua cartella e il tuo browser sul computer del workspace. Esegue tutti gli agenti come un solo utente: i comandi degli altri agenti lì possono leggerli, e solo chi l'ha collegato ne prende il controllo. Un server Linux installato con --system tiene separato ogni spazio.",
     "powers": {
       "title": "Poteri nel workspace",
       "help": "Solo il tuo braccio destro fa queste cose.",
