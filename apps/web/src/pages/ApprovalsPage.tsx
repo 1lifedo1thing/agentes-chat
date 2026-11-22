@@ -13,20 +13,14 @@ import {
 } from "@agenteschat/client";
 import {
   APPROVAL_REASON_MAX,
-  approvalCards,
   approvalLines,
-  approvalRuns,
   approveAllScope,
-  approveAlwaysAlso,
-  approveAlwaysOn,
   byAsked,
-  cardDeadline,
   type LinePlace,
   RUNNING_FOR_MS,
-  runKeys,
 } from "@agenteschat/client/lib/approval-card";
 import { aheadPhase, approveAlwaysOffered } from "@agenteschat/client/lib/approval-kind";
-import { approvalOriginShort, approvalWords } from "@agenteschat/client/lib/approval-origin";
+import { approvalWords } from "@agenteschat/client/lib/approval-origin";
 import {
   type ApprovalEffect,
   type ApprovalUndo,
@@ -38,13 +32,12 @@ import {
 import {
   aheadEndLine,
   approvalDoing,
-  approvalGroupWaitsFor,
   approvalOwnerOf,
   approvalWaitsFor,
   requesterDecidesLine,
 } from "@agenteschat/client/lib/approval-words";
 import { fromServer, itemName } from "@agenteschat/client/lib/connected";
-import { daysBetween, formatTime, joinNames, nextLabel, relativeTime, timeLeft } from "@agenteschat/client/lib/format";
+import { daysBetween, formatTime, nextLabel, relativeTime, timeLeft } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { connectorName } from "@agenteschat/client/lib/scopes";
 import { formatDuration, type ToolItem, toolItemsSaved, toolPhrase, workFromSteps } from "@agenteschat/client/lib/work";
@@ -56,11 +49,9 @@ import {
   cx,
   DetailsDialog,
   Disclosure,
-  EmptyState,
   ExpiryFuse,
   type Fact,
   FactStrip,
-  GroupHeading,
   Icon,
   type IconName,
   Kbd,
@@ -68,14 +59,9 @@ import {
   Locked,
   limitShown,
   overLimit,
-  PageHeader,
-  SearchInput,
-  Segmented,
   StepTrack,
   type StepTrackStep,
-  settleOnNextFrame,
   Tip,
-  Toolbar,
   WorkSweep,
 } from "@agenteschat/ui";
 import { Link } from "@tanstack/react-router";
@@ -93,7 +79,7 @@ import {
   useState,
 } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { AgentAvatar, AgentWho } from "@/components/AgentAvatar";
+import { AgentAvatar } from "@/components/AgentAvatar";
 import {
   AheadLine,
   ApproveAlways,
@@ -108,30 +94,17 @@ import {
 import { WhenAsksLink } from "@/components/ApprovalsLevelDialog";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { EmailLetter } from "@/components/EmailLetter";
-import { HelpLink } from "@/components/HelpLink";
-import { ErrorState, LoadingCards } from "@/components/Loading";
-import {
-  MissionCommandsPending,
-  MissionsWaitingList,
-  missionsWaiting,
-  pendingCommandCount,
-  useMissionsWaitingYou,
-} from "@/components/missions/MissionWaiting";
 import { useOrg } from "@/components/org-context";
 import { colorOf, prepareBurst } from "@/components/Sky";
 import { TaskStepsBlock, useCallLogo } from "@/components/ToolCalls";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useReveal } from "@/hooks/useReveal";
-import { useRightHandLook } from "@/hooks/useRightHandLook";
 import { useTextLimit } from "@/hooks/useTextLimit";
 import { TYPED_VALUES } from "@/i18n";
 import { inlineWords, Markdown } from "@/lib/markdown";
-import { useOpenParam } from "@/lib/open-param";
 import { useToast } from "@/lib/toast";
 import "./approvals.css";
 
-type Filter = "pending" | "approved" | "refused" | "expired" | "all";
-const FILTERS: Filter[] = ["pending", "approved", "refused", "expired", "all"];
 const TTL_MS = 24 * 3_600_000;
 const URGENT_MS = 3_600_000;
 
@@ -177,29 +150,12 @@ const titleOnCard = (t: TFunction, b: Approval, place: Pick<LinePlace, "position
     : approvalTitle(t, b);
 const usePhase = (a: Approval) => approvalPhase(a, Date.now(), useLinePlace(a));
 
-const bucketOf = (p: ApprovalPhase): Exclude<Filter, "all"> =>
-  p === "waiting" || p === "queued" || p === "running"
-    ? "pending"
-    : p === "done" || p === "failed" || p === "scheduled" || p === "notRun"
-      ? "approved"
-      : p === "refused"
-        ? "refused"
-        : "expired";
-
 /** In the order the agents asked (each card's requests together at its first, `approvalCards`). */
 export function sortOpen(list: Approval[]) {
   return [...list].sort(byAsked);
 }
 
 const decidedAt = (a: Approval) => a.decidedAt ?? (a.status === "expired" ? a.expiresAt : a.createdAt);
-
-/** The top-level scalar values of the action (what the card shows; the details show them all). */
-function scalars(params: Record<string, unknown>) {
-  return Object.entries(params ?? {}).filter(
-    (e): e is [string, string | number | boolean] =>
-      typeof e[1] === "string" || typeof e[1] === "number" || typeof e[1] === "boolean",
-  );
-}
 
 /** A GitHub PR the action points at, when its values say so. */
 function prLink(a: Approval) {
@@ -706,72 +662,6 @@ function ReqRow({ approval: a, selected, onOpen }: { approval: Approval; selecte
   );
 }
 
-/**
- * Several waiting requests of one kind in a row from one agent, as one row: "3 pedidos de Ada para Executar sql",
- * "Aprovar todos", "Aprovar sempre" where its kind offers it, and "Ver cada um" unfolding each request's own row.
- */
-function RunRow({
-  run,
-  items,
-  always,
-  agent,
-  open,
-  onToggle,
-  children,
-}: {
-  run: Approval[];
-  items: Approval[];
-  always: Set<string>;
-  agent: Agent | undefined;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const deciding = useApprovalsDeciding(
-    org.id,
-    run.map((a) => a.id),
-  );
-  const first = run[0];
-  if (!first) return null;
-  const name = agent?.name ?? t("channel.unknownAgent");
-  const head = t("approval.run.head", { count: run.length, name, what: approvalTitle(t, first) });
-  const lead = run.find((a) => always.has(a.id) && a.canDecide);
-  const decider = run.find((a) => a.canDecide);
-  const deadline = cardDeadline(run) ?? first.expiresAt;
-  const leftMs = new Date(deadline).getTime() - Date.now();
-  return (
-    <section className="ap-run" data-burst="" aria-label={head}>
-      <div className="ac-mediarow ac-mediarow--row">
-        <span className="ac-mediarow__face">
-          <AgentAvatar agentId={first.agentId} name={name} size="sm" state="waiting" />
-        </span>
-        <span className="ac-mediarow__head">
-          <b className="ap-li__line">{head}</b>
-        </span>
-        <span className={cx("ac-mediarow__end ap-li__left", leftMs <= URGENT_MS && "is-urgent")}>
-          {expiryText(t, { expiresAt: deadline })}
-        </span>
-      </div>
-      <div className="ap-run__acts">
-        <Locked when={deciding}>
-          <ApproveAll items={run} label={t("approval.run.approve")}>
-            {lead && <ApproveAlways approval={lead} agent={agent} also={approveAlwaysAlso(items, lead)} />}
-          </ApproveAll>
-        </Locked>
-      </div>
-      <div className="ap-run__links">
-        <Button variant="link" aria-expanded={open} onClick={onToggle}>
-          {t("approval.run.show")}
-        </Button>
-        {decider && <WhenAsksLink approval={decider} agent={agent} />}
-      </div>
-      {open && <div className="ap-run__items">{children}</div>}
-    </section>
-  );
-}
-
 const EFFECT_ICON: Record<ApprovalEffect, IconName> = {
   external: "send",
   production: "cloud",
@@ -781,55 +671,6 @@ const EFFECT_ICON: Record<ApprovalEffect, IconName> = {
 const UNDO_ICON: Record<ApprovalUndo, IconName> = { irreversible: "alert", reversible: "undo", deletable: "undo" };
 /** Its text folds past this many characters ("Ver mais"). */
 const TEXT_FOLD = 360;
-
-/** The request's head on the page: the agent, who asked and from where, and the action in one line. */
-function ReviewHead({ approval: a, channel }: { approval: Approval; channel: string }) {
-  const { t, i18n } = useTranslation();
-  const { org } = useOrg();
-  const dir = useDirectory(org.id);
-  const agent = dir.agentById.get(a.agentId);
-  const name = agent?.name ?? t("channel.unknownAgent");
-  const p = usePhase(a);
-  const place = useLinePlace(a);
-  const origin = approvalOriginShort(a);
-  const tt = t as unknown as (key: string, options?: Record<string, unknown>) => string;
-  const title = approvalTitle(t, a);
-  const by = [
-    agent?.role,
-    origin ? tt(origin.key, origin.values) : "",
-    channel ? `#${channel}` : "",
-    place && place.count > 1 ? t("approvals.position", { n: place.position, total: place.count }) : "",
-    relativeTime(t, i18n.language, a.createdAt),
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  return (
-    <header className="ap-review__head ac-mediarow">
-      <span className="ac-mediarow__face">
-        <AgentAvatar
-          agentId={a.agentId}
-          name={name}
-          size="md"
-          state={p === "running" ? "writing" : p === "waiting" || p === "queued" ? "waiting" : "idle"}
-          running={p === "running"}
-          expression={p === "done" ? "happy" : undefined}
-        />
-      </span>
-      <p className="ap-review__by ac-mediarow__head">
-        <b>{name}</b>
-        <span className="ac-mediarow__meta">{by}</span>
-      </p>
-      <div className="ac-mediarow__body">
-        <div className="ap-review__titleline">
-          <h2 className="ap-review__title" title={title}>
-            {title}
-          </h2>{" "}
-          <UndoChip approval={a} />
-        </div>
-      </div>
-    </header>
-  );
-}
 
 /** Whether what it does can be undone, as a chip after the request's title (on the page and in the dialog). */
 function UndoChip({ approval: a }: { approval: Approval }) {
