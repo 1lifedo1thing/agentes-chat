@@ -88,14 +88,21 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
               {tabs.diffs.get(key) ? (
                 <GitDiff session={s} opened={tabs.diffs.get(key) as GitOpened} onOpenFile={tabs.openFile} />
               ) : isTerminal(key) ? (
-                <TerminalPane
-                  orgId={org.id}
-                  agentId={s.agentId}
-                  machineId={s.machineId}
-                  sessionId={s.id}
-                  focused={tabs.active === key}
-                  keep={terminalKeep(key)}
-                />
+                <>
+                  <TerminalPane
+                    orgId={org.id}
+                    agentId={s.agentId}
+                    machineId={s.machineId}
+                    sessionId={s.id}
+                    focused={tabs.active === key}
+                    keep={terminalKeep(key)}
+                  />
+                  {/* As under the conversation's composer: what the agent thinks with and its plan's limits, which
+                      are the ones its CLI typed here uses. */}
+                  <div className="code-termfoot">
+                    <AgentStatus session={s} />
+                  </div>
+                </>
               ) : (
                 <CodeFileTab
                   session={s}

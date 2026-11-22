@@ -776,6 +776,18 @@ span.code-tabs__tab {
   margin: 0 6px;
   color: var(--muted);
 }
+/* Under a terminal's tab: the agent's model and its plan's limits, as under the conversation's composer. */
+.code-termfoot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-top: 1px solid var(--line);
+}
+.code-tabview > .code-term {
+  height: auto;
+}
 /* A file's tab: its editor fills it, its foot says the path and holds "Save". */
 .code-ftab {
   flex: 1;
