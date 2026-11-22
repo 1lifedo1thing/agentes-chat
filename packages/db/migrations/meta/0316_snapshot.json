@@ -1,5 +1,5 @@
 {
-  "id": "b862e844-924b-4a0a-8ac4-5f26b2602830",
+  "id": "cbf031d5-fb2e-425b-b79e-132b346fe90f",
   "prevId": "dd235a23-9a95-468d-9a73-05132e3bf497",
   "version": "7",
   "dialect": "postgresql",
@@ -203,6 +203,12 @@
         "owner_user_id": {
           "name": "owner_user_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_role_id": {
+          "name": "owner_role_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -603,6 +609,19 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
+        "agents_owner_role_id_org_roles_id_fk": {
+          "name": "agents_owner_role_id_org_roles_id_fk",
+          "tableFrom": "agents",
+          "tableTo": "org_roles",
+          "columnsFrom": [
+            "owner_role_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
         "agents_group_id_agent_groups_id_fk": {
           "name": "agents_group_id_agent_groups_id_fk",
           "tableFrom": "agents",
@@ -680,7 +699,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "agents_one_owner": {
+          "name": "agents_one_owner",
+          "value": "\"agents\".\"owner_user_id\" is null or \"agents\".\"owner_role_id\" is null"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.organization_settings": {
@@ -3609,6 +3633,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "reply_in_threads": {
+          "name": "reply_in_threads",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         }
       },
       "indexes": {},
@@ -17069,6 +17100,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "reply_in_thread": {
+          "name": "reply_in_thread",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "trigger": {
           "name": "trigger",
           "type": "agent_run_trigger",
@@ -18272,6 +18310,12 @@
         "owner_user_id": {
           "name": "owner_user_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_role_id": {
+          "name": "owner_role_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -22080,6 +22124,54 @@
         },
         "share_role_ids": {
           "name": "share_role_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
+        },
+        "editors_limited": {
+          "name": "editors_limited",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "editor_user_ids": {
+          "name": "editor_user_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "editor_role_ids": {
+          "name": "editor_role_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
+        },
+        "conversation_edits": {
+          "name": "conversation_edits",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "agent_base": {
+          "name": "agent_base",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agent_view_ids": {
+          "name": "agent_view_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
+        },
+        "agent_edit_ids": {
+          "name": "agent_edit_ids",
           "type": "uuid[]",
           "primaryKey": false,
           "notNull": true,
