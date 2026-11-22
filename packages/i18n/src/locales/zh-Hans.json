@@ -14168,6 +14168,7 @@
       "web_search": "搜索网页",
       "web_fetch": "读取网页",
       "image_search": "搜索图片",
+      "show_image": "显示网络图片",
       "create_routine": "创建例行工作",
       "update_routine": "更新例行工作",
       "delete_routine": "删除例行工作",

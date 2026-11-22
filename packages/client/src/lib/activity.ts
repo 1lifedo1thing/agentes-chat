@@ -268,6 +268,8 @@ const BUILTIN: Record<string, ActivityKind> = {
   web_search: "searchingWeb",
   web_fetch: "readingWeb",
   image_search: "searchingWeb",
+  // A picture from the web brought onto the reply (ADR 0217).
+  show_image: "fetchingFile",
   read_conversation: "readingConversation",
   // A card of ours in the conversation: the card itself says what it holds.
   show_block: "preparingCard",
