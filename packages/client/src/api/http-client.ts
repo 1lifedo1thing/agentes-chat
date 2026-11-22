@@ -1616,14 +1616,14 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         const qs = params.toString();
         return `${base}${org(orgId)}/artifacts/${enc(id)}/file${qs ? `?${qs}` : ""}`;
       },
-      upload: (orgId, file, options = {}) => {
+      upload: (orgId, file, options = {}, upload) => {
         const form = new FormData();
         form.append("file", file, file.name);
         if (options.title) form.append("title", options.title);
         if (options.channelId) form.append("channelId", options.channelId);
         if (options.threadId) form.append("threadId", options.threadId);
         if (options.folderId) form.append("folderId", options.folderId);
-        return files.upload<ArtifactDetail>(`${org(orgId)}/artifacts/files`, form);
+        return files.upload<ArtifactDetail>(`${org(orgId)}/artifacts/files`, form, upload);
       },
       uploadVersion: (orgId, id, file, options = {}) => {
         const form = new FormData();

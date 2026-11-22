@@ -1928,11 +1928,12 @@ export interface ApiClient {
       orgId: string,
       input: { title: string; channelId?: string | null; folderId?: string | null; content: ArtifactContent },
     ): Promise<ArtifactDetail>;
-    /** Uploads a file as is (multipart, ≤ 50 MB) to the Drive or to a channel. */
+    /** Uploads a file as is (multipart, ≤ 50 MB) to the Drive or to a channel; `upload` reports the share sent. */
     upload(
       orgId: string,
       file: File,
       options?: { title?: string; channelId?: string | null; threadId?: string | null; folderId?: string | null },
+      upload?: UploadOptions,
     ): Promise<ArtifactDetail>;
     /** A new version of an uploaded file (multipart, ≤ 50 MB). */
     uploadVersion(orgId: string, id: string, file: File, options?: { note?: string }): Promise<ArtifactDetail>;

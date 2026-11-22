@@ -562,6 +562,8 @@
     "camera": "Kamera",
     "photos": "Fotoğraflar",
     "file": "Dosya",
+    "paste": "Yapıştır",
+    "pasteGone": "Kopyalanan görsel okunamadı. Tekrar kopyalayın, sonra Yapıştır'a dokunun.",
     "media": "GIF'ler",
     "noCamera": "Kamera erişimi yok. Telefonun Ayarlar bölümünden izin verin.",
     "summary": "Sohbeti özetle",
