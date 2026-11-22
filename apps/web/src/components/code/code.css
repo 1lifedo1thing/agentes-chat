@@ -708,7 +708,7 @@
 }
 /* A file's or a terminal's tab: the name opens it, the x closes it. */
 span.code-tabs__tab {
-  padding: 0 6px 0 0;
+  padding: 0 4px 0 0;
   gap: 0;
 }
 .code-tabs__open {
@@ -746,20 +746,24 @@ span.code-tabs__tab {
   border-radius: 50%;
   background: var(--warn);
 }
+/* The x: a small plate of its own, the size and corner of the kit's icon buttons scaled to the tab's row. */
 .code-tabs__x {
   flex: none;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  margin-left: 2px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 30%;
   background: none;
   color: var(--faint);
   cursor: pointer;
+  transition: background-color 120ms ease;
 }
 .code-tabs__x:hover {
-  background: var(--line);
+  /* Seen on both grounds: the tab on screen's and the row's sunken one. */
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
   color: var(--ink);
 }
 .code-tabs :is(.code-tabs__tab, .code-tabs__open, .code-tabs__x):focus-visible {
