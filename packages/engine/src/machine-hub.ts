@@ -72,6 +72,7 @@ import { type WakeWhy, wantMachine } from "./machine-wake";
 import {
   assertNotPaused,
   authenticateMachine,
+  cleanMachineName,
   deletedAgentIds,
   getMachineById,
   inStandby,
@@ -773,6 +774,12 @@ export function createMachineHub(deps: MachineHubDeps) {
     const loginBlocked =
       frame.claudeLoginBlocked ??
       (frame.claudeLoginMethods?.includes("cli_login") ? undefined : machine.executors?.claudeLoginBlocked);
+    const nextHostName =
+      machine.kind === "host" &&
+      frame.hostname &&
+      (!machine.name || (machine.hostname !== "" && machine.name === cleanMachineName(machine.hostname)))
+        ? cleanMachineName(frame.hostname)
+        : "";
     await db
       .update(machines)
       .set({
@@ -783,6 +790,7 @@ export function createMachineHub(deps: MachineHubDeps) {
         // Awake: whatever put it in standby is over (ADR 0161).
         standbyAt: null,
         wakeWantedAt: null,
+        ...(nextHostName && nextHostName !== machine.name ? { name: nextHostName } : {}),
         hostname: frame.hostname,
         os: frame.os,
         arch: frame.arch,
@@ -834,6 +842,7 @@ export function createMachineHub(deps: MachineHubDeps) {
         updatedAt: now,
       })
       .where(eq(machines.id, machine.id));
+    if (nextHostName) conn.name = nextHostName;
     // An older socket for this machine on another replica (the runner came back elsewhere) is dropped there.
     await pubsub
       .publish(MACHINE_CONTROL_TOPIC, {
@@ -858,7 +867,7 @@ export function createMachineHub(deps: MachineHubDeps) {
     send(conn, {
       type: "welcome",
       machineId: machine.id,
-      name: machine.name,
+      name: nextHostName || machine.name,
       heartbeatMs,
       mcpOnce: true,
       observeEgress: machine.kind === "managed",
