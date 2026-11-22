@@ -1364,8 +1364,8 @@ Chrome, which must be installed there: get it from google.com/chrome; it keeps i
 each agent uses a profile of its own, never yours), and Claude Code, Codex, Cursor's, OpenCode's, xAI's Grok
 Build or Google's Antigravity CLI when an agent thinks with a subscription signed in there (OpenCode's free models need no sign-in at all).
 Install the ones you want on that computer, as the user that runs the runner: Cursor's with
-`curl https://cursor.com/install -fsS | bash` (it lands in `~/.local/bin`, which the runner's PATH must
-include), OpenCode's with `npm install -g opencode-ai@1.19.5`, Grok Build with
+`curl https://cursor.com/install -fsS | bash` (it lands in `~/.local/bin`, which the runner looks in
+even when its service's PATH lacks it), OpenCode's with `npm install -g opencode-ai@1.19.5`, Grok Build with
 `curl -fsSL https://x.ai/cli/install.sh | bash` (it puts `grok` in `~/.local/bin` too; agents think with it only
 through a Grok account added in Settings, AI and usage, never the computer's own sign-in. On Linux its sandbox needs
 bubblewrap, `sudo apt install -y bubblewrap`, or Grok Build refuses to start and every turn fails), Google's
@@ -1384,6 +1384,9 @@ extracted to `/usr/local/bin/opencode`; Grok Build with
 also makes `~/.local/bin/agent`, Cursor's name: where both are installed, link Cursor's `agent` last. The Antigravity
 CLI the same way: `sudo env HOME=/opt/agy sh -c 'curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --skip-path'`,
 then `sudo chmod -R a+rX /opt/agy` and `sudo ln -sf /opt/agy/.local/bin/agy /usr/local/bin/agy`.
+One installed in root's own `~/.local/bin` there is out of the agents' reach, and the apps say so with the line
+that installs it for all of them. Agents never use a sign-in made in a terminal: Gemini, Grok and the other plans
+sign in from the apps (Settings, AI and usage), once for all of their owner's agents.
 Commands run as the user that runs the runner, so give it a dedicated user or a VM.
 `agentes-runner tools disable commands` (or `claude`, `codex`, `cursor`, `opencode`, `grok` or `antigravity`) turns a capability off on that
 computer, and `agentes-runner folders allow <path>` shares a folder besides the agents' own.
@@ -1497,17 +1500,21 @@ With `--system`, what an agent clones or builds stays in its own home, which no 
 path handed from one agent to another leads nowhere. Hand work over as a git branch or pull request (each agent
 clones the repository itself), or put it in the shared folder (`~/shared`, below). Agents there are told so.
 
-**Lodi's computer.** Lodi, the built-in agent every member talks to, works on the workspace's own computer (the
-server's own, set up with `--system`), where each person gets a place of their own: a separate user with its
-own files, browser, desktop and sign-ins, which only that person can watch or take control of, from Lodi's
-page. A computer that runs every agent as one user (the simple mode, a Mac, a computer a person connected)
-can't keep people's places apart, so Lodi has no computer there, and its page says so. Turn its commands,
-browser or desktop off for everyone on its page, under what it can use. The computer's shared folder is
-still shared: every agent and every person's Lodi reads and writes it. Lodi's browser needs that setup
-(This server as the agents' computer, below): without it, Lodi has no browser, and its page links here.
+**Lodi's computer.** Lodi, the built-in agent every member talks to, works on the workspace's own computer (this
+server's own, This server as the agents' computer, below), where each person gets a place of their own. With
+`--system` that place is a separate user with its own files, browser, desktop and sign-ins, which only that
+person can watch or take control of, from Lodi's page. On a computer that runs every agent as one user (the
+simple mode, a Mac) each place is a folder and a browser profile of that one user, as every agent's there is:
+Lodi keeps each person's work in their own place and is told never to look outside it, but other agents'
+commands there can read it, and only the person who connected the computer takes control of its desktop or
+opens its terminal. Lodi's page says which of the two a place is. For places nobody else can read, set the
+server up with `--system`. A computer a person connected is never Lodi's. Turn its commands, browser or desktop
+off for everyone on its page, under what it can use. The computer's shared folder is still shared: every agent
+and every person's Lodi reads and writes it. Without a computer of the workspace's own, Lodi has no computer,
+and its page links here.
 
 Where others read what Lodi does (a channel, a dashboard widget, a routine that reports to a channel) it works in
-one more place, shared by the whole workspace: one more user on that computer, "Lodi (shared)". Nothing of a
+one more place, shared by the whole workspace: "Lodi (shared)" on that computer (a user of its own with `--system`). Nothing of a
 person's own place reaches it. A person's own place is used only for what that person asks Lodi in their own
 conversation with it: a routine that reports there, or anything else nobody asked for there, has no computer.
 Whoever may open any agent's computer (the admins of computers) opens it from the computer's page in Settings,

@@ -1861,6 +1861,9 @@
     "open": "Aç",
     "openInBrowser": "Tarayıcıda aç",
     "download": "İndir",
+    "copyImage": "Görseli kopyala",
+    "imageCopied": "Görsel kopyalandı.",
+    "copyImageFailed": "Görsel kopyalanamadı. Bunun yerine İndir'i kullanın.",
     "conversation": "Mesaj gönder",
     "agentPage": "Sayfayı gör",
     "back": "Geri",
@@ -3046,7 +3049,7 @@
     "computerNoHome": "Henüz bilgisayar yok. Bu çalışma alanının kendi bilgisayarı olduğunda bir tane olacak.",
     "computerNoHomeServer": "Henüz tarayıcı yok. Bir tarayıcı olması için <guide>bu sunucuyu ajanların bilgisayarı olarak</guide> kurun.",
     "addComputer": "Bilgisayar ekle",
-    "computerOneUser": "Burada bilgisayar yok. Çalışma alanının bilgisayarı tüm ajanları tek bir kullanıcı olarak çalıştırıyor, bu yüzden her kişinin yerini ayrı tutamıyor. Yükleyicinin --system seçeneğiyle kurulan bir Linux sunucusu bunu yapabilir.",
+    "computerOneUser": "Çalışma alanının bilgisayarında sana ait klasör ve tarayıcı. Bilgisayar tüm ajanları tek bir kullanıcı olarak çalıştırır: oradaki diğer ajanların komutları bunları okuyabilir ve kontrolü yalnızca onu bağlayan kişi alır. --system ile kurulan bir Linux sunucusu her yeri ayrı tutar.",
     "powers": {
       "title": "Çalışma alanı yetkileri",
       "help": "Bunları yalnızca sağ kolun yapar.",
@@ -3474,7 +3477,10 @@
       "getGit": "Git for Windows'u indir",
       "cantStart": "{{program}}, {{computer}} üzerinde var ama açılmıyor: {{message}}",
       "outdated": "Buradan kurmak için {{computer}} üzerindeki agentes.chat uygulamasını güncelleyin.",
-      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır."
+      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır.",
+      "runThis": "Kurmak için bu komutu orada çalıştırın.",
+      "missingSystem": "{{program}}, {{computer}} üzerinde her biri kendi kullanıcısıyla çalışan ajanlar için henüz yok. Hepsine kurmak için bu komutu orada çalıştırın.",
+      "homeOnly": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu. Her ajan kendi kullanıcısıyla çalışır ve ona erişemez. Hepsine kurmak için bu komutu orada çalıştırın."
     },
     "titleFor": "{{name}} için bir yapay zeka bağlayın",
     "have": {
@@ -12098,7 +12104,8 @@
       "cant_start": "{{program}}, {{computer}} üzerinde var ama açılmıyor.",
       "not_reported": "{{computer}} hangi programların olduğunu hâlâ kontrol ediyor. Bittiğinde bu kendiliğinden değişir.",
       "system": "{{program}} henüz {{computer}} sisteminde çalışmıyor.",
-      "no_computerCloud": "{{computer}} hazır olur olmaz hazır."
+      "no_computerCloud": "{{computer}} hazır olur olmaz hazır.",
+      "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez."
     },
     "notAvailableNow": "Seçildi ama şu anda kullanılamıyor.",
     "offline": "{{computer}} şu anda çevrimdışı.",
@@ -14613,6 +14620,27 @@
     "needsKey": "Bu sunucu OAuth desteklemiyor. API anahtarıyla bağlayın.",
     "notApproved": "{{name}} yalnızca onayladığı uygulamaların giriş yapmasına izin veriyor ve agentes.chat henüz onaylanmadı. Size bir API anahtarı veriyorsa onunla bağlanabilirsiniz.",
     "serverSaid": "Sunucunun yanıtı: {{detail}}",
+    "ownClient": {
+      "title": "Kendi OAuth uygulamanı kullan",
+      "notApproved": "{{name}} yalnızca onayladığı uygulamaları kabul ediyor ve agentes.chat henüz bunlardan biri değil. Orada kendi uygulamanla bağlayabilirsin.",
+      "askAdmin": "Bir yönetici, çalışma alanının kendi uygulamasıyla bağlayabilir.",
+      "help": "Sağlayıcıda bir uygulama oluştur, bu yönlendirme URI'sini oraya kaydet ve istemci kimliğini buraya yapıştır. Bundan sonra çalışma alanından oraya her giriş senin uygulamanı kullanır.",
+      "guide": {
+        "metaAds": "Meta for Developers'da Marketing API kullanım senaryosuyla bir uygulama oluştur. Bu yönlendirme URI'sini geçerli OAuth yönlendirme URI'lerine ekle, ardından Uygulama Kimliğini ve uygulaman istiyorsa Uygulama Gizli Anahtarını yapıştır."
+      },
+      "redirectUri": "Yönlendirme URI'si",
+      "copied": "Yönlendirme URI'si kopyalandı.",
+      "clientId": "İstemci kimliği",
+      "clientIdMissing": "Uygulamanın istemci kimliğini yapıştır.",
+      "clientSecret": "İstemci gizli anahtarı",
+      "clientSecretHelp": "Yalnızca uygulama istiyorsa. Şifreli saklanır ve bir daha gösterilmez.",
+      "secretSaved": "Kayıtlı bir gizli anahtar var. Korumak için boş bırak.",
+      "scopes": "Kapsamlar",
+      "scopesHelp": "Her girişte istenenler, boşlukla ayrılmış. Sunucunun listelediklerini kullanmak için boş bırak.",
+      "save": "Kaydet ve devam et",
+      "remove": "Kaldır",
+      "removed": "Uygulaman kaldırıldı."
+    },
     "headers": {
       "title": "İstek başlıkları",
       "help": "Başka bir başlıkta gönderilen bir anahtar ya da sunucunun önündeki bir ağ geçidi için. Çoğu sunucunun buna ihtiyacı yoktur.",
@@ -15401,7 +15429,10 @@
       "headerAndKey": "API anahtarı zaten Authorization olarak gönderiliyor. Anahtarı silin ya da bu başlığı kaldırın.",
       "headersTooMany": "Bir sunucu en çok {{max}} başlık alır. Yenisini eklemek için birini kaldırın.",
       "headersWithSignIn": "Bu sunucu giriş istiyor ve giriş henüz başlık taşıyamıyor. Giriş yapmak için başlıkları kaldırın ya da API anahtarıyla bağlayın.",
-      "headersUnreadable": "Kayıtlı başlıklar okunamadı. Yeniden yazın ya da kaldırın."
+      "headersUnreadable": "Kayıtlı başlıklar okunamadı. Yeniden yazın ya da kaldırın.",
+      "noOAuth": "MCP sunucusu OAuth ile giriş yapmıyor, bu yüzden kendi uygulamanı kabul etmez. Bir API anahtarıyla bağla.",
+      "ownClientInUse": "Önceden kaydedilen uygulamayla giriş yapan hesaplar hâlâ var. Önce onların bağlantısını kes, sonra değiştir.",
+      "ownClientId": "İstemci kimliğini kontrol et: sağlayıcının gösterdiği gibi tek bir kelime."
     },
     "wiki": {
       "githubNoNotes": "Bu bağlantıda Markdown notu yok.",

@@ -615,7 +615,8 @@
       "live.shell.formats.pdf",
       "live.shell.formats.pptx",
       "live.shell.formats.xlsx",
-      "live.shell.shortcuts.general"
+      "live.shell.shortcuts.general",
+      "connectFlow.ownClient.scopes"
     ],
     "fr": [
       "usage.kinds.routines",
@@ -1127,7 +1128,8 @@
       "settings.kinds.image",
       "files.comments.page",
       "live.conversation.what.point",
-      "live.conversation.what.page"
+      "live.conversation.what.page",
+      "connectFlow.ownClient.scopes"
     ],
     "de": [
       "live.sheet.args.k",
@@ -1612,7 +1614,8 @@
       "newAgentCard.proposal.routine.label",
       "newAgentCard.proposal.routine.lead",
       "orgAccent.sampleMention",
-      "teamWeek.budget.item"
+      "teamWeek.budget.item",
+      "connectFlow.ownClient.scopes"
     ],
     "it": [
       "live.sheet.args.a1",
@@ -2668,7 +2671,8 @@
       "live.sheet.args.k",
       "live.sheet.args.x",
       "audit.operatorReview.items",
-      "teamWeek.budget.item"
+      "teamWeek.budget.item",
+      "connectFlow.ownClient.scopes"
     ],
     "ja": [
       "live.sheet.args.k",
@@ -3501,7 +3505,9 @@
       "storage.connect.provider.b2",
       "storage.connect.awsRegion.il-central-1",
       "onboarding.import.choose.skill",
-      "onboarding.import.choose.step.video"
+      "onboarding.import.choose.step.video",
+      "connectFlow.ownClient.clientId",
+      "connectFlow.ownClient.clientSecret"
     ],
     "tr": [
       "live.canvas.inspector.model",

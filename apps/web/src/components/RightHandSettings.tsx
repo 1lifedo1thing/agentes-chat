@@ -33,7 +33,12 @@ import { rightHandUnusable } from "@agenteschat/client/lib/no-ai";
 import { can } from "@agenteschat/client/lib/permissions";
 import { brainPlan } from "@agenteschat/client/lib/plans";
 import { AUTO, modelChoices } from "@agenteschat/client/lib/providers";
-import { mineStatus, RIGHT_HAND_POWERS, rightHandNoComputer } from "@agenteschat/client/lib/right-hand";
+import {
+  mineStatus,
+  RIGHT_HAND_POWERS,
+  rightHandComputerLine,
+  rightHandNoComputer,
+} from "@agenteschat/client/lib/right-hand";
 import {
   type LodiPrefs,
   type LodiPrefsPatch,
@@ -53,6 +58,7 @@ import {
   DialogFooter,
   GroupHeading,
   Icon,
+  type IconName,
   Input,
   ProviderLogo,
   Switch,
@@ -217,11 +223,11 @@ export function RightHandMineRow({ agent }: { agent: Agent }) {
       .finally(() => setBusy(false));
   };
   const back = () => setMine({ brain: "model" }, () => setOpen(false));
-  // Connecting is a dialog of its own: this one closes for it.
+  // Connecting is a dialog of its own: this one closes for it, and its Back opens this one again.
   const connectMine = connect
     ? () => {
         setOpen(false);
-        connect.open({ agentId: agent.id });
+        connect.open({ agentId: agent.id, onBack: () => setOpen(true) });
       }
     : null;
   let face: ReactNode = null;
@@ -285,13 +291,13 @@ export function RightHandMineRow({ agent }: { agent: Agent }) {
   const links: RightHandLink[] = [];
   if (connectMine && !held)
     links.push({
-      icon: "plus",
+      opensDialog: true,
       label: own
         ? t("connectAi.chat.other")
         : t(status.kind === "nobody" ? "rightHand.settings.connectMine" : "rightHand.settings.useMine"),
       onClick: connectMine,
     });
-  if (own) links.push({ icon: "undo", label: t("rightHand.settings.useWorkspace"), onClick: back });
+  if (own) links.push({ label: t("rightHand.settings.useWorkspace"), onClick: back });
   // The AI's mark beside the right hand under the sky: its maker's, a key's, or none while nothing answers.
   let mineMark: ReactNode;
   if (logoId) mineMark = <ProviderLogo id={logoId} size="tile" />;
@@ -326,7 +332,7 @@ export function RightHandMineRow({ agent }: { agent: Agent }) {
 /**
  * "Computador": the row opens the computer every agent's page opens, which for the right hand is the viewer's own
  * seat on the workspace's computer and nobody else's. Where it has none for anyone (the workspace has no computer of
- * its own, or one that can't keep people apart) the row stays and says why, with nothing to open.
+ * its own) the row stays and says why, with nothing to open.
  */
 function RightHandComputerRow({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
@@ -349,15 +355,15 @@ function RightHandComputerRow({ agent }: { agent: Agent }) {
       id="rh-computer"
       icon="computer"
       label={t("agentComputer.button")}
-      status={t("rightHand.computerYours")}
+      status={t(rightHandComputerLine(view.facts.machine))}
       onOpen={() => openComputer(agent.id)}
     />
   );
 }
 
 /**
- * Why the right hand has no computer for anyone (the workspace has none of its own, or one that can't keep people
- * apart), as a line and the way out: its row on its page and its DM's sidebar alike. Null while it has one.
+ * Why the right hand has no computer for anyone (the workspace has none of its own), as a line and the way out: its
+ * row on its page and its DM's sidebar alike. Null while it has one.
  */
 export function useRightHandNoComputer(reason: string | null | undefined) {
   const { t } = useTranslation();
@@ -575,14 +581,15 @@ function RightHandForm({ agent }: { agent: Agent }) {
   };
   // Another AI: the Connect dialog, with every provider to pick from, over this one. On a billing hold nothing connects
   // before the plan (ADR 0162).
-  const connectOther: RightHandLink | null =
+  const connectOther: (RightHandLink & { icon: IconName }) | null =
     connect && !hold
       ? {
           icon: "plus",
           label: t("connectAi.chat.other"),
+          opensDialog: true,
           onClick: () => {
             setChoosing(false);
-            connect.open({ agentId: agent.id });
+            connect.open({ agentId: agent.id, onBack: () => setChoosing(true) });
           },
         }
       : null;

@@ -1935,6 +1935,9 @@
     "open": "Apri",
     "openInBrowser": "Apri nel browser",
     "download": "Scarica",
+    "copyImage": "Copia immagine",
+    "imageCopied": "Immagine copiata.",
+    "copyImageFailed": "Non è stato possibile copiare l'immagine. Usa Scarica.",
     "conversation": "Messaggio",
     "agentPage": "Vedi pagina",
     "back": "Indietro",
@@ -3166,7 +3169,7 @@
     "computerNoHome": "Ancora nessun computer. Ne avrà uno quando questo workspace avrà un computer proprio.",
     "computerNoHomeServer": "Ancora nessun browser. Configura <guide>questo server come computer degli agenti</guide> per dargliene uno.",
     "addComputer": "Aggiungi un computer",
-    "computerOneUser": "Qui nessun computer. Il computer del workspace esegue tutti gli agenti come un solo utente, quindi non può tenere separato lo spazio di ogni persona. Un server Linux installato con l'opzione --system dell'installer può farlo.",
+    "computerOneUser": "La tua cartella e il tuo browser sul computer del workspace. Esegue tutti gli agenti come un solo utente: i comandi degli altri agenti lì possono leggerli, e solo chi l'ha collegato ne prende il controllo. Un server Linux installato con --system tiene separato ogni spazio.",
     "powers": {
       "title": "Poteri nel workspace",
       "help": "Solo il tuo braccio destro fa queste cose.",
@@ -3630,7 +3633,10 @@
       "getGit": "Scarica Git for Windows",
       "cantStart": "{{program}} è su {{computer}}, ma non si avvia: {{message}}",
       "outdated": "Aggiorna l'app agentes.chat su {{computer}} per installare da qui.",
-      "asked": "Richiesta inviata. {{name}} riceve un pulsante per installarlo."
+      "asked": "Richiesta inviata. {{name}} riceve un pulsante per installarlo.",
+      "runThis": "Esegui questo comando lì per installarlo.",
+      "missingSystem": "{{program}} non è ancora su {{computer}} per gli agenti, che lavorano ognuno come un proprio utente. Esegui questo comando lì per installarlo per tutti.",
+      "homeOnly": "{{program}} è installato solo per root su {{computer}}. Ogni agente lavora come un proprio utente e non ci arriva. Esegui questo comando lì per installarlo per tutti."
     },
     "titleFor": "Collega un'IA per {{name}}",
     "titleFor_female": "Collega un'IA per {{name}}",
@@ -12658,7 +12664,8 @@
       "cant_start": "{{program}} è su {{computer}}, ma non si avvia.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
-      "no_computerCloud": "Pronto appena lo è {{computer}}."
+      "no_computerCloud": "Pronto appena lo è {{computer}}.",
+      "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano."
     },
     "notAvailableNow": "Scelto, ma non disponibile in questo momento.",
     "offline": "{{computer}} è offline in questo momento.",
@@ -15225,6 +15232,27 @@
     "needsKey": "Questo server non supporta OAuth. Collegalo con una chiave API.",
     "notApproved": "{{name}} consente l'accesso solo alle app che ha approvato, e agentes.chat non è ancora approvato. Se ti fornisce una chiave API, puoi collegarti con quella.",
     "serverSaid": "Il server ha risposto: {{detail}}",
+    "ownClient": {
+      "title": "Usa la tua app OAuth",
+      "notApproved": "{{name}} fa entrare solo le app che ha approvato, e agentes.chat non è ancora tra queste. Puoi collegarlo con la tua app.",
+      "askAdmin": "Un admin può collegarlo con l'app propria del workspace.",
+      "help": "Crea un'app presso il provider, registra lì questo URI di reindirizzamento e incolla il suo ID client. Da quel momento ogni accesso lì dal workspace usa la tua app.",
+      "guide": {
+        "metaAds": "In Meta for Developers, crea un'app con il caso d'uso Marketing API. Aggiungi questo URI di reindirizzamento agli URI di reindirizzamento OAuth validi, poi incolla l'ID app, e la chiave segreta dell'app se la tua app la richiede."
+      },
+      "redirectUri": "URI di reindirizzamento",
+      "copied": "URI di reindirizzamento copiato.",
+      "clientId": "ID client",
+      "clientIdMissing": "Incolla l'ID client dell'app.",
+      "clientSecret": "Segreto client",
+      "clientSecretHelp": "Solo se l'app lo richiede. Viene conservato cifrato e non viene più mostrato.",
+      "secretSaved": "C'è un segreto salvato. Lascia vuoto per mantenerlo.",
+      "scopes": "Scope",
+      "scopesHelp": "Cosa chiede ogni accesso, separato da spazi. Lascia vuoto per usare quello che indica il server.",
+      "save": "Salva e continua",
+      "remove": "Rimuovi",
+      "removed": "La tua app è stata rimossa."
+    },
     "headers": {
       "title": "Intestazioni della richiesta",
       "help": "Per una chiave che va in un'altra intestazione, o un gateway davanti al server. La maggior parte dei server non ne ha bisogno.",
@@ -16034,7 +16062,10 @@
       "headerAndKey": "La chiave API viene già inviata come Authorization. Cancella la chiave, oppure rimuovi questa intestazione.",
       "headersTooMany": "Un server accetta al massimo {{max}} intestazioni. Rimuovine una per aggiungerne un'altra.",
       "headersWithSignIn": "Questo server chiede un accesso, e un accesso non può ancora portare intestazioni. Rimuovi le intestazioni per accedere, oppure collegalo con una chiave API.",
-      "headersUnreadable": "Non è stato possibile leggere le intestazioni salvate. Scrivile di nuovo oppure rimuovile."
+      "headersUnreadable": "Non è stato possibile leggere le intestazioni salvate. Scrivile di nuovo oppure rimuovile.",
+      "noOAuth": "Il server MCP non accede con OAuth, quindi non accetta una tua app. Collegalo con una chiave API.",
+      "ownClientInUse": "Ci sono ancora account che accedono con l'app salvata prima. Scollegali prima, poi cambiala.",
+      "ownClientId": "Controlla l'ID client: una sola parola, come lo mostra il provider."
     },
     "wiki": {
       "githubNoNotes": "Nessuna nota Markdown in questo link.",

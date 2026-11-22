@@ -1789,6 +1789,9 @@
     "open": "打开",
     "openInBrowser": "在浏览器中打开",
     "download": "下载",
+    "copyImage": "复制图片",
+    "imageCopied": "图片已复制。",
+    "copyImageFailed": "无法复制图片。请改用下载。",
     "conversation": "发消息",
     "agentPage": "查看主页",
     "back": "后退",
@@ -2933,7 +2936,7 @@
     "computerNoHome": "还没有电脑。等这个工作区有了自己的电脑后，它就会有一台。",
     "computerNoHomeServer": "还没有浏览器。将<guide>此服务器设为智能体的电脑</guide>即可获得一个。",
     "addComputer": "添加电脑",
-    "computerOneUser": "这里没有电脑。工作区的电脑让所有智能体以同一个用户运行，无法把每个人的空间分开。用安装程序的 --system 选项安装的 Linux 服务器可以做到。",
+    "computerOneUser": "你在工作区电脑上的专属文件夹和浏览器。这台电脑让所有智能体以同一个用户运行：那里其他智能体的命令也能读取它们，只有连接这台电脑的人可以接管控制。用 --system 安装的 Linux 服务器会把每个空间分开。",
     "powers": {
       "title": "工作区权限",
       "help": "只有你的得力助手能做这些事。",
@@ -3337,7 +3340,10 @@
       "getGit": "下载 Git for Windows",
       "cantStart": "{{program}} 在 {{computer}} 上，但无法启动：{{message}}",
       "outdated": "更新 {{computer}} 上的 agentes.chat 应用，即可从这里安装。",
-      "asked": "请求已发送。{{name}} 会收到一个安装按钮。"
+      "asked": "请求已发送。{{name}} 会收到一个安装按钮。",
+      "runThis": "在那里运行这条命令来安装。",
+      "missingSystem": "{{computer}} 上还没有给智能体用的 {{program}}，每个智能体都以自己的用户身份工作。在那里运行这条命令，为所有智能体安装。",
+      "homeOnly": "{{computer}} 上的 {{program}} 只为 root 安装了。每个智能体都以自己的用户身份工作，访问不到它。在那里运行这条命令，为所有智能体安装。"
     },
     "titleFor": "为 {{name}} 连接 AI",
     "titleFor_female": "为 {{name}} 连接 AI",
@@ -11733,7 +11739,8 @@
       "cant_start": "{{program}} 在 {{computer}} 上，但无法启动。",
       "not_reported": "{{computer}} 还在检查有哪些程序。完成后这里会自动更新。",
       "system": "{{program}} 暂时还不能在 {{computer}} 的系统上运行。",
-      "no_computerCloud": "{{computer}} 一就绪即可使用。"
+      "no_computerCloud": "{{computer}} 一就绪即可使用。",
+      "home_only": "{{computer}} 上的 {{program}} 只为 root 安装了，智能体访问不到。"
     },
     "notAvailableNow": "已选择，但目前不可用。",
     "offline": "{{computer}} 当前离线。",
@@ -14192,6 +14199,27 @@
     "needsKey": "此服务器不支持 OAuth，请用 API 密钥连接。",
     "notApproved": "{{name}} 只允许它批准过的应用登录，而 agentes.chat 还未获批。如果它提供 API 密钥，你可以用密钥连接。",
     "serverSaid": "服务器返回：{{detail}}",
+    "ownClient": {
+      "title": "使用你自己的 OAuth 应用",
+      "notApproved": "{{name}} 只允许它批准过的应用登录，而 agentes.chat 还不在其中。你可以用自己的应用来连接它。",
+      "askAdmin": "管理员可以用工作区自己的应用来连接它。",
+      "help": "在服务提供方创建一个应用，在其中登记这个重定向 URI，然后粘贴它的客户端 ID。之后，工作区在那里的每次登录都会使用你的应用。",
+      "guide": {
+        "metaAds": "在 Meta for Developers 中，创建一个使用 Marketing API 用例的应用。把这个重定向 URI 加到它的有效 OAuth 重定向 URI 中，然后粘贴应用编号，如果应用需要，再粘贴应用密钥。"
+      },
+      "redirectUri": "重定向 URI",
+      "copied": "已复制重定向 URI。",
+      "clientId": "客户端 ID",
+      "clientIdMissing": "请粘贴应用的客户端 ID。",
+      "clientSecret": "客户端密钥",
+      "clientSecretHelp": "仅在应用需要时填写。它会加密保存，之后不再显示。",
+      "secretSaved": "已保存一个密钥。留空即可保留它。",
+      "scopes": "权限范围",
+      "scopesHelp": "每次登录请求的范围，用空格分隔。留空则使用服务器列出的范围。",
+      "save": "保存并继续",
+      "remove": "移除",
+      "removed": "你的应用已移除。"
+    },
     "headers": {
       "title": "请求标头",
       "help": "用于密钥需要放在其他标头中，或服务器前面有网关的情况。大多数服务器不需要。",
@@ -14957,7 +14985,10 @@
       "headerAndKey": "API 密钥已作为 Authorization 发送。请清空密钥，或移除这个标头。",
       "headersTooMany": "一个服务器最多可设置 {{max}} 个标头。请先移除一个再添加。",
       "headersWithSignIn": "此服务器要求登录，而登录暂时无法携带标头。请移除标头后登录，或用 API 密钥连接。",
-      "headersUnreadable": "无法读取已保存的标头。请重新输入，或将其移除。"
+      "headersUnreadable": "无法读取已保存的标头。请重新输入，或将其移除。",
+      "noOAuth": "该 MCP 服务器不通过 OAuth 登录，所以不接受你自己的应用。请用 API 密钥连接。",
+      "ownClientInUse": "仍有账号在用之前保存的应用登录。请先断开它们，再进行更改。",
+      "ownClientId": "请检查客户端 ID：一个词，与服务提供方显示的一致。"
     },
     "wiki": {
       "githubNoNotes": "此链接中没有 Markdown 笔记。",

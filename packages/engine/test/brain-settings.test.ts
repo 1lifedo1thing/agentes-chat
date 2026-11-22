@@ -364,7 +364,7 @@ describe("a model its plan can't run, stored before the guard", () => {
   test("goes back to the one it had before that change, else to its CLI's default", async () => {
     const fx = await setup();
     f = fx;
-    const migration = sql.raw(readFileSync(join(migrationsFolder, "0319_brain_model_of_its_plan.sql"), "utf8"));
+    const migration = sql.raw(readFileSync(join(migrationsFolder, "0320_brain_model_of_its_plan.sql"), "utf8"));
     const brainOf = async () => (await fx.db.select().from(schema.agents).where(eq(schema.agents.id, fx.agent.id)))[0];
     await fx.db
       .update(schema.agents)

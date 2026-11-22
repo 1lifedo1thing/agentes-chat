@@ -578,6 +578,8 @@
     "camera": "Cámara",
     "photos": "Fotos",
     "file": "Archivo",
+    "paste": "Pegar",
+    "pasteGone": "No se pudo leer la imagen copiada. Cópiala de nuevo y toca Pegar.",
     "media": "GIFs",
     "noCamera": "Sin acceso a la cámara. Permítelo en la Configuración del teléfono.",
     "summary": "Resumir el chat",

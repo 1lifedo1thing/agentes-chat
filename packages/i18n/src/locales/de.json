@@ -1861,6 +1861,9 @@
     "open": "Öffnen",
     "openInBrowser": "Im Browser öffnen",
     "download": "Herunterladen",
+    "copyImage": "Bild kopieren",
+    "imageCopied": "Bild kopiert.",
+    "copyImageFailed": "Das Bild ließ sich nicht kopieren. Nutze stattdessen Herunterladen.",
     "conversation": "Nachricht",
     "agentPage": "Seite ansehen",
     "back": "Zurück",
@@ -3050,7 +3053,7 @@
     "computerNoHome": "Noch kein Computer. Es gibt einen, sobald dieser Workspace einen eigenen Computer hat.",
     "computerNoHomeServer": "Noch kein Browser. Richte <guide>diesen Server als Computer der Agenten</guide> ein, damit er einen bekommt.",
     "addComputer": "Computer hinzufügen",
-    "computerOneUser": "Hier kein Computer. Der Computer des Workspace führt alle Agenten als einen einzigen Benutzer aus und kann den Platz jeder Person nicht getrennt halten. Ein Linux-Server, der mit der Option --system des Installers eingerichtet wurde, kann das.",
+    "computerOneUser": "Dein eigener Ordner und Browser auf dem Computer des Workspace. Er führt alle Agenten als einen einzigen Benutzer aus: Befehle anderer Agenten dort können sie lesen, und nur wer ihn verbunden hat, übernimmt die Steuerung. Ein Linux-Server, der mit --system eingerichtet wurde, hält jeden Platz getrennt.",
     "powers": {
       "title": "Workspace-Befugnisse",
       "help": "Das kann nur deine rechte Hand.",
@@ -3490,7 +3493,10 @@
       "getGit": "Git for Windows herunterladen",
       "cantStart": "{{program}} ist auf {{computer}}, startet aber nicht: {{message}}",
       "outdated": "Aktualisiere die agentes.chat-App auf {{computer}}, um von hier zu installieren.",
-      "asked": "Anfrage gesendet. {{name}} bekommt einen Button zum Installieren."
+      "asked": "Anfrage gesendet. {{name}} bekommt einen Button zum Installieren.",
+      "runThis": "Führe diesen Befehl dort aus, um es zu installieren.",
+      "missingSystem": "{{program}} ist auf {{computer}} noch nicht für die Agenten da, die jeweils als eigener Benutzer arbeiten. Führe diesen Befehl dort aus, um es für alle zu installieren.",
+      "homeOnly": "{{program}} ist auf {{computer}} nur für root installiert. Jeder Agent arbeitet als eigener Benutzer und kommt nicht daran. Führe diesen Befehl dort aus, um es für alle zu installieren."
     },
     "titleFor": "Eine KI für {{name}} verbinden",
     "have": {
@@ -12165,7 +12171,8 @@
       "cant_start": "{{program}} ist auf {{computer}}, startet aber nicht.",
       "not_reported": "{{computer}} prüft noch, welche Programme vorhanden sind. Das ändert sich von selbst, wenn es so weit ist.",
       "system": "{{program}} läuft noch nicht auf dem System von {{computer}}.",
-      "no_computerCloud": "Bereit, sobald {{computer}} es ist."
+      "no_computerCloud": "Bereit, sobald {{computer}} es ist.",
+      "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen."
     },
     "notAvailableNow": "Ausgewählt, aber gerade nicht verfügbar.",
     "offline": "{{computer}} ist gerade offline.",
@@ -14684,6 +14691,27 @@
     "needsKey": "Dieser Server unterstützt kein OAuth. Verbinde ihn mit einem API-Schlüssel.",
     "notApproved": "{{name}} lässt nur freigegebene Apps zur Anmeldung zu, und agentes.chat ist noch nicht freigegeben. Wenn du dort einen API-Schlüssel bekommst, kannst du dich damit verbinden.",
     "serverSaid": "Der Server hat geantwortet: {{detail}}",
+    "ownClient": {
+      "title": "Eigene OAuth-App verwenden",
+      "notApproved": "{{name}} lässt nur Apps herein, die es freigegeben hat, und agentes.chat gehört noch nicht dazu. Du kannst es mit deiner eigenen App dort verbinden.",
+      "askAdmin": "Ein Admin kann es mit der eigenen App des Workspace verbinden.",
+      "help": "Erstelle beim Anbieter eine App, trage dort diese Weiterleitungs-URI ein und füge ihre Client-ID hier ein. Jede Anmeldung dort aus dem Workspace nutzt dann deine App.",
+      "guide": {
+        "metaAds": "Erstelle in Meta for Developers eine App mit dem Anwendungsfall Marketing API. Füge diese Weiterleitungs-URI zu ihren gültigen OAuth-Weiterleitungs-URIs hinzu und füge dann die App-ID ein, und das App-Geheimnis, falls deine App eines verlangt."
+      },
+      "redirectUri": "Weiterleitungs-URI",
+      "copied": "Weiterleitungs-URI kopiert.",
+      "clientId": "Client-ID",
+      "clientIdMissing": "Füge die Client-ID der App ein.",
+      "clientSecret": "Client-Geheimnis",
+      "clientSecretHelp": "Nur wenn die App eines verlangt. Es wird verschlüsselt gespeichert und nie wieder angezeigt.",
+      "secretSaved": "Ein Geheimnis ist gespeichert. Lass das Feld leer, um es zu behalten.",
+      "scopes": "Scopes",
+      "scopesHelp": "Was jede Anmeldung anfragt, durch Leerzeichen getrennt. Leer lassen für das, was der Server angibt.",
+      "save": "Speichern und weiter",
+      "remove": "Entfernen",
+      "removed": "Deine App wurde entfernt."
+    },
     "headers": {
       "title": "Anfrage-Header",
       "help": "Für einen Schlüssel, der in einen anderen Header gehört, oder ein Gateway vor dem Server. Die meisten Server brauchen keine.",
@@ -15472,7 +15500,10 @@
       "headerAndKey": "Der API-Schlüssel wird schon als Authorization gesendet. Lösch den Schlüssel oder entferne diesen Header.",
       "headersTooMany": "Ein Server nimmt höchstens {{max}} Header. Entferne einen, um einen weiteren hinzuzufügen.",
       "headersWithSignIn": "Dieser Server verlangt eine Anmeldung, und eine Anmeldung kann noch keine Header mitsenden. Entferne die Header, um dich anzumelden, oder verbinde ihn mit einem API-Schlüssel.",
-      "headersUnreadable": "Die gespeicherten Header konnten nicht gelesen werden. Gib sie neu ein oder entferne sie."
+      "headersUnreadable": "Die gespeicherten Header konnten nicht gelesen werden. Gib sie neu ein oder entferne sie.",
+      "noOAuth": "Der MCP-Server meldet sich nicht per OAuth an und nimmt daher keine eigene App. Verbinde ihn mit einem API-Schlüssel.",
+      "ownClientInUse": "Es melden sich noch Konten mit der zuvor gespeicherten App an. Trenne sie zuerst und ändere sie dann.",
+      "ownClientId": "Prüfe die Client-ID: ein einziges Wort, so wie der Anbieter sie anzeigt."
     },
     "wiki": {
       "githubNoNotes": "Unter diesem Link gibt es keine Markdown-Notizen.",

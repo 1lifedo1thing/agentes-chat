@@ -146,7 +146,7 @@ import { supersededBrainNotices } from "@agenteschat/client/lib/machine-outages"
 import { hasWideBlock } from "@agenteschat/client/lib/markdown";
 import { isMediaAfterReply, isMediaAlone, messageMediaOf, quoteText } from "@agenteschat/client/lib/media";
 import { serverBody } from "@agenteschat/client/lib/message-body";
-import { joinDrafts, tooLongToSend } from "@agenteschat/client/lib/message-length";
+import { answerIds, joinDrafts, tooLongToSend } from "@agenteschat/client/lib/message-length";
 import {
   isOpenMission,
   missionCommandOf,
@@ -216,6 +216,7 @@ import {
   mayTakeFocus,
   OPEN_LAYER,
   PixelSpinner,
+  pastedFiles,
   SavedNote,
   SettingRow,
   Skeleton,
@@ -559,6 +560,8 @@ interface PendingFile {
   /** An image's local thumbnail (an object URL, revoked when the file leaves the composer). */
   preview?: string;
   status: "uploading" | "done" | "failed";
+  /** The share sent so far, 0 to 1, once the upload reports it. */
+  progress?: number;
   ref?: ArtifactRef;
 }
 
@@ -2163,7 +2166,7 @@ function ChannelView({
         { key, name: file.name, icon: fileIcon(file.name, file.type), size: file.size, preview, status: "uploading" },
       ]);
       api.artifacts
-        .upload(org.id, file, { channelId: channel.id })
+        .upload(org.id, file, { channelId: channel.id }, { onProgress: (progress) => update({ progress }) })
         .then((saved) => update({ status: "done", ref: { id: saved.id, version: saved.version, title: saved.title } }))
         .catch((error) => {
           update({ status: "failed" });
@@ -2191,7 +2194,7 @@ function ChannelView({
       const target = e.target;
       if (e.defaultPrevented || !(target instanceof Element) || inTextField(target)) return;
       if (target !== document.body && !column.current?.contains(target)) return;
-      const pasted = Array.from(e.clipboardData?.files ?? []);
+      const pasted = pastedFiles(e.clipboardData);
       if (pasted.length === 0) return;
       e.preventDefault();
       addFilesNow.current(pasted);
@@ -3008,6 +3011,7 @@ function ChannelView({
                                           preview={f.preview}
                                           detail={formatBytes(i18n.language, f.size)}
                                           status={f.status}
+                                          progress={f.progress}
                                           statusLabel={
                                             f.status === "uploading"
                                               ? t("channel.uploading")
@@ -3499,6 +3503,11 @@ const Timeline = memo(function Timeline({
     [heldPlaces, channelId, runVisible, slots, lastByRun],
   );
   const shownMessages = useMemo(() => items.flatMap((i) => (i.kind === "message" ? [i.message] : [])), [items]);
+  const myId = useOrg().me.user.id;
+  const answers = useMemo(
+    () => answerIds(shownMessages.map((m) => ({ id: m.id, mine: m.author.type === "person" && m.author.id === myId }))),
+    [shownMessages, myId],
+  );
   // One stop, one pill: a stopped task's notice goes into its reply's pill while that reply (or its block) is here.
   const stops = useMemo(() => stopsOf(shownMessages, slots), [shownMessages, slots]);
   const rows: ReactElement<{ message?: MessageType }>[] = [];
@@ -3559,6 +3568,7 @@ const Timeline = memo(function Timeline({
           replyContext={item.context}
           lastOfRun={lastByRun.get(m.agentRunId) === item.key}
           run={run}
+          answer={answers.has(m.id)}
         />
       ) : (
         <TimelineMessage
@@ -3574,6 +3584,7 @@ const Timeline = memo(function Timeline({
           seen={m.id === seenId}
           helping={m.agentRunId && !isMediaAfterReply(m.meta) ? consultGroups.helping.get(m.agentRunId) : undefined}
           run={run}
+          answer={answers.has(m.id)}
         />
       ),
     );
@@ -3672,6 +3683,7 @@ function RunBlock({
   replyContext?: ReplyRef;
   lastOfRun?: boolean;
   run?: RunPosition;
+  answer?: boolean;
 }) {
   const run = useStreams((s) => (message ? undefined : s.runs[runId]));
   const last = useRef<LiveRun | undefined>(undefined);
@@ -4442,6 +4454,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   helping,
   readOnly = false,
   run = "solo",
+  answer = false,
 }: {
   message: MessageType;
   grouped: boolean;
@@ -4467,6 +4480,8 @@ export const TimelineMessage = memo(function TimelineMessage({
   readOnly?: boolean;
   /** Its place in its author's run (`runPosition`): on my own rows, which bubble corners square off. */
   run?: RunPosition;
+  /** The newest message, or one after my latest (`answerIds`): it shows whole however long. */
+  answer?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const { org, me } = useOrg();
@@ -4927,7 +4942,7 @@ export const TimelineMessage = memo(function TimelineMessage({
             {routine && report && reportOpen && <RoutineReport text={report} />}
             {bodyShown && (
               <MessageText key="body" style={workOver ? { opacity: 0.6 } : undefined}>
-                <ClippedBody lead={talk?.lead}>
+                <ClippedBody id={m.id} addressed={answer || mentionsMe} lead={talk?.lead}>
                   {(clip, lead) => (
                     <MessageBody
                       className={clip}

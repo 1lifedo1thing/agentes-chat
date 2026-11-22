@@ -1861,6 +1861,9 @@
     "open": "Openen",
     "openInBrowser": "Openen in browser",
     "download": "Downloaden",
+    "copyImage": "Afbeelding kopiëren",
+    "imageCopied": "Afbeelding gekopieerd.",
+    "copyImageFailed": "De afbeelding kon niet worden gekopieerd. Gebruik Downloaden.",
     "conversation": "Bericht",
     "agentPage": "Pagina bekijken",
     "back": "Terug",
@@ -3049,7 +3052,7 @@
     "computerNoHome": "Nog geen computer. Die komt er zodra deze workspace een eigen computer heeft.",
     "computerNoHomeServer": "Nog geen browser. Stel <guide>deze server in als computer van de agents</guide> om er een te krijgen.",
     "addComputer": "Computer toevoegen",
-    "computerOneUser": "Hier geen computer. De computer van de workspace draait alle agents als één gebruiker en kan de plek van elke persoon dus niet gescheiden houden. Een Linux-server die met de optie --system van het installatieprogramma is ingericht, kan dat wel.",
+    "computerOneUser": "Je eigen map en browser op de computer van de workspace. Die draait alle agents als één gebruiker: commando's van andere agents daar kunnen ze lezen, en alleen wie hem heeft gekoppeld neemt de besturing over. Een Linux-server die met --system is ingericht, houdt elke plek gescheiden.",
     "powers": {
       "title": "Bevoegdheden in de workspace",
       "help": "Alleen je rechterhand doet dit.",
@@ -3489,7 +3492,10 @@
       "getGit": "Git for Windows downloaden",
       "cantStart": "{{program}} staat op {{computer}}, maar start niet: {{message}}",
       "outdated": "Werk de agentes.chat-app op {{computer}} bij om hiervandaan te installeren.",
-      "asked": "Verzoek verstuurd. {{name}} krijgt een knop om het te installeren."
+      "asked": "Verzoek verstuurd. {{name}} krijgt een knop om het te installeren.",
+      "runThis": "Voer daar deze opdracht uit om het te installeren.",
+      "missingSystem": "{{program}} staat nog niet op {{computer}} voor de agents, die elk als eigen gebruiker werken. Voer daar deze opdracht uit om het voor allemaal te installeren.",
+      "homeOnly": "{{program}} is op {{computer}} alleen voor root geïnstalleerd. Elke agent werkt als eigen gebruiker en kan er niet bij. Voer daar deze opdracht uit om het voor allemaal te installeren."
     },
     "titleFor": "Een AI koppelen voor {{name}}",
     "titleFor_female": "Een AI koppelen voor {{name}}",
@@ -12236,7 +12242,8 @@
       "cant_start": "{{program}} staat op {{computer}}, maar start niet.",
       "not_reported": "{{computer}} controleert nog welke programma's erop staan. Dit verandert vanzelf als het klaar is.",
       "system": "{{program}} werkt nog niet op het systeem van {{computer}}.",
-      "no_computerCloud": "Klaar zodra {{computer}} klaar is."
+      "no_computerCloud": "Klaar zodra {{computer}} klaar is.",
+      "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen."
     },
     "notAvailableNow": "Gekozen, maar nu niet beschikbaar.",
     "offline": "{{computer}} is nu offline.",
@@ -14752,6 +14759,27 @@
     "needsKey": "Deze server ondersteunt geen OAuth. Koppel met een API-sleutel.",
     "notApproved": "{{name}} laat alleen goedgekeurde apps inloggen, en agentes.chat is nog niet goedgekeurd. Krijg je er een API-sleutel, dan kun je daarmee koppelen.",
     "serverSaid": "De server antwoordde: {{detail}}",
+    "ownClient": {
+      "title": "Je eigen OAuth-app gebruiken",
+      "notApproved": "{{name}} laat alleen apps toe die het heeft goedgekeurd, en agentes.chat hoort daar nog niet bij. Je kunt het verbinden met je eigen app daar.",
+      "askAdmin": "Een beheerder kan het verbinden met de eigen app van de workspace.",
+      "help": "Maak een app bij de aanbieder, registreer daar deze redirect-URI en plak de client-ID hier. Elke aanmelding daar vanuit de workspace gebruikt dan jouw app.",
+      "guide": {
+        "metaAds": "Maak in Meta for Developers een app met de use case Marketing API. Voeg deze redirect-URI toe aan de geldige OAuth-redirect-URI's en plak dan de app-ID, en het app-geheim als je app erom vraagt."
+      },
+      "redirectUri": "Redirect-URI",
+      "copied": "Redirect-URI gekopieerd.",
+      "clientId": "Client-ID",
+      "clientIdMissing": "Plak de client-ID van de app.",
+      "clientSecret": "Clientgeheim",
+      "clientSecretHelp": "Alleen als de app erom vraagt. Het wordt versleuteld bewaard en nooit meer getoond.",
+      "secretSaved": "Er is een geheim opgeslagen. Laat dit leeg om het te houden.",
+      "scopes": "Scopes",
+      "scopesHelp": "Wat elke aanmelding vraagt, gescheiden door spaties. Laat leeg voor wat de server opgeeft.",
+      "save": "Opslaan en doorgaan",
+      "remove": "Verwijderen",
+      "removed": "Je app is verwijderd."
+    },
     "headers": {
       "title": "Headers van het verzoek",
       "help": "Voor een sleutel die in een andere header hoort, of een gateway vóór de server. De meeste servers hebben er geen nodig.",
@@ -15540,7 +15568,10 @@
       "headerAndKey": "De API-sleutel wordt al als Authorization meegestuurd. Wis de sleutel, of verwijder deze header.",
       "headersTooMany": "Een server neemt hooguit {{max}} headers. Verwijder er één om een andere toe te voegen.",
       "headersWithSignIn": "Deze server vraagt om in te loggen, en een login kan nog geen headers meesturen. Verwijder de headers om in te loggen, of koppel met een API-sleutel.",
-      "headersUnreadable": "De opgeslagen headers konden niet worden gelezen. Vul ze opnieuw in of verwijder ze."
+      "headersUnreadable": "De opgeslagen headers konden niet worden gelezen. Vul ze opnieuw in of verwijder ze.",
+      "noOAuth": "De MCP-server meldt niet aan met OAuth en neemt dus geen eigen app aan. Verbind hem met een API-sleutel.",
+      "ownClientInUse": "Er melden nog accounts aan met de eerder opgeslagen app. Verbreek die eerst en wijzig hem dan.",
+      "ownClientId": "Controleer de client-ID: één woord, zoals de aanbieder hem toont."
     },
     "wiki": {
       "githubNoNotes": "Geen Markdown-notities in deze link.",

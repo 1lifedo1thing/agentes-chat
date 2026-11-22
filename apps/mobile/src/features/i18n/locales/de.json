@@ -562,6 +562,8 @@
     "camera": "Kamera",
     "photos": "Fotos",
     "file": "Datei",
+    "paste": "Einfügen",
+    "pasteGone": "Das kopierte Bild ließ sich nicht lesen. Kopiere es noch einmal und tippe dann auf Einfügen.",
     "media": "GIFs",
     "noCamera": "Kein Kamerazugriff. Erlaube ihn in den Einstellungen des Handys.",
     "summary": "Chat zusammenfassen",

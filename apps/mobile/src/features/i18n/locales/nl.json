@@ -562,6 +562,8 @@
     "camera": "Camera",
     "photos": "Foto's",
     "file": "Bestand",
+    "paste": "Plakken",
+    "pasteGone": "De gekopieerde afbeelding kon niet worden gelezen. Kopieer hem opnieuw en tik dan op Plakken.",
     "media": "GIF's",
     "noCamera": "Geen toegang tot de camera. Sta het toe in de Instellingen van de telefoon.",
     "summary": "Het gesprek samenvatten",
