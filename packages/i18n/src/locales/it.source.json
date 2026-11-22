@@ -20652,6 +20652,24 @@
   "issues.files.linked": {
     "value": "Linked by {{name}}"
   },
+  "issues.files.remove": {
+    "value": "Remove {{name}} from the task"
+  },
+  "issues.files.removeShort": {
+    "value": "Remove from the task"
+  },
+  "issues.files.removed": {
+    "value": "{{name}} removed from the task. It's still in the Drive."
+  },
+  "issues.files.added": {
+    "value": {
+      "one": "File added to the attachments",
+      "other": "{{count}} files added to the attachments"
+    }
+  },
+  "issues.files.see": {
+    "value": "See attachments"
+  },
   "issues.history.commented": {
     "value": "commented"
   },

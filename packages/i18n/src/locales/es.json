@@ -8789,7 +8789,14 @@
       "empty": "Arrastra archivos aquí, pega una captura o envíalos en la conversación de la tarea.",
       "fromCreation": "Al crearla · {{when}}",
       "fromComment": "Comentario de {{name}} · {{when}}",
-      "linked": "Vinculado por {{name}}"
+      "linked": "Vinculado por {{name}}",
+      "remove": "Quitar {{name}} de la tarea",
+      "removeShort": "Quitar de la tarea",
+      "removed": "{{name}} salió de la tarea. Sigue en el Drive.",
+      "added_one": "Archivo en los adjuntos",
+      "added_many": "{{count}} archivos en los adjuntos",
+      "added_other": "{{count}} archivos en los adjuntos",
+      "see": "Ver adjuntos"
     },
     "history": {
       "commented": "comentó",

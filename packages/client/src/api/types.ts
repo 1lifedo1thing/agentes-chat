@@ -4339,6 +4339,8 @@ export type IssuePatch = Partial<
    * one without is new, one left out is removed.
    */
   criteria?: { id?: string; text: string }[];
+  /** Files to take off the task ("Anexos" ×): they stay in the Drive. */
+  removeFiles?: string[];
 };
 
 /** A task's project as its card shows it: a name and one of the roles' colors. Archived: offered to no new task. */

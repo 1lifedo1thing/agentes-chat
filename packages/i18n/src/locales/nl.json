@@ -8574,7 +8574,13 @@
       "empty": "Sleep bestanden hierheen, plak een screenshot of stuur ze in het gesprek van de taak.",
       "fromCreation": "Bij het maken · {{when}}",
       "fromComment": "Reactie van {{name}} · {{when}}",
-      "linked": "Gekoppeld door {{name}}"
+      "linked": "Gekoppeld door {{name}}",
+      "remove": "{{name}} uit de taak halen",
+      "removeShort": "Uit de taak halen",
+      "removed": "{{name}} is uit de taak gehaald. Het bestand staat nog in de Drive.",
+      "added_one": "Bestand bij de bijlagen",
+      "added_other": "{{count}} bestanden bij de bijlagen",
+      "see": "Bijlagen bekijken"
     },
     "history": {
       "commented": "reageerde",

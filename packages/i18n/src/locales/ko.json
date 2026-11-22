@@ -8198,7 +8198,12 @@
       "empty": "여기로 파일을 끌어다 놓거나, 스크린샷을 붙여 넣거나, 작업 대화에서 보내세요.",
       "fromCreation": "만들 때 · {{when}}",
       "fromComment": "{{name}}의 댓글 · {{when}}",
-      "linked": "{{name}}이(가) 연결함"
+      "linked": "{{name}}이(가) 연결함",
+      "remove": "{{name}}을(를) 작업에서 빼기",
+      "removeShort": "작업에서 빼기",
+      "removed": "{{name}}을(를) 작업에서 뺐어요. Drive에는 그대로 있어요.",
+      "added_other": "파일 {{count}}개를 첨부 파일에 추가했어요",
+      "see": "첨부 파일 보기"
     },
     "history": {
       "commented": "댓글을 남겼어요",

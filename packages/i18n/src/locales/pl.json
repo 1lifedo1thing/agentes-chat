@@ -9129,7 +9129,15 @@
       "empty": "Przeciągnij tu pliki, wklej zrzut ekranu albo wyślij je w rozmowie zadania.",
       "fromCreation": "Przy tworzeniu · {{when}}",
       "fromComment": "Komentarz: {{name}} · {{when}}",
-      "linked": "Połączone przez: {{name}}"
+      "linked": "Połączone przez: {{name}}",
+      "remove": "Usuń {{name}} z zadania",
+      "removeShort": "Usuń z zadania",
+      "removed": "{{name}} nie jest już w zadaniu. Plik zostaje na Drive.",
+      "added_one": "Plik trafił do załączników",
+      "added_few": "{{count}} pliki trafiły do załączników",
+      "added_many": "{{count}} plików trafiło do załączników",
+      "added_other": "{{count}} pliku trafiło do załączników",
+      "see": "Zobacz załączniki"
     },
     "history": {
       "commented": "dodaje komentarz",

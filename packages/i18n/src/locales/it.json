@@ -8856,7 +8856,14 @@
       "empty": "Trascina qui i file, incolla uno screenshot o inviali nella conversazione dell'attività.",
       "fromCreation": "Alla creazione · {{when}}",
       "fromComment": "Commento di {{name}} · {{when}}",
-      "linked": "Collegato da {{name}}"
+      "linked": "Collegato da {{name}}",
+      "remove": "Togli {{name}} dall'attività",
+      "removeShort": "Togli dall'attività",
+      "removed": "{{name}} non fa più parte dell'attività. Resta nel Drive.",
+      "added_one": "File negli allegati",
+      "added_many": "{{count}} file negli allegati",
+      "added_other": "{{count}} file negli allegati",
+      "see": "Vedi allegati"
     },
     "history": {
       "commented": "ha commentato",

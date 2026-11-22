@@ -8527,7 +8527,13 @@
       "empty": "Zieh Dateien hierher, füg einen Screenshot ein oder schick sie in der Unterhaltung der Aufgabe.",
       "fromCreation": "Beim Erstellen · {{when}}",
       "fromComment": "Kommentar von {{name}} · {{when}}",
-      "linked": "Verknüpft von {{name}}"
+      "linked": "Verknüpft von {{name}}",
+      "remove": "{{name}} aus der Aufgabe entfernen",
+      "removeShort": "Aus der Aufgabe entfernen",
+      "removed": "{{name}} ist nicht mehr in der Aufgabe. Die Datei bleibt im Drive.",
+      "added_one": "Datei bei den Anhängen",
+      "added_other": "{{count}} Dateien bei den Anhängen",
+      "see": "Anhänge ansehen"
     },
     "history": {
       "commented": "hat kommentiert",

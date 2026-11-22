@@ -8247,7 +8247,12 @@
       "empty": "把文件拖到这里、粘贴截图，或在任务对话里发送。",
       "fromCreation": "创建时 · {{when}}",
       "fromComment": "{{name}} 的评论 · {{when}}",
-      "linked": "由 {{name}} 关联"
+      "linked": "由 {{name}} 关联",
+      "remove": "把 {{name}} 移出任务",
+      "removeShort": "移出任务",
+      "removed": "{{name}} 已移出任务，仍保留在 Drive 中。",
+      "added_other": "已将 {{count}} 个文件加入附件",
+      "see": "查看附件"
     },
     "history": {
       "commented": "发表了评论",

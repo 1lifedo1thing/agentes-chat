@@ -8201,7 +8201,12 @@
       "empty": "ここにファイルをドロップするか、スクリーンショットを貼り付けるか、タスクの会話で送ってください。",
       "fromCreation": "作成時 · {{when}}",
       "fromComment": "{{name}}のコメント · {{when}}",
-      "linked": "{{name}}がリンク"
+      "linked": "{{name}}がリンク",
+      "remove": "{{name}}をタスクから外す",
+      "removeShort": "タスクから外す",
+      "removed": "{{name}}をタスクから外しました。Driveには残っています。",
+      "added_other": "{{count}}件のファイルを添付ファイルに追加しました",
+      "see": "添付ファイルを見る"
     },
     "history": {
       "commented": "がコメントしました",
