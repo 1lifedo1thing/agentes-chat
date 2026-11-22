@@ -2,7 +2,6 @@ import {
   ASK_AGAIN,
   commandKind,
   heldForPerson as heldMessage,
-  loneMerge,
   type MergeDone,
   PERMISSION_TOOL,
   type PubSub,
@@ -410,8 +409,8 @@ const needsApproval = (tool: ToolDefinition, decision: PolicyDecision) =>
 const asksPerson = (tool: ToolDefinition, decision: PolicyDecision) =>
   needsApproval(tool, decision) || (tool.name === ASK_USER && isBuiltIn(tool));
 
-/** A call that asks a person's approval because it says why (`whyAsks`: a command the computer held). */
-const asksWithWhy = (tool: ToolDefinition, input: Record<string, unknown>) =>
+/** A `whyAsks` tool's call that carries a reason for the card: it never makes the call ask by itself. */
+const saysWhy = (tool: ToolDefinition, input: Record<string, unknown>) =>
   tool.whyAsks === true && input.why !== undefined;
 
 /**
@@ -560,7 +559,7 @@ export type InvokeResult =
  *    lets it run, or makes it ask a person;
  * 5. a call that asks a person (an approval, `ask_user`) must say why: the
  *    `why` is taken out of the input and kept on the approval or question;
- * 6. sensitive tools (and a `whyAsks` tool's call that says why) create an
+ * 6. sensitive tools (and a `whyAsks` tool's command the computer held) create an
  *    `approvals` row bound to the action hash and stop there, unless a rule
  *    someone approved for good covers the call ("Aprovar sempre",
  *    `approval_rules`); others run, with errors turned into error results. A
@@ -1510,17 +1509,17 @@ export function createToolGateway(deps: {
       // asked for last: a call refused for any other reason (its input, a repository outside the agent's
       // list) gets that reason first.
       const never = unaskedAtNever(level, tool, authority);
-      const wouldAsk = needsApproval(tool, decision) || asksWithWhy(tool, call.input);
+      // A `whyAsks` tool's own `why` never makes a call ask: whether a command waits for a person is what the
+      // command does, judged by the computer (held below), the same with or without a reason.
+      const wouldAsk = needsApproval(tool, decision);
       unasked = never && wouldAsk;
       let approves = wouldAsk && !never;
-      // Only its `why` makes it ask: a command the computer holds, or (a merge this agent does alone) doesn't.
-      const askedByWhy = approves && decision.action !== "approve" && !isSensitive(tool);
       let why = "";
       let whyMissing = false;
-      if (asksPerson(tool, decision) || asksWithWhy(tool, call.input)) {
+      if (asksPerson(tool, decision) || saysWhy(tool, call.input)) {
         const taken = takeWhy(tool.inputSchema, call.input);
         why = onCard(taken.why ?? "");
-        whyMissing = !taken.why && !unasked;
+        whyMissing = !taken.why && !unasked && asksPerson(tool, decision);
         call = { ...call, input: taken.input };
       }
       // Team actions (ADR 0064): an outside call repeated after the agent was told the team already did it
@@ -1581,11 +1580,6 @@ export function createToolGateway(deps: {
       // The call's arguments (GitHub repositories, mail folders and recipients…), before running or asking anyone.
       const check = await checkToolCall(tool, call.input, ctx);
       if (!check.ok) return finish({ content: check.message, isError: true, data: check.data ?? {} }, "refused");
-      // A brain's own merge is refused with "ask with run_code and why": whether it may run alone is the computer's to
-      // say, so that one command goes there first. Held after all, it asks with this why, whatever the computer offered.
-      const script = askedByWhy ? tool.rememberCommand?.(call.input) : null;
-      const computerDecides = Boolean(script && loneMerge(script)) && (await mergeReposOfCall(ctx)).length > 0;
-      if (computerDecides) approves = false;
       // "Aprovar sempre": a call of a kind someone approved for good runs like an allowed one, why or not.
       const ruled = tool;
       /** The first saved rule that covers the call, kept for its line in the chat and the audit. */
@@ -1832,10 +1826,11 @@ export function createToolGateway(deps: {
       // Our own tools only (`schedule_action`), never a connected server's.
       if (!tool.connectionId) runCtx.prepareAhead = (request) => prepareAhead(runCtx, authority, request);
       let output = withRepo(await run(tool, call.input, runCtx));
-      // The computer held a command for a person (a merge, a deploy): the card goes out now, as a call with `why`
-      // would have asked, so it never rests on the agent calling again. Approved, it runs the approved way.
+      // The computer held a command for a person (a merge, a deploy): the card goes out now, so it never rests on
+      // the agent calling again. Approved, it runs the approved way.
       const held = tool.whyAsks && ctx.runId && !ctx.approved ? heldCommandReason(output) : null;
-      const stillAsks = computerDecides && output.data?.code === "command.approval_needed";
+      // Held in words this server doesn't read (an older runner): the agent that called again with why asks.
+      const stillAsks = Boolean(tool.whyAsks && ctx.runId && !ctx.approved && why) && heldForPerson(output);
       if (tool.whyAsks && !ctx.approved && heldForPerson(output)) {
         // An agent that never asks, or a kind someone approved for good ("Aprovar sempre"): the computer ran nothing
         // when it held the command, so running it again the approved way does it once. What it never runs (a push

@@ -282,9 +282,9 @@ const failed = (error: unknown): ToolOutput => ({
 });
 
 /**
- * `why` on the tools that run commands on the computer: given only to ask a person first, when the computer
- * held the command for them (`approval_needed`); the call then waits for their decision (ADR 0053 §3). Where
- * every call asks anyway (the organization's setting), the gateway's own required `why` stands instead.
+ * `why` on the tools that run commands on the computer: the reason a person reads on the card when the computer
+ * holds the command for them (`approval_needed`, ADR 0053 §3). It never makes a call ask: the command itself does.
+ * Where every call asks anyway (the organization's setting), the gateway's own required `why` stands instead.
  */
 const whyAsks = (requireApproval: boolean) =>
   requireApproval
@@ -294,7 +294,7 @@ const whyAsks = (requireApproval: boolean) =>
           type: "string",
           maxLength: WHY_MAX_CHARS,
           description:
-            "Only when the computer answered that a person approves this first: your reason, for them (what you found and why it's needed). The call then waits for their decision in the chat.",
+            "Your reason, for a person: shown on the approval card only if the computer holds this command for them (what you found and why it's needed). It never makes the call ask: what the command does decides that.",
         },
       };
 
