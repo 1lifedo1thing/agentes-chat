@@ -395,17 +395,13 @@ const CliRuns = z
     clis: z
       .array(
         z.object({
-          cli: z
-            .string()
-            .openapi({
-              description: "The coding CLI's name: `claude`, `codex`, `cursor`, `opencode`, `grok`, `antigravity`.",
-            }),
-          version: z
-            .string()
-            .openapi({
-              description: "Its version, as its `--version` gave it on the run's computer.",
-              example: "2.1.308",
-            }),
+          cli: z.string().openapi({
+            description: "The coding CLI's name: `claude`, `codex`, `cursor`, `opencode`, `grok`, `antigravity`.",
+          }),
+          version: z.string().openapi({
+            description: "Its version, as its `--version` gave it on the run's computer.",
+            example: "2.1.308",
+          }),
           runs: z.number().int().openapi({ description: "Runs that ended, done or failed." }),
           failed: z.number().int().openapi({ description: "Of them, those that failed, whatever the cause." }),
         }),
