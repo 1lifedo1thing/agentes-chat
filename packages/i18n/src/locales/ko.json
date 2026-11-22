@@ -2316,7 +2316,7 @@
     "howTo": "설치 방법",
     "phone": "휴대폰",
     "phoneText": "주머니 속 알림으로 어디서든 답할 수 있어요.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {

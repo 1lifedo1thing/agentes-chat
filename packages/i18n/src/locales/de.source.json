@@ -5969,8 +5969,8 @@
   "appsDownload.phoneText": {
     "value": "Notifications in your pocket, to answer from anywhere."
   },
-  "appsDownload.appStore": {
-    "value": "App Store"
+  "appsDownload.testFlight": {
+    "value": "TestFlight"
   },
   "appsDownload.googlePlay": {
     "value": "Google Play"

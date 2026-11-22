@@ -2485,7 +2485,7 @@
     "howTo": "Cómo instalarla",
     "phone": "Teléfono",
     "phoneText": "Los avisos en el bolsillo, para responder desde cualquier lugar.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {

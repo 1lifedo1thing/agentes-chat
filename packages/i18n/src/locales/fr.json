@@ -2486,7 +2486,7 @@
     "howTo": "Comment l'installer",
     "phone": "Téléphone",
     "phoneText": "Les notifications dans la poche, pour répondre de partout.",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {

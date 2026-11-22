@@ -2316,7 +2316,7 @@
     "howTo": "インストール方法",
     "phone": "スマートフォン",
     "phoneText": "通知をポケットに。どこからでも返信できます。",
-    "appStore": "App Store",
+    "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
   "openOnPhone": {

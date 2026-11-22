@@ -2553,13 +2553,14 @@ export const en = {
     howTo: "How to install",
     phone: "Phone",
     phoneText: "Notifications in your pocket, to answer from anywhere.",
-    appStore: "App Store",
+    /** The iPhone app's public beta, only on agentes.chat's own servers. */
+    testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
     making: "Making the code…",
-    /** Followed by the App Store and Google Play, each marked Soon until the app is in it. */
+    /** Followed by where to get the app (`usePhoneStores`); the App Store marked Soon where the iPhone app is not offered. */
     stepApp: "Install the agentes app on your phone.",
     stepTailscale: "Install Tailscale on your phone and sign in with the same Tailscale account as this server.",
     /** The links to Tailscale in each store, after the step: the store's own name. */
