@@ -5,16 +5,19 @@ setupDom();
 
 import { keys } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
+import { createFakeApi, ORG_ID, seedState } from "./fake-api";
 import { createFakeAuth } from "./fake-auth";
 import { renderApp, screen, settle } from "./render";
 
 afterEach(() => cleanup());
 
-const click = (el: Element, times = 4) =>
-  act(async () => {
+// act's thenable doesn't chain: a `.then` on it isn't awaited, and the next act overlaps the settling one.
+const click = async (el: Element, times = 4) => {
+  await act(async () => {
     fireEvent.click(el);
-  }).then(() => settle(times));
+  });
+  await settle(times);
+};
 const button = (name: string | RegExp) => screen().getByRole("button", { name });
 /** The account's e-mail dialog, once its code (loaded when it first opens) is here. */
 async function emailDialog() {
@@ -68,8 +71,8 @@ describe("a new account's address never confirmed (ADR 0006, addendum 2026-11-22
   });
 
   test("an account already in a workspace keeps it, under a line with a new link and a new address", async () => {
-    const { authCalls, router } = await open(`/org/${ORG_ID}/c/${ENG_ID}`, "reminder");
-    const line = await screen().findByRole("region", { name: "Confirme seu e-mail" }, { timeout: 10_000 });
+    const { authCalls, router } = await open(`/org/${ORG_ID}`, "reminder");
+    const line = screen().getByRole("region", { name: "Confirme seu e-mail" });
     expect(line.textContent).toContain("Abra o link que mandamos para walter@example.com.");
     await click(within(line).getByRole("button", { name: "Mandar outro link" }));
     expect(authCalls).toEqual([{ method: "sendVerificationEmail", args: ["walter@example.com"] }]);
