@@ -5637,6 +5637,10 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
 .cflow-notes__text:not(:hover, :focus-visible) {
   --scroll-thumb: transparent;
 }
+html:not([data-pointer]) .cflow-notes__text:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
 .cflow-notes__text[data-off] {
   color: var(--muted);
 }

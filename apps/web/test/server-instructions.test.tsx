@@ -7,7 +7,7 @@ import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import type { TFunction } from "i18next";
 import { createI18n } from "@/i18n";
 import { createFakeApi, ORG_ID, seedState } from "./fake-api";
-import { MOCK_INSTRUCTIONS } from "./fakes/custom-connectors";
+import { MOCK_INSTRUCTIONS, WORST_INSTRUCTIONS } from "./fakes/custom-connectors";
 import { renderApp, screen, settle } from "./render";
 
 afterEach(() => cleanup());
@@ -33,6 +33,17 @@ const saved = (state: ReturnType<typeof seedState>) =>
   state.calls.find((c) => c.method === "customConnectors.saveTools")?.args[2] as Record<string, unknown> | undefined;
 
 describe("a server's own instructions in its review", () => {
+  test("the worst a server sends: its first 4,000 characters as they are, cut, in the well (first: the screen CI measures)", async () => {
+    await review("https://oauth.worst.example.com/mcp");
+    const notes = within(flow()).getByRole("region", { name: "Instruções do servidor" });
+    expect(notes.textContent).toContain("Cortado em 4.000 caracteres");
+    const text = notes.querySelector(".cflow-notes__text") as HTMLElement;
+    expect(WORST_INSTRUCTIONS.length).toBeGreaterThan(4000);
+    expect(text.textContent).toBe(WORST_INSTRUCTIONS.slice(0, 4000));
+    // Long, it scrolls inside: the keys reach it in every browser.
+    expect(text.tabIndex).toBe(0);
+  });
+
   test("the setting under the tools: on, its size, the text as agents read it; turned off, saved with Continuar", async () => {
     const state = await review("https://oauth.rules.example.com/mcp");
     const notes = within(flow()).getByRole("region", { name: "Instruções do servidor" });

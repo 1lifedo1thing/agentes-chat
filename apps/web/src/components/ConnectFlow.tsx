@@ -1216,7 +1216,8 @@ function ServerInstructions({
       >
         <Switch id="cflow-notes-use" checked={on} onCheckedChange={onChange} />
       </SettingRow>
-      <div className="cflow-notes__text" data-off={on ? undefined : true}>
+      {/* biome-ignore lint/a11y/noNoninteractiveTabindex: a long text scrolls inside, and the keys scroll it once it has focus (Safari never focuses a scroller by itself) */}
+      <div className="cflow-notes__text" data-off={on ? undefined : true} tabIndex={0}>
         {said.text}
       </div>
     </section>
