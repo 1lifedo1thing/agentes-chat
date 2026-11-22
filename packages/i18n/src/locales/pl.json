@@ -21684,7 +21684,8 @@
       "stopAll": "Zatrzymaj wszystkie",
       "stopAllOf": "Zatrzymaj wszystkie zadania agenta {{name}}",
       "open": "Otwórz w rozmowie",
-      "openManager": "Otwórz w menedżerze zadań"
+      "openManager": "Otwórz w menedżerze zadań",
+      "more": "Więcej akcji"
     },
     "confirm": {
       "chainTitle_one": "Zatrzymać {{name}} i {{count}} pomocnika?",

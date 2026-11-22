@@ -49200,6 +49200,9 @@
   "taskManager.actions.openManager": {
     "value": "Open in the task manager"
   },
+  "taskManager.actions.more": {
+    "value": "More actions"
+  },
   "taskManager.confirm.chainTitle": {
     "value": {
       "one": "Stop {{name}} and {{count}} helper?",

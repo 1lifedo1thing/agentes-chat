@@ -19711,7 +19711,8 @@
       "stopAll": "すべて停止",
       "stopAllOf": "{{name}}のタスクをすべて停止",
       "open": "会話で開く",
-      "openManager": "タスクマネージャーで開く"
+      "openManager": "タスクマネージャーで開く",
+      "more": "その他の操作"
     },
     "confirm": {
       "chainTitle_other": "{{name}}と手伝い{{count}}件を止めますか？",

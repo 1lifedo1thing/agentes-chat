@@ -21142,6 +21142,8 @@ export const en = {
       stopAllOf: "Stop everything of {{name}}",
       open: "Open in the conversation",
       openManager: "Open in the task manager",
+      /** A row's ⋯: its tooltip, and with the row's title for screen readers. */
+      more: "More actions",
     },
     confirm: {
       /** One task and the agents it asked, stopped together. */

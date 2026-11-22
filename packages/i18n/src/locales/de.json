@@ -20369,7 +20369,8 @@
       "stopAll": "Alle stoppen",
       "stopAllOf": "Alles von {{name}} stoppen",
       "open": "In der Unterhaltung öffnen",
-      "openManager": "Im Task-Manager öffnen"
+      "openManager": "Im Task-Manager öffnen",
+      "more": "Weitere Aktionen"
     },
     "confirm": {
       "chainTitle_one": "{{name}} und {{count}} Helfer stoppen?",

@@ -20956,7 +20956,8 @@
       "stopAll": "Detener todas",
       "stopAllOf": "Detener todo lo de {{name}}",
       "open": "Abrir en la conversación",
-      "openManager": "Abrir en el gestor de tareas"
+      "openManager": "Abrir en el gestor de tareas",
+      "more": "Más acciones"
     },
     "confirm": {
       "chainTitle_one": "¿Detener a {{name}} y {{count}} ayudante?",

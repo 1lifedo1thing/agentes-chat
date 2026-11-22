@@ -20292,7 +20292,8 @@
       "stopAll": "Tümünü durdur",
       "stopAllOf": "{{name}} ajanının tüm görevlerini durdur",
       "open": "Sohbette aç",
-      "openManager": "Görev yöneticisinde aç"
+      "openManager": "Görev yöneticisinde aç",
+      "more": "Diğer işlemler"
     },
     "confirm": {
       "chainTitle_one": "{{name}} ve {{count}} yardımcı durdurulsun mu?",

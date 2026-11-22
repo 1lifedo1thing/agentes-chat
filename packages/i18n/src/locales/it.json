@@ -21120,7 +21120,8 @@
       "stopAll": "Ferma tutte",
       "stopAllOf": "Ferma tutto di {{name}}",
       "open": "Apri nella conversazione",
-      "openManager": "Apri in Gestione attività"
+      "openManager": "Apri in Gestione attività",
+      "more": "Altre azioni"
     },
     "confirm": {
       "chainTitle_one": "Fermare {{name}} e {{count}} aiutante?",

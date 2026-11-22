@@ -20552,7 +20552,8 @@
       "stopAll": "Alles stoppen",
       "stopAllOf": "Alles van {{name}} stoppen",
       "open": "Openen in het gesprek",
-      "openManager": "Openen in Taakbeheer"
+      "openManager": "Openen in Taakbeheer",
+      "more": "Meer acties"
     },
     "confirm": {
       "chainTitle_one": "{{name}} en {{count}} hulp stoppen?",
