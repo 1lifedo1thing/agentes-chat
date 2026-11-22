@@ -1,6 +1,7 @@
 import {
   browserHandoffOf,
   browserTrailOf,
+  codeSuggestionOf,
   desktopTrailOf,
   isPinnedSelection,
   keys,
@@ -57,7 +58,8 @@ import { replyChipsOf } from "@agenteschat/client/lib/team-plan";
 import { usagePauseCardOf, usageWaitOf } from "@agenteschat/client/lib/usage-pause";
 import { appVia } from "@agenteschat/client/lib/via";
 import { listedText, voiceOf } from "@agenteschat/client/lib/voice";
-import { type ReplyStop, showsActivity, splitCanceled } from "@agenteschat/client/lib/work";
+import { type ReplyStop, splitCanceled } from "@agenteschat/client/lib/work";
+import { useShowsWork } from "@agenteschat/client/lib/work-context";
 import { type AgentColorName, mixHex } from "@agenteschat/ui/agent/engine";
 import { WALLPAPER_LIFT } from "@agenteschat/ui/sky/wallpaper";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -104,6 +106,7 @@ import { StretchCard } from "../ai/StretchCard";
 import { UsagePauseCard, UsageWaitCancel } from "../ai/UsagePauseCard";
 import { HandoffCard } from "../browser/HandoffCard";
 import { TrailCard } from "../browser/TrailCard";
+import { CodeSuggestionCard } from "../coding/SuggestionCard";
 import { iconUri } from "../connectors/logic";
 import { DeviceWait } from "../devices/DeviceWait";
 import { deviceWaitOf } from "../devices/logic";
@@ -300,6 +303,7 @@ function RowBody({
   const qc = useQueryClient();
   const orgId = useOrgId();
   const { org } = useOrg();
+  const shows = useShowsWork(org);
   // Found again only when the cached lists it reads change, not on every draw of the row.
   const noticeId = routine?.noticeId;
   const listed = noticeId ? qc.getQueryData<Message[]>(keys.messages(orgId, m.channelId)) : undefined;
@@ -466,6 +470,8 @@ function RowBody({
   // Preparing the mission's copy of the project failed (ADR 0044): the card with "Tentar de novo".
   const setup = missionSetupOf(meta);
   const link = missionLinkOf(meta);
+  // A code session it suggested for a change asked here (ADR 0215 §11): the person's card under the reply.
+  const suggestion = m.author.type === "agent" && !m.local ? codeSuggestionOf(meta) : null;
   const files = artifactsOf(meta);
   // Mine, just sent: drawn from the phone while they upload.
   const localFiles = localFilesOf(meta);
@@ -495,7 +501,7 @@ function RowBody({
   // Where it browsed, or what it did on its desktop, after the run (as on the web): the steps' card.
   // Step summaries, no picture: activity, so the person's setting hides them like the tool block.
   const trails =
-    isAgent && m.author.id && !m.local && showsActivity(org)
+    isAgent && m.author.id && !m.local && shows
       ? {
           browser: browserTrailOf(meta),
           desktop: desktopTrailOf(meta),
@@ -555,6 +561,7 @@ function RowBody({
       ) : null}
       {meta?.missionStart ? <MissionCard threadId={m.id} /> : null}
       {link ? <MissionCard missionId={link.missionId} /> : null}
+      {suggestion ? <CodeSuggestionCard message={m} suggestion={suggestion} /> : null}
       {plan ? <PlanCard missionId={plan.missionId} goal={plan.goal} /> : null}
       {review ? <ReviewCard missionId={review.missionId} reviewId={review.id} /> : null}
       {setup ? (
@@ -1112,6 +1119,7 @@ function RowBody({
             ) : steps && m.agentRunId && !meta?.workUpdate ? (
               <SavedTools
                 runId={m.agentRunId}
+                messageId={m.id}
                 meta={meta}
                 agentName={agent?.name ?? name}
                 color={color}

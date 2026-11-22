@@ -1,5 +1,5 @@
 import type { ArtifactDetail } from "@agenteschat/client";
-import { formatBytes, pictureRatio } from "@agenteschat/client/lib/files";
+import { formatBytes, mediaKindOfArtifact, pictureRatio } from "@agenteschat/client/lib/files";
 import { keepWhole } from "@agenteschat/client/lib/format";
 import { Image } from "expo-image";
 import { useMemo, useState } from "react";
@@ -9,6 +9,7 @@ import { Icon, PressScale, Text } from "@/ui";
 import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
+import { FileCommentsLink } from "../chat/cards";
 import { useKeptWidth, useMessageCardCorners } from "../chat/look";
 import { LiveFileCard } from "../live-files/LiveFileCard";
 import { opensLive } from "../live-files/routes";
@@ -122,6 +123,12 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
   const media: FileRef[] = (tiles.length > 0 ? [...videos, ...images] : [...pictures, ...videos]).map(
     ({ file, detail }) => ({ id: file.id, version: file.version, title: file.title, detail }),
   );
+  // The pictures, videos and PDFs here that have comments (ADR 0208), in the message's order: each gets its line.
+  const commented = [...images, ...videos, ...others].flatMap(({ file, detail }) => {
+    const kind = mediaKindOfArtifact(detail);
+    const talk = detail?.conversation;
+    return detail && kind && talk && talk.count > 0 ? [{ file, detail, kind, talk }] : [];
+  });
   // Opening a file or a picture is plain navigation: the press shows it, with no haptic.
   const openOnly = () => {
     if (only)
@@ -172,6 +179,20 @@ export function MessageFiles({ files, align = "start" }: { files: MessageFile[];
           ))}
         </View>
       ) : null}
+      {commented.map(({ file, detail, kind, talk }) => (
+        <FileCommentsLink
+          key={`talk:${file.id}`}
+          talk={talk}
+          media={kind}
+          onPress={() =>
+            openFile(
+              { id: file.id, version: file.version, title: file.title, detail },
+              // A PDF opens on its own screen; a picture or a video among the message's.
+              kind === "pdf" ? undefined : media,
+            )
+          }
+        />
+      ))}
       {removed.map((file) => (
         <RemovedCard key={file.id} />
       ))}
