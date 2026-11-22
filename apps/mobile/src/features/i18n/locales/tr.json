@@ -2172,7 +2172,8 @@
         "either": "Hesap veya anahtar"
       },
       "canTitle": "Ajanlar bununla ne yapar",
-      "info": "Bilgiler",
+      "address": "Adres",
+      "addressNote": "Ajanlar bu adresi bağlı hesapla kullanır. Her biri yalnızca senin izin verdiğini alır.",
       "host": "Bağlandığı adres",
       "more": "{{category}} kategorisinde daha fazlası"
     },

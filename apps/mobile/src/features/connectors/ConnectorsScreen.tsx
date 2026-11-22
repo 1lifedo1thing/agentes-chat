@@ -730,6 +730,7 @@ export function ShelfRow({
   text,
   onOpen,
   onAll,
+  grouped = false,
 }: {
   title: string;
   defs: readonly ConnectorDef[];
@@ -737,6 +738,8 @@ export function ShelfRow({
   text: (d: ConnectorDef) => string;
   onOpen: (d: ConnectorDef) => void;
   onAll?: () => void;
+  /** Under the grouped lists' own header (a service's page, where every section has it). */
+  grouped?: boolean;
 }) {
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
@@ -745,10 +748,24 @@ export function ShelfRow({
   const columns = shelfColumns(defs);
   return (
     <View>
-      <SectionHeader
-        title={title}
-        {...(onAll ? { action: { label: t("mobile.connectors.seeAll"), onPress: onAll } } : {})}
-      />
+      {grouped ? (
+        <View style={styles.groupedHead}>
+          <GroupedHeader
+            aside={
+              onAll ? (
+                <Button variant="text" size="sm" label={t("mobile.connectors.seeAll")} onPress={onAll} />
+              ) : undefined
+            }
+          >
+            {title}
+          </GroupedHeader>
+        </View>
+      ) : (
+        <SectionHeader
+          title={title}
+          {...(onAll ? { action: { label: t("mobile.connectors.seeAll"), onPress: onAll } } : {})}
+        />
+      )}
       <SideScroll
         fade={c.grouped}
         // A column at a time, as the system's shelves move: snapped to the screen's side, never left between two; a
@@ -833,6 +850,8 @@ const styles = StyleSheet.create({
   usage: { paddingHorizontal: 16, paddingBottom: 8 },
   grow: { flex: 1, minWidth: 0 },
   bold: { fontWeight: "600" },
+  // A grouped header over a shelf: at the screen's sides, as the grouped lists over it.
+  groupedHead: { paddingHorizontal: 16 },
   // The app's card with its cut corner (no hairline box), as every card standing on the page.
   card: { borderRadius: 20, borderBottomLeftRadius: 6 },
   cardIn: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16 },

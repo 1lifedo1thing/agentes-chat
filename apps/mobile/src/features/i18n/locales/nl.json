@@ -2172,7 +2172,8 @@
         "either": "Account of sleutel"
       },
       "canTitle": "Wat agents ermee doen",
-      "info": "Informatie",
+      "address": "Adres",
+      "addressNote": "Agents gebruiken dit adres met het verbonden account. Elk krijgt alleen wat jij toestaat.",
       "host": "Verbindt met",
       "more": "Meer in {{category}}"
     },

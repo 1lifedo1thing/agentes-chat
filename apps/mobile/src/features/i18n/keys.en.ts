@@ -2341,7 +2341,9 @@ export const featureKeysEn = {
         either: "Account or key",
       },
       canTitle: "What agents do with it",
-      info: "Information",
+      /** Where the service connects, the one fact the page's strip doesn't say, and the note under it. */
+      address: "Address",
+      addressNote: "Agents use this address with the connected account. Each one gets only what you allow.",
       host: "Connects to",
       more: "More in {{category}}",
     },

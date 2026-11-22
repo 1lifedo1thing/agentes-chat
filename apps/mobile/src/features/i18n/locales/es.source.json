@@ -5384,8 +5384,11 @@
   "connectors.page.canTitle": {
     "value": "What agents do with it"
   },
-  "connectors.page.info": {
-    "value": "Information"
+  "connectors.page.address": {
+    "value": "Address"
+  },
+  "connectors.page.addressNote": {
+    "value": "Agents use this address with the connected account. Each one gets only what you allow."
   },
   "connectors.page.host": {
     "value": "Connects to"

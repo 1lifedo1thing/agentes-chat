@@ -10,18 +10,20 @@ import { Dither } from "@/sky/Dither";
 import {
   Button,
   EmptyState,
+  GroupedFooter,
   GroupedHeader,
   GroupedList,
   GroupedRow,
   Icon,
   type IconName,
-  LineIcon,
+  IconTile,
   SideScroll,
   SkeletonList,
   Text,
   useTheme,
 } from "@/ui";
 import { CoverParallax, useCoverScroll } from "@/ui/cover";
+import { router } from "@/ui/navigation";
 import { AgentFace } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useDirectory } from "../shared/hooks";
@@ -256,35 +258,54 @@ function Page({ def, g }: { def: ConnectorDef; g: ReturnType<typeof useGallery> 
           />
         </SideScroll>
 
-        <View style={styles.section}>
-          <Text variant="title2">{t("mobile.connectors.page.canTitle")}</Text>
-          {lines.map((l) => (
-            <View key={l.text} style={styles.cap}>
-              <LineIcon name={l.asks ? "shield" : "eye"} size={20} color={l.asks ? c.warn : c.muted} />
-              <Text variant="body" style={styles.grow}>
-                {l.asks && !l.said ? t("mobile.connectors.asks", { text: l.text }) : l.text}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.info}>
-          <GroupedHeader>{t("mobile.connectors.page.info")}</GroupedHeader>
-          <GroupedList>
-            <GroupedRow label={t("mobile.connectors.page.category")} value={category} />
-            <GroupedRow label={t("mobile.connectors.page.signIn")} value={how} />
-            {facts.host ? <GroupedRow label={t("mobile.connectors.page.host")} value={facts.host} /> : null}
-            <GroupedRow label={t("mobile.connectors.page.who")} value={who} />
-          </GroupedList>
+        {/* Every section under the grouped lists' own header, one hierarchy down the page. What agents do with it, as
+            grouped rows with their tiles; what always asks for approval is the orange shield's row, its words saying
+            so (no tag). */}
+        <View style={styles.groups}>
+          {lines.length > 0 ? (
+            <>
+              <GroupedHeader>{t("mobile.connectors.page.canTitle")}</GroupedHeader>
+              <GroupedList>
+                {lines.map((l) => (
+                  <GroupedRow
+                    key={l.text}
+                    leading={l.asks ? <IconTile icon="shield" tint="orange" /> : <IconTile icon="sparkle" />}
+                    label={l.asks && !l.said ? t("mobile.connectors.asks", { text: l.text }) : l.text}
+                    labelLines={0}
+                  />
+                ))}
+              </GroupedList>
+            </>
+          ) : null}
+          {/* Where it connects, the one fact the strip above doesn't say (nothing said twice). */}
+          {facts.host ? (
+            <>
+              <GroupedHeader>{t("mobile.connectors.page.address")}</GroupedHeader>
+              <GroupedList>
+                <GroupedRow icon="globe" label={t("mobile.connectors.page.host")} value={facts.host} />
+              </GroupedList>
+              <GroupedFooter>{t("mobile.connectors.page.addressNote")}</GroupedFooter>
+            </>
+          ) : null}
         </View>
 
         {related.length > 0 ? (
           <ShelfRow
+            grouped
             title={t("mobile.connectors.page.more", { category })}
             defs={related}
             name={(d) => connectorName(t, d)}
             text={(d) => connectorDescription(t, d)}
             onOpen={(d) => openService(d.id, personal)}
+            {...(def.category
+              ? {
+                  onAll: () =>
+                    router.push({
+                      pathname: "/connectors/category",
+                      params: { c: def.category, ...(personal ? { personal: "1" } : {}) },
+                    }),
+                }
+              : {})}
           />
         ) : null}
       </Animated.ScrollView>
@@ -358,8 +379,6 @@ const styles = StyleSheet.create({
   fact: { width: FACT, alignItems: "center", gap: 3, paddingHorizontal: 4 },
   factLine: { borderLeftWidth: StyleSheet.hairlineWidth },
   factValue: { height: 26, alignItems: "center", justifyContent: "center" },
-  section: { gap: 8, paddingTop: 18, paddingHorizontal: 16, paddingBottom: 4 },
-  cap: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 40 },
-  grow: { flex: 1, minWidth: 0 },
-  info: { paddingHorizontal: 16, paddingTop: 18 },
+  // The grouped lists at the screen's sides, under the strip.
+  groups: { paddingHorizontal: 16, paddingTop: 10 },
 });

@@ -2380,7 +2380,8 @@
         "either": "Konto lub klucz"
       },
       "canTitle": "Co agenci z tym robią",
-      "info": "Informacje",
+      "address": "Adres",
+      "addressNote": "Agenci używają tego adresu z połączonym kontem. Każdy dostaje tylko to, na co pozwolisz.",
       "host": "Łączy się z",
       "more": "Więcej w kategorii {{category}}"
     },

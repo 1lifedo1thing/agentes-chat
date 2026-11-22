@@ -746,3 +746,18 @@ describe("strips that scroll sideways say so", () => {
     expect(page).toContain("onScroll={onScroll}");
   });
 });
+
+describe("a service's page reads as one hierarchy", () => {
+  test("every section under the grouped header; capabilities as grouped rows; nothing the strip already says", () => {
+    const page = readFileSync(join(import.meta.dir, "../../src/features/connectors/ServicePage.tsx"), "utf8");
+    expect(page).not.toContain('<Text variant="title2">{t("mobile.connectors.page.canTitle")}</Text>');
+    expect(page).toContain('<GroupedHeader>{t("mobile.connectors.page.canTitle")}</GroupedHeader>');
+    expect(page).toContain('leading={l.asks ? <IconTile icon="shield" tint="orange" /> : <IconTile icon="sparkle" />}');
+    // Informações repeated the strip: only the address stays, with its note.
+    expect(page).not.toContain("mobile.connectors.page.info");
+    expect(page).toContain('<GroupedHeader>{t("mobile.connectors.page.address")}</GroupedHeader>');
+    expect(page).toContain('<GroupedFooter>{t("mobile.connectors.page.addressNote")}</GroupedFooter>');
+    // The related shelf under the same header, with its whole category one tap away.
+    expect(page).toMatch(/<ShelfRow\s+grouped/);
+  });
+});

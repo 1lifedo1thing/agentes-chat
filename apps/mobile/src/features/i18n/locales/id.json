@@ -2068,7 +2068,8 @@
         "either": "Akun atau kunci"
       },
       "canTitle": "Apa yang dilakukan agen dengannya",
-      "info": "Informasi",
+      "address": "Alamat",
+      "addressNote": "Agen memakai alamat ini dengan akun yang terhubung. Masing-masing hanya mendapat apa yang Anda izinkan.",
       "host": "Terhubung ke",
       "more": "Lainnya di {{category}}"
     },

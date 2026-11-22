@@ -2269,7 +2269,8 @@
         "either": "Cuenta o clave"
       },
       "canTitle": "Lo que los agentes hacen con él",
-      "info": "Información",
+      "address": "Dirección",
+      "addressNote": "Los agentes usan esta dirección con la cuenta conectada. Cada uno recibe solo lo que tú permitas.",
       "host": "Se conecta a",
       "more": "Más en {{category}}"
     },

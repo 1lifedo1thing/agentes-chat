@@ -2172,7 +2172,8 @@
         "either": "Konto oder Schlüssel"
       },
       "canTitle": "Was Agenten damit machen",
-      "info": "Informationen",
+      "address": "Adresse",
+      "addressNote": "Agenten nutzen diese Adresse mit dem verbundenen Konto. Jeder bekommt nur, was du freigibst.",
       "host": "Verbindet mit",
       "more": "Mehr in {{category}}"
     },
