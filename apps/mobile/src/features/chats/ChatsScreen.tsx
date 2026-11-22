@@ -30,6 +30,7 @@ import { useTabHeader } from "../shared/tabHeader";
 import { alongInAccessory } from "../work-along/logic";
 import { useHasWorkAlong } from "../work-along/WorkAlong";
 import { ChatsSplit, OpenFirstChat, SplitHandoff } from "./ChatsSplit";
+import { ConfirmEmailNotice } from "./ConfirmEmailNotice";
 import { DeletingNotice } from "./DeletingNotice";
 import { FirstAgentEmpty, Greeting, GreetingSky } from "./Greeting";
 import { useHomeEntrance, useWake } from "./HomeEntrance";
@@ -268,6 +269,7 @@ function Home() {
         <DeletingNotice />
       ) : (
         <>
+          <ConfirmEmailNotice />
           <SetupNotice />
           <OutageNotices />
         </>

@@ -613,6 +613,14 @@
     "emailLinkExpired": "Deze bevestigingslink is niet meer geldig. Je account werkt gewoon.",
     "sendNewLink": "Nieuwe link sturen",
     "newLinkSent": "We hebben een nieuwe link gestuurd naar {{email}}.",
+    "confirm": {
+      "title": "Kijk in je inbox",
+      "lead": "Open de link die we naar {{email}} hebben gestuurd om verder te gaan.",
+      "wrongAddress": "Verkeerd adres? Wijzig het",
+      "banner": "Bevestig je e-mail",
+      "bannerSub": "Open de link die we naar {{email}} hebben gestuurd.",
+      "change": "Adres wijzigen"
+    },
     "unconfirmed": "Dit e-mailadres heeft al een account met een wachtwoord dat nog niet is bevestigd. Log in met het wachtwoord of maak een nieuw wachtwoord via e-mail.",
     "unconfirmedReset": "Nieuw wachtwoord maken",
     "unconfirmedNoEmail": "Dit e-mailadres heeft al een account met een wachtwoord. Log in met het wachtwoord.",
@@ -15611,6 +15619,7 @@
     },
     "org": {
       "createInviteOnly": "Nieuwe werkruimtes hebben voorlopig een uitnodiging nodig.",
+      "createUnconfirmed": "Open eerst de link die we naar je e-mail hebben gestuurd. Maak daarna de werkruimte.",
       "membersFull": "Alle plekken in deze werkruimte zijn nu bezet. Vraag wie je heeft uitgenodigd om een plek vrij te maken.",
       "deleting": "Deze werkruimte wordt verwijderd.",
       "notRestorable": "Deze werkruimte kan niet meer hersteld worden.",

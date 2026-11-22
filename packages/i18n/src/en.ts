@@ -640,6 +640,15 @@ export const en = {
     emailLinkExpired: "This confirmation link is no longer valid. Your account works as usual.",
     sendNewLink: "Send a new link",
     newLinkSent: "We sent a new link to {{email}}.",
+    /** An address never confirmed (ADR 0006, addendum 2026-11-22): the screen before a first workspace, the line in one. */
+    confirm: {
+      title: "Check your inbox",
+      lead: "Open the link we sent to {{email}} to go on.",
+      wrongAddress: "Wrong address? Change it",
+      banner: "Confirm your email",
+      bannerSub: "Open the link we sent to {{email}}.",
+      change: "Change address",
+    },
     unconfirmed:
       "This email already has an account with a password that isn't confirmed yet. Sign in with the password, or create a new one by email.",
     unconfirmedReset: "Create a new password",
@@ -15864,6 +15873,7 @@ export const en = {
     },
     org: {
       createInviteOnly: "New workspaces need an invitation for now.",
+      createUnconfirmed: "Open the link we sent to your email first. Then create the workspace.",
       membersFull: "Every seat in this workspace is taken right now. Ask whoever invited you to open a seat.",
       deleting: "This workspace is being deleted.",
       notRestorable: "This workspace can't be restored anymore.",
