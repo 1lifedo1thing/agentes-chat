@@ -61,7 +61,7 @@ export interface RowFacts {
   orbit: AgentColorName;
   /** The faint line over the name ("Missão · #canal"). */
   place: string | null;
-  /** An agent's role (its Função, "Redator"), on its DM's row: the faint line under its name. */
+  /** An agent's role (its Função, "Redator"), on its DM's row: a tag beside its name. */
   role: string | null;
   line: RowLine;
   /** What the second line says, for screen readers. */

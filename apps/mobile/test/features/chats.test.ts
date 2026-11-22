@@ -759,8 +759,33 @@ describe("Conversas by sector (a team's Setores)", () => {
     expect(readFileSync(join(import.meta.dir, "../../src/features/chats/rowFacts.ts"), "utf8")).toContain(
       "role: agentDm ? dir.agentById.get(r.with.id)?.role?.trim() || null : null,",
     );
-    expect(row).toContain("{facts.place ?? role}");
+    // Beside the name as a tag, as the web's lists show it (not a line of its own).
+    expect(row).toContain("{...(role ? { titleAside: <Tag label={role} /> } : {})}");
+    expect(row).not.toContain("{facts.place ?? role}");
     const bar = readFileSync(join(import.meta.dir, "../../src/ui/headerActions.tsx"), "utf8");
     expect(bar).toContain('state: m.checked ? ("on" as const) : ("off" as const)');
+  });
+});
+
+describe("an agent's role as the web's tag", () => {
+  test("a soft plate as wide as its words, the small corner, muted words on an 18-point line, one line", () => {
+    const tag = readFileSync(join(import.meta.dir, "../../src/ui/Tag.tsx"), "utf8");
+    expect(tag).toContain("plate: { flexShrink: 1, minWidth: 0, paddingHorizontal: 6, borderRadius: RADIUS.sm },");
+    expect(tag).toContain("backgroundColor: colors.plateSoft");
+    expect(tag).toContain("words: { lineHeight: 18 },");
+    expect(tag).toContain("numberOfLines={1}");
+    // Beside the title on its line, the title keeping its words and the tag ending in "…" first.
+    const row = readFileSync(join(import.meta.dir, "../../src/ui/ListRow.tsx"), "utf8");
+    expect(row).toContain('titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },');
+  });
+});
+
+describe("a handed work's bubble", () => {
+  test("Stop is the kit's icon button on the bubble's row, and the bubble grows with its words", () => {
+    const line = readFileSync(join(import.meta.dir, "../../src/features/chat/WorkLine.tsx"), "utf8");
+    expect(line).toContain(
+      '<IconButton icon="stop" small label={halt.label} disabled={halt.disabled} onPress={halt.onPress} />',
+    );
+    expect(line).toContain("handedWords: { flexShrink: 1, minWidth: 0, gap: 1 },");
   });
 });

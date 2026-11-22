@@ -4,7 +4,7 @@ import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, StyleSheet, View } from "react-native";
 import { TAB_BADGE } from "@/lib/nav";
-import { Count, LIST_AVATAR, LIST_PREVIEW, LineIcon, ListRow, PixelOrbit, Text } from "@/ui";
+import { Count, LIST_AVATAR, LIST_PREVIEW, LineIcon, ListRow, PixelOrbit, Tag, Text } from "@/ui";
 import { router } from "@/ui/navigation";
 import { withAlpha } from "@/ui/palette";
 import type { RowAction } from "../categories/menus";
@@ -83,8 +83,8 @@ export const ConversationItem = memo(function ConversationItem({
   const opener = useChatOpener();
   const chosen = useIsChosen(opener, chatOfRow(r));
   const agentDm = r.kind === "dm" && r.with.type === "agent";
-  // An agent's role (its Função) on a line of its own under its name, as the team knows it ("Redator"): read once for
-  // the list with the row's other facts, never by the row itself.
+  // An agent's role (its Função, "Ops") beside its name as a tag, as the web's lists show it: read once for the list
+  // with the row's other facts, never by the row itself.
   const role = facts.role;
   const leading =
     r.kind === "dm" ? (
@@ -191,13 +191,14 @@ export const ConversationItem = memo(function ConversationItem({
           {...(chosen ? { background: withAlpha(c.ink, CHOSEN_TINT), accessibilityState: { selected: true } } : {})}
           leading={leading}
           title={name}
+          {...(role ? { titleAside: <Tag label={role} /> } : {})}
           time={meta ?? facts.time}
           dot={fresh && badge === 0}
           over={
             // A closed thread isn't marked here: it goes to the end of its list, and screen readers hear it.
-            facts.place || role ? (
+            facts.place ? (
               <Text variant="footnote" tone="faint" numberOfLines={1}>
-                {facts.place ?? role}
+                {facts.place}
               </Text>
             ) : null
           }
