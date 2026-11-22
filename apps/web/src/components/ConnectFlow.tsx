@@ -583,6 +583,27 @@ function ConnectStep({
             </details>
           )}
           {!viaApp && !canOAuth && canKey && keyForm}
+          {!viaApp && canHeaders && (
+            <details
+              className="cflow__more"
+              open={headersOpen}
+              onToggle={(e) => setHeadersOpen((e.currentTarget as HTMLDetailsElement).open)}
+            >
+              <summary>{t("connectFlow.headers.title")}</summary>
+              <HeaderRows
+                rows={headerRows}
+                saved={savedHeaders}
+                dropSaved={dropSaved}
+                refused={refused}
+                unreadable={unreadable}
+                onChange={(rows, drop) => {
+                  setHeaderRows(rows);
+                  setDropSaved(drop);
+                  setRefused(null);
+                }}
+              />
+            </details>
+          )}
           {!viaApp && ownOffered && serverUrl !== "" && (askUrl ? isHttpsUrl(url) : true) && (
             <details
               className="cflow__more"
@@ -603,27 +624,6 @@ function ConnectStep({
                   onSaved={startOAuth}
                 />
               )}
-            </details>
-          )}
-          {!viaApp && canHeaders && (
-            <details
-              className="cflow__more"
-              open={headersOpen}
-              onToggle={(e) => setHeadersOpen((e.currentTarget as HTMLDetailsElement).open)}
-            >
-              <summary>{t("connectFlow.headers.title")}</summary>
-              <HeaderRows
-                rows={headerRows}
-                saved={savedHeaders}
-                dropSaved={dropSaved}
-                refused={refused}
-                unreadable={unreadable}
-                onChange={(rows, drop) => {
-                  setHeaderRows(rows);
-                  setDropSaved(drop);
-                  setRefused(null);
-                }}
-              />
             </details>
           )}
         </DialogBody>
