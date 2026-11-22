@@ -10970,6 +10970,20 @@
       "terminalN": "终端 {{n}}",
       "close": "关闭 {{name}}",
       "add": "新建标签页"
+    },
+    "beta": {
+      "added": {
+        "worktree": "每个请求都有自己的 worktree，带 Git、文件、屏幕和终端",
+        "anyAi": "任何 AI：Claude Code、Codex、OpenCode，或用密钥的模型",
+        "beside": "在对话旁边编辑文件、打开终端"
+      },
+      "removed": {
+        "paste": "在聊天和编辑器之间复制粘贴代码",
+        "watch": "盯着终端等智能体做完"
+      },
+      "title": "Coding mode 处于测试阶段",
+      "text": "它真的能用，而且每周都在变。有时会卡住。卡住时，问题在我们这边。",
+      "go": "开始"
     }
   },
   "code": {

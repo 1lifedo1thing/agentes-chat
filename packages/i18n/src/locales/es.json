@@ -11726,6 +11726,20 @@
       "terminalN": "Terminal {{n}}",
       "close": "Cerrar {{name}}",
       "add": "Nueva pestaña"
+    },
+    "beta": {
+      "added": {
+        "worktree": "Cada pedido en su propio worktree, con Git, Archivos, Pantalla y Terminal",
+        "anyAi": "Cualquier IA: Claude Code, Codex, OpenCode o un modelo por su clave",
+        "beside": "Edita los archivos y abre un terminal junto a la conversación"
+      },
+      "removed": {
+        "paste": "Copiar y pegar código entre el chat y el editor",
+        "watch": "Quedarse mirando el terminal hasta que el agente termine"
+      },
+      "title": "Coding mode está en beta",
+      "text": "Funciona de verdad y cambia cada semana. A veces se atasca. Cuando pase, el problema es nuestro.",
+      "go": "Empezar"
     }
   },
   "code": {

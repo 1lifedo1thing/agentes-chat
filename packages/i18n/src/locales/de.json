@@ -11358,6 +11358,20 @@
       "terminalN": "Terminal {{n}}",
       "close": "{{name}} schließen",
       "add": "Neuer Tab"
+    },
+    "beta": {
+      "added": {
+        "worktree": "Jede Anfrage in ihrem eigenen Worktree, mit Git, Dateien, Bildschirm und Terminal",
+        "anyAi": "Jede KI: Claude Code, Codex, OpenCode oder ein Modell per Schlüssel",
+        "beside": "Dateien bearbeiten und ein Terminal neben der Unterhaltung öffnen"
+      },
+      "removed": {
+        "paste": "Code zwischen Chat und Editor hin- und herkopieren",
+        "watch": "Aufs Terminal starren, bis der Agent fertig ist"
+      },
+      "title": "Coding mode ist in der Beta",
+      "text": "Es funktioniert wirklich und ändert sich jede Woche. Manchmal hakt es. Dann liegt das Problem bei uns.",
+      "go": "Loslegen"
     }
   },
   "code": {

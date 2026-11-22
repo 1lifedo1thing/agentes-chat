@@ -11428,6 +11428,20 @@
       "terminalN": "Terminal {{n}}",
       "close": "{{name}} sluiten",
       "add": "Nieuw tabblad"
+    },
+    "beta": {
+      "added": {
+        "worktree": "Elk verzoek in een eigen worktree, met Git, Bestanden, Scherm en Terminal",
+        "anyAi": "Elke AI: Claude Code, Codex, OpenCode of een model via zijn sleutel",
+        "beside": "Bewerk de bestanden en open een terminal naast het gesprek"
+      },
+      "removed": {
+        "paste": "Code kopiëren en plakken tussen de chat en de editor",
+        "watch": "Naar de terminal staren tot de agent klaar is"
+      },
+      "title": "Coding mode is in bèta",
+      "text": "Het werkt echt en verandert elke week. Soms loopt het vast. Dan ligt het probleem bij ons.",
+      "go": "Aan de slag"
     }
   },
   "code": {

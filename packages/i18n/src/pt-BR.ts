@@ -11650,6 +11650,21 @@ export const ptBR = {
   },
   /** Código (ADR 0214): sessões em que um pedido é trabalhado numa worktree própria no computador de um agente. */
   codeSessions: {
+    /** The beta notice, once, the first time the Code page opens: what the mode is, as a diff. */
+    beta: {
+      title: "O Coding mode está em beta",
+      text: "Funciona de verdade e muda toda semana. Às vezes trava. Quando travar, o problema é nosso.",
+      go: "Começar",
+      added: {
+        worktree: "Cada pedido na sua worktree, com Git, Arquivos, Tela e Terminal",
+        anyAi: "Qualquer IA: Claude Code, Codex, OpenCode ou um modelo pela chave",
+        beside: "Edite os arquivos e abra o terminal ao lado da conversa",
+      },
+      removed: {
+        paste: "Copiar e colar código entre o chat e o editor",
+        watch: "Ficar olhando o terminal até o agente terminar",
+      },
+    },
     title: "Código",
     state: {
       waiting: "esperando você",

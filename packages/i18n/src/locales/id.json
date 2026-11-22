@@ -10956,6 +10956,20 @@
       "terminalN": "Terminal {{n}}",
       "close": "Tutup {{name}}",
       "add": "Tab baru"
+    },
+    "beta": {
+      "added": {
+        "worktree": "Setiap permintaan di worktree-nya sendiri, dengan Git, File, Layar, dan Terminal",
+        "anyAi": "AI apa pun: Claude Code, Codex, OpenCode, atau model lewat kuncinya",
+        "beside": "Edit file dan buka terminal di samping percakapan"
+      },
+      "removed": {
+        "paste": "Salin-tempel kode antara chat dan editor",
+        "watch": "Menunggui terminal sampai agen selesai"
+      },
+      "title": "Coding mode masih beta",
+      "text": "Ini benar-benar berfungsi dan berubah setiap minggu. Kadang macet. Kalau begitu, masalahnya ada pada kami.",
+      "go": "Mulai"
     }
   },
   "code": {

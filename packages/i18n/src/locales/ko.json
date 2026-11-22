@@ -10893,6 +10893,20 @@
       "terminalN": "터미널 {{n}}",
       "close": "{{name}} 닫기",
       "add": "새 탭"
+    },
+    "beta": {
+      "added": {
+        "worktree": "요청마다 자체 worktree, Git·파일·화면·터미널 포함",
+        "anyAi": "어떤 AI든: Claude Code, Codex, OpenCode 또는 키로 쓰는 모델",
+        "beside": "대화 옆에서 파일을 편집하고 터미널을 엽니다"
+      },
+      "removed": {
+        "paste": "채팅과 에디터 사이에서 코드 복사·붙여넣기",
+        "watch": "에이전트가 끝날 때까지 터미널 지켜보기"
+      },
+      "title": "Coding mode는 베타입니다",
+      "text": "실제로 쓸 수 있고 매주 달라집니다. 가끔 멈출 수 있는데, 그럴 때 문제는 저희 쪽에 있습니다.",
+      "go": "시작하기"
     }
   },
   "code": {

@@ -3,6 +3,7 @@ import { type CSSProperties, type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePageRoom } from "@/components/live/room";
 import { useOrg } from "@/components/org-context";
+import { CodeBetaDialog } from "./CodeBetaDialog";
 import { CodeGutter, useStoredSize } from "./CodeGutter";
 import { CodeList } from "./CodeList";
 import { useCodeKey, useCodeKeys } from "./shortcuts";
@@ -38,6 +39,7 @@ export function CodePage({ activeId, children }: { activeId: string | null; chil
           {children}
         </section>
       </div>
+      <CodeBetaDialog />
     </main>
   );
 }

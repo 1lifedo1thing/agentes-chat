@@ -1571,3 +1571,106 @@ html:not([data-pointer]) .code-tree__row:focus-visible {
   color: var(--muted);
   font-size: 12.5px;
 }
+
+/* The beta notice (`CodeBetaDialog`): the home's sky and its title's block at the top, then what the mode is as a
+   diff. Its pieces come in one after another, the block first. */
+.ac-dialog.code-beta {
+  overflow: hidden;
+}
+.code-beta__hero {
+  position: relative;
+  height: 168px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.code-beta__hero > .code-title {
+  position: relative;
+  margin-top: 12px;
+}
+.code-beta__hero .code-mid__t {
+  margin: 0;
+}
+/* On the sky: white, whatever the theme. */
+.code-beta__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  color: #fff;
+}
+.code-beta__close:hover {
+  background: #ffffff2e;
+  color: #fff;
+}
+.code-beta__body {
+  padding-top: 20px;
+}
+.code-beta__title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 28px;
+  letter-spacing: -0.01em;
+}
+.code-beta__text {
+  margin: 0 0 14px;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.code-beta__diff {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.code-beta__diff li {
+  display: flex;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: var(--text-md);
+  line-height: 20px;
+}
+.code-beta__diff li > span {
+  flex: none;
+  width: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+.code-beta__diff li[data-kind="add"] {
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+.code-beta__diff li[data-kind="del"] {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+.code-beta__diff li[data-kind="add"] > span,
+.code-beta__count b[data-kind="add"] {
+  color: var(--ok);
+}
+.code-beta__diff li[data-kind="del"] > span,
+.code-beta__count b[data-kind="del"] {
+  color: var(--danger);
+}
+.code-beta__count {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .code-beta__hero .code-block--add {
+    animation: code-drop 640ms 260ms both;
+  }
+  .code-beta__body > p,
+  .code-beta__diff > li {
+    animation: code-beta-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation-delay: calc(700ms + var(--step, 0) * 90ms);
+  }
+}
+@keyframes code-beta-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

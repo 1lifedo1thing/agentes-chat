@@ -11635,6 +11635,21 @@ export const en = {
   },
   /** Code (ADR 0214): sessions where a request is worked on in its own git worktree on an agent's computer. */
   codeSessions: {
+    /** The beta notice, once, the first time the Code page opens: what the mode is, as a diff. */
+    beta: {
+      title: "Coding mode is in beta",
+      text: "It works for real and changes every week. Sometimes it gets stuck. When it does, the problem is ours.",
+      go: "Get started",
+      added: {
+        worktree: "Each request in its own worktree, with Git, Files, Screen and Terminal",
+        anyAi: "Any AI: Claude Code, Codex, OpenCode, or a model by its key",
+        beside: "Edit the files and open a terminal beside the conversation",
+      },
+      removed: {
+        paste: "Copying and pasting code between the chat and the editor",
+        watch: "Watching the terminal until the agent is done",
+      },
+    },
     title: "Code",
     state: {
       waiting: "waiting for you",

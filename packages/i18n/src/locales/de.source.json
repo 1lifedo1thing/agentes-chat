@@ -55720,5 +55720,29 @@
   },
   "codeTerminal.moved": {
     "value": "This terminal is open in another window"
+  },
+  "codeSessions.beta.title": {
+    "value": "Coding mode is in beta"
+  },
+  "codeSessions.beta.text": {
+    "value": "It works for real and changes every week. Sometimes it gets stuck. When it does, the problem is ours."
+  },
+  "codeSessions.beta.go": {
+    "value": "Get started"
+  },
+  "codeSessions.beta.added.worktree": {
+    "value": "Each request in its own worktree, with Git, Files, Screen and Terminal"
+  },
+  "codeSessions.beta.added.anyAi": {
+    "value": "Any AI: Claude Code, Codex, OpenCode, or a model by its key"
+  },
+  "codeSessions.beta.added.beside": {
+    "value": "Edit the files and open a terminal beside the conversation"
+  },
+  "codeSessions.beta.removed.paste": {
+    "value": "Copying and pasting code between the chat and the editor"
+  },
+  "codeSessions.beta.removed.watch": {
+    "value": "Watching the terminal until the agent is done"
   }
 }

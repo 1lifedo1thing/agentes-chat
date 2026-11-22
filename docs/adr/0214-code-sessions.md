@@ -138,6 +138,9 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
     by path. A file opens in a tab beside the conversation (`codeSessionFile`): never one git ignores, a `.env` one or
     one reached through a link out of the worktree (each step resolved on the computer), only its first 512 KB, and a
     binary one only said to be one.
+- **A beta notice, once.** The first time a person opens the Code page on a browser (`CodeBetaDialog`), a dialog
+  says the mode is in beta: the title's block drops on the home's sky, and what the mode is reads as a diff, the
+  lines it adds and the ones it takes away. Every way out goes on.
 - **Tabs beside the conversation.** Under the session's header: the conversation, each open file, each diff opened from the Git tab (a change, a commit, the whole branch; a file's diff
   opens the file itself) and each terminal the person opens there (a shell of its own, as the drawer's); the ones off screen stay as they are, and the open
   files and terminals come back with the session on that browser.
