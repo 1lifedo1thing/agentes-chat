@@ -15106,6 +15106,27 @@
     "needsKey": "Este servidor no admite OAuth. Conéctalo con una clave de API.",
     "notApproved": "{{name}} solo deja iniciar sesión a las apps que aprobó, y agentes.chat todavía no está aprobado. Si te da una clave de API, puedes conectarlo con ella.",
     "serverSaid": "El servidor respondió: {{detail}}",
+    "ownClient": {
+      "title": "Usar tu propia app OAuth",
+      "notApproved": "{{name}} solo deja entrar apps que aprobó, y agentes.chat todavía no es una de ellas. Puedes conectarlo con tu propia app allí.",
+      "askAdmin": "Un admin puede conectarlo con la app propia del workspace.",
+      "help": "Crea una app en el proveedor, registra en ella este URI de redirección y pega su ID de cliente. Desde entonces, cada inicio de sesión en este servidor dentro del workspace usa tu app.",
+      "guide": {
+        "metaAds": "En Meta for Developers, crea una app con el caso de uso Marketing API. Agrega este URI de redirección a sus URI de redirección de OAuth válidos y luego pega el ID de la app, y el secreto de la app si tu app lo pide."
+      },
+      "redirectUri": "URI de redirección",
+      "copied": "URI de redirección copiado.",
+      "clientId": "ID de cliente",
+      "clientIdMissing": "Pega el ID de cliente de la app.",
+      "clientSecret": "Secreto de cliente",
+      "clientSecretHelp": "Solo si la app lo pide. Se guarda cifrado y no se vuelve a mostrar.",
+      "secretSaved": "Hay un secreto guardado. Deja esto vacío para conservarlo.",
+      "scopes": "Scopes",
+      "scopesHelp": "Lo que pide cada inicio de sesión, separado por espacios. Déjalo vacío para usar lo que indica el servidor.",
+      "save": "Guardar y continuar",
+      "remove": "Quitar",
+      "removed": "Se quitó tu app."
+    },
     "headers": {
       "title": "Encabezados de la solicitud",
       "help": "Para una clave que va en otro encabezado, o un gateway delante del servidor. La mayoría de los servidores no los necesita.",
@@ -15915,7 +15936,10 @@
       "headerAndKey": "La clave de API ya se envía como Authorization. Borra la clave o quita este encabezado.",
       "headersTooMany": "Un servidor admite como máximo {{max}} encabezados. Quita uno para agregar otro.",
       "headersWithSignIn": "Este servidor pide iniciar sesión, y un inicio de sesión todavía no puede llevar encabezados. Quita los encabezados para iniciar sesión, o conéctalo con una clave de API.",
-      "headersUnreadable": "No se pudieron leer los encabezados guardados. Escríbelos de nuevo o quítalos."
+      "headersUnreadable": "No se pudieron leer los encabezados guardados. Escríbelos de nuevo o quítalos.",
+      "noOAuth": "Este servidor no inicia sesión con OAuth, así que no acepta una app tuya. Conéctalo con una clave de API.",
+      "ownClientInUse": "Todavía hay cuentas que inician sesión con la app guardada antes. Desconéctalas primero y luego cámbiala.",
+      "ownClientId": "Revisa el ID de cliente: una sola palabra, tal como lo muestra el proveedor."
     },
     "wiki": {
       "githubNoNotes": "No hay notas en Markdown en este enlace.",

@@ -15181,6 +15181,27 @@
     "needsKey": "Ce serveur ne prend pas en charge OAuth. Connectez-le avec une clé API.",
     "notApproved": "{{name}} n'autorise la connexion qu'aux applications qu'il a approuvées, et agentes.chat ne l'est pas encore. S'il vous fournit une clé API, vous pouvez vous connecter avec.",
     "serverSaid": "Le serveur a répondu : {{detail}}",
+    "ownClient": {
+      "title": "Utiliser votre propre app OAuth",
+      "notApproved": "{{name}} n'accepte que les apps qu'il a approuvées, et agentes.chat n'en fait pas encore partie. Vous pouvez le connecter avec votre propre app chez lui.",
+      "askAdmin": "Un admin peut le connecter avec l'app propre au workspace.",
+      "help": "Créez une app chez le fournisseur, enregistrez-y cette URI de redirection et collez son ID client. Chaque connexion à ce serveur dans le workspace utilise alors votre app.",
+      "guide": {
+        "metaAds": "Dans Meta for Developers, créez une app avec le cas d'usage Marketing API. Ajoutez cette URI de redirection à ses URI de redirection OAuth valides, puis collez l'ID de l'app, et la clé secrète de l'app si elle en demande une."
+      },
+      "redirectUri": "URI de redirection",
+      "copied": "URI de redirection copiée.",
+      "clientId": "ID client",
+      "clientIdMissing": "Collez l'ID client de l'app.",
+      "clientSecret": "Secret client",
+      "clientSecretHelp": "Seulement si l'app en demande un. Il est conservé chiffré et n'est plus jamais affiché.",
+      "secretSaved": "Un secret est enregistré. Laissez ce champ vide pour le garder.",
+      "scopes": "Scopes",
+      "scopesHelp": "Ce que demande chaque connexion, séparé par des espaces. Laissez vide pour ce que le serveur indique.",
+      "save": "Enregistrer et continuer",
+      "remove": "Retirer",
+      "removed": "Votre app a été retirée."
+    },
     "headers": {
       "title": "En-têtes de requête",
       "help": "Pour une clé à envoyer dans un autre en-tête, ou une passerelle placée devant le serveur. La plupart des serveurs n'en ont pas besoin.",
@@ -15990,7 +16011,10 @@
       "headerAndKey": "La clé API est déjà envoyée dans Authorization. Effacez la clé, ou retirez cet en-tête.",
       "headersTooMany": "Un serveur accepte {{max}} en-têtes au plus. Retirez-en un pour en ajouter un autre.",
       "headersWithSignIn": "Ce serveur demande une connexion à un compte, et celle-ci ne peut pas encore transmettre d'en-têtes. Retirez les en-têtes pour vous connecter, ou connectez-le avec une clé API.",
-      "headersUnreadable": "Les en-têtes enregistrés n'ont pas pu être lus. Saisissez-les à nouveau ou retirez-les."
+      "headersUnreadable": "Les en-têtes enregistrés n'ont pas pu être lus. Saisissez-les à nouveau ou retirez-les.",
+      "noOAuth": "Ce serveur ne se connecte pas par OAuth, il n'accepte donc pas d'app de votre part. Connectez-le avec une clé d'API.",
+      "ownClientInUse": "Des comptes se connectent encore avec l'app enregistrée avant. Déconnectez-les d'abord, puis changez-la.",
+      "ownClientId": "Vérifiez l'ID client : un seul mot, tel que le fournisseur l'affiche."
     },
     "wiki": {
       "githubNoNotes": "Aucune note Markdown dans ce lien.",

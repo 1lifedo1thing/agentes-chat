@@ -14097,6 +14097,27 @@
     "needsKey": "이 서버는 OAuth를 지원하지 않아요. API 키로 연결하세요.",
     "notApproved": "{{name}}은(는) 승인한 앱만 로그인할 수 있는데, agentes.chat은 아직 승인되지 않았어요. API 키를 받을 수 있다면 그 키로 연결하면 돼요.",
     "serverSaid": "서버 응답: {{detail}}",
+    "ownClient": {
+      "title": "내 OAuth 앱 사용",
+      "notApproved": "{{name}}은(는) 승인한 앱만 들어올 수 있고, agentes.chat은 아직 승인되지 않았습니다. 내 앱으로 연결할 수 있습니다.",
+      "askAdmin": "관리자가 워크스페이스 자체 앱으로 연결할 수 있습니다.",
+      "help": "공급자에서 앱을 만들고 이 리디렉션 URI를 등록한 다음 클라이언트 ID를 붙여 넣으세요. 이후 워크스페이스에서 이 서버로의 모든 로그인은 내 앱을 사용합니다.",
+      "guide": {
+        "metaAds": "Meta for Developers에서 Marketing API 사용 사례로 앱을 만드세요. 이 리디렉션 URI를 유효한 OAuth 리디렉션 URI에 추가한 다음 앱 ID를 붙여 넣고, 앱이 요구하면 앱 시크릿도 붙여 넣으세요."
+      },
+      "redirectUri": "리디렉션 URI",
+      "copied": "리디렉션 URI를 복사했습니다.",
+      "clientId": "클라이언트 ID",
+      "clientIdMissing": "앱의 클라이언트 ID를 붙여 넣으세요.",
+      "clientSecret": "클라이언트 시크릿",
+      "clientSecretHelp": "앱이 요구할 때만 입력하세요. 암호화되어 보관되며 다시 표시되지 않습니다.",
+      "secretSaved": "시크릿이 저장되어 있습니다. 유지하려면 비워 두세요.",
+      "scopes": "범위",
+      "scopesHelp": "로그인할 때마다 요청할 범위로, 공백으로 구분합니다. 비워 두면 서버가 제시하는 범위를 사용합니다.",
+      "save": "저장하고 계속",
+      "remove": "제거",
+      "removed": "앱을 제거했습니다."
+    },
     "headers": {
       "title": "요청 헤더",
       "help": "키를 다른 헤더로 보내야 하거나 서버 앞에 게이트웨이가 있을 때 써요. 대부분의 서버에는 필요 없어요.",
@@ -14862,7 +14883,10 @@
       "headerAndKey": "API 키는 이미 Authorization으로 보내져요. 키를 지우거나 이 헤더를 삭제하세요.",
       "headersTooMany": "서버 하나에 헤더는 {{max}}개까지예요. 추가하려면 하나를 삭제하세요.",
       "headersWithSignIn": "이 서버는 로그인을 요구하는데, 로그인으로는 아직 헤더를 보낼 수 없어요. 헤더를 삭제하고 로그인하거나 API 키로 연결하세요.",
-      "headersUnreadable": "저장된 헤더를 읽지 못했어요. 다시 입력하거나 삭제하세요."
+      "headersUnreadable": "저장된 헤더를 읽지 못했어요. 다시 입력하거나 삭제하세요.",
+      "noOAuth": "이 서버는 OAuth로 로그인하지 않으므로 내 앱을 사용할 수 없습니다. API 키로 연결하세요.",
+      "ownClientInUse": "이전에 저장한 앱으로 로그인하는 계정이 아직 있습니다. 먼저 연결을 해제한 다음 변경하세요.",
+      "ownClientId": "클라이언트 ID를 확인하세요. 공급자가 보여 주는 그대로 한 단어입니다."
     },
     "wiki": {
       "githubNoNotes": "이 링크에는 Markdown 노트가 없어요.",

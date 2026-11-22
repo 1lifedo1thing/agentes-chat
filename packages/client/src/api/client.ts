@@ -258,6 +258,7 @@ import type {
   OrgPlanUsage,
   OrgRoles,
   OrgSettings,
+  OwnOAuthClient,
   PageTarget,
   PendingReturn,
   PeopleUsage,
@@ -1485,6 +1486,21 @@ export interface ApiClient {
       input: { label: string; tools: { name: string; access: ToolDecision; label: string; confirmed?: boolean }[] },
     ): Promise<CustomServer>;
     disconnect(orgId: string, serverId: string): Promise<void>;
+    /**
+     * The workspace's own OAuth client for the server at this address, and the redirect URI to register (who manages
+     * connectors). A 400 `connector.no_oauth` when the server doesn't sign in with OAuth.
+     */
+    ownClient(orgId: string, serverUrl: string): Promise<OwnOAuthClient>;
+    /**
+     * Saves it: every sign-in at that authorization server uses it. The same `clientId` keeps the saved secret unless
+     * one is sent; another one while accounts sign in with it is a 409 `connector.oauth_client_in_use`.
+     */
+    setOwnClient(
+      orgId: string,
+      input: { serverUrl: string; clientId: string; clientSecret?: string; scopes?: string },
+    ): Promise<OwnOAuthClient>;
+    /** Removes it; a 409 `connector.oauth_client_in_use` while accounts sign in with it. */
+    removeOwnClient(orgId: string, issuer: string): Promise<void>;
   };
   dms: {
     /** My direct conversations, with unread counts. */

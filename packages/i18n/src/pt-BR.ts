@@ -14957,6 +14957,29 @@ export const ptBR = {
     notApproved:
       "{{name}} só deixa entrar apps que aprovou, e o agentes.chat ainda não foi aprovado. Se ele te der uma chave de API, dá para conectar com ela.",
     serverSaid: "O servidor respondeu: {{detail}}",
+    ownClient: {
+      title: "Usar seu próprio app OAuth",
+      notApproved:
+        "{{name}} só deixa entrar apps que aprovou, e o agentes.chat ainda não foi aprovado. Dá para conectar com um app seu lá.",
+      askAdmin: "Um admin pode conectar com um app próprio do workspace.",
+      help: "Crie um app no provedor, cadastre nele esta URI de redirecionamento e cole o ID do cliente. Toda entrada nesse servidor no workspace passa a usar o seu app.",
+      guide: {
+        metaAds:
+          "No Meta for Developers, crie um app com o caso de uso da API de Marketing. Adicione esta URI de redirecionamento às URIs de redirecionamento OAuth válidas dele e cole o ID do app, e a chave secreta do app se ele pedir.",
+      },
+      redirectUri: "URI de redirecionamento",
+      copied: "URI de redirecionamento copiada.",
+      clientId: "ID do cliente",
+      clientIdMissing: "Cole o ID do cliente do app.",
+      clientSecret: "Chave secreta do cliente",
+      clientSecretHelp: "Só se o app pedir. Fica cifrada e não aparece de novo.",
+      secretSaved: "Há uma chave secreta salva. Deixe em branco para mantê-la.",
+      scopes: "Escopos",
+      scopesHelp: "O que toda entrada pede, separado por espaços. Em branco, vale o que o servidor lista.",
+      save: "Salvar e continuar",
+      remove: "Remover",
+      removed: "Seu app foi removido.",
+    },
     headers: {
       title: "Cabeçalhos da requisição",
       help: "Para uma chave que vai em outro cabeçalho, ou um gateway na frente do servidor. A maioria dos servidores não precisa.",
@@ -15716,6 +15739,9 @@ export const ptBR = {
       headersWithSignIn:
         "Este servidor pede login, e o login ainda não leva cabeçalhos. Remova os cabeçalhos para entrar, ou conecte com uma chave de API.",
       headersUnreadable: "Não deu para ler os cabeçalhos salvos. Digite de novo, ou remova.",
+      noOAuth: "Este servidor não entra por OAuth, então não usa um app seu. Conecte com uma chave de API.",
+      ownClientInUse: "Ainda há contas entrando com o app salvo antes. Desconecte-as primeiro e depois troque.",
+      ownClientId: "Confira o ID do cliente: uma palavra só, como o provedor mostra.",
     },
     /** Restricted wiki pages (ADR 0023). */
     wiki: {

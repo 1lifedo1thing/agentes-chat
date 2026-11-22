@@ -193,6 +193,7 @@ import type {
   OrgPlanUsage,
   OrgRoles,
   OrgSettings,
+  OwnOAuthClient,
   PageTarget,
   PendingReturn,
   PeopleUsage,
@@ -1994,6 +1995,12 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         }),
       disconnect: (orgId, serverId) =>
         request<void>(`${org(orgId)}/connectors/custom/${enc(serverId)}`, { method: "DELETE" }),
+      ownClient: (orgId, serverUrl) =>
+        request<OwnOAuthClient>(`${org(orgId)}/connector-oauth-clients?serverUrl=${enc(serverUrl)}`),
+      setOwnClient: (orgId, input) =>
+        request<OwnOAuthClient>(`${org(orgId)}/connector-oauth-clients`, { method: "PUT", json: input }),
+      removeOwnClient: (orgId, issuer) =>
+        request<void>(`${org(orgId)}/connector-oauth-clients?issuer=${enc(issuer)}`, { method: "DELETE" }),
     },
     questions: {
       answer: (orgId, questionId, input) =>

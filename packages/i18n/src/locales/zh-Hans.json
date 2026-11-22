@@ -14172,6 +14172,27 @@
     "needsKey": "此服务器不支持 OAuth，请用 API 密钥连接。",
     "notApproved": "{{name}} 只允许它批准过的应用登录，而 agentes.chat 还未获批。如果它提供 API 密钥，你可以用密钥连接。",
     "serverSaid": "服务器返回：{{detail}}",
+    "ownClient": {
+      "title": "使用你自己的 OAuth 应用",
+      "notApproved": "{{name}} 只允许它批准过的应用登录，而 agentes.chat 还不在其中。你可以用自己的应用来连接它。",
+      "askAdmin": "管理员可以用工作区自己的应用来连接它。",
+      "help": "在服务提供方创建一个应用，在其中登记这个重定向 URI，然后粘贴它的客户端 ID。之后，工作区里对这个服务器的每次登录都会使用你的应用。",
+      "guide": {
+        "metaAds": "在 Meta for Developers 中，创建一个使用 Marketing API 用例的应用。把这个重定向 URI 加到它的有效 OAuth 重定向 URI 中，然后粘贴应用编号，如果应用需要，再粘贴应用密钥。"
+      },
+      "redirectUri": "重定向 URI",
+      "copied": "已复制重定向 URI。",
+      "clientId": "客户端 ID",
+      "clientIdMissing": "请粘贴应用的客户端 ID。",
+      "clientSecret": "客户端密钥",
+      "clientSecretHelp": "仅在应用需要时填写。它会加密保存，之后不再显示。",
+      "secretSaved": "已保存一个密钥。留空即可保留它。",
+      "scopes": "权限范围",
+      "scopesHelp": "每次登录请求的范围，用空格分隔。留空则使用服务器列出的范围。",
+      "save": "保存并继续",
+      "remove": "移除",
+      "removed": "你的应用已移除。"
+    },
     "headers": {
       "title": "请求标头",
       "help": "用于密钥需要放在其他标头中，或服务器前面有网关的情况。大多数服务器不需要。",
@@ -14937,7 +14958,10 @@
       "headerAndKey": "API 密钥已作为 Authorization 发送。请清空密钥，或移除这个标头。",
       "headersTooMany": "一个服务器最多可设置 {{max}} 个标头。请先移除一个再添加。",
       "headersWithSignIn": "此服务器要求登录，而登录暂时无法携带标头。请移除标头后登录，或用 API 密钥连接。",
-      "headersUnreadable": "无法读取已保存的标头。请重新输入，或将其移除。"
+      "headersUnreadable": "无法读取已保存的标头。请重新输入，或将其移除。",
+      "noOAuth": "这个服务器不通过 OAuth 登录，所以不接受你自己的应用。请用 API 密钥连接。",
+      "ownClientInUse": "仍有账号在用之前保存的应用登录。请先断开它们，再进行更改。",
+      "ownClientId": "请检查客户端 ID：一个词，与服务提供方显示的一致。"
     },
     "wiki": {
       "githubNoNotes": "此链接中没有 Markdown 笔记。",

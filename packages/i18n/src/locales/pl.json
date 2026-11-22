@@ -15708,6 +15708,27 @@
     "needsKey": "Ten serwer nie obsługuje OAuth. Połącz go kluczem API.",
     "notApproved": "{{name}} pozwala logować się tylko zatwierdzonym aplikacjom, a agentes.chat jeszcze nie jest zatwierdzony. Jeśli dostaniesz tam klucz API, możesz połączyć się nim.",
     "serverSaid": "Odpowiedź serwera: {{detail}}",
+    "ownClient": {
+      "title": "Użyj własnej aplikacji OAuth",
+      "notApproved": "{{name}} wpuszcza tylko zatwierdzone przez siebie aplikacje, a agentes.chat jeszcze do nich nie należy. Możesz połączyć się własną aplikacją.",
+      "askAdmin": "Administrator może połączyć to aplikacją własną workspace'u.",
+      "help": "Utwórz aplikację u dostawcy, zarejestruj w niej ten URI przekierowania i wklej jej identyfikator klienta. Od tej pory każde logowanie do tego serwera w workspace używa Twojej aplikacji.",
+      "guide": {
+        "metaAds": "W Meta for Developers utwórz aplikację z przypadkiem użycia Marketing API. Dodaj ten URI przekierowania do prawidłowych URI przekierowania OAuth, a następnie wklej identyfikator aplikacji oraz klucz tajny aplikacji, jeśli aplikacja go wymaga."
+      },
+      "redirectUri": "URI przekierowania",
+      "copied": "Skopiowano URI przekierowania.",
+      "clientId": "Identyfikator klienta",
+      "clientIdMissing": "Wklej identyfikator klienta aplikacji.",
+      "clientSecret": "Klucz tajny klienta",
+      "clientSecretHelp": "Tylko jeśli aplikacja go wymaga. Jest przechowywany w postaci zaszyfrowanej i nigdy więcej się nie pokaże.",
+      "secretSaved": "Klucz tajny jest zapisany. Zostaw puste, aby go zachować.",
+      "scopes": "Zakresy",
+      "scopesHelp": "O co prosi każde logowanie, oddzielone spacjami. Zostaw puste, aby użyć tego, co podaje serwer.",
+      "save": "Zapisz i kontynuuj",
+      "remove": "Usuń",
+      "removed": "Twoja aplikacja została usunięta."
+    },
     "headers": {
       "title": "Nagłówki żądania",
       "help": "Dla klucza wysyłanego w innym nagłówku albo bramy przed serwerem. Większość serwerów ich nie potrzebuje.",
@@ -16542,7 +16563,10 @@
       "headerAndKey": "Klucz API jest już wysyłany jako Authorization. Wyczyść klucz albo usuń ten nagłówek.",
       "headersTooMany": "Serwer przyjmuje najwyżej {{max}} nagłówków. Usuń jeden, aby dodać kolejny.",
       "headersWithSignIn": "Ten serwer wymaga logowania, a logowanie nie może jeszcze przenosić nagłówków. Usuń nagłówki, aby się zalogować, albo połącz go kluczem API.",
-      "headersUnreadable": "Nie udało się odczytać zapisanych nagłówków. Wpisz je ponownie albo usuń."
+      "headersUnreadable": "Nie udało się odczytać zapisanych nagłówków. Wpisz je ponownie albo usuń.",
+      "noOAuth": "Ten serwer nie loguje przez OAuth, więc nie przyjmie Twojej aplikacji. Połącz go kluczem API.",
+      "ownClientInUse": "Konta wciąż logują się aplikacją zapisaną wcześniej. Najpierw je odłącz, a potem ją zmień.",
+      "ownClientId": "Sprawdź identyfikator klienta: jedno słowo, tak jak pokazuje go dostawca."
     },
     "wiki": {
       "githubNoNotes": "Pod tym linkiem nie ma notatek Markdown.",

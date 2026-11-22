@@ -15203,6 +15203,27 @@
     "needsKey": "Questo server non supporta OAuth. Collegalo con una chiave API.",
     "notApproved": "{{name}} consente l'accesso solo alle app che ha approvato, e agentes.chat non è ancora approvato. Se ti fornisce una chiave API, puoi collegarti con quella.",
     "serverSaid": "Il server ha risposto: {{detail}}",
+    "ownClient": {
+      "title": "Usa la tua app OAuth",
+      "notApproved": "{{name}} fa entrare solo le app che ha approvato, e agentes.chat non è ancora tra queste. Puoi collegarlo con la tua app.",
+      "askAdmin": "Un admin può collegarlo con l'app propria del workspace.",
+      "help": "Crea un'app presso il provider, registra lì questo URI di reindirizzamento e incolla il suo ID client. Da quel momento ogni accesso a questo server nel workspace usa la tua app.",
+      "guide": {
+        "metaAds": "In Meta for Developers, crea un'app con il caso d'uso Marketing API. Aggiungi questo URI di reindirizzamento agli URI di reindirizzamento OAuth validi, poi incolla l'ID app, e la chiave segreta dell'app se la tua app la richiede."
+      },
+      "redirectUri": "URI di reindirizzamento",
+      "copied": "URI di reindirizzamento copiato.",
+      "clientId": "ID client",
+      "clientIdMissing": "Incolla l'ID client dell'app.",
+      "clientSecret": "Segreto client",
+      "clientSecretHelp": "Solo se l'app lo richiede. Viene conservato cifrato e non viene più mostrato.",
+      "secretSaved": "C'è un segreto salvato. Lascia vuoto per mantenerlo.",
+      "scopes": "Scope",
+      "scopesHelp": "Cosa chiede ogni accesso, separato da spazi. Lascia vuoto per usare quello che indica il server.",
+      "save": "Salva e continua",
+      "remove": "Rimuovi",
+      "removed": "La tua app è stata rimossa."
+    },
     "headers": {
       "title": "Intestazioni della richiesta",
       "help": "Per una chiave che va in un'altra intestazione, o un gateway davanti al server. La maggior parte dei server non ne ha bisogno.",
@@ -16012,7 +16033,10 @@
       "headerAndKey": "La chiave API viene già inviata come Authorization. Cancella la chiave, oppure rimuovi questa intestazione.",
       "headersTooMany": "Un server accetta al massimo {{max}} intestazioni. Rimuovine una per aggiungerne un'altra.",
       "headersWithSignIn": "Questo server chiede un accesso, e un accesso non può ancora portare intestazioni. Rimuovi le intestazioni per accedere, oppure collegalo con una chiave API.",
-      "headersUnreadable": "Non è stato possibile leggere le intestazioni salvate. Scrivile di nuovo oppure rimuovile."
+      "headersUnreadable": "Non è stato possibile leggere le intestazioni salvate. Scrivile di nuovo oppure rimuovile.",
+      "noOAuth": "Questo server non accede con OAuth, quindi non accetta una tua app. Collegalo con una chiave API.",
+      "ownClientInUse": "Ci sono ancora account che accedono con l'app salvata prima. Scollegali prima, poi cambiala.",
+      "ownClientId": "Controlla l'ID client: una sola parola, come lo mostra il provider."
     },
     "wiki": {
       "githubNoNotes": "Nessuna nota Markdown in questo link.",

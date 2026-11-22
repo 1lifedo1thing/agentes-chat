@@ -82,6 +82,7 @@ export * from "./connectors/native/media";
 export { purgeTelegramUpdates, telegramWebhookPath } from "./connectors/native/telegram";
 export * from "./connectors/oauth-mcp";
 export * from "./connectors/oauth-return";
+export * from "./connectors/own-client";
 export * from "./connectors/personal";
 export * from "./connectors/pins";
 export * from "./connectors/presets";
