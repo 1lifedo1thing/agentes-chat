@@ -1178,18 +1178,22 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   }
 }
 
-/* The scrollbar's room is kept while the list fits too: a scrollbar that takes width (Windows, the kit's styled one)
-   showing and hiding would narrow and widen every row, and a message measured at one width and not the other
-   (ClippedBody) flipped with it on every frame. */
 .channel__messages {
   flex: 1;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   padding: 16px 8px 24px;
+}
+/* The scrollbar's room is kept while the list fits too: the kit's scrollbar takes width under a mouse (and Windows'
+   own does), and showing and hiding it narrowed and widened every row, so a message measured at one width and not the
+   other (ClippedBody) flipped with it on every frame. A touch screen's scrollbar takes no room: none kept there. */
+@media (hover: hover) and (pointer: fine) {
+  .channel__messages {
+    scrollbar-gutter: stable;
+  }
 }
 /* A message that @mentions the viewer: a tinted row, its corners all round. No accent bar on its left edge: the tint
    and the name in the words say it. No other row carries a plate at rest (only a hover on someone else's row, an open
