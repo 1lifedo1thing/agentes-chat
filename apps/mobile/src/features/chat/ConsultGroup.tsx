@@ -26,6 +26,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Icon, Text, useTheme } from "@/ui";
 import { router } from "@/ui/navigation";
 import { withAlpha } from "@/ui/palette";
+import { RADIUS } from "@/ui/radius";
 import { consultationHref } from "../links/logic";
 import { AgentFace } from "../shared/Face";
 import { useColors, useNow, useOrgId } from "../shared/hooks";
@@ -228,11 +229,12 @@ const quote = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     marginTop: 2,
-    marginBottom: 6,
-    paddingVertical: 7,
-    paddingLeft: 10,
-    paddingRight: 8,
-    borderRadius: 12,
+    marginBottom: 8,
+    // The plates' room and the scale's item corner, as a quote in the words.
+    paddingVertical: 10,
+    paddingLeft: 12,
+    paddingRight: 10,
+    borderRadius: RADIUS.md,
     overflow: "hidden",
   },
   // On its own (no reply here): as wide as a bubble's words, under the conversation's quiet lines' inset.

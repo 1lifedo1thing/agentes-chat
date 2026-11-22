@@ -525,3 +525,25 @@ describe("an agent's offer card is done for everyone once it's done", () => {
     expect(screen).toContain("turnOn && cardLink !== undefined && link.trim() === cardLink ? forAgentId : undefined");
   });
 });
+
+describe("no colored bar at a left edge: quotes and plates on the scale's corner", () => {
+  test("quotes, reports and opened notices sit on a plate with the plates' room, never a left bar", () => {
+    const fromSrc = (path: string) => readFileSync(join(import.meta.dir, "../../src", path), "utf8");
+    const files = [
+      "features/chat/ConsultGroup.tsx",
+      "features/chat/MessageText.tsx",
+      "features/chat/MessageRow.tsx",
+      "features/chat/QuoteLine.tsx",
+      "ui/EventPill.tsx",
+      "features/live-files/document/DocumentScreen.tsx",
+      "features/wiki/WikiDoc.tsx",
+    ];
+    for (const file of files) {
+      const text = fromSrc(file);
+      // Only the reply's curve to its face draws a left line (a joint, not a bar on a card).
+      const bars = (text.match(/borderLeftWidth: [2-9]/g) ?? []).length;
+      expect({ file, bars }).toEqual({ file, bars: file.endsWith("QuoteLine.tsx") ? 1 : 0 });
+      expect({ file, corner: /borderRadius: RADIUS(\.md)?\b/.test(text) }).toEqual({ file, corner: true });
+    }
+  });
+});

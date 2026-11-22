@@ -932,7 +932,8 @@ function RowBody({
       <View
         style={[
           styles.report,
-          { borderLeftColor: c.line },
+          // On a plate a step off what is around it, never a bar at its left edge.
+          { backgroundColor: c.plate },
           (inBubble || opener || words) && { marginBottom: rhythm.part },
         ]}
       >
@@ -1701,7 +1702,8 @@ const styles = StyleSheet.create({
   tagPress: { flexShrink: 1, maxWidth: "100%", alignSelf: "center" },
   pin: { alignSelf: "center" },
   // The routine report a message answers, unfolded under its name (like the notice line's text).
-  report: { marginTop: 2, paddingLeft: 10, borderLeftWidth: 2 },
+  // A plate in the words, as a quote's: the scale's item corner, the plates' room.
+  report: { marginTop: 2, paddingHorizontal: 12, paddingVertical: 10, borderRadius: RADIUS.md },
   tag: {
     flexDirection: "row",
     alignItems: "center",
