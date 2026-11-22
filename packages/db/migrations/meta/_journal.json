@@ -2171,6 +2171,13 @@
       "when": 1795299112482,
       "tag": "0314_reply_in_threads",
       "breakpoints": true
+    },
+    {
+      "idx": 312,
+      "version": "7",
+      "when": 1795305895422,
+      "tag": "0315_telegram_updates",
+      "breakpoints": true
     }
   ]
 }
