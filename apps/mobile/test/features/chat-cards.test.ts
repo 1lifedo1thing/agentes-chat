@@ -70,18 +70,19 @@ describe("a reply's tools sit last", () => {
   });
 });
 
-describe("agents it asked first: one pair row right before the reply, never inside it", () => {
-  test("saved: the row sits before the reply's own row (which then shows its face and name), none in its body", () => {
+describe("agents it asked first: quoted at the top of the reply, as a reply quotes a message", () => {
+  test("saved: the quote opens the reply's words, in its bubble or over its words; with none, it stands alone", () => {
     const row = source("MessageRow.tsx");
-    // The pair, then what the message is about in a live file (ADR 0199) and its quote, then the reply's own row.
+    // In the bubble: the name line, the agents' talk, then the reply's own quote and words.
     expect(
-      ascending(at(row, ["const grouped = groupedIn && !pair;", "{pair}\n      {liveRef ? (", "{quote && !inBubble"])),
+      ascending(
+        at(row, ["who(true) : null}", "{quoteInWords}", "{quote ? <QuotePlate reply={quote} onJump={onQuote} />"]),
+      ),
     ).toBe(true);
-    const [bodyAt, endAt] = at(row, [
-      "<Animated.View style={[styles.body, { gap: rhythm.part }, inBubble && giveWay.style, compact && slide]}>",
-      "{foot}\n          </RowParts>\n          {hintNode}\n        </Animated.View>\n",
-    ]);
-    expect(row.slice(bodyAt, endAt)).not.toContain("Consult");
+    // A reply with no words (only cards) shows the quote on its own before it, and its face and name again.
+    expect(row).toContain("const quoteAlone = consultQuote !== null && (!body || Boolean(choiceReply));");
+    expect(row).toContain("const grouped = groupedIn && !quoteAlone;");
+    expect(row).toContain("<ConsultQuote askerId={m.author.id} channelId={m.channelId} items={paired} alone />");
   });
 
   test("live: the working line carries the pair, the one asking and the one asked, while the turn works", () => {
@@ -98,31 +99,33 @@ describe("agents it asked first: one pair row right before the reply, never insi
     ).toBe(true);
   });
 
-  test("the row says no answer: only faces, names, a short word and the time", () => {
+  test("the quote says no answer: the agent asked, how it went, the question's subject, a chevron", () => {
     const pair = source("ConsultGroup.tsx");
     expect(pair).not.toContain("previewOf");
     expect(pair).not.toContain(".answer");
-    expect(pair).toContain('<Icon name="swap"');
+    expect(pair).not.toContain("ConsultPairRow");
+    expect(pair).toContain("<View style={[quote.bar, { backgroundColor: ink }]} />");
+    expect(pair).toContain('<Text variant="small" tone="muted" numberOfLines={2}>');
+    // Standing alone, it says who asked: the asker's name and the arrows.
+    expect(pair).toContain('<Icon name="swap" size={12}');
   });
 
-  test("a notice whose reply isn't here is the same row, not a card with the answer", () => {
+  test("a notice whose reply isn't here is the same quote on its own, not a card with the answer", () => {
     const line = source("EventLine.tsx");
     expect(line).toContain("items={[pairItemOf(consulted.consultation)]}");
     expect(source("cards.tsx")).not.toContain("Consultation");
   });
 
-  test("an answer far below its question is the same row, never a line of words or a pill", () => {
+  test("an answer far below its question is the same quote on its own, never a line of words or a pill", () => {
     const line = source("EventLine.tsx");
     expect(line).toContain("items={[fold.consultation]}");
     expect(line).not.toContain("consultFarKey");
     expect(source("ConsultGroup.tsx")).not.toContain("TalkPill");
   });
 
-  test("a hand-off by direct message is the same row on its reach line, left out of the reply's own row", () => {
+  test("a hand-off by direct message is the same quote on its reach line, left out of the reply's own", () => {
     const reach = source("ReachLines.tsx");
-    expect(reach).toMatch(
-      /<ConsultPairRow\s+askerId=\{authorId\}\s+channelId=\{channelId\}\s+items=\{\[talk\]\}\s+inline\s/,
-    );
+    expect(reach).toContain("<ConsultQuote askerId={authorId} channelId={channelId} items={[talk]} alone />");
     expect(reach).not.toContain("reach.see");
     // One older than the conversation's list goes back is loaded on its own, never the "Entregue ao" text.
     expect(source("ConsultGroup.tsx")).toContain(

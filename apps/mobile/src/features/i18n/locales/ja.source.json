@@ -770,6 +770,13 @@
   "chat.someone": {
     "value": "Someone"
   },
+  "chat.handedTo": {
+    "value": "Handed to {{name}}",
+    "female": "Handed to {{name}}"
+  },
+  "chat.pairAsked": {
+    "value": "{{from}} asked"
+  },
   "chat.messageTo": {
     "value": "Message {{name}}"
   },
@@ -2525,6 +2532,114 @@
   },
   "mention.added": {
     "value": "{{name}} joined the channel"
+  },
+  "settingsSearch.open": {
+    "value": "Search settings"
+  },
+  "settingsSearch.title": {
+    "value": "Search"
+  },
+  "settingsSearch.placeholder": {
+    "value": "Search You and settings"
+  },
+  "settingsSearch.workspace": {
+    "value": "Workspace settings"
+  },
+  "settingsSearch.words.status": {
+    "value": "away, busy, presence, online"
+  },
+  "settingsSearch.words.account": {
+    "value": "name, photo, email, time zone, password, handle"
+  },
+  "settingsSearch.words.deleteAccount": {
+    "value": "delete, remove, close account"
+  },
+  "settingsSearch.words.workspaces": {
+    "value": "switch, servers, accounts"
+  },
+  "settingsSearch.words.notifications": {
+    "value": "alerts, push, badges"
+  },
+  "settingsSearch.words.approvals": {
+    "value": "approve, delegate"
+  },
+  "settingsSearch.words.start": {
+    "value": "open, home, first screen"
+  },
+  "settingsSearch.words.activity": {
+    "value": "tools, what agents did"
+  },
+  "settingsSearch.words.chatLook": {
+    "value": "bubbles, messages, conversation"
+  },
+  "settingsSearch.words.wallpaper": {
+    "value": "background, wallpaper, photo"
+  },
+  "settingsSearch.words.agentStyle": {
+    "value": "technical, simple, tone"
+  },
+  "settingsSearch.words.sounds": {
+    "value": "sound, quiet, silent"
+  },
+  "settingsSearch.words.appearance": {
+    "value": "theme, dark, light, mode"
+  },
+  "settingsSearch.words.appIcon": {
+    "value": "icon"
+  },
+  "settingsSearch.words.language": {
+    "value": "English, Portuguese, Spanish"
+  },
+  "settingsSearch.words.about": {
+    "value": "version, licenses"
+  },
+  "settingsSearch.words.aiAccounts": {
+    "value": "key, API, provider, plan, model"
+  },
+  "settingsSearch.words.general": {
+    "value": "name, logo, time zone, context"
+  },
+  "settingsSearch.words.media": {
+    "value": "GIFs, stickers"
+  },
+  "settingsSearch.words.members": {
+    "value": "people, team"
+  },
+  "settingsSearch.words.invites": {
+    "value": "invite, link"
+  },
+  "settingsSearch.words.roles": {
+    "value": "permissions"
+  },
+  "settingsSearch.words.usage": {
+    "value": "costs, spend, plan, tokens, budget"
+  },
+  "settingsSearch.words.connectors": {
+    "value": "integrations, MCP, services"
+  },
+  "settingsSearch.words.skills": {
+    "value": "abilities"
+  },
+  "settingsSearch.words.vault": {
+    "value": "passwords, keys, logins, secrets"
+  },
+  "settingsSearch.words.access": {
+    "value": "permissions, agents' access"
+  },
+  "settingsSearch.words.apps": {
+    "value": "AI apps, MCP"
+  },
+  "settingsSearch.words.computers": {
+    "value": "devices, machines, computer, phone"
+  },
+  "settingsSearch.words.storage": {
+    "value": "files, S3, storage"
+  },
+  "settingsSearch.words.import": {
+    "value": "export, import, migrate"
+  },
+  "settingsSearch.words.audit": {
+    "value": "log, history"
   },
   "me.title": {
     "value": "You"
@@ -5025,12 +5140,6 @@
   "connectors.addMcp": {
     "value": "Add MCP"
   },
-  "connectors.add": {
-    "value": "Add"
-  },
-  "connectors.allServices": {
-    "value": "All services"
-  },
   "connectors.waitLine": {
     "value": {
       "one": "{{count}} tool needs you",
@@ -5052,8 +5161,8 @@
   "connectors.suggested": {
     "value": "Suggested for {{org}}"
   },
-  "connectors.all": {
-    "value": "All"
+  "connectors.seeAll": {
+    "value": "See all"
   },
   "connectors.noResults": {
     "value": "No service by that name. Try its address."
@@ -5063,9 +5172,6 @@
   },
   "connectors.loadFailed": {
     "value": "Couldn't load the connectors."
-  },
-  "connectors.connectedCheck": {
-    "value": "{{name}}, connected"
   },
   "connectors.adminsOnly": {
     "value": "Only an admin of {{org}} connects services. Ask one of them."

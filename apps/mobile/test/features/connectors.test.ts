@@ -26,6 +26,7 @@ import {
   authAnswerOf,
   brandOf,
   capabilityLines,
+  catalogShelves,
   connectHow,
   connectionOf,
   doneFinishing,
@@ -39,6 +40,7 @@ import {
   needsKeyText,
   ownMarkUri,
   searchConnectors,
+  shelfColumns,
   shownMailboxes,
   stateOf,
   suggestionsOf,
@@ -115,6 +117,38 @@ describe("connectors gallery", () => {
     catalog[2] = def("notion", { available: false });
     const items = connectedItems([conn("github")], [], catalog);
     expect(suggestionsOf(catalog, items).map((d) => d.id)).toEqual(["linear", "drive", "sentry"]);
+  });
+
+  test("the catalog in shelves: the suggestions first, then each category in order, none empty", () => {
+    const linear = def("linear", { category: "product" });
+    const stripe = def("stripe", { category: "payments" });
+    const github = def("github");
+    const offered = [stripe, linear, github];
+    expect(catalogShelves(offered, [linear]).map((s) => [s.key, s.defs.map((d) => d.id)])).toEqual([
+      ["suggested", ["linear"]],
+      ["dev", ["github"]],
+      ["product", ["linear"]],
+      ["payments", ["stripe"]],
+    ]);
+    // Nothing suggested: no shelf for it.
+    expect(catalogShelves([github], []).map((s) => s.key)).toEqual(["dev"]);
+    // Columns of three, sliding sideways.
+    expect(shelfColumns([1, 2, 3, 4, 5, 6, 7])).toEqual([[1, 2, 3], [4, 5, 6], [7]]);
+    expect(shelfColumns([])).toEqual([]);
+  });
+
+  test("the gallery: what is connected a grouped list, the catalog in shelves with the kit's Conectar", () => {
+    const gallery = readFileSync(join(import.meta.dir, "../../src/features/connectors/ConnectorsScreen.tsx"), "utf8");
+    expect(gallery).toMatch(/<GroupedHeader>\{`\$\{t\("mobile\.connectors\.connected"\)\} · \$\{connectedCount\}`\}/);
+    expect(gallery).toContain("catalogShelves(offered, suggestionsOf(list, items, SUGGESTIONS))");
+    // A column at a time, snapped to the screen's side, the next one's edge in sight.
+    expect(gallery).toContain("snapToInterval={column + SHELF_GAP}");
+    expect(gallery).toContain(
+      '<Button variant="secondary" size="sm" label={t("mobile.connectors.connect")} onPress={onPress} />',
+    );
+    // No filter chips and no flat list of every service under them: the shelves are the catalog.
+    expect(gallery).not.toContain("<Filters");
+    expect(gallery).not.toContain("mobile.connectors.allServices");
   });
 
   test("'Em breve': a vendor that hasn't approved agentes.chat yet is last, greyed with a lock, and opens nothing", () => {
@@ -384,9 +418,12 @@ describe("a connection's screen and the gallery, at a finger's reach", () => {
     expect(screen).not.toContain("ActivityIndicator");
   });
 
-  test("the amber line of what waits on you is a 44-point target", () => {
+  test("what waits on you says so in amber in its own row, which opens where it is decided", () => {
     const gallery = read("ConnectorsScreen.tsx");
-    expect(gallery).toMatch(/wait: \{[^}]*minHeight: 44[^}]*\}/);
+    expect(gallery).toContain('{...(why ? { sub: why, subTone: "amber" as const } : fact ? { sub: fact } : {})}');
+    expect(gallery).toContain(
+      "connectionActs(item, me, manages).change && item.pending > 0 ? openTools(item.id) : openConnection(item.id);",
+    );
   });
 });
 
@@ -595,7 +632,7 @@ describe("a connection that stopped working", () => {
     expect([sup?.needsReconnect, sup?.toolsError]).toEqual([false, "upstream timed out"]);
     const src = (f: string) => readFileSync(join(import.meta.dir, "../../src/features/connectors", f), "utf8");
     const strip = src("ConnectorsScreen.tsx");
-    const tile = strip.slice(strip.indexOf("function ConnectedTile("), strip.indexOf("const TILE_IN"));
+    const tile = strip.slice(strip.indexOf("function ConnectedRow("), strip.indexOf("function ShelfRow("));
     expect(tile).toContain('t("connectors.composio.needsReconnect")');
     expect(tile).toContain('t("connectors.noToolsNow")');
     const screen = src("ConnectionScreen.tsx");

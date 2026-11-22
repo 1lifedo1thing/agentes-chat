@@ -12,7 +12,6 @@ import { Platform, StyleSheet, View } from "react-native";
 import Animated, { Easing, FadeIn, FadeInUp } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "@/features/account";
-import { type SoundChoice, setSoundChoice, useSoundChoice } from "@/lib/sounds";
 import { useOrg } from "@/providers/org";
 import { WorkspaceSky } from "@/sky/Sky";
 import {
@@ -26,7 +25,6 @@ import {
   PressScale,
   SCREEN_X,
   Text,
-  type ThemePreference,
   useTheme,
   useToast,
   WithPresence,
@@ -38,7 +36,6 @@ import { confirmAction, Uploading } from "../settings/parts";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId, useOwnsAgent } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
-import { pickOne } from "../shared/PickerSheet";
 import { FocusLive, goBack, MentionCount, PushedHeader } from "../shared/parts";
 import { usePersonPhoto } from "../shared/photo";
 import { useTasksUnreadMarks, useUnreadThreads } from "../shared/queries";
@@ -60,10 +57,10 @@ import {
   NotificationsPage,
   StartPage,
   usePushSwitch,
-  useSoundLabel,
   useStartLabel,
 } from "./PreferencePages";
 import { useChangePhoto } from "./parts";
+import { useMePickers } from "./pickers";
 import { ME_FALLBACK, type MePageHref, meSplit } from "./split";
 import { useWorkspacesAcross, WorkspaceMark } from "./WorkspacesPages";
 
@@ -151,7 +148,8 @@ const HORIZON_FADE = FadeIn.duration(200);
 let horizonArrived = false;
 
 /**
- * Você, pushed from your avatar, as the phone's own settings: the bar reads "Você" with Editar on the right; the
+ * Você, pushed from your avatar, as the phone's own settings: the bar reads "Você" with Editar on the right, and the
+ * magnifier beside it finds any setting by name, yours or the workspace's (`SettingsSearchScreen`); the
  * workspace's sky as a band with your photo hanging from it (a tap changes it), your name, your @ and workspace; then
  * grouped lists on the grouped gray, one value per row. Status first (ADR 0084). The workspace as one row: where you
  * are, how many more and the unread elsewhere, opening the list by server (ADR 0154), with the workspace's settings
@@ -226,8 +224,6 @@ function MePage() {
   const name = me.data?.user.name ?? "";
   const photo = usePersonPhoto(mine?.avatarUrl ?? mine?.image ?? me.data?.user.image);
   const { changePhoto, uploading } = useChangePhoto();
-  const sounds = useSoundChoice();
-  const styleLabel = useSoundLabel();
   const startLabel = useStartLabel();
   const withMe = openIssuesWithMe(issues.data, meId);
   // Mentions of me not read in a task's conversation: the red badge before the value, as on Conversas.
@@ -317,34 +313,9 @@ function MePage() {
         />
       ) : null,
   };
-  const soundValue = sounds === "off" ? t("mobile.me.soundsOff") : styleLabel(sounds);
-  const themeValue = t(`mobile.theme.${theme.preference}`);
-
   // Sons and Aparência, a few fixed choices, change in their row through the app's picker (the one in use checked);
   // Idioma, one of many, is a pushed list of its own.
-  const pickSound = () => {
-    const choices: SoundChoice[] = ["tactile", "sky", "pixel", "off"];
-    void pickOne({
-      title: t("mobile.me.sounds"),
-      value: sounds,
-      options: choices.map((choice) => ({
-        key: choice,
-        label: choice === "off" ? t("mobile.me.soundsOff") : styleLabel(choice),
-      })),
-    }).then((key) => {
-      if (key) setSoundChoice(key as SoundChoice);
-    });
-  };
-  const pickTheme = () => {
-    const choices: ThemePreference[] = ["system", "light", "dark"];
-    void pickOne({
-      title: t("mobile.me.appearance"),
-      value: theme.preference,
-      options: choices.map((choice) => ({ key: choice, label: t(`mobile.theme.${choice}`) })),
-    }).then((key) => {
-      if (key) theme.setPreference(key as ThemePreference);
-    });
-  };
+  const { pickSound, pickTheme, soundValue, themeValue } = useMePickers();
   const confirmSignOut = () =>
     confirmAction({
       title: t("mobile.me.signOutConfirm"),
@@ -365,6 +336,15 @@ function MePage() {
         solid={false}
         grouped
         action={{ label: t("mobile.me.edit"), onPress: () => open("/me/account"), opens: true }}
+        // Your settings and the workspace's, found by name: a screen of its own, pushed in either size.
+        actions={[
+          {
+            icon: "search",
+            sf: "magnifyingglass",
+            label: t("mobile.settingsSearch.open"),
+            onPress: () => pushScreen("/me/search"),
+          },
+        ]}
       />
       <Animated.ScrollView
         style={styles.fill}

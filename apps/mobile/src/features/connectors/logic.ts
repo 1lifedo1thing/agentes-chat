@@ -15,7 +15,7 @@ export { type ConnectionTab, connectionTabs } from "@agenteschat/client/lib/conn
 /** Suggestions, in order (the web's list, catalog services only): the first three not connected yet. */
 export const SUGGESTED = ["github", "linear", "notion", "drive", "sentry", "stripe", "slack"];
 
-/** Categories in the order the filters show them. */
+/** Categories in the order their shelves stand. */
 export const CATEGORIES: ConnectorCategory[] = [
   "dev",
   "product",
@@ -49,7 +49,37 @@ export function accountActions(
   return item.custom ? ["rename", "reconnect", "add"] : ["rename", "reconnect"];
 }
 
-/** The first three suggestions that can be connected here and aren't yet. */
+/** A shelf of the catalog: the suggestions, or one category's services. */
+export interface Shelf {
+  key: "suggested" | ConnectorCategory;
+  defs: ConnectorDef[];
+}
+
+/**
+ * The catalog as shelves (Conectores): the suggestions first, then each category in `CATEGORIES`' order with the
+ * services offered in it; a category with none has no shelf. A suggested service is on its category's shelf too: each
+ * shelf is the whole of what it names.
+ */
+export function catalogShelves(offered: readonly ConnectorDef[], suggestions: readonly ConnectorDef[]): Shelf[] {
+  const shelves: Shelf[] = suggestions.length > 0 ? [{ key: "suggested", defs: [...suggestions] }] : [];
+  for (const key of CATEGORIES) {
+    const defs = offered.filter((d) => d.category === key);
+    if (defs.length > 0) shelves.push({ key, defs });
+  }
+  return shelves;
+}
+
+/** Rows in a shelf's column: the columns slide sideways, three services each. */
+export const SHELF_ROWS = 3;
+
+/** A shelf's columns, `rows` services each, in order. */
+export function shelfColumns<T>(items: readonly T[], rows = SHELF_ROWS): T[][] {
+  const columns: T[][] = [];
+  for (let i = 0; i < items.length; i += rows) columns.push(items.slice(i, i + rows));
+  return columns;
+}
+
+/** The suggestions that can be connected here and aren't yet, in `SUGGESTED`'s order (three by default). */
 export function suggestionsOf(catalog: ConnectorDef[], items: ConnectedItem[], count = 3): ConnectorDef[] {
   const out: ConnectorDef[] = [];
   for (const id of SUGGESTED) {

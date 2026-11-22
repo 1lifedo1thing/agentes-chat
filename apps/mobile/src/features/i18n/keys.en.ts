@@ -351,6 +351,11 @@ export const featureKeysEn = {
   },
   chat: {
     someone: "Someone",
+    /** A handed work's bubble under the reply that handed it: the agent that took it. */
+    handedTo: "Handed to {{name}}",
+    handedTo_female: "Handed to {{name}}",
+    /** Two agents' talk quoted on its own (its reply not here): who asked, before the agent asked. */
+    pairAsked: "{{from}} asked",
     messageTo: "Message {{name}}",
     messageIn: "Message {{channel}}",
     reply: "Reply",
@@ -1111,6 +1116,50 @@ export const featureKeysEn = {
     add: "Add",
     addA11y: "Add {{name}} to the channel",
     added: "{{name}} joined the channel",
+  },
+  /**
+   * Settings found by name: You's magnifier and its screen, the workspace's group of results, and the other words each
+   * setting answers to (comma-separated, never shown).
+   */
+  settingsSearch: {
+    open: "Search settings",
+    title: "Search",
+    placeholder: "Search You and settings",
+    workspace: "Workspace settings",
+    words: {
+      status: "away, busy, presence, online",
+      account: "name, photo, email, time zone, password, handle",
+      deleteAccount: "delete, remove, close account",
+      workspaces: "switch, servers, accounts",
+      notifications: "alerts, push, badges",
+      approvals: "approve, delegate",
+      start: "open, home, first screen",
+      activity: "tools, what agents did",
+      chatLook: "bubbles, messages, conversation",
+      wallpaper: "background, wallpaper, photo",
+      agentStyle: "technical, simple, tone",
+      sounds: "sound, quiet, silent",
+      appearance: "theme, dark, light, mode",
+      appIcon: "icon",
+      language: "English, Portuguese, Spanish",
+      about: "version, licenses",
+      aiAccounts: "key, API, provider, plan, model",
+      general: "name, logo, time zone, context",
+      media: "GIFs, stickers",
+      members: "people, team",
+      invites: "invite, link",
+      roles: "permissions",
+      usage: "costs, spend, plan, tokens, budget",
+      connectors: "integrations, MCP, services",
+      skills: "abilities",
+      vault: "passwords, keys, logins, secrets",
+      access: "permissions, agents' access",
+      apps: "AI apps, MCP",
+      computers: "devices, machines, computer, phone",
+      storage: "files, S3, storage",
+      import: "export, import, migrate",
+      audit: "log, history",
+    },
   },
   me: {
     title: "You",
@@ -2178,10 +2227,6 @@ export const featureKeysEn = {
     mcps: "MCPs",
     mcpsNone: "MCP servers you connect by their address show up here.",
     addMcp: "Add MCP",
-    /** The dashed tile at the end of the connected row. */
-    add: "Add",
-    /** The catalog's header, with its count. */
-    allServices: "All services",
     /** The amber line under the connected row: a service's tools wait on the person ("· <service>" follows). */
     waitLine_one: "{{count}} tool needs you",
     waitLine_other: "{{count}} tools need you",
@@ -2192,11 +2237,11 @@ export const featureKeysEn = {
     connectedState: "Connected",
     connected: "Connected",
     suggested: "Suggested for {{org}}",
-    all: "All",
+    /** A category's shelf: its whole list, on a screen of its own. */
+    seeAll: "See all",
     noResults: "No service by that name. Try its address.",
     soon: "Soon",
     loadFailed: "Couldn't load the connectors.",
-    connectedCheck: "{{name}}, connected",
     adminsOnly: "Only an admin of {{org}} connects services. Ask one of them.",
     /** In a personal workspace (ADR 0159): its owner and whoever helps run it, never "an admin of Personal". */
     adminsOnlyPersonal: "Only whoever runs this workspace connects apps. Ask them.",
