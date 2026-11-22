@@ -5,7 +5,7 @@ setupDom();
 
 import { keys } from "@agenteschat/client";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { createFakeApi, ORG_ID, seedState } from "./fake-api";
+import { createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
 import { createFakeAuth } from "./fake-auth";
 import { renderApp, screen, settle } from "./render";
 
@@ -24,7 +24,7 @@ async function emailDialog() {
 }
 
 /** Signed in as Walter at `email`, in no workspace (`required`) or in Acme (`reminder`), at `path`. */
-async function open(path: string, confirmation: "required" | "reminder", email = "walter@gmail.com") {
+async function open(path: string, confirmation: "required" | "reminder", email = "walter@example.com") {
   const state = seedState();
   if (!state.me) throw new Error("signed in");
   state.me.user = { ...state.me.user, email, emailVerified: false, emailConfirmation: confirmation };
@@ -37,15 +37,17 @@ async function open(path: string, confirmation: "required" | "reminder", email =
 
 describe("a new account's address never confirmed (ADR 0006, addendum 2026-11-22)", () => {
   test("the onboarding waits on “check your inbox”: its mail app, a new link, a new address, Sair", async () => {
-    const { authCalls } = await open("/onboarding", "required");
+    const { authCalls } = await open("/onboarding", "required", "caixa.inventada@gmail.com");
     expect(screen().getByRole("heading", { name: "Confira seu e-mail" })).toBeTruthy();
-    expect(document.body.textContent).toContain("Abra o link que mandamos para walter@gmail.com para continuar.");
+    expect(document.body.textContent).toContain(
+      "Abra o link que mandamos para caixa.inventada@gmail.com para continuar.",
+    );
     expect(screen().getByRole("link", { name: "Abrir o Gmail" }).getAttribute("href")).toBe("https://mail.google.com");
     expect(screen().queryByRole("radio", { name: /Para meu time/ })).toBeNull();
 
     expect(button("Sair")).toBeTruthy();
     await click(button("Mandar outro link"));
-    expect(authCalls).toEqual([{ method: "sendVerificationEmail", args: ["walter@gmail.com"] }]);
+    expect(authCalls).toEqual([{ method: "sendVerificationEmail", args: ["caixa.inventada@gmail.com"] }]);
 
     await click(button("Endereço errado? Trocar"));
     const dialog = await emailDialog();
@@ -66,11 +68,11 @@ describe("a new account's address never confirmed (ADR 0006, addendum 2026-11-22
   });
 
   test("an account already in a workspace keeps it, under a line with a new link and a new address", async () => {
-    const { authCalls, router } = await open(`/org/${ORG_ID}`, "reminder");
-    const line = screen().getByRole("region", { name: "Confirme seu e-mail" });
-    expect(line.textContent).toContain("Abra o link que mandamos para walter@gmail.com.");
+    const { authCalls, router } = await open(`/org/${ORG_ID}/c/${ENG_ID}`, "reminder");
+    const line = await screen().findByRole("region", { name: "Confirme seu e-mail" }, { timeout: 10_000 });
+    expect(line.textContent).toContain("Abra o link que mandamos para walter@example.com.");
     await click(within(line).getByRole("button", { name: "Mandar outro link" }));
-    expect(authCalls).toEqual([{ method: "sendVerificationEmail", args: ["walter@gmail.com"] }]);
+    expect(authCalls).toEqual([{ method: "sendVerificationEmail", args: ["walter@example.com"] }]);
     await click(within(line).getByRole("button", { name: "Trocar endereço" }));
     expect((router.state.location.search as { account?: string }).account).toBe("email");
     expect(await emailDialog()).toBeTruthy();
