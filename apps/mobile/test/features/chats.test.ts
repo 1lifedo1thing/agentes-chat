@@ -779,3 +779,13 @@ describe("an agent's role as the web's tag", () => {
     expect(row).toContain('titleRow: { flexDirection: "row", alignItems: "center", gap: 6 },');
   });
 });
+
+describe("a handed work's bubble", () => {
+  test("Stop is the kit's icon button on the bubble's row, and the bubble grows with its words", () => {
+    const line = readFileSync(join(import.meta.dir, "../../src/features/chat/WorkLine.tsx"), "utf8");
+    expect(line).toContain(
+      '<IconButton icon="stop" small label={halt.label} disabled={halt.disabled} onPress={halt.onPress} />',
+    );
+    expect(line).toContain("handedWords: { flexShrink: 1, minWidth: 0, gap: 1 },");
+  });
+});

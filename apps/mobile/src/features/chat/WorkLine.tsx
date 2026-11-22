@@ -18,7 +18,7 @@ import { createContext, type ReactNode, useCallback, useContext } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, haptics, Icon, LineIcon, PixelOrbit, Text, textLineOf, useToast } from "@/ui";
+import { Button, haptics, Icon, IconButton, LineIcon, PixelOrbit, Text, textLineOf, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { useFontScale } from "@/ui/text-scale";
 import { chatHref, consultationHref } from "../links/logic";
@@ -236,22 +236,9 @@ function Line({
             </View>
           </View>
           {halt ? (
-            <Pressable
-              onPress={halt.onPress}
-              disabled={halt.disabled}
-              accessibilityRole="button"
-              accessibilityLabel={halt.label}
-              hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
-            >
-              {({ pressed }) => (
-                <Text
-                  variant="small"
-                  style={[styles.bold, { color: halt.disabled ? c.faint : pressed ? c.danger : c.ink }]}
-                >
-                  {halt.label}
-                </Text>
-              )}
-            </Pressable>
+            // Stop as the kit's round button with the stop square, centred on the bubble's row: a word there took the
+            // room the state's words needed and sat off their middle.
+            <IconButton icon="stop" small label={halt.label} disabled={halt.disabled} onPress={halt.onPress} />
           ) : go ? (
             <Icon name="right" size={16} color={c.faint} />
           ) : null}
@@ -591,7 +578,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   handedCard: { borderWidth: StyleSheet.hairlineWidth },
-  handedWords: { flex: 1, minWidth: 0, gap: 1 },
+  // As wide as its words (the bubble grows with them up to the column), shrinking only when the column runs out: with
+  // no width of its own (`flex: 1`) the bubble stayed at its least and cut the words that had room.
+  handedWords: { flexShrink: 1, minWidth: 0, gap: 1 },
   handedState: { flexDirection: "row", alignItems: "center", gap: 4 },
   shrink: { flexShrink: 1 },
   quietMark: { width: QUIET_MARK, alignItems: "center" },
