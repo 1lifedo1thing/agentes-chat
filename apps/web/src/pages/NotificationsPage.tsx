@@ -1625,9 +1625,10 @@ export function NotificationsPage({
                 value: f,
                 label:
                   f !== "requests" && f !== "done" && counts?.[f] ? (
-                    <>
-                      {filterWords(f)} <span className="ib-menu__n">{counts[f]}</span>
-                    </>
+                    <span className="ib-menu__opt">
+                      {filterWords(f)}
+                      <span className="ib-menu__n">{counts[f]}</span>
+                    </span>
                   ) : (
                     filterWords(f)
                   ),

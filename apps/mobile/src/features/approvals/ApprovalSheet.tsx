@@ -13,6 +13,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrg } from "@/providers/org";
 import {
   Button,
@@ -23,20 +24,18 @@ import {
   GroupedRow,
   HoldButton,
   Locked,
-  SHEET_X,
-  SheetBar,
-  SheetScreen,
   SkeletonList,
   Text,
   useToast,
 } from "@/ui";
 import { ExpiryLine } from "../chat/asks";
-import { AgentFace } from "../shared/Face";
+import { OpenItemHead } from "../activity/OpenItem";
 import { LoadFailed } from "../shared/FirstUse";
-import { useDirectory, useNow, useOrgId, useOwnerRoles } from "../shared/hooks";
+import { useColors, useDirectory, useNow, useOrgId, useOwnerRoles } from "../shared/hooks";
 import { genderOf } from "../shared/logic";
 import { approvalOwnerOf, ownerNameIn } from "../shared/owner";
 import { successHaptic } from "../shared/parts";
+import { PushedLargeTitle } from "../shared/PushedLargeTitle";
 import { TextArea } from "../shared/TextArea";
 import {
   approvalAction,
@@ -91,6 +90,8 @@ export function ApprovalSheet({
   const roles = useOwnerRoles();
   const now = useNow();
   const toast = useToast();
+  const c = useColors();
+  const insets = useSafeAreaInsets();
   const approval = useApproval(orgId, id);
   const channels = useChannels(orgId);
   const decide = useDecideApproval(orgId);
@@ -149,6 +150,7 @@ export function ApprovalSheet({
   };
 
   let body: ReactNode;
+  let decision: ReactNode = null;
   if (!a) {
     body =
       approval.error instanceof ApiError && approval.error.status === 404 ? (
@@ -185,24 +187,87 @@ export function ApprovalSheet({
     const foot = [traits.join(" · "), requester].filter(Boolean).join("\n");
     const who = (
       <View style={styles.who}>
-        <View style={styles.whoHead}>
-          <AgentFace agentId={a.agentId} size={40} />
-          {/* The chip on the title's last line while it fits, under the title otherwise. */}
-          <View style={[styles.grow, styles.titleLine]}>
-            <Text variant="body" style={[styles.semibold, styles.shrink]}>
-              {approvalTitleText(t, a)}
-            </Text>
-            <ApprovalUndoChip approval={a} />
-          </View>
-        </View>
+        {/* Who and where, then the action as the screen's title; the agent stands on its sky above (`OpenItemHead`). */}
         <View style={styles.whereRow}>
           <Text variant="footnote" tone="muted" style={styles.shrink}>
             {where || t("mobile.approval.asksYou")}
           </Text>
           {pending ? <ExpiryLine createdAt={a.createdAt} expiresAt={a.expiresAt} /> : null}
         </View>
+        {/* The chip on the title's last line while it fits, under the title otherwise. */}
+        <View style={styles.titleLine}>
+          <Text variant="title2" style={styles.shrink}>
+            {approvalTitleText(t, a)}
+          </Text>
+          <ApprovalUndoChip approval={a} />
+        </View>
       </View>
     );
+    // The decision stays at the screen's foot while the request scrolls under it.
+    if (!refusing)
+      decision = (
+        <>
+          pending ? (
+          a.canDecide ? (
+            <View style={styles.pair}>
+              <View style={styles.half}>
+                <Button
+                  variant="secondary"
+                  wide
+                  label={t("mobile.approval.refuse")}
+                  disabled={decide.isPending}
+                  onPress={askRefusal}
+                />
+              </View>
+              <View style={styles.half}>
+                {high ? (
+                  <HoldButton
+                    label={t("mobile.approval.hold")}
+                    disabled={decide.isPending}
+                    onConfirm={() => done("approve", always)}
+                  />
+                ) : (
+                  <Button
+                    variant="primary"
+                    wide
+                    label={approvalAction(a) === "draft" ? t("approval.approve.draft") : t("mobile.approval.approve")}
+                    loading={decide.isPending}
+                    onPress={() => done("approve", always)}
+                  />
+                )}
+              </View>
+            </View>
+          ) : (
+            <Text variant="small" tone="muted" style={styles.note}>
+              {holders
+                ? t("mobile.approval.onlyOwnerRole", { role: holders })
+                : owner
+                  ? t("mobile.approval.onlyOwner", { name: owner })
+                  : t("mobile.approval.onlyAdmins")}
+            </Text>
+          )
+        ) : aheadPhase(a) === "scheduled" && runAt ? (
+          <>
+            <Text variant="small" tone="muted" style={styles.note}>
+              {t("mobile.approval.status.scheduled", { when: runAt })}
+            </Text>
+            {a.canCancel ? (
+              <Button
+                variant="secondary"
+                wide
+                label={t("approval.ahead.cancel")}
+                loading={cancelAhead.pending}
+                onPress={() => cancelAhead.cancel(a.id, onClose)}
+              />
+            ) : null}
+          </>
+        ) : (
+          <Text variant="small" tone="muted" style={styles.note}>
+            {aheadEndLine(t, a) ?? t(`mobile.approval.status.${a.status === "pending" ? "expired" : a.status}`)}
+          </Text>
+        )
+        </>
+      );
     body = refusing ? (
       <>
         {who}
@@ -302,85 +367,40 @@ export function ApprovalSheet({
             </GroupedList>
           </View>
         ) : null}
-        {pending ? (
-          a.canDecide ? (
-            <View style={styles.pair}>
-              <View style={styles.half}>
-                <Button
-                  variant="secondary"
-                  wide
-                  label={t("mobile.approval.refuse")}
-                  disabled={decide.isPending}
-                  onPress={askRefusal}
-                />
-              </View>
-              <View style={styles.half}>
-                {high ? (
-                  <HoldButton
-                    label={t("mobile.approval.hold")}
-                    disabled={decide.isPending}
-                    onConfirm={() => done("approve", always)}
-                  />
-                ) : (
-                  <Button
-                    variant="primary"
-                    wide
-                    label={approvalAction(a) === "draft" ? t("approval.approve.draft") : t("mobile.approval.approve")}
-                    loading={decide.isPending}
-                    onPress={() => done("approve", always)}
-                  />
-                )}
-              </View>
-            </View>
-          ) : (
-            <Text variant="small" tone="muted" style={styles.note}>
-              {holders
-                ? t("mobile.approval.onlyOwnerRole", { role: holders })
-                : owner
-                  ? t("mobile.approval.onlyOwner", { name: owner })
-                  : t("mobile.approval.onlyAdmins")}
-            </Text>
-          )
-        ) : aheadPhase(a) === "scheduled" && runAt ? (
-          <>
-            <Text variant="small" tone="muted" style={styles.note}>
-              {t("mobile.approval.status.scheduled", { when: runAt })}
-            </Text>
-            {a.canCancel ? (
-              <Button
-                variant="secondary"
-                wide
-                label={t("approval.ahead.cancel")}
-                loading={cancelAhead.pending}
-                onPress={() => cancelAhead.cancel(a.id, onClose)}
-              />
-            ) : null}
-          </>
-        ) : (
-          <Text variant="small" tone="muted" style={styles.note}>
-            {aheadEndLine(t, a) ?? t(`mobile.approval.status.${a.status === "pending" ? "expired" : a.status}`)}
-          </Text>
-        )}
       </>
     );
   }
 
+  const dock = decision ? (
+    <View style={[styles.dock, { paddingBottom: insets.bottom + 12, backgroundColor: c.grouped, borderColor: c.line }]}>
+      {decision}
+    </View>
+  ) : null;
   return (
-    <SheetScreen>
-      <SheetBar title={t("mobile.approval.sheet.title")} onClose={onClose} inset />
+    <PushedLargeTitle title="" collapsed grouped keyboard bottomInset={dock ? 140 : 24} dock={dock}>
+      <OpenItemHead agentId={a?.agentId ?? null} grouped />
       <View style={styles.in}>{body}</View>
-    </SheetScreen>
+    </PushedLargeTitle>
   );
 }
 
 const styles = StyleSheet.create({
   // The rows' shape runs to the sheet's edges, as a list's rows do, not inside its padding.
-  bleed: { marginHorizontal: -SHEET_X },
-  semibold: { fontWeight: "600" },
-  in: { gap: 24 },
+  bleed: { marginHorizontal: -20 },
+  in: { paddingHorizontal: 20, paddingTop: 12, gap: 24 },
+  // The decision, pinned at the screen's foot over what scrolls.
+  dock: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   // The face beside the title alone (never a column beside where and when): those go under, at the sheet's width.
   who: { gap: 8 },
-  whoHead: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   titleLine: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 4 },
   whereRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 4 },
   grow: { flex: 1, minWidth: 0 },

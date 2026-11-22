@@ -816,10 +816,15 @@ html:not([data-pointer]) .nt-fails .nt-rep:focus-visible {
  * The inbox: one list of everything that involves me and, beside it, the open item. The list has no cards and no
  * buttons (who, what they want, when); the open item is a page with the agent on its own sky, where the answer is given.
  */
+/* The inbox fills the work area: its two columns scroll on their own, so the area itself doesn't. */
+.shell__main:has(> .ib) {
+  position: relative;
+  overflow: hidden;
+}
 .ib {
+  position: absolute;
+  inset: 0;
   display: flex;
-  height: 100%;
-  min-height: 0;
 }
 .ib-list {
   flex: 0 0 380px;
@@ -859,8 +864,13 @@ html:not([data-pointer]) .nt-fails .nt-rep:focus-visible {
   flex: none;
   color: var(--muted);
 }
+/* A filter and how many it holds, on one line. */
+.ib-menu__opt {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
 .ib-menu__n {
-  margin-inline-start: 6px;
   color: var(--faint);
   font-variant-numeric: tabular-nums;
 }
