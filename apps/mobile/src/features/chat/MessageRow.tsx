@@ -133,7 +133,7 @@ import { secretRequestOf } from "./ask-store";
 import { useBubbleCap } from "./bubble-cap";
 import { ChatMedia } from "./ChatMedia";
 import { ClippedMessage, OpenedMessagesContext } from "./ClippedMessage";
-import { ConsultPairRow, useRunConsults } from "./ConsultGroup";
+import { ConsultQuote, useRunConsults } from "./ConsultGroup";
 import { ApprovalInline, QuestionCard, ThreadLink, ThreadReplyingLink } from "./cards";
 import { FeedbackOfferRow } from "./FeedbackOffer";
 import { HandedTaskChips, IssueWorkCard } from "./issue-work";
@@ -170,7 +170,7 @@ import { aboveInset, QuoteAbove, QuotePlate } from "./QuoteLine";
 import { ReachLines } from "./ReachLines";
 import { Receipts } from "./Receipts";
 import {
-  useRowConsults,
+  useRowConsultsPart,
   useRowDirectory,
   useRowMeId,
   useRowMyHandle,
@@ -356,8 +356,10 @@ function RowBody({
   // The one an agent adds after its own reply carries the reply's run: the run's tools, questions and stop line
   // stay on the reply, never shown twice.
   const mediaAfter = isAgent && isMediaAfterReply(meta);
-  // It asked other agents first: one row right before it (its run's questions on the run's first message here, and
-  // the ones its `meta.consulted` names), so it shows its face and name again under that row.
+  // It asked other agents first (its run's questions on the run's first message here, and the ones its
+  // `meta.consulted` names): quoted at the top of its words, as a reply quotes a message. With no words to sit in (a
+  // reply that is only cards), the quote stands on its own right before it, and the reply shows its face and name
+  // again under it.
   const reached = useMemo(() => reachHandoffs(m.meta), [m.meta]);
   const rhythm = useRhythm();
   const consults = useRunConsults(
@@ -369,18 +371,22 @@ function RowBody({
   );
   // Work it handed over that reports here: its line under this reply says what the pair row would.
   const paired = consults.filter((c) => !m.handedWorks?.some((w) => w.handedBy?.consultationId === c.id));
-  const pair =
+  const consultQuote =
     isAgent && m.author.id && paired.length > 0 ? (
-      <ConsultPairRow askerId={m.author.id} channelId={m.channelId} items={paired} />
+      <ConsultQuote askerId={m.author.id} channelId={m.channelId} items={paired} />
     ) : null;
-  const grouped = groupedIn && !pair;
+  const quoteAlone = consultQuote !== null && (!body || Boolean(choiceReply));
+  const quoteInWords = quoteAlone ? null : consultQuote;
+  const grouped = groupedIn && !quoteAlone;
   // A question to another agent (in their DM) carries the asking run: its work shows on that run's reply.
   const ownWork = isAgent && Boolean(m.agentRunId) && !meta?.consultation && !mediaAfter;
   const steps = ownWork ? workStepsOf(meta) : null;
-  // Posted by a run answering another agent's question from here (its approval, question, secret): whom it helps.
-  const consultations = useRowConsults(m.channelId);
-  const helping =
-    isAgent && m.agentRunId && !readOnly && !mediaAfter ? consultations.byConsultedRun.get(m.agentRunId) : undefined;
+  // Posted by a run answering another agent's question from here (its approval, question, secret): whom it helps. Only
+  // that question: the row draws again when it changes, not on every reload of the conversation's questions.
+  const helpingRun = isAgent && m.agentRunId && !readOnly && !mediaAfter ? m.agentRunId : null;
+  const helping = useRowConsultsPart(m.channelId, (list) =>
+    helpingRun ? list.byConsultedRun.get(helpingRun) : undefined,
+  );
   // No `onLongPress` where the system's menu takes the hold (iOS): the row adds nothing of its own to it.
   const press =
     readOnly || !onLongPress
@@ -926,7 +932,8 @@ function RowBody({
       <View
         style={[
           styles.report,
-          { borderLeftColor: c.line },
+          // On a plate a step off what is around it, never a bar at its left edge.
+          { backgroundColor: c.plate },
           (inBubble || opener || words) && { marginBottom: rhythm.part },
         ]}
       >
@@ -957,7 +964,11 @@ function RowBody({
   const partTop = bubbled && (body || media) ? BUBBLE_JOIN - rhythm.part : cardTop;
   return (
     <>
-      {pair}
+      {quoteAlone && m.author.id ? (
+        <View style={[styles.consultAlone, { paddingLeft: aboveInset(look), marginTop: rhythm.turn }]}>
+          <ConsultQuote askerId={m.author.id} channelId={m.channelId} items={paired} alone />
+        </View>
+      ) : null}
       {liveRef ? (
         <View style={[styles.aboutAbove, { paddingLeft: aboveInset(look), marginTop: rowGap }]}>
           <MessageAbout liveRef={liveRef} messageId={m.id} />
@@ -1032,6 +1043,7 @@ function RowBody({
                       ]}
                     >
                       {!grouped && (look.names || tagged) ? who(true) : null}
+                      {quoteInWords}
                       {quote ? <QuotePlate reply={quote} onJump={onQuote} /> : null}
                       {opener}
                       {words}
@@ -1041,15 +1053,17 @@ function RowBody({
                   <>
                     <View style={styles.compactLine}>
                       {who(false)}
-                      {!reportOpened && !opener ? words : null}
+                      {!reportOpened && !opener && !quoteInWords ? words : null}
                     </View>
+                    {quoteInWords}
                     {reportOpened}
                     {openerPart}
-                    {reportOpened || opener ? words : null}
+                    {reportOpened || opener || quoteInWords ? words : null}
                   </>
                 ) : (
                   <>
                     {nameLine && !askAlone ? who(false) : null}
+                    {quoteInWords}
                     {pinLine}
                     {reportOpened}
                     {openerPart}
@@ -1643,6 +1657,8 @@ const styles = StyleSheet.create({
   // Bubbles only: the other looks' cards cast shadows past the row.
   ownBox: { overflow: "hidden" },
   aboutAbove: { paddingRight: 16 },
+  // A quote of the agents' talk with no words to sit in: on the words' column, as wide as a bubble's.
+  consultAlone: { paddingRight: 48 },
   avslot: { width: MSG_AVATAR, alignItems: "center", paddingTop: 2 },
   body: { flex: 1, minWidth: 0 },
   // A long pick wraps: the check stays on its first line.
@@ -1686,7 +1702,8 @@ const styles = StyleSheet.create({
   tagPress: { flexShrink: 1, maxWidth: "100%", alignSelf: "center" },
   pin: { alignSelf: "center" },
   // The routine report a message answers, unfolded under its name (like the notice line's text).
-  report: { marginTop: 2, paddingLeft: 10, borderLeftWidth: 2 },
+  // A plate in the words, as a quote's: the scale's item corner, the plates' room.
+  report: { marginTop: 2, paddingHorizontal: 12, paddingVertical: 10, borderRadius: RADIUS.md },
   tag: {
     flexDirection: "row",
     alignItems: "center",

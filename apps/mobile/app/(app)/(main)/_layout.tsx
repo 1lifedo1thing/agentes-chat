@@ -96,6 +96,8 @@ export default function MainStack() {
       // The wiki's graph: its night fills the screen behind the bar.
       "wiki-map": cover,
       "connectors/[id]": cover,
+      // A service's own page: its sky under a clear bar, the system's back over it.
+      "connectors/service/[id]": cover,
       // Você: a pushed page with a clear bar over its sky; its screens pushed over it on the grouped gray.
       "me/index": cover,
       // On the sign-in's ruler, its own sky (the scanner: the camera): a clear bar, the system's back over it.
@@ -119,11 +121,13 @@ export default function MainStack() {
       ...Object.fromEntries(NEW_AGENT_ROUTES.map((name) => [name, connectAi])),
       // Código: its grouped screens on the gray they draw on, as the steps above (no white flash in a push).
       ...Object.fromEntries(CODING_GROUPED_ROUTES.map((name) => [name, connectAi])),
+      // A message's pictures: pushed (faded in, as a photo opens), black, the viewer's own bars over the picture. A
+      // screen of the stack, so the file's conversation pushes over it and its back comes back to the picture (ADR
+      // 0208); as a modal, whatever was pushed from it opened hidden under it.
       images: {
         ...base,
-        presentation: "transparentModal",
         animation: "fade",
-        contentStyle: { backgroundColor: "transparent" },
+        contentStyle: { backgroundColor: "#000000" },
       },
       // A file: pushed with its bar opaque over the file itself (a web view lays out below it, as a block does).
       "file/[id]": solid,
