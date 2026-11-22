@@ -231,7 +231,9 @@ describe("a screen of rows", () => {
     expect(ui("RowPressable.tsx")).toContain("onPressIn?.(e);");
   });
 
-  test("the home's sky comes up within 300 ms of the splash leaving", () => {
-    expect(src("chats/ChatsScreen.tsx")).toContain("const SKY_ARRIVE_MS = 300;");
+  test("the home's sky is already there under the splash: the splash's ring opens on it, nothing fades in", () => {
+    const home = src("chats/ChatsScreen.tsx");
+    expect(home).toContain("<GreetingSky />");
+    expect(home).not.toContain("SKY_ARRIVE_MS");
   });
 });
