@@ -46,6 +46,7 @@ import {
 } from "@agenteschat/client/lib/connected";
 import { humanize, isHttpsUrl, sameServer } from "@agenteschat/client/lib/custom-tools";
 import { errorText } from "@agenteschat/client/lib/errors";
+import { formatInt } from "@agenteschat/client/lib/format";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { can } from "@agenteschat/client/lib/permissions";
 import {
@@ -83,7 +84,9 @@ import {
   Locked,
   OptionList,
   Segmented,
+  SettingRow,
   Skeleton,
+  Switch,
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
@@ -1178,6 +1181,49 @@ function catalogReviewTools(t: TFunction, item: ConnectedItem): ReviewTool[] {
 }
 
 /**
+ * A server by address's own instructions (MCP's `instructions`, ADR 0016 addendum of 2026-11-22): a setting whose
+ * switch says whether agents get them, saved with the step's Continuar, then the text as agents read it. A server
+ * that sends none says so, with no switch.
+ */
+function ServerInstructions({
+  server,
+  on,
+  onChange,
+}: {
+  server: CustomServer;
+  on: boolean;
+  onChange: (on: boolean) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const said = server.instructions;
+  const title = t("toolReview.instructions.title");
+  // An older server doesn't say: nothing to show.
+  if (said === undefined) return null;
+  if (!said) return <SettingRow title={title} status={t("toolReview.instructions.none")} />;
+  const max = formatInt(i18n.language, said.maxChars);
+  const status = !on
+    ? t("toolReview.instructions.off")
+    : said.cut
+      ? t("toolReview.instructions.cut", { max })
+      : t("toolReview.instructions.chars", { used: formatInt(i18n.language, said.text.length), max });
+  return (
+    <section className="cflow-notes" aria-label={title}>
+      <SettingRow
+        title={title}
+        hint={{ name: t("common.about", { label: title }), text: t("toolReview.instructions.hint") }}
+        status={status}
+        htmlFor="cflow-notes-use"
+      >
+        <Switch id="cflow-notes-use" checked={on} onCheckedChange={onChange} />
+      </SettingRow>
+      <div className="cflow-notes__text" data-off={on ? undefined : true}>
+        {said.text}
+      </div>
+    </section>
+  );
+}
+
+/**
  * Step 2: "Revise o que o agente pode fazer sozinho".
  * Servers by address: every tool comes classified; the person settles the
  * ones the name can't decide and changes what they want. Ours: read-only, by scope.
@@ -1205,6 +1251,8 @@ function ToolsStep({
   const [labelError, setLabelError] = useState<string | null>(null);
   const tools = server ? reviewToolsOf(t, server) : [];
   const [state, setState] = useState<ToolReviewState>({ levels: {}, decided: new Set() });
+  // Saved with Continuar, beside the tools' levels. An older server leaves it out: on.
+  const [useInstructions, setUseInstructions] = useState(item.server?.useInstructions ?? true);
   const next = (saved?: CustomServer) => onNext(saved ? fromServer(saved, catalog.data?.connectors ?? []) : item);
   const name = itemName(t, item);
 
@@ -1238,7 +1286,13 @@ function ToolsStep({
       }
     }
     save.mutate(
-      { id: server.id, label: named, tools: reviewDecisions(tools, state.levels, state.decided) },
+      {
+        id: server.id,
+        label: named,
+        tools: reviewDecisions(tools, state.levels, state.decided),
+        // Only where the switch shows: a server that sends none keeps what it had.
+        ...(server.instructions ? { useInstructions } : {}),
+      },
       { onSuccess: (saved) => next(saved) },
     );
   };
@@ -1291,6 +1345,7 @@ function ToolsStep({
           ) : (
             <ToolReview name={name} tools={tools} state={state} onChange={setState} onMoved={(m) => toast.show(m)} />
           )}
+          <ServerInstructions server={server} on={useInstructions} onChange={setUseInstructions} />
         </DialogBody>
       </Locked>
       <DialogFooter bar note={reviewNote(t, tools, state)}>

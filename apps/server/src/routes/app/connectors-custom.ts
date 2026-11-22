@@ -119,6 +119,20 @@ const CustomServer = z
         firstSeenAt: z.string(),
       }),
     ),
+    instructions: z
+      .object({
+        text: z.string(),
+        cut: z.boolean().openapi({ description: "The server said more than agents read: `text` ends at `maxChars`." }),
+        maxChars: z.number().int(),
+      })
+      .nullable()
+      .openapi({
+        description:
+          "What the server said in `initialize` on how to use it (MCP's `instructions`), as agents read it. Null when it said nothing, and for a reader who doesn't manage connectors.",
+      }),
+    useInstructions: z.boolean().openapi({
+      description: "Agents granted its tools get `instructions`, after their own (on unless turned off).",
+    }),
     reviewedAt: z.string().nullable(),
     createdAt: z.string(),
     ownerUserId: z.string().nullable().openapi({
@@ -352,12 +366,13 @@ export function customConnectorRoutes(deps: AppDeps) {
       security,
       summary: "Save the label and the classification of each tool",
       description:
-        "Sensitive tools may only be `approval` or `off` (400 otherwise). `confirmed: false` applies a suggestion but leaves an ambiguous tool waiting for a decision.",
+        "Sensitive tools may only be `approval` or `off` (400 otherwise). `confirmed: false` applies a suggestion but leaves an ambiguous tool waiting for a decision. `useInstructions`, when given, turns the server's own instructions on or off for agents.",
       request: {
         params: ServerParams,
         body: body(
           z.object({
             label: z.string().max(80),
+            useInstructions: z.boolean().optional(),
             tools: z
               .array(
                 z.object({

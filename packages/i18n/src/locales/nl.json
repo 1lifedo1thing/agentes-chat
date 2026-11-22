@@ -14901,7 +14901,15 @@
     "see": "Bekijken",
     "seeAsks": "Bekijk wat om goedkeuring vraagt",
     "agentTitle": "Wat {{name}} kan gebruiken",
-    "agentSub": "Per connector en onderwerp. Standaard vragen gevoelige acties om goedkeuring."
+    "agentSub": "Per connector en onderwerp. Standaard vragen gevoelige acties om goedkeuring.",
+    "instructions": {
+      "title": "Serverinstructies",
+      "hint": "Agents die deze tools gebruiken, krijgen deze tekst na hun eigen instructies.",
+      "chars": "{{used}} van {{max}} tekens",
+      "cut": "Ingekort op {{max}} tekens",
+      "off": "Agents krijgen deze tekst niet.",
+      "none": "De server stuurt geen instructies."
+    }
   },
   "connectFlow": {
     "steps": "Stappen",

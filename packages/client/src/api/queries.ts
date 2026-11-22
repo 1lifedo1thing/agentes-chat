@@ -4750,6 +4750,8 @@ export function useCustomServerAction(orgId: string) {
         id: string;
         label: string;
         tools: { name: string; access: ToolDecision; label: string }[];
+        /** Whether agents get the server's own instructions; left as it is when absent. */
+        useInstructions?: boolean;
       }) => api.customConnectors.saveTools(orgId, id, input),
       onSuccess: done,
     }),

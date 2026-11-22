@@ -15378,7 +15378,15 @@
     "see": "Vedi",
     "seeAsks": "Vedi cosa chiede l'approvazione",
     "agentTitle": "Cosa può usare {{name}}",
-    "agentSub": "Per connettore e argomento. Di norma le azioni sensibili chiedono l'approvazione."
+    "agentSub": "Per connettore e argomento. Di norma le azioni sensibili chiedono l'approvazione.",
+    "instructions": {
+      "title": "Istruzioni del server",
+      "hint": "Gli agenti che usano questi strumenti ricevono questo testo dopo le proprie istruzioni.",
+      "chars": "{{used}} di {{max}} caratteri",
+      "cut": "Tagliato a {{max}} caratteri",
+      "off": "Gli agenti non ricevono questo testo.",
+      "none": "Il server non invia istruzioni."
+    }
   },
   "connectFlow": {
     "steps": "Passaggi",

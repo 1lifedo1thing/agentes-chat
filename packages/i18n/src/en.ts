@@ -15196,6 +15196,16 @@ export const en = {
     seeAsks: "See what asks for approval",
     agentTitle: "What {{name}} can use",
     agentSub: "By connector and subject. By default, sensitive actions ask for approval.",
+    /** A server by address's own instructions (MCP's `instructions`), under its tools in the review. */
+    instructions: {
+      title: "Server instructions",
+      hint: "Agents that use these tools get this text after their own instructions.",
+      /** `used` and `max` come formatted ("1,234", "4,000"). */
+      chars: "{{used}} of {{max}} characters",
+      cut: "Cut at {{max}} characters",
+      off: "Agents don't get this text.",
+      none: "The server sends no instructions.",
+    },
   },
   connectFlow: {
     steps: "Steps",

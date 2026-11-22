@@ -3231,6 +3231,13 @@ export interface CustomServer {
   tools: CustomTool[];
   /** What routines can wait on from it (ADR 0130). Older servers leave it out. */
   events?: RoutineConnectorTrigger["event"][];
+  /**
+   * What the server says on how to use its tools (MCP's `instructions`), as agents read it: `cut` when it said more
+   * than `maxChars`. Null when it says nothing, and for who doesn't manage connectors. Older servers leave it out.
+   */
+  instructions?: { text: string; cut: boolean; maxChars: number } | null;
+  /** Agents granted its tools get `instructions` after their own. Older servers leave it out (on). */
+  useInstructions?: boolean;
   /** Last time an admin saved the classification; null = never (nothing exposed). */
   reviewedAt: string | null;
   createdAt: string;

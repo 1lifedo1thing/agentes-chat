@@ -14762,7 +14762,15 @@
     "see": "Gör",
     "seeAsks": "Onay isteyenleri gör",
     "agentTitle": "{{name}} neleri kullanabilir",
-    "agentSub": "Bağlayıcıya ve konuya göre. Varsayılan olarak hassas eylemler onay ister."
+    "agentSub": "Bağlayıcıya ve konuya göre. Varsayılan olarak hassas eylemler onay ister.",
+    "instructions": {
+      "title": "Sunucu talimatları",
+      "hint": "Bu araçları kullanan ajanlar bu metni kendi talimatlarından sonra alır.",
+      "chars": "{{used}} / {{max}} karakter",
+      "cut": "{{max}} karakterde kesildi",
+      "off": "Ajanlar bu metni almaz.",
+      "none": "Sunucu talimat göndermiyor."
+    }
   },
   "connectFlow": {
     "steps": "Adımlar",

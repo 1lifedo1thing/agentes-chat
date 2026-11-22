@@ -11,16 +11,18 @@ import {
   createConnectorToolSource,
   createToolGateway,
   drainOutbox,
+  listCustomServers,
   type McpConnect,
   mcpSessionOver,
   postPersonMessage,
   SERVER_INSTRUCTIONS_MAX_CHARS,
   saveCustomTools,
   serverInstructionsPrompt,
+  type ToolDecisionInput,
   takeConnectionOffAgent,
 } from "../src";
 import { fakeGithubMcp } from "./fake-mcp";
-import { type Fixture, setup } from "./fixtures";
+import { addMember, type Fixture, setup } from "./fixtures";
 
 let f: Fixture;
 afterEach(async () => {
@@ -66,6 +68,12 @@ const depsOf = (fx: Fixture, connect: McpConnect): ConnectorDeps => ({
   connect,
 });
 
+/** Both tools' levels, as an admin saves them. */
+const TOOLS_SAVED: ToolDecisionInput[] = [
+  { name: "preview_change", access: "read", label: "Preview a change" },
+  { name: "apply_change", access: "approval", label: "Apply a change" },
+];
+
 /** A server connected by address with both tools classified: every agent's, as a new connection is. Its id. */
 async function connectServer(fx: Fixture, deps: ConnectorDeps, host: string, label: string) {
   const started = await connectCustomServer(deps, fx.owner.id, fx.org.id, {
@@ -74,13 +82,7 @@ async function connectServer(fx: Fixture, deps: ConnectorDeps, host: string, lab
     label,
   });
   if (started.status !== "connected") throw new Error(`expected connected, got ${started.status}`);
-  await saveCustomTools(deps, fx.owner.id, fx.org.id, started.server.id, {
-    label,
-    tools: [
-      { name: "preview_change", access: "read", label: "Preview a change" },
-      { name: "apply_change", access: "approval", label: "Apply a change" },
-    ],
-  });
+  await saveCustomTools(deps, fx.owner.id, fx.org.id, started.server.id, { label, tools: TOOLS_SAVED });
   return started.server.id;
 }
 
@@ -177,10 +179,57 @@ test("a server that sends no instructions, or only blanks, changes nothing", asy
   ]);
   expect(tools.some((t) => "serverInstructions" in t)).toBe(false);
   expect(serverInstructionsPrompt(tools)).toBe("");
+  // Their screens say they sent none.
+  expect((await listCustomServers(f.db, f.owner.id, f.org.id)).map((s) => s.instructions)).toEqual([null, null]);
 
   const system = await w.prompt();
   expect(system).not.toContain(HEADING);
   expect(system).not.toContain("server instructions");
+});
+
+test("on by default; turned off on the connection, its text leaves the prompt, and comes back when turned on", async () => {
+  const w = await world({ "tickets.example.com": RULES });
+  const id = await connectServer(f, w.deps, "tickets.example.com", "Tickets");
+  const [server] = await listCustomServers(f.db, f.owner.id, f.org.id);
+  expect(server).toMatchObject({ useInstructions: true, instructions: { text: RULES, cut: false, maxChars: 4000 } });
+  expect(await w.prompt()).toContain(RULES);
+
+  const tools = TOOLS_SAVED;
+  const off = await saveCustomTools(w.deps, f.owner.id, f.org.id, id, {
+    label: "Tickets",
+    tools,
+    useInstructions: false,
+  });
+  expect(off).toMatchObject({ useInstructions: false, instructions: { text: RULES } });
+  // Its tools stay, without the text.
+  const listed = await createConnectorToolSource(w.deps).tools(await runContext(f));
+  expect(listed.map((t) => t.name).sort()).toEqual(["tickets_apply_change", "tickets_preview_change"]);
+  expect(listed.some((t) => "serverInstructions" in t)).toBe(false);
+  const system = await w.prompt();
+  expect(system).toContain("tickets_preview_change");
+  expect(system).not.toContain(HEADING);
+  expect(system).not.toContain(RULES);
+
+  // A save that doesn't say keeps it off; on again, the text is back.
+  await saveCustomTools(w.deps, f.owner.id, f.org.id, id, { label: "Tickets", tools });
+  expect(await w.prompt()).not.toContain(RULES);
+  await saveCustomTools(w.deps, f.owner.id, f.org.id, id, { label: "Tickets", tools, useInstructions: true });
+  expect(await w.prompt()).toContain(RULES);
+});
+
+test("a server that changes its words: agents read the new ones, and its screen shows them from that listing on", async () => {
+  const said: Record<string, string | undefined> = { "tickets.example.com": RULES };
+  const w = await world(said);
+  await connectServer(f, w.deps, "tickets.example.com", "Tickets");
+  said["tickets.example.com"] = "Preview first. Never apply on Fridays.";
+  // A run's listing (a fresh source: no cached one) reads the new words and keeps them.
+  const tools = await createConnectorToolSource(w.deps).tools(await runContext(f));
+  expect(serverInstructionsPrompt(tools)).toContain("Never apply on Fridays.");
+  const [server] = await listCustomServers(f.db, f.owner.id, f.org.id);
+  expect(server?.instructions?.text).toBe("Preview first. Never apply on Fridays.");
+  // A member who doesn't manage connectors sees the server, not its words.
+  const member = await addMember(f.db, f.org.id, "member");
+  expect((await listCustomServers(f.db, member.id, f.org.id)).map((s) => s.instructions)).toEqual([null]);
 });
 
 test("long instructions are cut at the limit, with a note of how much was left out", async () => {
@@ -196,8 +245,10 @@ test("long instructions are cut at the limit, with a note of how much was left o
   expect(text).toContain(`[… ${long.length - SERVER_INSTRUCTIONS_MAX_CHARS} more characters cut]\n</external_data>`);
   expect(text).not.toContain(long.slice(0, SERVER_INSTRUCTIONS_MAX_CHARS + 1));
 
-  // The agent's run reads the same cut block.
+  // The agent's run reads the same cut block, and the server's screen shows that same text, marked cut.
   expect(await w.prompt()).toContain(text);
+  const [server] = await listCustomServers(f.db, f.owner.id, f.org.id);
+  expect(server?.instructions).toEqual({ text: body, cut: true, maxChars: SERVER_INSTRUCTIONS_MAX_CHARS });
 });
 
 test("a server whose tools the agent can't use stays out of its prompt", async () => {
