@@ -41,7 +41,7 @@ const saved = (state: ReturnType<typeof seedState>) =>
   state.calls.find((c) => c.method === "customConnectors.saveTools")?.args[2] as Record<string, unknown> | undefined;
 
 describe("a server's own instructions in its review", () => {
-  test("the worst a server sends: its first 4,000 characters formatted, folded until Ver mais (first: the screen CI measures)", async () => {
+  test("the worst a server sends: its first 4,000 characters as written, folded until Ver mais (first: the screen CI measures)", async () => {
     // The DOM here lays nothing out: the folded text holds more than it shows, as a browser measures it.
     const own = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollHeight");
     Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
@@ -55,15 +55,10 @@ describe("a server's own instructions in its review", () => {
       const notes = within(flow()).getByRole("region", { name: "Instruções do servidor" });
       expect(notes.textContent).toContain("Cortado em 4.000 caracteres");
       expect(WORST_INSTRUCTIONS.length).toBeGreaterThan(4000);
-      // Formatted, as an agent's own instructions are where they can't be changed: no Markdown marks left.
+      // Outside words as written: no mention, no internal id's chip, no link, no diagram; nothing to fetch or to focus.
       const text = notes.querySelector(".folded-body__text") as HTMLElement;
-      expect(text.querySelector("strong")?.textContent).toBe(
-        "Northwind Industries Holdings — Billing & Subscriptions MCP server (v2026.07.28-rc.3)",
-      );
-      expect(text.querySelector("table")).not.toBeNull();
-      expect(text.textContent).not.toContain("# Northwind");
-      expect(text.textContent).not.toContain("**every**");
-      expect(text.textContent).toContain("Mehrwertsteuer");
+      expect(text.textContent).toBe(WORST_INSTRUCTIONS.slice(0, 4000));
+      expect(text.querySelector("a, button, [role=button], table, strong")).toBeNull();
       // Folded until Ver mais opens it in place, for good.
       expect(text.hasAttribute("data-folded")).toBe(true);
       await click(within(notes).getByRole("button", { name: "Ver mais" }));
@@ -84,8 +79,7 @@ describe("a server's own instructions in its review", () => {
     expect(within(notes).getByRole("button", { name: "Sobre Instruções do servidor" })).toBeTruthy();
     expect(notes.textContent).toContain(`${MOCK_INSTRUCTIONS.length} de 4.000 caracteres`);
     const text = notes.querySelector(".folded-body__text") as HTMLElement;
-    const lines = MOCK_INSTRUCTIONS.split("\n");
-    for (const line of lines) expect(text.textContent).toContain(line);
+    expect(text.textContent).toBe(MOCK_INSTRUCTIONS);
     expect(notes.hasAttribute("data-off")).toBe(false);
 
     await click(use);
@@ -93,7 +87,7 @@ describe("a server's own instructions in its review", () => {
     expect(notes.textContent).toContain("Os agentes não recebem este texto.");
     expect(notes.textContent).not.toContain("de 4.000 caracteres");
     // Still there, faded.
-    for (const line of lines) expect(text.textContent).toContain(line);
+    expect(text.textContent).toBe(MOCK_INSTRUCTIONS);
     expect(notes.hasAttribute("data-off")).toBe(true);
 
     await click(within(flow()).getByRole("button", { name: "Continuar" }));

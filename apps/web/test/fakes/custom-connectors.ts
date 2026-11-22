@@ -43,9 +43,9 @@ const LATER: [string, string, boolean | null] = ["export_tickets", "Export ticke
 export const MOCK_INSTRUCTIONS = "Call get_ticket before close_ticket.\nAsk the person before delete_customer.";
 
 /**
- * The worst instructions a real server sends (an address that says "worst"): Markdown (agents read it as it is, the
- * screen formats it), an address and a token with no place to break, a table, other scripts, emoji, runs of blank
- * lines, and more than agents read, so the screen shows its first 4,000 characters, cut.
+ * The worst instructions a real server sends (an address that says "worst"): Markdown, an address and a token with no
+ * place to break, what would be a mention, an internal id's chip and a link anywhere else, a table, other scripts,
+ * emoji, runs of blank lines, and more than agents read, so the screen shows its first 4,000 characters, cut.
  */
 export const WORST_INSTRUCTIONS = [
   "# Northwind Industries Holdings — Billing & Subscriptions MCP server (v2026.07.28-rc.3)",
@@ -55,6 +55,7 @@ export const WORST_INSTRUCTIONS = [
   "1. Always call `billing_get_customer_subscription_summary_with_invoices` before `billing_apply_subscription_change_immediately`.",
   "2. Ask the person to confirm **every** destructive call (cancel, refund, delete) in the conversation, quoting the exact customer id, e.g. `cus_01HZX8Q7M3V5N9K2P4R6T8W0Y2A4C6E8G0J2L4N6Q8S0U2W4Y6`.",
   "3. Full policy: https://docs.northwind-industries-holdings.example.com/integrations/mcp/billing-and-subscriptions/instructions/v2026-07-28/confirmation-before-destructive-calls?utm_source=mcp&utm_medium=instructions",
+  "4. Escalations go to @ada; the case is artifact 0193b1c2-3d4e-7f50-8a6b-1c2d3e4f5a6b, see [the runbook](https://runbook.example.com/billing).",
   "",
   "",
   "",

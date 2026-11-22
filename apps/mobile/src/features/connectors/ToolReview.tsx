@@ -238,8 +238,8 @@ function ServerReview({
 /**
  * A server by address's own instructions under its tools (the web's `ServerInstructions`, ADR 0016 addendum of
  * 2026-11-22): the setting (its title the switch's row, its ⓘ, its status) with the text in a well under it in the same
- * card, formatted and folded as an agent's long text on a page is (`FoldedBody`), faded while agents don't get it; saved
- * with Continuar. A server that sends none says so in one row, no switch.
+ * card, as written (outside words: nothing in them made a mention, a link or a chart), folded as a long text on a page is
+ * (`FoldedBody`), faded while agents don't get it; saved with Continuar. A server that sends none says so in one row, no switch.
  */
 function ServerInstructions({
   server,
@@ -277,7 +277,7 @@ function ServerInstructions({
         />
         <View style={styles.notesRoom}>
           <View style={[styles.notes, { backgroundColor: c.sunken }]}>
-            <FoldedBody body={view.text} muted={view.faded} />
+            <FoldedBody body={view.text} muted={view.faded} plain />
           </View>
         </View>
       </GroupedList>
