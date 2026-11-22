@@ -19,11 +19,12 @@ export interface RightHandModel {
   onPick: (value: string) => void;
 }
 
-/** A line under the model that leads somewhere else: connecting another AI, going back to the workspace's. */
+/** A line that leads somewhere else: connecting another AI, going back to the workspace's. */
 export interface RightHandLink {
-  icon: IconName;
   label: string;
   onClick: () => void;
+  /** It opens another dialog in this one's place. */
+  opensDialog?: boolean;
 }
 
 /**
@@ -68,7 +69,7 @@ export function RightHandBrainDialog({
     onPick: (id: string) => void;
     empty?: string;
     /** Under the list: connecting another AI, which opens every provider to pick from. */
-    more?: RightHandLink;
+    more?: RightHandLink & { icon: IconName };
   } | null;
   links?: readonly RightHandLink[];
   /** Plans it can't think with now, under the others, each with why (`rightHandUnusable`). */
@@ -151,29 +152,27 @@ export function RightHandBrainDialog({
                   <p className="arrival-opts__label">{t("agentPage.work.brain.account")}</p>
                   {current ? <HaveRow item={current} checked still /> : <p className="muted">{empty}</p>}
                 </div>
-                {model && (
+                {(model || links.length > 0) && (
                   <div className="bd-lines">
-                    <BrainLine
-                      label={t("agentPage.work.brain.planModel")}
-                      lead={model.lead}
-                      value={model.label}
-                      onOpen={stays ? undefined : () => setScreen("model")}
-                    />
+                    {model && (
+                      <BrainLine
+                        label={t("agentPage.work.brain.planModel")}
+                        lead={model.lead}
+                        value={model.label}
+                        onOpen={stays ? undefined : () => setScreen("model")}
+                      />
+                    )}
+                    {links.map((link) => (
+                      <BrainLine
+                        key={link.label}
+                        label={link.label}
+                        opensDialog={link.opensDialog}
+                        disabled={busy}
+                        onOpen={link.onClick}
+                      />
+                    ))}
                   </div>
                 )}
-                {links.map((link) => (
-                  <button
-                    key={link.label}
-                    type="button"
-                    className="arrival-have__link arrival-have__link--other"
-                    disabled={busy}
-                    onClick={link.onClick}
-                  >
-                    <Icon name={link.icon} size={16} />
-                    <span>{link.label}</span>
-                    <Icon name="chevronRight" size={16} />
-                  </button>
-                ))}
               </>
             )}
             {screen === "switch" && accounts && (
