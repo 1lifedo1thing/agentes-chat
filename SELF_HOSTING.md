@@ -1364,8 +1364,8 @@ Chrome, which must be installed there: get it from google.com/chrome; it keeps i
 each agent uses a profile of its own, never yours), and Claude Code, Codex, Cursor's, OpenCode's, xAI's Grok
 Build or Google's Antigravity CLI when an agent thinks with a subscription signed in there (OpenCode's free models need no sign-in at all).
 Install the ones you want on that computer, as the user that runs the runner: Cursor's with
-`curl https://cursor.com/install -fsS | bash` (it lands in `~/.local/bin`, which the runner's PATH must
-include), OpenCode's with `npm install -g opencode-ai@1.19.5`, Grok Build with
+`curl https://cursor.com/install -fsS | bash` (it lands in `~/.local/bin`, which the runner looks in
+even when its service's PATH lacks it), OpenCode's with `npm install -g opencode-ai@1.19.5`, Grok Build with
 `curl -fsSL https://x.ai/cli/install.sh | bash` (it puts `grok` in `~/.local/bin` too; agents think with it only
 through a Grok account added in Settings, AI and usage, never the computer's own sign-in. On Linux its sandbox needs
 bubblewrap, `sudo apt install -y bubblewrap`, or Grok Build refuses to start and every turn fails), Google's
@@ -1384,6 +1384,9 @@ extracted to `/usr/local/bin/opencode`; Grok Build with
 also makes `~/.local/bin/agent`, Cursor's name: where both are installed, link Cursor's `agent` last. The Antigravity
 CLI the same way: `sudo env HOME=/opt/agy sh -c 'curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --skip-path'`,
 then `sudo chmod -R a+rX /opt/agy` and `sudo ln -sf /opt/agy/.local/bin/agy /usr/local/bin/agy`.
+One installed in root's own `~/.local/bin` there is out of the agents' reach, and the apps say so with the line
+that installs it for all of them. Agents never use a sign-in made in a terminal: Gemini, Grok and the other plans
+sign in from the apps (Settings, AI and usage), once for all of their owner's agents.
 Commands run as the user that runs the runner, so give it a dedicated user or a VM.
 `agentes-runner tools disable commands` (or `claude`, `codex`, `cursor`, `opencode`, `grok` or `antigravity`) turns a capability off on that
 computer, and `agentes-runner folders allow <path>` shares a folder besides the agents' own.

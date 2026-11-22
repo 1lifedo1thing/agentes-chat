@@ -3487,7 +3487,10 @@
       "getGit": "Git for Windows downloaden",
       "cantStart": "{{program}} staat op {{computer}}, maar start niet: {{message}}",
       "outdated": "Werk de agentes.chat-app op {{computer}} bij om hiervandaan te installeren.",
-      "asked": "Verzoek verstuurd. {{name}} krijgt een knop om het te installeren."
+      "asked": "Verzoek verstuurd. {{name}} krijgt een knop om het te installeren.",
+      "runThis": "Voer daar deze opdracht uit om het te installeren.",
+      "missingSystem": "{{program}} staat nog niet op {{computer}} voor de agents, die elk als eigen gebruiker werken. Voer daar deze opdracht uit om het voor allemaal te installeren.",
+      "homeOnly": "{{program}} is op {{computer}} alleen voor root geïnstalleerd. Elke agent werkt als eigen gebruiker en kan er niet bij. Voer daar deze opdracht uit om het voor allemaal te installeren."
     },
     "titleFor": "Een AI koppelen voor {{name}}",
     "titleFor_female": "Een AI koppelen voor {{name}}",
@@ -12234,7 +12237,8 @@
       "cant_start": "{{program}} staat op {{computer}}, maar start niet.",
       "not_reported": "{{computer}} controleert nog welke programma's erop staan. Dit verandert vanzelf als het klaar is.",
       "system": "{{program}} werkt nog niet op het systeem van {{computer}}.",
-      "no_computerCloud": "Klaar zodra {{computer}} klaar is."
+      "no_computerCloud": "Klaar zodra {{computer}} klaar is.",
+      "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen."
     },
     "notAvailableNow": "Gekozen, maar nu niet beschikbaar.",
     "offline": "{{computer}} is nu offline.",

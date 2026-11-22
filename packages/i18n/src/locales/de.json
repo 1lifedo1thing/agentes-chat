@@ -3488,7 +3488,10 @@
       "getGit": "Git for Windows herunterladen",
       "cantStart": "{{program}} ist auf {{computer}}, startet aber nicht: {{message}}",
       "outdated": "Aktualisiere die agentes.chat-App auf {{computer}}, um von hier zu installieren.",
-      "asked": "Anfrage gesendet. {{name}} bekommt einen Button zum Installieren."
+      "asked": "Anfrage gesendet. {{name}} bekommt einen Button zum Installieren.",
+      "runThis": "Führe diesen Befehl dort aus, um es zu installieren.",
+      "missingSystem": "{{program}} ist auf {{computer}} noch nicht für die Agenten da, die jeweils als eigener Benutzer arbeiten. Führe diesen Befehl dort aus, um es für alle zu installieren.",
+      "homeOnly": "{{program}} ist auf {{computer}} nur für root installiert. Jeder Agent arbeitet als eigener Benutzer und kommt nicht daran. Führe diesen Befehl dort aus, um es für alle zu installieren."
     },
     "titleFor": "Eine KI für {{name}} verbinden",
     "have": {
@@ -12163,7 +12166,8 @@
       "cant_start": "{{program}} ist auf {{computer}}, startet aber nicht.",
       "not_reported": "{{computer}} prüft noch, welche Programme vorhanden sind. Das ändert sich von selbst, wenn es so weit ist.",
       "system": "{{program}} läuft noch nicht auf dem System von {{computer}}.",
-      "no_computerCloud": "Bereit, sobald {{computer}} es ist."
+      "no_computerCloud": "Bereit, sobald {{computer}} es ist.",
+      "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen."
     },
     "notAvailableNow": "Ausgewählt, aber gerade nicht verfügbar.",
     "offline": "{{computer}} ist gerade offline.",
