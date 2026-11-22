@@ -75,9 +75,25 @@ export function brainFor(
 export const runBrainOf = (run: { brain?: string | null }, agent?: { brain?: string | null } | null): BrainKind =>
   kindOf(run.brain ?? agent?.brain);
 
-/** Stores the brain a run thinks with now (`agent_runs.brain`). */
-export async function recordRunBrain(db: Executor, runId: string, kind: BrainKind) {
-  await db.update(schema.agentRuns).set({ brain: kind }).where(eq(schema.agentRuns.id, runId));
+/**
+ * A version as a CLI's `--version` gives it, out of its line (`2.1.308 (Claude Code)`, `codex-cli 0.164.0`,
+ * `2026.10.22-27dcf5f`): the line itself is the computer's text, never stored whole.
+ */
+const CLI_VERSION_SQL = "[0-9]+(?:\\.[0-9]+)+(?:[-+][0-9A-Za-z.]+)?";
+
+/**
+ * Stores the brain a run thinks with now (`agent_runs.brain`), and for a computer brain on `machineId` its CLI and the
+ * version that computer last reported (`agent_runs.cli`, `<cli> <version>`, null when it said none): the failures by
+ * CLI version (`operatorCliRuns`).
+ */
+export async function recordRunBrain(db: Executor, runId: string, kind: BrainKind, machineId?: string) {
+  const name = kind === "model" ? null : kind === "claude_code" ? "claude" : kind;
+  const cli =
+    name && machineId
+      ? sql`(select ${name}::text || ' ' || substring(${schema.machines.executors} -> ${name}::text ->> 'version' from ${CLI_VERSION_SQL}::text)
+          from ${schema.machines} where ${schema.machines.id} = ${machineId})`
+      : null;
+  await db.update(schema.agentRuns).set({ brain: kind, cli }).where(eq(schema.agentRuns.id, runId));
 }
 
 /**
