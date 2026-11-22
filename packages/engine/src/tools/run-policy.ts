@@ -166,6 +166,8 @@ const HERE = new Set([
   // A code session suggested to the person here, on the reply (ADR 0215 §11).
   "suggest_code_session",
   "share_artifact",
+  // A picture from the web on the reply, here (ADR 0217).
+  "show_image",
   "propose_mission",
   "browser_ask_person",
   "desktop_ask_person",

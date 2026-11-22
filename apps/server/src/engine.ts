@@ -598,6 +598,8 @@ export function buildEngine(o: EngineOptions) {
         browser: browserTools.readPage,
         resolveHost: o.resolveHost,
         usage: gateway,
+        // `show_image` (ADR 0217): pictures from the web saved where the run posts.
+        artifacts,
       }),
       // The agent's own desktop (ADR 0062): `desktop:use` with Run code, when its computer serves desktop use.
       createDesktopToolSource({

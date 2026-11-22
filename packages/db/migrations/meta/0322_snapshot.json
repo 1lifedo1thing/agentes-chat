@@ -1,5 +1,5 @@
 {
-  "id": "3a13f04f-98a0-499d-9fec-5733e5c25095",
+  "id": "3b9b0ad8-42ea-4a5c-a2fd-e5618d9adce6",
   "prevId": "2bb19593-19b9-4b29-afdf-80a8d8a18ab1",
   "version": "7",
   "dialect": "postgresql",
@@ -5378,19 +5378,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "instructions": {
-          "name": "instructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "use_instructions": {
-          "name": "use_instructions",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         },
         "status": {
           "name": "status",
@@ -17574,6 +17561,12 @@
         },
         "brain": {
           "name": "brain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cli": {
+          "name": "cli",
           "type": "text",
           "primaryKey": false,
           "notNull": false
