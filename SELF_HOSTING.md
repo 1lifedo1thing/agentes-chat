@@ -1365,7 +1365,10 @@ Install the ones you want on that computer, as the user that runs the runner: Cu
 include), OpenCode's with `npm install -g opencode-ai@1.19.5`, Grok Build with
 `curl -fsSL https://x.ai/cli/install.sh | bash` (it puts `grok` in `~/.local/bin` too; agents think with it only
 through a Grok account added in Settings, AI and usage, never the computer's own sign-in. On Linux its sandbox needs
-bubblewrap, `sudo apt install -y bubblewrap`, or Grok Build refuses to start and every turn fails), Google's
+bubblewrap, `sudo apt install -y bubblewrap`, or Grok Build refuses to start and every turn fails; on Ubuntu 24.04+
+where `kernel.apparmor_restrict_unprivileged_userns = 1` blocks unprivileged user namespaces for `bwrap` (affecting
+both Grok Build and Antigravity CLI's Linux terminal sandbox), add a targeted AppArmor profile at
+`/etc/apparmor.d/bwrap` granting `userns` only to `/usr/bin/bwrap` — `abi <abi/4.0>, include <tunables/global> profile bwrap /usr/bin/bwrap flags=(unconfined) { userns, }` — and run `sudo systemctl reload apparmor`, rather than disabling AppArmor globally), Google's
 Antigravity CLI with
 `curl -fsSL https://antigravity.google/cli/install.sh | bash` (`agy` in `~/.local/bin`; Gemini accounts sign in on Linux
 and macOS computers, not Windows yet, each in a folder of its own (on a Mac, with a keychain of its own there), and a personal Google plan used this way is against Google's terms for
