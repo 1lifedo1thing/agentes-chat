@@ -71,6 +71,7 @@ describe("brain settings", () => {
     expect(normalizeBrainModel("claude_code", "fable")).toBe("fable");
     expect(normalizeBrainModel("claude_code", "claude-fable-5-2")).toBe("fable");
     expect(brainModelId("claude_code", "fable")).toBe("claude-fable-5-2");
+    expect(brainModelLabel("claude_code", "fable")).toBe("Fable 5.2");
     expect(brainModelOptions("codex").every((o) => o.modelId?.startsWith("gpt"))).toBe(true);
     // Codex offers the catalog's OpenAI rows, the Astras among them; the newest Sol is its default.
     expect(brainModelOptions("codex").map((o) => o.label)).toEqual([
