@@ -4586,6 +4586,15 @@
   "contextMenu.download": {
     "value": "Download"
   },
+  "contextMenu.copyImage": {
+    "value": "Copy image"
+  },
+  "contextMenu.imageCopied": {
+    "value": "Image copied."
+  },
+  "contextMenu.copyImageFailed": {
+    "value": "The image couldn't be copied. Use Download instead."
+  },
   "contextMenu.conversation": {
     "value": "Message"
   },

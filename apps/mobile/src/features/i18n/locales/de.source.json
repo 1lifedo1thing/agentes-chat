@@ -1307,6 +1307,12 @@
   "plus.file": {
     "value": "File"
   },
+  "plus.paste": {
+    "value": "Paste"
+  },
+  "plus.pasteGone": {
+    "value": "The copied picture couldn't be read. Copy it again, then tap Paste."
+  },
   "plus.media": {
     "value": "GIFs"
   },

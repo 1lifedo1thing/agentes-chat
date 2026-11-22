@@ -2592,6 +2592,14 @@ html:not([data-pointer]) .ac-menu__item:focus-visible,
 .ac-menu__leading .ac-icon {
   margin-top: 0;
 }
+/* An emoji suggested for a ":name" in the icons' 16px column, its name starting where theirs do. */
+.ac-suggest__emoji {
+  display: inline-flex;
+  justify-content: center;
+  width: 16px;
+  font-size: 16px;
+  line-height: 1;
+}
 /* A bare mark (14px) in the icons' 16px column: its label starts where theirs do. */
 .ac-menu__leading:has(> .ac-brand--xs) {
   justify-content: center;
@@ -8397,6 +8405,23 @@ html:not([data-pointer]) .ac-formatbar__btn:focus-visible {
   background: color-mix(in srgb, var(--raised) 70%, transparent);
   color: var(--danger);
 }
+/* The share sent, along the tile's foot: the tile clips it to its rounded corners (a 3px bar can't follow them). */
+.ac-composer__file:has(> .ac-composer__file-progress) {
+  overflow: hidden;
+}
+.ac-composer__file-progress {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 3px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.ac-composer__file-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transition: width 0.2s ease-out;
+}
 .ac-composer__file--image .ac-composer__file-remove {
   position: absolute;
   top: 3px;
@@ -8428,7 +8453,8 @@ html:not([data-pointer]) .ac-composer__file-remove:focus-visible {
   box-shadow: var(--focus-ring);
 }
 @media (prefers-reduced-motion: reduce) {
-  .ac-formatbar__btn {
+  .ac-formatbar__btn,
+  .ac-composer__file-progress > span {
     transition: none;
   }
 }
