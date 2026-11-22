@@ -20823,7 +20823,9 @@
     "seatsPaid_many": "{{count}} opłaconych miejsc",
     "seatsPaid_other": "{{count}} opłaconego miejsca",
     "noLimit": "Bez limitu",
-    "ownBucket": "Na twoim własnym buckecie, bez limitu z naszej strony"
+    "ownBucket": "Na twoim własnym buckecie, bez limitu z naszej strony",
+    "connectors": "X w tym miesiącu",
+    "shareUsed": "Wykorzystano {{share}}"
   },
   "referrals": {
     "open": "Poleć i zarabiaj",

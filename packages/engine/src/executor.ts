@@ -174,6 +174,7 @@ import {
   getChannelCached,
   isComputerTurnBlock,
   isConversationBlock,
+  lastRoutineRun,
   restatesReaction,
   stableFirst,
   teammatesNowAgain,
@@ -2157,6 +2158,8 @@ async function executeRunInner(
   // Started by a routine: its answer carries the routine (the app shows a small tag on the
   // agent's message, since the routine's own call isn't shown), and it may end in silence.
   const triggerMessage = trigger ?? topTrigger ?? (await getMessage(db, run.orgId, run.triggerMessageId));
+  const triggerNotice = (triggerMessage?.meta?.notice as { kind?: unknown } | undefined)?.kind;
+  const wokenByResult = triggerNotice === "proposal_result" || triggerNotice === "wait_result";
   if (
     !ctx.confidential &&
     isConfidential(triggerMessage?.meta) &&
@@ -2654,6 +2657,7 @@ async function executeRunInner(
             {
               orgId: run.orgId,
               text: trigger?.body ?? "",
+              channelText: channelRow?.topic ?? "",
               queryEmbedding,
               reader: async () => ({
                 type: "agent",
@@ -3537,6 +3541,7 @@ async function executeRunInner(
         reply: said,
         ...(await evidenceFor(t).gather()),
         runKind: "conversation",
+        resultNotice: wokenByResult,
         personal: await isPersonalWorkspace(db, run.orgId),
         backgroundWork: await backgroundWorkHere(),
       }).catch(() => null);
@@ -6107,7 +6112,14 @@ async function executeRunInner(
           prepare: () => void judging.gather().catch(() => {}),
           verdict: checker
             ? async () => {
-                const [gathered, personal] = await Promise.all([judging.gather(), isPersonalWorkspace(db, run.orgId)]);
+                const routineId = routineBriefOf(triggerMessage?.meta)?.routineId;
+                const [gathered, personal, [last]] = await Promise.all([
+                  judging.gather(),
+                  isPersonalWorkspace(db, run.orgId),
+                  routineId
+                    ? lastRoutineRun(db, run.orgId, routineId, routineRunId ?? null).catch(() => [])
+                    : Promise.resolve([]),
+                ]);
                 return continuationVerdict(checker, {
                   orgId: run.orgId,
                   agentId: run.agentId,
@@ -6116,6 +6128,10 @@ async function executeRunInner(
                   reply: record,
                   ...gathered,
                   runKind: "routine",
+                  // Another agent's record is not this one's (`routineContext`).
+                  ...(last?.summary && (last.agentId === null || last.agentId === run.agentId)
+                    ? { previousRecord: last.summary }
+                    : {}),
                   personal,
                   onLearn: (signal) => {
                     learned = signal;
@@ -6354,6 +6370,7 @@ async function executeRunInner(
                 reply: judged,
                 ...gathered,
                 runKind: betweenAgents ? "agents_dm" : "conversation",
+                resultNotice: wokenByResult,
                 unreached,
                 personal,
                 backgroundWork,

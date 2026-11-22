@@ -1,5 +1,5 @@
 {
-  "id": "ab9b61b6-4452-4178-b8ca-a58149963724",
+  "id": "cbf031d5-fb2e-425b-b79e-132b346fe90f",
   "prevId": "dd235a23-9a95-468d-9a73-05132e3bf497",
   "version": "7",
   "dialect": "postgresql",
@@ -5428,6 +5428,13 @@
         "approvals_given": {
           "name": "approvals_given",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cost_nano_usd": {
+          "name": "cost_nano_usd",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "default": 0
@@ -25588,6 +25595,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "limit_connector_nano_usd": {
+          "name": "limit_connector_nano_usd",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
         "limits_updated_at": {
           "name": "limits_updated_at",
           "type": "timestamp with time zone",
@@ -29299,12 +29312,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{POST}'::text[]"
-        },
-        "group_by": {
-          "name": "group_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",

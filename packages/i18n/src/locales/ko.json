@@ -18932,7 +18932,9 @@
     "usedOf": "{{limit}} 중 {{used}}",
     "seatsPaid_other": "결제한 자리 {{count}}개",
     "noLimit": "제한 없음",
-    "ownBucket": "자체 버킷 사용, 저희 쪽 제한 없음"
+    "ownBucket": "자체 버킷 사용, 저희 쪽 제한 없음",
+    "connectors": "이번 달 X",
+    "shareUsed": "{{share}} 사용"
   },
   "referrals": {
     "open": "추천하고 혜택 받기",

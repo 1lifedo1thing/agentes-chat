@@ -20122,6 +20122,8 @@ export const ptBR = {
     seatsPaid_other: "{{count}} vagas pagas",
     noLimit: "Sem limite",
     ownBucket: "No seu próprio bucket, sem limite nosso",
+    connectors: "X neste mês",
+    shareUsed: "{{share}} usado",
   },
   /** The referral service (ADR 0192): this server knows nothing of the program, only the way there. */
   referrals: {

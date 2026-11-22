@@ -84,6 +84,8 @@ export interface ToolOutput {
   images?: ToolImage[];
   /** Structured result kept in the run steps, not sent to the model. */
   data?: Record<string, unknown>;
+  /** What the vendor bills this server for the call (X), in nano-US$: the gateway adds it to the connector's day. */
+  costNanoUsd?: number;
   /** Ground truth this call produced (tests passed, PR merged…), recorded by the gateway. */
   outcome?: { kind: OutcomeKind; subject?: string; summary?: string; details?: Record<string, unknown> };
   /** Built-in `ask_user` only: suspend the run until a person answers this question (its `why` is the gateway's). */
