@@ -31,7 +31,7 @@ import { useColors, useNow, useOrgId } from "../shared/hooks";
 import { usePresenceOf } from "../status/hooks";
 import { rowBodyInset } from "./logic";
 import { useRhythm, useRowLook } from "./look";
-import { useRowConsults, useRowDirectory } from "./row-data";
+import { sameItems, useRowConsultsPart, useRowDirectory } from "./row-data";
 import { WaitMark } from "./WaitMark";
 
 /** A question's state in words, on the conversation's screen ("A Iris espera uma aprovação"). */
@@ -67,9 +67,12 @@ export function useRunConsults(
   const orgId = useOrgId();
   const qc = useQueryClient();
   // Grouped once for the conversation (`RowConsults.byRun`, `groupsByRun(asExchanges(…))`), not again in every row.
-  const list = useRowConsults(where.channelId);
-  const group = runId ? list.byRun.get(runId) : undefined;
-  const listed = list.byId;
+  // Only this run's questions, and which of the ones it names the list has: the row draws again when those change, not
+  // on every reload of the conversation's questions (a row with no run follows nothing).
+  const group = useRowConsultsPart(where.channelId, (list) => (runId ? list.byRun.get(runId) : undefined), sameItems);
+  const listed = useRowConsultsPart(where.channelId, (list) =>
+    consulted.map((c) => (list.byId.has(c.consultationId) ? "1" : "0")).join(""),
+  );
   const loaded =
     group && runId
       ? [
@@ -82,7 +85,7 @@ export function useRunConsults(
   const draws = group !== undefined && (messageId === null ? first === null : !first || first === messageId);
   return useMemo(() => {
     const run = group ?? NO_ITEMS;
-    const extra = consulted.filter((c) => !listed.has(c.consultationId)).map(pairItemOf);
+    const extra = consulted.filter((_, i) => listed[i] !== "1").map(pairItemOf);
     const mine = !draws ? NO_ITEMS : reached.size === 0 ? run : run.filter((c) => !reached.has(c.id));
     return extra.length === 0 ? mine : [...mine, ...extra];
   }, [group, listed, consulted, draws, reached]);
@@ -94,9 +97,10 @@ export function useRunConsults(
  */
 export function useConsultById(channelId: string, id: string | undefined): RunConsultation | null {
   const orgId = useOrgId();
-  const list = useRowConsults(channelId);
-  const listed = (id && list.byId.get(id)) || null;
-  const alone = useConsultationConversation(orgId, channelId, id && list.loaded && !listed ? id : null);
+  // That question alone (and whether the list came): the line draws again only when it changes.
+  const listed = useRowConsultsPart(channelId, (list) => (id && list.byId.get(id)) || null);
+  const loaded = useRowConsultsPart(channelId, (list) => list.loaded);
+  const alone = useConsultationConversation(orgId, channelId, id && loaded && !listed ? id : null);
   return listed ?? alone.data?.consultation ?? null;
 }
 

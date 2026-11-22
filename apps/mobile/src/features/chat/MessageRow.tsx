@@ -167,7 +167,7 @@ import { aboveInset, QuoteAbove, QuotePlate } from "./QuoteLine";
 import { ReachLines } from "./ReachLines";
 import { Receipts } from "./Receipts";
 import {
-  useRowConsults,
+  useRowConsultsPart,
   useRowDirectory,
   useRowMeId,
   useRowMyHandle,
@@ -373,10 +373,12 @@ function RowBody({
   // A question to another agent (in their DM) carries the asking run: its work shows on that run's reply.
   const ownWork = isAgent && Boolean(m.agentRunId) && !meta?.consultation && !mediaAfter;
   const steps = ownWork ? workStepsOf(meta) : null;
-  // Posted by a run answering another agent's question from here (its approval, question, secret): whom it helps.
-  const consultations = useRowConsults(m.channelId);
-  const helping =
-    isAgent && m.agentRunId && !readOnly && !mediaAfter ? consultations.byConsultedRun.get(m.agentRunId) : undefined;
+  // Posted by a run answering another agent's question from here (its approval, question, secret): whom it helps. Only
+  // that question: the row draws again when it changes, not on every reload of the conversation's questions.
+  const helpingRun = isAgent && m.agentRunId && !readOnly && !mediaAfter ? m.agentRunId : null;
+  const helping = useRowConsultsPart(m.channelId, (list) =>
+    helpingRun ? list.byConsultedRun.get(helpingRun) : undefined,
+  );
   // No `onLongPress` where the system's menu takes the hold (iOS): the row adds nothing of its own to it.
   const press =
     readOnly || !onLongPress

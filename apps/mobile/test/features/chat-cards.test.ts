@@ -138,7 +138,16 @@ describe("an exchange between the same two agents", () => {
   test("is one row on its first asking run's reply, and one conversation when opened", () => {
     // Grouped once for the conversation (`RowConsults`), each reply's row reading its run's.
     expect(source("row-data.tsx")).toContain("byRun: groupsByRun(asExchanges(list ?? []))");
-    expect(source("ConsultGroup.tsx")).toContain("const group = runId ? list.byRun.get(runId) : undefined;");
+    expect(source("ConsultGroup.tsx")).toContain(
+      "const group = useRowConsultsPart(where.channelId, (list) => (runId ? list.byRun.get(runId) : undefined), sameItems);",
+    );
+    // Each row follows only its own part of the questions: a reload while one is out (every 10 s, its progress moving)
+    // draws again the rows whose part changed, not every message on screen.
+    expect(source("row-data.tsx")).toContain(
+      "return useSyncExternalStore(store?.subscribe ?? noSubscription, read, read);",
+    );
+    expect(source("MessageRow.tsx")).toContain("const helping = useRowConsultsPart(m.channelId, (list) =>");
+    expect(source("ConsultGroup.tsx")).not.toContain("useRowConsults(");
     expect(source("ConsultGroup.tsx")).toContain("consultPair(items, now, askerId,");
     expect(chatScreenSource()).toContain("asExchanges(consultData)");
     expect(source("ConsultationScreen.tsx")).toContain("useExchangeConversation(");
