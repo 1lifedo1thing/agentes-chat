@@ -1178,11 +1178,15 @@ html:not([data-pointer]) .sidebar__user:focus-visible {
   }
 }
 
+/* The scrollbar's room is kept while the list fits too: a scrollbar that takes width (Windows, the kit's styled one)
+   showing and hiding would narrow and widen every row, and a message measured at one width and not the other
+   (ClippedBody) flipped with it on every frame. */
 .channel__messages {
   flex: 1;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   display: flex;
   flex-direction: column;
   padding: 16px 8px 24px;
@@ -3781,7 +3785,7 @@ html:not([data-pointer]) .channel-ref:focus-visible {
  * its lines.
  */
 .msg-clip--cut {
-  max-height: 360px;
+  max-height: 480px;
   overflow-y: clip;
   -webkit-mask-image: linear-gradient(#000 calc(100% - 128px), transparent calc(100% - 20px));
   mask-image: linear-gradient(#000 calc(100% - 128px), transparent calc(100% - 20px));
