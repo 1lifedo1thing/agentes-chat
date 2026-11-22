@@ -198,14 +198,15 @@ import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
 const MEMORY_READ = process.platform === "linux";
 
 /**
- * Background tasks at once, sized to the computer: one per 2 CPUs and per 2 GiB of memory left after 4 GiB for the
- * system and the person's own apps (a task is a coding CLI with its tools, about that much), at least 3 (the fixed
- * default before: it fits a small laptop) and at most the bound. A container's or slice's limit counts, not the host's.
+ * Background tasks at once, sized to the computer's memory: one per 1.5 GiB left after 4 GiB for the system and the
+ * person's own apps (a task is a coding CLI with its tools, 0.5 to 1 GB), at least 3 (the fixed default before: it
+ * fits a small laptop) and at most the bound. CPUs don't count: a task mostly waits on its model. A container's or
+ * slice's limit counts, not the host's.
  */
-export function sizedTaskLimit(size: Pick<MachineSize, "cpus" | "memoryGb" | "limit">): number {
-  const { cpus, memoryGb } = size.limit ?? size;
-  const fits = Math.min(Math.floor(cpus / 2), Math.floor((memoryGb - 4) / 2));
-  return Math.min(TASK_LIMIT_BOUNDS[1], Math.max(3, fits));
+export function sizedTaskLimit(size: Pick<MachineSize, "memoryGb" | "limit">): number {
+  const { memoryGb } = size.limit ?? size;
+  // memoryGb is in halves, so (memoryGb - 4) * 2 is whole and the division by 3 floors exactly.
+  return Math.min(TASK_LIMIT_BOUNDS[1], Math.max(3, Math.floor(((memoryGb - 4) * 2) / 3)));
 }
 
 export const DEFAULT_LIMITS = {
