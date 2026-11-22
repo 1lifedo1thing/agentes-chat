@@ -12557,10 +12557,10 @@
       "tool_offOne": "{{program}} está desactivado en {{computer}}.",
       "not_installed": "{{program}} no está instalado en {{computer}}.",
       "cant_start": "{{program}} está en {{computer}}, pero no abre.",
+      "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan.",
       "not_reported": "{{computer}} todavía está comprobando qué programas tiene. Esto cambia solo cuando termine.",
       "system": "{{program}} todavía no funciona en el sistema de {{computer}}.",
-      "no_computerCloud": "Listo en cuanto {{computer}} lo esté.",
-      "home_only": "{{program}} está instalado solo para root en {{computer}}, donde los agentes no llegan."
+      "no_computerCloud": "Listo en cuanto {{computer}} lo esté."
     },
     "notAvailableNow": "Elegido, pero no disponible ahora.",
     "offline": "{{computer}} está desconectada ahora.",
@@ -20675,7 +20675,8 @@
       "stopAll": "Detener todas",
       "stopAllOf": "Detener todo lo de {{name}}",
       "open": "Abrir en la conversación",
-      "openManager": "Abrir en el gestor de tareas"
+      "openManager": "Abrir en el gestor de tareas",
+      "more": "Más acciones"
     },
     "confirm": {
       "chainTitle_one": "¿Detener a {{name}} y {{count}} ayudante?",

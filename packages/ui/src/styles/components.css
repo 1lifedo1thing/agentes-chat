@@ -4272,6 +4272,10 @@ html:not([data-pointer]) .ac-receipt__action:focus-visible {
 .ac-popover:focus {
   outline: none;
 }
+/* What an anchored popover is placed by: its trigger's own box, no line of text around it. */
+.ac-popover__anchor {
+  display: inline-flex;
+}
 /* Rows of a menu (Mais): a menu's 2 between them, so its separator has a menu's room too. */
 .ac-popover:has(> .ac-menu__item) {
   gap: 2px;

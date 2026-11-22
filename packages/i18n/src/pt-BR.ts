@@ -20757,6 +20757,7 @@ export const ptBR = {
       stopAllOf: "Parar tudo de {{name}}",
       open: "Abrir na conversa",
       openManager: "Abrir no gerenciador",
+      more: "Mais ações",
     },
     confirm: {
       /** One task and the agents it asked, stopped together. */

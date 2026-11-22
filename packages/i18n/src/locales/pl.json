@@ -13102,10 +13102,10 @@
       "tool_offOne": "{{program}} jest wyłączony na {{computer}}.",
       "not_installed": "{{program}} nie jest zainstalowany na komputerze {{computer}}.",
       "cant_start": "{{program}} jest na {{computer}}, ale się nie uruchamia.",
+      "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu.",
       "not_reported": "{{computer}} wciąż sprawdza, jakie ma programy. To zmieni się samo, gdy skończy.",
       "system": "{{program}} nie działa jeszcze w systemie komputera {{computer}}.",
-      "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy.",
-      "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu."
+      "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy."
     },
     "notAvailableNow": "Wybrane, ale teraz niedostępne.",
     "offline": "{{computer}} jest teraz offline.",
@@ -21393,7 +21393,8 @@
       "stopAll": "Zatrzymaj wszystkie",
       "stopAllOf": "Zatrzymaj wszystkie zadania agenta {{name}}",
       "open": "Otwórz w rozmowie",
-      "openManager": "Otwórz w menedżerze zadań"
+      "openManager": "Otwórz w menedżerze zadań",
+      "more": "Więcej akcji"
     },
     "confirm": {
       "chainTitle_one": "Zatrzymać {{name}} i {{count}} pomocnika?",

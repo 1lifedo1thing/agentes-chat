@@ -12236,10 +12236,10 @@
       "tool_offOne": "{{program}} staat uit op {{computer}}.",
       "not_installed": "{{program}} is niet geïnstalleerd op {{computer}}.",
       "cant_start": "{{program}} staat op {{computer}}, maar start niet.",
+      "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen.",
       "not_reported": "{{computer}} controleert nog welke programma's erop staan. Dit verandert vanzelf als het klaar is.",
       "system": "{{program}} werkt nog niet op het systeem van {{computer}}.",
-      "no_computerCloud": "Klaar zodra {{computer}} klaar is.",
-      "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen."
+      "no_computerCloud": "Klaar zodra {{computer}} klaar is."
     },
     "notAvailableNow": "Gekozen, maar nu niet beschikbaar.",
     "offline": "{{computer}} is nu offline.",
@@ -20281,7 +20281,8 @@
       "stopAll": "Alles stoppen",
       "stopAllOf": "Alles van {{name}} stoppen",
       "open": "Openen in het gesprek",
-      "openManager": "Openen in Taakbeheer"
+      "openManager": "Openen in Taakbeheer",
+      "more": "Meer acties"
     },
     "confirm": {
       "chainTitle_one": "{{name}} en {{count}} hulp stoppen?",

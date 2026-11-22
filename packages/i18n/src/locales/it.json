@@ -12658,10 +12658,10 @@
       "tool_offOne": "{{program}} è disattivato su {{computer}}.",
       "not_installed": "{{program}} non è installato su {{computer}}.",
       "cant_start": "{{program}} è su {{computer}}, ma non si avvia.",
+      "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
-      "no_computerCloud": "Pronto appena lo è {{computer}}.",
-      "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano."
+      "no_computerCloud": "Pronto appena lo è {{computer}}."
     },
     "notAvailableNow": "Scelto, ma non disponibile in questo momento.",
     "offline": "{{computer}} è offline in questo momento.",
@@ -20839,7 +20839,8 @@
       "stopAll": "Ferma tutte",
       "stopAllOf": "Ferma tutto di {{name}}",
       "open": "Apri nella conversazione",
-      "openManager": "Apri in Gestione attività"
+      "openManager": "Apri in Gestione attività",
+      "more": "Altre azioni"
     },
     "confirm": {
       "chainTitle_one": "Fermare {{name}} e {{count}} aiutante?",

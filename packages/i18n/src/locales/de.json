@@ -12165,10 +12165,10 @@
       "tool_offOne": "{{program}} ist auf {{computer}} ausgeschaltet.",
       "not_installed": "{{program}} ist auf {{computer}} nicht installiert.",
       "cant_start": "{{program}} ist auf {{computer}}, startet aber nicht.",
+      "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen.",
       "not_reported": "{{computer}} prüft noch, welche Programme vorhanden sind. Das ändert sich von selbst, wenn es so weit ist.",
       "system": "{{program}} läuft noch nicht auf dem System von {{computer}}.",
-      "no_computerCloud": "Bereit, sobald {{computer}} es ist.",
-      "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen."
+      "no_computerCloud": "Bereit, sobald {{computer}} es ist."
     },
     "notAvailableNow": "Ausgewählt, aber gerade nicht verfügbar.",
     "offline": "{{computer}} ist gerade offline.",
@@ -20098,7 +20098,8 @@
       "stopAll": "Alle stoppen",
       "stopAllOf": "Alles von {{name}} stoppen",
       "open": "In der Unterhaltung öffnen",
-      "openManager": "Im Task-Manager öffnen"
+      "openManager": "Im Task-Manager öffnen",
+      "more": "Weitere Aktionen"
     },
     "confirm": {
       "chainTitle_one": "{{name}} und {{count}} Helfer stoppen?",

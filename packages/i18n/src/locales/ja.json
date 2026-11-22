@@ -11661,10 +11661,10 @@
       "tool_offOne": "{{computer}} では {{program}} がオフです。",
       "not_installed": "{{computer}}に{{program}}がインストールされていません。",
       "cant_start": "{{program}} は {{computer}} にありますが、起動しません。",
+      "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
-      "no_computerCloud": "{{computer}}の準備ができ次第使えます。",
-      "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。"
+      "no_computerCloud": "{{computer}}の準備ができ次第使えます。"
     },
     "notAvailableNow": "選択済みですが、現在は利用できません。",
     "offline": "{{computer}}は現在オフラインです。",
@@ -19450,7 +19450,8 @@
       "stopAll": "すべて停止",
       "stopAllOf": "{{name}}のタスクをすべて停止",
       "open": "会話で開く",
-      "openManager": "タスクマネージャーで開く"
+      "openManager": "タスクマネージャーで開く",
+      "more": "その他の操作"
     },
     "confirm": {
       "chainTitle_other": "{{name}}と手伝い{{count}}件を止めますか？",

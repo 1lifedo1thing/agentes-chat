@@ -13045,10 +13045,10 @@
       "tool_offOne": "{{program}} выключен на {{computer}}.",
       "not_installed": "{{program}} не установлен на {{computer}}.",
       "cant_start": "{{program}} есть на {{computer}}, но не запускается.",
+      "home_only": "{{program}} установлен на {{computer}} только для root, и агентам он недоступен.",
       "not_reported": "{{computer}} ещё проверяет, какие программы на нём есть. Это изменится само, когда он закончит.",
       "system": "{{program}} пока не работает в системе компьютера {{computer}}.",
-      "no_computerCloud": "Будет готово, как только будет готов {{computer}}.",
-      "home_only": "{{program}} установлен на {{computer}} только для root, и агентам он недоступен."
+      "no_computerCloud": "Будет готово, как только будет готов {{computer}}."
     },
     "notAvailableNow": "Выбрано, но сейчас недоступно.",
     "offline": "{{computer}} сейчас не в сети.",
@@ -21305,7 +21305,8 @@
       "stopAll": "Остановить все",
       "stopAllOf": "Остановить все задачи агента {{name}}",
       "open": "Открыть в разговоре",
-      "openManager": "Открыть в диспетчере задач"
+      "openManager": "Открыть в диспетчере задач",
+      "more": "Другие действия"
     },
     "confirm": {
       "chainTitle_one": "Остановить {{name}} и {{count}} помощника?",

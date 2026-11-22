@@ -12098,10 +12098,10 @@
       "tool_offOne": "{{program}}, {{computer}} üzerinde kapalı.",
       "not_installed": "{{program}}, {{computer}} üzerinde yüklü değil.",
       "cant_start": "{{program}}, {{computer}} üzerinde var ama açılmıyor.",
+      "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez.",
       "not_reported": "{{computer}} hangi programların olduğunu hâlâ kontrol ediyor. Bittiğinde bu kendiliğinden değişir.",
       "system": "{{program}} henüz {{computer}} sisteminde çalışmıyor.",
-      "no_computerCloud": "{{computer}} hazır olur olmaz hazır.",
-      "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez."
+      "no_computerCloud": "{{computer}} hazır olur olmaz hazır."
     },
     "notAvailableNow": "Seçildi ama şu anda kullanılamıyor.",
     "offline": "{{computer}} şu anda çevrimdışı.",
@@ -20021,7 +20021,8 @@
       "stopAll": "Tümünü durdur",
       "stopAllOf": "{{name}} ajanının tüm görevlerini durdur",
       "open": "Sohbette aç",
-      "openManager": "Görev yöneticisinde aç"
+      "openManager": "Görev yöneticisinde aç",
+      "more": "Diğer işlemler"
     },
     "confirm": {
       "chainTitle_one": "{{name}} ve {{count}} yardımcı durdurulsun mu?",

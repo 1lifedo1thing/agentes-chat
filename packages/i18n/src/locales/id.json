@@ -11719,10 +11719,10 @@
       "tool_offOne": "{{program}} mati di {{computer}}.",
       "not_installed": "{{program}} belum terpasang di {{computer}}.",
       "cant_start": "{{program}} ada di {{computer}}, tetapi tidak mau berjalan.",
+      "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
-      "no_computerCloud": "Siap begitu {{computer}} siap.",
-      "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen."
+      "no_computerCloud": "Siap begitu {{computer}} siap."
     },
     "notAvailableNow": "Dipilih, tapi sedang tidak tersedia.",
     "offline": "{{computer}} sedang offline.",
@@ -19557,7 +19557,8 @@
       "stopAll": "Hentikan semua",
       "stopAllOf": "Hentikan semua tugas {{name}}",
       "open": "Buka di percakapan",
-      "openManager": "Buka di pengelola tugas"
+      "openManager": "Buka di pengelola tugas",
+      "more": "Tindakan lain"
     },
     "confirm": {
       "chainTitle_other": "Hentikan {{name}} dan {{count}} pembantu?",
