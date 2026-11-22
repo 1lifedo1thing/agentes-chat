@@ -54,6 +54,18 @@ const NEW_AGENT_ROUTES = [
   "new-agent/import-preview",
 ];
 
+/** Código's screens on the grouped gray (ADR 0215): the list, a new session and where it works, a session's Git and
+ * Files, a folder, a diff and who is in it. */
+const CODING_GROUPED_ROUTES = [
+  "coding/index",
+  "coding/new",
+  "coding/where",
+  "coding/[sessionId]/index",
+  "coding/[sessionId]/files",
+  "coding/[sessionId]/diff",
+  "coding/[sessionId]/people",
+];
+
 export default function MainStack() {
   const { colors } = useTheme();
   const pushed = usePushedOptions();
@@ -107,6 +119,8 @@ export default function MainStack() {
       "connect-ai/makers": connectAi,
       // Create an agent: one pushed screen per step, on the grouped gray its steps draw on (no white flash in a push).
       ...Object.fromEntries(NEW_AGENT_ROUTES.map((name) => [name, connectAi])),
+      // Código: its grouped screens on the gray they draw on, as the steps above (no white flash in a push).
+      ...Object.fromEntries(CODING_GROUPED_ROUTES.map((name) => [name, connectAi])),
       // A message's pictures: pushed (faded in, as a photo opens), black, the viewer's own bars over the picture. A
       // screen of the stack, so the file's conversation pushes over it and its back comes back to the picture (ADR
       // 0208); as a modal, whatever was pushed from it opened hidden under it.

@@ -1,11 +1,14 @@
-import type { Agent } from "@agenteschat/client";
+import type { Agent, BrainKind } from "@agenteschat/client";
+import { type EffortLevel, effortLevelsOf, effortTextOf } from "@agenteschat/client/lib/brain-advanced";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { Button, Dialog, DialogBody, DialogFooter, Icon, type IconName } from "@agenteschat/ui";
+import { isAuto } from "@agenteschat/client/lib/providers";
+import { Button, Dialog, DialogBody, DialogFooter, EffortPixels, Icon, type IconName } from "@agenteschat/ui";
 import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type HaveItem, HaveList, HaveOffRow, HaveRow } from "@/components/arrival/ConnectHave";
 import { TeamScene } from "@/components/arrival/TeamScene";
-import { BrainLine, PickList, type PickOption } from "@/pages/agent/brain/pieces";
+import { fullLook, lookOf } from "@/lib/look";
+import { BrainLine, Fold, PickList, type PickOption } from "@/pages/agent/brain/pieces";
 import "@/pages/agent/brain/brain-dialog.css";
 
 /** The model of the account in use: its name on the first screen, and the list its line opens. */
@@ -19,6 +22,15 @@ export interface RightHandModel {
   onPick: (value: string) => void;
 }
 
+/** How hard the account in use thinks, under its model: saved as it is picked, as on the phone. */
+export interface RightHandEffort {
+  /** What thinks: an API key takes fewer levels. */
+  kind: BrainKind;
+  value: EffortLevel | null;
+  /** Settles once the view has the new level, or the save failed and the old one shows again. */
+  onPick: (level: EffortLevel) => Promise<unknown>;
+}
+
 /** A line that leads somewhere else: connecting another AI, going back to the workspace's. */
 export interface RightHandLink {
   label: string;
@@ -30,7 +42,9 @@ export interface RightHandLink {
 /**
  * Who thinks for the right hand, drawn as any agent's "Quem pensa" (`BrainDialog`) and from its pieces: the agent and
  * the AI's mark under the sky, the account in use with its plan's room, the model on a line that opens its list, and
- * "Trocar de conta" where there are accounts to pick from (the workspace's AI), each account once, by owner. Its two
+ * its effort on a line that opens the ramp under it (Automático picks it, and says so there), and "Trocar de conta"
+ * where there are accounts to pick from (the workspace's AI), each account once, by owner, every one under "Ver
+ * todas" past the three with most room. Its two
  * uses differ only in what they are given: the viewer's own AI, or the AI of people with no plan of their own
  * (ADR 0137 §11). A choice is saved when its screen's button is pressed.
  */
@@ -44,6 +58,7 @@ export function RightHandBrainDialog({
   current,
   empty,
   model,
+  effort,
   accounts,
   links = [],
   unusable = [],
@@ -63,6 +78,8 @@ export function RightHandBrainDialog({
   current: HaveItem | null;
   empty?: string;
   model?: RightHandModel | null;
+  /** Shown with `model`. */
+  effort?: RightHandEffort | null;
   /** The other accounts it may think with, the one in use left out; `empty`: what to do when there is none. */
   accounts?: {
     items: readonly HaveItem[];
@@ -80,19 +97,23 @@ export function RightHandBrainDialog({
 }) {
   const { t } = useTranslation();
   const g = agentGrammar(agent.name);
-  const [screen, setScreen] = useState<"glance" | "switch" | "model">("glance");
+  const [screen, setScreen] = useState<"glance" | "switch" | "all" | "model">("glance");
   const [account, setAccount] = useState<string>();
   const [picked, setPicked] = useState<string>();
+  const [folded, setFolded] = useState(false);
+  const [level, setLevel] = useState<EffortLevel>();
   // Each opening starts on the first screen, with nothing picked.
   useEffect(() => {
     if (!open) return;
     setScreen("glance");
     setAccount(undefined);
     setPicked(undefined);
+    setFolded(false);
+    setLevel(undefined);
   }, [open]);
   const glance = () => setScreen("glance");
   const shown =
-    screen === "switch"
+    screen === "switch" || screen === "all"
       ? t("agentPage.work.brain.v2.switchTitle", g)
       : screen === "model"
         ? t("agentPage.work.brain.v2.modelTitle", g)
@@ -101,6 +122,8 @@ export function RightHandBrainDialog({
   const modelLabel = model?.options.find((o) => o.value === modelValue)?.label ?? "";
   const accountLabel = accounts?.items.find((i) => i.id === account)?.title ?? "";
   const stays = busy || locked;
+  const autoModel = isAuto(model?.value);
+  const effortNow = level ?? effort?.value ?? null;
   return (
     <Dialog
       open={open}
@@ -138,7 +161,7 @@ export function RightHandBrainDialog({
                 icon="chevronLeft"
                 aria-label={t("common.back")}
                 disabled={busy}
-                onClick={glance}
+                onClick={screen === "all" ? () => setScreen("switch") : glance}
               />
             )}
             <p className="arrival-lede__title" aria-hidden="true">
@@ -162,6 +185,43 @@ export function RightHandBrainDialog({
                         onOpen={stays ? undefined : () => setScreen("model")}
                       />
                     )}
+                    {model && effort && (
+                      <>
+                        <BrainLine
+                          label={t("agentPage.work.brain.effort")}
+                          value={
+                            autoModel ? t("brain.auto.label") : t(`agentPage.work.brain.efforts.${effortNow ?? "none"}`)
+                          }
+                          folds
+                          open={folded}
+                          controls="rh-effort"
+                          onOpen={locked ? undefined : () => setFolded(!folded)}
+                        />
+                        <Fold id="rh-effort" open={folded}>
+                          {autoModel ? (
+                            // "Automático" picks the effort too: said where the ramp would be.
+                            <p className="bd-fold__hint">{t("agentPage.work.brain.effortText.auto")}</p>
+                          ) : (
+                            <EffortPixels
+                              label={t("agentPage.work.brain.effort")}
+                              value={effortNow}
+                              disabled={stays}
+                              onValueChange={(next) => {
+                                setLevel(next);
+                                void effort.onPick(next).finally(() => setLevel(undefined));
+                              }}
+                              color={fullLook(lookOf(agent)).color}
+                              steps={effortLevelsOf(effort.kind).map((e) => ({
+                                value: e,
+                                label: t(`agentPage.work.brain.efforts.${e}`),
+                              }))}
+                              hint={(e) => t(`agentPage.work.brain.effortText.${effortTextOf(effort.kind, e)}`)}
+                              unset={t("agentPage.work.brain.efforts.none")}
+                            />
+                          )}
+                        </Fold>
+                      </>
+                    )}
                     {links.map((link) => (
                       <BrainLine
                         key={link.label}
@@ -175,19 +235,21 @@ export function RightHandBrainDialog({
                 )}
               </>
             )}
-            {screen === "switch" && accounts && (
+            {(screen === "switch" || screen === "all") && accounts && (
               <>
                 <HaveList
                   items={accounts.items}
                   // The one in use is the one checked until another is picked, as on any agent's.
                   value={account ?? current?.id}
                   onChange={setAccount}
+                  all={screen === "all"}
+                  onAll={() => setScreen("all")}
                   disabled={stays}
                   pinned={{ label: t("agentPage.work.brain.v2.inUse"), items: current ? [current] : [] }}
                   label={shown}
                 />
                 {accounts.items.length === 0 && accounts.empty && <p className="small muted">{accounts.empty}</p>}
-                {unusable.length > 0 && (
+                {screen === "switch" && unusable.length > 0 && (
                   <div className="bd-use">
                     <p className="arrival-opts__label">{t("rightHand.unusable.title", g)}</p>
                     {unusable.map((u) => (
@@ -195,7 +257,7 @@ export function RightHandBrainDialog({
                     ))}
                   </div>
                 )}
-                {accounts.more && (
+                {screen === "switch" && accounts.more && (
                   <button
                     type="button"
                     className="arrival-have__link arrival-have__link--other"
@@ -232,7 +294,7 @@ export function RightHandBrainDialog({
             </Button>
           </DialogFooter>
         )}
-        {screen === "switch" && accounts && (
+        {(screen === "switch" || screen === "all") && accounts && (
           <DialogFooter className="bd-foot" note={note}>
             <Button
               variant="primary"

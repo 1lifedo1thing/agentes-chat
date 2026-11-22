@@ -353,7 +353,7 @@ function OrgChart({
 
 /**
  * A column's head: a role that answers for agents as its mark, its name and how many people hold it (ADR 0085,
- * addendum of 2026-11-21); a person as their face, first name and how many agents; nobody as "Sem responsável".
+ * addendum of 2026-11-21); a person as their face, first name and how many agents; nobody as "Admins".
  */
 function ColumnHead({
   col,
