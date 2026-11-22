@@ -1197,8 +1197,8 @@ function ServerInstructions({
   const { t, i18n } = useTranslation();
   const said = server.instructions;
   const title = t("toolReview.instructions.title");
-  // An older server doesn't say: nothing to show.
-  if (said === undefined) return null;
+  // An older server doesn't say, and a service through Composio has no `initialize`: nothing to show.
+  if (said === undefined || server.via === "composio") return null;
   if (!said) return <SettingRow title={title} status={t("toolReview.instructions.none")} />;
   const max = formatInt(i18n.language, said.maxChars);
   const status = !on
@@ -1253,7 +1253,8 @@ function ToolsStep({
   const tools = server ? reviewToolsOf(t, server) : [];
   const [state, setState] = useState<ToolReviewState>({ levels: {}, decided: new Set() });
   // Saved with Continuar, beside the tools' levels. An older server leaves it out: on.
-  const [useInstructions, setUseInstructions] = useState(item.server?.useInstructions ?? true);
+  const startedOn = item.server?.useInstructions ?? true;
+  const [useInstructions, setUseInstructions] = useState(startedOn);
   const next = (saved?: CustomServer) => onNext(saved ? fromServer(saved, catalog.data?.connectors ?? []) : item);
   const name = itemName(t, item);
 
@@ -1291,8 +1292,8 @@ function ToolsStep({
         id: server.id,
         label: named,
         tools: reviewDecisions(tools, state.levels, state.decided),
-        // Only where the switch shows: a server that sends none keeps what it had.
-        ...(server.instructions ? { useInstructions } : {}),
+        // Only a switch the person moved: a save that didn't never undoes what another device set meanwhile.
+        ...(server.instructions && useInstructions !== startedOn ? { useInstructions } : {}),
       },
       { onSuccess: (saved) => next(saved) },
     );

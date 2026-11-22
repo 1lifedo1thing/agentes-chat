@@ -6,7 +6,7 @@ import { caches } from "../cache";
 import { type ConnectorEventId, connectorEventsOf } from "../connector-triggers";
 import { randomToken, sealSecret, sha256 } from "../crypto";
 import { ConflictError, isUniqueViolation, NotFoundError, ValidationError } from "../errors";
-import { cutText, valueAtPath } from "../format";
+import { cutText, pgSafeText, valueAtPath } from "../format";
 import type { Judge } from "../judge";
 import { oneLine } from "../mail/text";
 import { assertPublicHttpsUrl } from "../net-guard";
@@ -297,7 +297,7 @@ const INSTRUCTIONS_KEPT_CHARS = 65_536;
 
 /** What a session's server said in `initialize` on how to use it, trimmed and bounded; null when it said nothing. */
 export const instructionsOf = (session: Pick<McpSession, "instructions">): string | null =>
-  cutText(session.instructions?.()?.trim() ?? "", INSTRUCTIONS_KEPT_CHARS) || null;
+  cutText(pgSafeText(session.instructions?.() ?? "").trim(), INSTRUCTIONS_KEPT_CHARS) || null;
 
 /**
  * Keeps what a listing found in a server's `instructions` when it changed, so its screen shows what agents read. The
@@ -1121,7 +1121,8 @@ export async function saveCustomTools(
     }
   }
   const now = new Date();
-  const useInstructions = input.useInstructions ?? c.useInstructions;
+  // Only when the request says: a save that leaves it out never writes back what this one read.
+  const switched = input.useInstructions === undefined ? {} : { useInstructions: input.useInstructions };
   await deps.db.transaction(async (tx) => {
     const asked = input.label.trim();
     const label = asked && asked !== c.label ? await checkLabel(tx, orgId, asked, c) : c.label;
@@ -1139,7 +1140,7 @@ export async function saveCustomTools(
     }
     await tx
       .update(connectorConnections)
-      .set({ label, useInstructions, reviewedAt: now, updatedAt: now })
+      .set({ label, ...switched, reviewedAt: now, updatedAt: now })
       .where(eq(connectorConnections.id, c.id));
     await recordAudit(tx, {
       orgId,
@@ -1148,7 +1149,7 @@ export async function saveCustomTools(
       target: { type: "connector_connection", id: c.id },
       details: {
         tools: input.tools.map((t) => ({ name: t.name, access: t.access })),
-        ...(useInstructions !== c.useInstructions ? { useInstructions } : {}),
+        ...(input.useInstructions !== undefined && input.useInstructions !== c.useInstructions ? switched : {}),
         ...(c.ownerUserId ? { label: auditLabel({ ...c, label }), personalOf: c.ownerUserId } : {}),
       },
     });

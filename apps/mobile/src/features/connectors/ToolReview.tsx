@@ -149,7 +149,8 @@ function ServerReview({
   const [server, setServer] = useState(first);
   const [state, setState] = useState<ReviewState>(emptyReview);
   // Saved with Continuar, beside the tools' levels. An older server leaves it out: on.
-  const [useInstructions, setUseInstructions] = useState(first.useInstructions ?? true);
+  const startedOn = first.useInstructions ?? true;
+  const [useInstructions, setUseInstructions] = useState(startedOn);
   const [failed, setFailed] = useState<string | null>(null);
   const tools = useMemo(() => reviewToolsOf(t, server), [t, server]);
   const left = tools.filter((x) => isWaiting(state, x)).length;
@@ -172,7 +173,7 @@ function ServerReview({
         id: server.id,
         label: server.label,
         tools: reviewDecisions(tools, state.levels, state.decided),
-        ...instructionsSave(server, useInstructions),
+        ...instructionsSave(server, useInstructions, startedOn),
       },
       {
         onSuccess: () => {

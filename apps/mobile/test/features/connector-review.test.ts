@@ -340,10 +340,19 @@ describe("a server's own instructions under its tools", () => {
     expect(instructionsView(t, "pt-BR", server(TOOLS), true)).toEqual({ kind: "hidden" });
   });
 
-  test("Continuar saves the switch only where it shows", () => {
-    expect(instructionsSave(withText, false)).toEqual({ useInstructions: false });
-    expect(instructionsSave(withText, true)).toEqual({ useInstructions: true });
-    expect(instructionsSave(server(TOOLS, { instructions: null }), false)).toEqual({});
-    expect(instructionsSave(server(TOOLS), false)).toEqual({});
+  test("Continuar saves the switch only where it shows, and only once the person moved it", () => {
+    expect(instructionsSave(withText, false, true)).toEqual({ useInstructions: false });
+    expect(instructionsSave(withText, true, false)).toEqual({ useInstructions: true });
+    // Not moved: left out, so another device's choice stays.
+    expect(instructionsSave(withText, true, true)).toEqual({});
+    expect(instructionsSave(server(TOOLS, { instructions: null }), false, true)).toEqual({});
+    expect(instructionsSave(server(TOOLS), false, true)).toEqual({});
+  });
+
+  test("a service through Composio has no `initialize`: nothing to show", async () => {
+    const t = await translator("pt-BR");
+    expect(instructionsView(t, "pt-BR", server(TOOLS, { instructions: null, via: "composio" }), true)).toEqual({
+      kind: "hidden",
+    });
   });
 });

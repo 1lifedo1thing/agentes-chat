@@ -201,11 +201,12 @@ export type InstructionsView =
 export function instructionsView(
   t: TFunction,
   locale: string,
-  server: Pick<CustomServer, "instructions">,
+  server: Pick<CustomServer, "instructions" | "via">,
   on: boolean,
 ): InstructionsView {
   const said = server.instructions;
-  if (said === undefined) return { kind: "hidden" };
+  // A service through Composio has no `initialize`: nothing to show there either.
+  if (said === undefined || server.via === "composio") return { kind: "hidden" };
   const title = t("toolReview.instructions.title");
   if (!said) return { kind: "none", title, status: t("toolReview.instructions.none") };
   const max = formatInt(locale, said.maxChars);
@@ -217,6 +218,9 @@ export function instructionsView(
   return { kind: "shown", title, hint: t("toolReview.instructions.hint"), status, text: said.text, faded: !on };
 }
 
-/** What the review's save says of the instructions: whether agents get them, only where the switch shows. */
-export const instructionsSave = (server: Pick<CustomServer, "instructions">, on: boolean) =>
-  server.instructions ? { useInstructions: on } : {};
+/**
+ * What the review's save says of the instructions: whether agents get them, only when the person moved the switch
+ * (`startedOn`: where it was), so a save that didn't never undoes what another device set meanwhile.
+ */
+export const instructionsSave = (server: Pick<CustomServer, "instructions">, on: boolean, startedOn: boolean) =>
+  server.instructions && on !== startedOn ? { useInstructions: on } : {};

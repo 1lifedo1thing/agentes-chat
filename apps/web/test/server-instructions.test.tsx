@@ -15,12 +15,20 @@ afterEach(() => cleanup());
 const click = (el: Element) => act(async () => fireEvent.click(el));
 const flow = () => screen().getAllByRole("dialog").at(-1) as HTMLElement;
 
-/** A server by address connected (the fake signs in at once), then its review: "Ajustar" on its confirmation. */
-async function review(serverUrl: string) {
+/**
+ * A server by address connected (the fake signs in at once), then its review: "Ajustar" on its confirmation.
+ * `composio`: the list says it is a service through Composio.
+ */
+async function review(serverUrl: string, { composio = false } = {}) {
   const state = seedState();
   const api = createFakeApi(state);
   const res = await api.customConnectors.connect(ORG_ID, { serverUrl, label: "Tickets", returnTo: "/" });
   if (res.status !== "connected") throw new Error("expected connected");
+  if (composio) {
+    const list = api.customConnectors.list;
+    api.customConnectors.list = async (...args) =>
+      (await list(...args)).map((x) => ({ ...x, via: "composio" as const }));
+  }
   await renderApp(`/org/${ORG_ID}/settings?connected=custom:${res.server.id}`, { api });
   await settle(8);
   await click(within(flow()).getByRole("button", { name: "Ajustar" }));
@@ -67,6 +75,22 @@ describe("a server's own instructions in its review", () => {
     await click(within(flow()).getByRole("button", { name: "Continuar" }));
     await settle(6);
     expect(saved(state)).toMatchObject({ useInstructions: false });
+  });
+
+  test("Continuar without moving the switch leaves it out: another device's choice stays", async () => {
+    const state = await review("https://oauth.rules.example.com/mcp");
+    expect(within(flow()).getByRole("switch", { name: "Instruções do servidor" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    await click(within(flow()).getByRole("button", { name: "Continuar" }));
+    await settle(6);
+    expect(saved(state)).toBeDefined();
+    expect(saved(state)).not.toHaveProperty("useInstructions");
+  });
+
+  test("a service through Composio has no instructions to show: no section at all", async () => {
+    await review("https://oauth.plain.example.com/mcp", { composio: true });
+    expect(flow().textContent).not.toContain("Instruções do servidor");
   });
 
   test("a server that sends none: one line, no switch, and the save leaves the setting as it was", async () => {

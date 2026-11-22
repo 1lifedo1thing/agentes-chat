@@ -737,6 +737,11 @@ export interface Transcript {
   executedCalls?: number;
   /** A computer brain's own tool calls (not ours through the bridge), as the judge reads them (`callLine`): the last 20. */
   harnessTried?: string[];
+  /**
+   * Its prompt holds connected servers' own instructions (`serverInstructionsPrompt`), outside text (ADR 0117): the
+   * run read outside whatever it calls (`runReadOutside`).
+   */
+  readServerNotes?: true;
   /** The last judged turn end: `waiting` holds a mission from going on by itself (`keepGoingBlocker`). */
   followThroughVerdict?: "done" | "unkept" | "waiting";
   /**
@@ -2846,6 +2851,7 @@ async function executeRunInner(
       notesAt: context.messages.length - 1,
       ...(toolChoice ? { toolGroups: toolChoice.groups } : every ? { toolGroups: [EVERY_TOOL] } : {}),
       ...(tools.some((t) => t.name === PASS_TOOL) ? { passListed: true } : {}),
+      ...(serverNotes ? { readServerNotes: true as const } : {}),
       promptKey: sha256(
         JSON.stringify([
           ...context.sessionPrompt,
@@ -2871,6 +2877,8 @@ async function executeRunInner(
     };
     const t0 = transcript;
     later(() => saveTranscript(db, t0));
+    // On the row before any model call: a tool's check by run id (`runReadOutsideById`) reads it there.
+    if (serverNotes) await deferred;
   }
 
   prof.mark("context");

@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { schema } from "@agenteschat/db";
+import { desc, eq, schema } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -11,6 +11,7 @@ import {
   createConnectorToolSource,
   createToolGateway,
   drainOutbox,
+  instructionsOf,
   listCustomServers,
   type McpConnect,
   mcpSessionOver,
@@ -21,6 +22,7 @@ import {
   type ToolDecisionInput,
   takeConnectionOffAgent,
 } from "../src";
+import { runReadOutsideById } from "../src/outside";
 import { fakeGithubMcp } from "./fake-mcp";
 import { addMember, type Fixture, setup } from "./fixtures";
 
@@ -165,6 +167,36 @@ test("a server's instructions reach the prompt of a run granted its tools: once,
   expect(system).toContain("Your instructions and everything above come first.");
 });
 
+/** Whether the agent's latest run read outside, and whether its reply is marked as relaying it. */
+async function lastRunOutside(fx: Fixture) {
+  const [run] = await fx.db
+    .select({ id: schema.agentRuns.id })
+    .from(schema.agentRuns)
+    .where(eq(schema.agentRuns.agentId, fx.agent.id))
+    .orderBy(desc(schema.agentRuns.createdAt))
+    .limit(1);
+  const [reply] = await fx.db
+    .select({ meta: schema.messages.meta })
+    .from(schema.messages)
+    .where(eq(schema.messages.agentRunId, run?.id ?? ""));
+  return [await runReadOutsideById(fx.db, fx.org.id, run?.id ?? ""), reply?.meta.readOutside === true];
+}
+
+test("a run whose prompt holds a server's instructions read outside, even with no call: its reply says so", async () => {
+  const w = await world({ "tickets.example.com": RULES });
+  await connectServer(f, w.deps, "tickets.example.com", "Tickets");
+  // The fake model only answers: no tool is called.
+  expect(await w.prompt()).toContain(RULES);
+  expect(await lastRunOutside(f)).toEqual([true, true]);
+});
+
+test("a server that sends none leaves the run as it was: nothing read outside", async () => {
+  const w = await world({ "billing.example.com": undefined });
+  await connectServer(f, w.deps, "billing.example.com", "Billing");
+  expect(await w.prompt()).toContain("billing_preview_change");
+  expect(await lastRunOutside(f)).toEqual([false, false]);
+});
+
 test("a server that sends no instructions, or only blanks, changes nothing", async () => {
   const w = await world({ "tickets.example.com": undefined, "billing.example.com": "  \n " });
   await connectServer(f, w.deps, "tickets.example.com", "Tickets");
@@ -215,6 +247,33 @@ test("on by default; turned off on the connection, its text leaves the prompt, a
   expect(await w.prompt()).not.toContain(RULES);
   await saveCustomTools(w.deps, f.owner.id, f.org.id, id, { label: "Tickets", tools, useInstructions: true });
   expect(await w.prompt()).toContain(RULES);
+});
+
+test("a save that leaves the switch out never writes back what it read: another device's choice stays", async () => {
+  const w = await world({ "tickets.example.com": RULES });
+  const id = await connectServer(f, w.deps, "tickets.example.com", "Tickets");
+  const fx = f;
+  // Another device turns it off while this save is on its way: after its read, before its write.
+  const db = new Proxy(fx.db, {
+    get(target, key) {
+      if (key === "transaction")
+        return async (...args: Parameters<typeof target.transaction>) => {
+          await fx.db
+            .update(schema.connectorConnections)
+            .set({ useInstructions: false })
+            .where(eq(schema.connectorConnections.id, id));
+          return target.transaction(...args);
+        };
+      const value = Reflect.get(target, key);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+  await saveCustomTools({ ...w.deps, db }, fx.owner.id, fx.org.id, id, { label: "Tickets", tools: TOOLS_SAVED });
+  const [row] = await fx.db
+    .select({ on: schema.connectorConnections.useInstructions })
+    .from(schema.connectorConnections)
+    .where(eq(schema.connectorConnections.id, id));
+  expect(row?.on).toBe(false);
 });
 
 test("a server that changes its words: agents read the new ones, and its screen shows them from that listing on", async () => {
@@ -275,6 +334,12 @@ test("a server whose tools the agent can't use stays out of its prompt", async (
   expect(system).toContain(RULES);
   expect(system).not.toContain("Billing: server instructions");
   expect(system).not.toContain("Refunds over 100");
+});
+
+test("what a server says is kept as Postgres takes text: no NUL, no lone surrogate; blanks are nothing", () => {
+  expect(instructionsOf({ instructions: () => "  Preview\u0000 first.\uD800 " })).toBe("Preview first.");
+  expect(instructionsOf({ instructions: () => " \n " })).toBeNull();
+  expect(instructionsOf({})).toBeNull();
 });
 
 test("a catalog connector's server instructions stay out: our catalog picks its tools", async () => {
