@@ -2948,8 +2948,6 @@
       "mentionsYou": "ti hanno menzionato"
     },
     "unreadDivider": "Nuovi",
-    "offline": "Nessuna connessione. Quello che invii parte da solo quando torna.",
-    "backOnline": "Di nuovo connesso",
     "sendingOffline": "parte quando torna la connessione",
     "endOfReply": "Fine della risposta",
     "mentionSuggestions": "Suggerimenti di menzione"
@@ -3172,7 +3170,7 @@
     "computerNoHome": "Ancora nessun computer. Ne avrà uno quando questo workspace avrà un computer proprio.",
     "computerNoHomeServer": "Ancora nessun browser. Configura <guide>questo server come computer degli agenti</guide> per dargliene uno.",
     "addComputer": "Aggiungi un computer",
-    "computerOneUser": "Qui nessun computer. Il computer del workspace esegue tutti gli agenti come un solo utente, quindi non può tenere separato lo spazio di ogni persona. Un server Linux installato con l'opzione --system dell'installer può farlo.",
+    "computerOneUser": "La tua cartella e il tuo browser sul computer del workspace. Esegue tutti gli agenti come un solo utente: i comandi degli altri agenti lì possono leggerli, e solo chi l'ha collegato ne prende il controllo. Un server Linux installato con --system tiene separato ogni spazio.",
     "powers": {
       "title": "Poteri nel workspace",
       "help": "Solo il tuo braccio destro fa queste cose.",
@@ -18970,10 +18968,6 @@
       "messages_one": "{{count}} messaggio",
       "messages_many": "{{count}} messaggi",
       "messages_other": "{{count}} messaggi",
-      "origin": "{{from}} ha chiesto a {{to}} in #{{channel}} · {{time}}",
-      "originDm": "{{from}} ha chiesto a {{to}} · {{time}}",
-      "originNote": "{{from}} ha passato del lavoro a {{to}} in #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} ha passato del lavoro a {{to}} · {{time}}",
       "readOnly": "Sola lettura.",
       "steer": "Per cambiare direzione, parla con {{name}}.",
       "steer_female": "Per cambiare direzione, parla con {{name}}.",

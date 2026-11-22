@@ -2949,8 +2949,6 @@
       "mentionsYou": "on vous a mentionné"
     },
     "unreadDivider": "Nouveau",
-    "offline": "Pas de connexion. Ce que vous envoyez partira tout seul au retour de la connexion.",
-    "backOnline": "De nouveau connecté",
     "sendingOffline": "partira au retour de la connexion",
     "endOfReply": "Fin de la réponse",
     "mentionSuggestions": "Suggestions de mention"
@@ -3177,7 +3175,7 @@
     "computerNoHome": "Pas encore d'ordinateur. Il en aura un quand ce workspace aura son propre ordinateur.",
     "computerNoHomeServer": "Pas encore de navigateur. Configurez <guide>ce serveur comme ordinateur des agents</guide> pour lui en donner un.",
     "addComputer": "Ajouter un ordinateur",
-    "computerOneUser": "Pas d'ordinateur ici. L'ordinateur du workspace exécute tous les agents sous un seul utilisateur et ne peut donc pas séparer l'espace de chaque personne. Un serveur Linux installé avec l'option --system de l'installateur le peut.",
+    "computerOneUser": "Ton propre dossier et ton navigateur sur l'ordinateur du workspace. Il exécute tous les agents sous un seul utilisateur : les commandes des autres agents peuvent les lire, et seule la personne qui l'a connecté en prend le contrôle. Un serveur Linux installé avec --system sépare chaque espace.",
     "powers": {
       "title": "Pouvoirs dans le workspace",
       "help": "Seul votre bras droit fait cela.",
@@ -18954,10 +18952,6 @@
       "messages_one": "{{count}} message",
       "messages_many": "{{count}} messages",
       "messages_other": "{{count}} messages",
-      "origin": "{{from}} a interrogé {{to}} dans #{{channel}} · {{time}}",
-      "originDm": "{{from}} a interrogé {{to}} · {{time}}",
-      "originNote": "{{from}} a confié du travail à {{to}} dans #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} a confié du travail à {{to}} · {{time}}",
       "readOnly": "Lecture seule.",
       "steer": "Pour changer de cap, parlez à {{name}}.",
       "steer_female": "Pour changer de cap, parlez à {{name}}.",

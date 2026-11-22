@@ -76,7 +76,7 @@ import { linePrompt } from "./reporting";
 import { wikiPersonOf } from "./requester";
 import { isRightHand } from "./right-hand";
 import { rightHandPrompt, rightHandTools } from "./right-hand-prompt";
-import { seatState } from "./right-hand-seats";
+import { seatPlace } from "./right-hand-seats";
 import { isRoutineRoomKey, type RoutineBrief, routineAccessOf, routineBriefOf, routineReportOf } from "./routine-brief";
 import { WEBHOOK_EVENT, webhookEventText } from "./routine-hooks";
 import { heldHere } from "./run-inbox";
@@ -1160,8 +1160,9 @@ export async function buildRunContext(
 
   const capabilities = await options.capabilities;
   // The right hand's own block (ADR 0137), in place of instructions: read live for the person behind the run.
+  const place = isRightHand(agent) ? await seatPlace(db, run) : null;
   const rightHand =
-    isRightHand(agent) && requester
+    place && requester
       ? await rightHandPrompt(
           { db, ai: options.ai, workspaceComputer: options.workspaceComputer },
           {
@@ -1169,7 +1170,8 @@ export async function buildRunContext(
             agent,
             personId: requester,
             inDm: channel.kind === "dm",
-            computer: await seatState(db, run),
+            computer: place.state,
+            oneUser: place.oneUser,
           },
         )
       : null;
@@ -1250,7 +1252,7 @@ export async function buildRunContext(
           `You are ${agent.name} (@${agent.handle})${agent.role ? `, ${agent.role}` : ""}, ${personal ? "one of this person's AI agents" : "an AI agent of this organization"}.`,
           agent.instructions.trim() ? `# Your instructions\n${agent.instructions.trim()}` : "",
           // The right hand with nobody behind the run (another agent's message) still keeps to its tools.
-          isRightHand(agent) ? rightHandTools(await seatState(db, run)) : "",
+          place ? rightHandTools(place.state, place.oneUser) : "",
         ]
           .filter(Boolean)
           .join("\n\n"),

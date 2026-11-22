@@ -2744,8 +2744,6 @@
       "mentionsYou": "有人提及了你"
     },
     "unreadDivider": "新",
-    "offline": "没有网络连接。你发送的内容会在恢复连接后自动发出。",
-    "backOnline": "已重新连接",
     "sendingOffline": "恢复连接后发出",
     "endOfReply": "回复结束",
     "mentionSuggestions": "提及建议"
@@ -2939,7 +2937,7 @@
     "computerNoHome": "还没有电脑。等这个工作区有了自己的电脑后，它就会有一台。",
     "computerNoHomeServer": "还没有浏览器。将<guide>此服务器设为智能体的电脑</guide>即可获得一个。",
     "addComputer": "添加电脑",
-    "computerOneUser": "这里没有电脑。工作区的电脑让所有智能体以同一个用户运行，无法把每个人的空间分开。用安装程序的 --system 选项安装的 Linux 服务器可以做到。",
+    "computerOneUser": "你在工作区电脑上的专属文件夹和浏览器。这台电脑让所有智能体以同一个用户运行：那里其他智能体的命令也能读取它们，只有连接这台电脑的人可以接管控制。用 --system 安装的 Linux 服务器会把每个空间分开。",
     "powers": {
       "title": "工作区权限",
       "help": "只有你的得力助手能做这些事。",
@@ -17809,10 +17807,6 @@
       "where": "#{{channel}} · 智能体之间",
       "whereDm": "智能体之间",
       "messages_other": "{{count}} 条消息",
-      "origin": "{{from}} 在 #{{channel}} 中询问了 {{to}} · {{time}}",
-      "originDm": "{{from}} 询问了 {{to}} · {{time}}",
-      "originNote": "{{from}} 在 #{{channel}} 中把工作交给了 {{to}} · {{time}}",
-      "originNoteDm": "{{from}} 把工作交给了 {{to}} · {{time}}",
       "readOnly": "只读。",
       "steer": "要调整方向，请和 {{name}} 对话。",
       "steer_female": "要调整方向，请和 {{name}} 对话。",

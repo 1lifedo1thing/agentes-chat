@@ -65,7 +65,7 @@ import { WALLPAPER_LIFT } from "@agenteschat/ui/sky/wallpaper";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, type ReactNode, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { type GestureResponderEvent, Pressable, StyleSheet, View } from "react-native";
+import { type GestureResponderEvent, Keyboard, Pressable, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   type EntryExitAnimationFunction,
@@ -400,21 +400,23 @@ function RowBody({
   const lastTap = useRef(0);
   const [pop, setPop] = useState<{ x: number; y: number; at: number } | null>(null);
   const canReact = !readOnly && !m.local;
-  const onTap = canReact
-    ? (e: GestureResponderEvent) => {
-        const at = Date.now();
-        if (at - lastTap.current > DOUBLE_TAP_MS) {
-          lastTap.current = at;
-          return;
-        }
-        lastTap.current = 0;
-        haptics.light();
-        const mine = reactionPills(reactions, meId).find((p) => p.reaction === THUMBS)?.mine ?? false;
-        toggle.mutate({ reaction: THUMBS, on: !mine });
-        setPop({ x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, at });
-        teachDoubleTap();
-      }
-    : undefined;
+  // The row takes the tap, so the list (`keyboardShouldPersistTaps="handled"`) never puts the keyboard away for it:
+  // the row does, as a tap on the conversation does in any chat.
+  const onTap = (e: GestureResponderEvent) => {
+    Keyboard.dismiss();
+    if (!canReact) return;
+    const at = Date.now();
+    if (at - lastTap.current > DOUBLE_TAP_MS) {
+      lastTap.current = at;
+      return;
+    }
+    lastTap.current = 0;
+    haptics.light();
+    const mine = reactionPills(reactions, meId).find((p) => p.reaction === THUMBS)?.mine ?? false;
+    toggle.mutate({ reaction: THUMBS, on: !mine });
+    setPop({ x: e.nativeEvent.locationX, y: e.nativeEvent.locationY, at });
+    teachDoubleTap();
+  };
   useEffect(() => {
     if (!pop) return;
     const timer = setTimeout(() => setPop(null), POP_MS);
