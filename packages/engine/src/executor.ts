@@ -171,6 +171,7 @@ import {
   thinksAsThread,
   threadIsConfidential,
 } from "./confidential";
+import { serverInstructionsPrompt } from "./connectors/mcp";
 import {
   announceConsultationChange,
   answersHandOffs,
@@ -2634,6 +2635,8 @@ async function executeRunInner(
     const browsers = granted.some((t) => t.name === "browser_profile")
       ? browsersPrompt(await agentBrowserProfiles(db, run.orgId, agent.id), agent.browserProfileId)
       : "";
+    // What its servers connected by address say on using their tools: granted, like the repositories above.
+    const serverNotes = serverInstructionsPrompt(granted);
     // Listed in every run of the agent (`EVERY_TOOL`): the prompt speaks of them only where they apply.
     const [workApplies, choicesApply, sayNowHere, codeHere] = await Promise.all([
       every ? workMayStart(ctx) : true,
@@ -2670,6 +2673,7 @@ async function executeRunInner(
             describeCapabilities(tools, pending, isRightHand(agent) && (await seatState(db, run)) === "none"),
             browsers,
             repositories,
+            serverNotes,
           ]
             .filter(Boolean)
             .join("\n\n"),
@@ -2847,6 +2851,8 @@ async function executeRunInner(
           ...context.sessionPrompt,
           repositories,
           browsers,
+          // A resumed session keeps the text it began with. Absent when there is none, so no other session's key changes.
+          ...(serverNotes ? [serverNotes] : []),
           // Per connection (a second database shares `database:read`); the agent's grant rows too, so a tool the
           // requester's policy held back doesn't change the key from one person to the next.
           [
