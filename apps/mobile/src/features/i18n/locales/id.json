@@ -392,10 +392,6 @@
       "mentionsYou": "kamu disebut",
       "divider": "Baru"
     },
-    "connection": {
-      "down": "Tidak ada koneksi. Yang kamu kirim akan terkirim sendiri begitu koneksi kembali.",
-      "back": "Terhubung lagi"
-    },
     "longPressHint": "Tahan untuk memberi reaksi dan melihat tindakan lain",
     "file": "File",
     "fileOpen": "Ketuk untuk membuka",

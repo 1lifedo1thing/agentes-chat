@@ -2910,8 +2910,6 @@ export const ptBR = {
       mentionsYou: "mencionaram você",
     },
     unreadDivider: "Novas",
-    offline: "Sem conexão. O que você mandar sai sozinho quando voltar.",
-    backOnline: "Conectado de novo",
     sendingOffline: "sai quando a conexão voltar",
     endOfReply: "Fim da resposta",
     mentionSuggestions: "Sugestões de menção",
@@ -3172,9 +3170,9 @@ export const ptBR = {
     computerNoHomeServer:
       "Ainda sem navegador. Configure <guide>este servidor como o computador dos agentes</guide> para ele ter um.",
     addComputer: "Adicionar um computador",
-    /** The row where the workspace's computer runs every agent as one OS user. */
+    /** Its "Computador" row where the workspace's computer runs every agent as one OS user: the place is a folder. */
     computerOneUser:
-      "Sem computador aqui. O computador do workspace roda todos os agentes como um só usuário, então não separa o espaço de cada pessoa. Um servidor Linux instalado com a opção --system do instalador separa.",
+      "Sua pasta e seu navegador no computador do workspace. Ele roda todos os agentes como um só usuário: os comandos de outros agentes ali podem lê-los, e só quem o conectou assume o controle. Um servidor Linux instalado com --system separa cada espaço.",
     powers: {
       title: "Poderes do workspace",
       help: "Só o seu braço direito faz isto.",
@@ -18536,10 +18534,6 @@ export const ptBR = {
       whereDm: "Conversa entre agentes",
       messages_one: "{{count}} mensagem",
       messages_other: "{{count}} mensagens",
-      origin: "{{from}} perguntou para {{to}} em #{{channel}} · {{time}}",
-      originDm: "{{from}} perguntou para {{to}} · {{time}}",
-      originNote: "{{from}} fez um pedido para {{to}} em #{{channel}} · {{time}}",
-      originNoteDm: "{{from}} fez um pedido para {{to}} · {{time}}",
       readOnly: "Só leitura.",
       steer: "Para mudar o rumo, fale com o {{name}}.",
       steer_female: "Para mudar o rumo, fale com a {{name}}.",

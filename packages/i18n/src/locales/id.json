@@ -2738,8 +2738,6 @@
       "mentionsYou": "kamu disebut"
     },
     "unreadDivider": "Baru",
-    "offline": "Tidak ada koneksi. Apa pun yang kamu kirim akan terkirim sendiri saat koneksi kembali.",
-    "backOnline": "Terhubung lagi",
     "sendingOffline": "terkirim saat koneksi kembali",
     "endOfReply": "Akhir balasan",
     "mentionSuggestions": "Saran sebutan"
@@ -2937,7 +2935,7 @@
     "computerNoHome": "Belum ada komputer. Komputer tersedia setelah workspace ini punya komputer sendiri.",
     "computerNoHomeServer": "Belum ada browser. Siapkan <guide>server ini sebagai komputer para agen</guide> agar ia punya satu.",
     "addComputer": "Tambahkan komputer",
-    "computerOneUser": "Tidak ada komputer di sini. Komputer workspace menjalankan semua agen sebagai satu pengguna, jadi tidak bisa memisahkan tempat tiap orang. Server Linux yang dipasang dengan opsi --system dari penginstal bisa.",
+    "computerOneUser": "Folder dan browser milikmu sendiri di komputer workspace. Komputer ini menjalankan semua agen sebagai satu pengguna: perintah agen lain di sana bisa membacanya, dan hanya orang yang menghubungkannya yang bisa mengambil kendali. Server Linux yang dipasang dengan --system memisahkan setiap tempat.",
     "powers": {
       "title": "Kemampuan di workspace",
       "help": "Hanya tangan kanan Anda yang melakukan ini.",
@@ -17599,10 +17597,6 @@
       "where": "#{{channel}} · antar-agen",
       "whereDm": "Antar-agen",
       "messages_other": "{{count}} pesan",
-      "origin": "{{from}} bertanya ke {{to}} di #{{channel}} · {{time}}",
-      "originDm": "{{from}} bertanya ke {{to}} · {{time}}",
-      "originNote": "{{from}} menyerahkan pekerjaan ke {{to}} di #{{channel}} · {{time}}",
-      "originNoteDm": "{{from}} menyerahkan pekerjaan ke {{to}} · {{time}}",
       "readOnly": "Hanya baca.",
       "steer": "Untuk mengubah arah, bicaralah dengan {{name}}.",
       "talk": "Bicara dengan {{name}}",

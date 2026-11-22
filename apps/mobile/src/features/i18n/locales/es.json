@@ -424,10 +424,6 @@
       "mentionsYou": "te mencionaron",
       "divider": "Nuevo"
     },
-    "connection": {
-      "down": "Sin conexión. Lo que envíes sale solo cuando vuelva.",
-      "back": "Conectado de nuevo"
-    },
     "longPressHint": "Mantén presionado para reaccionar y ver más acciones",
     "file": "Archivo",
     "fileOpen": "Toca para abrir",

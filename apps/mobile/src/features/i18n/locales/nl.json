@@ -408,10 +408,6 @@
       "mentionsYou": "je bent vermeld",
       "divider": "Nieuw"
     },
-    "connection": {
-      "down": "Geen verbinding. Wat je verstuurt, gaat vanzelf weg zodra die terug is.",
-      "back": "Weer verbonden"
-    },
     "longPressHint": "Ingedrukt houden om te reageren en meer acties te zien",
     "file": "Bestand",
     "fileOpen": "Tik om te openen",

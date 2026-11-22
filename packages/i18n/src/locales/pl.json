@@ -3049,8 +3049,6 @@
       "mentionsYou": "ktoś cię wspomniał"
     },
     "unreadDivider": "Nowe",
-    "offline": "Brak połączenia. To, co wyślesz, wyjdzie samo, gdy połączenie wróci.",
-    "backOnline": "Ponownie połączono",
     "sendingOffline": "wyjdzie, gdy wróci połączenie",
     "endOfReply": "Koniec odpowiedzi",
     "mentionSuggestions": "Podpowiedzi wzmianek"
@@ -3289,7 +3287,7 @@
     "computerNoHome": "Jeszcze bez komputera. Pojawi się, gdy ta przestrzeń robocza będzie miała własny komputer.",
     "computerNoHomeServer": "Na razie bez przeglądarki. Skonfiguruj <guide>ten serwer jako komputer agentów</guide>, aby ją dostał.",
     "addComputer": "Dodaj komputer",
-    "computerOneUser": "Tutaj nie ma komputera. Komputer przestrzeni roboczej uruchamia wszystkich agentów jako jednego użytkownika, więc nie może rozdzielić miejsc poszczególnych osób. Serwer Linux zainstalowany z opcją --system instalatora to potrafi.",
+    "computerOneUser": "Twój własny folder i przeglądarka na komputerze przestrzeni roboczej. Uruchamia on wszystkich agentów jako jednego użytkownika: polecenia innych agentów mogą je odczytać, a kontrolę przejmuje tylko osoba, która go podłączyła. Serwer Linux zainstalowany z --system oddziela każde miejsce.",
     "powers": {
       "title": "Uprawnienia w przestrzeni roboczej",
       "help": "To robi tylko Twoja prawa ręka.",
@@ -19334,10 +19332,6 @@
       "messages_few": "{{count}} wiadomości",
       "messages_many": "{{count}} wiadomości",
       "messages_other": "{{count}} wiadomości",
-      "origin": "Pytanie od {{from}} do {{to}} na #{{channel}} · {{time}}",
-      "originDm": "Pytanie od {{from}} do {{to}} · {{time}}",
-      "originNote": "Praca od {{from}} dla {{to}} na #{{channel}} · {{time}}",
-      "originNoteDm": "Praca od {{from}} dla {{to}} · {{time}}",
       "readOnly": "Tylko do odczytu.",
       "steer": "Aby zmienić kierunek, porozmawiaj z {{name}}.",
       "steer_female": "Aby zmienić kierunek, porozmawiaj z {{name}}.",

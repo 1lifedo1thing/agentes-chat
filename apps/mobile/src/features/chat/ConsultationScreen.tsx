@@ -4,7 +4,6 @@ import {
   consultChoiceOf,
   consultChoices,
   consultLineState,
-  consultOriginKey,
   openableConsultation,
 } from "@agenteschat/client/lib/consult-group";
 import { namesText } from "@agenteschat/client/lib/format";
@@ -28,7 +27,7 @@ import {
 } from "@/ui";
 import { chatHref } from "../links/logic";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory, useMeId, useOrgId, useWhen } from "../shared/hooks";
+import { useColors, useDirectory, useMeId, useOrgId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { SheetTitle } from "../shared/PromptForm";
 import { FocusLive, goBack } from "../shared/parts";
@@ -89,7 +88,6 @@ function Consultation({
   const meId = useMeId();
   const dir = useDirectory();
   const c = useColors();
-  const when = useWhen();
   const look = useConversationLook(false);
   const insets = useSafeAreaInsets();
   const several = Boolean(group && group.length > 1);
@@ -189,19 +187,6 @@ function Consultation({
           ) : (
             <EmptyState size="inline" title={t("chat.consultPanel.missing")} />
           )
-        ) : null}
-        {q ? (
-          <View style={[styles.line, styles.pad]}>
-            <LineIcon variant="caption" name="agent" size={14} color={c.faint} />
-            <Text variant="caption" tone="faint" style={styles.grow}>
-              {t(consultOriginKey(q, Boolean(channelName)), {
-                from: from.name,
-                to: to.name,
-                channel: channelName,
-                time: when.time(q.createdAt),
-              })}
-            </Text>
-          </View>
         ) : null}
         <RowLookContext.Provider value={look}>
           {list.map((m, i) => (

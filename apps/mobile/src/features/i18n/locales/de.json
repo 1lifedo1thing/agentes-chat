@@ -408,10 +408,6 @@
       "mentionsYou": "du wurdest erwähnt",
       "divider": "Neu"
     },
-    "connection": {
-      "down": "Keine Verbindung. Was du sendest, geht von selbst raus, sobald sie zurück ist.",
-      "back": "Wieder verbunden"
-    },
     "longPressHint": "Gedrückt halten, um zu reagieren und mehr Aktionen zu sehen",
     "file": "Datei",
     "fileOpen": "Zum Öffnen tippen",

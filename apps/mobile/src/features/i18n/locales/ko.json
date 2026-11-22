@@ -392,10 +392,6 @@
       "mentionsYou": "나를 멘션했어요",
       "divider": "새 메시지"
     },
-    "connection": {
-      "down": "연결되어 있지 않아요. 보낸 내용은 다시 연결되면 알아서 전송돼요.",
-      "back": "다시 연결됐어요"
-    },
     "longPressHint": "길게 눌러 반응하고 더 많은 작업 보기",
     "file": "파일",
     "fileOpen": "탭해서 열기",

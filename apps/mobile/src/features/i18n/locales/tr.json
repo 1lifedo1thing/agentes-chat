@@ -408,10 +408,6 @@
       "mentionsYou": "sizden bahsedildi",
       "divider": "Yeni"
     },
-    "connection": {
-      "down": "Bağlantı yok. Gönderdikleriniz bağlantı gelince kendiliğinden gider.",
-      "back": "Yeniden bağlandı"
-    },
     "longPressHint": "Tepki vermek ve diğer işlemleri görmek için basılı tutun",
     "file": "Dosya",
     "fileOpen": "Açmak için dokunun",

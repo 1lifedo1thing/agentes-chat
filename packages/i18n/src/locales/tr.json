@@ -2839,8 +2839,6 @@
       "mentionsYou": "sizden bahsedildi"
     },
     "unreadDivider": "Yeni",
-    "offline": "Bağlantı yok. Gönderdikleriniz bağlantı gelince kendiliğinden gider.",
-    "backOnline": "Yeniden bağlandı",
     "sendingOffline": "bağlantı gelince gönderilir",
     "endOfReply": "Yanıtın sonu",
     "mentionSuggestions": "Bahsetme önerileri"
@@ -3049,7 +3047,7 @@
     "computerNoHome": "Henüz bilgisayar yok. Bu çalışma alanının kendi bilgisayarı olduğunda bir tane olacak.",
     "computerNoHomeServer": "Henüz tarayıcı yok. Bir tarayıcı olması için <guide>bu sunucuyu ajanların bilgisayarı olarak</guide> kurun.",
     "addComputer": "Bilgisayar ekle",
-    "computerOneUser": "Burada bilgisayar yok. Çalışma alanının bilgisayarı tüm ajanları tek bir kullanıcı olarak çalıştırıyor, bu yüzden her kişinin yerini ayrı tutamıyor. Yükleyicinin --system seçeneğiyle kurulan bir Linux sunucusu bunu yapabilir.",
+    "computerOneUser": "Çalışma alanının bilgisayarında sana ait klasör ve tarayıcı. Bilgisayar tüm ajanları tek bir kullanıcı olarak çalıştırır: oradaki diğer ajanların komutları bunları okuyabilir ve kontrolü yalnızca onu bağlayan kişi alır. --system ile kurulan bir Linux sunucusu her yeri ayrı tutar.",
     "powers": {
       "title": "Çalışma alanı yetkileri",
       "help": "Bunları yalnızca sağ kolun yapar.",
@@ -18085,10 +18083,6 @@
       "whereDm": "Ajanlar arasında",
       "messages_one": "{{count}} mesaj",
       "messages_other": "{{count}} mesaj",
-      "origin": "{{from}}, #{{channel}} kanalında {{to}} ajanına sordu · {{time}}",
-      "originDm": "{{from}}, {{to}} ajanına sordu · {{time}}",
-      "originNote": "{{from}}, #{{channel}} kanalında {{to}} ajanına iş devretti · {{time}}",
-      "originNoteDm": "{{from}}, {{to}} ajanına iş devretti · {{time}}",
       "readOnly": "Yalnızca okuma.",
       "steer": "Yönü değiştirmek için {{name}} ile konuşun.",
       "talk": "{{name}} ile konuş",

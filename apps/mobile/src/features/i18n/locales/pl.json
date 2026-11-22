@@ -440,10 +440,6 @@
       "mentionsYou": "ktoś cię wspomniał",
       "divider": "Nowe"
     },
-    "connection": {
-      "down": "Brak połączenia. To, co wyślesz, pójdzie samo, gdy połączenie wróci.",
-      "back": "Znowu połączono"
-    },
     "longPressHint": "Przytrzymaj, aby zareagować i zobaczyć więcej akcji",
     "file": "Plik",
     "fileOpen": "Stuknij, aby otworzyć",
