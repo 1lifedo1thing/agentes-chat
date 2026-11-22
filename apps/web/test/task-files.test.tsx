@@ -211,7 +211,11 @@ describe("a task's Anexos", () => {
     expect(screen().getByRole("tab", { name: /Anexos/ }).textContent).toContain("1");
     await act(async () => fireEvent.click(screen().getByRole("button", { name: "Ver anexos" })));
     await settle(4);
-    expect(screen().getByRole("tab", { name: /Anexos/ }).getAttribute("aria-selected")).toBe("true");
+    expect(
+      screen()
+        .getByRole("tab", { name: /Anexos/ })
+        .getAttribute("aria-selected"),
+    ).toBe("true");
   });
 
   test("× takes a file off the task, never to the trash", async () => {

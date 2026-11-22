@@ -8480,7 +8480,13 @@
       "empty": "Dosyaları buraya sürükleyin, bir ekran görüntüsü yapıştırın ya da görevin sohbetinde gönderin.",
       "fromCreation": "Oluşturulurken · {{when}}",
       "fromComment": "{{name}} yorumu · {{when}}",
-      "linked": "{{name}} bağladı"
+      "linked": "{{name}} bağladı",
+      "remove": "{{name}} dosyasını görevden çıkar",
+      "removeShort": "Görevden çıkar",
+      "removed": "{{name}} görevden çıkarıldı. Dosya Drive'da duruyor.",
+      "added_one": "Dosya eklere eklendi",
+      "added_other": "{{count}} dosya eklere eklendi",
+      "see": "Ekleri gör"
     },
     "history": {
       "commented": "yorum yaptı",

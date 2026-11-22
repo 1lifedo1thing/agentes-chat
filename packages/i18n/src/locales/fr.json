@@ -8839,7 +8839,14 @@
       "empty": "Glissez des fichiers ici, collez une capture ou envoyez-les dans la conversation de la tâche.",
       "fromCreation": "À la création · {{when}}",
       "fromComment": "Commentaire de {{name}} · {{when}}",
-      "linked": "Lié par {{name}}"
+      "linked": "Lié par {{name}}",
+      "remove": "Retirer {{name}} de la tâche",
+      "removeShort": "Retirer de la tâche",
+      "removed": "{{name}} ne fait plus partie de la tâche. Le fichier reste dans le Drive.",
+      "added_one": "Fichier dans les pièces jointes",
+      "added_many": "{{count}} fichiers dans les pièces jointes",
+      "added_other": "{{count}} fichiers dans les pièces jointes",
+      "see": "Voir les pièces jointes"
     },
     "history": {
       "commented": "a commenté",
