@@ -20797,6 +20797,7 @@ export const en = {
     openAgain: "Open again",
     ended: "The shell ended",
     dropped: "The connection to the terminal dropped",
+    moved: "This terminal is open in another window",
     screening: "Terminals are off here",
     forbidden: "Only whoever may use this computer opens a terminal",
     offline: "The computer is offline",

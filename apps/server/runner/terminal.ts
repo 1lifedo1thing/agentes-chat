@@ -388,6 +388,7 @@ export class Terminals {
         if (before && socketOpen) {
           // Before its own `closed` runs: it finds another viewer here and leaves the shell alone.
           socket = data;
+          before.send(JSON.stringify({ type: "moved" }));
           before.close(STREAM_CLOSE.normal, "opened again elsewhere");
         }
         socket = data;

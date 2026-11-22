@@ -16,12 +16,13 @@ import "@xterm/xterm/css/xterm.css";
 import "./code-terminal.css";
 
 /** What the pane shows: the shell opening or live, or why it closed (`dropped`: it was live, then its socket broke). */
-type PaneState = "opening" | "live" | "dropped" | TerminalEnd;
+type PaneState = "opening" | "live" | "dropped" | "moved" | TerminalEnd;
 
 /** Each closed state's line. */
 const END_WORDS = {
   ended: "codeTerminal.ended",
   dropped: "codeTerminal.dropped",
+  moved: "codeTerminal.moved",
   screening: "codeTerminal.screening",
   forbidden: "codeTerminal.forbidden",
   offline: "codeTerminal.offline",
@@ -224,6 +225,8 @@ export function TerminalPane({
         if (typeof data === "string") {
           const said = terminalFrame(data);
           if (said === "exit") setState("ended");
+          // Another window took this terminal: its shell goes on there, and "Open again" takes it back.
+          else if (said === "moved") setState("moved");
           else if (said === "cwd_ignored") setAgentFolder(true);
           return;
         }
@@ -239,7 +242,7 @@ export function TerminalPane({
         shell.options.cursorBlink = false;
         const end = terminalCloseState(ev.code, (ev as { reason?: string }).reason ?? "");
         // Its shell's `exit` came first: it ended, however its socket closed after.
-        setState((s) => (s === "ended" ? s : s === "live" && end === "failed" ? "dropped" : end));
+        setState((s) => (s === "ended" || s === "moved" ? s : s === "live" && end === "failed" ? "dropped" : end));
       };
 
       const resized = () => {

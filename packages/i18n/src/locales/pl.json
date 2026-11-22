@@ -21361,7 +21361,8 @@
     "busy": "Na tym komputerze jest już otwartych tyle terminali, ile się da. Zamknij jeden i otwórz ponownie.",
     "paused": "Komputer jest wstrzymany",
     "failed": "Nie udało się otworzyć terminala",
-    "agentFolder": "Terminal otworzył się w folderze agenta. Zaktualizuj komputer, aby otwierał się w folderze sesji."
+    "agentFolder": "Terminal otworzył się w folderze agenta. Zaktualizuj komputer, aby otwierał się w folderze sesji.",
+    "moved": "Ten terminal jest otwarty w innym oknie"
   },
   "agora": {
     "label": "Teraz",

@@ -412,6 +412,7 @@ test("a named terminal keeps its shell when its viewer leaves, and the same name
   const third = memoryDataSocket();
   await terminals.open(dev, SIZE, async () => third.socket, undefined, "person.tab-0001");
   expect(second.closed).not.toBeNull();
+  expect(second.texts().map((t) => JSON.parse(t))).toEqual([{ type: "moved" }]);
   expect(shell.hungUp).toBe(false);
   // The person closes its tab: the shell ends now.
   third.control({ type: "end" });

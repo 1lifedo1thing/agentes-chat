@@ -55717,5 +55717,8 @@
   },
   "codeSessions.gitTab.openFile": {
     "value": "Open the file"
+  },
+  "codeTerminal.moved": {
+    "value": "This terminal is open in another window"
   }
 }

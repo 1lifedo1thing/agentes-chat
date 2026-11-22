@@ -19531,7 +19531,8 @@
     "busy": "Komputer ini sudah membuka terminal sebanyak yang ia bisa. Tutup satu lalu buka lagi.",
     "paused": "Komputer sedang dijeda",
     "failed": "Tidak bisa membuka terminal",
-    "agentFolder": "Terminal terbuka di folder agen. Perbarui komputer agar terbuka di folder sesi."
+    "agentFolder": "Terminal terbuka di folder agen. Perbarui komputer agar terbuka di folder sesi.",
+    "moved": "Terminal ini terbuka di jendela lain"
   },
   "agora": {
     "label": "Sekarang",

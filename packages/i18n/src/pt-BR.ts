@@ -20733,6 +20733,7 @@ export const ptBR = {
     openAgain: "Abrir de novo",
     ended: "O shell terminou",
     dropped: "A conexão com o terminal caiu",
+    moved: "Este terminal está aberto em outra janela",
     screening: "O terminal está desligado aqui",
     forbidden: "Só quem pode usar esse computador abre o terminal",
     offline: "Computador offline",

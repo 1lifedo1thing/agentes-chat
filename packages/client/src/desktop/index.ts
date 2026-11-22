@@ -546,10 +546,10 @@ export function terminalCloseState(code: number, reason = ""): TerminalEnd {
  * What a terminal's text frame says: its shell ended (`exit`), or its computer, too old for the folder asked, started
  * it in the agent's folder (`cwd_ignored`, ADR 0214); null for any other.
  */
-export function terminalFrame(text: string): "exit" | "cwd_ignored" | null {
+export function terminalFrame(text: string): "exit" | "moved" | "cwd_ignored" | null {
   try {
     const type = (JSON.parse(text) as { type?: unknown }).type;
-    return type === "exit" || type === "cwd_ignored" ? type : null;
+    return type === "exit" || type === "moved" || type === "cwd_ignored" ? type : null;
   } catch {
     return null;
   }

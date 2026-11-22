@@ -20070,7 +20070,8 @@
     "busy": "Auf diesem Computer sind schon so viele Terminals offen, wie er zulässt. Schließ eins und versuch es noch einmal.",
     "paused": "Der Computer ist pausiert",
     "failed": "Das Terminal ließ sich nicht öffnen",
-    "agentFolder": "Das Terminal wurde im Ordner des Agenten geöffnet. Aktualisiere den Computer, um es im Ordner der Sitzung zu öffnen."
+    "agentFolder": "Das Terminal wurde im Ordner des Agenten geöffnet. Aktualisiere den Computer, um es im Ordner der Sitzung zu öffnen.",
+    "moved": "Dieses Terminal ist in einem anderen Fenster geöffnet"
   },
   "agora": {
     "label": "Jetzt",

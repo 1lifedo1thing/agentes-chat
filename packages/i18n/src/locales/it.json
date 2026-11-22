@@ -20809,7 +20809,8 @@
     "busy": "Questo computer ha già aperti tutti i terminali che può gestire. Chiudine uno e riprova.",
     "paused": "Il computer è in pausa",
     "failed": "Impossibile aprire il terminale",
-    "agentFolder": "Il terminale si è aperto nella cartella dell'agente. Aggiorna il computer per aprirlo nella cartella della sessione."
+    "agentFolder": "Il terminale si è aperto nella cartella dell'agente. Aggiorna il computer per aprirlo nella cartella della sessione.",
+    "moved": "Questo terminale è aperto in un'altra finestra"
   },
   "agora": {
     "label": "Ora",

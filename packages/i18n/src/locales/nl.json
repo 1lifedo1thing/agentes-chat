@@ -20253,7 +20253,8 @@
     "busy": "Op deze computer staan al zoveel terminals open als hij aankan. Sluit er een en probeer het opnieuw.",
     "paused": "De computer is gepauzeerd",
     "failed": "Kon de terminal niet openen",
-    "agentFolder": "De terminal is geopend in de map van de agent. Werk de computer bij om hem in de map van de sessie te openen."
+    "agentFolder": "De terminal is geopend in de map van de agent. Werk de computer bij om hem in de map van de sessie te openen.",
+    "moved": "Deze terminal is in een ander venster geopend"
   },
   "agora": {
     "label": "Nu",

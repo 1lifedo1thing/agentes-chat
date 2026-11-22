@@ -20793,7 +20793,8 @@
     "busy": "Cet ordinateur a déjà autant de terminaux ouverts qu'il peut en accepter. Fermez-en un et réessayez.",
     "paused": "L'ordinateur est en pause",
     "failed": "Impossible d'ouvrir le terminal",
-    "agentFolder": "Le terminal s'est ouvert dans le dossier de l'agent. Mettez à jour l'ordinateur pour l'ouvrir dans le dossier de la session."
+    "agentFolder": "Le terminal s'est ouvert dans le dossier de l'agent. Mettez à jour l'ordinateur pour l'ouvrir dans le dossier de la session.",
+    "moved": "Ce terminal est ouvert dans une autre fenêtre"
   },
   "agora": {
     "label": "Maintenant",

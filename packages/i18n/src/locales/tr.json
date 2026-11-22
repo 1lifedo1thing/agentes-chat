@@ -19993,7 +19993,8 @@
     "busy": "Bu bilgisayarda açılabilecek en fazla terminal zaten açık. Birini kapatıp yeniden açın.",
     "paused": "Bilgisayar duraklatıldı",
     "failed": "Terminal açılamadı",
-    "agentFolder": "Terminal ajanın klasöründe açıldı. Oturumun klasöründe açılması için bilgisayarı güncelleyin."
+    "agentFolder": "Terminal ajanın klasöründe açıldı. Oturumun klasöründe açılması için bilgisayarı güncelleyin.",
+    "moved": "Bu terminal başka bir pencerede açık"
   },
   "agora": {
     "label": "Şimdi",

@@ -20645,7 +20645,8 @@
     "busy": "Esta computadora ya tiene abiertas todas las terminales que admite. Cierra una y vuelve a intentarlo.",
     "paused": "La computadora está en pausa",
     "failed": "No se pudo abrir la terminal",
-    "agentFolder": "La terminal se abrió en la carpeta del agente. Actualiza la computadora para abrirla en la carpeta de la sesión."
+    "agentFolder": "La terminal se abrió en la carpeta del agente. Actualiza la computadora para abrirla en la carpeta de la sesión.",
+    "moved": "Este terminal está abierto en otra ventana"
   },
   "agora": {
     "label": "Ahora",

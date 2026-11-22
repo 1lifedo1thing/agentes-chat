@@ -567,7 +567,7 @@ export function createStreamBroker(deps: StreamBrokerDeps) {
         if (!s) return;
         if (typeof data === "string") {
           const control = parseStreamControl(data);
-          if (control?.type === "exit" && s.request.kind === "terminal") {
+          if ((control?.type === "exit" || control?.type === "moved") && s.request.kind === "terminal") {
             quietly(() => s.viewer.send(JSON.stringify(control)));
           }
           // Where the computer's old session ends: the viewer starts noVNC again on the bytes after it.

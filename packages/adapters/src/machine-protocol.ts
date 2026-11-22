@@ -1723,6 +1723,8 @@ export type StreamControl =
   | { type: "exit"; code: number | null }
   /** Viewer → runner (`TERMINAL_KEEP_PROTOCOL`): the person closed a kept terminal, so its shell ends now. */
   | { type: "end" }
+  /** Runner → viewer (`TERMINAL_KEEP_PROTOCOL`): another viewer took this kept terminal; its shell goes on there. */
+  | { type: "moved" }
   /**
    * Server → viewer, once a terminal is ready (ADR 0214): its computer is too old for the folder it was asked to start
    * in (`TERMINAL_CWD_PROTOCOL`), so the shell started in the agent's folder.
@@ -4866,6 +4868,7 @@ export function parseStreamControl(raw: string): StreamControl | null {
     return { type: "exit", code: f.code as number | null };
   }
   if (f.type === "end") return { type: "end" };
+  if (f.type === "moved") return { type: "moved" };
   if (f.type === "mode" && (f.mode === "watch" || f.mode === "control")) return { type: "mode", mode: f.mode };
   if (f.type === "ack") return { type: "ack" };
   return null;
