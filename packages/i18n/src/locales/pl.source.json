@@ -55703,9 +55703,6 @@
   "codeSessions.tabs.close": {
     "value": "Close {{name}}"
   },
-  "codeSessions.tabs.newTerminal": {
-    "value": "New terminal"
-  },
   "errors.codeSession.fileChanged": {
     "value": "This file changed on the computer after you opened it."
   },
@@ -55714,5 +55711,8 @@
   },
   "codeSessions.files.cut": {
     "value": "Only the first {{size}} show here."
+  },
+  "codeSessions.tabs.add": {
+    "value": "New tab"
   }
 }

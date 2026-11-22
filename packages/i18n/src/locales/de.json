@@ -11356,7 +11356,7 @@
       "talk": "Unterhaltung",
       "terminalN": "Terminal {{n}}",
       "close": "{{name}} schließen",
-      "newTerminal": "Neues Terminal"
+      "add": "Neuer Tab"
     }
   },
   "code": {

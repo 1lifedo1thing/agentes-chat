@@ -11825,7 +11825,7 @@
       "talk": "Conversazione",
       "terminalN": "Terminale {{n}}",
       "close": "Chiudi {{name}}",
-      "newTerminal": "Nuovo terminale"
+      "add": "Nuova scheda"
     }
   },
   "code": {

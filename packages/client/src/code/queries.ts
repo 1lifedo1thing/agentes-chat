@@ -122,6 +122,8 @@ export const useSaveCodeFile = (orgId: string, sessionId: string) => {
   return useMutation({
     mutationFn: (input: { path: string; content: string; rev: string; overwrite?: boolean }) =>
       api.code.saveFile(orgId, sessionId, input),
+    // The file's tab says a failed save itself (a file that changed asks which one stays).
+    meta: { quiet: true },
     onSuccess: (file) => {
       qc.setQueryData(codeKeys.file(orgId, sessionId, file.path), file);
       void qc.invalidateQueries({ queryKey: codeKeys.files(orgId, sessionId) });

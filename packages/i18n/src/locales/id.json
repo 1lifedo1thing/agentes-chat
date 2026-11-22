@@ -10954,7 +10954,7 @@
       "talk": "Percakapan",
       "terminalN": "Terminal {{n}}",
       "close": "Tutup {{name}}",
-      "newTerminal": "Terminal baru"
+      "add": "Tab baru"
     }
   },
   "code": {

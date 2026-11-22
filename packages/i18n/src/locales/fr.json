@@ -11797,7 +11797,7 @@
       "talk": "Conversation",
       "terminalN": "Terminal {{n}}",
       "close": "Fermer {{name}}",
-      "newTerminal": "Nouveau terminal"
+      "add": "Nouvel onglet"
     }
   },
   "code": {

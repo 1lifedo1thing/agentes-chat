@@ -11787,7 +11787,7 @@ export const ptBR = {
       talk: "Conversa",
       terminalN: "Terminal {{n}}",
       close: "Fechar {{name}}",
-      newTerminal: "Novo terminal",
+      add: "Nova aba",
     },
     screen: {
       computer: "Computador do {{name}}",

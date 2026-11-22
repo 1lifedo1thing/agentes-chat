@@ -11426,7 +11426,7 @@
       "talk": "Gesprek",
       "terminalN": "Terminal {{n}}",
       "close": "{{name}} sluiten",
-      "newTerminal": "Nieuwe terminal"
+      "add": "Nieuw tabblad"
     }
   },
   "code": {

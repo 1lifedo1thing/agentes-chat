@@ -11291,7 +11291,7 @@
       "talk": "Sohbet",
       "terminalN": "Terminal {{n}}",
       "close": "{{name}} sekmesini kapat",
-      "newTerminal": "Yeni terminal"
+      "add": "Yeni sekme"
     }
   },
   "code": {

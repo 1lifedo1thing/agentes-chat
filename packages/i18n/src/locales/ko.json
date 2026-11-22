@@ -10891,7 +10891,7 @@
       "talk": "대화",
       "terminalN": "터미널 {{n}}",
       "close": "{{name}} 닫기",
-      "newTerminal": "새 터미널"
+      "add": "새 탭"
     }
   },
   "code": {

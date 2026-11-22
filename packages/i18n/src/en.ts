@@ -11772,7 +11772,7 @@ export const en = {
       talk: "Conversation",
       terminalN: "Terminal {{n}}",
       close: "Close {{name}}",
-      newTerminal: "New terminal",
+      add: "New tab",
     },
     screen: {
       computer: "{{name}}'s computer",

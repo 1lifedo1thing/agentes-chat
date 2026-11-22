@@ -85,7 +85,13 @@ export function CodeSessionView({ sessionId }: { sessionId: string }) {
           {tabs.open.map((key) => (
             <div key={key} className="code-tabview" hidden={tabs.active !== key}>
               {isTerminal(key) ? (
-                <TerminalPane orgId={org.id} agentId={s.agentId} machineId={s.machineId} sessionId={s.id} />
+                <TerminalPane
+                  orgId={org.id}
+                  agentId={s.agentId}
+                  machineId={s.machineId}
+                  sessionId={s.id}
+                  focused={tabs.active === key}
+                />
               ) : (
                 <CodeFileTab
                   session={s}
@@ -204,7 +210,7 @@ function useSessionTabs(sessionId: string): Tabs {
   return { open: state.open, active: state.active, asking, dirty, show, openFile, openTerminal, close, stay, setDirty };
 }
 
-/** The session's tabs, under its header: the conversation, the open files and terminals, and "+" for a terminal. */
+/** The session's tabs, under its header: the conversation, the open files and terminals, and "+" for a new one (a terminal). */
 function SessionTabs({ session, tabs }: { session: CodeSession; tabs: Tabs }) {
   const { t } = useTranslation();
   let terminals = 0;
@@ -256,17 +262,25 @@ function SessionTabs({ session, tabs }: { session: CodeSession; tabs: Tabs }) {
           </span>
         );
       })}
-      <Button
-        size="sm"
-        variant="ghost"
-        icon="codeBlock"
-        className="code-tabs__new"
-        disabled={session.worktree.state !== "ready"}
-        title={t("codeSessions.tabs.newTerminal")}
-        onClick={tabs.openTerminal}
+      <Menu
+        align="start"
+        label={t("codeSessions.tabs.add")}
+        trigger={
+          <Button
+            size="sm"
+            variant="ghost"
+            icon="plus"
+            iconOnly
+            className="code-tabs__new"
+            aria-label={t("codeSessions.tabs.add")}
+            title={t("codeSessions.tabs.add")}
+          />
+        }
       >
-        {t("codeSessions.tabs.newTerminal")}
-      </Button>
+        <MenuItem icon="codeBlock" disabled={session.worktree.state !== "ready"} onSelect={tabs.openTerminal}>
+          {t("codeTerminal.label")}
+        </MenuItem>
+      </Menu>
     </div>
   );
 }

@@ -11724,7 +11724,7 @@
       "talk": "Conversación",
       "terminalN": "Terminal {{n}}",
       "close": "Cerrar {{name}}",
-      "newTerminal": "Nuevo terminal"
+      "add": "Nueva pestaña"
     }
   },
   "code": {

@@ -62,16 +62,25 @@ export function TerminalPane({
   agentId,
   machineId,
   sessionId,
+  focused,
 }: {
   orgId: string;
   agentId: string;
   /** The agent's computer: where its terminal is off, the way to turn it on there. */
   machineId: string | null;
   sessionId: string;
+  /** A terminal in a tab: the keys are its own whenever its tab comes on screen. */
+  focused?: boolean;
 }) {
   const { t } = useTranslation();
   const createSocket = useContext(SocketFactoryContext);
   const hostRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<Terminal | null>(null);
+  const wantsKeys = useRef(focused === true);
+  wantsKeys.current = focused === true;
+  useEffect(() => {
+    if (focused) shellRef.current?.focus();
+  }, [focused]);
   const [state, setState] = useState<PaneState>("opening");
   /** Its computer is too old for the session's folder: the shell started in the agent's folder. */
   const [agentFolder, setAgentFolder] = useState(false);
@@ -122,6 +131,8 @@ export function TerminalPane({
       const fit = new FitAddon();
       shell.loadAddon(fit);
       shell.open(host);
+      shellRef.current = shell;
+      if (wantsKeys.current) shell.focus();
       // The pane's room in cells, within the sizes the server takes. A room it can't read (a hidden pane) is no new
       // size: the terminal keeps its own, as xterm's own fit does.
       const fitted = () => {
@@ -211,6 +222,7 @@ export function TerminalPane({
         socket.close(1000);
       }
       term?.dispose();
+      shellRef.current = null;
     };
   }, [orgId, agentId, sessionId, createSocket, round]);
 

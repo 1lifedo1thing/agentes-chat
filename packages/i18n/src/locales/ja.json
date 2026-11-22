@@ -10897,7 +10897,7 @@
       "talk": "会話",
       "terminalN": "ターミナル {{n}}",
       "close": "{{name}} を閉じる",
-      "newTerminal": "新しいターミナル"
+      "add": "新しいタブ"
     }
   },
   "code": {

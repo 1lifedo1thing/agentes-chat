@@ -10968,7 +10968,7 @@
       "talk": "对话",
       "terminalN": "终端 {{n}}",
       "close": "关闭 {{name}}",
-      "newTerminal": "新建终端"
+      "add": "新建标签页"
     }
   },
   "code": {
