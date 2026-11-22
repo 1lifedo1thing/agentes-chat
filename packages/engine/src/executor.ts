@@ -3373,7 +3373,7 @@ async function executeRunInner(
   if (brainPlan.kind !== "claude_code") onDemandForOtherBrain(transcript);
   // The run's effective brain (ADR 0053 §10): shared code reads it, never the agent's stored brain.
   if (run.brain !== brainPlan.kind) {
-    await recordRunBrain(db, run.id, brainPlan.kind);
+    await recordRunBrain(db, run.id, brainPlan.kind, brainPlan.session?.machineId);
     run = { ...run, brain: brainPlan.kind };
     // A routine's ledger keeps the brain that ran it.
     const routineRunId = run.background ? routineRunIdOf(triggerMessage?.meta) : null;
@@ -4214,7 +4214,7 @@ async function executeRunInner(
     standIn = null;
     delete t.fallback;
     t.standInRefused = true;
-    await recordRunBrain(db, run.id, plan.kind);
+    await recordRunBrain(db, run.id, plan.kind, plan.session?.machineId);
     run = { ...run, brain: plan.kind };
     thinksAs(plan.kind);
     const { cause, provider } = providerFailureOf(error);
