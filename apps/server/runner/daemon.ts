@@ -115,14 +115,14 @@ import { DesktopManager } from "./desktop";
 import { DesktopSessions, type DesktopUser, runnerUser, systemDesktopUser } from "./desktop-session";
 import { EgressObservation, probeEgress } from "./egress";
 import { NetworkChangingError, RUNNER_VERSION, RunnerError } from "./errors";
-import { cachedExecutors, EXECUTORS_TTL_MS, type ExecutorRun } from "./executors";
+import { cachedExecutors, EXECUTORS_TTL_MS, type ExecutorRun, inHomeDirs } from "./executors";
 import { systemGitCache } from "./git";
 import { closeIdleUnderPressure, type HandlerContext, type RequestObserver, type RequestOutcome } from "./handlers";
 import { Holds } from "./holds";
 import { IphoneSetup, type IphoneSetupOptions } from "./iphone-setup";
 import { currentProcess, isCompiled, selfCommand } from "./launch";
 import { tailLines } from "./logfile";
-import { adoptLoginPath } from "./login-path";
+import { addUsualDirs, adoptLoginPath } from "./login-path";
 import { LoopbackGuard, loopbackEndpoints, runnerEndpoints } from "./loopback-guard";
 import { McpBridge, type McpTaskInfo, mcpSocketPath } from "./mcp";
 import {
@@ -569,6 +569,13 @@ export class RunnerDaemon implements RequestObserver {
     const proc = currentProcess();
     this.self = opts.self ?? { command: selfCommand(proc), compiled: isCompiled(proc) };
     this.refreshPath = opts.refreshPath ?? (process.platform === "win32" ? () => adoptLoginPath() : undefined);
+    // System mode is set at install and kept through pairings: account folders are lent to agents' users.
+    let system = false;
+    try {
+      system = readStoredConfig(opts.home)?.mode === "system";
+    } catch {
+      // an unreadable config starts unpaired
+    }
     const exec =
       opts.executors ??
       cachedExecutors({
@@ -577,7 +584,9 @@ export class RunnerDaemon implements RequestObserver {
         onChange: () => this.executorsChanged(),
         ...(process.platform === "win32"
           ? { before: () => this.refreshPath?.(), gitMissing: () => gitBashPath() === null }
-          : {}),
+          : system
+            ? { homeOnly: (bin: string) => inHomeDirs(bin) !== null }
+            : { before: () => addUsualDirs() }),
       });
     // Grok Build's and Antigravity's models as the accounts signed in here list them: the computer's own
     // `grok models` and `agy models` are signed out.
@@ -591,13 +600,6 @@ export class RunnerDaemon implements RequestObserver {
     };
     this.executorsKnown = () => !("known" in exec) || exec.known === true;
     this.executorsFresh = (exec as { fresh?: () => Promise<unknown> }).fresh ?? (async () => this.executors());
-    // System mode is set at install and kept through pairings: account folders are lent to agents' users.
-    let system = false;
-    try {
-      system = readStoredConfig(opts.home)?.mode === "system";
-    } catch {
-      // an unreadable config starts unpaired
-    }
     const lent = system
       ? (opts.systemAccounts ?? {
           root: SYSTEM_ACCOUNTS_ROOT,

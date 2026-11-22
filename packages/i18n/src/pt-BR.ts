@@ -1922,6 +1922,9 @@ export const ptBR = {
     open: "Abrir",
     openInBrowser: "Abrir no navegador",
     download: "Baixar",
+    copyImage: "Copiar imagem",
+    imageCopied: "Imagem copiada.",
+    copyImageFailed: "Não foi possível copiar a imagem. Use Baixar.",
     conversation: "Conversar",
     agentPage: "Ver página",
     back: "Voltar",
@@ -3672,6 +3675,14 @@ export const ptBR = {
       cantStart: "O {{program}} está no {{computer}}, mas não abre: {{message}}",
       outdated: "Atualize o app do agentes.chat no {{computer}} para instalar daqui.",
       asked: "Pedido enviado. {{name}} recebe um botão para instalar.",
+      /** A CLI the apps don't install: the line to run follows, after `missing`. */
+      runThis: "Rode este comando lá para instalar.",
+      /** System mode: each agent is its own OS user, so the CLI goes where all of them run it. The line follows. */
+      missingSystem:
+        "O {{program}} ainda não está no {{computer}} para os agentes, que trabalham cada um como um usuário próprio. Rode este comando lá para instalar para todos.",
+      /** System mode: the CLI is only in root's `~/.local/bin`. The line follows. */
+      homeOnly:
+        "O {{program}} está instalado só para o root no {{computer}}. Cada agente trabalha como um usuário próprio e não chega lá. Rode este comando lá para instalar para todos.",
     },
     titleFor: "Conectar uma IA para o {{name}}",
     titleFor_female: "Conectar uma IA para a {{name}}",
@@ -12593,6 +12604,8 @@ export const ptBR = {
       tool_offOne: "O {{program}} está desligado no {{computer}}.",
       not_installed: "O {{program}} não está instalado no {{computer}}.",
       cant_start: "O {{program}} está no {{computer}}, mas não abre.",
+      /** System mode: the CLI is only in root's `~/.local/bin`. */
+      home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
       no_computerCloud: "Disponível assim que o {{computer}} ficar pronto.",

@@ -2008,6 +2008,9 @@
     "open": "Otwórz",
     "openInBrowser": "Otwórz w przeglądarce",
     "download": "Pobierz",
+    "copyImage": "Kopiuj obraz",
+    "imageCopied": "Skopiowano obraz.",
+    "copyImageFailed": "Nie udało się skopiować obrazu. Użyj opcji Pobierz.",
     "conversation": "Napisz wiadomość",
     "agentPage": "Zobacz stronę",
     "back": "Wstecz",
@@ -3760,7 +3763,10 @@
       "getGit": "Pobierz Git for Windows",
       "cantStart": "{{program}} jest na {{computer}}, ale się nie uruchamia: {{message}}",
       "outdated": "Zaktualizuj aplikację agentes.chat na {{computer}}, żeby instalować stąd.",
-      "asked": "Prośba wysłana. {{name}} dostanie przycisk do instalacji."
+      "asked": "Prośba wysłana. {{name}} dostanie przycisk do instalacji.",
+      "runThis": "Uruchom tam to polecenie, aby go zainstalować.",
+      "missingSystem": "{{program}} nie ma jeszcze na {{computer}} dla agentów, z których każdy pracuje jako osobny użytkownik. Uruchom tam to polecenie, aby zainstalować go dla wszystkich.",
+      "homeOnly": "{{program}} jest zainstalowany na {{computer}} tylko dla roota. Każdy agent pracuje jako osobny użytkownik i nie ma do niego dostępu. Uruchom tam to polecenie, aby zainstalować go dla wszystkich."
     },
     "titleFor": "Połącz AI dla: {{name}}",
     "have": {
@@ -13100,7 +13106,8 @@
       "cant_start": "{{program}} jest na {{computer}}, ale się nie uruchamia.",
       "not_reported": "{{computer}} wciąż sprawdza, jakie ma programy. To zmieni się samo, gdy skończy.",
       "system": "{{program}} nie działa jeszcze w systemie komputera {{computer}}.",
-      "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy."
+      "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy.",
+      "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu."
     },
     "notAvailableNow": "Wybrane, ale teraz niedostępne.",
     "offline": "{{computer}} jest teraz offline.",

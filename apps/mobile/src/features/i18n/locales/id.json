@@ -546,6 +546,8 @@
     "camera": "Kamera",
     "photos": "Foto",
     "file": "File",
+    "paste": "Tempel",
+    "pasteGone": "Gambar yang disalin tidak bisa dibaca. Salin lagi, lalu ketuk Tempel.",
     "media": "GIF",
     "noCamera": "Tidak ada akses kamera. Izinkan di Pengaturan ponsel.",
     "summary": "Rangkum obrolan",

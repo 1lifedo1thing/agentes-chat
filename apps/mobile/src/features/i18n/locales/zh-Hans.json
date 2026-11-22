@@ -546,6 +546,8 @@
     "camera": "相机",
     "photos": "照片",
     "file": "文件",
+    "paste": "粘贴",
+    "pasteGone": "无法读取复制的图片。请重新复制，然后点按粘贴。",
     "media": "GIF",
     "noCamera": "无法访问相机。请在手机的设置中允许。",
     "summary": "总结聊天",

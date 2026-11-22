@@ -578,6 +578,8 @@
     "camera": "Appareil photo",
     "photos": "Photos",
     "file": "Fichier",
+    "paste": "Coller",
+    "pasteGone": "Impossible de lire l'image copiée. Copiez-la à nouveau, puis touchez Coller.",
     "media": "GIFs",
     "noCamera": "Pas d'accès à l'appareil photo. Autorisez-le dans les Réglages du téléphone.",
     "summary": "Résumer la discussion",

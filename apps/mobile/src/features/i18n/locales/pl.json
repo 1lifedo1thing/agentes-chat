@@ -594,6 +594,8 @@
     "camera": "Aparat",
     "photos": "Zdjęcia",
     "file": "Plik",
+    "paste": "Wklej",
+    "pasteGone": "Nie udało się odczytać skopiowanego obrazu. Skopiuj go ponownie i stuknij Wklej.",
     "media": "GIF-y",
     "noCamera": "Brak dostępu do aparatu. Zezwól na niego w Ustawieniach telefonu.",
     "summary": "Podsumuj czat",

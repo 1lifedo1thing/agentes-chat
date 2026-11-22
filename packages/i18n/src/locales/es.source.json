@@ -4586,6 +4586,15 @@
   "contextMenu.download": {
     "value": "Download"
   },
+  "contextMenu.copyImage": {
+    "value": "Copy image"
+  },
+  "contextMenu.imageCopied": {
+    "value": "Image copied."
+  },
+  "contextMenu.copyImageFailed": {
+    "value": "The image couldn't be copied. Use Download instead."
+  },
   "contextMenu.conversation": {
     "value": "Message"
   },
@@ -8616,6 +8625,15 @@
   },
   "connectAi.cli.asked": {
     "value": "Request sent. {{name}} gets a button to install it."
+  },
+  "connectAi.cli.runThis": {
+    "value": "Run this command there to install it."
+  },
+  "connectAi.cli.missingSystem": {
+    "value": "{{program}} isn't on {{computer}} for its agents yet, who each work as their own user. Run this command there to install it for all of them."
+  },
+  "connectAi.cli.homeOnly": {
+    "value": "{{program}} is installed only for root on {{computer}}. Each agent works as its own user and can't reach it. Run this command there to install it for all of them."
   },
   "connectAi.titleFor": {
     "value": "Connect an AI for {{name}}"
@@ -29692,6 +29710,9 @@
   },
   "brain.reasons.cant_start": {
     "value": "{{program}} is on {{computer}}, but it won't start."
+  },
+  "brain.reasons.home_only": {
+    "value": "{{program}} is installed only for root on {{computer}}, where the agents can't reach it."
   },
   "brain.reasons.not_reported": {
     "value": "{{computer}} is still checking which programs it has. This changes by itself when it's done."

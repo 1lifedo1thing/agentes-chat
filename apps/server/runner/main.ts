@@ -71,7 +71,7 @@ import { writeJson } from "./json-file";
 import { hasBunTerminal, runningCompiled, thisRunner } from "./launch";
 import { acquireLock, lockedMessage, pidAlive, readLock } from "./lock";
 import { RotatingFile } from "./logfile";
-import { adoptLoginPath } from "./login-path";
+import { addUsualDirs, adoptLoginPath } from "./login-path";
 import { LoopbackGuard, loopbackEndpoints, runnerEndpoints } from "./loopback-guard";
 import { MCP_TOKEN_FILE, mcpSocketPath, runMcpRelay, runMcpServer } from "./mcp";
 import { runMigrate } from "./migrate";
@@ -466,6 +466,8 @@ async function start(): Promise<number> {
     console.error(lockedMessage(home, lock.holder));
     return serviceSafe(4);
   }
+  // Before anything starts a CLI: a service's PATH is the installing shell's (the daemon adds them again per look).
+  if (process.platform !== "win32" && config.mode !== "system") addUsualDirs();
   const daemon = new RunnerDaemon({ home, mode: "start", log, print: (line) => console.log(line), agyCopy: true });
   const stop = () => void daemon.stop();
   process.once("SIGINT", stop);

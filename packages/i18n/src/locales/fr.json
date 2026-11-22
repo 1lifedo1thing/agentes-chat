@@ -1935,6 +1935,9 @@
     "open": "Ouvrir",
     "openInBrowser": "Ouvrir dans le navigateur",
     "download": "Télécharger",
+    "copyImage": "Copier l'image",
+    "imageCopied": "Image copiée.",
+    "copyImageFailed": "Impossible de copier l'image. Utilisez Télécharger.",
     "conversation": "Envoyer un message",
     "agentPage": "Voir la page",
     "back": "Précédent",
@@ -3621,7 +3624,10 @@
       "getGit": "Télécharger Git for Windows",
       "cantStart": "{{program}} est sur {{computer}}, mais ne démarre pas : {{message}}",
       "outdated": "Mettez à jour l'app agentes.chat sur {{computer}} pour installer d'ici.",
-      "asked": "Demande envoyée. {{name}} reçoit un bouton pour l'installer."
+      "asked": "Demande envoyée. {{name}} reçoit un bouton pour l'installer.",
+      "runThis": "Lancez cette commande là-bas pour l'installer.",
+      "missingSystem": "{{program}} n'est pas encore sur {{computer}} pour les agents, qui travaillent chacun avec leur propre utilisateur. Lancez cette commande là-bas pour l'installer pour tous.",
+      "homeOnly": "{{program}} est installé uniquement pour root sur {{computer}}. Chaque agent travaille avec son propre utilisateur et n'y a pas accès. Lancez cette commande là-bas pour l'installer pour tous."
     },
     "titleFor": "Connecter une IA pour {{name}}",
     "titleFor_female": "Connecter une IA pour {{name}}",
@@ -12630,7 +12636,8 @@
       "cant_start": "{{program}} est sur {{computer}}, mais ne démarre pas.",
       "not_reported": "{{computer}} vérifie encore quels programmes il a. Ceci change tout seul une fois terminé.",
       "system": "{{program}} ne fonctionne pas encore sur le système de {{computer}}.",
-      "no_computerCloud": "Prêt dès que {{computer}} l'est."
+      "no_computerCloud": "Prêt dès que {{computer}} l'est.",
+      "home_only": "{{program}} est installé uniquement pour root sur {{computer}}, où les agents n'ont pas accès."
     },
     "notAvailableNow": "Choisi, mais indisponible pour le moment.",
     "offline": "{{computer}} est hors ligne pour le moment.",

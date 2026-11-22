@@ -1861,6 +1861,9 @@
     "open": "Aç",
     "openInBrowser": "Tarayıcıda aç",
     "download": "İndir",
+    "copyImage": "Görseli kopyala",
+    "imageCopied": "Görsel kopyalandı.",
+    "copyImageFailed": "Görsel kopyalanamadı. Bunun yerine İndir'i kullanın.",
     "conversation": "Mesaj gönder",
     "agentPage": "Sayfayı gör",
     "back": "Geri",
@@ -3472,7 +3475,10 @@
       "getGit": "Git for Windows'u indir",
       "cantStart": "{{program}}, {{computer}} üzerinde var ama açılmıyor: {{message}}",
       "outdated": "Buradan kurmak için {{computer}} üzerindeki agentes.chat uygulamasını güncelleyin.",
-      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır."
+      "asked": "İstek gönderildi. {{name}} kurmak için bir düğme alır.",
+      "runThis": "Kurmak için bu komutu orada çalıştırın.",
+      "missingSystem": "{{program}}, {{computer}} üzerinde her biri kendi kullanıcısıyla çalışan ajanlar için henüz yok. Hepsine kurmak için bu komutu orada çalıştırın.",
+      "homeOnly": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu. Her ajan kendi kullanıcısıyla çalışır ve ona erişemez. Hepsine kurmak için bu komutu orada çalıştırın."
     },
     "titleFor": "{{name}} için bir yapay zeka bağlayın",
     "have": {
@@ -12096,7 +12102,8 @@
       "cant_start": "{{program}}, {{computer}} üzerinde var ama açılmıyor.",
       "not_reported": "{{computer}} hangi programların olduğunu hâlâ kontrol ediyor. Bittiğinde bu kendiliğinden değişir.",
       "system": "{{program}} henüz {{computer}} sisteminde çalışmıyor.",
-      "no_computerCloud": "{{computer}} hazır olur olmaz hazır."
+      "no_computerCloud": "{{computer}} hazır olur olmaz hazır.",
+      "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez."
     },
     "notAvailableNow": "Seçildi ama şu anda kullanılamıyor.",
     "offline": "{{computer}} şu anda çevrimdışı.",

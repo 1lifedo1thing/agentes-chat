@@ -3637,6 +3637,11 @@ export function parseExecutors(v: Record<string, unknown>): NonNullable<RunnerIn
 export const CLI_ERROR_MAX = 300;
 /** `executors.broken.claude` on Windows when Git for Windows, which Claude Code needs there, isn't on the computer. */
 export const CLI_GIT_MISSING = "git_missing";
+/**
+ * `executors.broken.<cli>` in system mode for Cursor's, Grok Build or the Antigravity CLI found only in root's own
+ * `~/.local/bin`, where its installer puts it and no agent's user can run it.
+ */
+export const CLI_HOME_ONLY = "home_only";
 
 /** `hello.accounts` (protocol 13): at most `MAX_MACHINE_ACCOUNTS`, ids and kinds checked, short words only. */
 export function parseAccounts(v: unknown[]): RunnerAccountInfo[] {

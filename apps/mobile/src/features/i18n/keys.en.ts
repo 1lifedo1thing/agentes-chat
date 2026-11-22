@@ -602,6 +602,9 @@ export const featureKeysEn = {
     camera: "Camera",
     photos: "Photos",
     file: "File",
+    /** The tile shown while a picture is on the clipboard: it adds that picture to the message. */
+    paste: "Paste",
+    pasteGone: "The copied picture couldn't be read. Copy it again, then tap Paste.",
     /** The fourth tile: the GIFs and stickers (also beside the mic in the empty field). */
     media: "GIFs",
     noCamera: "No camera access. Allow it in the phone's Settings.",
