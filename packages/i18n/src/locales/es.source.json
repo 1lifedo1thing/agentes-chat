@@ -7691,6 +7691,9 @@
   "rightHand.card.only.model": {
     "value": "Only admins change an agent's model"
   },
+  "rightHand.card.only.effort": {
+    "value": "Only admins change an agent's effort"
+  },
   "rightHand.card.only.budget": {
     "value": "Only admins change an agent's budget"
   },
@@ -7732,6 +7735,9 @@
   },
   "rightHand.field.model": {
     "value": "Model"
+  },
+  "rightHand.field.effort": {
+    "value": "Effort"
   },
   "rightHand.field.ai_account": {
     "value": "AI account"

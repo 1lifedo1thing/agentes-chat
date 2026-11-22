@@ -2611,6 +2611,7 @@ export interface ProposalAccessLine {
 /** A setting the right hand's card changes on an agent (ADR 0137). */
 export type ProposalSettingField =
   | "model"
+  | "effort"
   | "ai_account"
   | "budget"
   | "owner"
@@ -2627,7 +2628,7 @@ export type ProposalSettingField =
   | "delete";
 
 /**
- * One line of a settings card: `model` a model id; `ai_account` `{ brain, accountId }`; `budget` nano-USD a month or
+ * One line of a settings card: `model` a model id; `effort` an effort as stored or null (its default); `ai_account` `{ brain, accountId }`; `budget` nano-USD a month or
  * null (the workspace's default); `owner` a user id; `audience` `{ mode, userIds, roleIds }`; `channel_add` /
  * `channel_remove` / `reply_mode` its seat in `channelId` (null: not in it, else whether it answers without a
  * mention); `skill` whether it has the skill in `skillId` on (its name in `label.to`); `name` its name; `look`

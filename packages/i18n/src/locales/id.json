@@ -2973,6 +2973,7 @@
       "onlyCreators": "Hanya admin yang membuat agen",
       "only": {
         "model": "Hanya admin yang mengubah model agen",
+        "effort": "Hanya admin yang mengubah upaya agen",
         "budget": "Hanya admin yang mengubah anggaran agen",
         "owner": "Hanya admin yang mengubah penanggung jawab agen",
         "archive": "Hanya admin yang mengarsipkan agen",
@@ -2990,6 +2991,7 @@
     },
     "field": {
       "model": "Model",
+      "effort": "Upaya",
       "ai_account": "Akun AI",
       "budget": "Anggaran bulanan",
       "owner": "Penanggung jawab",

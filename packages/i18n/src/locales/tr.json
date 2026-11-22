@@ -3085,6 +3085,7 @@
       "onlyCreators": "Ajanları yalnızca yöneticiler oluşturur",
       "only": {
         "model": "Bir ajanın modelini yalnızca yöneticiler değiştirir",
+        "effort": "Bir ajanın çabasını yalnızca yöneticiler değiştirir",
         "budget": "Bir ajanın bütçesini yalnızca yöneticiler değiştirir",
         "owner": "Bir ajanın sorumlusunu yalnızca yöneticiler değiştirir",
         "archive": "Bir ajanı yalnızca yöneticiler arşivler",
@@ -3102,6 +3103,7 @@
     },
     "field": {
       "model": "Model",
+      "effort": "Çaba",
       "ai_account": "Yapay zekâ hesabı",
       "budget": "Aylık bütçe",
       "owner": "Sorumlu",

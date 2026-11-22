@@ -3089,6 +3089,7 @@
       "onlyCreators": "Nur Admins erstellen Agenten",
       "only": {
         "model": "Nur Admins ändern das Modell eines Agenten",
+        "effort": "Nur Admins ändern den Aufwand eines Agenten",
         "budget": "Nur Admins ändern das Budget eines Agenten",
         "owner": "Nur Admins ändern, wem ein Agent gehört",
         "archive": "Nur Admins archivieren einen Agenten",
@@ -3106,6 +3107,7 @@
     },
     "field": {
       "model": "Modell",
+      "effort": "Aufwand",
       "ai_account": "KI-Konto",
       "budget": "Monatliches Budget",
       "owner": "Verantwortlich",

@@ -24,6 +24,7 @@ import {
   unnamedAccount,
 } from "@agenteschat/client/lib/ai-accounts";
 import { audienceOf, audiencePatch } from "@agenteschat/client/lib/audience";
+import { effortOf } from "@agenteschat/client/lib/brain-advanced";
 import { modelInput, modelRows } from "@agenteschat/client/lib/brain-picker";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
@@ -80,7 +81,12 @@ import { HelpLink } from "@/components/HelpLink";
 import { LoadingLine } from "@/components/Loading";
 import { PrefRow } from "@/components/NoticePrefs";
 import { useOrg } from "@/components/org-context";
-import { RightHandBrainDialog, type RightHandLink, type RightHandModel } from "@/components/RightHandBrainDialog";
+import {
+  RightHandBrainDialog,
+  type RightHandEffort,
+  type RightHandLink,
+  type RightHandModel,
+} from "@/components/RightHandBrainDialog";
 import { TeamWeekSchedule } from "@/components/TeamWeekSchedule";
 import { useComputerEdition } from "@/components/WorkspaceComputer";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -163,6 +169,13 @@ function planModelOf(t: TFunction, view: AgentBrain, onChange: (input: AgentBrai
   };
 }
 
+/** The effort line under the model: what the view thinks with and how hard, saved with `save`. */
+const effortOfView = (view: AgentBrain, save: (input: AgentBrainInput) => Promise<unknown>): RightHandEffort => ({
+  kind: view.brain,
+  value: effortOf(view.brain, view.effort),
+  onPick: (effort) => save({ effort }),
+});
+
 /** The model a plan's view runs, by its name (Automático included). */
 const usePlanModelLabel = (view: AgentBrain | undefined) => {
   const { t } = useTranslation();
@@ -197,7 +210,7 @@ export function RightHandMineRow({ agent }: { agent: Agent }) {
   if (!status) return null;
   const setMine = (input: AgentBrainInput, done?: () => void) => {
     setBusy(true);
-    void api.agents
+    return api.agents
       .setBrain(org.id, agent.id, { scope: "mine", ...input })
       .then(() =>
         Promise.all([
@@ -308,6 +321,7 @@ export function RightHandMineRow({ agent }: { agent: Agent }) {
         current={current}
         empty={t(held ? "agentSetup.firstRun.afterPlan" : "rightHand.settings.mineNobody")}
         model={own && view ? planModelOf(t, view, (input) => setMine(input)) : null}
+        effort={own && view ? effortOfView(view, setMine) : null}
         links={links}
         busy={busy}
       />
@@ -451,7 +465,7 @@ function RightHandForm({ agent }: { agent: Agent }) {
     update.mutate(patch, { onSuccess, onError: (e) => toast.show(errorText(t, e), "error") });
   const setWorkspace = (input: AgentBrainInput) => {
     setBusy(true);
-    void api.agents
+    return api.agents
       .setBrain(org.id, agent.id, { scope: "workspace", ...input })
       .then(() =>
         Promise.all(
@@ -727,6 +741,7 @@ function RightHandForm({ agent }: { agent: Agent }) {
         }
         current={current}
         model={model}
+        effort={view ? effortOfView(view, setWorkspace) : null}
         accounts={{
           items: others,
           onPick: pick,

@@ -3088,6 +3088,7 @@
       "onlyCreators": "Alleen admins maken agents",
       "only": {
         "model": "Alleen admins wijzigen het model van een agent",
+        "effort": "Alleen admins wijzigen de inspanning van een agent",
         "budget": "Alleen admins wijzigen het budget van een agent",
         "owner": "Alleen admins wijzigen wie verantwoordelijk is voor een agent",
         "archive": "Alleen admins archiveren een agent",
@@ -3105,6 +3106,7 @@
     },
     "field": {
       "model": "Model",
+      "effort": "Inspanning",
       "ai_account": "AI-account",
       "budget": "Maandbudget",
       "owner": "Verantwoordelijke",
