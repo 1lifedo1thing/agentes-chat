@@ -179,6 +179,7 @@ export const ROUTINE_EVENTS: RoutineEvent[] = [
   "github.pr_opened",
   "issue.created",
   "deploy.succeeded",
+  "telegram.message",
 ];
 
 /** Started by something happening (an event, an email, a webhook call), not by the clock. */
@@ -3064,7 +3065,6 @@ function OwnActions({
                 iconOnly
                 icon="close"
                 aria-label={t("routines.ownActions.remove", { action: ownActionName(t, name) })}
-                disabled={action.isPending}
                 onClick={() =>
                   action.mutate({
                     type: "update",
@@ -3103,7 +3103,6 @@ function VaultKeys({ routine }: { routine: Routine }) {
                 iconOnly
                 icon="close"
                 aria-label={t("routines.vaultKeys.remove", { key })}
-                disabled={action.isPending}
                 onClick={() =>
                   action.mutate({
                     type: "update",
