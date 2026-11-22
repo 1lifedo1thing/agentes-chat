@@ -937,6 +937,8 @@ export interface Agent {
   instructions: string;
   model: string;
   ownerUserId: string | null;
+  /** A role that answers for it instead of a person (ADR 0085, addendum of 2026-11-21); absent from older servers. */
+  ownerRoleId?: string | null;
   hasCredential: boolean;
   /** Admins only: its own monthly budget; null = the workspace default. Absent for members. */
   monthlyBudgetUsd?: number | null;
@@ -1109,6 +1111,8 @@ export interface TeamAgent {
   role: string;
   appearance: AgentLookInput | null;
   ownerUserId: string | null;
+  /** A role that answers for it instead of a person (absent from an older server). */
+  ownerRoleId?: string | null;
   /** Responde a: the agent it reports to (absent from an older server). */
   reportsToAgentId?: string | null;
   /** What it can do, as stable group keys (`drive`, `github`, `calendar`, `custom`…). */
@@ -1179,6 +1183,8 @@ export interface AgentInput {
   model?: string;
   credentialId?: string | null;
   ownerUserId?: string | null;
+  /** A role that answers for it instead of a person: naming it clears `ownerUserId`, and a person clears it. */
+  ownerRoleId?: string | null;
   monthlyBudgetUsd?: number | null;
   audience?: AgentAudience;
   /** With `audience`: the mailboxes the person agreed it loses; losing another refuses the save (409). */
@@ -1435,6 +1441,8 @@ export interface Channel {
   categoryId?: string | null;
   /** Order inside its category, from 0. */
   position?: number;
+  /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). Regular channels only. */
+  replyInThreads?: boolean;
   /**
    * Channel list only (`chat.channels`): messages since you last read it
    * (since you joined, if never), not yours; a thread reply counts only in a
@@ -1473,6 +1481,8 @@ export interface ChannelInput {
   visibility?: "public" | "private";
   /** Private only: limits it to people holding one of these roles (ADR 0125); empty: invite only. */
   audienceRoleIds?: string[];
+  /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
+  replyInThreads?: boolean;
 }
 
 /** A `#channel` link's card (`chat.card`): what the channel is and who is in it. */
@@ -1825,6 +1835,11 @@ export interface ActiveRun {
   pendingMessageIds?: string[];
   /** A routine's run working in the background: it holds no conversation and shows no "trabalhando". */
   background?: boolean;
+  /**
+   * Asked in the main timeline, it answers in the thread under that message (ADR 0214), as its channel said when it was
+   * asked. `threadId` is its conversation's root either way. Absent on a server from before it.
+   */
+  replyInThread?: boolean;
 }
 
 /** Real-time channel events (packages/engine/src/events.ts, docs/adr/0010-realtime.md). */
@@ -2287,6 +2302,8 @@ export interface Approval {
   routine?: boolean;
   /** The agent's owner (they and admins may decide). */
   ownerUserId?: string | null;
+  /** Its owner role instead: whoever holds it decides (absent from older servers). */
+  ownerRoleId?: string | null;
   /** When the approved action ran; null while it runs (or if it never did). */
   executedAt?: string | null;
   /**
@@ -2606,6 +2623,8 @@ export interface ProposalSettingLine {
   channelId?: string;
   skillId?: string;
   label?: { from?: string; to?: string };
+  /** `budget`: at or below the agent's spend this month, so applying it stops the agent at once. */
+  pausesNow?: boolean;
 }
 
 export interface Proposal {
@@ -2881,6 +2900,8 @@ export interface AgentStatus {
   working?: boolean;
   /** Its most important work for you, with where it shows when you read it (ADR 0084). Absent from older servers. */
   work?: AgentWork | null;
+  /** Work of its waits on its monthly budget: #general's team-stalled line names it. */
+  budgetPaused?: true;
 }
 
 /**
@@ -3005,6 +3026,8 @@ export interface AgentDetail {
   instructions: string;
   model: string;
   ownerUserId: string | null;
+  /** A role that answers for it instead of a person (absent from older servers). */
+  ownerRoleId?: string | null;
   /** Null = platform key (Cloud). */
   credentialId: string | null;
   /** This month's spend over its budget (its own, else the workspace default), in %. */
@@ -3992,6 +4015,10 @@ export interface Artifact {
   audience: ArtifactAudience;
   /** Who sees it on top of that conversation (ADR 0157); absent from an older server. */
   sharing?: ArtifactSharing;
+  /** Who sees and who edits it, people, roles and agents (ADR 0202); absent from an older server. */
+  access?: ArtifactAccess;
+  /** What its access lets me do (ADR 0202): `view` is read only; absent from an older server (edit). */
+  myAccess?: "view" | "edit";
   /**
    * I may change `sharing`: it lives in a conversation not everyone reads, and I read it there; or it is a file of the
    * Drive itself (ADR 0157, amendment 2026-11-17), and I made it or I'm an administrator.
@@ -4046,6 +4073,31 @@ export interface ArtifactSharing {
   mode: "conversation" | "people" | "everyone";
   userIds: string[];
   roleIds: string[];
+}
+
+/** What someone may do with a file (ADR 0202). */
+export type AccessLevel = "none" | "view" | "edit";
+
+/** Someone named on a file's access: a person, a role or an agent by id. */
+export interface ArtifactAccessRow {
+  id: string;
+  level: "view" | "edit";
+}
+
+/**
+ * Who sees and who edits a file (ADR 0202), row by row as Compartilhar shows it: who reads it where it lives (`place`:
+ * a conversation's readers; a file of the Drive itself has its maker, who always edits), the whole workspace, people,
+ * roles, every agent (a file of the Drive) or the agents where it lives, and agents by name. Administrators always see
+ * and edit. `limited`: someone who sees it only reads it.
+ */
+export interface ArtifactAccess {
+  place: "view" | "edit";
+  workspace: AccessLevel;
+  users: ArtifactAccessRow[];
+  roles: ArtifactAccessRow[];
+  agents: AccessLevel;
+  agentRows: ArtifactAccessRow[];
+  limited: boolean;
 }
 
 export type ArtifactAudience =
@@ -6269,6 +6321,12 @@ export interface BrainOption {
   reason?: BrainUnavailable;
   models: BrainModelOption[];
   defaultModel: string | null;
+  /**
+   * Antigravity: the newest Gemini isn't among its models, and why: the computer's agentes.chat is too old to bring a
+   * CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it (`cli_old`), or no
+   * account there has a plan that includes it (`plan`).
+   */
+  missing?: { modelId: string; label: string; why: "app_old" | "cli_old" | "plan" };
 }
 
 /** A computer the caller may give an agent, with what it offers. */
@@ -7120,7 +7178,9 @@ export type NotificationKind =
    * `latest.names` the first things it is about and `count` how many, `latest.text` the whole sentence in the
    * person's language. `source.agentId`, `machineId` or `accountId` when it is about one. Done once fixed.
    */
-  | "team_watch";
+  | "team_watch"
+  /** An agent's work stopped on its monthly budget: `source.agentId`, `latest.percent`. */
+  | "budget_paused";
 
 /** "O Gerente aprova por você" (ADR 0139 §2): what the person let the workspace's right hand approve. */
 export interface RightHandApprovals {

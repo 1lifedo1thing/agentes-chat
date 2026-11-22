@@ -2686,6 +2686,7 @@ export const ptBR = {
     working_other: "{{count}} agentes trabalhando",
   },
   channel: {
+    teamStalled: "Time parado",
     /** Channel settings' sections, for who manages it (ADR 0134). */
     settingsNav: {
       label: "Configurações do canal",
@@ -2816,6 +2817,9 @@ export const ptBR = {
     noTopic: "Sem descrição",
     nameLabel: "Nome",
     nameHelp: "Muda para todo mundo. Os links antigos continuam funcionando.",
+    replyInThreads: "Agentes respondem em threads",
+    replyInThreadsHelp:
+      "O agente chamado no canal responde na thread abaixo da mensagem, e o canal mostra uma linha para ela. O que já está em andamento fica onde está.",
     nameTaken: "Já existe #{{name}}.",
     generalName: "O #general mantém o nome.",
     archive: "Arquivar canal",
@@ -3231,6 +3235,7 @@ export const ptBR = {
       lookDefault: "A aparência padrão",
       none: "Nenhum",
       budgetDefault: "Padrão do workspace",
+      pausesNow: "pausa na hora",
       anAccount: "Uma conta de IA",
       everyone: "Todos",
       ownerOnly: "Só o responsável",
@@ -5993,6 +5998,8 @@ export const ptBR = {
       undo: "Desfazer",
       deadline: "Prazo",
       decides: "Quem decide",
+      /** A request of an agent a role answers for (ADR 0085, addendum of 2026-11-21): the first decision counts. */
+      decidesRole: "Qualquer pessoa de {{role}}",
       state: "Situação",
       why: "Por que {{name}} pede",
       email: "O e-mail",
@@ -7576,6 +7583,11 @@ export const ptBR = {
     noOwnerShort: "Os admins recebem os avisos e aprovam",
     noOwnerHelp: "Sem responsável, os admins recebem os avisos e aprovam as ações sensíveis.",
     ownerHelp: "Recebe os avisos de orçamento e aprova as ações sensíveis.",
+    /** A role as its owner (ADR 0085, addendum of 2026-11-21): whoever holds it gets them, any of them decides. */
+    ownerRoleHelp:
+      "Quem tem {{role}} recebe os pedidos de aprovação e os avisos dele. Qualquer um decide, inclusive quem entrar no cargo depois.",
+    ownerRoleHelp_female:
+      "Quem tem {{role}} recebe os pedidos de aprovação e os avisos dela. Qualquer um decide, inclusive quem entrar no cargo depois.",
     ownerYours: "Quem cria o agente é o responsável. Um admin pode passar para outra pessoa depois.",
     accessAdmins: "Só admins dão acesso a apps e caixas de email. Depois de criar, peça a um admin.",
     accessAdminsKeeper: "Só {{keeper}} dá acesso a apps e caixas de email. Depois de criar, peça a {{keeper}}.",
@@ -10406,6 +10418,8 @@ export const ptBR = {
       reply: "Responder",
       replies_one: "{{count}} resposta",
       replies_other: "{{count}} respostas",
+      replying_one: "{{names}} está respondendo na thread",
+      replying_other: "{{names}} estão respondendo na thread",
       closed_one: "Thread fechada · {{title}} · {{count}} mensagem",
       closed_other: "Thread fechada · {{title}} · {{count}} mensagens",
       archived_one: "{{count}} thread arquivada não aparece aqui",
@@ -11306,6 +11320,8 @@ export const ptBR = {
       everyone: "Todos do workspace",
       people: "Só algumas pessoas ou cargos",
       owner: "Só o responsável",
+      /** "Só o responsável" when a role answers for it (ADR 0085, addendum of 2026-11-21). */
+      ownerRole: "Só quem tem {{role}}",
       everyonePersonal: "Todos daqui",
       peoplePersonal: "Só algumas pessoas",
     },
@@ -11319,6 +11335,10 @@ export const ptBR = {
       owner_female:
         "Só {{owner}} fala com a {{name}}. Nas listas, a {{name}} aparece só para {{owner}}, admins e quem pode editar.",
       noOwner: "Defina um responsável para usar esta opção.",
+      ownerRole:
+        "Só quem tem {{role}} fala com o {{name}}. Nas listas, o {{name}} aparece só para quem tem {{role}}, admins e quem pode editar.",
+      ownerRole_female:
+        "Só quem tem {{role}} fala com a {{name}}. Nas listas, a {{name}} aparece só para quem tem {{role}}, admins e quem pode editar.",
       everyonePersonal: "Qualquer pessoa daqui pode chamar o {{name}}.",
       everyonePersonal_female: "Qualquer pessoa daqui pode chamar a {{name}}.",
       peoplePersonal: "Escolha as pessoas que podem falar com o {{name}}.",
@@ -11331,8 +11351,11 @@ export const ptBR = {
     roleMembers_other: "{{count}} pessoas",
     picked: "Escolhidos",
     ownerAlways: "{{name}} sempre pode, como responsável.",
+    ownerRoleAlways: "Quem tem {{role}} sempre pode, como responsável.",
+    whoHolds: "quem tem {{role}}",
     onlyYouForNow: "Só você, por enquanto",
     onlyOwnerForNow: "Só {{name}}, por enquanto",
+    onlyOwnerRoleForNow: "Só quem tem {{role}}, por enquanto",
     search: "Buscar cargos e pessoas",
     searchPeople: "Buscar pessoas",
     noMatch: "Nenhum cargo ou pessoa com esse nome.",
@@ -11343,6 +11366,7 @@ export const ptBR = {
       everyone: "Todos do workspace",
       everyonePersonal: "Todos daqui",
       owner: "Só {{name}}",
+      ownerRole: "Só quem tem {{role}}",
       nobody: "Ninguém por enquanto",
       someone: "Algumas pessoas",
       people: "{{names}}",
@@ -11375,6 +11399,11 @@ export const ptBR = {
       owner_female: "{{owner}}, responsável, os administradores e quem edita agentes e fala com a {{name}}.",
       noOwner: "Os administradores e quem edita agentes e fala com o {{name}}.",
       noOwner_female: "Os administradores e quem edita agentes e fala com a {{name}}.",
+      /** A role as its owner (ADR 0085, addendum of 2026-11-21). */
+      ownerRole:
+        "Quem tem {{role}} (o cargo responsável), os administradores e quem edita agentes e fala com o {{name}}.",
+      ownerRole_female:
+        "Quem tem {{role}} (o cargo responsável), os administradores e quem edita agentes e fala com a {{name}}.",
       people: "Escolha quem mais pode mudar como o {{name}} trabalha.",
       people_female: "Escolha quem mais pode mudar como a {{name}} trabalha.",
     },
@@ -12546,6 +12575,13 @@ export const ptBR = {
     free: "Grátis",
     /** Under OpenCode Go's models: OpenCode's free tier answers only its own CLI (ADR 0132 §7). */
     opencodeFreeHint: "Outros modelos grátis rodam pelo OpenCode no computador do agente.",
+    /** Under the Gemini plan's models: why its newest model isn't there (`BrainOption.missing`). */
+    missingModel: {
+      app_old: "Atualize o app do agentes.chat no computador do agente para usar o {{model}}.",
+      cli_old:
+        "O {{model}} precisa de uma versão mais nova do Antigravity CLI no computador do agente. Rode agy update nele.",
+      plan: "O {{model}} vem com o Google AI Pro e o Ultra. Nenhuma conta do Gemini no computador do agente tem esse plano.",
+    },
     modelHelp: "Os modelos maiores pensam mais e gastam o plano mais rápido.",
     hidden: "{{owner}} ou um admin escolhe quem pensa.",
     hiddenAdmins: "Só admins escolhem quem pensa.",
@@ -15790,6 +15826,8 @@ export const ptBR = {
       sharingEmpty: "Escolha quem vê.",
       sharingTooMany: "Escolha até {{max}} pessoas e {{max}} cargos.",
       notInDrive: "Isto vive só na conversa e não pode ser compartilhado.",
+      viewOnly: "Você pode ver este arquivo, mas não alterar. Peça acesso de edição a quem o criou.",
+      accessInvalid: "Não deu para salvar este acesso. Confira quem vê e quem edita e tente de novo.",
     },
     drive: {
       folderIntoItself: "Uma pasta não pode ir para dentro dela mesma nem de uma pasta dentro dela.",
@@ -15893,6 +15931,10 @@ export const ptBR = {
       detailsHidden: "Só quem conversa com {{agentName}} vê como funciona.",
       undoForbidden: "Só a pessoa para quem o agente trabalhou, o dono dele ou um admin pode desfazer isso.",
       undoSkillsAdmins: "Só quem pode editar o agente desfaz ou refaz uma mudança nas skills dele.",
+      /** `agent.owner_both` (ADR 0085, addendum of 2026-11-21): a person or a role answers for an agent, never both. */
+      ownerBoth: "O responsável é uma pessoa ou um cargo, não os dois. Escolha um.",
+      /** `agent.owner_role_unknown`: the role picked as owner is gone. */
+      ownerRoleUnknown: "Esse cargo não existe mais neste workspace. Escolha outro responsável.",
     },
     account: {
       notRestorable: "Esta conta não pode mais ser restaurada.",
@@ -21222,9 +21264,6 @@ export const ptBR = {
   share: {
     button: "Compartilhar",
     title: "Compartilhar {{name}}",
-    conversation: "Só a conversa",
-    people: "Pessoas e cargos que você escolher",
-    peoplePersonal: "Pessoas que você escolher",
     everyone: "Todos no workspace",
     everyonePersonal: "Todos daqui",
     whereDm: "A DM com {{name}}",
@@ -21232,14 +21271,9 @@ export const ptBR = {
     /** Para quem não está na DM e recebeu o arquivo por Compartilhar. */
     whereDmBetween: "A DM entre {{names}}",
     whereChannel: "Membros de #{{name}}",
-    add: "Adicionar pessoa ou cargo",
-    addPersonal: "Adicionar pessoa",
-    addSearch: "Buscar pessoas e cargos",
-    addSearchPersonal: "Buscar pessoas",
     noResults: "Ninguém com esse nome",
     groupPeople: "Pessoas",
     groupRoles: "Cargos",
-    access: "Quem tem acesso",
     you: "{{name}} (você)",
     agent: "Agente",
     role: "Cargo",
@@ -21248,35 +21282,48 @@ export const ptBR = {
     adminsPersonal: "Quem cuida daqui também vê.",
     copyLink: "Copiar link",
     copied: "Link copiado.",
-    done: "Concluir",
     /** Ao lado de Copiar link enquanto só uma conversa privada vê o arquivo. */
     onlyHere: "Quem não está nesta conversa não vai abrir o link.",
-    choosePeople: "Escolher pessoas",
     readOnly: "Só quem está na conversa muda quem vê.",
-    open: "Todos no workspace veem este arquivo.",
-    openPersonal: "Todos daqui veem este arquivo.",
-    savedEveryone: "Agora todos no workspace veem o arquivo.",
-    savedEveryonePersonal: "Agora todos daqui veem o arquivo.",
-    savedPeople: "Agora as pessoas escolhidas veem o arquivo.",
-    savedConversation: "Agora só a conversa vê o arquivo.",
     /**
-     * Um arquivo do próprio Drive fica com quem o criou (ADR 0157): a primeira escolha, quem tem acesso, o aviso do
-     * link, quem pode mudar e o aviso de salvo. `Maker`: outra pessoa abre (um administrador), `name` é quem criou.
+     * Um arquivo do próprio Drive fica com quem o criou (ADR 0157): o aviso do link e quem pode mudar quem vê.
+     * `Maker`: outra pessoa abre (um administrador), `name` é quem criou.
      */
-    onlyYou: "Só você",
-    onlyMaker: "Só {{name}}",
     onlyYouLink: "Só você abre este link.",
     onlyMakerLink: "Só {{name}} abre este link.",
     readOnlyDrive: "Só quem criou o arquivo e os administradores mudam quem vê.",
-    savedOnlyYou: "Agora só você vê o arquivo.",
-    savedOnlyMaker: "Agora só {{name}} vê o arquivo.",
-    undo: "Desfazer",
     fileRef: "Arquivo {{title}}",
     fileRefNone: "Arquivo sem acesso",
     /** Quem vê o arquivo (`text`, sem ponto final) e quem o Compartilhar acrescentou. */
     also: "{{text}}. Também compartilhado com {{who}}.",
     /** Copiar links de vários arquivos, alguns abertos só na própria conversa: o aviso, com Compartilhar. */
     someOnlyHere: "Alguns desses links só abrem para quem já vê o arquivo.",
+    /**
+     * Compartilhar com níveis (ADR 0202): o que cada um pode fazer com o arquivo, as linhas que sempre estão lá (quem o
+     * lê onde ele está, todos, os agentes) e suas frases, adicionar alguém e o aviso de salvo.
+     */
+    level: {
+      none: "Sem acesso",
+      view: "Ver",
+      edit: "Editar",
+    },
+    levelOf: "O que {{name}} pode fazer",
+    madeIt: "Criou o arquivo",
+    placeText: "Onde o arquivo está",
+    everyoneText: "Qualquer pessoa deste workspace",
+    everyoneTextPersonal: "Qualquer pessoa daqui",
+    agentsAll: "Todos os agentes",
+    agentsAllText: "Qualquer agente do workspace",
+    agentsHere: "Agentes desta conversa",
+    agentsHereText: "Os agentes de onde o arquivo está",
+    addAll: "Adicionar pessoa, cargo ou agente",
+    addAllPersonal: "Adicionar pessoa ou agente",
+    addAllSearch: "Buscar pessoas, cargos e agentes",
+    addAllSearchPersonal: "Buscar pessoas e agentes",
+    groupAgents: "Agentes",
+    /** No celular, ao lado de uma linha enquanto todos editam: um toque a adiciona (e limita). */
+    addRow: "Adicionar",
+    saved: "Acesso salvo.",
   },
   /**
    * Um link aberto no navegador que o servidor recusa (ADR 0157): o título e o texto de cada causa, o botão que leva
@@ -22041,6 +22088,13 @@ export const ptBR = {
         inTrash: "Na lixeira. Restaure para mudar.",
         closing: "O workspace está sendo excluído. Os arquivos só podem ser lidos.",
       },
+      /**
+       * Ao lado de Só leitura quando o acesso do arquivo me deixa só ver (ADR 0202): a conversa do arquivo abre com estas
+       * palavras para quem o criou (o @ dele), ou para quem estiver lá quando nenhuma pessoa o criou.
+       */
+      requestEdit: "Pedir para editar",
+      requestEditText: "pode me dar acesso para editar este arquivo?",
+      requestEditAnyone: "Alguém pode me dar acesso para editar este arquivo?",
       present: "Apresentar",
       download: "Baixar",
       formats: {
