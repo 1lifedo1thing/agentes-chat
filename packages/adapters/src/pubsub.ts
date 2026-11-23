@@ -135,6 +135,17 @@ export interface PgNotifier {
 export const listenResumedTopic = "pubsub.resumed";
 
 /**
+ * How often at most a replica's missed events have its subscribers start over (close every browser socket, forget
+ * every cache): each `listenResumedTopic` event says whether it is that one (`full`) or a gentler resync between two.
+ * Starting over makes every app read its workspace again; a burst of marks doing it each time keeps the database
+ * busy enough to miss the next NOTIFY too.
+ */
+export const FULL_RESYNC_MS = 60_000;
+
+/** Whether a `listenResumedTopic` event asks to start over; one without `full` (a test's, an older publisher's) does. */
+export const fullResync = (event: RealtimeEvent): boolean => event.full !== false;
+
+/**
  * How often a replica checks that its events still go out and come back: its own heartbeat goes through the same
  * queue, NOTIFY and LISTEN as every event, and must be heard again.
  */
@@ -224,12 +235,14 @@ export async function createPostgresPubSub(
     notifyTimeoutMs = NOTIFY_TIMEOUT_MS,
     notifyLostMs = NOTIFY_LOST_MS,
     listenTimeoutMs = LISTEN_TIMEOUT_MS,
+    fullResyncMs = FULL_RESYNC_MS,
     onTrouble,
   }: {
     heartbeatMs?: number;
     notifyTimeoutMs?: number;
     notifyLostMs?: number;
     listenTimeoutMs?: number;
+    fullResyncMs?: number;
     onTrouble?: (kind: PubSubTrouble, detail: Record<string, unknown>) => void;
   } = {},
 ): Promise<PubSub> {
@@ -243,6 +256,7 @@ export async function createPostgresPubSub(
   let brokenSince: number | null = null;
   let failedStatements = 0;
   let failedRelistens = 0;
+  let lastFullResync = Number.NEGATIVE_INFINITY;
   const report = (kind: PubSubTrouble, detail: Record<string, unknown> = {}) => {
     try {
       onTrouble?.(kind, detail);
@@ -264,7 +278,9 @@ export async function createPostgresPubSub(
     brokenSince = null;
     failedStatements = 0;
     failedRelistens = 0;
-    deliver(registry.topics.get(listenResumedTopic), { type: "pubsub.resumed" });
+    const full = Date.now() - lastFullResync >= fullResyncMs;
+    if (full) lastFullResync = Date.now();
+    deliver(registry.topics.get(listenResumedTopic), { type: "pubsub.resumed", full });
   };
   // The heartbeat's numbers: the last one queued, the last one that went out (and when), the last one heard back.
   let beatSeq = 0;
