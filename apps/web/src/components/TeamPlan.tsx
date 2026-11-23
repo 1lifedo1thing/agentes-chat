@@ -346,7 +346,7 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
           time: card.decidedAt ? whenAt(t, i18n.language, card.decidedAt) : undefined,
           action:
             undoable || landing ? (
-              <>
+              <span className="rq__answer-acts">
                 {undoable && (
                   <Button
                     size="sm"
@@ -362,7 +362,7 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
                     {t("lodiCursor.skip")}
                   </Button>
                 )}
-              </>
+              </span>
             ) : undefined,
         }
       : {
