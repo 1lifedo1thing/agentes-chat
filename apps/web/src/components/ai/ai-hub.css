@@ -185,16 +185,15 @@
   .ac-dialog.aa-order .plan-row__title,
   .ac-dialog.aa-order .plan-row__facts {
     display: block;
-    line-height: 22px;
+    line-height: 20px;
   }
   .ac-dialog.aa-order .plan-row__facts {
     font-size: 13px;
-    line-height: 18px;
   }
   .ac-dialog.aa-order .plan-row__head > .aa-state {
     grid-area: 2 / 2;
     justify-self: start;
     font-size: 13px;
-    line-height: 18px;
+    line-height: 20px;
   }
 }

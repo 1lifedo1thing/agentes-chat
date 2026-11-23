@@ -110,11 +110,11 @@
 }
 
 @media (max-width: 560px) {
-  /* One line on a phone too: the plan and owner give way to the name and the room. */
+  /* One line on a phone too: the name and the room; the plan and owner are the tooltip's. */
   .aa-opt > .aa-meta {
     min-width: 0;
   }
-  .aa-value .aa-meta__plan {
+  .aa-meta__plan {
     display: none;
   }
   .aa-pair {
