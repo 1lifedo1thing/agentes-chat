@@ -13,14 +13,26 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { whenAt } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 
-import { AutonomyPixels, Button, Chip, DetailsDialog, Icon, OptionList, SettingNote, SettingRow, SettingsMore, SettingsSection, Switch } from "@agenteschat/ui";
+import {
+  AutonomyPixels,
+  Button,
+  Chip,
+  DetailsDialog,
+  Icon,
+  OptionList,
+  SettingNote,
+  SettingRow,
+  SettingsMore,
+  SettingsSection,
+  Switch,
+} from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { brainModelLabel } from "@/components/AgentBrain";
-import { MachineIcon } from "@/components/machine-bits";
 import { AiChoicePicker } from "@/components/ai/AiChoice";
+import { MachineIcon } from "@/components/machine-bits";
 import { useOrg } from "@/components/org-context";
 import { useDirectory } from "@/hooks/useDirectory";
 import { lookOf } from "@/lib/look";

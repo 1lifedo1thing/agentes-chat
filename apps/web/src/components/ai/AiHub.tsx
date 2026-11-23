@@ -7,9 +7,17 @@ import type {
   AiHubAccount,
   MachineAccount,
 } from "@agenteschat/client";
-import { useAiHub, useApi, useMe, useRoles, useSetAccountPermissions, useSetKeyFallback } from "@agenteschat/client";
-import { accountTitle, orderAccounts, orderPlaces } from "@agenteschat/client/lib/ai-accounts";
-import { hubAccountsInOrder } from "@agenteschat/client/lib/ai-choice";
+import {
+  useAccountOrder,
+  useAiHub,
+  useApi,
+  useMe,
+  useRoles,
+  useSetAccountPermissions,
+  useSetKeyFallback,
+} from "@agenteschat/client";
+import { orderAccounts, orderPlaces } from "@agenteschat/client/lib/ai-accounts";
+import { accountShortName, hubAccountsInOrder } from "@agenteschat/client/lib/ai-choice";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { firstName, joinNames } from "@agenteschat/client/lib/format";
@@ -52,7 +60,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { useRightHandLook } from "@/hooks/useRightHandLook";
 import { useToast } from "@/lib/toast";
 import { useOrderMoves } from "./AccountOrder";
-import { AccountMenu } from "./AiAccounts";
+import { AccountMenu, AccountNotes } from "./AiAccounts";
 import "@/components/plan-usage.css";
 import "./ai-hub.css";
 
@@ -200,7 +208,7 @@ export function AiAccountsTab() {
         <List className="plan-rows aa-list">
           {blocks.map((logins) => {
             const a = lead(logins);
-            const title = accountTitle(t, a);
+            const title = accountShortName(t, a);
             const sub = facts(t, a);
             return (
               <div key={a.id} className="plan-row">
@@ -285,7 +293,7 @@ function AccountDialog({ logins, onClose }: { logins: readonly AiHubAccount[]; o
     { which: "reply", may: a.rights.canReplyAll },
   ];
   const text = planMeterText(t, i18n.language);
-  const title = accountTitle(t, a);
+  const title = accountShortName(t, a);
   const more = t("aiHub.detail.more", { name: title });
   return (
     <Dialog
@@ -301,6 +309,7 @@ function AccountDialog({ logins, onClose }: { logins: readonly AiHubAccount[]; o
     >
       <Locked when={save.isPending}>
         <div className="ac-dialog__body">
+          <AccountNotes logins={logins} />
           <SettingsSection title={t("aiHub.detail.limits")}>
             {a.usage ? (
               <PlanMeter usage={a.usage} text={text} />
@@ -314,7 +323,10 @@ function AccountDialog({ logins, onClose }: { logins: readonly AiHubAccount[]; o
             {rows.map(({ which, may }) => {
               const p = a.permissions[which];
               const name = t(`aiHub.detail.${which}`);
-              const hint = [t(`aiHub.detail.${which}Hint`), claude && which !== "manage" ? t("aiHub.detail.claudeTerms") : ""]
+              const hint = [
+                t(`aiHub.detail.${which}Hint`),
+                claude && which !== "manage" ? t("aiHub.detail.claudeTerms") : "",
+              ]
                 .filter(Boolean)
                 .join(" ");
               return (
@@ -448,7 +460,9 @@ function OrderDialog({ hub, onClose }: { hub: AiHub; onClose: () => void }) {
   const { org } = useOrg();
   const toast = useToast();
   const fallback = useSetKeyFallback(org.id);
-  const several = new Set(hub.order.map((g) => g.machineId)).size > 1 || hub.order.length > 1;
+  // The order's own view: a move updates it at once.
+  const groups = useAccountOrder(org.id).data?.groups ?? hub.order;
+  const several = new Set(groups.map((g) => g.machineId)).size > 1 || groups.length > 1;
   return (
     <Dialog
       open
@@ -460,22 +474,23 @@ function OrderDialog({ hub, onClose }: { hub: AiHub; onClose: () => void }) {
       className="aa-order"
     >
       <div className="ac-dialog__body">
-        {hub.order.map((g) => (
+        {groups.map((g) => (
           <OrderGroup key={`${g.machineId}:${g.kind}`} group={g} computer={several} />
         ))}
         <section className="ac-setsec">
           <SettingRow
             title={t("aiHub.order.fallback")}
-            hint={{ name: t("common.about", { label: t("aiHub.order.fallback") }), text: t("aiHub.order.fallbackHint") }}
+            hint={{
+              name: t("common.about", { label: t("aiHub.order.fallback") }),
+              text: t("aiHub.order.fallbackHint"),
+            }}
             htmlFor="aa-fallback"
           >
             <Switch
               id="aa-fallback"
               checked={hub.keyFallback}
               disabled={!hub.canConfigure || fallback.isPending}
-              onCheckedChange={(on) =>
-                fallback.mutate(on, { onError: (e) => toast.show(errorText(t, e), "error") })
-              }
+              onCheckedChange={(on) => fallback.mutate(on, { onError: (e) => toast.show(errorText(t, e), "error") })}
             />
           </SettingRow>
         </section>
@@ -491,10 +506,12 @@ function OrderGroup({ group, computer }: { group: AccountOrderGroup; computer: b
   const { place, drop } = useOrderMoves(org.id, group);
   const blocks = orderAccounts(group.accounts);
   const places = orderPlaces(group.accounts);
-  const rows = [
-    ...blocks.filter((_, i) => places[i] !== null),
-    ...blocks.filter((_, i) => places[i] === null),
-  ].map(lead);
+  // A row goes by its first login, which the grip names; moving it moves the whole account.
+  const rows = [...blocks.filter((_, i) => places[i] !== null), ...blocks.filter((_, i) => places[i] === null)].map(
+    (b) => b[0] as (typeof b)[number],
+  );
+  // Alone in its order, an account has nothing to move past: its number, no grip.
+  const alone = places.filter((n) => n !== null).length < 2;
   const maker = t(`aiAccounts.connect.${group.kind}`);
   const name = computer
     ? t("aiHub.order.group", {
@@ -515,7 +532,7 @@ function OrderGroup({ group, computer }: { group: AccountOrderGroup; computer: b
         </div>
       </div>
       {rows.map((a) => {
-        const title = accountTitle(t, a);
+        const title = accountShortName(t, a);
         const skipped = places[blocks.findIndex((b) => b.includes(a))] === null;
         const line = a.usage ? planLine(a.usage, text) : null;
         const limited = line?.state === "limited";
@@ -529,17 +546,21 @@ function OrderGroup({ group, computer }: { group: AccountOrderGroup; computer: b
                 : line?.top
                   ? { level: planLevel(line.top.used, false), text: `${text.short(line.top)} ${line.top.used}%` }
                   : null;
-        const sub = [a.plan ? planName(a.plan) : null, a.ownerName ? t("aiHub.of", { name: firstName(a.ownerName) }) : null]
+        const sub = [
+          a.plan ? planName(a.plan) : null,
+          a.ownerName ? t("aiHub.of", { name: firstName(a.ownerName) }) : null,
+        ]
           .filter(Boolean)
           .join(" · ");
         return (
-          <div
-            key={a.id}
-            className="plan-row plan-row--placed"
-            data-skipped={skipped || undefined}
-            {...drop(a.id)}
-          >
-            {place(a.id, title)}
+          <div key={a.id} className="plan-row plan-row--placed" data-skipped={skipped || undefined} {...drop(a.id)}>
+            {alone ? (
+              <span className="plan-row__place" aria-hidden={skipped || undefined}>
+                {skipped ? "" : 1}
+              </span>
+            ) : (
+              place(a.id, title)
+            )}
             <div className="plan-row__head">
               <span className="plan-acct__name">
                 <span className="plan-row__title" title={title}>

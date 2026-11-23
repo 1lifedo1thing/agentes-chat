@@ -1,5 +1,17 @@
 import type { Agent, AgentBrain } from "@agenteschat/client";
-import { useAgentBrain, useAuthConfig, useCredentials, useModels, usePlatformKey, useSetTeamWeekPrefs, useSettings, useTeamWeekPrefs, useUpdateAgent, useUpdateSettings, useWorkspaceUsesApi } from "@agenteschat/client";
+import {
+  useAgentBrain,
+  useAuthConfig,
+  useCredentials,
+  useModels,
+  usePlatformKey,
+  useSetTeamWeekPrefs,
+  useSettings,
+  useTeamWeekPrefs,
+  useUpdateAgent,
+  useUpdateSettings,
+  useWorkspaceUsesApi,
+} from "@agenteschat/client";
 import { selfHosted } from "@agenteschat/client/lib/about";
 import { accountTitle } from "@agenteschat/client/lib/ai-accounts";
 import { audienceOf, audiencePatch } from "@agenteschat/client/lib/audience";
@@ -25,7 +37,22 @@ import {
   type TeamWeekPeriod,
   teamWeekOn,
 } from "@agenteschat/client/lib/right-hand-prefs";
-import { AffixInput, BrainLogo, Button, Card, CardFooter, CardHeader, Dialog, DialogBody, DialogFooter, GroupHeading, Icon, Input, ProviderLogo, Switch } from "@agenteschat/ui";
+import {
+  AffixInput,
+  BrainLogo,
+  Button,
+  Card,
+  CardFooter,
+  CardHeader,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  GroupHeading,
+  Icon,
+  Input,
+  ProviderLogo,
+  Switch,
+} from "@agenteschat/ui";
 
 import { Link } from "@tanstack/react-router";
 
@@ -35,6 +62,7 @@ import { AudienceChoice } from "@/components/AgentAudience";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { LookRows, modelOptions } from "@/components/AgentFields";
 import { RightHandApprovalsCard } from "@/components/ApprovalCover";
+import { AiChoiceDialog, type AiChoiceLink } from "@/components/ai/AiChoiceDialog";
 import { PlanHold, usePlanHold } from "@/components/ai/plan-hold";
 import { useAgentComputer } from "@/components/computer/facts";
 import { useOpenComputer } from "@/components/computer/open";
@@ -43,7 +71,6 @@ import { HelpLink } from "@/components/HelpLink";
 import { LoadingLine } from "@/components/Loading";
 import { PrefRow } from "@/components/NoticePrefs";
 import { useOrg } from "@/components/org-context";
-import { type AiChoiceLink, AiChoiceDialog } from "@/components/ai/AiChoiceDialog";
 import { TeamWeekSchedule } from "@/components/TeamWeekSchedule";
 
 import { useDirectory } from "@/hooks/useDirectory";

@@ -8,7 +8,25 @@ import { accountKinds } from "@agenteschat/client/lib/plan-usage";
 import { planName } from "@agenteschat/client/lib/plans";
 import { AUTO, apiProviderOf } from "@agenteschat/client/lib/providers";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
-import { agentGradient, Button, Card, CardHeader, Dialog, DialogFooter, Disclosure, EmptyState, Icon, InfoHint, List, Meter, PLAN_ALMOST, PlanMeter, ProviderLogo, planLevel, planLine } from "@agenteschat/ui";
+import {
+  agentGradient,
+  Button,
+  Card,
+  CardHeader,
+  Dialog,
+  DialogFooter,
+  Disclosure,
+  EmptyState,
+  Icon,
+  InfoHint,
+  List,
+  Meter,
+  PLAN_ALMOST,
+  PlanMeter,
+  ProviderLogo,
+  planLevel,
+  planLine,
+} from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Fragment, useEffect, useId, useState } from "react";
@@ -22,7 +40,20 @@ import { useOrg } from "@/components/org-context";
 import { colorOf } from "@/components/Sky";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useRightHandLook } from "@/hooks/useRightHandLook";
-import { accountName, accountOwner, accountShares, accountWhere, accountWhose, groupUsageAccounts, loginsText, noWindowsText, planMeterText, servesText, shareCells, splitUsage } from "@/lib/plan-usage";
+import {
+  accountName,
+  accountOwner,
+  accountShares,
+  accountWhere,
+  accountWhose,
+  groupUsageAccounts,
+  loginsText,
+  noWindowsText,
+  planMeterText,
+  servesText,
+  shareCells,
+  splitUsage,
+} from "@/lib/plan-usage";
 import { useToast } from "@/lib/toast";
 import { PlanModels } from "./PlanModels";
 import "./plan-usage.css";

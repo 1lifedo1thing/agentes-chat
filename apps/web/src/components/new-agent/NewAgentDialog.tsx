@@ -1,5 +1,4 @@
 import type { ConnectorDef } from "@agenteschat/client";
-import type { AiChoice } from "@agenteschat/client/lib/ai-choice";
 import {
   keys,
   useAgentProposal,
@@ -15,6 +14,7 @@ import {
   useSkills,
 } from "@agenteschat/client";
 import { type Level, saveLevels } from "@agenteschat/client/lib/access-levels";
+import type { AiChoice } from "@agenteschat/client/lib/ai-choice";
 import { personalAllowed } from "@agenteschat/client/lib/connected";
 import { setDraftFor } from "@agenteschat/client/lib/drafts";
 import { errorText as failureText } from "@agenteschat/client/lib/errors";
@@ -68,12 +68,12 @@ import { useApi } from "@/api/context";
 import { useConnectedById } from "@/components/AccessLevels";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { LookPicker } from "@/components/AgentFields";
+import { AiChoicePicker } from "@/components/ai/AiChoice";
 import { ConnectFlow, type FlowState } from "@/components/ConnectFlow";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { useConnectAi } from "@/components/connect-ai-context";
 import { MailIcon } from "@/components/MailConnect";
 import { useMediaQuery } from "@/components/NavDrawer";
-import { AiChoicePicker } from "@/components/ai/AiChoice";
 import { useOrg } from "@/components/org-context";
 import { agentCoverOptions, facePool } from "@/components/Sky";
 import { useTextLimit } from "@/hooks/useTextLimit";
@@ -102,6 +102,7 @@ import { useNewAgentBrain } from "./useNewAgentBrain";
 
 /** The one picker's target here: nothing is saved before the agent exists. */
 const NEW_AGENT = { kind: "newAgent" } as const;
+
 import "../team-plan.css";
 import "./new-agent-card.css";
 import { type Flight, forgetReturn, type NewAgentRequest, RESUME_PARAM, saveForReturn } from "./new-agent-context";

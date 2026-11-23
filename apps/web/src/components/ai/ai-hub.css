@@ -183,3 +183,10 @@
     line-height: 18px;
   }
 }
+
+/* Before the limits: what stands for the account, then what its sign-in needs. */
+.aa-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

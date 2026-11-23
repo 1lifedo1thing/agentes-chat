@@ -110,15 +110,7 @@ const agentName = (t: TFunction, dir: Dir, id: string) => dir.anyAgent(id)?.name
  * personal workspace, only Resumo, without tabs (ADR 0159): an owner has no limit and nobody else uses it. A link to a
  * person still opens Pessoas.
  */
-export function UsageTabs({
-  accounts,
-  summary,
-  person,
-}: {
-  accounts: ReactNode;
-  summary: ReactNode;
-  person?: string;
-}) {
+export function UsageTabs({ accounts, summary, person }: { accounts: ReactNode; summary: ReactNode; person?: string }) {
   const { t } = useTranslation();
   const { org } = useOrg();
   const { solo } = usePersonalView();

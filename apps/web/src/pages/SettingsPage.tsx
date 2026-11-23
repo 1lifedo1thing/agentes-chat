@@ -296,6 +296,7 @@ function Settings({
               <>
                 <AiAccountsTab />
                 <KeysSection />
+                <WhoPicksSection />
               </>
             }
             summary={<UsageSection />}
@@ -1303,7 +1304,6 @@ function UsageSection() {
         </Card>
       )}
       {allowed && <DefaultBudgetCard />}
-      <WhoPicksSection />
     </>
   );
 }

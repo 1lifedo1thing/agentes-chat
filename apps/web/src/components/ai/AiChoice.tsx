@@ -1,10 +1,10 @@
 import type { AiChoiceState } from "@agenteschat/client";
 import { useAiChoice } from "@agenteschat/client";
-import { accountTitle } from "@agenteschat/client/lib/ai-accounts";
 import {
   type AiChoice,
   type AiChoiceRow,
   type AiChoiceTarget,
+  accountShortName,
   aiChoiceOf,
   reasonText,
 } from "@agenteschat/client/lib/ai-choice";
@@ -59,7 +59,7 @@ export function rowOfChoice(rows: readonly AiChoiceRow[], c: AiChoice | null | u
 
 /** A row's name: the account's, the key's, a brain's maker, "A do workspace". */
 export function rowName(t: TFunction, row: AiChoiceRow): string {
-  if (row.account) return accountTitle(t, row.account);
+  if (row.account) return accountShortName(t, row.account);
   if (row.apiKey) return row.apiKey.label;
   if (row.type === "workspace") return t("aiHub.choice.workspace");
   return row.brain === "model" ? t("aiHub.apiKey") : t(`aiAccounts.connect.${row.brain}`);
@@ -68,8 +68,7 @@ export function rowName(t: TFunction, row: AiChoiceRow): string {
 /** The maker's mark of a row. */
 export function rowMark(row: AiChoiceRow | undefined, size: "xs" | "sm" = "xs"): ReactNode {
   if (!row) return null;
-  if (row.account)
-    return <ProviderLogo id={row.account.provider ?? row.account.kind} size={size} off={!row.usable} />;
+  if (row.account) return <ProviderLogo id={row.account.provider ?? row.account.kind} size={size} off={!row.usable} />;
   if (row.apiKey) return <ProviderLogo id={row.apiKey.provider} size={size} />;
   if (row.type === "workspace") return <Icon name="key" size={size === "xs" ? 16 : 20} />;
   return <ProviderLogo id={row.brain} size={size} />;
@@ -271,9 +270,7 @@ export function AiChoiceFields({
                   <RowLine row={o.row} owner={false} />
                 </span>
               ) : (
-                <span className="ac-select__text">
-                  {state.loading ? t("common.loading") : t("aiHub.choice.none")}
-                </span>
+                <span className="ac-select__text">{state.loading ? t("common.loading") : t("aiHub.choice.none")}</span>
               )
             }
           />

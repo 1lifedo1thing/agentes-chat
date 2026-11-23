@@ -1,8 +1,8 @@
 import type { AgentBrain, AgentBrainInput, BrainKind, MachineAccount } from "@agenteschat/client";
-import type { AiChoice as AiChoiceValue, AiChoiceRow } from "@agenteschat/client/lib/ai-choice";
 import { useAgents, useAiChoice, useApi, useSetComputerTarget, useUpdateAgent } from "@agenteschat/client";
 import type { BrainScreen } from "@agenteschat/client/lib/agent-edit";
 import { accountInLine } from "@agenteschat/client/lib/ai-accounts";
+import type { AiChoiceRow, AiChoice as AiChoiceValue } from "@agenteschat/client/lib/ai-choice";
 import { EVERYONE_AUDIENCE } from "@agenteschat/client/lib/audience";
 
 import { type Advanced, advancedDefaults } from "@agenteschat/client/lib/brain-advanced";
@@ -15,8 +15,21 @@ import { usageWhen } from "@agenteschat/client/lib/plan-usage";
 import { geminiPersonal, isPlanId, signInProviderOf } from "@agenteschat/client/lib/plans";
 import { AUTO, isAuto, modelOnKey } from "@agenteschat/client/lib/providers";
 import { sceneTeam } from "@agenteschat/client/lib/right-hand";
-import { AvatarStack, Button, cx, Dialog, DialogBody, DialogFooter, Icon, type IconName, ProviderLogo, planState, SettingNote } from "@agenteschat/ui";
+import {
+  AvatarStack,
+  Button,
+  cx,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Icon,
+  type IconName,
+  ProviderLogo,
+  planState,
+  SettingNote,
+} from "@agenteschat/ui";
 
+import { Link } from "@tanstack/react-router";
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
@@ -24,12 +37,11 @@ import { NO_COMPUTER } from "@/components/AgentComputer";
 import { DEFAULT_KEY } from "@/components/AgentFields";
 import { AddAccount, OpenPage } from "@/components/ai/AddAccountFlow";
 import { AiChoiceFields } from "@/components/ai/AiChoice";
-import { UseOnAgentsDialog } from "@/components/ai/UseOnAgents";
 import { CliMissing } from "@/components/ai/CliMissing";
-
 import { PlanHold } from "@/components/ai/plan-hold";
+import { UseOnAgentsDialog } from "@/components/ai/UseOnAgents";
 import { AudienceCard } from "@/components/arrival/AudienceCard";
-import { HaveList, HaveRow } from "@/components/arrival/ConnectHave";
+import { HaveList, HaveRow, sortHave } from "@/components/arrival/ConnectHave";
 import { TeamScene, useDawn } from "@/components/arrival/TeamScene";
 import { useConnectAi } from "@/components/connect-ai-context";
 import { ToolOffWayOut } from "@/components/devices/ToolOneClick";
@@ -55,7 +67,7 @@ import "./brain-dialog.css";
  * glides between them.
  */
 
-type Screen = "glance" | "team" | "limit" | "more" | "computer" | "add" | "done";
+type Screen = "glance" | "switch" | "all" | "team" | "limit" | "more" | "computer" | "add" | "done";
 
 /** What this agent thought with before a switch, for "Desfazer". */
 interface Before {
@@ -130,9 +142,10 @@ function BrainFlow({
 
   // The way through the screens: back pops one, a save lands on the first again. At its limit it opens on the way out,
   // unless a link asked for a screen of its own (the account and the model are the first screen's).
-  const [trail, setTrail] = useState<Screen[]>(() =>
-    at === "more" ? ["glance", "more"] : [s.waitsAtLimit && !at ? "limit" : "glance"],
-  );
+  const [trail, setTrail] = useState<Screen[]>(() => {
+    const asked = at === "switch" ? can("brain") : at === "more";
+    return at && asked ? ["glance", at === "switch" ? "switch" : "more"] : [s.waitsAtLimit && !at ? "limit" : "glance"];
+  });
   const screen: Screen = trail[trail.length - 1] ?? "glance";
   const [dir, setDir] = useState<"fwd" | "back">("fwd");
   const go = (next: Screen) => {
@@ -192,7 +205,13 @@ function BrainFlow({
   );
 
   // ── switching ──
+  const selectable = s.rows.filter((r) => !r.off);
+  // The one with most room comes picked; what is in use or can't be picked never is.
+  const selected = s.rows.find((r) => r.id === picked) ?? (picked === s.currentRow?.id ? s.currentRow : undefined);
+  const switchSel = picked !== undefined ? selected : sortHave(selectable)[0];
   const limitSel = s.offers.find((r) => r.id === picked) ?? s.offers[0];
+  // Picking a full account is allowed: the agent then waits for its plan to renew, said under the list.
+  const switchFull = switchSel?.usage != null && !switchSel.current && planState(switchSel.usage).state === "limited";
 
   /** This agent onto `row`, in the right order: its computer, then who thinks. */
   const saveRow = async (row: BrainRow): Promise<AgentBrain | null> => {
@@ -540,6 +559,14 @@ function BrainFlow({
     (installableCli(view.brain) || cliCommandWayOut(t, view.brain, offOn, missingReason, offOn.name))
       ? { kind: view.brain, reason: missingReason, machine: offOn }
       : null;
+  const lendsAny = view.canUseOthersPlans === true && s.listed.some((a) => !a.mine && a.ownerId !== agent.ownerUserId);
+  const pairer = work.machines.data?.find((x) => x.id === view.computer?.machineId)?.pairedBy?.name.split(" ")[0];
+  // On someone else's computer only whoever connected it adds a sign-in: with nothing of the owner's there, it says so.
+  const lockedHere =
+    view.canUsePlans &&
+    !view.canManageAccounts &&
+    view.computer !== null &&
+    !s.rows.some((r) => r.kind === "account" || r.kind === "own");
   const team = [agent, ...s.team];
   const scene =
     (screen === "team" && teamToo) || (screen === "done" && (switched?.others.length ?? 0) > 0)
@@ -549,7 +576,9 @@ function BrainFlow({
   const asleep = s.waitsAtLimit && screen !== "done";
   const day = useDawn(!asleep);
   const markOf: AiChoice | undefined =
-    screen === "limit"
+    screen === "switch" || screen === "all"
+      ? (switchSel?.choice ?? s.savedCard)
+      : screen === "limit"
         ? (limitSel?.choice ?? s.savedCard)
         : screen === "team"
           ? (aim?.choice ?? s.savedCard)
@@ -558,21 +587,25 @@ function BrainFlow({
             : s.savedCard;
   const addAcc = adding?.also ?? adding?.again;
   const title =
-    screen === "team"
+    screen === "switch"
+      ? t("agentPage.work.brain.v2.switchTitle", g)
+      : screen === "all"
+        ? t("connectAi.chat.allTitle")
+        : screen === "team"
           ? t("agentPage.work.brain.v2.teamTitle")
           : screen === "limit"
             ? t("agentPage.work.brain.v2.limitTitle", g)
             : screen === "more"
-                ? t("agentPage.work.brain.v2.moreTitle", g)
-                : screen === "computer"
-                  ? t("agentPage.work.computer.title", g)
-                  : screen === "add"
-                    ? adding?.again
-                      ? t(isPlanId(adding.row.choice) ? "aiAccounts.page.newKey" : "agentPage.work.brain.signInAgain")
-                      : t(`agentPage.work.brain.add.title.${addAcc?.kind ?? "claude_code"}`)
-                    : screen === "done"
-                      ? t("agentPage.work.brain.v2.doneTitle")
-                      : t("agentPage.work.brain.v2.title", g);
+              ? t("agentPage.work.brain.v2.moreTitle", g)
+              : screen === "computer"
+                ? t("agentPage.work.computer.title", g)
+                : screen === "add"
+                  ? adding?.again
+                    ? t(isPlanId(adding.row.choice) ? "aiAccounts.page.newKey" : "agentPage.work.brain.signInAgain")
+                    : t(`agentPage.work.brain.add.title.${addAcc?.kind ?? "claude_code"}`)
+                  : screen === "done"
+                    ? t("agentPage.work.brain.v2.doneTitle")
+                    : t("agentPage.work.brain.v2.title", g);
 
   const body = (): ReactNode => {
     if (screen === "glance")
@@ -628,6 +661,49 @@ function BrainFlow({
             />
           </div>
           {s.kind === "model" && !can("model") && <SettingNote icon="lock">{adminsOnly}</SettingNote>}
+        </>
+      );
+    if (screen === "switch" || screen === "all")
+      return (
+        <>
+          {s.hold && <PlanHold hold={s.hold} />}
+          <HaveList
+            items={s.rows}
+            value={switchSel?.id}
+            onChange={setPicked}
+            all={screen === "all"}
+            onAll={() => go("all")}
+            disabled={busy}
+            pinned={{ label: t("agentPage.work.brain.v2.inUse"), items: s.currentRow ? [s.currentRow] : [] }}
+            label={title}
+            byAi
+          />
+          {switchFull && (
+            <SettingNote icon="clock" live>
+              {t("agentPage.work.brain.v2.fullWait", g)}{" "}
+              <Link
+                to="/org/$orgId/settings/$section"
+                params={{ orgId: org.id, section: "usage" }}
+                className="ac-link"
+                onClick={onClose}
+              >
+                {t("agentPage.work.brain.v2.seeUsage")}
+              </Link>
+            </SettingNote>
+          )}
+          {lockedHere && (
+            <SettingNote icon="lock">
+              {t("connectAi.accountsLocked", { name: pairer ?? "", computer: s.computerName })}
+            </SettingNote>
+          )}
+          {lendsAny && <SettingNote icon="info">{t("agentPage.work.brain.accountOthers")}</SettingNote>}
+          {connectOther && screen === "switch" && (
+            <button type="button" className="arrival-have__link arrival-have__link--other" onClick={connectOther}>
+              <Icon name="plus" size={16} />
+              <span>{t("connectAi.chat.other")}</span>
+              <Icon name="chevronRight" size={16} />
+            </button>
+          )}
         </>
       );
     if (screen === "team") {
@@ -693,7 +769,7 @@ function BrainFlow({
               className="arrival-have__link arrival-have__link--other"
               onClick={() => {
                 setPicked(undefined);
-                home();
+                go("switch");
               }}
             >
               <Icon name="layers" size={16} />
@@ -877,6 +953,17 @@ function BrainFlow({
             <span>{t("agentPage.work.brain.v2.only", g)}</span>
           </span>
         ),
+        second: can("brain") && (
+          <Button
+            onClick={() => {
+              setPicked(undefined);
+              setArrived(null);
+              go("switch");
+            }}
+          >
+            {t("agentPage.work.brain.v2.switch")}
+          </Button>
+        ),
         main: signIn ? (
           <Button
             variant="primary"
@@ -889,6 +976,30 @@ function BrainFlow({
           </Button>
         ) : (
           finish
+        ),
+      });
+    }
+    if (screen === "switch" || screen === "all") {
+      const row = switchSel;
+      return footer({
+        note: row?.lends ? mailNote(row.ownerName) : undefined,
+        second: cancel,
+        main: (
+          <Button
+            variant="primary"
+            disabled={!row || row.current || row.off || (row.signIn === true && !view.computer) || busy}
+            loading={busy}
+            onClick={() => row && confirm(row)}
+          >
+            {!row
+              ? // Nothing to switch to (the one in use alone): the screen's own words, never "Switch to" and nothing.
+                t("agentPage.work.brain.v2.switch")
+              : row.act === "again"
+                ? t(isPlanId(row.choice) ? "aiAccounts.page.newKey" : "agentPage.work.brain.signInAgain")
+                : row.act === "also"
+                  ? t("connectAi.signInFor", g)
+                  : t("agentPage.work.brain.v2.switchTo", { label: rowSaid(row) })}
+          </Button>
         ),
       });
     }

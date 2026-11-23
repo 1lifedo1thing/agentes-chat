@@ -14,10 +14,10 @@ import type {
   Model,
   ModelTier,
 } from "../api/types";
-import { ACCOUNT_KINDS, orderAccounts } from "./ai-accounts";
+import { ACCOUNT_KINDS, accountTitle, orderAccounts } from "./ai-accounts";
 import { type EffortLevel, effortLevelsOf } from "./brain-advanced";
 import { type ModelRow, modelRows } from "./brain-picker";
-import { planOf } from "./plans";
+import { isPlanId, planOf } from "./plans";
 import { AUTO, isAuto } from "./providers";
 
 /*
@@ -255,6 +255,15 @@ export function aiChoiceSetup(choice: AiChoice): AgentSetup {
     ...(choice.effort !== undefined ? { effort: choice.effort } : {}),
   };
 }
+
+/**
+ * An account's name where its plan shows beside it ("Trabalho", then "Max · de João"): someone else's and a key
+ * account by their name alone, the viewer's own as every app titles it (`accountTitle`).
+ */
+export const accountShortName = (
+  t: TFunction,
+  a: Pick<AiHubAccount, "label" | "plan" | "email" | "mine" | "named" | "keyHint" | "provider">,
+) => (!a.mine || a.keyHint != null || isPlanId(a.provider) ? a.label : accountTitle(t, a));
 
 /** Why a row is dimmed, in words: its owner by name. */
 export const reasonText = (t: TFunction, row: Pick<AiChoiceRow, "reason" | "account">) =>

@@ -5,8 +5,10 @@ import {
   againLogin,
   endsOnClaude,
   groupPlans,
+  identityUnknown,
   offersSignInAgain,
   type PlanAccount,
+  signInNote,
   unusedCopies,
 } from "@agenteschat/client/lib/ai-accounts";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
@@ -14,7 +16,18 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { joinNames } from "@agenteschat/client/lib/format";
 import { isPlanId, planOf, signInProviderOf } from "@agenteschat/client/lib/plans";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
-import { Button, Dialog, DialogBody, DialogFooter, Field, Input, Locked, Menu, MenuItem } from "@agenteschat/ui";
+import {
+  Button,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  Field,
+  Input,
+  Locked,
+  Menu,
+  MenuItem,
+  SettingNote,
+} from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -189,6 +202,42 @@ export function AccountMenu({
         </Dialog>
       )}
     </>
+  );
+}
+
+/**
+ * What an account's detail says before its limits: what its sign-in needs (signed out, or not checked), how many of its
+ * logins are copies nobody thinks with, and what stands for it when there is no email (a key's end).
+ */
+export function AccountNotes({ logins }: { logins: readonly AiHubAccount[] }) {
+  const { t } = useTranslation();
+  const { org } = useOrg();
+  const machines = useMachines(org.id);
+  const account = groupPlans(logins)[0];
+  const a = account?.logins.find((l) => l.shared === true) ?? account?.logins[0];
+  if (!account || !a) return null;
+  const note = signInNote(t, account, Boolean(planOf(a.provider)));
+  const copies = a.mine ? unusedCopies(account) : [];
+  const identity = a.email
+    ? a.email
+    : a.keyHint
+      ? t("aiAccounts.page.keyEnds", { hint: a.keyHint })
+      : a.mine &&
+          identityUnknown(
+            a,
+            machines.data?.find((m) => m.id === a.machineId),
+          )
+        ? t("aiAccounts.page.identityUnknown")
+        : null;
+  if (!note && copies.length === 0 && !identity) return null;
+  return (
+    <div className="aa-notes">
+      {identity && <span className="small muted">{identity}</span>}
+      {note && <SettingNote icon={note.state === "out" ? "alert" : "info"}>{note.text}</SettingNote>}
+      {copies.length > 0 && (
+        <SettingNote icon="repeat">{t("aiAccounts.page.copies", { count: copies.length })}</SettingNote>
+      )}
+    </div>
   );
 }
 
