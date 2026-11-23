@@ -11,6 +11,7 @@ import {
   expectReply,
   MISSED_MESSAGE_GRACE_MS,
   parseServerFrame,
+  QUIET_GAP_MS,
   RealtimeConnection,
   realtimeUrl,
   replyingUnder,
@@ -20,6 +21,7 @@ import {
   type Timers,
 } from "../src/index";
 import { barEntries } from "../src/lib/activity";
+import { RECONNECT_HEALTHY_MS } from "../src/lib/backoff";
 import { type FakeSocket, fakeSockets } from "./fake-socket";
 
 /** A frame socket's message as the server writes it (`encodeBrowserFrame`): version, header length, header, JPEG. */
@@ -527,6 +529,7 @@ describe("RealtimeConnection", () => {
       timers: clock.timers,
       pingMs: 0,
       backoffMs: [100, 200],
+      random: () => 0.5,
     });
     let caughtUp = 0;
     const statuses: string[] = [];
@@ -537,10 +540,10 @@ describe("RealtimeConnection", () => {
     sockets[0]?.open();
     expect(caughtUp).toBe(0);
     sockets[0]?.drop();
-    expect(clock.pending.map((p) => p.ms)).toEqual([100]);
+    expect(clock.pending.map((p) => p.ms)).toEqual([50]);
     clock.runNext();
     sockets[1]?.drop();
-    expect(clock.pending.map((p) => p.ms)).toEqual([200]);
+    expect(clock.pending.map((p) => p.ms)).toEqual([100]);
     clock.runNext();
     sockets[2]?.open();
     expect(sockets[2]?.sent).toEqual([{ type: "subscribe", channelId: "c1" }]);
@@ -548,7 +551,119 @@ describe("RealtimeConnection", () => {
     expect(statuses).toEqual(["connecting", "open", "reconnecting", "open"]);
   });
 
-  test("catches up at a random point within a few seconds: everything after a long drop, what is shown after a brief one", () => {
+  test("reconnect waits: 1 s, 2 s, 4 s… to 60 s, a random point within each, starting over only after a healthy connection", () => {
+    const { factory, sockets } = fakeSockets();
+    const clock = manualTimers();
+    let now = 1_000_000;
+    const conn = new RealtimeConnection({
+      url: "ws://x",
+      createSocket: factory,
+      timers: clock.timers,
+      pingMs: 0,
+      now: () => now,
+      random: () => 0.5,
+    });
+    const waits = () => clock.pending.map((p) => p.ms);
+    conn.start();
+    sockets[0]?.open();
+    sockets[0]?.drop();
+    expect(waits()).toEqual([500]);
+    clock.runNext();
+    // Refused before it opened: the next step.
+    sockets[1]?.drop();
+    expect(waits()).toEqual([1000]);
+    clock.runNext();
+    // Taken and dropped at once (an overloaded server): still the next step, not the first again.
+    sockets[2]?.open();
+    sockets[2]?.drop();
+    expect(waits()).toEqual([2000]);
+    for (let i = 0; i < 6; i++) {
+      clock.runNext();
+      sockets.at(-1)?.drop();
+    }
+    expect(waits()).toEqual([30_000]);
+    // Up for a while: the next drop starts over.
+    clock.runNext();
+    sockets.at(-1)?.open();
+    now += RECONNECT_HEALTHY_MS;
+    sockets.at(-1)?.drop();
+    expect(waits()).toEqual([500]);
+  });
+
+  test("a close that asks to retry after a while is waited out, then spread over as long again", () => {
+    const { factory, sockets } = fakeSockets();
+    const clock = manualTimers();
+    const conn = new RealtimeConnection({
+      url: "ws://x",
+      createSocket: factory,
+      timers: clock.timers,
+      pingMs: 0,
+      random: () => 0.5,
+    });
+    conn.start();
+    sockets[0]?.open();
+    sockets[0]?.drop(1011, "try again; retry-after=5");
+    expect(clock.pending.map((p) => p.ms)).toEqual([7500]);
+    // The hint was for that close only: a dial that fails next waits the usual step.
+    clock.runNext();
+    sockets[1]?.drop();
+    expect(clock.pending.map((p) => p.ms)).toEqual([1000]);
+  });
+
+  test("one socket at a time: the one before is closed and nothing it does later reaches the connection", () => {
+    const { factory, sockets } = fakeSockets();
+    const clock = manualTimers();
+    const conn = new RealtimeConnection({ url: "ws://x", createSocket: factory, timers: clock.timers, pingMs: 0 });
+    const statuses: string[] = [];
+    conn.onStatus((s) => statuses.push(s));
+    conn.subscribe("c1", () => {});
+    conn.start();
+    // Still opening when the connection starts over.
+    conn.stop();
+    conn.start();
+    expect(sockets).toHaveLength(2);
+    expect(sockets[0]?.closed).toBe(true);
+    sockets[1]?.open();
+    // The first one's late open and close change nothing.
+    sockets[0]?.open();
+    sockets[0]?.drop();
+    expect(sockets[0]?.sent).toEqual([]);
+    expect(conn.status).toBe("open");
+    expect(clock.pending).toEqual([]);
+    expect(sockets.filter((s) => !s.closed && s.readyState !== 3)).toHaveLength(1);
+    expect(statuses.at(-1)).toBe("open");
+  });
+
+  test("a hidden tab waits from the longest step; shown again, the wait is timed again from its own step", () => {
+    const { factory, sockets } = fakeSockets();
+    const clock = manualTimers();
+    let hidden = true;
+    const conn = new RealtimeConnection({
+      url: "ws://x",
+      createSocket: factory,
+      timers: clock.timers,
+      pingMs: 0,
+      random: () => 0.5,
+      hidden: () => hidden,
+    });
+    conn.start();
+    sockets[0]?.open();
+    sockets[0]?.drop();
+    expect(clock.pending.map((p) => p.ms)).toEqual([30_000]);
+    // Still hidden: nothing changes.
+    conn.checkAlive();
+    expect(clock.pending.map((p) => p.ms)).toEqual([30_000]);
+    hidden = false;
+    conn.checkAlive();
+    expect(clock.pending.map((p) => p.ms)).toEqual([500]);
+    // A visible tab's wait isn't cut short by showing it.
+    conn.checkAlive();
+    expect(clock.pending.map((p) => p.ms)).toEqual([500]);
+    clock.runNext();
+    expect(sockets).toHaveLength(2);
+  });
+
+  test("catches up at a random point within a few seconds: everything after a long drop, what is shown after a short one, nothing after a blip", () => {
     const { factory, sockets } = fakeSockets();
     const clock = manualTimers();
     let now = 1_000_000;
@@ -572,8 +687,12 @@ describe("RealtimeConnection", () => {
       clock.runNext();
       sockets.at(-1)?.open();
     };
-    // Back within a second from a network blip: only what is on screen, at half of the spread.
+    // Back within a second from a network blip: the channels on screen catch up on `subscribed`, nothing more.
     reconnect(undefined, 1000);
+    expect(clock.pending).toEqual([]);
+    expect(caughtUp).toEqual([]);
+    // A few seconds: only what is on screen, at half of the spread.
+    reconnect(undefined, QUIET_GAP_MS);
     expect(clock.pending.map((p) => p.ms)).toEqual([CATCH_UP_SPREAD_MS / 2]);
     clock.runNext();
     expect(caughtUp).toEqual([false]);
