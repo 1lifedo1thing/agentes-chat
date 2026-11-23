@@ -2,7 +2,7 @@ import { useAiChoice, useAiHub } from "@agenteschat/client";
 import { type AiChoice, type AiChoiceRow, type AiChoiceTarget, aiChoiceRows } from "@agenteschat/client/lib/ai-choice";
 import type { EffortLevel } from "@agenteschat/client/lib/brain-advanced";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { AUTO, isAuto } from "@agenteschat/client/lib/providers";
+import { isAuto } from "@agenteschat/client/lib/providers";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "@/providers/org";
 import { GroupedList, GroupedRow, ProviderLogo, useToast } from "@/ui";
@@ -108,10 +108,8 @@ export function AiChoiceFields({
   // The computer's own sign-in has its CLI's models too.
   const active = selected ?? extraOn?.row ?? null;
   const models = active ? state.models(active, t) : [];
-  const model =
-    models.find((m) =>
-      controlled ? m.value === (current?.model ?? AUTO) || (isAuto(m.value) && !current?.model) : m.checked,
-    ) ?? models[0];
+  // A choice the caller keeps names its model; with none (the brain's default) the list says which that is.
+  const model = models.find((m) => (controlled && current?.model ? m.value === current.model : m.checked)) ?? models[0];
   const pickModel = async () => {
     if (!current) return;
     const picked = await pickOne({
