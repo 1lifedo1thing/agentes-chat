@@ -369,7 +369,7 @@ const CONFIRMED_SIGN_UPS = [
   "create trigger test_confirmed_sign_up before insert on users for each row execute function test_confirmed_sign_up()",
 ];
 
-export function browser(t: TestServer) {
+export function browser(t: TestServer, origin = ORIGIN) {
   let cookie = "";
   const request = async (
     path: string,
@@ -385,7 +385,7 @@ export function browser(t: TestServer) {
     // The tests' people read Portuguese, as before English became the default (a browser that says none reads English).
     if (!headers.has("accept-language")) headers.set("accept-language", "pt-BR");
     if (cookie) headers.set("cookie", cookie);
-    if (init.origin !== null) headers.set("origin", init.origin ?? ORIGIN);
+    if (init.origin !== null) headers.set("origin", init.origin ?? origin);
     if (init.json !== undefined) headers.set("content-type", "application/json");
     const res = await t.app.request(path, {
       method: init.method ?? (init.json !== undefined ? "POST" : "GET"),
