@@ -16096,6 +16096,9 @@
       "pageOf": "{{page}} di {{count}}",
       "pdfFailed": "Questo PDF non si può mostrare qui. Scaricalo per aprirlo.",
       "loadFailed": "Questa immagine non si può mostrare qui.",
+      "mark": "Segna",
+      "markOff": "Smetti di segnare: il clic torna a spostare il file",
+      "markOn": "Segna: il clic commenta un punto o un'area",
       "hint": {
         "image": "Fai clic per segnare un punto o trascina per segnare una zona",
         "video": "Fai clic sul video per commentare questo momento, o trascina per segnare una zona",

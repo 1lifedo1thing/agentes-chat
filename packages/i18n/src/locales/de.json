@@ -15533,6 +15533,9 @@
       "pageOf": "{{page}} von {{count}}",
       "pdfFailed": "Dieses PDF kann hier nicht angezeigt werden. Lade es herunter, um es zu öffnen.",
       "loadFailed": "Dieses Bild kann hier nicht angezeigt werden.",
+      "mark": "Markieren",
+      "markOff": "Markieren beenden: Ein Klick bewegt die Datei wieder",
+      "markOn": "Markieren: Ein Klick kommentiert einen Punkt oder einen Bereich",
       "hint": {
         "image": "Klicken, um einen Punkt zu markieren, oder ziehen, um einen Bereich zu markieren",
         "video": "Aufs Video klicken, um diesen Moment zu kommentieren, oder ziehen, um einen Bereich zu markieren",

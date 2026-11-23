@@ -15462,6 +15462,9 @@
       "pageOf": "{{page}} / {{count}}",
       "pdfFailed": "Bu PDF burada gösterilemiyor. Açmak için indirin.",
       "loadFailed": "Bu görsel burada gösterilemiyor.",
+      "mark": "İşaretle",
+      "markOff": "İşaretlemeyi bırak: tıklama yine dosyayı hareket ettirir",
+      "markOn": "İşaretle: tıklama bir noktaya veya alana yorum yapar",
       "hint": {
         "image": "Bir nokta işaretlemek için tıklayın veya bir alan işaretlemek için sürükleyin",
         "video": "Bu ana yorum yapmak için videoya tıklayın veya bir alan işaretlemek için sürükleyin",

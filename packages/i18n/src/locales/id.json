@@ -15007,6 +15007,9 @@
       "pageOf": "{{page}} dari {{count}}",
       "pdfFailed": "PDF ini tidak bisa ditampilkan di sini. Unduh untuk membukanya.",
       "loadFailed": "Gambar ini tidak bisa ditampilkan di sini.",
+      "mark": "Tandai",
+      "markOff": "Berhenti menandai: klik kembali menggerakkan file",
+      "markOn": "Tandai: klik mengomentari satu titik atau satu area",
       "hint": {
         "image": "Klik untuk menandai titik atau seret untuk menandai bagian",
         "video": "Klik video untuk berkomentar di momen ini, atau seret untuk menandai bagian",

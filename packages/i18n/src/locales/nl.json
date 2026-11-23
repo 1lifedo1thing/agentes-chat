@@ -15601,6 +15601,9 @@
       "pageOf": "{{page}} van {{count}}",
       "pdfFailed": "Deze PDF kan hier niet worden getoond. Download hem om hem te openen.",
       "loadFailed": "Deze afbeelding kan hier niet worden getoond.",
+      "mark": "Markeren",
+      "markOff": "Stoppen met markeren: een klik verplaatst het bestand weer",
+      "markOn": "Markeren: een klik plaatst een opmerking bij een punt of een gebied",
       "hint": {
         "image": "Klik om een punt te markeren of sleep om een gebied te markeren",
         "video": "Klik op de video voor een opmerking bij dit moment, of sleep om een gebied te markeren",

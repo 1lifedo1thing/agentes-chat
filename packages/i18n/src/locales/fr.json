@@ -16074,6 +16074,9 @@
       "pageOf": "{{page}} sur {{count}}",
       "pdfFailed": "Ce PDF ne peut pas être affiché ici. Téléchargez-le pour l'ouvrir.",
       "loadFailed": "Cette image ne peut pas être affichée ici.",
+      "mark": "Marquer",
+      "markOff": "Arrêter de marquer : le clic déplace de nouveau le fichier",
+      "markOn": "Marquer : le clic commente un point ou une zone",
       "hint": {
         "image": "Cliquez pour marquer un point ou faites glisser pour marquer une zone",
         "video": "Cliquez sur la vidéo pour commenter ce moment, ou faites glisser pour marquer une zone",
