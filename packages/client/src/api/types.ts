@@ -4184,6 +4184,17 @@ export interface ArtifactRef {
   height?: number;
 }
 
+/**
+ * What a page of messages carries for its cards (`include=cards`): each live block, vote and question card at the
+ * version shown, with its state, so the cards draw whole on the first paint.
+ */
+export interface MessageCards {
+  artifacts: ArtifactDetail[];
+  polls: Poll[];
+  choices: Choices[];
+  blocks: BlockState[];
+}
+
 export interface ArtifactFilters {
   /** Words in the title, the text or the conversation's name. */
   q?: string;

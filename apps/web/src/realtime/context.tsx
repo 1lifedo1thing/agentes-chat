@@ -821,7 +821,7 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
         cacheApproval(qc, orgId, event.approval);
       }
       // A file's cards and viewer, an agent's memory list.
-      applyConversationEvent(qc, orgId, event);
+      applyConversationEvent(qc, orgId, event, api);
       // Who is in one of the conversation's live files changed (ADR 0196 §5): its cards ask again.
       applyLiveEvent(qc, orgId, event);
       if (event.type === "poll.updated") qc.setQueryData(keys.poll(orgId, event.poll.id), event.poll);

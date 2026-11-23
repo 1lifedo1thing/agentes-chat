@@ -25,6 +25,7 @@ import {
   agentStateOfRun,
   browserHandoffOf,
   browserTrailOf,
+  cardsInto,
   codeSuggestionOf,
   consultsIn,
   desktopTrailOf,
@@ -853,6 +854,9 @@ function ChannelView({
   const pushAsk = usePushAsk(thread || !isMember ? undefined : topLevel);
   // Read from the server (a thread's root the channel held stands in until then: its replies are still unknown).
   const serverRead = messages.isSuccess && !messages.isPlaceholderData;
+  // A thread whose replies are still loading: only their skeleton shows, never the root the channel holds above it,
+  // which the replies would push out of view. It opens on them, at its end, in one paint.
+  const repliesPending = Boolean(thread && messages.isPlaceholderData && thread.replyCount > 0);
   // The channel's threads: closed lines, context marks, markers (not in a thread view or while adjusting).
   const listsThreads = readable && !thread;
   const openThreads = useChannelThreads(org.id, channel.id, "all", listsThreads);
@@ -1308,7 +1312,7 @@ function ChannelView({
     }
     setOlderState("loading");
     api.chat
-      .messages(org.id, channel.id, { before: oldest.createdAt, limit })
+      .messages(org.id, channel.id, { before: oldest.createdAt, limit, onCards: cardsInto(qc, org.id) })
       .then((page) => {
         // Keep what's on screen where it is: remember the distance from the bottom.
         const el = scroller.current;
@@ -1338,7 +1342,7 @@ function ChannelView({
     if (!gap || newerLoading || !newest) return;
     setNewerLoading(true);
     api.chat
-      .messages(org.id, channel.id, { after: newest.createdAt, limit: OLDER_PAGE })
+      .messages(org.id, channel.id, { after: newest.createdAt, limit: OLDER_PAGE, onCards: cardsInto(qc, org.id) })
       .then((page) => {
         const known = new Set(older.map((m) => m.id));
         const start = channelMessages.data?.[0]?.createdAt;
@@ -2086,7 +2090,7 @@ function ChannelView({
     if (around?.id === focusTarget) return;
     setAround({ id: focusTarget, done: false });
     api.chat
-      .messages(org.id, channel.id, { around: focusTarget, limit: FOCUS_PAGE })
+      .messages(org.id, channel.id, { around: focusTarget, limit: FOCUS_PAGE, onCards: cardsInto(qc, org.id) })
       .then((page) => {
         showAround(page);
         setAround({ id: focusTarget, done: true });
@@ -2872,7 +2876,7 @@ function ChannelView({
                             ) : (
                               <>
                                 <Timeline
-                                  items={timeline}
+                                  items={repliesPending ? NO_ROWS : timeline}
                                   ready={serverRead}
                                   slots={gap ? NO_SLOTS : slots}
                                   runKeys={runKeys.current}
@@ -2885,9 +2889,8 @@ function ChannelView({
                                   marks={contextMarkIds}
                                   progressive={opensAtEnd}
                                 />
-                                {/* A thread's root is on screen from the channel: only its replies are loading. */}
-                                {thread && messages.isPlaceholderData && thread.replyCount > 0 && (
-                                  <LoadingConversation count={Math.min(thread.replyCount, 6)} />
+                                {repliesPending && (
+                                  <LoadingConversation count={Math.min((thread?.replyCount ?? 0) + 1, 6)} />
                                 )}
                                 {!thread && (
                                   <ArchivedThreadsNote
@@ -3651,6 +3654,7 @@ const HELD_RECENT_MS = 12 * 60 * 60_000;
 const NO_LABELS = new Map<string, string>();
 const NO_MARKS: ReadonlySet<string> = new Set();
 const NO_SLOTS: RunSlot[] = [];
+const NO_ROWS: ReturnType<typeof buildTimeline> = [];
 
 /** The live run as a message, while it has none (the block's header comes from the run): from when it started. */
 function liveMessageOf(r: LiveRun): MessageType {
