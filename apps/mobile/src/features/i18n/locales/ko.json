@@ -91,7 +91,7 @@
     "chats": "채팅",
     "threads": "스레드",
     "agents": "에이전트",
-    "activity": "활동",
+    "activity": "받은편지함",
     "search": "검색",
     "withCount": "{{label}}, {{count}}"
   },
@@ -845,7 +845,7 @@
     }
   },
   "activity": {
-    "title": "활동",
+    "title": "받은편지함",
     "chooseModel": "다른 모델 고르기",
     "filter": {
       "all": "전체",

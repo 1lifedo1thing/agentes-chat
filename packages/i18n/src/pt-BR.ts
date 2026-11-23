@@ -2341,7 +2341,8 @@ export const ptBR = {
     searchWorkspace: "Buscar no workspace",
     summary_one: "{{people}} membro · {{agents}} agentes",
     summary_other: "{{people}} membros · {{agents}} agentes",
-    waiting: "Esperando você",
+    /** The sidebar's one entry for everything that involves me: what waits on me, what is new, what I decided. */
+    waiting: "Caixa de entrada",
     approvals: "Aprovações",
     proposals: "Propostas de melhoria",
     issues: "Tarefas",
@@ -5571,7 +5572,7 @@ export const ptBR = {
     firstRun: "Continue de onde parou · {{done}} de {{total}}",
   },
   notifications: {
-    title: "Notificações",
+    title: "Caixa de entrada",
     /** "Tirar de volta" on `plan_lent`: the person's plan leaves the agent someone else gave it to, or all of them. */
     planLent: {
       takeBack: "Tirar de volta",
@@ -5609,7 +5610,7 @@ export const ptBR = {
         computer: "Trocar computador",
       },
     },
-    docTitleUnread: "({{count}}) Notificações",
+    docTitleUnread: "({{count}}) Caixa de entrada",
     summaryWaiting_one: "{{count}} coisa esperando você",
     summaryWaiting_other: "{{count}} coisas esperando você",
     summaryUnread_one: "{{count}} não lida",
@@ -5626,6 +5627,8 @@ export const ptBR = {
       waiting: "Esperando você",
       unread: "Não lidas",
       reactions: "Reações",
+      /** The requests already decided: approved, refused, expired. */
+      requests: "Pedidos decididos",
       done: "Concluídas",
     },
     keys: {
@@ -5868,6 +5871,9 @@ export const ptBR = {
     noneUnread: "Tudo lido.",
     noneHere: "Nada aqui por enquanto.",
     noneDone: "Nada concluído nos últimos 30 dias.",
+    noneRequests: "Nenhum pedido decidido ainda.",
+    /** A proposal's row in the inbox, after the agent's name. */
+    proposes: "propõe uma melhoria",
     more: "Mostrar mais",
   },
   approvals: {

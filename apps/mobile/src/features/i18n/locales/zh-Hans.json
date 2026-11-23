@@ -91,7 +91,7 @@
     "chats": "聊天",
     "threads": "话题",
     "agents": "智能体",
-    "activity": "动态",
+    "activity": "收件箱",
     "search": "搜索",
     "withCount": "{{label}}，{{count}}"
   },
@@ -845,7 +845,7 @@
     }
   },
   "activity": {
-    "title": "动态",
+    "title": "收件箱",
     "chooseModel": "选择其他模型",
     "filter": {
       "all": "全部",

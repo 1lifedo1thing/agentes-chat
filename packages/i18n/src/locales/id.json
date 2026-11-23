@@ -2217,7 +2217,7 @@
     "expandNav": "Bentangkan sidebar",
     "searchWorkspace": "Cari di ruang kerja",
     "summary_other": "{{people}} anggota · {{agents}} agen",
-    "waiting": "Menunggumu",
+    "waiting": "Kotak masuk",
     "approvals": "Persetujuan",
     "proposals": "Usulan perbaikan",
     "issues": "Tugas",
@@ -5099,7 +5099,7 @@
     "firstRun": "Lanjutkan dari terakhir · {{done}} dari {{total}}"
   },
   "notifications": {
-    "title": "Notifikasi",
+    "title": "Kotak masuk",
     "planLent": {
       "takeBack": "Tarik kembali",
       "takeBackAll": "Tarik kembali dari semua agen",
@@ -5127,7 +5127,7 @@
         "computer": "Ganti komputer"
       }
     },
-    "docTitleUnread": "({{count}}) Notifikasi",
+    "docTitleUnread": "({{count}}) Kotak masuk",
     "summaryWaiting_other": "{{count}} hal menunggumu",
     "summaryUnread_other": "{{count}} belum dibaca",
     "summaryAllRead": "semua sudah dibaca",
@@ -5141,6 +5141,7 @@
       "waiting": "Menunggumu",
       "unread": "Belum dibaca",
       "reactions": "Reaksi",
+      "requests": "Permintaan yang sudah diputuskan",
       "done": "Selesai"
     },
     "keys": {
@@ -5361,6 +5362,8 @@
     "noneUnread": "Semua sudah dibaca.",
     "noneHere": "Belum ada apa-apa di sini.",
     "noneDone": "Tidak ada yang ditandai selesai dalam 30 hari terakhir.",
+    "noneRequests": "Belum ada permintaan yang diputuskan.",
+    "proposes": "mengusulkan perbaikan",
     "more": "Tampilkan lebih banyak"
   },
   "approvals": {
@@ -10864,6 +10867,20 @@
     "empty": "Tidak ada hasil untuk “{{q}}”."
   },
   "codeSessions": {
+    "beta": {
+      "title": "Coding mode masih beta",
+      "text": "Ini benar-benar berfungsi dan berubah setiap minggu. Kadang macet. Kalau begitu, masalahnya ada pada kami.",
+      "go": "Mulai",
+      "added": {
+        "worktree": "Setiap permintaan di worktree-nya sendiri, dengan Git, File, Layar, dan Terminal",
+        "anyAi": "AI apa pun: Claude Code, Codex, OpenCode, atau model lewat kuncinya",
+        "beside": "Edit file dan buka terminal di samping percakapan"
+      },
+      "removed": {
+        "paste": "Salin-tempel kode antara chat dan editor",
+        "watch": "Menunggui terminal sampai agen selesai"
+      }
+    },
     "title": "Kode",
     "state": {
       "waiting": "menunggumu",
@@ -10923,6 +10940,7 @@
       "agent_idle": "tersedia"
     },
     "gitTab": {
+      "openFile": "Buka file",
       "label": "Git",
       "from": "dari {{base}}",
       "ahead_other": "{{count}}{{more}} commit di depan",
@@ -10945,8 +10963,7 @@
         "deleted": "Dihapus",
         "renamed": "Diganti nama",
         "untracked": "Baru, belum masuk git"
-      },
-      "openFile": "Buka file"
+      }
     },
     "files": {
       "label": "File",
@@ -10961,13 +10978,7 @@
       "truncated_other": "Menampilkan {{formatted}} file pertama.",
       "hasChanges": "Ada perubahan",
       "opening": "Membuka file…",
-      "state": {
-        "binary": "File biner: tidak ada yang bisa ditampilkan di sini.",
-        "missing": "File ini sudah tidak ada.",
-        "ignored": "Git mengabaikan file ini, jadi tidak tampil di sini.",
-        "secret": "File .env tidak tampil di sini: biasanya berisi rahasia.",
-        "outside": "File ini adalah tautan ke luar worktree."
-      },
+      "cut": "Hanya {{size}} pertama yang tampil di sini.",
       "save": "Simpan",
       "unsaved": "Belum disimpan",
       "tooLong": "Terlalu panjang untuk diedit di sini",
@@ -10977,7 +10988,20 @@
       "unsavedAsk": "File ini punya perubahan yang belum Anda simpan.",
       "keepEditing": "Lanjut mengedit",
       "discard": "Buang",
-      "cut": "Hanya {{size}} pertama yang tampil di sini."
+      "state": {
+        "binary": "File biner: tidak ada yang bisa ditampilkan di sini.",
+        "missing": "File ini sudah tidak ada.",
+        "ignored": "Git mengabaikan file ini, jadi tidak tampil di sini.",
+        "secret": "File .env tidak tampil di sini: biasanya berisi rahasia.",
+        "outside": "File ini adalah tautan ke luar worktree."
+      }
+    },
+    "tabs": {
+      "label": "Tab sesi",
+      "talk": "Percakapan",
+      "terminalN": "Terminal {{n}}",
+      "close": "Tutup {{name}}",
+      "add": "Tab baru"
     },
     "screen": {
       "computer": "Komputer {{name}}",
@@ -11018,27 +11042,6 @@
       "dm": "Dibuka dari percakapanmu dengan {{name}}",
       "channel": "Dibuka dari #{{name}}",
       "see": "Lihat percakapan"
-    },
-    "tabs": {
-      "label": "Tab sesi",
-      "talk": "Percakapan",
-      "terminalN": "Terminal {{n}}",
-      "close": "Tutup {{name}}",
-      "add": "Tab baru"
-    },
-    "beta": {
-      "added": {
-        "worktree": "Setiap permintaan di worktree-nya sendiri, dengan Git, File, Layar, dan Terminal",
-        "anyAi": "AI apa pun: Claude Code, Codex, OpenCode, atau model lewat kuncinya",
-        "beside": "Edit file dan buka terminal di samping percakapan"
-      },
-      "removed": {
-        "paste": "Salin-tempel kode antara chat dan editor",
-        "watch": "Menunggui terminal sampai agen selesai"
-      },
-      "title": "Coding mode masih beta",
-      "text": "Ini benar-benar berfungsi dan berubah setiap minggu. Kadang macet. Kalau begitu, masalahnya ada pada kami.",
-      "go": "Mulai"
     }
   },
   "code": {
@@ -15134,10 +15137,10 @@
       "repoNotAllowed": "Agen ini tidak bisa bekerja di repositori itu. Pilih yang lain, atau tambahkan di pengaturan agen.",
       "notYours": "Hanya pembuka sesi atau administrator yang bisa menutupnya.",
       "notReady": "Worktree sesi belum siap. Coba lagi sebentar lagi.",
-      "suggestionGone": "Saran ini sudah dijawab.",
-      "suggestionNotYours": "Hanya yang meminta yang memutuskan apakah sesi dibuka.",
       "fileChanged": "File ini berubah di komputer setelah Anda membukanya.",
-      "fileLocked": "File ini tidak bisa diedit di sini."
+      "fileLocked": "File ini tidak bisa diedit di sini.",
+      "suggestionGone": "Saran ini sudah dijawab.",
+      "suggestionNotYours": "Hanya yang meminta yang memutuskan apakah sesi dibuka."
     },
     "webhook": {
       "githubNoAccess": "GitHub workspace ini tidak bisa membuat webhook di {{repo}}. Ikuti langkah di bawah untuk membuatnya manual.",
@@ -19699,6 +19702,7 @@
     "openAgain": "Buka lagi",
     "ended": "Shell berakhir",
     "dropped": "Koneksi ke terminal terputus",
+    "moved": "Terminal ini terbuka di jendela lain",
     "screening": "Terminal dimatikan di sini",
     "forbidden": "Hanya orang yang boleh memakai komputer ini yang bisa membuka terminal",
     "offline": "Komputer sedang offline",
@@ -19708,8 +19712,7 @@
     "busy": "Komputer ini sudah membuka terminal sebanyak yang ia bisa. Tutup satu lalu buka lagi.",
     "paused": "Komputer sedang dijeda",
     "failed": "Tidak bisa membuka terminal",
-    "agentFolder": "Terminal terbuka di folder agen. Perbarui komputer agar terbuka di folder sesi.",
-    "moved": "Terminal ini terbuka di jendela lain"
+    "agentFolder": "Terminal terbuka di folder agen. Perbarui komputer agar terbuka di folder sesi."
   },
   "agora": {
     "label": "Sekarang",

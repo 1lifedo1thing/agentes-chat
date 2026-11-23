@@ -96,7 +96,7 @@
     "chats": "Chats",
     "threads": "Threads",
     "agents": "Agenten",
-    "activity": "Aktivität",
+    "activity": "Posteingang",
     "search": "Suche",
     "withCount": "{{label}}, {{count}}"
   },
@@ -870,7 +870,7 @@
     }
   },
   "activity": {
-    "title": "Aktivität",
+    "title": "Posteingang",
     "chooseModel": "Anderes Modell wählen",
     "filter": {
       "all": "Alle",

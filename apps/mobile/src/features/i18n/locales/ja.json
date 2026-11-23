@@ -91,7 +91,7 @@
     "chats": "チャット",
     "threads": "スレッド",
     "agents": "エージェント",
-    "activity": "アクティビティ",
+    "activity": "受信トレイ",
     "search": "検索",
     "withCount": "{{label}}、{{count}}"
   },
@@ -845,7 +845,7 @@
     }
   },
   "activity": {
-    "title": "アクティビティ",
+    "title": "受信トレイ",
     "chooseModel": "別のモデルを選ぶ",
     "filter": {
       "all": "すべて",

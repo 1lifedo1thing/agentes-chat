@@ -2290,7 +2290,7 @@
     "searchWorkspace": "Çalışma alanında ara",
     "summary_one": "{{people}} üye · {{agents}} ajan",
     "summary_other": "{{people}} üye · {{agents}} ajan",
-    "waiting": "Sizi bekliyor",
+    "waiting": "Gelen kutusu",
     "approvals": "Onaylar",
     "proposals": "İyileştirme önerileri",
     "issues": "Görevler",
@@ -5259,7 +5259,7 @@
     "firstRun": "Kaldığın yerden devam et · {{total}} adımdan {{done}}"
   },
   "notifications": {
-    "title": "Bildirimler",
+    "title": "Gelen kutusu",
     "planLent": {
       "takeBack": "Geri al",
       "takeBackAll": "Tüm ajanlardan geri al",
@@ -5294,7 +5294,7 @@
         "computer": "Bilgisayarı değiştir"
       }
     },
-    "docTitleUnread": "({{count}}) Bildirimler",
+    "docTitleUnread": "({{count}}) Gelen kutusu",
     "summaryWaiting_one": "Sizi bekleyen {{count}} şey var",
     "summaryWaiting_other": "Sizi bekleyen {{count}} şey var",
     "summaryUnread_one": "{{count}} okunmamış",
@@ -5310,6 +5310,7 @@
       "waiting": "Sizi bekleyenler",
       "unread": "Okunmamış",
       "reactions": "Tepkiler",
+      "requests": "Karara bağlanan istekler",
       "done": "Tamamlananlar"
     },
     "keys": {
@@ -5544,6 +5545,8 @@
     "noneUnread": "Hepsi okundu.",
     "noneHere": "Şimdilik burada bir şey yok.",
     "noneDone": "Son 30 günde tamamlandı olarak işaretlenen bir şey yok.",
+    "noneRequests": "Henüz karara bağlanan istek yok.",
+    "proposes": "bir iyileştirme öneriyor",
     "more": "Daha fazla göster"
   },
   "approvals": {
@@ -11199,6 +11202,20 @@
     "empty": "“{{q}}” için sonuç yok."
   },
   "codeSessions": {
+    "beta": {
+      "title": "Coding mode beta aşamasında",
+      "text": "Gerçekten çalışıyor ve her hafta değişiyor. Bazen takılır. Takıldığında sorun bizdedir.",
+      "go": "Başla",
+      "added": {
+        "worktree": "Her istek kendi worktree'sinde. Git, Dosyalar, Ekran ve Terminal ile",
+        "anyAi": "Her yapay zekâ: Claude Code, Codex, OpenCode ya da anahtarıyla bir model",
+        "beside": "Dosyaları düzenleyin ve sohbetin yanında terminal açın"
+      },
+      "removed": {
+        "paste": "Sohbet ile düzenleyici arasında kod kopyalayıp yapıştırmak",
+        "watch": "Ajan bitirene kadar terminali izlemek"
+      }
+    },
     "title": "Kod",
     "state": {
       "waiting": "sizi bekliyor",
@@ -11258,6 +11275,7 @@
       "agent_idle": "boşta"
     },
     "gitTab": {
+      "openFile": "Dosyayı aç",
       "label": "Git",
       "from": "temel: {{base}}",
       "ahead_one": "{{count}}{{more}} commit önde",
@@ -11281,8 +11299,7 @@
         "deleted": "Silindi",
         "renamed": "Adı değişti",
         "untracked": "Yeni, henüz git'te değil"
-      },
-      "openFile": "Dosyayı aç"
+      }
     },
     "files": {
       "label": "Dosyalar",
@@ -11299,13 +11316,7 @@
       "truncated_other": "İlk {{formatted}} dosya gösteriliyor.",
       "hasChanges": "Değişiklik var",
       "opening": "Dosya açılıyor…",
-      "state": {
-        "binary": "İkili bir dosya: burada gösterilecek bir şey yok.",
-        "missing": "Bu dosya artık yok.",
-        "ignored": "Git bu dosyayı yok sayıyor, bu yüzden burada görünmüyor.",
-        "secret": ".env dosyaları burada görünmez: genellikle gizli bilgiler içerirler.",
-        "outside": "Bu dosya, worktree dışına giden bir bağlantı."
-      },
+      "cut": "Burada yalnızca ilk {{size}} gösteriliyor.",
       "save": "Kaydet",
       "unsaved": "Kaydedilmedi",
       "tooLong": "Burada düzenlemek için çok uzun",
@@ -11315,7 +11326,20 @@
       "unsavedAsk": "Bu dosyada kaydetmediğiniz değişiklikler var.",
       "keepEditing": "Düzenlemeye devam et",
       "discard": "Vazgeç",
-      "cut": "Burada yalnızca ilk {{size}} gösteriliyor."
+      "state": {
+        "binary": "İkili bir dosya: burada gösterilecek bir şey yok.",
+        "missing": "Bu dosya artık yok.",
+        "ignored": "Git bu dosyayı yok sayıyor, bu yüzden burada görünmüyor.",
+        "secret": ".env dosyaları burada görünmez: genellikle gizli bilgiler içerirler.",
+        "outside": "Bu dosya, worktree dışına giden bir bağlantı."
+      }
+    },
+    "tabs": {
+      "label": "Oturum sekmeleri",
+      "talk": "Sohbet",
+      "terminalN": "Terminal {{n}}",
+      "close": "{{name}} sekmesini kapat",
+      "add": "Yeni sekme"
     },
     "screen": {
       "computer": "{{name}} bilgisayarı",
@@ -11357,27 +11381,6 @@
       "dm": "{{name}} ile konuşmanızdan açıldı",
       "channel": "#{{name}} kanalından açıldı",
       "see": "Konuşmayı gör"
-    },
-    "tabs": {
-      "label": "Oturum sekmeleri",
-      "talk": "Sohbet",
-      "terminalN": "Terminal {{n}}",
-      "close": "{{name}} sekmesini kapat",
-      "add": "Yeni sekme"
-    },
-    "beta": {
-      "added": {
-        "worktree": "Her istek kendi worktree'sinde. Git, Dosyalar, Ekran ve Terminal ile",
-        "anyAi": "Her yapay zekâ: Claude Code, Codex, OpenCode ya da anahtarıyla bir model",
-        "beside": "Dosyaları düzenleyin ve sohbetin yanında terminal açın"
-      },
-      "removed": {
-        "paste": "Sohbet ile düzenleyici arasında kod kopyalayıp yapıştırmak",
-        "watch": "Ajan bitirene kadar terminali izlemek"
-      },
-      "title": "Coding mode beta aşamasında",
-      "text": "Gerçekten çalışıyor ve her hafta değişiyor. Bazen takılır. Takıldığında sorun bizdedir.",
-      "go": "Başla"
     }
   },
   "code": {
@@ -15592,10 +15595,10 @@
       "repoNotAllowed": "Bu ajan o depoda çalışamaz. Başka bir depo seçin ya da ajanın ayarlarından bu depoyu ekleyin.",
       "notYours": "Oturumu yalnızca açan kişi veya bir yönetici kapatabilir.",
       "notReady": "Oturumun worktree'si henüz hazır değil. Birazdan tekrar deneyin.",
-      "suggestionGone": "Bu öneri zaten yanıtlandı.",
-      "suggestionNotYours": "Oturumun açılıp açılmayacağına yalnızca isteyen kişi karar verir.",
       "fileChanged": "Bu dosya siz açtıktan sonra bilgisayarda değişti.",
-      "fileLocked": "Bu dosya burada düzenlenemez."
+      "fileLocked": "Bu dosya burada düzenlenemez.",
+      "suggestionGone": "Bu öneri zaten yanıtlandı.",
+      "suggestionNotYours": "Oturumun açılıp açılmayacağına yalnızca isteyen kişi karar verir."
     },
     "webhook": {
       "githubNoAccess": "Bu çalışma alanının GitHub'ı {{repo}} içinde webhook oluşturamıyor. Elle oluşturmak için aşağıdaki adımları izle.",
@@ -20163,6 +20166,7 @@
     "openAgain": "Yeniden aç",
     "ended": "Kabuk kapandı",
     "dropped": "Terminal bağlantısı koptu",
+    "moved": "Bu terminal başka bir pencerede açık",
     "screening": "Terminaller burada kapalı",
     "forbidden": "Terminali yalnızca bu bilgisayarı kullanabilen kişi açar",
     "offline": "Bilgisayar çevrimdışı",
@@ -20172,8 +20176,7 @@
     "busy": "Bu bilgisayarda açılabilecek en fazla terminal zaten açık. Birini kapatıp yeniden açın.",
     "paused": "Bilgisayar duraklatıldı",
     "failed": "Terminal açılamadı",
-    "agentFolder": "Terminal ajanın klasöründe açıldı. Oturumun klasöründe açılması için bilgisayarı güncelleyin.",
-    "moved": "Bu terminal başka bir pencerede açık"
+    "agentFolder": "Terminal ajanın klasöründe açıldı. Oturumun klasöründe açılması için bilgisayarı güncelleyin."
   },
   "agora": {
     "label": "Şimdi",
