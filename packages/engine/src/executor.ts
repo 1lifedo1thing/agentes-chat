@@ -2020,9 +2020,14 @@ async function executeRunInner(
     if (!listsEveryTool(ctx)) return;
     ctx.loadedGroups = [];
     t.toolGroups = [];
-    tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+    tools = welcomeOnly(presentTools(granted, isSensitive, ctx.loadedGroups));
   };
   const trigger = triggerRows[0];
+  // A welcome to a newcomer (`member_joined`): a light turn, words or a pass, no tools.
+  const welcoming =
+    (trigger?.meta as { notice?: { kind?: unknown } } | null | undefined)?.notice?.kind === "member_joined";
+  const welcomeOnly = (list: typeof tools) => (welcoming ? list.filter((t) => t.name === PASS_TOOL) : list);
+  tools = welcomeOnly(tools);
   if (fresh && trigger)
     deps.onTiming?.("trigger_to_claim_ms", claimedAt - trigger.createdAt.getTime(), { runId: run.id });
   if (!agent || agent.archivedAt) return fail("agent_archived");

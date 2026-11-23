@@ -2,11 +2,16 @@ import { type Message, useApi } from "@agenteschat/client";
 import { type ConsultNoticeFold, pairItemOf } from "@agenteschat/client/lib/consult-group";
 import { agentsByAnyHandle } from "@agenteschat/client/lib/directory";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { consultationOfNotice, noticeOf, stoppedNoticeOf } from "@agenteschat/client/lib/notices";
+import { joinNames } from "@agenteschat/client/lib/format";
+import { consultationOfNotice, joinLineOf, noticeOf, stoppedNoticeOf } from "@agenteschat/client/lib/notices";
+import { WAVE_SECONDS } from "@agenteschat/ui/agent/stickers";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
-import { EventPill, EventPillAction, EventPillText, ProviderLogo, useToast } from "@/ui";
+import { StickerCanvas } from "@/agent/StickerCanvas";
+import { EventPill, EventPillAction, EventPillText, ProviderLogo, useReducedMotion, useToast } from "@/ui";
+import { fullLook } from "../agents/edit";
+import { Face } from "../shared/Face";
 import { useOrgId, useWhen } from "../shared/hooks";
 import { ConsultQuote } from "./ConsultGroup";
 import { keepOpen, keptOpen } from "./kept-sizes";
@@ -66,6 +71,8 @@ export const EventLine = memo(function EventLine({
   const line = eventLineOf(message, {
     author: dir.nameOf(message.author) || t("channel.unknownAgent"),
     agentByHandle: (handle) => agentsByAnyHandle([...dir.agentById.values()]).get(handle.toLowerCase())?.name ?? null,
+    nameOf: (m) => (m.type === "agent" ? (dir.anyAgent(m.id)?.name ?? null) : (dir.memberById.get(m.id)?.name ?? null)),
+    list: (names) => joinNames(names, t),
   });
   if (consulted)
     return (
@@ -80,10 +87,19 @@ export const EventLine = memo(function EventLine({
     );
   if (!line) return null;
   const kind = noticeOf(message.meta)?.kind;
+  const join = joinLineOf(message.meta);
   return (
     <View style={[styles.line, { paddingLeft: inset, marginTop: gap }]}>
       <EventPill
-        mark={kind === "github_event" || kind === "github_check" ? <ProviderLogo id="github" size="xs" /> : line.icon}
+        mark={
+          join ? (
+            <JoinFace message={message} />
+          ) : kind === "github_event" || kind === "github_check" ? (
+            <ProviderLogo id="github" size="xs" />
+          ) : (
+            line.icon
+          )
+        }
         time={when.time(message.createdAt)}
         actions={[
           line.answer ? <AnswerGitHub key="answer" messageId={message.id} /> : null,
@@ -116,6 +132,38 @@ export const EventLine = memo(function EventLine({
     </View>
   );
 });
+
+/** How long after a join its line still arrives with the newcomer waving. */
+const JUST_JOINED_MS = 15_000;
+const JOIN_FACE = 18;
+
+/**
+ * The first newcomer's face on a join's line (the web's `JoinLine`): arriving now, an agent waves a moment (the kit's
+ * wave sticker); a person shows their face.
+ */
+function JoinFace({ message }: { message: Message }) {
+  const dir = useRowDirectory();
+  const reduced = useReducedMotion();
+  // Decided when it mounts: a line read later stays still.
+  const [fresh] = useState(() => Date.now() - Date.parse(message.createdAt) < JUST_JOINED_MS);
+  const join = joinLineOf(message.meta);
+  const first = join?.members[0];
+  if (!first) return null;
+  const agent = first.type === "agent" ? dir.anyAgent(first.id) : undefined;
+  if (agent && fresh && !reduced && join?.kind === "joined")
+    return (
+      <StickerCanvas
+        look={fullLook(agent?.appearance)}
+        mood="wave"
+        size={JOIN_FACE}
+        seed={first.id}
+        live
+        playFor={WAVE_SECONDS}
+        from={Date.parse(message.createdAt)}
+      />
+    );
+  return <Face who={first} size={JOIN_FACE} live={false} />;
+}
 
 /**
  * "Pedir resposta" on what someone the agent doesn't answer wrote on GitHub: the agent answers them there, with this

@@ -4,9 +4,10 @@ import { APP_BRANDS } from "@agenteschat/client/lib/apps";
 import { seesDetails } from "@agenteschat/client/lib/audience";
 import { pairItemOf } from "@agenteschat/client/lib/consult-group";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { formatTime } from "@agenteschat/client/lib/format";
+import { formatTime, joinNames } from "@agenteschat/client/lib/format";
 import {
   consultationOfNotice,
+  joinLineOf,
   type NoticeView,
   noticeOf,
   noticeView,
@@ -20,6 +21,8 @@ import { surfaceViaName } from "@agenteschat/client/lib/surface-links";
 import type { AppVia, SurfaceVia } from "@agenteschat/client/lib/via";
 import { stopsMovedOn } from "@agenteschat/client/lib/work";
 import {
+  AgentSticker,
+  Avatar,
   cx,
   EventPill,
   EventPillAction,
@@ -28,12 +31,14 @@ import {
   type IconName,
   PixelStop,
   ProviderLogo,
+  WAVE_SECONDS,
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { MessageBody } from "@/chat/MessageBody";
+import { AgentAvatar } from "@/components/AgentAvatar";
 import { useOpenAgentPanel } from "@/components/agent-panel-context";
 import { ConsultPairRow } from "@/components/ConsultGroup";
 import { DetailsLink } from "@/components/details-link";
@@ -41,6 +46,7 @@ import { useOrg } from "@/components/org-context";
 import { SurfaceMark } from "@/components/SurfaceLink";
 import { SayWhy } from "@/components/tasks/TaskBits";
 import { useDirectory } from "@/hooks/useDirectory";
+import { lookOf } from "@/lib/look";
 import { useToast } from "@/lib/toast";
 import "./chat-notices.css";
 
@@ -137,6 +143,7 @@ export function NoticeLine({ message }: { message: Message }) {
   const dir = useDirectory(org.id);
   const notice = noticeOf(message.meta);
   if (!notice) return null;
+  if (notice.kind === "joined" || notice.kind === "left") return <JoinLine message={message} />;
   // A person stopped one of the agent's tasks (ADR 0128): its pill, with "Add a reason" for who stopped it. The
   // conversation hides it while the stopped reply is here: the reply's own pill says it (`Timeline`).
   const stopped = stoppedNoticeOf(message.meta);
@@ -172,6 +179,56 @@ export function NoticeLine({ message }: { message: Message }) {
     />
   );
 }
+
+/** How long after a join its line still arrives with the newcomer waving. */
+const JUST_JOINED_MS = 15_000;
+
+/**
+ * Who joined or left the channel, and who added them: one pill for everyone, with the first newcomer's face. Arriving
+ * now, an agent's face waves (the kit's wave sticker) for a moment.
+ */
+function JoinLine({ message }: { message: Message }) {
+  const { t, i18n } = useTranslation();
+  const { org } = useOrg();
+  const dir = useDirectory(org.id);
+  const join = joinLineOf(message.meta);
+  // Decided when it mounts: a line read later stays still.
+  const [fresh] = useState(() => Date.now() - Date.parse(message.createdAt) < JUST_JOINED_MS);
+  if (!join) return null;
+  const nameOf = (m: { type: "person" | "agent"; id: string }) =>
+    m.type === "agent" ? (dir.anyAgent(m.id)?.name ?? null) : (dir.memberById.get(m.id)?.name ?? null);
+  const view = noticeView(message, {
+    author: dir.authorName(message.author),
+    agentByHandle: () => null,
+    nameOf,
+    list: (names) => joinNames(names, t),
+  });
+  if (!view) return null;
+  const first = join.members[0];
+  const agent = first?.type === "agent" ? dir.anyAgent(first.id) : undefined;
+  const mark = agent ? (
+    fresh && join.kind === "joined" ? (
+      <AgentSticker appearance={lookOf(agent)} mood="wave" playFor={WAVE_SECONDS} size={JOIN_FACE} />
+    ) : (
+      <AgentAvatar agentId={agent.id} name={agent.name} size="xs" />
+    )
+  ) : first ? (
+    <Avatar kind="person" size="xs" name={nameOf(first) ?? ""} imageUrl={dir.memberById.get(first.id)?.image} />
+  ) : null;
+  return (
+    <EventPill
+      className="cn-pill"
+      mark={mark}
+      time={formatTime(i18n.language, message.createdAt)}
+      data-message-id={message.id}
+    >
+      {t(view.key as "chat.notice.left", view.values as { who: string })}
+    </EventPill>
+  );
+}
+
+/** The waving face in a join's pill: the size of the pill's other marks' faces. */
+const JOIN_FACE = 18;
 
 /** Under a reply that came at standard speed because Fast was refused (`meta.speedFallback`), with the way to the agent. */
 export function SpeedFallbackLine({ agent }: { agent: Agent | undefined }) {

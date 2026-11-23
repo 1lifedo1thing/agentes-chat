@@ -18982,6 +18982,13 @@ export const en = {
       agentNoteAnon: "Note from another agent",
       waitResult: "What {{name}} was waiting for came in",
       other: "Notice for {{name}}",
+      /** Who joined the channel (`who`: their names as one list), and who added them. */
+      joined_one: "{{who}} joined the channel",
+      joined_other: "{{who}} joined the channel",
+      joinedBy_one: "{{who}} joined the channel · added by {{by}}",
+      joinedBy_other: "{{who}} joined the channel · added by {{by}}",
+      /** Who left the channel, or was taken out of it. */
+      left: "{{who}} left the channel",
       wakeSkipped: "{{name}}'s mention didn't reach {{agents}}",
       /** The same, on an older line that didn't keep whom. */
       wakeSkippedAnon: "{{name}}'s mention didn't reach another agent",

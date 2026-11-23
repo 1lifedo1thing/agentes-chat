@@ -24,6 +24,7 @@ import { type BrakeReport, brakeWakes, callableAgents, LATER_JOB, notCallableWhy
 import { HANDOFF_REMIND_JOB, remindBrowserHandoff } from "./browser/handoff";
 import { typingLogFor } from "./burst";
 import { CHANNEL_DELETE_JOB, purgeChannel } from "./channel-deletion";
+import { announceJoins, CHANNEL_JOINED_JOB } from "./channel-joins";
 import { crowdedAgents, publishQueueChanged } from "./computer-queue";
 import { forgetComposioAccount } from "./connectors/composio";
 import { CONNECTOR_FORGET_JOB, type ConnectorDeps } from "./connectors/connections";
@@ -1078,6 +1079,11 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         throw error;
       }
       await forget();
+    },
+    // Who joined a channel, in one line there, and at most one welcome with room (ADR 0090, "Joining says so").
+    [CHANNEL_JOINED_JOB]: async (job) => {
+      const by = job.payload.byUserId;
+      await announceJoins(deps, orgOf(job), String(job.payload.channelId), typeof by === "string" ? by : null);
     },
     // The team says hi in #general once it can work (ADR 0162).
     [TEAM_HELLO_JOB]: async (job) => {

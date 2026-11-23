@@ -18840,6 +18840,13 @@ export const ptBR = {
       agentNoteAnon: "Nota de outro agente",
       waitResult: "Chegou o resultado que {{name}} esperava",
       other: "Aviso para {{name}}",
+      /** Who joined the channel (`who`: their names as one list), and who added them. */
+      joined_one: "{{who}} entrou no canal",
+      joined_other: "{{who}} entraram no canal",
+      joinedBy_one: "{{who}} entrou no canal · {{by}} adicionou",
+      joinedBy_other: "{{who}} entraram no canal · {{by}} adicionou",
+      /** Who left the channel, or was taken out of it. */
+      left: "{{who}} saiu do canal",
       wakeSkipped: "A menção de {{name}} não chamou {{agents}}",
       wakeSkippedAnon: "A menção de {{name}} não chamou outro agente",
       wakeSkippedAudience:
