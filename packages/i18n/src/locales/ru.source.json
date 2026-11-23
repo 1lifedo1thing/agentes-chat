@@ -14437,6 +14437,9 @@
   "agentPage.work.brain.efforts.high": {
     "value": "High"
   },
+  "agentPage.work.brain.efforts.xhigh": {
+    "value": "Extra high"
+  },
   "agentPage.work.brain.efforts.max": {
     "value": "Maximum"
   },
@@ -14451,6 +14454,9 @@
   },
   "agentPage.work.brain.effortsLower.high": {
     "value": "high"
+  },
+  "agentPage.work.brain.effortsLower.xhigh": {
+    "value": "extra high"
   },
   "agentPage.work.brain.effortsLower.max": {
     "value": "maximum"
@@ -14472,6 +14478,9 @@
   },
   "agentPage.work.brain.effortText.high": {
     "value": "Thinks more on hard tasks. Slower and costs more."
+  },
+  "agentPage.work.brain.effortText.xhigh": {
+    "value": "Thinks longer than high on the hardest tasks. Slower and costs more again."
   },
   "agentPage.work.brain.effortText.max": {
     "value": "Thinks as much as possible. Much slower and pricier."

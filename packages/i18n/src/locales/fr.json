@@ -6084,6 +6084,7 @@
           "low": "Faible",
           "medium": "Moyen",
           "high": "Élevé",
+          "xhigh": "Très élevé",
           "max": "Maximal"
         },
         "effortsLower": {
@@ -6091,6 +6092,7 @@
           "low": "faible",
           "medium": "moyen",
           "high": "élevé",
+          "xhigh": "très élevé",
           "max": "maximal"
         },
         "effortText": {
@@ -6100,6 +6102,7 @@
           "mediumKey": "Réfléchit assez la plupart du temps.",
           "none": "Le modèle réfléchit autant que d'habitude. Choisissez un niveau pour fixer l'effort.",
           "high": "Réfléchit davantage sur les tâches difficiles. Plus lent et plus cher.",
+          "xhigh": "Réfléchit plus qu'en élevé sur les tâches les plus dures. Encore plus lent et plus cher.",
           "max": "Réfléchit autant que possible. Bien plus lent et plus cher."
         },
         "speed": "Vitesse",

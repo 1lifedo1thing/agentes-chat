@@ -6202,9 +6202,10 @@ export const ptBR = {
           low: "Baixo",
           medium: "Médio",
           high: "Alto",
+          xhigh: "Muito alto",
           max: "Máximo",
         },
-        effortsLower: { auto: "automático", low: "baixo", medium: "médio", high: "alto", max: "máximo" },
+        effortsLower: { auto: "automático", low: "baixo", medium: "médio", high: "alto", xhigh: "muito alto", max: "máximo" },
         effortText: {
           auto: "O modelo Automático escolhe o esforço de cada tarefa. Escolha um modelo para fixar o esforço.",
           low: "Responde rápido. Bom para perguntas simples.",
@@ -6212,6 +6213,7 @@ export const ptBR = {
           mediumKey: "Pensa o suficiente na maioria das vezes.",
           none: "O modelo pensa o quanto costuma. Escolha um nível para fixar o esforço.",
           high: "Pensa mais em tarefas difíceis. Demora e gasta mais.",
+          xhigh: "Pensa mais que o alto nas tarefas mais difíceis. Demora e gasta ainda mais.",
           max: "Pensa o máximo que puder. Bem mais lento e caro.",
         },
         /** Velocidade (ADR 0149): shown on a ChatGPT plan with a model that has Fast mode. `2,5×` is OpenAI's rate. */
