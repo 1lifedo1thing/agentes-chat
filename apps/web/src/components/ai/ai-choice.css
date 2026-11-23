@@ -14,16 +14,17 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* An account option: the name, then its plan and owner muted, its room at the end. One line on a computer. */
+/* An account option: the name, then its plan and owner muted, its room at the end, on one line. */
 .ac-tz__option:has(> .aa-opt) {
   align-items: center;
 }
 .aa-opt {
   display: flex;
   flex: 1;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   min-width: 0;
+  line-height: 20px;
 }
 .aa-opt__name {
   flex: 0 1 auto;
@@ -109,25 +110,9 @@
 }
 
 @media (max-width: 560px) {
-  /* An option: the name on its own line, plan, owner and room under it. Every option two lines. */
-  .aa-opt {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-  }
-  .ac-tz__option:has(> .aa-opt) > .ac-menu__leading {
-    align-self: flex-start;
-    margin-top: 2px;
-  }
+  /* One line on a phone too: the plan and owner give way to the name and the room. */
   .aa-opt > .aa-meta {
     min-width: 0;
-    line-height: 18px;
-  }
-  /* The closed field: the name and its room; the plan is in the list. */
-  .aa-value .aa-opt {
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--space-2);
   }
   .aa-value .aa-meta__plan {
     display: none;

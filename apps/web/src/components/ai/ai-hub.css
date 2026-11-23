@@ -1,20 +1,20 @@
 /* "Contas de IA" (AiHub.tsx): one quiet line per account; its detail; the order of use. */
 
 /* A line: the name and its plan and owner on one line each, cut with an ellipsis (the whole in a tooltip). */
-.aa-list .plan-row__head > .plan-acct__name {
+.plan-rows.aa-list .plan-row__head > .plan-acct__name {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   min-width: 0;
   white-space: nowrap;
 }
-.aa-list .plan-row__title {
+.plan-rows.aa-list .plan-row__title {
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.aa-list .plan-row__facts {
+.plan-rows.aa-list .plan-row__facts {
   /* The plan and owner give way first: the name keeps its room down to 7em of facts. */
   flex: 0 100 auto;
   min-width: 7em;
@@ -37,7 +37,14 @@
 }
 .aa-acts {
   display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--space-2);
+}
+/* Two buttons in the card's head: on a narrow card they wrap under each other rather than past its edge. */
+.ac-card__action:has(> .aa-acts) {
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 /* The detail: one section rhythm, the divider in the middle of its room (20 above and under it). */
@@ -61,132 +68,133 @@
 }
 
 /* Ordem de uso: a box per maker and computer, its rows numbered; no ring while a row moves (only the keys' focus). */
-.aa-order .ac-dialog__body {
+.ac-dialog.aa-order .ac-dialog__body {
   gap: 0;
 }
-.aa-order .plan-order {
+.ac-dialog.aa-order .plan-order {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   overflow: hidden;
 }
-.aa-order .plan-order + .plan-order {
+.ac-dialog.aa-order .plan-order + .plan-order {
   margin-top: var(--space-3);
 }
-.aa-order .plan-order__head {
+.ac-dialog.aa-order .plan-order__head {
   padding-bottom: var(--space-1);
 }
-.aa-order .plan-row + .plan-row {
+.ac-dialog.aa-order .plan-row + .plan-row {
   border-top: 1px solid var(--line);
 }
-.aa-order .plan-row__head {
+.ac-dialog.aa-order .plan-row__head {
   cursor: default;
 }
-.aa-order .plan-row__head:hover {
+.ac-dialog.aa-order .plan-row__head:hover {
   background: none;
 }
-.aa-order .plan-row--placed > .plan-row__head {
+.ac-dialog.aa-order .plan-row--placed > .plan-row__head {
   grid-template-columns: minmax(0, 1fr) auto;
 }
-.aa-order .plan-row__head > .plan-acct__name {
+.ac-dialog.aa-order .plan-row__head > .plan-acct__name {
   display: flex;
   align-items: baseline;
   gap: var(--space-2);
   min-width: 0;
   white-space: nowrap;
 }
-.aa-order .plan-row__title,
-.aa-order .plan-row__facts {
+.ac-dialog.aa-order .plan-row__title,
+.ac-dialog.aa-order .plan-row__facts {
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.aa-order .plan-row__head > .aa-state {
+.ac-dialog.aa-order .plan-row__head > .aa-state {
   grid-column: 2;
 }
-.aa-order .plan-row[data-skipped] .plan-row__title {
+.ac-dialog.aa-order .plan-row[data-skipped] .plan-row__title {
   color: var(--ink-muted);
 }
-.aa-order .ac-setsec {
+.ac-dialog.aa-order .ac-setsec {
   margin-top: 20px;
   padding: 20px 0 0;
 }
 
 @media (max-width: 560px) {
-  /* A line: the name, the plan and owner under it, the state under those. */
-  .aa-list .plan-row__head {
+  /* A line on a phone: the mark and the name on one line; the plan and owner, then the state, under both. */
+  .plan-rows.aa-list .plan-row__head {
     grid-template-columns: auto minmax(0, 1fr) auto;
     row-gap: 0;
   }
-  .aa-list .plan-row__head > .plan-acct__name {
-    display: block;
-    grid-area: 1 / 2;
+  .plan-rows.aa-list .plan-row__head > .plan-acct__name {
+    display: contents;
   }
-  .aa-list .plan-row__title,
-  .aa-list .plan-row__facts {
-    display: block;
+  .plan-rows.aa-list .plan-row__head > .ac-brand {
+    grid-area: 1 / 1;
+  }
+  .plan-rows.aa-list .plan-row__title {
+    grid-area: 1 / 2;
+    align-self: center;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .aa-list .plan-row__facts {
+  .plan-rows.aa-list .plan-row__head > .plan-row__chevron {
+    grid-area: 1 / 3;
+  }
+  .plan-rows.aa-list .plan-row__facts {
+    grid-area: 2 / 1 / 3 / 4;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 13px;
     line-height: 18px;
   }
-  .aa-list .plan-row__head > :is(.plan-row__meter, .aa-state) {
-    grid-area: 2 / 2;
+  .plan-rows.aa-list .plan-row__head > :is(.plan-row__meter, .aa-state) {
+    grid-area: 3 / 1 / 4 / 4;
     justify-self: start;
     min-height: 0;
     font-size: 13px;
     line-height: 18px;
   }
-  .aa-list .plan-row__head > .plan-row__meter {
+  .plan-rows.aa-list .plan-row__head > .plan-row__meter {
     display: block;
     white-space: nowrap;
   }
-  .aa-list .plan-row__head > .plan-row__meter .ac-meter {
+  .plan-rows.aa-list .plan-row__head > .plan-row__meter .ac-meter {
     display: none;
   }
-  .aa-list .plan-row__meter[data-level="almost"] .ac-planmeter__line {
+  .plan-rows.aa-list .plan-row__meter[data-level="almost"] .ac-planmeter__line {
     color: var(--warn);
   }
-  .aa-list .plan-row__meter[data-level="limited"] .ac-planmeter__line {
+  .plan-rows.aa-list .plan-row__meter[data-level="limited"] .ac-planmeter__line {
     color: var(--danger);
   }
-  .aa-list .plan-row__head > .plan-row__chevron {
-    grid-area: 1 / 3 / 3 / 4;
-    align-self: center;
-  }
-  .aa-list .plan-row__head > .ac-brand {
-    grid-area: 1 / 1;
-  }
 
-  .aa-order .plan-row--placed > .plan-row__head {
+  /* An order's row: its place, then the name, its plan and owner, and its state, each on a line. */
+  .ac-dialog.aa-order .plan-row--placed > .plan-row__head {
     grid-template-columns: calc(var(--control-h-sm) + var(--space-3)) minmax(0, 1fr);
     row-gap: 0;
+    padding-block: var(--space-3);
   }
-  .aa-order .plan-row__head > .plan-acct__name {
+  .ac-dialog.aa-order .plan-row__head > .plan-acct__name {
     display: block;
     grid-area: 1 / 2;
+    margin-top: 0;
   }
-  .aa-order .plan-row__title,
-  .aa-order .plan-row__facts {
+  .ac-dialog.aa-order .plan-row__title,
+  .ac-dialog.aa-order .plan-row__facts {
     display: block;
+    line-height: 22px;
   }
-  .aa-order .plan-row__facts {
+  .ac-dialog.aa-order .plan-row__facts {
     font-size: 13px;
     line-height: 18px;
   }
-  .aa-order .plan-row__head > .aa-state {
+  .ac-dialog.aa-order .plan-row__head > .aa-state {
     grid-area: 2 / 2;
     justify-self: start;
     font-size: 13px;
     line-height: 18px;
   }
-}
-
-/* Before the limits: what stands for the account, then what its sign-in needs. */
-.aa-notes {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
 }
