@@ -8,7 +8,7 @@ import {
   useSetAccountPermissions,
   useSetKeyFallback,
 } from "@agenteschat/client";
-import { orderAccounts, orderDrop, orderStep } from "@agenteschat/client/lib/ai-accounts";
+import { orderDrop, orderStep } from "@agenteschat/client/lib/ai-accounts";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { firstName } from "@agenteschat/client/lib/format";
 import { planOf } from "@agenteschat/client/lib/plans";
@@ -90,7 +90,7 @@ export function HubList({ hub, connect, before }: { hub: AiHub; connect: boolean
   const { t, i18n } = useTranslation();
   const meId = useMeId();
   const accounts = hubAccounts(hub, meId ?? "");
-  const orders = hub.order.some((g) => orderAccounts(g.accounts).length > 1);
+  const orders = hub.order.length > 0 || hub.canConfigure;
   return (
     <>
       <GroupedHeader
