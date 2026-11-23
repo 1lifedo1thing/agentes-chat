@@ -325,6 +325,7 @@ function SettingsBody({
               orgId={org.id}
               target={{ kind: "mission", missionId: m.id }}
               parts={["model"]}
+              modelHint={t("brain.mission.modelHint")}
               onSaved={(c) => saved(t("brain.mission.saved", { model: brainModelLabel(brainOption, c.model ?? null) }))}
             />
           )}

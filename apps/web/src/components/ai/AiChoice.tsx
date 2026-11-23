@@ -12,8 +12,8 @@ import { type EffortLevel, effortOf } from "@agenteschat/client/lib/brain-advanc
 import { errorText } from "@agenteschat/client/lib/errors";
 import { firstName } from "@agenteschat/client/lib/format";
 import { planMeterText } from "@agenteschat/client/lib/plan-usage";
-import { planName } from "@agenteschat/client/lib/plans";
-import { AUTO, isAuto } from "@agenteschat/client/lib/providers";
+import { planModelById, planName } from "@agenteschat/client/lib/plans";
+import { AUTO, isAuto, providerLabel } from "@agenteschat/client/lib/providers";
 import {
   cx,
   Field,
@@ -41,9 +41,6 @@ import "./ai-choice.css";
 
 export type AiChoicePart = "account" | "model" | "effort";
 const ALL_PARTS: readonly AiChoicePart[] = ["account", "model", "effort"];
-
-/** Past this many models the Modelo select searches. */
-const SEARCH_MODELS_FROM = 12;
 
 /** The row a choice stands for: an account by any of its logins, a key, a mission's brain, Lodi's "A do workspace". */
 export function rowOfChoice(rows: readonly AiChoiceRow[], c: AiChoice | null | undefined): AiChoiceRow | undefined {
@@ -86,6 +83,8 @@ function rowMeta(t: TFunction, row: AiChoiceRow, withOwner: boolean): string {
       .join(" · ");
   }
   if (row.apiKey) return row.apiKey.endpoint ? row.apiKey.endpoint.baseURL : t("aiHub.apiKey");
+  // A plan through its computer's own sign-in.
+  if (row.type === "brain" && row.brain !== "model") return t("brain.picker.ownSignIn");
   return "";
 }
 
@@ -150,6 +149,7 @@ export function AiChoiceFields({
   onChange,
   onAccount,
   onSaved,
+  modelHint,
   disabled = false,
   className,
 }: {
@@ -160,6 +160,8 @@ export function AiChoiceFields({
   onAccount?: (row: AiChoiceRow) => void;
   /** A change saved (not with `onChange`). */
   onSaved?: (choice: AiChoice) => void;
+  /** What the Modelo field's ⓘ says (a mission's: when it can change). */
+  modelHint?: string;
   disabled?: boolean;
   className?: string;
 }) {
@@ -205,12 +207,25 @@ export function AiChoiceFields({
 
   const models = row ? state.models(row, t) : [];
   const checked = models.find((m) => m.checked)?.value;
-  const model = shown?.model ?? checked ?? AUTO;
-  const modelOptions: SelectOption[] = models.map((m) => ({
-    value: m.value,
-    label: m.label,
-    ...(m.sub || m.note ? { hint: [m.sub, m.note].filter(Boolean).join(" ") } : {}),
-  }));
+  // What was just picked while it is a choice of this list; else the one the list checks (a model kept by its id reads
+  // as the list's own value).
+  const known = (v: string | null | undefined) => !!v && models.some((m) => m.value === v);
+  // The model in use stays a choice when the list doesn't have it (a typed one, one the list dropped), by its name.
+  const kept =
+    shown?.model && !known(shown.model) && !isAuto(shown.model) && (!known(checked) || planModelById(shown.model))
+      ? shown.model
+      : null;
+  const model = known(shown?.model) ? (shown?.model as string) : (kept ?? checked ?? AUTO);
+  // One line each, by maker where a plan has several; what each is for stays out of the list.
+  const modelOptions: SelectOption[] = [
+    ...(kept ? [{ value: kept, label: planModelById(kept)?.label ?? kept }] : []),
+    ...models.map((m) => ({
+      value: m.value,
+      // A plan's model kept by its id reads by its name.
+      label: m.label === m.value ? (planModelById(m.value)?.label ?? m.label) : m.label,
+      ...(m.maker ? { group: providerLabel(m.maker) } : {}),
+    })),
+  ];
   const pickModel = (v: string) => {
     if (!row || !shown || v === model) return;
     // Automático picks the effort too; a fixed model after it starts on Médio.
@@ -279,23 +294,25 @@ export function AiChoiceFields({
       {(showModel || showEffort) && (
         <div className={cx("aa-pair", !(showModel && showEffort) && "aa-pair--one")}>
           {showModel && (
-            <Field label={t("agentPage.work.brain.planModel")} id={`${id}-model`}>
-              {modelOptions.length > SEARCH_MODELS_FROM ? (
-                <SearchSelect
-                  value={model}
-                  onValueChange={pickModel}
-                  options={modelOptions}
-                  disabled={locked}
-                  labels={{
-                    search: t("models.search"),
-                    searchPlaceholder: t("models.search"),
-                    noResults: t("aiHub.choice.noModel"),
-                    list: t("agentPage.work.brain.planModel"),
-                  }}
-                />
-              ) : (
-                <Select value={model} onValueChange={pickModel} options={modelOptions} disabled={locked} />
-              )}
+            <Field
+              label={t("agentPage.work.brain.planModel")}
+              id={`${id}-model`}
+              {...(modelHint
+                ? { hint: { name: t("common.about", { label: t("agentPage.work.brain.planModel") }), text: modelHint } }
+                : {})}
+            >
+              <SearchSelect
+                value={model}
+                onValueChange={pickModel}
+                options={modelOptions}
+                disabled={locked}
+                labels={{
+                  search: t("models.search"),
+                  searchPlaceholder: t("models.search"),
+                  noResults: t("aiHub.choice.noModel"),
+                  list: t("agentPage.work.brain.planModel"),
+                }}
+              />
             </Field>
           )}
           {showEffort && (

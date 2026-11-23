@@ -164,6 +164,17 @@ export function aiChoiceRows(hub: AiHub | null | undefined, ctx: AiChoiceContext
       });
     }
   }
+  // A plan through its computer's own sign-in (no account row): the choice in use stays a row of its own.
+  const own = (target.kind === "agent" || target.kind === "lodi") && current && current.brain !== "model";
+  if (own && !current.account && !rows.some((r) => r.selected))
+    rows.unshift({
+      key: `own:${current.brain}`,
+      type: "brain",
+      group: "yours",
+      brain: current.brain,
+      usable: true,
+      selected: true,
+    });
   if (takesKeys(target) && hub) {
     const keys = target.kind === "autoTier" ? hub.keys.filter((k) => k.provider === target.provider) : hub.keys;
     for (const k of keys) {
@@ -222,6 +233,8 @@ export const aiChoiceEfforts = (row: AiChoiceRow): readonly EffortLevel[] =>
 
 /** The choice a row makes, keeping the model and effort when the brain stays. */
 export function aiChoiceOf(row: AiChoiceRow, current: AiChoice | null): AiChoice {
+  // Lodi's "A do workspace": the workspace's own AI, nothing of the person's to carry.
+  if (row.type === "workspace") return { brain: "model" };
   const keep = current?.brain === row.brain;
   const rest = keep
     ? { model: current?.model ?? null, effort: current?.effort ?? null }

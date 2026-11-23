@@ -739,12 +739,9 @@ describe("an agent's model left its plan's list", () => {
     await click(within(row).getByRole("button", { name: "Escolher outro modelo" }));
     await settle(8);
     expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/agents/${ADA_ID}`);
-    // Straight on the model's screen, its models to pick from; back leads to the dialog's first screen.
-    const d = screen().getByRole("dialog", { name: "Modelo da Ada" });
-    expect(within(d).getByRole("radiogroup", { name: "Modelo da Ada" })).toBeTruthy();
-    await click(within(d).getByRole("button", { name: "Voltar" }));
-    await settle(4);
-    expect(screen().getByRole("dialog", { name: "Quem pensa pela Ada" })).toBe(d);
+    // On the dialog's first screen, where its Modelo is.
+    const d = screen().getByRole("dialog", { name: "Quem pensa pela Ada" });
+    expect(within(d).getByRole("combobox", { name: "Modelo" })).toBeTruthy();
   });
 });
 

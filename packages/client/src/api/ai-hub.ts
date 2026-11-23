@@ -193,7 +193,11 @@ export function useAiChoice(orgId: string, target: AiChoiceTarget): AiChoiceStat
           return null;
         }
         case "mission":
-          await setMission.mutateAsync({ brain: choice.brain, model: choice.model ?? null });
+          // Its brain stays what it follows (the executor) unless another was picked.
+          await setMission.mutateAsync({
+            ...(choice.brain !== current?.brain ? { brain: choice.brain } : {}),
+            model: choice.model ?? null,
+          });
           return null;
         case "agents":
           return api.agents.applySetup(orgId, {
