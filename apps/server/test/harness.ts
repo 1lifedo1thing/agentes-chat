@@ -134,6 +134,8 @@ export async function createTestServer(
      * addendum 2026-11-22), and most tests are about what comes after.
      */
     unconfirmedSignUps?: boolean;
+    /** The built web app to serve, as `WEB_DIR` does (`scripts/geometry/shifts.ts` opens it in Chrome). */
+    webDir?: string;
   } = {},
 ) {
   const { db, close } = await createTestDatabase();
@@ -258,6 +260,7 @@ export async function createTestServer(
       }),
     services,
     log,
+    webDir: options.webDir,
   });
   const live = createLiveSockets({
     db,
