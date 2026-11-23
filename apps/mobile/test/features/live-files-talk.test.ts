@@ -384,6 +384,10 @@ describe("a picture's, a video's and a PDF's conversation (ADR 0208)", () => {
     expect(pins).toContain("borderRadius: 8,");
     expect(pins).toContain("borderBottomLeftRadius: 3,");
     expect(pins).not.toContain("MEDIA_PIN_H / 2");
+    // The canvas's pins, the same shape.
+    const plane = src("features/live-files/canvas/CanvasPlane.tsx");
+    expect(plane).toContain("borderRadius: 8,");
+    expect(plane).not.toContain("PIN_H / 2");
   });
 
   test("the viewer and the PDF's screen push the conversation; a held touch marks a point; a link opens it", () => {
