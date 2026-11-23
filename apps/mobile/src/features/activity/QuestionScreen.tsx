@@ -11,6 +11,7 @@ import {
   GroupedRow,
   type HeaderAction,
   Locked,
+  SCREEN_X,
   SkeletonList,
   Text,
   useToast,
@@ -159,7 +160,7 @@ export function QuestionScreen({ id }: { id: string }) {
 }
 
 const styles = StyleSheet.create({
-  in: { paddingHorizontal: 20, paddingTop: 12, gap: 24 },
+  in: { paddingHorizontal: SCREEN_X, paddingTop: 12, gap: 24 },
   words: { gap: 6 },
   own: { gap: 12 },
 });

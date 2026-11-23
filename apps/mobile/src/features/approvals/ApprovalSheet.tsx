@@ -24,6 +24,7 @@ import {
   GroupedRow,
   HoldButton,
   Locked,
+  SCREEN_X,
   SkeletonList,
   Text,
   useToast,
@@ -383,8 +384,8 @@ export function ApprovalSheet({
 
 const styles = StyleSheet.create({
   // The rows' shape runs to the sheet's edges, as a list's rows do, not inside its padding.
-  bleed: { marginHorizontal: -20 },
-  in: { paddingHorizontal: 20, paddingTop: 12, gap: 24 },
+  bleed: { marginHorizontal: -SCREEN_X },
+  in: { paddingHorizontal: SCREEN_X, paddingTop: 12, gap: 24 },
   // The decision, pinned at the screen's foot over what scrolls.
   dock: {
     position: "absolute",
@@ -392,7 +393,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     gap: 8,
-    paddingHorizontal: 20,
+    paddingHorizontal: SCREEN_X,
     paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
   },

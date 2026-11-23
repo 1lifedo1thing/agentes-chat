@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import { Sky } from "@/ui";
+import { SCREEN_X, Sky } from "@/ui";
 import { AgentFace } from "../shared/Face";
 import { useDirectory } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
   head: {
     marginTop: -ABOVE,
     paddingTop: ABOVE + 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: SCREEN_X,
     paddingBottom: 4,
     minHeight: ABOVE + 96,
     justifyContent: "flex-end",

@@ -1068,8 +1068,9 @@ html:not([data-pointer]) .ib-row:focus-visible {
 }
 
 /* An approval and a question are the conversation's cards, drawn flat here: the page is their surface, their sky the
-   open item's own, their title the page's. */
-.ib-read .rq {
+   open item's own, their title the page's. The inbox's own class leads each rule, so the card's rules never tie with them
+   whichever sheet loads first. */
+.ib .ib-read .rq {
   max-width: none;
   margin: 0;
   padding: 0;
@@ -1077,25 +1078,25 @@ html:not([data-pointer]) .ib-row:focus-visible {
   background: none;
   box-shadow: none;
 }
-.ib-read .rq > .ac-approval__sky {
+.ib .ib-read .rq > .ac-approval__sky {
   display: none;
 }
-.ib-read .rq__kind {
+.ib .ib-read .rq__kind {
   font-size: 14px;
   font-weight: 400;
   color: var(--faint);
 }
-.ib-read .rq__who {
+.ib .ib-read .rq__who {
   font-weight: 600;
   color: var(--ink);
 }
-.ib-read .rq__lead {
+.ib .ib-read .rq__lead {
   margin-top: 8px;
   font-size: 17px;
   line-height: 26px;
   color: var(--ink2);
 }
-.ib-read .rq[data-ask-kind="question"] .rq__lead {
+.ib .ib-read .rq[data-ask-kind="question"] .rq__lead {
   font-size: 26px;
   line-height: 1.2;
   font-weight: 600;
@@ -1103,34 +1104,34 @@ html:not([data-pointer]) .ib-row:focus-visible {
   color: var(--ink);
   text-wrap: balance;
 }
-.ib-read .rq__well,
-.ib-read .rq__preview,
-.ib-read .rq__foot,
-.ib-read .rq__items {
+.ib .ib-read .rq__well,
+.ib .ib-read .rq__preview,
+.ib .ib-read .rq__foot,
+.ib .ib-read .rq__items {
   margin-inline: 0;
   padding-inline: 0;
 }
-.ib-read .rq__well {
+.ib .ib-read .rq__well {
   margin-top: 20px;
   padding-block: 16px;
 }
-.ib-read .rq__wt b {
+.ib .ib-read .rq__wt b {
   font-size: 20px;
   line-height: 26px;
 }
 /* The mark stands on the larger title's line. */
-.ib-read .rq__well > .rq__logo {
-  height: 26px;
+.ib .ib-read .rq__well > .rq__logo {
+  height: 25px;
 }
-.ib-read .rq__wt small {
+.ib .ib-read .rq__wt small {
   font-size: 15px;
   line-height: 22px;
 }
-.ib-read .rq__foot {
+.ib .ib-read .rq__foot {
   margin-top: 20px;
   padding-block: 16px 0;
 }
-.ib-read .rq__choices {
+.ib .ib-read .rq__choices {
   margin-top: 24px;
 }
 
