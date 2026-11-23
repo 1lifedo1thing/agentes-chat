@@ -8,9 +8,7 @@ import type {
 } from "@agenteschat/client";
 import {
   CardVia,
-  keys,
   useActionCard,
-  useAgentActions,
   useAgentProposal,
   useAskProposal,
   useAuthConfig,
@@ -65,7 +63,6 @@ import {
   settingLineText,
 } from "@agenteschat/client/lib/proposals";
 import { Button, EventPillAction, Icon, Switch } from "@agenteschat/ui";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -75,7 +72,7 @@ import { DeleteAgentsDialog } from "@/components/DeleteAgentDialog";
 import { useOrg } from "@/components/org-context";
 import { RemoveMemberDialog } from "@/components/RemoveMember";
 import { type RequestAnswer, RequestCard, RequestOpen } from "@/components/RequestCard";
-import { DelegateNote, DelegateUndo, useDelegateLine } from "@/components/RightHandDelegate";
+import { DelegateNote, useDelegateLine } from "@/components/RightHandDelegate";
 import { useDirectory } from "@/hooks/useDirectory";
 import { inlineWords } from "@/lib/markdown";
 import { useToast } from "@/lib/toast";
@@ -103,7 +100,7 @@ export function SettingsProposalCardView({ message, card }: { message: Message; 
 /**
  * "Arquivar 5 agentes?" (`propose_remove_agents`): the agents listed, each with its switch, and "Arquivar todos" or
  * "Arquivar 3" for whoever may archive (or delete) them, applied as them row by row; the person who asked and can't,
- * Pedir a um admin. Decided, how it ended and Desfazer for what was archived (a deleted agent doesn't come back).
+ * Pedir a um admin. Decided, how it ended and who decided, no Desfazer (the agents' page brings an archived one back).
  */
 function RemovalCard({
   rows,
@@ -121,9 +118,7 @@ function RemovalCard({
   const roles = useRoles(org.id).data?.roles ?? [];
   const decide = useDecideProposals(org.id);
   const ask = useAskProposal(org.id);
-  const actions = useAgentActions(org.id, message?.channelId ?? "");
   const toast = useToast();
-  const qc = useQueryClient();
   const [off, setOff] = useState<ReadonlySet<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
   const [first] = rows;
@@ -152,12 +147,11 @@ function RemovalCard({
       },
     );
 
-  // Decided: the same card, its rows saying how each ended, and who decided, when and Desfazer where the buttons were.
+  // Decided: the same card, its rows saying how each ended, and who decided and when where the buttons were.
   let answer: RequestAnswer | undefined;
   if (open.length === 0) {
     const outcome = cardOutcome(t, rows);
     const receipts = (message?.actions ?? []).filter((a) => rows.some((p) => p.undoActionId === a.id));
-    const undoable = receipts.some((a) => !a.undoneAt && a.undoableUntil && Date.parse(a.undoableUntil) > Date.now());
     const undone = receipts.length > 0 && receipts.every((a) => a.undoneAt);
     answer = {
       done: outcome.accepted && !undone,
@@ -165,22 +159,6 @@ function RemovalCard({
         ? `${cardDecidedBy(t, rows, me.user.id)} · ${t("rightHand.card.undone")}`
         : cardDecidedBy(t, rows, me.user.id),
       time: first.decidedAt ? formatTime(i18n.language, first.decidedAt) : undefined,
-      action: undoable ? (
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={actions.undoAll.isPending}
-          onClick={() =>
-            message &&
-            actions.undoAll.mutate(message.id, {
-              onSuccess: () => void qc.invalidateQueries({ queryKey: keys.agents(org.id) }),
-              onError: failed,
-            })
-          }
-        >
-          {t("rightHand.card.undo")}
-        </Button>
-      ) : undefined,
     };
   }
 
@@ -303,7 +281,7 @@ function RemovalCard({
 /**
  * One row: "Propõe uma mudança", the agent in the well, "Modelo: Haiku → Sonnet" a line each, and the decision.
  * Who may decide it gets Aplicar and Descartar (Recusar in the inbox); the person who asked and can't, Pedir a um
- * admin, then whom it went to. Decided, one line with who did it, and Desfazer on its receipt while it lasts.
+ * admin, then whom it went to. Decided, one line with who did it and when.
  */
 function SettingsRow({
   p,
@@ -313,7 +291,7 @@ function SettingsRow({
 }: {
   p: Proposal;
   message?: Message;
-  /** The right hand looked at the card for the person it is for (ADR 0139): one decision, Desfazer on the first row. */
+  /** The right hand looked at the card for the person it is for (ADR 0139): one decision, its note on the first row. */
   delegate?: CardDelegate | null;
   first?: boolean;
 }) {
@@ -327,9 +305,7 @@ function SettingsRow({
   const decide = useDecideProposal(org.id);
   const ask = useAskProposal(org.id);
   const redo = useSendDm(org.id);
-  const actions = useAgentActions(org.id, message?.channelId ?? "");
   const toast = useToast();
-  const qc = useQueryClient();
   const agent = dir.anyAgent(p.agentId);
   const proposer = dir.anyAgent(p.proposedByAgentId ?? p.agentId);
   const name = agent?.name ?? t("channel.unknownAgent");
@@ -348,35 +324,16 @@ function SettingsRow({
   const delegated = useDelegateLine(delegate);
   const byRightHand = delegated && (delegate?.state === "approved" || delegate?.state === "undone");
 
-  // Decided: the same card, the lines it changed still there, and who did it, when and Desfazer where the buttons were.
+  // Decided: the same card, the lines it changed still there, and who did it and when where the buttons were.
   let answer: RequestAnswer | undefined;
   if (p.status !== "pending") {
     const receipt = message?.actions?.find((a) => a.id === p.undoActionId);
     const who = byRightHand ? delegated : cardDecidedBy(t, [p], me.user.id);
-    const undoable =
-      receipt && !receipt.undoneAt && receipt.undoableUntil && Date.parse(receipt.undoableUntil) > Date.now();
     answer = {
       done: p.status === "accepted" && !receipt?.undoneAt && delegate?.state !== "undone",
       text: receipt?.undoneAt ? `${who} · ${t("rightHand.card.undone")}` : who,
       note: byRightHand && delegate?.reason ? inlineWords(delegate.reason) : undefined,
       time: p.decidedAt ? formatTime(i18n.language, p.decidedAt) : undefined,
-      action: byRightHand
-        ? (first && <DelegateUndo d={delegate} agentId={p.agentId} />) || undefined
-        : undoable && (
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={actions.undo.isPending}
-              onClick={() =>
-                actions.undo.mutate(receipt.id, {
-                  onSuccess: () => void qc.invalidateQueries({ queryKey: keys.agents(org.id) }),
-                  onError: failed,
-                })
-              }
-            >
-              {t("rightHand.card.undo")}
-            </Button>
-          ),
     };
   }
 
@@ -696,7 +653,7 @@ export function OpenPageCardView({ card }: { card: OpenPageCard }) {
  * The right hand's card of a change in the workspace (`workspace_action`): what it does in the app's own words (never
  * only the agent's), applied as whoever clicks with the permissions its screen checks; Descartar for the person it was
  * for or whoever may. Who can't reads who may, and the person it was for sends it to them. Decided, one line with who
- * did it and, while it lasts, Desfazer on its receipt.
+ * did it and when.
  */
 export function WorkspaceActionCardView({
   where,
@@ -707,14 +664,13 @@ export function WorkspaceActionCardView({
   where: { messageId: string; channelId: string };
   agentId: string | null;
   card: WorkspaceActionCard;
-  /** The card message's receipts: its Desfazer once applied. */
+  /** The card message's receipts: whether it was undone. */
   actions?: AgentAction[];
 }) {
   const { t, i18n } = useTranslation();
   const { org, me } = useOrg();
   const dir = useDirectory(org.id);
   const decide = useDecideActionCard(org.id, { ...where, action: card.params.action });
-  const undo = useAgentActions(org.id, where.channelId).undo;
   const toast = useToast();
   const failed = (e: unknown) => toast.show(errorText(t, e), "error");
   const label = t("rightHand.action.title");
@@ -732,11 +688,10 @@ export function WorkspaceActionCardView({
   const mine = card.forUserId === me.user.id;
   // Whoever applies it for someone else reads who asked, in the conversation and in their inbox.
   const asker = mine ? undefined : dir.memberById.get(card.forUserId)?.name;
-  // Decided: the same card, and who did it, when and Desfazer where the buttons were.
+  // Decided: the same card, and who did it and when where the buttons were.
   let answer: RequestAnswer | undefined;
   if (card.state !== "pending") {
     const receipt = actions?.find((a) => a.kind === "workspace.changed");
-    const undoable = receipt && !receipt.undoneAt && Date.parse(receipt.undoableUntil) > Date.now();
     const byMe = card.decidedByUserId === me.user.id;
     const name = dir.memberById.get(card.decidedByUserId ?? "")?.name ?? "";
     const who =
@@ -751,16 +706,6 @@ export function WorkspaceActionCardView({
       done: card.state === "applied" && !receipt?.undoneAt,
       text: receipt?.undoneAt ? `${who} · ${t("rightHand.card.undone")}` : who,
       time: card.decidedAt ? formatTime(i18n.language, card.decidedAt) : undefined,
-      action: undoable && (
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={undo.isPending}
-          onClick={() => undo.mutate(receipt.id, { onError: failed })}
-        >
-          {t("rightHand.card.undo")}
-        </Button>
-      ),
     };
   }
   const decision = may ? (

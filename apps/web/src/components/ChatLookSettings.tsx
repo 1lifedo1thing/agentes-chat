@@ -35,7 +35,7 @@ import { useOrg } from "@/components/org-context";
 import { useWallpaperName, WallpaperDialog } from "@/components/WallpaperDialog";
 import { useToast } from "@/lib/toast";
 
-/** One choice: its picture over its radio and name, as the cards of a radio group. */
+/** One choice: its picture over its name, as the cards of a radio group. */
 function Choice({
   id,
   value,

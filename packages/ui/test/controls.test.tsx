@@ -186,6 +186,18 @@ describe("Radio", () => {
     expect(b?.getAttribute("aria-checked")).toBe("true");
     expect(a?.getAttribute("aria-checked")).toBe("false");
   });
+
+  test("draws no dot: the card or row it sits in marks the pick", async () => {
+    render(
+      <RadioGroup value="platform" onValueChange={() => {}} aria-label="Qual chave o agente usa?">
+        <Radio value="platform" aria-label="Chave do agentes" />
+      </RadioGroup>,
+    );
+    expect(body().getByRole("radio").childElementCount).toBe(0);
+    const css = await Bun.file(new URL("../src/styles/components.css", import.meta.url).pathname).text();
+    const rule = css.split("\n.ac-radio {")[1]?.split("}")[0] ?? "";
+    expect(rule).toContain("clip: rect(0 0 0 0);");
+  });
 });
 
 describe("RadioCard", () => {

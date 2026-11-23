@@ -2,11 +2,9 @@ import {
   type AgentAction,
   type AppNotification,
   type CardDelegate,
-  keys,
   type Message,
   type Proposal,
   useActionCard,
-  useAgentActions,
   useAgentProposal,
   useAskProposal,
   useCardProposals,
@@ -41,14 +39,12 @@ import {
   sentToText,
   settingLineText,
 } from "@agenteschat/client/lib/proposals";
-import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
 import { Button, Icon, LineIcon, Text } from "@/ui";
 import { openAgentDelete } from "../agents/DeleteAgentScreen";
 import { AgentProposalView } from "../agents/ProposalCard";
-import { useDelegateUndoAction } from "../agents/RightHandDelegate";
 import { type AskAnswer, AskButtons, AskCard, AskFoot } from "../chat/asks";
 import { useFailed } from "../routines/hooks";
 import { AgentFace } from "../shared/Face";
@@ -135,7 +131,7 @@ export const ChangeRequestRow = ({ p }: { p: Proposal }) => <SettingsRow p={p} /
 /**
  * One row: the agent in the well, "Modelo: Haiku → Sonnet" a line each, and the decision. Who may decide it gets
  * Aplicar and Descartar (Recusar in the inbox); the person who asked and can't, Pedir a um admin, then whom it went
- * to; out of date, Refazer. Decided, one pill with who did it, and Undo on its receipt while it lasts.
+ * to; out of date, Refazer. Decided, one pill with who did it and when.
  */
 function SettingsRow({
   p,
@@ -145,7 +141,7 @@ function SettingsRow({
 }: {
   p: Proposal;
   message?: Message;
-  /** The right hand looked at the card for the person it is for (ADR 0139): one decision, Desfazer on the first row. */
+  /** The right hand looked at the card for the person it is for (ADR 0139): one decision. */
   delegate?: CardDelegate | null;
   first?: boolean;
 }) {
@@ -154,7 +150,6 @@ function SettingsRow({
   const meId = useMeId();
   const dir = useDirectory();
   const c = useColors();
-  const qc = useQueryClient();
   const failed = useFailed();
   const modelLabel = useModelLabel();
   const members = useMembers(orgId).data ?? [];
@@ -163,8 +158,6 @@ function SettingsRow({
   const decide = useDecideProposal(orgId);
   const ask = useAskProposal(orgId);
   const redo = useSendDm(orgId);
-  const actions = useAgentActions(orgId, message?.channelId ?? "");
-  const delegateUndo = useDelegateUndoAction(first ? delegate : null, p.agentId);
   const when = useWhen();
   const agent = dir.anyAgent(p.agentId);
   const proposer = p.proposedByAgentId ?? p.agentId;
@@ -190,34 +183,16 @@ function SettingsRow({
     : null;
   const byRightHand = delegated && (delegate?.state === "approved" || delegate?.state === "undone");
 
-  // Decided: the same card, the lines it changed still there, and who did it, when and Undo where the buttons were.
+  // Decided: the same card, the lines it changed still there, and who did it and when where the buttons were.
   let answer: AskAnswer | null = null;
   if (p.status !== "pending") {
     const receipt = message?.actions?.find((a) => a.id === p.undoActionId);
     const who = byRightHand ? delegated : cardDecidedBy(t, [p], meId ?? "");
-    const undoable =
-      receipt && !receipt.undoneAt && receipt.undoableUntil && Date.parse(receipt.undoableUntil) > Date.now();
     answer = {
       done: p.status === "accepted" && !receipt?.undoneAt && delegate?.state !== "undone",
       words: receipt?.undoneAt ? `${who} · ${t("rightHand.card.undone")}` : (who ?? ""),
       time: p.decidedAt ? when.short(p.decidedAt) : undefined,
       note: byRightHand ? delegate?.reason : null,
-      actions: byRightHand ? (
-        delegateUndo
-      ) : undoable ? (
-        <Button
-          variant="ghost"
-          size="card"
-          label={t("rightHand.card.undo")}
-          loading={actions.undo.isPending}
-          onPress={() =>
-            actions.undo.mutate(receipt.id, {
-              onSuccess: () => void qc.invalidateQueries({ queryKey: keys.agents(orgId) }),
-              onError: failed,
-            })
-          }
-        />
-      ) : null,
     };
   }
 
@@ -342,8 +317,7 @@ function SettingsRow({
 
 /**
  * The right hand's card of a change in the workspace (`workspace_action`), as on the web: what it does in the app's own
- * words, applied as whoever taps with the permissions its screen checks. Decided, one pill with who did it and Undo on
- * its receipt while it lasts.
+ * words, applied as whoever taps with the permissions its screen checks. Decided, one pill with who did it and when.
  */
 function WorkspaceActionView({
   where,
@@ -363,7 +337,6 @@ function WorkspaceActionView({
   const failed = useFailed();
   const when = useWhen();
   const decide = useDecideActionCard(orgId, { ...where, action: card.params.action });
-  const undo = useAgentActions(orgId, where.channelId).undo;
   const say = t as unknown as (key: string, values: Record<string, string | number>) => string;
   const sentence = say(actionCardKey(card), actionCardWords(card, t));
   const plain = sentence.replace(/<\/?b>/g, "");
@@ -375,11 +348,10 @@ function WorkspaceActionView({
   // Whoever applies it for someone else reads who asked, in the conversation and in their inbox.
   const asker = mine ? undefined : dir.memberById.get(card.forUserId)?.name;
   const mark = actionCardMark(card);
-  // Decided: the same card, and who did it, when and Undo where the buttons were.
+  // Decided: the same card, and who did it and when where the buttons were.
   let answer: AskAnswer | null = null;
   if (card.state !== "pending") {
     const receipt = actions?.find((a) => a.kind === "workspace.changed");
-    const undoable = receipt && !receipt.undoneAt && Date.parse(receipt.undoableUntil) > Date.now();
     const byMe = card.decidedByUserId === meId;
     const name = dir.memberById.get(card.decidedByUserId ?? "")?.name ?? "";
     const who =
@@ -394,15 +366,6 @@ function WorkspaceActionView({
       done: card.state === "applied" && !receipt?.undoneAt,
       words: receipt?.undoneAt ? `${who} · ${t("rightHand.card.undone")}` : who,
       time: card.decidedAt ? when.short(card.decidedAt) : undefined,
-      actions: undoable ? (
-        <Button
-          variant="ghost"
-          size="card"
-          label={t("rightHand.card.undo")}
-          loading={undo.isPending}
-          onPress={() => undo.mutate(receipt.id, { onError: failed })}
-        />
-      ) : null,
     };
   }
   const decision = may ? (

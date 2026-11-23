@@ -161,7 +161,7 @@ describe("a teammate's settings, on the right hand's card", () => {
     expect(within(applied).queryByRole("button", { name: "Aplicar" })).toBeNull();
   });
 
-  test("Descartar refuses it; once applied, Desfazer on its line undoes it", async () => {
+  test("once applied, its line says who and when, with no Desfazer", async () => {
     const receipt: AgentAction = {
       id: "act-1",
       kind: "agent.settings_changed",
@@ -183,13 +183,12 @@ describe("a teammate's settings, on the right hand's card", () => {
       decidedAt: NOW.toISOString(),
       canDecide: false,
     });
-    const { state } = await go(withCard(seedState(), applied, { actions: [receipt] }));
+    await go(withCard(seedState(), applied, { actions: [receipt] }));
     const line = card("Mudar as configurações da Ada");
     // The card says what was applied: no second receipt under it.
     expect(document.querySelectorAll(".ac-receipt").length).toBe(0);
-    await click(within(line).getByRole("button", { name: "Desfazer" }));
-    expect(state.calls.some((x) => x.method === "actions.undo" && x.args[1] === "act-1")).toBe(true);
-    expect(card("Mudar as configurações da Ada").textContent).toContain("Desfeito");
+    expect(line.querySelector(".rq__answer-text")?.textContent).toBe("Aplicado por você");
+    expect(within(line).queryByRole("button", { name: "Desfazer" })).toBeNull();
   });
 
   test("a member who can't decide sends it to an admin, then reads whom it went to", async () => {
@@ -402,7 +401,7 @@ describe("archiving several agents, on one card", () => {
     expect(card("Arquivar 2 agentes?").textContent).toContain("Enviado para");
   });
 
-  test("archived: who did it, and Desfazer brings them all back", async () => {
+  test("archived: who did it, with no Desfazer", async () => {
     const receipt = (id: string, agentId: string, name: string): AgentAction => ({
       id,
       kind: "agent.settings_changed",
@@ -432,8 +431,7 @@ describe("archiving several agents, on one card", () => {
     const c = card("Arquivar 2 agentes?");
     expect(c.querySelector(".rq__answer-text")?.textContent).toBe("Aplicado por você");
     expect([...c.querySelectorAll(".proposal-row__name")].map((b) => b.textContent)).toEqual(["Ada", "Atlas"]);
-    await click(within(c).getByRole("button", { name: "Desfazer" }));
-    expect(state.calls.some((x) => x.method === "actions.undoMessage" && x.args[1] === "m-rm")).toBe(true);
+    expect(within(c).queryByRole("button", { name: "Desfazer" })).toBeNull();
   });
 });
 

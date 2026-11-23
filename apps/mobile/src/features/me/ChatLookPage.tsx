@@ -32,18 +32,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withSpring, withTim
 import { scheduleOnRN } from "react-native-worklets";
 import { AgentAvatar } from "@/agent/AgentAvatar";
 import { useOrg } from "@/providers/org";
-import {
-  GroupedHeader,
-  GroupedList,
-  GroupedRow,
-  haptics,
-  Icon,
-  PressScale,
-  Segmented,
-  Text,
-  useTheme,
-  useToast,
-} from "@/ui";
+import { GroupedHeader, GroupedList, GroupedRow, haptics, PressScale, Segmented, Text, useTheme, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { ChatWallpaper, useWallpaperName, WallpaperThumb } from "../chat/ChatWallpaper";
 import {
@@ -325,7 +314,7 @@ function StyleGlyph({ style }: { style: ChatStyle }) {
   );
 }
 
-/** The four styles side by side, each a schematic, its name and a check on the chosen one. */
+/** The four styles side by side, each a schematic and its name, the chosen one's schematic ringed in ink (no dot). */
 function StylePicker({
   value,
   names,
@@ -357,7 +346,13 @@ function StylePicker({
             style={styles.choiceBox}
             contentStyle={styles.choice}
           >
-            <View style={[styles.glyphFrame, { backgroundColor: c.bg, borderColor: c.line2 }]}>
+            <View
+              style={[
+                styles.glyphFrame,
+                { backgroundColor: c.bg, borderColor: on ? c.ink : c.line2 },
+                on && styles.glyphChosen,
+              ]}
+            >
               <StyleGlyph style={s} />
             </View>
             <Text
@@ -368,11 +363,6 @@ function StylePicker({
             >
               {names[s]}
             </Text>
-            <View
-              style={[styles.check, on ? { backgroundColor: c.ink, borderColor: c.ink } : { borderColor: c.line2 }]}
-            >
-              {on ? <Icon name="check" size={13} color={c.raised} /> : null}
-            </View>
           </PressScale>
         );
       })}
@@ -742,14 +732,7 @@ const styles = StyleSheet.create({
   },
   choiceName: { textAlign: "center" },
   semibold: { fontWeight: "600" },
-  check: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  glyphChosen: { borderWidth: 2 },
   sizeCard: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10 },
   sizeRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   smallA: { fontSize: 13, lineHeight: 18, fontWeight: "500" },

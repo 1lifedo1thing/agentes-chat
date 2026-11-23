@@ -162,6 +162,7 @@ export function AudienceFields({
         data-state={value.audience === audience ? "checked" : "unchecked"}
         data-disabled={disabled ? "" : undefined}
       >
+        <Radio value={audience} id={optionId} disabled={disabled} />
         <span className="ac-mediarow__face">
           <span className="db-opt__icon">
             <Icon name={AUDIENCE_ICON[audience]} size={18} />
@@ -169,9 +170,6 @@ export function AudienceFields({
         </span>
         <span className="ac-mediarow__head">
           <b className="db-opt__title">{t(`dashboards.audience.${audience}`)}</b>
-        </span>
-        <span className="ac-mediarow__end">
-          <Radio value={audience} id={optionId} disabled={disabled} />
         </span>
         <small className="ac-mediarow__body db-opt__hint">{hint[audience]}</small>
       </label>

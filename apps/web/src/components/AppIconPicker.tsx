@@ -98,9 +98,6 @@ export function AppIconDialog({ open, onClose }: { open: boolean; onClose: () =>
                 className="app-icons__item"
                 onClick={() => pick(id)}
               >
-                <span className="ac-radio" data-state={current === id ? "checked" : "unchecked"} aria-hidden="true">
-                  {current === id && <span className="ac-radio__dot" />}
-                </span>
                 <AppIconPicture pick={id} />
                 <span className="app-icons__name">{t(appIconNameKey(id))}</span>
               </button>
