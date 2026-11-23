@@ -127,7 +127,8 @@ export const EventLine = memo(function EventLine({
           ) : null
         }
       >
-        {t(line.key, line.values)}
+        {/* A join's line has plural forms: their count is a number. */}
+        {t(line.key, { ...line.values, ...(join ? { count: Number(line.values.count) } : {}) })}
       </EventPill>
     </View>
   );

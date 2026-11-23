@@ -222,7 +222,11 @@ function JoinLine({ message }: { message: Message }) {
       time={formatTime(i18n.language, message.createdAt)}
       data-message-id={message.id}
     >
-      {t(view.key as "chat.notice.left", view.values as { who: string })}
+      {/* Its plural form needs the count as a number. */}
+      {t(
+        view.key as "chat.notice.left",
+        { ...view.values, count: Number(view.values.count) } as unknown as { who: string },
+      )}
     </EventPill>
   );
 }

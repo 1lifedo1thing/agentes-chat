@@ -212,8 +212,10 @@ describe("arrivals", () => {
       ["a1", 1],
       ["x", 2],
     ]);
-    expect(arrivalProps(arrived, "a1").style).toEqual({ "--arrive-delay": "0ms" });
-    expect(arrivalProps(arrived, "x").style).toEqual({ "--arrive-delay": "800ms" });
+    const delay = (id: string) =>
+      (arrivalProps(arrived, id).style as Record<string, string> | undefined)?.["--arrive-delay"];
+    expect(delay("a1")).toBe("0ms");
+    expect(delay("x")).toBe("800ms");
     expect(arrivalProps(arrived, "nope")).toEqual({});
   });
 
@@ -224,7 +226,7 @@ describe("arrivals", () => {
         { kind: "channel", action: "update", targetId: "c2" },
         { kind: "agent", action: "create", targetId: "a1" },
         { kind: "agent", action: "skip" },
-      ] as Parameters<typeof madeByImport>[0]),
+      ] as unknown as Parameters<typeof madeByImport>[0]),
     ).toEqual({ channelIds: ["c1"], agentIds: ["a1"] });
   });
 });

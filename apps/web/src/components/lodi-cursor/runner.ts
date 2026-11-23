@@ -225,7 +225,8 @@ export function inSight(nav: Element | null, rows: ArrivingRow[]): boolean {
 }
 
 /**
- * Everyone else's sidebar (and rows no cursor shows): each row that arrives draws itself in once its room opened, at
+ * Everyone else's sidebar, a channel's members column, and rows no cursor shows: each row that arrives draws itself in
+ * once its room opened, at
  * its own `--arrive-delay`. Runs after every render of the sidebar, and a row draws once.
  */
 export function useRowsDrawIn(nav: RefObject<HTMLElement | null>) {
@@ -233,11 +234,13 @@ export function useRowsDrawIn(nav: RefObject<HTMLElement | null>) {
     const root = nav.current;
     if (!root || prefersReducedMotion()) return;
     for (const el of root.querySelectorAll<HTMLElement>("[data-arriving]:not([data-drawn])")) {
-      const id = el.dataset.channelRow ?? el.dataset.agentRow ?? "";
+      // A sidebar row says what it is; a members column's agent row says so on its own (`data-arriving-agent`).
+      const agentId = el.dataset.agentRow ?? el.dataset.arrivingAgent;
+      const id = el.dataset.channelRow ?? agentId ?? "";
       if (arrivals.owns(id)) continue;
       el.dataset.drawn = "";
       const delay = Number.parseInt(el.style.getPropertyValue("--arrive-delay"), 10) || 0;
-      const row: ArrivingRow = { el, kind: el.dataset.agentRow ? "agent" : "channel", name: "" };
+      const row: ArrivingRow = { el, kind: agentId ? "agent" : "channel", name: "" };
       setTimeout(() => void drawRow(row), delay + RUN.roomMs);
     }
   });
