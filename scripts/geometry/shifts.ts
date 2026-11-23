@@ -333,12 +333,15 @@ async function screens(tab: Tab, size: (typeof SIZES)[number], app: string, ids:
   const filmed = flagValue("--frames");
   const measure = async (screen: string, act: () => Promise<unknown>, shot?: string) => {
     await tab.take().catch(() => null);
-    const film = shots && filmed === screen ? join(shots, `${size.name}-${screen}-frames`) : null;
+    // With `--shots`, every screen is filmed and a failing one's frames are kept (`--frames <screen>`: kept anyway).
+    const film = shots ? join(shots, `${size.name}-${screen}-frames`) : null;
     if (film) await tab.filming(film);
     await act();
     await tab.settle();
     if (film) await tab.filming(null);
-    out.push({ size: size.name, screen, score: scoreOf(await tab.take()) });
+    const score = scoreOf(await tab.take());
+    if (film && score.total <= LIMIT && filmed !== screen) rmSync(film, { recursive: true, force: true });
+    out.push({ size: size.name, screen, score });
     if (shot) await tab.shot(join(shot, `${size.name}-${screen}.png`));
   };
   const channel = `${app}/org/${ids.orgId}/c/${ids.channelId}`;
