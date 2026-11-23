@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { type LayoutChangeEvent, StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -12,6 +12,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import { haptics } from "./haptics";
 import { Icon } from "./Icon";
 import { reorderTarget, shiftOf } from "./reorder";
+import { GROUPED_ROW } from "./rhythm";
 import { motion, useTheme } from "./theme";
 
 interface Drag {
@@ -57,18 +58,23 @@ export function ReorderList<T>({
   };
   // A new order is drawn where the rows now are: nothing stays shifted from the drag that made it.
   const order = items.map(keyOf).join("\n");
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on a new order only
-  useEffect(() => {
+  const shown = useRef(order);
+  shown.current = order;
+  const reset = () => {
     drag.from.set(-1);
     drag.to.set(-1);
     drag.dy.set(0);
-  }, [order]);
+  };
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on a new order only
+  useEffect(reset, [order]);
   const move = (from: number, to: number) => {
-    if (from !== to) onMove(from, to);
-    else {
-      drag.from.set(-1);
-      drag.dy.set(0);
-    }
+    if (from === to) return reset();
+    const before = order;
+    onMove(from, to);
+    // A drop the caller didn't take (the order stays): the row goes back to its place.
+    setTimeout(() => {
+      if (shown.current === before) reset();
+    }, 300);
   };
   return (
     <View>
@@ -82,6 +88,7 @@ export function ReorderList<T>({
           disabled={disabled}
           label={handleLabel(item)}
           onDrop={move}
+          divider={i > 0}
         >
           {renderItem(item, i)}
         </ReorderRow>
@@ -98,6 +105,7 @@ function ReorderRow({
   disabled,
   label,
   onDrop,
+  divider,
   children,
 }: {
   index: number;
@@ -107,6 +115,8 @@ function ReorderRow({
   disabled: boolean;
   label: string;
   onDrop: (from: number, to: number) => void;
+  /** The hairline above it, as a grouped list's rows have, from where the words start. */
+  divider: boolean;
   children: ReactNode;
 }) {
   const { colors, shadows } = useTheme();
@@ -155,7 +165,8 @@ function ReorderRow({
     };
   });
   return (
-    <Animated.View onLayout={onLayout} style={[style, { backgroundColor: colors.surface }]}>
+    <Animated.View onLayout={onLayout} style={[style, { backgroundColor: colors.raised }]}>
+      {divider ? <View style={[styles.divider, { backgroundColor: colors.separator }]} /> : null}
       <View style={styles.row}>
         <View style={styles.grow}>{children}</View>
         {handle ? (
@@ -178,6 +189,8 @@ function ReorderRow({
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center" },
+  // A row with a leading column (its number): the hairline starts at the words, as `GroupedList` draws it.
+  divider: { height: StyleSheet.hairlineWidth, marginLeft: GROUPED_ROW.padX + GROUPED_ROW.lead + 12 },
   grow: { flex: 1, minWidth: 0 },
   // The system's reorder control: a 44-point column at the row's end.
   handle: { width: 44, alignSelf: "stretch", alignItems: "center", justifyContent: "center" },
