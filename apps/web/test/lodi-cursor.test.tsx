@@ -117,13 +117,14 @@ describe("after Criar o time", () => {
   });
 });
 
+// The script's rows stay out of the page: a bare row has none of the sidebar around it, and the layout check would read
+// it as a screen.
 describe("the script", () => {
   test("it presses each section's +, types each channel, drops each agent in, then goes back", async () => {
     const nav = document.createElement("nav");
     const channel = row("channel", "c1", "vendas", 100);
     const agent = row("agent", "a1", "Iara", 300);
     nav.append(channel, agent);
-    document.body.append(nav);
     const steps: CursorStep[] = [];
     const start = { x: 600, y: 500 };
     const play = playLodi(
@@ -158,7 +159,6 @@ describe("the script", () => {
       row("channel", "c2", "suporte", 140),
       row("agent", "a1", "Iara", 300),
     );
-    document.body.append(nav);
     const stop = new AbortController();
     const steps: CursorStep[] = [];
     const play = playLodi(
@@ -187,7 +187,6 @@ describe("the script", () => {
     const far = row("agent", "a2", "Ada", 600);
     scroll.append(near, far);
     nav.append(scroll);
-    document.body.append(nav);
     expect(inSight(nav, findRows(nav, "agent", ["a1"]))).toBe(true);
     expect(inSight(nav, findRows(nav, "agent", ["a1", "a2"]))).toBe(false);
     const dialog = document.createElement("div");
@@ -198,7 +197,6 @@ describe("the script", () => {
     dialog.remove();
     const rail = document.createElement("aside");
     rail.dataset.rail = "true";
-    document.body.append(rail);
     rail.append(nav);
     expect(inSight(nav, findRows(nav, "agent", ["a1"]))).toBe(false);
   });

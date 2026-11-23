@@ -93,7 +93,12 @@ export const EventLine = memo(function EventLine({
       <EventPill
         mark={
           join ? (
-            <JoinFace message={message} />
+            // A person: the people mark, as the web's line. An agent: its face.
+            join.members[0]?.type === "person" ? (
+              "person"
+            ) : (
+              <JoinFace message={message} />
+            )
           ) : kind === "github_event" || kind === "github_check" ? (
             <ProviderLogo id="github" size="xs" />
           ) : (
@@ -150,7 +155,7 @@ function JoinFace({ message }: { message: Message }) {
   const join = joinLineOf(message.meta);
   const first = join?.members[0];
   if (!first) return null;
-  const agent = first.type === "agent" ? dir.anyAgent(first.id) : undefined;
+  const agent = dir.anyAgent(first.id);
   if (agent && fresh && !reduced && join?.kind === "joined")
     return (
       <StickerCanvas

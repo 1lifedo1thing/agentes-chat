@@ -22,7 +22,6 @@ import type { AppVia, SurfaceVia } from "@agenteschat/client/lib/via";
 import { stopsMovedOn } from "@agenteschat/client/lib/work";
 import {
   AgentSticker,
-  Avatar,
   cx,
   EventPill,
   EventPillAction,
@@ -212,9 +211,10 @@ function JoinLine({ message }: { message: Message }) {
     ) : (
       <AgentAvatar agentId={agent.id} name={agent.name} size="xs" />
     )
-  ) : first ? (
-    <Avatar kind="person" size="xs" name={nameOf(first) ?? ""} imageUrl={dir.memberById.get(first.id)?.image} />
-  ) : null;
+  ) : (
+    // A person: the people mark, as other lines' icons (their initials would read as the line's first letter).
+    <Icon name={join.kind === "joined" ? "personAdd" : "person"} size={14} />
+  );
   return (
     <EventPill
       className="cn-pill"
