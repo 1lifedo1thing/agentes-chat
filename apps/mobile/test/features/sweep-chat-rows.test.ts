@@ -42,7 +42,7 @@ describe("two agents' conversation", () => {
     expect(screen).toContain("pad: { paddingHorizontal: SCREEN_X },");
     expect(screen).toMatch(/foot: \{[^}]*paddingHorizontal: SCREEN_X,/);
     // The task sheets' bar: the close plate and the two agents' names, with the bar's own room under the grabber.
-    expect(screen).toContain("<SheetBar\n            inset\n            onClose={() => goBack(chatHref(channelId))}");
+    expect(screen).toMatch(/<SheetBar\s+inset\s+onClose=\{\(\) => goBack\(chatHref\(channelId\)\)\}/);
     expect(screen).toContain("head: { paddingHorizontal: SHEET_X, paddingTop: SHEET_BAR.top },");
     expect(screen).not.toContain("SheetTitle");
   });
