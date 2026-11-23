@@ -193,7 +193,8 @@ describe("reduced motion", () => {
     // Strip the allowed blocks; no `animation:` may remain outside them. Under reduced motion only a 120ms fade.
     const calm = /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/g;
     for (const [block] of section.matchAll(calm))
-      for (const a of block.matchAll(/\banimation:\s*([^;]+);/g)) expect(a[1]?.trim()).toBe("ac-fade-in 120ms ease-out");
+      for (const a of block.matchAll(/\banimation:\s*([^;]+);/g))
+        expect(a[1]?.trim()).toBe("ac-fade-in 120ms ease-out");
     const outside = section
       .replace(/@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\n\}/g, "")
       .replace(calm, "");
