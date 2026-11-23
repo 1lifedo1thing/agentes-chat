@@ -1019,18 +1019,15 @@ export async function removeChannelMember(
       .limit(1);
     if (!stays) await closeChannel(db, orgId, channelId, options);
   }
-  if (gone.length > 0) {
-    await writeLeftLine(
-      { db, pubsub: options.pubsub },
-      orgId,
-      channelId,
-      "userId" in member ? { type: "person", id: member.userId } : { type: "agent", id: member.agentId },
-    );
-  }
+  // The line that says so comes after a person's live subscription ended: the conversation is no longer theirs.
+  const left = (who: { type: "person" | "agent"; id: string }) =>
+    gone.length > 0 ? writeLeftLine({ db, pubsub: options.pubsub }, orgId, channelId, who) : undefined;
   if ("userId" in member) {
     await announceChannelLeavers({ db, pubsub: options.pubsub }, orgId, [{ channelId, userId: member.userId }]);
+    await left({ type: "person", id: member.userId });
     return;
   }
+  await left({ type: "agent", id: member.agentId });
   caches.scopes.deletePrefix(`${orgId}:${member.agentId}:visible`);
   await publishChannelEvent(options.pubsub, {
     type: "channel.member_removed",

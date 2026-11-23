@@ -35,7 +35,9 @@ const notices = async (channelId: string) => {
     .orderBy(schema.messages.createdAt);
   return rows.flatMap((m) => {
     const n = (m.meta as { notice?: { kind: string; refs?: Record<string, string> } }).notice;
-    return n ? [{ kind: n.kind, body: m.body, refs: n.refs ?? {}, agentId: m.agentId, quiet: isQuietNotice(m.meta) }] : [];
+    return n
+      ? [{ kind: n.kind, body: m.body, refs: n.refs ?? {}, agentId: m.agentId, quiet: isQuietNotice(m.meta) }]
+      : [];
   });
 };
 const bot = (name: string, handle: string) =>

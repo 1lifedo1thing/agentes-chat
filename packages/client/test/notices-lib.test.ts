@@ -323,8 +323,8 @@ describe("what people read of a notice", () => {
         }
         expect(view.key).not.toBe("chat.notice.other");
         const keys = [view.key, ...(view.detail && "words" in view.detail ? [view.detail.words.key] : [])];
+        // A plural line (who joined) has its forms instead: `_other` is in every language.
         for (const code of LOCALES.map((l) => l.code))
-          // A plural line (who joined) has its forms instead: `_other` is in every language.
           for (const key of keys)
             if (typeof (leaf(code, key) ?? leaf(code, `${key}_other`)) !== "string")
               missing.push(`${kind}: ${key} in ${code}`);
