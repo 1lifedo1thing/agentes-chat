@@ -590,10 +590,20 @@ test("a coding plan's key: no sign-in page but the plan's key page, the key seal
   expect(row).toMatchObject({ provider: "zai", keyHint: "MnOp", email: null });
   expect(JSON.stringify(row)).not.toContain("0123456789abcdef");
 
-  // The same key again: another login of that account (one per agent), under its name. Another key is another.
+  // The same key again: another login of that account (one per agent), under its name and with its permissions.
+  // Another key is another.
+  await f.db
+    .update(schema.machineAccounts)
+    .set({ serves: "owner", useMode: "owner", replyMode: "everyone" })
+    .where(eq(schema.machineAccounts.id, login.loginId));
   const again = await add(KEY);
   expect(again.status).toMatchObject({ state: "done", account: { label: "GLM Coding", keyHint: "MnOp" } });
   expect(again.status.account?.id).not.toBe(login.loginId);
+  expect(await accountRow(again.status.account?.id ?? "")).toMatchObject({
+    serves: "owner",
+    useMode: "owner",
+    replyMode: "everyone",
+  });
   const second = await add(`${KEY.slice(0, -4)}WxYz`);
   expect(second.status.account).toMatchObject({ label: "GLM Coding 2", keyHint: "WxYz" });
 

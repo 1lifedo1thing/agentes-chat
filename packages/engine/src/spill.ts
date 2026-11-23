@@ -121,12 +121,20 @@ type ChainAgent = Pick<Agent, "id" | "orgId" | "ownerUserId" | "brainAccountPinn
  * The accounts on `machineId` of `kind` a run of `agent` may go on with at its plan's limit (ADR 0041 §6,
  * `chainWhereSql`): those that serve its owner. The right hand goes on only with the accounts of the person it answers
  * (`forPerson`), so never on a plan someone else gave it. `keep`: the run's own accounts, whatever their sharing.
+ * `asker`: someone besides its owner the run answers, whom the account's "Atender todos" must take.
  */
-function chainWhere(agent: ChainAgent, kind: string, machineId: string, forPerson: string | null, keep: string[]) {
+function chainWhere(
+  agent: ChainAgent,
+  kind: string,
+  machineId: string,
+  forPerson: string | null,
+  keep: string[],
+  asker: string | null = null,
+) {
   const owner = agent.ownerUserId ?? null;
   if (isRightHand(agent))
     return chainWhereSql(agent.orgId, machineId, kind, forPerson === owner ? owner : null, keep, true);
-  return chainWhereSql(agent.orgId, machineId, kind, owner, keep);
+  return chainWhereSql(agent.orgId, machineId, kind, owner, keep, false, asker);
 }
 
 /** Its owner still in the workspace (`planIsOwners`). */
@@ -151,6 +159,8 @@ export async function nextAccountPlan(
   options: {
     room?: (usage: PlanUsage | null, accountId: string) => boolean;
     forPerson?: string | null;
+    /** Someone besides the agent's owner the run answers (`runAsker`). */
+    asker?: string | null;
     own?: string;
   } = {},
 ): Promise<NextAccount> {
@@ -177,7 +187,7 @@ export async function nextAccountPlan(
       .leftJoin(schema.users, eq(schema.users.id, machineAccounts.createdBy))
       .where(
         and(
-          chainWhere(agent, plan.kind, machineId, options.forPerson ?? null, keep),
+          chainWhere(agent, plan.kind, machineId, options.forPerson ?? null, keep, options.asker ?? null),
           eq(machineAccounts.status, "active"),
         ),
       )
@@ -231,6 +241,7 @@ export async function movedAccountPlan(
   plan: BrainPlan,
   accountId: string,
   forPerson: string | null = null,
+  asker: string | null = null,
 ): Promise<BrainPlan | null> {
   const machineId = plan.session?.machineId;
   if (!machineId || plan.kind === "model") return null;
@@ -238,7 +249,7 @@ export async function movedAccountPlan(
     .select({ id: machineAccounts.id, label: machineAccounts.label, status: machineAccounts.status })
     .from(machineAccounts)
     .innerJoin(schema.organizationMembers, ownerIsMember)
-    .where(and(eq(machineAccounts.id, accountId), chainWhere(agent, plan.kind, machineId, forPerson, [])));
+    .where(and(eq(machineAccounts.id, accountId), chainWhere(agent, plan.kind, machineId, forPerson, [], asker)));
   if (!row) return null;
   const account: BrainAccount = {
     id: row.id,

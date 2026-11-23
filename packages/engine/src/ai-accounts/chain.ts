@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull, type SQL, schema, sql } from "@agenteschat/db";
 import { NEXT_ACCOUNT_KINDS } from "@agenteschat/providers/plans";
-import { accountServesSql } from "./serves";
+import { accountServesSql, audienceAllowsSql } from "./serves";
 
 const { machineAccounts } = schema;
 
@@ -29,7 +29,8 @@ export const movableKindSql = and(
  * The accounts of `kind` on `machineId` a run thinking for `person` may go on with at its plan's limit: a movable sign-in
  * (`movableKindSql`) that serves `person` (`accountServesSql`) and thinks for every agent of its owner there (`shared`; a
  * login made for one agent is that agent's only), or one of `keep` (the run's own) whatever its sharing. `ownOnly`:
- * `person`'s own accounts alone (the right hand never goes on with a plan someone else gave it).
+ * `person`'s own accounts alone (the right hand never goes on with a plan someone else gave it). `asker`: someone
+ * besides the agent's owner the run answers (`runAsker`), whom the account's "Atender todos" must take.
  */
 export function chainWhereSql(
   orgId: string,
@@ -38,8 +39,10 @@ export function chainWhereSql(
   person: string | null,
   keep: readonly string[],
   ownOnly = false,
+  asker: string | null = null,
 ): SQL {
   return and(
+    asker ? audienceAllowsSql("reply", asker) : undefined,
     eq(machineAccounts.orgId, orgId),
     eq(machineAccounts.machineId, machineId),
     eq(machineAccounts.kind, kind),
