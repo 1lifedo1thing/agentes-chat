@@ -608,15 +608,15 @@ describe("Quem pensa: Automático", () => {
     expect(brainCalls(state)).toEqual([{ brain: "model", effort: "high" }]);
   });
 
-  test("an API key: a stored Máximo shows as Alto, and Voltar ao padrão gives it back to the model", async () => {
+  test("an API key: a stored Máximo shows as Máximo (Claude 5.5 takes it), and Voltar ao padrão gives it back to the model", async () => {
     const state = seedState();
     const api = createFakeApi(state);
     follow(api, fakeAgentBrain(ADA_ID, { effort: "max" }));
     await open(state, api);
-    expect(brainCell().value).toContain("esforço alto");
+    expect(brainCell().value).toContain("esforço máximo");
     const d = await brainDialog();
     await toScreen(d, "Mais opções");
-    expect(lineOf(d, "Esforço")).toBe("Alto");
+    expect(lineOf(d, "Esforço")).toBe("Máximo");
     await act(async () => fireEvent.click(within(d).getByRole("button", { name: "Voltar ao padrão" })));
     expect(lineOf(d, "Esforço")).toBe("Padrão do modelo");
     await done(d);
