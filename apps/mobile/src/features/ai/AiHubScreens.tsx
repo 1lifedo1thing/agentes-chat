@@ -427,7 +427,10 @@ export function AccountOrderScreen() {
             <GroupedHeader
               hint={{
                 name: t("common.about", { label: t("usageViews.order.termsLabel", { plan }) }),
-                text: `${t("usageViews.order.hint")} ${t("usageViews.order.termsHint", { plan })}`,
+                text: t("common.joinSentences", {
+                  a: t("usageViews.order.hint"),
+                  b: t("usageViews.order.termsHint", { plan }),
+                }),
               }}
             >
               {t("mobile.aiHub.orderGroup", { plan, computer: g.computer })}
