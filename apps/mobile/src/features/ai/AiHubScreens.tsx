@@ -38,6 +38,7 @@ import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { pickOne } from "../shared/PickerSheet";
 import { errorHaptic, successHaptic } from "../shared/parts";
 import { PlanMeter } from "../usage/parts";
+import { openKeyForAll } from "./AgentSetupScreen";
 import { useAccountActions } from "./AiAccountsScreen";
 import {
   AUDIENCE_MODES,
@@ -55,7 +56,6 @@ import {
   type Permission,
   type StateTone,
 } from "./hub";
-import { openKeyForAll } from "./KeyForAllScreen";
 import { openConnectAi } from "./NoAiCard";
 
 /*

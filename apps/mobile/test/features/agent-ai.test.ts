@@ -16,6 +16,7 @@ import {
   advancedResetInput,
   agentAccounts,
   agentChain,
+  chosenAi,
   existingNotes,
   existingRows,
   flowStep,
@@ -24,6 +25,7 @@ import {
   modelRows,
   modelSections,
   newAgentAi,
+  newAgentChoice,
   orderMoves,
   ownAccountRows,
   pickedAi,
@@ -223,7 +225,7 @@ describe("the agent's AI", () => {
     expect(screen).toContain('openConnectAi({ forNew: "1" });');
     // The plan it connects is what the agent thinks with once it shows up, over a pick made before; nothing new keeps it.
     expect(screen).toContain("newPlanAccountOption(brainOptions, optionsBefore)");
-    expect(screen).toContain("connectedHere ?? picked");
+    expect(screen).toContain("const pick = connectedHere ? null : aiPick;");
     // For the agents I create: none of mine is offered, so a plan signs in for the new one.
     expect(sheet).toMatch(/ask\.forNew === "1"\s*\? \[\]/);
     expect(sheet).toContain("queryKey: keys.brainMachines(orgId)");
@@ -967,7 +969,7 @@ describe("the agent's AI", () => {
 
   test("an AI that didn't load asks again, and the dock and the effort settle on the drawer's spring", async () => {
     const read = (file: string) => Bun.file(new URL(`../../src/features/ai/${file}`, import.meta.url).pathname).text();
-    const files = ["AgentAiScreen.tsx", "AgentAdvancedScreen.tsx", "KeyForAllScreen.tsx", "AgentSetupScreen.tsx"];
+    const files = ["AgentAiScreen.tsx", "AgentAdvancedScreen.tsx", "AgentSetupScreen.tsx"];
     for (const file of files) {
       const source = await read(file);
       expect([file, source.includes("<LoadFailed")]).toEqual([file, true]);
@@ -1265,13 +1267,55 @@ describe("the agent's AI", () => {
       new URL("../../src/features/agents/NewAgentScreen.tsx", import.meta.url).pathname,
     ).text();
     expect(screen).toContain("openConnectAi({ agentId: agent.id, plan: thinks.connect })");
-    // "Quem pensa" is chosen on its own pushed screen, never a sheet over the form (ADR 0135).
-    expect(screen).toContain("openBrainPick({");
-    expect(screen).toContain('router.push("/agent-brain");');
-    expect(screen).not.toContain("BrainPickSheet");
+    // "Quem pensa" is the one AI choice, for an agent still being made: kept here, applied once it exists.
+    expect(screen).toContain("<AiChoiceFields\n                  target={NEW_AGENT}");
+    expect(screen).toContain("onChange={(next) => editNewAgent({ aiPick: next, optionsBefore: null })}");
+    expect(screen).not.toContain('from "./brain-pick"');
     // No last setup: a plan account of mine (one connected before I had an agent) thinks for it, as on the web.
     expect(screen).toContain("(proposed || start ? null : (ownPlan ?? null))");
     expect(screen).toContain("const ownPlan = planAccountOption(brainOptions);");
+  });
+
+  test("Criar agente's one AI choice: what it shows first, and what a pick sends, as the web's", () => {
+    const plan = {
+      kind: "claude_code" as const,
+      choice: "claude" as const,
+      machineId: "m1",
+      accountId: "a1",
+      model: "auto",
+    };
+    expect(newAgentChoice(plan, null, true)).toEqual({
+      brain: "claude_code",
+      machineId: "m1",
+      account: "a1",
+      model: null,
+    });
+    const api = { brain: "model" as const, model: "claude-opus-5-5", key: "k1", contextTokens: null };
+    expect(newAgentChoice(undefined, api, true)).toEqual({ brain: "model", model: "claude-opus-5-5", key: "k1" });
+    expect(newAgentChoice(undefined, null, true)).toEqual({ brain: "model", model: "auto", key: null });
+    // Nothing runs it: no choice, only Conectar uma IA.
+    expect(newAgentChoice(undefined, null, false)).toBeNull();
+    // A key: its model and key at creation; an effort saved right after, on no computer.
+    expect(chosenAi({ brain: "model", model: "claude-sonnet-5-5", key: "k2" }, "never")).toEqual({
+      model: "claude-sonnet-5-5",
+      credentialId: "k2",
+      contextTokens: null,
+      plan: null,
+      autonomy: "never",
+      connect: null,
+    });
+    expect(chosenAi({ brain: "model", model: null, effort: "high" }, undefined)).toMatchObject({
+      model: "auto",
+      plan: { machineId: null, input: { effort: "high" } },
+    });
+    // A plan account: Automático at creation, then its computer and its "Quem pensa".
+    expect(
+      chosenAi({ brain: "codex", account: "a2", machineId: "m2", model: "gpt-5.5", effort: "low" }, undefined),
+    ).toMatchObject({
+      model: "auto",
+      credentialId: null,
+      plan: { machineId: "m2", input: { brain: "codex", account: "a2", model: "gpt-5.5", effort: "low" } },
+    });
   });
 
   test("a plan connected with no agent yet: Criar um agente com este plano opens Criar agente thinking with it", async () => {
@@ -1287,8 +1331,8 @@ describe("the agent's AI", () => {
     expect(sheet).toContain("/new-agent?account=");
     expect(sheet).toContain("encodeURIComponent(makeWith.id)");
     expect(route).toContain('accountId={typeof account === "string" && account ? account : null}');
-    // That account wins over the workspace's last setup; a pick made on the screen still wins over it.
-    expect(screen).toContain("connectedHere ?? picked ?? askedPlan ??");
+    // That account wins over the workspace's last setup; a pick made in Quem pensa still wins over it.
+    expect(screen).toContain("connectedHere ?? (pick ? null : (askedPlan ??");
     // Someone else's computer: a computer of their own is the way on, for whoever may connect one.
     expect(steps).toContain('elsewhere && can(org, "pair_computers") ?');
     expect(steps).toContain('label={t("connectAi.connectMine")} onPress={onComputer}');

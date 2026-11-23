@@ -71,8 +71,8 @@ import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/part
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { PlanMeter } from "../usage/parts";
+import { openKeyForAll } from "./AgentSetupScreen";
 import { HubList } from "./AiHubScreens";
-import { openKeyForAll } from "./KeyForAllScreen";
 import { orderMoves, ownAccountRows } from "./logic";
 import { openConnectAi } from "./NoAiCard";
 import { alertKeyRefused, Note, openRenameAiAccount, PasteField, PlanHoldNote, usePlanHold } from "./parts";

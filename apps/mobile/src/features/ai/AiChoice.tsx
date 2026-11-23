@@ -1,5 +1,11 @@
 import { useAiChoice, useAiHub } from "@agenteschat/client";
-import { type AiChoice, type AiChoiceRow, type AiChoiceTarget, aiChoiceRows } from "@agenteschat/client/lib/ai-choice";
+import {
+  type AiChoice,
+  type AiChoiceRow,
+  type AiChoiceTarget,
+  aiChoiceOf,
+  aiChoiceRows,
+} from "@agenteschat/client/lib/ai-choice";
 import type { EffortLevel } from "@agenteschat/client/lib/brain-advanced";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { isAuto } from "@agenteschat/client/lib/providers";
@@ -102,7 +108,8 @@ export function AiChoiceFields({
     const row = rows.find((r) => r.key === picked);
     if (!row || row.key === selected?.key) return;
     if (onAccount && row.type === "plan" && !controlled) return onAccount(row);
-    apply(state.choose(row));
+    // A choice the caller keeps carries its own model and effort over, not the target's saved one.
+    apply(controlled ? aiChoiceOf(row, current) : state.choose(row));
   };
 
   // The computer's own sign-in has its CLI's models too.
