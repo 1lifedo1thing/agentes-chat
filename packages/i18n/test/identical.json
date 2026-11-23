@@ -346,6 +346,7 @@
       "codeSessions.tabs.terminalN"
     ],
     "es": [
+      "aiHub.modes.roles",
       "devices.iphone.path.general",
       "devices.cpus",
       "devices.memory",
@@ -1163,6 +1164,7 @@
       "codeSessions.tabs.terminalN"
     ],
     "de": [
+      "aiHub.detail.limits",
       "live.sheet.args.k",
       "live.sheet.args.x",
       "live.canvas.inks.orange",
@@ -2064,6 +2066,7 @@
       "cliTools.files"
     ],
     "nl": [
+      "aiHub.accounts",
       "usage.kinds.routines",
       "calendar.moreRuns",
       "devices.iphone.steps.account",

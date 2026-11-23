@@ -228,7 +228,7 @@ describe("Contas de IA: an account's permissions and the order's switch", () => 
     const saved = state.calls.find((c) => c.method === "machines.setAccountPermissions")?.args;
     expect(saved?.[1]).toBe("acct_work");
     expect(saved?.[2]).toMatchObject({ use: { mode: "people", roleIds: [] } });
-    expect((saved?.[2] as { use: { userIds: string[] } }).use.userIds).toHaveLength(1);
+    expect((saved?.[2] as { use: { userIds: string[] } } | undefined)?.use.userIds).toHaveLength(1);
   });
 
   test("Ordem de uso: the API-key switch is off by default and saves at once", async () => {

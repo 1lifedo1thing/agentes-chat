@@ -252,12 +252,9 @@ describe("Quem pensa: a coding plan's models", () => {
     expect(mainButton(d)?.disabled).toBe(false);
     expect(d.textContent).not.toContain("Só João troca");
   });
-
 });
 
-describe("Quem pensa: Automático", () => {
-
-});
+describe("Quem pensa: Automático", () => {});
 
 describe("Velocidade (ADR 0149)", () => {
   async function onChatGpt(patch: Partial<AgentBrain> = {}, line?: Partial<NonNullable<Agent["brain"]>>) {
@@ -326,5 +323,4 @@ describe("Velocidade (ADR 0149)", () => {
     expect(screen().getByRole("dialog", { name: "Mais opções da Ada" })).toBe(d);
     expect(lineOf(d, "Velocidade")).toBe("Rápida");
   });
-
 });

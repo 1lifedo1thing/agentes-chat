@@ -16,8 +16,8 @@ import type {
 } from "../api/types";
 import { ACCOUNT_KINDS, accountTitle, orderAccounts } from "./ai-accounts";
 import { type EffortLevel, effortLevelsOf } from "./brain-advanced";
-import { firstName } from "./format";
 import { type ModelRow, modelRows } from "./brain-picker";
+import { firstName } from "./format";
 import { isPlanId, planOf } from "./plans";
 import { AUTO, isAuto } from "./providers";
 

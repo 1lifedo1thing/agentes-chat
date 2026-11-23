@@ -11206,7 +11206,8 @@ export const en = {
       signedOut: "Signed out · skipped",
       skipped: "Skipped",
       fallback: "Continue with the API key when every plan is at its limit",
-      fallbackHint: "Off: agents wait for the first plan to renew. On: they go on with the workspace's API key, which is paid per use. A mission never does.",
+      fallbackHint:
+        "Off: agents wait for the first plan to renew. On: they go on with the workspace's API key, which is paid per use. A mission never does.",
     },
     detail: {
       limits: "Limits",

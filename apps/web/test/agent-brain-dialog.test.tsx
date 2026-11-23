@@ -131,7 +131,6 @@ describe("Quem pensa (its dialog)", () => {
     expect(brainCalls(state).at(-1)).toMatchObject({ brain: "claude_code" });
     expect(shownText(d)).toContain("A Ada agora pensa com Claude e só atende Walter.");
   });
-
 });
 
 describe("Quem pensa: the account on the computer and the effort (ADR 0041)", () => {

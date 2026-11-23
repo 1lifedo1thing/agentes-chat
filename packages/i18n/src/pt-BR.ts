@@ -11169,7 +11169,8 @@ export const ptBR = {
       signedOut: "Saiu da conta · pulada",
       skipped: "Pulada",
       fallback: "Continuar com a chave de API quando todos os planos estiverem no limite",
-      fallbackHint: "Desligado: os agentes esperam o primeiro plano renovar. Ligado: eles seguem com a chave de API do workspace, paga por uso. Uma missão nunca segue.",
+      fallbackHint:
+        "Desligado: os agentes esperam o primeiro plano renovar. Ligado: eles seguem com a chave de API do workspace, paga por uso. Uma missão nunca segue.",
     },
     detail: {
       limits: "Limites",

@@ -162,7 +162,17 @@ test("Sua IA is the one picker: A do workspace first, then the plans; picking it
   const api = createFakeApi(state);
   fakeMachinesOf.get(api)?.setAiAccounts({
     accounts: [anaPlan(state.me?.user.id) as never],
-    computers: [{ machineId: "machine_1", name: "MacBook", online: true, mine: true, canAdd: true, keys: true }],
+    computers: [
+      {
+        machineId: "machine_1",
+        name: "MacBook",
+        online: true,
+        mine: true,
+        canAdd: true,
+        keys: true,
+        brains: { claude_code: true, codex: false },
+      },
+    ],
   });
   const key = { provider: "openai", label: "OpenAI da Acme" };
   api.agents.brain = async (_org, id, scope) =>
@@ -201,7 +211,17 @@ test("the workspace's AI: Modelo and Esforço beside each other, each saved as i
   const api = createFakeApi(state);
   fakeMachinesOf.get(api)?.setAiAccounts({
     accounts: [anaPlan(state.me?.user.id) as never],
-    computers: [{ machineId: "machine_1", name: "MacBook", online: true, mine: true, canAdd: true, keys: true }],
+    computers: [
+      {
+        machineId: "machine_1",
+        name: "MacBook",
+        online: true,
+        mine: true,
+        canAdd: true,
+        keys: true,
+        brains: { claude_code: true, codex: false },
+      },
+    ],
   });
   api.agents.brain = async (_org, id, scope) =>
     fakeAgentBrain(id, {

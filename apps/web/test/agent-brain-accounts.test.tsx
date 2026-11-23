@@ -511,7 +511,6 @@ describe("Quem pensa: a plan with a login per agent, and plans on the Cloud", ()
     expect(brainCalls(state).at(-1)).toMatchObject({ account: "acct_ada" });
     expect(brainScreen(d)).toBe("Pronto");
   });
-
 });
 
 describe("Usar em outros agentes (ADR 0094)", () => {
