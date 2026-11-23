@@ -11540,6 +11540,73 @@
       "text": "Agenci będą działać dalej bez niego."
     }
   },
+  "aiHub": {
+    "tab": "Konta AI",
+    "usageTab": "Użycie",
+    "accounts": "Konta",
+    "accountsHint": "Każdy plan i klucz API, którym agenci mogą myśleć, bez względu na to, kto go połączył.",
+    "apiKey": "Klucz API",
+    "of": "należy do: {{name}}",
+    "moreSpeed": "Szybkość i okno kontekstu",
+    "whoThinks": "Kto myśli",
+    "bulk": {
+      "sub": "Wybierz AI, a potem agentów, którzy mają jej używać."
+    },
+    "choice": {
+      "workspace": "Ta przestrzeni roboczej",
+      "none": "Wybierz konto",
+      "search": "Szukaj po nazwie, AI, planie lub właścicielu",
+      "noMatch": "Brak pasującego konta.",
+      "noModel": "Brak pasującego modelu.",
+      "groups": {
+        "yours": "Twoje",
+        "others": "Zespołu",
+        "keys": "Przestrzeni roboczej"
+      }
+    },
+    "order": {
+      "title": "Kolejność użycia",
+      "tip": "Którego konta agenci używają najpierw",
+      "sub": "Po osiągnięciu limitu agenci przechodzą na kolejne konto.",
+      "group": "{{maker}} · {{computer}}",
+      "signedOut": "Wylogowano · pominięte",
+      "skipped": "Pominięte",
+      "fallback": "Kontynuuj z kluczem API, gdy wszystkie plany osiągną limit",
+      "fallbackHint": "Wyłączone: agenci czekają, aż pierwszy plan się odnowi. Włączone: kontynuują z kluczem API przestrzeni roboczej, płatnym za użycie. Misja nigdy."
+    },
+    "detail": {
+      "limits": "Limity",
+      "noLimits": "Limity nie zostały jeszcze odczytane.",
+      "permissions": "Uprawnienia",
+      "saved": "Uprawnienia zapisane.",
+      "more": "Więcej dla: {{name}}",
+      "manage": "Zarządzanie",
+      "manageLine": "Zmiana nazwy, ponowne logowanie, usuwanie",
+      "manageHint": "Kto może zmienić nazwę tego konta, zalogować się ponownie, usunąć je i zmienić te uprawnienia.",
+      "use": "Użycie w agentach",
+      "useLine": "Wybór w Kto myśli",
+      "useHint": "Czyi agenci mogą myśleć tym kontem.",
+      "reply": "Odpowiadanie wszystkim",
+      "replyLine": "Z kim rozmawiają agenci",
+      "replyHint": "Komu agent na tym koncie odpowiada poza swoim właścicielem.",
+      "claudeTerms": "Według warunków Claude plan osobisty należy do jednej osoby. Udostępnianie go to szara strefa.",
+      "pickRoles": "Osoby z tymi rolami.",
+      "pickPeople": "Poza właścicielem konta.",
+      "searchRoles": "Szukaj ról",
+      "searchPeople": "Szukaj osób",
+      "nobody": "Nie ma kogo wybrać."
+    },
+    "modes": {
+      "owner": "Tylko ty",
+      "ownerOf": "Tylko {{name}}",
+      "admins": "Ty i administratorzy",
+      "adminsOf": "{{name}} i administratorzy",
+      "roles": "Role…",
+      "people": "Osoby…",
+      "everyone": "Wszyscy",
+      "replyOwner": "Tylko właściciel agenta"
+    }
+  },
   "aiAccounts": {
     "useReason": {
       "signed_out": "Wylogowane",

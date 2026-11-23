@@ -1,4 +1,5 @@
 import type { ConnectorDef } from "@agenteschat/client";
+import type { AiChoice } from "@agenteschat/client/lib/ai-choice";
 import {
   keys,
   useAgentProposal,
@@ -72,6 +73,7 @@ import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { useConnectAi } from "@/components/connect-ai-context";
 import { MailIcon } from "@/components/MailConnect";
 import { useMediaQuery } from "@/components/NavDrawer";
+import { AiChoicePicker } from "@/components/ai/AiChoice";
 import { useOrg } from "@/components/org-context";
 import { agentCoverOptions, facePool } from "@/components/Sky";
 import { useTextLimit } from "@/hooks/useTextLimit";
@@ -97,6 +99,9 @@ import { useToast } from "@/lib/toast";
 import { AppsPickerDialog } from "./AppsPicker";
 import { ChannelDialog, type ProposalChange, type ProposalLater, ProposalSide, RoutineDialog } from "./ProposalReview";
 import { useNewAgentBrain } from "./useNewAgentBrain";
+
+/** The one picker's target here: nothing is saved before the agent exists. */
+const NEW_AGENT = { kind: "newAgent" } as const;
 import "../team-plan.css";
 import "./new-agent-card.css";
 import { type Flight, forgetReturn, type NewAgentRequest, RESUME_PARAM, saveForReturn } from "./new-agent-context";
@@ -247,8 +252,10 @@ export function NewAgentDialog({
   const live = useAgentProposal(org.id, review?.messageId ?? null);
   const deny = useDenyAgentProposal(org.id);
   const mailboxes = useMailAccounts(org.id);
+  const [aiPick, setAiPick] = useState<AiChoice | null>(null);
   const brain = useNewAgentBrain(
     request.accountId ?? (proposed?.ai.kind === "account" ? proposed.ai.accountId : undefined),
+    aiPick,
   );
   const connectAi = useConnectAi();
   const qc = useQueryClient();
@@ -1161,6 +1168,20 @@ export function NewAgentDialog({
                             {t("newAgentCard.similarAction", agentGrammar(nameOf(similar)))}
                           </button>
                         </span>
+                      )}
+                      {brain.hasAi && brain.choice && (
+                        <section className="nac__sec" aria-label={t("aiHub.whoThinks")}>
+                          <span className="nac__head">
+                            <span className="nac__label">{t("aiHub.whoThinks")}</span>
+                          </span>
+                          <AiChoicePicker
+                            orgId={org.id}
+                            target={NEW_AGENT}
+                            value={brain.choice}
+                            onChange={setAiPick}
+                            disabled={busy}
+                          />
+                        </section>
                       )}
                       <section className="nac__sec" aria-label={t("newAgentCard.uses")}>
                         <span className="nac__head">

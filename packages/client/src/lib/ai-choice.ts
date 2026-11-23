@@ -88,6 +88,18 @@ const kindRank = (kind: string) => {
   return i < 0 ? ACCOUNT_KINDS.length : i;
 };
 
+/**
+ * Every account's logins (`sameAs`), by maker, then in the one order of use with `viewerId`'s own first: the order of
+ * the picker's rows and of "Contas de IA".
+ */
+export function hubAccountsInOrder<A extends AiHubAccount>(accounts: readonly A[], viewerId: string): A[][] {
+  const inOrder = compareInOrder(viewerId);
+  const first = (logins: readonly A[]) => logins[0] as A;
+  return orderAccounts(accounts).sort(
+    (x, y) => kindRank(first(x).kind) - kindRank(first(y).kind) || inOrder(first(x), first(y)),
+  );
+}
+
 /** The target thinks with keys too: not Lodi's own AI (its "A do workspace" is the workspace's key). */
 const takesKeys = (t: AiChoiceTarget) => t.kind !== "mission" && !(t.kind === "lodi" && t.scope === "mine");
 
@@ -134,14 +146,10 @@ export function aiChoiceRows(hub: AiHub | null | undefined, ctx: AiChoiceContext
   }
   if (target.kind !== "autoTier" && hub) {
     const accounts = hub.accounts.filter((a) => !ctx.machineId || a.machineId === ctx.machineId);
-    const byAccount = orderAccounts(accounts);
-    const inOrder = compareInOrder(ctx.viewerId);
-    const firsts = byAccount
-      .map((logins) => ({
-        logins,
-        first: logins.find((l) => l.id === current?.account) ?? (logins[0] as AiHubAccount),
-      }))
-      .sort((x, y) => kindRank(x.first.kind) - kindRank(y.first.kind) || inOrder(x.first, y.first));
+    const firsts = hubAccountsInOrder(accounts, ctx.viewerId).map((logins) => ({
+      logins,
+      first: logins.find((l) => l.id === current?.account) ?? (logins[0] as AiHubAccount),
+    }));
     for (const { logins, first } of firsts) {
       const why = blocked(first, ctx);
       rows.push({

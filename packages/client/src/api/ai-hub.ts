@@ -174,13 +174,24 @@ export function useAiChoice(orgId: string, target: AiChoiceTarget): AiChoiceStat
     mutationFn: async ({ choice, preview }: { choice: AiChoice; preview?: boolean }) => {
       switch (target.kind) {
         case "agent":
-          if (choice.brain === "model" && choice.key !== undefined)
-            await api.agents.update(orgId, target.agentId, { credentialId: choice.key });
-          await api.agents.setBrain(orgId, target.agentId, aiChoiceBrainInput(choice));
+        case "lodi": {
+          const scope = target.kind === "lodi" ? target.scope : undefined;
+          // On the API the model is the agent's own field (`…/brain` refuses one for the API brain); a person's own
+          // Lodi on the API is the workspace's, whose model isn't theirs to change.
+          if (choice.brain === "model") {
+            const { model, ...rest } = choice;
+            const fields = {
+              ...(choice.key !== undefined ? { credentialId: choice.key } : {}),
+              ...(model ? { model } : {}),
+            };
+            if (scope !== "mine" && Object.keys(fields).length > 0)
+              await api.agents.update(orgId, target.agentId, fields);
+            await api.agents.setBrain(orgId, target.agentId, aiChoiceBrainInput(rest, scope));
+            return null;
+          }
+          await api.agents.setBrain(orgId, target.agentId, aiChoiceBrainInput(choice, scope));
           return null;
-        case "lodi":
-          await api.agents.setBrain(orgId, target.agentId, aiChoiceBrainInput(choice, target.scope));
-          return null;
+        }
         case "mission":
           await setMission.mutateAsync({ brain: choice.brain, model: choice.model ?? null });
           return null;
@@ -205,7 +216,9 @@ export function useAiChoice(orgId: string, target: AiChoiceTarget): AiChoiceStat
       }
     },
     onSuccess: () => {
-      if (brainTarget) void qc.invalidateQueries({ queryKey: keys.agentPages(orgId) });
+      if (brainTarget || target.kind === "agents")
+        for (const key of [keys.agentPages(orgId), keys.agents(orgId), keys.aiStatus(orgId)])
+          void qc.invalidateQueries({ queryKey: key });
       void qc.invalidateQueries({ queryKey: keys.aiAccounts(orgId) });
     },
   });
