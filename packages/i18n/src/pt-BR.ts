@@ -3183,7 +3183,7 @@ export const ptBR = {
       team: "Monta e muda o time inteiro por cards que uma pessoa aplica: agentes, pessoas e ajustes do workspace",
       routines: "Roda e apaga rotinas de qualquer agente que você pode gerenciar",
       asYou: "Na sua conversa, lê o Drive, a wiki e as tarefas que você pode ver",
-      mentions: "Responde a um @ em qualquer canal sem ser membro",
+      mentions: "Responde a um @ em qualquer canal sem ser membro, e a mensagens em que é a melhor escolha",
     },
     card: {
       settings: "{{name}} · Configurações",

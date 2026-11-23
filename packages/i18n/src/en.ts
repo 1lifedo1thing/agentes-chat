@@ -3308,7 +3308,7 @@ export const en = {
       team: "Sets up and changes the whole team with cards a person applies: agents, people and workspace settings",
       routines: "Runs and deletes any agent's routine you may manage",
       asYou: "In your own conversation, reads the Drive, the wiki and the tasks you can see",
-      mentions: "Answers an @mention in any channel without being a member",
+      mentions: "Answers an @mention in any channel without being a member, and messages it fits best",
     },
     card: {
       settings: "{{name}} · Settings",

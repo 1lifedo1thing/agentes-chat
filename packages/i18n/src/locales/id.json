@@ -2945,7 +2945,7 @@
       "team": "Menyiapkan dan mengubah seluruh tim lewat kartu yang diterapkan seseorang: agen, orang, dan pengaturan workspace",
       "routines": "Menjalankan dan menghapus rutinitas agen mana pun yang boleh Anda kelola",
       "asYou": "Dalam percakapan Anda sendiri, membaca Drive, wiki, dan tugas yang bisa Anda lihat",
-      "mentions": "Menjawab @mention di kanal mana pun tanpa menjadi anggota"
+      "mentions": "Menjawab @mention di kanal mana pun tanpa menjadi anggota, dan pesan yang paling cocok untuknya"
     },
     "card": {
       "settings": "{{name}} · Pengaturan",

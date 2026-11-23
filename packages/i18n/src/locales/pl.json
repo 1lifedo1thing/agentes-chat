@@ -3297,7 +3297,7 @@
       "team": "Buduje i zmienia cały zespół kartami, które zatwierdza człowiek: agenci, osoby i ustawienia przestrzeni roboczej",
       "routines": "Uruchamia i usuwa rutyny dowolnego agenta, którymi możesz zarządzać",
       "asYou": "W Twojej własnej rozmowie czyta Drive, wiki i zadania, które możesz zobaczyć",
-      "mentions": "Odpowiada na @wzmiankę w dowolnym kanale, nie będąc jego członkiem"
+      "mentions": "Odpowiada na @wzmiankę w dowolnym kanale, nie będąc jego członkiem, i na wiadomości, do których pasuje najlepiej"
     },
     "card": {
       "settings": "{{name}} · Ustawienia",
