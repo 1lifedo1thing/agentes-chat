@@ -171,6 +171,7 @@ export function NoAiCard({ message }: { message: Message }) {
     return (
       <RequestDone
         done
+        morphKey={`noai:${message.id}`}
         label={title}
         action={
           connect && !answering && mayAnswer ? (
@@ -187,6 +188,7 @@ export function NoAiCard({ message }: { message: Message }) {
   return (
     <RequestOpen
       mine={mine}
+      morphKey={`noai:${message.id}`}
       icon="plug"
       label={title}
       action={

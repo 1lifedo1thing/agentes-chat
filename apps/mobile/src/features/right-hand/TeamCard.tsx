@@ -35,9 +35,23 @@ import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { StickerCanvas } from "@/agent/StickerCanvas";
 import { useOrg } from "@/providers/org";
-import { AgentAvatar, Button, Icon, LineIcon, MEDIA_ROW, MediaRow, Sheet, SheetBar, Text } from "@/ui";
+import {
+  AgentAvatar,
+  Button,
+  FADE_OUT,
+  Icon,
+  LineIcon,
+  MEDIA_ROW,
+  MediaRow,
+  RISE_IN,
+  Sheet,
+  SheetBar,
+  Text,
+  useReducedMotion,
+} from "@/ui";
 import { router } from "@/ui/navigation";
 import { fullLook } from "../agents/edit";
 import { openConnectAi } from "../ai/NoAiCard";
@@ -311,6 +325,12 @@ export const countsText = (t: TFunction, plan: TeamPlan, personal: boolean) => {
 };
 
 /** The right hand's team card in place of its text (`meta.actionCard.kind = team_proposal`). */
+/* After Criar o time, as on the web: the waving team and the lines under the card, then the first tasks, rows 50ms
+   apart. */
+const WAVE_IN_MS = 160;
+const FIRST_TASK_IN_MS = 250;
+const ROW_STEP_MS = 50;
+
 export function TeamCard({ message: m }: { message: Message }) {
   const card = teamProposalOf(m.meta);
   if (!card || m.author.type !== "agent") return null;
@@ -325,6 +345,7 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
   const when = useWhen();
   const failed = useFailed();
   const held = usePlanHold(orgId, org) !== null;
+  const reduced = useReducedMotion();
   const team = useTeamCard(orgId, { channelId: m.channelId, messageId: m.id });
   const former = useFormerAgents(orgId).data;
   // Made here and now, on a hold: when the new agents' wave started.
@@ -332,6 +353,9 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
   const [map, setMap] = useState(false);
   const plan = card.params;
   const status = teamStatus(card);
+  // Created while on screen: what comes under the card rises in, in turn (as the web's `ac-arrive`).
+  const [createdHere] = useState(() => status === "open");
+  const arrive = (ms: number) => (createdHere && !reduced ? RISE_IN.delay(ms) : undefined);
   const personal = isPersonal(org);
   const names = joinNames(
     plan.agents.map((a) => a.name),
@@ -458,12 +482,19 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
       {status === "created" ? (
         <>
           {card.created?.skipped.includes("skills") ? (
-            <Text variant="footnote" tone="muted">
-              {t("teamPlan.card.skillsWait")}
-            </Text>
+            <Animated.View entering={arrive(WAVE_IN_MS)}>
+              <Text variant="footnote" tone="muted">
+                {t("teamPlan.card.skillsWait")}
+              </Text>
+            </Animated.View>
           ) : null}
           {waveFrom !== undefined ? (
-            <View style={styles.wave} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Animated.View
+              entering={arrive(WAVE_IN_MS)}
+              style={styles.wave}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
               {plan.agents.map((a) => (
                 <StickerCanvas
                   key={a.handle}
@@ -476,9 +507,9 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
                   from={waveFrom}
                 />
               ))}
-            </View>
+            </Animated.View>
           ) : null}
-          {card.decidedByUserId === meId ? <FirstTasks message={m} card={card} held={held} /> : null}
+          {card.decidedByUserId === meId ? <FirstTasks message={m} card={card} held={held} arrive={arrive} /> : null}
         </>
       ) : null}
     </>
@@ -489,7 +520,19 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
  * A first task per agent (its DM opens with it typed, never sent, for the person to finish) and inviting the people.
  * Only once the team can answer: never on a billing hold, nor before an AI.
  */
-function FirstTasks({ message: m, card, held }: { message: Message; card: TeamProposalCard; held: boolean }) {
+function FirstTasks({
+  message: m,
+  card,
+  held,
+  arrive,
+}: {
+  message: Message;
+  card: TeamProposalCard;
+  held: boolean;
+  /** Its entrance and its rows', at a time after Criar o time (none when it was already there). */
+  arrive: (ms: number) => typeof RISE_IN | undefined;
+}) {
+  const reduced = useReducedMotion();
   const { t } = useTranslation();
   const { org, orgId } = useOrg();
   const dir = useDirectory();
@@ -502,76 +545,82 @@ function FirstTasks({ message: m, card, held }: { message: Message; card: TeamPr
   const people = isPersonal(org) ? [] : card.params.invite;
   if (later || held || !thinks || (tasks.length === 0 && people.length === 0)) return null;
   return (
-    <AskCard
-      id={`${m.id}-first`}
-      kind="firstTask"
-      agentId={m.author.id ?? ""}
-      waitsFor={t("teamPlan.firstTask.suggestion")}
-      lead={t("teamPlan.firstTask.lead")}
-      body={
-        <View style={styles.rows}>
-          {tasks.map((f, i) => (
-            <View key={f.agentId} style={i > 0 && [styles.divided, { borderTopColor: c.line2 }]}>
-              {/* The task under the name at the card's width, its one action under it at its start. */}
-              <MediaRow
-                face={
-                  <AgentAvatar agent={fullLook(f.appearance)} size={MEDIA_ROW.card.face} name={f.name} live={false} />
-                }
-                name={f.name}
+    <Animated.View entering={arrive(FIRST_TASK_IN_MS)} exiting={reduced ? undefined : FADE_OUT}>
+      <AskCard
+        id={`${m.id}-first`}
+        kind="firstTask"
+        agentId={m.author.id ?? ""}
+        waitsFor={t("teamPlan.firstTask.suggestion")}
+        lead={t("teamPlan.firstTask.lead")}
+        body={
+          <View style={styles.rows}>
+            {tasks.map((f, i) => (
+              <Animated.View
+                key={f.agentId}
+                entering={arrive(FIRST_TASK_IN_MS + ROW_STEP_MS * (i + 1))}
+                style={i > 0 && [styles.divided, { borderTopColor: c.line2 }]}
               >
-                <Text variant="small" tone="ink2">
-                  {f.task}
-                </Text>
-                <View style={styles.agentFoot}>
+                {/* The task under the name at the card's width, its one action under it at its start. */}
+                <MediaRow
+                  face={
+                    <AgentAvatar agent={fullLook(f.appearance)} size={MEDIA_ROW.card.face} name={f.name} live={false} />
+                  }
+                  name={f.name}
+                >
+                  <Text variant="small" tone="ink2">
+                    {f.task}
+                  </Text>
+                  <View style={styles.agentFoot}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      label={t("teamPlan.firstTask.open")}
+                      onPress={() => void openDm({ agentId: f.agentId }, { compose: true, text: `${f.task} ` })}
+                    />
+                  </View>
+                </MediaRow>
+              </Animated.View>
+            ))}
+          </View>
+        }
+        foot={
+          <AskFoot>
+            <AskButtons
+              primary={
+                people.length > 0 && can(org, "invite_people") ? (
                   <Button
-                    variant="secondary"
-                    size="sm"
-                    label={t("teamPlan.firstTask.open")}
-                    onPress={() => void openDm({ agentId: f.agentId }, { compose: true, text: `${f.task} ` })}
+                    variant="primary"
+                    size="card"
+                    wide
+                    label={t("teamPlan.firstTask.invite", { names: joinNames(people, t) })}
+                    onPress={() => router.push("/invite-people")}
                   />
-                </View>
-              </MediaRow>
-            </View>
-          ))}
-        </View>
-      }
-      foot={
-        <AskFoot>
-          <AskButtons
-            primary={
-              people.length > 0 && can(org, "invite_people") ? (
-                <Button
-                  variant="primary"
-                  size="card"
-                  wide
-                  label={t("teamPlan.firstTask.invite", { names: joinNames(people, t) })}
-                  onPress={() => router.push("/invite-people")}
-                />
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="card"
-                  wide
-                  label={t("teamPlan.firstTask.later")}
-                  onPress={() => setLater(true)}
-                />
-              )
-            }
-            secondary={
-              people.length > 0 && can(org, "invite_people") ? (
-                <Button
-                  variant="ghost"
-                  size="card"
-                  wide
-                  label={t("teamPlan.firstTask.later")}
-                  onPress={() => setLater(true)}
-                />
-              ) : undefined
-            }
-          />
-        </AskFoot>
-      }
-    />
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="card"
+                    wide
+                    label={t("teamPlan.firstTask.later")}
+                    onPress={() => setLater(true)}
+                  />
+                )
+              }
+              secondary={
+                people.length > 0 && can(org, "invite_people") ? (
+                  <Button
+                    variant="ghost"
+                    size="card"
+                    wide
+                    label={t("teamPlan.firstTask.later")}
+                    onPress={() => setLater(true)}
+                  />
+                ) : undefined
+              }
+            />
+          </AskFoot>
+        }
+      />
+    </Animated.View>
   );
 }
 

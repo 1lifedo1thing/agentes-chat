@@ -4,7 +4,8 @@ import { setupDom } from "../testing/dom";
 setupDom();
 
 import { act, cleanup, render } from "@testing-library/react";
-import { List } from "../src";
+import { useRef } from "react";
+import { List, useMorph } from "../src";
 
 afterEach(() => cleanup());
 
@@ -16,8 +17,14 @@ describe("motion", () => {
     const all = await css();
     const section = all.slice(all.indexOf("Motion (2026-10)"));
     expect(section.length).toBeGreaterThan(100);
-    const outside = section.replace(/@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\n\}/g, "");
+    const outside = section
+      .replace(/@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\n\}/g, "")
+      .replace(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/g, "");
     expect(outside).not.toMatch(/\banimation(-name)?:/);
+    // Under reduced motion a change is still seen: a fade in, and nothing else.
+    for (const calm of section.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g))
+      for (const a of (calm[1] ?? "").matchAll(/animation: ([\w-]+) (\d+)ms/g))
+        expect([a[1], a[2]]).toEqual(["ac-fade-in", "120"]);
     // 120–200 ms, opacity and transform only (no layout properties in the keyframes).
     for (const ms of section.matchAll(/animation: [a-z-]+ (\d+)ms/g)) {
       expect(Number(ms[1])).toBeGreaterThanOrEqual(120);
@@ -50,5 +57,48 @@ describe("motion", () => {
     await wait(50);
     expect(list.classList.contains("ac-list--settled")).toBe(true);
     expect(await css()).not.toContain("ac-list--stagger");
+  });
+
+  test("a card changing size glides from its last height, and its old look fades out over the new", () => {
+    const calls: { el: Element; frames: Keyframe[] }[] = [];
+    const heights = new Map<string, number>([
+      ["waiting", 200],
+      ["answered", 90],
+    ]);
+    const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
+    const { animate, getBoundingClientRect } = proto;
+    proto.animate = function (this: Element, frames: Keyframe[]) {
+      calls.push({ el: this, frames });
+      const anim = new EventTarget() as Animation;
+      Object.assign(anim, { cancel() {}, currentTime: 0 });
+      return anim;
+    };
+    proto.getBoundingClientRect = function (this: HTMLElement) {
+      return { width: 320, height: heights.get(this.dataset.state ?? "") ?? 0 } as DOMRect;
+    };
+    function Card({ state }: { state: string }) {
+      const ref = useRef<HTMLDivElement>(null);
+      useMorph(ref, { key: "card-1", live: state === "waiting" });
+      return (
+        <div ref={ref} data-state={state}>
+          <p>{state}</p>
+        </div>
+      );
+    }
+    try {
+      const view = render(<Card state="waiting" />);
+      expect(calls).toHaveLength(0);
+      view.rerender(<Card state="answered" />);
+      const card = view.container.firstElementChild as HTMLElement;
+      const glide = calls.find((c) => c.el === card);
+      expect(glide?.frames.map((f) => f.height)).toEqual(["200px", "90px"]);
+      const ghost = card.querySelector("[data-morph-ghost]") as HTMLElement;
+      expect(ghost.inert).toBe(true);
+      expect(ghost.textContent).toBe("waiting");
+      expect(calls.find((c) => c.el === ghost)?.frames.at(-1)?.opacity).toBe(0);
+      expect(calls.find((c) => c.el === card.firstElementChild)?.frames[0]?.opacity).toBe(0);
+    } finally {
+      Object.assign(proto, { animate, getBoundingClientRect });
+    }
   });
 });

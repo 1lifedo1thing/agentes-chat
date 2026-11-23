@@ -25,10 +25,10 @@ import {
 import { consultSubject, consultTimeText, previewOf, withoutRelayLine } from "@agenteschat/client/lib/consultations";
 import { joinNames, namesText } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { cx, Icon, Tip } from "@agenteschat/ui";
+import { cx, Icon, Tip, useMorph } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MessageBody } from "@/chat/MessageBody";
 import { AgentAvatar, withAgentFace } from "@/components/AgentAvatar";
@@ -296,8 +296,11 @@ function ConsultInPlace({
   const from = agentGrammar(dir.agentById.get(askedBy)?.name ?? t("channel.unknownAgent"));
   const to = agentGrammar(dir.agentById.get(c.consultedAgentId)?.name ?? t("channel.unknownAgent"));
   const state = consultLineState(c, now);
+  // Its answer arriving: the waiting line fades out over it as the box glides to the answer's height.
+  const box = useRef<HTMLDivElement>(null);
+  useMorph(box, { live: state !== "answered" });
   return (
-    <div className="ac-consult__body ac-consult__body--inline">
+    <div ref={box} className="ac-consult__body ac-consult__body--inline">
       <small>{withAgentFace(t(consultAskedKey(c), { name: from.name }), from.name, askedBy)}</small>
       <div className="ac-consult__text ac-consult__text--q">
         <MessageBody

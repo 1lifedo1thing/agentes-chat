@@ -1,5 +1,5 @@
 import type { Actor, Message, ThreadInfo, ThreadStartMeta } from "@agenteschat/client";
-import { repliesUnder, runsInChannel, useChannelThreads } from "@agenteschat/client";
+import { repliesUnder, runsInChannel, useChannelThreads, usePrefetchConversation } from "@agenteschat/client";
 import {
   returnClock,
   type ThreadWorkState,
@@ -50,12 +50,15 @@ export const useChannelThreadsView = () => useContext(ChannelThreadsContext);
  */
 function OpenThread({
   threadId,
+  channelId,
   reply,
   pressed,
   className,
   children,
 }: {
   threadId: string;
+  /** Its channel: pointing at it loads its replies, so they are usually there when the panel lands. */
+  channelId?: string;
   reply?: boolean;
   /** Open in the panel right now. */
   pressed?: boolean;
@@ -64,9 +67,18 @@ function OpenThread({
 }) {
   const { org } = useOrg();
   const actions = useChannelActions();
+  const prefetch = usePrefetchConversation(org.id);
+  const ahead = channelId ? () => prefetch(channelId, threadId) : undefined;
   if (actions?.openThread) {
     return (
-      <button type="button" className={className} aria-pressed={pressed} onClick={() => actions.openThread?.(threadId)}>
+      <button
+        type="button"
+        className={className}
+        aria-pressed={pressed}
+        onMouseEnter={ahead}
+        onFocus={ahead}
+        onClick={() => actions.openThread?.(threadId)}
+      >
         {children}
       </button>
     );
@@ -102,7 +114,7 @@ export function ThreadReplyLine({ thread, count }: { thread: ThreadInfo; count: 
   const replies = t("threads.line.replies", { count });
   const open = view?.open === thread.id;
   return (
-    <OpenThread threadId={thread.id} className="thread-line" pressed={open}>
+    <OpenThread threadId={thread.id} channelId={thread.channelId} className="thread-line" pressed={open}>
       <ThreadLineBody
         people={people}
         label={replies}
@@ -146,7 +158,7 @@ export function ThreadReplyingLine({ messageId, channelId }: { messageId: string
   if (!agentIds) return null;
   const people = agentIds.split(",").map((id) => ({ type: "agent" as const, id }));
   return (
-    <OpenThread threadId={messageId} className="thread-line" pressed={view?.open === messageId}>
+    <OpenThread threadId={messageId} channelId={channelId} className="thread-line" pressed={view?.open === messageId}>
       <ThreadLineBody
         people={people}
         label={t("threads.line.replying", {
