@@ -6626,6 +6626,7 @@ export const en = {
       overview: "Overview",
       instructions: "Instructions",
       access: "Tools and access",
+      skills: "Skills",
       memory: "Memory",
       files: "Files",
       usage: "Usage",
