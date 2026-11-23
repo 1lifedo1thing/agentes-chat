@@ -36,6 +36,7 @@ export function AiChoiceFields({
   extras = [],
   onAccount,
   disabled = false,
+  lockAccount = false,
 }: {
   target: AiChoiceTarget;
   /** A choice the caller keeps (several agents, a new agent): shown, and changed through `onChange`. */
@@ -45,6 +46,8 @@ export function AiChoiceFields({
   /** Saves a picked account itself (an agent's: a login lent to one agent asks first). */
   onAccount?: (row: AiChoiceRow) => void;
   disabled?: boolean;
+  /** The account (a mission's brain after Start) stays; the model still changes. */
+  lockAccount?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const { orgId } = useOrg();
@@ -154,8 +157,8 @@ export function AiChoiceFields({
         label={t("mobile.aiHub.choice.account")}
         value={extraOn?.option.label ?? account?.label ?? ""}
         {...(account?.mark ? { valueLeading: <ProviderLogo id={account.mark} size="xs" /> } : {})}
-        menu
-        disabled={locked || state.loading}
+        menu={!lockAccount}
+        disabled={locked || lockAccount || state.loading}
         onPress={() => void pickAccount()}
       />
       {models.length > 0 ? (

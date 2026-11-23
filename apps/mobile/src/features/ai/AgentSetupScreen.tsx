@@ -1,4 +1,4 @@
-import { keys, useAgentBrain, useApi, useModels, useSetupPreview } from "@agenteschat/client";
+import { currentOf, keys, useAgentBrain, useAiHub, useApi, useModels, useSetupPreview } from "@agenteschat/client";
 import {
   autonomyName,
   changes,
@@ -8,6 +8,7 @@ import {
   sortedResults,
   takers,
 } from "@agenteschat/client/lib/agent-setup";
+import { type AiChoice, aiChoiceRows, aiChoiceSetup } from "@agenteschat/client/lib/ai-choice";
 import { setupPlanOpens, setupPlanQuestion } from "@agenteschat/client/lib/audience";
 import { brainLine } from "@agenteschat/client/lib/brain";
 import { firstName } from "@agenteschat/client/lib/format";
@@ -23,10 +24,12 @@ import { router } from "@/ui/navigation";
 import { confirmQuestion } from "../chat/ReachLines";
 import { Gap } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
-import { useColors, useDirectory } from "../shared/hooks";
+import { useColors, useDirectory, useMeId } from "../shared/hooks";
 import { agentLook } from "../shared/logic";
 import { BottomBar, PushedHeader } from "../shared/parts";
 import { advancedOf } from "./AgentAdvancedScreen";
+import { AiChoiceFields } from "./AiChoice";
+import { choiceText } from "./hub";
 import { setupWords } from "./logic";
 
 /*
@@ -47,13 +50,22 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
   const c = useColors();
   const insets = useSafeAreaInsets();
   const dir = useDirectory();
+  const meId = useMeId();
   const brain = useAgentBrain(orgId, agentId);
   const models = useModels();
   // "Levar a autonomia" off: the others keep their own.
   const [withAutonomy, setWithAutonomy] = useState(true);
   const view = brain.data && !withAutonomy ? { ...brain.data, autonomy: undefined } : brain.data;
-  const setup = view ? setupOfBrain(view) : null;
   const others = dir.agents.filter((a) => a.id !== agentId);
+  // The agent's AI as it is, or another one picked here (the one choice): what the others take.
+  const [choice, setChoice] = useState<AiChoice | null>(null);
+  const target = { kind: "agents" as const, agentIds: others.map((a) => a.id) };
+  const base = view ? setupOfBrain(view) : null;
+  const setup = choice ? { ...base, ...aiChoiceSetup(choice) } : base;
+  const { hub } = useAiHub(orgId);
+  const pickedRow = choice
+    ? aiChoiceRows(hub, { target, viewerId: meId ?? "", current: choice }).find((r) => r.selected)
+    : null;
   const preview = useSetupPreview(
     orgId,
     setup,
@@ -64,7 +76,11 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
   const results = sortedResults(preview.data ?? []);
   const can = takers(results);
   const chosen = can.filter((id) => picked.has(id));
-  const setupText = view ? setupWords(t, i18n.language, view, { now: advancedOf(view) }) : "";
+  const setupText = pickedRow
+    ? choiceText(t, pickedRow, i18n.language).label
+    : view
+      ? setupWords(t, i18n.language, view, { now: advancedOf(view) })
+      : "";
   const toggle = (id: string) =>
     setPicked((p) => {
       const next = new Set(p);
@@ -81,8 +97,11 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
       (id) => dir.agentById.get(id),
       (id) => dir.memberById.get(id)?.name ?? t("channel.unknownPerson"),
     );
-    const provider = view.accounts.find((a) => a.id === view.account)?.provider ?? null;
-    if (!(await confirmQuestion(t, setupPlanQuestion(t, { kind: view.brain, provider }, opens)))) return;
+    const provider = pickedRow
+      ? (pickedRow.account?.provider ?? null)
+      : (view.accounts.find((a) => a.id === view.account)?.provider ?? null);
+    const kind = setup.brain;
+    if (!(await confirmQuestion(t, setupPlanQuestion(t, { kind, provider }, opens)))) return;
     setBusy(true);
     try {
       const results = await api.agents.applySetup(orgId, { setup, agentIds: chosen });
@@ -132,8 +151,14 @@ export function AgentSetupScreen({ agentId }: { agentId: string }) {
           />
         ) : (
           <>
-            {/* What goes, said once over the lists, on their headers' edge. */}
+            {/* What goes, said once over the lists, on their headers' edge; another AI picked here instead. */}
             <GroupedFooter>{t("agentPage.work.brain.copy.sub", { setup: setupText })}</GroupedFooter>
+            <AiChoiceFields
+              target={target}
+              value={choice ?? (brain.data ? currentOf({ kind: "agent", agentId }, { brain: brain.data }) : null)}
+              onChange={setChoice}
+              disabled={busy}
+            />
             {brain.data?.autonomy ? (
               <>
                 <Gap />
