@@ -238,10 +238,14 @@ export function AiChoiceFields({
   const effort = row ? effortOf(row.brain, shown?.effort) : null;
   const effortOptions: SelectOption<string>[] = autoModel
     ? [{ value: AUTO, label: t("brain.auto.label") }]
-    : levels.map((e) => ({ value: e, label: t(`agentPage.work.brain.efforts.${e}`) }));
+    : [
+        // On a key no level is the model's own default: a choice of its own, never an empty field.
+        ...(row?.brain === "model" ? [{ value: "", label: t("agentPage.work.brain.efforts.none") }] : []),
+        ...levels.map((e) => ({ value: e, label: t(`agentPage.work.brain.efforts.${e}`) })),
+      ];
   const pickEffort = (v: string) => {
-    if (!row || !shown || autoModel || v === effort) return;
-    commit({ ...shown, effort: v as EffortLevel }, row);
+    if (!row || !shown || autoModel || v === (effort ?? "")) return;
+    commit({ ...shown, effort: v ? (v as EffortLevel) : AUTO }, row);
   };
 
   const showAccount = parts.includes("account");
@@ -318,7 +322,7 @@ export function AiChoiceFields({
           {showEffort && (
             <Field label={t("agentPage.work.brain.effort")} id={`${id}-effort`}>
               <Select
-                value={autoModel ? AUTO : (effort ?? undefined)}
+                value={autoModel ? AUTO : (effort ?? (row?.brain === "model" ? "" : undefined))}
                 onValueChange={pickEffort}
                 options={effortOptions}
                 placeholder={t("agentPage.work.brain.efforts.none")}
