@@ -161,8 +161,12 @@ describe("the rows follow the same choice as the web", () => {
     expect(await read("chat/QuoteLine.tsx")).toContain(
       "look.faces ? WORDS_START[look.style] : rowBodyInset(look).left",
     );
-    // The agents' talk quoted on its own sits on the words' column, as a quote above a reply does.
-    expect(await read("chat/MessageRow.tsx")).toContain("paddingLeft: aboveInset(look), marginTop: rhythm.turn");
+    // The agents' talk quoted on its own sits on the words' column, as a quote above a reply does; in bubbles, on the
+    // bubbles' own column and as wide as one (`plateInset`).
+    expect(await read("chat/MessageRow.tsx")).toContain(
+      "plateInset(look, aboveInset(look)), { marginTop: rhythm.turn }",
+    );
+    expect(await read("chat/look.ts")).toContain("return { paddingLeft: body.left, paddingRight: body.right };");
     expect(chatScreenSource()).toContain("const quiet = quietInset(rowLook);");
     for (const file of [
       "chat/EventLine.tsx",

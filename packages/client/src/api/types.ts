@@ -7617,7 +7617,6 @@ export interface NoticePrefs {
 /** A tool at the top of the sidebar (`SIDEBAR_ITEMS` in packages/engine/src/sidebar-items.ts). */
 export type SidebarItem =
   | "waiting"
-  | "approvals"
   | "proposals"
   | "threads"
   | "issues"

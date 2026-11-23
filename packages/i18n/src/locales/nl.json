@@ -2290,7 +2290,7 @@
     "searchWorkspace": "De werkruimte doorzoeken",
     "summary_one": "{{people}} lid · {{agents}} agents",
     "summary_other": "{{people}} leden · {{agents}} agents",
-    "waiting": "Wacht op jou",
+    "waiting": "Postvak IN",
     "approvals": "Goedkeuringen",
     "proposals": "Verbeteringsvoorstellen",
     "issues": "Taken",
@@ -5283,7 +5283,7 @@
     "firstRun": "Ga verder waar je was · {{done}} van {{total}}"
   },
   "notifications": {
-    "title": "Meldingen",
+    "title": "Postvak IN",
     "planLent": {
       "takeBack": "Terugnemen",
       "takeBackAll": "Van alle agents terugnemen",
@@ -5318,7 +5318,7 @@
         "computer": "Van computer wisselen"
       }
     },
-    "docTitleUnread": "({{count}}) Meldingen",
+    "docTitleUnread": "({{count}}) Postvak IN",
     "summaryWaiting_one": "{{count}} ding wacht op jou",
     "summaryWaiting_other": "{{count}} dingen wachten op jou",
     "summaryUnread_one": "{{count}} ongelezen",
@@ -5334,6 +5334,7 @@
       "waiting": "Wacht op jou",
       "unread": "Ongelezen",
       "reactions": "Reacties",
+      "requests": "Besliste verzoeken",
       "done": "Afgerond"
     },
     "keys": {
@@ -5570,6 +5571,8 @@
     "noneUnread": "Alles gelezen.",
     "noneHere": "Hier is voorlopig niets.",
     "noneDone": "Niets als afgerond gemarkeerd in de afgelopen 30 dagen.",
+    "noneRequests": "Nog geen verzoek beslist.",
+    "proposes": "stelt een verbetering voor",
     "more": "Meer tonen"
   },
   "approvals": {
@@ -11407,6 +11410,20 @@
     "empty": "Niets voor “{{q}}”."
   },
   "codeSessions": {
+    "beta": {
+      "title": "Coding mode is in bèta",
+      "text": "Het werkt echt en verandert elke week. Soms loopt het vast. Dan ligt het probleem bij ons.",
+      "go": "Aan de slag",
+      "added": {
+        "worktree": "Elk verzoek in een eigen worktree, met Git, Bestanden, Scherm en Terminal",
+        "anyAi": "Elke AI: Claude Code, Codex, OpenCode of een model via zijn sleutel",
+        "beside": "Bewerk de bestanden en open een terminal naast het gesprek"
+      },
+      "removed": {
+        "paste": "Code kopiëren en plakken tussen de chat en de editor",
+        "watch": "Naar de terminal staren tot de agent klaar is"
+      }
+    },
     "title": "Code",
     "state": {
       "waiting": "wacht op jou",
@@ -11466,6 +11483,7 @@
       "agent_idle": "is vrij"
     },
     "gitTab": {
+      "openFile": "Bestand openen",
       "label": "Git",
       "from": "vanaf {{base}}",
       "ahead_one": "{{count}}{{more}} commit voor",
@@ -11489,8 +11507,7 @@
         "deleted": "Verwijderd",
         "renamed": "Hernoemd",
         "untracked": "Nieuw, nog niet in git"
-      },
-      "openFile": "Bestand openen"
+      }
     },
     "files": {
       "label": "Bestanden",
@@ -11507,13 +11524,7 @@
       "truncated_other": "De eerste {{formatted}} bestanden worden getoond.",
       "hasChanges": "Heeft wijzigingen",
       "opening": "Het bestand openen…",
-      "state": {
-        "binary": "Een binair bestand: hier valt niets te tonen.",
-        "missing": "Dit bestand is er niet meer.",
-        "ignored": "Git negeert dit bestand, dus het staat hier niet.",
-        "secret": ".env-bestanden worden hier niet getoond: ze bevatten meestal geheimen.",
-        "outside": "Dit bestand is een link naar buiten de worktree."
-      },
+      "cut": "Alleen de eerste {{size}} worden hier getoond.",
       "save": "Opslaan",
       "unsaved": "Niet opgeslagen",
       "tooLong": "Te lang om hier te bewerken",
@@ -11523,7 +11534,20 @@
       "unsavedAsk": "Dit bestand heeft wijzigingen die je niet hebt opgeslagen.",
       "keepEditing": "Verder bewerken",
       "discard": "Weggooien",
-      "cut": "Alleen de eerste {{size}} worden hier getoond."
+      "state": {
+        "binary": "Een binair bestand: hier valt niets te tonen.",
+        "missing": "Dit bestand is er niet meer.",
+        "ignored": "Git negeert dit bestand, dus het staat hier niet.",
+        "secret": ".env-bestanden worden hier niet getoond: ze bevatten meestal geheimen.",
+        "outside": "Dit bestand is een link naar buiten de worktree."
+      }
+    },
+    "tabs": {
+      "label": "Tabbladen van de sessie",
+      "talk": "Gesprek",
+      "terminalN": "Terminal {{n}}",
+      "close": "{{name}} sluiten",
+      "add": "Nieuw tabblad"
     },
     "screen": {
       "computer": "Computer van {{name}}",
@@ -11565,27 +11589,6 @@
       "dm": "Geopend vanuit je gesprek met {{name}}",
       "channel": "Geopend vanuit #{{name}}",
       "see": "Gesprek bekijken"
-    },
-    "tabs": {
-      "label": "Tabbladen van de sessie",
-      "talk": "Gesprek",
-      "terminalN": "Terminal {{n}}",
-      "close": "{{name}} sluiten",
-      "add": "Nieuw tabblad"
-    },
-    "beta": {
-      "added": {
-        "worktree": "Elk verzoek in een eigen worktree, met Git, Bestanden, Scherm en Terminal",
-        "anyAi": "Elke AI: Claude Code, Codex, OpenCode of een model via zijn sleutel",
-        "beside": "Bewerk de bestanden en open een terminal naast het gesprek"
-      },
-      "removed": {
-        "paste": "Code kopiëren en plakken tussen de chat en de editor",
-        "watch": "Naar de terminal staren tot de agent klaar is"
-      },
-      "title": "Coding mode is in bèta",
-      "text": "Het werkt echt en verandert elke week. Soms loopt het vast. Dan ligt het probleem bij ons.",
-      "go": "Aan de slag"
     }
   },
   "code": {
@@ -15674,6 +15677,9 @@
       "pageOf": "{{page}} van {{count}}",
       "pdfFailed": "Deze PDF kan hier niet worden getoond. Download hem om hem te openen.",
       "loadFailed": "Deze afbeelding kan hier niet worden getoond.",
+      "mark": "Markeren",
+      "markOff": "Stoppen met markeren: een klik verplaatst het bestand weer",
+      "markOn": "Markeren: een klik plaatst een opmerking bij een punt of een gebied",
       "hint": {
         "image": "Klik om een punt te markeren of sleep om een gebied te markeren",
         "video": "Klik op de video voor een opmerking bij dit moment, of sleep om een gebied te markeren",
@@ -15801,10 +15807,10 @@
       "repoNotAllowed": "Deze agent kan niet in die repository werken. Kies een andere, of voeg hem toe in de instellingen van de agent.",
       "notYours": "Alleen wie de sessie heeft geopend, of een admin, kan hem sluiten.",
       "notReady": "De worktree van de sessie is nog niet klaar. Probeer het zo opnieuw.",
-      "suggestionGone": "Dit voorstel is al beantwoord.",
-      "suggestionNotYours": "Alleen wie het vroeg, beslist of de sessie opent.",
       "fileChanged": "Dit bestand is op de computer gewijzigd nadat je het opende.",
-      "fileLocked": "Dit bestand kan hier niet worden bewerkt."
+      "fileLocked": "Dit bestand kan hier niet worden bewerkt.",
+      "suggestionGone": "Dit voorstel is al beantwoord.",
+      "suggestionNotYours": "Alleen wie het vroeg, beslist of de sessie opent."
     },
     "webhook": {
       "githubNoAccess": "De GitHub van deze workspace kan geen webhooks maken in {{repo}}. Volg de stappen hieronder om hem met de hand te maken.",
@@ -20494,6 +20500,7 @@
     "openAgain": "Opnieuw openen",
     "ended": "De shell is gestopt",
     "dropped": "De verbinding met de terminal is verbroken",
+    "moved": "Deze terminal is in een ander venster geopend",
     "screening": "Terminals staan hier uit",
     "forbidden": "Alleen wie deze computer mag gebruiken, opent een terminal",
     "offline": "De computer is offline",
@@ -20503,8 +20510,7 @@
     "busy": "Op deze computer staan al zoveel terminals open als hij aankan. Sluit er een en probeer het opnieuw.",
     "paused": "De computer is gepauzeerd",
     "failed": "Kon de terminal niet openen",
-    "agentFolder": "De terminal is geopend in de map van de agent. Werk de computer bij om hem in de map van de sessie te openen.",
-    "moved": "Deze terminal is in een ander venster geopend"
+    "agentFolder": "De terminal is geopend in de map van de agent. Werk de computer bij om hem in de map van de sessie te openen."
   },
   "agora": {
     "label": "Nu",
