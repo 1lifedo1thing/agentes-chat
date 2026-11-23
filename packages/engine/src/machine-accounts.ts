@@ -77,7 +77,7 @@ import {
   windowReadAt,
   windowStale,
 } from "@agenteschat/ui/plan-state";
-import { accountPersonOf, managesAccount } from "./ai-accounts/serves";
+import { accountPersonOf, loginPermissions, managesAccount } from "./ai-accounts/serves";
 import { recordAudit } from "./audit";
 import { liveModelLimits } from "./brains/select";
 import { BRAIN_PLAN_NAMES } from "./brains/types";
@@ -842,13 +842,24 @@ async function settleAccount(
   // The runner says it when it knows it; one that just started doesn't yet (the last stays).
   const usage = info.usage ? { usage: accountReading(row.provider, row.usage, info.usage) } : {};
   if (signingIn) {
-    // A login of an account its owner already has here (one per agent) takes that account's name.
+    // A login of an account its owner already has here (one per agent) takes that account's name and permissions.
+    const sibling = await sameAccount(db, row, identity);
     const label =
-      (await sameAccount(db, row, identity))?.label ??
+      sibling?.label ??
       defaultAccountLabel(kindOf(row), await takenLabels(db, orgId, row.createdBy, row.id), row.provider);
     const [done] = await db
       .update(machineAccounts)
-      .set({ email, plan, keyHint, ...state, label, shared, ...usage, updatedAt: now })
+      .set({
+        email,
+        plan,
+        keyHint,
+        ...state,
+        label,
+        ...(sibling ? loginPermissions(sibling) : {}),
+        shared,
+        ...usage,
+        updatedAt: now,
+      })
       .where(
         and(eq(machineAccounts.orgId, orgId), eq(machineAccounts.id, row.id), eq(machineAccounts.status, "signing_in")),
       )
@@ -1001,6 +1012,7 @@ export async function syncMachineAccounts(
           .values({
             ...candidate,
             label: same?.label ?? defaultAccountLabel(a.kind, await takenLabels(tx, orgId, owner, a.id), provider),
+            ...(same ? loginPermissions(same) : {}),
             email: a.email ?? null,
             plan: a.plan ?? null,
             keyHint: a.keyHint ?? null,

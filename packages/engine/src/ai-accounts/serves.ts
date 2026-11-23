@@ -91,6 +91,20 @@ export function permissionColumns(right: AccountRight, a: AccountAudience): Part
   return { replyMode: lists.mode, replyUserIds: lists.userIds, replyRoleIds: lists.roleIds };
 }
 
+/** The permissions a new login of an account takes from another login of it (`sameLogins`), `serves` included. */
+export const loginPermissions = (row: PermissionColumns & Pick<typeof machineAccounts.$inferSelect, "serves">) => ({
+  serves: row.serves,
+  manageMode: row.manageMode,
+  manageUserIds: row.manageUserIds,
+  manageRoleIds: row.manageRoleIds,
+  useMode: row.useMode,
+  useUserIds: row.useUserIds,
+  useRoleIds: row.useRoleIds,
+  replyMode: row.replyMode,
+  replyUserIds: row.replyUserIds,
+  replyRoleIds: row.replyRoleIds,
+});
+
 /** A person as the rules read them: their roles, and whether they are an administrator (or the workspace's owner). */
 export interface AccountPerson {
   userId: string;

@@ -48,6 +48,7 @@ import { TECHNICAL_STYLE_LINE } from "./agent-style";
 import { type Agent, getAgentCached } from "./agents";
 import { agentsDmReads, readerOfRun } from "./agents-dm-reads";
 import { planKeyFallbackOn } from "./ai-accounts/fallback";
+import { runAsker } from "./ai-accounts/reply";
 import { type AgentAi, agentAiState, noAiReasonOf, ownNotSignedIn } from "./ai-status";
 import { heldBehind, markNotRun, notRunAfter, notRunText, wakeLine } from "./approval-order";
 import { deciderName, publishApproval } from "./approvals";
@@ -3396,6 +3397,7 @@ async function executeRunInner(
             brainPlan,
             moved.to,
             isRightHand(agent) ? await rightHandPerson(db, agent, run) : null,
+            isRightHand(agent) ? null : await runAsker(db, agent, run),
           )
         : null;
     const cut = transcript.interruptedTurn;
@@ -3941,6 +3943,7 @@ async function executeRunInner(
     const next = await nextAccountPlan(deps, await planAgent(), plan, tried, {
       ...(room ? { room } : {}),
       forPerson: person,
+      asker: isRightHand(agent) ? null : await runAsker(db, agent, run),
       own,
     });
     const to = next.plan?.account;

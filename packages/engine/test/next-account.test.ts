@@ -208,6 +208,30 @@ test("an account at its limit before the turn: the next account of its owner ans
   expect(switchOf((await runs(fx))[1])).toBeUndefined();
 });
 
+test("a run for someone besides the agent's owner goes on only with an account whose Atender todos takes them", async () => {
+  const { fx, machineId, walter, account, usage } = await world();
+  await account(WALTER_ALL, walter.id, { useOrder: 0 });
+  await account(OWN2, fx.owner.id, { useOrder: 1, replyMode: "everyone" });
+  await usage(OWN1, 100);
+  const agent = await agentRow(fx);
+  if (!agent) throw new Error("no agent");
+  const plan: BrainPlan = {
+    kind: "claude_code",
+    model: "sonnet",
+    session: { id: "s1", resume: true, machineId, cwd: "" },
+    account: { id: OWN1, label: "Conta a001", status: "active" },
+  };
+  const deps = { db: fx.db, machines: { status: async (id: string) => statusOf(id) } };
+  // The agent's owner asks: Walter's account answers them by its place.
+  expect((await nextAccountPlan(deps, agent, plan, [OWN1, OWN2])).plan?.account?.id).toBe(WALTER_ALL);
+  // Walter asks someone else's agent: his own account answers only the agent's owner, so it is passed over.
+  const asked = await nextAccountPlan(deps, agent, plan, [OWN1], { asker: walter.id });
+  expect(asked.plan?.account?.id).toBe(OWN2);
+  expect(await nextAccountPlan(deps, agent, plan, [OWN1, OWN2], { asker: walter.id })).toMatchObject({ plan: null });
+  expect(await movedAccountPlan(deps, agent, plan, WALTER_ALL, null, walter.id)).toBeNull();
+  expect(await movedAccountPlan(deps, agent, plan, OWN2, null, walter.id)).not.toBeNull();
+});
+
 test("the order: the owner's own accounts first, then others that serve everyone by their place; never an owner-only one", async () => {
   const { fx, machineId, walter, account, usage } = await world();
   await account(WALTER_ONLY, walter.id, { serves: "owner", useMode: "owner", useOrder: 0 });

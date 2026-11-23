@@ -14,10 +14,11 @@ import type {
   Model,
   ModelTier,
 } from "../api/types";
-import { ACCOUNT_KINDS, orderAccounts } from "./ai-accounts";
+import { ACCOUNT_KINDS, accountTitle, orderAccounts } from "./ai-accounts";
 import { type EffortLevel, effortLevelsOf } from "./brain-advanced";
 import { type ModelRow, modelRows } from "./brain-picker";
-import { planOf } from "./plans";
+import { firstName } from "./format";
+import { isPlanId, planOf } from "./plans";
 import { AUTO, isAuto } from "./providers";
 
 /*
@@ -88,6 +89,18 @@ const kindRank = (kind: string) => {
   return i < 0 ? ACCOUNT_KINDS.length : i;
 };
 
+/**
+ * Every account's logins (`sameAs`), by maker, then in the one order of use with `viewerId`'s own first: the order of
+ * the picker's rows and of "Contas de IA".
+ */
+export function hubAccountsInOrder<A extends AiHubAccount>(accounts: readonly A[], viewerId: string): A[][] {
+  const inOrder = compareInOrder(viewerId);
+  const first = (logins: readonly A[]) => logins[0] as A;
+  return orderAccounts(accounts).sort(
+    (x, y) => kindRank(first(x).kind) - kindRank(first(y).kind) || inOrder(first(x), first(y)),
+  );
+}
+
 /** The target thinks with keys too: not Lodi's own AI (its "A do workspace" is the workspace's key). */
 const takesKeys = (t: AiChoiceTarget) => t.kind !== "mission" && !(t.kind === "lodi" && t.scope === "mine");
 
@@ -134,14 +147,10 @@ export function aiChoiceRows(hub: AiHub | null | undefined, ctx: AiChoiceContext
   }
   if (target.kind !== "autoTier" && hub) {
     const accounts = hub.accounts.filter((a) => !ctx.machineId || a.machineId === ctx.machineId);
-    const byAccount = orderAccounts(accounts);
-    const inOrder = compareInOrder(ctx.viewerId);
-    const firsts = byAccount
-      .map((logins) => ({
-        logins,
-        first: logins.find((l) => l.id === current?.account) ?? (logins[0] as AiHubAccount),
-      }))
-      .sort((x, y) => kindRank(x.first.kind) - kindRank(y.first.kind) || inOrder(x.first, y.first));
+    const firsts = hubAccountsInOrder(accounts, ctx.viewerId).map((logins) => ({
+      logins,
+      first: logins.find((l) => l.id === current?.account) ?? (logins[0] as AiHubAccount),
+    }));
     for (const { logins, first } of firsts) {
       const why = blocked(first, ctx);
       rows.push({
@@ -156,6 +165,17 @@ export function aiChoiceRows(hub: AiHub | null | undefined, ctx: AiChoiceContext
       });
     }
   }
+  // A plan through its computer's own sign-in (no account row): the choice in use stays a row of its own.
+  const own = (target.kind === "agent" || target.kind === "lodi") && current && current.brain !== "model";
+  if (own && !current.account && !rows.some((r) => r.selected))
+    rows.unshift({
+      key: `own:${current.brain}`,
+      type: "brain",
+      group: "yours",
+      brain: current.brain,
+      usable: true,
+      selected: true,
+    });
   if (takesKeys(target) && hub) {
     const keys = target.kind === "autoTier" ? hub.keys.filter((k) => k.provider === target.provider) : hub.keys;
     for (const k of keys) {
@@ -214,6 +234,8 @@ export const aiChoiceEfforts = (row: AiChoiceRow): readonly EffortLevel[] =>
 
 /** The choice a row makes, keeping the model and effort when the brain stays. */
 export function aiChoiceOf(row: AiChoiceRow, current: AiChoice | null): AiChoice {
+  // Lodi's "A do workspace": the workspace's own AI, nothing of the person's to carry.
+  if (row.type === "workspace") return { brain: "model" };
   const keep = current?.brain === row.brain;
   const rest = keep
     ? { model: current?.model ?? null, effort: current?.effort ?? null }
@@ -248,6 +270,15 @@ export function aiChoiceSetup(choice: AiChoice): AgentSetup {
   };
 }
 
+/**
+ * An account's name where its plan shows beside it ("Trabalho", then "Max · de João"): someone else's and a key
+ * account by their name alone, the viewer's own as every app titles it (`accountTitle`).
+ */
+export const accountShortName = (
+  t: TFunction,
+  a: Pick<AiHubAccount, "label" | "plan" | "email" | "mine" | "named" | "keyHint" | "provider">,
+) => (!a.mine || a.keyHint != null || isPlanId(a.provider) ? a.label : accountTitle(t, a));
+
 /** Why a row is dimmed, in words: its owner by name. */
 export const reasonText = (t: TFunction, row: Pick<AiChoiceRow, "reason" | "account">) =>
-  row.reason ? t(`aiAccounts.useReason.${row.reason}`, { owner: row.account?.ownerName ?? "" }) : "";
+  row.reason ? t(`aiAccounts.useReason.${row.reason}`, { owner: firstName(row.account?.ownerName ?? "") }) : "";
