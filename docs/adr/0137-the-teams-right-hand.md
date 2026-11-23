@@ -614,7 +614,7 @@ it is the best fit.
 - It answers only when the step's scores pick it (`selectAgents`, at the full `minScore`, never the lower bar of a
   channel's only agent) or the person keeps talking with it (a reply to it, a follow-up). It is never the channel's
   only agent (R2), the failure default or the alone pick (R5, `bestPlaced`), nor counted as one of the channel's
-  agents for those rules.
+  agents for those rules. A message for every agent brings it in only as the top pick, never as a second voice.
 - A channel with no agent of its own is people talking: the router asks nothing there, as before, and an @mention
   still reaches the right hand.
 - The receipts list it as having read a message only when it answers it, so channel messages don't all read "seen by

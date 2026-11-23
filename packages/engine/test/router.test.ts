@@ -68,6 +68,20 @@ describe("selectAgents (policy)", () => {
     expect(selectAgents(candidates, { agents, needsAgent: 0.9, forEveryone: 0.8 }, policy)).toEqual(["pm", "research"]);
   });
 
+  test("the right hand answers a message for every agent only when it fits best", () => {
+    const candidates = [cand("dev"), { ...cand("lodi"), rightHand: true }];
+    const result = (dev: number, lodi: number) => ({
+      agents: [
+        { agentId: "dev", score: dev },
+        { agentId: "lodi", score: lodi },
+      ],
+      needsAgent: 0.9,
+      forEveryone: 0.9,
+    });
+    expect(selectAgents(candidates, result(0.9, 0.7), policy)).toEqual(["dev"]);
+    expect(selectAgents(candidates, result(0.7, 0.9), policy)).toEqual(["lodi", "dev"]);
+  });
+
   test("a low need-any-agent score means nobody", () => {
     expect(selectAgents([cand("a")], { agents: [{ agentId: "a", score: 0.9 }], needsAgent: 0.1 }, policy)).toEqual([]);
   });

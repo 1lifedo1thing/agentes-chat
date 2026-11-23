@@ -307,11 +307,15 @@ export function selectAgents(
   const clearPick = [...best.values()].some((score) => score >= (policy.clearPickScore ?? Number.POSITIVE_INFINITY));
   if (result.needsAgent !== undefined && result.needsAgent < needGateOf(policy, single) && !continuing && !clearPick)
     return [];
-  return [...best]
-    .filter(([agentId, score]) => score >= thresholdOf(agentId))
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, (result.forEveryone ?? 0) >= FOR_EVERYONE_THRESHOLD ? policy.maxAgents : 1)
-    .map(([agentId]) => agentId);
+  return (
+    [...best]
+      .filter(([agentId, score]) => score >= thresholdOf(agentId))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, (result.forEveryone ?? 0) >= FOR_EVERYONE_THRESHOLD ? policy.maxAgents : 1)
+      .map(([agentId]) => agentId)
+      // The right hand answers only as the best fit, never as one more voice of a message for every agent.
+      .filter((agentId, i) => i === 0 || !extra.has(agentId))
+  );
 }
 
 /** The only reactions a step may choose for a social message (`RoutingResult.social`), with when each fits. */
