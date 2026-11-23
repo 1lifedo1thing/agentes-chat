@@ -226,6 +226,8 @@ export class RealtimeConnection {
   private readonly heard = new Set<string>();
   private everOpened = false;
   private stopped = true;
+  /** This connection's id on the server (`?tab=`): its new socket replaces one it left behind there. */
+  private readonly tab = Math.random().toString(36).slice(2, 12);
   status: ConnectionStatus = "idle";
 
   constructor(
@@ -622,7 +624,8 @@ export class RealtimeConnection {
     this.setStatus(this.everOpened ? "reconnecting" : "connecting");
     let socket: SocketLike;
     try {
-      socket = this.options.createSocket(this.options.url);
+      const url = this.options.url;
+      socket = this.options.createSocket(`${url}${url.includes("?") ? "&" : "?"}tab=${this.tab}`);
     } catch {
       this.scheduleReconnect();
       return;

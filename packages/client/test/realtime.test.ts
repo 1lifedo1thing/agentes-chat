@@ -54,6 +54,23 @@ function manualTimers() {
 }
 
 describe("RealtimeConnection", () => {
+  test("each connection sends its own tab id, the same on every reconnect, so its new socket replaces its old one", () => {
+    const { factory, sockets } = fakeSockets();
+    const { timers, runNext } = manualTimers();
+    const conn = new RealtimeConnection({ url: "ws://x/api/ws?orgId=o", createSocket: factory, timers, pingMs: 0 });
+    const other = new RealtimeConnection({ url: "ws://x/api/ws?orgId=o", createSocket: factory, timers, pingMs: 0 });
+    conn.start();
+    (sockets[0] as FakeSocket).drop();
+    runNext();
+    other.start();
+    const [first, again, theirs] = sockets.map((s) => s.url);
+    expect(first).toMatch(/^ws:\/\/x\/api\/ws\?orgId=o&tab=[a-z0-9]+$/);
+    expect(again).toBe(first);
+    expect(theirs).not.toBe(first);
+    conn.stop();
+    other.stop();
+  });
+
   test("url uses ws/wss and the org id", () => {
     expect(realtimeUrl({ protocol: "https:", host: "agentes.chat" }, "o 1")).toBe(
       "wss://agentes.chat/api/ws?orgId=o%201",

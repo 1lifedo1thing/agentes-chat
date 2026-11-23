@@ -92,3 +92,30 @@ every other workspace's routines wait behind it.
   pushes to the app; cache invalidations across processes, and a LISTEN gap that clears them; the worker's health
   check. On a real server only (`TEST_DATABASE_URL`): a claim skips the jobs another worker is taking, and
   processes booting together record each migration once.
+
+## Addendum (2026-11-23): overload, restarts and the slots' ceiling
+
+A process that fell behind (its memory nearly full, runs waiting minutes to be claimed) was restarted; the runs left
+waiting all started in its first seconds while every app reconnected to it at once and read everything again, so
+it fell behind again. Four changes keep a process that falls behind from taking everything with it:
+
+- **Load shedding** (server `load-shed.ts`, `watchLoad`): every 5 s the process reads its event loop's p99 delay and
+  how long a `select 1` waits for a connection; past `LOAD_SHED_EVENT_LOOP_MS` or `LOAD_SHED_DB_WAIT_MS` it is
+  overloaded: new WebSocket upgrades and `GET /api/app/*` get a 503 `server_busy` with a `Retry-After` of 5 to 15 s
+  (spread, so they don't all return in the same second); writes, sign-in and open sockets carry on. With
+  `LOAD_SHED_MAX_SOCKETS` apps connected only new upgrades get the 503. `/api/health` answers 503 `overloaded`, so a proxy with an active health
+  check steers new requests to another process. The web and phone apps try a busy read again after its
+  `Retry-After` (client `busy-retry.ts`), up to 6 times.
+- **Stale sockets** (server `realtime/ws.ts`): Bun's own heartbeat (`sendPings`, `idleTimeout`) closes a socket that
+  answers nothing for 2 minutes. Each app connection now sends its own id (`?tab=`): its new socket replaces the one
+  it left behind in this process at once, instead of both holding subscriptions until the timeout. A person has at
+  most 50 sockets per process; past that a new one gets a 429 with `Retry-After`.
+- **A ramp after a restart** (`createOutboxPump`'s `startupRamp`, `STARTUP_RAMP_MS`): for its first minute a process
+  starts long jobs at most a tenth of its starting long slots per second; quick jobs don't wait for it.
+- **A ceiling by connections** (`laneLimits`, `JOBS_PER_DB_CONNECTION`): unless `OUTBOX_MAX_IN_FLIGHT_CEILING` says
+  otherwise, the lanes together grow to 8 jobs per database connection at most, not as far as memory alone allows.
+  At boot the server warns when `DATABASE_POOL_MAX` is below one connection per 4 starting slots (`poolNeededFor`).
+
+Tests: server `load-shed.test.ts` (each signal, the 503s and the health check, writes and open sockets carrying on,
+a tab's socket replaced, the per-person cap); engine `outbox.test.ts` (the ramp, the ceiling, `poolNeededFor`);
+client `busy-retry-lib.test.ts`, `realtime.test.ts` (the tab id).
