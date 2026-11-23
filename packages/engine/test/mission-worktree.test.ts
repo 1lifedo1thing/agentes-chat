@@ -99,6 +99,7 @@ function runner(hub: MachineHub) {
           });
         }
         if (frame.op === "task.cancel") return ok({ canceled: true });
+        if (frame.op === "task.status") return ok({ tasks: [] });
         if (frame.op === "read") return ok({ base64: null, size: 0 });
         if (frame.op === "write") return ok({ size: 1 });
         return ok({});
@@ -398,6 +399,26 @@ describe("one worktree per mission (ADR 0044)", () => {
     const { prompt, cwd, executor } = asked as { prompt: string; cwd: string; executor: string };
     expect(start).toMatchObject({ prompt, cwd, executor });
     expect(r.started.filter((s) => s.taskId === waiting)).toHaveLength(1);
+    expect(await taskRow(waiting)).toMatchObject({ status: "running", startRequest: null });
+  });
+
+  test("a server back within the start's grace: the claimed item is looked at again after it, and starts once", async () => {
+    const { r, paired } = await started();
+    r.state.noSlot = true;
+    const waiting = taskIdOf((await startTask({ title: "Tests", prompt: "Run the tests", mode: "read" })).content);
+    const asked = (await taskRow(waiting))?.startRequest;
+    await claimQueuedTask(f.db, (await taskRow(waiting))?.machineId ?? "");
+    // The computer says hello seconds after the claim: its start could still be on the way, so nothing yet.
+    r.state.noSlot = false;
+    await r.reconnect(paired.token);
+    await r.reconnect(paired.token);
+    await settle();
+    expect(r.started.filter((s) => s.taskId === waiting)).toHaveLength(0);
+    expect((await taskRow(waiting))?.status).toBe("queued");
+    // Past the grace, its journal doesn't have it: back in the queue and started as asked, once.
+    await drainOutbox(f.db, f.handlers, { now: new Date(Date.now() + 3 * 60_000) });
+    const { prompt, cwd, executor } = asked as { prompt: string; cwd: string; executor: string };
+    expect(r.started.filter((s) => s.taskId === waiting)).toEqual([expect.objectContaining({ prompt, cwd, executor })]);
     expect(await taskRow(waiting)).toMatchObject({ status: "running", startRequest: null });
   });
 

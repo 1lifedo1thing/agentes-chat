@@ -1180,7 +1180,8 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     [WAKE_OVERDUE_JOB]: async (job) => {
       await wakeOverdue({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.machineId));
     },
-    // A task start cut by a drop, once it can't still be underway: the agent's journal on its computer settles it.
+    // A task start cut by a drop (or taken from the queue before a restart), once it can't still be underway: the
+    // agent's journal on its computer settles it.
     "machine.task_start_check": async (job) => {
       const hub = missions.hub;
       if (!hub) return;
@@ -1193,6 +1194,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
           startQueued: (machineId) => startQueuedMissionTasks(missions, machineId),
         },
         String(job.payload.taskId),
+        typeof job.payload.claimedAt === "string" ? job.payload.claimedAt : undefined,
       );
     },
     // A request to join through an invitation link, filed apart from the ask's reply (ADR 0068).

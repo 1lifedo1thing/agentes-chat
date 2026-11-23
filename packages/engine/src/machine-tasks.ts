@@ -96,12 +96,12 @@ export const liveTaskSqlAs = (alias: string) =>
 export const isCutStart = (t: Pick<MachineTaskRow, "status" | "startedAt" | "endedAt">) =>
   t.status === "interrupted" && !t.startedAt && !t.endedAt;
 
-/** `checkCutTaskStart` for this task in `inMs`. */
-const enqueueStartCheck = (db: Executor, row: Pick<MachineTaskRow, "id" | "orgId">, inMs: number) =>
+/** `checkCutTaskStart` for this task in `inMs`; `claimedAt`: for one taken from our queue then. */
+const enqueueStartCheck = (db: Executor, row: Pick<MachineTaskRow, "id" | "orgId">, inMs: number, claimedAt?: string) =>
   enqueue(db, {
     orgId: row.orgId,
     kind: "machine.task_start_check",
-    payload: { taskId: row.id },
+    payload: { taskId: row.id, ...(claimedAt ? { claimedAt } : {}) },
     dedupeKey: `machine.task_start_check:${row.id}:${Date.now()}`,
     runAt: new Date(Date.now() + inMs),
   });
@@ -285,6 +285,27 @@ export type QueuedTaskStart = Omit<StartTaskInput, "protocol" | "machineName">;
  */
 export const waitsInQueue = (t: Pick<MachineTaskRow, "status" | "startRequest">) =>
   t.status === "queued" && Boolean(t.startRequest) && !t.startRequest?.claimedAt;
+
+/** When `claimQueuedTask` took it from our queue, while its start isn't confirmed. */
+const claimedAtOf = (t: Pick<MachineTaskRow, "status" | "startRequest">) =>
+  t.status === "queued" && typeof t.startRequest?.claimedAt === "string" ? t.startRequest.claimedAt : undefined;
+
+/** Back in our queue with all it was asked: once per claim, however many hellos or checks say so. */
+async function unclaimTask(db: Executor, taskId: string, claimedAt: string) {
+  const [back] = await db
+    .update(machineTasks)
+    .set({ startRequest: sql`${machineTasks.startRequest} - 'claimedAt'`, updatedAt: new Date() })
+    .where(
+      and(
+        eq(machineTasks.id, taskId),
+        eq(machineTasks.status, "queued"),
+        isNull(machineTasks.endedAt),
+        sql`${machineTasks.startRequest}->>'claimedAt' = ${claimedAt}`,
+      ),
+    )
+    .returning({ id: machineTasks.id });
+  return Boolean(back);
+}
 
 /** A runner older than protocol 4 can't run background tasks: the computer needs an update (`runnerUpdateWay`). */
 export class RunnerOutdatedError extends Error {
@@ -1262,24 +1283,19 @@ export async function reconcileMachineTasks(
     if (there) continue;
     // Waiting in our queue (ADR 0044): the runner never had it.
     if (waitsInQueue(row)) continue;
-    // Being started right now (its `task.start` may still be on the way). One from our queue began when it was
-    // taken from there, not when it was queued.
-    if (row.status === "queued" && Date.now() - row.updatedAt.getTime() < TASK_START_GRACE_MS) continue;
     // Taken from our queue, and the runner's journal doesn't have it: the start never reached it (the server
-    // stopped in between). Back in the queue with all it was asked, once, however many hellos say so.
-    const claimedAt = row.status === "queued" ? row.startRequest?.claimedAt : undefined;
-    if (typeof claimedAt === "string") {
-      await deps.db
-        .update(machineTasks)
-        .set({ startRequest: sql`${machineTasks.startRequest} - 'claimedAt'`, updatedAt: new Date() })
-        .where(
-          and(
-            eq(machineTasks.id, row.id),
-            eq(machineTasks.status, "queued"),
-            isNull(machineTasks.endedAt),
-            sql`${machineTasks.startRequest}->>'claimedAt' = ${claimedAt}`,
-          ),
-        );
+    // stopped in between). Back in the queue with all it was asked.
+    const claimedAt = claimedAtOf(row);
+    // Being started right now (its `task.start` may still be on the way). One from our queue began when it was
+    // taken from there, not when it was queued. A server back within that time says hello within it too: one taken
+    // from the queue is looked at again once its start can't still be underway (`checkCutTaskStart`).
+    const age = Date.now() - row.updatedAt.getTime();
+    if (row.status === "queued" && age < TASK_START_GRACE_MS) {
+      if (claimedAt) await enqueueStartCheck(deps.db, row, TASK_START_GRACE_MS - age, claimedAt);
+      continue;
+    }
+    if (claimedAt) {
+      await unclaimTask(deps.db, row.id, claimedAt);
       continue;
     }
     await settleInterruptedTask(deps, row);
@@ -1307,7 +1323,9 @@ async function markRunning(deps: TaskDeps, row: MachineTaskRow, there: RunnerTas
  * on the computer says (`task.status`, answered by the process that runs the agent's tasks there): running
  * there is running here; ended there, its `task.done` is on its way; not there, it never started, and it is
  * settled like a task that went away (Claude Code starts with what it was asked, others wake the agent). Its
- * computer away: its next hello asks for this check again.
+ * computer away: its next hello asks for this check again. `claimedAt`: a task taken from our queue at that time
+ * whose start the server may never have sent (a hello came while it could still be underway); not there, it goes
+ * back in the queue with all it was asked.
  */
 export async function checkCutTaskStart(
   deps: TaskDeps & {
@@ -1316,9 +1334,10 @@ export async function checkCutTaskStart(
     startQueued?: (machineId: string) => Promise<unknown>;
   },
   taskId: string,
+  claimedAt?: string,
 ) {
   const row = await getTask(deps.db, taskId);
-  if (!row || !isCutStart(row)) return;
+  if (!row || (claimedAt ? claimedAtOf(row) !== claimedAt : !isCutStart(row))) return;
   const [agent] = await deps.db
     .select({ handle: schema.agents.handle })
     .from(schema.agents)
@@ -1338,6 +1357,10 @@ export async function checkCutTaskStart(
   const there = reply.tasks.find((t) => t.taskId === row.id);
   if (there?.status === "running") return markRunning(deps, row, there);
   if (there) return;
+  if (claimedAt) {
+    if (await unclaimTask(deps.db, row.id, claimedAt)) await deps.startQueued?.(row.machineId);
+    return;
+  }
   await settleInterruptedTask(deps, row);
 }
 
