@@ -3308,7 +3308,6 @@ export const featureKeysPtBR = {
     pickRoles: "Cargos",
     pickPeople: "Pessoas",
     pickNone: "Escolha pelo menos um.",
-    saved: "Salvo",
     choice: {
       account: "Conta",
       model: "Modelo",
@@ -3321,7 +3320,6 @@ export const featureKeysPtBR = {
       key: "Chave de API",
       keyDefault: "padrão do workspace",
       api: "API",
-      connect: "Conectar uma IA",
     },
     missionAi: "IA",
     missionLocked: "Quem faz o trabalho é escolhido antes de Iniciar. O modelo muda a qualquer hora.",

@@ -3464,7 +3464,6 @@ export const featureKeysEn = {
     pickRoles: "Roles",
     pickPeople: "People",
     pickNone: "Pick at least one.",
-    saved: "Saved",
     /** The "Quem pensa" choice: three fields, each opening its list. */
     choice: {
       account: "Account",
@@ -3479,8 +3478,6 @@ export const featureKeysEn = {
       key: "API key",
       keyDefault: "workspace default",
       api: "API",
-      /** The computer's own sign-in, as an option of the account list. */
-      connect: "Connect an AI",
     },
     /** A mission's AI, on its screen. */
     missionAi: "AI",
