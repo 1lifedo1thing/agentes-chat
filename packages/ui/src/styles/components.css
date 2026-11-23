@@ -5457,11 +5457,12 @@ html:not([data-pointer]) .ac-switch:focus-visible {
     pointer-events: none;
   }
 }
-/* `MorphRoom`: its inner box holds its parts' margins (what is measured is what it takes); empty, it takes no room. */
+/* `MorphRoom`: its inner box holds its parts' margins (what is measured is what it takes); empty, it takes no room once
+   its room has closed (`data-closing` while it glides shut). */
 .ac-morph__in {
   display: flow-root;
 }
-.ac-morph:has(> .ac-morph__in:empty) {
+.ac-morph:not([data-closing]):has(> .ac-morph__in:empty) {
   display: none;
 }
 @keyframes ac-dialog-out {

@@ -18,9 +18,21 @@ const CALM_MS = 120;
 /** The new content waits this long after the old one starts fading. */
 const FADE_IN_DELAY_MS = 70;
 
+/** A copy's canvases, each with the canvas it was copied from (`cloneNode` copies no pixels). */
+const paints = new WeakMap<HTMLElement, (readonly [HTMLCanvasElement, HTMLCanvasElement])[]>();
+
 const glides = new WeakMap<HTMLElement, { anim: Animation; from: number; to: number; ms: number }>();
 
 const animates = (el: Element) => typeof el.animate === "function";
+
+/** A CSS transition already resizing something inside (a fold opening): pinning the box's height would cut it short. */
+const sizedByCss = (el: Element) =>
+  typeof el.getAnimations === "function" &&
+  el
+    .getAnimations({ subtree: true })
+    .some((a) =>
+      /height|grid-template/.test((a as Animation & { transitionProperty?: string }).transitionProperty ?? ""),
+    );
 
 /**
  * Glides `el`'s height from `from` to its height now. One gliding already starts from where it is; one gliding to the
@@ -34,7 +46,7 @@ export function glideHeight(el: HTMLElement, from: number, ms: number = duration
     running.anim.cancel();
   }
   const to = el.getBoundingClientRect().height;
-  if (!animates(el) || prefersReducedMotion() || Math.abs(start - to) < 0.5) return to;
+  if (!animates(el) || prefersReducedMotion() || Math.abs(start - to) < 0.5 || sizedByCss(el)) return to;
   const frames = (a: number, b: number) => [
     { height: `${a}px`, overflow: "clip" },
     { height: `${b}px`, overflow: "clip" },
@@ -60,6 +72,14 @@ export function crossFade(el: HTMLElement, old: HTMLElement) {
   // Not drawn (hidden, or a test's DOM with no layout): nothing to see fade.
   const box = el.getBoundingClientRect();
   if (!animates(el) || box.width === 0) return;
+  // A copied canvas is blank: it takes its source's last frame (a card's sky), or the copy fades out with a hole.
+  for (const [from, to] of paints.get(old) ?? []) {
+    try {
+      to.getContext("2d")?.drawImage(from, 0, 0);
+    } catch {
+      // A source with nothing drawn yet or a lost context: the copy keeps a blank canvas.
+    }
+  }
   const calm = prefersReducedMotion();
   const blur = calm ? "none" : "blur(2px)";
   for (const child of Array.from(el.children))
@@ -130,10 +150,22 @@ export function useMorph(
 ) {
   const owner = useRef({}).current;
   const id = key ?? owner;
+  // Between draws its size also changes with no draw of its own (a fold's transition, a narrower column): watched, so
+  // the next draw glides from where it stands, never from a height it left long ago.
+  const watched = useRef<{ el: HTMLElement; watch: ResizeObserver } | null>(null);
   // No dependency list: the height is read after every draw.
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (watched.current?.el !== el && typeof ResizeObserver !== "undefined") {
+      watched.current?.watch.disconnect();
+      const watch = new ResizeObserver(() => {
+        const last = draws.get(id);
+        if (last?.owner === owner) last.height = el.getBoundingClientRect().height;
+      });
+      watch.observe(el);
+      watched.current = { el, watch };
+    }
     const last = draws.get(id);
     if (last?.copy && !live) crossFade(el, last.copy);
     const height = last ? glideHeight(el, last.height) : el.getBoundingClientRect().height;
@@ -141,6 +173,13 @@ export function useMorph(
     if (live) {
       copy = el.cloneNode(true) as HTMLElement;
       for (const ghost of Array.from(copy.querySelectorAll("[data-morph-ghost]"))) ghost.remove();
+      const drawn = Array.from(el.querySelectorAll("canvas")).filter((c) => !c.closest("[data-morph-ghost]"));
+      paints.set(
+        copy,
+        Array.from(copy.querySelectorAll("canvas"), (c, i) => [drawn[i], c] as const).filter(
+          (pair): pair is readonly [HTMLCanvasElement, HTMLCanvasElement] => pair[0] !== undefined,
+        ),
+      );
     }
     draws.set(id, { height, copy, owner });
   });
@@ -148,6 +187,8 @@ export function useMorph(
   useEffect(
     () => () => {
       if (draws.get(id)?.owner === owner) draws.delete(id);
+      watched.current?.watch.disconnect();
+      watched.current = null;
     },
     [id, owner],
   );
@@ -185,7 +226,14 @@ export function MorphRoom({
       if (Math.abs(now - last) < 0.5) return;
       const from = last;
       last = now;
+      // Emptied: it stays drawn (`data-closing`) until its room has closed, then takes no room again.
+      if (now < 0.5) el.setAttribute("data-closing", "");
       glideHeight(el, from, ms);
+      const glide = glides.get(el)?.anim;
+      if (!glide) return el.removeAttribute("data-closing");
+      const open = () => el.removeAttribute("data-closing");
+      glide.addEventListener("finish", open);
+      glide.addEventListener("cancel", open);
     });
     watch.observe(inner);
     return () => watch.disconnect();
