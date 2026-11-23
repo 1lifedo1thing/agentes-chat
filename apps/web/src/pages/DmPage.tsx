@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { AudienceChip } from "@/components/AgentAudience";
 import { AgentAvatar } from "@/components/AgentAvatar";
-import { AgentSetupIntro, useSetupSteps } from "@/components/AgentSetup";
+import { AgentSetupIntro, useSetupSettled, useSetupSteps } from "@/components/AgentSetup";
 import { useAgentPanelShown, useOpenAgentPanel } from "@/components/agent-panel-context";
 import { ModelPickerButton } from "@/components/ai/ModelPicker";
 import { DmMoreMenu } from "@/components/ConversationMenu";
@@ -55,6 +55,7 @@ export function DmPage({ target, focusMessageId }: { target: DmTarget; focusMess
   const rightHand = isRightHand(agent);
   // A new agent's setup checklist (ADR 0155 §2) for whoever sets it up: its greeting and the checklist on top.
   const setup = useSetupSteps(agent).length > 0;
+  const setupSettled = useSetupSettled(agent);
   // Its DM is open, from its row or any other way in: its row's "Novo" goes.
   useEffect(() => {
     if (rightHand) rightHandSeen.mark(rightHandSeenKey(me.user.id, org.id));
@@ -173,7 +174,7 @@ export function DmPage({ target, focusMessageId }: { target: DmTarget; focusMess
               intro: <RightHandIntro agent={agent} channelId={dm.data.channelId} />,
             }
           : setup && agent
-            ? { intro: <AgentSetupIntro agent={agent} /> }
+            ? { intro: <AgentSetupIntro agent={agent} />, introPending: !setupSettled }
             : {}),
         dmAgentId: agent?.id,
         dmPersonId: person?.userId,

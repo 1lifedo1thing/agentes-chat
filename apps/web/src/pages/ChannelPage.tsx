@@ -516,6 +516,8 @@ export interface ChannelChrome {
    * and first cards, ADR 0137, which say it themselves).
    */
   intro?: ReactNode;
+  /** What the intro draws from is still loading: the conversation waits as its skeleton, then shows whole with it. */
+  introPending?: boolean;
   /** The composer's label and placeholder ("Responder na thread"). */
   composerLabel?: string;
   /** In place of the composer (an archived thread's read-only note). */
@@ -857,6 +859,8 @@ function ChannelView({
   // A thread whose replies are still loading: only their skeleton shows, never the root the channel holds above it,
   // which the replies would push out of view. It opens on them, at its end, in one paint.
   const repliesPending = Boolean(thread && messages.isPlaceholderData && thread.replyCount > 0);
+  // An agent's DM whose setup checklist still reads its data: shown with the messages once it can draw as it stays.
+  const introPending = Boolean(!thread && chrome?.introPending);
   // The channel's threads: closed lines, context marks, markers (not in a thread view or while adjusting).
   const listsThreads = readable && !thread;
   const openThreads = useChannelThreads(org.id, channel.id, "all", listsThreads);
@@ -2806,8 +2810,8 @@ function ChannelView({
                             {/* Pushes short channels down, next to the composer. */}
                             <div className="channel__spacer" aria-hidden="true" />
                             {chrome?.top}
-                            {chrome?.intro}
-                            {messages.isLoading && <LoadingConversation />}
+                            {!introPending && chrome?.intro}
+                            {(messages.isLoading || introPending) && <LoadingConversation />}
                             {messages.isError && !messages.data && (
                               <ErrorState error={messages.error} onRetry={() => void messages.refetch()} />
                             )}
@@ -2876,7 +2880,7 @@ function ChannelView({
                             ) : (
                               <>
                                 <Timeline
-                                  items={repliesPending ? NO_ROWS : timeline}
+                                  items={repliesPending || introPending ? NO_ROWS : timeline}
                                   ready={serverRead}
                                   slots={gap ? NO_SLOTS : slots}
                                   runKeys={runKeys.current}
@@ -3249,6 +3253,7 @@ function ChannelView({
                         channel={channel}
                         people={channelPeople}
                         agents={channelAgents}
+                        pending={!members.data || dir.loading}
                         {...(addsMembers ? { onAdd: addMembers } : {})}
                       />
                     )

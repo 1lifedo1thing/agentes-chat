@@ -15,6 +15,7 @@ import type {
   OrgDeletion,
   OrgStanding,
 } from "../api/types";
+import { isCardKind } from "../lib/artifacts";
 import { pacer } from "../lib/pace";
 import { isWorkspaceMode } from "../lib/workspace-mode";
 
@@ -401,7 +402,7 @@ function prefetchCard(
   orgId: string,
   a: { id: string; kind: string; version: number },
 ) {
-  if (a.kind !== "poll" && a.kind !== "choices" && a.kind !== "block") return;
+  if (!isCardKind(a.kind)) return;
   void qc.prefetchQuery({
     queryKey: keys.artifact(orgId, a.id, a.version),
     queryFn: () => api.artifacts.get(orgId, a.id, a.version),
