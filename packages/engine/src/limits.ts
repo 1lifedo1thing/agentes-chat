@@ -5,7 +5,7 @@ import { ConflictError } from "./errors";
 import { formatBytes } from "./format";
 import type { Judge } from "./judge";
 import { recordOperatorEvent } from "./operator-events";
-import { can, requirePermission } from "./organizations";
+import { can, lockOrgMembers, requirePermission } from "./organizations";
 import { RouterSkip, type RouterStrategy } from "./router";
 import { storedBytes, usesOwnBucket } from "./storage";
 import { monthStartUtc } from "./usage";
@@ -110,6 +110,8 @@ export async function setOrgLimits(
   const nanoUsd = nanoOf(limits.platformUsdPerMonth);
   const connectorNano = nanoOf(limits.connectorUsdPerMonth);
   const row = await db.transaction(async (tx) => {
+    // The lock a join takes: a member joining meanwhile is either among those synced here or reads the new payer.
+    await lockOrgMembers(tx, orgId);
     const [before] = await tx
       .select({ payer: organizations.payerUserId })
       .from(organizations)

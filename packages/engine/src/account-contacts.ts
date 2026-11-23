@@ -28,13 +28,13 @@ export function enableAccountContacts(publicUrl: string, email: Pick<EmailSender
  * Job `account.contact`: the account's address goes to the email provider's contacts as it is when the job runs.
  * Called where an account is created, changes language, is blocked or let back, is being deleted or restored, joins
  * or leaves a workspace, or goes for good (before its row is deleted: the job keeps its address). No key: each change
- * syncs once more.
+ * syncs once more. `left`: the address it just left, which loses what an account's contact holds.
  */
-export async function enqueueAccountContact(db: Executor, userId: string) {
+export async function enqueueAccountContact(db: Executor, userId: string, left?: string) {
   if (!enabled) return;
   const [row] = await db.select({ email: users.email }).from(users).where(eq(users.id, userId));
   if (!row) return;
-  await enqueue(db, { orgId: null, kind: ACCOUNT_CONTACT_JOB, payload: { userId, email: row.email } });
+  await enqueue(db, { orgId: null, kind: ACCOUNT_CONTACT_JOB, payload: { userId, email: left ?? row.email } });
 }
 
 /**
@@ -83,8 +83,9 @@ export async function enqueueAccountContacts(db: Database): Promise<number> {
 /**
  * Saves the account as a contact in the email provider (MillionSend) with `account_created_at`, `plan` ("paid" while
  * it is a member of a paying workspace, else removed) and, when set, `locale` (left alone when null, so the waiting
- * list's stays). A blocked account, one being deleted or one gone loses `account_created_at` and `plan`; the contact
- * itself stays, keeping its unsubscribe state. A provider without contacts: nothing.
+ * list's stays). A blocked account, one being deleted or one gone loses `account_created_at` and `plan`, and so does an
+ * address the account left (`payload.email`) that no account has now; the contact itself stays, keeping its
+ * unsubscribe state. A provider without contacts: nothing.
  */
 export async function saveAccountContact(
   db: Database,
@@ -93,6 +94,11 @@ export async function saveAccountContact(
 ): Promise<void> {
   if (!email.saveContact) return;
   const [row] = await db.select().from(users).where(eq(users.id, payload.userId));
+  const gone = { account_created_at: null, plan: null };
+  if (row && row.email !== payload.email) {
+    const [other] = await db.select({ id: users.id }).from(users).where(eq(users.email, payload.email)).limit(1);
+    if (!other) await email.saveContact({ email: payload.email, properties: gone }).catch(rethrowEmailError);
+  }
   const paying = row
     ? await db
         .select({ orgId: organizationMembers.orgId })
@@ -103,7 +109,7 @@ export async function saveAccountContact(
     : [];
   const contact =
     !row || row.blockedAt || row.deletionDueAt
-      ? { email: row?.email ?? payload.email, properties: { account_created_at: null, plan: null } }
+      ? { email: row?.email ?? payload.email, properties: gone }
       : {
           email: row.email,
           properties: {

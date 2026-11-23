@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createFakeEmailSender } from "@agenteschat/adapters";
-import { eq, schema } from "@agenteschat/db";
+import { eq, like, schema } from "@agenteschat/db";
 import {
   ACCOUNT_CONTACT_JOB,
   deleteAccount,
   enableAccountContacts,
   enqueueAccountContact,
   enqueueAccountContacts,
+  finishEmailChange,
   joinOrganization,
   purgeWorkspace,
   removeMember,
@@ -16,6 +17,7 @@ import {
   setMyLocale,
   setOrgLimits,
   setUserBlocked,
+  undoEmailChange,
 } from "../src";
 import { addMember, addUser, type Fixture, setup } from "./fixtures";
 
@@ -158,5 +160,33 @@ describe("account contacts", () => {
       .where(eq(schema.organizations.id, f.org.id));
     expect(await purgeWorkspace({ db: f.db, pubsub: f.pubsub }, f.org.id)).toBe(true);
     expect(await planOf()).toEqual({ [f.owner.email]: null, [bia.email]: null });
+  });
+
+  test("a new address carries the contact over: the one it left loses it, and gets it back with “This wasn't me”", async () => {
+    f = await setup();
+    enableAccountContacts(CLOUD, contacts);
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    await setOrgLimits(f.db, f.org.id, { ...NO_LIMITS, payerUserId: f.owner.id });
+    await sync();
+    const before = bia.email;
+    const after = "bia.new@example.com";
+    await f.db.insert(schema.verifications).values({
+      id: "asked-bia",
+      identifier: `email-change:${bia.id}`,
+      value: JSON.stringify({ from: before, to: after, proven: true }),
+      expiresAt: new Date(Date.now() + 3_600_000),
+    });
+    await f.db.update(schema.users).set({ email: after }).where(eq(schema.users.id, bia.id));
+    expect(await finishEmailChange({ db: f.db, publicUrl: CLOUD }, { id: bia.id, email: after })).toBe(true);
+    const planOf = async () => Object.fromEntries((await sync()).map((c) => [c.email, c.properties.plan]));
+    expect(await planOf()).toEqual({ [before]: null, [after]: "paid" });
+
+    const [notice] = await f.db
+      .select()
+      .from(schema.outbox)
+      .where(like(schema.outbox.dedupeKey, "email:email-changed:%"));
+    const url = (notice?.payload as { template?: { url: string } } | undefined)?.template?.url ?? CLOUD;
+    await undoEmailChange(f.db, new URL(url).searchParams.get("token") ?? "");
+    expect(await planOf()).toEqual({ [after]: null, [before]: "paid" });
   });
 });

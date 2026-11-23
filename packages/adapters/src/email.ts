@@ -122,7 +122,7 @@ export function createMillionSendSender(options: {
     },
     /**
      * `POST /contacts`; an existing contact (409) gets its properties merged with `PATCH /contacts/{email}`. A null
-     * goes only by `PATCH`, where it removes the key; a contact it doesn't find (404) has nothing to remove.
+     * goes only by `PATCH`, where it removes the key; a contact it doesn't find (404) is created with the rest.
      */
     async saveContact(contact) {
       const call = async (method: string, path: string, body: unknown) => {
