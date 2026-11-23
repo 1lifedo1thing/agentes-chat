@@ -67,7 +67,7 @@ export function FeedbackOfferRow({ message: m }: { message: Message }) {
             )}
           </Text>
           {under ? (
-            <Text variant="caption" tone="faint" style={styles.detail}>
+            <Text variant="footnote" tone="faint" style={styles.detail}>
               {under}
             </Text>
           ) : null}
@@ -77,7 +77,7 @@ export function FeedbackOfferRow({ message: m }: { message: Message }) {
             <Text variant="small" tone="ink2">
               {offer.text}
             </Text>
-            <Text variant="caption" tone="faint" style={styles.detail}>
+            <Text variant="footnote" tone="faint" style={styles.detail}>
               {t("feedback.offer.answer")}
             </Text>
           </View>

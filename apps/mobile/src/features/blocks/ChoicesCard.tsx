@@ -88,7 +88,7 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
               ) : null}
               <View style={styles.picked}>
                 <Letter letter={s.letter} on />
-                <Text variant="body" style={[styles.flex, styles.bold, styles.said]}>
+                <Text variant="cardTitle" style={[styles.flex, styles.said]}>
                   {s.label}
                 </Text>
               </View>
@@ -148,7 +148,7 @@ export function ChoicesCard({ id, version }: { id: string; version?: number }) {
           <IconButton icon="x" label={t("mobile.choices.close")} onPress={() => setClosed(true)} />
         </View>
       </View>
-      <Text variant="body" style={styles.question}>
+      <Text variant="subhead" style={styles.question}>
         {q.question}
       </Text>
       {/* Not `Locked`: it closes the keyboard, and in a conversation that's the composer's. */}

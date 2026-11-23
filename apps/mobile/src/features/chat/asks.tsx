@@ -576,7 +576,7 @@ export function AskCard({
             {headless ? null : (
               <View style={styles.head}>
                 <Icon name={ASK_ICON[kind]} size={13} color={c.muted} />
-                <Text variant="footnote" tone="muted" numberOfLines={1} style={[styles.medium, styles.grow]}>
+                <Text variant="cardKind" numberOfLines={1} style={styles.grow}>
                   {kindNote ? `${kindWords} · ${kindNote}` : kindWords}
                 </Text>
                 {waitsFor && waitsFor !== "you" && !ended ? (
@@ -587,7 +587,7 @@ export function AskCard({
               </View>
             )}
             {lead ? (
-              <Text variant={well ? "body" : "title"} tone="ink" style={well ? styles.lead : undefined}>
+              <Text variant={well ? "small" : "cardTitle"} tone="ink">
                 <Spans inline={parseInline(lead)} />
               </Text>
             ) : null}
@@ -696,11 +696,7 @@ export function AskNote({
   const part = useBubblePart();
   const cardCorners = useMessageCardCorners();
   const entering = useEntrance(CARD_IN);
-  const heading = (
-    <Text variant="body" tone="ink" style={styles.semibold}>
-      {title}
-    </Text>
-  );
+  const heading = <Text variant="cardTitle">{title}</Text>;
   return (
     <View style={ownTop}>
       <Animated.View entering={entering} style={[styles.card, surface, cardCorners]}>
@@ -1094,12 +1090,10 @@ const styles = StyleSheet.create({
   sky: { position: "absolute", top: 0, left: 0, right: 0, height: 56, opacity: 0.5 },
   head: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 18 },
   semibold: { fontWeight: "600" },
-  medium: { fontWeight: "500" },
   grow: { flex: 1, minWidth: 0 },
   shrink: { flexShrink: 1 },
   // Who it waits for never takes the kind's room: at most half the line (long words left the kind none).
   waits: { flexShrink: 1, maxWidth: "50%" },
-  lead: { lineHeight: 22 },
   // Edge to edge across the card (its sides, `MESSAGE_CARD_X`), a hairline above.
   edge: {
     marginHorizontal: -MESSAGE_CARD_X,

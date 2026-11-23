@@ -164,7 +164,7 @@ import {
   rowFrame,
   workStepsOf,
 } from "./logic";
-import { liftedEdge, lookRows, RowPartContext, useRhythm, useRowLook } from "./look";
+import { liftedEdge, lookRows, plateInset, RowPartContext, useRhythm, useRowLook } from "./look";
 import { MessageText } from "./MessageText";
 import { aboveInset, QuoteAbove, QuotePlate } from "./QuoteLine";
 import { ReachLines } from "./ReachLines";
@@ -965,7 +965,7 @@ function RowBody({
   return (
     <>
       {quoteAlone && m.author.id ? (
-        <View style={[styles.consultAlone, { paddingLeft: aboveInset(look), marginTop: rhythm.turn }]}>
+        <View style={[plateInset(look, aboveInset(look)), { marginTop: rhythm.turn }]}>
           <ConsultQuote askerId={m.author.id} channelId={m.channelId} items={paired} alone />
         </View>
       ) : null}
@@ -1658,7 +1658,6 @@ const styles = StyleSheet.create({
   ownBox: { overflow: "hidden" },
   aboutAbove: { paddingRight: 16 },
   // A quote of the agents' talk with no words to sit in: on the words' column, as wide as a bubble's.
-  consultAlone: { paddingRight: 48 },
   avslot: { width: MSG_AVATAR, alignItems: "center", paddingTop: 2 },
   body: { flex: 1, minWidth: 0 },
   // A long pick wraps: the check stays on its first line.

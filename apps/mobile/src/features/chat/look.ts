@@ -36,6 +36,7 @@ import {
   COMPACT_GAP,
   MSG_INSET,
   quietInset,
+  rowBodyInset,
 } from "./logic";
 import { wallpaperKey } from "./wallpaper-logic";
 
@@ -190,6 +191,17 @@ export function useMessageCardFrame(): { style: StyleProp<ViewStyle>; fill: stri
           },
     [part, cardCorners, colors.raised, colors.line2],
   );
+}
+
+/**
+ * Where a plate standing on its own among the rows starts and ends (the agents' talk quoted with no reply here): in a
+ * conversation of bubbles on the bubbles' own column, as wide as one, so it never stands a step in from them and past
+ * their end; in the other looks at `start` (the words' column), with the room a bubble leaves at the end.
+ */
+export function plateInset(look: RowLook, start: number): { paddingLeft: number; paddingRight: number } {
+  if (look.style !== "bubbles") return { paddingLeft: start, paddingRight: 48 };
+  const body = rowBodyInset(look);
+  return { paddingLeft: body.left, paddingRight: body.right };
 }
 
 /** `quietInset` in this conversation's look. */

@@ -872,7 +872,7 @@ export function QuestionCard({ question, asker }: { question: AgentQuestion; ask
                     style={[styles.optBox, { backgroundColor: on ? c.ink : c.sunken }]}
                     contentStyle={styles.opt}
                   >
-                    <Text variant="callout" style={[styles.optText, { color: on ? c.bg : c.ink }]}>
+                    <Text variant="subhead" style={[styles.optText, { color: on ? c.bg : c.ink }]}>
                       {choice}
                     </Text>
                   </PressScale>
@@ -886,7 +886,7 @@ export function QuestionCard({ question, asker }: { question: AgentQuestion; ask
                 style={[styles.optBox, styles.other, { borderColor: c.line2 }]}
                 contentStyle={styles.opt}
               >
-                <Text variant="callout" tone="muted">
+                <Text variant="subhead" tone="muted" style={styles.optText}>
                   {t("ask.otherAnswer")}
                 </Text>
               </PressScale>
@@ -1142,7 +1142,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  optText: { flexShrink: 1 },
+  // An option's word, as every card's options: the card's text (15), medium.
+  optText: { flexShrink: 1, fontWeight: "500" },
   other: { backgroundColor: "transparent", borderWidth: 1 },
   tlinkBox: { alignSelf: "flex-start", maxWidth: "100%", borderRadius: 10 },
   tlink: {

@@ -188,11 +188,9 @@ function WeekCard({ message, card }: { message: Message; card: TeamWeekCard }) {
     <View>
       <View style={[styles.card, frame.style, cardTop]}>
         <View style={styles.head}>
-          <Text variant="footnote" tone="muted" style={styles.semibold}>
-            {t(teamWeekTitleKey(card))}
-          </Text>
+          <Text variant="cardKind">{t(teamWeekTitleKey(card))}</Text>
           {suggested.length > 0 && !dismissed ? (
-            <Text variant="caption" style={[styles.semibold, { color: c.amber }]}>
+            <Text variant="footnote" style={[styles.semibold, { color: c.amber }]}>
               {t("teamWeek.suggestions", { count: suggested.length })}
             </Text>
           ) : null}
@@ -208,9 +206,7 @@ function WeekCard({ message, card }: { message: Message; card: TeamWeekCard }) {
         </View>
         {card.worked.length > 0 ? (
           <View style={styles.section}>
-            <Text variant="caption" tone="muted" style={styles.semibold}>
-              {t("teamWeek.worked")}
-            </Text>
+            <Text variant="cardKind">{t("teamWeek.worked")}</Text>
             {card.worked.map((w) => (
               <View key={`${w.kind}:${w.agentId}`} style={styles.line}>
                 <LineIcon name="check" size={13} color={c.ok} variant="footnote" />
@@ -233,9 +229,7 @@ function WeekCard({ message, card }: { message: Message; card: TeamWeekCard }) {
           </Text>
         ) : rows.length > 0 ? (
           <View style={styles.section}>
-            <Text variant="caption" tone="muted" style={styles.semibold}>
-              {t(card.period === "day" ? "teamWeek.needsYou" : "teamWeek.improve")}
-            </Text>
+            <Text variant="cardKind">{t(card.period === "day" ? "teamWeek.needsYou" : "teamWeek.improve")}</Text>
             {places.map((row, i) => {
               const text = teamWeekRowText(t, locale, row, names);
               return (

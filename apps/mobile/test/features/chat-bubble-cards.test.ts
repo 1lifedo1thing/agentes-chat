@@ -72,6 +72,40 @@ test("one frame for every card in a message: the bubble's fill with no outline i
   expect(src("features/chat/ToolCalls.tsx")).toContain("const ROW_PAD = 10;");
 });
 
+test("one hierarchy for the words of every card in a message", () => {
+  const text = src("ui/Text.tsx");
+  // A step under the message's words (17): the title 15 semibold, what it is 13 semibold over it.
+  expect(text).toContain('cardTitle: ["subhead", weights.semibold],');
+  expect(text).toContain('cardKind: ["footnote", weights.semibold],');
+  const titled = [
+    "features/chat/WorkLine.tsx",
+    "features/chat/asks.tsx",
+    "features/chat/issue-work.tsx",
+    "features/missions/cards.tsx",
+    "features/files/MessageFiles.tsx",
+    "features/blocks/ChoicesCard.tsx",
+  ];
+  for (const file of titled) expect([file, src(file).includes('variant="cardTitle"')]).toEqual([file, true]);
+  // Never the message's own size for a card's title, nor a caption for what it is.
+  for (const file of [
+    "features/missions/cards.tsx",
+    "features/files/MessageFiles.tsx",
+    "features/chat/issue-work.tsx",
+  ]) {
+    const card = src(file);
+    expect([file, /<Text variant="(body|callout)"/.test(card)]).toEqual([file, false]);
+    expect([file, card.includes('variant="caption" tone="muted" style={styles.bold}')]).toEqual([file, false]);
+  }
+  // Handed work: its title and its state on the same two steps as the agents' talk quoted in a reply.
+  const work = src("features/chat/WorkLine.tsx");
+  expect(work).toContain('{markOf("footnote", HANDED_MARK)}');
+  const quote = src("features/chat/ConsultGroup.tsx");
+  expect(quote).toContain('<Text variant="small" numberOfLines={1} style={[quote.name, { color: ink }]}>');
+  // "Show more" is an action said as a word, in a bubble as under a folded text.
+  for (const file of ["features/chat/ClippedMessage.tsx", "features/chat/FoldedBody.tsx"])
+    expect([file, src(file).includes('<Text variant="label" tone="ink2"')]).toEqual([file, true]);
+});
+
 test("a message that is only a request is a bubble of its own: its name at the top, its time at the end", () => {
   const row = src("features/chat/MessageRow.tsx");
   expect(row).toContain("[approvalId, question, secret].filter(Boolean).length === 1;");

@@ -102,7 +102,7 @@ function Row({ entry: e, channelId, authorId }: { entry: ReachEntry; channelId: 
             )}
           </Text>
           {detail ? (
-            <Text variant="caption" tone="faint" numberOfLines={1} style={styles.detail}>
+            <Text variant="footnote" tone="faint" numberOfLines={1} style={styles.detail}>
               {detail}
             </Text>
           ) : null}

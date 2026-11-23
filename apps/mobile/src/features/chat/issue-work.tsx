@@ -45,16 +45,16 @@ export function IssueWorkCard({ work, authorId }: { work: IssueWorkRef; authorId
       <View style={styles.head}>
         {/* The icon alone: no tile inside the card. */}
         <Icon name="issue" size={15} color={c.ink2} />
-        <Text variant="small" tone="muted" style={styles.grow} numberOfLines={1}>
+        <Text variant="cardKind" style={styles.grow} numberOfLines={1}>
           {asker ? t("chat.issueWork.askedBy", { name: asker }) : t("chat.issueWork.asked")} #{work.number}
         </Text>
         {current ? <StateChip issue={current} /> : null}
       </View>
-      <Text variant="callout" tone="ink" style={styles.title} numberOfLines={3}>
+      <Text variant="cardTitle" numberOfLines={3}>
         {current?.title ?? work.title}
       </Text>
       <View style={styles.foot}>
-        <Text variant="small" tone="ink2" style={styles.bold}>
+        <Text variant="label" tone="ink2">
           {t("chat.issueWork.view")}
         </Text>
         <Disclosure />
@@ -159,7 +159,6 @@ const styles = StyleSheet.create({
   card: { paddingVertical: 14, paddingHorizontal: MESSAGE_CARD_X, gap: 8 },
   head: { flexDirection: "row", alignItems: "center", gap: 8 },
   grow: { flex: 1, flexShrink: 1 },
-  title: { fontWeight: "600" },
   foot: { flexDirection: "row", alignItems: "center", gap: 4 },
   bold: { fontWeight: "600" },
   // An event pill at the messages' words, left aligned; the list sets its top.

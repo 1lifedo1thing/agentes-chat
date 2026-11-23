@@ -457,7 +457,7 @@ function LocalFileCard({ file, sending }: { file: LocalFile; sending: boolean })
         <FileTile ext={extLabel(extensionOf(file.name))} />
       )}
       <View style={styles.grow}>
-        <Text variant="body" style={styles.bold} numberOfLines={2}>
+        <Text variant="cardTitle" numberOfLines={2}>
           {file.name}
         </Text>
         {file.size !== undefined ? (
@@ -516,7 +516,7 @@ function RemovedCard() {
       <View style={[styles.tile, { backgroundColor: c.sunken }]}>
         <Icon name="file" size={20} color={c.faint} />
       </View>
-      <Text variant="body" tone="faint" style={styles.grow}>
+      <Text variant="small" tone="faint" style={styles.grow}>
         {t("mobile.chat.fileDeleted")}
       </Text>
     </View>
@@ -578,5 +578,4 @@ const styles = StyleSheet.create({
   },
   ext: { fontSize: 10, fontWeight: "700", letterSpacing: 0.4 },
   grow: { flex: 1, minWidth: 0 },
-  bold: { fontWeight: "600" },
 });

@@ -129,7 +129,7 @@ export function PollCard({ id, version }: { id: string; version?: number }) {
                     {mine ? <Icon name="check" size={13} color={c.raised} /> : null}
                   </View>
                 </View>
-                <Text variant="body" style={[styles.label, styles.bold]}>
+                <Text variant="subhead" style={[styles.label, styles.medium]}>
                   {o.label}
                 </Text>
                 {won ? (
@@ -194,6 +194,8 @@ const styles = StyleSheet.create({
   sky: { position: "absolute", top: 0, left: 0, right: 0, height: 8, opacity: 0.7 },
   head: { gap: 1, paddingHorizontal: 14, paddingTop: 12 },
   bold: { fontWeight: "600" },
+  // An option's word, as every card's options: the card's text (15), medium.
+  medium: { fontWeight: "500" },
   options: { gap: 6, padding: 14, paddingTop: 10 },
   // The option's plate (its border, corners and the share's fill cut to them) around the press area.
   option: { overflow: "hidden", borderWidth: 1, borderRadius: 12, borderBottomLeftRadius: 4 },

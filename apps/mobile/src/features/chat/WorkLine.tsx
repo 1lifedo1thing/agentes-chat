@@ -190,7 +190,7 @@ function Line({
     ) : (
       view.text
     );
-  const markOf = (variant: "small" | "caption", size: number) =>
+  const markOf = (variant: "small" | "footnote" | "caption", size: number) =>
     view.tone === "working" ? (
       <LineIcon variant={variant} size={size} mark>
         <PixelOrbit color="sky" size={size - 2} />
@@ -234,12 +234,12 @@ function Line({
             mode={h.tone === "working" ? "think" : "idle"}
           />
           <View style={styles.handedWords}>
-            <Text variant="body" tone="ink" numberOfLines={1} style={styles.bold}>
+            <Text variant="cardTitle" numberOfLines={1}>
               {t("mobile.chat.handedTo", { name: g.name, context: g.context })}
             </Text>
             <View style={styles.handedState}>
-              {markOf("caption", HANDED_MARK)}
-              <Text variant="caption" numberOfLines={1} style={[styles.bold, styles.shrink, { color: tone }]}>
+              {markOf("footnote", HANDED_MARK)}
+              <Text variant="footnote" numberOfLines={1} style={[styles.bold, styles.shrink, { color: tone }]}>
                 {state}
               </Text>
             </View>
@@ -444,7 +444,7 @@ export function IssueWorkLine({ issue, style }: { issue: Issue; style?: StylePro
           below={
             progress ? (
               <View style={styles.plan}>
-                <Text variant="caption" tone="faint" style={styles.bold}>
+                <Text variant="cardKind">
                   {t("work.plan")} · {t("work.planProgress", progress)}
                 </Text>
                 {work.plan.map((p) => (
@@ -484,10 +484,8 @@ function HandedWork({ work, style }: { work: WorkView; style?: StyleProp<ViewSty
     const when = relativeTime(t, i18n.language, work.finishedAt ?? work.startedAt);
     return (
       <View style={[style, styles.done, surface]}>
-        <Text variant="small" tone="ink" style={styles.bold}>
-          {t("issues.work.finishedTitle", { name })}
-        </Text>
-        <Text variant="caption" tone="muted">
+        <Text variant="cardTitle">{t("issues.work.finishedTitle", { name })}</Text>
+        <Text variant="footnote" tone="muted">
           {by ? t("issues.work.finishedMeta", { when, name: by }) : when}
         </Text>
         {work.result ? (

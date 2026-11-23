@@ -90,9 +90,7 @@ export function MissionCardView({ mission: m, pinned = false }: { mission: Missi
     >
       <View style={styles.row}>
         <Icon name="target" size={15} color={c.muted} />
-        <Text variant="caption" tone="muted" style={styles.bold}>
-          {t("mobile.mission.kind")}
-        </Text>
+        <Text variant="cardKind">{t("mobile.mission.kind")}</Text>
         <View style={styles.grow} />
         {/* The chip shrinks only inside something that can: a long agent's name ran past the card's edge. */}
         <View style={styles.chip}>
@@ -112,17 +110,17 @@ export function MissionCardView({ mission: m, pinned = false }: { mission: Missi
           />
         </View>
       </View>
-      <Text variant="body" style={[styles.bold, pinned ? styles.titlePinned : styles.title]} numberOfLines={2}>
+      <Text variant="cardTitle" style={pinned ? styles.titlePinned : styles.title} numberOfLines={2}>
         {m.title}
       </Text>
       <PlanTrack color={color} items={missionTrack(m)} />
       <View style={[styles.row, styles.ft]}>
         <Count value={done} size={13} />
-        <Text variant="caption" tone="faint">
+        <Text variant="footnote" tone="faint">
           {t("mobile.mission.ofTotal", { total })}
         </Text>
         {waiting > 0 ? (
-          <Text variant="caption" tone="ink" style={styles.bold}>
+          <Text variant="footnote" tone="ink" style={styles.bold}>
             {" · "}
             {t("mobile.mission.waitingYou", { count: waiting })}
           </Text>
@@ -174,11 +172,9 @@ export function SetupFailedCard({
     <View style={[styles.askcard, surface, cardCorners, ownTop]}>
       <View style={styles.row}>
         <Icon name="code" size={15} color={c.muted} />
-        <Text variant="caption" tone="muted" style={styles.bold}>
-          {t("mobile.mission.setup.cap")}
-        </Text>
+        <Text variant="cardKind">{t("mobile.mission.setup.cap")}</Text>
       </View>
-      <Text variant="body" style={[styles.bold, styles.title]}>
+      <Text variant="cardTitle" style={styles.title}>
         {t(lost ? "mobile.mission.setup.lostTitle" : "mobile.mission.setup.failedTitle")}
       </Text>
       {lost ? (
@@ -290,11 +286,9 @@ export function ReviewCardView({ review: r, mission }: { review: MissionReview; 
     <View style={[styles.askcard, surface, cardCorners, ownTop]}>
       <View style={styles.row}>
         <Icon name="sparkle" size={15} color={c.muted} />
-        <Text variant="caption" tone="muted" style={styles.bold}>
-          {t("mobile.mission.review.ready")}
-        </Text>
+        <Text variant="cardKind">{t("mobile.mission.review.ready")}</Text>
       </View>
-      <Text variant="body" style={[styles.bold, styles.title]}>
+      <Text variant="cardTitle" style={styles.title}>
         {r.title}
       </Text>
       {r.summary ? (
@@ -415,11 +409,11 @@ export function DecisionCardView({ decision: d, mission }: { decision: MissionDe
     <View style={[styles.askcard, surface, cardCorners, ownTop]}>
       <View style={styles.row}>
         <Icon name="flag" size={15} color={c.muted} />
-        <Text variant="caption" tone="muted" style={styles.bold}>
+        <Text variant="cardKind">
           {taken ? t("mobile.mission.decision.decided") : t("mobile.mission.decision.title")}
         </Text>
       </View>
-      <Text variant="body" style={[styles.bold, styles.title]}>
+      <Text variant="cardTitle" style={styles.title}>
         {d.question}
       </Text>
       <View style={styles.opts}>
@@ -438,12 +432,12 @@ export function DecisionCardView({ decision: d, mission }: { decision: MissionDe
                 pressed && styles.pressed,
               ]}
             >
-              {on ? <LineIcon variant="body" name="check" size={16} color={c.bg} /> : null}
-              <Text variant="body" style={[styles.optText, { color: on ? c.bg : c.ink }]}>
+              {on ? <LineIcon variant="subhead" name="check" size={16} color={c.bg} /> : null}
+              <Text variant="subhead" style={[styles.optText, { color: on ? c.bg : c.ink }]}>
                 {o}
               </Text>
               {o === rec ? (
-                <LineIcon variant="body" size={16}>
+                <LineIcon variant="subhead" size={16}>
                   <Text variant="caption" style={{ color: on ? c.bg : c.faint, opacity: on ? 0.7 : 1 }}>
                     {t("mobile.mission.decision.recommended")}
                   </Text>
@@ -454,7 +448,7 @@ export function DecisionCardView({ decision: d, mission }: { decision: MissionDe
         })}
       </View>
       {d.why && !taken ? (
-        <Text variant="caption" tone="faint" style={styles.summary}>
+        <Text variant="footnote" tone="faint" style={styles.summary}>
           {d.why}
         </Text>
       ) : null}
@@ -504,7 +498,7 @@ export function PlanCard({ missionId, goal }: { missionId: string; goal: string 
     <View style={[investigated ? styles.inv : styles.askcard, surface, cardCorners, ownTop]}>
       <View style={styles.row}>
         <Icon name="target" size={15} color={c.muted} />
-        <Text variant="caption" tone="muted" style={[styles.bold, styles.shrink]}>
+        <Text variant="cardKind" style={styles.shrink}>
           {investigated
             ? t("missions.findings.proposed")
             : items.length > 0
@@ -512,15 +506,13 @@ export function PlanCard({ missionId, goal }: { missionId: string; goal: string 
               : t("mobile.mission.plan.title")}
         </Text>
       </View>
-      <Text variant="body" style={[styles.bold, styles.title]}>
+      <Text variant="cardTitle" style={styles.title}>
         {m.title || goal}
       </Text>
       {investigated ? <Findings findings={findings} /> : null}
       {investigated && items.length > 0 ? (
         <View style={[styles.plHead, { borderTopColor: c.line }]}>
-          <Text variant="caption" tone="faint" style={styles.bold}>
-            {t("missions.findings.plan", { count: items.length })}
-          </Text>
+          <Text variant="cardKind">{t("missions.findings.plan", { count: items.length })}</Text>
         </View>
       ) : null}
       {items.slice(0, 4).map((it, i) => (
@@ -536,7 +528,7 @@ export function PlanCard({ missionId, goal }: { missionId: string; goal: string 
         </View>
       ))}
       {items.length > 4 ? (
-        <Text variant="caption" tone="faint" style={styles.more}>
+        <Text variant="footnote" tone="faint" style={styles.more}>
           {t("mobile.mission.plan.more", { count: items.length - 4 })}
         </Text>
       ) : null}
@@ -607,7 +599,7 @@ export function PlanCard({ missionId, goal }: { missionId: string; goal: string 
         </View>
       ) : null}
       {m.canAct && investigated ? (
-        <Text variant="caption" tone="faint" style={styles.note}>
+        <Text variant="footnote" tone="faint" style={styles.note}>
           {t("missions.findings.note")}
         </Text>
       ) : null}

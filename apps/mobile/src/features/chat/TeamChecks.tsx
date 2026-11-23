@@ -75,7 +75,7 @@ function Row({ check, selfId }: { check: TeamCheck; selfId: string | null }) {
             )}
           </Text>
           {detail ? (
-            <Text variant="caption" tone="faint" style={styles.detail}>
+            <Text variant="footnote" tone="faint" style={styles.detail}>
               {detail}
             </Text>
           ) : null}
