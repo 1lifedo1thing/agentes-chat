@@ -182,7 +182,11 @@ export function useAiChoice(orgId: string, target: AiChoiceTarget): AiChoiceStat
           await api.agents.setBrain(orgId, target.agentId, aiChoiceBrainInput(choice, target.scope));
           return null;
         case "mission":
-          await setMission.mutateAsync({ brain: choice.brain, model: choice.model ?? null });
+          // After Start only the model changes: a brain sent again, even the same one, is refused then.
+          await setMission.mutateAsync({
+            ...(choice.brain !== current?.brain ? { brain: choice.brain } : {}),
+            model: choice.model ?? null,
+          });
           return null;
         case "agents":
           return api.agents.applySetup(orgId, {

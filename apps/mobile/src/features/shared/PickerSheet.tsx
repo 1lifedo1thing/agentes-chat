@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import {
+  GroupedHeader,
   GroupedList,
   GroupedRow,
   haptics,
@@ -42,6 +43,14 @@ export interface PickOption {
   destructive?: boolean | undefined;
   /** Its level in a tree (a folder picker): a guide line per level. Flat while the person searches. */
   depth?: number | undefined;
+  /** The header of the group it opens and the ones after it share (an AI account's "Suas", "Do time"). */
+  section?: string | undefined;
+  /** Listed but not pickable (an account it can't think with): faint, its `sub` saying why. */
+  disabled?: boolean | undefined;
+  /** A short fact on the right, faint ("88%"). */
+  value?: string | undefined;
+  /** More words the search finds it by, never shown (an account's maker: "Claude"). */
+  keywords?: string | undefined;
 }
 
 export interface PickAsk {
@@ -55,6 +64,8 @@ export interface PickAsk {
   search?: boolean | undefined;
   /** A switch under the options that changes what a pick does ("Para todos os agentes do workspace"), off at first. */
   toggle?: { label: string; onChange: (on: boolean) => void } | undefined;
+  /** The one in use lit and in semibold instead of a check (the AI choice's selects: no column of checks). */
+  lit?: boolean | undefined;
 }
 
 /** From this many options the list gets its search field (people, languages, times, zones). */
@@ -173,7 +184,8 @@ export function PickerHost() {
   const typed = query.trim();
   // Every typed word, accents and case aside, in the option's name or its line (as the app's other pickers search).
   const shown = useMemo(
-    () => (typed ? options.filter((o) => matchesWords(`${o.label} ${o.sub ?? ""}`, typed)) : options),
+    () =>
+      typed ? options.filter((o) => matchesWords(`${o.label} ${o.sub ?? ""} ${o.keywords ?? ""}`, typed)) : options,
     [options, typed],
   );
   const live = options.length <= LIVE_UP_TO;
@@ -239,36 +251,48 @@ export function PickerHost() {
           />
         </View>
       ) : ask ? (
-        <GroupedList>
-          {shown.map((o) => {
-            const picked = ask.value != null && o.key === ask.value;
-            const lead = o.leading;
-            return (
-              <GroupedRow
-                key={o.key}
-                label={o.label}
-                {...(typed ? { labelParts: markTerms(o.label, [typed]) } : {})}
-                {...(o.sub ? { sub: o.sub } : {})}
-                {...(o.subLines ? { subLines: o.subLines } : {})}
-                {...(o.depth && !typed ? { depth: o.depth, labelLines: 0 } : {})}
-                {...(lead?.kind === "icon" ? { icon: lead.name } : {})}
-                {...(lead?.kind === "person"
-                  ? { leading: <Face who={{ type: "person", id: lead.userId }} size={36} /> }
-                  : lead?.kind === "agent"
-                    ? { leading: <AgentFace agentId={lead.agentId} size={36} framed live={live} /> }
-                    : lead?.kind === "node"
-                      ? { leading: lead.node }
-                      : {})}
-                danger={Boolean(o.destructive)}
-                checked={picked}
-                onPress={() => {
-                  haptics.selection();
-                  finish(o.key);
-                }}
-              />
-            );
-          })}
-        </GroupedList>
+        sectionsOf(shown).map((group) => (
+          <View key={group.key} style={group.title ? styles.section : null}>
+            {group.title ? <GroupedHeader>{group.title}</GroupedHeader> : null}
+            <GroupedList>
+              {group.options.map((o) => {
+                const picked = ask.value != null && o.key === ask.value;
+                const lead = o.leading;
+                return (
+                  <GroupedRow
+                    key={o.key}
+                    label={o.label}
+                    {...(typed
+                      ? { labelParts: markTerms(o.label, [typed]) }
+                      : ask.lit && picked
+                        ? { labelParts: [{ text: o.label, mark: true }] }
+                        : {})}
+                    {...(o.sub ? { sub: o.sub } : {})}
+                    {...(o.subLines ? { subLines: o.subLines } : {})}
+                    {...(o.value ? { value: o.value } : {})}
+                    {...(o.depth && !typed ? { depth: o.depth, labelLines: 0 } : {})}
+                    {...(lead?.kind === "icon" ? { icon: lead.name } : {})}
+                    {...(lead?.kind === "person"
+                      ? { leading: <Face who={{ type: "person", id: lead.userId }} size={36} /> }
+                      : lead?.kind === "agent"
+                        ? { leading: <AgentFace agentId={lead.agentId} size={36} framed live={live} /> }
+                        : lead?.kind === "node"
+                          ? { leading: lead.node }
+                          : {})}
+                    danger={Boolean(o.destructive)}
+                    {...(ask.lit ? { selected: picked } : { checked: picked })}
+                    faint={Boolean(o.disabled)}
+                    disabled={Boolean(o.disabled)}
+                    onPress={() => {
+                      haptics.selection();
+                      finish(o.key);
+                    }}
+                  />
+                );
+              })}
+            </GroupedList>
+          </View>
+        ))
       ) : null}
       {ask?.toggle ? (
         <View style={styles.toggle}>
@@ -295,7 +319,19 @@ export function PickerHost() {
   );
 }
 
+/** Options in runs under their `section`'s header; one run with no header when none says one. */
+export function sectionsOf(options: readonly PickOption[]): { key: string; title?: string; options: PickOption[] }[] {
+  const out: { key: string; title?: string; options: PickOption[] }[] = [];
+  for (const o of options) {
+    const last = out.at(-1);
+    if (last && (o.section === undefined || o.section === last.title)) last.options.push(o);
+    else out.push({ key: o.section ?? o.key, ...(o.section ? { title: o.section } : {}), options: [o] });
+  }
+  return out;
+}
+
 const styles = StyleSheet.create({
+  section: { marginTop: 4 },
   note: { textAlign: "center", paddingHorizontal: 24, paddingBottom: 8 },
   search: { paddingHorizontal: SHEET_X, paddingBottom: 12 },
   empty: { textAlign: "center", paddingVertical: 24 },
