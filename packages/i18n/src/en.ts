@@ -6338,7 +6338,14 @@ export const en = {
           xhigh: "Extra high",
           max: "Maximum",
         },
-        effortsLower: { auto: "automatic", low: "low", medium: "medium", high: "high", xhigh: "extra high", max: "maximum" },
+        effortsLower: {
+          auto: "automatic",
+          low: "low",
+          medium: "medium",
+          high: "high",
+          xhigh: "extra high",
+          max: "maximum",
+        },
         effortText: {
           auto: "The Automatic model picks each task's effort. Pick a model to set the effort yourself.",
           low: "Answers fast. Good for simple questions.",
