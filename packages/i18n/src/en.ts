@@ -15854,6 +15854,10 @@ export const en = {
       pageOf: "{{page}} of {{count}}",
       pdfFailed: "This PDF can't be shown here. Download it to open it.",
       loadFailed: "This image can't be shown here.",
+      /** On the file's bar with its comments open: whether a press marks the file. */
+      mark: "Mark",
+      markOff: "Stop marking: a click moves the file again",
+      markOn: "Mark: a click comments on a point or an area",
       hint: {
         image: "Click to mark a point or drag to mark an area",
         video: "Click the video to comment at this moment, or drag to mark an area",
