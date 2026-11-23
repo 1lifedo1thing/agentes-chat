@@ -101,31 +101,42 @@ const everyAgent = (api: ReturnType<typeof createFakeApi>, connectionId: string)
   ]);
 
 describe("the connectors store: one page", () => {
-  test("three suggestions as features; a line per service with no tags; tabs by category and search", async () => {
+  test("six suggestions as features; a line per service with no tags; tabs by category and search", async () => {
     const { store } = await open();
     // Suggested first (not connected yet, in a fixed order); they leave the lines below.
-    expect([...store.querySelectorAll(".store-feat .store-open")].map((b) => b.textContent)).toEqual([
-      "GitHub",
-      "Banco de dados",
+    expect([...store.querySelectorAll(".store-feats .store-open")].map((b) => b.textContent)).toEqual([
+      "Sentry",
+      "Notion",
       "Linear",
+      "GitHub",
+      "Canva",
+      "Google Drive",
     ]);
     expect(names(store)).not.toContain("GitHub");
+    // A feature's mark in its brand's color (Linear's), on the brand's art.
+    const linear = [...store.querySelectorAll(".store-role")].find((r) => r.textContent?.includes("Linear"));
+    expect(linear?.querySelector(".connector-icon__mark")?.getAttribute("style")?.toLowerCase()).toContain("#5e6ad2");
+    expect(linear?.querySelector(".brand-art canvas")).not.toBeNull();
+    // A search lists every service as a line, the featured ones too.
+    await searchStore(store, "notion");
     const notion = line(store, "Notion");
     expect(notion.textContent).toContain("Páginas e bancos de dados.");
     // No tags on a line: no category, no "One click".
     expect(notion.querySelectorAll(".ac-chip")).toHaveLength(0);
     expect(notion.textContent).not.toContain("Um clique");
-    // One button each, its own Connect.
-    expect(within(notion).getByRole("button", { name: "Conectar Notion" }).textContent).toBe("Conectar");
-    // The brand icon is a mask of our own file; Notion takes the ink, Linear its color.
+    // No Connect of its own: the whole line opens the service's dialog, an arrow at its end.
+    expect(within(notion).queryByRole("button", { name: "Conectar Notion" })).toBeNull();
+    expect(within(notion).getByRole("button", { name: "Notion" })).toBeTruthy();
+    expect(notion.querySelector(".store-item__chev")).not.toBeNull();
+    // The brand icon is a mask of our own file; Notion takes the ink.
     expect(notion.querySelector(".connector-icon__mark")?.getAttribute("style")).toContain("/connectors/notion.svg");
-    const linear = store.querySelector(".store-role__mark .connector-icon__mark");
-    expect(linear?.getAttribute("style")?.toLowerCase()).toContain("#5e6ad2");
     // Canva's mark keeps its colors: drawn as it is, not as a mask. No icon (Slack here): a monogram.
+    await searchStore(store, "canva");
     expect(line(store, "Canva").querySelector("img")?.getAttribute("src")).toBe("/brands/canva.svg");
+    await searchStore(store, "slack");
     const slack = line(store, "Slack");
     expect(slack.querySelector(".connector-icon--mono")?.textContent).toBe("S");
-    // Not configured on this server: "Coming soon" with a lock instead of Connect, and its page can't connect.
+    // Not configured on this server: "Coming soon" with a lock, and its dialog can't connect.
     expect([slack.hasAttribute("data-soon"), slack.querySelector(".store-state")?.textContent]).toEqual([
       true,
       "Em breve",
@@ -180,6 +191,34 @@ describe("the connectors store: one page", () => {
     expect([mark?.includes("/connectors/whatsapp.svg"), mark?.includes("#25d366")]).toEqual([true, true]);
   });
 
+  test("under the features, the Data row shows Amplitude, Mixpanel and PostHog alone; See all opens the category", async () => {
+    const state = seedState({ connections: [] });
+    const api = createFakeApi(state);
+    const base = CATALOG.connectors.find((d) => d.id === "linear") as ConnectorDef;
+    const data = (id: string, label: string): ConnectorDef => ({
+      ...base,
+      id,
+      label,
+      category: "data",
+      description: `${label} data.`,
+      iconUrl: `/connectors/${id}.svg`,
+      brandColor: null,
+    });
+    const extra = [
+      data("himetrica", "Himetrica"),
+      data("posthog", "PostHog"),
+      data("mixpanel", "Mixpanel"),
+      data("amplitude", "Amplitude"),
+    ];
+    api.connectors.catalog = async () => ({ ...CATALOG, connectors: [...CATALOG.connectors, ...extra] });
+    const { store } = await open(state, api);
+    const row = within(store).getByRole("region", { name: "Dados" });
+    expect(names(row)).toEqual(["Amplitude", "Mixpanel", "PostHog"]);
+    await click(within(row).getByRole("button", { name: "Ver todos" }));
+    expect(tab(storeRoot(), "Dados").getAttribute("aria-pressed")).toBe("true");
+    expect(names(storeRoot())).toEqual(["Himetrica", "PostHog", "Mixpanel", "Amplitude"]);
+  });
+
   test("nothing found: one of our agents searching, with the way in by address", async () => {
     const { store } = await open();
     const empty = () => store.querySelector<HTMLElement>(".catalog__empty");
@@ -218,7 +257,7 @@ describe("the connectors store: one page", () => {
     expect(drawnAs(state_?.querySelector("svg"), "lock")).toBe(true);
     expect(within(asana).queryByRole("button", { name: "Conectar Asana" })).toBeNull();
     await click(opens);
-    expect(document.querySelector(".store-page")).toBeNull();
+    expect(document.querySelector(".store-dialog")).toBeNull();
     expect(screen().queryAllByRole("dialog")).toEqual([]);
     const starts = ["customConnectors.connect", "connectors.startOAuth", "connectors.connectWithKey"];
     expect(state.calls.filter((c) => starts.includes(c.method))).toEqual([]);
@@ -248,7 +287,7 @@ describe("the connectors store: one page", () => {
     ).toBe(false);
   });
 
-  test("a line opens its service's page: what agents could do, what asks, how it connects; Connectors goes back", async () => {
+  test("a line opens its service's dialog: what agents could do, what asks, how it connects; its × closes it", async () => {
     const { store } = await open();
     const notion = await openService(store, "Notion");
     expect(notion.textContent).toContain("O que os agentes poderão fazer");
@@ -260,9 +299,9 @@ describe("the connectors store: one page", () => {
     // What connecting changes, under its own heading.
     expect(within(notion).getByRole("heading", { level: 4, name: "Depois de conectar" })).toBeTruthy();
     expect(notion.textContent).toContain("Ao conectar, todos os agentes podem usar. Dá para ajustar depois.");
-    // "Connectors" goes back to the store; another line opens its own page.
+    // Its × closes it, the store under it; another line opens its own.
     await backToList();
-    expect(document.querySelector(".store-page")).toBeNull();
+    expect(document.querySelector(".store-dialog")).toBeNull();
     const github = await openService(storeRoot(), "GitHub");
     // What always asks for approval is marked, and the strip says something asks.
     expect(github.querySelector("[data-asks]")?.textContent).toBe("Por padrão, merge e deploy pedem sua aprovação");
@@ -272,7 +311,7 @@ describe("the connectors store: one page", () => {
     );
   });
 
-  test("back from a service's page the store is as it was: the search and its lines", async () => {
+  test("a service's dialog closed, the store is as it was: the search and its lines", async () => {
     const { store } = await open();
     await click(tab(store, "Docs"));
     await openService(store, "Notion");
@@ -285,18 +324,28 @@ describe("the connectors store: one page", () => {
     expect(names(storeRoot())).toEqual(["Google Drive", "Notion"]);
   });
 
-  test("a line's Connect starts its flow, and so does the service page's", async () => {
+  test("the dialog's Connect closes it and starts the flow; a feature opens its dialog, wherever it is pressed", async () => {
     const { store } = await open();
     await pick(store, "Notion");
     expect(screen().getByRole("dialog", { name: "Conectar Notion" })).toBeTruthy();
+    expect(document.querySelector(".store-dialog")).toBeNull();
     await click(
       within(screen().getByRole("dialog", { name: "Conectar Notion" })).getByRole("button", { name: "Cancelar" }),
     );
     await settle(2);
-    const page = await openService(storeRoot(), "Notion");
-    await click(within(page).getByRole("button", { name: "Conectar Notion" }));
-    await settle(2);
-    expect(screen().getByRole("dialog", { name: "Conectar Notion" })).toBeTruthy();
+    await searchStore(storeRoot(), "");
+    // The large feature's See more, and a smaller one by its name (the whole card is that button).
+    const hero = storeRoot().querySelector(".store-hero") as HTMLElement;
+    const heroName = hero.querySelector(".store-open")?.textContent ?? "";
+    await click(within(hero).getByRole("button", { name: `Ver mais sobre ${heroName}` }));
+    await settle(4);
+    expect(service(heroName).querySelector(".ac-dialog__cover canvas")).not.toBeNull();
+    await backToList();
+    const card = storeRoot().querySelector(".store-role") as HTMLElement;
+    const cardName = card.querySelector(".store-open")?.textContent ?? "";
+    await click(card.querySelector(".store-open") as HTMLElement);
+    await settle(4);
+    expect(service(cardName)).toBeTruthy();
   });
 
   test("what's connected says Connected; then an MCP server adds an account, a catalog connector signs in again", async () => {
@@ -309,17 +358,20 @@ describe("the connectors store: one page", () => {
     });
     const { store } = await open(state, api);
     // Connected ones aren't suggested.
-    expect([...store.querySelectorAll(".store-feat .store-open")].map((b) => b.textContent)).toEqual([
-      "Banco de dados",
-      "Linear",
+    expect([...store.querySelectorAll(".store-feats .store-open")].map((b) => b.textContent)).toEqual([
+      "Sentry",
       "Notion",
+      "Linear",
+      "Canva",
+      "Google Drive",
+      "Stripe",
     ]);
     const github = line(store, "GitHub");
     expect(within(github).getByRole("button", { name: "GitHub, conectado" })).toBeTruthy();
     expect(github.querySelector(".store-state")?.textContent).toBe("Conectado");
     expect(line(store, "Zapier").querySelector(".store-state")?.textContent).toBe("Conectado");
     const detail = await openService(store, "GitHub");
-    expect(detail.querySelector(".store-page__title p .store-state")?.textContent).toBe("Conectado");
+    expect(detail.querySelector(".ac-dialog__desc .store-state")?.textContent).toBe("Conectado");
     // A catalog connector has one account: connected, it signs in again.
     expect(within(detail).getByRole("button", { name: "Reconectar GitHub" }).textContent).toBe("Reconectar");
     await backToList();
@@ -365,7 +417,6 @@ describe("the connectors store: one page", () => {
     expect(flow().textContent).not.toContain("todos os agentes podem usar");
     await click(within(flow()).getByRole("button", { name: "Cancelar" }));
     await settle(2);
-    await backToList();
 
     // By address: the note follows the address typed (a server already connected takes another account).
     await searchStore(storeRoot(), "");

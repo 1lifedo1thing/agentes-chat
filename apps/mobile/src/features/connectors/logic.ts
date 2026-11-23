@@ -14,17 +14,17 @@ export { type ConnectionTab, connectionTabs } from "@agenteschat/client/lib/conn
 
 /**
  * Suggestions, in order (the web's list, catalog services only): the tools a team reaches for every day, the first
- * not connected yet featured.
+ * ready here and not connected yet featured, the rest standing in for those that aren't.
  */
 export const SUGGESTED = [
-  "figma",
-  "canva",
-  "posthog",
+  "instagram",
   "sentry",
   "notion",
   "linear",
-  "slack",
   "github",
+  "figma",
+  "canva",
+  "slack",
   "hubspot",
   "drive",
   "stripe",

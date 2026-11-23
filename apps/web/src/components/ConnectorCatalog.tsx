@@ -110,25 +110,30 @@ function capabilities(t: TFunction, exists: (key: string) => boolean, id: string
 }
 
 /**
- * Suggestions, in order: the tools a team reaches for every day (design, product data, errors, mail, docs). The store
- * features the first six not connected yet and ready on this server.
+ * Suggestions, in order: the tools a team reaches for every day (social, errors, docs, product, code, design, mail).
+ * The store features the first six not connected yet and ready on this server; the rest stand in for those that aren't.
  */
 const SUGGESTED = [
-  "figma",
-  "canva",
-  "posthog",
+  "instagram",
   "sentry",
-  "mail-gmail",
-  "mail-outlook",
   "notion",
   "linear",
-  "slack",
   "github",
+  "figma",
+  "canva",
+  "mail-gmail",
+  "mail-outlook",
+  "slack",
   "hubspot",
   "drive",
   "stripe",
   "database",
 ];
+
+/** A category's row under the features shows these alone, in this order ("See all" opens the whole category). */
+const FEATURED_ROWS: Partial<Record<ConnectorCategory | "email", string[]>> = {
+  data: ["amplitude", "mixpanel", "posthog"],
+};
 
 /** How many suggestions the store's front features: one large, two beside it, three under them. */
 const FEATURED = 6;
@@ -346,13 +351,17 @@ export function StoreFeatured({
         </div>
       )}
       {categories.map((c) => {
-        const list = entries.filter((e) => e.category === c && !suggested.includes(e));
+        const all = entries.filter((e) => e.category === c && !suggested.includes(e));
+        const picked = FEATURED_ROWS[c];
+        const list = picked
+          ? picked.map((k) => all.find((e) => e.key === k)).filter((e): e is CatalogEntry => !!e)
+          : all;
         if (list.length === 0) return null;
         return (
           <section key={c} className="store-sec" aria-labelledby={`store-cat-${c}`}>
             <div className="store-sec__head">
               <h3 id={`store-cat-${c}`}>{t(`connectors.category.${c}`)}</h3>
-              {list.length > ROW && (
+              {(list.length > ROW || all.length > list.length) && (
                 <Button size="sm" variant="ghost" onClick={() => onCategory(c)}>
                   {t("connectors.store.seeAll")}
                 </Button>

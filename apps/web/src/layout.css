@@ -15444,7 +15444,6 @@ html:not([data-pointer]) .store-open:focus-visible {
   position: relative;
   z-index: 1;
   gap: 4px;
-  padding-inline-end: calc(var(--control-px-md) - 4px);
 }
 .store-side {
   display: grid;

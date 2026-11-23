@@ -14271,7 +14271,8 @@
       "featured": "Wyróżnione",
       "suggested": "Sugerowane",
       "seeAll": "Zobacz wszystkie",
-      "connect": "Połącz",
+      "more": "Zobacz więcej",
+      "moreName": "Zobacz więcej: {{name}}",
       "connected": "Połączono",
       "browse": "Przeglądaj konektory",
       "notListed": "Brakuje usługi w sklepie?",
@@ -14615,6 +14616,10 @@
         "2": "Tworzenie i dostosowywanie kampanii",
         "ask": "Włączanie reklam i zmiana budżetów zawsze prosi o Twoje zatwierdzenie"
       },
+      "tiktok_ads": {
+        "1": "Podgląd kampanii, grup reklam i wyników",
+        "2": "Tworzenie i dostosowywanie kampanii i reklam"
+      },
       "google_docs": {
         "1": "Wyszukiwanie i czytanie dokumentów",
         "2": "Tworzenie i edycja dokumentów"
@@ -14901,6 +14906,7 @@
       "amplitude": "Wykresy, dashboardy i eksperymenty.",
       "himetrica": "Odwiedzający, lejki, przychody i ruch z wyszukiwarek.",
       "meta_ads": "Kampanie reklamowe na Facebooku i Instagramie oraz ich wyniki.",
+      "tiktok_ads": "Kampanie, grupy reklam i reklamy w TikToku oraz ich wyniki.",
       "klaviyo": "Kampanie, przepływy, listy i profile.",
       "millionsend": "Kampanie e-mailowe, listy i kontakty.",
       "semrush": "Dane o słowach kluczowych, domenach i linkach zwrotnych.",

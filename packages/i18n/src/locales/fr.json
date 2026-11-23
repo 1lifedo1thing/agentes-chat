@@ -13759,7 +13759,8 @@
       "featured": "À la une",
       "suggested": "Suggéré",
       "seeAll": "Tout voir",
-      "connect": "Connecter",
+      "more": "Voir plus",
+      "moreName": "En savoir plus sur {{name}}",
       "connected": "Connecté",
       "browse": "Parcourir les connecteurs",
       "notListed": "Un service manque dans la boutique ?",
@@ -14099,6 +14100,10 @@
         "2": "Créer et ajuster des campagnes",
         "ask": "Activer des publicités et changer des budgets demande toujours votre approbation"
       },
+      "tiktok_ads": {
+        "1": "Voir les campagnes, les groupes d’annonces et les résultats",
+        "2": "Créer et ajuster des campagnes et des annonces"
+      },
       "google_docs": {
         "1": "Rechercher et lire des documents",
         "2": "Créer et modifier des documents"
@@ -14380,6 +14385,7 @@
       "amplitude": "Graphiques, tableaux de bord et expériences.",
       "himetrica": "Visiteurs, entonnoirs, revenus et trafic de recherche.",
       "meta_ads": "Campagnes publicitaires Facebook et Instagram et leurs résultats.",
+      "tiktok_ads": "Campagnes, groupes d’annonces et annonces TikTok, avec leurs résultats.",
       "klaviyo": "Campagnes, flows, listes et profils.",
       "millionsend": "Campagnes e-mail, listes et contacts.",
       "semrush": "Données sur les mots-clés, domaines et backlinks.",

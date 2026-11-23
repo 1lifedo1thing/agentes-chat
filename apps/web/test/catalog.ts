@@ -1,7 +1,7 @@
 import { act, fireEvent, within } from "@testing-library/react";
 import { screen, settle } from "./render";
 
-/** The connectors store's page (`/connectors`), or a service's or a connection's page: the region on screen. */
+/** The connectors store's page (`/connectors`), or a connection's page in Settings: the region on screen. */
 const storeRoot = () => document.querySelector(".store") as HTMLElement;
 
 /**
@@ -22,15 +22,16 @@ export async function searchStore(store: HTMLElement, query: string) {
   await settle(2);
 }
 
-/** A service's page in the store (its line pressed): the page, named by its heading. */
+/** A service's dialog in the store (its line or feature pressed), named by its title. */
 export const service = (name: string) => {
-  const page = document.querySelector(".store-page") as HTMLElement | null;
-  if (!page || page.querySelector(".store-page__title h3")?.textContent !== name)
-    throw new Error(`no page for ${name} on screen`);
-  return page;
+  const box = document.querySelector(".store-dialog") as HTMLElement | null;
+  // The title's words, after its mark (a monogram is letters too).
+  if (!box || box.querySelector(".ac-dialog__title .cflow__title > :last-child")?.textContent !== name)
+    throw new Error(`no dialog for ${name} on screen`);
+  return box;
 };
 
-/** Opens a service's page from the store: searched for, then its line pressed. */
+/** Opens a service's dialog from the store: searched for, then its line pressed. */
 export async function openService(store: HTMLElement, name: string) {
   await searchStore(store, name);
   const line = [...store.querySelectorAll(".store-item__open")].find(
@@ -42,11 +43,14 @@ export async function openService(store: HTMLElement, name: string) {
   return service(name);
 }
 
-/** Picks a service in the store (searched for, so any service is in reach) and presses its own Connect. */
+/**
+ * Picks a service in the store (searched for, so any service is in reach): its line opens its dialog, whose Connect
+ * closes it and starts the connect flow.
+ */
 export async function pick(store: HTMLElement, name: string) {
-  await searchStore(store, name);
-  await act(async () => fireEvent.click(within(storeRoot()).getByRole("button", { name: `Conectar ${name}` })));
-  await settle(2);
+  const box = await openService(store, name);
+  await act(async () => fireEvent.click(within(box).getByRole("button", { name: `Conectar ${name}` })));
+  await settle(4);
 }
 
 /** The connections listed in Settings › Connectors, by their names (what needs a person comes first). */
@@ -73,9 +77,13 @@ export async function openConnection(name: string) {
   return storeRoot().querySelector(".store-page") as HTMLElement;
 }
 
-/** "Connectors" over a page: back to the list (or to the store). */
+/** Back to the list: a service's dialog in the store closes (its ×); "Connectors" over a connection's page goes back. */
 export async function backToList() {
-  await act(async () => fireEvent.click(within(storeRoot()).getByRole("button", { name: "Conectores" })));
+  const box = document.querySelector(".store-dialog") as HTMLElement | null;
+  const back = box
+    ? within(box).getByRole("button", { name: "Fechar" })
+    : within(storeRoot()).getByRole("button", { name: "Conectores" });
+  await act(async () => fireEvent.click(back));
   await settle(4);
 }
 

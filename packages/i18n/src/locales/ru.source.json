@@ -32426,8 +32426,11 @@
   "connectors.store.seeAll": {
     "value": "See all"
   },
-  "connectors.store.connect": {
-    "value": "Connect"
+  "connectors.store.more": {
+    "value": "See more"
+  },
+  "connectors.store.moreName": {
+    "value": "See more about {{name}}"
   },
   "connectors.store.connected": {
     "value": "Connected"
@@ -33074,6 +33077,12 @@
   "connectors.can.meta_ads.ask": {
     "value": "Turning ads on and changing budgets always ask for your approval"
   },
+  "connectors.can.tiktok_ads.1": {
+    "value": "See campaigns, ad groups and results"
+  },
+  "connectors.can.tiktok_ads.2": {
+    "value": "Create and adjust campaigns and ads"
+  },
   "connectors.can.google_docs.1": {
     "value": "Search and read documents"
   },
@@ -33661,6 +33670,9 @@
   },
   "connectors.descriptions.meta_ads": {
     "value": "Facebook and Instagram ad campaigns and results."
+  },
+  "connectors.descriptions.tiktok_ads": {
+    "value": "TikTok ad campaigns, ad groups, ads and their results."
   },
   "connectors.descriptions.klaviyo": {
     "value": "Campaigns, flows, lists and profiles."

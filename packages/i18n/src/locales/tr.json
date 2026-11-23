@@ -13185,7 +13185,8 @@
       "featured": "Öne çıkanlar",
       "suggested": "Önerilen",
       "seeAll": "Tümünü gör",
-      "connect": "Bağla",
+      "more": "Daha fazlası",
+      "moreName": "{{name}} hakkında daha fazlası",
       "connected": "Bağlandı",
       "browse": "Bağlayıcılara göz at",
       "notListed": "Mağazada olmayan bir hizmet mi var?",
@@ -13521,6 +13522,10 @@
         "2": "Kampanya oluşturur ve ayarlar",
         "ask": "Reklamları etkinleştirmek ve bütçe değiştirmek her zaman onayınızı ister"
       },
+      "tiktok_ads": {
+        "1": "Kampanyaları, reklam gruplarını ve sonuçları görür",
+        "2": "Kampanya ve reklam oluşturur ve ayarlar"
+      },
       "google_docs": {
         "1": "Belgeleri arar ve okur",
         "2": "Belge oluşturur ve düzenler"
@@ -13797,6 +13802,7 @@
       "amplitude": "Grafikler, panolar ve deneyler.",
       "himetrica": "Ziyaretçiler, huniler, gelir ve arama trafiği.",
       "meta_ads": "Facebook ve Instagram reklam kampanyaları ve sonuçları.",
+      "tiktok_ads": "TikTok reklam kampanyaları, reklam grupları, reklamlar ve sonuçları.",
       "klaviyo": "Kampanyalar, akışlar, listeler ve profiller.",
       "millionsend": "E-posta kampanyaları, listeler ve kişiler.",
       "semrush": "Anahtar kelime, alan adı ve geri bağlantı verileri.",
