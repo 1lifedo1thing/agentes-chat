@@ -1162,4 +1162,10 @@ html:not([data-pointer]) .ib-row:focus-visible {
   .ib-read__in {
     padding: 32px 16px 48px;
   }
+  /* A narrow page: the title a size down, so a long name keeps to its words. */
+  .ib-read__title,
+  .ib .ib-read .rq[data-ask-kind="question"] .rq__lead {
+    font-size: 20px;
+    line-height: 26px;
+  }
 }
