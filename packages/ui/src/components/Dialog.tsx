@@ -70,6 +70,8 @@ export interface DialogProps {
   subtitle?: ReactNode;
   /** The head's own actions, before the close button. */
   actions?: ReactNode;
+  /** Art over the head, edge to edge (a service's brand in the connectors store); the close sits on it. */
+  cover?: ReactNode;
   /**
    * The field the dialog starts on. Unlike `autoFocus`, it holds when the dialog opens over another one: React gives
    * an autoFocus field the focus before this dialog's trap is up, and the trap of the dialog under it takes it back.
@@ -105,6 +107,7 @@ export function Dialog({
   leading,
   subtitle,
   actions,
+  cover,
   initialFocus,
   bare = false,
   unsaved = false,
@@ -175,6 +178,7 @@ export function Dialog({
           // Without a description, tell Radix there is none (it warns otherwise).
           {...(description ? {} : { "aria-describedby": undefined })}
         >
+          {cover && !bare && <div className="ac-dialog__cover">{cover}</div>}
           {bare ? (
             <RDialog.Title className="ac-visually-hidden">{title}</RDialog.Title>
           ) : (

@@ -15741,6 +15741,48 @@ html:not([data-pointer]) .store-back:focus-visible {
   font-weight: 600;
   color: var(--ink);
 }
+/* Brand art (`BrandArt`): a canvas filling what holds it, behind its words. */
+.brand-art {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.brand-art > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+/* A service's dialog in the store: its mark sits on the art's lower edge, bigger, with the name under it. */
+.store-dialog .ac-dialog__head {
+  padding-top: 0;
+}
+.store-dialog .cflow__title {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.store-dialog .cflow__title > .connector-icon {
+  position: relative;
+  z-index: 1;
+  translate: none;
+  margin-top: -34px;
+  width: 68px;
+  height: 68px;
+  border-radius: 18px 18px 18px 5px;
+  background: var(--raised);
+  box-shadow:
+    0 0 0 4px var(--surface-raised),
+    inset 0 0 0 1px var(--line2),
+    var(--e1);
+}
+.store-dialog .cflow__title > :last-child {
+  font: 650 24px / 30px var(--font-display, var(--font-sans));
+  letter-spacing: -0.01em;
+}
+.store-dialog .ac-dialog__desc {
+  margin-top: -6px;
+}
 /* A service's dialog in the store: the strip, what agents could do, what connecting changes, one under another. */
 .store-dialog__body {
   display: flex;

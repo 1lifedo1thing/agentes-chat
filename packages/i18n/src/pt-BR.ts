@@ -14002,7 +14002,10 @@ export const ptBR = {
         "2": "Criar e ajustar campanhas",
         ask: "Ativar anúncios e mudar orçamentos sempre pedem sua aprovação",
       },
-      tiktok_ads: { "1": "Ver campanhas, grupos de anúncios e resultados", "2": "Criar e ajustar campanhas e anúncios" },
+      tiktok_ads: {
+        "1": "Ver campanhas, grupos de anúncios e resultados",
+        "2": "Criar e ajustar campanhas e anúncios",
+      },
       google_docs: { "1": "Buscar e ler documentos", "2": "Criar e editar documentos" },
       google_sheets: { "1": "Ler planilhas", "2": "Adicionar linhas e atualizar células" },
       google_calendar: {

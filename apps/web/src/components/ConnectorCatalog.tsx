@@ -1,6 +1,8 @@
 import type { ConnectorCategory, ConnectorDef } from "@agenteschat/client";
+import { type BrandLook, brandLook } from "@agenteschat/client/lib/brand-look";
 import { composioOffText, hiddenWithoutComposio } from "@agenteschat/client/lib/composio";
-import type { MailChoice } from "@agenteschat/client/lib/mail";
+import { POSTGRES_MARK } from "@agenteschat/client/lib/databases";
+import { MAIL_BRANDS, type MailChoice } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorDescription, connectorName, scopeText } from "@agenteschat/client/lib/scopes";
 import {
@@ -22,11 +24,11 @@ import { ConnectorIcon } from "./ConnectorIcon";
 export { ConnectorIcon };
 
 import { useTranslation } from "react-i18next";
+import { BrandArt } from "@/components/BrandArt";
 import { DatabaseIcon } from "@/components/DatabaseConnect";
 import { FlowTitle } from "@/components/FlowTitle";
 import { MailIcon, mailAuthKind, mailChoiceName } from "@/components/MailConnect";
 import { useOrg } from "@/components/org-context";
-import { ConnectorSky } from "@/components/Sky";
 
 export const CATEGORIES: ConnectorCategory[] = [
   "dev",
@@ -69,6 +71,8 @@ export interface CatalogEntry {
   soon: boolean;
   icon: (size: "md" | "lg") => ReactNode;
   brandColor: string | null;
+  /** Its mark and its brand's colors, for its art in the store. */
+  look: BrandLook;
   how: HowKind;
   /** What agents could do there; `asks` = it always asks a person first. */
   can: { text: string; asks: boolean }[];
@@ -168,6 +172,7 @@ export function useCatalogEntries({
         soon: false,
         icon: (size) => <MailIcon choice={c} size={size} />,
         brandColor: c === "gmail" ? "#EA4335" : c === "icloud" ? "#3693F3" : null,
+        look: brandLook(MAIL_BRANDS[c]?.iconUrl, MAIL_BRANDS[c]?.brandColor),
         how: mailAuthKind(c),
         can: capabilities(t, exists, `mail-${c}`),
         after: t("connectors.detail.afterText"),
@@ -188,6 +193,7 @@ export function useCatalogEntries({
             soon: false,
             icon: (size: "md" | "lg") => <DatabaseIcon size={size} />,
             brandColor: null,
+            look: brandLook(POSTGRES_MARK, null),
             how: "addressPassword",
             can: capabilities(t, exists, "database"),
             after: t("connectors.detail.afterText"),
@@ -211,6 +217,7 @@ export function useCatalogEntries({
           soon: d.soon === true && !connected.has(d.id),
           icon: (size) => <ConnectorIcon def={d} label={d.label} size={size} />,
           brandColor: d.brandColor,
+          look: brandLook(d.iconUrl, d.brandColor),
           how: authKind(d),
           can: capabilities(t, exists, d.id, d),
           // As the server does: a first connection is every agent's; then an MCP server takes another account
@@ -260,7 +267,7 @@ function FeatureCard({ entry, onOpen }: { entry: CatalogEntry; onOpen: (entry: C
   const { t } = useTranslation();
   return (
     <article className="store-role">
-      <ConnectorSky brand={entry.brandColor} cover />
+      <BrandArt look={entry.look} template="glow" surface="--card-well" />
       <span className="store-role__mark">{entry.icon("lg")}</span>
       <span className="store-role__text">
         <span className="store-kicker">{t("connectors.store.suggested")}</span>
@@ -302,7 +309,7 @@ export function StoreFeatured({
         <div className="store-feats">
           <div className="store-feat" data-side={side.length || undefined}>
             <article className="store-hero">
-              <ConnectorSky brand={hero.brandColor} cover />
+              <BrandArt look={hero.look} template="glow" surface="--card-well" />
               <span className="store-hero__mark">{hero.icon("lg")}</span>
               <span className="store-kicker">{t("connectors.store.suggested")}</span>
               <h3 className="store-hero__name">
@@ -558,7 +565,7 @@ export function StoreBack({ onBack }: { onBack: () => void }) {
 }
 
 /**
- * A service's dialog in the store: its mark, name and what it is; a strip saying how it connects, who uses it and
+ * A service's dialog in the store: its brand's art on top, its mark on the art's edge, its name and what it is; a strip saying how it connects, who uses it and
  * whether something asks a person; what agents could do and what connecting changes; how it connects beside its one
  * button. Connecting closes it and opens the connect flow.
  */
@@ -603,6 +610,7 @@ export function ServiceDialog({
       closeLabel={t("common.close")}
       width={620}
       className="store-dialog"
+      cover={<BrandArt look={entry.look} template="pattern" surface="--surface-raised" />}
     >
       <DialogBody className="store-dialog__body">
         <dl className="store-strip">

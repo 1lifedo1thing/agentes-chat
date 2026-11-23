@@ -3111,6 +3111,34 @@ html:not([data-pointer]) .ac-tab:focus-visible {
 :is(.ac-dialog__head, .ac-details__head) .ac-btn--ghost.ac-btn--glyph:hover::before {
   background: transparent;
 }
+/* A cover over the head (a service's brand art), edge to edge under the dialog's top corners: the close sits on it, on
+   a round glass of its own so it reads over any art. */
+.ac-dialog__cover {
+  position: relative;
+  flex: none;
+  height: 132px;
+  overflow: hidden;
+  isolation: isolate;
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+}
+.ac-dialog:has(> .ac-dialog__cover) .ac-dialog__close {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  inset-inline-end: 12px;
+}
+.ac-dialog:has(> .ac-dialog__cover) .ac-dialog__close > .ac-btn--glyph {
+  --glyph-air: 0px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgb(0 0 0 / 0.32);
+  backdrop-filter: blur(6px);
+}
+.ac-dialog:has(> .ac-dialog__cover) .ac-dialog__close > .ac-btn--glyph:hover {
+  color: #fff;
+  background: rgb(0 0 0 / 0.48);
+}
 /* After the head's own actions the close is one more of them: a whole plate, 8 from the plate before it, as two icon
    buttons stand in a row. */
 .ac-actline:has(> .ac-dialog__acts) + .ac-dialog__close {
