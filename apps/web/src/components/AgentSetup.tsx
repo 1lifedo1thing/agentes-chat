@@ -7,8 +7,10 @@ import {
   useAiStatus,
   useApi,
   useCatalog,
+  useChannels,
   useConfirmSetup,
   useCredentials,
+  useDms,
   useModels,
   usePlatformKey,
   useRoles,
@@ -148,11 +150,13 @@ export function useSetupSettled(agent: Agent | undefined): boolean {
   const on = agent !== undefined && steps.length > 0;
   const status = useAiStatus(org.id, on);
   const detail = useAgentDetail(org.id, agent?.id ?? "", on);
-  const visible = useVisibleChannels();
+  const channels = useChannels(org.id);
+  const dms = useDms(org.id);
   const apps = on && agent !== undefined && managesAgent(agent) && steps.includes("apps");
   const access = useAgentAccess(org.id, agent?.id ?? "", apps);
   if (!on) return true;
-  return !status.isPending && !detail.isPending && visible.ready && !dir.loading && (!apps || !access.isPending);
+  const read = [status, detail, channels, dms, ...(apps ? [access] : [])];
+  return !dir.loading && read.every((q) => !q.isPending);
 }
 
 /**
