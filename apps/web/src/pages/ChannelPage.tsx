@@ -2881,7 +2881,8 @@ function ChannelView({
                               <>
                                 <Timeline
                                   items={repliesPending || introPending ? NO_ROWS : timeline}
-                                  ready={serverRead}
+                                  // Held rows aren't its first load: counted then, they would all enter as new ones.
+                                  ready={serverRead && !repliesPending && !introPending}
                                   slots={gap ? NO_SLOTS : slots}
                                   runKeys={runKeys.current}
                                   divider={divider}
