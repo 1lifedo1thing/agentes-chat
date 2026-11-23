@@ -16,6 +16,7 @@ import type {
 } from "../api/types";
 import { ACCOUNT_KINDS, accountTitle, orderAccounts } from "./ai-accounts";
 import { type EffortLevel, effortLevelsOf } from "./brain-advanced";
+import { firstName } from "./format";
 import { type ModelRow, modelRows } from "./brain-picker";
 import { isPlanId, planOf } from "./plans";
 import { AUTO, isAuto } from "./providers";
@@ -280,4 +281,4 @@ export const accountShortName = (
 
 /** Why a row is dimmed, in words: its owner by name. */
 export const reasonText = (t: TFunction, row: Pick<AiChoiceRow, "reason" | "account">) =>
-  row.reason ? t(`aiAccounts.useReason.${row.reason}`, { owner: row.account?.ownerName ?? "" }) : "";
+  row.reason ? t(`aiAccounts.useReason.${row.reason}`, { owner: firstName(row.account?.ownerName ?? "") }) : "";

@@ -75,6 +75,13 @@ import "./ai-hub.css";
 const lead = <A extends MachineAccount>(logins: readonly A[]): A =>
   logins.find((l) => l.shared === true) ?? (logins[0] as A);
 
+/** The newest usage any of an account's logins read: they share one plan's windows. */
+const newestUsage = (logins: readonly AiHubAccount[]) =>
+  logins
+    .map((l) => l.usage)
+    .filter((u): u is NonNullable<typeof u> => u !== null)
+    .sort((x, y) => Date.parse(y.at) - Date.parse(x.at))[0] ?? null;
+
 /** "Max · de João": its plan, whose it is. */
 function facts(t: TFunction, a: AiHubAccount): string {
   return [a.plan ? planName(a.plan) : null, a.ownerName ? t("aiHub.of", { name: firstName(a.ownerName) }) : null]
@@ -229,7 +236,7 @@ export function AiAccountsTab() {
                       </span>
                     )}
                   </span>
-                  <AccountState a={a} meter />
+                  <AccountState a={{ ...a, usage: newestUsage(logins) }} meter />
                   <Icon name="chevronRight" size={16} className="plan-row__chevron" />
                 </button>
               </div>

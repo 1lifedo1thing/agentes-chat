@@ -4737,8 +4737,17 @@ export function createFakeApi(state: FakeState = seedState(), options: { seed?: 
       hub: {
         accounts: view.accounts.map((a) => {
           const ownerOnly = a.serves === "owner";
+          // As the server's `sameAs`: the logins of one account on a computer share its oldest login's id.
+          const same = view.accounts.find(
+            (b) =>
+              b.machineId === a.machineId &&
+              b.kind === a.kind &&
+              b.provider === a.provider &&
+              (a.provider ? b.keyHint === a.keyHint : !!a.email && b.email?.toLowerCase() === a.email.toLowerCase()),
+          );
           return {
             ...a,
+            ...(a.sameAs ? {} : { sameAs: same?.id ?? a.id }),
             permissions: permissionsSaved.get(a.sameAs ?? a.id) ??
               permissionsSaved.get(a.id) ?? {
                 manage: { mode: "admins", ...nobody },
