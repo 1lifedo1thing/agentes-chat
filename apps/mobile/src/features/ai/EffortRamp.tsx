@@ -52,8 +52,15 @@ type RampProps = {
 /** The effort as the model takes it: the ramp up to four levels, a list past that; nothing for a model with none. */
 export function EffortRamp(props: RampProps) {
   if (props.levels.length === 0) return null;
-  // A stored level the model doesn't take runs as its highest one under it.
-  const shown = { ...props, value: props.value && shownEffort(props.value, props.levels) };
+  // A stored level the model doesn't take runs as its highest one under it, which saves when picked: a pick is held
+  // against what is stored, not what shows.
+  const shown = {
+    ...props,
+    value: props.value && shownEffort(props.value, props.levels),
+    onChange: (level: EffortLevel) => {
+      if (level !== props.value) props.onChange(level);
+    },
+  };
   return props.levels.length > RAMP_MAX ? <EffortPick {...shown} /> : <Ramp {...shown} />;
 }
 
@@ -69,7 +76,7 @@ function EffortPick({ value, onChange, levels, kind, disabled = false }: RampPro
       value,
       lit: true,
     });
-    if (picked !== null && picked !== value) onChange(picked as EffortLevel);
+    if (picked !== null) onChange(picked as EffortLevel);
   };
   return (
     <GroupedRow
@@ -121,7 +128,7 @@ function Ramp({ value, onChange, color, levels, kind, disabled = false }: RampPr
     setShown(to);
     land(to);
     const level = levels[to];
-    if (level && level !== value) onChange(level);
+    if (level) onChange(level);
   };
   const follow = (x: number) => {
     "worklet";

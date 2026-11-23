@@ -1547,10 +1547,14 @@ test("the effort shows the levels the model takes: the ramp up to four, a list p
   const ramp = await read("EffortRamp.tsx");
   expect(ramp).toContain("props.levels.length > RAMP_MAX ? <EffortPick {...shown} /> : <Ramp {...shown} />");
   expect(ramp).toContain("value: props.value && shownEffort(props.value, props.levels)");
+  // A stored level above the model's shows as the one under it, and picking that one saves it.
+  expect(ramp).toContain("if (level !== props.value) props.onChange(level);");
+  expect(ramp).not.toContain("level !== value");
   for (const file of ["AgentAiScreen.tsx", "AgentAdvancedScreen.tsx"])
     expect(await read(file)).toContain("effortLevelsFor(");
   const choice = await read("AiChoice.tsx");
   expect(choice).toContain("state.efforts(active, isAuto(model?.value) ? null : (model?.value ?? null))");
   expect(choice).toContain('label: t("agentPage.work.brain.v2.undo"),');
+  expect(choice).toContain("if (picked === null || picked === current.effort) return;");
   expect(choice).toContain("if (!controlled && aiChoiceAsks(row, agentId)) return setAsking(row);");
 });

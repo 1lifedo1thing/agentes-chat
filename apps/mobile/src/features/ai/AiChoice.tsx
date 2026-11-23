@@ -179,7 +179,9 @@ export function AiChoiceFields({
       value: effort,
       lit: true,
     });
-    if (picked === null || picked === effort) return;
+    // Against what is stored, not shown: a stored level the model doesn't take shows as the one under it, which then
+    // saves when picked.
+    if (picked === null || picked === current.effort) return;
     apply({ ...current, effort: picked as EffortLevel });
   };
 
