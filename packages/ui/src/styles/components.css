@@ -3124,7 +3124,7 @@ html:not([data-pointer]) .ac-tab:focus-visible {
 }
 .ac-dialog:has(> .ac-dialog__cover) .ac-dialog__close {
   position: absolute;
-  z-index: 1;
+  z-index: var(--z-raised);
   top: 12px;
   inset-inline-end: 12px;
 }

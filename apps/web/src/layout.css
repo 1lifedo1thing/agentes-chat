@@ -15442,7 +15442,7 @@ html:not([data-pointer]) .store-open:focus-visible {
 }
 .store-hero__more {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
   gap: 4px;
 }
 .store-side {
@@ -15744,7 +15744,7 @@ html:not([data-pointer]) .store-back:focus-visible {
 .brand-art {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-under);
   pointer-events: none;
 }
 .brand-art > canvas {
@@ -15763,7 +15763,7 @@ html:not([data-pointer]) .store-back:focus-visible {
 }
 .store-dialog .cflow__title > .connector-icon {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
   translate: none;
   margin-top: -34px;
   width: 68px;
