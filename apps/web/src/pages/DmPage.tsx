@@ -56,6 +56,9 @@ export function DmPage({ target, focusMessageId }: { target: DmTarget; focusMess
   // A new agent's setup checklist (ADR 0155 §2) for whoever sets it up: its greeting and the checklist on top.
   const setup = useSetupSteps(agent).length > 0;
   const setupSettled = useSetupSettled(agent);
+  // An agent's DM waits for its agent, then for its checklist's data when it has one: its rows show once, under the
+  // intro they keep, never before an intro that pushes them away.
+  const introPending = "agentId" in target && (agent ? setup && !setupSettled : dir.loading);
   // Its DM is open, from its row or any other way in: its row's "Novo" goes.
   useEffect(() => {
     if (rightHand) rightHandSeen.mark(rightHandSeenKey(me.user.id, org.id));
@@ -174,8 +177,9 @@ export function DmPage({ target, focusMessageId }: { target: DmTarget; focusMess
               intro: <RightHandIntro agent={agent} channelId={dm.data.channelId} />,
             }
           : setup && agent
-            ? { intro: <AgentSetupIntro agent={agent} />, introPending: !setupSettled }
+            ? { intro: <AgentSetupIntro agent={agent} /> }
             : {}),
+        introPending,
         dmAgentId: agent?.id,
         dmPersonId: person?.userId,
         locked:

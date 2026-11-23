@@ -516,7 +516,7 @@ export interface ChannelChrome {
    * and first cards, ADR 0137, which say it themselves).
    */
   intro?: ReactNode;
-  /** What the intro draws from is still loading: the conversation waits as its skeleton, then shows whole with it. */
+  /** What the intro draws from (or who it is) is still loading: the conversation waits as its skeleton, then shows whole. */
   introPending?: boolean;
   /** The composer's label and placeholder ("Responder na thread"). */
   composerLabel?: string;
