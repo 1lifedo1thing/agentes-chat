@@ -308,6 +308,7 @@ export function ViewerComments({
       <div className="file-view file-view--image mf-viewstage">
         <VideoStage
           src={fileUrl}
+          handoff={fileId}
           name={content.name}
           marks={marks}
           pad={bar ? VIDEO_PAD_BAR : VIDEO_PAD}
