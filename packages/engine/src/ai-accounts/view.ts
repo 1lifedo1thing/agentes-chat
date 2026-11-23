@@ -91,7 +91,7 @@ export async function aiHubView(db: Database, userId: string, orgId: string): Pr
         id: k.id,
         provider: k.provider,
         label: k.label,
-        keyHint: k.keyHint,
+        keyHint: canManageKeys ? k.keyHint : "",
         isDefault: k.isDefault ?? false,
         ...(canManageKeys && k.usedBy ? { usedBy: k.usedBy } : {}),
         ...(k.endpoint ? { endpoint: k.endpoint } : {}),
@@ -103,7 +103,7 @@ export async function aiHubView(db: Database, userId: string, orgId: string): Pr
   };
 }
 
-/** The live keys as anyone may see them: provider, name and last characters, and which is each provider's default. */
+/** The live keys as anyone may see them: provider, name, and which is each provider's default (key ends go to key managers only). */
 async function liveKeys(db: Database, orgId: string): Promise<(CredentialSummary & { revokedAt: Date | null })[]> {
   const [rows, defaults] = await Promise.all([
     db
