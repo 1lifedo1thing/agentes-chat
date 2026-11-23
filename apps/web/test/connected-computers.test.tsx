@@ -15,7 +15,7 @@ import { fileSaver } from "@/components/artifacts/fileSaver";
 import { createI18n } from "@/i18n";
 import { ADA_ID, createFakeApi, ENG_ID, fakeMachinesOf, ORG_ID, seedState } from "./fake-api";
 import { hintOf, shownText } from "./hint";
-import { renderApp, screen, settle, showIn } from "./render";
+import { onScreen, renderApp, screen, settle, showIn } from "./render";
 
 const saved: { url: string; name: string }[] = [];
 const realSave = fileSaver.save;
@@ -185,6 +185,43 @@ describe("uploaded files in the Drive", () => {
     await settle(4);
     const dialog = screen().getByRole("dialog", { name: long });
     expect(dialog.querySelector(".ac-details__subtitle")?.textContent).toMatch(/7\s?(byte|B)/);
+  });
+
+  test("an audio file plays in the viewer and on its Drive card, from the download in parts", async () => {
+    const api = createFakeApi(seedState());
+    const audio = await api.artifacts.upload(
+      ORG_ID,
+      new File([new Uint8Array([73, 68, 51, 4])], "entrevista.mp3", { type: "audio/mpeg" }),
+    );
+    const src = `/api/app/organizations/${ORG_ID}/artifacts/${audio.id}/file?version=1`;
+    await renderApp(`/org/${ORG_ID}/drive?artifact=${audio.id}`, { api });
+    await settle(8);
+    const dialog = screen().getByRole("dialog", { name: "entrevista.mp3" });
+    const player = dialog.querySelector<HTMLAudioElement>(".file-view--audio > audio");
+    expect(player?.getAttribute("src")).toBe(src);
+    expect(player?.hasAttribute("controls")).toBe(true);
+    expect(player?.getAttribute("aria-label")).toBe("entrevista.mp3");
+    expect(dialog.textContent).not.toContain("Sem prévia para este tipo de arquivo.");
+    // One the browser can't play says so, and Baixar stays in the header.
+    await act(async () => player?.dispatchEvent(new Event("error")));
+    expect(dialog.querySelector("audio")).toBeNull();
+    expect(dialog.textContent).toContain("Não deu para mostrar a prévia. Baixe o arquivo para abrir.");
+    cleanup();
+    const undo = onScreen(".drive-pv");
+    try {
+      await renderApp(`/org/${ORG_ID}/drive`, { api });
+      await settle(8);
+      const card = document.querySelector<HTMLElement>(`.drive-card:has(audio)`);
+      const pv = card?.querySelector(".drive-pv--audio");
+      expect(pv?.getAttribute("aria-hidden")).toBeNull();
+      expect(pv?.querySelector("audio")?.getAttribute("src")).toBe(src);
+      expect(pv?.querySelector("audio")?.getAttribute("preload")).toBe("none");
+    } finally {
+      undo();
+    }
+    expect(previewKind("audio/mpeg")).toBe("audio");
+    expect(previewKind("audio/x-m4a")).toBe("audio");
+    expect(previewKind("application/octet-stream", "entrevista.mp3")).toBeNull();
   });
 
   test("SVG and other types are download-only; small text files show their text, read-only", async () => {

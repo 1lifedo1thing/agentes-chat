@@ -80,6 +80,15 @@ describe("videos", () => {
   });
 });
 
+describe("audio", () => {
+  test("audio files play in the file screen's player; their tile stays a file card", () => {
+    expect(fileInfo(upload("entrevista.mp3", "audio/mpeg"))).toMatchObject({ view: "audio", type: "file", ext: "MP3" });
+    expect(fileInfo(upload("nota.m4a", "audio/x-m4a")).view).toBe("audio");
+    expect(fileInfo(upload("faixa.wav", "audio/wav")).view).toBe("audio");
+    expect(fileInfo(upload("midi.mid", "audio/midi")).view).toBe("other");
+  });
+});
+
 describe("file kind, tile and size", () => {
   test("raster pictures are images; SVG is not", () => {
     expect(fileInfo(upload("home.png", "image/png")).view).toBe("image");

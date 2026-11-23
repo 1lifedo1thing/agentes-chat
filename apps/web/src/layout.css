@@ -3300,6 +3300,26 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
 .drive-pv--sm .drive-pv__tag {
   display: none;
 }
+/* An audio file's card: a smaller type tile above the player, the player over the card's hit area (no isolation, so
+   its layer reaches the card's). */
+.drive-pv--audio {
+  isolation: auto;
+}
+/* Shorter on a narrow card, so it clears both the tags above it and the player under it. */
+.drive-pv--audio .drive-pv__glyph {
+  top: calc(50% - var(--space-3));
+  width: auto;
+  height: min(30cqw, calc(100% - var(--control-h-md) - 6 * var(--space-2)));
+  aspect-ratio: 4 / 5;
+}
+.drive-pv__audio {
+  position: absolute;
+  z-index: var(--z-lifted);
+  left: var(--space-2);
+  bottom: var(--space-2);
+  width: calc(100% - 2 * var(--space-2));
+  height: var(--control-h-md);
+}
 
 /* Selection: a glass bar fixed at the bottom of the work area, centered on it (SelectionBar hangs it from
  * `.shell__work`, beside the sidebar, so it stays put however short or long the list is). */
@@ -8283,6 +8303,13 @@ html:not([data-pointer]) .sky-welcome__close:focus-visible {
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+}
+/* Audio: the browser's player across the viewer's width. */
+.file-view--audio {
+  padding: var(--space-6) 0;
+}
+.file-view--audio > audio {
+  width: 100%;
 }
 .file-view__preview {
   display: flex;
