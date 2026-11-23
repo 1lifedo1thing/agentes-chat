@@ -2365,7 +2365,7 @@
     "summary_one": "{{people}} membro · {{agents}} agenti",
     "summary_many": "{{people}} membri · {{agents}} agenti",
     "summary_other": "{{people}} membri · {{agents}} agenti",
-    "waiting": "Ti aspetta",
+    "waiting": "Posta in arrivo",
     "approvals": "Approvazioni",
     "proposals": "Proposte di miglioramento",
     "issues": "Attività",
@@ -5451,7 +5451,7 @@
     "firstRun": "Riprendi da dove eri · {{done}} di {{total}}"
   },
   "notifications": {
-    "title": "Notifiche",
+    "title": "Posta in arrivo",
     "planLent": {
       "takeBack": "Riprendi",
       "takeBackAll": "Riprendi da tutti gli agenti",
@@ -5493,7 +5493,7 @@
         "computer": "Cambia computer"
       }
     },
-    "docTitleUnread": "({{count}}) Notifiche",
+    "docTitleUnread": "({{count}}) Posta in arrivo",
     "summaryWaiting_one": "{{count}} cosa ti aspetta",
     "summaryWaiting_many": "{{count}} cose ti aspettano",
     "summaryWaiting_other": "{{count}} cose ti aspettano",
@@ -5511,6 +5511,7 @@
       "waiting": "Ti aspetta",
       "unread": "Da leggere",
       "reactions": "Reazioni",
+      "requests": "Richieste decise",
       "done": "Completate"
     },
     "keys": {
@@ -5763,6 +5764,8 @@
     "noneUnread": "Tutto letto.",
     "noneHere": "Per ora niente qui.",
     "noneDone": "Niente segnato come completato negli ultimi 30 giorni.",
+    "noneRequests": "Nessuna richiesta decisa per ora.",
+    "proposes": "propone un miglioramento",
     "more": "Mostra altro"
   },
   "approvals": {
@@ -11731,6 +11734,20 @@
     "empty": "Nessun risultato per “{{q}}”."
   },
   "codeSessions": {
+    "beta": {
+      "title": "Coding mode è in beta",
+      "text": "Funziona davvero e cambia ogni settimana. A volte si blocca. Quando succede, il problema è nostro.",
+      "go": "Inizia",
+      "added": {
+        "worktree": "Ogni richiesta nel suo worktree, con Git, File, Schermo e Terminale",
+        "anyAi": "Qualsiasi IA: Claude Code, Codex, OpenCode o un modello tramite chiave",
+        "beside": "Modifica i file e apri un terminale accanto alla conversazione"
+      },
+      "removed": {
+        "paste": "Copiare e incollare codice tra la chat e l'editor",
+        "watch": "Fissare il terminale finché l'agente non ha finito"
+      }
+    },
     "title": "Codice",
     "state": {
       "waiting": "ti aspetta",
@@ -11790,6 +11807,7 @@
       "agent_idle": "è disponibile"
     },
     "gitTab": {
+      "openFile": "Apri il file",
       "label": "Git",
       "from": "da {{base}}",
       "ahead_one": "{{count}}{{more}} commit avanti",
@@ -11814,8 +11832,7 @@
         "deleted": "Eliminato",
         "renamed": "Rinominato",
         "untracked": "Nuovo, non ancora in git"
-      },
-      "openFile": "Apri il file"
+      }
     },
     "files": {
       "label": "File",
@@ -11834,13 +11851,7 @@
       "truncated_other": "Vengono mostrati i primi {{formatted}} file.",
       "hasChanges": "Contiene modifiche",
       "opening": "Apertura del file…",
-      "state": {
-        "binary": "Un file binario: niente da mostrare qui.",
-        "missing": "Questo file non c'è più.",
-        "ignored": "Git ignora questo file, quindi non compare qui.",
-        "secret": "I file .env non compaiono qui: di solito contengono segreti.",
-        "outside": "Questo file è un collegamento fuori dal worktree."
-      },
+      "cut": "Qui si vedono solo i primi {{size}}.",
       "save": "Salva",
       "unsaved": "Non salvato",
       "tooLong": "Troppo lungo per modificarlo qui",
@@ -11850,7 +11861,20 @@
       "unsavedAsk": "Questo file ha modifiche che non hai salvato.",
       "keepEditing": "Continua a modificare",
       "discard": "Scarta",
-      "cut": "Qui si vedono solo i primi {{size}}."
+      "state": {
+        "binary": "Un file binario: niente da mostrare qui.",
+        "missing": "Questo file non c'è più.",
+        "ignored": "Git ignora questo file, quindi non compare qui.",
+        "secret": "I file .env non compaiono qui: di solito contengono segreti.",
+        "outside": "Questo file è un collegamento fuori dal worktree."
+      }
+    },
+    "tabs": {
+      "label": "Schede della sessione",
+      "talk": "Conversazione",
+      "terminalN": "Terminale {{n}}",
+      "close": "Chiudi {{name}}",
+      "add": "Nuova scheda"
     },
     "screen": {
       "computer": "Il computer di {{name}}",
@@ -11893,27 +11917,6 @@
       "dm": "Aperta dalla tua conversazione con {{name}}",
       "channel": "Aperta da #{{name}}",
       "see": "Vedi conversazione"
-    },
-    "tabs": {
-      "label": "Schede della sessione",
-      "talk": "Conversazione",
-      "terminalN": "Terminale {{n}}",
-      "close": "Chiudi {{name}}",
-      "add": "Nuova scheda"
-    },
-    "beta": {
-      "added": {
-        "worktree": "Ogni richiesta nel suo worktree, con Git, File, Schermo e Terminale",
-        "anyAi": "Qualsiasi IA: Claude Code, Codex, OpenCode o un modello tramite chiave",
-        "beside": "Modifica i file e apri un terminale accanto alla conversazione"
-      },
-      "removed": {
-        "paste": "Copiare e incollare codice tra la chat e l'editor",
-        "watch": "Fissare il terminale finché l'agente non ha finito"
-      },
-      "title": "Coding mode è in beta",
-      "text": "Funziona davvero e cambia ogni settimana. A volte si blocca. Quando succede, il problema è nostro.",
-      "go": "Inizia"
     }
   },
   "code": {
@@ -16226,10 +16229,10 @@
       "repoNotAllowed": "Questo agente non può lavorare in quel repository. Scegline un altro, oppure aggiungilo nelle impostazioni dell'agente.",
       "notYours": "Solo chi ha aperto la sessione o un admin può chiuderla.",
       "notReady": "Il worktree della sessione non è ancora pronto. Riprova tra un momento.",
-      "suggestionGone": "Questo suggerimento ha già una risposta.",
-      "suggestionNotYours": "Solo chi l'ha chiesto decide se aprire la sessione.",
       "fileChanged": "Questo file è cambiato sul computer dopo che l'hai aperto.",
-      "fileLocked": "Questo file non può essere modificato qui."
+      "fileLocked": "Questo file non può essere modificato qui.",
+      "suggestionGone": "Questo suggerimento ha già una risposta.",
+      "suggestionNotYours": "Solo chi l'ha chiesto decide se aprire la sessione."
     },
     "webhook": {
       "githubNoAccess": "Il GitHub di questo workspace non può creare webhook in {{repo}}. Segui i passaggi qui sotto per crearlo a mano.",
@@ -20978,6 +20981,7 @@
     "openAgain": "Riapri",
     "ended": "La shell è terminata",
     "dropped": "La connessione al terminale è caduta",
+    "moved": "Questo terminale è aperto in un'altra finestra",
     "screening": "Il terminale è disattivato qui",
     "forbidden": "Solo chi può usare questo computer apre un terminale",
     "offline": "Il computer è offline",
@@ -20987,8 +20991,7 @@
     "busy": "Questo computer ha già aperti tutti i terminali che può gestire. Chiudine uno e riprova.",
     "paused": "Il computer è in pausa",
     "failed": "Impossibile aprire il terminale",
-    "agentFolder": "Il terminale si è aperto nella cartella dell'agente. Aggiorna il computer per aprirlo nella cartella della sessione.",
-    "moved": "Questo terminale è aperto in un'altra finestra"
+    "agentFolder": "Il terminale si è aperto nella cartella dell'agente. Aggiorna il computer per aprirlo nella cartella della sessione."
   },
   "agora": {
     "label": "Ora",

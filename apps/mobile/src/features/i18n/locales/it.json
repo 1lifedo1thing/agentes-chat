@@ -101,7 +101,7 @@
     "chats": "Chat",
     "threads": "Thread",
     "agents": "Agenti",
-    "activity": "Attività recenti",
+    "activity": "In arrivo",
     "search": "Cerca",
     "withCount": "{{label}}, {{count}}"
   },
@@ -886,7 +886,7 @@
     }
   },
   "activity": {
-    "title": "Attività recenti",
+    "title": "Posta in arrivo",
     "chooseModel": "Scegli un altro modello",
     "filter": {
       "all": "Tutto",

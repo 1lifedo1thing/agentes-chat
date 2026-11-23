@@ -96,7 +96,7 @@
     "chats": "Sohbetler",
     "threads": "İleti dizileri",
     "agents": "Ajanlar",
-    "activity": "Etkinlik",
+    "activity": "Gelen kutusu",
     "search": "Ara",
     "withCount": "{{label}}, {{count}}"
   },
@@ -861,7 +861,7 @@
     }
   },
   "activity": {
-    "title": "Etkinlik",
+    "title": "Gelen kutusu",
     "chooseModel": "Başka bir model seç",
     "filter": {
       "all": "Tümü",

@@ -101,7 +101,7 @@
     "chats": "Discussions",
     "threads": "Fils",
     "agents": "Agents",
-    "activity": "Activité",
+    "activity": "Réception",
     "search": "Recherche",
     "withCount": "{{label}}, {{count}}"
   },
@@ -886,7 +886,7 @@
     }
   },
   "activity": {
-    "title": "Activité",
+    "title": "Boîte de réception",
     "chooseModel": "Choisir un autre modèle",
     "filter": {
       "all": "Tout",

@@ -96,7 +96,7 @@
     "chats": "Gesprekken",
     "threads": "Threads",
     "agents": "Agents",
-    "activity": "Activiteit",
+    "activity": "Postvak IN",
     "search": "Zoeken",
     "withCount": "{{label}}, {{count}}"
   },
@@ -861,7 +861,7 @@
     }
   },
   "activity": {
-    "title": "Activiteit",
+    "title": "Postvak IN",
     "chooseModel": "Ander model kiezen",
     "filter": {
       "all": "Alles",

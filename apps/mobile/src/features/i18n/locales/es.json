@@ -101,7 +101,7 @@
     "chats": "Chats",
     "threads": "Hilos",
     "agents": "Agentes",
-    "activity": "Actividad",
+    "activity": "Bandeja",
     "search": "Buscar",
     "withCount": "{{label}}, {{count}}"
   },
@@ -886,7 +886,7 @@
     }
   },
   "activity": {
-    "title": "Actividad",
+    "title": "Bandeja de entrada",
     "chooseModel": "Elegir otro modelo",
     "filter": {
       "all": "Todo",

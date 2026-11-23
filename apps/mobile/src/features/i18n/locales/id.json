@@ -91,7 +91,7 @@
     "chats": "Obrolan",
     "threads": "Utas",
     "agents": "Agen",
-    "activity": "Aktivitas",
+    "activity": "Kotak masuk",
     "search": "Cari",
     "withCount": "{{label}}, {{count}}"
   },
@@ -836,7 +836,7 @@
     }
   },
   "activity": {
-    "title": "Aktivitas",
+    "title": "Kotak masuk",
     "chooseModel": "Pilih model lain",
     "filter": {
       "all": "Semua",

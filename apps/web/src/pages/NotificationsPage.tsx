@@ -3,9 +3,9 @@ import type {
   AppNotification,
   Approval,
   Member,
-  Proposal,
   NotificationActor,
   NotificationFilter,
+  Proposal,
 } from "@agenteschat/client";
 import {
   dropNotification,
@@ -81,20 +81,12 @@ import {
 } from "@agenteschat/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import {
-  Fragment,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, type ReactNode, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AdminAskActions } from "@/components/AdminAsk";
 import { AgentAvatar } from "@/components/AgentAvatar";
-import { InlineProposal } from "@/components/ChatCards";
 import { ApprovalAsk, ApprovalGroupAsk } from "@/components/ApprovalAsk";
+import { InlineProposal } from "@/components/ChatCards";
 import { useConnectAi } from "@/components/connect-ai-context";
 import { DeviceNoticeActions, deviceNoticeLine } from "@/components/devices/DeviceNotice";
 import { ErrorState, LoadingCards } from "@/components/Loading";
@@ -111,8 +103,8 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { useInboxWaiting } from "@/hooks/useInboxWaiting";
 import { matchesNow } from "@/hooks/useMatchMedia";
 import { lookOf } from "@/lib/look";
-import { ApprovalRow, approvalDecidedAt, decidedGroups } from "@/pages/ApprovalsPage";
 import { useToast } from "@/lib/toast";
+import { ApprovalRow, approvalDecidedAt, decidedGroups } from "@/pages/ApprovalsPage";
 import { useLiveStore } from "@/realtime/context";
 import "./notifications.css";
 
@@ -807,7 +799,12 @@ function ItemMenu({ n, h, busy }: { n: AppNotification; h: RowHandlers; busy: bo
           >
             {t("notifications.snoozeMenu.hour")}
           </MenuItem>
-          <MenuItem icon="calendar" hint={day(times.tomorrow)} disabled={busy} onSelect={() => h.onSnooze(n, "tomorrow")}>
+          <MenuItem
+            icon="calendar"
+            hint={day(times.tomorrow)}
+            disabled={busy}
+            onSelect={() => h.onSnooze(n, "tomorrow")}
+          >
             {t("notifications.snoozeMenu.tomorrow")}
           </MenuItem>
           <MenuItem
@@ -1033,7 +1030,11 @@ function InboxRead({
               </Button>
             )}
             {/* What the right hand found names its way out on the button; anything else only opens. */}
-            <Button variant={canReply ? "default" : "primary"} title={t("notifications.openTip")} onClick={() => h.onOpen(n)}>
+            <Button
+              variant={canReply ? "default" : "primary"}
+              title={t("notifications.openTip")}
+              onClick={() => h.onOpen(n)}
+            >
               {n.kind === "plan_model_dropped"
                 ? t("notifications.planModelDropped.choose")
                 : found?.act
@@ -1654,7 +1655,8 @@ export function NotificationsPage({
   const curItem = requestsView ? undefined : items.find((x) => x.id === cur);
   const curRequest = requestsView ? decided.find((a) => a.id === req) : undefined;
   const curProposal = requestsView ? undefined : waitingProposals.find((p) => proposalKey(p.id) === cur);
-  const filterWords = (f: InboxFilter) => (f === "requests" ? t("notifications.filter.requests") : t(`notifications.filter.${f}`));
+  const filterWords = (f: InboxFilter) =>
+    f === "requests" ? t("notifications.filter.requests") : t(`notifications.filter.${f}`);
   const summary = [
     waitingTotal ? t("notifications.summaryWaiting", { count: waitingTotal }) : "",
     unreadTotal ? t("notifications.summaryUnread", { count: unreadTotal }) : "",

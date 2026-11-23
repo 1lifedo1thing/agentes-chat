@@ -1,5 +1,4 @@
 import { ApiError, useApproval, useChannels, useDecideApproval } from "@agenteschat/client";
-import { aheadPhase } from "@agenteschat/client/lib/approval-kind";
 import { approvalEffects } from "@agenteschat/client/lib/approval-review";
 import {
   aheadEndLine,
@@ -28,14 +27,14 @@ import {
   Text,
   useToast,
 } from "@/ui";
-import { ExpiryLine } from "../chat/asks";
 import { OpenItemHead } from "../activity/OpenItem";
+import { ExpiryLine } from "../chat/asks";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useNow, useOrgId, useOwnerRoles } from "../shared/hooks";
 import { genderOf } from "../shared/logic";
 import { approvalOwnerOf, ownerNameIn } from "../shared/owner";
-import { successHaptic } from "../shared/parts";
 import { PushedLargeTitle } from "../shared/PushedLargeTitle";
+import { successHaptic } from "../shared/parts";
 import { TextArea } from "../shared/TextArea";
 import {
   approvalAction,
@@ -207,65 +206,61 @@ export function ApprovalSheet({
     if (!refusing)
       decision = (
         <>
-          pending ? (
-          a.canDecide ? (
-            <View style={styles.pair}>
-              <View style={styles.half}>
-                <Button
-                  variant="secondary"
-                  wide
-                  label={t("mobile.approval.refuse")}
-                  disabled={decide.isPending}
-                  onPress={askRefusal}
-                />
-              </View>
-              <View style={styles.half}>
-                {high ? (
-                  <HoldButton
-                    label={t("mobile.approval.hold")}
-                    disabled={decide.isPending}
-                    onConfirm={() => done("approve", always)}
-                  />
-                ) : (
-                  <Button
-                    variant="primary"
-                    wide
-                    label={approvalAction(a) === "draft" ? t("approval.approve.draft") : t("mobile.approval.approve")}
-                    loading={decide.isPending}
-                    onPress={() => done("approve", always)}
-                  />
-                )}
-              </View>
-            </View>
-          ) : (
-            <Text variant="small" tone="muted" style={styles.note}>
-              {holders
-                ? t("mobile.approval.onlyOwnerRole", { role: holders })
-                : owner
-                  ? t("mobile.approval.onlyOwner", { name: owner })
-                  : t("mobile.approval.onlyAdmins")}
-            </Text>
-          )
-        ) : aheadPhase(a) === "scheduled" && runAt ? (
-          <>
-            <Text variant="small" tone="muted" style={styles.note}>
-              {t("mobile.approval.status.scheduled", { when: runAt })}
-            </Text>
-            {a.canCancel ? (
+          pending ? ( a.canDecide ? (
+          <View style={styles.pair}>
+            <View style={styles.half}>
               <Button
                 variant="secondary"
                 wide
-                label={t("approval.ahead.cancel")}
-                loading={cancelAhead.pending}
-                onPress={() => cancelAhead.cancel(a.id, onClose)}
+                label={t("mobile.approval.refuse")}
+                disabled={decide.isPending}
+                onPress={askRefusal}
               />
-            ) : null}
-          </>
-        ) : (
+            </View>
+            <View style={styles.half}>
+              {high ? (
+                <HoldButton
+                  label={t("mobile.approval.hold")}
+                  disabled={decide.isPending}
+                  onConfirm={() => done("approve", always)}
+                />
+              ) : (
+                <Button
+                  variant="primary"
+                  wide
+                  label={approvalAction(a) === "draft" ? t("approval.approve.draft") : t("mobile.approval.approve")}
+                  loading={decide.isPending}
+                  onPress={() => done("approve", always)}
+                />
+              )}
+            </View>
+          </View>
+          ) : (
+          <Text variant="small" tone="muted" style={styles.note}>
+            {holders
+              ? t("mobile.approval.onlyOwnerRole", { role: holders })
+              : owner
+                ? t("mobile.approval.onlyOwner", { name: owner })
+                : t("mobile.approval.onlyAdmins")}
+          </Text>
+          ) ) : aheadPhase(a) === "scheduled" && runAt ? (
+          <Text variant="small" tone="muted" style={styles.note}>
+            {t("mobile.approval.status.scheduled", { when: runAt })}
+          </Text>
+          {a.canCancel ? (
+            <Button
+              variant="secondary"
+              wide
+              label={t("approval.ahead.cancel")}
+              loading={cancelAhead.pending}
+              onPress={() => cancelAhead.cancel(a.id, onClose)}
+            />
+          ) : null}
+          ) : (
           <Text variant="small" tone="muted" style={styles.note}>
             {aheadEndLine(t, a) ?? t(`mobile.approval.status.${a.status === "pending" ? "expired" : a.status}`)}
           </Text>
-        )
+          )
         </>
       );
     body = refusing ? (

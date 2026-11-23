@@ -1,6 +1,5 @@
 import {
   type AppNotification,
-  type Approval,
   type NotificationCounts,
   type NotificationFilter,
   type Routine,
@@ -11,7 +10,7 @@ import {
   useNotifications,
   useRoutines,
 } from "@agenteschat/client";
-import { approvalDetail, approvalSummary, approvalTitle } from "@agenteschat/client/lib/approval-words";
+import { approvalTitle } from "@agenteschat/client/lib/approval-words";
 import { errorText, restrictionLine } from "@agenteschat/client/lib/errors";
 import { dateFormat, timeLeft, upperFirst } from "@agenteschat/client/lib/format";
 import { mediaWord } from "@agenteschat/client/lib/media";
@@ -34,7 +33,6 @@ import { useOrg } from "@/providers/org";
 import {
   Button,
   EmptyState,
-  Filters,
   type HeaderAction,
   type HeaderMenuItem,
   type IconName,
@@ -47,32 +45,25 @@ import {
   SectionHeader,
   SkeletonList,
   SwipeRow,
-  Text,
   useReducedMotion,
   useToast,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { approvalAction } from "../approvals/logic";
-import { ApprovalMark, ApprovalWhy, useApprovalSource, useApproveNow } from "../approvals/parts";
-import { WhenAsksLink } from "../approvals/when-asks";
-import type { AskKind } from "../chat/ask-store";
-import { ASK_ICON, AskButtons } from "../chat/asks";
 import { dashboardWaitingCard } from "../dashboards/logic";
 import { deviceNoticeOf, isDeviceNotice } from "../devices/logic";
 import { DeviceNoticeActions, DeviceNoticeCard } from "../devices/notices";
 import { type AppHref, notificationHref, notificationWebPath, routineHref } from "../links/logic";
 import { openWebPath } from "../links/open-web";
 import { ChangeRequestCard } from "../right-hand/SettingsCard";
+import { chooseAction } from "../settings/parts";
 import { AdminAskAdd } from "../shared/AdminAsk";
 import { AgentFace, Face } from "../shared/Face";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useNow, useOrgId, usePullRefresh, useWhen } from "../shared/hooks";
 import { Tile } from "../shared/parts";
 import { useWaitingApprovals } from "../shared/queries";
-import { chooseAction } from "../settings/parts";
 import { RetryLine, TeamSkyEmpty } from "../shared/TeamSkyEmpty";
 import { useTabHeader } from "../shared/tabHeader";
-import { WaitingCard, WaitingSource } from "../shared/WaitingCard";
 import { UsageLimitActions } from "../usage/people";
 import {
   ACTIVITY_FILTERS,
@@ -86,7 +77,6 @@ import {
   type SayWords,
   subtitleOf,
   upcomingDay,
-  type WaitingCardKind,
   waitingCardOf,
 } from "./logic";
 import { useNoticeTitle } from "./noticeTitle";
@@ -146,7 +136,10 @@ export function ActivityScreen() {
             sf: "envelope.open" as const,
             label: t("notifications.readAll"),
             onPress: () =>
-              act({ type: "readAll", filter: listFilter }, { onError: (e) => toast({ title: errorText(t, e), icon: "x" }) }),
+              act(
+                { type: "readAll", filter: listFilter },
+                { onError: (e) => toast({ title: errorText(t, e), icon: "x" }) },
+              ),
           },
         ]
       : []),
@@ -196,9 +189,7 @@ export function ActivityScreen() {
   return (
     <LargeTitleScreen title={t("mobile.activity.title")} {...header} pull={pull}>
       {/* Which filter the list is on, when it isn't everything: the menu's own word, once, over the list. */}
-      {filter !== "all" && filter !== "waiting" ? (
-        <SectionHeader title={t(`notifications.filter.${filter}`)} />
-      ) : null}
+      {filter !== "all" && filter !== "waiting" ? <SectionHeader title={t(`notifications.filter.${filter}`)} /> : null}
       {waiting.length > 0 ? (
         <>
           <SectionHeader title={t("mobile.home.waiting")} count={waitingCount} />

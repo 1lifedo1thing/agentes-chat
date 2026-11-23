@@ -2217,7 +2217,7 @@
     "expandNav": "사이드바 펼치기",
     "searchWorkspace": "워크스페이스 검색",
     "summary_other": "멤버 {{people}}명 · 에이전트 {{agents}}명",
-    "waiting": "내 확인 대기",
+    "waiting": "받은편지함",
     "approvals": "승인",
     "proposals": "개선 제안",
     "issues": "작업",
@@ -5079,7 +5079,7 @@
     "firstRun": "하던 곳에서 이어서 · {{total}}개 중 {{done}}개"
   },
   "notifications": {
-    "title": "알림",
+    "title": "받은편지함",
     "planLent": {
       "takeBack": "되돌려 받기",
       "takeBackAll": "모든 에이전트에서 되돌려 받기",
@@ -5107,7 +5107,7 @@
         "computer": "컴퓨터 바꾸기"
       }
     },
-    "docTitleUnread": "({{count}}) 알림",
+    "docTitleUnread": "({{count}}) 받은편지함",
     "summaryWaiting_other": "내 확인을 기다리는 항목 {{count}}개",
     "summaryUnread_other": "{{count}}개 읽지 않음",
     "summaryAllRead": "모두 읽음",
@@ -5121,6 +5121,7 @@
       "waiting": "내 확인 대기",
       "unread": "읽지 않음",
       "reactions": "반응",
+      "requests": "결정된 요청",
       "done": "완료"
     },
     "keys": {
@@ -5339,6 +5340,8 @@
     "noneUnread": "모두 읽었어요.",
     "noneHere": "지금은 아무것도 없어요.",
     "noneDone": "최근 30일 동안 완료로 표시한 항목이 없어요.",
+    "noneRequests": "아직 결정된 요청이 없습니다.",
+    "proposes": "님이 개선을 제안합니다",
     "more": "더 보기"
   },
   "approvals": {
@@ -10801,6 +10804,20 @@
     "empty": "“{{q}}”에 대한 결과가 없어요."
   },
   "codeSessions": {
+    "beta": {
+      "title": "Coding mode는 베타입니다",
+      "text": "실제로 쓸 수 있고 매주 달라집니다. 가끔 멈출 수 있는데, 그럴 때 문제는 저희 쪽에 있습니다.",
+      "go": "시작하기",
+      "added": {
+        "worktree": "요청마다 자체 worktree, Git·파일·화면·터미널 포함",
+        "anyAi": "어떤 AI든: Claude Code, Codex, OpenCode 또는 키로 쓰는 모델",
+        "beside": "대화 옆에서 파일을 편집하고 터미널을 엽니다"
+      },
+      "removed": {
+        "paste": "채팅과 에디터 사이에서 코드 복사·붙여넣기",
+        "watch": "에이전트가 끝날 때까지 터미널 지켜보기"
+      }
+    },
     "title": "코드",
     "state": {
       "waiting": "내 확인 대기",
@@ -10860,6 +10877,7 @@
       "agent_idle": "사용 가능"
     },
     "gitTab": {
+      "openFile": "파일 열기",
       "label": "Git",
       "from": "{{base}}에서 분기",
       "ahead_other": "커밋 {{count}}{{more}}개 앞섬",
@@ -10882,8 +10900,7 @@
         "deleted": "삭제됨",
         "renamed": "이름 변경됨",
         "untracked": "새 파일, 아직 git에 없음"
-      },
-      "openFile": "파일 열기"
+      }
     },
     "files": {
       "label": "파일",
@@ -10898,13 +10915,7 @@
       "truncated_other": "처음 {{formatted}}개 파일을 표시하고 있어요.",
       "hasChanges": "변경 사항 있음",
       "opening": "파일을 여는 중…",
-      "state": {
-        "binary": "바이너리 파일이라 여기에 표시할 내용이 없어요.",
-        "missing": "이 파일은 더 이상 없어요.",
-        "ignored": "git이 이 파일을 무시해서 여기에 표시되지 않아요.",
-        "secret": ".env 파일은 여기에 표시되지 않아요. 보통 비밀 정보가 들어 있어요.",
-        "outside": "이 파일은 워크트리 밖을 가리키는 링크예요."
-      },
+      "cut": "여기에는 처음 {{size}}만 표시돼요.",
       "save": "저장",
       "unsaved": "저장 안 됨",
       "tooLong": "너무 길어서 여기서 편집할 수 없습니다",
@@ -10914,7 +10925,20 @@
       "unsavedAsk": "이 파일에 저장하지 않은 변경 사항이 있습니다.",
       "keepEditing": "계속 편집",
       "discard": "버리기",
-      "cut": "여기에는 처음 {{size}}만 표시돼요."
+      "state": {
+        "binary": "바이너리 파일이라 여기에 표시할 내용이 없어요.",
+        "missing": "이 파일은 더 이상 없어요.",
+        "ignored": "git이 이 파일을 무시해서 여기에 표시되지 않아요.",
+        "secret": ".env 파일은 여기에 표시되지 않아요. 보통 비밀 정보가 들어 있어요.",
+        "outside": "이 파일은 워크트리 밖을 가리키는 링크예요."
+      }
+    },
+    "tabs": {
+      "label": "세션 탭",
+      "talk": "대화",
+      "terminalN": "터미널 {{n}}",
+      "close": "{{name}} 닫기",
+      "add": "새 탭"
     },
     "screen": {
       "computer": "{{name}}의 컴퓨터",
@@ -10955,27 +10979,6 @@
       "dm": "{{name}}와의 대화에서 열었어요",
       "channel": "#{{name}}에서 열었어요",
       "see": "대화 보기"
-    },
-    "tabs": {
-      "label": "세션 탭",
-      "talk": "대화",
-      "terminalN": "터미널 {{n}}",
-      "close": "{{name}} 닫기",
-      "add": "새 탭"
-    },
-    "beta": {
-      "added": {
-        "worktree": "요청마다 자체 worktree, Git·파일·화면·터미널 포함",
-        "anyAi": "어떤 AI든: Claude Code, Codex, OpenCode 또는 키로 쓰는 모델",
-        "beside": "대화 옆에서 파일을 편집하고 터미널을 엽니다"
-      },
-      "removed": {
-        "paste": "채팅과 에디터 사이에서 코드 복사·붙여넣기",
-        "watch": "에이전트가 끝날 때까지 터미널 지켜보기"
-      },
-      "title": "Coding mode는 베타입니다",
-      "text": "실제로 쓸 수 있고 매주 달라집니다. 가끔 멈출 수 있는데, 그럴 때 문제는 저희 쪽에 있습니다.",
-      "go": "시작하기"
     }
   },
   "code": {
@@ -15066,10 +15069,10 @@
       "repoNotAllowed": "이 에이전트는 그 저장소에서 작업할 수 없어요. 다른 저장소를 고르거나, 에이전트 설정에서 추가하세요.",
       "notYours": "세션은 연 사람이나 관리자만 닫을 수 있어요.",
       "notReady": "세션의 워크트리가 아직 준비되지 않았어요. 잠시 후 다시 시도하세요.",
-      "suggestionGone": "이 제안에는 이미 답했어요.",
-      "suggestionNotYours": "세션을 열지는 요청한 사람만 정할 수 있어요.",
       "fileChanged": "이 파일은 연 뒤에 컴퓨터에서 변경되었습니다.",
-      "fileLocked": "이 파일은 여기서 편집할 수 없습니다."
+      "fileLocked": "이 파일은 여기서 편집할 수 없습니다.",
+      "suggestionGone": "이 제안에는 이미 답했어요.",
+      "suggestionNotYours": "세션을 열지는 요청한 사람만 정할 수 있어요."
     },
     "webhook": {
       "githubNoAccess": "이 워크스페이스의 GitHub은 {{repo}}에 웹훅을 만들 수 없어요. 아래 단계를 따라 직접 만들어 주세요.",
@@ -19581,6 +19584,7 @@
     "openAgain": "다시 열기",
     "ended": "셸이 종료됐어요",
     "dropped": "터미널 연결이 끊겼어요",
+    "moved": "이 터미널은 다른 창에서 열려 있습니다",
     "screening": "여기서는 터미널이 꺼져 있습니다",
     "forbidden": "이 컴퓨터를 쓸 수 있는 사람만 터미널을 열 수 있어요",
     "offline": "컴퓨터가 오프라인이에요",
@@ -19590,8 +19594,7 @@
     "busy": "이 컴퓨터에서 열 수 있는 터미널이 가득 찼어요. 하나를 닫고 다시 여세요.",
     "paused": "컴퓨터가 일시 중지됐어요",
     "failed": "터미널을 열지 못했어요",
-    "agentFolder": "터미널이 에이전트 폴더에서 열렸어요. 세션 폴더에서 열려면 컴퓨터를 업데이트하세요.",
-    "moved": "이 터미널은 다른 창에서 열려 있습니다"
+    "agentFolder": "터미널이 에이전트 폴더에서 열렸어요. 세션 폴더에서 열려면 컴퓨터를 업데이트하세요."
   },
   "agora": {
     "label": "지금",

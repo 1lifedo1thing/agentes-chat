@@ -106,7 +106,7 @@
     "chats": "Czaty",
     "threads": "Wątki",
     "agents": "Agenci",
-    "activity": "Aktywność",
+    "activity": "Odebrane",
     "search": "Szukaj",
     "withCount": "{{label}}, {{count}}"
   },
@@ -911,7 +911,7 @@
     }
   },
   "activity": {
-    "title": "Aktywność",
+    "title": "Skrzynka odbiorcza",
     "chooseModel": "Wybierz inny model",
     "filter": {
       "all": "Wszystko",

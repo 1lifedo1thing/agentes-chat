@@ -121,7 +121,11 @@ export function ListRow({
               <Text
                 variant={TIME_VARIANT}
                 tone={unread ? "ink2" : "faint"}
-                style={[LIST_TIME, unread && styles.unreadTime, timeWaiting && { color: c.amberInk, fontWeight: weights.semibold }]}
+                style={[
+                  LIST_TIME,
+                  unread && styles.unreadTime,
+                  timeWaiting && { color: c.amberInk, fontWeight: weights.semibold },
+                ]}
               >
                 {time}
               </Text>

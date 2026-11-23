@@ -145,7 +145,12 @@ export function QuestionScreen({ id }: { id: string }) {
             {suggestions.map((s) => (
               <GroupedRow key={s} label={s} labelLines={3} disabled={reply.isPending} onPress={() => answer(s, true)} />
             ))}
-            <GroupedRow label={t("ask.otherAnswer")} chevron disabled={reply.isPending} onPress={() => setTyping(true)} />
+            <GroupedRow
+              label={t("ask.otherAnswer")}
+              chevron
+              disabled={reply.isPending}
+              onPress={() => setTyping(true)}
+            />
           </GroupedList>
         )}
       </View>
