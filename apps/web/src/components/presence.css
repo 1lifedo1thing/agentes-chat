@@ -229,3 +229,6 @@ html:not([data-pointer]) .status-field__emoji:focus-visible {
 html:not([data-pointer]) .status-avail__opt:has(.ac-radio:focus-visible) {
   box-shadow: var(--focus-ring-inset);
 }
+html:not([data-pointer]) .status-avail__opt:has(.ac-radio[data-state="checked"]:focus-visible) {
+  box-shadow: var(--status-chosen), var(--focus-ring-inset);
+}

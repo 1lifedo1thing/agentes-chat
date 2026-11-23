@@ -2835,7 +2835,7 @@ html:not([data-pointer]) .ac-check:focus-visible {
   border-bottom-left-radius: var(--radius-cut);
 }
 /* Chosen (--chosen-*), inside the card's own outline (its line2 ring and e1's line), so neither the card nor the gaps
-   around it move. A pressed card also takes a check in the corner, while a radio card's own radio already marks it. */
+   around it move. A pressed card also takes a check in the corner, a radio card an ink ring (below). */
 .ac-option[aria-pressed="true"],
 .ac-option[data-state="checked"] {
   --pressed: 0 0 0 1px var(--line2), 0 0 0 1px var(--line), var(--chosen-press);

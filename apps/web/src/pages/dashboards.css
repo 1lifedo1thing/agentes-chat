@@ -934,7 +934,7 @@ html:not([data-pointer]) :is(.nw-sug, .nw-pick, .nw-alert__sugs button):focus-vi
 }
 .nw-pick {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
