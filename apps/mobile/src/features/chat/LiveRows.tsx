@@ -244,7 +244,12 @@ export function WorkingLine({
                       <Icon name="right" size={12} color={c.faint} />
                     )}
                     <View style={plate}>
-                      <AgentFace agentId={asking.to} size={18} framed mode={asking.yours || asking.wait ? "idle" : "think"} />
+                      <AgentFace
+                        agentId={asking.to}
+                        size={18}
+                        framed
+                        mode={asking.yours || asking.wait ? "idle" : "think"}
+                      />
                     </View>
                   </Animated.View>
                 );

@@ -93,7 +93,8 @@ describe("agents it asked first: quoted at the top of the reply, as a reply quot
         at(live, [
           "if (asking && e.consult === asking)",
           '<AgentFace agentId={e.id} size={18} framed mode="idle" />',
-          '<AgentFace agentId={asking.to} size={18} framed mode={asking.yours || asking.wait ? "idle" : "think"} />',
+          "agentId={asking.to}",
+          'mode={asking.yours || asking.wait ? "idle" : "think"}',
         ]),
       ),
     ).toBe(true);
