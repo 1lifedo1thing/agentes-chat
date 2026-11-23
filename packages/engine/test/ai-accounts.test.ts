@@ -11,6 +11,7 @@ import {
   accountsServing,
   aiHubView,
   audienceSql,
+  createCredential,
   planKeyFallbackOn,
   postPersonMessage,
   replyRefusal,
@@ -218,13 +219,24 @@ describe("permissions: who changes what, and who hears about it", () => {
       .update(schema.machineAccounts)
       .set({ email: "walter@example.com" })
       .where(eq(schema.machineAccounts.id, WALTERS));
+    const key = await createCredential(fx.db, fx.keyWrapper, fx.owner.id, fx.org.id, {
+      provider: "openai",
+      label: "Team key",
+      apiKey: "sk-proj-test-key-12345678",
+    });
     const hub = await aiHubView(fx.db, ana.id, fx.org.id);
     expect(hub.accounts.map((a) => a.id).sort()).toEqual([WALTERS, ANAS, OWNERS].sort());
     const walters = hub.accounts.find((a) => a.id === WALTERS);
     expect(walters).toMatchObject({ email: null, rights: { canUse: false, useReason: "owner_only" } });
     expect(walters?.permissions.use.mode).toBe("owner");
     expect(hub).toMatchObject({ keyFallback: false, canConfigure: false, canManageKeys: false });
-    expect(hub.keys.every((k) => k.usedBy === undefined)).toBe(true);
+    // Every member sees the workspace's keys; their ends and users stay with whoever manages keys.
+    expect(hub.keys.find((k) => k.id === key.id)).toMatchObject({ provider: "openai", label: "Team key" });
+    expect(hub.keys.every((k) => k.keyHint === "")).toBe(true);
+    const owners = await aiHubView(fx.db, fx.owner.id, fx.org.id);
+    expect(owners.canManageKeys).toBe(true);
+    expect(key.keyHint).not.toBe("");
+    expect(owners.keys.find((k) => k.id === key.id)?.keyHint).toBe(key.keyHint);
   });
 
   test("widening is told apart from narrowing", () => {
