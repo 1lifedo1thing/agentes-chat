@@ -2588,6 +2588,13 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Пропустить",
+    "inMenu_one": "{{count}} новый в меню",
+    "inMenu_few": "{{count}} новых в меню",
+    "inMenu_many": "{{count}} новых в меню",
+    "inMenu_other": "{{count}} новых в меню"
+  },
   "openOnPhone": {
     "qr": "QR-код для входа в приложение agentes",
     "making": "Создаём код…",
@@ -14210,7 +14217,6 @@
     "added": "{{repo}} попадёт в список после сохранения."
   },
   "connectors": {
-    "title": "Коннекторы",
     "store": {
       "featured": "Избранное",
       "suggested": "Рекомендуем",
@@ -14261,6 +14267,7 @@
       "addressPassword": "Адрес и пароль",
       "composio": "Через Composio"
     },
+    "title": "Коннекторы",
     "add": "Добавить коннектор",
     "personal": {
       "note": "Открыть эти подключения можете только вы. Ваши агенты используют их, только когда вы просите.",

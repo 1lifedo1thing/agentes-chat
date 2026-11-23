@@ -2573,6 +2573,12 @@ export const en = {
     testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
+  /** Lodi's cursor building the sidebar after a team is made: Skip on the receipt and the count on the closed menu. */
+  lodiCursor: {
+    skip: "Skip",
+    inMenu_one: "{{count}} new in the menu",
+    inMenu_other: "{{count}} new in the menu",
+  },
   openOnPhone: {
     qr: "QR code to sign in to the agentes app",
     making: "Making the code…",

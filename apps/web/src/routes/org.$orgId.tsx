@@ -21,6 +21,8 @@ import { DetailsHost } from "@/components/DetailsHost";
 import { InviteDialogProvider } from "@/components/invite/InviteDialog";
 import { LeaveChannelDialog } from "@/components/LeaveChannelDialog";
 import { RefetchBar } from "@/components/Loading";
+import { useArrivalsBusy } from "@/components/lodi-cursor/arrivals";
+import { LodiCursor } from "@/components/lodi-cursor/LodiCursor";
 import { OutageNotices } from "@/components/MachineOutages";
 import { NavDrawerProvider, NavScrim, ShellBar } from "@/components/NavDrawer";
 import { NoticeIsland } from "@/components/NoticeIsland";
@@ -77,6 +79,7 @@ function OrgLayout() {
   const focused =
     (/\/agents\/new\/?$/.test(path) && can(membership, "create_agents")) ||
     (LIVE_FILE_PATH.test(path) && PRESENTING.test(href));
+  const landing = useArrivalsBusy();
   // Notifications in this browser (ADR 0071), when already on: the server hears of them again, quietly.
   useWebPushRefresh(me.user.id);
   useServerLocale(me.user);
@@ -151,6 +154,7 @@ function OrgLayout() {
                       <div className="shell">
                         <RefetchBar />
                         <CommandMenu />
+                        <LodiCursor />
                         <LeaveChannelDialog />
                         {!focused && (
                           <>
@@ -168,7 +172,8 @@ function OrgLayout() {
                           {!focused && !membership.deletion && (
                             <MorphRoom pace="panel" className="shell__notices">
                               <ConfirmEmailBanner />
-                              <HoldBanner />
+                              {/* Lodi's cursor shows a new team land first, then the page glides under the banner. */}
+                              {!landing && <HoldBanner />}
                               <ComputerSetupNotice />
                               <OutageNotices />
                             </MorphRoom>

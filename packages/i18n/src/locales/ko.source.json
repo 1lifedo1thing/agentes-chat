@@ -6011,6 +6011,15 @@
   "appsDownload.googlePlay": {
     "value": "Google Play"
   },
+  "lodiCursor.skip": {
+    "value": "Skip"
+  },
+  "lodiCursor.inMenu": {
+    "value": {
+      "one": "{{count}} new in the menu",
+      "other": "{{count}} new in the menu"
+    }
+  },
   "openOnPhone.qr": {
     "value": "QR code to sign in to the agentes app"
   },
@@ -32414,9 +32423,6 @@
   "repos.added": {
     "value": "{{repo}} joins the list when you save."
   },
-  "connectors.title": {
-    "value": "Connectors"
-  },
   "connectors.store.featured": {
     "value": "Featured"
   },
@@ -32530,6 +32536,9 @@
   },
   "connectors.howShort.composio": {
     "value": "Through Composio"
+  },
+  "connectors.title": {
+    "value": "Connectors"
   },
   "connectors.add": {
     "value": "Add connector"

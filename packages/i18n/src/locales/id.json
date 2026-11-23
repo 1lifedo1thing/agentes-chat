@@ -2333,6 +2333,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Lewati",
+    "inMenu_other": "{{count}} baru di menu"
+  },
   "openOnPhone": {
     "qr": "Kode QR untuk masuk ke aplikasi agentes",
     "making": "Membuat kode…",
@@ -12765,7 +12769,6 @@
     "added": "{{repo}} masuk ke daftar saat kamu menyimpan."
   },
   "connectors": {
-    "title": "Konektor",
     "store": {
       "featured": "Unggulan",
       "suggested": "Disarankan",
@@ -12804,6 +12807,7 @@
       "addressPassword": "Alamat dan kata sandi",
       "composio": "Lewat Composio"
     },
+    "title": "Konektor",
     "add": "Tambah konektor",
     "personal": {
       "note": "Hanya kamu yang membuka koneksi ini. Agenmu hanya menggunakannya saat kamu minta.",

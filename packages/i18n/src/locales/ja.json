@@ -2333,6 +2333,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "スキップ",
+    "inMenu_other": "メニューに新着 {{count}} 件"
+  },
   "openOnPhone": {
     "qr": "agentesアプリにログインするためのQRコード",
     "making": "コードを作成中…",
@@ -12706,7 +12710,6 @@
     "added": "保存すると{{repo}}がリストに追加されます。"
   },
   "connectors": {
-    "title": "コネクタ",
     "store": {
       "featured": "注目",
       "suggested": "おすすめ",
@@ -12745,6 +12748,7 @@
       "addressPassword": "アドレスとパスワード",
       "composio": "Composio経由"
     },
+    "title": "コネクタ",
     "add": "コネクタを追加",
     "personal": {
       "note": "これらの接続を開けるのはあなただけです。エージェントは、あなたが頼んだときだけ使います。",

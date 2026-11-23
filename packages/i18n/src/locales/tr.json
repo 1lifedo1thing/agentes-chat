@@ -2417,6 +2417,11 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Geç",
+    "inMenu_one": "Menüde {{count}} yeni",
+    "inMenu_other": "Menüde {{count}} yeni"
+  },
   "openOnPhone": {
     "qr": "agentes uygulamasına giriş yapmak için QR kodu",
     "making": "Kod oluşturuluyor…",
@@ -13180,7 +13185,6 @@
     "added": "{{repo}} kaydettiğinizde listeye eklenir."
   },
   "connectors": {
-    "title": "Bağlayıcılar",
     "store": {
       "featured": "Öne çıkanlar",
       "suggested": "Önerilen",
@@ -13223,6 +13227,7 @@
       "addressPassword": "Adres ve şifre",
       "composio": "Composio üzerinden"
     },
+    "title": "Bağlayıcılar",
     "add": "Bağlayıcı ekle",
     "personal": {
       "note": "Bu bağlantıları yalnızca sen açarsın. Ajanların bunları yalnızca sen istediğinde kullanır.",

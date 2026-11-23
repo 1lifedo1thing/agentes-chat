@@ -522,7 +522,7 @@ export {
 } from "./recurrence";
 export { fold, matchesWords } from "./search";
 export { workspaceSky } from "./sky/accent";
-export { pixelBurst, pixelConfetti } from "./sky/burst";
+export { pixelBurst, pixelConfetti, pixelVeil } from "./sky/burst";
 export { ditherCells, ditherSvg, ditherTones, ditherUrl } from "./sky/dither";
 export {
   drawSprite,

@@ -2333,6 +2333,10 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "건너뛰기",
+    "inMenu_other": "메뉴에 새 항목 {{count}}개"
+  },
   "openOnPhone": {
     "qr": "agentes 앱에 로그인하는 QR 코드",
     "making": "코드를 만드는 중…",
@@ -12700,7 +12704,6 @@
     "added": "저장하면 {{repo}}이(가) 목록에 추가돼요."
   },
   "connectors": {
-    "title": "커넥터",
     "store": {
       "featured": "추천",
       "suggested": "제안",
@@ -12739,6 +12742,7 @@
       "addressPassword": "주소와 비밀번호",
       "composio": "Composio를 통해"
     },
+    "title": "커넥터",
     "add": "커넥터 추가",
     "personal": {
       "note": "이 연결은 나만 열 수 있어요. 내가 부탁할 때만 에이전트가 사용해요.",

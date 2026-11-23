@@ -125,6 +125,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { useNewAgent } from "@/components/new-agent/new-agent-context";
+import { useArrived } from "@/hooks/useArrived";
 import { useDirectory } from "@/hooks/useDirectory";
 import { useEverTrue } from "@/hooks/useEverTrue";
 import { useInboxWaiting } from "@/hooks/useInboxWaiting";
@@ -169,6 +170,8 @@ import { MoveChannelDialog, NewCategoryDialog, RenameCategoryDialog } from "./Ch
 import { MenuEntries } from "./DesktopMenus";
 import { useAgentMenu, useChannelMenu, usePersonMenu } from "./entity-menus";
 import { useInviteDialog } from "./invite/InviteDialog";
+import { arrivalProps, useArrivals } from "./lodi-cursor/arrivals";
+import { useRowsDrawIn } from "./lodi-cursor/runner";
 import { useNow } from "./missions/MissionBits";
 import { COMPACT_QUERY, useMediaQuery, useNavDrawer } from "./NavDrawer";
 import { NewChannelDialog } from "./NewChannelDialog";
@@ -404,6 +407,10 @@ export function Sidebar() {
   // the key doesn't reach (ADR 0085 addendum of 2026-11-17), which Team still lists.
   const manages = can(org, "manage_agents");
   const team = dir.agents.filter((a) => !isRightHand(a));
+  const arrivedAgents = useArrived(
+    team.map((a) => a.id),
+    !dir.loading,
+  );
   const shownAgents = team.filter((a) => canTalk(a) || (manages && view.showAllAgents && opensDm(a)));
   const groups = useAgentGroups(orgId).data ?? [];
   const byGroup = agentSections(shownAgents, groups, (a) => a.id);
@@ -478,6 +485,7 @@ export function Sidebar() {
       >
         <AgentRow
           agent={a}
+          arrival={arrivalProps(arrivedAgents, a.id)}
           unread={unread}
           waitingFor={waitingFor.get(a.id)}
           live={busy.has(a.id) || waits.has(a.id) || waitingFor.has(a.id) || unread > 0}
@@ -493,6 +501,7 @@ export function Sidebar() {
   // Only the middle scrolls: the workspace card on top and the foot stay put. The active item
   // paints its own background (no sliding pill).
   const navRef = useRef<HTMLDivElement>(null);
+  useRowsDrawIn(navRef);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // The list fades out at an edge only while there is more to scroll past it (no hard cut); re-checked as lists load.
   useScrollEdges(navRef, [channels.data, directs.length, shownAgents.length, groups.length, rail]);
@@ -1209,6 +1218,12 @@ function SidebarChannels({
   const path = useRouterState({ select: (s) => s.location.pathname });
   const channels = all.filter((c) => !c.seenAsAdmin || path.endsWith(`/c/${c.id}`));
   const others = all.filter((c) => !channels.includes(c));
+  // New since the list loaded (a team's, someone else's): their rows open their room as they land.
+  const arrived = useArrived(
+    channels.map((c) => c.id),
+    !loading,
+  );
+  useArrivals();
   const mayCreate = can(org, "create_channels");
   const mayChange = (c: Channel) => managesChannel(c, me.user.id, org);
   const [renaming, setRenaming] = useState<ChannelCategory | null>(null);
@@ -1419,6 +1434,9 @@ function SidebarChannels({
     // mention still shows.
     const unread = looksUnread(c);
     const mentions = c.mentionCount ?? 0;
+    // The row's own marks go on what the list holds: the link, or the row around it with its buttons.
+    const outer = { "data-channel-row": c.id, ...arrivalProps(arrived, c.id) };
+    const plain = !mayChange(c);
     const link = (
       <Link
         key={c.id}
@@ -1426,6 +1444,7 @@ function SidebarChannels({
         params={{ orgId, channelId: c.id }}
         className="sidebar__item"
         title={`#${c.name}`}
+        {...(plain ? outer : {})}
         data-kind="channel"
         data-unread={unread}
         data-muted={c.muted || undefined}
@@ -1459,13 +1478,13 @@ function SidebarChannels({
       </Link>
     );
     // On hover or focus, like Discord's invite and settings: who manages the channel adds members or opens its details.
-    if (!mayChange(c)) return link;
+    if (plain) return link;
     const open = (ask: "details" | "add") => () => {
       requestChannelDetails(c.id, ask);
       void navigate({ to: "/org/$orgId/c/$channelId", params: { orgId, channelId: c.id } });
     };
     return (
-      <div key={c.id} className="sidebar__row" data-unread={unread} data-acts={2}>
+      <div key={c.id} className="sidebar__row" data-unread={unread} data-acts={2} {...outer}>
         {link}
         <span className="sidebar__row-acts">
           <RowAction icon="personAdd" label={t("shell.sidebarMenu.addMembers")} onClick={open("add")} />
@@ -1749,6 +1768,7 @@ function PinnedMark() {
  */
 function AgentRow({
   agent: a,
+  arrival,
   unread,
   waitingFor,
   live,
@@ -1759,6 +1779,8 @@ function AgentRow({
   menuExtra,
 }: {
   agent: Agent;
+  /** Its marks while it lands in the sidebar (`arrivalProps`). */
+  arrival?: ReturnType<typeof arrivalProps>;
   unread: number;
   /** The offline computer it waits for (its brain runs there). */
   waitingFor?: string;
@@ -1840,7 +1862,13 @@ function AgentRow({
     : [a.name, a.role, now ?? word, line?.text].filter(Boolean).join(" · ");
   const roleTag = !locked && !out;
   return (
-    <div className="sidebar__row" data-agent-row={a.id} data-live={live || undefined} data-acts={edits ? 1 : undefined}>
+    <div
+      className="sidebar__row"
+      data-agent-row={a.id}
+      data-live={live || undefined}
+      data-acts={edits ? 1 : undefined}
+      {...arrival}
+    >
       <Link
         {...rowMenu}
         to="/org/$orgId/dm/agent/$agentId"

@@ -64,6 +64,7 @@ import { proposedRoutineWhen } from "../routines/rule";
 import { useColors, useDirectory, useMeId, useWhen } from "../shared/hooks";
 import { tapHaptic } from "../shared/parts";
 import { openTeamAdjust } from "./TeamAdjustScreen";
+import { arrivalKeys, teamArrivals } from "./team-arrivals";
 
 /**
  * The right hand's team setup on the phone (ADR 0137 §10), as on the web: answers to tap as chips (each the person's
@@ -460,7 +461,15 @@ function TeamCardView({ message: m, card }: { message: Message; card: TeamPropos
                 disabled={busy}
                 onPress={() =>
                   team.create.mutate(undefined, {
-                    onSuccess: ({ noAi }) => {
+                    onSuccess: ({ card: made, noAi }) => {
+                      // Where it went: the faces fly into the back button, the rows come into Conversas once.
+                      teamArrivals.add(
+                        arrivalKeys({
+                          channelIds: personal ? [] : (made.created?.channelIds ?? []),
+                          agentIds: made.created?.agentIds ?? [],
+                        }),
+                        plan.agents.map((a) => ({ key: a.handle, name: a.name, appearance: a.appearance })),
+                      );
                       if (held) setWaveFrom(Date.now());
                       else if (noAi?.[0]) openConnectAi({ agentId: noAi[0] });
                     },

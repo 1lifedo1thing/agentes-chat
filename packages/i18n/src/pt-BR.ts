@@ -2471,6 +2471,12 @@ export const ptBR = {
     testFlight: "TestFlight",
     googlePlay: "Google Play",
   },
+  /** Lodi's cursor building the sidebar after a team is made: Pular on the receipt and the count on the closed menu. */
+  lodiCursor: {
+    skip: "Pular",
+    inMenu_one: "{{count}} novo no menu",
+    inMenu_other: "{{count}} novos no menu",
+  },
   openOnPhone: {
     qr: "QR code para entrar no app agentes",
     making: "Gerando o código…",

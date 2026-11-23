@@ -55,6 +55,7 @@ import { usePlanHold } from "@/components/ai/plan-hold";
 import { useChannelActions } from "@/components/channel-actions";
 import { useConnectAi } from "@/components/connect-ai-context";
 import { useInviteDialog } from "@/components/invite/InviteDialog";
+import { arrivals, useArrivalsBusy } from "@/components/lodi-cursor/arrivals";
 import { useOrg } from "@/components/org-context";
 import { type RequestAnswer, RequestCard } from "@/components/RequestCard";
 import { useDirectory } from "@/hooks/useDirectory";
@@ -294,6 +295,8 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
   const former = useFormerAgents(org.id).data;
   // Made here and now, on a hold: the new agents wave, once.
   const [wave, setWave] = useState(false);
+  // Lodi's cursor is building the sidebar from this team: Pular lands it all at once.
+  const landing = useArrivalsBusy() && card.decidedByUserId === me.user.id;
   const [adjusting, setAdjusting] = useState<TeamAgentDraft | null>(null);
   const [map, setMap] = useState(false);
   const agent = message.author.id ? dir.anyAgent(message.author.id) : undefined;
@@ -331,6 +334,7 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
   // server's `undoTeam`, ADR 0085 addendum of 2026-11-17), so a private agent stays out of reach of who only holds
   // "Edit agents".
   const managesTeam = managesTeamAgents(org, card.created?.agentIds ?? [], dir.agents, former);
+  const undoable = teamUndoable(card, { userId: me.user.id, admin: managesTeam });
   const answer: RequestAnswer | undefined = open
     ? undefined
     : status === "created"
@@ -340,16 +344,26 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
             ? t(modeKey(org, "teamPlan.card.created"), { name: by })
             : t(modeKey(org, "teamPlan.card.createdYou")),
           time: card.decidedAt ? whenAt(t, i18n.language, card.decidedAt) : undefined,
-          action: teamUndoable(card, { userId: me.user.id, admin: managesTeam }) ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={team.undo.isPending}
-              onClick={() => team.undo.mutate(undefined, { onError: failed })}
-            >
-              {t("agentActions.undo")}
-            </Button>
-          ) : undefined,
+          action:
+            undoable || landing ? (
+              <>
+                {undoable && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={team.undo.isPending}
+                    onClick={() => team.undo.mutate(undefined, { onError: failed })}
+                  >
+                    {t("agentActions.undo")}
+                  </Button>
+                )}
+                {landing && (
+                  <Button size="sm" variant="ghost" className="lodi-skip" onClick={arrivals.skip}>
+                    {t("lodiCursor.skip")}
+                  </Button>
+                )}
+              </>
+            ) : undefined,
         }
       : {
           done: false,
@@ -401,7 +415,12 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
                   disabled={team.deny.isPending}
                   onClick={() =>
                     team.create.mutate(undefined, {
-                      onSuccess: ({ noAi }) => {
+                      onSuccess: ({ card: made, noAi }) => {
+                        // Lodi's cursor shows the clicker where it all went (a personal workspace lists no channels).
+                        arrivals.add({
+                          channelIds: personal ? [] : (made.created?.channelIds ?? []),
+                          agentIds: made.created?.agentIds ?? [],
+                        });
                         if (held) setWave(true);
                         else if (noAi?.length) connect?.open({ agentId: noAi[0], agentIds: noAi });
                       },

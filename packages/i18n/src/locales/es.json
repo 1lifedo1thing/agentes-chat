@@ -2502,6 +2502,12 @@
     "testFlight": "TestFlight",
     "googlePlay": "Google Play"
   },
+  "lodiCursor": {
+    "skip": "Saltar",
+    "inMenu_one": "{{count}} nuevo en el menú",
+    "inMenu_many": "{{count}} nuevos en el menú",
+    "inMenu_other": "{{count}} nuevos en el menú"
+  },
   "openOnPhone": {
     "qr": "Código QR para iniciar sesión en la app agentes",
     "making": "Generando el código…",
@@ -13679,7 +13685,6 @@
     "added": "{{repo}} entra en la lista cuando guardes."
   },
   "connectors": {
-    "title": "Conectores",
     "store": {
       "featured": "Destacados",
       "suggested": "Sugerido",
@@ -13726,6 +13731,7 @@
       "addressPassword": "Dirección y contraseña",
       "composio": "A través de Composio"
     },
+    "title": "Conectores",
     "add": "Agregar conector",
     "personal": {
       "note": "Solo tú abres estas conexiones. Tus agentes las usan solo cuando se lo pides.",
