@@ -153,8 +153,9 @@ describe("Atividade", () => {
     expect(decided).toContain('.filter((a) => a.status !== "pending")');
     // biome-ignore lint/suspicious/noTemplateCurlyInString: the screen's own template, read as source text
     expect(decided).toContain("onPress={() => router.push(`/approval/${a.id}`)}");
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: the screen's own template, read as source text
-    expect(decided).toContain("t(`mobile.approval.status.${a.status}`)");
+    // How it ended, in one word after what it was (the request screen's status lines are whole sentences).
+    expect(decided).toContain("t(`approvals.status.");
+    expect(decided).not.toContain("mobile.approval.status");
     // The notifications behind them stay where they were: the other filters sort them as before.
     expect(activitySections(items, "requests", NOW).waiting.map((n) => n.id)).toEqual(["question", "approval"]);
   });
