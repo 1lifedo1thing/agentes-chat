@@ -265,11 +265,12 @@ describe("what an agent changed wraps whole, on a card as wide as its words", ()
     expect(checks).not.toContain("styles.one, ACT_LINE.row");
   });
 
-  test("they wear the tool block's card (the face a step up, a hairline), never the sunken gray of a pressed row", () => {
+  test("they wear the message card's frame (as the tool block), never the sunken gray of a pressed row", () => {
     for (const file of ["Receipts.tsx", "TeamChecks.tsx"]) {
       const text = source(file);
       expect(text).not.toContain("sunken");
-      expect(text).toMatch(/backgroundColor: (c|colors)\.raised, borderColor: (c|colors)\.line2/);
+      // The one frame of a message card (`useMessageCardFrame`): raised with a hairline, a bubble in bubbles.
+      expect(text).toContain("card.style");
     }
   });
 });

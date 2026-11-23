@@ -155,7 +155,8 @@ export function ConsultQuote({
     pair.seconds !== null ? consultTimeText(t, i18n.language, live, pair.seconds) : null,
   ]
     .filter(Boolean)
-    .join(" ");
+    // Two facts, told apart as every line's: "1 of 2 · 2.1 h".
+    .join(" · ");
   return (
     <Pressable
       onPress={() => {

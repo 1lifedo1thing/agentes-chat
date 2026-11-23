@@ -55,7 +55,7 @@ import {
   useReducedMotion,
 } from "@/ui";
 import { router } from "@/ui/navigation";
-import { useCardTop, useMessageCardCorners } from "../chat/look";
+import { useCardTop, useMessageCardFrame } from "../chat/look";
 import { chatHref } from "../links/logic";
 import { useFailed } from "../routines/hooks";
 import { AgentFace } from "../shared/Face";
@@ -96,7 +96,7 @@ function WeekCard({ message, card }: { message: Message; card: TeamWeekCard }) {
   const { orgId, org } = useOrg();
   const c = useColors();
   const cardTop = useCardTop();
-  const cardCorners = useMessageCardCorners();
+  const frame = useMessageCardFrame();
   const dir = useDirectory();
   const channels = useChannels(orgId).data ?? [];
   const proposals = useCardProposals(orgId, card.proposalIds);
@@ -186,7 +186,7 @@ function WeekCard({ message, card }: { message: Message; card: TeamWeekCard }) {
   return (
     // Its week ("How the team's week went, Oct 28 to Nov 3") is the message's text, above.
     <View>
-      <View style={[styles.card, { backgroundColor: c.raised, borderColor: c.line2 }, cardCorners, cardTop]}>
+      <View style={[styles.card, frame.style, cardTop]}>
         <View style={styles.head}>
           <Text variant="footnote" tone="muted" style={styles.semibold}>
             {t(teamWeekTitleKey(card))}

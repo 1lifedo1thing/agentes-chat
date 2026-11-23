@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Text as RNText, StyleSheet, View } from "react-native";
-import { Icon, PressScale, Text } from "@/ui";
+import { Icon, MESSAGE_CARD_X, PressScale, Text } from "@/ui";
 import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: MESSAGE_CARD_X,
     paddingVertical: 10,
     // As the pictures' beside it.
     borderRadius: 14,

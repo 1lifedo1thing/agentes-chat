@@ -3,7 +3,7 @@ import { type HandedTask, handedTasksOf, type IssueWorkRef, issueTakenOf } from 
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
-import { CARD_PAD, Disclosure, EventPill, Icon, PressScale, Text, TOUCH } from "@/ui";
+import { Disclosure, EventPill, Icon, MESSAGE_CARD_X, PressScale, Text, TOUCH } from "@/ui";
 import { router } from "@/ui/navigation";
 import { StateChip } from "../issues/parts";
 import { chatHref } from "../links/logic";
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   fit: { flexShrink: 1, minWidth: 0 },
   // The card's box, as every card in a message, and its content at the cards' padding.
   cardBox: { borderRadius: 20 },
-  card: { padding: CARD_PAD, gap: 8 },
+  card: { paddingVertical: 14, paddingHorizontal: MESSAGE_CARD_X, gap: 8 },
   head: { flexDirection: "row", alignItems: "center", gap: 8 },
   grow: { flex: 1, flexShrink: 1 },
   title: { fontWeight: "600" },

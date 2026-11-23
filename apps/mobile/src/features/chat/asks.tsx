@@ -48,6 +48,7 @@ import {
   Icon,
   type IconName,
   InfoHint,
+  MESSAGE_CARD_X,
   Text,
   useReducedMotion,
   useTheme,
@@ -1082,7 +1083,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderBottomLeftRadius: 6,
     overflow: "hidden",
-    paddingHorizontal: 16,
+    paddingHorizontal: MESSAGE_CARD_X,
     paddingVertical: 14,
     gap: 8,
   },
@@ -1099,8 +1100,12 @@ const styles = StyleSheet.create({
   // Who it waits for never takes the kind's room: at most half the line (long words left the kind none).
   waits: { flexShrink: 1, maxWidth: "50%" },
   lead: { lineHeight: 22 },
-  // Edge to edge across the card (its 16-point sides), a hairline above.
-  edge: { marginHorizontal: -16, paddingHorizontal: 16, borderTopWidth: StyleSheet.hairlineWidth },
+  // Edge to edge across the card (its sides, `MESSAGE_CARD_X`), a hairline above.
+  edge: {
+    marginHorizontal: -MESSAGE_CARD_X,
+    paddingHorizontal: MESSAGE_CARD_X,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   // What will happen, drawn small: as tall as a preview gets, fading at its foot.
   preview: { maxHeight: 152, overflow: "hidden", paddingVertical: 10 },
   fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: 40 },

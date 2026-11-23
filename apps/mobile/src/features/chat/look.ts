@@ -17,7 +17,7 @@ import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import type { AgentColorName } from "@agenteschat/ui/agent/engine";
 import { wallpaperStrength } from "@agenteschat/ui/sky/wallpaper";
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { type LayoutChangeEvent, StyleSheet, useWindowDimensions, type ViewStyle } from "react-native";
+import { type LayoutChangeEvent, type StyleProp, StyleSheet, useWindowDimensions, type ViewStyle } from "react-native";
 import { useOrg } from "@/providers/org";
 import { useTheme } from "@/ui";
 import { cardEdge, type Scheme } from "@/ui/palette";
@@ -163,6 +163,33 @@ export function useMessageCardCorners(): Corners | null {
   const part = useBubblePart();
   const inBody = useContext(RowPartContext) !== null;
   return part ? BUBBLE_PART_CORNERS : inBody ? MESSAGE_CARD_CORNERS : null;
+}
+
+/**
+ * The one frame of a card in a message, spread last over the card's own: under someone else's words in a conversation
+ * of bubbles it is a bubble of that message (its fill, its light edge over a background, no outline); elsewhere the
+ * raised surface with a hairline. With the corners every card there takes (`useMessageCardCorners`). `fill`: the
+ * color behind its content, for what fades into it or rings a face on it; `bubble`: whether it is a bubble part.
+ */
+export function useMessageCardFrame(): { style: StyleProp<ViewStyle>; fill: string; bubble: boolean } {
+  const { colors } = useTheme();
+  const part = useBubblePart();
+  const cardCorners = useMessageCardCorners();
+  return useMemo(
+    () =>
+      part
+        ? {
+            style: [{ backgroundColor: part.fill, borderWidth: 0 }, cardCorners, part.edge],
+            fill: part.fill,
+            bubble: true,
+          }
+        : {
+            style: [{ backgroundColor: colors.raised, borderColor: colors.line2 }, cardCorners],
+            fill: colors.raised,
+            bubble: false,
+          },
+    [part, cardCorners, colors.raised, colors.line2],
+  );
 }
 
 /** `quietInset` in this conversation's look. */
