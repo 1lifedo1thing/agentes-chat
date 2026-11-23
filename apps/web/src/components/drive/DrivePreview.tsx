@@ -67,7 +67,9 @@ export function DrivePreview({
   const live = isLiveFileKind(artifact.kind);
   const query = useArtifact(org.id, seen || size === "lg" ? artifact.id : null, live ? undefined : artifact.version);
   const content = query.data?.content;
-  const audio = player && content?.kind === "file" && previewKind(content.contentType) === "audio";
+  // A sound this browser can't play falls back to its type tile, as the viewer does.
+  const [audioFailed, setAudioFailed] = useState(false);
+  const audio = player && !audioFailed && content?.kind === "file" && previewKind(content.contentType) === "audio";
   return (
     <div
       ref={ref}
@@ -75,7 +77,14 @@ export function DrivePreview({
       data-kind={artifact.kind}
       aria-hidden={audio ? undefined : "true"}
     >
-      {content && <PreviewBody content={content} artifact={artifact} size={size} audio={audio} />}
+      {content && (
+        <PreviewBody
+          content={content}
+          artifact={artifact}
+          size={size}
+          onAudioFailed={audio ? () => setAudioFailed(true) : undefined}
+        />
+      )}
     </div>
   );
 }
@@ -84,12 +93,13 @@ function PreviewBody({
   content,
   artifact,
   size,
-  audio,
+  onAudioFailed,
 }: {
   content: ArtifactContent;
   artifact: Artifact;
   size: "sm" | "md" | "lg";
-  audio: boolean;
+  /** Given: an audio file plays here, and this hears that it can't. */
+  onAudioFailed?: () => void;
 }) {
   const { t } = useTranslation();
   // The small list thumbnail stays simple: diagrams and pages by their shape.
@@ -179,7 +189,7 @@ function PreviewBody({
         </div>
       );
     case "file":
-      return <FilePreview content={content} artifact={artifact} audio={audio} />;
+      return <FilePreview content={content} artifact={artifact} onAudioFailed={onAudioFailed} />;
     // Live files (ADR 0196 §7), documents too (ADR 0200): drawn from the preview the server keeps.
     case "document":
     case "spreadsheet":
@@ -192,11 +202,11 @@ function PreviewBody({
 function FilePreview({
   content,
   artifact,
-  audio,
+  onAudioFailed,
 }: {
   content: ArtifactFileContent;
   artifact: Artifact;
-  audio: boolean;
+  onAudioFailed?: () => void;
 }) {
   const { t } = useTranslation();
   const { org } = useOrg();
@@ -250,7 +260,7 @@ function FilePreview({
       <span className="drive-pv__ext">{ext}</span>
     </span>
   );
-  if (!audio) return glyph;
+  if (!onAudioFailed) return glyph;
   return (
     <>
       {glyph}
@@ -261,6 +271,7 @@ function FilePreview({
         preload="none"
         src={api.artifacts.fileUrl(org.id, artifact.id, { version: artifact.version })}
         aria-label={artifact.title}
+        onError={onAudioFailed}
         // The card drags into folders: a press on the controls (the seek bar) drags nothing, it plays.
         draggable
         onDragStart={(e) => {

@@ -216,6 +216,12 @@ describe("uploaded files in the Drive", () => {
       expect(pv?.getAttribute("aria-hidden")).toBeNull();
       expect(pv?.querySelector("audio")?.getAttribute("src")).toBe(src);
       expect(pv?.querySelector("audio")?.getAttribute("preload")).toBe("none");
+      // One this browser can't play leaves its type tile, as before.
+      await act(async () => pv?.querySelector("audio")?.dispatchEvent(new Event("error")));
+      expect(card?.querySelector("audio")).toBeNull();
+      expect(card?.querySelector(".drive-pv--audio")).toBeNull();
+      expect(card?.querySelector(".drive-pv")?.getAttribute("aria-hidden")).toBe("true");
+      expect(card?.querySelector(".drive-pv__ext")?.textContent).toBe("MP3");
     } finally {
       undo();
     }
