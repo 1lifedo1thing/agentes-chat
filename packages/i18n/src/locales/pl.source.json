@@ -37692,6 +37692,15 @@
   "files.comments.loadFailed": {
     "value": "This image can't be shown here."
   },
+  "files.comments.mark": {
+    "value": "Mark"
+  },
+  "files.comments.markOff": {
+    "value": "Stop marking: a click moves the file again"
+  },
+  "files.comments.markOn": {
+    "value": "Mark: a click comments on a point or an area"
+  },
   "files.comments.hint.image": {
     "value": "Click to mark a point or drag to mark an area"
   },

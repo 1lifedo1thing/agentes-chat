@@ -16628,6 +16628,9 @@
       "pageOf": "{{page}} z {{count}}",
       "pdfFailed": "Tego pliku PDF nie da się tu pokazać. Pobierz go, żeby otworzyć.",
       "loadFailed": "Tego obrazu nie da się tu pokazać.",
+      "mark": "Zaznacz",
+      "markOff": "Przestań zaznaczać: kliknięcie znów przesuwa plik",
+      "markOn": "Zaznacz: kliknięcie komentuje punkt lub obszar",
       "hint": {
         "image": "Kliknij, aby zaznaczyć punkt, albo przeciągnij, aby zaznaczyć obszar",
         "video": "Kliknij film, aby skomentować ten moment, albo przeciągnij, aby zaznaczyć obszar",
