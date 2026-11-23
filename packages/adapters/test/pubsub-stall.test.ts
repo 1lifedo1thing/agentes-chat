@@ -95,8 +95,23 @@ test("a NOTIFY that hangs holds nothing behind it, and once NOTIFY works every s
   await until(() => resumed.length > 0);
   // The first never went out; the second did, with the mark that tells every replica to read again.
   expect(got).toEqual([2]);
-  expect(resumed).toEqual([{ type: "pubsub.resumed" }]);
+  expect(resumed).toEqual([{ type: "pubsub.resumed", full: true }]);
   expect(troubles).toEqual(["notify_timeout", "resumed"]);
+  await pubsub.close?.();
+});
+
+test("a burst of missed marks has subscribers start over once a minute, and resync gently in between", async () => {
+  const { notifier } = flakyPostgres();
+  const pubsub = await createPostgresPubSub(notifier, { heartbeatMs: 10_000, fullResyncMs: 100 });
+  const { resumed } = watch(pubsub);
+  // Other replicas' marks, as they come through LISTEN.
+  const mark = () =>
+    notifier.notify("agenteschat_events", JSON.stringify({ t: "pubsub.missed", e: { type: "missed" } }));
+  for (let i = 0; i < 5; i++) await mark();
+  expect(resumed.map((e) => e.full)).toEqual([true, false, false, false, false]);
+  await new Promise((r) => setTimeout(r, 120));
+  await mark();
+  expect(resumed.at(-1)).toEqual({ type: "pubsub.resumed", full: true });
   await pubsub.close?.();
 });
 
