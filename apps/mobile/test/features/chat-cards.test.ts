@@ -106,7 +106,7 @@ describe("agents it asked first: quoted at the top of the reply, as a reply quot
     expect(pair).not.toContain("ConsultPairRow");
     // No colored bar at its left edge: a plate a step off the bubble, the agent's name in its color.
     expect(pair).not.toContain("quote.bar");
-    expect(pair).toContain('<Text variant="small" tone="muted" numberOfLines={2}>');
+    expect(pair).toContain('<Text variant="footnote" tone="muted" numberOfLines={2}>');
     // Standing alone, it says who asked: the asker's name and the arrows.
     expect(pair).toContain('<Icon name="swap" size={12}');
   });
@@ -265,11 +265,12 @@ describe("what an agent changed wraps whole, on a card as wide as its words", ()
     expect(checks).not.toContain("styles.one, ACT_LINE.row");
   });
 
-  test("they wear the tool block's card (the face a step up, a hairline), never the sunken gray of a pressed row", () => {
+  test("they wear the message card's frame (as the tool block), never the sunken gray of a pressed row", () => {
     for (const file of ["Receipts.tsx", "TeamChecks.tsx"]) {
       const text = source(file);
       expect(text).not.toContain("sunken");
-      expect(text).toMatch(/backgroundColor: (c|colors)\.raised, borderColor: (c|colors)\.line2/);
+      // The one frame of a message card (`useMessageCardFrame`): raised with a hairline, a bubble in bubbles.
+      expect(text).toContain("card.style");
     }
   });
 });
