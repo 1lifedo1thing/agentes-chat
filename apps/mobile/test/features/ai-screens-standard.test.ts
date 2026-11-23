@@ -109,10 +109,10 @@ describe("pickers are the screen, never a list opening in place", () => {
 
 test("a row that opens a choice in place wears the up-down mark, never a chevron (that pushes a screen)", () => {
   const settings = source("right-hand/SettingsScreen.tsx");
-  expect(settings).toContain("menu={!hold}");
   expect(settings).not.toContain("chevron={!hold}");
-  const mine = settings.slice(settings.indexOf("export function RightHandMine("), settings.indexOf("const KEY = "));
-  expect(mine.slice(mine.lastIndexOf("<GroupedRow"))).toContain("menu\n");
+  // The one choice's fields open their lists in place: the up-down mark.
+  const choice = source("ai/AiChoice.tsx");
+  expect(choice.match(/\bmenu(=\{!lockAccount\})?\n/g)?.length).toBe(3);
   // A plan's agent is picked on the agent picker's pushed screen: its row wears the chevron.
   expect(source("ai/ConnectAiSteps.tsx")).toContain("{...(agents.length > 1 ? { chevron: true, onPress: pick } : {})}");
 });

@@ -9,7 +9,6 @@ import type {
 } from "@agenteschat/client";
 import { ACCOUNT_KINDS, compareInOrder, orderAccounts, runMayMoveTo } from "@agenteschat/client/lib/ai-accounts";
 import type { AiChoice, AiChoiceRow } from "@agenteschat/client/lib/ai-choice";
-import { reasonText } from "@agenteschat/client/lib/ai-choice";
 import { firstName } from "@agenteschat/client/lib/format";
 import { planMeterText } from "@agenteschat/client/lib/plan-usage";
 import { planName } from "@agenteschat/client/lib/plans";
@@ -200,7 +199,9 @@ export function choiceText(t: TFunction, row: AiChoiceRow, locale: string, now =
   const top = a.usage ? planWindows(a.usage, now.getTime()).filter(planOwn)[0] : undefined;
   return {
     label: hubTitle(t, a),
-    sub: row.usable ? hubLine(t, a) : reasonText(t, row),
+    sub: row.usable
+      ? hubLine(t, a)
+      : t(`aiAccounts.useReason.${row.reason ?? "not_allowed"}`, { owner: firstName(a.ownerName ?? "") }),
     ...(state && state.tone !== "muted" ? { value: state.text } : top ? { value: `${top.used}%` } : {}),
     keywords: [a.provider ? providerLabel(a.provider) : t(`aiAccounts.connect.${a.kind}`), a.ownerName ?? ""].join(" "),
     mark: a.provider ?? a.kind,
