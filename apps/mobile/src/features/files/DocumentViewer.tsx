@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { type AudioSource, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { releaseVoiceAudio, voiceAudio } from "@/lib/audio-mode";
@@ -378,12 +378,9 @@ function AudioPlayer({ source, fallback }: { source: AudioSource; fallback: Reac
         accessibilityLabel={status.playing ? t("voice.pausePlay") : t("voice.play")}
         style={[styles.audioPlay, { backgroundColor: status.isLoaded ? c.ink : c.sunken }]}
       >
+        {/* Dimmed until the sound has loaded (no spinner: the screen keeps its shape). */}
         <View style={styles.audioCenter}>
-          {status.isLoaded ? (
-            <Icon name={status.playing ? "pause" : "play"} size={26} filled color={c.bg} />
-          ) : (
-            <ActivityIndicator size="small" color={c.muted} />
-          )}
+          <Icon name={status.playing ? "pause" : "play"} size={26} filled color={status.isLoaded ? c.bg : c.muted} />
         </View>
       </PressScale>
       <Pressable
