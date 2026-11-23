@@ -91,7 +91,8 @@ async function writeLine(
   if (!first) return null;
   const names = await namesOf(deps.db, orgId, members, byUserId);
   const who = englishNames(members.map((m) => names.get(m.id) ?? "someone"));
-  const by = byUserId && !(members.length === 1 && first.type === "person" && first.id === byUserId);
+  // Whoever joined by themselves wasn't added: a line that names them names no adder (the job keeps its first payload).
+  const by = byUserId && !members.some((m) => m.type === "person" && m.id === byUserId);
   const text =
     kind === "joined"
       ? `${who} joined this channel${by ? `, added by ${names.get(byUserId) ?? "someone"}` : ""}`

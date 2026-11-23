@@ -2151,7 +2151,7 @@ async function executeRunInner(
           });
           toolChoice = choice;
           ctx.loadedGroups = choice.groups;
-          tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+          tools = welcomeOnly(presentTools(granted, isSensitive, ctx.loadedGroups));
           // Listed only to keep the prompt cache: nothing says this message needs the browser.
           const browser = toolGroupKey({ scope: BROWSER_SCOPE });
           if (choice.groups.includes(browser) && !kept.listed.includes(browser)) {
@@ -4278,7 +4278,7 @@ async function executeRunInner(
     ctx.loadedGroups = standIn.loadedGroups;
     if (standIn.toolGroups) t.toolGroups = standIn.toolGroups;
     else delete t.toolGroups;
-    tools = presentTools(granted, isSensitive, ctx.loadedGroups);
+    tools = welcomeOnly(presentTools(granted, isSensitive, ctx.loadedGroups));
     standIn = null;
     delete t.fallback;
     t.standInRefused = true;

@@ -11,13 +11,16 @@ interface State {
   waiting: Arrival | null;
   /** The ids the cursor shows (or is about to): the sidebar leaves drawing them to it. */
   owned: ReadonlySet<string>;
-  /** A run plays: the hold banner waits for it. */
+  /** A run plays: a hold banner that wasn't up yet waits for it. */
   busy: boolean;
+  /** The hold banner was already up when the run began: it stays, so the page doesn't jump away and back. */
+  bannerUp: boolean;
   /** What the cursor dropped into the closed drawer (phone width), until it opens. */
   inDrawer: Arrival | null;
 }
 
-let state: State = { waiting: null, owned: new Set(), busy: false, inDrawer: null };
+const EMPTY: State = { waiting: null, owned: new Set(), busy: false, bannerUp: false, inDrawer: null };
+let state: State = EMPTY;
 /** What "Pular" and Esc stop: the run playing now. */
 let skipper: (() => void) | null = null;
 const listeners = new Set<() => void>();
@@ -37,7 +40,8 @@ const subscribe = (l: () => void) => {
 export const arrivals = {
   add(a: Arrival) {
     if (a.channelIds.length + a.agentIds.length === 0) return;
-    set({ waiting: a, owned: new Set([...a.channelIds, ...a.agentIds]), busy: true });
+    const bannerUp = state.busy ? state.bannerUp : document.querySelector(".hold-banner") !== null;
+    set({ waiting: a, owned: new Set([...a.channelIds, ...a.agentIds]), busy: true, bannerUp });
   },
   /** The runner takes the arrival to play. */
   take(): Arrival | null {
@@ -47,7 +51,7 @@ export const arrivals = {
   },
   /** The run ended (played, skipped or fallen back): the rows are the sidebar's again. */
   done() {
-    set({ busy: false, owned: new Set() });
+    set({ busy: false, bannerUp: false, owned: new Set() });
   },
   owns: (id: string) => state.owned.has(id),
   /** "Pular": the run lands everything at once. */
@@ -59,11 +63,12 @@ export const arrivals = {
     };
   },
   dropIntoDrawer(part: Partial<Arrival>) {
+    // Pular after a bunch was dropped drops everything: what is there already counts once.
     const was = state.inDrawer ?? { channelIds: [], agentIds: [] };
     set({
       inDrawer: {
-        channelIds: [...was.channelIds, ...(part.channelIds ?? [])],
-        agentIds: [...was.agentIds, ...(part.agentIds ?? [])],
+        channelIds: [...new Set([...was.channelIds, ...(part.channelIds ?? [])])],
+        agentIds: [...new Set([...was.agentIds, ...(part.agentIds ?? [])])],
       },
     });
   },
@@ -77,7 +82,7 @@ export const arrivals = {
   subscribe,
   /** Tests start clean. */
   reset() {
-    state = { waiting: null, owned: new Set(), busy: false, inDrawer: null };
+    state = EMPTY;
     for (const l of listeners) l();
   },
 };
@@ -85,6 +90,11 @@ export const arrivals = {
 export const useArrivals = () => useSyncExternalStore(subscribe, arrivals.get, arrivals.get);
 /** Lodi's cursor is showing a team land: what would push the page (the hold banner) waits for it. */
 export const useArrivalsBusy = () => useArrivals().busy;
+/** The hold banner waits for Lodi's cursor, unless it was already up when the run began. */
+export const useHoldBannerWaits = () => {
+  const { busy, bannerUp } = useArrivals();
+  return busy && !bannerUp;
+};
 
 /**
  * Rows that draw themselves (the cursor's fallback, and everyone else's sidebar): each opens its room, a pixel veil

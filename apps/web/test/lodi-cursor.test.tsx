@@ -6,7 +6,7 @@ setupDom();
 import type { TeamProposalCard } from "@agenteschat/client";
 import { madeByImport } from "@agenteschat/client/lib/import/flow";
 import { act, cleanup, fireEvent } from "@testing-library/react";
-import { arrivalProps, arrivals } from "@/components/lodi-cursor/arrivals";
+import { arrivalProps, arrivals, droppedCount } from "@/components/lodi-cursor/arrivals";
 import { type CursorStep, findRows, inSight, playLodi, RUN } from "@/components/lodi-cursor/runner";
 import { createFakeApi, LODI_ID, ORG_ID, seedDm, seedState, withRightHand } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
@@ -215,6 +215,24 @@ describe("arrivals", () => {
     expect(delay("a1")).toBe("0ms");
     expect(delay("x")).toBe("800ms");
     expect(arrivalProps(arrived, "nope")).toEqual({});
+  });
+
+  test("Pular after a bunch went into the closed menu counts each row once", () => {
+    arrivals.dropIntoDrawer({ channelIds: ["c1", "c2"] });
+    arrivals.dropIntoDrawer({ channelIds: ["c1", "c2"], agentIds: ["a1"] });
+    expect(droppedCount(arrivals.get().inDrawer)).toBe(3);
+  });
+
+  test("a hold banner already up stays while the team lands; one that wasn't waits", () => {
+    const banner = document.createElement("div");
+    banner.className = "hold-banner";
+    document.body.append(banner);
+    arrivals.add({ channelIds: [], agentIds: ["a1"] });
+    expect(arrivals.get()).toMatchObject({ busy: true, bannerUp: true });
+    arrivals.done();
+    banner.remove();
+    arrivals.add({ channelIds: [], agentIds: ["a2"] });
+    expect(arrivals.get()).toMatchObject({ busy: true, bannerUp: false });
   });
 
   test("an import hands over only what it made, in order", () => {

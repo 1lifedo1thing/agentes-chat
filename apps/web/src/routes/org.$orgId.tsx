@@ -21,7 +21,7 @@ import { DetailsHost } from "@/components/DetailsHost";
 import { InviteDialogProvider } from "@/components/invite/InviteDialog";
 import { LeaveChannelDialog } from "@/components/LeaveChannelDialog";
 import { RefetchBar } from "@/components/Loading";
-import { useArrivalsBusy } from "@/components/lodi-cursor/arrivals";
+import { useHoldBannerWaits } from "@/components/lodi-cursor/arrivals";
 import { LodiCursor } from "@/components/lodi-cursor/LodiCursor";
 import { OutageNotices } from "@/components/MachineOutages";
 import { NavDrawerProvider, NavScrim, ShellBar } from "@/components/NavDrawer";
@@ -79,7 +79,7 @@ function OrgLayout() {
   const focused =
     (/\/agents\/new\/?$/.test(path) && can(membership, "create_agents")) ||
     (LIVE_FILE_PATH.test(path) && PRESENTING.test(href));
-  const landing = useArrivalsBusy();
+  const bannerWaits = useHoldBannerWaits();
   // Notifications in this browser (ADR 0071), when already on: the server hears of them again, quietly.
   useWebPushRefresh(me.user.id);
   useServerLocale(me.user);
@@ -173,7 +173,7 @@ function OrgLayout() {
                             <MorphRoom pace="panel" className="shell__notices">
                               <ConfirmEmailBanner />
                               {/* Lodi's cursor shows a new team land first, then the page glides under the banner. */}
-                              {!landing && <HoldBanner />}
+                              {!bannerWaits && <HoldBanner />}
                               <ComputerSetupNotice />
                               <OutageNotices />
                             </MorphRoom>

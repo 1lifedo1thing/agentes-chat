@@ -295,8 +295,11 @@ export function TeamPlanCardView({ message, card }: { message: Message; card: Te
   const former = useFormerAgents(org.id).data;
   // Made here and now, on a hold: the new agents wave, once.
   const [wave, setWave] = useState(false);
-  // Lodi's cursor is building the sidebar from this team: Pular lands it all at once.
-  const landing = useArrivalsBusy() && card.decidedByUserId === me.user.id;
+  // Lodi's cursor is building the sidebar from this team (not an earlier one in the same conversation): Pular lands it.
+  const landing =
+    useArrivalsBusy() &&
+    card.decidedByUserId === me.user.id &&
+    [...(card.created?.channelIds ?? []), ...(card.created?.agentIds ?? [])].some(arrivals.owns);
   const [adjusting, setAdjusting] = useState<TeamAgentDraft | null>(null);
   const [map, setMap] = useState(false);
   const agent = message.author.id ? dir.anyAgent(message.author.id) : undefined;

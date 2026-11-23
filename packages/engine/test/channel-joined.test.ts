@@ -163,11 +163,44 @@ describe("people, and leaving", () => {
     expect(f.provider.calls.length).toBe(calls);
   });
 
+  test("people who join by themselves in the same moments share a line that names no adder", async () => {
+    f = await setup();
+    const channel = await room();
+    const bia = await addMember(f.db, f.org.id, "member", "bia");
+    const caio = await addMember(f.db, f.org.id, "member", "caio");
+    await joinChannel(f.db, bia.id, f.org.id, channel.id);
+    await joinChannel(f.db, caio.id, f.org.id, channel.id);
+    await drain();
+    expect((await notices(channel.id)).at(-1)).toMatchObject({
+      kind: "joined",
+      body: "bia and caio joined this channel",
+    });
+  });
+
   test("an agent taken out gets its line at once", async () => {
     f = await setup();
     const channel = await room();
     await removeChannelMember(f.db, f.owner.id, f.org.id, channel.id, { agentId: f.agent.id });
     const lines = await notices(channel.id);
     expect(lines.at(-1)).toMatchObject({ kind: "left", body: "Dev left this channel", quiet: true });
+  });
+});
+
+describe("the welcome's turn", () => {
+  test("stays words or a pass when the judge loads tool groups for it", async () => {
+    f = await setup({
+      reply: () => ({ chunks: ["Bem-vinda, Iara."] }),
+      toolSources: [createPassToolSource()],
+      contextTools: true,
+      issueTools: true,
+      toolsOnDemand: true,
+      judge: (kind) => (kind === "tool_groups" ? 0.9 : undefined),
+    });
+    const channel = await room();
+    const iara = await bot("Iara", "iara");
+    await addChannelMember(f.db, f.owner.id, f.org.id, channel.id, { agentId: iara.id });
+    await drain();
+    const request = f.provider.calls.at(-1)?.request;
+    expect(request?.tools?.map((t) => t.name) ?? []).toEqual(["pass"]);
   });
 });
