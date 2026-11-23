@@ -10301,6 +10301,12 @@
     }
   },
   "aiAccounts": {
+    "useReason": {
+      "signed_out": "로그아웃됨",
+      "owner_left": "{{owner}} 님이 워크스페이스를 떠났어요",
+      "owner_only": "{{owner}} 님만 사용해요",
+      "not_allowed": "내 에이전트에는 열려 있지 않아요"
+    },
     "unnamed": "이름 없는 계정",
     "rename": {
       "action": "{{label}} 이름 바꾸기",
@@ -15398,6 +15404,7 @@
     "account": {
       "notRestorable": "이 계정은 더 이상 복원할 수 없어요.",
       "notOwner": "이 계정이나 요금제를 연결한 사람만 할 수 있어요.",
+      "permissionForbidden": "계정 소유자, 관리자 또는 계정을 관리할 수 있는 사람만 바꿀 수 있어요.",
       "orderForbidden": "이 계정을 연결한 사람이나 관리자만 순서에서 위치를 바꿀 수 있어요."
     },
     "channel": {

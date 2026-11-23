@@ -10792,6 +10792,12 @@
     }
   },
   "aiAccounts": {
+    "useReason": {
+      "signed_out": "Afgemeld",
+      "owner_left": "{{owner}} heeft de workspace verlaten",
+      "owner_only": "Alleen {{owner}} gebruikt het",
+      "not_allowed": "Niet open voor je agents"
+    },
     "unnamed": "Account zonder naam",
     "rename": {
       "action": "{{label}} hernoemen",
@@ -16061,6 +16067,7 @@
     "account": {
       "notRestorable": "Dit account kan niet meer hersteld worden.",
       "notOwner": "Alleen wie dit account of abonnement heeft gekoppeld, kan dit doen.",
+      "permissionForbidden": "Alleen de eigenaar van het account, een beheerder of wie het mag beheren kan dit wijzigen.",
       "orderForbidden": "Alleen wie dit account heeft gekoppeld of een beheerder kan de plek in de volgorde wijzigen."
     },
     "channel": {

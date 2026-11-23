@@ -11150,6 +11150,12 @@
     }
   },
   "aiAccounts": {
+    "useReason": {
+      "signed_out": "Déconnecté",
+      "owner_left": "{{owner}} a quitté le workspace",
+      "owner_only": "Seul {{owner}} l'utilise",
+      "not_allowed": "Pas ouvert à vos agents"
+    },
     "unnamed": "Compte sans nom",
     "rename": {
       "action": "Renommer {{label}}",
@@ -16538,6 +16544,7 @@
     "account": {
       "notRestorable": "Ce compte ne peut plus être restauré.",
       "notOwner": "Seule la personne qui a connecté ce compte ou cet abonnement peut faire cela.",
+      "permissionForbidden": "Seul le propriétaire du compte, un admin ou qui peut le gérer peut changer cela.",
       "orderForbidden": "Seuls la personne qui a connecté ce compte ou un admin peuvent changer sa place dans l'ordre."
     },
     "channel": {

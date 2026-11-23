@@ -10686,6 +10686,12 @@
     }
   },
   "aiAccounts": {
+    "useReason": {
+      "signed_out": "Oturum kapalı",
+      "owner_left": "{{owner}} workspace'ten ayrıldı",
+      "owner_only": "Yalnızca {{owner}} kullanıyor",
+      "not_allowed": "Ajanlarına açık değil"
+    },
     "unnamed": "Adsız hesap",
     "rename": {
       "action": "{{label}} adını değiştir",
@@ -15922,6 +15928,7 @@
     "account": {
       "notRestorable": "Bu hesap artık geri yüklenemez.",
       "notOwner": "Bunu yalnızca bu hesabı veya planı bağlayan kişi yapabilir.",
+      "permissionForbidden": "Bunu yalnızca hesabın sahibi, bir yönetici veya hesabı yönetebilen kişi değiştirebilir.",
       "orderForbidden": "Bu hesabın sıradaki yerini yalnızca onu bağlayan kişi veya bir yönetici değiştirebilir."
     },
     "channel": {

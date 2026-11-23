@@ -685,7 +685,10 @@ describe("a plan thinks only for its owner's agents, one account each", () => {
       .returning();
     if (!theo) throw new Error("no agent");
     // Bia keeps hers to herself ("Só eu", ADR 0059 §3): Dev's page lists Ana's account, never Bia's.
-    await fx.db.update(schema.machineAccounts).set({ serves: "owner" }).where(eq(schema.machineAccounts.id, BIAS));
+    await fx.db
+      .update(schema.machineAccounts)
+      .set({ serves: "owner", useMode: "owner" })
+      .where(eq(schema.machineAccounts.id, BIAS));
     const dan = await editor();
     const seen = await getAgentBrain(deps, dan.id, fx.org.id, fx.agent.id);
     expect(seen.accounts.map((a) => a.id)).toEqual([ANAS]);
@@ -808,9 +811,15 @@ describe("Usar planos de outras pessoas (ADR 0059 §3, amended 2026-11-04)", () 
     const agent = await row();
     expect(await planIsOwners(fx.db, agent, machineId, { id: BIAS })).toBe(true);
     // Kept to Bia ("Só eu"), it thinks for nobody else's agent.
-    await fx.db.update(schema.machineAccounts).set({ serves: "owner" }).where(eq(schema.machineAccounts.id, BIAS));
+    await fx.db
+      .update(schema.machineAccounts)
+      .set({ serves: "owner", useMode: "owner" })
+      .where(eq(schema.machineAccounts.id, BIAS));
     expect(await planIsOwners(fx.db, agent, machineId, { id: BIAS })).toBe(false);
-    await fx.db.update(schema.machineAccounts).set({ serves: "everyone" }).where(eq(schema.machineAccounts.id, BIAS));
+    await fx.db
+      .update(schema.machineAccounts)
+      .set({ serves: "everyone", useMode: "everyone" })
+      .where(eq(schema.machineAccounts.id, BIAS));
     expect((await brainAccountFor(fx.db, agent, "claude_code", machineId))?.id).toBe(BIAS);
     const usage = await recordPlanUsage(fx.db, {
       orgId: fx.org.id,
@@ -912,13 +921,19 @@ describe("Usar planos de outras pessoas (ADR 0059 §3, amended 2026-11-04)", () 
       .returning();
     if (!lodi) throw new Error("no agent");
     const dan = await editor();
-    await fx.db.update(schema.machineAccounts).set({ serves: "owner" }).where(eq(schema.machineAccounts.id, BIAS));
+    await fx.db
+      .update(schema.machineAccounts)
+      .set({ serves: "owner", useMode: "owner" })
+      .where(eq(schema.machineAccounts.id, BIAS));
     const refused = await setAgentBrain(deps, caio.id, fx.org.id, lodi.id, {
       brain: "claude_code",
       account: BIAS,
     }).catch((e) => e);
     expect(refused.code).toBe("account.not_owner");
-    await fx.db.update(schema.machineAccounts).set({ serves: "everyone" }).where(eq(schema.machineAccounts.id, BIAS));
+    await fx.db
+      .update(schema.machineAccounts)
+      .set({ serves: "everyone", useMode: "everyone" })
+      .where(eq(schema.machineAccounts.id, BIAS));
     expect(
       await setAgentBrain(deps, dan.id, fx.org.id, lodi.id, { brain: "claude_code", account: BIAS }),
     ).toMatchObject({ account: BIAS });

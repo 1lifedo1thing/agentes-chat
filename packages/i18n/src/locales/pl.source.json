@@ -26117,6 +26117,18 @@
   "jev.remove.text": {
     "value": "Agents keep working without it."
   },
+  "aiAccounts.useReason.signed_out": {
+    "value": "Signed out"
+  },
+  "aiAccounts.useReason.owner_left": {
+    "value": "{{owner}} left the workspace"
+  },
+  "aiAccounts.useReason.owner_only": {
+    "value": "Only {{owner}} uses it"
+  },
+  "aiAccounts.useReason.not_allowed": {
+    "value": "Not open to your agents"
+  },
   "aiAccounts.unnamed": {
     "value": "Unnamed account"
   },
@@ -38768,6 +38780,9 @@
   },
   "errors.account.notOwner": {
     "value": "Only the person who connected this account or plan can do this."
+  },
+  "errors.account.permissionForbidden": {
+    "value": "Only the account's owner, an admin or whoever may manage it can change this."
   },
   "errors.account.orderForbidden": {
     "value": "Only the person who connected this account or an admin can change its place in the order."

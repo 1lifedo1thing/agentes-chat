@@ -1,8 +1,9 @@
 import type { PlanUsage } from "@agenteschat/adapters";
-import { and, type Executor, eq, inArray, isNull, ne, or, schema, sql } from "@agenteschat/db";
+import { and, type Executor, eq, isNull, ne, schema, sql } from "@agenteschat/db";
 import { isAutoModel } from "@agenteschat/providers";
 import { autoPlanModel, claudeCodeModel, NEXT_ACCOUNT_KINDS, planOf } from "@agenteschat/providers/plans";
 import type { Agent } from "./agents";
+import { accountOrderSql, chainWhereSql } from "./ai-accounts/chain";
 import { type BrainPlan, computerBrainUnavailable, NO_AI_CODES, planIsOwners, storedPlanUsage } from "./brains/select";
 import type { BrainAccount, BrainSession } from "./brains/types";
 import { machineRule, mayUseDevice } from "./devices";
@@ -117,29 +118,15 @@ const sameSeat = (a: SeatRow, b: SeatRow) =>
 type ChainAgent = Pick<Agent, "id" | "orgId" | "ownerUserId" | "brainAccountPinned" | "builtin">;
 
 /**
- * The accounts on `machineId` of `kind` a run of `agent` may go on with at its plan's limit (ADR 0041 §6): a CLI
- * sign-in (never a key, which is paid by the token) shared between agents, whose owner is still a member
- * (`planIsOwners`) and that serves this agent: its owner's own, or one that serves everyone. The right hand goes on
- * only with the accounts of the person it answers (`forPerson`), so never on a plan someone else gave it. `keep`: the run's own
- * accounts, whatever their sharing. A one-agent login is never another's: the runner lends its folder to that agent only.
+ * The accounts on `machineId` of `kind` a run of `agent` may go on with at its plan's limit (ADR 0041 §6,
+ * `chainWhereSql`): those that serve its owner. The right hand goes on only with the accounts of the person it answers
+ * (`forPerson`), so never on a plan someone else gave it. `keep`: the run's own accounts, whatever their sharing.
  */
 function chainWhere(agent: ChainAgent, kind: string, machineId: string, forPerson: string | null, keep: string[]) {
-  const owner = agent.ownerUserId ?? "";
-  return and(
-    eq(machineAccounts.orgId, agent.orgId),
-    eq(machineAccounts.machineId, machineId),
-    eq(machineAccounts.kind, kind),
-    isNull(machineAccounts.provider),
-    sql`${machineAccounts.authMethod} is distinct from 'api_key'`,
-    isRightHand(agent)
-      ? forPerson === owner
-        ? eq(machineAccounts.createdBy, owner)
-        : sql`false`
-      : or(eq(machineAccounts.createdBy, owner), eq(machineAccounts.serves, "everyone")),
-    keep.length > 0
-      ? or(inArray(machineAccounts.id, keep), eq(machineAccounts.shared, true))
-      : eq(machineAccounts.shared, true),
-  );
+  const owner = agent.ownerUserId ?? null;
+  if (isRightHand(agent))
+    return chainWhereSql(agent.orgId, machineId, kind, forPerson === owner ? owner : null, keep, true);
+  return chainWhereSql(agent.orgId, machineId, kind, owner, keep);
 }
 
 /** Its owner still in the workspace (`planIsOwners`). */
@@ -194,12 +181,7 @@ export async function nextAccountPlan(
           eq(machineAccounts.status, "active"),
         ),
       )
-      .orderBy(
-        sql`${machineAccounts.createdBy} = ${owner} desc`,
-        sql`${machineAccounts.useOrder} asc nulls last`,
-        machineAccounts.createdAt,
-        machineAccounts.id,
-      ),
+      .orderBy(...accountOrderSql(owner)),
   ]);
   const triedRows = rows.filter((r) => tried.includes(r.id));
   const now = Date.now();

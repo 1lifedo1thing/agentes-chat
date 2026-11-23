@@ -10350,6 +10350,12 @@
     }
   },
   "aiAccounts": {
+    "useReason": {
+      "signed_out": "已退出登录",
+      "owner_left": "{{owner}} 已离开工作区",
+      "owner_only": "只有 {{owner}} 使用",
+      "not_allowed": "未向你的智能体开放"
+    },
     "unnamed": "未命名账号",
     "rename": {
       "action": "重命名 {{label}}",
@@ -15473,6 +15479,7 @@
     "account": {
       "notRestorable": "这个账号已无法恢复。",
       "notOwner": "只有连接此账号或套餐的人可以执行此操作。",
+      "permissionForbidden": "只有账号的所有者、管理员或可以管理它的人才能更改。",
       "orderForbidden": "只有连接此账号的人或管理员可以调整它在顺序中的位置。"
     },
     "channel": {

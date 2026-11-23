@@ -398,6 +398,8 @@ export const organizationSettings = pgTable("organization_settings", {
    * (`{ openrouter: { small, medium, large } }`); a tier left out is the provider's default (ADR 0087).
    */
   autoModels: jsonb().$type<Partial<Record<string, Partial<Record<string, string>>>>>().notNull().default({}),
+  /** With every plan account of a run's order at its limit, the run goes on with the workspace's API key (off by default). */
+  planKeyFallback: boolean().notNull().default(false),
   /** People can send GIFs in chat (ADR 0091): needs the server's `GIPHY_API_KEY` too. */
   gifs: boolean().notNull().default(true),
   /** The most a GIF may be rated: `g` (any age) or `pg` (ADR 0091). */

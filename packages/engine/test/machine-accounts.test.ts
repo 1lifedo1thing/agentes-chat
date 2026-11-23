@@ -1160,7 +1160,7 @@ test("one login per agent where the account allows it: a key's logins share its 
   expect(again.duplicate).toBeUndefined();
 });
 
-test("rename and remove: the owner renames; the owner or the pairer removes; offline, a tombstone until the next hello", async () => {
+test("rename and remove: whoever manages it renames; they or the pairer remove; offline, a tombstone until the next hello", async () => {
   f = await setup();
   const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-a" });
   hubs.push(hub);
@@ -1171,8 +1171,17 @@ test("rename and remove: the owner renames; the owner or the pairer removes; off
     .set({ machineId, brain: "claude_code", brainAccountId: CLAUDE_ID })
     .where(eq(schema.agents.id, f.agent.id));
   const admin = await addMember(f.db, f.org.id, "admin", "bia");
+  const member = await addMember(f.db, f.org.id, "member", "caio");
   const online = fakeHub(machineId, () => ({}));
 
+  expect(
+    await renameMachineAccount(online.deps, member.id, f.org.id, machineId, CLAUDE_ID, "Meu").catch((e) => e),
+  ).toBeInstanceOf(ForbiddenError);
+  // "Gerenciar" is its owner's and the administrators' by default; "Só você" keeps the administrators out.
+  await f.db
+    .update(schema.machineAccounts)
+    .set({ manageMode: "owner" })
+    .where(eq(schema.machineAccounts.id, CLAUDE_ID));
   expect(
     await renameMachineAccount(online.deps, admin.id, f.org.id, machineId, CLAUDE_ID, "Meu").catch((e) => e),
   ).toBeInstanceOf(ForbiddenError);
@@ -1188,7 +1197,7 @@ test("rename and remove: the owner renames; the owner or the pairer removes; off
     await renameMachineAccount(online.deps, f.owner.id, f.org.id, machineId, CODEX_ID, "Outro").catch((e) => e),
   ).toBeInstanceOf(NotFoundError);
 
-  // An admin removes only where the computer or the account has no person.
+  // Outside "Gerenciar", an admin removes only where the computer or the account has no person.
   expect(
     await removeMachineAccount(online.deps, admin.id, f.org.id, machineId, CLAUDE_ID).catch((e) => e),
   ).toBeInstanceOf(ForbiddenError);

@@ -77,6 +77,7 @@ import {
   windowReadAt,
   windowStale,
 } from "@agenteschat/ui/plan-state";
+import { accountPersonOf, managesAccount } from "./ai-accounts/serves";
 import { recordAudit } from "./audit";
 import { liveModelLimits } from "./brains/select";
 import { BRAIN_PLAN_NAMES } from "./brains/types";
@@ -170,8 +171,10 @@ export interface MachineAccountView {
   shared: boolean;
   /** Claude's organization it is signed in to (opaque, protocol 50), for its owner's eyes only; null: not known. */
   providerOrgId: string | null;
-  /** Who it thinks for (ADR 0059 §3): everyone in the workspace, or only its owner. */
+  /** Who it thinks for (ADR 0059 §3), as older apps read it: `everyone` while "Usar em agentes" is everyone, else `owner`. */
   serves: PlanServes;
+  /** In an agent's "Quem pensa": it may think for that agent (`accountServesSql` for the agent's owner). */
+  usable?: boolean;
   /** Its place in the order of use of its computer's accounts of its kind (ADR 0041 §6); null: after the placed ones, oldest first. */
   useOrder: number | null;
   /**
@@ -1850,11 +1853,11 @@ export async function renameMachineAccount(
   if (!label || label.length > MACHINE_ACCOUNT_LIMITS.labelChars) {
     throw new ValidationError("Give the account a name of up to 40 characters", "account.invalid_label");
   }
-  const { machine } = await memberMachine(deps.db, userId, orgId, machineId);
+  const { membership, machine } = await memberMachine(deps.db, userId, orgId, machineId);
   const account = await getListedAccount(deps.db, orgId, machine.id, accountId);
   if (!account) throw new NotFoundError("Account not found", "account.not_found");
-  if (account.createdBy !== userId) {
-    throw new ForbiddenError("Only the account's owner can rename it", "account.not_owner");
+  if (!managesAccount(account, accountPersonOf(userId, membership))) {
+    throw new ForbiddenError("Only whoever manages this account can rename it", "account.not_owner");
   }
   const logins = await sameLogins(deps.db, account);
   const renamed = logins.filter((r) => r.label !== label);
@@ -1902,7 +1905,7 @@ export async function removeMachineAccount(
   const account = await getListedAccount(deps.db, orgId, machine.id, accountId);
   if (!account) throw new NotFoundError("Account not found", "account.not_found");
   const allowed =
-    account.createdBy === userId ||
+    managesAccount(account, accountPersonOf(userId, membership)) ||
     machine.pairedByUserId === userId ||
     (can(membership, "configure") && (machine.pairedByUserId === null || account.createdBy === null));
   if (!allowed) {
