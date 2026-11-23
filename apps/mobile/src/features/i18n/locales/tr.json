@@ -1341,6 +1341,7 @@
     "criteriaOf": "{{done}} / {{total}}",
     "linkMessage": "#{{channel}} kanalındaki mesaj",
     "linkMessagePlain": "Kaynak mesaj",
+    "removeFileText": "Dosya Drive'da kalır.",
     "subIssues": "Alt görevler",
     "talk": "Sohbet et",
     "finish": "Tamamlandı olarak işaretle",

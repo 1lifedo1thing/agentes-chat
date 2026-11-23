@@ -1418,6 +1418,7 @@
     "criteriaOf": "{{done}} sur {{total}}",
     "linkMessage": "Message dans #{{channel}}",
     "linkMessagePlain": "Le message d'origine",
+    "removeFileText": "Le fichier reste dans le Drive.",
     "subIssues": "Sous-tâches",
     "talk": "Discuter",
     "finish": "Marquer comme terminée",
