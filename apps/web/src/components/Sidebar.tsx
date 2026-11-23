@@ -126,6 +126,7 @@ import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { useNewAgent } from "@/components/new-agent/new-agent-context";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useInboxWaiting } from "@/hooks/useInboxWaiting";
 import { useEverTrue } from "@/hooks/useEverTrue";
 import { agentLine, availabilityOf, personLine, useAgentPresence, usePersonPresence } from "@/hooks/usePresence";
 import { useServerPlace } from "@/hooks/useServerPlace";
@@ -267,7 +268,7 @@ export function Sidebar() {
   const notificationCount = useNotificationCount(orgId).data;
   const unreadNotifications = notificationCount?.unread ?? 0;
   // "Esperando você": everything that waits on me, the same live count (ADR 0172).
-  const waitingOnMe = notificationCount?.waiting ?? 0;
+  const waitingOnMe = useInboxWaiting(orgId);
   // Threads: how many open missions wait for me (the server counts: a decision, a review, a suggestion…).
   const missionList = useMissionList(orgId, MISSIONS_WAITING_COUNT);
   const missionsWaiting = missionList.data?.counts.waitingYou ?? 0;

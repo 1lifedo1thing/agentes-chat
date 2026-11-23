@@ -20,7 +20,8 @@ export const SIDEBAR_ITEMS: readonly SidebarItem[] = [
 export const SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   // The inbox is always in sight: the one place for what waits on the person and what is new.
   waiting: "always",
-  proposals: "auto",
+  // Proposals waiting on the person are in the inbox, one by one: the page of all of them is in More.
+  proposals: "more",
   threads: "always",
   issues: "always",
   wiki: "more",
@@ -42,7 +43,8 @@ export const SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
 export const PERSONAL_SIDEBAR_DEFAULTS: Record<SidebarItem, SidebarPlace> = {
   // The inbox is always in sight: the one place for what waits on the person and what is new.
   waiting: "always",
-  proposals: "auto",
+  // Proposals waiting on the person are in the inbox, one by one: the page of all of them is in More.
+  proposals: "more",
   threads: "more",
   issues: "more",
   wiki: "more",

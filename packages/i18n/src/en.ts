@@ -6015,6 +6015,8 @@ export const en = {
     noneHere: "Nothing here for now.",
     noneDone: "Nothing marked done in the last 30 days.",
     noneRequests: "No request decided yet.",
+    /** A proposal's row in the inbox, after the agent's name. */
+    proposes: "proposes an improvement",
     more: "Show more",
   },
   approvals: {

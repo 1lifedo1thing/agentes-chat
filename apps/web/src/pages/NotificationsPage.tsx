@@ -3,6 +3,7 @@ import type {
   AppNotification,
   Approval,
   Member,
+  Proposal,
   NotificationActor,
   NotificationFilter,
 } from "@agenteschat/client";
@@ -19,6 +20,7 @@ import {
   useNotificationCount,
   useNotificationReply,
   useNotifications,
+  useProposals,
   useTaskConversation,
   useThreadMessages,
 } from "@agenteschat/client";
@@ -54,6 +56,7 @@ import {
   workspaceHeadline,
 } from "@agenteschat/client/lib/notifications";
 import { usageLimitLine } from "@agenteschat/client/lib/person-usage";
+import { isOpen, proposalTitle, proposalWhy, proposerOf, sortProposals } from "@agenteschat/client/lib/proposals";
 import { routineNotificationWords } from "@agenteschat/client/lib/routine-view";
 import { secretNoticeLine } from "@agenteschat/client/lib/secret-requests";
 import {
@@ -90,6 +93,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { AdminAskActions } from "@/components/AdminAsk";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { InlineProposal } from "@/components/ChatCards";
 import { ApprovalAsk, ApprovalGroupAsk } from "@/components/ApprovalAsk";
 import { useConnectAi } from "@/components/connect-ai-context";
 import { DeviceNoticeActions, deviceNoticeLine } from "@/components/devices/DeviceNotice";
@@ -104,6 +108,7 @@ import { ChangeRequestCard } from "@/components/RightHandCards";
 import { CardSky, colorOf, prepareBurst } from "@/components/Sky";
 import { WidgetNoticeActions, widgetNoticeLine } from "@/components/widgets/WidgetNotice";
 import { useDirectory } from "@/hooks/useDirectory";
+import { useInboxWaiting } from "@/hooks/useInboxWaiting";
 import { matchesNow } from "@/hooks/useMatchMedia";
 import { lookOf } from "@/lib/look";
 import { ApprovalRow, approvalDecidedAt, decidedGroups } from "@/pages/ApprovalsPage";
@@ -1079,6 +1084,78 @@ function InboxRead({
   );
 }
 
+/** A proposal's id as the list knows it: beside the notifications' own ids, never one of them. */
+const proposalKey = (id: string) => `proposal:${id}`;
+
+/** A proposal waiting on me, as a row of the inbox: who proposes, what changes, and when. */
+function ProposalRow({ p, on, onSelect }: { p: Proposal; on: boolean; onSelect: () => void }) {
+  const { t, i18n } = useTranslation();
+  const { org } = useOrg();
+  const dir = useDirectory(org.id);
+  const agentName = (id: string) => dir.anyAgent(id)?.name ?? t("channel.unknownAgent");
+  const name = agentName(proposerOf(p));
+  return (
+    <button
+      type="button"
+      className={cx("ib-row is-unread", on && "is-on")}
+      data-n={proposalKey(p.id)}
+      aria-current={on || undefined}
+      aria-label={`${name}: ${proposalTitle(t, p, org, agentName)}`}
+      onClick={onSelect}
+    >
+      <span className="ib-row__face">
+        <AgentAvatar agentId={proposerOf(p)} name={name} size="sm" state="waiting" className="nt-av24" />
+      </span>
+      <span className="ib-row__text">
+        <span className="ib-row__line nt-what">
+          <b>{name}</b> {t("notifications.proposes")}
+        </span>
+        <span className="ib-row__sub">{proposalTitle(t, p, org, agentName)}</span>
+      </span>
+      <span className="ib-row__end">{whenText(t, i18n.language, p.createdAt)}</span>
+    </button>
+  );
+}
+
+/** A proposal open beside the list: who proposes and why, then the change itself with its decision, as in the chat. */
+function ProposalRead({ p, dir, onBack }: { p: Proposal; dir: Dir; onBack: () => void }) {
+  const { t, i18n } = useTranslation();
+  const { org } = useOrg();
+  const agentName = (id: string) => dir.anyAgent(id)?.name ?? t("channel.unknownAgent");
+  const proposer = proposerOf(p);
+  const agent = dir.anyAgent(proposer);
+  const name = agentName(proposer);
+  return (
+    <section className="ib-read" aria-label={name}>
+      {agent && <CardSky color={colorOf(agent)} />}
+      <div className="ib-read__in">
+        <header className="ib-read__top">
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon="chevronLeft"
+            className="ib-read__back"
+            aria-label={t("common.back")}
+            onClick={onBack}
+          />
+          <span className="ib-read__face">
+            <AgentAvatar agentId={proposer} name={name} size="lg" framed={false} state="waiting" />
+          </span>
+        </header>
+        <div className="ib-item">
+          <p className="ib-read__who">
+            {[name, t("shell.proposals"), whenText(t, i18n.language, p.createdAt)].join(" · ")}
+          </p>
+          <h2 className="ib-read__title">{proposalTitle(t, p, org, agentName)}</h2>
+          <p className="ib-read__say">{proposalWhy(t, p)}</p>
+          <InlineProposal proposalId={p.id} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** A decided request, open beside the list: the same card, saying who decided and when. */
 function RequestRead({ approval, dir, onBack }: { approval: Approval; dir: Dir; onBack: () => void }) {
   const { t } = useTranslation();
@@ -1218,12 +1295,19 @@ export function NotificationsPage({
   const channelName = (id: string) => channels.data?.find((c) => c.id === id)?.name ?? "";
   // "Concluídas": by when each was marked done, waiting or not.
   const doneView = filter === "done";
-  const waiting = doneView ? [] : sortWaiting(items.filter((n) => n.waiting));
+  // The proposals I may decide, one row each: they stand in for the one notice saying that proposals wait.
+  const proposals = useProposals(org.id);
+  const waitingProposals =
+    filter === "all" || filter === "waiting"
+      ? sortProposals((proposals.data ?? []).filter((p) => isOpen(p) && p.canDecide))
+      : [];
+  const waiting = doneView ? [] : sortWaiting(items.filter((n) => n.waiting && n.kind !== "proposal_waiting"));
   const rest = doneView ? items : items.filter((n) => !n.waiting);
   const days = groupByDay(rest, undefined, doneView ? (n) => n.doneAt ?? n.updatedAt : undefined);
   const unreadTotal = counts?.unread ?? badge.data?.unread ?? 0;
-  const waitingTotal = counts?.waiting ?? badge.data?.waiting ?? 0;
-  const nothing = list.isSuccess && (counts?.all ?? 0) === 0 && items.length === 0;
+  const waitingTotal = useInboxWaiting(org.id);
+  const nothing =
+    list.isSuccess && (counts?.all ?? 0) === 0 && items.length === 0 && (proposals.data ?? []).every((p) => !isOpen(p));
 
   // The tab says how many are unread.
   useEffect(() => {
@@ -1236,8 +1320,10 @@ export function NotificationsPage({
 
   // The first item opens by itself beside the list: what waits on me first. Where the screen shows one of the two,
   // the list stays until the person picks.
-  const firstId = (waiting[0] ?? days[0]?.[1][0])?.id ?? null;
-  const curShown = cur !== null && items.some((x) => x.id === cur);
+  const firstProposal = waitingProposals[0] ? proposalKey(waitingProposals[0].id) : null;
+  const firstId = waiting[0]?.id ?? firstProposal ?? days[0]?.[1][0]?.id ?? null;
+  const curShown =
+    cur !== null && (items.some((x) => x.id === cur) || waitingProposals.some((p) => proposalKey(p.id) === cur));
   useEffect(() => {
     if (requestsView || curShown || !firstId || matchesNow(NARROW)) return;
     setCur(firstId);
@@ -1567,6 +1653,7 @@ export function NotificationsPage({
   // What the keys act on: the open item.
   const curItem = requestsView ? undefined : items.find((x) => x.id === cur);
   const curRequest = requestsView ? decided.find((a) => a.id === req) : undefined;
+  const curProposal = requestsView ? undefined : waitingProposals.find((p) => proposalKey(p.id) === cur);
   const filterWords = (f: InboxFilter) => (f === "requests" ? t("notifications.filter.requests") : t(`notifications.filter.${f}`));
   const summary = [
     waitingTotal ? t("notifications.summaryWaiting", { count: waitingTotal }) : "",
@@ -1591,7 +1678,7 @@ export function NotificationsPage({
     );
 
   return (
-    <div className={cx("nt ib", (curItem || curRequest) && "ib--open")}>
+    <div className={cx("nt ib", (curItem || curRequest || curProposal) && "ib--open")}>
       <aside className="ib-list" aria-label={title}>
         <header className="ib-head">
           <div className="ib-head__text">
@@ -1691,7 +1778,7 @@ export function NotificationsPage({
           <>
             {list.isPending && <LoadingCards count={3} />}
             {list.isError && !list.data && <ErrorState error={list.error} onRetry={() => void list.refetch()} />}
-            {list.isSuccess && items.length === 0 && (
+            {list.isSuccess && items.length === 0 && waitingProposals.length === 0 && (
               <EmptyState
                 size="panel"
                 // Nobody waiting and all read are wins: the others are only a filter with nothing in it.
@@ -1719,11 +1806,22 @@ export function NotificationsPage({
                       : t("notifications.noneHere")}
               </EmptyState>
             )}
-            {waiting.length > 0 && (
+            {waiting.length + waitingProposals.length > 0 && (
               <section className="ib-group nt-wait" aria-label={t("notifications.wait.title")}>
-                <GroupHeading title={t("notifications.wait.title")} count={waiting.length} />
+                <GroupHeading title={t("notifications.wait.title")} count={waiting.length + waitingProposals.length} />
                 {waiting.map((n) => (
                   <InboxRow key={n.id} n={n} s={stateOf(n)} h={handlers} dir={dir} channelName={channelName} />
+                ))}
+                {waitingProposals.map((p) => (
+                  <ProposalRow
+                    key={p.id}
+                    p={p}
+                    on={cur === proposalKey(p.id)}
+                    onSelect={() => {
+                      setReplying(null);
+                      setCur(proposalKey(p.id));
+                    }}
+                  />
                 ))}
               </section>
             )}
@@ -1769,6 +1867,8 @@ export function NotificationsPage({
           channelName={channelName}
           onBack={back}
         />
+      ) : curProposal ? (
+        <ProposalRead key={curProposal.id} p={curProposal} dir={dir} onBack={back} />
       ) : curRequest ? (
         <RequestRead key={curRequest.id} approval={curRequest} dir={dir} onBack={back} />
       ) : (

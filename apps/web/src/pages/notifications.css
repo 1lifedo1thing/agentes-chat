@@ -826,6 +826,14 @@ html:not([data-pointer]) .nt-fails .nt-rep:focus-visible {
   inset: 0;
   display: flex;
 }
+/* The columns keep their own room at the foot: none under them. */
+.nt.ib {
+  padding-bottom: 0;
+}
+.ib-read__link {
+  align-self: flex-start;
+  margin-top: 20px;
+}
 .ib-list {
   flex: 0 0 380px;
   min-width: 0;
