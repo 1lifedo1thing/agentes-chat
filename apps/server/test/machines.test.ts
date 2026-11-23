@@ -127,7 +127,7 @@ test("where each workspace gets its own computer the agents read so, and one wit
   await t.drain();
   const request = asked.at(-1);
   if (!request) throw new Error("no model call");
-  expect(systemText(request.system)).toContain("a bigger plan may bring a bigger one (Settings › Plan and billing)");
+  expect(systemText(request.system)).toContain("another workspace, on its own plan, has its own computer");
   // Paid, nothing reported by the provisioner yet: never "connect one".
   const runCode = request.tools?.find((tool) => tool.name === "run_code");
   expect(runCode?.description).toContain("still being prepared");

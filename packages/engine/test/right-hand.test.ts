@@ -384,8 +384,8 @@ test("what it and the agents advise about computers follows where the server get
     expect(cloud).toContain(
       "People may connect their own devices (computers, phones) under Settings › Devices; suggest it when a task needs a phone, a Mac or more power.",
     );
-    expect(cloud).toContain("a bigger plan may bring a bigger one (Settings › Plan and billing)");
-    expect(cloud).toContain("another workspace, on its own plan, has its own");
+    expect(cloud).toContain("another workspace, on its own plan, has its own computer");
+    expect(cloud).not.toContain("bigger plan");
     // A server of the customer's own is work an agent may still reach: only computers for the agents are ruled out.
     expect(cloud).not.toMatch(/never suggest (it|SSH)|no (pairing|SSH)/);
     expect(cloud).toContain("Task manager");
