@@ -3,7 +3,18 @@ import { composioOffText, hiddenWithoutComposio } from "@agenteschat/client/lib/
 import type { MailChoice } from "@agenteschat/client/lib/mail";
 import { can } from "@agenteschat/client/lib/permissions";
 import { connectorDescription, connectorName, scopeText } from "@agenteschat/client/lib/scopes";
-import { AgentSearching, Button, codeAndBold, EmptyState, Icon, Skeleton, SkeletonGroup } from "@agenteschat/ui";
+import {
+  AgentSearching,
+  Button,
+  codeAndBold,
+  Dialog,
+  DialogBody,
+  DialogFooter,
+  EmptyState,
+  Icon,
+  Skeleton,
+  SkeletonGroup,
+} from "@agenteschat/ui";
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { ConnectorIcon } from "./ConnectorIcon";
@@ -12,6 +23,7 @@ export { ConnectorIcon };
 
 import { useTranslation } from "react-i18next";
 import { DatabaseIcon } from "@/components/DatabaseConnect";
+import { FlowTitle } from "@/components/FlowTitle";
 import { MailIcon, mailAuthKind, mailChoiceName } from "@/components/MailConnect";
 import { useOrg } from "@/components/org-context";
 import { ConnectorSky } from "@/components/Sky";
@@ -93,8 +105,29 @@ function capabilities(t: TFunction, exists: (key: string) => boolean, id: string
   return (def?.scopes ?? []).map((s) => ({ text: scopeText(t, s).label, asks: s.sensitive }));
 }
 
-/** Suggestions, in order: the first three not connected yet (and ready on this server). */
-const SUGGESTED = ["github", "database", "linear", "notion", "mail-gmail", "drive", "sentry", "stripe", "slack"];
+/**
+ * Suggestions, in order: the tools a team reaches for every day (design, product data, errors, mail, docs). The store
+ * features the first six not connected yet and ready on this server.
+ */
+const SUGGESTED = [
+  "figma",
+  "canva",
+  "posthog",
+  "sentry",
+  "mail-gmail",
+  "mail-outlook",
+  "notion",
+  "linear",
+  "slack",
+  "github",
+  "hubspot",
+  "drive",
+  "stripe",
+  "database",
+];
+
+/** How many suggestions the store's front features: one large, two beside it, three under them. */
+const FEATURED = 6;
 
 /** How many services a category shows under Featured before "See all". */
 const ROW = 4;
@@ -220,8 +253,30 @@ export function matchEntries(t: TFunction, entries: CatalogEntry[], query: strin
 }
 
 /**
- * The store's front: the three suggestions as features (the first one large, each on its brand's pixel sky), then a
- * row of services per category with "See all". One button per service connects it; its line opens its page.
+ * A suggestion beside or under the large one: its mark on its brand's pixel sky, its name and what it does, and an
+ * arrow. The whole card opens the service's dialog (its name is the control).
+ */
+function FeatureCard({ entry, onOpen }: { entry: CatalogEntry; onOpen: (entry: CatalogEntry) => void }) {
+  const { t } = useTranslation();
+  return (
+    <article className="store-role">
+      <ConnectorSky brand={entry.brandColor} cover />
+      <span className="store-role__mark">{entry.icon("lg")}</span>
+      <span className="store-role__text">
+        <span className="store-kicker">{t("connectors.store.suggested")}</span>
+        <button type="button" className="store-open store-role__name" onClick={() => onOpen(entry)}>
+          {entry.name}
+        </button>
+        <span className="store-role__sub">{entry.description}</span>
+      </span>
+      <Icon name="chevronRight" size={18} className="store-role__chev" />
+    </article>
+  );
+}
+
+/**
+ * The store's front: six suggestions as features (the first one large, each on its brand's pixel sky), then a row of
+ * services per category with "See all". A feature or a line opens the service's dialog, where it connects.
  */
 export function StoreFeatured({
   entries,
@@ -237,46 +292,47 @@ export function StoreFeatured({
   const { t } = useTranslation();
   const suggested = SUGGESTED.map((k) => entries.find((e) => e.key === k))
     .filter((e): e is CatalogEntry => !!e && !e.connected && e.available)
-    .slice(0, 3);
-  const [hero, ...side] = suggested;
+    .slice(0, FEATURED);
+  const [hero, ...rest] = suggested;
+  const side = rest.slice(0, 2);
+  const under = rest.slice(2);
   return (
     <>
       {hero && (
-        <div className="store-feat" data-side={side.length || undefined}>
-          <article className="store-hero">
-            <ConnectorSky brand={hero.brandColor} cover />
-            <span className="store-hero__mark">{hero.icon("lg")}</span>
-            <span className="store-kicker">{t("connectors.store.suggested")}</span>
-            <h3 className="store-hero__name">
-              <button type="button" className="store-open" onClick={() => onOpen(hero)}>
-                {hero.name}
-              </button>
-            </h3>
-            <p className="store-hero__text">{hero.description}</p>
-            <span className="store-hero__get">
-              <Button variant="primary" onClick={hero.pick}>
-                {t("connectors.connectName", { name: hero.name })}
+        <div className="store-feats">
+          <div className="store-feat" data-side={side.length || undefined}>
+            <article className="store-hero">
+              <ConnectorSky brand={hero.brandColor} cover />
+              <span className="store-hero__mark">{hero.icon("lg")}</span>
+              <span className="store-kicker">{t("connectors.store.suggested")}</span>
+              <h3 className="store-hero__name">
+                <button type="button" className="store-open" onClick={() => onOpen(hero)}>
+                  {hero.name}
+                </button>
+              </h3>
+              <p className="store-hero__text">{hero.description}</p>
+              <Button
+                variant="primary"
+                className="store-hero__more"
+                aria-label={t("connectors.store.moreName", { name: hero.name })}
+                onClick={() => onOpen(hero)}
+              >
+                {t("connectors.store.more")}
+                <Icon name="chevronRight" size={16} />
               </Button>
-              <small>{t(`connectors.howShort.${hero.how}`)}</small>
-            </span>
-          </article>
-          {side.length > 0 && (
-            <div className="store-side">
-              {side.map((e) => (
-                <article key={e.key} className="store-role">
-                  <ConnectorSky brand={e.brandColor} cover />
-                  <span className="store-role__mark">{e.icon("lg")}</span>
-                  <span className="store-role__text">
-                    <span className="store-kicker">{t("connectors.store.suggested")}</span>
-                    <button type="button" className="store-open store-role__name" onClick={() => onOpen(e)}>
-                      {e.name}
-                    </button>
-                    <span className="store-role__sub">{e.description}</span>
-                  </span>
-                  <Button size="sm" aria-label={t("connectors.connectName", { name: e.name })} onClick={e.pick}>
-                    {t("connectors.store.connect")}
-                  </Button>
-                </article>
+            </article>
+            {side.length > 0 && (
+              <div className="store-side">
+                {side.map((e) => (
+                  <FeatureCard key={e.key} entry={e} onOpen={onOpen} />
+                ))}
+              </div>
+            )}
+          </div>
+          {under.length > 0 && (
+            <div className="store-trio">
+              {under.map((e) => (
+                <FeatureCard key={e.key} entry={e} onOpen={onOpen} />
               ))}
             </div>
           )}
@@ -403,13 +459,20 @@ export function StoreSkeleton() {
   );
 }
 
-/** Services in two columns of lines (one on narrow screens): the mark, the name, what it does and its one button. */
+/**
+ * Services in two columns of lines (one on narrow screens): the mark, the name, what it does, its state and an arrow.
+ * A line opens the service's dialog wherever it is clicked; one coming soon opens nothing.
+ */
 export function StoreRows({ entries, onOpen }: { entries: CatalogEntry[]; onOpen: (entry: CatalogEntry) => void }) {
   const { t } = useTranslation();
   return (
     <ul className="store-rows">
       {entries.map((e) => (
-        <li key={e.key} className="store-item" data-soon={!e.available || undefined}>
+        <li
+          key={e.key}
+          className={e.soon ? "store-item" : "store-item store-item--link"}
+          data-soon={!e.available || undefined}
+        >
           <button
             type="button"
             className="store-item__open"
@@ -433,16 +496,15 @@ export function StoreRows({ entries, onOpen }: { entries: CatalogEntry[]; onOpen
             <span className="store-state" data-s="ok">
               {t("connectors.store.connected")}
             </span>
-          ) : !e.available ? (
-            <span className="store-state" data-s="soon">
-              <Icon name="lock" size={14} />
-              {t("connectors.soon")}
-            </span>
           ) : (
-            <Button size="sm" aria-label={t("connectors.connectName", { name: e.name })} onClick={e.pick}>
-              {t("connectors.store.connect")}
-            </Button>
+            !e.available && (
+              <span className="store-state" data-s="soon">
+                <Icon name="lock" size={14} />
+                {t("connectors.soon")}
+              </span>
+            )
           )}
+          {!e.soon && <Icon name="chevronRight" size={16} className="store-item__chev" />}
         </li>
       ))}
     </ul>
@@ -484,7 +546,7 @@ export function StoreFoot({ onOther, composioOff }: { onOther: () => void; compo
   );
 }
 
-/** "Connectors" over a service's page: back to the store. */
+/** "Connectors" over a connection's page in Settings › Connectors: back to the list. */
 export function StoreBack({ onBack }: { onBack: () => void }) {
   const { t } = useTranslation();
   return (
@@ -496,75 +558,71 @@ export function StoreBack({ onBack }: { onBack: () => void }) {
 }
 
 /**
- * A service's page: its mark, name and what it is beside its one button; a strip saying how it connects, who uses it
- * and whether something asks a person; then what agents could do and what connecting changes.
+ * A service's dialog in the store: its mark, name and what it is; a strip saying how it connects, who uses it and
+ * whether something asks a person; what agents could do and what connecting changes; how it connects beside its one
+ * button. Connecting closes it and opens the connect flow.
  */
-export function ServicePage({ entry, onBack }: { entry: CatalogEntry; onBack: () => void }) {
+export function ServiceDialog({
+  entry,
+  open,
+  onClose,
+}: {
+  entry: CatalogEntry | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
+  if (!entry) return null;
   const asks = entry.can.some((c) => c.asks);
+  const label = t(
+    !entry.connected
+      ? "connectors.connectName"
+      : entry.again === "add"
+        ? "connectors.addAccountName"
+        : "connectors.reconnectName",
+    { name: entry.name },
+  );
   return (
-    <div className="store-page">
-      <StoreBack onBack={onBack} />
-      <div className="store-page__head">
-        <span className="store-page__icon">{entry.icon("lg")}</span>
-        <div className="store-page__title">
-          <h3>{entry.name}</h3>
-          <p>
-            {entry.connected && (
-              <>
-                <span className="store-state" data-s="ok">
-                  {t("connectors.store.connected")}
-                </span>
-                {" · "}
-              </>
-            )}
-            {entry.description}
-          </p>
-        </div>
-        {entry.available ? (
-          <Button
-            variant="primary"
-            aria-label={t(
-              !entry.connected
-                ? "connectors.connectName"
-                : entry.again === "add"
-                  ? "connectors.addAccountName"
-                  : "connectors.reconnectName",
-              { name: entry.name },
-            )}
-            onClick={entry.pick}
-          >
-            {!entry.connected
-              ? t("connectors.connectName", { name: entry.name })
-              : entry.again === "add"
-                ? t("connectors.detail.addAccount")
-                : t("connectors.detail.reconnect")}
-          </Button>
-        ) : (
-          <Button variant="primary" disabled>
-            {t("connectors.soon")}
-          </Button>
-        )}
-      </div>
-      <dl className="store-strip">
-        <div>
-          <dt>{t("connectors.store.howLabel")}</dt>
-          <dd>{t(`connectors.howShort.${entry.how}`)}</dd>
-        </div>
-        <div>
-          <dt>{t("connectors.who")}</dt>
-          <dd>{t(entry.everyone ? "connectors.store.whoAll" : "connectors.store.whoChoose")}</dd>
-        </div>
-        {asks && (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title={<FlowTitle tile={entry.icon("lg")}>{entry.name}</FlowTitle>}
+      description={
+        <>
+          {entry.connected && (
+            <>
+              <span className="store-state" data-s="ok">
+                {t("connectors.store.connected")}
+              </span>
+              {" · "}
+            </>
+          )}
+          {entry.description}
+        </>
+      }
+      closeLabel={t("common.close")}
+      width={620}
+      className="store-dialog"
+    >
+      <DialogBody className="store-dialog__body">
+        <dl className="store-strip">
           <div>
-            <dt>{t("connectors.store.asksLabel")}</dt>
-            <dd>{t("connectors.store.asksSensitive")}</dd>
+            <dt>{t("connectors.store.howLabel")}</dt>
+            <dd>{t(`connectors.howShort.${entry.how}`)}</dd>
           </div>
-        )}
-      </dl>
-      <div className="store-cols">
-        {entry.can.length > 0 && (
           <div>
+            <dt>{t("connectors.who")}</dt>
+            <dd>{t(entry.everyone ? "connectors.store.whoAll" : "connectors.store.whoChoose")}</dd>
+          </div>
+          {asks && (
+            <div>
+              <dt>{t("connectors.store.asksLabel")}</dt>
+              <dd>{t("connectors.store.asksSensitive")}</dd>
+            </div>
+          )}
+        </dl>
+        {entry.can.length > 0 && (
+          <section>
             <h4>{t("connectors.detail.can")}</h4>
             <ul className="store-caps">
               {entry.can.map((c) => (
@@ -574,16 +632,35 @@ export function ServicePage({ entry, onBack }: { entry: CatalogEntry; onBack: ()
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
         )}
-        <div>
+        <section>
           <h4>{t("connectors.store.afterTitle")}</h4>
-          <ul className="store-after">
-            <li>{entry.after}</li>
-            <li>{t(`connectors.how.${entry.how}`)}</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+          <p className="store-after">{entry.after}</p>
+        </section>
+      </DialogBody>
+      <DialogFooter note={t(`connectors.how.${entry.how}`)}>
+        {entry.available ? (
+          <Button
+            variant="primary"
+            aria-label={label}
+            onClick={() => {
+              onClose();
+              entry.pick();
+            }}
+          >
+            {!entry.connected
+              ? label
+              : entry.again === "add"
+                ? t("connectors.detail.addAccount")
+                : t("connectors.detail.reconnect")}
+          </Button>
+        ) : (
+          <Button variant="primary" disabled>
+            {t("connectors.soon")}
+          </Button>
+        )}
+      </DialogFooter>
+    </Dialog>
   );
 }

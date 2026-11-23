@@ -15330,9 +15330,19 @@ html:not([data-pointer]) .store-cats button:focus-visible {
   font-weight: 400;
   color: var(--faint);
 }
+.store-feats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 .store-feat {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.store-trio {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 .store-feat[data-side] {
@@ -15423,14 +15433,18 @@ html:not([data-pointer]) .store-open:focus-visible {
   line-height: 23px;
   color: var(--ink2);
 }
-.store-hero__get {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* A feature opens its service's dialog wherever it is clicked (its name is the control); See more stays its own. */
+.store-hero .store-open::after,
+.store-role .store-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
 }
-.store-hero__get small {
-  font-size: 13px;
-  color: var(--ink2);
+.store-hero__more {
+  position: relative;
+  z-index: 1;
+  gap: 4px;
+  padding-inline-end: calc(var(--control-px-md) - 4px);
 }
 .store-side {
   display: grid;
@@ -15465,8 +15479,12 @@ html:not([data-pointer]) .store-open:focus-visible {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.store-role .ac-btn {
+.store-role__chev {
   flex: none;
+  color: var(--ink2);
+}
+.store-role:hover .store-role__chev {
+  color: var(--ink);
 }
 .store-sec {
   display: flex;
@@ -15560,11 +15578,6 @@ html:not([data-pointer]) .store-item__open:focus-visible {
 .store-item[data-soon] .store-item__text b {
   opacity: 0.55;
 }
-.store-rows .ac-btn {
-  flex: none;
-  min-width: 84px;
-  justify-content: center;
-}
 .store-state {
   font-size: 13.5px;
   line-height: 18px;
@@ -15588,7 +15601,8 @@ html:not([data-pointer]) .store-item__open:focus-visible {
   color: var(--faint);
 }
 .store-item__text .store-state,
-.store-page__title .store-state {
+.store-page__title .store-state,
+.store-dialog .ac-dialog__desc .store-state {
   font-size: inherit;
   line-height: inherit;
 }
@@ -15600,6 +15614,9 @@ html:not([data-pointer]) .store-item__open:focus-visible {
   content: "";
   position: absolute;
   inset: 0;
+}
+.store-item--link > .store-state {
+  min-width: 0;
 }
 .store-item--link > .ac-btn {
   position: relative;
@@ -15724,14 +15741,17 @@ html:not([data-pointer]) .store-back:focus-visible {
   font-weight: 600;
   color: var(--ink);
 }
-.store-cols {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 40px;
+/* A service's dialog in the store: the strip, what agents could do, what connecting changes, one under another. */
+.store-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
-.store-cols h4 {
-  margin: 0 0 10px;
-  font: 650 18px / 24px var(--font-display, var(--font-sans));
+.store-dialog__body h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 21px;
+  font-weight: 650;
   color: var(--ink);
 }
 .store-caps,
@@ -15742,8 +15762,8 @@ html:not([data-pointer]) .store-back:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  font-size: 15.5px;
-  line-height: 22px;
+  font-size: 14.5px;
+  line-height: 21px;
 }
 .store-caps {
   color: var(--ink2);
@@ -15786,8 +15806,8 @@ html:not([data-pointer]) .store-back:focus-visible {
     width: 100%;
   }
   .store-feat[data-side],
-  .store-rows,
-  .store-cols {
+  .store-trio,
+  .store-rows {
     grid-template-columns: minmax(0, 1fr);
   }
   .store-strip {

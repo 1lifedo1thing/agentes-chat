@@ -12,12 +12,13 @@ import { ownerScopeOf } from "@agenteschat/client/lib/owner-split";
 import { can } from "@agenteschat/client/lib/permissions";
 import { Icon, SearchField } from "@agenteschat/ui";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConnectFlow, type FlowState } from "@/components/ConnectFlow";
 import {
+  type CatalogEntry,
   matchEntries,
-  ServicePage,
+  ServiceDialog,
   StoreEmpty,
   StoreFeatured,
   StoreFoot,
@@ -32,8 +33,8 @@ import { useOrg } from "@/components/org-context";
 
 /**
  * The connectors store, a page of its own (`/connectors`, opened from Settings › Connectors): the suggestions as
- * features, a tab per category, search, one button per service and each service's page (`?service=`); a service
- * the store doesn't list connects by its address in the connect dialog. Who manages
+ * features, a tab per category, search, and a line per service that opens its dialog (`?service=`), where it connects; a
+ * service the store doesn't list connects by its address in the connect dialog. Who manages
  * connectors adds the team's by default, everyone else their own; the connect flow still asks "For whom". What is
  * connected is cared for in Settings › Connectors, where Settings at the top goes back.
  */
@@ -87,6 +88,9 @@ export function ConnectorStorePage({ service }: { service?: string }) {
   const open = (key?: string) =>
     void navigate({ to: "/org/$orgId/connectors", params: { orgId: org.id }, search: key ? { service: key } : {} });
   const entry = service ? (entries.find((e) => e.key === service) ?? null) : null;
+  // The dialog keeps the service it showed while it closes.
+  const shown = useRef<CatalogEntry | null>(null);
+  if (entry) shown.current = entry;
   const needle = q.trim();
   const found = needle ? matchEntries(t, entries, needle) : [];
   // Any service by its address: the connect dialog itself says what to paste.
@@ -96,74 +100,64 @@ export function ConnectorStorePage({ service }: { service?: string }) {
   return (
     <div className="page store-wrap">
       <div className="store">
-        {entry ? (
-          <ServicePage entry={entry} onBack={() => open()} />
-        ) : (
-          <>
-            <Link
-              to="/org/$orgId/settings/$section"
-              params={{ orgId: org.id, section: "connectors" }}
-              className="store-back"
+        <Link
+          to="/org/$orgId/settings/$section"
+          params={{ orgId: org.id, section: "connectors" }}
+          className="store-back"
+        >
+          <Icon name="chevronLeft" size={16} />
+          {t("settings.title")}
+        </Link>
+        <div className="store-top">
+          <h1 className="store-title">{t("connectors.title")}</h1>
+          <SearchField
+            size="sm"
+            className="store-search"
+            aria-label={t("connectors.search")}
+            placeholder={t("connectors.searchPlaceholder")}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onClear={() => setQ("")}
+            clearLabel={t("filters.clearSearch")}
+          />
+        </div>
+        <nav className="store-cats" aria-label={t("connectors.categories")}>
+          {tabs.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-pressed={!needle && tab === c}
+              onClick={() => {
+                setQ("");
+                setTab(c);
+              }}
             >
-              <Icon name="chevronLeft" size={16} />
-              {t("settings.title")}
-            </Link>
-            <div className="store-top">
-              <h1 className="store-title">{t("connectors.title")}</h1>
-              <SearchField
-                size="sm"
-                className="store-search"
-                aria-label={t("connectors.search")}
-                placeholder={t("connectors.searchPlaceholder")}
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onClear={() => setQ("")}
-                clearLabel={t("filters.clearSearch")}
-              />
-            </div>
-            <nav className="store-cats" aria-label={t("connectors.categories")}>
-              {tabs.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  aria-pressed={!needle && tab === c}
-                  onClick={() => {
-                    setQ("");
-                    setTab(c);
-                  }}
-                >
-                  {c === "featured" ? t("connectors.store.featured") : t(`connectors.category.${c}`)}
-                </button>
-              ))}
-            </nav>
-            {needle ? (
-              found.length > 0 ? (
-                <StoreRows entries={found} onOpen={(e) => open(e.key)} />
-              ) : (
-                <StoreEmpty query={needle} onOther={other} />
-              )
-            ) : catalog.isLoading ? (
-              <StoreSkeleton />
-            ) : tab === "featured" ? (
-              <>
-                <StoreFeatured
-                  entries={entries}
-                  categories={categories}
-                  onOpen={(e) => open(e.key)}
-                  onCategory={setTab}
-                />
-                <StoreFoot onOther={other} composioOff={composioOff} />
-              </>
-            ) : entries.some((e) => e.category === tab) ? (
-              <>
-                <StoreRows entries={entries.filter((e) => e.category === tab)} onOpen={(e) => open(e.key)} />
-                <StoreFoot onOther={other} />
-              </>
-            ) : (
-              <StoreEmpty query="" onOther={other} />
-            )}
+              {c === "featured" ? t("connectors.store.featured") : t(`connectors.category.${c}`)}
+            </button>
+          ))}
+        </nav>
+        {needle ? (
+          found.length > 0 ? (
+            <StoreRows entries={found} onOpen={(e) => open(e.key)} />
+          ) : (
+            <StoreEmpty query={needle} onOther={other} />
+          )
+        ) : catalog.isLoading ? (
+          <StoreSkeleton />
+        ) : tab === "featured" ? (
+          <>
+            <StoreFeatured entries={entries} categories={categories} onOpen={(e) => open(e.key)} onCategory={setTab} />
+            <StoreFoot onOther={other} composioOff={composioOff} />
           </>
+        ) : entries.some((e) => e.category === tab) ? (
+          <>
+            <StoreRows entries={entries.filter((e) => e.category === tab)} onOpen={(e) => open(e.key)} />
+            <StoreFoot onOther={other} />
+          </>
+        ) : (
+          <StoreEmpty query="" onOther={other} />
         )}
+        <ServiceDialog entry={entry ?? shown.current} open={entry !== null} onClose={() => open()} />
         <ConnectFlow flow={flow} onChange={setFlow} onClose={() => setFlow(null)} />
         <MailConnectFlow flow={mailFlow} onChange={setMailFlow} onClose={() => setMailFlow(null)} />
         <DatabaseConnectFlow flow={dbFlow} onChange={setDbFlow} onClose={() => setDbFlow(null)} />
