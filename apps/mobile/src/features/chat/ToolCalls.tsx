@@ -359,7 +359,7 @@ export function ToolBlock({
         <View style={[styles.grow, styles.clip]}>
           <Animated.View key={head.textKey ?? head.text} entering={moving ? HEAD_IN : undefined}>
             <Breathing on={head.state === "run"}>
-              <Text variant="footnote" tone="ink2" numberOfLines={1} style={styles.medium}>
+              <Text variant="label" tone="ink2" numberOfLines={1}>
                 {head.text}
               </Text>
             </Breathing>

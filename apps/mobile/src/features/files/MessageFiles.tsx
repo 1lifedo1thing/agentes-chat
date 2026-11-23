@@ -10,11 +10,10 @@ import { ChoicesCard } from "../blocks/ChoicesCard";
 import { LiveBlockCard } from "../blocks/LiveBlock";
 import { PollCard } from "../blocks/PollCard";
 import { FileCommentsLink } from "../chat/cards";
-import { useKeptWidth, useMessageCardCorners } from "../chat/look";
+import { useKeptWidth, useMessageCardCorners, useMessageCardFrame } from "../chat/look";
 import { LiveFileCard } from "../live-files/LiveFileCard";
 import { opensLive } from "../live-files/routes";
 import { useColors, useOrgId } from "../shared/hooks";
-import { useSurface } from "../shared/parts";
 import { AttachmentTile } from "./AttachmentTile";
 import { ImageStack, type StackImage } from "./ImageStack";
 import { isLocalMedia, type LocalFile, localRatio } from "./local-files";
@@ -441,12 +440,11 @@ function LocalMedia({
 }
 
 function LocalFileCard({ file, sending }: { file: LocalFile; sending: boolean }) {
-  const cardCorners = useMessageCardCorners();
   const { i18n } = useTranslation();
   const c = useColors();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   return (
-    <View style={[styles.card, surface, cardCorners]} accessible accessibilityLabel={file.name}>
+    <View style={[styles.card, frame.style]} accessible accessibilityLabel={file.name}>
       {isLocalPdf(file) ? (
         // A PDF on its way shows its first page already, read from the phone's own file, as it did in the composer.
         <View style={styles.page}>
@@ -507,12 +505,11 @@ export function FileTile({ ext }: { ext: string }) {
 }
 
 function RemovedCard() {
-  const cardCorners = useMessageCardCorners();
   const { t } = useTranslation();
   const c = useColors();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   return (
-    <View style={[styles.card, surface, cardCorners]}>
+    <View style={[styles.card, frame.style]}>
       <View style={[styles.tile, { backgroundColor: c.sunken }]}>
         <Icon name="file" size={20} color={c.faint} />
       </View>

@@ -167,30 +167,29 @@ export function useMessageCardCorners(): Corners | null {
 }
 
 /**
- * The one frame of a card in a message, spread last over the card's own: under someone else's words in a conversation
- * of bubbles it is a bubble of that message (its fill, its light edge over a background, no outline); elsewhere the
- * raised surface with a hairline. With the corners every card there takes (`useMessageCardCorners`). `fill`: the
- * color behind its content, for what fades into it or rings a face on it; `bubble`: whether it is a bubble part.
+ * The one frame of a card that shows in a message, spread last over the card's own: under someone else's words in a
+ * conversation of bubbles it is a bubble of that message (its fill, its light edge over a background, no outline); in
+ * a message of the other looks the raised surface with a hairline; outside a message (a mission's screen, the inbox)
+ * the app's raised card with its shadow, at the card's own corners. `fill`: the color behind its content, for what
+ * fades into it or rings a face on it; `bubble`: whether it is a bubble part.
  */
 export function useMessageCardFrame(): { style: StyleProp<ViewStyle>; fill: string; bubble: boolean } {
-  const { colors } = useTheme();
+  const { colors, shadows } = useTheme();
   const part = useBubblePart();
+  const inBody = useContext(RowPartContext) !== null;
   const cardCorners = useMessageCardCorners();
-  return useMemo(
-    () =>
-      part
-        ? {
-            style: [{ backgroundColor: part.fill, borderWidth: 0 }, cardCorners, part.edge],
-            fill: part.fill,
-            bubble: true,
-          }
-        : {
-            style: [{ backgroundColor: colors.raised, borderColor: colors.line2 }, cardCorners],
-            fill: colors.raised,
-            bubble: false,
-          },
-    [part, cardCorners, colors.raised, colors.line2],
-  );
+  return useMemo(() => {
+    if (part)
+      return {
+        style: [{ backgroundColor: part.fill, borderWidth: 0 }, cardCorners, part.edge],
+        fill: part.fill,
+        bubble: true,
+      };
+    const style = inBody
+      ? { backgroundColor: colors.raised, borderColor: colors.line2, borderWidth: StyleSheet.hairlineWidth }
+      : { backgroundColor: colors.raised, boxShadow: `${shadows.e1}, ${shadows.top}` };
+    return { style: [style, cardCorners], fill: colors.raised, bubble: false };
+  }, [part, inBody, cardCorners, colors.raised, colors.line2, shadows]);
 }
 
 /**

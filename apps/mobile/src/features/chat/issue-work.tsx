@@ -11,7 +11,7 @@ import { AgentFace } from "../shared/Face";
 import { useColors, useOrgId, useWhen } from "../shared/hooks";
 import { useSurface } from "../shared/parts";
 import { usePresenceOf } from "../status/hooks";
-import { useCardTop, useMessageCardCorners, useQuietInset } from "./look";
+import { useCardTop, useMessageCardFrame, useQuietInset } from "./look";
 import { useRowDirectory, useRowMeId } from "./row-data";
 
 /**
@@ -20,11 +20,10 @@ import { useRowDirectory, useRowMeId } from "./row-data";
  * issue"); the agent's instructions never show in the chat.
  */
 export function IssueWorkCard({ work, authorId }: { work: IssueWorkRef; authorId: string | null }) {
-  const cardCorners = useMessageCardCorners();
   const { t } = useTranslation();
   const c = useColors();
   const cardTop = useCardTop();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   const orgId = useOrgId();
   const meId = useRowMeId();
   const dir = useRowDirectory();
@@ -39,7 +38,7 @@ export function IssueWorkCard({ work, authorId }: { work: IssueWorkRef; authorId
       accessibilityHint={t("chat.issueWork.view")}
       // The card's own size: the press area never grows past it.
       fill={false}
-      style={[styles.cardBox, surface, cardCorners, cardTop]}
+      style={[styles.cardBox, frame.style, cardTop]}
       contentStyle={styles.card}
     >
       <View style={styles.head}>

@@ -824,14 +824,14 @@ function RowBody({
           hitSlop={NAME_LINE_SLOP}
           style={({ pressed }) => [styles.shrink, pressed && styles.pressedDim]}
         >
-          <Text variant="caption" tone="muted" numberOfLines={1} style={styles.medium}>
+          <Text variant="label" tone="muted" numberOfLines={1}>
             {reportOpen ? t("channel.routineReportHide") : t("channel.routineReport")}
           </Text>
         </Pressable>
       ) : null}
       {talker ? (
         <Text
-          variant="caption"
+          variant="footnote"
           tone="faint"
           numberOfLines={1}
           style={styles.shrink}
@@ -844,7 +844,7 @@ function RowBody({
       {/* The agent's role tells agents apart where several speak; in a DM (`look.names` off) the bar under its name
           already says it, and it isn't said again on every turn. */}
       {!reminder && !routine && !talker && !helping && agent?.role && look.names && !bubbled && !compact ? (
-        <Text variant="caption" tone="faint" numberOfLines={1} style={styles.shrink}>
+        <Text variant="footnote" tone="faint" numberOfLines={1} style={styles.shrink}>
           {agent.role}
         </Text>
       ) : null}
@@ -1452,7 +1452,7 @@ function HelpingTag({ consultation: c, channelId }: { consultation: RunConsultat
   const from = agentGrammar(dir.agentById.get(c.agentId)?.name ?? t("mobile.chat.someone"));
   return (
     <>
-      <Text variant="caption" tone="faint" numberOfLines={1} style={styles.shrink}>
+      <Text variant="footnote" tone="faint" numberOfLines={1} style={styles.shrink}>
         {withAgentFaces(
           t("chat.consultPanel.helping", { name: from.name, context: from.context }),
           [{ name: from.name, agentId: c.agentId }],
@@ -1465,7 +1465,7 @@ function HelpingTag({ consultation: c, channelId }: { consultation: RunConsultat
         hitSlop={NAME_LINE_SLOP}
         style={({ pressed }) => [styles.shrink, pressed && styles.pressedDim]}
       >
-        <Text variant="caption" tone="muted" numberOfLines={1} style={styles.medium}>
+        <Text variant="label" tone="muted" numberOfLines={1}>
           {t("chat.consultPanel.see")}
         </Text>
       </Pressable>

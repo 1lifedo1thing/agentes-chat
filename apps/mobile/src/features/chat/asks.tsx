@@ -60,7 +60,7 @@ import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useMeId, useNow, useOrgId } from "../shared/hooks";
 import { agentLook, fuseRemaining } from "../shared/logic";
 import { ownsIn } from "../shared/owner";
-import { tapHaptic, useSurface } from "../shared/parts";
+import { tapHaptic } from "../shared/parts";
 import {
   type AskKind,
   type AskStore,
@@ -75,7 +75,7 @@ import {
 } from "./ask-store";
 import { LineStop } from "./LiveRows";
 import { approvalIdOf, lineStops, markedParts, markName, parseInline, questionOf, workingEntries } from "./logic";
-import { useCardTop, useMessageCardCorners, useOwnTop } from "./look";
+import { useCardTop, useMessageCardCorners, useMessageCardFrame, useOwnTop } from "./look";
 import { Spans } from "./MessageSpans";
 import { useRowDirectory } from "./row-data";
 import { withOpacity } from "./turn";
@@ -494,7 +494,7 @@ export function AskCard({
   const { t } = useTranslation();
   const c = useColors();
   const dir = useRowDirectory();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   // Under someone else's words in a conversation of bubbles: a bubble of that message (its fill, joined to it, no sky),
   // and, when the message is only this request, its name line at the top and its time at the end, as a bubble's.
   const part = useBubblePart();
@@ -566,7 +566,7 @@ export function AskCard({
   return (
     // A plain view the conversation measures (never flattened away), around the card.
     <View ref={slot} collapsable={false} style={ownTop}>
-      <Animated.View entering={entering} style={[styles.card, surface, cardCorners]}>
+      <Animated.View entering={entering} style={[styles.card, frame.style]}>
         {/* What the card holds when it mounts just shows (a row scrolled back into view, its answer already there);
             what comes later fades in. */}
         <LayoutAnimationConfig skipEntering>
@@ -692,14 +692,14 @@ export function AskNote({
   const ownTop = useCardTop(12);
   const { t } = useTranslation();
   const dir = useRowDirectory();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   const part = useBubblePart();
   const cardCorners = useMessageCardCorners();
   const entering = useEntrance(CARD_IN);
   const heading = <Text variant="cardTitle">{title}</Text>;
   return (
     <View style={ownTop}>
-      <Animated.View entering={entering} style={[styles.card, surface, cardCorners]}>
+      <Animated.View entering={entering} style={[styles.card, frame.style]}>
         <View style={[styles.clip, cardCorners]}>
           {part ? null : (
             <Sky

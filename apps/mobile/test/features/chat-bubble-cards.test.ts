@@ -28,7 +28,11 @@ test("in bubbles, the cards under someone else's words are bubbles of that messa
 test("one frame for every card in a message: the bubble's fill with no outline in bubbles, the bubble's sides", () => {
   const look = src("features/chat/look.ts");
   expect(look).toContain("style: [{ backgroundColor: part.fill, borderWidth: 0 }, cardCorners, part.edge],");
-  expect(look).toContain("style: [{ backgroundColor: colors.raised, borderColor: colors.line2 }, cardCorners],");
+  // In a message of the other looks, raised with a hairline; outside a message, the app's raised card.
+  expect(look).toContain(
+    "? { backgroundColor: colors.raised, borderColor: colors.line2, borderWidth: StyleSheet.hairlineWidth }",
+  );
+  expect(look).toContain(": { backgroundColor: colors.raised, boxShadow: ");
   const framed = [
     "features/chat/Receipts.tsx",
     "features/chat/ToolCalls.tsx",
@@ -40,6 +44,12 @@ test("one frame for every card in a message: the bubble's fill with no outline i
     "features/blocks/PollCard.tsx",
     "features/blocks/ChoicesCard.tsx",
     "features/blocks/LiveBlock.tsx",
+    "features/chat/asks.tsx",
+    "features/chat/issue-work.tsx",
+    "features/missions/cards.tsx",
+    "features/files/MessageFiles.tsx",
+    "features/browser/HandoffCard.tsx",
+    "features/live-files/LiveFileCard.tsx",
   ];
   for (const file of framed) {
     const text = src(file);
@@ -101,6 +111,13 @@ test("one hierarchy for the words of every card in a message", () => {
   expect(work).toContain('{markOf("footnote", HANDED_MARK)}');
   const quote = src("features/chat/ConsultGroup.tsx");
   expect(quote).toContain('<Text variant="small" numberOfLines={1} style={[quote.name, { color: ink }]}>');
+  // The waiting card, a thread's link, the tool block's head and the name line's words take the same roles.
+  expect(src("features/shared/WaitingCard.tsx")).toContain('<Text variant="cardTitle" numberOfLines={3}>');
+  expect(src("features/chat/ToolCalls.tsx")).toContain('<Text variant="label" tone="ink2" numberOfLines={1}>');
+  expect(src("features/chat/cards.tsx")).toContain('<Text variant="label" tone="ink2">');
+  expect(src("features/chat/MessageRow.tsx")).not.toContain(
+    'variant="caption" tone="muted" numberOfLines={1} style={styles.medium}',
+  );
   // "Show more" is an action said as a word, in a bubble as under a folded text.
   for (const file of ["features/chat/ClippedMessage.tsx", "features/chat/FoldedBody.tsx"])
     expect([file, src(file).includes('<Text variant="label" tone="ink2"')]).toEqual([file, true]);

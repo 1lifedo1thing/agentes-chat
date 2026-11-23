@@ -33,12 +33,12 @@ import {
 } from "@/ui";
 import { router } from "@/ui/navigation";
 import { FoldedBody } from "../chat/FoldedBody";
-import { useCardTop, useMessageCardCorners } from "../chat/look";
+import { useCardTop, useMessageCardFrame } from "../chat/look";
 import { AgentFace } from "../shared/Face";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { agentLook, genderOf } from "../shared/logic";
 import { PromptForm } from "../shared/PromptForm";
-import { successHaptic, tapHaptic, useSurface } from "../shared/parts";
+import { successHaptic, tapHaptic } from "../shared/parts";
 import { useSheet } from "../shared/SheetHost";
 import { missionTrack, planProgress, recommendedOption, waitingCount } from "./logic";
 
@@ -70,12 +70,11 @@ export function MissionCard({
 }
 
 export function MissionCardView({ mission: m, pinned = false }: { mission: Mission; pinned?: boolean }) {
-  const cardCorners = useMessageCardCorners();
   const ownTop = useCardTop(8);
   const { t } = useTranslation();
   const dir = useDirectory();
   const c = useColors();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   const agent = dir.agentById.get(m.agentId);
   const color = agentLook(agent).color;
   const { done, total } = planProgress(m);
@@ -86,7 +85,7 @@ export function MissionCardView({ mission: m, pinned = false }: { mission: Missi
       onPress={() => router.push(`/mission/${m.id}`)}
       accessibilityRole="button"
       accessibilityLabel={t("mobile.mission.cardLabel", { title: m.title, done, total })}
-      style={({ pressed }) => [styles.mcard, surface, cardCorners, ownTop, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.mcard, frame.style, ownTop, pressed && styles.pressed]}
     >
       <View style={styles.row}>
         <Icon name="target" size={15} color={c.muted} />
@@ -151,14 +150,13 @@ export function SetupFailedCard({
   /** The mission's branch is gone (`branch_missing`): trying again starts over from the base. */
   lostBranch?: string | null;
 }) {
-  const cardCorners = useMessageCardCorners();
   const ownTop = useCardTop(8);
   const { t } = useTranslation();
   const orgId = useOrgId();
   const dir = useDirectory();
   const c = useColors();
   const { colors, fonts } = useTheme();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   const toast = useToast();
   const byId = useMission(orgId, missionId);
   const byThread = useThreadMission(orgId, missionId ? null : threadId);
@@ -169,7 +167,7 @@ export function SetupFailedCard({
   const state = m?.worktreeState;
   const open = m ? m.status !== "done" && m.status !== "canceled" : false;
   return (
-    <View style={[styles.askcard, surface, cardCorners, ownTop]}>
+    <View style={[styles.askcard, frame.style, ownTop]}>
       <View style={styles.row}>
         <Icon name="code" size={15} color={c.muted} />
         <Text variant="cardKind">{t("mobile.mission.setup.cap")}</Text>
@@ -248,14 +246,13 @@ export function ReviewCard({ missionId, reviewId }: { missionId: string; reviewI
 }
 
 export function ReviewCardView({ review: r, mission }: { review: MissionReview; mission: Mission | null }) {
-  const cardCorners = useMessageCardCorners();
   const ownTop = useCardTop(8);
   const { t } = useTranslation();
   const api = useApi();
   const orgId = useOrgId();
   const dir = useDirectory();
   const c = useColors();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   const toast = useToast();
   const sheet = useSheet();
   const agentId = mission?.agentId ?? null;
@@ -266,7 +263,7 @@ export function ReviewCardView({ review: r, mission }: { review: MissionReview; 
   );
   if (r.status !== "pending") {
     return (
-      <View style={[styles.done, surface, cardCorners]}>
+      <View style={[styles.done, frame.style]}>
         <LineIcon
           name={r.status === "approved" ? "check" : "reply"}
           size={15}
@@ -283,7 +280,7 @@ export function ReviewCardView({ review: r, mission }: { review: MissionReview; 
   }
   const canAct = mission?.canAct ?? false;
   return (
-    <View style={[styles.askcard, surface, cardCorners, ownTop]}>
+    <View style={[styles.askcard, frame.style, ownTop]}>
       <View style={styles.row}>
         <Icon name="sparkle" size={15} color={c.muted} />
         <Text variant="cardKind">{t("mobile.mission.review.ready")}</Text>
@@ -372,13 +369,12 @@ export function DecisionCard({ missionId, decisionId }: { missionId: string; dec
 }
 
 export function DecisionCardView({ decision: d, mission }: { decision: MissionDecision; mission: Mission | null }) {
-  const cardCorners = useMessageCardCorners();
   const ownTop = useCardTop(8);
   const { t } = useTranslation();
   const api = useApi();
   const orgId = useOrgId();
   const c = useColors();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   const toast = useToast();
   const canAct = mission?.canAct ?? false;
   const canOpine = mission ? mission.role === "comment" : false;
@@ -406,7 +402,7 @@ export function DecisionCardView({ decision: d, mission }: { decision: MissionDe
     });
   };
   return (
-    <View style={[styles.askcard, surface, cardCorners, ownTop]}>
+    <View style={[styles.askcard, frame.style, ownTop]}>
       <View style={styles.row}>
         <Icon name="flag" size={15} color={c.muted} />
         <Text variant="cardKind">
@@ -460,12 +456,11 @@ export function DecisionCardView({ decision: d, mission }: { decision: MissionDe
 
 /** `meta.missionPlan`: before Start, the plan and Começar / Mudar algo; after, one quiet line. */
 export function PlanCard({ missionId, goal }: { missionId: string; goal: string }) {
-  const cardCorners = useMessageCardCorners();
   const { t } = useTranslation();
   const api = useApi();
   const orgId = useOrgId();
   const c = useColors();
-  const surface = useSurface();
+  const frame = useMessageCardFrame();
   const toast = useToast();
   const sheet = useSheet();
   const dir = useDirectory();
@@ -481,7 +476,7 @@ export function PlanCard({ missionId, goal }: { missionId: string; goal: string 
       <Pressable
         onPress={() => router.push(`/mission/${m.id}`)}
         accessibilityRole="button"
-        style={({ pressed }) => [styles.done, surface, cardCorners, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.done, frame.style, pressed && styles.pressed]}
       >
         <LineIcon name="check" size={15} color={c.ok} variant="small" />
         <Text variant="small" tone="muted" style={styles.grow} numberOfLines={2}>
@@ -495,7 +490,7 @@ export function PlanCard({ missionId, goal }: { missionId: string; goal: string 
   const findings = m.findings ?? [];
   const investigated = findings.length > 0;
   return (
-    <View style={[investigated ? styles.inv : styles.askcard, surface, cardCorners, ownTop]}>
+    <View style={[investigated ? styles.inv : styles.askcard, frame.style, ownTop]}>
       <View style={styles.row}>
         <Icon name="target" size={15} color={c.muted} />
         <Text variant="cardKind" style={styles.shrink}>
