@@ -1,4 +1,8 @@
 import { compareInOrder, NEXT_ACCOUNT_KINDS } from "@agenteschat/providers/plans";
+
+/** The one order of use (`@agenteschat/providers/plans`), for apps that read it through the client. */
+export { compareInOrder };
+
 import type { TFunction } from "i18next";
 import type {
   AccountOrderGroup,
