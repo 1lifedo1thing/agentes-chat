@@ -224,16 +224,6 @@ export const agents = pgTable(
     /** The computer brain's model (`opus`, `sonnet`, `haiku`, a Codex model); null = the brain's default. */
     brainModel: text(),
     /**
-     * Unused (ADR 0032's 2026-11-15 addendum: the API never stands in for a computer brain). Kept while the previous
-     * release still reads it during a deploy and on rollback; a migration of a later release drops it.
-     */
-    brainFallback: boolean().notNull().default(true),
-    /**
-     * Never read (ADR 0118's 2026-11-15 addendum: paid extra usage follows the plan, `paysExtraUsage`). Kept and dropped
-     * as `brainFallback` is; until then written `false` where the previous release wrote it, which still reads it.
-     */
-    brainExtraUsage: boolean().notNull().default(true),
-    /**
      * The account its computer brain runs with (ADR 0041), on its machine and
      * of its brain's kind (checked in code); null = the computer's own sign-in.
      * Cleared when the agent changes computer or brain kind, or the account goes.
@@ -308,11 +298,6 @@ export const agents = pgTable(
      */
     planForOthers: boolean().notNull().default(false),
     /**
-     * Retired with ADR 0093 (superseded by ADR 0137): nothing reads or writes it. Kept, with its index, while a
-     * running version still selects it (`check:migrations`); dropped by a migration in a later release.
-     */
-    coordinator: boolean().notNull().default(false),
-    /**
      * What it says it is doing (`set_status`, ADR 0084): a line, an optional emoji, and whether it asks not
      * to be interrupted. Tied to the run that wrote it (gone once that run ends) unless it set an end time.
      */
@@ -342,7 +327,6 @@ export const agents = pgTable(
   (t) => [
     unique().on(t.orgId, t.handle),
     unique().on(t.orgId, t.id),
-    uniqueIndex("agents_one_coordinator").on(t.orgId).where(sql`${t.coordinator} and ${t.archivedAt} is null`),
     uniqueIndex("agents_one_right_hand").on(t.orgId).where(sql`${t.builtin} = 'right_hand'`),
     check("agents_one_owner", sql`${t.ownerUserId} is null or ${t.ownerRoleId} is null`),
     // Machines are only soft-deleted (and `deleteMachine` clears this column first).

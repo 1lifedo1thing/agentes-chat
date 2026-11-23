@@ -1452,10 +1452,6 @@ export async function setAgentBrain(
         brainSpeed: speed,
         contextTokens,
         planForOthers,
-        // Unused here, but the previous release still reads it while a deploy rolls out or after a rollback: a plan
-        // that changes hands keeps it off there too, so that release never spends someone else's extra usage.
-        // Goes with the column (ADR 0118's 2026-11-15 addendum).
-        ...(newPlan || ownerSwitch ? { brainExtraUsage: false } : {}),
         // The people and roles lists stay while it is its owner's only, for when it is let out again.
         ...(audience
           ? {
