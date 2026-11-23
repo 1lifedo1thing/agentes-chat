@@ -1399,6 +1399,7 @@ export const featureKeysPtBR = {
     criteriaOf: "{{done}} de {{total}}",
     linkMessage: "Mensagem no #{{channel}}",
     linkMessagePlain: "A mensagem de origem",
+    removeFileText: "O arquivo continua no Drive.",
     subIssues: "Subtarefas",
     talk: "Conversar",
     finish: "Concluir",

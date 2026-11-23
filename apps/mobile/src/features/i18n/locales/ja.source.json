@@ -3328,6 +3328,9 @@
   "issues.linkMessagePlain": {
     "value": "The original message"
   },
+  "issues.removeFileText": {
+    "value": "The file stays in the Drive."
+  },
   "issues.subIssues": {
     "value": "Subtasks"
   },
