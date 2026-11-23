@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { schema } from "@agenteschat/db";
 import { createArtifact, createConversationArtifact, insertMessage } from "@agenteschat/engine";
-import { browser, createTestServer, seedOrg, signUp, type TestServer } from "./harness";
+import { browser, createTestServer, joinByInvitation, seedOrg, signUp, type TestServer } from "./harness";
 
 let t: TestServer;
 beforeEach(async () => {
@@ -73,4 +73,42 @@ test("a conversation's page brings what its cards show (include=cards), so they 
   expect(cards?.polls).toEqual([expect.objectContaining({ id: poll.id, votes: [] })]);
   expect(cards?.choices).toEqual([{ id: choices.id, answer: null }]);
   expect(cards?.blocks).toEqual([]);
+});
+
+test("a card from a conversation the reader can't see stays out of the page's cards", async () => {
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const { orgId, channelId, agentId } = await seedOrg(owner);
+  const ownerId = ((await (await owner("/api/app/me")).json()) as { user: { id: string } }).user.id;
+  const hidden = (await (
+    await owner(`/api/app/organizations/${orgId}/channels`, { json: { name: "cofre", visibility: "private" } })
+  ).json()) as { id: string };
+  const poll = await createConversationArtifact(
+    t.engine.artifacts,
+    { type: "agent", agentId, channelId: hidden.id },
+    orgId,
+    { title: "Bônus", content: { kind: "poll", question: "Bônus?", options: ["Sim", "Não"], multiple: false } },
+  );
+  await t.db
+    .insert(schema.polls)
+    .values({ artifactId: poll.id, orgId, runId: crypto.randomUUID(), closesAt: new Date(Date.now() + 3_600_000) });
+  await insertMessage(t.db, {
+    orgId,
+    channelId,
+    author: { type: "person", userId: ownerId },
+    body: "Olhem isso.",
+    meta: { artifacts: [{ id: poll.id, version: poll.version, title: poll.title }] },
+  });
+  const member = await joinByInvitation(t, owner, orgId, "member@example.com");
+  const cardsOf = async (b: typeof owner) =>
+    (
+      (await (await b(`/api/app/organizations/${orgId}/channels/${channelId}/messages?include=cards`)).json()) as {
+        cards: { artifacts: { id: string }[]; polls: { id: string }[] };
+      }
+    ).cards;
+
+  expect((await cardsOf(owner)).artifacts.map((a) => a.id)).toEqual([poll.id]);
+  const seen = await cardsOf(member);
+  expect(seen.artifacts).toEqual([]);
+  expect(seen.polls).toEqual([]);
 });
