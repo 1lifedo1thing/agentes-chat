@@ -1118,6 +1118,10 @@ html:not([data-pointer]) .ib-row:focus-visible {
   font-size: 20px;
   line-height: 26px;
 }
+/* The mark stands on the larger title's line. */
+.ib-read .rq__well > .rq__logo {
+  height: 26px;
+}
 .ib-read .rq__wt small {
   font-size: 15px;
   line-height: 22px;
