@@ -840,6 +840,7 @@ export const desktopPtBR = {
       brainMaxDesc:
         "Quantas ficam abertas em cada workspace. Mais conversas abertas respondem mais rápido, mas usam mais memória.",
       brainIdle: "Fechar conversa parada depois de",
+      mixed: "Diferente em cada workspace: {{values}}. Uma mudança aqui vale para todos.",
       folder: "Pasta dos agentes",
       folderDesc: "Uma pasta por workspace, com uma pasta para cada agente.",
     },

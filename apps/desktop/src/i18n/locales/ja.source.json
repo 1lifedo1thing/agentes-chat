@@ -2150,6 +2150,9 @@
   "prefs.advanced.brainIdle": {
     "value": "Close an idle conversation after"
   },
+  "prefs.advanced.mixed": {
+    "value": "Not the same everywhere: {{values}}. A change here sets all of them."
+  },
   "prefs.advanced.folder": {
     "value": "Agents' folder"
   },

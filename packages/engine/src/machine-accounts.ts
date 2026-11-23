@@ -836,8 +836,15 @@ async function settleAccount(
     const released = await releaseAgents(db, orgId, [row.id], now);
     return { row: gone ?? row, duplicate, released, changed: !signingIn };
   }
-  // The runner says it when it knows it; one that just started doesn't yet (the last stays).
-  const usage = info.usage ? { usage: accountReading(row.provider, row.usage, info.usage) } : {};
+  // The runner says it when it knows it; one that just started doesn't yet (the last stays). A reading belongs to the
+  // plan and key it was read on: another plan or key with no reading of its own starts with none, so long work never
+  // pauses on, nor a card quotes, a percentage the plan in force doesn't have.
+  const replaced = Boolean(row.usage) && !info.usage && (plan !== row.plan || keyHint !== row.keyHint);
+  const usage = info.usage
+    ? { usage: accountReading(row.provider, row.usage, info.usage) }
+    : replaced
+      ? { usage: null }
+      : {};
   if (signingIn) {
     // A login of an account its owner already has here (one per agent) takes that account's name.
     const label =
@@ -879,7 +886,9 @@ async function settleAccount(
     .returning();
   const released = await unshare(db, orgId, row, shared, now);
   const moved = usageMoved(row.usage, usage.usage);
-  if (moved && usage.usage) await wakeOnRoom(db, orgId, machine.id, kindOf(row), row.id, usage.usage, now.getTime());
+  // No reading is room: what paused on the old plan's reading goes on.
+  const room = usage.usage ?? (replaced ? { windows: [], source: "turn" as const, at: now.toISOString() } : null);
+  if (moved && room) await wakeOnRoom(db, orgId, machine.id, kindOf(row), row.id, room, now.getTime());
   return { row: fresh ?? row, released, changed: !same || moved };
 }
 

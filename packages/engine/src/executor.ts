@@ -3882,11 +3882,10 @@ async function executeRunInner(
   if (transcript.freshSession !== undefined && plan.kind !== "model" && transcript.freshSession === plan.session?.id)
     await noteMoved();
   else delete transcript.freshSession;
-  /**
-   * A routine's run started by Rodar agora (a person just asked for it) or one that refreshes a widget isn't long by
-   * kind: read once.
-   */
+  /** A routine's run started by Rodar agora (a person just asked for it) isn't long by kind: read once. */
   let notLongByKind: boolean | null = null;
+  /** A widget's refresh is never long work, whatever its size: it goes on until the plan's own limit. Read once. */
+  let refreshesWidget: boolean | null = null;
   /**
    * A mission's work is long by kind; a person's message in its thread starts a quick reply (it roots in that
    * person), not more of the mission's work: read once.
@@ -3894,11 +3893,11 @@ async function executeRunInner(
   let missionWork: boolean | null = null;
   /** Whether this run is long work now (ADR 0118): by kind, after a pause, or by its size in this claim. */
   const longNow = async () => {
-    if (run.background && notLongByKind === null) {
-      notLongByKind =
-        (await routineRunByHand(db, run.id).catch(() => false)) ||
-        (await routineRunRefreshesWidget(db, run.id).catch(() => false));
+    if (run.background && refreshesWidget === null) {
+      refreshesWidget = await routineRunRefreshesWidget(db, run.id).catch(() => false);
+      notLongByKind = await routineRunByHand(db, run.id).catch(() => false);
     }
+    if (refreshesWidget) return false;
     if (plan.missionId && missionWork === null)
       missionWork = !(await personOfMessage(db, run.orgId, run.triggerMessageId).catch(() => null));
     return isLongWork({

@@ -788,6 +788,7 @@
       "brainMax": "Açık sohbetler",
       "brainMaxDesc": "Her çalışma alanında kaç tanesinin açık kalacağı. Daha fazlası daha hızlı yanıt verir ama daha çok bellek kullanır.",
       "brainIdle": "Boştaki sohbeti şu süreden sonra kapat",
+      "mixed": "Her yerde aynı değil: {{values}}. Buradaki değişiklik hepsine uygulanır.",
       "folder": "Ajanların klasörü",
       "folderDesc": "Her çalışma alanı için bir klasör, içinde her ajan için bir klasör."
     }

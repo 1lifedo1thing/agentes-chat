@@ -278,6 +278,14 @@ export interface StartTaskInput {
 /** What a task waiting in our queue keeps to start later (`machine_tasks.start_request`). */
 export type QueuedTaskStart = Omit<StartTaskInput, "protocol" | "machineName">;
 
+/**
+ * Still waiting in our queue: a start request not yet taken to start. `claimQueuedTask` stamps `claimedAt` on it
+ * instead of clearing it, so a crash before the runner had it loses none of its launch options; the runner taking it
+ * clears it.
+ */
+export const waitsInQueue = (t: Pick<MachineTaskRow, "status" | "startRequest">) =>
+  t.status === "queued" && Boolean(t.startRequest) && !t.startRequest?.claimedAt;
+
 /** A runner older than protocol 4 can't run background tasks: the computer needs an update (`runnerUpdateWay`). */
 export class RunnerOutdatedError extends Error {
   constructor(
@@ -442,11 +450,22 @@ async function insertTask(
   return row;
 }
 
+/**
+ * The runner's connection had `MAX_IN_FLIGHT` requests in flight: it refuses anything but a person's view with
+ * `internal` / `busy`. Short of capacity, not a failed task.
+ */
+const isConnectionBusy = (error: unknown) =>
+  (error as { code?: unknown })?.code === "internal" && (error as { message?: unknown })?.message === "busy";
+
+/** A queued task its runner's connection had no room for looks again after this: no task end signals room there. */
+export const TASK_BUSY_RETRY_MS = 15_000;
+
 /** The runner said its slots are full, or the computer is away: a queued task waits for the next chance. */
 export const isWaitError = (error: unknown) =>
   error instanceof MachineOfflineError ||
   ["no_slot", "offline", "paused"].includes(String((error as { code?: unknown })?.code ?? "")) ||
-  error instanceof MachinePausedError;
+  error instanceof MachinePausedError ||
+  isConnectionBusy(error);
 
 /**
  * Asks the machine to start a recorded task (status `queued`). `requeue`: a
@@ -502,6 +521,7 @@ export async function launchTask(
         branch: started.branch ?? (input.branch ? null : (input.worktreeBranch ?? null)),
         startedAt: Number.isNaN(at.getTime()) ? new Date() : at,
         lastEventAt: new Date(),
+        startRequest: null,
         updatedAt: new Date(),
       })
       // A fast task may already have reported its end.
@@ -534,6 +554,16 @@ export async function launchTask(
         .returning();
       if (back) {
         await publishTaskEvent(deps.pubsub, back);
+        if (isConnectionBusy(error)) {
+          const at = Date.now() + TASK_BUSY_RETRY_MS;
+          await enqueue(deps.db, {
+            orgId: back.orgId,
+            kind: "machine.queue_retry",
+            payload: { machineId: back.machineId },
+            dedupeKey: `machine.queue_retry:${back.machineId}:${Math.floor(at / TASK_BUSY_RETRY_MS)}`,
+            runAt: new Date(at),
+          });
+        }
         return { row: back, queued: true };
       }
     }
@@ -594,12 +624,12 @@ export async function claimQueuedTask(
         sql`${machineTasks.id} = (select q.id from ${machineTasks} q
           left join ${schema.missions} m on m.id = q.mission_id
           where q.machine_id = ${machineId}::uuid and q.status = 'queued' and q.ended_at is null
-            and q.start_request is not null
+            and q.start_request is not null and q.start_request->>'claimedAt' is null
             and (q.mission_id is null or q.mode = 'setup' or (m.status in ('active', 'awaiting_close') and m.worktree_state = 'ready'))
             and (q.mode is distinct from 'write' or (
               not exists (select 1 from ${machineTasks} w
                 where w.mission_id = q.mission_id and w.id <> q.id and w.mode = 'write'
-                  and w.start_request is null and ${liveTaskSqlAs("w")})
+                  and (w.start_request is null or w.start_request->>'claimedAt' is not null) and ${liveTaskSqlAs("w")})
               and not exists (select 1 from ${agentRuns} r
                 where r.thread_root_id = m.thread_root_id and r.agent_id = m.agent_id
                   and r.status = 'running' and r.started_at <= q.created_at)))
@@ -609,8 +639,13 @@ export async function claimQueuedTask(
     if (!next?.startRequest) return null;
     const [row] = await tx
       .update(machineTasks)
-      .set({ startRequest: null, updatedAt: new Date() })
-      .where(and(eq(machineTasks.id, next.id), sql`${machineTasks.startRequest} is not null`))
+      .set({ startRequest: { ...next.startRequest, claimedAt: new Date().toISOString() }, updatedAt: new Date() })
+      .where(
+        and(
+          eq(machineTasks.id, next.id),
+          sql`${machineTasks.startRequest} is not null and ${machineTasks.startRequest}->>'claimedAt' is null`,
+        ),
+      )
       .returning();
     return row ? { row, start: next.startRequest as unknown as QueuedTaskStart } : null;
   });
@@ -1166,9 +1201,9 @@ export async function cancelOrgTasks(
   await Promise.all(
     rows.map(async ({ task, handle }) => {
       await deps.db.update(machineTasks).set({ canceledBy, updatedAt: new Date() }).where(eq(machineTasks.id, task.id));
-      // A task with a start request still waits in our queue: its computer never had it.
+      // A task still waiting in our queue: its computer never had it.
       const reply =
-        deps.call && !task.startRequest
+        deps.call && !waitsInQueue(task)
           ? await deps
               .call<"task.cancel">(task.machineId, {
                 agent: taskScope(task, handle),
@@ -1226,10 +1261,27 @@ export async function reconcileMachineTasks(
     }
     if (there) continue;
     // Waiting in our queue (ADR 0044): the runner never had it.
-    if (row.status === "queued" && row.startRequest) continue;
+    if (waitsInQueue(row)) continue;
     // Being started right now (its `task.start` may still be on the way). One from our queue began when it was
     // taken from there, not when it was queued.
     if (row.status === "queued" && Date.now() - row.updatedAt.getTime() < TASK_START_GRACE_MS) continue;
+    // Taken from our queue, and the runner's journal doesn't have it: the start never reached it (the server
+    // stopped in between). Back in the queue with all it was asked, once, however many hellos say so.
+    const claimedAt = row.status === "queued" ? row.startRequest?.claimedAt : undefined;
+    if (typeof claimedAt === "string") {
+      await deps.db
+        .update(machineTasks)
+        .set({ startRequest: sql`${machineTasks.startRequest} - 'claimedAt'`, updatedAt: new Date() })
+        .where(
+          and(
+            eq(machineTasks.id, row.id),
+            eq(machineTasks.status, "queued"),
+            isNull(machineTasks.endedAt),
+            sql`${machineTasks.startRequest}->>'claimedAt' = ${claimedAt}`,
+          ),
+        );
+      continue;
+    }
     await settleInterruptedTask(deps, row);
   }
 }

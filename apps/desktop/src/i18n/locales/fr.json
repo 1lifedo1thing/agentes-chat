@@ -793,6 +793,7 @@
       "brainMax": "Conversations ouvertes",
       "brainMaxDesc": "Combien restent ouvertes dans chaque espace de travail. Plus il y en a, plus elles répondent vite, mais elles utilisent plus de mémoire.",
       "brainIdle": "Fermer une conversation inactive après",
+      "mixed": "Pas pareil partout : {{values}}. Une modification ici s'applique à tous.",
       "folder": "Dossier des agents",
       "folderDesc": "Un dossier par espace de travail, avec un dossier pour chaque agent."
     }

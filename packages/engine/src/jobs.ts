@@ -1140,6 +1140,10 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       // machine's queue per task end (also kicked for a resumed item queued with this job, its own id).
       await afterMachineTaskEnded(missions, String(job.payload.taskId)).catch(() => 0);
     },
+    // The runner's connection had no room for a queued task's start (`TASK_BUSY_RETRY_MS`): its queue tries again.
+    "machine.queue_retry": async (job) => {
+      await startQueuedMissionTasks(missions, String(job.payload.machineId)).catch(() => 0);
+    },
     // The `.agentes/` files of a mission changed (debounced): written to its machine.
     "mission.sync_files": async (job) => {
       await syncMissionFiles(missions, String(job.payload.missionId));

@@ -1563,6 +1563,32 @@ test("plan usage: stored with the account, kept when the runner doesn't know it 
   expect(view?.usage).toEqual(usage(41, "2030-01-01T10:06:00.000Z"));
 });
 
+test("plan usage: another plan or key on the account drops the old plan's reading until the runner reads the new one", async () => {
+  f = await setup();
+  const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-a" });
+  hubs.push(hub);
+  const { token } = await ownedMachine(PLAN_USAGE_PROTOCOL);
+  const runner = connectedRunner(hub, token);
+  const account = (plan: string, keyHint: string, u?: PlanUsage): RunnerAccountInfo => ({
+    id: CLAUDE_ID,
+    kind: "claude_code",
+    loggedIn: true,
+    email: "ana@example.com",
+    plan,
+    keyHint,
+    ...(u ? { usage: u } : {}),
+  });
+  await runner.hello([account("max", "…f4ke", usage(99))], PLAN_USAGE_PROTOCOL);
+  // The same plan and key with nothing read yet: the last reading stays.
+  await runner.changed([account("max", "…f4ke")]);
+  expect((await accountRow(CLAUDE_ID))?.usage).toEqual(usage(99));
+  // Another plan with nothing read yet: the 99% was the old plan's, and nothing pauses on it any more.
+  await runner.changed([account("pro", "…f4ke")]);
+  expect((await accountRow(CLAUDE_ID))?.usage).toBeNull();
+  await runner.changed([account("pro", "…f4ke", usage(19, "2030-01-01T10:06:00.000Z"))]);
+  expect((await accountRow(CLAUDE_ID))?.usage).toEqual(usage(19, "2030-01-01T10:06:00.000Z"));
+});
+
 test("an OpenCode Go reading keeps the models at their own limits, and a refusal with no window full isn't the account's", async () => {
   f = await setup();
   const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-a" });
