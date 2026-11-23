@@ -29,13 +29,14 @@ import { approvalOriginWords } from "@agenteschat/client/lib/approval-origin";
 import { appCreatedLine } from "@agenteschat/client/lib/apps";
 import { deviceNoticeOf } from "@agenteschat/client/lib/devices";
 import { errorText, restrictionLine } from "@agenteschat/client/lib/errors";
-import { daysBetween, formatShortDate, formatTime, timeLeft } from "@agenteschat/client/lib/format";
+import { daysBetween, formatShortDate, formatTime, namesText, timeLeft } from "@agenteschat/client/lib/format";
 import { agentGrammar, isFeminineName } from "@agenteschat/client/lib/grammar";
 import { plainLine } from "@agenteschat/client/lib/markdown";
 import { mediaKindOf, mediaWord, messageMediaOf, textOrMedia } from "@agenteschat/client/lib/media";
 import { latestText } from "@agenteschat/client/lib/message-body";
 import {
   allItems,
+  askersOf,
   canClearAll,
   channelOf,
   groupByDay,
@@ -672,13 +673,25 @@ function InboxRow({
   const unread = n.readAt === null;
   const name = nameOf(t, dir, n.actors[0]);
   const own = workspaceHeadline(n);
-  const label = own ? t(own, { name: n.source.label }) : n.kind === "app_created" ? appCreatedLine(t, n) : name;
+  // What a screen reader hears for the row: the workspace's own headline, who asks to join (someone asking is no
+  // member yet, and a notice that someone joined names them itself, ADR 0090), else who it is from.
+  const asked = n.kind === "join_request" ? askersOf(n) : null;
+  const label = own
+    ? t(own, { name: n.source.label })
+    : n.kind === "app_created"
+      ? appCreatedLine(t, n)
+      : asked
+        ? asked.total > 1
+          ? t("notifications.wait.joinRequestNames", { names: namesText(t, asked.names, 2, asked.total) })
+          : t("notifications.wait.joinRequest", { count: 1, name: asked.names[0] })
+        : ((n.kind === "invitation_accepted" ? joinerOf(t, dir, n) : undefined) ?? name);
   const words = itemWords(t, n, dir, channelName);
   const sub = n.waiting
     ? [words.where, waitingWords(t, n, dir)].filter(Boolean).join(" · ")
     : [words.where, words.lead, words.text].filter(Boolean).join(" · ");
-  // An approval says how long is left to decide; anything else when it came.
-  const expires = n.waiting && n.kind === "approval" ? n.latest.expiresAt : undefined;
+  // What waits with a deadline (an approval, a secret, a hand in the browser) says how long is left; anything else
+  // when it came.
+  const expires = n.waiting ? n.latest.expiresAt : undefined;
   const left = expires ? timeLeft(t, expires) : null;
   const urgent = Boolean(expires && left && new Date(expires).getTime() - Date.now() <= URGENT_MS);
   return (
@@ -700,6 +713,10 @@ function InboxRow({
         else h.onSelect(n);
       }}
       onDoubleClick={() => h.onOpen(n)}
+      // A middle click opens where it happened in a new tab, as Cmd/Ctrl-click does.
+      onAuxClick={(e) => {
+        if (e.button === 1) h.onOpenNew(n);
+      }}
     >
       <span className="ib-row__face">
         <ItemFace n={n} dir={dir} state={n.waiting ? "waiting" : undefined} />
@@ -1050,7 +1067,8 @@ function InboxRead({
   return (
     <section
       className={cx("ib-read", s.leaving && "is-leaving")}
-      aria-label={[name, l.title ?? l.text].filter(Boolean).join(": ")}
+      data-scroll-restoration-id="inbox-item"
+      aria-label={[first ? name : "", l.title ?? l.text].filter(Boolean).join(": ") || t("notifications.title")}
       data-burst=""
     >
       {agent && <CardSky color={colorOf(agent)} />}
@@ -1128,7 +1146,7 @@ function ProposalRead({ p, dir, onBack }: { p: Proposal; dir: Dir; onBack: () =>
   const agent = dir.anyAgent(proposer);
   const name = agentName(proposer);
   return (
-    <section className="ib-read" aria-label={name}>
+    <section className="ib-read" data-scroll-restoration-id="inbox-item" aria-label={name}>
       {agent && <CardSky color={colorOf(agent)} />}
       <div className="ib-read__in">
         <header className="ib-read__top">
@@ -1164,7 +1182,7 @@ function RequestRead({ approval, dir, onBack }: { approval: Approval; dir: Dir; 
   const agent = dir.anyAgent(approval.agentId);
   const name = agent?.name ?? t("channel.unknownAgent");
   return (
-    <section className="ib-read" aria-label={name}>
+    <section className="ib-read" data-scroll-restoration-id="inbox-item" aria-label={name}>
       {agent && <CardSky color={colorOf(agent)} />}
       <div className="ib-read__in">
         <header className="ib-read__top">
@@ -1270,12 +1288,14 @@ export function NotificationsPage({
   const listFilter: NotificationFilter = requestsView ? "all" : filter;
   const list = useNotifications(org.id, listFilter);
   const approvals = useApprovals(org.id);
+  const [req, setReq] = useState<string | null>(null);
+  // The decided ones, and a request a link asked for that still waits but has no notice in the list (done, snoozed,
+  // or not this person's to decide): it reads here too, instead of another request taking its place.
   const decided = requestsView
     ? (approvals.data ?? [])
-        .filter((a) => a.status !== "pending")
+        .filter((a) => a.status !== "pending" || a.id === req)
         .sort((a, b) => approvalDecidedAt(b).localeCompare(approvalDecidedAt(a)))
     : [];
-  const [req, setReq] = useState<string | null>(null);
   const title = t("notifications.title");
   const badge = useNotificationCount(org.id);
   const action = useNotificationAction(org.id);
@@ -1558,8 +1578,9 @@ export function NotificationsPage({
   const select = (n: AppNotification) => {
     if (cur !== n.id) setReplying(null);
     setCur(n.id);
-    markRead(n);
+    // Opening where it happened marks it read itself.
     if (connectsAi(n)) openItem(n);
+    else markRead(n);
   };
 
   const handlers: RowHandlers = {
@@ -1627,7 +1648,9 @@ export function NotificationsPage({
       // Cmd/Ctrl+Enter opens in a new tab; any other key with a modifier is the browser's.
       const newTab = e.key === "Enter" && (e.metaKey || e.ctrlKey) && !e.altKey;
       if ((e.metaKey || e.ctrlKey || e.altKey) && !newTab) return;
-      if (target?.closest("button") && (e.key === "Enter" || e.key === " ")) return;
+      // A button's own Enter and Space are its click, but a row's Enter opens where it happened.
+      if (target?.closest("button:not(.ib-row)") && (e.key === "Enter" || e.key === " ")) return;
+      if (target?.closest(".ib-row") && e.key === " ") return;
       const here = target?.closest<HTMLElement>(".ib-list [data-n]") ?? (current ? element(current) : null);
       const key = e.key.toLowerCase();
       // Arrows move only from an item; J and K from anywhere on the page.
@@ -1682,7 +1705,7 @@ export function NotificationsPage({
 
   return (
     <div className={cx("nt ib", (curItem || curRequest || curProposal) && "ib--open")}>
-      <aside className="ib-list" aria-label={title}>
+      <aside className="ib-list" data-scroll-restoration-id="inbox-list" aria-label={title}>
         {/* The page's own header, as every page's; it stays while the list scrolls under it. */}
         <PageHeader
           className="ib-head"

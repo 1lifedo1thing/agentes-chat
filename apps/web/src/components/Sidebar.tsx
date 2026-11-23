@@ -267,7 +267,7 @@ export function Sidebar() {
   // The inbox's row: bold while something in it is unread (live through `notification.counts`).
   const notificationCount = useNotificationCount(orgId).data;
   const unreadNotifications = notificationCount?.unread ?? 0;
-  // "Esperando você": everything that waits on me, the same live count (ADR 0172).
+  // The inbox's count: everything that waits on me, proposals I may decide among it (ADR 0218).
   const waitingOnMe = useInboxWaiting(orgId);
   // Threads: how many open missions wait for me (the server counts: a decision, a review, a suggestion…).
   const missionList = useMissionList(orgId, MISSIONS_WAITING_COUNT);
@@ -1726,8 +1726,7 @@ function MoreTools({
           <span className="ac-menu__label">{t("shell.customizeSidebar")}</span>
         </button>
       </Popover>
-      {/* Proposals in More are a tab of Aprovações: its row lights up for them. */}
-      <div className="sidebar__more-active">{items.filter((id) => id !== "proposals").map(row)}</div>
+      <div className="sidebar__more-active">{items.map(row)}</div>
     </>
   );
 }

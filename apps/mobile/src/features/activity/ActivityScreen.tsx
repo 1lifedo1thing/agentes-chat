@@ -397,7 +397,10 @@ function DecidedRequests() {
           leading={<AgentFace agentId={a.agentId} size={LIST_AVATAR - 2} live={false} />}
           title={dir.agentById.get(a.agentId)?.name ?? t("channel.unknownAgent")}
           time={when.short(a.decidedAt ?? a.expiresAt)}
-          sub={[approvalTitle(t, a), t(`mobile.approval.status.${a.status}`)].join(" · ")}
+          // How it ended, in one word after what it was.
+          sub={[approvalTitle(t, a), t(`approvals.status.${a.status === "pending" ? "expired" : a.status}`)].join(
+            " · ",
+          )}
         />
       ))}
     </>
@@ -719,8 +722,6 @@ const faceOf = (a: AppNotification["actors"][number] | undefined) =>
   a ? { type: a.type === "agent" ? "agent" : "person", id: a.id } : null;
 
 const styles = StyleSheet.create({
-  // The decision, then "Mudar quando perguntar" on its own line at the card's words' edge.
-  decision: { gap: 4 },
   // A device's card among the rows, at the screen's margin.
   cards: { paddingHorizontal: 16, paddingVertical: 6 },
   // What is decided right under a row starts at the row's words (the text column at 80), not under its face.

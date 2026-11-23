@@ -1,4 +1,5 @@
 import { ApiError, useApproval, useChannels, useDecideApproval } from "@agenteschat/client";
+import { aheadPhase } from "@agenteschat/client/lib/approval-kind";
 import { approvalEffects } from "@agenteschat/client/lib/approval-review";
 import {
   aheadEndLine,
@@ -64,14 +65,15 @@ import { useWhenAsks } from "./when-asks";
 const SHORT_VALUE = 22;
 
 /**
- * A request, from anywhere (deep link `approval/<id>`), as the system's sheets read: the task sheets' bar (`SheetBar`: ×
- * and its title, "Pedido"), who asks with the action in words and whether it can be undone after it, where and the
- * fuse to its deadline under them at the sheet's width; then the request in groups (why, the service it goes through, the values it runs with, what
- * it affects) and, where its kind allows it, "Aprovar sempre" as a switch for next time. Two buttons side by side:
- * Recusar and Aprovar (held, for high risk). Recusar asks as the cards do: the system's alert with the optional
- * reason on iOS; where alerts take no text (Android) the reason field shows in the sheet in answer to the tap (its
- * keyboard up then), with Cancelar and Recusar. The deep link's `refuse` (Android's cards) opens there, the keyboard
- * down until the person taps the field; its Cancelar closes the sheet, as the alert's leaves everything as it was.
+ * A request, from anywhere (deep link `approval/<id>`), on a pushed screen with the system's back (ADR 0218): the
+ * asking agent on its sky (`OpenItemHead`), where it was asked and the fuse to its deadline, the action in words as
+ * the screen's title with whether it can be undone after it; then the request in groups (why, the service it goes
+ * through, the values it runs with, what it affects) and, where its kind allows it, "Aprovar sempre" as a switch for
+ * next time. The decision is pinned at the screen's foot: Recusar and Aprovar (held, for high risk). Recusar asks as
+ * the cards do: the system's alert with the optional reason on iOS; where alerts take no text (Android) the reason
+ * field shows on the screen in answer to the tap (its keyboard up then), with Cancelar and Recusar. The deep link's
+ * `refuse` (Android's cards) opens there, the keyboard down until the person taps the field; its Cancelar goes back,
+ * as the alert's leaves everything as it was.
  */
 export function ApprovalSheet({
   id,
@@ -204,9 +206,8 @@ export function ApprovalSheet({
     );
     // The decision stays at the screen's foot while the request scrolls under it.
     if (!refusing)
-      decision = (
-        <>
-          pending ? ( a.canDecide ? (
+      decision = pending ? (
+        a.canDecide ? (
           <View style={styles.pair}>
             <View style={styles.half}>
               <Button
@@ -235,7 +236,7 @@ export function ApprovalSheet({
               )}
             </View>
           </View>
-          ) : (
+        ) : (
           <Text variant="small" tone="muted" style={styles.note}>
             {holders
               ? t("mobile.approval.onlyOwnerRole", { role: holders })
@@ -243,7 +244,9 @@ export function ApprovalSheet({
                 ? t("mobile.approval.onlyOwner", { name: owner })
                 : t("mobile.approval.onlyAdmins")}
           </Text>
-          ) ) : aheadPhase(a) === "scheduled" && runAt ? (
+        )
+      ) : aheadPhase(a) === "scheduled" && runAt ? (
+        <>
           <Text variant="small" tone="muted" style={styles.note}>
             {t("mobile.approval.status.scheduled", { when: runAt })}
           </Text>
@@ -256,12 +259,11 @@ export function ApprovalSheet({
               onPress={() => cancelAhead.cancel(a.id, onClose)}
             />
           ) : null}
-          ) : (
-          <Text variant="small" tone="muted" style={styles.note}>
-            {aheadEndLine(t, a) ?? t(`mobile.approval.status.${a.status === "pending" ? "expired" : a.status}`)}
-          </Text>
-          )
         </>
+      ) : (
+        <Text variant="small" tone="muted" style={styles.note}>
+          {aheadEndLine(t, a) ?? t(`mobile.approval.status.${a.status === "pending" ? "expired" : a.status}`)}
+        </Text>
       );
     body = refusing ? (
       <>
@@ -398,7 +400,6 @@ const styles = StyleSheet.create({
   who: { gap: 8 },
   titleLine: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 4 },
   whereRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: 8, rowGap: 4 },
-  grow: { flex: 1, minWidth: 0 },
   shrink: { flexShrink: 1 },
   pair: { flexDirection: "row", gap: 8 },
   half: { flex: 1 },

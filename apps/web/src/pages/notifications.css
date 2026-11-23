@@ -942,6 +942,11 @@ html:not([data-pointer]) .ib-row:focus-visible {
 .ib-row.is-unread .ib-row__line {
   color: var(--ink);
 }
+/* A read row whose headline names nobody is as quiet as any read row. */
+.ib-row:not(.is-unread) .ib-row__line.nt-what:not(:has(b)) {
+  color: var(--muted);
+  font-weight: 500;
+}
 .ib-row.is-unread .ib-row__line.nt-what b {
   font-weight: 700;
 }
