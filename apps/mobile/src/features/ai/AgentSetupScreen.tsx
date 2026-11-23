@@ -1,4 +1,4 @@
-import { currentOf, keys, useAgentBrain, useAiHub, useApi, useModels, useSetupPreview } from "@agenteschat/client";
+import { currentOf, keys, useAgentBrain, useAiAccounts, useApi, useModels, useSetupPreview } from "@agenteschat/client";
 import {
   autonomyName,
   changes,
@@ -12,6 +12,7 @@ import { type AiChoice, aiChoiceRows, aiChoiceSetup } from "@agenteschat/client/
 import { setupPlanOpens, setupPlanQuestion } from "@agenteschat/client/lib/audience";
 import { brainLine } from "@agenteschat/client/lib/brain";
 import { firstName } from "@agenteschat/client/lib/format";
+import { accountPlan } from "@agenteschat/client/lib/plans";
 import { isAuto } from "@agenteschat/client/lib/providers";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -73,9 +74,13 @@ export function AgentSetupScreen({
   const [withAutonomy, setWithAutonomy] = useState(true);
   const view = brain.data && !withAutonomy ? { ...brain.data, autonomy: undefined } : brain.data;
   const others = dir.agents.filter((a) => a.id !== agentId);
-  const { hub, loading: hubLoading } = useAiHub(orgId);
+  const ai = useAiAccounts(orgId);
+  const hub = ai.data?.hub ?? null;
+  // An older server has no hub: the account is still in its plain list.
   const login = account
-    ? hub?.accounts.find((a) => a.id === account.id && a.machineId === account.machineId)
+    ? [...(hub?.accounts ?? []), ...(ai.data?.accounts ?? [])].find(
+        (a) => a.id === account.id && a.machineId === account.machineId,
+      )
     : undefined;
   // The agent's AI as it is (or the account's), or another one picked here (the one choice): what the others take.
   const [picked, setChoice] = useState<AiChoice | null>(null);
@@ -106,7 +111,7 @@ export function AgentSetupScreen({
     ? choiceText(t, pickedRow, i18n.language).label
     : view
       ? setupWords(t, i18n.language, view, { now: advancedOf(view) })
-      : "";
+      : (accountPlan(login)?.label ?? "");
   const toggle = (id: string) => {
     const next = new Set(chosenSet);
     if (next.has(id)) next.delete(id);
@@ -165,7 +170,7 @@ export function AgentSetupScreen({
     <View style={[styles.screen, { backgroundColor: c.grouped }]}>
       <PushedHeader title={t("agentPage.work.brain.copy.title")} solid={false} grouped />
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={[styles.in, { paddingBottom: 24 }]}>
-        {(agentId ? brain.isPending : hubLoading) ? (
+        {(agentId ? brain.isPending : ai.isLoading) ? (
           <SkeletonList rows={4} />
         ) : !setup || preview.isError ? (
           <LoadFailed
@@ -173,6 +178,7 @@ export function AgentSetupScreen({
               // The preview is asked again only once there is a setup to preview (a refetch ignores `enabled`).
               if (setup) void preview.refetch();
               else if (agentId) void brain.refetch();
+              else void ai.refetch();
             }}
           />
         ) : (

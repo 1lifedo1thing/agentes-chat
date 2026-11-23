@@ -219,7 +219,7 @@ export function AiAccountScreen({ accountId }: { accountId: string }) {
           },
         ]
       : []),
-    ...(plan && a.mine && a.status === "active"
+    ...(plan && a.rights.canUse && a.status === "active"
       ? [
           {
             label: t("aiAccounts.page.useAll"),

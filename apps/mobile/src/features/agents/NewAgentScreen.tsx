@@ -843,7 +843,7 @@ function ReviewStep({ d }: StepProps) {
       ? pickedAi(chosen.pick, aiAccounts.data?.computers)
       : newAgentAi(start);
   const choice = pick ?? newAgentChoice(chosen?.pick, chosen ? null : start, usable.size > 0);
-  const { hub } = useAiHub(orgId);
+  const { hub, loading: hubLoading } = useAiHub(orgId);
   const pickRow = pick
     ? aiChoiceRows(hub, { target: NEW_AGENT, viewerId: meId ?? "", current: pick }).find((r) => r.selected)
     : undefined;
@@ -854,6 +854,8 @@ function ReviewStep({ d }: StepProps) {
         provider: lastSetup.data?.account?.provider,
       })
     : "";
+  // What it thinks with unless another is picked, in words.
+  const startsOn = chosen?.title ?? (start ? startText : t("brain.auto.label"));
   const connect = () => {
     editNewAgent({ optionsBefore: new Set(brainOptions.map((o) => o.value)) });
     openConnectAi({ forNew: "1" });
@@ -1006,9 +1008,7 @@ function ReviewStep({ d }: StepProps) {
         markArrived(agent.id);
         // It joined (a personal workspace has no team to join: it is here, ADR 0159), and what it thinks with, under
         // its face: the one note before its conversation opens.
-        const thinksLabel =
-          (pickRow ? choiceText(t, pickRow, i18n.language).label : chosen?.title) ??
-          (start ? startText : t("brain.auto.label"));
+        const thinksLabel = pickRow ? choiceText(t, pickRow, i18n.language).label : startsOn;
         toast({
           title: isPersonal(org)
             ? t("newAgent.createdTitlePersonal", { name: agent.name })
@@ -1101,7 +1101,13 @@ function ReviewStep({ d }: StepProps) {
           !held && (
             <>
               <GroupedHeader>{t("mobile.intentAgents.thinks")}</GroupedHeader>
-              {choice ? (
+              {choice && !hub && !hubLoading ? (
+                // An older server has no "Contas de IA" to choose from: what it starts on, said.
+                <GroupedList>
+                  <GroupedRow icon="key" label={startsOn} labelLines={2} />
+                  <GroupedRow icon="plus" label={t("aiAccounts.page.connect")} onPress={connect} />
+                </GroupedList>
+              ) : choice ? (
                 <AiChoiceFields
                   target={NEW_AGENT}
                   value={choice}
