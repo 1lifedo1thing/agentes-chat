@@ -61,7 +61,9 @@ describe("a shared computer's line on the phone", () => {
     expect(sheet).toContain('active: { flexDirection: "row", alignItems: "flex-start", gap: 4 },');
     expect(sheet).toContain('.replaceAll(" ", NBSP);');
     // What fills the computer sits beside "Working now", never on a line of its own over the rows.
-    expect(sheet).toContain('<GroupHead title={t("queue.workingNow", { n: view.working.length })} aside={fill || null} />');
+    expect(sheet).toContain(
+      '<GroupHead title={t("queue.workingNow", { n: view.working.length })} aside={fill || null} />',
+    );
   });
 
   test("the computer the conversation's agents share: the first one that has one", () => {
