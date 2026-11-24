@@ -6,6 +6,7 @@ import {
   type ConnectorDeps,
   type ContextDeps,
   claimStuckPhoneSetups,
+  claimSweep,
   clearOldOutboxPayloads,
   consolidateRunAt,
   createOutboxPump,
@@ -40,6 +41,7 @@ import {
   type MachineCaller,
   type MailDeps,
   type OutboxJob,
+  onceOnDatabase,
   pollMailWatches,
   pollTelegramBots,
   postAutonomyDigests,
@@ -72,6 +74,7 @@ import {
   sweepWidgetDrafts,
   type VoiceDeps,
   wakeSnoozedNotifications,
+  workerLive,
 } from "@agenteschat/engine";
 import { isExpectedError } from "./http/errors";
 import type { Logger } from "./logger";
@@ -162,8 +165,59 @@ export interface WorkerDeps {
   errors?: ErrorReporter;
   /** The database is the built-in one (one process): the alarms advise what fits it. */
   builtInDatabase?: boolean;
+  /**
+   * `SERVER_ROLE`. A worker does the database's daily sweeps and boot work; an app process does them only while no
+   * worker runs on the database (a single process, as self-hosting has it).
+   */
+  role?: "all" | "worker";
+  /** Work each start has to do for the database (`BootTask`), done `BOOT_WORK_DELAY_MS` after it (the built-in one: at once). */
+  bootTasks?: BootTask[];
   log: Logger;
   workerId?: string;
+}
+
+/** Work a start does for the database, in the process that does its sweeps, once that process has been up a while. */
+export interface BootTask {
+  name: string;
+  /**
+   * A one-off left from an upgrade: recorded once done (`onceOnDatabase`), so it runs once per database, and again only
+   * after a start where it threw or resolved `false`. Without it, the task runs after every start.
+   */
+  once?: boolean;
+  run: () => Promise<unknown>;
+}
+
+/** How long after a start a process does the database's sweeps and boot work: out of a deploy's reconnects. */
+export const BOOT_WORK_DELAY_MS = 10 * 60_000;
+/** How often a process that sweeps looks whether a daily sweep's turn came. */
+const SWEEP_LOOK_MS = 3600_000;
+/** The gap a daily sweep's turn waits for: looked at hourly, each runs every 23 to 24 hours, so no day goes without. */
+const DAILY_SWEEP_GAP_MS = 23 * 3600_000;
+
+/** A worker does the database's sweeps and boot work; an app process does them only while no worker runs on it. */
+export async function sweepsHere(db: Database, role: WorkerDeps["role"] = "all") {
+  return role === "worker" || !(await workerLive(db));
+}
+
+/**
+ * The boot work, in a process that sweeps: each one-off once per database (`onceOnDatabase`), the rest at every start,
+ * one after another. One that fails is logged and goes again at the next start; the others still run.
+ */
+export async function runBootTasks(
+  deps: Pick<WorkerDeps, "db" | "role" | "log">,
+  tasks: BootTask[],
+  stopped: () => boolean = () => false,
+) {
+  if (!(await sweepsHere(deps.db, deps.role))) return;
+  for (const task of tasks) {
+    if (stopped()) return;
+    try {
+      if (task.once) await onceOnDatabase(deps.db, task.name, task.run);
+      else await task.run();
+    } catch (error) {
+      deps.log.warn("boot work failed, tried again at the next start", { task: task.name, error: String(error) });
+    }
+  }
 }
 
 /** Pub/sub topic that wakes every instance's outbox worker (cross-replica, over LISTEN/NOTIFY). */
@@ -176,11 +230,9 @@ export const WORKER_INTERVALS_MS = {
   outboxTune: 30_000,
   /** The beat that counts how often the process's timers fire late (`OutboxPump.tune`'s `lateBeats`). */
   loopBeat: 100,
-  partitions: 24 * 3600_000,
   approvals: 60_000,
   approvalDigest: 15 * 60_000,
   reflections: 10 * 60_000,
-  consolidation: 24 * 3600_000,
   /** Often enough that the routines of one minute fire as the ramp their offsets make (`fireDueRoutines`). */
   routines: 5_000,
   /** Snoozed notifications whose time came back to the inbox. */
@@ -195,11 +247,6 @@ export const WORKER_INTERVALS_MS = {
   feedbackFiles: 6 * 3600_000,
   /** Wiki pages in the trash past 30 days are removed with their history. */
   wikiPurge: 6 * 3600_000,
-  voiceExpiry: 24 * 3600_000,
-  /** Support requests past 90 days lose their words, past a year their row. */
-  supportRequests: 24 * 3600_000,
-  /** Confidential threads past their time lose their words (ADR 0190). */
-  confidentialPrune: 24 * 3600_000,
   /** How often watched IMAP folders are looked at (each is checked every `MAIL_POLL_SECONDS`). */
   mailPoll: 30_000,
   /** Telegram bots on a server the internet doesn't reach: `getUpdates` (ADR 0170 §5). */
@@ -249,9 +296,12 @@ export function startWorkers(deps: WorkerDeps) {
   const timers: Timer[] = [];
   const ticks = new Map<string, () => Promise<void>>();
   let stopped = false;
+  // The built-in database's one process has no deploy's reconnects to stay out of, and may not stay up 10 minutes (the
+  // desktop app): its sweeps and boot work start at once.
+  const bootDelay = deps.builtInDatabase ? 0 : BOOT_WORK_DELAY_MS;
 
-  /** Runs `job` every `ms`, never overlapping with itself, logging failures. */
-  const every = (name: string, ms: number, job: () => Promise<void>) => {
+  /** Runs `job` every `ms`, never overlapping with itself, logging failures: first at once, or after `firstAfterMs`. */
+  const every = (name: string, ms: number, job: () => Promise<void>, firstAfterMs = 0) => {
     let running = false;
     let again = false;
     const tick = async () => {
@@ -275,8 +325,23 @@ export function startWorkers(deps: WorkerDeps) {
     };
     ticks.set(name, tick);
     timers.push(setInterval(tick, ms));
-    void tick();
+    if (firstAfterMs > 0) timers.push(setTimeout(tick, firstAfterMs));
+    else void tick();
   };
+
+  /**
+   * A daily sweep of the database: looked at hourly from `bootDelay` after the start, by the process that sweeps, and
+   * run by whichever takes its turn (`claimSweep`): once a day, however many processes and restarts.
+   */
+  const daily = (name: string, job: () => Promise<void>) =>
+    every(
+      name,
+      SWEEP_LOOK_MS,
+      async () => {
+        if ((await sweepsHere(db, deps.role)) && (await claimSweep(db, name, DAILY_SWEEP_GAP_MS))) await job();
+      },
+      bootDelay,
+    );
 
   // A pool, not batches: a slow job (a long agent run) doesn't hold back the ones claimed after it, and quick jobs
   // keep slots of their own.
@@ -345,7 +410,8 @@ export function startWorkers(deps: WorkerDeps) {
   every("vaultSyncs", WORKER_INTERVALS_MS.vaultSyncs, async () => {
     if ((await enqueueVaultSyncs(db)) > 0) void ticks.get("outbox")?.();
   });
-  every("partitions", WORKER_INTERVALS_MS.partitions, async () => {
+  // Next months' message partitions (the boot made this one), and what the server keeps only a while.
+  daily("partitions", async () => {
     const created = await ensureMessagePartitions(db);
     if (created > 0) log.info("created message partitions", { created });
     // Old send ids (idempotent resends) are no longer needed.
@@ -474,18 +540,20 @@ export function startWorkers(deps: WorkerDeps) {
 
   const voice = deps.voice;
   if (voice) {
-    every("voiceExpiry", WORKER_INTERVALS_MS.voiceExpiry, async () => {
+    daily("voiceExpiry", async () => {
       const { swept, failed } = await sweepExpiredVoice(voice);
       if (swept + failed > 0) log.info("expired voice recordings deleted", { swept, failed });
     });
   }
 
-  every("supportRequests", WORKER_INTERVALS_MS.supportRequests, async () => {
+  // Support requests past 90 days lose their words, past a year their row.
+  daily("supportRequests", async () => {
     const { blanked, deleted } = await sweepSupportRequests(db);
     if (blanked + deleted > 0) log.info("old support requests swept", { blanked, deleted });
   });
 
-  every("confidentialPrune", WORKER_INTERVALS_MS.confidentialPrune, async () => {
+  // Confidential threads past their time lose their words (ADR 0190).
+  daily("confidentialPrune", async () => {
     const pruned = await pruneConfidential({ db, pubsub: deps.pubsub, blobs: voice?.blobs });
     if (pruned.sealed + pruned.messages + pruned.runs > 0) log.info("confidential threads pruned", pruned);
   });
@@ -544,7 +612,7 @@ export function startWorkers(deps: WorkerDeps) {
     });
     // One consolidation job per organization per day (dedupe key = org + date: replicas don't double it), spread
     // over hours: they share the long lane with agent runs.
-    every("consolidation", WORKER_INTERVALS_MS.consolidation, async () => {
+    daily("consolidation", async () => {
       const now = new Date();
       const day = now.toISOString().slice(0, 10);
       for (const org of await db.select({ id: schema.organizations.id }).from(schema.organizations)) {
@@ -559,13 +627,19 @@ export function startWorkers(deps: WorkerDeps) {
     });
   }
 
-  // Confirmed waiting list entries from before contacts were synced (no-op for the rest: dedupe key).
-  void enqueueWaitlistContacts(db).catch((error) =>
-    log.error("background job failed", { job: "waitlistContacts", error }),
-  );
-  // Accounts from before contacts were synced (no-op for the rest: dedupe key).
-  void enqueueAccountContacts(db).catch((error) =>
-    log.error("background job failed", { job: "accountContacts", error }),
+  const bootTasks: BootTask[] = [
+    ...(deps.bootTasks ?? []),
+    // Waiting list entries and accounts from before contacts were synced. None queued for accounts: this server syncs
+    // none (yet), so a later start that does still catches them up.
+    { name: "waitlist-contacts", once: true, run: () => enqueueWaitlistContacts(db) },
+    { name: "account-contacts", once: true, run: async () => (await enqueueAccountContacts(db)) > 0 },
+  ];
+  timers.push(
+    setTimeout(() => {
+      runBootTasks(deps, bootTasks, () => stopped).catch((error) =>
+        log.error("background job failed", { job: "bootTasks", error }),
+      );
+    }, bootDelay),
   );
 
   const offWake = deps.pubsub.subscribe(WAKE_TOPIC, () => void ticks.get("outbox")?.());

@@ -1,4 +1,4 @@
-import { type Database, desc, gt, lt, schema, sql } from "@agenteschat/db";
+import { and, type Database, desc, eq, gt, lt, schema, sql } from "@agenteschat/db";
 
 const { serverProcesses, agentRuns } = schema;
 
@@ -61,4 +61,19 @@ export function liveProcesses(db: Database, now = new Date()) {
     .from(serverProcesses)
     .where(gt(serverProcesses.seenAt, new Date(now.getTime() - PROCESS_LIVE_MS)))
     .orderBy(desc(serverProcesses.startedAt));
+}
+
+/**
+ * Whether a worker (`SERVER_ROLE=worker`) wrote its vitals in the last `PROCESS_LIVE_MS`: while one runs, it does the
+ * database's sweeps and boot work, and the app processes leave them to it.
+ */
+export async function workerLive(db: Database, now = new Date()) {
+  const [row] = await db
+    .select({ id: serverProcesses.id })
+    .from(serverProcesses)
+    .where(
+      and(eq(serverProcesses.role, "worker"), gt(serverProcesses.seenAt, new Date(now.getTime() - PROCESS_LIVE_MS))),
+    )
+    .limit(1);
+  return Boolean(row);
 }
