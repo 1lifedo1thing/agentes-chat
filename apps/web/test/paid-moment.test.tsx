@@ -112,7 +112,7 @@ describe("the paid moment in the workspace", () => {
     state.me?.organizations.push({ id: OTHER_ID, name: "Beta", role: "owner" });
     const { router } = await open(state, `${SETTINGS}?paid=1`);
     expect(card()).toBeTruthy();
-    await act(() => router.navigate({ to: "/org/$orgId/settings/billing", params: { orgId: OTHER_ID } }));
+    await act(() => router.navigate({ href: `/org/${OTHER_ID}/settings/billing` }));
     await settle(8);
     expect(card()).toBeNull();
   });
