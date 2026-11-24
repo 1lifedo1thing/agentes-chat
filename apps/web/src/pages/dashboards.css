@@ -230,15 +230,10 @@ html:not([data-pointer]) .db-card:focus-visible {
 .db-opts > * + * {
   border-top: 1px solid var(--line);
 }
-/* Each a MediaRow: the audience's tile and its name on one line, who it covers under them. The chosen one is marked
-   by its fill alone. */
+/* Each a MediaRow: the audience's tile, its name and its radio on one line, who it covers under them. */
 .db-opt {
-  position: relative;
   padding: 10px 14px;
   cursor: pointer;
-}
-html:not([data-pointer]) .db-opt:has(.ac-radio:focus-visible) {
-  box-shadow: var(--focus-ring-inset);
 }
 .db-opt:hover {
   background: color-mix(in srgb, var(--sunken) 45%, transparent);
@@ -934,7 +929,7 @@ html:not([data-pointer]) :is(.nw-sug, .nw-pick, .nw-alert__sugs button):focus-vi
 }
 .nw-pick {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 44px minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
@@ -973,6 +968,16 @@ html:not([data-pointer]) :is(.nw-sug, .nw-pick, .nw-alert__sugs button):focus-vi
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.nw-radio {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.6px var(--line-strong);
+}
+[aria-checked="true"] > .nw-radio {
+  box-shadow: inset 0 0 0 5px var(--ink);
 }
 @media (max-width: 640px) {
   .nw-stage {

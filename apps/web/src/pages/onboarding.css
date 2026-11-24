@@ -622,8 +622,9 @@ html:not([data-pointer]) .onb__logo:focus-visible {
 /*
  * What the workspace is for (ADR 0159), the onboarding's brand moment: two choices one over the other with no card
  * around them (OptionList `cards`, `PurposeCards`), a hairline between them: on the left who would be there
- * (`PurposeScene`: you with your agents around you, or a team's chart, no horizon), on the right the title and one line.
- * The row itself is the radio, the chosen one marked by the kit's chosen row look, no dot. Chosen, the drawing wakes and its agents say what they do, one at a time. The title, both rows and Continue fit a 720px window.
+ * (`PurposeScene`: you with your agents around you, or a team's chart, no horizon), on the right the title and one line,
+ * and at the end a round choice drawn as the kit's radio (`.ac-radio`; the row itself is the radio). Chosen, the
+ * drawing wakes and its agents say what they do, one at a time. The title, both rows and Continue fit a 720px window.
  * On a phone, the drawing over the words.
  */
 .onb-purpose .ac-optlist__cards {
@@ -631,12 +632,13 @@ html:not([data-pointer]) .onb__logo:focus-visible {
   grid-auto-rows: 1fr;
   gap: 0;
 }
-.onb-purpose .ac-optrow {
+.onb-purpose .ac-optrow,
+.onb-purpose .ac-optrow[data-state="checked"] {
   position: relative;
   flex-direction: row;
   align-items: center;
   gap: 0;
-  padding: 0;
+  padding: 0 20px 0 0;
   border-radius: var(--radius-lg);
   background: transparent;
   box-shadow: none;
@@ -645,15 +647,8 @@ html:not([data-pointer]) .onb__logo:focus-visible {
 .onb-purpose .ac-optrow:hover {
   background: color-mix(in srgb, var(--ink) 3%, transparent);
 }
-.onb-purpose .ac-optrow[data-state="checked"] {
-  background: var(--chosen-bg);
-  box-shadow: var(--optrow-chosen);
-}
 html:not([data-pointer]) .onb-purpose .ac-optrow:focus-visible {
   box-shadow: var(--field-ring);
-}
-html:not([data-pointer]) .onb-purpose .ac-optrow[data-state="checked"]:focus-visible {
-  box-shadow: var(--optrow-chosen), var(--field-ring);
 }
 /* The hairline between the two, inset from the rows' ends. */
 .onb-purpose .ac-optrow:first-child::before {
@@ -665,6 +660,20 @@ html:not([data-pointer]) .onb-purpose .ac-optrow[data-state="checked"]:focus-vis
   height: 1px;
   background: var(--line);
   pointer-events: none;
+}
+.onb-purpose .ac-optrow::after {
+  content: "";
+  flex: none;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface-raised);
+}
+.onb-purpose .ac-optrow[data-state="checked"]::after {
+  border-color: var(--action);
+  background: radial-gradient(circle, var(--on-action) 0 3.5px, var(--action) 4px);
 }
 .onb-purpose .ac-optrow__lead {
   align-self: stretch;
@@ -883,10 +892,17 @@ html:not([data-pointer]) .onb-purpose .ac-optrow[data-state="checked"]:focus-vis
   .onb-scene__sky {
     height: 48px;
   }
-  .onb-purpose .ac-optrow {
+  .onb-purpose .ac-optrow,
+  .onb-purpose .ac-optrow[data-state="checked"] {
     flex-direction: column;
     align-items: stretch;
     padding: 0;
+  }
+  /* The round choice beside the title, under the drawing. */
+  .onb-purpose .ac-optrow::after {
+    position: absolute;
+    top: 148px;
+    right: 16px;
   }
   .onb-purpose .onb-scene {
     --scene-scale: 0.64;

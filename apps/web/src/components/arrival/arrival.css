@@ -655,6 +655,18 @@
   line-height: 18px;
   overflow-wrap: anywhere;
 }
+/* Out of sight and out of the grid, still the row's keyboard stop and its state for screen readers. */
+.arrival-have__row > .ac-radio {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
 html:not([data-pointer]) .arrival-have__row:has(.ac-radio:focus-visible) {
   box-shadow:
     inset 0 0 0 1px var(--line),

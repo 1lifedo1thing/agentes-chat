@@ -2734,8 +2734,9 @@ html:not([data-pointer]) .ac-menu__item:focus-visible,
   }
 }
 
-/* Checkbox: our own look (Radix renders a button with role checkbox) */
-.ac-check {
+/* Checkbox and radio: our own look (Radix renders a button with role checkbox/radio) */
+.ac-check,
+.ac-radio {
   appearance: none;
   -webkit-appearance: none;
   flex: none;
@@ -2750,21 +2751,12 @@ html:not([data-pointer]) .ac-menu__item:focus-visible,
   display: inline-grid;
   place-content: center;
   color: var(--on-action);
+}
+.ac-check {
   border-radius: 5px;
 }
-/* A radio draws no dot: it is the keyboard stop and the state screen readers read of a selectable card or row, whose
-   own chosen look (border or fill) marks the pick and whose `:has(.ac-radio:focus-visible)` draws the focus ring. */
 .ac-radio {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-  appearance: none;
+  border-radius: 999px;
 }
 .ac-check__mark {
   display: inline-flex;
@@ -2782,16 +2774,26 @@ html:not([data-pointer]) .ac-menu__item:focus-visible,
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.ac-radio__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--on-action);
+}
+
 .ac-check[data-state="checked"],
-.ac-check[data-state="indeterminate"] {
+.ac-check[data-state="indeterminate"],
+.ac-radio[data-state="checked"] {
   background: var(--action);
   border-color: var(--action);
 }
-html:not([data-pointer]) .ac-check:focus-visible {
+html:not([data-pointer]) .ac-check:focus-visible,
+html:not([data-pointer]) .ac-radio:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
 }
-.ac-check:disabled {
+.ac-check:disabled,
+.ac-radio:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
@@ -2835,17 +2837,13 @@ html:not([data-pointer]) .ac-check:focus-visible {
   border-bottom-left-radius: var(--radius-cut);
 }
 /* Chosen (--chosen-*), inside the card's own outline (its line2 ring and e1's line), so neither the card nor the gaps
-   around it move. A pressed card also takes a check in the corner, a radio card an ink ring (below). */
+   around it move. A pressed card also takes a check in the corner, while a radio card's own radio already marks it. */
 .ac-option[aria-pressed="true"],
 .ac-option[data-state="checked"] {
   --pressed: 0 0 0 1px var(--line2), 0 0 0 1px var(--line), var(--chosen-press);
   --stack-ring: var(--chosen-bg);
   background: var(--chosen-bg);
   box-shadow: var(--pressed);
-}
-/* A radio card draws no dot: an ink ring inside its outline marks the pick, as on the kit's chosen option rows. */
-.ac-option[data-state="checked"] {
-  --pressed: 0 0 0 1px var(--line2), 0 0 0 1px var(--line), var(--chosen-press), inset 0 0 0 1.5px var(--ink);
 }
 .ac-option[aria-pressed="true"]::after {
   content: "";
@@ -6514,6 +6512,9 @@ html:not([data-pointer]) .ac-hint:focus-visible {
     stroke-dasharray: 14;
     animation: ac-check-draw 0.2s ease 0.03s both;
   }
+  .ac-radio[data-state="checked"] .ac-radio__dot {
+    animation: ac-mark-in 0.2s var(--spring) both;
+  }
   /* Tabs: the underline grows in under the chosen tab. */
   .ac-tab[data-state="active"]::after {
     animation: ac-tab-in 0.22s var(--out) both;
@@ -6534,6 +6535,16 @@ html:not([data-pointer]) .ac-hint:focus-visible {
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+@keyframes ac-mark-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 @keyframes ac-tab-in {

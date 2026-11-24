@@ -589,6 +589,7 @@ function NewWidgetBody({
                 <b>{b.title}</b>
                 <small>{placeOf(t, i18n.language, b, dir.anyAgent(b.agentId)?.name ?? "")}</small>
               </span>
+              <span className="nw-radio" aria-hidden="true" />
             </button>
           ))}
         </div>

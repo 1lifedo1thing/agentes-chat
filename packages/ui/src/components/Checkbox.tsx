@@ -76,7 +76,6 @@ export function RadioGroup<V extends string>({ value, onValueChange, className, 
   );
 }
 
-/** Draws nothing: the keyboard stop of a selectable card or row, whose own chosen look marks the pick. */
 export function Radio({
   value,
   id,
@@ -97,11 +96,13 @@ export function Radio({
       disabled={disabled}
       className={cx("ac-radio", className)}
       aria-label={ariaLabel}
-    />
+    >
+      <RRadioGroup.Indicator className="ac-radio__dot" />
+    </RRadioGroup.Item>
   );
 }
 
-/** A card with a title and a description, picked as a radio (onboarding key choice): its chosen look marks it. */
+/** A card with a radio, a title and a description (onboarding key choice). */
 export function RadioCard({
   value,
   id,

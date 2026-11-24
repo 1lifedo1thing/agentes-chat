@@ -187,16 +187,24 @@ describe("Radio", () => {
     expect(a?.getAttribute("aria-checked")).toBe("false");
   });
 
-  test("draws no dot: the card or row it sits in marks the pick", async () => {
+  test("the chosen one shows its dot, on a card too, and no card is marked by a ring alone", async () => {
     render(
-      <RadioGroup value="platform" onValueChange={() => {}} aria-label="Qual chave o agente usa?">
+      <RadioGroup value="own" onValueChange={() => {}} aria-label="Qual chave o agente usa?">
         <Radio value="platform" aria-label="Chave do agentes" />
+        <RadioCard value="own" id="own" checked title="Chave da Acme" />
       </RadioGroup>,
     );
-    expect(body().getByRole("radio").childElementCount).toBe(0);
+    const [plain, card] = body().getAllByRole("radio");
+    expect(plain?.querySelector(".ac-radio__dot")).toBeNull();
+    expect(card?.querySelector(".ac-radio__dot")).not.toBeNull();
     const css = await Bun.file(new URL("../src/styles/components.css", import.meta.url).pathname).text();
-    const rule = css.split("\n.ac-radio {")[1]?.split("}")[0] ?? "";
-    expect(rule).toContain("clip: rect(0 0 0 0);");
+    expect(css.split("\n.ac-radio {")[1]?.split("}")[0]).not.toContain("clip:");
+    expect(css).toContain("\n.ac-radio__dot {");
+    const chosen = css
+      .split('\n.ac-option[data-state="checked"] {')
+      .slice(1)
+      .map((r) => r.split("}")[0]);
+    expect(chosen.some((r) => r?.includes("var(--ink)"))).toBe(false);
   });
 });
 

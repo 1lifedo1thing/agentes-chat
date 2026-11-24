@@ -196,7 +196,7 @@ html:not([data-pointer]) .status-field__emoji:focus-visible {
   font-weight: 650;
   color: var(--ink);
 }
-/* The four ways to appear: one card of rows, each its badge first, the chosen one filled. */
+/* The four ways to appear: one card of rows, the badge first and the radio last. */
 .status-avail__opt.ac-list__row {
   flex-wrap: nowrap;
   padding: 11px 14px;
@@ -220,15 +220,6 @@ html:not([data-pointer]) .status-field__emoji:focus-visible {
   font-size: 13px;
   color: var(--muted);
 }
-/* The chosen row is marked by its fill and ring alone, as the kit's chosen option rows (`.ac-optrow`). */
-.status-avail__opt:has(.ac-radio[data-state="checked"]) {
-  --status-chosen: var(--chosen-press), inset 0 0 0 1.5px var(--ink);
-  background: var(--chosen-bg);
-  box-shadow: var(--status-chosen);
-}
-html:not([data-pointer]) .status-avail__opt:has(.ac-radio:focus-visible) {
-  box-shadow: var(--focus-ring-inset);
-}
-html:not([data-pointer]) .status-avail__opt:has(.ac-radio[data-state="checked"]:focus-visible) {
-  box-shadow: var(--status-chosen), var(--focus-ring-inset);
+.status-avail__opt .ac-radio {
+  margin: 0;
 }

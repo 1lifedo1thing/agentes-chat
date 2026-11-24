@@ -151,6 +151,9 @@ function SpeechProviderPicker({ view }: { view: SpeechKey }) {
                 <Radio className="voice-tile__radio" value={p.id} aria-label={p.name} />
                 <ProviderLogo id={p.id} size="sm" />
                 <span className="voice-tile__name">{p.name}</span>
+                <span className="voice-tile__check" aria-hidden="true">
+                  <Icon name="check" size={14} />
+                </span>
               </label>
             ))}
             {/* biome-ignore lint/a11y/noLabelWithoutControl: the Radio inside is its control */}
@@ -160,6 +163,9 @@ function SpeechProviderPicker({ view }: { view: SpeechKey }) {
                 <Icon name="computer" size={16} />
               </span>
               <span className="voice-tile__name">{t("voice.settings.own")}</span>
+              <span className="voice-tile__check" aria-hidden="true">
+                <Icon name="check" size={14} />
+              </span>
             </label>
           </RadioGroup>
           <label className="voice-engine__label" htmlFor={field}>
