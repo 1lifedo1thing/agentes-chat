@@ -1,1 +1,0 @@
-ALTER TABLE "artifact_versions" ADD COLUMN "wave" jsonb;

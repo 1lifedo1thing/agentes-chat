@@ -628,6 +628,11 @@ html:not([data-pointer]) .consult-pair__row:focus-visible {
   flex-direction: column;
   gap: 16px;
 }
+/* Until the channels, the agents and the DMs are all in (Sidebar.tsx): laid out but unseen, then shown together. The
+   tools on top stay (nothing above them moves). */
+.sidebar__scroll[data-pending] > :not([data-section="tools"]:first-child) {
+  visibility: hidden;
+}
 .sidebar__scroll {
   position: relative;
   flex: 1 1 auto;
@@ -1656,21 +1661,6 @@ html:not([data-pointer]) .member-row--add:focus-visible {
 }
 .struck {
   text-decoration: line-through;
-}
-/* Aceitar todas and Recusar todas at the tabs' right, small and 8 apart, as the tabs bar's toolbar sits; asked again in
-   the same spot. Under the tabs, at the right, when the row has no room. */
-.proposals-all {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-2) auto;
-}
-.proposals-all__ask {
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--muted);
 }
 .evidence {
   margin: 0;
@@ -4492,24 +4482,13 @@ html:not([data-pointer]) .sidebar__org-button:focus-visible {
   flex-direction: column;
   gap: var(--space-4);
 }
+/* The pages' header (`PageHeader`), its words in line with the links' icons. */
 .settings__head {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding: 0 10px;
-}
-.settings__title {
-  margin: 0;
-  font-size: 20px;
-  line-height: 26px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
 }
 /* The workspace's name wraps under the mark, which stays on its first line: a long one never widens the nav. */
 .settings__org {
   min-width: 0;
-  color: var(--ink-muted);
-  font-size: 13px;
 }
 .settings__org > span {
   min-width: 0;
@@ -11019,10 +10998,6 @@ html:not([data-pointer]) .agp-cell:focus-visible {
   background: var(--ink);
   color: var(--bg);
 }
-.agp-badge--ask {
-  background: var(--warn-soft);
-  color: var(--warn);
-}
 .agp-view {
   /* Room under the tabs before the first card, and the same 16px between whatever a tab stacks. */
   display: flex;
@@ -16093,4 +16068,49 @@ html:not([data-pointer]) .store-back:focus-visible {
 .artifact-audio__title {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+/* A live connection down for two minutes: a small pill over the top of the work area, its cause and one way out. */
+.reconnect-pill {
+  position: fixed;
+  top: var(--space-3);
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-3);
+  max-width: calc(100vw - 2 * var(--space-4));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  /* Round on one line, still round-cornered when the words take two on a phone. */
+  border-radius: 20px;
+  background: var(--glass-solid);
+  box-shadow: var(--e2);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.reconnect-pill__text {
+  display: flex;
+  /* Too narrow for the words beside the button (a small phone): the button goes under them, at the end. */
+  flex: 1 1 16em;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.reconnect-pill__text > :last-child {
+  min-width: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .reconnect-pill {
+    animation: reconnect-pill-in 0.2s var(--out) both;
+  }
+}
+@keyframes reconnect-pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
 }

@@ -167,6 +167,7 @@ import type {
   Memory,
   Message,
   MessageCard,
+  MessageCards,
   MessagePin,
   Mission,
   MissionBrain,
@@ -1189,10 +1190,11 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         })) ?? null,
       messages: async (orgId, channelId, options = {}) => {
         const path = `${org(orgId)}/channels/${enc(channelId)}/messages`;
-        const { threadId, before, after, around, limit } = options;
-        const query = { threadId, before, after, around, limit };
-        const { messages } = await request<{ messages: Message[] }>(path, { query });
+        const { threadId, before, after, around, limit, onCards } = options;
+        const query = { threadId, before, after, around, limit, include: onCards ? "cards" : undefined };
+        const { messages, cards } = await request<{ messages: Message[]; cards?: MessageCards }>(path, { query });
         steerStore.seed(channelId, messages);
+        if (cards) onCards?.(cards);
         return messages;
       },
       post: async (orgId, channelId, input) => {
@@ -2054,6 +2056,7 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/accept`, { json: text === undefined ? {} : { text } }),
       refuse: (orgId, id) => request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/refuse`, { json: {} }),
       ask: (orgId, id) => request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/ask`, { json: {} }),
+      undo: (orgId, id) => request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/undo`, { json: {} }),
     },
     repositories: {
       get: async (orgId, agentId) =>
