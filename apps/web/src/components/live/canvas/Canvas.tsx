@@ -1,11 +1,9 @@
 import { useApi, useLivePeers, useLiveSelector, useRetryImages } from "@agenteschat/client";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
-import { LOCAL } from "@agenteschat/live";
+import { groupMembersOf, LOCAL, outermostGroup } from "@agenteschat/live";
 import type { Peer, PeerUser } from "@agenteschat/live/awareness";
-import { groupMembersOf, outermostGroup } from "@agenteschat/live";
 import {
-  readCanvasGroups,
   type ArrowEnd,
   type ArrowRoute,
   addShape,
@@ -19,6 +17,7 @@ import {
   moveShapes,
   type NewShape,
   type Point,
+  readCanvasGroups,
   rectsIntersect,
   resizeShape,
   SHAPE_TYPES,
@@ -1317,9 +1316,7 @@ function CanvasEditor({
           onPointerMove(e);
           return;
         }
-        let ids = topLevelOf(sel.includes(g.hit.id) ? sel : g.pick, now.list).filter(
-          (id) => !now.byId.get(id)?.locked,
-        );
+        let ids = topLevelOf(sel.includes(g.hit.id) ? sel : g.pick, now.list).filter((id) => !now.byId.get(id)?.locked);
         if (!ids.length) {
           gesture.current = null;
           return;

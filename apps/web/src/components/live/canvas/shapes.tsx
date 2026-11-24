@@ -112,14 +112,7 @@ function ShapeInside({ shape, editing, interacting, fresh }: ShapeBodyProps) {
         </div>
       );
     case "text":
-      return (
-        <CanvasRich
-          shape={shape}
-          editing={editing}
-          className="cnv-text"
-          style={canvasTextCss(shape.style)}
-        />
-      );
+      return <CanvasRich shape={shape} editing={editing} className="cnv-text" style={canvasTextCss(shape.style)} />;
     case "frame":
       return <div className="cnv-frame" style={shape.fill ? fillStyle(shape.fill) : undefined} />;
     case "shape":

@@ -18,8 +18,8 @@ import { useTranslation } from "react-i18next";
 import { useOrg } from "@/components/org-context";
 import { CanvasMini } from "./canvas";
 import { DocCover } from "./document/DocCover";
-import { PeerFace, usePeerLooks } from "./peers";
 import { FontAssetUrl } from "./fonts";
+import { PeerFace, usePeerLooks } from "./peers";
 import { SlideThumb } from "./slides";
 import "./covers.css";
 

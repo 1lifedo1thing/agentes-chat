@@ -48,15 +48,25 @@ function parseCompound(text: string): Compound | null {
     if (tag[1] !== "*") c.tag = tag[1]?.toLowerCase();
     rest = rest.slice(tag[0].length);
   }
+  // Each part of a compound, in turn: what it matches and what it sets.
+  const parts: [RegExp, (m: RegExpExecArray) => void][] = [
+    [/^\.([a-z0-9_-]+)/i, (m) => c.classes.push(m[1] ?? "")],
+    [/^#([a-z0-9_-]+)/i, (m) => (c.id = m[1])],
+    [/^\[([a-z0-9_-]+)(?:[~|^$*]?=(?:"[^"]*"|'[^']*'|[^\]]*))?\]/i, (m) => c.attrs.push(m[1]?.toLowerCase() ?? "")],
+    [/^:first-child/i, () => (c.first = true)],
+    [/^:last-child/i, () => (c.last = true)],
+  ];
   while (rest) {
-    let m: RegExpExecArray | null;
-    if ((m = /^\.([a-z0-9_-]+)/i.exec(rest))) c.classes.push(m[1] ?? "");
-    else if ((m = /^#([a-z0-9_-]+)/i.exec(rest))) c.id = m[1];
-    else if ((m = /^\[([a-z0-9_-]+)(?:[~|^$*]?=(?:"[^"]*"|'[^']*'|[^\]]*))?\]/i.exec(rest))) c.attrs.push(m[1]?.toLowerCase() ?? "");
-    else if ((m = /^:first-child/i.exec(rest))) c.first = true;
-    else if ((m = /^:last-child/i.exec(rest))) c.last = true;
-    else return null;
-    rest = rest.slice(m[0].length);
+    let matched: RegExpExecArray | null = null;
+    for (const [pattern, apply] of parts) {
+      matched = pattern.exec(rest);
+      if (matched) {
+        apply(matched);
+        break;
+      }
+    }
+    if (!matched) return null;
+    rest = rest.slice(matched[0].length);
   }
   return c;
 }
@@ -65,7 +75,10 @@ function parseCompound(text: string): Compound | null {
 export function parseSelector(text: string): Selector | null {
   const s = text.trim();
   if (!s || UNSUPPORTED_PSEUDO.test(s) || /::|[+~]/.test(s)) return null;
-  const tokens = s.replace(/\s*>\s*/g, " > ").split(/\s+/).filter(Boolean);
+  const tokens = s
+    .replace(/\s*>\s*/g, " > ")
+    .split(/\s+/)
+    .filter(Boolean);
   const parts: Selector = [];
   let combinator: " " | ">" | null = null;
   for (let i = tokens.length - 1; i >= 0; i--) {
@@ -195,11 +208,11 @@ function expand(prop: string, value: string, out: Declarations): void {
   switch (prop) {
     case "margin":
     case "padding": {
-      boxSides(value).forEach((v, i) => out.set(`${prop}-${SIDES[i]}`, v));
+      for (const [i, v] of boxSides(value).entries()) out.set(`${prop}-${SIDES[i]}`, v);
       return;
     }
     case "inset": {
-      boxSides(value).forEach((v, i) => out.set(SIDES[i] as string, v));
+      for (const [i, v] of boxSides(value).entries()) out.set(SIDES[i] as string, v);
       return;
     }
     case "border":
@@ -220,7 +233,7 @@ function expand(prop: string, value: string, out: Declarations): void {
     case "border-color":
     case "border-style": {
       const kind = prop.slice(7);
-      boxSides(value).forEach((v, i) => out.set(`border-${SIDES[i]}-${kind}`, v));
+      for (const [i, v] of boxSides(value).entries()) out.set(`border-${SIDES[i]}-${kind}`, v);
       return;
     }
     case "border-radius": {
@@ -231,7 +244,9 @@ function expand(prop: string, value: string, out: Declarations): void {
     case "background": {
       const gradient = /linear-gradient\(/i.test(value) ? value.slice(value.search(/linear-gradient\(/i)) : null;
       if (gradient) out.set("background-image", gradient);
-      const color = words(value.replace(/linear-gradient\([^]*\)/i, "")).find((w) => parseColor(w) !== null);
+      const at = value.search(/linear-gradient\(/i);
+      const plain = at < 0 ? value : value.slice(0, at);
+      const color = words(plain).find((w) => parseColor(w) !== null);
       if (color) out.set("background-color", color);
       return;
     }
@@ -607,5 +622,7 @@ export function parseWeight(value: string | undefined, inherited: number): numbe
 /** A `font-family` list's names, quotes taken off. */
 export function parseFamilies(value: string | undefined): string[] {
   if (!value) return [];
-  return splitTop(value, ",").map((f) => f.replace(/^["']|["']$/g, "").trim()).filter(Boolean);
+  return splitTop(value, ",")
+    .map((f) => f.replace(/^["']|["']$/g, "").trim())
+    .filter(Boolean);
 }

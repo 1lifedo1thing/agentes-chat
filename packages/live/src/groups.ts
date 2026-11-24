@@ -1,4 +1,4 @@
-import * as Y from "yjs";
+import type * as Y from "yjs";
 
 /**
  * Groups on slides and canvases (ADR 0220 §3): pieces that hold together, selected, moved and scaled as one. Each kind

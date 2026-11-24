@@ -104,7 +104,8 @@ export function slideStylePatch(input: unknown): { [K in keyof live.ElementStyle
       out[name] = null;
       continue;
     }
-    if (live.cleanStyleValue(name, value) === undefined) throw new ValidationError(`Bad style ${key}: ${JSON.stringify(raw).slice(0, 60)}`);
+    if (live.cleanStyleValue(name, value) === undefined)
+      throw new ValidationError(`Bad style ${key}: ${JSON.stringify(raw).slice(0, 60)}`);
     out[name] = value;
   }
   return out;
@@ -127,7 +128,8 @@ export function canvasStylePatch(shape: live.ShapeView, input: unknown): live.Sh
   for (const [key, value] of Object.entries(slide)) {
     switch (key) {
       case "font":
-        if (value !== null && live.isFontRole(value)) throw new ValidationError("A canvas has no heading or body font: name the font");
+        if (value !== null && live.isFontRole(value))
+          throw new ValidationError("A canvas has no heading or body font: name the font");
         setText("font", value);
         break;
       case "size":
@@ -181,7 +183,10 @@ export function styleWords(style: Partial<live.ElementStyle & live.CanvasTextSty
   if (style.padding) parts.push(`padding ${style.padding}`);
   if (style.fill) parts.push(`fill ${style.fill}`);
   if (style.gradient) parts.push(`gradient ${style.gradient.from}→${style.gradient.to} ${style.gradient.angle}°`);
-  if (style.stroke) parts.push(`border ${style.stroke}${style.strokeWidth ? ` ${style.strokeWidth}` : ""}${style.dash && style.dash !== "solid" ? ` ${style.dash}` : ""}`);
+  if (style.stroke)
+    parts.push(
+      `border ${style.stroke}${style.strokeWidth ? ` ${style.strokeWidth}` : ""}${style.dash && style.dash !== "solid" ? ` ${style.dash}` : ""}`,
+    );
   if (style.radius) parts.push(`radius ${style.radius}`);
   if (style.shadow) parts.push(`shadow ${style.shadow.x} ${style.shadow.y} ${style.shadow.blur} ${style.shadow.color}`);
   if (style.opacity !== undefined && style.opacity < 1) parts.push(`opacity ${style.opacity}`);

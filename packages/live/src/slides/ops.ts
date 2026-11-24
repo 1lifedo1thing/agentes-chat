@@ -2,8 +2,8 @@ import * as Y from "yjs";
 import type { Box } from "../canvas/geometry";
 import { LiveEditError } from "../errors";
 import { isOrderKey, keyBetween, keysBetween, restack, type StackMove } from "../fractional";
-import { newId } from "../ids";
 import { cleanGroupName, groupMembersOf, type LiveGroup, outermostGroup, usedGroups } from "../groups";
+import { newId } from "../ids";
 import { LIVE_LIMITS } from "../limits";
 import { cloneValue, overwriteText } from "../restore";
 import { richFromText, richLength } from "../rich/text";
@@ -770,14 +770,16 @@ export function putGroups(doc: Y.Doc, slideId: string, groups: readonly LiveGrou
   if (!groups.length) return;
   const slide = needSlide(doc, slideId);
   const existing = new Set(readGroups(slide).map((g) => g.id));
-  if (existing.size + groups.length > limits.elements) throw new LiveEditError("too_many", "Too many groups on one slide");
+  if (existing.size + groups.length > limits.elements)
+    throw new LiveEditError("too_many", "Too many groups on one slide");
   const ids = new Set(groups.map((g) => g.id));
   doc.transact(() => {
     const map = groupsMapFor(slide);
     for (const g of groups) {
       if (!isRefId(g.id)) throw invalid("Bad group");
       const name = cleanGroupName(g.name);
-      const parent = g.parent && (ids.has(g.parent) || existing.has(g.parent)) && g.parent !== g.id ? g.parent : undefined;
+      const parent =
+        g.parent && (ids.has(g.parent) || existing.has(g.parent)) && g.parent !== g.id ? g.parent : undefined;
       map.set(g.id, { ...(name ? { name } : {}), ...(parent ? { parent } : {}) });
     }
   }, origin);

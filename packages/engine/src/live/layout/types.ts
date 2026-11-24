@@ -81,7 +81,9 @@ export interface TablePiece extends PieceBase {
 export type Piece = BoxPiece | TextPiece | ImagePiece | LinePiece | TablePiece;
 
 /** A picture the HTML names: an address or id (`<img src>`), or an inline `<svg>`. */
-export type PictureRequest = { key: string; kind: "src"; src: string; alt?: string } | { key: string; kind: "svg"; svg: string };
+export type PictureRequest =
+  | { key: string; kind: "src"; src: string; alt?: string }
+  | { key: string; kind: "svg"; svg: string };
 
 /** A picture resolved by the caller: its natural size (to keep its proportions). */
 export interface PictureSize {

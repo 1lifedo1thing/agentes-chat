@@ -8,14 +8,7 @@ import {
   fontAssetOf,
   isFontRole,
 } from "../fonts";
-import {
-  type DeckFonts,
-  type ElementStyle,
-  type ElementType,
-  isThemeId,
-  type SlideRole,
-  type ThemeId,
-} from "./types";
+import { type DeckFonts, type ElementStyle, type ElementType, isThemeId, type SlideRole, type ThemeId } from "./types";
 
 /**
  * The six presentation themes (ADR 0196 §2). They use only the app's own fonts (Funnel Display for headings, Source
@@ -186,7 +179,10 @@ type RoleLook = Pick<TextLook, "font" | "weight" | "align" | "valign" | "lineHei
 };
 
 /** A font ref as drawn: its family name and kind. A ref nothing knows draws as the theme's body font. */
-export function fontFace(ref: FontRef, fallback: FontRef = "source-sans-3"): {
+export function fontFace(
+  ref: FontRef,
+  fallback: FontRef = "source-sans-3",
+): {
   ref: FontRef;
   family: string;
   category: FontCategory;

@@ -34,12 +34,12 @@ export {
   initCanvas,
   moveShapes,
   putShapeGroups,
+  renameShapeGroup,
   resizeShape,
   setCanvasBackground,
   setParent,
   shapesById,
   shapeTextFragment,
-  renameShapeGroup,
   ungroupShapes,
   updateShape,
 } from "./ops";

@@ -76,7 +76,10 @@ function cssObject(css: string): CSSProperties {
   for (const part of css.split(";")) {
     const i = part.indexOf(":");
     if (i <= 0) continue;
-    const prop = part.slice(0, i).trim().replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+    const prop = part
+      .slice(0, i)
+      .trim()
+      .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
     out[prop] = part.slice(i + 1).trim();
   }
   return out as CSSProperties;

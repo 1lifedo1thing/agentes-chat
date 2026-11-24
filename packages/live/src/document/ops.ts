@@ -363,7 +363,8 @@ export function documentSource(doc: Y.Doc): DocumentSource | null {
 /** The document's own fonts for headings and body (ADR 0220 §3), in its `meta`; null goes back to the app's. */
 export function setDocumentFonts(doc: Y.Doc, fonts: FileFonts | null, origin: unknown): void {
   const clean = fonts === null ? undefined : cleanFileFonts(fonts);
-  if (fonts !== null && !clean) throw new LiveEditError("invalid", "Name a heading or body font: a catalog font or one of the file's");
+  if (fonts !== null && !clean)
+    throw new LiveEditError("invalid", "Name a heading or body font: a catalog font or one of the file's");
   doc.transact(() => {
     const meta = doc.getMap<unknown>("meta");
     if (clean) meta.set("fonts", { ...clean });

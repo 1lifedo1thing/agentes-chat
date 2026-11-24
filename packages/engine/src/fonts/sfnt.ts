@@ -182,7 +182,12 @@ function nameString(r: Reader, at: number, length: number, platform: number): st
     for (let i = 0; i < length; i++) s += String.fromCharCode(r.u8(at + i));
   }
   // Only what a name holds: no control characters, at most 100 characters.
-  return s.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 100);
+  let clean = "";
+  for (const ch of s) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code >= 0x20 && code !== 0x7f) clean += ch;
+  }
+  return clean.trim().slice(0, 100);
 }
 
 function namesOf(r: Reader, tables: Map<string, Table>): { family: string; style: string } {
@@ -231,7 +236,7 @@ function cmapOf(r: Reader, tables: Map<string, Table>): (codePoint: number) => n
     const unicode = platform === 0 || (platform === 3 && (encoding === 1 || encoding === 10));
     if (!unicode) continue;
     const format = r.u16(at);
-    if (format === 12 && (!best || best.format !== 12)) best = { format, at };
+    if (format === 12 && best?.format !== 12) best = { format, at };
     else if (format === 4 && !best) best = { format, at };
   }
   if (!best) throw new FontError("The font has no Unicode character map");
@@ -301,7 +306,9 @@ export function readFont(input: Uint8Array): FontInfo {
   const format = sniffFont(input);
   if (!format) {
     const tag = String.fromCharCode(input[0] ?? 0, input[1] ?? 0, input[2] ?? 0, input[3] ?? 0);
-    throw new FontError(tag === "wOF2" ? "WOFF2 fonts aren't taken: upload the .ttf or .otf" : "That isn't a font file");
+    throw new FontError(
+      tag === "wOF2" ? "WOFF2 fonts aren't taken: upload the .ttf or .otf" : "That isn't a font file",
+    );
   }
   const sfnt = format === "woff" ? unwrapWoff(input) : input;
   const r = new Reader(sfnt);
@@ -329,7 +336,15 @@ export function readFont(input: Uint8Array): FontInfo {
     else if (fsType & 0x0008) embedding = "editable";
     if (os2.length >= 64 && (r.u16(os2.offset + 62) & 1) !== 0) italic = true;
   }
-  return { format, family: names.family, style: names.style || (italic ? "Italic" : "Regular"), weight, italic, embedding, sfnt };
+  return {
+    format,
+    family: names.family,
+    style: names.style || (italic ? "Italic" : "Regular"),
+    weight,
+    italic,
+    embedding,
+    sfnt,
+  };
 }
 
 /** The metrics to measure text with, from an sfnt `readFont` checked (or a file the server ships). */

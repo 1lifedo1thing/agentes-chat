@@ -159,7 +159,10 @@ function gradientEnds(g: Gradient) {
 }
 
 /** A dash pattern for a stroke of `width`. */
-export function dashArray(dash: string | undefined, width: number): { strokeDasharray?: string; strokeLinecap?: "round" } {
+export function dashArray(
+  dash: string | undefined,
+  width: number,
+): { strokeDasharray?: string; strokeLinecap?: "round" } {
   if (dash === "dashed") return { strokeDasharray: `${width * 3} ${width * 2}` };
   if (dash === "dotted") return { strokeDasharray: `0 ${width * 2}`, strokeLinecap: "round" };
   return {};
@@ -412,7 +415,15 @@ function LineBody({ el, theme, mode }: { el: ElementView; theme: SlideTheme; mod
   return (
     <svg className="sl-line" width={Math.max(w, 1)} height={Math.max(h, 1)} aria-hidden="true">
       <g stroke={color} fill={color} opacity={style.opacity ?? 1}>
-        <line x1={x1} y1={y1} x2={ex} y2={ey} strokeWidth={width} strokeLinecap="round" {...dashArray(style.dash, width)} />
+        <line
+          x1={x1}
+          y1={y1}
+          x2={ex}
+          y2={ey}
+          strokeWidth={width}
+          strokeLinecap="round"
+          {...dashArray(style.dash, width)}
+        />
         {/* While editing, a wide clear stroke along the line takes the pointer: a thin line is hard to hit. */}
         {mode === "edit" && (
           <line

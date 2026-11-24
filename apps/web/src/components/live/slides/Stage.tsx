@@ -295,7 +295,8 @@ export function Stage(props: StageProps) {
     // A press picks the element's group; a double click (or a press while it alone is chosen) goes inside it.
     const pick = pickOf(id);
     let next = [...selected];
-    if (additive) next = wasSelected ? next.filter((s) => !pick.includes(s)) : [...next, ...pick.filter((p) => !next.includes(p))];
+    if (additive)
+      next = wasSelected ? next.filter((s) => !pick.includes(s)) : [...next, ...pick.filter((p) => !next.includes(p))];
     else if (!wasSelected) next = pick;
     if (next.join() !== selected.join()) props.onSelect(next);
     const boxes = new Map(

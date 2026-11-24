@@ -1,6 +1,6 @@
+import { and, eq, inArray, schema } from "@agenteschat/db";
 import * as live from "@agenteschat/live";
 import type * as Y from "yjs";
-import { and, eq, inArray, schema } from "@agenteschat/db";
 import type { ArtifactActor, ArtifactDeps } from "../../artifacts";
 import { TextMeasurer } from "../../fonts/library";
 import { outboundRefusal } from "../../outbound";
@@ -9,7 +9,7 @@ import { copyAssetFrom, type LiveAsset, putAsset } from "../assets";
 import { SVG_TYPE, sanitizeSvg } from "../svg";
 import { fetchWebPicture, type WebPictureDeps } from "../web-pictures";
 import { layoutHtml, type ParsedHtml, parseHtml } from "./html";
-import type { LayoutResult, Piece, PictureSize, PieceTextStyle } from "./types";
+import type { LayoutResult, PictureSize, Piece, PieceTextStyle } from "./types";
 
 /**
  * Where `add_html` (ADR 0220 §4) meets the files: the pictures the markup names become assets of the file (the same
@@ -44,9 +44,7 @@ export async function resolveHtmlPictures(
   const out: HtmlPictures = { assets: new Map(), sizes: new Map(), notes: [] };
   const bySource = new Map<string, LiveAsset>();
   const own = new Set(
-    parsed.pictures
-      .map((p) => (p.kind === "src" ? p.src.replace(/^asset:/, "") : ""))
-      .filter((id) => UUID.test(id)),
+    parsed.pictures.map((p) => (p.kind === "src" ? p.src.replace(/^asset:/, "") : "")).filter((id) => UUID.test(id)),
   );
   const ownRows =
     own.size === 0
@@ -83,14 +81,22 @@ export async function resolveHtmlPictures(
           const id = src.replace(/^(asset|file):/, "");
           const mine = ownRows.find((row) => row.id === id);
           if (mine) {
-            asset = { id: mine.id, contentType: mine.contentType, size: mine.size, width: mine.width, height: mine.height };
+            asset = {
+              id: mine.id,
+              contentType: mine.contentType,
+              size: mine.size,
+              width: mine.width,
+              height: mine.height,
+            };
           } else if (UUID.test(id)) {
             asset = await copyAssetFrom(deps.artifacts, actor, ctx.orgId, fileId, { artifactId: id });
           } else if (/^data:image\/svg\+xml[;,]/i.test(src)) {
             const comma = src.indexOf(",");
             const meta = src.slice(0, comma);
             const body = src.slice(comma + 1);
-            const text = /;base64$/i.test(meta) ? Buffer.from(body, "base64").toString("utf8") : decodeURIComponent(body);
+            const text = /;base64$/i.test(meta)
+              ? Buffer.from(body, "base64").toString("utf8")
+              : decodeURIComponent(body);
             const clean = sanitizeSvg(text);
             asset = await putAsset(deps.artifacts, actor, ctx.orgId, fileId, {
               bytes: clean.bytes,
@@ -108,7 +114,9 @@ export async function resolveHtmlPictures(
               origin: { url: picture.url },
             });
           } else {
-            throw new Error("name a Drive picture (file:<id>), one of the file's (asset:<id>), an https address or an inline <svg>");
+            throw new Error(
+              "name a Drive picture (file:<id>), one of the file's (asset:<id>), an https address or an inline <svg>",
+            );
           }
           bySource.set(src, asset);
         }
@@ -251,7 +259,15 @@ export function placeOnSlide(
       case "image": {
         const asset = pictures.assets.get(piece.picture);
         if (!asset) continue;
-        el = { type: "image", box, asset: asset.id, fit: piece.fit, ...(piece.alt ? { alt: piece.alt } : {}), style, ...group };
+        el = {
+          type: "image",
+          box,
+          asset: asset.id,
+          fit: piece.fit,
+          ...(piece.alt ? { alt: piece.alt } : {}),
+          style,
+          ...group,
+        };
         break;
       }
       case "line":
@@ -318,7 +334,11 @@ export function placeOnCanvas(
           ...(piece.radius ? { radius: Math.min(200, piece.radius) } : {}),
           ...(piece.shadow ? { shadow: piece.shadow } : {}),
           ...(piece.text ? { text: piece.text } : {}),
-          ...(text ? { style: { ...canvasTextStyle(text), ...(piece.padding !== undefined ? { padding: piece.padding } : {}) } } : {}),
+          ...(text
+            ? {
+                style: { ...canvasTextStyle(text), ...(piece.padding !== undefined ? { padding: piece.padding } : {}) },
+              }
+            : {}),
           ...common(piece),
         };
         break;

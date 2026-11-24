@@ -5,8 +5,8 @@ import { richLength, richText } from "../rich/text";
 import { readRich } from "../rich/yjs";
 import { arrowPath, union } from "./geometry";
 import {
-  canvasGroupsMapOf,
   canvasBackground,
+  canvasGroupsMapOf,
   canvasMapOf,
   cleanProp,
   finite,

@@ -1,8 +1,8 @@
 import * as Y from "yjs";
 import { cleanGradient, cleanLineHeight, cleanPadding, cleanShadow, cleanTracking, isDash } from "../effects";
 import { cleanFileFonts, isFontRef, isFontWeight } from "../fonts";
-import { readGroupMap } from "../groups";
 import { compareStack } from "../fractional";
+import { readGroupMap } from "../groups";
 import { readRich } from "../rich/yjs";
 import { SLIDE_H, SLIDE_W, themeOf } from "./themes";
 import {

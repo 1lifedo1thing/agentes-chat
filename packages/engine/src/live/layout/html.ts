@@ -19,9 +19,9 @@ import Yoga, {
   Gutter,
   Justify,
   MeasureMode,
-  type Node as YogaNode,
   PositionType,
   Wrap,
+  type Node as YogaNode,
 } from "yoga-layout";
 import { ValidationError } from "../../errors";
 import type { Face, TextMeasurer } from "../../fonts/library";
@@ -47,9 +47,9 @@ import type {
   BoxPiece,
   ImagePiece,
   LayoutResult,
-  Piece,
   PictureRequest,
   PictureSize,
+  Piece,
   PieceBox,
   PieceTextStyle,
   TextPiece,
@@ -99,7 +99,26 @@ const BLOCK_TAGS = new Set([
   "body",
   "html",
 ]);
-const SKIPPED_TAGS = new Set(["script", "style", "head", "title", "meta", "link", "noscript", "template", "iframe", "object", "embed", "video", "audio", "canvas", "input", "textarea", "select", "button"]);
+const SKIPPED_TAGS = new Set([
+  "script",
+  "style",
+  "head",
+  "title",
+  "meta",
+  "link",
+  "noscript",
+  "template",
+  "iframe",
+  "object",
+  "embed",
+  "video",
+  "audio",
+  "canvas",
+  "input",
+  "textarea",
+  "select",
+  "button",
+]);
 
 /** The UA style a browser gives each tag, the parts that change a layout. */
 const UA: Record<string, string> = {
@@ -195,7 +214,10 @@ function svgSource(el: XmlElement): string {
  */
 export function parseHtml(html: string): ParsedHtml {
   if (html.length > HTML_LIMITS.chars) {
-    throw new ValidationError(`The HTML is over ${HTML_LIMITS.chars / 1000}k characters: split it`, "live.html_too_large");
+    throw new ValidationError(
+      `The HTML is over ${HTML_LIMITS.chars / 1000}k characters: split it`,
+      "live.html_too_large",
+    );
   }
   const notes: string[] = [];
   const styles: string[] = [];
@@ -412,7 +434,8 @@ class Cascade {
       if (ref) return ref;
       missing.push(family);
     }
-    if (missing.length) this.notes.add(`fonts not available (used the next one or the file's): ${missing.slice(0, 4).join(", ")}`);
+    if (missing.length)
+      this.notes.add(`fonts not available (used the next one or the file's): ${missing.slice(0, 4).join(", ")}`);
     return fallback;
   }
 
@@ -453,7 +476,10 @@ class Cascade {
       if (v === "sticky") return "relative";
       return "static";
     })() as Computed["position"];
-    const side = (prefix: string, suffix = ""): [string | undefined, string | undefined, string | undefined, string | undefined] => [
+    const side = (
+      prefix: string,
+      suffix = "",
+    ): [string | undefined, string | undefined, string | undefined, string | undefined] => [
       d.get(`${prefix}top${suffix}`),
       d.get(`${prefix}right${suffix}`),
       d.get(`${prefix}bottom${suffix}`),
@@ -571,7 +597,9 @@ class Cascade {
         const c = parseColor(d.get("color"));
         return c && c !== "none" ? opaque(c) : (parent?.color ?? this.opts.base.color ?? null);
       })(),
-      font: families.length ? this.fontOf(families, parent?.font ?? this.opts.base.font) : (parent?.font ?? this.opts.base.font),
+      font: families.length
+        ? this.fontOf(families, parent?.font ?? this.opts.base.font)
+        : (parent?.font ?? this.opts.base.font),
       size: fontSize,
       weight,
       italic: d.has("font-style") ? /italic|oblique/.test(d.get("font-style") ?? "") : (parent?.italic ?? false),
@@ -798,12 +826,27 @@ class Builder {
     const walk = (e: HtmlElement) => {
       for (const c of e.children) {
         if (typeof c === "string") continue;
-        if (c.tag === "tr") rows.push(c.children.filter((x): x is HtmlElement => typeof x !== "string" && (x.tag === "td" || x.tag === "th")).map((cell) => this.plainText(cell)));
+        if (c.tag === "tr")
+          rows.push(
+            c.children
+              .filter((x): x is HtmlElement => typeof x !== "string" && (x.tag === "td" || x.tag === "th"))
+              .map((cell) => this.plainText(cell)),
+          );
         else walk(c);
       }
     };
     walk(el);
-    const header = el.children.some((c) => typeof c !== "string" && (c.tag === "thead" || c.children.some((r) => typeof r !== "string" && r.tag === "tr" && r.children.some((x) => typeof x !== "string" && x.tag === "th"))));
+    const header = el.children.some(
+      (c) =>
+        typeof c !== "string" &&
+        (c.tag === "thead" ||
+          c.children.some(
+            (r) =>
+              typeof r !== "string" &&
+              r.tag === "tr" &&
+              r.children.some((x) => typeof x !== "string" && x.tag === "th"),
+          )),
+    );
     const rowHeight = s.size * 1.4 + 24;
     if (!s.height) yoga.setHeight(Math.max(1, rows.length) * rowHeight);
     if (!s.width) yoga.setWidthPercent(100);
@@ -858,7 +901,8 @@ class Builder {
   private plainBlock(el: HtmlElement): boolean {
     const s = this.styleOf(el);
     if (s.display !== "block" && s.display !== "list-item") return false;
-    if (hasLook(s) || s.width || s.height || s.position === "absolute" || el.id || el.attrs.has("data-name")) return false;
+    if (hasLook(s) || s.width || s.height || s.position === "absolute" || el.id || el.attrs.has("data-name"))
+      return false;
     if (s.padding.some((p) => p > 0)) return false;
     return this.inlineOnly(el);
   }
@@ -868,12 +912,21 @@ class Builder {
    * room after (margins collapsed as browsers do). Null when it holds anything else.
    */
   private plainParagraphs(el: HtmlElement, s: Computed): Paragraph[] | null {
-    const elements = el.children.filter((c): c is HtmlElement => typeof c !== "string" && this.styleOf(c).display !== "none");
+    const elements = el.children.filter(
+      (c): c is HtmlElement => typeof c !== "string" && this.styleOf(c).display !== "none",
+    );
     const stray = el.children.some((c) => typeof c === "string" && c.trim());
     if (stray || elements.length < 2 || s.display === "flex") return null;
     if (!elements.every((c) => this.plainBlock(c))) return null;
     // A list's items each become a list paragraph; nested lists aren't merged.
-    const list = el.tag === "ul" || el.tag === "ol" ? (s.listStyle === "none" ? undefined : s.listStyle === "decimal" ? "ordered" : "bullet") : undefined;
+    const list =
+      el.tag === "ul" || el.tag === "ol"
+        ? s.listStyle === "none"
+          ? undefined
+          : s.listStyle === "decimal"
+            ? "ordered"
+            : "bullet"
+        : undefined;
     const out: Paragraph[] = [];
     elements.forEach((child, i) => {
       const cs = this.styleOf(child);
@@ -923,7 +976,10 @@ class Builder {
       const max = widthMode === MeasureMode.Undefined || nowrap ? Number.POSITIVE_INFINITY : width;
       const m = this.measure(paragraphs, max);
       return {
-        width: widthMode === MeasureMode.Exactly ? width : Math.min(Math.ceil(m.width), widthMode === MeasureMode.AtMost ? width : Number.POSITIVE_INFINITY),
+        width:
+          widthMode === MeasureMode.Exactly
+            ? width
+            : Math.min(Math.ceil(m.width), widthMode === MeasureMode.AtMost ? width : Number.POSITIVE_INFINITY),
         height: Math.ceil(m.height),
       };
     });
@@ -1037,7 +1093,13 @@ class Builder {
     const out: LNode[] = [];
     for (const c of el.children) {
       if (typeof c === "string") {
-        if (c.trim()) out.push(this.textNode([{ runs: trimRuns([{ text: c.replace(/\s+/g, " "), ...marksOf(s, s, undefined) }]), style: s }], s));
+        if (c.trim())
+          out.push(
+            this.textNode(
+              [{ runs: trimRuns([{ text: c.replace(/\s+/g, " "), ...marksOf(s, s, undefined) }]), style: s }],
+              s,
+            ),
+          );
         continue;
       }
       const cs = this.styleOf(c);
@@ -1117,7 +1179,8 @@ class Builder {
       flushText();
       const n = this.build(c);
       if (!n) continue;
-      if ((gapBefore || leadingSpace) && rowNode.children.length) n.yoga.setMargin(Edge.Left, marginPx(cs.margin[3]) + space);
+      if ((gapBefore || leadingSpace) && rowNode.children.length)
+        n.yoga.setMargin(Edge.Left, marginPx(cs.margin[3]) + space);
       gapBefore = false;
       this.addChild(rowNode, n);
     }
@@ -1187,7 +1250,8 @@ function trimRuns(runs: RichRun[]): RichRun[] {
   if (last) last.text = last.text.replace(/ +$/, "");
   // A space right after a line break is the markup's indent, not text.
   for (let i = 1; i < out.length; i++) {
-    if ((out[i - 1] as RichRun).text.endsWith("\n")) (out[i] as RichRun).text = (out[i] as RichRun).text.replace(/^ +/, "");
+    if ((out[i - 1] as RichRun).text.endsWith("\n"))
+      (out[i] as RichRun).text = (out[i] as RichRun).text.replace(/^ +/, "");
   }
   return out.filter((r) => r.text);
 }
@@ -1382,10 +1446,11 @@ export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResul
     for (const child of node.children) made += walk(child, x, y, inner);
     if (groupId) {
       if (made >= 2) {
-        const text = pieces
-          .slice(start)
-          .map((p) => (p.kind === "text" ? p.text.map((pp) => pp.runs.map((r) => r.text).join("")).join(" ") : ""))
-          .find((t) => t.trim()) ?? "";
+        const text =
+          pieces
+            .slice(start)
+            .map((p) => (p.kind === "text" ? p.text.map((pp) => pp.runs.map((r) => r.text).join("")).join(" ") : ""))
+            .find((t) => t.trim()) ?? "";
         const name = el ? groupName(el, text) : undefined;
         groups.push({ id: groupId, ...(name ? { name } : {}), ...(group ? { parent: group } : {}) });
       } else {
@@ -1476,7 +1541,13 @@ export function htmlToRich(parsed: ParsedHtml, base: LayoutOptions["base"]): Ric
       }
       flush();
       const nested = c.tag === "ul" || c.tag === "ol";
-      const kind = nested ? (cs.listStyle === "none" ? undefined : cs.listStyle === "decimal" ? "ordered" : "bullet") : list;
+      const kind = nested
+        ? cs.listStyle === "none"
+          ? undefined
+          : cs.listStyle === "decimal"
+            ? "ordered"
+            : "bullet"
+        : list;
       walk(c, kind, nested && list ? level + 1 : level);
     }
     flush();

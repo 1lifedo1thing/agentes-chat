@@ -60,7 +60,8 @@ export function registerFonts(api: OpenAPIHono): void {
     const id = c.req.param("id");
     const prefix = `/api/fonts/v/${c.req.param("version")}/`;
     const relative = decodeURIComponent(new URL(c.req.url).pathname.slice(prefix.length));
-    if (!relative.startsWith(`${id}/`) || relative.includes("..")) return apiError(c, 404, "font.not_found", "No such font file");
+    if (!relative.startsWith(`${id}/`) || relative.includes(".."))
+      return apiError(c, 404, "font.not_found", "No such font file");
     const path = catalogFilePath(id, relative);
     if (!path) return apiError(c, 404, "font.not_found", "No such font file");
     const ext = relative.split(".").pop()?.toLowerCase() ?? "";

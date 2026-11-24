@@ -92,9 +92,9 @@ import {
   registerNativeRoutes,
 } from "./routes/desktop";
 import { deviceAppRoutes, registerConnectLinkInfo, registerConnectScripts } from "./routes/devices";
+import { registerFonts } from "./routes/fonts";
 import { registerGitProxy } from "./routes/git";
 import { githubAppRoutes, registerGitHubAppWebhook } from "./routes/github-app";
-import { registerFonts } from "./routes/fonts";
 import { registerHealth } from "./routes/health";
 import { registerInstance } from "./routes/instance";
 import { machineAppRoutes, registerMachinePublicRoutes } from "./routes/machines";

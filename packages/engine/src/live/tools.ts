@@ -40,16 +40,6 @@ import { createLiveFile } from "./create";
 import type { LiveDocs } from "./docs";
 import { documentTools } from "./document-tools";
 import type { ImageFailure, LiveImages } from "./images";
-import {
-  bringMadePicture,
-  madePictureKey,
-  PICTURE_CHOICE,
-  PICTURE_INPUTS,
-  PICTURE_OP_WORDS,
-  pictureProblem,
-  picturesProblem,
-  picturesToShow,
-} from "./pictures";
 import { htmlToRich, layoutSummary } from "./layout/html";
 import {
   canvasHtmlLayout,
@@ -61,6 +51,16 @@ import {
   slideHtmlLayout,
 } from "./layout/place";
 import type { LayoutResult } from "./layout/types";
+import {
+  bringMadePicture,
+  madePictureKey,
+  PICTURE_CHOICE,
+  PICTURE_INPUTS,
+  PICTURE_OP_WORDS,
+  pictureProblem,
+  picturesProblem,
+  picturesToShow,
+} from "./pictures";
 import {
   canvasStylePatch,
   fontRefOf,
@@ -886,7 +886,10 @@ type SlideOpName = (typeof SLIDE_OPS)[number];
 const HTML_INPUT = { type: "string", maxLength: 200_000 } as const;
 const FONTS_INPUT = {
   type: "object",
-  properties: { heading: { type: ["string", "null"], maxLength: 80 }, body: { type: ["string", "null"], maxLength: 80 } },
+  properties: {
+    heading: { type: ["string", "null"], maxLength: 80 },
+    body: { type: ["string", "null"], maxLength: 80 },
+  },
   additionalProperties: false,
 } as const;
 
@@ -1019,14 +1022,22 @@ function slideOpProblem(op: Json): string | null {
     case "style":
       return (
         needs("slide", "style") ??
-        (op.element || op.group || (Array.isArray(op.elements) && op.elements.length) ? null : "needs element, elements or group")
+        (op.element || op.group || (Array.isArray(op.elements) && op.elements.length)
+          ? null
+          : "needs element, elements or group")
       );
     case "move":
-      return needs("slide") ?? (op.element || op.group ? null : "needs element or group") ?? (num(op.x) === undefined || num(op.y) === undefined ? "needs x and y" : null);
+      return (
+        needs("slide") ??
+        (op.element || op.group ? null : "needs element or group") ??
+        (num(op.x) === undefined || num(op.y) === undefined ? "needs x and y" : null)
+      );
     case "resize":
       return needs("slide", "element") ?? (num(op.w) === undefined || num(op.h) === undefined ? "needs w and h" : null);
     case "group":
-      return needs("slide") ?? (Array.isArray(op.elements) && op.elements.length >= 2 ? null : "needs elements (2 or more)");
+      return (
+        needs("slide") ?? (Array.isArray(op.elements) && op.elements.length >= 2 ? null : "needs elements (2 or more)")
+      );
     case "ungroup":
       return needs("slide", "group");
     case "set_fonts":
@@ -1446,7 +1457,10 @@ async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
         }
         case "add_shape": {
           const slide = slideOf(doc, op.slide, refs);
-          const style = { shape: (op.shape as sl.ElementStyle["shape"]) ?? "rect", ...(op.style ? slideStylePatch(op.style) : {}) } as sl.ElementStyle;
+          const style = {
+            shape: (op.shape as sl.ElementStyle["shape"]) ?? "rect",
+            ...(op.style ? slideStylePatch(op.style) : {}),
+          } as sl.ElementStyle;
           const box = opBox(op);
           const hasText = op.text !== undefined || op.html !== undefined;
           const element = sl.addElement(
@@ -1489,7 +1503,9 @@ async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
         }
         case "move": {
           const slide = slideOf(doc, op.slide, refs);
-          const ids = op.group ? slideTargets(doc, slide, op, refs) : slideTargets(doc, slide, { element: op.element }, refs);
+          const ids = op.group
+            ? slideTargets(doc, slide, op, refs)
+            : slideTargets(doc, slide, { element: op.element }, refs);
           const view = sl.readSlide(doc, slide);
           const els = (view?.elements ?? []).filter((e) => ids.includes(e.id));
           const left = Math.min(...els.map((e) => Math.min(e.x, e.x + (e.type === "line" ? e.w : 0))));
@@ -1525,7 +1541,11 @@ async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
           const fonts = op.fonts as Json;
           const heading = fonts.heading ? fontRefOf(fonts.heading) : undefined;
           const body = fonts.body ? fontRefOf(fonts.body) : undefined;
-          sl.setDeckFonts(doc, heading || body ? { ...(heading ? { heading } : {}), ...(body ? { body } : {}) } : null, origin);
+          sl.setDeckFonts(
+            doc,
+            heading || body ? { ...(heading ? { heading } : {}), ...(body ? { body } : {}) } : null,
+            origin,
+          );
           await done(heading || body ? `set the deck's fonts` : "went back to the theme's fonts", null);
           break;
         }
@@ -1825,7 +1845,8 @@ interface CanvasBatch {
 function canvasGroupOf(doc: Y.Doc, ref: unknown, refs: Map<string, string>): string {
   const want = refs.get(str(ref)) ?? str(ref);
   const groups = cv.readCanvasGroups(doc);
-  const found = groups.find((g) => g.id === want) ?? groups.find((g) => g.name?.toLowerCase() === want.trim().toLowerCase());
+  const found =
+    groups.find((g) => g.id === want) ?? groups.find((g) => g.name?.toLowerCase() === want.trim().toLowerCase());
   if (!found) throw new ValidationError(`There is no group "${named(want, 60)}"`);
   return found.id;
 }
@@ -2252,7 +2273,8 @@ function canvasLines(doc: Y.Doc, makers: ReadonlyMap<string, string>): string[] 
   const groups = cv.readCanvasGroups(doc);
   if (groups.length > 0) {
     lines.push("Groups:");
-    for (const g of groups) lines.push(`  group [${g.id}]${g.name ? ` "${named(g.name, 80)}"` : ""}${g.parent ? ` in ${g.parent}` : ""}`);
+    for (const g of groups)
+      lines.push(`  group [${g.id}]${g.name ? ` "${named(g.name, 80)}"` : ""}${g.parent ? ` in ${g.parent}` : ""}`);
   }
   return lines;
 }

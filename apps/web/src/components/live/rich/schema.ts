@@ -1,3 +1,4 @@
+import { isFontRef, isFontWeight } from "@agenteschat/live";
 import {
   isRichColor,
   isRichHref,
@@ -6,7 +7,6 @@ import {
   type RichAlign,
   type RichList,
 } from "@agenteschat/live/rich";
-import { isFontRef, isFontWeight } from "@agenteschat/live";
 import { type DOMOutputSpec, type Mark, type Node as PMNode, Schema } from "prosemirror-model";
 import { fontFamilyCss } from "../fonts";
 
@@ -31,7 +31,8 @@ export function paragraphDomAttrs(attrs: {
 }): Record<string, string> {
   const out: Record<string, string> = { class: "rt-p" };
   const css: string[] = [];
-  if (attrs.align === "left" || attrs.align === "center" || attrs.align === "right") css.push(`text-align: ${attrs.align}`);
+  if (attrs.align === "left" || attrs.align === "center" || attrs.align === "right")
+    css.push(`text-align: ${attrs.align}`);
   // A paragraph's own spacing (ADR 0220 §3), in the text's units.
   if (typeof attrs.lineHeight === "number" && attrs.lineHeight >= 0.8 && attrs.lineHeight <= 3) {
     css.push(`line-height: ${attrs.lineHeight}`);
@@ -174,8 +175,14 @@ export const richSchema = new Schema({
           : ["span", 0],
     },
     // The type marks (ADR 0220 §3): drawn the way `RichView` draws them, each value checked on the way to the page.
-    font: { ...spec.marks.font, toDOM: (mark: Mark): DOMOutputSpec => ["span", typeMarkDom("font", mark.attrs.font), 0] },
-    size: { ...spec.marks.size, toDOM: (mark: Mark): DOMOutputSpec => ["span", typeMarkDom("size", mark.attrs.size), 0] },
+    font: {
+      ...spec.marks.font,
+      toDOM: (mark: Mark): DOMOutputSpec => ["span", typeMarkDom("font", mark.attrs.font), 0],
+    },
+    size: {
+      ...spec.marks.size,
+      toDOM: (mark: Mark): DOMOutputSpec => ["span", typeMarkDom("size", mark.attrs.size), 0],
+    },
     weight: {
       ...spec.marks.weight,
       toDOM: (mark: Mark): DOMOutputSpec => ["span", typeMarkDom("weight", mark.attrs.weight), 0],
@@ -193,7 +200,10 @@ export const richSchema = new Schema({
 });
 
 /** The CSS of one type mark (ADR 0220 §3) as one declaration, or none when its value isn't one it may hold. */
-export function typeMarkCss(name: "font" | "size" | "weight" | "highlight" | "tracking" | "caps", value: unknown): string {
+export function typeMarkCss(
+  name: "font" | "size" | "weight" | "highlight" | "tracking" | "caps",
+  value: unknown,
+): string {
   switch (name) {
     case "font": {
       const family = isFontRef(value) ? fontFamilyCss(value) : undefined;

@@ -152,7 +152,13 @@ describe("add_html on a slide", () => {
       expect(badge?.style).toMatchObject({ weight: 700, color: "#ffffff", align: "center" });
       // Fonts from the catalog, by the names the CSS gave.
       const label = texts.find((e) => JSON.stringify(e.text).includes("Gatilho"));
-      expect(label?.style).toMatchObject({ font: "martian-mono", size: 16, tracking: 120, caps: true, color: "#0063d1" });
+      expect(label?.style).toMatchObject({
+        font: "martian-mono",
+        size: 16,
+        tracking: 120,
+        caps: true,
+        color: "#0063d1",
+      });
       const title = texts.find((e) => JSON.stringify(e.text).includes("Webhook"));
       expect(title?.style).toMatchObject({ font: "funnel-display", weight: 300, size: 36 });
       // A word in bold is a mark on the run, the paragraph keeps its own look.
@@ -197,7 +203,14 @@ describe("add_html on a slide", () => {
           role: "title",
           html: 'Anatomia <span style="font-weight:300;color:#0063d1">de um agente</span>',
         },
-        { op: "add_shape", slide: 1, shape: "rect", text: "Soon", box: { x: 40, y: 40, w: 120, h: 40 }, style: { fill: "#0063d1", radius: 20, color: "#ffffff", weight: 700, padding: 6 } },
+        {
+          op: "add_shape",
+          slide: 1,
+          shape: "rect",
+          text: "Soon",
+          box: { x: 40, y: 40, w: 120, h: 40 },
+          style: { fill: "#0063d1", radius: 20, color: "#ffffff", weight: 700, padding: 6 },
+        },
       ],
     });
     await headOf(deck.id, (doc) => {
@@ -333,7 +346,7 @@ describe("the layout itself", () => {
   });
 
   test("htmlToRich keeps a paragraph per block and the inline looks as marks", () => {
-    const rich = htmlToRich(parseHtml('<p>A <i>b</i></p><ul><li>c</li></ul>'), { size: 20 });
+    const rich = htmlToRich(parseHtml("<p>A <i>b</i></p><ul><li>c</li></ul>"), { size: 20 });
     expect(rich.map((p) => p.list ?? null)).toEqual([null, "bullet"]);
     expect(rich[0]?.runs.find((r) => r.text === "b")?.italic).toBe(true);
   });

@@ -12,13 +12,13 @@ import { writeRich } from "../rich/yjs";
 import { arrowPath, type Box, center, type Point, pointsBounds, union } from "./geometry";
 import { placeBoxes } from "./place";
 import {
-  canvasGroupsMapOf,
   COMMON_PROPS,
+  canvasGroupsMapOf,
   canvasMapOf,
   cleanProp,
   descendantsOf,
-  readShapeById,
   readCanvasGroups,
+  readShapeById,
   readShapes,
   shapeBounds,
   shapeIndex,
@@ -652,7 +652,8 @@ export function putShapeGroups(doc: Y.Doc, groups: readonly LiveGroup[], origin:
     for (const g of groups) {
       if (!/^[A-Za-z0-9_-]{1,64}$/.test(g.id)) throw invalid("Bad group");
       const name = cleanGroupName(g.name);
-      const parent = g.parent && (ids.has(g.parent) || existing.has(g.parent)) && g.parent !== g.id ? g.parent : undefined;
+      const parent =
+        g.parent && (ids.has(g.parent) || existing.has(g.parent)) && g.parent !== g.id ? g.parent : undefined;
       map.set(g.id, { ...(name ? { name } : {}), ...(parent ? { parent } : {}) });
     }
   }, origin);
