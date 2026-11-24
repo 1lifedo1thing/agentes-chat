@@ -622,6 +622,8 @@ const KNOWN = {
   "channel.delete_name": "errors.said.deleteName",
   "channel.general": "errors.said.generalKept",
   "channel.general_stays": "errors.said.generalStays",
+  "channel.lead_channel_only": "errors.said.leadChannelOnly",
+  "channel.lead_not_member": "errors.said.leadNotMember",
   "connector.mcp_status": "errors.said.mcpUnreachable",
   "connector.mcp_unreachable": "errors.said.mcpUnreachable",
   "connector.not_approved": "errors.said.notApproved",
@@ -1157,6 +1159,15 @@ export const FILES_TEXT_ONLY = "run.files_text_only";
 export const filesTextOnlyOf = (meta: Record<string, unknown> | null | undefined) =>
   meta?.filesTextOnly === true ? FILES_TEXT_ONLY : null;
 
+/** Failures another model fixes: one gone, a text-only connection, and a model that wrote no words when asked. */
+const CHANGE_MODEL_FAILURES = new Set([
+  "run.model_unlisted",
+  "run.provider_model_unavailable",
+  FILES_TEXT_ONLY,
+  "run.empty_reply",
+  "run.empty_reply_limit",
+]);
+
 /**
  * The one thing to do about a failed run, by its code, for someone who can: another key (`keys`: who manages them),
  * another model or another account (the agent's owner or who manages agents). Null when nothing fixes it or it's
@@ -1166,8 +1177,7 @@ export function failedRunFix(
   code: string | null | undefined,
   who: { keys: boolean; admin: boolean; owner: boolean },
 ): "useKey" | "changeModel" | "changeAccount" | null {
-  if (code === "run.model_unlisted" || code === "run.provider_model_unavailable" || code === FILES_TEXT_ONLY)
-    return who.admin || who.owner ? "changeModel" : null;
+  if (CHANGE_MODEL_FAILURES.has(code ?? "")) return who.admin || who.owner ? "changeModel" : null;
   if (code === "run.account_missing") return who.admin || who.owner ? "changeAccount" : null;
   return code && KEY_FAILURES.has(code) && who.keys ? "useKey" : null;
 }
