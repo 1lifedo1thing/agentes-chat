@@ -619,6 +619,13 @@ export async function learnRun(deps: ContextDeps, input: { orgId: string; runId:
     mayReplace: (old: { createdByKind: string }) => old.createdByKind !== "person",
   };
 
+  const learnsFrom = new Map<string, Promise<boolean>>();
+  const letsLearn = (userId: string) => {
+    const on = learnsFrom.get(userId) ?? rightHandLearnsFrom(db, run.orgId, userId);
+    learnsFrom.set(userId, on);
+    return on;
+  };
+
   for (const item of parsed.items.slice(0, 10)) {
     const refs = item.refs.map((r) => r.trim());
     const cited = {
@@ -672,14 +679,20 @@ export async function learnRun(deps: ContextDeps, input: { orgId: string; runId:
     // Who holds which access is the whole team's to know, read from a page or not: it only points at the holder (it
     // grants nothing, and an untrusted one is labeled so), and kept to one agent it can't stop another from saying
     // nobody has it. Untrusted, it may only name this agent as the holder: a page can't point the team at someone.
-    // The right hand: a person's own preference stays theirs (and only while they let it learn), the rest stays its
-    // own in the conversation it came from, never the team's.
-    if (rightHand && item.scope === "person" && (!person || !(await rightHandLearnsFrom(db, run.orgId, person)))) {
-      out.rejected.push({ content: item.content, reason: "refused" });
-      continue;
+    // The right hand: nothing from the words of someone who turned its learning off, whoever's run read them. A
+    // person's own preference stays theirs, trusted or not; the rest stays its own where it was said, never the team's.
+    if (rightHand) {
+      const authors = new Set(
+        cited.messages.flatMap((m) => (m.authorType === "person" && m.authorUserId ? [m.authorUserId] : [])),
+      );
+      const allowed = (await Promise.all([...authors].map(letsLearn))).every(Boolean);
+      if (!allowed || (item.scope === "person" && !person)) {
+        out.rejected.push({ content: item.content, reason: "refused" });
+        continue;
+      }
     }
     const scope = rightHand
-      ? item.scope === "person" && trust === "high"
+      ? item.scope === "person"
         ? "person"
         : "own"
       : item.kind === "access" && (trust === "high" || ownAccess(agent.handle, key))

@@ -46,9 +46,15 @@ async function lodiOf() {
 }
 
 /** A finished run of the right hand on what `userId` wrote in `channelId`. */
-async function lodiRun(userId: string, channelId: string, body: string) {
+async function lodiRun(userId: string, channelId: string, body: string, meta?: Record<string, unknown>) {
   const lodi = await lodiOf();
-  const msg = await insertMessage(f.db, { orgId: f.org.id, channelId, author: { type: "person", userId }, body });
+  const msg = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId,
+    author: { type: "person", userId },
+    body,
+    ...(meta ? { meta } : {}),
+  });
   const [run] = await f.db
     .insert(schema.agentRuns)
     .values({
@@ -74,9 +80,15 @@ const fact = (content: string) => ({
   content,
   refs: ["m1"],
 });
-const learn = async (userId: string, channelId: string, body: string, items: unknown[]) => {
+const learn = async (
+  userId: string,
+  channelId: string,
+  body: string,
+  items: unknown[],
+  meta?: Record<string, unknown>,
+) => {
   learnOutput = { items, skill_fixes: [] };
-  const run = await lodiRun(userId, channelId, body);
+  const run = await lodiRun(userId, channelId, body, meta);
   return learnRun(f.context, { orgId: f.org.id, runId: run.id });
 };
 const seen = async (userId: string) =>
@@ -170,5 +182,46 @@ describe("the right hand learns on its own (Q22)", () => {
     expect(await forgetRightHandLearned(f.db, f.owner.id, f.org.id)).toBe(2);
     expect(await seen(f.owner.id)).toEqual(["Ana wants replies in English.", "Staging is at staging.example.com."]);
     expect(await seen(joao.id)).toEqual(["João's box is osprey.", "Staging is at staging.example.com."]);
+  });
+
+  test("a person who turned it off isn't learned from in a channel either, even when someone else asked", async () => {
+    f = await setup();
+    const joao = await addMember(f.db, f.org.id, "member", "joao");
+    await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: joao.id });
+    await setLodiPrefs(f.db, f.org.id, joao.id, { learnOff: true });
+    await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: f.general.id,
+      author: { type: "person", userId: joao.id },
+      body: "the release train leaves on Thursdays",
+    });
+    const every = ["m1", "m2", "m3", "m4", "m5", "m6"];
+    const out = await learn(f.owner.id, f.general.id, "noted", [{ ...fact("Releases go on Thursdays."), refs: every }]);
+    expect(out.saved).toEqual([]);
+    expect(out.rejected.map((r) => r.reason)).toEqual(["refused"]);
+  });
+
+  test("a person's preference said in a channel stays theirs even when the run read outside content", async () => {
+    f = await setup();
+    const joao = await addMember(f.db, f.org.id, "member", "joao");
+    await addChannelMember(f.db, f.owner.id, f.org.id, f.general.id, { userId: joao.id });
+    const out = await learn(
+      f.owner.id,
+      f.general.id,
+      "I review pricing changes myself",
+      [
+        {
+          kind: "preference",
+          scope: "person",
+          about_person: "ana",
+          title: "pricing reviews",
+          content: "Ana reviews pricing changes herself.",
+          refs: ["m1"],
+        },
+      ],
+      { readOutside: true },
+    );
+    expect(out.saved.map((s) => s.scopeType)).toEqual(["person"]);
+    expect(await seen(joao.id)).toEqual([]);
   });
 });
