@@ -800,7 +800,7 @@ ones a self-hosted instance usually touches:
 | `POSTGRES_PASSWORD` | required | Database password. Read by the compose file only. |
 | `AGENTES_IMAGE` | `ghcr.io/agentes-chat/agentes:latest` | The image to run. A version tag or a digest holds a version. |
 | `BIND_ADDRESS`, `HOST_PORT` | `127.0.0.1`, `3000` | Where the compose file publishes the app. |
-| `AGENTES_MEMORY` | `8g` | The most memory the app's container may take, swap included. Over it, the kernel stops the app alone and Docker restarts it, instead of the machine swapping until something else is killed. On a machine with less than 10 GiB of memory, the setup writes three quarters of it here instead: a limit above the machine's memory never fires. The speech server's is `SPEECH_MEMORY` (Voice messages). |
+| `AGENTES_MEMORY` | `8g` | The most memory the app's container may take, swap included. Over it, the kernel stops the app alone and Docker restarts it, instead of the machine swapping until something else is killed. Before that the app brakes on its own: past 70% of it its job slots stop growing, past 85% it sheds long jobs. On a machine with less than 10 GiB of memory, the setup writes three quarters of it here instead: a limit above the machine's memory never fires. With worker processes taking the runs, `4g` (More at once: worker processes). The speech server's is `SPEECH_MEMORY` (Voice messages). |
 | `COMPOSE_PROFILES` | | How people reach it: `tailscale` (the setup's default), `https` (Caddy for `DOMAIN`), or neither (this machine only). Comma-separated, with other optional services: `backup` (Backups and restore), `speech` (Voice messages), `embeddings` (Search across languages). |
 | `DOMAIN` | | The public domain Caddy gets a certificate for. |
 | `TS_AUTHKEY` | | The auth key or OAuth client secret the server joins your tailnet with, read only until it has joined. The setup empties it then. |
@@ -1950,6 +1950,8 @@ app is up:
         condition: service_healthy
     networks: [default, speech]
     restart: unless-stopped
+    mem_limit: "${AGENTES_WORKER_MEMORY:-8g}"
+    memswap_limit: "${AGENTES_WORKER_MEMORY:-8g}"
     stop_grace_period: 40s
     init: true
     security_opt:
@@ -1970,6 +1972,13 @@ written for), so each worker adds as many jobs at once as the app runs. Each pro
 where it can reach them (`S3_*`, or Postgres without `FILES_DIR`), and one on the app's computer
 outside Docker a `PORT` of its own. The built-in database (on this computer, without Docker) belongs
 to one process and takes no worker.
+
+Each process brakes before the kernel stops it: its job slots stop growing past 70% of its container's
+memory limit and its long jobs shed past 85%, so the limit is what decides when. Once workers take
+the runs, the app mostly holds the open apps' connections: give it `AGENTES_MEMORY=4g` and
+`OUTBOX_MAX_IN_FLIGHT_CEILING=32`, and each worker its own `AGENTES_WORKER_MEMORY` (`8g`, as above).
+A process that still grew past its limit is stopped alone and restarts, and every app on it
+reconnects to the others, instead of the whole machine swapping.
 
 When a process is overloaded (its event loop late by over `LOAD_SHED_EVENT_LOOP_MS`, or a database
 connection slower than `LOAD_SHED_DB_WAIT_MS` to come), it turns new connections and the apps' reads
