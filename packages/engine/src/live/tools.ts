@@ -51,6 +51,7 @@ import {
   slideHtmlLayout,
 } from "./layout/place";
 import type { LayoutResult } from "./layout/types";
+import { canvasLook, slideLook } from "./look";
 import {
   bringMadePicture,
   madePictureKey,
@@ -1228,6 +1229,8 @@ interface SlideBatch {
   html?: Map<number, HtmlPlan>;
   step: (() => Promise<void>) | null;
   onWork?: (slide: string, elements: string[], activity: string) => Promise<void>;
+  /** The slides the batch changed, in order (what the agent is shown afterwards, ADR 0220 §5). */
+  touched?: string[];
 }
 
 /** A slide's empty picture placeholder (its layout's image slot, nothing in it yet), or undefined. */
@@ -1290,6 +1293,40 @@ function slideTextOf(doc: Y.Doc, op: Json, el: { type: sl.ElementType; role?: sl
 /** A box an op gives, or the default for its type. */
 const opBox = (op: Json): cv.Box | undefined => boxOf(op.box);
 
+/** Ops whose result the agent is shown as a picture of the slide (not notes, order or deletions). */
+const LOOKED_SLIDE_OPS = new Set<string>([
+  "add_slide",
+  "duplicate_slide",
+  "set_text",
+  "set_layout",
+  "set_theme",
+  "add_image",
+  "add_chart",
+  "add_table",
+  "add_text",
+  "add_shape",
+  "add_html",
+  "style",
+  "move",
+  "resize",
+  "set_fonts",
+]);
+
+/** A picture of what an edit left, for the agent to check (ADR 0220 §5), or null when it can't be drawn. */
+async function lookAfterEdit(
+  deps: LiveFileToolDeps,
+  ctx: ToolContext,
+  fileId: string,
+  draw: (doc: Y.Doc) => Promise<ToolImage | null>,
+): Promise<ToolImage | null> {
+  const { doc } = await deps.live.read(ctx.orgId, fileId);
+  try {
+    return await draw(doc).catch(() => null);
+  } finally {
+    doc.destroy();
+  }
+}
+
 async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
   const { origin } = batch;
   const refs = new Map<string, string>();
@@ -1305,6 +1342,7 @@ async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
         activity: string = LIVE_ACTIVITY.editingSlide,
       ) => {
         said.push(text);
+        if (slide && LOOKED_SLIDE_OPS.has(name)) batch.touched?.push(slide);
         if (slide && batch.step && batch.onWork) await batch.onWork(slide, elements, activity);
         await batch.step?.();
       };
@@ -1835,6 +1873,8 @@ function shapeStylePatch(shape: cv.ShapeView, op: Json): { patch: cv.ShapePatch;
 interface CanvasBatch {
   origin: unknown;
   assets: AssetsByRef;
+  /** The shapes the batch made or changed (what the agent is shown afterwards, ADR 0220 §5). */
+  touched?: string[];
   /** `add_html` ops laid out ahead, by their index in the batch. */
   html?: Map<number, HtmlPlan>;
   step: (() => Promise<void>) | null;
@@ -1881,6 +1921,7 @@ async function applyCanvasOps(doc: Y.Doc, ops: Json[], batch: CanvasBatch) {
     try {
       const done = async (text: string, ids: string[], activity: string = LIVE_ACTIVITY.arrangingCanvas) => {
         said.push(text);
+        if (name !== "delete") batch.touched?.push(...ids);
         if (batch.step && batch.onWork) {
           const shapes = ids.flatMap((id) => cv.readShapeById(doc, id, { text: false }) ?? []);
           await batch.onWork(shapes, activity);
@@ -2788,6 +2829,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
         const brought: Brought = { notes: [], looks: [] };
         const assets = await imageAssets(deps, ctx, fileId, ops, ["add_slide", "add_image"], brought);
         const html = await htmlPlans(deps, ctx, fileId, ops, "slides");
+        const touched: string[] = [];
         const progressive = ops.length >= LIVE_TOOL_LIMITS.progressiveOps;
         const slidePresence = (doc: Y.Doc, slide: string, elements: string[], key: string): Partial<PeerState> => ({
           mode: "editing",
@@ -2818,13 +2860,22 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
               html,
               step: progressive ? step : null,
               onWork: (slide, elements, key) => present(deps, ctx, fileId, slidePresence(doc, slide, elements, key)),
+              touched,
             });
           },
           { presence: { mode: "editing", activity: { key: LIVE_ACTIVITY.working } }, progressive },
         );
         const card = await cardOf(deps.artifacts.db, ctx.orgId, fileId);
+        const lastSlide = touched[touched.length - 1];
+        const look = lastSlide
+          ? await lookAfterEdit(deps, ctx, fileId, (doc) =>
+              slideLook(deps.artifacts, actorOf(ctx), ctx.orgId, fileId, doc, lastSlide),
+            )
+          : null;
+        if (look) brought.looks.unshift(look);
+        const looked = look && lastSlide ? ` A picture of the slide as it looks now is attached: check it for cut, overlapping or misaligned text before you say it is done.` : "";
         return {
-          content: `Changed "${named(card.title)}" (presentation, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}`,
+          content: `Changed "${named(card.title)}" (presentation, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}${looked}`,
           ...broughtImages(brought),
           data: { artifact: card },
         };
@@ -2973,6 +3024,7 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
         const brought: Brought = { notes: [], looks: [] };
         const assets = await imageAssets(deps, ctx, fileId, ops, ["add_image"], brought);
         const html = await htmlPlans(deps, ctx, fileId, ops, "canvas");
+        const touched: string[] = [];
         const progressive = ops.length >= LIVE_TOOL_LIMITS.progressiveOps;
         const canvasPresence = (shapes: cv.ShapeView[], key: string): Partial<PeerState> => {
           const last = shapes.at(-1);
@@ -2995,13 +3047,21 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
               html,
               step: progressive ? step : null,
               onWork: (shapes, key) => present(deps, ctx, fileId, canvasPresence(shapes, key)),
+              touched,
             });
           },
           { presence: { mode: "editing", activity: { key: LIVE_ACTIVITY.arrangingCanvas } }, progressive },
         );
         const card = await cardOf(deps.artifacts.db, ctx.orgId, fileId);
+        const look = touched.length
+          ? await lookAfterEdit(deps, ctx, fileId, (doc) =>
+              canvasLook(deps.artifacts, actorOf(ctx), ctx.orgId, fileId, doc, touched),
+            )
+          : null;
+        if (look) brought.looks.unshift(look);
+        const looked = look ? " A picture of that part of the canvas as it looks now is attached: check it for cut, overlapping or misaligned text before you say it is done." : "";
         return {
-          content: `Changed "${named(card.title)}" (canvas, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}`,
+          content: `Changed "${named(card.title)}" (canvas, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}${looked}`,
           ...broughtImages(brought),
           data: { artifact: card },
         };

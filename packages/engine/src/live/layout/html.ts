@@ -672,6 +672,11 @@ class Builder {
     this.notes = this.cascade.notes;
   }
 
+  /** Gives an anonymous holder of some of an element's content that element's look. */
+  computedFor(holder: HtmlElement, style: Computed): void {
+    this.computed.set(holder, style);
+  }
+
   styleOf(el: HtmlElement): Computed {
     const hit = this.computed.get(el);
     if (hit) return hit;
@@ -1553,5 +1558,141 @@ export function htmlToRich(parsed: ParsedHtml, base: LayoutOptions["base"]): Ric
     flush();
   };
   walk(parsed.root, undefined, 0);
+  return out;
+}
+
+/** The pictures a document's markup names, by their key, as the file's asset ids (resolved by the caller). */
+export type BlockPictures = ReadonlyMap<string, { asset: string; w: number }>;
+
+/** The page width a document's pictures are sized against (a CSS width in px becomes a fraction of it). */
+const DOC_PAGE = 720;
+
+/**
+ * Markup as a document's blocks (ADR 0220 §4): headings, paragraphs with their marks, lists by level, quotes, code,
+ * rules, pictures and tables. A heading keeps the document's own heading size; a font, a color, a weight, letter
+ * spacing or capitals the markup gives it become marks on its words.
+ */
+export function htmlToBlocks(parsed: ParsedHtml, pictures: BlockPictures): import("@agenteschat/live").DocBlock[] {
+  type DocBlock = import("@agenteschat/live").DocBlock;
+  type DocParagraph = import("@agenteschat/live").DocParagraph;
+  const builder = new Builder(parsed, {
+    width: DOC_PAGE,
+    base: { size: 16 },
+    fontNamed: () => null,
+    measurer: { width: () => 0, extent: () => ({ ascent: 0.9, descent: 0.25 }) } as unknown as TextMeasurer,
+    pictures: new Map(),
+    tables: false,
+  });
+  const root = builder.styleOf(parsed.root);
+  /** What a block's words are measured against: its own size, the document's font, color and the tag's weight. */
+  const baseOf = (s: Computed, weight: FontWeight): Computed => ({
+    ...s,
+    font: root.font,
+    color: root.color,
+    weight,
+    tracking: 0,
+    caps: false,
+    italic: false,
+    underline: false,
+    strike: false,
+  });
+  const runsOf = (el: HtmlElement, weight: FontWeight) => {
+    const s = builder.styleOf(el);
+    return builder.runsOf(el, baseOf(s, weight));
+  };
+  const alignOf = (s: Computed) => (s.align !== "left" ? { align: s.align } : {});
+  const holder = (items: (HtmlElement | string)[], parent: HtmlElement): HtmlElement => {
+    const h: HtmlElement = { ...parent, children: items };
+    return h;
+  };
+  const out: DocBlock[] = [];
+  const paragraph = (
+    el: HtmlElement,
+    items: (HtmlElement | string)[],
+    extra: Partial<DocParagraph>,
+    into: DocBlock[],
+  ) => {
+    const h = holder(items, el);
+    builder.computedFor(h, builder.styleOf(el));
+    const runs = runsOf(h, 400);
+    if (runs.some((r) => r.text.trim())) into.push({ type: "paragraph", ...alignOf(builder.styleOf(el)), ...extra, runs });
+  };
+  const walk = (el: HtmlElement, list: "bullet" | "ordered" | undefined, level: number, into: DocBlock[]) => {
+    let pending: (HtmlElement | string)[] = [];
+    const flush = () => {
+      if (pending.some((p) => typeof p !== "string" || p.trim())) {
+        paragraph(el, pending, el.tag === "li" && list ? { list, ...(level ? { level } : {}) } : {}, into);
+      }
+      pending = [];
+    };
+    for (const c of el.children) {
+      if (typeof c === "string") {
+        pending.push(c);
+        continue;
+      }
+      const s = builder.styleOf(c);
+      if (s.display === "none") continue;
+      if (c.picture) {
+        flush();
+        const picture = pictures.get(c.picture);
+        if (picture) {
+          const css = s.width && s.width !== "auto" ? s.width : null;
+          const width = css ? ("percent" in css ? css.percent / 100 : css.px / DOC_PAGE) : picture.w / DOC_PAGE;
+          into.push({
+            type: "image",
+            asset: picture.asset,
+            ...(c.attrs.get("alt") ? { alt: (c.attrs.get("alt") ?? "").slice(0, 500) } : {}),
+            ...(width < 1 ? { width: Math.max(0.1, Math.round(width * 100) / 100) } : {}),
+          });
+        }
+        continue;
+      }
+      if (s.display === "inline" || s.display === "inline-block") {
+        pending.push(c);
+        continue;
+      }
+      flush();
+      const heading = /^h([1-6])$/.exec(c.tag);
+      if (heading) {
+        const level = Math.min(3, Number(heading[1])) as 1 | 2 | 3;
+        const runs = runsOf(c, 700);
+        if (runs.some((r) => r.text.trim())) into.push({ type: "heading", level, ...alignOf(s), runs });
+      } else if (c.tag === "hr") into.push({ type: "horizontal_rule" });
+      else if (c.tag === "pre") {
+        const code = c.children.find((x): x is HtmlElement => typeof x !== "string" && x.tag === "code");
+        const language = /language-([a-z0-9_+#.-]+)/i.exec((code ?? c).classes.join(" "))?.[1];
+        const text = (function plain(e: HtmlElement): string {
+          return e.children.map((x) => (typeof x === "string" ? x : x.tag === "br" ? "\n" : plain(x))).join("");
+        })(c);
+        into.push({ type: "code_block", ...(language ? { language } : {}), text: text.replace(/\n$/, "") });
+      } else if (c.tag === "blockquote") {
+        const inner: DocBlock[] = [];
+        walk(c, undefined, 0, inner);
+        if (inner.length) into.push({ type: "blockquote", blocks: inner });
+      } else if (c.tag === "table") {
+        const rows: HtmlElement[] = [];
+        (function collect(e: HtmlElement) {
+          for (const x of e.children) if (typeof x !== "string") x.tag === "tr" ? rows.push(x) : collect(x);
+        })(c);
+        const cells = rows.map((r) =>
+          r.children
+            .filter((x): x is HtmlElement => typeof x !== "string" && (x.tag === "td" || x.tag === "th"))
+            .map((cell) => {
+              const h = holder(cell.children, cell);
+              builder.computedFor(h, builder.styleOf(cell));
+              const runs = runsOf(h, 400);
+              return { blocks: [{ type: "paragraph" as const, runs: runs.length ? runs : [{ text: "" }] }] };
+            }),
+        );
+        const header = rows[0]?.children.some((x) => typeof x !== "string" && x.tag === "th");
+        if (cells.length) into.push({ type: "table", ...(header ? { header: true as const } : {}), rows: cells });
+      } else if (c.tag === "ul" || c.tag === "ol") {
+        const kind = s.listStyle === "none" ? undefined : s.listStyle === "decimal" ? "ordered" : "bullet";
+        walk(c, kind, list ? level + 1 : level, into);
+      } else walk(c, list, level, into);
+    }
+    flush();
+  };
+  walk(parsed.root, undefined, 0, out);
   return out;
 }

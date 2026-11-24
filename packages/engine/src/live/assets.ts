@@ -274,7 +274,14 @@ export async function readPictureFile(
 }
 
 /** A picture's row and bytes, for whoever reads its file (null otherwise, as for none). */
-async function readAsset(deps: ArtifactDeps, actor: ArtifactActor, orgId: string, fileId: string, assetId: string) {
+/** One of a live file's assets with its bytes, under the reader's check (null when it can't be read). */
+export async function readAsset(
+  deps: ArtifactDeps,
+  actor: ArtifactActor,
+  orgId: string,
+  fileId: string,
+  assetId: string,
+) {
   if (!UUID.test(assetId)) return null;
   if (!(await liveFileAccess(deps, actor, orgId, fileId))) return null;
   const [row] = await deps.db
