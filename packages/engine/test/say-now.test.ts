@@ -20,6 +20,7 @@ import {
   finishWhatYouStart,
   insertMessage,
   isSayNow,
+  linesSaid,
   loadReplyPolicy,
   type MachineStatus,
   mergeToolEffects,
@@ -449,6 +450,16 @@ describe("the tool", () => {
       .where(eq(schema.messages.id, last.id));
     expect((await sayNow(working, "Mais uma.")).content).toStartWith("Already told them");
     expect((await lines()).length).toBe(1 + PROGRESS_MAX);
+    // Two more for messages taken in: the paths that leave its lines out of a reply still read the newest one.
+    for (const body of ["Ah, e o relatório de março também.", "Certo, sem o anexo."])
+      await insertMessage(f.db, {
+        orgId: f.org.id,
+        channelId: dm.id,
+        author: { type: "agent", agentId: f.agent.id, runId: null, hop: 0, stretchId: null },
+        body,
+        meta: { sayNow: { runId: run.id, took: ["m"] } },
+      });
+    expect((await linesSaid(f.db, working)).map((l) => l.text).at(-1)).toBe("Certo, sem o anexo.");
   });
 
   test("progressDue: long work only, a gap after the last line, three at most", () => {

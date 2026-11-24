@@ -114,11 +114,13 @@ type LinesRun = Pick<AgentRun, "id" | "orgId" | "channelId" | "agentId" | "creat
 /**
  * The lines this run posted on the way (`meta.sayNow.runId`), oldest first: the conversation's record, for the paths
  * that post what a run wrote before its transcript took in a computer turn's lines (a stop, a cut turn, a restart).
+ * The default reads past every line a run may post (its first, `PROGRESS_MAX` progress lines, one per message taken
+ * in), so a reply that repeats its newest line still has it left out.
  */
 export async function linesSaid(
   db: Executor,
   run: LinesRun,
-  limit = 5,
+  limit = 20,
 ): Promise<{ text: string; took: string[]; at: Date; progress: boolean }[]> {
   const rows = await db
     .select({ body: messages.body, meta: messages.meta, createdAt: messages.createdAt })
