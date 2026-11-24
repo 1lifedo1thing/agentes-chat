@@ -98,7 +98,7 @@ describe("while it works the conversation's last row says it, as a reply on its 
     expect(also.querySelector(".ac-typing__typers")?.textContent).toBe("João");
     // Her face leads the row; his is the line's one small face, and who types ends the line.
     expect(line().querySelectorAll(".ac-typing__tok")).toHaveLength(1);
-    expect(line().lastElementChild).toBe(also);
+    expect(line().querySelector(".working-tail__words")?.lastElementChild).toBe(also);
   });
 
   test("what it did so far under its line: its own words quoted, the app's line for each call, older ones folded", async () => {

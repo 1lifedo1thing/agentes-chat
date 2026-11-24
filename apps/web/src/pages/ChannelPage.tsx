@@ -4430,16 +4430,20 @@ function WorkingTail({ onSeeAsk, ...here }: WorkHere & { onSeeAsk: (id: string) 
           data-active="true"
           data-consult={consult ? (consult.yours ? "you" : consult.wait ? "wait" : "work") : undefined}
         >
-          <WorkingStack entries={entries} faces={faces} />
-          {/* The phrase turns: the old one leaves upward, the new one comes from below. Names in ink. */}
-          <span className="ac-typing__text" title={consultTip}>
-            {step !== null && lead ? <BarStep name={lead.name} step={step} /> : <BarPhrase entries={entries} />}
+          {/* What it says, wrapping whole pieces when short of room; its globe and "Ver" end the line, never wrapped
+              away alone. */}
+          <span className="working-tail__words">
+            <WorkingStack entries={entries} faces={faces} />
+            {/* The phrase turns: the old one leaves upward, the new one comes from below. Names in ink. */}
+            <span className="ac-typing__text" title={consultTip}>
+              {step !== null && lead ? <BarStep name={lead.name} step={step} /> : <BarPhrase entries={entries} />}
+            </span>
+            {/* Its time and its stop right after its words; who types beside it after them. */}
+            {solo && step !== null && <RunTail run={solo} />}
+            <ConsultClock entries={entries} now={now} />
+            {consultTime && <span className="ac-typing__elapsed ac-num">{consultTime}</span>}
+            {step !== null && <BarAlsoTyping entries={entries} />}
           </span>
-          {/* Its time and its stop right after its words; who types beside it after them. */}
-          {solo && step !== null && <RunTail run={solo} />}
-          <ConsultClock entries={entries} now={now} />
-          {consultTime && <span className="ac-typing__elapsed ac-num">{consultTime}</span>}
-          {step !== null && <BarAlsoTyping entries={entries} />}
           {openBrowser && (
             <Button
               size="sm"
