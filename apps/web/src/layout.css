@@ -731,14 +731,23 @@ html:not([data-pointer]) .consult-pair__row:focus-visible {
   height: 28px;
 }
 /* A workspace logo, whole, in the agent's shape (the cut corner). It may arrive uncropped (a wordmark), so it is
-   contained, not covered. The plate is white in both themes: logos are drawn for a light page, and a transparent one
-   with dark ink would vanish on dark. A square opaque logo hides the plate. */
+   contained, not covered. Its plate shows only where the surface would hide the ink (`logoPlate`,
+   @agenteschat/ui/org-logo, same colors): white behind dark ink on dark, dark behind light ink on light. A square
+   opaque logo hides the plate. */
 .org-mark {
   display: block;
   flex: none;
   object-fit: contain;
-  background: #fff;
   border-radius: 30% 30% 30% 9%;
+}
+.org-mark[data-ink="light"] {
+  background: #1c1c1b;
+}
+[data-theme="dark"] .org-mark {
+  background: #ffffff;
+}
+[data-theme="dark"] .org-mark[data-ink="light"] {
+  background: none;
 }
 .sidebar__org-text {
   display: flex;

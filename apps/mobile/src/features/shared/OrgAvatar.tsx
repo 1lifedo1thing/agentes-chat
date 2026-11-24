@@ -1,3 +1,4 @@
+import { logoPlate } from "@agenteschat/ui/org-logo";
 import { workspaceSky } from "@agenteschat/ui/sky/accent";
 import { Image } from "expo-image";
 import { useMemo } from "react";
@@ -5,12 +6,13 @@ import { appHeaders, lastCookie } from "@/lib/auth";
 import { photoSource } from "@/lib/photo";
 import { placeKey } from "@/lib/server";
 import { serverOf } from "@/lib/server-choice";
-import { LogoMark } from "@/ui";
+import { LogoMark, useTheme } from "@/ui";
 
 /**
  * A workspace's face, as the web's `OrgMark`: its whole logo (a wordmark arrives uncropped) in the agent's shape
- * (rounded, the bottom-left corner cut closer), else the agent mark. The logo is cached in memory and on disk (its address changes with its content) and
- * drawn with no fade, as the bars and lists show it again and again.
+ * (rounded, the bottom-left corner cut closer), on a plate where the surface would hide its ink (`logoPlate`), else the
+ * agent mark. The logo is cached in memory and on disk (its address changes with its content) and drawn with no fade,
+ * as the bars and lists show it again and again.
  */
 export function OrgAvatar({
   logo,
@@ -25,6 +27,7 @@ export function OrgAvatar({
   /** The place the logo is read from (another server or account signed in to, in Workspaces); the current one by default. */
   server?: string;
 }) {
+  const { scheme } = useTheme();
   // Stable per logo, so the image isn't fetched again on every render.
   const source = useMemo(() => {
     const on = server ?? placeKey();
@@ -42,8 +45,7 @@ export function OrgAvatar({
       style={{
         width: size,
         height: size,
-        // White in both themes, as the web's `.org-mark`: a transparent logo with dark ink stays legible on dark.
-        backgroundColor: "#fff",
+        backgroundColor: logoPlate(logo, scheme === "dark") ?? "transparent",
         borderTopLeftRadius: round,
         borderTopRightRadius: round,
         borderBottomRightRadius: round,
