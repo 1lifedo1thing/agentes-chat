@@ -262,20 +262,13 @@ test("parser: partial deltas, our tool calls with results, usage, and the final 
 test("parser: usage.model uses the model that answered this turn, not a stale key from resumed modelUsage or a subagent", () => {
   const p = new ClaudeStreamParser();
   p.beginTurn();
-  // Main turn streams and answers with opus, while a subagent uses haiku and resumed modelUsage still lists fable first.
+  // Main turn streams and answers with opus, while resumed modelUsage still lists fable first.
   p.push(
     line({
       type: "stream_event",
       session_id: SESSION(1),
       parent_tool_use_id: null,
       event: { type: "message_start", message: { id: "msg_1", model: "claude-opus-5-5" } },
-    }),
-  );
-  p.push(
-    line({
-      type: "assistant",
-      parent_tool_use_id: "toolu_sub",
-      message: { id: "msg_sub", model: "claude-haiku-5-5", content: [{ type: "text", text: "sub" }] },
     }),
   );
   p.push(
@@ -292,6 +285,21 @@ test("parser: usage.model uses the model that answered this turn, not a stale ke
       parent_tool_use_id: null,
       error: "rate_limit",
       message: { id: "msg_err", model: "<synthetic>", content: [{ type: "text", text: "limit" }] },
+    }),
+  );
+  // A subagent on haiku speaks last, streamed and whole: still not the turn's model.
+  p.push(
+    line({
+      type: "stream_event",
+      parent_tool_use_id: "toolu_sub",
+      event: { type: "message_start", message: { id: "msg_sub", model: "claude-haiku-5-5" } },
+    }),
+  );
+  p.push(
+    line({
+      type: "assistant",
+      parent_tool_use_id: "toolu_sub",
+      message: { id: "msg_sub", model: "claude-haiku-5-5", content: [{ type: "text", text: "sub" }] },
     }),
   );
   const end = p.push(
