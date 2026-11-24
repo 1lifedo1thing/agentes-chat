@@ -1096,14 +1096,21 @@ async function closeConsultation(
   row: AgentConsultationRow,
   status: "answered" | "expired" | "failed",
   answer: string | null,
-  options: { told?: boolean } = {},
+  options: { told?: boolean; owedBy?: string } = {},
 ) {
   const now = new Date();
   const out = await deps.db.transaction(async (tx) => {
     const [closed] = await tx
       .update(agentConsultations)
       .set({ status, answer, answeredAt: now, ...(options.told ? { reportedAt: now } : {}) })
-      .where(and(eq(agentConsultations.id, row.id), eq(agentConsultations.status, "open")))
+      .where(
+        and(
+          eq(agentConsultations.id, row.id),
+          eq(agentConsultations.status, "open"),
+          // Still that run's to answer: a run that took it meanwhile (`goOnBetween`, `handOn`) answers it instead.
+          options.owedBy ? eq(agentConsultations.targetRunId, options.owedBy) : undefined,
+        ),
+      )
       .returning();
     if (!closed) return null;
     // Locked until this commits: a run that asked from an agents' DM neither ends nor reads its inbox in between, so
@@ -1472,6 +1479,7 @@ async function settleOwed(
         row,
         "failed",
         cutText([why, row.answer].filter(Boolean).join("\n\n"), ANSWER_MAX),
+        { owedBy: run.id },
       );
       if (c) closed.push(c);
     }
@@ -1484,7 +1492,7 @@ async function settleOwed(
   for (const row of rows) {
     const text = cutText([reply, row.answer].filter(Boolean).join("\n\n"), ANSWER_MAX) || null;
     if (!text) {
-      const c = await closeConsultation(deps, row, "failed", "no reply");
+      const c = await closeConsultation(deps, row, "failed", "no reply", { owedBy: run.id });
       if (c) closed.push(c);
       continue;
     }
@@ -1501,7 +1509,7 @@ async function settleOwed(
         note: row.question,
         reply,
       }).catch(() => true));
-    const c = await closeConsultation(deps, row, "answered", text, { told });
+    const c = await closeConsultation(deps, row, "answered", text, { told, owedBy: run.id });
     if (c) closed.push(c);
   }
   return closed;
