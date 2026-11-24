@@ -1,5 +1,5 @@
 import { type Message, useApi } from "@agenteschat/client";
-import { type ConsultNoticeFold, pairItemOf } from "@agenteschat/client/lib/consult-group";
+import { type ConsultNoticeFold, handOffOf, pairItemOf } from "@agenteschat/client/lib/consult-group";
 import { agentsByAnyHandle } from "@agenteschat/client/lib/directory";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { consultationOfNotice, noticeOf, stoppedNoticeOf } from "@agenteschat/client/lib/notices";
@@ -57,6 +57,21 @@ export const EventLine = memo(function EventLine({
           channelId={message.channelId}
           items={[fold.consultation]}
           alone
+        />
+      </View>
+    );
+  // Another agent's request in this agent's DM: its quote on its own, opening the exchange.
+  const handed = handOffOf(message.meta);
+  if (handed)
+    return (
+      <View style={[plateInset(look, inset), { marginTop: gap }]}>
+        <ConsultQuote
+          askerId={handed.askerId}
+          channelId={message.channelId}
+          items={[handed.item]}
+          alone
+          handed
+          askedIn={handed.askedIn}
         />
       </View>
     );

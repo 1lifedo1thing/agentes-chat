@@ -19008,7 +19008,10 @@
       "noAnswer": "non ha risposto",
       "notFinished": "non ha finito",
       "someAnswered": "{{done}} su {{total}} hanno risposto",
-      "labelMany": "Conversazioni di {{from}} con {{to}}"
+      "labelMany": "Conversazioni di {{from}} con {{to}}",
+      "askedHere": "ha chiesto a",
+      "forYou": "per te",
+      "askedIn": "in {{channel}}"
     },
     "consultPanel": {
       "label": "Conversazione tra {{from}} e {{to}}",
@@ -19037,6 +19040,7 @@
       "consultReplyAnon": "Un altro agente ha risposto",
       "agentNote": "Nota di {{from}}",
       "agentNoteAnon": "Nota di un altro agente",
+      "handOff": "{{from}} ha fatto una richiesta a {{to}}",
       "waitResult": "È arrivato ciò che {{name}} aspettava",
       "other": "Avviso per {{name}}",
       "wakeSkipped": "La menzione di {{name}} non ha raggiunto {{agents}}",
