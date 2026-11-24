@@ -20,9 +20,8 @@ import type { TypingKind } from "./typing";
  * - reconnects with exponential backoff and full jitter (`lib/backoff.ts`), starting over only after a connection
  *   stayed up `RECONNECT_HEALTHY_MS` (a server that takes the socket and drops it at once doesn't get a dial every
  *   second); waits at least what a close reason's `retry-after=` asks; keeps one socket at a time; in a hidden tab
- *   (`hidden`) waits from the longest step until the tab shows again (`checkAlive`);
- * - tells listeners so they catch up over HTTP (real-time is best effort, the database is the source of truth),
- *   except after a drop shorter than `QUIET_GAP_MS` the server didn't say missed anything;
+ *   (`hidden`) waits from the longest step; shown again or back online (`checkAlive`), dials within the first step;
+ * - tells listeners so they catch up over HTTP (real-time is best effort, the database is the source of truth);
  * - pings to keep the connection alive through proxies, and drops a socket whose pong doesn't come back
  *   (`pongTimeoutMs`): after a network change or a sleep the browser can keep a dead socket "open" for
  *   minutes while HTTP still works, so messages send and nothing arrives live;
@@ -99,11 +98,6 @@ const defaultTimers: Timers = {
 
 /** Waits before asking again for a channel the server dropped or refused on a live socket. */
 export const BACKOFF_MS = [500, 1000, 2000, 5000, 10_000];
-/**
- * A socket back within this long, closed without the server saying it missed events, skips the catch-up: the
- * channels on screen read again anyway when the server confirms them (`onSubscribed`).
- */
-export const QUIET_GAP_MS = 3000;
 /** The longest a catch-up waits, at random: a whole server's apps reconnecting at once don't all read at once. */
 export const CATCH_UP_SPREAD_MS = 5000;
 /** A socket back within this long missed little: what is on screen reads again, the rest of what is cached stays. */
@@ -234,8 +228,8 @@ export class RealtimeConnection {
   });
   private attempt = 0;
   private retryTimer: unknown = null;
-  /** The pending retry was timed for a hidden tab (from the longest step): showing the tab times it again. */
-  private retryHidden = false;
+  /** When the pending retry dials. */
+  private retryAt = 0;
   /** When the server's close asked to wait until (`retry-after=`); 0 for no ask. */
   private retryAfterUntil = 0;
   /** When the current socket opened (null: none open). */
@@ -274,8 +268,6 @@ export class RealtimeConnection {
       browserFrameSockets?: boolean;
       /** The longest a catch-up waits (`onCatchUp`); default `CATCH_UP_SPREAD_MS`. */
       catchUpSpreadMs?: number;
-      /** A drop shorter than this, without a missed-events signal, skips the catch-up; default `QUIET_GAP_MS`. */
-      quietGapMs?: number;
       now?: () => number;
       random?: () => number;
     },
@@ -615,11 +607,10 @@ export class RealtimeConnection {
    * call it too when the page may have slept or changed networks (visible again, back online).
    */
   checkAlive() {
-    if (this.retryHidden && this.retryTimer !== null && !this.options.hidden?.()) {
-      // Shown again while waiting out a hidden tab's long step: timed again as a visible tab's.
-      this.timers.clearTimeout(this.retryTimer);
-      this.retryTimer = null;
-      this.scheduleReconnect(false);
+    if (this.retryTimer !== null) {
+      // Shown again or back online while waiting to dial: this device's own moment, not a restart's wave, so the dial
+      // comes within the first step if that's sooner (a server's retry-after still holds).
+      if (!this.options.hidden?.()) this.scheduleReconnect(false);
       return;
     }
     if (!this.isOpen || this.pongTimer !== null) return;
@@ -675,9 +666,7 @@ export class RealtimeConnection {
     socket.onopen = () => {
       const reconnected = this.everOpened;
       const now = this.now();
-      const gap = now - (this.downSince ?? now);
-      const missed = this.missedOnClose;
-      const full = missed || gap >= BRIEF_GAP_MS;
+      const full = this.missedOnClose || now - (this.downSince ?? now) >= BRIEF_GAP_MS;
       this.everOpened = true;
       this.openedAt = now;
       this.downSince = null;
@@ -690,7 +679,7 @@ export class RealtimeConnection {
       this.browserWatches.resumeAll();
       this.startPing();
       if (reconnected) {
-        if (missed || gap >= (this.options.quietGapMs ?? QUIET_GAP_MS)) this.queueCatchUp(full);
+        this.queueCatchUp(full);
         for (const l of this.reconnectListeners) l();
       }
     };
@@ -852,9 +841,9 @@ export class RealtimeConnection {
     if (this.socket && this.socket.readyState === OPEN) this.socket.send(JSON.stringify(frame));
   }
 
-  /** `next`: a new attempt (false: the pending one timed again, after the tab showed). */
+  /** `next`: a new attempt (false: the pending one brought forward to the first step, if that's sooner). */
   private scheduleReconnect(next = true) {
-    const attempt = next ? this.attempt++ : Math.max(0, this.attempt - 1);
+    const attempt = next ? this.attempt++ : 0;
     const hidden = this.options.hidden?.() === true;
     const steps = this.options.backoffMs;
     const step = steps?.length
@@ -863,11 +852,14 @@ export class RealtimeConnection {
     const random = this.options.random ?? Math.random;
     const retryAfter = this.retryAfterUntil - this.now();
     const delay = retryAfter > 0 ? waitAfterRetryHint(retryAfter, step, random) : reconnectDelay(attempt, random, step);
-    this.retryHidden = hidden;
+    if (!next) {
+      if (this.retryTimer === null || this.now() + delay >= this.retryAt) return;
+      this.timers.clearTimeout(this.retryTimer);
+    }
+    this.retryAt = this.now() + delay;
     this.setStatus("reconnecting");
     this.retryTimer = this.timers.setTimeout(() => {
       this.retryTimer = null;
-      this.retryHidden = false;
       if (!this.stopped) this.open();
     }, delay);
   }
@@ -880,7 +872,6 @@ export class RealtimeConnection {
 
   private clearTimers() {
     if (this.retryTimer !== null) this.timers.clearTimeout(this.retryTimer);
-    this.retryHidden = false;
     if (this.pingTimer !== null) this.timers.clearInterval(this.pingTimer);
     if (this.pongTimer !== null) this.timers.clearTimeout(this.pongTimer);
     this.retryTimer = null;

@@ -11,7 +11,6 @@ import {
   expectReply,
   MISSED_MESSAGE_GRACE_MS,
   parseServerFrame,
-  QUIET_GAP_MS,
   RealtimeConnection,
   realtimeUrl,
   replyingUnder,
@@ -656,14 +655,51 @@ describe("RealtimeConnection", () => {
     hidden = false;
     conn.checkAlive();
     expect(clock.pending.map((p) => p.ms)).toEqual([500]);
-    // A visible tab's wait isn't cut short by showing it.
+    // Never pushed later by showing it again.
     conn.checkAlive();
     expect(clock.pending.map((p) => p.ms)).toEqual([500]);
     clock.runNext();
     expect(sockets).toHaveLength(2);
   });
 
-  test("catches up at a random point within a few seconds: everything after a long drop, what is shown after a short one, nothing after a blip", () => {
+  test("back online or shown while a long wait is pending: dials within the first step, a server's retry-after holds", () => {
+    const { factory, sockets } = fakeSockets();
+    const clock = manualTimers();
+    let now = 1_000_000;
+    const conn = new RealtimeConnection({
+      url: "ws://x",
+      createSocket: factory,
+      timers: clock.timers,
+      pingMs: 0,
+      now: () => now,
+      random: () => 0.5,
+    });
+    const waits = () => clock.pending.map((p) => p.ms);
+    conn.start();
+    // Offline for a while: every dial fails at once and the waits climb.
+    for (let i = 0; i < 6; i++) {
+      sockets.at(-1)?.drop();
+      clock.runNext();
+    }
+    sockets.at(-1)?.drop();
+    expect(waits()).toEqual([30_000]);
+    conn.checkAlive();
+    expect(waits()).toEqual([500]);
+    // That dial fails too: the waits go on climbing from where they were.
+    clock.runNext();
+    sockets.at(-1)?.drop();
+    expect(waits()).toEqual([30_000]);
+    // A server that asked for a pause still gets it.
+    clock.runNext();
+    sockets.at(-1)?.open();
+    sockets.at(-1)?.drop(1011, "try again; retry-after=5");
+    expect(waits()).toEqual([35_000]);
+    now += 1000;
+    conn.checkAlive();
+    expect(waits()).toEqual([6000]);
+  });
+
+  test("catches up at a random point within a few seconds: everything after a long drop, what is shown after a brief one", () => {
     const { factory, sockets } = fakeSockets();
     const clock = manualTimers();
     let now = 1_000_000;
@@ -687,12 +723,9 @@ describe("RealtimeConnection", () => {
       clock.runNext();
       sockets.at(-1)?.open();
     };
-    // Back within a second from a network blip: the channels on screen catch up on `subscribed`, nothing more.
+    // Back within a second (a network blip, or another server taking over a stopped one's tabs): events in the gap
+    // are lost all the same, so what is on screen reads again, at half of the spread.
     reconnect(undefined, 1000);
-    expect(clock.pending).toEqual([]);
-    expect(caughtUp).toEqual([]);
-    // A few seconds: only what is on screen, at half of the spread.
-    reconnect(undefined, QUIET_GAP_MS);
     expect(clock.pending.map((p) => p.ms)).toEqual([CATCH_UP_SPREAD_MS / 2]);
     clock.runNext();
     expect(caughtUp).toEqual([false]);

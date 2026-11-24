@@ -456,9 +456,9 @@ export function RealtimeProvider({
       // A background tab's lost socket comes back slowly (`checkAlive` on showing times it again): the old tabs a
       // restart dropped don't all dial at once, and they still get their notifications within a minute.
       hidden: () => document.visibilityState === "hidden",
-      // Spread out in a browser; in React's act() environment (tests), like the frames, at once: every catch-up, and
+      // Spread out in a browser; in React's act() environment (tests), like the frames, at once: catch-ups, and
       // reconnects within half a second.
-      ...(batchFrames() ? {} : { catchUpSpreadMs: 0, quietGapMs: 0, backoffMs: [500] }),
+      ...(batchFrames() ? {} : { catchUpSpreadMs: 0, backoffMs: [500] }),
     });
     // A reconnect is often a deploy: is this tab still on the app the server serves?
     const offReconnect = conn.onReconnect(() => void checkAppVersion());
@@ -592,7 +592,7 @@ export function RealtimeProvider({
     conn.start();
     setConnection(conn);
     // Back from a sleep or a network change, the socket may be dead while it still says open: check it now (and a
-    // reconnect waiting out a hidden tab's long step is timed again).
+    // reconnect still waiting dials within the first step).
     const wake = () => {
       if (document.visibilityState === "visible") conn.checkAlive();
     };
