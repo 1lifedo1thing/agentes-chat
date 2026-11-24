@@ -148,7 +148,7 @@ export interface HtmlLayoutInput {
   fonts?: { byFamily: ReadonlyMap<string, string>; bytes: ReadonlyMap<string, Uint8Array> };
 }
 
-/** Lays markup out for a slide: the box (the whole slide when none), the deck's body font, size and color as the root's. */
+/** Lays markup out for a slide: the box (the whole slide when none), the deck's body font and color as the root's. */
 export function slideHtmlLayout(
   doc: Y.Doc,
   parsed: ParsedHtml,
@@ -162,7 +162,8 @@ export function slideHtmlLayout(
   const layout = layoutHtml(parsed, {
     width: area.w,
     ...(box ? { height: box.h } : { height: deck.h }),
-    base: { font: roles.body, size: theme.sizes.body, color: theme.colors.text },
+    // A browser's 16px for text the markup gives no size (it is laid out as a 1920-wide page), the deck's font and color.
+    base: { font: roles.body, size: 16, color: theme.colors.text },
     fontNamed: fontResolver(input.fonts?.byFamily ?? new Map()),
     measurer: new TextMeasurer(input.fonts?.bytes),
     pictures: input.pictures.sizes,
