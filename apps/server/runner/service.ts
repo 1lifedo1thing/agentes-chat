@@ -66,7 +66,8 @@ export const allAgentsLimitsPath = (unitPath = SYSTEM_UNIT_PATH) =>
   path.join(path.dirname(unitPath), "agents.slice.d", "limits.conf");
 /**
  * The runner ahead of the agents when they saturate the computer, so its heartbeats, admissions and cancels keep
- * their pace: 1000 against `agents.slice`'s 50 for CPU and IO, and memory the kernel doesn't take back from it. No
+ * their pace. Weights compare siblings only: `agents.slice` at 50 against `system.slice`'s default 100, the runner at
+ * 1000 within `system.slice`, for CPU and IO; and memory the kernel doesn't take back from it. No
  * `Nice`, `IOSchedulingClass` or `OOMScoreAdjust`: the agents' scopes start from the runner's process context
  * (`systemd-run --scope`) and would inherit them, and a negative OOM score would make their Chrome unkillable.
  * `IOWeight` counts only where the disk's scheduler weighs (BFQ, io.cost).
