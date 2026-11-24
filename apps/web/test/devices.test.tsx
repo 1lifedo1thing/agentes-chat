@@ -196,6 +196,29 @@ describe("Settings › Devices", () => {
     expect(screen().getByRole("combobox", { name: "Tasks at once" })).toBeTruthy();
   });
 
+  test("a computer whose tasks start on room: Automatic with what fits, why it's full, and its owner's Push harder", async () => {
+    const room = { more: 0, freeGb: 1.4, cpuBusy: false, pushHarder: false };
+    const { state } = await open(`/org/${ORG_ID}/settings/devices/${MAC}`, (devices) => {
+      const list = acmeDevices();
+      devices.set({
+        ...list,
+        devices: list.devices.map((d) =>
+          d.id === MAC ? { ...d, status: { kind: "busy", running: 9, max: null }, taskRoom: room } : d,
+        ),
+      });
+    });
+    expect(screen().getByText("Busy · 9 running")).toBeTruthy();
+    expect(
+      screen().getByText(
+        "No room for another task right now: 1.4 GB of memory free. The next one starts when one ends.",
+      ),
+    ).toBeTruthy();
+    expect(screen().getByText("Automatic · 9 running · full for now")).toBeTruthy();
+    expect(screen().queryByRole("combobox", { name: "Tasks at once" })).toBeNull();
+    await click(screen().getByRole("switch", { name: "Push harder" }));
+    expect(calls(state, "devices.updateComputer")[0]?.args.slice(1)).toEqual([MAC, { pushHarder: true }]);
+  });
+
   test("a computer's phones: each state a pill alone, its detail in its tip; one that needs me opens its fix", async () => {
     await open(`/org/${ORG_ID}/settings/devices/${MAC}`);
     const list = screen().getByRole("list", { name: "Phones on this computer" });

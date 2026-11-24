@@ -4932,6 +4932,19 @@ export function useMemoryAction(orgId: string, agentId: string) {
   });
 }
 
+/** "Forget all" on the right hand's Memory tab: its lists read again once the server forgot. */
+export function useForgetRightHandLearned(orgId: string, agentId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.memory.forgetRightHandLearned(orgId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.memory(orgId, agentId) });
+      void qc.invalidateQueries({ queryKey: keys.orgMemories(orgId) });
+    },
+  });
+}
+
 /** Memória do time (ADR 0167). */
 export const useTeamMemories = (orgId: string) => {
   const api = useApi();

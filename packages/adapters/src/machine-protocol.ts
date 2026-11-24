@@ -290,8 +290,10 @@ export interface MachineSize {
   memoryGb: number;
   diskGb: number;
   limit?: { cpus: number; memoryGb: number };
-  /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once. */
+  /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once (where memory isn't read: `room` decides else). */
   maxTasks?: number;
+  /** `TASK_ROOM_PROTOCOL`: tasks start on room here. */
+  room?: TaskRoomReport;
 }
 
 /**
@@ -2098,6 +2100,8 @@ export interface TaskStart {
    * that doesn't read it runs the plan's `sonnet`).
    */
   model?: string;
+  /** `TASK_ROOM_PROTOCOL`: a person asked, in their own message, to push this computer harder for this work. */
+  pushHarder?: boolean;
 }
 
 /** The coding CLIs `hello.executors` reports. */
@@ -2494,6 +2498,30 @@ export const TASK_LIMIT_PROTOCOL = 75;
  * app's version. An older runner runs whatever `agy` the person installed.
  */
 export const AGY_COPY_PROTOCOL = 76;
+
+/**
+ * Protocol 78: where the runner reads free memory, background tasks start on room, not on a count (`TaskRoomReport`
+ * in `hello.size.room` and `runner.state.room`), and `limits.set` `pushHarder` lowers the floor it keeps for the
+ * person's own apps; `task.start` `pushHarder` does that for one task, when a person asked in their own words.
+ * An older runner keeps its count and is never sent either.
+ */
+export const TASK_ROOM_PROTOCOL = 78;
+
+/** About how many more background tasks fit on the computer now, and what decides it. */
+export interface TaskRoomReport {
+  more: number;
+  /** Free memory now, in GB with one decimal. */
+  freeGb: number;
+  /** The processor has stayed over 90% busy for the last minute. */
+  cpuBusy: boolean;
+  /** The owner's Push harder switch. */
+  pushHarder: boolean;
+}
+
+export function parseTaskRoom(v: unknown): TaskRoomReport | null {
+  if (!isObject(v) || !inRange(v.more, [0, 1024]) || !between(v.freeGb, 0, 1 << 16)) return null;
+  return { more: v.more, freeGb: v.freeGb, cpuBusy: v.cpuBusy === true, pushHarder: v.pushHarder === true };
+}
 /** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
 export const TASK_LIMIT_BOUNDS = [1, 20] as const;
 
@@ -3001,7 +3029,7 @@ export type MachineRequest = (
   /** `REMOTE_PAUSE_PROTOCOL`: pause (until `until`, null: until resumed) or resume, for the person `by`. */
   | { op: "pause.set"; paused: boolean; until?: string | null; by: string }
   /** `TASK_LIMIT_PROTOCOL`: the background tasks it runs at once, from now on (stored in its config). */
-  | { op: "limits.set"; maxTasks: number }
+  | { op: "limits.set"; maxTasks?: number; pushHarder?: boolean }
   /**
    * A phone guide is open and waits for a phone: for the next minute, a Windows runner also looks for a plugged phone
    * Windows has no USB driver for (adb never lists one) and reports it as `no_driver`. From `IPHONE_DEV_MODE_PROTOCOL`
@@ -3281,7 +3309,7 @@ export interface MachineReplies {
   "phone.pair.status": PhonePairing;
   "phone.pair.cancel": { canceled: boolean };
   "pause.set": { paused: RunnerPause };
-  "limits.set": { maxTasks: number };
+  "limits.set": { maxTasks: number; room?: TaskRoomReport };
   "phone.look": { looking: boolean };
   "phone.wifi": { available: WifiIphone[] };
   "keep.start": { held: true };
@@ -3485,6 +3513,8 @@ export type RunnerFrame =
       paused: RunnerPause;
       /** `TASK_LIMIT_PROTOCOL`: the tasks it runs at once, sent when that changed on the computer. */
       maxTasks?: number;
+      /** `TASK_ROOM_PROTOCOL`: the room for tasks, sent when it changed. */
+      room?: TaskRoomReport;
     }
   /** Protocol 10: what the machine allows changed (the person granted, removed, or turned a tool on or off). */
   | { type: "access.changed"; access: RunnerAccess }
@@ -4144,7 +4174,13 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
     case "runner.state": {
       const paused = parsePause(f.paused);
       if (!paused) return null;
-      return { type: "runner.state", paused, ...(taskLimit(f.maxTasks) ? { maxTasks: f.maxTasks } : {}) };
+      const room = parseTaskRoom(f.room);
+      return {
+        type: "runner.state",
+        paused,
+        ...(taskLimit(f.maxTasks) ? { maxTasks: f.maxTasks } : {}),
+        ...(room ? { room } : {}),
+      };
     }
     case "access.changed": {
       const access = parseAccess(f.access);
@@ -4811,12 +4847,14 @@ export function parseMachineSize(v: unknown): MachineSize | null {
     isObject(l) && inRange(l.cpus, [1, v.cpus]) && between(l.memoryGb, 0, v.memoryGb)
       ? { limit: { cpus: l.cpus, memoryGb: l.memoryGb } }
       : {};
+  const room = parseTaskRoom(v.room);
   return {
     cpus: v.cpus,
     memoryGb: v.memoryGb,
     diskGb: v.diskGb,
     ...limit,
     ...(taskLimit(v.maxTasks) ? { maxTasks: v.maxTasks } : {}),
+    ...(room ? { room } : {}),
   };
 }
 
