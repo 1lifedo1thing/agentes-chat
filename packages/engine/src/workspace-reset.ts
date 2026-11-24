@@ -29,15 +29,16 @@ export const ORG_RESET_JOB = "org.reset";
 const KEPT_COLUMNS = { ...STANDING_COLUMNS, deletionHoldAt: organizations.deletionHoldAt };
 
 /**
- * Tenant tables a reset leaves as they are: the workspace's settings, its people and how they join, their own
- * settings there, AI accounts, computers, connectors, the Vault (people's own logins among them) and storage, usage
- * and the audit. `blobs` is a storage: the
+ * Tenant tables a reset leaves as they are: the workspace's settings, its people and how they join (and the apps they
+ * have open), their own settings there, AI accounts, computers, connectors, the Vault (people's own logins among them)
+ * and storage, usage and the audit. `blobs` is a storage: the
  * erased files' bytes leave it through their store. `outbox` keeps only the jobs of `RESET_KEEPS_JOBS`.
  */
 export const RESET_KEEPS = [
   "organization_settings",
   "org_sandbox_settings",
   "organization_members",
+  "presence_connections",
   "organization_member_roles",
   "org_roles",
   "organization_invitations",
