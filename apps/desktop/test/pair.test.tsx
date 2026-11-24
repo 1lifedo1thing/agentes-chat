@@ -204,7 +204,9 @@ describe("pairing from the app", () => {
           body: { audience: { mode: "everyone", userIds: [], roleIds: [] } },
         },
       ]);
-      await until(() => rowOf(el, "Let the whole workspace use it")?.textContent?.includes("Everyone in Estúdio Norte"));
+      await until(() =>
+        rowOf(el, "Let the whole workspace use it")?.textContent?.includes("Everyone in Estúdio Norte"),
+      );
       const norte = () => pairedHomes(store.getSnapshot()).find((h) => h.status?.org?.id === "o-norte");
       await until(() => norte()?.access?.tools.browser === true);
       expect(norte()?.access?.tools).toMatchObject({ claude: true, codex: false, commands: false, browser: true });
