@@ -5326,10 +5326,11 @@ async function executeRunInner(
           later(() => addRunStep(db, run, "context", { spill: transcript.spill }));
         }
         // Its sign-in thinks for all it takes at once: a fresh run goes on with another shared sign-in of the same
-        // kind that has a free slot, before it waits.
+        // kind that has a free slot, before it waits. Only one under the pause line: never into someone's paid extra
+        // usage, nor onto a plan near its limit, to save a short wait.
         if (behind?.cause === "sign_in" && run.turns === 0 && !transcript.spill) {
           const full = await fullSignIns(db, run.orgId, deps.signInConcurrency ?? SIGN_IN_CONCURRENCY);
-          const next = await moveToNextAccount("busy", (_, id) => !full.has(id));
+          const next = await moveToNextAccount("busy", (usage, id) => !full.has(id) && underTheLine(usage));
           if (next?.plan) behind = await roomGate(db, run, askOn, place, slotOf(plan));
         }
         const slot = slotOf(plan);
