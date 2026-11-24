@@ -1,5 +1,5 @@
 import type { ErrorReporter, PubSub } from "@agenteschat/adapters";
-import { type Database, ensureMessagePartitions, schema } from "@agenteschat/db";
+import { type Database, ensureMessagePartitions } from "@agenteschat/db";
 import {
   type ArtifactDeps,
   type BrowserLive,
@@ -7,12 +7,11 @@ import {
   type ContextDeps,
   claimStuckPhoneSetups,
   clearOldOutboxPayloads,
-  consolidateRunAt,
   createOutboxPump,
   type DesktopControl,
-  enqueue,
   enqueueAccountContacts,
   enqueueAutonomyReport,
+  enqueueConsolidations,
   enqueueIdleReflections,
   enqueueOverdueAccountDeletions,
   enqueueOverdueDeletions,
@@ -173,7 +172,8 @@ export const WORKER_INTERVALS_MS = {
   approvals: 60_000,
   approvalDigest: 15 * 60_000,
   reflections: 10 * 60_000,
-  consolidation: 24 * 3600_000,
+  /** Each workspace's next daily consolidation, queued ahead at its own time of day (`enqueueConsolidations`). */
+  consolidation: 3600_000,
   /** Often enough that the routines of one minute fire as the ramp their offsets make (`fireDueRoutines`). */
   routines: 5_000,
   /** Snoozed notifications whose time came back to the inbox. */
@@ -535,20 +535,8 @@ export function startWorkers(deps: WorkerDeps) {
       const queued = await enqueueIdleReflections(context);
       if (queued > 0) log.info("idle threads queued for reflection", { queued });
     });
-    // One consolidation job per organization per day (dedupe key = org + date: replicas don't double it), spread
-    // over hours: they share the long lane with agent runs.
     every("consolidation", WORKER_INTERVALS_MS.consolidation, async () => {
-      const now = new Date();
-      const day = now.toISOString().slice(0, 10);
-      for (const org of await db.select({ id: schema.organizations.id }).from(schema.organizations)) {
-        await enqueue(db, {
-          orgId: org.id,
-          kind: "context.consolidate",
-          payload: {},
-          dedupeKey: `context.consolidate:${org.id}:${day}`,
-          runAt: consolidateRunAt(org.id, now),
-        });
-      }
+      await enqueueConsolidations(db);
     });
   }
 

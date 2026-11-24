@@ -74,6 +74,8 @@ export const outbox = pgTable(
       .on(t.dedupeKey.op("text_pattern_ops"))
       .where(sql`${t.kind} = 'agent_run.execute'`)
       .concurrently(),
+    // Emails by when they were queued: the daily sweeps of their words and codes, and the operator's list of them.
+    index("outbox_email_created_idx").on(t.createdAt).where(sql`${t.kind} = 'email.send'`).concurrently(),
   ],
 );
 

@@ -33,18 +33,33 @@ export interface EnqueueInput {
   maxAttempts?: number;
 }
 
+const rowOf = (input: EnqueueInput) => ({
+  orgId: input.orgId,
+  kind: input.kind,
+  payload: input.payload,
+  dedupeKey: input.dedupeKey,
+  nextAttemptAt: input.runAt ?? new Date(),
+  maxAttempts: input.maxAttempts ?? 8,
+});
+
 export async function enqueue(db: Executor, input: EnqueueInput): Promise<void> {
-  await db
-    .insert(outbox)
-    .values({
-      orgId: input.orgId,
-      kind: input.kind,
-      payload: input.payload,
-      dedupeKey: input.dedupeKey,
-      nextAttemptAt: input.runAt ?? new Date(),
-      maxAttempts: input.maxAttempts ?? 8,
-    })
-    .onConflictDoNothing();
+  await db.insert(outbox).values(rowOf(input)).onConflictDoNothing();
+}
+
+const ENQUEUE_BATCH = 500;
+
+/** `enqueue` for many jobs, `ENQUEUE_BATCH` a statement. Returns how many it queued: a key already taken isn't. */
+export async function enqueueBatch(db: Executor, inputs: EnqueueInput[]): Promise<number> {
+  let queued = 0;
+  for (let i = 0; i < inputs.length; i += ENQUEUE_BATCH) {
+    const rows = await db
+      .insert(outbox)
+      .values(inputs.slice(i, i + ENQUEUE_BATCH).map(rowOf))
+      .onConflictDoNothing()
+      .returning({ id: outbox.id });
+    queued += rows.length;
+  }
+  return queued;
 }
 
 /**
