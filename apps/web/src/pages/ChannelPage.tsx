@@ -208,6 +208,7 @@ import {
   Locked,
   Mention,
   Menu,
+  MenuCheckboxItem,
   MenuItem,
   MenuRadioGroup,
   MenuSeparator,
@@ -5440,6 +5441,18 @@ function ChannelDetails({
       <span className="member-group__count">{count}</span>
     </p>
   );
+  // How an agent answers my messages; the responsible agent's line says that first, alone when it answers on its own
+  // and something picks for me.
+  const agentLine = (r: (typeof all)[number]) => {
+    const line = !r.autoReply
+      ? t("channelMembers.mentionLine", { handle: r.handle })
+      : !picksForMe(routing)
+        ? t(replyAloneKey(routing), agentGrammar(r.name))
+        : t("channelMembers.aloneLine", agentGrammar(r.name));
+    if (r.id !== channel.leadAgentId) return line;
+    const lead = t("channelMembers.lead");
+    return r.autoReply && picksForMe(routing) ? lead : [lead, line].join(" · ");
+  };
   const membersList = (
     <DialogSearchList
       query={q}
@@ -5461,13 +5474,7 @@ function ChannelDetails({
           </OpensAgent>
           <span className="list-col">
             <span style={{ fontWeight: 600 }}>{r.name}</span>
-            <span className="small muted">
-              {!r.autoReply
-                ? t("channelMembers.mentionLine", { handle: r.handle })
-                : !picksForMe(routing)
-                  ? t(replyAloneKey(routing), agentGrammar(r.name))
-                  : t("channelMembers.aloneLine", agentGrammar(r.name))}
-            </span>
+            <span className="small muted">{agentLine(r)}</span>
           </span>
           {r.setsReply && (
             <Menu
@@ -5513,6 +5520,20 @@ function ChannelDetails({
               />
               {editable && (
                 <>
+                  <MenuSeparator />
+                  <MenuCheckboxItem
+                    checked={r.id === channel.leadAgentId}
+                    disabled={update.isPending}
+                    description={t("channelMembers.leadHelp")}
+                    onCheckedChange={(on) =>
+                      update.mutate(
+                        { leadAgentId: on ? r.id : null },
+                        { onError: (e) => toast.show(errorText(t, e), "error") },
+                      )
+                    }
+                  >
+                    {t("channelMembers.lead")}
+                  </MenuCheckboxItem>
                   <MenuSeparator />
                   <MenuItem icon="close" danger onSelect={() => setRemoving({ kind: "agent", id: r.id, name: r.name })}>
                     {t("channelMembers.remove")}
