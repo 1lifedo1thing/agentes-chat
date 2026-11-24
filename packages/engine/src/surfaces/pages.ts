@@ -52,6 +52,23 @@ export async function mintPageLink(
 }
 
 /**
+ * The confirm page of an approval the person decides now; null when it waits on someone else or was already decided,
+ * so its card opens the app instead of asking for a PIN that can't decide it.
+ */
+export async function confirmPageLink(
+  db: Database,
+  input: { orgId: string; linkId: string; userId: string; approvalId: string },
+): Promise<string | null> {
+  const decides = await getApproval(db, input.userId, input.orgId, input.approvalId).then(
+    (a) => a.canDecide && a.status === "pending",
+    () => false,
+  );
+  if (!decides) return null;
+  const { approvalId, ...rest } = input;
+  return mintPageLink(db, { ...rest, kind: "confirm", targetId: approvalId });
+}
+
+/**
  * The page behind `token`, live for this browser. Unopened, it opens now for the browser that gets the returned
  * `secret`, once and within `PAGE_FIRST_OPEN_MS`; opened, only `secret` reopens it, until its kind's time is up.
  * `firstOpen: false` refuses an unopened link: only the page's own first load opens it.

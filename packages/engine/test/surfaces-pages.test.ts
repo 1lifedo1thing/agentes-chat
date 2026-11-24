@@ -22,7 +22,7 @@ import {
   resetSurfacePin,
   setSurface,
 } from "../src";
-import { type Fixture, setup } from "./fixtures";
+import { addMember, type Fixture, setup } from "./fixtures";
 
 const { surfaceDeliveries, surfaceLinks, surfacePageLinks, approvals, agentRuns, outbox, organizationMembers } = schema;
 
@@ -63,7 +63,7 @@ async function dm() {
 }
 
 /** What a surface turn's delete asks: the person alone decides it (`approvers`), as the gateway writes it. */
-async function approval() {
+async function approval(approvers?: (typeof approvals.$inferInsert)["approvers"]) {
   const { lodi, channel } = await dm();
   const [row] = await f.db
     .insert(approvals)
@@ -79,7 +79,12 @@ async function approval() {
       actionHash: crypto.randomUUID(),
       title: "Delete the key OLD_KEY",
       detail: '{"key":"OLD_KEY"}',
-      approvers: { userIds: [f.owner.id], label: f.owner.name, requestedBy: f.owner.id, requesterDecides: true },
+      approvers: approvers ?? {
+        userIds: [f.owner.id],
+        label: f.owner.name,
+        requestedBy: f.owner.id,
+        requesterDecides: true,
+      },
       expiresAt: new Date(Date.now() + 3_600_000),
     })
     .returning();
@@ -268,7 +273,7 @@ test("the same sender linked again keeps the PIN; another sender of the account 
   expect((await f.db.select().from(surfaceLinks))[0]?.pinHash).toBeNull();
 });
 
-test("an approval's card in a surface reply opens its own page, not the app", async () => {
+async function surfaceTurn() {
   await linked();
   const { lodi, channel } = await dm();
   const ask = await insertMessage(f.db, {
@@ -293,6 +298,11 @@ test("an approval's card in a surface reply opens its own page, not the app", as
       status: "waiting_approval",
     })
     .returning();
+  return { lodi, channel, run };
+}
+
+test("an approval's card in a surface reply opens its own page, not the app", async () => {
+  const { lodi, channel, run } = await surfaceTurn();
   const asked = await approval();
   const card = await insertMessage(f.db, {
     orgId: f.org.id,
@@ -307,4 +317,28 @@ test("an approval's card in a surface reply opens its own page, not the app", as
   expect(listed?.card?.url).toMatch(/\/surface-page\?token=[\w-]{40,}$/);
   const [minted] = await f.db.select().from(surfacePageLinks);
   expect([minted?.kind, minted?.targetId]).toEqual(["confirm", asked.id]);
+});
+
+test("an approval someone else decides opens the app: a PIN there couldn't decide it", async () => {
+  const { lodi, channel, run } = await surfaceTurn();
+  const other = await addMember(f.db, f.org.id, "member", "Approver");
+  const asked = await approval({
+    userIds: [other.id],
+    label: "Approver",
+    requestedBy: f.owner.id,
+    requesterDecides: false,
+    required: true,
+  });
+  const card = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId: channel.id,
+    author: { type: "agent", agentId: lodi.id, runId: run?.id ?? "", hop: 1 },
+    body: "Approval request: Delete the key OLD_KEY",
+    meta: { approvalId: asked.id },
+  });
+  expect(await queueSurfaceDelivery(f.db, f.org.id, card.id)).toBe(true);
+  const [listed] = await listSurfaceDeliveries({ db: f.db }, 10);
+  expect(listed?.card?.kind).toBe("approval");
+  expect(listed?.card?.url).not.toContain("/surface-page");
+  expect(await f.db.select().from(surfacePageLinks)).toEqual([]);
 });

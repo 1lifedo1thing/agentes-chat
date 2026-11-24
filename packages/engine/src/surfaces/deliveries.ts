@@ -30,7 +30,7 @@ import { RIGHT_HAND } from "../right-hand";
 import { lodiFor, postFromLodi } from "../right-hand-proactive";
 import { surfaceOn } from "./config";
 import { activeLinkOf } from "./links";
-import { mintPageLink, prunePageLinks } from "./pages";
+import { confirmPageLink, prunePageLinks } from "./pages";
 
 /**
  * Replies of the right hand that go out on the outside chat surface (ADR 0187) instead of an in-app notification.
@@ -337,10 +337,10 @@ type StoredMessage = NonNullable<Awaited<ReturnType<typeof messageOf>>>;
 
 /**
  * A reply as the service sends it: its words, its files, its GIF or sticker, and where its card opens in the app. An
- * approval's card opens instead a page of its own, where the person decides it with their PIN (ADR 0226): minted
- * each time it is listed, so a delivery listed twice carries two links, each good for one browser.
+ * approval's card the person decides opens instead a page of its own, where they decide it with their PIN (ADR 0226):
+ * minted each time it is listed, so a delivery listed twice carries two links, each good for one browser.
  */
-async function contentOf(db: Executor, orgId: string, m: StoredMessage, link: { id: string; userId: string }) {
+async function contentOf(db: Database, orgId: string, m: StoredMessage, link: { id: string; userId: string }) {
   const { artifacts, artifactVersions, agentQuestions } = schema;
   const ids = fileIdsOf(m.meta);
   const attached = ids.length
@@ -397,15 +397,15 @@ async function contentOf(db: Executor, orgId: string, m: StoredMessage, link: { 
       ? {
           kind: cardKind,
           url:
-            cardKind === "approval" && typeof meta.approvalId === "string"
-              ? await mintPageLink(db, {
-                  orgId,
-                  linkId: link.id,
-                  userId: link.userId,
-                  kind: "confirm",
-                  targetId: meta.approvalId,
-                })
-              : messageLink(orgId, m),
+            (cardKind === "approval" &&
+              typeof meta.approvalId === "string" &&
+              (await confirmPageLink(db, {
+                orgId,
+                linkId: link.id,
+                userId: link.userId,
+                approvalId: meta.approvalId,
+              }))) ||
+            messageLink(orgId, m),
         }
       : null,
     choices: question?.choices?.length ? question.choices : null,
