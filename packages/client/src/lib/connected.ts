@@ -241,10 +241,10 @@ export function accountUnchecked(accounts: readonly (Pick<CustomServer, "account
 }
 
 /**
- * Connectors that connect for the team only: GitHub's git proxy, repository lists and webhooks read the workspace's
- * one GitHub connection (mirror of `requireConnect` in the engine).
+ * Connectors that connect for the team only (mirror of `requireConnect` in the engine): none now. GitHub as a
+ * person's own is their account in code sessions (ADR 0215), never the workspace's GitHub.
  */
-export const TEAM_ONLY_CONNECTORS: ReadonlySet<string> = new Set(["github"]);
+export const TEAM_ONLY_CONNECTORS: ReadonlySet<string> = new Set();
 
 /** Whether "Para quem: Pessoal" is offered for a catalog entry (any server by address may be personal). */
 export const personalAllowed = (connectorId: string | null | undefined) =>

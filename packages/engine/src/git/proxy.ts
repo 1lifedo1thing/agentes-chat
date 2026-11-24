@@ -15,6 +15,7 @@ import {
   BRANCH_PUSH_TOOL,
   branchBlock,
   branchFacts,
+  connectionToken,
   DELETE_BRANCHES_TOOL,
   githubHeaders,
   githubToken,
@@ -27,6 +28,7 @@ import { machineGitGen, verifyGitToken } from "./credential";
 import type { GitHubAppConfig } from "./github-app";
 import { appMissMessage } from "./github-call";
 import { parseReceivePackRequest, pkt, type RefCommand, readPack, walkToOld, ZERO_OID } from "./pack";
+import { personAccountOfPush } from "./person-account";
 import { agentRepositoryList, repoInList } from "./repos";
 
 const { machines, agents, connectorConnections } = schema;
@@ -297,7 +299,10 @@ async function proxyGit(
         isNull(connectorConnections.revokedAt),
       ),
     );
-  if (connection?.connector !== "github") return text(404, "agentes: GitHub is not connected in this organization");
+  // The workspace's GitHub: a person's own account is never a proxy's connection (`teamGitHub`).
+  if (connection?.connector !== "github" || connection.ownerUserId) {
+    return text(404, "agentes: GitHub is not connected in this organization");
+  }
   const keys = await freshGrantedKeys(deps.db, claims.orgId, claims.agentId);
   const { read: canRead, write: canWrite } = gitAccess(keys, connection.id);
   const repoName = `${parsed.owner}/${parsed.repo}`;
@@ -333,8 +338,8 @@ async function proxyGit(
   }
   const upstreamAuth = `Basic ${Buffer.from(`x-access-token:${bearer}`).toString("base64")}`;
   const target = `${upstream.gitUrl}/${parsed.owner}/${parsed.repo}.git/${parsed.action}${url.search}`;
-  const forward = (body?: Uint8Array) => {
-    const headers: Record<string, string> = { authorization: upstreamAuth, "user-agent": "git/agentes-proxy" };
+  const forward = (body?: Uint8Array, authorization = upstreamAuth) => {
+    const headers: Record<string, string> = { authorization, "user-agent": "git/agentes-proxy" };
     for (const h of ["content-type", "accept", "git-protocol"]) {
       const v = req.headers.get(h);
       if (v) headers[h] = v;
@@ -481,7 +486,22 @@ async function proxyGit(
     }).catch(() => undefined);
     return refusal(request.commands, reasons, told, request.capabilities);
   }
-  const res = await forward(body);
+  // A code session's branch, pushed while a person is behind its run, goes to GitHub as that person, by the account
+  // they connected as their own (ADR 0215 §5a). GitHub refusing their token (no access to this repository, a token
+  // that ended) sends it as the workspace, as every other push goes.
+  const person = await personAccountOfPush(deps.db, {
+    orgId: claims.orgId,
+    agentId: claims.agentId,
+    repo: repoName,
+    refs: request.commands.map((c) => c.ref),
+  }).catch(() => null);
+  const personToken = person ? await connectionToken(deps.connectors, person.connection).catch(() => null) : null;
+  let res = personToken
+    ? await forward(body, `Basic ${Buffer.from(`x-access-token:${personToken}`).toString("base64")}`)
+    : null;
+  const asPerson = res !== null && res.status !== 401 && res.status !== 403 && res.status !== 404;
+  if (res && !asPerson) await res.body?.cancel().catch(() => undefined);
+  if (!res || !asPerson) res = await forward(body);
   if (res.ok) {
     await recordAudit(deps.db, {
       orgId: claims.orgId,
@@ -490,6 +510,7 @@ async function proxyGit(
       target: { type: "git_repo", id: repoName },
       details: {
         connectionId: connection.id,
+        ...(asPerson && person ? { asPersonId: person.personId } : {}),
         ...where,
         refs: request.commands.map((c) => ({ ref: c.ref, from: c.oldOid, to: c.newOid })),
         commits,

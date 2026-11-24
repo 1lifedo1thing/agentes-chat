@@ -557,7 +557,11 @@ function DoneStep({
     <>
       <ConnectedNote
         name={name}
-        text={personal && summary && !waiting ? t("connectors.personal.done") : (summary?.text ?? null)}
+        text={
+          personal && summary && !waiting
+            ? t(def?.id === "github" ? "connectors.personal.githubDone" : "connectors.personal.done")
+            : (summary?.text ?? null)
+        }
       />
       {summary?.unreadable ? <Problem text={t("toolReview.unreadable", { reason: summary.unreadable })} /> : null}
       {failed ? <Problem key={failed} text={failed} /> : null}
@@ -735,7 +739,9 @@ function ConnectStep({
   const access = useGithubAccess(orgId, githubOrgs);
   const githubApp = useGitHubApp(orgId);
   const installer = useInstallGitHubAppHere();
-  const appOffered = def?.id === "github" && !viaComposio && !accountOnly && githubApp.data?.installable === true;
+  // The app is the workspace's GitHub: a person's own account is always a sign-in.
+  const appOffered =
+    def?.id === "github" && !viaComposio && !accountOnly && !theirs && githubApp.data?.installable === true;
   const [via, setVia] = useState<"app" | "account">("app");
   const how = def ? connectHow(def) : "either";
   // Reconectar: the headers the account has, by name. They stay unless new ones are typed or "Remover" drops them.

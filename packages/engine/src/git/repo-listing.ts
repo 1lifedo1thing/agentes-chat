@@ -1,5 +1,6 @@
 import type { Database } from "@agenteschat/db";
 import { activeConnections, type ConnectorDeps } from "../connectors/connections";
+import { teamGitHub } from "../connectors/own-github";
 import { NotFoundError } from "../errors";
 import { requirePermission } from "../organizations";
 import { connectionToken } from "./branches";
@@ -73,7 +74,7 @@ export async function listOrgRepositories(
 ): Promise<OrgRepositoryListing> {
   await requirePermission(deps.db, actorId, orgId, "read");
   const now = deps.now?.() ?? Date.now();
-  const connection = (await activeConnections(deps.db, orgId)).find((c) => c.connector === "github");
+  const connection = teamGitHub(await activeConnections(deps.db, orgId));
   const connectionId = connection?.id ?? null;
   const hit = cache.get(orgId);
   // A connection made, replaced or removed since shows at once (the app's events forget the listing themselves).
@@ -173,7 +174,7 @@ export interface GitHubOrgAccess {
  */
 export async function githubOrgAccess(deps: RepoListingDeps, actorId: string, orgId: string): Promise<GitHubOrgAccess> {
   await requirePermission(deps.db, actorId, orgId, "manage_connectors");
-  const connection = (await activeConnections(deps.db, orgId)).find((c) => c.connector === "github");
+  const connection = teamGitHub(await activeConnections(deps.db, orgId));
   if (!connection) throw new NotFoundError("GitHub isn't connected");
   // Read as a person comes back from granting one: its repositories show now, not when the listing expires.
   forgetOrgRepositories(orgId);

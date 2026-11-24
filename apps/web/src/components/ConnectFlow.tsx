@@ -343,8 +343,9 @@ function ConnectStep({
   const mine = personal ? { personal: true } : {};
   // The accounts this one joins or replaces: the person's own for a personal one, else the team's.
   const sameOwner = (owner: string | null | undefined) => (personal ? owner === me.user.id : !owner);
+  // The app is the workspace's GitHub: a person's own account is always a sign-in.
   const appOffered =
-    def?.id === "github" && !viaComposio && !mode && !accountOnly && githubApp.data?.installable === true;
+    def?.id === "github" && !viaComposio && !mode && !accountOnly && !personal && githubApp.data?.installable === true;
   const viaApp = appOffered && how === "app";
   // Read once its form opens: asking takes a request to the server.
   const own = useOwnOAuthClient(org.id, serverUrl, ownOffered && ownOpen);
@@ -639,7 +640,7 @@ function ConnectStep({
               : again && unchecked
                 ? t("connectFlow.newAccountUnchecked")
                 : personal
-                  ? t("connectors.personal.done")
+                  ? t(def?.id === "github" ? "connectors.personal.githubDone" : "connectors.personal.done")
                   : t("connectFlow.allCanUse")
         }
       >

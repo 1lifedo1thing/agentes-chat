@@ -13907,6 +13907,8 @@ export const en = {
       teamLocked: "Only people who manage connectors add the team's.",
       mailLocked: "A mailbox always belongs to whoever connects it.",
       done: "Your agents use it only when you ask.",
+      /** After connecting GitHub as your own: what the account is for (it gives agents no tools). */
+      githubDone: "In code sessions, the commits, pushes and pull requests for what you ask go out in your name.",
       worksWhenAsked: "Works only when you ask.",
       remove: "Remove",
       removeName: "Remove {{name}}",

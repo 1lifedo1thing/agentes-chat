@@ -21,6 +21,7 @@ import { NATIVE_SERVICES } from "./native/services";
 import { NativeError } from "./native/types";
 import { clientAuth, getOAuthClient, type McpOAuthDeps, probeMcpServer } from "./oauth-mcp";
 import { oauthReturnTo } from "./oauth-return";
+import { isOwnGitHub } from "./own-github";
 import {
   auditLabel,
   connectionFor,
@@ -380,7 +381,8 @@ async function storeConnection(
         },
       });
     }
-    if (!previous) await grantToEveryAgent(tx, input.orgId, input.actorId, row);
+    // A person's own GitHub account goes on no agent: it has no tools (`isOwnGitHub`).
+    if (!previous && !isOwnGitHub(row)) await grantToEveryAgent(tx, input.orgId, input.actorId, row);
     caches.connections.delete(`${input.orgId}:active`);
     caches.scopes.deletePrefix(`${input.orgId}:`);
     // Over GitHub through the app alone, an account is a first connection to people: never a "Reconectar".
@@ -401,13 +403,16 @@ export async function createApiKeyConnection(
   orgId: string,
   input: { connector: string; apiKey?: string; label?: string; personal?: boolean },
 ) {
-  await requireConnect(deps.db, actorId, orgId, input.personal === true, input.connector);
+  await requireConnect(deps.db, actorId, orgId, input.personal === true);
   const def = connectorDefinition(input.connector);
   const serverUrl = checkServerUrl(def.serverUrl);
   const apiKey = input.apiKey?.trim();
   if (apiKey !== undefined && apiKey.length < 8) throw new ValidationError("apiKey looks too short");
   const secret = apiKey ? { apiKey } : null;
-  const account = secret ? await nativeAccount(deps, input.connector, secret) : null;
+  const account = secret
+    ? ((await nativeAccount(deps, input.connector, secret)) ??
+      (input.personal ? await ownGitHubAccount(deps, input.connector, secret) : null))
+    : null;
   const { connection } = await storeConnection(deps, {
     orgId,
     actorId,
@@ -442,6 +447,35 @@ async function nativeAccount(deps: ConnectorDeps, connector: string, secret: Con
     }
     throw error;
   }
+}
+
+/**
+ * The GitHub account a person connected as their own (ADR 0215 §5a): its login and id, kept on the connection, are
+ * who their code sessions' commits are authored as (GitHub's no-reply address for the account). A token GitHub
+ * doesn't answer for is theirs to fix, so it fails the connect: without the account the connection would do nothing.
+ */
+async function ownGitHubAccount(deps: ConnectorDeps, connector: string, secret: ConnectionSecret) {
+  if (connector !== "github") return null;
+  const token = secret.accessToken ?? secret.apiKey;
+  const res = token
+    ? await (deps.http ?? fetch)("https://api.github.com/user", {
+        headers: {
+          authorization: `Bearer ${token}`,
+          accept: "application/vnd.github+json",
+          "user-agent": "agentes.chat",
+        },
+      }).catch(() => null)
+    : null;
+  const body = res?.ok ? ((await res.json().catch(() => null)) as { id?: unknown; login?: unknown } | null) : null;
+  const login = typeof body?.login === "string" && /^[A-Za-z0-9-]{1,39}$/.test(body.login) ? body.login : null;
+  const id = typeof body?.id === "number" && Number.isSafeInteger(body.id) && body.id > 0 ? String(body.id) : null;
+  if (!login || !id) {
+    throw new ValidationError(
+      "GitHub didn't say which account this is",
+      res && !res.ok ? "connector.key_refused" : "connector.busy",
+    );
+  }
+  return { label: login, id };
 }
 
 /** What a connector of our own sets up once stored (Telegram's webhook), its secret sealed again when it changed. */
@@ -635,7 +669,9 @@ export async function revokeConnection(
       .where(and(eq(connectorConnections.id, connectionId), activeOf(orgId)))
       .for("update");
     if (!current) throw new NotFoundError("Connection not found");
-    const accounts = current.connector === "github" ? await installationAccounts(tx, orgId) : [];
+    // The team's GitHub over the app stays as the app alone; a person's own account just goes.
+    const accounts =
+      current.connector === "github" && !current.ownerUserId ? await installationAccounts(tx, orgId) : [];
     if (accounts.length > 0 && current.authType !== GITHUB_APP_AUTH) {
       await tx
         .update(connectorConnections)
@@ -759,7 +795,7 @@ export async function syncGitHubAppConnection(
   const [current] = await tx
     .select()
     .from(connectorConnections)
-    .where(and(activeOf(orgId), eq(connectorConnections.connector, "github")))
+    .where(and(activeOf(orgId), eq(connectorConnections.connector, "github"), connectionsOf(null)))
     .for("update");
   const label = accounts.join(", ");
   if (current && current.authType !== GITHUB_APP_AUTH) return;
@@ -842,7 +878,7 @@ export async function startOAuth(
   options: { returnTo?: string; personal?: boolean } = {},
 ): Promise<{ authorizeUrl: string; state: string }> {
   const personal = options.personal === true;
-  await requireConnect(deps.db, actorId, orgId, personal, connector);
+  await requireConnect(deps.db, actorId, orgId, personal);
   const def = connectorDefinition(connector);
   const app = deps.oauthApps?.[connector];
   const serverUrl = checkServerUrl(def.serverUrl);
@@ -1090,7 +1126,9 @@ export async function completeOAuth(
     token.expires_in = long.expiresIn;
   }
   const signedIn: ConnectionSecret = { accessToken: token.access_token, refreshToken: token.refresh_token };
-  const account = await nativeAccount(deps, row.connector, signedIn);
+  const account =
+    (await nativeAccount(deps, row.connector, signedIn)) ??
+    (row.personal ? await ownGitHubAccount(deps, row.connector, signedIn) : null);
   const stored = await storeConnection(deps, {
     orgId: row.orgId,
     actorId: user.id,

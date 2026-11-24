@@ -13912,6 +13912,7 @@ export const ptBR = {
       teamLocked: "Só quem gerencia conectores adiciona os da equipe.",
       mailLocked: "Uma caixa de email é sempre de quem a conecta.",
       done: "Seus agentes só usam quando você pede.",
+      githubDone: "Nas sessões de código, commits, pushes e pull requests do que você pedir saem no seu nome.",
       worksWhenAsked: "Só funciona quando você pede.",
       remove: "Remover",
       removeName: "Remover {{name}}",

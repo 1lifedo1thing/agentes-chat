@@ -15,6 +15,7 @@ import { and, type Database, eq, isNull, schema } from "@agenteschat/db";
 import { getAgentCached } from "../agents";
 import { recordAudit } from "../audit";
 import { activeConnections } from "../connectors/connections";
+import { teamGitHub } from "../connectors/own-github";
 import type { MachineCaller, MachineCallOptions, MachineStatus } from "../machine-hub";
 import { MachineOfflineError, MachinePausedError, REMOVED_COMPUTER_MESSAGE } from "../machines";
 import { missionOfRun } from "../mission-context";
@@ -90,7 +91,7 @@ export async function machineGitSetup(
   /** A tool's call: who the computer takes the agent for (`machineScope`), the right hand's seat included. */
   scope?: AgentScope,
 ): Promise<(Pick<GitSyncRequest, "proxy" | "author"> & { agent: AgentScope }) | null> {
-  const connection = (await activeConnections(deps.db, orgId)).find((c) => c.connector === "github");
+  const connection = teamGitHub(await activeConnections(deps.db, orgId));
   if (!connection) return null;
   const keys = await grantedScopeKeys(deps.db, orgId, agentId);
   if (!gitAccess(keys, connection.id).read) return null;

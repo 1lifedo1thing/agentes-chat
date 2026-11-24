@@ -3,6 +3,7 @@ import { getAgentCached } from "../agents";
 import { recordCodeSessionPr } from "../code-sessions";
 import { connectorScope } from "../connectors/catalog";
 import { activeConnections, type ConnectorDeps } from "../connectors/connections";
+import { teamGitHub } from "../connectors/own-github";
 import { publishChannelEvent } from "../events";
 import { computerPreparing } from "../machine-provisioning";
 import { missionOfRun } from "../mission-context";
@@ -18,6 +19,7 @@ import {
   branchBlock,
   branchFacts,
   branchPath,
+  connectionToken,
   DELETE_BRANCHES_TOOL,
   githubHeaders,
   githubToken,
@@ -28,6 +30,7 @@ import type { GitHubAppConfig } from "./github-app";
 import { noTokenMessage } from "./github-call";
 import { recordGitHubItem } from "./github-events";
 import { cloneOnMachine } from "./machine";
+import { onSessionRepo, personAccountOfRun } from "./person-account";
 import { parseRepo } from "./repos";
 import { signatureLine, signedBody } from "./signature";
 
@@ -103,7 +106,7 @@ export function createGitToolSource(deps: GitToolDeps): ToolSource {
   return {
     name: "git",
     async tools(ctx: ToolContext): Promise<ToolDefinition[]> {
-      const connection = (await activeConnections(ctx.db, ctx.orgId)).find((c) => c.connector === "github");
+      const connection = teamGitHub(await activeConnections(ctx.db, ctx.orgId));
       if (!connection) return [];
       const repoInput = { type: "string", minLength: 3, maxLength: 200, description: "owner/name" };
       const branchInput = { type: "string", minLength: 1, maxLength: 200, description: "A branch name, not refs/…" };
@@ -314,17 +317,28 @@ export function createGitToolSource(deps: GitToolDeps): ToolSource {
                   return { content: `GitHub answered ${info.status} for ${repo.owner}/${repo.repo}`, isError: true };
                 base = ((await info.json()) as { default_branch?: string }).default_branch ?? "main";
               }
-              const res = await github.fetch(`${github.apiUrl}/repos/${repo.owner}/${repo.repo}/pulls`, {
-                method: "POST",
-                headers,
-                body: JSON.stringify({
-                  title: str(input.title),
-                  head: str(input.branch),
-                  base,
-                  body: signedBody(str(input.body), await signatureLine(c.db, c)),
-                  draft: input.draft === true,
-                }),
-              });
+              const open = async (as: Record<string, string>) =>
+                github.fetch(`${github.apiUrl}/repos/${repo.owner}/${repo.repo}/pulls`, {
+                  method: "POST",
+                  headers: as,
+                  body: JSON.stringify({
+                    title: str(input.title),
+                    head: str(input.branch),
+                    base,
+                    body: signedBody(str(input.body), await signatureLine(c.db, c)),
+                    draft: input.draft === true,
+                  }),
+                });
+              // In a code session, on its repository, the pull request is opened as the person who asked, by the
+              // account they connected as their own (ADR 0215 §5a); GitHub refusing their token opens it as the
+              // workspace, as before.
+              const person = await personAccountOfRun(c.db, c.orgId, c.runId).catch(() => null);
+              const own =
+                person && onSessionRepo(person, `${repo.owner}/${repo.repo}`)
+                  ? await connectionToken(deps.connectors, person.connection).catch(() => null)
+                  : null;
+              let res = own ? await open({ ...githubHeaders(own), "content-type": "application/json" }) : null;
+              if (!res || [401, 403, 404].includes(res.status)) res = await open(headers);
               const body = (await res.json().catch(() => ({}))) as {
                 html_url?: string;
                 number?: number;
