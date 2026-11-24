@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { normalizeUrl, outboundUrlProblem, urlsIn } from "../src/outbound-url";
+import { foldText, normalizeUrl, outboundUrlProblem, urlsIn } from "../src/outbound-url";
 
 const code = (url: string, opts?: Parameters<typeof outboundUrlProblem>[1]) =>
   outboundUrlProblem(url, opts)?.code ?? null;
@@ -42,7 +42,7 @@ describe("outboundUrlProblem", () => {
   });
 
   test("private text copied into the query is refused; a short value is not", () => {
-    const mail = "Your reset code is 448812. This link expires in 10 minutes, do not share it with anyone.";
+    const mail = foldText("Your reset code is 448812. This link expires in 10 minutes, do not share it with anyone.");
     const leak = `https://x.io/v?c=${encodeURIComponent("448812 This link expires in 10 minutes")}`;
     expect(code(leak, { privateText: [mail] })).toBe("outbound.private_text");
     expect(code("https://x.io/v?c=448812", { privateText: [mail] })).toBeNull();

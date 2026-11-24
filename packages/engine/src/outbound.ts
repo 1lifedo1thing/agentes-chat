@@ -19,13 +19,19 @@ const CACHED_RUNS = 200;
  * next check reads their stored steps again, as an evicted run's always did.
  */
 export const CACHED_CHARS = 32 * 1024 * 1024;
+/**
+ * Characters one run's reads hold at most: past it its oldest results and writes go first (never its newest), so one
+ * run reading huge files neither pushes every other run out nor makes each address check scan all it ever read.
+ */
+export const RUN_CHARS = CACHED_CHARS / 8;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RunReads {
   seq: number;
   seen: Set<string>;
+  /** Folded (`foldText`), as the address check compares it. */
   privateText: string[];
-  /** What the agent itself wrote to its browser: where it can make a page or a tool's answer show any address. */
+  /** What the agent wrote to its browser (folded): where it can make a page or a tool's answer show any address. */
   written: string[];
   names: Map<string, string>;
   /** Null: a call outside a stored run, never cached. */
@@ -43,20 +49,40 @@ const evict = (runId: string) => {
   cache.delete(runId);
 };
 
-/** Characters `addResult` and `addWritten` just added to a cached run: past `CACHED_CHARS`, the oldest runs go. */
+/**
+ * Characters `addResult` and `addWritten` just added to a run: past `RUN_CHARS` its oldest texts go, and past
+ * `CACHED_CHARS` the least recently used runs.
+ */
 function grew(reads: RunReads, chars: number) {
-  reads.chars += chars;
+  let dropped = 0;
+  for (const texts of [reads.privateText, reads.written]) {
+    while (reads.chars + chars - dropped > RUN_CHARS && texts.length > 1) dropped += texts.shift()?.length ?? 0;
+  }
+  reads.chars += chars - dropped;
   // Evicted meanwhile (or never cached): it holds nothing the cache counts.
   if (!reads.runId || cache.get(reads.runId) !== reads) return;
-  cachedChars += chars;
+  cachedChars += chars - dropped;
   for (const oldest of cache.keys()) {
     if (cachedChars <= CACHED_CHARS) break;
     evict(oldest);
   }
 }
 
-/** Tests: the runs the cache holds, least recently used first, and their characters. */
-export const outboundCached = () => ({ runs: [...cache.keys()], chars: cachedChars });
+/** Whether this process holds reads of the run (`forgetRunReads`). */
+export const holdsRunReads = (runId: string) => cache.has(runId);
+
+/**
+ * Drops a run's reads: one that ended (done, failed, canceled) never checks an address again. A run that parked (an
+ * approval, its computer, a plan's limit) keeps them for when it goes on.
+ */
+export const forgetRunReads = (runId: string) => evict(runId);
+
+/** Tests: the runs the cache holds, least recently used first, their characters, and one run's. */
+export const outboundCached = (runId?: string) => ({
+  runs: [...cache.keys()],
+  chars: cachedChars,
+  run: runId ? (cache.get(runId)?.chars ?? 0) : 0,
+});
 
 /**
  * `outboundUrlProblem` with what this run knows (ADR 0117): `seen` is every address in the conversation (the
@@ -153,7 +179,7 @@ const stringsIn = (value: unknown): string[] =>
 function addWritten(reads: RunReads, tool: string, input: unknown) {
   if (!tool.startsWith("browser_")) return;
   for (const text of stringsIn(input)) {
-    const added = [text, ...urlsIn(text).map((u) => [...new URL(u).searchParams.values()].join(" "))];
+    const added = [text, ...urlsIn(text).map((u) => [...new URL(u).searchParams.values()].join(" "))].map(foldText);
     reads.written.push(...added);
     grew(
       reads,

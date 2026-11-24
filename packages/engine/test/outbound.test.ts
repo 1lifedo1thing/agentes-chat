@@ -1,6 +1,16 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { schema } from "@agenteschat/db";
-import { CACHED_CHARS, createWebToolSource, insertMessage, outboundCached, recordRead, type ToolContext } from "../src";
+import {
+  CACHED_CHARS,
+  createWebToolSource,
+  forgetRunReads,
+  holdsRunReads,
+  insertMessage,
+  outboundCached,
+  RUN_CHARS,
+  recordRead,
+  type ToolContext,
+} from "../src";
 import { type Fixture, setup } from "./fixtures";
 
 // ADR 0117: what a run read from private data never leaves in a web address; what anyone wrote or a tool gave does.
@@ -282,15 +292,35 @@ describe("web_fetch's outbound check", () => {
 });
 
 test("the reads cache holds at most CACHED_CHARS of tool output: the least recently used runs go first", () => {
-  const big = "x".repeat(Math.floor(CACHED_CHARS / 3) + 1);
-  const [a, b, c] = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
-  recordRead(a, "read_file", big);
-  recordRead(b, "read_file", big);
+  const big = "x".repeat(RUN_CHARS - 10);
+  const [a, b, ...others] = Array.from({ length: CACHED_CHARS / RUN_CHARS + 1 }, () => crypto.randomUUID());
+  recordRead(a as string, "read_file", big);
+  recordRead(b as string, "read_file", big);
   // Used again: b is now the least recently used.
-  recordRead(a, "read_file", "again");
-  recordRead(c, "read_file", big);
+  recordRead(a as string, "read_file", "again");
+  for (const run of others) recordRead(run, "read_file", big);
   const held = outboundCached();
   expect(held.chars).toBeLessThanOrEqual(CACHED_CHARS);
-  expect(held.runs).not.toContain(b);
-  expect(held.runs.slice(-2)).toEqual([a, c]);
+  expect(held.runs).not.toContain(b as string);
+  expect(held.runs).toContain(a as string);
+});
+
+test("one run's reads hold at most RUN_CHARS: its oldest texts go first, never its newest", () => {
+  const run = crypto.randomUUID();
+  recordRead(run, "read_file", "a".repeat(RUN_CHARS - 10));
+  recordRead(run, "read_file", "b".repeat(100));
+  expect(outboundCached(run).run).toBe(100);
+  // A single result past the cap is kept whole: it is the newest.
+  recordRead(run, "read_file", "c".repeat(RUN_CHARS + 1));
+  expect(outboundCached(run).run).toBe(RUN_CHARS + 1);
+});
+
+test("forgetting a run's reads frees what it held", () => {
+  const run = crypto.randomUUID();
+  recordRead(run, "read_file", MAIL);
+  expect(holdsRunReads(run)).toBe(true);
+  const before = outboundCached().chars;
+  forgetRunReads(run);
+  expect(holdsRunReads(run)).toBe(false);
+  expect(outboundCached().chars).toBe(before - MAIL.length);
 });

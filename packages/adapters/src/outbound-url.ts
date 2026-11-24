@@ -67,9 +67,10 @@ const decode = (s: string) => {
 
 /**
  * Why an agent may not open this address by itself (null: it may): the address carries a key, is long enough to
- * smuggle data, or copies text the run read from private data (`privateText`). An address that appeared as is
- * (`seen`: in the conversation or a tool's result) always passes, whatever it carries. No privateText (the
- * runner, where the run's reads aren't known): AWS key ids and JWTs pass, since signed addresses carry them.
+ * smuggle data, or copies text the run read from private data (`privateText`, each entry already `foldText`ed). An
+ * address that appeared as is (`seen`: in the conversation or a tool's result) always passes, whatever it carries. No
+ * privateText (the runner, where the run's reads aren't known): AWS key ids and JWTs pass, since signed addresses carry
+ * them.
  */
 export function outboundUrlProblem(
   url: string,
@@ -111,13 +112,15 @@ export function urlCopiesPrivateText(url: string, privateText: string[]): boolea
   }
 }
 
-/** Whether some `WINDOW`-long run of `query` appears in a private text (both folded). */
+/**
+ * Whether some `WINDOW`-long run of `query` appears in a private text. Both come folded (`foldText`): the texts once,
+ * when the run read them, not again at every address checked against all of them.
+ */
 function copiesPrivateText(query: string, privateText: string[]) {
   if (query.length < WINDOW) return false;
   const windows = new Set<string>();
   for (let i = 0; i + WINDOW <= query.length; i++) windows.add(query.slice(i, i + WINDOW));
-  for (const raw of privateText) {
-    const text = foldText(raw);
+  for (const text of privateText) {
     for (let i = 0; i + WINDOW <= text.length; i++) if (windows.has(text.slice(i, i + WINDOW))) return true;
   }
   return false;
