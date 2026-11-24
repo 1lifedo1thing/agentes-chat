@@ -45231,6 +45231,15 @@
   "chat.wait.said": {
     "value": "“{{text}}”"
   },
+  "chat.trail.label": {
+    "value": "What {{name}} did so far"
+  },
+  "chat.trail.earlier": {
+    "value": {
+      "one": "{{count}} earlier step",
+      "other": "{{count}} earlier steps"
+    }
+  },
   "chat.consult.asking": {
     "value": "{{from}} is asking {{to}}"
   },

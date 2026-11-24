@@ -18809,6 +18809,13 @@ export const ptBR = {
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
     },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "O que o {{name}} fez até agora",
+      label_female: "O que a {{name}} fez até agora",
+      earlier_one: "{{count}} passo antes",
+      earlier_other: "{{count}} passos antes",
+    },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {
       asking: "{{from}} está perguntando para {{to}}",

@@ -18473,6 +18473,11 @@
       "held": "Wacht op goedkeuring…",
       "said": "‘{{text}}’"
     },
+    "trail": {
+      "label": "Wat {{name}} tot nu toe deed",
+      "earlier_one": "{{count}} eerdere stap",
+      "earlier_other": "{{count}} eerdere stappen"
+    },
     "consult": {
       "asking": "{{from}} vraagt {{to}} iets",
       "answered": "{{to}} heeft geantwoord. {{from}} schrijft",
