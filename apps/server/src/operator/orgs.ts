@@ -72,6 +72,11 @@ const Health = z
 
 const ms = (description: string) => z.number().int().nullable().openapi({ description });
 
+/** One measure across the apps' reports of a minute. */
+const ClientVitalStat = z
+  .object({ n: z.number().int(), p50: z.number(), p95: z.number(), max: z.number() })
+  .openapi("OperatorClientVitalStat");
+
 const Vitals = z
   .object({
     at: z.string(),
@@ -94,6 +99,39 @@ const Vitals = z
             .object({ at: z.string(), file: z.string() })
             .nullable()
             .openapi({ description: "The heap snapshot it wrote (`HEAP_SNAPSHOT_MB`), in `HEAP_SNAPSHOT_DIR`." }),
+          routes: z
+            .array(
+              z.object({
+                route: z.string().openapi({ description: "Method and route as registered, ids left out." }),
+                count: z.number().int(),
+                p95Ms: z.number().int(),
+                maxMs: z.number().int(),
+                totalMs: z.number().int(),
+              }),
+            )
+            .openapi({
+              description:
+                "The HTTP routes that took it the most time over its last minute, the most first. Empty for a worker.",
+            }),
+          clientVitals: z
+            .record(
+              z.string(),
+              z.object({
+                reports: z.number().int(),
+                coldStartMs: ClientVitalStat.optional(),
+                firstRowsMs: ClientVitalStat.optional(),
+                jsLagP95Ms: ClientVitalStat.optional(),
+                jsLagMaxMs: ClientVitalStat.optional(),
+                heapBytes: ClientVitalStat.optional(),
+                getsPerReturn: ClientVitalStat.optional(),
+                reconnects: ClientVitalStat.optional(),
+              }),
+            )
+            .nullable()
+            .openapi({
+              description:
+                "What the apps that reported to it over its last minute measured, by platform (`ios`, `android`, `web`): cold start to the first frame and to the first rows, JavaScript stalls, heap, reads after each return to the app, socket reconnects. Null: no report.",
+            }),
         }),
       )
       .openapi({
@@ -320,6 +358,8 @@ export function registerOperatorOrgs(
               p.heapSnapshotAt && p.heapSnapshotFile
                 ? { at: p.heapSnapshotAt.toISOString(), file: p.heapSnapshotFile }
                 : null,
+            routes: p.routes ?? [],
+            clientVitals: p.clientVitals ?? null,
           })),
           runClaims: claims,
         },
