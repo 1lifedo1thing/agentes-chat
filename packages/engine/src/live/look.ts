@@ -497,10 +497,43 @@ export async function canvasLook(
         const from = s.from ? live.resolveEnd(s.from, byId) : null;
         const to = s.to ? live.resolveEnd(s.to, byId) : null;
         if (from && to) {
+          // As the apps draw it: border to border, its route, a head at each end that has one, its label in the middle.
           const width = s.strokeWidth ?? 2;
+          const color = esc(s.stroke && s.stroke !== "none" ? s.stroke : "#5b6370");
+          const line = live.arrowPath(from, to);
+          const len = Math.hypot(line.x2 - line.x1, line.y2 - line.y1);
+          const head = 12 + width;
+          const atStart = s.heads?.start === "arrow" && len > 1;
+          const atEnd = (s.heads?.end ?? "arrow") === "arrow" && len > 1;
+          const routed = live.routeArrow(line, s.route ?? "straight", {
+            start: atStart ? head * 0.8 : 0,
+            end: atEnd ? head * 0.8 : 0,
+          });
+          const tip = (at: { x: number; y: number }, dir: { x: number; y: number }) =>
+            `<polygon points="${live
+              .arrowHeadPoints(at, dir, head)
+              .map((p) => `${n(p.x)},${n(p.y)}`)
+              .join(" ")}" fill="${color}"/>`;
           parts.push(
-            `<line x1="${n(from.x)}" y1="${n(from.y)}" x2="${n(to.x)}" y2="${n(to.y)}" stroke="${esc(s.stroke && s.stroke !== "none" ? s.stroke : "#5b6370")}" stroke-width="${n(width)}"${s.dashed ? ` stroke-dasharray="${n(width * 3)} ${n(width * 2)}"` : ""}/>`,
+            `<path d="${routed.d}" fill="none" stroke="${color}" stroke-width="${n(width)}" stroke-linecap="round"${s.dashed ? ` stroke-dasharray="${n(width * 3)} ${n(width * 2)}"` : ""}/>`,
           );
+          if (atEnd) parts.push(tip(routed.end, routed.endDir));
+          if (atStart) parts.push(tip(routed.start, { x: -routed.startDir.x, y: -routed.startDir.y }));
+          if (s.label?.trim()) {
+            const size = 18;
+            const lw = Math.min(400, measurer.width(s.label, { ref: base.font, weight: 400, italic: false }, size) + 16);
+            const box = { x: routed.mid.x - lw / 2, y: routed.mid.y - size, w: lw, h: size * 2 };
+            parts.push(
+              `<rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="6" fill="#fafafa"/>`,
+              textSvg(
+                [{ runs: [{ text: s.label }] }],
+                { ...base, size, color: "#1d2129", align: "center", valign: "middle", padding: 0 },
+                box,
+                measurer,
+                faces,
+              ),
+            );
+          }
         }
         break;
       }
