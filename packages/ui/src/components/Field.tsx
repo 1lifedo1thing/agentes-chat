@@ -297,6 +297,20 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
   limit?: TextLimit;
 }
 
+/**
+ * Keeps a controlled textarea's default text as its value. React writes `defaultValue` (the box's text node) on every
+ * change of `value`: a change of the page's tree under its `:has()` rules, which restyled the whole conversation around
+ * the composer on every key (40 ms a key in a long one). No form here is ever reset, so nothing reads the default.
+ */
+export function useStillDefaultText(box: RefObject<HTMLTextAreaElement | null>) {
+  // After every render: a box shown again (the composer after a voice note) is a new element.
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (el && !Object.hasOwn(el, "defaultValue"))
+      Object.defineProperty(el, "defaultValue", { configurable: true, get: () => el.value, set: () => {} });
+  });
+}
+
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   { className, invalid, rows = 4, autoGrow = false, limit, ...rest },
   ref,
@@ -311,6 +325,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   const box = useRef<HTMLTextAreaElement>(null);
   useImperativeHandle(ref, () => box.current as HTMLTextAreaElement, []);
   useAutoGrow(box, value, autoGrow);
+  useStillDefaultText(box);
   const area = (
     <textarea
       ref={box}
