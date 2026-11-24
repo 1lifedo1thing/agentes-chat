@@ -968,7 +968,8 @@ class Builder {
         }
       }
     };
-    walk(el, base, undefined);
+    // The element's own look for its own words; the marks say where they differ from `base`.
+    walk(el, this.styleOf(el), undefined);
     return trimRuns(runs);
   }
 
