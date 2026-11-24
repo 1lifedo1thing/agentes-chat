@@ -77,6 +77,17 @@ describe("outboundUrlProblem", () => {
     expect(prints("abcdefghijklmnopqrstuvwxyz0123").copiedIn("abcdefghijklmnopqrstuvw")).toBe(false);
   });
 
+  test("past its bound a run keeps every read checked: the first text is still caught, the bytes stay within", () => {
+    const p = new TextPrints(16 * 1024);
+    p.add("Your reset code is 448812. Use it within 10 minutes and never share it.");
+    const letters = "abcdefghijklmnopqrstuvwxyz ";
+    for (let i = 0; i < 20; i++) {
+      p.add(Array.from({ length: 10_000 }, () => letters[Math.floor(Math.random() * letters.length)]).join(""));
+    }
+    expect(p.bytes).toBeLessThanOrEqual(16 * 1024);
+    expect(p.copiedIn("448812. Use it within 10 minutes")).toBe(true);
+  });
+
   test("urlsIn drops an address's trailing punctuation, however long the run, and keeps a run inside it", () => {
     const run = "!".repeat(200_000);
     expect(urlsIn(`see https://example.com/a${run}b${run} and https://example.com/c?).`)).toEqual([
