@@ -43,19 +43,25 @@ async function openWith(count: number) {
 }
 
 test("pinned to its end a while, a conversation keeps only its newest messages", async () => {
-  const { qc, key } = await openWith(MESSAGES_KEPT + 50);
-  expect(qc.getQueryData<Message[]>(key)).toHaveLength(MESSAGES_KEPT + 50);
+  const { qc, key } = await openWith(MESSAGES_KEPT + 60);
+  expect(qc.getQueryData<Message[]>(key)).toHaveLength(MESSAGES_KEPT + 60);
   await wait(200);
   const kept = qc.getQueryData<Message[]>(key) ?? [];
   expect(kept).toHaveLength(MESSAGES_KEPT);
-  expect(kept.at(-1)?.id).toBe(`m-${MESSAGES_KEPT + 49}`);
+  expect(kept.at(-1)?.id).toBe(`m-${MESSAGES_KEPT + 59}`);
+});
+
+test("a few past the ceiling wait for more before a trim: each one draws the conversation again", async () => {
+  const { qc, key } = await openWith(MESSAGES_KEPT + 10);
+  await wait(200);
+  expect(qc.getQueryData<Message[]>(key)).toHaveLength(MESSAGES_KEPT + 10);
 });
 
 test("scrolled up, it keeps what the person reads", async () => {
-  const { qc, key } = await openWith(MESSAGES_KEPT + 50);
+  const { qc, key } = await openWith(MESSAGES_KEPT + 60);
   await act(async () => {
     fireEvent.wheel(screen().getByRole("region", { name: "Mensagens" }), { deltaY: -200 });
   });
   await wait(200);
-  expect(qc.getQueryData<Message[]>(key)).toHaveLength(MESSAGES_KEPT + 50);
+  expect(qc.getQueryData<Message[]>(key)).toHaveLength(MESSAGES_KEPT + 60);
 });

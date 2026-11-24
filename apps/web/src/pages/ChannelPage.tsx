@@ -555,6 +555,8 @@ const IDLE_CATCH_UP_MS = 20_000;
 const OLDER_PAGE = 50;
 /** Messages a conversation pinned to its end keeps (`trimNow`): older ones come back as pages on scrolling up. */
 export const MESSAGES_KEPT = 300;
+/** Trimmed once this many more came, not at each one: every trim draws the conversation again. */
+const TRIM_SLACK = 50;
 /** Pinned this long, it lets go of what is far above (shorter in tests). */
 export const trimming = { afterMs: 10_000 };
 /** Older pages a channel already loaded, and whether there are no more. */
@@ -1610,7 +1612,7 @@ function ChannelView({
     [],
   );
   // A conversation pinned to its end that holds more than it keeps (pages from before, a busy channel's new messages).
-  const holdsMore = older.length > 0 || (channelMessages.data?.length ?? 0) > MESSAGES_KEPT;
+  const holdsMore = older.length > 0 || (channelMessages.data?.length ?? 0) > MESSAGES_KEPT + TRIM_SLACK;
   // biome-ignore lint/correctness/useExhaustiveDependencies: checked again as the lists change
   useEffect(() => {
     if (holdsMore && stick.current) trimSoon();
