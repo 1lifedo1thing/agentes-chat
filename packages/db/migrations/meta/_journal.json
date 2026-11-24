@@ -2241,6 +2241,13 @@
       "when": 1795495329302,
       "tag": "0324_account_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 322,
+      "version": "7",
+      "when": 1795495393705,
+      "tag": "0325_channels_reply_in_threads_by_default",
+      "breakpoints": true
     }
   ]
 }
