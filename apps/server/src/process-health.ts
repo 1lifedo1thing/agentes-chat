@@ -1,3 +1,4 @@
+import { readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeHeapSnapshot } from "node:v8";
@@ -7,6 +8,19 @@ import type { EventLoopLag } from "./event-loop-lag";
 import type { Logger } from "./logger";
 
 export const PROCESS_VITALS_EVERY_MS = 60_000;
+/**
+ * Snapshots already in the folder past which no process writes another: each is about the heap's size, and every
+ * restart of a leaking process (and each process of a split deployment) would add one until the disk is full.
+ */
+export const HEAP_SNAPSHOTS_KEPT = 3;
+
+const snapshotsIn = (dir: string) => {
+  try {
+    return readdirSync(dir).filter((f) => f.endsWith(".heapsnapshot")).length;
+  } catch {
+    return 0;
+  }
+};
 
 export interface ProcessHealthDeps {
   db: Database;
@@ -39,15 +53,31 @@ export function watchProcessHealth(deps: ProcessHealthDeps, everyMs = PROCESS_VI
     if (limit && !snapshotTried && memory.heapUsed > limit * 1024 * 1024) {
       // Once per process start, failed or not: a second one would pause the process again for what the first showed.
       snapshotTried = true;
+      const dir = deps.heapSnapshotDir ?? tmpdir();
       const file = `heap-${deps.role}-${startedAt.toISOString().replace(/[:.]/g, "-")}-${process.pid}.heapsnapshot`;
-      const path = join(deps.heapSnapshotDir ?? tmpdir(), file);
-      deps.log.warn("heap past HEAP_SNAPSHOT_MB: writing a heap snapshot", { heapUsed: memory.heapUsed, path });
-      try {
-        writeSnapshot(path);
-        snapshot = { at: new Date(), file };
-        deps.log.warn("heap snapshot written", { path });
-      } catch (error) {
-        deps.log.error("heap snapshot failed", { path, error });
+      const path = join(dir, file);
+      if (snapshotsIn(dir) >= HEAP_SNAPSHOTS_KEPT) {
+        deps.log.warn("heap past HEAP_SNAPSHOT_MB, but no snapshot written: remove the ones in the folder first", {
+          heapUsed: memory.heapUsed,
+          dir,
+          kept: HEAP_SNAPSHOTS_KEPT,
+        });
+      } else {
+        deps.log.warn("heap past HEAP_SNAPSHOT_MB: writing a heap snapshot", { heapUsed: memory.heapUsed, path });
+        // The snapshot holds everything in memory in clear (decrypted keys, sessions, messages): readable by this
+        // user alone. Synchronous, so nothing else in the process runs under this umask.
+        const umask = process.umask(0o077);
+        try {
+          writeSnapshot(path);
+          snapshot = { at: new Date(), file };
+          deps.log.warn("heap snapshot written", { path });
+        } catch (error) {
+          // A disk that filled midway leaves a partial file that would only take more room.
+          rmSync(path, { force: true });
+          deps.log.error("heap snapshot failed", { path, error });
+        } finally {
+          process.umask(umask);
+        }
       }
     }
     const lag = deps.eventLoopLag();

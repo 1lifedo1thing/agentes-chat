@@ -1472,7 +1472,7 @@ export const envVars = {
   HEAP_SNAPSHOT_MB: {
     schema: z.coerce.number().int().min(64).optional(),
     description:
-      "Once a process's JavaScript heap passes this many MiB, it writes one heap snapshot to `HEAP_SNAPSHOT_DIR` (once per process start), to find what holds the memory. Writing it pauses the process for seconds to minutes and takes about as much memory again as the heap, so set it well under the process's memory limit. Unset (default): never.",
+      "Once a process's JavaScript heap passes this many MiB, it writes one heap snapshot to `HEAP_SNAPSHOT_DIR` (once per process start), to find what holds the memory. Writing it pauses the process for seconds to minutes and takes about as much memory again as the heap, so set it well under the process's memory limit. The file holds everything in the process's memory in clear (decrypted keys, sessions, messages), readable by the server's user alone: delete it once read. No process writes one while the folder holds 3. Unset (default): never.",
     section: "Observability",
     example: "3072",
   },

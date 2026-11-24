@@ -109,7 +109,7 @@ const Vitals = z
         oldestQueuedMs: ms("How long the run waiting longest has waited. Null: none waits."),
       })
       .openapi({
-        description: `How long agents' runs wait for a worker: those claimed in the last ${RUN_CLAIM_WINDOW_MS / 60_000} minutes and those still waiting (created in the last hour). Growing while every process looks idle: jobs aren't being claimed.`,
+        description: `How long agents' runs for people wait for a worker (routines' background runs, which wait behind them by design, left out): those claimed in the last ${RUN_CLAIM_WINDOW_MS / 60_000} minutes and those still waiting (created in the last hour). Growing while every process looks idle: jobs aren't being claimed.`,
       }),
   })
   .openapi("OperatorVitals");

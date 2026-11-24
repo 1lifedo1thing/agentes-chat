@@ -220,7 +220,7 @@
               }
             },
             "required": ["windowSeconds", "runs", "queued", "p50Ms", "p95Ms", "oldestQueuedMs"],
-            "description": "How long agents' runs wait for a worker: those claimed in the last 5 minutes and those still waiting (created in the last hour). Growing while every process looks idle: jobs aren't being claimed."
+            "description": "How long agents' runs for people wait for a worker (routines' background runs, which wait behind them by design, left out): those claimed in the last 5 minutes and those still waiting (created in the last hour). Growing while every process looks idle: jobs aren't being claimed."
           }
         },
         "required": ["at", "processes", "runClaims"]

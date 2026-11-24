@@ -21,7 +21,7 @@ export async function recordProcessVitals(db: Database, vitals: ProcessVitals, n
 }
 
 /**
- * How long runs waited for a worker to claim them: each run claimed in the last `RUN_CLAIM_WINDOW_MS` from its creation
+ * How long people's runs waited for a worker to claim them: each run claimed in the last `RUN_CLAIM_WINDOW_MS` from its creation
  * to its start, and each run still queued from its creation to now, so a stall that claims nothing shows at once
  * instead of only once its runs are finally claimed.
  */
@@ -39,7 +39,8 @@ export async function runClaimWaits(db: Database, now = new Date()) {
     })
     .from(agentRuns)
     .where(
-      sql`${agentRuns.createdAt} > ${horizon.toISOString()}::timestamptz and (${agentRuns.startedAt} > ${windowStart.toISOString()}::timestamptz
+      // Background runs (routines) wait behind people's by design (ADR 0053 §10), minutes at a busy hour: left out.
+      sql`${agentRuns.createdAt} > ${horizon.toISOString()}::timestamptz and not ${agentRuns.background} and (${agentRuns.startedAt} > ${windowStart.toISOString()}::timestamptz
         or (${agentRuns.status} = 'queued' and ${agentRuns.startedAt} is null))`,
     );
   const round = (ms: number | null | undefined) => (ms === null || ms === undefined ? null : Math.round(Number(ms)));

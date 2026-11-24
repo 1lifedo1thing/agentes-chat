@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
-import { watchProcessHealth } from "../src/process-health";
+import { HEAP_SNAPSHOTS_KEPT, watchProcessHealth } from "../src/process-health";
 import { createTestServer, type TestServer } from "./harness";
 
 const TOKEN = "operator-test-token-".padEnd(48, "x");
@@ -18,6 +21,7 @@ afterAll(async () => {
 test("a process writes its vitals for GET /vitals, and one heap snapshot once its heap passes the mark", async () => {
   let heapUsed = 100 * MB;
   const written: string[] = [];
+  const umasks: number[] = [];
   const health = watchProcessHealth(
     {
       db: t.db,
@@ -30,6 +34,7 @@ test("a process writes its vitals for GET /vitals, and one heap snapshot once it
       memoryUsage: () => ({ rss: 300 * MB, heapUsed, heapTotal: 400 * MB, external: 0, arrayBuffers: 0 }),
       writeSnapshot: (path) => {
         written.push(path);
+        umasks.push(process.umask());
         return path;
       },
     },
@@ -43,6 +48,9 @@ test("a process writes its vitals for GET /vitals, and one heap snapshot once it
     await health.tick();
     expect(written).toHaveLength(1);
     expect(written[0]).toStartWith("/data/heap/heap-worker-");
+    // Written readable by the server's user alone; the umask is the process's own again after.
+    expect(umasks).toEqual([0o077]);
+    expect(process.umask()).not.toBe(0o077);
 
     const app = createOperatorApp({ db: t.db, config: t.config, version: "test", log: createLogger("error") }, TOKEN);
     const res = await app.request("/api/operator/v1/vitals", { headers: { authorization: `Bearer ${TOKEN}` } });
@@ -61,5 +69,35 @@ test("a process writes its vitals for GET /vitals, and one heap snapshot once it
     expect(vitals.runClaims).toMatchObject({ windowSeconds: 300, queued: 0 });
   } finally {
     health.stop();
+  }
+});
+
+test("no snapshot while the folder already holds HEAP_SNAPSHOTS_KEPT: restarts of a leaking process don't fill the disk", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "heap-kept-"));
+  for (let i = 0; i < HEAP_SNAPSHOTS_KEPT; i++) writeFileSync(join(dir, `heap-all-${i}.heapsnapshot`), "{}");
+  const written: string[] = [];
+  const health = watchProcessHealth(
+    {
+      db: t.db,
+      log: createLogger("error"),
+      role: "all",
+      version: "test",
+      eventLoopLag: () => null,
+      heapSnapshotMb: 200,
+      heapSnapshotDir: dir,
+      memoryUsage: () => ({ rss: 300 * MB, heapUsed: 250 * MB, heapTotal: 400 * MB, external: 0, arrayBuffers: 0 }),
+      writeSnapshot: (path) => {
+        written.push(path);
+        return path;
+      },
+    },
+    60_000,
+  );
+  try {
+    await health.tick();
+    expect(written).toEqual([]);
+  } finally {
+    health.stop();
+    rmSync(dir, { recursive: true, force: true });
   }
 });

@@ -14,7 +14,7 @@ afterAll(async () => {
 const now = new Date("2026-03-01T12:00:00Z");
 const ago = (ms: number) => new Date(now.getTime() - ms);
 
-async function run(createdAt: Date, startedAt: Date | null) {
+async function run(createdAt: Date, startedAt: Date | null, background = false) {
   const trigger = await insertMessage(f.db, {
     orgId: f.org.id,
     channelId: f.general.id,
@@ -30,6 +30,7 @@ async function run(createdAt: Date, startedAt: Date | null) {
     trigger: "mention",
     hop: 1,
     status: startedAt ? "done" : "queued",
+    background,
     createdAt,
     startedAt,
   });
@@ -45,6 +46,8 @@ test("run claims count each claimed run's wait and each waiting run's wait so fa
   // Claimed before the window, and a run left waiting since yesterday: neither is today's load.
   await run(ago(3_600_000), ago(3_000_000));
   await run(ago(86_400_000), null);
+  // A routine's background run waits behind people's by design: not a stall.
+  await run(ago(1_800_000), null, true);
   const claims = await runClaimWaits(f.db, now);
   expect(claims).toMatchObject({ windowSeconds: 300, runs: 3, queued: 1, p50Ms: 3000, oldestQueuedMs: 600_000 });
   expect(claims.p95Ms).toBeGreaterThan(500_000);
