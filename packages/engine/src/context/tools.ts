@@ -33,7 +33,7 @@ import { announceMessageMemories } from "../message-memories";
 import { quietNoticeSql } from "../notices";
 import { can, getMembership } from "../organizations";
 import { personWords, runReadOutsideById, UNASKED_DESTINATION, unaskedDestination } from "../outside";
-import { personBehindCall, wikiActorOfCall } from "../requester";
+import { personBehindCall, triggerPerson, wikiActorOfCall } from "../requester";
 import { isRightHandId, rightHandReader } from "../right-hand";
 import {
   agentSearchChannels,
@@ -78,7 +78,7 @@ import {
 } from "./items";
 import { kindFamily, overlap } from "./judgments";
 import { learnTrust, ownWords } from "./learn";
-import { CARD_MAX_AGENTS, proposeChange } from "./proposals";
+import { askedWords, CARD_MAX_AGENTS, proposeChange } from "./proposals";
 import { type ContextDeps, ensureThreadSummary, judgeOf, memoryJudging } from "./summaries";
 
 const { agentRuns, contextItems, messages, outcomes } = schema;
@@ -1008,6 +1008,7 @@ export function createContextToolSource(deps: ContextDeps): ToolSource {
             rationale: str(input.reason),
             requesterId: requester,
             atOnce: (await ownWords(ctx)) === requester ? ctx : undefined,
+            words: await askedWords(ctx.db, ctx, requester),
           });
           const done = applied.length
             ? `Applied ${applied.length} of it at once: the person sees it with Undo under your reply, so say it is done. `
@@ -1210,18 +1211,6 @@ const notRequested = {
   isError: true,
 };
 
-/**
- * Who wrote the message this run answers, when a person did in their own words: one sent through an AI app carries
- * `meta.readOutside` and counts as outside content (ADR 0119).
- */
-async function triggerPerson(ctx: ToolContext): Promise<{ id: string; body: string } | null> {
-  const [m] = await ctx.db
-    .select({ type: messages.authorType, userId: messages.authorUserId, meta: messages.meta, body: messages.body })
-    .from(messages)
-    .where(and(eq(messages.orgId, ctx.orgId), eq(messages.id, ctx.triggerMessageId)));
-  return m?.type === "person" && m.meta.readOutside !== true && m.userId ? { id: m.userId, body: m.body } : null;
-}
-
 /** A person's message as a memory's text (ADR 0167): their words as written, within an item's length. */
 const quoteOf = (body: string) => cutText(body.trim(), 2000);
 
@@ -1298,6 +1287,7 @@ async function saveForTeam(
       change: input.content,
       rationale: "Asked to keep it for the whole team.",
       requesterId: input.person,
+      words: input.words,
     });
     const [first] = proposals;
     if (!first) return { content: "Not proposed: the team already keeps this.", isError: true };

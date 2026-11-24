@@ -994,6 +994,11 @@ export interface Agent {
    */
   seesDetails?: boolean;
   /**
+   * A teammate's private agent I see through "Editar agentes": listed on Equipe with a lock, its page its facts and
+   * this month's usage, never how it works, nothing to change. Absent = no (an older server).
+   */
+  factsOnly?: boolean;
+  /**
    * Whether my lists and pickers name it; absent = yes (an older server). False for a private agent (it answers only its
    * owner) to anyone but its owner, administrators and who its "Quem pode editar" names: its messages and its public
    * card still show.
@@ -1150,6 +1155,8 @@ export interface TeamAgent {
   canTalk: boolean;
   /** Whether I see how it works (absent = yes); without it `capabilities` is empty. */
   seesDetails?: boolean;
+  /** A teammate's private agent I see by its facts alone (as `Agent.factsOnly`); absent = no. */
+  factsOnly?: boolean;
   /** Whether I manage it (as `Agent.canManage`); absent = no. */
   canManage?: boolean;
 }
@@ -1469,6 +1476,8 @@ export interface Channel {
   position?: number;
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). Regular channels only. */
   replyInThreads?: boolean;
+  /** The agent responsible for the channel, one of its member agents; null or absent: none. */
+  leadAgentId?: string | null;
   /**
    * Channel list only (`chat.channels`): messages since you last read it
    * (since you joined, if never), not yours; a thread reply counts only in a
@@ -1509,6 +1518,8 @@ export interface ChannelInput {
   audienceRoleIds?: string[];
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
   replyInThreads?: boolean;
+  /** The agent responsible for the channel, one of its member agents; null: none. */
+  leadAgentId?: string | null;
 }
 
 /** A `#channel` link's card (`chat.card`): what the channel is and who is in it. */
@@ -2055,7 +2066,11 @@ export type ChannelEvent =
       consultedAgentId: string;
       kind?: "note";
     }
-  /** That question, or that work (`note`), came back (answered, expired or failed). */
+  /**
+   * That question, or that work (`note`), came back (answered, expired or failed). `goesOn: false`: work whose result
+   * woke nobody, so the agent that handed it isn't writing; `stillOutAgentId`: a colleague still at work on another
+   * part that turn handed off.
+   */
   | {
       type: "agent.consulted";
       channelId: string;
@@ -2065,6 +2080,8 @@ export type ChannelEvent =
       consultedAgentId: string;
       status: ConsultationStatus;
       kind?: "note";
+      goesOn?: false;
+      stillOutAgentId?: string;
     }
   /**
    * A question or a hand-off still out changed without closing (the consulted agent waits on a person, is back at
@@ -2609,6 +2626,8 @@ export interface Memory {
   disputed?: boolean;
   /** Where it was learned. */
   channelId?: string | null;
+  /** Kept for the viewer alone (a preference of theirs, or from their DM with the agent). Absent: an older server. */
+  onlyYou?: boolean;
   /** A `rule` the viewer may remove: its giver, the agent's owner or an admin. */
   removable?: boolean;
   updatedAt: string;
@@ -2771,6 +2790,8 @@ export interface OrgSettings {
   teamWatch?: boolean;
   /** The right hand greets each person who joins, once. Absent from an older server: on. */
   welcomePeople?: boolean;
+  /** The right hand learns from conversations on its own. Absent from an older server: off (it didn't). */
+  rightHandLearns?: boolean;
   /** Read only: this server has a speech engine. */
   voiceAvailable: boolean;
   /** Read only: this server can search GIFs (it has a GIF provider). */
@@ -3103,6 +3124,14 @@ export interface AgentDetail {
   pendingApprovals: number;
   channels: AgentChannel[];
   createdAt: string;
+  /** "Quem pode editar", for who sees its details or its facts (absent from older servers). */
+  editors?: AgentEditors;
+  /** Its facts alone (as `Agent.factsOnly`); absent = no. */
+  factsOnly?: boolean;
+  /** Who made it, for who sees its details or facts (absent from older servers). */
+  createdByUserId?: string | null;
+  /** When its last run started, for who sees its details or facts (absent from older servers). */
+  lastActivityAt?: string | null;
 }
 
 export interface Run {
@@ -3964,6 +3993,14 @@ export interface ArtifactFileContent {
   /** A picture's own size (pixels), when the server read it: its box has its proportions before it loads. */
   width?: number;
   height?: number;
+  /** An audio file's wave and length, once an app measured it. */
+  wave?: FileWave;
+}
+
+/** An audio file's wave (0–1 per bar) and its length. */
+export interface FileWave {
+  peaks: number[];
+  durationMs: number;
 }
 
 export interface ArtifactAuthor {
@@ -4224,6 +4261,17 @@ export interface ArtifactRef {
   name?: string;
   contentType?: string;
   size?: number;
+}
+
+/**
+ * What a page of messages carries for its cards (`include=cards`): each live block, vote and question card at the
+ * version shown, with its state, so the cards draw whole on the first paint.
+ */
+export interface MessageCards {
+  artifacts: ArtifactDetail[];
+  polls: Poll[];
+  choices: Choices[];
+  blocks: BlockState[];
 }
 
 export interface ArtifactFilters {
@@ -8761,7 +8809,8 @@ export type DeviceStatus =
       label?: string;
       since: string;
     }
-  | { kind: "busy"; running: number; max: number }
+  /** `max` null: tasks start on room there (`taskRoom`). */
+  | { kind: "busy"; running: number; max: number | null }
   | { kind: "needs_you"; reason: string }
   | { kind: "preparing"; reason: string }
   | { kind: "paused"; until: string | null }
@@ -8804,6 +8853,8 @@ export interface ComputerDevice {
   audience: DeviceAudience;
   status: DeviceStatus;
   maxTasks: number | null;
+  /** Tasks start on room, not on `maxTasks`; null: the count decides (an older app). Absent from an older server. */
+  taskRoom?: { more: number; freeGb: number; cpuBusy: boolean; pushHarder: boolean } | null;
   toolchains: Record<string, string>;
   /** A Mac whose app opens Xcode and looks at its iPhone again for the iPhone guide; absent from an older server. */
   opensXcode?: boolean;
@@ -8934,6 +8985,7 @@ export interface ComputerDeviceInput {
   audience?: DeviceAudience;
   belongsToWorkspace?: boolean;
   maxTasks?: number;
+  pushHarder?: boolean;
   spill?: { own?: boolean; others?: boolean };
 }
 

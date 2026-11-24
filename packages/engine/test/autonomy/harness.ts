@@ -89,6 +89,13 @@ export interface JudgeTable {
   triage?: (state: Record<string, unknown>) => "work" | "noise";
   /** `held_reply`: what goes out after a reply held back as untried (default: the new words alone). */
   heldReply?: (state: Record<string, unknown>) => "reply" | "both" | "held";
+  /**
+   * `hand_off_next` (ADR 0095): whether an agent whose hand-offs all posted their results to the people still has a
+   * step of its own (default 0: a plain delegation wakes nobody).
+   */
+  handOffNext?: number;
+  /** `channel_lead_next` (ADR 0095): whether ended work leaves the channel's responsible agent a step (default 0). */
+  leadNext?: number;
 }
 
 /** Judgments the engine asks along the way that the scenarios leave at the fake's defaults. */
@@ -208,6 +215,10 @@ export async function world(options: WorldOptions) {
         return table.noteReply ?? 0.9;
       case "handed_back_next":
         return table.handedBack ?? 0;
+      case "hand_off_next":
+        return table.handOffNext ?? 0;
+      case "channel_lead_next":
+        return table.leadNext ?? 0;
       default:
         if (!INCIDENTAL.has(kind)) unknownJudgments.push(kind);
         return undefined;
