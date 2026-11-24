@@ -32,14 +32,12 @@ import {
   fileConversationOf,
   heldRowsIn,
   inMainTimeline,
-  isQuiet,
   isScreenTool,
   keys,
   type LiveRun,
   MESSAGES_PAGE,
   messageLiveRef,
   OPEN_THREAD,
-  QUIET_AFTER_MS,
   runsInChannel,
   type StreamsState,
   sendHelpers,
@@ -443,7 +441,6 @@ import { reportPainted } from "@/lib/perf";
 import { useToast } from "@/lib/toast";
 import { useValueStore } from "@/lib/value-store";
 import {
-  reconcileChannelRuns,
   useChannelRealtime,
   useDismissRun,
   useLive,
@@ -3820,10 +3817,7 @@ function RunBlock({
     [liveId, liveAgent, liveChannel, liveThread, liveStart],
   );
   // At work the bar above the composer speaks for it, and the block draws only for something to show (`rowShows`).
-  // A run gone quiet meanwhile draws for "sem notícias · Atualizar": wake when that moment comes.
-  const waits = Boolean(live && !message && waitsForWords(live));
-  useDue(live?.lastEventAt ?? liveStart ?? null, QUIET_AFTER_MS, waits);
-  const hidden = Boolean(live && !message && !rowShows(live, Date.now()));
+  const hidden = Boolean(live && !message && !rowShows(live));
   const shown = message ?? placeholder;
   // Its live row on the page: the view measures which blocks are in view again (the bar speaks for those out of it).
   const rowDrawn = useContext(RowDrawnContext);
@@ -3969,50 +3963,6 @@ function RunTail({ run }: { run: LiveRun }) {
   );
 }
 
-/** Under a live block: "sem notícias há 4 min · Atualizar" (what it does now is the bar's to say). */
-function LiveRunStatus({ run }: { run: LiveRun }) {
-  const { t } = useTranslation();
-  const { org } = useOrg();
-  const api = useApi();
-  const qc = useQueryClient();
-  const liveStore = useLiveStore();
-  // A run with no news for minutes (orphaned by a restart?): say so and offer to check.
-  const [, tick] = useState(0);
-  useEffect(() => {
-    const again = () => tick((n) => n + 1);
-    const timer = setInterval(again, 15_000);
-    // Back to the tab after a while: check right away.
-    window.addEventListener("focus", again);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("focus", again);
-    };
-  }, []);
-  const [checking, setChecking] = useState(false);
-  if (!isQuiet(run)) return null;
-  const recheck = () => {
-    setChecking(true);
-    void reconcileChannelRuns(api, liveStore, org.id, run.channelId, [run.runId])
-      .then((dropped) => {
-        if (dropped) void qc.invalidateQueries({ queryKey: keys.messages(org.id, run.channelId) });
-      })
-      .finally(() => setChecking(false));
-  };
-  return (
-    <div className="run-status">
-      <p className="ac-msg__activity run-quiet">
-        {t("run.quiet", {
-          minutes: Math.max(3, Math.floor((Date.now() - (run.lastEventAt ?? run.startedAt ?? 0)) / 60_000)),
-        })}
-        {" · "}
-        <Button variant="ghost" size="sm" loading={checking} onClick={recheck}>
-          {t("run.refresh")}
-        </Button>
-      </p>
-    </div>
-  );
-}
-
 /**
  * Under a stopped answer: "Parado por você · Continuar", or "No limite de passos · Continuar" under the
  * reply of a run that reached its step limit, or just Continuar under the end of a long work its AI provider failed. Continuar starts a new run of the same agent from where it
@@ -4096,27 +4046,6 @@ function StoppedLine({
       className="run-canceled"
     />
   );
-}
-
-/** Shows only after `ms` while `on` ("enviando" waits half a second: most sends never show it). */
-/** True from `from + ms` on (now when `from` is unknown, i.e. counted from the mount), while `on`. */
-function useDue(from: number | null, ms: number, on: boolean) {
-  const [start] = useState(() => Date.now());
-  const at = (from ?? start) + ms;
-  const [, tick] = useState(0);
-  const wait = at - Date.now();
-  useEffect(() => {
-    if (!on || wait <= 0) return;
-    const again = () => tick((n) => n + 1);
-    const timer = setTimeout(again, wait);
-    // Back to the tab after a while: look again at once (a sleeping computer's timers run late).
-    window.addEventListener("focus", again);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("focus", again);
-    };
-  }, [on, wait]);
-  return !on || wait <= 0;
 }
 
 function useAfter(ms: number, on: boolean) {
@@ -4501,7 +4430,7 @@ function ActivityBar({
               </>
             )}
             {/* "Ver" once its row is in the conversation (before that, there is nothing to go back to). */}
-            {!seeConsult && soloAway && rowShows(soloAway, now) && (
+            {!seeConsult && soloAway && rowShows(soloAway) && (
               <>
                 <span className="ac-typing__sep" aria-hidden="true" />
                 <button type="button" className="ac-typing__see" onClick={() => onSee(soloAway.runId)}>
@@ -4992,7 +4921,6 @@ export const TimelineMessage = memo(function TimelineMessage({
       >
         {live && waiting ? (
           <Parts resetKey={m}>
-            <LiveRunStatus run={live} />
             {makingImage(live) && <ImageMaking color={colorOf(agent)} />}
             {/* Its subagents and workflows at work, in a code session (ADR 0215). */}
             <LiveSubagents work={live.work ?? []} agentName={name} color={colorOf(agent)} />

@@ -1,6 +1,6 @@
 {
   "id": "982e2cdd-6651-46cd-ae7d-c93aec31439a",
-  "prevId": "7608b094-5bb2-411e-8571-2a7e352e1690",
+  "prevId": "901c6d48-4a26-4c7d-8163-77f3a4e93fe7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -22572,6 +22572,12 @@
         "height": {
           "name": "height",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wave": {
+          "name": "wave",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
