@@ -270,12 +270,10 @@ pub fn open(app: &AppHandle, url: Option<Url>) -> Result<(), String> {
         })
         // A whole page loading again (⌘R, macOS ended it, a full navigation): the cover, never a blank window.
         .on_page_load(move |page, payload| match payload.event() {
-            PageLoadEvent::Started => {
-                page_loading();
-                crate::cover::show(&on_load, Duration::ZERO);
-            }
+            PageLoadEvent::Started => crate::cover::show(&on_load, Duration::ZERO),
             // The page's own sizes follow the zoom (desktop.css), and the bar knows about full screen.
             PageLoadEvent::Finished => {
+                page_loaded();
                 fit_page(&on_load);
                 crate::cover::site_loaded(&on_load, &page);
             }
@@ -380,8 +378,9 @@ pub fn fit_page(app: &AppHandle) {
 /// The zoom and full screen the page loaded now was told (`fit_page`); a new page load starts with none.
 static PAGE_TOLD: Mutex<Option<(String, bool)>> = Mutex::new(None);
 
-/// A whole page is loading: it hears the zoom and full screen again once it is there.
-fn page_loading() {
+/// A whole page loaded: it hears the zoom and full screen again. Not as it starts loading: a resize meanwhile is told
+/// to the page being replaced, and the new one would never hear it.
+fn page_loaded() {
     *PAGE_TOLD.lock().unwrap_or_else(|e| e.into_inner()) = None;
 }
 
