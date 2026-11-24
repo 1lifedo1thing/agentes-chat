@@ -536,9 +536,11 @@ const stepColumns = {
     when ${KIND} = 'tool_result' then ${DATA}->'data'->>'code' end`,
   errorClass: sql<ErrorClass | null>`case when ${KIND} = 'tool_result' then ${errorClassSql(sql`${DATA}`)} end`,
   errorStatus: sql<number | null>`case when ${KIND} = 'tool_result' then ${errorStatusSql(sql`${DATA}`)} end`,
-  // A context step's: why a run's unread messages were handed on (`handOn`).
+  // A context step's: why a run's unread messages were handed on (`handOn`), how the triage said the agent takes a
+  // message sent while it works (`steerTriage`), what the fast reply decided about one (`talkerDecision`).
   reason: sql<string | null>`case when ${KIND} = 'error'
-    or (${KIND} = 'context' and ${DATA} ? 'redispatchedMessageIds') then ${DATA}->>'reason' end`,
+    or (${KIND} = 'context' and ${DATA} ?| array['redispatchedMessageIds', 'steerTriage', 'talkerDecision'])
+    then ${DATA}->>'reason' end`,
   // The run a hand-on or a closed catch-up sent its messages to.
   toRunId: sql<string | null>`case when ${KIND} = 'context'
     then coalesce(${DATA}->>'toRunId', ${DATA}->'released'->>'toRunId') end`,
