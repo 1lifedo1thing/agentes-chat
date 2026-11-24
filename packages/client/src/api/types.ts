@@ -20,6 +20,24 @@ export interface Health {
   edition: Edition;
 }
 
+/**
+ * An app's own speed, for its server (`POST /api/app/client-vitals`): what it measured since its last report, all in
+ * milliseconds but the heap (bytes) and the counts.
+ */
+export interface ClientVitalsReport {
+  platform: "ios" | "android" | "web";
+  /** From the app's start to the launch splash leaving. */
+  coldStartMs?: number;
+  /** From the app's start to its first list drawn with rows. */
+  firstRowsMs?: number;
+  jsLagP95Ms?: number;
+  jsLagMaxMs?: number;
+  heapBytes?: number;
+  /** Reads (GETs) in the 10 s after the app came back to the front. */
+  getsPerReturn?: number;
+  reconnects?: number;
+}
+
 /** The usage report's switch, for the installation's owner (`GET /api/app/telemetry`). */
 export interface ServerTelemetry {
   /** The owner's switch. */
@@ -7631,24 +7649,6 @@ export interface ThreadFollow {
   threadId: string;
   channelId: string;
   following: boolean;
-}
-
-/**
- * An app's own speed, for its server (`POST /api/app/client-vitals`): what it measured since its last report, all in
- * milliseconds but the heap (bytes) and the counts.
- */
-export interface ClientVitalsReport {
-  platform: "ios" | "android" | "web";
-  /** From the app's start to the launch splash leaving. */
-  coldStartMs?: number;
-  /** From the app's start to its first list drawn with rows. */
-  firstRowsMs?: number;
-  jsLagP95Ms?: number;
-  jsLagMaxMs?: number;
-  heapBytes?: number;
-  /** Reads (GETs) in the 10 s after the app came back to the front. */
-  getsPerReturn?: number;
-  reconnects?: number;
 }
 
 /**
