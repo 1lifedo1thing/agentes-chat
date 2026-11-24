@@ -206,7 +206,7 @@ export function createSayNowToolSource(deps: { pubsub?: PubSub }): ToolSource {
   const tool: ToolDefinition = {
     name: SAY_NOW_TOOL,
     description:
-      'Posts one short line in this conversation at once, before work that takes a while: what you\'ll do, in their language ("Bora! Vou abrir o navegador e já te mando."). Once more if they correct or add to the task while you work. On long work, a short update when a new phase starts, at most about once a minute and three times. Never a result, a time, a question or a request for a key: your final message brings the result.',
+      'Posts one short line in this conversation at once, before work that takes a while: what you\'ll do, in their language ("Bora! Vou abrir o navegador e já te mando."). Once more if they correct or add to the task while you work. Never a result, a time, a question or a request for a key: your final message brings the result.',
     scope: "",
     inputSchema: {
       type: "object",

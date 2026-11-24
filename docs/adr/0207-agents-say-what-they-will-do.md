@@ -251,8 +251,8 @@ its reasoning summaries, and OpenAI's reasoning models were never asked for thei
   `PROGRESS_GAP_MS` (75 s) ago or more, and it posted fewer than `PROGRESS_MAX` (3) progress lines (`progressDue`).
   The line is marked `meta.sayNow.progress` and is quiet like the first: no push, no notification, no routing, never
   the reply. Any other call is answered `Already told them`, as before, now with when an update fits. A line for a
-  message taken in (addendum of 2026-11-24) doesn't count against the three. The prompt's line and the tool's
-  description say it in one clause (about 90 characters).
+  message taken in (addendum of 2026-11-24) doesn't count against the three. The prompt's line says it in one
+  clause (42 characters), the tool's description is unchanged.
 - **The notes models hide, as narration.** Claude's progress updates are asked for with `thinking.display: "updates"`
   (beta `thinking-display-updates-2026-08-18`) on the models that hide them (`thinkingUpdates` in the catalog);
   OpenAI's reasoning models with `reasoning.summary: "auto"` (sent again without it when an organization isn't allowed
