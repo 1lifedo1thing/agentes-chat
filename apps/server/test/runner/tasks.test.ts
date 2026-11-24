@@ -19,6 +19,8 @@ import {
   claudeSessionFile,
   executorCommand,
   parseOutputLine,
+  roomNews,
+  TASK_ROOM_QUIET_MS,
   TaskManager,
   type TaskManagerOptions,
 } from "../../runner/tasks";
@@ -1044,4 +1046,15 @@ test("free memory on a Mac is its memory-pressure level, not os.freemem(); a ful
   for (const bad of ["", "abc", "101", "-1", "4.5"]) expect(pressureLevelBytes(bad, 16 * GIB)).toBeNull();
   expect(cpuBusyNow(7.3, 8)).toBe(true);
   expect(cpuBusyNow(7.1, 8)).toBe(false);
+});
+
+test("the room is told at once when the computer fills or frees up, its numbers alone only every few minutes", () => {
+  const room = { more: 8, freeGb: 6.4, cpuBusy: false, pushHarder: false };
+  expect(roomNews(null, room, 0)).toBe(true);
+  expect(roomNews(room, { ...room, more: 7, freeGb: 5.9 }, 15_000)).toBe(false);
+  expect(roomNews(room, { ...room, more: 7, freeGb: 5.9 }, TASK_ROOM_QUIET_MS)).toBe(true);
+  expect(roomNews(room, room, TASK_ROOM_QUIET_MS)).toBe(false);
+  expect(roomNews(room, { ...room, more: 0, freeGb: 1.4 }, 15_000)).toBe(true);
+  expect(roomNews(room, { ...room, cpuBusy: true }, 15_000)).toBe(true);
+  expect(roomNews(room, { ...room, pushHarder: true }, 15_000)).toBe(true);
 });

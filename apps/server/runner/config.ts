@@ -250,6 +250,7 @@ export function normalizeStored(raw: Record<string, unknown>): StoredConfig {
     ...(text(raw.workspace, 4000) ? { workspace: text(raw.workspace, 4000) } : {}),
     ...(typeof raw.exec === "boolean" ? { exec: raw.exec } : {}),
     ...(positive(raw.maxConcurrentTasks) ? { maxConcurrentTasks: positive(raw.maxConcurrentTasks) } : {}),
+    ...(raw.pushHarder === true ? { pushHarder: true } : {}),
     ...(positive(raw.taskMaxSeconds) ? { taskMaxSeconds: positive(raw.taskMaxSeconds) } : {}),
     ...(positive(raw.brainIdleMinutes) ? { brainIdleMinutes: positive(raw.brainIdleMinutes) } : {}),
     ...(positive(raw.brainMaxProcesses) ? { brainMaxProcesses: positive(raw.brainMaxProcesses) } : {}),

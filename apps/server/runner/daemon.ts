@@ -169,7 +169,7 @@ import {
   type WorkerDesktopUse,
   type WorkerState,
 } from "./supervisor";
-import { type SettledTask, TaskManager, type TaskRoomReading } from "./tasks";
+import { roomNews, type SettledTask, TaskManager, type TaskRoomReading } from "./tasks";
 import { runnerTerminalUser, systemTerminalUser, Terminals, type TerminalUser } from "./terminal";
 import { appleToolchains, cachedToolchains, TOOLCHAINS_FILE, xcodeBlocked } from "./toolchains";
 import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
@@ -490,7 +490,7 @@ export class RunnerDaemon implements RequestObserver {
   private stopStandbyWatch: (() => void) | null = null;
   private readonly timers: ReturnType<typeof setInterval>[] = [];
   /** The tasks' room last told to the server (`reportRoom`). */
-  private roomSaid: string | null = null;
+  private roomSaid: { room: TaskRoomReport; at: number } | null = null;
   /** Protocol 22: how busy this computer got over the last day (rides on `pong`). */
   private readonly load = new LoadWindow();
   /** The agents' browsers' last day of traffic (protocol 23). */
@@ -1151,9 +1151,9 @@ export class RunnerDaemon implements RequestObserver {
   /** Tells the server the tasks' room when it changed: the device page's "room for about N more". */
   private reportRoom() {
     const { room } = this.taskRoom();
-    const said = room ? JSON.stringify(room) : null;
-    if (said === null || said === this.roomSaid) return;
-    this.roomSaid = said;
+    const at = this.now();
+    if (!room || !roomNews(this.roomSaid?.room ?? null, room, at - (this.roomSaid?.at ?? 0))) return;
+    this.roomSaid = { room, at };
     this.send({ type: "runner.state", paused: this.pauseState(), maxTasks: this.taskLimit(this.stored), room });
   }
 
@@ -2570,6 +2570,7 @@ export class RunnerDaemon implements RequestObserver {
       brainMaxProcesses: c.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
       workspace: this.session?.workspaceReal ?? c.workspace,
       defaultMaxConcurrentTasks: DEFAULT_LIMITS.maxConcurrentTasks,
+      ...(this.session?.tasks.room() ? { tasksOnRoom: true } : {}),
       ...(c.managedBy === "desktop" ? { managedBy: c.managedBy } : {}),
     };
   }

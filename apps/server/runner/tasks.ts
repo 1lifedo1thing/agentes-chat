@@ -139,6 +139,20 @@ export interface TaskRoomReading {
   cpuBusy: boolean;
 }
 
+/** How long a room that changed only in its numbers waits before it is told again (`roomNews`). */
+export const TASK_ROOM_QUIET_MS = 120_000;
+
+/**
+ * Whether a new room is worth telling the server: on it every member's apps read the devices list again. At once when
+ * the computer fills or frees up, or the processor or Push harder flips; free memory moving a little waits.
+ */
+export function roomNews(said: TaskRoomReport | null, now: TaskRoomReport, sinceMs: number) {
+  if (!said) return true;
+  const turn = (r: TaskRoomReport) => `${r.more === 0}|${r.cpuBusy}|${r.pushHarder}`;
+  if (turn(said) !== turn(now)) return true;
+  return sinceMs >= TASK_ROOM_QUIET_MS && JSON.stringify(said) !== JSON.stringify(now);
+}
+
 export const DEFAULT_TASK_MAX_SECONDS = 4 * 3600;
 /** Hard cap on `maxSeconds` (a day). */
 export const TASK_MAX_SECONDS_CAP = 24 * 3600;
