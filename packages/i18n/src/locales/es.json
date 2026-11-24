@@ -54,6 +54,13 @@
     "offline": "No tienes conexión. Revísala e intenta de nuevo.",
     "unreachable": "No se puede conectar con agentes.chat ahora. Intenta de nuevo en un momento."
   },
+  "reconnect": {
+    "device": "Reconectando… Sin internet en este dispositivo.",
+    "server": "Reconectando… El servidor no responde o se está reiniciando.",
+    "signedOut": "Tu sesión terminó.",
+    "retry": "Reintentar ahora",
+    "signIn": "Iniciar sesión"
+  },
   "roles": {
     "owner": "Propietario",
     "admin": "Admin",
@@ -437,7 +444,7 @@
     },
     "manage_agents": {
       "title": "Editar agentes",
-      "desc": "Instrucciones, cerebro, presupuesto y lo que usa cada uno, en los agentes con los que la persona habla. Los agentes privados de otras personas quedan fuera.",
+      "desc": "Instrucciones, cerebro, presupuesto y lo que usa cada uno, en los agentes con los que la persona habla. De los agentes privados de otras personas, solo el nombre, el responsable y el uso.",
       "short": "editar agentes",
       "say": "edita los agentes con los que habla"
     },
@@ -6457,6 +6464,20 @@
     },
     "copyHandle": "Copiar @{{handle}}",
     "copied": "@{{handle}} copiado.",
+    "facts": {
+      "private": "Privado",
+      "created": "Creado",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "Uso en {{month}}",
+      "budget": "Presupuesto",
+      "budgetUsed": "{{percent}} usado",
+      "last": "Última actividad",
+      "never": "Ninguna todavía",
+      "title": "Qué hace",
+      "locked": "Las instrucciones, la memoria, las herramientas, las conversaciones, las rutinas y los archivos de {{name}} quedan con {{owner}}, quien esa persona invite a editar y los admins.",
+      "lockedNoOwner": "Las instrucciones, la memoria, las herramientas, las conversaciones, las rutinas y los archivos de {{name}} quedan con quien puede editarlo y los admins.",
+      "ask": "Pedirle a {{owner}}"
+    },
     "overview": {
       "approvals_one": "{{count}} solicitud de aprobación",
       "approvals_many": "{{count}} solicitudes de aprobación",
@@ -6553,6 +6574,22 @@
       "playbook": "Cómo trabaja {{name}}",
       "playbookNote": "Formas de trabajar que guarda para sí. No aparecen en el chat. Lo que tomó de fuera y no volvió a usar pasa solo a Archivado.",
       "details": "Detalles técnicos",
+      "learning": {
+        "title": "Cómo aprende",
+        "fromYou": "Aprende de tus conversaciones",
+        "fromYouHint": "Lo que aprende en tu DM queda solo contigo. Lo que aprende en un canal lo ve todo el que lee ese canal. Lo que aprende sobre ti queda solo contigo.",
+        "workspaceOff": "Desactivado para todo el workspace",
+        "forgetAll": "Olvidar todo",
+        "forgetAllHint": "Borra lo que aprendió de ti por su cuenta. Lo que le pediste recordar se queda.",
+        "forgetTitle": "¿Olvidar lo que aprendió de ti?",
+        "forgetText": "Todo lo que aprendió de ti por su cuenta se borra para siempre. Lo que le pediste recordar se queda, y también lo que aprendió en los canales.",
+        "forgotten": "Listo. Lo que aprendió de ti por su cuenta se ha borrado.",
+        "workspace": "Aprende en este workspace",
+        "workspaceHint": "Desactivado, no aprende de nadie por su cuenta. En cualquier caso, nadie puede leer los recuerdos de otra persona.",
+        "onlyYou": "Solo tú",
+        "everyoneIn": "Todos en #{{channel}}",
+        "everyone": "Todos los que pueden verlo"
+      },
       "skills": "Habilidades que creó",
       "skillUses_one": "cargada una vez",
       "skillUses_many": "cargada {{count}} veces",
@@ -16473,6 +16510,7 @@
       "widenForbidden": "Los admins solo pueden restringir quién usa el dispositivo propio de alguien.",
       "spillOwnerOnly": "Solo quien conectó esta computadora puede dejar que las respuestas piensen en ella. Tú puedes apagarlo.",
       "tasksOwnerOnly": "Solo quien conectó esta computadora puede cambiar cuántas tareas ejecuta a la vez.",
+      "tasksCloud": "La Cloud dimensiona por sí misma el espacio de este ordenador para tareas.",
       "notHome": "Los agentes viven en la computadora del workspace y usan esta cuando la nombran."
     },
     "machine": {
@@ -16893,6 +16931,11 @@
     "phonesHere": "Teléfonos en esta computadora",
     "maxTasks": "Tareas a la vez",
     "maxTasksHint": "Cuántas tareas en segundo plano ejecutan aquí los agentes al mismo tiempo. Las demás esperan su turno.",
+    "tasksAutoRoom": "Automático · {{running}} en curso · caben unas {{more}} más",
+    "tasksAutoFull": "Automático · {{running}} en curso · lleno por ahora",
+    "tasksAutoHint": "Los agentes inician tareas en segundo plano mientras este ordenador tiene memoria de sobra, dejando 1,5 GB libres para tus propias apps. Las demás esperan su turno.",
+    "pushHarder": "Exigir más",
+    "pushHarderHint": "Más tareas a la vez: solo quedan libres 0,5 GB de memoria y un procesador ocupado no las detiene. Tus propias apps pueden ir más lentas.",
     "belongs": "Pertenece al espacio de trabajo",
     "belongsHint": "Se queda cuando se va la persona que lo conectó, y todos pueden usarlo mientras no tenga dueño.",
     "spillOwn": "Tus respuestas pueden pensar aquí",
@@ -16947,6 +16990,7 @@
       "inUse": "En uso",
       "inUseBy": "En uso por {{name}}",
       "busy": "Ocupado {{running}}/{{max}}",
+      "busyRunning": "Ocupado · {{running}} en curso",
       "needs": "Te necesita",
       "preparing": "Preparando",
       "paused": "En pausa",
@@ -16971,6 +17015,9 @@
       "tasksChange": "Tareas a la vez aquí: {{max}}. Cámbialo abajo.",
       "tasksOwner": "Tareas a la vez aquí: {{max}}. Quien la conectó puede cambiarlo.",
       "tasksUpdate": "Tareas a la vez aquí: {{max}}. Actualiza su app para cambiarlo desde aquí.",
+      "tasksNoMemory": "No hay espacio para otra tarea ahora: {{gb, number}} GB de memoria libres. La siguiente empieza cuando termine una.",
+      "tasksNoCpu": "No hay espacio para otra tarea ahora: el procesador está casi al máximo. La siguiente empieza cuando se calme.",
+      "tasksPushing": "Exigiendo más: {{gb, number}} GB de memoria libres. Tus propias apps pueden ir más lentas.",
       "offline": "Los agentes esperan a que vuelva.",
       "offlineSeen": "Visto por última vez {{time}}. Los agentes esperan a que vuelva.",
       "offlineWithHost": "{{host}} está sin conexión. Los agentes esperan a que vuelva.",
@@ -17072,17 +17119,21 @@
       "rolesHint": "Cualquiera con el rol puede usarlo, incluso quien lo reciba más adelante.",
       "computerHint": "De quién son los agentes que pueden ejecutar tareas aquí. Los admins pueden restringirlo, solo su dueño puede ampliarlo.",
       "phoneHint": "Compartir un teléfono nunca comparte {{host}}.",
-      "followsHint": "Un iPhone sigue la regla de la Mac a la que está conectado.",
-      "serverHelp": "Cada agente se ejecuta ahí con su propio usuario.",
-      "computerHelp": "Los comandos de los agentes se ejecutan ahí con tu usuario."
+      "followsHint": "Un iPhone sigue la regla de la Mac a la que está conectado."
+    },
+    "share": {
+      "title": "Dejar que todo el espacio de trabajo lo use",
+      "off": "Solo tú por ahora",
+      "on": "Todos en {{org}}",
+      "hint": "Los agentes de todos en {{org}} pueden ejecutar tareas ahí, con tu usuario.",
+      "hintServer": "Los agentes de todos en {{org}} pueden ejecutar tareas ahí, cada uno con su propio usuario."
     },
     "request": {
       "title": "{{name}} quiere unirse a {{org}}",
       "list": "Piden unirse",
       "letJoin": "Dejar que se una",
       "deny": "Rechazar",
-      "denied": "{{name}} no se unirá.",
-      "joined": "{{name}} se unió."
+      "denied": "{{name}} no se unirá."
     },
     "empty": {
       "title": "Aún no hay dispositivos",

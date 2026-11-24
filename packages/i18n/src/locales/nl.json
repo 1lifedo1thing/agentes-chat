@@ -54,6 +54,13 @@
     "offline": "Je bent offline. Controleer je verbinding en probeer het opnieuw.",
     "unreachable": "agentes.chat is nu niet bereikbaar. Probeer het zo opnieuw."
   },
+  "reconnect": {
+    "device": "Opnieuw verbinden… Geen internet op dit apparaat.",
+    "server": "Opnieuw verbinden… De server is onbereikbaar of start opnieuw op.",
+    "signedOut": "Je bent uitgelogd.",
+    "retry": "Nu opnieuw proberen",
+    "signIn": "Inloggen"
+  },
   "roles": {
     "owner": "Eigenaar",
     "admin": "Beheerder",
@@ -424,7 +431,7 @@
     },
     "manage_agents": {
       "title": "Agents bewerken",
-      "desc": "Instructies, brein, budget en wat elke agent gebruikt, bij de agents met wie de persoon praat. Privé-agents van anderen vallen erbuiten.",
+      "desc": "Instructies, brein, budget en wat elke agent gebruikt, bij de agents met wie de persoon praat. Van privé-agents van anderen alleen de naam, de verantwoordelijke en het gebruik.",
       "short": "agents bewerken",
       "say": "bewerkt de agents waarmee hij of zij praat"
     },
@@ -6286,6 +6293,20 @@
     },
     "copyHandle": "@{{handle}} kopiëren",
     "copied": "@{{handle}} gekopieerd.",
+    "facts": {
+      "private": "Privé",
+      "created": "Gemaakt",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "Gebruik in {{month}}",
+      "budget": "Budget",
+      "budgetUsed": "{{percent}} gebruikt",
+      "last": "Laatste activiteit",
+      "never": "Nog geen",
+      "title": "Wat hij doet",
+      "locked": "De instructies, het geheugen, de tools, de gesprekken, de routines en de bestanden van {{name}} blijven bij {{owner}}, wie die persoon vraagt om hem te bewerken en de admins.",
+      "lockedNoOwner": "De instructies, het geheugen, de tools, de gesprekken, de routines en de bestanden van {{name}} blijven bij wie hem mag bewerken en de admins.",
+      "ask": "Vraag het {{owner}}"
+    },
     "overview": {
       "approvals_one": "{{count}} goedkeuringsverzoek",
       "approvals_other": "{{count}} goedkeuringsverzoeken",
@@ -6382,6 +6403,22 @@
       "playbook_female": "Hoe {{name}} werkt",
       "playbookNote": "Werkwijzen die het voor zichzelf bewaart. Ze verschijnen niet in de chat. Wat het van buitenaf oppikte en nooit opnieuw gebruikte, gaat vanzelf naar Gearchiveerd.",
       "details": "Technische details",
+      "learning": {
+        "title": "Hoe het leert",
+        "fromYou": "Leert van je gesprekken",
+        "fromYouHint": "Wat het in je DM leert, blijft van jou. Wat het in een kanaal leert, ziet iedereen die dat kanaal leest. Wat het over jou leert, blijft van jou.",
+        "workspaceOff": "Uit voor de hele workspace",
+        "forgetAll": "Alles vergeten",
+        "forgetAllHint": "Wist wat het zelf van je heeft geleerd. Wat je het vroeg te onthouden, blijft.",
+        "forgetTitle": "Vergeten wat het van je heeft geleerd?",
+        "forgetText": "Alles wat het zelf van je heeft geleerd, verdwijnt voorgoed. Wat je het vroeg te onthouden blijft, net als wat het in kanalen heeft geleerd.",
+        "forgotten": "Klaar. Wat het zelf van je heeft geleerd, is weg.",
+        "workspace": "Leert in deze workspace",
+        "workspaceHint": "Uit, leert het van niemand uit zichzelf. Hoe dan ook kan niemand de herinneringen van een ander lezen.",
+        "onlyYou": "Alleen jij",
+        "everyoneIn": "Iedereen in #{{channel}}",
+        "everyone": "Iedereen die het kan zien"
+      },
       "skills": "Skills die hij maakte",
       "skillUses_one": "{{count}} keer geladen",
       "skillUses_other": "{{count}} keer geladen",
@@ -16077,6 +16114,7 @@
       "widenForbidden": "Admins kunnen alleen beperken wie iemands eigen apparaat mag gebruiken.",
       "spillOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan antwoorden hier laten denken. Uitzetten kan wel.",
       "tasksOwnerOnly": "Alleen wie deze computer heeft gekoppeld, kan wijzigen hoeveel taken hij tegelijk uitvoert.",
+      "tasksCloud": "De Cloud bepaalt zelf hoeveel ruimte deze computer heeft voor taken.",
       "notHome": "Agents wonen op de computer van de workspace en gebruiken deze als ze hem bij naam noemen."
     },
     "machine": {
@@ -16495,6 +16533,11 @@
     "phonesHere": "Telefoons op deze computer",
     "maxTasks": "Taken tegelijk",
     "maxTasksHint": "Hoeveel achtergrondtaken agents hier tegelijk uitvoeren. De rest wacht op zijn beurt.",
+    "tasksAutoRoom": "Automatisch · {{running}} bezig · ruimte voor ongeveer {{more}} meer",
+    "tasksAutoFull": "Automatisch · {{running}} bezig · voorlopig vol",
+    "tasksAutoHint": "Agenten starten achtergrondtaken zolang deze computer geheugen over heeft, en houden 1,5 GB vrij voor je eigen apps. De rest wacht op zijn beurt.",
+    "pushHarder": "Harder pushen",
+    "pushHarderHint": "Meer taken tegelijk: er blijft maar 0,5 GB geheugen vrij en een drukke processor houdt ze niet tegen. Je eigen apps kunnen trager worden.",
     "belongs": "Hoort bij de werkruimte",
     "belongsHint": "Het blijft als de persoon die het koppelde vertrekt, en iedereen kan het gebruiken zolang niemand de eigenaar is.",
     "spillOwn": "Jouw antwoorden kunnen hier denken",
@@ -16549,6 +16592,7 @@
       "inUse": "In gebruik",
       "inUseBy": "In gebruik door {{name}}",
       "busy": "Bezet {{running}}/{{max}}",
+      "busyRunning": "Bezet · {{running}} bezig",
       "needs": "Heeft je nodig",
       "preparing": "Wordt voorbereid",
       "paused": "Gepauzeerd",
@@ -16572,6 +16616,9 @@
       "tasksChange": "Taken tegelijk hier: {{max}}. Wijzig het hieronder.",
       "tasksOwner": "Taken tegelijk hier: {{max}}. Wie hem heeft gekoppeld, kan dat wijzigen.",
       "tasksUpdate": "Taken tegelijk hier: {{max}}. Werk zijn app bij om het hiervandaan te wijzigen.",
+      "tasksNoMemory": "Nu geen ruimte voor nog een taak: {{gb, number}} GB geheugen vrij. De volgende start zodra er een klaar is.",
+      "tasksNoCpu": "Nu geen ruimte voor nog een taak: de processor is bijna vol. De volgende start zodra hij rustiger wordt.",
+      "tasksPushing": "Harder pushen: {{gb, number}} GB geheugen vrij. Je eigen apps kunnen trager worden.",
       "offline": "Agents wachten tot het terug is.",
       "offlineSeen": "Laatst gezien {{time}}. Agents wachten tot het terug is.",
       "offlineWithHost": "{{host}} is offline. Agents wachten tot het terug is.",
@@ -16671,17 +16718,21 @@
       "rolesHint": "Iedereen met de rol kan het gebruiken, ook wie die later krijgt.",
       "computerHint": "Wiens agents hier taken mogen uitvoeren. Beheerders kunnen dit beperken, alleen de eigenaar kan het uitbreiden.",
       "phoneHint": "Een telefoon delen deelt nooit {{host}}.",
-      "followsHint": "Een iPhone volgt de regel van de Mac waarop hij is aangesloten.",
-      "serverHelp": "Elke agent draait er als een eigen gebruiker op.",
-      "computerHelp": "De opdrachten van agents draaien er als jouw gebruiker op."
+      "followsHint": "Een iPhone volgt de regel van de Mac waarop hij is aangesloten."
+    },
+    "share": {
+      "title": "Laat de hele werkruimte hem gebruiken",
+      "off": "Voorlopig alleen jij",
+      "on": "Iedereen in {{org}}",
+      "hint": "De agents van iedereen in {{org}} kunnen er taken op draaien, als jouw gebruiker.",
+      "hintServer": "De agents van iedereen in {{org}} kunnen er taken op draaien, elk als een eigen gebruiker."
     },
     "request": {
       "title": "{{name}} wil lid worden van {{org}}",
       "list": "Vraagt om lid te worden",
       "letJoin": "Toelaten",
       "deny": "Weigeren",
-      "denied": "{{name}} wordt geen lid.",
-      "joined": "{{name}} is lid geworden."
+      "denied": "{{name}} wordt geen lid."
     },
     "empty": {
       "title": "Nog geen apparaten",

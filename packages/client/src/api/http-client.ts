@@ -166,6 +166,7 @@ import type {
   Memory,
   Message,
   MessageCard,
+  MessageCards,
   MessagePin,
   Mission,
   MissionBrain,
@@ -1194,10 +1195,11 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         })) ?? null,
       messages: async (orgId, channelId, options = {}) => {
         const path = `${org(orgId)}/channels/${enc(channelId)}/messages`;
-        const { threadId, before, after, around, limit } = options;
-        const query = { threadId, before, after, around, limit };
-        const { messages } = await request<{ messages: Message[] }>(path, { query });
+        const { threadId, before, after, around, limit, onCards } = options;
+        const query = { threadId, before, after, around, limit, include: onCards ? "cards" : undefined };
+        const { messages, cards } = await request<{ messages: Message[]; cards?: MessageCards }>(path, { query });
         steerStore.seed(channelId, messages);
+        if (cards) onCards?.(cards);
         return messages;
       },
       post: async (orgId, channelId, input) => {
@@ -1292,6 +1294,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       listAll: async (orgId) => (await request<{ memories: Memory[] }>(`${org(orgId)}/memories`)).memories,
       listTeam: async (orgId) => (await request<{ memories: Memory[] }>(`${org(orgId)}/team-memories`)).memories,
       makeTeam: (orgId, id) => request<Memory>(`${org(orgId)}/memories/${enc(id)}/team`, { json: {} }),
+      forgetRightHandLearned: (orgId) =>
+        request<{ forgotten: number }>(`${org(orgId)}/right-hand/forget-learned`, { json: {} }),
       list: async (orgId, agentId, filter) =>
         (
           await request<{ memories: Memory[] }>(`${org(orgId)}/agents/${enc(agentId)}/memories`, {

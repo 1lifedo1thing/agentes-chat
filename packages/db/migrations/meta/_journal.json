@@ -2336,6 +2336,13 @@
     {
       "idx": 335,
       "version": "7",
+      "when": 1795521707122,
+      "tag": "0338_right_hand_learns",
+      "breakpoints": true
+    },
+    {
+      "idx": 336,
+      "version": "7",
       "when": 1795536742745,
       "tag": "0340_surface_pin_pages",
       "breakpoints": true

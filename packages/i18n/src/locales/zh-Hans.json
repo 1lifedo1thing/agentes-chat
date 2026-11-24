@@ -54,6 +54,13 @@
     "offline": "你已离线，请检查网络连接后重试。",
     "unreachable": "暂时无法连接 agentes.chat，请稍后再试。"
   },
+  "reconnect": {
+    "device": "正在重新连接… 此设备没有网络连接。",
+    "server": "正在重新连接… 服务器无法访问或正在重启。",
+    "signedOut": "你已退出登录。",
+    "retry": "立即重试",
+    "signIn": "登录"
+  },
   "roles": {
     "owner": "所有者",
     "admin": "管理员",
@@ -411,7 +418,7 @@
     },
     "manage_agents": {
       "title": "编辑智能体",
-      "desc": "指令、大脑、预算，以及每个智能体使用的东西，限于此人可以对话的智能体。其他人的私人智能体不在其中。",
+      "desc": "指令、大脑、预算，以及每个智能体使用的东西，限于此人可以对话的智能体。其他人的私人智能体只显示名称、负责人和用量。",
       "short": "编辑智能体",
       "say": "编辑可对话的智能体"
     },
@@ -6039,6 +6046,20 @@
     },
     "copyHandle": "复制 @{{handle}}",
     "copied": "已复制 @{{handle}}。",
+    "facts": {
+      "private": "私人",
+      "created": "创建",
+      "createdBy": "{{name}}，{{date}}",
+      "usage": "{{month}}的用量",
+      "budget": "预算",
+      "budgetUsed": "已用 {{percent}}",
+      "last": "最近活动",
+      "never": "还没有",
+      "title": "它做什么",
+      "locked": "{{name}} 的指令、记忆、工具、对话、例行任务和文件只留给 {{owner}}、此人请来编辑的人和管理员。",
+      "lockedNoOwner": "{{name}} 的指令、记忆、工具、对话、例行任务和文件只留给可以编辑它的人和管理员。",
+      "ask": "请 {{owner}} 帮忙"
+    },
     "overview": {
       "approvals_other": "{{count}} 个审批请求",
       "approvalsYou": "在“审批”或聊天中批准或拒绝",
@@ -6133,6 +6154,22 @@
       "playbook_female": "{{name}} 的工作方式",
       "playbookNote": "它为自己保留的工作方法。不会出现在聊天中。从外部获得且再也没用过的会自动移到“已归档”。",
       "details": "技术细节",
+      "learning": {
+        "title": "它如何学习",
+        "fromYou": "从你的对话中学习",
+        "fromYouHint": "它在你的私信中学到的只属于你。它在频道中学到的，所有能阅读该频道的人都能看到。它学到的关于你的内容只属于你。",
+        "workspaceOff": "已对整个工作区关闭",
+        "forgetAll": "全部忘记",
+        "forgetAllHint": "删除它自行从你那里学到的内容。你让它记住的内容会保留。",
+        "forgetTitle": "忘记它从你那里学到的内容？",
+        "forgetText": "它自行从你那里学到的所有内容都会被永久删除。你让它记住的内容会保留，它在频道中学到的内容也会保留。",
+        "forgotten": "完成。它自行从你那里学到的内容已删除。",
+        "workspace": "在这个工作区中学习",
+        "workspaceHint": "关闭后，它不会自行从任何人那里学习。无论如何，任何人都无法读取他人的记忆。",
+        "onlyYou": "仅你",
+        "everyoneIn": "#{{channel}} 中的所有人",
+        "everyone": "所有能看到的人"
+      },
       "skills": "它创建的技能",
       "skillUses_other": "已加载 {{count}} 次",
       "view": "查看",
@@ -15495,6 +15532,7 @@
       "widenForbidden": "管理员只能缩小可以使用他人个人设备的人员范围。",
       "spillOwnerOnly": "只有连接这台电脑的人才能让回复在这里思考。你可以把它关掉。",
       "tasksOwnerOnly": "只有连接这台电脑的人才能更改它同时运行的任务数。",
+      "tasksCloud": "这台电脑用于任务的余量由 Cloud 自己决定。",
       "notHome": "智能体住在工作区的电脑上，点名时才使用这台电脑。"
     },
     "machine": {
@@ -15911,6 +15949,11 @@
     "phonesHere": "这台电脑上的手机",
     "maxTasks": "同时运行的任务数",
     "maxTasksHint": "智能体在这里同时运行多少个后台任务。其余的排队等待。",
+    "tasksAutoRoom": "自动 · {{running}} 个运行中 · 还能再放约 {{more}} 个",
+    "tasksAutoFull": "自动 · {{running}} 个运行中 · 暂时已满",
+    "tasksAutoHint": "只要这台电脑还有富余内存，智能体就会启动后台任务，并为你自己的应用留出 1.5 GB。其余任务排队等候。",
+    "pushHarder": "加大马力",
+    "pushHarderHint": "同时运行更多任务：只留 0.5 GB 空闲内存，处理器忙碌时也不再暂停。你自己的应用可能会变慢。",
     "belongs": "归工作区所有",
     "belongsHint": "连接它的人离开后它仍会保留，没有所有者时所有人都可以使用。",
     "spillOwn": "给你的回复可以在这里思考",
@@ -15965,6 +16008,7 @@
       "inUse": "使用中",
       "inUseBy": "{{name}} 正在使用",
       "busy": "忙碌 {{running}}/{{max}}",
+      "busyRunning": "忙碌 · {{running}} 个运行中",
       "needs": "需要你处理",
       "preparing": "准备中",
       "paused": "已暂停",
@@ -15987,6 +16031,9 @@
       "tasksChange": "这里同时运行的任务数：{{max}}。在下方更改。",
       "tasksOwner": "这里同时运行的任务数：{{max}}。连接它的人可以更改。",
       "tasksUpdate": "这里同时运行的任务数：{{max}}。更新它的应用后即可在这里更改。",
+      "tasksNoMemory": "现在没有余量再开一个任务：空闲内存 {{gb, number}} GB。有一个结束后，下一个就会开始。",
+      "tasksNoCpu": "现在没有余量再开一个任务：处理器几乎满载。等它缓下来，下一个就会开始。",
+      "tasksPushing": "正在加大马力：空闲内存 {{gb, number}} GB。你自己的应用可能会变慢。",
       "offline": "智能体会等它回来。",
       "offlineSeen": "上次在线 {{time}}。智能体会等它回来。",
       "offlineWithHost": "{{host}} 已离线。智能体会等它回来。",
@@ -16084,17 +16131,21 @@
       "rolesHint": "拥有该角色的任何人都可以使用，包括以后获得该角色的人。",
       "computerHint": "谁的智能体可以在这里运行任务。管理员可以缩小范围，只有所有者可以扩大。",
       "phoneHint": "共享手机绝不会共享 {{host}}。",
-      "followsHint": "iPhone 遵循它所连接的 Mac 的规则。",
-      "serverHelp": "每个智能体在上面以各自的用户身份运行。",
-      "computerHelp": "智能体的命令在上面以你的用户身份运行。"
+      "followsHint": "iPhone 遵循它所连接的 Mac 的规则。"
+    },
+    "share": {
+      "title": "让整个工作区使用",
+      "off": "目前只有你",
+      "on": "{{org}} 的所有人",
+      "hint": "{{org}} 所有人的智能体都能以你的用户身份在上面运行任务。",
+      "hintServer": "{{org}} 所有人的智能体都能在上面以各自的用户身份运行任务。"
     },
     "request": {
       "title": "{{name}} 想加入 {{org}}",
       "list": "请求加入",
       "letJoin": "允许加入",
       "deny": "拒绝",
-      "denied": "{{name}} 不会加入。",
-      "joined": "{{name}} 已加入。"
+      "denied": "{{name}} 不会加入。"
     },
     "empty": {
       "title": "还没有设备",

@@ -54,6 +54,13 @@
     "offline": "Vous êtes hors ligne. Vérifiez votre connexion et réessayez.",
     "unreachable": "Impossible de joindre agentes.chat pour le moment. Réessayez dans un instant."
   },
+  "reconnect": {
+    "device": "Reconnexion… Pas d'internet sur cet appareil.",
+    "server": "Reconnexion… Le serveur est injoignable ou redémarre.",
+    "signedOut": "Vous êtes déconnecté.",
+    "retry": "Réessayer maintenant",
+    "signIn": "Se connecter"
+  },
   "roles": {
     "owner": "Propriétaire",
     "admin": "Admin",
@@ -437,7 +444,7 @@
     },
     "manage_agents": {
       "title": "Modifier les agents",
-      "desc": "Instructions, cerveau, budget et ce que chacun utilise, sur les agents à qui la personne parle. Les agents privés des autres restent exclus.",
+      "desc": "Instructions, cerveau, budget et ce que chacun utilise, sur les agents à qui la personne parle. Des agents privés des autres, seulement le nom, le responsable et l'utilisation.",
       "short": "modifier les agents",
       "say": "modifie les agents à qui elle parle"
     },
@@ -6491,6 +6498,20 @@
     },
     "copyHandle": "Copier @{{handle}}",
     "copied": "@{{handle}} copié.",
+    "facts": {
+      "private": "Privé",
+      "created": "Créé",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "Utilisation en {{month}}",
+      "budget": "Budget",
+      "budgetUsed": "{{percent}} utilisé",
+      "last": "Dernière activité",
+      "never": "Aucune pour l'instant",
+      "title": "Ce qu'il fait",
+      "locked": "Les instructions, la mémoire, les outils, les conversations, les routines et les fichiers de {{name}} restent avec {{owner}}, les personnes qu'il ou elle invite à le modifier et les admins.",
+      "lockedNoOwner": "Les instructions, la mémoire, les outils, les conversations, les routines et les fichiers de {{name}} restent avec les personnes qui peuvent le modifier et les admins.",
+      "ask": "Demander à {{owner}}"
+    },
     "overview": {
       "approvals_one": "{{count}} demande d'approbation",
       "approvals_many": "{{count}} demandes d'approbation",
@@ -6589,6 +6610,22 @@
       "playbook_female": "Comment {{name}} travaille",
       "playbookNote": "Des façons de travailler qu'il garde pour lui. Elles n'apparaissent pas dans la conversation. Ce qu'il a pris de l'extérieur et n'a plus jamais utilisé passe tout seul dans Archivés.",
       "details": "Détails techniques",
+      "learning": {
+        "title": "Comment il apprend",
+        "fromYou": "Apprend de vos conversations",
+        "fromYouHint": "Ce qu'il apprend dans votre DM reste à vous. Ce qu'il apprend dans un canal, tous ceux qui lisent ce canal le voient. Ce qu'il apprend sur vous reste à vous.",
+        "workspaceOff": "Désactivé pour tout le workspace",
+        "forgetAll": "Tout oublier",
+        "forgetAllHint": "Supprime ce qu'il a appris de vous par lui-même. Ce que vous lui avez demandé de retenir reste.",
+        "forgetTitle": "Oublier ce qu'il a appris de vous ?",
+        "forgetText": "Tout ce qu'il a appris de vous par lui-même disparaît, définitivement. Ce que vous lui avez demandé de retenir reste, tout comme ce qu'il a appris dans les canaux.",
+        "forgotten": "C'est fait. Ce qu'il a appris de vous par lui-même a disparu.",
+        "workspace": "Apprend dans ce workspace",
+        "workspaceHint": "Désactivé, il n'apprend de personne par lui-même. Dans tous les cas, personne ne peut lire les mémoires des autres.",
+        "onlyYou": "Vous seul",
+        "everyoneIn": "Tout le monde dans #{{channel}}",
+        "everyone": "Tous ceux qui peuvent le voir"
+      },
       "skills": "Compétences qu'il a créées",
       "skillUses_one": "chargée {{count}} fois",
       "skillUses_many": "chargée {{count}} fois",
@@ -16547,6 +16584,7 @@
       "widenForbidden": "Les admins peuvent seulement restreindre qui utilise l'appareil personnel de quelqu'un.",
       "spillOwnerOnly": "Seule la personne qui a connecté cet ordinateur peut y laisser penser les réponses. Toi, tu peux le désactiver.",
       "tasksOwnerOnly": "Seule la personne qui a connecté cet ordinateur peut changer le nombre de tâches qu'il exécute en même temps.",
+      "tasksCloud": "Le Cloud dimensionne lui-même la place de cet ordinateur pour les tâches.",
       "notHome": "Les agents vivent sur l'ordinateur du workspace et utilisent celui-ci quand ils le nomment."
     },
     "machine": {
@@ -16967,6 +17005,11 @@
     "phonesHere": "Téléphones sur cet ordinateur",
     "maxTasks": "Tâches simultanées",
     "maxTasksHint": "Combien de tâches en arrière-plan les agents exécutent ici en même temps. Les autres attendent leur tour.",
+    "tasksAutoRoom": "Automatique · {{running}} en cours · place pour environ {{more}} de plus",
+    "tasksAutoFull": "Automatique · {{running}} en cours · plein pour l'instant",
+    "tasksAutoHint": "Les agents lancent des tâches en arrière-plan tant que cet ordinateur a de la mémoire à revendre, en gardant 1,5 Go libres pour vos propres apps. Les autres attendent leur tour.",
+    "pushHarder": "Pousser plus fort",
+    "pushHarderHint": "Plus de tâches à la fois : seuls 0,5 Go de mémoire restent libres et un processeur occupé ne les retient pas. Vos propres apps peuvent ralentir.",
     "belongs": "Appartient à l'espace de travail",
     "belongsHint": "Il reste quand la personne qui l'a connecté part, et tout le monde peut l'utiliser tant que personne n'en est propriétaire.",
     "spillOwn": "Vos réponses peuvent réfléchir ici",
@@ -17021,6 +17064,7 @@
       "inUse": "Utilisé",
       "inUseBy": "Utilisé par {{name}}",
       "busy": "Occupé {{running}}/{{max}}",
+      "busyRunning": "Occupé · {{running}} en cours",
       "needs": "Action requise",
       "preparing": "Préparation",
       "paused": "En pause",
@@ -17045,6 +17089,9 @@
       "tasksChange": "Tâches simultanées ici : {{max}}. Change-le plus bas.",
       "tasksOwner": "Tâches simultanées ici : {{max}}. La personne qui l'a connecté peut le changer.",
       "tasksUpdate": "Tâches simultanées ici : {{max}}. Mets à jour son app pour le changer d'ici.",
+      "tasksNoMemory": "Pas de place pour une autre tâche pour l'instant : {{gb, number}} Go de mémoire libres. La suivante démarre quand une se termine.",
+      "tasksNoCpu": "Pas de place pour une autre tâche pour l'instant : le processeur est presque saturé. La suivante démarre quand il se calme.",
+      "tasksPushing": "Pousser plus fort : {{gb, number}} Go de mémoire libres. Vos propres apps peuvent ralentir.",
       "offline": "Les agents attendent son retour.",
       "offlineSeen": "Vu pour la dernière fois {{time}}. Les agents attendent son retour.",
       "offlineWithHost": "{{host}} est hors ligne. Les agents attendent son retour.",
@@ -17146,17 +17193,21 @@
       "rolesHint": "Toute personne ayant le rôle peut l'utiliser, y compris celles qui l'obtiendront plus tard.",
       "computerHint": "Les personnes dont les agents peuvent exécuter des tâches ici. Les admins peuvent restreindre, seul son propriétaire peut élargir.",
       "phoneHint": "Partager un téléphone ne partage jamais {{host}}.",
-      "followsHint": "Un iPhone suit la règle du Mac auquel il est branché.",
-      "serverHelp": "Chaque agent y tourne avec son propre utilisateur.",
-      "computerHelp": "Les commandes des agents y tournent avec votre utilisateur."
+      "followsHint": "Un iPhone suit la règle du Mac auquel il est branché."
+    },
+    "share": {
+      "title": "Laisser tout l'espace de travail l'utiliser",
+      "off": "Vous seul pour l'instant",
+      "on": "Tout le monde dans {{org}}",
+      "hint": "Les agents de tout le monde dans {{org}} peuvent y lancer des tâches, avec votre utilisateur.",
+      "hintServer": "Les agents de tout le monde dans {{org}} peuvent y lancer des tâches, chacun avec son propre utilisateur."
     },
     "request": {
       "title": "{{name}} veut rejoindre {{org}}",
       "list": "Demandent à rejoindre",
       "letJoin": "Accepter",
       "deny": "Refuser",
-      "denied": "{{name}} ne rejoindra pas.",
-      "joined": "{{name}} a été ajouté."
+      "denied": "{{name}} ne rejoindra pas."
     },
     "empty": {
       "title": "Aucun appareil pour l'instant",
