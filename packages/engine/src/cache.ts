@@ -67,12 +67,16 @@ export class TtlCache<V> {
     this.onInvalidate?.("clear", "");
   }
 
+  /** Run with every invalidation applied here, this process's or another's: caches built from this one's rows forget too. */
+  readonly followers: ((op: CacheOp, key: string) => void)[] = [];
+
   /** An invalidation, here only: another process's, which it already told everyone. */
   apply(op: CacheOp, key: string) {
     this.generation++;
     if (op === "clear") this.entries.clear();
     else if (op === "delete") this.entries.delete(key);
     else for (const k of this.entries.keys()) if (k.startsWith(key)) this.entries.delete(k);
+    for (const follow of this.followers) follow(op, key);
   }
 
   /** Every entry expires within `ms`, each at a random point: their reloads spread out instead of all coming at once. */
@@ -147,7 +151,32 @@ export const caches = {
   intents: new TtlCache<unknown>(3600_000, 5000),
   /** Automático's choice for a routine's prompt (`orgId:agentId:routineId:hash`): the same work every firing. */
   routineAutoModel: new TtlCache<unknown>(24 * 3600_000, 5000),
+  /**
+   * The whole workspace's part of what its members poll (`orgId:what`): its agents' statuses and work, its returns
+   * still to come, the task manager's asks and computers. What each person may see of it is read apart, per request
+   * (`viewerFacts`). Forgotten when an agent's status is announced (`forgetOrgReads`) and with any change to an agent
+   * or a channel.
+   */
+  orgReads: new TtlCache<unknown>(3_000, 20_000),
 };
+
+const followOrgReads = (op: CacheOp, key: string) =>
+  caches.orgReads.apply(op === "clear" ? "clear" : "deletePrefix", key.slice(0, key.indexOf(":") + 1));
+caches.agents.followers.push(followOrgReads);
+caches.channels.followers.push(followOrgReads);
+
+/**
+ * Forgets an org's reads (`caches.orgReads`) here at once, and in every process through `pubsub` ahead of what is
+ * published after it: an app reading again on the event that follows never gets what was kept before the change. Sent
+ * through the caller's pubsub, so a transaction's held events carry it after their commit, not before.
+ */
+export async function forgetOrgReads(pubsub: Pick<PubSub, "publish"> | undefined, orgId: string) {
+  const key = `${orgId}:`;
+  caches.orgReads.apply("deletePrefix", key);
+  await pubsub
+    ?.publish(CACHE_TOPIC, { type: "cache.invalidate", cache: "orgReads", op: "deletePrefix", key })
+    .catch(() => {});
+}
 
 /** `caches.contextPresence`'s key for whether an agent holds a rule people gave (`rulesForRun`). */
 export const rulesPresenceKey = (orgId: string, agentId: string) => `${orgId}:rules:${agentId}`;

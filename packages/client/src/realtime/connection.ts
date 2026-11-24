@@ -883,7 +883,14 @@ export class RealtimeConnection {
 
   private setStatus(status: ConnectionStatus) {
     if (this.status === status) return;
+    if (status === "open") openSockets++;
+    else if (this.status === "open") openSockets--;
     this.status = status;
     for (const l of this.statusListeners) l(status);
   }
 }
+
+let openSockets = 0;
+
+/** Whether any of this app's realtime sockets is open: polls that only back events up may wait longer then. */
+export const realtimeOpen = () => openSockets > 0;

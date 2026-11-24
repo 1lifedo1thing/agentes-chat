@@ -1,6 +1,7 @@
 import type { PubSub } from "@agenteschat/adapters";
 import { and, type Database, eq, inArray, isNull, schema, sql } from "@agenteschat/db";
 import { type AgentWork, agentWorkFor, bareWork } from "./agent-work";
+import { caches, forgetOrgReads } from "./cache";
 import { publishOrgEvent } from "./events";
 import { type PendingReturn, pendingReturns } from "./follow-through";
 import { cutText } from "./format";
@@ -133,10 +134,12 @@ export async function agentStatuses(
 ): Promise<(AgentStatusView & { work: AgentWork | null })[]> {
   await requirePermission(db, actorId, orgId, "read");
   const [list, sees, work, rightHand, returns] = await Promise.all([
-    loadAgentStatuses(db, orgId, now),
+    caches.orgReads.getOrLoad(`${orgId}:statuses`, () => loadAgentStatuses(db, orgId, now)) as Promise<
+      AgentStatusView[]
+    >,
     routineSeer(db, orgId, actorId),
     agentWorkFor(db, actorId, orgId, new Date(now.getTime() - AGENT_HEARTBEAT_FRESH_MS)),
-    rightHandId(db, orgId),
+    caches.orgReads.getOrLoad(`${orgId}:right-hand`, () => rightHandId(db, orgId)) as Promise<string | null>,
     pendingReturns(db, actorId, orgId),
   ]);
   const later = laterWork(returns);
@@ -518,8 +521,12 @@ export function lineInEnglish(line: AgentStatusLine): string | null {
   return line.kind ? words[line.kind] : null;
 }
 
-/** Tells the apps an agent's presence or line moved (a run started or ended, a line changed): ids only. */
+/**
+ * Tells the apps an agent's presence or line moved (a run started or ended, a line changed): ids only. The workspace's
+ * kept statuses and work go first (`forgetOrgReads`), so the reads this event sets off see the change.
+ */
 export async function announceAgentStatus(pubsub: PubSub | undefined, orgId: string, agentId: string) {
+  await forgetOrgReads(pubsub, orgId);
   await publishOrgEvent(pubsub, { type: "org.broadcast", orgId, event: { type: "agent.status", orgId, agentId } });
 }
 
