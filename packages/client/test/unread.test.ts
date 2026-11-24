@@ -282,6 +282,41 @@ describe("a message's line patches its row instead of reading the list again", (
     expect(stale(qc, keys.channels(ORG))).toBe(true);
   });
 
+  // A UUIDv7 as the server makes it: its first 48 bits are when it was posted.
+  const posted = (s: number, tail = "7000-8000-000000000000") => {
+    const hex = Date.parse(at(s)).toString(16).padStart(12, "0");
+    return `${hex.slice(0, 8)}-${hex.slice(8)}-${tail}`;
+  };
+
+  test("an agent's reply placed before the shown line but posted after the list's read counts, under that line", () => {
+    const qc = new QueryClient();
+    qc.setQueryData(keys.channels(ORG), [
+      channel("c1", { unreadCount: 0, lastMessage: shown(posted(30), at(30)), lastReadAt: at(0) }),
+    ]);
+    jest.advanceTimersByTime(10_000);
+    // Its place is where its status line showed (20 s), its post after the person's line (40 s).
+    applyUnreadEvent(qc, ORG, heard("c1", line(posted(40), at(20))));
+    expect(row(qc)).toMatchObject({ unreadCount: 1, lastMessage: { id: posted(30) } });
+    pastBurst();
+    expect(stale(qc, keys.channels(ORG))).toBe(false);
+    // One posted before the shown line: that read holds it already.
+    applyUnreadEvent(qc, ORG, heard("c1", line(posted(25), at(10))));
+    expect(row(qc)?.unreadCount).toBe(1);
+  });
+
+  test("a reply placed before my read but posted after it is unread, as the server counts it", () => {
+    const qc = new QueryClient();
+    qc.setQueryData(keys.channels(ORG), [
+      channel("c1", { unreadCount: 0, lastMessage: shown(posted(0), at(0)), lastReadAt: at(30) }),
+    ]);
+    jest.advanceTimersByTime(10_000);
+    applyUnreadEvent(qc, ORG, heard("c1", line(posted(60), at(20))));
+    expect(row(qc)).toMatchObject({ unreadCount: 1, lastMessage: { id: posted(60) } });
+    // My read on another device, past its place but before its post: the list reads again.
+    applyUnreadEvent(qc, ORG, { type: "channel.read", channelId: "c1", userId: "me", lastReadAt: at(50) } as never);
+    expect(stale(qc, keys.channels(ORG))).toBe(true);
+  });
+
   test("a notice about a message whose line is in already reads nothing; one about anything else reads at once", () => {
     const qc = seeded();
     applyUnreadEvent(qc, ORG, heard("c1", line("m1", at(5))));

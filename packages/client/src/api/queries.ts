@@ -68,7 +68,7 @@ import { repinAgent, SIDEBAR_VIEW_DEFAULT, unpinAgents } from "../lib/sidebar-vi
 import { playSound } from "../lib/sounds";
 import type { TeamWeekAct } from "../lib/team-week";
 import { threadStartOf } from "../lib/threads";
-import { upsertMessage, withLocalCopies } from "../lib/timeline";
+import { landedAfter, postedAtOf, upsertMessage, withLocalCopies } from "../lib/timeline";
 import { MAX_CHANNEL_UNREAD } from "../lib/unread";
 import { listedText } from "../lib/voice";
 import type { Wallpaper } from "../lib/wallpaper";
@@ -8003,14 +8003,14 @@ function clearUnread(qc: QueryClient, orgId: string, channelId: string, lastRead
   patchList<Channel[]>(qc, keys.channels(orgId), (list) =>
     list?.map((c) => {
       if (c.id !== channelId) return c;
-      if (lastReadAt && c.lastMessage && c.lastMessage.createdAt > lastReadAt) after = true;
+      if (lastReadAt && c.lastMessage && landedAfter(c.lastMessage, Date.parse(lastReadAt))) after = true;
       return { ...c, unreadCount: 0, mentionCount: 0, ...read };
     }),
   );
   patchList<DirectMessage[]>(qc, keys.dms(orgId), (list) =>
     list?.map((d) => {
       if (d.channelId !== channelId) return d;
-      if (lastReadAt && d.lastMessage && d.lastMessage.createdAt > lastReadAt) after = true;
+      if (lastReadAt && d.lastMessage && landedAfter(d.lastMessage, Date.parse(lastReadAt))) after = true;
       return { ...d, unread: 0, ...(lastReadAt ? { lastReadAt, everRead: true } : {}) };
     }),
   );
@@ -8057,32 +8057,35 @@ function patchConversationRow(
   /** The row with the message in it: as it is when its read already holds it, unless that can't be told. */
   const apply = <R extends { lastMessage?: { id: string; createdAt: string } | null; lastReadAt?: string | null }>(
     row: R,
-    patch: (unread: boolean) => R,
+    patch: (unread: boolean, top: boolean) => R,
   ): R => {
     const shown = row.lastMessage;
-    // Read after the message: it shows this line or a later one.
-    if (shown && (shown.id === line.id || shown.createdAt > line.createdAt)) {
+    // Read after the message was posted: it holds it. Ids are UUIDv7 in post order, whatever the place: an agent's
+    // reply keeps a place before what was posted while it was written (`PLACE_KEPT_MS`), so places can't tell.
+    if (shown && (shown.id === line.id || postedAtOf(shown.id) > postedAtOf(line.id))) {
       result.patched = true;
       return row;
     }
+    // Its line goes on top: the read didn't hold it, or it would show it.
+    const top = last !== undefined && !(shown && shown.createdAt > line.createdAt);
     // A read that just came in may count it or not, and no line tells: the list reads again.
-    if (!last && fresh) {
+    if (!top && fresh) {
       result.patched = false;
       return row;
     }
     result.patched = true;
-    // Already read past it (its `channel.read` heard first): nothing unread.
-    return patch(line.counts && !(row.lastReadAt && line.createdAt <= row.lastReadAt));
+    // Already read past it (its `channel.read` heard first): nothing unread, as the server counts (`landedAfterSql`).
+    return patch(line.counts && !(row.lastReadAt && !landedAfter(line, Date.parse(row.lastReadAt))), top);
   };
   if (e.dm) {
     patchList<DirectMessage[]>(qc, queryKey, (list) =>
       list?.map((d) =>
         d.channelId !== e.channelId
           ? d
-          : apply(d, (unread) => ({
+          : apply(d, (unread, top) => ({
               ...d,
               unread: d.unread + (unread ? 1 : 0),
-              ...(last
+              ...(last && top
                 ? {
                     lastMessage: {
                       id: line.id,
@@ -8103,11 +8106,11 @@ function patchConversationRow(
       list?.map((c) =>
         c.id !== e.channelId || !c.isMember
           ? c
-          : apply(c, (unread) => ({
+          : apply(c, (unread, top) => ({
               ...c,
               unreadCount: cap((c.unreadCount ?? 0) + (unread ? 1 : 0)),
               mentionCount: cap((c.mentionCount ?? 0) + (unread && e.mentioned ? 1 : 0)),
-              ...(last
+              ...(last && top
                 ? {
                     lastMessage: {
                       id: line.id,
