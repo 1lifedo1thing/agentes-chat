@@ -179,16 +179,17 @@
   flex: none;
   height: 172px;
 }
-/* On the sky: white, whatever the theme. */
+/* On the sky: white on a soft dark plate, whatever the theme and the hour (a day sky is light under it). */
 .arrival-hero__close {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 1;
+  background: #00000038;
   color: #fff;
 }
 .arrival-hero__close:hover {
-  background: #ffffff2e;
+  background: #00000059;
   color: #fff;
 }
 .arrival-lede {

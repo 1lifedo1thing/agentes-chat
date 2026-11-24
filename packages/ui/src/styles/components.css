@@ -6231,6 +6231,13 @@ html:not([data-pointer]) .ac-seg__item:focus-visible {
   border-radius: var(--radius-section);
   box-shadow: var(--e3), var(--top);
 }
+/* Dark: the face is barely lighter than the page under the scrim, so its edge lifts it (e3 with a brighter line). */
+[data-theme="dark"] .ac-dialog {
+  box-shadow:
+    0 28px 64px -16px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.22),
+    var(--top);
+}
 .ac-dialog__scrim {
   background: var(--scrim);
 }
