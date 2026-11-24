@@ -88,7 +88,7 @@ export const outbox = pgTable(
 /**
  * The dedupe keys of done jobs that left the outbox (`pruneDoneJobs`), until they expire. A row inserted into the
  * outbox with a key held here is skipped, as a conflict on the key would skip it: the `outbox_dedupe_refuses` trigger
- * (migration 0324), so every insert, raw SQL included, keeps refusing a key whose row was pruned.
+ * (migration 0329), so every insert, raw SQL included, keeps refusing a key whose row was pruned.
  */
 export const outboxDedupe = pgTable("outbox_dedupe", {
   dedupeKey: text().primaryKey(),
@@ -153,7 +153,7 @@ export const agentRuns = pgTable(
     /**
      * The transcript's small keys that say where the run stands, copied by the `agent_runs_state` trigger on every write
      * of the transcript (`RUN_STATE_KEYS` in the engine), so status reads never decompress it. Null on a run whose
-     * transcript wasn't written since the copy began (migration 0324): the runs that had ended by then.
+     * transcript wasn't written since the copy began (migration 0331): the runs that had ended by then.
      */
     state: jsonb().$type<Record<string, unknown>>(),
     /**

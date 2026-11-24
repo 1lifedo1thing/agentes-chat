@@ -2,7 +2,7 @@ import { getTableColumns, schema, sql } from "@agenteschat/db";
 
 /**
  * The transcript's keys the `agent_runs_state` trigger copies to `agent_runs.state` on every write of the transcript
- * (migration 0324): where the run stands (its wait, an outage, its place in a computer's line, what it owes), all of
+ * (migration 0331): where the run stands (its wait, an outage, its place in a computer's line, what it owes), all of
  * them small. Status reads and lists look at nothing else, so they never decompress the transcript, tens of KB a run.
  * Equal to the trigger's list: `run-state.test.ts` checks.
  */
