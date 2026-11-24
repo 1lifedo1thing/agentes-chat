@@ -1,3 +1,4 @@
+import { BoundedMap } from "@agenteschat/ui/bounded-map";
 import {
   hashKey,
   type InfiniteData,
@@ -4622,8 +4623,11 @@ export function cacheMessageActions(
   });
 }
 
-/** Handed works by the run that handed them (`orgId:runId`), for that run's messages still to come (`cacheMessage`). */
-const handedByRun = new Map<string, WorkView[]>();
+/**
+ * Handed works by the run that handed them (`orgId:runId`), for that run's messages still to come (`cacheMessage`): the
+ * latest runs' only, as a day-long session hears many.
+ */
+const handedByRun = new BoundedMap<string, WorkView[]>(500);
 
 /**
  * A handed work in a cached list: where it already is, else under the last message here of the run that handed it.
@@ -5518,14 +5522,19 @@ export const useArtifactBlob = (orgId: string, id: string, version: number, enab
 // ── Issues ───────────────────────────────────────────────────────────────────
 
 /** `project`: only a project's tasks (its id), or `none` for the ones with no project. The server filters. */
-export const useIssues = (orgId: string, q = "", project = "") => {
+/**
+ * The tasks I can see (`q` and `project` filter them). `poll: false` for a screen that only counts them (a tab's badge):
+ * the 10 s look while an agent works is for the screens that show its steps, and the list's events keep counts current.
+ */
+export const useIssues = (orgId: string, q = "", project = "", { poll = true }: { poll?: boolean } = {}) => {
   const api = useApi();
   return useQuery({
     queryKey: keys.issueList(orgId, q, project),
     queryFn: () => api.issues.list(orgId, { ...(q ? { q } : {}), ...(project ? { projectId: project } : {}) }),
     placeholderData: (prev) => prev,
     // While an agent works on an issue its steps change without an event: look again every 10 s.
-    refetchInterval: (query) => (query.state.data?.some((i) => i.work && i.work.state !== "stalled") ? 10_000 : false),
+    refetchInterval: (query) =>
+      poll && query.state.data?.some((i) => i.work && i.work.state !== "stalled") ? 10_000 : false,
   });
 };
 

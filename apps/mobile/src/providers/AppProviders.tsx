@@ -29,8 +29,11 @@ import { SessionProvider } from "./session";
 
 const i18n = setupI18n();
 
-/** While the app is in use, the conversations snapshot is saved at most this often (and always as it leaves). */
-const SNAPSHOT_EVERY_MS = 30_000;
+/**
+ * While the app is in use, the conversations snapshot is saved at most this often; as it leaves, whatever changed
+ * since is saved then.
+ */
+const SNAPSHOT_EVERY_MS = 60_000;
 
 /**
  * Everything the screens rely on, outermost first: gestures, the window's size class and fold (`useWide`,
