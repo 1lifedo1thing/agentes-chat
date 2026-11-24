@@ -37,6 +37,25 @@ export async function liveAssetBytes(deps: ArtifactDeps, orgId: string, fileId: 
   return picture ? { bytes: picture.bytes, type: picture.contentType } : null;
 }
 
+/** One of a file's own fonts as its bytes (for a PDF to embed), or null. */
+export async function liveFontBytes(deps: ArtifactDeps, orgId: string, fileId: string, assetId: string) {
+  if (!UUID.test(assetId)) return null;
+  const [row] = await deps.db
+    .select()
+    .from(schema.liveAssets)
+    .where(
+      and(
+        eq(schema.liveAssets.orgId, orgId),
+        eq(schema.liveAssets.artifactId, fileId),
+        eq(schema.liveAssets.id, assetId),
+      ),
+    );
+  if (!row?.font) return null;
+  const store = await deps.blobs.forConfig(orgId, row.storageConfigId).catch(() => null);
+  const object = await store?.get(row.blobKey).catch(() => null);
+  return object ? object.body : null;
+}
+
 const TYPES = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   md: "text/markdown; charset=utf-8",
