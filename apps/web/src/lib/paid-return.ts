@@ -1,6 +1,6 @@
 import type { OrgStanding } from "@agenteschat/client";
 import { isPaidReturn, type PaidReturn, paidReturnOf, standingActive } from "@agenteschat/client/lib/billing";
-import { useRouterState, useSearch } from "@tanstack/react-router";
+import { useNavigate, useRouterState, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { STORAGE_KEYS, sessionStore, storage } from "@/lib/storage";
 
@@ -21,10 +21,11 @@ export function usePaidReturn(orgId: string, held: boolean) {
 }
 
 /**
- * A moment shown keeps the same payment from showing it again for this long: a reload, Back or the billing service's
- * return opened twice. Past it, a paid return is a new payment (a plan bought again after it ended).
+ * A moment shown keeps the same payment from showing it again for this long: the billing service's return opened
+ * twice (a second tab, or Back through Checkout to it). A reload or Back inside the app finds no return at all, since
+ * the address drops it as the moment shows. Past it, a paid return is a new payment.
  */
-export const PAID_MOMENT_ONCE_MS = 24 * 60 * 60_000;
+export const PAID_MOMENT_ONCE_MS = 30 * 60_000;
 
 const readPending = (key: string): PaidReturn | null => {
   const raw = sessionStore.get(key);
@@ -36,31 +37,42 @@ const readPending = (key: string): PaidReturn | null => {
   }
 };
 
+/** The address without a paid return's marks. */
+const withoutPaid = ({ paid: _p, plan: _k, period: _d, ...rest }: Record<string, unknown>) => rest;
+
 /**
  * The moment right after a paid Checkout (ADR 0079): what the address said was bought, once the plan is in force.
  * The return is kept for the tab until then (the hold lifts on the billing service's next pass), and shown once per
- * payment: as it shows, this browser notes when, so a reload, Back or the same return again shows nothing. A plain
- * visit has no return to show. `moment` stays until `done`, whatever the address does meanwhile.
+ * payment: as the plan is found in force, the return is used up (the address and the tab drop it) and this browser
+ * notes when, so a reload, Back or the same return again shows nothing. A plain visit has no return to show. `moment`
+ * stays until `done`, whatever the address does meanwhile, and only in the workspace it was paid for.
  */
 export function usePaidMoment(orgId: string, standing: OrgStanding | undefined) {
   const pendingKey = `${STORAGE_KEYS.paidMoment}.${orgId}`;
   const shownKey = `${STORAGE_KEYS.paidMomentShown}.${orgId}`;
   const search = useRouterState({ select: (s) => s.location.search }) as Record<string, unknown>;
-  const [shown, setShown] = useState<PaidReturn | null>(null);
+  const navigate = useNavigate();
+  const [shown, setShown] = useState<{ orgId: string; moment: PaidReturn } | null>(null);
   const seen = Number(storage.get(shownKey) ?? 0) > Date.now() - PAID_MOMENT_ONCE_MS;
-  const pending = seen ? null : (paidReturnOf(search) ?? readPending(pendingKey));
-  const due = shown === null && pending !== null && standingActive(standing);
+  const inAddress = paidReturnOf(search) !== null;
+  const pending = paidReturnOf(search) ?? readPending(pendingKey);
+  const active = standingActive(standing);
+  const mine = shown?.orgId === orgId ? shown.moment : null;
+  const due = mine === null && !seen && pending !== null && active;
   const pendingJson = pending && JSON.stringify(pending);
   useEffect(() => {
     if (pendingJson === null) return;
-    if (!due) {
+    if (!active) {
       sessionStore.set(pendingKey, pendingJson);
       return;
     }
-    storage.set(shownKey, String(Date.now()));
     sessionStore.remove(pendingKey);
-    setShown(JSON.parse(pendingJson) as PaidReturn);
-  }, [due, pendingJson, pendingKey, shownKey]);
+    if (due) {
+      storage.set(shownKey, String(Date.now()));
+      setShown({ orgId, moment: JSON.parse(pendingJson) as PaidReturn });
+    }
+    if (inAddress) void navigate({ to: ".", replace: true, search: withoutPaid as never });
+  }, [active, due, inAddress, navigate, orgId, pendingJson, pendingKey, shownKey]);
   const done = useCallback(() => setShown(null), []);
-  return { moment: shown ?? (due ? pending : null), done };
+  return { moment: mine ?? (due ? pending : null), done };
 }

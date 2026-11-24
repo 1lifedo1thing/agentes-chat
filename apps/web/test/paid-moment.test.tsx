@@ -3,7 +3,10 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
+import path from "node:path";
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
+import { PAID_MOMENT_ONCE_MS } from "@/lib/paid-return";
+import { STORAGE_KEYS } from "@/lib/storage";
 import { createFakeApi, type FakeState, LODI_ID, ORG_ID, seedState, withRightHand } from "./fake-api";
 import { renderApp, screen, settle, showIn } from "./render";
 
@@ -24,6 +27,9 @@ const TITLE = "O seu time está de pé";
 const BETA = "Você chegou cedo. Que bom.";
 const CONNECT = "Conecte uma IA para o seu time pensar";
 const SETTINGS = `/org/${ORG_ID}/settings/billing`;
+const OTHER_ID = "00000000-0000-4000-8000-0000000000b2";
+const PENDING = `${STORAGE_KEYS.paidMoment}.${ORG_ID}`;
+const SHOWN = `${STORAGE_KEYS.paidMomentShown}.${ORG_ID}`;
 
 const click = async (el: Element, rounds = 6) => {
   await act(async () => fireEvent.click(el));
@@ -100,11 +106,59 @@ describe("the paid moment in the workspace", () => {
     await click(within(card() as HTMLElement).getByRole("button", { name: "Fechar" }));
     expect(card()).toBeNull();
   });
+
+  test("it belongs to its workspace: switching to another one leaves it behind", async () => {
+    const state = workspace();
+    state.me?.organizations.push({ id: OTHER_ID, name: "Beta", role: "owner" });
+    const { router } = await open(state, `${SETTINGS}?paid=1`);
+    expect(card()).toBeTruthy();
+    await act(() => router.navigate({ to: "/org/$orgId/settings/billing", params: { orgId: OTHER_ID } }));
+    await settle(8);
+    expect(card()).toBeNull();
+  });
+
+  test("as it shows, the address forgets the return: a reload or Back to it shows nothing", async () => {
+    const { router } = await open(workspace(), `${SETTINGS}?paid=1&plan=team&period=year&tab=x`);
+    expect(card()).toBeTruthy();
+    const search = router.state.location.search as Record<string, unknown>;
+    expect([search.paid, search.plan, search.period]).toEqual([undefined, undefined, undefined]);
+    expect(search.tab).toBe("x");
+  });
+
+  test("a return already shown leaves nothing kept for the tab", async () => {
+    await open(held(workspace()), `${SETTINGS}?paid=1`);
+    expect(sessionStorage.getItem(PENDING)).not.toBeNull();
+    cleanup();
+    // Shown meanwhile in another tab of this browser: the hold lifts, this tab shows nothing and keeps nothing.
+    localStorage.setItem(SHOWN, String(Date.now()));
+    await open(workspace(), `/org/${ORG_ID}/home`);
+    expect(card()).toBeNull();
+    expect(sessionStorage.getItem(PENDING)).toBeNull();
+  });
+
+  test("a second payment later the same day shows its own moment", async () => {
+    localStorage.setItem(SHOWN, String(Date.now() - PAID_MOMENT_ONCE_MS - 1000));
+    await open(workspace(), `${SETTINGS}?paid=1`);
+    expect(card()).toBeTruthy();
+    expect(PAID_MOMENT_ONCE_MS).toBeLessThanOrEqual(60 * 60_000);
+  });
+
+  test("a dialog open as it comes stays above it: the card is drawn under every scrim", async () => {
+    const root = path.join(import.meta.dir, "../../..");
+    const layers = await Bun.file(path.join(root, "packages/ui/src/styles/layers.css")).text();
+    const css = await Bun.file(path.join(root, "apps/web/src/components/arrival/arrival.css")).text();
+    const token = (name: string) => Number(layers.match(new RegExp(`--z-${name}:\\s*(-?\\d+)`))?.[1]);
+    const z = css.match(/\.paid-card\s*\{[^}]*z-index:\s*var\(--z-([\w-]+)\)/)?.[1] ?? "";
+    expect(token(z)).toBeLessThan(token("scrim"));
+    expect(token(z)).toBeGreaterThan(token("lifted"));
+  });
 });
 
 describe("with the arrival (a workspace that opens right after its onboarding)", () => {
   test("the moment first, as a dialog, then the beta notice, then Connect an AI: one at a time", async () => {
-    await open(withoutAi(workspace()), `/org/${ORG_ID}?paid=1&arrival=1`);
+    const { router } = await open(withoutAi(workspace()), `/org/${ORG_ID}?paid=1&arrival=1`);
+    // Both marks leave the address together: neither brings the other back.
+    expect(router.state.location.search).toEqual({});
     const paid = screen().getByRole("dialog", { name: TITLE });
     expect(screen().getAllByRole("dialog")).toHaveLength(1);
     expect(card()).toBeNull();
