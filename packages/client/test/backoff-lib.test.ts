@@ -41,6 +41,7 @@ describe("reconnect backoff", () => {
   test("retry-after in a close reason", () => {
     expect(retryAfterReason(5)).toBe("try again; retry-after=5");
     expect(retryAfterFromReason(retryAfterReason(5, "session unavailable"))).toBe(5000);
+    expect(retryAfterFromReason("x; retry-after=99999")).toBe(RECONNECT_CAP_MS);
     expect(retryAfterFromReason("too far behind")).toBeNull();
     expect(retryAfterFromReason("")).toBeNull();
     expect(retryAfterFromReason(undefined)).toBeNull();

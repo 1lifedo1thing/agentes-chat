@@ -32,8 +32,8 @@ const RETRY_AFTER = /retry-after=(\d{1,5})/;
 /** A close reason that asks the client to wait `seconds` before it dials again. */
 export const retryAfterReason = (seconds: number, why = "try again") => `${why}; retry-after=${Math.round(seconds)}`;
 
-/** The wait a close reason asks for (`retryAfterReason`), in ms; null without one. */
+/** The wait a close reason asks for (`retryAfterReason`), in ms, at most the longest reconnect step; null without one. */
 export function retryAfterFromReason(reason: string | undefined | null): number | null {
   const m = reason ? RETRY_AFTER.exec(reason) : null;
-  return m ? Number(m[1]) * 1000 : null;
+  return m ? Math.min(RECONNECT_CAP_MS, Number(m[1]) * 1000) : null;
 }
