@@ -621,9 +621,9 @@ export function createAuth(deps: {
           },
         },
         // Signed out, revoked, a new password, expiry renewed, another workspace made active: no process serves the
-        // kept copy again (`sessionOf`).
-        update: { after: async (session) => forgetSession(session.token) },
-        delete: { after: async (session) => forgetSession(session.token) },
+        // kept copy again (`sessionOf`). An update of many at once tells no token: all of them go.
+        update: { after: async (session) => forgetSessionOf(session) },
+        delete: { after: async (session) => forgetSessionOf(session) },
       },
     },
   });
@@ -888,6 +888,11 @@ async function keptSession(auth: Auth, headers: Headers): ReturnType<Auth["api"]
 
 /** Forgets a kept session (`sessionOf`) by its token, here and in every other process: it ended or changed. */
 export const forgetSession = (token: string) => caches.sessions.deletePrefix(`${token}.`);
+const forgetSessionOf = (row: unknown) => {
+  const token = (row as { token?: unknown } | null)?.token;
+  if (typeof token === "string") forgetSession(token);
+  else caches.sessions.clear();
+};
 
 /** Resolves the signed-in person from request headers (cookie), or null. Used by HTTP and WebSocket. */
 export async function sessionUser(auth: Auth, headers: Headers): Promise<SessionUser | null> {
