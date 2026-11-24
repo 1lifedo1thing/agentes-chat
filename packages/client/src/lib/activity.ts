@@ -747,11 +747,13 @@ export function entriesOffScreen(
 
 /** "trabalhando", "consultando o GitHub". */
 export const activityVerb = (t: TFunction, a: Activity) =>
-  t(`chat.activity.${a.kind === "preparingCli" && a.percent != null ? "preparingCliPct" : a.kind}`, {
-    app: appLabel(a),
-    computer: a.computer ?? "",
-    percent: a.percent ?? 0,
-  });
+  a.kind === "preparingCli"
+    ? t(`chat.activity.${a.percent != null ? "preparingCliPct" : "preparingCli"}`, {
+        app: appLabel(a),
+        computer: a.computer ?? "",
+        percent: a.percent ?? 0,
+      })
+    : t(`chat.activity.${a.kind}`, { app: appLabel(a) });
 
 /**
  * The app as people read it: a connector's slug ("himetrica") starts with a capital ("Himetrica"); a name with
