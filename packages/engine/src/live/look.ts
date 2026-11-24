@@ -23,6 +23,12 @@ const esc = (text: string) =>
 
 const n = (v: number) => (Math.round(v * 100) / 100).toString();
 
+/** Adds a definition (a shadow, a gradient) to the drawing's `<defs>` and gives back how a piece refers to it. */
+function useDef(defs: string[], def: string, ref: string): string {
+  defs.push(def);
+  return ref;
+}
+
 interface TextBase {
   font: live.FontRef;
   size: number;
@@ -303,12 +309,12 @@ export async function slideLook(
   slide.elements.forEach((el, i) => {
     const s = el.style ?? {};
     const rot = el.rot ? ` transform="rotate(${n(el.rot)} ${n(el.x + el.w / 2)} ${n(el.y + el.h / 2)})"` : "";
-    const filter = s.shadow ? (defs.push(shadowDef(`sh${i}`, s.shadow)), ` filter="url(#sh${i})"`) : "";
+    const filter = s.shadow ? useDef(defs, shadowDef(`sh${i}`, s.shadow), ` filter="url(#sh${i})"`) : "";
     const opacity = s.opacity !== undefined && s.opacity < 1 ? ` opacity="${n(s.opacity)}"` : "";
     const parts: string[] = [];
     if (el.type === "shape") {
       const fill = s.gradient
-        ? (defs.push(gradientDef(`gr${i}`, s.gradient)), `url(#gr${i})`)
+        ? useDef(defs, gradientDef(`gr${i}`, s.gradient), `url(#gr${i})`)
         : live.shapeFill(theme, s);
       const width = s.stroke && s.stroke !== "none" ? (s.strokeWidth ?? 4) : 0;
       const attrs = ` fill="${esc(fill)}" stroke="${esc(width ? (s.stroke as string) : "none")}" stroke-width="${n(width)}"${dashAttr(s.dash, width)}`;
@@ -434,7 +440,7 @@ export async function canvasLook(
   const body: string[] = [`<rect x="${n(x0)}" y="${n(y0)}" width="${n(w)}" height="${n(h)}" fill="#fafafa"/>`];
   const byId = live.shapeIndex(all);
   inside.forEach((s, i) => {
-    const filter = s.shadow ? (defs.push(shadowDef(`sh${i}`, s.shadow)), ` filter="url(#sh${i})"`) : "";
+    const filter = s.shadow ? useDef(defs, shadowDef(`sh${i}`, s.shadow), ` filter="url(#sh${i})"`) : "";
     const rot = s.rot ? ` transform="rotate(${n(s.rot)} ${n(s.x + s.w / 2)} ${n(s.y + s.h / 2)})"` : "";
     const parts: string[] = [];
     const base: TextBase = {
@@ -467,7 +473,7 @@ export async function canvasLook(
         break;
       case "shape": {
         const fill = s.gradient
-          ? (defs.push(gradientDef(`gr${i}`, s.gradient)), `url(#gr${i})`)
+          ? useDef(defs, gradientDef(`gr${i}`, s.gradient), `url(#gr${i})`)
           : s.fill && s.fill !== "none"
             ? s.fill
             : s.fill === "none"
@@ -521,7 +527,10 @@ export async function canvasLook(
           if (atStart) parts.push(tip(routed.start, { x: -routed.startDir.x, y: -routed.startDir.y }));
           if (s.label?.trim()) {
             const size = 18;
-            const lw = Math.min(400, measurer.width(s.label, { ref: base.font, weight: 400, italic: false }, size) + 16);
+            const lw = Math.min(
+              400,
+              measurer.width(s.label, { ref: base.font, weight: 400, italic: false }, size) + 16,
+            );
             const box = { x: routed.mid.x - lw / 2, y: routed.mid.y - size, w: lw, h: size * 2 };
             parts.push(
               `<rect x="${n(box.x)}" y="${n(box.y)}" width="${n(box.w)}" height="${n(box.h)}" rx="6" fill="#fafafa"/>`,
