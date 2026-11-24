@@ -858,14 +858,17 @@ function platformBlobStore(config: Config, db: Database) {
   if (!S3_ENDPOINT || !S3_BUCKET || !S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY) {
     return config.FILES_DIR ? createDiskBlobStore(config.FILES_DIR) : createPostgresBlobStore(db);
   }
-  return createS3BlobStore({
-    endpoint: S3_ENDPOINT,
-    region: config.S3_REGION,
-    bucket: S3_BUCKET,
-    accessKeyId: S3_ACCESS_KEY_ID,
-    secretAccessKey: S3_SECRET_ACCESS_KEY,
-    pathStyle: config.S3_PATH_STYLE,
-  });
+  return createS3BlobStore(
+    {
+      endpoint: S3_ENDPOINT,
+      region: config.S3_REGION,
+      bucket: S3_BUCKET,
+      accessKeyId: S3_ACCESS_KEY_ID,
+      secretAccessKey: S3_SECRET_ACCESS_KEY,
+      pathStyle: config.S3_PATH_STYLE,
+    },
+    { presign: config.S3_PRESIGNED_URLS },
+  );
 }
 
 /** At most one log line this often about push services refusing this server's signature. */
