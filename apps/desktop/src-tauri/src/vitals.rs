@@ -35,7 +35,7 @@ pub fn window_at_launch() {
     WINDOW_AT_LAUNCH.store(true, Ordering::Relaxed);
 }
 
-/// The site painted (`page_ready`): the first time, the opening ends.
+/// The site itself painted its first screen (`page_ready` with `site`): the first time, the opening ends.
 pub fn painted() {
     if !WINDOW_AT_LAUNCH.load(Ordering::Relaxed) {
         return;
@@ -94,21 +94,27 @@ pub async fn problem_report_facts(app: AppHandle, webview: tauri::Webview) -> Re
     .map_err(|e| e.to_string())
 }
 
-/// A process as the system lists it, with the memory it holds (None: not asked, or it couldn't be read).
+/// A process as the system lists it, and on Linux the memory its listing says it holds (None: it couldn't be read).
 #[cfg_attr(target_os = "macos", allow(dead_code))]
 #[derive(Debug)]
 struct Proc {
     pid: u32,
     ppid: u32,
     name: String,
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     bytes: Option<u64>,
 }
 
-/// The memory of each process `picked` finds under `root`, at any depth, with everything under it; None when there
-/// is none, or none could be read.
+/// The memory (`bytes_of`, asked of those alone) of each process `picked` finds under `root`, at any depth, with
+/// everything under it; None when there is none, or none could be read.
 // ponytail: each step scans the whole list (a few hundred processes); a map of children if it ever runs hot.
 #[cfg_attr(target_os = "macos", allow(dead_code))]
-fn tree_bytes(procs: &[Proc], root: u32, picked: impl Fn(&str) -> bool) -> Option<u64> {
+fn tree_bytes(
+    procs: &[Proc],
+    root: u32,
+    picked: impl Fn(&str) -> bool,
+    bytes_of: impl Fn(&Proc) -> Option<u64>,
+) -> Option<u64> {
     let mut total: Option<u64> = None;
     // A parent's id that came back on a new process can't loop the walk, nor count a process twice.
     let mut seen = HashSet::from([root]);
@@ -120,7 +126,7 @@ fn tree_bytes(procs: &[Proc], root: u32, picked: impl Fn(&str) -> bool) -> Optio
             }
             let counted = inside || picked(&child.name);
             if counted {
-                if let Some(bytes) = child.bytes {
+                if let Some(bytes) = bytes_of(child) {
                     total = Some(total.unwrap_or(0).saturating_add(bytes));
                 }
             }
@@ -249,7 +255,7 @@ mod system {
                 status_of(pid, &std::fs::read_to_string(entry.path().join("status")).ok()?)
             })
             .collect();
-        tree_bytes(&procs, std::process::id(), |name| name.starts_with(WEBKIT_WEB_PROCESS))
+        tree_bytes(&procs, std::process::id(), |name| name.starts_with(WEBKIT_WEB_PROCESS), |p| p.bytes)
     }
 }
 
@@ -392,11 +398,8 @@ mod system {
             }
             CloseHandle(snapshot);
         }
-        // Every process of WebView2's tree runs as its one program: only those are asked their memory.
-        for entry in procs.iter_mut().filter(|p| p.name.eq_ignore_ascii_case(WEBVIEW2)) {
-            entry.bytes = private_bytes(entry.pid);
-        }
-        tree_bytes(&procs, std::process::id(), |name| name.eq_ignore_ascii_case(WEBVIEW2))
+        // Only the processes under the app are asked their memory, never another app's WebView2.
+        tree_bytes(&procs, std::process::id(), |name| name.eq_ignore_ascii_case(WEBVIEW2), |p| private_bytes(p.pid))
     }
 }
 
@@ -426,9 +429,17 @@ mod tests {
             process(400, 1, "msedgewebview2.exe", 1000),
         ];
         let webview2 = |name: &str| name.eq_ignore_ascii_case("MSEdgeWebView2.exe");
-        assert_eq!(tree_bytes(&procs, app, webview2), Some((60 + 210 + 90 + 5) << 20));
-        assert_eq!(tree_bytes(&procs, 300, webview2), None, "none under it");
-        assert_eq!(tree_bytes(&procs, 999, webview2), None, "an app that isn't there");
+        let asked = std::cell::RefCell::new(Vec::new());
+        let bytes_of = |p: &Proc| {
+            asked.borrow_mut().push(p.pid);
+            p.bytes
+        };
+        assert_eq!(tree_bytes(&procs, app, webview2, bytes_of), Some((60 + 210 + 90 + 5) << 20));
+        // Only the app's own web view's processes are asked: never the app's other children, nor another app's.
+        asked.borrow_mut().sort_unstable();
+        assert_eq!(*asked.borrow(), [200, 201, 202, 203]);
+        assert_eq!(tree_bytes(&procs, 300, webview2, |p| p.bytes), None, "none under it");
+        assert_eq!(tree_bytes(&procs, 999, webview2, |p| p.bytes), None, "an app that isn't there");
     }
 
     #[test]
@@ -443,10 +454,10 @@ mod tests {
             process(21, 20, "x", 1),
         ];
         let webkit = |name: &str| name.starts_with(WEBKIT_WEB_PROCESS);
-        assert_eq!(tree_bytes(&procs, 1, webkit), Some(150 << 20));
-        assert_eq!(tree_bytes(&procs, 21, webkit), Some(7 << 20));
+        assert_eq!(tree_bytes(&procs, 1, webkit, |p| p.bytes), Some(150 << 20));
+        assert_eq!(tree_bytes(&procs, 21, webkit, |p| p.bytes), Some(7 << 20));
         let unreadable = [Proc { pid: 12, ppid: 1, name: "WebKitWebProces".into(), bytes: None }];
-        assert_eq!(tree_bytes(&unreadable, 1, webkit), None);
+        assert_eq!(tree_bytes(&unreadable, 1, webkit, |p| p.bytes), None);
     }
 
     #[test]
