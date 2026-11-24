@@ -61,6 +61,7 @@ export {
   stickerSeed,
   WAVE_SECONDS,
 } from "./agent/stickers";
+export { BoundedMap } from "./bounded-map";
 export {
   BRAIN_GRID,
   BRAIN_KINDS,

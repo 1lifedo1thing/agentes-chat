@@ -1551,6 +1551,17 @@ export function useAgentGroupAction(orgId: string) {
 
 export const useChannels = (orgId: string) => useQuery(channelsQuery(useApi(), orgId));
 
+/**
+ * What a row reads of the channel list (`pick`): it draws again when that changes, never at every unread count or last
+ * message the list moves with (a picked object that is equal keeps its identity).
+ */
+export const useChannelsPick = <T>(orgId: string, pick: (list: Channel[]) => T) =>
+  useQuery({ ...channelsQuery(useApi(), orgId), select: pick }).data;
+
+/** One channel's name, for a row that says where something happens (`useChannelsPick`). */
+export const useChannelName = (orgId: string, channelId: string | null | undefined) =>
+  useChannelsPick(orgId, (list) => (channelId ? list.find((c) => c.id === channelId)?.name : undefined));
+
 /** The sidebar's channel categories, in order (ADR 0080). */
 export const channelCategoriesQuery = (api: ApiClient, orgId: string) =>
   queryOptions({
