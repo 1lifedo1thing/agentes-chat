@@ -1,5 +1,16 @@
 import { startInFlight } from "@agenteschat/adapters/in-flight";
-import { and, type Database, type Executor, eq, inArray, type SQL, schema, sql } from "@agenteschat/db";
+import {
+  and,
+  type Database,
+  type Executor,
+  eq,
+  inArray,
+  notInArray,
+  rowsOf,
+  type SQL,
+  schema,
+  sql,
+} from "@agenteschat/db";
 import { errorNumber } from "./errors";
 import { percentile } from "./format";
 
@@ -33,18 +44,33 @@ export interface EnqueueInput {
   maxAttempts?: number;
 }
 
+const rowOf = (input: EnqueueInput) => ({
+  orgId: input.orgId,
+  kind: input.kind,
+  payload: input.payload,
+  dedupeKey: input.dedupeKey,
+  nextAttemptAt: input.runAt ?? new Date(),
+  maxAttempts: input.maxAttempts ?? 8,
+});
+
 export async function enqueue(db: Executor, input: EnqueueInput): Promise<void> {
-  await db
-    .insert(outbox)
-    .values({
-      orgId: input.orgId,
-      kind: input.kind,
-      payload: input.payload,
-      dedupeKey: input.dedupeKey,
-      nextAttemptAt: input.runAt ?? new Date(),
-      maxAttempts: input.maxAttempts ?? 8,
-    })
-    .onConflictDoNothing();
+  await db.insert(outbox).values(rowOf(input)).onConflictDoNothing();
+}
+
+const ENQUEUE_BATCH = 500;
+
+/** `enqueue` for many jobs, `ENQUEUE_BATCH` a statement. Returns how many it queued: a key already taken isn't. */
+export async function enqueueBatch(db: Executor, inputs: EnqueueInput[]): Promise<number> {
+  let queued = 0;
+  for (let i = 0; i < inputs.length; i += ENQUEUE_BATCH) {
+    const rows = await db
+      .insert(outbox)
+      .values(inputs.slice(i, i + ENQUEUE_BATCH).map(rowOf))
+      .onConflictDoNothing()
+      .returning({ id: outbox.id });
+    queued += rows.length;
+  }
+  return queued;
 }
 
 /**
@@ -134,6 +160,17 @@ const payloadId = (key: "runId" | "routineRunId") => {
 
 /** The run an `agent_run.execute` job executes (null for a malformed payload). */
 const runOfJob = payloadId("runId");
+
+const RUN_JOB = "agent_run.execute";
+
+/**
+ * A run's jobs, by name: every one is named `agent_run.execute:<run id>`, then why it woke the run. Written as
+ * `outbox_run_jobs_idx` is (the kind is the index's condition, and the planner reads `starts_with` as a range of it):
+ * a few rows, where the payload's run id is a scan of every job of every run. A finished job's payload is cleared after
+ * 30 days, and its name stays.
+ */
+export const jobsOfRun = (runId: string) =>
+  and(eq(outbox.kind, RUN_JOB), sql`starts_with(${outbox.dedupeKey}, ${`${RUN_JOB}:${runId}`})`);
 
 /**
  * Background work (ADR 0053 §10): a routine firing (`routine.run`), or the execution of a routine's
@@ -772,25 +809,128 @@ export function createOutboxPump(
 }
 
 /**
- * Finished jobs (`done`, `failed`) keep their content `days` days (ADR 0005), then lose their payload and error.
- * The row stays, so its `dedupe_key` still refuses a second enqueue. Only pending and running jobs' payloads are
- * ever read. Returns how many rows it cleared.
+ * Finished jobs (`done`, `failed`) still in the outbox keep their content `days` days (ADR 0005), then lose their
+ * payload and error: failed jobs, and done ones `pruneDoneJobs` leaves. The row stays, so its `dedupe_key` still
+ * refuses a second enqueue. Only pending and running jobs' payloads are ever read. Returns how many rows it cleared.
  */
 export async function clearOldOutboxPayloads(db: Executor, days = 30): Promise<number> {
-  const before = new Date(Date.now() - days * 86_400_000);
-  // ponytail: one daily scan with no index, add a partial index if the outbox passes a few million rows.
+  const before = sql`${new Date(Date.now() - days * DAY_MS).toISOString()}::timestamptz`;
   const cleared = await db
     .update(outbox)
     .set({ payload: {}, lastError: null })
     .where(
       and(
         inArray(outbox.status, ["done", "failed"]),
-        sql`coalesce(${outbox.completedAt}, ${outbox.createdAt}) < ${before.toISOString()}::timestamptz`,
+        // A job ends after it was queued: the bound on `created_at` reads only the old end of `outbox_created_idx`.
+        sql`${outbox.createdAt} < ${before}`,
+        sql`coalesce(${outbox.completedAt}, ${outbox.createdAt}) < ${before}`,
         sql`(${outbox.payload} <> '{}'::jsonb or ${outbox.lastError} is not null)`,
       ),
     )
     .returning({ id: outbox.id });
   return cleared.length;
+}
+
+const DAY_MS = 86_400_000;
+/** Done jobs leave the outbox this long after they were queued (`pruneDoneJobs`). */
+export const DONE_JOBS_KEPT_DAYS = 14;
+/** How long the key of a pruned job still refuses a second enqueue, from when the job was queued (`outboxDedupe`). */
+export const DEDUPE_KEPT_DAYS = 90;
+
+/**
+ * Kinds whose done rows are never pruned: their key is a memory for good. `saidOnce`'s ledger, the greetings and the
+ * plan reminders a workspace or a person gets once, and the jobs a boot sweep queues again for every account, entry or
+ * workspace, which only their keys make a no-op (contacts, the embedding backfill).
+ */
+export const KEPT_JOB_KINDS = [
+  "right_hand.said",
+  "team.hello",
+  "right_hand.welcome",
+  "plan.waiting",
+  "account.contact",
+  "waitlist.contact",
+  "search.reindex",
+];
+
+/**
+ * Kinds whose keys are not kept once their rows go, most of the outbox: each names what was made in the transaction
+ * that queued it (a message, a run, a routine run) or a time window already past, so nothing queues it again.
+ */
+export const UNREPEATABLE_JOB_KINDS = [
+  "agent_run.execute",
+  "message.posted",
+  "notifications.message",
+  "search.index",
+  "threads.assess",
+  "routine.run",
+  "machine.tasks_offline",
+  "live-activity.refresh",
+  "context.consolidate",
+  "team_watch.check",
+];
+
+/** The run an `agent_run.execute` job's key names (`agent_run.execute:<run>…`); null for a key of another shape. */
+const runOfJobKey = sql`case when split_part(o.dedupe_key, ':', 2) ~ '^[0-9a-fA-F-]{36}$'
+  then split_part(o.dedupe_key, ':', 2)::uuid end`;
+
+/**
+ * Done jobs queued over `DONE_JOBS_KEPT_DAYS` ago leave the outbox, `batch` at a time, oldest first, so the queue's
+ * indexes stay the size of two weeks of jobs. Their keys go to `outboxDedupe`, still refusing a second enqueue, until
+ * `DEDUPE_KEPT_DAYS` have passed (the keys that expire then go too), except the keys nothing can queue again
+ * (`UNREPEATABLE_JOB_KINDS`). Left in place: `KEPT_JOB_KINDS`, and the jobs of an agent run that hasn't ended, as a
+ * run waiting again reads whether a delivered secret was taken off its resume job (`pauseOpen`). Several processes
+ * may run it at once: each takes the rows the others don't hold.
+ */
+export async function pruneDoneJobs(
+  db: Database,
+  options: { now?: Date; batch?: number } = {},
+): Promise<{ jobs: number; keys: number }> {
+  const now = (options.now ?? new Date()).getTime();
+  const before = sql`${new Date(now - DONE_JOBS_KEPT_DAYS * DAY_MS).toISOString()}::timestamptz`;
+  const kept = `{${KEPT_JOB_KINDS.join(",")}}`;
+  const unrepeatable = `{${UNREPEATABLE_JOB_KINDS.join(",")}}`;
+  // Read once, not per batch (the planner hashes them from a scan of every run). A run never opens again once ended.
+  const open = await db
+    .select({ id: schema.agentRuns.id })
+    .from(schema.agentRuns)
+    .where(notInArray(schema.agentRuns.status, ["done", "failed", "canceled"]));
+  const openRuns = `{${open.map((r) => r.id).join(",")}}`;
+  // Each batch goes on from where the last one ended: the rows left behind are never read twice.
+  let after = sql``;
+  let jobs = 0;
+  for (;;) {
+    const [gone] = rowsOf<{ n: number; at: string | null; id: string | null }>(
+      await db.execute(sql`with gone as (
+          delete from ${outbox} where ${outbox.id} in (
+            select o.id from ${outbox} o
+            where o.created_at < ${before} ${after} and o.status = 'done' and o.kind <> all(${kept}::text[])
+              and not (o.kind = 'agent_run.execute' and coalesce(${runOfJobKey} = any(${openRuns}::uuid[]), false))
+            order by o.created_at, o.id
+            limit ${options.batch ?? 5000}
+            for update of o skip locked)
+          returning id, org_id, kind, dedupe_key, created_at
+        ), archived as (
+          insert into ${schema.outboxDedupe} (dedupe_key, org_id, created_at)
+          select dedupe_key, org_id, created_at from gone
+          where dedupe_key is not null and kind <> all(${unrepeatable}::text[])
+          on conflict do nothing
+        )
+        select count(*)::int as n, max(created_at)::text as at,
+          (array_agg(id order by created_at desc, id desc))[1]::text as id
+        from gone`),
+    );
+    if (!gone?.n || !gone.at || !gone.id) break;
+    jobs += gone.n;
+    after = sql`and (o.created_at, o.id) > (${gone.at}::timestamptz, ${gone.id}::uuid)`;
+  }
+  const [expired] = rowsOf<{ n: number }>(
+    await db.execute(sql`with gone as (
+        delete from ${schema.outboxDedupe}
+        where ${schema.outboxDedupe.createdAt} < ${new Date(now - DEDUPE_KEPT_DAYS * DAY_MS).toISOString()}::timestamptz
+        returning 1)
+      select count(*)::int as n from gone`),
+  );
+  return { jobs, keys: expired?.n ?? 0 };
 }
 
 /** Runs batches until nothing is due. For tests and CLI tools; workers call `processOutbox` on an interval. */

@@ -20,6 +20,24 @@ export interface Health {
   edition: Edition;
 }
 
+/**
+ * An app's own speed, for its server (`POST /api/app/client-vitals`): what it measured since its last report, all in
+ * milliseconds but the heap (bytes) and the counts.
+ */
+export interface ClientVitalsReport {
+  platform: "ios" | "android" | "web";
+  /** From the app's start to the launch splash leaving. */
+  coldStartMs?: number;
+  /** From the app's start to its first list drawn with rows. */
+  firstRowsMs?: number;
+  jsLagP95Ms?: number;
+  jsLagMaxMs?: number;
+  heapBytes?: number;
+  /** Reads (GETs) in the 10 s after the app came back to the front. */
+  getsPerReturn?: number;
+  reconnects?: number;
+}
+
 /** The usage report's switch, for the installation's owner (`GET /api/app/telemetry`). */
 export interface ServerTelemetry {
   /** The owner's switch. */
@@ -4182,6 +4200,13 @@ export interface ArtifactRef {
   /** A picture's size (pixels), when the server knew it: its card has its box before the file's details load. */
   width?: number;
   height?: number;
+  /**
+   * An uploaded file's name, type and bytes (servers from 2026-11 on): a picture or a video shows from these alone,
+   * with no request for the file's details first.
+   */
+  name?: string;
+  contentType?: string;
+  size?: number;
 }
 
 export interface ArtifactFilters {
@@ -7714,11 +7739,40 @@ export interface ThreadFollow {
 }
 
 /**
- * Unread marks on my own topic: a message in a conversation I'm in (no content: the lists read again), and my
- * reads and mutes from any device.
+ * A new message as the conversation lists show it (`channel.activity`): whether it counts as unread and, when it may
+ * be a list's last line, that line (`Channel.lastMessage`'s `preview`, `DirectMessage.lastMessage`'s `body`).
+ */
+export interface ActivityLine {
+  id: string;
+  createdAt: string;
+  /** It counts as unread: not a quiet notice, nor an agent's sticker after its own reply. */
+  counts: boolean;
+  /** A channel's top-level message or any of a DM's; absent for a routine's call (its answer is the line). */
+  last?: {
+    authorType: AuthorType;
+    authorId: string | null;
+    preview: string;
+    body: string;
+    meta: PreviewMeta | null;
+    mediaKind: MediaKind | null;
+  };
+}
+
+/**
+ * Unread marks on my own topic: a message in a conversation I'm in (with its list line, `message`, the lists patch
+ * their row; without, from an older server or for a confidential message, they read again), and my reads and mutes
+ * from any device.
  */
 export type UnreadEvent =
-  | { type: "channel.activity"; channelId: string; threadId: string | null; dm?: boolean }
+  | {
+      type: "channel.activity";
+      channelId: string;
+      threadId: string | null;
+      dm?: boolean;
+      message?: ActivityLine;
+      /** With `message`: it mentions me. */
+      mentioned?: boolean;
+    }
   | { type: "channel.read"; channelId: string; userId: string; lastReadAt: string }
   | { type: "channel.muted"; channelId: string; muted: boolean }
   | { type: "thread.read"; threadId: string; channelId: string; lastReadAt: string }

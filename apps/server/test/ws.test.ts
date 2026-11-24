@@ -624,7 +624,7 @@ test("a missed revocation event is reconciled from durable membership", async ()
   }
 }, 60_000);
 
-test("a new message reaches the other members' sockets as `channel.activity` (no content), never the author's", async () => {
+test("a new message reaches the other members' sockets as `channel.activity` with its list line, never the author's", async () => {
   const owner = browser(t);
   await signUp(owner, "owner@example.com");
   const { orgId, channelId } = await seedOrg(owner);
@@ -635,12 +635,34 @@ test("a new message reaches the other members' sockets as `channel.activity` (no
   await Promise.all([a.opened, o.opened]);
   await Promise.all([a.next((f) => f.type === "ready"), o.next((f) => f.type === "ready")]);
 
-  await owner(`/api/app/organizations/${orgId}/channels/${channelId}/messages`, { json: { body: "hello all" } });
+  const sent = (await (
+    await owner(`/api/app/organizations/${orgId}/channels/${channelId}/messages`, { json: { body: "hello **all**" } })
+  ).json()) as { id: string; createdAt: string; author: { id: string } };
   const heard = await a.next((f) => (f.event as { type?: string } | undefined)?.type === "channel.activity");
+  // What her lists show of it, so they patch their row instead of reading the list again.
   expect(heard).toEqual({
     type: "event",
     scope: "user",
-    event: { type: "channel.activity", channelId, threadId: null, dm: false },
+    event: {
+      type: "channel.activity",
+      channelId,
+      threadId: null,
+      dm: false,
+      message: {
+        id: sent.id,
+        createdAt: sent.createdAt,
+        counts: true,
+        last: {
+          authorType: "person",
+          authorId: sent.author.id,
+          preview: "hello all",
+          body: "hello **all**",
+          meta: null,
+          mediaKind: null,
+        },
+      },
+      mentioned: false,
+    },
   });
   await Bun.sleep(200);
   expect(o.frames.some((f) => (f.event as { type?: string } | undefined)?.type === "channel.activity")).toBe(false);
@@ -748,4 +770,38 @@ test("an event Bun drops past its backpressure limit closes the socket, so the a
   };
   await realtime.websocket.message(frozen as unknown as Bun.ServerWebSocket<SocketData>, '{"type":"ping"}');
   expect(closed).toEqual([1013]);
+});
+
+test("an idle socket whose session ended is closed by its replica's one check of every socket's session", async () => {
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const { orgId } = await seedOrg(owner);
+  const fast = fastRecheckServer(t.db, 50);
+  const { internalAdapter } = await t.auth.$context;
+  const findSession = internalAdapter.findSession;
+  let reads = 0;
+  internalAdapter.findSession = (...args) => {
+    reads++;
+    return findSession(...args);
+  };
+  try {
+    const url = `ws://127.0.0.1:${fast.port}/api/ws?orgId=${orgId}`;
+    const sockets = [0, 1, 2].map(() => connect(url, { origin: ORIGIN, cookie: owner.cookie() }));
+    for (const c of sockets) await c.next((f) => f.type === "ready");
+    const closed = sockets.map(
+      (c) => new Promise<number>((resolve) => c.ws.addEventListener("close", (e) => resolve(e.code))),
+    );
+    // Idle a few periods: their sessions are read together, never one socket at a time.
+    reads = 0;
+    await Bun.sleep(300);
+    expect(reads).toBe(0);
+    // The session ends; the sockets send nothing, so only the replica's check can find it.
+    await t.db.delete(schema.sessions);
+    expect(await Promise.all(closed.map((p) => Promise.race([p, Bun.sleep(3_000).then(() => -1)])))).toEqual([
+      4401, 4401, 4401,
+    ]);
+  } finally {
+    internalAdapter.findSession = findSession;
+    await Promise.race([fast.stop(true), Bun.sleep(500)]);
+  }
 });

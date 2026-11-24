@@ -11,6 +11,10 @@ publish = false
 name = "agentes_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[features]
+# The web inspector in a release build: the Desktop workflow's profiling build, never one people get.
+devtools = ["tauri/devtools"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 

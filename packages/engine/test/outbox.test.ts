@@ -22,6 +22,7 @@ import {
   POOL_SLOW_MS,
   poolNeededFor,
   processOutbox,
+  pruneDoneJobs,
   RUN_MEMORY_BYTES,
   releaseJobs,
   renewLease,
@@ -874,9 +875,14 @@ test("finished jobs lose their content after 30 days and keep their row and dedu
   for (const kind of ["old", "failed", "recent", "waiting"]) await enqueue(db, job(kind, { dedupeKey: kind }));
   const set = (kind: string, values: Partial<typeof schema.outbox.$inferInsert>) =>
     db.update(schema.outbox).set(values).where(eq(schema.outbox.kind, kind));
-  await set("old", { status: "done", completedAt: at(-31 * day), lastError: "a@example.com bounced" });
+  await set("old", {
+    status: "done",
+    createdAt: at(-31 * day),
+    completedAt: at(-31 * day),
+    lastError: "a@example.com bounced",
+  });
   await set("failed", { status: "failed", createdAt: at(-31 * day), lastError: "a@example.com bounced" });
-  await set("recent", { status: "done", completedAt: at(-29 * day) });
+  await set("recent", { status: "done", createdAt: at(-31 * day), completedAt: at(-29 * day) });
   await set("waiting", { createdAt: at(-31 * day) });
 
   expect(await clearOldOutboxPayloads(db)).toBe(2);
@@ -891,6 +897,86 @@ test("finished jobs lose their content after 30 days and keep their row and dedu
   await enqueue(db, job("old", { dedupeKey: "old" }));
   expect(await rows()).toHaveLength(4);
   expect(await clearOldOutboxPayloads(db)).toBe(0);
+});
+
+const keysKept = async () => (await db.select().from(schema.outboxDedupe)).map((r) => r.dedupeKey).sort();
+
+test("done jobs leave the outbox after two weeks; their keys still refuse a second enqueue until they expire", async () => {
+  const day = 86_400_000;
+  const put = async (kind: string, dedupeKey: string, values: Partial<typeof schema.outbox.$inferInsert>) => {
+    await enqueue(db, job(kind, { dedupeKey }));
+    await db.update(schema.outbox).set(values).where(eq(schema.outbox.dedupeKey, dedupeKey));
+  };
+  const old = { status: "done" as const, createdAt: at(-15 * day), completedAt: at(-15 * day) };
+  await put("email.send", "email:a", old);
+  await put("message.posted", "message.posted:m1", old);
+  await put("right_hand.said", "right_hand.said:o:hello", old);
+  await put("email.send", "email:b", { ...old, status: "failed" });
+  await put("email.send", "email:c", { createdAt: at(-15 * day) });
+  await put("email.send", "email:d", { ...old, createdAt: at(-13 * day) });
+
+  expect(await pruneDoneJobs(db)).toEqual({ jobs: 2, keys: 0 });
+  expect((await rows()).map((r) => r.dedupeKey).sort()).toEqual([
+    "email:b",
+    "email:c",
+    "email:d",
+    "right_hand.said:o:hello",
+  ]);
+  // A message's job names a message that is never posted again: its key isn't kept.
+  expect(await keysKept()).toEqual(["email:a"]);
+
+  await enqueue(db, job("email.send", { dedupeKey: "email:a" }));
+  await enqueue(db, job("message.posted", { dedupeKey: "message.posted:m1" }));
+  expect((await rows()).map((r) => r.dedupeKey)).not.toContain("email:a");
+  expect((await rows()).map((r) => r.dedupeKey)).toContain("message.posted:m1");
+
+  // 90 days after its job was queued, the key goes and the job may come again.
+  expect(await pruneDoneJobs(db, { now: at(76 * day) })).toEqual({ jobs: 1, keys: 1 });
+  expect(await keysKept()).toEqual(["email:d"]);
+  await enqueue(db, job("email.send", { dedupeKey: "email:a" }));
+  expect((await rows()).map((r) => r.dedupeKey)).toContain("email:a");
+});
+
+test("pruning goes on past the rows it leaves, and keeps the jobs of a run that hasn't ended", async () => {
+  const day = 86_400_000;
+  const [agent] = await db
+    .insert(schema.agents)
+    .values({ orgId, name: "Dev", handle: "dev", model: "claude-sonnet-5-5" })
+    .returning();
+  const run = (status: "waiting_input" | "done") => ({
+    orgId,
+    agentId: agent?.id ?? "",
+    channelId: crypto.randomUUID(),
+    threadRootId: crypto.randomUUID(),
+    triggerMessageId: crypto.randomUUID(),
+    trigger: "mention" as const,
+    hop: 1,
+    status,
+  });
+  const [open, ended] = await db
+    .insert(schema.agentRuns)
+    .values([run("waiting_input"), run("done")])
+    .returning();
+  const jobs = [
+    ["agent_run.execute", `agent_run.execute:${open?.id}:secret:s1`],
+    ["right_hand.said", "right_hand.said:o:hello"],
+    ["agent_run.execute", `agent_run.execute:${ended?.id}`],
+    ["team.hello", "team.hello:o"],
+    ["email.send", "email:x"],
+  ] as const;
+  for (const [i, [kind, dedupeKey]] of jobs.entries()) {
+    await enqueue(db, job(kind, { dedupeKey }));
+    await db
+      .update(schema.outbox)
+      .set({ status: "done", createdAt: at(-20 * day + i * 1000) })
+      .where(eq(schema.outbox.dedupeKey, dedupeKey));
+  }
+
+  expect(await pruneDoneJobs(db, { batch: 1 })).toEqual({ jobs: 2, keys: 0 });
+  expect((await rows()).map((r) => r.dedupeKey).sort()).toEqual(
+    [`agent_run.execute:${open?.id}:secret:s1`, "right_hand.said:o:hello", "team.hello:o"].sort(),
+  );
+  expect(await keysKept()).toEqual(["email:x"]);
 });
 
 test("drainOutbox follows chains of jobs", async () => {

@@ -21,7 +21,9 @@ import type { TypingKind } from "./typing";
  *   stayed up `RECONNECT_HEALTHY_MS` (a server that takes the socket and drops it at once doesn't get a dial every
  *   second); waits at least what a close reason's `retry-after=` asks; keeps one socket at a time; in a hidden tab
  *   (`hidden`) waits from the longest step; shown again or back online (`checkAlive`), dials within the first step;
- * - tells listeners so they catch up over HTTP (real-time is best effort, the database is the source of truth);
+ * - tells listeners so they catch up over HTTP (real-time is best effort, the database is the source of truth), at a
+ *   random point within a few seconds; at once when the app started it again after a `stop()` (the phone back in
+ *   front: that app's own moment, not a restart's wave);
  * - pings to keep the connection alive through proxies, and drops a socket whose pong doesn't come back
  *   (`pongTimeoutMs`): after a network change or a sleep the browser can keep a dead socket "open" for
  *   minutes while HTTP still works, so messages send and nothing arrives live;
@@ -241,6 +243,8 @@ export class RealtimeConnection {
   private readonly retries = new Map<string, { timer: unknown; attempt: number }>();
   /** Recent `message.created` ids, oldest first. */
   private readonly heard = new Set<string>();
+  /** Started again after a `stop()`, its first socket not open nor lost yet. */
+  private restarted = false;
   private everOpened = false;
   private stopped = true;
   /** This connection's id on the server (`?tab=`): its new socket replaces one it left behind there. */
@@ -286,6 +290,7 @@ export class RealtimeConnection {
   start() {
     if (!this.stopped) return;
     this.stopped = false;
+    this.restarted = this.everOpened;
     this.open();
   }
 
@@ -356,8 +361,9 @@ export class RealtimeConnection {
 
   /**
    * Read again over HTTP what may have been missed, at a random point within `CATCH_UP_SPREAD_MS`: after a reconnect,
-   * or when the server says it missed events (`resync`). `full`: anything cached may be old; otherwise the socket was
-   * back within `BRIEF_GAP_MS` and what is on screen reading again is enough.
+   * or when the server says it missed events (`resync`); at once after a `start()` that followed a `stop()`, if its
+   * first socket opens. `full`: anything cached may be old; otherwise the socket was back within `BRIEF_GAP_MS` and
+   * what is on screen reading again is enough.
    */
   onCatchUp(listener: (full: boolean) => void) {
     this.catchUpListeners.add(listener);
@@ -366,11 +372,11 @@ export class RealtimeConnection {
     };
   }
 
-  private queueCatchUp(full: boolean) {
+  private queueCatchUp(full: boolean, atOnce = false) {
     if (this.catchUpListeners.size === 0) return;
     this.catchUpFull ||= full;
     if (this.catchUpTimer !== null) return;
-    const spread = this.options.catchUpSpreadMs ?? CATCH_UP_SPREAD_MS;
+    const spread = atOnce ? 0 : (this.options.catchUpSpreadMs ?? CATCH_UP_SPREAD_MS);
     const delay = Math.floor((this.options.random ?? Math.random)() * spread);
     this.catchUpTimer = this.timers.setTimeout(() => {
       this.catchUpTimer = null;
@@ -682,9 +688,10 @@ export class RealtimeConnection {
       this.browserWatches.resumeAll();
       this.startPing();
       if (reconnected) {
-        this.queueCatchUp(full);
+        this.queueCatchUp(full, this.restarted);
         for (const l of this.reconnectListeners) l();
       }
+      this.restarted = false;
     };
     socket.onmessage = (ev) => {
       // Anything heard proves the socket alive.
@@ -707,6 +714,8 @@ export class RealtimeConnection {
       this.downSince = ping > 0 ? Math.min(this.now(), due) : this.now();
     }
     if (code !== undefined && MISSED_CLOSE_CODES.has(code)) this.missedOnClose = true;
+    // A restart whose first dial failed (the server restarting) comes back with everyone else: spread out.
+    this.restarted = false;
     const now = this.now();
     if (this.openedAt !== null && now - this.openedAt >= RECONNECT_HEALTHY_MS) this.attempt = 0;
     this.openedAt = null;
@@ -886,7 +895,14 @@ export class RealtimeConnection {
 
   private setStatus(status: ConnectionStatus) {
     if (this.status === status) return;
+    if (status === "open") openSockets++;
+    else if (this.status === "open") openSockets--;
     this.status = status;
     for (const l of this.statusListeners) l(status);
   }
 }
+
+let openSockets = 0;
+
+/** Whether any of this app's realtime sockets is open: polls that only back events up may wait longer then. */
+export const realtimeOpen = () => openSockets > 0;

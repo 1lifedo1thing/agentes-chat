@@ -12,6 +12,7 @@ import {
   MISSED_MESSAGE_GRACE_MS,
   parseServerFrame,
   RealtimeConnection,
+  realtimeOpen,
   realtimeUrl,
   replyingUnder,
   retargetProvisional,
@@ -130,6 +131,20 @@ describe("RealtimeConnection", () => {
     for (let i = 0; i < 400 && !frames.closed; i++) await Bun.sleep(5);
     expect(frames.closed).toBe(true);
     conn.stop();
+  });
+
+  test("realtimeOpen says whether any socket is open, for the polls that only back events up", () => {
+    const { factory, last } = fakeSockets();
+    const conn = new RealtimeConnection({ url: "ws://x/api/ws?orgId=o", createSocket: factory, pingMs: 0 });
+    expect(realtimeOpen()).toBe(false);
+    conn.start();
+    expect(realtimeOpen()).toBe(false);
+    last().open();
+    expect(realtimeOpen()).toBe(true);
+    last().drop();
+    expect(realtimeOpen()).toBe(false);
+    conn.stop();
+    expect(realtimeOpen()).toBe(false);
   });
 
   test("a server that doesn't ask for answers (one from before acks) gets none, so it never counts them as bad", async () => {
@@ -764,6 +779,58 @@ describe("RealtimeConnection", () => {
     expect(clock.pending).toHaveLength(1);
     clock.runNext();
     expect(caughtUp).toEqual([false, true, true, true]);
+  });
+
+  test("started again after a stop (the phone back in front), it catches up as soon as it opens, not spread", () => {
+    const { factory, sockets } = fakeSockets();
+    const clock = manualTimers();
+    let now = 1_000_000;
+    const conn = new RealtimeConnection({
+      url: "ws://x",
+      createSocket: factory,
+      timers: clock.timers,
+      pingMs: 0,
+      backoffMs: [100],
+      now: () => now,
+      random: () => 0.5,
+    });
+    const caughtUp: boolean[] = [];
+    conn.onCatchUp((full) => caughtUp.push(full));
+    const waits = () => clock.pending.map((p) => p.ms);
+    conn.start();
+    sockets[0]?.open();
+    // A quick look at another app: what is shown reads again, at once.
+    conn.stop();
+    now += 3000;
+    conn.start();
+    sockets[1]?.open();
+    expect(waits()).toEqual([0]);
+    clock.runNext();
+    expect(caughtUp).toEqual([false]);
+    // Away longer than a brief gap: everything, at once too.
+    conn.stop();
+    now += BRIEF_GAP_MS;
+    conn.start();
+    sockets[2]?.open();
+    expect(waits()).toEqual([0]);
+    clock.runNext();
+    expect(caughtUp).toEqual([false, true]);
+    // A drop it didn't ask for is a restart's wave: spread as before.
+    sockets[2]?.drop();
+    now += 1000;
+    clock.runNext();
+    sockets[3]?.open();
+    expect(waits()).toEqual([CATCH_UP_SPREAD_MS / 2]);
+    clock.runNext();
+    // Back in front while the server restarts: the first dial fails, and it comes back spread with everyone else.
+    conn.stop();
+    now += 1000;
+    conn.start();
+    sockets[4]?.drop();
+    clock.runNext();
+    sockets[5]?.open();
+    expect(waits()).toEqual([CATCH_UP_SPREAD_MS / 2]);
+    conn.stop();
   });
 
   test("a socket that went silent (a sleep) counts as down since its answer was due, not since its close", () => {

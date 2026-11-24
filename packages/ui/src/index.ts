@@ -61,6 +61,7 @@ export {
   stickerSeed,
   WAVE_SECONDS,
 } from "./agent/stickers";
+export { BoundedMap } from "./bounded-map";
 export {
   BRAIN_GRID,
   BRAIN_KINDS,
@@ -525,6 +526,7 @@ export { ditherCells, ditherSvg, ditherTones, ditherUrl } from "./sky/dither";
 export {
   drawSprite,
   holdSkies,
+  holdSkiesWhileAway,
   prefersReducedMotion,
   redrawSkies,
   type SkyBlob,

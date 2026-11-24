@@ -24,6 +24,7 @@ import { busyResponse } from "./load-shed";
 import { createLogger, type Logger, loggedPath } from "./logger";
 import { ownHosts } from "./operator/hosts";
 import { directPushSenders, relayServeSender } from "./push-senders";
+import { timeRoutes } from "./route-times";
 import { accessRoutes } from "./routes/app/access";
 import { accountRoutes } from "./routes/app/account";
 import { actionRoutes } from "./routes/app/actions";
@@ -79,6 +80,7 @@ import { surfaceRoutes } from "./routes/app/surfaces";
 import { teamWeekRoutes } from "./routes/app/team-week";
 import { telemetryRoutes } from "./routes/app/telemetry";
 import { threadRoutes } from "./routes/app/threads";
+import { thumbRoutes } from "./routes/app/thumbs";
 import { vaultRoutes } from "./routes/app/vault";
 import { speechKeyRoutes, voiceRoutes } from "./routes/app/voice";
 import { waitingRoutes } from "./routes/app/waiting";
@@ -229,6 +231,7 @@ export function createApp(options: AppOptions) {
     api.route("/app", billingRoutes(deps));
     api.route("/app", referralRoutes(deps));
     api.route("/app", artifactRoutes(deps));
+    api.route("/app", thumbRoutes(deps));
     api.route("/app", liveRoutes(deps));
     // Pictures on canvases (ADR 0197): the image models, requests and Try again.
     api.route("/app", imageRoutes(deps));
@@ -358,6 +361,8 @@ export function createApp(options: AppOptions) {
   });
   // Ties a request's failure in the log to its report, and to what the client saw (`X-Request-Id`).
   app.use("/api/*", requestId());
+  // Each route's p95 over the minute, on the operator's `GET /vitals` (`route-times.ts`, `process-health.ts`).
+  app.use("/api/*", timeRoutes);
   app.use("/api/*", apiBodyLimit);
   // Security headers on every response: the app may not be framed (clickjacking of approval, merge and deploy
   // cards), <base> is pinned to our own origin, and HSTS is sent where the instance is served over TLS. `frame-src`
@@ -421,7 +426,9 @@ export function createApp(options: AppOptions) {
   );
 
   if (options.webDir) {
-    const assets = serveStatic({ root: options.webDir });
+    // The build writes each script and stylesheet compressed beside it (apps/web/scripts/compress-dist.ts): a server
+    // with nothing in front of it sends 1/4 of the bytes. Pages stay plain (their HTML is rewritten for a host).
+    const assets = serveStatic({ root: options.webDir, precompressed: true });
     // Client-side routing: unknown non-API paths render the web app.
     const spa = serveStatic({ root: options.webDir, path: "index.html" });
     const isApi = (path: string) => path.startsWith("/api/");

@@ -285,7 +285,7 @@ const spillable = (orgId: string, home: string) =>
     sql`${machines.executors}->>'mode' is distinct from 'system'`,
     sql`not exists (select 1 from ${agentRuns} w where w.org_id = ${machines.orgId}
       and w.waiting_machine_id = ${machines.id} and w.status = 'waiting_input'
-      and w.transcript->'waitingForBrain'->>'code' = 'busy')`,
+      and coalesce(w.state, w.transcript)->'waitingForBrain'->>'code' = 'busy')`,
   );
 
 /** Whether a turn waiting behind others on `home` may find another computer (`spillTarget`): worth a look now. */

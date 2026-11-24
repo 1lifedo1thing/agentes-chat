@@ -469,6 +469,14 @@ function viewOf(
 async function factsFor(db: Executor, orgId: string, userId: string, rows: CodeSessionRow[]) {
   const ids = rows.map((r) => r.channelId);
   if (ids.length === 0) return new Map<string, { working: boolean; waiting: boolean; lastAt: Date | null }>();
+  // Each conversation's newest message, read backwards from its end (`(channel_id, created_at)`), not all of it.
+  const newest = db
+    .select({ channelId: messages.channelId, at: messages.createdAt })
+    .from(messages)
+    .where(and(eq(messages.orgId, orgId), sql`${messages.channelId} = s.id`, isNull(messages.deletedAt)))
+    .orderBy(desc(messages.createdAt))
+    .limit(1)
+    .as("newest");
   const [live, waiting, last] = await Promise.all([
     db
       .selectDistinct({ channelId: agentRuns.channelId })
@@ -496,14 +504,13 @@ async function factsFor(db: Executor, orgId: string, userId: string, rows: CodeS
         ),
       ),
     db
-      .select({ channelId: messages.channelId, at: sql<Date>`max(${messages.createdAt})` })
-      .from(messages)
-      .where(and(eq(messages.orgId, orgId), inArray(messages.channelId, ids), isNull(messages.deletedAt)))
-      .groupBy(messages.channelId),
+      .select({ channelId: newest.channelId, at: newest.at })
+      .from(sql`unnest(${`{${ids.join(",")}}`}::uuid[]) as s(id)`)
+      .crossJoinLateral(newest),
   ]);
   const liveSet = new Set(live.map((r) => r.channelId));
   const waitSet = new Set(waiting.map((r) => r.channelId));
-  const lastBy = new Map(last.map((r) => [r.channelId, r.at ? new Date(r.at) : null]));
+  const lastBy = new Map(last.map((r) => [r.channelId, r.at]));
   return new Map(
     ids.map((id) => [id, { working: liveSet.has(id), waiting: waitSet.has(id), lastAt: lastBy.get(id) ?? null }]),
   );

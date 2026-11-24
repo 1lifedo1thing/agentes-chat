@@ -39,6 +39,7 @@ import {
   rightHandStandIn,
   thinkingAgent,
 } from "../right-hand";
+import { runState } from "../run-state";
 import { runnerUpdateWay } from "../runner-update";
 import type { AgentRun } from "../runs";
 import { accountUnavailable, brainSessionId, claudeCodeAvailability, cliMissingMessage, toolOff } from "./claude-code";
@@ -712,7 +713,7 @@ async function sessionFor(
             order by s.seq desc limit 1),
           (select max(u.input_tokens + u.cache_read_tokens + u.cache_write_tokens)
             from ${usageRecords} u where u.run_id = "agent_runs"."id" and u.provider = ${kind}), 0)`.mapWith(Number),
-        promptKey: sql<string | null>`${agentRuns.transcript}->>'promptKey'`,
+        promptKey: sql<string | null>`${runState}->>'promptKey'`,
       })
       .from(agentRuns)
       .where(
@@ -899,7 +900,7 @@ export async function resolveBrain(
   const settingsChanged =
     mission?.session?.resume && options.promptKey !== undefined
       ? await deps.db
-          .select({ key: sql<string | null>`${schema.agentRuns.transcript}->>'promptKey'` })
+          .select({ key: sql<string | null>`${runState}->>'promptKey'` })
           .from(schema.agentRuns)
           .where(
             and(
@@ -907,7 +908,7 @@ export async function resolveBrain(
               eq(schema.agentRuns.agentId, run.agentId),
               eq(schema.agentRuns.threadRootId, run.threadRootId),
               ne(schema.agentRuns.id, run.id),
-              sql`${schema.agentRuns.transcript}->>'promptKey' is not null`,
+              sql`${runState}->>'promptKey' is not null`,
             ),
           )
           .orderBy(desc(schema.agentRuns.createdAt))
