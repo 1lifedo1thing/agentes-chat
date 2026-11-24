@@ -987,7 +987,9 @@ describe("the agent's AI", () => {
     // The screens are components the tests can't render: what they wire in, as text.
     const screen = await Bun.file(new URL("../../src/features/ai/AgentAiScreen.tsx", import.meta.url).pathname).text();
     // Conta, Modelo and Esforço as the one choice every picker shares.
-    const accountAt = screen.indexOf('<GroupedHeader>{t("agentPage.work.brain.account")}</GroupedHeader>');
+    const accountAt = screen.search(
+      /<GroupedHeader[^>]*>\s*\{t\("agentPage\.work\.brain\.account"\)\}\s*<\/GroupedHeader>/,
+    );
     expect(accountAt).toBeGreaterThan(0);
     expect(screen.indexOf('target={{ kind: "agent", agentId }}')).toBeGreaterThan(accountAt);
     expect(screen).toContain("const input = accountInput(view, a);");
@@ -1011,6 +1013,22 @@ describe("the agent's AI", () => {
       "A chave foi recusada: troque por uma nova.",
     );
     expect(t("aiAccounts.page.newKey")).toBe("Trocar a chave");
+  });
+
+  test("Codex on a Windows computer without MXC: an ⓘ by Conta and by Codex on the computer's screen, never a line", async () => {
+    const read = (file: string) =>
+      Bun.file(new URL(`../../src/features/${file}`, import.meta.url).pathname)
+        .text()
+        .then((text) => text.replace(/\s+/g, " "));
+    const [ai, computer] = await Promise.all([read("ai/AgentAiScreen.tsx"), read("settings/MachineScreen.tsx")]);
+    // As the web's Conta: the hint rides on the header's ⓘ, from the option of the brain it thinks with.
+    expect(ai).toContain('const partial = view?.options.find((o) => o.kind === view.brain)?.sandbox === "partial";');
+    expect(ai).toContain(
+      '<GroupedHeader {...(partial ? { hint: { name: t("common.about", { label: t("agentPage.work.brain.account") }), text: t("brain.sandboxPartial"), }, } : {})} >',
+    );
+    // The computer's Codex row: the same words as the web's ⓘ (`codexSandboxNote`), behind an ⓘ of its own.
+    expect(computer).toContain('const note = tool === "codex" ? codexSandboxNote(t, m) : null;');
+    expect(computer).toContain('{...(note ? { hint: { name: t("common.about", { label }), text: note } } : {})}');
   });
 
   test("the agent's AI opens its model on a page of its own, pushed over it", async () => {
@@ -1532,21 +1550,5 @@ describe("the order of use at a limit (ADR 0041 §6)", () => {
     expect(ai).toContain('chain.moves && !waits ? t("agentPage.work.brain.movesOn") : null');
     expect(advanced).toContain("toggle={shown.accountPinned}");
     expect(advanced).toContain("accountPinned: pending.accountPinned ?? now.accountPinned");
-  });
-
-  test("Codex on a Windows computer without MXC: an ⓘ by Conta and by Codex on the computer's screen, never a line", async () => {
-    const read = (file: string) =>
-      Bun.file(new URL(`../../src/features/${file}`, import.meta.url).pathname)
-        .text()
-        .then((text) => text.replace(/\s+/g, " "));
-    const [ai, computer] = await Promise.all([read("ai/AgentAiScreen.tsx"), read("settings/MachineScreen.tsx")]);
-    // As the web's Conta: the hint rides on the header's ⓘ, from the option of the brain it thinks with.
-    expect(ai).toContain('const partial = view?.options.find((o) => o.kind === view.brain)?.sandbox === "partial";');
-    expect(ai).toContain(
-      '<GroupedHeader {...(partial ? { hint: { name: t("common.about", { label: t("agentPage.work.brain.account") }), text: t("brain.sandboxPartial"), }, } : {})} >',
-    );
-    // The computer's Codex row: the same words as the web's ⓘ (`codexSandboxNote`), behind an ⓘ of its own.
-    expect(computer).toContain('const note = tool === "codex" ? codexSandboxNote(t, m) : null;');
-    expect(computer).toContain('{...(note ? { hint: { name: t("common.about", { label }), text: note } } : {})}');
   });
 });
