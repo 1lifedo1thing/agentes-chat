@@ -369,6 +369,8 @@ export function AiChoiceFields({
   const showAccount = parts.includes("account");
   const showModel = parts.includes("model") && models.length > 0;
   const showEffort = parts.includes("effort") && levels.length > 0;
+  // Nothing to show (a model of its own on a plan without a list, no levels): no empty block in the dialog's rhythm.
+  if (!showAccount && !showModel && !showEffort) return null;
   const groupLabel = (g: string) =>
     g === "yours" || g === "others" || g === "keys" ? t(`aiHub.choice.groups.${g}`) : g;
   return (

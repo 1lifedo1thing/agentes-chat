@@ -249,7 +249,13 @@ export function SearchSelect<V extends string = string, O extends SelectOption<V
                 );
               })}
             </div>
-            {footer && <div className="ac-tz__foot">{footer(() => setOpen(false))}</div>}
+            {footer && (
+              <div className="ac-tz__foot">
+                {/* biome-ignore lint/a11y/useSemanticElements: a menu's separator, drawn as every menu's */}
+                <div className="ac-menu__separator" role="separator" />
+                {footer(() => setOpen(false))}
+              </div>
+            )}
           </RPopover.Content>
         </RPopover.Portal>
       </RPopover.Root>

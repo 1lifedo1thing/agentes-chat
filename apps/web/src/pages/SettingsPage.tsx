@@ -878,8 +878,10 @@ function KeysGroup() {
     <section className="aa-keys" aria-label={label}>
       <div className="aa-group__head">
         <p className="aa-group__label">
-          {label}
-          <InfoHint name={t("common.about", { label })}>{t("settings.keysSubtitle")}</InfoHint>
+          <span className="ac-hintline">
+            {label}
+            <InfoHint name={t("common.about", { label })}>{t("settings.keysSubtitle")}</InfoHint>
+          </span>
         </p>
         {!hold && (
           <Button size="sm" variant="ghost" icon="plus" onClick={() => setDialog({ type: "add" })}>

@@ -194,7 +194,7 @@ export function AiAccountsTab({ keys }: { keys?: ReactNode }) {
   const blocks = hubAccountsInOrder(hub.accounts, me.data?.user.id ?? "");
   const shown = blocks.find((b) => b.some((l) => l.id === open));
   const connect = connectAi && mayConnect && !hold && (
-    <Button size="sm" variant="primary" icon="plus" onClick={() => connectAi.open({})}>
+    <Button size="sm" icon="plus" onClick={() => connectAi.open({})}>
       {t("aiHub.choice.add")}
     </Button>
   );

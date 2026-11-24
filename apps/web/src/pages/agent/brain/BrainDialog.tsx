@@ -519,9 +519,10 @@ function BrainFlow({
     go("signin");
   };
   // What the accounts don't list, from "Quem pensa"'s own rows: its computer's own sign-ins, a plan that would move it to
-  // another computer. Drawn in the same list, each picked the way a switch goes here.
+  // another computer. Drawn in the same list, each picked the way a switch goes here; one whose program doesn't run
+  // there isn't a way to think at all, so it isn't listed.
   const extra: AiChoiceExtra[] = s.rows
-    .filter((r) => r.kind === "own" || r.kind === "plan")
+    .filter((r) => (r.kind === "own" || r.kind === "plan") && !r.off)
     .map((r) => ({
       key: r.id,
       group: view.canUsePlans || r.free ? "yours" : "others",
@@ -529,7 +530,6 @@ function BrainFlow({
       ...(r.about ? { meta: r.about } : {}),
       mark: r.mark,
       usage: r.usage,
-      ...(r.off ? { off: s.reason(r.choice) ?? s.side(r.choice)?.text ?? t("agentPage.work.brain.none") } : {}),
       onPick: () => confirm(r),
     }));
   /** "Gerenciar contas": every account in Settings (Contas de IA). */
@@ -1060,25 +1060,24 @@ function BrainFlow({
   /** A row in a button or a sentence: an unnamed account by its maker ("Usar Claude"), else its title. */
   const rowSaid = (r: BrainRow) => (r.account ? accountInLine(t, r.account) : r.title);
   /** The footer, always the same: a quiet note at its start, the main action at its end. */
-  const footer = (o: { note?: ReactNode; icon?: IconName; second?: ReactNode; main?: ReactNode }) => (
-    <DialogFooter
-      key={screen}
-      className={cx("bd-foot", o.note && o.second && o.main ? "bd-foot--two" : null)}
-      {...(o.note
-        ? {
-            note: (
-              <span className="ac-iconline">
-                <Icon name={o.icon ?? "info"} />
-                <span>{o.note}</span>
-              </span>
-            ),
-          }
-        : {})}
-    >
-      {o.second}
-      {o.main}
-    </DialogFooter>
-  );
+  const footer = (o: { note?: ReactNode; icon?: IconName; second?: ReactNode; main?: ReactNode }) => {
+    const note = o.note ? (
+      <span className="ac-iconline">
+        <Icon name={o.icon ?? "info"} />
+        <span>{o.note}</span>
+      </span>
+    ) : null;
+    return (
+      <DialogFooter
+        key={screen}
+        className={cx("bd-foot", note && o.second && o.main ? "bd-foot--two" : null)}
+        {...(note ? { note } : {})}
+      >
+        {o.second}
+        {o.main}
+      </DialogFooter>
+    );
+  };
   const cancel = (
     <Button variant="ghost" disabled={busy} onClick={back}>
       {t("common.cancel")}
