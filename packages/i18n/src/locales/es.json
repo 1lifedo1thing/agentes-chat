@@ -2548,6 +2548,17 @@
       "unlinkText": "{{assistant}} deja de responderte allí. Puedes vincularlo de nuevo cuando quieras.",
       "unlinked": "{{surface}} desvinculado"
     },
+    "nudge": {
+      "title": "Recordatorio de no leídos",
+      "hint": "Cuando algo queda sin leer en la app, {{assistant}} te lo recuerda en {{surface}}, como máximo una vez al día. No si tu teléfono recibe notificaciones.",
+      "after": "Recordar después de",
+      "hours": "{{hours}} h",
+      "quiet": "Horas de silencio",
+      "quietHint": "Ningún recordatorio entre estas horas, en tu zona horaria.",
+      "quietFrom": "Desde",
+      "quietTo": "Hasta",
+      "quietRange": "De {{from}} a {{to}}"
+    },
     "undo": {
       "title": "¿Desvincular la app de chat?",
       "lead": "Tu cuenta se acaba de vincular a una app de chat. Si no fuiste tú, desvincúlala aquí.",

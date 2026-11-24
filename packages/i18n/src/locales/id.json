@@ -2381,6 +2381,17 @@
       "unlinkText": "{{assistant}} berhenti menjawabmu di sana. Kamu bisa menautkannya lagi kapan saja.",
       "unlinked": "Tautan {{surface}} dilepas"
     },
+    "nudge": {
+      "title": "Pengingat belum dibaca",
+      "hint": "Saat ada yang belum dibaca di aplikasi, {{assistant}} mengingatkanmu di {{surface}}, paling banyak sekali sehari. Tidak jika ponselmu menerima notifikasi.",
+      "after": "Ingatkan setelah",
+      "hours": "{{hours}} jam",
+      "quiet": "Jam tenang",
+      "quietHint": "Tidak ada pengingat di antara jam ini, sesuai zona waktumu.",
+      "quietFrom": "Dari",
+      "quietTo": "Sampai",
+      "quietRange": "{{from}} sampai {{to}}"
+    },
     "undo": {
       "title": "Lepas tautan aplikasi chat?",
       "lead": "Akunmu baru saja ditautkan ke aplikasi chat. Kalau itu bukan kamu, lepas tautannya di sini.",

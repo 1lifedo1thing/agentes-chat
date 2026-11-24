@@ -2381,6 +2381,17 @@
       "unlinkText": "{{assistant}}将不再在那里回复你。你随时可以重新关联。",
       "unlinked": "已取消关联{{surface}}"
     },
+    "nudge": {
+      "title": "未读提醒",
+      "hint": "当应用中有未读内容时，{{assistant}} 会在 {{surface}} 上提醒你，每天最多一次。如果你的手机能收到推送通知，则不会提醒。",
+      "after": "提醒间隔",
+      "hours": "{{hours}} 小时",
+      "quiet": "免打扰时段",
+      "quietHint": "在这些时段内不发送提醒，按你的时区计算。",
+      "quietFrom": "开始",
+      "quietTo": "结束",
+      "quietRange": "{{from}} 至 {{to}}"
+    },
     "undo": {
       "title": "要取消关联聊天应用吗？",
       "lead": "你的账号刚刚关联了一个聊天应用。如果不是你，请在这里取消关联。",

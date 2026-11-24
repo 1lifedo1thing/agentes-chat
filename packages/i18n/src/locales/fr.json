@@ -2549,6 +2549,17 @@
       "unlinkText": "{{assistant}} ne vous répondra plus là-bas. Vous pouvez le lier à nouveau quand vous voulez.",
       "unlinked": "{{surface}} délié"
     },
+    "nudge": {
+      "title": "Rappel des non-lus",
+      "hint": "Quand quelque chose reste non lu dans l'app, {{assistant}} te le rappelle sur {{surface}}, une fois par jour au plus. Pas si ton téléphone reçoit les notifications.",
+      "after": "Rappeler après",
+      "hours": "{{hours}} h",
+      "quiet": "Heures calmes",
+      "quietHint": "Aucun rappel entre ces heures, dans ton fuseau horaire.",
+      "quietFrom": "De",
+      "quietTo": "Jusqu'à",
+      "quietRange": "De {{from}} à {{to}}"
+    },
     "undo": {
       "title": "Délier l'app de chat ?",
       "lead": "Votre compte vient d'être lié à une app de chat. Si ce n'était pas vous, déliez-la ici.",

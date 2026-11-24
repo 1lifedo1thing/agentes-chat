@@ -233,6 +233,7 @@ import type {
   StartChoice,
   StatusInput,
   StorageMigration,
+  SurfaceNudge,
   TaskManagerView,
   Team,
   TeamProposalCard,
@@ -433,6 +434,15 @@ export function useConfirmSurfaceLink() {
 export function useRemoveSurfaceLink() {
   const api = useApi();
   return useSurfaceLinkMutation((linkId: string) => api.surfaces.remove(linkId));
+}
+
+/** Changes my unread nudge on the surface (ADR 0227); the links are read again after. */
+export function useSetSurfaceNudge() {
+  const api = useApi();
+  return useSurfaceLinkMutation((input: { linkId: string } & Partial<SurfaceNudge>) => {
+    const { linkId, ...nudge } = input;
+    return api.surfaces.setNudge(linkId, nudge);
+  });
 }
 
 /** The "linked" email's undo, by its token; works signed out. */

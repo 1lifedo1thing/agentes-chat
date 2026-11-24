@@ -11,6 +11,7 @@ import { getMembership } from "../organizations";
 import { personLocale } from "../requester";
 import { lodiFor, postFromLodi } from "../right-hand-proactive";
 import { surfaceOn } from "./config";
+import { type NudgeSettings, nudgeOf } from "./nudge";
 
 /**
  * Links between a sender on the outside chat surface and an account (ADR 0187): a code minted in the app, typed on
@@ -39,6 +40,8 @@ export interface SurfaceLinkView {
   confirmedAt: string | null;
   /** Pending only: when it stops counting. */
   expiresAt: string | null;
+  /** The unread nudge's settings (ADR 0227). */
+  nudge: NudgeSettings;
 }
 
 /** `publicUrl`: where the emails link to; absent or null on a server that sends no email, which sends none. */
@@ -385,6 +388,7 @@ async function viewsOf(db: Executor, where: SQL | undefined): Promise<SurfaceLin
     createdAt: link.createdAt.toISOString(),
     confirmedAt: link.confirmedAt?.toISOString() ?? null,
     expiresAt: link.status === "pending" ? pendingExpiry(link.createdAt).toISOString() : null,
+    nudge: nudgeOf(link),
   }));
 }
 

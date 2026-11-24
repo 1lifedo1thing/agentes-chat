@@ -24,6 +24,7 @@ const LONG_PROFILE = "Ana 🌟 مرحبا بالعالم من مساحة الع�
 const LONG_WORKSPACE = "Northwind Industries Holdings and Partners Worldwide Operations";
 
 const link = (over: Partial<SurfaceLink> = {}): SurfaceLink => ({
+  nudge: { on: true, afterHours: 4, quietFrom: 22, quietTo: 8 },
   id: "link-1",
   status: "pending",
   display: "5511900000001",
@@ -184,6 +185,28 @@ describe("the outside chat app's row in Notificações", () => {
     expect(calls(state, "surfaces.remove")).toEqual([["link-1"]]);
     expect(document.body.textContent).toContain("Example Chat desvinculado");
     expect(within(row() as HTMLElement).getByRole("button", { name: "Vincular" })).toBeTruthy();
+  });
+
+  test("linked: the unread reminder, on by default; its delay and quiet hours save at once (ADR 0227)", async () => {
+    const { state } = await notifications({
+      name: "Example Chat",
+      links: [link({ status: "active", expiresAt: null, confirmedAt: new Date().toISOString() })],
+    });
+    const toggle = screen().getByRole("switch", { name: "Lembrete de não lidas" });
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    const after = screen().getByRole("combobox", { name: "Lembrar depois de" });
+    expect(after.textContent).toBe("4 h");
+    after.focus();
+    await act(async () => fireEvent.keyDown(after, { key: "Enter" }));
+    await click(screen().getByRole("option", { name: "8 h" }));
+    expect(screen().getByRole("combobox", { name: "De" }).textContent).toBe("22:00");
+    expect(screen().getByRole("combobox", { name: "Até" }).textContent).toBe("8:00");
+    await click(toggle);
+    expect(calls(state, "surfaces.setNudge")).toEqual([
+      ["link-1", { afterHours: 8 }],
+      ["link-1", { on: false }],
+    ]);
+    expect(screen().queryByRole("combobox", { name: "Lembrar depois de" })).toBeNull();
   });
 
   test("each failure says what happened with one way out", async () => {

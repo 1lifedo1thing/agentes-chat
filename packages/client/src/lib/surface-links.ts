@@ -1,3 +1,4 @@
+import { formatTime } from "@agenteschat/i18n/format";
 import type { SurfaceLink, SurfaceLinkCode, SurfaceLinks } from "../api/types";
 import { CONNECTOR_MARK } from "./connected";
 import { capitalize } from "./format";
@@ -63,3 +64,12 @@ export function surfaceMarkUrl(name: string): string | null {
   const url = `/connectors/${name.trim().toLowerCase()}.svg`;
   return CONNECTOR_MARK.test(url) ? url : null;
 }
+
+/** The nudge's delays the apps offer, in hours (ADR 0227). */
+export const NUDGE_AFTER_HOURS = [1, 2, 4, 8, 12, 24] as const;
+
+/** Every whole hour of the day, for the quiet hours. */
+export const DAY_HOURS = Array.from({ length: 24 }, (_, h) => h);
+
+/** An hour of the day as the reader's clock writes it ("22:00", "10 PM"). */
+export const hourLabel = (locale: string, hour: number) => formatTime(locale, new Date(2000, 0, 1, hour));

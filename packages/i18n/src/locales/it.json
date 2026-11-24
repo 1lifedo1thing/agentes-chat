@@ -2549,6 +2549,17 @@
       "unlinkText": "{{assistant}} smette di risponderti lì. Puoi collegarlo di nuovo quando vuoi.",
       "unlinked": "{{surface}} scollegato"
     },
+    "nudge": {
+      "title": "Promemoria dei non letti",
+      "hint": "Quando qualcosa resta non letto nell'app, {{assistant}} te lo ricorda su {{surface}}, al massimo una volta al giorno. Non se il telefono riceve le notifiche.",
+      "after": "Ricorda dopo",
+      "hours": "{{hours}} h",
+      "quiet": "Ore di silenzio",
+      "quietHint": "Nessun promemoria tra questi orari, nel tuo fuso orario.",
+      "quietFrom": "Dalle",
+      "quietTo": "Alle",
+      "quietRange": "Dalle {{from}} alle {{to}}"
+    },
     "undo": {
       "title": "Scollegare l'app di chat?",
       "lead": "Il tuo account è appena stato collegato a un'app di chat. Se non sei stato tu, scollegala qui.",

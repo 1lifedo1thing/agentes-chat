@@ -2633,6 +2633,17 @@
       "unlinkText": "{{assistant}} przestanie ci tam odpowiadać. Możesz połączyć ponownie w każdej chwili.",
       "unlinked": "{{surface}} rozłączony"
     },
+    "nudge": {
+      "title": "Przypomnienie o nieprzeczytanych",
+      "hint": "Gdy coś czeka nieprzeczytane w aplikacji, {{assistant}} przypomina o tym w {{surface}}, najwyżej raz dziennie. Nie, jeśli telefon dostaje powiadomienia.",
+      "after": "Przypomnij po",
+      "hours": "{{hours}} godz.",
+      "quiet": "Godziny ciszy",
+      "quietHint": "Brak przypomnień w tych godzinach, w Twojej strefie czasowej.",
+      "quietFrom": "Od",
+      "quietTo": "Do",
+      "quietRange": "{{from}} do {{to}}"
+    },
     "undo": {
       "title": "Rozłączyć aplikację czatu?",
       "lead": "Twoje konto zostało właśnie połączone z aplikacją czatu. Jeśli to nie ty, rozłącz ją tutaj.",

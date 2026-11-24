@@ -2640,6 +2640,18 @@ export const en = {
       unlinkText: "{{assistant}} stops answering you there. You can link it again any time.",
       unlinked: "{{surface}} unlinked",
     },
+    /** Settings › Notifications: the unread nudge under the linked chat app's row (ADR 0227). */
+    nudge: {
+      title: "Unread reminder",
+      hint: "When something waits unread in the app, {{assistant}} reminds you on {{surface}}, at most once a day. Not when your phone gets push notifications.",
+      after: "Remind after",
+      hours: "{{hours}} h",
+      quiet: "Quiet hours",
+      quietHint: "No reminders between these hours, in your time zone.",
+      quietFrom: "From",
+      quietTo: "Until",
+      quietRange: "{{from}} to {{to}}",
+    },
     /** The page the "linked" email's undo opens. Signed out, so it learns the app's name only from the answer. */
     undo: {
       title: "Unlink the chat app?",

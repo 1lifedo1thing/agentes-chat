@@ -247,6 +247,7 @@ import type {
   SurfaceLink,
   SurfaceLinkCode,
   SurfaceLinks,
+  SurfaceNudge,
   TaskManagerView,
   TaskOutput,
   TaskSteps,
@@ -661,6 +662,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       mintCode: (orgId) => request<SurfaceLinkCode>(`${org(orgId)}/surface-link/code`, { json: {} }),
       confirm: (linkId) => request<SurfaceLink>(`/api/app/me/surface-links/${enc(linkId)}/confirm`, { json: {} }),
       remove: (linkId) => request<void>(`/api/app/me/surface-links/${enc(linkId)}`, { method: "DELETE" }),
+      setNudge: (linkId, input) =>
+        request<SurfaceNudge>(`/api/app/me/surface-links/${enc(linkId)}/nudge`, { method: "PATCH", json: input }),
       undo: (token) =>
         request<{ unlinked: boolean; surface: string; display: string | null }>("/api/app/surface-undo", {
           json: { token },

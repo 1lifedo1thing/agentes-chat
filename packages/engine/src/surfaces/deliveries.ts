@@ -12,6 +12,7 @@ import {
   isNotNull,
   isNull,
   lt,
+  ne,
   schema,
   sql,
 } from "@agenteschat/db";
@@ -30,6 +31,7 @@ import { RIGHT_HAND } from "../right-hand";
 import { lodiFor, postFromLodi } from "../right-hand-proactive";
 import { surfaceOn } from "./config";
 import { activeLinkOf } from "./links";
+import { unreadFor } from "./nudge";
 
 /**
  * Replies of the right hand that go out on the outside chat surface (ADR 0187) instead of an in-app notification.
@@ -51,7 +53,7 @@ type CardKind = "question" | "approval" | "secret" | "block" | "poll" | "choices
 
 export interface SurfaceDeliveryView {
   id: string;
-  kind: "reply" | "linked";
+  kind: "reply" | "linked" | "nudge";
   linkId: string;
   externalId: string;
   orgId: string;
@@ -65,6 +67,8 @@ export interface SurfaceDeliveryView {
   media: { kind: "gif"; id: string; title: string } | { kind: "sticker"; mood: string } | null;
   card: { kind: CardKind; url: string } | null;
   choices: string[] | null;
+  /** A nudge's counts as listed (ADR 0227): what waits unread in the workspace, and how much of it blocks someone. */
+  nudge: { unread: number; waiting: number } | null;
 }
 
 /**
@@ -277,14 +281,25 @@ const openSince = () => new Date(Date.now() - SURFACE_FALLBACK_MS);
  * again: a link that ended falls back to the app; a person no longer in the workspace, or a right hand that may no
  * longer talk to them, drops it.
  */
-export async function listSurfaceDeliveries(deps: DeliveryDeps, limit: number): Promise<SurfaceDeliveryView[]> {
+export async function listSurfaceDeliveries(
+  deps: DeliveryDeps,
+  limit: number,
+  /** Nudges go only to a service that asks for them: an older one can't read their kind. */
+  options: { nudges?: boolean } = {},
+): Promise<SurfaceDeliveryView[]> {
   const { db } = deps;
   if (!surfaceOn()) return [];
   const rows = await db
     .select({ row: surfaceDeliveries, link: surfaceLinks })
     .from(surfaceDeliveries)
     .leftJoin(surfaceLinks, eq(surfaceLinks.id, surfaceDeliveries.linkId))
-    .where(and(isNull(surfaceDeliveries.takenAt), gt(surfaceDeliveries.createdAt, openSince())))
+    .where(
+      and(
+        isNull(surfaceDeliveries.takenAt),
+        gt(surfaceDeliveries.createdAt, openSince()),
+        options.nudges ? undefined : ne(surfaceDeliveries.kind, "nudge"),
+      ),
+    )
     .orderBy(asc(surfaceDeliveries.createdAt))
     .limit(limit);
   const out: SurfaceDeliveryView[] = [];
@@ -311,12 +326,21 @@ export async function listSurfaceDeliveries(deps: DeliveryDeps, limit: number): 
       createdAt: row.createdAt.toISOString(),
       inReplyTo: row.inReplyTo,
     };
+    if (row.kind === "nudge") {
+      const counts = await unreadFor(db, row.orgId, link.userId, new Date());
+      if (counts.unread === 0) {
+        await close(db, [row.id], "dropped");
+        continue;
+      }
+      out.push({ ...base, ...NO_CONTENT, nudge: counts });
+      continue;
+    }
     out.push(message ? { ...base, ...(await contentOf(db, row.orgId, message)) } : { ...base, ...NO_CONTENT });
   }
   return out;
 }
 
-const NO_CONTENT = { messageId: null, text: "", files: [], media: null, card: null, choices: null };
+const NO_CONTENT = { messageId: null, text: "", files: [], media: null, card: null, choices: null, nudge: null };
 
 async function messageOf(db: Executor, orgId: string, id: string, createdAt: Date | null) {
   const [m] = await db
@@ -390,6 +414,7 @@ async function contentOf(db: Executor, orgId: string, m: StoredMessage) {
       : null,
     card: cardKind ? { kind: cardKind, url: messageLink(orgId, m) } : null,
     choices: question?.choices?.length ? question.choices : null,
+    nudge: null,
   };
 }
 

@@ -6131,6 +6131,33 @@
   "surface.row.unlinked": {
     "value": "{{surface}} unlinked"
   },
+  "surface.nudge.title": {
+    "value": "Unread reminder"
+  },
+  "surface.nudge.hint": {
+    "value": "When something waits unread in the app, {{assistant}} reminds you on {{surface}}, at most once a day. Not when your phone gets push notifications."
+  },
+  "surface.nudge.after": {
+    "value": "Remind after"
+  },
+  "surface.nudge.hours": {
+    "value": "{{hours}} h"
+  },
+  "surface.nudge.quiet": {
+    "value": "Quiet hours"
+  },
+  "surface.nudge.quietHint": {
+    "value": "No reminders between these hours, in your time zone."
+  },
+  "surface.nudge.quietFrom": {
+    "value": "From"
+  },
+  "surface.nudge.quietTo": {
+    "value": "Until"
+  },
+  "surface.nudge.quietRange": {
+    "value": "{{from}} to {{to}}"
+  },
   "surface.undo.title": {
     "value": "Unlink the chat app?"
   },
