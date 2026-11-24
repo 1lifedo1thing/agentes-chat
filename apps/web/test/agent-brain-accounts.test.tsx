@@ -134,7 +134,12 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
   });
 
   test("renaming one of hers: the name itself becomes the field (no box, no Save), Enter saves, Esc goes back", async () => {
-    const { state } = await onMac({ accounts: [{ ...work, named: true }] });
+    const { state, api } = await onMac({ accounts: [{ ...work, named: true }] });
+    // Listed among the person's AI accounts too, where a rename lands.
+    fakeMachinesOf.get(api)?.setAiAccounts({
+      accounts: [{ ...work, named: true, machineId: "machine_1", computer: "MacBook" } as never],
+      computers: [],
+    });
     const d = await brainDialog();
     await toScreen(d, "Trocar de conta");
     // Each account's maker on its small tile, as AI e uso shows it.
@@ -163,6 +168,7 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
       "acct_work",
       "Escritório",
     ]);
+    expect(within(d).queryByRole("textbox", { name: "Nome da conta" })).toBeNull();
   });
 
   test("her own login signed out, an account another agent uses: a new login of that account, never hers again", async () => {

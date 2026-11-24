@@ -730,6 +730,13 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   font-size: 15px;
   line-height: 20px;
 }
+/* A row of one line (the one in use, named alone): the line centres on the mark instead. */
+.arrival-have__row:not(:has(.arrival-have__line)) {
+  align-items: center;
+}
+.arrival-have__row:not(:has(.arrival-have__line)) .arrival-have__head.ac-captop {
+  margin-block-start: 0;
+}
 /* "Unnamed account": quieter than a name or an email, until its owner names it. */
 .arrival-have__title[data-unnamed] {
   color: var(--ink-muted);
