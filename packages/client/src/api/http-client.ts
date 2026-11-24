@@ -115,6 +115,7 @@ import type {
   FeedbackFile,
   FeedbackOffer,
   FileConversationRef,
+  FileWave,
   ForeignMailbox,
   FormerAgent,
   GifKey,
@@ -1608,6 +1609,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<{ id: string }>(`${org(orgId)}/artifacts/${enc(id)}/reply`, {
           json: { text, clientId },
         }),
+      setWave: (orgId, id, version, wave) =>
+        request<FileWave>(`${org(orgId)}/artifacts/${enc(id)}/wave`, { method: "PUT", query: { version }, json: wave }),
       blockState: (orgId, id, version) =>
         request<BlockState>(`${org(orgId)}/blocks/${enc(id)}/state`, { query: { version } }),
       setBlockState: (orgId, id, version, values) =>

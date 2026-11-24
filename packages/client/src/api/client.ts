@@ -156,6 +156,7 @@ import type {
   FeedbackInput,
   FeedbackOffer,
   FileConversationRef,
+  FileWave,
   ForeignMailbox,
   FormerAgent,
   GifKey,
@@ -1944,6 +1945,8 @@ export interface ApiClient {
     keep(orgId: string, id: string): Promise<Artifact>;
     /** Sends what a person picked in a block to the agent that made it, as their own message. */
     reply(orgId: string, id: string, text: string, clientId: string): Promise<{ id: string }>;
+    /** Keeps an audio file's wave and length, measured here; the server keeps the first one measured (and returns it). */
+    setWave(orgId: string, id: string, version: number, wave: FileWave): Promise<FileWave>;
     /** A block's state, the same for everyone (ADR 0113). */
     blockState(orgId: string, id: string, version: number): Promise<BlockState>;
     /** Sets values in a block for everyone. */
