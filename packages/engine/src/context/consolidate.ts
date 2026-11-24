@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, eq, inArray, isNull, lt, lte, ne, or, schema, sql } from "@agenteschat/db";
+import { and, asc, eq, inArray, isNull, lt, lte, ne, or, rowsOf, schema, sql } from "@agenteschat/db";
 import { isPlaybook } from "../audience";
 import { enqueue } from "../outbox";
 import {
@@ -32,6 +32,9 @@ export const LEARNED_EXPIRE_DAYS = 14;
 
 /** An unconfirmed fact unused this long is archived (ADR 0167). */
 export const UNCONFIRMED_FACT_DAYS = 30;
+
+/** A channel with this many messages in the last week gets that week's summary. */
+const BUSY_WEEK_MESSAGES = 30;
 
 /** The daily `context.consolidate` jobs start over this long after the tick, so every workspace's doesn't land at once. */
 export const CONSOLIDATE_SPREAD_MS = 6 * 3600_000;
@@ -209,22 +212,18 @@ export async function consolidateOrg(deps: ContextDeps, orgId: string, now = new
   for (const s of [...stale, ...fleeting, ...unconfirmed])
     await enqueue(db, { orgId, kind: "search.index", payload: { kind: "context_item", sourceId: s.id } });
 
-  // Last week's summary per channel that was busy (≥ 30 messages).
+  // Last week's summary per channel that was busy. Each of the org's channels is counted from its own index
+  // (`(channel_id, created_at)`), and only up to the threshold: `messages` has no index by org, so a filter on its
+  // org reads the week of every workspace.
   const weekStart = new Date(now.getTime() - 7 * 86_400_000);
-  const busy = await db
-    .select({ channelId: messages.channelId, n: sql<number>`count(*)::int` })
-    .from(messages)
-    .innerJoin(channels, eq(channels.id, messages.channelId))
-    .where(
-      and(
-        eq(messages.orgId, orgId),
-        sql`${messages.createdAt} >= ${weekStart.toISOString()}::timestamptz`,
-        isNull(channels.archivedAt),
-      ),
-    )
-    .groupBy(messages.channelId);
-  for (const c of busy.filter((b) => b.n >= 30)) {
-    await ensurePeriodSummary(deps, orgId, c.channelId, { from: weekStart, to: now }).catch(() => null);
+  const busy = rowsOf<{ id: string }>(
+    await db.execute(sql`select c.id from ${channels} c
+      where c.org_id = ${orgId}::uuid and c.archived_at is null
+        and (select count(*) from (select 1 from ${messages} m where m.channel_id = c.id and m.org_id = c.org_id
+          and m.created_at >= ${weekStart.toISOString()}::timestamptz limit ${BUSY_WEEK_MESSAGES}) w) >= ${BUSY_WEEK_MESSAGES}`),
+  );
+  for (const c of busy) {
+    await ensurePeriodSummary(deps, orgId, c.id, { from: weekStart, to: now }).catch(() => null);
   }
 
   let proposals = 0;
