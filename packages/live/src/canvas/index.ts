@@ -30,6 +30,7 @@ export {
   defaultSize,
   deleteShapes,
   fillPending,
+  groupShapes,
   initCanvas,
   moveShapes,
   resizeShape,
@@ -37,6 +38,8 @@ export {
   setParent,
   shapesById,
   shapeTextFragment,
+  renameShapeGroup,
+  ungroupShapes,
   updateShape,
 } from "./ops";
 export { contentBounds, FRAME_LABEL, frameAt, placeBoxes } from "./place";
@@ -45,7 +48,9 @@ export {
   CANVAS_COORD_MAX,
   COMMON_PROPS,
   canvasBackground,
+  canvasGroupsMapOf,
   descendantsOf,
+  readCanvasGroups,
   readShape,
   readShapeById,
   readShapes,
