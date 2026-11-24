@@ -2346,6 +2346,13 @@
       "when": 1795521807122,
       "tag": "0339_audio_file_wave",
       "breakpoints": true
+    },
+    {
+      "idx": 337,
+      "version": "7",
+      "when": 1795550171282,
+      "tag": "0340_channel_lead",
+      "breakpoints": true
     }
   ]
 }
