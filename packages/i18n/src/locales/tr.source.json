@@ -32695,6 +32695,9 @@
   "connectors.personal.done": {
     "value": "Your agents use it only when you ask."
   },
+  "connectors.personal.githubDone": {
+    "value": "In code sessions, the commits, pushes and pull requests for what you ask go out in your name."
+  },
   "connectors.personal.worksWhenAsked": {
     "value": "Works only when you ask."
   },
@@ -37008,6 +37011,27 @@
   },
   "connectFlow.done.ok": {
     "value": "Done"
+  },
+  "connectFlow.git.token": {
+    "value": "Access token"
+  },
+  "connectFlow.git.address": {
+    "value": "Address"
+  },
+  "connectFlow.git.addressHelp.gitlab": {
+    "value": "Only for a GitLab your company runs itself. Left blank, it is gitlab.com."
+  },
+  "connectFlow.git.addressHelp.git": {
+    "value": "Where the git server is, like https://git.company.com."
+  },
+  "connectFlow.git.tokenHelp.gitlab": {
+    "value": "A GitLab access token (personal, group or project) with the api and write_repository scopes. It stays on the server: agents' computers never get it."
+  },
+  "connectFlow.git.tokenHelp.bitbucket": {
+    "value": "A workspace or repository access token with repository write and pull request write. With your own API token, type your Atlassian email, a colon and the token: you@company.com:TOKEN."
+  },
+  "connectFlow.git.tokenHelp.git": {
+    "value": "The token the server takes as git's password. If it wants a username, type username:token."
   },
   "connectFlow.telegram.token": {
     "value": "Bot token"

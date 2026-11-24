@@ -319,7 +319,7 @@ export async function withConnectedMachine<T>(
   // The right hand's requests go to the seat its run works in (a person's own, the shared one), or nowhere (ADR 0175).
   const scope = await machineScope(hub, ctx, machineId);
   // In a code session the commands' commits are authored as the person who asked, by their own GitHub account
-  // (ADR 0215 §5a).
+  // (ADR 0215 §13).
   const author = await codeCommitAuthor(ctx.db, ctx.orgId, ctx.runId).catch(() => null);
   const provider = createMachineSandboxProvider(hub, author ? { ...scope, author } : scope, device);
   return fn({ id: machineId, provider, ref: `machine:${machineId}`, machineId });

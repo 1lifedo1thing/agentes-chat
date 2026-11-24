@@ -13890,6 +13890,7 @@
       "teamLocked": "Solo chi gestisce i connettori aggiunge quelli del team.",
       "mailLocked": "Una casella di posta è sempre di chi la collega.",
       "done": "I tuoi agenti lo usano solo quando lo chiedi tu.",
+      "githubDone": "Nelle sessioni di codice, i commit, i push e le pull request di ciò che chiedi escono a tuo nome.",
       "worksWhenAsked": "Funziona solo quando lo chiedi tu.",
       "remove": "Rimuovi",
       "removeName": "Rimuovi {{name}}",
@@ -15590,6 +15591,19 @@
       "asks_other": "{{count}} azioni chiedono l'approvazione in chat.",
       "adjust": "Regola",
       "ok": "Fatto"
+    },
+    "git": {
+      "token": "Token di accesso",
+      "address": "Indirizzo",
+      "addressHelp": {
+        "gitlab": "Solo per un GitLab che la tua azienda ospita da sé. Lasciato vuoto, è gitlab.com.",
+        "git": "Dove si trova il server git, ad esempio https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Un token di accesso GitLab (personale, di gruppo o di progetto) con gli ambiti api e write_repository. Resta sul server: i computer degli agenti non lo ricevono mai.",
+        "bitbucket": "Un token di accesso del workspace o del repository, con scrittura su repository e pull request. Con il tuo token API, scrivi la tua email Atlassian, due punti e il token: you@company.com:TOKEN.",
+        "git": "Il token che il server accetta come password di git. Se chiede un nome utente, scrivi username:token."
+      }
     },
     "telegram": {
       "token": "Token del bot",

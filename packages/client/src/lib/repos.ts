@@ -79,7 +79,8 @@ export const mergeChoices = (listing: GitHubRepositories | undefined, reach: str
 /** Whether the list covers a repository (itself, or its whole account). */
 export const covers = (list: string[], fullName: string) => {
   const f = fullName.toLowerCase();
-  return list.some((e) => e.toLowerCase() === f || e.toLowerCase() === `${ownerOf(f)}/*`);
+  // Itself, or anything it sits under (`acme/*`; on GitLab a group covers its subgroups too).
+  return list.some((e) => e.toLowerCase() === f || (isAccount(e) && f.startsWith(e.toLowerCase().slice(0, -1))));
 };
 
 /** The picker's list after checking or unchecking one entry (a whole account takes its repositories' place). */

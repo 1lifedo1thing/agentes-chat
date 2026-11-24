@@ -351,7 +351,7 @@ export function createGitToolSource(deps: GitToolDeps): ToolSource {
                 draft: input.draft === true,
               };
               // In a code session, on its repository, it is opened as the person who asked, by the account they
-              // connected as their own (ADR 0215 §5a); the host refusing their token opens it as the workspace.
+              // connected as their own (ADR 0215 §13); the host refusing their token opens it as the workspace.
               const person = await personAccountOfRun(c.db, c.orgId, c.runId).catch(() => null);
               const own =
                 person?.host === host.id && onSessionRepo(person, repo.name)

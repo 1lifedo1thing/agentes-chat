@@ -34,6 +34,7 @@ import {
 import { readAdvertisement } from "../src/git/hosts/plain";
 import { codeCommitAuthor } from "../src/git/person-account";
 import { listOrgRepositories } from "../src/git/repo-listing";
+import { checkToolCall } from "../src/tools/checks";
 import { type Fixture, SECRET, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 
@@ -612,6 +613,24 @@ describe("the git proxy on another host", () => {
     expect(w.lab.calls.find((c) => c.url.endsWith("/merge_requests"))?.auth).toBe(`Bearer ${OWN_TOKEN}`);
     const [kept] = await f.db.select().from(schema.codeSessions);
     expect(kept).toMatchObject({ prNumber: 12, prUrl: "https://gitlab.com/acme/web/app/-/merge_requests/12" });
+  });
+
+  test("a tool call on another host is held to the agent's repositories there", async () => {
+    await world();
+    const check = (repo: string) =>
+      checkToolCall({ scope: "gitlab:pr.write" }, { repo }, {
+        db: f.db,
+        orgId: f.org.id,
+        agentId: f.agent.id,
+      } as ToolContext);
+    expect((await check("acme/web/app")).ok).toBe(true);
+    await setAgentRepositories(f.db, f.owner.id, f.org.id, f.agent.id, ["acme/web", "gitlab:acme/web/*"]);
+    expect(await check("acme/web/app")).toMatchObject({ ok: true, data: { repo: "gitlab:acme/web/app" } });
+    expect(await check("gitlab:acme/web/app")).toMatchObject({ ok: true });
+    expect(await check("acme/api")).toMatchObject({ ok: false, data: { deniedRepo: "gitlab:acme/api" } });
+    // GitHub's `acme/web` in the list opens nothing here, and a call that names none is refused.
+    expect((await check("acme/web")).ok).toBe(false);
+    expect((await check("")).ok).toBe(false);
   });
 
   test("the repositories people pick from: other hosts' apart from GitHub's, by group", async () => {

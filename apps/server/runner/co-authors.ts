@@ -129,7 +129,7 @@ const AUTHOR_NAME = /^[^\u0000-\u001f\u007f<>]{1,200}$/;
 const AUTHOR_EMAIL = /^[^\u0000- \u007f<>@]{1,100}@[^\u0000- \u007f<>@]{1,100}$/;
 
 /**
- * The person a request's commits are authored as (`AgentScope.author`, ADR 0215 §5a), checked, as the env git reads
+ * The person a request's commits are authored as (`AgentScope.author`, ADR 0215 §13), checked, as the env git reads
  * before any config: author and committer, in the agent's own processes alone. Nothing changes in a repository,
  * whose config other sessions share. Empty when the request names nobody: the checkout's author, the agent, stays.
  */

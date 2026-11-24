@@ -2836,7 +2836,7 @@ export interface AgentScope {
   coAuthors?: string[];
   /**
    * On a code session's work (`exec`, `brain.turn`): the person its commits are authored as, when they connected a
-   * GitHub account as their own (ADR 0215 §5a). The runner hands it to git in the agent's own processes alone, never
+   * GitHub account as their own (ADR 0215 §13). The runner hands it to git in the agent's own processes alone, never
    * to a repository's config. A runner that doesn't know it leaves the checkout's author, the agent.
    */
   author?: CommitAuthor;

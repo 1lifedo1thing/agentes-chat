@@ -12885,6 +12885,7 @@
       "teamLocked": "Hanya orang yang mengelola konektor yang menambahkan milik tim.",
       "mailLocked": "Kotak surat selalu milik orang yang menghubungkannya.",
       "done": "Agenmu hanya memakainya saat kamu meminta.",
+      "githubDone": "Di sesi kode, commit, push, dan pull request untuk hal yang Anda minta dikirim atas nama Anda.",
       "worksWhenAsked": "Hanya berfungsi saat kamu meminta.",
       "remove": "Hapus",
       "removeName": "Hapus {{name}}",
@@ -14535,6 +14536,19 @@
       "asks_other": "{{count}} tindakan meminta persetujuan di chat.",
       "adjust": "Sesuaikan",
       "ok": "Selesai"
+    },
+    "git": {
+      "token": "Token akses",
+      "address": "Alamat",
+      "addressHelp": {
+        "gitlab": "Hanya untuk GitLab yang dijalankan sendiri oleh perusahaan Anda. Jika kosong, berarti gitlab.com.",
+        "git": "Lokasi server git, misalnya https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Token akses GitLab (pribadi, grup, atau proyek) dengan cakupan api dan write_repository. Token tetap di server: komputer agen tidak pernah menerimanya.",
+        "bitbucket": "Token akses workspace atau repositori dengan izin tulis repositori dan pull request. Dengan token API Anda sendiri, ketik email Atlassian Anda, titik dua, lalu tokennya: you@company.com:TOKEN.",
+        "git": "Token yang diterima server sebagai kata sandi git. Jika server meminta nama pengguna, ketik username:token."
+      }
     },
     "telegram": {
       "token": "Token bot",

@@ -140,7 +140,7 @@ export async function githubCallAuth(
   call: { tool: string; scope: string; input: Record<string, unknown> },
 ): Promise<GitHubCallAuth> {
   // What the agent writes on its code session's repository goes as the person who asked, by the account they
-  // connected as their own (ADR 0215 §5a): a pull request, a comment, an API commit. Reads, merges and anything on
+  // connected as their own (ADR 0215 §13): a pull request, a comment, an API commit. Reads, merges and anything on
   // another repository go as the workspace, below; so does this one when their token doesn't answer.
   if (call.scope.endsWith(".write")) {
     const named = reposOfGithubCall(call.input);

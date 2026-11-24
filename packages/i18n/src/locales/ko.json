@@ -12820,6 +12820,7 @@
       "teamLocked": "팀 연결은 커넥터를 관리하는 사람만 추가할 수 있어요.",
       "mailLocked": "메일함은 항상 연결한 사람의 것이에요.",
       "done": "에이전트는 내가 요청할 때만 사용해요.",
+      "githubDone": "코드 세션에서는 요청한 작업의 커밋, 푸시, 풀 리퀘스트가 내 이름으로 나갑니다.",
       "worksWhenAsked": "내가 요청할 때만 작동해요.",
       "remove": "제거",
       "removeName": "{{name}} 제거",
@@ -14470,6 +14471,19 @@
       "asks_other": "작업 {{count}}개는 채팅에서 승인을 요청해요.",
       "adjust": "조정",
       "ok": "완료"
+    },
+    "git": {
+      "token": "액세스 토큰",
+      "address": "주소",
+      "addressHelp": {
+        "gitlab": "회사에서 직접 운영하는 GitLab일 때만 입력하세요. 비워 두면 gitlab.com입니다.",
+        "git": "git 서버가 있는 곳입니다. 예: https://git.company.com"
+      },
+      "tokenHelp": {
+        "gitlab": "api와 write_repository 범위가 있는 GitLab 액세스 토큰(개인, 그룹 또는 프로젝트). 서버에만 보관되며 에이전트의 컴퓨터에는 전달되지 않습니다.",
+        "bitbucket": "저장소와 풀 리퀘스트 쓰기 권한이 있는 워크스페이스 또는 저장소 액세스 토큰. 본인의 API 토큰을 쓰려면 Atlassian 이메일, 콜론, 토큰 순으로 입력하세요: you@company.com:TOKEN",
+        "git": "서버가 git 비밀번호로 받는 토큰입니다. 사용자 이름이 필요하면 username:token으로 입력하세요."
+      }
     },
     "telegram": {
       "token": "봇 토큰",

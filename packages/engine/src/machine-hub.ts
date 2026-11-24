@@ -1053,7 +1053,7 @@ export function createMachineHub(deps: MachineHubDeps) {
     const runs = request.op === "exec" || request.op === "brain.turn" || request.op === "task.start";
     const line = runs ? await agentCoAuthorLine(db, orgId, agent).catch(() => null) : null;
     // A code session's turn is authored as the person who asked, by the GitHub account they connected as their own
-    // (ADR 0215 §5a); its commands carry theirs already (`withMachineSandbox`).
+    // (ADR 0215 §13); its commands carry theirs already (`withMachineSandbox`).
     const author =
       scope.author ??
       (request.op === "brain.turn" ? await codeCommitAuthor(db, orgId, request.runId).catch(() => null) : null);

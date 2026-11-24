@@ -540,7 +540,7 @@ async function proxyGit(
     return refusal(request.commands, reasons, told, request.capabilities);
   }
   // A code session's branch, pushed while a person is behind its run, goes to the host as that person, by the account
-  // they connected as their own (ADR 0215 §5a). The host refusing their token (no access to this repository, a token
+  // they connected as their own (ADR 0215 §13). The host refusing their token (no access to this repository, a token
   // that ended) sends it as the workspace, as every other push goes.
   const person = await personAccountOfPush(deps.db, {
     orgId: claims.orgId,

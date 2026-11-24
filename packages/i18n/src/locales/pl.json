@@ -14377,6 +14377,7 @@
       "teamLocked": "Połączenia zespołu dodają tylko osoby zarządzające konektorami.",
       "mailLocked": "Skrzynka pocztowa zawsze należy do osoby, która ją łączy.",
       "done": "Twoi agenci używają go tylko wtedy, gdy poprosisz.",
+      "githubDone": "W sesjach kodu commity, pushe i pull requesty dotyczące tego, o co prosisz, wychodzą pod Twoim nazwiskiem.",
       "worksWhenAsked": "Działa tylko, gdy poprosisz.",
       "remove": "Usuń",
       "removeName": "Usuń {{name}}",
@@ -16105,6 +16106,19 @@
       "asks_other": "{{count}} akcji prosi o zatwierdzenie na czacie.",
       "adjust": "Dostosuj",
       "ok": "Gotowe"
+    },
+    "git": {
+      "token": "Token dostępu",
+      "address": "Adres",
+      "addressHelp": {
+        "gitlab": "Tylko dla GitLaba, który Twoja firma hostuje sama. Puste pole oznacza gitlab.com.",
+        "git": "Gdzie znajduje się serwer git, na przykład https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Token dostępu GitLab (osobisty, grupy lub projektu) z zakresami api i write_repository. Zostaje na serwerze: komputery agentów nigdy go nie dostają.",
+        "bitbucket": "Token dostępu workspace’u lub repozytorium z prawem zapisu do repozytoriów i pull requestów. Przy własnym tokenie API wpisz swój e-mail Atlassian, dwukropek i token: you@company.com:TOKEN.",
+        "git": "Token, który serwer przyjmuje jako hasło git. Jeśli wymaga nazwy użytkownika, wpisz username:token."
+      }
     },
     "telegram": {
       "token": "Token bota",

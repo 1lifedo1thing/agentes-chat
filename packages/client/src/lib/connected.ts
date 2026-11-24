@@ -240,6 +240,10 @@ export function accountUnchecked(accounts: readonly (Pick<CustomServer, "account
   return !accounts.some((a) => a?.accountLabel);
 }
 
+/** The connectors that are git hosts (engine `git/hosts/refs.ts`): a person's own is their account in code sessions. */
+const GIT_HOST_CONNECTORS = new Set(["github", "gitlab", "bitbucket", "git"]);
+export const isGitHostConnector = (id: string | undefined) => Boolean(id && GIT_HOST_CONNECTORS.has(id));
+
 /**
  * Connectors that connect for the team only (mirror of `requireConnect` in the engine): none now. GitHub as a
  * person's own is their account in code sessions (ADR 0215), never the workspace's GitHub.
@@ -249,6 +253,13 @@ export const TEAM_ONLY_CONNECTORS: ReadonlySet<string> = new Set();
 /** Whether "Para quem: Pessoal" is offered for a catalog entry (any server by address may be personal). */
 export const personalAllowed = (connectorId: string | null | undefined) =>
   !connectorId || !TEAM_ONLY_CONNECTORS.has(connectorId);
+
+/**
+ * Whether a member may connect, as their own, an app an agent asked for: a git host of one's own gives agents no
+ * tools (it is the person's account in code sessions), so what an agent asks of one is the team's to connect.
+ */
+export const personalServesAgents = (connectorId: string | null | undefined) =>
+  personalAllowed(connectorId) && !isGitHostConnector(connectorId ?? undefined);
 
 /**
  * What a viewer may do with a connection's row (mirror of `mayConnection` in the engine). Their own: everything, and
@@ -324,7 +335,3 @@ export const personalOfParts = (t: TFunction) => {
   const [before = "", after = ""] = t("connectors.personal.of", { name: "\u0000" }).split("\u0000");
   return { before, after };
 };
-
-/** The connectors that are git hosts (engine `git/hosts/refs.ts`): a person's own is their account in code sessions. */
-const GIT_HOST_CONNECTORS = new Set(["github", "gitlab", "bitbucket", "git"]);
-export const isGitHostConnector = (id: string | undefined) => Boolean(id && GIT_HOST_CONNECTORS.has(id));

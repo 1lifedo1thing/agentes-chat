@@ -9,7 +9,16 @@ import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
 import { requirePermission } from "../organizations";
 import { approvalsLevelOf } from "../tools/run-policy";
 import type { ToolContext } from "../tools/types";
-import { refInList, repoEntry } from "./hosts";
+import {
+  GIT_HOSTS,
+  type GitHostId,
+  gitToolName,
+  hostOfEntry,
+  parseRepoRef,
+  refInList,
+  repoEntry,
+  repoRefName,
+} from "./hosts";
 
 const { agentRepositories: table, agents } = schema;
 
@@ -310,6 +319,41 @@ export async function checkGithubCall(
   return { ok: true, repo: named[0] ?? null };
 }
 
+/**
+ * Checks a git tool call on another host (ADR 0220) against the agent's repositories: `repo` is that host's own
+ * (`group/project`, or with the host first). The proxy checks every fetch and push the same way.
+ */
+export async function checkHostRepoCall(
+  db: Executor,
+  orgId: string,
+  agentId: string,
+  host: GitHostId,
+  input: Record<string, unknown>,
+): Promise<GithubCallCheck> {
+  const given = str(input.repo);
+  const ref = parseRepoRef(/^[a-z]+:/.test(given) ? given : `${host}:${given}`);
+  const named = ref?.host === host ? repoRefName(ref) : null;
+  const list = await agentRepositoryList(db, orgId, agentId);
+  if (list.length === 0) return { ok: true, repo: named };
+  if (!named) {
+    return {
+      ok: false,
+      repo: null,
+      list,
+      message: `Not allowed: you may only use these repositories: ${list.join(", ")}. Name one of them in the call (repo).`,
+    };
+  }
+  if (!refInList(list, named)) {
+    return {
+      ok: false,
+      repo: named,
+      list,
+      message: `Not allowed: ${named} isn't one of your repositories (${list.join(", ")}). Tell the person; whoever can edit you can add it in your access settings. Don't try another way.`,
+    };
+  }
+  return { ok: true, repo: named };
+}
+
 /** The prompt block for an agent limited to some repositories (English). Empty when it has no list. */
 export function repositoriesPrompt(list: readonly string[]): string {
   if (list.length === 0) return "";
@@ -361,19 +405,43 @@ export function codePrompt(input: {
         : `${c.repo} is checked out at ${c.path} (${branch}, updated before this turn).`,
     );
   }
+  // Each git host has its own tools (ADR 0220): GitHub's are the plain names, another host's carry it first.
+  const hostsOf = (repos: readonly string[]) => [...new Set(repos.map(hostOfEntry))];
+  const onlyGitHub = (hosts: readonly GitHostId[]) => hosts.every((h) => h === "github");
+  const each = (hosts: readonly GitHostId[], say: (host: GitHostId) => string | null) =>
+    hosts.flatMap((h) => {
+      const said = say(h);
+      return said ? [`${GIT_HOSTS[h].label}: ${said}`] : [];
+    });
   if (input.checkouts.length > 0) {
+    const hosts = hostsOf(input.checkouts.map((c) => c.repo));
+    const start = `Read it freely; to change code, create a branch agentes/${input.handle}/<topic> there, push it (git push -u origin agentes/${input.handle}/<topic>)`;
     lines.push(
-      `Read it freely; to change code, create a branch agentes/${input.handle}/<topic> there, push it (git push -u origin agentes/${input.handle}/<topic>) and open a PR with open_pull_request. Delete branches with delete_branches; to push to someone else's branch, ask with request_branch_push first.`,
+      onlyGitHub(hosts)
+        ? `${start} and open a PR with open_pull_request. Delete branches with delete_branches; to push to someone else's branch, ask with request_branch_push first.`
+        : `${start} and open a pull or merge request with the tool of the repository's host (${each(hosts, (h) =>
+            GIT_HOSTS[h].openPullRequest
+              ? gitToolName(h, "open_pull_request")
+              : "give the person the link the server prints after the push",
+          ).join(
+            "; ",
+          )}). Deleting branches (${each(hosts, (h) => (GIT_HOSTS[h].deleteBranch ? gitToolName(h, "delete_branches") : null)).join("; ")}) and pushing to someone else's branch (${each(hosts, (h) => gitToolName(h, "request_branch_push")).join("; ")}) are asked for with the host's tool first.`,
     );
   }
+  const cloneWith = (repos: readonly string[]) => {
+    const hosts = hostsOf(repos);
+    return onlyGitHub(hosts)
+      ? "git_clone"
+      : `its host's clone tool (${each(hosts, (h) => gitToolName(h, "git_clone")).join("; ")})`;
+  };
   if (input.notCloned.length > 0) {
     lines.push(
-      `Not cloned yet: ${input.notCloned.join(", ")}. To work on one, call git_clone first; it needs no approval.`,
+      `Not cloned yet: ${input.notCloned.join(", ")}. To work on one, call ${cloneWith(input.notCloned)} first; it needs no approval.`,
     );
   }
   if (downloading.length > 0) {
     lines.push(
-      `Still downloading on your computer: ${downloading.join(", ")}. It goes on by itself; call git_clone for one when you need it, to wait for it.`,
+      `Still downloading on your computer: ${downloading.join(", ")}. It goes on by itself; call ${cloneWith(downloading)} for one when you need it, to wait for it.`,
     );
   }
   return lines.join("\n");
