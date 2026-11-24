@@ -1,4 +1,11 @@
-import { catalogFont, type DocBlock, type DocCell, type DocParagraph, type DocRun, fontAssetOf } from "@agenteschat/live";
+import {
+  catalogFont,
+  type DocBlock,
+  type DocCell,
+  type DocParagraph,
+  type DocRun,
+  fontAssetOf,
+} from "@agenteschat/live";
 import { DOCX_STYLES, docxCore } from "../docx";
 import { imageSize } from "../image-size";
 import { zip } from "../zip";

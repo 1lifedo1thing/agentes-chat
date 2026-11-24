@@ -1,4 +1,3 @@
-import { fileFonts } from "./file-fonts";
 import { and, eq, schema } from "@agenteschat/db";
 import { documentToMarkdown, readDocument } from "@agenteschat/live";
 import type * as Y from "yjs";
@@ -7,6 +6,7 @@ import { UUID } from "../authority";
 import { ValidationError } from "../errors";
 import { writeDocx } from "../office/docx-write";
 import { markdownToPdf } from "../pdf";
+import { fileFonts } from "./file-fonts";
 import { rasterPicture } from "./svg";
 
 /**

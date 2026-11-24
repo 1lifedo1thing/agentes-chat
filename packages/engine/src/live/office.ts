@@ -1,4 +1,3 @@
-import { fileFonts } from "./file-fonts";
 import { serverText } from "@agenteschat/i18n";
 import {
   canvasBackground,
@@ -59,6 +58,7 @@ import { LIVE_ASSET_BYTES } from "./assets";
 import { createLiveFile } from "./create";
 import type { LiveDocs } from "./docs";
 import { documentExport, liveAssetBytes, liveFontBytes } from "./document-export";
+import { fileFonts } from "./file-fonts";
 import { loadHeadDoc } from "./store";
 
 /**

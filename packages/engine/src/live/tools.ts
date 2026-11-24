@@ -39,6 +39,7 @@ import { conversationFileId } from "./conversation";
 import { createLiveFile } from "./create";
 import type { LiveDocs } from "./docs";
 import { documentTools } from "./document-tools";
+import { bringFont, type FileFont, fileFontBytes, fileFonts, fileFontWords } from "./file-fonts";
 import type { ImageFailure, LiveImages } from "./images";
 import { htmlToRich, layoutSummary } from "./layout/html";
 import {
@@ -51,7 +52,6 @@ import {
   slideHtmlLayout,
 } from "./layout/place";
 import type { LayoutResult } from "./layout/types";
-import { bringFont, type FileFont, fileFontBytes, fileFontWords, fileFonts } from "./file-fonts";
 import { canvasLook, slideLook } from "./look";
 import {
   bringMadePicture,
@@ -1617,7 +1617,10 @@ async function applySlideOps(doc: Y.Doc, ops: Json[], batch: SlideBatch) {
         }
         case "add_font": {
           const font = batch.fonts?.brought.get(index);
-          await done(font ? `brought the font ${fileFontWords(font)} into the file` : "brought a font into the file", null);
+          await done(
+            font ? `brought the font ${fileFontWords(font)} into the file` : "brought a font into the file",
+            null,
+          );
           break;
         }
         case "set_fonts": {
@@ -2037,7 +2040,10 @@ async function applyCanvasOps(doc: Y.Doc, ops: Json[], batch: CanvasBatch) {
         }
         case "add_font": {
           const font = batch.fonts?.brought.get(index);
-          await done(font ? `brought the font ${fileFontWords(font)} into the file` : "brought a font into the file", []);
+          await done(
+            font ? `brought the font ${fileFontWords(font)} into the file` : "brought a font into the file",
+            [],
+          );
           break;
         }
         case "group": {
@@ -2933,7 +2939,10 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
             )
           : null;
         if (look) brought.looks.unshift(look);
-        const looked = look && lastSlide ? ` A picture of the slide as it looks now is attached: check it for cut, overlapping or misaligned text before you say it is done.` : "";
+        const looked =
+          look && lastSlide
+            ? ` A picture of the slide as it looks now is attached: check it for cut, overlapping or misaligned text before you say it is done.`
+            : "";
         return {
           content: `Changed "${named(card.title)}" (presentation, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}${looked}`,
           ...broughtImages(brought),
@@ -3123,7 +3132,9 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
             )
           : null;
         if (look) brought.looks.unshift(look);
-        const looked = look ? " A picture of that part of the canvas as it looks now is attached: check it for cut, overlapping or misaligned text before you say it is done." : "";
+        const looked = look
+          ? " A picture of that part of the canvas as it looks now is attached: check it for cut, overlapping or misaligned text before you say it is done."
+          : "";
         return {
           content: `Changed "${named(card.title)}" (canvas, artifact ${fileId}, now version ${card.version}): ${result.join("; ")}.${broughtText(brought)}${looked}`,
           ...broughtImages(brought),

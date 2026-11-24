@@ -97,7 +97,14 @@ function lines(rich: live.RichDoc, base: TextBase, width: number, measurer: Text
     } else if (p.list === "bullet") marker = "•";
     const indent = (p.list ? base.size * 1.2 : 0) + level * base.size * 1.5;
     const lh = p.lineHeight ?? base.lineHeight;
-    let line: Line = { segments: [], width: indent, height: base.size * lh, indent, align: p.align ?? base.align, ...(marker ? { marker } : {}) };
+    let line: Line = {
+      segments: [],
+      width: indent,
+      height: base.size * lh,
+      indent,
+      align: p.align ?? base.align,
+      ...(marker ? { marker } : {}),
+    };
     const push = () => {
       out.push(line);
       line = { segments: [], width: indent, height: base.size * lh, indent, align: p.align ?? base.align };
@@ -152,7 +159,12 @@ function textSvg(
   faces: Faces,
 ): string {
   if (!rich.some((p) => p.runs.some((r) => r.text.trim()))) return "";
-  const inner = { x: box.x + base.padding, y: box.y + base.padding, w: Math.max(1, box.w - 2 * base.padding), h: box.h - 2 * base.padding };
+  const inner = {
+    x: box.x + base.padding,
+    y: box.y + base.padding,
+    w: Math.max(1, box.w - 2 * base.padding),
+    h: box.h - 2 * base.padding,
+  };
   const laid = lines(rich, base, inner.w, measurer, faces);
   const total = laid.reduce((s, l) => s + l.height, 0);
   let y = inner.y + (base.valign === "middle" ? (inner.h - total) / 2 : base.valign === "bottom" ? inner.h - total : 0);
@@ -229,7 +241,10 @@ async function pictures(
     const asset = await readAsset(deps, actor, orgId, fileId, id).catch(() => null);
     if (!asset || asset.bytes.byteLength > budget) continue;
     budget -= asset.bytes.byteLength;
-    out.set(id, `data:${asset.row.contentType === SVG_TYPE ? SVG_TYPE : asset.row.contentType};base64,${bytesToBase64(asset.bytes)}`);
+    out.set(
+      id,
+      `data:${asset.row.contentType === SVG_TYPE ? SVG_TYPE : asset.row.contentType};base64,${bytesToBase64(asset.bytes)}`,
+    );
   }
   return out;
 }
@@ -247,7 +262,10 @@ function imageSvg(
   if (!href) return `<rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" fill="#e6e9ee"/>`;
   const aspect = fit === "contain" ? "xMidYMid meet" : "xMidYMid slice";
   const clipped = radius > 0 ? ` clip-path="url(#${clip})"` : "";
-  const def = radius > 0 ? `<clipPath id="${clip}"><rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${n(radius)}"/></clipPath>` : "";
+  const def =
+    radius > 0
+      ? `<clipPath id="${clip}"><rect x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" rx="${n(radius)}"/></clipPath>`
+      : "";
   return `${def}<image href="${href}" x="${n(x)}" y="${n(y)}" width="${n(w)}" height="${n(h)}" preserveAspectRatio="${aspect}"${clipped}/>`;
 }
 
@@ -272,21 +290,16 @@ export async function slideLook(
   const theme = live.themeOf(deck.theme);
   const measurer = new TextMeasurer();
   const faces = new Faces();
-  const images = await pictures(
-    deps,
-    actor,
-    orgId,
-    fileId,
-    [
-      ...slide.elements.filter((e) => e.type === "image" && e.asset).map((e) => e.asset as string),
-      ...(typeof slide.bg === "object" && slide.bg ? [slide.bg.asset] : []),
-    ],
-  );
+  const images = await pictures(deps, actor, orgId, fileId, [
+    ...slide.elements.filter((e) => e.type === "image" && e.asset).map((e) => e.asset as string),
+    ...(typeof slide.bg === "object" && slide.bg ? [slide.bg.asset] : []),
+  ]);
   const defs: string[] = [];
   const body: string[] = [];
   const bg = typeof slide.bg === "string" ? slide.bg : theme.colors.bg;
   body.push(`<rect width="${deck.w}" height="${deck.h}" fill="${esc(bg)}"/>`);
-  if (typeof slide.bg === "object" && slide.bg) body.push(imageSvg(images.get(slide.bg.asset), 0, 0, deck.w, deck.h, 0, "cover", ""));
+  if (typeof slide.bg === "object" && slide.bg)
+    body.push(imageSvg(images.get(slide.bg.asset), 0, 0, deck.w, deck.h, 0, "cover", ""));
   slide.elements.forEach((el, i) => {
     const s = el.style ?? {};
     const rot = el.rot ? ` transform="rotate(${n(el.rot)} ${n(el.x + el.w / 2)} ${n(el.y + el.h / 2)})"` : "";
@@ -294,13 +307,36 @@ export async function slideLook(
     const opacity = s.opacity !== undefined && s.opacity < 1 ? ` opacity="${n(s.opacity)}"` : "";
     const parts: string[] = [];
     if (el.type === "shape") {
-      const fill = s.gradient ? (defs.push(gradientDef(`gr${i}`, s.gradient)), `url(#gr${i})`) : live.shapeFill(theme, s);
+      const fill = s.gradient
+        ? (defs.push(gradientDef(`gr${i}`, s.gradient)), `url(#gr${i})`)
+        : live.shapeFill(theme, s);
       const width = s.stroke && s.stroke !== "none" ? (s.strokeWidth ?? 4) : 0;
       const attrs = ` fill="${esc(fill)}" stroke="${esc(width ? (s.stroke as string) : "none")}" stroke-width="${n(width)}"${dashAttr(s.dash, width)}`;
-      parts.push(outline(s.shape ?? "rect", el.x + width / 2, el.y + width / 2, el.w - width, el.h - width, s.radius ?? 0, attrs));
+      parts.push(
+        outline(
+          s.shape ?? "rect",
+          el.x + width / 2,
+          el.y + width / 2,
+          el.w - width,
+          el.h - width,
+          s.radius ?? 0,
+          attrs,
+        ),
+      );
     }
     if (el.type === "image") {
-      parts.push(imageSvg(el.asset ? images.get(el.asset) : undefined, el.x, el.y, el.w, el.h, s.radius ?? 0, el.fit ?? "cover", `cl${i}`));
+      parts.push(
+        imageSvg(
+          el.asset ? images.get(el.asset) : undefined,
+          el.x,
+          el.y,
+          el.w,
+          el.h,
+          s.radius ?? 0,
+          el.fit ?? "cover",
+          `cl${i}`,
+        ),
+      );
     }
     if (el.type === "line") {
       const width = s.strokeWidth ?? 6;
@@ -375,8 +411,8 @@ export async function canvasLook(
   const touched = all.filter((s) => ids.includes(s.id));
   if (!touched.length) return null;
   const margin = 40;
-  let x0 = Math.min(...touched.map((s) => s.x)) - margin;
-  let y0 = Math.min(...touched.map((s) => s.y)) - margin;
+  const x0 = Math.min(...touched.map((s) => s.x)) - margin;
+  const y0 = Math.min(...touched.map((s) => s.y)) - margin;
   let x1 = Math.max(...touched.map((s) => s.x + s.w)) + margin;
   let y1 = Math.max(...touched.map((s) => s.y + s.h)) + margin;
   // A region too big to read is cut to the first 4000 units each way.
@@ -416,45 +452,78 @@ export async function canvasLook(
     };
     switch (s.type) {
       case "frame":
-        parts.push(`<rect x="${n(s.x)}" y="${n(s.y)}" width="${n(s.w)}" height="${n(s.h)}" rx="12" fill="${esc(s.fill && s.fill !== "none" ? s.fill : "#f1f2f4")}"/>`);
-        if (s.name) parts.push(`<text x="${n(s.x)}" y="${n(s.y - 10)}" font-family="Source Sans 3" font-size="20" fill="#5b6370">${esc(s.name)}</text>`);
+        parts.push(
+          `<rect x="${n(s.x)}" y="${n(s.y)}" width="${n(s.w)}" height="${n(s.h)}" rx="12" fill="${esc(s.fill && s.fill !== "none" ? s.fill : "#f1f2f4")}"/>`,
+        );
+        if (s.name)
+          parts.push(
+            `<text x="${n(s.x)}" y="${n(s.y - 10)}" font-family="Source Sans 3" font-size="20" fill="#5b6370">${esc(s.name)}</text>`,
+          );
         break;
       case "note":
-        parts.push(`<rect x="${n(s.x)}" y="${n(s.y)}" width="${n(s.w)}" height="${n(s.h)}" rx="6" fill="${NOTE_FILLS[s.color ?? "yellow"] ?? NOTE_FILLS.yellow}"/>`);
+        parts.push(
+          `<rect x="${n(s.x)}" y="${n(s.y)}" width="${n(s.w)}" height="${n(s.h)}" rx="6" fill="${NOTE_FILLS[s.color ?? "yellow"] ?? NOTE_FILLS.yellow}"/>`,
+        );
         break;
       case "shape": {
-        const fill = s.gradient ? (defs.push(gradientDef(`gr${i}`, s.gradient)), `url(#gr${i})`) : s.fill && s.fill !== "none" ? s.fill : s.fill === "none" ? "none" : "#ffffff";
+        const fill = s.gradient
+          ? (defs.push(gradientDef(`gr${i}`, s.gradient)), `url(#gr${i})`)
+          : s.fill && s.fill !== "none"
+            ? s.fill
+            : s.fill === "none"
+              ? "none"
+              : "#ffffff";
         const width = s.stroke === "none" ? 0 : (s.strokeWidth ?? 2);
         const stroke = s.stroke && s.stroke !== "none" ? s.stroke : "#c4c9d1";
-        parts.push(outline(s.kind ?? "rect", s.x + width / 2, s.y + width / 2, s.w - width, s.h - width, s.radius ?? 12, ` fill="${esc(fill)}" stroke="${esc(width ? stroke : "none")}" stroke-width="${n(width)}"${dashAttr(s.dash, width)}`));
+        parts.push(
+          outline(
+            s.kind ?? "rect",
+            s.x + width / 2,
+            s.y + width / 2,
+            s.w - width,
+            s.h - width,
+            s.radius ?? 12,
+            ` fill="${esc(fill)}" stroke="${esc(width ? stroke : "none")}" stroke-width="${n(width)}"${dashAttr(s.dash, width)}`,
+          ),
+        );
         break;
       }
       case "image":
-        parts.push(imageSvg(s.asset ? images.get(s.asset) : undefined, s.x, s.y, s.w, s.h, s.radius ?? 0, "cover", `cl${i}`));
+        parts.push(
+          imageSvg(s.asset ? images.get(s.asset) : undefined, s.x, s.y, s.w, s.h, s.radius ?? 0, "cover", `cl${i}`),
+        );
         break;
       case "arrow": {
         const from = s.from ? live.resolveEnd(s.from, byId) : null;
         const to = s.to ? live.resolveEnd(s.to, byId) : null;
         if (from && to) {
           const width = s.strokeWidth ?? 2;
-          parts.push(`<line x1="${n(from.x)}" y1="${n(from.y)}" x2="${n(to.x)}" y2="${n(to.y)}" stroke="${esc(s.stroke && s.stroke !== "none" ? s.stroke : "#5b6370")}" stroke-width="${n(width)}"${s.dashed ? ` stroke-dasharray="${n(width * 3)} ${n(width * 2)}"` : ""}/>`);
+          parts.push(
+            `<line x1="${n(from.x)}" y1="${n(from.y)}" x2="${n(to.x)}" y2="${n(to.y)}" stroke="${esc(s.stroke && s.stroke !== "none" ? s.stroke : "#5b6370")}" stroke-width="${n(width)}"${s.dashed ? ` stroke-dasharray="${n(width * 3)} ${n(width * 2)}"` : ""}/>`,
+          );
         }
         break;
       }
       case "draw":
         if (s.points?.length) {
           const pts = [];
-          for (let k = 0; k + 1 < s.points.length; k += 2) pts.push(`${n(s.x + (s.points[k] ?? 0))},${n(s.y + (s.points[k + 1] ?? 0))}`);
-          parts.push(`<polyline points="${pts.join(" ")}" fill="none" stroke="${esc(s.stroke ?? "#1d2129")}" stroke-width="${n(s.strokeWidth ?? 4)}"/>`);
+          for (let k = 0; k + 1 < s.points.length; k += 2)
+            pts.push(`${n(s.x + (s.points[k] ?? 0))},${n(s.y + (s.points[k + 1] ?? 0))}`);
+          parts.push(
+            `<polyline points="${pts.join(" ")}" fill="none" stroke="${esc(s.stroke ?? "#1d2129")}" stroke-width="${n(s.strokeWidth ?? 4)}"/>`,
+          );
         }
         break;
       case "html":
       case "file":
       case "pending":
-        parts.push(`<rect x="${n(s.x)}" y="${n(s.y)}" width="${n(s.w)}" height="${n(s.h)}" rx="10" fill="#ffffff" stroke="#c4c9d1"/>`);
+        parts.push(
+          `<rect x="${n(s.x)}" y="${n(s.y)}" width="${n(s.w)}" height="${n(s.h)}" rx="10" fill="#ffffff" stroke="#c4c9d1"/>`,
+        );
         break;
     }
-    if ((s.type === "text" || s.type === "note" || s.type === "shape") && s.text) parts.push(textSvg(s.text, base, s, measurer, faces));
+    if ((s.type === "text" || s.type === "note" || s.type === "shape") && s.text)
+      parts.push(textSvg(s.text, base, s, measurer, faces));
     body.push(`<g${rot}${filter}>${parts.join("")}</g>`);
   });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${n(w)}" height="${n(h)}" viewBox="${n(x0)} ${n(y0)} ${n(w)} ${n(h)}"><defs>${defs.join("")}</defs>${body.join("")}</svg>`;

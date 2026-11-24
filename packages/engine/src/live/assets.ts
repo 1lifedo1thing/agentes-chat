@@ -13,8 +13,8 @@ import { recordAudit } from "../audit";
 import { UUID } from "../authority";
 import { sniffImage, sniffModelImage } from "../avatars";
 import { NotFoundError, ValidationError } from "../errors";
-import { imageSize } from "../image-size";
 import { FontError, fontMediaType, readFont, sniffFont } from "../fonts/sfnt";
+import { imageSize } from "../image-size";
 import { looksLikeSvg, SVG_TYPE, sanitizeSvg } from "./svg";
 
 /**
@@ -158,7 +158,13 @@ async function storeAsset(
   if (fontFormat) {
     try {
       const info = readFont(bytes);
-      font = { family: info.family, style: info.style, weight: info.weight, italic: info.italic, embedding: info.embedding };
+      font = {
+        family: info.family,
+        style: info.style,
+        weight: info.weight,
+        italic: info.italic,
+        embedding: info.embedding,
+      };
       contentType = fontMediaType(fontFormat);
     } catch (error) {
       throw new ValidationError(

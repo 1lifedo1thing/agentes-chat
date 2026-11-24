@@ -1616,7 +1616,8 @@ export function htmlToBlocks(parsed: ParsedHtml, pictures: BlockPictures): impor
     const h = holder(items, el);
     builder.computedFor(h, builder.styleOf(el));
     const runs = runsOf(h, 400);
-    if (runs.some((r) => r.text.trim())) into.push({ type: "paragraph", ...alignOf(builder.styleOf(el)), ...extra, runs });
+    if (runs.some((r) => r.text.trim()))
+      into.push({ type: "paragraph", ...alignOf(builder.styleOf(el)), ...extra, runs });
   };
   const walk = (el: HtmlElement, list: "bullet" | "ordered" | undefined, level: number, into: DocBlock[]) => {
     let pending: (HtmlElement | string)[] = [];

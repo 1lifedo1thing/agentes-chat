@@ -32,7 +32,9 @@ export async function fileFonts(
   const list = rows.flatMap((r) => (r.font ? [{ id: r.id, ...(r.font as LiveAssetFont) }] : []));
   const byFamily = new Map<string, string>();
   // The regular face first, so a family's name picks the face people expect.
-  for (const f of [...list].sort((a, b) => Math.abs(a.weight - 400) - Math.abs(b.weight - 400) || Number(a.italic) - Number(b.italic))) {
+  for (const f of [...list].sort(
+    (a, b) => Math.abs(a.weight - 400) - Math.abs(b.weight - 400) || Number(a.italic) - Number(b.italic),
+  )) {
     const key = f.family.trim().toLowerCase();
     if (!byFamily.has(key)) byFamily.set(key, f.id);
     const styled = `${f.family} ${f.style}`.trim().toLowerCase();

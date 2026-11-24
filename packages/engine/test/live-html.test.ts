@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { schema } from "@agenteschat/db";
 import { readCanvasGroups, readShapes } from "@agenteschat/live/canvas";
+import { readDocument } from "@agenteschat/live/document";
 import { readDeck } from "@agenteschat/live/slides";
 import type * as Y from "yjs";
-import { readDocument } from "@agenteschat/live/document";
 import {
   createArtifact,
   createFileArtifact,
@@ -13,10 +13,10 @@ import {
   enableSvgRasterizer,
   exportLive,
   insertMessage,
-  readZip,
-  setSvgRasterizer,
   type LiveDocs,
   type LiveImages,
+  readZip,
+  setSvgRasterizer,
   type ToolContext,
   type ToolOutput,
   type ToolSource,
@@ -389,7 +389,12 @@ describe("a workspace's own fonts", () => {
       ops: [
         { op: "add_font", font_file: font.id },
         { op: "add_text", slide: 1, text: "Hello", style: { font: "Onest", size: 60 } },
-        { op: "add_html", slide: 1, html: '<p style="font-family: Onest; margin: 0">From HTML</p>', box: { x: 0, y: 600, w: 1920, h: 200 } },
+        {
+          op: "add_html",
+          slide: 1,
+          html: '<p style="font-family: Onest; margin: 0">From HTML</p>',
+          box: { x: 0, y: 600, w: 1920, h: 200 },
+        },
       ],
     });
     expect(out.content).toContain('brought the font "Onest"');
@@ -463,8 +468,16 @@ describe("exports keep the type", () => {
     const run = await runFor();
     const deck = artifactOf(await ok(run, "create_presentation", { title: "Deck", slides: [{ layout: "blank" }] }));
     await ok(run, "edit_presentation", { file: deck.id, ops: [{ op: "add_html", slide: 1, html: CARDS }] });
-    const pptx = await exportLive({ ...f.artifactDeps, live: docs }, personActor(f.owner.id), f.org.id, deck.id, "pptx");
-    const slide = readZip(pptx.body, { maxFiles: 200, maxBytes: 50_000_000 }).find((e) => e.path === "ppt/slides/slide1.xml");
+    const pptx = await exportLive(
+      { ...f.artifactDeps, live: docs },
+      personActor(f.owner.id),
+      f.org.id,
+      deck.id,
+      "pptx",
+    );
+    const slide = readZip(pptx.body, { maxFiles: 200, maxBytes: 50_000_000 }).find(
+      (e) => e.path === "ppt/slides/slide1.xml",
+    );
     const xml = new TextDecoder().decode(slide?.data);
     expect(xml).toContain('typeface="Martian Mono"');
     expect(xml).toContain('typeface="Funnel Display"');
@@ -479,7 +492,12 @@ describe("exports keep the type", () => {
     });
     await ok(run, "edit_document", {
       file: doc.id,
-      ops: [{ op: "append", html: '<p><span style="font-family: Inter; font-weight: 700; font-size: 24px">Marca</span></p>' }],
+      ops: [
+        {
+          op: "append",
+          html: '<p><span style="font-family: Inter; font-weight: 700; font-size: 24px">Marca</span></p>',
+        },
+      ],
     });
     const docx = await exportLive({ ...f.artifactDeps, live: docs }, personActor(f.owner.id), f.org.id, doc.id, "docx");
     const body = readZip(docx.body, { maxFiles: 50, maxBytes: 50_000_000 }).find((e) => e.path === "word/document.xml");

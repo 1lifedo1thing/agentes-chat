@@ -176,7 +176,7 @@ class Writer {
         run.strike ? 'strike="sngStrike"' : "",
         run.caps || look.caps ? 'cap="all"' : "",
         // Letter spacing in hundredths of a point.
-        tracking ? `spc="${Math.round(((tracking / 1000) * this.sz(size)))}"` : "",
+        tracking ? `spc="${Math.round((tracking / 1000) * this.sz(size))}"` : "",
         'dirty="0"',
       ]
         .filter(Boolean)
@@ -315,7 +315,12 @@ async function elementXml(
             : solid(color, el.style?.opacity ?? 1);
         const stroke = el.style?.stroke;
         if (stroke && stroke !== "none") {
-          const dash = el.style?.dash === "dashed" ? '<a:prstDash val="dash"/>' : el.style?.dash === "dotted" ? '<a:prstDash val="sysDot"/>' : "";
+          const dash =
+            el.style?.dash === "dashed"
+              ? '<a:prstDash val="dash"/>'
+              : el.style?.dash === "dotted"
+                ? '<a:prstDash val="sysDot"/>'
+                : "";
           line = `<a:ln w="${w.e(el.style?.strokeWidth ?? 2)}">${solid(stroke, el.style?.opacity ?? 1)}${dash}</a:ln>`;
         }
         geometry = shapeGeometry(el.style?.shape, el);
