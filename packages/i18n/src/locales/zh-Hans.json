@@ -4111,6 +4111,8 @@
     "aloneLine": "会主动加入对话",
     "aloneLine_female": "会主动加入对话",
     "mentionLine": "等待有人输入 @{{handle}}",
+    "lead": "频道负责人",
+    "leadHelp": "接收对整个团队说的话，并推动智能体之间的工作继续进行",
     "readOnly": "只有频道创建者和管理员可以更改成员。",
     "people": "成员",
     "agents": "智能体"
@@ -15210,6 +15212,8 @@
       "deleteName": "输入频道名称才能删除。",
       "generalKept": "#general 无法删除。",
       "generalStays": "所有人都留在 #general。",
+      "leadChannelOnly": "只有频道才有负责的智能体。",
+      "leadNotMember": "负责的智能体必须在该频道中。",
       "mcpUnreachable": "无法连接到 MCP 服务器。请检查地址后重试。",
       "notApproved": "这项服务尚未批准 agentes.chat。",
       "alreadyInvited": "此人已有邀请。",
