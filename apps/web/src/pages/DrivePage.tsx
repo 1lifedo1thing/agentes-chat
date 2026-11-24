@@ -395,6 +395,7 @@ export function DrivePage({
             : []),
         ]
       : null;
+  const newFolderHere = () => arrange.newFolder(folder);
   const filePicker = useFilePicker({ label: t("files.upload"), onFiles: upload, multiple: true });
   /** Right click or the menu key on the Drive's empty space: what makes something here. */
   const pageMenu = entityMenu((): MenuEntry[] =>
@@ -405,7 +406,7 @@ export function DrivePage({
             id: "new-folder",
             label: t("drive.newFolder"),
             icon: "plus",
-            run: () => arrange.newFolder(folder),
+            run: newFolderHere,
           },
           { kind: "item", id: "upload", label: t("files.upload"), icon: "upload", run: filePicker.open },
         ]
@@ -555,15 +556,10 @@ export function DrivePage({
                 >
                   {t("artifacts.trash")}
                 </Button>
-                {uploads && (
-                  <Button variant="ghost" icon="plus" onClick={() => arrange.newFolder(folder)}>
-                    {t("drive.newFolder")}
-                  </Button>
-                )}
                 {uploads && !(list.isSuccess && rows.length === 0 && subfolders.length === 0 && !filtered) && (
                   <>
-                    {/* A spreadsheet, a presentation or a canvas (ADR 0196 §9); Upload stays the one primary. */}
-                    <NewFileMenu iconOnly={phone} />
+                    {/* A folder or a live file (ADR 0196 §9); Upload stays the one primary. */}
+                    <NewFileMenu iconOnly={phone} onNewFolder={newFolderHere} />
                     <UploadButton
                       size="md"
                       label={t("files.upload")}
@@ -790,7 +786,16 @@ export function DrivePage({
                 title={t("drive.folderEmptyTitle")}
                 actions={
                   uploads && (
-                    <UploadButton size="md" label={t("files.upload")} busy={uploader.busy} multiple onFiles={upload} />
+                    <>
+                      <UploadButton
+                        size="md"
+                        label={t("files.upload")}
+                        busy={uploader.busy}
+                        multiple
+                        onFiles={upload}
+                      />
+                      <NewFileMenu align="start" onNewFolder={newFolderHere} />
+                    </>
                   )
                 }
               >
@@ -813,7 +818,7 @@ export function DrivePage({
                         onFiles={upload}
                         variant="primary"
                       />
-                      <NewFileMenu align="start" />
+                      <NewFileMenu align="start" onNewFolder={newFolderHere} />
                     </>
                   )
                 }
