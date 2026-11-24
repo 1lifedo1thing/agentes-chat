@@ -40,6 +40,8 @@ export interface RunnerConfig {
   exec: boolean;
   /** Background tasks at once on this computer (default: sized to it, `sizedTaskLimit`). */
   maxConcurrentTasks?: number;
+  /** The owner's Push harder (`TASK_ROOM_PROTOCOL`): tasks may fill memory down to 0.5 GB free, whatever the processor. */
+  pushHarder?: boolean;
   /** A background task is stopped after this many seconds (default 4 h). */
   taskMaxSeconds?: number;
   /** Brain turns (protocol 8): a Claude Code process with no turn this long is closed (default 10). */

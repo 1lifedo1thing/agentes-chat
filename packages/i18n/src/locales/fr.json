@@ -13827,7 +13827,6 @@
     "added": "{{repo}} rejoindra la liste à l'enregistrement."
   },
   "connectors": {
-    "title": "Connecteurs",
     "store": {
       "featured": "À la une",
       "suggested": "Suggéré",
@@ -13874,6 +13873,7 @@
       "addressPassword": "Adresse et mot de passe",
       "composio": "Via Composio"
     },
+    "title": "Connecteurs",
     "add": "Ajouter un connecteur",
     "personal": {
       "note": "Vous seul ouvrez ces connexions. Vos agents les utilisent seulement quand vous le demandez.",
@@ -16580,6 +16580,7 @@
       "widenForbidden": "Les admins peuvent seulement restreindre qui utilise l'appareil personnel de quelqu'un.",
       "spillOwnerOnly": "Seule la personne qui a connecté cet ordinateur peut y laisser penser les réponses. Toi, tu peux le désactiver.",
       "tasksOwnerOnly": "Seule la personne qui a connecté cet ordinateur peut changer le nombre de tâches qu'il exécute en même temps.",
+      "tasksCloud": "Le Cloud dimensionne lui-même la place de cet ordinateur pour les tâches.",
       "notHome": "Les agents vivent sur l'ordinateur du workspace et utilisent celui-ci quand ils le nomment."
     },
     "machine": {
@@ -17000,6 +17001,11 @@
     "phonesHere": "Téléphones sur cet ordinateur",
     "maxTasks": "Tâches simultanées",
     "maxTasksHint": "Combien de tâches en arrière-plan les agents exécutent ici en même temps. Les autres attendent leur tour.",
+    "tasksAutoRoom": "Automatique · {{running}} en cours · place pour environ {{more}} de plus",
+    "tasksAutoFull": "Automatique · {{running}} en cours · plein pour l'instant",
+    "tasksAutoHint": "Les agents lancent des tâches en arrière-plan tant que cet ordinateur a de la mémoire à revendre, en gardant 1,5 Go libres pour vos propres apps. Les autres attendent leur tour.",
+    "pushHarder": "Pousser plus fort",
+    "pushHarderHint": "Plus de tâches à la fois : seuls 0,5 Go de mémoire restent libres et un processeur occupé ne les retient pas. Vos propres apps peuvent ralentir.",
     "belongs": "Appartient à l'espace de travail",
     "belongsHint": "Il reste quand la personne qui l'a connecté part, et tout le monde peut l'utiliser tant que personne n'en est propriétaire.",
     "spillOwn": "Vos réponses peuvent réfléchir ici",
@@ -17054,6 +17060,7 @@
       "inUse": "Utilisé",
       "inUseBy": "Utilisé par {{name}}",
       "busy": "Occupé {{running}}/{{max}}",
+      "busyRunning": "Occupé · {{running}} en cours",
       "needs": "Action requise",
       "preparing": "Préparation",
       "paused": "En pause",
@@ -17078,6 +17085,9 @@
       "tasksChange": "Tâches simultanées ici : {{max}}. Change-le plus bas.",
       "tasksOwner": "Tâches simultanées ici : {{max}}. La personne qui l'a connecté peut le changer.",
       "tasksUpdate": "Tâches simultanées ici : {{max}}. Mets à jour son app pour le changer d'ici.",
+      "tasksNoMemory": "Pas de place pour une autre tâche pour l'instant : {{gb, number}} Go de mémoire libres. La suivante démarre quand une se termine.",
+      "tasksNoCpu": "Pas de place pour une autre tâche pour l'instant : le processeur est presque saturé. La suivante démarre quand il se calme.",
+      "tasksPushing": "Pousser plus fort : {{gb, number}} Go de mémoire libres. Vos propres apps peuvent ralentir.",
       "offline": "Les agents attendent son retour.",
       "offlineSeen": "Vu pour la dernière fois {{time}}. Les agents attendent son retour.",
       "offlineWithHost": "{{host}} est hors ligne. Les agents attendent son retour.",

@@ -16413,6 +16413,7 @@ export const en = {
       widenForbidden: "Admins can only narrow who can use someone's own device.",
       spillOwnerOnly: "Only the person who connected this computer can let replies think on it. You can turn it off.",
       tasksOwnerOnly: "Only the person who connected this computer can change how many tasks it runs at once.",
+      tasksCloud: "The Cloud sizes this computer's room for tasks itself.",
       notHome: "Agents live on the workspace computer and use this one when they name it.",
     },
     machine: {
@@ -16839,6 +16840,14 @@ export const en = {
     phonesHere: "Phones on this computer",
     maxTasks: "Tasks at once",
     maxTasksHint: "How many background tasks agents run here at the same time. The rest wait their turn.",
+    /** Tasks start while the computer has memory to spare, not on a count: "Automatic · 3 running · room for about 8 more". */
+    tasksAutoRoom: "Automatic · {{running}} running · room for about {{more}} more",
+    tasksAutoFull: "Automatic · {{running}} running · full for now",
+    tasksAutoHint:
+      "Agents start background tasks while this computer has memory to spare, keeping 1.5 GB free for your own apps. The rest wait their turn.",
+    pushHarder: "Push harder",
+    pushHarderHint:
+      "More tasks at once: only 0.5 GB of memory stays free and a busy processor doesn't hold them. Your own apps may slow down.",
     belongs: "Belongs to the workspace",
     belongsHint: "It stays when the person who connected it leaves, and everyone can use it while nobody owns it.",
     spillOwn: "Your replies can think here",
@@ -16895,6 +16904,8 @@ export const en = {
       inUse: "In use",
       inUseBy: "In use by {{name}}",
       busy: "Busy {{running}}/{{max}}",
+      /** Busy where tasks start on room: no count to fill. */
+      busyRunning: "Busy · {{running}} running",
       needs: "Needs you",
       preparing: "Preparing",
       paused: "Paused",
@@ -16922,6 +16933,12 @@ export const en = {
       tasksChange: "Tasks at once here: {{max}}. Change it below.",
       tasksOwner: "Tasks at once here: {{max}}. The person who connected it can change that.",
       tasksUpdate: "Tasks at once here: {{max}}. Update its app to change that from here.",
+      /** Under a busy computer's pill where tasks start on room and none fits now: why, and when the next starts. */
+      tasksNoMemory:
+        "No room for another task right now: {{gb, number}} GB of memory free. The next one starts when one ends.",
+      tasksNoCpu:
+        "No room for another task right now: the processor is nearly full. The next one starts when it calms down.",
+      tasksPushing: "Pushing harder: {{gb, number}} GB of memory free. Your own apps may slow down.",
       offline: "Agents wait for it to come back.",
       offlineSeen: "Last seen {{time}}. Agents wait for it to come back.",
       offlineWithHost: "{{host}} is offline. Agents wait for it to come back.",

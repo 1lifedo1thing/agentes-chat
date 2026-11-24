@@ -173,6 +173,8 @@ export interface WorkerState {
     /** Codex app-servers' own (`CODEX_DEFAULT_LIMITS`); absent: the brains'. */
     codexIdleMinutes?: number;
     codexMaxProcesses?: number;
+    /** The owner's Push harder (`RunnerConfig.pushHarder`). */
+    pushHarder?: boolean;
   };
   /** People watching or controlling its agent's desktop (root's): its Chrome there isn't idle meanwhile. */
   desktopViewers?: number;

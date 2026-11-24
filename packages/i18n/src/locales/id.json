@@ -12838,7 +12838,6 @@
     "added": "{{repo}} masuk ke daftar saat kamu menyimpan."
   },
   "connectors": {
-    "title": "Konektor",
     "store": {
       "featured": "Unggulan",
       "suggested": "Disarankan",
@@ -12877,6 +12876,7 @@
       "addressPassword": "Alamat dan kata sandi",
       "composio": "Lewat Composio"
     },
+    "title": "Konektor",
     "add": "Tambah konektor",
     "personal": {
       "note": "Hanya kamu yang membuka koneksi ini. Agenmu hanya menggunakannya saat kamu minta.",
@@ -15499,6 +15499,7 @@
       "widenForbidden": "Admin hanya bisa mempersempit siapa yang boleh memakai perangkat milik seseorang.",
       "spillOwnerOnly": "Hanya orang yang menghubungkan komputer ini yang bisa membiarkan balasan berpikir di sini. Kamu bisa mematikannya.",
       "tasksOwnerOnly": "Hanya orang yang menghubungkan komputer ini yang bisa mengubah berapa tugas yang dijalankannya sekaligus.",
+      "tasksCloud": "Cloud menentukan sendiri ruang komputer ini untuk tugas.",
       "notHome": "Agen tinggal di komputer workspace dan memakai komputer ini saat menyebut namanya."
     },
     "machine": {
@@ -15915,6 +15916,11 @@
     "phonesHere": "Ponsel di komputer ini",
     "maxTasks": "Tugas sekaligus",
     "maxTasksHint": "Berapa banyak tugas latar belakang yang dijalankan agen di sini secara bersamaan. Sisanya menunggu giliran.",
+    "tasksAutoRoom": "Otomatis · {{running}} berjalan · muat sekitar {{more}} lagi",
+    "tasksAutoFull": "Otomatis · {{running}} berjalan · penuh untuk saat ini",
+    "tasksAutoHint": "Agen memulai tugas latar belakang selama komputer ini masih punya memori lebih, dengan menyisakan 1,5 GB untuk aplikasimu sendiri. Sisanya menunggu giliran.",
+    "pushHarder": "Paksa lebih keras",
+    "pushHarderHint": "Lebih banyak tugas sekaligus: hanya 0,5 GB memori yang tetap bebas dan prosesor yang sibuk tidak menahannya. Aplikasimu sendiri bisa melambat.",
     "belongs": "Milik ruang kerja",
     "belongsHint": "Perangkat ini tetap ada saat orang yang menghubungkannya keluar, dan semua orang bisa memakainya selama tidak ada pemiliknya.",
     "spillOwn": "Balasan untukmu bisa berpikir di sini",
@@ -15969,6 +15975,7 @@
       "inUse": "Sedang dipakai",
       "inUseBy": "Dipakai {{name}}",
       "busy": "Sibuk {{running}}/{{max}}",
+      "busyRunning": "Sibuk · {{running}} berjalan",
       "needs": "Butuh kamu",
       "preparing": "Menyiapkan",
       "paused": "Dijeda",
@@ -15991,6 +15998,9 @@
       "tasksChange": "Tugas sekaligus di sini: {{max}}. Ubah di bawah.",
       "tasksOwner": "Tugas sekaligus di sini: {{max}}. Orang yang menghubungkannya bisa mengubahnya.",
       "tasksUpdate": "Tugas sekaligus di sini: {{max}}. Perbarui aplikasinya untuk mengubahnya dari sini.",
+      "tasksNoMemory": "Belum ada ruang untuk tugas lain: {{gb, number}} GB memori bebas. Tugas berikutnya mulai saat satu selesai.",
+      "tasksNoCpu": "Belum ada ruang untuk tugas lain: prosesor hampir penuh. Tugas berikutnya mulai saat bebannya turun.",
+      "tasksPushing": "Memaksa lebih keras: {{gb, number}} GB memori bebas. Aplikasimu sendiri bisa melambat.",
       "offline": "Agen menunggu sampai perangkat ini kembali.",
       "offlineSeen": "Terakhir terlihat {{time}}. Agen menunggu sampai perangkat ini kembali.",
       "offlineWithHost": "{{host}} sedang offline. Agen menunggu sampai komputer itu kembali.",

@@ -14339,7 +14339,6 @@
     "added": "{{repo}} trafi na listę po zapisaniu."
   },
   "connectors": {
-    "title": "Konektory",
     "store": {
       "featured": "Wyróżnione",
       "suggested": "Sugerowane",
@@ -14390,6 +14389,7 @@
       "addressPassword": "Adres i hasło",
       "composio": "Przez Composio"
     },
+    "title": "Konektory",
     "add": "Dodaj konektor",
     "personal": {
       "note": "Te połączenia otwierasz tylko ty. Twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",
@@ -17141,6 +17141,7 @@
       "widenForbidden": "Administratorzy mogą tylko zawęzić, kto korzysta z czyjegoś własnego urządzenia.",
       "spillOwnerOnly": "Tylko osoba, która podłączyła ten komputer, może pozwolić odpowiedziom myśleć na nim. Ty możesz to wyłączyć.",
       "tasksOwnerOnly": "Tylko osoba, która podłączyła ten komputer, może zmienić, ile zadań wykonuje naraz.",
+      "tasksCloud": "Cloud sam ustala, ile miejsca na zadania ma ten komputer.",
       "notHome": "Agenci działają na komputerze workspace i używają tego, gdy podadzą jego nazwę."
     },
     "machine": {
@@ -17563,6 +17564,11 @@
     "phonesHere": "Telefony na tym komputerze",
     "maxTasks": "Zadania naraz",
     "maxTasksHint": "Ile zadań w tle agenci wykonują tu jednocześnie. Pozostałe czekają na swoją kolej.",
+    "tasksAutoRoom": "Automatycznie · {{running}} w toku · miejsce na około {{more}} więcej",
+    "tasksAutoFull": "Automatycznie · {{running}} w toku · na razie pełno",
+    "tasksAutoHint": "Agenci uruchamiają zadania w tle, dopóki ten komputer ma wolną pamięć, zostawiając 1,5 GB dla twoich własnych aplikacji. Reszta czeka na swoją kolej.",
+    "pushHarder": "Mocniej",
+    "pushHarderHint": "Więcej zadań naraz: wolne zostaje tylko 0,5 GB pamięci, a zajęty procesor ich nie wstrzymuje. Twoje własne aplikacje mogą zwolnić.",
     "belongs": "Należy do przestrzeni roboczej",
     "belongsHint": "Zostaje, gdy osoba, która je podłączyła, odchodzi, a dopóki nie ma właściciela, każdy może go używać.",
     "spillOwn": "Twoje odpowiedzi mogą myśleć tutaj",
@@ -17617,6 +17623,7 @@
       "inUse": "W użyciu",
       "inUseBy": "Używa: {{name}}",
       "busy": "Zajęte {{running}}/{{max}}",
+      "busyRunning": "Zajęte · {{running}} w toku",
       "needs": "Potrzebuje ciebie",
       "preparing": "Przygotowanie",
       "paused": "Wstrzymane",
@@ -17642,6 +17649,9 @@
       "tasksChange": "Zadania naraz tutaj: {{max}}. Zmień to poniżej.",
       "tasksOwner": "Zadania naraz tutaj: {{max}}. Osoba, która go podłączyła, może to zmienić.",
       "tasksUpdate": "Zadania naraz tutaj: {{max}}. Zaktualizuj jego aplikację, aby zmienić to stąd.",
+      "tasksNoMemory": "Teraz nie ma miejsca na kolejne zadanie: {{gb, number}} GB wolnej pamięci. Następne ruszy, gdy któreś się skończy.",
+      "tasksNoCpu": "Teraz nie ma miejsca na kolejne zadanie: procesor jest prawie w pełni zajęty. Następne ruszy, gdy się uspokoi.",
+      "tasksPushing": "Mocniej: {{gb, number}} GB wolnej pamięci. Twoje własne aplikacje mogą zwolnić.",
       "offline": "Agenci czekają, aż wróci.",
       "offlineSeen": "Ostatnio online: {{time}}. Agenci czekają, aż wróci.",
       "offlineWithHost": "{{host}} jest offline. Agenci czekają, aż wróci.",

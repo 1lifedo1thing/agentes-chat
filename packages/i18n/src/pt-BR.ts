@@ -16358,6 +16358,7 @@ export const ptBR = {
       widenForbidden: "Admins só podem restringir quem usa o dispositivo de outra pessoa.",
       spillOwnerOnly: "Só quem conectou este computador pode deixar respostas pensarem nele. Você pode desligar.",
       tasksOwnerOnly: "Só quem conectou este computador pode mudar quantas tarefas ele roda ao mesmo tempo.",
+      tasksCloud: "A Cloud dimensiona sozinha o espaço deste computador para tarefas.",
       notHome: "Os agentes moram no computador do workspace e usam este quando o citam pelo nome.",
     },
     machine: {
@@ -16774,6 +16775,13 @@ export const ptBR = {
     phonesHere: "Celulares neste computador",
     maxTasks: "Tarefas ao mesmo tempo",
     maxTasksHint: "Quantas tarefas em segundo plano os agentes rodam aqui ao mesmo tempo. As outras esperam a vez.",
+    tasksAutoRoom: "Automático · {{running}} rodando · cabem mais umas {{more}}",
+    tasksAutoFull: "Automático · {{running}} rodando · cheio por enquanto",
+    tasksAutoHint:
+      "Os agentes começam tarefas em segundo plano enquanto este computador tem memória sobrando, deixando 1,5 GB livres para os seus apps. As outras esperam a vez.",
+    pushHarder: "Forçar mais",
+    pushHarderHint:
+      "Mais tarefas ao mesmo tempo: só 0,5 GB de memória fica livre e o processador ocupado não as segura. Os seus apps podem ficar lentos.",
     belongs: "Pertence ao workspace",
     belongsHint: "Ele fica quando quem o conectou sai, e todos podem usá-lo enquanto ninguém for dono dele.",
     spillOwn: "Suas respostas podem pensar aqui",
@@ -16831,6 +16839,7 @@ export const ptBR = {
       inUse: "Em uso",
       inUseBy: "Em uso por {{name}}",
       busy: "Ocupado {{running}}/{{max}}",
+      busyRunning: "Ocupado · {{running}} rodando",
       needs: "Precisa de você",
       preparing: "Preparando",
       paused: "Pausado",
@@ -16854,6 +16863,11 @@ export const ptBR = {
       tasksChange: "Tarefas ao mesmo tempo aqui: {{max}}. Mude abaixo.",
       tasksOwner: "Tarefas ao mesmo tempo aqui: {{max}}. Quem conectou este computador pode mudar isso.",
       tasksUpdate: "Tarefas ao mesmo tempo aqui: {{max}}. Atualize o app dele para mudar isso daqui.",
+      tasksNoMemory:
+        "Sem espaço para outra tarefa agora: {{gb, number}} GB de memória livres. A próxima começa quando uma terminar.",
+      tasksNoCpu:
+        "Sem espaço para outra tarefa agora: o processador está quase cheio. A próxima começa quando ele aliviar.",
+      tasksPushing: "Forçando mais: {{gb, number}} GB de memória livres. Os seus apps podem ficar lentos.",
       offline: "Os agentes esperam ele voltar.",
       offlineSeen: "Visto às {{time}}. Os agentes esperam ele voltar.",
       offlineWithHost: "{{host}} está offline. Os agentes esperam ele voltar.",

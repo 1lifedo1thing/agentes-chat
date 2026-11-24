@@ -13849,7 +13849,6 @@
     "added": "{{repo}} entra nell'elenco quando salvi."
   },
   "connectors": {
-    "title": "Connettori",
     "store": {
       "featured": "In evidenza",
       "suggested": "Suggerito",
@@ -13896,6 +13895,7 @@
       "addressPassword": "Indirizzo e password",
       "composio": "Tramite Composio"
     },
+    "title": "Connettori",
     "add": "Aggiungi connettore",
     "personal": {
       "note": "Solo tu apri queste connessioni. I tuoi agenti le usano solo quando glielo chiedi.",
@@ -16602,6 +16602,7 @@
       "widenForbidden": "Gli admin possono solo restringere chi usa il dispositivo personale di qualcuno.",
       "spillOwnerOnly": "Solo chi ha collegato questo computer può lasciare che le risposte pensino qui. Tu puoi disattivarlo.",
       "tasksOwnerOnly": "Solo chi ha collegato questo computer può cambiare quante attività esegue in contemporanea.",
+      "tasksCloud": "Il Cloud dimensiona da solo lo spazio di questo computer per le attività.",
       "notHome": "Gli agenti vivono sul computer del workspace e usano questo quando lo nominano."
     },
     "machine": {
@@ -17022,6 +17023,11 @@
     "phonesHere": "Telefoni su questo computer",
     "maxTasks": "Attività in contemporanea",
     "maxTasksHint": "Quante attività in background gli agenti eseguono qui allo stesso tempo. Le altre aspettano il loro turno.",
+    "tasksAutoRoom": "Automatico · {{running}} in corso · spazio per circa altre {{more}}",
+    "tasksAutoFull": "Automatico · {{running}} in corso · pieno per ora",
+    "tasksAutoHint": "Gli agenti avviano attività in background finché questo computer ha memoria in avanzo, lasciando 1,5 GB liberi per le tue app. Le altre aspettano il loro turno.",
+    "pushHarder": "Spingi di più",
+    "pushHarderHint": "Più attività in contemporanea: restano liberi solo 0,5 GB di memoria e un processore occupato non le trattiene. Le tue app potrebbero rallentare.",
     "belongs": "Appartiene allo spazio di lavoro",
     "belongsHint": "Resta quando la persona che l'ha collegato se ne va, e tutti possono usarlo finché non ha un proprietario.",
     "spillOwn": "Le tue risposte possono pensare qui",
@@ -17076,6 +17082,7 @@
       "inUse": "In uso",
       "inUseBy": "In uso da {{name}}",
       "busy": "Occupato {{running}}/{{max}}",
+      "busyRunning": "Occupato · {{running}} in corso",
       "needs": "Serve il tuo aiuto",
       "preparing": "In preparazione",
       "paused": "In pausa",
@@ -17100,6 +17107,9 @@
       "tasksChange": "Attività in contemporanea qui: {{max}}. Cambialo qui sotto.",
       "tasksOwner": "Attività in contemporanea qui: {{max}}. Chi l'ha collegato può cambiarlo.",
       "tasksUpdate": "Attività in contemporanea qui: {{max}}. Aggiorna la sua app per cambiarlo da qui.",
+      "tasksNoMemory": "Nessuno spazio per un'altra attività ora: {{gb, number}} GB di memoria liberi. La prossima parte quando una finisce.",
+      "tasksNoCpu": "Nessuno spazio per un'altra attività ora: il processore è quasi al massimo. La prossima parte quando si calma.",
+      "tasksPushing": "Spingendo di più: {{gb, number}} GB di memoria liberi. Le tue app potrebbero rallentare.",
       "offline": "Gli agenti aspettano che torni.",
       "offlineSeen": "Visto l'ultima volta {{time}}. Gli agenti aspettano che torni.",
       "offlineWithHost": "{{host}} è offline. Gli agenti aspettano che torni.",
