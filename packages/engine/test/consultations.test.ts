@@ -1824,6 +1824,77 @@ describe("tell_agent: what comes of work handed off comes back by itself (ADR 00
     expect(await runsOf(f.agent.id)).toHaveLength(1);
   });
 
+  test("an agent that handed part on goes on once when what came back needs a step from it, and that run's reply goes back", async () => {
+    f = await setup({
+      askAgent: true,
+      judge: (kind) => (kind === "note_reply" || kind === "handed_back_next" ? 0.9 : undefined),
+      reply: handing([{ agent: "@infra", message: "Cuida do deploy de staging." }], {
+        Infra: (req) =>
+          lastText(req).includes("this came back")
+            ? answer("Destravei os 3 jobs; staging no ar.")
+            : lastText(req).includes("tool_result")
+              ? answer("Deploy feito; pedi ao Ops para checar a fila.")
+              : {
+                  chunks: [],
+                  toolUses: [{ name: "tell_agent", input: { agent: "@ops", message: "Checa a fila de staging." } }],
+                },
+        Ops: () => answer("3 jobs travados na fila."),
+      }),
+    });
+    const infra = await addInfra();
+    const ops = await addAgent("Ops");
+    const { handlers, release } = holding(ops.id);
+    await post("@dev pede ao infra para cuidar do deploy");
+    await drainOutbox(f.db, handlers);
+    const parent = (await consultations()).find((c) => c.targetAgentId === infra.id);
+    expect(parent).toMatchObject({ status: "open", answer: null });
+
+    await release(ops.id);
+    const infraRuns = await runsOf(infra.id);
+    expect(infraRuns).toHaveLength(2);
+    const [first, again] = infraRuns.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    // It goes on in the agents' DM where it answered, and that run is the one that answers.
+    expect(again?.channelId).toBe(first?.channelId);
+    expect((await consultations()).find((c) => c.id === parent?.id)).toMatchObject({
+      status: "answered",
+      targetRunId: again?.id,
+      answer:
+        "Destravei os 3 jobs; staging no ar.\n\n[@ops, to whom @infra handed part of it]: 3 jobs travados na fila.",
+    });
+    const judged = (f.context.judge as unknown as { calls: { kind: string }[] }).calls;
+    expect(judged.map((c) => c.kind)).toContain("handed_back_next");
+  });
+
+  test("an agent that goes on with what came back and fails still sends up what its colleagues sent back, with why", async () => {
+    f = await setup({
+      askAgent: true,
+      judge: (kind) => (kind === "note_reply" || kind === "handed_back_next" ? 0.9 : undefined),
+      reply: handing([{ agent: "@infra", message: "Cuida do deploy de staging." }], {
+        Infra: (req) =>
+          lastText(req).includes("this came back")
+            ? { chunks: [], failMidStream: { error: "model_error", retryable: false, inputTokens: null } }
+            : lastText(req).includes("tool_result")
+              ? answer("Deploy feito; pedi ao Ops para checar a fila.")
+              : {
+                  chunks: [],
+                  toolUses: [{ name: "tell_agent", input: { agent: "@ops", message: "Checa a fila de staging." } }],
+                },
+        Ops: () => answer("3 jobs travados na fila."),
+      }),
+    });
+    const infra = await addInfra();
+    const ops = await addAgent("Ops");
+    const { handlers, release } = holding(ops.id);
+    await post("@dev pede ao infra para cuidar do deploy");
+    await drainOutbox(f.db, handlers);
+    await release(ops.id);
+    const infraRuns = (await runsOf(infra.id)).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    expect(infraRuns.map((r) => r.status)).toEqual(["done", "failed"]);
+    const parent = (await consultations()).find((c) => c.targetAgentId === infra.id);
+    expect(parent?.status).toBe("failed");
+    expect(parent?.answer).toContain("[@ops, to whom @infra handed part of it]: 3 jobs travados na fila.");
+  });
+
   test("what comes back while the agent that handed it on still works is read at its next step, and joins its answer even if it ends first", async () => {
     f = await setup({ askAgent: true, judge: notesMatter });
     const infra = await addInfra();
