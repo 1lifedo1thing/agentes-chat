@@ -14,7 +14,8 @@ const fieldsOf = (input: AgentBrainInput) => Object.keys(input) as Field[];
  * `pending` holds the fields still on their way, which the screen draws over what is saved, so a switch flips and a
  * check moves on the tap. Only that row waits; another one can change meanwhile, and a newer change of the same field
  * wins (the older one's answer says nothing). A failure says so and the row goes back to what is saved. `undo`: what
- * the saved toast's Desfazer saves back. `scope`: which of the right hand's two AIs (its own cache entry).
+ * the saved toast's Desfazer saves back, then `giveBack` runs (a login taken from other agents goes back to them).
+ * `scope`: which of the right hand's two AIs (its own cache entry).
  */
 export function useSaveBrain(agentId: string, scope?: BrainScope) {
   const { t } = useTranslation();
@@ -35,11 +36,15 @@ export function useSaveBrain(agentId: string, scope?: BrainScope) {
     input: AgentBrainInput,
     done: string | ((saved: AgentBrain) => string),
     undo?: AgentBrainInput,
+    giveBack?: () => Promise<void>,
+    /** Runs once the change is saved, before it is said (a Desfazer's `giveBack`). */
+    then?: () => Promise<void>,
   ): Promise<void> => {
     put({ ...live.current, ...input });
     try {
       const saved = await api.agents.setBrain(orgId, agentId, { ...(scope ? { scope } : {}), ...input });
       qc.setQueryData(scope ? [...keys.agentBrain(orgId, agentId), scope] : keys.agentBrain(orgId, agentId), saved);
+      await then?.();
       if (newest(input))
         toast({
           title: typeof done === "string" ? done : done(saved),
@@ -48,7 +53,7 @@ export function useSaveBrain(agentId: string, scope?: BrainScope) {
             ? {
                 action: {
                   label: t("agentPage.work.brain.v2.undo"),
-                  onPress: () => void save(undo, t("agentPage.work.brain.v2.undone")),
+                  onPress: () => void save(undo, t("agentPage.work.brain.v2.undone"), undefined, undefined, giveBack),
                 },
               }
             : {}),
