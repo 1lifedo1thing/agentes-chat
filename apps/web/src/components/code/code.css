@@ -1314,9 +1314,11 @@ html:not([data-pointer]) .code-tabs :is(.code-tabs__tab, .code-tabs__open, .code
 .code-vcs__where > .ac-icon {
   flex: none;
 }
-/* The branch gives way first; where it came from stays whole. */
+/* The branch gives way first, down to a few letters of its name; then where it came from is cut too (a base as long
+   as a branch's own name), never drawn over the head's button. */
 .code-vcs__branch {
-  min-width: 0;
+  flex: 0 1000 auto;
+  min-width: 8ch;
   overflow: hidden;
   color: var(--ink2);
   font: 600 12.5px / 18px var(--font-mono);
@@ -1324,9 +1326,12 @@ html:not([data-pointer]) .code-tabs :is(.code-tabs__tab, .code-tabs__open, .code
   text-overflow: ellipsis;
 }
 .code-vcs__base {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   font-size: 12.5px;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .code-vcs__scroll {
   padding: 0 6px 160px;

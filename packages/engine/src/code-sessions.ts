@@ -76,8 +76,15 @@ const ENSURE_TIMEOUT_MS = 120_000;
 /** A clone still running on the computer is asked again this often, this many times. */
 const CLONE_RETRY_MS = 15_000;
 const CLONE_RETRIES = 40;
-/** A git command for the panel (diff, status) never runs longer than this. */
-const GIT_READ_SECONDS = 30;
+/**
+ * A git command for the panel (diff, status) never runs longer than this on the computer, and the computer answers
+ * within `GIT_READ_ANSWER_MS`: both under the apps' own wait for a read (`READ_TIMEOUT_MS`, 30 s), so a computer busy
+ * with its agent's work is said to be slow (`machine.timeout`) instead of the server reading as unreachable.
+ */
+const GIT_READ_SECONDS = 20;
+const GIT_READ_ANSWER_MS = 25_000;
+/** A read the computer cut at `GIT_READ_SECONDS`: the same words as one it never answered. */
+const slowRead = () => new MachineRequestError("timeout", `the computer did not answer within ${GIT_READ_SECONDS} s`);
 /** The diff the panel reads: past this, the files are listed without their patch. */
 const DIFF_MAX_CHARS = 1_500_000;
 /** What a failed worktree keeps of the reason. */
@@ -1140,21 +1147,26 @@ async function gitRead(deps: CodeSessionDeps, row: CodeSessionRow, args: string)
     throw new ConflictError("The worktree isn't ready yet", "code_session.not_ready");
   const agent = await getAgentCached(deps.db, row.orgId, row.agentId);
   if (!agent) throw new NotFoundError("Agent not found");
-  let out: { exitCode: number; stdout: string; stderr: string };
+  let out: { exitCode: number; stdout: string; stderr: string; timedOut?: boolean };
   try {
-    out = await deps.hub.call<"exec">(row.machineId, {
-      op: "exec",
-      command: `git --no-pager ${args}`,
-      cwd: row.worktreePath,
-      timeoutSeconds: GIT_READ_SECONDS,
-      stream: false,
-      agent: { id: agent.id, handle: agent.handle },
-    });
+    out = await deps.hub.call<"exec">(
+      row.machineId,
+      {
+        op: "exec",
+        command: `git --no-pager ${args}`,
+        cwd: row.worktreePath,
+        timeoutSeconds: GIT_READ_SECONDS,
+        stream: false,
+        agent: { id: agent.id, handle: agent.handle },
+      },
+      { timeoutMs: GIT_READ_ANSWER_MS },
+    );
   } catch (error) {
     if (error instanceof MachineOfflineError || error instanceof MachinePausedError)
       throw new ConflictError("This session's computer isn't reachable", "code_session.offline");
     throw error;
   }
+  if (out.timedOut) throw slowRead();
   if (out.exitCode !== 0) throw new ConflictError(out.stderr.trim() || "git failed", "code_session.git_failed");
   return out.stdout;
 }
@@ -1364,14 +1376,20 @@ async function worktreeShell(deps: CodeSessionDeps, row: CodeSessionRow, command
   const agent = await getAgentCached(deps.db, row.orgId, row.agentId);
   if (!agent) throw new NotFoundError("Agent not found");
   try {
-    return await deps.hub.call<"exec">(row.machineId, {
-      op: "exec",
-      command,
-      cwd: row.worktreePath,
-      timeoutSeconds: GIT_READ_SECONDS,
-      stream: false,
-      agent: { id: agent.id, handle: agent.handle },
-    });
+    const out = await deps.hub.call<"exec">(
+      row.machineId,
+      {
+        op: "exec",
+        command,
+        cwd: row.worktreePath,
+        timeoutSeconds: GIT_READ_SECONDS,
+        stream: false,
+        agent: { id: agent.id, handle: agent.handle },
+      },
+      { timeoutMs: GIT_READ_ANSWER_MS },
+    );
+    if (out.timedOut) throw slowRead();
+    return out;
   } catch (error) {
     if (error instanceof MachineOfflineError || error instanceof MachinePausedError)
       throw new ConflictError("This session's computer isn't reachable", "code_session.offline");

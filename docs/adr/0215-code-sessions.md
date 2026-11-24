@@ -135,7 +135,9 @@ config once the worktree is made (`ensureGitIdentity`): the CLI commits with pla
   by the window folds the app's sidebar to its rail until the room comes back (`usePageRoom`, as beside a live file's
   conversation):
   - **Git**: read with `git` in the worktree as its agent (the runner's `exec`, read-only commands), again every few
-    seconds while it works (`codeSessionGitLog`): the branch and what it came from, the whole change since the base
+    seconds while it works (`codeSessionGitLog`); each read is cut at 20 s on the computer and answered within 25 s,
+    under the apps' own wait for a read, so a computer busy with the agent's work reads as slow (`machine.timeout`),
+    never as the server being away: the branch and what it came from, the whole change since the base
     (committed or not, new files included), what isn't committed as `git status` letters it (with its lines), and the
     branch's commits since the base as a line of nodes. Any row opens its diff in place (an uncommitted file's, a
     commit's `git show`, everything's), unified or side by side from the diff's own head. The sky rises behind it from
