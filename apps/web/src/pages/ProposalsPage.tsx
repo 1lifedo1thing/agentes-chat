@@ -113,9 +113,10 @@ export function ProposalsPage({ agentId }: { agentId?: string }) {
                     </span>
                     <span className="ac-mediarow__end">
                       {!isReviewing(p) && (
-                        // Its row's mark takes the requests' own state class (a decided request's `is-<phase>`).
+                        // Its row's mark takes the requests' own state class (a decided request's `is-<phase>`, as
+                        // the approvals list marks one): applied reads in the success color, the rest muted.
                         <span
-                          className={cx("ap-li__state", applied(p) && "is-done")}
+                          className={cx("ap-li__state", `is-${applied(p) ? "done" : "off"}`)}
                           role="img"
                           aria-label={proposalOutcome(t, p, me.user.id)}
                           title={proposalOutcome(t, p, me.user.id)}
