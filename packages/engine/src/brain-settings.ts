@@ -7,6 +7,7 @@ import {
   BRAIN_PROTOCOL,
   type BrainEffort,
   type BrainSpeed,
+  CLI_COPIES_PROTOCOL,
   CODEX_WINDOWS_PROTOCOL,
   CURSOR_PROTOCOL,
   GROK_PROTOCOL,
@@ -407,7 +408,7 @@ export type BrainUnavailable =
   | "not_reported"
   /** It is there and can't start (`executors.broken`, with its own error): not missing, so installing it won't help. */
   | "cant_start"
-  /** Its runner doesn't run this CLI on the computer's system (`brainRunsOn`): Cursor on Windows, for one. */
+  /** No build of its CLI for the computer's system (`brainRunsOn`, the pin list). */
   | "system"
   /** It is there at a version agentes.chat holds back (`CLI_FLOORS`): too old, or a blocked one. Updating it helps. */
   | "cli_outdated";
@@ -542,6 +543,8 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
   // On a Mac a runner before `ANTIGRAVITY_MAC_PROTOCOL` refuses every Gemini sign-in and turn.
   else if (kind === "antigravity" && machine.os === "darwin" && machine.protocol < ANTIGRAVITY_MAC_PROTOCOL)
     reason = "runner_old";
+  // On Windows a runner before `CLI_COPIES_PROTOCOL` refuses every Cursor, Grok Build and Gemini turn (ADR 0228 §6).
+  else if (isWindowsLate(kind, machine)) reason = "runner_old";
   else if (!brainRunsOn(kind, machine.os)) reason = "system";
   else if (!machine.executors?.[kind] && !fetchesCli(machine, kind)) reason = missingCli(machine, kind);
   else if (outdatedCli(machine, kind) && !fetchesCli(machine, kind)) reason = "cli_outdated";
@@ -2207,4 +2210,13 @@ function ownSignIns(
       ...(usage.codex ? { usage: usage.codex } : {}),
     };
   return out;
+}
+
+/** Cursor, Grok Build and the Antigravity CLI think on Windows from `CLI_COPIES_PROTOCOL` (ADR 0228 §6). */
+export function isWindowsLate(kind: string, machine: { os?: string | null; protocol?: number | null }): boolean {
+  return (
+    (kind === "cursor" || kind === "grok" || kind === "antigravity") &&
+    machine.os === "windows" &&
+    (machine.protocol ?? 0) < CLI_COPIES_PROTOCOL
+  );
 }

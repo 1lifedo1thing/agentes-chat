@@ -3,6 +3,7 @@ import {
   CLI_COPIES_PROTOCOL,
   type CliFetchState,
   type CliName,
+  type FetchName,
   type PubSub,
   parseCliFetchState,
 } from "@agenteschat/adapters";
@@ -48,7 +49,7 @@ interface FetchingMachine {
  * the workspace's own computer (its image brings its CLIs) nor a system-mode one (its setup installs them). A runner
  * before `CLI_COPIES_PROTOCOL` brought only the Antigravity CLI, on macOS and Linux (`AGY_COPY_PROTOCOL`).
  */
-export function fetchesCli(machine: FetchingMachine | null | undefined, cli: CliName): boolean {
+export function fetchesCli(machine: FetchingMachine | null | undefined, cli: FetchName): boolean {
   if (!machine || machine.kind === "managed" || machine.executors?.mode === "system") return false;
   const protocol = machine.protocol ?? 0;
   if (protocol >= CLI_COPIES_PROTOCOL) return machine.executors?.copies?.fetchable?.includes(cli) ?? false;
@@ -67,7 +68,7 @@ export const fetchPercent = (fetch: CliFetchState) =>
 export async function storeCliFetch(
   deps: { db: Database; pubsub: PubSub | undefined },
   machineId: string,
-  cli: CliName,
+  cli: FetchName,
   fetch: CliFetchState,
   runIds: readonly string[] = [],
 ) {
@@ -119,7 +120,7 @@ export async function retryCliFetch(
   actorId: string,
   orgId: string,
   machineId: string,
-  cli: CliName,
+  cli: FetchName,
 ): Promise<{ fetch: CliFetchState | null }> {
   await requirePermission(deps.db, actorId, orgId, "read");
   const machine = await getMachine(deps.db, orgId, machineId);

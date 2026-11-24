@@ -157,6 +157,8 @@ export const CLI_PROGRAMS: Readonly<Record<string, string>> = {
   opencode: "OpenCode",
   grok: "Grok Build",
   antigravity: "Antigravity",
+  // Git for Windows' portable build: Claude Code's shell on Windows (ADR 0228 §6).
+  git: "Git",
 };
 
 /** The CLI each computer brain thinks with. */

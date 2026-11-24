@@ -3,7 +3,7 @@ import {
   CLI_FETCH_FAILURES,
   CLI_INSTALL_CAUSES,
   CLI_INSTALL_STATES,
-  CLI_NAMES,
+  FETCH_NAMES,
   INSTALLABLE_CLIS,
   limitIp,
 } from "@agenteschat/adapters";
@@ -183,9 +183,9 @@ export const Machine = z
       description:
         "Its coding CLIs can be looked for again from here (`POST …/clis/check`) and installed by the person who paired it (`…/cli-install`); `false`: its app is too old, or it is the workspace's own computer.",
     }),
-    cliFetchable: z.array(z.enum(CLI_NAMES)).openapi({
+    cliFetchable: z.array(z.enum(FETCH_NAMES)).openapi({
       description:
-        "ADR 0228 §6: the coding CLIs its runner fetches by itself there (a pinned build, hash checked) when a turn or a sign-in needs one. None on the workspace's own computer, in system mode or from an older runner.",
+        "ADR 0228 §6: the coding CLIs its runner fetches by itself there (a pinned build, hash checked) when a turn or a sign-in needs one, and `git` on Windows (Git for Windows' portable build, Claude Code's shell there). None on the workspace's own computer, in system mode or from an older runner.",
     }),
     cliFetch: z
       .record(
@@ -769,7 +769,7 @@ export function machineAppRoutes(deps: AppDeps) {
       summary: "Fetch a coding CLI's pinned build on the computer again now (the apps' Try again)",
       description:
         "Any member: it brings the version agentes.chat already chose, nothing else (ADR 0228 §6). Where it stands comes back at once and then as `machine.updated` with `cliFetch`. 400 `machine.cli_not_fetched` when that computer doesn't fetch it by itself.",
-      request: { params: MachineParams.extend({ cli: z.enum(CLI_NAMES) }) },
+      request: { params: MachineParams.extend({ cli: z.enum(FETCH_NAMES) }) },
       responses: {
         200: json(
           z.object({

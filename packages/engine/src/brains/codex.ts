@@ -5,6 +5,7 @@ import {
   BRAIN_PROTOCOL,
   type BrainTurnRequest,
   brainTopic,
+  CLI_COPIES_PROTOCOL,
   CODEX_FOLDER_PROTOCOL,
   CODEX_WINDOWS_PROTOCOL,
   CURSOR_PROTOCOL,
@@ -215,6 +216,8 @@ const CURSOR_CLI: CliBrainSpec = {
   kind: "cursor",
   name: "Cursor",
   protocol: CURSOR_PROTOCOL,
+  // Windows from the runner that keeps each account's sign-in in its folder there (ADR 0228 §6).
+  windowsProtocol: CLI_COPIES_PROTOCOL,
   check: ({ cursor }) =>
     cursor
       ? null
@@ -246,6 +249,8 @@ const GROK_CLI: CliBrainSpec = {
   kind: "grok",
   name: "Grok Build",
   protocol: GROK_PROTOCOL,
+  // Windows from the runner that keeps each account's sign-in in its folder there (ADR 0228 §6).
+  windowsProtocol: CLI_COPIES_PROTOCOL,
   check: ({ grok }) =>
     grok
       ? null
@@ -261,6 +266,8 @@ const ANTIGRAVITY_CLI: CliBrainSpec = {
   kind: "antigravity",
   name: "Antigravity CLI",
   protocol: ANTIGRAVITY_PROTOCOL,
+  // Windows from the runner that keeps each account's sign-in in its folder there (ADR 0228 §6).
+  windowsProtocol: CLI_COPIES_PROTOCOL,
   check: ({ antigravity }) =>
     antigravity
       ? null

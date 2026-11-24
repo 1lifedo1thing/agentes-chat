@@ -1,6 +1,6 @@
 import type { Machine } from "@agenteschat/client";
 import { useRetryCliFetch } from "@agenteschat/client";
-import { cliFetchLine } from "@agenteschat/client/lib/cli-fetch";
+import { cliFetchLine, shownFetch } from "@agenteschat/client/lib/cli-fetch";
 import { Button, Meter, SettingNote, Spinner } from "@agenteschat/ui";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "../org-context";
@@ -15,8 +15,9 @@ export function CliFetchLine({ machine, cli }: { machine: Machine; cli: string |
   const { t } = useTranslation();
   const { org } = useOrg();
   const retry = useRetryCliFetch(org.id);
-  const line = cli ? cliFetchLine(t, machine.cliFetch?.[cli], cli, machine.name) : null;
-  if (!cli || !line) return null;
+  const shown = cli ? shownFetch(machine, cli) : undefined;
+  const line = shown ? cliFetchLine(t, machine.cliFetch?.[shown], shown, machine.name) : null;
+  if (!shown || !line) return null;
   if (!line.failed) {
     return (
       <div className="cli-fetch" role="status">
@@ -35,7 +36,7 @@ export function CliFetchLine({ machine, cli }: { machine: Machine; cli: string |
         size="sm"
         disabled={retry.isPending || !machine.online}
         loading={retry.isPending}
-        onClick={() => retry.mutate({ machineId: machine.id, cli })}
+        onClick={() => retry.mutate({ machineId: machine.id, cli: shown })}
       >
         {t("common.retry")}
       </Button>

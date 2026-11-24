@@ -1694,9 +1694,11 @@ export function createMachineHub(deps: MachineHubDeps) {
         }
       } else if (frame.type === "cli.fetch") {
         // The turns waiting for this CLI there are alive while it comes (their runner holds them until it is ready).
+        // Git for Windows is Claude Code's shell there: its fetch holds Claude Code's turns (ADR 0228 §6).
         const runIds: string[] = [];
         for (const p of conn.pending.values()) {
-          if (p.brain?.kind && CLI_OF_KIND[p.brain.kind] === frame.cli) {
+          const waits = p.brain?.kind ? CLI_OF_KIND[p.brain.kind] : undefined;
+          if (waits && (waits === frame.cli || (frame.cli === "git" && waits === "claude"))) {
             p.touch?.();
             runIds.push(p.brain.runId);
           }

@@ -1,5 +1,5 @@
 import { useMachines, useRetryCliFetch } from "@agenteschat/client";
-import { cliFetchLine } from "@agenteschat/client/lib/cli-fetch";
+import { cliFetchLine, shownFetch } from "@agenteschat/client/lib/cli-fetch";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
@@ -17,8 +17,9 @@ export function CliFetchNote({ machineId, cli }: { machineId: string; cli: strin
   const { orgId } = useOrg();
   const machine = useMachines(orgId).data?.find((m) => m.id === machineId);
   const retry = useRetryCliFetch(orgId);
-  const line = machine && cli ? cliFetchLine(t, machine.cliFetch?.[cli], cli, machine.name) : null;
-  if (!machine || !cli || !line) return null;
+  const shown = machine && cli ? shownFetch(machine, cli) : undefined;
+  const line = machine && shown ? cliFetchLine(t, machine.cliFetch?.[shown], shown, machine.name) : null;
+  if (!machine || !shown || !line) return null;
   if (!line.failed) {
     return (
       <View style={styles.block}>
@@ -45,7 +46,7 @@ export function CliFetchNote({ machineId, cli }: { machineId: string; cli: strin
           label={t("common.retry")}
           disabled={retry.isPending || !machine.online}
           loading={retry.isPending}
-          onPress={() => retry.mutate({ machineId: machine.id, cli })}
+          onPress={() => retry.mutate({ machineId: machine.id, cli: shown })}
         />
       </View>
     </View>

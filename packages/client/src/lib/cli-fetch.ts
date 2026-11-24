@@ -33,3 +33,12 @@ export function cliFetchLine(
     failed: true,
   };
 }
+
+/**
+ * Which fetch to show for `cli` on a computer: Claude Code on Windows waits for Git for Windows first (its shell there),
+ * so its fetch shows while it isn't ready; else the CLI's own.
+ */
+export function shownFetch(machine: { os: string; cliFetch?: Partial<Record<string, CliFetch>> | null }, cli: string) {
+  const git = machine.cliFetch?.git;
+  return cli === "claude" && machine.os === "windows" && git && git.state !== "ready" ? "git" : cli;
+}
