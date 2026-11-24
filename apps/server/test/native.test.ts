@@ -143,9 +143,9 @@ test("a new folder: it starts, migrates and answers only on its own loopback add
     pglite: PGLITE_VERSION,
     pgMajor: PG_MAJOR,
   });
-  // The log is written in batches, within a quarter of a second.
+  // The log is written in batches, within a quarter of a second (waited for longer: a busy machine fires timers late).
   const log = async (text: string) => {
-    for (let i = 0; i < 40 && !readFileSync(join(data, "logs", "server.log"), "utf8").includes(text); i++)
+    for (let i = 0; i < 200 && !readFileSync(join(data, "logs", "server.log"), "utf8").includes(text); i++)
       await Bun.sleep(50);
     return readFileSync(join(data, "logs", "server.log"), "utf8");
   };

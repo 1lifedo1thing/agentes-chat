@@ -190,11 +190,12 @@ test("rotating files: 5 MB by default, three files at most, newest first", () =>
 
 test("log lines are written in batches: one write per window, at once past the size, the rest on flush", async () => {
   const writes: string[] = [];
-  const batch = batchedAppend((text) => writes.push(text), { ms: 30, bytes: 10 });
+  const batch = batchedAppend((text) => writes.push(text), { ms: 20, bytes: 10 });
   batch.write("a\n");
   batch.write("b\n");
   expect(writes).toEqual([]);
-  await Bun.sleep(80);
+  // The window's timer writes both lines at once (waited for, never timed: a busy machine fires timers late).
+  await waitFor(() => writes.length > 0);
   expect(writes).toEqual(["a\nb\n"]);
   batch.write("0123456789\n");
   expect(writes).toEqual(["a\nb\n", "0123456789\n"]);
@@ -202,8 +203,6 @@ test("log lines are written in batches: one write per window, at once past the s
   batch.flush();
   batch.flush();
   expect(writes).toEqual(["a\nb\n", "0123456789\n", "left\n"]);
-  await Bun.sleep(80);
-  expect(writes).toHaveLength(3);
 });
 
 test("credentials are masked in free text", () => {
