@@ -186,25 +186,29 @@ function Note({ shape, k }: { shape: ShapeView; k: number }) {
         },
       ]}
     >
-      <RichBlock rich={shape.text ?? []} look={look(NOTE_TEXT, c.ink)} k={k} />
+      <RichBlock rich={shape.text ?? []} look={styleLook(shape.style, NOTE_TEXT, c.ink)} k={k} />
     </View>
   );
 }
 
+/** A shape's own text look (ADR 0220 §3) over the canvas's defaults. */
+function styleLook(s: ShapeView["style"], size: number, color: string, opts: Partial<TextLook> = {}): TextLook {
+  const st = s ?? {};
+  return look(st.size ?? size, st.color ?? color, {
+    ...opts,
+    ...(st.font ? { fontRef: st.font } : {}),
+    ...(st.align ? { align: st.align } : {}),
+    ...(st.valign ? { valign: st.valign } : {}),
+    ...(st.weight ? { weight: st.weight } : {}),
+    ...(st.lineHeight ? { lineHeight: st.lineHeight } : {}),
+    ...(st.tracking ? { tracking: st.tracking } : {}),
+    ...(st.caps ? { caps: true } : {}),
+  });
+}
+
 function Words({ shape, k }: { shape: ShapeView; k: number }) {
   const { colors: c } = useTheme();
-  const s = shape.style ?? {};
-  return (
-    <RichBlock
-      rich={shape.text ?? []}
-      look={look(s.size ?? 24, s.color ?? c.ink, {
-        lineHeight: 1.35,
-        ...(s.align ? { align: s.align } : {}),
-        ...(s.weight ? { weight: s.weight } : {}),
-      })}
-      k={k}
-    />
-  );
+  return <RichBlock rich={shape.text ?? []} look={styleLook(shape.style, 24, c.ink, { lineHeight: 1.35 })} k={k} />;
 }
 
 /** A star's corners on a 100 × 100 square. */
@@ -264,8 +268,12 @@ function Geo({ shape, k }: { shape: ShapeView; k: number }) {
           />
         )}
       </Svg>
-      <View style={[styles.fill, { padding: 12 * k }]}>
-        <RichBlock rich={rich} look={look(18, c.ink, { align: "center", valign: "middle", lineHeight: 1.35 })} k={k} />
+      <View style={[styles.fill, { padding: (shape.style?.padding ?? 12) * k }]}>
+        <RichBlock
+          rich={rich}
+          look={styleLook(shape.style, 18, c.ink, { align: "center", valign: "middle", lineHeight: 1.35 })}
+          k={k}
+        />
       </View>
     </>
   );
