@@ -1,3 +1,4 @@
+-- deploy-safe: the check comes back at once below with one more kind, so every row any version writes still passes
 ALTER TABLE "surface_deliveries" DROP CONSTRAINT "surface_deliveries_kind";--> statement-breakpoint
 ALTER TABLE "surface_links" ADD COLUMN "nudge_on" boolean DEFAULT true NOT NULL;--> statement-breakpoint
 ALTER TABLE "surface_links" ADD COLUMN "nudge_after_hours" smallint DEFAULT 4 NOT NULL;--> statement-breakpoint
