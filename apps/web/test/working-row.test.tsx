@@ -108,13 +108,15 @@ describe("while it works the conversation's last row says it, as a reply on its 
     await ev({ type: "agent.tool", ...ids, tool: "search_context", toolUseId: "t2" });
     await ev({ type: "agent.tool", ...ids, tool: "read_file", toolUseId: "t3" });
     await settle(3);
-    // One line at first; the next waits its turn (one every 3 s at most).
+    // What it had when the row first had lines shows at once (its words and their call); the next waits its turn
+    // (one every 3 s at most).
     const trail = () => [...tail().querySelectorAll(".working-tail__trail > li")].map((li) => li.textContent);
-    expect(trail()).toEqual(["“Primeiro o login”"]);
+    expect(trail()).toHaveLength(2);
+    expect(trail()[0]).toBe("“Primeiro o login”");
+    expect(trail()[1]).not.toContain("“");
     await act(() => new Promise((r) => setTimeout(r, 3100)));
     await settle(2);
-    expect(trail()).toHaveLength(2);
-    expect(trail()[1]).not.toContain("“");
+    expect(trail()).toHaveLength(3);
     // Its line now has its capitals at the face's top, the trail under it.
     expect(line().classList.contains("ac-captop")).toBe(true);
   });

@@ -55,11 +55,14 @@ export interface TrailPace {
 
 /**
  * The next pace for `keys` (the trail's lines now) at `now`: lines already shown stay, a line gone is dropped, and at
- * most one new line is revealed per `TRAIL_PACE_MS`. `due`: when the next waits to be revealed (null: none waits).
+ * most one new line is revealed per `TRAIL_PACE_MS`. With none shown yet (a conversation opened mid-run, a new run),
+ * what is there shows at once: only what comes in while it is watched is paced. `due`: when the next waits to be
+ * revealed (null: none waits).
  */
 export function paceTrail(pace: TrailPace, keys: readonly string[], now: number): TrailPace & { due: number | null } {
   const present = new Set(keys);
   const shown = pace.shown.filter((k) => present.has(k));
+  if (shown.length === 0 && keys.length > 0) return { shown: [...keys], at: now, due: null };
   const next = keys.find((k) => !shown.includes(k));
   if (next === undefined) return { shown, at: pace.at, due: null };
   if (now - pace.at < TRAIL_PACE_MS) return { shown, at: pace.at, due: pace.at + TRAIL_PACE_MS };

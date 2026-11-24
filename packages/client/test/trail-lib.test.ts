@@ -60,14 +60,23 @@ test("the trail keeps each call's words as the server told them", () => {
 });
 
 test("paced: one new line every 3 s at most, lines gone are dropped, nothing waits once all are shown", () => {
-  let pace = paceTrail({ shown: [], at: 0 }, ["a", "b", "c"], 10_000);
+  let pace = paceTrail({ shown: [], at: 0 }, ["a"], 10_000);
   expect(pace.shown).toEqual(["a"]);
-  expect(pace.due).toBe(10_000 + TRAIL_PACE_MS);
   pace = paceTrail(pace, ["a", "b", "c"], 11_000);
   expect(pace.shown).toEqual(["a"]);
+  expect(pace.due).toBe(10_000 + TRAIL_PACE_MS);
   pace = paceTrail(pace, ["a", "b", "c"], 10_000 + TRAIL_PACE_MS);
   expect(pace.shown).toEqual(["a", "b"]);
   pace = paceTrail(pace, ["b", "c"], 20_000);
   expect(pace.shown).toEqual(["b", "c"]);
   expect(pace.due).toBeNull();
+});
+
+test("opened mid-run: the lines it already has show at once, not one every 3 s", () => {
+  const pace = paceTrail({ shown: [], at: 0 }, ["a", "b", "c", "d"], 10_000);
+  expect(pace.shown).toEqual(["a", "b", "c", "d"]);
+  expect(pace.due).toBeNull();
+  // A new run after another's lines went: its lines show at once too.
+  const next = paceTrail({ shown: ["x", "y"], at: 9_000 }, ["n1", "n2"], 10_000);
+  expect(next.shown).toEqual(["n1", "n2"]);
 });
