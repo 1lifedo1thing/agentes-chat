@@ -4260,6 +4260,8 @@
     "aloneLine": "Sohbete kendiliğinden katılır",
     "aloneLine_female": "Sohbete kendiliğinden katılır",
     "mentionLine": "Birinin @{{handle}} yazmasını bekler",
+    "lead": "Kanalın sorumlusu",
+    "leadHelp": "Tüm ekibe söyleneni alır ve ajanlar arasında işin ilerlemesini sağlar",
     "readOnly": "Üyeleri yalnızca kanalı oluşturan kişi ve yöneticiler değiştirebilir.",
     "people": "Kişiler",
     "agents": "Ajanlar"
@@ -15654,6 +15656,8 @@
       "deleteName": "Silmek için kanalın adını yazın.",
       "generalKept": "#general silinemez.",
       "generalStays": "Herkes #general kanalında kalır.",
+      "leadChannelOnly": "Yalnızca kanalların sorumlu ajanı olur.",
+      "leadNotMember": "Sorumlu ajan kanalda olmalı.",
       "mcpUnreachable": "MCP sunucusuna bağlanılamadı. Adresini kontrol edip tekrar deneyin.",
       "notApproved": "Bu hizmet henüz agentes.chat için onay vermedi.",
       "alreadyInvited": "Bu kişinin zaten bir daveti var.",
