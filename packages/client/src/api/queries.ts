@@ -721,15 +721,15 @@ export const useOrganization = (orgId: string) => {
   return useQuery({ queryKey: [...keys.org(orgId), "detail"], queryFn: () => api.orgs.get(orgId) });
 };
 
-export const useMembers = (orgId: string) => {
-  const api = useApi();
-  return useQuery({
+export const membersQuery = (api: ApiClient, orgId: string) =>
+  queryOptions({
     queryKey: keys.members(orgId),
     queryFn: () => api.orgs.members(orgId),
     staleTime: 30_000,
     ...BACK_TO_TAB,
   });
-};
+
+export const useMembers = (orgId: string) => useQuery(membersQuery(useApi(), orgId));
 
 export function useChangeRole(orgId: string) {
   const api = useApi();
@@ -756,10 +756,10 @@ export const refreshRoles = (qc: QueryClient, orgId: string) =>
   ]);
 
 /** The workspace's roles, top first, and the permission areas (ADR 0085). */
-export const useRoles = (orgId: string) => {
-  const api = useApi();
-  return useQuery({ queryKey: keys.roles(orgId), queryFn: () => api.roles.list(orgId), staleTime: 30_000 });
-};
+export const rolesQuery = (api: ApiClient, orgId: string) =>
+  queryOptions({ queryKey: keys.roles(orgId), queryFn: () => api.roles.list(orgId), staleTime: 30_000 });
+
+export const useRoles = (orgId: string) => useQuery(rolesQuery(useApi(), orgId));
 
 /** `silent`: the caller shows a failure itself (in its dialog). */
 export function useCreateRole(orgId: string, silent = false) {
@@ -970,21 +970,21 @@ export const useAgents = (orgId: string, enabled = true) => {
  * Every agent of the team the server sent, unlisted ones too (`listed: false`): only for the directories, which name a
  * message's author and open a link to its public card. A list or picker reads `useAgents`.
  */
-export const useAllAgents = (orgId: string) => {
-  const api = useApi();
-  return useQuery({
+export const agentsQuery = (api: ApiClient, orgId: string) =>
+  queryOptions({
     queryKey: keys.agents(orgId),
     queryFn: () => api.agents.list(orgId),
     staleTime: 30_000,
     ...BACK_TO_TAB,
   });
-};
+
+export const useAllAgents = (orgId: string) => useQuery(agentsQuery(useApi(), orgId));
+
+export const formerAgentsQuery = (api: ApiClient, orgId: string) =>
+  queryOptions({ queryKey: keys.formerAgents(orgId), queryFn: () => api.agents.former(orgId), staleTime: 30_000 });
 
 /** Agents no longer in the team: the directories name their old messages with these (fresh with `useAgents`). */
-export const useFormerAgents = (orgId: string) => {
-  const api = useApi();
-  return useQuery({ queryKey: keys.formerAgents(orgId), queryFn: () => api.agents.former(orgId), staleTime: 30_000 });
-};
+export const useFormerAgents = (orgId: string) => useQuery(formerAgentsQuery(useApi(), orgId));
 
 /** Restaurar on an archived agent (Equipe, the phone's Agentes): back in the team and its lists. */
 export function useUnarchiveAgent(orgId: string) {
@@ -7436,14 +7436,14 @@ export function useAskAdmins(orgId: string) {
 }
 
 /** Where I put the tools at the top of my sidebar in this workspace (only the ones I moved). */
-export const useSidebarItems = (orgId: string) => {
-  const api = useApi();
-  return useQuery({
+export const sidebarItemsQuery = (api: ApiClient, orgId: string) =>
+  queryOptions({
     queryKey: keys.sidebarItems(orgId),
     queryFn: () => api.orgs.sidebarItems(orgId),
     staleTime: 60_000,
   });
-};
+
+export const useSidebarItems = (orgId: string) => useQuery(sidebarItemsQuery(useApi(), orgId));
 
 /**
  * Moves one tool, or with `null` puts every tool back on its default: the sidebar changes at once and goes back if the
