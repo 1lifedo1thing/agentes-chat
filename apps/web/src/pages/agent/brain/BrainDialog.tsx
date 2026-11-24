@@ -1,5 +1,6 @@
 import type { AgentBrain, AgentBrainInput, BrainKind, MachineAccount } from "@agenteschat/client";
 import { useAgents, useAiChoice, useApi, useSetComputerTarget, useUpdateAgent } from "@agenteschat/client";
+import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import type { BrainScreen } from "@agenteschat/client/lib/agent-edit";
 import { accountInLine } from "@agenteschat/client/lib/ai-accounts";
 import type { AiChoiceRow, AiChoice as AiChoiceValue } from "@agenteschat/client/lib/ai-choice";
@@ -37,6 +38,7 @@ import { NO_COMPUTER } from "@/components/AgentComputer";
 import { DEFAULT_KEY } from "@/components/AgentFields";
 import { AddAccount, OpenPage } from "@/components/ai/AddAccountFlow";
 import { AiChoiceFields } from "@/components/ai/AiChoice";
+import { CliFetchLine } from "@/components/ai/CliFetchLine";
 import { CliMissing } from "@/components/ai/CliMissing";
 import { PlanHold } from "@/components/ai/plan-hold";
 import { UseOnAgentsDialog } from "@/components/ai/UseOnAgents";
@@ -635,6 +637,7 @@ function BrainFlow({
           ) : (
             savedSide?.text && <SettingNote icon={savedSide.icon}>{savedSide.text}</SettingNote>
           )}
+          {offOn && view.brain !== "model" && <CliFetchLine machine={offOn} cli={CLI_OF_BRAIN[view.brain]} />}
           {modelLimit && (
             <SettingNote icon="alert" live>
               {modelLimit}

@@ -3306,6 +3306,17 @@
       "zen": "连接 OpenCode",
       "api_key": "添加 API 密钥"
     },
+    "cliFetch": {
+      "preparing": "正在 {{computer}} 上准备 {{program}}…",
+      "preparingPct": "正在 {{computer}} 上准备 {{program}}… {{percent}}%",
+      "failed": {
+        "offline": "无法在 {{computer}} 上准备 {{program}}：这台电脑无法访问下载地址。",
+        "hash_mismatch": "无法在 {{computer}} 上准备 {{program}}：下载的文件不是原始文件，因此没有使用。",
+        "no_build": "{{program}} 没有适用于 {{computer}} 系统的版本。",
+        "disk_full": "无法在 {{computer}} 上准备 {{program}}：磁盘已满。",
+        "failed": "无法在 {{computer}} 上准备 {{program}}：下载没有完成。"
+      }
+    },
     "cli": {
       "missing": "{{computer}} 上还没有 {{program}}。",
       "claudeApp": "只有 Claude 应用还不够：智能体使用在电脑上运行的 Claude Code。",
@@ -15152,6 +15163,7 @@
       "privateNetwork": "此地址位于私有网络。请使用公网地址，或在自托管服务器上通过 `OUTBOUND_ALLOW_CIDRS` 允许它。",
       "tooLong": "内容太长。请缩短后重试。",
       "updateComputerApp": "电脑上的应用版本太旧。请更新后重试。",
+      "cliNotFetched": "这台电脑不会自己获取那个程序。",
       "computerUpdatesItself": "工作区的电脑会为此自动更新。请稍后再试。",
       "notInvited": "你不在此日程的受邀者之中。",
       "offHere": "此功能在这里已关闭。",
@@ -18043,6 +18055,7 @@
         "runningCommandAny": "运行了命令",
         "usingScreen": "使用了屏幕",
         "cloningRepo": "克隆了仓库",
+        "preparingCli": "准备了 {{app}}",
         "openingPullRequest": "创建了拉取请求",
         "handingOff": "交付了报告",
         "recordingFindings": "记录了发现",
@@ -18164,6 +18177,8 @@
       "runningCommandAny": "运行命令",
       "usingScreen": "使用屏幕",
       "cloningRepo": "克隆仓库",
+      "preparingCli": "在 {{computer}} 上准备 {{app}}",
+      "preparingCliPct": "在 {{computer}} 上准备 {{app}}（{{percent}}%）",
       "openingPullRequest": "创建拉取请求",
       "handingOff": "交付报告",
       "recordingFindings": "记录发现",

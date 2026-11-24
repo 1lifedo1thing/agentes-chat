@@ -7,6 +7,7 @@ import {
   ownSignInName,
   signInOf,
 } from "@agenteschat/client/lib/ai-accounts";
+import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import { managesAgent } from "@agenteschat/client/lib/audience";
 import { brainLine, thinksWith } from "@agenteschat/client/lib/brain";
 import { advancedContents, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
@@ -72,6 +73,7 @@ import {
   thinkingUsage,
 } from "./logic";
 import { openConnectAi } from "./NoAiCard";
+import { CliFetchNote } from "./CliFetchNote";
 import { Note, PlanHoldNote, usePlanHold } from "./parts";
 import { useSaveBrain } from "./useSaveBrain";
 
@@ -211,6 +213,9 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
           </Text>
         </View>
         {hold ? <PlanHoldNote org={org} inset /> : null}
+        {view?.computer?.machineId && view.brain !== "model" ? (
+          <CliFetchNote machineId={view.computer.machineId} cli={CLI_OF_BRAIN[view.brain]} />
+        ) : null}
         {!allowed ? (
           <Note icon="lock" inset>
             {t("agentPage.lock.admins")}

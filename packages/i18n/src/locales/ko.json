@@ -3305,6 +3305,17 @@
       "zen": "OpenCode 연결",
       "api_key": "API 키 추가"
     },
+    "cliFetch": {
+      "preparing": "{{computer}}에서 {{program}}을(를) 준비하는 중…",
+      "preparingPct": "{{computer}}에서 {{program}}을(를) 준비하는 중… {{percent}}%",
+      "failed": {
+        "offline": "{{computer}}에서 {{program}}을(를) 준비하지 못했어요. 컴퓨터가 다운로드에 연결하지 못해요.",
+        "hash_mismatch": "{{computer}}에서 {{program}}을(를) 준비하지 못했어요. 받은 파일이 원본이 아니어서 사용하지 않았어요.",
+        "no_build": "{{program}}에는 {{computer}}의 시스템용 버전이 없어요.",
+        "disk_full": "{{computer}}에서 {{program}}을(를) 준비하지 못했어요. 디스크가 가득 찼어요.",
+        "failed": "{{computer}}에서 {{program}}을(를) 준비하지 못했어요. 다운로드가 끝나지 않았어요."
+      }
+    },
     "cli": {
       "missing": "{{program}}이(가) 아직 {{computer}}에 없습니다.",
       "claudeApp": "Claude 앱만으로는 부족합니다. 에이전트는 컴퓨터에서 실행되는 Claude Code를 사용합니다.",
@@ -15077,6 +15088,7 @@
       "privateNetwork": "이 주소는 사설 네트워크에 있어요. 공개 주소를 쓰거나, 직접 호스팅하는 서버라면 `OUTBOUND_ALLOW_CIDRS`로 허용해 주세요.",
       "tooLong": "너무 길어요. 줄이고 다시 시도해 주세요.",
       "updateComputerApp": "컴퓨터의 앱이 너무 오래됐어요. 업데이트하고 다시 시도해 주세요.",
+      "cliNotFetched": "이 컴퓨터는 그 프로그램을 스스로 받지 않아요.",
       "computerUpdatesItself": "워크스페이스 컴퓨터가 이를 위해 스스로 업데이트돼요. 잠시 후 다시 시도하세요.",
       "notInvited": "이 일정에 초대받지 않았어요.",
       "offHere": "여기서는 꺼져 있어요.",
@@ -17961,6 +17973,7 @@
         "runningCommandAny": "명령을 실행했어요",
         "usingScreen": "화면을 사용했어요",
         "cloningRepo": "저장소를 클론했어요",
+        "preparingCli": "{{app}}을(를) 준비했어요",
         "openingPullRequest": "pull request를 열었어요",
         "handingOff": "보고서를 전달했어요",
         "recordingFindings": "발견한 내용을 기록했어요",
@@ -18082,6 +18095,8 @@
       "runningCommandAny": "명령을 실행하는 중",
       "usingScreen": "화면을 사용하는 중",
       "cloningRepo": "저장소를 클론하는 중",
+      "preparingCli": "{{computer}}에서 {{app}}을(를) 준비하는 중",
+      "preparingCliPct": "{{computer}}에서 {{app}}을(를) 준비하는 중 ({{percent}}%)",
       "openingPullRequest": "pull request를 여는 중",
       "handingOff": "보고서를 전달하는 중",
       "recordingFindings": "발견한 내용을 기록하는 중",

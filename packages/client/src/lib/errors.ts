@@ -598,6 +598,7 @@ const KNOWN = {
   "account.runner_old": "errors.said.updateComputerApp",
   "machine.access_outdated": "errors.said.updateComputerApp",
   "machine.cli_outdated": "errors.said.updateComputerApp",
+  "machine.cli_not_fetched": "errors.said.cliNotFetched",
   "machine.outdated": "errors.said.updateComputerApp",
   "machine.updates_itself": "errors.said.computerUpdatesItself",
   "database.disabled": "errors.said.offHere",

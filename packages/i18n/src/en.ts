@@ -3755,6 +3755,18 @@ export const en = {
      * A coding CLI that isn't on a computer someone connected (`program`: "Claude Code" or "Codex"), and installing it
      * from here. `claudeApp` sits behind an ⓘ on Windows and macOS, where a Claude chat app is likely.
      */
+    /** A coding CLI its computer fetches by itself (ADR 0228 §6): while it comes, and why it failed. */
+    cliFetch: {
+      preparing: "Preparing {{program}} on {{computer}}…",
+      preparingPct: "Preparing {{program}} on {{computer}}… {{percent}}%",
+      failed: {
+        offline: "Couldn't prepare {{program}} on {{computer}}: the computer can't reach the download.",
+        hash_mismatch: "Couldn't prepare {{program}} on {{computer}}: the download wasn't the original file, so it wasn't used.",
+        no_build: "{{program}} has no version for {{computer}}'s system.",
+        disk_full: "Couldn't prepare {{program}} on {{computer}}: its disk is full.",
+        failed: "Couldn't prepare {{program}} on {{computer}}: the download didn't finish.",
+      },
+    },
     cli: {
       missing: "{{program}} isn't on {{computer}} yet.",
       claudeApp: "The Claude app isn't enough: agents use Claude Code, which runs on the computer.",
@@ -16013,6 +16025,7 @@ export const en = {
         "This address is on a private network. Use a public address, or on a self-hosted server allow it with `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "That's too long. Shorten it and try again.",
       updateComputerApp: "The computer's app is too old for this. Update it and try again.",
+      cliNotFetched: "This computer doesn't get that program by itself.",
       computerUpdatesItself: "The workspace's computer updates itself for this. Try again in a little while.",
       notInvited: "You're not invited to this event.",
       offHere: "This is turned off here.",
@@ -19188,6 +19201,7 @@ export const en = {
         runningCommandAny: "Ran a command",
         usingScreen: "Used the screen",
         cloningRepo: "Cloned a repository",
+        preparingCli: "Prepared {{app}}",
         openingPullRequest: "Opened a pull request",
         handingOff: "Delivered a report",
         recordingFindings: "Noted the findings",
@@ -19310,6 +19324,8 @@ export const en = {
       runningCommandAny: "running a command",
       usingScreen: "using the screen",
       cloningRepo: "cloning a repository",
+      preparingCli: "preparing {{app}} on {{computer}}",
+      preparingCliPct: "preparing {{app}} on {{computer}} ({{percent}}%)",
       openingPullRequest: "opening a pull request",
       handingOff: "delivering a report",
       recordingFindings: "noting the findings",

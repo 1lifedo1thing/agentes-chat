@@ -3319,6 +3319,17 @@
       "zen": "Hubungkan OpenCode",
       "api_key": "Tambahkan kunci API"
     },
+    "cliFetch": {
+      "preparing": "Menyiapkan {{program}} di {{computer}}…",
+      "preparingPct": "Menyiapkan {{program}} di {{computer}}… {{percent}}%",
+      "failed": {
+        "offline": "Tidak bisa menyiapkan {{program}} di {{computer}}: komputer tidak bisa mengunduhnya.",
+        "hash_mismatch": "Tidak bisa menyiapkan {{program}} di {{computer}}: unduhannya bukan file asli, jadi tidak dipakai.",
+        "no_build": "{{program}} tidak punya versi untuk sistem {{computer}}.",
+        "disk_full": "Tidak bisa menyiapkan {{program}} di {{computer}}: disknya penuh.",
+        "failed": "Tidak bisa menyiapkan {{program}} di {{computer}}: unduhannya tidak selesai."
+      }
+    },
     "cli": {
       "missing": "{{program}} belum ada di {{computer}}.",
       "claudeApp": "Aplikasi Claude saja tidak cukup: agen memakai Claude Code, yang berjalan di komputer.",
@@ -15142,6 +15153,7 @@
       "privateNetwork": "Alamat ini ada di jaringan privat. Gunakan alamat publik, atau di server yang di-host sendiri, izinkan dengan `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "Itu terlalu panjang. Persingkat dan coba lagi.",
       "updateComputerApp": "Aplikasi di komputer terlalu lama untuk ini. Perbarui dan coba lagi.",
+      "cliNotFetched": "Komputer ini tidak mengambil program itu sendiri.",
       "computerUpdatesItself": "Komputer ruang kerja memperbarui dirinya sendiri untuk ini. Coba lagi sebentar lagi.",
       "notInvited": "Kamu tidak termasuk yang diundang ke acara ini.",
       "offHere": "Ini dimatikan di sini.",
@@ -18028,6 +18040,7 @@
         "runningCommandAny": "Menjalankan perintah",
         "usingScreen": "Memakai layar",
         "cloningRepo": "Meng-clone repositori",
+        "preparingCli": "Menyiapkan {{app}}",
         "openingPullRequest": "Membuka pull request",
         "handingOff": "Mengirim laporan",
         "recordingFindings": "Mencatat temuan",
@@ -18149,6 +18162,8 @@
       "runningCommandAny": "menjalankan perintah",
       "usingScreen": "memakai layar",
       "cloningRepo": "meng-clone repositori",
+      "preparingCli": "menyiapkan {{app}} di {{computer}}",
+      "preparingCliPct": "menyiapkan {{app}} di {{computer}} ({{percent}}%)",
       "openingPullRequest": "membuka pull request",
       "handingOff": "mengirim laporan",
       "recordingFindings": "mencatat temuan",

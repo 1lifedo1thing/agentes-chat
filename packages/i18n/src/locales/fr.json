@@ -3586,6 +3586,17 @@
       "zen": "Connecter OpenCode",
       "api_key": "Ajouter une clé API"
     },
+    "cliFetch": {
+      "preparing": "Préparation de {{program}} sur {{computer}}…",
+      "preparingPct": "Préparation de {{program}} sur {{computer}}… {{percent}} %",
+      "failed": {
+        "offline": "Impossible de préparer {{program}} sur {{computer}} : l'ordinateur n'arrive pas à le télécharger.",
+        "hash_mismatch": "Impossible de préparer {{program}} sur {{computer}} : le téléchargement n'était pas le fichier d'origine, il n'a donc pas été utilisé.",
+        "no_build": "{{program}} n'a pas de version pour le système de {{computer}}.",
+        "disk_full": "Impossible de préparer {{program}} sur {{computer}} : le disque est plein.",
+        "failed": "Impossible de préparer {{program}} sur {{computer}} : le téléchargement n'a pas abouti."
+      }
+    },
     "cli": {
       "missing": "{{program}} n'est pas encore sur {{computer}}.",
       "claudeApp": "L'app Claude ne suffit pas : les agents utilisent Claude Code, qui tourne sur l'ordinateur.",
@@ -16204,6 +16215,7 @@
       "privateNetwork": "Cette adresse se trouve sur un réseau privé. Utilisez une adresse publique ou, sur un serveur auto-hébergé, autorisez-la avec `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "C'est trop long. Raccourcissez et réessayez.",
       "updateComputerApp": "L'application de l'ordinateur est trop ancienne pour ceci. Mettez-la à jour et réessayez.",
+      "cliNotFetched": "Cet ordinateur ne récupère pas ce programme tout seul.",
       "computerUpdatesItself": "L'ordinateur de l'espace de travail se met à jour tout seul pour cela. Réessayez dans un moment.",
       "notInvited": "Vous ne faites pas partie des invités de cet événement.",
       "offHere": "Ceci est désactivé ici.",
@@ -19181,6 +19193,7 @@
         "runningCommandAny": "A exécuté une commande",
         "usingScreen": "A utilisé l'écran",
         "cloningRepo": "A cloné un dépôt",
+        "preparingCli": "A préparé {{app}}",
         "openingPullRequest": "A ouvert une pull request",
         "handingOff": "A livré un rapport",
         "recordingFindings": "A noté les résultats",
@@ -19302,6 +19315,8 @@
       "runningCommandAny": "exécution d'une commande",
       "usingScreen": "utilisation de l'écran",
       "cloningRepo": "clonage d'un dépôt",
+      "preparingCli": "préparation de {{app}} sur {{computer}}",
+      "preparingCliPct": "préparation de {{app}} sur {{computer}} ({{percent}} %)",
       "openingPullRequest": "ouverture d'une pull request",
       "handingOff": "livraison d'un rapport",
       "recordingFindings": "prise de notes des résultats",

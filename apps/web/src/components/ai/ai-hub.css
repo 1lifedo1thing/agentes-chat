@@ -197,3 +197,11 @@
     line-height: 20px;
   }
 }
+.cli-fetch {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.cli-fetch .ac-meter {
+  width: 100%;
+}

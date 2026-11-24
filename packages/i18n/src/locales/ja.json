@@ -3307,6 +3307,17 @@
       "zen": "OpenCodeを接続",
       "api_key": "APIキーを追加"
     },
+    "cliFetch": {
+      "preparing": "{{computer}}で{{program}}を準備しています…",
+      "preparingPct": "{{computer}}で{{program}}を準備しています… {{percent}}%",
+      "failed": {
+        "offline": "{{computer}}で{{program}}を準備できませんでした。コンピューターがダウンロード先に接続できません。",
+        "hash_mismatch": "{{computer}}で{{program}}を準備できませんでした。ダウンロードしたファイルが元のファイルではなかったため、使用していません。",
+        "no_build": "{{program}}には{{computer}}のシステム向けのバージョンがありません。",
+        "disk_full": "{{computer}}で{{program}}を準備できませんでした。ディスクがいっぱいです。",
+        "failed": "{{computer}}で{{program}}を準備できませんでした。ダウンロードが完了しませんでした。"
+      }
+    },
     "cli": {
       "missing": "{{program}} はまだ {{computer}} にありません。",
       "claudeApp": "Claude アプリだけでは足りません。エージェントはコンピューターで動く Claude Code を使います。",
@@ -15083,6 +15094,7 @@
       "privateNetwork": "このアドレスはプライベートネットワーク上にあります。公開アドレスを使うか、セルフホストのサーバーでは `OUTBOUND_ALLOW_CIDRS` で許可してください。",
       "tooLong": "長すぎます。短くして、もう一度お試しください。",
       "updateComputerApp": "コンピューターのアプリが古すぎます。更新して、もう一度お試しください。",
+      "cliNotFetched": "このコンピューターはそのプログラムを自分で取得しません。",
       "computerUpdatesItself": "ワークスペースのコンピューターはこのために自動で更新されます。少ししてからもう一度お試しください。",
       "notInvited": "この予定には招待されていません。",
       "offHere": "ここではオフになっています。",
@@ -17969,6 +17981,7 @@
         "runningCommandAny": "コマンドを実行しました",
         "usingScreen": "画面を使いました",
         "cloningRepo": "リポジトリをクローンしました",
+        "preparingCli": "{{app}}を準備しました",
         "openingPullRequest": "プルリクエストを作成しました",
         "handingOff": "レポートを届けました",
         "recordingFindings": "調査結果を記録しました",
@@ -18090,6 +18103,8 @@
       "runningCommandAny": "コマンドを実行中",
       "usingScreen": "画面を使用中",
       "cloningRepo": "リポジトリをクローン中",
+      "preparingCli": "{{computer}}で{{app}}を準備中",
+      "preparingCliPct": "{{computer}}で{{app}}を準備中（{{percent}}%）",
       "openingPullRequest": "プルリクエストを作成中",
       "handingOff": "レポートを届けています",
       "recordingFindings": "調査結果を記録中",

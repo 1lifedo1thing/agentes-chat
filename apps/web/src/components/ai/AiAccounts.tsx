@@ -11,6 +11,7 @@ import {
   signInNote,
   unusedCopies,
 } from "@agenteschat/client/lib/ai-accounts";
+import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { joinNames } from "@agenteschat/client/lib/format";
@@ -34,6 +35,7 @@ import { useTranslation } from "react-i18next";
 import { PlanHold, usePlanHold } from "@/components/ai/plan-hold";
 import { useOrg } from "@/components/org-context";
 import { useToast } from "@/lib/toast";
+import { CliFetchLine } from "./CliFetchLine";
 import { AddAccount } from "./AddAccountFlow";
 import { UseOnAgentsDialog } from "./UseOnAgents";
 
@@ -218,6 +220,10 @@ export function AccountNotes({ logins }: { logins: readonly AiHubAccount[] }) {
   if (!account || !a) return null;
   const note = signInNote(t, account, Boolean(planOf(a.provider)));
   const copies = a.mine ? unusedCopies(account) : [];
+  // Its CLI being fetched on its computer (ADR 0228 §6), or why that failed.
+  const computer = machines.data?.find((m) => m.id === a.machineId);
+  const fetching = computer?.cliFetch?.[CLI_OF_BRAIN[a.kind] ?? ""];
+  const fetchShown = Boolean(computer && fetching && fetching.state !== "ready");
   const identity = a.email
     ? a.email
     : a.keyHint
@@ -229,10 +235,11 @@ export function AccountNotes({ logins }: { logins: readonly AiHubAccount[] }) {
           )
         ? t("aiAccounts.page.identityUnknown")
         : null;
-  if (!note && copies.length === 0 && !identity) return null;
+  if (!note && copies.length === 0 && !identity && !fetchShown) return null;
   return (
     <div className="aa-notes">
       {identity && <span className="small muted">{identity}</span>}
+      {computer && fetchShown && <CliFetchLine machine={computer} cli={CLI_OF_BRAIN[a.kind]} />}
       {note && <SettingNote icon={note.state === "out" ? "alert" : "info"}>{note.text}</SettingNote>}
       {copies.length > 0 && (
         <SettingNote icon="repeat">{t("aiAccounts.page.copies", { count: copies.length })}</SettingNote>

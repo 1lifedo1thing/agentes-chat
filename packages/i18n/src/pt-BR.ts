@@ -3636,6 +3636,18 @@ export const ptBR = {
      * A coding CLI that isn't on a computer someone connected (`program`: "Claude Code" or "Codex"), and installing it
      * from here. `claudeApp` sits behind an ⓘ on Windows and macOS, where a Claude chat app is likely.
      */
+    /** A coding CLI its computer fetches by itself (ADR 0228 §6): while it comes, and why it failed. */
+    cliFetch: {
+      preparing: "Preparando o {{program}} no {{computer}}…",
+      preparingPct: "Preparando o {{program}} no {{computer}}… {{percent}}%",
+      failed: {
+        offline: "Não deu para preparar o {{program}} no {{computer}}: o computador não conseguiu baixar.",
+        hash_mismatch: "Não deu para preparar o {{program}} no {{computer}}: o arquivo baixado não era o original, então não foi usado.",
+        no_build: "O {{program}} não tem versão para o sistema do {{computer}}.",
+        disk_full: "Não deu para preparar o {{program}} no {{computer}}: o disco está cheio.",
+        failed: "Não deu para preparar o {{program}} no {{computer}}: o download não terminou.",
+      },
+    },
     cli: {
       missing: "O {{program}} ainda não está no {{computer}}.",
       claudeApp: "O app do Claude não basta: os agentes usam o Claude Code, que roda no computador.",
@@ -15971,6 +15983,7 @@ export const ptBR = {
         "Este endereço está numa rede privada. Use um endereço público ou, num servidor próprio, libere-o com `OUTBOUND_ALLOW_CIDRS`.",
       tooLong: "Ficou longo demais. Encurte e tente de novo.",
       updateComputerApp: "O app do computador é antigo demais para isso. Atualize e tente de novo.",
+      cliNotFetched: "Este computador não busca esse programa sozinho.",
       computerUpdatesItself: "O computador do workspace se atualiza sozinho para isso. Tente de novo daqui a pouco.",
       notInvited: "Você não está entre os convidados deste evento.",
       offHere: "Isso está desligado aqui.",
@@ -19039,6 +19052,7 @@ export const ptBR = {
         runningCommandAny: "Rodou um comando",
         usingScreen: "Usou a tela",
         cloningRepo: "Clonou um repositório",
+        preparingCli: "Preparou o {{app}}",
         openingPullRequest: "Abriu um pull request",
         handingOff: "Entregou um relatório",
         recordingFindings: "Anotou o que encontrou",
@@ -19160,6 +19174,8 @@ export const ptBR = {
       runningCommandAny: "rodando um comando",
       usingScreen: "usando a tela",
       cloningRepo: "clonando um repositório",
+      preparingCli: "preparando o {{app}} no {{computer}}",
+      preparingCliPct: "preparando o {{app}} no {{computer}} ({{percent}}%)",
       openingPullRequest: "abrindo um pull request",
       handingOff: "entregando um relatório",
       recordingFindings: "anotando o que encontrou",

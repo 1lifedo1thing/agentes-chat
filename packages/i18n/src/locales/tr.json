@@ -3440,6 +3440,17 @@
       "zen": "OpenCode'u bağlayın",
       "api_key": "API anahtarı ekleyin"
     },
+    "cliFetch": {
+      "preparing": "{{program}}, {{computer}} üzerinde hazırlanıyor…",
+      "preparingPct": "{{program}}, {{computer}} üzerinde hazırlanıyor… %{{percent}}",
+      "failed": {
+        "offline": "{{program}}, {{computer}} üzerinde hazırlanamadı: bilgisayar indirmeye ulaşamıyor.",
+        "hash_mismatch": "{{program}}, {{computer}} üzerinde hazırlanamadı: indirilen dosya orijinal değildi, bu yüzden kullanılmadı.",
+        "no_build": "{{program}} için {{computer}} sisteminde çalışan bir sürüm yok.",
+        "disk_full": "{{program}}, {{computer}} üzerinde hazırlanamadı: disk dolu.",
+        "failed": "{{program}}, {{computer}} üzerinde hazırlanamadı: indirme tamamlanmadı."
+      }
+    },
     "cli": {
       "missing": "{{program}} henüz {{computer}} üzerinde yok.",
       "claudeApp": "Claude uygulaması yetmez: ajanlar bilgisayarda çalışan Claude Code'u kullanır.",
@@ -15596,6 +15607,7 @@
       "privateNetwork": "Bu adres özel bir ağda. Herkese açık bir adres kullanın ya da kendi barındırdığınız sunucuda `OUTBOUND_ALLOW_CIDRS` ile izin verin.",
       "tooLong": "Bu çok uzun. Kısaltıp tekrar deneyin.",
       "updateComputerApp": "Bilgisayardaki uygulama bunun için çok eski. Güncelleyip tekrar deneyin.",
+      "cliNotFetched": "Bu bilgisayar o programı kendisi almıyor.",
       "computerUpdatesItself": "Çalışma alanının bilgisayarı bunun için kendini güncelliyor. Birazdan tekrar deneyin.",
       "notInvited": "Bu etkinliğin davetlileri arasında değilsiniz.",
       "offHere": "Bu, burada kapalı.",
@@ -18516,6 +18528,7 @@
         "runningCommandAny": "Bir komut çalıştırdı",
         "usingScreen": "Ekranı kullandı",
         "cloningRepo": "Bir depoyu klonladı",
+        "preparingCli": "{{app}} hazırlandı",
         "openingPullRequest": "Bir pull request açtı",
         "handingOff": "Bir rapor teslim etti",
         "recordingFindings": "Bulguları not etti",
@@ -18637,6 +18650,8 @@
       "runningCommandAny": "komut çalıştırıyor",
       "usingScreen": "ekranı kullanıyor",
       "cloningRepo": "depo klonluyor",
+      "preparingCli": "{{app}} uygulamasını {{computer}} üzerinde hazırlıyor",
+      "preparingCliPct": "{{app}} uygulamasını {{computer}} üzerinde hazırlıyor (%{{percent}})",
       "openingPullRequest": "pull request açıyor",
       "handingOff": "rapor teslim ediyor",
       "recordingFindings": "bulguları not ediyor",

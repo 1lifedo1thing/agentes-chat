@@ -3593,6 +3593,17 @@
       "zen": "Collega OpenCode",
       "api_key": "Aggiungi una chiave API"
     },
+    "cliFetch": {
+      "preparing": "Preparazione di {{program}} su {{computer}}…",
+      "preparingPct": "Preparazione di {{program}} su {{computer}}… {{percent}}%",
+      "failed": {
+        "offline": "Impossibile preparare {{program}} su {{computer}}: il computer non riesce a scaricarlo.",
+        "hash_mismatch": "Impossibile preparare {{program}} su {{computer}}: il file scaricato non era quello originale, quindi non è stato usato.",
+        "no_build": "{{program}} non ha una versione per il sistema di {{computer}}.",
+        "disk_full": "Impossibile preparare {{program}} su {{computer}}: il disco è pieno.",
+        "failed": "Impossibile preparare {{program}} su {{computer}}: il download non è terminato."
+      }
+    },
     "cli": {
       "missing": "{{program}} non è ancora su {{computer}}.",
       "claudeApp": "L'app di Claude non basta: gli agenti usano Claude Code, che gira sul computer.",
@@ -16227,6 +16238,7 @@
       "privateNetwork": "Questo indirizzo è su una rete privata. Usa un indirizzo pubblico oppure, su un server self-hosted, consentilo con `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "È troppo lungo. Accorcialo e riprova.",
       "updateComputerApp": "L'app del computer è troppo vecchia per questo. Aggiornala e riprova.",
+      "cliNotFetched": "Questo computer non scarica quel programma da solo.",
       "computerUpdatesItself": "Il computer dello spazio di lavoro si aggiorna da solo per questo. Riprova tra poco.",
       "notInvited": "Non sei tra gli invitati a questo evento.",
       "offHere": "Questo è disattivato qui.",
@@ -19198,6 +19210,7 @@
         "runningCommandAny": "Ha eseguito un comando",
         "usingScreen": "Ha usato lo schermo",
         "cloningRepo": "Ha clonato un repository",
+        "preparingCli": "Ha preparato {{app}}",
         "openingPullRequest": "Ha aperto una pull request",
         "handingOff": "Ha consegnato un report",
         "recordingFindings": "Ha annotato i risultati",
@@ -19319,6 +19332,8 @@
       "runningCommandAny": "eseguendo un comando",
       "usingScreen": "usando lo schermo",
       "cloningRepo": "clonando un repository",
+      "preparingCli": "preparando {{app}} su {{computer}}",
+      "preparingCliPct": "preparando {{app}} su {{computer}} ({{percent}}%)",
       "openingPullRequest": "aprendo una pull request",
       "handingOff": "consegnando un report",
       "recordingFindings": "annotando i risultati",

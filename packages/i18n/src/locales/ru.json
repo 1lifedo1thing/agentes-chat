@@ -3718,6 +3718,17 @@
       "zen": "Подключите OpenCode",
       "api_key": "Добавить API-ключ"
     },
+    "cliFetch": {
+      "preparing": "Подготовка {{program}} на {{computer}}…",
+      "preparingPct": "Подготовка {{program}} на {{computer}}… {{percent}}%",
+      "failed": {
+        "offline": "Не удалось подготовить {{program}} на {{computer}}: компьютер не может скачать файл.",
+        "hash_mismatch": "Не удалось подготовить {{program}} на {{computer}}: скачанный файл не был оригинальным, поэтому он не использован.",
+        "no_build": "У {{program}} нет версии для системы {{computer}}.",
+        "disk_full": "Не удалось подготовить {{program}} на {{computer}}: диск заполнен.",
+        "failed": "Не удалось подготовить {{program}} на {{computer}}: загрузка не завершилась."
+      }
+    },
     "cli": {
       "missing": "{{program}} пока нет на {{computer}}.",
       "claudeApp": "Приложения Claude недостаточно: агенты используют Claude Code, который работает на компьютере.",
@@ -16702,6 +16713,7 @@
       "privateNetwork": "Этот адрес находится в частной сети. Укажите публичный адрес или на своём сервере разрешите его в `OUTBOUND_ALLOW_CIDRS`.",
       "tooLong": "Слишком длинно. Сократите и попробуйте ещё раз.",
       "updateComputerApp": "Приложение на компьютере слишком старое для этого. Обновите его и попробуйте ещё раз.",
+      "cliNotFetched": "Этот компьютер не получает эту программу сам.",
       "computerUpdatesItself": "Компьютер рабочего пространства обновляется для этого сам. Попробуйте ещё раз чуть позже.",
       "notInvited": "Вас нет среди приглашённых на это событие.",
       "offHere": "Здесь это выключено.",
@@ -19702,6 +19714,7 @@
         "runningCommandAny": "Запустил команду",
         "usingScreen": "Работал с экраном",
         "cloningRepo": "Клонировал репозиторий",
+        "preparingCli": "Подготовил {{app}}",
         "openingPullRequest": "Открыл пул-реквест",
         "handingOff": "Сдал отчёт",
         "recordingFindings": "Записал находки",
@@ -19823,6 +19836,8 @@
       "runningCommandAny": "запускает команду",
       "usingScreen": "работает с экраном",
       "cloningRepo": "клонирует репозиторий",
+      "preparingCli": "готовит {{app}} на {{computer}}",
+      "preparingCliPct": "готовит {{app}} на {{computer}} ({{percent}}%)",
       "openingPullRequest": "открывает пул-реквест",
       "handingOff": "сдаёт отчёт",
       "recordingFindings": "записывает находки",
