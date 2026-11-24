@@ -93,6 +93,7 @@ import { BrowserManager } from "./browser";
 import { ensureBrowserBindPolicy, prepareAgents } from "./browser-bind-policy";
 import { BrowserViews } from "./browser-views";
 import { CliInstaller, type CliInstallerOptions, gitBashPath } from "./cli-install";
+import { readCodexAccount } from "./codex-account";
 import {
   accessToStore,
   configPath,
@@ -580,7 +581,10 @@ export class RunnerDaemon implements RequestObserver {
       opts.executors ??
       cachedExecutors({
         file: path.join(opts.home, "executors.json"),
-        ...(opts.executorRun ? { run: opts.executorRun } : {}),
+        // A fake run (tests) never starts a real Codex app-server.
+        ...(opts.executorRun
+          ? { run: opts.executorRun }
+          : { codexSignIn: (bin: string, version: string) => readCodexAccount({ bin, version }) }),
         onChange: () => this.executorsChanged(),
         ...(process.platform === "win32"
           ? { before: () => this.refreshPath?.(), gitMissing: () => gitBashPath() === null }

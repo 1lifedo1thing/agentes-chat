@@ -68,6 +68,7 @@ import {
   placeAgySignIn,
   writeAgySettings,
 } from "./agy-home";
+import { codexLoginStatusOf } from "./codex-sign-in";
 import { errnoCode, RunnerError } from "./errors";
 import { killTree } from "./exec";
 import {
@@ -1305,10 +1306,12 @@ export function parseCursorStatus(status: number | null, output: string): Omit<R
   return { loggedIn, ...(email && email.length <= 254 ? { email } : {}) };
 }
 
-/** `codex login status` (`Logged in using ChatGPT`, on either stream): signed in when it exits 0 and says so. */
+/**
+ * `codex login status` (`Logged in using ChatGPT`, or an API key's `API key configured`, on either stream): signed in
+ * when it exits 0 and says so (`codexLoginStatusOf`).
+ */
 export function parseCodexStatus(status: number | null, output: string): Omit<RunnerAccountInfo, "id" | "kind"> {
-  const text = stripAnsi(output);
-  return { loggedIn: status === 0 && /logged in/i.test(text) && !/not logged in/i.test(text) };
+  return { loggedIn: codexLoginStatusOf(status, stripAnsi(output)).loggedIn };
 }
 
 /**

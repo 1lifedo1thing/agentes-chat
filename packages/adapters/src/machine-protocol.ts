@@ -2099,9 +2099,16 @@ export interface RunnerExecutorInfo {
   version: string;
   /** `codex` only: the copy the runner starts, the newest of those it found. */
   path?: string;
-  /** Protocol 8, `claude` only: `claude auth status` says it is logged in (absent: unknown). */
+  /**
+   * Protocol 8, `claude`: `claude auth status` says it is logged in (absent: unknown). `codex` (any protocol: an older
+   * runner leaves it out): its app-server's `account/read`, else `codex login status`, which is believed only on a
+   * sign-in it found.
+   */
   loggedIn?: boolean;
-  /** Protocol 8, `claude` only: how it is logged in (`claude.ai`, `api_key`…) and the plan (`pro`, `max`, `ultra`…). */
+  /**
+   * How it is logged in and the plan: `claude` (protocol 8) `claude.ai`, `api_key`… with `pro`, `max`, `ultra`…;
+   * `codex` `chatgpt` (with `plus`, `pro`, `team`…), `api_key`, or `provider` (a model provider of its own config).
+   */
   authMethod?: string;
   plan?: string;
   /**

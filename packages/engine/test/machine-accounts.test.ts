@@ -690,6 +690,28 @@ test("a coding plan's key: no sign-in page but the plan's key page, the key seal
     })
     .where(eq(schema.machines.id, machineId));
   expect((await listAiAccounts({ db: f.db }, f.owner.id, f.org.id)).computers[0]?.own).toEqual({});
+  // Codex's own sign-in as its runner reads it (an API key, or a model provider of its own config), usage or not.
+  await f.db
+    .update(schema.machines)
+    .set({
+      executors: {
+        codex: { version: "codex-cli 0.169.0", loggedIn: true, authMethod: "provider" },
+        detectedAt: new Date().toISOString(),
+      },
+    })
+    .where(eq(schema.machines.id, machineId));
+  expect((await listAiAccounts({ db: f.db }, f.owner.id, f.org.id)).computers[0]?.own).toEqual({ codex: {} });
+  await f.db
+    .update(schema.machines)
+    .set({
+      executors: {
+        codex: { version: "codex-cli 0.169.0", loggedIn: false },
+        ownUsage: { codex: usage },
+        detectedAt: new Date().toISOString(),
+      },
+    })
+    .where(eq(schema.machines.id, machineId));
+  expect((await listAiAccounts({ db: f.db }, f.owner.id, f.org.id)).computers[0]?.own).toEqual({});
   await f.db
     .update(schema.machines)
     .set({ execAllowed: before?.execAllowed ?? false, executors: before?.executors ?? {} })

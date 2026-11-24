@@ -2181,6 +2181,13 @@ function ownSignIns(
       ...(claude?.plan ? { plan: claude.plan } : {}),
       ...(usage.claude_code ? { usage: usage.claude_code } : {}),
     };
-  if (can("codex") && usage.codex) out.codex = { usage: usage.codex };
+  // Codex's own sign-in as its runner reads it (its app-server's `account/read`: a ChatGPT plan, an API key or a model
+  // provider of the computer's own config), or its usage reading from before runners said it.
+  const codex = executors?.codex;
+  if (can("codex") && (codex?.loggedIn === true || (codex?.loggedIn !== false && usage.codex)))
+    out.codex = {
+      ...(codex?.plan ? { plan: codex.plan } : {}),
+      ...(usage.codex ? { usage: usage.codex } : {}),
+    };
   return out;
 }

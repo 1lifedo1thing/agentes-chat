@@ -13,7 +13,9 @@
 // change of that file), "RATE" (the plan's windows moved:
 // `account/rateLimits/updated`), "LEAK" (quotes $FAKE_SECRET in two deltas apart), "FAST_REFUSED" (a turn with
 // `serviceTier: "fast"` fails as the provider's refusal comes back); anything else answers "pong".
-// `account/rateLimits/read` answers the 5 hours at 12% and the week at 55%. `sandbox … echo MXC_OK` (Codex's MXC
+// `account/rateLimits/read` answers the 5 hours at 12% and the week at 55%. `account/read` answers a ChatGPT Plus
+// sign-in, or as $FAKE_CODEX_ACCOUNT says: `apiKey`, `provider` (no account, none needed) or `none` (signed out).
+// `sandbox … echo MXC_OK` (Codex's MXC
 // check) prints MXC_OK when $FAKE_CODEX_MXC is 1, else fails as Codex does without MXC.
 import { appendFileSync } from "node:fs";
 import { createInterface } from "node:readline";
@@ -159,6 +161,13 @@ function appServer() {
             secondary: { usedPercent: 55, windowDurationMins: 10080, resetsAt: 1900500000 },
           },
         });
+      case "account/read": {
+        const kind = process.env.FAKE_CODEX_ACCOUNT ?? "chatgpt";
+        if (kind === "apiKey") return ok({ account: { type: "apiKey" }, requiresOpenaiAuth: true });
+        if (kind === "provider") return ok({ account: null, requiresOpenaiAuth: false });
+        if (kind === "none") return ok({ account: null, requiresOpenaiAuth: true });
+        return ok({ account: { type: "chatgpt", email: null, planType: "plus" }, requiresOpenaiAuth: true });
+      }
       case "thread/start":
         total.input = 0;
         total.cached = 0;

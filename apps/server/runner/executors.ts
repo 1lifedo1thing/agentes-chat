@@ -12,6 +12,7 @@ import {
   type RunnerInfo,
 } from "@agenteschat/adapters/machine-protocol";
 import { isOpencodeFreeModel, OPENCODE_FREE_MODELS } from "@agenteschat/providers/plans";
+import { type CodexSignIn, codexLoginStatusOf } from "./codex-sign-in";
 import { readSmallJson, writeJson } from "./json-file";
 import { usualDirs } from "./login-path";
 import { SHARED_BIN_ENV } from "./shared-folder";
@@ -602,6 +603,40 @@ async function detectCodex(run: Run, bins: string[]): Promise<Probe> {
   return looks[0] ? versionFailed(looks[0].r) : detectVersion(run, "codex");
 }
 
+/**
+ * How the computer's own Codex is signed in, asked of its app-server (`readCodexAccount`, given by the daemon: this
+ * module can't import the app-server's client); null when it couldn't tell.
+ */
+export type CodexSignInProbe = (bin: string, version: string) => Promise<CodexSignIn | null>;
+
+/**
+ * The computer's own Codex with how it is signed in (`loggedIn`, `authMethod`, `plan`), so the apps offer it as a sign-in
+ * of the computer's own the way they offer Claude Code's: by its app-server when it answers (an API key and a model
+ * provider of the person's own count), else by `codex login status`. Only the app-server is believed on "signed out":
+ * `codex login status` says that of a model provider that needs no sign-in, and Codex turns never waited on it.
+ */
+async function withCodexSignIn(run: Run, probe: Probe, ask: CodexSignInProbe): Promise<Probe> {
+  const entry = probe.entry;
+  if (!entry) return probe;
+  const bin = entry.path ?? "codex";
+  const read = await ask(bin, entry.version).catch(() => null);
+  const said =
+    read ??
+    (await Promise.resolve(run(bin, ["login", "status"]))
+      .then((r) => (r.error ? null : codexLoginStatusOf(r.status, `${r.stdout}\n${r.stderr ?? ""}`)))
+      .catch(() => null));
+  if (!said || (!said.loggedIn && !read)) return probe;
+  return {
+    ...probe,
+    entry: {
+      ...entry,
+      loggedIn: said.loggedIn,
+      ...(said.authMethod ? { authMethod: said.authMethod } : {}),
+      ...(said.plan ? { plan: said.plan } : {}),
+    },
+  };
+}
+
 /** `<bin> --version` checked against `shape`, then `<bin> models` (none when signed out or offline). */
 async function detectWithModels(
   run: Run,
@@ -650,7 +685,8 @@ export function inHomeDirs(bin: string, home = homedir(), isExe: (file: string) 
  * row across looks (the caller keeps it). A CLI whose `--version` fails with no good look to keep, or past its
  * strikes, is `broken` with its error line: it is there and can't start, which is not missing. Claude Code on Windows
  * says why only through `gitMissing`: without Git for Windows it can't start at all. `homeOnly`: a CLI of
- * `HOME_INSTALLED` not found is in the runner's own home only (system mode), `CLI_HOME_ONLY`.
+ * `HOME_INSTALLED` not found is in the runner's own home only (system mode), `CLI_HOME_ONLY`. `codexSignIn`: how the
+ * computer's own Codex is signed in is asked too (`withCodexSignIn`); left out, only its version.
  */
 export async function detectExecutors(
   run: Run = defaultRun,
@@ -659,12 +695,17 @@ export async function detectExecutors(
   gitMissing: () => boolean = () => false,
   codexBins: () => string[] = run === defaultRun ? codexCandidates : () => [],
   homeOnly: (bin: string) => boolean = () => false,
+  codexSignIn?: CodexSignInProbe,
 ): Promise<{ found: Executors; unsure: boolean }> {
   const safe = (p: () => Promise<Probe>) => p().catch((): Probe => ({ unsure: true }));
   const names = ["claude", "codex", "cursor", "opencode", "grok", "antigravity"] as const;
+  const codex = async () => {
+    const probe = await detectCodex(run, codexBins());
+    return codexSignIn ? withCodexSignIn(run, probe, codexSignIn) : probe;
+  };
   const probes = await Promise.all([
     safe(() => detectVersion(run, "claude")),
-    safe(() => detectCodex(run, codexBins())),
+    safe(codex),
     safe(() => detectCursor(run)),
     safe(() => detectOpencode(run)),
     safe(() => detectGrok(run)),
@@ -725,6 +766,8 @@ export function cachedExecutors(
     gitMissing?: () => boolean;
     /** System mode: a CLI found only in root's own install folders (`CLI_HOME_ONLY`). */
     homeOnly?: (bin: string) => boolean;
+    /** How the computer's own Codex is signed in (`readCodexAccount`); left out, only its version. */
+    codexSignIn?: CodexSignInProbe;
   } = {},
 ): ExecutorsCache {
   const now = opts.now ?? Date.now;
@@ -740,7 +783,9 @@ export function cachedExecutors(
     (running ??= Promise.resolve()
       .then(() => opts.before?.())
       .catch(() => undefined)
-      .then(() => detectExecutors(opts.run, value, strikes, opts.gitMissing, undefined, opts.homeOnly))
+      .then(() =>
+        detectExecutors(opts.run, value, strikes, opts.gitMissing, undefined, opts.homeOnly, opts.codexSignIn),
+      )
       .then(({ found, unsure }) => {
         at = now();
         retry = unsure ? Math.min(retry ? retry * 2 : EXECUTORS_RETRY_MS, EXECUTORS_TTL_MS) : 0;
