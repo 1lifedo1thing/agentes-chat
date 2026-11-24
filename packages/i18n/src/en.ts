@@ -13337,6 +13337,10 @@ export const en = {
     viewList: "List",
     arrange: "Arrange",
     arrangeValue: "Arrange: {{group}}",
+    display: "Display",
+    displayValue: "Display: {{view}} · {{group}}",
+    filterButton: "Filter",
+    filterValue: "{{filter}}: {{value}}",
     groupBy: "Group by",
     group: {
       date: "Date",

@@ -10363,12 +10363,14 @@ html:not([data-pointer]) .ac-filtertoggle:focus-visible {
 .ac-filter--active:hover {
   background: color-mix(in srgb, var(--ink) 88%, var(--bg));
 }
+/* On the filled chip the × is its words' color, quieter; its plate shows only under the pointer. */
 .ac-filter--active .ac-filter__clear {
-  background: color-mix(in srgb, var(--bg) 20%, transparent);
-  color: var(--bg);
+  background: transparent;
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
 }
 .ac-filter--active .ac-filter__clear:hover {
-  background: color-mix(in srgb, var(--bg) 32%, transparent);
+  background: color-mix(in srgb, var(--bg) 20%, transparent);
+  color: var(--bg);
 }
 .ac-filter__trigger {
   display: inline-flex;
@@ -10418,9 +10420,12 @@ html:not([data-pointer]) .ac-filter__clear:focus-visible {
   margin-right: var(--in);
   border: 0;
   border-radius: calc(var(--tool-r, var(--control-r-sm)) - var(--in));
-  background: var(--sunken);
+  background: transparent;
   color: var(--ink2);
   cursor: pointer;
+  transition:
+    background-color 0.15s var(--out),
+    color 0.15s var(--out);
 }
 .ac-filter__clear:hover {
   background: var(--plate);

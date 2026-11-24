@@ -13335,6 +13335,10 @@ export const ptBR = {
     viewList: "Lista",
     arrange: "Organizar",
     arrangeValue: "Organizar: {{group}}",
+    display: "Exibição",
+    displayValue: "Exibição: {{view}} · {{group}}",
+    filterButton: "Filtro",
+    filterValue: "{{filter}}: {{value}}",
     groupBy: "Agrupar por",
     group: {
       date: "Data",
