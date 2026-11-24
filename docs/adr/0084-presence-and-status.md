@@ -106,3 +106,5 @@ answer for days kept it `online`, and the right hand was never away (§15).
 23. **The face says it**: `AgentFace` gains `away`, drawn with the people's away badge and worded "Inativo" (`presence.idle`),
     never a person's "Ausente" (it reads as gone) and never asleep or on standby. Working, waiting on you, out of office
     and offline come first, as in §16, so work always shows. Web and phone read it from `agentPresenceShown`.
+24. **Agents read it too**: `find_agent` says "idle, answers when called", never "away": a mention or `ask_agent`
+    reaches an idle agent at once, and most agents are idle most of the time.
