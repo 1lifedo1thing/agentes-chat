@@ -406,7 +406,9 @@ export function createApp(options: AppOptions) {
   );
 
   if (options.webDir) {
-    const assets = serveStatic({ root: options.webDir });
+    // The build writes each script and stylesheet compressed beside it (apps/web/scripts/compress-dist.ts): a server
+    // with nothing in front of it sends 1/4 of the bytes. Pages stay plain (their HTML is rewritten for a host).
+    const assets = serveStatic({ root: options.webDir, precompressed: true });
     // Client-side routing: unknown non-API paths render the web app.
     const spa = serveStatic({ root: options.webDir, path: "index.html" });
     const isApi = (path: string) => path.startsWith("/api/");
