@@ -1194,6 +1194,12 @@ export const envVars = {
       "Path-style bucket URLs (`https://endpoint/bucket/key`), for MinIO, Garage and similar stores. Off: virtual-hosted URLs (`https://bucket.endpoint/key`), as R2 and AWS expect.",
     section: "Storage",
   },
+  S3_PRESIGNED_URLS: {
+    schema: z.stringbool().default(true),
+    description:
+      "Browsers and the apps download files of the platform bucket straight from it, by short-lived presigned links the server hands out after its own checks (videos and downloads; previews still come through the server). Set to `false` when they can't reach `S3_ENDPOINT` (a bucket on a private network): the server then sends every file itself.",
+    section: "Storage",
+  },
   HOST_COMPUTER_TOKEN: {
     schema: z
       .string()

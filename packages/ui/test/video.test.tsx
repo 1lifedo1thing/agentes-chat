@@ -79,6 +79,43 @@ describe("VideoPlayer", () => {
     expect(failed).toBe(1);
   });
 
+  test("its link went stale while the page stayed open: it loads once more and goes on from there", async () => {
+    let failed = 0;
+    player({ onFailed: () => failed++ });
+    const [v] = videos() as [HTMLVideoElement];
+    const video = fake(v, { ready: true, time: 42, playing: true });
+    let ready = 1;
+    let loads = 0;
+    Object.defineProperties(v, {
+      error: { configurable: true, get: () => ({ code: 2 }) },
+      readyState: { configurable: true, get: () => ready },
+      load: {
+        configurable: true,
+        value: () => {
+          loads++;
+          ready = 0;
+          v.currentTime = 0;
+        },
+      },
+    });
+    fireEvent.error(v);
+    expect([loads, failed]).toEqual([1, 0]);
+    await act(async () => {
+      ready = 1;
+      fireEvent.loadedMetadata(v);
+    });
+    expect(v.currentTime).toBe(42);
+    expect(video.plays.count).toBe(1);
+    // A second failure is the caller's, who shows the file instead.
+    fireEvent.error(v);
+    expect([loads, failed]).toEqual([1, 1]);
+  });
+
+  test("crossOrigin reaches the element, so its frames can be read back from a canvas", () => {
+    player({ crossOrigin: "anonymous" });
+    expect(document.querySelector("video")?.getAttribute("crossorigin")).toBe("anonymous");
+  });
+
   test("speed goes 1×, 1.5×, 2× and back", () => {
     player();
     const speed = () => screen.getByRole("button", { name: /^Velocidade/, hidden: true });
