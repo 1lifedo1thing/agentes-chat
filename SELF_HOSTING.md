@@ -1639,11 +1639,12 @@ restart. The app can install Claude Code there for you, but not Codex. Then sign
     that ignores them still gets out), and commands can read anything the Windows user can. The AI choice
     and the computer's page say so behind an ⓘ.
   - **When neither starts** (Codex's own sandbox fails to set up on some Windows 10 computers), Codex isn't
-    offered on that computer and says why: give that agent Claude or an API key, update to Windows 11 24H2,
-    or move it to a Linux computer.
+    offered for agents on that computer and says why: give that agent Claude or an API key, update to
+    Windows 11 24H2 or newer with its latest updates, or move it to a Linux computer.
 
-  The computer checks which one works by itself, shortly after it starts. Lodi's turns run no commands, so
-  they work on any Windows.
+  The computer checks which one works by itself, shortly after it starts, and while it runs on Codex's own
+  sandbox it looks for Windows' own isolation again every 10 minutes. Lodi's turns run no commands, so they
+  work on any Windows, ChatGPT included.
 - Nothing asks for approval there: what the isolation refuses stays refused. Windows' own isolation has no
   network, so `git push` or a package install doesn't run from Codex's own commands. Codex's own sandbox
   blocks only what honours the proxy settings: a program that ignores them (an SSH `git push`, for one) can
