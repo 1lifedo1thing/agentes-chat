@@ -2357,7 +2357,21 @@
     {
       "idx": 338,
       "version": "7",
-      "when": 1795550271282,
+      "when": 1795555369214,
+      "tag": "0341_surface_pin_pages",
+      "breakpoints": true
+    },
+    {
+      "idx": 339,
+      "version": "7",
+      "when": 1795555379831,
+      "tag": "0342_surface_pin_lockouts",
+      "breakpoints": true
+    },
+    {
+      "idx": 340,
+      "version": "7",
+      "when": 1795559189474,
       "tag": "0352_devices_help",
       "breakpoints": true
     }
