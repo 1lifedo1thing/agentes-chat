@@ -258,6 +258,12 @@ export const agentRuns = pgTable(
     // The task manager's count of today's finished tasks, asked at every poll: only today's rows read, not every run
     // the workspace ever finished. Built CONCURRENTLY (its migration), as agent_runs is large.
     index("agent_runs_done_finished_idx").on(t.orgId, t.finishedAt).where(sql`${t.status} = 'done'`),
+    // The task manager's tasks that ended since a time, asked at every poll: without it each ask read every run the
+    // workspace ever had, through (org_id, agent_id, created_at), to keep the last day's. Built concurrently.
+    index("agent_runs_finished_idx").on(t.orgId, t.finishedAt).where(sql`${t.finishedAt} is not null`).concurrently(),
+    // A conversation's runs: a run's context reads what agents did there before it starts, and most runs are in DMs,
+    // where no thread narrows it; without it that read went through every run of the workspace. Built concurrently.
+    index("agent_runs_channel_created_idx").on(t.channelId, t.createdAt).concurrently(),
     // Runs still holding unread messages, found by the inbox sweep (`sweepEndedInboxes`) every tick; the predicate is
     // the sweep's own expression, so the planner matches it. Not keyed on updated_at, which every update moves: that
     // would make all of agent_runs' updates non-HOT.
