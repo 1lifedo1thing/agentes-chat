@@ -270,7 +270,7 @@ pub fn open(app: &AppHandle, url: Option<Url>) -> Result<(), String> {
         })
         // A whole page loading again (⌘R, macOS ended it, a full navigation): the cover, never a blank window.
         .on_page_load(move |page, payload| match payload.event() {
-            PageLoadEvent::Started => crate::cover::show(&on_load, Duration::ZERO),
+            PageLoadEvent::Started => crate::cover::show(&on_load),
             // The page's own sizes follow the zoom (desktop.css), and the bar knows about full screen.
             PageLoadEvent::Finished => {
                 page_loaded();
@@ -319,7 +319,7 @@ pub fn open(app: &AppHandle, url: Option<Url>) -> Result<(), String> {
             use webkit2gtk::WebViewExt;
             view.inner().connect_web_process_terminated(move |view, reason| {
                 crate::health::note(&app, &format!("the web process of {LABEL} ended ({reason:?}): loading it again"));
-                crate::cover::show(&app, Duration::ZERO);
+                crate::cover::show(&app);
                 view.reload();
             });
         });

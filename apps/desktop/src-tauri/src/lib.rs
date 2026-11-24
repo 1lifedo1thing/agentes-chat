@@ -800,7 +800,7 @@ pub fn run() {
         let app = webview.app_handle();
         health::note(app, &format!("the web process of {} ended: loading it again", webview.label()));
         if webview.label() == main_window::LABEL {
-            cover::show(app, std::time::Duration::ZERO);
+            cover::show(app);
         }
         let _ = webview.reload();
     });
