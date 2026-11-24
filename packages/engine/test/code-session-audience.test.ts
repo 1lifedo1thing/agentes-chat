@@ -1,13 +1,17 @@
 import { afterEach, expect, setDefaultTimeout, test } from "bun:test";
 import { and, eq, schema } from "@agenteschat/db";
+import { systemText } from "@agenteschat/providers";
 import {
   codeStartOptions,
   createCodeSession,
+  createTalker,
   insertMessage,
   postPersonMessage,
   releaseRequest,
   saveCodeSessionFile,
+  stopChecksSettled,
 } from "../src";
+import { addRunStep } from "../src/runs";
 import { addMember, type Fixture, setup } from "./fixtures";
 
 /**
@@ -148,4 +152,60 @@ test("a worktree that becomes ready hands over the newest message of someone the
     messageId: mine.id,
     pickedBy: [f.agent.id],
   });
+});
+
+test("a message to a session's agent at work gets the fast reply, in the session, as in any conversation", async () => {
+  f = await setup({
+    reply: (req) =>
+      systemText(req.system).includes("conversation layer")
+        ? { chunks: [JSON.stringify({ action: "reply", text: "Rodando os testes agora." })] }
+        : { chunks: ["ok"] },
+  });
+  await ownerOnlyAgent();
+  const session = await sessionWith([]);
+  const request = await insertMessage(f.db, {
+    orgId: f.org.id,
+    channelId: session.channelId,
+    threadId: session.rootMessageId,
+    author: { type: "person", userId: f.owner.id },
+    body: "fix the login",
+  });
+  const started = new Date(Date.now() - 10 * 60_000);
+  const [run] = await f.db
+    .insert(schema.agentRuns)
+    .values({
+      orgId: f.org.id,
+      agentId: f.agent.id,
+      channelId: session.channelId,
+      threadRootId: session.rootMessageId,
+      triggerMessageId: request.id,
+      trigger: "dm",
+      hop: 1,
+      status: "running",
+      createdAt: started,
+      startedAt: started,
+    })
+    .returning();
+  if (!run) throw new Error("no run");
+  await addRunStep(f.db, run, "context", {
+    cliTool: { id: "1", name: "Bash", verb: "run", target: "bun test", ok: true },
+  });
+  await addRunStep(f.db, run, "tool_call", { name: "permission_prompt", input: {} });
+  const decisions: string[] = [];
+  const talker = createTalker({
+    db: f.db,
+    pubsub: f.pubsub,
+    gateway: f.gateway,
+    resolveModel: async () => "claude-haiku-5-5",
+    onDecision: (d) => decisions.push(d.outcome),
+  });
+  const m = await postPersonMessage({ db: f.db, pubsub: f.pubsub, talker }, f.owner.id, f.org.id, session.channelId, {
+    body: "how is it going?",
+    threadId: session.rootMessageId,
+  });
+  await stopChecksSettled();
+  expect(m.meta).toMatchObject({ steeredRunIds: [run.id] });
+  expect(decisions).toEqual(["reply"]);
+  const said = (await f.db.select().from(schema.messages)).filter((x) => x.authorAgentId === f.agent.id);
+  expect(said.map((s) => [s.body, s.threadId])).toEqual([["Rodando os testes agora.", session.rootMessageId]]);
 });
