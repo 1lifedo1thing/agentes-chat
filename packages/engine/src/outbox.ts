@@ -135,6 +135,17 @@ const payloadId = (key: "runId" | "routineRunId") => {
 /** The run an `agent_run.execute` job executes (null for a malformed payload). */
 const runOfJob = payloadId("runId");
 
+const RUN_JOB = "agent_run.execute";
+
+/**
+ * A run's jobs, by name: every one is named `agent_run.execute:<run id>`, then why it woke the run. Written as
+ * `outbox_run_jobs_idx` is (the kind is the index's condition, and the planner reads `starts_with` as a range of it):
+ * a few rows, where the payload's run id is a scan of every job of every run. A finished job's payload is cleared after
+ * 30 days, and its name stays.
+ */
+export const jobsOfRun = (runId: string) =>
+  and(eq(outbox.kind, RUN_JOB), sql`starts_with(${outbox.dedupeKey}, ${`${RUN_JOB}:${runId}`})`);
+
 /**
  * Background work (ADR 0053 §10): a routine firing (`routine.run`), or the execution of a routine's
  * background run (`agent_run.execute` of a run with `agent_runs.background`). A person's message never

@@ -10,7 +10,7 @@ import { publishChannelEvent, publishMessageCreated } from "./events";
 import type { Transcript } from "./executor";
 import { queueLiveActivityRun } from "./live-activity-queue";
 import { getMessage, insertMessage, messageView } from "./messages";
-import { enqueue } from "./outbox";
+import { enqueue, jobsOfRun } from "./outbox";
 import { closeRoutineRun } from "./routine-ledger";
 import { releaseInbox } from "./run-inbox";
 import { revokeRunToolTokens } from "./run-tool-tokens";
@@ -248,13 +248,7 @@ async function resume(db: Database, run: AgentRun, at: SweepTime, ran: string[])
         lastError: "its worker stopped: the run went on in a new job",
         lastErrorStatus: null,
       })
-      .where(
-        and(
-          eq(outbox.kind, "agent_run.execute"),
-          sql`${outbox.payload}->>'runId' = ${run.id}`,
-          eq(outbox.status, "processing"),
-        ),
-      );
+      .where(and(jobsOfRun(run.id), eq(outbox.status, "processing")));
     await enqueue(tx, {
       orgId: run.orgId,
       kind: "agent_run.execute",
@@ -327,13 +321,7 @@ async function failInterrupted(deps: { db: Database; pubsub?: PubSub }, run: Age
     await tx
       .update(outbox)
       .set({ status: "failed", lockedUntil: null, lastError: INTERRUPTED_BY_RESTART, lastErrorStatus: null })
-      .where(
-        and(
-          eq(outbox.kind, "agent_run.execute"),
-          sql`${outbox.payload}->>'runId' = ${run.id}`,
-          inArray(outbox.status, ["pending", "processing"]),
-        ),
-      );
+      .where(and(jobsOfRun(run.id), inArray(outbox.status, ["pending", "processing"])));
     return { message, closedSecrets, closedApprovals };
   });
   if (!result) return false;

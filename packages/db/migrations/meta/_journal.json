@@ -2255,6 +2255,13 @@
       "when": 1795495438746,
       "tag": "0326_unused_agent_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 324,
+      "version": "7",
+      "when": 1795511295066,
+      "tag": "0327_open_wake_and_platform_spend_indexes",
+      "breakpoints": true
     }
   ]
 }

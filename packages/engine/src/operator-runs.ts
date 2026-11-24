@@ -28,7 +28,7 @@ import { PLATFORM_CAP } from "./limits";
 import { machineOnline } from "./machines";
 import { type Message, parseMentionHandles, receiptsFor } from "./messages";
 import { NO_AI_CARD_REASONS } from "./no-ai";
-import { jobOf, jobsOfRun, OPERATOR_JOB_ERROR_MAX, selectJobs, spentColumns, spentOf } from "./operator-jobs";
+import { jobOf, OPERATOR_JOB_ERROR_MAX, selectJobs, spentColumns, spentOf } from "./operator-jobs";
 import {
   CODE,
   codeOf,
@@ -43,6 +43,7 @@ import {
   uuidOf,
   wordOf,
 } from "./operator-paging";
+import { jobsOfRun } from "./outbox";
 import { rightHandReaches } from "./right-hand";
 import { DEFAULT_CAP, UNDER_NEED_GATE } from "./router";
 import { RELEASE_REASONS } from "./run-inbox";
