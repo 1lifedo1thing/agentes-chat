@@ -12,7 +12,9 @@ import {
   NEW_AGENT_DEFAULTS,
   proposeChange,
   proposeFromItem,
+  redoAgentAction,
   splitLearned,
+  undoAgentAction,
   updateAgent,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -168,6 +170,46 @@ describe("an agent created or saved with a section", () => {
     });
     expect(edited.instructions).toBe("Seja breve.");
     expect((await lessonsOf(f.agent.id)).map((i) => i.content)).toEqual(["Ser cordial."]);
+  });
+});
+
+describe("Undo of an instructions change", () => {
+  test("puts a section back into memory again, never twice, and Redo still finds what it left", async () => {
+    f = await setup();
+    const withSection = "Seja breve.\n\n## Learned\n- Citar a fonte.";
+    await f.db.update(agents).set({ instructions: "Seja formal." }).where(eq(agents.id, f.agent.id));
+    const [receipt] = await f.db
+      .insert(schema.agentActions)
+      .values({
+        orgId: f.org.id,
+        agentId: f.agent.id,
+        channelId: f.general.id,
+        requestedByUserId: f.owner.id,
+        kind: "agent.settings_changed",
+        targetType: "agent",
+        targetId: f.agent.id,
+        params: { agentName: "Dev", fields: ["instructions"] },
+        before: { lines: [{ field: "instructions", from: withSection, to: "Seja formal." }] },
+        undoableUntil: new Date(Date.now() + 60_000),
+      })
+      .returning();
+    const deps = { db: f.db, pubsub: f.pubsub };
+    const state = async () => ({
+      instructions: (await f.db.select().from(agents).where(eq(agents.id, f.agent.id)))[0]?.instructions,
+      lessons: (
+        await f.db
+          .select()
+          .from(contextItems)
+          .where(and(eq(contextItems.agentId, f.agent.id), eq(contextItems.status, "active")))
+      ).map((i) => i.content),
+    });
+
+    await undoAgentAction(deps, f.owner.id, f.org.id, receipt?.id ?? "");
+    expect(await state()).toEqual({ instructions: "Seja breve.", lessons: ["Citar a fonte."] });
+    await redoAgentAction(deps, f.owner.id, f.org.id, receipt?.id ?? "");
+    expect(await state()).toEqual({ instructions: "Seja formal.", lessons: ["Citar a fonte."] });
+    await undoAgentAction(deps, f.owner.id, f.org.id, receipt?.id ?? "");
+    expect(await state()).toEqual({ instructions: "Seja breve.", lessons: ["Citar a fonte."] });
   });
 });
 
