@@ -12770,8 +12770,6 @@ export const ptBR = {
     steered: "{{name}} recebeu durante a tarefa",
     stillWorking: "{{name}} ainda trabalhando",
     inProgress: "em andamento",
-    quiet: "sem notícias há {{minutes}} min",
-    refresh: "Atualizar",
     stop: "Parar",
     stopping: "Parando…",
     stopHint: "Parar tarefa · Esc",

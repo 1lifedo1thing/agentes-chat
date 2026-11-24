@@ -11854,8 +11854,6 @@
     "steered": "{{name}} 在任务进行中收到了",
     "stillWorking": "{{name}} 仍在工作",
     "inProgress": "进行中",
-    "quiet": "{{minutes}} 分钟没有新进展",
-    "refresh": "刷新",
     "stop": "停止",
     "stopping": "正在停止…",
     "stopHint": "停止任务 · Esc",

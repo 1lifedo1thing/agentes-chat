@@ -11782,8 +11782,6 @@
     "steered": "{{name}}がタスク中に受け取りました",
     "stillWorking": "{{name}}はまだ作業中",
     "inProgress": "進行中",
-    "quiet": "{{minutes}}分間更新なし",
-    "refresh": "更新",
     "stop": "停止",
     "stopping": "停止中…",
     "stopHint": "タスクを停止 · Esc",

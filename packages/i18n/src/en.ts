@@ -12753,8 +12753,6 @@ export const en = {
     steered: "{{name}} got it during the task",
     stillWorking: "{{name}} still working",
     inProgress: "in progress",
-    quiet: "no news for {{minutes}} min",
-    refresh: "Refresh",
     stop: "Stop",
     stopping: "Stopping…",
     stopHint: "Stop task · Esc",

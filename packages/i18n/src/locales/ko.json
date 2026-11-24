@@ -11776,8 +11776,6 @@
     "steered": "{{name}}이(가) 작업 중에 받았어요",
     "stillWorking": "{{name}} 아직 작업 중",
     "inProgress": "진행 중",
-    "quiet": "{{minutes}}분째 소식 없음",
-    "refresh": "새로고침",
     "stop": "중지",
     "stopping": "중지하는 중…",
     "stopHint": "작업 중지 · Esc",
