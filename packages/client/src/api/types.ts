@@ -440,7 +440,7 @@ export interface OrgSummary {
   permissions?: string[];
   /** Their highest role's position (0 the top), null with none: they manage the roles and people below it. */
   rank?: number | null;
-  /** The workspace logo (`/api/app/org-logos/…`); null or absent = the agent mark. */
+  /** The workspace logo (`/api/app/org-logos/…`, `#ink=light` after a light-ink one); null or absent = the agent mark. */
   logo?: string | null;
   /** The workspace's accent "#rrggbb" (ADR 0193): the apps paint the agent colors from it. Null or absent: the default. */
   accent?: string | null;
