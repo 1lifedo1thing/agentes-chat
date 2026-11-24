@@ -273,7 +273,7 @@ describe("the working line", () => {
     // on a screen that isn't showing.
     expect(orbit).toContain('import { ORBIT_RINGS, ORBIT_SPAN, orbitColors } from "@agenteschat/ui/agent/orbit";');
     expect(orbit).toContain("const turning = !reduced;");
-    expect(orbit).toContain("loopStyle(ring.back ? UNTURN : TURN, turn, \"linear\", delay, paused)");
+    expect(orbit).toContain('loopStyle(ring.back ? UNTURN : TURN, turn, "linear", delay, paused)');
     expect(orbit).not.toMatch(/useFrameCallback|requestAnimationFrame|setInterval/);
   });
 
