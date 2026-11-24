@@ -48,8 +48,12 @@ export interface MachinePlanUsage {
 export interface MachineExecutors {
   /** `loggedIn`/`authMethod`/`plan`: from `claude auth status` (protocol 8; absent = unknown). */
   claude?: { version: string; loggedIn?: boolean; authMethod?: string; plan?: string };
-  /** `path`: the copy its runner starts, the newest it found. */
-  codex?: { version: string; path?: string };
+  /**
+   * `path`: the copy its runner starts, the newest it found. `loggedIn`/`authMethod`/`plan`: its own sign-in as its
+   * app-server's `account/read` says (`chatgpt` with its plan, `api_key`, `provider`), else `codex login status` on a
+   * sign-in it found (absent = unknown).
+   */
+  codex?: { version: string; path?: string; loggedIn?: boolean; authMethod?: string; plan?: string };
   /** Cursor's CLI (protocol 36, ADR 0114) and the models its sign-in lists; `inPlan`: the CLI said the plan includes it. */
   cursor?: { version: string; models?: { id: string; label?: string; inPlan?: boolean }[] };
   /** OpenCode's CLI (protocol 39, ADR 0132) and the models it lists; `free`: OpenCode's free tier. */
