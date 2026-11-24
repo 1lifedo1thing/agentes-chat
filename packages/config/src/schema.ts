@@ -1197,7 +1197,7 @@ export const envVars = {
   S3_PRESIGNED_URLS: {
     schema: z.stringbool().default(true),
     description:
-      "Browsers and the apps download files of the platform bucket straight from it, by short-lived presigned links the server hands out after its own checks (videos and downloads; previews still come through the server). Set to `false` when they can't reach `S3_ENDPOINT` (a bucket on a private network): the server then sends every file itself.",
+      "Browsers and the apps download files of the platform bucket straight from it, by short-lived presigned links the server hands out after its own checks (videos and downloads; previews still come through the server). Only for an `https` `S3_ENDPOINT`: an `http` one is never linked to. Set to `false` when browsers can't reach `S3_ENDPOINT` (a bucket on a private network): the server then sends every file itself.",
     section: "Storage",
   },
   HOST_COMPUTER_TOKEN: {

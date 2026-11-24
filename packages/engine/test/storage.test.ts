@@ -121,6 +121,9 @@ describe("S3 client against the fake server", () => {
     );
     const off = createS3BlobStore(settings, { fetch: f.s3.fetch, presign: false });
     expect(await off.signedUrl("a/clip", options)).toBeNull();
+    // An http bucket's link can't load in a page served over https: its files go through the server.
+    const plain = createS3BlobStore({ ...settings, endpoint: "http://minio.example.com:9000" }, { fetch: f.s3.fetch });
+    expect(await plain.signedUrl("a/clip", options)).toBeNull();
     // A store that answers a range with the whole object would play garbage: refused.
     const whole = createS3BlobStore(settings, { fetch: async () => new Response("0123456789", { status: 200 }) });
     await expect(whole.stream?.("a/clip", { start: 2, end: 5 })).rejects.toBeInstanceOf(StorageError);

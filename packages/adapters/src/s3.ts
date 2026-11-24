@@ -116,7 +116,8 @@ export function s3Error(status: number, body: string): StorageError {
 /**
  * A minimal S3 client (SigV4 over `fetch`): put, get, delete, list and
  * presigned GET. No SDK, so the transport can be swapped in tests.
- * `presign: false` hands out no links, for a bucket only the server reaches.
+ * `presign: false` hands out no links, for a bucket only the server reaches;
+ * an http endpoint never does.
  */
 export function createS3BlobStore(
   settings: S3Settings,
@@ -228,7 +229,9 @@ export function createS3BlobStore(
       return [...xml.matchAll(/<Key>([^<]*)<\/Key>/g)].map((m) => decodeXml(m[1] ?? "")).slice(0, limit);
     },
     async signedUrl(key, { expiresInSeconds, filename, contentType }) {
-      if (options.presign === false) return null;
+      // An http endpoint is never linked to: a page served over https can't load it (mixed content), and it is most
+      // often a bucket on the server's own network. Its files go through the server.
+      if (options.presign === false || endpoint.protocol === "http:") return null;
       const { origin, host, path } = locate(settings, key);
       const { amzDate, date } = amzDates(now());
       const expires = Math.max(1, Math.min(604_800, Math.round(expiresInSeconds)));
