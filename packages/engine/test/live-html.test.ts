@@ -137,7 +137,9 @@ const CARDS = `
 describe("add_html on a slide", () => {
   test("cards become shapes, texts with the brand's fonts, an icon and a badge, grouped by the markup", async () => {
     const run = await runFor();
-    const deck = artifactOf(await ok(run, "create_presentation", { title: "Order guide", slides: [{ layout: "blank" }] }));
+    const deck = artifactOf(
+      await ok(run, "create_presentation", { title: "Order guide", slides: [{ layout: "blank" }] }),
+    );
     const out = await ok(run, "edit_presentation", {
       file: deck.id,
       ops: [{ op: "add_html", slide: 1, html: CARDS, box: { x: 0, y: 200, w: 1920, h: 600 } }],

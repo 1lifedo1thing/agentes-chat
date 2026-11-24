@@ -165,7 +165,6 @@ function Part({
 
 // ── Text ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-
 /** Rich text in a box, in the theme's look for its role: paragraphs, lists, levels and marks as the web draws them. */
 export function RichBlock({
   rich,

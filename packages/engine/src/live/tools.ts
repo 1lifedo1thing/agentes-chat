@@ -1118,7 +1118,7 @@ async function fontPlans(deps: LiveFileToolDeps, ctx: ToolContext, fileId: strin
       const asset = await bringFont(deps.artifacts, actorOf(ctx), ctx.orgId, fileId, str(op.font_file));
       brought.set(index, { id: asset.id, ...asset.font });
     } catch (error) {
-      throw new OpError(index, "add_font", error);
+      throw new OpError(index, str(op.op), error);
     }
   }
   const { list, byFamily } = await fileFonts(deps.artifacts, ctx.orgId, fileId);
@@ -1168,7 +1168,7 @@ async function htmlPlans(
           plans.set(index, { layout, at: { x: num(op.x) ?? 0, y: num(op.y) ?? 0 }, pictures });
         }
       } catch (error) {
-        throw new OpError(index, "add_html", error);
+        throw new OpError(index, str(op.op), error);
       }
     }
   } finally {
