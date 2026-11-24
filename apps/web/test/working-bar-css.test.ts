@@ -106,7 +106,9 @@ test("what ships draws the working row's rings with transforms only, still with 
   // The rings take no room: they reach into the row's gap, behind and in front of the face.
   expect(last(".ac-orbit>.ac-orbit__front", "position")).toBe("absolute");
   expect(last(".ac-orbit>.ac-orbit__back", "position")).toBe("absolute");
-  expect(last(".ac-orbit>.ac-orbit__back", "z-index")).toBe("-1");
+  expect(last(".ac-orbit>.ac-orbit__back", "z-index")).toBe("var(--z-under)");
+  // Their box reaches past the row: the row clips it, or the conversation would scroll by it.
+  expect(last(".working-tail", "overflow")).toBe("clip");
   // Turning only where motion is welcome, and paused off screen.
   const moving = atRule(all, "@media (prefers-reduced-motion: no-preference)");
   expect(declarations(moving, ".ac-orbit__spin").find(([p]) => p === "animation")?.[1]).toContain("ac-orbit-turn");
@@ -123,6 +125,12 @@ test("what ships draws the working row's rings with transforms only, still with 
   const line = ".working-tail>.working-tail__body>.working-tail__line.ac-typing[data-active]";
   expect(last(line, "max-height")).toBe("none");
   expect(last(line, "font-size")).toBe("var(--msg-text)");
-  // What it did so far wraps, never cut.
+  // Its words, and what it did so far, wrap: never cut.
+  expect(
+    last(
+      ".working-tail>.working-tail__body>.working-tail__line.ac-typing[data-active] .ac-typing__text",
+      "white-space",
+    ),
+  ).toBe("normal");
   expect(last(".working-tail__trail>li", "overflow-wrap")).toBe("anywhere");
 });

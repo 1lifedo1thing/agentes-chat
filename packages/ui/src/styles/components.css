@@ -9357,7 +9357,8 @@ html:not([data-pointer]) button.ac-tools__row:focus-visible {
 /*
  * An agent at work (`OrbitGlyph`): rings orbit its glyph, their far halves behind it and their near halves in front,
  * in its colour (`--orbit`) and two neighbours mixed from it (`orbitColors`). The overlay is 3.6 glyphs wide and takes no room
- * (it reaches into the row's gap). Only transforms move; reduced motion draws them still, and off screen they pause.
+ * (it reaches into the row's gap), but its box counts as overflow: the row holding it clips (`overflow: clip`), or a
+ * scrolling list would scroll by it. Only transforms move; reduced motion draws them still, and off screen they pause.
  */
 .ac-orbit {
   position: relative;
@@ -9373,13 +9374,13 @@ html:not([data-pointer]) button.ac-tools__row:focus-visible {
   pointer-events: none;
 }
 .ac-orbit > .ac-orbit__back {
-  z-index: -1;
+  z-index: var(--z-under);
 }
 .ac-orbit > :not(svg) {
   position: relative;
 }
 .ac-orbit > .ac-orbit__front {
-  z-index: 1;
+  z-index: var(--z-raised);
 }
 .ac-orbit__ring {
   --ring: var(--orbit);

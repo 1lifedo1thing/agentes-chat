@@ -7597,6 +7597,8 @@ html:not([data-pointer]) .run-continue:focus-visible {
   align-items: flex-start;
   gap: var(--space-3);
   padding: var(--msg-block) var(--space-4);
+  /* The rings' box reaches past the row: as the conversation's end, it would scroll the list by it. */
+  overflow: clip;
 }
 /* An agent in its browser: the whole row opens the live view; the globe says so. */
 .working-tail[data-browser="true"] {
@@ -7634,13 +7636,29 @@ html:not([data-pointer]) .run-continue:focus-visible {
   font-size: var(--msg-text);
   line-height: var(--msg-line);
 }
-/* Short of room, who types beside it goes to a line of its own, whole: never a word a line. */
-.working-tail__line.ac-typing {
+/*
+ * Short of room, its pieces wrap whole (who types beside it to a line of its own), and its words wrap rather than end
+ * in "…": the row has the room a bar above the composer had not. Its globe and "Ver" end the line, as the bar's did.
+ */
+.working-tail > .working-tail__body > .working-tail__line.ac-typing[data-active] {
   flex-wrap: wrap;
   row-gap: 0;
 }
-.working-tail__line .ac-typing__also {
-  white-space: nowrap;
+.working-tail > .working-tail__body > .working-tail__line.ac-typing[data-active] .ac-typing__text {
+  flex-wrap: wrap;
+  overflow: visible;
+  white-space: normal;
+}
+.working-tail__line :is(.ac-typing__agents, .ac-typing__people, .ac-typing__group, .ac-typing__typers, .ac-typing__also) {
+  flex-wrap: wrap;
+  overflow: visible;
+  white-space: normal;
+}
+.working-tail__line > :is(.ac-typing__browser, .ac-typing__sep) {
+  margin-left: auto;
+}
+.working-tail__line > .ac-typing__browser ~ .ac-typing__sep {
+  margin-left: 0;
 }
 /* What it did so far: the newest last, older ones as "+N". Each line wraps, never cut. */
 .working-tail__trail {
