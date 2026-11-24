@@ -2340,7 +2340,7 @@ export function workspaceComputerText({ billing }: WorkspaceComputer) {
     "# The computer",
     `The workspace computer is the agents' computer, always on and self-updating. When full, work queues: stop what can wait (Task manager), one heavy job at a time. ${
       billing
-        ? "Past that: another workspace, on its own plan, has its own computer."
+        ? "Past that: a bigger plan may bring a bigger one (Settings › Plan and billing); another workspace, on its own plan, has its own."
         : "Past that: only whoever runs this server can give it a bigger one."
     } People may connect their own devices (computers, phones) under Settings › Devices; suggest it when a task needs a phone, a Mac or more power.`,
   ].join("\n");
