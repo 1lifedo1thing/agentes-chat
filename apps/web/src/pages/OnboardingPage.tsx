@@ -194,8 +194,9 @@ export function OnboardingPage() {
   const paid = usePaidReturn(orgId ?? "", held);
   useQuery({ ...meQuery(api), enabled: paid, refetchInterval: PAID_POLL_MS });
   // Once the plan is on, the moment it turned on (ADR 0079): the plan step stays, the team awake on it, with the step
-  // that follows as its one way on. Once per payment, never on a plain visit.
-  const paidMoment = usePaidMoment(orgId ?? "", orgId ? mine?.standing : { state: "hold", reason: null });
+  // that follows as its one way on. Once per payment, never on a plain visit. A workspace `/me` doesn't list yet (one
+  // made in this visit, before it is read again) counts as held: its standing is unknown, not in force.
+  const paidMoment = usePaidMoment(orgId ?? "", mine ? mine.standing : { state: "hold", reason: null });
   const moment = paidMoment.moment;
   // Made here as "For me", one being set up that is, or "For me" picked and not made yet: the rail shows the personal
   // path from the first question on (ADR 0159).
@@ -785,6 +786,8 @@ export function OnboardingPage() {
           onGo={(i) => {
             // Back on the name, its field holds the saved one, to change or clear.
             if (steps[i] === "name") setOrg(name);
+            // The paid moment holds the plan step only until the person goes elsewhere.
+            paidMoment.done();
             setPicked(steps[i] ?? null);
           }}
           doneLabel={t("onboarding.stepDone")}

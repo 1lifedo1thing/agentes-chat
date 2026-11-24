@@ -741,6 +741,22 @@ describe("a workspace being set up resumes from its data", () => {
     expect(heading()).toBe(CONNECT);
   });
 
+  test("the moment never holds the rail: a step picked on it opens at once", async () => {
+    const state = noAiYet(settingUp({ context: "Loja online", team: true, step: "computer" }));
+    state.authConfig = { billingUrl: "https://billing.example.com" };
+    plans(PLANS);
+    await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: createFakeApi(state) });
+    await settle(16);
+    expect(heading()).toBe("O seu time está de pé");
+    const current = () => document.querySelector(".onb__step[aria-current='step']")?.textContent;
+    const onPlan = current();
+    const first = document.querySelectorAll<HTMLButtonElement>(".onb__step")[0] as HTMLButtonElement;
+    expect(first.disabled).toBe(false);
+    await click(first, 12);
+    expect(heading()).not.toBe("O seu time está de pé");
+    expect(current()).not.toBe(onPlan);
+  });
+
   test("asked to delete the workspace being set up: its dialog, and nothing is finished", async () => {
     const state = settingUp();
     await renderApp("/onboarding?delete=1", { api: createFakeApi(state) });
