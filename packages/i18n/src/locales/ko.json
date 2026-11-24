@@ -12314,7 +12314,6 @@
     "count_other": "항목 {{count}}개",
     "searchHint": "검색 단축키",
     "who": "만든 사람",
-    "everyone": "모두",
     "kindMany": {
       "document": "문서",
       "table": "표",
@@ -12332,8 +12331,10 @@
     "view": "보기",
     "viewGrid": "그리드",
     "viewList": "목록",
-    "arrange": "정렬",
-    "arrangeValue": "정렬: {{group}}",
+    "display": "표시",
+    "displayValue": "표시: {{view}} · {{group}}",
+    "filterButton": "필터",
+    "filterValue": "{{filter}}: {{value}}",
     "groupBy": "그룹 기준",
     "group": {
       "date": "날짜",
@@ -12774,7 +12775,6 @@
     "added": "저장하면 {{repo}}이(가) 목록에 추가돼요."
   },
   "connectors": {
-    "title": "커넥터",
     "store": {
       "featured": "추천",
       "suggested": "제안",
@@ -12813,6 +12813,7 @@
       "addressPassword": "주소와 비밀번호",
       "composio": "Composio를 통해"
     },
+    "title": "커넥터",
     "add": "커넥터 추가",
     "personal": {
       "note": "이 연결은 나만 열 수 있어요. 내가 부탁할 때만 에이전트가 사용해요.",

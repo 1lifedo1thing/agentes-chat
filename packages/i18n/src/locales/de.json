@@ -12849,7 +12849,6 @@
     "count_other": "{{count}} Elemente",
     "searchHint": "Tastenkürzel für die Suche",
     "who": "Erstellt von",
-    "everyone": "Alle",
     "kindMany": {
       "document": "Dokumente",
       "table": "Tabellen",
@@ -12867,8 +12866,10 @@
     "view": "Ansicht",
     "viewGrid": "Raster",
     "viewList": "Liste",
-    "arrange": "Anordnen",
-    "arrangeValue": "Anordnen: {{group}}",
+    "display": "Darstellung",
+    "displayValue": "Darstellung: {{view}} · {{group}}",
+    "filterButton": "Filtern",
+    "filterValue": "{{filter}}: {{value}}",
     "groupBy": "Gruppieren nach",
     "group": {
       "date": "Datum",
@@ -13325,7 +13326,6 @@
     "added": "{{repo}} kommt beim Speichern auf die Liste."
   },
   "connectors": {
-    "title": "Konnektoren",
     "store": {
       "featured": "Empfohlen",
       "suggested": "Vorgeschlagen",
@@ -13368,6 +13368,7 @@
       "addressPassword": "Adresse und Passwort",
       "composio": "Über Composio"
     },
+    "title": "Konnektoren",
     "add": "Konnektor hinzufügen",
     "personal": {
       "note": "Nur du öffnest diese Verbindungen. Deine Agenten verwenden sie nur, wenn du sie darum bittest.",

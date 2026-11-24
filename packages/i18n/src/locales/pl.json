@@ -13836,7 +13836,6 @@
     "count_other": "{{count}} elementu",
     "searchHint": "Skrót do wyszukiwania",
     "who": "Autor",
-    "everyone": "Wszyscy",
     "kindMany": {
       "document": "Dokumenty",
       "table": "Tabele",
@@ -13854,8 +13853,10 @@
     "view": "Widok",
     "viewGrid": "Siatka",
     "viewList": "Lista",
-    "arrange": "Układ",
-    "arrangeValue": "Układ: {{group}}",
+    "display": "Wyświetlanie",
+    "displayValue": "Wyświetlanie: {{view}} · {{group}}",
+    "filterButton": "Filtr",
+    "filterValue": "{{filter}}: {{value}}",
     "groupBy": "Grupuj według",
     "group": {
       "date": "Data",
@@ -14340,7 +14341,6 @@
     "added": "{{repo}} trafi na listę po zapisaniu."
   },
   "connectors": {
-    "title": "Konektory",
     "store": {
       "featured": "Wyróżnione",
       "suggested": "Sugerowane",
@@ -14391,6 +14391,7 @@
       "addressPassword": "Adres i hasło",
       "composio": "Przez Composio"
     },
+    "title": "Konektory",
     "add": "Dodaj konektor",
     "personal": {
       "note": "Te połączenia otwierasz tylko ty. Twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",

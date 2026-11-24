@@ -13315,7 +13315,6 @@ export const ptBR = {
     count_other: "{{count}} itens",
     searchHint: "Atalho para buscar",
     who: "Quem fez",
-    everyone: "Todos",
     kindMany: {
       document: "Documentos",
       table: "Tabelas",
@@ -13333,8 +13332,6 @@ export const ptBR = {
     view: "Visualização",
     viewGrid: "Grade",
     viewList: "Lista",
-    arrange: "Organizar",
-    arrangeValue: "Organizar: {{group}}",
     display: "Exibição",
     displayValue: "Exibição: {{view}} · {{group}}",
     filterButton: "Filtro",

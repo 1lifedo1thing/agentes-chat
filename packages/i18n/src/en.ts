@@ -13317,7 +13317,6 @@ export const en = {
     count_other: "{{count}} items",
     searchHint: "Shortcut to search",
     who: "Made by",
-    everyone: "Everyone",
     kindMany: {
       document: "Documents",
       table: "Tables",
@@ -13335,8 +13334,6 @@ export const en = {
     view: "View",
     viewGrid: "Grid",
     viewList: "List",
-    arrange: "Arrange",
-    arrangeValue: "Arrange: {{group}}",
     display: "Display",
     displayValue: "Display: {{view}} · {{group}}",
     filterButton: "Filter",

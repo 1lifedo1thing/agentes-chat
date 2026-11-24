@@ -13336,7 +13336,6 @@
     "count_other": "{{count}} éléments",
     "searchHint": "Raccourci de recherche",
     "who": "Créé par",
-    "everyone": "Tout le monde",
     "kindMany": {
       "document": "Documents",
       "table": "Tableaux",
@@ -13354,8 +13353,10 @@
     "view": "Affichage",
     "viewGrid": "Grille",
     "viewList": "Liste",
-    "arrange": "Organiser",
-    "arrangeValue": "Organiser : {{group}}",
+    "display": "Affichage",
+    "displayValue": "Affichage : {{view}} · {{group}}",
+    "filterButton": "Filtre",
+    "filterValue": "{{filter}} : {{value}}",
     "groupBy": "Grouper par",
     "group": {
       "date": "Date",
@@ -13828,7 +13829,6 @@
     "added": "{{repo}} rejoindra la liste à l'enregistrement."
   },
   "connectors": {
-    "title": "Connecteurs",
     "store": {
       "featured": "À la une",
       "suggested": "Suggéré",
@@ -13875,6 +13875,7 @@
       "addressPassword": "Adresse et mot de passe",
       "composio": "Via Composio"
     },
+    "title": "Connecteurs",
     "add": "Ajouter un connecteur",
     "personal": {
       "note": "Vous seul ouvrez ces connexions. Vos agents les utilisent seulement quand vous le demandez.",
