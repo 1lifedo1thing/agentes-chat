@@ -347,8 +347,9 @@ export function createRealtime(deps: RealtimeDeps) {
     texts.set(key, text);
     sendText(ws, text);
   };
-  // A new message reaches its members' sockets on this replica as `channel.activity` (no content): their lists
-  // count it as unread without subscribing to every channel. The author's own sockets never hear it.
+  // A new message reaches its members' sockets on this replica as `channel.activity`, with the line their
+  // conversation lists show of it (`activityLine`): their row is patched without subscribing to every channel or
+  // reading the list again. The author's own sockets never hear it.
   // ponytail: one audience query per message per replica with sockets; a per-channel member cache if that shows up.
   const browsers = new Set<BrowserSocket>();
   /** Open sockets by person, and by person, workspace and app instance (`tab`). */
@@ -357,20 +358,25 @@ export function createRealtime(deps: RealtimeDeps) {
   const tabKey = (data: BrowserSocketData) => (data.tab ? `${data.user.id}:${data.orgId}:${data.tab}` : null);
   deps.pubsub.subscribe(chatActivityTopic, (raw) => {
     if (browsers.size === 0) return;
-    const { channelId, threadId, authorUserId, mentionedUserIds } = raw as {
+    const { channelId, threadId, authorUserId, mentionedUserIds, line } = raw as {
       channelId?: unknown;
       threadId?: unknown;
       authorUserId?: unknown;
       mentionedUserIds?: unknown;
+      line?: unknown;
     };
     if (typeof channelId !== "string" || !UUID.test(channelId)) return;
     const thread = typeof threadId === "string" && UUID.test(threadId) ? threadId : null;
     const mentioned = Array.isArray(mentionedUserIds)
       ? mentionedUserIds.filter((id): id is string => typeof id === "string")
       : [];
+    const message = line && typeof line === "object" && typeof (line as { id?: unknown }).id === "string" ? line : null;
     void activityAudience(deps.db, channelId, thread, mentioned)
       .then(({ orgId, dm, userIds }) => {
         const event = { type: "channel.activity", channelId, threadId: thread, dm };
+        // Two frames at most, each stringified once: with the line, a socket's person is mentioned in it or not.
+        const plain = message ? { ...event, message, mentioned: false } : event;
+        const ofMentioned = message ? { ...event, message, mentioned: true } : event;
         for (const ws of browsers)
           if (
             ws.readyState === 1 &&
@@ -378,7 +384,7 @@ export function createRealtime(deps: RealtimeDeps) {
             ws.data.user.id !== authorUserId &&
             userIds.has(ws.data.user.id)
           )
-            sendEvent(ws, event, { scope: "user" });
+            sendEvent(ws, mentioned.includes(ws.data.user.id) ? ofMentioned : plain, { scope: "user" });
       })
       .catch(() => {});
   });
