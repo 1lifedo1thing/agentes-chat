@@ -51,6 +51,7 @@ import { sha256 } from "../crypto";
 import { provenReadOnly } from "../databases/guard";
 import { errorNumber, isUnexpectedError, ToolOffError } from "../errors";
 import { cutMarked, cutText, inertJson, inertLinks, pgSafeJson, pgSafeText } from "../format";
+import { gitVerbOf } from "../git/hosts/refs";
 import { mergeReposOfCall, recordMergeDone, reposOfGithubCall } from "../git/repos";
 import { recordRead } from "../outbound";
 import { ownerOnlyPerson, personalLostNote } from "../personal-use";
@@ -217,7 +218,7 @@ export async function rememberKinds(
 /** Our own tools whose job is asking a person: the agent chose to ask, so one that never asks still does. */
 const ASKING_TOOLS = new Set(["request_approval", REQUEST_PERMISSION_TOOL, "send_feedback"]);
 export const asksByChoice = (tool: Pick<ToolDefinition, "name" | "scope" | "connectionId">) =>
-  tool.connectionId ? tool.name === "request_branch_push" && serverGitTool(tool) : ASKING_TOOLS.has(tool.name);
+  tool.connectionId ? gitVerbOf(tool) === "request_branch_push" : ASKING_TOOLS.has(tool.name);
 
 /**
  * "Nunca perguntar" (`agents.approvals_level` = `never`, ADR 0173 as amended 2026-11-12): whether a call of this tool
@@ -336,10 +337,7 @@ const TOOL_NAME = /^[a-zA-Z0-9_-]{1,64}$/;
 /** The most of a tool's output the model gets. */
 export const MAX_RESULT_CHARS = 50_000;
 /** Server-owned Git tools have a connection ID only to use that connection's credential. */
-const serverGitTool = (tool: Pick<ToolDefinition, "name" | "scope">) =>
-  (tool.name === "git_clone" && tool.scope === "github:git.read") ||
-  (tool.name === "open_pull_request" && tool.scope === "github:pr.write") ||
-  ((tool.name === "delete_branches" || tool.name === "request_branch_push") && tool.scope === "github:git.write");
+const serverGitTool = (tool: Pick<ToolDefinition, "name" | "scope">) => gitVerbOf(tool) !== null;
 /**
  * One of the server's own tools, never a connected app's: its name is written here, not by a workspace or by the
  * server it connected.

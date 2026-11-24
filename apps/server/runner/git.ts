@@ -10,6 +10,7 @@ import {
   type GitSyncRepo,
   type GitSyncRequest,
   isGitRepoName,
+  isGitRepoPath,
   type MachineReplies,
 } from "@agenteschat/adapters/machine-protocol";
 import { RunnerError } from "./errors";
@@ -684,7 +685,7 @@ export async function gitSync(ctx: GitContext, req: GitSyncRequest): Promise<Mac
   if (!Array.isArray(req.repos)) throw new RunnerError("bad_request", "repos must be a list");
   const wanted: { repo: string; dir: string; clone: boolean; github?: string }[] = [];
   for (const r of req.repos.slice(0, GIT_SYNC_LIMITS.repos)) {
-    if (!isGitRepoName(r?.repo)) throw new RunnerError("bad_request", "repo must be owner/name");
+    if (!isGitRepoPath(r?.repo)) throw new RunnerError("bad_request", "repo must be a repository's path");
     if (r.github !== undefined && (typeof r.github !== "string" || !GITHUB_APP_TOKEN.test(r.github))) {
       throw new RunnerError("bad_request", "github is not a GitHub App token");
     }

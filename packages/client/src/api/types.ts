@@ -2472,6 +2472,8 @@ export interface ConnectorDef {
   soon?: boolean;
   /** A connector of ours that needs a developer app this self-hosted server hasn't registered (ADR 0170). */
   needsApp?: boolean;
+  /** A git host at an address of one's own: the connect form asks for it (`required`) or offers it. */
+  address?: "optional" | "required";
   /** Connects through Composio (ADR 0107): its page signs in. Unavailable on a server without Composio. */
   via?: "composio";
   /** Where it connects, by the way this server picked (a `remote_mcp` entry's address). */
@@ -2557,7 +2559,7 @@ export interface GitHubAppInfo {
 
 /** A repository the organization's GitHub reaches. */
 export interface GitHubRepository {
-  /** `owner/name`. */
+  /** `owner/name`; on another git host, with the host first (`gitlab:group/project`). */
   fullName: string;
   owner: string;
   name: string;
@@ -2568,8 +2570,22 @@ export interface GitHubRepository {
 /** The repositories the organization's GitHub reaches (its connection and the app's installations), by account. */
 export interface GitHubRepositories {
   connected: boolean;
-  accounts: { login: string; type: string; repositories: GitHubRepository[] }[];
+  accounts: GitHostAccount[];
+  /** What the organization's other git hosts reach (GitLab, Bitbucket), by group or workspace. */
+  elsewhere?: GitHostAccount[];
   truncated: boolean;
+}
+
+/** An account, group or workspace of a git host and its repositories. */
+export interface GitHostAccount {
+  /** `github`, `gitlab`, `bitbucket`; absent from an older server: GitHub. */
+  host?: string;
+  hostLabel?: string;
+  /** What its repositories' names start with, before the last slash (`acme`, `gitlab:acme/web`). */
+  prefix?: string;
+  login: string;
+  type: string;
+  repositories: GitHubRepository[];
 }
 
 /** The organizations the GitHub connection reaches now (`null`: GitHub didn't answer) and GitHub's page to grant more. */

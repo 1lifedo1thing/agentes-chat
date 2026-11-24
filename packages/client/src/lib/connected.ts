@@ -324,3 +324,7 @@ export const personalOfParts = (t: TFunction) => {
   const [before = "", after = ""] = t("connectors.personal.of", { name: "\u0000" }).split("\u0000");
   return { before, after };
 };
+
+/** The connectors that are git hosts (engine `git/hosts/refs.ts`): a person's own is their account in code sessions. */
+const GIT_HOST_CONNECTORS = new Set(["github", "gitlab", "bitbucket", "git"]);
+export const isGitHostConnector = (id: string | undefined) => Boolean(id && GIT_HOST_CONNECTORS.has(id));

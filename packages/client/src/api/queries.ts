@@ -2991,8 +2991,13 @@ export function useConnectWithKey(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { connector: string; apiKey: string; label?: string; personal?: boolean }) =>
-      api.connectors.connectWithKey(orgId, input),
+    mutationFn: (input: {
+      connector: string;
+      apiKey: string;
+      label?: string;
+      personal?: boolean;
+      serverUrl?: string;
+    }) => api.connectors.connectWithKey(orgId, input),
     // A new connection is every agent's: their access trees change too, and so do the repositories GitHub reaches.
     onSuccess: () =>
       Promise.all([

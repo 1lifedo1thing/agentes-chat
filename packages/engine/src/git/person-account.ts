@@ -3,49 +3,48 @@ import { and, type Database, desc, eq, inArray, isNull, schema, sql } from "@age
 import { runAuthorityById, UUID } from "../authority";
 import { TtlCache } from "../cache";
 import type { ConnectorConnection } from "../connectors/connections";
+import { GIT_HOSTS, type GitHostId, isHostedRepo, parseRepoRef } from "./hosts";
 
 const { agentRuns, channels, codeSessions, users } = schema;
 
 /**
- * A person's own GitHub account in a code session (ADR 0215 §5a). A member may connect GitHub as their own
- * (`connector_connections.owner_user_id`, ADR 0099): it has no tools of its own and is never the workspace's GitHub.
- * It is who the work goes as when its person asks in a code session, on that session's repository alone:
+ * A person's own account on a git host in a code session (ADR 0215 §5a, ADR 0220). A member may connect GitHub,
+ * GitLab, Bitbucket or a git server as their own (`connector_connections.owner_user_id`, ADR 0099): it has no tools
+ * of its own and is never the workspace's connection. It is who the work goes as when its person asks in a code
+ * session, on that session's repository alone:
  *
- * - the commits the agent makes are authored as them (`codeCommitAuthor`: their name and GitHub's no-reply address
+ * - the commits the agent makes are authored as them (`codeCommitAuthor`: their name and the host's no-reply address
  *   for that account, never their email), the agent still the co-author;
- * - the push of the session's branch reaches GitHub with their token (`personAccountOfPush`, in the git proxy);
+ * - the push of the session's branch reaches the host with their token (`personAccountOfPush`, in the git proxy);
  * - what the agent writes there (a pull request, a comment, an API commit) goes with their token too
- *   (`githubCallAuth`).
+ *   (`open_pull_request`, `githubCallAuth`).
  *
  * Their token stays on the server, as the workspace's does: the agent's computer gets a name and an address. A run
  * nobody asked for (a routine, a check that woke the agent), another conversation, another repository, a person who
- * left or who connected no account: the workspace's GitHub, as before. In a session with several people it follows
- * who asked that turn, so nobody acts as someone else.
+ * left or who connected no account: the workspace's connection, as before. In a session with several people it
+ * follows who asked that turn, so nobody acts as someone else.
  */
 export interface PersonAccount {
   personId: string;
-  /** The session's repository, `owner/name`. */
+  /** The session's repository, by its stored name (`owner/name`, `gitlab:group/project`). */
   repo: string;
+  host: GitHostId;
   connection: ConnectorConnection;
 }
 
-/** GitHub's id and login for an account, as its connection kept them when it was connected. */
+/** The account a connection kept when it was connected, when its host named one. */
 const accountOf = (c: Pick<ConnectorConnection, "accountId" | "accountLabel">) =>
-  c.accountId && /^\d{1,20}$/.test(c.accountId) && c.accountLabel && /^[A-Za-z0-9-]{1,39}$/.test(c.accountLabel)
-    ? { id: c.accountId, login: c.accountLabel }
-    : null;
+  c.accountId && c.accountLabel ? { id: c.accountId, login: c.accountLabel } : null;
 
-/** A person's own live GitHub connection whose account is known, if any. */
-export const ownGitHub = (connections: readonly ConnectorConnection[], personId: string) =>
-  connections.find(
-    (c) => c.connector === "github" && c.ownerUserId === personId && c.status === "active" && accountOf(c) !== null,
-  ) ?? null;
+/** A person's own live connection to a git host, if any. */
+export const ownAccount = (connections: readonly ConnectorConnection[], personId: string, host: GitHostId) =>
+  connections.find((c) => c.connector === host && c.ownerUserId === personId && c.status === "active") ?? null;
 
 // Who is behind a run and which session it is in never change: read once per run. The connection is read each time
 // (`activeConnections` forgets it the moment it is removed).
-const behind = new TtlCache<{ personId: string; repo: string } | null>(10 * 60_000);
+const behind = new TtlCache<{ personId: string; repo: string; host: GitHostId } | null>(10 * 60_000);
 
-/** The account a run's work on its code session's repository goes as, or null (the workspace's GitHub). */
+/** The account a run's work on its code session's repository goes as, or null (the workspace's connection). */
 export async function personAccountOfRun(
   db: Database,
   orgId: string,
@@ -63,10 +62,11 @@ export async function personAccountOfRun(
       )
       .where(and(eq(agentRuns.orgId, orgId), eq(agentRuns.id, runId), eq(channels.kind, "code")))
       .limit(1);
-    // A project that lives only on the computer has no repository on GitHub.
-    if (!run?.repo.includes("/")) return null;
+    // A project that lives only on the computer is on no host.
+    const ref = run && isHostedRepo(run.repo) ? parseRepoRef(run.repo) : null;
+    if (!run || !ref) return null;
     const authority = await runAuthorityById(db, orgId, runId);
-    return authority.kind === "person" ? { personId: authority.personId, repo: run.repo } : null;
+    return authority.kind === "person" ? { personId: authority.personId, repo: run.repo, host: ref.host } : null;
   });
   if (!who) return null;
   // Read when asked: the machine hub and the sandbox load this file, and these load them.
@@ -74,12 +74,12 @@ export async function personAccountOfRun(
     import("../connectors/connections"),
     import("../organizations"),
   ]);
-  const connection = ownGitHub(await activeConnections(db, orgId), who.personId);
+  const connection = ownAccount(await activeConnections(db, orgId), who.personId, who.host);
   if (!connection || !(await getMembership(db, who.personId, orgId))) return null;
   return { ...who, connection };
 }
 
-/** Whether `repo` (`owner/name`, any capitals) is the repository a run's person acts as themselves on. */
+/** Whether `repo` (its stored name, any capitals) is the repository a run's person acts as themselves on. */
 export const onSessionRepo = (account: PersonAccount, repo: string) =>
   account.repo.toLowerCase() === repo.toLowerCase();
 
@@ -128,8 +128,8 @@ export async function personAccountOfPush(
 
 /**
  * Who a run's commits are authored as, when it isn't the agent: the person who asked in a code session, by the
- * GitHub account they connected as their own. Sent with the session's turn and commands (`AgentScope.author`); the
- * agent still ends each commit with its own `Co-authored-by` line.
+ * account they connected as their own, where its host has an address for it. Sent with the session's turn and
+ * commands (`AgentScope.author`); the agent still ends each commit with its own `Co-authored-by` line.
  */
 export async function codeCommitAuthor(
   db: Database,
@@ -137,12 +137,15 @@ export async function codeCommitAuthor(
   runId: string | null | undefined,
 ): Promise<CommitAuthor | null> {
   const account = await personAccountOfRun(db, orgId, runId);
-  const github = account && accountOf(account.connection);
-  if (!account || !github) return null;
+  const named = account && accountOf(account.connection);
+  if (!account || !named) return null;
+  const host = GIT_HOSTS[account.host];
+  const email = host.commitEmail?.(host.at(account.connection.serverUrl, fetch), named);
+  if (!email) return null;
   const [person] = await db.select({ name: users.name }).from(users).where(eq(users.id, account.personId));
   const { trailerName } = await import("./signature");
   return {
-    name: trailerName(person?.name ?? "") || github.login,
-    email: `${github.id}+${github.login}@users.noreply.github.com`,
+    name: trailerName(person?.name ?? "") || named.login,
+    email,
   };
 }

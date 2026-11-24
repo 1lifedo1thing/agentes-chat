@@ -1156,10 +1156,13 @@ export interface ApiClient {
     catalog(): Promise<ConnectorCatalog>;
     /** The team's connections and the person's own (no secrets). `others`: also everyone else's personal ones (who manages connectors gets them, as read-only rows). */
     list(orgId: string, options?: { others?: boolean }): Promise<Connection[]>;
-    /** `personal`: the person's own connection, which any member adds (GitHub connects for the team only). */
+    /**
+     * `personal`: the person's own connection, which any member adds. `serverUrl`: a git host at an address of one's
+     * own (a company's GitLab, a git server).
+     */
     connectWithKey(
       orgId: string,
-      input: { connector: string; apiKey: string; label?: string; personal?: boolean },
+      input: { connector: string; apiKey: string; label?: string; personal?: boolean; serverUrl?: string },
     ): Promise<Connection>;
     /** Returns the provider URL to open; the server redirects back to `returnTo`. `personal`: the person's own. */
     startOAuth(orgId: string, connector: string, input: { returnTo: string; personal?: boolean }): Promise<string>;

@@ -1,4 +1,4 @@
-import type { CodeChangeStatus, CodeSession } from "@agenteschat/client";
+import { type CodeChangeStatus, type CodeSession, isLocalPlace } from "@agenteschat/client";
 import { chatHref } from "../links/logic";
 
 /*
@@ -32,7 +32,7 @@ export const sessionDiffHref = (sessionId: string, d: DiffOpen) =>
 export const shortBranch = (branch: string) => branch.replace(/^agentes\/[^/]+\//, "");
 
 /** A project only on the agent's computer: a name with no owner. */
-export const isLocalRepo = (repo: string) => repo !== "" && !repo.includes("/");
+export const isLocalRepo = (repo: string) => repo !== "" && isLocalPlace(repo);
 
 /** The sessions by project, as the web's list groups them: the project of the newest first, each newest first. */
 export function sessionsByRepo(

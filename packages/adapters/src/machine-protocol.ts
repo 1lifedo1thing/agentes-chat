@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 78;
+export const MACHINE_PROTOCOL_VERSION = 79;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -1843,6 +1843,18 @@ export const gitCheckoutDir = (repo: string) => `${GIT_CHECKOUTS_DIR}/${repo}`;
 export const isGitRepoName = (v: unknown): v is string =>
   typeof v === "string" &&
   /^[A-Za-z0-9_.-]{1,100}\/[A-Za-z0-9_.-]{1,100}$/.test(v) &&
+  v.split("/").every((part) => part !== "." && part !== "..");
+
+/**
+ * Protocol 79: `git.sync` takes a repository of any git host (ADR 0220), whose path may be deeper or shallower than
+ * GitHub's `owner/name` (`group/subgroup/project`, `project.git`); the proxy address it comes with says which host. An
+ * older runner refuses those, so the server asks it only for two-part paths.
+ */
+export const GIT_HOST_PATH_PROTOCOL = 79;
+/** A repository's path on its host: one to twenty-one parts, none of them `.` or `..`. */
+export const isGitRepoPath = (v: unknown): v is string =>
+  typeof v === "string" &&
+  /^[A-Za-z0-9_.-]{1,100}(\/[A-Za-z0-9_.-]{1,100}){0,20}$/.test(v) &&
   v.split("/").every((part) => part !== "." && part !== "..");
 
 /** Largest pieces of a `git.sync`. */

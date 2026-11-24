@@ -15454,6 +15454,21 @@ export const en = {
       adjust: "Adjust",
       ok: "Done",
     },
+    git: {
+      token: "Access token",
+      address: "Address",
+      addressHelp: {
+        gitlab: "Only for a GitLab your company runs itself. Left blank, it is gitlab.com.",
+        git: "Where the git server is, like https://git.company.com.",
+      },
+      tokenHelp: {
+        gitlab:
+          "A GitLab access token (personal, group or project) with the api and write_repository scopes. It stays on the server: agents' computers never get it.",
+        bitbucket:
+          "A workspace or repository access token with repository write and pull request write. With your own API token, type your Atlassian email, a colon and the token: you@company.com:TOKEN.",
+        git: "The token the server takes as git's password. If it wants a username, type username:token.",
+      },
+    },
     telegram: {
       token: "Bot token",
       steps:

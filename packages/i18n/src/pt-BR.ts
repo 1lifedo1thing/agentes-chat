@@ -15412,6 +15412,21 @@ export const ptBR = {
       adjust: "Ajustar",
       ok: "Pronto",
     },
+    git: {
+      token: "Token de acesso",
+      address: "Endereço",
+      addressHelp: {
+        gitlab: "Só para um GitLab que a sua empresa mesma hospeda. Em branco, é o gitlab.com.",
+        git: "Onde fica o servidor git, como https://git.empresa.com.",
+      },
+      tokenHelp: {
+        gitlab:
+          "Um token de acesso do GitLab (pessoal, de grupo ou de projeto) com os escopos api e write_repository. Ele fica no servidor: os computadores dos agentes nunca o recebem.",
+        bitbucket:
+          "Um token de acesso do workspace ou do repositório, com escrita em repositórios e em pull requests. Com o seu próprio token de API, escreva o seu email da Atlassian, dois-pontos e o token: voce@empresa.com:TOKEN.",
+        git: "O token que o servidor aceita como senha do git. Se ele pede um usuário, escreva usuario:token.",
+      },
+    },
     telegram: {
       token: "Token do bot",
       steps:

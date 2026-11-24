@@ -3,11 +3,16 @@ import { activeConnections, type ConnectorDeps } from "../connectors/connections
 import { teamGitHub } from "../connectors/own-github";
 import { NotFoundError } from "../errors";
 import { requirePermission } from "../organizations";
-import { connectionToken } from "./branches";
+import { connectionToken, hostConnectionToken } from "./branches";
 import { boundInstallations, type GitHubAppConfig, type GitHubHttp, installationToken } from "./github-app";
+import { GIT_HOST_IDS, type GitHostId, repoRefName, teamGitConnections } from "./hosts";
+import { hostAt } from "./hosts/reach";
 
 export interface GitHubRepositoryView {
-  /** `owner/name`, as GitHub spells it. */
+  /**
+   * The repository's name as it is stored and sent back: `owner/name` as GitHub spells it, `gitlab:group/project` on
+   * another host (ADR 0220).
+   */
   fullName: string;
   owner: string;
   name: string;
@@ -17,6 +22,11 @@ export interface GitHubRepositoryView {
 }
 
 export interface GitHubAccountView {
+  /** The git host these repositories are on (`github`, `gitlab`, `bitbucket`), and its name for people. */
+  host: string;
+  hostLabel: string;
+  /** What its repositories' names start with, before the last slash (`acme`, `gitlab:acme/web`). */
+  prefix: string;
   login: string;
   /** GitHub's `Organization` or `User`. */
   type: string;
@@ -25,9 +35,14 @@ export interface GitHubAccountView {
 
 /** The repositories the organization's GitHub reaches, by account. Never carries a token. */
 export interface OrgRepositoryListing {
-  /** GitHub is connected (a connection, or the app installed on some account). */
+  /** A git host is connected (a connection, or GitHub's app installed on some account). */
   connected: boolean;
   accounts: GitHubAccountView[];
+  /**
+   * What the organization's other git hosts reach (ADR 0220), by group or workspace: apart from GitHub's, which the
+   * screens about GitHub alone (its webhooks, skills from a repository) go on reading by themselves.
+   */
+  elsewhere: GitHubAccountView[];
   /** GitHub had more than we read (very large accounts). */
   truncated: boolean;
 }
@@ -74,8 +89,11 @@ export async function listOrgRepositories(
 ): Promise<OrgRepositoryListing> {
   await requirePermission(deps.db, actorId, orgId, "read");
   const now = deps.now?.() ?? Date.now();
-  const connection = teamGitHub(await activeConnections(deps.db, orgId));
-  const connectionId = connection?.id ?? null;
+  const connections = await activeConnections(deps.db, orgId);
+  const connection = teamGitHub(connections);
+  const others = teamGitConnections(connections).filter((c) => c.host.id !== "github" && c.host.repositories);
+  // Every git connection it was read with: one made, replaced or removed since shows at once.
+  const connectionId = [connection, ...others.map((o) => o.connection)].map((c) => c?.id ?? "").join(",") || null;
   const hit = cache.get(orgId);
   // A connection made, replaced or removed since shows at once (the app's events forget the listing themselves).
   if (hit && now - hit.at < TTL_MS && hit.connectionId === connectionId) return hit.value;
@@ -127,6 +145,9 @@ export async function listOrgRepositories(
     const [owner = "", name = r.name ?? ""] = (r.full_name ?? "").split("/");
     const key = owner.toLowerCase();
     const account = accounts.get(key) ?? {
+      host: "github",
+      hostLabel: "GitHub",
+      prefix: r.owner?.login ?? owner,
       login: r.owner?.login ?? owner,
       type: r.owner?.type ?? "User",
       repositories: [],
@@ -140,17 +161,57 @@ export async function listOrgRepositories(
     });
     accounts.set(key, account);
   }
+  // The other git hosts (ADR 0220): what each one's connection reaches, by the group or workspace it sits under.
+  const elsewhere: GitHubAccountView[] = [];
+  for (const { host, connection: c } of others) {
+    const token = await hostConnectionToken(deps.connectors, c).catch(() => null);
+    const listed = token
+      ? await host
+          .repositories?.(
+            hostAt(host, c.serverUrl, { http: deps.github?.fetch, resolveHost: deps.connectors.resolveHost }),
+            token,
+          )
+          .catch(() => null)
+      : null;
+    if (!listed) continue;
+    if (listed.truncated) truncated = true;
+    const groups = new Map<string, GitHubAccountView>();
+    for (const r of listed.repositories) {
+      const group = groups.get(r.under.toLowerCase()) ?? {
+        host: host.id,
+        hostLabel: host.label,
+        prefix: repoRefName({ host: host.id, path: r.under }),
+        login: r.under,
+        type: r.kind,
+        repositories: [],
+      };
+      group.repositories.push({
+        fullName: repoRefName({ host: host.id, path: r.path }),
+        owner: r.under,
+        name: r.name,
+        private: r.private,
+        updatedAt: r.updatedAt,
+      });
+      groups.set(r.under.toLowerCase(), group);
+    }
+    elsewhere.push(...groups.values());
+  }
   const recent = (a: GitHubRepositoryView, b: GitHubRepositoryView) =>
     (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "") || a.name.localeCompare(b.name);
-  const value: OrgRepositoryListing = {
-    connected: Boolean(connection) || installations.length > 0,
-    accounts: [...accounts.values()]
+  const sorted = (list: GitHubAccountView[]) =>
+    list
       .map((a) => ({ ...a, repositories: a.repositories.sort(recent) }))
-      // Organizations first, then people; by name.
+      // By host, organizations first, then people; by name.
       .sort(
         (a, b) =>
-          Number(a.type !== "Organization") - Number(b.type !== "Organization") || a.login.localeCompare(b.login),
-      ),
+          GIT_HOST_IDS.indexOf(a.host as GitHostId) - GIT_HOST_IDS.indexOf(b.host as GitHostId) ||
+          Number(a.type !== "Organization") - Number(b.type !== "Organization") ||
+          a.login.localeCompare(b.login),
+      );
+  const value: OrgRepositoryListing = {
+    connected: Boolean(connection) || installations.length > 0,
+    accounts: sorted([...accounts.values()]),
+    elsewhere: sorted(elsewhere),
     truncated,
   };
   cache.set(orgId, { at: now, connectionId, value });

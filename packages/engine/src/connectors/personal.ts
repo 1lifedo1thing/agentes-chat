@@ -9,7 +9,7 @@ import { can, type Membership, requirePermission } from "../organizations";
 import { ownerApprovers, personalUseCheck } from "../personal-use";
 import { ALL_TOOLS, grantedScopeKeys, grantKey, isAllowed, listAgentScopes, toolAccess } from "../tools/scopes";
 import type { ToolContext, ToolDefinition } from "../tools/types";
-import { isOwnGitHub } from "./own-github";
+import { isOwnGitAccount } from "./own-github";
 
 const { connectorConnections } = schema;
 type ConnectorConnection = typeof connectorConnections.$inferSelect;
@@ -135,7 +135,9 @@ export async function usableConnections(ctx: ToolContext, connections: Connector
   const held = (id: string) => [...ownGrants].some((k) => k.startsWith(`${id}|`) && !k.includes("|deny:"));
   return {
     // A person's own GitHub account has no tools: the team's GitHub tools go as them in their code sessions.
-    connections: connections.filter((c) => !isOwnGitHub(c) && (!c.ownerUserId || (held(c.id) && check(c.ownerUserId)))),
+    connections: connections.filter(
+      (c) => !isOwnGitAccount(c) && (!c.ownerUserId || (held(c.id) && check(c.ownerUserId))),
+    ),
     ownGrants,
   };
 }

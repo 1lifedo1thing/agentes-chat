@@ -9,35 +9,28 @@ import { ForbiddenError, NotFoundError, ValidationError } from "../errors";
 import { requirePermission } from "../organizations";
 import { approvalsLevelOf } from "../tools/run-policy";
 import type { ToolContext } from "../tools/types";
+import { refInList, repoEntry } from "./hosts";
 
 const { agentRepositories: table, agents } = schema;
 
 /**
- * The GitHub repositories an agent may use (`agent_repositories`): an
- * ordered list of `owner/name` or `owner/*` (a whole account). No list =
- * every repository the organization's GitHub reaches. The first entry is
- * where the agent starts when nobody names a repository. The git proxy and
- * the Tool Gateway check it on every GitHub call, reads included.
+ * The repositories an agent may use (`agent_repositories`): an ordered list of `owner/name` or `owner/*` (a whole
+ * account) on GitHub, and of `gitlab:group/project` or `gitlab:group/*` on another git host (ADR 0220). No list =
+ * every repository the organization's git connections reach. The first entry is where the agent starts when nobody
+ * names a repository. The git proxy checks it on every fetch and push, and the Tool Gateway on every GitHub call,
+ * reads included.
  */
 
 export const MAX_AGENT_REPOSITORIES = 100;
 const NAME = /^[A-Za-z0-9_.-]{1,100}$/;
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
-/** "owner/name", "owner/*", a GitHub URL or "owner/name.git" → "owner/name" or "owner/*"; null when it isn't one. */
-export function normalizeRepoEntry(input: string): string | null {
-  const s = input
-    .trim()
-    .replace(/^https?:\/\/github\.com\//i, "")
-    .replace(/^git@github\.com:/i, "")
-    .replace(/\/+$/, "")
-    .replace(/\.git$/i, "");
-  const [owner, name, ...rest] = s.split("/");
-  if (rest.length > 0 || !owner || !name || !NAME.test(owner)) return null;
-  if (name === "*") return `${owner}/*`;
-  if (!NAME.test(name) || name === "." || name === "..") return null;
-  return `${owner}/${name}`;
-}
+/**
+ * "owner/name", "owner/*", a GitHub URL or "owner/name.git" → "owner/name" or "owner/*"; another host's repository or
+ * group by its name there (`gitlab:group/project`, `gitlab:group/*`) or its address; null when it is none.
+ */
+export const normalizeRepoEntry = (input: string): string | null =>
+  repoEntry(input.replace(/^https?:\/\/github\.com\//i, ""));
 
 const REPO = /^([A-Za-z0-9_.-]{1,100})\/([A-Za-z0-9_.-]{1,100}?)(?:\.git)?$/;
 
@@ -54,16 +47,8 @@ export function parseRepo(input: string) {
   return { owner: m[1] as string, repo: m[2] as string };
 }
 
-/** Whether `owner/repo` is in the list (an empty list allows everything). Case-insensitive, like GitHub. */
-export function repoInList(list: readonly string[], owner: string, repo: string) {
-  if (list.length === 0) return true;
-  const o = owner.toLowerCase();
-  const full = `${o}/${repo.toLowerCase()}`;
-  return list.some((entry) => {
-    const e = entry.toLowerCase();
-    return e === full || e === `${o}/*`;
-  });
-}
+/** Whether GitHub's `owner/repo` is in the list (an empty list allows everything). Case-insensitive, like GitHub. */
+export const repoInList = (list: readonly string[], owner: string, repo: string) => refInList(list, `${owner}/${repo}`);
 
 /**
  * The list as it is saved: valid entries, no repeats, no repository that an
@@ -83,8 +68,8 @@ export function cleanRepoList(input: readonly string[]): { list: string[]; inval
     seen.add(entry.toLowerCase());
     valid.push(entry);
   }
-  const wholes = new Set(valid.filter((e) => e.endsWith("/*")).map((e) => e.slice(0, -2).toLowerCase()));
-  const list = valid.filter((e) => e.endsWith("/*") || !wholes.has(e.split("/")[0]?.toLowerCase() ?? ""));
+  const wholes = valid.filter((e) => e.endsWith("/*"));
+  const list = valid.filter((e) => e.endsWith("/*") || !refInList(wholes.length > 0 ? wholes : ["\0"], e));
   return { list, invalid };
 }
 
@@ -103,10 +88,8 @@ function withinRepos(current: readonly string[], next: readonly string[]) {
   if (current.length === 0) return true;
   if (next.length === 0) return false;
   const have = new Set(current.map((e) => e.toLowerCase()));
-  return next.every((entry) => {
-    const lower = entry.toLowerCase();
-    return have.has(lower) || have.has(`${lower.split("/")[0]}/*`);
-  });
+  // A repository under an account or group already in reach, or the same entry.
+  return next.every((entry) => have.has(entry.toLowerCase()) || (!entry.endsWith("/*") && refInList(current, entry)));
 }
 
 /** `GET …/agents/{id}/repositories` (any member). Empty = every repository. */
@@ -169,10 +152,7 @@ async function chosenMergeRepos(db: Executor, orgId: string, agentId: string) {
   return row?.repos ?? [];
 }
 
-const inReach = (list: readonly string[], entry: string) => {
-  const [owner = "", repo = ""] = entry.split("/");
-  return repoInList(list, owner, repo);
-};
+const inReach = (list: readonly string[], entry: string) => refInList(list, entry);
 
 /**
  * The repositories this agent merges in without asking: what its owner or an admin chose, within its repositories
@@ -336,8 +316,8 @@ export function repositoriesPrompt(list: readonly string[]): string {
   const say = (r: string) => (r.endsWith("/*") ? `every repository of ${r.slice(0, -2)} (${r})` : r);
   const first = list[0] as string;
   return [
-    "# Your GitHub repositories",
-    `You may only use these GitHub repositories, reading included: ${list.map(say).join(", ")}.`,
+    "# Your repositories",
+    `You may only use these repositories, reading included: ${list.map(say).join(", ")}.`,
     first.endsWith("/*")
       ? `When nobody names a repository, search the repositories of ${first.slice(0, -2)} first (search_code) and pick the one that fits; ask only if it stays unclear.`
       : `When nobody names a repository, work in ${first}.`,
