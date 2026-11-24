@@ -13,6 +13,7 @@
   - good-shift--fresh: the same list, whose last card is also drawn at content-visibility's placeholder first: in the
     frame its rows first show, Chromium lays them out twice (placeholders, then real sizes) and reports them moved from
     where the first pass put them, though that pass was never painted.
+  - bad-shift--fresh: the same list scrolled to its end a frame late: its rows were painted, then moved.
 -->
 <html lang="pt-BR">
   <head>
@@ -43,7 +44,7 @@
           box.style.height = "160px";
           box.textContent = "Carregado";
         });
-      } else if (twin === "bad-shift--overflow" || twin === "good-shift--overflow" || twin === "good-shift--fresh") {
+      } else if (twin?.endsWith("-shift--overflow") || twin?.endsWith("-shift--fresh")) {
         later(() => {
           const list = document.createElement("section");
           list.className = "channel__messages";
@@ -61,7 +62,7 @@
             row.textContent = `Mensagem ${i + 1}`;
             list.append(row);
           }
-          if (twin === "good-shift--fresh") {
+          if (twin.endsWith("--fresh")) {
             const card = document.createElement("div");
             card.className = "card";
             card.style.cssText = "content-visibility: auto; contain-intrinsic-size: auto 24px";

@@ -312,6 +312,7 @@ export const TWINS = [
   "good-shift--pinned",
   "bad-shift--overflow",
   "good-shift--overflow",
+  "bad-shift--fresh",
   "good-shift--fresh",
 ];
 
