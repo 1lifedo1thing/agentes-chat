@@ -180,6 +180,7 @@ import type {
   Member,
   Memory,
   Message,
+  MessageCards,
   MessagePin,
   ModelTier,
   MoveAgentsInput,
@@ -1726,7 +1727,7 @@ export const messagesQuery = (api: ApiClient, orgId: string, channelId: string) 
     queryFn: async ({ client, queryKey }) => {
       const start = client.getQueryData<Message[]>(queryKey);
       return withLocalCopies(
-        await api.chat.messages(orgId, channelId, { limit: MESSAGES_PAGE }),
+        await api.chat.messages(orgId, channelId, { limit: MESSAGES_PAGE, onCards: cardsInto(client, orgId) }),
         client.getQueryData<Message[]>(queryKey),
         outbox.has,
         start,
@@ -1735,6 +1736,25 @@ export const messagesQuery = (api: ApiClient, orgId: string, channelId: string) 
     staleTime: 30_000,
     gcTime: 30 * 60_000,
   });
+
+/**
+ * A page's cards (`include=cards`) into the caches their cards read (`useArtifact`, `usePoll`, `useChoices`,
+ * `useSharedBlock`): they draw whole with the messages, never a placeholder that changes size after. A card shown at
+ * its head is kept under the head's key too, which is what a ref with no version reads.
+ */
+export function seedCards(qc: QueryClient, orgId: string, cards: MessageCards) {
+  for (const a of cards.artifacts) {
+    qc.setQueryData(keys.artifact(orgId, a.id, a.shownVersion), a);
+    if (a.shownVersion === a.version) qc.setQueryData(keys.artifact(orgId, a.id), a);
+  }
+  for (const p of cards.polls) qc.setQueryData(keys.poll(orgId, p.id), p);
+  for (const c of cards.choices) qc.setQueryData(keys.choices(orgId, c.id), c);
+  for (const b of cards.blocks)
+    qc.setQueryData<BlockState>(keys.blockState(orgId, b.id, b.version), (old) => newerBlockState(old, b));
+}
+
+/** `onCards` for a page read: its cards into the caches. */
+export const cardsInto = (qc: QueryClient, orgId: string) => (cards: MessageCards) => seedCards(qc, orgId, cards);
 
 export const useMessages = (orgId: string, channelId: string, enabled = true) => {
   const api = useApi();
@@ -2081,7 +2101,11 @@ export async function catchUpChannel(
   const held = recent ? idsInLists(qc, prefix) : null;
   const read = (rootId: string | null, page: number) => {
     const ask = (limit: number) =>
-      api.chat.messages(orgId, channelId, rootId ? { threadId: rootId, limit } : { limit });
+      api.chat.messages(orgId, channelId, {
+        ...(rootId ? { threadId: rootId } : {}),
+        limit,
+        onCards: cardsInto(qc, orgId),
+      });
     if (!recent || !held) return ask(page);
     return ask(recent).then((latest) => {
       // A thread's read starts with its root whatever the limit: only its replies tell how far back it reached.
@@ -4159,12 +4183,13 @@ export function useRemoveCredentialCopies(orgId: string) {
   });
 }
 
-export const useAgentDetail = (orgId: string, agentId: string) => {
+export const useAgentDetail = (orgId: string, agentId: string, enabled = true) => {
   const api = useApi();
   return useQuery({
     queryKey: keys.agentDetail(orgId, agentId),
     queryFn: () => api.agents.detail(orgId, agentId),
     staleTime: 15_000,
+    enabled,
   });
 };
 
@@ -4949,7 +4974,10 @@ export function useCardProposals(orgId: string, ids: string[]) {
  * (profile card, hero, team), and the apps (the Access tab and the matrix).
  */
 function refreshAccepted(qc: QueryClient, orgId: string, decided: Proposal[]) {
-  const accepted = decided.filter((p) => p.status === "accepted" && p.target.type !== "org_context");
+  // Applied or put back (ADR 0219): either way what it changed on the agent's page moved.
+  const accepted = decided.filter(
+    (p) => (p.status === "accepted" || p.status === "undone") && p.target.type !== "org_context",
+  );
   if (accepted.length === 0) return;
   void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
   void qc.invalidateQueries({ queryKey: keys.team(orgId) });
@@ -4964,7 +4992,7 @@ function refreshAccepted(qc: QueryClient, orgId: string, decided: Proposal[]) {
     void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
 }
 
-/** The proposals and the sidebar's count of them: after a decision here, or a `proposal.*` event from elsewhere. */
+/** The proposals and the overview: after an undo here, or a `proposal.*` event from elsewhere. */
 export function refreshProposals(qc: QueryClient, orgId: string) {
   void qc.invalidateQueries({ queryKey: keys.overview(orgId) });
   return qc.invalidateQueries({ queryKey: keys.proposals(orgId) });
@@ -4975,83 +5003,16 @@ function editProposals(qc: QueryClient, orgId: string, update: (list: Proposal[]
   qc.setQueriesData<Proposal[]>({ queryKey: keys.proposals(orgId) }, (list) => (list ? update(list) : list));
 }
 
-/** Pending proposals decided before the answer, in every list of them. */
-function proposalEdits(orgId: string, ids: readonly string[], decision: "accept" | "refuse"): CacheEdit[] {
-  const status = decision === "accept" ? ("accepted" as const) : ("refused" as const);
-  return [
-    editAll<Proposal[]>(keys.proposals(orgId), (list) =>
-      list.some((p) => ids.includes(p.id) && p.status === "pending")
-        ? list.map((p) => (ids.includes(p.id) && p.status === "pending" ? { ...p, status } : p))
-        : list,
-    ),
-  ];
-}
-
-export function useDecideProposal(orgId: string) {
+/** Undo on a change an agent applied (ADR 0219): the row comes back `undone`, and what it changed is read again. */
+export function useUndoProposal(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { id: string; decision: "accept" | "refuse"; text?: string }) =>
-      input.decision === "accept"
-        ? api.proposals.accept(orgId, input.id, input.text)
-        : api.proposals.refuse(orgId, input.id),
-    // The page explains a stale proposal (409) itself.
-    meta: { silent: true },
-    // The row takes its decision at once; a refused one comes back as it was.
-    ...optimistic(qc, (input: { id: string; decision: "accept" | "refuse"; text?: string }) =>
-      proposalEdits(orgId, [input.id], input.decision),
-    ),
+    mutationFn: (id: string) => api.proposals.undo(orgId, id),
     onSuccess: (row) => {
       editProposals(qc, orgId, patchIn<Proposal>(row.id, row));
       refreshAccepted(qc, orgId, [row]);
     },
-    onSettled: () => void refreshProposals(qc, orgId),
-  });
-}
-
-/** "Pedir a um admin" on a settings row the viewer can't decide (ADR 0137): the card says whom it went to. */
-export function useAskProposal(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.proposals.ask(orgId, id),
-    // "Sent to …" shows at once; the answer says to whom.
-    ...optimistic(qc, (id: string) => [
-      editAll<Proposal[]>(keys.proposals(orgId), patchIn<Proposal>(id, { askedAt: new Date().toISOString() })),
-    ]),
-    onSuccess: (row) => editProposals(qc, orgId, patchIn<Proposal>(row.id, row)),
-    onSettled: () => void qc.invalidateQueries({ queryKey: keys.proposals(orgId) }),
-  });
-}
-
-/**
- * A card's rows accepted or refused at once: one request per row, so each applies on its own and a stale one
- * never stops the rest, then one refresh. Resolves with the rows decided and the ones that failed and why.
- */
-export function useDecideProposals(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { ids: string[]; decision: "accept" | "refuse" }) => {
-      const decided: Proposal[] = [];
-      const failed: { id: string; error: unknown }[] = [];
-      for (const id of input.ids) {
-        try {
-          decided.push(
-            await (input.decision === "accept" ? api.proposals.accept(orgId, id) : api.proposals.refuse(orgId, id)),
-          );
-        } catch (error) {
-          failed.push({ id, error });
-        }
-      }
-      return { decided, failed };
-    },
-    meta: { silent: true },
-    // Every row takes its decision at once; one that failed comes back with the read below.
-    ...optimistic(qc, (input: { ids: string[]; decision: "accept" | "refuse" }) =>
-      proposalEdits(orgId, input.ids, input.decision),
-    ),
-    onSuccess: ({ decided }) => refreshAccepted(qc, orgId, decided),
     onSettled: () => void refreshProposals(qc, orgId),
   });
 }
@@ -7230,7 +7191,11 @@ export const threadMessagesQuery = (api: ApiClient, orgId: string, channelId: st
     queryKey: keys.thread(orgId, channelId, rootId),
     queryFn: async ({ client, queryKey }) => {
       const start = client.getQueryData<Message[]>(queryKey);
-      const read = await api.chat.messages(orgId, channelId, { threadId: rootId, limit: THREAD_PAGE });
+      const read = await api.chat.messages(orgId, channelId, {
+        threadId: rootId,
+        limit: THREAD_PAGE,
+        onCards: cardsInto(client, orgId),
+      });
       return withLocalCopies(read, client.getQueryData<Message[]>(queryKey), outbox.has, start);
     },
     staleTime: 30_000,

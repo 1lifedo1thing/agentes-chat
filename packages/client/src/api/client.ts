@@ -223,6 +223,7 @@ import type {
   Memory,
   Message,
   MessageCard,
+  MessageCards,
   MessagePin,
   Mission,
   MissionBrain,
@@ -1052,7 +1053,15 @@ export interface ApiClient {
     messages(
       orgId: string,
       channelId: string,
-      options?: { threadId?: string; before?: string; after?: string; around?: string; limit?: number },
+      options?: {
+        threadId?: string;
+        before?: string;
+        after?: string;
+        around?: string;
+        limit?: number;
+        /** Also what the page's cards show (`include=cards`), handed here before the messages return. */
+        onCards?: (cards: MessageCards) => void;
+      },
     ): Promise<Message[]>;
     post(
       orgId: string,
@@ -1473,6 +1482,8 @@ export interface ApiClient {
     refuse(orgId: string, proposalId: string): Promise<Proposal>;
     /** "Pedir a um admin" (ADR 0137): the person who asked sends a row they can't decide to whoever may, once. */
     ask(orgId: string, proposalId: string): Promise<Proposal>;
+    /** Undo on a change an agent applied (ADR 0219): 409 `proposal.changed` when it changed since. */
+    undo(orgId: string, proposalId: string): Promise<Proposal>;
   };
   customConnectors: {
     /** The team's servers and the person's own. `others`: also everyone else's personal ones (who manages connectors gets them, as read-only rows). */

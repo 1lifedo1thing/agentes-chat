@@ -494,12 +494,13 @@ export function RealtimeProvider({
         void qc.invalidateQueries({ queryKey: keys.overview(orgId) });
       }
       if (isAgentUnavailable(event)) streams.unavailable(event);
-      // A change I asked the right hand for was decided by someone else (ADR 0137): "Aplicado por …" on my card.
+      // A change was applied, left out or put back, by someone else or by an agent's review (ADR 0137, ADR 0219): how
+      // it ended on its card.
       if (event.type === "proposal.decided") {
         void refreshProposals(qc, orgId);
         void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
       }
-      // A proposal I may decide: the sidebar's count and Aprovações' tab.
+      // A proposal was made: Agent improvements and its cards.
       if (event.type === "proposal.created") void refreshProposals(qc, orgId);
       // A code session I'm in changed (ADR 0215): its worktree, name or pull request.
       applyCodeSessionEvent(qc, orgId, event);
@@ -826,7 +827,7 @@ export function useChannelRealtime(orgId: string, channelId: string, enabled: bo
         cacheApproval(qc, orgId, event.approval);
       }
       // A file's cards and viewer, an agent's memory list.
-      applyConversationEvent(qc, orgId, event);
+      applyConversationEvent(qc, orgId, event, api);
       // Who is in one of the conversation's live files changed (ADR 0196 §5): its cards ask again.
       applyLiveEvent(qc, orgId, event);
       if (event.type === "poll.updated") qc.setQueryData(keys.poll(orgId, event.poll.id), event.poll);
@@ -1144,6 +1145,9 @@ export function useDesktopPointer(agentId: string, enabled = true) {
   }, [connection, agentId, enabled, shared]);
   return pointer;
 }
+
+/** The workspace's live connection (null before it starts): to ask it to try again now. */
+export const useRealtimeConnection = () => useRealtime().connection;
 
 export function useConnectionStatus(): ConnectionStatus {
   const { connection } = useRealtime();
