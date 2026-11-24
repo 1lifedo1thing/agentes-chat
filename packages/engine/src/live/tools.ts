@@ -4,7 +4,7 @@ import * as live from "@agenteschat/live";
 import { LIVE_LIMITS, type LiveOrigin } from "@agenteschat/live";
 import type { PeerState, SheetSel } from "@agenteschat/live/awareness";
 import * as cv from "@agenteschat/live/canvas";
-import { type RichDoc, richToMarkdown } from "@agenteschat/live/rich";
+import type { RichDoc } from "@agenteschat/live/rich";
 import * as sl from "@agenteschat/live/slides";
 import * as ss from "@agenteschat/live/spreadsheet";
 import {

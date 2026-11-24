@@ -456,7 +456,14 @@ export function parseStyleSheet(css: string): {
       const family = decls.find(([k]) => k === "font-family")?.[1];
       const src = decls.find(([k]) => k === "src")?.[1];
       const file = src ? /url\(\s*["']?([^"')]+)/i.exec(src)?.[1] : undefined;
-      if (family && file) fontFaces.set(family.replace(/^["']|["']$/g, "").trim().toLowerCase(), file);
+      if (family && file)
+        fontFaces.set(
+          family
+            .replace(/^["']|["']$/g, "")
+            .trim()
+            .toLowerCase(),
+          file,
+        );
       continue;
     }
     if (prelude.startsWith("@")) {
@@ -487,7 +494,11 @@ export function parseStyleSheet(css: string): {
  * A grid's column tracks (`430px 1fr 470px`, `repeat(4, 1fr)`, `minmax(200px, 1fr)`): each a fixed width or a share
  * of what is left. Null when it isn't a list of tracks (auto-fill and named lines aren't taken).
  */
-export function parseTracks(value: string | undefined, em: number, rem: number): ({ px: number } | { fr: number })[] | null {
+export function parseTracks(
+  value: string | undefined,
+  em: number,
+  rem: number,
+): ({ px: number } | { fr: number })[] | null {
   if (!value || value === "none") return null;
   const out: ({ px: number } | { fr: number })[] = [];
   for (const w of words(value)) {

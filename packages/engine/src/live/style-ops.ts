@@ -61,7 +61,9 @@ export const HTML_WORDS = [
   "Pictures: <img src> with file:<id> (a Drive picture), asset:<id> (the file's own), an https address, icon:<name> (our icon set, drawn in the CSS color around it: use these for icons) or logo:<provider> (an AI maker's own mark), and inline <svg>.",
   'An element with data-arrow-to="<id of another element>" (and data-arrow-label, data-arrow-color) gets an arrow from its box to that one; on a canvas it is a connector that follows the shapes.',
   "Position, transforms, filters, animations and web fonts by address are left out, and the result says what it left out.",
-  `Icons: ${Object.keys(iconShapes).join(", ")}. Logos: ${Object.keys(PROVIDER_MARKS).filter((k) => k !== "custom" && !("image" in PROVIDER_MARKS[k as keyof typeof PROVIDER_MARKS])).join(", ")}.`,
+  `Icons: ${Object.keys(iconShapes).join(", ")}. Logos: ${Object.keys(PROVIDER_MARKS)
+    .filter((k) => k !== "custom" && !("image" in PROVIDER_MARKS[k as keyof typeof PROVIDER_MARKS]))
+    .join(", ")}.`,
 ].join(" ");
 
 const KEYS: Record<string, keyof live.ElementStyle> = {

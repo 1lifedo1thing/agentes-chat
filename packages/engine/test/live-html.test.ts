@@ -379,11 +379,13 @@ describe("the layout itself", () => {
       h1 { font-family: "Brand Display", sans-serif; margin: 0; }
       .step::before { content: "01 "; } .step::after { content: " \\2192"; }
     </style><h1>Anatomia</h1><p class="step">Gatilho</p>`);
-    const texts = r.pieces.filter((p) => p.kind === "text");
-    const title = texts.find((t) => t.kind === "text" && JSON.stringify(t.text).includes("Anatomia"));
-    expect(title?.kind === "text" && title.style.font).toBe("funnel-display");
-    const step = texts.find((t) => t.kind === "text" && JSON.stringify(t.text).includes("Gatilho"));
-    const words = step?.kind === "text" ? step.text.flatMap((p) => p.runs.map((x) => x.text)).join("") : "";
+    // The heading and the paragraph are one text box of two paragraphs; each run carries its own font.
+    const paragraphs = r.pieces.flatMap((p) => (p.kind === "text" ? p.text.map((para) => ({ para, box: p })) : []));
+    const title = paragraphs.find(({ para }) => para.runs.some((x) => x.text.includes("Anatomia")));
+    const run = title?.para.runs.find((x) => x.text.includes("Anatomia"));
+    expect(run?.font ?? title?.box.style.font).toBe("funnel-display");
+    const step = paragraphs.find(({ para }) => para.runs.some((x) => x.text.includes("Gatilho")));
+    const words = step?.para.runs.map((x) => x.text).join("") ?? "";
     expect(words.replace(/\s+/g, " ").trim()).toBe("01 Gatilho \u2192");
   });
 

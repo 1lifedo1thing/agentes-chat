@@ -14,7 +14,6 @@ import Yoga, {
   Align,
   BoxSizing,
   Direction,
-  Display,
   Edge,
   FlexDirection,
   Gutter,
@@ -44,8 +43,8 @@ import {
   parseWeight,
   px,
   type RawDeclarations,
-  resolveVars,
   type Rule,
+  resolveVars,
   words,
 } from "./css";
 import type {
@@ -159,7 +158,9 @@ const UA: Record<string, string> = {
   mark: "background-color:#ffff00",
   dd: "margin-left:40px",
 };
-const UA_DECLS = new Map<string, RawDeclarations>(Object.entries(UA).map(([tag, css]) => [tag, parseDeclarations(css)]));
+const UA_DECLS = new Map<string, RawDeclarations>(
+  Object.entries(UA).map(([tag, css]) => [tag, parseDeclarations(css)]),
+);
 
 // ── Parsing ────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -332,7 +333,9 @@ export function parseHtml(html: string): ParsedHtml {
 function contentText(value: string | undefined): string | null {
   if (!value || value === "none" || value === "normal") return null;
   const parts = [...value.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g)].map((m) =>
-    (m[1] ?? m[2] ?? "").replace(/\\([0-9a-f]{1,6})\s?/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16))),
+    (m[1] ?? m[2] ?? "").replace(/\\([0-9a-f]{1,6})\s?/gi, (_, hex: string) =>
+      String.fromCodePoint(Number.parseInt(hex, 16)),
+    ),
   );
   return parts.length ? parts.join("") : null;
 }
@@ -518,7 +521,10 @@ class Cascade {
    * An element's declarations as the cascade orders them (the tag's own look, its rules by specificity, then its
    * `style`), its custom properties over the ones it inherits, `var()` resolved, shorthands expanded.
    */
-  declarations(el: HtmlElement, inherited: ReadonlyMap<string, string>): { d: Declarations; custom: Map<string, string> } {
+  declarations(
+    el: HtmlElement,
+    inherited: ReadonlyMap<string, string>,
+  ): { d: Declarations; custom: Map<string, string> } {
     const entries: RawDeclarations = [...(el.pseudo ? [] : (UA_DECLS.get(el.tag) ?? []))];
     if (!el.pseudo) {
       const matched = this.rules.filter((r) => matches(el, r.selector));
@@ -796,7 +802,7 @@ class Builder {
   private readonly computed = new Map<HtmlElement, Computed>();
 
   constructor(
-    private readonly parsed: ParsedHtml,
+    parsed: ParsedHtml,
     private readonly opts: LayoutOptions,
   ) {
     this.cascade = new Cascade(parsed, opts);
