@@ -94,6 +94,15 @@ test("a message's file card carries its name, type and size: the apps draw it wi
   expect(posted.status).toBe(201);
   const message = (await posted.json()) as { meta: { artifacts: unknown[] } };
   expect(message.meta.artifacts).toEqual([
-    { id, version: 1, title: "tela.png", name: "tela.png", contentType: "image/png", size: expect.any(Number), width: 40, height: 30 },
+    {
+      id,
+      version: 1,
+      title: "tela.png",
+      name: "tela.png",
+      contentType: "image/png",
+      size: expect.any(Number),
+      width: 40,
+      height: 30,
+    },
   ]);
 });
