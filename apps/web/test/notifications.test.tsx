@@ -941,6 +941,23 @@ describe("what the workspace itself tells: nobody's face, its own", () => {
     expect((await open("n-hold")).querySelector(".ib-read__face .nt-sys svg")).toBeTruthy();
   });
 
+  test("an unread row carries a dot under its time; Mark all as read is a button in the header while any is unread", async () => {
+    const css = await Bun.file(new URL("../src/pages/notifications.css", import.meta.url).pathname).text();
+    // The dot is drawn by the row's end (no element of its own), and a proposal, which has no read state, has none.
+    expect(css).toMatch(
+      /\.ib-row\.is-unread:not\(\.ib-row--proposal\) \.ib-row__end::after \{[^}]*border-radius: 50%[^}]*background: var\(--danger\)/,
+    );
+    const { state } = await go();
+    const button = () => document.querySelector<HTMLButtonElement>(".ib-head .ib-readall");
+    expect(button()?.getAttribute("aria-label")).toBe("Marcar tudo como lido");
+    await click(button() as HTMLElement);
+    await settle(4);
+    expect(state.calls.find((c) => c.method === "notifications.readAll")?.args).toEqual([ORG_ID, "all"]);
+    // Nothing left unread: no row says so, and the button leaves.
+    expect(document.querySelector(".ib-list .ib-row.is-unread")).toBeNull();
+    expect(button()).toBeNull();
+  });
+
   test("a headline with no name in it carries the unread weight whole, and loses it once read", async () => {
     const css = await Bun.file(new URL("../src/pages/notifications.css", import.meta.url).pathname).text();
     expect(css).toMatch(/\.nt-what:not\(:has\(b\)\) \{[^}]*font-weight: 600/);
