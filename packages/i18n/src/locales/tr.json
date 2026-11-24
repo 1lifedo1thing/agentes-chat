@@ -15980,6 +15980,7 @@
       "tooLarge": "Bu dosya boyut sınırına ulaştı. Önce içinden bir şey kaldırın.",
       "assetTooLarge": "Görsel, görsel başına sınır olan {{max}} MB'ı aşıyor.",
       "assetType": "Bu dosyaya yalnızca görsel eklenebilir: PNG, JPEG, WebP veya GIF.",
+      "fontInvalid": "Bu yazı tipi kullanılamıyor: dosya, uygulamanın okuyabildiği bir yazı tipi değil. Bir .ttf, .otf veya .woff dosyası deneyin.",
       "liveOnly": "Bu dosya bulunduğu yerde düzenlenir, bu yüzden bütünüyle başkasıyla değiştirilemez."
     },
     "office": {

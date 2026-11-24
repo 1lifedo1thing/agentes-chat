@@ -16613,6 +16613,7 @@
       "tooLarge": "Questo file ha raggiunto il limite di dimensione. Prima rimuovi qualcosa.",
       "assetTooLarge": "L'immagine supera {{max}} MB, il limite per immagine.",
       "assetType": "In questo file vanno solo immagini: PNG, JPEG, WebP o GIF.",
+      "fontInvalid": "Questo font non si può usare: il file non è un font che l'app riesce a leggere. Prova con un file .ttf, .otf o .woff.",
       "liveOnly": "Questo file si modifica direttamente dov'è, quindi non può essere sostituito per intero."
     },
     "office": {

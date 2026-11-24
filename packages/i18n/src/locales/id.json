@@ -15524,6 +15524,7 @@
       "tooLarge": "File ini sudah mencapai batas ukurannya. Hapus sesuatu darinya dulu.",
       "assetTooLarge": "Gambar ini lebih dari {{max}} MB, batas untuk setiap gambar.",
       "assetType": "Hanya gambar yang bisa masuk ke file ini: PNG, JPEG, WebP, atau GIF.",
+      "fontInvalid": "Font ini tidak bisa dipakai: file ini bukan font yang bisa dibaca aplikasi. Coba file .ttf, .otf, atau .woff.",
       "liveOnly": "File ini diubah langsung di tempatnya, jadi tidak bisa diganti seluruhnya."
     },
     "office": {

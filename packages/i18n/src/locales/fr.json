@@ -16590,6 +16590,7 @@
       "tooLarge": "Ce fichier a atteint sa taille maximale. Retirez-en quelque chose d'abord.",
       "assetTooLarge": "L'image dépasse {{max}} Mo, la limite par image.",
       "assetType": "Ce fichier n'accepte que des images : PNG, JPEG, WebP ou GIF.",
+      "fontInvalid": "Cette police ne peut pas être utilisée : le fichier n'est pas une police que l'app sait lire. Essayez un fichier .ttf, .otf ou .woff.",
       "liveOnly": "Ce fichier se modifie là où il est, il ne peut donc pas être remplacé en entier."
     },
     "office": {
