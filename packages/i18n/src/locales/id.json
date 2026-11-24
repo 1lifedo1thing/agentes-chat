@@ -689,6 +689,8 @@
       "confirmNo": "Ini bukan aku",
       "done": "Beres.",
       "doneLead": "Kamu sudah masuk di aplikasi agentes. Kamu bisa menutup tab ini.",
+      "back": "Kembali ke aplikasi.",
+      "openApp": "Buka aplikasi",
       "expired": "Permintaan ini sudah kedaluwarsa.",
       "expiredLead": "Kembali ke aplikasi lalu pilih {{provider}} lagi.",
       "handover": "Masuk dengan akunmu dari perangkat lain…",

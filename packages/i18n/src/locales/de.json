@@ -704,6 +704,8 @@
       "confirmNo": "Das war ich nicht",
       "done": "Alles bereit.",
       "doneLead": "Du bist in der agentes-App angemeldet. Du kannst diesen Tab schließen.",
+      "back": "Zurück zur App.",
+      "openApp": "App öffnen",
       "expired": "Diese Anfrage ist abgelaufen.",
       "expiredLead": "Geh zurück zur App und wähle noch einmal {{provider}}.",
       "handover": "Anmeldung mit deinem Konto vom anderen Gerät…",

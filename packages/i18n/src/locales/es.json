@@ -719,6 +719,8 @@
       "confirmNo": "No fui yo",
       "done": "Todo listo.",
       "doneLead": "Iniciaste sesión en la app de agentes. Puedes cerrar esta pestaña.",
+      "back": "Volviendo a la app.",
+      "openApp": "Abrir la app",
       "expired": "Esta solicitud venció.",
       "expiredLead": "Vuelve a la app y elige {{provider}} de nuevo.",
       "handover": "Iniciando sesión con tu cuenta del otro dispositivo…",

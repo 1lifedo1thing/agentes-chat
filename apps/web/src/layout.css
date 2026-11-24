@@ -10870,6 +10870,7 @@ html:not([data-pointer]) .agp-cell:focus-visible {
   font-size: 24px;
   font-weight: 650;
   letter-spacing: 0.08em;
+  white-space: nowrap;
   user-select: all;
 }
 /* A sign-in's button and "Copy link" beside it, wrapping under it when the column is narrow. */

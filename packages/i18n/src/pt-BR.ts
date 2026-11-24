@@ -730,6 +730,8 @@ export const ptBR = {
       confirmNo: "Não fui eu",
       done: "Tudo certo.",
       doneLead: "Você entrou no app agentes. Pode fechar esta aba.",
+      back: "Voltando para o app.",
+      openApp: "Abrir o app",
       expired: "Esse pedido expirou.",
       expiredLead: "Volte ao app e escolha {{provider}} de novo.",
       handover: "Entrando com a sua conta do outro aparelho…",
