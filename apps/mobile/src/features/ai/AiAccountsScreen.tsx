@@ -12,6 +12,7 @@ import {
   useSettings,
   useUpdateSettings,
 } from "@agenteschat/client";
+import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import {
   accountSub,
   accountTitle,
@@ -31,7 +32,6 @@ import {
   signInNote,
   unnamedAccount,
 } from "@agenteschat/client/lib/ai-accounts";
-import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { errorText, keyRefusal } from "@agenteschat/client/lib/errors";
 import { joinNames, relativeTime } from "@agenteschat/client/lib/format";
@@ -72,9 +72,9 @@ import { errorHaptic, goBack, PushedHeader, successHaptic } from "../shared/part
 import { SheetHostProvider, useSheet } from "../shared/SheetHost";
 import { overLimit, TextArea } from "../shared/TextArea";
 import { PlanMeter } from "../usage/parts";
-import { CliFetchNote } from "./CliFetchNote";
 import { openKeyForAll } from "./AgentSetupScreen";
 import { HubList } from "./AiHubScreens";
+import { CliFetchNote } from "./CliFetchNote";
 import { orderMoves, ownAccountRows } from "./logic";
 import { openConnectAi } from "./NoAiCard";
 import { alertKeyRefused, Note, openRenameAiAccount, PasteField, PlanHoldNote, usePlanHold } from "./parts";

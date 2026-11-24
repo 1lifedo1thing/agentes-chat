@@ -69,7 +69,6 @@ export const CLI_NO_SELF_UPDATE: Readonly<Record<string, string>> = {
 const sha256 = (value: string) => ({ algorithm: "sha256" as const, value });
 const sha512 = (value: string) => ({ algorithm: "sha512" as const, value });
 
-
 /**
  * Sources: Claude Code's `manifest.json` per version (sha256, what its installer checks); Codex's release
  * `codex-package_SHA256SUMS` (its Linux packages are musl builds, run on any libc); OpenCode's release assets' sha256;

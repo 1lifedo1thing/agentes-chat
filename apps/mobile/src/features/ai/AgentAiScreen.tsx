@@ -1,5 +1,6 @@
 import type { AgentBrain, BrainScope, MachineAccount } from "@agenteschat/client";
 import { useAgentBrain, useAiAccounts, useApi, useMachines, useModels } from "@agenteschat/client";
+import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import {
   accountChoices,
   offersSignInAgain,
@@ -7,7 +8,6 @@ import {
   ownSignInName,
   signInOf,
 } from "@agenteschat/client/lib/ai-accounts";
-import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import { managesAgent } from "@agenteschat/client/lib/audience";
 import { brainLine, thinksWith } from "@agenteschat/client/lib/brain";
 import { advancedContents, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
@@ -59,6 +59,7 @@ import { PlanMeter, PlanModels } from "../usage/parts";
 import { advancedOf, openAgentAdvanced } from "./AgentAdvancedScreen";
 import { openAgentSetup } from "./AgentSetupScreen";
 import { AiChoiceFields } from "./AiChoice";
+import { CliFetchNote } from "./CliFetchNote";
 import { EffortRamp, useEffortChoice } from "./EffortRamp";
 import {
   accountInput,
@@ -73,7 +74,6 @@ import {
   thinkingUsage,
 } from "./logic";
 import { openConnectAi } from "./NoAiCard";
-import { CliFetchNote } from "./CliFetchNote";
 import { Note, PlanHoldNote, usePlanHold } from "./parts";
 import { useSaveBrain } from "./useSaveBrain";
 

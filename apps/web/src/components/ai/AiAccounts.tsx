@@ -1,5 +1,6 @@
 import type { AiAccounts as AiAccountsView, AiHubAccount } from "@agenteschat/client";
 import { keys, useAiAccounts, useApi, useMachines } from "@agenteschat/client";
+import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import {
   accountTitle,
   againLogin,
@@ -11,7 +12,6 @@ import {
   signInNote,
   unusedCopies,
 } from "@agenteschat/client/lib/ai-accounts";
-import { CLI_OF_BRAIN } from "@agenteschat/client/lib/activity";
 import { computerNameOf } from "@agenteschat/client/lib/computer";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { joinNames } from "@agenteschat/client/lib/format";
@@ -35,8 +35,8 @@ import { useTranslation } from "react-i18next";
 import { PlanHold, usePlanHold } from "@/components/ai/plan-hold";
 import { useOrg } from "@/components/org-context";
 import { useToast } from "@/lib/toast";
-import { CliFetchLine } from "./CliFetchLine";
 import { AddAccount } from "./AddAccountFlow";
+import { CliFetchLine } from "./CliFetchLine";
 import { UseOnAgentsDialog } from "./UseOnAgents";
 
 /*

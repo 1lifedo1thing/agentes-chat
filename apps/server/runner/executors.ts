@@ -69,7 +69,9 @@ export function resolveCommand(
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
 ): string {
-  const picked = command.includes("/") ? undefined : (pickedCli(command) ?? (command === "codex" ? pickedCodex() : undefined));
+  const picked = command.includes("/")
+    ? undefined
+    : (pickedCli(command) ?? (command === "codex" ? pickedCodex() : undefined));
   if (picked) return picked;
   if (process.platform === "win32" || command.includes("/")) return command;
   const dirs = pathList.split(delimiter).filter((dir) => dir && dir !== sharedBin);

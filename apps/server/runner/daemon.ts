@@ -86,12 +86,12 @@ import {
   systemLauncher,
   trustedNetworkLauncher,
 } from "./agent-users";
-import { CLI_OF_BRAIN, CliCopies, type CliCopiesOptions, holdCliSelfUpdates } from "./cli-copies";
 import { BrainManager, readyRoom } from "./brain";
 import { CodexAppServers } from "./brain-codex-app";
 import { BrowserManager } from "./browser";
 import { ensureBrowserBindPolicy, prepareAgents } from "./browser-bind-policy";
 import { BrowserViews } from "./browser-views";
+import { CLI_OF_BRAIN, CliCopies, type CliCopiesOptions, holdCliSelfUpdates } from "./cli-copies";
 import { CliInstaller, type CliInstallerOptions, gitBashPath } from "./cli-install";
 import { readCodexAccount } from "./codex-account";
 import {
@@ -621,8 +621,7 @@ export class RunnerDaemon implements RequestObserver {
         ? new CliCopies({
             home: opts.home,
             log: opts.log,
-            inUse: (cli) =>
-              this.accounts.snapshot()?.some((a) => CLI_OF_BRAIN[a.kind] === cli) ?? false,
+            inUse: (cli) => this.accounts.snapshot()?.some((a) => CLI_OF_BRAIN[a.kind] === cli) ?? false,
             onChange: () => {
               void this.clisLook().then(() => this.accounts.refresh(true).catch(() => undefined));
             },

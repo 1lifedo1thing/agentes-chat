@@ -18,7 +18,12 @@ test("every CLI is pinned, each build at https with a hash of its algorithm's si
 });
 
 test("from the wire: only https, a well-formed hash and a program path inside the copy's folder", () => {
-  const good = { url: "https://x.example/c", hash: { algorithm: "sha256", value: "a".repeat(64) }, archive: "file", executable: "c" };
+  const good = {
+    url: "https://x.example/c",
+    hash: { algorithm: "sha256", value: "a".repeat(64) },
+    archive: "file",
+    executable: "c",
+  };
   const parsed = parseCliPins({
     claude: { version: "1.2.3", builds: { "linux-x64": good, "darwin-arm64": { ...good, url: "http://x.example/c" } } },
     codex: { version: "1.2.3", builds: { "linux-x64": { ...good, executable: "../../bin/sh" } } },

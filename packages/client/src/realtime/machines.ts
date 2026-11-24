@@ -134,6 +134,7 @@ export function applyMachineEvent(qc: QueryClient, orgId: string, event: { type:
     egress?: unknown;
     networkTransition?: unknown;
     standby?: unknown;
+    cliFetch?: unknown;
   };
   if (typeof e.machineId !== "string") return true;
   const machineId = e.machineId;

@@ -224,7 +224,8 @@ test("every CLI the runner starts keeps from updating itself; a value already se
   const env: NodeJS.ProcessEnv = { DISABLE_AUTOUPDATER: "0" };
   holdCliSelfUpdates(env);
   expect(env.DISABLE_AUTOUPDATER).toBe("0");
-  for (const [name, value] of Object.entries(CLI_NO_SELF_UPDATE)) if (name !== "DISABLE_AUTOUPDATER") expect(env[name]).toBe(value);
+  for (const [name, value] of Object.entries(CLI_NO_SELF_UPDATE))
+    if (name !== "DISABLE_AUTOUPDATER") expect(env[name]).toBe(value);
 });
 
 test("the built-in pins: every CLI pinned, https and a hash for each build; the Antigravity CLI runs Gemini 4 Neon", () => {

@@ -27,7 +27,10 @@ const computer = (over: Record<string, unknown> = {}) => ({
   execAllowed: true,
   lastSeenAt: new Date(),
   access: { tools: { claude: true, codex: true, cursor: true, opencode: true, grok: true, antigravity: true } },
-  executors: { detectedAt: new Date().toISOString(), copies: { fetchable: ["claude", "grok"] } },
+  executors: {
+    detectedAt: new Date().toISOString(),
+    copies: { fetchable: ["claude", "grok"] as ("claude" | "grok")[] },
+  },
   ...over,
 });
 
@@ -35,9 +38,9 @@ test("a CLI its runner fetches comes by itself; never on the workspace's own com
   expect(fetchesCli(computer(), "claude")).toBe(true);
   expect(fetchesCli(computer(), "codex")).toBe(false);
   expect(fetchesCli(computer({ kind: "managed" }), "claude")).toBe(false);
-  expect(
-    fetchesCli(computer({ executors: { mode: "system", copies: { fetchable: ["claude"] } } }), "claude"),
-  ).toBe(false);
+  expect(fetchesCli(computer({ executors: { mode: "system", copies: { fetchable: ["claude"] } } }), "claude")).toBe(
+    false,
+  );
   // An older runner brought only the Antigravity CLI, on macOS and Linux.
   expect(fetchesCli(computer({ protocol: AGY_COPY_PROTOCOL, executors: {} }), "antigravity")).toBe(true);
   expect(fetchesCli(computer({ protocol: AGY_COPY_PROTOCOL, executors: {} }), "claude")).toBe(false);
@@ -51,7 +54,9 @@ test("not installed or too old is no reason where the runner fetches it: the bra
   expect(options.find((o) => o.kind === "claude_code")).toMatchObject({ available: true });
   expect(options.find((o) => o.kind === "grok")).toMatchObject({ available: true });
   expect(options.find((o) => o.kind === "codex")).toMatchObject({ available: false, reason: "not_installed" });
-  const old = computer({ executors: { claude: { version: "2.0.1 (Claude Code)" }, copies: { fetchable: ["claude"] } } });
+  const old = computer({
+    executors: { claude: { version: "2.0.1 (Claude Code)" }, copies: { fetchable: ["claude"] } },
+  });
   expect(cliOutdated(old as never, "claude", "Claude Code")).toBeNull();
   const notFetched = computer({ executors: { claude: { version: "2.0.1 (Claude Code)" } } });
   expect(cliOutdated(notFetched as never, "claude", "Claude Code")?.code).toBe("cli_outdated");
@@ -65,7 +70,11 @@ test("a fetch is kept with the computer and told to the apps as it goes", async 
   f.pubsub.subscribe(orgTopic(f.org.id), (e) => told.push(e));
   const fetching = { state: "fetching" as const, version: "2.1.325", done: 45, total: 100 };
   await storeCliFetch({ db: f.db, pubsub: f.pubsub }, id, "claude", fetching);
-  await storeCliFetch({ db: f.db, pubsub: f.pubsub }, id, "grok", { state: "failed", version: "1.0.92", reason: "offline" });
+  await storeCliFetch({ db: f.db, pubsub: f.pubsub }, id, "grok", {
+    state: "failed",
+    version: "1.0.92",
+    reason: "offline",
+  });
   const [stored] = await f.db.select().from(schema.machines).where(eq(schema.machines.id, id));
   expect(stored?.executors?.copies?.fetch).toEqual({
     claude: fetching,

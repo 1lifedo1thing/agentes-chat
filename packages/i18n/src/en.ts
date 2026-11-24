@@ -3761,7 +3761,8 @@ export const en = {
       preparingPct: "Preparing {{program}} on {{computer}}… {{percent}}%",
       failed: {
         offline: "Couldn't prepare {{program}} on {{computer}}: the computer can't reach the download.",
-        hash_mismatch: "Couldn't prepare {{program}} on {{computer}}: the download wasn't the original file, so it wasn't used.",
+        hash_mismatch:
+          "Couldn't prepare {{program}} on {{computer}}: the download wasn't the original file, so it wasn't used.",
         no_build: "{{program}} has no version for {{computer}}'s system.",
         disk_full: "Couldn't prepare {{program}} on {{computer}}: its disk is full.",
         failed: "Couldn't prepare {{program}} on {{computer}}: the download didn't finish.",

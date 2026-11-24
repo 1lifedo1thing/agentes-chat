@@ -27,5 +27,9 @@ export function cliFetchLine(
     const key = percent === null ? "connectAi.cliFetch.preparing" : "connectAi.cliFetch.preparingPct";
     return { text: t(key, { program, computer, percent: percent ?? 0 }), percent, failed: false };
   }
-  return { text: t(`connectAi.cliFetch.failed.${fetch.reason ?? "failed"}`, { program, computer }), percent: null, failed: true };
+  return {
+    text: t(`connectAi.cliFetch.failed.${fetch.reason ?? "failed"}`, { program, computer }),
+    percent: null,
+    failed: true,
+  };
 }

@@ -3642,7 +3642,8 @@ export const ptBR = {
       preparingPct: "Preparando o {{program}} no {{computer}}… {{percent}}%",
       failed: {
         offline: "Não deu para preparar o {{program}} no {{computer}}: o computador não conseguiu baixar.",
-        hash_mismatch: "Não deu para preparar o {{program}} no {{computer}}: o arquivo baixado não era o original, então não foi usado.",
+        hash_mismatch:
+          "Não deu para preparar o {{program}} no {{computer}}: o arquivo baixado não era o original, então não foi usado.",
         no_build: "O {{program}} não tem versão para o sistema do {{computer}}.",
         disk_full: "Não deu para preparar o {{program}} no {{computer}}: o disco está cheio.",
         failed: "Não deu para preparar o {{program}} no {{computer}}: o download não terminou.",

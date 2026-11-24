@@ -93,7 +93,11 @@ export interface MachineExecutors {
         "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity",
         | { state: "fetching"; version: string; done: number; total: number | null }
         | { state: "ready"; version: string }
-        | { state: "failed"; version: string; reason: "offline" | "hash_mismatch" | "no_build" | "disk_full" | "failed" }
+        | {
+            state: "failed";
+            version: string;
+            reason: "offline" | "hash_mismatch" | "no_build" | "disk_full" | "failed";
+          }
       >
     >;
   };

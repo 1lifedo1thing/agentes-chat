@@ -35,7 +35,7 @@ export function CliFetchNote({ machineId, cli }: { machineId: string; cli: strin
   }
   return (
     <View style={styles.block}>
-      <Note icon="alert" inset live>
+      <Note icon="x" inset live>
         {line.text}
       </Note>
       <View style={styles.action}>

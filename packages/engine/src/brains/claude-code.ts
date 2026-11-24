@@ -21,8 +21,8 @@ import {
 import { type Database, schema } from "@agenteschat/db";
 import { CLI_FLOORS, CLI_UPDATE_COMMAND, cliVersionProblem, type FloorCli } from "@agenteschat/providers/cli-floors";
 import { autoContextFor } from "@agenteschat/providers/context-limits";
-import { fetchesCli } from "../cli-fetch";
 import { getAgentCached } from "../agents";
+import { fetchesCli } from "../cli-fetch";
 import type { CodeSetup } from "../git/machine";
 import { type MachineCaller, MachineRequestError, type MachineStatus } from "../machine-hub";
 import { MachineDroppedError, MachineOfflineError, MachinePausedError, pausedMessage } from "../machines";
@@ -257,7 +257,9 @@ export function cliMissingMessage(
 export function cliOutdated(
   status: {
     name?: string | null;
-    executors?: (Partial<Record<FloorCli, { version: string }>> & Pick<schema.MachineExecutors, "copies" | "mode">) | null;
+    executors?:
+      | (Partial<Record<FloorCli, { version: string }>> & Pick<schema.MachineExecutors, "copies" | "mode">)
+      | null;
     kind?: string | null;
     os?: string;
     protocol?: number;

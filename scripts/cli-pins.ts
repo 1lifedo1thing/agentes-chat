@@ -13,7 +13,13 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { CLI_PINS, type CliBuild, type CliPin, type PinCli, type PinPlatform } from "../packages/providers/src/cli-pins";
+import {
+  CLI_PINS,
+  type CliBuild,
+  type CliPin,
+  type PinCli,
+  type PinPlatform,
+} from "../packages/providers/src/cli-pins";
 
 const FILE = path.join(import.meta.dir, "../packages/providers/src/cli-pins.ts");
 const GITHUB = "https://api.github.com/repos";
@@ -69,7 +75,12 @@ async function claude(): Promise<CliPin> {
     const checksum = manifest.platforms[platform]?.checksum;
     if (!checksum) continue;
     const exe = platform.startsWith("win32") ? "claude.exe" : "claude";
-    builds[platform] = { url: `${base}/${version}/${platform}/${exe}`, hash: sha256(checksum), archive: "file", executable: exe };
+    builds[platform] = {
+      url: `${base}/${version}/${platform}/${exe}`,
+      hash: sha256(checksum),
+      archive: "file",
+      executable: exe,
+    };
   }
   return { version, builds };
 }
@@ -140,7 +151,13 @@ async function cursor(): Promise<CliPin> {
   ];
   for (const [platform, where] of systems) {
     const url = `https://downloads.cursor.com/lab/${version}/${where}/agent-cli-package.tar.gz`;
-    builds[platform] = { url, hash: sha256(await sha256Of(url)), archive: "tar.gz", strip: 1, executable: "cursor-agent" };
+    builds[platform] = {
+      url,
+      hash: sha256(await sha256Of(url)),
+      archive: "tar.gz",
+      strip: 1,
+      executable: "cursor-agent",
+    };
   }
   return { version, builds };
 }

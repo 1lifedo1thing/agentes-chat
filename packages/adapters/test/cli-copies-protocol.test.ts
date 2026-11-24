@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import {
   CLI_COPIES_PROTOCOL,
-  MACHINE_PROTOCOL_VERSION,
   MACHINE_OPS,
+  MACHINE_PROTOCOL_VERSION,
   parseCliFetchState,
   parseRunnerFrame,
   parseServerFrame,
@@ -22,7 +22,9 @@ test("a fetch's state, checked: known states, counts that are numbers, a known r
     done: 10,
     total: 100,
   });
-  expect(parseCliFetchState({ state: "fetching", version: "1.0.0", done: 500, total: 100 })).toMatchObject({ done: 100 });
+  expect(parseCliFetchState({ state: "fetching", version: "1.0.0", done: 500, total: 100 })).toMatchObject({
+    done: 100,
+  });
   expect(parseCliFetchState({ state: "fetching", version: "1.0.0", done: -1, total: "x" })).toEqual({
     state: "fetching",
     version: "1.0.0",
@@ -40,14 +42,20 @@ test("a fetch's state, checked: known states, counts that are numbers, a known r
 
 test("the runner's frames: `cli.fetch` for a known CLI, and `hello.clis` with known CLIs only", () => {
   const frame = parseRunnerFrame(
-    JSON.stringify({ type: "cli.fetch", cli: "claude", fetch: { state: "fetching", version: "2.1.325", done: 1, total: 2 } }),
+    JSON.stringify({
+      type: "cli.fetch",
+      cli: "claude",
+      fetch: { state: "fetching", version: "2.1.325", done: 1, total: 2 },
+    }),
   );
   expect(frame).toEqual({
     type: "cli.fetch",
     cli: "claude",
     fetch: { state: "fetching", version: "2.1.325", done: 1, total: 2 },
   });
-  expect(parseRunnerFrame(JSON.stringify({ type: "cli.fetch", cli: "bash", fetch: { state: "ready", version: "1" } }))).toBeNull();
+  expect(
+    parseRunnerFrame(JSON.stringify({ type: "cli.fetch", cli: "bash", fetch: { state: "ready", version: "1" } })),
+  ).toBeNull();
   const hello = parseRunnerFrame(
     JSON.stringify({
       type: "hello",
@@ -65,7 +73,9 @@ test("the runner's frames: `cli.fetch` for a known CLI, and `hello.clis` with kn
 });
 
 test("the server's pins and the retry op reach the runner", () => {
-  expect(parseServerFrame(JSON.stringify({ type: "clis.pins", pins: { claude: {} } }))).toMatchObject({ type: "clis.pins" });
+  expect(parseServerFrame(JSON.stringify({ type: "clis.pins", pins: { claude: {} } }))).toMatchObject({
+    type: "clis.pins",
+  });
   expect(parseServerFrame(JSON.stringify({ type: "clis.pins", pins: "x" }))).toBeNull();
   expect(parseServerFrame(JSON.stringify({ type: "request", id: "1", op: "cli.fetch", cli: "codex" }))).toMatchObject({
     op: "cli.fetch",

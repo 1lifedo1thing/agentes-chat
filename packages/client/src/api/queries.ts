@@ -6740,7 +6740,8 @@ export function useRetryCliFetch(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ machineId, cli }: { machineId: string; cli: string }) => api.machines.fetchCli(orgId, machineId, cli),
+    mutationFn: ({ machineId, cli }: { machineId: string; cli: string }) =>
+      api.machines.fetchCli(orgId, machineId, cli),
     onSuccess: (r, { machineId, cli }) => {
       if (!r.fetch) return;
       const fetch = r.fetch;

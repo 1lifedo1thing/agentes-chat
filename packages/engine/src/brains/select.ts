@@ -23,10 +23,10 @@ import {
   speedFits,
 } from "@agenteschat/providers/plans";
 import { planFull, planState } from "@agenteschat/ui/plan-state";
-import { fetchesCli } from "../cli-fetch";
 import type { Agent } from "../agents";
 import { replyRefusal } from "../ai-accounts/reply";
 import { accountServes } from "../ai-accounts/serves";
+import { fetchesCli } from "../cli-fetch";
 import type { CodeSessionContext } from "../code-sessions";
 import type { ModelGateway } from "../gateway";
 import type { MachineStatus } from "../machine-hub";
