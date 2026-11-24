@@ -1794,7 +1794,7 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         }
         sf.page = {
           ...page,
-          pin: { set: true, lockedUntil: null },
+          pin: { ...page.pin, set: true, lockedUntil: null },
           approval: { ...page.approval, status: decision === "approve" ? "approved" : "refused" },
         };
         return sf.page;

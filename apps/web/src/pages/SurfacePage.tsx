@@ -198,7 +198,7 @@ function Confirm({ token, view, title }: { token: string; view: Page; title: str
             >
               {t("surface.page.refuse")}
             </Button>
-            {!choosing && !forgot.isSuccess && (
+            {!choosing && view.pin.resetByEmail && !forgot.isSuccess && (
               <Button type="button" variant="ghost" size="sm" onClick={() => forgot.mutate()}>
                 {t("surface.page.forgot")}
               </Button>

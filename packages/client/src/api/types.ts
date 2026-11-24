@@ -390,8 +390,11 @@ export interface SurfacePage {
   /** When the page stops opening. */
   expiresAt: string;
   surface: string;
-  /** `set` false: approving chooses the PIN. `lockedUntil`: three wrong ones lock approving until then. */
-  pin: { set: boolean; lockedUntil: string | null };
+  /**
+   * `set` false: approving chooses the PIN. `lockedUntil`: three wrong ones lock approving until then. `resetByEmail`:
+   * the server sends email, so "Forgot your PIN?" is offered.
+   */
+  pin: { set: boolean; lockedUntil: string | null; resetByEmail: boolean };
   approval: {
     id: string;
     tool: string;

@@ -8,6 +8,7 @@ import {
   removeLink,
   requireSurface,
   resetSurfacePin,
+  type SurfacePageView,
   sha256,
   surfaceAllowed,
   surfaceOn,
@@ -48,6 +49,7 @@ const SurfacePage = z
     pin: z.object({
       set: z.boolean().openapi({ description: "False: approving chooses the PIN." }),
       lockedUntil: z.string().nullable(),
+      resetByEmail: z.boolean().openapi({ description: "This server sends email, so “Forgot your PIN?” works." }),
     }),
     approval: z
       .object({
@@ -250,6 +252,8 @@ export function surfaceRoutes(deps: AppDeps) {
     },
   );
 
+  const resetByEmail = adapters.email.delivers === true;
+  const shown = (view: SurfacePageView) => ({ ...view, pin: { ...view.pin, resetByEmail } });
   const pageLimited = async (c: Context, key: string, limit: { limit: number; windowMs: number }) => {
     const ip = requestLimitIp(c.req.raw.headers, deps.config.TRUSTED_PROXIES);
     return !(await adapters.rateLimiter.consume(`${key}:${ip}`, limit)).allowed;
@@ -288,7 +292,7 @@ export function surfaceRoutes(deps: AppDeps) {
           maxAge: Math.ceil((Date.parse(opened.view.expiresAt) - Date.now()) / 1000),
         });
       }
-      return c.json(opened.view, 200);
+      return c.json(shown(opened.view), 200);
     },
   );
 
@@ -330,7 +334,7 @@ export function surfaceRoutes(deps: AppDeps) {
         getCookie(c, pageCookie(token)) ?? null,
         { decision, pin },
       );
-      return c.json(view, 200);
+      return c.json(shown(view), 200);
     },
   );
 
@@ -340,7 +344,8 @@ export function surfaceRoutes(deps: AppDeps) {
       path: "/surface-page/forgot-pin",
       tags,
       summary: "Email me a link that clears my PIN",
-      description: "Only from the browser that opened the page. 3 emails an hour per IP address.",
+      description:
+        "Only from the browser that opened the page, on a server that sends email (else 404 `not_found`). 3 emails an hour per IP address.",
       request: { body: body(PageToken) },
       responses: {
         ...noContent,
@@ -351,6 +356,7 @@ export function surfaceRoutes(deps: AppDeps) {
       },
     }),
     async (c) => {
+      if (!resetByEmail) return apiError(c, 404, "not_found", "This server sends no email");
       if (await pageLimited(c, "surface-pin-email", PIN_EMAILS_PER_IP)) {
         return apiError(c, 429, "rate_limited", "Too many requests. Try again later.");
       }

@@ -14,7 +14,7 @@ const page = (over: Partial<SurfacePage> = {}, approval: Partial<NonNullable<Sur
   kind: "confirm" as const,
   expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
   surface: "Example Chat",
-  pin: { set: true, lockedUntil: null },
+  pin: { set: true, lockedUntil: null, resetByEmail: true },
   approval: {
     id: "a-1",
     tool: "vault_delete",
@@ -52,7 +52,7 @@ const calls = (state: ReturnType<typeof seedState>, method: string) =>
   state.calls.filter((c) => c.method === method).map((c) => c.args);
 
 test("the first approval chooses the PIN, typed twice, hidden", async () => {
-  const { state } = await open({ page: page({ pin: { set: false, lockedUntil: null } }) });
+  const { state } = await open({ page: page({ pin: { set: false, lockedUntil: null, resetByEmail: true } }) });
   const first = screen().getByLabelText("Escolha um PIN") as HTMLInputElement;
   expect(first.type).toBe("password");
   const approve = () => screen().getByRole("button", { name: /Aprovar/ }) as HTMLButtonElement;
@@ -85,11 +85,18 @@ test("a wrong PIN says how many tries are left; refusing needs none", async () =
 });
 
 test("locked, forgot, someone else decides, and a link that ran out", async () => {
-  await open({ page: page({ pin: { set: true, lockedUntil: new Date(Date.now() + 60_000).toISOString() } }) });
+  await open({
+    page: page({ pin: { set: true, lockedUntil: new Date(Date.now() + 60_000).toISOString(), resetByEmail: true } }),
+  });
   expect(document.body.textContent).toContain("PINs errados demais.");
   expect((screen().getByRole("button", { name: /Aprovar/ }) as HTMLButtonElement).disabled).toBe(true);
   await click(/Esqueceu seu PIN/);
   expect(document.body.textContent).toContain("Enviamos um link por e-mail que apaga o PIN.");
+  cleanup();
+
+  // A server that sends no email offers no reset by email.
+  await open({ page: page({ pin: { set: true, lockedUntil: null, resetByEmail: false } }) });
+  expect(screen().queryByRole("button", { name: /Esqueceu seu PIN/ })).toBeNull();
   cleanup();
 
   await open({ page: page({}, { canDecide: false, approverLabel: "Bruno" }) });
@@ -119,7 +126,10 @@ test("the PIN email's page clears it only from its button", async () => {
 
 test("worst case: a long app name in German still shows the whole lead", async () => {
   const long = "Example Chat Longunbrokenwordxyz";
-  const { app } = await open({ name: long, page: page({ surface: long, pin: { set: false, lockedUntil: null } }) });
+  const { app } = await open({
+    name: long,
+    page: page({ surface: long, pin: { set: false, lockedUntil: null, resetByEmail: true } }),
+  });
   await showIn(app.services, "de");
   expect(document.body.textContent).toContain(long);
 });

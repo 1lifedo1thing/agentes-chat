@@ -66,7 +66,8 @@ without one, so a new password (which ends the link) clears it too.
   count.
 - "Forgot your PIN?", from the browser that opened the page: an email (`surface_pin_reset`) with a link to
   `/email-undo?kind=surface-pin&token=`, once, within an hour; only that page's button clears the PIN and its lock
-  (mail scanners open links). 3 emails an hour per IP address.
+  (mail scanners open links). 3 emails an hour per IP address. Offered only where the server sends email
+  (`pin.resetByEmail`); elsewhere unlinking and linking again in the app clears it.
 
 ### 4. Not built here
 - The `screen` and `control` pages: their lifetimes are set (§2), and a control link will open only after the PIN, but
