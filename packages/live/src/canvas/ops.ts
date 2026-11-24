@@ -2,7 +2,7 @@ import * as Y from "yjs";
 import type { PeerUser } from "../awareness";
 import { LiveEditError } from "../errors";
 import { isOrderKey, keyBetween, restack, type StackMove } from "../fractional";
-import { cleanGroupName, outermostGroup, usedGroups } from "../groups";
+import { cleanGroupName, type LiveGroup, outermostGroup, usedGroups } from "../groups";
 import { newId } from "../ids";
 import { LIVE_LIMITS } from "../limits";
 import { isLiveOrigin } from "../origins";
@@ -639,4 +639,21 @@ export function renameShapeGroup(doc: Y.Doc, groupId: string, name: string | nul
   const clean = cleanGroupName(name);
   const { name: _old, ...rest } = value as { name?: string; parent?: string };
   doc.transact(() => map.set(groupId, clean ? { ...rest, name: clean } : rest), origin);
+}
+
+/** Writes canvas groups as they are given (ids, names, parents), as `putGroups` does for a slide (ADR 0220 §4). */
+export function putShapeGroups(doc: Y.Doc, groups: readonly LiveGroup[], origin: unknown): void {
+  if (!groups.length) return;
+  const existing = new Set(readCanvasGroups(doc).map((g) => g.id));
+  if (existing.size + groups.length > LIVE_LIMITS.canvas.shapes) throw new LiveEditError("too_many", "Too many groups");
+  const ids = new Set(groups.map((g) => g.id));
+  doc.transact(() => {
+    const map = canvasGroupsMapOf(doc);
+    for (const g of groups) {
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(g.id)) throw invalid("Bad group");
+      const name = cleanGroupName(g.name);
+      const parent = g.parent && (ids.has(g.parent) || existing.has(g.parent)) && g.parent !== g.id ? g.parent : undefined;
+      map.set(g.id, { ...(name ? { name } : {}), ...(parent ? { parent } : {}) });
+    }
+  }, origin);
 }

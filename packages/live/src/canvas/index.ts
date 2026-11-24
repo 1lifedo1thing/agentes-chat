@@ -33,6 +33,7 @@ export {
   groupShapes,
   initCanvas,
   moveShapes,
+  putShapeGroups,
   resizeShape,
   setCanvasBackground,
   setParent,

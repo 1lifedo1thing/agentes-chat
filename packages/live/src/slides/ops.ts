@@ -3,7 +3,7 @@ import type { Box } from "../canvas/geometry";
 import { LiveEditError } from "../errors";
 import { isOrderKey, keyBetween, keysBetween, restack, type StackMove } from "../fractional";
 import { newId } from "../ids";
-import { cleanGroupName, groupMembersOf, outermostGroup, usedGroups } from "../groups";
+import { cleanGroupName, groupMembersOf, type LiveGroup, outermostGroup, usedGroups } from "../groups";
 import { LIVE_LIMITS } from "../limits";
 import { cloneValue, overwriteText } from "../restore";
 import { richFromText, richLength } from "../rich/text";
@@ -760,4 +760,25 @@ export function groupMembers(
   groupId: string,
 ): string[] {
   return groupMembersOf(slide.elements, slide.groups ?? [], groupId);
+}
+
+/**
+ * Writes groups as they are given (ids, names, parents), inside the caller's batch: what `add_html` lays out (ADR 0220
+ * §4) arrives with its whole tree of groups at once. A parent missing from the slide and from `groups` is dropped.
+ */
+export function putGroups(doc: Y.Doc, slideId: string, groups: readonly LiveGroup[], origin: unknown): void {
+  if (!groups.length) return;
+  const slide = needSlide(doc, slideId);
+  const existing = new Set(readGroups(slide).map((g) => g.id));
+  if (existing.size + groups.length > limits.elements) throw new LiveEditError("too_many", "Too many groups on one slide");
+  const ids = new Set(groups.map((g) => g.id));
+  doc.transact(() => {
+    const map = groupsMapFor(slide);
+    for (const g of groups) {
+      if (!isRefId(g.id)) throw invalid("Bad group");
+      const name = cleanGroupName(g.name);
+      const parent = g.parent && (ids.has(g.parent) || existing.has(g.parent)) && g.parent !== g.id ? g.parent : undefined;
+      map.set(g.id, { ...(name ? { name } : {}), ...(parent ? { parent } : {}) });
+    }
+  }, origin);
 }

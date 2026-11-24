@@ -845,7 +845,7 @@ class Builder {
   }
 
   /** Whether an element's content is only inline text (no boxes, pictures or blocks inside). */
-  private inlineOnly(el: HtmlElement): boolean {
+  inlineOnly(el: HtmlElement): boolean {
     return el.children.every((c) => {
       if (typeof c === "string") return true;
       const s = this.styleOf(c);
@@ -891,7 +891,7 @@ class Builder {
   }
 
   /** The runs of an element's inline content, marks relative to `base` (the block the text box takes its look from). */
-  private runsOf(el: HtmlElement, base: Computed): RichRun[] {
+  runsOf(el: HtmlElement, base: Computed): RichRun[] {
     const runs: RichRun[] = [];
     const walk = (node: HtmlElement, s: Computed, link: string | undefined) => {
       for (const c of node.children) {
@@ -1436,3 +1436,51 @@ export function layoutSummary(result: LayoutResult): string {
 }
 
 export { words };
+
+/**
+ * Markup as rich text, no layout (what `set_text` takes as `html`): each block a paragraph (list items as list
+ * paragraphs, nested lists a level deeper), inline styles as marks relative to `base`, the text box's own look.
+ */
+export function htmlToRich(parsed: ParsedHtml, base: LayoutOptions["base"]): RichDoc {
+  const builder = new Builder(parsed, {
+    width: 1000,
+    base,
+    fontNamed: () => null,
+    measurer: { width: () => 0, extent: () => ({ ascent: 0.9, descent: 0.25 }) } as unknown as TextMeasurer,
+    pictures: new Map(),
+    tables: false,
+  });
+  const rootStyle = builder.styleOf(parsed.root);
+  const out: RichParagraph[] = [];
+  const inlineGroup = (items: (HtmlElement | string)[], list?: "bullet" | "ordered", level = 0) => {
+    const holder: HtmlElement = { ...parsed.root, children: items, parent: parsed.root };
+    const runs = builder.runsOf(holder, rootStyle);
+    if (runs.some((r) => r.text.trim())) out.push({ ...(list ? { list } : {}), ...(level ? { level } : {}), runs });
+  };
+  const walk = (el: HtmlElement, list: "bullet" | "ordered" | undefined, level: number) => {
+    let pending: (HtmlElement | string)[] = [];
+    const flush = () => {
+      if (pending.length) inlineGroup(pending, el.tag === "li" ? list : undefined, el.tag === "li" ? level : 0);
+      pending = [];
+    };
+    for (const c of el.children) {
+      if (typeof c === "string") {
+        pending.push(c);
+        continue;
+      }
+      const cs = builder.styleOf(c);
+      if (cs.display === "none" || c.picture) continue;
+      if (cs.display === "inline" || cs.display === "inline-block") {
+        pending.push(c);
+        continue;
+      }
+      flush();
+      const nested = c.tag === "ul" || c.tag === "ol";
+      const kind = nested ? (cs.listStyle === "none" ? undefined : cs.listStyle === "decimal" ? "ordered" : "bullet") : list;
+      walk(c, kind, nested && list ? level + 1 : level);
+    }
+    flush();
+  };
+  walk(parsed.root, undefined, 0);
+  return out;
+}
