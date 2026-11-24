@@ -663,7 +663,7 @@ export function useChatLive(orgId: string, channelId: string, enabled: boolean, 
       // A file's cards (a deleted one says so) and an agent's memory list, as on the web.
       applyConversationEvent(qc, orgId, event);
     });
-    // Left, or the app went to the background: shown again, it reads what it missed, as on the web.
+    // Left: shown again, it reads what it missed, as on the web. Back from the background, `onSubscribed` above does.
     return () => {
       off();
       close();
