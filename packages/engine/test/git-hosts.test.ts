@@ -137,7 +137,6 @@ describe("how a repository is named", () => {
     expect(gitToolName("gitlab", "request_branch_push")).toBe("gitlab_request_branch_push");
     expect(gitToolName("git", "git_clone")).toBe("server_git_clone");
     expect(gitVerbOf({ name: "git_clone", scope: "github:git.read" })).toBe("git_clone");
-    expect(gitVerbOf({ name: "bitbucket_list_repositories", scope: "bitbucket:git.read" })).toBe("list_repositories");
     expect(gitVerbOf({ name: "gitlab_open_pull_request", scope: "gitlab:pr.write" })).toBe("open_pull_request");
     // A connected app's tool of the same name isn't ours.
     expect(gitVerbOf({ name: "git_clone", scope: "gitlab:git.read" })).toBeNull();
@@ -617,13 +616,13 @@ describe("the git proxy on another host", () => {
     } as ToolContext;
     const tools = await source.tools(ctx);
     expect(tools.map((t) => t.name)).toEqual([
+      "list_repositories",
       "gitlab_git_clone",
-      "gitlab_list_repositories",
       "gitlab_open_pull_request",
       "gitlab_delete_branches",
       "gitlab_request_branch_push",
     ]);
-    expect(new Set(tools.map((t) => t.connectionId))).toEqual(new Set([w.connection.id]));
+    expect(new Set(tools.slice(1).map((t) => t.connectionId))).toEqual(new Set([w.connection.id]));
     const open = tools.find((t) => t.name === "gitlab_open_pull_request");
     const out = await open?.execute(
       { repo: "acme/web/app", branch: "agentes/dev/fix-login", title: "Fix the login" },
@@ -661,18 +660,18 @@ describe("the git proxy on another host", () => {
       github: { apiUrl: w.lab.apiUrl, fetch: w.lab.fetch },
     });
     const ctx = { db: f.db, orgId: f.org.id, agentId: f.agent.id, runId: "", channelId: "" } as ToolContext;
-    const list = (await source.tools(ctx)).find((t) => t.name === "gitlab_list_repositories");
+    const list = (await source.tools(ctx)).find((t) => t.name === "list_repositories");
     expect((await list?.execute({}, ctx))?.content).toBe(
-      "acme/web/app (private, active 2026-11-20)\nana.dev/notes (public, active 2026-11-01)",
+      "gitlab:acme/web/app (GitLab, private, active 2026-11-20)\ngitlab:ana.dev/notes (GitLab, public, active 2026-11-01)",
     );
     expect((await list?.execute({ query: "NOTES" }, ctx))?.data).toEqual({ repositories: ["gitlab:ana.dev/notes"] });
     await setAgentRepositories(f.db, f.owner.id, f.org.id, f.agent.id, ["gitlab:acme/*"]);
-    expect((await list?.execute({}, ctx))?.content).toBe("acme/web/app (private, active 2026-11-20)");
-    // It names no repository, and still runs for an agent held to a list.
-    expect((await checkToolCall({ name: "gitlab_list_repositories", scope: "gitlab:git.read" }, {}, ctx)).ok).toBe(
-      true,
-    );
-    expect((await checkToolCall({ name: "gitlab_git_clone", scope: "gitlab:git.read" }, {}, ctx)).ok).toBe(false);
+    expect((await list?.execute({}, ctx))?.content).toBe("gitlab:acme/web/app (GitLab, private, active 2026-11-20)");
+    // One tool for every host, with no connection of its own; an agent with no git access there gets nothing.
+    expect(list).toMatchObject({ scope: "" });
+    expect(list?.connectionId).toBeUndefined();
+    await setAgentScopes(f.db, f.owner.id, f.org.id, f.agent.id, [], connectorGrantValidator);
+    expect((await list?.execute({}, ctx))?.content).toContain("no git access");
   });
 
   test("the repositories people pick from: other hosts' apart from GitHub's, by group", async () => {

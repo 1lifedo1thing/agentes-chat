@@ -462,7 +462,6 @@ export const CONNECTOR_CATALOG: Record<string, ConnectorDefinition> = {
     },
     tools: {
       gitlab_git_clone: { scope: "git.read", ours: true },
-      gitlab_list_repositories: { scope: "git.read", ours: true },
       gitlab_open_pull_request: { scope: "pr.write", ours: true },
       gitlab_delete_branches: { scope: "git.write", ours: true },
       gitlab_request_branch_push: { scope: "git.write", ours: true },
@@ -489,7 +488,6 @@ export const CONNECTOR_CATALOG: Record<string, ConnectorDefinition> = {
     },
     tools: {
       bitbucket_git_clone: { scope: "git.read", ours: true },
-      bitbucket_list_repositories: { scope: "git.read", ours: true },
       bitbucket_open_pull_request: { scope: "pr.write", ours: true },
       bitbucket_delete_branches: { scope: "git.write", ours: true },
       bitbucket_request_branch_push: { scope: "git.write", ours: true },

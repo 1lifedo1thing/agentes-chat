@@ -1,4 +1,4 @@
-import { type GitHostId, gitVerbOf } from "../git/hosts/refs";
+import type { GitHostId } from "../git/hosts/refs";
 import { checkGithubCall, checkHostRepoCall } from "../git/repos";
 import type { CallCheck, ToolContext, ToolDefinition } from "./types";
 
@@ -36,15 +36,13 @@ const SCOPE_CHECKS: Record<string, ScopedCheck> = {
  * `checkCall`. Data from both is merged when allowed.
  */
 export async function checkToolCall(
-  tool: Pick<ToolDefinition, "scope" | "checkCall"> & { name?: string },
+  tool: Pick<ToolDefinition, "scope" | "checkCall">,
   input: Record<string, unknown>,
   ctx: ToolContext,
 ): Promise<CallCheck> {
   let data: Record<string, unknown> | undefined;
-  // Listing a host's repositories names none: what it returns is cut to the agent's own (`git/tools.ts`).
-  const lists = tool.name ? gitVerbOf({ name: tool.name, scope: tool.scope }) === "list_repositories" : false;
   for (const [prefix, check] of Object.entries(SCOPE_CHECKS)) {
-    if (lists || !tool.scope.startsWith(prefix)) continue;
+    if (!tool.scope.startsWith(prefix)) continue;
     const r = await check(input, ctx);
     if (!r.ok) return r;
     if (r.data) data = { ...data, ...r.data };

@@ -88,6 +88,11 @@ export async function listOrgRepositories(
   orgId: string,
 ): Promise<OrgRepositoryListing> {
   await requirePermission(deps.db, actorId, orgId, "read");
+  return orgRepositories(deps, orgId);
+}
+
+/** The same listing with nobody asking: for an agent's `list_repositories`, which cuts it to what the agent may use. */
+export async function orgRepositories(deps: RepoListingDeps, orgId: string): Promise<OrgRepositoryListing> {
   const now = deps.now?.() ?? Date.now();
   const connections = await activeConnections(deps.db, orgId);
   const connection = teamGitHub(connections);
