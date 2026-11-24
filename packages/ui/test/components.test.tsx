@@ -608,6 +608,29 @@ describe("boxes as tall as their text", () => {
       await type(box, "um\ndois");
       expect(box.style.height).toBe("66px");
     }));
+
+  test("typing at the end never lets the box go to auto: the page around it isn't laid out twice per key", () =>
+    measured(async () => {
+      function Box() {
+        const [value, setValue] = useState("");
+        return <Textarea autoGrow aria-label="Texto" value={value} onChange={(e) => setValue(e.target.value)} />;
+      }
+      render(<Box />);
+      const box = body().getByRole("textbox", { name: "Texto" }) as HTMLTextAreaElement;
+      // Each style write, by the value it replaced (the last one is the box's own).
+      const replaced: string[] = [];
+      const watch = new MutationObserver((records) => {
+        for (const r of records) replaced.push(r.oldValue ?? "");
+      });
+      watch.observe(box, { attributes: true, attributeFilter: ["style"], attributeOldValue: true });
+      for (const text of ["o", "oi", "oi\n", "oi\nt", "oi\ntudo"]) await type(box, text);
+      expect(replaced.filter((v) => v.includes("auto"))).toEqual([]);
+      expect(box.style.height).toBe("66px");
+      await type(box, "oi");
+      watch.disconnect();
+      expect(replaced.some((v) => v.includes("auto"))).toBe(true);
+      expect(box.style.height).toBe("44px");
+    }));
 });
 
 describe("Message", () => {

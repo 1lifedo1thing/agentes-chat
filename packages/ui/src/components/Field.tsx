@@ -194,10 +194,16 @@ export function Locked({ when, children }: { when: boolean; children: ReactNode 
   );
 }
 
-/** A border-box height that fits the text: `scrollHeight` leaves the border out. */
-function fitText(el: HTMLTextAreaElement) {
-  el.style.height = "auto";
-  el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
+/**
+ * A border-box height that fits the text: `scrollHeight` leaves the border out. `grows`: text only added at the end,
+ * which can't take a line away, so the height is read as it stands; the "auto" that lets it shrink would lay out
+ * everything around the box twice per key.
+ */
+function fitText(el: HTMLTextAreaElement, grows = false) {
+  const border = el.offsetHeight - el.clientHeight;
+  if (!grows) el.style.height = "auto";
+  const height = `${el.scrollHeight + border}px`;
+  if (el.style.height !== height) el.style.height = height;
 }
 
 /**
@@ -218,9 +224,12 @@ export function PickerHeading({ label, description }: { label: ReactNode; descri
  * width rewraps it (a window resize, a sidebar opening). `on` false leaves its height alone.
  */
 export function useAutoGrow(ref: RefObject<HTMLTextAreaElement | null>, value: string, on = true) {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: measured again whenever the text changes
+  const measured = useRef<string | null>(null);
   useLayoutEffect(() => {
-    if (on && ref.current) fitText(ref.current);
+    if (!on || !ref.current) return;
+    const before = measured.current;
+    fitText(ref.current, before !== null && value.startsWith(before));
+    measured.current = value;
   }, [ref, value, on]);
   useLayoutEffect(() => {
     const el = ref.current;
