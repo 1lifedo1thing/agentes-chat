@@ -36,6 +36,7 @@ const realFetch = globalThis.fetch;
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
+  localStorage.clear();
   globalThis.fetch = realFetch;
   focusManager.setFocused(undefined);
 });
@@ -666,10 +667,12 @@ describe("a workspace being set up resumes from its data", () => {
     expect(router.state.location.pathname).toBe(`/org/${ORG_ID}/c/${GENERAL_ID}`);
   });
 
-  test("back from paying: the payment received, then the AI step once the hold lifts; back without: the plan", async () => {
+  test("back from paying: the payment received, the plan turned on, then the AI step; back without: the plan", async () => {
     const paid = noAiYet(settingUp({ context: "Loja online", team: true, held: true }));
     plans(PLANS);
-    const { router } = await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: createFakeApi(paid) });
+    const { router } = await renderApp(`/org/${ORG_ID}/onboarding?paid=1&plan=team&period=year`, {
+      api: createFakeApi(paid),
+    });
     await settle(14);
     expect(router.state.location.pathname).toBe("/onboarding");
     expect(heading()).toBe("Ligue o time");
@@ -685,6 +688,14 @@ describe("a workspace being set up resumes from its data", () => {
       focusManager.setFocused(true);
     });
     await settle(16);
+    // The moment it turned on: the plan step stays, the team awake on it, what was bought in one line, and the step
+    // that follows as its one way on.
+    expect(heading()).toBe("O seu time está de pé");
+    expect(document.querySelector(".onb__lead")?.textContent).toBe("Pagamento confirmado: Equipe, cobrança anual.");
+    expect(document.querySelector(".onb__say")?.textContent).toContain("Estamos todos de pé");
+    expect(planCard().querySelector(".paid-scene")).toBeTruthy();
+    expect(within(planCard()).queryByRole("button", { name: "Ligar o time" })).toBeNull();
+    await click(within(planCard()).getByRole("button", { name: /Conectar uma IA/ }), 16);
     expect(heading()).toBe(CONNECT);
     // The plan stays on the rail, on, and is never asked again.
     expect(document.querySelector(".onb__steps")?.textContent).toContain("Ligado");
@@ -709,6 +720,25 @@ describe("a workspace being set up resumes from its data", () => {
     await settle(14);
     expect(again.router.state.location.pathname.startsWith(`/org/${ORG_ID}/`)).toBe(true);
     expect(document.querySelector(".onb")).toBeNull();
+  });
+
+  test("back from paying with the plan already on: the moment once, and a reload goes straight to the AI step", async () => {
+    // The plan step was shown before Checkout ("computer"), and the billing service lifted the hold before the return.
+    const paidOn = () => {
+      const state = noAiYet(settingUp({ context: "Loja online", team: true, step: "computer" }));
+      state.authConfig = { billingUrl: "https://billing.example.com" };
+      return state;
+    };
+    plans(PLANS);
+    await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: createFakeApi(paidOn()) });
+    await settle(16);
+    expect(heading()).toBe("O seu time está de pé");
+    expect(document.querySelector(".onb__lead")?.textContent).toBe("Pagamento confirmado.");
+    cleanup();
+    plans(PLANS);
+    await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: createFakeApi(paidOn()) });
+    await settle(16);
+    expect(heading()).toBe(CONNECT);
   });
 
   test("asked to delete the workspace being set up: its dialog, and nothing is finished", async () => {

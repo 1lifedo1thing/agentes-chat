@@ -405,6 +405,11 @@ html:not([data-pointer]) .onb__logo:focus-visible {
   isolation: isolate;
   box-shadow: inset 0 0 0 1px var(--line);
 }
+/* The plan just turned on: the team's band, day over it. */
+.team-scene.onb__plan-scene {
+  height: 132px;
+  border-radius: var(--radius-lg);
+}
 .onb__plan-sky {
   position: absolute;
   inset: 0;

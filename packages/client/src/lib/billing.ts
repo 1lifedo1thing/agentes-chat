@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { OrgStanding, OrgSummary } from "../api/types";
 import { can } from "./permissions";
 
@@ -40,6 +41,51 @@ export const standingActive = (standing: Pick<OrgStanding, "state"> | null | und
 export const isPaidReturn = (search: Record<string, unknown>) =>
   search.paid === 1 || search.paid === true || search.paid === "1";
 
+/** The periods a plan is paid for. */
+export const PLAN_PERIODS = ["month", "year"] as const;
+export type PlanPeriod = (typeof PLAN_PERIODS)[number];
+
+/**
+ * What a paid return says it bought, when the billing service names it: the plan's key (`plan`) and its period
+ * (`period`), beside `paid`. Null when the address isn't a paid return. Keys only, never a name or a price: the app
+ * reads the plan's name from the billing service's own plan list (`planOfferOf`).
+ */
+export interface PaidReturn {
+  plan?: string;
+  period?: PlanPeriod;
+}
+
+export function paidReturnOf(search: Record<string, unknown>): PaidReturn | null {
+  if (!isPaidReturn(search)) return null;
+  const plan = typeof search.plan === "string" && PLAN_KEY.test(search.plan) ? search.plan : undefined;
+  const period = PLAN_PERIODS.find((p) => p === search.period);
+  return { ...(plan ? { plan } : {}), ...(period ? { period } : {}) };
+}
+
+/** The search a redirect forwards a paid return with: `paid`, and what it bought. Nothing when it isn't one. */
+export const paidSearch = (search: Record<string, unknown>): { paid?: true } & PaidReturn => {
+  const paid = paidReturnOf(search);
+  return paid ? { paid: true, ...paid } : {};
+};
+
+/**
+ * The purchase in one line: confirmed, with the plan's name and its period when the app knows them (`plan`: the name
+ * the billing service's plan list gives the bought key).
+ */
+export function paidLine(t: TFunction, plan: string | null | undefined, period: PlanPeriod | undefined) {
+  if (!plan) return t("paidMoment.confirmed");
+  if (period === "month") return t("paidMoment.confirmedMonth", { plan });
+  if (period === "year") return t("paidMoment.confirmedYear", { plan });
+  return t("paidMoment.confirmedPlan", { plan });
+}
+
+/**
+ * The phone's trigger for the moment a plan turns on (it never sees the paid return, ADR 0079): the workspace was on a
+ * billing hold the last time this device looked (`wasHeld`) and its plan is in force now. Never on the first look.
+ */
+export const planTurnedOn = (wasHeld: boolean | undefined, standing: Pick<OrgStanding, "state"> | null | undefined) =>
+  wasHeld === true && standingActive(standing);
+
 /** The plan the onboarding offers: its key for the billing link, its name, and its price as the billing service writes it. */
 export interface PlanOffer {
   key: string;
@@ -52,18 +98,19 @@ const shortText = (v: unknown, max: number) =>
   typeof v === "string" && v.trim() && v.length <= max ? v.trim() : undefined;
 
 /**
- * The recommended plan from the billing service's public plan list (`GET {billingUrl}/plans.json`), or null when the
- * list isn't one: the onboarding then names no plan. The core server never names a plan nor a price (ADR 0079 §6).
+ * The recommended plan (or the one whose `key` is given) from the billing service's public plan list
+ * (`GET {billingUrl}/plans.json`), or null when the list isn't one: the app then names no plan. The core server never names a plan nor a price (ADR 0079 §6).
  */
-export function planOfferOf(json: unknown): PlanOffer | null {
+export function planOfferOf(json: unknown, key?: string): PlanOffer | null {
   if (!json || typeof json !== "object") return null;
   const { recommended, plans } = json as { recommended?: unknown; plans?: unknown };
-  if (typeof recommended !== "string" || !Array.isArray(plans)) return null;
-  const plan = plans.find((p) => (p as { key?: unknown } | null)?.key === recommended) as
+  const wanted = key ?? recommended;
+  if (typeof wanted !== "string" || !Array.isArray(plans)) return null;
+  const plan = plans.find((p) => (p as { key?: unknown } | null)?.key === wanted) as
     | Record<string, unknown>
     | undefined;
   const name = shortText(plan?.name, 40);
-  if (!plan || !PLAN_KEY.test(recommended) || !name) return null;
+  if (!plan || !PLAN_KEY.test(wanted) || !name) return null;
   const price = shortText(plan.price, 24);
-  return { key: recommended, name, ...(price ? { price } : {}) };
+  return { key: wanted, name, ...(price ? { price } : {}) };
 }

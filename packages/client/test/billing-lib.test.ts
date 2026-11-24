@@ -2,7 +2,16 @@ import { describe, expect, test } from "bun:test";
 import type { TFunction } from "i18next";
 import { ApiError } from "../src/api/http";
 import type { AppNotification, OrgSummary } from "../src/api/types";
-import { BILLING_HOLDS, billingHoldOf, planMoveTargets, planOfferOf } from "../src/lib/billing";
+import {
+  BILLING_HOLDS,
+  billingHoldOf,
+  paidLine,
+  paidReturnOf,
+  paidSearch,
+  planMoveTargets,
+  planOfferOf,
+  planTurnedOn,
+} from "../src/lib/billing";
 import { errorText, holdText, restrictionLine } from "../src/lib/errors";
 import { workspaceHeadline } from "../src/lib/notifications";
 import { can } from "../src/lib/permissions";
@@ -88,6 +97,47 @@ describe("the plan the onboarding offers (the billing service's plan list)", () 
     expect(planOfferOf(list([{ key: "team" }]))).toBeNull();
     expect(planOfferOf(list([{ key: "Team!", name: "Equipe" }], "Team!"))).toBeNull();
     expect(planOfferOf(list([{ key: "team", name: "x".repeat(41) }]))).toBeNull();
+  });
+
+  test("any plan of the list by its key, a paid return's", () => {
+    const json = list([
+      { key: "personal", name: "Pessoal", price: "$29" },
+      { key: "team", name: "Equipe" },
+    ]);
+    expect(planOfferOf(json, "personal")).toEqual({ key: "personal", name: "Pessoal", price: "$29" });
+    expect(planOfferOf(json, "solo")).toBeNull();
+  });
+});
+
+describe("a paid return (the billing service's `?paid=1`)", () => {
+  test("what it says was bought: a plan's key and its period, nothing else", () => {
+    expect(paidReturnOf({ paid: 1 })).toEqual({});
+    expect(paidReturnOf({ paid: "1", plan: "team", period: "year" })).toEqual({ plan: "team", period: "year" });
+    expect(paidReturnOf({ paid: true, plan: "Team <b>", period: "week" })).toEqual({});
+    expect(paidReturnOf({ plan: "team" })).toBeNull();
+    expect(paidSearch({ paid: 1, plan: "team", period: "month", other: 1 })).toEqual({
+      paid: true,
+      plan: "team",
+      period: "month",
+    });
+    expect(paidSearch({ plan: "team" })).toEqual({});
+  });
+
+  test("the purchase in one line, with as much as the app knows", () => {
+    const t = ((key: string, o?: { plan?: string }) => (o?.plan ? `${key}:${o.plan}` : key)) as never;
+    expect(paidLine(t, null, "year")).toBe("paidMoment.confirmed");
+    expect(paidLine(t, "Equipe", undefined)).toBe("paidMoment.confirmedPlan:Equipe");
+    expect(paidLine(t, "Equipe", "month")).toBe("paidMoment.confirmedMonth:Equipe");
+    expect(paidLine(t, "Equipe", "year")).toBe("paidMoment.confirmedYear:Equipe");
+  });
+
+  test("the phone's trigger: held when it last looked, in force now; never on a first look", () => {
+    const hold = { state: "hold" as const };
+    expect(planTurnedOn(true, { state: "active" })).toBe(true);
+    expect(planTurnedOn(true, undefined)).toBe(true);
+    expect(planTurnedOn(true, hold)).toBe(false);
+    expect(planTurnedOn(false, { state: "active" })).toBe(false);
+    expect(planTurnedOn(undefined, { state: "active" })).toBe(false);
   });
 });
 

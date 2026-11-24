@@ -22232,6 +22232,28 @@ export const en = {
     approvalsPersonal:
       "Anything sent, paid or booked in your name waits for your approval. You can let it go later, once you trust them.",
   },
+  /** Right after a paid Checkout (ADR 0079): the plan on, the team awake on its sky, and one way on. */
+  paidMoment: {
+    title: "Your team is up and running",
+    titlePersonal: "Your agents are up and running",
+    /** The purchase in one line. `{{plan}}`: the plan's name, as the billing service writes it. */
+    confirmed: "Payment confirmed.",
+    confirmedPlan: "Payment confirmed: {{plan}}.",
+    confirmedMonth: "Payment confirmed: {{plan}}, billed monthly.",
+    confirmedYear: "Payment confirmed: {{plan}}, billed yearly.",
+    /** Said by the agents on the sky to the person who paid, by their first name. `hi`: their name isn't known. */
+    hello: "Hi, {{first}}",
+    hi: "Hi there",
+    /** The right hand's line beside the onboarding's step, once the plan is on. */
+    say: "We're all up and the computer is on. Let's get to work.",
+    /** The one way on: the step that comes next, or the first conversation. */
+    next: {
+      ai: "Connect an AI",
+      people: "Invite people",
+      open: "Go to the workspace",
+      talk: "Talk to {{name}}",
+    },
+  },
   /** Right after the onboarding (ADR 0160): the beta notice, then Connect an AI with the team beside it. */
   arrival: {
     beta: {

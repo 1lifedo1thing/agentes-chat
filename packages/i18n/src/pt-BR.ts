@@ -22122,6 +22122,28 @@ export const ptBR = {
     approvalsPersonal:
       "O que for enviado, pago ou reservado em seu nome espera a sua aprovação. Dá para liberar depois, quando você confiar neles.",
   },
+  /** Right after a paid Checkout (ADR 0079): the plan on, the team awake on its sky, and one way on. */
+  paidMoment: {
+    title: "O seu time está de pé",
+    titlePersonal: "Os seus agentes estão de pé",
+    /** The purchase in one line. `{{plan}}`: the plan's name, as the billing service writes it. */
+    confirmed: "Pagamento confirmado.",
+    confirmedPlan: "Pagamento confirmado: {{plan}}.",
+    confirmedMonth: "Pagamento confirmado: {{plan}}, cobrança mensal.",
+    confirmedYear: "Pagamento confirmado: {{plan}}, cobrança anual.",
+    /** Said by the agents on the sky to the person who paid, by their first name. `hi`: their name isn't known. */
+    hello: "Oi, {{first}}",
+    hi: "Oi",
+    /** The right hand's line beside the onboarding's step, once the plan is on. */
+    say: "Estamos todos de pé e o computador está ligado. Vamos ao trabalho.",
+    /** The one way on: the step that comes next, or the first conversation. */
+    next: {
+      ai: "Conectar uma IA",
+      people: "Convidar pessoas",
+      open: "Entrar no workspace",
+      talk: "Falar com {{name}}",
+    },
+  },
   /** Right after the onboarding (ADR 0160): the beta notice, then Connect an AI with the team beside it. */
   arrival: {
     beta: {

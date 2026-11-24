@@ -9,7 +9,7 @@ import {
   useAuthConfig,
   type WorkspaceMode,
 } from "@agenteschat/client";
-import { billingHoldOf } from "@agenteschat/client/lib/billing";
+import { billingHoldOf, paidLine } from "@agenteschat/client/lib/billing";
 import { accountOutOfReach } from "@agenteschat/client/lib/deletion";
 import { errorCode, errorText } from "@agenteschat/client/lib/errors";
 import { firstName, joinNames } from "@agenteschat/client/lib/format";
@@ -65,7 +65,7 @@ import { ARRIVAL_BETA_ONLY, ARRIVAL_PARAM } from "@/lib/arrival";
 import { sendNewLink } from "@/lib/email-confirmation";
 import { lookOf } from "@/lib/look";
 import { useOpenParam } from "@/lib/open-param";
-import { usePaidReturn } from "@/lib/paid-return";
+import { usePaidMoment, usePaidReturn } from "@/lib/paid-return";
 import { usePlanOffer } from "@/lib/plan-offer";
 import { returnPlace } from "@/lib/return-to";
 import { STORAGE_KEYS, sessionStore, storage } from "@/lib/storage";
@@ -193,6 +193,10 @@ export function OnboardingPage() {
   // Back from paying, until the billing service lifts the hold: `/me` again meanwhile, as the hold's banner does.
   const paid = usePaidReturn(orgId ?? "", held);
   useQuery({ ...meQuery(api), enabled: paid, refetchInterval: PAID_POLL_MS });
+  // Once the plan is on, the moment it turned on (ADR 0079): the plan step stays, the team awake on it, with the step
+  // that follows as its one way on. Once per payment, never on a plain visit.
+  const paidMoment = usePaidMoment(orgId ?? "", orgId ? mine?.standing : { state: "hold", reason: null });
+  const moment = paidMoment.moment;
   // Made here as "For me", one being set up that is, or "For me" picked and not made yet: the rail shows the personal
   // path from the first question on (ADR 0159).
   const personalNow = isPersonal(mine) || (personal && (created !== null || orgId === null));
@@ -233,7 +237,8 @@ export function OnboardingPage() {
       // The person's own step is answered once per account: their area said, or skipped (amended 2026-11-12).
       funnel: { thinks, passed, about: (me.data?.user.workArea ?? null) !== null },
     });
-  const reachedRail = railAt(picked);
+  const onRail = railAt(picked);
+  const reachedRail = moment && onRail.hasPlanStep ? railAt("plan") : onRail;
   // Connected on its step in this visit, a team's AI step stays on screen (what was connected, the Connect dialog still
   // over it) until its Continuar: the people step never takes its place under the person (ADR 0162, amended 2026-11-11).
   const keepAi =
@@ -284,10 +289,14 @@ export function OnboardingPage() {
   // Read from the first step, so the plan step has it when it opens.
   const plans = usePlanOffer(i18n.language);
   const offer = plans.offer;
+  // What the paid return says was bought, by its name in the plan list.
+  const bought = usePlanOffer(i18n.language, { key: moment?.plan, enabled: Boolean(moment?.plan) });
   // Read once is enough: a refetch that fails later keeps the step on screen with what it read. The plan step opens
   // whole, back from the billing page too: with its price, or with none once the list is late, never a line that changes.
   // A first visit that only the AI's answer can place (its step or opening) waits for it, as for the workspace's data.
-  const known = loaded && !(deciding && frozen === null) && !(step === "plan" && plans.loading);
+  const known = loaded && !(deciding && frozen === null) && !(step === "plan" && (plans.loading || bought.loading));
+  // The plan step showing the plan turned on.
+  const awake = moment !== null && step === "plan";
   const name = (mine?.name ?? org).trim();
   // Back on step 1, the workspace's own zone (saved on another visit, maybe another device), never this browser's.
   const zoneNow = zone ?? settings.data?.timezone ?? browserTimezone() ?? "UTC";
@@ -324,7 +333,7 @@ export function OnboardingPage() {
   const teamList = team.length > 0 && !holding && !arriving;
   // Nothing opens by itself while the person is on a step they chose: the AI's done screen, an import's report or its
   // files copying, a step they went back to.
-  const stay = aiSeen || holding || picked !== null;
+  const stay = aiSeen || holding || picked !== null || awake;
 
   /** A step the server saved, in `/me` as it answered, where the rail reads it. */
   const remember = (id: string, saved: { step: OnboardingStepId } | null) => {
@@ -547,7 +556,7 @@ export function OnboardingPage() {
             ? (teamHead?.say ??
               t(personalNow ? "onboarding.flow.lodi.teamMadePersonal" : "onboarding.flow.lodi.teamMade", lodiWords))
             : step === "plan"
-              ? t("onboarding.flow.lodi.planThen", lodiWords)
+              ? t(awake ? "paidMoment.say" : "onboarding.flow.lodi.planThen", lodiWords)
               : step === "people"
                 ? t(emails ? "onboarding.flow.lodi.people" : "onboarding.flow.lodi.peopleLink", lodiWords)
                 : aiDone
@@ -572,7 +581,9 @@ export function OnboardingPage() {
               ? (teamHead?.title ??
                 t(personalNow ? "onboarding.flow.steps.teamPersonal" : "onboarding.flow.team.title"))
               : step === "plan"
-                ? t(personalNow ? "onboarding.flow.plan.titlePersonal" : "onboarding.flow.plan.title")
+                ? awake
+                  ? t(personalNow ? "paidMoment.titlePersonal" : "paidMoment.title")
+                  : t(personalNow ? "onboarding.flow.plan.titlePersonal" : "onboarding.flow.plan.title")
                 : step === "people"
                   ? t("onboarding.flow.people.title")
                   : aiDone
@@ -597,13 +608,15 @@ export function OnboardingPage() {
             : step === "team"
               ? (teamHead?.lead ?? t("onboarding.flow.team.madeLead"))
               : step === "plan"
-                ? t(
-                    personalNow
-                      ? "onboarding.flow.plan.leadPersonal"
-                      : alone
-                        ? "onboarding.flow.plan.leadAlone"
-                        : "onboarding.flow.plan.lead",
-                  )
+                ? awake
+                  ? paidLine(t, bought.offer?.name, moment?.period)
+                  : t(
+                      personalNow
+                        ? "onboarding.flow.plan.leadPersonal"
+                        : alone
+                          ? "onboarding.flow.plan.leadAlone"
+                          : "onboarding.flow.plan.lead",
+                    )
                 : step === "people"
                   ? // A server that sends no email invites through its link only (ADR 0090).
                     t(emails ? "onboarding.flow.people.lead" : "members.dialog.linkStep.lead")
@@ -684,7 +697,7 @@ export function OnboardingPage() {
           name: a.name,
           role: a.role,
           look: lookOf(a),
-          asleep: step === "plan" || step === "ai",
+          asleep: (step === "plan" && !awake) || step === "ai",
         }))
       : brought
         ? brought.agents
@@ -1069,6 +1082,21 @@ export function OnboardingPage() {
                   next={steps.includes("ai")}
                   confirming={paid}
                   personal={personalNow}
+                  awake={
+                    awake
+                      ? {
+                          name: me.data.user.name,
+                          next: t(
+                            steps[index + 1] === "ai"
+                              ? "paidMoment.next.ai"
+                              : steps[index + 1] === "people"
+                                ? "paidMoment.next.people"
+                                : "paidMoment.next.open",
+                          ),
+                          onNext: paidMoment.done,
+                        }
+                      : null
+                  }
                 />
               )}
               {step === "ai" && orgId && (
@@ -1131,8 +1159,8 @@ export function OnboardingPage() {
  * The AI step and its stage inside the workspace's context and Connect an AI (ADR 0160), which the onboarding has
  * nowhere else; the people step inside the workspace's context, which the invite link's panel reads, the team
  * step, where a private repository to bring agents from offers to connect GitHub, and the person's own step, whose
- * avatar builder and photo save to the person's account through it; any other step
- * as it is, so the earlier steps ask the server for nothing more.
+ * avatar builder and photo save to the person's account through it, and the plan step, whose team wakes on its sky
+ * once the plan is on; any other step as it is, so the earlier steps ask the server for nothing more.
  */
 function StepHost({
   step,
@@ -1151,7 +1179,7 @@ function StepHost({
         {children}
       </AiHost>
     );
-  if (org && (step === "people" || step === "team" || step === "you"))
+  if (org && (step === "people" || step === "team" || step === "you" || step === "plan"))
     return (
       <OrgProvider org={org} me={me}>
         {children}

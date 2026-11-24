@@ -1216,12 +1216,108 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
   }
 }
 
+/* ---------- right after paying: the team wakes, the computer turns on, a hello ---------- */
+.paid-scene .team-scene__row {
+  gap: var(--space-3);
+}
+.paid-scene .ac-computer {
+  flex: none;
+}
+/* The hello comes once the team is up: faded in, never popped. */
+.paid-scene__hello {
+  flex: none;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--out);
+}
+.paid-scene__hello[data-on] {
+  opacity: 1;
+}
+/* A phone: two faces, so the computer and the hello keep their room. */
+@media (max-width: 520px) {
+  .paid-scene .team-scene__agent:nth-child(3) {
+    display: none;
+  }
+}
+
+/* The lighter form: a card in the window's corner, over the page and under every dialog, leaving the page as it is. */
+.paid-card {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-floating);
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100% - 2 * var(--space-4)));
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--raised);
+  box-shadow: var(--e3);
+  animation: arrival-in var(--dur-base) var(--out) both;
+}
+.paid-card__band {
+  position: relative;
+  height: 112px;
+}
+.paid-card__band .team-scene__row {
+  bottom: var(--space-3);
+}
+.paid-card__band .team-scene__agent .ac-avatar {
+  width: 36px;
+  height: 36px;
+}
+.paid-card__band .team-scene__agent[data-lead] .ac-avatar {
+  width: 44px;
+  height: 44px;
+}
+.paid-card__band .arrival-hero__close {
+  top: var(--space-2);
+  right: var(--space-2);
+}
+.paid-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+}
+.paid-card__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 22px;
+  text-wrap: balance;
+}
+.paid-card__line {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.paid-card__go {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+@media (max-width: 520px) {
+  .paid-card {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-4));
+  }
+  /* A card's lone primary button fills it on a phone. */
+  .paid-card__go {
+    align-self: stretch;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .team-scene__cast[data-awake] .team-scene__agent,
   .team-scene__trail i,
   .team-scene__mark,
-  .arrival-envelope {
+  .arrival-envelope,
+  .paid-card {
     animation: none;
+  }
+  .paid-scene__hello {
+    transition: none;
   }
   .arrival-envelope[data-sent] {
     display: none;
