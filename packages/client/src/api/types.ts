@@ -7342,6 +7342,13 @@ export type NotificationKind =
   | "computer_disk_full"
   /** ADR 0133: a computer has no Google Chrome for its agents' browsers (who connected it). `source.machineId`. */
   | "computer_no_chrome"
+  /**
+   * ADR 0227: a computer the agents work on has been away 10 minutes (who configures the workspace). Once per outage;
+   * `source.machineId` and its name in `source.label`, `latest.since`, `latest.runs`, `latest.calls`.
+   */
+  | "computer_down"
+  /** ADR 0227: that computer is back (who heard it was down), with the same fields. Opens the computer. */
+  | "computer_back"
   /** ADR 0059 §8: someone else took control of the person's agent's desktop. Once a day per agent; `source.agentId`. */
   | "desktop_taken"
   /**
@@ -7591,6 +7598,9 @@ export interface NotificationLatest {
   /** `computer_disk_full`: the share of the disk in use (0 to 1) and the GB left. */
   diskUse?: number;
   diskFreeGb?: number;
+  /** `computer_down`, `computer_back`: when the outage began (ISO), the webhook calls that waited (`runs`: the runs). */
+  since?: string;
+  calls?: number;
   /** `app_created`: how many of each kind (`agent`, `routine`, `skill`, `memory`, `channel`). */
   created?: Record<string, number>;
   /** `run_failed`: every run the row stands for, failed for one cause close together (`latest.reason`). */
@@ -7605,6 +7615,7 @@ export interface NotificationLatest {
   limitUsd?: number;
   raiseToUsd?: number;
   limitFrom?: string;
+  /** `usage_limit`: this month's requests; `computer_down`, `computer_back`: the runs that waited for the computer. */
   runs?: number;
   /** `usage_limit`: the share of the requests made with the agent named in `title`. */
   share?: number;

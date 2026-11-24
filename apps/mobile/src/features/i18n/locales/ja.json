@@ -920,6 +920,8 @@
       "plan_model_dropped_other": "{{model}}が{{plan}}から外れました。{{names}}は当面{{runs}}を使います",
       "computer_disk_full_other": "コンピューターのディスクがほぼいっぱいです",
       "computer_no_chrome_other": "コンピューターにGoogle Chromeが必要です。google.com/chromeからダウンロードしてください",
+      "computer_down_other": "コンピューターが応答していません",
+      "computer_back_other": "コンピューターが復旧しました",
       "app_created_other": "AIアプリがあなたのために作成しました"
     },
     "markRead": "既読にする",

@@ -2217,7 +2217,7 @@
       },
       "computers": {
         "title": "Computadoras",
-        "help": "Se sumó una computadora nueva o la del espacio de trabajo está lista"
+        "help": "Se sumó una computadora, está lista o dejó de responder"
       },
       "reactions": {
         "title": "Reacciones",
@@ -16838,6 +16838,20 @@
       "diskFullNotice": "El disco de {{name}} está casi lleno"
     },
     "chromeMissingNotice": "{{name}} necesita Google Chrome para el navegador de los agentes. Descárgalo en google.com/chrome",
+    "outage": {
+      "down": "{{name}} no responde",
+      "back": "{{name}} volvió",
+      "since": "Desde las {{time}}",
+      "backAfter": "Volvió después de {{away}}",
+      "waiting": "En espera: {{what}}",
+      "waited": "Esperaron: {{what}}",
+      "runs_one": "{{count}} pedido a agentes",
+      "runs_many": "{{count}} pedidos a agentes",
+      "runs_other": "{{count}} pedidos a agentes",
+      "calls_one": "{{count}} llamada de webhook",
+      "calls_many": "{{count}} llamadas de webhook",
+      "calls_other": "{{count}} llamadas de webhook"
+    },
     "access": {
       "folders": "Carpetas permitidas",
       "ownFolder": "Carpeta de cada agente",

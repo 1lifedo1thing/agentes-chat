@@ -25,6 +25,7 @@ import {
 import { approvalCardItems } from "@agenteschat/client/lib/approval-card";
 import { approvalOriginWords } from "@agenteschat/client/lib/approval-origin";
 import { appCreatedLine } from "@agenteschat/client/lib/apps";
+import { computerOutageLine, isComputerOutage } from "@agenteschat/client/lib/computer-outage";
 import { deviceNoticeOf } from "@agenteschat/client/lib/devices";
 import { errorText, restrictionLine } from "@agenteschat/client/lib/errors";
 import { daysBetween, formatShortDate, formatTime, namesText, timeLeft } from "@agenteschat/client/lib/format";
@@ -193,6 +194,7 @@ function sourceOf(t: TFunction, n: AppNotification, channelName: (id: string) =>
     n.kind === "computer_ready" ||
     n.kind === "computer_disk_full" ||
     n.kind === "computer_no_chrome" ||
+    isComputerOutage(n) ||
     n.kind === "desktop_taken" ||
     (n.kind === "browser_handoff" && s.screen === "desktop")
   )
@@ -548,7 +550,7 @@ function PlanTakeBack({ n }: { n: AppNotification }) {
 }
 
 /** What an item says under its headline: where it happened, what leads the line, and its words. */
-function itemWords(t: TFunction, n: AppNotification, dir: Dir, channelName: (id: string) => string) {
+function itemWords(t: TFunction, n: AppNotification, dir: Dir, channelName: (id: string) => string, locale: string) {
   const l = n.latest;
   // Asked while nobody watched (ADR 0053 §8): who asked leads an approval's line, its why follows.
   const origin = n.kind === "approval" ? approvalOriginWords({ origin: l.origin }) : null;
@@ -574,21 +576,23 @@ function itemWords(t: TFunction, n: AppNotification, dir: Dir, channelName: (id:
   const media = mediaKindOf(l.media);
   const text = restriction
     ? restrictionLine(t, restriction.code, restriction.facts)
-    : n.kind === "usage_limit"
-      ? usageLimitLine(t, n)
-      : widgetLine
-        ? widgetLine
-        : // What the right hand found is the headline itself: nothing under it says it again.
-          n.kind === "team_watch" || n.kind === "budget_paused"
-          ? null
-          : // What an agent applied (ADR 0219): the newest change, in a line.
-            n.kind === "proposal_applied"
-            ? (l.title ?? null)
-            : why
-              ? sayWords(t, why, l.text ?? "")
-              : media === "voice"
-                ? mediaWord(t, media)
-                : latestText(t, l) || (media ? mediaWord(t, media) : l.text);
+    : isComputerOutage(n)
+      ? computerOutageLine(t, n, locale)
+      : n.kind === "usage_limit"
+        ? usageLimitLine(t, n)
+        : widgetLine
+          ? widgetLine
+          : // What the right hand found is the headline itself: nothing under it says it again.
+            n.kind === "team_watch" || n.kind === "budget_paused"
+            ? null
+            : // What an agent applied (ADR 0219): the newest change, in a line.
+              n.kind === "proposal_applied"
+              ? (l.title ?? null)
+              : why
+                ? sayWords(t, why, l.text ?? "")
+                : media === "voice"
+                  ? mediaWord(t, media)
+                  : latestText(t, l) || (media ? mediaWord(t, media) : l.text);
   const statusMove = n.kind === "issue_status" && (l.statusFrom || l.statusTo);
   // Where it happened and a task's move, in plain words.
   const where =
@@ -686,7 +690,7 @@ function InboxRow({
           ? t("notifications.wait.joinRequestNames", { names: namesText(t, asked.names, 2, asked.total) })
           : t("notifications.wait.joinRequest", { count: 1, name: asked.names[0] })
         : ((n.kind === "invitation_accepted" ? joinerOf(t, dir, n) : undefined) ?? name);
-  const words = itemWords(t, n, dir, channelName);
+  const words = itemWords(t, n, dir, channelName, i18n.language);
   const sub = n.waiting
     ? [words.where, waitingWords(t, n, dir)].filter(Boolean).join(" · ")
     : [words.where, words.lead, words.text].filter(Boolean).join(" · ");
@@ -872,7 +876,7 @@ function InboxRead({
   const l = n.latest;
   const approvalId = n.kind === "approval" ? n.source.approvalId : undefined;
   const source = sourceOf(t, n, channelName);
-  const words = itemWords(t, n, dir, channelName);
+  const words = itemWords(t, n, dir, channelName, i18n.language);
   const found = teamWatchOf(n);
   const steps = l.steps && l.steps.total > 0 ? l.steps : null;
   const failed =

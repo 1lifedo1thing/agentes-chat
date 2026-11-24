@@ -2144,7 +2144,7 @@
       },
       "computers": {
         "title": "Computer",
-        "help": "Ein neuer Computer ist dazugekommen oder der des Workspace ist bereit"
+        "help": "Ein Computer ist dazugekommen, ist bereit oder antwortet nicht mehr"
       },
       "reactions": {
         "title": "Reaktionen",
@@ -16371,6 +16371,18 @@
       "diskFullNotice": "Die Festplatte von {{name}} ist fast voll"
     },
     "chromeMissingNotice": "{{name}} braucht Google Chrome für den Browser der Agenten. Lade es unter google.com/chrome herunter",
+    "outage": {
+      "down": "{{name}} antwortet nicht",
+      "back": "{{name}} ist wieder da",
+      "since": "Seit {{time}}",
+      "backAfter": "Wieder da nach {{away}}",
+      "waiting": "Es warten: {{what}}",
+      "waited": "Gewartet haben: {{what}}",
+      "runs_one": "{{count}} Anfrage an Agenten",
+      "runs_other": "{{count}} Anfragen an Agenten",
+      "calls_one": "{{count}} Webhook-Aufruf",
+      "calls_other": "{{count}} Webhook-Aufrufe"
+    },
     "access": {
       "folders": "Erlaubte Ordner",
       "ownFolder": "Ordner jedes Agenten",

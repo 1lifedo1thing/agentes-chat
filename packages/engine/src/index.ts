@@ -69,6 +69,7 @@ export * from "./claude-auth-policy";
 export * from "./code-sessions";
 export * from "./code-suggestions";
 export * from "./codes";
+export * from "./computer-down";
 export * from "./computer-queue";
 export * from "./confidential";
 export * from "./confidential-prune";

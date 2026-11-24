@@ -2072,7 +2072,7 @@
       },
       "computers": {
         "title": "电脑",
-        "help": "有新电脑加入，或工作区的电脑已就绪"
+        "help": "有电脑加入、就绪或无响应时"
       },
       "reactions": {
         "title": "表情回应",
@@ -15854,6 +15854,16 @@
       "diskFullNotice": "{{name}} 的磁盘快满了"
     },
     "chromeMissingNotice": "{{name}} 需要 Google Chrome 才能运行代理的浏览器。请在 google.com/chrome 下载",
+    "outage": {
+      "down": "{{name}} 没有响应",
+      "back": "{{name}} 已恢复",
+      "since": "自 {{time}} 起",
+      "backAfter": "{{away}}后恢复",
+      "waiting": "等待中：{{what}}",
+      "waited": "曾等待：{{what}}",
+      "runs_other": "{{count}} 个给智能体的请求",
+      "calls_other": "{{count}} 次 Webhook 调用"
+    },
     "access": {
       "folders": "允许的文件夹",
       "ownFolder": "每个智能体的文件夹",

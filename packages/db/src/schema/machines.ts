@@ -280,6 +280,11 @@ export const machines = pgTable(
      * apps show a line; null: they don't wait.
      */
     egressWaitingAt: timestamp({ withTimezone: true }),
+    /**
+     * The operator moves the workspace's own computer to another host (`PUT …/moving`): away by plan, so its people are
+     * never told it is down (`computer_down`). Its runner's next hello clears it; null: not moving.
+     */
+    movingAt: timestamp({ withTimezone: true }),
     /** Last time a run or a person wanted this computer (written at most every 30 s per server process). */
     wantedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

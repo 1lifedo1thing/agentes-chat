@@ -26,6 +26,7 @@ import { HANDOFF_REMIND_JOB, remindBrowserHandoff } from "./browser/handoff";
 import { typingLogFor } from "./burst";
 import { CHANNEL_DELETE_JOB, purgeChannel } from "./channel-deletion";
 import { tellChannelLead } from "./channel-lead";
+import { COMPUTER_DOWN_JOB, noticeComputerDown } from "./computer-down";
 import { crowdedAgents, publishQueueChanged } from "./computer-queue";
 import { forgetComposioAccount } from "./connectors/composio";
 import { CONNECTOR_FORGET_JOB, type ConnectorDeps } from "./connectors/connections";
@@ -1207,6 +1208,14 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       await interruptOfflineMachineTasks({ db: deps.db, pubsub: deps.pubsub }, String(job.payload.machineId), {
         statusOnly: job.payload.statusOnly === true,
       });
+    },
+    // A computer still away a while after its socket closed: who configures the workspace hears it (ADR 0227).
+    [COMPUTER_DOWN_JOB]: async (job) => {
+      await noticeComputerDown(
+        { db: deps.db, pubsub: deps.pubsub, home: deps.email ? (deps.emailArt?.home ?? null) : null },
+        String(job.payload.machineId),
+        job.payload.stage === "email" ? "email" : "down",
+      );
     },
     // A computer in standby wanted awake a grace ago: still asleep, people see it down (ADR 0161).
     [WAKE_OVERDUE_JOB]: async (job) => {

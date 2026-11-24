@@ -1264,6 +1264,15 @@
         },
         "required": ["waiting"]
       },
+      "OperatorMoving": {
+        "type": "object",
+        "properties": {
+          "moving": {
+            "type": "boolean"
+          }
+        },
+        "required": ["moving"]
+      },
       "OperatorSignup": {
         "type": "object",
         "properties": {
@@ -10223,6 +10232,91 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/OperatorEgressWaiting"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orgs/{orgId}/machines/{machineId}/moving": {
+      "put": {
+        "tags": ["Operator"],
+        "summary": "Say the workspace's computer is moving to another host, or no longer",
+        "description": "Say it (`true`) before the computer stops for a move. While it moves its people are never told it isn't answering: a move is planned, not an outage. Its first hello on the new host ends it, and so does `false` (a move called off). Said over 2 hours ago and still away, it counts as down again. `true` again keeps the first time it was said. 404 when the workspace has no such managed computer.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "orgId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "machineId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "moving": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["moving"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperatorMoving"
                 }
               }
             }

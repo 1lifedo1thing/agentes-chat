@@ -5292,7 +5292,7 @@
     "value": "Computers"
   },
   "noticePrefs.category.computers.help": {
-    "value": "A new computer joined or the workspace's one is ready"
+    "value": "A computer joined, is ready, or stopped answering"
   },
   "noticePrefs.category.reactions.title": {
     "value": "Reactions"
@@ -6227,6 +6227,21 @@
   "surface.page.back": {
     "value": "Go back to {{surface}}. Your assistant goes on there."
   },
+  "surface.page.setFirst": {
+    "value": "Set your PIN first"
+  },
+  "surface.page.setFirstLead": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
+  },
+  "surface.page.setFirstLeadEmail": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
+  },
+  "surface.page.openApp": {
+    "value": "Choose it in the app"
+  },
+  "surface.page.emailMe": {
+    "value": "Email me a link"
+  },
   "surface.pinReset.title": {
     "value": "Choose your PIN"
   },
@@ -6256,6 +6271,21 @@
   },
   "surface.forwardedTip": {
     "value": "{{person}} forwarded this from {{surface}}. The words are someone else's."
+  },
+  "surface.pin.set": {
+    "value": "Set PIN"
+  },
+  "surface.pin.change": {
+    "value": "Change PIN"
+  },
+  "surface.pin.title": {
+    "value": "Your {{surface}} PIN"
+  },
+  "surface.pin.text": {
+    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
+  },
+  "surface.pin.save": {
+    "value": "Save PIN"
   },
   "team.title": {
     "value": "Team"
@@ -38563,6 +38593,12 @@
   "errors.surface.pinResetGone": {
     "value": "This link was already used or ran out. Ask for a new one with “Forgot your PIN?”."
   },
+  "errors.surface.pinUnset": {
+    "value": "Set your PIN first. Choose it in the app, signed in."
+  },
+  "errors.surface.emailUnverified": {
+    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
+  },
   "errors.wallpaper.notYours": {
     "value": "That photo isn't yours."
   },
@@ -40142,6 +40178,36 @@
   },
   "machines.chromeMissingNotice": {
     "value": "{{name}} needs Google Chrome for the agents' browser. Get it at google.com/chrome"
+  },
+  "machines.outage.down": {
+    "value": "{{name}} isn't answering"
+  },
+  "machines.outage.back": {
+    "value": "{{name}} is back"
+  },
+  "machines.outage.since": {
+    "value": "Since {{time}}"
+  },
+  "machines.outage.backAfter": {
+    "value": "Back after {{away}}"
+  },
+  "machines.outage.waiting": {
+    "value": "Waiting: {{what}}"
+  },
+  "machines.outage.waited": {
+    "value": "Waited: {{what}}"
+  },
+  "machines.outage.runs": {
+    "value": {
+      "one": "{{count}} agent request",
+      "other": "{{count}} agent requests"
+    }
+  },
+  "machines.outage.calls": {
+    "value": {
+      "one": "{{count}} webhook call",
+      "other": "{{count}} webhook calls"
+    }
   },
   "machines.access.folders": {
     "value": "Allowed folders"
@@ -56478,41 +56544,5 @@
   },
   "live.sheet.fn.YEARFRAC": {
     "value": "The share of a year between two dates"
-  },
-  "surface.page.setFirst": {
-    "value": "Set your PIN first"
-  },
-  "surface.page.setFirstLead": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
-  },
-  "surface.page.setFirstLeadEmail": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
-  },
-  "surface.page.openApp": {
-    "value": "Choose it in the app"
-  },
-  "surface.page.emailMe": {
-    "value": "Email me a link"
-  },
-  "surface.pin.set": {
-    "value": "Set PIN"
-  },
-  "surface.pin.change": {
-    "value": "Change PIN"
-  },
-  "surface.pin.title": {
-    "value": "Your {{surface}} PIN"
-  },
-  "surface.pin.text": {
-    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
-  },
-  "surface.pin.save": {
-    "value": "Save PIN"
-  },
-  "errors.surface.pinUnset": {
-    "value": "Set your PIN first. Choose it in the app, signed in."
-  },
-  "errors.surface.emailUnverified": {
-    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
   }
 }

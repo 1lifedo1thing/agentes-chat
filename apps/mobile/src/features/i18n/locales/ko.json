@@ -920,6 +920,8 @@
       "plan_model_dropped_other": "{{model}} 모델이 {{plan}}에서 빠졌어요. {{names}}은(는) 당분간 {{runs}}을(를) 써요",
       "computer_disk_full_other": "컴퓨터 디스크가 거의 찼어요",
       "computer_no_chrome_other": "컴퓨터에 Google Chrome이 필요해요. google.com/chrome에서 받으세요",
+      "computer_down_other": "컴퓨터가 응답하지 않아요",
+      "computer_back_other": "컴퓨터가 다시 연결됐어요",
       "app_created_other": "AI 앱이 나를 위해 항목을 만들었어요"
     },
     "markRead": "읽음으로 표시",

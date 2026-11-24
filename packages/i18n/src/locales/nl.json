@@ -2144,7 +2144,7 @@
       },
       "computers": {
         "title": "Computers",
-        "help": "Er is een nieuwe computer bijgekomen of die van de werkruimte is klaar"
+        "help": "Een computer is bijgekomen, is klaar of reageert niet meer"
       },
       "reactions": {
         "title": "Reacties",
@@ -16439,6 +16439,18 @@
       "diskFullNotice": "De schijf van {{name}} is bijna vol"
     },
     "chromeMissingNotice": "{{name}} heeft Google Chrome nodig voor de browser van de agents. Download het op google.com/chrome",
+    "outage": {
+      "down": "{{name}} reageert niet",
+      "back": "{{name}} is terug",
+      "since": "Sinds {{time}}",
+      "backAfter": "Terug na {{away}}",
+      "waiting": "Wachten: {{what}}",
+      "waited": "Hebben gewacht: {{what}}",
+      "runs_one": "{{count}} verzoek aan agents",
+      "runs_other": "{{count}} verzoeken aan agents",
+      "calls_one": "{{count}} webhook-aanroep",
+      "calls_other": "{{count}} webhook-aanroepen"
+    },
     "access": {
       "folders": "Toegestane mappen",
       "ownFolder": "De map van elke agent",

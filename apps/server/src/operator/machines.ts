@@ -9,6 +9,7 @@ import {
   PROVISIONING_STEPS,
   revokeManagedMachine,
   setMachineEgressWaiting,
+  setMachineMoving,
   setMachineStandby,
   setProvisioning,
 } from "@agenteschat/engine";
@@ -306,6 +307,25 @@ export function registerOperatorMachines(api: OpenAPIHono, { db, config, pubsub,
     async (c) => {
       const { orgId, machineId } = c.req.valid("param");
       const set = await setMachineEgressWaiting({ db, pubsub }, orgId, machineId, c.req.valid("json").waiting);
+      if (!set) return apiError(c, 404, "not_found", "This workspace has no managed computer with this id");
+      return c.json(set, 200);
+    },
+  );
+
+  api.openapi(
+    createRoute({
+      method: "put",
+      path: "/orgs/{orgId}/machines/{machineId}/moving",
+      tags,
+      summary: "Say the workspace's computer is moving to another host, or no longer",
+      description:
+        "Say it (`true`) before the computer stops for a move. While it moves its people are never told it isn't answering: a move is planned, not an outage. Its first hello on the new host ends it, and so does `false` (a move called off). Said over 2 hours ago and still away, it counts as down again. `true` again keeps the first time it was said. 404 when the workspace has no such managed computer.",
+      request: { params: MachineParams, body: body(z.object({ moving: z.boolean() })) },
+      responses: { 200: json(z.object({ moving: z.boolean() }).openapi("OperatorMoving")), ...errors },
+    }),
+    async (c) => {
+      const { orgId, machineId } = c.req.valid("param");
+      const set = await setMachineMoving(db, orgId, machineId, c.req.valid("json").moving);
       if (!set) return apiError(c, 404, "not_found", "This workspace has no managed computer with this id");
       return c.json(set, 200);
     },

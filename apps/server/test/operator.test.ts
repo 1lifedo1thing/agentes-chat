@@ -890,6 +890,37 @@ test("the workspace's computer's agents waiting for their way out: said, kept an
   expect((await waiting(machineId, { waiting: "yes" })).status).toBe(400);
 });
 
+test("the workspace's computer moving hosts: said, kept, taken back, only for it (ADR 0227)", async () => {
+  const { orgId } = acme;
+  const NONE = "0b0b0b0b-0b0b-4b0b-8b0b-0b0b0b0b0b0b";
+  const issue = await createOperatorApp(deps, TOKEN).request(`/api/operator/v1/orgs/${orgId}/machines`, {
+    method: "POST",
+    headers: { authorization: BEARER, "content-type": "application/json" },
+    body: "{}",
+  });
+  const machine = { id: (await body<{ machineId: string }>(issue)).machineId };
+  const moving = (id: string, json: unknown, org = orgId) => put(`/orgs/${org}/machines/${id}/moving`, json);
+  const row = async () => (await t.db.select().from(schema.machines).where(eq(schema.machines.id, machine.id)))[0];
+
+  expect(await body(await moving(machine.id, { moving: true }))).toEqual({ moving: true });
+  const first = (await row())?.movingAt;
+  expect(first).toBeInstanceOf(Date);
+  await moving(machine.id, { moving: true });
+  expect((await row())?.movingAt).toEqual(first ?? null);
+  expect(await body(await moving(machine.id, { moving: false }))).toEqual({ moving: false });
+  expect((await row())?.movingAt).toBeNull();
+  const listed = await body<{ machines: { id: string; name: string }[] }>(await op(`/orgs/${orgId}/machines`));
+  const mac = listed.machines.find((m) => m.name === "Mac");
+  for (const [id, org] of [
+    [mac?.id ?? NONE, orgId],
+    [NONE, orgId],
+    [machine.id, NONE],
+  ] as const) {
+    expect((await moving(id, { moving: true }, org)).status).toBe(404);
+  }
+  expect((await moving(machine.id, { moving: "yes" })).status).toBe(400);
+});
+
 test("billing holds: put on, changed and lifted, never over a hold set through /standing", async () => {
   const [org] = await t.db.insert(schema.organizations).values({ name: "Billing Co" }).returning();
   if (!org) throw new Error("no org");

@@ -2072,7 +2072,7 @@
       },
       "computers": {
         "title": "Komputer",
-        "help": "Komputer baru bergabung atau komputer ruang kerja sudah siap"
+        "help": "Komputer bergabung, siap, atau berhenti merespons"
       },
       "reactions": {
         "title": "Reaksi",
@@ -15844,6 +15844,16 @@
       "diskFullNotice": "Disk {{name}} hampir penuh"
     },
     "chromeMissingNotice": "{{name}} memerlukan Google Chrome untuk browser agen. Unduh di google.com/chrome",
+    "outage": {
+      "down": "{{name}} tidak merespons",
+      "back": "{{name}} sudah kembali",
+      "since": "Sejak {{time}}",
+      "backAfter": "Kembali setelah {{away}}",
+      "waiting": "Menunggu: {{what}}",
+      "waited": "Sempat menunggu: {{what}}",
+      "runs_other": "{{count}} permintaan ke agen",
+      "calls_other": "{{count}} panggilan webhook"
+    },
     "access": {
       "folders": "Folder yang diizinkan",
       "ownFolder": "Folder tiap agen",

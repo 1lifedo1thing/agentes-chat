@@ -920,6 +920,8 @@
       "plan_model_dropped_other": "{{model}} 已从 {{plan}} 下架。{{names}} 暂时使用 {{runs}}",
       "computer_disk_full_other": "一台电脑的磁盘快满了",
       "computer_no_chrome_other": "电脑需要 Google Chrome。请在 google.com/chrome 下载",
+      "computer_down_other": "一台电脑没有响应",
+      "computer_back_other": "一台电脑已恢复",
       "app_created_other": "一个 AI 应用为你创建了内容"
     },
     "markRead": "标为已读",

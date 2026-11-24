@@ -2218,7 +2218,7 @@
       },
       "computers": {
         "title": "Ordinateurs",
-        "help": "Un nouvel ordinateur a rejoint, ou celui de l'espace de travail est prêt"
+        "help": "Un ordinateur a rejoint, est prêt ou ne répond plus"
       },
       "reactions": {
         "title": "Réactions",
@@ -16912,6 +16912,20 @@
       "diskFullNotice": "Le disque de {{name}} est presque plein"
     },
     "chromeMissingNotice": "{{name}} a besoin de Google Chrome pour le navigateur des agents. Téléchargez-le sur google.com/chrome",
+    "outage": {
+      "down": "{{name}} ne répond pas",
+      "back": "{{name}} est de retour",
+      "since": "Depuis {{time}}",
+      "backAfter": "De retour après {{away}}",
+      "waiting": "En attente : {{what}}",
+      "waited": "Ont attendu : {{what}}",
+      "runs_one": "{{count}} demande aux agents",
+      "runs_many": "{{count}} demandes aux agents",
+      "runs_other": "{{count}} demandes aux agents",
+      "calls_one": "{{count}} appel webhook",
+      "calls_many": "{{count}} appels webhook",
+      "calls_other": "{{count}} appels webhook"
+    },
     "access": {
       "folders": "Dossiers autorisés",
       "ownFolder": "Dossier de chaque agent",

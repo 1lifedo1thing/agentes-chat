@@ -2290,7 +2290,7 @@ export const en = {
       threads: { title: "Threads you follow", help: "Replies in threads you wrote in or follow" },
       tasks: { title: "Tasks", help: "Tasks for you, comments and when one changes stage" },
       routines: { title: "Routines and missions", help: "When they stop, fail or wait for their computer" },
-      computers: { title: "Computers", help: "A new computer joined or the workspace's one is ready" },
+      computers: { title: "Computers", help: "A computer joined, is ready, or stopped answering" },
       reactions: { title: "Reactions", help: "When someone reacts to a message of yours" },
     },
   },
@@ -16800,6 +16800,21 @@ export const en = {
     },
     /** A notice row's headline: the computer's runner found no Google Chrome, which agents' browsers now run on. */
     chromeMissingNotice: "{{name}} needs Google Chrome for the agents' browser. Get it at google.com/chrome",
+    /** A notice row: a computer the agents work on has been away a while (`down`), and is back (`back`). */
+    outage: {
+      down: "{{name}} isn't answering",
+      back: "{{name}} is back",
+      /** When the outage began, at the time of day: "Since 14:05". */
+      since: "Since {{time}}",
+      backAfter: "Back after {{away}}",
+      /** What waits for it now (`down`), or waited (`back`): a list of `runs` and `calls`. */
+      waiting: "Waiting: {{what}}",
+      waited: "Waited: {{what}}",
+      runs_one: "{{count}} agent request",
+      runs_other: "{{count}} agent requests",
+      calls_one: "{{count}} webhook call",
+      calls_other: "{{count}} webhook calls",
+    },
     access: {
       folders: "Allowed folders",
       ownFolder: "Each agent's folder",

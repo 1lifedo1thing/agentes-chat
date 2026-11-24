@@ -731,6 +731,27 @@ export async function setMachineEgressWaiting(
   return { waiting };
 }
 
+/**
+ * `PUT …/machines/{machineId}/moving`: the operator says the workspace's own computer is moving to another host
+ * (`moving_at` keeps the first time), or no longer; its runner's next hello says it too. Null: the workspace has no
+ * such managed computer.
+ */
+export async function setMachineMoving(db: Database, orgId: string, machineId: string, moving: boolean) {
+  const [row] = await db
+    .update(machines)
+    .set({ movingAt: moving ? sql`coalesce(${machines.movingAt}, now())` : null })
+    .where(
+      and(
+        eq(machines.orgId, orgId),
+        eq(machines.id, machineId),
+        eq(machines.kind, "managed"),
+        isNull(machines.deletedAt),
+      ),
+    )
+    .returning({ id: machines.id });
+  return row ? { moving } : null;
+}
+
 /** How many `deletedAgentIds` lists: a computer that misses one only keeps that agent's transcripts. */
 const DELETED_AGENTS_LISTED = 500;
 
@@ -965,6 +986,7 @@ export async function detachMachine(tx: Executor, machine: Pick<MachineRow, "id"
       standbyAt: null,
       wakeWantedAt: null,
       egressWaitingAt: null,
+      movingAt: null,
       previousAgentIds: ids,
       updatedAt: now,
     })
