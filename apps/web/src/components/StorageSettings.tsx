@@ -95,7 +95,7 @@ function PathCode({ path }: { path: string }) {
  * A service's mark in its color, at an icon's size on the name's line (no tile: a tile beside a name and a line that
  * wraps would own a column); "Other" our database icon.
  */
-function ProviderMark({ provider, size = 20 }: { provider: StorageProvider; size?: 14 | 20 }) {
+function ProviderMark({ provider, size = 20 }: { provider: StorageProvider; size?: 14 | 16 | 20 }) {
   if (provider === "other") return <Icon name="database" size={size} className="storage-mark" />;
   const mark = MARKS[provider];
   return (
@@ -375,7 +375,11 @@ function ConnectDialog({
             className="storage-pick"
             options={STORAGE_PROVIDERS.map((p) => ({
               value: p,
-              leading: <ProviderMark provider={p} />,
+              leading: (
+                <span className="ac-brand ac-brand--sm ac-brand--mono" aria-hidden="true">
+                  <ProviderMark provider={p} size={16} />
+                </span>
+              ),
               title: t(`storage.connect.provider.${p}`),
               description: t(`storage.connect.providerText.${p}`),
               onSelect: () => setProvider(p),

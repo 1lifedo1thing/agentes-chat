@@ -870,6 +870,10 @@ textarea.ac-input:not(:hover, :focus-visible) {
 .ac-brand svg {
   fill: currentColor;
 }
+/* The kit's own line icon on a tile (a key, a computer): its strokes, never filled. */
+.ac-brand > svg.ac-icon {
+  fill: none;
+}
 /* An image mark that isn't square (Tux) keeps its shape in the square box. */
 .ac-brand img {
   object-fit: contain;
@@ -11613,6 +11617,10 @@ html:not([data-pointer]) .ac-effort:focus-visible .ac-effort__ramp {
   position: relative;
   cursor: pointer;
 }
+/* The chevron ends every row 16 in: the leading picture starts as far in. */
+.ac-optrow--link.ac-optrow--lead {
+  padding-left: 16px;
+}
 .ac-optrow__hit {
   appearance: none;
   margin: 0;
@@ -11631,7 +11639,7 @@ html:not([data-pointer]) .ac-effort:focus-visible .ac-effort__ramp {
   inset: 0;
   border-radius: inherit;
 }
-.ac-optrow__hit:focus-visible {
+html:not([data-pointer]) .ac-optrow__hit:focus-visible {
   outline: none;
 }
 html:not([data-pointer]) .ac-optrow--link:has(.ac-optrow__hit:focus-visible) {
@@ -11645,7 +11653,7 @@ html:not([data-pointer]) .ac-optrow--link:has(.ac-optrow__hit:focus-visible) {
 }
 .ac-optrow--link .ac-optrow__desc :is(a, button) {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
 }
 .ac-optrow__go {
   flex: none;

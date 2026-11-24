@@ -867,12 +867,6 @@ a.dv-row__detail {
 [data-theme="dark"] .dv-logo--ink {
   filter: invert(1);
 }
-/* Our own line icon in the same tile (Another computer): the tile fills svgs, our icons are strokes. */
-.ac-brand > svg.ac-icon {
-  fill: none;
-  width: 16px;
-  height: 16px;
-}
 /* A system's or tool's mark on a plain tile, in its own colour (the kit tints a coloured mark's tile). */
 .ac-brand.dv-tile {
   background: var(--raised);

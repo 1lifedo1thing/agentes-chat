@@ -818,7 +818,11 @@ function PathList({
         className="imp-paths"
         options={paths.map((path) => ({
           value: path,
-          leading: <Icon name={PATH_ICON[path]} size={20} />,
+          leading: (
+            <span className="ac-brand ac-brand--sm ac-brand--mono" aria-hidden="true">
+              <Icon name={PATH_ICON[path]} size={16} />
+            </span>
+          ),
           title: t(`onboarding.import.sheet.paths.${path}.title`, { app }),
           tag: path === "command" ? t("onboarding.import.sheet.paths.best") : undefined,
           description: t(`onboarding.import.sheet.paths.${path}.line`),
