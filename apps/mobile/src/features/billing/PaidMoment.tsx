@@ -1,12 +1,15 @@
-import { useMe } from "@agenteschat/client";
+import { useAiStatus, useMe } from "@agenteschat/client";
 import { paidLine, planHeldNext } from "@agenteschat/client/lib/billing";
+import { mayConnectAi, teamThinks } from "@agenteschat/client/lib/no-ai";
+import { can } from "@agenteschat/client/lib/permissions";
 import { rightHandOf } from "@agenteschat/client/lib/right-hand";
 import { isPersonal } from "@agenteschat/client/lib/workspace-mode";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { openConnectAi } from "@/features/ai/NoAiCard";
 import { useRevealed } from "@/features/launch/launched";
 import { useOpenDm } from "@/features/new/useOpenDm";
-import { useDirectory } from "@/features/shared/hooks";
+import { useDirectory, useMeId } from "@/features/shared/hooks";
 import { TeamSkyEmpty } from "@/features/shared/TeamSkyEmpty";
 import { readValueSync, STORED, writeValueSync } from "@/lib/storage";
 import { useOrg } from "@/providers/org";
@@ -41,15 +44,31 @@ export function usePlanTurnedOn() {
 }
 
 /**
- * The plan just turned on: the team hops up happy on its sky, the purchase in one line, and the first conversation,
- * with the right hand, as the one way on.
+ * The plan just turned on: the team hops up happy on its sky, the purchase in one line, and the web's one way on: an
+ * AI for the team to think with while it has none and the person may connect one, else the first conversation, with
+ * the right hand. The button waits for the AI status, so it never changes under the person.
  */
 export function PaidMomentSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const { org } = useOrg();
+  const { org, orgId } = useOrg();
   const dir = useDirectory();
+  const status = useAiStatus(orgId);
+  const meId = useMeId();
   const openDm = useOpenDm();
   const lead = rightHandOf(dir.agents);
+  const thinks = teamThinks(
+    dir.agents.map((a) => a.id),
+    status.data,
+  );
+  const toConnect = thinks === false && (can(org, "create_agents") || mayConnectAi(lead, meId, org));
+  const next =
+    thinks === undefined
+      ? null
+      : toConnect
+        ? { label: t("paidMoment.next.ai"), run: () => openConnectAi({}) }
+        : lead
+          ? { label: t("paidMoment.next.talk", { name: lead.name }), run: () => void openDm({ agentId: lead.id }) }
+          : null;
   return (
     <SheetScreen fit>
       <TeamSkyEmpty
@@ -57,14 +76,14 @@ export function PaidMomentSheet({ onClose }: { onClose: () => void }) {
         title={t(isPersonal(org) ? "paidMoment.titlePersonal" : "paidMoment.title")}
         text={paidLine(t, null, undefined)}
         action={
-          lead ? (
+          next ? (
             <Button
               variant="primary"
               wide
-              label={t("paidMoment.next.talk", { name: lead.name })}
+              label={next.label}
               onPress={() => {
                 onClose();
-                void openDm({ agentId: lead.id });
+                next.run();
               }}
             />
           ) : undefined
