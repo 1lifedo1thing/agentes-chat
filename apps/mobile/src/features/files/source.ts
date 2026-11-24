@@ -1,4 +1,5 @@
 import { type ApiClient, type ArtifactDetail, isLiveFileKind, keys, useApi } from "@agenteschat/client";
+import { BoundedMap } from "@agenteschat/ui/bounded-map";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Directory, File, Paths } from "expo-file-system";
 import * as MediaLibrary from "expo-media-library";
@@ -43,15 +44,16 @@ const localCopies = new Map<string, string>();
 export const rememberLocalCopy = (id: string, uri: string) => localCopies.set(id, uri);
 
 /**
- * Pictures already drawn once in this run, by their cache key: one coming back (its row mounted again as the list
- * scrolls, the conversation opened again) shows at once from the cache, where a fade each time read as a flicker.
+ * Pictures already drawn once in this run, by their cache key, the latest 2000: one coming back (its row mounted again
+ * as the list scrolls, the conversation opened again) shows at once from the cache, where a fade each time read as a
+ * flicker.
  */
-const drawn = new Set<string>();
+const drawn = new BoundedMap<string, true>(2000);
 /** A picture's fade in, its first time only (`drawn`). */
 export const pictureFade = (key: string) => (drawn.has(key) ? 0 : 160);
 /** Its `onLoad`: drawn once, it never fades in again in this run. */
 export const pictureDrawn = (key: string) => {
-  drawn.add(key);
+  drawn.set(key, true);
 };
 
 /**
