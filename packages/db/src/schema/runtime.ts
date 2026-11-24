@@ -80,6 +80,8 @@ export const outbox = pgTable(
       .on(t.kind, sql`(${t.payload}->>'messageId')`)
       .where(sql`${t.status} in ('pending', 'processing')`)
       .concurrently(),
+    // Emails by when they were queued: the daily sweeps of their words and codes, and the operator's list of them.
+    index("outbox_email_created_idx").on(t.createdAt).where(sql`${t.kind} = 'email.send'`).concurrently(),
   ],
 );
 
