@@ -1,5 +1,5 @@
 {
-  "id": "6ad75c0a-82cd-4d89-b7a6-9364d398cc5a",
+  "id": "7608b094-5bb2-411e-8571-2a7e352e1690",
   "prevId": "52ebaee0-4cb8-4a80-afb5-e392bc14bf6e",
   "version": "7",
   "dialect": "postgresql",
@@ -824,6 +824,13 @@
         },
         "welcome_people": {
           "name": "welcome_people",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "right_hand_learns": {
+          "name": "right_hand_learns",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -24841,12 +24848,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "client_vitals": {
-          "name": "client_vitals",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
