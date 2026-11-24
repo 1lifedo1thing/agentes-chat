@@ -87,6 +87,7 @@ import { DELEGATED_RESULT_CHARS, type DelegatedBridge } from "./delegated-tools"
 import { hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
 import { RunnerError } from "./errors";
 import { descendantPids, killTree } from "./exec";
+import { withGitBash } from "./cli-install";
 import { cliSpawn } from "./executors";
 import { HARDENED_GIT_ARGS } from "./git-guard";
 import { readJson, writeJson } from "./json-file";
@@ -1357,7 +1358,8 @@ export class ClaudeProcess {
     // the PATH (never in the agent's folder), a launcher through cmd.exe with every argument quoted (an empty
     // `--setting-sources` stays one).
     const run = cliSpawn(command.length ? command : ["claude"], args, env.PATH);
-    const runEnv = run.env ? { ...env, ...run.env } : env;
+    // On Windows its shell is Git Bash: the person's, else the runner's own (ADR 0228 §6).
+    const runEnv = withGitBash(run.env ? { ...env, ...run.env } : env);
     const timeouts = { ...runEnv, ...settingsEnv };
     const bashDefault = Number(timeouts.BASH_DEFAULT_TIMEOUT_MS);
     this.bashDefaultMs = Number.isFinite(bashDefault) && bashDefault > 0 ? bashDefault : BASH_DEFAULT_MS;

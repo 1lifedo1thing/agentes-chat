@@ -107,10 +107,14 @@ export function ownCommand(
  * sign-in and turn, so each runs the version reported.
  */
 const cliPicks = new Map<string, string>();
+/** Files a pick starts with before its own arguments (Cursor's Windows `node.exe` and its `index.js`). */
+const cliLaunch = new Map<string, string[]>();
 
-export function setCliPick(command: string, file: string | undefined) {
+export function setCliPick(command: string, file: string | undefined, launch: readonly string[] = []) {
   if (file) cliPicks.set(command, file);
   else cliPicks.delete(command);
+  if (file && launch.length) cliLaunch.set(command, [...launch]);
+  else cliLaunch.delete(command);
 }
 
 /** The runner's own copy of `command`, while it is the one to run and still there. */
@@ -118,6 +122,9 @@ export function pickedCli(command: string): string | undefined {
   const file = cliPicks.get(command);
   return file && isExecutable(file) ? file : undefined;
 }
+
+/** What the runner's own copy of `command` starts with before its arguments; none for most. */
+export const pickedLaunch = (command: string): string[] => [...(cliLaunch.get(command) ?? [])];
 
 /**
  * One argument on cmd.exe's command line, read back by the program as it was: in quotes, so an empty one stays an
@@ -269,7 +276,14 @@ export function cliSpawn(
 ): CliRun {
   const [file = "", ...pre] = command;
   const own = command.length === 1 ? pickedCli(file) : undefined;
-  if (platform === "win32" && own) return { file: own, args: [...args], env: { ...NO_CWD_LOOKUP } };
+  // The runner's own copy (ADR 0228 §6), with what it starts with first: never a `.cmd` (cmd.exe's line is too short
+  // for a prompt), so it starts as it is.
+  if (own) {
+    const launch = pickedLaunch(file);
+    return platform === "win32"
+      ? { file: own, args: [...launch, ...args], env: { ...NO_CWD_LOOKUP } }
+      : { file: own, args: [...launch, ...args] };
+  }
   if (platform === "win32" && command.length === 1) {
     const found = findOnWindowsPath(
       file,

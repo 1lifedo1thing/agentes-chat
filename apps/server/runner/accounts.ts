@@ -68,6 +68,7 @@ import {
   placeAgySignIn,
   writeAgySettings,
 } from "./agy-home";
+import { withGitBash } from "./cli-install";
 import { codexLoginStatusOf } from "./codex-sign-in";
 import { errnoCode, RunnerError } from "./errors";
 import { killTree } from "./exec";
@@ -277,15 +278,24 @@ export function withoutContainers(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 /** The env a CLI runs with for an account folder: `base` without any other sign-in, the folder as its home. */
-export function accountEnv(kind: AccountKind, dir: string, base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+export function accountEnv(
+  kind: AccountKind,
+  dir: string,
+  base: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): NodeJS.ProcessEnv {
   const env = withoutSignIns(base);
   env[ENV_VAR[kind]] = dir;
+  if (kind === "claude_code" && platform === "win32") return withGitBash(env, platform);
   if (kind === "cursor") {
     // Linux keeps the sign-in under `$XDG_CONFIG_HOME/cursor`, macOS in the Keychain unless told to use a file: both
     // in the account's folder, so two accounts never share one sign-in. The sign-in prints its link, opens nothing.
     env.XDG_CONFIG_HOME = dir;
     env.AGENT_CLI_CREDENTIAL_STORE = "file";
     env.NO_OPEN_BROWSER = "1";
+    // Windows keeps it in the Credential Manager unless told to use a file, then in `%APPDATA%\Cursor\auth.json`
+    // (its CLI's own credentials module, read off the 2026.11.22 package): the account's folder there too.
+    if (platform === "win32") env.APPDATA = dir;
   }
   if (kind === "opencode") {
     // Its config, its sessions, its caches: all in the account's folder, so two accounts never share a sign-in.
@@ -309,9 +319,30 @@ export function accountEnv(kind: AccountKind, dir: string, base: NodeJS.ProcessE
     delete env.DISPLAY;
     delete env.SSH_AUTH_SOCK;
     Object.assign(env, AGY_QUIET_ENV);
-    if (process.platform === "darwin") agyKeychain(dir);
+    if (platform === "darwin") agyKeychain(dir);
+    if (platform === "win32") {
+      // Windows: Go's home is `USERPROFILE`, and the CLI keeps its sign-in in the computer user's one Credential
+      // Manager unless told to keep it in its file under that home (`AGY_CLI_FORCE_FILE_TOKEN_STORAGE`, read off the
+      // 1.5.16 Windows build), so each account's stays in its folder. The sign-in checks that it did (`keptApart`).
+      env.USERPROFILE = dir;
+      env.APPDATA = path.join(dir, "AppData", "Roaming");
+      env.LOCALAPPDATA = path.join(dir, "AppData", "Local");
+      env.AGY_CLI_FORCE_FILE_TOKEN_STORAGE = "true";
+    }
   }
   return env;
+}
+
+/**
+ * Where a sign-in of `kind` must have landed in its account's folder on Windows, or null where nothing needs checking:
+ * Cursor's and the Antigravity CLI's go to the computer user's one Credential Manager unless they keep their file,
+ * and there every account of that CLI would be one (ADR 0143, ADR 0228 §6).
+ */
+export function signInFileOnWindows(kind: AccountKind, dir: string, platform: NodeJS.Platform = process.platform) {
+  if (platform !== "win32") return null;
+  if (kind === "cursor") return path.join(dir, "Cursor", "auth.json");
+  if (kind === "antigravity") return path.join(dir, ...AGY_SIGN_IN_FILE.split("/"));
+  return null;
 }
 
 /**
@@ -1616,7 +1647,7 @@ export class AccountManager {
   }
 
   private env(kind: AccountKind, dir: string): NodeJS.ProcessEnv {
-    return accountEnv(kind, dir);
+    return accountEnv(kind, dir, process.env, this.opts.platform ?? process.platform);
   }
 
   /**
@@ -1794,11 +1825,6 @@ export class AccountManager {
     }
     if (kind === "opencode" && !cliKey) {
       throw new RunnerError("bad_request", "OpenCode signs in with its API key");
-    }
-    // ADR 0143: Windows keeps every sign-in in the one Credential Manager of the computer's user, so two accounts
-    // would be one.
-    if (kind === "antigravity" && (this.opts.platform ?? process.platform) === "win32") {
-      throw new RunnerError("bad_request", "Gemini accounts don't sign in on Windows computers yet.");
     }
     if (this.logins.get(loginId)?.state === "waiting") {
       throw new RunnerError("bad_request", "This sign-in already exists");
@@ -2301,6 +2327,18 @@ export class AccountManager {
           // Signed in again, the folder now holds that sign-in, which no agent can think with: signed out for all.
           if (unshared && !unshared.unsure && login.again) await this.refused(login.kind, login.id);
           if (login.state !== "waiting") return;
+          // Windows: a sign-in that didn't keep its file in the folder went to the computer user's Credential Manager,
+          // where it would be every account's: refused, never counted (ADR 0228 §6).
+          const apart = login.child || login.term ? signInFileOnWindows(login.kind, login.dir, this.opts.platform) : null;
+          if (apart && !existsSync(apart)) {
+            this.failWith(
+              login,
+              "failed",
+              "cli_exit",
+              `${LABEL[login.kind]} kept this sign-in where every account on this computer would share it, not in its own folder.`,
+            );
+            return;
+          }
           if (!unshared) {
             await rm(path.join(login.dir, SIGNING_IN), { force: true }).catch(() => undefined);
             // A ChatGPT or Gemini sign-in for all agents: root's alone from now on (`grant`).

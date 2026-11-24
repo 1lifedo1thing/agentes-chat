@@ -1,9 +1,9 @@
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createWriteStream, existsSync, readFileSync } from "node:fs";
-import { chmod, mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { chmod, copyFile, mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { CliFetchFailure, CliFetchState, CliName, RunnerClisInfo } from "@agenteschat/adapters/machine-protocol";
+import type { CliFetchFailure, CliFetchState, FetchName, RunnerClisInfo } from "@agenteschat/adapters/machine-protocol";
 import {
   CLI_NO_SELF_UPDATE,
   CLI_PINS,
@@ -17,8 +17,9 @@ import {
   parseCliPins,
   pinPlatformOf,
 } from "@agenteschat/providers/cli-pins";
+import { GIT_BASH_PICK, gitBashPath } from "./cli-install";
 import { RunnerError } from "./errors";
-import { isExecutable, ownCommand, setCliPick } from "./executors";
+import { envValue, isExecutable, ownCommand, setCliPick } from "./executors";
 
 /**
  * The one way this runner gets its coding CLIs (ADR 0228 §6). For each CLI the pin list names one version and each
@@ -31,7 +32,10 @@ import { isExecutable, ownCommand, setCliPick } from "./executors";
  * `progressGate`). Outside system mode only: there the computer's setup installs the CLIs for the agents' users.
  */
 
-/** The command each CLI answers to on the PATH (Cursor's is `agent`; the Antigravity CLI's `agy`). */
+/**
+ * The command each CLI answers to on the PATH (Cursor's is `agent`; the Antigravity CLI's `agy`). Git for Windows'
+ * bash is picked by a name of its own (`GIT_BASH_PICK`), never `git`: the runner's other `git` calls stay the PATH's.
+ */
 export const CLI_COMMAND: Readonly<Record<PinCli, string>> = {
   claude: "claude",
   codex: "codex",
@@ -39,7 +43,11 @@ export const CLI_COMMAND: Readonly<Record<PinCli, string>> = {
   opencode: "opencode",
   grok: "grok",
   antigravity: "agy",
+  git: GIT_BASH_PICK,
 };
+
+/** Whether `name` is one the runner fetches (a request names it; the server's list may be newer than this runner). */
+export const isPinCli = (name: string): name is PinCli => (PIN_CLIS as readonly string[]).includes(name);
 
 /** The CLI a brain thinks with. */
 export const CLI_OF_BRAIN: Readonly<Record<string, PinCli>> = {
@@ -118,7 +126,7 @@ export interface CliCopiesOptions {
   platform?: PinPlatform | null;
   fetch?: typeof fetch;
   /** The person's own copy of `cli` and its `--version` line; null: none. */
-  own?: (cli: PinCli) => Promise<{ file: string; version: string } | null>;
+  own?: (cli: PinCli, pinned: string) => Promise<{ file: string; version: string } | null>;
   now?: () => number;
 }
 
@@ -138,7 +146,7 @@ export class CliCopies {
 
   /** The CLIs fetched here on this system, and where each fetch stands (`hello.clis`). */
   info(): RunnerClisInfo {
-    const fetchable = PIN_CLIS.filter((cli) => this.buildOf(cli)) as CliName[];
+    const fetchable = PIN_CLIS.filter((cli) => this.buildOf(cli)) as FetchName[];
     return { fetchable, fetch: Object.fromEntries(this.states) };
   }
 
@@ -230,7 +238,7 @@ export class CliCopies {
   }
 
   private ownOf(cli: PinCli) {
-    return (this.opts.own ?? ownCopy)(cli);
+    return (this.opts.own ?? ownCopy)(cli, this.pins[cli].version);
   }
 
   /** One fetch per CLI at a time, whoever asks; its end (ready or failed) is told. */
@@ -267,7 +275,9 @@ export class CliCopies {
   private async use(cli: PinCli, file: string | undefined) {
     if (this.picked.has(cli) && this.picked.get(cli) === file) return;
     this.picked.set(cli, file);
-    setCliPick(CLI_COMMAND[cli], file);
+    // Its own files to start with, relative to the copy's folder (Cursor's Windows `index.js`).
+    const launch = file ? (this.buildOf(cli)?.launch ?? []).map((f) => path.join(this.folder(cli), f)) : [];
+    setCliPick(CLI_COMMAND[cli], file, launch);
     this.opts.log(
       file ? `${cli}: running the runner's own ${this.pins[cli].version}` : `${cli}: running the computer's own`,
     );
@@ -330,7 +340,17 @@ export class CliCopies {
         await unpack(download, staging, build);
         await rm(download, { force: true });
       }
+      // MinGit's bash ships as `sh.exe` only: a copy named `bash.exe` runs as full bash (ADR 0228 §6).
+      if (build.from && !existsSync(path.join(staging, build.executable))) {
+        const from = path.join(staging, build.from);
+        if (!existsSync(from)) throw new FetchError("failed", `the download has no ${build.from}`);
+        await mkdir(path.dirname(path.join(staging, build.executable)), { recursive: true });
+        await copyFile(from, path.join(staging, build.executable));
+      }
       const program = path.join(staging, build.executable);
+      for (const f of build.launch ?? []) {
+        if (!existsSync(path.join(staging, f))) throw new FetchError("failed", `the download has no ${f}`);
+      }
       if (!existsSync(program)) throw new FetchError("failed", `the download has no ${build.executable}`);
       if (process.platform !== "win32") await chmod(program, 0o755);
       await rm(dir, { recursive: true, force: true });
@@ -342,13 +362,28 @@ export class CliCopies {
   }
 }
 
-/** `archive` unpacked into `into`: the system's `tar` reads both kinds on macOS and Windows; Linux's needs `unzip`. */
-function unpack(archive: string, into: string, build: CliBuild): Promise<void> {
+/**
+ * `archive` unpacked into `into`: the system's `tar` reads both kinds on macOS and Windows (there Windows' own
+ * `System32\tar.exe`, bsdtar, never a GNU tar on the PATH, which reads no zip); Linux's needs `unzip`.
+ */
+export function unpackCommand(
+  archive: string,
+  into: string,
+  build: CliBuild,
+  platform: NodeJS.Platform = process.platform,
+  env: NodeJS.ProcessEnv = process.env,
+): [string, string[]] {
   const strip = build.strip ? [`--strip-components=${build.strip}`] : [];
-  const [file, args] =
-    build.archive === "zip" && process.platform === "linux"
-      ? ["unzip", ["-q", "-o", archive, "-d", into]]
-      : ["tar", [build.archive === "zip" ? "-xf" : "-xzf", archive, "-C", into, ...strip]];
+  if (build.archive === "zip" && platform === "linux") return ["unzip", ["-q", "-o", archive, "-d", into]];
+  const tar =
+    platform === "win32"
+      ? path.win32.join(envValue(env, "SystemRoot", "win32") || "C:\\Windows", "System32", "tar.exe")
+      : "tar";
+  return [tar, [build.archive === "zip" ? "-xf" : "-xzf", archive, "-C", into, ...strip]];
+}
+
+function unpack(archive: string, into: string, build: CliBuild): Promise<void> {
+  const [file, args] = unpackCommand(archive, into, build);
   return new Promise((done, fail) =>
     execFile(file, args as string[], { timeout: FETCH_MS, windowsHide: true }, (err) =>
       err ? fail(new FetchError("failed", `couldn't unpack it: ${err.message}`)) : done(),
@@ -365,6 +400,7 @@ const NAMES: Record<PinCli, string> = {
   opencode: "OpenCode",
   grok: "Grok Build",
   antigravity: "the Antigravity CLI",
+  git: "Git for Windows",
 };
 const cliName = (cli: PinCli) => NAMES[cli];
 
@@ -398,8 +434,15 @@ function versionOf(file: string): Promise<string | null> {
   });
 }
 
-/** The person's own copy of `cli` on the PATH, never the runner's, with its version line. */
-async function ownCopy(cli: PinCli): Promise<{ file: string; version: string } | null> {
+/**
+ * The person's own copy of `cli` on the PATH, never the runner's, with its version line. Git: the person's Git Bash,
+ * any version (its bash is all Claude Code needs), so it reads as the pinned one.
+ */
+async function ownCopy(cli: PinCli, pinned: string): Promise<{ file: string; version: string } | null> {
+  if (cli === "git") {
+    const bash = process.platform === "win32" ? gitBashPath(process.env, undefined, false) : null;
+    return bash ? { file: bash, version: pinned } : null;
+  }
   const file = ownCommand(CLI_COMMAND[cli]);
   const version = file ? await versionOf(file) : null;
   return file && version ? { file, version } : null;

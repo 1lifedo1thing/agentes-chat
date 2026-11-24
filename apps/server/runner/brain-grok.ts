@@ -18,10 +18,10 @@ import {
 } from "./accounts";
 import { ClaudeStreamParser, LIMIT_TEXT } from "./brain";
 import { type CodexBrainEvent, CodexThreads, chatFolder, codexProfileOf, codexThreadKey } from "./brain-codex";
-import { cursorPrompt } from "./brain-cursor";
+import { cursorPrompt, promptMaxOn } from "./brain-cursor";
 import { RunnerError } from "./errors";
 import { killTree } from "./exec";
-import { GROK_BIN, resolveCommand } from "./executors";
+import { cliSpawn, GROK_BIN } from "./executors";
 import { CODEX_MCP_ENV, CODEX_MCP_SERVER, redactDeep } from "./mcp";
 import { resolveForAgent } from "./paths";
 import type { Spawn } from "./scope-gate";
@@ -312,9 +312,7 @@ export interface GrokTurnOptions {
 export async function runGrokTurn(input: GrokTurnInput, opts: GrokTurnOptions): Promise<void> {
   const fail = (code: string, message: string, retryable?: boolean) =>
     opts.emit({ type: "error", code, message, ...(retryable ? { retryable } : {}) });
-  if ((opts.platform ?? process.platform) === "win32") {
-    return fail("unsupported", "The Grok brain isn't supported on Windows yet.");
-  }
+  const platform = opts.platform ?? process.platform;
   try {
     writeGrokConfig(
       input.account.home,
@@ -332,7 +330,7 @@ export async function runGrokTurn(input: GrokTurnInput, opts: GrokTurnOptions): 
     ...(opts.socketPath ? { [CODEX_MCP_ENV[1]]: opts.socketPath } : {}),
     ...(opts.runnerHome ? { [CODEX_MCP_ENV[2]]: opts.runnerHome } : {}),
   };
-  const env = accountEnv("grok", input.account.home, base);
+  const env = accountEnv("grok", input.account.home, base, platform);
   const clean = (text: string) => (opts.redact ? opts.redact(text) : text);
   const hold = opts.redact ? (opts.redactHold ?? 0) : 0;
 
@@ -340,7 +338,7 @@ export async function runGrokTurn(input: GrokTurnInput, opts: GrokTurnOptions): 
   for (let attempt = 0; ; attempt++) {
     const chat = opts.chats.get(chatKey);
     const args = grokTurnArgs({
-      prompt: cursorPrompt(input.system, input.prompt, !chat),
+      prompt: cursorPrompt(input.system, input.prompt, !chat, promptMaxOn(platform)),
       ...(chat ? { chat } : {}),
       ...(input.model ? { model: input.model } : {}),
       ...(input.effort ? { effort: input.effort } : {}),
@@ -351,11 +349,15 @@ export async function runGrokTurn(input: GrokTurnInput, opts: GrokTurnOptions): 
     parser.beginTurn();
     let child: ChildProcess;
     try {
-      child = (opts.spawn ?? spawn)(resolveCommand(opts.bin ?? GROK_BIN, env.PATH), args, {
+      // Not its own group on Windows: there that opens a console, and `killTree` follows the tree anyway.
+      const run = cliSpawn([opts.bin ?? GROK_BIN], args, env.PATH, platform);
+      child = (opts.spawn ?? spawn)(run.file, run.args, {
         cwd: input.cwd,
-        env,
+        env: run.env ? { ...env, ...run.env } : env,
         stdio: ["ignore", "pipe", "pipe"],
-        detached: true,
+        detached: platform !== "win32",
+        windowsHide: true,
+        ...(run.windowsVerbatimArguments ? { windowsVerbatimArguments: true } : {}),
       });
     } catch (err) {
       return fail("grok_failed", err instanceof Error ? err.message : String(err));

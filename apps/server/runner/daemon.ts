@@ -92,7 +92,7 @@ import { CodexAppServers } from "./brain-codex-app";
 import { BrowserManager } from "./browser";
 import { ensureBrowserBindPolicy, prepareAgents } from "./browser-bind-policy";
 import { BrowserViews } from "./browser-views";
-import { CLI_OF_BRAIN, CliCopies, type CliCopiesOptions, holdCliSelfUpdates } from "./cli-copies";
+import { CLI_OF_BRAIN, CliCopies, type CliCopiesOptions, holdCliSelfUpdates, isPinCli } from "./cli-copies";
 import { CliInstaller, type CliInstallerOptions, gitBashPath } from "./cli-install";
 import { readCodexAccount } from "./codex-account";
 import {
@@ -631,7 +631,11 @@ export class RunnerDaemon implements RequestObserver {
         ? new CliCopies({
             home: opts.home,
             log: opts.log,
-            inUse: (cli) => this.accounts.snapshot()?.some((a) => CLI_OF_BRAIN[a.kind] === cli) ?? false,
+            // Git for Windows is wanted where Claude Code is, on Windows: its bash is Claude Code's shell there.
+            inUse: (cli) =>
+              this.accounts
+                .snapshot()
+                ?.some((a) => CLI_OF_BRAIN[a.kind] === (cli === "git" ? "claude" : cli)) ?? false,
             onChange: () => {
               void this.clisLook().then(() => this.accounts.refresh(true).catch(() => undefined));
             },
@@ -644,10 +648,7 @@ export class RunnerDaemon implements RequestObserver {
     this.accounts = new AccountManager({
       root: lent?.root ?? path.join(opts.home, "accounts"),
       // A sign-in on a computer with no copy of its CLI new enough: the runner fetches its own first.
-      prepare: async (kind) => {
-        const cli = CLI_OF_BRAIN[kind];
-        if (cli) await this.copies?.ensure(cli);
-      },
+      prepare: async (kind) => this.cliReady(kind),
       ...(lent ? { lending: { chown: lent.chown } } : {}),
       ...(lent?.grokRoot ? { grokRoot: lent.grokRoot } : {}),
       ...(lent && !opts.systemAccounts && process.platform === "linux"
@@ -1716,11 +1717,8 @@ export class RunnerDaemon implements RequestObserver {
         return { executors: this.executors() };
       },
       cliInstall: (req) => this.cliInstaller().handle(req),
-      cliFetch: (cli) => ({ fetch: this.copies?.retry(cli) ?? null }),
-      cliEnsure: async (kind) => {
-        const cli = CLI_OF_BRAIN[kind];
-        if (cli) await this.copies?.ensure(cli);
-      },
+      cliFetch: (cli) => ({ fetch: isPinCli(cli) ? (this.copies?.retry(cli) ?? null) : null }),
+      cliEnsure: async (kind) => this.cliReady(kind),
       xcodeOpen: () => this.iphoneSetup().open("xcode"),
       reportParts: () => this.reportParts(),
     };
@@ -2383,6 +2381,17 @@ export class RunnerDaemon implements RequestObserver {
   async executorsCheck(): Promise<ControlStatus> {
     await this.clisLook();
     return this.status();
+  }
+
+  /**
+   * A brain's CLI ready before its turn or sign-in (ADR 0228 §6): the person's own, else the runner's copy, fetched now
+   * if it isn't here. Claude Code on Windows needs Git Bash first: the person's, else the runner's MinGit.
+   */
+  private async cliReady(kind: string) {
+    const cli = CLI_OF_BRAIN[kind];
+    if (!cli) return;
+    if (cli === "claude" && process.platform === "win32") await this.copies?.ensure("git");
+    await this.copies?.ensure(cli);
   }
 
   /** The PATH read again and the coding CLIs looked up now; a change reaches the server (`executors.changed`). */
