@@ -1139,10 +1139,9 @@ export async function setDevicesHelp(
   deps: { db: Executor; pubsub?: PubSub },
   userId: string,
   orgId: string,
-  on: unknown,
+  on: boolean,
 ): Promise<boolean> {
   const { db } = deps;
-  if (typeof on !== "boolean") throw new ValidationError("on is true or false", "devices.invalid_help");
   await requirePermission(db, userId, orgId, "configure");
   if ((await devicesHelpOn(db, orgId)) === on) return on;
   await db
