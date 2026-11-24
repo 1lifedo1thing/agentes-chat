@@ -197,6 +197,10 @@ export const MAX_SUBSCRIPTIONS = 200;
  */
 export const SESSION_RECHECK_MS = 60_000;
 export const MEMBERSHIP_RECHECK_TICKS = 5;
+/** Sessions read per statement by the replica's check (`checkSessions`). */
+const SESSION_CHECK_CHUNK = 500;
+/** Periods a socket may go unchecked while the database can't answer, before it closes. */
+const SESSION_UNCHECKED_TICKS = 3;
 /** A socket's own recheck period: up to a quarter more, so sockets reconnected together don't recheck in waves. */
 export const sessionRecheckPeriod = (base: number, random = Math.random) => base + Math.floor(random() * (base / 4));
 /** Incoming frames recheck at most once this often, to avoid a database query per mouse event. */
@@ -327,10 +331,21 @@ export async function currentSubscriptions(
 
 export function createRealtime(deps: RealtimeDeps) {
   const origins = allowedOrigins(deps.config);
-  const send = (ws: BrowserSocket, frame: unknown): void => {
+  const sendText = (ws: BrowserSocket, text: string): void => {
     // 0: Bun dropped it, past its backpressure limit (a frozen tab that stopped reading). The app would never learn
     // what it missed; closed, it reconnects and reads it.
-    if (ws.send(JSON.stringify(frame)) === 0 && ws.readyState === 1) ws.close(1013, "too far behind");
+    if (ws.send(text) === 0 && ws.readyState === 1) ws.close(1013, "too far behind");
+  };
+  const send = (ws: BrowserSocket, frame: unknown) => sendText(ws, JSON.stringify(frame));
+  /** Each event's frame as text, made once for all the sockets it goes to (a broadcast reaches every one). */
+  const eventTexts = new WeakMap<object, Map<string, string>>();
+  const sendEvent = (ws: BrowserSocket, event: object, at: { scope: "org" | "user" } | { channelId: string }) => {
+    const key = "scope" in at ? at.scope : at.channelId;
+    const texts = eventTexts.get(event) ?? new Map<string, string>();
+    eventTexts.set(event, texts);
+    const text = texts.get(key) ?? JSON.stringify({ type: "event", ...at, event });
+    texts.set(key, text);
+    sendText(ws, text);
   };
   // A new message reaches its members' sockets on this replica as `channel.activity` (no content): their lists
   // count it as unread without subscribing to every channel. The author's own sockets never hear it.
@@ -363,7 +378,7 @@ export function createRealtime(deps: RealtimeDeps) {
             ws.data.user.id !== authorUserId &&
             userIds.has(ws.data.user.id)
           )
-            send(ws, { type: "event", scope: "user", event });
+            sendEvent(ws, event, { scope: "user" });
       })
       .catch(() => {});
   });
@@ -379,9 +394,67 @@ export function createRealtime(deps: RealtimeDeps) {
     }
   });
 
-  async function liveSession(ws: BrowserSocket, force = false): Promise<boolean> {
+  const sessionRecheckMs = deps.sessionRecheckMs ?? SESSION_RECHECK_MS;
+  /**
+   * Every open socket's session, read in one statement per replica every `sessionRecheckMs` (in chunks of
+   * `SESSION_CHECK_CHUNK` tokens) instead of once per socket: a session that ended closes its sockets. When the
+   * database can't answer, only a socket left unchecked for `SESSION_UNCHECKED_TICKS` periods closes, so a moment's
+   * outage doesn't send every app reconnecting at once.
+   */
+  async function checkSessions() {
+    const open = [...browsers].filter((ws) => ws.readyState === 1);
+    const tokens = [...new Set(open.map((ws) => ws.data.sessionToken))];
+    const found = new Map<string, { userId: string; expiresAt: Date }>();
+    try {
+      for (let i = 0; i < tokens.length; i += SESSION_CHECK_CHUNK) {
+        const rows = await deps.db
+          .select({
+            token: schema.sessions.token,
+            userId: schema.sessions.userId,
+            expiresAt: schema.sessions.expiresAt,
+          })
+          .from(schema.sessions)
+          .where(inArray(schema.sessions.token, tokens.slice(i, i + SESSION_CHECK_CHUNK)));
+        for (const r of rows) found.set(r.token, r);
+      }
+    } catch {
+      const stale = Date.now() - SESSION_UNCHECKED_TICKS * sessionRecheckMs;
+      for (const ws of open) {
+        if (ws.readyState === 1 && ws.data.sessionValidatedAt < stale)
+          ws.close(1011, retryAfterReason(DB_RETRY_AFTER_S, "session unavailable"));
+      }
+      return;
+    }
+    const now = Date.now();
+    for (const ws of open) {
+      const session = found.get(ws.data.sessionToken);
+      if (session && session.userId === ws.data.user.id && session.expiresAt.getTime() > now) {
+        ws.data.sessionValidatedAt = now;
+      } else if (ws.readyState === 1) ws.close(4401, "session revoked");
+    }
+  }
+  let checkingSessions = false;
+  let sessionSweep: ReturnType<typeof setInterval> | null = null;
+  /** The sweep runs while this replica holds a socket, and stops with its last one. */
+  const sweepSessions = (on: boolean) => {
+    if (on && !sessionSweep) {
+      sessionSweep = setInterval(() => {
+        if (checkingSessions) return;
+        checkingSessions = true;
+        void checkSessions().finally(() => {
+          checkingSessions = false;
+        });
+      }, sessionRecheckMs);
+      sessionSweep.unref?.();
+    } else if (!on && sessionSweep) {
+      clearInterval(sessionSweep);
+      sessionSweep = null;
+    }
+  };
+
+  async function liveSession(ws: BrowserSocket): Promise<boolean> {
     if (ws.readyState !== 1) return false;
-    if (!force && Date.now() - ws.data.sessionValidatedAt < SESSION_FRAME_RECHECK_MS) return true;
+    if (Date.now() - ws.data.sessionValidatedAt < SESSION_FRAME_RECHECK_MS) return true;
     if (ws.data.sessionCheckInFlight) return ws.data.sessionCheckInFlight;
     const check = (async () => {
       try {
@@ -766,7 +839,8 @@ export function createRealtime(deps: RealtimeDeps) {
         connectionId: crypto.randomUUID(),
         user: person,
         sessionToken,
-        sessionValidatedAt: 0,
+        // Just read by `personUpgrade`: its socket's open doesn't read it again.
+        sessionValidatedAt: Date.now(),
         sessionCheckInFlight: null,
         sessionTimer: null,
         orgId,
@@ -796,8 +870,9 @@ export function createRealtime(deps: RealtimeDeps) {
         if (isStream(socket)) return deps.streams?.open(socket);
         if (isLive(socket)) return deps.live?.open(socket);
         const ws = socket as BrowserSocket;
-        if (!(await liveSession(ws, true))) return;
+        if (!(await liveSession(ws))) return;
         browsers.add(ws);
+        sweepSessions(true);
         const { orgId, user } = ws.data;
         perPerson.set(user.id, (perPerson.get(user.id) ?? 0) + 1);
         const key = tabKey(ws.data);
@@ -816,15 +891,14 @@ export function createRealtime(deps: RealtimeDeps) {
           if (ws.readyState === 1) send(ws, { type: "unsubscribed", channelId, reason });
         };
         let rechecking = false;
-        let ticks = 0;
-        const period = sessionRecheckPeriod(deps.sessionRecheckMs ?? SESSION_RECHECK_MS);
+        // Its session is checked with every other socket's (`checkSessions`); its channels, on its own, less often.
+        const period = sessionRecheckPeriod(sessionRecheckMs * MEMBERSHIP_RECHECK_TICKS);
         ws.data.sessionTimer = setInterval(() => {
           if (rechecking || ws.readyState !== 1) return;
           rechecking = true;
           void (async () => {
             try {
-              if (!(await liveSession(ws, true))) return;
-              if (++ticks % MEMBERSHIP_RECHECK_TICKS !== 0) return;
+              if (!(await liveSession(ws))) return;
               let timeout: ReturnType<typeof setTimeout> | undefined;
               const deadline = new Promise<never>((_, reject) => {
                 timeout = setTimeout(
@@ -861,7 +935,7 @@ export function createRealtime(deps: RealtimeDeps) {
             const event = raw as unknown as OrgEvent;
             if (event.type === "channel.archived") return drop(event.channelId, "archived");
             if (event.type === "org.broadcast") {
-              if (ws.readyState === 1) send(ws, { type: "event", scope: "org", event: event.event });
+              if (ws.readyState === 1) sendEvent(ws, event.event, { scope: "org" });
               if (closesWorkspace(event.event) && ws.readyState === 1) ws.close(4403, "organization closed");
               return;
             }
@@ -876,7 +950,7 @@ export function createRealtime(deps: RealtimeDeps) {
             }
           }),
           deps.pubsub.subscribe(userTopic(orgId, user.id), (event) => {
-            if (ws.readyState === 1) send(ws, { type: "event", scope: "user", event });
+            if (ws.readyState === 1) sendEvent(ws, event, { scope: "user" });
           }),
         );
         const wasConnected = await isConnected(deps.presence, orgId, user.id);
@@ -970,7 +1044,7 @@ export function createRealtime(deps: RealtimeDeps) {
         if (ws.readyState !== 1) return;
         if (ws.data.subscriptions.has(channelId)) return send(ws, { type: "subscribed", channelId });
         const off = deps.pubsub.subscribe(channelTopic(channelId), (event) => {
-          if (ws.readyState === 1) send(ws, { type: "event", channelId, event });
+          if (ws.readyState === 1) sendEvent(ws, event, { channelId });
         });
         ws.data.subscriptions.set(channelId, off);
         send(ws, { type: "subscribed", channelId });
@@ -987,6 +1061,7 @@ export function createRealtime(deps: RealtimeDeps) {
           else perPerson.delete(ws.data.user.id);
           const key = tabKey(ws.data);
           if (key && tabs.get(key) === ws) tabs.delete(key);
+          if (browsers.size === 0) sweepSessions(false);
         }
         if (ws.data.sessionTimer) clearInterval(ws.data.sessionTimer);
         ws.data.sessionTimer = null;
@@ -995,6 +1070,8 @@ export function createRealtime(deps: RealtimeDeps) {
         for (const stop of ws.data.browsers.values()) stop();
         ws.data.browsers.clear();
         for (const agentId of [...ws.data.frameSockets.keys()]) closeFrameSocket(ws, agentId);
+        // Its unused tickets hold the closed socket until another is issued here: they go with it.
+        for (const [ticket, t] of frameTickets) if (t.owner === ws) frameTickets.delete(ticket);
         ws.data.browserFps.clear();
         for (const off of ws.data.system) off();
         ws.data.system = [];
