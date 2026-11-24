@@ -2133,3 +2133,45 @@ test.if(posix)(
   },
   15_000,
 );
+
+test.if(posix)(
+  "an inconclusive status look is looked at again at doubling waits, and no more once the wait reaches the list's TTL",
+  async () => {
+    const home = tempDir("grok-retry-");
+    dirs.push(home);
+    const root = path.join(home, "accounts");
+    const looked = path.join(home, "looks.log");
+    const cli = path.join(home, "fake-grok-down.mjs");
+    // Signed in on disk, but every status look fails without saying why: never conclusive.
+    writeFileSync(
+      cli,
+      [
+        'import { appendFileSync } from "node:fs";',
+        `if (process.argv.includes("models")) appendFileSync(${JSON.stringify(looked)}, "x");`,
+        'process.stderr.write("Error: connection reset by peer\\n");',
+        "process.exit(1);",
+      ].join("\n"),
+    );
+    const id = LOGIN(195);
+    const dir = path.join(root, "grok", id);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "auth.json"), grokAuth("r1", Date.now() + 6 * 3600_000));
+    const m = new AccountManager({
+      root,
+      commands: { grok: [process.execPath, cli] },
+      statusRetryMs: 20,
+      listTtlMs: 100,
+    });
+    managers.push(m);
+    const looks = () => (existsSync(looked) ? readFileSync(looked, "utf8").length : 0);
+
+    expect(await m.list()).toEqual([
+      { id, kind: "grok", loggedIn: true, statusUnknown: true, shared: true, authMethod: "cli_login" },
+    ]);
+    // Again after 20, 40 and 80 ms; the next wait (160 ms) passes the 100 ms TTL, so no timer is set.
+    await waitFor(() => looks() >= 4, 5000);
+    await new Promise((r) => setTimeout(r, 600));
+    expect(looks()).toBe(4);
+  },
+  15_000,
+);
