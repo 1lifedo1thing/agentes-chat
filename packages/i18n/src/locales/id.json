@@ -2916,7 +2916,6 @@
       "mineHelp": "Percakapanmu dengan {{name}} berpikir dengan paketmu atau paket yang dibagikan kepadamu, dan hanya percakapanmu.",
       "connectMine": "Hubungkan paket saya",
       "useWorkspace": "Pakai milik workspace",
-      "useMine": "Pakai paket saya",
       "mineYours": "paket kamu",
       "mineOf": "paket {{owner}}",
       "mineKey": "kunci workspace",
@@ -5743,6 +5742,18 @@
           "missed_other": "{{count}} agen tidak berubah."
         },
         "add": {
+          "pickTitle": "Tambah akun",
+          "pickFoot": "Kamu masuk di halaman AI itu sendiri.",
+          "have_other": "Kamu punya {{count}}",
+          "others": "Paket lain",
+          "key": "Kunci API",
+          "keyLine": "Bayar sesuai pemakaian",
+          "titlePlan": "Tambah {{plan}}",
+          "againTitle": "Masuk lagi ke {{brand}}",
+          "haveNote": "Kamu sudah punya {{accounts}} di sini. Untuk masuk dengan akun lain, keluar dulu dari {{brand}} di browser, atau salin tautannya dan buka di jendela pribadi.",
+          "againNote": "Masuk lagi sebagai {{account}}. {{name}} kembali berpikir dengannya begitu kamu selesai.",
+          "footSignIn": "Kamu mengetik kata sandi di halaman {{brand}}.",
+          "footKey": "Kuncinya dikirim terenkripsi langsung ke {{computer}}.",
           "title": {
             "claude_code": "Tambah akun Claude",
             "codex": "Tambah akun ChatGPT",
@@ -5824,32 +5835,22 @@
           "title": "Siapa yang berpikir untuk {{name}}",
           "only": "Hanya untuk {{name}}.",
           "more": "Opsi lainnya",
-          "switch": "Ganti akun",
-          "switchTitle": "Ganti akun {{name}}",
-          "inUse": "Sedang dipakai",
-          "switchTo": "Ganti ke {{label}}",
-          "teamTitle": "Ganti akun tim",
-          "teamAria": "Untuk siapa",
-          "justOne": "Hanya {{name}}",
-          "everyone": "Semua di akun ini",
-          "target": "Ganti ke",
-          "switchMany_other": "Ganti {{count}} agen",
-          "limitTitle": "Akun {{name}} mencapai batas",
           "limitBack": "{{account}} kembali {{when}}",
           "limitSoon": "{{account}} kembali saat paketnya diperbarui",
           "limitHelp": "Sementara itu {{name}} bisa berpikir dengan akun lain yang sudah terhubung.",
           "fullWait": "Di akun ini {{name}} menunggu sampai paketnya diperbarui.",
-          "seeUsage": "Lihat penggunaan",
-          "wait": "Tunggu",
           "modelTitle": "Model {{name}}",
           "moreTitle": "Opsi lainnya untuk {{name}}",
           "computer": "Komputer",
-          "doneTitle": "Beres",
-          "doneSub": "Yang sedang berjalan lanjut dengan akun baru.",
           "finish": "Selesai",
           "undo": "Batalkan",
           "undone": "Kembali seperti semula.",
-          "missed_other": "{{names}} tetap memakai akun sebelumnya."
+          "missed_other": "{{names}} tetap memakai akun sebelumnya.",
+          "added": "Akun ditambahkan. {{name}} sekarang berpikir dengan {{account}}.",
+          "alsoUses_other": "{{names}} juga berpikir dengan {{account}}.",
+          "alsoSwitch": "Ganti juga",
+          "signedOut": "{{account}} keluar dari {{brand}}. {{name}} tidak akan menjawab sampai kamu masuk lagi atau memilih akun lain.",
+          "empty": "{{name}} belum punya akun AI untuk berpikir."
         }
       },
       "computer": {
@@ -10354,6 +10355,8 @@
     "of": "milik {{name}}",
     "moreSpeed": "Kecepatan dan jendela konteks",
     "whoThinks": "Siapa yang berpikir",
+    "thinks_other": "{{names}} berpikir dengannya",
+    "thinksNone": "Tidak ada agen yang berpikir dengannya",
     "bulk": {
       "sub": "Pilih AI-nya, lalu agen yang memakainya."
     },
@@ -10363,10 +10366,14 @@
       "search": "Cari menurut nama, AI, paket, atau pemilik",
       "noMatch": "Tidak ada akun yang cocok.",
       "noModel": "Tidak ada model yang cocok.",
+      "empty": "Belum ada akun.",
+      "add": "Tambah akun",
+      "addLine": "Claude, ChatGPT, Gemini, dan lainnya, atau kunci API",
+      "manage": "Kelola akun",
       "groups": {
-        "yours": "Milikmu",
+        "yours": "Akunmu",
         "others": "Milik tim",
-        "keys": "Milik ruang kerja"
+        "keys": "Kunci API"
       }
     },
     "order": {
@@ -17346,7 +17353,6 @@
     "removeUsedOther_other": "{{agents}} berpikir dengan kunci ini. Setelah kunci hilang, mereka pindah ke kunci lain, atau meminta AI jika tidak ada yang cocok dengan modelnya.",
     "removeUsedNone_other": "{{agents}} berpikir dengan kunci ini dan tidak punya yang lain. Setelah kunci hilang, mereka berhenti menjawab sampai kamu menghubungkan AI lain.",
     "noKeys": "Dengan kunci API, kamu membayar langsung ke penyedia dan memilih modelnya.",
-    "noKeysTitle": "Bawa kunci AI-mu sendiri",
     "platformAvailable": "Kunci Claude server ini juga tersedia.",
     "usageTitle": "Pengeluaran API per jenis",
     "usageAgentLine": "{{spent}} dari {{budget}}",

@@ -2916,7 +2916,6 @@
       "mineHelp": "{{name}}とのあなたの会話は、あなたのプラン、または共有されたプランで考えます。あなたの会話だけです。",
       "connectMine": "自分のプランを接続",
       "useWorkspace": "ワークスペースのものを使う",
-      "useMine": "自分のプランを使う",
       "mineYours": "あなたのプラン",
       "mineOf": "{{owner}}のプラン",
       "mineKey": "ワークスペースのキー",
@@ -5723,6 +5722,18 @@
           "missed_other": "{{count}}体のエージェントは変更されませんでした。"
         },
         "add": {
+          "pickTitle": "アカウントを追加",
+          "pickFoot": "ログインはそのAIのページで行います。",
+          "have_other": "{{count}}件あります",
+          "others": "その他のプラン",
+          "key": "APIキー",
+          "keyLine": "従量課金",
+          "titlePlan": "{{plan}}を追加",
+          "againTitle": "{{brand}}にもう一度ログイン",
+          "haveNote": "ここにはすでに{{accounts}}があります。別のアカウントでログインするには、先にブラウザで{{brand}}からログアウトするか、リンクをコピーしてプライベートウィンドウで開いてください。",
+          "againNote": "{{account}}としてもう一度ログインしてください。完了するとすぐに、{{name}}はまたこのアカウントで考えます。",
+          "footSignIn": "パスワードは{{brand}}のページで入力します。",
+          "footKey": "キーは暗号化されて{{computer}}に直接送られます。",
           "title": {
             "claude_code": "Claudeアカウントを追加",
             "codex": "ChatGPTアカウントを追加",
@@ -5804,32 +5815,22 @@
           "title": "{{name}}の考えるAI",
           "only": "{{name}}だけに適用されます。",
           "more": "その他のオプション",
-          "switch": "アカウントを切り替え",
-          "switchTitle": "{{name}}のアカウントを切り替え",
-          "inUse": "使用中",
-          "switchTo": "{{label}}に切り替え",
-          "teamTitle": "チームのアカウントを切り替え",
-          "teamAria": "対象",
-          "justOne": "{{name}}だけ",
-          "everyone": "このアカウントの全員",
-          "target": "切り替え先",
-          "switchMany_other": "{{count}}体を切り替え",
-          "limitTitle": "{{name}}のアカウントが上限に達しました",
           "limitBack": "{{account}}は{{when}}に戻ります",
           "limitSoon": "{{account}}はプランが更新されたら戻ります",
           "limitHelp": "それまでの間、{{name}}は接続済みの別のアカウントで考えられます。",
           "fullWait": "このアカウントでは、{{name}}はプランが更新されるまで待ちます。",
-          "seeUsage": "使用量を見る",
-          "wait": "待つ",
           "modelTitle": "{{name}}のモデル",
           "moreTitle": "{{name}}のその他のオプション",
           "computer": "コンピューター",
-          "doneTitle": "完了しました",
-          "doneSub": "進行中だった作業は新しいアカウントで続きます。",
           "finish": "完了",
           "undo": "元に戻す",
           "undone": "元の状態に戻しました。",
-          "missed_other": "{{names}}は前のアカウントのままです。"
+          "missed_other": "{{names}}は前のアカウントのままです。",
+          "added": "アカウントを追加しました。{{name}}は今、{{account}}で考えています。",
+          "alsoUses_other": "{{names}}も{{account}}で考えています。",
+          "alsoSwitch": "こちらも切り替える",
+          "signedOut": "{{account}}は{{brand}}からログアウトしました。もう一度ログインするか別のアカウントを選ぶまで、{{name}}は返信しません。",
+          "empty": "{{name}}にはまだ考えるためのAIアカウントがありません。"
         }
       },
       "computer": {
@@ -10300,6 +10301,8 @@
     "of": "{{name}}さんの",
     "moreSpeed": "速度とコンテキストウィンドウ",
     "whoThinks": "考える担当",
+    "thinks_other": "{{names}}がこのアカウントで考えています",
+    "thinksNone": "このアカウントで考えているエージェントはいません",
     "bulk": {
       "sub": "AIを選び、次にそれを使うエージェントを選びます。"
     },
@@ -10309,10 +10312,14 @@
       "search": "名前、AI、プラン、所有者で検索",
       "noMatch": "一致するアカウントはありません。",
       "noModel": "一致するモデルはありません。",
+      "empty": "まだアカウントはありません。",
+      "add": "アカウントを追加",
+      "addLine": "Claude、ChatGPT、Geminiなど、またはAPIキー",
+      "manage": "アカウントを管理",
       "groups": {
-        "yours": "あなたの",
+        "yours": "あなたのアカウント",
         "others": "チームの",
-        "keys": "ワークスペースの"
+        "keys": "APIキー"
       }
     },
     "order": {
@@ -17287,7 +17294,6 @@
     "removeUsedOther_other": "{{agents}}はこのキーで動いています。削除すると別のキーに移るか、モデルに合うキーがなければAIを求めます。",
     "removeUsedNone_other": "{{agents}}はこのキーで動いていて、ほかに何もありません。削除すると、別のAIを接続するまで応答しなくなります。",
     "noKeys": "APIキーなら、プロバイダーに直接支払い、モデルを選べます。",
-    "noKeysTitle": "自分のAIキーを使えます",
     "platformAvailable": "このサーバーのClaudeキーも利用できます。",
     "usageTitle": "種類別のAPI支出",
     "usageAgentLine": "{{spent}} / {{budget}}",

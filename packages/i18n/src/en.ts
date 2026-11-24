@@ -3266,7 +3266,6 @@ export const en = {
       mineHelp: "Your conversation with {{name}} thinks with your plan or one shared with you, and only yours does.",
       connectMine: "Connect my plan",
       useWorkspace: "Use the workspace's",
-      useMine: "Use my plan",
       /** "Sua IA" as one status line: the AI's name, then what it is for the person (lower case, after a " · "). */
       mineYours: "your plan",
       mineOf: "{{owner}}'s plan",
@@ -6419,6 +6418,24 @@ export const en = {
           missed_other: "{{count}} agents didn't change.",
         },
         add: {
+          /** "Add account" in "Who thinks": one line per AI, then that AI's sign-in. */
+          pickTitle: "Add account",
+          pickFoot: "You sign in on the AI's own page.",
+          /** At the end of an AI's line: how many accounts of it the person already has there. */
+          have_one: "You have 1",
+          have_other: "You have {{count}}",
+          others: "Another plan",
+          key: "API key",
+          keyLine: "Pay as you go",
+          /** A coding plan's sign-in: its key. */
+          titlePlan: "Add {{plan}}",
+          againTitle: "Sign in to {{brand}} again",
+          /** Before a new sign-in where the person has accounts of that AI there: the browser would bring one of those back. */
+          haveNote:
+            "You already have {{accounts}} here. To sign in with another account, sign out of {{brand}} in your browser first, or copy the link and open it in a private window.",
+          againNote: "Sign in again as {{account}}. {{name}} thinks with it again as soon as you're done.",
+          footSignIn: "You type your password on {{brand}}'s page.",
+          footKey: "The key goes encrypted straight to {{computer}}.",
           title: {
             claude_code: "Add a Claude account",
             codex: "Add a ChatGPT account",
@@ -6521,23 +6538,6 @@ export const en = {
           only: "Only for {{name}}.",
           /** A line on the first screen that opens effort, speed, context and the rest. */
           more: "More options",
-          switch: "Change account",
-          switchTitle: "Change {{name}}'s account",
-          /** The label over the account the agent uses now. */
-          inUse: "In use",
-          /** The main button: `label` is the account's title ("Claude 2 · Max"). */
-          switchTo: "Switch to {{label}}",
-          teamTitle: "Change the team's account",
-          /** The two cards of the team screen, for a screen reader: whom the switch is for. */
-          teamAria: "Whom it is for",
-          /** Two cards, when the account thinks for all of its owner's agents: whom the switch is for. */
-          justOne: "Only {{name}}",
-          everyone: "Everyone on this account",
-          /** The label over the account they switch to. */
-          target: "Switch to",
-          switchMany_one: "Switch {{count}} agent",
-          switchMany_other: "Switch the {{count}} agents",
-          limitTitle: "{{name}}'s account is at its limit",
           /** `when` is a day and a time ("Saturday at 18:00"). */
           limitBack: "{{account}} is back {{when}}",
           /** When the time it's back isn't known. */
@@ -6545,15 +6545,10 @@ export const en = {
           limitHelp: "Meanwhile {{name}} can think with another account that's already connected.",
           /** Under the list, with an account at its limit picked: the row above says until when. */
           fullWait: "On this account {{name}} waits until the plan renews.",
-          /** A link to the usage page, after `fullWait`. */
-          seeUsage: "See usage",
-          wait: "Wait",
           modelTitle: "{{name}}'s model",
           moreTitle: "More options for {{name}}",
           /** A line under More options where several computers can run it. */
           computer: "Computer",
-          doneTitle: "All set",
-          doneSub: "What was under way goes on with the new account.",
           /** The main button of the first screen, of More options and of the last screen. */
           finish: "Done",
           undo: "Undo",
@@ -6562,6 +6557,17 @@ export const en = {
           /** The agents the server didn't move when switching everyone on the account: `names` lists them. */
           missed_one: "{{names}} kept the account it had.",
           missed_other: "{{names}} kept the accounts they had.",
+          /** Under the account, after one a sign-in here just brought became the one in use. */
+          added: "Account added. {{name}} now thinks with {{account}}.",
+          /** After a switch: the others of the person's agents still on the account it left (`names` lists them). */
+          alsoUses_one: "{{names}} also thinks with {{account}}.",
+          alsoUses_other: "{{names}} also think with {{account}}.",
+          alsoSwitch: "Switch them too",
+          /** The account in use signed out on its computer. `brand`: its AI ("Claude"). */
+          signedOut:
+            "{{account}} signed out of {{brand}}. {{name}} won't answer until you sign in again or pick another account.",
+          /** No AI to think with at all. */
+          empty: "{{name}} has no AI account to think with yet.",
         },
       },
       computer: {
@@ -11176,6 +11182,10 @@ export const en = {
     of: "{{name}}'s",
     moreSpeed: "Speed and context window",
     whoThinks: "Who thinks",
+    /** Under an account in AI accounts: the agents that think with it (`names` lists them). */
+    thinks_one: "{{names}} thinks with it",
+    thinks_other: "{{names}} think with it",
+    thinksNone: "No agent thinks with it",
     bulk: {
       sub: "Pick the AI, then the agents that take it.",
     },
@@ -11185,10 +11195,15 @@ export const en = {
       search: "Search by name, AI, plan or owner",
       noMatch: "No account matches.",
       noModel: "No model matches.",
+      empty: "No account yet.",
+      /** The account list's foot, under every row. */
+      add: "Add account",
+      addLine: "Claude, ChatGPT, Gemini and more, or an API key",
+      manage: "Manage accounts",
       groups: {
-        yours: "Yours",
+        yours: "Your accounts",
         others: "The team's",
-        keys: "The workspace's",
+        keys: "API keys",
       },
     },
     order: {
@@ -18460,7 +18475,6 @@ export const en = {
     removeUsedNone_other:
       "{{agents}} think with this key and have nothing else. Once it's gone, they stop answering until you connect another AI.",
     noKeys: "With an API key, you pay the provider directly and choose the models.",
-    noKeysTitle: "Bring your own AI key",
     platformAvailable: "This server's Claude key is also available.",
     usageTitle: "API spend by kind",
     usageAgentLine: "{{spent}} of {{budget}}",
