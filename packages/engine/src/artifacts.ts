@@ -38,7 +38,7 @@ import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from ".
 import { publishChannelEvent, publishListChanged } from "./events";
 import { MODEL_FILE_READ_BYTES, type ModelFile, readForModel, tooBigToReadNote, transcriptKey } from "./file-reader";
 import { formatBytes, tableToCsv } from "./format";
-import { imageSize } from "./image-size";
+import { imageSize, pictureSize } from "./image-size";
 import { originOfActor } from "./live/access";
 import { type FileConversationSummary, fileConversationSummaries } from "./live/conversation";
 import { documentExport } from "./live/document-export";
@@ -713,6 +713,53 @@ function fileContent(
     }
   }
   return content;
+}
+
+/**
+ * What a file's card on a message (`meta.artifacts`) draws from: its name, type and size, and a picture's own size. The
+ * apps show the picture or the video at once from these, with no request for the file's details first.
+ */
+export const fileFacts = (
+  v: Pick<VersionRow, "fileName" | "contentType" | "size"> & Partial<Pick<VersionRow, "width" | "height">>,
+) => {
+  const name = v.fileName ?? "file";
+  return { name, contentType: fileContentType(name, v.contentType), size: v.size, ...pictureSize(v) };
+};
+
+/** Message cards with their uploaded files' `fileFacts`, in one read; a card of anything else stays as it is. */
+export async function withFileFacts<T extends { id: string; version: number }>(
+  db: Executor,
+  orgId: string,
+  refs: readonly T[],
+): Promise<T[]> {
+  if (refs.length === 0) return [...refs];
+  const rows = await db
+    .select({
+      artifactId: artifactVersions.artifactId,
+      version: artifactVersions.version,
+      fileName: artifactVersions.fileName,
+      contentType: artifactVersions.contentType,
+      size: artifactVersions.size,
+      width: artifactVersions.width,
+      height: artifactVersions.height,
+    })
+    .from(artifactVersions)
+    .innerJoin(artifacts, eq(artifacts.id, artifactVersions.artifactId))
+    .where(
+      and(
+        eq(artifactVersions.orgId, orgId),
+        eq(artifacts.kind, "file"),
+        inArray(
+          artifactVersions.artifactId,
+          refs.map((r) => r.id),
+        ),
+      ),
+    );
+  const byVersion = new Map(rows.map((r) => [`${r.artifactId}:${r.version}`, r]));
+  return refs.map((r) => {
+    const v = byVersion.get(`${r.id}:${r.version}`);
+    return v ? { ...r, ...fileFacts(v) } : r;
+  });
 }
 
 /** Whether a `file` version's bytes are worth reading for `text`. */

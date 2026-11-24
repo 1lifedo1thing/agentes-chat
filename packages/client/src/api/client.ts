@@ -1943,6 +1943,8 @@ export interface ApiClient {
       id: string,
       options?: { version?: number; format?: "csv" | "patch" | "pdf" | "docx" | "xlsx" | "pptx" | "md" },
     ): string;
+    /** A picture made small (`THUMB_WIDTHS` on the server), as WebP, at a version: the browser keeps it for good. */
+    thumbUrl(orgId: string, id: string, options: { version: number; width: 96 | 480 | 960 }): string;
     create(
       orgId: string,
       input: { title: string; channelId?: string | null; folderId?: string | null; content: ArtifactContent },
