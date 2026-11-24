@@ -4545,9 +4545,7 @@ function WorkingTail({ onSeeAsk, ...here }: WorkHere & { onSeeAsk: (id: string) 
               </li>
             )}
             {trail.lines.map((l) => (
-              <li key={l.key} data-said={l.said || undefined}>
-                {l.text}
-              </li>
+              <li key={l.key}>{l.text}</li>
             ))}
           </ol>
         )}

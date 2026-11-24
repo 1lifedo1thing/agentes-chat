@@ -366,7 +366,7 @@ export function WorkingLine({
           ) : null}
           {trail.lines.map((l) => (
             <Animated.View key={l.key} entering={reduced ? undefined : LINE_IN}>
-              <Text variant="caption" tone={l.said ? "ink2" : "muted"} maxFontSizeMultiplier={CHROME_MAX_SCALE}>
+              <Text variant="caption" tone="muted" maxFontSizeMultiplier={CHROME_MAX_SCALE}>
                 {l.text}
               </Text>
             </Animated.View>

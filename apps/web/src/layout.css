@@ -7609,6 +7609,14 @@ html:not([data-pointer]) .run-continue:focus-visible {
   font-size: var(--msg-text);
   line-height: var(--msg-line);
 }
+/* Short of room, who types beside it goes to a line of its own, whole: never a word a line. */
+.working-tail__line.ac-typing {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+.working-tail__line .ac-typing__also {
+  white-space: nowrap;
+}
 /* What it did so far: the newest last, older ones as "+N". Each line wraps, never cut. */
 .working-tail__trail {
   display: flex;
@@ -7624,8 +7632,10 @@ html:not([data-pointer]) .run-continue:focus-visible {
 .working-tail__trail > li {
   overflow-wrap: anywhere;
 }
-.working-tail__trail > li[data-said] {
-  color: var(--ink2);
+/* Its time as quiet as its step: the seconds never the loudest thing on the line. */
+.working-tail .run-tail__clock {
+  color: var(--faint);
+  font-weight: 400;
 }
 .working-tail__more {
   color: var(--faint);

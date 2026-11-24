@@ -6,9 +6,9 @@ import { type AgentColorName, gradientOf, mixHex } from "./engine.js";
  * way. Different speeds, one the other way round, so they never line up into one shape.
  */
 export const ORBIT_RINGS = [
-  { r: 1.5, flat: 0.26, tilt: -16, turn: 2.4, start: 20, back: false },
-  { r: 1.36, flat: 0.34, tilt: 22, turn: 3.6, start: 200, back: true },
-  { r: 1.62, flat: 0.18, tilt: 4, turn: 5.2, start: 120, back: false },
+  { r: 1.42, flat: 0.26, tilt: -16, turn: 2.4, start: 20, back: false },
+  { r: 1.3, flat: 0.34, tilt: 22, turn: 3.6, start: 200, back: true },
+  { r: 1.52, flat: 0.18, tilt: 4, turn: 5.2, start: 120, back: false },
 ] as const;
 
 /** The rings' box, in glyph sides: the widest ring and its dot fit. */

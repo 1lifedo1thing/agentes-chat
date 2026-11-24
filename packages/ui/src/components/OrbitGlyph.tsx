@@ -13,7 +13,7 @@ const HALF = 50;
  * along the ellipse; the dot turns back as much, so it stays round.
  */
 function Rings({ half, id }: { half: "back" | "front"; id: string }) {
-  const box = ORBIT_SPAN * HALF;
+  const box = ORBIT_SPAN * 2 * HALF;
   return (
     <svg
       className={`ac-orbit__${half}`}
