@@ -38,6 +38,7 @@ import { maySql } from "./permissions";
 import { pushStrings } from "./push-messages";
 import { taskEndToldSql } from "./right-hand-follow";
 import {
+  knownZoneNames,
   knownZonesSql,
   type LodiPrefs,
   lodiPrefsOf,
@@ -1191,7 +1192,7 @@ export async function nearTeamWeeks(db: Database, now: Date): Promise<NearTeamWe
   const weekly = sql`(not ${lodiPrefsSql.weekOff}
     and ${lodiPrefsSql.day} in (${weekday(at)}, ${weekday(sql`(${at} - make_interval(hours => ${window}))`)}))`;
   return rowsOf<NearTeamWeek>(
-    await db.execute(sql`with ${knownZonesSql}
+    await db.execute(sql`with ${knownZonesSql(await knownZoneNames(db))}
       select org_id, user_id, team_week, tz, day_tz, admin from (
         select near.*, case when near.weekly
           then ${maySql(sql`near.org_id`, sql`near.user_id`, "administrator")} else false end as admin
