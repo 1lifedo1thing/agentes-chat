@@ -1601,21 +1601,8 @@ export async function routineSeer(
 ): Promise<(r: Pick<RoutineRow, "agentId" | "createdByUserId">) => boolean> {
   const [membership, agentRows] = await Promise.all([
     getMembership(db, viewerId, orgId),
-    db
-      .select({
-        id: agents.id,
-        ownerUserId: agents.ownerUserId,
-        ownerRoleId: agents.ownerRoleId,
-        audienceMode: agents.audienceMode,
-        audienceUserIds: agents.audienceUserIds,
-        audienceRoleIds: agents.audienceRoleIds,
-        consultable: agents.consultable,
-        brain: agents.brain,
-        editorUserIds: agents.editorUserIds,
-        editorRoleIds: agents.editorRoleIds,
-      })
-      .from(agents)
-      .where(eq(agents.orgId, orgId)),
+    // The same rows for every viewer, kept a moment (`caches.orgReads`): any change to an agent forgets them.
+    caches.orgReads.getOrLoad(`${orgId}:seer`, () => seerRows(db, orgId)) as ReturnType<typeof seerRows>,
   ]);
   const talks = speakerOf(membership);
   const listed = new Set(
@@ -1625,6 +1612,23 @@ export async function routineSeer(
   );
   return (r) => r.createdByUserId === viewerId || listed.has(r.agentId);
 }
+
+const seerRows = (db: Database, orgId: string) =>
+  db
+    .select({
+      id: agents.id,
+      ownerUserId: agents.ownerUserId,
+      ownerRoleId: agents.ownerRoleId,
+      audienceMode: agents.audienceMode,
+      audienceUserIds: agents.audienceUserIds,
+      audienceRoleIds: agents.audienceRoleIds,
+      consultable: agents.consultable,
+      brain: agents.brain,
+      editorUserIds: agents.editorUserIds,
+      editorRoleIds: agents.editorRoleIds,
+    })
+    .from(agents)
+    .where(eq(agents.orgId, orgId));
 
 /**
  * The org's routines for an agent's read tool (`list_routines` with `agent`):

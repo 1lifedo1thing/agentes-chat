@@ -12,6 +12,7 @@ import {
   MISSED_MESSAGE_GRACE_MS,
   parseServerFrame,
   RealtimeConnection,
+  realtimeOpen,
   realtimeUrl,
   replyingUnder,
   retargetProvisional,
@@ -130,6 +131,20 @@ describe("RealtimeConnection", () => {
     for (let i = 0; i < 400 && !frames.closed; i++) await Bun.sleep(5);
     expect(frames.closed).toBe(true);
     conn.stop();
+  });
+
+  test("realtimeOpen says whether any socket is open, for the polls that only back events up", () => {
+    const { factory, last } = fakeSockets();
+    const conn = new RealtimeConnection({ url: "ws://x/api/ws?orgId=o", createSocket: factory, pingMs: 0 });
+    expect(realtimeOpen()).toBe(false);
+    conn.start();
+    expect(realtimeOpen()).toBe(false);
+    last().open();
+    expect(realtimeOpen()).toBe(true);
+    last().drop();
+    expect(realtimeOpen()).toBe(false);
+    conn.stop();
+    expect(realtimeOpen()).toBe(false);
   });
 
   test("a server that doesn't ask for answers (one from before acks) gets none, so it never counts them as bad", async () => {

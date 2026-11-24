@@ -73,8 +73,8 @@ import type { Wallpaper } from "../lib/wallpaper";
 import type { AudienceChoice } from "../lib/who-sees";
 import type { WikiAccess } from "../lib/wiki";
 import { liveRefOf, type ResolvedMark } from "../live/types";
-import type { RealtimeConnection } from "../realtime/connection";
-import { readUnknownMembers, setOrgDeletion } from "../realtime/machines";
+import { type RealtimeConnection, realtimeOpen } from "../realtime/connection";
+import { readList, readUnknownMembers, setOrgDeletion } from "../realtime/machines";
 import type { ApiClient } from "./client";
 import { type AgentReactionEffect, useAgentReaction, useApi, useCardVia } from "./context";
 import { ApiError, type UploadOptions } from "./http";
@@ -298,13 +298,20 @@ export const channelsQuery = (api: ApiClient, orgId: string) =>
 export const peopleQuery = (api: ApiClient, orgId: string) =>
   queryOptions({ queryKey: keys.people(orgId), queryFn: () => api.orgs.people(orgId), staleTime: 30_000 });
 
+/**
+ * How often the agents' statuses are asked again: presence also follows time (busy after 2 minutes on one run, away
+ * after 30 idle), which no event says. With the realtime socket open, `agent.status` brings every other change.
+ */
+export const AGENT_STATUS_POLL_MS = 30_000;
+export const AGENT_STATUS_POLL_LIVE_MS = 120_000;
+
 /** The agents' statuses (`useAgentStatuses`); also for a `select` of one agent. */
 export const agentStatusQuery = (api: ApiClient, orgId: string) =>
   queryOptions({
     queryKey: keys.agentStatus(orgId),
     queryFn: () => api.agents.statuses(orgId),
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: () => (realtimeOpen() ? AGENT_STATUS_POLL_LIVE_MS : AGENT_STATUS_POLL_MS),
     enabled: orgId.length > 0,
   });
 
@@ -3696,8 +3703,8 @@ export function useCancelUsageQueue(orgId: string, agentId: string) {
 }
 
 /**
- * Each agent's presence and line (ADR 0084). Refetched on `agent.status`, and every 30 s: presence also follows
- * time (busy after 2 minutes on one run, away after 30 idle) and runs elsewhere in the workspace.
+ * Each agent's presence and line (ADR 0084). Refetched on `agent.status`, and every 2 minutes while the realtime
+ * socket is open (30 s while it isn't): presence also follows time (`agentStatusQuery`).
  */
 export const useAgentStatuses = (orgId: string, enabled = true) => {
   const api = useApi();
@@ -8284,7 +8291,7 @@ export function useCancelFollowUp(orgId: string) {
     onSuccess: (_done, { channelId, messageId }) => drop(channelId, messageId),
     onSettled: (_done, _error, { channelId }) => {
       void qc.invalidateQueries({ queryKey: keys.followUps(orgId, channelId) });
-      void qc.invalidateQueries({ queryKey: keys.taskManager(orgId) });
+      readList(qc, `${orgId}:task-manager`, { queryKey: keys.taskManager(orgId) });
       void qc.invalidateQueries({ queryKey: keys.agentStatus(orgId) });
     },
   });
@@ -8446,7 +8453,7 @@ export function useStopTasks(orgId: string) {
       return { stopped: results.length - failed, failed };
     },
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: keys.taskManager(orgId) });
+      readList(qc, `${orgId}:task-manager`, { queryKey: keys.taskManager(orgId) });
       void qc.invalidateQueries({ queryKey: keys.working(orgId) });
     },
   });
@@ -8462,7 +8469,7 @@ export function useContinueTasks(orgId: string) {
       return api.working.continueTasks(orgId, runIds);
     },
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: keys.taskManager(orgId) });
+      readList(qc, `${orgId}:task-manager`, { queryKey: keys.taskManager(orgId) });
       void qc.invalidateQueries({ queryKey: keys.working(orgId) });
     },
   });
@@ -8477,7 +8484,7 @@ export function useStopReason(orgId: string) {
       if (!api.agents.stopReason) throw new Error("This server can't take a reason yet");
       return api.agents.stopReason(orgId, input.runId, input.reason);
     },
-    onSettled: () => void qc.invalidateQueries({ queryKey: keys.taskManager(orgId) }),
+    onSettled: () => readList(qc, `${orgId}:task-manager`, { queryKey: keys.taskManager(orgId) }),
   });
 }
 

@@ -13,7 +13,7 @@ import {
 import { ACCESS_COLUMNS, managesAgentSql, ownsAgent, ownsAgentSql } from "./audience";
 import { runAuthorityById } from "./authority";
 import type { ModelScope } from "./brains/select";
-import { TtlCache } from "./cache";
+import { caches, TtlCache } from "./cache";
 import { computerQueue as lineOfComputer, seesRunSql } from "./computer-queue";
 import { isAgentOnlyDm } from "./dms";
 import { NotFoundError } from "./errors";
@@ -564,13 +564,20 @@ async function handedFrom(db: Database, userId: string, orgId: string, runIds: s
 
 /**
  * The workspace's open asks as edges, by the run that asked: the run each waits on, or the ask itself while no run took
- * it yet (`waking`: its wake waits for room, or a stretch holds it). A stop takes those too.
+ * it yet (`waking`: its wake waits for room, or a stretch holds it). A stop takes those too. Kept a moment for every
+ * viewer (`caches.orgReads`).
  */
 async function openAsks(db: Database, orgId: string) {
-  const rows = await db
-    .select({ id: agentConsultations.id, asker: agentConsultations.askerRunId, target: agentConsultations.targetRunId })
-    .from(agentConsultations)
-    .where(and(eq(agentConsultations.orgId, orgId), eq(agentConsultations.status, "open")));
+  const rows = (await caches.orgReads.getOrLoad(`${orgId}:asks`, () =>
+    db
+      .select({
+        id: agentConsultations.id,
+        asker: agentConsultations.askerRunId,
+        target: agentConsultations.targetRunId,
+      })
+      .from(agentConsultations)
+      .where(and(eq(agentConsultations.orgId, orgId), eq(agentConsultations.status, "open"))),
+  )) as { id: string; asker: string; target: string | null }[];
   const edges = new Map<string, string[]>();
   for (const r of rows) edges.set(r.asker, [...(edges.get(r.asker) ?? []), r.target ?? r.id]);
   return { edges, waking: rows.flatMap((r) => (r.target ? [] : [r.id])) };
@@ -832,8 +839,11 @@ async function computerLines(db: Database, userId: string, orgId: string, machin
   return places;
 }
 
-/** The workspace's computers with a turn running or waiting for room. */
-async function computerSummaries(db: Database, orgId: string): Promise<ComputerSummary[]> {
+/** The workspace's computers with a turn running or waiting for room, kept a moment for every viewer. */
+const computerSummaries = (db: Database, orgId: string) =>
+  caches.orgReads.getOrLoad(`${orgId}:computers`, () => loadComputerSummaries(db, orgId)) as Promise<ComputerSummary[]>;
+
+async function loadComputerSummaries(db: Database, orgId: string): Promise<ComputerSummary[]> {
   const rows = rowsOf<{ id: string; name: string; working: number | string; in_line: number | string }>(
     await db.execute(sql`select m.id, m.name,
         (select count(*) from ${agentRuns} r join ${agents} a on a.id = r.agent_id
