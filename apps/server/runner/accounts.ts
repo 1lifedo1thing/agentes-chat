@@ -2329,7 +2329,8 @@ export class AccountManager {
           if (login.state !== "waiting") return;
           // Windows: a sign-in that didn't keep its file in the folder went to the computer user's Credential Manager,
           // where it would be every account's: refused, never counted (ADR 0228 §6).
-          const apart = login.child || login.term ? signInFileOnWindows(login.kind, login.dir, this.opts.platform) : null;
+          const apart =
+            login.child || login.term ? signInFileOnWindows(login.kind, login.dir, this.opts.platform) : null;
           if (apart && !existsSync(apart)) {
             this.failWith(
               login,

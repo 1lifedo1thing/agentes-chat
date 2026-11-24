@@ -81,13 +81,13 @@ import {
   stallNote,
   stallWords,
 } from "./brain-silence";
+import { withGitBash } from "./cli-install";
 import { coAuthorLines } from "./co-authors";
 import { ownBranches } from "./command-gate";
 import { DELEGATED_RESULT_CHARS, type DelegatedBridge } from "./delegated-tools";
 import { hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
 import { RunnerError } from "./errors";
 import { descendantPids, killTree } from "./exec";
-import { withGitBash } from "./cli-install";
 import { cliSpawn } from "./executors";
 import { HARDENED_GIT_ARGS } from "./git-guard";
 import { readJson, writeJson } from "./json-file";

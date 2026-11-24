@@ -1697,10 +1697,11 @@ export function createMachineHub(deps: MachineHubDeps) {
         // Git for Windows is Claude Code's shell there: its fetch holds Claude Code's turns (ADR 0228 §6).
         const runIds: string[] = [];
         for (const p of conn.pending.values()) {
-          const waits = p.brain?.kind ? CLI_OF_KIND[p.brain.kind] : undefined;
-          if (waits && (waits === frame.cli || (frame.cli === "git" && waits === "claude"))) {
+          const brain = p.brain;
+          const waits = brain?.kind ? CLI_OF_KIND[brain.kind] : undefined;
+          if (brain && waits && (waits === frame.cli || (frame.cli === "git" && waits === "claude"))) {
             p.touch?.();
-            runIds.push(p.brain.runId);
+            runIds.push(brain.runId);
           }
         }
         await storeCliFetch({ db, pubsub }, conn.machineId as string, frame.cli, frame.fetch, runIds).catch((error) =>

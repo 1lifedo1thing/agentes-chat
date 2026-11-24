@@ -477,7 +477,11 @@ export function parseCliPins(v: unknown): Partial<CliPins> | null {
       const launch = b.launch;
       if (
         launch !== undefined &&
-        !(Array.isArray(launch) && launch.length <= 4 && launch.every((f) => typeof f === "string" && SAFE_PATH.test(f)))
+        !(
+          Array.isArray(launch) &&
+          launch.length <= 4 &&
+          launch.every((f) => typeof f === "string" && SAFE_PATH.test(f))
+        )
       ) {
         continue;
       }

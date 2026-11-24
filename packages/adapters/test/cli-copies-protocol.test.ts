@@ -92,7 +92,10 @@ test("Git for Windows, fetched like a CLI there: in hello.clis and its fetch fra
       version: "1",
       protocol: CLI_COPIES_PROTOCOL,
       os: "windows",
-      clis: { fetchable: ["claude", "git"], fetch: { git: { state: "fetching", version: "2.56.1", done: 1, total: 4 } } },
+      clis: {
+        fetchable: ["claude", "git"],
+        fetch: { git: { state: "fetching", version: "2.56.1", done: 1, total: 4 } },
+      },
     }),
   );
   expect(hello && "clis" in hello ? hello.clis : null).toEqual({

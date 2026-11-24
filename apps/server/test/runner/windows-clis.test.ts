@@ -32,7 +32,12 @@ test("Cursor on Windows keeps its sign-in in a file in the account's folder, nev
 test("the Antigravity CLI on Windows: the account's folder is its home, its sign-in forced into its file there", () => {
   const dir = tempDir("agy-win-");
   dirs.push(dir);
-  const env = accountEnv("antigravity", dir, { USERPROFILE: "C:\\Users\\ana", LOCALAPPDATA: "C:\\Users\\ana\\L" }, "win32");
+  const env = accountEnv(
+    "antigravity",
+    dir,
+    { USERPROFILE: "C:\\Users\\ana", LOCALAPPDATA: "C:\\Users\\ana\\L" },
+    "win32",
+  );
   expect(env).toMatchObject({
     HOME: dir,
     USERPROFILE: dir,
@@ -69,9 +74,9 @@ test("Claude Code's Git Bash: the person's first, else the runner's own MinGit, 
   // Whether the person has one: the runner's own doesn't count.
   expect(gitBashPath({ PATH: "" }, none, false)).toBeNull();
   // The person's pinned bash wins over the runner's.
-  expect(gitBashPath({ CLAUDE_CODE_GIT_BASH_PATH: "C:\\Git\\bin\\bash.exe" }, (f) => f === "C:\\Git\\bin\\bash.exe")).toBe(
-    "C:\\Git\\bin\\bash.exe",
-  );
+  expect(
+    gitBashPath({ CLAUDE_CODE_GIT_BASH_PATH: "C:\\Git\\bin\\bash.exe" }, (f) => f === "C:\\Git\\bin\\bash.exe"),
+  ).toBe("C:\\Git\\bin\\bash.exe");
   expect(withGitBash({ PATH: "" }, "win32").CLAUDE_CODE_GIT_BASH_PATH).toBe(bash);
   expect(withGitBash({ PATH: "" }, "linux").CLAUDE_CODE_GIT_BASH_PATH).toBeUndefined();
   expect(withGitBash({ CLAUDE_CODE_GIT_BASH_PATH: "mine" }, "win32").CLAUDE_CODE_GIT_BASH_PATH).toBe("mine");

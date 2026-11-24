@@ -633,9 +633,7 @@ export class RunnerDaemon implements RequestObserver {
             log: opts.log,
             // Git for Windows is wanted where Claude Code is, on Windows: its bash is Claude Code's shell there.
             inUse: (cli) =>
-              this.accounts
-                .snapshot()
-                ?.some((a) => CLI_OF_BRAIN[a.kind] === (cli === "git" ? "claude" : cli)) ?? false,
+              this.accounts.snapshot()?.some((a) => CLI_OF_BRAIN[a.kind] === (cli === "git" ? "claude" : cli)) ?? false,
             onChange: () => {
               void this.clisLook().then(() => this.accounts.refresh(true).catch(() => undefined));
             },

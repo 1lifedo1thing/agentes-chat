@@ -60,7 +60,11 @@ test("every coding CLI has its vendor's Windows builds; Git for Windows' portabl
     expect(CLI_PINS[cli].builds["win32-arm64"]).toBeDefined();
   }
   // Cursor's Windows package starts as Node and its `index.js`, never through its `.cmd` launcher.
-  expect(CLI_PINS.cursor.builds["win32-x64"]).toMatchObject({ archive: "zip", executable: "node.exe", launch: ["index.js"] });
+  expect(CLI_PINS.cursor.builds["win32-x64"]).toMatchObject({
+    archive: "zip",
+    executable: "node.exe",
+    launch: ["index.js"],
+  });
   // The Antigravity CLI: one version everywhere, Google's sha512 of each build, a bare `agy.exe` on Windows.
   for (const b of Object.values(CLI_PINS.antigravity.builds)) expect(b?.hash.algorithm).toBe("sha512");
   expect(Object.keys(CLI_PINS.antigravity.builds)).toHaveLength(8);
@@ -79,7 +83,10 @@ test("from the wire: launch files and the file a program is made from stay insid
   };
   const parsed = parseCliPins({
     cursor: { version: "1.2.3", builds: { "win32-x64": { ...good, launch: ["index.js"] } } },
-    git: { version: "1.2.3", builds: { "win32-x64": { ...good, executable: "usr/bin/bash.exe", from: "usr/bin/sh.exe" } } },
+    git: {
+      version: "1.2.3",
+      builds: { "win32-x64": { ...good, executable: "usr/bin/bash.exe", from: "usr/bin/sh.exe" } },
+    },
     grok: { version: "1.2.3", builds: { "win32-x64": { ...good, launch: ["../evil.js"] } } },
     codex: { version: "1.2.3", builds: { "win32-x64": { ...good, from: "/etc/passwd" } } },
   });
