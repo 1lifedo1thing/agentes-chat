@@ -24,6 +24,7 @@ import {
   accountFields,
   accountUnavailable,
   busyRefusal,
+  cliOutdated,
   contextFields,
   speedFields,
   steerOnMachine,
@@ -351,6 +352,12 @@ export class CodexBrain implements Brain {
     const missing = this.cli.check(status.executors);
     if (missing) {
       yield missing;
+      return;
+    }
+    // At a version agentes.chat holds back (`CLI_FLOORS`): it waits for an update there instead of failing there.
+    const old = cliOutdated(status, this.kind, name);
+    if (old) {
+      yield { type: "error", code: old.code, message: old.message, retryable: true };
       return;
     }
     const account = accountUnavailable(status, turn.account, this.kind);

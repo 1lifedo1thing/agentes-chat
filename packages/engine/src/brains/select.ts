@@ -42,7 +42,14 @@ import {
 import { runState } from "../run-state";
 import { runnerUpdateWay } from "../runner-update";
 import type { AgentRun } from "../runs";
-import { accountUnavailable, brainSessionId, claudeCodeAvailability, cliMissingMessage, toolOff } from "./claude-code";
+import {
+  accountUnavailable,
+  brainSessionId,
+  claudeCodeAvailability,
+  cliMissingMessage,
+  cliOutdated,
+  toolOff,
+} from "./claude-code";
 import { BRAIN_NAMES, BRAIN_PLAN_NAMES, type BrainAccount, type BrainKind, type BrainSession } from "./types";
 
 const KINDS: readonly BrainKind[] = ["model", "claude_code", "codex", "cursor", "opencode", "grok", "antigravity"];
@@ -453,6 +460,8 @@ export function computerBrainUnavailable(
     if (status.executors?.detectedAt && !status.executors[kind]) {
       return { code: `${kind}_missing`, message: cliMissingMessage(`${name}'s CLI`, status, kind) };
     }
+    const old = cliOutdated(status, kind, name);
+    if (old) return old;
     return accountUnavailable(status, account, kind);
   }
   const off = toolOff(status, "codex");
@@ -469,6 +478,8 @@ export function computerBrainUnavailable(
   if (status.executors?.detectedAt && !codex) {
     return { code: "codex_missing", message: cliMissingMessage("Codex", status, "codex") };
   }
+  const old = cliOutdated(status, "codex", "Codex");
+  if (old) return old;
   return accountUnavailable(status, account, "codex");
 }
 
@@ -494,6 +505,8 @@ export const UNAVAILABLE_CODES: ReadonlySet<string> = new Set([
   "opencode_missing",
   "grok_missing",
   "antigravity_missing",
+  // Its CLI at a version agentes.chat holds back (`cliOutdated`): the run waits for it to be updated there.
+  "cli_outdated",
   "plan_limit",
   "plan_not_owner",
   "plan_not_shared",

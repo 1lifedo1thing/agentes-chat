@@ -55,7 +55,8 @@ test("a CLI that ended its turn with nothing in it", () => {
 
 test("a refused model stays out of that sign-in's turns for a while; others keep it", () => {
   const session = { id: "s", resume: false, machineId: "m-1", cwd: "app" };
-  const turn = { model: "glm-9", session, account: { id: "acct-1" } } as never as Parameters<typeof skipRefusedModel>[1];
+  type Turn = Parameters<typeof skipRefusedModel>[1];
+  const turn = { model: "glm-9", session, account: { id: "acct-1" } } as never as Turn;
   const now = 1_000_000;
   noteModelRefusal("claude_code", turn, error("model_not_found"), now);
   expect(skipRefusedModel("claude_code", turn, now + 1).model).toBeUndefined();

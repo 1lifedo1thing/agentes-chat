@@ -6381,7 +6381,9 @@ export type BrainUnavailable =
   /** Its runner doesn't run this CLI on the computer's system (Cursor on Windows, for one). */
   | "system"
   /** It is there and can't start: the computer's row has its error (`Machine.cliErrors`). */
-  | "cant_start";
+  | "cant_start"
+  /** It is there at a version agentes.chat holds back: too old, or a blocked one (`BrainOption.outdated`). */
+  | "cli_outdated";
 
 export interface BrainModelOption {
   /** What is stored (`fable`, `opus`, `sonnet`, `haiku`, a Codex model). */
@@ -6409,6 +6411,8 @@ export interface BrainOption {
    * account there has a plan that includes it (`plan`).
    */
   missing?: { modelId: string; label: string; why: "app_old" | "cli_old" | "plan" };
+  /** With `cli_outdated`: the version reported, the oldest one that runs (absent: blocked), and the command that updates it. */
+  outdated?: { version: string; min?: string; command?: string };
 }
 
 /** A computer the caller may give an agent, with what it offers. */

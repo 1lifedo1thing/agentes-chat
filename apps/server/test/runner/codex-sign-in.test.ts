@@ -47,15 +47,17 @@ test("codex login status: ChatGPT and an API key are signed in, anything else is
 });
 
 test("account/read: a ChatGPT plan, an API key, a model provider of its own, or signed out", () => {
-  expect(codexAccountOf({ account: { type: "chatgpt", planType: "pro", email: null }, requiresOpenaiAuth: true })).toEqual(
-    { loggedIn: true, authMethod: "chatgpt", plan: "pro" },
-  );
+  const chatgpt = { account: { type: "chatgpt", planType: "pro", email: null }, requiresOpenaiAuth: true };
+  expect(codexAccountOf(chatgpt)).toEqual({ loggedIn: true, authMethod: "chatgpt", plan: "pro" });
   expect(codexAccountOf({ account: { type: "apiKey" }, requiresOpenaiAuth: true })).toEqual({
     loggedIn: true,
     authMethod: "api_key",
   });
   // A provider in config.toml that needs no OpenAI sign-in thinks as it is.
-  expect(codexAccountOf({ account: null, requiresOpenaiAuth: false })).toEqual({ loggedIn: true, authMethod: "provider" });
+  expect(codexAccountOf({ account: null, requiresOpenaiAuth: false })).toEqual({
+    loggedIn: true,
+    authMethod: "provider",
+  });
   expect(codexAccountOf({ account: null, requiresOpenaiAuth: true })).toEqual({ loggedIn: false });
   expect(codexAccountOf({ account: null })).toEqual({ loggedIn: false });
   // A plan word that isn't one is left out.

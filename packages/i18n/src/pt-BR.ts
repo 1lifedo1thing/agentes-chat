@@ -12845,6 +12845,10 @@ export const ptBR = {
       tool_offOne: "O {{program}} está desligado no {{computer}}.",
       not_installed: "O {{program}} não está instalado no {{computer}}.",
       cant_start: "O {{program}} está no {{computer}}, mas não abre.",
+      /** Its version is too old for agentes.chat, or one with a known problem: updating it there is the way out. */
+      cli_outdated: "O {{program}} no {{computer}} precisa ser atualizado para os agentes usarem.",
+      /** The same, with the command that updates it (`claude update`, `opencode upgrade`). */
+      cli_outdatedRun: "O {{program}} no {{computer}} precisa ser atualizado para os agentes usarem. Rode {{command}} lá.",
       /** System mode: the CLI is only in root's `~/.local/bin`. */
       home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",

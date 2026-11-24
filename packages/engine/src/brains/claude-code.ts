@@ -19,6 +19,7 @@ import {
   type WireBrainEvent,
 } from "@agenteschat/adapters";
 import { type Database, schema } from "@agenteschat/db";
+import { CLI_FLOORS, CLI_UPDATE_COMMAND, cliVersionProblem, type FloorCli } from "@agenteschat/providers/cli-floors";
 import { autoContextFor } from "@agenteschat/providers/context-limits";
 import { getAgentCached } from "../agents";
 import type { CodeSetup } from "../git/machine";
@@ -247,6 +248,33 @@ export function cliMissingMessage(
     : `${program} is on ${status.name} but can't start: ${said}`;
 }
 
+/**
+ * A CLI the computer reports at a version agentes.chat holds back (`CLI_FLOORS`): older than its floor, or a blocked one.
+ * Its turns wait (`cli_outdated` is in `UNAVAILABLE_CODES`) until the runner reports a newer one (`executors.changed`
+ * resumes them), never sent to fail there. Null: it may run.
+ */
+export function cliOutdated(
+  status: { name?: string | null; executors?: Partial<Record<FloorCli, { version: string }>> | null },
+  cli: FloorCli,
+  program: string,
+  floors = CLI_FLOORS,
+): { code: "cli_outdated"; message: string } | null {
+  const problem = cliVersionProblem(cli, status.executors?.[cli]?.version, floors);
+  if (!problem) return null;
+  const where = status.name || "the computer";
+  const command = CLI_UPDATE_COMMAND[cli];
+  const how = command
+    ? `Update it there (${command}).`
+    : "Update it there, from the agent's settings or with the installer it came from.";
+  return {
+    code: "cli_outdated",
+    message:
+      problem.kind === "too_old"
+        ? `${program} ${problem.version} on ${where} is older than ${problem.min}, the oldest version agentes.chat works with. ${how}`
+        : `${program} ${problem.version} on ${where} has a known problem with agentes.chat. ${how}`,
+  };
+}
+
 /** Why the turn can't go to this machine now (null: it can). With an account, the account decides the sign-in. */
 export function claudeCodeAvailability(status: MachineStatus | null, account?: BrainAccount): BrainEvent | null {
   if (!status) return err("machine_offline", "The agent's computer is not connected to the organization.", true);
@@ -267,6 +295,8 @@ export function claudeCodeAvailability(status: MachineStatus | null, account?: B
   }
   const ex = status.executors ?? {};
   if (ex.detectedAt && !ex.claude) return err("cli_missing", cliMissingMessage("Claude Code", status, "claude"), true);
+  const old = cliOutdated(status, "claude", "Claude Code");
+  if (old) return err(old.code, old.message, true);
   if (account) {
     const e = accountUnavailable(status, account, "claude_code");
     return e ? err(e.code, e.message, true) : null;

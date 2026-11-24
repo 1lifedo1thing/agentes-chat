@@ -12829,6 +12829,10 @@ export const en = {
       tool_offOne: "{{program}} is turned off on {{computer}}.",
       not_installed: "{{program}} isn't installed on {{computer}}.",
       cant_start: "{{program}} is on {{computer}}, but it won't start.",
+      /** Its version is too old for agentes.chat, or one with a known problem: updating it there is the way out. */
+      cli_outdated: "{{program}} on {{computer}} needs an update before agents can use it.",
+      /** The same, with the command that updates it (`claude update`, `opencode upgrade`). */
+      cli_outdatedRun: "{{program}} on {{computer}} needs an update before agents can use it. Run {{command}} there.",
       /** System mode: the CLI is only in root's `~/.local/bin`. */
       home_only: "{{program}} is installed only for root on {{computer}}, where the agents can't reach it.",
       /** Its runner hasn't said which CLIs it has yet: nobody knows whether this one is there. */

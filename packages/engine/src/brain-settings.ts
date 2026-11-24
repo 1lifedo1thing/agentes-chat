@@ -43,6 +43,7 @@ import {
   modelProvider,
   parseCustomModel,
 } from "@agenteschat/providers";
+import { CLI_UPDATE_COMMAND, cliVersionProblem, type FloorCli } from "@agenteschat/providers/cli-floors";
 import {
   ANTIGRAVITY_MODELS,
   ANTIGRAVITY_NEON_CLI,
@@ -406,7 +407,9 @@ export type BrainUnavailable =
   /** It is there and can't start (`executors.broken`, with its own error): not missing, so installing it won't help. */
   | "cant_start"
   /** Its runner doesn't run this CLI on the computer's system (`brainRunsOn`): Cursor on Windows, for one. */
-  | "system";
+  | "system"
+  /** It is there at a version agentes.chat holds back (`CLI_FLOORS`): too old, or a blocked one. Updating it helps. */
+  | "cli_outdated";
 
 export interface BrainOption {
   kind: BrainKind;
@@ -420,6 +423,11 @@ export interface BrainOption {
    * (`cli_old`, system mode), or no account signed in there has a plan that includes it (`plan`).
    */
   missing?: { modelId: string; label: string; why: "app_old" | "cli_old" | "plan" };
+  /**
+   * With `cli_outdated`: the version it reported, the floor it is under (none: a blocked version), and the command that
+   * updates it where its own updater is the way (`CLI_UPDATE_COMMAND`).
+   */
+  outdated?: { version: string; min?: string; command?: string };
 }
 
 type MachineLike = Parameters<typeof machineExecutors>[0] & {
@@ -452,6 +460,18 @@ const missingCli = (
 ): BrainUnavailable =>
   machine.executors?.broken?.[cli] ? "cant_start" : machine.executors?.detectedAt ? "not_installed" : "not_reported";
 
+/** A CLI the computer reports at a version agentes.chat holds back (`CLI_FLOORS`), with how to update it; else null. */
+function outdatedCli(machine: MachineLike, cli: FloorCli): NonNullable<BrainOption["outdated"]> | null {
+  const problem = cliVersionProblem(cli, machine.executors?.[cli]?.version);
+  if (!problem) return null;
+  const command = CLI_UPDATE_COMMAND[cli];
+  return {
+    version: problem.version,
+    ...(problem.kind === "too_old" ? { min: problem.min } : {}),
+    ...(command ? { command } : {}),
+  };
+}
+
 /**
  * What the agent's computer can think with; the model brain always. A
  * computer brain needs the runner's `brain.turn` (`BRAIN_PROTOCOL`, the same
@@ -471,11 +491,14 @@ export function brainOptions(machine: MachineLike | null): BrainOption[] {
     else if (executor === "codex" && machine.os === "windows" && machine.protocol < CODEX_WINDOWS_PROTOCOL)
       reason = "runner_old";
     else if (!found?.available.includes(executor)) reason = missingCli(machine, executor);
+    else if (outdatedCli(machine, executor)) reason = "cli_outdated";
     else if (machine.access?.tools && machine.access.tools[executor] !== true) reason = "tool_off";
+    const outdated = reason === "cli_outdated" && machine ? outdatedCli(machine, executor) : null;
     return {
       kind,
       available: !reason,
       ...(reason ? { reason } : {}),
+      ...(outdated ? { outdated } : {}),
       models: brainModelOptions(kind),
       defaultModel: defaultBrainModel(kind),
     };
@@ -519,13 +542,16 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
   else if (!brainRunsOn(kind, machine.os)) reason = "system";
   else if (!machine.executors?.[kind] && !(kind === "antigravity" && bringsAgy(machine)))
     reason = missingCli(machine, kind);
+  else if (outdatedCli(machine, kind)) reason = "cli_outdated";
   else if (tools && (tools[kind] ?? tools.codex) !== true) reason = "tool_off";
   const models = brainModelOptions(kind, machine);
   const missing = kind === "antigravity" ? antigravityMissing(models, machine) : undefined;
+  const outdated = reason === "cli_outdated" && machine ? outdatedCli(machine, kind) : null;
   return {
     kind,
     available: !reason,
     ...(reason ? { reason } : {}),
+    ...(outdated ? { outdated } : {}),
     models,
     defaultModel: null,
     ...(missing ? { missing } : {}),
