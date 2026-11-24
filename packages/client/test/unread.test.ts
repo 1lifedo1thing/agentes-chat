@@ -197,6 +197,16 @@ describe("a message's line patches its row instead of reading the list again", (
     expect(stale(qc, keys.channels(ORG))).toBe(false);
   });
 
+  test("a patched row keeps its list's age: what no event carries (a new channel, a name) still reads on schedule", () => {
+    const qc = seeded();
+    const read = qc.getQueryState(keys.channels(ORG))?.dataUpdatedAt;
+    jest.advanceTimersByTime(60_000);
+    applyUnreadEvent(qc, ORG, heard("c1", line("m1", at(5))));
+    applyUnreadEvent(qc, ORG, { type: "channel.read", channelId: "c1", userId: "me", lastReadAt: at(9) } as never);
+    expect(row(qc)?.lastMessage?.id).toBe("m1");
+    expect(qc.getQueryState(keys.channels(ORG))?.dataUpdatedAt).toBe(read);
+  });
+
   test("a DM's row takes the line as its body", () => {
     const qc = seeded();
     applyUnreadEvent(qc, ORG, heard("d1", line("m1", at(5)), { dm: true }));

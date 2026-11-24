@@ -8000,14 +8000,14 @@ export function addDm(qc: QueryClient, orgId: string, dm: DirectMessage) {
 function clearUnread(qc: QueryClient, orgId: string, channelId: string, lastReadAt?: string): boolean {
   let after = false;
   const read = lastReadAt ? { lastReadAt } : {};
-  qc.setQueryData<Channel[]>(keys.channels(orgId), (list) =>
+  patchList<Channel[]>(qc, keys.channels(orgId), (list) =>
     list?.map((c) => {
       if (c.id !== channelId) return c;
       if (lastReadAt && c.lastMessage && c.lastMessage.createdAt > lastReadAt) after = true;
       return { ...c, unreadCount: 0, mentionCount: 0, ...read };
     }),
   );
-  qc.setQueryData<DirectMessage[]>(keys.dms(orgId), (list) =>
+  patchList<DirectMessage[]>(qc, keys.dms(orgId), (list) =>
     list?.map((d) => {
       if (d.channelId !== channelId) return d;
       if (lastReadAt && d.lastMessage && d.lastMessage.createdAt > lastReadAt) after = true;
@@ -8015,6 +8015,14 @@ function clearUnread(qc: QueryClient, orgId: string, channelId: string, lastRead
     }),
   );
   return after;
+}
+
+/**
+ * A cached list changed from what an event said, keeping the age of its last read: what the event didn't carry (a
+ * channel made, a name changed) still reads again on its schedule (`staleTime`, a tab shown again).
+ */
+function patchList<T>(qc: QueryClient, queryKey: readonly unknown[], update: (list: T | undefined) => T | undefined) {
+  qc.setQueryData<T>(queryKey, update, { updatedAt: qc.getQueryState(queryKey)?.dataUpdatedAt });
 }
 
 /** The messages `patchConversationRow` put in a list, so a notice about one reads nothing again. */
@@ -8067,7 +8075,7 @@ function patchConversationRow(
     return patch(line.counts && !(row.lastReadAt && line.createdAt <= row.lastReadAt));
   };
   if (e.dm) {
-    qc.setQueryData<DirectMessage[]>(queryKey, (list) =>
+    patchList<DirectMessage[]>(qc, queryKey, (list) =>
       list?.map((d) =>
         d.channelId !== e.channelId
           ? d
@@ -8091,7 +8099,7 @@ function patchConversationRow(
     );
   } else {
     const cap = (n: number) => Math.min(n, MAX_CHANNEL_UNREAD);
-    qc.setQueryData<Channel[]>(queryKey, (list) =>
+    patchList<Channel[]>(qc, queryKey, (list) =>
       list?.map((c) =>
         c.id !== e.channelId || !c.isMember
           ? c
