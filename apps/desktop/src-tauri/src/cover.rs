@@ -174,7 +174,7 @@ pub fn server_here_ready(app: &AppHandle) {
 pub fn over_server_here(app: &AppHandle) {
     let Some(site) = main_window::site(app) else { return };
     if crate::local_server::is_here(app, &site.origin().ascii_serialization()) {
-        show(app, Duration::ZERO);
+        show(app);
     }
 }
 
