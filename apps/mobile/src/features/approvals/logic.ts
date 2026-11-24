@@ -78,7 +78,7 @@ const EFFECT_ICON: Record<ApprovalEffect, IconName> = {
 };
 
 /**
- * A request's facts strip, as the web's review (D123): where it acts (the app, then the repository, channel or account),
+ * A request's facts strip, as the web's review (ADR 0218, addendum 2026-11-24): where it acts (the app, then the repository, channel or account),
  * what it does to the outside, and the role that answers for it. Its deadline is the fuse's line above the title, and
  * who decides it or how it ended is the line at the screen's foot: each said once.
  */

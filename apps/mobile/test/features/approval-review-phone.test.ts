@@ -15,7 +15,7 @@ const between = (source: string, from: string, to: string) => {
   return source.slice(start, end);
 };
 
-describe("the phone's request screen reads as the web's review (D123)", () => {
+describe("the phone's request screen reads as the web's review (ADR 0218, addendum 2026-11-24)", () => {
   test("its facts: where it acts with the repository and its pull request, what it does outside, who answers for it", async () => {
     const pt = await translator("pt-BR");
     const merge = approval({

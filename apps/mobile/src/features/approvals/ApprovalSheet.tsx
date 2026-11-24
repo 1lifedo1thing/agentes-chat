@@ -70,7 +70,7 @@ import { useWhenAsks } from "./when-asks";
 
 /** A value longer than this goes under its label, whole, instead of squeezed at the row's end. */
 const SHORT_VALUE = 22;
-/** The web review's facts strip (D123): where it acts, what it does to the outside, who answers for it. */
+/** The web review's facts strip (ADR 0218, addendum 2026-11-24): where it acts, what it does to the outside, who answers for it. */
 function RequestFacts({ approval: a, role }: { approval: Approval; role?: string }) {
   const { t } = useTranslation();
   const { org } = useOrg();

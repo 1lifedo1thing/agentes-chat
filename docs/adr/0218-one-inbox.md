@@ -51,8 +51,8 @@ buttons, so a few waiting items filled the screen.
 
 ## Addendum 2026-11-24: the phone's request reads as the web's review
 
-D123 (2026-11-04) gave the web's review of a request a facts strip, "Como chegou aqui" and a line on what approving
-lets the agent do, and kept the phone on its sheet. With §6 the phone's request is a pushed screen, and it now carries
+On 2026-11-04 the web's review of a request got a facts strip, "Como chegou aqui" and a line on what approving
+lets the agent do, while the phone kept its sheet. With §6 the phone's request is a pushed screen, and it now carries
 the same three pieces:
 
 - **Facts strip** under the title (`FactStrip` in the phone's kit, `requestFacts` in `features/approvals/logic.ts`):
