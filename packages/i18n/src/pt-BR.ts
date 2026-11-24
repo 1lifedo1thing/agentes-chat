@@ -6284,6 +6284,26 @@ export const ptBR = {
           missed_other: "{{count}} agentes não mudaram.",
         },
         add: {
+          /** "Add account" in "Quem pensa": one line per AI, then that AI's sign-in. */
+          pickTitle: "Adicionar conta",
+          pickFoot: "Você entra na página da própria IA.",
+          /** At the end of an AI's line: how many accounts of it the person already has there. */
+          have_one: "Você tem 1",
+          have_other: "Você tem {{count}}",
+          others: "Outro plano",
+          key: "Chave de API",
+          keyLine: "Pago pelo uso",
+          /** A coding plan's sign-in: its key. */
+          titlePlan: "Adicionar o {{plan}}",
+          againTitle: "Entrar de novo no {{brand}}",
+          /** Before a new sign-in where the person has accounts of that AI there: the browser would bring one of those back. */
+          haveNote:
+            "Você já tem {{accounts}} aqui. Para entrar com outra conta, saia do {{brand}} no navegador antes, ou copie o link e abra numa janela anônima.",
+          againNote: "Entre de novo como {{account}}. O {{name}} volta a pensar com ela assim que você terminar.",
+          againNote_female:
+            "Entre de novo como {{account}}. A {{name}} volta a pensar com ela assim que você terminar.",
+          footSignIn: "Você digita a senha na página do {{brand}}.",
+          footKey: "A chave vai cifrada direto para o {{computer}}.",
           title: {
             claude_code: "Adicionar conta do Claude",
             codex: "Adicionar conta do ChatGPT",
@@ -6439,6 +6459,21 @@ export const ptBR = {
           /** The agents the server didn't move when switching everyone on the account: `names` lists them. */
           missed_one: "{{names}} ficou com a conta de antes.",
           missed_other: "{{names}} ficaram com a conta de antes.",
+          /** Under the account, after one a sign-in here just brought became the one in use. */
+          added: "Conta adicionada. O {{name}} já pensa com {{account}}.",
+          added_female: "Conta adicionada. A {{name}} já pensa com {{account}}.",
+          /** After a switch: the others of the person's agents still on the account it left (`names` lists them). */
+          alsoUses_one: "{{names}} também pensa com {{account}}.",
+          alsoUses_other: "{{names}} também pensam com {{account}}.",
+          alsoSwitch: "Trocar também",
+          /** The account in use signed out on its computer. `brand`: its AI ("Claude"). */
+          signedOut:
+            "{{account}} saiu do {{brand}}. O {{name}} não responde até você entrar de novo ou escolher outra conta.",
+          signedOut_female:
+            "{{account}} saiu do {{brand}}. A {{name}} não responde até você entrar de novo ou escolher outra conta.",
+          /** No AI to think with at all. */
+          empty: "O {{name}} ainda não tem uma conta de IA para pensar.",
+          empty_female: "A {{name}} ainda não tem uma conta de IA para pensar.",
         },
       },
       computer: {
@@ -11091,6 +11126,10 @@ export const ptBR = {
     of: "de {{name}}",
     moreSpeed: "Velocidade e janela de contexto",
     whoThinks: "Quem pensa",
+    /** Under an account in Contas de IA: the agents that think with it (`names` lists them). */
+    thinks_one: "{{names}} pensa com ela",
+    thinks_other: "{{names}} pensam com ela",
+    thinksNone: "Nenhum agente pensa com ela",
     bulk: {
       sub: "Escolha a IA e depois os agentes que passam a usar.",
     },
@@ -11100,10 +11139,15 @@ export const ptBR = {
       search: "Buscar por nome, IA, plano ou dono",
       noMatch: "Nenhuma conta encontrada.",
       noModel: "Nenhum modelo encontrado.",
+      empty: "Nenhuma conta ainda.",
+      /** The account list's foot, under every row. */
+      add: "Adicionar conta",
+      addLine: "Claude, ChatGPT, Gemini e outras, ou uma chave de API",
+      manage: "Gerenciar contas",
       groups: {
-        yours: "Suas",
+        yours: "Suas contas",
         others: "Do time",
-        keys: "Do workspace",
+        keys: "Chaves de API",
       },
     },
     order: {

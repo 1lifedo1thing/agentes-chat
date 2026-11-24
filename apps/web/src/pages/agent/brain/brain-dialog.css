@@ -261,6 +261,35 @@
 .bd-line:enabled:hover :is(.bd-line__v, .bd-line__chev) {
   color: var(--ink);
 }
+/* "Add account": a mark before each name, and the other plans, folded open, start past the mark of their line. */
+.bd-line__k--mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.bd-line__mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: var(--ink);
+}
+.bd-line__mark > :is(.ac-brand, .ac-icon) {
+  width: 20px;
+  height: 20px;
+}
+.bd-line--inner > .bd-line__k--mark {
+  padding-left: 32px;
+}
+/* The folded plans sit in the lines' own grid. */
+.bd-lines__group {
+  display: contents;
+}
+.bd-lines--add > .bd-line:last-child {
+  border-bottom: 1px solid var(--line);
+}
 html:not([data-pointer]) .bd-line:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);

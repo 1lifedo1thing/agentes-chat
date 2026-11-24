@@ -33,6 +33,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useOpenAgentPanel } from "@/components/agent-panel-context";
 import { usePlanHold } from "@/components/ai/plan-hold";
 import { useOpenBilling } from "@/components/BillingLinkButton";
 import { type ConnectAiRequest, useConnectAi } from "@/components/connect-ai-context";
@@ -57,7 +58,8 @@ const VaultNewDialog = lazyDialog(() => import("@/components/vault/VaultNewDialo
 
 /**
  * Above the composer: this DM's agent has no AI, or (anywhere with agents) the organization has none, its ⓘ saying
- * it can also be asked for in the chat. Everyone sees it; the dialog says what each person may connect.
+ * it can also be asked for in the chat. Everyone sees it; the dialog says what each person may connect. The DM's agent:
+ * its own "Quem pensa", in the panel beside the conversation, on its account list ("Adicionar conta" at its foot).
  */
 export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgentId?: string }) {
   const { t } = useTranslation();
@@ -65,6 +67,7 @@ export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgen
   const dir = useDirectory(org.id);
   const status = useAiStatus(org.id);
   const connect = useConnectAi();
+  const openPanel = useOpenAgentPanel();
   const held = usePlanHold() !== null;
   // On a billing hold an AI comes after the plan: the agent's card and the hold's banner say so.
   if (!status.data || !connect || held) return null;
@@ -79,7 +82,14 @@ export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgen
           <b>{t(noAiStatusKey(status.data, dmAgentId), agentGrammar(name))}</b>
         </span>
         {mayConnectAi(agent, me.user.id, org) && (
-          <Button size="sm" onClick={() => connect.open({ agentId: dmAgentId, chat: true })}>
+          <Button
+            size="sm"
+            onClick={() =>
+              openPanel
+                ? openPanel(dmAgentId, "settings", "brain:switch")
+                : connect.open({ agentId: dmAgentId, chat: true })
+            }
+          >
             {t("noAi.action")}
           </Button>
         )}

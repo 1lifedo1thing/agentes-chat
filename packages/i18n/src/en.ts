@@ -6411,6 +6411,24 @@ export const en = {
           missed_other: "{{count}} agents didn't change.",
         },
         add: {
+          /** "Add account" in "Who thinks": one line per AI, then that AI's sign-in. */
+          pickTitle: "Add account",
+          pickFoot: "You sign in on the AI's own page.",
+          /** At the end of an AI's line: how many accounts of it the person already has there. */
+          have_one: "You have 1",
+          have_other: "You have {{count}}",
+          others: "Another plan",
+          key: "API key",
+          keyLine: "Pay as you go",
+          /** A coding plan's sign-in: its key. */
+          titlePlan: "Add {{plan}}",
+          againTitle: "Sign in to {{brand}} again",
+          /** Before a new sign-in where the person has accounts of that AI there: the browser would bring one of those back. */
+          haveNote:
+            "You already have {{accounts}} here. To sign in with another account, sign out of {{brand}} in your browser first, or copy the link and open it in a private window.",
+          againNote: "Sign in again as {{account}}. {{name}} thinks with it again as soon as you're done.",
+          footSignIn: "You type your password on {{brand}}'s page.",
+          footKey: "The key goes encrypted straight to {{computer}}.",
           title: {
             claude_code: "Add a Claude account",
             codex: "Add a ChatGPT account",
@@ -6554,6 +6572,17 @@ export const en = {
           /** The agents the server didn't move when switching everyone on the account: `names` lists them. */
           missed_one: "{{names}} kept the account it had.",
           missed_other: "{{names}} kept the accounts they had.",
+          /** Under the account, after one a sign-in here just brought became the one in use. */
+          added: "Account added. {{name}} now thinks with {{account}}.",
+          /** After a switch: the others of the person's agents still on the account it left (`names` lists them). */
+          alsoUses_one: "{{names}} also thinks with {{account}}.",
+          alsoUses_other: "{{names}} also think with {{account}}.",
+          alsoSwitch: "Switch them too",
+          /** The account in use signed out on its computer. `brand`: its AI ("Claude"). */
+          signedOut:
+            "{{account}} signed out of {{brand}}. {{name}} won't answer until you sign in again or pick another account.",
+          /** No AI to think with at all. */
+          empty: "{{name}} has no AI account to think with yet.",
         },
       },
       computer: {
@@ -11129,6 +11158,10 @@ export const en = {
     of: "{{name}}'s",
     moreSpeed: "Speed and context window",
     whoThinks: "Who thinks",
+    /** Under an account in AI accounts: the agents that think with it (`names` lists them). */
+    thinks_one: "{{names}} thinks with it",
+    thinks_other: "{{names}} think with it",
+    thinksNone: "No agent thinks with it",
     bulk: {
       sub: "Pick the AI, then the agents that take it.",
     },
@@ -11138,10 +11171,15 @@ export const en = {
       search: "Search by name, AI, plan or owner",
       noMatch: "No account matches.",
       noModel: "No model matches.",
+      empty: "No account yet.",
+      /** The account list's foot, under every row. */
+      add: "Add account",
+      addLine: "Claude, ChatGPT, Gemini and more, or an API key",
+      manage: "Manage accounts",
       groups: {
-        yours: "Yours",
+        yours: "Your accounts",
         others: "The team's",
-        keys: "The workspace's",
+        keys: "API keys",
       },
     },
     order: {

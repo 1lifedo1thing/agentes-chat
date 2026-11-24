@@ -91,12 +91,12 @@ import {
 } from "@/components/AccessLevels";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ModelSelect, modelOptions, NO_OWNER, OwnerSelect } from "@/components/AgentFields";
+import { useOpenAgentPanel } from "@/components/agent-panel-context";
 import { PlanReplies } from "@/components/ai/PlanReplies";
 import { usePlanHold } from "@/components/ai/plan-hold";
 import { ConnectFlow, type FlowState } from "@/components/ConnectFlow";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { useChannelActions } from "@/components/channel-actions";
-import { useConnectAi } from "@/components/connect-ai-context";
 import { SetupBand } from "@/components/new-agent/SetupBand";
 import { PersonalChip } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";
@@ -244,7 +244,7 @@ export function AgentSetupCard({ agent, place }: { agent: Agent; place: "dm" | "
   const { org, me } = useOrg();
   const navigate = useNavigate();
   const actions = useChannelActions();
-  const connect = useConnectAi();
+  const openPanel = useOpenAgentPanel();
   const dir = useDirectory(org.id);
   const { steps, done, doneHere, all, ready, held, connectors, granted, inChannels, visible } = useSetupProgress(agent);
   const catalog = useCatalog();
@@ -302,8 +302,17 @@ export function AgentSetupCard({ agent, place }: { agent: Agent; place: "dm" | "
     });
 
   const act = (step: AgentSetupStep) => {
-    if (step === "ai") connect?.open({ agentId: agent.id, chat: true });
-    else setOpen(step);
+    // Its AI is its "Quem pensa", on the account list ("Adicionar conta" at its foot): in the panel beside the
+    // conversation, else on its page.
+    if (step === "ai") {
+      if (openPanel) openPanel(agent.id, "settings", "brain:switch");
+      else
+        void navigate({
+          to: "/org/$orgId/agents/$agentId",
+          params: { orgId: org.id, agentId: agent.id },
+          search: { tab: "settings", sec: "brain", brain: "switch" },
+        });
+    } else setOpen(step);
   };
   const confirmed = () => setOpen(null);
 
@@ -363,7 +372,6 @@ export function AgentSetupCard({ agent, place }: { agent: Agent; place: "dm" | "
             desc: planOnly ? t("agentSetup.who.todoPlanDesc") : undefined,
             action: { label: row.action, onClick: () => act(s) },
           };
-        const acts = s !== "ai" || Boolean(connect);
         // On a hold it waits for the plan, whose one button is the hold's banner.
         if (s === "ai" && held && !isDone) {
           return {
@@ -383,15 +391,11 @@ export function AgentSetupCard({ agent, place }: { agent: Agent; place: "dm" | "
           title: row.title,
           desc: row.desc,
           saying: said?.step === s ? said.text : null,
-          ...(acts
-            ? {
-                action: {
-                  label: connectFirst ? t("agentSetup.firstRun.apps.connect") : row.action,
-                  primary: s === next,
-                  onClick: () => act(s),
-                },
-              }
-            : {}),
+          action: {
+            label: connectFirst ? t("agentSetup.firstRun.apps.connect") : row.action,
+            primary: s === next,
+            onClick: () => act(s),
+          },
         };
       })}
       foot={
