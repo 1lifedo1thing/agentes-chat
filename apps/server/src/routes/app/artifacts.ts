@@ -420,6 +420,9 @@ async function storedFile(c: Context, file: StoredDownload, versioned: boolean) 
       ? "private, max-age=31536000, immutable, no-transform"
       : "private, no-cache, no-transform",
     etag,
+    // A video's own load is sent to the bucket: bytes cached for a load under CORS (a fetch, the comment stage's
+    // video) must never answer it, since Chrome fails a video whose first bytes came from here and the next from there.
+    vary: "sec-fetch-mode",
   };
   if (etagMatches(c.req.header("if-none-match"), etag)) return new Response(null, { status: 304, headers });
   // A part of another version than the one the client holds (`If-Range`) would mix two files: the whole one instead.

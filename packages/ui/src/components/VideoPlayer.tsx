@@ -73,6 +73,8 @@ const IDLE_MS = 2000;
 const STEP_S = 5;
 /** `MediaError.MEDIA_ERR_NETWORK`: the bytes stopped coming after the video had loaded. */
 const MEDIA_ERR_NETWORK = 2;
+/** A fresh signed link lives an hour: failing again sooner than this after asking for one is no expired link. */
+const RELOAD_GAP_MS = 60_000;
 const clock = (seconds: number) => {
   const s = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
   const h = Math.floor(s / 3600);
@@ -203,7 +205,7 @@ export function VideoPlayer({
 }: VideoPlayerProps) {
   const root = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
-  const reloaded = useRef(false);
+  const reloadedAt = useRef(Number.NEGATIVE_INFINITY);
   const frame = useRef(0);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lastTouch = useRef(false);
@@ -435,13 +437,14 @@ export function VideoPlayer({
         }}
         onError={(e) => {
           const v = e.currentTarget;
-          // Our address may send it on to the file store's signed link, which can expire while the page stays open:
-          // once, it asks our address again for a fresh one and goes on from where it was.
-          if (v.error?.code !== MEDIA_ERR_NETWORK || reloaded.current) {
+          // Our address may send it on to the file store's signed link, which can expire while the page stays open
+          // (hours, for a conversation left open): it asks our address again for a fresh one and goes on from where
+          // it was, each time that link has had the time to expire too.
+          if (v.error?.code !== MEDIA_ERR_NETWORK || Date.now() - reloadedAt.current < RELOAD_GAP_MS) {
             onFailed?.();
             return;
           }
-          reloaded.current = true;
+          reloadedAt.current = Date.now();
           const state = playbackOf(v);
           v.load();
           if (state.playing || state.time > 0) resume(state);

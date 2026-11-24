@@ -115,10 +115,13 @@ test("a file's bytes: a version cached for good, the newest checked again; a vid
   expect(pinned.status).toBe(200);
   expect(pinned.headers.get("cache-control")).toBe("private, max-age=31536000, immutable, no-transform");
   expect(pinned.headers.get("etag")).toBe(etag);
+  // The same address answers a video with the store's link: what a load under CORS cached never stands in for it.
+  expect(pinned.headers.get("vary")).toBe("sec-fetch-mode");
   expect(new Uint8Array(await pinned.arrayBuffer())).toEqual(PDF);
   expect((await api(`/artifacts/${id}/file`)).headers.get("cache-control")).toBe("private, no-cache, no-transform");
   const unchanged = await api(`/artifacts/${id}/file`, { "if-none-match": `W/${etag}` });
   expect(unchanged.status).toBe(304);
+  expect(unchanged.headers.get("vary")).toBe("sec-fetch-mode");
   expect(await unchanged.text()).toBe("");
   // A part of a file the client no longer holds would mix two files: the whole of this one.
   const stale = await api(`/artifacts/${id}/file`, { range: "bytes=1-4", "if-range": '"older"' });
