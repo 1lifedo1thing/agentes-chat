@@ -363,7 +363,8 @@ describe("a voice message's row", () => {
     expect(row).toContain("const starting = useSyncExternalStore(subscribePlayback, startingId) === clipId;");
     expect(row).toContain('<ActivityIndicator size="small" color={c.bg} />');
     const toggle = between(row, "const toggle = () => {", "const seek =");
-    expect(toggle.indexOf("voiceAudioGone(")).toBeGreaterThan(toggle.indexOf("const failed = () => {"));
+    expect(toggle.indexOf("isGone?.()")).toBeGreaterThan(toggle.indexOf("const failed = () => {"));
+    expect(row).toContain("isGone={() => voiceAudioGone(url, authedFetch as typeof fetch)}");
     expect(toggle).toContain("onError: failed,");
     expect(toggle).toContain("}).catch(failed);");
     // Where it stands is the playback module's: a row drawn again mid-play shows it.

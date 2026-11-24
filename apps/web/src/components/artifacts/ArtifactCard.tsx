@@ -255,9 +255,11 @@ function LoadingTile({ title = "", ratio }: { title?: string; ratio?: number }) 
         <div className="ac-voice">
           <div className="ac-voice__card artifact-audio__wait" />
         </div>
-        <div className="artifact-audio__foot ac-iconline" aria-hidden="true">
-          <Icon name={fileIcon(title)} size={16} />
-          <span className="artifact-audio__title">{title || "\u00a0"}</span>
+        <div className="artifact-audio__foot" aria-hidden="true">
+          <span className="artifact-audio__label ac-iconline">
+            <Icon name={fileIcon(title)} size={16} />
+            <span className="artifact-audio__title">{title || "\u00a0"}</span>
+          </span>
         </div>
       </div>
     );
@@ -438,17 +440,19 @@ function AudioAttachment({
         fallback={null}
         onFailed={() => setFailed(true)}
       />
-      <div className="artifact-audio__foot ac-iconline">
-        <Icon name={icon} size={16} />
-        <button
-          type="button"
-          className="artifact-audio__name"
-          aria-label={t("artifacts.open", { title: a.title })}
-          onClick={onOpen}
-        >
-          <span className="artifact-audio__title">{a.title}</span>
-          <span className="tabular">{meta}</span>
-        </button>
+      <div className="artifact-audio__foot">
+        <span className="artifact-audio__label ac-iconline">
+          <Icon name={icon} size={16} />
+          <button
+            type="button"
+            className="artifact-audio__name"
+            aria-label={t("artifacts.open", { title: a.title })}
+            onClick={onOpen}
+          >
+            <span className="artifact-audio__title">{a.title}</span>
+            <span className="tabular">{meta}</span>
+          </button>
+        </span>
         <TileActions title={a.title} actions={actions} onDownload={onDownload} />
       </div>
     </div>
