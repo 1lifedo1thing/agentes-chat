@@ -311,6 +311,12 @@ const NETWORK_TEXT =
   /\bE(?:CONNRESET|CONNREFUSED|CONNABORTED|TIMEDOUT|NOTFOUND|AI_AGAIN|HOSTUNREACH|NETUNREACH|PIPE)\b|socket hang up|proxy|connection error|fetch failed/i;
 /** How Claude Code words a provider's answer in an error text: "API Error: 403 {…}". */
 const API_ERROR_STATUS = /\bAPI Error: (\d{3})\b/;
+/**
+ * The model it was given isn't one the sign-in or its endpoint serves: Claude Code's "There's an issue with the selected
+ * model (…). It may not exist or you may not have access to it", the API's `not_found_error` on a model. Never its
+ * `unrecognized_model` notice, printed for a model outside its own catalog before it goes on.
+ */
+const MODEL_TEXT = /issue with the selected model|not_found_error.{0,40}model:|model[_ ]not[_ ]found/i;
 
 /** Why the provider refused or failed a call (protocol 50), and its HTTP status when the CLI said one. */
 export interface ProviderFailure {
@@ -335,6 +341,8 @@ export function providerFailure(f: {
   const http = httpStatus ? { httpStatus } : {};
   const error = typeof f.error === "string" ? f.error : "";
   if (DISABLED_TEXT.test(text)) return { cause: "account_disabled", ...http };
+  // Before the sign-in's refusal: a 403 on a model the account can't use is the model's, and another one may answer.
+  if (MODEL_TEXT.test(text)) return { cause: "model_unavailable", ...http };
   if (error === "authentication_failed" || error === "oauth_org_not_allowed" || status === 401 || status === 403)
     return { cause: "auth_rejected", ...http };
   if (error === "billing_error" || BILLING_TEXT.test(text)) return { cause: "billing", ...http };

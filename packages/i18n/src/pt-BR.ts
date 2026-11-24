@@ -6816,6 +6816,9 @@ export const ptBR = {
         cli_stopped: "O {{brain}} parou com um erro.",
         /** The agent's CLI ended without its answer and without a word (it crashed or was killed). */
         cli_closed: "O {{brain}} fechou de repente.",
+        /** The agent's CLI ended its turn with nothing in it (no answer, no step), even after being asked again. */
+        cli_empty:
+          "O {{brain}} terminou sem responder. Peça de novo; se continuar, atualize o {{brain}} no computador ou escolha outra IA nas configurações do agente.",
         /** The agent's CLI couldn't start its sandbox on its computer (bubblewrap refused), before the model was asked. */
         cli_sandbox:
           "O {{brain}} não consegue abrir a sandbox dele neste computador. Escolha outra IA nas configurações do agente.",

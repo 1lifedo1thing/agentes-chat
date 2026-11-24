@@ -74,7 +74,7 @@ import type { BlockSpecReader } from "./block-state";
 import { ASK_CHOICES_TOOL, SHOW_BLOCK_TOOL, someoneAnswers } from "./blocks";
 import { brainOf } from "./brain-settings";
 import { brainSessionId, missingTurnFolder, recordPlanUsage } from "./brains/claude-code";
-import { codexModelRefused } from "./brains/codex";
+import { modelUnavailable } from "./brains/failure-causes";
 import { ModelBrain, turnEffort } from "./brains/model";
 import type { ComputerTurn } from "./brains/prompt";
 import {
@@ -5778,11 +5778,12 @@ async function executeRunInner(
               return waitForDroppedComputer(turnPlan.kind, machineId, prompt, labels, error.serverStop, early);
             }
           }
-          // Codex's sign-in refused the agent's model before anything ran: the rest of the run goes on the sign-in's
-          // default, in a fresh session, the conversation so far in its first prompt (`codexModelRefused`).
+          // The sign-in or its endpoint refused the agent's model before anything ran (Codex's ChatGPT list, a model
+          // the account can't use, one that doesn't exist there): the rest of the run goes on the CLI's default, once,
+          // in a fresh session, the conversation so far in its first prompt (`modelUnavailable`).
           if (
             error instanceof BrainFailure &&
-            codexModelRefused(error.message) &&
+            modelUnavailable({ message: error.message, cause: error.provider.cause }) &&
             executed.length === 0 &&
             plan.model &&
             plan.session &&
@@ -5942,8 +5943,11 @@ async function executeRunInner(
           };
           later(() => noteAccountFailure(db, failure));
         }
+        // A model refused even on the CLI's default (or a mission's, which keeps its model) is refused again on any retry.
+        const modelRefused =
+          error instanceof BrainFailure && modelUnavailable({ message: error.message, cause: error.provider.cause });
         const cli =
-          error instanceof BrainFailure && (!error.retryable || cliRefusedStart(error) || neverWorked)
+          error instanceof BrainFailure && (!error.retryable || cliRefusedStart(error) || neverWorked || modelRefused)
             ? (cliFailureText(error, turnPlan.account) ??
               (!error.retryable && isComputerBrain(turnPlan.kind) ? brainFailureText(error, turnPlan.kind) : null))
             : null;
@@ -6687,7 +6691,10 @@ async function executeRunInner(
         keep = decision.nudge;
         if (shown) addsTo = true;
       }
-      if (!text && !anythingPosted && !silent) return fail("empty_reply");
+      // Nothing to post after its nudge either: a computer brain's CLI answered nothing (`cli_empty`, whose line says to
+      // ask again and check that program there), the API's model returned nothing.
+      if (!text && !anythingPosted && !silent)
+        return fail(isComputerBrain(plan.kind) ? `cli_empty: ${BRAIN_NAMES[plan.kind]}` : "empty_reply");
       // Someone wrote while it answered: post this answer, then read the new message(s) and go on.
       const still = { pending: await unreadNow(db, run.id, { awaitTriage }) };
       // At the cap this answer ends the run instead: what came in gets a run of its own.

@@ -28,6 +28,7 @@ import {
   speedFields,
   steerOnMachine,
 } from "./claude-code";
+import { noteModelRefusal, skipRefusedModel, withFailureCause } from "./failure-causes";
 import { computerPrompt, systemWithConversation } from "./prompt";
 import {
   askingPermissions,
@@ -269,20 +270,6 @@ const ANTIGRAVITY_CLI: CliBrainSpec = {
         },
 };
 
-/**
- * A ChatGPT sign-in offers Codex its own list of models, not the API's (catalog rows a plan may not have, or not yet),
- * and refuses any other: "The '<model>' model is not supported when using Codex with a ChatGPT account." It refuses
- * before the model runs, so the executor takes the turn again with no model, in a fresh session: a Codex thread keeps
- * the model it was given, and a turn can't clear it.
- */
-export const codexModelRefused = (message: string) =>
-  /model is not supported when using Codex with a ChatGPT account/i.test(message);
-
-/** How long a sign-in's refusal of a model is remembered: its turns leave that model out meanwhile. */
-const REFUSED_MODEL_MS = 6 * 60 * 60_000;
-// ponytail: per-process memory, so each server process pays one refused turn per sign-in and model; store it if that matters.
-const refusedModels = new Map<string, number>();
-
 export class CodexBrain implements Brain {
   readonly kind: "codex" | "cursor" | "opencode" | "grok" | "antigravity";
 
@@ -293,14 +280,10 @@ export class CodexBrain implements Brain {
     this.kind = cli.kind;
   }
 
+  /** A model the sign-in refused lately is left out (the CLI's default instead), and a new refusal remembered. */
   async *run(turn: BrainTurn, io: BrainIO): AsyncIterable<BrainEvent> {
-    const key =
-      turn.model && turn.session ? `${this.kind}:${turn.account?.id ?? turn.session.machineId}:${turn.model}` : null;
-    const refused = key !== null && (refusedModels.get(key) ?? 0) > Date.now();
-    for await (const event of this.attempt(refused ? { ...turn, model: undefined } : turn, io)) {
-      if (key && event.type === "error" && codexModelRefused(event.message)) {
-        refusedModels.set(key, Date.now() + REFUSED_MODEL_MS);
-      }
+    for await (const event of this.attempt(skipRefusedModel(this.kind, turn), io)) {
+      noteModelRefusal(this.kind, turn, event);
       yield event;
     }
   }
@@ -582,7 +565,7 @@ export function hubBrainLink(deps: {
         const event = parseBrainEvent(e.event);
         if (!event) return;
         if (event.type === "done" || event.type === "error") finalSeen = true;
-        options.onEvent(event as BrainEvent);
+        options.onEvent(withFailureCause(event as BrainEvent));
       });
       try {
         const reply = await deps.hub.call<"brain.turn">(
@@ -602,7 +585,7 @@ export function hubBrainLink(deps: {
         // The stream lost its last event: the reply carries it.
         const final = parseBrainEvent(reply?.final);
         if (!finalSeen && final && (final.type === "done" || final.type === "error"))
-          options.onEvent(final as BrainEvent);
+          options.onEvent(withFailureCause(final as BrainEvent));
       } finally {
         off();
       }

@@ -27,6 +27,7 @@ import { MachineDroppedError, MachineOfflineError, MachinePausedError, pausedMes
 import { addPersonSpend } from "../person-usage";
 import { apiNano } from "../plan-usage";
 import { runnerUpdateWay } from "../runner-update";
+import { noteModelRefusal, skipRefusedModel, withFailureCause } from "./failure-causes";
 import { computerPrompt, systemWithConversation } from "./prompt";
 import {
   askingPermissions,
@@ -345,7 +346,8 @@ export function claudeCodeCallError(error: unknown): BrainEvent {
   return err("runner_error", error instanceof Error ? error.message : String(error), false);
 }
 
-const toBrainEvent = (e: WireBrainEvent): BrainEvent => e as BrainEvent;
+/** A runner's event, with the cause its words say where the runner gave none (`withFailureCause`). */
+const toBrainEvent = (e: WireBrainEvent): BrainEvent => withFailureCause(e as BrainEvent);
 const isFinal = (e: BrainEvent) => e.type === "done" || e.type === "error";
 
 type Item = { kind: "event"; event: BrainEvent } | { kind: "stream_end" } | { kind: "reply"; final: BrainEvent };
@@ -422,7 +424,9 @@ export function createClaudeCodeBrain(deps: ClaudeCodeBrainDeps): Brain {
         // the turn starts its CLI itself
       }
     },
-    async *run(turn: BrainTurn, io: BrainIO): AsyncIterable<BrainEvent> {
+    async *run(asked: BrainTurn, io: BrainIO): AsyncIterable<BrainEvent> {
+      // A model the sign-in refused lately goes out as the CLI's default; a new refusal is remembered (as Codex's).
+      const turn = skipRefusedModel("claude_code", asked);
       const session = turn.session;
       if (!session) {
         yield err("no_session", "This agent has no computer for Claude Code.", true);
@@ -531,10 +535,14 @@ export function createClaudeCodeBrain(deps: ClaudeCodeBrainDeps): Brain {
         for (;;) {
           const item = await queue.next(replyFinal ? (streamEnded ? 0 : (deps.finalGraceMs ?? 1500)) : undefined);
           if (item === null) {
-            if (replyFinal) yield replyFinal;
+            if (replyFinal) {
+              noteModelRefusal("claude_code", asked, replyFinal);
+              yield replyFinal;
+            }
             return;
           }
           if (item.kind === "event") {
+            noteModelRefusal("claude_code", asked, item.event);
             yield item.event;
             if (isFinal(item.event)) return;
           } else if (item.kind === "stream_end") {

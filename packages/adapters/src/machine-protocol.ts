@@ -1160,7 +1160,12 @@ export const isClaudeLoginMethod = (v: unknown): v is ClaudeLoginMethod => v ===
 export const claudeLoginMethodsOf = (said: readonly AuthMethod[] | undefined, system: boolean): AuthMethod[] =>
   said ? [...said] : [system ? "setup_token" : "cli_login"];
 
-/** Why a provider refused or failed a turn (protocol 50), as far as the runner could tell from the CLI. */
+/**
+ * Why a provider refused or failed a turn (protocol 50), as far as the runner could tell from the CLI.
+ * `model_unavailable`: the sign-in or its endpoint doesn't serve the model it was given (it doesn't exist there, or the
+ * account can't use it); `empty_answer`: the CLI ended its turn with nothing in it. A server that doesn't know a cause
+ * drops it (`isProviderFailureCause`), and the engine reads both from the CLI's words too (`withFailureCause`).
+ */
 export type ProviderFailureCause =
   | "auth_rejected"
   | "account_disabled"
@@ -1168,6 +1173,8 @@ export type ProviderFailureCause =
   | "billing"
   | "provider_transient"
   | "network"
+  | "model_unavailable"
+  | "empty_answer"
   | "unknown";
 export const PROVIDER_FAILURE_CAUSES: readonly ProviderFailureCause[] = [
   "auth_rejected",
@@ -1176,6 +1183,8 @@ export const PROVIDER_FAILURE_CAUSES: readonly ProviderFailureCause[] = [
   "billing",
   "provider_transient",
   "network",
+  "model_unavailable",
+  "empty_answer",
   "unknown",
 ];
 export const isProviderFailureCause = (v: unknown): v is ProviderFailureCause =>

@@ -6924,6 +6924,9 @@ export const en = {
         cli_stopped: "The {{brain}} program stopped with an error.",
         /** The agent's CLI ended without its answer and without a word (it crashed or was killed). */
         cli_closed: "The {{brain}} program closed unexpectedly.",
+        /** The agent's CLI ended its turn with nothing in it (no answer, no step), even after being asked again. */
+        cli_empty:
+          "The {{brain}} program ended its turn without an answer. Ask again; if it keeps happening, update {{brain}} on the computer or choose another AI in the agent's settings.",
         /**
          * The agent's CLI couldn't start its sandbox on its computer (bubblewrap refused), before the model was asked.
          * No "update the computer": on Cloud nobody in the workspace can.
