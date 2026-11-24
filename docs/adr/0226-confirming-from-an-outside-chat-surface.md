@@ -42,8 +42,9 @@ to call the tool and say in one line that the person confirms it on the page.
 ### 2. A page link
 `surface_page_links` (`org_id`, `link_id` cascading with the surface link, `user_id`, `kind`, `target_id`,
 `token_hash`, `browser_hash`, `created_at`, `opened_at`). The token is 32 random bytes, kept only as its SHA-256.
-- Minted when a delivery is listed: an approval's card (`card.kind = "approval"`) carries
-  `PUBLIC_URL/surface-page?token=…` instead of the app's link to the message. Other cards keep the app's link. A
+- Minted when a delivery is listed: the card of an approval the person decides now (`card.kind = "approval"`)
+  carries `PUBLIC_URL/surface-page?token=…` instead of the app's link to the message. Other cards, and an approval
+  that waits on someone else, keep the app's link. A
   delivery listed twice carries two links; each opens in one browser only.
 - The page posts its token (`POST /api/app/surface-page/open`); a GET of the page opens nothing, so a chat app's
   link preview, which only fetches, spends nothing. The first open must come within 10 minutes of minting
@@ -63,7 +64,7 @@ without one, so a new password (which ends the link) clears it too.
 - `confirm` page: approving takes the PIN; with none set, the PIN typed (twice, on the page) becomes it. Refusing
   takes none. Who may decide is `decideApproval`'s rule, unchanged.
 - Three wrong ones in a row lock approving for 15 minutes (`surface.pin_locked` with `until`); a right one resets the
-  count.
+  count. Each try is counted before its hash is checked, so tries sent at once never get past three.
 - "Forgot your PIN?", from the browser that opened the page: an email (`surface_pin_reset`) with a link to
   `/email-undo?kind=surface-pin&token=`, once, within an hour; only that page's button clears the PIN and its lock
   (mail scanners open links). 3 emails an hour per IP address. Offered only where the server sends email
