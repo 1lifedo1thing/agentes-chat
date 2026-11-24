@@ -92,12 +92,12 @@ import {
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ModelSelect, modelOptions, NO_OWNER, OwnerSelect } from "@/components/AgentFields";
 import { useOpenAgentPanel } from "@/components/agent-panel-context";
-import { useConnectAi } from "@/components/connect-ai-context";
 import { PlanReplies } from "@/components/ai/PlanReplies";
 import { usePlanHold } from "@/components/ai/plan-hold";
 import { ConnectFlow, type FlowState } from "@/components/ConnectFlow";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { useChannelActions } from "@/components/channel-actions";
+import { useConnectAi } from "@/components/connect-ai-context";
 import { SetupBand } from "@/components/new-agent/SetupBand";
 import { PersonalChip } from "@/components/OwnerScope";
 import { useOrg } from "@/components/org-context";

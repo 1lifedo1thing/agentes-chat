@@ -149,7 +149,9 @@ describe("IA e uso: budget only where the workspace uses the API", () => {
         .map((tab) => tab.textContent),
     ).toEqual(["Contas de IA", "Uso", "Pessoas"]);
     expect(screen().getByRole("region", { name: "Contas" })).toBeTruthy();
-    expect(within(screen().getByRole("region", { name: "Contas" })).getByRole("region", { name: "Chaves de API" })).toBeTruthy();
+    expect(
+      within(screen().getByRole("region", { name: "Contas" })).getByRole("region", { name: "Chaves de API" }),
+    ).toBeTruthy();
     await usageTab();
     expect(regions()).toEqual([]);
     const body = document.querySelector(".settings__body")?.textContent ?? "";
