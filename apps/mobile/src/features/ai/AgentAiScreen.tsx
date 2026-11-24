@@ -127,6 +127,8 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   });
   const view = brain.data;
   const kind = accountKindOf(view?.brain);
+  // Codex on a Windows computer without MXC: what its own sandbox holds there, behind Conta's ⓘ.
+  const partial = view?.options.find((o) => o.kind === view.brain)?.sandbox === "partial";
   // Its computer's row, where that computer's own sign-in shows once its CLI is signed in.
   const row = useAiAccounts(orgId, view?.canUsePlans === true && kind !== null).data?.computers.find(
     (c) => c.machineId === view?.computer?.machineId,
@@ -222,7 +224,18 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
         ) : (
           <>
             {/* Conta, Modelo and Esforço: the one choice every picker shares (`AiChoiceFields`). */}
-            <GroupedHeader>{t("agentPage.work.brain.account")}</GroupedHeader>
+            <GroupedHeader
+              {...(partial
+                ? {
+                    hint: {
+                      name: t("common.about", { label: t("agentPage.work.brain.account") }),
+                      text: t("brain.sandboxPartial"),
+                    },
+                  }
+                : {})}
+            >
+              {t("agentPage.work.brain.account")}
+            </GroupedHeader>
             <AiChoiceFields
               target={{ kind: "agent", agentId }}
               disabled={pending.account !== undefined}

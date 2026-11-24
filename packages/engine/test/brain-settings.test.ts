@@ -5,6 +5,7 @@ import {
   ACCOUNTS_PROTOCOL,
   ANTIGRAVITY_MAC_PROTOCOL,
   BRAIN_PROTOCOL,
+  CODEX_UNELEVATED_PROTOCOL,
   CODEX_WINDOWS_PROTOCOL,
   CONTEXT_LIMIT_PROTOCOL,
   MISSION_PROTOCOL,
@@ -173,6 +174,41 @@ describe("brain settings", () => {
       true,
       null,
     ]);
+  });
+
+  test("options: on Windows, Codex says what holds its commands there before anyone picks it", () => {
+    const codexOf = (sandbox: "mxc" | "unelevated" | "none" | undefined, patch: Record<string, unknown> = {}) =>
+      brainOptions(
+        mac({
+          os: "windows",
+          protocol: CODEX_UNELEVATED_PROTOCOL,
+          executors: {
+            claude: { version: "2" },
+            codex: { version: "codex-cli 0.170.0", ...(sandbox ? { sandbox } : {}) },
+            detectedAt: "x",
+          },
+          ...patch,
+        }),
+      ).find((o) => o.kind === "codex");
+    // MXC, or not known yet: nothing new to say.
+    for (const sandbox of ["mxc", undefined] as const) {
+      expect(codexOf(sandbox)).toMatchObject({ available: true });
+      expect(codexOf(sandbox)).not.toHaveProperty("reason");
+      expect(codexOf(sandbox)).not.toHaveProperty("sandbox");
+    }
+    // Codex's own sandbox: it stays a choice, with its hint.
+    expect(codexOf("unelevated")).toMatchObject({ available: true, sandbox: "partial" });
+    expect(codexOf("unelevated")).not.toHaveProperty("reason");
+    // Nothing could hold it: unavailable there, with its own reason, instead of failing in the chat.
+    expect(codexOf("none")).toMatchObject({ available: false, reason: "windows_sandbox" });
+    expect(codexOf("none")).not.toHaveProperty("sandbox");
+    // Switched off there: that first (turning it on is the way out, and its runner checks only then).
+    const off = { access: { folders: [], tools: { claude: true, codex: false, commands: true } } };
+    expect(codexOf("none", off)).toMatchObject({ available: false, reason: "tool_off" });
+    expect(codexOf("unelevated", off)).not.toHaveProperty("sandbox");
+    // Only Windows reads it, and only for Codex.
+    expect(codexOf("none", { os: "linux" })).toMatchObject({ available: true });
+    expect(brainOptions(mac({ os: "windows", protocol: CODEX_UNELEVATED_PROTOCOL }))[1]).not.toHaveProperty("sandbox");
   });
 
   test("options: on Windows OpenCode needs a runner that speaks ACP; a CLI that doesn't run on the computer's system says so", () => {

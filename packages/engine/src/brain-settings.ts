@@ -406,7 +406,9 @@ export type BrainUnavailable =
   /** It is there and can't start (`executors.broken`, with its own error): not missing, so installing it won't help. */
   | "cant_start"
   /** Its runner doesn't run this CLI on the computer's system (`brainRunsOn`): Cursor on Windows, for one. */
-  | "system";
+  | "system"
+  /** Codex on a Windows computer where no sandbox could hold its commands (`executors.codex.sandbox` is `none`). */
+  | "windows_sandbox";
 
 export interface BrainOption {
   kind: BrainKind;
@@ -414,6 +416,11 @@ export interface BrainOption {
   reason?: BrainUnavailable;
   models: BrainModelOption[];
   defaultModel: string | null;
+  /**
+   * `partial`: Codex on a Windows computer without MXC, in Codex's own `unelevated` sandbox: its commands write only in
+   * the agent's folders, but the internet is kept from them only in part (ADR 0053's addendum of 2026-11-24).
+   */
+  sandbox?: "partial";
   /**
    * Antigravity: the newest Gemini (`ANTIGRAVITY_NEON`) isn't among its models, and why: the computer's agentes.chat
    * is too old to bring a CLI that runs it (`app_old`), its CLI predates it where the computer's setup installs it
@@ -463,6 +470,8 @@ export function brainOptions(machine: MachineLike | null): BrainOption[] {
   const found = machine ? machineExecutors({ ...machine, execAllowed: true }) : null;
   const computer = (kind: "claude_code" | "codex", executor: "claude" | "codex"): BrainOption => {
     let reason: BrainUnavailable | undefined;
+    // What holds Codex's commands on Windows, once its runner checked (`CODEX_UNELEVATED_PROTOCOL`).
+    const sandbox = executor === "codex" && machine?.os === "windows" ? machine.executors?.codex?.sandbox : undefined;
     // A runner that reports its tools (protocol 10) runs a coding CLI by that CLI's own switch, commands off or not
     // (`toolOff` in brains/claude-code.ts, `toolOn` on the runner); only an older one follows commands (`exec`).
     if (!machine) reason = "no_computer";
@@ -472,10 +481,12 @@ export function brainOptions(machine: MachineLike | null): BrainOption[] {
       reason = "runner_old";
     else if (!found?.available.includes(executor)) reason = missingCli(machine, executor);
     else if (machine.access?.tools && machine.access.tools[executor] !== true) reason = "tool_off";
+    else if (sandbox === "none") reason = "windows_sandbox";
     return {
       kind,
       available: !reason,
       ...(reason ? { reason } : {}),
+      ...(!reason && sandbox === "unelevated" ? { sandbox: "partial" as const } : {}),
       models: brainModelOptions(kind),
       defaultModel: defaultBrainModel(kind),
     };

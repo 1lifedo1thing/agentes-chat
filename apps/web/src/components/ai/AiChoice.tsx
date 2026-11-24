@@ -251,12 +251,21 @@ export function AiChoiceFields({
   const showAccount = parts.includes("account");
   const showModel = parts.includes("model") && models.length > 0;
   const showEffort = parts.includes("effort") && levels.length > 0;
+  // Codex on a Windows computer without MXC: what its own sandbox holds there, behind Conta's ⓘ.
+  const accountHint =
+    row && state.option(row)?.sandbox === "partial"
+      ? { name: t("common.about", { label: t("agentPage.work.brain.account") }), text: t("brain.sandboxPartial") }
+      : undefined;
   const groupLabel = (g: string) =>
     g === "yours" || g === "others" || g === "keys" ? t(`aiHub.choice.groups.${g}`) : g;
   return (
     <div className={cx("aa-picker", className)} aria-busy={state.loading || undefined}>
       {showAccount && (
-        <Field label={t("agentPage.work.brain.account")} id={`${id}-account`}>
+        <Field
+          label={t("agentPage.work.brain.account")}
+          id={`${id}-account`}
+          {...(accountHint ? { hint: accountHint } : {})}
+        >
           <SearchSelect<string, RowOption>
             className="aa-account"
             value={row?.key}

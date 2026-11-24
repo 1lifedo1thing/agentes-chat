@@ -26,7 +26,7 @@ test("hello's Windows build: a build number only", () => {
 });
 
 test("Codex's sandbox rides on its executor, in hello and executors.changed alike; nothing else is believed", () => {
-  const codex = { version: "codex-cli 0.170.0", sandbox: "unelevated" };
+  const codex = { version: "codex-cli 0.170.0", sandbox: "unelevated" as const };
   const frame = hello({ executors: { codex, claude: { version: "2.1.300", sandbox: "mxc" } } });
   expect(frame?.type === "hello" && frame.executors).toEqual({ codex, claude: { version: "2.1.300" } });
   for (const sandbox of ["mxc", "none"] as const) {

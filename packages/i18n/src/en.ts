@@ -6935,9 +6935,9 @@ export const en = {
           "The {{brain}} program doesn't run on this computer's system yet. Choose another AI in the agent's settings.",
         account_missing:
           "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again.",
-        /** A Codex turn on a Windows computer where MXC can't hold its commands (runner `windows_sandbox`). */
+        /** A Codex turn on a Windows computer where no sandbox could hold its commands (runner `windows_sandbox`). */
         windows_sandbox:
-          "This Windows computer can't isolate Codex's commands: it needs Windows 11 24H2 or newer. Update Windows, choose Claude or an API key for this agent, or move it to a Linux computer.",
+          "Codex couldn't start any isolation for its commands on this Windows computer. Choose Claude or an API key for this agent, or update the computer to Windows\u00a011\u00a024H2.",
         our_error: "Something went wrong on our side and it stopped. Ask again in a little while.",
         unknown: "Failed.",
       },
@@ -12832,8 +12832,17 @@ export const en = {
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
       system: "{{program}} doesn't run on {{computer}}'s system yet.",
+      /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
+      windows_sandbox:
+        "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows\u00a011\u00a024H2.",
       no_computerCloud: "Ready as soon as {{computer}} is.",
     },
+    /**
+     * Behind an ⓘ beside Codex on a Windows computer without MXC, where Codex runs in its own `unelevated` sandbox:
+     * writes held to the agents' folders, the internet blocked only through proxy settings a program may ignore.
+     */
+    sandboxPartial:
+      "On this Windows, Codex's commands write only in the agents' folders, but the internet is only partly blocked for them. Windows\u00a011\u00a024H2 blocks it fully.",
     notAvailableNow: "Chosen, but unavailable right now.",
     offline: "{{computer}} is offline right now.",
     modelLabel: "Model",
