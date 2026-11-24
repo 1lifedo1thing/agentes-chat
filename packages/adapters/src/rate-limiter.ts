@@ -21,8 +21,13 @@ export interface RateLimiter {
 /** Seconds until a rate limit's window opens again, at least 1. */
 export const retryInSeconds = (resetAt: Date) => Math.max(1, Math.ceil((resetAt.getTime() - Date.now()) / 1000));
 
+/** Past this many keys, the in-memory limiter sweeps its ended windows, at most every `SWEEP_EVERY_MS`. */
+const SWEEP_PAST = 50_000;
+const SWEEP_EVERY_MS = 30_000;
+
 export function createMemoryRateLimiter(now: () => number = Date.now): RateLimiter {
   const windows = new Map<string, { count: number; resetAt: number }>();
+  let sweptAt = Number.NEGATIVE_INFINITY;
   return {
     async consume(key, rule) {
       const t = now();
@@ -32,7 +37,9 @@ export function createMemoryRateLimiter(now: () => number = Date.now): RateLimit
         windows.set(key, w);
       }
       w.count++;
-      if (windows.size > 50_000) {
+      // Not at every take: while that many windows are still open, each sweep would scan them all for nothing.
+      if (windows.size > SWEEP_PAST && t - sweptAt >= SWEEP_EVERY_MS) {
+        sweptAt = t;
         for (const [k, v] of windows) if (v.resetAt <= t) windows.delete(k);
       }
       return {
