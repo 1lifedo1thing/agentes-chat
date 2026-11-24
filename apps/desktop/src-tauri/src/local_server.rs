@@ -1307,6 +1307,7 @@ pub fn status(app: &AppHandle, welcome: bool) -> Status {
 }
 
 fn emit_status(app: &AppHandle) {
+    crate::discover::forget_served();
     let _ = app.emit(STATUS_EVENT, status(app, false));
     crate::tray::refresh(app);
 }
@@ -2293,14 +2294,29 @@ const KEEP_BACKUPS: usize = 2;
 /// The nightly backup's hour, local time.
 const NIGHTLY_HOUR: &str = "030000";
 
-/// Now on this computer's clock as `YYYY-MM-DD-HHMMSS` (backups' names); None where there is no `date` program
-/// (Windows, whose builds don't carry the server).
+/// Now on this computer's clock as `YYYY-MM-DD-HHMMSS` (backups' names), read from the system's time zone without
+/// starting a program (the nightly check asks every minute); None on Windows, whose builds don't carry the server.
 fn local_stamp() -> Option<String> {
     #[cfg(unix)]
-    let date = Command::new("date").arg("+%Y-%m-%d-%H%M%S").output().ok();
+    {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).ok()?.as_secs() as libc::time_t;
+        // SAFETY: `localtime_r` fills `tm` from `now`; both live on this stack frame for the call.
+        let mut tm: libc::tm = unsafe { std::mem::zeroed() };
+        if unsafe { libc::localtime_r(&now, &mut tm) }.is_null() {
+            return None;
+        }
+        Some(format!(
+            "{:04}-{:02}-{:02}-{:02}{:02}{:02}",
+            tm.tm_year + 1900,
+            tm.tm_mon + 1,
+            tm.tm_mday,
+            tm.tm_hour,
+            tm.tm_min,
+            tm.tm_sec
+        ))
+    }
     #[cfg(not(unix))]
-    let date: Option<std::process::Output> = None;
-    date.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()).filter(|d| d.len() == 17)
+    None
 }
 
 /// The backups `backup` wrote in `dir` (`agentes-*.tar.gz`), newest first. Only those: the "Copy to" folder is the
@@ -3103,6 +3119,17 @@ mod tests {
         assert_eq!(owner_refusal(401, &says("OWNER_GONE")), None, "only the server's conflict carries it");
         assert_eq!(owner_refusal(400, "{\"message\":\"The owner's name and email are needed\"}"), None, "an older server");
         assert_eq!(owner_refusal(409, "not json"), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_backups_clock_reads_like_date_without_running_it() {
+        let stamp = local_stamp().unwrap();
+        let date = Command::new("date").arg("+%Y-%m-%d-%H%M%S").output().unwrap();
+        let date = String::from_utf8_lossy(&date.stdout).trim().to_string();
+        assert_eq!(stamp.len(), 17, "{stamp}");
+        // The same minute as `date` (a second may tick between the two reads).
+        assert_eq!(stamp[..15], date[..15], "{stamp} {date}");
     }
 
     #[test]
