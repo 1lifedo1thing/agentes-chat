@@ -10,7 +10,7 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { type Database, migrateInSteps, migrationsFolder } from "../src/client";
 import * as schema from "../src/schema";
-import { tracingLogger } from "../src/trace";
+import { tracingLogger, trackTransactions } from "../src/trace";
 
 /**
  * Fresh database with all migrations applied, for tests.
@@ -26,7 +26,7 @@ export async function createTestDatabase(): Promise<{ db: Database; close: () =>
   if (serverUrl) return createOnServer(serverUrl);
 
   const client = new PGlite({ extensions: { vector }, loadDataDir: await migratedTemplate() });
-  const db = drizzlePglite(client, { schema, casing: "snake_case", logger: tracingLogger });
+  const db = trackTransactions(drizzlePglite(client, { schema, casing: "snake_case", logger: tracingLogger }));
   return { db: db as unknown as Database, close: () => client.close(), pglite: client };
 }
 
@@ -128,7 +128,7 @@ async function createOnServer(serverUrl: string) {
   const url = new URL(serverUrl);
   url.pathname = `/${name}`;
   const client = postgres(url.toString(), { max: 5, onnotice: () => {} });
-  const db = drizzlePostgres(client, { schema, casing: "snake_case", logger: tracingLogger });
+  const db = trackTransactions(drizzlePostgres(client, { schema, casing: "snake_case", logger: tracingLogger }));
   await migrateInSteps(db, migrationsFolder);
   await db.execute(sql.raw(TEST_DEFAULTS));
 
