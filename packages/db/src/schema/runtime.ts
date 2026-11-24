@@ -55,7 +55,7 @@ export const outbox = pgTable(
     lastError: text(),
     /** The HTTP status the error behind `lastError` carried (a provider's refusal), when it carried one. */
     lastErrorStatus: integer(),
-    /** Optional idempotency key: enqueueing the same key twice is a no-op. */
+    /** Optional idempotency key: enqueueing the same key twice is a no-op, also once the row left (`outboxDedupe`). */
     dedupeKey: text().unique(),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp({ withTimezone: true }),
@@ -76,6 +76,18 @@ export const outbox = pgTable(
       .concurrently(),
   ],
 );
+
+/**
+ * The dedupe keys of done jobs that left the outbox (`pruneDoneJobs`), until they expire. A row inserted into the
+ * outbox with a key held here is skipped, as a conflict on the key would skip it: the `outbox_dedupe_refuses` trigger
+ * (migration 0324), so every insert, raw SQL included, keeps refusing a key whose row was pruned.
+ */
+export const outboxDedupe = pgTable("outbox_dedupe", {
+  dedupeKey: text().primaryKey(),
+  orgId: uuid().references(() => organizations.id, { onDelete: "cascade" }),
+  /** When its job was queued: the key expires from it. */
+  createdAt: timestamp({ withTimezone: true }).notNull(),
+});
 
 /**
  * Durable state machine of one agent turn (docs/adr/0008-agent-runs.md):
