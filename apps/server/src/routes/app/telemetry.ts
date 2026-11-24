@@ -45,6 +45,9 @@ const BrowserTraffic = z
       "What the agents' browsers on these computers sent and received over the last day, in MB (10^6 bytes), as their Chrome counts each request's headers and body, with the `hours` counted on average and how many of them said. Null when none did.",
   });
 
+/** One measure of the apps' speed reports since the last report: how many values, their median and 95th percentile. */
+const VitalStat = z.object({ n: z.number().int(), p50: z.number(), p95: z.number() });
+
 const Report = z
   .object({
     report: z.literal(1),
@@ -53,6 +56,9 @@ const Report = z
     edition: z.enum(["selfhost", "cloud"]),
     install: z.enum(["docker", "native", "desktop"]),
     os: z.string(),
+    osVersion: z.string().openapi({
+      description: "The server's system version as numbers alone (`10.0.19045`, a kernel's `6.8.0`), else `other`.",
+    }),
     arch: z.string(),
     uptimeHours: z.number(),
     host: z.object({ size: Size, container: z.boolean(), load: Load }),
@@ -90,6 +96,25 @@ const Report = z
           outputTokens: z.number().int(),
         }),
       ),
+      clientVitals: z
+        .record(
+          z.string(),
+          z.object({
+            reports: z.number().int(),
+            coldStartMs: VitalStat.optional(),
+            firstRowsMs: VitalStat.optional(),
+            jsLagP95Ms: VitalStat.optional(),
+            jsLagMaxMs: VitalStat.optional(),
+            heapBytes: VitalStat.optional(),
+            webviewBytes: VitalStat.optional(),
+            getsPerReturn: VitalStat.optional(),
+            reconnects: VitalStat.optional(),
+          }),
+        )
+        .openapi({
+          description:
+            "How fast the apps ran since the last report, by platform (`ios`, `android`, `web`, the desktop app's `macos`, `windows`, `linux`): how many speed reports, and per measure how many values with their median and 95th percentile.",
+        }),
     }),
   })
   .openapi("TelemetryReport");

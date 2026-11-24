@@ -1,8 +1,9 @@
 /**
- * The usage report's sender (ADR 0060 §5): samples the host, sends the report once a day (the first about
- * an hour after the server first started), and prints it for `agentes telemetry`. What goes in it is
- * `buildTelemetryReport`.
+ * The usage report's sender (ADR 0060 §5): samples the host, keeps the apps' speed reports of the day, sends the
+ * report once a day (the first about an hour after the server first started), and prints it for `agentes telemetry`.
+ * What goes in it is `buildTelemetryReport`.
  */
+import { release } from "node:os";
 import { LOAD_SAMPLE_MS } from "@agenteschat/adapters";
 import { inContainer, LoadWindow, machineSize, sampleLoad } from "@agenteschat/adapters/host-stats";
 import type { Config } from "@agenteschat/config";
@@ -11,12 +12,14 @@ import {
   buildTelemetryReport,
   isAgentesCloud,
   markServerStarted,
+  saveClientVitals,
   saveHostLoad,
   setNextReport,
   type TelemetryFacts,
   telemetrySends,
   telemetryState,
 } from "@agenteschat/engine";
+import { clientVitals } from "./client-vitals";
 import type { Logger } from "./logger";
 import { version } from "./version";
 
@@ -41,6 +44,7 @@ export function telemetryFacts(config: Config): TelemetryFacts {
     edition: isAgentesCloud(config.PUBLIC_URL) ? "cloud" : "selfhost",
     install: installMode(config, container),
     os: process.platform,
+    osVersion: release(),
     arch: process.arch,
     // FILES_DIR is the compose file's data volume.
     host: { size: machineSize(config.FILES_DIR ?? process.cwd()), container },
@@ -69,6 +73,8 @@ export interface TelemetryDeps {
   timers?: Timers;
   sample?: typeof sampleLoad;
   now?: () => number;
+  /** The apps' speed reports this process gets (`client-vitals.ts`). */
+  vitals?: Pick<typeof clientVitals, "dayToSave" | "restoreDay" | "newDay">;
 }
 
 /**
@@ -83,6 +89,7 @@ export function startTelemetry(deps: TelemetryDeps) {
   const post = deps.fetch ?? fetch;
   const take = deps.sample ?? sampleLoad;
   const now = deps.now ?? Date.now;
+  const vitals = deps.vitals ?? clientVitals;
   const quiet = (error: unknown) => log.debug("usage report", { error: String(error) });
   let window = new LoadWindow();
   const pending = new Set<unknown>();
@@ -98,10 +105,17 @@ export function startTelemetry(deps: TelemetryDeps) {
     pending.add(timer);
   };
 
+  /** The apps' day so far, into the row the report reads, when it changed. */
+  const keepVitals = async () => {
+    const day = vitals.dayToSave();
+    if (day) await saveClientVitals(db, day);
+  };
+
   const sample = async () => {
     try {
       window.add(await take(), now());
       await saveHostLoad(db, window, new Date(now()));
+      await keepVitals();
     } finally {
       later(LOAD_SAMPLE_MS, sample);
     }
@@ -110,6 +124,7 @@ export function startTelemetry(deps: TelemetryDeps) {
   const send = async () => {
     const state = await telemetryState(db);
     if (!telemetrySends(config, state.enabled)) return "off";
+    await keepVitals();
     const report = await buildTelemetryReport(db, telemetryFacts(config), new Date(now()));
     const res = await post(config.TELEMETRY_URL, {
       method: "POST",
@@ -134,6 +149,9 @@ export function startTelemetry(deps: TelemetryDeps) {
       log.debug("usage report not sent", { error: String(error), retryInMs: delay ?? null });
       if (delay !== undefined) return later(delay, () => deliver(due, retry + 1));
     }
+    // The apps' next day starts now, whether this one went, stayed home (off) or never got through.
+    vitals.newDay();
+    await saveClientVitals(db, null).catch(quiet);
     // After days down, a day from now: not one report per day missed.
     const next = due + REPORT_EVERY_MS > now() ? due + REPORT_EVERY_MS : now() + REPORT_EVERY_MS;
     await setNextReport(db, new Date(next)).catch(quiet);
@@ -149,6 +167,7 @@ export function startTelemetry(deps: TelemetryDeps) {
       return null;
     });
     window = new LoadWindow(kept?.hostSamples ?? []);
+    vitals.restoreDay(kept?.clientVitals);
     await sample().catch(quiet);
     if (!sends) return;
     // ponytail: every replica sends its own report under the one instance id; claim the day in the row

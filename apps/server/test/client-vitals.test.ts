@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { clientVitals, createClientVitals } from "../src/client-vitals";
+import { clientVitals, createClientVitals, DAY_KEPT } from "../src/client-vitals";
 import { browser, createTestServer, ORIGIN, signUp, type TestServer } from "./harness";
 
 let t: TestServer;
@@ -45,6 +45,35 @@ test("the desktop app sums up per system, its web view's memory beside the rest,
       webviewBytes: { n: 1, p50: 180_000_000, p95: 180_000_000, max: 180_000_000 },
     },
   });
+});
+
+test("the usage report's day keeps every report's count and a bounded, uniform sample of its values", () => {
+  const vitals = createClientVitals(() => 0.5);
+  expect(vitals.dayToSave()).toBeNull();
+  for (let i = 1; i <= 1000; i++) vitals.add({ platform: "web", coldStartMs: i, jsLagMaxMs: i % 7 });
+  vitals.take();
+  const day = vitals.dayToSave();
+  expect(day?.web?.reports).toBe(1000);
+  expect(day?.web?.values.coldStartMs?.n).toBe(1000);
+  expect(day?.web?.values.coldStartMs?.sample).toHaveLength(DAY_KEPT);
+  // Past the first DAY_KEPT, the value of rank n takes a place with the chance DAY_KEPT / n: with every draw at half,
+  // those of rank under twice DAY_KEPT do, and none after.
+  expect(day?.web?.values.coldStartMs?.sample).toContain(2 * DAY_KEPT - 1);
+  expect(day?.web?.values.coldStartMs?.sample).not.toContain(2 * DAY_KEPT);
+  expect(day?.web?.values.coldStartMs?.sample).not.toContain(1000);
+  // Taken: nothing new until another report.
+  expect(vitals.dayToSave()).toBeNull();
+
+  // A restart goes on with the row's day; a new day starts empty, to be saved as such.
+  const restarted = createClientVitals();
+  restarted.restoreDay({ ios: { reports: 4, values: { coldStartMs: { n: 4, sample: [1, 2, 3, 4] } } } });
+  restarted.add({ platform: "ios", coldStartMs: 5 });
+  expect(restarted.dayToSave()?.ios).toEqual({
+    reports: 5,
+    values: { coldStartMs: { n: 5, sample: [1, 2, 3, 4, 5] } },
+  });
+  restarted.newDay();
+  expect(restarted.dayToSave()).toEqual({});
 });
 
 test("an app sends its numbers with its session; nobody signed in, or a malformed report, is refused", async () => {

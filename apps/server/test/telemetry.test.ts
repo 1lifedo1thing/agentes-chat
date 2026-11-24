@@ -4,6 +4,7 @@ import { testConfig } from "@agenteschat/config";
 import { type Database, eq, schema } from "@agenteschat/db";
 import { createTestDatabase } from "@agenteschat/db/testing";
 import { setTelemetryEnabled, telemetryState } from "@agenteschat/engine";
+import { createClientVitals } from "../src/client-vitals";
 import { createLogger } from "../src/logger";
 import {
   FIRST_REPORT_MS,
@@ -93,12 +94,22 @@ async function start(
   answers?: (number | "down")[],
   sample: () => Promise<{ load: number; memory: number } | null> = async () => null,
   clock = fakeTimers(),
+  vitals = createClientVitals(),
 ) {
   // A restart keeps the database.
   if (!close) ({ db, close } = await createTestDatabase());
   const config = testConfig({ ...PROD, ...env });
   const http = fakeFetch(answers);
-  const telemetry = startTelemetry({ db, config, log, fetch: http.fn, timers: clock.timers, sample, now: clock.now });
+  const telemetry = startTelemetry({
+    db,
+    config,
+    log,
+    fetch: http.fn,
+    timers: clock.timers,
+    sample,
+    now: clock.now,
+    vitals,
+  });
   stops.push(telemetry.stop);
   await telemetry.ready;
   return { config, clock, http, stop: telemetry.stop };
@@ -122,6 +133,7 @@ describe("sending", () => {
       "edition",
       "install",
       "os",
+      "osVersion",
       "arch",
       "uptimeHours",
       "host",
@@ -234,6 +246,35 @@ describe("sending", () => {
   test("a development server sends nothing", async () => {
     const { clock } = await start({ NODE_ENV: "development" });
     expect(clock.delays()).toEqual([]);
+  });
+
+  test("the apps' speed reports since the last report go with it, a restart keeps them, the next day starts empty", async () => {
+    const clock = fakeTimers();
+    const vitals = createClientVitals();
+    vitals.add({ platform: "windows", coldStartMs: 6200, webviewBytes: 410_000_000 });
+    // Kept in the row at the sampler's first turn, as the server starts.
+    const first = await start({}, [204], undefined, clock, vitals);
+    first.stop();
+    clock.advance(10 * 60_000);
+    const again = createClientVitals();
+    const second = await start({}, [204], undefined, clock, again);
+    again.add({ platform: "windows", coldStartMs: 5800 });
+    // The report reads the row: what came since the sampler's last turn is kept first.
+    await clock.fire(FIRST_REPORT_MS - 10 * 60_000);
+    expect(second.http.calls[0]?.body.lastDay).toMatchObject({
+      clientVitals: {
+        windows: {
+          reports: 2,
+          coldStartMs: { n: 2, p50: 5800, p95: 6200 },
+          webviewBytes: { n: 1, p50: 410_000_000, p95: 410_000_000 },
+        },
+      },
+    });
+    expect(second.http.calls[0]?.body.osVersion).toMatch(/^\d+(\.\d+){0,3}$|^other$/);
+    // It went: the next day starts from nothing.
+    expect((await telemetryState(db)).clientVitals).toBeNull();
+    await clock.fire(REPORT_EVERY_MS);
+    expect(second.http.calls[1]?.body.lastDay).toMatchObject({ clientVitals: {} });
   });
 
   test("the host load sampler keeps the last day in the database, and the report carries it", async () => {
