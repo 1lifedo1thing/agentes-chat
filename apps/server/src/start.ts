@@ -22,7 +22,9 @@ import {
   createPhonePushSender,
   createPostgresBlobStore,
   createPostgresDatabaseDriver,
+  createPostgresPresence,
   createPostgresPubSub,
+  createPostgresRateLimiter,
   createPostgresSearchResolver,
   createRelayPushSender,
   createS3BlobStore,
@@ -286,8 +288,11 @@ async function boot(
           },
         })
       : createMemoryPubSub(),
-    presence: createMemoryPresence(),
-    rateLimiter: createMemoryRateLimiter(),
+    // On Postgres, several processes may each hold some of the open apps and answer some of the requests: who is
+    // online and how many tries a limit has left are counted where all of them read. The built-in database is one
+    // process's.
+    presence: database.client ? createPostgresPresence(database.db) : createMemoryPresence(),
+    rateLimiter: database.client ? createPostgresRateLimiter(database.db) : createMemoryRateLimiter(),
     keyWrapper: localKeyWrapper,
     legacyKeyWrappers: [],
     email: emailSender(config, log),
