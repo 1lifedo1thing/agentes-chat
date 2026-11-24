@@ -105,6 +105,7 @@ import { checkHumanCheckAtBoot, createHumanCheck } from "./http/human-check";
 import { watchLoad } from "./load-shed";
 import { createLogger, type Logger } from "./logger";
 import { OPERATOR_API_PREFIX, serveOperatorApi } from "./operator/app";
+import { watchProcessHealth } from "./process-health";
 import { apnsKeyGaps, directPushSenders, phonePushMode, relayServeSender } from "./push-senders";
 import { createLiveSockets } from "./realtime/live";
 import { createMachineSockets } from "./realtime/machines";
@@ -699,6 +700,15 @@ async function boot(
     url: `http://${config.HOST}:${config.PORT}`,
   });
   const eventLoopLag = watchEventLoopLag(log);
+  const processHealth = watchProcessHealth({
+    db: database.db,
+    log,
+    role: config.SERVER_ROLE,
+    version: release,
+    eventLoopLag,
+    heapSnapshotMb: config.HEAP_SNAPSHOT_MB,
+    heapSnapshotDir: config.HEAP_SNAPSHOT_DIR,
+  });
   const operator = worker
     ? null
     : serveOperatorApi({
@@ -742,6 +752,7 @@ async function boot(
     // promise resolves only once every socket is closed, and browser tabs never close theirs.
     telemetry?.stop();
     load?.stop();
+    processHealth.stop();
     void server?.stop();
     void operator?.stop();
     // Runners reconnect to the next instance, and people's desktops and terminals open again there.
