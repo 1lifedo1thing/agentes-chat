@@ -1174,9 +1174,69 @@ html:not([data-pointer]) .code-tabs :is(.code-tabs__tab, .code-tabs__open, .code
 .code-sstage .brw-ac__stage {
   background: none;
 }
-/* The line under the screen reads over the sky: the page's second ink, not its quiet one. */
-.code-sstage .dsk-line .muted {
-  color: var(--ink2);
+/*
+ * A cover keeps the screen's own shape and place (1280×900, as large as the stage allows), so the screen opens exactly
+ * where its cover was: in the dialog a cover takes the whole stage, which here is a tall panel, not a window cut to the
+ * screen. The box, the cover and a question over the live screen share the one cell, under the bar: the foot's height
+ * (one line, or more in a narrow panel) never moves the screen.
+ */
+.code-sstage .cmp-body > .cmp-stage > *,
+.code-sstage .cmp-body > .dsk > .dsk-stage > * {
+  grid-area: 1 / 1;
+}
+.code-sstage .cmp-body > .cmp-stage,
+.code-sstage .cmp-body > .dsk > .dsk-stage {
+  place-items: start center;
+}
+.code-sstage .cmp-body > .cmp-stage > .cmp-stage__box,
+.code-sstage .cmp-body > .dsk:not([data-state="live"]) .dsk-screen,
+.code-sstage .cmp-body > .cmp-stage > .brw-dim,
+.code-sstage .cmp-body > .dsk > .dsk-stage > .brw-dim {
+  position: relative;
+  inset: auto;
+  place-self: start center;
+  box-sizing: border-box;
+  width: min(100cqw, 100cqh * 1280 / 900);
+  aspect-ratio: 1280 / 900;
+}
+/*
+ * The line under the screen (what programs there can see, the steps, the keys in control) is the panel's foot, on the
+ * panel's own ground from side to side: words never sit on the sky's pixels. It reaches through the body's 20 px.
+ */
+.code-sstage {
+  container: code-sstage / inline-size;
+}
+.code-sstage:not(.is-full) .cmp-body .dsk-line,
+.code-sstage:not(.is-full) .cmp-body:has(> .dsk) > .cmp-steps-row:has(> .cmp-steps) {
+  margin: 12px -20px -20px;
+  padding: 9px 16px;
+  height: auto;
+  background: var(--pane);
+  box-shadow: 0 -1px 0 var(--line);
+  font-size: 12.5px;
+  line-height: 18px;
+}
+.code-sstage .cmp-body:has(> .dsk) > .cmp-steps-row > .cmp-steps {
+  margin-top: 0;
+}
+.code-sstage .cmp-body .dsk-line {
+  min-height: 0;
+  gap: 4px 16px;
+}
+.code-sstage .cmp-body .dsk-words {
+  flex: 1 1 0;
+  min-width: 0;
+  text-wrap: pretty;
+}
+/* A narrow panel: the address goes under the words, which keep the whole width and wrap less. */
+@container code-sstage (max-width: 560px) {
+  .code-sstage .cmp-body .dsk:not(.is-control) > .dsk-line,
+  .code-sstage .cmp-body > .dsk-line {
+    flex-direction: column;
+  }
+  .code-sstage .cmp-body .dsk-egress {
+    margin-left: 0;
+  }
 }
 .code-sstage--phone {
   align-items: center;
