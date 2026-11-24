@@ -651,7 +651,7 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
     const none = t("brain.reasons.windows_sandbox", { computer: "Estudio-PC", program: "Codex" });
     expect(codexSandboxNote(t, { ...desk, codexSandbox: "none" })).toBe(none);
     expect(none).toBe(
-      "O Windows do Estudio-PC não consegue isolar os comandos do Codex. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2.",
+      "O Windows do Estudio-PC não consegue isolar os comandos do Codex. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
     );
     // The same words where a person picks Codex for an agent there, on the web and the phone (`gateLine`).
     expect(

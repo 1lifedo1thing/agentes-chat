@@ -6710,7 +6710,7 @@
         "cli_sandbox": "Il programma {{brain}} non riesce ad avviare la sua sandbox su questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "cli_system": "Il programma {{brain}} non funziona ancora sul sistema di questo computer. Scegli un'altra IA nelle impostazioni dell'agente.",
         "account_missing": "L'account scelto per questo agente non è più sul suo computer. Scegline un altro nelle impostazioni dell'agente o aggiungilo di nuovo.",
-        "windows_sandbox": "Codex non è riuscito ad avviare alcun isolamento per i suoi comandi su questo computer Windows. Scegli Claude o una chiave API per questo agente, oppure aggiorna il computer a Windows 11 24H2.",
+        "windows_sandbox": "Codex non è riuscito ad avviare alcun isolamento per i suoi comandi su questo computer Windows. Scegli Claude o una chiave API per questo agente, oppure aggiorna il computer a Windows 11 24H2 o successivo, con gli ultimi aggiornamenti.",
         "our_error": "Qualcosa è andato storto da parte nostra e l'attività si è fermata. Richiedilo tra poco.",
         "unknown": "Non riuscita."
       }
@@ -12908,10 +12908,10 @@
       "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
-      "windows_sandbox": "Il Windows di {{computer}} non riesce a isolare i comandi di {{program}}. Scegli invece Claude o una chiave API, oppure aggiorna quel computer a Windows 11 24H2.",
+      "windows_sandbox": "Il Windows di {{computer}} non riesce a isolare i comandi di {{program}}. Scegli invece Claude o una chiave API, oppure aggiorna quel computer a Windows 11 24H2 o successivo, con gli ultimi aggiornamenti.",
       "no_computerCloud": "Pronto appena lo è {{computer}}."
     },
-    "sandboxPartial": "Su questo Windows i comandi di Codex scrivono solo nelle cartelle degli agenti, ma internet è bloccato solo in parte per loro. Windows 11 24H2 lo blocca del tutto.",
+    "sandboxPartial": "Su questo Windows i comandi di Codex scrivono solo nelle cartelle degli agenti, ma internet è bloccato solo in parte per loro. Windows 11 24H2 o successivo, con gli ultimi aggiornamenti, lo blocca del tutto.",
     "notAvailableNow": "Scelto, ma non disponibile in questo momento.",
     "offline": "{{computer}} è offline in questo momento.",
     "modelLabel": "Modello",

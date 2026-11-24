@@ -6885,7 +6885,7 @@ export const ptBR = {
           "A conta escolhida para este agente não está mais no computador dele. Escolha outra nas configurações do agente ou adicione de novo.",
         /** A Codex turn on a Windows computer where no sandbox could hold its commands (runner `windows_sandbox`). */
         windows_sandbox:
-          "O Codex não conseguiu isolar os comandos dele neste computador com Windows. Escolha o Claude ou uma chave de API para este agente, ou atualize o computador para o Windows\u00a011\u00a024H2.",
+          "O Codex não conseguiu isolar os comandos dele neste computador com Windows. Escolha o Claude ou uma chave de API para este agente, ou atualize o computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
         our_error: "Algo deu errado do nosso lado e a tarefa parou. Peça de novo daqui a pouco.",
         unknown: "Falhou.",
       },
@@ -12916,7 +12916,7 @@ export const ptBR = {
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
       /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
       windows_sandbox:
-        "O Windows do {{computer}} não consegue isolar os comandos do {{program}}. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2.",
+        "O Windows do {{computer}} não consegue isolar os comandos do {{program}}. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
       no_computerCloud: "Disponível assim que o {{computer}} ficar pronto.",
     },
     /**
@@ -12924,7 +12924,7 @@ export const ptBR = {
      * writes held to the agents' folders, the internet blocked only through proxy settings a program may ignore.
      */
     sandboxPartial:
-      "Neste Windows, os comandos do Codex só escrevem nas pastas dos agentes, mas a internet fica bloqueada só em parte para eles. O Windows\u00a011\u00a024H2 bloqueia por completo.",
+      "Neste Windows, os comandos do Codex só escrevem nas pastas dos agentes, mas a internet fica bloqueada só em parte para eles. O Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia, bloqueia por completo.",
     notAvailableNow: "Escolhido, mas indisponível agora.",
     offline: "O {{computer}} está offline agora.",
     modelLabel: "Modelo",

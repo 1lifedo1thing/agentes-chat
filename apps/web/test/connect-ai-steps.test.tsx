@@ -923,7 +923,7 @@ describe("Conectar uma IA: one picker, plans first", () => {
     await closeAiSelect();
     await choose("ChatGPT");
     expect(dialog.textContent).toContain(
-      "O Windows do MacBook não consegue isolar os comandos do Codex. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2.",
+      "O Windows do MacBook não consegue isolar os comandos do Codex. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
     );
     expect(within(dialog).getByRole("button", { name: "Usar uma chave de API agora" })).toBeTruthy();
   });

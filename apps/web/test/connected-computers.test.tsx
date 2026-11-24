@@ -960,11 +960,11 @@ describe("the computer page: pause, folders and tools (ADR 0036)", () => {
     for (const sandbox of ["mxc", null] as const) expect((await codexHint(sandbox)).text).toBe(plain);
     const partial = await codexHint("unelevated");
     expect(partial.text).toBe(
-      `${plain} Neste Windows, os comandos do Codex só escrevem nas pastas dos agentes, mas a internet fica bloqueada só em parte para eles. O Windows\u00a011\u00a024H2 bloqueia por completo.`,
+      `${plain} Neste Windows, os comandos do Codex só escrevem nas pastas dos agentes, mas a internet fica bloqueada só em parte para eles. O Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia, bloqueia por completo.`,
     );
     expect(partial.shown).not.toContain("Neste Windows");
     expect((await codexHint("none")).text).toBe(
-      `${plain} O Windows do Estudio-PC não consegue isolar os comandos do Codex. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2.`,
+      `${plain} O Windows do Estudio-PC não consegue isolar os comandos do Codex. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.`,
     );
   });
 

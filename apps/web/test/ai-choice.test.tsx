@@ -193,7 +193,7 @@ describe("Quem pensa: the one picker", () => {
     };
     const d = await open("partial");
     expect(hintOf("Conta", d).text).toBe(
-      "Neste Windows, os comandos do Codex só escrevem nas pastas dos agentes, mas a internet fica bloqueada só em parte para eles. O Windows\u00a011\u00a024H2 bloqueia por completo.",
+      "Neste Windows, os comandos do Codex só escrevem nas pastas dos agentes, mas a internet fica bloqueada só em parte para eles. O Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia, bloqueia por completo.",
     );
     expect(shownText(d)).not.toContain("Neste Windows");
     // MXC there, or not known yet: nothing new.
