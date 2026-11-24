@@ -3276,6 +3276,7 @@ async function executeRunInner(
     const rows = await renderSteered(db, run.orgId, ids, {
       beforeStart,
       workId: run.workId,
+      runId: run.id,
       ...(brainPlan?.kind === "model"
         ? { unseal: { threadRootId: run.threadRootId, thinksWith: ctx.thinksWith } }
         : {}),

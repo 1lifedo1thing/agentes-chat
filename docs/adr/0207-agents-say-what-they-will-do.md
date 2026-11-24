@@ -224,6 +224,10 @@ agent: the run's one line was already spent, and the fast reply (`talker.ts`) ca
   other call is answered `Already told them`, as before, and a message still unread refuses the line (§3). An `add`
   that only stands for a judge that wasn't sure, a quick question (the fast reply's) and a separate request (a run of
   its own) give no line. Without a judge there is no triage, so one line per run.
+- **Told with the message.** The tool's description alone didn't make agents use the second line: they went straight to
+  the reply. The message itself now reaches the agent with a word after it (`SAY_HOW_YOU_TAKE_IT`, `renderSteered`
+  with the run's id, live in a computer turn and at a model loop's next step): tell them in one short line how you take
+  this. Only where the triage opened a line, which in a model loop may come after the step that reads the message.
 - **One voice.** For a message the agent answers itself this way, the fast reply isn't asked (`TalkerSkip`
   `own_line`): the agent knows how it takes the correction, the fast reply could only say it was noted.
 - **The prompt and the tool** say it: `SAY_NOW_LINE` ("once when they correct or add to it mid-work") and the tool's

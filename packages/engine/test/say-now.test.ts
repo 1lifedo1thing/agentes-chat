@@ -42,6 +42,7 @@ import {
   withoutSaidNow,
 } from "../src";
 import { AGENT_MEDIA_JOB, replySkip } from "../src/agent-media";
+import { renderSteered, SAY_HOW_YOU_TAKE_IT } from "../src/live-steer";
 import { type Fixture, setup } from "./fixtures";
 import { pairMachine } from "./machine-fixtures";
 
@@ -431,6 +432,28 @@ describe("the tool", () => {
     const again = await sayNow(run, "Quase lá.");
     expect(again.content).toStartWith(`Already told them: "${took}"`);
     expect((await lines()).map((m) => m.body)).toEqual([LINE, took]);
+  });
+
+  test("the message the agent may answer with a line reaches it with a word saying so; the others as they were", async () => {
+    f = await setup({ sayNow: true });
+    const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: f.agent.id });
+    const run = await runOver(dm.id);
+    const fixed = await byPerson(dm.id, "na verdade, é o de setembro");
+    const asked = await byPerson(dm.id, "tá indo?");
+    await addRunStep(f.db, run, "context", {
+      steerTriage: { messageId: fixed.id, sure: true, line: true },
+      reason: "interrupt",
+    });
+    await addRunStep(f.db, run, "context", {
+      steerTriage: { messageId: asked.id, sure: true, line: false },
+      reason: "answer",
+    });
+    const read = await renderSteered(f.db, f.org.id, [fixed.id, asked.id], { runId: run.id });
+    expect(read.map((r) => r.text.endsWith(`\n${SAY_HOW_YOU_TAKE_IT}`))).toEqual([true, false]);
+    // Another run's triage says nothing for this one, and without the run nothing is added.
+    const other = await runOver(dm.id);
+    expect((await renderSteered(f.db, f.org.id, [fixed.id], { runId: other.id }))[0]?.text).not.toContain("say_now");
+    expect((await renderSteered(f.db, f.org.id, [fixed.id]))[0]?.text).not.toContain("say_now");
   });
 
   test("a run's first line takes in what they sent before it: no second line for the same message", async () => {
