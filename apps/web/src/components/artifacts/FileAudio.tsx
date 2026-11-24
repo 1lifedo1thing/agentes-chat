@@ -13,6 +13,14 @@ import { setVoiceSpeed, useVoiceSpeed } from "@/lib/voice-speed";
 const FILE_PEAKS = 100;
 
 /**
+ * Decoded PCM is float32 per channel at the context's rate: a 25 MB mp3 (~26 min) at 48 kHz is ~600 MB. A 100-bar
+ * loudness wave needs no more than the lowest rate Web Audio allows, and files are measured one at a time (a channel or
+ * a Drive folder can show many unmeasured ones at once).
+ */
+const MEASURE_RATE = 3000;
+let measuring: Promise<unknown> = Promise.resolve();
+
+/**
  * An audio file in the voice-message player: its wave, play, the clock and the speed every voice message shares. Its
  * wave is the one kept with the file; the first app to play one with none measures it here and keeps it for everyone.
  * A sound this browser can't play gives its place back to `fallback` (the file's tile).
@@ -65,35 +73,31 @@ function useFileWave(artifactId: string, version: number, content: ArtifactFileC
   const qc = useQueryClient();
   const [measured, setMeasured] = useState<FileWave | null>(null);
   const kept = content.wave ?? null;
-  const measurable = !kept && content.size <= MAX_PREVIEW_BYTES && typeof AudioContext !== "undefined";
+  const measurable = !kept && content.size <= MAX_PREVIEW_BYTES && typeof OfflineAudioContext !== "undefined";
   useEffect(() => {
     if (!measurable) return;
     let live = true;
-    void (async () => {
+    const run = measuring.then(async () => {
+      if (!live) return;
       const bytes = await (await api.artifacts.fileBlob(org.id, artifactId, version)).arrayBuffer();
-      const ctx = new AudioContext();
-      try {
-        const sound = await ctx.decodeAudioData(bytes);
-        const wave = {
-          peaks: wavePeaks(sound.getChannelData(0), FILE_PEAKS),
-          durationMs: Math.round(sound.duration * 1000),
-        };
-        if (!live) return;
-        setMeasured(wave);
-        const keptWave = await api.artifacts.setWave(org.id, artifactId, version, wave);
-        qc.setQueriesData<{ shownVersion?: number; content?: { kind: string } }>(
-          { queryKey: ["org", org.id, "artifacts", "one", artifactId] },
-          (old) =>
-            old?.shownVersion === version && old.content?.kind === "file"
-              ? { ...old, content: { ...old.content, wave: keptWave } }
-              : old,
-        );
-      } finally {
-        void ctx.close();
-      }
-    })().catch(() => {
-      // A sound this browser can't read whole still plays: its wave stays flat, its length comes from the player.
+      const sound = await new OfflineAudioContext(1, 1, MEASURE_RATE).decodeAudioData(bytes);
+      const wave = {
+        peaks: wavePeaks(sound.getChannelData(0), FILE_PEAKS),
+        durationMs: Math.round(sound.duration * 1000),
+      };
+      if (!live) return;
+      setMeasured(wave);
+      const keptWave = await api.artifacts.setWave(org.id, artifactId, version, wave);
+      qc.setQueriesData<{ shownVersion?: number; content?: { kind: string } }>(
+        { queryKey: ["org", org.id, "artifacts", "one", artifactId] },
+        (old) =>
+          old?.shownVersion === version && old.content?.kind === "file"
+            ? { ...old, content: { ...old.content, wave: keptWave } }
+            : old,
+      );
     });
+    // A sound this browser can't read whole still plays: its wave stays flat, its length comes from the player.
+    measuring = run.catch(() => {});
     return () => {
       live = false;
     };
