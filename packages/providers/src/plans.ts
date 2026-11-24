@@ -482,14 +482,14 @@ export const isPlanModelId = (v: string) => planModelById(v) !== undefined;
 
 /**
  * The `--model` of a Claude Code turn for a stored value: an alias as is (on a plan, the plan names its model);
- * with a plan, one of its models by id; without one, a Claude id. Anything else (another plan's model, none) runs
- * `sonnet`.
+ * with a plan, one of its models by id; without one, `fable` or a Claude id. Anything else (another plan's model,
+ * none) runs `sonnet`.
  */
 export function claudeCodeModel(plan: CodingPlan | undefined, value: unknown): string {
   if (isAlias(value)) return value;
   if (typeof value !== "string") return "sonnet";
   if (plan) return plan.claudeCode.models.some((m) => m.id === value) ? value : "sonnet";
-  return /^claude-/.test(value) ? value : "sonnet";
+  return value === "fable" || /^claude-/.test(value) ? value : "sonnet";
 }
 
 /**
@@ -501,7 +501,7 @@ export function claudeCodeModel(plan: CodingPlan | undefined, value: unknown): s
 export function droppedPlanModel(provider: unknown, value: unknown): PlanModel | null {
   const plan = isPlanId(provider) ? learned.get(provider) : undefined;
   if (!isPlanId(provider) || !plan?.modelsUrl) return null;
-  if (typeof value !== "string" || isAlias(value) || /^claude-/.test(value)) return null;
+  if (typeof value !== "string" || isAlias(value) || value === "fable" || /^claude-/.test(value)) return null;
   if (plan.claudeCode.models.some((m) => m.id === value) || planModelById(value)) return null;
   const table: readonly PlanModel[] = CODING_PLANS[provider].claudeCode.models;
   return table.find((m) => m.id === value) ?? { id: value, label: value };
@@ -562,6 +562,25 @@ export const SHARED_SIGN_INS: Readonly<Record<"claude_code" | "codex" | "antigra
  * Antigravity: Google forbids automating account rotation (ADR 0143). Not Grok, Cursor or OpenCode.
  */
 export const NEXT_ACCOUNT_KINDS: readonly string[] = ["claude_code", "codex"];
+
+/** What an account's place in the order of use is read from (`compareInOrder`). */
+export interface OrderKey {
+  ownerId: string | null;
+  /** Its place among its computer's accounts of its kind, 0 first; null or absent: after the placed ones. */
+  useOrder?: number | null;
+}
+
+const placeOf = (a: OrderKey) => a.useOrder ?? Number.MAX_SAFE_INTEGER;
+
+/**
+ * The one order of use (ADR 0041 §6), the engine's `accountOrderSql` in SQL: `person`'s own accounts first, then by
+ * place, the unplaced after. A stable sort keeps the rest as given, which is oldest first everywhere.
+ */
+export const compareInOrder =
+  (person: string | null) =>
+  (a: OrderKey, b: OrderKey): number =>
+    Number(person !== null && b.ownerId === person) - Number(person !== null && a.ownerId === person) ||
+    placeOf(a) - placeOf(b);
 
 /** Whether a new sign-in of an account (its CLI's kind, and a coding plan's `provider`) is made for all agents. */
 export const sharedSignIn = (kind: string, provider?: string | null) =>

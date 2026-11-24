@@ -65,6 +65,7 @@ const KNOWN = {
   "action.skills_admins": "errors.agent.undoSkillsAdmins",
   "account.not_owner": "errors.account.notOwner",
   "account.order_forbidden": "errors.account.orderForbidden",
+  "account.permission_forbidden": "errors.account.permissionForbidden",
   "channel.members_forbidden": "errors.channel.membersForbidden",
   "agent_proposal.not_requester": "errors.agentProposal.notRequester",
   "proposal.not_requester": "errors.agentProposal.notRequester",
@@ -128,6 +129,7 @@ const KNOWN = {
   "device.widen_forbidden": "errors.device.widenForbidden",
   "device.spill_owner_only": "errors.device.spillOwnerOnly",
   "device.tasks_owner_only": "errors.device.tasksOwnerOnly",
+  "device.tasks_cloud": "errors.device.tasksCloud",
   "device.not_home": "errors.device.notHome",
   "machine.not_found": "errors.machine.notFound",
   "machine.name_required": "errors.machine.nameRequired",
@@ -173,6 +175,19 @@ const KNOWN = {
   "mission.agent_unavailable": "errors.mission.agentUnavailable",
   "mission.no_computer": "errors.mission.noComputer",
   "mission.computer_offline": "errors.mission.computerOffline",
+  // A code session (ADR 0215): starting one, and what its panel reads on the agent's computer.
+  "code_session.too_long": "errors.said.tooLong",
+  "code_session.bad_repo": "errors.webhook.invalidRepo",
+  "code_session.offline": "errors.mission.computerOffline",
+  "code_session.no_computer": "errors.codeSession.noComputer",
+  "code_session.cannot_code": "errors.codeSession.cannotCode",
+  "code_session.repo_not_allowed": "errors.codeSession.repoNotAllowed",
+  "code_session.not_yours": "errors.codeSession.notYours",
+  "code_session.not_ready": "errors.codeSession.notReady",
+  "code_session.file_changed": "errors.codeSession.fileChanged",
+  "code_session.file_locked": "errors.codeSession.fileLocked",
+  "code_session.suggestion_gone": "errors.codeSession.suggestionGone",
+  "code_session.suggestion_not_yours": "errors.codeSession.suggestionNotYours",
   "mission.exec_disabled": "errors.mission.execDisabled",
   "mission.runner_outdated": "errors.mission.runnerOutdated",
   "mission.codex_windows": "errors.mission.codexWindows",
@@ -214,6 +229,7 @@ const KNOWN = {
   "routine.widget_fixed": "errors.routine.widgetFixed",
   "routine.agent_not_in_channel": "errors.routine.agentNotInChannel",
   "routine.webhook_paused": "errors.routine.webhookPaused",
+  "routine.group_by_invalid": "errors.routine.groupByInvalid",
   "routine.continue_extra_off": "errors.routine.continueExtraOff",
   "run.continue_extra_off": "errors.routine.continueExtraOff",
   "routine.continue_extra_used_up": "errors.routine.continueExtraUsedUp",
@@ -254,6 +270,9 @@ const KNOWN = {
   "connector.headers_too_many": "errors.connector.headersTooMany",
   "connector.headers_with_sign_in": "errors.connector.headersWithSignIn",
   "connector.headers_unreadable": "errors.connector.headersUnreadable",
+  "connector.no_oauth": "errors.connector.noOAuth",
+  "connector.oauth_client_in_use": "errors.connector.ownClientInUse",
+  "connector.oauth_client_id": "errors.connector.ownClientId",
   // Facts only (the phone shows this one): the web's onboarding says `standing.createUnpaid` beside the way to pay.
   "org.create_unpaid": "standing.createInactive",
   "credentials.plan_hold": "connectAi.key.closed",
@@ -291,6 +310,7 @@ const KNOWN = {
   "email.undo_taken": "emailUndo.takenLead",
   "invitation.ask_to_join": "errors.invitation.askToJoin",
   "org.create_invite_only": "errors.org.createInviteOnly",
+  "org.create_unconfirmed": "errors.org.createUnconfirmed",
   "org.not_restorable": "errors.org.notRestorable",
   "account.not_restorable": "errors.account.notRestorable",
   "issue.assignee_outside": "errors.issue.assigneeOutside",
@@ -490,6 +510,11 @@ const KNOWN = {
   "poll.closed": "errors.said.alreadyDone",
   "proposal.asked": "errors.said.alreadyDone",
   "proposal.decided": "errors.said.alreadyDone",
+  "proposal.undone": "errors.said.alreadyDone",
+  "proposal.changed": "errors.proposal.changed",
+  "proposal.not_applied": "errors.proposal.notApplied",
+  "proposal.not_undoable": "errors.proposal.notUndoable",
+  "proposal.not_allowed": "errors.proposal.notAllowed",
   "right_hand.undone": "errors.said.alreadyDone",
   run_finished: "errors.said.alreadyDone",
   "secret.closed": "errors.said.alreadyDone",
@@ -597,6 +622,8 @@ const KNOWN = {
   "channel.delete_name": "errors.said.deleteName",
   "channel.general": "errors.said.generalKept",
   "channel.general_stays": "errors.said.generalStays",
+  "channel.lead_channel_only": "errors.said.leadChannelOnly",
+  "channel.lead_not_member": "errors.said.leadNotMember",
   "connector.mcp_status": "errors.said.mcpUnreachable",
   "connector.mcp_unreachable": "errors.said.mcpUnreachable",
   "connector.not_approved": "errors.said.notApproved",
@@ -1132,6 +1159,15 @@ export const FILES_TEXT_ONLY = "run.files_text_only";
 export const filesTextOnlyOf = (meta: Record<string, unknown> | null | undefined) =>
   meta?.filesTextOnly === true ? FILES_TEXT_ONLY : null;
 
+/** Failures another model fixes: one gone, a text-only connection, and a model that wrote no words when asked. */
+const CHANGE_MODEL_FAILURES = new Set([
+  "run.model_unlisted",
+  "run.provider_model_unavailable",
+  FILES_TEXT_ONLY,
+  "run.empty_reply",
+  "run.empty_reply_limit",
+]);
+
 /**
  * The one thing to do about a failed run, by its code, for someone who can: another key (`keys`: who manages them),
  * another model or another account (the agent's owner or who manages agents). Null when nothing fixes it or it's
@@ -1141,8 +1177,7 @@ export function failedRunFix(
   code: string | null | undefined,
   who: { keys: boolean; admin: boolean; owner: boolean },
 ): "useKey" | "changeModel" | "changeAccount" | null {
-  if (code === "run.model_unlisted" || code === "run.provider_model_unavailable" || code === FILES_TEXT_ONLY)
-    return who.admin || who.owner ? "changeModel" : null;
+  if (CHANGE_MODEL_FAILURES.has(code ?? "")) return who.admin || who.owner ? "changeModel" : null;
   if (code === "run.account_missing") return who.admin || who.owner ? "changeAccount" : null;
   return code && KEY_FAILURES.has(code) && who.keys ? "useKey" : null;
 }
