@@ -58,8 +58,9 @@ const VaultNewDialog = lazyDialog(() => import("@/components/vault/VaultNewDialo
 
 /**
  * Above the composer: this DM's agent has no AI, or (anywhere with agents) the organization has none, its ⓘ saying
- * it can also be asked for in the chat. Everyone sees it; the dialog says what each person may connect. The DM's agent:
- * its own "Quem pensa", in the panel beside the conversation, on its account list ("Adicionar conta" at its foot).
+ * it can also be asked for in the chat. Everyone sees it; the dialog says what each person may connect. The DM's agent
+ * alone with no AI: its own "Quem pensa", in the panel beside the conversation, on its account list ("Adicionar conta" at
+ * its foot); with others of the person's agents waiting too, Connect, which signs in once for all of them.
  */
 export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgentId?: string }) {
   const { t } = useTranslation();
@@ -75,6 +76,11 @@ export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgen
     if (aiStateOf(status.data, dmAgentId) !== "no_ai") return null;
     const agent = dir.agentById.get(dmAgentId);
     const name = agent?.name ?? t("channel.unknownAgent");
+    // The person's other agents with no AI, the right hand aside: one sign-in can serve them all.
+    const alone = !status.data.agents.some((a) => {
+      const other = a.agentId !== dmAgentId ? dir.agentById.get(a.agentId) : undefined;
+      return a.state === "no_ai" && other?.ownerUserId === me.user.id && !isRightHand(other);
+    });
     return (
       <div className="noai-banner ac-actline" role="status">
         <span className="noai-banner__text ac-iconline">
@@ -85,7 +91,7 @@ export function NoAiBanner({ agentIds, dmAgentId }: { agentIds: string[]; dmAgen
           <Button
             size="sm"
             onClick={() =>
-              openPanel
+              openPanel && alone
                 ? openPanel(dmAgentId, "settings", "brain:switch")
                 : connect.open({ agentId: dmAgentId, chat: true })
             }

@@ -92,6 +92,7 @@ import {
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ModelSelect, modelOptions, NO_OWNER, OwnerSelect } from "@/components/AgentFields";
 import { useOpenAgentPanel } from "@/components/agent-panel-context";
+import { useConnectAi } from "@/components/connect-ai-context";
 import { PlanReplies } from "@/components/ai/PlanReplies";
 import { usePlanHold } from "@/components/ai/plan-hold";
 import { ConnectFlow, type FlowState } from "@/components/ConnectFlow";
@@ -245,6 +246,8 @@ export function AgentSetupCard({ agent, place }: { agent: Agent; place: "dm" | "
   const navigate = useNavigate();
   const actions = useChannelActions();
   const openPanel = useOpenAgentPanel();
+  const connect = useConnectAi();
+  const ai = useAiStatus(org.id).data;
   const dir = useDirectory(org.id);
   const { steps, done, doneHere, all, ready, held, connectors, granted, inChannels, visible } = useSetupProgress(agent);
   const catalog = useCatalog();
@@ -301,11 +304,17 @@ export function AgentSetupCard({ agent, place }: { agent: Agent; place: "dm" | "
       personal: isPersonal(org),
     });
 
+  // Others of the person's agents with no AI, the right hand aside: Connect signs in once for all of them.
+  const othersWait = (ai?.agents ?? []).some((a) => {
+    const other = a.agentId !== agent.id ? dir.agentById.get(a.agentId) : undefined;
+    return a.state === "no_ai" && other?.ownerUserId === me.user.id && !isRightHand(other);
+  });
   const act = (step: AgentSetupStep) => {
     // Its AI is its "Quem pensa", on the account list ("Adicionar conta" at its foot): in the panel beside the
-    // conversation, else on its page.
+    // conversation, else on its page. With others waiting too, Connect, for all of them.
     if (step === "ai") {
-      if (openPanel) openPanel(agent.id, "settings", "brain:switch");
+      if (othersWait && connect) connect.open({ agentId: agent.id, chat: true });
+      else if (openPanel) openPanel(agent.id, "settings", "brain:switch");
       else
         void navigate({
           to: "/org/$orgId/agents/$agentId",

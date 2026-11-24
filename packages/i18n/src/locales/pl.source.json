@@ -7520,9 +7520,6 @@
   "rightHand.settings.useWorkspace": {
     "value": "Use the workspace's"
   },
-  "rightHand.settings.useMine": {
-    "value": "Use my plan"
-  },
   "rightHand.settings.mineYours": {
     "value": "your plan"
   },
@@ -14839,42 +14836,6 @@
   "agentPage.work.brain.v2.more": {
     "value": "More options"
   },
-  "agentPage.work.brain.v2.switch": {
-    "value": "Change account"
-  },
-  "agentPage.work.brain.v2.switchTitle": {
-    "value": "Change {{name}}'s account"
-  },
-  "agentPage.work.brain.v2.inUse": {
-    "value": "In use"
-  },
-  "agentPage.work.brain.v2.switchTo": {
-    "value": "Switch to {{label}}"
-  },
-  "agentPage.work.brain.v2.teamTitle": {
-    "value": "Change the team's account"
-  },
-  "agentPage.work.brain.v2.teamAria": {
-    "value": "Whom it is for"
-  },
-  "agentPage.work.brain.v2.justOne": {
-    "value": "Only {{name}}"
-  },
-  "agentPage.work.brain.v2.everyone": {
-    "value": "Everyone on this account"
-  },
-  "agentPage.work.brain.v2.target": {
-    "value": "Switch to"
-  },
-  "agentPage.work.brain.v2.switchMany": {
-    "value": {
-      "one": "Switch {{count}} agent",
-      "other": "Switch the {{count}} agents"
-    }
-  },
-  "agentPage.work.brain.v2.limitTitle": {
-    "value": "{{name}}'s account is at its limit"
-  },
   "agentPage.work.brain.v2.limitBack": {
     "value": "{{account}} is back {{when}}"
   },
@@ -14887,12 +14848,6 @@
   "agentPage.work.brain.v2.fullWait": {
     "value": "On this account {{name}} waits until the plan renews."
   },
-  "agentPage.work.brain.v2.seeUsage": {
-    "value": "See usage"
-  },
-  "agentPage.work.brain.v2.wait": {
-    "value": "Wait"
-  },
   "agentPage.work.brain.v2.modelTitle": {
     "value": "{{name}}'s model"
   },
@@ -14901,12 +14856,6 @@
   },
   "agentPage.work.brain.v2.computer": {
     "value": "Computer"
-  },
-  "agentPage.work.brain.v2.doneTitle": {
-    "value": "All set"
-  },
-  "agentPage.work.brain.v2.doneSub": {
-    "value": "What was under way goes on with the new account."
   },
   "agentPage.work.brain.v2.finish": {
     "value": "Done"
@@ -43907,9 +43856,6 @@
   },
   "settings.noKeys": {
     "value": "With an API key, you pay the provider directly and choose the models."
-  },
-  "settings.noKeysTitle": {
-    "value": "Bring your own AI key"
   },
   "settings.platformAvailable": {
     "value": "This server's Claude key is also available."
