@@ -30,6 +30,7 @@ test("a process writes its vitals for GET /vitals, and one heap snapshot once it
       role: "worker",
       version: "test",
       eventLoopLag: () => ({ p50Ms: 1, p99Ms: 12.5, maxMs: 40, at: new Date().toISOString() }),
+      clientVitals: () => ({ ios: { reports: 3, coldStartMs: { n: 3, p50: 1200, p95: 2100, max: 2100 } } }),
       heapSnapshotMb: 200,
       heapSnapshotDir: "/data/heap",
       memoryUsage: () => ({ rss: 300 * MB, heapUsed, heapTotal: 400 * MB, external: 0, arrayBuffers: 0 }),
@@ -68,6 +69,8 @@ test("a process writes its vitals for GET /vitals, and one heap snapshot once it
       eventLoopP99Ms: 12.5,
       heapSnapshot: { file: written[0]?.slice("/data/heap/".length) },
       routes: [{ route: "GET /api/app/me", count: 3, p95Ms: 40, maxMs: 41, totalMs: 90 }],
+      // What the apps that reported to it over the minute measured.
+      clientVitals: { ios: { reports: 3, coldStartMs: { n: 3, p50: 1200, p95: 2100, max: 2100 } } },
     });
     expect(vitals.runClaims).toMatchObject({ windowSeconds: 300, queued: 0 });
   } finally {

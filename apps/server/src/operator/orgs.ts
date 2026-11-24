@@ -72,6 +72,11 @@ const Health = z
 
 const ms = (description: string) => z.number().int().nullable().openapi({ description });
 
+/** One measure across the apps' reports of a minute. */
+const ClientVitalStat = z
+  .object({ n: z.number().int(), p50: z.number(), p95: z.number(), max: z.number() })
+  .openapi("OperatorClientVitalStat");
+
 const Vitals = z
   .object({
     at: z.string(),
@@ -107,6 +112,25 @@ const Vitals = z
             .openapi({
               description:
                 "The HTTP routes that took it the most time over its last minute, the most first. Empty for a worker.",
+            }),
+          clientVitals: z
+            .record(
+              z.string(),
+              z.object({
+                reports: z.number().int(),
+                coldStartMs: ClientVitalStat.optional(),
+                firstRowsMs: ClientVitalStat.optional(),
+                jsLagP95Ms: ClientVitalStat.optional(),
+                jsLagMaxMs: ClientVitalStat.optional(),
+                heapBytes: ClientVitalStat.optional(),
+                getsPerReturn: ClientVitalStat.optional(),
+                reconnects: ClientVitalStat.optional(),
+              }),
+            )
+            .nullable()
+            .openapi({
+              description:
+                "What the apps that reported to it over its last minute measured, by platform (`ios`, `android`, `web`): cold start to the first frame and to the first rows, JavaScript stalls, heap, reads after each return to the app, socket reconnects. Null: no report.",
             }),
         }),
       )
@@ -335,6 +359,7 @@ export function registerOperatorOrgs(
                 ? { at: p.heapSnapshotAt.toISOString(), file: p.heapSnapshotFile }
                 : null,
             routes: p.routes ?? [],
+            clientVitals: p.clientVitals ?? null,
           })),
           runClaims: claims,
         },

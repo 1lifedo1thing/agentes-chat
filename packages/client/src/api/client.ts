@@ -111,6 +111,7 @@ import type {
   ChannelMember,
   ChannelOverride,
   Choices,
+  ClientVitalsReport,
   CliInstall,
   CodeSent,
   CommandApproval,
@@ -404,6 +405,8 @@ export interface ApiClient {
     /** `null` unless I am the installation's owner (and not on agentes.chat itself). */
     telemetry(): Promise<ServerTelemetry | null>;
     setTelemetry(enabled: boolean): Promise<ServerTelemetry>;
+    /** How fast this app ran (`ClientVitalsReport`); absent from fakes that don't take it. */
+    reportVitals?(report: ClientVitalsReport): Promise<void>;
     /** A problem report to show in full before it's sent (self-hosted servers; 404 on agentes.chat itself). */
     previewProblemReport(input: ProblemReportPreviewInput): Promise<ProblemReportPreview>;
     /** Sends the previewed report, with the person's note and reply address: answers its code (`R-7K3QXM`). */

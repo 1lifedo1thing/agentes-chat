@@ -2,7 +2,7 @@ import { readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeHeapSnapshot } from "node:v8";
-import type { Database } from "@agenteschat/db";
+import type { Database, schema } from "@agenteschat/db";
 import { recordProcessVitals } from "@agenteschat/engine";
 import type { EventLoopLag } from "./event-loop-lag";
 import type { Logger } from "./logger";
@@ -29,6 +29,8 @@ export interface ProcessHealthDeps {
   role: string;
   version: string;
   eventLoopLag: () => EventLoopLag | null;
+  /** The apps' reports of the minute (`client-vitals.ts`), taken at each write. */
+  clientVitals?: () => schema.ClientVitalsSummary | null;
   /** `HEAP_SNAPSHOT_MB`: past this heap, one snapshot; absent: never. */
   heapSnapshotMb?: number;
   heapSnapshotDir?: string;
@@ -99,6 +101,7 @@ export function watchProcessHealth(deps: ProcessHealthDeps, everyMs = PROCESS_VI
       heapSnapshotAt: snapshot?.at ?? null,
       heapSnapshotFile: snapshot?.file ?? null,
       routes: deps.routeTimes?.() ?? null,
+      clientVitals: deps.clientVitals?.() ?? null,
     });
   };
   const run = () =>

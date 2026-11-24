@@ -200,6 +200,40 @@
                     "required": ["route", "count", "p95Ms", "maxMs", "totalMs"]
                   },
                   "description": "The HTTP routes that took it the most time over its last minute, the most first. Empty for a worker."
+                },
+                "clientVitals": {
+                  "type": ["object", "null"],
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "reports": {
+                        "type": "integer"
+                      },
+                      "coldStartMs": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "firstRowsMs": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "jsLagP95Ms": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "jsLagMaxMs": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "heapBytes": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "getsPerReturn": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "reconnects": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      }
+                    },
+                    "required": ["reports"]
+                  },
+                  "description": "What the apps that reported to it over its last minute measured, by platform (`ios`, `android`, `web`): cold start to the first frame and to the first rows, JavaScript stalls, heap, reads after each return to the app, socket reconnects. Null: no report."
                 }
               },
               "required": [
@@ -214,7 +248,8 @@
                 "eventLoopP99Ms",
                 "eventLoopMaxMs",
                 "heapSnapshot",
-                "routes"
+                "routes",
+                "clientVitals"
               ]
             },
             "description": "Every process on this database that wrote its vitals in the last 5 minutes (the app's and every worker's), the newest first."
@@ -251,6 +286,24 @@
           }
         },
         "required": ["at", "processes", "runClaims"]
+      },
+      "OperatorClientVitalStat": {
+        "type": "object",
+        "properties": {
+          "n": {
+            "type": "integer"
+          },
+          "p50": {
+            "type": "number"
+          },
+          "p95": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          }
+        },
+        "required": ["n", "p50", "p95", "max"]
       },
       "OperatorOrgPage": {
         "type": "object",

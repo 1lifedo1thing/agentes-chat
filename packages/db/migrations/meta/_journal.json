@@ -2318,6 +2318,13 @@
       "when": 1795511527150,
       "tag": "0335_open_notification_kinds",
       "breakpoints": true
+    },
+    {
+      "idx": 333,
+      "version": "7",
+      "when": 1795511607122,
+      "tag": "0336_client_vitals",
+      "breakpoints": true
     }
   ]
 }

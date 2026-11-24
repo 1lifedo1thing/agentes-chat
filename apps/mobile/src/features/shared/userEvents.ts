@@ -22,6 +22,7 @@ import { playSound, soundForEvent } from "@agenteschat/client/lib/sounds";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { AppState } from "react-native";
+import { countReconnect } from "@/lib/perf";
 import { feedIsland, island } from "../island/island";
 import { useConnection, useOrgId } from "./hooks";
 
@@ -96,9 +97,12 @@ export function useUserEvents() {
         refreshMission(qc, orgId, event.missionId);
     });
     // Missed while offline (the inbox, the requests, the standing, the computers, the lists): `RealtimeProvider` reads
-    // everything again on a reconnect; reading them here too would only start those reads over.
+    // everything again on a reconnect; reading them here too would only start those reads over. Counted for the app's
+    // vitals.
+    const offReconnect = connection.onReconnect(countReconnect);
     return () => {
       offUser();
+      offReconnect();
       // In the background, or another workspace: its notices go (the inbox keeps them).
       island.clear();
     };
