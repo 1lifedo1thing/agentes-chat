@@ -4128,6 +4128,8 @@
     "aloneLine": "自分の判断で会話に参加します",
     "aloneLine_female": "自分の判断で会話に参加します",
     "mentionLine": "誰かが@{{handle}}と書くのを待ちます",
+    "lead": "チャンネルの責任者",
+    "leadHelp": "チーム全体への発言を受け取り、エージェント間の作業を進めます",
     "readOnly": "メンバーを変更できるのは、チャンネルの作成者と管理者だけです。",
     "people": "人",
     "agents": "エージェント"
@@ -15076,6 +15078,8 @@
       "deleteName": "削除するにはチャンネル名を入力してください。",
       "generalKept": "#generalは削除できません。",
       "generalStays": "全員が#generalに残ります。",
+      "leadChannelOnly": "責任者のエージェントを置けるのはチャンネルだけです。",
+      "leadNotMember": "責任者のエージェントはチャンネルに参加している必要があります。",
       "mcpUnreachable": "MCPサーバーに接続できませんでした。アドレスを確認して、もう一度お試しください。",
       "notApproved": "このサービスはまだagentes.chatを承認していません。",
       "alreadyInvited": "この人はすでに招待を受けています。",

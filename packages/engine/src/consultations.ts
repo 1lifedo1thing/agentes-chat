@@ -21,16 +21,19 @@ import { agentsOnlyIn, waitSinceIn } from "./agent-work";
 import { currentHandles } from "./agents";
 import { type AiStatusDeps, agentAiState } from "./ai-status";
 import { canTalkTo, speakerFor, viaAgent } from "./audience";
-import { runAuthorityById } from "./authority";
+import { runAuthorityById, runChain } from "./authority";
 import { routineBriefOfRun } from "./background";
 import { type BrakeOutcome, brakeWakes, callableAgents, LATER_JOB, notCallableText } from "./brakes";
 import { canceledBy, stopRun } from "./cancel";
+import { isConfidentialRun } from "./confidential";
 import { publishDelivery } from "./delivery";
 import { INBOX_JOB, startOrJoinRun } from "./dispatch";
 import { isAgentOnlyDm, openAgentDm } from "./dms";
 import { publishChannelEvent } from "./events";
 import { cutText } from "./format";
+import { JevOffError } from "./jev-key";
 import type { Judge } from "./judge";
+import { PLATFORM_CAP } from "./limits";
 import { machineOnline } from "./machines";
 import { messageLink } from "./message-links";
 import { getMessage, insertMessage, type Message, type MessageView, withMessageDetails } from "./messages";
@@ -43,8 +46,9 @@ import { stoppedToSend } from "./run-inbox";
 import { deliverNoticeToRun, resumeRunWithResult } from "./run-resume";
 import { inChannelRun } from "./run-scope";
 import { tellAgentStopped } from "./run-stopped";
-import { type AgentRun, isTerminal, outageParkedSql, type RunStatus, replyThreadOf } from "./runs";
-import { MAX_HANDOFF_LINKS, refusedAtLimit } from "./stretch";
+import { type AgentRun, continuableEnd, isTerminal, outageParkedSql, type RunStatus, replyThreadOf } from "./runs";
+import { AgentHeldError, OrgDeletingError, OrgPausedError } from "./standing";
+import { MAX_HANDOFF_LINKS, refusedAtLimit, runStretchOf } from "./stretch";
 import { noAgentText } from "./team";
 import type { ToolContext, ToolDefinition, ToolOutput, ToolSource } from "./tools/types";
 import { untrustedBlock } from "./untrusted";
@@ -455,7 +459,7 @@ function createTellAgentTool(deps: { pubsub?: PubSub; ai?: AiCheck; judge?: Judg
         : here && isAgentOnlyDm(here)
           ? `Handed to @${handle}. Your answer goes back once @${handle} is done, together with what came of it: do your own part now, then end your turn saying what you handed on.`
           : handedWork
-            ? `Handed to @${handle}; it's on it. The people here follow its progress, its questions and its result from @${handle} itself, under your reply: you are not woken to relay what comes of it. Tell the people in a line who has it, without promising a time or to report back, then do your own part or end your turn.`
+            ? `Handed to @${handle}; it's on it. The people here follow its progress, its questions and its result from @${handle} itself, under your reply: you are not woken to relay what comes of it, only when a step of your own waits on it (checking or approving it, passing it on to another agent, publishing). Tell the people in a line who has it, without promising a time or to report back, and don't offer a check or a step they didn't ask for; then do your own part or end your turn.`
             : `Handed to @${handle}; it's on it, and the people here can see that. What comes of it reaches you here by itself once everything you handed off this turn is back. Tell the people in a line who has it, without promising a time, then do your own part or end your turn.`;
       return {
         content: waitsForRoom
@@ -847,8 +851,9 @@ export function consultationResult(
 /**
  * What the asker reads when the answer comes as a notice (`consult_reply`: it didn't wait, or a person woke it
  * meanwhile), with its question, since it may have asked other things since. A note's says what came of the work
- * (`refs.kind` `note`); `wake`: the notice of a report that wakes the agent (`reportHandOffs`); `pending`: the
- * colleagues of that turn still waiting on a person or their computer when it wakes.
+ * (`refs.kind` `note`); `wake`: the notice of a report that wakes the agent (`reportHandOffs`); `home`: every result
+ * of that report was already posted to the people by the colleague that did it, and the agent wakes only to go on
+ * (`refs.home`); `pending`: the colleagues of that turn still waiting on a person or their computer when it wakes.
  */
 export function consultationNotice(
   c: Pick<
@@ -856,7 +861,7 @@ export function consultationNotice(
     "id" | "kind" | "status" | "answer" | "question" | "askerRunId" | "askerAgentId" | "targetAgentId"
   >,
   handle: string,
-  options: { wake?: boolean; pending?: string; hidden?: boolean; readOutside?: boolean } = {},
+  options: { wake?: boolean; home?: boolean; pending?: string; hidden?: boolean; readOutside?: boolean } = {},
 ): Notice {
   const quoted = `"${c.question.slice(0, 300)}${c.question.length > 300 ? "…" : ""}"`;
   const note = c.kind === "note";
@@ -891,6 +896,7 @@ export function consultationNotice(
       ...(shown ? { answer: cutText(shown, NOTICE_ANSWER_MAX) } : {}),
       ...(note ? { kind: "note" } : {}),
       ...(options.wake ? { wake: "1" } : {}),
+      ...(options.wake && options.home ? { home: "1" } : {}),
       ...(options.pending ? { pending: options.pending } : {}),
     },
   };
@@ -1009,8 +1015,8 @@ const HAND_OFFS_LISTED = 8;
 
 /**
  * What this agent asked or handed off from the conversation `run` works in (in a channel: its thread, or its main
- * timeline) in the last day: still out, or, unless `openOnly`, closed within the hour. Newest first. "# Work you
- * handed off here" and `wakesLater` read it.
+ * timeline), or from a routine of its that reports there, in the last day: still out, or, unless `openOnly`, closed
+ * within the hour. Newest first. "# Work you handed off here" and `wakesLater` read it.
  */
 export async function handOffsFrom(
   db: Executor,
@@ -1046,8 +1052,12 @@ export async function handOffsFrom(
       left join agent_runs t on t.id = c.target_run_id
       where c.org_id = ${run.orgId}::uuid and c.asker_agent_id = ${run.agentId}::uuid
         and c.created_at > now() - interval '1 day'
-        and r.channel_id = ${run.channelId}::uuid
-        and (ch.kind <> 'channel' or ${conversation})
+        and ((r.channel_id = ${run.channelId}::uuid and (ch.kind <> 'channel' or ${conversation}))
+          -- What its routine handed off for this conversation (ADR 0095): the routine reports here, so its results
+          -- come back here, and the agent must not hand the same work again while a colleague is on it.
+          or (r.background and exists (select 1 from messages bm where bm.org_id = r.org_id
+            and bm.id = r.trigger_message_id
+            and bm.meta->'routineBrief'->'deliverTo'->>'channelId' = ${run.channelId}::text)))
         and (c.status = 'open'${options.openOnly ? sql`` : sql` or c.answered_at > now() - interval '1 hour'`})
       order by c.created_at desc
       limit ${HAND_OFFS_LISTED}`),
@@ -1112,6 +1122,8 @@ async function closeConsultation(
   const { closed, asker, handle } = out;
   if (!asker) return closed;
   const hidden = await keptFromPeople(deps.db, closed);
+  // Work handed off from a person's conversation: whether what came back woke the agent that handed it.
+  let woke: boolean | undefined;
   if (!isAsyncConsultation(closed)) {
     const readOutside = await answerReadOutside(deps.db, closed);
     const notice = consultationNotice(closed, handle, { hidden, readOutside });
@@ -1139,7 +1151,10 @@ async function closeConsultation(
     if (asker.status === "done") await settleOwed(deps, asker, "done");
   } else if (closed.kind === "note") {
     // Its own close committed: this claim sees it, and every sibling that closed before.
-    await reportHandOffs(deps, asker);
+    // The report's waking notice (`refs.wake`) goes to the agent's run: it goes on with what came back now.
+    woke = (await reportHandOffs(deps, asker)).some(
+      (d) => (d.message.meta.notice as { refs?: { wake?: unknown } } | undefined)?.refs?.wake === "1",
+    );
   } else if (!options.told) {
     const delivered = await deps.db.transaction(async (tx) => {
       const readOutside = await answerReadOutside(tx, closed);
@@ -1149,6 +1164,9 @@ async function closeConsultation(
     });
     await publishDelivery(deps.pubsub, delivered).catch(() => {});
   }
+  // Work handed off that wakes nobody now: the agent that handed it isn't writing, and its line says who is still
+  // at work on that turn's other parts, if anyone (ADR 0095).
+  const stillOut = woke === false ? await openNoteOf(deps.db, closed) : null;
   await publishChannelEvent(deps.pubsub, {
     type: "agent.consulted",
     channelId: asker.channelId,
@@ -1158,8 +1176,27 @@ async function closeConsultation(
     consultedAgentId: closed.targetAgentId,
     status,
     ...(closed.kind === "note" ? { kind: "note" as const } : {}),
+    ...(woke === false ? { goesOn: false, ...(stillOut ? { stillOutAgentId: stillOut } : {}) } : {}),
   });
   return closed;
+}
+
+/** A colleague still at work on another note the same run handed off, if any. */
+async function openNoteOf(db: Executor, closed: Pick<AgentConsultationRow, "orgId" | "askerRunId">) {
+  const [open] = await db
+    .select({ agentId: agentConsultations.targetAgentId })
+    .from(agentConsultations)
+    .where(
+      and(
+        eq(agentConsultations.orgId, closed.orgId),
+        eq(agentConsultations.askerRunId, closed.askerRunId),
+        eq(agentConsultations.kind, "note"),
+        eq(agentConsultations.status, "open"),
+      ),
+    )
+    .orderBy(desc(agentConsultations.createdAt))
+    .limit(1);
+  return open?.agentId ?? null;
 }
 
 /**
@@ -1225,13 +1262,17 @@ async function handBack(tx: Executor, asker: AgentRun, closed: AgentConsultation
   return null;
 }
 
-/** Why a run that owed an answer ended, as the agent that asked reads it: a person's stop by name, and what it means. */
+/**
+ * Why a run that owed an answer ended, as the agent that asked reads it: a person's stop by name, and what it means.
+ * With no error given (its worker heard a stop), the one the stop stored on the run.
+ */
 async function endedWhy(db: Executor, runId: string, status: string, error: string | undefined) {
-  const by = canceledBy(error);
-  if (!by) return error?.slice(0, 500) ?? status;
+  const [run] = await db.select().from(agentRuns).where(eq(agentRuns.id, runId));
+  const why = error ?? run?.error ?? undefined;
+  const by = canceledBy(why);
+  if (!by) return why?.slice(0, 500) ?? status;
   const [person] = await db.select({ name: users.name }).from(users).where(eq(users.id, by));
   // Stopped to read a message the person sent it: no stop on purpose, it goes on from that message.
-  const [run] = await db.select().from(agentRuns).where(eq(agentRuns.id, runId));
   if (run && (await stoppedToSend(db, run)))
     return `${person?.name || "A person"} sent it a message that it stopped to read, so it did not get to this`;
   return `${person?.name || "A person"} stopped it on purpose, so don't ask it again or hand it to anyone else unless a person asks you to`;
@@ -1317,27 +1358,29 @@ async function settleOwed(
  * is only written; the last wakes the agent, and a run of its already at work there that takes it reads the earlier
  * ones with it. Only for a run in a person's conversation (an agents' DM hands back instead).
  */
-export async function reportHandOffs(deps: Pick<Deps, "db" | "pubsub">, asker: AgentRun) {
+export async function reportHandOffs(deps: Deps, asker: AgentRun) {
+  const ready = and(
+    eq(agentConsultations.orgId, asker.orgId),
+    eq(agentConsultations.askerRunId, asker.id),
+    eq(agentConsultations.kind, "note"),
+    ne(agentConsultations.status, "open"),
+    isNull(agentConsultations.reportedAt),
+    sql`not exists (select 1 from ${agentConsultations} o left join ${agentRuns} t on t.id = o.target_run_id
+      where o.org_id = ${asker.orgId}::uuid and o.asker_run_id = ${asker.id}::uuid
+        and o.kind = 'note' and o.status = 'open'
+        and ((t.id is null and not ${wakeWaitsSql(sql`o`)}) or t.status not in ('waiting_approval', 'waiting_input')
+          or exists (select 1 from ${agentConsultations} s where s.asker_run_id = t.id and s.status = 'open'
+            and not ${headsUpSql(sql`s`)})))`,
+  );
+  // Asked before the claim, outside its transaction: the judge is a network call.
+  const candidates = await deps.db.select().from(agentConsultations).where(ready);
+  // Unsure (a read failed before the judge was asked): it wakes when a judge could have been asked, and the results
+  // are still claimed and written.
+  const unsure = Boolean(deps.judge) && !asker.background;
+  const goesOn = await senderGoesOn(deps, asker, candidates).catch(() => unsure);
+  const judged = new Set(candidates.map((c) => c.id));
   const delivered = await deps.db.transaction(async (tx) => {
-    const claimed = await tx
-      .update(agentConsultations)
-      .set({ reportedAt: new Date() })
-      .where(
-        and(
-          eq(agentConsultations.orgId, asker.orgId),
-          eq(agentConsultations.askerRunId, asker.id),
-          eq(agentConsultations.kind, "note"),
-          ne(agentConsultations.status, "open"),
-          isNull(agentConsultations.reportedAt),
-          sql`not exists (select 1 from ${agentConsultations} o left join ${agentRuns} t on t.id = o.target_run_id
-            where o.org_id = ${asker.orgId}::uuid and o.asker_run_id = ${asker.id}::uuid
-              and o.kind = 'note' and o.status = 'open'
-              and ((t.id is null and not ${wakeWaitsSql(sql`o`)}) or t.status not in ('waiting_approval', 'waiting_input')
-                or exists (select 1 from ${agentConsultations} s where s.asker_run_id = t.id and s.status = 'open'
-                  and not ${headsUpSql(sql`s`)})))`,
-        ),
-      )
-      .returning();
+    const claimed = await tx.update(agentConsultations).set({ reportedAt: new Date() }).where(ready).returning();
     if (claimed.length === 0) return [];
     const waiting = await tx
       .selectDistinct({ handle: agents.handle })
@@ -1354,19 +1397,25 @@ export async function reportHandOffs(deps: Pick<Deps, "db" | "pubsub">, asker: A
     const pending = waiting.map((w) => `@${w.handle}`).join(", ");
     claimed.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
     // A hand-off whose work already reported to the person (`handOverWork`) is only written down: relaying it would
-    // repeat it. The asker wakes once, at most, and only for one that ended with nothing posted home.
+    // repeat it. The asker wakes once, at most: for one that ended with nothing posted home, or, when all of them
+    // posted home, only when a step of its own waits on what came back (`senderGoesOn`), and then not to relay it.
     const home = await handedHomeOf(
       tx,
       asker.orgId,
       claimed.map((c) => c.id),
     );
-    const wakes = claimed.some((c) => !home.has(c.id));
+    const allHome = claimed.every((c) => home.has(c.id));
+    // A sibling closed between the judgment and this claim: what was judged isn't what is claimed. Unsure, it wakes
+    // when a judge could have been asked, as when the judge fails.
+    const same = claimed.length === judged.size && claimed.every((c) => judged.has(c.id));
+    const wakes = !allHome || (same ? goesOn : unsure);
     const out: Awaited<ReturnType<typeof deliverNoticeToRun>>[] = [];
     for (const [i, row] of claimed.entries()) {
       const wake = wakes && i === claimed.length - 1;
       const handle = await handleOf(tx, row.orgId, row.targetAgentId);
       const notice = consultationNotice(row, handle, {
         wake,
+        home: allHome,
         hidden: await keptFromPeople(tx, row),
         ...(wake && pending ? { pending } : {}),
         readOutside: await answerReadOutside(tx, row),
@@ -1396,6 +1445,170 @@ export async function reportHandOffs(deps: Pick<Deps, "db" | "pubsub">, asker: A
   });
   for (const d of delivered) await publishDelivery(deps.pubsub, d).catch(() => {});
   return delivered;
+}
+
+/**
+ * Whether the run that handed these notes still has a step of its own that waits on what came back, when every one of
+ * them already posted its result to the people (`handedHomeOf`): it coordinates the job, said it would check or
+ * approve the result, another colleague's part needs it, a result asks it for something, or one failed. A plain
+ * delegation, whose result already answers the person, wakes nobody. Read by the judge from the request the chain
+ * started from, what the sender said along it, the notes and their results, and the parts still out, in any
+ * language. True with no judgment while the sender is still at work (the results join its turn). False when a result
+ * is still to be posted home (that one wakes it anyway), for a routine's run (its report is its own), for a sender a
+ * person stopped, and with no judge that can answer here: the sender is then not woken, as before. True when the
+ * judge fails otherwise: one turn that may pass costs less than a job left half done.
+ */
+async function senderGoesOn(deps: Deps, asker: AgentRun, rows: AgentConsultationRow[]) {
+  if (!deps.judge || rows.length === 0 || asker.background) return false;
+  if (asker.status === "canceled" && canceledBy(asker.error) && !(await stoppedToSend(deps.db, asker))) return false;
+  const home = await handedHomeOf(
+    deps.db,
+    asker.orgId,
+    rows.map((r) => r.id),
+  );
+  if (rows.some((r) => !home.has(r.id))) return false;
+  if (asker.status === "queued" || asker.status === "running") return true;
+  const bodyOf = async (id: string | null | undefined) =>
+    id ? ((await getMessage(deps.db, asker.orgId, id))?.body ?? "") : "";
+  // The person's request the chain started from: a run woken by an earlier report has that report as its trigger.
+  const chain = await runChain(deps.db, asker.orgId, asker.id).catch(() => null);
+  // What it told the people along the chain, oldest first.
+  const own = (
+    await deps.db
+      .select({ agentId: agentRuns.agentId, replyMessageId: agentRuns.replyMessageId, createdAt: agentRuns.createdAt })
+      .from(agentRuns)
+      .where(and(eq(agentRuns.orgId, asker.orgId), inArray(agentRuns.id, chain?.runIds ?? [asker.id])))
+  )
+    .filter((r) => r.agentId === asker.agentId)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const said = (await Promise.all(own.map((r) => bodyOf(r.replyMessageId)))).filter(Boolean).join("\n\n");
+  const handed: { to: string; note: string; result: string }[] = [];
+  for (const row of rows)
+    handed.push({
+      to: `@${await handleOf(deps.db, row.orgId, row.targetAgentId)}`,
+      note: cutText(row.question, 1500),
+      result: await resultFor(deps.db, asker, row),
+    });
+  const out = await deps.db
+    .select({ handle: agents.handle, note: agentConsultations.question })
+    .from(agentConsultations)
+    .innerJoin(agents, eq(agents.id, agentConsultations.targetAgentId))
+    .where(
+      and(
+        eq(agentConsultations.orgId, asker.orgId),
+        eq(agentConsultations.askerRunId, asker.id),
+        eq(agentConsultations.kind, "note"),
+        eq(agentConsultations.status, "open"),
+      ),
+    );
+  return handOffGoesOn(deps.judge, {
+    orgId: asker.orgId,
+    agentId: asker.agentId,
+    runId: asker.id,
+    request: await bodyOf(chain?.rootMessageId ?? asker.triggerMessageId),
+    said,
+    handed,
+    pending: out.map((o) => ({ to: `@${o.handle}`, note: cutText(o.note, 500) })),
+  }).catch((error: unknown) => !judgeCannotAnswer(error, asker.id));
+}
+
+/**
+ * What came of one hand-off, as the judge reads it: its result, why it couldn't finish, a person's stop (it stays
+ * stopped), an end the people can resume with Continuar (its provider cut it off, or its step limit), or the same part
+ * failing again after it was handed again in this stretch (nothing new to do with it).
+ */
+async function resultFor(db: Executor, asker: AgentRun, row: AgentConsultationRow) {
+  if (row.status === "expired") return "(it never got to it)";
+  const [target] = row.targetRunId
+    ? await db
+        .select()
+        .from(agentRuns)
+        .where(and(eq(agentRuns.orgId, row.orgId), eq(agentRuns.id, row.targetRunId)))
+    : [];
+  const stopped = target ? canceledBy(target.error) !== null && !(await stoppedToSend(db, target)) : false;
+  // Continuar goes on from its end (`continuableEnd`): redoing it would race the people's own click.
+  const resumable =
+    target !== undefined &&
+    !stopped &&
+    continuableEnd(target, target.replyMessageId ? await getMessage(db, row.orgId, target.replyMessageId) : null);
+  const short = "it stopped short, and the people can resume it with Continuar where it reported";
+  if (row.status === "answered" && row.answer)
+    return resumable ? `${cutText(row.answer, 1500)}\n(${short})` : cutText(row.answer, 1500);
+  const why = cutText(row.answer ?? "its run failed", 500);
+  if (stopped) return `(a person stopped it on purpose; it stays stopped unless a person asks again: ${why})`;
+  if (resumable) return `(${short}: ${why})`;
+  const [before] = await db
+    .select({ id: agentConsultations.id })
+    .from(agentConsultations)
+    .innerJoin(agentRuns, eq(agentRuns.id, agentConsultations.askerRunId))
+    .where(
+      and(
+        eq(agentConsultations.orgId, row.orgId),
+        eq(agentConsultations.askerAgentId, row.askerAgentId),
+        eq(agentConsultations.targetAgentId, row.targetAgentId),
+        eq(agentConsultations.kind, "note"),
+        inArray(agentConsultations.status, ["failed", "expired"]),
+        ne(agentConsultations.id, row.id),
+        lt(agentConsultations.createdAt, row.createdAt),
+        eq(agentRuns.stretchId, runStretchOf(asker)),
+      ),
+    )
+    .limit(1);
+  return before ? `(it couldn't finish again, after it was handed again: ${why})` : `(it couldn't finish: ${why})`;
+}
+
+/**
+ * The judge can't answer for this workspace or run: no Jev key and no small model, past its platform AI for the
+ * month, a confidential thread (ADR 0190), or a workspace or agent that may not work now. No judgment, not a failure.
+ */
+const judgeCannotAnswer = (error: unknown, runId: string) =>
+  error instanceof JevOffError ||
+  (error instanceof Error && error.message === PLATFORM_CAP) ||
+  error instanceof OrgPausedError ||
+  error instanceof OrgDeletingError ||
+  error instanceof AgentHeldError ||
+  isConfidentialRun(runId);
+
+/** The judgment behind `senderGoesOn`. */
+export async function handOffGoesOn(
+  judge: Judge,
+  input: {
+    orgId: string;
+    agentId: string;
+    runId: string;
+    request: string;
+    said: string;
+    handed: { to: string; note: string; result: string }[];
+    /** Parts still out, waiting on a person or a computer: they come back by themselves later. */
+    pending?: { to: string; note: string }[];
+  },
+) {
+  const answers = await judge.ask({
+    orgId: input.orgId,
+    agentId: input.agentId,
+    runId: input.runId,
+    kind: "hand_off_next",
+    state: {
+      request: cutText(input.request, 2000),
+      // The latest words matter most: what it said last, whole.
+      said: input.said.length > 2000 ? `…${input.said.slice(-2000)}` : input.said,
+      handed: input.handed,
+      pending: input.pending ?? [],
+    },
+    questions: {
+      goesOn: {
+        type: "noul",
+        instructions:
+          "An AI agent (the sender) got `request` from a person, handed work to other agents (`handed`: to whom, the `note` it sent, the `result` that came back) and told the person `said`. Each result was already posted to the person by the agent that did it. `pending`: parts still out, waiting on a person or a computer; they come back to the sender by themselves later. Is there still a step that only the sender can take now with these results?",
+        criteria: {
+          true: "The person asked the sender to coordinate, orchestrate, lead, review or approve the job, or to assemble or deliver what several agents' parts make together, or the sender said it would check, approve, assemble, publish or continue once the work came back; or one agent's result is needed by another agent's part and the sender has to pass it on; or a result asks the sender for something (an ok, a decision, a file) or says it waits on the sender; or a result failed, is partial or was never started and nobody else picks it up.",
+          false:
+            "The handed work was the whole request and its result already answers the person; the sender promised nothing afterwards and nothing in a result waits on it, or only a check the sender offered on its own that the person didn't ask for. The sender would only repeat or summarize what the person already read. Also false when the next step needs a part still in `pending`, for a part a person stopped (it stays stopped), for a part the people can resume with Continuar, and for a part that failed again after it was handed again.",
+        },
+      },
+    },
+  });
+  return (answers.goesOn?.noul ?? 0) >= 0.5;
 }
 
 /**
@@ -2108,7 +2321,7 @@ const waitSinceSql = () => sql<string>`(extract(epoch from ${waitSinceIn("agent_
  * deadline, a row nobody started (the stretch held it) or whose run is gone closes: with what it gathered, else
  * expired, and its run stops. Returns how many closed.
  */
-export async function expireConsultations(deps: { db: Database; pubsub?: PubSub }, now = new Date()) {
+export async function expireConsultations(deps: Deps, now = new Date()) {
   const rows = await deps.db
     .select({
       row: agentConsultations,

@@ -728,6 +728,10 @@ export const Channel = z
       description:
         "Agents asked in its main timeline answer in the thread under that message, which then shows as one line (ADR 0214). Regular channels only.",
     }),
+    leadAgentId: z.uuid().nullable().optional().openapi({
+      description:
+        "The agent responsible for the channel, one of its member agents; null or absent: none. Regular channels only.",
+    }),
     unreadCount: z.number().int().optional().openapi({
       description:
         "Channel list only: messages since you last read it (since you joined, if never), not yours; a thread reply counts only in a thread you follow; an agent's sticker or GIF after its own reply never (ADR 0091). At most 100; 0 when you're not a member.",

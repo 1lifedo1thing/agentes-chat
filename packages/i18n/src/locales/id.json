@@ -4144,6 +4144,8 @@
     "aloneLine": "Ikut percakapan atas inisiatif sendiri",
     "aloneLine_female": "Ikut percakapan atas inisiatif sendiri",
     "mentionLine": "Menunggu seseorang menulis @{{handle}}",
+    "lead": "Penanggung jawab kanal",
+    "leadHelp": "Menerima yang disampaikan ke seluruh tim dan menjaga pekerjaan terus berjalan di antara agen",
     "readOnly": "Hanya pembuat kanal dan admin yang bisa mengubah anggota.",
     "people": "Orang",
     "agents": "Agen"
@@ -15135,6 +15137,8 @@
       "deleteName": "Ketik nama kanal untuk menghapusnya.",
       "generalKept": "#general tidak bisa dihapus.",
       "generalStays": "Semua orang tetap di #general.",
+      "leadChannelOnly": "Hanya kanal yang punya agen penanggung jawab.",
+      "leadNotMember": "Agen penanggung jawab harus ada di kanal.",
       "mcpUnreachable": "Tidak bisa terhubung ke server MCP. Periksa alamatnya dan coba lagi.",
       "notApproved": "Layanan ini belum menyetujui agentes.chat.",
       "alreadyInvited": "Orang ini sudah punya undangan.",

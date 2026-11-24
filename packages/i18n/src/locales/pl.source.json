@@ -10531,6 +10531,12 @@
   "channelMembers.mentionLine": {
     "value": "Waits for someone to write @{{handle}}"
   },
+  "channelMembers.lead": {
+    "value": "Responsible for the channel"
+  },
+  "channelMembers.leadHelp": {
+    "value": "Gets what is said to the whole team and keeps the work moving between the agents"
+  },
   "channelMembers.readOnly": {
     "value": "Only the channel's creator and admins change members."
   },
@@ -38473,6 +38479,12 @@
   },
   "errors.said.generalStays": {
     "value": "Everyone stays in #general."
+  },
+  "errors.said.leadChannelOnly": {
+    "value": "Only channels have a responsible agent."
+  },
+  "errors.said.leadNotMember": {
+    "value": "The responsible agent has to be in the channel."
   },
   "errors.said.mcpUnreachable": {
     "value": "Couldn't connect to the MCP server. Check its address and try again."
