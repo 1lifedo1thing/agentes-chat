@@ -2623,7 +2623,11 @@ export interface Memory {
   from?: { messageId: string; channelId: string; threadId: string | null; dm: boolean; at: string } | null;
 }
 
-export type ProposalStatus = "pending" | "accepted" | "refused";
+/**
+ * `pending`: the agent's review hasn't weighed it yet (ADR 0219); `refused`: left out; `undone`: applied, then put
+ * back.
+ */
+export type ProposalStatus = "pending" | "accepted" | "refused" | "undone";
 
 /** An app a proposal turns on or off for an agent, as `request_permission` names it (`label` in English). */
 export interface ProposalAccessLine {
@@ -2727,6 +2731,19 @@ export interface Proposal {
   decider: { type: "user"; userId: string; name: string } | { type: "admins" } | { type: "account_owner" };
   createdAt: string;
   decidedBy: { userId: string; name: string } | null;
+  /** The agent whose review applied it or left it out (ADR 0219); null when a person did. */
+  decidedByAgent: { agentId: string; name: string } | null;
+  /**
+   * The review's line, in the language of the text it changes: why it was applied or left out; null when a person
+   * decided.
+   */
+  review: string | null;
+  /** Decided by the review, not a person (`decidedByAgent` is null for a workspace-wide lesson). */
+  reviewed: boolean;
+  /** Applied, and the viewer may put it back (`proposals.undo`). */
+  undoable: boolean;
+  undoneBy: { userId: string; name: string } | null;
+  undoneAt: string | null;
   decidedAt: string | null;
 }
 
@@ -7313,6 +7330,12 @@ export type NotificationKind =
    */
   | "change_request"
   | "proposal_waiting"
+  /**
+   * ADR 0219: an agent applied a change it judged worth making to an agent this person looks after (or the workspace's
+   * context): one row a day while unread, `count`, `latest.title` the newest change, `source.agentId`/`label` the agent
+   * it changed, `source.proposalId`, the applying agent as actor. Inbox only.
+   */
+  | "proposal_applied"
   /**
    * ADR 0141: a person's monthly AI limit, `source.userId` the person, `latest.statusTo`: `warning` (80%, the
    * person), `reached` (who decides; `reached_notify` to the person when the limit only notifies), `request` (who
