@@ -20737,6 +20737,23 @@
     "approvals": "고객에게 나가는 것은 승인을 기다려요. 믿을 수 있게 되면 나중에 맡길 수 있어요.",
     "approvalsPersonal": "내 이름으로 보내거나 결제하거나 예약하는 건 모두 승인을 기다려요. 믿을 수 있게 되면 나중에 맡길 수 있어요."
   },
+  "paidMoment": {
+    "title": "팀이 일을 시작했어요",
+    "titlePersonal": "에이전트가 일을 시작했어요",
+    "confirmed": "결제가 확인됐어요.",
+    "confirmedPlan": "결제가 확인됐어요: {{plan}}.",
+    "confirmedMonth": "결제가 확인됐어요: {{plan}}, 매월 청구.",
+    "confirmedYear": "결제가 확인됐어요: {{plan}}, 매년 청구.",
+    "hello": "안녕하세요, {{first}}님",
+    "hi": "안녕하세요",
+    "say": "모두 깨어났고 컴퓨터도 켜졌어요. 이제 일해 볼까요.",
+    "next": {
+      "ai": "AI 연결",
+      "people": "사람 초대",
+      "open": "워크스페이스로 가기",
+      "talk": "{{name}}와 대화하기"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

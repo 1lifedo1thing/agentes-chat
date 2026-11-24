@@ -21339,6 +21339,23 @@
     "approvals": "Müşterilere gidenler onayını bekler. Onlara güvendiğinde daha sonra serbest bırakabilirsin.",
     "approvalsPersonal": "Senin adına gönderilen, ödenen veya rezerve edilen her şey onayını bekler. Onlara güvendiğinde daha sonra serbest bırakabilirsin."
   },
+  "paidMoment": {
+    "title": "Ekibin işbaşında",
+    "titlePersonal": "Ajanların işbaşında",
+    "confirmed": "Ödeme onaylandı.",
+    "confirmedPlan": "Ödeme onaylandı: {{plan}}.",
+    "confirmedMonth": "Ödeme onaylandı: {{plan}}, aylık faturalandırılır.",
+    "confirmedYear": "Ödeme onaylandı: {{plan}}, yıllık faturalandırılır.",
+    "hello": "Merhaba {{first}}",
+    "hi": "Merhaba",
+    "say": "Hepimiz uyandık ve bilgisayar açık. Haydi işe koyulalım.",
+    "next": {
+      "ai": "Yapay zeka bağla",
+      "people": "Kişileri davet et",
+      "open": "Çalışma alanına git",
+      "talk": "{{name}} ile konuş"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

@@ -22158,6 +22158,23 @@
     "approvals": "Ce qui part vers les clients attend ton accord. Tu pourras le libérer plus tard, quand tu leur feras confiance.",
     "approvalsPersonal": "Tout ce qui est envoyé, payé ou réservé en ton nom attend ton accord. Tu pourras le libérer plus tard, quand tu leur feras confiance."
   },
+  "paidMoment": {
+    "title": "Votre équipe est en route",
+    "titlePersonal": "Vos agents sont en route",
+    "confirmed": "Paiement confirmé.",
+    "confirmedPlan": "Paiement confirmé : {{plan}}.",
+    "confirmedMonth": "Paiement confirmé : {{plan}}, facturé chaque mois.",
+    "confirmedYear": "Paiement confirmé : {{plan}}, facturé chaque année.",
+    "hello": "Bonjour, {{first}}",
+    "hi": "Bonjour",
+    "say": "Nous sommes tous debout et l'ordinateur est allumé. Au travail.",
+    "next": {
+      "ai": "Connecter une IA",
+      "people": "Inviter des personnes",
+      "open": "Entrer dans l'espace de travail",
+      "talk": "Parler à {{name}}"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

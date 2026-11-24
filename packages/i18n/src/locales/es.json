@@ -22011,6 +22011,23 @@
     "approvals": "Lo que sale para los clientes espera tu aprobación. Puedes liberarlo después, cuando confíes en ellos.",
     "approvalsPersonal": "Todo lo que se envíe, se pague o se reserve a tu nombre espera tu aprobación. Puedes liberarlo después, cuando confíes en ellos."
   },
+  "paidMoment": {
+    "title": "Tu equipo ya está en marcha",
+    "titlePersonal": "Tus agentes ya están en marcha",
+    "confirmed": "Pago confirmado.",
+    "confirmedPlan": "Pago confirmado: {{plan}}.",
+    "confirmedMonth": "Pago confirmado: {{plan}}, cobro mensual.",
+    "confirmedYear": "Pago confirmado: {{plan}}, cobro anual.",
+    "hello": "Hola, {{first}}",
+    "hi": "Hola",
+    "say": "Ya estamos todos despiertos y la computadora está encendida. Manos a la obra.",
+    "next": {
+      "ai": "Conectar una IA",
+      "people": "Invitar personas",
+      "open": "Entrar al espacio de trabajo",
+      "talk": "Hablar con {{name}}"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

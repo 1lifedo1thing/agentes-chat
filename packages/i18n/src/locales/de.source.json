@@ -52225,6 +52225,45 @@
   "teamTemplates.approvalsPersonal": {
     "value": "Anything sent, paid or booked in your name waits for your approval. You can let it go later, once you trust them."
   },
+  "paidMoment.title": {
+    "value": "Your team is up and running"
+  },
+  "paidMoment.titlePersonal": {
+    "value": "Your agents are up and running"
+  },
+  "paidMoment.confirmed": {
+    "value": "Payment confirmed."
+  },
+  "paidMoment.confirmedPlan": {
+    "value": "Payment confirmed: {{plan}}."
+  },
+  "paidMoment.confirmedMonth": {
+    "value": "Payment confirmed: {{plan}}, billed monthly."
+  },
+  "paidMoment.confirmedYear": {
+    "value": "Payment confirmed: {{plan}}, billed yearly."
+  },
+  "paidMoment.hello": {
+    "value": "Hi, {{first}}"
+  },
+  "paidMoment.hi": {
+    "value": "Hi there"
+  },
+  "paidMoment.say": {
+    "value": "We're all up and the computer is on. Let's get to work."
+  },
+  "paidMoment.next.ai": {
+    "value": "Connect an AI"
+  },
+  "paidMoment.next.people": {
+    "value": "Invite people"
+  },
+  "paidMoment.next.open": {
+    "value": "Go to the workspace"
+  },
+  "paidMoment.next.talk": {
+    "value": "Talk to {{name}}"
+  },
   "arrival.beta.word": {
     "value": "BETA"
   },

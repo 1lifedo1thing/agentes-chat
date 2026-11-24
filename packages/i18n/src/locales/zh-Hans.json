@@ -20929,6 +20929,23 @@
     "approvals": "发给客户的内容需要你批准。等你信任它们后，可以再放开。",
     "approvalsPersonal": "凡是以你的名义发送、付款或预订的内容，都要等你批准。等你信任它们后，可以再放开。"
   },
+  "paidMoment": {
+    "title": "你的团队已经开工",
+    "titlePersonal": "你的智能体已经开工",
+    "confirmed": "付款已确认。",
+    "confirmedPlan": "付款已确认：{{plan}}。",
+    "confirmedMonth": "付款已确认：{{plan}}，按月计费。",
+    "confirmedYear": "付款已确认：{{plan}}，按年计费。",
+    "hello": "你好，{{first}}",
+    "hi": "你好",
+    "say": "我们都醒了，电脑也开着。开始干活吧。",
+    "next": {
+      "ai": "连接 AI",
+      "people": "邀请成员",
+      "open": "进入工作区",
+      "talk": "和 {{name}} 聊聊"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

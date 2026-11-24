@@ -20852,6 +20852,23 @@
     "approvals": "Yang dikirim ke pelanggan menunggu persetujuanmu. Kamu bisa melepasnya nanti, saat sudah percaya pada mereka.",
     "approvalsPersonal": "Apa pun yang dikirim, dibayar, atau dipesan atas namamu menunggu persetujuanmu. Kamu bisa melepasnya nanti, saat sudah percaya pada mereka."
   },
+  "paidMoment": {
+    "title": "Timmu sudah siap bekerja",
+    "titlePersonal": "Agenmu sudah siap bekerja",
+    "confirmed": "Pembayaran dikonfirmasi.",
+    "confirmedPlan": "Pembayaran dikonfirmasi: {{plan}}.",
+    "confirmedMonth": "Pembayaran dikonfirmasi: {{plan}}, ditagih bulanan.",
+    "confirmedYear": "Pembayaran dikonfirmasi: {{plan}}, ditagih tahunan.",
+    "hello": "Hai, {{first}}",
+    "hi": "Hai",
+    "say": "Kami semua sudah bangun dan komputernya menyala. Ayo mulai bekerja.",
+    "next": {
+      "ai": "Hubungkan AI",
+      "people": "Undang orang",
+      "open": "Masuk ke ruang kerja",
+      "talk": "Bicara dengan {{name}}"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

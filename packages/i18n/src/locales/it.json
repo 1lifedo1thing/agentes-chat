@@ -22175,6 +22175,23 @@
     "approvals": "Ciò che va ai clienti aspetta la tua approvazione. Puoi lasciarlo andare più avanti, quando ti fiderai di loro.",
     "approvalsPersonal": "Tutto ciò che viene inviato, pagato o prenotato a tuo nome aspetta la tua approvazione. Puoi lasciarlo andare più avanti, quando ti fiderai di loro."
   },
+  "paidMoment": {
+    "title": "Il tuo team è operativo",
+    "titlePersonal": "I tuoi agenti sono operativi",
+    "confirmed": "Pagamento confermato.",
+    "confirmedPlan": "Pagamento confermato: {{plan}}.",
+    "confirmedMonth": "Pagamento confermato: {{plan}}, addebito mensile.",
+    "confirmedYear": "Pagamento confermato: {{plan}}, addebito annuale.",
+    "hello": "Ciao, {{first}}",
+    "hi": "Ciao",
+    "say": "Siamo tutti svegli e il computer è acceso. Al lavoro.",
+    "next": {
+      "ai": "Collega un'IA",
+      "people": "Invita persone",
+      "open": "Entra nello spazio di lavoro",
+      "talk": "Parla con {{name}}"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

@@ -21598,6 +21598,23 @@
     "approvals": "Wat naar klanten gaat, wacht op je goedkeuring. Je kunt het later vrijgeven, als je ze vertrouwt.",
     "approvalsPersonal": "Alles wat in jouw naam wordt verstuurd, betaald of geboekt, wacht op je goedkeuring. Je kunt het later vrijgeven, als je ze vertrouwt."
   },
+  "paidMoment": {
+    "title": "Je team is aan de slag",
+    "titlePersonal": "Je agents zijn aan de slag",
+    "confirmed": "Betaling bevestigd.",
+    "confirmedPlan": "Betaling bevestigd: {{plan}}.",
+    "confirmedMonth": "Betaling bevestigd: {{plan}}, maandelijks gefactureerd.",
+    "confirmedYear": "Betaling bevestigd: {{plan}}, jaarlijks gefactureerd.",
+    "hello": "Hoi, {{first}}",
+    "hi": "Hoi",
+    "say": "We zijn allemaal wakker en de computer staat aan. Aan de slag.",
+    "next": {
+      "ai": "Een AI koppelen",
+      "people": "Mensen uitnodigen",
+      "open": "Naar de werkruimte",
+      "talk": "Praat met {{name}}"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",

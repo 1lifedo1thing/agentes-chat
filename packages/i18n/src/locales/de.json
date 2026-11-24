@@ -21415,6 +21415,23 @@
     "approvals": "Was an Kunden rausgeht, wartet auf deine Freigabe. Du kannst es später freigeben, wenn du ihnen vertraust.",
     "approvalsPersonal": "Alles, was in deinem Namen gesendet, bezahlt oder gebucht wird, wartet auf deine Freigabe. Du kannst es später freigeben, wenn du ihnen vertraust."
   },
+  "paidMoment": {
+    "title": "Dein Team ist startklar",
+    "titlePersonal": "Deine Agenten sind startklar",
+    "confirmed": "Zahlung bestätigt.",
+    "confirmedPlan": "Zahlung bestätigt: {{plan}}.",
+    "confirmedMonth": "Zahlung bestätigt: {{plan}}, monatliche Abrechnung.",
+    "confirmedYear": "Zahlung bestätigt: {{plan}}, jährliche Abrechnung.",
+    "hello": "Hallo, {{first}}",
+    "hi": "Hallo",
+    "say": "Wir sind alle wach und der Computer läuft. Legen wir los.",
+    "next": {
+      "ai": "KI verbinden",
+      "people": "Leute einladen",
+      "open": "Zum Workspace",
+      "talk": "Mit {{name}} sprechen"
+    }
+  },
   "arrival": {
     "beta": {
       "word": "BETA",
