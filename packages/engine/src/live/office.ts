@@ -1,3 +1,4 @@
+import { fileFonts } from "./file-fonts";
 import { serverText } from "@agenteschat/i18n";
 import {
   canvasBackground,
@@ -341,7 +342,8 @@ export async function writeLiveExport(
     const deck = deckOfDoc(doc);
     const media = (asset: string) => liveAssetBytes(deps, file.orgId, file.id, asset);
     if (format === "pdf") return out("pdf", await slidesPdf(deck, media, file.title));
-    return out("pptx", await writePptx(deck, media));
+    const own = await fileFonts(deps, file.orgId, file.id);
+    return out("pptx", await writePptx(deck, media, new Map(own.list.map((f) => [f.id, f.family]))));
   }
   if (kind === "document") return documentExport(deps, file, doc, format);
   if (kind === "canvas" && (format === null || format === "json")) {
