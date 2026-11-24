@@ -243,10 +243,10 @@ export class RealtimeConnection {
   private readonly retries = new Map<string, { timer: unknown; attempt: number }>();
   /** Recent `message.created` ids, oldest first. */
   private readonly heard = new Set<string>();
-  private everOpened = false;
-  private stopped = true;
   /** Started again after a `stop()`, its first socket not open nor lost yet. */
   private restarted = false;
+  private everOpened = false;
+  private stopped = true;
   status: ConnectionStatus = "idle";
 
   constructor(
