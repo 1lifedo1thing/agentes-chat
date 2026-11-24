@@ -87,8 +87,16 @@ test("overloaded: reads, new sockets and the health check answer 503, writes and
   const read = await owner(`/api/app/organizations/${orgId}/channels`);
   expect(read.status).toBe(503);
   expect(Number(read.headers.get("retry-after"))).toBeGreaterThanOrEqual(5);
+  // A container's check, a deploy's wait and an uptime monitor see it up; only a proxy's `?load=1` sees it busy.
   const health = await t.app.request("/api/health");
-  expect([health.status, ((await health.json()) as { status: string }).status]).toEqual([503, "overloaded"]);
+  expect([health.status, ((await health.json()) as { status: string }).status]).toEqual([200, "overloaded"]);
+  const proxied = await t.app.request("/api/health?load=1");
+  expect([proxied.status, ((await proxied.json()) as { status: string }).status]).toEqual([503, "overloaded"]);
+  // A link a person opened (a provider's OAuth return, a download) is never turned away.
+  const opened = await owner(`/api/app/organizations/${orgId}/channels`, {
+    headers: { "sec-fetch-mode": "navigate", "sec-fetch-dest": "document" },
+  });
+  expect(opened.status).toBe(200);
   expect(await upgradeStatus(wsUrl, { origin: ORIGIN, cookie: owner.cookie() })).toBe(503);
   const write = await owner(`/api/app/organizations/${orgId}/channels/${channelId}/messages`, {
     json: { body: "still goes" },
@@ -99,12 +107,12 @@ test("overloaded: reads, new sockets and the health check answer 503, writes and
   // A full socket count turns new sockets away, and the proxy elsewhere; people already here keep reading.
   overloaded = "sockets";
   expect((await owner(`/api/app/organizations/${orgId}/channels`)).status).toBe(200);
-  expect((await t.app.request("/api/health")).status).toBe(503);
+  expect((await t.app.request("/api/health?load=1")).status).toBe(503);
   expect(await upgradeStatus(wsUrl, { origin: ORIGIN, cookie: owner.cookie() })).toBe(503);
 
   overloaded = null;
   expect((await owner(`/api/app/organizations/${orgId}/channels`)).status).toBe(200);
-  expect((await t.app.request("/api/health")).status).toBe(200);
+  expect((await t.app.request("/api/health?load=1")).status).toBe(200);
   open.close();
 });
 

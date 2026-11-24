@@ -103,8 +103,11 @@ it fell behind again. Four changes keep a process that falls behind from taking 
   how long a `select 1` waits for a connection; past `LOAD_SHED_EVENT_LOOP_MS` or `LOAD_SHED_DB_WAIT_MS` it is
   overloaded: new WebSocket upgrades and `GET /api/app/*` get a 503 `server_busy` with a `Retry-After` of 5 to 15 s
   (spread, so they don't all return in the same second); writes, sign-in and open sockets carry on. With
-  `LOAD_SHED_MAX_SOCKETS` apps connected only new upgrades get the 503. `/api/health` answers 503 `overloaded`, so a proxy with an active health
-  check steers new requests to another process. The web and phone apps try a busy read again after its
+  `LOAD_SHED_MAX_SOCKETS` apps connected only new upgrades get the 503. `/api/health` says `overloaded` with a 200, and
+  `/api/health?load=1` with a 503, so a proxy's active health check across several processes steers new requests to
+  another one. Not 503 by default: overload often hits every process at once (one database) and passes by itself,
+  and a container's health check, a deploy's wait, an uptime monitor or a single process's proxy would take it for
+  down. Links a person opens (a provider's OAuth return, a download) are never shed. The web and phone apps try a busy read again after its
   `Retry-After` (client `busy-retry.ts`), up to 6 times.
 - **Stale sockets** (server `realtime/ws.ts`): Bun's own heartbeat (`sendPings`, `idleTimeout`) closes a socket that
   answers nothing for 2 minutes. Each app connection now sends its own id (`?tab=`): its new socket replaces the one

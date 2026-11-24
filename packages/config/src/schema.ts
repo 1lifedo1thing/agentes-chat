@@ -177,7 +177,7 @@ export const envVars = {
   LOAD_SHED_EVENT_LOOP_MS: {
     schema: z.coerce.number().int().min(0).default(500),
     description:
-      "Load shedding: while the event loop's p99 delay over the last 5 seconds is above this, the process is overloaded. It then answers new WebSocket connections and the apps' reads (`GET /api/app/*`) with 503 and a `Retry-After` of 5 to 15 seconds instead of queueing everyone, and `/api/health` answers 503 (`overloaded`) so a proxy with an active health check sends new requests to another process. Writes, sign-in and open sockets carry on. 0: off.",
+      "Load shedding: while the event loop's p99 delay over the last 5 seconds is above this, the process is overloaded. It then answers new WebSocket connections and the apps' reads (`GET /api/app/*`, not links a person opens) with 503 and a `Retry-After` of 5 to 15 seconds instead of queueing everyone. `/api/health` says `overloaded`, still with 200; `/api/health?load=1` answers 503 then, for a proxy's active health check across several app processes (never a single process's: it would take out the only one). Writes, sign-in and open sockets carry on. 0: off.",
     section: "Server",
   },
   LOAD_SHED_DB_WAIT_MS: {

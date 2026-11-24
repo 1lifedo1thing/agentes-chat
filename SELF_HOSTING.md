@@ -1975,9 +1975,10 @@ When a process is overloaded (its event loop late by over `LOAD_SHED_EVENT_LOOP_
 connection slower than `LOAD_SHED_DB_WAIT_MS` to come), it turns new connections and the apps' reads
 away with a 503 and a `Retry-After` of 5 to 15 seconds, and the apps try again then; writes and open
 connections carry on. With `LOAD_SHED_MAX_SOCKETS` apps connected, it turns only new connections away.
-Either way its `/api/health` answers 503
-(`overloaded`) meanwhile, so a reverse proxy in front of several app processes with an active health
-check sends new requests to the others.
+Either way its `/api/health` says `overloaded`
+(still with a 200) meanwhile, and `/api/health?load=1` answers 503: point the active health check of a
+reverse proxy in front of several app processes at that one (Caddy: `health_uri /api/health?load=1`),
+so it sends new requests to the others. Never on a single process's check: it would take out the only one.
 
 </details>
 
