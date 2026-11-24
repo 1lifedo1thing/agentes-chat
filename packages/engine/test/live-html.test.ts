@@ -1,12 +1,20 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { schema } from "@agenteschat/db";
 import { readCanvasGroups, readShapes } from "@agenteschat/live/canvas";
 import { readDeck } from "@agenteschat/live/slides";
 import type * as Y from "yjs";
+import { readDocument } from "@agenteschat/live/document";
 import {
+  createArtifact,
+  createFileArtifact,
   createLiveFileToolSource,
   createLiveImages,
+  enableSvgRasterizer,
+  exportLive,
   insertMessage,
+  readZip,
+  setSvgRasterizer,
   type LiveDocs,
   type LiveImages,
   type ToolContext,
@@ -16,7 +24,7 @@ import {
 import { TextMeasurer } from "../src/fonts/library";
 import { htmlToRich, layoutHtml, parseHtml } from "../src/live/layout/html";
 import { type Fixture, setup } from "./fixtures";
-import { liveDocsFor } from "./live-fixtures";
+import { liveDocsFor, personActor } from "./live-fixtures";
 
 /**
  * Type and native layouts in live files (ADR 0220): `add_html` turns markup into a slide's or a canvas's own pieces
@@ -353,5 +361,130 @@ describe("the layout itself", () => {
 
   test("markup too big is refused before anything is parsed", () => {
     expect(() => parseHtml(`<p>${"x".repeat(210_000)}</p>`)).toThrow("split it");
+  });
+});
+
+/** A real TrueType font the repository ships (Onest, SIL Open Font License), as a workspace would upload one. */
+const ONEST = new Uint8Array(readFileSync(new URL("../assets/fonts/Onest-Regular.ttf", import.meta.url)));
+
+describe("a workspace's own fonts", () => {
+  test("a font uploaded to the Drive is checked; add_font brings it into a file, where its family names it", async () => {
+    const run = await runFor();
+    const bad = createFileArtifact(f.artifactDeps, personActor(f.owner.id), f.org.id, {
+      title: "Broken",
+      name: "broken.ttf",
+      bytes: new Uint8Array([0, 1, 0, 0, 0, 9, 0, 0, 1, 2, 3, 4, 5, 6]),
+      channelId: f.general.id,
+    });
+    await expect(bad).rejects.toMatchObject({ code: "live.font_invalid" });
+    const font = await createFileArtifact(f.artifactDeps, personActor(f.owner.id), f.org.id, {
+      title: "Brand",
+      name: "Brand-Regular.ttf",
+      bytes: ONEST,
+      channelId: f.general.id,
+    });
+    const deck = artifactOf(await ok(run, "create_presentation", { title: "Deck", slides: [{ layout: "blank" }] }));
+    const out = await ok(run, "edit_presentation", {
+      file: deck.id,
+      ops: [
+        { op: "add_font", font_file: font.id },
+        { op: "add_text", slide: 1, text: "Hello", style: { font: "Onest", size: 60 } },
+        { op: "add_html", slide: 1, html: '<p style="font-family: Onest; margin: 0">From HTML</p>', box: { x: 0, y: 600, w: 1920, h: 200 } },
+      ],
+    });
+    expect(out.content).toContain('brought the font "Onest"');
+    await headOf(deck.id, (doc) => {
+      const els = readDeck(doc).slides[0]?.elements ?? [];
+      const typed = els.find((e) => JSON.stringify(e.text).includes("Hello"));
+      // The file's own font wins over the catalog's of the same name: it is what the file carries.
+      expect(typed?.style?.font).toMatch(/^asset:/);
+      const html = els.find((e) => JSON.stringify(e.text).includes("From HTML"));
+      expect(html?.style?.font).toBe(typed?.style?.font);
+    });
+    const read = await ok(run, "read_presentation", { file: deck.id });
+    expect(read.content).toContain('its own fonts "Onest"');
+  });
+});
+
+describe("documents take HTML", () => {
+  test("headings, paragraphs with marks, lists and a table become blocks", async () => {
+    const run = await runFor();
+    const a = await createArtifact(f.artifactDeps, personActor(f.owner.id), f.org.id, {
+      title: "Plano",
+      content: { kind: "document", markdown: "# Plano" },
+      channelId: f.general.id,
+    });
+    await ok(run, "edit_document", {
+      file: a.id,
+      ops: [
+        {
+          op: "append",
+          html: '<h2 style="font-family: Fraunces; color: #0063d1">Contexto</h2><p>Um <span style="font-weight:600;letter-spacing:0.1em;text-transform:uppercase">agente</span> sabe.</p><ul><li>Memória</li><li>Skills</li></ul><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>',
+        },
+      ],
+    });
+    await headOf(a.id, (doc) => {
+      const blocks = readDocument(doc);
+      const heading = blocks.find((b) => b.type === "heading" && JSON.stringify(b).includes("Contexto"));
+      expect(heading?.type === "heading" && heading.runs[0]).toMatchObject({ font: "fraunces", color: "#0063d1" });
+      const para = blocks.find((b) => b.type === "paragraph" && JSON.stringify(b).includes("agente"));
+      const word = para?.type === "paragraph" ? para.runs.find((r) => r.text === "agente") : undefined;
+      expect(word).toMatchObject({ weight: 600, tracking: 100, caps: true });
+      expect(blocks.filter((b) => b.type === "paragraph" && b.list === "bullet")).toHaveLength(2);
+      const table = blocks.find((b) => b.type === "table");
+      expect(table?.type === "table" && table.header).toBe(true);
+    });
+  });
+});
+
+describe("the agent sees its edit", () => {
+  test("with the server's rasterizer, a slide edit comes back with a picture of the slide", async () => {
+    expect(await enableSvgRasterizer()).toBe(true);
+    try {
+      const run = await runFor();
+      const deck = artifactOf(await ok(run, "create_presentation", { title: "Deck", slides: [{ layout: "blank" }] }));
+      const out = await ok(run, "edit_presentation", {
+        file: deck.id,
+        ops: [{ op: "add_html", slide: 1, html: CARDS }],
+      });
+      expect(out.content).toContain("A picture of the slide");
+      expect(out.images?.[0]?.mediaType).toBe("image/png");
+      const canvas = artifactOf(await ok(run, "create_canvas", { title: "Board" }));
+      const drawn = await ok(run, "edit_canvas", { file: canvas.id, ops: [{ op: "add_html", html: CARDS }] });
+      expect(drawn.images?.[0]?.mediaType).toBe("image/png");
+    } finally {
+      setSvgRasterizer(null);
+    }
+  });
+});
+
+describe("exports keep the type", () => {
+  test("PowerPoint names the faces and keeps spacing, capitals and the shapes' looks; Word keeps the marks", async () => {
+    const run = await runFor();
+    const deck = artifactOf(await ok(run, "create_presentation", { title: "Deck", slides: [{ layout: "blank" }] }));
+    await ok(run, "edit_presentation", { file: deck.id, ops: [{ op: "add_html", slide: 1, html: CARDS }] });
+    const pptx = await exportLive({ ...f.artifactDeps, live: docs }, personActor(f.owner.id), f.org.id, deck.id, "pptx");
+    const slide = readZip(pptx.body, { maxFiles: 200, maxBytes: 50_000_000 }).find((e) => e.path === "ppt/slides/slide1.xml");
+    const xml = new TextDecoder().decode(slide?.data);
+    expect(xml).toContain('typeface="Martian Mono"');
+    expect(xml).toContain('typeface="Funnel Display"');
+    expect(xml).toContain('cap="all"');
+    expect(xml).toMatch(/spc="\d+"/);
+    expect(xml).toContain("<a:outerShdw");
+
+    const doc = await createArtifact(f.artifactDeps, personActor(f.owner.id), f.org.id, {
+      title: "Plano",
+      content: { kind: "document", markdown: "# Plano" },
+      channelId: f.general.id,
+    });
+    await ok(run, "edit_document", {
+      file: doc.id,
+      ops: [{ op: "append", html: '<p><span style="font-family: Inter; font-weight: 700; font-size: 24px">Marca</span></p>' }],
+    });
+    const docx = await exportLive({ ...f.artifactDeps, live: docs }, personActor(f.owner.id), f.org.id, doc.id, "docx");
+    const body = readZip(docx.body, { maxFiles: 50, maxBytes: 50_000_000 }).find((e) => e.path === "word/document.xml");
+    const word = new TextDecoder().decode(body?.data);
+    expect(word).toContain('w:ascii="Inter"');
+    expect(word).toContain('<w:sz w:val="36"/>');
   });
 });
