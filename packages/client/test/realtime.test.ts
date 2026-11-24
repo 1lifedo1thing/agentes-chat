@@ -592,12 +592,14 @@ describe("RealtimeConnection", () => {
   test("a close that asks to retry after a while is waited out, then spread over as long again", () => {
     const { factory, sockets } = fakeSockets();
     const clock = manualTimers();
+    // A clock that stands still: the hint is kept as a deadline, and real milliseconds passing would shorten the wait.
     const conn = new RealtimeConnection({
       url: "ws://x",
       createSocket: factory,
       timers: clock.timers,
       pingMs: 0,
       random: () => 0.5,
+      now: () => 1_000_000,
     });
     conn.start();
     sockets[0]?.open();
