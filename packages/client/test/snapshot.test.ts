@@ -273,3 +273,32 @@ test("a kept chat's cards are kept with what they show: opened from the snapshot
   expect(next.getQueryData(keys.artifact("o1", "doc", 1))).toBeUndefined();
   expect(next.getQueryData(keys.poll("o1", "elsewhere"))).toBeUndefined();
 });
+
+test("leaving with nothing new since the last save writes nothing; leaving after a change writes it", async () => {
+  const qc = new QueryClient();
+  const store = memory();
+  let writes = 0;
+  const counting: SnapshotStorage = {
+    ...store,
+    write: async (v) => {
+      writes++;
+      await store.write(v);
+    },
+  };
+  qc.setQueryData(keys.me, me("u1"));
+  const snapshot = createSnapshot(qc, counting, { saveAfterMs: 60_000 });
+  const stop = snapshot.start();
+  await snapshot.flush();
+  expect(writes).toBe(1);
+  // The notification shade, a quick look at another app: nothing changed meanwhile.
+  await snapshot.flush();
+  await snapshot.flush();
+  expect(writes).toBe(1);
+  qc.setQueryData(keys.channels("o1"), [{ id: "c1" }]);
+  await snapshot.flush();
+  expect(writes).toBe(2);
+  stop();
+  // Not following the cache any more: a flush writes, as it can't know.
+  await snapshot.flush();
+  expect(writes).toBe(3);
+});

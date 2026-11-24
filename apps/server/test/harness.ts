@@ -136,6 +136,8 @@ export async function createTestServer(
     unconfirmedSignUps?: boolean;
     /** The built web app to serve, as `WEB_DIR` does (`scripts/geometry/shifts.ts` opens it in Chrome). */
     webDir?: string;
+    /** Whether the process counts as overloaded (`watchLoad`); absent = never. */
+    overloaded?: () => string | null;
   } = {},
 ) {
   const { db, close } = await createTestDatabase();
@@ -253,6 +255,7 @@ export async function createTestServer(
     version: "test",
     modules: [],
     pingDatabase: async () => {},
+    overloaded: options.overloaded,
     appsFetchDocument:
       options.appsFetchDocument ??
       (async () => {
@@ -282,6 +285,7 @@ export async function createTestServer(
     browserLive: engine.browserLive,
     streams: createStreamSockets({ db, auth, config, broker: engine.streams }),
     live,
+    overloaded: options.overloaded,
   });
   return {
     db,
