@@ -74,6 +74,12 @@ export const outbox = pgTable(
       .on(t.dedupeKey.op("text_pattern_ops"))
       .where(sql`${t.kind} = 'agent_run.execute'`)
       .concurrently(),
+    // Open jobs by the message they are for: a question's or a note's wake, a follow-up's return. They are a few
+    // thousand rows among millions of finished ones, which a lookup by payload otherwise scans.
+    index("outbox_open_message_idx")
+      .on(t.kind, sql`(${t.payload}->>'messageId')`)
+      .where(sql`${t.status} in ('pending', 'processing')`)
+      .concurrently(),
   ],
 );
 
@@ -448,6 +454,12 @@ export const usageRecords = pgTable(
     index().on(t.createdAt),
     // Usage by run (the task list, routines, cost): read per run id, never by time.
     index().on(t.runId),
+    // The platform AI cap's month sum (`platformSpendNano`), read from the index alone: the cost is in it. Most rows
+    // of a busy workspace are its platform calls.
+    index("usage_records_platform_month_idx")
+      .on(t.orgId, t.createdAt, t.costNanoUsd)
+      .where(sql`${t.billedTo} = 'platform'`)
+      .concurrently(),
   ],
 );
 
