@@ -13,6 +13,11 @@ import type { ClientVitalsReport } from "../api/types";
 export const LAG_PROBE_MS = 250;
 /** Lags kept between two reports, the newest. */
 const LAGS_KEPT = 1200;
+/**
+ * A turn later than this is the computer asleep or the process suspended (some systems' clocks count through sleep),
+ * not the thread busy: it counts no lag. It stays far under the longest lag the server takes (10 min).
+ */
+export const SUSPENDED_MS = 60_000;
 /** The reads a return to the app counts: those asked within this long of it. */
 export const RETURN_WINDOW_MS = 10_000;
 /** The first report waits this long after the launch for the first rows, then goes without them. */
@@ -109,8 +114,10 @@ export function createVitals(host: VitalsHost) {
       let due = host.now() + LAG_PROBE_MS;
       probe = setInterval(() => {
         const now = host.now();
-        lags.push(Math.max(0, now - due));
-        if (lags.length > LAGS_KEPT) lags.shift();
+        if (now - due <= SUSPENDED_MS) {
+          lags.push(Math.max(0, now - due));
+          if (lags.length > LAGS_KEPT) lags.shift();
+        }
         due = now + LAG_PROBE_MS;
       }, LAG_PROBE_MS);
     };
@@ -126,17 +133,24 @@ export function createVitals(host: VitalsHost) {
         ...shared(),
       });
     };
+    // A page loaded hidden launches (paints) only once it shows: until then no timer goes round while it is away.
+    let waiting = false;
     const waitForRows = () => {
-      if (marks.reported) return;
+      waiting = false;
+      if (marks.reported || (!marks.launched && host.presence() === "away")) return;
       const waited = host.now() - (host.startedAt() ?? 0) > FIRST_ROWS_WAIT_MS;
       if (marks.launched && (marks.firstRows !== null || waited)) firstReport();
-      else later(waitForRows, 1000);
+      else {
+        waiting = true;
+        later(waitForRows, 1000);
+      }
     };
     waitForRows();
 
     let last: AppPresence = host.presence();
     const offPresence = host.onPresence((presence) => {
       probing(presence === "front");
+      if (presence !== "away" && !waiting) waitForRows();
       if (presence === "front" && last === "away") {
         const before = reads;
         later(() => send({ getsPerReturn: reads - before, ...shared() }), RETURN_WINDOW_MS);

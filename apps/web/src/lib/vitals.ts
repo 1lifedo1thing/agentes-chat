@@ -15,11 +15,13 @@ import { type DesktopVitals, desktopPlatform, pageReady, thisMac } from "./deskt
 const OPENING_MAX_MS = 600_000;
 const DESKTOP_PLATFORMS = { mac: "macos", windows: "windows", linux: "linux" } as const;
 
-const presenceNow = (): AppPresence => (document.visibilityState === "hidden" ? "away" : "front");
-
 /** This page's side of the measures, read from the window as it is now. */
 export function webVitalsHost(): VitalsHost {
   const desktop = desktopPlatform();
+  // A desktop window hidden to the tray or minimised can keep its page visible (WebView2 is never told, as
+  // `holdSkiesWhileAway` says): there a window without focus is in between, no stall probe and no return counted.
+  const presence = (): AppPresence =>
+    document.visibilityState === "hidden" ? "away" : !desktop || document.hasFocus() ? "front" : "between";
   // A page loaded hidden (a tab opened in the background) paints only once it shows: that opening isn't timed.
   let timed = document.visibilityState !== "hidden";
   document.addEventListener("visibilitychange", () => {
@@ -31,11 +33,17 @@ export function webVitalsHost(): VitalsHost {
     // `performance.now()` counts from the navigation's start.
     startedAt: () => (timed ? 0 : null),
     heapBytes: () => (performance as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize,
-    presence: presenceNow,
+    presence,
     onPresence: (listener) => {
-      const changed = () => listener(presenceNow());
+      const changed = () => listener(presence());
       document.addEventListener("visibilitychange", changed);
-      return () => document.removeEventListener("visibilitychange", changed);
+      window.addEventListener("focus", changed);
+      window.addEventListener("blur", changed);
+      return () => {
+        document.removeEventListener("visibilitychange", changed);
+        window.removeEventListener("focus", changed);
+        window.removeEventListener("blur", changed);
+      };
     },
     ...(desktop && {
       own: async () => {

@@ -8,6 +8,7 @@ import {
   LAG_PROBE_MS,
   lagStats,
   RETURN_WINDOW_MS,
+  SUSPENDED_MS,
   type VitalsHost,
 } from "../src/lib/vitals";
 
@@ -118,6 +119,40 @@ test("the stall probe runs only in front: a late turn is the thread's lag, a hid
   stop();
 });
 
+test("a turn far later than any stall is the computer asleep: no lag of the thread's, and the report still goes", () => {
+  jest.useFakeTimers();
+  const { host, state, pass } = fakeHost();
+  const { sent, api } = sink();
+  const vitals = createVitals(host);
+  vitals.markLaunchedAt();
+  const stop = vitals.start(api, new QueryClient());
+  pass(LAG_PROBE_MS);
+  state.now += 400;
+  pass(LAG_PROBE_MS);
+  // Asleep for an hour with the app in front: its clock counted the hour, its timers didn't run.
+  state.now += 60 * SUSPENDED_MS;
+  for (let i = 0; i < 4; i++) pass(LAG_PROBE_MS);
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toMatchObject({ jsLagMaxMs: 400 });
+  stop();
+});
+
+test("a page loaded hidden keeps no timer going while away; once it shows and paints, its first report goes", () => {
+  jest.useFakeTimers();
+  const { host, state, to, pass } = fakeHost({ startedAt: () => null });
+  state.presence = "away";
+  const { sent, api } = sink();
+  const vitals = createVitals(host);
+  const stop = vitals.start(api, new QueryClient());
+  pass(10 * 60_000);
+  expect(jest.getTimerCount()).toBe(0);
+  to("front");
+  vitals.markLaunchedAt();
+  pass(1000);
+  expect(sent).toHaveLength(1);
+  stop();
+});
+
 test("an opening that can't be timed still reports, without its cold start; no heap, none sent", () => {
   jest.useFakeTimers();
   const { host, state, pass } = fakeHost({ startedAt: () => null });
@@ -159,5 +194,25 @@ test("what only the app measures goes with each report and replaces the report's
   expect(sent).toHaveLength(2);
   expect(sent[1]).toMatchObject({ webviewBytes: 300_000_000, getsPerReturn: 0 });
   expect(sent[1]?.coldStartMs).toBeUndefined();
+  stop();
+});
+
+test("an app with no opening to tell drops the page's own: `undefined` from the app never lets it through", async () => {
+  jest.useFakeTimers();
+  const { host, pass } = fakeHost({
+    platform: "windows",
+    own: async () => ({ coldStartMs: undefined, webviewBytes: 1 }),
+  });
+  const { sent, api } = sink();
+  const vitals = createVitals(host);
+  const stop = vitals.start(api, new QueryClient());
+  pass(1200);
+  vitals.markLaunchedAt();
+  vitals.markFirstRows();
+  pass(1000);
+  await settle();
+  expect(sent).toHaveLength(1);
+  expect(sent[0]).toMatchObject({ platform: "windows", firstRowsMs: 1200, webviewBytes: 1 });
+  expect(sent[0]?.coldStartMs).toBeUndefined();
   stop();
 });

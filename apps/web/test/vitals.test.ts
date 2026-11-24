@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
@@ -79,9 +79,38 @@ describe("the web's speed reports", () => {
   });
 
   test("never the page's own opening in the app: an app from before, or one past what the server takes, sends none", async () => {
+    // The key itself, `undefined`: it replaces the page's own opening in the report (`toStrictEqual`, never `{}`).
     inTheApp("mac", "refuse");
-    expect(await webVitalsHost().own?.()).toEqual({ coldStartMs: undefined });
+    expect(await webVitalsHost().own?.()).toStrictEqual({ coldStartMs: undefined });
     inTheApp("linux", { coldStartMs: 900_000, webviewBytes: 260_000_000 });
-    expect(await webVitalsHost().own?.()).toEqual({ coldStartMs: undefined, webviewBytes: 260_000_000 });
+    expect(await webVitalsHost().own?.()).toStrictEqual({ coldStartMs: undefined, webviewBytes: 260_000_000 });
+  });
+
+  test("the desktop app's window without focus is in between, as one hidden to the tray whose page stays visible", () => {
+    inTheApp("windows", {});
+    showing("visible");
+    let focused = true;
+    const hasFocus = spyOn(document, "hasFocus").mockImplementation(() => focused);
+    try {
+      const host = webVitalsHost();
+      expect(host.presence()).toBe("front");
+      const seen: string[] = [];
+      const off = host.onPresence((p) => seen.push(p));
+      focused = false;
+      window.dispatchEvent(new Event("blur"));
+      focused = true;
+      window.dispatchEvent(new Event("focus"));
+      showing("hidden");
+      off();
+      expect(seen).toEqual(["between", "front", "away"]);
+
+      // A browser's tab is in front while it shows, focused or not.
+      delete win().__agentesDesktop;
+      focused = false;
+      showing("visible");
+      expect(webVitalsHost().presence()).toBe("front");
+    } finally {
+      hasFocus.mockRestore();
+    }
   });
 });
