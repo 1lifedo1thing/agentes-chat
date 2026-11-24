@@ -16808,10 +16808,10 @@ export const ptBR = {
       "Quando o computador dos seus agentes estiver cheio ou fora, as respostas, os pedidos e as rotinas deles podem pensar aqui com o seu login.",
     spillTeamHint:
       "Quando o computador de um agente estiver cheio ou fora, as respostas, os pedidos e as rotinas dele podem pensar aqui com o login do dono dele neste computador.",
-    spillWorkspaceOff: "Um admin desligou isso para o workspace.",
+    spillWorkspaceOff: "Um admin desativou isso para o workspace.",
     helpWorkspace: "Computadores ajudam quando o da equipe estiver cheio ou fora",
     helpWorkspaceHint:
-      "Cada computador só ajuda se o dono permitir. Desligado: nenhum ajuda, seja qual for a escolha do dono.",
+      "Cada computador só ajuda se o dono permitir. Com isto desativado, nenhum ajuda, seja qual for a escolha do dono.",
     connectedBy: "Conectado por {{name}}",
     downloadFor: "Baixar para {{system}}",
     downloadApp: "Baixar o app",
