@@ -751,8 +751,8 @@ export async function setMachineEgressWaiting(
 
 /**
  * `PUT …/machines/{machineId}/moving`: the operator says the workspace's own computer is moving to another server
- * (`moving_at` keeps the first time), or no longer; its people's apps read it again. Null: the workspace has no such
- * managed computer.
+ * (`moving_at` the latest word, which `MOVING_SHOWN_MS` counts from: a move that waits for its next step says it
+ * again), or no longer; its people's apps read it again. Null: the workspace has no such managed computer.
  */
 export async function setMachineMoving(
   deps: { db: Database; pubsub?: PubSub },
@@ -762,7 +762,7 @@ export async function setMachineMoving(
 ) {
   const [row] = await deps.db
     .update(machines)
-    .set({ movingAt: moving ? sql`coalesce(${machines.movingAt}, now())` : null })
+    .set({ movingAt: moving ? sql`now()` : null })
     .where(
       and(
         eq(machines.orgId, orgId),

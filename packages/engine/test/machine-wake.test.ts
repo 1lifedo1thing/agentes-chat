@@ -211,10 +211,14 @@ describe("moving to another server", () => {
     expect((await device())?.kind).toBe("offline");
 
     expect(await setMachineMoving(deps(), f.org.id, machineId, true)).toEqual({ moving: true });
-    const first = (await machineRow(machineId)).movingAt;
-    expect(first).toBeInstanceOf(Date);
+    // Said again at a later step of the move: its while counts from then.
+    await f.db
+      .update(schema.machines)
+      .set({ movingAt: new Date(Date.now() - MOVING_SHOWN_MS) })
+      .where(eq(schema.machines.id, machineId));
     expect(await setMachineMoving(deps(), f.org.id, machineId, true)).toEqual({ moving: true });
-    expect((await machineRow(machineId)).movingAt).toEqual(first);
+    const first = (await machineRow(machineId)).movingAt;
+    expect(Date.now() - (first?.getTime() ?? 0)).toBeLessThan(60_000);
     expect(heard).toEqual([
       { type: "machine.updated", machineId, moving: true },
       { type: "machine.updated", machineId, moving: true },

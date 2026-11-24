@@ -319,7 +319,7 @@ export function registerOperatorMachines(api: OpenAPIHono, { db, config, pubsub,
       tags,
       summary: "Say the workspace's computer is moving to another server, or no longer",
       description:
-        "Say it (`true`) when its move starts, and `false` once its runner paired on the new server, or the move was cancelled or failed. While it is away its people see that it is moving and comes back in a few minutes, never that it is offline or not answering, for at most two hours after the first `true`. `true` again keeps the first time; removing the computer ends it. A change comes as `machine.updated`. 404 when the workspace has no such managed computer.",
+        "Say it (`true`) when its move starts, and `false` once its runner paired on the new server, or the move was cancelled or failed. While it is away its people see that it is moving and comes back in a few minutes, never that it is offline or not answering, for at most two hours after the latest `true` (say it again at each step of a long move). Removing the computer ends it. A change comes as `machine.updated`. 404 when the workspace has no such managed computer.",
       request: { params: MachineParams, body: body(z.object({ moving: z.boolean() })) },
       responses: { 200: json(z.object({ moving: z.boolean() }).openapi("OperatorMoving")), ...errors },
     }),
