@@ -8,7 +8,7 @@ import {
   parseServerFrame,
 } from "../src/machine-protocol";
 
-/* Protocol 78 (ADR 0228 §6): the pins after `welcome`, `hello.clis`, `cli.fetch` frames and the `cli.fetch` op. */
+/* Protocol 79 (ADR 0228 §6): the pins after `welcome`, `hello.clis`, `cli.fetch` frames and the `cli.fetch` op. */
 
 test("the protocol says it", () => {
   expect(MACHINE_PROTOCOL_VERSION).toBeGreaterThanOrEqual(CLI_COPIES_PROTOCOL);

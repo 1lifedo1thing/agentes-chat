@@ -29,7 +29,7 @@ let f: Fixture;
 afterEach(() => f?.close());
 
 const CLAUDE = { claude: { version: "2.1.300", loggedIn: true }, detectedAt: new Date().toISOString() };
-/** A Mac's runner (protocol 78) also says it fetches the Antigravity CLI itself (ADR 0228 §6); Windows has no build. */
+/** A Mac's runner (protocol 79) also says it fetches the Antigravity CLI itself (ADR 0228 §6); Windows has no build. */
 const MAC = { ...CLAUDE, copies: { fetchable: ["antigravity"] } };
 
 async function scene() {

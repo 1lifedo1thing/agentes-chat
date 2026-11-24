@@ -3769,7 +3769,10 @@ async function executeRunInner(
   };
 
   /** Ends the run with a plain closing line that carries what it changed (its receipts). */
-  const endWithReceipts = () => closeWith(DONE_TEXT, "done", { receipts: true });
+  const endWithReceipts = () => {
+    const line = noReplyLine(undefined);
+    return closeWith(line.text, line.code, { receipts: true });
+  };
 
   /** Ends the run on the reply it held back (`held`), its own words, with what it changed and its cards. */
   const closeOnHeld = () => {
@@ -6263,7 +6266,7 @@ async function executeRunInner(
       if (await workWaitsInLine()) return parkQueuedWork();
       if (run.workId) await dropWorkNotices(db, run.id);
       const updates = transcript.memoryUpdates ?? [];
-      const saved = (transcript.artifacts ?? []).length > 0 ? "File saved." : "";
+      const saved = (transcript.artifacts ?? []).length > 0;
       const anythingPosted = transcript.postedCount > 0;
       // The silence word (NO_REPLY) is never posted, on any run (reply-policy.ts): what it really wrote, without the line
       // it already said on the way (`say_now`) when it writes it again.
@@ -6415,27 +6418,17 @@ async function executeRunInner(
         ? said
         : (await heldWords(transcript.heldWording && transcript.reacted && restatesReaction(said) ? "" : said)) ||
           (transcript.heldWording ?? "");
-      // The message is the final answer only: the last model call's text. Without it, a short closing line.
-      const written = silent
-        ? ""
-        : words ||
-          (updates.length > 0 ? updates.map(describeUpdate).join("\n") : "") ||
-          saved ||
-          closingSummary(transcript, anythingPosted) ||
-          (result.executedCount > 0 && !anythingPosted ? DONE_TEXT : "");
-      // It changed something since its last message and wrote nothing more: its receipts still go out.
-      let text = written || (!silent && anythingPosted && (await hasUnpostedReceipts(db, run)) ? DONE_TEXT : "");
+      // The message is the final answer only: the model's own words, this call's or its last narration since its last post.
+      const written = silent ? "" : words || closingSummary(transcript);
+      // It changed something (receipts, memory, files) and wrote no words: never a stand-in reply. It is asked for
+      // its answer (`unanswered`). Still none, its changes go out on a line that says it wrote no reply, and why.
+      const noReply =
+        !silent && !written && (updates.length > 0 || saved || (await hasUnpostedReceipts(db, run)))
+          ? noReplyLine(result.stopReason)
+          : null;
+      let text = written || noReply?.text || "";
       // A line the server wrote (not the model): its code, so the app shows it in the person's language.
-      const code =
-        words || text === ""
-          ? undefined
-          : updates.length > 0
-            ? bodyCode("memory")
-            : text === saved
-              ? bodyCode("file_saved")
-              : text === DONE_TEXT
-                ? bodyCode("done")
-                : undefined;
+      const code = noReply && text === noReply.text ? bodyCode(noReply.code) : undefined;
       const t = transcript;
       // How the turn ends (ADR 0097): it goes on in this run (told why), it waits on something durable, it asks a
       // person with a card, or it is done. One choke point for every run kind but a routine's (above).
@@ -6546,8 +6539,9 @@ async function executeRunInner(
         executed: work,
         bound: t.stuck?.endAt !== undefined ? "stuck" : t.wrapUpNoted ? "step_limit" : null,
         quiet: silent && !judged,
-        decided: decided && !silent && !said && !capped && !closingSummary(t, true) ? decided : null,
-        unanswered: !silent && !viaRoutine && !words && (sentinelOnly || (!text && !anythingPosted)),
+        decided: decided && !silent && !said && !capped && !closingSummary(t) ? decided : null,
+        unanswered:
+          !silent && !viaRoutine && !words && (sentinelOnly || Boolean(noReply) || (!text && !anythingPosted)),
         unreached,
         judged: owesAnswer && !capped ? judged : "",
         mission: Boolean(plan.missionId),
@@ -6691,10 +6685,16 @@ async function executeRunInner(
         keep = decision.nudge;
         if (shown) addsTo = true;
       }
-      // Nothing to post after its nudge either: a computer brain's CLI answered nothing (`cli_empty`, whose line says to
-      // ask again and check that program there), the API's model returned nothing.
+      // No words after being asked for them: a computer brain's CLI answered nothing (`cli_empty`, whose line says to
+      // ask again and check that program there); the API's model fails saying how its last call ended.
       if (!text && !anythingPosted && !silent)
-        return fail(isComputerBrain(plan.kind) ? `cli_empty: ${BRAIN_NAMES[plan.kind]}` : "empty_reply");
+        return fail(
+          isComputerBrain(plan.kind)
+            ? `cli_empty: ${BRAIN_NAMES[plan.kind]}`
+            : result.stopReason === "max_tokens"
+              ? "empty_reply_limit"
+              : "empty_reply",
+        );
       // Someone wrote while it answered: post this answer, then read the new message(s) and go on.
       const still = { pending: await unreadNow(db, run.id, { awaitTriage }) };
       // At the cap this answer ends the run instead: what came in gets a run of its own.
@@ -7383,13 +7383,11 @@ function heardSaidNow(t: Transcript, from: number, at?: number) {
 }
 
 /**
- * When the final model call wrote nothing: the agent's last narration since
- * the last post ("Installed Go and built it."), else a plain "Done." when it
- * used tools, else nothing (an empty reply fails the run).
+ * When the final model call wrote nothing: the agent's last narration since the last post ("Installed Go and built
+ * it."), else nothing.
  */
-function closingSummary(t: Transcript, anythingPosted: boolean): string {
-  // What it wrote up to its line on the way (`say_now`) was that line: never the reply. The work it called in that
-  // same response is work, though: a run that did it and wrote nothing after still closes with "Done.".
+function closingSummary(t: Transcript): string {
+  // What it wrote up to its line on the way (`say_now`) was that line: never the reply.
   const said = t.saidNow?.at(-1)?.at;
   const from = said === undefined ? t.postedUpTo : Math.max(t.postedUpTo, said + 1);
   const last = t.messages
@@ -7398,11 +7396,7 @@ function closingSummary(t: Transcript, anythingPosted: boolean): string {
     .map((m) => withoutSaidNow(stripSentinel(textOf(m.content)), t.saidNow))
     .filter(Boolean)
     .at(-1);
-  if (last) return last;
-  const usedTools = t.messages
-    .slice(t.postedUpTo)
-    .some((m) => typeof m.content !== "string" && m.content.some((b) => b.type === "tool_use" && !isSayNow(b.name)));
-  return usedTools && !anythingPosted ? DONE_TEXT : "";
+  return last ?? "";
 }
 
 /**
@@ -7673,15 +7667,21 @@ function takeMemoryUpdates(t: Transcript): Record<string, unknown> | undefined {
   return meta;
 }
 
-const describeUpdate = (u: MemoryUpdate) =>
-  u.action === "proposed"
-    ? `Proposal created: ${u.text}`
-    : u.action === "forgot"
-      ? `Memory updated: forgot "${u.text}".`
-      : `Memory updated: ${u.text}`;
-
-/** The closing line of a run that used tools and wrote nothing (the app shows it as `chat.body.done`). */
-const DONE_TEXT = "Done.";
+/**
+ * The line that carries what a run changed when the model wrote no reply (the app shows it as `chat.body.no_reply` or
+ * `chat.body.no_reply_limit`): how its last call ended, never a reply made up for it.
+ */
+function noReplyLine(stop: StopReason | undefined) {
+  return stop === "max_tokens"
+    ? {
+        code: "no_reply_limit",
+        text: "The AI hit its output limit before writing a reply. What it changed is below. Ask again for its answer.",
+      }
+    : {
+        code: "no_reply",
+        text: "The AI ended its turn without writing a reply. What it changed is below. Ask again for its answer.",
+      };
+}
 
 const withCode = (meta: Record<string, unknown> | undefined, code: ReturnType<typeof bodyCode> | undefined) =>
   code ? { ...(meta ?? {}), ...code } : meta;

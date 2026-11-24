@@ -107,7 +107,7 @@ The same for Claude Code, Codex, Cursor, OpenCode, Grok Build and the Antigravit
   (macOS, Linux with glibc or musl, Windows; arm64 and x64 where the vendor has them) at the vendor's own https
   address, with the vendor's hash of it (Claude Code's manifest, Codex's and OpenCode's release assets, the
   Antigravity CLI's manifests) or, where the vendor publishes none (Cursor, Grok Build), the hash taken when pinning.
-  The server sends its list after every `welcome` (`clis.pins`, protocol 78); the runner keeps the last one in its home
+  The server sends its list after every `welcome` (`clis.pins`, protocol 79); the runner keeps the last one in its home
   and has the same list built in, so it works with an older server or none. A new pin is a server deploy, never a
   runner release.
 - **The runner.** The person's own copy runs when it is at the pinned version or newer. Otherwise, where the CLI is
@@ -142,4 +142,4 @@ The same for Claude Code, Codex, Cursor, OpenCode, Grok Build and the Antigravit
 - A computer may hold a CLI twice (the person's older one and the runner's), which takes disk space.
 - Not done here: the loading screen's own avatar loop and minimum time (`apps/desktop`, a desktop release), the
   window's throttling setting (the page now stops its own motion instead), and reading sign-ins through each CLI's
-  protocol beyond Codex. The one-click `cli.install` stays for runners before protocol 78.
+  protocol beyond Codex. The one-click `cli.install` stays for runners before protocol 79.

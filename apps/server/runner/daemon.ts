@@ -35,6 +35,7 @@ import {
   type RunnerToolchains,
   type RunnerTools,
   TASK_LIMIT_BOUNDS,
+  type TaskRoomReport,
 } from "@agenteschat/adapters/machine-protocol";
 import { redactCommon } from "@agenteschat/adapters/redact";
 import {
@@ -169,7 +170,7 @@ import {
   type WorkerDesktopUse,
   type WorkerState,
 } from "./supervisor";
-import { type SettledTask, TaskManager } from "./tasks";
+import { roomNews, type SettledTask, TaskManager, type TaskRoomReading } from "./tasks";
 import { runnerTerminalUser, systemTerminalUser, Terminals, type TerminalUser } from "./terminal";
 import { appleToolchains, cachedToolchains, TOOLCHAINS_FILE, xcodeBlocked } from "./toolchains";
 import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
@@ -197,6 +198,8 @@ import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
  * (`SESSION_IDLE_MS` on the server). Elsewhere a count of turns decides room, so idle CLIs close soon.
  */
 const MEMORY_READ = process.platform === "linux";
+/** How often the tasks' room is read for the server (sent only when it changed). */
+const TASK_ROOM_REPORT_MS = 15_000;
 
 /**
  * Background tasks at once, sized to the computer's memory: one per 1.5 GiB left after 4 GiB for the system and the
@@ -443,6 +446,11 @@ export interface DaemonOptions {
    * (`CliCopies`, ADR 0228 §6): on for the runner people run (`main.ts`), off in tests unless they ask.
    */
   cliCopies?: boolean | Partial<CliCopiesOptions>;
+  /**
+   * Where tasks read their room (`TaskManagerOptions.room`; system mode tells its workers to read it too): the machine's
+   * own for the runner people run (`main.ts`), none in tests unless they ask, so a busy test machine decides nothing.
+   */
+  taskRoom?: () => TaskRoomReading;
 }
 
 /** What a task is in its activity words: a shell task's command, or the CLI that works it (the app names it). */
@@ -482,6 +490,8 @@ export class RunnerDaemon implements RequestObserver {
   private stopWatch: (() => void) | null = null;
   private stopStandbyWatch: (() => void) | null = null;
   private readonly timers: ReturnType<typeof setInterval>[] = [];
+  /** The tasks' room last told to the server (`reportRoom`). */
+  private roomSaid: { room: TaskRoomReport; at: number } | null = null;
   /** Protocol 22: how busy this computer got over the last day (rides on `pong`). */
   private readonly load = new LoadWindow();
   /** The agents' browsers' last day of traffic (protocol 23). */
@@ -903,6 +913,9 @@ export class RunnerDaemon implements RequestObserver {
     const load = setInterval(sample, LOAD_SAMPLE_MS);
     load.unref?.();
     this.timers.push(load);
+    const room = setInterval(() => this.reportRoom(), TASK_ROOM_REPORT_MS);
+    room.unref?.();
+    this.timers.push(room);
     const egress = setInterval(() => void this.sampleEgress(), 30_000);
     egress.unref?.();
     this.timers.push(egress);
@@ -1117,6 +1130,7 @@ export class RunnerDaemon implements RequestObserver {
       this.session.tasks.setLimits({
         maxConcurrent: this.taskLimit(paired),
         defaultMaxSeconds: paired.taskMaxSeconds ?? DEFAULT_LIMITS.taskMaxSeconds,
+        pushHarder: paired.pushHarder === true,
       });
       const brainLimits = {
         idleMs: (paired.brainIdleMinutes ?? DEFAULT_LIMITS.brainIdleMinutes) * 60_000,
@@ -1135,6 +1149,21 @@ export class RunnerDaemon implements RequestObserver {
   private stopHosted(why: string) {
     this.session?.accountBrains?.dropTurns(new RunnerError("dropped", why));
     for (const u of readAgentUsers(this.opts.home)) this.accountUsers?.stopScopes(u.uid);
+  }
+
+  /** `TASK_ROOM_PROTOCOL`: tasks' room now, where memory is read. */
+  private taskRoom(): { room?: TaskRoomReport } {
+    const room = this.session?.tasks.room();
+    return room ? { room } : {};
+  }
+
+  /** Tells the server the tasks' room when it changed: the device page's "room for about N more". */
+  private reportRoom() {
+    const { room } = this.taskRoom();
+    const at = this.now();
+    if (!room || !roomNews(this.roomSaid?.room ?? null, room, at - (this.roomSaid?.at ?? 0))) return;
+    this.roomSaid = { room, at };
+    this.send({ type: "runner.state", paused: this.pauseState(), maxTasks: this.taskLimit(this.stored), room });
   }
 
   private taskLimit(c: Pick<StoredConfig, "maxConcurrentTasks"> | null | undefined) {
@@ -1158,6 +1187,8 @@ export class RunnerDaemon implements RequestObserver {
         brainMaxProcesses: c?.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
         codexIdleMinutes: c?.brainIdleMinutes ?? CODEX_DEFAULT_LIMITS.brainIdleMinutes,
         codexMaxProcesses: c?.brainMaxProcesses ?? CODEX_DEFAULT_LIMITS.brainMaxProcesses,
+        pushHarder: c?.pushHarder === true,
+        ...(this.opts.taskRoom ? { onRoom: true } : {}),
       },
     };
   }
@@ -1332,6 +1363,14 @@ export class RunnerDaemon implements RequestObserver {
       ...(this.self.compiled ? { wrapperCommand: [...this.self.command, "task-wrapper"] } : {}),
       onSettled: (t) => this.taskSettled(t),
       commitHost: () => this.workerState().commitHost,
+      ...(this.opts.taskRoom ? { room: this.opts.taskRoom } : {}),
+      pushHarder: config.pushHarder === true,
+      // A task without room closes idle CLIs, then idle browsers, as a turn does (system mode: the workers').
+      reclaim: async () => {
+        const s = this.session?.supervisor;
+        if (s) return (await s.reclaimBrains("")) || s.reclaimBrowsers();
+        return (await brains.reclaimIdle("")) || browser.reclaimIdle();
+      },
       ...(this.opts.caffeinate !== undefined ? { caffeinate: this.opts.caffeinate } : {}),
     });
     await tasks.init();
@@ -1641,7 +1680,11 @@ export class RunnerDaemon implements RequestObserver {
       codex: { runnerHome: home, mcp: mcpCommand, runs: codexRuns, app: codexApp },
       paused: () => this.stopping || this.pauseState().paused,
       setPause: (paused, until, by) => (paused ? this.pause(until, by) : this.resume()),
-      setTaskLimit: (maxTasks) => this.configSet({ maxConcurrentTasks: maxTasks }).maxConcurrentTasks,
+      setTaskLimit: ({ maxTasks, pushHarder }) => {
+        if (pushHarder !== undefined) this.write({ ...(this.stored ?? {}), pushHarder });
+        const set = maxTasks === undefined ? this.configGet() : this.configSet({ maxConcurrentTasks: maxTasks });
+        return { maxTasks: set.maxConcurrentTasks, ...this.taskRoom() };
+      },
       // A config written later without the mode never turns a system session back into one that does agents' work.
       systemMode: () => config.mode === "system" || this.stored?.mode === "system",
       ...(supervisor ? { workers: supervisor } : {}),
@@ -2121,7 +2164,7 @@ export class RunnerDaemon implements RequestObserver {
       exec: access.tools.commands,
       paused: this.pauseState(),
       access,
-      size: { ...machineSize(workspaceReal), maxTasks: this.taskLimit(this.stored) },
+      size: { ...machineSize(workspaceReal), maxTasks: this.taskLimit(this.stored), ...this.taskRoom() },
       claudeLoginMethods: this.accounts.claudeLoginMethods(),
       ...(this.sharedLoginBlocked && this.stored?.claudeSharedLogin
         ? { claudeLoginBlocked: this.sharedLoginBlocked }
@@ -2543,6 +2586,7 @@ export class RunnerDaemon implements RequestObserver {
       brainMaxProcesses: c.brainMaxProcesses ?? DEFAULT_LIMITS.brainMaxProcesses,
       workspace: this.session?.workspaceReal ?? c.workspace,
       defaultMaxConcurrentTasks: DEFAULT_LIMITS.maxConcurrentTasks,
+      ...(this.session?.tasks.room() ? { tasksOnRoom: true } : {}),
       ...(c.managedBy === "desktop" ? { managedBy: c.managedBy } : {}),
     };
   }

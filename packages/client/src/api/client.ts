@@ -157,6 +157,7 @@ import type {
   FeedbackInput,
   FeedbackOffer,
   FileConversationRef,
+  FileWave,
   ForeignMailbox,
   FormerAgent,
   GifKey,
@@ -224,6 +225,7 @@ import type {
   Memory,
   Message,
   MessageCard,
+  MessageCards,
   MessagePin,
   Mission,
   MissionBrain,
@@ -1053,7 +1055,15 @@ export interface ApiClient {
     messages(
       orgId: string,
       channelId: string,
-      options?: { threadId?: string; before?: string; after?: string; around?: string; limit?: number },
+      options?: {
+        threadId?: string;
+        before?: string;
+        after?: string;
+        around?: string;
+        limit?: number;
+        /** Also what the page's cards show (`include=cards`), handed here before the messages return. */
+        onCards?: (cards: MessageCards) => void;
+      },
     ): Promise<Message[]>;
     post(
       orgId: string,
@@ -1459,6 +1469,8 @@ export interface ApiClient {
     listTeam(orgId: string): Promise<Memory[]>;
     /** Tornar do time (ADR 0167): an agent's memory becomes the team's; its copies are archived. */
     makeTeam(orgId: string, memoryId: string): Promise<Memory>;
+    /** "Forget all" on the right hand's Memory tab: what it learned from me on its own, for me alone. */
+    forgetRightHandLearned(orgId: string): Promise<{ forgotten: number }>;
     edit(orgId: string, memoryId: string, text: string): Promise<Memory>;
     setPinned(orgId: string, memoryId: string, pinned: boolean): Promise<Memory>;
     setArchived(orgId: string, memoryId: string, archived: boolean): Promise<Memory>;
@@ -1934,6 +1946,8 @@ export interface ApiClient {
     keep(orgId: string, id: string): Promise<Artifact>;
     /** Sends what a person picked in a block to the agent that made it, as their own message. */
     reply(orgId: string, id: string, text: string, clientId: string): Promise<{ id: string }>;
+    /** Keeps an audio file's wave and length, measured here; the server keeps the first one measured (and returns it). */
+    setWave(orgId: string, id: string, version: number, wave: FileWave): Promise<FileWave>;
     /** A block's state, the same for everyone (ADR 0113). */
     blockState(orgId: string, id: string, version: number): Promise<BlockState>;
     /** Sets values in a block for everyone. */
