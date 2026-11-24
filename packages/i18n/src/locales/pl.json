@@ -12195,10 +12195,10 @@
       "agent": "Agent",
       "repo": "Gdzie pracować",
       "repoPlaceholder": "Repozytorium lub projekt",
-      "repoSearch": "Szukaj lub wpisz właściciel/nazwa albo nową nazwę",
+      "repoSearch": "Szukaj albo wpisz owner/name, adres repozytorium lub nową nazwę",
       "newLocal": "Nowy projekt na komputerze: {{name}}",
       "useRepo": "Użyj {{repo}}",
-      "repoNote": "Nazwa bez właściciela tworzy projekt na komputerze agenta, poza GitHubem.",
+      "repoNote": "Nazwa bez owner tworzy projekt tylko na komputerze agenta, bez zdalnego repozytorium.",
       "hint": "@ zaprasza kogoś do sesji",
       "start": "Rozpocznij"
     },
@@ -12212,7 +12212,7 @@
       "closeHint": "Znika z listy: worktree znika, gałąź zostaje",
       "failed": "Nie udało się przygotować worktree.",
       "retry": "Spróbuj ponownie",
-      "githubAccess": "Ta przestrzeń robocza nie ma dostępu do tego repozytorium w GitHub. Podłącz GitHub w Ustawienia › Konektory albo rozpocznij sesję w projekcie na komputerze (wystarczy nazwa)."
+      "githubAccess": "Ten workspace nie ma dostępu do tego repozytorium. Połącz miejsce, w którym się znajduje (GitHub, GitLab lub Bitbucket), w Ustawieniach › Konektory albo zacznij sesję w projekcie na komputerze (sama nazwa)."
     },
     "panel": {
       "label": "Panel sesji",

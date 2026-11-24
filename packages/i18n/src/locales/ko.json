@@ -10911,10 +10911,10 @@
       "agent": "에이전트",
       "repo": "작업할 곳",
       "repoPlaceholder": "저장소 또는 프로젝트",
-      "repoSearch": "검색하거나 owner/name 또는 새 이름을 입력하세요",
+      "repoSearch": "검색하거나 owner/name, 저장소 주소 또는 새 이름을 입력하세요",
       "newLocal": "컴퓨터의 새 프로젝트: {{name}}",
       "useRepo": "{{repo}} 사용",
-      "repoNote": "owner 없이 이름만 쓰면 GitHub 밖, 에이전트의 컴퓨터에 프로젝트를 만들어요.",
+      "repoNote": "owner 없는 이름은 원격 저장소 없이 에이전트의 컴퓨터에만 프로젝트를 만듭니다.",
       "hint": "@로 다른 사람을 세션에 부를 수 있어요",
       "start": "시작"
     },
@@ -10928,7 +10928,7 @@
       "closeHint": "목록에서 빠지고, 워크트리는 삭제되며 브랜치는 남아요",
       "failed": "워크트리를 준비하지 못했어요.",
       "retry": "다시 시도",
-      "githubAccess": "이 워크스페이스에는 이 저장소에 대한 GitHub 접근 권한이 없어요. 설정 › 커넥터에서 GitHub를 연결하거나, 컴퓨터의 프로젝트로 세션을 시작하세요(이름만 입력)."
+      "githubAccess": "이 워크스페이스는 이 저장소에 접근할 수 없습니다. 설정 › 커넥터에서 저장소가 있는 곳(GitHub, GitLab 또는 Bitbucket)을 연결하거나, 컴퓨터의 프로젝트(이름만)에서 세션을 시작하세요."
     },
     "panel": {
       "label": "세션 패널",

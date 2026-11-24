@@ -10988,10 +10988,10 @@
       "agent": "智能体",
       "repo": "在哪里工作",
       "repoPlaceholder": "仓库或项目",
-      "repoSearch": "搜索，或输入 owner/name 或新名称",
+      "repoSearch": "搜索，或输入 owner/name、仓库地址或一个新名称",
       "newLocal": "电脑上的新项目：{{name}}",
       "useRepo": "使用 {{repo}}",
-      "repoNote": "不带 owner 的名称会在智能体的电脑上新建项目，不放在 GitHub 上。",
+      "repoNote": "不带 owner 的名称只会在智能体的电脑上创建项目，没有远程仓库。",
       "hint": "用 @ 呼叫他人加入会话",
       "start": "开始"
     },
@@ -11005,7 +11005,7 @@
       "closeHint": "会从列表中移除：工作树会被删除，分支会保留",
       "failed": "无法准备工作树。",
       "retry": "重试",
-      "githubAccess": "此工作区没有这个仓库的 GitHub 访问权限。请在“设置 › 连接器”中连接 GitHub，或在电脑上的项目中开始会话（只需输入名称）。"
+      "githubAccess": "此工作区无权访问该仓库。请在设置 › 连接器中连接它所在的平台（GitHub、GitLab 或 Bitbucket），或在电脑上的项目中开始会话（只需一个名称）。"
     },
     "panel": {
       "label": "会话面板",

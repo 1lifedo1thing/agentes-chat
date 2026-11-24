@@ -27617,7 +27617,7 @@
     "value": "Repository or project"
   },
   "codeSessions.home.repoSearch": {
-    "value": "Search, or type owner/name or a new name"
+    "value": "Search, or type owner/name, a repository's address or a new name"
   },
   "codeSessions.home.newLocal": {
     "value": "New project on the computer: {{name}}"
@@ -27626,7 +27626,7 @@
     "value": "Use {{repo}}"
   },
   "codeSessions.home.repoNote": {
-    "value": "A name with no owner starts a project on the agent's computer, outside GitHub."
+    "value": "A name with no owner starts a project on the agent's computer only, with no remote repository."
   },
   "codeSessions.home.hint": {
     "value": "@ calls someone into the session"
@@ -27662,7 +27662,7 @@
     "value": "Try again"
   },
   "codeSessions.view.githubAccess": {
-    "value": "This workspace has no GitHub access for this repository. Connect GitHub in Settings › Connectors, or start a session on a project on the computer (just a name)."
+    "value": "This workspace has no access to this repository. Connect where it lives (GitHub, GitLab or Bitbucket) in Settings › Connectors, or start a session on a project on the computer (just a name)."
   },
   "codeSessions.panel.label": {
     "value": "Session panel"

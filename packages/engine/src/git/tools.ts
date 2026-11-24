@@ -31,6 +31,7 @@ import {
   gitToolName,
   type HostAt,
   parseRepoRef,
+  refInList,
   repoRefAt,
   repoRefName,
   teamGitConnections,
@@ -38,6 +39,7 @@ import {
 import { hostAt } from "./hosts/reach";
 import { cloneOnMachine } from "./machine";
 import { onSessionRepo, personAccountOfRun } from "./person-account";
+import { agentRepositoryList } from "./repos";
 import { signatureLine, signedBody } from "./signature";
 
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -226,7 +228,7 @@ export function createGitToolSource(deps: GitToolDeps): ToolSource {
       const all: ToolDefinition[] = [
         {
           name: named("git_clone"),
-          description: `Clone a ${host.label} repository into your folder on your computer (${checkoutDirOf({ host: host.id, path: host.id === "gitlab" ? "<group>/<project>" : "<owner>/<name>" })}; already there: it is updated). No approval needed. Real git through our proxy: commit and push from there to branches agentes/<your handle>/…${host.openPullRequest ? `, then ${named("open_pull_request")}` : `, then give the person the link the server prints to open a ${host.request}`}. ${host.deleteBranch ? `Delete branches with ${named("delete_branches")}; to` : "To"} push to someone else's branch, ask with ${named("request_branch_push")} first.`,
+          description: `Clone a ${host.label} repository into your folder on your computer (${checkoutDirOf({ host: host.id, path: host.id === "gitlab" ? "<group>/<project>" : "<owner>/<name>" })}; already there: it is updated)${host.repositories ? `; ${named("list_repositories")} lists the ones you can use` : ""}. No approval needed. Real git through our proxy: commit and push from there to branches agentes/<your handle>/…${host.openPullRequest ? `, then ${named("open_pull_request")}` : `, then give the person the link the server prints to open a ${host.request}`}. ${host.deleteBranch ? `Delete branches with ${named("delete_branches")}; to` : "To"} push to someone else's branch, ask with ${named("request_branch_push")} first.`,
           scope: scopeOf("git_clone"),
           connectionId: connection.id,
           connector: { key: host.id, via: "native", tool: named("git_clone") },
@@ -309,6 +311,56 @@ export function createGitToolSource(deps: GitToolDeps): ToolSource {
               if (isRightHand(agent)) return { content: NO_HOME_MESSAGE, isError: true };
               const preparing = await computerPreparing({ ...deps.sandbox, db: c.db }, c.orgId);
               return { content: preparing ? PREPARING_COMPUTER_MESSAGE : NO_COMPUTER_MESSAGE, isError: true };
+            } catch (error) {
+              return failed(error);
+            }
+          },
+        },
+        {
+          name: named("list_repositories"),
+          description: `List the ${host.label} repositories you can work in, most recently active first, each by the name the other ${host.label} tools take (repo). Use it before asking a person for a repository's path. \`query\` keeps the ones whose path has that text.`,
+          scope: scopeOf("list_repositories"),
+          connectionId: connection.id,
+          connector: { key: host.id, via: "native", tool: named("list_repositories") },
+          connectorLabel: connection.label,
+          service: host.id,
+          inputSchema: {
+            type: "object",
+            properties: { query: { type: "string", maxLength: 100, description: "Part of a path or name" } },
+            additionalProperties: false,
+          },
+          async execute(input, c) {
+            try {
+              const token = await hostConnectionToken(deps.connectors, connection).catch(() => null);
+              if (!token || !host.repositories) return { content: noToken(host.label), isError: true };
+              const listed = await host.repositories(at, token).catch(() => null);
+              if (!listed) {
+                return { content: `${host.label} didn't answer. Try again in a moment.`, isError: true };
+              }
+              // Only what this agent may use, as the proxy and every other tool hold it.
+              const mine = await agentRepositoryList(c.db, c.orgId, c.agentId);
+              const query = str(input.query).trim().toLowerCase();
+              const all = listed.repositories
+                .map((r) => ({ ...r, name: repoRefName({ host: host.id, path: r.path }) }))
+                .filter((r) => refInList(mine, r.name) && (!query || r.path.toLowerCase().includes(query)));
+              const shown = all.slice(0, 100);
+              if (shown.length === 0) {
+                return {
+                  content: query
+                    ? `No ${host.label} repository of yours has "${query}" in its path.`
+                    : `The ${host.label} connection reaches no repository you may use. Tell the person: the token may lack access, or your repositories list leaves them out.`,
+                };
+              }
+              const lines = shown.map(
+                (r) =>
+                  `${r.path} (${r.private ? "private" : "public"}${r.updatedAt ? `, active ${r.updatedAt.slice(0, 10)}` : ""})`,
+              );
+              const more =
+                all.length > shown.length || listed.truncated ? "\nThere are more: narrow it with query." : "";
+              return {
+                content: `${lines.join("\n")}${more}`,
+                data: { repositories: shown.map((r) => r.name) },
+              };
             } catch (error) {
               return failed(error);
             }
@@ -467,6 +519,7 @@ export function createGitToolSource(deps: GitToolDeps): ToolSource {
       // A host with no call for something offers no such tool.
       return all.filter(
         (tool) =>
+          (tool.name !== named("list_repositories") || host.repositories) &&
           (tool.name !== named("open_pull_request") || host.openPullRequest) &&
           (tool.name !== named("delete_branches") || host.deleteBranch),
       );

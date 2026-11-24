@@ -156,6 +156,8 @@ export const checkoutDirOf = (ref: RepoRef) =>
 /** The git tools agents get on a host's connection, each with the scope of that connector it needs. */
 export const GIT_TOOL_SCOPES = {
   git_clone: "git.read",
+  /** Where a host lists what a token reaches (GitLab, Bitbucket): GitHub's own tools search its repositories. */
+  list_repositories: "git.read",
   open_pull_request: "pr.write",
   delete_branches: "git.write",
   request_branch_push: "git.write",

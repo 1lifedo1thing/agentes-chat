@@ -10974,10 +10974,10 @@
       "agent": "Agen",
       "repo": "Di mana bekerja",
       "repoPlaceholder": "Repositori atau proyek",
-      "repoSearch": "Cari, atau ketik owner/name atau nama baru",
+      "repoSearch": "Cari, atau ketik owner/name, alamat repositori, atau nama baru",
       "newLocal": "Proyek baru di komputer: {{name}}",
       "useRepo": "Pakai {{repo}}",
-      "repoNote": "Nama tanpa owner membuat proyek di komputer agen, di luar GitHub.",
+      "repoNote": "Nama tanpa owner membuat proyek hanya di komputer agen, tanpa repositori remote.",
       "hint": "@ memanggil seseorang ke sesi",
       "start": "Mulai"
     },
@@ -10991,7 +10991,7 @@
       "closeHint": "Sesi keluar dari daftar: worktree dihapus, branch tetap ada",
       "failed": "Worktree tidak bisa disiapkan.",
       "retry": "Coba lagi",
-      "githubAccess": "Ruang kerja ini tidak punya akses GitHub untuk repositori ini. Hubungkan GitHub di Pengaturan › Konektor, atau mulai sesi di proyek di komputer (cukup sebuah nama)."
+      "githubAccess": "Workspace ini tidak punya akses ke repositori ini. Hubungkan tempat repositori itu berada (GitHub, GitLab, atau Bitbucket) di Pengaturan › Konektor, atau mulai sesi pada proyek di komputer (cukup sebuah nama)."
     },
     "panel": {
       "label": "Panel sesi",

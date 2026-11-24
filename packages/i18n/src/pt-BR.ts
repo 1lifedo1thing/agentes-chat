@@ -11871,11 +11871,11 @@ export const ptBR = {
       agent: "Agente",
       repo: "Onde trabalhar",
       repoPlaceholder: "Repositório ou projeto",
-      repoSearch: "Busque, ou digite owner/name ou um nome novo",
+      repoSearch: "Busque, ou digite owner/name, o endereço do repositório ou um nome novo",
       /** Um nome sem owner: um projeto novo só no computador do agente, sem remote. */
       newLocal: "Novo projeto no computador: {{name}}",
       useRepo: "Usar {{repo}}",
-      repoNote: "Um nome sem owner cria um projeto no computador do agente, fora do GitHub.",
+      repoNote: "Um nome sem owner cria um projeto só no computador do agente, sem repositório remoto.",
       hint: "@ chama alguém para a sessão",
       start: "Começar",
     },
@@ -11890,7 +11890,7 @@ export const ptBR = {
       failed: "Não deu para preparar a worktree.",
       retry: "Tentar de novo",
       githubAccess:
-        "Este workspace não tem acesso ao GitHub para esse repositório. Conecte o GitHub em Configurações\u00a0›\u00a0Conectores, ou comece uma sessão num projeto no computador (só um nome).",
+        "Este workspace não tem acesso a esse repositório. Conecte onde ele fica (GitHub, GitLab ou Bitbucket) em Configurações\u00a0›\u00a0Conectores, ou comece uma sessão num projeto no computador (só um nome).",
     },
     panel: {
       label: "Painel da sessão",

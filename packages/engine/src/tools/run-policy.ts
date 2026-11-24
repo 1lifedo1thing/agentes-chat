@@ -262,6 +262,8 @@ const LOOKS_ONLY = new Set([
   "gitlab_git_clone",
   "bitbucket_git_clone",
   "server_git_clone",
+  "gitlab_list_repositories",
+  "bitbucket_list_repositories",
   "team_status",
   "offer_approvals",
   "offer_open_page",
@@ -320,7 +322,9 @@ export function toolKind(tool: PolicyTool): ToolKind {
   // These Git tools carry a connection ID for credentials, but they are our own
   // workspace-changing actions. Their exact scopes distinguish them from MCP tools.
   const git = gitVerbOf(tool);
-  if (git === "git_clone" || git === "open_pull_request") return { kind: "internal", area: "code" };
+  if (git === "git_clone" || git === "list_repositories" || git === "open_pull_request") {
+    return { kind: "internal", area: "code" };
+  }
   // Opening a pull request is the agent's own code work, like a push to its own branch, through any connected app:
   // nothing changes until someone merges it, and a merge is another tool.
   if (opensPullRequest(tool)) return { kind: "internal", area: "code" };

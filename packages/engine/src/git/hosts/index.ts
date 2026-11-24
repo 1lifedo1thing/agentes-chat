@@ -2,7 +2,7 @@ import { bitbucketHost } from "./bitbucket";
 import { githubHost } from "./github";
 import { gitlabHost } from "./gitlab";
 import { plainHost } from "./plain";
-import { GIT_HOST_IDS, type GitHostId, isGitHostId, parseRepoRef, type RepoRef, repoRefAt } from "./refs";
+import { GIT_HOST_IDS, type GitHostId, isGitHostId, parseRepoRef, type RepoRef, repoPathOn, repoRefAt } from "./refs";
 import type { GitHost } from "./types";
 
 export * from "./refs";
@@ -51,8 +51,16 @@ export function repoRefFrom<C extends Owned & { serverUrl: string }>(
   connections: readonly C[],
 ): RepoRef | null {
   const known = parseRepoRef(input);
+  const team = teamGitConnections(connections);
+  // A bare `owner/name` means GitHub's. Where the workspace has no GitHub and one other host that takes such a
+  // path, it is that host's: nobody should have to know to write the host first.
+  if (known?.host === "github" && repoPathOn("github", input) && !team.some((t) => t.host.id === "github")) {
+    const others = team.filter((t) => t.host.id !== "git" && repoPathOn(t.host.id, known.path));
+    const only = others.length === 1 ? others[0] : undefined;
+    if (only) return { host: only.host.id, path: known.path };
+  }
   if (known || !/^https:\/\//i.test(input.trim())) return known;
-  for (const { host, connection } of teamGitConnections(connections)) {
+  for (const { host, connection } of team) {
     const ref = repoRefAt(host.id, connection.serverUrl, input);
     if (ref) return ref;
   }

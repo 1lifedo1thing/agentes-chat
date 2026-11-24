@@ -29,6 +29,7 @@ import {
   refInList,
   repoEntry,
   repoRefAt,
+  repoRefFrom,
   repoRefName,
 } from "../src/git/hosts";
 import { readAdvertisement } from "../src/git/hosts/plain";
@@ -109,6 +110,23 @@ describe("how a repository is named", () => {
     expect(refInList([], "bitbucket:acme/app")).toBe(true);
   });
 
+  test("a bare owner/name is the workspace's one host when that isn't GitHub", () => {
+    const c = (connector: string) => ({ connector, ownerUserId: null, serverUrl: "https://example.test" });
+    expect(repoRefFrom("acme/app", [c("gitlab")])).toEqual({ host: "gitlab", path: "acme/app" });
+    expect(repoRefFrom("acme/app", [c("bitbucket"), c("linear")])).toEqual({ host: "bitbucket", path: "acme/app" });
+    // GitHub connected, two other hosts, or none: it stays GitHub's, as it is written.
+    expect(repoRefFrom("acme/app", [c("github"), c("gitlab")])).toEqual({ host: "github", path: "acme/app" });
+    expect(repoRefFrom("acme/app", [c("gitlab"), c("bitbucket")])).toEqual({ host: "github", path: "acme/app" });
+    expect(repoRefFrom("acme/app", [])).toEqual({ host: "github", path: "acme/app" });
+    // An address says where it is, whatever is connected.
+    expect(repoRefFrom("https://github.com/acme/app", [c("gitlab")])).toEqual({ host: "github", path: "acme/app" });
+    // A person's own account is not the workspace's host.
+    expect(repoRefFrom("acme/app", [{ ...c("gitlab"), ownerUserId: "u1" }])).toEqual({
+      host: "github",
+      path: "acme/app",
+    });
+  });
+
   test("checkouts of another host never meet GitHub's", () => {
     expect(checkoutDirOf({ host: "github", path: "acme/app" })).toBe("repos/acme/app");
     expect(checkoutDirOf({ host: "gitlab", path: "acme/web/app" })).toBe("repos/_gitlab/acme/web/app");
@@ -119,6 +137,7 @@ describe("how a repository is named", () => {
     expect(gitToolName("gitlab", "request_branch_push")).toBe("gitlab_request_branch_push");
     expect(gitToolName("git", "git_clone")).toBe("server_git_clone");
     expect(gitVerbOf({ name: "git_clone", scope: "github:git.read" })).toBe("git_clone");
+    expect(gitVerbOf({ name: "bitbucket_list_repositories", scope: "bitbucket:git.read" })).toBe("list_repositories");
     expect(gitVerbOf({ name: "gitlab_open_pull_request", scope: "gitlab:pr.write" })).toBe("open_pull_request");
     // A connected app's tool of the same name isn't ours.
     expect(gitVerbOf({ name: "git_clone", scope: "gitlab:git.read" })).toBeNull();
@@ -599,6 +618,7 @@ describe("the git proxy on another host", () => {
     const tools = await source.tools(ctx);
     expect(tools.map((t) => t.name)).toEqual([
       "gitlab_git_clone",
+      "gitlab_list_repositories",
       "gitlab_open_pull_request",
       "gitlab_delete_branches",
       "gitlab_request_branch_push",
@@ -631,6 +651,28 @@ describe("the git proxy on another host", () => {
     // GitHub's `acme/web` in the list opens nothing here, and a call that names none is refused.
     expect((await check("acme/web")).ok).toBe(false);
     expect((await check("")).ok).toBe(false);
+  });
+
+  test("an agent lists the repositories it can work in, cut to its own", async () => {
+    const w = await world();
+    const source = createGitToolSource({
+      sandbox: { db: f.db } as never,
+      connectors: w.connectors,
+      github: { apiUrl: w.lab.apiUrl, fetch: w.lab.fetch },
+    });
+    const ctx = { db: f.db, orgId: f.org.id, agentId: f.agent.id, runId: "", channelId: "" } as ToolContext;
+    const list = (await source.tools(ctx)).find((t) => t.name === "gitlab_list_repositories");
+    expect((await list?.execute({}, ctx))?.content).toBe(
+      "acme/web/app (private, active 2026-11-20)\nana.dev/notes (public, active 2026-11-01)",
+    );
+    expect((await list?.execute({ query: "NOTES" }, ctx))?.data).toEqual({ repositories: ["gitlab:ana.dev/notes"] });
+    await setAgentRepositories(f.db, f.owner.id, f.org.id, f.agent.id, ["gitlab:acme/*"]);
+    expect((await list?.execute({}, ctx))?.content).toBe("acme/web/app (private, active 2026-11-20)");
+    // It names no repository, and still runs for an agent held to a list.
+    expect((await checkToolCall({ name: "gitlab_list_repositories", scope: "gitlab:git.read" }, {}, ctx)).ok).toBe(
+      true,
+    );
+    expect((await checkToolCall({ name: "gitlab_git_clone", scope: "gitlab:git.read" }, {}, ctx)).ok).toBe(false);
   });
 
   test("the repositories people pick from: other hosts' apart from GitHub's, by group", async () => {
