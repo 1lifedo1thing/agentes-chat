@@ -54,6 +54,13 @@
     "offline": "오프라인 상태예요. 연결을 확인하고 다시 시도해 주세요.",
     "unreachable": "지금은 agentes.chat에 연결할 수 없어요. 잠시 후 다시 시도해 주세요."
   },
+  "reconnect": {
+    "device": "다시 연결하는 중… 이 기기에 인터넷 연결이 없습니다.",
+    "server": "다시 연결하는 중… 서버에 연결할 수 없거나 다시 시작하는 중입니다.",
+    "signedOut": "로그아웃되었습니다.",
+    "retry": "지금 다시 시도",
+    "signIn": "로그인"
+  },
   "roles": {
     "owner": "소유자",
     "admin": "관리자",
@@ -12774,7 +12781,6 @@
     "added": "저장하면 {{repo}}이(가) 목록에 추가돼요."
   },
   "connectors": {
-    "title": "커넥터",
     "store": {
       "featured": "추천",
       "suggested": "제안",
@@ -12813,6 +12819,7 @@
       "addressPassword": "주소와 비밀번호",
       "composio": "Composio를 통해"
     },
+    "title": "커넥터",
     "add": "커넥터 추가",
     "personal": {
       "note": "이 연결은 나만 열 수 있어요. 내가 부탁할 때만 에이전트가 사용해요.",

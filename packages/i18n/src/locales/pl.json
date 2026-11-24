@@ -54,6 +54,13 @@
     "offline": "Jesteś offline. Sprawdź połączenie i spróbuj ponownie.",
     "unreachable": "Nie można teraz połączyć się z agentes.chat. Spróbuj za chwilę."
   },
+  "reconnect": {
+    "device": "Ponowne łączenie… Brak internetu na tym urządzeniu.",
+    "server": "Ponowne łączenie… Serwer jest niedostępny lub się restartuje.",
+    "signedOut": "Wylogowano cię.",
+    "retry": "Spróbuj teraz",
+    "signIn": "Zaloguj się"
+  },
   "roles": {
     "owner": "Właściciel",
     "admin": "Administrator",
@@ -14340,7 +14347,6 @@
     "added": "{{repo}} trafi na listę po zapisaniu."
   },
   "connectors": {
-    "title": "Konektory",
     "store": {
       "featured": "Wyróżnione",
       "suggested": "Sugerowane",
@@ -14391,6 +14397,7 @@
       "addressPassword": "Adres i hasło",
       "composio": "Przez Composio"
     },
+    "title": "Konektory",
     "add": "Dodaj konektor",
     "personal": {
       "note": "Te połączenia otwierasz tylko ty. Twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",

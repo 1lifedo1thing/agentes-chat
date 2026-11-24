@@ -54,6 +54,13 @@
     "offline": "Sei offline. Controlla la connessione e riprova.",
     "unreachable": "Impossibile raggiungere agentes.chat ora. Riprova tra poco."
   },
+  "reconnect": {
+    "device": "Riconnessione… Nessuna connessione a internet su questo dispositivo.",
+    "server": "Riconnessione… Il server non è raggiungibile o si sta riavviando.",
+    "signedOut": "Sei uscito dall'account.",
+    "retry": "Riprova ora",
+    "signIn": "Accedi"
+  },
   "roles": {
     "owner": "Proprietario",
     "admin": "Admin",
@@ -13850,7 +13857,6 @@
     "added": "{{repo}} entra nell'elenco quando salvi."
   },
   "connectors": {
-    "title": "Connettori",
     "store": {
       "featured": "In evidenza",
       "suggested": "Suggerito",
@@ -13897,6 +13903,7 @@
       "addressPassword": "Indirizzo e password",
       "composio": "Tramite Composio"
     },
+    "title": "Connettori",
     "add": "Aggiungi connettore",
     "personal": {
       "note": "Solo tu apri queste connessioni. I tuoi agenti le usano solo quando glielo chiedi.",

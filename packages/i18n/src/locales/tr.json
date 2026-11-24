@@ -54,6 +54,13 @@
     "offline": "Çevrimdışısınız. Bağlantınızı kontrol edip tekrar deneyin.",
     "unreachable": "agentes.chat'e şu anda ulaşılamıyor. Birazdan tekrar deneyin."
   },
+  "reconnect": {
+    "device": "Yeniden bağlanıyor… Bu cihazda internet yok.",
+    "server": "Yeniden bağlanıyor… Sunucuya ulaşılamıyor ya da yeniden başlatılıyor.",
+    "signedOut": "Oturumunuz kapandı.",
+    "retry": "Şimdi yeniden dene",
+    "signIn": "Giriş yap"
+  },
   "roles": {
     "owner": "Sahip",
     "admin": "Yönetici",
@@ -13254,7 +13261,6 @@
     "added": "{{repo}} kaydettiğinizde listeye eklenir."
   },
   "connectors": {
-    "title": "Bağlayıcılar",
     "store": {
       "featured": "Öne çıkanlar",
       "suggested": "Önerilen",
@@ -13297,6 +13303,7 @@
       "addressPassword": "Adres ve şifre",
       "composio": "Composio üzerinden"
     },
+    "title": "Bağlayıcılar",
     "add": "Bağlayıcı ekle",
     "personal": {
       "note": "Bu bağlantıları yalnızca sen açarsın. Ajanların bunları yalnızca sen istediğinde kullanır.",
