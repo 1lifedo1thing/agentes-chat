@@ -1,12 +1,21 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import type { AiAccounts, AiComputer } from "@agenteschat/client";
+import type { AiAccounts, AiComputer, BrainOption } from "@agenteschat/client";
 import { setupDom } from "@agenteschat/ui/testing/dom";
 
 setupDom();
 
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { brainDialog } from "./ai-picker";
-import { ADA_ID, createFakeApi, fakeAgentBrain, fakeMachinesOf, ORG_ID, seedState } from "./fake-api";
+import {
+  ADA_ID,
+  createFakeApi,
+  fakeAgentBrain,
+  fakeMachinesOf,
+  LODI_ID,
+  ORG_ID,
+  seedState,
+  withRightHand,
+} from "./fake-api";
 import { hintOf, shownText } from "./hint";
 import { openOrder } from "./plan-rows";
 import { renderApp, screen, settle } from "./render";
@@ -199,6 +208,37 @@ describe("Quem pensa: the one picker", () => {
     // MXC there, or not known yet: nothing new.
     const mxc = await open();
     expect(within(mxc).queryByRole("button", { name: "Sobre Conta" })).toBeNull();
+  });
+
+  test("Lodi on a ChatGPT plan of that computer: no ⓘ by Conta, since its turns run no commands", async () => {
+    const gpt = account("acct_gpt", "ChatGPT do trabalho", { kind: "codex", plan: "plus", provider: "openai" });
+    const state = withRightHand(seedState());
+    const api = createFakeApi(state);
+    fakeMachinesOf.get(api)?.setAiAccounts({ accounts: [gpt], computers: [MAC] });
+    fakeMachinesOf.get(api)?.pair({ id: "machine_1", name: "MacBook" });
+    // What the computer says for any agent there: Lodi's options come from that list too.
+    const partial = (o: BrainOption): BrainOption => (o.kind === "codex" ? { ...o, sandbox: "partial" } : o);
+    const options = fakeAgentBrain(LODI_ID).options.map(partial);
+    state.brainMachines = [{ machineId: "machine_1", name: "MacBook", online: true, options }];
+    api.agents.brain = async (_org, id, scope) => ({
+      ...fakeAgentBrain(id, {
+        scope: scope ?? "mine",
+        brain: "codex",
+        account: "acct_gpt",
+        accounts: [{ ...gpt, usable: true }],
+        computer: { machineId: "machine_1", name: "MacBook", online: true },
+        canUsePlans: true,
+        canEdit: true,
+        workspaceAi: { brain: "model", ownerId: null, servesYou: true },
+      }),
+      options,
+    });
+    await renderApp(`/org/${ORG_ID}/agents/${LODI_ID}`, { api });
+    await settle(8);
+    await click(screen().getByRole("button", { name: /^Sua IA/ }));
+    const dialog = screen().getByRole("dialog", { name: "Quem pensa pelo Lodi para você" });
+    expect(within(dialog).getByRole("combobox", { name: "Conta" })).toBeTruthy();
+    expect(within(dialog).queryByRole("button", { name: "Sobre Conta" })).toBeNull();
   });
 
   test("a long name ends in an ellipsis on its line, whole in its tooltip", async () => {

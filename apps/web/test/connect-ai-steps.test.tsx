@@ -911,7 +911,9 @@ describe("Conectar uma IA: one picker, plans first", () => {
 
   test("a Windows computer where nothing holds Codex: ChatGPT dims, its panel says what Windows lacks and the way out", async () => {
     const { dialog, choose } = await connect({
-      computers: [{ ...MAC, brains: { claude_code: true, codex: false }, off: { codex: "windows_sandbox" } }],
+      // The computer still takes a ChatGPT sign-in (the team's right hand thinks with it there): the agent's own view
+      // says it can't.
+      computers: [MAC],
       brain: {
         options: fakeAgentBrain(ADA_ID).options.map((o) =>
           o.kind === "codex" ? { ...o, available: false, reason: "windows_sandbox" as const } : o,

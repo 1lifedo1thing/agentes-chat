@@ -177,7 +177,11 @@ describe("brain settings", () => {
   });
 
   test("options: on Windows, Codex says what holds its commands there before anyone picks it", () => {
-    const codexOf = (sandbox: "mxc" | "unelevated" | "none" | undefined, patch: Record<string, unknown> = {}) =>
+    const codexOf = (
+      sandbox: "mxc" | "unelevated" | "none" | undefined,
+      patch: Record<string, unknown> = {},
+      chat = false,
+    ) =>
       brainOptions(
         mac({
           os: "windows",
@@ -189,6 +193,7 @@ describe("brain settings", () => {
           },
           ...patch,
         }),
+        { chat },
       ).find((o) => o.kind === "codex");
     // MXC, or not known yet: nothing new to say.
     for (const sandbox of ["mxc", undefined] as const) {
@@ -209,6 +214,12 @@ describe("brain settings", () => {
     // Only Windows reads it, and only for Codex.
     expect(codexOf("none", { os: "linux" })).toMatchObject({ available: true });
     expect(brainOptions(mac({ os: "windows", protocol: CODEX_UNELEVATED_PROTOCOL }))[1]).not.toHaveProperty("sandbox");
+    // Turns that run no commands (the team's right hand): nothing for a sandbox to hold, so nothing to say either.
+    for (const sandbox of ["unelevated", "none"] as const) {
+      expect(codexOf(sandbox, {}, true)).toMatchObject({ available: true });
+      expect(codexOf(sandbox, {}, true)).not.toHaveProperty("reason");
+      expect(codexOf(sandbox, {}, true)).not.toHaveProperty("sandbox");
+    }
   });
 
   test("options: on Windows OpenCode needs a runner that speaks ACP; a CLI that doesn't run on the computer's system says so", () => {

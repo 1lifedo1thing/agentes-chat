@@ -373,7 +373,7 @@ export function AiChoiceFields({
   if (!showAccount && !showModel && !showEffort) return null;
   // Codex on a Windows computer without MXC: what its own sandbox holds there, behind Conta's ⓘ.
   const accountHint =
-    row && state.option(row)?.sandbox === "partial"
+    row && state.sandboxPartial(row)
       ? { name: t("common.about", { label: t("agentPage.work.brain.account") }), text: t("brain.sandboxPartial") }
       : undefined;
   const groupLabel = (g: string) =>

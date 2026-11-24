@@ -112,8 +112,11 @@ export interface AiChoiceState {
   loading: boolean;
   /** The caller may change it (an agent's owner or who manages it; a mission before Start). */
   canEdit: boolean;
-  /** What a row's brain offers on the computer it thinks on (its `sandbox`, for one); undefined: nothing known. */
-  option: (row: AiChoiceRow) => BrainOption | undefined;
+  /**
+   * Where the row thinks, its commands are held only in part (Codex on Windows without MXC, `BrainOption.sandbox`).
+   * Never for Lodi: its turns run no commands.
+   */
+  sandboxPartial: (row: AiChoiceRow) => boolean;
 }
 
 const agentId = (t: AiChoiceTarget) => (t.kind === "agent" || t.kind === "lodi" ? t.agentId : "");
@@ -245,7 +248,8 @@ export function useAiChoice(orgId: string, target: AiChoiceTarget): AiChoiceStat
       (target.kind === "newAgent" && newSetup.isLoading),
     canEdit:
       target.kind === "mission" ? (mission.data?.canSetModel ?? false) : brainTarget ? (view?.canEdit ?? false) : true,
-    option: (row) => optionsFor(row).find((o) => o.kind === row.brain),
+    sandboxPartial: (row) =>
+      target.kind !== "lodi" && optionsFor(row).find((o) => o.kind === row.brain)?.sandbox === "partial",
   };
 }
 
