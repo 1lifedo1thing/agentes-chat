@@ -104,16 +104,22 @@ The limits and the server's rules of shape (`validate*`, `LIVE_LIMITS`) cover th
 The edit tools take the new fields as ops (`style`, `group`, `ungroup`, `add_text`, `add_shape` on slides), and each
 takes `add_html`: a fragment of HTML and CSS the server lays out and turns into native pieces, never a picture.
 
-- Layout is CSS flexbox and block flow computed with Yoga (MIT) and the fonts' real metrics, so a line wraps where
-  a browser would wrap it.
+- It reads markup as agents write it for a browser: a fragment or a whole page (its head's `<style>` included),
+  custom properties on `:root` with `var()`, `::before`/`::after` content, `@font-face` names (matched to the catalog
+  by the font file's name).
+- Layout is CSS flexbox, grid (column tracks in px, `fr`, `repeat()`, `minmax()`; spans) and block flow computed with
+  Yoga (MIT) and the fonts' real metrics, so a line wraps where a browser would wrap it.
 - Each box with a background, border, radius or shadow becomes a shape; each run of text a text box with its marks;
-  each `<img>` (a Drive picture or the file's own) and inline `<svg>` (sanitized as ADR 0196 §8) a picture; icons
-  are SVG pictures. What one box held becomes one group, named after its `id` or `data-name`, so "the Webhook card"
-  can be found and changed later.
+  each `<img>` (a Drive picture or the file's own) and inline `<svg>` (sanitized as ADR 0196 §8) a picture. Icons
+  come from the app's own set (`icon:<name>`, drawn in the CSS color around them) and AI makers' marks from the
+  product's brand marks (`logo:<provider>`, in their own colors, ADR 0059). What one box held becomes one group,
+  named after its `id` or `data-name`, so "the Webhook card" can be found and changed later.
+- `data-arrow-to="<id>"` asks for an arrow between two boxes: a connector that follows its shapes on a canvas, a
+  line with a head on a slide.
 - On slides, `add_html` fills a box (the whole slide when none is given); on a canvas it goes at a point, in a frame;
   in a document it becomes blocks (headings, paragraphs with their marks, pictures, tables).
-- CSS it doesn't support (grid, floats, absolute positioning past one box, transforms, filters, animations, web
-  fonts by address) is ignored, and the result says what was left out. Fonts are `font-family` names from the
+- CSS it doesn't support (floats, absolute positioning past one box, transforms, filters, animations, web fonts by
+  address) is ignored, and the result says what was left out. Fonts are `font-family` names from the
   catalog or the file's fonts.
 
 ### 5. Agents see what they built
