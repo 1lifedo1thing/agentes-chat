@@ -263,25 +263,28 @@ function FilePreview({
   );
   if (!onAudioFailed) return glyph;
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: keeps the card's own press and drag off the player
-    <div
-      className="drive-pv__audio"
-      onClick={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
-      // The card drags into folders: a press on the wave (to seek) drags nothing.
-      draggable
-      onDragStart={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-    >
-      <FileAudio
-        artifactId={artifact.id}
-        version={artifact.version}
-        content={content}
-        fallback={null}
-        onFailed={onAudioFailed}
-      />
-    </div>
+    <>
+      {glyph}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: keeps the card's own press and drag off the player */}
+      <div
+        className="drive-pv__audio"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        // The card drags into folders: a press on the wave (to seek) drags nothing.
+        draggable
+        onDragStart={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        <FileAudio
+          artifactId={artifact.id}
+          version={artifact.version}
+          content={content}
+          fallback={null}
+          onFailed={onAudioFailed}
+        />
+      </div>
+    </>
   );
 }

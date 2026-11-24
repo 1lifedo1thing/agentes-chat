@@ -3323,6 +3323,18 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
   margin-top: 0;
   max-width: none;
 }
+/* A card is narrow: the wave keeps more of it. */
+.drive-pv__audio .ac-voice__bar {
+  gap: var(--space-2);
+}
+/* Two cards to a row on a phone: play and the wave alone, which the viewer gives back with the clock and the speed;
+   the type tile would only fit cut. */
+@container (max-width: 240px) {
+  .drive-pv__audio :is(.ac-voice__time, .ac-voice__speed),
+  .drive-pv--audio .drive-pv__glyph {
+    display: none;
+  }
+}
 
 /* Selection: a glass bar fixed at the bottom of the work area, centered on it (SelectionBar hangs it from
  * `.shell__work`, beside the sidebar, so it stays put however short or long the list is). */
