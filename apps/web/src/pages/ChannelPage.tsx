@@ -1494,13 +1494,16 @@ function ChannelView({
   // More than a screen above the end: the round button shows even with nothing new below. Never while pinned to
   // the end, so it stays gone while its own click glides down.
   const [far, setFar] = useState(false);
-  // Once a frame, however many scroll events or changes ask: reading the list's heights lays it out.
+  // Once a frame, however many scroll events or changes ask: reading the list's heights lays it out. Pinned as of
+  // the last ask, as a scroll handler sees it before it unpins.
   const farFrame = useRef(0);
+  const farPinned = useRef(false);
   const measureFar = (el: HTMLElement) => {
+    farPinned.current = stick.current;
     if (farFrame.current) return;
     farFrame.current = requestAnimationFrame(() => {
       farFrame.current = 0;
-      setFar(!stick.current && screenAboveEnd(el.scrollHeight - el.scrollTop - el.clientHeight, el.clientHeight));
+      setFar(!farPinned.current && screenAboveEnd(el.scrollHeight - el.scrollTop - el.clientHeight, el.clientHeight));
     });
   };
   useEffect(() => () => cancelAnimationFrame(farFrame.current), []);
