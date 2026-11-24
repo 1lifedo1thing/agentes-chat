@@ -20,13 +20,12 @@ export interface CliFloor {
 }
 
 export const CLI_FLOORS: Readonly<Record<FloorCli, CliFloor>> = {
-  // Not held back yet. The floor the code needs is 2.1.206: every command of a turn goes through our prompt tool
-  // (`--permission-prompt-tool`, an MCP tool of our bridge), and before 2.1.206 Claude Code crashed with "MCP tool not
-  // found" when the bridge hadn't connected yet at its start. Turned on together with the tests' computers' versions.
-  claude: {},
-  // Not held back yet. The floor the code needs is 0.164.0: a `chat` turn turns off every Codex feature of 0.164.0 by
-  // name, and Codex fails the turn on a name it doesn't know (`CODEX_CHAT_OFF` in the runner).
-  codex: {},
+  // Every command of a turn goes through our prompt tool (`--permission-prompt-tool`, an MCP tool of our bridge): before
+  // 2.1.206 Claude Code crashed with "MCP tool not found" when the bridge hadn't connected yet at its start.
+  claude: { min: "2.1.206" },
+  // A `chat` turn turns off every Codex feature of 0.164.0 by name, and Codex fails the turn on a name it doesn't know
+  // (`CODEX_CHAT_OFF` in the runner).
+  codex: { min: "0.164.0" },
   cursor: {},
   opencode: {},
   grok: {},

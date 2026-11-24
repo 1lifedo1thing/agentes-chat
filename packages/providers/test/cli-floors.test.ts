@@ -23,6 +23,11 @@ test("a version below the floor or a blocked one gets no turn; any other, or a l
   expect(cliVersionProblem("cursor", "2026.10.28-1a2b3c4", dated)).toMatchObject({ kind: "too_old", min: "2026.11.1" });
 });
 
-test("the shipped list holds no CLI back yet", () => {
-  for (const cli of Object.keys(CLI_FLOORS) as FloorCli[]) expect(cliVersionProblem(cli, "0.0.1")).toBeNull();
+test("the shipped floors: Claude Code from 2.1.206, Codex from 0.164.0, the others at any version", () => {
+  expect(cliVersionProblem("claude", "2.1.205 (Claude Code)")).toMatchObject({ kind: "too_old", min: "2.1.206" });
+  expect(cliVersionProblem("claude", "2.1.206 (Claude Code)")).toBeNull();
+  expect(cliVersionProblem("codex", "codex-cli 0.163.0")).toMatchObject({ kind: "too_old", min: "0.164.0" });
+  expect(cliVersionProblem("codex", "codex-cli 0.164.0")).toBeNull();
+  for (const cli of ["cursor", "opencode", "grok", "antigravity"] as FloorCli[])
+    expect(cliVersionProblem(cli, "0.0.1")).toBeNull();
 });

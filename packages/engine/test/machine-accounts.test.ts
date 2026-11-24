@@ -667,7 +667,7 @@ test("a coding plan's key: no sign-in page but the plan's key page, the key seal
     .set({
       execAllowed: true,
       executors: {
-        claude: { version: "2.1.0", loggedIn: true, plan: "max" },
+        claude: { version: "2.1.300", loggedIn: true, plan: "max" },
         ownUsage: { claude_code: usage },
         detectedAt: new Date().toISOString(),
       },
@@ -683,7 +683,7 @@ test("a coding plan's key: no sign-in page but the plan's key page, the key seal
     .update(schema.machines)
     .set({
       executors: {
-        claude: { version: "2.1.0", loggedIn: false },
+        claude: { version: "2.1.300", loggedIn: false },
         ownUsage: { claude_code: usage },
         detectedAt: new Date().toISOString(),
       },

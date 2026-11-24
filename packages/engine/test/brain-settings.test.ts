@@ -55,7 +55,7 @@ const mac = (patch: Record<string, unknown> = {}) => ({
   name: "mac",
   protocol: BRAIN_PROTOCOL,
   execAllowed: true,
-  executors: { claude: { version: "2.1.0" }, detectedAt: "2026-10-17" },
+  executors: { claude: { version: "2.1.300" }, detectedAt: "2026-10-17" },
   online: true,
   lastSeenAt: new Date(),
   deletedAt: null,
@@ -253,13 +253,24 @@ describe("brain settings", () => {
       ["claude_code", true, null],
       ["codex", false, "not_reported"],
     ]);
-    // Codex counts at any version, whatever its line says.
-    for (const version of ["codex-cli 0.100.0", "codex-cli 0.170.0", ""]) {
+    // Codex counts at its floor or newer, and when its line has no version in it; below, it needs an update.
+    for (const version of ["codex-cli 0.164.0", "codex-cli 0.170.0", ""]) {
       expect(reasons(mac({ executors: { codex: { version }, detectedAt: "x" } })).slice(1, 3)).toEqual([
         ["claude_code", false, "not_installed"],
         ["codex", true, null],
       ]);
     }
+    expect(reasons(mac({ executors: { codex: { version: "codex-cli 0.163.0" }, detectedAt: "x" } }))[2]).toEqual([
+      "codex",
+      false,
+      "cli_outdated",
+    ]);
+    const oldClaude = mac({ executors: { claude: { version: "2.1.205 (Claude Code)" }, detectedAt: "x" } });
+    expect(brainOptions(oldClaude).find((o) => o.kind === "claude_code")).toMatchObject({
+      available: false,
+      reason: "cli_outdated",
+      outdated: { version: "2.1.205", min: "2.1.206", command: "claude update" },
+    });
     // There and failing to start: said as that, never "not installed".
     const broken = mac({ executors: { codex: { version: "0.170.0" }, broken: { claude: "boom" }, detectedAt: "x" } });
     expect(reasons(broken).slice(1, 3)).toEqual([
