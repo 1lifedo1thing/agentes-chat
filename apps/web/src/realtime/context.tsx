@@ -1146,6 +1146,9 @@ export function useDesktopPointer(agentId: string, enabled = true) {
   return pointer;
 }
 
+/** The workspace's live connection (null before it starts): to ask it to try again now. */
+export const useRealtimeConnection = () => useRealtime().connection;
+
 export function useConnectionStatus(): ConnectionStatus {
   const { connection } = useRealtime();
   const [status, setStatus] = useState<ConnectionStatus>(connection?.status ?? "idle");
