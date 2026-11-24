@@ -1,6 +1,6 @@
 {
-  "id": "a687d73c-f99a-48a7-a383-e3d55328f9e9",
-  "prevId": "7608b094-5bb2-411e-8571-2a7e352e1690",
+  "id": "d912bc77-b62d-49b7-b76c-647fd113a025",
+  "prevId": "29d398d0-8fc6-4c74-929b-a86f5a72a65f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3617,6 +3617,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "lead_agent_id": {
+          "name": "lead_agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -3653,6 +3659,19 @@
           "tableTo": "channel_categories",
           "columnsFrom": [
             "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "channels_lead_agent_id_agents_id_fk": {
+          "name": "channels_lead_agent_id_agents_id_fk",
+          "tableFrom": "channels",
+          "tableTo": "agents",
+          "columnsFrom": [
+            "lead_agent_id"
           ],
           "columnsTo": [
             "id"
@@ -22578,6 +22597,12 @@
         "height": {
           "name": "height",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "wave": {
+          "name": "wave",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },

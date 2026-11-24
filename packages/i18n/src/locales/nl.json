@@ -4280,6 +4280,8 @@
     "aloneLine": "Doet uit zichzelf mee aan het gesprek",
     "aloneLine_female": "Doet uit zichzelf mee aan het gesprek",
     "mentionLine": "Wacht tot iemand @{{handle}} schrijft",
+    "lead": "Verantwoordelijk voor het kanaal",
+    "leadHelp": "Krijgt wat tegen het hele team wordt gezegd en houdt het werk tussen de agents gaande",
     "readOnly": "Alleen de maker van het kanaal en beheerders wijzigen de leden.",
     "people": "Mensen",
     "agents": "Agents"
@@ -15792,6 +15794,8 @@
       "deleteName": "Typ de naam van het kanaal om het te verwijderen.",
       "generalKept": "#general kan niet worden verwijderd.",
       "generalStays": "Iedereen blijft in #general.",
+      "leadChannelOnly": "Alleen kanalen hebben een verantwoordelijke agent.",
+      "leadNotMember": "De verantwoordelijke agent moet in het kanaal zitten.",
       "mcpUnreachable": "Kon geen verbinding maken met de MCP-server. Controleer het adres en probeer het opnieuw.",
       "notApproved": "Deze dienst heeft agentes.chat nog niet goedgekeurd.",
       "alreadyInvited": "Deze persoon heeft al een uitnodiging.",
