@@ -86,6 +86,23 @@ export function paidLine(t: TFunction, plan: string | null | undefined, period: 
 export const planTurnedOn = (wasHeld: boolean | undefined, standing: Pick<OrgStanding, "state"> | null | undefined) =>
   wasHeld === true && standingActive(standing);
 
+/**
+ * The workspaces this device last saw on a billing hold (`held`, kept by each app), after a look at `orgs`: the ones
+ * held now are added; the one on screen (`current`) whose plan turned on is taken out, and `turnedOn` says to show
+ * the moment for it. One that turned on elsewhere stays listed until it is opened.
+ */
+export function planHeldNext(
+  held: readonly string[],
+  orgs: readonly Pick<OrgSummary, "id" | "standing">[],
+  current: string | null,
+): { held: string[]; turnedOn: boolean } {
+  const org = orgs.find((o) => o.id === current);
+  const turnedOn = org !== undefined && planTurnedOn(held.includes(org.id), org.standing);
+  const now = orgs.filter((o) => billingHoldOf(o.standing) !== null).map((o) => o.id);
+  const next = [...new Set([...held.filter((id) => !(turnedOn && id === current)), ...now])];
+  return { held: next, turnedOn };
+}
+
 /** The plan the onboarding offers: its key for the billing link, its name, and its price as the billing service writes it. */
 export interface PlanOffer {
   key: string;

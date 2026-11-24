@@ -8,6 +8,7 @@ import {
   paidLine,
   paidReturnOf,
   paidSearch,
+  planHeldNext,
   planMoveTargets,
   planOfferOf,
   planTurnedOn,
@@ -138,6 +139,20 @@ describe("a paid return (the billing service's `?paid=1`)", () => {
     expect(planTurnedOn(true, hold)).toBe(false);
     expect(planTurnedOn(false, { state: "active" })).toBe(false);
     expect(planTurnedOn(undefined, { state: "active" })).toBe(false);
+  });
+
+  test("what the phone keeps: held ones added, the one opened once its plan is on taken out, and only that one", () => {
+    const hold = { state: "hold" as const, reason: "payment" };
+    const orgs = [{ id: "a", standing: hold }, { id: "b" }, { id: "c" }];
+    // A first look: nothing turned on, the held one noted.
+    expect(planHeldNext([], orgs, "b")).toEqual({ held: ["a"], turnedOn: false });
+    // "b" was held and is on now, on screen: the moment, once.
+    expect(planHeldNext(["a", "b"], orgs, "b")).toEqual({ held: ["a"], turnedOn: true });
+    // "c" turned on elsewhere: kept until it is opened.
+    expect(planHeldNext(["c"], orgs, "b")).toEqual({ held: ["c", "a"], turnedOn: false });
+    expect(planHeldNext(["c"], orgs, "c")).toEqual({ held: ["a"], turnedOn: true });
+    // Still held on screen: nothing.
+    expect(planHeldNext(["a"], orgs, "a")).toEqual({ held: ["a"], turnedOn: false });
   });
 });
 
