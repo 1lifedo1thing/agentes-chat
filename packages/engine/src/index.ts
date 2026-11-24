@@ -188,6 +188,17 @@ export * from "./judge";
 export * from "./key-line";
 export * from "./limits";
 export * from "./live";
+export {
+  catalogFilePath,
+  catalogStaticFiles,
+  catalogWebFaces,
+  fontsVersion,
+  hasFontFiles,
+  setFontsDir,
+  TextMeasurer,
+  type WebFace,
+} from "./fonts/library";
+export { FONT_MAX_BYTES, FontError, fontMediaType, readFont, sniffFont } from "./fonts/sfnt";
 export * from "./live-activity";
 export * from "./live-activity-queue";
 export * from "./machine-access";

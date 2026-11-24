@@ -168,6 +168,12 @@ export const envVars = {
       "Directory containing the built web app (single-page app). Served by this server when it exists; otherwise only the API runs.",
     section: "Server",
   },
+  FONTS_DIR: {
+    schema: z.string().optional(),
+    description:
+      "Directory of the fonts live files use (ADR 0220): the catalog built by `scripts/fonts/build.py` (the image sets it). Served at `/api/fonts/*`, read to measure text, draw pictures and embed fonts in PDFs. Unset: the catalog is still offered, and every app and export falls back to system fonts.",
+    section: "Server",
+  },
   SHUTDOWN_DELAY_MS: {
     schema: z.coerce.number().int().min(0).max(5_000).default(0),
     description:

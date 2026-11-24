@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { catalogFont, type FontRef, fontAssetOf, nearestWeight } from "@agenteschat/live";
@@ -7,23 +8,31 @@ import { type FontMetrics, fontMetrics } from "./sfnt";
 /**
  * The fonts the server ships (ADR 0220 §1), read from `FONTS_DIR` as `scripts/fonts/build.py` lays it out:
  *
- *   <dir>/catalog.json                    { fonts: { <id>: { static: { "400": "inter/inter-400.ttf", "400i": … },
- *                                                            web: { normal: "inter/inter.woff2", italic: … },
- *                                                            license: "inter/OFL.txt" } } }
+ *   <dir>/catalog.json   { fonts: { <id>: { static: { "400": "inter/static/inter-400.ttf", "400i": … },
+ *                                           web: [{ file: "inter/web/inter.woff2", weight: "100 900", style: "normal" }, …],
+ *                                           license: "inter/OFL.txt" } } }
  *
  * Static TrueType instances are what the server measures text with, draws pictures with and embeds in PDFs; the
  * variable WOFF2 files are what browsers load. Without the directory (tests, development) every lookup is null and
  * text is measured with Helvetica's widths, so layouts still come out close.
  */
 
+/** A face browsers load: its file, its weight (`400`, or `100 900` for a variable one) and its style. */
+export interface WebFace {
+  file: string;
+  weight: string;
+  style: "normal" | "italic";
+}
+
 interface CatalogEntry {
   static: Record<string, string>;
-  web: { normal?: string; italic?: string };
+  web: WebFace[];
   license?: string;
 }
 
 let dir: string | null = null;
 let entries: Record<string, CatalogEntry> | null = null;
+let version = "";
 const bytesCache = new Map<string, Uint8Array | null>();
 const metricsCache = new Map<string, FontMetrics | null>();
 
@@ -40,12 +49,20 @@ function catalog(): Record<string, CatalogEntry> {
   entries = {};
   if (!dir) return entries;
   try {
-    const raw = JSON.parse(readFileSync(join(dir, "catalog.json"), "utf8")) as { fonts?: Record<string, CatalogEntry> };
+    const text = readFileSync(join(dir, "catalog.json"), "utf8");
+    const raw = JSON.parse(text) as { fonts?: Record<string, CatalogEntry> };
     if (raw.fonts && typeof raw.fonts === "object") entries = raw.fonts;
+    version = createHash("sha256").update(text).digest("hex").slice(0, 12);
   } catch {
     // No built fonts here: everything falls back.
   }
   return entries;
+}
+
+/** A word that changes whenever the built fonts do: it goes in their addresses, so they can be cached for good. */
+export function fontsVersion(): string {
+  catalog();
+  return version;
 }
 
 /** Whether the server has the catalog's files (what `/api/fonts` can serve). */
@@ -88,15 +105,25 @@ export function catalogStaticFont(id: string, weight: number, italic: boolean): 
   return key ? read(entry.static[key]) : null;
 }
 
-/** A catalog font's file for browsers (`normal` or `italic`), as a path to serve, or null. */
-export function catalogWebFile(id: string, style: "normal" | "italic"): string | null {
-  const entry = catalog()[id];
-  return entry ? inside(entry.web[style] ?? (style === "italic" ? undefined : entry.web.normal)) : null;
+/** A catalog font's faces for browsers, their files relative to `FONTS_DIR`. */
+export function catalogWebFaces(id: string): WebFace[] {
+  return catalog()[id]?.web ?? [];
 }
 
-/** A catalog font's license text, as a path to serve, or null. */
-export function catalogLicenseFile(id: string): string | null {
-  return inside(catalog()[id]?.license);
+/** A catalog font's static files by key (`400`, `700i`), relative to `FONTS_DIR`. */
+export function catalogStaticFiles(id: string): Record<string, string> {
+  return catalog()[id]?.static ?? {};
+}
+
+/**
+ * The path of one of a catalog font's files (a face, a static instance or its license), or null when the family
+ * doesn't list it: only what `catalog.json` names is ever served.
+ */
+export function catalogFilePath(id: string, relative: string): string | null {
+  const entry = catalog()[id];
+  if (!entry) return null;
+  const listed = [...entry.web.map((f) => f.file), ...Object.values(entry.static), entry.license].includes(relative);
+  return listed ? inside(relative) : null;
 }
 
 /** One face to measure: a font ref resolved to a catalog id or a file's font, a weight and a slant. */
