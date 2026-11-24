@@ -6657,7 +6657,7 @@
         "cli_failed": "Le programme {{brain}} s'est arrêté sur une erreur : {{detail}}",
         "cli_stopped": "Le programme {{brain}} s'est arrêté sur une erreur.",
         "cli_closed": "Le programme {{brain}} s'est fermé de façon inattendue.",
-        "cli_empty": "Le programme {{brain}} a terminé son tour sans répondre. Redemandez ; si cela continue, mettez à jour {{brain}} sur l'ordinateur ou choisissez une autre IA dans les paramètres de l'agent.",
+        "cli_empty": "Le programme {{brain}} a terminé son tour sans répondre. Redemandez. Si cela continue, mettez à jour {{brain}} sur l'ordinateur ou choisissez une autre IA dans les paramètres de l'agent.",
         "cli_sandbox": "Le programme {{brain}} ne peut pas démarrer sa sandbox sur cet ordinateur. Choisissez une autre IA dans les paramètres de l'agent.",
         "cli_system": "Le programme {{brain}} ne fonctionne pas encore sur le système de cet ordinateur. Choisissez une autre IA dans les paramètres de l'agent.",
         "account_missing": "Le compte choisi pour cet agent n'est plus sur son ordinateur. Choisissez-en un autre dans les paramètres de l'agent, ou ajoutez-le à nouveau.",

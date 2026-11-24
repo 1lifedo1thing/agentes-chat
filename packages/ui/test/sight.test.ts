@@ -1,4 +1,4 @@
-import { afterEach, expect, spyOn, test } from "bun:test";
+import { afterEach, beforeAll, expect, spyOn, test } from "bun:test";
 import { setupDom } from "../testing/dom";
 
 setupDom();
@@ -7,8 +7,15 @@ import { onSight, type Sight, sight, watchSight } from "../src";
 
 let hidden = false;
 let focused = true;
-Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
-const hasFocus = spyOn(document, "hasFocus").mockImplementation(() => focused);
+let focusAsked = 0;
+// After setupDom's own beforeAll: the document exists from there.
+beforeAll(() => {
+  Object.defineProperty(document, "hidden", { configurable: true, get: () => hidden });
+  spyOn(document, "hasFocus").mockImplementation(() => {
+    focusAsked++;
+    return focused;
+  });
+});
 
 let stop: (() => void) | null = null;
 afterEach(() => {
@@ -35,7 +42,7 @@ test("present while the window has the focus; another window in front is away, u
   focused = true;
   window.dispatchEvent(new Event("focus"));
   expect(sight()).toBe("present");
-  expect(hasFocus).toHaveBeenCalled();
+  expect(focusAsked).toBeGreaterThan(0);
 });
 
 test("hidden beats everything, and coming back into view is present again", () => {

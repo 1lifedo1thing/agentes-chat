@@ -6621,7 +6621,7 @@
         "cli_failed": "El programa {{brain}} se detuvo con un error: {{detail}}",
         "cli_stopped": "El programa {{brain}} se detuvo con un error.",
         "cli_closed": "El programa {{brain}} se cerró de repente.",
-        "cli_empty": "El programa {{brain}} terminó su turno sin responder. Pregunta de nuevo; si sigue pasando, actualiza {{brain}} en la computadora o elige otra IA en la configuración del agente.",
+        "cli_empty": "El programa {{brain}} terminó su turno sin responder. Pregunta de nuevo. Si sigue pasando, actualiza {{brain}} en la computadora o elige otra IA en la configuración del agente.",
         "cli_sandbox": "El programa {{brain}} no puede iniciar su sandbox en esta computadora. Elige otra IA en la configuración del agente.",
         "cli_system": "El programa {{brain}} todavía no funciona en el sistema de esta computadora. Elige otra IA en la configuración del agente.",
         "account_missing": "La cuenta elegida para este agente ya no está en su computadora. Elige otra en la configuración del agente o agrégala de nuevo.",

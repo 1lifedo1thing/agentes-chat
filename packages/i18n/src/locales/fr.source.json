@@ -15838,7 +15838,7 @@
     "value": "The {{brain}} program closed unexpectedly."
   },
   "agentPage.activity.errors.cli_empty": {
-    "value": "The {{brain}} program ended its turn without an answer. Ask again; if it keeps happening, update {{brain}} on the computer or choose another AI in the agent's settings."
+    "value": "The {{brain}} program ended its turn without an answer. Ask again. If it keeps happening, update {{brain}} on the computer or choose another AI in the agent's settings."
   },
   "agentPage.activity.errors.cli_sandbox": {
     "value": "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings."

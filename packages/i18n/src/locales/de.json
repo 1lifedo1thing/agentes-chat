@@ -6414,7 +6414,7 @@
         "cli_failed": "Das Programm {{brain}} wurde mit einem Fehler beendet: {{detail}}",
         "cli_stopped": "Das Programm {{brain}} wurde mit einem Fehler beendet.",
         "cli_closed": "Das Programm {{brain}} wurde unerwartet beendet.",
-        "cli_empty": "Das Programm {{brain}} hat seinen Zug ohne Antwort beendet. Frag noch einmal; wenn es wieder passiert, aktualisiere {{brain}} auf dem Computer oder wähle in den Einstellungen des Agenten eine andere KI.",
+        "cli_empty": "Das Programm {{brain}} hat seinen Zug ohne Antwort beendet. Frag noch einmal. Wenn es wieder passiert, aktualisiere {{brain}} auf dem Computer oder wähle in den Einstellungen des Agenten eine andere KI.",
         "cli_sandbox": "Das Programm {{brain}} kann seine Sandbox auf diesem Computer nicht starten. Wähle in den Einstellungen des Agenten eine andere KI.",
         "cli_system": "Das Programm {{brain}} läuft noch nicht auf dem System dieses Computers. Wähle in den Einstellungen des Agenten eine andere KI.",
         "account_missing": "Das für diesen Agenten gewählte Konto ist nicht mehr auf seinem Computer. Wähl in den Einstellungen des Agenten ein anderes oder füg es erneut hinzu.",

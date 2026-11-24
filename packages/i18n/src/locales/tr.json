@@ -6390,7 +6390,7 @@
         "cli_failed": "Bir hata {{brain}} programını durdurdu: {{detail}}",
         "cli_stopped": "Bir hata {{brain}} programını durdurdu.",
         "cli_closed": "Beklenmedik şekilde {{brain}} programı kapandı.",
-        "cli_empty": "{{brain}} programı sırasını yanıt vermeden bitirdi. Yeniden sorun; tekrar ederse bilgisayardaki {{brain}} programını güncelleyin veya ajanın ayarlarından başka bir yapay zekâ seçin.",
+        "cli_empty": "{{brain}} programı sırasını yanıt vermeden bitirdi. Yeniden sorun. Tekrar ederse bilgisayardaki {{brain}} programını güncelleyin veya ajanın ayarlarından başka bir yapay zekâ seçin.",
         "cli_sandbox": "{{brain}} programı bu bilgisayarda sandbox'ını başlatamıyor. Ajanın ayarlarından başka bir yapay zekâ seçin.",
         "cli_system": "{{brain}} programı henüz bu bilgisayarın sisteminde çalışmıyor. Ajanın ayarlarından başka bir yapay zekâ seçin.",
         "account_missing": "Bu ajan için seçilen hesap artık bilgisayarında değil. Ajanın ayarlarından başka bir hesap seçin ya da yeniden ekleyin.",

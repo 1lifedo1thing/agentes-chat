@@ -6181,7 +6181,7 @@
         "cli_failed": "Program {{brain}} berhenti karena kesalahan: {{detail}}",
         "cli_stopped": "Program {{brain}} berhenti karena kesalahan.",
         "cli_closed": "Program {{brain}} tertutup tiba-tiba.",
-        "cli_empty": "Program {{brain}} mengakhiri gilirannya tanpa jawaban. Tanyakan lagi; jika terus terjadi, perbarui {{brain}} di komputer atau pilih AI lain di pengaturan agen.",
+        "cli_empty": "Program {{brain}} mengakhiri gilirannya tanpa jawaban. Tanyakan lagi. Jika terus terjadi, perbarui {{brain}} di komputer atau pilih AI lain di pengaturan agen.",
         "cli_sandbox": "Program {{brain}} tidak bisa menjalankan sandbox-nya di komputer ini. Pilih AI lain di pengaturan agen.",
         "cli_system": "Program {{brain}} belum berjalan di sistem komputer ini. Pilih AI lain di pengaturan agen.",
         "account_missing": "Akun yang dipilih untuk agen ini sudah tidak ada di komputernya. Pilih akun lain di pengaturan agen, atau tambahkan lagi.",

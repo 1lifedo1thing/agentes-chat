@@ -6905,7 +6905,7 @@
         "cli_failed": "Program {{brain}} zatrzymał się z błędem: {{detail}}",
         "cli_stopped": "Program {{brain}} zatrzymał się z błędem.",
         "cli_closed": "Program {{brain}} nagle się zamknął.",
-        "cli_empty": "Program {{brain}} zakończył swoją turę bez odpowiedzi. Zapytaj ponownie; jeśli to się powtarza, zaktualizuj {{brain}} na komputerze albo wybierz inną AI w ustawieniach agenta.",
+        "cli_empty": "Program {{brain}} zakończył swoją turę bez odpowiedzi. Zapytaj ponownie. Jeśli to się powtarza, zaktualizuj {{brain}} na komputerze albo wybierz inną AI w ustawieniach agenta.",
         "cli_sandbox": "Program {{brain}} nie może uruchomić swojego sandboxa na tym komputerze. Wybierz inną AI w ustawieniach agenta.",
         "cli_system": "Program {{brain}} nie działa jeszcze w systemie tego komputera. Wybierz inną AI w ustawieniach agenta.",
         "account_missing": "Konta wybranego dla tego agenta nie ma już na jego komputerze. Wybierz inne w ustawieniach agenta albo dodaj je ponownie.",
