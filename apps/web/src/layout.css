@@ -1662,21 +1662,6 @@ html:not([data-pointer]) .member-row--add:focus-visible {
 .struck {
   text-decoration: line-through;
 }
-/* Aceitar todas and Recusar todas at the tabs' right, small and 8 apart, as the tabs bar's toolbar sits; asked again in
-   the same spot. Under the tabs, at the right, when the row has no room. */
-.proposals-all {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-2) auto;
-}
-.proposals-all__ask {
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--muted);
-}
 .evidence {
   margin: 0;
   padding: 0;
@@ -4462,24 +4447,13 @@ html:not([data-pointer]) .sidebar__org-button:focus-visible {
   flex-direction: column;
   gap: var(--space-4);
 }
+/* The pages' header (`PageHeader`), its words in line with the links' icons. */
 .settings__head {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding: 0 10px;
-}
-.settings__title {
-  margin: 0;
-  font-size: 20px;
-  line-height: 26px;
-  font-weight: 700;
-  letter-spacing: -0.015em;
 }
 /* The workspace's name wraps under the mark, which stays on its first line: a long one never widens the nav. */
 .settings__org {
   min-width: 0;
-  color: var(--ink-muted);
-  font-size: 13px;
 }
 .settings__org > span {
   min-width: 0;
@@ -10977,10 +10951,6 @@ html:not([data-pointer]) .agp-cell:focus-visible {
 .agp-badge--edit {
   background: var(--ink);
   color: var(--bg);
-}
-.agp-badge--ask {
-  background: var(--warn-soft);
-  color: var(--warn);
 }
 .agp-view {
   /* Room under the tabs before the first card, and the same 16px between whatever a tab stacks. */

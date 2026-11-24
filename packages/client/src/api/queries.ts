@@ -4961,7 +4961,10 @@ export function useCardProposals(orgId: string, ids: string[]) {
  * (profile card, hero, team), and the apps (the Access tab and the matrix).
  */
 function refreshAccepted(qc: QueryClient, orgId: string, decided: Proposal[]) {
-  const accepted = decided.filter((p) => p.status === "accepted" && p.target.type !== "org_context");
+  // Applied or put back (ADR 0219): either way what it changed on the agent's page moved.
+  const accepted = decided.filter(
+    (p) => (p.status === "accepted" || p.status === "undone") && p.target.type !== "org_context",
+  );
   if (accepted.length === 0) return;
   void qc.invalidateQueries({ queryKey: keys.agents(orgId) });
   void qc.invalidateQueries({ queryKey: keys.team(orgId) });
@@ -4976,7 +4979,7 @@ function refreshAccepted(qc: QueryClient, orgId: string, decided: Proposal[]) {
     void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
 }
 
-/** The proposals and the sidebar's count of them: after a decision here, or a `proposal.*` event from elsewhere. */
+/** The proposals and the overview: after an undo here, or a `proposal.*` event from elsewhere. */
 export function refreshProposals(qc: QueryClient, orgId: string) {
   void qc.invalidateQueries({ queryKey: keys.overview(orgId) });
   return qc.invalidateQueries({ queryKey: keys.proposals(orgId) });
@@ -4987,83 +4990,16 @@ function editProposals(qc: QueryClient, orgId: string, update: (list: Proposal[]
   qc.setQueriesData<Proposal[]>({ queryKey: keys.proposals(orgId) }, (list) => (list ? update(list) : list));
 }
 
-/** Pending proposals decided before the answer, in every list of them. */
-function proposalEdits(orgId: string, ids: readonly string[], decision: "accept" | "refuse"): CacheEdit[] {
-  const status = decision === "accept" ? ("accepted" as const) : ("refused" as const);
-  return [
-    editAll<Proposal[]>(keys.proposals(orgId), (list) =>
-      list.some((p) => ids.includes(p.id) && p.status === "pending")
-        ? list.map((p) => (ids.includes(p.id) && p.status === "pending" ? { ...p, status } : p))
-        : list,
-    ),
-  ];
-}
-
-export function useDecideProposal(orgId: string) {
+/** Undo on a change an agent applied (ADR 0219): the row comes back `undone`, and what it changed is read again. */
+export function useUndoProposal(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { id: string; decision: "accept" | "refuse"; text?: string }) =>
-      input.decision === "accept"
-        ? api.proposals.accept(orgId, input.id, input.text)
-        : api.proposals.refuse(orgId, input.id),
-    // The page explains a stale proposal (409) itself.
-    meta: { silent: true },
-    // The row takes its decision at once; a refused one comes back as it was.
-    ...optimistic(qc, (input: { id: string; decision: "accept" | "refuse"; text?: string }) =>
-      proposalEdits(orgId, [input.id], input.decision),
-    ),
+    mutationFn: (id: string) => api.proposals.undo(orgId, id),
     onSuccess: (row) => {
       editProposals(qc, orgId, patchIn<Proposal>(row.id, row));
       refreshAccepted(qc, orgId, [row]);
     },
-    onSettled: () => void refreshProposals(qc, orgId),
-  });
-}
-
-/** "Pedir a um admin" on a settings row the viewer can't decide (ADR 0137): the card says whom it went to. */
-export function useAskProposal(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.proposals.ask(orgId, id),
-    // "Sent to …" shows at once; the answer says to whom.
-    ...optimistic(qc, (id: string) => [
-      editAll<Proposal[]>(keys.proposals(orgId), patchIn<Proposal>(id, { askedAt: new Date().toISOString() })),
-    ]),
-    onSuccess: (row) => editProposals(qc, orgId, patchIn<Proposal>(row.id, row)),
-    onSettled: () => void qc.invalidateQueries({ queryKey: keys.proposals(orgId) }),
-  });
-}
-
-/**
- * A card's rows accepted or refused at once: one request per row, so each applies on its own and a stale one
- * never stops the rest, then one refresh. Resolves with the rows decided and the ones that failed and why.
- */
-export function useDecideProposals(orgId: string) {
-  const api = useApi();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { ids: string[]; decision: "accept" | "refuse" }) => {
-      const decided: Proposal[] = [];
-      const failed: { id: string; error: unknown }[] = [];
-      for (const id of input.ids) {
-        try {
-          decided.push(
-            await (input.decision === "accept" ? api.proposals.accept(orgId, id) : api.proposals.refuse(orgId, id)),
-          );
-        } catch (error) {
-          failed.push({ id, error });
-        }
-      }
-      return { decided, failed };
-    },
-    meta: { silent: true },
-    // Every row takes its decision at once; one that failed comes back with the read below.
-    ...optimistic(qc, (input: { ids: string[]; decision: "accept" | "refuse" }) =>
-      proposalEdits(orgId, input.ids, input.decision),
-    ),
-    onSuccess: ({ decided }) => refreshAccepted(qc, orgId, decided),
     onSettled: () => void refreshProposals(qc, orgId),
   });
 }
