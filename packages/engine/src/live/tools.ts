@@ -66,6 +66,7 @@ import {
 import {
   canvasStylePatch,
   fontRefOf,
+  HTML_WORDS,
   richForRead,
   STYLE_INPUT,
   STYLE_WORDS,
@@ -1145,10 +1146,12 @@ async function htmlPlans(
   if (!wanted.length) return plans;
   const { doc } = await deps.live.read(ctx.orgId, fileId);
   try {
+    // Icons take the text color around them; a slide's text inherits its theme's.
+    const ink = kind === "slides" ? live.themeOf(live.readDeck(doc).theme).colors.text : undefined;
     for (const { op, index } of wanted) {
       try {
         const parsed = parseHtml(str(op.html));
-        const pictures = await resolveHtmlPictures(deps, ctx, actorOf(ctx), fileId, parsed);
+        const pictures = await resolveHtmlPictures(deps, ctx, actorOf(ctx), fileId, parsed, ink);
         const input = {
           html: str(op.html),
           pictures,
@@ -2847,9 +2850,10 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
       `Change a live presentation in one batch while people in it watch (at most ${LIVE_TOOL_LIMITS.ops} ops). \`slide\` is a number (1 is the first) or a slide's id; give an op \`ref\` to name what it adds for later ops of the batch. Ops:`,
       "- add_slide {at?, layout?, title?, body?, notes?, image? | svg? | url?}; duplicate_slide / delete_slide {slide}; move_slide {slide, to}.",
       "- set_text {slide, element (its id) or role (title, subtitle, body, body2, caption, number, quote), text in light Markdown, or html: inline HTML whose styles become the words' own (font, size, weight, color, highlight, letter spacing, capitals)}; set_notes {slide, text}; set_layout {slide, layout}; set_theme {theme}; set_fonts {fonts: {heading?, body?}}: the deck's own fonts over the theme's (null both: the theme's).",
-      "- add_html {slide, html, box?, name?}: lays out HTML and CSS (a <style> block or style attributes; flexbox, padding, margins, borders, radius, shadows, gradients, fonts, letter spacing; <img src=\"file:<id>|asset:<id>|https://…\"> and inline <svg> for pictures and icons) in `box` (the whole slide when left out, 1920×1080, CSS px = slide units, text with no size 16px as in a browser) and turns it into the slide's own editable pieces, grouped as the markup nests (name a container with data-name). The way to build a designed slide (cards, columns, badges, icons, a brand's type): never place a picture of a page.",
+      "- add_html {slide, html, box?, name?}: lays out HTML and CSS in `box` (the whole slide when left out, 1920×1080, CSS px = slide units, text with no size 16px as in a browser) and turns it into the slide's own editable pieces, grouped as the markup nests (a container is named by its id or data-name). The way to build a designed slide (cards, columns, badges, icons, a brand's type): never place a picture of a page.",
       "- add_text {slide, text | html, box?, style?}; add_shape {slide, shape (rect|ellipse|triangle|diamond|arrow)?, text? | html?, box?, style?}; style {slide, element | elements | group, style}; move {slide, element | group, x, y}; resize {slide, element, w, h}; group {slide, elements, name?}; ungroup {slide, group}. A group is named by its id or its name.",
       STYLE_WORDS,
+      HTML_WORDS,
       `- add_image {slide, image | svg | url, alt?, box?}: a picture; it fills the slide's empty picture placeholder when it has one. ${FILE_IMAGE_WORDS} ${PICTURE_OP_WORDS}`,
       "- add_chart {slide, chart: {type: bar|line|pie|number, title, labels, series: [{name, values}], unit?}, box?}; add_table {slide, rows, header?, box?}; delete_element {slide, element}.",
       PICTURE_CHOICE,
@@ -3041,8 +3045,9 @@ export function createLiveFileToolSource(deps: LiveFileToolDeps): ToolSource {
       "- connect {from, to, label?, route?, heads?, dashed?, stroke?, stroke_width?}: an arrow between two shapes that follows them when they move (the way to show a flow or a relation); add_line {x1, y1, x2, y2, heads?, …}: a line between two points (no heads unless asked), for underlining or dividing. route: straight|curve|elbow; heads: end (default for connect)|start|both|none.",
       "- draw {points, x?, y?, stroke?, stroke_width?, tool (pen|marker)?}: a freehand stroke, points x, y, x, y… (from x, y when given). Pen strokes are people's own marks: draw one only when asked to draw or circle by hand; a shape or an arrow says it better.",
       "- move {shape | group, x, y, frame?}; resize {shape, w, h}; set_text {shape, text | html}; rename_frame {frame, name}; delete {shapes}; group {shapes, name?}; ungroup {group}. A group is named by its id or its name.",
-      "- add_html {html, x?, y?, w? (1200 when left out), frame?, name?}: lays out HTML and CSS (a <style> block or style attributes; flexbox, padding, borders, radius, shadows, gradients, fonts, letter spacing; <img src=\"file:<id>|asset:<id>|https://…\"> and inline <svg> for icons) and turns it into the canvas's own editable shapes and texts (CSS px = canvas units), grouped as the markup nests (name a container with data-name). The way to draw a designed diagram or card in a brand's look: never place a picture of a page.",
+      "- add_html {html, x?, y?, w? (1200 when left out), frame?, name?}: lays out HTML and CSS and turns it into the canvas's own editable shapes, texts, pictures and connectors (CSS px = canvas units), grouped as the markup nests (a container is named by its id or data-name). The way to draw a designed diagram, map or card in a brand's look: never place a picture of a page.",
       `- add_text, add_note and add_shape take text or html, and style; style {shapes | group, style?, …} also takes \`style\` for text and box looks. ${STYLE_WORDS}`,
+      HTML_WORDS,
       "- style {shapes, fill?, color?, stroke?, stroke_width?, radius?, kind?, route?, heads?, dashed?, tool?, crop?, hidden?}: changes how shapes look, each where its type has it; crop {x, y, w, h} in fractions of a picture shows part of it (null shows it whole); hidden hides a shape from view without deleting it.",
       PICTURE_CHOICE,
       "If any op fails nothing changes.",

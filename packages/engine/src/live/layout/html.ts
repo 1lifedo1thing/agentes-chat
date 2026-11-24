@@ -420,6 +420,8 @@ interface Computed {
   shadow: { x: number; y: number; blur: number; color: string } | null;
   opacity: number;
   aspectRatio: number | null;
+  /** How a picture fills its box (`object-fit`). */
+  fit: "contain" | "cover";
   // Inherited.
   color: string | null;
   font: FontRef | undefined;
@@ -507,7 +509,7 @@ class Cascade {
   private readonly rules: Rule[];
   constructor(
     private readonly parsed: ParsedHtml,
-    private readonly opts: LayoutOptions,
+    private readonly opts: Pick<LayoutOptions, "base" | "fontNamed">,
   ) {
     this.rules = parsed.rules;
   }
@@ -721,6 +723,7 @@ class Cascade {
       shadow: parseShadow(d.get("box-shadow"), em, rem),
       opacity: Number.isFinite(opacity) ? Math.max(0, Math.min(1, opacity)) : 1,
       aspectRatio: aspect && aspect > 0 ? aspect : null,
+      fit: /contain|scale-down/.test(d.get("object-fit") ?? "") ? "contain" : "cover",
       color: (() => {
         const c = parseColor(d.get("color"));
         return c && c !== "none" ? opaque(c) : (parent?.color ?? this.opts.base.color ?? null);
@@ -1345,7 +1348,7 @@ class Builder {
       attrs: new Map(),
       parent: null,
       children: items,
-      inline: new Map(),
+      inline: [],
       first: false,
       last: false,
     };
@@ -1634,7 +1637,7 @@ export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResul
         kind: "image",
         box,
         picture: node.picture,
-        fit: /contain/.test(el?.inline.get("object-fit") ?? "") ? "contain" : "cover",
+        fit: s.fit,
         ...(el?.attrs.get("alt") ? { alt: el.attrs.get("alt") } : {}),
         ...(s.radius ? { radius: Math.min(s.radius, Math.min(box.w, box.h) / 2) } : {}),
         ...(s.shadow ? { shadow: s.shadow } : {}),
@@ -1775,6 +1778,25 @@ function layoutArrows(
 }
 
 /** Words of an `add_html` result for the agent: what it made, and what it left out. */
+/**
+ * The color each picture is drawn in where the markup names one of our icons (`icon:<name>`): the text color its
+ * element computes, as a browser draws an SVG in `currentColor`; the root inherits `base`.
+ */
+export function pictureInks(parsed: ParsedHtml, base: LayoutOptions["base"]): Map<string, string> {
+  const cascade = new Cascade(parsed, { base, fontNamed: () => null });
+  const out = new Map<string, string>();
+  const walk = (el: HtmlElement, parent: Computed | null) => {
+    const s = cascade.compute(el, parent);
+    if (el.picture) {
+      if (s.color) out.set(el.picture, s.color);
+      return;
+    }
+    for (const c of el.children) if (typeof c !== "string") walk(c, s);
+  };
+  walk(parsed.root, null);
+  return out;
+}
+
 export function layoutSummary(result: LayoutResult): string {
   const counts = new Map<string, number>();
   for (const p of result.pieces) counts.set(p.kind, (counts.get(p.kind) ?? 0) + 1);

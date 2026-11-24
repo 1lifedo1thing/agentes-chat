@@ -506,7 +506,7 @@ export function documentTools(deps: LiveFileToolDeps): ToolDefinition[] {
       "- replace {block, to?, markdown}: the block (or the span from block to `to`) becomes the markdown's blocks; the first keeps the block's id.",
       "- delete {block, to?}; replace_text {find, replace, block?, all?, ignore_case?}: text found in place, keeping its formatting.",
       "- rewrite {markdown}: the whole document; blocks that stay the same keep their place (prefer the ops above for a few changes).",
-      "- insert, append, replace and rewrite take html in place of markdown: HTML and CSS whose looks become the words' own (a font from the catalog, size, weight, color, highlight, letter spacing, capitals; <img src=\"file:<id>|asset:<id>|https://…\"> and inline <svg> as pictures; tables, lists, quotes, code). Use it for a document in a brand's type.",
+      "- insert, append, replace and rewrite take html in place of markdown: HTML and CSS whose looks become the words' own (a font from the catalog, size, weight, color, highlight, letter spacing, capitals; <img src=\"file:<id>|asset:<id>|https://…|icon:<name>|logo:<provider>\"> and inline <svg> as pictures; tables, lists, quotes, code). Use it for a document in a brand's type.",
       "- add_image {image | svg | url, alt?, after? (a block id, or `start`), before?}: a picture as a block of its own (at the end when neither). `image`: a picture's Drive file id, or one of the document's. " +
         PICTURE_OP_WORDS,
       "In Markdown, a picture on a line of its own: ![description](file:<a Drive image's id>), ![description](asset:<one of the document's pictures>) or ![description](https://…) for a picture on the web, downloaded into the document.",

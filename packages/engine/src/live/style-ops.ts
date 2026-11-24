@@ -1,4 +1,6 @@
 import * as live from "@agenteschat/live";
+import { PROVIDER_MARKS } from "@agenteschat/ui/brand/marks";
+import { iconShapes } from "@agenteschat/ui/icons/data";
 import { ValidationError } from "../errors";
 import type { JsonSchema } from "../tools/json-schema";
 
@@ -51,6 +53,15 @@ export const STYLE_INPUT: JsonSchema = {
 export const STYLE_WORDS = [
   "`style` {font, size, weight (100–900), color, align, valign, line_height (× size), tracking (thousandths of the size), caps, padding, fill, gradient {from, to, angle}, stroke, stroke_width, dash (solid|dashed|dotted), radius, shadow {x, y, blur, color #rrggbbaa}, opacity}; null takes a key away.",
   `Fonts: a catalog family by name or id (${live.FONT_CATALOG.map((f) => f.family).join(", ")}), one of the file's own fonts by its family or \`asset:<id>\` (add_font {font_file: a Drive file id} brings a .ttf, .otf or .woff into the file first), or heading/body (the theme's).`,
+].join(" ");
+
+/** What `add_html` reads (ADR 0220 §4), said once for slides, canvases and documents. */
+export const HTML_WORDS = [
+  "The markup may be a fragment or a whole page as written for a browser: <style> anywhere (its head too), classes, ids, descendant and child selectors, :root and custom properties with var(), ::before/::after content, flexbox, grid (grid-template-columns in px, fr, repeat(), minmax(); gap; grid-column: span n), inline-flex, block flow, padding, margins, borders, radius, box-shadow, linear-gradient, opacity, fonts (font-family from the catalog or the file's own, also behind an @font-face name), weights, letter-spacing, text-transform: uppercase, line-height.",
+  "Pictures: <img src> with file:<id> (a Drive picture), asset:<id> (the file's own), an https address, icon:<name> (our icon set, drawn in the CSS color around it: use these for icons) or logo:<provider> (an AI maker's own mark), and inline <svg>.",
+  'An element with data-arrow-to="<id of another element>" (and data-arrow-label, data-arrow-color) gets an arrow from its box to that one; on a canvas it is a connector that follows the shapes.',
+  "Position, transforms, filters, animations and web fonts by address are left out, and the result says what it left out.",
+  `Icons: ${Object.keys(iconShapes).join(", ")}. Logos: ${Object.keys(PROVIDER_MARKS).filter((k) => k !== "custom" && !("image" in PROVIDER_MARKS[k as keyof typeof PROVIDER_MARKS])).join(", ")}.`,
 ].join(" ");
 
 const KEYS: Record<string, keyof live.ElementStyle> = {

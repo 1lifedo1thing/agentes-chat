@@ -22,7 +22,7 @@ import {
   type ToolSource,
 } from "../src";
 import { TextMeasurer } from "../src/fonts/library";
-import { htmlToRich, layoutHtml, parseHtml } from "../src/live/layout/html";
+import { htmlToRich, layoutHtml, parseHtml, pictureInks } from "../src/live/layout/html";
 import { type Fixture, setup } from "./fixtures";
 import { liveDocsFor, personActor } from "./live-fixtures";
 
@@ -343,14 +343,68 @@ describe("the layout itself", () => {
     expect(tall?.box.h).toBeGreaterThan(40);
   });
 
-  test("what isn't taken is said: scripts, grid, transforms, outside fonts", () => {
+  test("what isn't taken is said: scripts, floats, transforms, outside fonts", () => {
     const r = layout(
-      '<script>alert(1)</script><div style="display:grid;transform:rotate(3deg);font-family:Papyrus">x</div>',
+      '<script>alert(1)</script><div style="float:left;transform:rotate(3deg);font-family:Papyrus">x</div>',
     );
     expect(r.notes.join(" ")).toContain("script");
-    expect(r.notes.join(" ")).toContain("grid");
+    expect(r.notes.join(" ")).toContain("float");
     expect(r.notes.join(" ")).toContain("transform");
     expect(r.notes.join(" ")).toContain("Papyrus");
+  });
+
+  test("a page as an agent writes it: custom properties on :root, a grid of columns, a cell spanning two", () => {
+    const r = layout(
+      `<!doctype html><html><head><style>
+        :root { --accent: #0063d1; --gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
+        .c { background: var(--accent); height: 40px; }
+      </style></head><body style="margin:0"><div class="grid">
+        <div class="c"></div><div class="c"></div><div class="c"></div><div class="c" style="grid-column: span 2"></div>
+      </div></body></html>`,
+      640,
+    );
+    const boxes = r.pieces.filter((p) => p.kind === "box" && p.fill === "#0063d1");
+    expect(boxes.map((b) => b.box)).toEqual([
+      { x: 0, y: 0, w: 200, h: 40 },
+      { x: 220, y: 0, w: 200, h: 40 },
+      { x: 440, y: 0, w: 200, h: 40 },
+      { x: 0, y: 60, w: 420, h: 40 },
+    ]);
+  });
+
+  test("::before and ::after content is text; an @font-face name reaches the catalog font its file is", () => {
+    const r = layout(`<style>
+      @font-face { font-family: "Brand Display"; src: url("fonts/FunnelDisplay-Bold.ttf") format("truetype"); }
+      h1 { font-family: "Brand Display", sans-serif; margin: 0; }
+      .step::before { content: "01 "; } .step::after { content: " \\2192"; }
+    </style><h1>Anatomia</h1><p class="step">Gatilho</p>`);
+    const texts = r.pieces.filter((p) => p.kind === "text");
+    const title = texts.find((t) => t.kind === "text" && JSON.stringify(t.text).includes("Anatomia"));
+    expect(title?.kind === "text" && title.style.font).toBe("funnel-display");
+    const step = texts.find((t) => t.kind === "text" && JSON.stringify(t.text).includes("Gatilho"));
+    const words = step?.kind === "text" ? step.text.flatMap((p) => p.runs.map((x) => x.text)).join("") : "";
+    expect(words.replace(/\s+/g, " ").trim()).toBe("01 Gatilho \u2192");
+  });
+
+  test("data-arrow-to asks for an arrow between two boxes, by their pieces", () => {
+    const r = layout(
+      '<div style="display:flex;gap:100px"><div id="a" data-arrow-to="b" data-arrow-label="chama" style="width:100px;height:50px;background:#eee"></div><div id="b" style="width:100px;height:50px;background:#ddd"></div></div>',
+    );
+    expect(r.arrows).toHaveLength(1);
+    const arrow = r.arrows[0];
+    expect(arrow?.label).toBe("chama");
+    expect(r.pieces[arrow?.from ?? -1]?.kind === "box" && r.pieces[arrow?.from ?? -1]?.box.x).toBe(0);
+    expect(r.pieces[arrow?.to ?? -1]?.box.x).toBe(200);
+  });
+
+  test("an icon takes the text color around it, a mark keeps its own", () => {
+    const parsed = parseHtml(
+      '<style>.hot { color: #d14a00 }</style><p class="hot"><img src="icon:agent"> Agente</p><p><img src="icon:search"></p>',
+    );
+    const inks = pictureInks(parsed, { size: 16, color: "#222222" });
+    expect(inks.get("p0")).toBe("#d14a00");
+    expect(inks.get("p1")).toBe("#222222");
   });
 
   test("htmlToRich keeps a paragraph per block and the inline looks as marks", () => {
