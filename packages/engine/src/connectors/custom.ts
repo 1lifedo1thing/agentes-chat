@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import type { BlobStore } from "@agenteschat/adapters";
+import type { BlobStore, PubSub } from "@agenteschat/adapters";
 import { and, asc, type Database, type Executor, eq, inArray, isNull, like, schema, sql } from "@agenteschat/db";
+import { releaseUnasked } from "../approvals";
 import { recordAudit } from "../audit";
 import { caches } from "../cache";
 import { type ConnectorEventId, connectorEventsOf } from "../connector-triggers";
@@ -234,6 +235,8 @@ export interface CustomDeps extends McpOAuthDeps {
   /** Where servers' icons are kept (the platform store); none: no icons. */
   blobs?: BlobStore;
   log?: { warn(message: string, data?: Record<string, unknown>): void };
+  /** Tells the apps when a classification frees requests still waiting (`releaseUnasked`). */
+  pubsub?: PubSub;
 }
 
 const aadFor = (orgId: string, id: string) => `connector-connection|${orgId}|${id}`;
@@ -1101,6 +1104,12 @@ export async function saveCustomTools(
   caches.connections.delete(`${orgId}:active`);
   caches.connections.delete(toolsKey(c));
   caches.scopes.deletePrefix(`${orgId}:`);
+  // A tool that no longer asks frees the requests of it still waiting: their runs call it again (`releaseUnasked`).
+  const freed = input.tools
+    .filter((t) => known.get(t.name)?.access === "approval" && (t.access === "read" || t.access === "write"))
+    .map((t) => t.name);
+  // The names the agent called them by: the prefix as it was before this rename.
+  await releaseUnasked(deps, actorId, orgId, { connectionId: c.id, prefix: toolPrefixOfConnection(c), tools: freed });
   return serverView(deps.db, orgId, id);
 }
 

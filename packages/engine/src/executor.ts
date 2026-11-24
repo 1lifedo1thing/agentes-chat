@@ -3072,8 +3072,9 @@ async function executeRunInner(
           // The approvals screen shows it ran (and what came back).
           const [ran] = await db.select().from(approvals).where(eq(approvals.id, approval.id));
           if (ran) await publishApproval({ db, pubsub: deps.pubsub }, ran, "approval.decided").catch(() => {});
-        } else if (approval?.status === "canceled" && approval.supersededById && mootText) {
-          // Replaced by its newer request (`supersedeApprovals`): nothing was decided here.
+        } else if (approval?.status === "canceled" && mootText) {
+          // Replaced by its newer request (`supersedeApprovals`), or no longer asked (`releaseUnasked`): nothing was
+          // decided here.
           result = { isError: false, content: mootText };
         } else {
           result = toolResultFor(approval, approval?.status === "refused" ? decider : undefined);
