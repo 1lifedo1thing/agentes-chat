@@ -141,6 +141,13 @@ export const caches = {
    * membership is kept, never its absence, so someone who just joined is let in at once.
    */
   membership: new TtlCache<unknown>(5_000),
+  /**
+   * A signed-in request's session and person, by its signed session cookie (the server's `sessionOf`): a tab's polls
+   * and lists read them once every few seconds instead of a session and a user row each. A session that ends or
+   * changes is forgotten here and in every process at once: by its token (`${token}.`) from Better Auth's hooks, all
+   * of them when the engine ends a person's sessions itself, or a person changes.
+   */
+  sessions: new TtlCache<unknown>(5_000, 50_000),
   /** An org's standing (`standing.ts`), read before every model and computer call: a hold bites within 5 s everywhere. */
   standing: new TtlCache<unknown>(5_000),
   /** Whether an org spent its platform AI for the month (`limits.ts`), read before every Jev call and route. */
