@@ -61,7 +61,7 @@ import { keysOfCall, RUN_CODE_TOOL, routineKeysAllowed, routineKeysKind } from "
 import { addRunStep } from "../runs";
 import { describeWhen } from "../schedule";
 import { REQUEST_SECRET_TOOL } from "../secrets";
-import { surfaceRefusal } from "../surfaces/turn";
+import { surfaceGate } from "../surfaces/turn";
 import {
   callTargets,
   checkTeamAction,
@@ -1473,10 +1473,10 @@ export function createToolGateway(deps: {
         if (actions?.length && actions.every(opensPullRequestName)) tool = { ...tool, opensPullRequest: true };
       }
       if (tool.sensitive && tool.asksNobody?.(call.input)) tool = { ...tool, sensitive: false };
-      const surfaceNo = await surfaceRefusal(ctx, tool, call.input);
-      if (surfaceNo) {
+      const surfaceSays = await surfaceGate(ctx, tool, call.input);
+      if (surfaceSays && "refuse" in surfaceSays) {
         return finish(
-          { content: surfaceNo, isError: true, data: { code: "tool.surface", refusal: "surface" } },
+          { content: surfaceSays.refuse, isError: true, data: { code: "tool.surface", refusal: "surface" } },
           "refused",
         );
       }
@@ -1750,7 +1750,12 @@ export function createToolGateway(deps: {
         const [ran] = await ctx.db.select().from(approvals).where(eq(approvals.id, ahead.id));
         return { type: "result", output, ...(ran ? { ran } : {}) };
       }
-      const askPerson = async (why: string, remember: RememberedKind | null): Promise<InvokeResult> => {
+      const askPerson = async (
+        why: string,
+        remember: RememberedKind | null,
+        /** The person of a surface turn, who alone decides it, with their PIN (ADR 0226). */
+        onSurface?: { userId: string; name: string },
+      ): Promise<InvokeResult> => {
         const owner = await ownerOf(ctx);
         // A routine's request goes to the conversation it reports to, never its room; one asked by another
         // agent (ADR 0034) where the person is, not in the agents' DM.
@@ -1800,7 +1805,16 @@ export function createToolGateway(deps: {
             ownerRoleId: owner.ownerRoleId,
             expiresAt: new Date(now().getTime() + APPROVAL_TTL_MS),
             approveAlways: remember,
-            approvers: asked?.approvers ?? null,
+            approvers: onSurface
+              ? {
+                  userIds: [onSurface.userId],
+                  label: onSurface.name,
+                  requestedBy: onSurface.userId,
+                  requesterDecides: true,
+                  // Not an admin nor whoever covers them: their say would stand in for the PIN.
+                  required: true,
+                }
+              : (asked?.approvers ?? null),
             requestedByUserId: authority ? (authority.personId ?? routineCreatorOf(authority)) : null,
             highRisk: highRisk(tool.name, tool.scope),
           })
@@ -1824,6 +1838,13 @@ export function createToolGateway(deps: {
         await audit("pending", { reason: why || null, approvalId: row.id });
         return { type: "approval", approval: row };
       };
+      // A surface turn's act that would run without asking anyone waits for the person's own say, given with their
+      // PIN on a page the surface links to (ADR 0226): no rule, level or allowed repository stands in for it, since
+      // nothing typed on the surface proves who typed it. What asks someone anyway asks them as usual.
+      if (surfaceSays && !approves) {
+        unasked = false;
+        return askPerson(why, null, surfaceSays.confirm);
+      }
       if (approves) {
         // A card of a run doing a routine's job (its own run, or one its report or a teammate's answer woke:
         // `ownJobBrief`) offers "Sempre nesta rotina" where the action can be its own: the narrower word for the same

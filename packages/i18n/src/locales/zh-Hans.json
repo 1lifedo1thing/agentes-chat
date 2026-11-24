@@ -2399,10 +2399,50 @@
       "gone": "这个撤销链接已失效",
       "sender": "该发送者"
     },
+    "page": {
+      "opening": "正在打开页面",
+      "gone": "此链接已失效",
+      "lead": "输入你的 PIN 以批准。",
+      "leadFirst": "设置一个 6 位 PIN 来批准。它用于确认来自 {{surface}} 的此类操作。",
+      "choosePin": "设置 PIN",
+      "repeatPin": "再输入一次",
+      "pin": "你的 PIN",
+      "mismatch": "两次输入的 PIN 不一致。请重新输入第二个。",
+      "approve": "批准",
+      "refuse": "拒绝",
+      "forgot": "忘记 PIN？",
+      "emailed": "我们已通过邮件发送链接。请在那里设置 PIN，然后回到此页面。",
+      "notYours": "由 {{who}} 在应用中决定。",
+      "notYoursSomeone": "由有权批准的人在应用中决定。",
+      "approved": "已批准",
+      "refused": "已拒绝",
+      "expired": "此请求已过期",
+      "back": "回到 {{surface}}，你的助手会在那里继续。",
+      "setFirst": "请先设置 PIN",
+      "setFirstLead": "通过 {{surface}} 批准需要 PIN，而聊天中的链接无法设置它。请在已登录的应用中设置，然后回到此页面。",
+      "setFirstLeadEmail": "通过 {{surface}} 批准需要 PIN，而聊天中的链接无法设置它。请在已登录的应用中设置，或通过我们发到你邮箱的链接设置，然后回到此页面。",
+      "openApp": "在应用中设置",
+      "emailMe": "通过邮件发送链接"
+    },
+    "pinReset": {
+      "title": "设置你的 PIN",
+      "lead": "六位数字。你在聊天应用中请求的操作需要输入它来批准。",
+      "button": "保存我的 PIN",
+      "done": "PIN 已保存",
+      "doneLead": "回到从 {{surface}} 打开的页面，用它来批准。",
+      "gone": "此链接已失效"
+    },
     "via": "通过 {{surface}}",
     "viaTip": "由 {{person}} 通过 {{surface}} 发送",
     "forwarded": "通过 {{surface}} 转发",
-    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。"
+    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。",
+    "pin": {
+      "set": "设置 PIN",
+      "change": "更改 PIN",
+      "title": "你的 {{surface}} PIN",
+      "text": "你在 {{surface}} 中请求的操作需要输入这六位数字来批准。它永远不会在聊天中发送。",
+      "save": "保存 PIN"
+    }
   },
   "team": {
     "title": "团队",
@@ -15165,7 +15205,15 @@
       "linkGone": "此关联已不再等待：它在 10 分钟后过期或已被取消。请生成新代码重新开始。",
       "taken": "该发送者已关联到另一个 agentes.chat 账号。请先在那里取消关联，再发送新代码。",
       "undoGone": "此撤销链接已被使用或已过期。请改在通知设置中取消关联。",
-      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。"
+      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。",
+      "pageGone": "此链接已过期。请在聊天中向助手要一个新链接。",
+      "pageElsewhere": "此链接已在另一台设备上打开。请在聊天中向助手要一个新链接。",
+      "pinWrong": "PIN 错误。剩余次数：{{left}}。",
+      "pinLocked": "错误的 PIN 次数过多。请稍后再试，或在应用中设置新的 PIN。",
+      "pinShape": "PIN 为 6 位数字。",
+      "pinResetGone": "此链接已使用或已过期。请通过“忘记 PIN？”重新获取。",
+      "pinUnset": "请先设置 PIN。请在已登录的应用中设置。",
+      "emailUnverified": "你的邮箱地址尚未验证。请在应用中设置 PIN。"
     },
     "wallpaper": {
       "notYours": "这张照片不是你的。",

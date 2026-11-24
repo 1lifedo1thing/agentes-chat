@@ -2651,10 +2651,50 @@
       "gone": "Ten link do cofnięcia już nie działa",
       "sender": "Ten nadawca"
     },
+    "page": {
+      "opening": "Otwieranie strony",
+      "gone": "Ten link już nie działa",
+      "lead": "Wpisz PIN, aby to zatwierdzić.",
+      "leadFirst": "Wybierz 6-cyfrowy PIN, aby to zatwierdzić. Potwierdza on takie działania z {{surface}}.",
+      "choosePin": "Wybierz PIN",
+      "repeatPin": "Wpisz go ponownie",
+      "pin": "Twój PIN",
+      "mismatch": "Oba PIN-y się różnią. Wpisz drugi ponownie.",
+      "approve": "Zatwierdź",
+      "refuse": "Odrzuć",
+      "forgot": "Nie pamiętasz PIN-u?",
+      "emailed": "Wysłaliśmy Ci link e-mailem. Wybierz tam PIN, a potem wróć na tę stronę.",
+      "notYours": "{{who}} decyduje o tym w aplikacji.",
+      "notYoursSomeone": "Decyduje o tym w aplikacji osoba, która może to zatwierdzić.",
+      "approved": "Zatwierdzono",
+      "refused": "Odrzucono",
+      "expired": "Ta prośba wygasła",
+      "back": "Wróć do {{surface}}. Asystent kontynuuje tam.",
+      "setFirst": "Najpierw wybierz PIN",
+      "setFirstLead": "Zatwierdzanie z {{surface}} wymaga PIN-u, a link z czatu nie może go wybrać. Wybierz go w aplikacji po zalogowaniu, a potem wróć na tę stronę.",
+      "setFirstLeadEmail": "Zatwierdzanie z {{surface}} wymaga PIN-u, a link z czatu nie może go wybrać. Wybierz go w aplikacji po zalogowaniu albo przez link, który wyślemy Ci e-mailem. Potem wróć na tę stronę.",
+      "openApp": "Wybierz w aplikacji",
+      "emailMe": "Wyślij mi link e-mailem"
+    },
+    "pinReset": {
+      "title": "Wybierz PIN",
+      "lead": "Sześć cyfr. Wpiszesz go, aby zatwierdzać działania, o które prosisz w aplikacji czatu.",
+      "button": "Zapisz mój PIN",
+      "done": "PIN zapisany",
+      "doneLead": "Wróć na stronę otwartą z {{surface}} i zatwierdź tym PIN-em.",
+      "gone": "Ten link już nie działa"
+    },
     "via": "przez {{surface}}",
     "viaTip": "Wysłane przez {{person}} na {{surface}}",
     "forwarded": "przekazane przez {{surface}}",
-    "forwardedTip": "{{person}} przekazał(a) to z {{surface}}. To słowa kogoś innego."
+    "forwardedTip": "{{person}} przekazał(a) to z {{surface}}. To słowa kogoś innego.",
+    "pin": {
+      "set": "Ustaw PIN",
+      "change": "Zmień PIN",
+      "title": "Twój PIN do {{surface}}",
+      "text": "Sześć cyfr, które wpisujesz, aby zatwierdzać działania, o które prosisz w {{surface}}. Nigdy nie jest wysyłany na czacie.",
+      "save": "Zapisz PIN"
+    }
   },
   "team": {
     "title": "Zespół",
@@ -16776,7 +16816,15 @@
       "linkGone": "To połączenie już nie czeka: wygasło po 10 minutach albo zostało anulowane. Utwórz nowy kod, aby zacząć od nowa.",
       "taken": "Ten nadawca jest połączony z innym kontem agentes.chat. Odłącz go tam, a potem wyślij nowy kod.",
       "undoGone": "Ten link do cofnięcia został już użyty albo wygasł. Odłącz zamiast tego w ustawieniach powiadomień.",
-      "codeGone": "Ten kod jest błędny, już użyty albo wygasł po 10 minutach. Utwórz nowy kod i wyślij go ponownie."
+      "codeGone": "Ten kod jest błędny, już użyty albo wygasł po 10 minutach. Utwórz nowy kod i wyślij go ponownie.",
+      "pageGone": "Ten link wygasł. Poproś asystenta na czacie o nowy.",
+      "pageElsewhere": "Ten link został otwarty na innym urządzeniu. Poproś asystenta na czacie o nowy.",
+      "pinWrong": "Błędny PIN. Pozostałe próby: {{left}}.",
+      "pinLocked": "Zbyt wiele błędnych PIN-ów. Spróbuj później albo wybierz nowy PIN w aplikacji.",
+      "pinShape": "PIN ma 6 cyfr.",
+      "pinResetGone": "Ten link został już użyty lub wygasł. Poproś o nowy przez „Nie pamiętasz PIN-u?”.",
+      "pinUnset": "Najpierw wybierz PIN. Wybierz go w aplikacji po zalogowaniu.",
+      "emailUnverified": "Twój adres e-mail nie jest jeszcze potwierdzony. Wybierz PIN w aplikacji."
     },
     "wallpaper": {
       "notYours": "To zdjęcie nie jest twoje.",

@@ -364,6 +364,8 @@ export interface SurfaceLink {
   confirmedAt: string | null;
   /** Pending only: when it stops counting. */
   expiresAt: string | null;
+  /** A PIN confirms actions asked from the surface (ADR 0226). */
+  pinSet: boolean;
 }
 
 /** `GET /me/surface-links`: `allowed`, never `AuthConfig.surface`, decides whether the apps offer linking. */
@@ -382,6 +384,36 @@ export interface SurfaceLinkCode {
   /** Opens the surface with the code typed. */
   openUrl: string;
   expiresAt: string;
+}
+
+/** A page the outside chat surface linked to (ADR 0226): one action to confirm with the person's PIN. */
+export interface SurfacePage {
+  kind: "confirm" | "screen" | "control";
+  /** When the page stops opening. */
+  expiresAt: string;
+  surface: string;
+  /** The approval's workspace: its notification settings choose the PIN in the app. */
+  orgId: string;
+  /**
+   * `set` false: approving waits until the PIN is chosen somewhere trusted. `canChoose`: none set and this browser is
+   * signed in as the person, so approving here chooses it. `lockedUntil`: wrong ones lock approving until then.
+   * `resetByEmail`: the server can email a link to choose it (none yet, or forgotten).
+   */
+  pin: { set: boolean; lockedUntil: string | null; canChoose: boolean; resetByEmail: boolean };
+  approval: {
+    id: string;
+    tool: string;
+    params: Record<string, unknown>;
+    title: string;
+    detail: string;
+    why: string | null;
+    kind: string;
+    titleParams: Record<string, string | number | boolean>;
+    status: string;
+    canDecide: boolean;
+    /** Who decides it, in words, when it isn't the person. */
+    approverLabel: string | null;
+  } | null;
 }
 
 export interface User {

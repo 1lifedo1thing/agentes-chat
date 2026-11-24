@@ -2583,7 +2583,7 @@ async function surfaceTurnLine(
   const found = turn ? await turn : null;
   if (!found || !surface) return "";
   const who = names.get(found.userId) ?? "this person";
-  return `\n${who} reads this conversation on ${promptName(surface.name)} right now, not in agentes.chat. Keep it short. Plain text with bold, italics, lists and links; pictures and files go through. No cards, blocks, polls or choices: ask in words. Deleting, roles, budgets, money, merges, deploys and routines that post elsewhere are done in the app: say so in one line and give no other way.`;
+  return `\n${who} reads this conversation on ${promptName(surface.name)} right now, not in agentes.chat. Keep it short. Plain text with bold, italics, lists and links; pictures and files go through. No cards, blocks, polls or choices: ask in words. Deleting, sending, roles, budgets, money, merges and deploys wait for ${who} to confirm with their PIN on a page linked here: call the tool as usual and say in one line that they confirm it there. Routines that post elsewhere are done in the app: say so in one line and give no other way.`;
 }
 
 /** `meta.actionNotes` (undo/redo of the agent's changes) as one bracketed line each; "" when none. */
