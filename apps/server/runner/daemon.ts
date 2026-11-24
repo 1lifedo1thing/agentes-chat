@@ -113,7 +113,7 @@ import {
 } from "./config";
 import { type ConnectionOutcome, type Dial, RunnerConnection } from "./connection";
 import { DesktopManager } from "./desktop";
-import { DesktopSessions, type DesktopUser, runnerUser, systemDesktopUser, taskRoomNow } from "./desktop-session";
+import { DesktopSessions, type DesktopUser, runnerUser, systemDesktopUser } from "./desktop-session";
 import { EgressObservation, probeEgress } from "./egress";
 import { NetworkChangingError, RUNNER_VERSION, RunnerError } from "./errors";
 import { cachedExecutors, EXECUTORS_TTL_MS, type ExecutorRun, inHomeDirs } from "./executors";
@@ -169,7 +169,7 @@ import {
   type WorkerDesktopUse,
   type WorkerState,
 } from "./supervisor";
-import { type SettledTask, TaskManager } from "./tasks";
+import { type SettledTask, TaskManager, type TaskRoomReading } from "./tasks";
 import { runnerTerminalUser, systemTerminalUser, Terminals, type TerminalUser } from "./terminal";
 import { appleToolchains, cachedToolchains, TOOLCHAINS_FILE, xcodeBlocked } from "./toolchains";
 import { XcodeFixer, type XcodeFixOptions } from "./xcode-fix";
@@ -445,6 +445,11 @@ export interface DaemonOptions {
    * the runner people run (`main.ts`), off in tests unless they ask.
    */
   agyCopy?: boolean | Partial<AgyCopyOptions>;
+  /**
+   * Where tasks read their room (`TaskManagerOptions.room`; system mode tells its workers to read it too): the machine's
+   * own for the runner people run (`main.ts`), none in tests unless they ask, so a busy test machine decides nothing.
+   */
+  taskRoom?: () => TaskRoomReading;
 }
 
 /** What a task is in its activity words: a shell task's command, or the CLI that works it (the app names it). */
@@ -1174,6 +1179,7 @@ export class RunnerDaemon implements RequestObserver {
         codexIdleMinutes: c?.brainIdleMinutes ?? CODEX_DEFAULT_LIMITS.brainIdleMinutes,
         codexMaxProcesses: c?.brainMaxProcesses ?? CODEX_DEFAULT_LIMITS.brainMaxProcesses,
         pushHarder: c?.pushHarder === true,
+        ...(this.opts.taskRoom ? { onRoom: true } : {}),
       },
     };
   }
@@ -1348,7 +1354,7 @@ export class RunnerDaemon implements RequestObserver {
       ...(this.self.compiled ? { wrapperCommand: [...this.self.command, "task-wrapper"] } : {}),
       onSettled: (t) => this.taskSettled(t),
       commitHost: () => this.workerState().commitHost,
-      room: taskRoomNow,
+      ...(this.opts.taskRoom ? { room: this.opts.taskRoom } : {}),
       pushHarder: config.pushHarder === true,
       // A task without room closes idle CLIs, then idle browsers, as a turn does (system mode: the workers').
       reclaim: async () => {

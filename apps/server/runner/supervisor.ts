@@ -175,6 +175,8 @@ export interface WorkerState {
     codexMaxProcesses?: number;
     /** The owner's Push harder (`RunnerConfig.pushHarder`). */
     pushHarder?: boolean;
+    /** Tasks start on the machine's room (`DaemonOptions.taskRoom`); absent: on the count. */
+    onRoom?: boolean;
   };
   /** People watching or controlling its agent's desktop (root's): its Chrome there isn't idle meanwhile. */
   desktopViewers?: number;

@@ -590,7 +590,8 @@ export async function runWorker(o: WorkerOptions): Promise<number> {
     ...(cli ? { spawnCli: cli } : {}),
     hostedStop: (taskId) => link.taskStop(taskId),
     commitHost: () => state.commitHost,
-    room: taskRoomNow,
+    // Read as each task starts: root may turn it on or off with the state it sends.
+    room: () => (state.limits.onRoom ? taskRoomNow() : { free: null, cpuBusy: false }),
     pushHarder: state.limits.pushHarder === true,
   });
   link.onTaskOut = (taskId, stream, line) => tasks.hostedOutput(taskId, stream, line);
