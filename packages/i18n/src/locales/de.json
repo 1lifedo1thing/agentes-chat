@@ -10750,6 +10750,73 @@
       "text": "Die Agenten arbeiten ohne ihn weiter."
     }
   },
+  "aiHub": {
+    "tab": "KI-Konten",
+    "usageTab": "Nutzung",
+    "accounts": "Konten",
+    "accountsHint": "Jedes Abo und jeder API-Schlüssel, mit dem die Agenten denken können, egal wer es verbunden hat.",
+    "apiKey": "API-Schlüssel",
+    "of": "von {{name}}",
+    "moreSpeed": "Geschwindigkeit und Kontextfenster",
+    "whoThinks": "Wer denkt",
+    "bulk": {
+      "sub": "Wähle die KI und dann die Agenten, die sie übernehmen."
+    },
+    "choice": {
+      "workspace": "Die des Workspace",
+      "none": "Konto wählen",
+      "search": "Nach Name, KI, Abo oder Besitzer suchen",
+      "noMatch": "Kein Konto gefunden.",
+      "noModel": "Kein Modell gefunden.",
+      "groups": {
+        "yours": "Deine",
+        "others": "Vom Team",
+        "keys": "Vom Workspace"
+      }
+    },
+    "order": {
+      "title": "Nutzungsreihenfolge",
+      "tip": "Welches Konto die Agenten zuerst nutzen",
+      "sub": "Am Limit wechseln die Agenten zum nächsten Konto.",
+      "group": "{{maker}} · {{computer}}",
+      "signedOut": "Abgemeldet · übersprungen",
+      "skipped": "Übersprungen",
+      "fallback": "Mit dem API-Schlüssel weitermachen, wenn alle Abos am Limit sind",
+      "fallbackHint": "Aus: Die Agenten warten, bis sich das erste Abo erneuert. An: Sie machen mit dem API-Schlüssel des Workspace weiter, der pro Nutzung bezahlt wird. Eine Mission nie."
+    },
+    "detail": {
+      "limits": "Limits",
+      "noLimits": "Noch keine Limits gelesen.",
+      "permissions": "Berechtigungen",
+      "saved": "Berechtigungen gespeichert.",
+      "more": "Mehr zu {{name}}",
+      "manage": "Verwalten",
+      "manageLine": "Umbenennen, neu anmelden, entfernen",
+      "manageHint": "Wer dieses Konto umbenennen, neu anmelden, entfernen und diese Berechtigungen ändern darf.",
+      "use": "In Agenten nutzen",
+      "useLine": "In Wer denkt auswählen",
+      "useHint": "Wessen Agenten mit diesem Konto denken dürfen.",
+      "reply": "Allen antworten",
+      "replyLine": "Mit wem die Agenten sprechen",
+      "replyHint": "Wem ein Agent auf diesem Konto außer seinem eigenen Besitzer antwortet.",
+      "claudeTerms": "Nach den Bedingungen von Claude gehört ein persönliches Abo einer Person. Teilen ist eine Grauzone.",
+      "pickRoles": "Die Personen mit diesen Rollen.",
+      "pickPeople": "Neben dem Besitzer des Kontos.",
+      "searchRoles": "Rollen suchen",
+      "searchPeople": "Personen suchen",
+      "nobody": "Niemand zum Auswählen."
+    },
+    "modes": {
+      "owner": "Nur du",
+      "ownerOf": "Nur {{name}}",
+      "admins": "Du und Admins",
+      "adminsOf": "{{name}} und Admins",
+      "roles": "Rollen…",
+      "people": "Personen…",
+      "everyone": "Alle",
+      "replyOwner": "Nur der Besitzer des Agenten"
+    }
+  },
   "aiAccounts": {
     "useReason": {
       "signed_out": "Abgemeldet",
