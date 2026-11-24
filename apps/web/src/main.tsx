@@ -15,7 +15,7 @@ import {
 } from "@agenteschat/client";
 import { ErrorBoundary } from "@agenteschat/client/lib/error-boundary";
 import { errorText } from "@agenteschat/client/lib/errors";
-import { holdSkies, holdSkiesWhileAway, installTitleTips, trackInput, watchSight } from "@agenteschat/ui";
+import { holdSkies, installTitleTips, trackInput, watchSight } from "@agenteschat/ui";
 import { AppProviders, type AppServices } from "./app/providers";
 import { createQueryClient } from "./app/query-client";
 import { backToSignIn } from "./app/unauthorized";
@@ -112,10 +112,9 @@ if (platform) {
   if (renderer) document.documentElement.dataset.desktopRenderer = renderer;
   if (renderer === "cpu") holdSkies();
 }
-// Nobody looking (hidden, or in the background with the pointer elsewhere): agents, skies and the stylesheets' loops
-// stand still (`data-sight`); the skies also after a while with no input.
+// Nobody looking (hidden, in the background with the pointer elsewhere, or no input for a while): skies, agents and
+// the stylesheets' loops stand still (`data-sight`, ADR 0228).
 watchSight();
-holdSkiesWhileAway();
 // Focus rings only while the keys move the focus (`data-pointer` on <html>, read by the stylesheet).
 trackInput();
 // Every `title` and icon-only control says its words in the product's tooltip, not the browser's.

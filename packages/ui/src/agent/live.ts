@@ -5,12 +5,13 @@
  * and an agent under the pointer, about 12 (every blink still shows; a slow
  * turn reads the same). An agent at rest or asleep stands still, drawn once
  * as with reduced motion: its blinks and turns cost a frame each for every
- * avatar on screen, with nothing to say. With nobody looking (`sight`) none
- * moves, and with nothing moving the loop stops. A page can set a gaze point
+ * avatar on screen, with nothing to say. With nobody looking (`sight`, ADR
+ * 0228) none moves, after a while with no input only one at work does, and
+ * with nothing moving the loop stops. A page can set a gaze point
  * (the landing's pointer): avatars inside an element marked `data-gaze` turn
  * their heads toward it.
  */
-import { onSight, sight } from "../sight";
+import { onSight, type Sight, sight } from "../sight";
 import { avatarSky } from "../sky/avatar";
 import { PAINT_ATTRS } from "../theme";
 import {
@@ -202,7 +203,7 @@ const isDark = (el: Element) => {
 };
 
 /**
- * Draws one agent now: at `t` if it moves (`moves`), else in its still pose. Framed: the canvas is the tile (the
+ * Draws one agent now: at `t` if it moves (`agentMotion`), else in its still pose. Framed: the canvas is the tile (the
  * agent's sky, then the agent standing in it). Unframed: the canvas is a bit larger than the box, with room for
  * accessories.
  */
@@ -217,7 +218,7 @@ export function drawLive(agent: LiveAgent, t: number) {
     return;
   }
   if (!ctx) return;
-  const still = !moves(agent);
+  const still = motionOf(agent) === "still";
   const dpr = Math.min(2, typeof devicePixelRatio === "number" ? devicePixelRatio : 1);
   if (agent.look().framed) {
     drawFramed(agent, ctx, size, dpr, t, still);
@@ -322,16 +323,36 @@ function watchTheme() {
   themeWatch.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: PAINT_ATTRS });
 }
 
-/** At work, waiting on someone, making a face or following the gaze: it moves, at the full rate. */
-const busy = (a: LiveAgent) => {
-  const look = a.look();
-  if ((look.state !== "idle" && look.state !== "sleeping") || (look.reactionKey && reactions.has(look.reactionKey)))
-    return true;
-  return Boolean(gaze && a.box.closest("[data-gaze]"));
-};
+/** How an agent moves in a frame: at the full rate, at rest's, or not at all. */
+export type AgentMotion = "full" | "rest" | "still";
 
-/** Whether an agent moves now: busy, or under the pointer (at rest's rate); never with reduced motion or unseen. */
-const moves = (a: LiveAgent) => !reduced() && sight() === "present" && (busy(a) || hovered.has(a.box));
+/**
+ * How an agent moves now. Busy (at work, waiting on someone, making a face, following the gaze): the full rate; at
+ * rest or asleep under the pointer: rest's rate; else still. With no input for a while (`idle`) only an agent at work
+ * moves: one waiting on someone who isn't there would move for hours. Never with reduced motion, nor with nobody
+ * looking.
+ */
+export function agentMotion(
+  state: ReturnType<LiveAgent["look"]>["state"],
+  on: { sight: Sight; reduced: boolean; reacting: boolean; gazing: boolean; hovered: boolean },
+): AgentMotion {
+  if (on.reduced) return "still";
+  if (on.sight === "idle") return state === "thinking" || state === "writing" ? "full" : "still";
+  if (on.sight !== "present") return "still";
+  if ((state !== "idle" && state !== "sleeping") || on.reacting || on.gazing) return "full";
+  return on.hovered ? "rest" : "still";
+}
+
+const motionOf = (a: LiveAgent): AgentMotion => {
+  const look = a.look();
+  return agentMotion(look.state, {
+    sight: sight(),
+    reduced: reduced(),
+    reacting: Boolean(look.reactionKey && reactions.has(look.reactionKey)),
+    gazing: Boolean(gaze && a.box.closest("[data-gaze]")),
+    hovered: hovered.has(a.box),
+  });
+};
 
 function tick(now: number) {
   raf = 0;
@@ -346,7 +367,8 @@ function tick(now: number) {
     const covered = typeof document !== "undefined" && document.documentElement.dataset.menuOverlay !== undefined;
     for (const a of agents) {
       if (!visible.has(a.box)) continue;
-      if (!moves(a)) {
+      const motion = motionOf(a);
+      if (motion === "still") {
         // It just stopped (back at rest, the pointer gone, nobody looking): its still frame.
         if (moving.delete(a)) drawLive(a, t);
         continue;
@@ -354,7 +376,7 @@ function tick(now: number) {
       moving.add(a);
       wanted = true;
       if (covered && !a.box.closest(".ac-mo")) continue;
-      if (rest || busy(a)) drawLive(a, t);
+      if (rest || motion === "full") drawLive(a, t);
     }
   }
   if (wanted) raf = requestAnimationFrame(tick);

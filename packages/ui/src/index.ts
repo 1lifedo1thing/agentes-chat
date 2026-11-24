@@ -521,14 +521,13 @@ export {
   zonedInstant,
 } from "./recurrence";
 export { fold, matchesWords } from "./search";
-export { onSight, type Sight, sight, watchSight } from "./sight";
+export { IDLE_MS, onSight, type Sight, sight, watchSight } from "./sight";
 export { workspaceSky } from "./sky/accent";
 export { pixelBurst, pixelConfetti } from "./sky/burst";
 export { ditherCells, ditherSvg, ditherTones, ditherUrl } from "./sky/dither";
 export {
   drawSprite,
   holdSkies,
-  holdSkiesWhileAway,
   prefersReducedMotion,
   redrawSkies,
   type SkyBlob,
