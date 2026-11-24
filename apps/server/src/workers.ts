@@ -47,6 +47,7 @@ import {
   postAutonomyDigests,
   pruneConfidential,
   pruneDeletionCodes,
+  pruneDoneJobs,
   pruneEmailChanges,
   pruneJoinRequests,
   pruneMessageClientIds,
@@ -421,6 +422,8 @@ export function startWorkers(deps: WorkerDeps) {
     if (surfaceRows > 0) log.info("pruned surface rows", { pruned: surfaceRows });
     const events = await pruneOperatorEvents(db);
     if (events > 0) log.info("pruned operator events", { pruned: events });
+    const doneJobs = await pruneDoneJobs(db);
+    if (doneJobs.jobs + doneJobs.keys > 0) log.info("pruned done jobs", doneJobs);
     const cleared = await clearOldOutboxPayloads(db);
     if (cleared > 0) log.info("cleared old job contents", { cleared });
     const calls = await pruneRoutineHookCalls(db);
