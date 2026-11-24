@@ -5,6 +5,13 @@
 - Amends: ADR 0036 (the desktop window keeps running the site out of sight), ADR 0070 (the sounds' audio context),
   ADR 0025 and ADR 0059 (what a computer reports about its CLIs and their sign-ins)
 - Issues: #949, #1278 (the app at rest); #680, #739, #691, #1133 (CLI turns that fail without saying why)
+- Code (§6): providers `packages/providers/src/cli-pins.ts` (`CLI_PINS`, `parseCliPins`, `CLI_NO_SELF_UPDATE`),
+  `scripts/cli-pins.ts`, `.github/workflows/cli-pins.yml`; adapters `machine-protocol.ts` (`CLI_COPIES_PROTOCOL`,
+  `clis.pins`, `hello.clis`, `cli.fetch`); runner `apps/server/runner/cli-copies.ts` (`CliCopies`, `progressGate`),
+  `executors.ts` (`setCliPick`, `pickedCli`), `daemon.ts`, `handlers.ts`, `connection.ts`; engine `cli-fetch.ts`
+  (`fetchesCli`, `storeCliFetch`, `retryCliFetch`), `machine-hub.ts`, `brain-settings.ts`, `brains/*`; server
+  `routes/machines.ts`; client `lib/cli-fetch.ts`, `lib/activity.ts` (`preparingCli`), `realtime/machines.ts`
+  (`cliFetchOf`); web `components/ai/CliFetchLine.tsx`; phone `features/ai/CliFetchNote.tsx`
 - Code: ui `packages/ui/src/sight.ts` (`watchSight`, `sight`, `onSight`, `IDLE_MS`, `<html data-sight>`),
   `agent/live.ts` (`agentMotion`, `wakeLiveAgents`), `components/Avatar.tsx`, `sky/engine.ts`; web `main.tsx`,
   `desktop.css` (`html[data-sight="away"|"hidden"]`), `lib/sounds.ts` (`releaseLater`); providers
@@ -69,10 +76,11 @@ Claude Code is held below 2.1.206 (every command of a turn goes through our perm
 a cold start before it) and Codex below 0.164.0 (a chat turn turns off that version's features by name). A version
 line with no number in it is never held back.
 
-A CLI under its floor shows as `cli_outdated` with the floor and how to update it. Claude Code and Codex offer
-"Update" through the installer that already installs them (it brings the newest version); the others show the
-command. A run for it waits (wait code `cli_outdated`) without sending the turn, and resumes when the runner reports
-the update.
+Where its computer fetches the CLI itself (§6) a floor is never in the way: the runner runs its own pinned copy.
+Elsewhere (system mode, an older runner, no build for that system) a CLI under its floor shows as `cli_outdated` with
+the floor and how to update it: Claude Code and Codex offer "Update" through the installer that already installs them,
+the others show the command. A run for it waits (wait code `cli_outdated`) without sending the turn, and resumes when
+the runner reports the update.
 
 ### 4. Failures that say what to do
 
@@ -91,13 +99,47 @@ a ChatGPT sign-in with its plan, an API key, or a model provider of the person's
 sign-in. `codex login status` is the fallback, believed only when it reports a sign-in (it now accepts an API key).
 The server offers that Codex as the computer's own account, as it does for Claude Code.
 
+### 6. One way to every coding CLI: a pinned build, fetched on demand
+
+The same for Claude Code, Codex, Cursor, OpenCode, Grok Build and the Antigravity CLI, with no case of its own:
+
+- **The pins.** `CLI_PINS` (`@agenteschat/providers/cli-pins`) names, per CLI, one version and each system's build
+  (macOS, Linux with glibc or musl, Windows; arm64 and x64 where the vendor has them) at the vendor's own https
+  address, with the vendor's hash of it (Claude Code's manifest, Codex's and OpenCode's release assets, the
+  Antigravity CLI's manifests) or, where the vendor publishes none (Cursor, Grok Build), the hash taken when pinning.
+  The server sends its list after every `welcome` (`clis.pins`, protocol 78); the runner keeps the last one in its home
+  and has the same list built in, so it works with an older server or none. A new pin is a server deploy, never a
+  runner release.
+- **The runner.** The person's own copy runs when it is at the pinned version or newer. Otherwise, where the CLI is
+  wanted (an account of it on the computer, the person's older copy, a turn or a sign-in asking), the runner fetches
+  the pinned build itself, checks the hash (a mismatch is never used), unpacks it aside and moves it in whole under its
+  own home, and every call of that CLI's command runs it. The person's install is never touched. One fetch per CLI at
+  a time; a failure waits 30 minutes unless someone asks again. Every process the runner starts runs with each CLI's
+  self-update switched off (`CLI_NO_SELF_UPDATE`), so the version checked is the one that runs. Outside system mode
+  only: there the computer's setup installs the CLIs for the agents' users.
+- **Who knows.** `hello.clis` says which CLIs the runner fetches on its system and where each fetch stands; `cli.fetch`
+  frames tell a fetch as it goes (at most once a second or every 5%), when it is ready, or why it failed (`offline`,
+  `hash_mismatch`, `no_build`, `disk_full`, `failed`). The server keeps them with the computer (`executors.copies`),
+  sends them to the apps (`machine.updated` with `cliFetch`) and keeps the turns waiting for that CLI there alive.
+- **The apps.** A CLI the computer fetches is no reason to refuse it (`fetchesCli`): not installed, too old or broken
+  there, it can be chosen and its turn goes; the runner fetches first. While it comes, the run's live line in the
+  conversation says "Preparando o Claude Code no MacBook… 45%" (`prepare_cli`), and the agent's brain settings and the
+  account's row in Contas de IA show the same line with the kit's meter, on the web and the phone. A failure says why
+  in plain words with "Tentar de novo" (`POST …/machines/{machineId}/clis/{cli}/fetch`), which asks for the fetch now.
+- **Keeping up.** `scripts/cli-pins.ts` reads each vendor's latest stable release and rewrites the pins; the `cli-pins`
+  workflow runs it daily and opens a pull request, never merged by itself. The Antigravity CLI's pin moves by hand:
+  its builds' addresses carry a build number its channel doesn't name.
+
 ## Consequences
 
 - At rest the app draws nothing: no frame loop, no stylesheet loop out of sight, no audio device held. The fix ships
   with the server (the desktop window loads the site), so no desktop release is needed.
 - Agents at rest no longer blink or turn on their own; they come alive at work, waiting on you, reacting, or under the
   pointer.
-- A CLI too old for us stops failing turns: its agents wait and the person gets one action to fix it.
+- Every computer outside system mode runs the CLI version agentes.chat chose and checked, fetched only when it is
+  needed; nobody is sent to a terminal to install or update one. Where it can't be fetched, a CLI too old for us
+  stops failing turns: its agents wait and the person gets one action to fix it.
+- A computer may hold a CLI twice (the person's older one and the runner's), which takes disk space.
 - Not done here: the loading screen's own avatar loop and minimum time (`apps/desktop`, a desktop release), the
-  window's throttling setting (the page now stops its own motion instead), pinning and downloading the CLIs
-  ourselves, and reading sign-ins through each CLI's protocol beyond Codex.
+  window's throttling setting (the page now stops its own motion instead), and reading sign-ins through each CLI's
+  protocol beyond Codex. The one-click `cli.install` stays for runners before protocol 78.
