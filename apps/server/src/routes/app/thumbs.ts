@@ -23,7 +23,7 @@ export function thumbRoutes(deps: AppDeps) {
     const orgId = c.req.param("orgId");
     const actor = { type: "person" as const, userId: c.get("user").id };
     const file = await storedFileOfArtifact(artifacts, actor, orgId, c.req.param("artifactId"), version);
-    const small = await thumbnail(file.sha256, width, async () => {
+    const small = await thumbnail(`${file.storageConfigId ?? "platform"}/${file.blobKey}`, width, async () => {
       const object = await (await artifacts.blobs.forConfig(orgId, file.storageConfigId)).get(file.blobKey);
       if (!object) throw new Error("The stored file is missing");
       return object.body;

@@ -17,8 +17,10 @@ const queue: (() => void)[] = [];
 
 /**
  * A picture made at most `width` wide and high (never larger than it is), as WebP, its EXIF orientation applied; null
- * for what isn't a JPEG, PNG or WebP this server can decode. `key` names the bytes (their hash): the same picture
- * asked for again, by anyone, is made once. Decoding runs off the event loop (`Bun.Image`'s worker thread).
+ * for what isn't a JPEG, PNG or WebP this server can decode. `key` names where the bytes are stored (a store and its
+ * key, unique per write), never their hash: a workspace's own bucket can change the bytes behind a key, and a hash
+ * key would then serve them to another workspace's file with the same hash. The same file asked for again, by anyone
+ * who may read it, is made once. Decoding runs off the event loop (`Bun.Image`'s worker thread).
  */
 export async function thumbnail(key: string, width: ThumbWidth, read: () => Promise<Uint8Array>) {
   const id = `${key}:${width}`;

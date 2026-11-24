@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { deflateSync } from "node:zlib";
+import { eq, schema } from "@agenteschat/db";
 import { type Browser, browser, createTestServer, ORIGIN, seedOrg, signUp, type TestServer } from "./harness";
 
 let t: TestServer;
@@ -80,6 +81,28 @@ test("a picture comes small as WebP, kept by the browser for good; anything else
   await signUp(stranger, "stranger@example.com");
   await seedOrg(stranger);
   expect((await thumb("480", "1", stranger)).status).toBe(403);
+});
+
+test("a small picture is made from its own stored file: bytes changed behind one file never show for another", async () => {
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const { orgId } = await seedOrg(owner);
+  const picture = () => new File([png(600, 300)], "logo.png", { type: "image/png" });
+  const upload1 = (await (await upload(owner, orgId, picture())).json()) as { id: string };
+  // A workspace's own bucket can change what is stored under a key; the row still names the old bytes' hash.
+  const [stored] = await t.db
+    .select({ key: schema.artifactVersions.blobKey })
+    .from(schema.artifactVersions)
+    .where(eq(schema.artifactVersions.artifactId, upload1.id));
+  await t.adapters.platformBlobs.put(stored?.key ?? "", png(100, 100), { contentType: "image/png" });
+  const size = async (id: string) => {
+    const res = await owner(`/api/app/organizations/${orgId}/artifacts/${id}/thumb?version=1&w=480`);
+    return new Bun.Image(new Uint8Array(await res.arrayBuffer())).metadata();
+  };
+  expect(await size(upload1.id)).toMatchObject({ width: 100, height: 100 });
+  // Another file with the same bytes (the same hash) as the first had: its own picture, not what the first now holds.
+  const upload2 = (await (await upload(owner, orgId, picture())).json()) as { id: string };
+  expect(await size(upload2.id)).toMatchObject({ width: 480, height: 240 });
 });
 
 test("a message's file card carries its name, type and size: the apps draw it without asking for its details", async () => {
