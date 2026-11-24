@@ -9593,6 +9593,14 @@ html:not([data-pointer]) .ac-recur__day:focus-visible {
   font-size: 13px;
   color: var(--muted);
 }
+/* SearchSelect's `footer`: under the list whatever is typed, past a menu's separator, its rows drawn as a menu's. */
+.ac-tz__foot {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 var(--menu-pad) var(--menu-pad);
+}
 .ac-tz__option[aria-disabled="true"] {
   color: var(--ink-muted);
   cursor: not-allowed;
@@ -9694,8 +9702,10 @@ html:not([data-pointer]) .ac-recur__day:focus-visible {
   justify-content: space-between;
   gap: 12px 16px;
 }
+/* As wide as the title on one line: when the buttons don't fit beside it, they go under it and the title stays whole. A
+   title wider than the page on its own wraps there. */
 .ac-pagehead__text {
-  flex: 1 1 280px;
+  flex: 1 1 auto;
   min-width: 0;
 }
 .ac-pagehead__titleline {
@@ -9716,7 +9726,9 @@ html:not([data-pointer]) .ac-recur__day:focus-visible {
   text-wrap: balance;
   overflow-wrap: anywhere;
 }
+/* Its words never widen the header: only the title decides when the buttons go under it. */
 .ac-pagehead__meta {
+  contain: inline-size;
   min-height: 20px;
   margin: -2px 0 0;
   font-size: 14px;
