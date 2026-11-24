@@ -1289,6 +1289,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
       listAll: async (orgId) => (await request<{ memories: Memory[] }>(`${org(orgId)}/memories`)).memories,
       listTeam: async (orgId) => (await request<{ memories: Memory[] }>(`${org(orgId)}/team-memories`)).memories,
       makeTeam: (orgId, id) => request<Memory>(`${org(orgId)}/memories/${enc(id)}/team`, { json: {} }),
+      forgetRightHandLearned: (orgId) =>
+        request<{ forgotten: number }>(`${org(orgId)}/right-hand/forget-learned`, { json: {} }),
       list: async (orgId, agentId, filter) =>
         (
           await request<{ memories: Memory[] }>(`${org(orgId)}/agents/${enc(agentId)}/memories`, {
