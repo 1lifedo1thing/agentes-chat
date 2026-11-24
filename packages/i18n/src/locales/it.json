@@ -4480,6 +4480,7 @@
     "available": "Disponibile",
     "working": "Al lavoro",
     "waiting": "Ti aspetta",
+    "idle": "Inattivo",
     "lower": {
       "online": "online",
       "away": "assente",

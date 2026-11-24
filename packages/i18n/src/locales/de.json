@@ -4324,6 +4324,7 @@
     "available": "Verfügbar",
     "working": "Arbeitet",
     "waiting": "Wartet auf dich",
+    "idle": "Inaktiv",
     "lower": {
       "online": "online",
       "away": "abwesend",

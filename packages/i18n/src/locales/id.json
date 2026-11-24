@@ -4170,6 +4170,7 @@
     "available": "Tersedia",
     "working": "Sedang bekerja",
     "waiting": "Menunggumu",
+    "idle": "Tidak aktif",
     "lower": {
       "online": "online",
       "away": "sedang pergi",
