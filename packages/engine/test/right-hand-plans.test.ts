@@ -91,7 +91,10 @@ async function world() {
   /** Nothing can stand in for Lodi's plan (ADR 0137 §7, amended): no API key, and Caio's plan serves only him. */
   const noStandIn = async () => {
     await fx.db.update(schema.providerCredentials).set({ revokedAt: new Date() });
-    await fx.db.update(schema.machineAccounts).set({ serves: "owner" }).where(eq(schema.machineAccounts.id, CAIOS));
+    await fx.db
+      .update(schema.machineAccounts)
+      .set({ serves: "owner", useMode: "owner" })
+      .where(eq(schema.machineAccounts.id, CAIOS));
   };
   return { fx, deps: { db: fx.db }, machineId, bia, caio, lodi, account, noStandIn };
 }

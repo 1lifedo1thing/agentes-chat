@@ -11180,6 +11180,13 @@ export const en = {
     },
   },
   aiAccounts: {
+    /** Why an account can't think for these agents (`AccountUseReason`): the picker shows it dimmed, with this. */
+    useReason: {
+      signed_out: "Signed out",
+      owner_left: "{{owner}} left the workspace",
+      owner_only: "Only {{owner}} uses it",
+      not_allowed: "Not open to your agents",
+    },
     /** An account of the viewer's that says no email and has no name of theirs yet (Claude's token for all agents). */
     unnamed: "Unnamed account",
     /** The pencil after an account's title, and the field it opens in the row. */
@@ -16421,6 +16428,8 @@ export const en = {
     account: {
       notRestorable: "This account can't be restored anymore.",
       notOwner: "Only the person who connected this account or plan can do this.",
+      /** `account.permission_forbidden`: an AI account's Gerenciar, Usar em agentes or Atender todos. */
+      permissionForbidden: "Only the account's owner, an admin or whoever may manage it can change this.",
       /** `account.order_forbidden`: the order of use of a provider's accounts (ADR 0041 §6). */
       orderForbidden: "Only the person who connected this account or an admin can change its place in the order.",
     },

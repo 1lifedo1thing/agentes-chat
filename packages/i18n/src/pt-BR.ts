@@ -11143,6 +11143,13 @@ export const ptBR = {
     },
   },
   aiAccounts: {
+    /** Why an account can't think for these agents (`AccountUseReason`): the picker shows it dimmed, with this. */
+    useReason: {
+      signed_out: "Saiu da conta",
+      owner_left: "{{owner}} saiu do workspace",
+      owner_only: "Só {{owner}} usa",
+      not_allowed: "Não liberada para os seus agentes",
+    },
     /** An account of the viewer's that says no email and has no name of theirs yet (Claude's token for all agents). */
     unnamed: "Conta sem nome",
     /** The pencil after an account's title, and the field it opens in the row. */
@@ -16361,6 +16368,8 @@ export const ptBR = {
     account: {
       notRestorable: "Esta conta não pode mais ser restaurada.",
       notOwner: "Só quem conectou esta conta ou plano pode fazer isso.",
+      /** `account.permission_forbidden`: an AI account's Gerenciar, Usar em agentes or Atender todos. */
+      permissionForbidden: "Só o dono da conta, um administrador ou quem pode gerenciá-la muda isto.",
       /** `account.order_forbidden`: the order of use of a provider's accounts (ADR 0041 §6). */
       orderForbidden: "Só quem conectou esta conta ou um admin pode mudar o lugar dela na ordem.",
     },
