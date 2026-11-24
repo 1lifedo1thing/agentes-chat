@@ -311,14 +311,17 @@ export async function checkPin(db: Executor, link: LinkRow, pin: string, at: Dat
   throw new ForbiddenError("Wrong PIN", "surface.pin_wrong", { left: PIN_TRIES - failures });
 }
 
-/** Tells the person their PIN locked, for how long, and the way out if it wasn't them: unlinking in the app. */
+/**
+ * Tells the person their PIN locked, for how long, and the way out if it wasn't them: unlinking in the app. Only to a
+ * verified address: an account can take anyone's address unconfirmed, and its owner can lock its own PIN at will.
+ */
 async function emailPinLocked(db: Executor, link: LinkRow, step: 0 | 1 | 2, until: Date): Promise<void> {
   const surface = surfaceOn();
   const [user] = await db
-    .select({ email: users.email, locale: users.locale })
+    .select({ email: users.email, locale: users.locale, verified: users.emailVerified })
     .from(users)
     .where(eq(users.id, link.userId));
-  if (!surface || !user) return;
+  if (!surface || !user?.verified) return;
   const orgId = link.orgId;
   await queueEmail(db, {
     orgId: null,
@@ -383,8 +386,14 @@ export async function emailPinLink(
   const surface = surfaceOn();
   if (!surface) throw gone();
   const reset = randomToken(32);
-  const value = JSON.stringify({ userId: link.userId, linkId: link.id });
   await deps.db.transaction(async (tx) => {
+    const [user] = await tx
+      .select({ email: users.email, locale: users.locale, verified: users.emailVerified })
+      .from(users)
+      .where(eq(users.id, link.userId));
+    if (!user) throw gone();
+    // The address it goes to: a link sent before the account's address changed no longer chooses the PIN.
+    const value = JSON.stringify({ userId: link.userId, linkId: link.id, email: user.email });
     const [sent] = await tx
       .select({ n: count() })
       .from(verifications)
@@ -396,11 +405,6 @@ export async function emailPinLink(
         ),
       );
     if ((sent?.n ?? 0) >= PIN_EMAILS_PER_HOUR) throw new TooManyError("Too many reset emails. Try again later.");
-    const [user] = await tx
-      .select({ email: users.email, locale: users.locale, verified: users.emailVerified })
-      .from(users)
-      .where(eq(users.id, link.userId));
-    if (!user) throw gone();
     if (!user.verified) {
       throw new ForbiddenError(
         "Your email address isn't verified. Set your PIN in the app.",
@@ -440,11 +444,23 @@ export async function setPinFromEmail(db: Database, token: string, pin: string):
     .delete(verifications)
     .where(eq(verifications.identifier, pinResetId(token)))
     .returning();
-  let value: { userId?: unknown; linkId?: unknown } = {};
+  let value: { userId?: unknown; linkId?: unknown; email?: unknown } = {};
   try {
     value = row && row.expiresAt > new Date() ? (JSON.parse(row.value) as typeof value) : {};
   } catch {}
-  if (typeof value.userId !== "string" || typeof value.linkId !== "string") {
+  const [user] =
+    typeof value.userId === "string"
+      ? await db
+          .select({ email: users.email, verified: users.emailVerified })
+          .from(users)
+          .where(eq(users.id, value.userId))
+      : [];
+  if (
+    typeof value.userId !== "string" ||
+    typeof value.linkId !== "string" ||
+    !user?.verified ||
+    user.email !== value.email
+  ) {
     throw new NotFoundError("This link expired or was already used", "surface.pin_reset_gone");
   }
   if (!(await setSurfacePin(db, { linkId: value.linkId, userId: value.userId }, pin))) {

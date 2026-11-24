@@ -252,6 +252,7 @@ describe("the PIN", () => {
 
   test("three wrong ones lock approving: 15 minutes, then an hour, then a day, each with an email", async () => {
     const linkId = await linked();
+    await verified();
     await f.db
       .update(surfaceLinks)
       .set({ pinHash: await Bun.password.hash("111111") })
@@ -286,6 +287,18 @@ describe("the PIN", () => {
     expect(await check(start, "111111")).toBe("ok");
     const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
     expect([row?.pinFailures, row?.pinLockouts]).toEqual([0, 0]);
+  });
+
+  test("a lock emails no address that was never verified: an account can take anyone's unconfirmed", async () => {
+    const linkId = await linked();
+    await f.db
+      .update(surfaceLinks)
+      .set({ pinHash: await Bun.password.hash("111111"), pinFailures: 2 })
+      .where(eq(surfaceLinks.id, linkId));
+    const [link] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+    if (!link) throw new Error("no link");
+    expect(await codeOf(checkPin(f.db, link, "222222", at(1000)()))).toBe("surface.pin_locked");
+    expect(await f.db.select().from(outbox).where(eq(outbox.kind, "email.send"))).toEqual([]);
   });
 
   test("a lock a day past no longer makes the next one longer", async () => {
@@ -347,6 +360,20 @@ describe("the PIN", () => {
     expect(await Bun.password.verify("654321", row?.pinHash ?? "")).toBe(true);
     expect([row?.pinFailures, row?.pinLockedUntil]).toEqual([0, null]);
     expect(await codeOf(setPinFromEmail(f.db, reset, "777777"))).toBe("surface.pin_reset_gone");
+  });
+
+  test("an emailed link sent before the account's address changed no longer chooses it", async () => {
+    const { token, linkId } = await page();
+    await verified();
+    const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
+    await emailPinLink({ db: f.db, now: at(1000), publicUrl: "https://app.example.com" }, token, secret);
+    const [job] = await f.db.select().from(outbox).where(eq(outbox.kind, "email.send"));
+    const url = String((job?.payload as { template?: { url?: string } } | undefined)?.template?.url);
+    const reset = new URL(url).searchParams.get("token") ?? "";
+    await f.db.update(schema.users).set({ email: "new@example.com" }).where(eq(schema.users.id, f.owner.id));
+    expect(await codeOf(setPinFromEmail(f.db, reset, "654321"))).toBe("surface.pin_reset_gone");
+    const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+    expect(row?.pinHash).toBeNull();
   });
 
   test("no link goes to an address that was never verified", async () => {

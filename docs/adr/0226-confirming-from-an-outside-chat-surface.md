@@ -73,7 +73,8 @@ new link starts without one, so a new password (which ends the link) clears it t
   - a link emailed to the person's verified address (`surface_pin_reset`, from "Email me a link" or "Forgot your
     PIN?" on the page): `/email-undo?kind=surface-pin&token=` chooses the PIN, typed twice, once, within an hour,
     replacing any PIN and clearing its lock. Only that page's button spends the link (mail scanners open links), and a
-    PIN of the wrong shape spends nothing. An address never verified gets no link (`surface.email_unverified`).
+    PIN of the wrong shape spends nothing. An address never verified gets no link (`surface.email_unverified`), and
+    the link stops choosing once the account's address changes or stops being verified.
     3 emails an hour per IP address, and 3 an hour for the person whatever the address; 10 tries per 10 minutes per
     IP address on `/surface-pin`. Offered only where the server sends email (`pin.resetByEmail`).
 - `confirm` page with a PIN: approving takes it. With none, and nobody signed in as the person there, the page says
@@ -84,7 +85,8 @@ new link starts without one, so a new password (which ends the link) clears it t
 - Three wrong ones in a row lock approving (`surface.pin_locked` with `until`), longer each time since the last right
   PIN: 15 minutes, then an hour, then a day for each further lock (`PIN_LOCKS_MS`). A lock that ended more than a day
   ago starts the count over, and so do a right PIN and a new one. Each lock emails the person (`surface_pin_locked`):
-  for how long, and the way out if it wasn't them (unlink in the notification settings). Each try is counted before
+  for how long, and the way out if it wasn't them (unlink in the notification settings). Only a verified address
+  gets it: an account can take anyone's address unconfirmed, and lock its own PIN at will. Each try is counted before
   its hash is checked, so tries sent at once never get past three.
 
 ### 4. Not built here
