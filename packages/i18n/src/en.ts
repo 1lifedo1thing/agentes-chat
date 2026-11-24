@@ -6882,7 +6882,12 @@ export const en = {
         brain_interrupted: "The AI stopped before finishing.",
         /** A computer brain had no AI to think with this time; its own words show only on hover. */
         brain_unavailable: "The AI on its computer couldn't answer. Check the computer and ask again.",
-        empty_reply: "The model returned nothing.",
+        /** The model's last call ended with no words, even after it was asked for its answer. */
+        empty_reply:
+          "The AI ended its turn without writing a reply. Try again, or choose another model in the agent's settings.",
+        /** The same, its last call cut at the output limit (often while thinking) before any words. */
+        empty_reply_limit:
+          "The AI hit its output limit before writing a reply. Try again, or choose another model in the agent's settings.",
         model_refused: "The model refused to answer.",
         agent_archived: "The agent was archived.",
         code_session_unavailable: "The session's worktree isn't available on its computer.",
@@ -9635,6 +9640,7 @@ export const en = {
       provider_unavailable: "The model didn't answer",
       gave_up: "The model didn't answer after several tries",
       empty_reply: "The model answered nothing",
+      empty_reply_limit: "The model hit its output limit before answering",
       model_refused: "The model refused to answer",
       runner_outdated: "The program on the computer needs an update",
       too_many_tool_calls: "Went over the step limit for one run",
@@ -19552,6 +19558,7 @@ export const en = {
       browser_handoff: "I need help in my browser.",
       desktop_handoff: "I need help on my computer.",
       browser_restarted: "{{agent}} restarted its browser. {{person}}'s control ended.",
+      /** Older messages only: a run no longer stands in for a reply the model didn't write. */
       file_saved: "File saved.",
       issue_work_start: "Please do task #{{number}}.",
       issue_taken: "Took task #{{number}}.",
@@ -19560,7 +19567,13 @@ export const en = {
         "{{surface}} was unlinked because its identity changed. Link it again in Settings if it was you.",
       /** A voice note sent from an outside chat surface had no words to post; the line goes back out there. */
       surfaceVoiceDropped: "I couldn't make out that voice note. Could you send it again, or type it?",
+      /** Older messages only: a run no longer stands in for a reply the model didn't write. */
       done: "Done.",
+      /** What a run changed, when the model wrote no reply (its last call ended with no words). */
+      no_reply: "The AI ended its turn without writing a reply. What it changed is below. Ask again for its answer.",
+      /** The same, its last call cut at the output limit (often while thinking) before any words. */
+      no_reply_limit:
+        "The AI hit its output limit before writing a reply. What it changed is below. Ask again for its answer.",
       stretch_paused_runs_one: "{{agents}} paused to check with you before going on",
       stretch_paused_runs_other: "{{agents}} paused to check with you before going on",
       stretch_paused_spend_one: "{{agents}} paused to check with you · used {{percent}}% of the month's budget",
