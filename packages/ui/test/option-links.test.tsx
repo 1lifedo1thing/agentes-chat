@@ -45,10 +45,13 @@ test("each way is a button named by its title, described by its line, the recomm
   const list = within(container).getByRole("list", { name: "Ways" });
   expect(within(list).getAllByRole("listitem")).toHaveLength(4);
   const command = within(list).getByRole("button", { name: "With a command" });
-  expect(command.getAttribute("aria-describedby")).toBeTruthy();
-  expect(document.getElementById(command.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
-    "Brings everything",
-  );
+  // Described by its chip and its line: the recommendation is heard on the button.
+  const described = (b: HTMLElement) =>
+    (b.getAttribute("aria-describedby") ?? "")
+      .split(" ")
+      .map((i) => document.getElementById(i)?.textContent)
+      .join(" | ");
+  expect(described(command)).toBe("The most complete | Brings everything");
   // The recommended way: the kit's tag, beside the title, outside the button's name.
   const chips = list.querySelectorAll(".ac-chip.ac-chip--info");
   expect([...chips].map((c) => c.textContent)).toEqual(["The most complete"]);

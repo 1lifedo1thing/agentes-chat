@@ -928,27 +928,6 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
   font-weight: 600;
   line-height: 24px;
 }
-/*
- * A tile beside a title and its one line: the two lines as a block on the tile's middle, and what ends the card (the
- * chevron, "No subscription") on the same middle, so the three share one centre. Each card holds only these, never a
- * list ("Another plan" opens into cards of their own).
- */
-.arrival-opts .ac-option {
-  align-items: center;
-  width: 100%;
-}
-.arrival-opts .ac-option > .ac-option__text {
-  flex: 1;
-}
-/* One line under each title, so every card is the same height: a long list of plans ends in an ellipsis. */
-.arrival-opts .ac-option__text {
-  min-width: 0;
-}
-.arrival-opts .ac-option__desc {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 .arrival-opts__tile {
   display: grid;
   place-items: center;

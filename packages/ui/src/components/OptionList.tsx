@@ -184,6 +184,9 @@ export function OptionLinks({
     <ul className={cx("ac-optlist ac-optlinks", className)} {...rest}>
       {options.map((o) => {
         const desc = o.description ? `${id}-${o.value}` : undefined;
+        // The chip sits outside the button: read with its line, so "Recomendado" is heard on the button too.
+        const tagId = o.tag ? `${id}-${o.value}-tag` : undefined;
+        const describedBy = [tagId, desc].filter(Boolean).join(" ") || undefined;
         return (
           <li
             key={o.value}
@@ -197,7 +200,7 @@ export function OptionLinks({
                 <button
                   type="button"
                   className="ac-optrow__hit"
-                  aria-describedby={desc}
+                  aria-describedby={describedBy}
                   {...o.button}
                   disabled={o.disabled}
                   onClick={o.onSelect}
@@ -205,7 +208,7 @@ export function OptionLinks({
                   {o.title}
                 </button>
                 {o.tag && (
-                  <Chip tone="info" className="ac-optrow__chip">
+                  <Chip tone="info" className="ac-optrow__chip" id={tagId}>
                     {o.tag}
                   </Chip>
                 )}
