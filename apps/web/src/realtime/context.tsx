@@ -394,7 +394,7 @@ export function createStreamsStore(
     /** The server found the run still active. */
     touch: (runId: string) => set({ ...state, streams: touchRun(state.streams, runId, now()) }),
     /** The server's active runs, asked about runs gone quiet (`recheckRuns`). */
-    recheck: (runIds: readonly string[], active: readonly ActiveRun[]) =>
+    recheck: (runIds: readonly string[], active: readonly ActiveRun[] | undefined) =>
       set({ ...state, streams: recheckRuns(state.streams, runIds, active, now()) }),
     subscribe: (listener: () => void) => {
       listeners.add(listener);
@@ -677,7 +677,14 @@ export async function reconcileChannelRuns(
   );
   const askedAt = Date.now();
   const active = await api.agents.activeRuns(orgId, channelId).catch(() => undefined);
-  if (active === undefined) return false;
+  if (active === undefined) {
+    if (runIds)
+      store.recheck(
+        live.map((r) => r.runId),
+        undefined,
+      );
+    return false;
+  }
   if (active) {
     if (runIds)
       store.recheck(

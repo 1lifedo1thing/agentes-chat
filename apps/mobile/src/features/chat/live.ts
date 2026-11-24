@@ -697,12 +697,11 @@ export function useChatLive(orgId: string, channelId: string, enabled: boolean, 
       api.agents
         .activeRuns(orgId, channelId)
         .then((active) => {
-          if (!active) return;
-          dispatch({ type: "recheck", runIds: quiet, active, at: Date.now() });
-          if (quiet.some((id) => !active.some((a) => a.runId === id)))
+          dispatch({ type: "recheck", runIds: quiet, active: active ?? undefined, at: Date.now() });
+          if (active && quiet.some((id) => !active.some((a) => a.runId === id)))
             void qc.invalidateQueries({ queryKey: ["org", orgId, "channel", channelId] });
         })
-        .catch(() => {})
+        .catch(() => dispatch({ type: "recheck", runIds: quiet, active: undefined, at: Date.now() }))
         .finally(() => {
           for (const id of quiet) checking.delete(id);
         });

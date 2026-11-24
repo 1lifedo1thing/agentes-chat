@@ -882,17 +882,19 @@ export function touchRun(state: StreamsState, runId: string, now = Date.now()): 
 
 /**
  * The server's active runs, asked about `runIds` (runs gone quiet): those it no longer lists ended while their end never
- * reached us and go (their message reads again); the rest are quiet again for another while.
+ * reached us and go (their message reads again); the rest are quiet again for another while. `active` undefined: the
+ * check failed (offline, no access any more, a server error), and they are asked about again after another while, not
+ * on every 5 s sweep.
  */
 export function recheckRuns(
   state: StreamsState,
   runIds: readonly string[],
-  active: readonly ActiveRun[],
+  active: readonly ActiveRun[] | undefined,
   now = Date.now(),
 ) {
-  const known = new Set(active.map((a) => a.runId));
+  const known = new Set((active ?? []).map((a) => a.runId));
   let s = state;
-  for (const id of runIds) s = known.has(id) ? touchRun(s, id, now) : dismissRun(s, id);
+  for (const id of runIds) s = !active || known.has(id) ? touchRun(s, id, now) : dismissRun(s, id);
   return s;
 }
 

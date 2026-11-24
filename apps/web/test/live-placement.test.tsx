@@ -10,6 +10,7 @@ import {
   emptyStreams,
   isQuiet,
   QUIET_AFTER_MS,
+  quietRunsByChannel,
   reconcileRuns,
   steerStore,
 } from "@agenteschat/client";
@@ -193,6 +194,24 @@ describe("stale runs: reconcile with the server", () => {
     expect(await reconcileChannelRuns(api, store, "o", "c", ["ended", "busy"])).toBe(true);
     expect(Object.keys(store.get().streams.runs).sort()).toEqual(["busy", "other"]);
     expect(await reconcileChannelRuns(api, store, "o", "c", ["busy"])).toBe(false);
+  });
+
+  test("a quiet check that failed drops nothing and waits another while, not the next 5 s sweep", async () => {
+    let clock = 1_000;
+    const store = createStreamsStore(undefined, () => clock);
+    store.apply({ type: "agent.delta", channelId: "c", threadId: "t", agentId: "ada", runId: "r", seq: 0, text: "…" });
+    clock += QUIET_AFTER_MS;
+    expect(quietRunsByChannel(store.get().streams, clock).get("c")).toEqual(["r"]);
+    const down = {
+      agents: {
+        activeRuns: async () => {
+          throw new Error("offline");
+        },
+      },
+    } as unknown as ApiClient;
+    expect(await reconcileChannelRuns(down, store, "o", "c", ["r"])).toBe(false);
+    expect(store.get().streams.runs.r).toBeDefined();
+    expect(quietRunsByChannel(store.get().streams, clock + 5_000).size).toBe(0);
   });
 
   test("without the endpoint: each live run's detail decides (404 or finished = gone)", async () => {

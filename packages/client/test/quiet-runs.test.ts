@@ -56,4 +56,11 @@ describe("runs gone quiet are checked with the server, unseen", () => {
     // Runs it wasn't asked about stay as they were.
     expect(next.runs.elsewhere).toBe(s.runs.elsewhere);
   });
+
+  test("a check that failed asks again after another while, not on every sweep, and drops nothing", () => {
+    const next = recheckRuns(s, ["ended", "busy"], undefined, at);
+    expect(Object.keys(next.runs).sort()).toEqual(Object.keys(s.runs).sort());
+    expect(quietRunsByChannel(next, at + 5_000).get("c1")).toBeUndefined();
+    expect(quietRunsByChannel(next, at + QUIET_AFTER_MS).get("c1")).toEqual(["ended", "busy", "fresh"]);
+  });
 });
