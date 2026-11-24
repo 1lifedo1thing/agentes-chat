@@ -5,6 +5,7 @@ import {
   ACCOUNTS_PROTOCOL,
   ANTIGRAVITY_MAC_PROTOCOL,
   BRAIN_PROTOCOL,
+  CLI_COPIES_PROTOCOL,
   CODEX_WINDOWS_PROTOCOL,
   CONTEXT_LIMIT_PROTOCOL,
   MISSION_PROTOCOL,
@@ -190,13 +191,20 @@ describe("brain settings", () => {
           .slice(3)
           .map((o) => [o.kind, o.reason ?? null]),
       );
-    // An older Windows runner refuses every OpenCode turn; Cursor, Grok Build and the Antigravity CLI don't run on
-    // Windows; a Mac runner before `ANTIGRAVITY_MAC_PROTOCOL` refuses Gemini.
+    // An older Windows runner refuses every OpenCode turn, and runs Cursor, Grok Build and the Antigravity CLI only
+    // from `CLI_COPIES_PROTOCOL` on (ADR 0228 §7: each sign-in in its folder there); a Mac runner before
+    // `ANTIGRAVITY_MAC_PROTOCOL` refuses Gemini.
     expect(reasons(mac({ os: "windows", protocol: OPENCODE_ACP_PROTOCOL - 1, executors }))).toEqual({
-      cursor: "system",
+      cursor: "runner_old",
       opencode: "runner_old",
-      grok: "system",
-      antigravity: "system",
+      grok: "runner_old",
+      antigravity: "runner_old",
+    });
+    expect(reasons(mac({ os: "windows", protocol: CLI_COPIES_PROTOCOL, executors }))).toEqual({
+      cursor: null,
+      opencode: null,
+      grok: null,
+      antigravity: null,
     });
     expect(reasons(mac({ os: "windows", protocol: OPENCODE_ACP_PROTOCOL, executors })).opencode).toBeNull();
     expect(reasons(mac({ os: "darwin", protocol: OPENCODE_ACP_PROTOCOL - 1, executors }))).toEqual({
