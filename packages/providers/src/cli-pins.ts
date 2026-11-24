@@ -9,9 +9,13 @@ import { cliVersionAtLeast } from "./plans";
  * touching the person's. `scripts/cli-pins.ts` rewrites the list from the vendors' latest stable releases (the
  * `cli-pins` workflow, daily, as a pull request).
  */
-export type PinCli = "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity";
+/**
+ * The six coding CLIs, and Git for Windows' portable build (`git`), which Claude Code needs on Windows for its shell
+ * (Git Bash) and the runner fetches like a CLI there.
+ */
+export type PinCli = "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity" | "git";
 
-export const PIN_CLIS: readonly PinCli[] = ["claude", "codex", "cursor", "opencode", "grok", "antigravity"];
+export const PIN_CLIS: readonly PinCli[] = ["claude", "codex", "cursor", "opencode", "grok", "antigravity", "git"];
 
 /** A system the runner fetches for: `<os>-<cpu>`, `-musl` on a Linux with musl's libc. */
 export type PinPlatform =
@@ -45,6 +49,17 @@ export interface CliBuild {
   strip?: number;
   /** The program, relative to the copy's folder (the file's own name for `file`). */
   executable: string;
+  /**
+   * Files the program is started with, before its own arguments, relative to the copy's folder: Cursor's Windows
+   * package is `node.exe` and its `index.js` (its `.cmd` launcher goes through cmd.exe and PowerShell, whose command
+   * line is too short for a prompt and requotes it).
+   */
+  launch?: string[];
+  /**
+   * The program is made from this file of the package after unpacking (a copy): MinGit ships GNU bash as
+   * `usr/bin/sh.exe` only, and bash started as `sh` runs in POSIX mode.
+   */
+  from?: string;
 }
 
 export interface CliPin {
@@ -73,8 +88,9 @@ const sha512 = (value: string) => ({ algorithm: "sha512" as const, value });
  * Sources: Claude Code's `manifest.json` per version (sha256, what its installer checks); Codex's release
  * `codex-package_SHA256SUMS` (its Linux packages are musl builds, run on any libc); OpenCode's release assets' sha256;
  * Cursor's and Grok's builds, which come with no published hash, hashed when pinned; the Antigravity CLI's manifests
- * per platform (sha512). No build: the runner can't fetch that CLI there and the apps say so (`cli_outdated`,
- * `not_installed`).
+ * per platform, the ones its installers read (sha512); MinGit's release assets' sha256. Every one of the six has a
+ * build for Windows (ADR 0228 §6). No build: the runner can't fetch that CLI there and the apps say so
+ * (`cli_outdated`, `not_installed`).
  */
 export const CLI_PINS: CliPins = {
   claude: {
@@ -214,6 +230,23 @@ export const CLI_PINS: CliPins = {
         strip: 1,
         executable: "cursor-agent",
       },
+      // Its Windows installer's package (cursor.com/install?win32=true): Node and the CLI under one folder.
+      "win32-x64": {
+        url: "https://downloads.cursor.com/lab/2026.11.22-e9042b2/windows/x64/agent-cli-package.zip",
+        hash: sha256("4bf0afdadaa41c2cb58508cb50984656a35b9d494fc92944ed1132a8a067086f"),
+        archive: "zip",
+        strip: 1,
+        executable: "node.exe",
+        launch: ["index.js"],
+      },
+      "win32-arm64": {
+        url: "https://downloads.cursor.com/lab/2026.11.22-e9042b2/windows/arm64/agent-cli-package.zip",
+        hash: sha256("e920523e611c8568a9b137e0e156861d5f6a5781a58a782f0025c311b3093d7f"),
+        archive: "zip",
+        strip: 1,
+        executable: "node.exe",
+        launch: ["index.js"],
+      },
     },
   },
   opencode: {
@@ -311,55 +344,92 @@ export const CLI_PINS: CliPins = {
     },
   },
   antigravity: {
-    version: "1.5.14",
+    version: "1.5.16",
     builds: {
       "darwin-arm64": {
-        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.14-5302690847260672/darwin-arm/cli_mac_arm64.tar.gz",
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/darwin-arm/cli_mac_arm64.tar.gz",
         hash: sha512(
-          "26830fd46bfb9200d073cf3e71bf94b707552557b4380ec01afd6e99f3a2b030e65422dab1867f77318078692defc859a7547d17ec4b0b1e9369f13c9c3caea6",
+          "33f5617dc74fea606d47b2483c6d271c850c9f3c9c55b724c664c3c0d4b82100d819fbcf55714f851765f6628d4296883ac8939b4fdeb55d5e6b9ce923135d18",
         ),
         archive: "tar.gz",
         executable: "antigravity",
       },
       "darwin-x64": {
-        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.14-5302690847260672/darwin-x64/cli_mac_x64.tar.gz",
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/darwin-x64/cli_mac_x64.tar.gz",
         hash: sha512(
-          "1b6a1fc6dbe46ba6d9d0405d1b6095189f35ebfc4c3c33ceb1fd1b6d0c9fd702b52ac10b64b8b52aed0d8d71ae02c5df3cffd5e3e3d37549c2daffcce2a853c7",
+          "b3eae073ee633032e9d473cdc7725c30bdfe2e09436bc36cfb3422e7e5fa3733de9591a7f78d02362294e7bf87e345d70e5d839689e526129a6f3fc041857a05",
         ),
         archive: "tar.gz",
         executable: "antigravity",
       },
       "linux-x64": {
-        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.14-5302690847260672/linux-x64/cli_linux_x64.tar.gz",
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/linux-x64/cli_linux_x64.tar.gz",
         hash: sha512(
-          "83311d3f354567612dc16c1ae2ea9b503d6f6833aa4e138d39aa229da3f3bb99b0e4d7cca0bce4796b0060d6a51d8113eb7449ed5dc0e7900bf217107ea5bff9",
+          "3dee9f26e298156db673f6ce2a0f5dfed5b30006e04ceb9809c68070e7b717587b33a3da0f8bc2eda45af81a50bc8b14c82b28ae5832bcfe3e7fd49397117b31",
         ),
         archive: "tar.gz",
         executable: "antigravity",
       },
       "linux-arm64": {
-        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.14-5302690847260672/linux-arm/cli_linux_arm64.tar.gz",
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/linux-arm/cli_linux_arm64.tar.gz",
         hash: sha512(
-          "c9b29bba475f63a1a80161ae93ba72b221c7a586d9851e4d0061546704bab66d6b2760b25d716d191724fc7564f3246456ee151e28aa37af48dbcd72bdc6c463",
+          "23c193151499a4986fd5fa0d8132665cc8ffbad6cc0b3ff4fd53a2cb68abb76b149a992b836d53063443cd89add335f14d8134fb02abdcecbf6e1eaef6c53d33",
         ),
         archive: "tar.gz",
         executable: "antigravity",
       },
       "linux-x64-musl": {
-        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.14-5302690847260672/linux-x64-musl/cli_linux_x64_musl.tar.gz",
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/linux-x64-musl/cli_linux_x64_musl.tar.gz",
         hash: sha512(
-          "1da24922727c5b4e84369d0843575d7d6f180a1946e2dc4289171ad1e3ca92594e687724d1902a7d83e407f98f0a8d3b7c3e976f03680fd80dbed2d2da00c0ed",
+          "9f868c13f308557192b8c3fa30f1251283167b7e551e9f0f05ed0fa2640e91e02accaeacd41692a0422e8de90c1cc0b6e327f2b6befbd11080a4881d45bf61b1",
         ),
         archive: "tar.gz",
         executable: "antigravity",
       },
       "linux-arm64-musl": {
-        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.14-5302690847260672/linux-arm-musl/cli_linux_arm64_musl.tar.gz",
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/linux-arm-musl/cli_linux_arm64_musl.tar.gz",
         hash: sha512(
-          "f6e35fc3dab2cd49fd4296ddee0841b9cc4c7020b6c6aaea6452c5b3452b0ad8d66451c9098e418ad6b2f6eabcc81cdf13105ed043903248b11d6fb24ae709ab",
+          "4bc5c802c97ca19404c666136f1e74dc880a3b0346e7c6950ad4e217056c6cc86ae5afa633aa5989a260600f49cb6e71db438558c4f2d44e5f5bdab8bb38980c",
         ),
         archive: "tar.gz",
         executable: "antigravity",
+      },
+      "win32-x64": {
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/windows-x64/cli_windows_x64.exe",
+        hash: sha512(
+          "058a85911c40a0beba24d0ae4e3227ea5060388060d4746aa6b48722ff43516c16fbffe6d30e31e2c266d5b47495a7886f072cc4e0143b26eb3cd9a007578c83",
+        ),
+        archive: "file",
+        executable: "agy.exe",
+      },
+      "win32-arm64": {
+        url: "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.16-5250855658717184/windows-arm/cli_windows_arm64.exe",
+        hash: sha512(
+          "a3d961732875eedc8cf9b946c542290616d41508ebc9144cb38787615f95b48ddfc9d3edd5bee06eaae061a0fa000a03c3db9efafcd046d90ec021ec4c54eea9",
+        ),
+        archive: "file",
+        executable: "agy.exe",
+      },
+    },
+  },
+  // Git for Windows' portable build (github.com/git-for-windows/git releases, their sha256), on Windows only: Claude
+  // Code's shell there is Git Bash.
+  git: {
+    version: "2.56.1",
+    builds: {
+      "win32-x64": {
+        url: "https://github.com/git-for-windows/git/releases/download/v2.56.1.windows.1/MinGit-2.56.1-64-bit.zip",
+        hash: sha256("4a92850b6e917da4fd010669b614b55dccf5b0ec333a534cc4be4700dfefdafd"),
+        archive: "zip",
+        executable: "usr/bin/bash.exe",
+        from: "usr/bin/sh.exe",
+      },
+      "win32-arm64": {
+        url: "https://github.com/git-for-windows/git/releases/download/v2.56.1.windows.1/MinGit-2.56.1-arm64.zip",
+        hash: sha256("96571e442e90523a90e5fd8661b4c4e43bc192910f3c6db938816e6955b4cc8c"),
+        archive: "zip",
+        executable: "usr/bin/bash.exe",
+        from: "usr/bin/sh.exe",
       },
     },
   },
@@ -404,12 +474,22 @@ export function parseCliPins(v: unknown): Partial<CliPins> | null {
       if (b.archive !== "file" && b.archive !== "tar.gz" && b.archive !== "zip") continue;
       if (typeof b.executable !== "string" || !SAFE_PATH.test(b.executable)) continue;
       const strip = typeof b.strip === "number" && Number.isInteger(b.strip) && b.strip >= 0 && b.strip <= 3;
+      const launch = b.launch;
+      if (
+        launch !== undefined &&
+        !(Array.isArray(launch) && launch.length <= 4 && launch.every((f) => typeof f === "string" && SAFE_PATH.test(f)))
+      ) {
+        continue;
+      }
+      if (b.from !== undefined && (typeof b.from !== "string" || !SAFE_PATH.test(b.from))) continue;
       builds[platform] = {
         url: b.url,
         hash: { algorithm: hash.algorithm, value: hash.value },
         archive: b.archive,
         executable: b.executable,
         ...(strip ? { strip: b.strip as number } : {}),
+        ...(Array.isArray(launch) && launch.length ? { launch: launch as string[] } : {}),
+        ...(typeof b.from === "string" ? { from: b.from } : {}),
       };
     }
     if (Object.keys(builds).length) out[cli] = { version: pin.version, builds };

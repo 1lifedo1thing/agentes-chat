@@ -87,10 +87,10 @@ export interface MachineExecutors {
    * (`fetching` with bytes done and total, `ready`, or `failed` with why), updated by its `cli.fetch` frames.
    */
   copies?: {
-    fetchable?: ("claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity")[];
+    fetchable?: ("claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity" | "git")[];
     fetch?: Partial<
       Record<
-        "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity",
+        "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity" | "git",
         | { state: "fetching"; version: string; done: number; total: number | null }
         | { state: "ready"; version: string }
         | {

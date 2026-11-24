@@ -2106,6 +2106,13 @@ export interface TaskStart {
 export const CLI_NAMES = ["claude", "codex", "cursor", "opencode", "grok", "antigravity"] as const;
 export type CliName = (typeof CLI_NAMES)[number];
 
+/**
+ * What a runner fetches by itself (ADR 0228 §6): the coding CLIs, and on Windows Git for Windows' portable build
+ * (`git`), whose bash is Claude Code's shell there.
+ */
+export const FETCH_NAMES = [...CLI_NAMES, "git"] as const;
+export type FetchName = (typeof FETCH_NAMES)[number];
+
 /** A coding CLI on the machine, as `hello` reports it (protocol 7). */
 export interface RunnerExecutorInfo {
   /** The line of `<cli> --version` that holds its version (else its first line, or `unknown`). */
@@ -2555,9 +2562,9 @@ export type CliFetchState =
 /** `hello.clis` (`CLI_COPIES_PROTOCOL`). */
 export interface RunnerClisInfo {
   /** The CLIs this runner fetches by itself on this system (a pinned build for it, outside system mode). */
-  fetchable: CliName[];
+  fetchable: FetchName[];
   /** The last state of each fetch since the runner started. */
-  fetch: Partial<Record<CliName, CliFetchState>>;
+  fetch: Partial<Record<FetchName, CliFetchState>>;
 }
 /** The tasks a computer may run at once (`maxConcurrentTasks` in the runner's config). */
 export const TASK_LIMIT_BOUNDS = [1, 20] as const;
@@ -3094,7 +3101,7 @@ export type MachineRequest = (
   /** `CLI_INSTALL_PROTOCOL`: start an install of `tool`, or say where the last one stands, or stop it. One at a time. */
   | { op: "cli.install"; action: "start" | "status" | "cancel"; tool?: InstallableCli }
   /** `CLI_COPIES_PROTOCOL`: fetch `cli`'s pinned build now, whatever an earlier failure said; answers at once. */
-  | { op: "cli.fetch"; cli: CliName }
+  | { op: "cli.fetch"; cli: FetchName }
   /** `IPHONE_DEV_MODE_PROTOCOL`: open Xcode on this Mac (it shows Developer Mode on a plugged iPhone). */
   | { op: "xcode.open" }
   /** `PHONE_REPAIR_PROTOCOL`: repair the test helper of the iPhone `serial`; answers once its rebuild started. */
@@ -3572,7 +3579,7 @@ export type RunnerFrame =
   /** What `hello.toolchains` said changed (an Apple team found, Xcode updated), whole. An older server drops it. */
   | { type: "toolchains.changed"; toolchains: RunnerToolchains }
   /** `CLI_COPIES_PROTOCOL`: a fetch of `cli` moved on (throttled), ended or failed. An older server drops it. */
-  | { type: "cli.fetch"; cli: CliName; fetch: CliFetchState }
+  | { type: "cli.fetch"; cli: FetchName; fetch: CliFetchState }
   /** `PHONES_PROTOCOL`: the phones it reaches changed (one came or went, a state or a holder changed), whole. */
   | { type: "phones.changed"; phones: RunnerPhone[] }
   /**
@@ -3847,12 +3854,12 @@ export function parseCliFetchState(v: unknown): CliFetchState | null {
   return { state: "fetching", version, done: Math.min(count(v.done) ?? 0, total ?? Number.MAX_SAFE_INTEGER), total };
 }
 
-/** `hello.clis`, checked: known CLIs only. */
+/** `hello.clis`, checked: known CLIs (and Git) only. */
 export function parseClis(v: Record<string, unknown>): RunnerClisInfo {
-  const fetchable = Array.isArray(v.fetchable) ? CLI_NAMES.filter((n) => (v.fetchable as unknown[]).includes(n)) : [];
+  const fetchable = Array.isArray(v.fetchable) ? FETCH_NAMES.filter((n) => (v.fetchable as unknown[]).includes(n)) : [];
   const fetch: RunnerClisInfo["fetch"] = {};
   if (isObject(v.fetch)) {
-    for (const name of CLI_NAMES) {
+    for (const name of FETCH_NAMES) {
       const state = parseCliFetchState(v.fetch[name]);
       if (state) fetch[name] = state;
     }
@@ -4266,7 +4273,7 @@ export function parseRunnerFrame(raw: string): RunnerFrame | null {
     case "toolchains.changed":
       return isObject(f.toolchains) ? { type: "toolchains.changed", toolchains: parseToolchains(f.toolchains) } : null;
     case "cli.fetch": {
-      const cli = CLI_NAMES.find((n) => n === f.cli);
+      const cli = FETCH_NAMES.find((n) => n === f.cli);
       const fetch = parseCliFetchState(f.fetch);
       return cli && fetch ? { type: "cli.fetch", cli, fetch } : null;
     }
