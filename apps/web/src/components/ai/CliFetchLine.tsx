@@ -4,6 +4,7 @@ import { cliFetchLine } from "@agenteschat/client/lib/cli-fetch";
 import { Button, Meter, SettingNote, Spinner } from "@agenteschat/ui";
 import { useTranslation } from "react-i18next";
 import { useOrg } from "../org-context";
+import "./cli-fetch.css";
 
 /**
  * A coding CLI its computer fetches by itself (ADR 0228 §6), in the agent's brain settings and its account in Contas
