@@ -392,14 +392,17 @@ export function wakeLiveAgents() {
   raf = requestAnimationFrame(tick);
 }
 
-let sightWatch: (() => void) | null = null;
+let followsSight = false;
 
 /** Starts drawing an agent; returns the cleanup. */
 export function addLiveAgent(agent: LiveAgent): () => void {
   agents.add(agent);
   watchTheme();
   // Seen again: the loop starts (busy agents move); unseen, the next frame stills them and the loop stops.
-  sightWatch ??= onSight(wakeLiveAgents);
+  if (!followsSight) {
+    followsSight = true;
+    onSight(wakeLiveAgents);
+  }
   if (typeof IntersectionObserver === "function") {
     observer ??= new IntersectionObserver((entries) => {
       let shown = false;
