@@ -271,7 +271,7 @@ test("Poderes do workspace is one row for everyone that opens what only Lodi doe
     "Monta e muda o time inteiro por cards que uma pessoa aplica: agentes, pessoas e ajustes do workspace",
     "Roda e apaga rotinas de qualquer agente que você pode gerenciar",
     "Na sua conversa, lê o Drive, a wiki e as tarefas que você pode ver",
-    "Responde a um @ em qualquer canal sem ser membro",
+    "Responde a um @ em qualquer canal sem ser membro, e a mensagens em que é a melhor escolha",
   ]);
 });
 

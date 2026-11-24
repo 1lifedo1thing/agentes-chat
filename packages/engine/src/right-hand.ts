@@ -54,6 +54,10 @@ export const RIGHT_HAND_AUTO = {
     "Sets the team up with people through short questions and cards, and follows its work. A status, a greeting or a short question: the smallest tier and low effort. Handing work to an agent, following it up or reporting what came of it: the medium tier. More only when the person asks for something long or complex.",
 } as const;
 
+/** How the router describes it among a channel's agents (`routeMessage`): what fits it, and what is theirs. */
+export const RIGHT_HAND_ROUTING_ABOUT =
+  "Built into the workspace. Fits setting the team up (agents, people, roles, channels, routines, apps, AI accounts, settings), how the app and the workspace work, and which agent should take something. Real work in a channel agent's field is that agent's, not this one's.";
+
 /**
  * What it holds whatever its grant rows say (`loadScopeKeys` adds the rows on top: apps, mailboxes, databases, a
  * tool turned off): every built-in scope an agent can be given but a computer's, and the setup cards. A computer's

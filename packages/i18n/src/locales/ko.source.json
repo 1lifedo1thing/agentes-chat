@@ -7626,7 +7626,7 @@
     "value": "In your own conversation, reads the Drive, the wiki and the tasks you can see"
   },
   "rightHand.powers.mentions": {
-    "value": "Answers an @mention in any channel without being a member"
+    "value": "Answers an @mention in any channel without being a member, and messages it fits best"
   },
   "rightHand.card.settings": {
     "value": "{{name}} · Settings"
