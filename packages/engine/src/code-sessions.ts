@@ -19,6 +19,7 @@ import {
   sql,
 } from "@agenteschat/db";
 import { getAgentCached } from "./agents";
+import { audienceError, audienceSql, canTalkTo, REACH_COLUMNS, type Speaker, speakerOf } from "./audience";
 import { isComputerBrain } from "./brains/types";
 import { caches } from "./cache";
 import { requireChannelAccess } from "./channels";
@@ -633,6 +634,8 @@ export async function createCodeSession(
   const repo = parsed ? `${parsed.owner}/${parsed.repo}` : (local as string);
   const agent = await getAgentCached(deps.db, orgId, input.agentId);
   if (!agent || agent.archivedAt) throw new NotFoundError("Agent not found");
+  // A session is the agent's work for whoever opens it: only someone it answers opens one (`canTalkTo`).
+  if (!canTalkTo(agent, userId, speakerOf(membership))) throw await audienceError(deps.db, agent);
   if (!agent.machineId)
     throw new ValidationError("This agent has no computer", "code_session.no_computer", { agent: agent.name });
   if (!(await worksInSessions(deps.db, agent)))
@@ -897,12 +900,14 @@ export async function loseCodeWorktree(deps: Pick<CodeSessionDeps, "db" | "pubsu
 
 /**
  * Once the worktree is ready: the people's messages that waited for it go to the agent as one run (the newest
- * starts it; the run reads the thread). Nothing when a run already answered after them.
+ * starts it; the run reads the thread). Only a message from someone the agent answers starts it (`audienceSql`, as a
+ * message posted to a ready session). Nothing when a run already answered after them.
  */
-async function releaseRequest(deps: CodeSessionDeps, row: CodeSessionRow) {
+export async function releaseRequest(deps: CodeSessionDeps, row: CodeSessionRow) {
   const [lastPerson] = await deps.db
     .select({ id: messages.id, createdAt: messages.createdAt })
     .from(messages)
+    .innerJoin(schema.agents, and(eq(schema.agents.orgId, row.orgId), eq(schema.agents.id, row.agentId)))
     .where(
       and(
         eq(messages.orgId, row.orgId),
@@ -910,6 +915,7 @@ async function releaseRequest(deps: CodeSessionDeps, row: CodeSessionRow) {
         eq(messages.threadId, row.rootMessageId),
         eq(messages.authorType, "person"),
         isNull(messages.deletedAt),
+        audienceSql("agents", sql`${messages.authorUserId}`, { channelId: sql`${row.channelId}::uuid` }),
       ),
     )
     .orderBy(desc(messages.createdAt))
@@ -931,6 +937,18 @@ async function releaseRequest(deps: CodeSessionDeps, row: CodeSessionRow) {
   const message = await getMessage(deps.db, row.orgId, lastPerson.id);
   if (!message) return;
   const runs = await deps.db.transaction((tx) => createAgentRuns(tx, message, [row.agentId], "dm"));
+  // The receipt of the message that waited: its agent has it now.
+  if (runs.length > 0) {
+    await publishChannelEvent(deps.pubsub, {
+      type: "message.routed",
+      channelId: row.channelId,
+      messageId: message.id,
+      seenBy: runs.map((r) => r.agentId),
+      pickedBy: runs.map((r) => r.agentId),
+      runs: runs.map((r) => ({ agentId: r.agentId, runId: r.id })),
+      strategy: "dm",
+    });
+  }
   for (const run of runs) {
     await publishChannelEvent(deps.pubsub, {
       type: "agent.thinking",
@@ -966,10 +984,20 @@ export async function retryCodeSession(deps: CodeSessionDeps, userId: string, or
   return getCodeSession(deps.db, userId, orgId, row.id);
 }
 
-/** The workspace's agents a session can start with (`worksInSessions`), oldest first; `first`: stop at one. */
-async function sessionAgentsIn(db: Database, orgId: string, first = false): Promise<string[]> {
+/**
+ * The workspace's agents `userId` can start a session with: the ones that can have one (`worksInSessions`) and answer
+ * them (`canTalkTo`), oldest first; `first`: stop at one.
+ */
+async function sessionAgentsIn(
+  db: Database,
+  orgId: string,
+  userId: string,
+  speaker: Speaker,
+  first = false,
+): Promise<string[]> {
   const rows = await db
     .select({
+      ...REACH_COLUMNS,
       id: schema.agents.id,
       orgId: schema.agents.orgId,
       brain: schema.agents.brain,
@@ -987,6 +1015,7 @@ async function sessionAgentsIn(db: Database, orgId: string, first = false): Prom
     .orderBy(schema.agents.createdAt);
   const found: string[] = [];
   for (const row of rows) {
+    if (!canTalkTo(row, userId, speaker)) continue;
     if (!(await worksInSessions(db, row))) continue;
     found.push(row.id);
     if (first) break;
@@ -995,11 +1024,12 @@ async function sessionAgentsIn(db: Database, orgId: string, first = false): Prom
 }
 
 /**
- * Whether Code has anything for this person (ADR 0215 §12): an agent a session can start with, or an open session they
- * take part in (its agent may have left since). The apps offer Code only then; the caller checked the membership.
+ * Whether Code has anything for this person (ADR 0215 §12): an agent they can start a session with, or an open session
+ * they take part in (its agent may have left since). The apps offer Code only then; the caller checked the membership.
  */
 export async function hasCodeWork(db: Database, userId: string, orgId: string): Promise<boolean> {
-  if ((await sessionAgentsIn(db, orgId, true)).length > 0) return true;
+  const speaker = speakerOf(await getMembership(db, userId, orgId));
+  if ((await sessionAgentsIn(db, orgId, userId, speaker, true)).length > 0) return true;
   const [session] = await db
     .select({ id: codeSessions.id })
     .from(codeSessions)
@@ -1013,14 +1043,14 @@ export async function hasCodeWork(db: Database, userId: string, orgId: string): 
 }
 
 /**
- * Where a person can start a session: the workspace's agents that can have one (`worksInSessions`), each with the
- * repositories it may work in (`any`: its list allows more than it names, so any `owner/name` the person types is
- * tried).
+ * Where a person can start a session: the workspace's agents that can have one (`worksInSessions`) and answer them
+ * (`canTalkTo`), each with the repositories it may work in (`any`: its list allows more than it names, so any
+ * `owner/name` the person types is tried).
  */
 export async function codeStartOptions(db: Database, userId: string, orgId: string) {
-  await requireMember(db, userId, orgId);
+  const speaker = speakerOf(await requireMember(db, userId, orgId));
   const agents = [];
-  for (const agentId of await sessionAgentsIn(db, orgId)) {
+  for (const agentId of await sessionAgentsIn(db, orgId, userId, speaker)) {
     const list = await agentRepositoryList(db, orgId, agentId);
     const repos = list.filter((r) => !r.endsWith("/*"));
     agents.push({ agentId, repos, any: list.length === 0 || repos.length < list.length });
@@ -1664,6 +1694,10 @@ export async function saveCodeSessionFile(
   input: { path: string; content: string; rev: string; overwrite?: boolean },
 ): Promise<CodeFile> {
   const row = await requireCodeSession(deps.db, userId, orgId, sessionId);
+  // A save is a change the person could ask the agent for: someone it doesn't answer reads the session, no more.
+  const writer = await getAgentCached(deps.db, row.orgId, row.agentId);
+  if (writer && !canTalkTo(writer, userId, speakerOf(await getMembership(deps.db, userId, orgId))))
+    throw await audienceError(deps.db, writer);
   const { path, content } = input;
   if (!codeFilePathOk(path))
     throw new ValidationError("A path inside the worktree is needed", "code_session.file_path");
