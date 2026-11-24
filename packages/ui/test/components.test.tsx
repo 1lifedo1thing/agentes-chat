@@ -936,6 +936,29 @@ describe("Logo, Icon, Meter", () => {
     expect(container.querySelector(".ac-logo__body")).not.toBeNull();
   });
 
+  test("the logo's mark centres on the wordmark's capitals: its words trimmed to them, not their line", async () => {
+    const { container } = render(
+      <>
+        <Logo />
+        <Logo variant="expanded" />
+      </>,
+    );
+    const [main, expanded] = [...container.querySelectorAll(".ac-logo")];
+    expect(main?.querySelector(":scope > span")?.textContent).toBe("agentes");
+    expect([...(expanded?.querySelectorAll(".ac-logo__word > span") ?? [])].map((s) => s.textContent)).toEqual([
+      "agentes",
+      ".chat",
+    ]);
+    const css = await Bun.file(new URL("../src/styles/components.css", import.meta.url).pathname).text();
+    expect(css).toMatch(/\n\.ac-logo > span,\n\.ac-logo__word > span \{\n {2}text-box: trim-both cap alphabetic;\n\}/);
+    // Funnel Display's cap height stands 0.027em above its capitals: the mark moves down half that.
+    expect(css).toContain("\n.ac-logo > .ac-logo__mark {\n  translate: 0 0.0135em;\n}");
+    // Where text-box is unknown, from the line box's middle to the capitals'.
+    expect(css).toMatch(
+      /@supports not \(text-box: trim-both cap alphabetic\) \{\s*\.ac-logo > \.ac-logo__mark \{\s*translate: 0 0\.0525em;/,
+    );
+  });
+
   test("every icon renders a stroke-only 20px glyph, decorative unless labelled", () => {
     for (const name of iconNames.filter((n) => n !== "spinner")) {
       const { container, unmount } = render(<Icon name={name} />);
