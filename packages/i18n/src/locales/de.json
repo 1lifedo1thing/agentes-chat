@@ -6355,6 +6355,22 @@
       "playbook": "So arbeitet {{name}}",
       "playbookNote": "Arbeitsweisen, die es für sich behält. Sie erscheinen nicht im Chat. Was es von außen aufgenommen und nie wieder genutzt hat, landet von selbst unter Archiviert.",
       "details": "Technische Details",
+      "learning": {
+        "title": "So lernt es",
+        "fromYou": "Lernt aus deinen Unterhaltungen",
+        "fromYouHint": "Was es in deiner DM lernt, bleibt bei dir. Was es in einem Kanal lernt, sieht jeder, der diesen Kanal liest. Was es über dich lernt, bleibt bei dir.",
+        "workspaceOff": "Für den ganzen Workspace aus",
+        "forgetAll": "Alles vergessen",
+        "forgetAllHint": "Löscht, was es von selbst von dir gelernt hat. Was du es dir merken lassen wolltest, bleibt.",
+        "forgetTitle": "Vergessen, was es von dir gelernt hat?",
+        "forgetText": "Alles, was es von selbst von dir gelernt hat, wird endgültig gelöscht. Was du es dir merken lassen wolltest, bleibt, ebenso was es in Kanälen gelernt hat.",
+        "forgotten": "Erledigt. Was es von selbst von dir gelernt hat, ist weg.",
+        "workspace": "Lernt in diesem Workspace",
+        "workspaceHint": "Aus, lernt es von niemandem von selbst. So oder so kann niemand die Erinnerungen anderer lesen.",
+        "onlyYou": "Nur du",
+        "everyoneIn": "Alle in #{{channel}}",
+        "everyone": "Alle, die es sehen können"
+      },
       "skills": "Selbst erstellte Skills",
       "skillUses_one": "einmal geladen",
       "skillUses_other": "{{count}}-mal geladen",
@@ -13324,7 +13340,6 @@
     "added": "{{repo}} kommt beim Speichern auf die Liste."
   },
   "connectors": {
-    "title": "Konnektoren",
     "store": {
       "featured": "Empfohlen",
       "suggested": "Vorgeschlagen",
@@ -13367,6 +13382,7 @@
       "addressPassword": "Adresse und Passwort",
       "composio": "Über Composio"
     },
+    "title": "Konnektoren",
     "add": "Konnektor hinzufügen",
     "personal": {
       "note": "Nur du öffnest diese Verbindungen. Deine Agenten verwenden sie nur, wenn du sie darum bittest.",

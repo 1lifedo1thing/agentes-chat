@@ -2609,6 +2609,8 @@ export interface Memory {
   disputed?: boolean;
   /** Where it was learned. */
   channelId?: string | null;
+  /** Kept for the viewer alone (a preference of theirs, or from their DM with the agent). Absent: an older server. */
+  onlyYou?: boolean;
   /** A `rule` the viewer may remove: its giver, the agent's owner or an admin. */
   removable?: boolean;
   updatedAt: string;
@@ -2754,6 +2756,8 @@ export interface OrgSettings {
   teamWatch?: boolean;
   /** The right hand greets each person who joins, once. Absent from an older server: on. */
   welcomePeople?: boolean;
+  /** The right hand learns from conversations on its own. Absent from an older server: off (it didn't). */
+  rightHandLearns?: boolean;
   /** Read only: this server has a speech engine. */
   voiceAvailable: boolean;
   /** Read only: this server can search GIFs (it has a GIF provider). */

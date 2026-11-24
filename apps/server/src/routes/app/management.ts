@@ -242,6 +242,10 @@ const Settings = z
     welcomePeople: z.boolean().openapi({
       description: "The right hand greets each person who joins the workspace, once. On by default.",
     }),
+    rightHandLearns: z.boolean().openapi({
+      description:
+        "The right hand learns from conversations on its own, kept where it was said (each person can also turn it off for themselves, `learnOff` in `…/team-week`). Turning it off reveals nobody's memories. On by default.",
+    }),
     approvalsLevel: ApprovalsLevel.openapi({
       description:
         "What every agent without its own choice asks before acting (ADR 0173). `risky` by default. Set with `PUT …/approvals-level`.",
@@ -696,6 +700,7 @@ export function managementRoutes(deps: AppDeps) {
             mode: z.enum(WORKSPACE_MODES).optional().openapi({ description: "`team` or `personal` (ADR 0159)." }),
             teamWatch: z.boolean().optional(),
             welcomePeople: z.boolean().optional(),
+            rightHandLearns: z.boolean().optional(),
           }),
         ),
       },

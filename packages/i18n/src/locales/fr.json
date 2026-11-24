@@ -6597,6 +6597,22 @@
       "playbook_female": "Comment {{name}} travaille",
       "playbookNote": "Des façons de travailler qu'il garde pour lui. Elles n'apparaissent pas dans la conversation. Ce qu'il a pris de l'extérieur et n'a plus jamais utilisé passe tout seul dans Archivés.",
       "details": "Détails techniques",
+      "learning": {
+        "title": "Comment il apprend",
+        "fromYou": "Apprend de vos conversations",
+        "fromYouHint": "Ce qu'il apprend dans votre DM reste à vous. Ce qu'il apprend dans un canal, tous ceux qui lisent ce canal le voient. Ce qu'il apprend sur vous reste à vous.",
+        "workspaceOff": "Désactivé pour tout le workspace",
+        "forgetAll": "Tout oublier",
+        "forgetAllHint": "Supprime ce qu'il a appris de vous par lui-même. Ce que vous lui avez demandé de retenir reste.",
+        "forgetTitle": "Oublier ce qu'il a appris de vous ?",
+        "forgetText": "Tout ce qu'il a appris de vous par lui-même disparaît, définitivement. Ce que vous lui avez demandé de retenir reste, tout comme ce qu'il a appris dans les canaux.",
+        "forgotten": "C'est fait. Ce qu'il a appris de vous par lui-même a disparu.",
+        "workspace": "Apprend dans ce workspace",
+        "workspaceHint": "Désactivé, il n'apprend de personne par lui-même. Dans tous les cas, personne ne peut lire les mémoires des autres.",
+        "onlyYou": "Vous seul",
+        "everyoneIn": "Tout le monde dans #{{channel}}",
+        "everyone": "Tous ceux qui peuvent le voir"
+      },
       "skills": "Compétences qu'il a créées",
       "skillUses_one": "chargée {{count}} fois",
       "skillUses_many": "chargée {{count}} fois",
@@ -13827,7 +13843,6 @@
     "added": "{{repo}} rejoindra la liste à l'enregistrement."
   },
   "connectors": {
-    "title": "Connecteurs",
     "store": {
       "featured": "À la une",
       "suggested": "Suggéré",
@@ -13874,6 +13889,7 @@
       "addressPassword": "Adresse et mot de passe",
       "composio": "Via Composio"
     },
+    "title": "Connecteurs",
     "add": "Ajouter un connecteur",
     "personal": {
       "note": "Vous seul ouvrez ces connexions. Vos agents les utilisent seulement quand vous le demandez.",

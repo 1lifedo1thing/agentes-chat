@@ -6137,6 +6137,22 @@
       "playbook_female": "{{name}} 的工作方式",
       "playbookNote": "它为自己保留的工作方法。不会出现在聊天中。从外部获得且再也没用过的会自动移到“已归档”。",
       "details": "技术细节",
+      "learning": {
+        "title": "它如何学习",
+        "fromYou": "从你的对话中学习",
+        "fromYouHint": "它在你的私信中学到的只属于你。它在频道中学到的，所有能阅读该频道的人都能看到。它学到的关于你的内容只属于你。",
+        "workspaceOff": "已对整个工作区关闭",
+        "forgetAll": "全部忘记",
+        "forgetAllHint": "删除它自行从你那里学到的内容。你让它记住的内容会保留。",
+        "forgetTitle": "忘记它从你那里学到的内容？",
+        "forgetText": "它自行从你那里学到的所有内容都会被永久删除。你让它记住的内容会保留，它在频道中学到的内容也会保留。",
+        "forgotten": "完成。它自行从你那里学到的内容已删除。",
+        "workspace": "在这个工作区中学习",
+        "workspaceHint": "关闭后，它不会自行从任何人那里学习。无论如何，任何人都无法读取他人的记忆。",
+        "onlyYou": "仅你",
+        "everyoneIn": "#{{channel}} 中的所有人",
+        "everyone": "所有能看到的人"
+      },
       "skills": "它创建的技能",
       "skillUses_other": "已加载 {{count}} 次",
       "view": "查看",
@@ -12848,7 +12864,6 @@
     "added": "保存后，{{repo}} 会加入列表。"
   },
   "connectors": {
-    "title": "连接器",
     "store": {
       "featured": "精选",
       "suggested": "推荐",
@@ -12887,6 +12902,7 @@
       "addressPassword": "地址和密码",
       "composio": "通过 Composio"
     },
+    "title": "连接器",
     "add": "添加连接器",
     "personal": {
       "note": "只有你能打开这些连接。你的智能体只在你要求时使用它们。",

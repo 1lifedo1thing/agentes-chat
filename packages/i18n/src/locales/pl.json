@@ -6843,6 +6843,22 @@
       "playbook_female": "Jak pracuje {{name}}",
       "playbookNote": "Sposoby pracy, które zachowuje dla siebie. Nie pojawiają się na czacie. To, co przejął z zewnątrz i czego nigdy więcej nie użył, samo trafia do Zarchiwizowanych.",
       "details": "Szczegóły techniczne",
+      "learning": {
+        "title": "Jak się uczy",
+        "fromYou": "Uczy się z twoich rozmów",
+        "fromYouHint": "To, czego nauczy się w twoim DM, zostaje tylko dla ciebie. To, czego nauczy się na kanale, widzi każdy, kto czyta ten kanał. To, czego dowie się o tobie, zostaje tylko dla ciebie.",
+        "workspaceOff": "Wyłączone dla całej przestrzeni roboczej",
+        "forgetAll": "Zapomnij wszystko",
+        "forgetAllHint": "Usuwa to, czego sam nauczył się od ciebie. To, o zapamiętanie czego prosiłeś, zostaje.",
+        "forgetTitle": "Zapomnieć to, czego nauczył się od ciebie?",
+        "forgetText": "Wszystko, czego sam nauczył się od ciebie, zniknie na zawsze. To, o zapamiętanie czego prosiłeś, zostaje, podobnie jak to, czego nauczył się na kanałach.",
+        "forgotten": "Gotowe. To, czego sam nauczył się od ciebie, zniknęło.",
+        "workspace": "Uczy się w tej przestrzeni roboczej",
+        "workspaceHint": "Wyłączone: sam nie uczy się od nikogo. Tak czy inaczej nikt nie może czytać cudzych wspomnień.",
+        "onlyYou": "Tylko ty",
+        "everyoneIn": "Wszyscy na #{{channel}}",
+        "everyone": "Wszyscy, którzy mogą to zobaczyć"
+      },
       "skills": "Utworzone umiejętności",
       "skillUses_one": "wczytana {{count}} raz",
       "skillUses_few": "wczytana {{count}} razy",
@@ -14339,7 +14355,6 @@
     "added": "{{repo}} trafi na listę po zapisaniu."
   },
   "connectors": {
-    "title": "Konektory",
     "store": {
       "featured": "Wyróżnione",
       "suggested": "Sugerowane",
@@ -14390,6 +14405,7 @@
       "addressPassword": "Adres i hasło",
       "composio": "Przez Composio"
     },
+    "title": "Konektory",
     "add": "Dodaj konektor",
     "personal": {
       "note": "Te połączenia otwierasz tylko ty. Twoi agenci używają ich tylko wtedy, gdy o to poprosisz.",

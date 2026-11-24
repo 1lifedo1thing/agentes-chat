@@ -1456,6 +1456,8 @@ export interface ApiClient {
     listTeam(orgId: string): Promise<Memory[]>;
     /** Tornar do time (ADR 0167): an agent's memory becomes the team's; its copies are archived. */
     makeTeam(orgId: string, memoryId: string): Promise<Memory>;
+    /** "Forget all" on the right hand's Memory tab: what it learned from me on its own, for me alone. */
+    forgetRightHandLearned(orgId: string): Promise<{ forgotten: number }>;
     edit(orgId: string, memoryId: string, text: string): Promise<Memory>;
     setPinned(orgId: string, memoryId: string, pinned: boolean): Promise<Memory>;
     setArchived(orgId: string, memoryId: string, archived: boolean): Promise<Memory>;
