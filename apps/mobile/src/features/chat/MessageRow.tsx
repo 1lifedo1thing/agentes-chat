@@ -28,6 +28,7 @@ import { channelRefsOf } from "@agenteschat/client/lib/channel-refs";
 import { type RunPosition, runAround } from "@agenteschat/client/lib/chat";
 import { mineOnRight } from "@agenteschat/client/lib/chat-look";
 import { choiceReplyLine } from "@agenteschat/client/lib/choices";
+import { spilledText } from "@agenteschat/client/lib/devices";
 import { agentsByAnyHandle } from "@agenteschat/client/lib/directory";
 import {
   CONTINUE_ERRORS,
@@ -178,7 +179,7 @@ import {
   useRowRoles,
 } from "./row-data";
 import { SecretCard } from "./SecretCard";
-import { ModelStandInLine, SpeedFallbackLine, StopPill } from "./StoppedLine";
+import { ModelStandInLine, SpeedFallbackLine, SpilledLine, StopPill } from "./StoppedLine";
 import { useStopMovedOn, useStoppedRun } from "./stopped-runs";
 import { SwipeSlide, SwipeTime, useGiveWay, useSwipeSlide } from "./swipe-time";
 import { TeamChecks } from "./TeamChecks";
@@ -296,6 +297,7 @@ function RowBody({
   const name = dir.nameOf(m.author) || t("mobile.chat.someone");
   const meta = m.meta;
   const standIn = modelStandInText(t, meta);
+  const spilled = isAgent ? spilledText(t, meta) : null;
   // What a routine found, told by its agent (as on the web): a small tag, and the report it answers on demand
   // (that report's own line folds into this message). Unfolded, it comes back unfolded with its row (`keptOpen`).
   const routine = routineReplyOf(m);
@@ -1075,6 +1077,7 @@ function RowBody({
             {voiceOf(meta) ? <VoiceMessage message={m} /> : null}
             {isAgent && meta?.speedFallback === true ? <SpeedFallbackLine message={m} /> : null}
             {isAgent && standIn ? <ModelStandInLine message={m} text={standIn} /> : null}
+            {spilled ? <SpilledLine text={spilled} /> : null}
             {(stopped || atLimit || providerCut) && m.agentRunId ? (
               <StoppedLine
                 message={m}

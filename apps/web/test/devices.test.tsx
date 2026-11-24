@@ -1166,15 +1166,24 @@ describe("A device's page", () => {
     expect(line?.querySelector("code, b")).toBeNull();
   });
 
-  test("spill-over on someone's computer: an admin may turn it off, never on", async () => {
+  test("help on someone's computer: one switch an admin may turn off, never on, and the workspace's switch wins", async () => {
     const { state } = await open(`/org/${ORG_ID}/settings/devices/${IMAC}`);
-    const own = screen().getByRole("switch", { name: "Your replies can think here" });
-    const others = screen().getByRole("switch", { name: "Other people's agents can think here" });
-    expect([own.getAttribute("aria-checked"), others.getAttribute("aria-checked")]).toEqual(["true", "false"]);
-    expect(others.hasAttribute("disabled")).toBe(true);
-    await click(own);
+    const help = screen().getByRole("switch", { name: "Help when the team's computer is full or away" });
+    expect(help.getAttribute("aria-checked")).toBe("true");
+    expect(screen().queryByRole("switch", { name: "Other people's agents can think here" })).toBeNull();
+    await click(help);
     await settle(4);
     expect(calls(state, "devices.updateComputer").map((c) => c.args.at(-1))).toEqual([{ spill: { own: false } }]);
+  });
+
+  test("an admin turns every computer's help off for the workspace from the devices list", async () => {
+    const { state } = await open(`/org/${ORG_ID}/settings/devices`);
+    const all = screen().getByRole("switch", { name: "Computers help when the team's is full or away" });
+    expect(all.getAttribute("aria-checked")).toBe("true");
+    await click(all);
+    await settle(4);
+    expect(calls(state, "devices.setHelp").map((c) => c.args.at(-1))).toEqual([false]);
+    expect(all.getAttribute("aria-checked")).toBe("false");
   });
 
   test("Only some people or roles: the picker opens with nobody yet, and the first pick is what saves", async () => {

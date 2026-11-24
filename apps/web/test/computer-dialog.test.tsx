@@ -676,6 +676,26 @@ describe("the computer dialog, self-host", () => {
     expect(t.closed()).toBe(0);
   });
 
+  test("offline while her owner's laptop helps: the cover says her new work thinks there meanwhile", async () => {
+    setSystemTime(new Date(2026, 9, 21, 12));
+    const seen = new Date(Date.now() - 30 * 60_000).toISOString();
+    const b = await backend({
+      machine: { online: false, lastSeenAt: seen },
+      desktop: { available: false, reason: "offline" },
+    });
+    const ada = await adaOf(b);
+    b.machines.pair({ name: "MacBook do Bruno", online: true, pairedBy: { id: ada.ownerUserId ?? "", name: "Bruno" } });
+    await renderPage(<ComputerDialog agent={ada} open onClose={() => {}} />, {
+      api: b.api,
+      org: true,
+      createSocket: b.sockets.factory,
+    });
+    await settle(8);
+    expect(box().textContent).toContain(
+      "A Ada espera o computador voltar. Enquanto isso, o trabalho novo pensa em MacBook do Bruno.",
+    );
+  });
+
   test("a Mac with its browser off: that, and who turns it on, never a screen it doesn't have", async () => {
     await dialog({
       machine: { name: "Mac mini", os: "darwin", mode: "single" },
