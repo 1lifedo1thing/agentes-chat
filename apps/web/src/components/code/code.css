@@ -1200,17 +1200,20 @@ html:not([data-pointer]) .code-tabs :is(.code-tabs__tab, .code-tabs__open, .code
   aspect-ratio: 1280 / 900;
 }
 /*
- * The line under the screen (what programs there can see, the steps, the keys in control) is the panel's foot, on the
- * panel's own ground from side to side: words never sit on the sky's pixels. It reaches through the body's 20 px.
+ * Under the screen, what programs there can see is an ⓘ at the panel's bottom right (`notice: "hint"`): the panel has no
+ * room for a sentence, and words never sit on the sky's pixels. The agent's steps and the keys' line in control are the
+ * panel's foot, on the panel's own ground from side to side, reaching through the body's 20 px.
  */
-.code-sstage {
-  container: code-sstage / inline-size;
+.code-sstage .cmp-body .dsk-line--hint {
+  justify-content: flex-end;
+  align-items: center;
 }
-.code-sstage:not(.is-full) .cmp-body .dsk-line,
+.code-sstage:not(.is-full) .cmp-body .dsk-line:not(.dsk-line--hint),
 .code-sstage:not(.is-full) .cmp-body:has(> .dsk) > .cmp-steps-row:has(> .cmp-steps) {
   margin: 12px -20px -20px;
   padding: 9px 16px;
   height: auto;
+  min-height: 0;
   background: var(--pane);
   box-shadow: 0 -1px 0 var(--line);
   font-size: 12.5px;
@@ -1218,25 +1221,6 @@ html:not([data-pointer]) .code-tabs :is(.code-tabs__tab, .code-tabs__open, .code
 }
 .code-sstage .cmp-body:has(> .dsk) > .cmp-steps-row > .cmp-steps {
   margin-top: 0;
-}
-.code-sstage .cmp-body .dsk-line {
-  min-height: 0;
-  gap: 4px 16px;
-}
-.code-sstage .cmp-body .dsk-words {
-  flex: 1 1 0;
-  min-width: 0;
-  text-wrap: pretty;
-}
-/* A narrow panel: the address goes under the words, which keep the whole width and wrap less. */
-@container code-sstage (max-width: 560px) {
-  .code-sstage .cmp-body .dsk:not(.is-control) > .dsk-line,
-  .code-sstage .cmp-body > .dsk-line {
-    flex-direction: column;
-  }
-  .code-sstage .cmp-body .dsk-egress {
-    margin-left: 0;
-  }
 }
 .code-sstage--phone {
   align-items: center;
