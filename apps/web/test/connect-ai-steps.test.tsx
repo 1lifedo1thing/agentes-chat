@@ -1626,7 +1626,8 @@ describe("All agents: one plan for the team, a login per agent", () => {
     expect(shownText(line)).toBe("3 agentes sem IAEscolher");
     // No tabs and no select: the AIs are the list. On the MacBook each agent signs in to Claude on its own.
     expect(dialog.querySelector(".ai-picker")).toBeNull();
-    const tag = (name: RegExp) => within(dialog).getByRole("button", { name }).querySelector(".arrival-opts__tag");
+    const tag = (name: RegExp) =>
+      within(dialog).getByRole("button", { name }).closest(".ac-optrow")?.querySelector(".ac-optrow__side");
     expect(tag(/^Claude/)?.textContent).toBe("Um login por agente");
     expect(tag(/^ChatGPT/)?.textContent).toBe("Um login por agente");
     // The footer: the quiet note at its start, "Not now" at its end.
@@ -1640,7 +1641,8 @@ describe("All agents: one plan for the team, a login per agent", () => {
     expect(
       within(shared.dialog)
         .getByRole("button", { name: /^Claude/ })
-        .querySelector(".arrival-opts__tag"),
+        .closest(".ac-optrow")
+        ?.querySelector(".ac-optrow__side"),
     ).toBeNull();
   });
 

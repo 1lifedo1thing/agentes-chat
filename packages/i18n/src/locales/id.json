@@ -1201,7 +1201,7 @@
         "fileLead": "File dari aplikasi apa pun yang kami kenal. File itu dikenali dengan sendirinya.",
         "paths": {
           "lead": "Pilih cara membawanya. Kamu memeriksa semuanya sebelum apa pun dibuat.",
-          "best": "paling lengkap",
+          "best": "Paling lengkap",
           "safe": "Kunci, kata sandi, dan sesi {{app}} tidak pernah ikut, lewat cara apa pun.",
           "command": {
             "title": "Dengan perintah",

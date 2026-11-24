@@ -3021,7 +3021,7 @@
     "value": "Choose how to bring them. You check everything before anything is made."
   },
   "onboarding.import.sheet.paths.best": {
-    "value": "the most complete"
+    "value": "The most complete"
   },
   "onboarding.import.sheet.paths.safe": {
     "value": "{{app}}'s keys, passwords and sessions never come, whichever way you pick."

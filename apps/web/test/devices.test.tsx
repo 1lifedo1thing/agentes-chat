@@ -301,7 +301,7 @@ describe("Connect a device", () => {
     await open(`/org/${ORG_ID}/settings/devices`);
     await click(screen().getByRole("button", { name: "Connect a device" }));
     const computers = screen().getByRole("region", { name: "Computers" });
-    expect([...computers.querySelectorAll(".dv-option__title")].map((n) => n.textContent)).toEqual([
+    expect([...computers.querySelectorAll(".ac-optrow__hit")].map((n) => n.textContent)).toEqual([
       "This computer",
       "Another computer",
       "A server or VPS",

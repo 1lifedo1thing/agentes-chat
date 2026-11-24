@@ -38,6 +38,7 @@ import {
   List,
   Locked,
   Meter,
+  OptionLinks,
   RadioCard,
   RadioGroup,
   Select,
@@ -370,20 +371,16 @@ function ConnectDialog({
         width={560}
       >
         <DialogBody>
-          <List className="storage-pick">
-            {STORAGE_PROVIDERS.map((p) => (
-              <button key={p} type="button" className="ac-list__row storage-pick__row" onClick={() => setProvider(p)}>
-                <span className="ac-iconline storage-pick__main">
-                  <ProviderMark provider={p} />
-                  <span className="list-col">
-                    <span className="storage-pick__name">{t(`storage.connect.provider.${p}`)}</span>
-                    <span className="small muted">{t(`storage.connect.providerText.${p}`)}</span>
-                  </span>
-                </span>
-                <Icon name="chevronRight" size={16} className="storage-pick__go" />
-              </button>
-            ))}
-          </List>
+          <OptionLinks
+            className="storage-pick"
+            options={STORAGE_PROVIDERS.map((p) => ({
+              value: p,
+              leading: <ProviderMark provider={p} />,
+              title: t(`storage.connect.provider.${p}`),
+              description: t(`storage.connect.providerText.${p}`),
+              onSelect: () => setProvider(p),
+            }))}
+          />
         </DialogBody>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)}>{t("common.cancel")}</Button>

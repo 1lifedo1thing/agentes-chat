@@ -1228,7 +1228,7 @@
         "fileLead": "Tanıdığımız herhangi bir uygulamanın dosyası. Kendiliğinden tanınır.",
         "paths": {
           "lead": "Nasıl getireceğinizi seçin. Bir şey oluşturulmadan önce her şeyi kontrol edersiniz.",
-          "best": "en eksiksizi",
+          "best": "En eksiksizi",
           "safe": "{{app}} anahtarları, şifreleri ve oturumları hiçbir yolla gelmez.",
           "command": {
             "title": "Bir komutla",
