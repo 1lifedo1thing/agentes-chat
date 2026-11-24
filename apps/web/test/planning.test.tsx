@@ -634,11 +634,18 @@ describe("Issue detail", () => {
     expect(dialog.querySelectorAll(".issue-details__title")).toHaveLength(1);
     expect(bar.textContent).not.toContain("Criada por");
     await click(within(dialog).getByRole("button", { name: "Editar o título" }));
+    // Esc goes back to the title as it was, the dialog still open; Enter saves.
     const title = within(dialog).getByRole("textbox", { name: "Título" });
-    await type(title, "Confirmação por WhatsApp");
+    await type(title, "Something else");
     await act(async () => fireEvent.keyDown(title, { key: "Escape" }));
     await settle(4);
     expect(screen().getByRole("dialog")).toBeTruthy();
+    expect((await api.issues.get(ORG_ID, 131)).title).toBe("Confirmação do agendamento por WhatsApp");
+    await click(within(dialog).getByRole("button", { name: "Editar o título" }));
+    const again = within(dialog).getByRole("textbox", { name: "Título" });
+    await type(again, "Confirmação por WhatsApp");
+    await act(async () => fireEvent.keyDown(again, { key: "Enter" }));
+    await settle(4);
     expect((await api.issues.get(ORG_ID, 131)).title).toBe("Confirmação por WhatsApp");
   });
 

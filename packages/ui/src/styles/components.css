@@ -870,6 +870,10 @@ textarea.ac-input:not(:hover, :focus-visible) {
 .ac-brand svg {
   fill: currentColor;
 }
+/* The kit's own line icon on a tile (a key, a computer): its strokes, never filled. */
+.ac-brand > svg.ac-icon {
+  fill: none;
+}
 /* An image mark that isn't square (Tux) keeps its shape in the square box. */
 .ac-brand img {
   object-fit: contain;
@@ -11214,6 +11218,40 @@ html:not([data-pointer]) .ac-run-bars__bar:focus-visible {
 }
 .ac-menu__hint > .ac-chip {
   margin-block: -1px;
+}
+
+/* ---------- InlineName: a name renamed where it stands ---------- */
+/* The font, size and line of what it replaces, so nothing moves; no box, only the ring. Its 4px of side padding are
+   pulled back out, so the text stays on the name's own edge. */
+.ac-inlinename {
+  display: block;
+  box-sizing: content-box;
+  width: 100%;
+  min-width: 0;
+  height: 1lh;
+  margin: 0 -4px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  outline: none;
+  box-shadow: inset 0 -1px 0 var(--line2);
+}
+.ac-inlinename:focus {
+  box-shadow: var(--field-ring);
+}
+.ac-inlinename--fit {
+  width: auto;
+}
+.ac-inlinename[aria-busy] {
+  opacity: 0.6;
+}
+.ac-inlinename::placeholder {
+  color: var(--faint);
 }
 
 /* ---------- Choice rows (OptionList.tsx): full width, one left edge, neutral selection ---------- */

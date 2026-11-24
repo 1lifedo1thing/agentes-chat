@@ -133,6 +133,38 @@ describe("Quem pensa: the account on the computer and the effort (ADR 0041)", ()
     expect(brainScreen(d)).toBe("Pronto");
   });
 
+  test("renaming one of hers: the name itself becomes the field (no box, no Save), Enter saves, Esc goes back", async () => {
+    const { state } = await onMac({ accounts: [{ ...work, named: true }] });
+    const d = await brainDialog();
+    await toScreen(d, "Trocar de conta");
+    // Each account's maker on its small tile, as AI e uso shows it.
+    const row = () =>
+      [...d.querySelectorAll<HTMLElement>(".arrival-have__row")].find((r) => r.textContent?.includes("walt@acme.com"));
+    expect(row()?.querySelector(".ac-brand.ac-brand--sm")).not.toBeNull();
+    await click(within(d).getByRole("button", { name: "Mudar o nome de Trabalho" }));
+    const field = within(d).getByRole("textbox", { name: "Nome da conta" }) as HTMLInputElement;
+    expect(field.classList.contains("ac-inlinename")).toBe(true);
+    expect(field.value).toBe("Trabalho");
+    expect(within(row() as HTMLElement).queryByRole("button", { name: "Salvar" })).toBeNull();
+    // Esc: the old name, nothing sent, the dialog still open.
+    fireEvent.change(field, { target: { value: "Escritório" } });
+    await act(async () => fireEvent.keyDown(field, { key: "Escape" }));
+    await settle(2);
+    expect(within(d).queryByRole("textbox", { name: "Nome da conta" })).toBeNull();
+    expect(state.calls.find((c) => c.method === "machines.renameAccount")).toBeUndefined();
+    expect(screen().getByRole("dialog")).toBeTruthy();
+    // Enter: saved under the new name.
+    await click(within(d).getByRole("button", { name: "Mudar o nome de Trabalho" }));
+    const again = within(d).getByRole("textbox", { name: "Nome da conta" });
+    fireEvent.change(again, { target: { value: "Escritório " } });
+    await act(async () => fireEvent.keyDown(again, { key: "Enter" }));
+    await settle(4);
+    expect(state.calls.find((c) => c.method === "machines.renameAccount")?.args.slice(2)).toEqual([
+      "acct_work",
+      "Escritório",
+    ]);
+  });
+
   test("her own login signed out, an account another agent uses: a new login of that account, never hers again", async () => {
     const theo: MachineAccount = {
       ...work,
