@@ -1505,6 +1505,8 @@ export function createMachineHub(deps: MachineHubDeps) {
     conn.pending.clear();
     if (conn.machineId && local.get(conn.machineId) === conn) {
       local.delete(conn.machineId);
+      // Its kept row says this replica holds it: a runner back on another replica a moment later reads as offline.
+      statusRows.delete(conn.machineId);
       browserHooks.closed?.(conn.machineId);
       const how = serverStop ? { code: 1001, reason: "server stopping" } : (close ?? { code: 1005, reason: "" });
       await markOffline(conn, serverStop, how).catch(() => undefined);
@@ -1521,6 +1523,7 @@ export function createMachineHub(deps: MachineHubDeps) {
     }),
     pubsub.subscribe(MACHINE_CONTROL_TOPIC, (event) => {
       if (event.type === "machine.connected" && typeof event.machineId === "string") {
+        statusRows.delete(event.machineId);
         if (event.replicaId === replicaId) return;
         const conn = local.get(event.machineId);
         if (!conn || conn.connectionId === event.connectionId) return;

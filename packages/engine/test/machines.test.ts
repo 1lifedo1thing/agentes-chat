@@ -22,6 +22,7 @@ import {
   deleteMachine,
   deliverSecret,
   drainOutbox,
+  enableCaches,
   executeRun,
   expireSecretRequests,
   ForbiddenError,
@@ -1144,6 +1145,25 @@ describe("hub", () => {
     expect(await within(read, 1000)).toBe("pending");
     await f.pubsub.publish(listenResumedTopic, { type: "pubsub.resumed", full: false });
     expect(await within(read, 500)).toBe("resolved");
+  });
+
+  test("a computer that left this replica for another reads as online here at once, its kept row dropped", async () => {
+    f = await setup({ machines: true });
+    const hubA = f.machineHub as MachineHub;
+    const hubB = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-b" });
+    hubs.push(hubB);
+    const paired = await pair();
+    enableCaches();
+    try {
+      const first = fakeRunner(hubA);
+      await first.hello(paired.token);
+      expect(await hubA.status(paired.machineId)).toMatchObject({ online: true });
+      await first.disconnect();
+      await fakeRunner(hubB).hello(paired.token);
+      expect(await hubA.status(paired.machineId)).toMatchObject({ online: true });
+    } finally {
+      enableCaches(false);
+    }
   });
 
   test("a row left online by a replica that died is offline once stale", async () => {
