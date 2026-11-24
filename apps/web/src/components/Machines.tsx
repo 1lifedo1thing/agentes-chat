@@ -166,7 +166,7 @@ function MachineRow({
             {machineTitle(m, t("machines.host.label"))}
           </Link>
           {m.kind === "host" && m.name && <Chip icon="computer">{t("machines.host.label")}</Chip>}
-          <MachineChip online={m.online} />
+          <MachineChip online={m.online} moving={m.moving} />
           <PausedChip paused={m.paused} />
           {!m.execAllowed && <Chip icon="block">{t("machines.execOff")}</Chip>}
         </span>
@@ -928,7 +928,7 @@ export function MachinePage({ machineId }: { machineId: string }) {
             {managed ? <ComputerTitle name={title}>{heading}</ComputerTitle> : heading}
             {/* One status word: paused outranks online. */}
             <span className="row" style={{ gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-              {paused ? <PausedChip paused={m.paused} /> : <MachineChip online={m.online} />}
+              {paused ? <PausedChip paused={m.paused} /> : <MachineChip online={m.online} moving={m.moving} />}
             </span>
           </span>
           {m.canManage && <MachineMenu machine={m} onRename={() => setRenaming(m)} onRemove={() => setRemoving(m)} />}

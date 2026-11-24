@@ -16174,6 +16174,11 @@
       "hint": "Die Adresse, die Websites sehen, wenn die Agenten surfen. Sie ändert sich, wenn sich das Netzwerk des Computers ändert.",
       "waiting": "Die Internetverbindung der Agenten wird wiederhergestellt. Ihre Verbindungen warten, bis sie zurück ist."
     },
+    "moving": {
+      "short": "Serverumzug",
+      "line": "Zieht auf einen neuen Server um… in ein paar Minuten zurück",
+      "named": "{{computer}} zieht auf einen neuen Server um… in ein paar Minuten zurück"
+    },
     "online": "Online",
     "offline": "Offline",
     "execOff": "Befehle aus",

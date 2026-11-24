@@ -79,6 +79,9 @@ const Status = z
     z.object({ kind: z.literal("needs_you"), reason: Reason }),
     z.object({ kind: z.literal("preparing"), reason: Reason }),
     z.object({ kind: z.literal("paused"), until: z.string().nullable() }),
+    z.object({ kind: z.literal("moving"), since: z.string() }).openapi({
+      description: "The workspace's own computer, away while it moves to another server: back in a few minutes.",
+    }),
     z.object({
       kind: z.literal("offline"),
       lastSeenAt: z.string().nullable(),

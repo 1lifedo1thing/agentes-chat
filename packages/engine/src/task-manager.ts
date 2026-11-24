@@ -89,6 +89,8 @@ export interface TaskWait {
   since: string | null;
   /** The caller may press Continuar agora (`mayContinuePause`; the server checks again). */
   canContinue: boolean;
+  /** Its computer is away moving to another server: it comes back by itself. */
+  moving?: boolean;
 }
 
 /** Work one agent asked of another, in their private conversation (`ask_agent`, `tell_agent`, ADR 0034, ADR 0095). */
@@ -316,6 +318,7 @@ interface StoredWait {
   waitKey?: string;
   /** Ms. */
   since?: number;
+  moving?: boolean;
 }
 
 /** Who answers for the row's agent: a person or a role (ADR 0085, addendum of 2026-11-21). */
@@ -659,6 +662,7 @@ function waitOf(r: Row): TaskWait | null {
     resetsAt: str(wait.resetsAt),
     since: typeof wait.since === "number" ? new Date(wait.since).toISOString() : null,
     canContinue: false,
+    ...(wait.moving ? { moving: true } : {}),
   };
 }
 

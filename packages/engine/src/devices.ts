@@ -31,6 +31,7 @@ import {
   type OfflineCause,
   offlineCause,
   publishMachineUpdated,
+  shownMoving,
   shownOnline,
   withTaskLimit,
 } from "./machines";
@@ -75,6 +76,8 @@ export type DeviceStatus =
   | { kind: "needs_you"; reason: PhoneReason | string }
   | { kind: "preparing"; reason: PhoneReason | string }
   | { kind: "paused"; until: string | null }
+  /** The workspace's own computer, away while it moves to another server (`shownMoving`), since `since`. */
+  | { kind: "moving"; since: string }
   /** `withHost`: a phone whose host is offline. `cause`: a computer's, as `offlineCause` reads it. */
   | { kind: "offline"; lastSeenAt: string | null; withHost?: boolean; cause?: OfflineCause }
   | { kind: "unsupported"; reason: PhoneReason | string };
@@ -309,6 +312,7 @@ export const personalComputer = (m: Pick<MachineRow, "kind" | "pairedByUserId" |
   m.kind === "connected" && m.pairedByUserId !== null && m.executors?.mode !== "system" && !m.belongsToWorkspace;
 
 function computerStatus(m: MachineRow, running: number, now: Date): DeviceStatus {
+  if (shownMoving(m, now) && m.movingAt) return { kind: "moving", since: m.movingAt.toISOString() };
   // Asleep in standby and waking as it should, it reads ready (ADR 0161).
   if (!shownOnline(m, now)) {
     const cause = offlineCause(m, false);

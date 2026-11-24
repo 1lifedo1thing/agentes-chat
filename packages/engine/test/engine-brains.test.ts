@@ -1831,6 +1831,23 @@ test("a run waiting for commands turned off on its computer goes on when they ar
   expect(f.provider.calls).toHaveLength(0);
 });
 
+test("its computer moving to another server: the run's wait says so, for the apps to say moving and not offline", async () => {
+  f = await setup();
+  const machineId = await computerAgent(f);
+  const { brain, seen } = scriptedComputerBrain(() => [{ type: "done", text: "Pronto." }]);
+  const handlers = createJobHandlers({
+    ...f.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id, { online: false, moving: true }) },
+  });
+  await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  const [run] = await f.db.select().from(schema.agentRuns);
+  expect(run?.status).toBe("waiting_input");
+  expect(seen).toHaveLength(0);
+  expect(run?.transcript).toMatchObject({ waitingForBrain: { code: "machine_offline", moving: true } });
+});
+
 test("an offline computer, though the workspace has a key: the agent says so once and the run waits until it is back", async () => {
   f = await setup({ reply: () => ({ chunks: ["Respondi pela API."] }) });
   const machineId = await computerAgent(f);

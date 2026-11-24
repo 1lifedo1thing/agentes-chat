@@ -816,6 +816,8 @@ export interface Transcript {
     reading?: PlanReadingRef;
     /** Its computer is just gone (within the outage grace): it waits without a word, and no outage shows yet. */
     quiet?: boolean;
+    /** Its computer is away moving to another server (`shownMoving`): the apps say so, not that it is offline. */
+    moving?: boolean;
     /** A plan wait with every account of the order at its limit: how many (`resetsAt` is the first of them to reset). */
     chain?: number;
   };
@@ -4173,8 +4175,10 @@ async function executeRunInner(
     // Asleep in standby, waking: without a word too, for one grace from its first such wait (ADR 0161); one that
     // never wakes is down, and says so.
     let quietUntil: number | null = null;
+    let moving = false;
     if (u.code === "machine_offline") {
       const status = await deps.machines?.status(machineId).catch(() => null);
+      moving = status?.online === false && status.moving === true;
       const seen = status?.lastSeenAt ? Date.parse(status.lastSeenAt) : Number.NaN;
       if (status && !status.online && status.standby) {
         t.standbyWaitSince ??= Date.now();
@@ -4240,6 +4244,7 @@ async function executeRunInner(
       waitId: Bun.randomUUIDv7(),
       at: Date.now(),
       ...(quietUntil !== null ? { quiet: true } : {}),
+      ...(moving ? { moving: true } : {}),
     };
     if (!stillBusy)
       await addRunStep(db, run, "error", {

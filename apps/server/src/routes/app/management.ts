@@ -566,6 +566,10 @@ const ManagedTask = z
         resetsAt: z.string().nullable(),
         since: z.string().nullable(),
         canContinue: z.boolean(),
+        moving: z
+          .boolean()
+          .optional()
+          .openapi({ description: "Its computer is away moving to another server: it comes back by itself." }),
       })
       .nullable()
       .openapi({

@@ -16641,6 +16641,11 @@
       "hint": "La dirección que ven los sitios web cuando los agentes navegan. Se actualiza cuando cambia la red de la computadora.",
       "waiting": "Reconectando la conexión a internet de los agentes. Sus conexiones esperan hasta que vuelva."
     },
+    "moving": {
+      "short": "Cambiando de servidor",
+      "line": "Cambiando a un servidor nuevo… vuelve en unos minutos",
+      "named": "{{computer}} se está cambiando a un servidor nuevo… vuelve en unos minutos"
+    },
     "online": "En línea",
     "offline": "Sin conexión",
     "execOff": "Comandos desactivados",

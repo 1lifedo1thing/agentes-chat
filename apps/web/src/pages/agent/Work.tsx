@@ -318,15 +318,19 @@ export function WorkCard({
       </section>
       {machine && !machine.online && kind !== "model" && (
         <SettingNote icon="pause">
-          {edition === "cloud"
-            ? t("agentPage.work.offlineCloud", {
-                ...g,
+          {machineRow?.moving
+            ? t("machines.moving.named", {
                 computer: computerNameOf(t, org.name, machine.name, isPersonal(org)),
               })
-            : t("agentPage.work.offline", {
-                ...g,
-                computer: computerNameOf(t, org.name, machine.name, isPersonal(org)),
-              })}
+            : edition === "cloud"
+              ? t("agentPage.work.offlineCloud", {
+                  ...g,
+                  computer: computerNameOf(t, org.name, machine.name, isPersonal(org)),
+                })
+              : t("agentPage.work.offline", {
+                  ...g,
+                  computer: computerNameOf(t, org.name, machine.name, isPersonal(org)),
+                })}
           <ThisMacReconnect machineId={machine.machineId} />
         </SettingNote>
       )}

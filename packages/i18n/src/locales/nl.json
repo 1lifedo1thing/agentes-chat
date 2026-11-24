@@ -16242,6 +16242,11 @@
       "hint": "Het adres dat websites zien als de agents browsen. Het verandert mee met het netwerk van de computer.",
       "waiting": "Het internet van de agents wordt opnieuw verbonden. Hun verbindingen wachten tot het terug is."
     },
+    "moving": {
+      "short": "Verhuist van server",
+      "line": "Verhuist naar een nieuwe server… over een paar minuten terug",
+      "named": "{{computer}} verhuist naar een nieuwe server… over een paar minuten terug"
+    },
     "online": "Online",
     "offline": "Offline",
     "execOff": "Opdrachten uit",

@@ -17,7 +17,7 @@ import type { BrainPlan } from "./brains/select";
 import { TtlCache } from "./cache";
 import { NotFoundError } from "./errors";
 import { publishOrgEvent } from "./events";
-import { getMachine } from "./machines";
+import { getMachine, shownMoving } from "./machines";
 import { requirePermission } from "./organizations";
 import { enqueue } from "./outbox";
 import { runState } from "./run-state";
@@ -325,6 +325,8 @@ export interface QueueWaiting extends QueueAccess {
 export interface ComputerQueue {
   machineId: string;
   name: string;
+  /** It is away moving to another server: the line waits for it, and its dialog says so. */
+  moving: boolean;
   working: QueueWorking[];
   waiting: QueueWaiting[];
 }
@@ -572,6 +574,7 @@ export async function computerQueue(
   return {
     machineId,
     name: machine.name,
+    moving: shownMoving(machine),
     working: working.map((r, i) => ({
       runId: r.runId,
       agentId: r.agentId,
