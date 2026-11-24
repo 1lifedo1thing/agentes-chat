@@ -1,5 +1,5 @@
 {
-  "id": "429e75b9-1449-49c6-8139-bfc7308e0614",
+  "id": "7608b094-5bb2-411e-8571-2a7e352e1690",
   "prevId": "52ebaee0-4cb8-4a80-afb5-e392bc14bf6e",
   "version": "7",
   "dialect": "postgresql",
@@ -824,6 +824,13 @@
         },
         "welcome_people": {
           "name": "welcome_people",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "right_hand_learns": {
+          "name": "right_hand_learns",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -3610,12 +3617,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
-        },
-        "lead_agent_id": {
-          "name": "lead_agent_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -3652,19 +3653,6 @@
           "tableTo": "channel_categories",
           "columnsFrom": [
             "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "channels_lead_agent_id_agents_id_fk": {
-          "name": "channels_lead_agent_id_agents_id_fk",
-          "tableFrom": "channels",
-          "tableTo": "agents",
-          "columnsFrom": [
-            "lead_agent_id"
           ],
           "columnsTo": [
             "id"
