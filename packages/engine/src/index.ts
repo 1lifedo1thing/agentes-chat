@@ -60,6 +60,7 @@ export * from "./catch-up";
 export * from "./catch-up-triage";
 export * from "./channel-categories";
 export * from "./channel-deletion";
+export * from "./channel-lead";
 export * from "./channel-permissions";
 export * from "./channels";
 export * from "./chat-prefs";

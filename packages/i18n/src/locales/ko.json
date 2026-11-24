@@ -4149,6 +4149,8 @@
     "aloneLine": "스스로 대화에 참여해요",
     "aloneLine_female": "스스로 대화에 참여해요",
     "mentionLine": "누군가 @{{handle}}을(를) 쓸 때까지 기다려요",
+    "lead": "채널 책임자",
+    "leadHelp": "팀 전체에게 한 말을 받고 에이전트 사이의 작업이 계속 진행되게 해요",
     "readOnly": "채널을 만든 사람과 관리자만 멤버를 바꿀 수 있어요.",
     "people": "사람",
     "agents": "에이전트"
@@ -15181,6 +15183,8 @@
       "deleteName": "삭제하려면 채널 이름을 입력해 주세요.",
       "generalKept": "#general은 삭제할 수 없어요.",
       "generalStays": "모두가 #general에 남아요.",
+      "leadChannelOnly": "책임 에이전트는 채널에만 둘 수 있어요.",
+      "leadNotMember": "책임 에이전트는 채널에 있어야 해요.",
       "mcpUnreachable": "MCP 서버에 연결하지 못했어요. 주소를 확인하고 다시 시도해 주세요.",
       "notApproved": "이 서비스가 아직 agentes.chat을 승인하지 않았어요.",
       "alreadyInvited": "이 사람은 이미 초대를 받았어요.",

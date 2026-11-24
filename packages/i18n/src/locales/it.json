@@ -4476,6 +4476,8 @@
     "aloneLine": "Entra nella conversazione da solo",
     "aloneLine_female": "Entra nella conversazione da sola",
     "mentionLine": "Aspetta che qualcuno scriva @{{handle}}",
+    "lead": "Responsabile del canale",
+    "leadHelp": "Riceve ciò che viene detto a tutto il team e fa avanzare il lavoro tra gli agenti",
     "readOnly": "Solo chi ha creato il canale e gli admin cambiano i membri.",
     "people": "Persone",
     "agents": "Agenti"
@@ -16335,6 +16337,8 @@
       "deleteName": "Scrivi il nome del canale per eliminarlo.",
       "generalKept": "#general non si può eliminare.",
       "generalStays": "Tutti restano in #general.",
+      "leadChannelOnly": "Solo i canali hanno un agente responsabile.",
+      "leadNotMember": "L’agente responsabile deve essere nel canale.",
       "mcpUnreachable": "Impossibile collegarsi al server MCP. Controlla il suo indirizzo e riprova.",
       "notApproved": "Questo servizio non ha ancora approvato agentes.chat.",
       "alreadyInvited": "Questa persona ha già un invito.",

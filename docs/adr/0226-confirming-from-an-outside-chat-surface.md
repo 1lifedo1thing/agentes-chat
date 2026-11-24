@@ -4,7 +4,7 @@
 - Date: 2026-11-24
 - Extends: ADR 0187 (outside chat surfaces; its §6 refusals and its "Later"), ADR 0015 (approvals)
 - Code: db `packages/db/src/schema/surfaces.ts` (`surface_links.pin_hash`, `pin_failures`, `pin_locked_until`,
-  `pin_lockouts`; `surface_page_links`), migrations 0340 and 0342; engine `packages/engine/src/surfaces/turn.ts`
+  `pin_lockouts`; `surface_page_links`), migrations 0341 and 0342; engine `packages/engine/src/surfaces/turn.ts`
   (`surfaceGate`, called by the tool gateway), `pages.ts` (`mintPageLink`, `openSurfacePage`, `setSurfacePin`,
   `setMySurfacePin`, `checkPin`, `decideOnSurfacePage`, `emailPinLink`, `setPinFromEmail`, `prunePageLinks`),
   `deliveries.ts` (an approval's card opens its page); the `surface_pin_reset` and `surface_pin_locked` emails; routes

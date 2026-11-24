@@ -4320,6 +4320,8 @@
     "aloneLine": "Steigt von selbst in die Unterhaltung ein",
     "aloneLine_female": "Steigt von selbst in die Unterhaltung ein",
     "mentionLine": "Wartet, bis jemand @{{handle}} schreibt",
+    "lead": "Für den Kanal verantwortlich",
+    "leadHelp": "Bekommt, was an das ganze Team gerichtet ist, und hält die Arbeit zwischen den Agenten in Gang",
     "readOnly": "Nur wer den Kanal erstellt hat und Admins ändern die Mitglieder.",
     "people": "Personen",
     "agents": "Agenten"
@@ -15772,6 +15774,8 @@
       "deleteName": "Gib den Namen des Kanals ein, um ihn zu löschen.",
       "generalKept": "#general kann nicht gelöscht werden.",
       "generalStays": "Alle bleiben in #general.",
+      "leadChannelOnly": "Nur Kanäle haben einen verantwortlichen Agenten.",
+      "leadNotMember": "Der verantwortliche Agent muss im Kanal sein.",
       "mcpUnreachable": "Keine Verbindung zum MCP-Server. Prüf seine Adresse und versuch es noch einmal.",
       "notApproved": "Dieser Dienst hat agentes.chat noch nicht freigegeben.",
       "alreadyInvited": "Diese Person hat schon eine Einladung.",

@@ -1508,6 +1508,8 @@ export interface Channel {
   position?: number;
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). Regular channels only. */
   replyInThreads?: boolean;
+  /** The agent responsible for the channel, one of its member agents; null or absent: none. */
+  leadAgentId?: string | null;
   /**
    * Channel list only (`chat.channels`): messages since you last read it
    * (since you joined, if never), not yours; a thread reply counts only in a
@@ -1548,6 +1550,8 @@ export interface ChannelInput {
   audienceRoleIds?: string[];
   /** Agents asked in its main timeline answer in the thread under that message (ADR 0214). */
   replyInThreads?: boolean;
+  /** The agent responsible for the channel, one of its member agents; null: none. */
+  leadAgentId?: string | null;
 }
 
 /** A `#channel` link's card (`chat.card`): what the channel is and who is in it. */
@@ -2094,7 +2098,11 @@ export type ChannelEvent =
       consultedAgentId: string;
       kind?: "note";
     }
-  /** That question, or that work (`note`), came back (answered, expired or failed). */
+  /**
+   * That question, or that work (`note`), came back (answered, expired or failed). `goesOn: false`: work whose result
+   * woke nobody, so the agent that handed it isn't writing; `stillOutAgentId`: a colleague still at work on another
+   * part that turn handed off.
+   */
   | {
       type: "agent.consulted";
       channelId: string;
@@ -2104,6 +2112,8 @@ export type ChannelEvent =
       consultedAgentId: string;
       status: ConsultationStatus;
       kind?: "note";
+      goesOn?: false;
+      stillOutAgentId?: string;
     }
   /**
    * A question or a hand-off still out changed without closing (the consulted agent waits on a person, is back at

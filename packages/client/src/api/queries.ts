@@ -4415,6 +4415,7 @@ export function useUpdateChannel(orgId: string, channelId: string) {
         ...(input.topic !== undefined ? { topic: input.topic } : {}),
         ...(input.visibility !== undefined ? { visibility: input.visibility } : {}),
         ...(input.audienceRoleIds !== undefined ? { audienceRoleIds: input.audienceRoleIds } : {}),
+        ...(input.leadAgentId !== undefined ? { leadAgentId: input.leadAgentId } : {}),
       };
       return [
         edit<Channel[]>(keys.channels(orgId), patchIn<Channel>(channelId, patch)),
