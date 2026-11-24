@@ -80,7 +80,8 @@ import { useDeck } from "./deck";
 import { Notes } from "./Notes";
 import { Present } from "./Present";
 import { Rail } from "./Rail";
-import { SlideImages } from "./render";
+import { FontAssetUrl } from "../fonts";
+import { SlideFonts, SlideImages } from "./render";
 import { type EditTarget, NUDGE, Stage } from "./Stage";
 import { type ShapeTools, SlideToolbar, type TableOp, type TextTools } from "./Toolbar";
 import "./slides.css";
@@ -925,6 +926,8 @@ export function Slides(props: LiveEditorProps) {
 
   return (
     <SlideImages.Provider value={imageUrl}>
+      <FontAssetUrl.Provider value={imageUrl}>
+      <SlideFonts.Provider value={deck.fonts}>
       <div ref={root} className="sl-editor" data-readonly={readOnly ? "true" : undefined}>
         {!readOnly && (
           <SlideToolbar
@@ -1153,6 +1156,8 @@ export function Slides(props: LiveEditorProps) {
           )
         )}
       </div>
+      </SlideFonts.Provider>
+      </FontAssetUrl.Provider>
     </SlideImages.Provider>
   );
 }
