@@ -1,6 +1,19 @@
 import { sql } from "drizzle-orm";
-import { bigint, boolean, check, integer, jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  boolean,
+  check,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  real,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import type { MachineLoadRecord } from "./machines";
+import { organizations } from "./tenancy";
 
 /**
  * The usage report's state for the whole installation (ADR 0060 §5): one row, made at the server's
@@ -58,4 +71,34 @@ export const serverProcesses = pgTable("server_processes", {
   /** When it wrote its heap snapshot (`HEAP_SNAPSHOT_MB`), and the file's name; null: none. */
   heapSnapshotAt: timestamp({ withTimezone: true }),
   heapSnapshotFile: text(),
+});
+
+/**
+ * Every open app connection of every server process (`createPostgresPresence`), so "who has the app open" is the same
+ * answer from each: the online dots, and the pushes held back from whoever is looking. Each process renews its own
+ * rows' `seen_at` every half minute; a row it stopped renewing (the process died) stops counting after 90 s and goes.
+ */
+export const presenceConnections = pgTable(
+  "presence_connections",
+  {
+    connectionId: text().primaryKey(),
+    orgId: uuid()
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: text().notNull(),
+    processId: uuid().notNull(),
+    seenAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("presence_connections_org_idx").on(t.orgId, t.userId), index().on(t.processId)],
+);
+
+/**
+ * Our endpoints' rate limits counted across every server process (`createPostgresRateLimiter`): a fixed window per
+ * key, so a limit stays the limit however many processes answer. Rows past their window are swept. The installation's
+ * own, like the limits themselves, so no `org_id`.
+ */
+export const rateLimits = pgTable("rate_limits", {
+  key: text().primaryKey(),
+  count: integer().notNull(),
+  resetAt: timestamp({ withTimezone: true }).notNull(),
 });
