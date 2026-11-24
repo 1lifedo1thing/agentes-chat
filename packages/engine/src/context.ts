@@ -67,10 +67,14 @@ import {
   answersForEveryone,
   byAnotherAgent,
   byEveryone,
+  routedToLead,
   WHY_AN_AGENT_CALLED,
   WHY_ANSWER_FOR_EVERYONE,
   WHY_EVERYONE_CALLED,
+  WHY_GOING_ON,
+  WHY_LEAD_CALLED,
   WHY_YOU_WERE_CALLED,
+  wokenToGoOn,
 } from "./reply-policy";
 import { linePrompt } from "./reporting";
 import { wikiPersonOf } from "./requester";
@@ -1086,7 +1090,7 @@ export async function buildRunContext(
   const [routed] =
     (run.trigger === "router" || run.trigger === "mention") && others.length > 0
       ? await db
-          .select({ selected: schema.routingDecisions.selectedAgentIds })
+          .select({ selected: schema.routingDecisions.selectedAgentIds, reason: schema.routingDecisions.reason })
           .from(schema.routingDecisions)
           .where(
             and(
@@ -1098,6 +1102,8 @@ export async function buildRunContext(
   const alsoAnswering = others
     .filter((m) => m.agentId && routed?.selected.includes(m.agentId))
     .map((m) => `@${m.agentHandle}`);
+  // What a person said to the room, given to this agent as the channel's responsible agent (ADR 0095).
+  const led = run.trigger === "router" && routedToLead(routed?.reason);
   // Agents the person only referenced (part of what this agent is asked): they got no request.
   const referencedIds = Array.isArray(trigger.meta?.referencedAgentIds) ? trigger.meta.referencedAgentIds : [];
   const referenced = others
@@ -1378,16 +1384,20 @@ export async function buildRunContext(
     ...(routine ? [{ turn: true, text: routine.timeLine }] : []),
     ...personLines.map((text) => ({ turn: true, text })),
     // Brought in without being named, by another agent or by a mention of everyone (reply-policy.ts): staying quiet
-    // is an answer.
+    // is an answer. Woken to go on with work that came back, or given the room as its responsible agent, it is told so.
     ...(options.mayPass
       ? [
           {
             turn: true,
-            text: byAnotherAgent(run, trigger)
-              ? WHY_AN_AGENT_CALLED
-              : byEveryone(run, trigger)
-                ? WHY_EVERYONE_CALLED
-                : WHY_YOU_WERE_CALLED,
+            text: wokenToGoOn(run, trigger)
+              ? WHY_GOING_ON
+              : led
+                ? WHY_LEAD_CALLED
+                : byAnotherAgent(run, trigger)
+                  ? WHY_AN_AGENT_CALLED
+                  : byEveryone(run, trigger)
+                    ? WHY_EVERYONE_CALLED
+                    : WHY_YOU_WERE_CALLED,
           },
         ]
       : []),
@@ -2469,12 +2479,20 @@ export function accessNotice(m: Pick<Message, "body" | "meta">, current = false)
   return parts.join("\n");
 }
 
-/** The text the model reads for a task-end notice (`meta.machineTask`), with its result; null for other messages. */
-export function taskNotice(m: Pick<Message, "body" | "meta">, current = false, personal = false): string | null {
+/**
+ * The text the model reads for a task-end notice (`meta.machineTask`), with its result; null for other messages.
+ * `atWork`: taken by a run already at work, mid-turn (`renderSteered`).
+ */
+export function taskNotice(
+  m: Pick<Message, "body" | "meta">,
+  current = false,
+  personal = false,
+  atWork = false,
+): string | null {
   const access = accessNotice(m, current);
   if (access) return access;
   // An event delivered to the agent (a routine's report, another agent's answer, a late wait result).
-  const notice = noticeText(m.meta, current, personal);
+  const notice = noticeText(m.meta, current, personal, atWork);
   if (notice) return notice;
   // A stretch's pause card (ADR 0089): the agents stopped for the people here; the run a person let go on reads it.
   const paused = stretchCardOf(m.meta);
