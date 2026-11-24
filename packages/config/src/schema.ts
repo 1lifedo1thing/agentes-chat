@@ -177,7 +177,7 @@ export const envVars = {
   OUTBOX_MAX_IN_FLIGHT: {
     schema: z.coerce.number().int().min(1).default(48),
     description:
-      "How many jobs one server process runs at once besides its requests: agents' runs, routines, a message's routing, notifications, emails. Agents' runs spend most of their time waiting for their model or their computer, so this can be far above the number of CPUs. A job holds a database connection only while it reads or writes (`DATABASE_POOL_MAX`).",
+      "How many jobs one server process runs at once besides its requests: agents' runs, routines, a message's routing, notifications, emails. Agents' runs spend most of their time waiting for their model or their computer, so this can be far above the number of CPUs. A job holds a database connection only while it reads or writes (`DATABASE_POOL_MAX`). Native mode (`agentes-server`, with the database built in: one process, one connection) defaults to 16, 4 of them quick (`OUTBOX_QUICK_SLOTS`).",
     section: "Server",
   },
   OUTBOX_QUICK_SLOTS: {

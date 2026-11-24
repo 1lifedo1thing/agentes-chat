@@ -16,7 +16,7 @@ import {
   watchConfig,
   writeConfig,
 } from "../../runner/config";
-import { RotatingFile, rotatedName, tailLines } from "../../runner/logfile";
+import { batchedAppend, RotatingFile, rotatedName, tailLines } from "../../runner/logfile";
 import { removeDirs, tempDir, waitFor } from "./helpers";
 
 const dirs: string[] = [];
@@ -186,6 +186,24 @@ test("rotating files: 5 MB by default, three files at most, newest first", () =>
   expect(readdirSync(path.join(h, "logs")).sort()).toEqual(["runner.1.log", "runner.2.log", "runner.log"]);
   expect(f.files()).toEqual([file, rotatedName(file, 1), rotatedName(file, 2)]);
   expect(tailLines(file, 1)[0]).toStartWith("line 19");
+});
+
+test("log lines are written in batches: one write per window, at once past the size, the rest on flush", async () => {
+  const writes: string[] = [];
+  const batch = batchedAppend((text) => writes.push(text), { ms: 30, bytes: 10 });
+  batch.write("a\n");
+  batch.write("b\n");
+  expect(writes).toEqual([]);
+  await Bun.sleep(80);
+  expect(writes).toEqual(["a\nb\n"]);
+  batch.write("0123456789\n");
+  expect(writes).toEqual(["a\nb\n", "0123456789\n"]);
+  batch.write("left\n");
+  batch.flush();
+  batch.flush();
+  expect(writes).toEqual(["a\nb\n", "0123456789\n", "left\n"]);
+  await Bun.sleep(80);
+  expect(writes).toHaveLength(3);
 });
 
 test("credentials are masked in free text", () => {
