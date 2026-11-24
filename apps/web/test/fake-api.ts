@@ -1106,6 +1106,12 @@ function proposal(
     decider,
     createdAt: minutesAgo(minutes),
     decidedBy: null,
+    decidedByAgent: null,
+    review: null,
+    reviewed: false,
+    undoable: false,
+    undoneBy: null,
+    undoneAt: null,
     decidedAt: null,
   };
 }
@@ -2517,23 +2523,27 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         return { previous };
       },
       team: async () => ({
-        agents: listed().map((a) => ({
-          id: a.id,
-          name: a.name,
-          handle: a.handle,
-          role: a.role,
-          appearance: a.appearance ?? null,
-          ownerUserId: a.ownerUserId,
-          reportsToAgentId: a.reportsToAgentId ?? null,
-          capabilities: ["drive", "issues"],
-          busy: false,
-          channelIds: state.channels
-            .filter((c) => (state.channelMembers[c.id] ?? []).some((m) => m.type === "agent" && m.id === a.id))
-            .map((c) => c.id),
-          canTalk: true,
-          canManage: rightsOf(a).canManage,
-          ...(a.seesDetails === false ? { capabilities: [], canTalk: false, seesDetails: false } : {}),
-        })),
+        // A teammate's private agent seen by its facts alone (`factsOnly` set by the test) is on Equipe too.
+        agents: state.agents
+          .filter((a) => listsToMe(a) || a.factsOnly)
+          .map((a) => ({
+            id: a.id,
+            name: a.name,
+            handle: a.handle,
+            role: a.role,
+            appearance: a.appearance ?? null,
+            ownerUserId: a.ownerUserId,
+            reportsToAgentId: a.reportsToAgentId ?? null,
+            capabilities: ["drive", "issues"],
+            busy: false,
+            channelIds: state.channels
+              .filter((c) => (state.channelMembers[c.id] ?? []).some((m) => m.type === "agent" && m.id === a.id))
+              .map((c) => c.id),
+            canTalk: true,
+            canManage: rightsOf(a).canManage,
+            ...(a.seesDetails === false ? { capabilities: [], canTalk: false, seesDetails: false } : {}),
+            ...(a.factsOnly ? { factsOnly: true } : {}),
+          })),
         people: state.members
           .filter((m) => state.agents.some((a) => a.ownerUserId === m.userId))
           .map((m) => ({ id: m.userId, name: m.name, image: m.image ?? null })),
@@ -3013,6 +3023,9 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
               : [{ day: 1, runs: 12, failed: 0 }],
           pendingApprovals: state.approvals.filter((x) => x.agentId === agentId && x.status === "pending").length,
           channels,
+          editors: a.editors ?? { userIds: [], roleIds: [] },
+          createdByUserId: a.ownerUserId,
+          lastActivityAt: new Date(NOW.getTime() - 2 * 3_600_000).toISOString(),
         };
       },
       channels: async (_orgId, agentId) =>
@@ -3920,6 +3933,12 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
       setArchived: async (orgId, id, archived) => patchMemory(orgId, id, { archived }),
       confirm: async (orgId, id) => patchMemory(orgId, id, { confirmed: true }),
       listTeam: async () => state.memories.filter((m) => !m.agentId && !m.archived),
+      forgetRightHandLearned: async (orgId) => {
+        log("memory.forgetRightHandLearned", orgId);
+        const before = state.memories.length;
+        state.memories = state.memories.filter((m) => !(m.onlyYou && m.learned && m.editedByUserId === null));
+        return { forgotten: before - state.memories.length };
+      },
       makeTeam: async (orgId, id) => {
         log("memory.team", orgId, id);
         const m = state.memories.find((x) => x.id === id);
@@ -4080,6 +4099,19 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
           decidedBy: { userId: state.me?.user.id ?? "", name: state.me?.user.name ?? "" },
           decidedAt: new Date().toISOString(),
           canDecide: false,
+        });
+        return structuredClone(p);
+      },
+      // As the server's undo (ADR 0219): only an applied row the viewer may put back; 409 once it changed since.
+      undo: async (orgId, id) => {
+        log("proposals.undo", orgId, id);
+        const p = findProposal(id);
+        if (p.status !== "accepted" || !p.undoable) throw new ApiError(409, "proposal.changed", "It changed since");
+        Object.assign(p, {
+          status: "undone",
+          undoable: false,
+          undoneBy: { userId: state.me?.user.id ?? "", name: state.me?.user.name ?? "" },
+          undoneAt: new Date().toISOString(),
         });
         return structuredClone(p);
       },
