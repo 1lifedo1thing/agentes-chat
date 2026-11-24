@@ -59,3 +59,15 @@ export const serverProcesses = pgTable("server_processes", {
   heapSnapshotAt: timestamp({ withTimezone: true }),
   heapSnapshotFile: text(),
 });
+
+/**
+ * Work a server process does for the whole database rather than for itself: a one-off left from an upgrade, recorded
+ * once it finished so it runs once per database; a daily sweep, whose row says when one process last took its turn.
+ * The installation's own, so no `org_id`.
+ */
+export const serverTasks = pgTable("server_tasks", {
+  /** `once:<name>` or `sweep:<name>`. */
+  name: text().primaryKey(),
+  /** When the one-off finished, or the sweep last started. */
+  ranAt: timestamp({ withTimezone: true }).notNull(),
+});
