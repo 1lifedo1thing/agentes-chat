@@ -6857,6 +6857,25 @@ export const en = {
         "Ways of working it keeps for itself. They don't show in the chat. What it picked up from outside and never used again moves to Archived on its own.",
       /** Folds the technical text under a learned item's plain summary. */
       details: "Technical details",
+      /** The right hand's Memory tab: what it learns on its own, for whom, and the person's own switch. */
+      learning: {
+        title: "How it learns",
+        fromYou: "Learns from your conversations",
+        fromYouHint:
+          "What it learns in your DM stays yours. What it learns in a channel, everyone who reads that channel sees. What it learns about you stays yours.",
+        workspaceOff: "Off for the whole workspace",
+        forgetAll: "Forget all",
+        forgetAllHint: "Removes what it learned from you on its own. What you asked it to remember stays.",
+        forgetTitle: "Forget what it learned from you?",
+        forgetText:
+          "Everything it learned from you on its own goes, for good. What you asked it to remember stays, and so does what it learned in channels.",
+        forgotten: "Done. What it learned from you on its own is gone.",
+        workspace: "Learns in this workspace",
+        workspaceHint: "Off, it learns from nobody on its own. Either way, nobody can read anyone else's memories.",
+        onlyYou: "Only you",
+        everyoneIn: "Everyone in #{{channel}}",
+        everyone: "Everyone who can see it",
+      },
       skills: "Skills it made",
       skillUses_zero: "never loaded",
       skillUses_one: "loaded once",

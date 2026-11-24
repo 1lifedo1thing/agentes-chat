@@ -6752,6 +6752,25 @@ export const ptBR = {
       playbookNote:
         "Jeitos de trabalhar que guardou para si. Não aparecem na conversa. O que pegou de fora e não voltou a usar vai sozinho para Arquivadas.",
       details: "Detalhes técnicos",
+      learning: {
+        title: "Como aprende",
+        fromYou: "Aprende com as suas conversas",
+        fromYouHint:
+          "O que aprende na sua DM fica só com você. O que aprende num canal, todo mundo que lê aquele canal vê. O que aprende sobre você fica só com você.",
+        workspaceOff: "Desligado para o workspace inteiro",
+        forgetAll: "Esquecer tudo",
+        forgetAllHint: "Apaga o que aprendeu com você por conta própria. O que você pediu para lembrar fica.",
+        forgetTitle: "Esquecer o que aprendeu com você?",
+        forgetText:
+          "Tudo o que aprendeu com você por conta própria vai embora, para sempre. O que você pediu para lembrar fica, e o que aprendeu nos canais também.",
+        forgotten: "Pronto. O que aprendeu com você por conta própria foi apagado.",
+        workspace: "Aprende neste workspace",
+        workspaceHint:
+          "Desligado, não aprende com ninguém por conta própria. De todo jeito, ninguém lê as memórias de outra pessoa.",
+        onlyYou: "Só você",
+        everyoneIn: "Todo mundo em #{{channel}}",
+        everyone: "Todo mundo que pode ver",
+      },
       skills: "Skills que criou",
       skillUses_zero: "nunca carregada",
       skillUses_one: "carregada uma vez",

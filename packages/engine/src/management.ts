@@ -96,6 +96,8 @@ export interface OrgSettings extends MediaSettings {
   teamWatch: boolean;
   /** The right hand greets each person who joins, once. On by default. */
   welcomePeople: boolean;
+  /** The right hand learns from conversations on its own (each person may also turn it off for themselves). On by default. */
+  rightHandLearns: boolean;
   /** What agents without their own choice ask before acting (ADR 0173). Set with `setWorkspaceApprovalsLevel`. */
   approvalsLevel: ApprovalsLevel;
 }
@@ -124,6 +126,7 @@ export async function getOrgSettings(db: Database, actorId: string, orgId: strin
     mode: isWorkspaceMode(s?.mode) ? s.mode : "team",
     teamWatch: s?.teamWatch ?? true,
     welcomePeople: s?.welcomePeople ?? true,
+    rightHandLearns: s?.rightHandLearns ?? true,
     approvalsLevel: s?.approvalsLevel ?? DEFAULT_APPROVALS_LEVEL,
     ...mediaSettingsFrom(s),
   };
@@ -259,6 +262,7 @@ export async function updateOrgSettings(
       ...(input.mode !== undefined ? { mode: input.mode } : {}),
       ...(input.teamWatch !== undefined ? { teamWatch: input.teamWatch } : {}),
       ...(input.welcomePeople !== undefined ? { welcomePeople: input.welcomePeople } : {}),
+      ...(input.rightHandLearns !== undefined ? { rightHandLearns: input.rightHandLearns } : {}),
       ...(input.autoModels !== undefined
         ? { autoModels: mergeAutoModels(await storedAutoModels(), input.autoModels) }
         : {}),
