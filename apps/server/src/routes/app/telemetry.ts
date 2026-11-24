@@ -188,7 +188,7 @@ export function telemetryRoutes(deps: AppDeps) {
       tags,
       summary: "How fast an app ran: its cold start, JavaScript stalls, heap and reads per return",
       description:
-        "Kept in memory and summed up once a minute into the process's vitals (the operator's `GET /vitals`), with nobody's id. Past the per-person limit a report is dropped, still answered 204.",
+        "Summed up once a minute into the process's vitals (the operator's `GET /vitals`), with nobody's id. A bounded sample is also kept in `instance_telemetry.client_vitals` until the next usage report, which sends its per-platform summary (ADR 0060 §5); none with `TELEMETRY=off`. Past the per-person limit a report is dropped, still answered 204.",
       security,
       request: { body: body(ClientVitalsReport) },
       responses: { 204: noContent[204], 401: errors[401] },

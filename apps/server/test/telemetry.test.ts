@@ -274,7 +274,27 @@ describe("sending", () => {
     // It went: the next day starts from nothing.
     expect((await telemetryState(db)).clientVitals).toBeNull();
     await clock.fire(REPORT_EVERY_MS);
-    expect(second.http.calls[1]?.body.lastDay).toMatchObject({ clientVitals: {} });
+    expect((second.http.calls[1]?.body.lastDay as { clientVitals?: unknown } | undefined)?.clientVitals).toEqual({});
+  });
+
+  test("where the report can't go no day of the apps' is kept: turned on again, it starts from an empty one", async () => {
+    const clock = fakeTimers();
+    const on = createClientVitals();
+    on.add({ platform: "windows", coldStartMs: 6200 });
+    (await start({}, [204], undefined, clock, on)).stop();
+    expect((await telemetryState(db)).clientVitals).not.toBeNull();
+    // TELEMETRY=off (the desktop app's Preferences restart the server with it): the day kept before goes, and
+    // what the apps say meanwhile is never kept.
+    const off = createClientVitals();
+    const second = await start({ TELEMETRY: "off" }, [204], undefined, clock, off);
+    off.add({ platform: "windows", coldStartMs: 5800 });
+    await clock.fire(LOAD_SAMPLE_MS);
+    expect((await telemetryState(db)).clientVitals).toBeNull();
+    second.stop();
+    const third = await start({}, [204], undefined, clock, createClientVitals());
+    const [due] = clock.delays();
+    await clock.fire(due ?? 0);
+    expect((third.http.calls[0]?.body.lastDay as { clientVitals?: unknown } | undefined)?.clientVitals).toEqual({});
   });
 
   test("the host load sampler keeps the last day in the database, and the report carries it", async () => {

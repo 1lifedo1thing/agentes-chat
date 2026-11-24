@@ -105,8 +105,16 @@ export function startTelemetry(deps: TelemetryDeps) {
     pending.add(timer);
   };
 
-  /** The apps' day so far, into the row the report reads, when it changed. */
+  const cloud = isAgentesCloud(config.PUBLIC_URL);
+  // A development server is nobody's installation.
+  const sends = (cloud || config.TELEMETRY === "on") && config.NODE_ENV === "production";
+
+  /**
+   * The apps' day so far, into the row the report reads, when it changed. None where the report can't go: no day
+   * would ever end there, and turned on later the report would carry every day since.
+   */
   const keepVitals = async () => {
+    if (!sends) return;
     const day = vitals.dayToSave();
     if (day) await saveClientVitals(db, day);
   };
@@ -158,16 +166,14 @@ export function startTelemetry(deps: TelemetryDeps) {
     schedule(next);
   };
 
-  const cloud = isAgentesCloud(config.PUBLIC_URL);
-  // A development server is nobody's installation.
-  const sends = (cloud || config.TELEMETRY === "on") && config.NODE_ENV === "production";
   const ready = (async () => {
     const kept = await markServerStarted(db, new Date(now())).catch((error: unknown) => {
       quiet(error);
       return null;
     });
     window = new LoadWindow(kept?.hostSamples ?? []);
-    vitals.restoreDay(kept?.clientVitals);
+    if (sends) vitals.restoreDay(kept?.clientVitals);
+    else if (kept?.clientVitals) await saveClientVitals(db, null).catch(quiet);
     await sample().catch(quiet);
     if (!sends) return;
     // ponytail: every replica sends its own report under the one instance id; claim the day in the row

@@ -42,12 +42,13 @@ describe("the desktop app's problem report", () => {
   test("what the app couldn't tell stays out, and an app whose Rust is older sends the report without any of it", () => {
     const linux = coverReport(
       { ...COVER, os: "linux" },
-      { osVersion: "6.8.0-45-generic", cpus: 4, memoryBytes: null, webviewBytes: null, openingMs: null },
+      { osVersion: "6.9.1-custom-workstation", cpus: 4, memoryBytes: null, webviewBytes: null, openingMs: null },
       [],
       "en",
       NOW,
     );
-    expect(linux.versions.osVersion).toBe("6.8.0-45-generic");
+    // The kernel's numbers alone: what its build adds after them (a flavour, a name someone gave it) stays home.
+    expect(linux.versions.osVersion).toBe("6.9.1");
     expect(linux.facts["desktop.cpus"]).toBe(4);
     expect(linux.facts).not.toHaveProperty("desktop.memoryGb");
     expect(linux.facts).not.toHaveProperty("desktop.webviewMb");
@@ -57,7 +58,7 @@ describe("the desktop app's problem report", () => {
     expect(older.versions).not.toHaveProperty("osVersion");
     expect(Object.keys(older.facts).filter((k) => /cpus|memory|webview/.test(k))).toEqual([]);
     expect(older).not.toHaveProperty("timings");
-    // A version with a character the contract refuses, or an opening longer than a day, is left out, never sent.
+    // A version that doesn't start with its numbers, or an opening longer than a day, is left out, never sent.
     const odd = coverReport(COVER, { ...ABOUT, osVersion: "Darwin/25.6", openingMs: 90_000_000 }, [], "en", NOW);
     expect(odd.versions).not.toHaveProperty("osVersion");
     expect(odd).not.toHaveProperty("timings");

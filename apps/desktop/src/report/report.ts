@@ -6,7 +6,7 @@
  */
 
 import { type KnownLabel, scrubLogLine } from "@agenteschat/adapters/error-scrub";
-import { halfGb, type RunnerReportParts } from "@agenteschat/adapters/machine-protocol";
+import { halfGb, type RunnerReportParts, versionNumbers } from "@agenteschat/adapters/machine-protocol";
 import { capProblemReport, type ProblemLogName } from "@agenteschat/adapters/problem-report";
 
 /** What `problem_report_parts` answers (local_server.rs). */
@@ -76,8 +76,9 @@ const hostOf = (url: string | null | undefined) => {
 const lang = (locale: string) => (/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$/.test(locale) ? locale : null);
 
 /**
- * This computer in a report: its system's version among the versions, its CPUs, memory and web view's memory as facts,
- * and this opening (`timings.opening`). Nothing of what wasn't measured.
+ * This computer in a report: its system's version among the versions (its numbers alone, as the usage report says
+ * it), its CPUs, memory and web view's memory as facts, and this opening (`timings.opening`). Nothing of what wasn't
+ * measured.
  */
 function thisComputer(about: ReportFacts | null) {
   const size = (n: number | null | undefined) => (typeof n === "number" && Number.isFinite(n) && n > 0 ? n : null);
@@ -85,7 +86,7 @@ function thisComputer(about: ReportFacts | null) {
   const webview = size(about?.webviewBytes);
   const opening = about?.openingMs;
   return {
-    osVersion: okVersion(about?.osVersion),
+    osVersion: versionNumbers(about?.osVersion ?? ""),
     facts: {
       ...(size(about?.cpus) ? { "desktop.cpus": Math.round(about?.cpus ?? 0) } : {}),
       ...(memory ? { "desktop.memoryGb": halfGb(memory) } : {}),

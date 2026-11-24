@@ -1,4 +1,4 @@
-import type { BrowserTraffic, MachineLoad, MachineSize } from "@agenteschat/adapters";
+import { type BrowserTraffic, type MachineLoad, type MachineSize, versionNumbers } from "@agenteschat/adapters";
 import { type CombinedTraffic, combineLoads, combineTraffic, type LoadSample } from "@agenteschat/adapters/host-stats";
 import { type Database, eq, rowsOf, schema, sql } from "@agenteschat/db";
 import { catalogModelOf } from "@agenteschat/providers";
@@ -75,8 +75,6 @@ const DAY_MS = 24 * 3600_000;
 const ARCHES = new Set(["x64", "arm64", "arm", "ia32", "ppc64", "s390x", "riscv64", "loong64"]);
 /** Ids, not text: anything else is reported as `other`. */
 const PROVIDER_ID = /^[a-z0-9][a-z0-9._-]{0,39}$/;
-/** A version's numbers: what a kernel's own name adds after them (`-45-generic`, a custom build's) stays home. */
-const VERSION_NUMBERS = /^\d{1,6}(?:\.\d{1,6}){0,3}/;
 /** Both lists capped, so a report stays well under the 32 KB telemetry.agentes.chat takes. */
 const MAX_MODELS = 50;
 const MAX_COMPUTERS = 50;
@@ -325,7 +323,7 @@ export async function buildTelemetryReport(
     edition: facts.edition,
     install: facts.install,
     os: facts.os,
-    osVersion: VERSION_NUMBERS.exec(facts.osVersion)?.[0] ?? "other",
+    osVersion: versionNumbers(facts.osVersion) ?? "other",
     arch: archOf(facts.arch),
     uptimeHours: Math.max(0, Math.round((now.getTime() - state.startedAt.getTime()) / 360_000) / 10),
     host: { size: facts.host.size, container: facts.host.container, load: fresh(state.hostLoad, now) },
