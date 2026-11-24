@@ -13362,7 +13362,6 @@
     "count_other": "{{count}} elementi",
     "searchHint": "Scorciatoia per cercare",
     "who": "Creato da",
-    "everyone": "Tutti",
     "kindMany": {
       "document": "Documenti",
       "table": "Tabelle",
@@ -13380,8 +13379,10 @@
     "view": "Vista",
     "viewGrid": "Griglia",
     "viewList": "Elenco",
-    "arrange": "Disponi",
-    "arrangeValue": "Disponi: {{group}}",
+    "display": "Visualizzazione",
+    "displayValue": "Visualizzazione: {{view}} · {{group}}",
+    "filterButton": "Filtro",
+    "filterValue": "{{filter}}: {{value}}",
     "groupBy": "Raggruppa per",
     "group": {
       "date": "Data",
@@ -13850,7 +13851,6 @@
     "added": "{{repo}} entra nell'elenco quando salvi."
   },
   "connectors": {
-    "title": "Connettori",
     "store": {
       "featured": "In evidenza",
       "suggested": "Suggerito",
@@ -13897,6 +13897,7 @@
       "addressPassword": "Indirizzo e password",
       "composio": "Tramite Composio"
     },
+    "title": "Connettori",
     "add": "Aggiungi connettore",
     "personal": {
       "note": "Solo tu apri queste connessioni. I tuoi agenti le usano solo quando glielo chiedi.",

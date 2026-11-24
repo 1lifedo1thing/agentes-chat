@@ -12393,7 +12393,6 @@
     "count_other": "{{count}} 项",
     "searchHint": "搜索快捷键",
     "who": "创建者",
-    "everyone": "所有人",
     "kindMany": {
       "document": "文档",
       "table": "表格",
@@ -12411,8 +12410,10 @@
     "view": "视图",
     "viewGrid": "网格",
     "viewList": "列表",
-    "arrange": "排列",
-    "arrangeValue": "排列：{{group}}",
+    "display": "显示",
+    "displayValue": "显示：{{view}} · {{group}}",
+    "filterButton": "筛选",
+    "filterValue": "{{filter}}：{{value}}",
     "groupBy": "分组方式",
     "group": {
       "date": "日期",
@@ -12849,7 +12850,6 @@
     "added": "保存后，{{repo}} 会加入列表。"
   },
   "connectors": {
-    "title": "连接器",
     "store": {
       "featured": "精选",
       "suggested": "推荐",
@@ -12888,6 +12888,7 @@
       "addressPassword": "地址和密码",
       "composio": "通过 Composio"
     },
+    "title": "连接器",
     "add": "添加连接器",
     "personal": {
       "note": "只有你能打开这些连接。你的智能体只在你要求时使用它们。",

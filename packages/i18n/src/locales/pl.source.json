@@ -31354,9 +31354,6 @@
   "drive.who": {
     "value": "Made by"
   },
-  "drive.everyone": {
-    "value": "Everyone"
-  },
   "drive.kindMany.document": {
     "value": "Documents"
   },
@@ -31402,11 +31399,17 @@
   "drive.viewList": {
     "value": "List"
   },
-  "drive.arrange": {
-    "value": "Arrange"
+  "drive.display": {
+    "value": "Display"
   },
-  "drive.arrangeValue": {
-    "value": "Arrange: {{group}}"
+  "drive.displayValue": {
+    "value": "Display: {{view}} · {{group}}"
+  },
+  "drive.filterButton": {
+    "value": "Filter"
+  },
+  "drive.filterValue": {
+    "value": "{{filter}}: {{value}}"
   },
   "drive.groupBy": {
     "value": "Group by"
@@ -32588,9 +32591,6 @@
   "repos.added": {
     "value": "{{repo}} joins the list when you save."
   },
-  "connectors.title": {
-    "value": "Connectors"
-  },
   "connectors.store.featured": {
     "value": "Featured"
   },
@@ -32704,6 +32704,9 @@
   },
   "connectors.howShort.composio": {
     "value": "Through Composio"
+  },
+  "connectors.title": {
+    "value": "Connectors"
   },
   "connectors.add": {
     "value": "Add connector"

@@ -12320,7 +12320,6 @@
     "count_other": "{{count}}件",
     "searchHint": "検索のショートカット",
     "who": "作成者",
-    "everyone": "全員",
     "kindMany": {
       "document": "ドキュメント",
       "table": "表",
@@ -12338,8 +12337,10 @@
     "view": "表示",
     "viewGrid": "グリッド",
     "viewList": "リスト",
-    "arrange": "並べ方",
-    "arrangeValue": "並べ方: {{group}}",
+    "display": "表示設定",
+    "displayValue": "表示設定：{{view}} · {{group}}",
+    "filterButton": "フィルター",
+    "filterValue": "{{filter}}：{{value}}",
     "groupBy": "グループ化",
     "group": {
       "date": "日付",
@@ -12780,7 +12781,6 @@
     "added": "保存すると{{repo}}がリストに追加されます。"
   },
   "connectors": {
-    "title": "コネクタ",
     "store": {
       "featured": "注目",
       "suggested": "おすすめ",
@@ -12819,6 +12819,7 @@
       "addressPassword": "アドレスとパスワード",
       "composio": "Composio経由"
     },
+    "title": "コネクタ",
     "add": "コネクタを追加",
     "personal": {
       "note": "これらの接続を開けるのはあなただけです。エージェントは、あなたが頼んだときだけ使います。",

@@ -13780,7 +13780,6 @@
     "count_other": "{{count}} элемента",
     "searchHint": "Быстрый поиск",
     "who": "Автор",
-    "everyone": "Все",
     "kindMany": {
       "document": "Документы",
       "table": "Таблицы",
@@ -13798,8 +13797,10 @@
     "view": "Вид",
     "viewGrid": "Сетка",
     "viewList": "Список",
-    "arrange": "Упорядочить",
-    "arrangeValue": "Упорядочить: {{group}}",
+    "display": "Отображение",
+    "displayValue": "Отображение: {{view}} · {{group}}",
+    "filterButton": "Фильтр",
+    "filterValue": "{{filter}}: {{value}}",
     "groupBy": "Группировать по",
     "group": {
       "date": "Дате",
@@ -14284,7 +14285,6 @@
     "added": "{{repo}} попадёт в список после сохранения."
   },
   "connectors": {
-    "title": "Коннекторы",
     "store": {
       "featured": "Избранное",
       "suggested": "Рекомендуем",
@@ -14335,6 +14335,7 @@
       "addressPassword": "Адрес и пароль",
       "composio": "Через Composio"
     },
+    "title": "Коннекторы",
     "add": "Добавить коннектор",
     "personal": {
       "note": "Открыть эти подключения можете только вы. Ваши агенты используют их, только когда вы просите.",
