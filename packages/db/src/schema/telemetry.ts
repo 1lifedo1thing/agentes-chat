@@ -131,9 +131,10 @@ export interface ClientVitalStat {
 }
 
 /**
- * The apps' reports to one process over a minute, by platform (`ios`, `android`, `web`): how long a cold start took
- * to the first frame and to the first rows, how late the JavaScript thread ran, the heap, the reads (GETs) after each
- * return to the app, and the socket's reconnects.
+ * The apps' reports to one process over a minute, by platform (`ios`, `android`, `web`, and the desktop app's `macos`,
+ * `windows`, `linux`): how long a cold start took to the first screen and to the first rows, how late the JavaScript
+ * thread ran, the heap, the desktop's web view memory, the reads (GETs) after each return to the app, and the socket's
+ * reconnects.
  */
 export type ClientVitalsSummary = Record<
   string,
@@ -144,6 +145,7 @@ export type ClientVitalsSummary = Record<
     jsLagP95Ms?: ClientVitalStat;
     jsLagMaxMs?: ClientVitalStat;
     heapBytes?: ClientVitalStat;
+    webviewBytes?: ClientVitalStat;
     getsPerReturn?: ClientVitalStat;
     reconnects?: ClientVitalStat;
   }

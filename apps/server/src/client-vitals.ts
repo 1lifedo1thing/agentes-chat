@@ -7,17 +7,30 @@ type ClientVitalsSummary = schema.ClientVitalsSummary;
 const ms = z.number().min(0).max(600_000);
 const count = z.number().int().min(0).max(100_000);
 
+/**
+ * Where an app runs: the phone apps, a browser, and the desktop app on each system, kept apart so one system's web view
+ * (WebView2, WebKit, WebKitGTK) is never averaged with another's.
+ */
+export const CLIENT_PLATFORMS = ["ios", "android", "web", "macos", "windows", "linux"] as const;
+
 /** An app's report (`POST /api/app/client-vitals`): what it measured since its last one, all optional. */
 export const ClientVitalsReport = z
   .object({
-    platform: z.enum(["ios", "android", "web"]),
-    coldStartMs: ms.optional().openapi({ description: "From the app's start to its first frame." }),
+    platform: z.enum(CLIENT_PLATFORMS),
+    coldStartMs: ms.optional().openapi({
+      description:
+        "From the app's start to its first screen: a phone's to its splash leaving, a browser's page from its navigation, the desktop app from its process's start to the site's first screen painted.",
+    }),
     firstRowsMs: ms.optional().openapi({ description: "From the app's start to its first list drawn with rows." }),
     jsLagP95Ms: ms
       .optional()
       .openapi({ description: "How late its JavaScript thread ran what was due, 95th percentile." }),
     jsLagMaxMs: ms.optional(),
     heapBytes: z.number().int().min(0).max(1e11).optional(),
+    webviewBytes: z.number().int().min(0).max(1e11).optional().openapi({
+      description:
+        "The desktop app's: the memory of the processes behind its main window's web view (macOS: its web content process's footprint; Windows: WebView2's processes; Linux: WebKitGTK's web processes).",
+    }),
     getsPerReturn: count
       .optional()
       .openapi({ description: "Reads (GETs) in the 10 s after it came back to the front." }),
@@ -34,6 +47,7 @@ const MEASURES: Measure[] = [
   "jsLagP95Ms",
   "jsLagMaxMs",
   "heapBytes",
+  "webviewBytes",
   "getsPerReturn",
   "reconnects",
 ];
