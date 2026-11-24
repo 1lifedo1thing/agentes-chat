@@ -1240,6 +1240,38 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
     display: none;
   }
 }
+/* In full: a larger sky, the team drawn larger on it. */
+.arrival-paid .arrival-hero {
+  height: 216px;
+}
+.arrival-paid .team-scene__row {
+  bottom: var(--space-6);
+}
+.arrival-paid .team-scene__agent .ac-avatar {
+  width: 52px;
+  height: 52px;
+}
+.arrival-paid .team-scene__agent[data-lead] .ac-avatar {
+  width: 72px;
+  height: 72px;
+}
+/* The computer as it is now: the orbit while it gets ready, a check once it is on. */
+.paid-computer {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-wrap: pretty;
+}
+/* A button whose words come from data (a right hand's long name) ends in "…", its title saying it whole. */
+.paid-go {
+  max-width: 100%;
+}
+.paid-go .ac-btn__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* The lighter form: a card in the window's corner, over the page and under every dialog, leaving the page as it is. */
 .paid-card {
@@ -1296,16 +1328,9 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
-/* Never wider than the card: a long name ends in "…", as in a dialog's footer, and the button's title says it whole. */
 .paid-card__go {
   align-self: flex-start;
-  max-width: 100%;
   margin-top: var(--space-2);
-}
-.paid-card__go .ac-btn__label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 @media (max-width: 520px) {
   .paid-card {

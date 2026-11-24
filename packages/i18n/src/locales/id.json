@@ -20853,15 +20853,26 @@
     "approvalsPersonal": "Apa pun yang dikirim, dibayar, atau dipesan atas namamu menunggu persetujuanmu. Kamu bisa melepasnya nanti, saat sudah percaya pada mereka."
   },
   "paidMoment": {
-    "title": "Timmu sudah siap bekerja",
-    "titlePersonal": "Agenmu sudah siap bekerja",
-    "confirmed": "Pembayaran dikonfirmasi.",
-    "confirmedPlan": "Pembayaran dikonfirmasi: {{plan}}.",
-    "confirmedMonth": "Pembayaran dikonfirmasi: {{plan}}, ditagih bulanan.",
-    "confirmedYear": "Pembayaran dikonfirmasi: {{plan}}, ditagih tahunan.",
+    "on": "Paketmu sudah aktif",
+    "onPlan": "Kamu memakai paket {{plan}}",
+    "onMonth": "Kamu memakai paket {{plan}}, bulanan",
+    "onYear": "Kamu memakai paket {{plan}}, tahunan",
+    "room": {
+      "both_other": "Ruang untuk {{people}} orang dan {{files}} file.",
+      "people_other": "Ruang untuk {{people}} orang, tanpa batas file.",
+      "files": "Ruang untuk {{files}} file, tanpa batas orang.",
+      "none": "Tanpa batas orang maupun file."
+    },
+    "computer": {
+      "on": "Komputermu sudah menyala.",
+      "starting": "Komputermu sedang disiapkan.",
+      "startingTold": "Komputermu sedang disiapkan. Kami akan memberitahumu saat sudah menyala."
+    },
     "hello": "Hai, {{first}}",
     "hi": "Hai",
-    "say": "Kami semua sudah bangun dan komputernya menyala. Ayo mulai bekerja.",
+    "say": "Kami semua sudah di sini. Ayo mulai bekerja.",
+    "sayOn": "Kami semua sudah di sini dan komputernya menyala. Ayo mulai bekerja.",
+    "sayStarting": "Kami semua sudah di sini. Kami akan memberitahumu saat komputernya menyala.",
     "next": {
       "ai": "Hubungkan AI",
       "people": "Undang orang",

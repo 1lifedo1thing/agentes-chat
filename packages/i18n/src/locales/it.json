@@ -22176,15 +22176,28 @@
     "approvalsPersonal": "Tutto ciò che viene inviato, pagato o prenotato a tuo nome aspetta la tua approvazione. Puoi lasciarlo andare più avanti, quando ti fiderai di loro."
   },
   "paidMoment": {
-    "title": "Il tuo team è operativo",
-    "titlePersonal": "I tuoi agenti sono operativi",
-    "confirmed": "Pagamento confermato.",
-    "confirmedPlan": "Pagamento confermato: {{plan}}.",
-    "confirmedMonth": "Pagamento confermato: {{plan}}, addebito mensile.",
-    "confirmedYear": "Pagamento confermato: {{plan}}, addebito annuale.",
+    "on": "Il tuo piano è attivo",
+    "onPlan": "Hai il piano {{plan}}",
+    "onMonth": "Hai il piano {{plan}}, mensile",
+    "onYear": "Hai il piano {{plan}}, annuale",
+    "room": {
+      "both_one": "Spazio per {{people}} persona e {{files}} di file.",
+      "both_other": "Spazio per {{people}} persone e {{files}} di file.",
+      "people_one": "Spazio per {{people}} persona, senza limiti per i file.",
+      "people_other": "Spazio per {{people}} persone, senza limiti per i file.",
+      "files": "Spazio per {{files}} di file, senza limiti per le persone.",
+      "none": "Nessun limite per persone o file."
+    },
+    "computer": {
+      "on": "Il tuo computer è acceso.",
+      "starting": "Il tuo computer è in preparazione.",
+      "startingTold": "Il tuo computer è in preparazione. Ti avvisiamo quando è acceso."
+    },
     "hello": "Ciao, {{first}}",
     "hi": "Ciao",
-    "say": "Siamo tutti svegli e il computer è acceso. Al lavoro.",
+    "say": "Ci siamo tutti. Al lavoro.",
+    "sayOn": "Ci siamo tutti e il computer è acceso. Al lavoro.",
+    "sayStarting": "Ci siamo tutti. Ti avvisiamo quando il computer è acceso.",
     "next": {
       "ai": "Collega un'IA",
       "people": "Invita persone",

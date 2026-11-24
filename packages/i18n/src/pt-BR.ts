@@ -22122,20 +22122,38 @@ export const ptBR = {
     approvalsPersonal:
       "O que for enviado, pago ou reservado em seu nome espera a sua aprovação. Dá para liberar depois, quando você confiar neles.",
   },
-  /** Right after a paid Checkout (ADR 0079): the plan on, the team awake on its sky, and one way on. */
+  /**
+   * Right after a paid Checkout (ADR 0079): the plan on, the team awake on its sky, and one way on. Only what is true
+   * now: never "up and running" while the computer still gets ready.
+   */
   paidMoment: {
-    title: "O seu time está de pé",
-    titlePersonal: "Os seus agentes estão de pé",
-    /** The purchase in one line. `{{plan}}`: the plan's name, as the billing service writes it. */
-    confirmed: "Pagamento confirmado.",
-    confirmedPlan: "Pagamento confirmado: {{plan}}.",
-    confirmedMonth: "Pagamento confirmado: {{plan}}, cobrança mensal.",
-    confirmedYear: "Pagamento confirmado: {{plan}}, cobrança anual.",
+    /** The plan in force, as the moment's title. `{{plan}}`: the plan's name, as the billing service writes it. */
+    on: "O seu plano está ativo",
+    onPlan: "Você está no plano {{plan}}",
+    onMonth: "Você está no plano {{plan}}, mensal",
+    onYear: "Você está no plano {{plan}}, anual",
+    /** What the plan gives, from its limits: seats (`{{people}}`, a written number) and room for files (`{{files}}`). */
+    room: {
+      both_one: "Espaço para {{people}} pessoa e {{files}} de arquivos.",
+      both_other: "Espaço para {{people}} pessoas e {{files}} de arquivos.",
+      people_one: "Espaço para {{people}} pessoa, sem limite de arquivos.",
+      people_other: "Espaço para {{people}} pessoas, sem limite de arquivos.",
+      files: "Espaço para {{files}} de arquivos, sem limite de pessoas.",
+      none: "Sem limite de pessoas nem de arquivos.",
+    },
+    /** The workspace's own computer as it is now. `startingTold`: to its owners, who are told when it is on. */
+    computer: {
+      on: "O seu computador está ligado.",
+      starting: "O seu computador está sendo preparado.",
+      startingTold: "O seu computador está sendo preparado. Avisamos quando estiver ligado.",
+    },
     /** Said by the agents on the sky to the person who paid, by their first name. `hi`: their name isn't known. */
     hello: "Oi, {{first}}",
     hi: "Oi",
-    /** The right hand's line beside the onboarding's step, once the plan is on. */
-    say: "Estamos todos de pé e o computador está ligado. Vamos ao trabalho.",
+    /** The right hand's line beside the onboarding, once the plan is on, with the computer as it is. */
+    say: "Estamos todos aqui. Vamos ao trabalho.",
+    sayOn: "Estamos todos aqui e o computador está ligado. Vamos ao trabalho.",
+    sayStarting: "Estamos todos aqui. Avisamos quando o computador estiver ligado.",
     /** The one way on: the step that comes next, or the first conversation. */
     next: {
       ai: "Conectar uma IA",

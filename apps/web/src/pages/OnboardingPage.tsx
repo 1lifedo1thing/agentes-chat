@@ -9,7 +9,7 @@ import {
   useAuthConfig,
   type WorkspaceMode,
 } from "@agenteschat/client";
-import { billingHoldOf, paidLine } from "@agenteschat/client/lib/billing";
+import { billingHoldOf } from "@agenteschat/client/lib/billing";
 import { accountOutOfReach } from "@agenteschat/client/lib/deletion";
 import { errorCode, errorText } from "@agenteschat/client/lib/errors";
 import { firstName, joinNames } from "@agenteschat/client/lib/format";
@@ -50,6 +50,7 @@ import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { useAuth } from "@/auth/context";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { usePaidFacts } from "@/components/arrival/PaidMoment";
 import { BillingLinkButton } from "@/components/BillingLinkButton";
 import { DeleteAccountDialog } from "@/components/DeleteAccount";
 import { DeleteWorkspaceDialog } from "@/components/DeleteWorkspace";
@@ -193,9 +194,9 @@ export function OnboardingPage() {
   // Back from paying, until the billing service lifts the hold: `/me` again meanwhile, as the hold's banner does.
   const paid = usePaidReturn(orgId ?? "", held);
   useQuery({ ...meQuery(api), enabled: paid, refetchInterval: PAID_POLL_MS });
-  // Once the plan is on, the moment it turned on (ADR 0079): the plan step stays, the team awake on it, with the step
-  // that follows as its one way on. Once per payment, never on a plain visit. A workspace `/me` doesn't list yet (one
-  // made in this visit, before it is read again) counts as held: its standing is unknown, not in force.
+  // Once the plan is on, the moment it turned on (ADR 0079): the page between the plan and the step that comes next,
+  // the team awake on it. Once per payment, never on a plain visit. A workspace `/me` doesn't list yet (one made in this
+  // visit, before it is read again) counts as held: its standing is unknown, not in force.
   const paidMoment = usePaidMoment(orgId ?? "", mine ? mine.standing : { state: "hold", reason: null });
   const moment = paidMoment.moment;
   // Made here as "For me", one being set up that is, or "For me" picked and not made yet: the rail shows the personal
@@ -238,8 +239,7 @@ export function OnboardingPage() {
       // The person's own step is answered once per account: their area said, or skipped (amended 2026-11-12).
       funnel: { thinks, passed, about: (me.data?.user.workArea ?? null) !== null },
     });
-  const onRail = railAt(picked);
-  const reachedRail = moment && onRail.hasPlanStep ? railAt("plan") : onRail;
+  const reachedRail = railAt(picked);
   // Connected on its step in this visit, a team's AI step stays on screen (what was connected, the Connect dialog still
   // over it) until its Continuar: the people step never takes its place under the person (ADR 0162, amended 2026-11-11).
   const keepAi =
@@ -266,7 +266,12 @@ export function OnboardingPage() {
   // from another app) keeps the screen that made it, its button pending, rather than its list for a moment.
   const lastTeam = useRef(0);
   const frozen = deciding || leaving.current ? lastRail.current : null;
-  const { steps, at, reached, step, index, thinks: thinksNow } = frozen ?? rail;
+  const { steps, at, reached, step: railStep, index, hasPlanStep, thinks: thinksNow } = frozen ?? rail;
+  // The plan just turned on: the moment stands in the page, the plan step's, while the rail, its count and the moment's
+  // one button are at the step that comes next (`at`), the one the data reached. Never on a step the person went back to.
+  const awake = moment !== null && hasPlanStep && picked === null;
+  const step: RailStep = awake ? "plan" : railStep;
+  const paidFacts = usePaidFacts(orgId ?? "", awake ? moment : null, mine?.role === "owner");
   // A team's rail ends on inviting people (ADR 0162, amended 2026-11-11).
   const hasPeople = steps.includes("people");
   useEffect(() => {
@@ -290,14 +295,12 @@ export function OnboardingPage() {
   // Read from the first step, so the plan step has it when it opens.
   const plans = usePlanOffer(i18n.language);
   const offer = plans.offer;
-  // What the paid return says was bought, by its name in the plan list.
-  const bought = usePlanOffer(i18n.language, { key: moment?.plan, enabled: Boolean(moment?.plan) });
   // Read once is enough: a refetch that fails later keeps the step on screen with what it read. The plan step opens
   // whole, back from the billing page too: with its price, or with none once the list is late, never a line that changes.
   // A first visit that only the AI's answer can place (its step or opening) waits for it, as for the workspace's data.
-  const known = loaded && !(deciding && frozen === null) && !(step === "plan" && (plans.loading || bought.loading));
-  // The plan step showing the plan turned on.
-  const awake = moment !== null && step === "plan";
+  // The moment waits for what it says (the plan's name, what it gives, the computer as it is).
+  const known =
+    loaded && !(deciding && frozen === null) && !(step === "plan" && plans.loading) && !(awake && paidFacts.loading);
   const name = (mine?.name ?? org).trim();
   // Back on step 1, the workspace's own zone (saved on another visit, maybe another device), never this browser's.
   const zoneNow = zone ?? settings.data?.timezone ?? browserTimezone() ?? "UTC";
@@ -310,10 +313,11 @@ export function OnboardingPage() {
     step === "business" || ((step === "you" || step === "team") && !personalNow),
   );
 
-  // The AI step shown from a read that lists every agent: from then on, the team thinking shows its done screen.
+  // The AI step shown from a read that lists every agent: from then on, the team thinking shows its done screen. The
+  // paid moment in its place is not it.
   useEffect(() => {
-    if (known && at === "ai" && !deciding) setAiSeen(true);
-  }, [known, at, deciding]);
+    if (known && at === "ai" && !deciding && !awake) setAiSeen(true);
+  }, [known, at, deciding, awake]);
   // On the AI step with every agent thinking: its done screen (a team's, gone back to, too: Continuar leads on).
   const aiDone = step === "ai" && thinksNow && (aiSeen || hasPeople);
   // The rail ends on the AI step and it is done: every step answered, none current.
@@ -557,7 +561,16 @@ export function OnboardingPage() {
             ? (teamHead?.say ??
               t(personalNow ? "onboarding.flow.lodi.teamMadePersonal" : "onboarding.flow.lodi.teamMade", lodiWords))
             : step === "plan"
-              ? t(awake ? "paidMoment.say" : "onboarding.flow.lodi.planThen", lodiWords)
+              ? awake
+                ? // Only what is true now: the computer is on, or getting ready (none of its own: not a word of it).
+                  t(
+                    paidFacts.computer === null
+                      ? "paidMoment.say"
+                      : paidFacts.computer.on
+                        ? "paidMoment.sayOn"
+                        : "paidMoment.sayStarting",
+                  )
+                : t("onboarding.flow.lodi.planThen", lodiWords)
               : step === "people"
                 ? t(emails ? "onboarding.flow.lodi.people" : "onboarding.flow.lodi.peopleLink", lodiWords)
                 : aiDone
@@ -583,7 +596,7 @@ export function OnboardingPage() {
                 t(personalNow ? "onboarding.flow.steps.teamPersonal" : "onboarding.flow.team.title"))
               : step === "plan"
                 ? awake
-                  ? t(personalNow ? "paidMoment.titlePersonal" : "paidMoment.title")
+                  ? paidFacts.title
                   : t(personalNow ? "onboarding.flow.plan.titlePersonal" : "onboarding.flow.plan.title")
                 : step === "people"
                   ? t("onboarding.flow.people.title")
@@ -610,7 +623,7 @@ export function OnboardingPage() {
               ? (teamHead?.lead ?? t("onboarding.flow.team.madeLead"))
               : step === "plan"
                 ? awake
-                  ? paidLine(t, bought.offer?.name, moment?.period)
+                  ? (paidFacts.room ?? "")
                   : t(
                       personalNow
                         ? "onboarding.flow.plan.leadPersonal"
@@ -879,14 +892,15 @@ export function OnboardingPage() {
                 </button>
               )}
               <header className="onb__head">
-                {/* Once the team thinks on a rail that ends there, it is done: no step to count. */}
-                {!asking && !allDone && (
+                {/* Once the team thinks on a rail that ends there, it is done: no step to count. The paid moment is no
+                    step: the rail already marks the one that comes after it. */}
+                {!asking && !allDone && !awake && (
                   <p className="onb__eyebrow">{t("onboarding.flow.stepOf", { n: index + 1, total: steps.length })}</p>
                 )}
                 <h1 className="onb__title" ref={titleRef} tabIndex={-1}>
                   {title}
                 </h1>
-                <p className="onb__lead">{lead}</p>
+                {lead && <p className="onb__lead">{lead}</p>}
               </header>
 
               {step === "name" && (
@@ -1089,12 +1103,16 @@ export function OnboardingPage() {
                     awake
                       ? {
                           name: me.data.user.name,
+                          computer: paidFacts.computer,
+                          // The step the rail marks, where the data is: the one the button leads to.
                           next: t(
-                            steps[index + 1] === "ai"
+                            at === "ai"
                               ? "paidMoment.next.ai"
-                              : steps[index + 1] === "people"
+                              : at === "people"
                                 ? "paidMoment.next.people"
-                                : "paidMoment.next.open",
+                                : at === "open"
+                                  ? "paidMoment.next.open"
+                                  : "onboarding.actions.continue",
                           ),
                           onNext: paidMoment.done,
                         }

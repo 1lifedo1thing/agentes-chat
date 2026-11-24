@@ -21340,15 +21340,28 @@
     "approvalsPersonal": "Senin adına gönderilen, ödenen veya rezerve edilen her şey onayını bekler. Onlara güvendiğinde daha sonra serbest bırakabilirsin."
   },
   "paidMoment": {
-    "title": "Ekibin işbaşında",
-    "titlePersonal": "Ajanların işbaşında",
-    "confirmed": "Ödeme onaylandı.",
-    "confirmedPlan": "Ödeme onaylandı: {{plan}}.",
-    "confirmedMonth": "Ödeme onaylandı: {{plan}}, aylık faturalandırılır.",
-    "confirmedYear": "Ödeme onaylandı: {{plan}}, yıllık faturalandırılır.",
+    "on": "Planınız etkin",
+    "onPlan": "{{plan}} planındasınız",
+    "onMonth": "{{plan}} planındasınız, aylık",
+    "onYear": "{{plan}} planındasınız, yıllık",
+    "room": {
+      "both_one": "{{people}} kişi ve {{files}} dosya için yer var.",
+      "both_other": "{{people}} kişi ve {{files}} dosya için yer var.",
+      "people_one": "{{people}} kişi için yer var, dosyalarda sınır yok.",
+      "people_other": "{{people}} kişi için yer var, dosyalarda sınır yok.",
+      "files": "{{files}} dosya için yer var, kişi sayısında sınır yok.",
+      "none": "Kişi ve dosya sınırı yok."
+    },
+    "computer": {
+      "on": "Bilgisayarınız açık.",
+      "starting": "Bilgisayarınız hazırlanıyor.",
+      "startingTold": "Bilgisayarınız hazırlanıyor. Açıldığında size haber vereceğiz."
+    },
     "hello": "Merhaba {{first}}",
     "hi": "Merhaba",
-    "say": "Hepimiz uyandık ve bilgisayar açık. Haydi işe koyulalım.",
+    "say": "Hepimiz buradayız. Haydi işe koyulalım.",
+    "sayOn": "Hepimiz buradayız ve bilgisayar açık. Haydi işe koyulalım.",
+    "sayStarting": "Hepimiz buradayız. Bilgisayar açıldığında size haber vereceğiz.",
     "next": {
       "ai": "Yapay zeka bağla",
       "people": "Kişileri davet et",

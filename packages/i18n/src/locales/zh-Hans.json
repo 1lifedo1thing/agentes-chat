@@ -20930,15 +20930,26 @@
     "approvalsPersonal": "凡是以你的名义发送、付款或预订的内容，都要等你批准。等你信任它们后，可以再放开。"
   },
   "paidMoment": {
-    "title": "你的团队已经开工",
-    "titlePersonal": "你的智能体已经开工",
-    "confirmed": "付款已确认。",
-    "confirmedPlan": "付款已确认：{{plan}}。",
-    "confirmedMonth": "付款已确认：{{plan}}，按月计费。",
-    "confirmedYear": "付款已确认：{{plan}}，按年计费。",
+    "on": "你的套餐已生效",
+    "onPlan": "你已开通 {{plan}} 套餐",
+    "onMonth": "你已开通 {{plan}} 套餐，按月付费",
+    "onYear": "你已开通 {{plan}} 套餐，按年付费",
+    "room": {
+      "both_other": "可容纳 {{people}} 人，文件空间 {{files}}。",
+      "people_other": "可容纳 {{people}} 人，文件空间不限。",
+      "files": "文件空间 {{files}}，人数不限。",
+      "none": "人数和文件空间均不限。"
+    },
+    "computer": {
+      "on": "你的电脑已开机。",
+      "starting": "你的电脑正在准备中。",
+      "startingTold": "你的电脑正在准备中。开机后我们会通知你。"
+    },
     "hello": "你好，{{first}}",
     "hi": "你好",
-    "say": "我们都醒了，电脑也开着。开始干活吧。",
+    "say": "我们都到齐了。开始干活吧。",
+    "sayOn": "我们都到齐了，电脑也已开机。开始干活吧。",
+    "sayStarting": "我们都到齐了。电脑开机后我们会通知你。",
     "next": {
       "ai": "连接 AI",
       "people": "邀请成员",

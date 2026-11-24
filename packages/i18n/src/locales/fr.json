@@ -22159,15 +22159,28 @@
     "approvalsPersonal": "Tout ce qui est envoyé, payé ou réservé en ton nom attend ton accord. Tu pourras le libérer plus tard, quand tu leur feras confiance."
   },
   "paidMoment": {
-    "title": "Votre équipe est en route",
-    "titlePersonal": "Vos agents sont en route",
-    "confirmed": "Paiement confirmé.",
-    "confirmedPlan": "Paiement confirmé : {{plan}}.",
-    "confirmedMonth": "Paiement confirmé : {{plan}}, facturé chaque mois.",
-    "confirmedYear": "Paiement confirmé : {{plan}}, facturé chaque année.",
+    "on": "Votre abonnement est actif",
+    "onPlan": "Vous êtes sur {{plan}}",
+    "onMonth": "Vous êtes sur {{plan}}, au mois",
+    "onYear": "Vous êtes sur {{plan}}, à l'année",
+    "room": {
+      "both_one": "De la place pour {{people}} personne et {{files}} de fichiers.",
+      "both_other": "De la place pour {{people}} personnes et {{files}} de fichiers.",
+      "people_one": "De la place pour {{people}} personne, sans limite de fichiers.",
+      "people_other": "De la place pour {{people}} personnes, sans limite de fichiers.",
+      "files": "De la place pour {{files}} de fichiers, sans limite de personnes.",
+      "none": "Aucune limite de personnes ni de fichiers."
+    },
+    "computer": {
+      "on": "Votre ordinateur est allumé.",
+      "starting": "Votre ordinateur se prépare.",
+      "startingTold": "Votre ordinateur se prépare. Nous vous prévenons dès qu'il est allumé."
+    },
     "hello": "Bonjour, {{first}}",
     "hi": "Bonjour",
-    "say": "Nous sommes tous debout et l'ordinateur est allumé. Au travail.",
+    "say": "Nous sommes tous là. Au travail.",
+    "sayOn": "Nous sommes tous là et l'ordinateur est allumé. Au travail.",
+    "sayStarting": "Nous sommes tous là. Nous vous prévenons dès que l'ordinateur est allumé.",
     "next": {
       "ai": "Connecter une IA",
       "people": "Inviter des personnes",

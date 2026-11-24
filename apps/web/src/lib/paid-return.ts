@@ -41,24 +41,33 @@ const readPending = (key: string): PaidReturn | null => {
 const withoutPaid = ({ paid: _p, plan: _k, period: _d, ...rest }: Record<string, unknown>) => rest;
 
 /**
+ * How the moment comes: in full (`dialog`) on the page the return landed on, or as a card in the corner when the plan
+ * turned on after the person went elsewhere, or while a dialog of their own was open (never two at once).
+ */
+export type PaidForm = "dialog" | "card";
+
+/**
  * The moment right after a paid Checkout (ADR 0079): what the address said was bought, once the plan is in force.
  * The return is kept for the tab until then (the hold lifts on the billing service's next pass), and shown once per
  * payment: as the plan is found in force, the return is used up (the address and the tab drop it) and this browser
  * notes when, so a reload, Back or the same return again shows nothing. A plain visit has no return to show. `moment`
- * stays until `done`, whatever the address does meanwhile, and only in the workspace it was paid for.
+ * stays until `done`, whatever the address does meanwhile, and only in the workspace it was paid for. `busy`: a dialog
+ * the caller doesn't sequence itself is open now.
  */
-export function usePaidMoment(orgId: string, standing: OrgStanding | undefined) {
+export function usePaidMoment(orgId: string, standing: OrgStanding | undefined, busy = false) {
   const pendingKey = `${STORAGE_KEYS.paidMoment}.${orgId}`;
   const shownKey = `${STORAGE_KEYS.paidMomentShown}.${orgId}`;
   const search = useRouterState({ select: (s) => s.location.search }) as Record<string, unknown>;
   const navigate = useNavigate();
-  const [shown, setShown] = useState<{ orgId: string; moment: PaidReturn } | null>(null);
+  const [shown, setShown] = useState<{ orgId: string; moment: PaidReturn; form: PaidForm } | null>(null);
   const seen = Number(storage.get(shownKey) ?? 0) > Date.now() - PAID_MOMENT_ONCE_MS;
   const inAddress = paidReturnOf(search) !== null;
   const pending = paidReturnOf(search) ?? readPending(pendingKey);
   const active = standingActive(standing);
-  const mine = shown?.orgId === orgId ? shown.moment : null;
+  const mine = shown?.orgId === orgId ? shown : null;
   const due = mine === null && !seen && pending !== null && active;
+  // Still where the return landed (the address has it): the moment in full. Decided as it comes, then kept.
+  const form: PaidForm = inAddress && !busy ? "dialog" : "card";
   const pendingJson = pending && JSON.stringify(pending);
   useEffect(() => {
     if (pendingJson === null) return;
@@ -69,10 +78,10 @@ export function usePaidMoment(orgId: string, standing: OrgStanding | undefined) 
     sessionStore.remove(pendingKey);
     if (due) {
       storage.set(shownKey, String(Date.now()));
-      setShown({ orgId, moment: JSON.parse(pendingJson) as PaidReturn });
+      setShown({ orgId, moment: JSON.parse(pendingJson) as PaidReturn, form });
     }
     if (inAddress) void navigate({ to: ".", replace: true, search: withoutPaid as never });
-  }, [active, due, inAddress, navigate, orgId, pendingJson, pendingKey, shownKey]);
+  }, [active, due, form, inAddress, navigate, orgId, pendingJson, pendingKey, shownKey]);
   const done = useCallback(() => setShown(null), []);
-  return { moment: mine ?? (due ? pending : null), done };
+  return { moment: mine?.moment ?? (due ? pending : null), form: mine?.form ?? form, done };
 }

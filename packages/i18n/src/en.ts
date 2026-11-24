@@ -22232,20 +22232,47 @@ export const en = {
     approvalsPersonal:
       "Anything sent, paid or booked in your name waits for your approval. You can let it go later, once you trust them.",
   },
-  /** Right after a paid Checkout (ADR 0079): the plan on, the team awake on its sky, and one way on. */
+  /**
+   * Right after a paid Checkout (ADR 0079): the plan on, the team awake on its sky, and one way on. Only what is true
+   * now: never "up and running" while the computer still gets ready.
+   */
   paidMoment: {
-    title: "Your team is up and running",
-    titlePersonal: "Your agents are up and running",
-    /** The purchase in one line. `{{plan}}`: the plan's name, as the billing service writes it. */
-    confirmed: "Payment confirmed.",
-    confirmedPlan: "Payment confirmed: {{plan}}.",
-    confirmedMonth: "Payment confirmed: {{plan}}, billed monthly.",
-    confirmedYear: "Payment confirmed: {{plan}}, billed yearly.",
+    /**
+     * The plan in force, as the moment's title. `on`: its name isn't known. `{{plan}}`: the plan's name, as the
+     * billing service writes it ("Team"); `onMonth` and `onYear` say how it is paid.
+     */
+    on: "Your plan is on",
+    onPlan: "You're on {{plan}}",
+    onMonth: "You're on {{plan}}, monthly",
+    onYear: "You're on {{plan}}, yearly",
+    /**
+     * What the plan gives, from its limits: the people it has seats for (`{{people}}`, a number written as the
+     * language writes it; `count` picks the form) and its room for files (`{{files}}`: a size, "50 GB").
+     */
+    room: {
+      both_one: "Room for {{people}} person and {{files}} of files.",
+      both_other: "Room for {{people}} people and {{files}} of files.",
+      people_one: "Room for {{people}} person, with no limit on files.",
+      people_other: "Room for {{people}} people, with no limit on files.",
+      files: "Room for {{files}} of files, with no limit on people.",
+      none: "No limit on people or files.",
+    },
+    /** The workspace's own computer as it is now. `startingTold`: to its owners, who are told when it is on. */
+    computer: {
+      on: "Your computer is on.",
+      starting: "Your computer is getting ready.",
+      startingTold: "Your computer is getting ready. We'll tell you when it's on.",
+    },
     /** Said by the agents on the sky to the person who paid, by their first name. `hi`: their name isn't known. */
     hello: "Hi, {{first}}",
     hi: "Hi there",
-    /** The right hand's line beside the onboarding's step, once the plan is on. */
-    say: "We're all up and the computer is on. Let's get to work.",
+    /**
+     * The right hand's line beside the onboarding, once the plan is on: `sayOn` with the computer on, `sayStarting`
+     * while it gets ready, `say` where the workspace has no computer of its own.
+     */
+    say: "We're all here. Let's get to work.",
+    sayOn: "We're all here, and the computer is on. Let's get to work.",
+    sayStarting: "We're all here. We'll tell you when the computer is on.",
     /** The one way on: the step that comes next, or the first conversation. */
     next: {
       ai: "Connect an AI",

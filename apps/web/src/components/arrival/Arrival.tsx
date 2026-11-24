@@ -11,7 +11,7 @@ import { ARRIVAL_BETA_ONLY, ARRIVAL_PARAM } from "@/lib/arrival";
 import { useOpenParam } from "@/lib/open-param";
 import { usePaidMoment } from "@/lib/paid-return";
 import { BetaDialog } from "./BetaDialog";
-import { PaidCard, PaidDialog } from "./PaidMoment";
+import { PaidCard, PaidDialog, type PaidNext } from "./PaidMoment";
 
 /**
  * Right after the onboarding (ADR 0160): the beta notice, then Connect an AI with the team on its stage, for a
@@ -19,9 +19,10 @@ import { PaidCard, PaidDialog } from "./PaidMoment";
  * it opens, so a reload or Back shows neither again. `?arrival=beta` is the notice alone: the onboarding already
  * asked for the AI in its own step, or the plan was left for later and its row leads the right hand's card (ADR 0162).
  *
- * Right after paying (ADR 0079, `usePaidMoment`), the moment the plan turned on, once its hold lifts: in full before
- * the beta notice when both came together, else as a card in the corner, after the notice when that was already up.
- * One thing at a time: never two dialogs, and the card never over one (it sits under every dialog's scrim).
+ * Right after paying (ADR 0079, `usePaidMoment`), the moment the plan turned on, once its hold lifts: in full on the
+ * page the return landed on (before the beta notice when both came together, after it when the plan turned on during
+ * it), else as a card in the corner. One thing at a time: never two dialogs, and the card never over one (it sits
+ * under every dialog's scrim).
  */
 export function Arrival() {
   const { t } = useTranslation();
@@ -29,7 +30,9 @@ export function Arrival() {
   const [asked, clear] = useOpenParam(ARRIVAL_PARAM);
   // The value it was asked with, kept once the address drops it; null: nothing to show.
   const [beta, setBeta] = useState<string | null>(null);
-  const paid = usePaidMoment(org.id, org.standing);
+  // A dialog of the person's own open as the plan turns on: the moment comes as the card, under it. The beta notice is
+  // this component's, and the moment follows it.
+  const paid = usePaidMoment(org.id, org.standing, beta === null && document.querySelector("[role='dialog']") !== null);
   // The paid moment was there as the notice was asked for: it comes first. One that comes during the notice waits.
   const [paidFirst, setPaidFirst] = useState(false);
   const connect = useConnectAi();
@@ -52,7 +55,9 @@ export function Arrival() {
       status.data,
     ) === true;
   const toConnect = mayConnect && !allThink && connect !== null;
-  if (paid.moment && beta !== null && paidFirst) return <PaidDialog moment={paid.moment} onContinue={paid.done} />;
+  // Before the notice, the moment's way on is the notice itself (Continue).
+  if (paid.moment && beta !== null && paidFirst)
+    return <PaidDialog moment={paid.moment} next={null} onClose={paid.done} />;
   if (beta !== null)
     return (
       <BetaDialog
@@ -69,7 +74,7 @@ export function Arrival() {
   // The one way on: an AI for the team to think with, else the first conversation, with the right hand.
   const lead = rightHandOf(dir.agents);
   const leadPath = lead ? `/org/${org.id}/dm/agent/${lead.id}` : null;
-  const next = toConnect
+  const next: PaidNext = toConnect
     ? { label: t("paidMoment.next.ai"), run: () => connect?.open({}) }
     : lead && leadPath !== path
       ? {
@@ -78,5 +83,9 @@ export function Arrival() {
             void navigate({ to: "/org/$orgId/dm/agent/$agentId", params: { orgId: org.id, agentId: lead.id } }),
         }
       : null;
-  return <PaidCard moment={paid.moment} next={next} onClose={paid.done} />;
+  return paid.form === "dialog" ? (
+    <PaidDialog moment={paid.moment} next={next} onClose={paid.done} />
+  ) : (
+    <PaidCard moment={paid.moment} next={next} onClose={paid.done} />
+  );
 }

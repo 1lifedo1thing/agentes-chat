@@ -13,6 +13,7 @@ import {
   ATLAS_ID,
   createFakeApi,
   type FakeState,
+  fakeMachinesOf,
   GENERAL_ID,
   LODI_ID,
   ORG_ID,
@@ -58,6 +59,8 @@ const type = async (label: string, value: string) => {
 const calls = (state: FakeState, method: string) => state.calls.filter((c) => c.method === method);
 const heading = () => document.querySelector(".onb__title")?.textContent;
 const eyebrow = () => document.querySelector(".onb__eyebrow")?.textContent;
+/** The step the rail marks as the one the person is on. */
+const railCurrent = () => document.querySelector(".onb__step[aria-current='step']")?.textContent;
 /** The plan step's card: its button shares the rail step's name, "Ligar o time". */
 const planCard = () => document.querySelector(".onb__plan") as HTMLElement;
 const GREETING = "Oi, eu sou o Lodi. Monto o time com você.";
@@ -688,11 +691,14 @@ describe("a workspace being set up resumes from its data", () => {
       focusManager.setFocused(true);
     });
     await settle(16);
-    // The moment it turned on: the plan step stays, the team awake on it, what was bought in one line, and the step
-    // that follows as its one way on.
-    expect(heading()).toBe("O seu time está de pé");
-    expect(document.querySelector(".onb__lead")?.textContent).toBe("Pagamento confirmado: Equipe, cobrança anual.");
-    expect(document.querySelector(".onb__say")?.textContent).toContain("Estamos todos de pé");
+    // The moment it turned on, between the plan and the step after it: the plan in force by its name, what it gives,
+    // the team awake, and the step the rail marks as its one way on. No step number: the moment is no step.
+    expect(heading()).toBe("Você está no plano Equipe, anual");
+    expect(document.querySelector(".onb__lead")?.textContent).toBe("Sem limite de pessoas nem de arquivos.");
+    // Where people connect their own computers (the fake's), not a word of one.
+    expect(document.querySelector(".onb__say")?.textContent).toBe("Estamos todos aqui. Vamos ao trabalho.");
+    expect(eyebrow()).toBeUndefined();
+    expect(railCurrent()).toContain("Conectar uma IA");
     expect(planCard().querySelector(".paid-scene")).toBeTruthy();
     expect(within(planCard()).queryByRole("button", { name: "Ligar o time" })).toBeNull();
     await click(within(planCard()).getByRole("button", { name: /Conectar uma IA/ }), 16);
@@ -732,8 +738,8 @@ describe("a workspace being set up resumes from its data", () => {
     plans(PLANS);
     await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: createFakeApi(paidOn()) });
     await settle(16);
-    expect(heading()).toBe("O seu time está de pé");
-    expect(document.querySelector(".onb__lead")?.textContent).toBe("Pagamento confirmado.");
+    expect(heading()).toBe("O seu plano está ativo");
+    expect(document.querySelector(".onb__lead")?.textContent).toBe("Sem limite de pessoas nem de arquivos.");
     cleanup();
     plans(PLANS);
     await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: createFakeApi(paidOn()) });
@@ -747,14 +753,55 @@ describe("a workspace being set up resumes from its data", () => {
     plans(PLANS);
     await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: createFakeApi(state) });
     await settle(16);
-    expect(heading()).toBe("O seu time está de pé");
-    const current = () => document.querySelector(".onb__step[aria-current='step']")?.textContent;
-    const onPlan = current();
+    expect(heading()).toBe("O seu plano está ativo");
+    const during = railCurrent();
     const first = document.querySelectorAll<HTMLButtonElement>(".onb__step")[0] as HTMLButtonElement;
     expect(first.disabled).toBe(false);
     await click(first, 12);
-    expect(heading()).not.toBe("O seu time está de pé");
-    expect(current()).not.toBe(onPlan);
+    expect(heading()).not.toBe("O seu plano está ativo");
+    expect(railCurrent()).not.toBe(during);
+    expect(railCurrent()).toContain("Nome do workspace");
+  });
+
+  test("the moment over a rail that went further: its one button is the step the rail marks, its words what is true", async () => {
+    // The AI left for later before paying ("ai"): the people are next, the AI step answered "Depois".
+    const further = () => {
+      const state = noAiYet(settingUp({ context: "Loja online", team: true, step: "ai" }));
+      state.authConfig = { billingUrl: "https://billing.example.com" };
+      return state;
+    };
+    plans(PLANS);
+    const api = createFakeApi(further());
+    fakeMachinesOf.get(api)?.setSetup({ state: "waiting", reason: "capacity" });
+    await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api });
+    await settle(16);
+    expect(heading()).toBe("O seu plano está ativo");
+    // The computer still waits: never "the computer is on".
+    expect(document.querySelector(".onb__say")?.textContent).toBe(
+      "Estamos todos aqui. Avisamos quando o computador estiver ligado.",
+    );
+    expect(planCard().querySelector(".ac-computer")?.getAttribute("data-state")).toBe("paused");
+    // One count: the rail's, at the people; the moment shows no step number of its own.
+    expect(eyebrow()).toBeUndefined();
+    expect(railCurrent()).toContain("Convidar pessoas");
+    expect(within(planCard()).queryByRole("button", { name: /Conectar uma IA/ })).toBeNull();
+    await click(within(planCard()).getByRole("button", { name: /Convidar pessoas/ }), 16);
+    expect(heading()).toBe(PEOPLE);
+    expect(eyebrow()).toBe("Passo 7 de 7");
+    cleanup();
+    localStorage.clear();
+
+    // On: its words say so, and it lights up on the sky.
+    plans(PLANS);
+    const on = createFakeApi(further());
+    const machines = fakeMachinesOf.get(on);
+    const m = machines?.pair({ name: "Computador da Ateliê Couto", kind: "managed", os: "other", online: true });
+    machines?.setSetup({ state: "ready", machineId: m?.id ?? null });
+    await renderApp(`/org/${ORG_ID}/onboarding?paid=1`, { api: on });
+    await settle(16);
+    expect(document.querySelector(".onb__say")?.textContent).toBe(
+      "Estamos todos aqui e o computador está ligado. Vamos ao trabalho.",
+    );
   });
 
   test("asked to delete the workspace being set up: its dialog, and nothing is finished", async () => {

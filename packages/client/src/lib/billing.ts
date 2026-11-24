@@ -1,5 +1,7 @@
 import type { TFunction } from "i18next";
-import type { OrgStanding, OrgSummary } from "../api/types";
+import type { OrgStanding, OrgSummary, WorkspaceLimits } from "../api/types";
+import { formatBytes } from "./files";
+import { formatInt } from "./format";
 import { can } from "./permissions";
 
 /** Mirror of the server's billing holds (`packages/engine/src/standing.ts`, ADR 0079). */
@@ -69,15 +71,38 @@ export const paidSearch = (search: Record<string, unknown>): { paid?: true } & P
 };
 
 /**
- * The purchase in one line: confirmed, with the plan's name and its period when the app knows them (`plan`: the name
- * the billing service's plan list gives the bought key).
+ * The plan in force, in one line: by its name and period when the paid return carried them (`plan`: the name the
+ * billing service's plan list gives the bought key), else only that it is on.
  */
 export function paidLine(t: TFunction, plan: string | null | undefined, period: PlanPeriod | undefined) {
-  if (!plan) return t("paidMoment.confirmed");
-  if (period === "month") return t("paidMoment.confirmedMonth", { plan });
-  if (period === "year") return t("paidMoment.confirmedYear", { plan });
-  return t("paidMoment.confirmedPlan", { plan });
+  if (!plan) return t("paidMoment.on");
+  if (period === "month") return t("paidMoment.onMonth", { plan });
+  if (period === "year") return t("paidMoment.onYear", { plan });
+  return t("paidMoment.onPlan", { plan });
 }
+
+/**
+ * What the plan in force gives, in one line, from the limits the billing service set: the seats paid for and the room
+ * for files (a workspace's own bucket counts against none). Null while they aren't known.
+ */
+export function paidRoom(t: TFunction, locale: string, limits: WorkspaceLimits | null | undefined): string | null {
+  if (!limits) return null;
+  const people = limits.members.limit;
+  const bytes = limits.storage.ownStorage ? null : limits.storage.limitBytes;
+  const files = bytes === null ? null : formatBytes(locale, bytes);
+  if (people !== null && files !== null)
+    return t("paidMoment.room.both", { count: people, people: formatInt(locale, people), files });
+  if (people !== null) return t("paidMoment.room.people", { count: people, people: formatInt(locale, people) });
+  if (files !== null) return t("paidMoment.room.files", { files });
+  return t("paidMoment.room.none");
+}
+
+/**
+ * The workspace's own computer as it is now: on, or getting ready. Its owners are told when it is on (the
+ * `computer_ready` notification), so only they are promised it.
+ */
+export const paidComputerLine = (t: TFunction, on: boolean, owner: boolean) =>
+  t(on ? "paidMoment.computer.on" : owner ? "paidMoment.computer.startingTold" : "paidMoment.computer.starting");
 
 /**
  * The phone's trigger for the moment a plan turns on (it never sees the paid return, ADR 0079): the workspace was on a

@@ -5,8 +5,10 @@ import type { AppNotification, OrgSummary } from "../src/api/types";
 import {
   BILLING_HOLDS,
   billingHoldOf,
+  paidComputerLine,
   paidLine,
   paidReturnOf,
+  paidRoom,
   paidSearch,
   planHeldNext,
   planMoveTargets,
@@ -124,12 +126,35 @@ describe("a paid return (the billing service's `?paid=1`)", () => {
     expect(paidSearch({ plan: "team" })).toEqual({});
   });
 
-  test("the purchase in one line, with as much as the app knows", () => {
+  test("the plan in force in one line, with as much as the app knows", () => {
     const t = ((key: string, o?: { plan?: string }) => (o?.plan ? `${key}:${o.plan}` : key)) as never;
-    expect(paidLine(t, null, "year")).toBe("paidMoment.confirmed");
-    expect(paidLine(t, "Equipe", undefined)).toBe("paidMoment.confirmedPlan:Equipe");
-    expect(paidLine(t, "Equipe", "month")).toBe("paidMoment.confirmedMonth:Equipe");
-    expect(paidLine(t, "Equipe", "year")).toBe("paidMoment.confirmedYear:Equipe");
+    expect(paidLine(t, null, "year")).toBe("paidMoment.on");
+    expect(paidLine(t, "Equipe", undefined)).toBe("paidMoment.onPlan:Equipe");
+    expect(paidLine(t, "Equipe", "month")).toBe("paidMoment.onMonth:Equipe");
+    expect(paidLine(t, "Equipe", "year")).toBe("paidMoment.onYear:Equipe");
+  });
+
+  test("what the plan gives, from its limits: seats and files, a bucket of its own counting against none", () => {
+    const GB = 1024 ** 3;
+    const limits = (people: number | null, files: number | null, ownStorage = false) => ({
+      members: { used: 1, limit: people },
+      storage: { usedBytes: 0, limitBytes: files, ownStorage },
+      uploads: { usedBytes24h: 0, limitBytesPerDay: null },
+    });
+    expect(paidRoom(t, "en", undefined)).toBeNull();
+    expect(paidRoom(t, "en", limits(1284, 50 * GB))).toBe(
+      'paidMoment.room.both {"count":1284,"people":"1,284","files":"50 GB"}',
+    );
+    expect(paidRoom(t, "de", limits(3, null))).toBe('paidMoment.room.people {"count":3,"people":"3"}');
+    expect(paidRoom(t, "en", limits(3, 50 * GB, true))).toBe('paidMoment.room.people {"count":3,"people":"3"}');
+    expect(paidRoom(t, "en", limits(null, 50 * GB))).toBe('paidMoment.room.files {"files":"50 GB"}');
+    expect(paidRoom(t, "en", limits(null, null))).toBe("paidMoment.room.none");
+  });
+
+  test("the computer as it is now: on, or getting ready, its owners promised a word when it is on", () => {
+    expect(paidComputerLine(t, true, true)).toBe("paidMoment.computer.on");
+    expect(paidComputerLine(t, false, true)).toBe("paidMoment.computer.startingTold");
+    expect(paidComputerLine(t, false, false)).toBe("paidMoment.computer.starting");
   });
 
   test("the phone's trigger: held when it last looked, in force now; never on a first look", () => {

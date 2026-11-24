@@ -52225,23 +52225,44 @@
   "teamTemplates.approvalsPersonal": {
     "value": "Anything sent, paid or booked in your name waits for your approval. You can let it go later, once you trust them."
   },
-  "paidMoment.title": {
-    "value": "Your team is up and running"
+  "paidMoment.on": {
+    "value": "Your plan is on"
   },
-  "paidMoment.titlePersonal": {
-    "value": "Your agents are up and running"
+  "paidMoment.onPlan": {
+    "value": "You're on {{plan}}"
   },
-  "paidMoment.confirmed": {
-    "value": "Payment confirmed."
+  "paidMoment.onMonth": {
+    "value": "You're on {{plan}}, monthly"
   },
-  "paidMoment.confirmedPlan": {
-    "value": "Payment confirmed: {{plan}}."
+  "paidMoment.onYear": {
+    "value": "You're on {{plan}}, yearly"
   },
-  "paidMoment.confirmedMonth": {
-    "value": "Payment confirmed: {{plan}}, billed monthly."
+  "paidMoment.room.both": {
+    "value": {
+      "one": "Room for {{people}} person and {{files}} of files.",
+      "other": "Room for {{people}} people and {{files}} of files."
+    }
   },
-  "paidMoment.confirmedYear": {
-    "value": "Payment confirmed: {{plan}}, billed yearly."
+  "paidMoment.room.people": {
+    "value": {
+      "one": "Room for {{people}} person, with no limit on files.",
+      "other": "Room for {{people}} people, with no limit on files."
+    }
+  },
+  "paidMoment.room.files": {
+    "value": "Room for {{files}} of files, with no limit on people."
+  },
+  "paidMoment.room.none": {
+    "value": "No limit on people or files."
+  },
+  "paidMoment.computer.on": {
+    "value": "Your computer is on."
+  },
+  "paidMoment.computer.starting": {
+    "value": "Your computer is getting ready."
+  },
+  "paidMoment.computer.startingTold": {
+    "value": "Your computer is getting ready. We'll tell you when it's on."
   },
   "paidMoment.hello": {
     "value": "Hi, {{first}}"
@@ -52250,7 +52271,13 @@
     "value": "Hi there"
   },
   "paidMoment.say": {
-    "value": "We're all up and the computer is on. Let's get to work."
+    "value": "We're all here. Let's get to work."
+  },
+  "paidMoment.sayOn": {
+    "value": "We're all here, and the computer is on. Let's get to work."
+  },
+  "paidMoment.sayStarting": {
+    "value": "We're all here. We'll tell you when the computer is on."
   },
   "paidMoment.next.ai": {
     "value": "Connect an AI"

@@ -22012,15 +22012,28 @@
     "approvalsPersonal": "Todo lo que se envíe, se pague o se reserve a tu nombre espera tu aprobación. Puedes liberarlo después, cuando confíes en ellos."
   },
   "paidMoment": {
-    "title": "Tu equipo ya está en marcha",
-    "titlePersonal": "Tus agentes ya están en marcha",
-    "confirmed": "Pago confirmado.",
-    "confirmedPlan": "Pago confirmado: {{plan}}.",
-    "confirmedMonth": "Pago confirmado: {{plan}}, cobro mensual.",
-    "confirmedYear": "Pago confirmado: {{plan}}, cobro anual.",
+    "on": "Tu plan está activo",
+    "onPlan": "Estás en el plan {{plan}}",
+    "onMonth": "Estás en el plan {{plan}}, mensual",
+    "onYear": "Estás en el plan {{plan}}, anual",
+    "room": {
+      "both_one": "Espacio para {{people}} persona y {{files}} de archivos.",
+      "both_other": "Espacio para {{people}} personas y {{files}} de archivos.",
+      "people_one": "Espacio para {{people}} persona, sin límite de archivos.",
+      "people_other": "Espacio para {{people}} personas, sin límite de archivos.",
+      "files": "Espacio para {{files}} de archivos, sin límite de personas.",
+      "none": "Sin límite de personas ni de archivos."
+    },
+    "computer": {
+      "on": "Tu computadora está encendida.",
+      "starting": "Tu computadora se está preparando.",
+      "startingTold": "Tu computadora se está preparando. Te avisamos cuando esté encendida."
+    },
     "hello": "Hola, {{first}}",
     "hi": "Hola",
-    "say": "Ya estamos todos despiertos y la computadora está encendida. Manos a la obra.",
+    "say": "Ya estamos todos aquí. Manos a la obra.",
+    "sayOn": "Ya estamos todos aquí y la computadora está encendida. Manos a la obra.",
+    "sayStarting": "Ya estamos todos aquí. Te avisamos cuando la computadora esté encendida.",
     "next": {
       "ai": "Conectar una IA",
       "people": "Invitar personas",

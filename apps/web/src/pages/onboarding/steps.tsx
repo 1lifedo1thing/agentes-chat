@@ -30,7 +30,7 @@ import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { AgentAvatar } from "@/components/AgentAvatar";
-import { PaidScene } from "@/components/arrival/PaidMoment";
+import { type PaidComputer, PaidScene } from "@/components/arrival/PaidMoment";
 import { useOpenBilling } from "@/components/BillingLinkButton";
 import { TeamAsleepSky } from "@/components/Sky";
 import { TeamPlanBody } from "@/components/TeamPlan";
@@ -272,7 +272,8 @@ export function TeamStep({
  * billing service recommends with its price when it says one, what comes after it (`next`: connecting an AI, ADR
  * 0162), and the way in without it, where the right hand's card keeps the plan. Back from paying (`confirming`), the
  * payment said as received until the hold lifts. Then (`awake`, ADR 0079) the moment the plan turned on: day over
- * the team, the computer on, a hello to the person who paid, and the step that follows as the one way on.
+ * the team, the computer as it is (on, or getting ready), a hello to the person who paid, and the step that comes
+ * next as the one way on.
  */
 export function PlanStep({
   orgId,
@@ -293,8 +294,8 @@ export function PlanStep({
   next: boolean;
   confirming: boolean;
   personal: boolean;
-  /** The plan just turned on: who paid (greeted by their first name), and the step that follows. */
-  awake: { name: string | null | undefined; next: string; onNext: () => void } | null;
+  /** The plan just turned on: who paid (greeted by their first name), the computer as it is, and the step after it. */
+  awake: { name: string | null | undefined; computer: PaidComputer; next: string; onNext: () => void } | null;
 }) {
   const { t } = useTranslation();
   const routines = useRoutines(orgId).data;
@@ -306,7 +307,7 @@ export function PlanStep({
         className="onb__plan"
         aria-label={t(personal ? "onboarding.flow.steps.planPersonal" : "onboarding.flow.steps.plan")}
       >
-        <PaidScene agents={team} name={awake.name} className="onb__plan-scene" />
+        <PaidScene agents={team} name={awake.name} computer={awake.computer} className="onb__plan-scene" />
         <PlanWeek team={team} routines={routines} />
         <div className="onb__plan-acts">
           <Button variant="primary" kbd={["↵"]} data-enter="" onClick={awake.onNext}>

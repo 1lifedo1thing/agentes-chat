@@ -21599,15 +21599,28 @@
     "approvalsPersonal": "Alles wat in jouw naam wordt verstuurd, betaald of geboekt, wacht op je goedkeuring. Je kunt het later vrijgeven, als je ze vertrouwt."
   },
   "paidMoment": {
-    "title": "Je team is aan de slag",
-    "titlePersonal": "Je agents zijn aan de slag",
-    "confirmed": "Betaling bevestigd.",
-    "confirmedPlan": "Betaling bevestigd: {{plan}}.",
-    "confirmedMonth": "Betaling bevestigd: {{plan}}, maandelijks gefactureerd.",
-    "confirmedYear": "Betaling bevestigd: {{plan}}, jaarlijks gefactureerd.",
+    "on": "Je abonnement is actief",
+    "onPlan": "Je zit op {{plan}}",
+    "onMonth": "Je zit op {{plan}}, maandelijks",
+    "onYear": "Je zit op {{plan}}, jaarlijks",
+    "room": {
+      "both_one": "Ruimte voor {{people}} persoon en {{files}} aan bestanden.",
+      "both_other": "Ruimte voor {{people}} mensen en {{files}} aan bestanden.",
+      "people_one": "Ruimte voor {{people}} persoon, zonder limiet op bestanden.",
+      "people_other": "Ruimte voor {{people}} mensen, zonder limiet op bestanden.",
+      "files": "Ruimte voor {{files}} aan bestanden, zonder limiet op mensen.",
+      "none": "Geen limiet op mensen of bestanden."
+    },
+    "computer": {
+      "on": "Je computer staat aan.",
+      "starting": "Je computer wordt klaargemaakt.",
+      "startingTold": "Je computer wordt klaargemaakt. We laten het je weten zodra hij aan staat."
+    },
     "hello": "Hoi, {{first}}",
     "hi": "Hoi",
-    "say": "We zijn allemaal wakker en de computer staat aan. Aan de slag.",
+    "say": "We zijn er allemaal. Aan de slag.",
+    "sayOn": "We zijn er allemaal en de computer staat aan. Aan de slag.",
+    "sayStarting": "We zijn er allemaal. We laten het je weten zodra de computer aan staat.",
     "next": {
       "ai": "Een AI koppelen",
       "people": "Mensen uitnodigen",

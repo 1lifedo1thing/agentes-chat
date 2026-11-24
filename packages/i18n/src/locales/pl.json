@@ -22755,15 +22755,32 @@
     "approvalsPersonal": "Wszystko, co jest wysyłane, opłacane lub rezerwowane w twoim imieniu, czeka na twoją zgodę. Możesz to puścić później, gdy im zaufasz."
   },
   "paidMoment": {
-    "title": "Twój zespół już działa",
-    "titlePersonal": "Twoi agenci już działają",
-    "confirmed": "Płatność potwierdzona.",
-    "confirmedPlan": "Płatność potwierdzona: {{plan}}.",
-    "confirmedMonth": "Płatność potwierdzona: {{plan}}, rozliczenie miesięczne.",
-    "confirmedYear": "Płatność potwierdzona: {{plan}}, rozliczenie roczne.",
+    "on": "Twój plan jest aktywny",
+    "onPlan": "Masz plan {{plan}}",
+    "onMonth": "Masz plan {{plan}}, miesięczny",
+    "onYear": "Masz plan {{plan}}, roczny",
+    "room": {
+      "both_one": "Miejsce dla {{people}} osoby i {{files}} na pliki.",
+      "both_few": "Miejsce dla {{people}} osób i {{files}} na pliki.",
+      "both_many": "Miejsce dla {{people}} osób i {{files}} na pliki.",
+      "both_other": "Miejsce dla {{people}} osoby i {{files}} na pliki.",
+      "people_one": "Miejsce dla {{people}} osoby, bez limitu plików.",
+      "people_few": "Miejsce dla {{people}} osób, bez limitu plików.",
+      "people_many": "Miejsce dla {{people}} osób, bez limitu plików.",
+      "people_other": "Miejsce dla {{people}} osoby, bez limitu plików.",
+      "files": "Miejsce na {{files}} plików, bez limitu osób.",
+      "none": "Bez limitu osób i plików."
+    },
+    "computer": {
+      "on": "Twój komputer jest włączony.",
+      "starting": "Twój komputer jest przygotowywany.",
+      "startingTold": "Twój komputer jest przygotowywany. Damy ci znać, gdy będzie włączony."
+    },
     "hello": "Cześć, {{first}}",
     "hi": "Cześć",
-    "say": "Wszyscy już nie śpimy, a komputer jest włączony. Do pracy.",
+    "say": "Wszyscy już jesteśmy. Do pracy.",
+    "sayOn": "Wszyscy już jesteśmy, a komputer jest włączony. Do pracy.",
+    "sayStarting": "Wszyscy już jesteśmy. Damy ci znać, gdy komputer będzie włączony.",
     "next": {
       "ai": "Połącz AI",
       "people": "Zaproś ludzi",
