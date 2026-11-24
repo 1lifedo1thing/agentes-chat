@@ -324,23 +324,26 @@ export function createRealtime(deps: RealtimeDeps) {
     // what it missed; closed, it reconnects and reads it.
     if (ws.send(JSON.stringify(frame)) === 0 && ws.readyState === 1) ws.close(1013, "too far behind");
   };
-  // A new message reaches its members' sockets on this replica as `channel.activity` (no content): their lists
-  // count it as unread without subscribing to every channel. The author's own sockets never hear it.
+  // A new message reaches its members' sockets on this replica as `channel.activity`, with the line their
+  // conversation lists show of it (`activityLine`): their row is patched without subscribing to every channel or
+  // reading the list again. The author's own sockets never hear it.
   // ponytail: one audience query per message per replica with sockets; a per-channel member cache if that shows up.
   const browsers = new Set<BrowserSocket>();
   deps.pubsub.subscribe(chatActivityTopic, (raw) => {
     if (browsers.size === 0) return;
-    const { channelId, threadId, authorUserId, mentionedUserIds } = raw as {
+    const { channelId, threadId, authorUserId, mentionedUserIds, line } = raw as {
       channelId?: unknown;
       threadId?: unknown;
       authorUserId?: unknown;
       mentionedUserIds?: unknown;
+      line?: unknown;
     };
     if (typeof channelId !== "string" || !UUID.test(channelId)) return;
     const thread = typeof threadId === "string" && UUID.test(threadId) ? threadId : null;
     const mentioned = Array.isArray(mentionedUserIds)
       ? mentionedUserIds.filter((id): id is string => typeof id === "string")
       : [];
+    const message = line && typeof line === "object" && typeof (line as { id?: unknown }).id === "string" ? line : null;
     void activityAudience(deps.db, channelId, thread, mentioned)
       .then(({ orgId, dm, userIds }) => {
         const event = { type: "channel.activity", channelId, threadId: thread, dm };
@@ -351,7 +354,11 @@ export function createRealtime(deps: RealtimeDeps) {
             ws.data.user.id !== authorUserId &&
             userIds.has(ws.data.user.id)
           )
-            send(ws, { type: "event", scope: "user", event });
+            send(ws, {
+              type: "event",
+              scope: "user",
+              event: message ? { ...event, message, mentioned: mentioned.includes(ws.data.user.id) } : event,
+            });
       })
       .catch(() => {});
   });

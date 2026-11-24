@@ -624,7 +624,7 @@ test("a missed revocation event is reconciled from durable membership", async ()
   }
 }, 60_000);
 
-test("a new message reaches the other members' sockets as `channel.activity` (no content), never the author's", async () => {
+test("a new message reaches the other members' sockets as `channel.activity` with its list line, never the author's", async () => {
   const owner = browser(t);
   await signUp(owner, "owner@example.com");
   const { orgId, channelId } = await seedOrg(owner);
@@ -635,12 +635,34 @@ test("a new message reaches the other members' sockets as `channel.activity` (no
   await Promise.all([a.opened, o.opened]);
   await Promise.all([a.next((f) => f.type === "ready"), o.next((f) => f.type === "ready")]);
 
-  await owner(`/api/app/organizations/${orgId}/channels/${channelId}/messages`, { json: { body: "hello all" } });
+  const sent = (await (
+    await owner(`/api/app/organizations/${orgId}/channels/${channelId}/messages`, { json: { body: "hello **all**" } })
+  ).json()) as { id: string; createdAt: string; author: { id: string } };
   const heard = await a.next((f) => (f.event as { type?: string } | undefined)?.type === "channel.activity");
+  // What her lists show of it, so they patch their row instead of reading the list again.
   expect(heard).toEqual({
     type: "event",
     scope: "user",
-    event: { type: "channel.activity", channelId, threadId: null, dm: false },
+    event: {
+      type: "channel.activity",
+      channelId,
+      threadId: null,
+      dm: false,
+      message: {
+        id: sent.id,
+        createdAt: sent.createdAt,
+        counts: true,
+        last: {
+          authorType: "person",
+          authorId: sent.author.id,
+          preview: "hello all",
+          body: "hello **all**",
+          meta: null,
+          mediaKind: null,
+        },
+      },
+      mentioned: false,
+    },
   });
   await Bun.sleep(200);
   expect(o.frames.some((f) => (f.event as { type?: string } | undefined)?.type === "channel.activity")).toBe(false);

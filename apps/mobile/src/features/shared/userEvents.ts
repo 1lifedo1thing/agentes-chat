@@ -46,11 +46,11 @@ export function useUserEvents() {
         applyNotificationEvent(qc, orgId, event);
         // The island at the top (ADR 0071 §9): what reaches me while the app is open, and what I settled elsewhere.
         feedIsland(event);
-        // Something new reached you somewhere: the conversation list's unread and last lines, at once. A fetch under
-        // way serves a burst (the undo of "Clear all" restores row by row); a new one stands for the burst read
-        // the message's own `channel.activity` queued.
+        // Something new reached you somewhere: the conversation list's unread and last lines, at once, unless its
+        // message's `channel.activity` already put them in. A fetch under way serves a burst (the undo of "Clear all"
+        // restores row by row); a new one stands for the burst read the message's own `channel.activity` queued.
         if (event.type === "notification.upserted") {
-          readConversationListsNow(qc, orgId);
+          readConversationListsNow(qc, orgId, event.notification.source.messageId);
           // Its sound (ADR 0070); the push covers the app in the background.
           const sound = soundForEvent(event, AppState.currentState !== "active");
           if (sound) playSound(sound);

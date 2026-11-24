@@ -1,3 +1,4 @@
+import { BoundedMap } from "@agenteschat/ui/bounded-map";
 import {
   hashKey,
   type InfiniteData,
@@ -68,6 +69,7 @@ import { playSound } from "../lib/sounds";
 import type { TeamWeekAct } from "../lib/team-week";
 import { threadStartOf } from "../lib/threads";
 import { upsertMessage, withLocalCopies } from "../lib/timeline";
+import { MAX_CHANNEL_UNREAD } from "../lib/unread";
 import { listedText } from "../lib/voice";
 import type { Wallpaper } from "../lib/wallpaper";
 import type { AudienceChoice } from "../lib/who-sees";
@@ -7927,7 +7929,11 @@ export function useThreadActivity(orgId: string, channelId: string): number {
   return useSyncExternalStore(subscribe, read, read);
 }
 
-/** Marks a channel or DM read now; the channel and DM lists show it with no unread at once. */
+/**
+ * Marks a channel or DM read now; the channel and DM lists show it with no unread at once, and the read's
+ * `channel.read` on my own topic sets where it starts (`applyUnreadEvent`). Only a failed mark reads them again. The
+ * threads' unread stays: reading a channel never reads its threads (`countUnreadThreads`).
+ */
 export function useMarkChannelRead(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
@@ -7936,10 +7942,9 @@ export function useMarkChannelRead(orgId: string) {
     retry: retryRead,
     mutationFn: (channelId: string) => api.dms.markRead(orgId, channelId),
     onMutate: (channelId) => clearUnread(qc, orgId, channelId),
-    onSettled: () => {
+    onError: () => {
       void qc.invalidateQueries({ queryKey: keys.channels(orgId) });
       void qc.invalidateQueries({ queryKey: keys.dms(orgId) });
-      void qc.invalidateQueries({ queryKey: keys.unreadThreads(orgId) });
     },
   });
 }
@@ -7987,14 +7992,134 @@ export function addDm(qc: QueryClient, orgId: string, dm: DirectMessage) {
   void qc.refetchQueries({ queryKey: key, exact: true, fetchStatus: "fetching" }, { cancelRefetch: false }).then(add);
 }
 
-/** A conversation shows nothing unread in the cached lists (read here or on another device). */
-function clearUnread(qc: QueryClient, orgId: string, channelId: string) {
+/**
+ * A conversation shows nothing unread in the cached lists (read here or on another device), read up to `lastReadAt`
+ * when the server said (`channel.read`). True when its last line came after that read: something there may be unread
+ * still, and the list reads again.
+ */
+function clearUnread(qc: QueryClient, orgId: string, channelId: string, lastReadAt?: string): boolean {
+  let after = false;
+  const read = lastReadAt ? { lastReadAt } : {};
   qc.setQueryData<Channel[]>(keys.channels(orgId), (list) =>
-    list?.map((c) => (c.id === channelId ? { ...c, unreadCount: 0, mentionCount: 0 } : c)),
+    list?.map((c) => {
+      if (c.id !== channelId) return c;
+      if (lastReadAt && c.lastMessage && c.lastMessage.createdAt > lastReadAt) after = true;
+      return { ...c, unreadCount: 0, mentionCount: 0, ...read };
+    }),
   );
   qc.setQueryData<DirectMessage[]>(keys.dms(orgId), (list) =>
-    list?.map((d) => (d.channelId === channelId ? { ...d, unread: 0 } : d)),
+    list?.map((d) => {
+      if (d.channelId !== channelId) return d;
+      if (lastReadAt && d.lastMessage && d.lastMessage.createdAt > lastReadAt) after = true;
+      return { ...d, unread: 0, ...(lastReadAt ? { lastReadAt, everRead: true } : {}) };
+    }),
   );
+  return after;
+}
+
+/** The messages `patchConversationRow` put in a list, so a notice about one reads nothing again. */
+const patchedLines = new BoundedMap<string, true>(500);
+
+/** How long after a list's read a message heard may already be counted in it, when its line can't tell. */
+const LIST_READ_OVERLAP_MS = 5000;
+
+/**
+ * A new message's line (`channel.activity`'s `message`) into the cached list, so the list isn't read again for it:
+ * the row's last line and its unread (and mention) count. False when the list reads again instead: an older server
+ * sent no line, the conversation isn't in the list, or a read of the list on its way, or one just in, may hold the
+ * message already.
+ */
+function patchConversationRow(
+  qc: QueryClient,
+  orgId: string,
+  e: Extract<UnreadEvent, { type: "channel.activity" }>,
+): boolean {
+  const line = e.message;
+  if (!line) return false;
+  const queryKey = e.dm ? keys.dms(orgId) : keys.channels(orgId);
+  // A read on its way may have left before the message.
+  if (qc.isFetching({ queryKey }) > 0) return false;
+  const state = qc.getQueryState(queryKey);
+  // Not loaded: it loads whole when shown.
+  if (state?.data === undefined) return true;
+  // A channel's last line is a top-level message; a DM's, any.
+  const last = e.dm || e.threadId === null ? line.last : undefined;
+  const fresh = Date.now() - state.dataUpdatedAt < LIST_READ_OVERLAP_MS;
+  const result = { patched: null as boolean | null };
+  /** The row with the message in it: as it is when its read already holds it, unless that can't be told. */
+  const apply = <R extends { lastMessage?: { id: string; createdAt: string } | null; lastReadAt?: string | null }>(
+    row: R,
+    patch: (unread: boolean) => R,
+  ): R => {
+    const shown = row.lastMessage;
+    // Read after the message: it shows this line or a later one.
+    if (shown && (shown.id === line.id || shown.createdAt > line.createdAt)) {
+      result.patched = true;
+      return row;
+    }
+    // A read that just came in may count it or not, and no line tells: the list reads again.
+    if (!last && fresh) {
+      result.patched = false;
+      return row;
+    }
+    result.patched = true;
+    // Already read past it (its `channel.read` heard first): nothing unread.
+    return patch(line.counts && !(row.lastReadAt && line.createdAt <= row.lastReadAt));
+  };
+  if (e.dm) {
+    qc.setQueryData<DirectMessage[]>(queryKey, (list) =>
+      list?.map((d) =>
+        d.channelId !== e.channelId
+          ? d
+          : apply(d, (unread) => ({
+              ...d,
+              unread: d.unread + (unread ? 1 : 0),
+              ...(last
+                ? {
+                    lastMessage: {
+                      id: line.id,
+                      body: last.body,
+                      meta: last.meta,
+                      mediaKind: last.mediaKind,
+                      createdAt: line.createdAt,
+                      authorType: last.authorType,
+                    },
+                  }
+                : {}),
+            })),
+      ),
+    );
+  } else {
+    const cap = (n: number) => Math.min(n, MAX_CHANNEL_UNREAD);
+    qc.setQueryData<Channel[]>(queryKey, (list) =>
+      list?.map((c) =>
+        c.id !== e.channelId || !c.isMember
+          ? c
+          : apply(c, (unread) => ({
+              ...c,
+              unreadCount: cap((c.unreadCount ?? 0) + (unread ? 1 : 0)),
+              mentionCount: cap((c.mentionCount ?? 0) + (unread && e.mentioned ? 1 : 0)),
+              ...(last
+                ? {
+                    lastMessage: {
+                      id: line.id,
+                      authorType: last.authorType,
+                      authorId: last.authorId,
+                      // The rows name the author from the directory.
+                      authorName: null,
+                      preview: last.preview,
+                      meta: last.meta,
+                      mediaKind: last.mediaKind,
+                      createdAt: line.createdAt,
+                    },
+                  }
+                : {}),
+            })),
+      ),
+    );
+  }
+  if (result.patched) patchedLines.set(line.id, true);
+  return result.patched === true;
 }
 
 /** Mutes or unmutes a channel for me: it never looks unread while muted (a mention of me still counts). */
@@ -8147,7 +8272,9 @@ export function readConversationListsOncePerBurst(qc: QueryClient, orgId: string
  * starts here comes after every `channel.activity` heard so far, so the burst read those asked for is dropped; with a
  * read already under way (it may predate them) the burst read stays.
  */
-export function readConversationListsNow(qc: QueryClient, orgId: string) {
+export function readConversationListsNow(qc: QueryClient, orgId: string, messageId?: string) {
+  // Its message's line is in the lists already (its `channel.activity` came first).
+  if (messageId && patchedLines.has(messageId)) return;
   for (const [list, queryKey] of [
     ["dms", keys.dms(orgId)],
     ["channels", keys.channels(orgId)],
@@ -8208,8 +8335,11 @@ export function applyUnreadEvent(qc: QueryClient, orgId: string, event: { type: 
     // conversation reads again when it is shown.
     if (!openScreens.get(qc)?.has(`${orgId}:${e.channelId}`))
       void qc.invalidateQueries({ queryKey: ["org", orgId, "channel", e.channelId], refetchType: "none" });
-    if (e.dm) readOncePerBurst(`${orgId}:dms`, () => void qc.invalidateQueries({ queryKey: keys.dms(orgId) }));
-    else readOncePerBurst(`${orgId}:channels`, () => void qc.invalidateQueries({ queryKey: keys.channels(orgId) }));
+    // Its line goes into the list's row; without one (or when the list can't tell), the list reads once per burst.
+    if (!patchConversationRow(qc, orgId, e)) {
+      if (e.dm) readOncePerBurst(`${orgId}:dms`, () => void qc.invalidateQueries({ queryKey: keys.dms(orgId) }));
+      else readOncePerBurst(`${orgId}:channels`, () => void qc.invalidateQueries({ queryKey: keys.channels(orgId) }));
+    }
     if (e.threadId) {
       const store = threadActivityOf(qc);
       const key = `${orgId}:${e.channelId}`;
@@ -8221,17 +8351,12 @@ export function applyUnreadEvent(qc: QueryClient, orgId: string, event: { type: 
       );
     }
   } else if (e.type === "channel.read") {
-    clearUnread(qc, orgId, e.channelId);
-    // The counts already show it: a list whose burst read is on its way reads with it (each message of a conversation
-    // open here marks it read, and that read comes back here too). One with no burst, or a read under way that may
-    // predate this one, reads at once.
-    for (const [list, queryKey] of [
-      ["channels", keys.channels(orgId)],
-      ["dms", keys.dms(orgId)],
-    ] as const)
-      if (!activityTimers.has(`${orgId}:${list}`) || qc.isFetching({ queryKey }) > 0)
-        void qc.invalidateQueries({ queryKey });
-    void qc.invalidateQueries({ queryKey: keys.unreadThreads(orgId) });
+    // The rows show it at once, read up to the server's moment (each message of a conversation open here marks it
+    // read, and that read comes back here too): the lists read again only when that can't be the whole truth, with a
+    // read of them on its way that may predate this one, or a last line that came after the read.
+    const after = clearUnread(qc, orgId, e.channelId, e.lastReadAt);
+    for (const queryKey of [keys.channels(orgId), keys.dms(orgId)])
+      if (after || qc.isFetching({ queryKey }) > 0) void qc.invalidateQueries({ queryKey });
   } else if (e.type === "channel.muted") setMuted(qc, orgId, e.channelId, e.muted);
   else if (e.type === "chat.prefs") putChatPrefs(qc, orgId, e.chatPrefs);
   else if (e.type === "thread.read") {
