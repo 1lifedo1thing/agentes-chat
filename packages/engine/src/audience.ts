@@ -557,6 +557,28 @@ export async function agentEditorIds(db: Executor, orgId: string, agentId: strin
 }
 
 /**
+ * Who looks after the agent, as member ids: its owner (`ownsAgent`) and the people its "Quem pode editar" names
+ * (`namedEditor`), never who merely manages agents. They talk to it and know what it was told, so a change to its
+ * instructions waits on them (ADR 0085, addendum of 2026-11-24). Empty: the callers turn to who reviews memory.
+ */
+export async function agentKeeperIds(db: Executor, orgId: string, agentId: string): Promise<string[]> {
+  const userId = sql`${organizationMembers.userId}`;
+  const rows = await db
+    .select({ userId: organizationMembers.userId })
+    .from(organizationMembers)
+    .innerJoin(agents, and(eq(agents.orgId, organizationMembers.orgId), eq(agents.id, agentId)))
+    .where(
+      and(
+        eq(organizationMembers.orgId, orgId),
+        sql<boolean>`(${ownsAgentSql("agents", userId)} or ${userId} = any(agents.editor_user_ids)
+          or exists (select 1 from organization_member_roles kr where kr.org_id = agents.org_id
+            and kr.user_id = ${userId} and kr.role_id = any(agents.editor_role_ids)))`,
+      ),
+    );
+  return rows.map((r) => r.userId);
+}
+
+/**
  * Whom it answers by name: its roles first (its owner role leading), then its owner and the people of its audience
  * (only what still exists).
  */
