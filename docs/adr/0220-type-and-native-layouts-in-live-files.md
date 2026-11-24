@@ -7,22 +7,21 @@
 - Code: `packages/live/src/fonts.ts` (`FONT_CATALOG`, `FontRef`), `packages/live/src/rich/*` (the new marks and
   paragraph spacing), `slides/*`, `canvas/*`, `document/*`; fonts built by `scripts/fonts/build.py` from
   `scripts/fonts/fonts.lock.json` into `FONTS_DIR`, served at `/api/fonts/*`; engine `packages/engine/src/live/layout/*`
-  (`add_html`), `live/look.ts` (what an agent sees of its edit), `live/fonts.ts` (fonts from the Drive, embedding
-  rights), the exports in `office/*` and `pdf.ts`
+  (`add_html`), `live/look.ts` (what an agent sees of its edit), `live/file-fonts.ts` and `fonts/*` (fonts from the
+  Drive, reading and measuring fonts, embedding rights), the exports in `office/pptx-write.ts`, `office/docx-write.ts`
+  and `office/slides-pdf.ts`
 
 ## Context
 
-An agent asked to redraw a diagram on a canvas "in our brand" first drew it with the canvas's own shapes, then said
-it couldn't match the brand: every text box was in the app's default font, one size and one weight per box, a card's
-title as heavy as its body, no room for an icon inside a card, and "1." turned into a numbered list. So it wrote the
-diagram as a web page on its computer, took a screenshot with a headless browser and placed the picture on the
-canvas. It looked right, but nobody could change a word: the person double-clicked and only zoomed. Each request
-after that ("20% wider", "a Soon badge on this card", "rename this column") regenerated the whole picture, 23 versions
-in an hour, and every reply said the agent had only seen its picture, never the canvas.
+Live files couldn't hold a designed piece. A canvas drew every text box in the app's default font, one size and one
+weight per box, so a card's title weighed as much as its body, and there was no room for an icon inside a card.
+Presentations were tighter still: two fonts (the theme's heading and body), weights 400, 600 and 700, and no free text
+box, shape, move or style through `edit_presentation`. Documents had the same marks as slides and no font of their own.
 
-Presentations are tighter still: two fonts (the theme's heading and body), weights 400, 600 and 700, no free text
-box, shape, move or style through `edit_presentation`. Documents have the same marks as slides and no font of their
-own.
+An agent asked for a slide or a diagram in a company's look had one way out: write it as a web page on a computer,
+take a screenshot with a headless browser and place the picture in the file. It looks right, but nobody can change a
+word in it, every change ("wider", "a badge on this card", "rename this column") means a new picture, and the agent
+only sees its own picture, never the file.
 
 The fix is not a better picture: it is letting the native files hold what the picture held, and letting the agent
 build it the way it already knows how.
@@ -112,7 +111,7 @@ takes `add_html`: a fragment of HTML and CSS the server lays out and turns into 
 - Each box with a background, border, radius or shadow becomes a shape; each run of text a text box with its marks;
   each `<img>` (a Drive picture or the file's own) and inline `<svg>` (sanitized as ADR 0196 §8) a picture. Icons
   come from the app's own set (`icon:<name>`, drawn in the CSS color around them). What one box held becomes one group,
-  named after its `id` or `data-name`, so "the Webhook card" can be found and changed later.
+  named after its `id` or `data-name`, so "the pricing card" can be found and changed later.
 - `data-arrow-to="<id>"` asks for an arrow between two boxes: a connector that follows its shapes on a canvas, a
   line with a head on a slide.
 - On slides, `add_html` fills a box (the whole slide when none is given); on a canvas it goes at a point, in a frame;

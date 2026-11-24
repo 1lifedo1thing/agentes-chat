@@ -16406,6 +16406,8 @@ export const ptBR = {
       tooLarge: "Este arquivo já está no limite de tamanho. Remova algo dele antes.",
       assetTooLarge: "A imagem passa de {{max}} MB, o limite por imagem.",
       assetType: "Só imagens entram neste arquivo: PNG, JPEG, WebP ou GIF.",
+      fontInvalid:
+        "Essa fonte não pode ser usada: o arquivo não é uma fonte que o app consiga ler. Tente um arquivo .ttf, .otf ou .woff.",
       liveOnly: "Este arquivo é alterado no próprio lugar e não pode ser substituído por inteiro.",
     },
     office: {

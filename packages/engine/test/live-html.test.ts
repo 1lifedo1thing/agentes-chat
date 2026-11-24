@@ -122,22 +122,22 @@ const CARDS = `
            border-radius: 999px; }
   p { font-size: 24px; color: #4c5a6c; margin: 12px 0 0; }
 </style>
-<div class="cards" data-name="O que acorda o agente">
-  <div class="card" data-name="Webhook">
-    <div class="label">Gatilho</div>
-    <div class="title"><svg width="32" height="32" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" fill="#0063d1"/></svg> Webhook <span class="badge">Soon</span></div>
-    <p>Um sistema de fora avisa o agente quando <b>algo</b> acontece.</p>
+<div class="cards" data-name="Ways to order">
+  <div class="card" data-name="Delivery">
+    <div class="label">Fastest</div>
+    <div class="title"><svg width="32" height="32" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" fill="#0063d1"/></svg> Delivery <span class="badge">New</span></div>
+    <p>A courier brings it to your door in <b>under</b> an hour.</p>
   </div>
-  <div class="card" data-name="Rotina">
-    <div class="title">Rotina</div>
-    <p>Horário, e-mail chegando, PR aberto.</p>
+  <div class="card" data-name="Pickup">
+    <div class="title">Pickup</div>
+    <p>Ready at the counter in twenty minutes.</p>
   </div>
 </div>`;
 
 describe("add_html on a slide", () => {
   test("cards become shapes, texts with the brand's fonts, an icon and a badge, grouped by the markup", async () => {
     const run = await runFor();
-    const deck = artifactOf(await ok(run, "create_presentation", { title: "Anatomia", slides: [{ layout: "blank" }] }));
+    const deck = artifactOf(await ok(run, "create_presentation", { title: "Order guide", slides: [{ layout: "blank" }] }));
     const out = await ok(run, "edit_presentation", {
       file: deck.id,
       ops: [{ op: "add_html", slide: 1, html: CARDS, box: { x: 0, y: 200, w: 1920, h: 600 } }],
@@ -156,10 +156,10 @@ describe("add_html on a slide", () => {
       expect(card?.style).toMatchObject({ fill: "#ffffff", strokeWidth: 3, radius: 20 });
       expect(card?.style?.shadow).toBeDefined();
       const badge = shapes.find((e) => e.style?.fill === "#0063d1");
-      expect(JSON.stringify(badge?.text)).toContain("Soon");
+      expect(JSON.stringify(badge?.text)).toContain("New");
       expect(badge?.style).toMatchObject({ weight: 700, color: "#ffffff", align: "center" });
       // Fonts from the catalog, by the names the CSS gave.
-      const label = texts.find((e) => JSON.stringify(e.text).includes("Gatilho"));
+      const label = texts.find((e) => JSON.stringify(e.text).includes("Fastest"));
       expect(label?.style).toMatchObject({
         font: "martian-mono",
         size: 16,
@@ -167,12 +167,12 @@ describe("add_html on a slide", () => {
         caps: true,
         color: "#0063d1",
       });
-      const title = texts.find((e) => JSON.stringify(e.text).includes("Webhook"));
+      const title = texts.find((e) => JSON.stringify(e.text).includes("Delivery"));
       expect(title?.style).toMatchObject({ font: "funnel-display", weight: 300, size: 36 });
       // A word in bold is a mark on the run, the paragraph keeps its own look.
-      const body = texts.find((e) => JSON.stringify(e.text).includes("Um sistema"));
+      const body = texts.find((e) => JSON.stringify(e.text).includes("A courier"));
       expect(body?.style).toMatchObject({ font: "onest", size: 24, color: "#4c5a6c" });
-      expect(body?.text?.[0]?.runs.find((r) => r.text === "algo")?.weight).toBe(700);
+      expect(body?.text?.[0]?.runs.find((r) => r.text === "under")?.weight).toBe(700);
       // The icon is a picture of the file (the sanitized SVG), placed where the markup put it.
       const icon = slide.elements.find((e) => e.type === "image");
       expect(icon?.asset).toBeTruthy();
@@ -181,15 +181,15 @@ describe("add_html on a slide", () => {
       for (const e of slide.elements) expect(e.y).toBeGreaterThanOrEqual(200);
       // The cards and the row are groups, named as the markup named them.
       const names = (slide.groups ?? []).map((g) => g.name);
-      expect(names).toEqual(expect.arrayContaining(["O que acorda o agente", "Webhook", "Rotina"]));
-      const webhook = slide.groups?.find((g) => g.name === "Webhook");
-      const row = slide.groups?.find((g) => g.name === "O que acorda o agente");
-      expect(webhook?.parent).toBe(row?.id);
+      expect(names).toEqual(expect.arrayContaining(["Ways to order", "Delivery", "Pickup"]));
+      const delivery = slide.groups?.find((g) => g.name === "Delivery");
+      const row = slide.groups?.find((g) => g.name === "Ways to order");
+      expect(delivery?.parent).toBe(row?.id);
       expect(card?.group).toBeTruthy();
     });
 
     const read = await ok(run, "read_presentation", { file: deck.id });
-    expect(read.content).toContain('"Webhook"');
+    expect(read.content).toContain('"Delivery"');
     expect(read.content).toContain("text Martian Mono");
     expect(read.content).toContain("caps");
     expect(read.content).toContain("font-weight:700");
@@ -202,20 +202,20 @@ describe("add_html on a slide", () => {
       file: deck.id,
       ops: [
         { op: "add_html", slide: 1, html: CARDS, box: { x: 0, y: 300, w: 1920, h: 500 } },
-        { op: "style", slide: 1, group: "Webhook", style: { color: "#ff0000" } },
-        { op: "move", slide: 1, group: "Rotina", x: 1000, y: 900 },
+        { op: "style", slide: 1, group: "Delivery", style: { color: "#ff0000" } },
+        { op: "move", slide: 1, group: "Pickup", x: 1000, y: 900 },
         { op: "set_fonts", fonts: { heading: "Funnel Display", body: "Inter" } },
         {
           op: "set_text",
           slide: 1,
           role: "title",
-          html: 'Anatomia <span style="font-weight:300;color:#0063d1">de um agente</span>',
+          html: 'Order <span style="font-weight:300;color:#0063d1">guide</span>',
         },
         {
           op: "add_shape",
           slide: 1,
           shape: "rect",
-          text: "Soon",
+          text: "New",
           box: { x: 40, y: 40, w: 120, h: 40 },
           style: { fill: "#0063d1", radius: 20, color: "#ffffff", weight: 700, padding: 6 },
         },
@@ -226,19 +226,19 @@ describe("add_html on a slide", () => {
       expect(view.fonts).toEqual({ heading: "funnel-display", body: "inter" });
       const slide = view.slides[0];
       if (!slide) throw new Error("no slide");
-      const webhook = slide.groups?.find((g) => g.name === "Webhook");
-      const inWebhook = slide.elements.filter((e) => e.group === webhook?.id);
-      expect(inWebhook.length).toBeGreaterThan(1);
-      for (const e of inWebhook) expect(e.style?.color).toBe("#ff0000");
-      const rotina = slide.groups?.find((g) => g.name === "Rotina");
-      const moved = slide.elements.filter((e) => e.group === rotina?.id);
+      const delivery = slide.groups?.find((g) => g.name === "Delivery");
+      const inDelivery = slide.elements.filter((e) => e.group === delivery?.id);
+      expect(inDelivery.length).toBeGreaterThan(1);
+      for (const e of inDelivery) expect(e.style?.color).toBe("#ff0000");
+      const pickup = slide.groups?.find((g) => g.name === "Pickup");
+      const moved = slide.elements.filter((e) => e.group === pickup?.id);
       expect(Math.min(...moved.map((e) => e.x))).toBe(1000);
       expect(Math.min(...moved.map((e) => e.y))).toBe(900);
       const title = slide.elements.find((e) => e.role === "title");
-      const run = title?.text?.[0]?.runs.find((r) => r.text === "de um agente");
+      const run = title?.text?.[0]?.runs.find((r) => r.text === "guide");
       expect(run).toMatchObject({ weight: 300, color: "#0063d1" });
       const pill = slide.elements.find((e) => e.type === "shape" && e.x === 40 && e.y === 40);
-      expect(JSON.stringify(pill?.text)).toContain("Soon");
+      expect(JSON.stringify(pill?.text)).toContain("New");
       expect(pill?.style).toMatchObject({ fill: "#0063d1", radius: 20, color: "#ffffff", weight: 700, padding: 6 });
     });
   });
@@ -248,7 +248,7 @@ describe("add_html on a slide", () => {
     const deck = artifactOf(await ok(run, "create_presentation", { title: "Deck", slides: [{ layout: "blank" }] }));
     const out = await ok(run, "edit_presentation", {
       file: deck.id,
-      ops: [{ op: "add_html", slide: 1, html: '<p style="font-family: Helvetica Neue; font-size: 48px">Olá</p>' }],
+      ops: [{ op: "add_html", slide: 1, html: '<p style="font-family: Helvetica Neue; font-size: 48px">Hello</p>' }],
     });
     expect(out.content).toContain("Helvetica Neue");
     const bad = await call(run, "edit_presentation", {
@@ -263,12 +263,12 @@ describe("add_html on a slide", () => {
 describe("add_html on a canvas", () => {
   test("in a frame: shapes with their looks and labels, texts, and the groups the markup makes", async () => {
     const run = await runFor();
-    const board = artifactOf(await ok(run, "create_canvas", { title: "Anatomia" }));
+    const board = artifactOf(await ok(run, "create_canvas", { title: "Menu" }));
     await ok(run, "edit_canvas", {
       file: board.id,
       ops: [
-        { op: "add_frame", ref: "f", name: "Marca", x: 0, y: 0, w: 1600, h: 800 },
-        { op: "add_html", html: CARDS, x: 40, y: 60, w: 1400, frame: "f", name: "Diagrama" },
+        { op: "add_frame", ref: "f", name: "Menu", x: 0, y: 0, w: 1600, h: 800 },
+        { op: "add_html", html: CARDS, x: 40, y: 60, w: 1400, frame: "f", name: "Diagram" },
       ],
     });
     await headOf(board.id, (doc) => {
@@ -280,20 +280,20 @@ describe("add_html on a canvas", () => {
       expect(cards[0]?.shadow).toBeDefined();
       const badge = shapes.find((s) => s.type === "shape" && s.fill === "#0063d1");
       expect(badge?.style).toMatchObject({ weight: 700, color: "#ffffff", align: "center" });
-      const label = shapes.find((s) => s.type === "text" && JSON.stringify(s.text).includes("Gatilho"));
+      const label = shapes.find((s) => s.type === "text" && JSON.stringify(s.text).includes("Fastest"));
       expect(label?.style).toMatchObject({ font: "martian-mono", tracking: 120, caps: true });
       expect(label?.x).toBeGreaterThanOrEqual(40);
       const groups = readCanvasGroups(doc);
-      expect(groups.map((g) => g.name)).toEqual(expect.arrayContaining(["Webhook", "Rotina", "O que acorda o agente"]));
+      expect(groups.map((g) => g.name)).toEqual(expect.arrayContaining(["Delivery", "Pickup", "Ways to order"]));
     });
 
     await ok(run, "edit_canvas", {
       file: board.id,
-      ops: [{ op: "move", group: "Webhook", x: 2000, y: 0 }],
+      ops: [{ op: "move", group: "Delivery", x: 2000, y: 0 }],
     });
     await headOf(board.id, (doc) => {
-      const webhook = readCanvasGroups(doc).find((g) => g.name === "Webhook");
-      const inside = readShapes(doc).filter((s) => s.group === webhook?.id);
+      const delivery = readCanvasGroups(doc).find((g) => g.name === "Delivery");
+      const inside = readShapes(doc).filter((s) => s.group === delivery?.id);
       expect(Math.min(...inside.map((s) => s.x))).toBe(2000);
     });
     const read = await ok(run, "read_canvas", { file: board.id });
@@ -378,15 +378,15 @@ describe("the layout itself", () => {
       @font-face { font-family: "Brand Display"; src: url("fonts/FunnelDisplay-Bold.ttf") format("truetype"); }
       h1 { font-family: "Brand Display", sans-serif; margin: 0; }
       .step::before { content: "01 "; } .step::after { content: " \\2192"; }
-    </style><h1>Anatomia</h1><p class="step">Gatilho</p>`);
+    </style><h1>Order guide</h1><p class="step">Choose</p>`);
     // The heading and the paragraph are one text box of two paragraphs; each run carries its own font.
     const paragraphs = r.pieces.flatMap((p) => (p.kind === "text" ? p.text.map((para) => ({ para, box: p })) : []));
-    const title = paragraphs.find(({ para }) => para.runs.some((x) => x.text.includes("Anatomia")));
-    const run = title?.para.runs.find((x) => x.text.includes("Anatomia"));
+    const title = paragraphs.find(({ para }) => para.runs.some((x) => x.text.includes("Order guide")));
+    const run = title?.para.runs.find((x) => x.text.includes("Order guide"));
     expect(run?.font ?? title?.box.style.font).toBe("funnel-display");
-    const step = paragraphs.find(({ para }) => para.runs.some((x) => x.text.includes("Gatilho")));
+    const step = paragraphs.find(({ para }) => para.runs.some((x) => x.text.includes("Choose")));
     const words = step?.para.runs.map((x) => x.text).join("") ?? "";
-    expect(words.replace(/\s+/g, " ").trim()).toBe("01 Gatilho \u2192");
+    expect(words.replace(/\s+/g, " ").trim()).toBe("01 Choose \u2192");
   });
 
   test("data-arrow-to asks for an arrow between two boxes, by their pieces", () => {
@@ -480,16 +480,16 @@ describe("documents take HTML", () => {
       ops: [
         {
           op: "append",
-          html: '<h2 style="font-family: Fraunces; color: #0063d1">Contexto</h2><p>Um <span style="font-weight:600;letter-spacing:0.1em;text-transform:uppercase">agente</span> sabe.</p><ul><li>Memória</li><li>Skills</li></ul><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>',
+          html: '<h2 style="font-family: Fraunces; color: #0063d1">Pantry</h2><p>A <span style="font-weight:600;letter-spacing:0.1em;text-transform:uppercase">baker</span> knows.</p><ul><li>Flour</li><li>Water</li></ul><table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>',
         },
       ],
     });
     await headOf(a.id, (doc) => {
       const blocks = readDocument(doc);
-      const heading = blocks.find((b) => b.type === "heading" && JSON.stringify(b).includes("Contexto"));
+      const heading = blocks.find((b) => b.type === "heading" && JSON.stringify(b).includes("Pantry"));
       expect(heading?.type === "heading" && heading.runs[0]).toMatchObject({ font: "fraunces", color: "#0063d1" });
-      const para = blocks.find((b) => b.type === "paragraph" && JSON.stringify(b).includes("agente"));
-      const word = para?.type === "paragraph" ? para.runs.find((r) => r.text === "agente") : undefined;
+      const para = blocks.find((b) => b.type === "paragraph" && JSON.stringify(b).includes("baker"));
+      const word = para?.type === "paragraph" ? para.runs.find((r) => r.text === "baker") : undefined;
       expect(word).toMatchObject({ weight: 600, tracking: 100, caps: true });
       expect(blocks.filter((b) => b.type === "paragraph" && b.list === "bullet")).toHaveLength(2);
       const table = blocks.find((b) => b.type === "table");
@@ -551,7 +551,7 @@ describe("exports keep the type", () => {
       ops: [
         {
           op: "append",
-          html: '<p><span style="font-family: Inter; font-weight: 700; font-size: 24px">Marca</span></p>',
+          html: '<p><span style="font-family: Inter; font-weight: 700; font-size: 24px">Label</span></p>',
         },
       ],
     });

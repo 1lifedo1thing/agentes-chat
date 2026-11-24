@@ -16459,6 +16459,8 @@ export const en = {
       tooLarge: "This file is at its size limit. Remove something from it first.",
       assetTooLarge: "The picture is over {{max}} MB, the limit per picture.",
       assetType: "Only pictures go in this file: PNG, JPEG, WebP or GIF.",
+      /** A font uploaded to the Drive or brought into a file is checked first (ADR 0220 §2). */
+      fontInvalid: "This font can't be used: the file isn't a font the app can read. Try a .ttf, .otf or .woff file.",
       liveOnly: "This file is changed right where it is, so it can't be replaced as a whole.",
     },
     /** Uploaded Office files the server reads to show or to make editable (ADR 0198). */
