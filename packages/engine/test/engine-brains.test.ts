@@ -3412,7 +3412,7 @@ test("a sign-in that never answered fails at once on its CLI's own error, noted 
   for (const worked of [false, true]) {
     if (worked) await f.close();
     f = await setup();
-    const machineId = await computerAgent(f, { brainFallback: false });
+    const machineId = await computerAgent(f);
     const account = crypto.randomUUID();
     await f.db.insert(schema.machineAccounts).values({
       id: account,
