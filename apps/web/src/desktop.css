@@ -28,6 +28,16 @@ html[data-desktop-renderer="cpu"] *::after {
   /* biome-ignore lint/complexity/noImportantStyles: painting on the CPU must beat every component's own loop */
   animation-iteration-count: 1 !important;
 }
+/* Nobody sees the app (`data-sight`, packages/ui/src/sight.ts: hidden, or another window in front with the pointer
+   elsewhere): an endless loop (typing dots, pulses, shimmers) ends its round and waits, here and in a browser tab.
+   The desktop window keeps running its page out of sight, where each loop kept the GPU drawing for nobody. Only
+   loops: what plays once (a message fading in) still plays. */
+html[data-sight] *,
+html[data-sight] *::before,
+html[data-sight] *::after {
+  /* biome-ignore lint/complexity/noImportantStyles: with nobody looking, no component's loop may keep going */
+  animation-iteration-count: 1 !important;
+}
 /* Full screen: the buttons hide, so does their room. Windows and Linux keep the system's own title bar. */
 html[data-fullscreen],
 html[data-desktop="windows"],

@@ -15,6 +15,7 @@
  * element's CSS background shows.
  */
 import { onScreenNow } from "../device";
+import { onSight, sight } from "../sight";
 import { PAINT_ATTRS } from "../theme";
 import {
   blobsAt,
@@ -149,7 +150,7 @@ export const skiesHeld = () => held || away;
 export const SKY_IDLE_MS = 2 * 60_000;
 
 /**
- * Holds the skies still while nobody looks: the page hidden, the window in the background, or no input for
+ * Holds the skies still while nobody looks: nobody sees the app (`sight`, followed by `watchSight`), or no input for
  * `SKY_IDLE_MS`. The first input, or the window coming forward, moves them again. A hidden desktop window keeps
  * running its page (no throttling there), where each frame of a sky costs a core's time for nothing. Returns the stop.
  */
@@ -157,7 +158,7 @@ export function holdSkiesWhileAway(idleMs = SKY_IDLE_MS) {
   let last = Date.now();
   let idle = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const update = () => setHeld({ away: idle || document.hidden || !document.hasFocus() });
+  const update = () => setHeld({ away: idle || sight() !== "present" });
   const check = () => {
     const left = idleMs - (Date.now() - last);
     if (left > 0) timer = setTimeout(check, left);
@@ -176,17 +177,13 @@ export function holdSkiesWhileAway(idleMs = SKY_IDLE_MS) {
   };
   const inputs = ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"];
   for (const name of inputs) window.addEventListener(name, active, { capture: true, passive: true });
-  window.addEventListener("focus", update);
-  window.addEventListener("blur", update);
-  document.addEventListener("visibilitychange", update);
+  const unsight = onSight(update);
   active();
   update();
   return () => {
     clearTimeout(timer);
     for (const name of inputs) window.removeEventListener(name, active, { capture: true });
-    window.removeEventListener("focus", update);
-    window.removeEventListener("blur", update);
-    document.removeEventListener("visibilitychange", update);
+    unsight();
     setHeld({ away: false });
   };
 }
