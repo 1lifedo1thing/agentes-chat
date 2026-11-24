@@ -1825,19 +1825,22 @@ describe("tell_agent: what comes of work handed off comes back by itself (ADR 00
   });
 
   test("an agent that handed part on goes on once when what came back needs a step from it, and that run's reply goes back", async () => {
+    let woken = "";
     f = await setup({
       askAgent: true,
       judge: (kind) => (kind === "note_reply" || kind === "handed_back_next" ? 0.9 : undefined),
       reply: handing([{ agent: "@infra", message: "Cuida do deploy de staging." }], {
-        Infra: (req) =>
-          lastText(req).includes("this came back")
-            ? answer("Destravei os 3 jobs; staging no ar.")
-            : lastText(req).includes("tool_result")
+        Infra: (req) => {
+          if (!lastText(req).includes("this came back"))
+            return lastText(req).includes("tool_result")
               ? answer("Deploy feito; pedi ao Ops para checar a fila.")
               : {
                   chunks: [],
                   toolUses: [{ name: "tell_agent", input: { agent: "@ops", message: "Checa a fila de staging." } }],
-                },
+                };
+          woken = lastText(req);
+          return answer("Destravei os 3 jobs; staging no ar.");
+        },
         Ops: () => answer("3 jobs travados na fila."),
       }),
     });
@@ -1863,6 +1866,9 @@ describe("tell_agent: what comes of work handed off comes back by itself (ADR 00
     });
     const judged = (f.context.judge as unknown as { calls: { kind: string }[] }).calls;
     expect(judged.map((c) => c.kind)).toContain("handed_back_next");
+    // It is told to act and answer in full, not to report to people as after a person's hand-off.
+    expect(woken).toContain("instead of your earlier one");
+    expect(woken).not.toContain("Tell the people here");
   });
 
   test("an agent that goes on with what came back and fails still sends up what its colleagues sent back, with why", async () => {
