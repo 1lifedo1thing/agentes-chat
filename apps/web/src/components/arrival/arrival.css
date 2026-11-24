@@ -713,6 +713,29 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   gap: 1px;
   min-width: 0;
 }
+/* Beside its maker's tile only the name's line (centred on it, with how full the plan is); the lines under it take
+   the row's whole width, so the tile never owns a column beside three lines. */
+.arrival-have__row:has(> .ac-brand) {
+  align-items: center;
+  row-gap: 2px;
+}
+.arrival-have__row:has(> .ac-brand) > .arrival-have__text {
+  display: contents;
+}
+.arrival-have__row:has(> .ac-brand) > .ac-brand,
+.arrival-have__row:has(> .ac-brand) .arrival-have__head {
+  grid-row: 1;
+}
+.arrival-have__row:has(> .ac-brand) .arrival-have__head {
+  grid-column: 2;
+}
+.arrival-have__row:has(> .ac-brand) :is(.arrival-have__line, .arrival-have__why) {
+  grid-column: 1 / -1;
+}
+.arrival-have__row:has(> .ac-brand) > .arrival-have__room {
+  grid-row: 1;
+  grid-column: 3;
+}
 /* What tells one account from the next (its name, its email, whose it is) wraps whole, never cut. */
 .arrival-have__title,
 .arrival-have__line {
@@ -728,8 +751,7 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   font-size: 13px;
   line-height: 18px;
 }
-/* The title and, after it, the pencil that names the account (ADR 0059 §4): one line, in the title's size, its
-   capitals at the mark's top (`.ac-captop`). */
+/* The title and, after it, the pencil that names the account (ADR 0059 §4): one line, in the title's size. */
 .arrival-have__head {
   display: flex;
   align-items: center;
@@ -737,13 +759,6 @@ html:not([data-pointer]) button.arrival-have__row[data-state="checked"]:focus-vi
   min-width: 0;
   font-size: 15px;
   line-height: 20px;
-}
-/* A row of one line (the one in use, named alone): the line centres on the mark instead. */
-.arrival-have__row:not(:has(.arrival-have__line)) {
-  align-items: center;
-}
-.arrival-have__row:not(:has(.arrival-have__line)) .arrival-have__head.ac-captop {
-  margin-block-start: 0;
 }
 /* "Unnamed account": quieter than a name or an email, until its owner names it. */
 .arrival-have__title[data-unnamed] {

@@ -207,7 +207,7 @@ export function HaveRow({
     <>
       {item.mark}
       <span className="arrival-have__text">
-        <span className="arrival-have__head ac-captop">
+        <span className="arrival-have__head">
           <span className="arrival-have__title" data-unnamed={item.unnamed ? "" : undefined}>
             {item.title}
           </span>
@@ -296,7 +296,7 @@ function RenameRow({ item, onDone }: { item: HaveItem; onDone: () => void }) {
     <div className="arrival-have__row" data-state="unchecked" data-renaming="">
       {item.mark}
       <span className="arrival-have__text">
-        <span className="arrival-have__head ac-captop">
+        <span className="arrival-have__head">
           <InlineName
             className="arrival-have__title"
             value={rename.value}
