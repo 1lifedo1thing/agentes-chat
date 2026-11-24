@@ -2798,14 +2798,17 @@ export function cacheApproval(qc: ReturnType<typeof useQueryClient>, orgId: stri
 }
 
 /**
- * Channel events don't know who is asking: our own `canDecide` stays until it's decided, and our own `canCancel`
- * while an action approved ahead may still run.
+ * Channel events don't know who is asking: our own `canDecide` stays until it's decided, our own `canCancel`
+ * while an action approved ahead may still run, and our own `canRunNow` while it waits its turn.
  */
 function keepOwnRights(previous: Approval | undefined, approval: Approval): Approval {
   if (!previous) return approval;
   if (approval.status === "pending") return { ...approval, canDecide: previous.canDecide };
   if (approval.status === "approved" && approval.runAt && !approval.executedAt) {
     return { ...approval, canCancel: approval.canCancel || previous.canCancel };
+  }
+  if (approval.status === "approved" && !approval.executedAt && approval.afterIds?.length) {
+    return { ...approval, canRunNow: approval.canRunNow || previous.canRunNow };
   }
   return approval;
 }
@@ -2886,6 +2889,24 @@ export function useCancelApproval(orgId: string) {
     onSuccess: (approval) => {
       cacheApproval(qc, orgId, approval);
       void qc.invalidateQueries({ queryKey: keys.approvals(orgId) });
+    },
+  });
+}
+
+/** "Rodar este agora": an approved action waiting for other runs' requests runs at once. */
+export function useRunApprovalNow(orgId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationKey: decidingKey(orgId),
+    mutationFn: ({ id }: { id: string }) => api.approvals.runNow(orgId, id),
+    ...optimistic(qc, ({ id }: { id: string }) =>
+      approvalEdits(orgId, [id], (a) => ({ ...a, afterIds: [], canRunNow: false })),
+    ),
+    onSuccess: (approval) => {
+      cacheApproval(qc, orgId, approval);
+      void qc.invalidateQueries({ queryKey: keys.approvals(orgId) });
+      void qc.invalidateQueries({ queryKey: keys.threads(orgId) });
     },
   });
 }

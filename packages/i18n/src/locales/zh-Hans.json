@@ -4888,8 +4888,16 @@
     "expiredChip": "已过期 · {{when}}",
     "canceledChip": "已取消 · {{when}}",
     "line": {
-      "after": "在“{{title}}”之后执行",
       "notRun": "未执行：前一个请求没有获批"
+    },
+    "held": {
+      "waiting": "正在等待 <link/>",
+      "runNow": "立即运行"
+    },
+    "byAgent": {
+      "head_other": "{{name}} 的 {{count}} 个请求",
+      "approve": "全部批准",
+      "refuse": "全部拒绝"
     },
     "waitingFor": "等待 {{name}}",
     "waitingAdmin": "等待管理员",
@@ -5456,7 +5464,6 @@
       "queued": "排队中",
       "notRun": "未执行"
     },
-    "queuedLine": "已批准。会在先前请求的“{{title}}”之后执行。",
     "notRunRefused": "先前请求的“{{title}}”在这一项获批后被拒绝，所以这一项没有执行。",
     "notRunExpired": "先前请求的“{{title}}”在这一项获批后无人决定而过期，所以这一项没有执行。",
     "notRunEarlier": "在这一项获批后，先前的请求被拒绝或已过期，所以这一项没有执行。",

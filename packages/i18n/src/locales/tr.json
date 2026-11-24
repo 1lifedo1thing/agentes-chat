@@ -5058,8 +5058,17 @@
     "expiredChip": "Süresi doldu · {{when}}",
     "canceledChip": "İptal edildi · {{when}}",
     "line": {
-      "after": "“{{title}}” sonrasında çalışır",
       "notRun": "çalışmadı: önceki istek onaylanmadı"
+    },
+    "held": {
+      "waiting": "<link/> bekleniyor",
+      "runNow": "Bunu şimdi çalıştır"
+    },
+    "byAgent": {
+      "head_one": "{{name}} adlı ajandan {{count}} istek",
+      "head_other": "{{name}} adlı ajandan {{count}} istek",
+      "approve": "Tümünü onayla",
+      "refuse": "Tümünü reddet"
     },
     "waitingFor": "{{name}} bekleniyor",
     "waitingAdmin": "Bir yönetici bekleniyor",
@@ -5658,7 +5667,6 @@
       "queued": "Sırada",
       "notRun": "Çalışmadı"
     },
-    "queuedLine": "Onaylandı. Daha önce istenen “{{title}}” sonrasında çalışır.",
     "notRunRefused": "Daha önce istenen “{{title}}”, bu istek onaylandıktan sonra reddedildi. Bu yüzden bu istek çalışmadı.",
     "notRunExpired": "Daha önce istenen “{{title}}”, bu istek onaylandıktan sonra karar verilmeden süresi doldu. Bu yüzden bu istek çalışmadı.",
     "notRunEarlier": "Önceki bir istek, bu onaylandıktan sonra reddedildi veya süresi doldu. Bu yüzden bu istek çalışmadı.",

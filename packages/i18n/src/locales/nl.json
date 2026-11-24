@@ -5079,8 +5079,17 @@
     "expiredChip": "Verlopen · {{when}}",
     "canceledChip": "Geannuleerd · {{when}}",
     "line": {
-      "after": "wordt uitgevoerd na ‘{{title}}’",
       "notRun": "niet uitgevoerd: het verzoek ervoor is niet goedgekeurd"
+    },
+    "held": {
+      "waiting": "Wacht op <link/>",
+      "runNow": "Nu uitvoeren"
+    },
+    "byAgent": {
+      "head_one": "{{count}} verzoek van {{name}}",
+      "head_other": "{{count}} verzoeken van {{name}}",
+      "approve": "Alles goedkeuren",
+      "refuse": "Alles weigeren"
     },
     "waitingFor": "Wacht op {{name}}",
     "waitingAdmin": "Wacht op een beheerder",
@@ -5686,7 +5695,6 @@
       "queued": "In de wachtrij",
       "notRun": "Niet uitgevoerd"
     },
-    "queuedLine": "Goedgekeurd. Wordt uitgevoerd na ‘{{title}}’, dat eerder is gevraagd.",
     "notRunRefused": "‘{{title}}’, eerder gevraagd, is geweigerd nadat dit verzoek was goedgekeurd. Daarom is dit niet uitgevoerd.",
     "notRunExpired": "‘{{title}}’, eerder gevraagd, is zonder beslissing verlopen nadat dit verzoek was goedgekeurd. Daarom is dit niet uitgevoerd.",
     "notRunEarlier": "Een eerder verzoek is geweigerd of verlopen nadat dit was goedgekeurd. Daarom is dit niet uitgevoerd.",

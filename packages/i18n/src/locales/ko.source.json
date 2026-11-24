@@ -12406,11 +12406,26 @@
   "approval.canceledChip": {
     "value": "Canceled · {{when}}"
   },
-  "approval.line.after": {
-    "value": "runs after “{{title}}”"
-  },
   "approval.line.notRun": {
     "value": "not run: the request before it wasn't approved"
+  },
+  "approval.held.waiting": {
+    "value": "Waiting for <link/>"
+  },
+  "approval.held.runNow": {
+    "value": "Run this now"
+  },
+  "approval.byAgent.head": {
+    "value": {
+      "one": "{{count}} request from {{name}}",
+      "other": "{{count}} requests from {{name}}"
+    }
+  },
+  "approval.byAgent.approve": {
+    "value": "Approve all"
+  },
+  "approval.byAgent.refuse": {
+    "value": "Refuse all"
   },
   "approval.waitingFor": {
     "value": "Waiting for {{name}}"
@@ -13902,9 +13917,6 @@
   },
   "approvals.status.notRun": {
     "value": "Not run"
-  },
-  "approvals.queuedLine": {
-    "value": "Approved. Runs after “{{title}}”, asked before it."
   },
   "approvals.notRunRefused": {
     "value": "“{{title}}”, asked before this, was refused after this was approved, so this didn't run."

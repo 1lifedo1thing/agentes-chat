@@ -4887,8 +4887,16 @@
     "expiredChip": "만료됨 · {{when}}",
     "canceledChip": "취소됨 · {{when}}",
     "line": {
-      "after": "“{{title}}” 다음에 실행",
       "notRun": "실행 안 됨: 앞의 요청이 승인되지 않았어요"
+    },
+    "held": {
+      "waiting": "<link/> 대기 중",
+      "runNow": "지금 실행"
+    },
+    "byAgent": {
+      "head_other": "{{name}}의 요청 {{count}}건",
+      "approve": "모두 승인",
+      "refuse": "모두 거절"
     },
     "waitingFor": "{{name}}님 대기 중",
     "waitingAdmin": "관리자 대기 중",
@@ -5450,7 +5458,6 @@
       "queued": "순서 대기 중",
       "notRun": "실행 안 됨"
     },
-    "queuedLine": "승인됨. 먼저 요청된 “{{title}}” 다음에 실행돼요.",
     "notRunRefused": "먼저 요청된 “{{title}}”이(가) 이 요청이 승인된 뒤에 거절되어 이 요청은 실행되지 않았어요.",
     "notRunExpired": "먼저 요청된 “{{title}}”이(가) 이 요청이 승인된 뒤에 결정 없이 만료되어 이 요청은 실행되지 않았어요.",
     "notRunEarlier": "이 요청이 승인된 뒤에 앞의 요청이 거절되거나 만료되어 이 요청은 실행되지 않았어요.",

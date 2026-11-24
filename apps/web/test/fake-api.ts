@@ -3754,6 +3754,15 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         });
         return { ...a };
       },
+      runNow: async (orgId, approvalId) => {
+        log("approvals.runNow", orgId, approvalId);
+        const a = state.approvals.find((x) => x.id === approvalId);
+        if (a?.status !== "approved" || a.executedAt || !a.afterIds?.length) {
+          throw new ApiError(409, "approval.not_waiting", "This request isn't waiting for another one");
+        }
+        Object.assign(a, { afterIds: [], canRunNow: false });
+        return { ...a };
+      },
       decideMany: async (orgId, input) => {
         log("approvals.decideMany", orgId, input.ids, input.decision, ...(input.only ? [input.only] : []));
         if (input.via) log("via", input.via);

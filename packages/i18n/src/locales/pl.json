@@ -5420,8 +5420,19 @@
     "expiredChip": "Wygasło · {{when}}",
     "canceledChip": "Anulowano · {{when}}",
     "line": {
-      "after": "wykona się po „{{title}}”",
       "notRun": "niewykonane: poprzednia prośba nie została zatwierdzona"
+    },
+    "held": {
+      "waiting": "Czeka na <link/>",
+      "runNow": "Uruchom teraz"
+    },
+    "byAgent": {
+      "head_one": "{{count}} prośba od {{name}}",
+      "head_few": "{{count}} prośby od {{name}}",
+      "head_many": "{{count}} próśb od {{name}}",
+      "head_other": "{{count}} prośby od {{name}}",
+      "approve": "Zatwierdź wszystkie",
+      "refuse": "Odrzuć wszystkie"
     },
     "waitingFor": "Czeka na: {{name}}",
     "waitingAdmin": "Czeka na administratora",
@@ -6097,7 +6108,6 @@
       "queued": "W kolejce",
       "notRun": "Niewykonane"
     },
-    "queuedLine": "Zatwierdzone. Wykona się po „{{title}}”, o które poproszono wcześniej.",
     "notRunRefused": "„{{title}}”, o które poproszono wcześniej, zostało odrzucone po zatwierdzeniu tej prośby. Dlatego ta nie została wykonana.",
     "notRunExpired": "„{{title}}”, o które poproszono wcześniej, wygasło bez decyzji po zatwierdzeniu tej prośby. Dlatego ta nie została wykonana.",
     "notRunEarlier": "Wcześniejsza prośba została odrzucona lub wygasła po zatwierdzeniu tej. Dlatego ta nie została wykonana.",

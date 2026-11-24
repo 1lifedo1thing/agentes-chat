@@ -1146,6 +1146,8 @@ export interface ApiClient {
     refuse(orgId: string, approvalId: string, reason?: string, via?: string): Promise<Approval>;
     /** Withdraws an action approved ahead before its time: its routine's run won't do it. */
     cancel(orgId: string, approvalId: string): Promise<Approval>;
+    /** "Rodar este agora": an approved action waiting for other runs' requests runs at once. */
+    runNow(orgId: string, approvalId: string): Promise<Approval>;
     /**
      * A card's "Aprovar tudo" / "Agora não para todos": exactly these ids; `skipped` the ones not decided. With
      * `only: "routine"` the server decides the ones it calls routine (`Approval.routine`) and skips the rest.

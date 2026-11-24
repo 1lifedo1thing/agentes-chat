@@ -5513,8 +5513,19 @@ export const en = {
     canceledChip: "Canceled · {{when}}",
     /** After an approved request's outcome on a shared card: it runs in the order asked. */
     line: {
-      after: "runs after “{{title}}”",
       notRun: "not run: the request before it wasn't approved",
+    },
+    /** Approved, and waiting for a request asked before it (ADR 0182): what it waits for, and a way past it. */
+    held: {
+      waiting: "Waiting for <link/>",
+      runNow: "Run this now",
+    },
+    /** Every waiting request of one agent, decided at once (the inbox, the phone's list of what waits on you). */
+    byAgent: {
+      head_one: "{{count}} request from {{name}}",
+      head_other: "{{count}} requests from {{name}}",
+      approve: "Approve all",
+      refuse: "Refuse all",
     },
     waitingFor: "Waiting for {{name}}",
     waitingAdmin: "Waiting for an admin",
@@ -6132,7 +6143,6 @@ export const en = {
       notRun: "Not run",
     },
     /** Approved, waiting for a request the agent asked before it on the same card to be decided and done. */
-    queuedLine: "Approved. Runs after “{{title}}”, asked before it.",
     /** Approved before a request asked ahead of it was refused or expired: it didn't run. */
     notRunRefused: "“{{title}}”, asked before this, was refused after this was approved, so this didn't run.",
     notRunExpired: "“{{title}}”, asked before this, expired undecided after this was approved, so this didn't run.",

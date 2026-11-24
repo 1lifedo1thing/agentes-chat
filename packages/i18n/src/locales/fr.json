@@ -5232,8 +5232,18 @@
     "expiredChip": "Expirée · {{when}}",
     "canceledChip": "Annulée · {{when}}",
     "line": {
-      "after": "s'exécute après « {{title}} »",
       "notRun": "pas exécutée : la demande précédente n'a pas été approuvée"
+    },
+    "held": {
+      "waiting": "En attente de <link/>",
+      "runNow": "Lancer celle-ci maintenant"
+    },
+    "byAgent": {
+      "head_one": "{{count}} demande de {{name}}",
+      "head_many": "{{count}} demandes de {{name}}",
+      "head_other": "{{count}} demandes de {{name}}",
+      "approve": "Tout approuver",
+      "refuse": "Tout refuser"
     },
     "waitingFor": "En attente de {{name}}",
     "waitingAdmin": "En attente d'un admin",
@@ -5874,7 +5884,6 @@
       "queued": "En file d'attente",
       "notRun": "Pas exécutée"
     },
-    "queuedLine": "Approuvée. S'exécute après « {{title}} », demandée avant.",
     "notRunRefused": "« {{title}} », demandée avant, a été refusée après l'approbation de celle-ci. Celle-ci n'a donc pas été exécutée.",
     "notRunExpired": "« {{title}} », demandée avant, a expiré sans décision après l'approbation de celle-ci. Celle-ci n'a donc pas été exécutée.",
     "notRunEarlier": "Une demande précédente a été refusée ou a expiré après l'approbation de celle-ci. Celle-ci n'a donc pas été exécutée.",

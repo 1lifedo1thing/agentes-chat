@@ -5227,8 +5227,18 @@
     "expiredChip": "Vencida · {{when}}",
     "canceledChip": "Cancelada · {{when}}",
     "line": {
-      "after": "se ejecuta después de “{{title}}”",
       "notRun": "no se ejecutó: la solicitud anterior no fue aprobada"
+    },
+    "held": {
+      "waiting": "Esperando <link/>",
+      "runNow": "Ejecutar esta ahora"
+    },
+    "byAgent": {
+      "head_one": "{{count}} pedido de {{name}}",
+      "head_many": "{{count}} pedidos de {{name}}",
+      "head_other": "{{count}} pedidos de {{name}}",
+      "approve": "Aprobar todos",
+      "refuse": "Rechazar todos"
     },
     "waitingFor": "Esperando a {{name}}",
     "waitingAdmin": "Esperando a un admin",
@@ -5866,7 +5876,6 @@
       "queued": "En cola",
       "notRun": "No se ejecutó"
     },
-    "queuedLine": "Aprobada. Se ejecuta después de “{{title}}”, solicitada antes.",
     "notRunRefused": "“{{title}}”, solicitada antes, fue rechazada después de aprobar esta. Por eso esta no se ejecutó.",
     "notRunExpired": "“{{title}}”, solicitada antes, venció sin decisión después de aprobar esta. Por eso esta no se ejecutó.",
     "notRunEarlier": "Una solicitud anterior fue rechazada o venció después de aprobar esta. Por eso esta no se ejecutó.",
