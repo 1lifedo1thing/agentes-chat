@@ -504,6 +504,29 @@ describe("the steps", () => {
       window.matchMedia = native;
     }
   });
+
+  test("past a team step left with no agents, the preview is what the workspace has: no place waiting for a team", async () => {
+    const native = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(min-width: 1200px)",
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+    try {
+      plans(PLANS);
+      await renderApp("/onboarding", {
+        api: createFakeApi(settingUp({ context: "Loja online", step: "agents", held: true })),
+      });
+      await settle(14);
+      expect(heading()).toBe("Ligue o time");
+      const preview = document.querySelector(".onb-preview") as HTMLElement;
+      expect(preview.querySelector(".sidebar__org-meta")?.textContent).toBe("1 membro · 1 agente");
+      expect(preview.querySelector(".onb-preview__ghost")).toBeNull();
+    } finally {
+      window.matchMedia = native;
+    }
+  });
 });
 
 describe("the plan step (agentes.chat Cloud)", () => {
@@ -784,6 +807,7 @@ describe("a workspace being set up resumes from its data", () => {
     // One count: the rail's, at the people; the moment shows no step number of its own.
     expect(eyebrow()).toBeUndefined();
     expect(railCurrent()).toContain("Convidar pessoas");
+    expect(document.querySelector(".onb__progress-text")?.textContent).toBe("Falta 1 etapa");
     expect(within(planCard()).queryByRole("button", { name: /Conectar uma IA/ })).toBeNull();
     await click(within(planCard()).getByRole("button", { name: /Convidar pessoas/ }), 16);
     expect(heading()).toBe(PEOPLE);
@@ -802,6 +826,37 @@ describe("a workspace being set up resumes from its data", () => {
     expect(document.querySelector(".onb__say")?.textContent).toBe(
       "Estamos todos aqui e o computador está ligado. Vamos ao trabalho.",
     );
+  });
+
+  test("one count on every step: the page's number is the step the rail marks, and the rail says only what is left", async () => {
+    /** The rail's marked step is the page's "Passo n de N", and no other count of steps shows. */
+    const agrees = () => {
+      const rail = [...document.querySelectorAll(".onb__step")];
+      const at = rail.findIndex((b) => b.getAttribute("aria-current") === "step");
+      expect(eyebrow()).toBe(`Passo ${at + 1} de ${rail.length}`);
+      expect(document.querySelector(".onb__progress-text")?.textContent).not.toMatch(/\d+ de \d+/);
+    };
+    plans(PLANS);
+    const states: [string, FakeState][] = [
+      ["business", settingUp()],
+      ["team", settingUp({ context: "Loja online" })],
+      ["plan", settingUp({ context: "Loja online", team: true, held: true })],
+      ["ai", noAiYet(settingUp({ context: "Loja online", team: true }))],
+      ["people", settingUp({ context: "Loja online", team: true })],
+    ];
+    for (const [step, state] of states) {
+      await renderApp("/onboarding", { api: createFakeApi(state) });
+      await settle(16);
+      expect({ step, title: heading() }).not.toEqual({ step, title: undefined });
+      agrees();
+      if (step === "people") {
+        // A step gone back to: the page and the rail move together.
+        await click(document.querySelectorAll<HTMLButtonElement>(".onb__step")[0] as HTMLButtonElement, 12);
+        agrees();
+        expect(eyebrow()).toBe("Passo 1 de 6");
+      }
+      cleanup();
+    }
   });
 
   test("asked to delete the workspace being set up: its dialog, and nothing is finished", async () => {

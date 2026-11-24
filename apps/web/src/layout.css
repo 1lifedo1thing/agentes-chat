@@ -9479,7 +9479,7 @@ html:not([data-pointer]) .onb__step:focus-visible {
     min-height: 0;
     padding: 4px;
   }
-  /* The setup's seven steps beside the logo at 390px: 28px steps 3px apart, and 2px around them for the current
+  /* The setup's seven steps beside the logo's mark at 390px: 28px steps 3px apart, and 2px around them for the current
      one's ring, reaching past the strip's edges. Criar agente and the landing's card keep the shared strip. */
   .onb:not(.newag) .onb__steps {
     gap: 3px;
@@ -9499,8 +9499,8 @@ html:not([data-pointer]) .onb__step:focus-visible {
     white-space: nowrap;
   }
 }
-/* Narrower, they fit beside the logo's mark alone. */
-@media (max-width: 384px) {
+/* Seven steps and the whole logo need about 430px: narrower, the steps sit beside the logo's mark alone. */
+@media (max-width: 439px) {
   .onb__brand .ac-logo > :not(.ac-logo__mark) {
     display: none;
   }

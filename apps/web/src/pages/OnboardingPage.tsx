@@ -781,13 +781,11 @@ export function OnboardingPage() {
         </div>
         {!phone && (
           <div className="onb__progress">
+            {/* What is left, in words: the step's own number is the page's ("Step 5 of 7"), never a second count. */}
             <span className="onb__progress-text">
-              <span>
-                {answered === steps.length
-                  ? t("onboarding.progress.done")
-                  : t("onboarding.progress.left", { count: steps.length - answered })}
-              </span>
-              <span>{t("agentSetup.count", { done: answered, total: steps.length })}</span>
+              {answered === steps.length
+                ? t("onboarding.progress.done")
+                : t("onboarding.progress.left", { count: steps.length - answered })}
             </span>
             <OnboardingProgress progress={answered / steps.length} />
           </div>
@@ -1165,6 +1163,7 @@ export function OnboardingPage() {
                   agents={preview}
                   person={me.data.user}
                   personal={personalNow}
+                  teamAhead={reached <= steps.indexOf("team")}
                 />
               ))}
           </StepHost>
