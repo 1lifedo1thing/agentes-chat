@@ -7649,7 +7649,8 @@ html:not([data-pointer]) .run-continue:focus-visible {
   overflow: visible;
   white-space: normal;
 }
-.working-tail__line :is(.ac-typing__agents, .ac-typing__people, .ac-typing__group, .ac-typing__typers, .ac-typing__also) {
+.working-tail__line
+  :is(.ac-typing__agents, .ac-typing__people, .ac-typing__group, .ac-typing__typers, .ac-typing__also) {
   flex-wrap: wrap;
   overflow: visible;
   white-space: normal;
