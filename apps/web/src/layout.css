@@ -1657,21 +1657,6 @@ html:not([data-pointer]) .member-row--add:focus-visible {
 .struck {
   text-decoration: line-through;
 }
-/* Aceitar todas and Recusar todas at the tabs' right, small and 8 apart, as the tabs bar's toolbar sits; asked again in
-   the same spot. Under the tabs, at the right, when the row has no room. */
-.proposals-all {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-2) auto;
-}
-.proposals-all__ask {
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--muted);
-}
 .evidence {
   margin: 0;
   padding: 0;
@@ -10972,10 +10957,6 @@ html:not([data-pointer]) .agp-cell:focus-visible {
 .agp-badge--edit {
   background: var(--ink);
   color: var(--bg);
-}
-.agp-badge--ask {
-  background: var(--warn-soft);
-  color: var(--warn);
 }
 .agp-view {
   /* Room under the tabs before the first card, and the same 16px between whatever a tab stacks. */

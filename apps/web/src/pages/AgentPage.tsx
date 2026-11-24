@@ -8,7 +8,6 @@ import {
   useAgentSkills,
   useCredentials,
   useModels,
-  useProposals,
   useRuns,
   useSettings,
   useUpdateAgent,
@@ -34,7 +33,6 @@ import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { overLimitText, tooLongToSend } from "@agenteschat/client/lib/message-length";
 import { edit, optimistic, without } from "@agenteschat/client/lib/optimistic";
 import { can } from "@agenteschat/client/lib/permissions";
-import { pendingOnAgent } from "@agenteschat/client/lib/proposals";
 import { isAuto } from "@agenteschat/client/lib/providers";
 import { type RepoChoice, repoChoiceOf, repoListOf, reposText } from "@agenteschat/client/lib/repos";
 import { isRightHand, tellsNameStory } from "@agenteschat/client/lib/right-hand";
@@ -232,7 +230,6 @@ function AgentProfile({
   const repos = useAgentRepos(org.id, agent.id);
   const groups = useAgentGroups(org.id);
   const library = useAgentSkills(org.id, agent.id);
-  const proposals = useProposals(org.id);
   const runs = useRuns(org.id, agent.id, ownsOrManages(viewer));
   const visible = useVisibleChannels();
   const items = useConnectedById();
@@ -756,7 +753,6 @@ function AgentProfile({
 
   /* ---------- Tabs ---------- */
 
-  const pending = pendingOnAgent(proposals.data ?? [], agent.id).length;
   const failures = !ownsOrManages(viewer)
     ? 0
     : (runs.data ?? []).filter((r) => r.status === "failed" && thisMonth(r.createdAt)).length;
@@ -768,15 +764,6 @@ function AgentProfile({
         <span className="agp-badge agp-badge--edit ac-num" title={t("agentPage.changesCount", { count: n })}>
           <Icon name="edit" size={14} />
           {n}
-        </span>
-      );
-    else if (id === "memory" && pending > 0)
-      badge = (
-        <span
-          className="agp-badge agp-badge--ask ac-num"
-          title={t("agentPage.memory.waitingCount", { count: pending })}
-        >
-          {pending}
         </span>
       );
     else if ((id === "activity" || (personal && id === "advanced" && view !== "activity")) && failures > 0)
