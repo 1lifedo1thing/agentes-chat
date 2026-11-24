@@ -1,14 +1,16 @@
-import { ApiError, useResetSurfacePin, useUndoSurfaceLink } from "@agenteschat/client";
+import { ApiError, usePinFromEmail, useUndoSurfaceLink } from "@agenteschat/client";
 import { errorCode, errorText } from "@agenteschat/client/lib/errors";
+import { pinChosen, pinMismatch } from "@agenteschat/client/lib/surface-links";
 import { formatPhone } from "@agenteschat/i18n/format";
 import { Button, Icon, Locked } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import type { FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { AuthShell } from "@/components/AuthLayout";
+import { PinFields } from "@/components/PinFields";
 
 /**
  * “This wasn't me” (ADR 0088 §2, addendum 2026-11-13): where the notice to an account's old address lands, in the
@@ -146,14 +148,18 @@ export function SurfaceUndoPage({ token }: { token?: string }) {
 }
 
 /**
- * The link in the "Reset your PIN" email (ADR 0226): only its button clears the PIN (mail scanners open every link).
- * The next action confirmed from the chat app chooses a new one.
+ * The link in the "Choose your PIN" email (ADR 0226): the email to the verified address is what lets the PIN be chosen
+ * here, typed twice. Only the button spends the link (mail scanners open every link), and a PIN of the wrong shape
+ * spends nothing.
  */
 export function SurfacePinResetPage({ token }: { token?: string }) {
   const { t } = useTranslation();
-  const reset = useResetSurfacePin();
-  const done = reset.data;
-  const gone = !token || errorCode(reset.error) === "surface.pin_reset_gone";
+  const choose = usePinFromEmail();
+  const [pin, setPin] = useState("");
+  const [again, setAgain] = useState("");
+  const done = choose.data;
+  const gone = !token || errorCode(choose.error) === "surface.pin_reset_gone";
+  const mismatch = pinMismatch(pin, again);
   const [title, lead]: [string, string] = done
     ? [t("surface.pinReset.done"), t("surface.pinReset.doneLead", { surface: done.surface })]
     : gone
@@ -161,8 +167,9 @@ export function SurfacePinResetPage({ token }: { token?: string }) {
       : [t("surface.pinReset.title"), t("surface.pinReset.lead")];
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!done && !gone && !reset.isPending && token) reset.mutate(token);
+    if (!done && !gone && !choose.isPending && token && pinChosen(pin, again)) choose.mutate({ token, pin });
   };
+  const error = mismatch ? t("surface.page.mismatch") : choose.isError ? errorText(t, choose.error) : null;
 
   return (
     <AuthShell>
@@ -171,7 +178,7 @@ export function SurfacePinResetPage({ token }: { token?: string }) {
           <AgentAvatar
             name="agentes.chat"
             size="lg"
-            state={reset.isPending ? "writing" : undefined}
+            state={choose.isPending ? "writing" : undefined}
             expression={done ? "happy" : undefined}
           />
           <div className="auth__bubble" key={title} aria-live="polite">
@@ -181,14 +188,23 @@ export function SurfacePinResetPage({ token }: { token?: string }) {
         </header>
         {!done && !gone && (
           <div className="auth__step">
-            <Locked when={reset.isPending}>
-              {reset.isError && (
+            <Locked when={choose.isPending}>
+              <PinFields big choosing autoFocus pin={pin} again={again} onPin={setPin} onAgain={setAgain} />
+              {error && (
                 <p className="auth__error ac-iconline" role="alert">
                   <Icon name="alert" size={14} />
-                  {errorText(t, reset.error)}
+                  {error}
                 </p>
               )}
-              <Button type="submit" variant="primary" size="lg" block kbd={["↵"]} loading={reset.isPending}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                block
+                kbd={["↵"]}
+                loading={choose.isPending}
+                disabled={!pinChosen(pin, again)}
+              >
                 {t("surface.pinReset.button")}
               </Button>
             </Locked>

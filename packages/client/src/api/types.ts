@@ -364,6 +364,8 @@ export interface SurfaceLink {
   confirmedAt: string | null;
   /** Pending only: when it stops counting. */
   expiresAt: string | null;
+  /** A PIN confirms actions asked from the surface (ADR 0226). */
+  pinSet: boolean;
 }
 
 /** `GET /me/surface-links`: `allowed`, never `AuthConfig.surface`, decides whether the apps offer linking. */
@@ -390,11 +392,14 @@ export interface SurfacePage {
   /** When the page stops opening. */
   expiresAt: string;
   surface: string;
+  /** The approval's workspace: its notification settings choose the PIN in the app. */
+  orgId: string;
   /**
-   * `set` false: approving chooses the PIN. `lockedUntil`: three wrong ones lock approving until then. `resetByEmail`:
-   * the server sends email, so "Forgot your PIN?" is offered.
+   * `set` false: approving waits until the PIN is chosen somewhere trusted. `canChoose`: none set and this browser is
+   * signed in as the person, so approving here chooses it. `lockedUntil`: wrong ones lock approving until then.
+   * `resetByEmail`: the server can email a link to choose it (none yet, or forgotten).
    */
-  pin: { set: boolean; lockedUntil: string | null; resetByEmail: boolean };
+  pin: { set: boolean; lockedUntil: string | null; canChoose: boolean; resetByEmail: boolean };
   approval: {
     id: string;
     tool: string;

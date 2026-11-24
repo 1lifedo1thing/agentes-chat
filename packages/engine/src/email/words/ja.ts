@@ -616,15 +616,26 @@ export const words: EmailWords = {
       picture: "スマートフォンからは外れたアシスタント",
     },
     pinReset: {
-      subject: (surface) => `${surface} の PIN をリセット`,
-      preheader: "PIN を消去し、次に求められたときに新しい PIN を設定してください。",
-      headline: (surface) => `${surface} の PIN をリセット`,
+      subject: (surface) => `${surface} の PIN を設定`,
+      preheader: "チャットアプリから操作を承認するための PIN を設定してください。",
+      headline: (surface) => `${surface} の PIN を設定`,
       body: (surface) =>
-        `${surface} から操作を確認するときに使う PIN のリセットが依頼されました。ここで消去し、次にアシスタントから求められたときに新しい PIN を設定してください。`,
-      button: "PIN を消去",
+        `${surface} から操作を承認するときに使う PIN を設定するためのリンクが依頼されました。ご本人の場合は、このボタンで開くページで設定してください。`,
+      button: "PIN を設定",
       small:
-        "このリンクは 1 時間以内に 1 回だけ使えます。心当たりがなければ、このメールは無視してください。PIN はそのままです。",
+        "このリンクは 1 時間以内に 1 回だけ使えます。心当たりがなければ、このメールは無視してください。何も変わりません。",
       why: (surface) => `${surface} が agentes.chat アカウントに連携されているため、このメールをお送りしています。`,
+    },
+    pinLocked: {
+      subject: (surface) => `${surface} の PIN がロックされました`,
+      preheader: "PIN が 3 回続けて間違っていました。チャットアプリからの承認は一時停止中です。",
+      headline: (surface) => `${surface} の PIN がロックされました`,
+      body: (surface, time) =>
+        `${surface} から操作を承認しようとして、間違った PIN が 3 回続けて入力されました。${surface} からの承認は ${time}の間、停止されます。`,
+      lockedFor: ["15 分", "1 時間", "24 時間"],
+      small: (surface) =>
+        `ご本人の場合は、しばらくしてからもう一度お試しください。心当たりがない場合は、通知設定で ${surface} の連携を解除してください。そこから誰も承認できなくなります。`,
+      button: "通知設定を開く",
     },
   },
   supportReply: {

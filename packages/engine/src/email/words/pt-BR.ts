@@ -604,14 +604,25 @@ export const ptBR: Words = {
       picture: "Seu assistente, não mais no seu celular",
     },
     pinReset: {
-      subject: (surface) => `Redefina seu PIN do ${surface}`,
-      preheader: "Apague o PIN e escolha um novo na próxima vez que ele for pedido.",
-      headline: (surface) => `Redefina seu PIN do ${surface}`,
+      subject: (surface) => `Escolha seu PIN do ${surface}`,
+      preheader: "Escolha o PIN que aprova ações pelo seu app de chat.",
+      headline: (surface) => `Escolha seu PIN do ${surface}`,
       body: (surface) =>
-        `Pediram para redefinir o PIN que você usa para confirmar ações pelo ${surface}. Apague-o aqui e escolha um novo na próxima vez que seu assistente pedir.`,
-      button: "Apagar meu PIN",
-      small: "O link funciona uma vez, por uma hora. Se não foi você, ignore este e-mail. Seu PIN continua o mesmo.",
+        `Pediram um link para escolher o PIN que você usa para aprovar ações pelo ${surface}. Se foi você, escolha-o na página que este botão abre.`,
+      button: "Escolher meu PIN",
+      small: "O link funciona uma vez, por uma hora. Se não foi você, ignore este e-mail. Nada muda.",
       why: (surface) => `Você recebeu este e-mail porque ${surface} está vinculado à sua conta do agentes.chat.`,
+    },
+    pinLocked: {
+      subject: (surface) => `Seu PIN do ${surface} está bloqueado`,
+      preheader: "Três PINs errados seguidos. Aprovar pelo seu app de chat está pausado por enquanto.",
+      headline: (surface) => `Seu PIN do ${surface} está bloqueado`,
+      body: (surface, time) =>
+        `Alguém digitou um PIN errado três vezes seguidas para aprovar uma ação pelo ${surface}. Aprovar pelo ${surface} está pausado por ${time}.`,
+      lockedFor: ["15 minutos", "1 hora", "24 horas"],
+      small: (surface) =>
+        `Se foi você, tente de novo mais tarde. Se não foi, desvincule o ${surface} nas suas configurações de notificações, para que ninguém aprove por ele.`,
+      button: "Abrir configurações de notificações",
     },
   },
   supportReply: {

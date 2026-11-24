@@ -605,14 +605,25 @@ export const words: EmailWords = {
       picture: "Asistenmu, tidak lagi di ponselmu",
     },
     pinReset: {
-      subject: (surface) => `Atur ulang PIN ${surface} kamu`,
-      preheader: "Hapus PIN, lalu pilih yang baru saat diminta lagi.",
-      headline: (surface) => `Atur ulang PIN ${surface} kamu`,
+      subject: (surface) => `Pilih PIN ${surface} kamu`,
+      preheader: "Pilih PIN yang menyetujui tindakan dari aplikasi chat kamu.",
+      headline: (surface) => `Pilih PIN ${surface} kamu`,
       body: (surface) =>
-        `Ada yang meminta untuk mengatur ulang PIN yang kamu pakai untuk mengonfirmasi tindakan dari ${surface}. Hapus di sini, lalu pilih yang baru saat asistenmu memintanya lagi.`,
-      button: "Hapus PIN saya",
-      small: "Tautan ini berlaku sekali, selama satu jam. Kalau bukan kamu, abaikan email ini. PIN kamu tetap sama.",
+        `Ada yang meminta tautan untuk memilih PIN yang kamu pakai untuk menyetujui tindakan dari ${surface}. Kalau itu kamu, pilih PIN di halaman yang dibuka tombol ini.`,
+      button: "Pilih PIN saya",
+      small: "Tautan ini berlaku sekali, selama satu jam. Kalau bukan kamu, abaikan email ini. Tidak ada yang berubah.",
       why: (surface) => `Kamu menerima email ini karena ${surface} ditautkan ke akun agentes.chat kamu.`,
+    },
+    pinLocked: {
+      subject: (surface) => `PIN ${surface} kamu terkunci`,
+      preheader: "Tiga kali PIN salah berturut-turut. Menyetujui dari aplikasi chat kamu dijeda untuk sementara.",
+      headline: (surface) => `PIN ${surface} kamu terkunci`,
+      body: (surface, time) =>
+        `Seseorang memasukkan PIN yang salah tiga kali berturut-turut untuk menyetujui tindakan dari ${surface}. Menyetujui dari ${surface} dijeda selama ${time}.`,
+      lockedFor: ["15 menit", "1 jam", "24 jam"],
+      small: (surface) =>
+        `Kalau itu kamu, coba lagi nanti. Kalau bukan, putuskan tautan ${surface} di pengaturan notifikasi kamu, supaya tidak ada yang bisa menyetujui dari sana.`,
+      button: "Buka pengaturan notifikasi",
     },
   },
   supportReply: {

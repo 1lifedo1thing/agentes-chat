@@ -2494,26 +2494,38 @@
       "approve": "Onayla",
       "refuse": "Reddet",
       "forgot": "PIN'ini mi unuttun?",
-      "emailed": "Sana PIN'i silen bir bağlantı e-postaladık. Ardından yenisini seçmek için bu sayfayı yeniden yükle.",
+      "emailed": "Sana e-postayla bir bağlantı gönderdik. PIN'ini orada seç, sonra bu sayfaya dön.",
       "notYours": "Buna uygulamada {{who}} karar verir.",
       "notYoursSomeone": "Buna uygulamada onaylama yetkisi olan biri karar verir.",
       "approved": "Onaylandı",
       "refused": "Reddedildi",
       "expired": "Bu isteğin süresi doldu",
-      "back": "{{surface}} uygulamasına dön. Asistanın orada devam eder."
+      "back": "{{surface}} uygulamasına dön. Asistanın orada devam eder.",
+      "setFirst": "Önce PIN'ini seç",
+      "setFirstLead": "{{surface}} üzerinden onaylamak için PIN gerekir ve sohbetteki bir bağlantı onu seçemez. PIN'i oturum açtığın uygulamada seç, sonra bu sayfaya dön.",
+      "setFirstLeadEmail": "{{surface}} üzerinden onaylamak için PIN gerekir ve sohbetteki bir bağlantı onu seçemez. PIN'i oturum açtığın uygulamada ya da e-postayla gönderdiğimiz bağlantıyla seç. Sonra bu sayfaya dön.",
+      "openApp": "Uygulamada seç",
+      "emailMe": "Bana bağlantı gönder"
     },
     "pinReset": {
-      "title": "PIN'in silinsin mi?",
-      "lead": "Sohbet uygulamandan bir dahaki onayında yenisini seçeceksin.",
-      "button": "PIN'imi sil",
-      "done": "PIN silindi",
-      "doneLead": "{{surface}} üzerinden bir dahaki onayında yenisini seç.",
+      "title": "PIN'ini seç",
+      "lead": "Altı rakam. Sohbet uygulamandan istediğin işlemleri onaylamak için gireceksin.",
+      "button": "PIN'imi kaydet",
+      "done": "PIN kaydedildi",
+      "doneLead": "{{surface}} üzerinden açılan sayfaya dön ve bu PIN'le onayla.",
       "gone": "Bu bağlantı artık çalışmıyor"
     },
     "via": "{{surface}} aracılığıyla",
     "viaTip": "{{person}} tarafından {{surface}} üzerinden gönderildi",
     "forwarded": "{{surface}} üzerinden iletildi",
-    "forwardedTip": "{{person}} bunu {{surface}} üzerinden iletti. Bu sözler başka birine ait."
+    "forwardedTip": "{{person}} bunu {{surface}} üzerinden iletti. Bu sözler başka birine ait.",
+    "pin": {
+      "set": "PIN belirle",
+      "change": "PIN'i değiştir",
+      "title": "{{surface}} PIN'in",
+      "text": "{{surface}} üzerinden istediğin işlemleri onaylamak için girdiğin altı rakam. Sohbette asla gönderilmez.",
+      "save": "PIN'i kaydet"
+    }
   },
   "team": {
     "title": "Ekip",
@@ -15630,9 +15642,11 @@
       "pageGone": "Bu bağlantının süresi doldu. Sohbette asistanından yenisini iste.",
       "pageElsewhere": "Bu bağlantı başka bir cihazda açıldı. Sohbette asistanından yenisini iste.",
       "pinWrong": "PIN yanlış. Kalan deneme: {{left}}.",
-      "pinLocked": "Çok fazla yanlış PIN. 15 dakika sonra tekrar dene ya da PIN'ini e-postayla sil.",
+      "pinLocked": "Çok fazla yanlış PIN. Daha sonra tekrar dene ya da uygulamada yeni bir PIN seç.",
       "pinShape": "PIN'in 6 hanelidir.",
-      "pinResetGone": "Bu bağlantı zaten kullanıldı ya da süresi doldu. “PIN'ini mi unuttun?” ile yenisini iste."
+      "pinResetGone": "Bu bağlantı zaten kullanıldı ya da süresi doldu. “PIN'ini mi unuttun?” ile yenisini iste.",
+      "pinUnset": "Önce PIN'ini seç. PIN'i oturum açtığın uygulamada seç.",
+      "emailUnverified": "E-posta adresin henüz doğrulanmadı. PIN'ini uygulamada seç."
     },
     "wallpaper": {
       "notYours": "Bu fotoğraf sizin değil.",

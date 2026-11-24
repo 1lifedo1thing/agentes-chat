@@ -436,7 +436,18 @@ export function useRemoveSurfaceLink() {
   return useSurfaceLinkMutation((linkId: string) => api.surfaces.remove(linkId));
 }
 
-/** A page the surface linked to (ADR 0226), opened once by its token: never refetched on its own. */
+/** Chooses my PIN in the app (ADR 0226), the signed-in session being what lets it. */
+export function useSetSurfacePin() {
+  const api = useApi();
+  return useSurfaceLinkMutation((input: { linkId: string; pin: string }) =>
+    api.surfaces.setPin(input.linkId, input.pin),
+  );
+}
+
+/**
+ * A page the surface linked to (ADR 0226), opened once by its token. Read again only when the person comes back to it
+ * while it waits on a PIN chosen elsewhere (the app, or the emailed link).
+ */
 export function useSurfacePage(token: string | undefined) {
   const api = useApi();
   return useQuery({
@@ -445,7 +456,7 @@ export function useSurfacePage(token: string | undefined) {
     enabled: Boolean(token),
     retry: false,
     staleTime: Number.POSITIVE_INFINITY,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: (q) => (q.state.data && !q.state.data.pin.set ? "always" : false),
     meta: { quiet: true },
   });
 }
@@ -462,15 +473,19 @@ export function useDecideSurfacePage(token: string) {
   });
 }
 
-export function useForgotSurfacePin(token: string) {
+/** "Email me a link" (no PIN yet) or "Forgot your PIN?": a link to choose it, to the account's verified address. */
+export function useEmailSurfacePin(token: string) {
   const api = useApi();
-  return useMutation({ mutationFn: () => api.surfaces.forgotPin(token), meta: { silent: true } });
+  return useMutation({ mutationFn: () => api.surfaces.emailPin(token), meta: { silent: true } });
 }
 
-/** The PIN email's link; works signed out. */
-export function useResetSurfacePin() {
+/** The PIN email's link chooses the PIN; works signed out. */
+export function usePinFromEmail() {
   const api = useApi();
-  return useMutation({ mutationFn: (token: string) => api.surfaces.resetPin(token), meta: { silent: true } });
+  return useMutation({
+    mutationFn: (input: { token: string; pin: string }) => api.surfaces.pinFromEmail(input.token, input.pin),
+    meta: { silent: true },
+  });
 }
 
 /** The "linked" email's undo, by its token; works signed out. */

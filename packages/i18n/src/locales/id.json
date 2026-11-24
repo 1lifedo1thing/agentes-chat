@@ -2411,26 +2411,38 @@
       "approve": "Setujui",
       "refuse": "Tolak",
       "forgot": "Lupa PIN?",
-      "emailed": "Kami sudah mengirim email berisi tautan untuk menghapusnya. Lalu muat ulang halaman ini untuk memilih yang baru.",
+      "emailed": "Kami sudah mengirim tautan lewat email. Pilih PIN kamu di sana, lalu kembali ke halaman ini.",
       "notYours": "{{who}} yang memutuskan ini di aplikasi.",
       "notYoursSomeone": "Orang yang bisa menyetujuinya memutuskan ini di aplikasi.",
       "approved": "Disetujui",
       "refused": "Ditolak",
       "expired": "Permintaan ini sudah kedaluwarsa",
-      "back": "Kembali ke {{surface}}. Asistenmu melanjutkan di sana."
+      "back": "Kembali ke {{surface}}. Asistenmu melanjutkan di sana.",
+      "setFirst": "Pilih PIN kamu dulu",
+      "setFirstLead": "Menyetujui dari {{surface}} butuh PIN, dan tautan dari chat tidak bisa memilihnya. Pilih di aplikasi dalam keadaan masuk, lalu kembali ke halaman ini.",
+      "setFirstLeadEmail": "Menyetujui dari {{surface}} butuh PIN, dan tautan dari chat tidak bisa memilihnya. Pilih di aplikasi dalam keadaan masuk, atau lewat tautan yang kami kirim ke email kamu. Lalu kembali ke halaman ini.",
+      "openApp": "Pilih di aplikasi",
+      "emailMe": "Kirim tautan ke email saya"
     },
     "pinReset": {
-      "title": "Hapus PIN kamu?",
-      "lead": "Kamu akan memilih yang baru saat berikutnya menyetujui sesuatu dari aplikasi chat.",
-      "button": "Hapus PIN saya",
-      "done": "PIN dihapus",
-      "doneLead": "Pilih yang baru saat berikutnya menyetujui sesuatu dari {{surface}}.",
+      "title": "Pilih PIN kamu",
+      "lead": "Enam digit. Kamu akan mengetiknya untuk menyetujui tindakan yang kamu minta dari aplikasi chat.",
+      "button": "Simpan PIN saya",
+      "done": "PIN tersimpan",
+      "doneLead": "Kembali ke halaman dari {{surface}} dan setujui dengan PIN itu.",
       "gone": "Tautan ini sudah tidak berlaku"
     },
     "via": "via {{surface}}",
     "viaTip": "Dikirim oleh {{person}} di {{surface}}",
     "forwarded": "diteruskan via {{surface}}",
-    "forwardedTip": "{{person}} meneruskan ini dari {{surface}}. Kata-kata ini milik orang lain."
+    "forwardedTip": "{{person}} meneruskan ini dari {{surface}}. Kata-kata ini milik orang lain.",
+    "pin": {
+      "set": "Atur PIN",
+      "change": "Ganti PIN",
+      "title": "PIN {{surface}} kamu",
+      "text": "Enam digit yang kamu ketik untuk menyetujui tindakan yang kamu minta dari {{surface}}. PIN ini tidak pernah dikirim di chat.",
+      "save": "Simpan PIN"
+    }
   },
   "team": {
     "title": "Tim",
@@ -15176,9 +15188,11 @@
       "pageGone": "Tautan ini sudah kedaluwarsa. Minta yang baru ke asistenmu di chat.",
       "pageElsewhere": "Tautan ini sudah dibuka di perangkat lain. Minta yang baru ke asistenmu di chat.",
       "pinWrong": "PIN salah. Sisa percobaan: {{left}}.",
-      "pinLocked": "Terlalu banyak PIN salah. Coba lagi dalam 15 menit, atau hapus PIN lewat email.",
+      "pinLocked": "Terlalu banyak PIN salah. Coba lagi nanti, atau pilih PIN baru di aplikasi.",
       "pinShape": "PIN kamu terdiri dari 6 digit.",
-      "pinResetGone": "Tautan ini sudah dipakai atau kedaluwarsa. Minta yang baru lewat “Lupa PIN?”."
+      "pinResetGone": "Tautan ini sudah dipakai atau kedaluwarsa. Minta yang baru lewat “Lupa PIN?”.",
+      "pinUnset": "Pilih PIN kamu dulu. Pilih di aplikasi dalam keadaan masuk.",
+      "emailUnverified": "Alamat email kamu belum diverifikasi. Pilih PIN kamu di aplikasi saja."
     },
     "wallpaper": {
       "notYours": "Foto itu bukan milikmu.",

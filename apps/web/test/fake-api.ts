@@ -1799,13 +1799,19 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         };
         return sf.page;
       },
-      forgotPin: async (token) => {
-        log("surfaces.forgotPin", token);
+      emailPin: async (token) => {
+        log("surfaces.emailPin", token);
       },
-      resetPin: async (token) => {
-        log("surfaces.resetPin", token);
+      pinFromEmail: async (token, pin) => {
+        log("surfaces.pinFromEmail", { token, pin });
         if (state.surface?.pinReset) throw state.surface.pinReset;
         return { surface: state.surface?.name ?? "" };
+      },
+      setPin: async (linkId, pin) => {
+        log("surfaces.setPin", { linkId, pin });
+        const sf = state.surface;
+        if (!sf?.links.some((l) => l.id === linkId)) throw new ApiError(404, "surface.link_gone", "This link is gone");
+        sf.links = sf.links.map((l) => (l.id === linkId ? { ...l, pinSet: true } : l));
       },
     },
     push: {

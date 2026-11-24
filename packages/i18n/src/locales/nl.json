@@ -2494,26 +2494,38 @@
       "approve": "Goedkeuren",
       "refuse": "Weigeren",
       "forgot": "Pincode vergeten?",
-      "emailed": "We hebben je een link gemaild die hem wist. Laad deze pagina daarna opnieuw om een nieuwe te kiezen.",
+      "emailed": "We hebben je een link gemaild. Kies daar je pincode en kom dan terug naar deze pagina.",
       "notYours": "{{who}} beslist hierover in de app.",
       "notYoursSomeone": "Iemand die het mag goedkeuren beslist hierover in de app.",
       "approved": "Goedgekeurd",
       "refused": "Geweigerd",
       "expired": "Dit verzoek is verlopen",
-      "back": "Ga terug naar {{surface}}. Je assistent gaat daar verder."
+      "back": "Ga terug naar {{surface}}. Je assistent gaat daar verder.",
+      "setFirst": "Kies eerst je pincode",
+      "setFirstLead": "Goedkeuren via {{surface}} vraagt een pincode, en een link uit de chat kan die niet kiezen. Kies hem in de app terwijl je ingelogd bent en kom dan terug naar deze pagina.",
+      "setFirstLeadEmail": "Goedkeuren via {{surface}} vraagt een pincode, en een link uit de chat kan die niet kiezen. Kies hem in de app terwijl je ingelogd bent, of via een link die we je mailen. Kom dan terug naar deze pagina.",
+      "openApp": "Kiezen in de app",
+      "emailMe": "Mail me een link"
     },
     "pinReset": {
-      "title": "Je pincode wissen?",
-      "lead": "Je kiest een nieuwe als je de volgende keer iets goedkeurt via je chat-app.",
-      "button": "Mijn pincode wissen",
-      "done": "Pincode gewist",
-      "doneLead": "Kies een nieuwe als je de volgende keer iets goedkeurt via {{surface}}.",
+      "title": "Kies je pincode",
+      "lead": "Zes cijfers. Je typt hem om acties goed te keuren die je via je chat-app vraagt.",
+      "button": "Mijn pincode opslaan",
+      "done": "Pincode opgeslagen",
+      "doneLead": "Ga terug naar de pagina uit {{surface}} en keur goed met je pincode.",
       "gone": "Deze link werkt niet meer"
     },
     "via": "via {{surface}}",
     "viaTip": "Verstuurd door {{person}} via {{surface}}",
     "forwarded": "doorgestuurd via {{surface}}",
-    "forwardedTip": "{{person}} heeft dit doorgestuurd vanuit {{surface}}. Het zijn de woorden van iemand anders."
+    "forwardedTip": "{{person}} heeft dit doorgestuurd vanuit {{surface}}. Het zijn de woorden van iemand anders.",
+    "pin": {
+      "set": "Pincode instellen",
+      "change": "Pincode wijzigen",
+      "title": "Je {{surface}}-pincode",
+      "text": "Zes cijfers die je typt om acties goed te keuren die je via {{surface}} vraagt. Hij wordt nooit in de chat verstuurd.",
+      "save": "Pincode opslaan"
+    }
   },
   "team": {
     "title": "Team",
@@ -15768,9 +15780,11 @@
       "pageGone": "Deze link is verlopen. Vraag je assistent in de chat om een nieuwe.",
       "pageElsewhere": "Deze link is op een ander apparaat geopend. Vraag je assistent in de chat om een nieuwe.",
       "pinWrong": "Verkeerde pincode. Pogingen over: {{left}}.",
-      "pinLocked": "Te vaak een verkeerde pincode. Probeer het over 15 minuten opnieuw of wis je pincode via e-mail.",
+      "pinLocked": "Te vaak een verkeerde pincode. Probeer het later opnieuw of kies een nieuwe pincode in de app.",
       "pinShape": "Je pincode heeft 6 cijfers.",
-      "pinResetGone": "Deze link is al gebruikt of verlopen. Vraag een nieuwe aan met ‘Pincode vergeten?’."
+      "pinResetGone": "Deze link is al gebruikt of verlopen. Vraag een nieuwe aan met ‘Pincode vergeten?’.",
+      "pinUnset": "Kies eerst je pincode. Kies hem in de app terwijl je ingelogd bent.",
+      "emailUnverified": "Je e-mailadres is nog niet bevestigd. Kies je pincode in de app."
     },
     "wallpaper": {
       "notYours": "Die foto is niet van jou.",

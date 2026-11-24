@@ -141,6 +141,7 @@ describe("every email, in both languages", () => {
       surface_linked: true,
       surface_unlinked: true,
       surface_pin_reset: true,
+      surface_pin_locked: true,
       workspace_deleting: true,
       workspace_restored: true,
       account_deleted: true,

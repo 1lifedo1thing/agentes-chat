@@ -2346,6 +2346,13 @@
       "when": 1795536742745,
       "tag": "0340_surface_pin_pages",
       "breakpoints": true
+    },
+    {
+      "idx": 337,
+      "version": "7",
+      "when": 1795548386538,
+      "tag": "0342_surface_pin_lockouts",
+      "breakpoints": true
     }
   ]
 }

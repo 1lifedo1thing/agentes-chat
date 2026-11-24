@@ -2674,21 +2674,28 @@ export const en = {
       approve: "Approve",
       refuse: "Refuse",
       forgot: "Forgot your PIN?",
-      emailed: "We emailed you a link that clears it. Then reload this page to choose a new one.",
+      emailed: "We emailed you a link. Choose your PIN there, then come back to this page.",
       notYours: "{{who}} decides this in the app.",
       notYoursSomeone: "Someone who can approve it decides this in the app.",
       approved: "Approved",
       refused: "Refused",
       expired: "This request ran out",
       back: "Go back to {{surface}}. Your assistant goes on there.",
+      setFirst: "Set your PIN first",
+      setFirstLead:
+        "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page.",
+      setFirstLeadEmail:
+        "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page.",
+      openApp: "Choose it in the app",
+      emailMe: "Email me a link",
     },
-    /** The page the "Reset your PIN" email opens. Signed out, so it learns the app's name only from the answer. */
+    /** The page the "Choose your PIN" email opens. Signed out, so it learns the app's name only from the answer. */
     pinReset: {
-      title: "Clear your PIN?",
-      lead: "You'll choose a new one the next time you approve something from your chat app.",
-      button: "Clear my PIN",
-      done: "PIN cleared",
-      doneLead: "Choose a new one the next time you approve something from {{surface}}.",
+      title: "Choose your PIN",
+      lead: "Six digits. You'll type it to approve actions you ask for from your chat app.",
+      button: "Save my PIN",
+      done: "PIN saved",
+      doneLead: "Go back to the page from {{surface}} and approve with it.",
       gone: "This link no longer works",
     },
     /** The tag on a person's message written in the chat app. */
@@ -2697,6 +2704,14 @@ export const en = {
     /** The same, for a message the person forwarded there: someone else's words. */
     forwarded: "forwarded via {{surface}}",
     forwardedTip: "{{person}} forwarded this from {{surface}}. The words are someone else's.",
+    /** Choosing the PIN in the app's settings, where the signed-in session proves who chooses it (ADR 0226). */
+    pin: {
+      set: "Set PIN",
+      change: "Change PIN",
+      title: "Your {{surface}} PIN",
+      text: "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat.",
+      save: "Save PIN",
+    },
   },
   team: {
     title: "Team",
@@ -16049,9 +16064,11 @@ export const en = {
       pageGone: "This link ran out. Ask your assistant in the chat for a new one.",
       pageElsewhere: "This link was opened on another device. Ask your assistant in the chat for a new one.",
       pinWrong: "Wrong PIN. Tries left: {{left}}.",
-      pinLocked: "Too many wrong PINs. Try again in 15 minutes, or clear your PIN by email.",
+      pinLocked: "Too many wrong PINs. Try again later, or choose a new PIN in the app.",
       pinShape: "Your PIN has 6 digits.",
       pinResetGone: "This link was already used or ran out. Ask for a new one with “Forgot your PIN?”.",
+      pinUnset: "Set your PIN first. Choose it in the app, signed in.",
+      emailUnverified: "Your email address isn't verified yet. Choose your PIN in the app instead.",
     },
     wallpaper: {
       notYours: "That photo isn't yours.",

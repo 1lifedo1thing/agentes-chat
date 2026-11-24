@@ -97,15 +97,31 @@ test("the first browser to open the page keeps it; another browser can't", async
   expect((await phone("/api/app/surface-page/open", { json: { token } })).status).toBe(200);
 });
 
-test("approving takes the PIN; the first one chosen becomes it", async () => {
-  const { token, approvalId } = await confirmPage();
+test("a page link alone never chooses the PIN; signed in as the person, the page does", async () => {
+  const first = await confirmPage();
   const phone = browser(t);
-  await phone("/api/app/surface-page/open", { json: { token } });
-  const bad = await phone("/api/app/surface-page/decide", { json: { token, decision: "approve" } });
+  const opened = await phone("/api/app/surface-page/open", { json: { token: first.token } });
+  expect(((await opened.json()) as { pin: object }).pin).toMatchObject({ set: false, canChoose: false });
+  const unset = await phone("/api/app/surface-page/decide", {
+    json: { token: first.token, decision: "approve", pin: "907312" },
+  });
+  expect([unset.status, await codeOf(unset)]).toEqual([409, "surface.pin_unset"]);
+  const [waiting] = await t.db.select().from(schema.approvals).where(eq(schema.approvals.id, first.approvalId));
+  expect(waiting?.status).toBe("pending");
+  expect((await t.db.select().from(schema.surfaceLinks).where(eq(schema.surfaceLinks.id, linkId)))[0]?.pinHash).toBe(
+    null,
+  );
+
+  const signedIn = await confirmPage();
+  const page = await ana("/api/app/surface-page/open", { json: { token: signedIn.token } });
+  expect(((await page.json()) as { pin: object }).pin).toMatchObject({ set: false, canChoose: true });
+  const bad = await ana("/api/app/surface-page/decide", { json: { token: signedIn.token, decision: "approve" } });
   expect([bad.status, await codeOf(bad)]).toEqual([400, "surface.pin_shape"]);
-  const ok = await phone("/api/app/surface-page/decide", { json: { token, decision: "approve", pin: "907312" } });
+  const ok = await ana("/api/app/surface-page/decide", {
+    json: { token: signedIn.token, decision: "approve", pin: "907312" },
+  });
   expect(ok.status).toBe(200);
-  const [row] = await t.db.select().from(schema.approvals).where(eq(schema.approvals.id, approvalId));
+  const [row] = await t.db.select().from(schema.approvals).where(eq(schema.approvals.id, signedIn.approvalId));
   expect(row?.status).toBe("approved");
 
   const next = await confirmPage();
@@ -114,14 +130,50 @@ test("approving takes the PIN; the first one chosen becomes it", async () => {
     json: { token: next.token, decision: "approve", pin: "000000" },
   });
   expect([wrong.status, await codeOf(wrong)]).toEqual([403, "surface.pin_wrong"]);
+  const right = await phone("/api/app/surface-page/decide", {
+    json: { token: next.token, decision: "approve", pin: "907312" },
+  });
+  expect(right.status).toBe(200);
 });
 
-test("forgot the PIN: an email, from the browser that opened the page only", async () => {
+test("the app chooses the PIN for my own link, signed in, 10 an account per 10 minutes", async () => {
+  expect(
+    (await browser(t)(`/api/app/me/surface-links/${linkId}/pin`, { method: "PUT", json: { pin: "123456" } })).status,
+  ).toBe(401);
+  const shape = await ana(`/api/app/me/surface-links/${linkId}/pin`, { method: "PUT", json: { pin: "12345" } });
+  expect(shape.status).toBe(400);
+  expect(
+    (await ana(`/api/app/me/surface-links/${linkId}/pin`, { method: "PUT", json: { pin: "246810" } })).status,
+  ).toBe(204);
+  const links = (await (await ana("/api/app/me/surface-links")).json()) as { links: { pinSet: boolean }[] };
+  expect(links.links[0]?.pinSet).toBe(true);
+  const [row] = await t.db.select().from(schema.surfaceLinks).where(eq(schema.surfaceLinks.id, linkId));
+  expect(await Bun.password.verify("246810", row?.pinHash ?? "")).toBe(true);
+  const statuses: number[] = [];
+  for (let i = 0; i < 10; i++) {
+    statuses.push(
+      (await ana(`/api/app/me/surface-links/${linkId}/pin`, { method: "PUT", json: { pin: "246810" } })).status,
+    );
+  }
+  expect(statuses.at(-1)).toBe(429);
+});
+
+test("a link to choose the PIN: emailed only from the browser that opened the page", async () => {
   const { token } = await confirmPage();
   const phone = browser(t);
-  expect((await phone("/api/app/surface-page/forgot-pin", { json: { token } })).status).toBe(404);
+  expect((await phone("/api/app/surface-page/pin-email", { json: { token } })).status).toBe(404);
   await phone("/api/app/surface-page/open", { json: { token } });
-  expect((await phone("/api/app/surface-page/forgot-pin", { json: { token } })).status).toBe(204);
-  const gone = await browser(t)("/api/app/surface-pin-reset", { json: { token: "x".repeat(40) } });
+  expect((await phone("/api/app/surface-page/pin-email", { json: { token } })).status).toBe(204);
+  const gone = await browser(t)("/api/app/surface-pin", { json: { token: "x".repeat(40), pin: "135790" } });
   expect([gone.status, await codeOf(gone)]).toEqual([404, "surface.pin_reset_gone"]);
+});
+
+test("choosing the PIN from the emailed link: 10 tries per 10 minutes per address", async () => {
+  const statuses: number[] = [];
+  for (let i = 0; i < 10; i++) {
+    statuses.push(
+      (await browser(t)("/api/app/surface-pin", { json: { token: "y".repeat(40), pin: "135790" } })).status,
+    );
+  }
+  expect(statuses.at(-1)).toBe(429);
 });

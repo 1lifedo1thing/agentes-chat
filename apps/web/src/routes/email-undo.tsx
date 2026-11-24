@@ -3,7 +3,7 @@ import { EmailUndoPage, SurfacePinResetPage, SurfaceUndoPage } from "@/pages/Ema
 
 /**
  * Where an email's undo lands (`?token=`): the notice to an account's old address (“This wasn't me”), or with
- * `kind=surface` the one that says a chat app was linked (ADR 0187), or with `kind=surface-pin` the one that clears the
+ * `kind=surface` the one that says a chat app was linked (ADR 0187), or with `kind=surface-pin` the one that chooses the
  * PIN that confirms actions from it (ADR 0226).
  */
 export const Route = createFileRoute("/email-undo")({

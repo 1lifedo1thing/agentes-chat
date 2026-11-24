@@ -368,7 +368,7 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
     display: "5511900000001",
     url: APP,
   },
-  /** "Forgot your PIN?" on the confirm page (ADR 0226). */
+  /** "Email me a link" or "Forgot your PIN?" on the confirm page (ADR 0226). */
   "surface_pin_reset.en": {
     kind: "surface_pin_reset",
     locale: "en",
@@ -380,6 +380,21 @@ export const EMAIL_SAMPLES: Record<string, EmailTemplate> = {
     locale: "pt-BR",
     surface: "Example Chat",
     url: `${APP}/email-undo?kind=surface-pin&token=Pq4dQ9xWm4Lp7Rt1Vb8Nc3Zs6Yf0Ja5Ue`,
+  },
+  /** Three wrong PINs on the confirm page: the second lock, an hour (ADR 0226). */
+  "surface_pin_locked.en": {
+    kind: "surface_pin_locked",
+    locale: "en",
+    surface: "Example Chat",
+    step: 1,
+    url: `${APP}/org/${ORG}/settings/notifications`,
+  },
+  "surface_pin_locked.pt-BR": {
+    kind: "surface_pin_locked",
+    locale: "pt-BR",
+    surface: "Example Chat",
+    step: 1,
+    url: `${APP}/org/${ORG}/settings/notifications`,
   },
   /** To an owner: a button to restore it. */
   "workspace_deleting-owner.en": {

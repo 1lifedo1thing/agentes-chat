@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { and, eq, schema } from "@agenteschat/db";
 import {
+  checkPin,
   claimLink,
   confirmLink,
   decideOnSurfacePage,
-  emailPinReset,
+  emailPinLink,
   insertMessage,
   listSurfaceDeliveries,
   lodiFor,
@@ -15,11 +16,12 @@ import {
   PAGE_FIRST_OPEN_MS,
   PAGE_OPEN_MS,
   type PageKind,
-  PIN_LOCK_MS,
+  PIN_LOCKS_MS,
   pruneSurfaceRows,
   queueSurfaceDelivery,
   removeLink,
-  resetSurfacePin,
+  setMySurfacePin,
+  setPinFromEmail,
   setSurface,
 } from "../src";
 import { addMember, type Fixture, setup } from "./fixtures";
@@ -102,6 +104,9 @@ async function page(kind: PageKind = "confirm", targetId?: string) {
   return { url, token, linkId, targetId: target };
 }
 
+/** The owner's address as sign-up leaves it once confirmed: what a link to choose the PIN may go to. */
+const verified = () => f.db.update(schema.users).set({ emailVerified: true }).where(eq(schema.users.id, f.owner.id));
+
 const codeOf = (p: Promise<unknown>) =>
   p.then(
     () => "ok",
@@ -167,36 +172,73 @@ describe("lifetimes: opened once within 10 minutes, then its kind's time in that
 describe("the PIN", () => {
   const deps = (ms: number) => ({ db: f.db, pubsub: f.pubsub, now: at(ms) });
 
-  test("the first approval chooses it; refusing needs none", async () => {
+  test("a page link alone never chooses the PIN: approving waits in the app, refusing needs none", async () => {
     const { token, linkId, targetId } = await page();
     const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
-    expect((await openSurfacePage({ db: f.db, now: at(0) }, token, secret)).view.pin.set).toBe(false);
-    expect(await codeOf(decideOnSurfacePage(deps(1000), token, secret, { decision: "approve", pin: "12345" }))).toBe(
-      "surface.pin_shape",
+    const { view } = await openSurfacePage({ db: f.db, now: at(0) }, token, secret);
+    expect(view.pin).toMatchObject({ set: false, canChoose: false });
+    expect(await codeOf(decideOnSurfacePage(deps(1000), token, secret, { decision: "approve", pin: "482913" }))).toBe(
+      "surface.pin_unset",
     );
-    const view = await decideOnSurfacePage(deps(1000), token, secret, { decision: "approve", pin: "482913" });
+    const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+    expect(row?.pinHash).toBeNull();
+    expect((await f.db.select().from(approvals).where(eq(approvals.id, targetId)))[0]?.status).toBe("pending");
+
+    const refused = await decideOnSurfacePage(deps(2000), token, secret, { decision: "refuse" });
+    expect(refused.approval?.status).toBe("refused");
+  });
+
+  test("the bridge's own check never chooses a PIN either", async () => {
+    const linkId = await linked();
+    const [link] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+    if (!link) throw new Error("no link");
+    expect(await codeOf(checkPin(f.db, link, "482913", new Date()))).toBe("surface.pin_unset");
+    expect((await f.db.select().from(surfaceLinks))[0]?.pinHash).toBeNull();
+  });
+
+  test("signed in here as the person, approving chooses it; signed in as someone else, it doesn't", async () => {
+    const { token, linkId, targetId } = await page();
+    const other = await addMember(f.db, f.org.id, "member", "Someone Else");
+    const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null, other.id)).secret;
+    expect((await openSurfacePage({ db: f.db, now: at(0) }, token, secret, other.id)).view.pin.canChoose).toBe(false);
+    expect(
+      await codeOf(decideOnSurfacePage(deps(1000), token, secret, { decision: "approve", pin: "482913" }, other.id)),
+    ).toBe("surface.pin_unset");
+
+    expect((await openSurfacePage({ db: f.db, now: at(0) }, token, secret, f.owner.id)).view.pin.canChoose).toBe(true);
+    expect(
+      await codeOf(decideOnSurfacePage(deps(1000), token, secret, { decision: "approve", pin: "12345" }, f.owner.id)),
+    ).toBe("surface.pin_shape");
+    const view = await decideOnSurfacePage(
+      deps(1000),
+      token,
+      secret,
+      { decision: "approve", pin: "482913" },
+      f.owner.id,
+    );
     expect(view.approval?.status).toBe("approved");
-    expect(view.pin.set).toBe(true);
+    expect(view.pin).toMatchObject({ set: true, canChoose: false });
     const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
     expect(row?.pinHash).not.toContain("482913");
+    expect(await Bun.password.verify("482913", row?.pinHash ?? "")).toBe(true);
     expect((await f.db.select().from(approvals).where(eq(approvals.id, targetId)))[0]?.decidedByUserId).toBe(
       f.owner.id,
     );
+  });
 
-    const other = await approval();
-    const next = await mintPageLink(f.db, {
-      orgId: f.org.id,
-      linkId,
-      userId: f.owner.id,
-      kind: "confirm",
-      targetId: other.id,
-    });
-    const nextToken = new URL(next).searchParams.get("token") ?? "";
-    const nextSecret = (await openSurfacePage({ db: f.db }, nextToken, null)).secret;
-    const refused = await decideOnSurfacePage({ db: f.db, pubsub: f.pubsub }, nextToken, nextSecret, {
-      decision: "refuse",
-    });
-    expect(refused.approval?.status).toBe("refused");
+  test("the app chooses it for the person's own active link, replacing any and its lock", async () => {
+    const linkId = await linked();
+    await f.db
+      .update(surfaceLinks)
+      .set({ pinHash: "old", pinFailures: 2, pinLockedUntil: new Date(Date.now() + 60_000), pinLockouts: 2 })
+      .where(eq(surfaceLinks.id, linkId));
+    const other = await addMember(f.db, f.org.id, "member", "Someone Else");
+    expect(await codeOf(setMySurfacePin(f.db, other.id, linkId, "482913"))).toBe("surface.link_gone");
+    expect(await codeOf(setMySurfacePin(f.db, f.owner.id, linkId, "4829"))).toBe("surface.pin_shape");
+    await setMySurfacePin(f.db, f.owner.id, linkId, "482913");
+    const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+    expect(await Bun.password.verify("482913", row?.pinHash ?? "")).toBe(true);
+    expect([row?.pinFailures, row?.pinLockedUntil, row?.pinLockouts]).toEqual([0, null, 0]);
   });
 
   test("only the browser that opened the page decides, and not before it opened", async () => {
@@ -208,24 +250,64 @@ describe("the PIN", () => {
     );
   });
 
-  test("three wrong ones lock approving for 15 minutes", async () => {
-    const { token, linkId } = await page();
+  test("three wrong ones lock approving: 15 minutes, then an hour, then a day, each with an email", async () => {
+    const linkId = await linked();
     await f.db
       .update(surfaceLinks)
       .set({ pinHash: await Bun.password.hash("111111") })
       .where(eq(surfaceLinks.id, linkId));
-    const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
-    const approve = (ms: number, pin: string) =>
-      decideOnSurfacePage(deps(ms), token, secret, { decision: "approve", pin }).then(
-        (v) => v.approval?.status,
+    const check = async (ms: number, pin: string) => {
+      const [link] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+      if (!link) throw new Error("no link");
+      return checkPin(f.db, link, pin, at(ms)()).then(
+        () => "ok",
         (e: { code: string; params?: Record<string, unknown> }) => [e.code, e.params],
       );
-    expect(await approve(1000, "222222")).toEqual(["surface.pin_wrong", { left: 2 }]);
-    expect(await approve(2000, "222222")).toEqual(["surface.pin_wrong", { left: 1 }]);
-    const until = new Date(T0.getTime() + 3000 + PIN_LOCK_MS).toISOString();
-    expect(await approve(3000, "222222")).toEqual(["surface.pin_locked", { until }]);
-    expect(await approve(4000, "111111")).toEqual(["surface.pin_locked", { until }]);
-    expect(await approve(3000 + PIN_LOCK_MS + 1000, "111111")).toBe("approved");
+    };
+    expect(PIN_LOCKS_MS).toEqual([minutes(15), minutes(60), minutes(24 * 60)]);
+    let start = 1000;
+    for (const lock of PIN_LOCKS_MS) {
+      expect(await check(start, "222222")).toEqual(["surface.pin_wrong", { left: 2 }]);
+      expect(await check(start + 1000, "222222")).toEqual(["surface.pin_wrong", { left: 1 }]);
+      const until = new Date(T0.getTime() + start + 2000 + lock).toISOString();
+      expect(await check(start + 2000, "222222")).toEqual(["surface.pin_locked", { until }]);
+      expect(await check(start + 3000, "111111")).toEqual(["surface.pin_locked", { until }]);
+      start += 2000 + lock + 1000;
+    }
+    const mails = await f.db.select().from(outbox).where(eq(outbox.kind, "email.send"));
+    const sent = mails.map((m) => (m.payload as { template: { kind: string; step: number; url: string } }).template);
+    expect(sent.map((m) => [m.kind, m.step])).toEqual([
+      ["surface_pin_locked", 0],
+      ["surface_pin_locked", 1],
+      ["surface_pin_locked", 2],
+    ]);
+    expect(sent[0]?.url).toEndWith(`/org/${f.org.id}/settings/notifications`);
+    // A right one starts the count over.
+    expect(await check(start, "111111")).toBe("ok");
+    const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+    expect([row?.pinFailures, row?.pinLockouts]).toEqual([0, 0]);
+  });
+
+  test("a lock a day past no longer makes the next one longer", async () => {
+    const linkId = await linked();
+    await f.db
+      .update(surfaceLinks)
+      .set({
+        pinHash: await Bun.password.hash("111111"),
+        pinLockouts: 2,
+        pinLockedUntil: new Date(T0.getTime() - minutes(25 * 60)),
+      })
+      .where(eq(surfaceLinks.id, linkId));
+    const wrong = async (ms: number) => {
+      const [link] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+      if (!link) throw new Error("no link");
+      return codeOf(checkPin(f.db, link, "222222", at(ms)()));
+    };
+    await wrong(1000);
+    await wrong(2000);
+    expect(await wrong(3000)).toBe("surface.pin_locked");
+    const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
+    expect(row?.pinLockedUntil?.getTime()).toBe(T0.getTime() + 3000 + PIN_LOCKS_MS[0]);
   });
 
   test("tries sent at once still get three before the lock", async () => {
@@ -243,27 +325,46 @@ describe("the PIN", () => {
     expect(codes.at(-1)).toBe("surface.pin_locked");
   });
 
-  test("forgot it: an emailed link clears it once", async () => {
+  test("an emailed link chooses it once, replacing a forgotten one and its lock", async () => {
     const { token, linkId } = await page();
-    await f.db.update(surfaceLinks).set({ pinHash: "x", pinFailures: 2 }).where(eq(surfaceLinks.id, linkId));
+    await verified();
+    await f.db
+      .update(surfaceLinks)
+      .set({ pinHash: "old", pinFailures: 2, pinLockedUntil: new Date(Date.now() + 60_000) })
+      .where(eq(surfaceLinks.id, linkId));
     const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
-    await emailPinReset({ db: f.db, now: at(1000), publicUrl: "https://app.example.com" }, token, secret);
+    expect((await openSurfacePage({ db: f.db, now: at(0) }, token, secret)).view.pin.emailVerified).toBe(true);
+    await emailPinLink({ db: f.db, now: at(1000), publicUrl: "https://app.example.com" }, token, secret);
     const [job] = await f.db.select().from(outbox).where(eq(outbox.kind, "email.send"));
     const payload = job?.payload as { template?: { url?: string } } | undefined;
     const url = String(payload?.template?.url);
     expect(url).toStartWith("https://app.example.com/email-undo?kind=surface-pin&token=");
     const reset = new URL(url).searchParams.get("token") ?? "";
-    expect(await resetSurfacePin(f.db, reset)).toEqual({ surface: "Example Chat" });
+    // A PIN of the wrong shape spends nothing.
+    expect(await codeOf(setPinFromEmail(f.db, reset, "12345"))).toBe("surface.pin_shape");
+    expect(await setPinFromEmail(f.db, reset, "654321")).toEqual({ surface: "Example Chat" });
     const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
-    expect([row?.pinHash, row?.pinFailures]).toEqual([null, 0]);
-    expect(await codeOf(resetSurfacePin(f.db, reset))).toBe("surface.pin_reset_gone");
+    expect(await Bun.password.verify("654321", row?.pinHash ?? "")).toBe(true);
+    expect([row?.pinFailures, row?.pinLockedUntil]).toEqual([0, null]);
+    expect(await codeOf(setPinFromEmail(f.db, reset, "777777"))).toBe("surface.pin_reset_gone");
   });
 
-  test("forgot it: three emails an hour for the person, from any address or page", async () => {
+  test("no link goes to an address that was never verified", async () => {
     const { token } = await page();
     const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
+    expect((await openSurfacePage({ db: f.db, now: at(0) }, token, secret)).view.pin.emailVerified).toBe(false);
+    expect(
+      await codeOf(emailPinLink({ db: f.db, now: at(1000), publicUrl: "https://app.example.com" }, token, secret)),
+    ).toBe("surface.email_unverified");
+    expect(await f.db.select().from(outbox).where(eq(outbox.kind, "email.send"))).toEqual([]);
+  });
+
+  test("three emails an hour for the person, from any address or page", async () => {
+    const { token } = await page();
+    await verified();
+    const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
     const ask = (ms: number) =>
-      codeOf(emailPinReset({ db: f.db, now: at(ms), publicUrl: "https://app.example.com" }, token, secret));
+      codeOf(emailPinLink({ db: f.db, now: at(ms), publicUrl: "https://app.example.com" }, token, secret));
     expect([await ask(1000), await ask(2000), await ask(3000)]).toEqual(["ok", "ok", "ok"]);
     expect(await ask(4000)).toBe("rate_limited");
     expect(await f.db.select().from(outbox).where(eq(outbox.kind, "email.send"))).toHaveLength(3);

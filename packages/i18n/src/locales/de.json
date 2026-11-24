@@ -2494,26 +2494,38 @@
       "approve": "Genehmigen",
       "refuse": "Ablehnen",
       "forgot": "PIN vergessen?",
-      "emailed": "Wir haben dir einen Link per E-Mail geschickt, der sie löscht. Lade danach diese Seite neu, um eine neue zu wählen.",
+      "emailed": "Wir haben dir einen Link per E-Mail geschickt. Wähle dort deine PIN und komm dann zu dieser Seite zurück.",
       "notYours": "{{who}} entscheidet das in der App.",
       "notYoursSomeone": "Jemand, der es genehmigen darf, entscheidet das in der App.",
       "approved": "Genehmigt",
       "refused": "Abgelehnt",
       "expired": "Diese Anfrage ist abgelaufen",
-      "back": "Geh zurück zu {{surface}}. Dein Assistent macht dort weiter."
+      "back": "Geh zurück zu {{surface}}. Dein Assistent macht dort weiter.",
+      "setFirst": "Wähle zuerst deine PIN",
+      "setFirstLead": "Zum Genehmigen über {{surface}} brauchst du eine PIN, und ein Link aus dem Chat kann sie nicht wählen. Wähle sie angemeldet in der App und komm dann zu dieser Seite zurück.",
+      "setFirstLeadEmail": "Zum Genehmigen über {{surface}} brauchst du eine PIN, und ein Link aus dem Chat kann sie nicht wählen. Wähle sie angemeldet in der App oder über einen Link, den wir dir per E-Mail schicken. Komm dann zu dieser Seite zurück.",
+      "openApp": "In der App wählen",
+      "emailMe": "Link per E-Mail schicken"
     },
     "pinReset": {
-      "title": "PIN löschen?",
-      "lead": "Du wählst eine neue, wenn du das nächste Mal etwas über deine Chat-App genehmigst.",
-      "button": "Meine PIN löschen",
-      "done": "PIN gelöscht",
-      "doneLead": "Wähle eine neue, wenn du das nächste Mal etwas über {{surface}} genehmigst.",
+      "title": "Wähle deine PIN",
+      "lead": "Sechs Ziffern. Du gibst sie ein, um Aktionen zu genehmigen, um die du über deine Chat-App bittest.",
+      "button": "Meine PIN speichern",
+      "done": "PIN gespeichert",
+      "doneLead": "Geh zurück zur Seite aus {{surface}} und genehmige mit ihr.",
       "gone": "Dieser Link funktioniert nicht mehr"
     },
     "via": "via {{surface}}",
     "viaTip": "Gesendet von {{person}} über {{surface}}",
     "forwarded": "weitergeleitet über {{surface}}",
-    "forwardedTip": "{{person}} hat das aus {{surface}} weitergeleitet. Die Worte stammen von jemand anderem."
+    "forwardedTip": "{{person}} hat das aus {{surface}} weitergeleitet. Die Worte stammen von jemand anderem.",
+    "pin": {
+      "set": "PIN festlegen",
+      "change": "PIN ändern",
+      "title": "Deine {{surface}}-PIN",
+      "text": "Sechs Ziffern, mit denen du Aktionen genehmigst, um die du über {{surface}} bittest. Sie wird nie im Chat gesendet.",
+      "save": "PIN speichern"
+    }
   },
   "team": {
     "title": "Team",
@@ -15700,9 +15712,11 @@
       "pageGone": "Dieser Link ist abgelaufen. Bitte deinen Assistenten im Chat um einen neuen.",
       "pageElsewhere": "Dieser Link wurde auf einem anderen Gerät geöffnet. Bitte deinen Assistenten im Chat um einen neuen.",
       "pinWrong": "Falsche PIN. Verbleibende Versuche: {{left}}.",
-      "pinLocked": "Zu viele falsche PINs. Versuch es in 15 Minuten noch einmal oder lösche deine PIN per E-Mail.",
+      "pinLocked": "Zu viele falsche PINs. Versuch es später noch einmal oder wähle in der App eine neue PIN.",
       "pinShape": "Deine PIN hat 6 Ziffern.",
-      "pinResetGone": "Dieser Link wurde schon benutzt oder ist abgelaufen. Fordere mit „PIN vergessen?“ einen neuen an."
+      "pinResetGone": "Dieser Link wurde schon benutzt oder ist abgelaufen. Fordere mit „PIN vergessen?“ einen neuen an.",
+      "pinUnset": "Wähle zuerst deine PIN. Wähle sie angemeldet in der App.",
+      "emailUnverified": "Deine E-Mail-Adresse ist noch nicht bestätigt. Wähle deine PIN stattdessen in der App."
     },
     "wallpaper": {
       "notYours": "Dieses Foto gehört nicht dir.",

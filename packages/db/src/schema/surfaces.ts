@@ -37,6 +37,8 @@ export const surfaceLinks = pgTable(
     pinFailures: integer().notNull().default(0),
     /** Three wrong PINs in a row lock confirming until then. */
     pinLockedUntil: timestamp({ withTimezone: true }),
+    /** Locks since the last right PIN: each one lasts longer (15 minutes, an hour, then a day). */
+    pinLockouts: integer().notNull().default(0),
   },
   (t) => [
     check("surface_links_status", sql`${t.status} in ('pending', 'active')`),

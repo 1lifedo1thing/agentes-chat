@@ -6207,7 +6207,7 @@
     "value": "Forgot your PIN?"
   },
   "surface.page.emailed": {
-    "value": "We emailed you a link that clears it. Then reload this page to choose a new one."
+    "value": "We emailed you a link. Choose your PIN there, then come back to this page."
   },
   "surface.page.notYours": {
     "value": "{{who}} decides this in the app."
@@ -6228,19 +6228,19 @@
     "value": "Go back to {{surface}}. Your assistant goes on there."
   },
   "surface.pinReset.title": {
-    "value": "Clear your PIN?"
+    "value": "Choose your PIN"
   },
   "surface.pinReset.lead": {
-    "value": "You'll choose a new one the next time you approve something from your chat app."
+    "value": "Six digits. You'll type it to approve actions you ask for from your chat app."
   },
   "surface.pinReset.button": {
-    "value": "Clear my PIN"
+    "value": "Save my PIN"
   },
   "surface.pinReset.done": {
-    "value": "PIN cleared"
+    "value": "PIN saved"
   },
   "surface.pinReset.doneLead": {
-    "value": "Choose a new one the next time you approve something from {{surface}}."
+    "value": "Go back to the page from {{surface}} and approve with it."
   },
   "surface.pinReset.gone": {
     "value": "This link no longer works"
@@ -38522,7 +38522,7 @@
     "value": "Wrong PIN. Tries left: {{left}}."
   },
   "errors.surface.pinLocked": {
-    "value": "Too many wrong PINs. Try again in 15 minutes, or clear your PIN by email."
+    "value": "Too many wrong PINs. Try again later, or choose a new PIN in the app."
   },
   "errors.surface.pinShape": {
     "value": "Your PIN has 6 digits."
@@ -56436,5 +56436,41 @@
   },
   "live.sheet.fn.YEARFRAC": {
     "value": "The share of a year between two dates"
+  },
+  "surface.page.setFirst": {
+    "value": "Set your PIN first"
+  },
+  "surface.page.setFirstLead": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
+  },
+  "surface.page.setFirstLeadEmail": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
+  },
+  "surface.page.openApp": {
+    "value": "Choose it in the app"
+  },
+  "surface.page.emailMe": {
+    "value": "Email me a link"
+  },
+  "surface.pin.set": {
+    "value": "Set PIN"
+  },
+  "surface.pin.change": {
+    "value": "Change PIN"
+  },
+  "surface.pin.title": {
+    "value": "Your {{surface}} PIN"
+  },
+  "surface.pin.text": {
+    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
+  },
+  "surface.pin.save": {
+    "value": "Save PIN"
+  },
+  "errors.surface.pinUnset": {
+    "value": "Set your PIN first. Choose it in the app, signed in."
+  },
+  "errors.surface.emailUnverified": {
+    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
   }
 }

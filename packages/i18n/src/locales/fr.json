@@ -2579,26 +2579,38 @@
       "approve": "Approuver",
       "refuse": "Refuser",
       "forgot": "Code PIN oublié ?",
-      "emailed": "Nous t'avons envoyé par e-mail un lien qui l'efface. Recharge ensuite cette page pour en choisir un nouveau.",
+      "emailed": "Nous t'avons envoyé un lien par e-mail. Choisis ton code PIN là-bas, puis reviens sur cette page.",
       "notYours": "{{who}} décide de ceci dans l'app.",
       "notYoursSomeone": "Une personne qui peut l'approuver en décide dans l'app.",
       "approved": "Approuvé",
       "refused": "Refusé",
       "expired": "Cette demande a expiré",
-      "back": "Retourne sur {{surface}}. Ton assistant continue là-bas."
+      "back": "Retourne sur {{surface}}. Ton assistant continue là-bas.",
+      "setFirst": "Choisis d'abord ton code PIN",
+      "setFirstLead": "Pour approuver depuis {{surface}}, il faut un code PIN, et un lien du chat ne peut pas le choisir. Choisis-le dans l'app, connecté, puis reviens sur cette page.",
+      "setFirstLeadEmail": "Pour approuver depuis {{surface}}, il faut un code PIN, et un lien du chat ne peut pas le choisir. Choisis-le dans l'app, connecté, ou avec un lien qu'on t'envoie par e-mail. Puis reviens sur cette page.",
+      "openApp": "Le choisir dans l'app",
+      "emailMe": "M'envoyer un lien par e-mail"
     },
     "pinReset": {
-      "title": "Effacer ton code PIN ?",
-      "lead": "Tu en choisiras un nouveau la prochaine fois que tu approuveras quelque chose depuis ton app de chat.",
-      "button": "Effacer mon code PIN",
-      "done": "Code PIN effacé",
-      "doneLead": "Choisis-en un nouveau la prochaine fois que tu approuves quelque chose depuis {{surface}}.",
+      "title": "Choisis ton code PIN",
+      "lead": "Six chiffres. Tu le saisiras pour approuver les actions que tu demandes depuis ton app de chat.",
+      "button": "Enregistrer mon code PIN",
+      "done": "Code PIN enregistré",
+      "doneLead": "Retourne sur la page venue de {{surface}} et approuve avec lui.",
       "gone": "Ce lien ne fonctionne plus"
     },
     "via": "via {{surface}}",
     "viaTip": "Envoyé par {{person}} sur {{surface}}",
     "forwarded": "transféré via {{surface}}",
-    "forwardedTip": "{{person}} a transféré ceci depuis {{surface}}. Ce sont les mots de quelqu'un d'autre."
+    "forwardedTip": "{{person}} a transféré ceci depuis {{surface}}. Ce sont les mots de quelqu'un d'autre.",
+    "pin": {
+      "set": "Choisir un code PIN",
+      "change": "Changer de code PIN",
+      "title": "Ton code PIN {{surface}}",
+      "text": "Six chiffres que tu saisis pour approuver les actions que tu demandes depuis {{surface}}. Il n'est jamais envoyé dans le chat.",
+      "save": "Enregistrer le code PIN"
+    }
   },
   "team": {
     "title": "Équipe",
@@ -16238,9 +16250,11 @@
       "pageGone": "Ce lien a expiré. Demande-en un nouveau à ton assistant dans le chat.",
       "pageElsewhere": "Ce lien a été ouvert sur un autre appareil. Demande-en un nouveau à ton assistant dans le chat.",
       "pinWrong": "Code PIN incorrect. Essais restants : {{left}}.",
-      "pinLocked": "Trop de codes PIN incorrects. Réessaie dans 15 minutes ou efface ton code PIN par e-mail.",
+      "pinLocked": "Trop de codes PIN incorrects. Réessaie plus tard ou choisis un nouveau code PIN dans l'app.",
       "pinShape": "Ton code PIN compte 6 chiffres.",
-      "pinResetGone": "Ce lien a déjà servi ou a expiré. Demandes-en un nouveau avec « Code PIN oublié ? »."
+      "pinResetGone": "Ce lien a déjà servi ou a expiré. Demandes-en un nouveau avec « Code PIN oublié ? ».",
+      "pinUnset": "Choisis d'abord ton code PIN. Choisis-le dans l'app, connecté.",
+      "emailUnverified": "Ton adresse e-mail n'est pas encore vérifiée. Choisis ton code PIN dans l'app."
     },
     "wallpaper": {
       "notYours": "Cette photo n'est pas à vous.",

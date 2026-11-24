@@ -211,8 +211,13 @@ export type EmailTemplate =
     } & Beside)
   /** The surface unlinked the account because the sender's identity there changed. `url`: the server, for the pictures. */
   | ({ kind: "surface_unlinked"; locale: EmailLocale; surface: string; display: string; url: string } & Beside)
-  /** "Forgot your PIN?" on a page the surface linked to (ADR 0226): `url` is the page that clears it, once, for an hour. */
+  /**
+   * "Email me a link" or "Forgot your PIN?" on a page the surface linked to (ADR 0226): `url` is the page that chooses
+   * the PIN, once, for an hour.
+   */
   | ({ kind: "surface_pin_reset"; locale: EmailLocale; surface: string; url: string } & Beside)
+  /** Three wrong PINs locked approving from the surface; `step` 0, 1, 2: for 15 minutes, an hour, a day. `url`: settings. */
+  | ({ kind: "surface_pin_locked"; locale: EmailLocale; surface: string; step: 0 | 1 | 2; url: string } & Beside)
   /**
    * Double opt-in for the landing page's waiting list, in the language they
    * joined in. `email` is the address being confirmed (absent in jobs queued
@@ -993,6 +998,21 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
         c.headline(t.surface),
         [{ p: c.body(t.surface) }, { button: c.button, url: t.url }, { small: c.small }, fallback(t.url)],
         c.why(t.surface),
+        { crew: surfaceCrew(t.assistant), phone: { alt: w.surface.linked.picture, on: true } },
+      );
+    }
+    case "surface_pin_locked": {
+      const c = w.surface.pinLocked;
+      return doc(
+        c.subject(t.surface),
+        c.preheader,
+        c.headline(t.surface),
+        [
+          { p: c.body(t.surface, c.lockedFor[t.step]) },
+          { button: c.button, url: t.url },
+          { small: c.small(t.surface) },
+        ],
+        w.surface.pinReset.why(t.surface),
         { crew: surfaceCrew(t.assistant), phone: { alt: w.surface.linked.picture, on: true } },
       );
     }

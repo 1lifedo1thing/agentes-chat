@@ -2411,26 +2411,38 @@
       "approve": "批准",
       "refuse": "拒绝",
       "forgot": "忘记 PIN？",
-      "emailed": "我们已通过邮件发送清除 PIN 的链接。之后刷新此页面以设置新的 PIN。",
+      "emailed": "我们已通过邮件发送链接。请在那里设置 PIN，然后回到此页面。",
       "notYours": "由 {{who}} 在应用中决定。",
       "notYoursSomeone": "由有权批准的人在应用中决定。",
       "approved": "已批准",
       "refused": "已拒绝",
       "expired": "此请求已过期",
-      "back": "回到 {{surface}}，你的助手会在那里继续。"
+      "back": "回到 {{surface}}，你的助手会在那里继续。",
+      "setFirst": "请先设置 PIN",
+      "setFirstLead": "通过 {{surface}} 批准需要 PIN，而聊天中的链接无法设置它。请在已登录的应用中设置，然后回到此页面。",
+      "setFirstLeadEmail": "通过 {{surface}} 批准需要 PIN，而聊天中的链接无法设置它。请在已登录的应用中设置，或通过我们发到你邮箱的链接设置，然后回到此页面。",
+      "openApp": "在应用中设置",
+      "emailMe": "通过邮件发送链接"
     },
     "pinReset": {
-      "title": "清除你的 PIN？",
-      "lead": "下次在聊天应用中批准操作时，你会设置新的 PIN。",
-      "button": "清除我的 PIN",
-      "done": "PIN 已清除",
-      "doneLead": "下次在 {{surface}} 中批准操作时设置新的 PIN。",
+      "title": "设置你的 PIN",
+      "lead": "六位数字。你在聊天应用中请求的操作需要输入它来批准。",
+      "button": "保存我的 PIN",
+      "done": "PIN 已保存",
+      "doneLead": "回到从 {{surface}} 打开的页面，用它来批准。",
       "gone": "此链接已失效"
     },
     "via": "通过 {{surface}}",
     "viaTip": "由 {{person}} 通过 {{surface}} 发送",
     "forwarded": "通过 {{surface}} 转发",
-    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。"
+    "forwardedTip": "{{person}} 从 {{surface}} 转发了这条消息。这是别人的话。",
+    "pin": {
+      "set": "设置 PIN",
+      "change": "更改 PIN",
+      "title": "你的 {{surface}} PIN",
+      "text": "你在 {{surface}} 中请求的操作需要输入这六位数字来批准。它永远不会在聊天中发送。",
+      "save": "保存 PIN"
+    }
   },
   "team": {
     "title": "团队",
@@ -15186,9 +15198,11 @@
       "pageGone": "此链接已过期。请在聊天中向助手要一个新链接。",
       "pageElsewhere": "此链接已在另一台设备上打开。请在聊天中向助手要一个新链接。",
       "pinWrong": "PIN 错误。剩余次数：{{left}}。",
-      "pinLocked": "PIN 错误次数过多。请 15 分钟后再试，或通过邮件清除 PIN。",
+      "pinLocked": "错误的 PIN 次数过多。请稍后再试，或在应用中设置新的 PIN。",
       "pinShape": "PIN 为 6 位数字。",
-      "pinResetGone": "此链接已使用或已过期。请通过“忘记 PIN？”重新获取。"
+      "pinResetGone": "此链接已使用或已过期。请通过“忘记 PIN？”重新获取。",
+      "pinUnset": "请先设置 PIN。请在已登录的应用中设置。",
+      "emailUnverified": "你的邮箱地址尚未验证。请在应用中设置 PIN。"
     },
     "wallpaper": {
       "notYours": "这张照片不是你的。",

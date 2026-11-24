@@ -3,13 +3,15 @@
 - Status: Accepted
 - Date: 2026-11-24
 - Extends: ADR 0187 (outside chat surfaces; its §6 refusals and its "Later"), ADR 0015 (approvals)
-- Code: db `packages/db/src/schema/surfaces.ts` (`surface_links.pin_hash`, `pin_failures`, `pin_locked_until`;
-  `surface_page_links`), migration 0340; engine `packages/engine/src/surfaces/turn.ts` (`surfaceGate`, called by the
-  tool gateway), `pages.ts` (`mintPageLink`, `openSurfacePage`, `checkPin`, `decideOnSurfacePage`, `emailPinReset`,
-  `resetSurfacePin`, `prunePageLinks`), `deliveries.ts` (an approval's card opens its page); the `surface_pin_reset`
-  email; routes `apps/server/src/routes/app/surfaces.ts` (`/surface-page/open`, `/surface-page/decide`,
-  `/surface-page/forgot-pin`, `/surface-pin-reset`); web `apps/web/src/pages/SurfacePage.tsx` (`/surface-page`) and
-  `SurfacePinResetPage` (`/email-undo?kind=surface-pin`)
+- Code: db `packages/db/src/schema/surfaces.ts` (`surface_links.pin_hash`, `pin_failures`, `pin_locked_until`,
+  `pin_lockouts`; `surface_page_links`), migrations 0340 and 0342; engine `packages/engine/src/surfaces/turn.ts`
+  (`surfaceGate`, called by the tool gateway), `pages.ts` (`mintPageLink`, `openSurfacePage`, `setSurfacePin`,
+  `setMySurfacePin`, `checkPin`, `decideOnSurfacePage`, `emailPinLink`, `setPinFromEmail`, `prunePageLinks`),
+  `deliveries.ts` (an approval's card opens its page); the `surface_pin_reset` and `surface_pin_locked` emails; routes
+  `apps/server/src/routes/app/surfaces.ts` (`/surface-page/open`, `/surface-page/decide`, `/surface-page/pin-email`,
+  `/surface-pin`, `PUT /me/surface-links/{id}/pin`); web `apps/web/src/pages/SurfacePage.tsx` (`/surface-page`),
+  `SurfacePinResetPage` (`/email-undo?kind=surface-pin`) and the PIN row in Settings › Notifications
+  (`SurfaceLink.tsx`, `?pin=1`); phone `apps/mobile/src/features/me/SurfaceLink.tsx` (the PIN row in Notificações)
 
 ## Context
 
@@ -59,17 +61,31 @@ to call the tool and say in one line that the person confirms it on the page.
 - 30 calls per 10 minutes per IP address on the page's routes.
 
 ### 3. The PIN
-Six digits, on the surface link (`pin_hash`, Bun's argon2id; `pin_failures`; `pin_locked_until`), never in the
-chat, the logs or the service. Kept when the same sender moves to another workspace; a new sender or a new link starts
-without one, so a new password (which ends the link) clears it too.
-- `confirm` page: approving takes the PIN; with none set, the PIN typed (twice, on the page) becomes it. Refusing
-  takes none. Who may decide is `decideApproval`'s rule, unchanged.
-- Three wrong ones in a row lock approving for 15 minutes (`surface.pin_locked` with `until`); a right one resets the
-  count. Each try is counted before its hash is checked, so tries sent at once never get past three.
-- "Forgot your PIN?", from the browser that opened the page: an email (`surface_pin_reset`) with a link to
-  `/email-undo?kind=surface-pin&token=`, once, within an hour; only that page's button clears the PIN and its lock
-  (mail scanners open links). 3 emails an hour per IP address, and 3 an hour for the person whatever the address. Offered only where the server sends email
-  (`pin.resetByEmail`); elsewhere unlinking and linking again in the app clears it.
+Six digits, on the surface link (`pin_hash`, Bun's argon2id; `pin_failures`; `pin_locked_until`; `pin_lockouts`),
+never in the chat, the logs or the service. Kept when the same sender moves to another workspace; a new sender or a
+new link starts without one, so a new password (which ends the link) clears it too.
+- Only a context that proves who the person is chooses a PIN, the first one and any one after "Forgot your PIN?"
+  (`setSurfacePin`). A page link never does: whoever holds the chat, a forwarded message or the bridge's token can open
+  one. The trusted contexts:
+  - the person's signed-in session: Settings › Notifications in the web and desktop app, or Notificações on the phone
+    (`PUT /me/surface-links/{id}/pin`, 10 an account per 10 minutes), or the page itself when the browser that opened
+    it is signed in as the same person (`pin.canChoose`; approving there takes the PIN typed twice and keeps it);
+  - a link emailed to the person's verified address (`surface_pin_reset`, from "Email me a link" or "Forgot your
+    PIN?" on the page): `/email-undo?kind=surface-pin&token=` chooses the PIN, typed twice, once, within an hour,
+    replacing any PIN and clearing its lock. Only that page's button spends the link (mail scanners open links), and a
+    PIN of the wrong shape spends nothing. An address never verified gets no link (`surface.email_unverified`).
+    3 emails an hour per IP address, and 3 an hour for the person whatever the address; 10 tries per 10 minutes per
+    IP address on `/surface-pin`. Offered only where the server sends email (`pin.resetByEmail`).
+- `confirm` page with a PIN: approving takes it. With none, and nobody signed in as the person there, the page says
+  "Set your PIN first" with the way out (choose it in the app, which `/org/{orgId}/settings/notifications?pin=1`
+  opens, or get the email) and reads itself again when the person comes back; approving answers
+  `surface.pin_unset` and the approval waits in the app as before. Refusing takes no PIN. Who may decide is
+  `decideApproval`'s rule, unchanged. `checkPin`, which the chat app's native form will use too, never sets a PIN.
+- Three wrong ones in a row lock approving (`surface.pin_locked` with `until`), longer each time since the last right
+  PIN: 15 minutes, then an hour, then a day for each further lock (`PIN_LOCKS_MS`). A lock that ended more than a day
+  ago starts the count over, and so do a right PIN and a new one. Each lock emails the person (`surface_pin_locked`):
+  for how long, and the way out if it wasn't them (unlink in the notification settings). Each try is counted before
+  its hash is checked, so tries sent at once never get past three.
 
 ### 4. Not built here
 - The `screen` and `control` pages: their lifetimes are set (§2), and a control link will open only after the PIN, but
@@ -85,7 +101,9 @@ without one, so a new password (which ends the link) clears it too.
   after typing their PIN on a page of ours, where before they had to open the app.
 - A stolen bridge token still can't decide anything once the person has a PIN: it sees page links, but the PIN is
   never sent through it. A person who forwards a fresh page link lets the first browser to open it see the request;
-  approving there still takes the PIN. Until the person has chosen a PIN, though, whoever opens a page first (someone
-  holding the phone, a forwarded link, the bridge's token) chooses it: the first choice proves nothing more than the
-  chat does.
+  approving there still takes the PIN. A PIN is never chosen from a page link alone (no trust on first use): before
+  one exists, the page only points to the signed-in app or the email to the verified address, so someone holding the
+  phone, a forwarded link or the bridge's token can't choose it. Forgetting the PIN never reopens that gap: the
+  emailed link chooses the new one itself.
+- Guessing is slow and loud: three tries, then locks that grow to a day, and the person hears of each one by email.
 - Self-hosters with a bridge get the same pages; nothing changes without `SURFACE_BRIDGE_TOKEN`.

@@ -2578,26 +2578,38 @@
       "approve": "Aprobar",
       "refuse": "Rechazar",
       "forgot": "¿Olvidaste tu PIN?",
-      "emailed": "Te enviamos por correo un enlace que lo borra. Luego recarga esta página para elegir uno nuevo.",
+      "emailed": "Te enviamos un enlace por correo. Elige tu PIN ahí y luego vuelve a esta página.",
       "notYours": "{{who}} decide esto en la app.",
       "notYoursSomeone": "Quien puede aprobarlo decide esto en la app.",
       "approved": "Aprobado",
       "refused": "Rechazado",
       "expired": "Esta solicitud caducó",
-      "back": "Vuelve a {{surface}}. Tu asistente sigue allí."
+      "back": "Vuelve a {{surface}}. Tu asistente sigue allí.",
+      "setFirst": "Primero elige tu PIN",
+      "setFirstLead": "Para aprobar desde {{surface}} necesitas un PIN, y un enlace del chat no puede elegirlo. Elígelo en la app, con tu sesión iniciada, y luego vuelve a esta página.",
+      "setFirstLeadEmail": "Para aprobar desde {{surface}} necesitas un PIN, y un enlace del chat no puede elegirlo. Elígelo en la app, con tu sesión iniciada, o con un enlace que te enviamos por correo. Luego vuelve a esta página.",
+      "openApp": "Elegirlo en la app",
+      "emailMe": "Enviarme un enlace"
     },
     "pinReset": {
-      "title": "¿Borrar tu PIN?",
-      "lead": "Elegirás uno nuevo la próxima vez que apruebes algo desde tu app de chat.",
-      "button": "Borrar mi PIN",
-      "done": "PIN borrado",
-      "doneLead": "Elige uno nuevo la próxima vez que apruebes algo desde {{surface}}.",
+      "title": "Elige tu PIN",
+      "lead": "Seis dígitos. Lo escribirás para aprobar las acciones que pidas desde tu app de chat.",
+      "button": "Guardar mi PIN",
+      "done": "PIN guardado",
+      "doneLead": "Vuelve a la página de {{surface}} y aprueba con él.",
       "gone": "Este enlace ya no funciona"
     },
     "via": "via {{surface}}",
     "viaTip": "Enviado por {{person}} en {{surface}}",
     "forwarded": "reenviado vía {{surface}}",
-    "forwardedTip": "{{person}} reenvió esto desde {{surface}}. Las palabras son de otra persona."
+    "forwardedTip": "{{person}} reenvió esto desde {{surface}}. Las palabras son de otra persona.",
+    "pin": {
+      "set": "Elegir PIN",
+      "change": "Cambiar PIN",
+      "title": "Tu PIN de {{surface}}",
+      "text": "Seis dígitos que escribes para aprobar las acciones que pides desde {{surface}}. Nunca se envía en el chat.",
+      "save": "Guardar PIN"
+    }
   },
   "team": {
     "title": "Equipo",
@@ -16164,9 +16176,11 @@
       "pageGone": "Este enlace caducó. Pide uno nuevo a tu asistente en el chat.",
       "pageElsewhere": "Este enlace se abrió en otro dispositivo. Pide uno nuevo a tu asistente en el chat.",
       "pinWrong": "PIN incorrecto. Intentos restantes: {{left}}.",
-      "pinLocked": "Demasiados PIN incorrectos. Inténtalo de nuevo en 15 minutos o borra tu PIN por correo.",
+      "pinLocked": "Demasiados PIN incorrectos. Vuelve a intentarlo más tarde o elige un PIN nuevo en la app.",
       "pinShape": "Tu PIN tiene 6 dígitos.",
-      "pinResetGone": "Este enlace ya se usó o caducó. Pide uno nuevo con “¿Olvidaste tu PIN?”."
+      "pinResetGone": "Este enlace ya se usó o caducó. Pide uno nuevo con “¿Olvidaste tu PIN?”.",
+      "pinUnset": "Primero elige tu PIN. Elígelo en la app, con tu sesión iniciada.",
+      "emailUnverified": "Tu correo aún no está verificado. Elige tu PIN en la app."
     },
     "wallpaper": {
       "notYours": "Esa foto no es tuya.",

@@ -1,23 +1,25 @@
 import {
   type SurfacePage as Page,
   useDecideSurfacePage,
-  useForgotSurfacePin,
+  useEmailSurfacePin,
   useSurfacePage,
 } from "@agenteschat/client";
 import { approvalTitle } from "@agenteschat/client/lib/approval-words";
 import { errorCode, errorText } from "@agenteschat/client/lib/errors";
-import { Button, Icon, Input, Locked } from "@agenteschat/ui";
+import { PIN_SHAPE, pinChosen, pinMismatch } from "@agenteschat/client/lib/surface-links";
+import { Button, Icon, Locked } from "@agenteschat/ui";
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { AuthShell } from "@/components/AuthLayout";
-
-const PIN = /^\d{6}$/;
+import { PinFields } from "@/components/PinFields";
 
 /**
  * A page the outside chat surface linked to (ADR 0226): one action the person confirms with their PIN, in the sign-in
  * screen's calm style. Opened by posting its token (a chat app's preview only loads the page), it stays this
- * browser's for an hour. The first approval chooses the PIN, typed twice; it is never sent in the chat.
+ * browser's for an hour. With no PIN yet, the link alone can't choose one: signed in here, the approval chooses it
+ * (typed twice); otherwise the page says to set it first, in the app or by an emailed link, and reads itself again
+ * when the person comes back.
  */
 export function SurfacePage({ token }: { token?: string }) {
   const { t } = useTranslation();
@@ -66,7 +68,66 @@ export function SurfacePage({ token }: { token?: string }) {
       : t("surface.page.notYoursSomeone");
     return <Said title={title} lead={lead} />;
   }
-  return <Confirm token={token ?? ""} view={view} title={title} />;
+  if (!view.pin.set && !view.pin.canChoose) return <SetFirst token={token ?? ""} view={view} />;
+  return <Confirm token={token ?? ""} view={view} title={title} onUnset={() => void page.refetch()} />;
+}
+
+/** No PIN yet and nobody signed in here: the app, or an emailed link, chooses it. Refusing still needs none. */
+function SetFirst({ token, view }: { token: string; view: Page }) {
+  const { t } = useTranslation();
+  const decide = useDecideSurfacePage(token);
+  const email = useEmailSurfacePin(token);
+  const busy = decide.isPending || email.isPending;
+  const failed = decide.isError ? decide.error : email.isError ? email.error : null;
+  const lead = view.pin.resetByEmail ? "surface.page.setFirstLeadEmail" : "surface.page.setFirstLead";
+  return (
+    <AuthShell>
+      <div className="auth__form">
+        <header className="auth__ask">
+          <AgentAvatar name="agentes.chat" size="lg" state={busy ? "writing" : undefined} />
+          <div className="auth__bubble" aria-live="polite">
+            <h1 className="auth__title">{t("surface.page.setFirst")}</h1>
+            <p className="auth__lead">{t(lead, { surface: view.surface })}</p>
+          </div>
+        </header>
+        <div className="auth__step">
+          <Locked when={busy}>
+            {failed !== null && (
+              <p className="auth__error ac-iconline" role="alert">
+                <Icon name="alert" size={14} />
+                {errorText(t, failed)}
+              </p>
+            )}
+            {email.isSuccess && (
+              <p className="auth__lead" role="status">
+                {t("surface.page.emailed")}
+              </p>
+            )}
+            <Button asChild variant="primary" size="lg" block>
+              <a href={`/org/${view.orgId}/settings/notifications?pin=1`} target="_blank" rel="noreferrer">
+                {t("surface.page.openApp")}
+              </a>
+            </Button>
+            {view.pin.resetByEmail && !email.isSuccess && (
+              <Button type="button" size="lg" block loading={email.isPending} onClick={() => email.mutate()}>
+                {t("surface.page.emailMe")}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              block
+              loading={decide.isPending}
+              onClick={() => decide.mutate({ decision: "refuse" })}
+            >
+              {t("surface.page.refuse")}
+            </Button>
+          </Locked>
+        </div>
+      </div>
+    </AuthShell>
+  );
 }
 
 function Said({ title, lead, happy }: { title: string; lead: string; happy?: boolean }) {
@@ -85,23 +146,32 @@ function Said({ title, lead, happy }: { title: string; lead: string; happy?: boo
   );
 }
 
-function Confirm({ token, view, title }: { token: string; view: Page; title: string }) {
+/** The PIN, or (signed in here, none set yet) choosing it, typed twice; then Approve. */
+function Confirm({ token, view, title, onUnset }: { token: string; view: Page; title: string; onUnset: () => void }) {
   const { t } = useTranslation();
   const decide = useDecideSurfacePage(token);
-  const forgot = useForgotSurfacePin(token);
+  const forgot = useEmailSurfacePin(token);
   const [pin, setPin] = useState("");
   const [again, setAgain] = useState("");
   const [focus, setFocus] = useState(false);
   const choosing = !view.pin.set;
-  const mismatch = choosing && again.length === 6 && again !== pin;
+  const mismatch = choosing && pinMismatch(pin, again);
   const locked = view.pin.lockedUntil !== null || errorCode(decide.error) === "surface.pin_locked";
-  const ready = PIN.test(pin) && (!choosing || again === pin) && !locked;
+  const ready = (choosing ? pinChosen(pin, again) : PIN_SHAPE.test(pin)) && !locked;
   const busy = decide.isPending || forgot.isPending;
-  const digits = (set: (v: string) => void) => (e: { target: { value: string } }) =>
-    set(e.target.value.replace(/\D/g, "").slice(0, 6));
   const approve = (e: FormEvent) => {
     e.preventDefault();
-    if (ready && !busy) decide.mutate({ decision: "approve", pin }, { onError: () => setPin("") });
+    if (ready && !busy)
+      decide.mutate(
+        { decision: "approve", pin },
+        {
+          onError: (e) => {
+            setPin("");
+            // Signed out meanwhile: the page asks for the PIN to be set first.
+            if (errorCode(e) === "surface.pin_unset") onUnset();
+          },
+        },
+      );
   };
   const error = mismatch
     ? t("surface.page.mismatch")
@@ -133,40 +203,18 @@ function Confirm({ token, view, title }: { token: string; view: Page; title: str
         </header>
         <div className="auth__step">
           <Locked when={busy}>
-            <div className="auth__field">
-              <Input
-                className="auth__big"
-                type="password"
-                inputMode="numeric"
-                autoComplete={choosing ? "new-password" : "current-password"}
-                maxLength={6}
-                aria-label={choosing ? t("surface.page.choosePin") : t("surface.page.pin")}
-                placeholder={choosing ? t("surface.page.choosePin") : t("surface.page.pin")}
-                value={pin}
-                onChange={digits(setPin)}
-                onFocus={() => setFocus(true)}
-                onBlur={() => setFocus(false)}
-                disabled={locked}
-                autoFocus
-              />
-            </div>
-            {choosing && (
-              <div className="auth__field">
-                <Input
-                  className="auth__big"
-                  type="password"
-                  inputMode="numeric"
-                  autoComplete="new-password"
-                  maxLength={6}
-                  aria-label={t("surface.page.repeatPin")}
-                  placeholder={t("surface.page.repeatPin")}
-                  value={again}
-                  onChange={digits(setAgain)}
-                  aria-invalid={mismatch || undefined}
-                  disabled={locked}
-                />
-              </div>
-            )}
+            <PinFields
+              big
+              pin={pin}
+              again={again}
+              onPin={setPin}
+              onAgain={setAgain}
+              choosing={choosing}
+              disabled={locked}
+              autoFocus
+              onFocus={() => setFocus(true)}
+              onBlur={() => setFocus(false)}
+            />
             {error && (
               <p className="auth__error ac-iconline" role="alert">
                 <Icon name="alert" size={14} />

@@ -39,6 +39,8 @@ export interface SurfaceLinkView {
   confirmedAt: string | null;
   /** Pending only: when it stops counting. */
   expiresAt: string | null;
+  /** A PIN confirms actions asked from the surface (ADR 0226). */
+  pinSet: boolean;
 }
 
 /** `publicUrl`: where the emails link to; absent or null on a server that sends no email, which sends none. */
@@ -392,6 +394,7 @@ async function viewsOf(db: Executor, where: SQL | undefined): Promise<SurfaceLin
     createdAt: link.createdAt.toISOString(),
     confirmedAt: link.confirmedAt?.toISOString() ?? null,
     expiresAt: link.status === "pending" ? pendingExpiry(link.createdAt).toISOString() : null,
+    pinSet: link.pinHash !== null,
   }));
 }
 
