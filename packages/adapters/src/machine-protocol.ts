@@ -294,6 +294,9 @@ export interface MachineSize {
   maxTasks?: number;
 }
 
+/** A memory size as `MachineSize` says it: in GB (2^30 bytes), to 0.5. */
+export const halfGb = (bytes: number) => Math.round((bytes / 2 ** 30) * 2) / 2;
+
 /**
  * Protocol 22: how busy a computer got over the last day (`pong.load`): the 5-minute load average per
  * logical CPU (1 = every CPU busy) and the share of memory in use (0 to 1), average and highest over

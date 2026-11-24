@@ -195,6 +195,7 @@ pub fn page_ready(app: AppHandle, webview: tauri::Webview) -> Result<(), String>
         let _marker = MARKER.lock();
         let _ = std::fs::remove_file(path);
     }
+    crate::vitals::painted();
     hide(&app);
     Ok(())
 }
