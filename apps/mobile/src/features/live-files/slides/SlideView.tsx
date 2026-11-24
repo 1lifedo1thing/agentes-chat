@@ -165,7 +165,6 @@ function Part({
 
 // ── Text ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-const weightOf = (w: number): TextStyle["fontWeight"] => (w >= 700 ? "700" : w >= 600 ? "600" : "400");
 
 /** Rich text in a box, in the theme's look for its role: paragraphs, lists, levels and marks as the web draws them. */
 export function RichBlock({

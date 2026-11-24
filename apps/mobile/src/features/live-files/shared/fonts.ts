@@ -22,7 +22,8 @@ const loaded = new Set<string>();
 const loading = new Map<string, Promise<void>>();
 const listeners = new Set<() => void>();
 
-const weightStyle = (w: number): TextStyle["fontWeight"] => String(Math.min(900, Math.max(100, Math.round(w / 100) * 100))) as TextStyle["fontWeight"];
+const weightStyle = (w: number): TextStyle["fontWeight"] =>
+  String(Math.min(900, Math.max(100, Math.round(w / 100) * 100))) as TextStyle["fontWeight"];
 
 /** The registered name of a catalog face, or null for a ref the phone doesn't load (a file's own font). */
 function faceName(face: NativeFace): { id: string; key: string; name: string } | null {

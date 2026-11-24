@@ -55,7 +55,7 @@ import { chooseSlideAction, confirmDelete } from "./menus";
 import { usePhotoPick } from "./photos";
 import { useFilePictures } from "./pictures";
 import { slideLayoutRoute, slideShowRoute, textRoute } from "./routes";
-import { SlideFontsContext, type PictureOf, SlideView } from "./SlideView";
+import { type PictureOf, SlideFontsContext, SlideView } from "./SlideView";
 import { useDeck } from "./useDeck";
 
 /**
