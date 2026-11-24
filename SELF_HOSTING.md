@@ -1916,9 +1916,13 @@ The app runs its jobs (agents' runs, routines, messages' routing, notifications,
 process: 48 at once to start with, 12 of them kept for the quick ones. While jobs wait for a slot, it
 gives itself more, every 30 seconds: agents' runs as far as half of its memory holds them, about 4 MB
 each while they wait on their model or their computer, and quick jobs up to 4 per database connection
-(`DATABASE_POOL_MAX`), never while its processor, its database or its memory is what jobs wait on. Its
-memory is its container's limit when it has one; beside Postgres and the speech server on one computer,
-it counts only what it holds and what was free there when it started.
+(`DATABASE_POOL_MAX`), never while its processor, its database or its memory is what jobs wait on, and
+never past 8 jobs per database connection in all (`OUTBOX_MAX_IN_FLIGHT_CEILING` sets another ceiling).
+Its memory is its container's limit when it has one; beside Postgres and the speech server on one
+computer, it counts only what it holds and what was free there when it started. After a restart, the
+runs left waiting start over its first minute, not all at once. Give it at least one database
+connection per 4 job slots (the default 20 is enough for the default 48): it warns as it starts when
+`DATABASE_POOL_MAX` is lower.
 Workspaces take turns, so one workspace's burst of routines makes only that workspace wait. When jobs
 keep waiting anyway, the log says so, with `add a worker process`, and so do the error reports when
 they are on (`SENTRY_DSN`).
@@ -1966,6 +1970,15 @@ written for), so each worker adds as many jobs at once as the app runs. Each pro
 where it can reach them (`S3_*`, or Postgres without `FILES_DIR`), and one on the app's computer
 outside Docker a `PORT` of its own. The built-in database (on this computer, without Docker) belongs
 to one process and takes no worker.
+
+When a process is overloaded (its event loop late by over `LOAD_SHED_EVENT_LOOP_MS`, or a database
+connection slower than `LOAD_SHED_DB_WAIT_MS` to come), it turns new connections and the apps' reads
+away with a 503 and a `Retry-After` of 5 to 15 seconds, and the apps try again then; writes and open
+connections carry on. With `LOAD_SHED_MAX_SOCKETS` apps connected, it turns only new connections away.
+Either way its `/api/health` says `overloaded`
+(still with a 200) meanwhile, and `/api/health?load=1` answers 503: point the active health check of a
+reverse proxy in front of several app processes at that one (Caddy: `health_uri /api/health?load=1`),
+so it sends new requests to the others. Never on a single process's check: it would take out the only one.
 
 </details>
 
