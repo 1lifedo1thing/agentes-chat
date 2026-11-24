@@ -42,7 +42,7 @@ import { useTranslation } from "react-i18next";
 import { NO_COMPUTER } from "@/components/AgentComputer";
 import { DEFAULT_KEY } from "@/components/AgentFields";
 import { AddAccount, OpenPage } from "@/components/ai/AddAccountFlow";
-import { AiChoiceFields } from "@/components/ai/AiChoice";
+import { type AiChoiceExtra, AiChoiceFields } from "@/components/ai/AiChoice";
 import { CliMissing } from "@/components/ai/CliMissing";
 import { PlanHold } from "@/components/ai/plan-hold";
 import { UseOnAgentsDialog } from "@/components/ai/UseOnAgents";
@@ -518,6 +518,20 @@ function BrainFlow({
     setAdding({ choice: c });
     go("signin");
   };
+  // What the accounts don't list, from "Quem pensa"'s own rows: its computer's own sign-ins, a plan that would move it to
+  // another computer. Drawn in the same list, each picked the way a switch goes here.
+  const extra: AiChoiceExtra[] = s.rows
+    .filter((r) => r.kind === "own" || r.kind === "plan")
+    .map((r) => ({
+      key: r.id,
+      group: view.canUsePlans || r.free ? "yours" : "others",
+      name: r.title,
+      ...(r.about ? { meta: r.about } : {}),
+      mark: r.mark,
+      usage: r.usage,
+      ...(r.off ? { off: s.reason(r.choice) ?? s.side(r.choice)?.text ?? t("agentPage.work.brain.none") } : {}),
+      onPick: () => confirm(r),
+    }));
   /** "Gerenciar contas": every account in Settings (Contas de IA). */
   const manage = () => {
     onClose();
@@ -692,7 +706,7 @@ function BrainFlow({
               ? addCoding
                 ? t("aiAccounts.page.newKey")
                 : t("agentPage.work.brain.add.againTitle", { brand })
-              : !adding?.also && addCoding
+              : addCoding
                 ? t("agentPage.work.brain.add.titlePlan", { plan: planLabel(t, addCoding) })
                 : t(`agentPage.work.brain.add.title.${addKind}`)
             : t("agentPage.work.brain.v2.title", g);
@@ -791,6 +805,7 @@ function BrainFlow({
             state={choice}
             parts={["account"]}
             onAccount={pickAccount}
+            extra={extra}
             {...(mayAdd ? { onAdd: () => go("add") } : {})}
             {...(signs ? { onAgain: againFrom } : {})}
             onManage={manage}

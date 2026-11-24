@@ -1,7 +1,9 @@
-import type { AiChoiceState } from "@agenteschat/client";
+import type { AiChoiceState, PlanUsage } from "@agenteschat/client";
 import { useAiChoice } from "@agenteschat/client";
 import {
+  AI_CHOICE_GROUPS,
   type AiChoice,
+  type AiChoiceGroup,
   type AiChoiceRow,
   type AiChoiceTarget,
   accountShortName,
@@ -92,9 +94,14 @@ function rowMeta(t: TFunction, row: AiChoiceRow, withOwner: boolean): string {
 
 /** A row's end: why it can't be used, else its room (the window closest to its limit), or nothing. */
 function RowEnd({ row }: { row: AiChoiceRow }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   if (!row.usable) return <span className="aa-room">{reasonText(t, row)}</span>;
-  const usage = row.account?.usage;
+  return <Room usage={row.account?.usage} />;
+}
+
+/** A plan's room: the window closest to its limit, as a short bar and its percent; at the limit, until when. */
+function Room({ usage }: { usage: PlanUsage | null | undefined }) {
+  const { t, i18n } = useTranslation();
   const line = usage ? planLine(usage, planMeterText(t, i18n.language)) : null;
   if (!line) return null;
   if (line.state === "limited")
@@ -170,7 +177,47 @@ function AccountOption({ row, chosen, again }: { row: AiChoiceRow; chosen: boole
   );
 }
 
-type RowOption = SelectOption & { row: AiChoiceRow };
+/**
+ * A way to think the accounts don't list, from the caller (an agent's "Quem pensa": its computer's own sign-in, a plan
+ * that moves it to another computer): drawn as an account, in its group, picked through `onPick`.
+ */
+export interface AiChoiceExtra {
+  key: string;
+  group: AiChoiceGroup;
+  name: string;
+  meta?: string;
+  mark: ReactNode;
+  usage?: PlanUsage | null;
+  /** It can't be picked: why, at the row's end. */
+  off?: string;
+  onPick: () => void;
+}
+
+/** An extra row of the open list, drawn as an account's. */
+function ExtraOption({ extra }: { extra: AiChoiceExtra }) {
+  return (
+    <>
+      <span className="ac-menu__leading" aria-hidden="true">
+        {extra.mark}
+      </span>
+      <span className="ac-menu__label aa-row">
+        <span title={extra.name}>{extra.name}</span>
+        {extra.meta && (
+          <span className="ac-menu__desc" title={extra.meta}>
+            {extra.meta}
+          </span>
+        )}
+      </span>
+      <span className="aa-row__end">
+        {extra.off ? <span className="aa-room">{extra.off}</span> : <Room usage={extra.usage} />}
+        <span className="ac-tz__check" aria-hidden="true" />
+      </span>
+    </>
+  );
+}
+
+type RowOption = SelectOption & { row?: AiChoiceRow; extra?: AiChoiceExtra };
+const EXTRA = "x:";
 
 /**
  * The selects of a choice, drawn from its state. `value`/`onChange`: the caller keeps the choice (a new agent, several
@@ -190,6 +237,7 @@ export function AiChoiceFields({
   onAdd,
   onManage,
   onAgain,
+  extra = [],
   open = false,
   disabled = false,
   className,
@@ -209,6 +257,8 @@ export function AiChoiceFields({
   onManage?: () => void;
   /** One of the viewer's accounts that signed out, picked: sign in again. */
   onAgain?: (row: AiChoiceRow) => void;
+  /** Ways to think the accounts don't list, each in its group (`AiChoiceExtra`). */
+  extra?: readonly AiChoiceExtra[];
   /** The Conta list opens shown (a link that leads to the choice). */
   open?: boolean;
   disabled?: boolean;
@@ -240,7 +290,7 @@ export function AiChoiceFields({
 
   // The viewer's own account that signed out: picking it signs in again, where the caller offers that.
   const again = (r: AiChoiceRow) => !!onAgain && r.reason === "signed_out" && r.account?.mine === true;
-  const accountOptions: RowOption[] = state.rows.map((r) => ({
+  const rowOptions: RowOption[] = state.rows.map((r) => ({
     value: r.key,
     label: rowName(t, r),
     // Lodi's "A do workspace" stands first on its own, with no heading.
@@ -249,7 +299,23 @@ export function AiChoiceFields({
     disabled: !r.usable && !again(r),
     row: r,
   }));
+  // The caller's extra rows after the accounts of their group.
+  const accountOptions: RowOption[] = AI_CHOICE_GROUPS.flatMap((g) => [
+    ...rowOptions.filter((o) => o.row?.group === g),
+    ...extra
+      .filter((x) => x.group === g)
+      .map((x) => ({
+        value: `${EXTRA}${x.key}`,
+        label: x.name,
+        group: g,
+        leading: x.mark,
+        disabled: !!x.off,
+        extra: x,
+      })),
+  ]);
   const pickAccount = (key: string) => {
+    const more = extra.find((x) => `${EXTRA}${x.key}` === key);
+    if (more) return more.onPick();
     const next = state.rows.find((r) => r.key === key);
     if (next && onAgain && again(next)) return onAgain(next);
     if (!next || next.key === row?.key) return;
@@ -325,8 +391,16 @@ export function AiChoiceFields({
               list: t("agentPage.work.brain.account"),
             }}
             groupLabel={groupLabel}
-            matches={(o, q) => matchesRow(t, o.row, q)}
-            renderOption={(o) => <AccountOption row={o.row} chosen={o.row.key === row?.key} again={again(o.row)} />}
+            matches={(o, q) =>
+              o.row ? matchesRow(t, o.row, q) : matchesWords(`${o.extra?.name ?? ""} ${o.extra?.meta ?? ""}`, q)
+            }
+            renderOption={(o) =>
+              o.row ? (
+                <AccountOption row={o.row} chosen={o.row.key === row?.key} again={again(o.row)} />
+              ) : o.extra ? (
+                <ExtraOption extra={o.extra} />
+              ) : null
+            }
             {...(onAdd || onManage
               ? {
                   footer: (close: () => void) => (
@@ -365,7 +439,7 @@ export function AiChoiceFields({
                 }
               : {})}
             renderValue={(o) =>
-              o ? (
+              o?.row ? (
                 <span className="aa-value">
                   <span className="ac-select__lead" aria-hidden="true">
                     {o.leading}
