@@ -1,5 +1,6 @@
 import {
   catalogFontNamed,
+  FONT_CATALOG,
   type FontRef,
   type FontWeight,
   type LiveGroup,
@@ -27,6 +28,7 @@ import { ValidationError } from "../../errors";
 import type { Face, TextMeasurer } from "../../fonts/library";
 import {
   type Declarations,
+  expandAll,
   type Length,
   type MatchTarget,
   matches,
@@ -38,8 +40,11 @@ import {
   parseLength,
   parseShadow,
   parseStyleSheet,
+  parseTracks,
   parseWeight,
   px,
+  type RawDeclarations,
+  resolveVars,
   type Rule,
   words,
 } from "./css";
@@ -122,6 +127,7 @@ const SKIPPED_TAGS = new Set([
 
 /** The UA style a browser gives each tag, the parts that change a layout. */
 const UA: Record<string, string> = {
+  body: "margin:8px",
   h1: "font-size:2em;font-weight:700;margin:0.67em 0",
   h2: "font-size:1.5em;font-weight:700;margin:0.83em 0",
   h3: "font-size:1.17em;font-weight:700;margin:1em 0",
@@ -153,7 +159,7 @@ const UA: Record<string, string> = {
   mark: "background-color:#ffff00",
   dd: "margin-left:40px",
 };
-const UA_DECLS = new Map(Object.entries(UA).map(([tag, css]) => [tag, parseDeclarations(css)]));
+const UA_DECLS = new Map<string, RawDeclarations>(Object.entries(UA).map(([tag, css]) => [tag, parseDeclarations(css)]));
 
 // ── Parsing ────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -162,16 +168,20 @@ export interface HtmlElement extends MatchTarget {
   attrs: Map<string, string>;
   parent: HtmlElement | null;
   children: (HtmlElement | string)[];
-  inline: Declarations;
+  inline: RawDeclarations;
   /** An `<img>` or `<svg>`: the picture it names. */
   picture?: string;
   first: boolean;
   last: boolean;
+  /** Generated content (`::before`, `::after`): its declarations are its rule's, it matches no selector itself. */
+  pseudo?: boolean;
 }
 
 export interface ParsedHtml {
   root: HtmlElement;
   rules: Rule[];
+  /** `@font-face` names to the font files they load. */
+  fontFaces: Map<string, string>;
   pictures: PictureRequest[];
   notes: string[];
 }
@@ -223,19 +233,22 @@ export function parseHtml(html: string): ParsedHtml {
   const styles: string[] = [];
   const pictures: PictureRequest[] = [];
   let doc: ReturnType<DOMParser["parseFromString"]>;
+  // A whole page is taken as a fragment: its doctype and XML declaration say nothing here.
+  const body = html.replace(/<!doctype[^>]{0,200}>/gi, "").replace(/<\?xml[^>]{0,200}\?>/gi, "");
   try {
-    doc = new DOMParser({ onError: () => {} }).parseFromString(`<div data-agentes-root="">${html}</div>`, "text/html");
+    doc = new DOMParser({ onError: () => {} }).parseFromString(`<div data-agentes-root="">${body}</div>`, "text/html");
   } catch {
     throw new ValidationError("The HTML couldn't be read", "live.html_invalid");
   }
+  // Style sheets wherever they are (a page keeps them in its head, which draws nothing).
+  const sheets = doc.getElementsByTagName("style");
+  for (let i = 0; i < sheets.length; i++) styles.push(sheets.item(i)?.textContent ?? "");
   let count = 0;
   const skipped = new Set<string>();
   const convert = (node: XmlElement, parent: HtmlElement | null, depth: number): HtmlElement | null => {
     const tag = (node.localName ?? node.nodeName).toString().toLowerCase();
-    if (tag === "style") {
-      styles.push(node.textContent ?? "");
-      return null;
-    }
+    if (tag === "style") return null;
+    if (tag === "head") return null;
     if (SKIPPED_TAGS.has(tag)) {
       skipped.add(tag);
       return null;
@@ -309,9 +322,58 @@ export function parseHtml(html: string): ParsedHtml {
   root.first = true;
   root.last = true;
   const sheet = parseStyleSheet(styles.join("\n"));
+  addGeneratedContent(root, sheet.rules);
   if (skipped.size) notes.push(`left out: ${[...skipped].join(", ")}`);
   if (sheet.skipped.length) notes.push(`CSS rules not taken: ${[...new Set(sheet.skipped)].slice(0, 8).join(", ")}`);
-  return { root, rules: sheet.rules, pictures, notes };
+  return { root, rules: sheet.rules.filter((r) => !r.pseudo), fontFaces: sheet.fontFaces, pictures, notes };
+}
+
+/** The text a `content` value gives (quoted strings, joined), or null for none (`none`, `normal`, no strings). */
+function contentText(value: string | undefined): string | null {
+  if (!value || value === "none" || value === "normal") return null;
+  const parts = [...value.matchAll(/"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'/g)].map((m) =>
+    (m[1] ?? m[2] ?? "").replace(/\\([0-9a-f]{1,6})\s?/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16))),
+  );
+  return parts.length ? parts.join("") : null;
+}
+
+/**
+ * `::before` and `::after` as the elements they draw: a child first or last, with the rule's declarations (most
+ * specific last) and its `content`'s text, laid out and turned into pieces like any element.
+ */
+function addGeneratedContent(root: HtmlElement, rules: readonly Rule[]): void {
+  const pseudo = rules.filter((r) => r.pseudo);
+  if (!pseudo.length) return;
+  const walk = (el: HtmlElement) => {
+    for (const c of el.children) if (typeof c !== "string") walk(c);
+    if (el.picture || el.pseudo) return;
+    for (const where of ["before", "after"] as const) {
+      const matched = pseudo
+        .filter((r) => r.pseudo === where && matches(el, r.selector))
+        .sort((a, b) => a.specificity - b.specificity || a.order - b.order);
+      if (!matched.length) continue;
+      const declarations = matched.flatMap((r) => r.declarations);
+      const content = [...declarations].reverse().find(([k]) => k === "content")?.[1];
+      const text = contentText(content);
+      if (text === null) continue;
+      const generated: HtmlElement = {
+        tag: "x-generated",
+        id: null,
+        classes: [],
+        hasAttr: () => false,
+        attrs: new Map(),
+        parent: el,
+        children: text ? [text] : [],
+        inline: declarations.filter(([k]) => k !== "content"),
+        first: false,
+        last: false,
+        pseudo: true,
+      };
+      if (where === "before") el.children.unshift(generated);
+      else el.children.push(generated);
+    }
+  };
+  walk(root);
 }
 
 // ── Cascade ────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -319,7 +381,15 @@ export function parseHtml(html: string): ParsedHtml {
 type LenOrAuto = Length | "auto" | null;
 
 interface Computed {
-  display: "block" | "flex" | "inline" | "inline-block" | "none" | "list-item" | "table";
+  display: "block" | "flex" | "grid" | "inline" | "inline-block" | "none" | "list-item" | "table";
+  /** An inline box laid out inside as a flex row or column (`inline-flex`). */
+  flexInner: boolean;
+  /** A grid's column tracks. */
+  gridColumns: ({ px: number } | { fr: number })[] | null;
+  /** How many columns a grid item spans (`grid-column: span 2`, `1 / -1` for all of them: Infinity). */
+  gridSpan: number;
+  /** The custom properties in scope (`--name`), for `var()` below. */
+  custom: Map<string, string>;
   position: "static" | "relative" | "absolute";
   boxSizing: "content-box" | "border-box";
   width: LenOrAuto;
@@ -409,20 +479,60 @@ function pxOr(value: string | undefined, em: number, rem: number, fallback: numb
   return px(value, em, rem) ?? fallback;
 }
 
+/** Letters only, lowercase: how a font's file name and a family name are compared. */
+const squash = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** A catalog font a name stands for: its family exactly, or a family it uniquely starts ("Martian" → Martian Mono). */
+function catalogByName(name: string): FontRef | null {
+  const exact = catalogFontNamed(name);
+  if (exact) return exact.id;
+  const key = squash(name);
+  if (key.length < 3) return null;
+  const starts = FONT_CATALOG.filter((f) => squash(f.family).startsWith(key));
+  return starts.length === 1 ? (starts[0]?.id ?? null) : null;
+}
+
+/** A catalog font a font file's name names (`fontes/FunnelDisplay-Variable.ttf` → Funnel Display), or null. */
+function catalogByFile(file: string): FontRef | null {
+  const base = squash(file.split("/").pop() ?? file);
+  // The longest family the name holds, so "Source Sans 3" isn't read as a shorter one.
+  const found = FONT_CATALOG.filter((f) => base.includes(squash(f.family))).sort(
+    (a, b) => squash(b.family).length - squash(a.family).length,
+  );
+  return found[0]?.id ?? null;
+}
+
 class Cascade {
   readonly notes = new Set<string>();
+  private readonly rules: Rule[];
   constructor(
-    private readonly rules: Rule[],
+    private readonly parsed: ParsedHtml,
     private readonly opts: LayoutOptions,
-  ) {}
+  ) {
+    this.rules = parsed.rules;
+  }
 
-  declarations(el: HtmlElement): Declarations {
-    const out: Declarations = new Map(UA_DECLS.get(el.tag) ?? []);
-    const matched = this.rules.filter((r) => matches(el, r.selector));
-    matched.sort((a, b) => a.specificity - b.specificity || a.order - b.order);
-    for (const rule of matched) for (const [k, v] of rule.declarations) out.set(k, v);
-    for (const [k, v] of el.inline) out.set(k, v);
-    return out;
+  /**
+   * An element's declarations as the cascade orders them (the tag's own look, its rules by specificity, then its
+   * `style`), its custom properties over the ones it inherits, `var()` resolved, shorthands expanded.
+   */
+  declarations(el: HtmlElement, inherited: ReadonlyMap<string, string>): { d: Declarations; custom: Map<string, string> } {
+    const entries: RawDeclarations = [...(el.pseudo ? [] : (UA_DECLS.get(el.tag) ?? []))];
+    if (!el.pseudo) {
+      const matched = this.rules.filter((r) => matches(el, r.selector));
+      matched.sort((a, b) => a.specificity - b.specificity || a.order - b.order);
+      for (const rule of matched) entries.push(...rule.declarations);
+    }
+    entries.push(...el.inline);
+    const custom = new Map(inherited);
+    for (const [k, v] of entries) if (k.startsWith("--")) custom.set(k, v);
+    const resolved: RawDeclarations = [];
+    for (const [k, v] of entries) {
+      if (k.startsWith("--")) continue;
+      const value = resolveVars(v, custom);
+      if (value !== null) resolved.push([k, value]);
+    }
+    return { d: expandAll(resolved), custom };
   }
 
   private fontOf(families: string[], fallback: FontRef | undefined): FontRef | undefined {
@@ -430,7 +540,11 @@ class Cascade {
     for (const family of families) {
       const generic = GENERIC[family.toLowerCase()];
       if (generic) return generic === "base" ? this.opts.base.font : generic;
-      const ref = this.opts.fontNamed(family) ?? catalogFontNamed(family)?.id ?? null;
+      const own = this.opts.fontNamed(family);
+      if (own) return own;
+      // A name the sheet gave a font file (`@font-face`), matched by the file's name; else a catalog family.
+      const file = this.parsed.fontFaces.get(family.toLowerCase());
+      const ref = (file ? catalogByFile(file) : null) ?? catalogByName(family);
       if (ref) return ref;
       missing.push(family);
     }
@@ -440,7 +554,7 @@ class Cascade {
   }
 
   compute(el: HtmlElement, parent: Computed | null): Computed {
-    const d = this.declarations(el);
+    const { d, custom } = this.declarations(el, parent?.custom ?? new Map());
     const rem = this.opts.base.size;
     const inheritedSize = parent?.size ?? this.opts.base.size;
     const fontSize = (() => {
@@ -453,20 +567,21 @@ class Cascade {
       return named[v] ? named[v] * rem : inheritedSize;
     })();
     const em = fontSize;
+    const displayValue = d.get("display");
     const display = (() => {
-      const v = d.get("display");
+      const v = displayValue;
       if (v === "none") return "none";
-      if (v === "flex" || v === "inline-flex") return "flex";
-      if (v === "grid" || v === "inline-grid") {
-        this.notes.add("grid isn't taken: laid out as a block (use flex)");
-        return "block";
-      }
+      if (v === "flex") return "flex";
+      if (v === "grid") return "grid";
+      // An inline box with its own layout inside (a number in a circle, a chip): a box in the line.
+      if (v === "inline-flex" || v === "inline-grid") return "inline-block";
       if (v === "inline-block" || v === "inline-table") return "inline-block";
       if (v === "inline") return "inline";
       if (v === "block" || v === "flow-root") return "block";
       if (v === "list-item" || el.tag === "li") return "list-item";
       if (v === "table" || el.tag === "table") return "table";
       if (el.picture) return "inline";
+      if (el.pseudo) return "inline";
       return BLOCK_TAGS.has(el.tag) || !parent ? "block" : "inline";
     })() as Computed["display"];
     const position = (() => {
@@ -556,8 +671,21 @@ class Cascade {
     if (d.get("background-image") && !/linear-gradient/i.test(d.get("background-image") ?? "")) {
       this.notes.add("background images aren't taken: use an <img>");
     }
+    const gridSpan = (() => {
+      const v = d.get("grid-column") ?? d.get("grid-area");
+      if (!v) return 1;
+      if (/^1\s*\/\s*-1$/.test(v.trim()) || /^-?1\s*\/\s*span\s+99/.test(v)) return Number.POSITIVE_INFINITY;
+      const span = /span\s+(\d+)/.exec(v);
+      if (span) return Math.max(1, Number(span[1]));
+      const range = /^(\d+)\s*\/\s*(\d+)$/.exec(v.trim());
+      return range ? Math.max(1, Number(range[2]) - Number(range[1])) : 1;
+    })();
     return {
       display,
+      flexInner: displayValue === "inline-flex" || displayValue === "inline-grid",
+      gridColumns: display === "grid" ? parseTracks(d.get("grid-template-columns"), em, rem) : null,
+      gridSpan,
+      custom,
       position,
       boxSizing: d.get("box-sizing") === "border-box" ? "border-box" : "content-box",
       width: len(d.get("width"), em, rem),
@@ -668,7 +796,7 @@ class Builder {
     private readonly parsed: ParsedHtml,
     private readonly opts: LayoutOptions,
   ) {
-    this.cascade = new Cascade(parsed.rules, opts);
+    this.cascade = new Cascade(parsed, opts);
     this.notes = this.cascade.notes;
   }
 
@@ -780,7 +908,11 @@ class Builder {
       this.tableAsRows(el);
     }
     const node: LNode = { yoga, el, style: s, kind: "box", children: [] };
-    if (s.display === "flex") this.flexContainer(yoga, s);
+    if (s.display === "grid") {
+      this.gridContainer(node, el, s);
+      return node;
+    }
+    if (s.display === "flex" || s.flexInner) this.flexContainer(yoga, s);
     else this.blockContainer(yoga);
     // One text box for a list or a run of plain paragraphs (a person would write it as one).
     const merged = this.plainParagraphs(el, s);
@@ -790,12 +922,88 @@ class Builder {
       this.addChild(node, this.textNode(merged, s));
       return node;
     }
-    if (s.display === "flex") {
+    if (s.display === "flex" || s.flexInner) {
       for (const part of this.flexItems(el, s)) this.addChild(node, part);
     } else {
       for (const part of this.blockItems(el, s)) this.addChild(node, part);
     }
     return node;
+  }
+
+  /**
+   * A grid as rows of its column tracks (ADR 0220 §4): items fill the columns in order, a span takes several, each row
+   * as tall as its tallest item (CSS grid's stretch), the tracks' fixed widths and shares of what is left kept on every
+   * row, the last one too.
+   */
+  private gridContainer(node: LNode, el: HtmlElement, s: Computed): void {
+    const yoga = node.yoga;
+    yoga.setFlexDirection(FlexDirection.Column);
+    yoga.setAlignItems(Align.Stretch);
+    yoga.setGap(Gutter.Row, s.rowGap);
+    const tracks = s.gridColumns ?? [{ fr: 1 }];
+    const n = tracks.length;
+    const gap = s.columnGap;
+    const size = (from: number, span: number) => {
+      const slice = tracks.slice(from, from + span);
+      const fixed = slice.reduce((t, k) => t + ("px" in k ? k.px : 0), 0) + (span - 1) * gap;
+      const share = slice.reduce((t, k) => t + ("fr" in k ? k.fr : 0), 0);
+      return { fixed, share };
+    };
+    const fit = (item: YogaNode, from: number, span: number, explicit: boolean) => {
+      if (explicit) return;
+      const { fixed, share } = size(from, span);
+      if (share > 0) {
+        item.setFlexGrow(share);
+        item.setFlexShrink(1);
+        item.setFlexBasis(fixed);
+      } else {
+        item.setFlexGrow(0);
+        item.setFlexShrink(0);
+        item.setWidth(fixed);
+      }
+    };
+    let row: LNode | null = null;
+    let col = 0;
+    const close = () => {
+      if (!row) return;
+      // Empty columns keep their room, so a short last row lines up with the others.
+      while (col < n) {
+        const spacer = Yoga.Node.create();
+        fit(spacer, col, 1, false);
+        row.yoga.insertChild(spacer, row.yoga.getChildCount());
+        row.children.push({ yoga: spacer, el: null, style: s, kind: "box", children: [] });
+        col++;
+      }
+      row = null;
+      col = 0;
+    };
+    const open = () => {
+      const r = Yoga.Node.create();
+      r.setFlexDirection(FlexDirection.Row);
+      r.setAlignItems(ALIGN[s.alignItems] ?? Align.Stretch);
+      r.setGap(Gutter.Column, gap);
+      row = { yoga: r, el: null, style: s, kind: "box", children: [] };
+      this.addChild(node, row);
+    };
+    for (const item of this.flexItems(el, s)) {
+      // An absolutely placed item takes no cell (as in CSS): it sits on the grid itself.
+      if (item.style.position === "absolute" && item.style !== s) {
+        this.addChild(node, item);
+        continue;
+      }
+      const span = Math.min(n, Number.isFinite(item.style.gridSpan) ? item.style.gridSpan : n);
+      if (!row || col + span > n) {
+        close();
+        open();
+      }
+      const current = row as LNode | null;
+      if (!current) continue;
+      fit(item.yoga, col, span, !!item.style.width && item.el !== null && item.style !== s);
+      this.addChild(current, item);
+      col += span;
+      if (col >= n) close();
+    }
+    close();
   }
 
   private addChild(parent: LNode, child: LNode | null): void {
@@ -1314,7 +1522,7 @@ function groupName(el: HtmlElement, fallbackText: string): string | undefined {
 export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResult {
   const builder = new Builder(parsed, opts);
   const root = builder.build(parsed.root, true);
-  if (!root) return { pieces: [], groups: [], width: opts.width, height: 0, notes: [...builder.notes] };
+  if (!root) return { pieces: [], groups: [], arrows: [], width: opts.width, height: 0, notes: [...builder.notes] };
   root.yoga.setWidth(opts.width);
   if (opts.height !== undefined) root.yoga.setHeight(opts.height);
   root.yoga.calculateLayout(opts.width, opts.height, Direction.LTR);
@@ -1324,6 +1532,8 @@ export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResul
   const notes = new Set(builder.notes);
 
   /** Walks the layout: each node's pieces, and the group it makes. Returns how many pieces it made. */
+  /** The pieces each element made, its own and its children's: where an arrow to it lands. */
+  const made = new Map<HtmlElement, { start: number; end: number }>();
   const walk = (node: LNode, ox: number, oy: number, group: string | undefined): number => {
     const l = node.yoga.getComputedLayout();
     const x = ox + l.left;
@@ -1384,7 +1594,12 @@ export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResul
         const lh = builder.lineHeightOf(only.style);
         piece.text = richOf(only.paragraphs, builder, only.style);
         piece.textStyle = textStyleOf(only.style, lh, valign);
-        if (centered) piece.textStyle.align = "center";
+        // Where the text sits across the box says its alignment (a number centered in a circle by flex).
+        const left = tl.left - (s.border[3] + pads[3]);
+        const right = contentWidth - (left + tl.width);
+        const across = Math.abs(left - right) <= 2 && left > 1 ? "center" : right + 1 < left ? "right" : null;
+        if (centered || across === "center") piece.textStyle.align = "center";
+        else if (across === "right") piece.textStyle.align = "right";
         piece.padding = Math.round(Math.min(...pads) + Math.min(...s.border));
         if (group) piece.group = group;
         else delete piece.group;
@@ -1448,10 +1663,11 @@ export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResul
       });
     }
 
-    let made = pieces.length - start;
-    for (const child of node.children) made += walk(child, x, y, inner);
+    let count = pieces.length - start;
+    for (const child of node.children) count += walk(child, x, y, inner);
+    if (el) made.set(el, { start, end: pieces.length });
     if (groupId) {
-      if (made >= 2) {
+      if (count >= 2) {
         const text =
           pieces
             .slice(start)
@@ -1469,16 +1685,16 @@ export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResul
         }
       }
     }
-    return made;
+    return count;
   };
 
   const rootGroup = newId();
-  const made = walk(root, 0, 0, rootGroup);
+  const total = walk(root, 0, 0, rootGroup);
   const layout = root.yoga.getComputedLayout();
   root.yoga.freeRecursive();
   const direct = pieces.filter((p) => p.group === rootGroup).length;
   const childGroups = groups.filter((g) => g.parent === rootGroup);
-  if (made >= 2 && !(direct === 0 && childGroups.length === 1)) {
+  if (total >= 2 && !(direct === 0 && childGroups.length === 1)) {
     const name = opts.name ?? groupName(parsed.root, "") ?? undefined;
     groups.push({ id: rootGroup, ...(name ? { name } : {}) });
   } else {
@@ -1493,7 +1709,69 @@ export function layoutHtml(parsed: ParsedHtml, opts: LayoutOptions): LayoutResul
     notes.add(`the content is ${Math.round(layout.height - opts.height)} units taller than its box`);
   }
   for (const n of parsed.notes) notes.add(n);
-  return { pieces, groups, width: layout.width, height: layout.height, notes: [...notes] };
+  const arrows = layoutArrows(parsed.root, made, pieces, notes);
+  return { pieces, groups, arrows, width: layout.width, height: layout.height, notes: [...notes] };
+}
+
+/**
+ * The arrows the markup asks for: an element's `data-arrow-to` (an id, or several with commas) joins its piece to each
+ * named element's, with `data-arrow-label` and `data-arrow-color`. An element's piece is its own box when it has one,
+ * else the biggest piece it made.
+ */
+function layoutArrows(
+  root: HtmlElement,
+  made: ReadonlyMap<HtmlElement, { start: number; end: number }>,
+  pieces: readonly Piece[],
+  notes: Set<string>,
+): LayoutResult["arrows"] {
+  const byId = new Map<string, HtmlElement>();
+  const asking: HtmlElement[] = [];
+  const walk = (el: HtmlElement) => {
+    if (el.id) byId.set(el.id, el);
+    if (el.attrs.has("data-arrow-to")) asking.push(el);
+    for (const c of el.children) if (typeof c !== "string") walk(c);
+  };
+  walk(root);
+  const pieceOf = (el: HtmlElement): number | null => {
+    const range = made.get(el);
+    if (!range || range.end <= range.start) return null;
+    let best = range.start;
+    let area = -1;
+    for (let i = range.start; i < range.end; i++) {
+      const p = pieces[i];
+      if (!p) continue;
+      if (p.kind === "box" && i === range.start) return i;
+      const a = p.box.w * p.box.h;
+      if (a > area) {
+        area = a;
+        best = i;
+      }
+    }
+    return best;
+  };
+  const out: LayoutResult["arrows"] = [];
+  for (const el of asking) {
+    const from = pieceOf(el);
+    for (const raw of (el.attrs.get("data-arrow-to") ?? "").split(",")) {
+      const id = raw.trim().replace(/^#/, "");
+      if (!id) continue;
+      const target = byId.get(id);
+      const to = target ? pieceOf(target) : null;
+      if (from === null || to === null) {
+        notes.add(`an arrow to "${id.slice(0, 40)}" has no element to land on`);
+        continue;
+      }
+      const color = parseColor(el.attrs.get("data-arrow-color"));
+      const label = el.attrs.get("data-arrow-label")?.trim();
+      out.push({
+        from,
+        to,
+        ...(label ? { label: label.slice(0, 200) } : {}),
+        ...(color && color !== "none" ? { color: opaque(color) } : {}),
+      });
+    }
+  }
+  return out;
 }
 
 /** Words of an `add_html` result for the agent: what it made, and what it left out. */
@@ -1502,8 +1780,9 @@ export function layoutSummary(result: LayoutResult): string {
   for (const p of result.pieces) counts.set(p.kind, (counts.get(p.kind) ?? 0) + 1);
   const made = [...counts].map(([k, n]) => `${n} ${k}${n === 1 ? "" : k === "box" ? "es" : "s"}`).join(", ");
   const groups = result.groups.length ? `; ${result.groups.length} group${result.groups.length === 1 ? "" : "s"}` : "";
+  const arrows = result.arrows.length ? `; ${result.arrows.length} arrow${result.arrows.length === 1 ? "" : "s"}` : "";
   const notes = result.notes.length ? ` Left out or changed: ${result.notes.join("; ")}.` : "";
-  return `${made || "nothing"}${groups}, ${Math.round(result.width)}×${Math.round(result.height)}.${notes}`;
+  return `${made || "nothing"}${groups}${arrows}, ${Math.round(result.width)}×${Math.round(result.height)}.${notes}`;
 }
 
 export { words };

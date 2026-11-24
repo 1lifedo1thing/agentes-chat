@@ -280,7 +280,48 @@ export function placeOnSlide(
     }
     if (el) ids.push(live.addElement(doc, slideId, el, origin));
   }
+  // An arrow on a slide is a line with a head, from the side of one piece to the facing side of the other.
+  for (const arrow of layout.arrows) {
+    const a = layout.pieces[arrow.from]?.box;
+    const b = layout.pieces[arrow.to]?.box;
+    if (!a || !b) continue;
+    const [p, q] = facingPoints(shift(a, at), shift(b, at));
+    ids.push(
+      live.addElement(
+        doc,
+        slideId,
+        {
+          type: "line",
+          box: { x: p.x, y: p.y, w: q.x - p.x, h: q.y - p.y },
+          style: { stroke: arrow.color ?? "#0063d1", strokeWidth: 4, lineEnd: "arrow" },
+        },
+        origin,
+      ),
+    );
+  }
   return ids;
+}
+
+/** Where an arrow between two boxes starts and ends: the middles of their facing sides, a little apart. */
+function facingPoints(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): [{ x: number; y: number }, { x: number; y: number }] {
+  const gap = 6;
+  const ac = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+  const bc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  if (Math.abs(bc.x - ac.x) >= Math.abs(bc.y - ac.y)) {
+    const right = bc.x > ac.x;
+    return [
+      { x: right ? a.x + a.w + gap : a.x - gap, y: ac.y },
+      { x: right ? b.x - gap : b.x + b.w + gap, y: bc.y },
+    ];
+  }
+  const down = bc.y > ac.y;
+  return [
+    { x: ac.x, y: down ? a.y + a.h + gap : a.y - gap },
+    { x: bc.x, y: down ? b.y - gap : b.y + b.h + gap },
+  ];
 }
 
 function canvasTextStyle(style: PieceTextStyle): live.CanvasTextStyle {
@@ -317,7 +358,8 @@ export function placeOnCanvas(
     ...(piece.group ? { group: piece.group } : {}),
     ...(frame ? { parent: frame } : {}),
   });
-  for (const piece of layout.pieces) {
+  const shapeOf = new Map<number, string>();
+  for (const [index, piece] of layout.pieces.entries()) {
     const box = shift(piece.box, at);
     let shape: live.NewShape | null = null;
     switch (piece.kind) {
@@ -378,7 +420,32 @@ export function placeOnCanvas(
       case "table":
         continue;
     }
-    if (shape) ids.push(live.addShape(doc, shape, origin));
+    if (shape) {
+      const id = live.addShape(doc, shape, origin);
+      shapeOf.set(index, id);
+      ids.push(id);
+    }
+  }
+  // Arrows the markup asks for are the canvas's own connectors: they follow the shapes when people move them.
+  for (const arrow of layout.arrows) {
+    const from = shapeOf.get(arrow.from);
+    const to = shapeOf.get(arrow.to);
+    if (!from || !to) continue;
+    ids.push(
+      live.addShape(
+        doc,
+        {
+          type: "arrow",
+          from: { shape: from },
+          to: { shape: to },
+          ...(arrow.color ? { stroke: arrow.color } : {}),
+          strokeWidth: 3,
+          ...(arrow.label ? { label: arrow.label } : {}),
+          ...(frame ? { parent: frame } : {}),
+        },
+        origin,
+      ),
+    );
   }
   return ids;
 }

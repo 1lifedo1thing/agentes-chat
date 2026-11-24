@@ -91,9 +91,19 @@ export interface PictureSize {
   h: number;
 }
 
+/** An arrow the markup asks for between two of its pieces (`data-arrow-to`), by their place in `pieces`. */
+export interface LayoutArrow {
+  from: number;
+  to: number;
+  label?: string;
+  color?: string;
+}
+
 export interface LayoutResult {
   pieces: Piece[];
   groups: LiveGroup[];
+  /** Arrows between pieces: native connectors on a canvas, lines on a slide. */
+  arrows: LayoutArrow[];
   /** The laid-out size. */
   width: number;
   height: number;

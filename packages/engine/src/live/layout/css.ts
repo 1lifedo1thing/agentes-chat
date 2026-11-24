@@ -1,18 +1,25 @@
 /**
  * The CSS `add_html` reads (ADR 0220 §4): style rules with simple selectors (tags, classes, ids, attribute presence,
- * `*`, descendant and child combinators, `:first-child` / `:last-child`), declarations with their shorthands, and
- * values (lengths, colors, gradients, shadows). What it doesn't take is skipped and named, never an error: the agent
- * is told what was left out.
+ * `*`, `:root`, descendant and child combinators, `:first-child` / `:last-child`, and `::before` / `::after`),
+ * declarations with their shorthands and custom properties (`--name`, read with `var()`), `@font-face` names, and
+ * values (lengths, colors, gradients, shadows). What it doesn't take is skipped and named, never an error: the agent is
+ * told what was left out.
  */
 
+/** Longhand properties and their values, after `var()` and shorthands. */
 export type Declarations = Map<string, string>;
+
+/** Declarations as written, in order: shorthands and `var()` are resolved once the cascade knows the element. */
+export type RawDeclarations = [string, string][];
 
 export interface Rule {
   selector: Selector;
   specificity: number;
   /** Source order, for ties. */
   order: number;
-  declarations: Declarations;
+  declarations: RawDeclarations;
+  /** A rule for an element's generated content (`::before`, `::after`). */
+  pseudo?: "before" | "after";
 }
 
 interface Compound {
@@ -22,6 +29,7 @@ interface Compound {
   attrs: string[];
   first?: boolean;
   last?: boolean;
+  root?: boolean;
 }
 
 /** Compounds right to left, each with the combinator that joins it to the next one on its left. */
@@ -38,7 +46,7 @@ export interface MatchTarget {
   last: boolean;
 }
 
-const UNSUPPORTED_PSEUDO = /:(?!first-child|last-child)[a-z-]+(\([^)]*\))?/i;
+const UNSUPPORTED_PSEUDO = /:(?!first-child|last-child|root\b)[a-z-]+(\([^)]*\))?/i;
 
 function parseCompound(text: string): Compound | null {
   const c: Compound = { classes: [], attrs: [] };
@@ -55,6 +63,7 @@ function parseCompound(text: string): Compound | null {
     [/^\[([a-z0-9_-]+)(?:[~|^$*]?=(?:"[^"]*"|'[^']*'|[^\]]*))?\]/i, (m) => c.attrs.push(m[1]?.toLowerCase() ?? "")],
     [/^:first-child/i, () => (c.first = true)],
     [/^:last-child/i, () => (c.last = true)],
+    [/^:root/i, () => (c.root = true)],
   ];
   while (rest) {
     let matched: RegExpExecArray | null = null;
@@ -71,7 +80,14 @@ function parseCompound(text: string): Compound | null {
   return c;
 }
 
-/** One selector of a list, or null when it uses what isn't taken (`:hover`, `+`, `~`, pseudo-elements). */
+/** A selector's generated content, and the selector without it (`.card::after` → after, `.card`). */
+export function pseudoOf(text: string): { selector: string; pseudo?: "before" | "after" } {
+  const m = /::?(before|after)\s*$/i.exec(text.trim());
+  if (!m) return { selector: text };
+  return { selector: text.trim().slice(0, m.index), pseudo: (m[1] ?? "").toLowerCase() as "before" | "after" };
+}
+
+/** One selector of a list, or null when it uses what isn't taken (`:hover`, `+`, `~`, other pseudo-elements). */
 export function parseSelector(text: string): Selector | null {
   const s = text.trim();
   if (!s || UNSUPPORTED_PSEUDO.test(s) || /::|[+~]/.test(s)) return null;
@@ -105,7 +121,12 @@ export function specificityOf(selector: Selector): number {
   let tags = 0;
   for (const { compound } of selector) {
     if (compound.id) ids++;
-    classes += compound.classes.length + compound.attrs.length + (compound.first ? 1 : 0) + (compound.last ? 1 : 0);
+    classes +=
+      compound.classes.length +
+      compound.attrs.length +
+      (compound.first ? 1 : 0) +
+      (compound.last ? 1 : 0) +
+      (compound.root ? 1 : 0);
     if (compound.tag) tags++;
   }
   return ids * 10_000 + classes * 100 + tags;
@@ -118,6 +139,8 @@ function matchesCompound(el: MatchTarget, c: Compound): boolean {
   for (const attr of c.attrs) if (!el.hasAttr(attr)) return false;
   if (c.first && !el.first) return false;
   if (c.last && !el.last) return false;
+  // `:root` is the document's root: its `html`, or the top of a fragment.
+  if (c.root && !(el.tag === "html" || el.parent === null)) return false;
   return true;
 }
 
@@ -140,19 +163,64 @@ export function matches(el: MatchTarget, selector: Selector): boolean {
   return true;
 }
 
-/** `prop: value; …` as a map (last wins, `!important` dropped, property names lowercased). */
-export function parseDeclarations(text: string): Declarations {
-  const out: Declarations = new Map();
+/** `prop: value; …` in order, as written (`!important` dropped, property names lowercased, custom ones kept). */
+export function parseDeclarations(text: string): RawDeclarations {
+  const out: RawDeclarations = [];
   for (const part of splitTop(text, ";")) {
     const i = part.indexOf(":");
     if (i <= 0) continue;
-    const prop = part.slice(0, i).trim().toLowerCase();
+    const name = part.slice(0, i).trim();
+    const prop = name.startsWith("--") ? name : name.toLowerCase();
     const value = part
       .slice(i + 1)
       .replace(/!\s*important\s*$/i, "")
       .trim();
-    if (prop && value && value.length <= VALUE_MAX) expand(prop, value, out);
+    if (prop && value && value.length <= VALUE_MAX) out.push([prop, value]);
   }
+  return out;
+}
+
+/**
+ * `var(--name, fallback)` in a value, from the custom properties in scope (read by index, nested up to a few levels;
+ * a name with no value and no fallback leaves the declaration out).
+ */
+export function resolveVars(value: string, custom: ReadonlyMap<string, string>, depth = 0): string | null {
+  if (!value.includes("var(")) return value;
+  if (depth > 5) return null;
+  let out = "";
+  let i = 0;
+  while (i < value.length) {
+    const at = value.indexOf("var(", i);
+    if (at < 0) {
+      out += value.slice(i);
+      break;
+    }
+    out += value.slice(i, at);
+    let depthParen = 1;
+    let j = at + 4;
+    while (j < value.length && depthParen > 0) {
+      if (value[j] === "(") depthParen++;
+      else if (value[j] === ")") depthParen--;
+      j++;
+    }
+    const inner = value.slice(at + 4, j - 1);
+    const comma = inner.indexOf(",");
+    const name = (comma < 0 ? inner : inner.slice(0, comma)).trim();
+    const fallback = comma < 0 ? null : inner.slice(comma + 1).trim();
+    const found = custom.get(name) ?? fallback;
+    if (found === null || found === undefined) return null;
+    const resolved = resolveVars(found, custom, depth + 1);
+    if (resolved === null) return null;
+    out += resolved;
+    i = j;
+  }
+  return out;
+}
+
+/** Declarations in order into longhands: each shorthand expanded where it stands, later ones winning. */
+export function expandAll(entries: RawDeclarations): Declarations {
+  const out: Declarations = new Map();
+  for (const [prop, value] of entries) if (!prop.startsWith("--")) expand(prop, value, out);
   return out;
 }
 
@@ -277,12 +345,17 @@ function expand(prop: string, value: string, out: Declarations): void {
       }
       return;
     }
-    case "gap": {
+    case "gap":
+    case "grid-gap": {
       const [row = "0", column = row] = words(value);
       out.set("row-gap", row);
       out.set("column-gap", column);
       return;
     }
+    case "grid-row-gap":
+    case "grid-column-gap":
+      out.set(prop.slice(5), value);
+      return;
     case "font": {
       // [style] [weight] size[/line-height] family…
       const m = /^(.*?)(\d*\.?\d+(?:px|em|rem|%|pt))(?:\s*\/\s*([^\s]+))?\s+(.+)$/i.exec(value.trim());
@@ -351,9 +424,15 @@ const VALUE_MAX = 2000;
  * A style sheet's rules in cascade order. `@` blocks (media queries, font faces, keyframes) are skipped and counted in
  * `skipped`, as are selectors that aren't taken.
  */
-export function parseStyleSheet(css: string): { rules: Rule[]; skipped: string[] } {
+export function parseStyleSheet(css: string): {
+  rules: Rule[];
+  skipped: string[];
+  /** `@font-face` names to the font files they load (`Funnel` → `fontes/FunnelDisplay-Variable.ttf`). */
+  fontFaces: Map<string, string>;
+} {
   const rules: Rule[] = [];
   const skipped: string[] = [];
+  const fontFaces = new Map<string, string>();
   const text = stripComments(css);
   let i = 0;
   let order = 0;
@@ -371,21 +450,66 @@ export function parseStyleSheet(css: string): { rules: Rule[]; skipped: string[]
     }
     const body = text.slice(open + 1, j - 1);
     i = j;
+    if (/^@font-face$/i.test(prelude)) {
+      // The name a sheet gives a font file: matched to the catalog by the file's name.
+      const decls = parseDeclarations(body);
+      const family = decls.find(([k]) => k === "font-family")?.[1];
+      const src = decls.find(([k]) => k === "src")?.[1];
+      const file = src ? /url\(\s*["']?([^"')]+)/i.exec(src)?.[1] : undefined;
+      if (family && file) fontFaces.set(family.replace(/^["']|["']$/g, "").trim().toLowerCase(), file);
+      continue;
+    }
     if (prelude.startsWith("@")) {
       skipped.push(prelude.split(/\s/)[0] ?? prelude);
       continue;
     }
     const declarations = parseDeclarations(body);
     for (const part of splitTop(prelude, ",")) {
-      const selector = parseSelector(part);
+      const { selector: text, pseudo } = pseudoOf(part);
+      const selector = parseSelector(text);
       if (!selector) {
         skipped.push(part);
         continue;
       }
-      rules.push({ selector, specificity: specificityOf(selector), order: order++, declarations });
+      rules.push({
+        selector,
+        specificity: specificityOf(selector),
+        order: order++,
+        declarations,
+        ...(pseudo ? { pseudo } : {}),
+      });
     }
   }
-  return { rules, skipped };
+  return { rules, skipped, fontFaces };
+}
+
+/**
+ * A grid's column tracks (`430px 1fr 470px`, `repeat(4, 1fr)`, `minmax(200px, 1fr)`): each a fixed width or a share
+ * of what is left. Null when it isn't a list of tracks (auto-fill and named lines aren't taken).
+ */
+export function parseTracks(value: string | undefined, em: number, rem: number): ({ px: number } | { fr: number })[] | null {
+  if (!value || value === "none") return null;
+  const out: ({ px: number } | { fr: number })[] = [];
+  for (const w of words(value)) {
+    const repeat = /^repeat\(\s*(\d+)\s*,\s*(.+)\)$/i.exec(w);
+    if (repeat) {
+      const inner = parseTracks(repeat[2], em, rem);
+      if (!inner) return null;
+      for (let k = 0; k < Math.min(24, Number(repeat[1])); k++) out.push(...inner);
+      continue;
+    }
+    const minmax = /^minmax\(\s*[^,]+,\s*(.+)\)$/i.exec(w);
+    const track = minmax ? (minmax[1] ?? "").trim() : w;
+    const fr = /^(\d*\.?\d+)fr$/i.exec(track);
+    if (fr) out.push({ fr: Number.parseFloat(fr[1] ?? "1") });
+    else if (track === "auto" || /^(min|max|fit)-content/.test(track)) out.push({ fr: 1 });
+    else {
+      const l = parseLength(track, em, rem);
+      if (!l || !("px" in l)) return null;
+      out.push({ px: l.px });
+    }
+  }
+  return out.length ? out : null;
 }
 
 // ── Values ────────────────────────────────────────────────────────────────────────────────────────────────────
