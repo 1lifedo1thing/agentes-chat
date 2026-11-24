@@ -749,3 +749,37 @@ test("an event Bun drops past its backpressure limit closes the socket, so the a
   await realtime.websocket.message(frozen as unknown as Bun.ServerWebSocket<SocketData>, '{"type":"ping"}');
   expect(closed).toEqual([1013]);
 });
+
+test("an idle socket whose session ended is closed by its replica's one check of every socket's session", async () => {
+  const owner = browser(t);
+  await signUp(owner, "owner@example.com");
+  const { orgId } = await seedOrg(owner);
+  const fast = fastRecheckServer(t.db, 50);
+  const { internalAdapter } = await t.auth.$context;
+  const findSession = internalAdapter.findSession;
+  let reads = 0;
+  internalAdapter.findSession = (...args) => {
+    reads++;
+    return findSession(...args);
+  };
+  try {
+    const url = `ws://127.0.0.1:${fast.port}/api/ws?orgId=${orgId}`;
+    const sockets = [0, 1, 2].map(() => connect(url, { origin: ORIGIN, cookie: owner.cookie() }));
+    for (const c of sockets) await c.next((f) => f.type === "ready");
+    const closed = sockets.map(
+      (c) => new Promise<number>((resolve) => c.ws.addEventListener("close", (e) => resolve(e.code))),
+    );
+    // Idle a few periods: their sessions are read together, never one socket at a time.
+    reads = 0;
+    await Bun.sleep(300);
+    expect(reads).toBe(0);
+    // The session ends; the sockets send nothing, so only the replica's check can find it.
+    await t.db.delete(schema.sessions);
+    expect(await Promise.all(closed.map((p) => Promise.race([p, Bun.sleep(3_000).then(() => -1)])))).toEqual([
+      4401, 4401, 4401,
+    ]);
+  } finally {
+    internalAdapter.findSession = findSession;
+    await Promise.race([fast.stop(true), Bun.sleep(500)]);
+  }
+});
