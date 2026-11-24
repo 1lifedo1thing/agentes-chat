@@ -7,6 +7,7 @@ setupDom();
 
 import type { SignInOptions } from "@agenteschat/client";
 import { act, cleanup, fireEvent } from "@testing-library/react";
+import { ASK_BLUR_MS } from "@/components/BackToApp";
 import { createFakeApi, seedState } from "./fake-api";
 import { createFakeAuth } from "./fake-auth";
 import { renderApp, screen, settle } from "./render";
@@ -263,6 +264,30 @@ describe("in the browser, for the app", () => {
       expect(assign.urls).toEqual([link]);
       expect(screen().queryByRole("link", { name: "Abrir o app" })).toBeNull();
     } finally {
+      assign.restore();
+    }
+  });
+
+  test("the tab closes as the app comes forward, never on the blur of the browser's own question", async () => {
+    const assign = recordAssign();
+    const closed = spyOn(window, "close").mockImplementation(() => undefined);
+    let now = 1_000_000;
+    const clock = spyOn(Date, "now").mockImplementation(() => now);
+    try {
+      await renderApp(`/desktop/back#${encodeURIComponent("agenteschat://desktop/signed-in")}`, {
+        api: createFakeApi(seedState({ me: null })),
+      });
+      await settle(3);
+      expect(assign.urls).toEqual(["agenteschat://desktop/signed-in"]);
+      // "Open the app?" takes focus right away: closing now would take it, and the link, with the tab.
+      window.dispatchEvent(new Event("blur"));
+      expect(closed).not.toHaveBeenCalled();
+      now += ASK_BLUR_MS;
+      window.dispatchEvent(new Event("blur"));
+      expect(closed).toHaveBeenCalledTimes(1);
+    } finally {
+      clock.mockRestore();
+      closed.mockRestore();
       assign.restore();
     }
   });
