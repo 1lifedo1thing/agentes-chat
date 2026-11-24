@@ -419,8 +419,10 @@ export function estimateQueue(
   return { ends, overdue, starts, after };
 }
 
-// ponytail: per-process cache, a minute stale at most; the read touches at most 300 finished runs' transcripts.
-const typicalCache = new TtlCache<TypicalTurns>(60_000, 1000);
+// A median of up to 20 turns over 14 days moves little in 10 minutes, and its read decompresses up to 300 finished
+// runs' transcripts (about half a second on a busy workspace).
+// ponytail: per-process cache; a duration column written when the run ends would spare the transcripts.
+const typicalCache = new TtlCache<TypicalTurns>(10 * 60_000, 1000);
 
 /**
  * The median of each agent's latest `TYPICAL_TURNS` finished computer turns, from its ask (`roomAsk.at`) to the

@@ -23,6 +23,8 @@ export const cachesEnabled = () => enabled;
 
 export class TtlCache<V> {
   private readonly entries = new Map<string, { value: V; expires: number }>();
+  /** Loads under way by key: a miss while one runs waits for it instead of reading the database again. */
+  private readonly loading = new Map<string, { generation: number; value: Promise<V> }>();
   /** Bumped by every invalidation, so a load that began before one never stores what it read. */
   private generation = 0;
   constructor(
@@ -84,16 +86,28 @@ export class TtlCache<V> {
   /**
    * Returns the cached value or loads, caches and returns it (`undefined`/null results are cached too, unless `keep`
    * refuses them). A load an invalidation overtook (here or from another process) is returned but not kept: its read
-   * may predate the write.
+   * may predate the write. Misses while a load of the key runs share it, unless an invalidation came after it began;
+   * a value `keep` refuses isn't shared either (each of them loads again), as it wouldn't be cached.
    */
   async getOrLoad(key: string, load: () => Promise<V>, keep?: (value: V) => boolean): Promise<V> {
     if (!enabled) return load();
     const hit = this.entries.get(key);
     if (hit && hit.expires >= Date.now()) return hit.value;
+    const running = this.loading.get(key);
+    if (running && running.generation === this.generation) {
+      const value = await running.value;
+      return (keep?.(value) ?? true) ? value : load();
+    }
     const started = this.generation;
-    const value = await load();
-    if (this.generation === started && (keep?.(value) ?? true)) this.set(key, value);
-    return value;
+    const mine = { generation: started, value: load() };
+    this.loading.set(key, mine);
+    try {
+      const value = await mine.value;
+      if (this.generation === started && (keep?.(value) ?? true)) this.set(key, value);
+      return value;
+    } finally {
+      if (this.loading.get(key) === mine) this.loading.delete(key);
+    }
   }
 }
 
