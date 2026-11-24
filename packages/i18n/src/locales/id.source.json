@@ -15104,6 +15104,9 @@
   "agentPage.tabs.access": {
     "value": "Tools and access"
   },
+  "agentPage.tabs.skills": {
+    "value": "Skills"
+  },
   "agentPage.tabs.memory": {
     "value": "Memory"
   },
