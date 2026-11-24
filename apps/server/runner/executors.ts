@@ -69,9 +69,9 @@ export function resolveCommand(
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
 ): string {
-  if (process.platform === "win32" || command.includes("/")) return command;
-  const picked = command === "codex" ? pickedCodex() : command === "agy" ? pickedAgy() : undefined;
+  const picked = command.includes("/") ? undefined : (pickedCli(command) ?? (command === "codex" ? pickedCodex() : undefined));
   if (picked) return picked;
+  if (process.platform === "win32" || command.includes("/")) return command;
   const dirs = pathList.split(delimiter).filter((dir) => dir && dir !== sharedBin);
   const found = onPath(command, dirs);
   if (found) return found;
@@ -88,7 +88,9 @@ export function ownCommand(
   pathList = process.env.PATH ?? "",
   sharedBin = process.env[SHARED_BIN_ENV],
 ): string | null {
-  if (process.platform === "win32") return null;
+  if (process.platform === "win32") {
+    return findOnWindowsPath(command, envValue(process.env, "PATH") ?? "", envValue(process.env, "PATHEXT"));
+  }
   return (
     onPath(
       command,
@@ -98,18 +100,21 @@ export function ownCommand(
 }
 
 /**
- * The Antigravity CLI the runner brought (`AgyCopy`, ADR 0143), where the person's own is older or missing:
- * `resolveCommand` starts this one for every `agy`, so its looks, sign-ins and turns all run the version reported.
+ * The copies of the coding CLIs the runner fetched (`CliCopies`, ADR 0228 §6), by command (`claude`, `agent`, `agy`…),
+ * where the person's own is older than the pin or missing: `resolveCommand` and `cliSpawn` start these for every look,
+ * sign-in and turn, so each runs the version reported.
  */
-let agyPick: string | undefined;
+const cliPicks = new Map<string, string>();
 
-export function setAgyPick(file: string | undefined) {
-  agyPick = file;
+export function setCliPick(command: string, file: string | undefined) {
+  if (file) cliPicks.set(command, file);
+  else cliPicks.delete(command);
 }
 
-/** The runner's own `agy`, while it is the one to run and still there. */
-export function pickedAgy(): string | undefined {
-  return agyPick && isExecutable(agyPick) ? agyPick : undefined;
+/** The runner's own copy of `command`, while it is the one to run and still there. */
+export function pickedCli(command: string): string | undefined {
+  const file = cliPicks.get(command);
+  return file && isExecutable(file) ? file : undefined;
 }
 
 /**
@@ -261,6 +266,8 @@ export function cliSpawn(
   } = {},
 ): CliRun {
   const [file = "", ...pre] = command;
+  const own = command.length === 1 ? pickedCli(file) : undefined;
+  if (platform === "win32" && own) return { file: own, args: [...args], env: { ...NO_CWD_LOOKUP } };
   if (platform === "win32" && command.length === 1) {
     const found = findOnWindowsPath(
       file,
@@ -574,7 +581,11 @@ export function codexCandidates(
 ): string[] {
   if (platform === "win32") return [];
   const dirs = [...pathList.split(delimiter), ...usualDirs()].filter((d) => isAbsolute(d) && d !== sharedBin);
-  return [...new Set(dirs.map((d) => join(d, "codex")))].filter((f) => isFile(f) && isExecutable(f));
+  // The runner's own copy (`setCliPick`) too: it is there because the person's is older, so the newest wins it.
+  const copy = cliPicks.get("codex");
+  return [...new Set([...dirs.map((d) => join(d, "codex")), ...(copy ? [copy] : [])])].filter(
+    (f) => isFile(f) && isExecutable(f),
+  );
 }
 
 /**

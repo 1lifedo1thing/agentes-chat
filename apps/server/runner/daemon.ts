@@ -86,7 +86,7 @@ import {
   systemLauncher,
   trustedNetworkLauncher,
 } from "./agent-users";
-import { AgyCopy, type AgyCopyOptions } from "./agy-copy";
+import { CLI_OF_BRAIN, CliCopies, type CliCopiesOptions, holdCliSelfUpdates } from "./cli-copies";
 import { BrainManager, readyRoom } from "./brain";
 import { CodexAppServers } from "./brain-codex-app";
 import { BrowserManager } from "./browser";
@@ -439,10 +439,10 @@ export interface DaemonOptions {
   /** Tests: how `cli.install` installs. */
   cliInstall?: Partial<CliInstallerOptions>;
   /**
-   * The runner brings its own Antigravity CLI where the person's is older than `AGY_PIN` (`AgyCopy`, ADR 0143): on for
-   * the runner people run (`main.ts`), off in tests unless they ask.
+   * The runner fetches its own copy of a coding CLI where the person's is older than the pinned one or missing
+   * (`CliCopies`, ADR 0228 §6): on for the runner people run (`main.ts`), off in tests unless they ask.
    */
-  agyCopy?: boolean | Partial<AgyCopyOptions>;
+  cliCopies?: boolean | Partial<CliCopiesOptions>;
 }
 
 /** What a task is in its activity words: a shell task's command, or the CLI that works it (the app names it). */
@@ -553,8 +553,8 @@ export class RunnerDaemon implements RequestObserver {
   private fixer: XcodeFixer | null = null;
   /** An install of a coding CLI (`cli.install`), made on its first request. */
   private installer: CliInstaller | null = null;
-  /** The Antigravity CLI the runner brings, outside system mode on macOS and Linux; null elsewhere. */
-  private readonly agy: AgyCopy | null;
+  /** The coding CLIs the runner fetches itself (ADR 0228 §6), outside system mode; null there. */
+  private readonly copies: CliCopies | null;
   /**
    * The PATH read again (app mode's `refreshPath`). On Windows before every look too: an app keeps the PATH it started
    * with, so a CLI installed since is found only through the registry.
@@ -613,25 +613,31 @@ export class RunnerDaemon implements RequestObserver {
         })
       : null;
     // Outside system mode, where the person's own CLI runs: the root's are the computer's setup's (the Cloud's image).
-    this.agy =
-      opts.agyCopy && !system && (process.platform === "darwin" || process.platform === "linux")
-        ? new AgyCopy({
+    // Every CLI the runner starts, the person's own or its copy, stays the version it was checked at (ADR 0228 §6).
+    holdCliSelfUpdates();
+    // Outside system mode, where the person's own CLI runs: the root's are the computer's setup's (the Cloud's image).
+    this.copies =
+      opts.cliCopies && !system
+        ? new CliCopies({
             home: opts.home,
             log: opts.log,
-            inUse: () => this.accounts.snapshot()?.some((a) => a.kind === "antigravity") ?? false,
+            inUse: (cli) =>
+              this.accounts.snapshot()?.some((a) => CLI_OF_BRAIN[a.kind] === cli) ?? false,
             onChange: () => {
               void this.clisLook().then(() => this.accounts.refresh(true).catch(() => undefined));
             },
-            ...(typeof opts.agyCopy === "object" ? opts.agyCopy : {}),
+            onFetch: (cli, fetch) => this.send({ type: "cli.fetch", cli, fetch }),
+            ...(typeof opts.cliCopies === "object" ? opts.cliCopies : {}),
           })
         : null;
     const accountUsers = system ? (opts.accountUsers ?? new AccountUsers({ home: opts.home, log: opts.log })) : null;
     this.accountUsers = accountUsers;
     this.accounts = new AccountManager({
       root: lent?.root ?? path.join(opts.home, "accounts"),
-      // A Gemini sign-in on a computer with no Antigravity CLI new enough: the runner brings its own first.
+      // A sign-in on a computer with no copy of its CLI new enough: the runner fetches its own first.
       prepare: async (kind) => {
-        if (kind === "antigravity") await this.agy?.ensure();
+        const cli = CLI_OF_BRAIN[kind];
+        if (cli) await this.copies?.ensure(cli);
       },
       ...(lent ? { lending: { chown: lent.chown } } : {}),
       ...(lent?.grokRoot ? { grokRoot: lent.grokRoot } : {}),
@@ -870,11 +876,11 @@ export class RunnerDaemon implements RequestObserver {
     browsers.unref?.();
     this.timers.push(browsers);
     // A CLI installed while the runner stays up: with no app asking for the status, nothing else looks again. The
-    // runner's own Antigravity CLI is checked as often (a download is due only when Gemini thinks here).
-    void this.agy?.check();
+    // runner's own copies are checked as often (a fetch is due only where the CLI is wanted, ADR 0228 §6).
+    void this.copies?.check();
     const clis = setInterval(() => {
       this.executors();
-      void this.agy?.check();
+      void this.copies?.check();
     }, EXECUTORS_TTL_MS);
     clis.unref?.();
     this.timers.push(clis);
@@ -1668,6 +1674,11 @@ export class RunnerDaemon implements RequestObserver {
         return { executors: this.executors() };
       },
       cliInstall: (req) => this.cliInstaller().handle(req),
+      cliFetch: (cli) => ({ fetch: this.copies?.retry(cli) ?? null }),
+      cliEnsure: async (kind) => {
+        const cli = CLI_OF_BRAIN[kind];
+        if (cli) await this.copies?.ensure(cli);
+      },
       xcodeOpen: () => this.iphoneSetup().open("xcode"),
       reportParts: () => this.reportParts(),
     };
@@ -1695,6 +1706,7 @@ export class RunnerDaemon implements RequestObserver {
           desktop: this.desktops.info(),
           terminal: this.terminals.info(),
           desktopUse: desktopUse.info(),
+          ...(this.copies ? { clis: this.copies.info() } : {}),
           ...(accounts ? { accounts } : {}),
           ...usage,
           // Who may control a desktop or open a terminal follows it (ADR 0058 §4).
@@ -1712,6 +1724,7 @@ export class RunnerDaemon implements RequestObserver {
       log,
       observer: this,
       onAgents: (raw, deleted) => this.setAgents(raw, deleted),
+      onPins: (pins) => void this.copies?.setPins(pins),
       onBrowserHandoff: (frame) =>
         supervisor ? supervisor.handoff(frame) : browser.setHandoff(frame.agentId, frame.handoff),
       onState: (state) => {

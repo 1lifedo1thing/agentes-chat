@@ -1395,8 +1395,8 @@ export interface AccountManagerOptions {
   /** `<runner home>/accounts`. */
   root: string;
   /**
-   * Before a CLI's sign-in starts: the runner's own Antigravity CLI made ready where the computer has none new enough
-   * (`AgyCopy.ensure`, ADR 0143); its failure is the sign-in's.
+   * Before a CLI's sign-in starts: the runner's own copy of that CLI made ready where the computer has none new enough
+   * (`CliCopies.ensure`, ADR 0228 §6); its failure is the sign-in's.
    */
   prepare?: (kind: AccountKind) => Promise<void>;
   /** Tests: the clock. */

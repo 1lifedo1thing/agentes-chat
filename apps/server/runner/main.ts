@@ -468,7 +468,7 @@ async function start(): Promise<number> {
   }
   // Before anything starts a CLI: a service's PATH is the installing shell's (the daemon adds them again per look).
   if (process.platform !== "win32" && config.mode !== "system") addUsualDirs();
-  const daemon = new RunnerDaemon({ home, mode: "start", log, print: (line) => console.log(line), agyCopy: true });
+  const daemon = new RunnerDaemon({ home, mode: "start", log, print: (line) => console.log(line), cliCopies: true });
   const stop = () => void daemon.stop();
   process.once("SIGINT", stop);
   process.once("SIGTERM", stop);
