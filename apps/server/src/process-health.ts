@@ -6,6 +6,7 @@ import type { Database } from "@agenteschat/db";
 import { recordProcessVitals } from "@agenteschat/engine";
 import type { EventLoopLag } from "./event-loop-lag";
 import type { Logger } from "./logger";
+import type { RouteTime } from "./route-times";
 
 export const PROCESS_VITALS_EVERY_MS = 60_000;
 /**
@@ -33,11 +34,14 @@ export interface ProcessHealthDeps {
   heapSnapshotDir?: string;
   memoryUsage?: () => NodeJS.MemoryUsage;
   writeSnapshot?: (path: string) => string;
+  /** The routes that took the most time since the last tick (`takeRouteTimes`); absent: a process that serves none. */
+  routeTimes?: () => RouteTime[];
 }
 
 /**
- * Writes this process's memory and event loop delay to `server_processes` once a minute, for the operator's
- * `GET /vitals`, and its one heap snapshot once its heap passes `HEAP_SNAPSHOT_MB`. Returns a tick (tests) and a stop.
+ * Writes this process's memory, event loop delay and slowest routes to `server_processes` once a minute, for the
+ * operator's `GET /vitals`, and its one heap snapshot once its heap passes `HEAP_SNAPSHOT_MB`. Returns a tick (tests)
+ * and a stop.
  */
 export function watchProcessHealth(deps: ProcessHealthDeps, everyMs = PROCESS_VITALS_EVERY_MS) {
   const id = crypto.randomUUID();
@@ -94,6 +98,7 @@ export function watchProcessHealth(deps: ProcessHealthDeps, everyMs = PROCESS_VI
       eventLoopMaxMs: lag?.maxMs ?? null,
       heapSnapshotAt: snapshot?.at ?? null,
       heapSnapshotFile: snapshot?.file ?? null,
+      routes: deps.routeTimes?.() ?? null,
     });
   };
   const run = () =>

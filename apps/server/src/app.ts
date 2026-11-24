@@ -24,6 +24,7 @@ import { busyResponse } from "./load-shed";
 import { createLogger, type Logger, loggedPath } from "./logger";
 import { ownHosts } from "./operator/hosts";
 import { directPushSenders, relayServeSender } from "./push-senders";
+import { timeRoutes } from "./route-times";
 import { accessRoutes } from "./routes/app/access";
 import { accountRoutes } from "./routes/app/account";
 import { actionRoutes } from "./routes/app/actions";
@@ -358,6 +359,8 @@ export function createApp(options: AppOptions) {
   });
   // Ties a request's failure in the log to its report, and to what the client saw (`X-Request-Id`).
   app.use("/api/*", requestId());
+  // Each route's p95 over the minute, on the operator's `GET /vitals` (`route-times.ts`, `process-health.ts`).
+  app.use("/api/*", timeRoutes);
   app.use("/api/*", apiBodyLimit);
   // Security headers on every response: the app may not be framed (clickjacking of approval, merge and deploy
   // cards), <base> is pinned to our own origin, and HSTS is sent where the instance is served over TLS. `frame-src`

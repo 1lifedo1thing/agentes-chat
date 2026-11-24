@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { freemem, totalmem } from "node:os";
+import { freemem, hostname, totalmem } from "node:os";
 import { join, resolve } from "node:path";
 import {
   type Adapters,
@@ -111,6 +111,7 @@ import { createLiveSockets } from "./realtime/live";
 import { createMachineSockets } from "./realtime/machines";
 import { createStreamSockets } from "./realtime/streams";
 import { createRealtime, type SocketData } from "./realtime/ws";
+import { takeRouteTimes } from "./route-times";
 import type { AppDeps } from "./routes/app/context";
 import { workerHealth } from "./routes/health";
 import { startTelemetry } from "./telemetry";
@@ -228,7 +229,11 @@ async function boot(
     );
   }
 
-  const database = createDatabase({ url: config.DATABASE_URL, poolMax: config.DATABASE_POOL_MAX });
+  const database = createDatabase({
+    url: config.DATABASE_URL,
+    poolMax: config.DATABASE_POOL_MAX,
+    applicationName: `agentes:${config.SERVER_ROLE}:${hostname()}`,
+  });
   await prepareDatabase(database, log, config.RUN_MIGRATIONS_ON_BOOT);
   // Best effort: a replica that boots before the migrations ran (RUN_MIGRATIONS_ON_BOOT=false) still starts.
   await retireHostTokens(database.db, config.HOST_COMPUTER_TOKEN).then(
@@ -734,6 +739,7 @@ async function boot(
     eventLoopLag,
     heapSnapshotMb: config.HEAP_SNAPSHOT_MB,
     heapSnapshotDir: config.HEAP_SNAPSHOT_DIR,
+    ...(worker ? {} : { routeTimes: takeRouteTimes }),
   });
   const operator = worker
     ? null

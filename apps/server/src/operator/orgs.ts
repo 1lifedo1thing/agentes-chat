@@ -94,6 +94,20 @@ const Vitals = z
             .object({ at: z.string(), file: z.string() })
             .nullable()
             .openapi({ description: "The heap snapshot it wrote (`HEAP_SNAPSHOT_MB`), in `HEAP_SNAPSHOT_DIR`." }),
+          routes: z
+            .array(
+              z.object({
+                route: z.string().openapi({ description: "Method and route as registered, ids left out." }),
+                count: z.number().int(),
+                p95Ms: z.number().int(),
+                maxMs: z.number().int(),
+                totalMs: z.number().int(),
+              }),
+            )
+            .openapi({
+              description:
+                "The HTTP routes that took it the most time over its last minute, the most first. Empty for a worker.",
+            }),
         }),
       )
       .openapi({
@@ -320,6 +334,7 @@ export function registerOperatorOrgs(
               p.heapSnapshotAt && p.heapSnapshotFile
                 ? { at: p.heapSnapshotAt.toISOString(), file: p.heapSnapshotFile }
                 : null,
+            routes: p.routes ?? [],
           })),
           runClaims: claims,
         },

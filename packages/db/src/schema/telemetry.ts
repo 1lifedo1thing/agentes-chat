@@ -58,6 +58,11 @@ export const serverProcesses = pgTable("server_processes", {
   /** When it wrote its heap snapshot (`HEAP_SNAPSHOT_MB`), and the file's name; null: none. */
   heapSnapshotAt: timestamp({ withTimezone: true }),
   heapSnapshotFile: text(),
+  /**
+   * The HTTP routes that took it the most time over its last minute (`route-times.ts`), each with its count, p95,
+   * slowest and total in ms; null: a worker, which serves none, or a row from before.
+   */
+  routes: jsonb().$type<{ route: string; count: number; p95Ms: number; maxMs: number; totalMs: number }[]>(),
 });
 
 /**

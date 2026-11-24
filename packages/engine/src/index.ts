@@ -147,6 +147,7 @@ export * from "./file-pulls";
 export * from "./file-reader";
 export * from "./follow-through";
 export * from "./follows";
+export { percentile } from "./format";
 export * from "./gateway";
 export * from "./gif-key";
 export * from "./git/branches";
