@@ -8787,7 +8787,8 @@ export type DeviceStatus =
       label?: string;
       since: string;
     }
-  | { kind: "busy"; running: number; max: number }
+  /** `max` null: tasks start on room there (`taskRoom`). */
+  | { kind: "busy"; running: number; max: number | null }
   | { kind: "needs_you"; reason: string }
   | { kind: "preparing"; reason: string }
   | { kind: "paused"; until: string | null }
@@ -8830,6 +8831,8 @@ export interface ComputerDevice {
   audience: DeviceAudience;
   status: DeviceStatus;
   maxTasks: number | null;
+  /** Tasks start on room, not on `maxTasks`; null: the count decides (an older app). Absent from an older server. */
+  taskRoom?: { more: number; freeGb: number; cpuBusy: boolean; pushHarder: boolean } | null;
   toolchains: Record<string, string>;
   /** A Mac whose app opens Xcode and looks at its iPhone again for the iPhone guide; absent from an older server. */
   opensXcode?: boolean;
@@ -8960,6 +8963,7 @@ export interface ComputerDeviceInput {
   audience?: DeviceAudience;
   belongsToWorkspace?: boolean;
   maxTasks?: number;
+  pushHarder?: boolean;
   spill?: { own?: boolean; others?: boolean };
 }
 

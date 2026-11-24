@@ -39235,6 +39235,9 @@
   "errors.device.tasksOwnerOnly": {
     "value": "Only the person who connected this computer can change how many tasks it runs at once."
   },
+  "errors.device.tasksCloud": {
+    "value": "The Cloud sizes this computer's room for tasks itself."
+  },
   "errors.device.notHome": {
     "value": "Agents live on the workspace computer and use this one when they name it."
   },
@@ -40284,6 +40287,21 @@
   "devices.maxTasksHint": {
     "value": "How many background tasks agents run here at the same time. The rest wait their turn."
   },
+  "devices.tasksAutoRoom": {
+    "value": "Automatic · {{running}} running · room for about {{more}} more"
+  },
+  "devices.tasksAutoFull": {
+    "value": "Automatic · {{running}} running · full for now"
+  },
+  "devices.tasksAutoHint": {
+    "value": "Agents start background tasks while this computer has memory to spare, keeping 1.5 GB free for your own apps. The rest wait their turn."
+  },
+  "devices.pushHarder": {
+    "value": "Push harder"
+  },
+  "devices.pushHarderHint": {
+    "value": "More tasks at once: only 0.5 GB of memory stays free and a busy processor doesn't hold them. Your own apps may slow down."
+  },
   "devices.belongs": {
     "value": "Belongs to the workspace"
   },
@@ -40437,6 +40455,9 @@
   "devices.status.busy": {
     "value": "Busy {{running}}/{{max}}"
   },
+  "devices.status.busyRunning": {
+    "value": "Busy · {{running}} running"
+  },
   "devices.status.needs": {
     "value": "Needs you"
   },
@@ -40493,6 +40514,15 @@
   },
   "devices.line.tasksUpdate": {
     "value": "Tasks at once here: {{max}}. Update its app to change that from here."
+  },
+  "devices.line.tasksNoMemory": {
+    "value": "No room for another task right now: {{gb, number}} GB of memory free. The next one starts when one ends."
+  },
+  "devices.line.tasksNoCpu": {
+    "value": "No room for another task right now: the processor is nearly full. The next one starts when it calms down."
+  },
+  "devices.line.tasksPushing": {
+    "value": "Pushing harder: {{gb, number}} GB of memory free. Your own apps may slow down."
   },
   "devices.line.offline": {
     "value": "Agents wait for it to come back."
