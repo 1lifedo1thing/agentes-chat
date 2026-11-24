@@ -19,7 +19,7 @@ import {
   useTakeConnectionOffAgent,
   useUsage,
 } from "@agenteschat/client";
-import { seesFactsOnly } from "@agenteschat/client/lib/agent-facts";
+import { hidesAgentPage, seesFactsOnly } from "@agenteschat/client/lib/agent-facts";
 import { approvalRuleServer, approvalRuleWords, approvalTitle } from "@agenteschat/client/lib/approval-words";
 import { canTalk, editsAgent, managesAgent, seesDetails } from "@agenteschat/client/lib/audience";
 import { brainLine } from "@agenteschat/client/lib/brain";
@@ -189,6 +189,15 @@ export function AgentProfileScreen({ id }: { id: string }) {
       <View style={[styles.screen, { backgroundColor: c.bg }]}>
         <PushedHeader title={agent.name} solid={false} />
         <EmptyState size="page" icon="agent" title={t("profile.former")} />
+      </View>
+    );
+  }
+  // A teammate's private agent whose page doesn't open for me: as on the web, and as the server answers its link.
+  if (hidesAgentPage(agent)) {
+    return (
+      <View style={[styles.screen, { backgroundColor: c.bg }]}>
+        <PushedHeader title="" solid={false} />
+        <EmptyState size="page" icon="agent" title={t("agent.notFound")} />
       </View>
     );
   }

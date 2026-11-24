@@ -4,7 +4,7 @@ import { setupDom } from "@agenteschat/ui/testing/dom";
 setupDom();
 
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
-import { ADA_ID, createFakeApi, ORG_ID, seedState } from "./fake-api";
+import { ADA_ID, createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
 import { renderApp, screen, settle } from "./render";
 
 afterEach(() => cleanup());
@@ -45,6 +45,23 @@ describe("an agent seen from outside its audience", () => {
     expect(screen().queryByRole("heading", { level: 1, name: "Ada" })).toBeNull();
     expect(document.body.textContent).toContain("Este agente não existe ou foi arquivado.");
     expect(document.body.textContent).not.toContain("tabela 4");
+  });
+
+  test("a teammate's private agent: her message's menu has no Ver perfil for a plain member, who'd find nothing", async () => {
+    await renderApp(`/org/${ORG_ID}/c/${ENG_ID}`, { api: createFakeApi(outside()) });
+    await settle(8);
+    const name = screen()
+      .getAllByRole("button", { name: "Perfil de Ada" })
+      .find((b) => !b.hasAttribute("aria-hidden"));
+    if (!name) throw new Error("no author name for Ada");
+    const menuKey = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 30, clientY: 40 });
+    await act(async () => void name.dispatchEvent(menuKey));
+    await settle(2);
+    const items = within(screen().getByRole("menu", { name: "Ações" }))
+      .getAllByRole("menuitem")
+      .map((i) => i.textContent);
+    expect(items).toContain("Mencionar");
+    expect(items).not.toContain("Ver perfil");
   });
 
   test('with "Editar agentes", a teammate\'s private agent: Equipe lists it locked, its page shows only its facts', async () => {
