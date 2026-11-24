@@ -444,7 +444,7 @@
     },
     "manage_agents": {
       "title": "Editar agentes",
-      "desc": "Instrucciones, cerebro, presupuesto y lo que usa cada uno, en los agentes con los que la persona habla. Los agentes privados de otras personas quedan fuera.",
+      "desc": "Instrucciones, cerebro, presupuesto y lo que usa cada uno, en los agentes con los que la persona habla. De los agentes privados de otras personas, solo el nombre, el responsable y el uso.",
       "short": "editar agentes",
       "say": "edita los agentes con los que habla"
     },
@@ -6436,6 +6436,20 @@
     },
     "copyHandle": "Copiar @{{handle}}",
     "copied": "@{{handle}} copiado.",
+    "facts": {
+      "private": "Privado",
+      "created": "Creado",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "Uso en {{month}}",
+      "budget": "Presupuesto",
+      "budgetUsed": "{{percent}} usado",
+      "last": "Última actividad",
+      "never": "Ninguna todavía",
+      "title": "Qué hace",
+      "locked": "Las instrucciones, la memoria, las herramientas, las conversaciones, las rutinas y los archivos de {{name}} quedan con {{owner}}, quien esa persona invite a editar y los admins.",
+      "lockedNoOwner": "Las instrucciones, la memoria, las herramientas, las conversaciones, las rutinas y los archivos de {{name}} quedan con quien puede editarlo y los admins.",
+      "ask": "Pedirle a {{owner}}"
+    },
     "overview": {
       "approvals_one": "{{count}} solicitud de aprobación",
       "approvals_many": "{{count}} solicitudes de aprobación",

@@ -459,7 +459,7 @@ export const en = {
     },
     manage_agents: {
       title: "Edit agents",
-      desc: "Instructions, brain, budget and what each one uses, on the agents they talk to. Other people's private agents stay out.",
+      desc: "Instructions, brain, budget and what each one uses, on the agents they talk to. Of other people's private agents, only the name, owner and usage.",
       short: "edit agents",
       say: "edits the agents they talk to",
     },
@@ -6738,6 +6738,26 @@ export const en = {
     },
     copyHandle: "Copy @{{handle}}",
     copied: "@{{handle}} copied.",
+    /**
+     * A teammate's private agent seen through "Editar agentes" (ADR 0085, addendum of 2026-11-24): its facts and this
+     * month's usage, never how it works. `owner` is a person's name.
+     */
+    facts: {
+      private: "Private",
+      created: "Made",
+      createdBy: "{{name}}, {{date}}",
+      usage: "Usage in {{month}}",
+      budget: "Budget",
+      budgetUsed: "{{percent}} used",
+      last: "Last activity",
+      never: "None yet",
+      title: "What it does",
+      locked:
+        "{{name}}'s instructions, memory, tools, conversations, routines and files stay with {{owner}}, whoever they ask to edit it and the admins.",
+      lockedNoOwner:
+        "{{name}}'s instructions, memory, tools, conversations, routines and files stay with whoever edits it and the admins.",
+      ask: "Ask {{owner}}",
+    },
     overview: {
       approvals_one: "{{count}} approval request",
       approvals_other: "{{count}} approval requests",

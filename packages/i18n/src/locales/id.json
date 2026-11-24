@@ -418,7 +418,7 @@
     },
     "manage_agents": {
       "title": "Edit agen",
-      "desc": "Instruksi, otak, anggaran, dan apa yang dipakai masing-masing, di agen yang diajak bicara orang itu. Agen pribadi milik orang lain tidak termasuk.",
+      "desc": "Instruksi, otak, anggaran, dan apa yang dipakai masing-masing, di agen yang diajak bicara orang itu. Dari agen pribadi milik orang lain, hanya nama, penanggung jawab, dan pemakaiannya.",
       "short": "edit agen",
       "say": "mengedit agen yang diajak bicara"
     },
@@ -6008,6 +6008,20 @@
     },
     "copyHandle": "Salin @{{handle}}",
     "copied": "@{{handle}} disalin.",
+    "facts": {
+      "private": "Pribadi",
+      "created": "Dibuat",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "Pemakaian bulan {{month}}",
+      "budget": "Anggaran",
+      "budgetUsed": "{{percent}} terpakai",
+      "last": "Aktivitas terakhir",
+      "never": "Belum ada",
+      "title": "Apa yang dikerjakannya",
+      "locked": "Instruksi, memori, alat, percakapan, rutinitas, dan file {{name}} tetap di {{owner}}, orang yang diajaknya mengedit, dan admin.",
+      "lockedNoOwner": "Instruksi, memori, alat, percakapan, rutinitas, dan file {{name}} tetap di orang yang bisa mengeditnya dan admin.",
+      "ask": "Minta ke {{owner}}"
+    },
     "overview": {
       "approvals_other": "{{count}} permintaan persetujuan",
       "approvalsYou": "Setujui atau tolak di Persetujuan atau di chat",

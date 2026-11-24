@@ -431,7 +431,7 @@
     },
     "manage_agents": {
       "title": "Agents bewerken",
-      "desc": "Instructies, brein, budget en wat elke agent gebruikt, bij de agents met wie de persoon praat. Privé-agents van anderen vallen erbuiten.",
+      "desc": "Instructies, brein, budget en wat elke agent gebruikt, bij de agents met wie de persoon praat. Van privé-agents van anderen alleen de naam, de verantwoordelijke en het gebruik.",
       "short": "agents bewerken",
       "say": "bewerkt de agents waarmee hij of zij praat"
     },
@@ -6265,6 +6265,20 @@
     },
     "copyHandle": "@{{handle}} kopiëren",
     "copied": "@{{handle}} gekopieerd.",
+    "facts": {
+      "private": "Privé",
+      "created": "Gemaakt",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "Gebruik in {{month}}",
+      "budget": "Budget",
+      "budgetUsed": "{{percent}} gebruikt",
+      "last": "Laatste activiteit",
+      "never": "Nog geen",
+      "title": "Wat hij doet",
+      "locked": "De instructies, het geheugen, de tools, de gesprekken, de routines en de bestanden van {{name}} blijven bij {{owner}}, wie die persoon vraagt om hem te bewerken en de admins.",
+      "lockedNoOwner": "De instructies, het geheugen, de tools, de gesprekken, de routines en de bestanden van {{name}} blijven bij wie hem mag bewerken en de admins.",
+      "ask": "Vraag het {{owner}}"
+    },
     "overview": {
       "approvals_one": "{{count}} goedkeuringsverzoek",
       "approvals_other": "{{count}} goedkeuringsverzoeken",
