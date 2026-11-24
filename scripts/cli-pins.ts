@@ -2,10 +2,10 @@
 /**
  * Rewrites the coding CLIs' pins (`packages/providers/src/cli-pins.ts`, ADR 0228 §6) from each vendor's latest stable
  * release: the version, and each system's build with its hash. The vendor's own hash where it publishes one (Claude
- * Code's manifest, Codex's and OpenCode's release assets); otherwise the build is downloaded and hashed here (Cursor's,
- * Grok Build's). The Antigravity CLI keeps its pin: its builds' addresses carry a build number its channel doesn't
- * name, so it moves by hand. Prints what changed; with nothing new it leaves the file as it is. The `cli-pins`
- * workflow runs it daily and opens a pull request with the change, never merged by itself.
+ * Code's manifest, Codex's, OpenCode's and MinGit's release assets, the Antigravity CLI's manifests per platform, the
+ * ones its installers read); otherwise the build is downloaded and hashed here (Cursor's, Grok Build's). Prints what
+ * changed; with nothing new it leaves the file as it is. The `cli-pins` workflow runs it daily and opens a pull
+ * request with the change, never merged by itself.
  *
  *   bun scripts/cli-pins.ts            rewrite the file
  *   bun scripts/cli-pins.ts --check    say what is new, change nothing (exit 1 when something is)
@@ -159,6 +159,77 @@ async function cursor(): Promise<CliPin> {
       executable: "cursor-agent",
     };
   }
+  // Windows: its PowerShell installer's package (cursor.com/install?win32=true), Node and the CLI's `index.js`.
+  for (const [platform, cpu] of [
+    ["win32-x64", "x64"],
+    ["win32-arm64", "arm64"],
+  ] as [PinPlatform, string][]) {
+    const url = `https://downloads.cursor.com/lab/${version}/windows/${cpu}/agent-cli-package.zip`;
+    builds[platform] = {
+      url,
+      hash: sha256(await sha256Of(url)),
+      archive: "zip",
+      strip: 1,
+      executable: "node.exe",
+      launch: ["index.js"],
+    };
+  }
+  return { version, builds };
+}
+
+/** The Antigravity CLI: the manifest per platform its installers read (`install.sh`, `install.ps1`), with its sha512. */
+const AGY_MANIFESTS = "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests";
+async function antigravity(): Promise<CliPin> {
+  const systems: [PinPlatform, string][] = [
+    ["darwin-arm64", "darwin_arm64"],
+    ["darwin-x64", "darwin_amd64"],
+    ["linux-x64", "linux_amd64"],
+    ["linux-arm64", "linux_arm64"],
+    ["linux-x64-musl", "linux_amd64_musl"],
+    ["linux-arm64-musl", "linux_arm64_musl"],
+    ["win32-x64", "windows_amd64"],
+    ["win32-arm64", "windows_arm64"],
+  ];
+  const builds: CliPin["builds"] = {};
+  let version = "";
+  for (const [platform, name] of systems) {
+    const m = await json<{ version: string; url: string; sha512: string }>(`${AGY_MANIFESTS}/${name}.json`);
+    if (version && m.version !== version) throw new Error(`antigravity: ${name} is at ${m.version}, others ${version}`);
+    version = m.version;
+    if (!m.url.startsWith("https://") || !/^[0-9a-f]{128}$/i.test(m.sha512)) throw new Error(`antigravity: ${name}`);
+    const exe = platform.startsWith("win32");
+    builds[platform] = {
+      url: m.url,
+      hash: { algorithm: "sha512", value: m.sha512.toLowerCase() },
+      archive: exe ? "file" : "tar.gz",
+      executable: exe ? "agy.exe" : "antigravity",
+    };
+  }
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`antigravity: unexpected version "${version}"`);
+  return { version, builds };
+}
+
+/** Git for Windows' portable build (MinGit), Claude Code's shell on Windows: its release assets' sha256. */
+async function git(): Promise<CliPin> {
+  const r = await release("git-for-windows/git");
+  const version = /^v(\d+\.\d+\.\d+)\.windows\.\d+$/.exec(r.tag)?.[1];
+  if (!version) throw new Error(`git: unexpected tag "${r.tag}"`);
+  const builds: CliPin["builds"] = {};
+  for (const [platform, name] of [
+    ["win32-x64", `MinGit-${version}-64-bit.zip`],
+    ["win32-arm64", `MinGit-${version}-arm64.zip`],
+  ] as [PinPlatform, string][]) {
+    const asset = r.assets.get(name);
+    if (!asset) throw new Error(`git: no ${name}`);
+    // MinGit ships GNU bash as `usr/bin/sh.exe` only.
+    builds[platform] = {
+      url: asset.url,
+      hash: sha256(asset.sha256),
+      archive: "zip",
+      executable: "usr/bin/bash.exe",
+      from: "usr/bin/sh.exe",
+    };
+  }
   return { version, builds };
 }
 
@@ -192,6 +263,8 @@ function render(cli: PinCli, pin: CliPin): string {
       `        archive: ${JSON.stringify(b.archive)},`,
       ...(b.strip ? [`        strip: ${b.strip},`] : []),
       `        executable: ${JSON.stringify(b.executable)},`,
+      ...(b.launch?.length ? [`        launch: ${JSON.stringify(b.launch)},`] : []),
+      ...(b.from ? [`        from: ${JSON.stringify(b.from)},`] : []),
       "      },",
     ].join("\n");
   const builds = Object.entries(pin.builds)
@@ -200,7 +273,7 @@ function render(cli: PinCli, pin: CliPin): string {
   return `  ${cli}: {\n    version: ${JSON.stringify(pin.version)},\n    builds: {\n${builds}\n    },\n  },`;
 }
 
-const FETCHERS: Partial<Record<PinCli, () => Promise<CliPin>>> = { claude, codex, cursor, opencode, grok };
+const FETCHERS: Record<PinCli, () => Promise<CliPin>> = { claude, codex, cursor, opencode, grok, antigravity, git };
 
 const check = process.argv.includes("--check");
 let source = readFileSync(FILE, "utf8");

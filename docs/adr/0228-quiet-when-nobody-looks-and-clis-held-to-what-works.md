@@ -127,8 +127,36 @@ The same for Claude Code, Codex, Cursor, OpenCode, Grok Build and the Antigravit
   account's row in Contas de IA show the same line with the kit's meter, on the web and the phone. A failure says why
   in plain words with "Tentar de novo" (`POST …/machines/{machineId}/clis/{cli}/fetch`), which asks for the fetch now.
 - **Keeping up.** `scripts/cli-pins.ts` reads each vendor's latest stable release and rewrites the pins; the `cli-pins`
-  workflow runs it daily and opens a pull request, never merged by itself. The Antigravity CLI's pin moves by hand:
-  its builds' addresses carry a build number its channel doesn't name.
+  workflow runs it daily and opens a pull request, never merged by itself. The Antigravity CLI's comes from the
+  manifest per platform its own installers read (`install.sh`, `install.ps1`), with Google's sha512.
+
+### 7. Windows, like the others
+
+Every one of the six vendors makes a Windows build (x64 and arm64), so all six think on Windows: `brainRunsOn` follows
+the pin list (a system is refused only where its vendor makes no build), and a Windows runner before
+`CLI_COPIES_PROTOCOL` is too old for Cursor, Grok Build and the Antigravity CLI there (`runner_old`, the specs'
+`windowsProtocol`). Each account's sign-in stays in its own folder, as on macOS and Linux:
+
+- **Cursor** keeps it in the Windows Credential Manager unless told to use a file, then in `%APPDATA%\Cursor\auth.json`
+  (its CLI's own credentials module, read in its 2026.11.22 Windows package): the account's env has
+  `AGENT_CLI_CREDENTIAL_STORE=file` and `APPDATA` at its folder. Its Windows package is Node and its `index.js`; the
+  runner starts `node.exe index.js` itself (`launch` in the pin), never its `.cmd` launcher, whose cmd.exe and
+  PowerShell line is too short for a prompt and requotes it.
+- **Grok Build** keeps it in `auth.json` under `GROK_HOME` everywhere; its Windows build has no keyring code at all.
+- **The Antigravity CLI** keeps it in the Credential Manager unless `AGY_CLI_FORCE_FILE_TOKEN_STORAGE` is set, then in
+  its file under the home (read off the 1.5.16 Windows build: the switch, and a token store that writes the file): the
+  account's env has `USERPROFILE` (Go's home there), `APPDATA` and `LOCALAPPDATA` in its folder and the switch on.
+- **Checked, not trusted.** A Windows sign-in of Cursor or the Antigravity CLI counts only once its file is in the
+  account's folder (`signInFileOnWindows`); one that went to the Credential Manager instead is refused in plain words,
+  so two accounts never become one.
+- **Git for Windows** is Claude Code's shell there (Git Bash). Where the person has none, the runner fetches MinGit,
+  Git for Windows' portable build (its release's sha256), as one more pin (`git`, Windows only, wanted where Claude Code
+  is) before Claude Code's turn or sign-in, and points `CLAUDE_CODE_GIT_BASH_PATH` at it; MinGit ships GNU bash as
+  `usr\bin\sh.exe` only, so the program is a copy named `bash.exe` (`from` in the pin), which runs as full bash. Its
+  fetch shows as Claude Code's ("Preparando o Git no PC… 45%") and holds Claude Code's turns while it comes.
+- **Prompts** fit Windows' command line (32,767 characters with the program and its other arguments): past 24,000 the
+  engine's context loses its middle, as past 120,000 elsewhere.
+- **Unpacking** uses Windows' own `System32\tar.exe` (bsdtar, which reads zips), never a GNU tar on the PATH.
 
 ## Consequences
 

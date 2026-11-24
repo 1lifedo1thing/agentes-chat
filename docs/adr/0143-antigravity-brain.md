@@ -43,9 +43,11 @@ What the CLI does, read in antigravity.google/docs (cli/headless, cli/reference,
 
    *Amended 2026-11-22:* a runner's service keeps the PATH of the shell that installed it, so an `agy` that Google's installer put in `~/.local/bin` afterwards (or with that folder missing from the shell's PATH, as for root on most Linux servers) wasn't found, and the apps said the CLI isn't installed. Outside system mode the runner now adds the usual install folders that exist after its PATH, at start and before every look (`addUsualDirs`). In system mode it never does (root's folders are no agent's): an `agy`, `grok` or Cursor's `agent` found only in root's own install folders is reported as `executors.broken.<cli>` `home_only` (`CLI_HOME_ONLY`), and where one of these CLIs is missing on a computer someone connected, the apps show the line to run there (`cliInstallCommand`): the vendor's installer, or in system mode the install under `/opt` linked into `/usr/local/bin`, with Check again.
 
+   *Amended 2026-11-24 (ADR 0228 §6, §7):* the CLI is one of the pinned CLIs every runner fetches the same way (the per-CLI `AGY_PIN` and `agy-copy.ts` are gone), at 1.5.16 from the manifests Google's installers read, on Windows too. There the account's env makes its folder Go's home (`USERPROFILE`, with `APPDATA` and `LOCALAPPDATA` in it) and sets `AGY_CLI_FORCE_FILE_TOKEN_STORAGE` (read off the 1.5.16 Windows build), so the sign-in lands in its file there instead of the computer user's Credential Manager; a Windows sign-in counts only once that file is in its folder (`signInFileOnWindows`), else it is refused.
+
 ## Not done
 
-- Gemini plans on Windows computers (the Credential Manager is per user); the computer's own sign-in.
+- The computer's own sign-in.
 - A `plan` turn's sandboxed commands can still write in the workspace: the CLI has no per-run flag for a read-only sandbox, and the settings are shared by every turn on the account.
 - The CLI's own telemetry has no settings key or flag outside ACP (`--disable-telemetry`): it stays as the account set it.
 - The agent's shell sees the account's folder as its `HOME`, so a work turn's commands have no `~/.gitconfig` or SSH keys of the computer's user (the sandbox keeps them out anyway).
