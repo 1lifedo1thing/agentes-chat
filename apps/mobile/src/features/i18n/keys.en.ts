@@ -102,7 +102,7 @@ export const featureKeysEn = {
     chats: "Chats",
     threads: "Threads",
     agents: "Agents",
-    activity: "Activity",
+    activity: "Inbox",
     search: "Search",
     withCount: "{{label}}, {{count}}",
   },
@@ -201,6 +201,16 @@ export const featureKeysEn = {
     pinned: "Pinned",
     /** Conversas' one list: every chat by its latest activity, with no grouping. */
     recent: "Recent",
+    /**
+     * A team's Conversas lists its chats by latest activity or by the agents' sectors (as the web's sidebar): the bar
+     * button's menu title, the second choice, and the sections Setores ends with.
+     */
+    view: {
+      title: "Show chats",
+      sectors: "Sectors",
+      dms: "Direct messages",
+      channels: "Channels",
+    },
     /** Under Recentes' first rows: the whole list. */
     seeAll: "See all chats",
     /** On a large screen (the iPhone Duo open), where the open chat stands beside the list while there is none yet. */
@@ -351,6 +361,11 @@ export const featureKeysEn = {
   },
   chat: {
     someone: "Someone",
+    /** A handed work's bubble under the reply that handed it: the agent that took it. */
+    handedTo: "Handed to {{name}}",
+    handedTo_female: "Handed to {{name}}",
+    /** Two agents' talk quoted on its own (its reply not here): who asked, before the agent asked. */
+    pairAsked: "{{from}} asked",
     messageTo: "Message {{name}}",
     messageIn: "Message {{channel}}",
     reply: "Reply",
@@ -927,7 +942,7 @@ export const featureKeysEn = {
     },
   },
   activity: {
-    title: "Activity",
+    title: "Inbox",
     /** Under `plan_model_dropped`: opens the agent's model. */
     chooseModel: "Choose another model",
     /** The pills over Atividade: short, no counts (the section and the tab's badge count). */
@@ -1107,6 +1122,50 @@ export const featureKeysEn = {
     add: "Add",
     addA11y: "Add {{name}} to the channel",
     added: "{{name}} joined the channel",
+  },
+  /**
+   * Settings found by name: You's magnifier and its screen, the workspace's group of results, and the other words each
+   * setting answers to (comma-separated, never shown).
+   */
+  settingsSearch: {
+    open: "Search settings",
+    title: "Search",
+    placeholder: "Search You and settings",
+    workspace: "Workspace settings",
+    words: {
+      status: "away, busy, presence, online",
+      account: "name, photo, email, time zone, password, handle",
+      deleteAccount: "delete, remove, close account",
+      workspaces: "switch, servers, accounts",
+      notifications: "alerts, push, badges",
+      approvals: "approve, delegate",
+      start: "open, home, first screen",
+      activity: "tools, what agents did",
+      chatLook: "bubbles, messages, conversation",
+      wallpaper: "background, wallpaper, photo",
+      agentStyle: "technical, simple, tone",
+      sounds: "sound, quiet, silent",
+      appearance: "theme, dark, light, mode",
+      appIcon: "icon",
+      language: "English, Portuguese, Spanish",
+      about: "version, licenses",
+      aiAccounts: "key, API, provider, plan, model",
+      general: "name, logo, time zone, context",
+      media: "GIFs, stickers",
+      members: "people, team",
+      invites: "invite, link",
+      roles: "permissions",
+      usage: "costs, spend, plan, tokens, budget",
+      connectors: "integrations, MCP, services",
+      skills: "abilities",
+      vault: "passwords, keys, logins, secrets",
+      access: "permissions, agents' access",
+      apps: "AI apps, MCP",
+      computers: "devices, machines, computer, phone",
+      storage: "files, S3, storage",
+      import: "export, import, migrate",
+      audit: "log, history",
+    },
   },
   me: {
     title: "You",
@@ -1334,16 +1393,13 @@ export const featureKeysEn = {
       cantPlay: "This video can't play on this phone.",
     },
     /**
-     * A file's conversation in the sheet over it (ADR 0208): what a tap on the file does while the sheet is up, the
-     * video's tap target, a PDF's page, and a PDF that couldn't be drawn.
+     * A file's conversation (ADR 0208): what a touch held on a PDF's page does (the screen reader's hint), a PDF's
+     * page, and a PDF that couldn't be drawn.
      */
     talk: {
       hint: {
-        image: "Tap where you want to comment",
-        video: "Tap the video to comment on this moment",
-        pdf: "Tap the page to mark a point",
+        pdf: "Touch and hold the page to mark a point",
       },
-      markVideo: "Comment on this moment of the video",
       pdfPage: "Page {{page}} of {{count}}",
       pdfFailed: "Couldn't show this PDF.",
     },
@@ -1399,6 +1455,8 @@ export const featureKeysEn = {
     criteriaOf: "{{done}} of {{total}}",
     linkMessage: "Message in #{{channel}}",
     linkMessagePlain: "The original message",
+    /** The text of the confirm before a file comes off a task (its title: "Remove {{name}} from the task"). */
+    removeFileText: "The file stays in the Drive.",
     subIssues: "Subtasks",
     talk: "Chat",
     finish: "Mark done",
@@ -2199,10 +2257,6 @@ export const featureKeysEn = {
     mcps: "MCPs",
     mcpsNone: "MCP servers you connect by their address show up here.",
     addMcp: "Add MCP",
-    /** The dashed tile at the end of the connected row. */
-    add: "Add",
-    /** The catalog's header, with its count. */
-    allServices: "All services",
     /** The amber line under the connected row: a service's tools wait on the person ("· <service>" follows). */
     waitLine_one: "{{count}} tool needs you",
     waitLine_other: "{{count}} tools need you",
@@ -2212,12 +2266,11 @@ export const featureKeysEn = {
     /** Under the account's address on a connection's screen. */
     connectedState: "Connected",
     connected: "Connected",
-    suggested: "Suggested for {{org}}",
-    all: "All",
+    /** A category's shelf: its whole list, on a screen of its own. */
+    seeAll: "See all",
     noResults: "No service by that name. Try its address.",
     soon: "Soon",
     loadFailed: "Couldn't load the connectors.",
-    connectedCheck: "{{name}}, connected",
     adminsOnly: "Only an admin of {{org}} connects services. Ask one of them.",
     /** In a personal workspace (ADR 0159): its owner and whoever helps run it, never "an admin of Personal". */
     adminsOnlyPersonal: "Only whoever runs this workspace connects apps. Ask them.",
@@ -2264,6 +2317,38 @@ export const featureKeysEn = {
     usedBy_zero: "No agent uses it",
     usedBy_one: "{{names}} uses it",
     usedBy_other: "{{names}} use it",
+    /**
+     * A catalog service's own page: connected, the way to its connection; its facts (category, how many tools and
+     * how many ask for approval, or that they show once connected; who connects it; how one signs in), what agents do
+     * with it, the same facts as a list, and the others of its category.
+     */
+    page: {
+      missing: "This service isn't in the catalog anymore.",
+      connected: "Connected",
+      open: "Open the connection",
+      category: "Category",
+      tools: "Tools",
+      toolsAsk_one: "{{count}} asks for approval",
+      toolsAsk_other: "{{count}} ask for approval",
+      toolsAskNone: "none asks for approval",
+      toolsLater: "once connected",
+      who: "Who connects",
+      whoAdmins: "{{org}} admins",
+      whoRuns: "Who runs the workspace",
+      whoYou: "You, for yourself",
+      signIn: "Signs in with",
+      how: {
+        signIn: "Your account",
+        key: "A key",
+        either: "Account or key",
+      },
+      canTitle: "What agents do with it",
+      /** Where the service connects, the one fact the page's strip doesn't say, and the note under it. */
+      address: "Address",
+      addressNote: "Agents use this address with the connected account. Each one gets only what you allow.",
+      host: "Connects to",
+      more: "More in {{category}}",
+    },
     fromAgent: "Connect a service",
     /** GitHub with the agentes.chat app (ADR 0156): the app first, an account as the other way. */
     githubApp: {
@@ -3329,6 +3414,76 @@ export const featureKeysEn = {
       editHint: "Edits this part",
       notHere: "This part is edited on the computer",
     },
+  },
+  /** "Contas de IA" (ADR 0059, ADR 0041 §6): every AI account of the workspace, its permissions, the order of use. */
+  aiHub: {
+    /** The list's header: plans and keys, whoever added them. */
+    accounts: "Accounts",
+    accountsHint:
+      "Every plan and API key in this workspace, whoever connected it. Tap an account for its limits and who may use it.",
+    /** The header's button to the order of use, and that screen's title. */
+    order: "Order of use",
+    orderSub: "At a limit, agents go on with the next account.",
+    /** After a signed-out account in the order: runs skip it. */
+    skipped: "skipped",
+    /** The order's group of a computer: its maker and the computer ("Claude · Walter's MacBook"). */
+    orderGroup: "{{plan}} · {{computer}}",
+    noOrder: "With two accounts of the same AI on one computer, their order shows here.",
+    keyFallback: "Go on with the API key when every plan is at its limit",
+    keyFallbackHint:
+      "After the last account, agents go on with the workspace's API key, which is paid per use. Missions never move to the key.",
+    /** Only admins turn it on or off. */
+    keyFallbackLocked: "Only an admin changes this.",
+    limits: "Limits",
+    permissions: "Permissions",
+    manage: "Manage",
+    manageSub: "Rename, sign in again, remove",
+    manageHint:
+      "Who may rename this account, sign in to it again and remove it. Only whoever connected it changes this.",
+    use: "Use in agents",
+    useSub: "Pick it in Who thinks",
+    useHint: "Whose agents may think with this account, and whose Lodi. Whoever manages it changes this.",
+    reply: "Answer everyone",
+    replySub: "Who the agents talk to",
+    replyHint:
+      "Who an agent on this account answers besides its own owner. Claude's terms ask that a plan is used by the person who pays for it: check them before opening it to everyone.",
+    audience: {
+      owner: "Only you",
+      ownerOf: "Only {{name}}",
+      admins: "You and admins",
+      adminsOf: "{{name}} and admins",
+      roles: "Roles…",
+      people: "People…",
+      everyone: "Everyone",
+      /** Atender todos's narrowest: only the owner of each agent on the account. */
+      agentOwner: "Only the agent's owner",
+      rolesCount_one: "{{count}} role",
+      rolesCount_other: "{{count}} roles",
+      peopleCount_one: "{{count}} person",
+      peopleCount_other: "{{count}} people",
+    },
+    /** The screen that picks the roles or the people of a permission. */
+    pickRoles: "Roles",
+    pickPeople: "People",
+    pickNone: "Pick at least one.",
+    /** The "Quem pensa" choice: three fields, each opening its list. */
+    choice: {
+      account: "Account",
+      model: "Model",
+      effort: "Effort",
+      yours: "Yours",
+      others: "Team's",
+      keys: "API keys",
+      /** Lodi's own AI: the workspace's, first. */
+      workspace: "The workspace's",
+      workspaceSub: "The workspace's API key",
+      key: "API key",
+      keyDefault: "workspace default",
+      api: "API",
+    },
+    /** A mission's AI, on its screen. */
+    missionAi: "AI",
+    missionLocked: "Who does the work is chosen before Start. The model can change any time.",
   },
   /** Linking the outside chat app in Notificações (ADR 0187). {{surface}} is that app's name, as the server sets it. */
   surface: {

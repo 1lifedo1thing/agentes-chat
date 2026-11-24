@@ -1,5 +1,5 @@
 {
-  "id": "19c2cad2-3120-47c3-bd71-9056604aff75",
+  "id": "6e2f0791-3fd3-4d5c-9ecf-50d4de82511f",
   "prevId": "3b9b0ad8-42ea-4a5c-a2fd-e5618d9adce6",
   "version": "7",
   "dialect": "postgresql",
@@ -5378,19 +5378,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "instructions": {
-          "name": "instructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "use_instructions": {
-          "name": "use_instructions",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
         },
         "status": {
           "name": "status",
@@ -24601,6 +24588,91 @@
           "value": "\"instance_telemetry\".\"id\" = 1"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.server_processes": {
+      "name": "server_processes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seen_at": {
+          "name": "seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rss_bytes": {
+          "name": "rss_bytes",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "heap_used_bytes": {
+          "name": "heap_used_bytes",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "heap_total_bytes": {
+          "name": "heap_total_bytes",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_loop_p_99_ms": {
+          "name": "event_loop_p_99_ms",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_loop_max_ms": {
+          "name": "event_loop_max_ms",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heap_snapshot_at": {
+          "name": "heap_snapshot_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heap_snapshot_file": {
+          "name": "heap_snapshot_file",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.org_roles": {
