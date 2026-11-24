@@ -174,6 +174,66 @@
                   },
                   "required": ["at", "file"],
                   "description": "The heap snapshot it wrote (`HEAP_SNAPSHOT_MB`), in `HEAP_SNAPSHOT_DIR`."
+                },
+                "routes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "route": {
+                        "type": "string",
+                        "description": "Method and route as registered, ids left out."
+                      },
+                      "count": {
+                        "type": "integer"
+                      },
+                      "p95Ms": {
+                        "type": "integer"
+                      },
+                      "maxMs": {
+                        "type": "integer"
+                      },
+                      "totalMs": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": ["route", "count", "p95Ms", "maxMs", "totalMs"]
+                  },
+                  "description": "The HTTP routes that took it the most time over its last minute, the most first. Empty for a worker."
+                },
+                "clientVitals": {
+                  "type": ["object", "null"],
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "reports": {
+                        "type": "integer"
+                      },
+                      "coldStartMs": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "firstRowsMs": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "jsLagP95Ms": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "jsLagMaxMs": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "heapBytes": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "getsPerReturn": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      },
+                      "reconnects": {
+                        "$ref": "#/components/schemas/OperatorClientVitalStat"
+                      }
+                    },
+                    "required": ["reports"]
+                  },
+                  "description": "What the apps that reported to it over its last minute measured, by platform (`ios`, `android`, `web`): cold start to the first frame and to the first rows, JavaScript stalls, heap, reads after each return to the app, socket reconnects. Null: no report."
                 }
               },
               "required": [
@@ -187,7 +247,9 @@
                 "heapTotalBytes",
                 "eventLoopP99Ms",
                 "eventLoopMaxMs",
-                "heapSnapshot"
+                "heapSnapshot",
+                "routes",
+                "clientVitals"
               ]
             },
             "description": "Every process on this database that wrote its vitals in the last 5 minutes (the app's and every worker's), the newest first."
@@ -224,6 +286,24 @@
           }
         },
         "required": ["at", "processes", "runClaims"]
+      },
+      "OperatorClientVitalStat": {
+        "type": "object",
+        "properties": {
+          "n": {
+            "type": "integer"
+          },
+          "p50": {
+            "type": "number"
+          },
+          "p95": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          }
+        },
+        "required": ["n", "p50", "p95", "max"]
       },
       "OperatorOrgPage": {
         "type": "object",
@@ -4992,7 +5072,7 @@
                 },
                 "reason": {
                   "type": ["string", "null"],
-                  "description": "An error's: `transient`, `provider_outage`, `brain_unavailable`, `brain_stalled`, `usage_wait`, `no_ai`, `canceled`, `gave_up`, `recovered`, `interrupted`… A `context` step's that handed the run's unread messages on to another run (`redispatchedMessageIds`): why, one of `done`, `failed`, `canceled`, `interrupted`, `swept`, `held`."
+                  "description": "An error's: `transient`, `provider_outage`, `brain_unavailable`, `brain_stalled`, `usage_wait`, `no_ai`, `canceled`, `gave_up`, `recovered`, `interrupted`… A `context` step's that handed the run's unread messages on to another run (`redispatchedMessageIds`): why, one of `done`, `failed`, `canceled`, `interrupted`, `swept`, `held`. A `context` step with `steerTriage`: how the triage said the agent takes a message sent while it works (`stop`, `interrupt`, `add`, `answer`, `queue`, `elsewhere`). One with `talkerDecision`: what the fast reply decided about that message (`reply`, `pass`, `error`, or why it was skipped)."
                 },
                 "toRunId": {
                   "type": ["string", "null"],

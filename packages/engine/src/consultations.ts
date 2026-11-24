@@ -45,6 +45,7 @@ import { isRoutineRoomKey } from "./routine-brief";
 import { stoppedToSend } from "./run-inbox";
 import { deliverNoticeToRun, resumeRunWithResult } from "./run-resume";
 import { inChannelRun } from "./run-scope";
+import { runState } from "./run-state";
 import { tellAgentStopped } from "./run-stopped";
 import { type AgentRun, continuableEnd, isTerminal, outageParkedSql, type RunStatus, replyThreadOf } from "./runs";
 import { AgentHeldError, OrgDeletingError, OrgPausedError } from "./standing";
@@ -1043,7 +1044,7 @@ export async function handOffsFrom(
     await db.execute(sql`select c.id, c.kind, c.status, c.question, c.answer, a.handle, c.created_at, c.answered_at,
         c.reported_at, t.status as target_status, t.waiting_machine_id,
         exists (select 1 from agent_consultations s where s.asker_run_id = t.id and s.status = 'open') as handed_on,
-        (t.status = 'waiting_input' and t.transcript -> 'outage' is not null) as outage,
+        (t.status = 'waiting_input' and coalesce(t.state, t.transcript) -> 'outage' is not null) as outage,
         (c.target_run_id is null and ${wakeWaitsSql(sql`c`)}) as parked
       from agent_consultations c
       join agent_runs r on r.id = c.asker_run_id
@@ -2327,9 +2328,9 @@ export async function expireConsultations(deps: Deps, now = new Date()) {
       row: agentConsultations,
       target: agentRuns.status,
       handedOn: handedOnSql,
-      code: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'code'`,
-      resetsAt: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'resetsAt'`,
-      until: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'until'`,
+      code: sql<string | null>`${runState}->'waitingForBrain'->>'code'`,
+      resetsAt: sql<string | null>`${runState}->'waitingForBrain'->>'resetsAt'`,
+      until: sql<string | null>`${runState}->'waitingForBrain'->>'until'`,
       outage: outageParkedSql,
       waitingMachineId: agentRuns.waitingMachineId,
       machine: { online: machines.online, lastSeenAt: machines.lastSeenAt, deletedAt: machines.deletedAt },

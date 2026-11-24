@@ -1,5 +1,5 @@
 {
-  "id": "f76b103e-d7f2-47d5-b107-d6f0a5c2c8a0",
+  "id": "f3225a6f-6d76-4c9a-8cfe-19322f29c8c1",
   "prevId": "6e2f0791-3fd3-4d5c-9ecf-50d4de82511f",
   "version": "7",
   "dialect": "postgresql",
@@ -782,6 +782,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
+        },
+        "plan_key_fallback": {
+          "name": "plan_key_fallback",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
         },
         "gifs": {
           "name": "gifs",
@@ -3640,12 +3647,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "lead_agent_id": {
-          "name": "lead_agent_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -3682,19 +3683,6 @@
           "tableTo": "channel_categories",
           "columnsFrom": [
             "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "channels_lead_agent_id_agents_id_fk": {
-          "name": "channels_lead_agent_id_agents_id_fk",
-          "tableFrom": "channels",
-          "tableTo": "agents",
-          "columnsFrom": [
-            "lead_agent_id"
           ],
           "columnsTo": [
             "id"
@@ -11707,6 +11695,69 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'everyone'"
+        },
+        "manage_mode": {
+          "name": "manage_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'admins'"
+        },
+        "manage_user_ids": {
+          "name": "manage_user_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "manage_role_ids": {
+          "name": "manage_role_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
+        },
+        "use_mode": {
+          "name": "use_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'everyone'"
+        },
+        "use_user_ids": {
+          "name": "use_user_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "use_role_ids": {
+          "name": "use_role_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
+        },
+        "reply_mode": {
+          "name": "reply_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'owner'"
+        },
+        "reply_user_ids": {
+          "name": "reply_user_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "reply_role_ids": {
+          "name": "reply_role_ids",
+          "type": "uuid[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::uuid[]"
         },
         "use_order": {
           "name": "use_order",

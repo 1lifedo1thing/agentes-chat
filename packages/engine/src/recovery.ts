@@ -11,9 +11,10 @@ import type { Transcript } from "./executor";
 import type { Judge } from "./judge";
 import { queueLiveActivityRun } from "./live-activity-queue";
 import { getMessage, insertMessage, messageView } from "./messages";
-import { enqueue } from "./outbox";
+import { enqueue, jobsOfRun } from "./outbox";
 import { closeRoutineRun } from "./routine-ledger";
 import { releaseInbox } from "./run-inbox";
+import { runState } from "./run-state";
 import { revokeRunToolTokens } from "./run-tool-tokens";
 import {
   type AgentRun,
@@ -153,15 +154,15 @@ export async function recoverStaleRuns(
     .select({
       id: agentRuns.id,
       orgId: agentRuns.orgId,
-      waitId: sql<string>`${agentRuns.transcript}->'waitingForBrain'->>'waitId'`,
+      waitId: sql<string>`${runState}->'waitingForBrain'->>'waitId'`,
     })
     .from(agentRuns)
     .where(
       and(
         eq(agentRuns.status, "waiting_input"),
-        inArray(sql<string>`${agentRuns.transcript}->'waitingForBrain'->>'code'`, [...USAGE_WAIT_CODES]),
-        sql`${agentRuns.transcript}->'waitingForBrain'->>'waitId' is not null`,
-        sql`(${agentRuns.transcript}->'waitingForBrain'->>'until')::timestamptz < ${cutoff.toISOString()}::timestamptz`,
+        inArray(sql<string>`${runState}->'waitingForBrain'->>'code'`, [...USAGE_WAIT_CODES]),
+        sql`${runState}->'waitingForBrain'->>'waitId' is not null`,
+        sql`(${runState}->'waitingForBrain'->>'until')::timestamptz < ${cutoff.toISOString()}::timestamptz`,
         sql`not ${liveJob}`,
       ),
     )
@@ -252,13 +253,7 @@ async function resume(db: Database, run: AgentRun, at: SweepTime, ran: string[])
         lastError: "its worker stopped: the run went on in a new job",
         lastErrorStatus: null,
       })
-      .where(
-        and(
-          eq(outbox.kind, "agent_run.execute"),
-          sql`${outbox.payload}->>'runId' = ${run.id}`,
-          eq(outbox.status, "processing"),
-        ),
-      );
+      .where(and(jobsOfRun(run.id), eq(outbox.status, "processing")));
     await enqueue(tx, {
       orgId: run.orgId,
       kind: "agent_run.execute",
@@ -331,13 +326,7 @@ async function failInterrupted(deps: RecoveryDeps, run: AgentRun, at: SweepTime)
     await tx
       .update(outbox)
       .set({ status: "failed", lockedUntil: null, lastError: INTERRUPTED_BY_RESTART, lastErrorStatus: null })
-      .where(
-        and(
-          eq(outbox.kind, "agent_run.execute"),
-          sql`${outbox.payload}->>'runId' = ${run.id}`,
-          inArray(outbox.status, ["pending", "processing"]),
-        ),
-      );
+      .where(and(jobsOfRun(run.id), inArray(outbox.status, ["pending", "processing"])));
     return { message, closedSecrets, closedApprovals };
   });
   if (!result) return false;
