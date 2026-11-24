@@ -2195,8 +2195,11 @@ const SYSTEM_DIRS =
 /** What a recursive delete wipes the computer or a whole home with (any case: macOS and Windows ignore it). */
 const WHOLE_TREE =
   /^(\/+\*?|~\/?\*?|(\$\{?(HOME|USERPROFILE)\}?|\$env:(USERPROFILE|HOMEPATH|SystemDrive|SystemRoot|windir)|%(USERPROFILE|HOMEPATH|SystemDrive|SystemRoot|windir)%)\/?\*?|\/(home|Users|root|bin|boot|dev|etc|lib|lib64|opt|proc|sbin|srv|sys|usr|var|System|Library|Applications|private|Windows|Program Files( \(x86\))?|ProgramData)\/?\*?)$/i;
-/** A Windows drive at the start of a path: `C:`, or Git Bash's `/c` (`C:\Users`, `C:/Users`, `/c/Users`). */
-const DRIVE = /^(?:[a-z]:|\/[a-z])(?=\/|$)/i;
+/**
+ * A Windows drive at the start of a path: `C:` (`C:\Users`, `C:/Users`), or Git Bash's `/c` alone or before Windows'
+ * own folders (`/c/Users`); elsewhere a one-letter folder stays a POSIX one (`/a/usr`).
+ */
+const DRIVE = /^(?:[a-z]:(?=\/|$)|\/[a-z](?=\/?$|\/(Users|Windows|Program Files( \(x86\))?|ProgramData)(\/|$)))/i;
 
 const PRIVILEGE = /^(sudo|sudoedit|su|doas|pkexec|run0|gsudo)$/;
 const SYSTEM_TOOLS =
@@ -2228,8 +2231,9 @@ const REVERSE_SHELL: ReadonlyArray<readonly RegExp[]> = [
   [/\bTCPSocket\b/, /\b(exec|spawn|system)\b|IO\.popen|\/bin\/(ba)?sh/],
   [/\bnet\.(connect|createConnection|Socket)\b/, /\/bin\/(ba)?sh/],
   [/\bnet\.(connect|createConnection|Socket)\b|require\(\s*["'](node:)?net["']\s*\)/, /child_process/, SHELL_LITERAL],
-  // PowerShell's: what comes in on a `TcpClient` is run with `Invoke-Expression`.
-  [/\btcpclient\b/i, /\b(iex|invoke-expression)\b/i],
+  // PowerShell's: what comes in on a `Net.Sockets.TcpClient` is run with `Invoke-Expression` (Elixir's `iex` and its
+  // own `TCPClient` modules aren't it).
+  [/\bsockets\.tcpclient\b/i, /\b(iex|invoke-expression)\b/i],
 ];
 /** Code it hides by encoding it, then runs: `base64 -d | sh`, `eval "$(… | base64 -d)"`, `exec(b64decode(…))`. */
 const DECODE = String.raw`(\bbase64\b[^|;&\n]*\s(-d|-D|--decode)\b|\bxxd\b[^|;&\n]*\s-r\b|\bopenssl\s+(base64|enc)\b[^|;&\n]*\s-d\b)`;
@@ -2283,17 +2287,27 @@ interface Loose {
   writes: string[];
   /** Files read with `<`. */
   reads: string[];
+  /** PowerShell's text a command runs, read whole for its cmdlets (`powershellProblem`); the entry has no words. */
+  powershell?: string;
 }
 
 /** Programs whose quoted words are commands or code of their own (`bash -c '…'`, `python3 -c '…'`, `eval '…'`). */
 const RUNS_ITS_WORDS =
-  /^(sh|bash|zsh|dash|ksh|fish|busybox|eval|exec|xargs|watch|timeout|nohup|env|su|sudo|doas|runuser|flock|parallel|script|setsid|tmux|screen|systemd-run|python[\d.]*|node|nodejs|bun|deno|ruby|perl|php|g?awk|mawk|nawk|iex|invoke-expression)$/;
+  /^(sh|bash|zsh|dash|ksh|fish|busybox|eval|exec|xargs|watch|timeout|nohup|env|su|sudo|doas|runuser|flock|parallel|script|setsid|start|call|tmux|screen|systemd-run|python[\d.]*|node|nodejs|bun|deno|ruby|perl|php|g?awk|mawk|nawk|iex|invoke-expression)$/;
 const CODE_RUNNERS = /^(python[\d.]*|node|nodejs|bun|deno|ruby|perl|php|g?awk|mawk|nawk)$/;
-/** Windows' shells, whose scripts read backslashes as part of a path, not as an escape. */
 const WINDOWS_SHELLS = /^(cmd|powershell|pwsh)$/;
-/** Programs that run the rest of their words as a command, after options of their own (`taskset -c 0 cmd`). */
+/**
+ * A Windows shell's text as the loose scan reads it: a backslash is part of a path, not an escape; cmd's `^` escapes
+ * the next character and its `'` is a plain one; PowerShell's backtick escapes (`r^eg` and `re`g` run `reg`).
+ */
+const windowsText = (program: string, text: string) =>
+  text.replaceAll("\\", "/").replace(program === "cmd" ? /[\^']/g : /`/g, "");
+/**
+ * Programs that run the rest of their words as a command, after options of their own (`taskset -c 0 cmd`, cmd's
+ * `start /b cmd` and `call cmd`, Git Bash's `start cmd` and `winpty cmd`).
+ */
 const LAUNCHERS =
-  /^(setsid|nice|ionice|stdbuf|taskset|chrt|unbuffer|caffeinate|systemd-run|xvfb-run|dbus-run-session|parallel|screen|runuser|cgexec|numactl|prlimit|strace|ltrace|setpriv|chpst)$/;
+  /^(setsid|nice|ionice|stdbuf|taskset|chrt|unbuffer|caffeinate|systemd-run|xvfb-run|dbus-run-session|parallel|screen|runuser|cgexec|numactl|prlimit|strace|ltrace|setpriv|chpst|start|call|winpty)$/;
 /** What runs the text piped into it as commands (`echo '…' | bash`, `… | crontab -`, `… | powershell -Command -`). */
 const FED_COMMANDS = /^(sh|bash|zsh|dash|ksh|fish|at|batch|crontab|cmd|powershell|pwsh)$/;
 const SHELL_KEYWORDS = new Set(["if", "then", "else", "elif", "do", "while", "until", "!", "exec", "time"]);
@@ -2362,10 +2376,22 @@ function heredocs(text: string): { shell: string; bodies: Array<{ runner: string
  */
 function looseScan(text: string, code: boolean, depth: number, out: Loose[]): void {
   if (depth > 4) return;
+  /** A Windows shell's script (`-Command`'s words, a heredoc, piped text): its commands, and PowerShell's whole. */
+  const windows = (program: string, script: string) => {
+    const t = windowsText(program, script);
+    if (program !== "cmd") out.push({ raw: [], argv: [], writes: [], reads: [], powershell: t });
+    looseScan(t, false, depth + 1, out);
+  };
+  /** What a command runs when it is a Windows shell (`cmd /c …`, `powershell -c …`), behind a launcher too. */
+  const windowsRun = (a: readonly string[]) => {
+    const program = baseName(a[0] ?? "");
+    const script = WINDOWS_SHELLS.test(program) ? windowsScript(program, a.slice(1)) : null;
+    if (script !== null) windows(program, script);
+  };
   const { shell, bodies } = code ? { shell: text, bodies: [] } : heredocs(text);
   for (const b of bodies) {
     if (SHELL_NAMES.test(b.runner)) looseScan(b.body, false, depth + 1, out);
-    else if (WINDOWS_SHELLS.test(b.runner)) looseScan(b.body.replaceAll("\\", "/"), false, depth + 1, out);
+    else if (WINDOWS_SHELLS.test(b.runner)) windows(b.runner, b.body);
     else if (CODE_RUNNERS.test(b.runner)) looseScan(b.body, true, depth + 1, out);
   }
   let words: string[] = [];
@@ -2394,23 +2420,28 @@ function looseScan(text: string, code: boolean, depth: number, out: Loose[]): vo
     // with a schedule (`@reboot`, or five fields) to leave out.
     for (const f of fed) {
       if (head === "crontab") looseScan(f.replace(/^\s*(@\w+\s+|(\S+\s+){5})/gm, ""), false, depth + 1, out);
-      else if (WINDOWS_SHELLS.test(head)) looseScan(f.replaceAll("\\", "/"), false, depth + 1, out);
+      else if (WINDOWS_SHELLS.test(head)) windows(head, f);
       else if (FED_COMMANDS.test(head)) looseScan(f, false, depth + 1, out);
       else if (CODE_RUNNERS.test(head)) looseScan(f, true, depth + 1, out);
     }
     fed = sep === "|" && /^(echo|printf)$/.test(head) ? [...quoted, argv.slice(1).join(" ")] : [];
     if (LAUNCHERS.test(head)) {
       for (let k = 1; k < argv.length && k < 8; k++) {
-        if (!(argv[k] as string).startsWith("-"))
-          out.push({ raw: argv.slice(k), argv: looseArgv(argv.slice(k)), writes: [], reads: [] });
+        if ((argv[k] as string).startsWith("-")) continue;
+        const launched = looseArgv(argv.slice(k));
+        out.push({ raw: argv.slice(k), argv: launched, writes: [], reads: [] });
+        windowsRun(launched);
       }
     }
     if (head === "find") {
       const at = argv.findIndex((a) => /^-(exec|execdir|ok|okdir)$/.test(a));
-      if (at >= 0) out.push({ raw: argv.slice(at + 1), argv: looseArgv(argv.slice(at + 1)), writes: [], reads: [] });
+      if (at >= 0) {
+        const found = looseArgv(argv.slice(at + 1));
+        out.push({ raw: argv.slice(at + 1), argv: found, writes: [], reads: [] });
+        windowsRun(found);
+      }
     }
-    const script = WINDOWS_SHELLS.test(head) ? windowsScript(head, argv.slice(1)) : null;
-    if (script !== null) looseScan(script.replaceAll("\\", "/"), false, depth + 1, out);
+    windowsRun(argv);
     if (code || RUNS_ITS_WORDS.test(head) || RUNS_ITS_WORDS.test(rawHead)) {
       for (const q of quoted) looseScan(q, !code && CODE_RUNNERS.test(head), depth + 1, out);
     }
@@ -2682,37 +2713,60 @@ function hostAccess(args: readonly string[], scope: CommandScope) {
 }
 
 /**
+ * A cmdlet or alias by one of `names` (lower case), alone or by its module (`Defender\Set-MpPreference`), but not part
+ * of a path or a file's name (`./scripts/new-service.ts`).
+ */
+const cmdlet = (names: string) => new RegExp(String.raw`(?<![\w./\\:-])([a-z][\w.]*[\\/])?(${names})(?![\w./\\-])`);
+/** The registry's drives and paths (`HKCU:`, `HKEY_LOCAL_MACHINE\…`, `Registry::…`). */
+const HIVE = /\b(hk(lm|cu|cr|u|cc):|hkey_|registry::)/;
+/** The item cmdlets and their aliases: a change to the registry where their path is in it. */
+const ITEM_CHANGE = cmdlet(
+  "(new|set|remove|rename|copy|move|clear)-item(property)?|ni|si|sp|ri|rp|rni|rnp|cpi|cpp|cp|copy|mi|mp|mv|move|cli|clp|del|erase|rd|rm|rmdir",
+);
+/** The location set to the registry (`cd HKCU:\…`), where every later path is in it. */
+const IN_HIVE = new RegExp(
+  String.raw`${cmdlet("cd|chdir|sl|set-location|pushd|push-location").source}\s+(-(literal)?path\s+)?['"]?${HIVE.source}`,
+);
+/** A variable given a registry path (`$k = "HKCU:\…"`). */
+const HIVE_VARIABLE = new RegExp(String.raw`(\$[\w:]+)\s*=\s*['"]?${HIVE.source}`, "g");
+
+/**
  * PowerShell's changes to the system, each read in one statement of its text (in lower case, all of a row's patterns
  * in the same statement): cmdlets and their usual aliases. Reads (`Get-*`, `Test-*`) aren't here.
  */
 const POWERSHELL_CHANGES: ReadonlyArray<readonly [string, ...RegExp[]]> = [
   [PRIVILEGE_REASON, /-verb[\s:]+['"]?runas/],
-  [SYSTEM_REASON, /\b(set|add)-mppreference\b/],
+  [SYSTEM_REASON, cmdlet("(set|add)-mppreference")],
   // Without a scope it sets the machine's policy; `CurrentUser` and `Process` are the agent's own.
-  [SYSTEM_REASON, /\bset-executionpolicy\b(?!.*\b(currentuser|process)\b)/],
-  [
-    SYSTEM_REASON,
-    /\b((new|set|remove|rename|copy|move|clear)-item(property)?|ni|si|sp|ri|rp|rni|rnp|cpi|cpp|cp|copy|mi|mp|mv|move|cli|clp|del|erase|rd|rm|rmdir)\b/,
-    /\b(hk(lm|cu|cr|u|cc):|hkey_|registry::)/,
-  ],
-  [SYSTEM_REASON, /\b(register|set|unregister|enable|disable)-scheduledtask\b/],
-  [SYSTEM_REASON, /\b(new|set|remove|stop|suspend|restart)-service\b|\bspsv\b/],
-  [SYSTEM_REASON, /\b(new|set|remove|enable|disable|rename|add)-local(user|group|groupmember)\b/],
-  [SYSTEM_REASON, /\b(clear|remove)-eventlog\b/],
-  [SYSTEM_REASON, /\bwin32_shadowcopy\b/, /\.delete\(|\bremove-(ciminstance|wmiobject)\b/],
-  [WIPE, /\b(clear-disk|format-volume|initialize-disk|remove-partition)\b/],
-  [NETWORK, /\b(new|set|enable|disable|remove|copy|rename)-netfirewall\w*/],
-  [NETWORK, /\b(new|set|remove)-netroute\b/],
-  [NETWORK, /\b(invoke-webrequest|iwr|invoke-restmethod|irm)\b.*\s-(no)?proxy\b/],
+  [SYSTEM_REASON, cmdlet("set-executionpolicy"), /^(?!.*\b(currentuser|process)\b)/],
+  [SYSTEM_REASON, ITEM_CHANGE, HIVE],
+  [SYSTEM_REASON, cmdlet("(register|set|unregister|enable|disable)-scheduledtask")],
+  [SYSTEM_REASON, cmdlet("(new|set|remove|stop|suspend|restart)-service|spsv")],
+  [SYSTEM_REASON, cmdlet("(new|set|remove|enable|disable|rename|add)-local(user|group|groupmember)")],
+  [SYSTEM_REASON, cmdlet("(clear|remove)-eventlog")],
+  [WIPE, cmdlet("clear-disk|format-volume|initialize-disk|remove-partition")],
+  [NETWORK, cmdlet(String.raw`(new|set|enable|disable|remove|copy|rename)-netfirewall\w*`)],
+  [NETWORK, cmdlet("(new|set|remove)-netroute")],
+  [NETWORK, cmdlet("invoke-webrequest|iwr|invoke-restmethod|irm"), /\s-(no)?proxy\b/],
+  // The runner stopped by name, piped too (`Get-Process agentes-runner | Stop-Process`, `(gps agentes-runner).Kill()`).
+  [RUNNER, /agentes-runner/, cmdlet("stop-process|spps|kill")],
+  [RUNNER, /agentes-runner/, /\.kill\(/],
 ];
 
-/** Why a PowerShell text is refused: its first statement with a change to the system (`POWERSHELL_CHANGES`). */
+/**
+ * Why a PowerShell text is refused: its first statement with a change to the system (`POWERSHELL_CHANGES`), or one
+ * carried across statements: shadow copies deleted in a script block (`gwmi win32_shadowcopy | % { $_.Delete() }`),
+ * the registry changed by the location or a variable (`cd HKCU:\…; ni .`, `$k = "HKCU:\…"; sp $k …`).
+ */
 function powershellProblem(text: string): string | null {
-  // A backtick is PowerShell's escape character: `Set-Mp`Preference` runs `Set-MpPreference`.
-  for (const statement of text
-    .toLowerCase()
-    .replaceAll("`", "")
-    .split(/[;\n{}]/)) {
+  const flat = text.toLowerCase();
+  if (/\bwin32_shadowcopy\b/.test(flat) && /\.delete\(|\bremove-(ciminstance|wmiobject)\b/.test(flat))
+    return SYSTEM_REASON;
+  const inHive = IN_HIVE.test(flat);
+  const held = new Set([...flat.matchAll(HIVE_VARIABLE)].map((m) => m[1]));
+  for (const statement of flat.split(/[;\n{}]/)) {
+    if (ITEM_CHANGE.test(statement) && (inHive || [...statement.matchAll(/\$[\w:]+/g)].some((v) => held.has(v[0]))))
+      return SYSTEM_REASON;
     const hit = POWERSHELL_CHANGES.find(([, ...all]) => all.every((r) => r.test(statement)));
     if (hit) return hit[0];
   }
@@ -2759,15 +2813,20 @@ function outsideFolders(scope: CommandScope, p: string) {
   return path.posix.normalize(q).split("/")[0] === "..";
 }
 
+/** cmd's switches: one letter each, alone or chained (`/s`, `/s/q`, `/a:h`), doubled in Git Bash (`//s`). */
+const CMD_SWITCH = /^(\/\/?[a-z?](:[^\s/]*)?)+$/i;
 /** sc's subcommands that change a service (`query`, `qc` and `start` don't). */
 const SC_CHANGES =
   /^(create|config|delete|stop|pause|failure|failureflag|sdset|privs|sidtype|triggerinfo|managedaccount|control)$/i;
+/** icacls's and cacls's switches that change who may use a file (`/grant:r`, `/inheritance:d`, `/g`, `/s:SDDL`). */
+const ACL_CHANGES =
+  /^(\/\/?|-)((grant|deny|remove|setowner|setintegritylevel|reset|inheritance|restore|substitute)(:\w+)?|[gpdr]|s:\S+)$/i;
 
 /**
  * Why a Windows command is refused: more rights (`runas`), the system changed (the registry, scheduled tasks,
  * services, boot, backups, event logs, accounts, who may use a file outside the agent's folders), a disk wiped, the
- * firewall, proxy or routes changed, the system's secrets read; in PowerShell, the same by its cmdlets
- * (`POWERSHELL_CHANGES`). Reads run: `reg query`, `schtasks /query`, `sc query`, `netsh … show`, `Get-*`.
+ * firewall, proxy or routes changed, the system's secrets read. PowerShell's cmdlets are `powershellProblem`'s.
+ * Reads run: `reg query`, `schtasks /query`, `sc query`, `netsh … show`, `icacls` without a change.
  */
 function windowsProblem(cmd: string, args: readonly string[], scope: CommandScope): string | null {
   const sub = (args[0] ?? "").toLowerCase();
@@ -2809,20 +2868,17 @@ function windowsProblem(cmd: string, args: readonly string[], scope: CommandScop
     if (has(/^wlan$/i) && has(/^key=clear$/i)) return SECRETS;
     if (has(/^(set|add|delete|reset|import|restore|install|uninstall)$/i)) return NETWORK;
   }
-  if (cmd === "icacls" || cmd === "cacls" || cmd === "takeown") {
+  // icacls and cacls only show who may use a file unless a switch changes it; takeown always takes it.
+  if (cmd === "takeown" || ((cmd === "icacls" || cmd === "cacls") && has(ACL_CHANGES))) {
     const f = args.findIndex((a) => /^(\/\/?|-)f$/i.test(a));
     const target = cmd === "takeown" ? (f >= 0 ? args[f + 1] : undefined) : args[0];
-    if (target !== undefined && !/^[-/]\?$/.test(target) && outsideFolders(scope, target)) return SYSTEM_REASON;
+    if (target !== undefined && outsideFolders(scope, target)) return SYSTEM_REASON;
   }
-  if (cmd === "powershell" || cmd === "pwsh") {
-    const script = windowsScript(cmd, args);
-    return script === null ? null : (textProblem(script) ?? powershellProblem(script));
-  }
-  // A cmdlet (`Set-MpPreference …`) found as a command of its own: in a PowerShell block, a heredoc or piped text.
-  return /^[a-z]+-[a-z]+$/.test(cmd) ? powershellProblem([cmd, ...args].join(" ")) : null;
+  return null;
 }
 
 function commandProblem(s: Loose, scope: CommandScope): string | null {
+  if (s.powershell !== undefined) return textProblem(s.powershell) ?? powershellProblem(s.powershell);
   const [first = "", ...args] = s.argv;
   const cmd = baseName(first);
   if (PRIVILEGE.test(cmd)) return PRIVILEGE_REASON;
@@ -2831,15 +2887,21 @@ function commandProblem(s: Loose, scope: CommandScope): string | null {
   if (cmd === "diskutil" && /^(erase\w*|reformat|partitionDisk|zeroDisk|randomDisk|secureErase)$/i.test(args[0] ?? ""))
     return WIPE;
   const recursive = args.some((a) => /^-[a-zA-Z]*[rR]/.test(a) || a === "--recursive");
-  // cmd's `rd /s` and `del /s`, PowerShell's `Remove-Item -Recurse`: their switches aren't paths (`/s` isn't drive S:).
+  // cmd's `rd /s` and `del /s` (`/s/q` too), PowerShell's `Remove-Item -Recurse`. A path from the drive's root isn't a
+  // switch (`\Users`, read as `/Users`), and a parameter may carry its path (`-Path:C:\`).
   const windowsDelete =
-    /^(rd|rmdir|del|erase|remove-item|ri)$/.test(cmd) && (recursive || args.some((a) => /^(\/\/?|-)s$/i.test(a)));
+    /^(rd|rmdir|del|erase|remove-item|ri)$/.test(cmd) &&
+    (recursive || args.some((a) => CMD_SWITCH.test(a) && /(^|\/)s(\W|$)/i.test(a)));
   if (
     args.includes("--no-preserve-root") ||
     (/^(rm|chmod|chown|chgrp)$/.test(cmd) &&
       recursive &&
       args.some((a) => !a.startsWith("-") && wholeTree(a, scope))) ||
-    (windowsDelete && args.some((a) => !/^(\/\/?|-)[\w?]+(:\S*)?$/.test(a) && wholeTree(a, scope)))
+    (windowsDelete &&
+      args.some((a) => {
+        const p = a.replace(/^-\w+:/, "");
+        return !p.startsWith("-") && !CMD_SWITCH.test(p) && wholeTree(p, scope);
+      }))
   )
     return WIPE;
   if (cmd === "find" && args.includes("-delete") && findRoots(args).some((a) => wholeTree(a, scope))) return WIPE;
@@ -2860,10 +2922,11 @@ function commandProblem(s: Loose, scope: CommandScope): string | null {
       args.includes("get"))
   )
     return SECRETS;
-  // The runner by name: stopped or killed (a search for the name, `pgrep` and a status are not).
+  // The runner by name: stopped or killed (a search for the name, `pgrep` and a status are not), on Windows by
+  // `taskkill` or `tskill` (PowerShell's `Stop-Process`: `POWERSHELL_CHANGES`).
   if (
     args.some((a) => /agentes-runner/i.test(a)) &&
-    (/^(pkill|killall)$/.test(cmd) ||
+    (/^(pkill|killall|taskkill|tskill)$/.test(cmd) ||
       (cmd === "systemctl" && args.some((a) => SYSTEMCTL_CHANGES.test(a))) ||
       (cmd === "service" && args.some((a) => /^(stop|restart|reload)$/.test(a))) ||
       (cmd === "launchctl" && args.some((a) => /^(bootout|unload|stop|kill|remove|disable)$/.test(a))))

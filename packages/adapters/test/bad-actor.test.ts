@@ -10,6 +10,8 @@ const codeOf = (command: string, s: typeof scope | typeof unknownFolders = scope
 };
 /** PowerShell's `-EncodedCommand`: base64 of the script's UTF-16LE text. */
 const encoded = (script: string) => Buffer.from(script, "utf16le").toString("base64");
+/** The current user's Run key, under `HKCU\` (reg) or `HKCU:\` (PowerShell). */
+const RUN = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 
 /** Ordinary agent work: none of it is refused outside a mission. */
 const LEGIT = [
@@ -81,6 +83,15 @@ const LEGIT = [
   "grep -rn AGENTES_RUNNER_HOME apps/server/runner/config.ts",
   "pgrep -fl agentes-runner",
   "bun test apps/server/test/runner/agentes-runner-paths.test.ts",
+  // A cmdlet's name in a program's, a script's or a file's name is no PowerShell.
+  "ts-node scripts/new-service.ts --name billing",
+  "./bin/restart-service",
+  "clang-format -i src/set-service.c",
+  "docker-compose run --rm app ./bin/new-localuser",
+  "ts-node scripts/clear-disk.ts",
+  // A one-letter top-level folder is a Windows drive only before Windows' own folders; Elixir's `iex` is no PowerShell.
+  "rm -rf /a/usr",
+  "iex -S mix run -e 'MyApp.TCPClient.connect()'",
 ];
 
 /** Obvious harm, wherever it is written: each is refused with its code. */
@@ -201,7 +212,14 @@ const WINDOWS_LEGIT = [
   "icacls ./build //grant 'Everyone:(OI)(CI)F'",
   "icacls 'build\\app.exe' //reset",
   "takeown //f ./dist //r",
+  // Without a switch that changes it, icacls and cacls only show who may use a file.
+  "icacls 'C:\\Program Files\\Example'",
+  "icacls C:/Users/ada/work/build",
+  "cacls 'C:\\Users\\ada\\work'",
   "powershell -Command Get-Process",
+  "powershell -c 'Get-Process agentes-runner'",
+  "pwsh ./scripts/Restart-Service.ps1",
+  "powershell -c 'node ./scripts/new-service.js; Get-Service Example'",
   'powershell.exe -NoProfile -Command "Get-ChildItem HKCU:\\Software | Select-Object Name"',
   "pwsh -c 'Get-NetFirewallRule | Select-Object DisplayName'",
   "pwsh -c 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser'",
@@ -215,6 +233,10 @@ const WINDOWS_LEGIT = [
   "net start",
   'cmd //c "dir /s build"',
   "cmd //c rd /s /q build",
+  'cmd //c "rd /s/q build"',
+  "start https://example.com/docs",
+  'cmd //c "start /b npm run dev"',
+  "winpty node scripts/seed.js",
   "grep -rn 'Set-MpPreference' docs/",
   "git commit -m 'refuse reg add and Stop-Service'",
 ];
@@ -261,7 +283,12 @@ const WINDOWS_BAD: Array<[string, string]> = [
   ["rm -rf /c/Users/ada", "destroy"],
   ["rm -rf 'C:\\Windows'", "destroy"],
   ['cmd //c "rd /s /q C:\\\\"', "destroy"],
+  ['cmd //c "rd /s/q C:\\\\"', "destroy"],
+  ['cmd //c "rmdir /S/Q C:\\\\Users\\\\ada"', "destroy"],
+  ['cmd //c "rd /s /q \\\\Users"', "destroy"],
   ["powershell -c 'Remove-Item -Recurse -Force $env:USERPROFILE'", "destroy"],
+  ["powershell -c 'Remove-Item -Recurse -Force \\Users'", "destroy"],
+  ["pwsh -c 'Remove-Item -Recurse -Path:C:\\'", "destroy"],
   ["netsh advfirewall set allprofiles state off", "network"],
   ["NETSH firewall set opmode disable", "network"],
   ["netsh advfirewall firewall add rule name=x dir=in action=allow protocol=TCP localport=4444", "network"],
@@ -283,11 +310,23 @@ const WINDOWS_BAD: Array<[string, string]> = [
   ["powershell Set-ExecutionPolicy Unrestricted", "system"],
   ["powershell -c 'Set-ExecutionPolicy Bypass -Scope LocalMachine -Force'", "system"],
   ["powershell -c 'Set-Mp`Preference -DisableIOAVProtection 1'", "system"],
-  ["powershell -c { Set-MpPreference -DisableIOAVProtection $true }", "system"],
+  // A script block given as text runs only through `&`: alone it is printed.
+  ["powershell -c '& { Set-MpPreference -DisableIOAVProtection $true }'", "system"],
+  ["powershell -c 'Defender\\Set-MpPreference -DisableRealtimeMonitoring $true'", "system"],
+  ["echo 'Set-MpPreference -DisableRealtimeMonitoring 1' | powershell -Command -", "system"],
   [
     "powershell -c \"New-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run' -Name x -Value calc.exe\"",
     "system",
   ],
+  // The registry by the location or a variable set in another statement.
+  [`powershell -c 'cd HKCU:\\${RUN}; New-ItemProperty . -Name x -Value calc.exe'`, "system"],
+  [`powershell -c '$k="HKCU:\\${RUN}"; New-ItemProperty $k -Name x -Value calc.exe'`, "system"],
+  [
+    `powershell -Command - <<'EOF'\n$k = 'HKCU:\\${RUN}'\nSet-ItemProperty -Path $k -Name x -Value calc.exe\nEOF`,
+    "system",
+  ],
+  ["powershell -c 'Get-WmiObject Win32_Shadowcopy | ForEach-Object {$_.Delete();}'", "system"],
+  ["powershell -c 'gwmi win32_shadowcopy | % { $_.Delete() }'", "system"],
   ["powershell -c 'Register-ScheduledTask -TaskName x -Action $a -Trigger $t'", "system"],
   ["powershell -c 'Stop-Service WinDefend -Force'", "system"],
   ["powershell -c 'New-LocalUser eve -Password $p; Add-LocalGroupMember Administrators eve'", "system"],
@@ -301,6 +340,28 @@ const WINDOWS_BAD: Array<[string, string]> = [
   ['powershell -c "iex ([Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($b)))"', "unclear"],
   ['cmd //c "reg add HKCU\\Software\\Example /f"', "system"],
   ["cmd.exe /C schtasks /create /tn x /tr calc.exe", "system"],
+  // cmd's `call` and `start`, and Git Bash's `start`, run the words after them.
+  [`cmd //c "call reg add HKCU\\${RUN} /v x /d calc.exe /f"`, "system"],
+  ['cmd //c "call schtasks /create /tn x /tr calc.exe /sc onlogon"', "system"],
+  [`cmd //c "start /b reg add HKCU\\${RUN} /v x /d calc.exe /f"`, "system"],
+  [`start reg add 'HKCU\\${RUN}' //v x //d calc.exe //f`, "system"],
+  // A shell behind a launcher is read as it is at the head.
+  ["start bash -c 'reg add HKCU\\Software\\Example /f'", "system"],
+  ["start cmd //c 'reg add HKCU\\Software\\Example /f'", "system"],
+  ["start powershell -c 'Set-MpPreference -DisableRealtimeMonitoring 1'", "system"],
+  ["stdbuf -o0 powershell -c 'Set-MpPreference -DisableRealtimeMonitoring 1'", "system"],
+  ["winpty powershell -c 'Set-MpPreference -DisableRealtimeMonitoring 1'", "system"],
+  [`winpty reg add 'HKCU\\${RUN}' //v x //d calc.exe //f`, "system"],
+  ["find . -name '*.ps1' -exec powershell -c 'Set-MpPreference -DisableRealtimeMonitoring 1' \\;", "system"],
+  // cmd's `^` escape and plain `'`, PowerShell's backtick escape.
+  [`cmd //c "r^eg add HKCU\\${RUN} /v x /d calc.exe /f"`, "system"],
+  [`cmd //c "echo it's & reg add HKCU\\${RUN} /v x /d calc.exe /f & echo '"`, "system"],
+  [`powershell -c 're\`g add HKCU\\${RUN} /v x /d calc.exe /f'`, "system"],
+  ["powershell -c 'schtask`s /create /tn x /tr calc.exe /sc onlogon'", "system"],
+  ["taskkill //IM agentes-runner.exe //F", "system"],
+  ["powershell -c 'Stop-Process -Name agentes-runner -Force'", "system"],
+  ["powershell -c 'Get-Process agentes-runner | Stop-Process'", "system"],
+  ["pwsh -c '(Get-Process agentes-runner).Kill()'", "system"],
   ["echo 'reg add HKCU\\Software\\Example /v a /d b /f' | cmd", "system"],
   ["powershell -Command - <<'EOF'\nStop-Service WinDefend\nEOF", "system"],
   ["powershell -c 'Write-Output $env:AGENTES_MCP_TOKEN'", "system"],
