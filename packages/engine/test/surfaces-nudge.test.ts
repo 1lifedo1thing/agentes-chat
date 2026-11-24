@@ -145,6 +145,8 @@ test("the person's settings: defaults on the link view, changed on their own act
     quietFrom: 21,
     quietTo: 8,
   });
+  expect(await setNudge(f.db, f.owner.id, linkId, {})).toMatchObject({ afterHours: 8, quietFrom: 21 });
+  await expect(setNudge(f.db, "someone-else", linkId, {})).rejects.toMatchObject({ code: "surface.link_gone" });
   const other = await f.db.select().from(surfaceLinks);
   expect(other).toHaveLength(1);
   await expect(setNudge(f.db, "someone-else", linkId, { on: false })).rejects.toMatchObject({

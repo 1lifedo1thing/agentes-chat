@@ -58,16 +58,18 @@ export async function setNudge(
   linkId: string,
   input: Partial<NudgeSettings>,
 ): Promise<NudgeSettings> {
-  const [row] = await db
-    .update(surfaceLinks)
-    .set({
-      ...(input.on !== undefined ? { nudgeOn: input.on } : {}),
-      ...(input.afterHours !== undefined ? { nudgeAfterHours: input.afterHours } : {}),
-      ...(input.quietFrom !== undefined ? { quietFrom: input.quietFrom } : {}),
-      ...(input.quietTo !== undefined ? { quietTo: input.quietTo } : {}),
-    })
-    .where(and(eq(surfaceLinks.id, linkId), eq(surfaceLinks.userId, userId), eq(surfaceLinks.status, "active")))
-    .returning();
+  const changes = {
+    ...(input.on !== undefined ? { nudgeOn: input.on } : {}),
+    ...(input.afterHours !== undefined ? { nudgeAfterHours: input.afterHours } : {}),
+    ...(input.quietFrom !== undefined ? { quietFrom: input.quietFrom } : {}),
+    ...(input.quietTo !== undefined ? { quietTo: input.quietTo } : {}),
+  };
+  const mine = and(eq(surfaceLinks.id, linkId), eq(surfaceLinks.userId, userId), eq(surfaceLinks.status, "active"));
+  // Drizzle throws on an update with nothing to set: an empty change reads the settings as they are.
+  const [row] =
+    Object.keys(changes).length === 0
+      ? await db.select().from(surfaceLinks).where(mine)
+      : await db.update(surfaceLinks).set(changes).where(mine).returning();
   if (!row) throw new NotFoundError("This link is gone", "surface.link_gone");
   return nudgeOf(row);
 }
