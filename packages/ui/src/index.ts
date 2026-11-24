@@ -525,6 +525,7 @@ export { ditherCells, ditherSvg, ditherTones, ditherUrl } from "./sky/dither";
 export {
   drawSprite,
   holdSkies,
+  holdSkiesWhileAway,
   prefersReducedMotion,
   redrawSkies,
   type SkyBlob,
