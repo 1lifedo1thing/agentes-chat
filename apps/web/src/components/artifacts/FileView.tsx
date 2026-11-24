@@ -20,6 +20,7 @@ import { CodeBlock } from "@/components/CodeBlock";
 import { OfficePreview } from "@/components/live/office/OfficePreview";
 import { useOrg } from "@/components/org-context";
 import { Markdown } from "@/lib/markdown";
+import { FileAudio } from "./FileAudio";
 import { ImageZoom } from "./ImageZoom";
 
 /** Object URLs for blobs (swappable: test DOMs may lack `URL.createObjectURL`). */
@@ -140,7 +141,7 @@ export function FileVideo({
 /**
  * An uploaded file in the viewer (its name, size and Baixar are in the viewer's header): an inline preview only for
  * raster images and PDF (a blob of exactly that type, never the file's own origin), videos in our player and audio in
- * the browser's (a media element never runs the file as a page), and the text of small text files, read-only (JSON formatted, as a code
+ * the voice-message player (a media element never runs the file as a page), and the text of small text files, read-only (JSON formatted, as a code
  * block reads it, code highlighted, Markdown drawn).
  */
 export function FileView({
@@ -196,23 +197,16 @@ export function FileView({
     );
   }
 
-  // Audio plays in the browser's own controls, from the download in parts.
+  // Audio plays in the voice-message player, from the download in parts.
   if (kind === "audio") {
     return (
       <div className="file-view file-view--audio">
-        {mediaFailed ? (
-          <p className="small muted">{t("files.previewFailed")}</p>
-        ) : (
-          // biome-ignore lint/a11y/useMediaCaption: an uploaded recording has no captions to offer
-          <audio
-            key={`${artifactId}:${version}`}
-            controls
-            preload="metadata"
-            src={api.artifacts.fileUrl(org.id, artifactId, { version })}
-            aria-label={title}
-            onError={() => setMediaFailed(true)}
-          />
-        )}
+        <FileAudio
+          artifactId={artifactId}
+          version={version}
+          content={content}
+          fallback={<p className="small muted">{t("files.previewFailed")}</p>}
+        />
       </div>
     );
   }

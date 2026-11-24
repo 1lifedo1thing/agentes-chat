@@ -101,14 +101,14 @@ const PREVIEW_BY_EXTENSION: Record<string, PreviewKind> = {
 
 /**
  * `image`, `pdf`, `video`, `audio`, an Office preview, or null (download only). `contentType` may carry parameters; `name`,
- * when given, says what a generic type (`application/octet-stream`) doesn't, for Office files only.
+ * when given, says what a generic type (`application/octet-stream`) doesn't, for Office and audio files only.
  */
 export function previewKind(contentType: string, name?: string): PreviewKind | null {
   const base = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
   const byType = PREVIEW[base];
   if (byType) return byType;
   const byName = name ? PREVIEW_BY_EXTENSION[extensionOf(name)] : undefined;
-  return byName && isOfficePreview(byName) ? byName : null;
+  return byName && (isOfficePreview(byName) || byName === "audio") ? byName : null;
 }
 
 /**

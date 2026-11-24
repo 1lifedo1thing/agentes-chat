@@ -139,7 +139,7 @@ export function fileInfo(a: Pick<ArtifactDetail, "kind" | "title" | "content">):
     if (IMAGE_TYPES.has(mime) || (untyped && IMAGE_EXT.has(ext))) view = "image";
     else if (VIDEO_TYPES.has(mime) || (untyped && VIDEO_EXT.has(ext))) view = "video";
     else if (mime === "application/pdf" || ext === "pdf") view = "pdf";
-    else if (previewKind(mime) === "audio") view = "audio";
+    else if (previewKind(mime) === "audio" || (untyped && previewKind("", name) === "audio")) view = "audio";
     else if (office) view = office;
     // A page is shown as a page (its source isn't the point), before the text types it is one of.
     else if (mime === "text/html" || ext === "html" || ext === "htm") view = "html";

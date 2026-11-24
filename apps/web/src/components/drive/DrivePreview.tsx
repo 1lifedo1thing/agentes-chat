@@ -6,6 +6,7 @@ import { cx } from "@agenteschat/ui";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
+import { FileAudio } from "@/components/artifacts/FileAudio";
 import { MAX_THUMB_BYTES, usePreviewUrl } from "@/components/artifacts/FileView";
 import { MermaidDiagram } from "@/components/artifacts/Mermaid";
 import { PdfCover } from "@/components/artifacts/PdfCover";
@@ -262,23 +263,25 @@ function FilePreview({
   );
   if (!onAudioFailed) return glyph;
   return (
-    <>
-      {glyph}
-      {/* biome-ignore lint/a11y/useMediaCaption: an uploaded recording has no captions to offer */}
-      <audio
-        className="drive-pv__audio"
-        controls
-        preload="none"
-        src={api.artifacts.fileUrl(org.id, artifact.id, { version: artifact.version })}
-        aria-label={artifact.title}
-        onError={onAudioFailed}
-        // The card drags into folders: a press on the controls (the seek bar) drags nothing, it plays.
-        draggable
-        onDragStart={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+    // biome-ignore lint/a11y/noStaticElementInteractions: keeps the card's own press and drag off the player
+    <div
+      className="drive-pv__audio"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
+      // The card drags into folders: a press on the wave (to seek) drags nothing.
+      draggable
+      onDragStart={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
+      <FileAudio
+        artifactId={artifact.id}
+        version={artifact.version}
+        content={content}
+        fallback={null}
+        onFailed={onAudioFailed}
       />
-    </>
+    </div>
   );
 }

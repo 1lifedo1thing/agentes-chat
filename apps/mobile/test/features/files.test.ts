@@ -86,6 +86,10 @@ describe("audio", () => {
     expect(fileInfo(upload("nota.m4a", "audio/x-m4a")).view).toBe("audio");
     expect(fileInfo(upload("faixa.wav", "audio/wav")).view).toBe("audio");
     expect(fileInfo(upload("midi.mid", "audio/midi")).view).toBe("other");
+    // Stored as plain bytes (an agent's recording with no type given): by its name.
+    expect(fileInfo(upload("entrevista.m4a", "application/octet-stream")).view).toBe("audio");
+    expect(fileInfo(upload("nota.opus", "application/octet-stream")).view).toBe("audio");
+    expect(fileInfo(upload("faixa.flac", "application/octet-stream")).view).toBe("audio");
   });
 });
 

@@ -189,47 +189,77 @@ describe("uploaded files in the Drive", () => {
     expect(dialog.querySelector(".ac-details__subtitle")?.textContent).toMatch(/7\s?(byte|B)/);
   });
 
-  test("an audio file plays in the viewer and on its Drive card, from the download in parts", async () => {
-    const api = createFakeApi(seedState());
-    const audio = await api.artifacts.upload(
-      ORG_ID,
-      new File([new Uint8Array([73, 68, 51, 4])], "entrevista.mp3", { type: "audio/mpeg" }),
-    );
-    const src = `/api/app/organizations/${ORG_ID}/artifacts/${audio.id}/file?version=1`;
-    await renderApp(`/org/${ORG_ID}/drive?artifact=${audio.id}`, { api });
-    await settle(8);
-    const dialog = screen().getByRole("dialog", { name: "entrevista.mp3" });
-    const player = dialog.querySelector<HTMLAudioElement>(".file-view--audio > audio");
-    expect(player?.getAttribute("src")).toBe(src);
-    expect(player?.hasAttribute("controls")).toBe(true);
-    expect(player?.getAttribute("aria-label")).toBe("entrevista.mp3");
-    expect(dialog.textContent).not.toContain("Sem prévia para este tipo de arquivo.");
-    // One the browser can't play says so, and Baixar stays in the header.
-    await act(async () => player?.dispatchEvent(new Event("error")));
-    expect(dialog.querySelector("audio")).toBeNull();
-    expect(dialog.textContent).toContain("Não deu para mostrar a prévia. Baixe o arquivo para abrir.");
-    cleanup();
-    const undo = onScreen(".drive-pv");
+  test("an audio file plays in the voice-message player in the viewer and on its Drive card, never the browser's", async () => {
+    // A browser that can't play it: the player hands its place back.
+    const played: string[] = [];
+    const RealAudio = globalThis.Audio;
+    globalThis.Audio = class {
+      src = "";
+      preload = "";
+      currentTime = 0;
+      duration = Number.NaN;
+      playbackRate = 1;
+      onerror: (() => void) | null = null;
+      onended: (() => void) | null = null;
+      onloadedmetadata: (() => void) | null = null;
+      constructor(src?: string) {
+        if (src) this.src = src;
+      }
+      play() {
+        played.push(this.src);
+        return Promise.reject(Object.assign(new Error("no"), { name: "NotSupportedError" }));
+      }
+      pause() {}
+      removeAttribute() {}
+    } as unknown as typeof Audio;
     try {
-      await renderApp(`/org/${ORG_ID}/drive`, { api });
+      const api = createFakeApi(seedState());
+      const audio = await api.artifacts.upload(
+        ORG_ID,
+        new File([new Uint8Array([73, 68, 51, 4])], "entrevista.mp3", { type: "audio/mpeg" }),
+      );
+      const src = `/api/app/organizations/${ORG_ID}/artifacts/${audio.id}/file?version=1`;
+      await renderApp(`/org/${ORG_ID}/drive?artifact=${audio.id}`, { api });
       await settle(8);
-      const card = document.querySelector<HTMLElement>(`.drive-card:has(audio)`);
-      const pv = card?.querySelector(".drive-pv--audio");
-      expect(pv?.getAttribute("aria-hidden")).toBeNull();
-      expect(pv?.querySelector("audio")?.getAttribute("src")).toBe(src);
-      expect(pv?.querySelector("audio")?.getAttribute("preload")).toBe("none");
-      // One this browser can't play leaves its type tile, as before.
-      await act(async () => pv?.querySelector("audio")?.dispatchEvent(new Event("error")));
-      expect(card?.querySelector("audio")).toBeNull();
-      expect(card?.querySelector(".drive-pv--audio")).toBeNull();
-      expect(card?.querySelector(".drive-pv")?.getAttribute("aria-hidden")).toBe("true");
-      expect(card?.querySelector(".drive-pv__ext")?.textContent).toBe("MP3");
+      const dialog = screen().getByRole("dialog", { name: "entrevista.mp3" });
+      expect(dialog.querySelector("audio")).toBeNull();
+      const player = dialog.querySelector<HTMLElement>(".file-view--audio .ac-voice");
+      expect(player).not.toBeNull();
+      expect(player?.querySelector("[role=slider]")).not.toBeNull();
+      expect(player?.querySelector(".ac-voice__speed")?.textContent).toBe("1×");
+      expect(dialog.textContent).not.toContain("Sem prévia para este tipo de arquivo.");
+      // One the browser can't play says so, and Baixar stays in the header.
+      const play = player?.querySelector<HTMLButtonElement>(".ac-voice__play");
+      await act(async () => play?.click());
+      await settle(2);
+      expect(played).toEqual([src]);
+      expect(dialog.querySelector(".ac-voice")).toBeNull();
+      expect(dialog.textContent).toContain("Não deu para mostrar a prévia. Baixe o arquivo para abrir.");
+      cleanup();
+      const undo = onScreen(".drive-pv");
+      try {
+        await renderApp(`/org/${ORG_ID}/drive`, { api });
+        await settle(8);
+        const card = document.querySelector<HTMLElement>(".drive-card:has(.ac-voice)");
+        const pv = card?.querySelector(".drive-pv--audio");
+        expect(pv?.getAttribute("aria-hidden")).toBeNull();
+        expect(card?.querySelector("audio")).toBeNull();
+        // One this browser can't play leaves its type tile, as before.
+        await act(async () => pv?.querySelector<HTMLButtonElement>(".ac-voice__play")?.click());
+        await settle(2);
+        expect(card?.querySelector(".ac-voice")).toBeNull();
+        expect(card?.querySelector(".drive-pv--audio")).toBeNull();
+        expect(card?.querySelector(".drive-pv")?.getAttribute("aria-hidden")).toBe("true");
+        expect(card?.querySelector(".drive-pv__ext")?.textContent).toBe("MP3");
+      } finally {
+        undo();
+      }
     } finally {
-      undo();
+      globalThis.Audio = RealAudio;
     }
     expect(previewKind("audio/mpeg")).toBe("audio");
     expect(previewKind("audio/x-m4a")).toBe("audio");
-    expect(previewKind("application/octet-stream", "entrevista.mp3")).toBeNull();
+    expect(previewKind("application/octet-stream", "entrevista.m4a")).toBe("audio");
   });
 
   test("SVG and other types are download-only; small text files show their text, read-only", async () => {

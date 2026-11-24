@@ -3,26 +3,12 @@ import { formatJson, highlightCode } from "@agenteschat/client/lib/code";
 import { isJsonFile, mediaKindOfArtifact } from "@agenteschat/client/lib/files";
 import { isolatedPage } from "@agenteschat/client/lib/isolated-page";
 import { useQuery } from "@tanstack/react-query";
-import { type AudioSource, useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Pressable, Text as RNText, ScrollView, StyleSheet, View } from "react-native";
+import { Text as RNText, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
-import { releaseVoiceAudio, voiceAudio } from "@/lib/audio-mode";
-import {
-  Button,
-  EmptyState,
-  type HeaderAction,
-  type HeaderMenuItem,
-  Icon,
-  PressScale,
-  SCREEN_X,
-  systemText,
-  Text,
-  TOUCH,
-  useToast,
-} from "@/ui";
+import { Button, EmptyState, type HeaderAction, type HeaderMenuItem, SCREEN_X, systemText, useToast } from "@/ui";
 import { router } from "@/ui/navigation";
 import { ISOLATED_WEB_VIEW, STORAGE_STANDINS } from "../blocks/logic";
 import { CodeText, RawToggle } from "../chat/CodeCard";
@@ -35,14 +21,14 @@ import { chooseAction } from "../settings/parts";
 import { LoadFailed } from "../shared/FirstUse";
 import { useColors, useDirectory, useOrgId } from "../shared/hooks";
 import { copyText, PushedHeader, successHaptic } from "../shared/parts";
-import { stopPlayback } from "../voice/playback";
 import { useFileActions } from "./actions";
-import { extensionOf, fileInfo, fileRoute, isCodeName, textChunks, videoClock } from "./logic";
+import { FileVoice } from "./FileVoice";
+import { extensionOf, fileInfo, fileRoute, isCodeName, textChunks } from "./logic";
 import { useFileLine } from "./MessageFiles";
 import { openFile } from "./open";
 import { PageBones } from "./PageBones";
 import { PdfPages } from "./PdfPages";
-import { fileText, useRemoteFile } from "./source";
+import { fileText } from "./source";
 
 /**
  * A file opened from a message, the Drive or a link: a screen pushed with the platform's push. Its bar is the native
@@ -51,8 +37,8 @@ import { fileText, useRemoteFile } from "./source";
  * and Ver no Drive (the system's own menu on iOS, the app's list of the same choices on Android). Under it the file
  * itself, the screen's whole width: Markdown and text drawn by the app, a page in a web view, a PDF page by page by
  * the system's own renderer (`PdfPages`), an Office file as the server read it (ADR 0198: a workbook in the
- * spreadsheet's grid, a deck's slides, a Word document's page) and an old table in the same grid, an audio file in its
- * player (`AudioPage`), anything else says
+ * spreadsheet's grid, a deck's slides, a Word document's page) and an old table in the same grid, an audio file in the
+ * voice-message player (`FileVoice`), anything else says
  * it opens in another app. Pictures and videos open straight in the picture viewer (`openFile`), live files on their
  * own screens (ADR 0196); one reached here anyway (a file's link that didn't say what it was) goes on there, and a link
  * to a message of a picture's or a video's conversation opens the viewer, its conversation pushed over it at the
@@ -200,7 +186,16 @@ export function DocumentViewer({
       ) : pdf ? (
         <PdfPages detail={detail} />
       ) : info.view === "audio" ? (
-        <AudioPage detail={detail} fallback={noPreview} />
+        <Middle>
+          <View style={styles.audio}>
+            <FileVoice
+              id={detail.id}
+              version={detail.shownVersion}
+              wave={detail.content.kind === "file" ? detail.content.wave : undefined}
+              fallback={noPreview}
+            />
+          </View>
+        </Middle>
       ) : (
         noPreview
       )}
@@ -310,111 +305,6 @@ function BottomRoom() {
   return <View style={{ height: insets.bottom, backgroundColor: c.bg }} />;
 }
 
-/** An audio file's player: its link read once, then the sound streamed from it; `fallback` when this phone can't play it. */
-function AudioPage({ detail, fallback }: { detail: ArtifactDetail; fallback: ReactNode }) {
-  const orgId = useOrgId();
-  const link = useRemoteFile(orgId, detail.id, detail.shownVersion, { once: true });
-  if (link.isError)
-    return (
-      <Middle>
-        <LoadFailed onRetry={() => void link.refetch()} />
-      </Middle>
-    );
-  if (!link.data) return <PageBones />;
-  return <AudioPlayer source={link.data} fallback={fallback} />;
-}
-
-/** The step a screen reader's swipe up or down moves the sound, in seconds. */
-const AUDIO_STEP_S = 10;
-const AUDIO_PLAY = 64;
-
-/**
- * Play and pause, the timeline (a tap anywhere on it goes there) and the clock. Playing, it takes the audio session as
- * a voice message does (heard in silent mode, stops a voice message playing), and gives it back once it stops.
- */
-function AudioPlayer({ source, fallback }: { source: AudioSource; fallback: ReactNode }) {
-  const { t } = useTranslation();
-  const c = useColors();
-  const player = useAudioPlayer(source);
-  const status = useAudioPlayerStatus(player);
-  const [width, setWidth] = useState(0);
-  const holds = useRef(false);
-  useEffect(() => {
-    if (status.playing || !holds.current) return;
-    holds.current = false;
-    releaseVoiceAudio();
-  }, [status.playing]);
-  useEffect(
-    () => () => {
-      if (holds.current) releaseVoiceAudio();
-    },
-    [],
-  );
-  if (status.error) return <>{fallback}</>;
-  const duration = status.duration > 0 ? status.duration : 0;
-  const at = Math.min(status.currentTime, duration || status.currentTime);
-  const seek = (seconds: number) => void player.seekTo(Math.max(0, Math.min(duration, seconds)));
-  const toggle = () => {
-    if (status.playing) {
-      player.pause();
-      return;
-    }
-    stopPlayback();
-    holds.current = true;
-    void voiceAudio(false)
-      .catch(() => undefined)
-      .then(() => {
-        if (duration > 0 && at >= duration - 0.25) void player.seekTo(0);
-        player.play();
-      });
-  };
-  return (
-    <View style={[styles.middle, styles.audio]}>
-      <PressScale
-        to={0.92}
-        disabled={!status.isLoaded}
-        onPress={toggle}
-        accessibilityRole="button"
-        accessibilityLabel={status.playing ? t("voice.pausePlay") : t("voice.play")}
-        style={[styles.audioPlay, { backgroundColor: status.isLoaded ? c.ink : c.sunken }]}
-      >
-        {/* Dimmed until the sound has loaded (no spinner: the screen keeps its shape). */}
-        <View style={styles.audioCenter}>
-          <Icon name={status.playing ? "pause" : "play"} size={26} filled color={status.isLoaded ? c.bg : c.muted} />
-        </View>
-      </PressScale>
-      <Pressable
-        disabled={duration === 0}
-        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-        onPress={(e) => width > 0 && seek((e.nativeEvent.locationX / width) * duration)}
-        accessibilityRole="adjustable"
-        accessibilityLabel={t("voice.seek")}
-        accessibilityValue={{ min: 0, max: Math.round(duration), now: Math.round(at), text: videoClock(at) }}
-        accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
-        onAccessibilityAction={(e) => seek(at + (e.nativeEvent.actionName === "increment" ? 1 : -1) * AUDIO_STEP_S)}
-        style={styles.audioTrackHit}
-      >
-        <View style={[styles.audioTrack, { backgroundColor: c.line2 }]}>
-          <View
-            style={[
-              styles.audioTrack,
-              { backgroundColor: c.ink, width: duration > 0 ? `${(at / duration) * 100}%` : 0 },
-            ]}
-          />
-        </View>
-      </Pressable>
-      <View style={styles.audioClock}>
-        <Text variant="caption" tone="muted" style={styles.audioTime}>
-          {videoClock(at)}
-        </Text>
-        <Text variant="caption" tone="muted" style={styles.audioTime}>
-          {duration > 0 ? videoClock(duration) : ""}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 /** HTML in the isolated web view (see `HtmlPage`), its shape while it comes, why it didn't. */
 function IsolatedHtml({ html, failed, onRetry }: { html: string | undefined; failed: boolean; onRetry: () => void }) {
   const page = useMemo(() => (html !== undefined ? isolatedPage(html, PAGE_HEAD) : null), [html]);
@@ -445,17 +335,11 @@ function IsolatedHtml({ html, failed, onRetry }: { html: string | undefined; fai
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   middle: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: SCREEN_X },
+  // The voice player's own width (it caps itself), whatever the centred column would shrink it to.
+  audio: { width: "100%", maxWidth: 320 },
   page: { paddingHorizontal: SCREEN_X, paddingTop: 12 },
   white: { backgroundColor: "#fff" },
   // The app's body, as a message's words.
   prose: systemText("body"),
   json: { gap: 10, alignItems: "flex-start" },
-  audio: { alignItems: "stretch", gap: 16 },
-  audioPlay: { alignSelf: "center", width: AUDIO_PLAY, height: AUDIO_PLAY, borderRadius: AUDIO_PLAY / 2 },
-  audioCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
-  // A 4 drawn line, the height a finger needs to hit it.
-  audioTrackHit: { height: TOUCH, justifyContent: "center" },
-  audioTrack: { height: 4, borderRadius: 2 },
-  audioClock: { flexDirection: "row", justifyContent: "space-between", marginTop: -8 },
-  audioTime: { fontVariant: ["tabular-nums"] },
 });

@@ -3309,7 +3309,7 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
 .drive-pv--audio .drive-pv__glyph {
   top: calc(50% - var(--space-3));
   width: auto;
-  height: min(30cqw, calc(100% - var(--control-h-md) - 6 * var(--space-2)));
+  height: min(30cqw, calc(100% - 50px - 6 * var(--space-2)));
   aspect-ratio: 4 / 5;
 }
 .drive-pv__audio {
@@ -3318,7 +3318,10 @@ html:not([data-pointer]) .artifact-table__sort:focus-visible {
   left: var(--space-2);
   bottom: var(--space-2);
   width: calc(100% - 2 * var(--space-2));
-  height: var(--control-h-md);
+}
+.drive-pv__audio .ac-voice {
+  margin-top: 0;
+  max-width: none;
 }
 
 /* Selection: a glass bar fixed at the bottom of the work area, centered on it (SelectionBar hangs it from
@@ -8304,12 +8307,16 @@ html:not([data-pointer]) .sky-welcome__close:focus-visible {
   gap: 12px;
   min-width: 0;
 }
-/* Audio: the browser's player across the viewer's width. */
+/* Audio: the voice-message player, centred in the viewer. */
 .file-view--audio {
+  display: flex;
+  justify-content: center;
   padding: var(--space-6) 0;
 }
-.file-view--audio > audio {
-  width: 100%;
+.file-view--audio .ac-voice {
+  flex: 1;
+  max-width: 560px;
+  margin-top: 0;
 }
 .file-view__preview {
   display: flex;
@@ -16022,4 +16029,50 @@ html:not([data-pointer]) .store-back:focus-visible {
     font-size: 24px;
     line-height: 30px;
   }
+}
+
+/* An audio file on a message: the voice-message player, its name under it (which opens it) and the tile's actions. */
+.artifact-audio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: min(420px, 100%);
+}
+.artifact-audio .ac-voice {
+  margin-top: 0;
+  max-width: none;
+}
+/* While its details load: the player's own height (its 34 px button and 8 px above and below). */
+.artifact-audio__wait {
+  height: 50px;
+  box-sizing: border-box;
+}
+.artifact-audio__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-inline: var(--space-3) 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.artifact-audio__name {
+  flex: 1;
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.artifact-audio__name:hover .artifact-audio__title {
+  color: var(--ink);
+}
+.artifact-audio__title {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

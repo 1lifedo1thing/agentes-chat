@@ -314,6 +314,23 @@ describe("a message's attachments", () => {
     }
   });
 
+  test("an audio file plays right in the message, in the voice-message player, its name under it", async () => {
+    const box = (el: HTMLElement | undefined) => ({
+      audio: el?.classList.contains("artifact-audio") ?? false,
+      name: el?.querySelector(".artifact-audio__title")?.textContent ?? null,
+    });
+    const [loading] = await withFiles([["entrevista.m4a", "audio/mp4"]], true);
+    expect(box(loading)).toEqual({ audio: true, name: "entrevista.m4a" });
+    expect(loading?.getAttribute("aria-busy")).toBe("true");
+    cleanup();
+    const [loaded] = await withFiles([["entrevista.m4a", "audio/mp4"]]);
+    expect(box(loaded)).toEqual({ audio: true, name: "entrevista.m4a" });
+    expect(loaded?.querySelector(".ac-voice [role=slider]")).not.toBeNull();
+    expect(loaded?.querySelector(".ac-voice__speed")).not.toBeNull();
+    expect(loaded?.querySelector("audio")).toBeNull();
+    expect(loaded?.querySelector("button[aria-label='Baixar']")).not.toBeNull();
+  });
+
   test("and keeps that box once they do, and once the picture is in: no tile changes shape", async () => {
     const before = (await withFiles(FILES, true)).map(shape);
     cleanup();

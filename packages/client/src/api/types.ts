@@ -3947,6 +3947,14 @@ export interface ArtifactFileContent {
   /** A picture's own size (pixels), when the server read it: its box has its proportions before it loads. */
   width?: number;
   height?: number;
+  /** An audio file's wave and length, once an app measured it. */
+  wave?: FileWave;
+}
+
+/** An audio file's wave (0–1 per bar) and its length. */
+export interface FileWave {
+  peaks: number[];
+  durationMs: number;
 }
 
 export interface ArtifactAuthor {
