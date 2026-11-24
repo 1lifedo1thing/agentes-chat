@@ -4775,7 +4775,8 @@
   "accountSwitch": {
     "limit": "Kontynuował na koncie <to/>, bo konto <from/> osiągnęło limit",
     "line": "Kontynuował na koncie <to/>, bo konto <from/> jest blisko limitu",
-    "extra": "Kontynuował na koncie <to/>, bo konto <from/> weszłoby w płatne dodatkowe użycie"
+    "extra": "Kontynuował na koncie <to/>, bo konto <from/> weszłoby w płatne dodatkowe użycie",
+    "busy": "Kontynuowano na koncie <to/>, bo konto <from/> odpowiadało już na tyle rozmów naraz, ile może"
   },
   "channelRefs": {
     "list": "Kanały",

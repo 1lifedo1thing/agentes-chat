@@ -4868,6 +4868,7 @@ export const en = {
     limit: "Went on with the <to/> account because the <from/> account hit its limit",
     line: "Went on with the <to/> account because the <from/> account is near its limit",
     extra: "Went on with the <to/> account because the <from/> account would go into paid extra usage",
+    busy: "Went on with the <to/> account because the <from/> account was already answering as many conversations as it can at once",
   },
   channelRefs: {
     list: "Channels",

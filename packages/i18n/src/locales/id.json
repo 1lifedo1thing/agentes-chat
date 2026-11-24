@@ -4322,7 +4322,8 @@
   "accountSwitch": {
     "limit": "Lanjut dengan akun <to/> karena akun <from/> mencapai batasnya",
     "line": "Lanjut dengan akun <to/> karena akun <from/> hampir mencapai batasnya",
-    "extra": "Lanjut dengan akun <to/> karena akun <from/> akan masuk ke penggunaan tambahan berbayar"
+    "extra": "Lanjut dengan akun <to/> karena akun <from/> akan masuk ke penggunaan tambahan berbayar",
+    "busy": "Lanjut dengan akun <to/> karena akun <from/> sudah menjawab percakapan sebanyak yang bisa ditanganinya sekaligus"
   },
   "channelRefs": {
     "list": "Kanal",

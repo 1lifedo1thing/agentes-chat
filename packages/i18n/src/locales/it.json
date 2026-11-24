@@ -4632,7 +4632,8 @@
   "accountSwitch": {
     "limit": "Ha continuato con l’account <to/> perché l’account <from/> ha raggiunto il limite",
     "line": "Ha continuato con l’account <to/> perché l’account <from/> è vicino al limite",
-    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento"
+    "extra": "Ha continuato con l’account <to/> perché l’account <from/> passerebbe all’uso extra a pagamento",
+    "busy": "Ha continuato con l'account <to/> perché l'account <from/> stava già rispondendo a tutte le conversazioni che può gestire insieme"
   },
   "channelRefs": {
     "list": "Canali",
