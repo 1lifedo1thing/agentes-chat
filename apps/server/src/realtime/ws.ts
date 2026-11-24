@@ -925,6 +925,9 @@ export function createRealtime(deps: RealtimeDeps) {
         // A revocation that arrived while we were checking wins over a stale "allowed".
         if (!denied && check.revoked) denied = "forbidden";
         if (denied) return send(ws, { type: "error", code: denied, channelId });
+        // Closed while it was checked: `close` already let go of its subscriptions, so one made now would hold the
+        // socket and its listener for the life of the process.
+        if (ws.readyState !== 1) return;
         if (ws.data.subscriptions.has(channelId)) return send(ws, { type: "subscribed", channelId });
         const off = deps.pubsub.subscribe(channelTopic(channelId), (event) => {
           if (ws.readyState === 1) send(ws, { type: "event", channelId, event });
