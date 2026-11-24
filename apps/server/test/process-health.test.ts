@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { createLogger } from "../src/logger";
 import { createOperatorApp } from "../src/operator/app";
 import { HEAP_SNAPSHOTS_KEPT, watchProcessHealth } from "../src/process-health";
+import { takeRouteTimes } from "../src/route-times";
 import { createTestServer, type TestServer } from "./harness";
 
 const TOKEN = "operator-test-token-".padEnd(48, "x");
@@ -37,6 +38,7 @@ test("a process writes its vitals for GET /vitals, and one heap snapshot once it
         umasks.push(process.umask());
         return path;
       },
+      routeTimes: () => [{ route: "GET /api/app/me", count: 3, p95Ms: 40, maxMs: 41, totalMs: 90 }],
     },
     60_000,
   );
@@ -65,6 +67,7 @@ test("a process writes its vitals for GET /vitals, and one heap snapshot once it
       heapUsedBytes: 250 * MB,
       eventLoopP99Ms: 12.5,
       heapSnapshot: { file: written[0]?.slice("/data/heap/".length) },
+      routes: [{ route: "GET /api/app/me", count: 3, p95Ms: 40, maxMs: 41, totalMs: 90 }],
     });
     expect(vitals.runClaims).toMatchObject({ windowSeconds: 300, queued: 0 });
   } finally {
@@ -100,4 +103,16 @@ test("no snapshot while the folder already holds HEAP_SNAPSHOTS_KEPT: restarts o
     health.stop();
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("each API route's requests are timed by the route they matched, and taken once a tick", async () => {
+  takeRouteTimes();
+  for (let i = 0; i < 3; i++) await t.app.request("/api/app/me");
+  await t.app.request("/api/health");
+  const taken = takeRouteTimes();
+  expect(taken.find((r) => r.route === "GET /api/app/me")).toMatchObject({ count: 3 });
+  expect(taken.find((r) => r.route === "GET /api/health")).toMatchObject({ count: 1 });
+  expect(taken.every((r) => r.p95Ms <= r.maxMs && r.maxMs <= r.totalMs)).toBe(true);
+  // Taken: the next tick starts afresh.
+  expect(takeRouteTimes()).toEqual([]);
 });

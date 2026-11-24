@@ -133,8 +133,9 @@ const KEPT: Record<string, string[]> = {
   db_connections: ["label", "status", "last_error"],
   // A registered host and its look: only this API writes them, never a workspace (ADR 0194).
   hosts: ["host", "name", "accent"],
-  // A server process's own vitals: only the process writes them, from its role, its release and its snapshot's name.
-  server_processes: ["role", "version", "heap_snapshot_file"],
+  // A server process's own vitals: only the process writes them, from its role, its release, its snapshot's name and
+  // the patterns of its routes (as registered, ids left out).
+  server_processes: ["role", "version", "heap_snapshot_file", "routes.route"],
 };
 
 /** The places the proof is about: each holds a canary before any read, and after every column got one. */
