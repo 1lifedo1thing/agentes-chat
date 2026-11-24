@@ -26,7 +26,7 @@ function startedAt(): number {
 }
 
 /** The notification shade and the app switcher (`inactive`) are no return: only the background is. */
-const presenceOf = (state: string): AppPresence =>
+const presenceOf = (state: string | null | undefined): AppPresence =>
   state === "active" ? "front" : state === "background" ? "away" : "between";
 
 const vitals = createVitals({
