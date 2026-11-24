@@ -107,6 +107,8 @@ export function AiChoiceFields({
 
   /** A pick asked first: someone else's plan, or a login taken from the agents that think with it. */
   const take = async (row: AiChoiceRow, moves: boolean) => {
+    // Its button goes at once: a second tap while the agents losing it are read would take it twice.
+    setAsking(null);
     if (!moves || !row.account) return apply(state.choose(row));
     const giveBack = await giveBackLogin(api.agents, orgId, loginHolders(row.account, agentId));
     apply({ ...state.choose(row), moveAccount: true }, giveBack);

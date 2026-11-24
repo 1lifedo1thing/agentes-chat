@@ -1584,6 +1584,10 @@ test("Desfazer after taking a login from another agent gives it back to that age
     "const giveBack = await giveBackLogin(api.agents, orgId, loginHolders(row.account, agentId));",
   );
   expect(choice).toMatch(/\.save\(before\)\s*\.then\(\(\) => giveBack\?\.\(\)\)\s*\.then\(\(\) => toast\(/);
+  // Its button goes at once: a second tap while the agents losing it are read doesn't take it twice.
+  const take = choice.slice(choice.indexOf("const take = async (row: AiChoiceRow, moves: boolean) => {"));
+  expect(take.indexOf("setAsking(null);")).toBeGreaterThan(-1);
+  expect(take.indexOf("setAsking(null);")).toBeLessThan(take.indexOf("await giveBackLogin("));
   // At its limit the agent would wait there: it asks, as the web's Quem pensa, with the usage a tap away.
   expect(screen).toContain(
     'const full = (a: MachineAccount) => a.usage != null && planState(a.usage).state === "limited";',
