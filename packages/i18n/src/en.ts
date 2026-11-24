@@ -3759,6 +3759,8 @@ export const en = {
       missing: "{{program}} isn't on {{computer}} yet.",
       claudeApp: "The Claude app isn't enough: agents use Claude Code, which runs on the computer.",
       install: "Install {{program}} for me",
+      /** Too old for agentes.chat: the same installer brings the newest. */
+      update: "Update {{program}} for me",
       check: "I installed it, check again",
       checked: "Checked just now: {{program}} still isn't on {{computer}}.",
       installing: "Installing {{program}} on {{computer}}. It takes about a minute.",

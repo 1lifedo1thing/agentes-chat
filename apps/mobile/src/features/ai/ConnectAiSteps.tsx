@@ -752,8 +752,8 @@ function Hero({ mark, sub }: { mark: ReactNode; sub: string }) {
 }
 
 /**
- * The web's `CliMissing` on the phone: Claude Code or Codex isn't on a computer someone connected, or won't start
- * there. Whoever connected it installs it from here (it runs on the computer), anyone else asks them, anyone looks
+ * The web's `CliMissing` on the phone: Claude Code or Codex isn't on a computer someone connected, won't start there,
+ * or is too old for agentes.chat (its installer brings the newest: "Update"). Whoever connected it installs it from here (it runs on the computer), anyone else asks them, anyone looks
  * again. The page's own "Use an API key now" stays under it.
  */
 function CliMissingCard({
@@ -765,7 +765,7 @@ function CliMissingCard({
   machine: Machine;
   kind: MachineAccountKind;
   computer: string;
-  reason: "not_installed" | "cant_start";
+  reason: "not_installed" | "cant_start" | "cli_outdated";
 }) {
   const { t } = useTranslation();
   const { orgId } = useAiOrg();
@@ -795,14 +795,16 @@ function CliMissingCard({
           ? broken
             ? t("connectAi.cli.cantStart", { ...words, message: broken })
             : t("brain.reasons.cant_start", words)
-          : checked
-            ? t("connectAi.cli.checked", words)
-            : oneClick?.kind === "outdated"
-              ? t("common.joinSentences", {
-                  a: t("connectAi.cli.missing", words),
-                  b: t("connectAi.cli.outdated", { computer }),
-                })
-              : t("connectAi.cli.missing", words)));
+          : reason === "cli_outdated"
+            ? t("brain.reasons.cli_outdated", words)
+            : checked
+              ? t("connectAi.cli.checked", words)
+              : oneClick?.kind === "outdated"
+                ? t("common.joinSentences", {
+                    a: t("connectAi.cli.missing", words),
+                    b: t("connectAi.cli.outdated", { computer }),
+                  })
+                : t("connectAi.cli.missing", words)));
   const failedBefore = install?.state === "failed" || install?.state === "canceled";
   const actions = running ? (
     <Button
@@ -819,7 +821,11 @@ function CliMissingCard({
         <Button
           size="sm"
           variant={gitMissing ? "secondary" : "primary"}
-          label={failedBefore ? t("common.retry") : t("connectAi.cli.install", { program })}
+          label={
+            failedBefore
+              ? t("common.retry")
+              : t(reason === "cli_outdated" ? "connectAi.cli.update" : "connectAi.cli.install", { program })
+          }
           disabled={pending}
           loading={run.start.isPending}
           onPress={() => run.start.mutate(undefined, { onError: fail })}
@@ -859,6 +865,7 @@ function CliMissingCard({
     install?.state !== "failed" &&
     broken === null &&
     !checked &&
+    reason !== "cli_outdated" &&
     oneClick?.kind !== "outdated";
   const why = plain && cli === "claude" && (machine.os === "windows" || machine.os === "darwin");
   return (
@@ -884,7 +891,7 @@ function CliCommandCard({
   machine: Machine;
   kind: MachineAccountKind;
   computer: string;
-  reason: "not_installed" | "cant_start";
+  reason: "not_installed" | "cant_start" | "cli_outdated";
 }) {
   const { t } = useTranslation();
   const { orgId } = useAiOrg();
@@ -1534,7 +1541,7 @@ function GateWait({
     );
   } else if (
     gate.state === "unsupported" &&
-    (gate.reason === "not_installed" || gate.reason === "cant_start") &&
+    (gate.reason === "not_installed" || gate.reason === "cant_start" || gate.reason === "cli_outdated") &&
     !hold &&
     installableCli(kind) &&
     row &&
@@ -1543,7 +1550,7 @@ function GateWait({
     wait = <CliMissingCard machine={row} kind={kind} computer={computer} reason={gate.reason} />;
   } else if (
     gate.state === "unsupported" &&
-    (gate.reason === "not_installed" || gate.reason === "cant_start") &&
+    (gate.reason === "not_installed" || gate.reason === "cant_start" || gate.reason === "cli_outdated") &&
     !hold &&
     row &&
     cliCommandWayOut(t, kind, row, gate.reason, computer)

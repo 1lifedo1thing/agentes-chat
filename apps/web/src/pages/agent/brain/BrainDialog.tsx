@@ -549,11 +549,12 @@ function BrainFlow({
       : null;
   const offOn = work.machines.data?.find((x) => x.id === view.computer?.machineId) ?? null;
   const offTool = offBrain && offOn && offOn.kind !== "managed" ? brainTool(offBrain) : null;
-  // Its CLI not on its computer, or there and failing to start: installed from here, or looked for again.
+  // Its CLI not on its computer, there and failing to start, or too old: installed (or updated) from here, or looked
+  // for again.
   const missingReason = view.brain !== "model" ? view.options.find((o) => o.kind === view.brain)?.reason : undefined;
   const missingCli =
     view.brain !== "model" &&
-    (missingReason === "not_installed" || missingReason === "cant_start") &&
+    (missingReason === "not_installed" || missingReason === "cant_start" || missingReason === "cli_outdated") &&
     offOn &&
     offOn.kind !== "managed" &&
     (installableCli(view.brain) || cliCommandWayOut(t, view.brain, offOn, missingReason, offOn.name))

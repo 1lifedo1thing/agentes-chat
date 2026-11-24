@@ -8536,6 +8536,9 @@
   "connectAi.cli.install": {
     "value": "Install {{program}} for me"
   },
+  "connectAi.cli.update": {
+    "value": "Update {{program}} for me"
+  },
   "connectAi.cli.check": {
     "value": "I installed it, check again"
   },
@@ -15833,6 +15836,9 @@
   },
   "agentPage.activity.errors.cli_closed": {
     "value": "The {{brain}} program closed unexpectedly."
+  },
+  "agentPage.activity.errors.cli_empty": {
+    "value": "The {{brain}} program ended its turn without an answer. Ask again; if it keeps happening, update {{brain}} on the computer or choose another AI in the agent's settings."
   },
   "agentPage.activity.errors.cli_sandbox": {
     "value": "The {{brain}} program can't start its sandbox on this computer. Choose another AI in the agent's settings."
@@ -30161,6 +30167,12 @@
   },
   "brain.reasons.cant_start": {
     "value": "{{program}} is on {{computer}}, but it won't start."
+  },
+  "brain.reasons.cli_outdated": {
+    "value": "{{program}} on {{computer}} needs an update before agents can use it."
+  },
+  "brain.reasons.cli_outdatedRun": {
+    "value": "{{program}} on {{computer}} needs an update before agents can use it. Run {{command}} there."
   },
   "brain.reasons.home_only": {
     "value": "{{program}} is installed only for root on {{computer}}, where the agents can't reach it."

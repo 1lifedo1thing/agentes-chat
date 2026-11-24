@@ -3640,6 +3640,8 @@ export const ptBR = {
       missing: "O {{program}} ainda não está no {{computer}}.",
       claudeApp: "O app do Claude não basta: os agentes usam o Claude Code, que roda no computador.",
       install: "Instalar o {{program}} para mim",
+      /** Too old for agentes.chat: the same installer brings the newest. */
+      update: "Atualizar o {{program}} para mim",
       check: "Já instalei, verificar de novo",
       checked: "Verifiquei agora: o {{program}} ainda não está no {{computer}}.",
       installing: "Instalando o {{program}} no {{computer}}. Leva cerca de um minuto.",
@@ -12848,7 +12850,8 @@ export const ptBR = {
       /** Its version is too old for agentes.chat, or one with a known problem: updating it there is the way out. */
       cli_outdated: "O {{program}} no {{computer}} precisa ser atualizado para os agentes usarem.",
       /** The same, with the command that updates it (`claude update`, `opencode upgrade`). */
-      cli_outdatedRun: "O {{program}} no {{computer}} precisa ser atualizado para os agentes usarem. Rode {{command}} lá.",
+      cli_outdatedRun:
+        "O {{program}} no {{computer}} precisa ser atualizado para os agentes usarem. Rode {{command}} lá.",
       /** System mode: the CLI is only in root's `~/.local/bin`. */
       home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
