@@ -1846,6 +1846,12 @@ test("its computer moving to another server: the run's wait says so, for the app
   expect(run?.status).toBe("waiting_input");
   expect(seen).toHaveLength(0);
   expect(run?.transcript).toMatchObject({ waitingForBrain: { code: "machine_offline", moving: true } });
+  // The Task Manager says moving only while the computer still is: a move called off leaves it plainly offline.
+  const waitOfTask = async () => (await taskManager(f.db, f.owner.id, f.org.id)).tasks[0]?.wait;
+  await f.db.update(schema.machines).set({ movingAt: new Date() }).where(eq(schema.machines.id, machineId));
+  expect((await waitOfTask())?.moving).toBe(true);
+  await f.db.update(schema.machines).set({ movingAt: null }).where(eq(schema.machines.id, machineId));
+  expect((await waitOfTask())?.moving).toBeUndefined();
 });
 
 test("an offline computer, though the workspace has a key: the agent says so once and the run waits until it is back", async () => {

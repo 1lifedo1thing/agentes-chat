@@ -606,11 +606,15 @@ function ComputerForm({ onClose }: { onClose: () => void }) {
       ...(brain !== "model" && !has(id, brain)
         ? [t("agentPage.work.computer.alsoBrain", { brain: t(`brain.card.${brain}`) })]
         : []),
-      ...(m && !m.online ? [t("agentPage.work.computer.alsoOffline", g)] : []),
+      ...(m && !m.online ? [m.moving ? t("machines.moving.line") : t("agentPage.work.computer.alsoOffline", g)] : []),
     ];
   };
   const status = (m: Machine) =>
-    m.online ? t("agentPage.work.computer.online") : t("agentPage.work.computer.offline");
+    m.online
+      ? t("agentPage.work.computer.online")
+      : m.moving
+        ? t("machines.moving.short")
+        : t("agentPage.work.computer.offline");
   const chosen = pickable.find((m) => m.id === choice);
   const use = async () => {
     setBusy(true);
