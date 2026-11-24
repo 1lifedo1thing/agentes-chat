@@ -4383,6 +4383,7 @@ const SERVER_FRAME_TYPES = [
   "mcp.tools",
   "agents",
   "browser.handoff",
+  "clis.pins",
 ];
 
 /** Parses a server frame (runner side); null when it isn't one. */
