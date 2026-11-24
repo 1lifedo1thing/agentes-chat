@@ -84,3 +84,21 @@ test("a fetch is kept with the computer and told to the apps as it goes", async 
   expect(fetchPercent(fetching)).toBe(45);
   expect(fetchPercent({ state: "fetching", version: "1", done: 5, total: null })).toBeNull();
 });
+
+test("Windows: Cursor, Grok Build and Gemini can be chosen on a runner that keeps each sign-in in its folder there", () => {
+  const all = ["claude", "codex", "cursor", "opencode", "grok", "antigravity", "git"] as const;
+  const win = computer({
+    os: "windows",
+    executors: { detectedAt: new Date().toISOString(), copies: { fetchable: [...all] } },
+  });
+  for (const kind of ["cursor", "grok", "antigravity"] as const) {
+    expect(brainOptions(win as never).find((o) => o.kind === kind)).toMatchObject({ available: true });
+  }
+  // An older Windows runner refuses their turns there: too old, never "not on this system".
+  const older = computer({ os: "windows", protocol: CLI_COPIES_PROTOCOL - 1, executors: {} });
+  for (const kind of ["cursor", "grok", "antigravity"] as const) {
+    expect(brainOptions(older as never).find((o) => o.kind === kind)).toMatchObject({ reason: "runner_old" });
+  }
+  // Git for Windows comes by itself too, as the CLIs do.
+  expect(fetchesCli(win as never, "git")).toBe(true);
+});

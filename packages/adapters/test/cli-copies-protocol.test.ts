@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
 import {
   CLI_COPIES_PROTOCOL,
+  CLI_NAMES,
+  FETCH_NAMES,
   MACHINE_OPS,
   MACHINE_PROTOCOL_VERSION,
   parseCliFetchState,
@@ -80,4 +82,26 @@ test("the server's pins and the retry op reach the runner", () => {
   expect(parseServerFrame(JSON.stringify({ type: "request", id: "1", op: "cli.fetch", cli: "codex" }))).toMatchObject({
     op: "cli.fetch",
   });
+});
+
+test("Git for Windows, fetched like a CLI there: in hello.clis and its fetch frames, never among the executors", () => {
+  const hello = parseRunnerFrame(
+    JSON.stringify({
+      type: "hello",
+      token: "t",
+      version: "1",
+      protocol: CLI_COPIES_PROTOCOL,
+      os: "windows",
+      clis: { fetchable: ["claude", "git"], fetch: { git: { state: "fetching", version: "2.56.1", done: 1, total: 4 } } },
+    }),
+  );
+  expect(hello && "clis" in hello ? hello.clis : null).toEqual({
+    fetchable: ["claude", "git"],
+    fetch: { git: { state: "fetching", version: "2.56.1", done: 1, total: 4 } },
+  });
+  expect(
+    parseRunnerFrame(JSON.stringify({ type: "cli.fetch", cli: "git", fetch: { state: "ready", version: "2.56.1" } })),
+  ).toEqual({ type: "cli.fetch", cli: "git", fetch: { state: "ready", version: "2.56.1" } });
+  expect(FETCH_NAMES).toContain("git");
+  expect(CLI_NAMES as readonly string[]).not.toContain("git");
 });

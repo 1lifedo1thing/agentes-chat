@@ -488,7 +488,6 @@ test.skipIf(!posix)(
     const limited = await run(ctx, turn({ runId: RUN.replace(/1$/, "6"), prompt: "LIMIT" }));
     expect(limited.find((e) => e.type === "limit")).toMatchObject({ resetsAt: expect.any(String) });
     expect(limited.at(-1)).toMatchObject({ type: "error", code: "plan_limit" });
-    expect(await final({}, { ...ctx, platform: "win32" })).toMatchObject({ code: "unsupported" });
   },
   20_000,
 );
@@ -551,12 +550,6 @@ test.skipIf(!posix)(
     expect(m.status(id)).toMatchObject({
       state: "done",
       account: { kind: "antigravity", loggedIn: true, provider: "enterprise" },
-    });
-    // Windows keeps every sign-in in the user's one Credential Manager: refused.
-    const win = new AccountManager({ root: path.join(home, "win"), orgId: () => ORG, platform: "win32" });
-    managers.push(win);
-    await expect(win.begin("antigravity", "0193eeee-0000-7000-8000-0000000000d3")).rejects.toMatchObject({
-      code: "bad_request",
     });
   },
   20_000,

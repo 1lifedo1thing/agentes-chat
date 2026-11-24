@@ -53,3 +53,37 @@ test("the person's own copy runs at the pinned version or newer; a line with no 
   expect(ownCopyServes(pin, "2.1.300 (Claude Code)")).toBe(false);
   expect(ownCopyServes(pin, "unknown")).toBe(false);
 });
+
+test("every coding CLI has its vendor's Windows builds; Git for Windows' portable build is pinned for Windows only", () => {
+  for (const cli of ["claude", "codex", "cursor", "opencode", "grok", "antigravity"] as const) {
+    expect(CLI_PINS[cli].builds["win32-x64"]).toBeDefined();
+    expect(CLI_PINS[cli].builds["win32-arm64"]).toBeDefined();
+  }
+  // Cursor's Windows package starts as Node and its `index.js`, never through its `.cmd` launcher.
+  expect(CLI_PINS.cursor.builds["win32-x64"]).toMatchObject({ archive: "zip", executable: "node.exe", launch: ["index.js"] });
+  // The Antigravity CLI: one version everywhere, Google's sha512 of each build, a bare `agy.exe` on Windows.
+  for (const b of Object.values(CLI_PINS.antigravity.builds)) expect(b?.hash.algorithm).toBe("sha512");
+  expect(Object.keys(CLI_PINS.antigravity.builds)).toHaveLength(8);
+  expect(CLI_PINS.antigravity.builds["win32-x64"]).toMatchObject({ archive: "file", executable: "agy.exe" });
+  // MinGit ships bash as `sh.exe`: the program is a copy named `bash.exe`.
+  expect(Object.keys(CLI_PINS.git.builds).sort()).toEqual(["win32-arm64", "win32-x64"]);
+  expect(CLI_PINS.git.builds["win32-x64"]).toMatchObject({ executable: "usr/bin/bash.exe", from: "usr/bin/sh.exe" });
+});
+
+test("from the wire: launch files and the file a program is made from stay inside the copy's folder", () => {
+  const good = {
+    url: "https://x.example/c.zip",
+    hash: { algorithm: "sha256", value: "a".repeat(64) },
+    archive: "zip",
+    executable: "node.exe",
+  };
+  const parsed = parseCliPins({
+    cursor: { version: "1.2.3", builds: { "win32-x64": { ...good, launch: ["index.js"] } } },
+    git: { version: "1.2.3", builds: { "win32-x64": { ...good, executable: "usr/bin/bash.exe", from: "usr/bin/sh.exe" } } },
+    grok: { version: "1.2.3", builds: { "win32-x64": { ...good, launch: ["../evil.js"] } } },
+    codex: { version: "1.2.3", builds: { "win32-x64": { ...good, from: "/etc/passwd" } } },
+  });
+  expect(Object.keys(parsed ?? {}).sort()).toEqual(["cursor", "git"]);
+  expect(parsed?.cursor?.builds["win32-x64"]?.launch).toEqual(["index.js"]);
+  expect(parsed?.git?.builds["win32-x64"]?.from).toBe("usr/bin/sh.exe");
+});

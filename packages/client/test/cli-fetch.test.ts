@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { TFunction } from "i18next";
 import { activityVerb, toolActivity } from "../src/lib/activity";
-import { cliFetchLine } from "../src/lib/cli-fetch";
+import { cliFetchLine, shownFetch } from "../src/lib/cli-fetch";
 import { cliFetchOf } from "../src/realtime/machines";
 
 /* A computer fetching a coding CLI (ADR 0228 §6), as both apps say it. */
@@ -48,4 +48,13 @@ test("a fetch's state from the live event, checked", () => {
   });
   expect(cliFetchOf("x")).toBeUndefined();
   expect(cliFetchOf({})).toBeUndefined();
+});
+
+test("Claude Code on Windows shows Git for Windows' fetch while it isn't ready, its own after", () => {
+  const fetching = { state: "fetching" as const, version: "2.56.1", done: 1, total: 4 };
+  expect(shownFetch({ os: "windows", cliFetch: { git: fetching } }, "claude")).toBe("git");
+  expect(shownFetch({ os: "windows", cliFetch: { git: { state: "ready", version: "2.56.1" } } }, "claude")).toBe("claude");
+  expect(shownFetch({ os: "darwin", cliFetch: { git: fetching } }, "claude")).toBe("claude");
+  expect(shownFetch({ os: "windows", cliFetch: { git: fetching } }, "codex")).toBe("codex");
+  expect(shownFetch({ os: "windows", cliFetch: null }, "claude")).toBe("claude");
 });

@@ -14,8 +14,9 @@ import {
   PROGRESS_STEP,
   progressGate,
   RETRY_MS,
+  unpackCommand,
 } from "../../runner/cli-copies";
-import { pickedCli, resolveCommand, setCliPick } from "../../runner/executors";
+import { cliSpawn, pickedCli, pickedLaunch, resolveCommand, setCliPick } from "../../runner/executors";
 import { removeDirs, tempDir } from "./helpers";
 
 /*
@@ -60,6 +61,7 @@ function pinsFor(made: { sha256: string }, version = "9.9.9"): CliPins {
     opencode: pin("opencode"),
     grok: pin("grok"),
     antigravity: pin("antigravity"),
+    git: pin("git"),
   };
 }
 
@@ -239,4 +241,75 @@ test("the built-in pins: every CLI pinned, https and a hash for each build; the 
     expect(cli in CLI_COMMAND).toBe(true);
   }
   expect(cliVersionAtLeast(CLI_PINS.antigravity.version, ANTIGRAVITY_NEON_CLI)).toBe(true);
+});
+
+test("a build made from another file of its package, started with files of its own: both kept with the pick", async () => {
+  const made = tarball("antigravity", "9.9.9");
+  const pins = pinsFor(made);
+  // As MinGit's bash (a copy of `sh.exe` named `bash.exe`) and Cursor's Windows `node.exe` with its `index.js`.
+  pins.antigravity.builds["linux-x64"] = {
+    ...(pins.antigravity.builds["linux-x64"] as NonNullable<(typeof pins.antigravity.builds)["linux-x64"]>),
+    executable: "bin/agy-copy",
+    from: "antigravity",
+    launch: ["antigravity"],
+  };
+  const { cli } = copies({ pins, bytes: made.bytes, sha256: made.sha256 });
+  await cli.ensure("antigravity");
+  const file = cli.file("antigravity") as string;
+  expect(execFileSync(file, { encoding: "utf8" }).trim()).toBe("antigravity 9.9.9");
+  expect(pickedCli("agy")).toBe(file);
+  const launch = path.join(path.dirname(path.dirname(file)), "antigravity");
+  expect(pickedLaunch("agy")).toEqual([launch]);
+  // Every start of the command goes through the pick with its files first, on Windows as elsewhere.
+  expect(cliSpawn(["agy"], ["-p", "hi"], "", "linux")).toEqual({ file, args: [launch, "-p", "hi"] });
+  expect(cliSpawn(["agy"], ["-p", "hi"], "", "win32")).toMatchObject({ file, args: [launch, "-p", "hi"] });
+});
+
+test("a package that lacks the file its program is made from is refused, never half kept", async () => {
+  const made = tarball("antigravity", "9.9.9");
+  const pins = pinsFor(made);
+  pins.antigravity.builds["linux-x64"] = {
+    ...(pins.antigravity.builds["linux-x64"] as NonNullable<(typeof pins.antigravity.builds)["linux-x64"]>),
+    executable: "bin/bash",
+    from: "usr/bin/sh",
+  };
+  const { cli, told } = copies({ pins, bytes: made.bytes, sha256: made.sha256 });
+  await expect(cli.ensure("antigravity")).rejects.toMatchObject({ code: "internal" });
+  expect(told.at(-1)).toEqual(["antigravity", { state: "failed", version: "9.9.9", reason: "failed" }]);
+  expect(existsSync(cli.file("antigravity") as string)).toBe(false);
+});
+
+test("Windows unpacks with its own tar.exe (bsdtar reads zips), never one on the PATH; Linux's zips need unzip", () => {
+  const zip = { url: "https://x/y.zip", hash: { algorithm: "sha256" as const, value: "0".repeat(64) } };
+  const build = { ...zip, archive: "zip" as const, strip: 1, executable: "node.exe" };
+  expect(unpackCommand("a.zip", "out", build, "win32", { SystemRoot: "D:\\Win" })).toEqual([
+    "D:\\Win\\System32\\tar.exe",
+    ["-xf", "a.zip", "-C", "out", "--strip-components=1"],
+  ]);
+  expect(unpackCommand("a.zip", "out", build, "linux", {})).toEqual(["unzip", ["-q", "-o", "a.zip", "-d", "out"]]);
+  expect(unpackCommand("a.tgz", "out", { ...build, archive: "tar.gz" }, "darwin", {})[0]).toBe("tar");
+});
+
+test("Git for Windows is fetched on Windows only, and only while Claude Code is wanted there", () => {
+  const win = new CliCopies({
+    home: "/nowhere",
+    log: () => undefined,
+    inUse: () => false,
+    onChange: () => undefined,
+    onFetch: () => undefined,
+    platform: "win32-x64",
+  });
+  expect(win.info().fetchable).toContain("git");
+  expect(win.file("git")).toMatch(/usr[\\/]bin[\\/]bash\.exe$/);
+  const mac = new CliCopies({
+    home: "/nowhere",
+    log: () => undefined,
+    inUse: () => false,
+    onChange: () => undefined,
+    onFetch: () => undefined,
+    platform: "darwin-arm64",
+  });
+  expect(mac.info().fetchable).not.toContain("git");
+  expect(mac.file("git")).toBeNull();
+  expect(CLI_COMMAND.git).not.toBe("git");
 });
