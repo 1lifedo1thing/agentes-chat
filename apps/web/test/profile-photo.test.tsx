@@ -91,6 +91,15 @@ describe("profile photo", () => {
 });
 
 describe("workspace logo", () => {
+  test("a logo shows whole on a white plate in both themes (a wordmark arrives uncropped)", async () => {
+    const css = await Bun.file(new URL("../src/layout.css", import.meta.url).pathname).text();
+    const start = css.indexOf("\n.org-mark {");
+    const rule = css.slice(start, css.indexOf("}", start));
+    expect(rule).toContain("object-fit: contain;");
+    expect(rule).toContain("background: #fff;");
+    expect(css).not.toMatch(/\.org-mark[^{]*\{[^}]*object-fit: cover/);
+  });
+
   test("Configurações → Geral → Enviar logo: crop, save; the sidebar shows the logo", async () => {
     const state = seedState();
     await renderApp(`/org/${ORG_ID}/settings`, { api: createFakeApi(state) });

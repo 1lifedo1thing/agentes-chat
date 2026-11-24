@@ -23,6 +23,13 @@ test("photos and workspace marks load through expo-image, cached, with no fade",
   expect(src("features/shared/OrgAvatar.tsx")).toContain("photoSource(logo, serverOf(on), appHeaders(lastCookie(on)))");
 });
 
+test("a workspace logo shows whole on a white plate (a wordmark arrives uncropped)", () => {
+  const avatar = src("features/shared/OrgAvatar.tsx");
+  expect(avatar).toContain('contentFit="contain"');
+  expect(avatar).not.toContain('contentFit="cover"');
+  expect(avatar).toContain('backgroundColor: "#fff"');
+});
+
 test("the lists' times are written with formats made once per language", () => {
   const hooks = src("features/shared/hooks.ts");
   const when = hooks.slice(hooks.indexOf("export function useWhen()"), hooks.indexOf("export function useNow("));

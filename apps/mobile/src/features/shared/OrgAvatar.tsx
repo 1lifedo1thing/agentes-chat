@@ -8,8 +8,8 @@ import { serverOf } from "@/lib/server-choice";
 import { LogoMark } from "@/ui";
 
 /**
- * A workspace's face, as the web's `OrgMark`: its logo in the agent's shape (rounded, the bottom-left corner cut
- * closer), else the agent mark. The logo is cached in memory and on disk (its address changes with its content) and
+ * A workspace's face, as the web's `OrgMark`: its whole logo (a wordmark arrives uncropped) in the agent's shape
+ * (rounded, the bottom-left corner cut closer), else the agent mark. The logo is cached in memory and on disk (its address changes with its content) and
  * drawn with no fade, as the bars and lists show it again and again.
  */
 export function OrgAvatar({
@@ -38,10 +38,12 @@ export function OrgAvatar({
       cachePolicy="memory-disk"
       recyclingKey={source.uri}
       transition={0}
-      contentFit="cover"
+      contentFit="contain"
       style={{
         width: size,
         height: size,
+        // White in both themes, as the web's `.org-mark`: a transparent logo with dark ink stays legible on dark.
+        backgroundColor: "#fff",
         borderTopLeftRadius: round,
         borderTopRightRadius: round,
         borderBottomRightRadius: round,

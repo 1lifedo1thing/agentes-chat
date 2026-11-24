@@ -199,10 +199,11 @@ p {
   font-size: 13px;
   border-radius: 9px 9px 9px 3px;
 }
+/* Whole and on a white plate in both themes, as the web's `.org-mark`: a wordmark arrives uncropped. */
 .dk-org--logo {
   display: inline-block;
-  object-fit: cover;
-  background: transparent;
+  object-fit: contain;
+  background: #fff;
 }
 .dk-orgmark {
   flex: none;
