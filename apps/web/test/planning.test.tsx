@@ -618,7 +618,7 @@ describe("Issue detail", () => {
     expect(criteria().textContent).toContain("0 de 5");
   });
 
-  test("in the dialog: the task's page at full height; Esc in the title being edited saves it and stays", async () => {
+  test("in the dialog: the task's page at full height; Esc in the title being edited goes back and stays, Enter saves", async () => {
     const { api } = await go("issues?open=131");
     const dialog = screen().getByRole("dialog", { name: "Confirmação do agendamento por WhatsApp" });
     expect(dialog.className).toContain("ac-details--fill");
