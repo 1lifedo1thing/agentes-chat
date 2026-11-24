@@ -31,9 +31,9 @@ export async function createTestDatabase(): Promise<{ db: Database; close: () =>
 }
 
 /**
- * Test databases differ from production here alone. A new channel's agents answer in a thread (migration 0323), but
+ * Test databases differ from production here alone. A new channel's agents answer in a thread (migration 0325), but
  * hundreds of tests pin answers in a channel's main timeline; the thread tests turn `reply_in_threads` on themselves,
- * and the 0323 test reruns that migration to check the production default.
+ * and the 0325 test reruns that migration to check the production default.
  */
 const TEST_DEFAULTS = `alter table channels alter column reply_in_threads set default false`;
 
