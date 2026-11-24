@@ -13253,7 +13253,6 @@
     "added": "{{repo}} kaydettiğinizde listeye eklenir."
   },
   "connectors": {
-    "title": "Bağlayıcılar",
     "store": {
       "featured": "Öne çıkanlar",
       "suggested": "Önerilen",
@@ -13296,6 +13295,7 @@
       "addressPassword": "Adres ve şifre",
       "composio": "Composio üzerinden"
     },
+    "title": "Bağlayıcılar",
     "add": "Bağlayıcı ekle",
     "personal": {
       "note": "Bu bağlantıları yalnızca sen açarsın. Ajanların bunları yalnızca sen istediğinde kullanır.",
@@ -16555,17 +16555,21 @@
       "rolesHint": "Bu role sahip herkes kullanabilir, rolü sonradan alanlar da.",
       "computerHint": "Burada kimlerin ajanlarının görev çalıştırabileceği. Yöneticiler daraltabilir, yalnızca sahibi genişletebilir.",
       "phoneHint": "Bir telefonu paylaşmak {{host}} bilgisayarını asla paylaşmaz.",
-      "followsHint": "Bir iPhone, takılı olduğu Mac'in kuralını izler.",
-      "serverHelp": "Her ajan üzerinde kendi kullanıcısı olarak çalışır.",
-      "computerHelp": "Ajanların komutları üzerinde sizin kullanıcınız olarak çalışır."
+      "followsHint": "Bir iPhone, takılı olduğu Mac'in kuralını izler."
+    },
+    "share": {
+      "title": "Tüm çalışma alanı kullansın",
+      "off": "Şimdilik yalnızca siz",
+      "on": "{{org}} içindeki herkes",
+      "hint": "{{org}} içindeki herkesin ajanları üzerinde sizin kullanıcınız olarak görev çalıştırabilir.",
+      "hintServer": "{{org}} içindeki herkesin ajanları üzerinde her biri kendi kullanıcısı olarak görev çalıştırabilir."
     },
     "request": {
       "title": "{{name}}, {{org}} çalışma alanına katılmak istiyor",
       "list": "Katılmak isteyenler",
       "letJoin": "Katılmasına izin ver",
       "deny": "Reddet",
-      "denied": "{{name}} katılmayacak.",
-      "joined": "{{name}} katıldı."
+      "denied": "{{name}} katılmayacak."
     },
     "empty": {
       "title": "Henüz cihaz yok",
