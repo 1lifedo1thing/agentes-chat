@@ -868,8 +868,13 @@ export interface Transcript {
   roomAsk?: { machineId: string; at: number; signIn?: string };
   /** In its computer's line because this plan sign-in has all the runs it takes at once (`SignInSlot`). */
   signInWait?: { key: string };
-  /** Its agent's computer was full: it thinks on another computer of the workspace, in a session of its own there. */
+  /** Its agent's computer was full or away: it thinks on another computer of the workspace, in a session of its own. */
   spill?: SpillRecord;
+  /**
+   * When it last looked for another computer and found none: a run behind others claims to look only once per
+   * `SPILL_AFTER_MS`, not on every retry of its line.
+   */
+  spillLookedAt?: number;
   /** Its plan's limit moved it to the next account in the workspace's order (ADR 0041 §6), in a session of its own there. */
   accountMove?: AccountMove;
   /**
@@ -1329,6 +1334,7 @@ async function executeRunInner(
         people: sql<boolean | null>`(${runState}->>'roomPeople')::boolean`,
         spilled: sql<boolean>`${runState} ? 'spill'`,
         roomSince: sql<string | null>`${runState}->>'roomWaitSince'`,
+        spillLooked: sql<string | null>`${runState}->>'spillLookedAt'`,
         source: sql<string | null>`${runState}->'waitingForBrain'->>'source'`,
         // Read by a usage wait alone, and the one read here that opens the transcript.
         cut: sql<string | null>`case when ${runState}->'waitingForBrain'->>'code' in (${sql.join(
@@ -1415,9 +1421,12 @@ async function executeRunInner(
     if (askingForRoom && row.machineId) {
       const head = await roomHead(db, row.machineId);
       // A turn behind others looks for another computer itself (spill-over) when one may take it: a person's at once,
-      // any other once it waited `SPILL_AFTER_MS`.
+      // any other once it waited `SPILL_AFTER_MS`, and then once per `SPILL_AFTER_MS` (`spillLookedAt`): most can't
+      // move or find no computer, and each look claims the run.
       const spill =
-        (row.people === true || Date.now() - Number(row.roomSince ?? Date.now()) >= SPILL_AFTER_MS) &&
+        (row.people === true ||
+          (Date.now() - Number(row.roomSince ?? Date.now()) >= SPILL_AFTER_MS &&
+            Date.now() - Number(row.spillLooked ?? 0) >= SPILL_AFTER_MS)) &&
         !row.spilled &&
         (await spillMayHelp(db, row.orgId, row.machineId).catch(() => false));
       if (head && head.id !== runId && !spill) {
@@ -4030,6 +4039,7 @@ async function executeRunInner(
    * checkouts there), the right hand, or a turn only its own computer may finish. True: `plan` thinks there now.
    */
   const spillOver = async (cause: SpillCause): Promise<boolean> => {
+    transcript.spillLookedAt = Date.now();
     const home = plan.kind !== "model" ? (plan.session?.machineId ?? agent.machineId ?? null) : null;
     if (
       !home ||
@@ -4049,6 +4059,7 @@ async function executeRunInner(
     const session = { id: Bun.randomUUIDv7() };
     const found = await spillTarget(deps, agent, plan, personId, session);
     if (!found) return false;
+    delete transcript.spillLookedAt;
     await db.update(agentRuns).set({ brainSessionId: session.id }).where(eq(agentRuns.id, run.id));
     plan = found.plan;
     transcript.spill = {
@@ -5342,11 +5353,12 @@ async function executeRunInner(
         let behind = isRightHand(agent) ? null : await roomGate(db, run, roomMachine, place, slotOf(plan));
         let askOn = roomMachine;
         // Behind others, or refused for room before: a person's reply looks for another computer at once, any other
-        // fresh turn once it waited `SPILL_AFTER_MS` (`spillOver`).
+        // fresh turn once it waited `SPILL_AFTER_MS`, then once per `SPILL_AFTER_MS` (`spillOver`).
         const waited = Date.now() - (transcript.roomWaitSince ?? Date.now());
+        const looked = Date.now() - (transcript.spillLookedAt ?? 0);
         if (
           (behind || transcript.roomWaitSince !== undefined) &&
-          (personWaiting || waited >= SPILL_AFTER_MS) &&
+          (personWaiting || (waited >= SPILL_AFTER_MS && looked >= SPILL_AFTER_MS)) &&
           (await spillOver("full"))
         ) {
           askOn = plan.session?.machineId ?? roomMachine;

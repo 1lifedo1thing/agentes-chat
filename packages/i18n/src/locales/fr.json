@@ -21079,7 +21079,7 @@
       "offline": "{{computer}} est hors ligne",
       "offlineHelpPlain": "{{name}} attend le retour de l'ordinateur.",
       "offlineHelpPlain_female": "{{name}} attend le retour de l'ordinateur.",
-      "helping": "En attendant, le nouveau travail réfléchit sur {{names}}.",
+      "helping": "En attendant, le nouveau travail peut réfléchir sur {{names}}.",
       "noRoom": "{{computer}} affiche déjà autant d'écrans que possible. Réessayez dans un instant.",
       "unavailable": "L'écran de {{name}} ne peut pas être affiché pour le moment",
       "unavailable_female": "L'écran de {{name}} ne peut pas être affiché pour le moment",

@@ -19828,7 +19828,7 @@
       "notAnsweringHelp": "Biasanya kembali dalam beberapa menit. Kami sedang menanganinya.",
       "offline": "{{computer}} sedang offline",
       "offlineHelpPlain": "{{name}} menunggu komputernya kembali.",
-      "helping": "Sementara itu, pekerjaan baru berpikir di {{names}}.",
+      "helping": "Sementara itu, pekerjaan baru bisa berpikir di {{names}}.",
       "noRoom": "{{computer}} sudah menampilkan layar sebanyak yang ia bisa. Coba lagi sebentar lagi.",
       "unavailable": "Layar {{name}} tidak bisa ditampilkan sekarang",
       "unavailableHelp": "Coba lagi sebentar lagi.",

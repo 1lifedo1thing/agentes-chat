@@ -19713,7 +19713,7 @@
       "notAnsweringHelp": "보통 몇 분 안에 돌아와요. 해결 중이에요.",
       "offline": "{{computer}}이(가) 오프라인이에요",
       "offlineHelpPlain": "{{name}}은(는) 컴퓨터가 돌아오기를 기다려요.",
-      "helping": "그동안 새 작업은 {{names}}에서 생각합니다.",
+      "helping": "그동안 새 작업은 {{names}}에서 생각할 수 있습니다.",
       "noRoom": "{{computer}}이(가) 표시할 수 있는 화면 수가 가득 찼어요. 잠시 후 다시 시도하세요.",
       "unavailable": "지금은 {{name}}의 화면을 표시할 수 없어요",
       "unavailableHelp": "잠시 후 다시 시도하세요.",

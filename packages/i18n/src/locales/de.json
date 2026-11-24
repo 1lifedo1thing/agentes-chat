@@ -20365,7 +20365,7 @@
       "notAnsweringHelp": "Meist ist er in ein paar Minuten zurück. Wir kümmern uns.",
       "offline": "{{computer}} ist offline",
       "offlineHelpPlain": "{{name}} wartet, bis der Computer zurück ist.",
-      "helping": "Inzwischen denkt neue Arbeit auf {{names}}.",
+      "helping": "Inzwischen kann neue Arbeit auf {{names}} denken.",
       "noRoom": "{{computer}} zeigt schon so viele Bildschirme, wie er kann. Versuch es gleich noch einmal.",
       "unavailable": "Der Bildschirm von {{name}} kann gerade nicht angezeigt werden",
       "unavailableHelp": "Versuch es gleich noch einmal.",

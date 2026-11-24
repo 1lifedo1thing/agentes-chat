@@ -21096,7 +21096,7 @@
       "offline": "{{computer}} è offline",
       "offlineHelpPlain": "{{name}} aspetta che il computer torni disponibile.",
       "offlineHelpPlain_female": "{{name}} aspetta che il computer torni disponibile.",
-      "helping": "Nel frattempo, il nuovo lavoro pensa su {{names}}.",
+      "helping": "Nel frattempo, il nuovo lavoro può pensare su {{names}}.",
       "noRoom": "{{computer}} sta mostrando tutti gli schermi che può. Riprova tra un attimo.",
       "unavailable": "Lo schermo di {{name}} non si può mostrare in questo momento",
       "unavailable_female": "Lo schermo di {{name}} non si può mostrare in questo momento",

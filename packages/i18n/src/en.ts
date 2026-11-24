@@ -21181,7 +21181,7 @@ export const en = {
       offline: "{{computer}} is offline",
       offlineHelpPlain: "{{name}} waits for the computer to come back.",
       /** Under it while computers that help take its new work (ADR 0233): `names` is a list of computers. */
-      helping: "Meanwhile, its new work thinks on {{names}}.",
+      helping: "Meanwhile, its new work can think on {{names}}.",
       noRoom: "{{computer}} is showing as many screens as it can. Try again in a moment.",
       unavailable: "{{name}}'s screen can't be shown right now",
       unavailableHelp: "Try again in a moment.",

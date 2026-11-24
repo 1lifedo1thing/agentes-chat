@@ -245,6 +245,47 @@ test("a routine waits in line first, and once it waited long thinks on its owner
   expect((await runOf(id))?.transcript).toMatchObject({ spill: { from: home, to: laptop, cause: "full" } });
 });
 
+test("a run that looked for another computer and found none looks again only once it waited that long again", async () => {
+  f = await setup();
+  const home = await fullHome();
+  // Rui's own computer helps, but never with someone else's agents: a look finds nothing.
+  const rui = await addMember(f.db, f.org.id, "member", "rui");
+  const theirs = await pair(rui.id, "theirs");
+  await f.db.update(schema.machines).set({ audienceMode: "everyone" }).where(eq(schema.machines.id, theirs));
+  await f.db.insert(schema.machineAccounts).values({
+    orgId: f.org.id,
+    machineId: theirs,
+    id: Bun.randomUUIDv7(),
+    kind: "claude_code",
+    label: "Ana's Claude",
+    createdBy: f.owner.id,
+  });
+  const { handlers, seen } = handlersSeeing();
+  const fired = await fire(f, (await channelRoutine(f)).id, new Date());
+  await drainOutbox(f.db, handlers);
+  const id = fired.agentRunId ?? "";
+  await waitedLong(id);
+  await drainOutbox(f.db, handlers, { now: new Date(Date.now() + COMPUTER_BUSY_RETRY_MS + 1_000) });
+  expect((await runOf(id))?.waitingMachineId).toBe(home);
+  expect((await runOf(id))?.transcript).toHaveProperty("spillLookedAt");
+
+  // Marked the workspace's, it could take the routine now; the next retries of the line don't look yet.
+  await f.db.update(schema.machines).set({ belongsToWorkspace: true }).where(eq(schema.machines.id, theirs));
+  await drainOutbox(f.db, handlers, { now: new Date(Date.now() + 2 * COMPUTER_BUSY_RETRY_MS + 1_000) });
+  expect((await runOf(id))?.waitingMachineId).toBe(home);
+  expect(seen).toEqual([]);
+
+  await f.db
+    .update(schema.agentRuns)
+    .set({
+      transcript: sql`jsonb_set(${schema.agentRuns.transcript}, '{spillLookedAt}', to_jsonb(${Date.now() - SPILL_AFTER_MS - 1_000}::bigint))`,
+    })
+    .where(eq(schema.agentRuns.id, id));
+  await drainOutbox(f.db, handlers, { now: new Date(Date.now() + 3 * COMPUTER_BUSY_RETRY_MS + 1_000) });
+  expect((await runOf(id))?.status).toBe("done");
+  expect(seen.map((t) => t.session?.machineId)).toEqual([theirs]);
+});
+
 test("another agent's ask waits in line first, and once it waited long thinks on the laptop", async () => {
   f = await setup();
   const home = await fullHome();

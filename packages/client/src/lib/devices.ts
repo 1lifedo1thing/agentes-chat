@@ -8,14 +8,17 @@ import type {
   DeviceStatus,
   MachineOfflineCause,
   MachineTool,
+  OrgSummary,
   PhoneDevice,
   WifiPairing,
 } from "../api/types";
 import { DESKTOP_CLOSE, type DesktopMode, type DesktopRetry } from "../desktop";
 import { type SocketBase, socketUrl } from "../realtime/connection";
+import { computerNameOf } from "./computer";
 import { clockAt, firstName, joinNames } from "./format";
 import { computerKind } from "./machines";
 import { norm as fold } from "./tool-review";
+import { isPersonal } from "./workspace-mode";
 
 /**
  * Bring your own devices: the words, pictures and order the web and phone apps give the devices list
@@ -273,12 +276,20 @@ export const spillDeviceText = (t: TFunction, d: ComputerDevice, plan: string | 
 
 /**
  * The line under a reply that thought on another computer because the agent's own was full or away (`meta.spilled`,
- * ADR 0233): "Thought on Bruno's MacBook: Acme's computer was full." Null on any other reply.
+ * ADR 0233): "Thought on Bruno's MacBook: Acme's computer was full." The workspace's own computer reads in the
+ * reader's words (`computerNameOf`). Null on any other reply.
  */
-export function spilledText(t: TFunction, meta: Record<string, unknown> | null | undefined): string | null {
+export function spilledText(
+  t: TFunction,
+  meta: Record<string, unknown> | null | undefined,
+  org: Pick<OrgSummary, "name" | "mode"> | null | undefined,
+): string | null {
   const s = meta?.spilled as { to?: unknown; from?: unknown; cause?: unknown } | undefined;
   if (!s || typeof s.to !== "string") return null;
-  const from = typeof s.from === "string" && s.from ? s.from : t("chat.spilled.itsComputer");
+  const from =
+    typeof s.from === "string" && s.from
+      ? computerNameOf(t, org?.name ?? "", s.from, isPersonal(org))
+      : t("chat.spilled.itsComputer");
   return t(s.cause === "away" ? "chat.spilled.away" : "chat.spilled.full", { to: s.to, from });
 }
 

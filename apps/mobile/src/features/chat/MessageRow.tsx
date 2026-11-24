@@ -297,7 +297,6 @@ function RowBody({
   const name = dir.nameOf(m.author) || t("mobile.chat.someone");
   const meta = m.meta;
   const standIn = modelStandInText(t, meta);
-  const spilled = isAgent ? spilledText(t, meta) : null;
   // What a routine found, told by its agent (as on the web): a small tag, and the report it answers on demand
   // (that report's own line folds into this message). Unfolded, it comes back unfolded with its row (`keptOpen`).
   const routine = routineReplyOf(m);
@@ -305,6 +304,7 @@ function RowBody({
   const qc = useQueryClient();
   const orgId = useOrgId();
   const { org } = useOrg();
+  const spilled = isAgent ? spilledText(t, meta, org) : null;
   const shows = useShowsWork(org);
   // Found again only when the cached lists it reads change, not on every draw of the row.
   const noticeId = routine?.noticeId;

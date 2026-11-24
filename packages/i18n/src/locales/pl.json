@@ -21646,7 +21646,7 @@
       "offline": "{{computer}} jest offline",
       "offlineHelpPlain": "{{name}} czeka, aż komputer wróci.",
       "offlineHelpPlain_female": "{{name}} czeka, aż komputer wróci.",
-      "helping": "W międzyczasie nowa praca myśli na {{names}}.",
+      "helping": "W międzyczasie nowa praca może myśleć na {{names}}.",
       "noRoom": "{{computer}} pokazuje już tyle ekranów, ile może. Spróbuj ponownie za chwilę.",
       "unavailable": "Nie można teraz pokazać ekranu agenta {{name}}",
       "unavailable_female": "Nie można teraz pokazać ekranu agentki {{name}}",

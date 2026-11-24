@@ -20542,7 +20542,7 @@
       "offline": "{{computer}} is offline",
       "offlineHelpPlain": "{{name}} wacht tot de computer terug is.",
       "offlineHelpPlain_female": "{{name}} wacht tot de computer terug is.",
-      "helping": "Ondertussen denkt nieuw werk op {{names}}.",
+      "helping": "Ondertussen kan nieuw werk op {{names}} denken.",
       "noRoom": "{{computer}} toont al zoveel schermen als hij kan. Probeer het zo opnieuw.",
       "unavailable": "Het scherm van {{name}} kan nu niet getoond worden",
       "unavailable_female": "Het scherm van {{name}} kan nu niet getoond worden",

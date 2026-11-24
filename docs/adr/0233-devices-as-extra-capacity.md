@@ -38,7 +38,9 @@ computer could take other people's agents, whose commands run there as its owner
    agent with repositories (it works in its checkouts there), the right hand, or a turn only its own computer may
    finish.
 4. **When**: the home computer is full (behind others in its line, or refused for room) — a person's reply looks at
-   once, anything else after waiting `SPILL_AFTER_MS` (60 s) — or away at the run's start: offline past the blip
+   once, anything else after waiting `SPILL_AFTER_MS` (60 s) and then once per `SPILL_AFTER_MS` while it finds none
+   (`spillLookedAt`: each look claims the run, so a full line never re-claims every run on every retry) — or away at
+   the run's start: offline past the blip
    grace, or paused by its owner. A computer waking from standby is never away: the run waits for it.
 5. **Where**: an online, unpaused computer of the workspace with commands on, its switch on, nothing waiting in its own
    line, never a server install (no OS user of the agent there). A person's own computer takes only its owner's agents;

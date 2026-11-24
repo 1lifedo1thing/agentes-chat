@@ -20289,7 +20289,7 @@
       "notAnsweringHelp": "Genellikle birkaç dakika içinde geri gelir. İlgileniyoruz.",
       "offline": "{{computer}} çevrimdışı",
       "offlineHelpPlain": "{{name}}, bilgisayarın geri gelmesini bekliyor.",
-      "helping": "Bu arada yeni işler {{names}} üzerinde düşünüyor.",
+      "helping": "Bu arada yeni işler {{names}} üzerinde düşünebilir.",
       "noRoom": "{{computer}} gösterebileceği kadar ekran gösteriyor. Birazdan tekrar deneyin.",
       "unavailable": "{{name}} ajanının ekranı şu anda gösterilemiyor",
       "unavailableHelp": "Birazdan tekrar deneyin.",

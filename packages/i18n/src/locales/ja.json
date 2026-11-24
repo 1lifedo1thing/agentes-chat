@@ -19721,7 +19721,7 @@
       "notAnsweringHelp": "通常は数分で戻ります。対応中です。",
       "offline": "{{computer}}はオフラインです",
       "offlineHelpPlain": "{{name}}はコンピューターが戻るのを待っています。",
-      "helping": "その間、新しい作業は{{names}}で考えます。",
+      "helping": "その間、新しい作業は{{names}}で考えられます。",
       "noRoom": "{{computer}}は表示できる画面数の上限に達しています。少し待ってからもう一度お試しください。",
       "unavailable": "{{name}}の画面は現在表示できません",
       "unavailableHelp": "少し待ってからもう一度お試しください。",

@@ -4608,7 +4608,7 @@ export const TimelineMessage = memo(function TimelineMessage({
   };
   const meta = m.meta ?? {};
   const standIn = modelStandInText(t, meta);
-  const spilled = m.author.type === "agent" ? spilledText(t, meta) : null;
+  const spilled = m.author.type === "agent" ? spilledText(t, meta, org) : null;
   const approvalId = typeof meta.approvalId === "string" ? meta.approvalId : null;
   const proposalId = typeof meta.proposalId === "string" ? meta.proposalId : null;
   const memoryUpdates = Array.isArray(meta.memoryUpdates)

@@ -49796,7 +49796,7 @@
     "value": "{{name}} waits for the computer to come back."
   },
   "agentComputer.state.helping": {
-    "value": "Meanwhile, its new work thinks on {{names}}."
+    "value": "Meanwhile, its new work can think on {{names}}."
   },
   "agentComputer.state.noRoom": {
     "value": "{{computer}} is showing as many screens as it can. Try again in a moment."

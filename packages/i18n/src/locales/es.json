@@ -20938,7 +20938,7 @@
       "notAnsweringHelp": "Suele volver en pocos minutos. Ya estamos en eso.",
       "offline": "{{computer}} está desconectada",
       "offlineHelpPlain": "{{name}} espera a que la computadora vuelva.",
-      "helping": "Mientras tanto, el trabajo nuevo piensa en {{names}}.",
+      "helping": "Mientras tanto, el trabajo nuevo puede pensar en {{names}}.",
       "noRoom": "{{computer}} ya muestra todas las pantallas que puede. Inténtalo de nuevo en un momento.",
       "unavailable": "La pantalla de {{name}} no se puede mostrar ahora",
       "unavailableHelp": "Inténtalo de nuevo en un momento.",

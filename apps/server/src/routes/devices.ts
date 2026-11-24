@@ -353,8 +353,9 @@ export function deviceAppRoutes(deps: AppDeps) {
         machineId,
         input,
       );
+      // Best effort: the switch is saved, and a turn that finds no CLI there says so later.
       if (input.spill?.own === true && machineHub)
-        await installHelpClis({ db, pubsub, hub: machineHub }, c.get("user").id, orgId, machineId);
+        await installHelpClis({ db, pubsub, hub: machineHub }, c.get("user").id, orgId, machineId).catch(() => []);
       return c.json(device, 200);
     },
   );

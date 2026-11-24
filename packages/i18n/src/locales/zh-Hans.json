@@ -19899,7 +19899,7 @@
       "offline": "{{computer}} 已离线",
       "offlineHelpPlain": "{{name}} 正在等待电脑恢复。",
       "offlineHelpPlain_female": "{{name}} 正在等待电脑恢复。",
-      "helping": "在此期间，新工作在 {{names}} 上思考。",
+      "helping": "在此期间，新工作可以在 {{names}} 上思考。",
       "noRoom": "{{computer}} 显示的屏幕已达上限。请稍后再试。",
       "unavailable": "暂时无法显示 {{name}} 的屏幕",
       "unavailable_female": "暂时无法显示 {{name}} 的屏幕",

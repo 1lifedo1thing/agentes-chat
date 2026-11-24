@@ -106,13 +106,18 @@ const computer = (c: Partial<ComputerDevice>): ComputerDevice => ({
 
 describe("devices as extra capacity", () => {
   test("the line under a reply that thought elsewhere says where and why; any other reply has none", () => {
-    expect(spilledText(t, { spilled: { to: "Bruno's MacBook", from: "Acme computer", cause: "full" } })).toBe(
-      "Thought on Bruno's MacBook: Acme computer was full.",
+    const org = { name: "Acme", mode: "team" as const };
+    expect(spilledText(t, { spilled: { to: "Bruno's MacBook", from: "Studio Mac", cause: "full" } }, org)).toBe(
+      "Thought on Bruno's MacBook: Studio Mac was full.",
     );
-    expect(spilledText(t, { spilled: { to: "Bruno's MacBook", from: null, cause: "away" } })).toBe(
+    // The workspace's own computer, named in its first owner's language, reads in the reader's.
+    expect(spilledText(t, { spilled: { to: "Bruno's MacBook", from: "Computador da Acme", cause: "full" } }, org)).toBe(
+      `Thought on Bruno's MacBook: ${t("computerSetup.title", { org: "Acme" })} was full.`,
+    );
+    expect(spilledText(t, { spilled: { to: "Bruno's MacBook", from: null, cause: "away" } }, org)).toBe(
       "Thought on Bruno's MacBook: its computer was away.",
     );
-    expect(spilledText(t, { speedFallback: true })).toBeNull();
+    expect(spilledText(t, { speedFallback: true }, org)).toBeNull();
   });
 
   test("the computers that help an agent: online, its owner's own or the workspace's, while the workspace lets them", () => {

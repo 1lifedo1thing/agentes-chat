@@ -676,7 +676,7 @@ describe("the computer dialog, self-host", () => {
     expect(t.closed()).toBe(0);
   });
 
-  test("offline while her owner's laptop helps: the cover says her new work thinks there meanwhile", async () => {
+  test("offline while her owner's laptop helps: the cover says her new work can think there meanwhile", async () => {
     setSystemTime(new Date(2026, 9, 21, 12));
     const seen = new Date(Date.now() - 30 * 60_000).toISOString();
     const b = await backend({
@@ -692,7 +692,7 @@ describe("the computer dialog, self-host", () => {
     });
     await settle(8);
     expect(box().textContent).toContain(
-      "A Ada espera o computador voltar. Enquanto isso, o trabalho novo pensa em MacBook do Bruno.",
+      "A Ada espera o computador voltar. Enquanto isso, o trabalho novo pode pensar em MacBook do Bruno.",
     );
   });
 

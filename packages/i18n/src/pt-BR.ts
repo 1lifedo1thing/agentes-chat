@@ -18867,12 +18867,12 @@ export const ptBR = {
       cant: "Respondi com {{via}}: {{plan}} não consegue pensar agora.",
       change: "Trocar",
     },
-    /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     spilled: {
       full: "Pensou em {{to}}: {{from}} estava cheio.",
       away: "Pensou em {{to}}: {{from}} estava fora.",
       itsComputer: "o computador dele",
     },
+    /** Under a reply "Automático" gave with another model because the plan refused the one it maps to (`meta.modelStandIn`). */
     modelStandIn: {
       text: "O {{plan}} recusou o {{from}} com esta chave. Respondi com o {{to}}, que funciona nela.",
       useAll: "Usar o {{model}} em todos",
@@ -21096,7 +21096,7 @@ export const ptBR = {
       offline: "O {{computer}} está offline",
       offlineHelpPlain: "O {{name}} espera o computador voltar.",
       offlineHelpPlain_female: "A {{name}} espera o computador voltar.",
-      helping: "Enquanto isso, o trabalho novo pensa em {{names}}.",
+      helping: "Enquanto isso, o trabalho novo pode pensar em {{names}}.",
       noRoom: "O {{computer}} já mostra o máximo de telas que consegue. Tente de novo daqui a pouco.",
       unavailable: "A tela do {{name}} não pode ser mostrada agora",
       unavailable_female: "A tela da {{name}} não pode ser mostrada agora",
