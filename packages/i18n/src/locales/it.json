@@ -437,7 +437,7 @@
     },
     "manage_agents": {
       "title": "Modificare agenti",
-      "desc": "Istruzioni, cervello, budget e cosa usa ciascuno, sugli agenti con cui la persona parla. Gli agenti privati degli altri restano esclusi.",
+      "desc": "Istruzioni, cervello, budget e cosa usa ciascuno, sugli agenti con cui la persona parla. Degli agenti privati degli altri, solo il nome, il responsabile e l'uso.",
       "short": "modificare agenti",
       "say": "modifica gli agenti con cui parla"
     },
@@ -6494,6 +6494,20 @@
     },
     "copyHandle": "Copia @{{handle}}",
     "copied": "@{{handle}} copiato.",
+    "facts": {
+      "private": "Privato",
+      "created": "Creato",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "Uso a {{month}}",
+      "budget": "Budget",
+      "budgetUsed": "{{percent}} usato",
+      "last": "Ultima attività",
+      "never": "Nessuna ancora",
+      "title": "Cosa fa",
+      "locked": "Istruzioni, memoria, strumenti, conversazioni, routine e file di {{name}} restano a {{owner}}, a chi questa persona chiama a modificarlo e agli admin.",
+      "lockedNoOwner": "Istruzioni, memoria, strumenti, conversazioni, routine e file di {{name}} restano a chi può modificarlo e agli admin.",
+      "ask": "Chiedi a {{owner}}"
+    },
     "overview": {
       "approvals_one": "{{count}} richiesta di approvazione",
       "approvals_many": "{{count}} richieste di approvazione",
@@ -13849,7 +13863,6 @@
     "added": "{{repo}} entra nell'elenco quando salvi."
   },
   "connectors": {
-    "title": "Connettori",
     "store": {
       "featured": "In evidenza",
       "suggested": "Suggerito",
@@ -13896,6 +13909,7 @@
       "addressPassword": "Indirizzo e password",
       "composio": "Tramite Composio"
     },
+    "title": "Connettori",
     "add": "Aggiungi connettore",
     "personal": {
       "note": "Solo tu apri queste connessioni. I tuoi agenti le usano solo quando glielo chiedi.",

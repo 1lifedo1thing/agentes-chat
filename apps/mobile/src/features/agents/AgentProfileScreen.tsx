@@ -19,6 +19,7 @@ import {
   useTakeConnectionOffAgent,
   useUsage,
 } from "@agenteschat/client";
+import { seesFactsOnly } from "@agenteschat/client/lib/agent-facts";
 import { approvalRuleServer, approvalRuleWords, approvalTitle } from "@agenteschat/client/lib/approval-words";
 import { canTalk, editsAgent, managesAgent, seesDetails } from "@agenteschat/client/lib/audience";
 import { brainLine } from "@agenteschat/client/lib/brain";
@@ -123,6 +124,7 @@ import { useAgentProfileStatus, usePresenceOf } from "../status/hooks";
 import { StatusCard } from "../status/StatusCard";
 import { openAgentUsage } from "../usage/UsageScreen";
 import { openAgentEdit } from "./AgentEditScreen";
+import { AgentFacts } from "./AgentFacts";
 import { useAgentMailboxes } from "./AgentMailSection";
 import { ApprovalsLevelRow } from "./ApprovalsLevelRow";
 import {
@@ -219,6 +221,8 @@ function Profile({ id }: { id: string }) {
   const models = useModels();
   // Someone it doesn't answer (not its owner, not an admin) sees only its public card: no tools, memory or month.
   const details = seesDetails(agent);
+  // A teammate's private agent seen through "Editar agentes": its facts, nothing of how it works.
+  const facts = seesFactsOnly(agent);
   // The team's right hand (ADR 0137): what it is and how it works, its model, Configurar for who manages agents.
   const rightHand = isRightHand(agent);
   // A personal workspace's agent (ADR 0159 §3): its rules, repositories and the rest in Advanced.
@@ -421,7 +425,11 @@ function Profile({ id }: { id: string }) {
   // The right hand's one role name, as its row in Conversas and its conversation's header say it.
   const roleLine = rightHand
     ? t("rightHand.labelCapitalized")
-    : [roleName || null, plain ? (roleName ? lowerFirst(plain, i18n.language) : plain) : null]
+    : [
+        roleName || null,
+        plain ? (roleName ? lowerFirst(plain, i18n.language) : plain) : null,
+        facts ? t("agentPage.facts.private") : null,
+      ]
         .filter(Boolean)
         .join(" · ");
   const shownDid = allDid ? did : did.slice(0, DID_SHOWN);
@@ -907,13 +915,17 @@ function Profile({ id }: { id: string }) {
             ) : (
               <Button
                 variant="primary"
-                label={t("profile.askAccess")}
+                label={
+                  facts && dir.memberById.get(ownerId)
+                    ? t("agentPage.facts.ask", { owner: dir.memberById.get(ownerId)?.name })
+                    : t("profile.askAccess")
+                }
                 loading={opening}
                 onPress={() => openDm({ userId: ownerId })}
               />
             )}
           </View>
-          {agent?.canTalk === false ? (
+          {agent?.canTalk === false && !facts ? (
             <Text variant="small" tone="muted" style={styles.center}>
               {details ? t("mobile.agent.cantTalk") : t("profile.detailsHidden", agentGrammar(name))}
             </Text>
@@ -974,6 +986,15 @@ function Profile({ id }: { id: string }) {
             {/* Views are peers: a switch shows the other at once, never animated (it happens many times a visit). */}
             <View style={styles.page}>{tab === "today" ? todayView : tab === "access" ? accessView : memoryView}</View>
           </>
+        ) : facts && agent ? (
+          <View style={styles.page}>
+            <AgentFacts
+              agent={agent}
+              detail={detail.data}
+              owner={owner ?? null}
+              thinks={thinks?.text ?? modelLabel(agent.model)}
+            />
+          </View>
         ) : (
           <View style={styles.page}>{nowBlock}</View>
         )}

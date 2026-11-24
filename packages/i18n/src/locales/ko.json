@@ -411,7 +411,7 @@
     },
     "manage_agents": {
       "title": "에이전트 편집",
-      "desc": "지침, 두뇌, 예산, 각 에이전트가 쓰는 것. 그 사람이 대화하는 에이전트에 한하며, 다른 사람의 비공개 에이전트는 제외돼요.",
+      "desc": "지침, 두뇌, 예산, 각 에이전트가 쓰는 것. 그 사람이 대화하는 에이전트에 한해요. 다른 사람의 비공개 에이전트는 이름, 책임자, 사용량만 보여요.",
       "short": "에이전트 편집",
       "say": "대화하는 에이전트 편집"
     },
@@ -6000,6 +6000,20 @@
     },
     "copyHandle": "@{{handle}} 복사",
     "copied": "@{{handle}}을(를) 복사했어요.",
+    "facts": {
+      "private": "비공개",
+      "created": "만든 날",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "{{month}} 사용량",
+      "budget": "예산",
+      "budgetUsed": "{{percent}} 사용",
+      "last": "마지막 활동",
+      "never": "아직 없어요",
+      "title": "하는 일",
+      "locked": "{{name}}의 지침, 메모리, 도구, 대화, 루틴, 파일은 {{owner}}, 그 사람이 편집을 맡긴 사람, 관리자만 볼 수 있어요.",
+      "lockedNoOwner": "{{name}}의 지침, 메모리, 도구, 대화, 루틴, 파일은 편집할 수 있는 사람과 관리자만 볼 수 있어요.",
+      "ask": "{{owner}}에게 요청"
+    },
     "overview": {
       "approvals_other": "승인 요청 {{count}}개",
       "approvalsYou": "승인 메뉴나 채팅에서 승인하거나 거절하세요",
@@ -12773,7 +12787,6 @@
     "added": "저장하면 {{repo}}이(가) 목록에 추가돼요."
   },
   "connectors": {
-    "title": "커넥터",
     "store": {
       "featured": "추천",
       "suggested": "제안",
@@ -12812,6 +12825,7 @@
       "addressPassword": "주소와 비밀번호",
       "composio": "Composio를 통해"
     },
+    "title": "커넥터",
     "add": "커넥터 추가",
     "personal": {
       "note": "이 연결은 나만 열 수 있어요. 내가 부탁할 때만 에이전트가 사용해요.",

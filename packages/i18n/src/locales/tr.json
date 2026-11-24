@@ -424,7 +424,7 @@
     },
     "manage_agents": {
       "title": "Ajanları düzenleme",
-      "desc": "Talimatlar, beyin, bütçe ve her birinin kullandıkları, kişinin konuştuğu ajanlarda. Başkalarının özel ajanları hariç.",
+      "desc": "Talimatlar, beyin, bütçe ve her birinin kullandıkları, kişinin konuştuğu ajanlarda. Başkalarının özel ajanlarından yalnızca adı, sorumlusu ve kullanımı.",
       "short": "ajanları düzenleme",
       "say": "konuştuğu ajanları düzenler"
     },
@@ -6225,6 +6225,20 @@
     },
     "copyHandle": "@{{handle}} kopyala",
     "copied": "@{{handle}} kopyalandı.",
+    "facts": {
+      "private": "Özel",
+      "created": "Oluşturuldu",
+      "createdBy": "{{name}}, {{date}}",
+      "usage": "{{month}} kullanımı",
+      "budget": "Bütçe",
+      "budgetUsed": "%{{percent}} kullanıldı",
+      "last": "Son etkinlik",
+      "never": "Henüz yok",
+      "title": "Ne yapar",
+      "locked": "{{name}} adlı ajanın talimatları, belleği, araçları, konuşmaları, rutinleri ve dosyaları {{owner}}, bu kişinin düzenlemeye çağırdıkları ve yöneticilerde kalır.",
+      "lockedNoOwner": "{{name}} adlı ajanın talimatları, belleği, araçları, konuşmaları, rutinleri ve dosyaları onu düzenleyebilenlerde ve yöneticilerde kalır.",
+      "ask": "{{owner}} kişisine sor"
+    },
     "overview": {
       "approvals_one": "{{count}} onay isteği",
       "approvals_other": "{{count}} onay isteği",
@@ -13253,7 +13267,6 @@
     "added": "{{repo}} kaydettiğinizde listeye eklenir."
   },
   "connectors": {
-    "title": "Bağlayıcılar",
     "store": {
       "featured": "Öne çıkanlar",
       "suggested": "Önerilen",
@@ -13296,6 +13309,7 @@
       "addressPassword": "Adres ve şifre",
       "composio": "Composio üzerinden"
     },
+    "title": "Bağlayıcılar",
     "add": "Bağlayıcı ekle",
     "personal": {
       "note": "Bu bağlantıları yalnızca sen açarsın. Ajanların bunları yalnızca sen istediğinde kullanır.",

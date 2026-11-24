@@ -688,3 +688,10 @@
   color: var(--muted);
   font-size: 13px;
 }
+
+/* A teammate's private agent seen by its facts alone: the lock and "Private" after its handle, kept together. */
+.team-private {
+  display: inline-flex;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
