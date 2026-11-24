@@ -5951,6 +5951,19 @@
           "missed_other": "{{count}} Agenten wurden nicht geändert."
         },
         "add": {
+          "pickTitle": "Konto hinzufügen",
+          "pickFoot": "Du meldest dich auf der Seite der KI selbst an.",
+          "have_one": "Du hast {{count}}",
+          "have_other": "Du hast {{count}}",
+          "others": "Anderer Plan",
+          "key": "API-Schlüssel",
+          "keyLine": "Nach Nutzung bezahlt",
+          "titlePlan": "{{plan}} hinzufügen",
+          "againTitle": "Erneut bei {{brand}} anmelden",
+          "haveNote": "Du hast hier schon {{accounts}}. Um dich mit einem anderen Konto anzumelden, melde dich zuerst im Browser bei {{brand}} ab, oder kopiere den Link und öffne ihn in einem privaten Fenster.",
+          "againNote": "Melde dich erneut als {{account}} an. {{name}} denkt wieder damit, sobald du fertig bist.",
+          "footSignIn": "Du gibst dein Passwort auf der Seite von {{brand}} ein.",
+          "footKey": "Der Schlüssel geht verschlüsselt direkt an {{computer}}.",
           "title": {
             "claude_code": "Claude-Konto hinzufügen",
             "codex": "ChatGPT-Konto hinzufügen",
@@ -6043,7 +6056,13 @@
           "undo": "Rückgängig",
           "undone": "Wieder wie vorher.",
           "missed_one": "{{names}} behält das bisherige Konto.",
-          "missed_other": "{{names}} behalten ihre bisherigen Konten."
+          "missed_other": "{{names}} behalten ihre bisherigen Konten.",
+          "added": "Konto hinzugefügt. {{name}} denkt jetzt mit {{account}}.",
+          "alsoUses_one": "{{names}} denkt auch mit {{account}}.",
+          "alsoUses_other": "{{names}} denken auch mit {{account}}.",
+          "alsoSwitch": "Auch wechseln",
+          "signedOut": "{{account}} ist bei {{brand}} abgemeldet. {{name}} antwortet nicht, bis du dich erneut anmeldest oder ein anderes Konto wählst.",
+          "empty": "{{name}} hat noch kein KI-Konto zum Denken."
         }
       },
       "computer": {
@@ -10678,6 +10697,9 @@
     "of": "von {{name}}",
     "moreSpeed": "Geschwindigkeit und Kontextfenster",
     "whoThinks": "Wer denkt",
+    "thinks_one": "{{names}} denkt damit",
+    "thinks_other": "{{names}} denken damit",
+    "thinksNone": "Kein Agent denkt damit",
     "bulk": {
       "sub": "Wähle die KI und dann die Agenten, die sie übernehmen."
     },
@@ -10687,10 +10709,14 @@
       "search": "Nach Name, KI, Abo oder Besitzer suchen",
       "noMatch": "Kein Konto gefunden.",
       "noModel": "Kein Modell gefunden.",
+      "empty": "Noch kein Konto.",
+      "add": "Konto hinzufügen",
+      "addLine": "Claude, ChatGPT, Gemini und weitere, oder ein API-Schlüssel",
+      "manage": "Konten verwalten",
       "groups": {
-        "yours": "Deine",
+        "yours": "Deine Konten",
         "others": "Vom Team",
-        "keys": "Vom Workspace"
+        "keys": "API-Schlüssel"
       }
     },
     "order": {

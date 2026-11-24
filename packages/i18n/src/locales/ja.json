@@ -5715,6 +5715,18 @@
           "missed_other": "{{count}}体のエージェントは変更されませんでした。"
         },
         "add": {
+          "pickTitle": "アカウントを追加",
+          "pickFoot": "ログインはそのAIのページで行います。",
+          "have_other": "{{count}}件あります",
+          "others": "その他のプラン",
+          "key": "APIキー",
+          "keyLine": "従量課金",
+          "titlePlan": "{{plan}}を追加",
+          "againTitle": "{{brand}}にもう一度ログイン",
+          "haveNote": "ここにはすでに{{accounts}}があります。別のアカウントでログインするには、先にブラウザで{{brand}}からログアウトするか、リンクをコピーしてプライベートウィンドウで開いてください。",
+          "againNote": "{{account}}としてもう一度ログインしてください。完了するとすぐに、{{name}}はまたこのアカウントで考えます。",
+          "footSignIn": "パスワードは{{brand}}のページで入力します。",
+          "footKey": "キーは暗号化されて{{computer}}に直接送られます。",
           "title": {
             "claude_code": "Claudeアカウントを追加",
             "codex": "ChatGPTアカウントを追加",
@@ -5806,7 +5818,12 @@
           "finish": "完了",
           "undo": "元に戻す",
           "undone": "元の状態に戻しました。",
-          "missed_other": "{{names}}は前のアカウントのままです。"
+          "missed_other": "{{names}}は前のアカウントのままです。",
+          "added": "アカウントを追加しました。{{name}}は今、{{account}}で考えています。",
+          "alsoUses_other": "{{names}}も{{account}}で考えています。",
+          "alsoSwitch": "こちらも切り替える",
+          "signedOut": "{{account}}は{{brand}}からログアウトしました。もう一度ログインするか別のアカウントを選ぶまで、{{name}}は返信しません。",
+          "empty": "{{name}}にはまだ考えるためのAIアカウントがありません。"
         }
       },
       "computer": {
@@ -10247,6 +10264,8 @@
     "of": "{{name}}さんの",
     "moreSpeed": "速度とコンテキストウィンドウ",
     "whoThinks": "考える担当",
+    "thinks_other": "{{names}}がこのアカウントで考えています",
+    "thinksNone": "このアカウントで考えているエージェントはいません",
     "bulk": {
       "sub": "AIを選び、次にそれを使うエージェントを選びます。"
     },
@@ -10256,10 +10275,14 @@
       "search": "名前、AI、プラン、所有者で検索",
       "noMatch": "一致するアカウントはありません。",
       "noModel": "一致するモデルはありません。",
+      "empty": "まだアカウントはありません。",
+      "add": "アカウントを追加",
+      "addLine": "Claude、ChatGPT、Geminiなど、またはAPIキー",
+      "manage": "アカウントを管理",
       "groups": {
-        "yours": "あなたの",
+        "yours": "あなたのアカウント",
         "others": "チームの",
-        "keys": "ワークスペースの"
+        "keys": "APIキー"
       }
     },
     "order": {

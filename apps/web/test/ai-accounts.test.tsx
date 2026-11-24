@@ -131,10 +131,11 @@ describe("IA e uso: the viewer's own accounts", () => {
     // Looking at the plans asks the computers for fresh usage.
     expect(member.state.calls.some((c) => c.method === "machines.refreshAccountUsage")).toBe(true);
     const [work, mm] = rows();
-    // One line: its name, its plan and owner, its window closest to the limit.
+    // One line: its name, its plan, its window closest to the limit.
     const head = work?.querySelector(".plan-row__head") as HTMLElement;
     expect(head.querySelector(".plan-row__title")?.textContent).toBe("Trabalho");
-    expect(head.querySelector(".plan-row__owner")?.textContent).toBe("Team · de Walter");
+    // The viewer's own: in "Suas contas", its plan alone.
+    expect(head.querySelector(".plan-row__owner")?.textContent).toBe("Team");
     expect(head.querySelector(".ac-planmeter__line")?.textContent).toBe("5h 84%");
     expect(within(head).getAllByRole("meter")).toHaveLength(1);
     // A coding plan's key: its maker's mark; opened, its key's end and the way to a new key.

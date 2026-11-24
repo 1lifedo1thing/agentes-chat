@@ -5713,6 +5713,18 @@
           "missed_other": "에이전트 {{count}}개는 바뀌지 않았어요."
         },
         "add": {
+          "pickTitle": "계정 추가",
+          "pickFoot": "로그인은 AI의 페이지에서 직접 해요.",
+          "have_other": "{{count}}개 있어요",
+          "others": "다른 요금제",
+          "key": "API 키",
+          "keyLine": "사용한 만큼 결제",
+          "titlePlan": "{{plan}} 추가",
+          "againTitle": "{{brand}}에 다시 로그인",
+          "haveNote": "여기에 이미 {{accounts}}이(가) 있어요. 다른 계정으로 로그인하려면 먼저 브라우저에서 {{brand}}에서 로그아웃하거나, 링크를 복사해 시크릿 창에서 여세요.",
+          "againNote": "{{account}}(으)로 다시 로그인하세요. 끝나는 대로 {{name}}이(가) 다시 이 계정으로 생각해요.",
+          "footSignIn": "비밀번호는 {{brand}} 페이지에서 입력해요.",
+          "footKey": "키는 암호화되어 {{computer}}(으)로 바로 가요.",
           "title": {
             "claude_code": "Claude 계정 추가",
             "codex": "ChatGPT 계정 추가",
@@ -5804,7 +5816,12 @@
           "finish": "완료",
           "undo": "되돌리기",
           "undone": "원래대로 돌아갔어요.",
-          "missed_other": "{{names}}은(는) 이전 계정을 그대로 써요."
+          "missed_other": "{{names}}은(는) 이전 계정을 그대로 써요.",
+          "added": "계정을 추가했어요. 이제 {{name}}이(가) {{account}}(으)로 생각해요.",
+          "alsoUses_other": "{{names}}도 {{account}}(으)로 생각해요.",
+          "alsoSwitch": "함께 바꾸기",
+          "signedOut": "{{account}}이(가) {{brand}}에서 로그아웃됐어요. 다시 로그인하거나 다른 계정을 고를 때까지 {{name}}은(는) 답하지 않아요.",
+          "empty": "{{name}}에게는 아직 생각할 AI 계정이 없어요."
         }
       },
       "computer": {
@@ -10241,6 +10258,8 @@
     "of": "{{name}} 님의",
     "moreSpeed": "속도와 컨텍스트 창",
     "whoThinks": "생각하는 주체",
+    "thinks_other": "{{names}}이(가) 이 계정으로 생각해요",
+    "thinksNone": "이 계정으로 생각하는 에이전트가 없어요",
     "bulk": {
       "sub": "AI를 고른 다음 그것을 쓸 에이전트를 고르세요."
     },
@@ -10250,10 +10269,14 @@
       "search": "이름, AI, 플랜, 소유자로 검색",
       "noMatch": "일치하는 계정이 없습니다.",
       "noModel": "일치하는 모델이 없습니다.",
+      "empty": "아직 계정이 없어요.",
+      "add": "계정 추가",
+      "addLine": "Claude, ChatGPT, Gemini 등 또는 API 키",
+      "manage": "계정 관리",
       "groups": {
         "yours": "내 계정",
         "others": "팀의 계정",
-        "keys": "워크스페이스의 계정"
+        "keys": "API 키"
       }
     },
     "order": {

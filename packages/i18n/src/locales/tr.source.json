@@ -14629,6 +14629,45 @@
       "other": "{{count}} agents didn't change."
     }
   },
+  "agentPage.work.brain.add.pickTitle": {
+    "value": "Add account"
+  },
+  "agentPage.work.brain.add.pickFoot": {
+    "value": "You sign in on the AI's own page."
+  },
+  "agentPage.work.brain.add.have": {
+    "value": {
+      "one": "You have 1",
+      "other": "You have {{count}}"
+    }
+  },
+  "agentPage.work.brain.add.others": {
+    "value": "Another plan"
+  },
+  "agentPage.work.brain.add.key": {
+    "value": "API key"
+  },
+  "agentPage.work.brain.add.keyLine": {
+    "value": "Pay as you go"
+  },
+  "agentPage.work.brain.add.titlePlan": {
+    "value": "Add {{plan}}"
+  },
+  "agentPage.work.brain.add.againTitle": {
+    "value": "Sign in to {{brand}} again"
+  },
+  "agentPage.work.brain.add.haveNote": {
+    "value": "You already have {{accounts}} here. To sign in with another account, sign out of {{brand}} in your browser first, or copy the link and open it in a private window."
+  },
+  "agentPage.work.brain.add.againNote": {
+    "value": "Sign in again as {{account}}. {{name}} thinks with it again as soon as you're done."
+  },
+  "agentPage.work.brain.add.footSignIn": {
+    "value": "You type your password on {{brand}}'s page."
+  },
+  "agentPage.work.brain.add.footKey": {
+    "value": "The key goes encrypted straight to {{computer}}."
+  },
   "agentPage.work.brain.add.title.claude_code": {
     "value": "Add a Claude account"
   },
@@ -14871,6 +14910,24 @@
       "one": "{{names}} kept the account it had.",
       "other": "{{names}} kept the accounts they had."
     }
+  },
+  "agentPage.work.brain.v2.added": {
+    "value": "Account added. {{name}} now thinks with {{account}}."
+  },
+  "agentPage.work.brain.v2.alsoUses": {
+    "value": {
+      "one": "{{names}} also thinks with {{account}}.",
+      "other": "{{names}} also think with {{account}}."
+    }
+  },
+  "agentPage.work.brain.v2.alsoSwitch": {
+    "value": "Switch them too"
+  },
+  "agentPage.work.brain.v2.signedOut": {
+    "value": "{{account}} signed out of {{brand}}. {{name}} won't answer until you sign in again or pick another account."
+  },
+  "agentPage.work.brain.v2.empty": {
+    "value": "{{name}} has no AI account to think with yet."
   },
   "agentPage.work.computer.title": {
     "value": "Where does {{name}} work?"
@@ -25936,6 +25993,15 @@
   "aiHub.whoThinks": {
     "value": "Who thinks"
   },
+  "aiHub.thinks": {
+    "value": {
+      "one": "{{names}} thinks with it",
+      "other": "{{names}} think with it"
+    }
+  },
+  "aiHub.thinksNone": {
+    "value": "No agent thinks with it"
+  },
   "aiHub.bulk.sub": {
     "value": "Pick the AI, then the agents that take it."
   },
@@ -25954,14 +26020,26 @@
   "aiHub.choice.noModel": {
     "value": "No model matches."
   },
+  "aiHub.choice.empty": {
+    "value": "No account yet."
+  },
+  "aiHub.choice.add": {
+    "value": "Add account"
+  },
+  "aiHub.choice.addLine": {
+    "value": "Claude, ChatGPT, Gemini and more, or an API key"
+  },
+  "aiHub.choice.manage": {
+    "value": "Manage accounts"
+  },
   "aiHub.choice.groups.yours": {
-    "value": "Yours"
+    "value": "Your accounts"
   },
   "aiHub.choice.groups.others": {
     "value": "The team's"
   },
   "aiHub.choice.groups.keys": {
-    "value": "The workspace's"
+    "value": "API keys"
   },
   "aiHub.order.title": {
     "value": "Order of use"

@@ -5736,6 +5736,18 @@
           "missed_other": "{{count}} 个智能体未更改。"
         },
         "add": {
+          "pickTitle": "添加账号",
+          "pickFoot": "你在 AI 自己的页面上登录。",
+          "have_other": "你有 {{count}} 个",
+          "others": "其他套餐",
+          "key": "API 密钥",
+          "keyLine": "按用量付费",
+          "titlePlan": "添加 {{plan}}",
+          "againTitle": "重新登录 {{brand}}",
+          "haveNote": "你在这里已经有 {{accounts}}。要用其他账号登录，请先在浏览器中退出 {{brand}}，或复制链接在无痕窗口中打开。",
+          "againNote": "以 {{account}} 重新登录。你一完成，{{name}} 就会再次用它思考。",
+          "footSignIn": "你在 {{brand}} 的页面上输入密码。",
+          "footKey": "密钥会加密后直接发送到 {{computer}}。",
           "title": {
             "claude_code": "添加 Claude 账号",
             "codex": "添加 ChatGPT 账号",
@@ -5827,7 +5839,12 @@
           "finish": "完成",
           "undo": "撤销",
           "undone": "已恢复原样。",
-          "missed_other": "{{names}} 仍使用原来的账号。"
+          "missed_other": "{{names}} 仍使用原来的账号。",
+          "added": "已添加账号。{{name}} 现在用 {{account}} 思考。",
+          "alsoUses_other": "{{names}} 也在用 {{account}} 思考。",
+          "alsoSwitch": "也切换",
+          "signedOut": "{{account}} 已退出 {{brand}}。在你重新登录或选择其他账号之前，{{name}} 不会回复。",
+          "empty": "{{name}} 还没有用来思考的 AI 账号。"
         }
       },
       "computer": {
@@ -10290,6 +10307,8 @@
     "of": "{{name}} 的",
     "moreSpeed": "速度和上下文窗口",
     "whoThinks": "由谁思考",
+    "thinks_other": "{{names}} 用它思考",
+    "thinksNone": "没有智能体用它思考",
     "bulk": {
       "sub": "先选 AI，再选使用它的智能体。"
     },
@@ -10299,10 +10318,14 @@
       "search": "按名称、AI、套餐或所有者搜索",
       "noMatch": "没有匹配的账号。",
       "noModel": "没有匹配的模型。",
+      "empty": "还没有账号。",
+      "add": "添加账号",
+      "addLine": "Claude、ChatGPT、Gemini 等，或 API 密钥",
+      "manage": "管理账号",
       "groups": {
-        "yours": "你的",
+        "yours": "你的账号",
         "others": "团队的",
-        "keys": "工作区的"
+        "keys": "API 密钥"
       }
     },
     "order": {

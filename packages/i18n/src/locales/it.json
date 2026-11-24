@@ -6174,6 +6174,20 @@
           "missed_other": "{{count}} agenti non sono cambiati."
         },
         "add": {
+          "pickTitle": "Aggiungi account",
+          "pickFoot": "Accedi sulla pagina dell'IA stessa.",
+          "have_one": "Ne hai {{count}}",
+          "have_many": "Ne hai {{count}}",
+          "have_other": "Ne hai {{count}}",
+          "others": "Altro piano",
+          "key": "Chiave API",
+          "keyLine": "A consumo",
+          "titlePlan": "Aggiungi {{plan}}",
+          "againTitle": "Accedi di nuovo a {{brand}}",
+          "haveNote": "Hai già {{accounts}} qui. Per accedere con un altro account, esci prima da {{brand}} nel browser, oppure copia il link e aprilo in una finestra privata.",
+          "againNote": "Accedi di nuovo come {{account}}. {{name}} torna a pensare con questo account appena hai finito.",
+          "footSignIn": "Inserisci la password sulla pagina di {{brand}}.",
+          "footKey": "La chiave va cifrata direttamente a {{computer}}.",
           "title": {
             "claude_code": "Aggiungi un account Claude",
             "codex": "Aggiungi un account ChatGPT",
@@ -6267,7 +6281,14 @@
           "undone": "Tutto com'era prima.",
           "missed_one": "{{names}} tiene l'account di prima.",
           "missed_many": "{{names}} tengono gli account di prima.",
-          "missed_other": "{{names}} tengono gli account di prima."
+          "missed_other": "{{names}} tengono gli account di prima.",
+          "added": "Account aggiunto. {{name}} ora pensa con {{account}}.",
+          "alsoUses_one": "Anche {{names}} pensa con {{account}}.",
+          "alsoUses_many": "Anche {{names}} pensano con {{account}}.",
+          "alsoUses_other": "Anche {{names}} pensano con {{account}}.",
+          "alsoSwitch": "Cambia anche loro",
+          "signedOut": "{{account}} è uscito da {{brand}}. {{name}} non risponderà finché non accedi di nuovo o scegli un altro account.",
+          "empty": "{{name}} non ha ancora un account di IA per pensare."
         }
       },
       "computer": {
@@ -11096,6 +11117,10 @@
     "of": "di {{name}}",
     "moreSpeed": "Velocità e finestra di contesto",
     "whoThinks": "Chi pensa",
+    "thinks_one": "{{names}} pensa con questo account",
+    "thinks_many": "{{names}} pensano con questo account",
+    "thinks_other": "{{names}} pensano con questo account",
+    "thinksNone": "Nessun agente pensa con questo account",
     "bulk": {
       "sub": "Scegli l'IA e poi gli agenti che la usano."
     },
@@ -11105,10 +11130,14 @@
       "search": "Cerca per nome, IA, piano o proprietario",
       "noMatch": "Nessun account corrisponde.",
       "noModel": "Nessun modello corrisponde.",
+      "empty": "Ancora nessun account.",
+      "add": "Aggiungi account",
+      "addLine": "Claude, ChatGPT, Gemini e altri, o una chiave API",
+      "manage": "Gestisci account",
       "groups": {
-        "yours": "Tuoi",
+        "yours": "I tuoi account",
         "others": "Del team",
-        "keys": "Dello spazio di lavoro"
+        "keys": "Chiavi API"
       }
     },
     "order": {

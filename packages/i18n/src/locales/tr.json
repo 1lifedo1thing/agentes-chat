@@ -5927,6 +5927,19 @@
           "missed_other": "{{count}} ajan değişmedi."
         },
         "add": {
+          "pickTitle": "Hesap ekle",
+          "pickFoot": "Yapay zekânın kendi sayfasında giriş yaparsınız.",
+          "have_one": "{{count}} hesabınız var",
+          "have_other": "{{count}} hesabınız var",
+          "others": "Başka bir plan",
+          "key": "API anahtarı",
+          "keyLine": "Kullandıkça öde",
+          "titlePlan": "{{plan}} ekle",
+          "againTitle": "{{brand}} hesabına yeniden giriş yap",
+          "haveNote": "Burada zaten {{accounts}} var. Başka bir hesapla giriş yapmak için önce tarayıcıda {{brand}} hesabından çıkın ya da bağlantıyı kopyalayıp gizli bir pencerede açın.",
+          "againNote": "{{account}} olarak yeniden giriş yapın. İşiniz biter bitmez {{name}} yeniden onunla düşünür.",
+          "footSignIn": "Şifrenizi {{brand}} sayfasında girersiniz.",
+          "footKey": "Anahtar şifrelenmiş olarak doğrudan {{computer}} bilgisayarına gider.",
           "title": {
             "claude_code": "Claude hesabı ekle",
             "codex": "ChatGPT hesabı ekle",
@@ -6019,7 +6032,13 @@
           "undo": "Geri al",
           "undone": "Eski haline döndü.",
           "missed_one": "{{names}} önceki hesabıyla kaldı.",
-          "missed_other": "{{names}} önceki hesaplarıyla kaldı."
+          "missed_other": "{{names}} önceki hesaplarıyla kaldı.",
+          "added": "Hesap eklendi. {{name}} artık {{account}} ile düşünüyor.",
+          "alsoUses_one": "{{names}} da {{account}} ile düşünüyor.",
+          "alsoUses_other": "{{names}} da {{account}} ile düşünüyor.",
+          "alsoSwitch": "Onları da değiştir",
+          "signedOut": "{{account}}, {{brand}} hesabından çıktı. Yeniden giriş yapana ya da başka bir hesap seçene kadar {{name}} yanıt vermeyecek.",
+          "empty": "{{name}} için henüz düşünecek bir yapay zekâ hesabı yok."
         }
       },
       "computer": {
@@ -10617,6 +10636,9 @@
     "of": "{{name}} kişisinin",
     "moreSpeed": "Hız ve bağlam penceresi",
     "whoThinks": "Kim düşünüyor",
+    "thinks_one": "{{names}} bununla düşünüyor",
+    "thinks_other": "{{names}} bununla düşünüyor",
+    "thinksNone": "Bununla düşünen ajan yok",
     "bulk": {
       "sub": "Yapay zekâyı, sonra onu kullanacak ajanları seçin."
     },
@@ -10626,10 +10648,14 @@
       "search": "Ada, yapay zekâya, plana veya sahibine göre arayın",
       "noMatch": "Eşleşen hesap yok.",
       "noModel": "Eşleşen model yok.",
+      "empty": "Henüz hesap yok.",
+      "add": "Hesap ekle",
+      "addLine": "Claude, ChatGPT, Gemini ve diğerleri ya da bir API anahtarı",
+      "manage": "Hesapları yönet",
       "groups": {
-        "yours": "Sizin",
+        "yours": "Hesaplarınız",
         "others": "Ekibin",
-        "keys": "Çalışma alanının"
+        "keys": "API anahtarları"
       }
     },
     "order": {

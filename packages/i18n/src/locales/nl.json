@@ -5972,6 +5972,19 @@
           "missed_other": "{{count}} agents zijn niet gewijzigd."
         },
         "add": {
+          "pickTitle": "Account toevoegen",
+          "pickFoot": "Je logt in op de pagina van de AI zelf.",
+          "have_one": "Je hebt er {{count}}",
+          "have_other": "Je hebt er {{count}}",
+          "others": "Ander abonnement",
+          "key": "API-sleutel",
+          "keyLine": "Betalen per gebruik",
+          "titlePlan": "{{plan}} toevoegen",
+          "againTitle": "Opnieuw inloggen bij {{brand}}",
+          "haveNote": "Je hebt hier al {{accounts}}. Om met een ander account in te loggen, log je eerst uit bij {{brand}} in je browser, of kopieer je de link en open je die in een privévenster.",
+          "againNote": "Log opnieuw in als {{account}}. {{name}} denkt er weer mee zodra je klaar bent.",
+          "footSignIn": "Je typt je wachtwoord op de pagina van {{brand}}.",
+          "footKey": "De sleutel gaat versleuteld rechtstreeks naar {{computer}}.",
           "title": {
             "claude_code": "Claude-account toevoegen",
             "codex": "ChatGPT-account toevoegen",
@@ -6064,7 +6077,13 @@
           "undo": "Ongedaan maken",
           "undone": "Weer zoals het was.",
           "missed_one": "{{names}} houdt het vorige account.",
-          "missed_other": "{{names}} houden hun vorige accounts."
+          "missed_other": "{{names}} houden hun vorige accounts.",
+          "added": "Account toegevoegd. {{name}} denkt nu met {{account}}.",
+          "alsoUses_one": "{{names}} denkt ook met {{account}}.",
+          "alsoUses_other": "{{names}} denken ook met {{account}}.",
+          "alsoSwitch": "Ook wisselen",
+          "signedOut": "{{account}} is uitgelogd bij {{brand}}. {{name}} antwoordt niet tot je opnieuw inlogt of een ander account kiest.",
+          "empty": "{{name}} heeft nog geen AI-account om mee te denken."
         }
       },
       "computer": {
@@ -10722,6 +10741,9 @@
     "of": "van {{name}}",
     "moreSpeed": "Snelheid en contextvenster",
     "whoThinks": "Wie denkt",
+    "thinks_one": "{{names}} denkt ermee",
+    "thinks_other": "{{names}} denken ermee",
+    "thinksNone": "Geen agent denkt ermee",
     "bulk": {
       "sub": "Kies de AI en daarna de agents die hem nemen."
     },
@@ -10731,10 +10753,14 @@
       "search": "Zoek op naam, AI, abonnement of eigenaar",
       "noMatch": "Geen account gevonden.",
       "noModel": "Geen model gevonden.",
+      "empty": "Nog geen account.",
+      "add": "Account toevoegen",
+      "addLine": "Claude, ChatGPT, Gemini en meer, of een API-sleutel",
+      "manage": "Accounts beheren",
       "groups": {
-        "yours": "Van jou",
+        "yours": "Jouw accounts",
         "others": "Van het team",
-        "keys": "Van de werkruimte"
+        "keys": "API-sleutels"
       }
     },
     "order": {
