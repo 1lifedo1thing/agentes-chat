@@ -8,7 +8,7 @@ import postgres from "postgres";
 import { assertMigrationsMatch } from "./migration-guard";
 import { openPglite, pgliteFolder } from "./pglite";
 import * as schema from "./schema";
-import { tracingLogger } from "./trace";
+import { tracingLogger, trackTransactions } from "./trace";
 
 /**
  * Driver-agnostic database handle. A Postgres server goes through postgres.js; native mode
@@ -103,7 +103,7 @@ export function createDatabase(options: DatabaseOptions): DatabaseHandle {
     // call, CPU spent before an indexed read even starts. `?jit=on` in the URL still overrides it.
     connection: { jit: "off" },
   });
-  const db = drizzle(client, { schema, casing: "snake_case", logger: tracingLogger });
+  const db = trackTransactions(drizzle(client, { schema, casing: "snake_case", logger: tracingLogger }));
   serializeDates(client);
   return {
     db: db as unknown as Database,
@@ -153,7 +153,7 @@ export function serializeDates(client: postgres.Sql) {
 
 function createPgliteDatabase(folder: string): DatabaseHandle {
   const { pg, ready } = openPglite(folder);
-  const db = drizzlePglite(pg, { schema, casing: "snake_case", logger: tracingLogger });
+  const db = trackTransactions(drizzlePglite(pg, { schema, casing: "snake_case", logger: tracingLogger }));
   return {
     db: db as unknown as Database,
     client: null,
