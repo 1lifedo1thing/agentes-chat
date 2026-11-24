@@ -161,7 +161,7 @@ function releaseReader<T, K extends string>(
   const now = options.now ?? Date.now;
   const latest = new Map<K, { at: number; value: T | null }>();
   let list: { at: number; value: GitHubRelease[] } | null = null;
-  const byTag = new Map<string, { at: number; value: GitHubRelease | null }>();
+  const byTag = new Map<string, { at: number; value: GitHubRelease }>();
   const signed = new Map<string, { at: number; value: string }>();
   const headers = () => ({
     authorization: `Bearer ${options.token}`,
@@ -192,12 +192,15 @@ function releaseReader<T, K extends string>(
     return location ? http(location, { redirect: "follow" }) : first;
   }
 
-  /** A release by its tag, cached like the list. */
+  /**
+   * A published release by its tag, cached like the list. A missing or draft one isn't kept: any version can be asked
+   * for, and a draft is published minutes later.
+   */
   async function releaseByTag(tag: string): Promise<GitHubRelease | null> {
     const cached = byTag.get(tag);
     if (cached && now() - cached.at < LATEST_TTL_MS) return cached.value;
     const value = await getJson<GitHubRelease>(`/repos/${options.repo}/releases/tags/${encodeURIComponent(tag)}`);
-    byTag.set(tag, { at: now(), value });
+    if (value && !value.draft) byTag.set(tag, { at: now(), value });
     return value;
   }
 
