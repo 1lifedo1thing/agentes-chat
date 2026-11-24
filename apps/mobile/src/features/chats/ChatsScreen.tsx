@@ -9,6 +9,7 @@ import { Stack, useIsFocused } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Platform, View } from "react-native";
+import { markFirstRows } from "@/lib/perf";
 import { readValueSync, STORED, writeValue } from "@/lib/storage";
 import { useOrg } from "@/providers/org";
 import {
@@ -309,6 +310,10 @@ function Home() {
   const empty = !list.loading && !failed && pinned.rows.length === 0 && !teamListed;
   // The first load: the rows arrive over the stand-ins (a refetch plays nothing).
   const load = useFirstLoad(list.loading);
+  const hasRows = list.rows.length > 0;
+  useEffect(() => {
+    if (hasRows) markFirstRows();
+  }, [hasRows]);
 
   // The first Conversas after the splash is already in place under it (the splash's ring opens on it): only the right
   // hand's face wakes, once it is in view.

@@ -7634,6 +7634,24 @@ export interface ThreadFollow {
 }
 
 /**
+ * An app's own speed, for its server (`POST /api/app/client-vitals`): what it measured since its last report, all in
+ * milliseconds but the heap (bytes) and the counts.
+ */
+export interface ClientVitalsReport {
+  platform: "ios" | "android" | "web";
+  /** From the app's start to the launch splash leaving. */
+  coldStartMs?: number;
+  /** From the app's start to its first list drawn with rows. */
+  firstRowsMs?: number;
+  jsLagP95Ms?: number;
+  jsLagMaxMs?: number;
+  heapBytes?: number;
+  /** Reads (GETs) in the 10 s after the app came back to the front. */
+  getsPerReturn?: number;
+  reconnects?: number;
+}
+
+/**
  * Unread marks on my own topic: a message in a conversation I'm in (no content: the lists read again), and my
  * reads and mutes from any device.
  */

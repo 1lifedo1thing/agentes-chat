@@ -96,6 +96,7 @@ import { type AgentesModule, type Edition, type ModuleContext, resolveAdapters }
 import { createModelProviders, enableOpenRouterModels } from "@agenteschat/providers";
 import { createApp } from "./app";
 import { createAuth } from "./auth";
+import { clientVitals } from "./client-vitals";
 import { buildEngine } from "./engine";
 import { watchEventLoopLag } from "./event-loop-lag";
 import { startFreezeWatch } from "./freeze-watch";
@@ -679,6 +680,7 @@ async function boot(
     role: config.SERVER_ROLE,
     version: release,
     eventLoopLag,
+    clientVitals: () => clientVitals.take(),
     heapSnapshotMb: config.HEAP_SNAPSHOT_MB,
     heapSnapshotDir: config.HEAP_SNAPSHOT_DIR,
   });

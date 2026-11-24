@@ -58,4 +58,33 @@ export const serverProcesses = pgTable("server_processes", {
   /** When it wrote its heap snapshot (`HEAP_SNAPSHOT_MB`), and the file's name; null: none. */
   heapSnapshotAt: timestamp({ withTimezone: true }),
   heapSnapshotFile: text(),
+  /** What the apps that reported to this process over its last minute measured (`client-vitals.ts`); null: none did. */
+  clientVitals: jsonb().$type<ClientVitalsSummary>(),
 });
+
+/** One measure across the apps' reports of a minute: how many, the median, the 95th percentile and the worst. */
+export interface ClientVitalStat {
+  n: number;
+  p50: number;
+  p95: number;
+  max: number;
+}
+
+/**
+ * The apps' reports to one process over a minute, by platform (`ios`, `android`, `web`): how long a cold start took
+ * to the first frame and to the first rows, how late the JavaScript thread ran, the heap, the reads (GETs) after each
+ * return to the app, and the socket's reconnects.
+ */
+export type ClientVitalsSummary = Record<
+  string,
+  {
+    reports: number;
+    coldStartMs?: ClientVitalStat;
+    firstRowsMs?: ClientVitalStat;
+    jsLagP95Ms?: ClientVitalStat;
+    jsLagMaxMs?: ClientVitalStat;
+    heapBytes?: ClientVitalStat;
+    getsPerReturn?: ClientVitalStat;
+    reconnects?: ClientVitalStat;
+  }
+>;
