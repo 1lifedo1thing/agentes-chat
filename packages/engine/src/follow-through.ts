@@ -34,6 +34,7 @@ import { can } from "./organizations";
 import { enqueue } from "./outbox";
 import { personCanPost } from "./routine-state";
 import { deliverNoticeToRun, lateNoticeSent } from "./run-resume";
+import { runColumns } from "./run-state";
 import { type AgentRun, replyThreadOf } from "./runs";
 import { refusedAtLimit, runStretchOf } from "./stretch";
 import { channelReaderSql } from "./task-access";
@@ -319,7 +320,7 @@ const publishLine = async (pubsub: PubSub | undefined, line: Message) => {
 async function conversationRun(ctx: ToolContext) {
   if (!ctx.runId || ctx.bridge?.taskId) return null;
   const [run] = await ctx.db
-    .select()
+    .select(runColumns)
     .from(agentRuns)
     .where(and(eq(agentRuns.id, ctx.runId), eq(agentRuns.orgId, ctx.orgId), eq(agentRuns.agentId, ctx.agentId)));
   return run ? { ...run, confidential: ctx.confidential === true } : null;

@@ -13,6 +13,7 @@ import { getMessage, insertMessage, messageView } from "./messages";
 import { enqueue, jobsOfRun } from "./outbox";
 import { closeRoutineRun } from "./routine-ledger";
 import { releaseInbox } from "./run-inbox";
+import { runState } from "./run-state";
 import { revokeRunToolTokens } from "./run-tool-tokens";
 import {
   type AgentRun,
@@ -149,15 +150,15 @@ export async function recoverStaleRuns(
     .select({
       id: agentRuns.id,
       orgId: agentRuns.orgId,
-      waitId: sql<string>`${agentRuns.transcript}->'waitingForBrain'->>'waitId'`,
+      waitId: sql<string>`${runState}->'waitingForBrain'->>'waitId'`,
     })
     .from(agentRuns)
     .where(
       and(
         eq(agentRuns.status, "waiting_input"),
-        inArray(sql<string>`${agentRuns.transcript}->'waitingForBrain'->>'code'`, [...USAGE_WAIT_CODES]),
-        sql`${agentRuns.transcript}->'waitingForBrain'->>'waitId' is not null`,
-        sql`(${agentRuns.transcript}->'waitingForBrain'->>'until')::timestamptz < ${cutoff.toISOString()}::timestamptz`,
+        inArray(sql<string>`${runState}->'waitingForBrain'->>'code'`, [...USAGE_WAIT_CODES]),
+        sql`${runState}->'waitingForBrain'->>'waitId' is not null`,
+        sql`(${runState}->'waitingForBrain'->>'until')::timestamptz < ${cutoff.toISOString()}::timestamptz`,
         sql`not ${liveJob}`,
       ),
     )

@@ -83,8 +83,8 @@ export const agentsOnlyIn = (c: string) =>
 
 /** Parked on its AI provider's outage (`outageParkedSql`), over the run alias `r`. */
 export const outageIn = (r: string) =>
-  sql.raw(`(${r}.status = 'waiting_input' and ${r}.transcript -> 'outage' is not null
-    and ${r}.waiting_machine_id is null and ${r}.transcript -> 'waitingForBrain' is null)`);
+  sql.raw(`(${r}.status = 'waiting_input' and coalesce(${r}.state, ${r}.transcript) -> 'outage' is not null
+    and ${r}.waiting_machine_id is null and coalesce(${r}.state, ${r}.transcript) -> 'waitingForBrain' is null)`);
 
 /**
  * Since when a run waits, over `r`: in line for room, on its computer, plan or provider, by that wait's own clock; on a
@@ -92,8 +92,8 @@ export const outageIn = (r: string) =>
  * when none says: a message queued on a waiting run moves `updated_at`, and the wait goes on.
  */
 export const waitSinceIn = (r: string) =>
-  sql.raw(`coalesce(to_timestamp(coalesce((${r}.transcript->>'roomWaitSince')::bigint,
-    (${r}.transcript->'waitingForBrain'->>'since')::bigint, (${r}.transcript->'outage'->>'since')::bigint) / 1000.0),
+  sql.raw(`coalesce(to_timestamp(coalesce((coalesce(${r}.state, ${r}.transcript)->>'roomWaitSince')::bigint,
+    (coalesce(${r}.state, ${r}.transcript)->'waitingForBrain'->>'since')::bigint, (coalesce(${r}.state, ${r}.transcript)->'outage'->>'since')::bigint) / 1000.0),
     case ${r}.status
       when 'waiting_approval' then (select min(pa.created_at) from approvals pa
         where pa.org_id = ${r}.org_id and pa.run_id = ${r}.id and pa.status = 'pending')
@@ -205,7 +205,7 @@ export async function agentWorkFor(
   const rows = rowsOf<Row>(
     await db.execute(sql`with ${anchorsSql(orgId)}
       select r.id as run_id, r.agent_id, r.status, r.waiting_machine_id is not null as on_machine,
-        ${outageIn("r")} as outage, r.transcript->'waitingForBrain'->>'code' as wait_code,
+        ${outageIn("r")} as outage, coalesce(r.state, r.transcript)->'waitingForBrain'->>'code' as wait_code,
         coalesce(t.handed_at, r.started_at, r.created_at) as work_since, ${waitSinceIn("r")} as wait_since,
         t.for_agent, a.id <> r.id as anchored, a.background as anchor_background,
         c.id as channel_id, c.kind as channel_kind, c.name as channel_name, a.thread_root_id, a.trigger_message_id, a.reply_in_thread,

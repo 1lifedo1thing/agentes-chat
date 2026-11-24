@@ -350,6 +350,7 @@ import {
   whileHeld,
 } from "./run-inbox";
 import { deliverNoticeToRun } from "./run-resume";
+import { runState } from "./run-state";
 import { issueRunToolToken, revokeRunToolTokens } from "./run-tool-tokens";
 import {
   type ArtifactLink,
@@ -1310,12 +1311,16 @@ async function executeRunInner(
         background: agentRuns.background,
         waitId: sql<
           string | null
-        >`coalesce(${agentRuns.transcript}->'waitingForBrain'->>'waitId', ${agentRuns.transcript}->'outage'->>'waitId')`,
-        code: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'code'`,
-        people: sql<boolean | null>`(${agentRuns.transcript}->>'roomPeople')::boolean`,
-        spilled: sql<boolean>`${agentRuns.transcript} ? 'spill'`,
-        source: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'source'`,
-        cut: sql<string | null>`${agentRuns.transcript}->'interruptedTurn'->>'cause'`,
+        >`coalesce(${runState}->'waitingForBrain'->>'waitId', ${runState}->'outage'->>'waitId')`,
+        code: sql<string | null>`${runState}->'waitingForBrain'->>'code'`,
+        people: sql<boolean | null>`(${runState}->>'roomPeople')::boolean`,
+        spilled: sql<boolean>`${runState} ? 'spill'`,
+        source: sql<string | null>`${runState}->'waitingForBrain'->>'source'`,
+        // Read by a usage wait alone, and the one read here that opens the transcript.
+        cut: sql<string | null>`case when ${runState}->'waitingForBrain'->>'code' in (${sql.join(
+          [...USAGE_WAIT_CODES].map((c) => sql`${c}`),
+          sql`, `,
+        )}) then ${agentRuns.transcript}->'interruptedTurn'->>'cause' end`,
         orgId: agentRuns.orgId,
         machineId: agentRuns.waitingMachineId,
         agentId: agentRuns.agentId,
@@ -1326,10 +1331,10 @@ async function executeRunInner(
         workId: agentRuns.workId,
         since: sql<
           string | null
-        >`coalesce(${agentRuns.transcript}->'waitingForBrain'->>'since', ${agentRuns.transcript}->'usageWait'->>'since')`,
-        busyRetries: sql<number | null>`(${agentRuns.transcript}->'catchUpTriage'->>'busyRetries')::int`,
-        keyLine: sql<string | null>`${agentRuns.transcript}->'outage'->>'line'`,
-        outageWait: sql<string | null>`${agentRuns.transcript}->'outage'->>'waitId'`,
+        >`coalesce(${runState}->'waitingForBrain'->>'since', ${runState}->'usageWait'->>'since')`,
+        busyRetries: sql<number | null>`(${runState}->'catchUpTriage'->>'busyRetries')::int`,
+        keyLine: sql<string | null>`${runState}->'outage'->>'line'`,
+        outageWait: sql<string | null>`${runState}->'outage'->>'waitId'`,
       })
       .from(agentRuns)
       .where(eq(agentRuns.id, runId));
@@ -1367,7 +1372,7 @@ async function executeRunInner(
       await db
         .update(agentRuns)
         .set({
-          transcript: sql`jsonb_set(${agentRuns.transcript}, '{catchUpTriage}', coalesce(${agentRuns.transcript}->'catchUpTriage', '{"calls":0}'::jsonb)
+          transcript: sql`jsonb_set(${agentRuns.transcript}, '{catchUpTriage}', coalesce(${runState}->'catchUpTriage', '{"calls":0}'::jsonb)
             || jsonb_build_object('busyRetries', ${busyTries + 1}::int, 'outcome', 'skipped_busy', 'at', ${Date.now()}::bigint))`,
         })
         .where(and(eq(agentRuns.id, runId), eq(agentRuns.status, "waiting_input")));
