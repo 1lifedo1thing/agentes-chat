@@ -1,3 +1,4 @@
+import { fileFonts } from "./file-fonts";
 import { and, eq, schema } from "@agenteschat/db";
 import { documentToMarkdown, readDocument } from "@agenteschat/live";
 import type * as Y from "yjs";
@@ -64,7 +65,9 @@ export async function documentExport(
   }
   if (format === null || format === "docx") {
     const media = (asset: string) => liveAssetBytes(deps, file.orgId, file.id, asset);
-    return { body: await writeDocx(blocks, { title: file.title, media }), contentType: TYPES.docx, ext: "docx" };
+    const own = await fileFonts(deps, file.orgId, file.id);
+    const fonts = new Map(own.list.map((f) => [f.id, f.family]));
+    return { body: await writeDocx(blocks, { title: file.title, media, fonts }), contentType: TYPES.docx, ext: "docx" };
   }
   throw new ValidationError(
     `${format.toUpperCase()} export is not available for this file`,
