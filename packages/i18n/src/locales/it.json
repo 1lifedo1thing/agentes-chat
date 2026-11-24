@@ -12723,8 +12723,6 @@
     "steered": "{{name}} l'ha ricevuto durante l'attività",
     "stillWorking": "{{name}} sta ancora lavorando",
     "inProgress": "in corso",
-    "quiet": "nessuna novità da {{minutes}} min",
-    "refresh": "Aggiorna",
     "stop": "Ferma",
     "stopping": "Arresto in corso…",
     "stopHint": "Ferma l'attività · Esc",

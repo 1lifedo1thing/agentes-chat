@@ -14,7 +14,7 @@ import {
   steerStore,
 } from "@agenteschat/client";
 import { elapsedParts } from "@agenteschat/client/lib/activity";
-import { act, cleanup, fireEvent, within } from "@testing-library/react";
+import { act, cleanup, within } from "@testing-library/react";
 import { blockRowByRun, nextSlots, rowShows, SLOT_HOLD_MS, sameSlots, waitingLast } from "@/chat/run-slots";
 import { createStreamsStore, reconcileChannelRuns } from "@/realtime/context";
 import { ADA_ID, ATLAS_ID, createFakeApi, ENG_ID, ORG_ID, seedState } from "./fake-api";
@@ -106,7 +106,7 @@ describe("one block per answer (run-slots)", () => {
     expect(waitingLast(slots, () => false)).toEqual(slots);
   });
 
-  test("at work no row draws, writing or not: only for a browser card or a quiet notice (the bar says the rest)", () => {
+  test("at work no row draws, writing or not: only for a browser card (the bar says the rest)", () => {
     const fresh = {
       runId: "a",
       agentId: "ada",
@@ -117,8 +117,7 @@ describe("one block per answer (run-slots)", () => {
       startedAt: 10_000,
       lastEventAt: 10_000,
     } as unknown as LiveRun;
-    expect(rowShows(fresh, 10_500)).toBe(false);
-    expect(rowShows(fresh, 60_000)).toBe(false);
+    expect(rowShows(fresh)).toBe(false);
     const call = {
       kind: "call" as const,
       id: "t1",
@@ -129,13 +128,14 @@ describe("one block per answer (run-slots)", () => {
       output: [],
       running: true,
     };
-    expect(rowShows({ ...fresh, work: [call] }, 60_000)).toBe(false);
+    expect(rowShows({ ...fresh, work: [call] })).toBe(false);
     // A message it read mid-run: its receipt is under that message, never a row of its own.
-    expect(rowShows({ ...fresh, work: [{ kind: "steer", messageId: "m9" }] }, 10_500)).toBe(false);
-    expect(rowShows({ ...fresh, work: [{ ...call, tool: "browser_navigate" }] }, 10_500)).toBe(true);
-    expect(rowShows(fresh, 10_000 + QUIET_AFTER_MS)).toBe(true);
+    expect(rowShows({ ...fresh, work: [{ kind: "steer", messageId: "m9" }] })).toBe(false);
+    expect(rowShows({ ...fresh, work: [{ ...call, tool: "browser_navigate" }] })).toBe(true);
+    // Gone quiet: no line of its own, the app asks the server unseen (`quietRunsByChannel`).
+    expect(rowShows({ ...fresh, lastEventAt: 10_000 - QUIET_AFTER_MS })).toBe(false);
     // Ended badly: its row says why.
-    expect(rowShows({ ...fresh, status: "failed" }, 10_500)).toBe(true);
+    expect(rowShows({ ...fresh, status: "failed" })).toBe(true);
   });
 
   test("the elapsed time", () => {
@@ -153,7 +153,7 @@ describe("stale runs: reconcile with the server", () => {
       at,
     );
 
-  test("isQuiet after 3 min without events", () => {
+  test("isQuiet after QUIET_AFTER_MS without events", () => {
     const run = ev("r", 1_000).runs.r;
     if (!run) throw new Error("no run");
     expect(isQuiet(run, 1_000 + QUIET_AFTER_MS - 1)).toBe(false);
@@ -175,6 +175,24 @@ describe("stale runs: reconcile with the server", () => {
     expect(Object.keys(s.runs).sort()).toEqual(["fresh", "new"]);
     expect(s.finished.old).toBeTruthy();
     expect(s.runs.new?.status).toBe("thinking");
+  });
+
+  test("runs gone quiet: the server's list ends those it no longer runs, only those", async () => {
+    const store = createStreamsStore();
+    for (const runId of ["ended", "busy", "other"])
+      store.apply({ type: "agent.delta", channelId: "c", threadId: "t", agentId: "ada", runId, seq: 0, text: "…" });
+    const listed: ActiveRun = {
+      runId: "busy",
+      agentId: "ada",
+      channelId: "c",
+      threadId: "t",
+      status: "running",
+      startedAt: null,
+    };
+    const api = { agents: { activeRuns: async () => [listed] } } as unknown as ApiClient;
+    expect(await reconcileChannelRuns(api, store, "o", "c", ["ended", "busy"])).toBe(true);
+    expect(Object.keys(store.get().streams.runs).sort()).toEqual(["busy", "other"]);
+    expect(await reconcileChannelRuns(api, store, "o", "c", ["busy"])).toBe(false);
   });
 
   test("without the endpoint: each live run's detail decides (404 or finished = gone)", async () => {
@@ -402,20 +420,24 @@ describe("live row in the timeline", () => {
     expect(reply.textContent).not.toContain("Olha também o refresh");
   });
 
-  test("no news for 3 min: 'Atualizar' asks the server and drops a run that no longer exists", async () => {
+  test("a run gone quiet is asked about unseen: no line, no button, and it goes once the server no longer runs it", async () => {
     const { ev, state } = await open();
-    setSystemTime(new Date(Date.now() - 4 * 60_000));
+    state.activeRuns = { [ENG_ID]: [] };
+    setSystemTime(new Date(Date.now() - QUIET_AFTER_MS - 60_000));
     await ev({ type: "agent.run", ...ids, status: "running" });
     await ev({ type: "agent.typing", ...ids });
     setSystemTime();
-    await act(async () => window.dispatchEvent(new Event("focus")));
     await settle(2);
-    expect(row().textContent).toContain("sem notícias há 4 min");
-    await act(async () => fireEvent.click(within(row()).getByRole("button", { name: "Atualizar" })));
+    expect(bar().dataset.active).toBe("true");
+    // Its end never reached the tab: the next sweep (every 5 s) asks the server.
+    await act(() => new Promise((r) => setTimeout(r, 5_200)));
     await settle(4);
     expect(state.calls.some((c) => c.method === "agents.activeRuns")).toBe(true);
     expect(row()).toBeNull();
-  });
+    expect(bar().dataset.active).toBe("false");
+    expect(document.body.textContent).not.toContain("sem notícias");
+    expect(within(document.body).queryByRole("button", { name: "Atualizar" })).toBeNull();
+  }, 20_000);
 
   test("a line said before a call and posted as the message shows once (a repeated delta adds nothing)", async () => {
     const { ev } = await open();

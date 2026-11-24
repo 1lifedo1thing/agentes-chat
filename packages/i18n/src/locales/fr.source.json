@@ -29832,12 +29832,6 @@
   "run.inProgress": {
     "value": "in progress"
   },
-  "run.quiet": {
-    "value": "no news for {{minutes}} min"
-  },
-  "run.refresh": {
-    "value": "Refresh"
-  },
   "run.stop": {
     "value": "Stop"
   },

@@ -12622,8 +12622,6 @@
     "steered": "{{name}} lo recibió durante la tarea",
     "stillWorking": "{{name}} sigue trabajando",
     "inProgress": "en curso",
-    "quiet": "sin novedades hace {{minutes}} min",
-    "refresh": "Actualizar",
     "stop": "Detener",
     "stopping": "Deteniendo…",
     "stopHint": "Detener tarea · Esc",

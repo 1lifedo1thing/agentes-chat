@@ -12172,8 +12172,6 @@
     "steered": "{{name}} görev sırasında aldı",
     "stillWorking": "{{name}} hâlâ çalışıyor",
     "inProgress": "sürüyor",
-    "quiet": "{{minutes}} dakikadır yenilik yok",
-    "refresh": "Yenile",
     "stop": "Durdur",
     "stopping": "Durduruluyor…",
     "stopHint": "Görevi durdur · Esc",

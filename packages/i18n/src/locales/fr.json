@@ -12694,8 +12694,6 @@
     "steered": "{{name}} l'a reçu pendant la tâche",
     "stillWorking": "{{name}} travaille encore",
     "inProgress": "en cours",
-    "quiet": "pas de nouvelles depuis {{minutes}} min",
-    "refresh": "Actualiser",
     "stop": "Arrêter",
     "stopping": "Arrêt…",
     "stopHint": "Arrêter la tâche · Échap",

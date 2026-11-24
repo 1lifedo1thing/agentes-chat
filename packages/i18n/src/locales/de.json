@@ -12236,8 +12236,6 @@
     "steered": "{{name}} hat sie während der Aufgabe bekommen",
     "stillWorking": "{{name}} arbeitet noch",
     "inProgress": "läuft",
-    "quiet": "seit {{minutes}} Min. nichts Neues",
-    "refresh": "Aktualisieren",
     "stop": "Stoppen",
     "stopping": "Wird gestoppt…",
     "stopHint": "Aufgabe stoppen · Esc",

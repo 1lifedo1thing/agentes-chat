@@ -12307,8 +12307,6 @@
     "steered": "{{name}} kreeg het tijdens de taak",
     "stillWorking": "{{name}} is nog bezig",
     "inProgress": "bezig",
-    "quiet": "al {{minutes}} min geen nieuws",
-    "refresh": "Vernieuwen",
     "stop": "Stoppen",
     "stopping": "Stoppen…",
     "stopHint": "Taak stoppen · Esc",
