@@ -1811,6 +1811,8 @@ export function createToolGateway(deps: {
                   label: onSurface.name,
                   requestedBy: onSurface.userId,
                   requesterDecides: true,
+                  // Not an admin nor whoever covers them: their say would stand in for the PIN.
+                  required: true,
                 }
               : (asked?.approvers ?? null),
             requestedByUserId: authority ? (authority.personId ?? routineCreatorOf(authority)) : null,

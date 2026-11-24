@@ -1,6 +1,20 @@
 import { randomUUID } from "node:crypto";
 import type { PubSub } from "@agenteschat/adapters";
-import { and, type Database, type Executor, eq, isNull, lt, lte, or, schema, sql } from "@agenteschat/db";
+import {
+  and,
+  count,
+  type Database,
+  type Executor,
+  eq,
+  gt,
+  isNull,
+  like,
+  lt,
+  lte,
+  or,
+  schema,
+  sql,
+} from "@agenteschat/db";
 import { decideApproval, getApproval } from "../approvals";
 import { randomToken, safeEqual, sha256 } from "../crypto";
 import { emailAssistant, emailLocale, queueEmail } from "../email";
@@ -32,6 +46,8 @@ const PAGE_KEEP_MS = 24 * 3_600_000;
 export const PIN_TRIES = 3;
 export const PIN_LOCK_MS = 15 * 60_000;
 const PIN_RESET_MS = 60 * 60_000;
+/** Reset emails a person gets an hour, whichever addresses or pages ask: the per-IP limit alone lets one mail-bomb them. */
+const PIN_EMAILS_PER_HOUR = 3;
 const PIN_SHAPE = /^\d{6}$/;
 
 type PageRow = typeof surfacePageLinks.$inferSelect;
@@ -269,7 +285,19 @@ export async function emailPinReset(
   const surface = surfaceOn();
   if (!surface) throw gone();
   const reset = randomToken(32);
+  const value = JSON.stringify({ userId: link.userId, linkId: link.id });
   await deps.db.transaction(async (tx) => {
+    const [sent] = await tx
+      .select({ n: count() })
+      .from(verifications)
+      .where(
+        and(
+          like(verifications.identifier, "surface-pin:%"),
+          eq(verifications.value, value),
+          gt(verifications.createdAt, new Date(at.getTime() - PIN_RESET_MS)),
+        ),
+      );
+    if ((sent?.n ?? 0) >= PIN_EMAILS_PER_HOUR) throw new TooManyError("Too many reset emails. Try again later.");
     const [user] = await tx
       .select({ email: users.email, locale: users.locale })
       .from(users)
@@ -278,7 +306,7 @@ export async function emailPinReset(
     await tx.insert(verifications).values({
       id: randomUUID(),
       identifier: pinResetId(reset),
-      value: JSON.stringify({ userId: link.userId, linkId: link.id }),
+      value,
       expiresAt: new Date(at.getTime() + PIN_RESET_MS),
       createdAt: at,
       updatedAt: at,

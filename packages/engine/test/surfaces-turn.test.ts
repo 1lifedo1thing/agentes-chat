@@ -4,6 +4,8 @@ import { systemText } from "@agenteschat/providers";
 import {
   buildRunContext,
   createToolGateway,
+  decideApproval,
+  ForbiddenError,
   insertMessage,
   lodiFor,
   openPersonAgentDm,
@@ -14,7 +16,7 @@ import {
 } from "../src";
 import { runReadOutsideById } from "../src/outside";
 import { addRunStep } from "../src/runs";
-import { type Fixture, setup } from "./fixtures";
+import { addMember, type Fixture, setup } from "./fixtures";
 
 const { agentRuns, auditLog } = schema;
 
@@ -230,6 +232,21 @@ describe("through the gateway: a surface turn refuses each class, an app turn go
       propose_settings_change: person,
       workspace_action: person,
     });
+    expect(ran).toEqual([]);
+  });
+
+  test("the person alone decides it: an admin can't approve it in the app in their place, without the PIN", async () => {
+    const run = await runOn(await said("pode apagar a chave antiga?", "surface"));
+    const res = await createToolGateway({ sources: [fixture] }).invoke(ctxOf(run), {
+      toolUseId: "tu_alone",
+      name: "vault_delete",
+      input: {},
+    });
+    if (res.type !== "approval") throw new Error(res.type);
+    const admin = await addMember(f.db, f.org.id, "admin", "Another Admin");
+    await expect(
+      decideApproval({ db: f.db, pubsub: f.pubsub }, admin.id, f.org.id, res.approval.id, { decision: "approve" }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
     expect(ran).toEqual([]);
   });
 

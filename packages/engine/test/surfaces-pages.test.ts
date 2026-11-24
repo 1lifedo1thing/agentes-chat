@@ -84,6 +84,7 @@ async function approval(approvers?: (typeof approvals.$inferInsert)["approvers"]
         label: f.owner.name,
         requestedBy: f.owner.id,
         requesterDecides: true,
+        required: true,
       },
       expiresAt: new Date(Date.now() + 3_600_000),
     })
@@ -256,6 +257,18 @@ describe("the PIN", () => {
     const [row] = await f.db.select().from(surfaceLinks).where(eq(surfaceLinks.id, linkId));
     expect([row?.pinHash, row?.pinFailures]).toEqual([null, 0]);
     expect(await codeOf(resetSurfacePin(f.db, reset))).toBe("surface.pin_reset_gone");
+  });
+
+  test("forgot it: three emails an hour for the person, from any address or page", async () => {
+    const { token } = await page();
+    const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
+    const ask = (ms: number) =>
+      codeOf(emailPinReset({ db: f.db, now: at(ms), publicUrl: "https://app.example.com" }, token, secret));
+    expect([await ask(1000), await ask(2000), await ask(3000)]).toEqual(["ok", "ok", "ok"]);
+    expect(await ask(4000)).toBe("rate_limited");
+    expect(await f.db.select().from(outbox).where(eq(outbox.kind, "email.send"))).toHaveLength(3);
+    await f.db.update(schema.verifications).set({ createdAt: new Date(T0.getTime() - minutes(61)) });
+    expect(await ask(5000)).toBe("ok");
   });
 });
 

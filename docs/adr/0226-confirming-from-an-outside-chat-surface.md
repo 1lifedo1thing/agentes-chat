@@ -32,8 +32,9 @@ of ours works with any chat app on the day the bridge is on, and stays as the fa
 through the bridge), a call of class `approval`, `sends_deletes_pays` or `roles_budgets_money` becomes an approval
 request instead of a refusal:
 - An act that would run without asking anyone in the app (its level, "Aprovar sempre", an allowed merge repository,
-  a routine's own job) asks the person behind the turn alone: `approvers` names them, `requesterDecides` true. The PIN
-  stands in for the person's own say, never for someone else's: no rule or level skips it.
+  a routine's own job) asks the person behind the turn alone: `approvers` names them, `requesterDecides` and
+  `required` true, so neither an admin nor someone covering them decides it in the app in their place. The PIN stands
+  in for the person's own say, never for someone else's: no rule or level skips it.
 - An act that asks someone anyway asks them as usual; the person decides it only if the app's rule lets them.
 Cards and blocks, and routines that post elsewhere or act for another agent, stay refused. An agent the right hand
 asked or told is still refused (no person stands behind its turn). The turn's "# Where you are" line tells the model
@@ -67,7 +68,7 @@ without one, so a new password (which ends the link) clears it too.
   count. Each try is counted before its hash is checked, so tries sent at once never get past three.
 - "Forgot your PIN?", from the browser that opened the page: an email (`surface_pin_reset`) with a link to
   `/email-undo?kind=surface-pin&token=`, once, within an hour; only that page's button clears the PIN and its lock
-  (mail scanners open links). 3 emails an hour per IP address. Offered only where the server sends email
+  (mail scanners open links). 3 emails an hour per IP address, and 3 an hour for the person whatever the address. Offered only where the server sends email
   (`pin.resetByEmail`); elsewhere unlinking and linking again in the app clears it.
 
 ### 4. Not built here
@@ -82,7 +83,9 @@ without one, so a new password (which ends the link) clears it too.
 
 - A person on the chat app can now delete, send, change roles and settings, merge or deploy through the right hand
   after typing their PIN on a page of ours, where before they had to open the app.
-- A stolen bridge token still can't decide anything: it never sees a page link's secret, and the PIN is never sent
-  through it. A person who forwards a fresh page link lets the first browser to open it see the request; approving
-  there still takes the PIN.
+- A stolen bridge token still can't decide anything once the person has a PIN: it sees page links, but the PIN is
+  never sent through it. A person who forwards a fresh page link lets the first browser to open it see the request;
+  approving there still takes the PIN. Until the person has chosen a PIN, though, whoever opens a page first (someone
+  holding the phone, a forwarded link, the bridge's token) chooses it: the first choice proves nothing more than the
+  chat does.
 - Self-hosters with a bridge get the same pages; nothing changes without `SURFACE_BRIDGE_TOKEN`.
