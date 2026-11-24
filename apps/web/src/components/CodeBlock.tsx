@@ -6,9 +6,10 @@ import { useGrowFrom } from "@/lib/grow";
 
 /**
  * Blocks highlighted already, by language and text: a row drawn again (the conversation opened again, scrolled back
- * to) shows its code without reading it all over again.
+ * to) shows its code without reading it all over again. Weighed by characters, not blocks: an editor's preview
+ * highlights its whole block again at every key, and each of those versions would stay.
  */
-const HIGHLIGHTS = new BoundedMap<string, CodeToken[][]>(300);
+const HIGHLIGHTS = new BoundedMap<string, CodeToken[][]>(300_000, (key) => key.length);
 export function highlightedCode(text: string, lang: string) {
   const key = `${lang}\n${text}`;
   let lines = HIGHLIGHTS.get(key);

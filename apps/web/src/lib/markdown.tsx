@@ -226,9 +226,11 @@ const TASK = /^\[( |x|X)\]\s+(.*)$/;
 const CALLOUT = /^\[!([\w-]+)\][+-]?\s*(.*)$/i;
 /**
  * Texts parsed already, by source: a row drawn again (the conversation opened again, scrolled back to) shows its
- * words without parsing them again. Never mutated.
+ * words without parsing them again. Never mutated. Weighed by characters, not texts: the wiki editor's preview parses
+ * its whole page again at every key, and each of those versions would stay.
  */
-const PARSED = new BoundedMap<string, ReturnType<typeof parseMarkdown>>(1000);
+export const PARSED_CHARS = 1_000_000;
+const PARSED = new BoundedMap<string, ReturnType<typeof parseMarkdown>>(PARSED_CHARS, (key) => key.length);
 export function parsedMarkdown(source: string, message: boolean) {
   const key = `${message ? "m" : "d"}${source}`;
   let blocks = PARSED.get(key);
