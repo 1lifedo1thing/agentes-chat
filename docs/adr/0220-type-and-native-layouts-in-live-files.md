@@ -52,22 +52,26 @@ license text ships beside its files and in `NOTICE`.
 
 **Files.** `scripts/fonts/build.py` (Python with fontTools, run in the image build) downloads each family from a
 pinned commit of the `google/fonts` repository (Source Sans 3 from Adobe's release), checks every file against the
-SHA-256 in `fonts.lock.json`, and writes to `FONTS_DIR`: a variable WOFF2 per family and style for browsers, static
-TrueType instances (400, 600, 700 and italic 400) for the server's measuring, pictures and PDFs and for the phone,
-and `catalog.json`. About 40 MB. The server serves them at `/api/fonts/<id>/<file>` with a year's immutable cache;
+SHA-256 in `fonts.lock.json`, and writes to `FONTS_DIR`: a WOFF2 per family and style for browsers (the variable
+file, every script it has), static TrueType instances cut to Latin (every 100 from 300 to 800 the family covers, and
+italic 400 and 700) for the server's measuring, pictures and PDFs and for the phone, and `catalog.json`. About 36 MB;
+the build stage is cached until the lock or the script changes. The server serves them at `/api/fonts/<id>/<file>` with a year's immutable cache;
 they hold no workspace data, so they need no session. Without `FONTS_DIR` (tests, development) the catalog still
 lists them and every app falls back to its system fonts. Chinese, Japanese and Korean text falls back to the system's
 fonts, as today.
 
 ### 2. A workspace's own fonts come from the Drive
 
-A person or an agent uploads a `.ttf`, `.otf`, `.woff` or `.woff2` to the Drive like any file. The upload is checked
-before it is kept: at most 10 MB, a font the server can parse, its tables within bounds. A font in the Drive the
-reader can see shows in the font picker beside the catalog, under its family name.
+A person or an agent uploads a `.ttf`, `.otf` or `.woff` to the Drive like any file (`.woff2` isn't taken: its tables
+need a decoder the server doesn't carry). The upload is checked before it is kept (`readFont`): at most 10 MB, a
+font the server can parse, its tables within bounds. A font in the Drive the reader can see shows in the font picker
+beside the catalog, under its family name; an agent brings one into a file with `add_font {font_file}`.
 
 Using one in a live file copies it into the file's assets (ADR 0196 §8), under the reader's check that they can read
 it, like a picture from the Drive: the file refers to it as `asset:<id>`, so whoever opens the file draws it right,
-also when the font sits in one person's private Drive, and the font goes away with the file. The apps load it through
+also when the font sits in one person's private Drive, and the font goes away with the file. What the font is (its
+family and style names, weight, slant and embedding rights) is kept with it (`live_assets.font`), so people and
+agents name it by its family. The apps load it through
 the file's asset route, with `nosniff` and the font's own type.
 
 Exports respect the font's embedding rights (`OS/2.fsType`): a font marked restricted is never embedded in a PDF,
@@ -127,9 +131,11 @@ asked for the brand uses them.
 
 ### 7. Exports
 
-PDF embeds each font and weight a file uses, as subsets (the static instances, the file's own fonts when their rights
-allow). PowerPoint names each run's typeface and embeds the fonts it may; Word names each run's font. Shadows,
-gradients and dashes go into PowerPoint as its own effects.
+PDF embeds each font and weight a slide uses, as subsets (the static instances; a file's own TrueType font when its
+rights allow, an OpenType one falls back to the engine's font). PowerPoint and Word name each run's typeface (a file's
+own font under its family name), with its size, weight, letter spacing, capitals and highlight; they don't embed the
+fonts, so a computer without one shows its own substitute. Shadows, gradients and dashes go into PowerPoint as its
+own effects. A document's PDF stays the Drive's Markdown PDF.
 
 ### 8. The apps
 
