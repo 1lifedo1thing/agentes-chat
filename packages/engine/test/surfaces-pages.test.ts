@@ -222,6 +222,21 @@ describe("the PIN", () => {
     expect(await approve(3000 + PIN_LOCK_MS + 1000, "111111")).toBe("approved");
   });
 
+  test("tries sent at once still get three before the lock", async () => {
+    const { token, linkId } = await page();
+    await f.db
+      .update(surfaceLinks)
+      .set({ pinHash: await Bun.password.hash("111111") })
+      .where(eq(surfaceLinks.id, linkId));
+    const secret = (await openSurfacePage({ db: f.db, now: at(0) }, token, null)).secret;
+    const pins = ["222222", "333333", "444444", "555555", "111111"];
+    const codes = await Promise.all(
+      pins.map((pin) => codeOf(decideOnSurfacePage(deps(1000), token, secret, { decision: "approve", pin }))),
+    );
+    expect(codes.filter((c) => c === "surface.pin_wrong").length).toBeLessThanOrEqual(2);
+    expect(codes.at(-1)).toBe("surface.pin_locked");
+  });
+
   test("forgot it: an emailed link clears it once", async () => {
     const { token, linkId } = await page();
     await f.db.update(surfaceLinks).set({ pinHash: "x", pinFailures: 2 }).where(eq(surfaceLinks.id, linkId));

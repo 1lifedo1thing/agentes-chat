@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { PubSub } from "@agenteschat/adapters";
-import { and, type Database, type Executor, eq, isNull, lt, schema, sql } from "@agenteschat/db";
+import { and, type Database, type Executor, eq, isNull, lt, lte, or, schema, sql } from "@agenteschat/db";
 import { decideApproval, getApproval } from "../approvals";
 import { randomToken, safeEqual, sha256 } from "../crypto";
 import { emailAssistant, emailLocale, queueEmail } from "../email";
@@ -186,16 +186,32 @@ export async function checkPin(db: Executor, link: LinkRow, pin: string, at: Dat
     if (!now?.pinHash) throw gone();
     return checkPin(db, now, pin, at);
   }
-  if (await Bun.password.verify(pin, link.pinHash)) {
-    if (link.pinFailures > 0) await db.update(surfaceLinks).set({ pinFailures: 0 }).where(eq(surfaceLinks.id, link.id));
-    return;
-  }
-  const [counted] = await db
+  // The try is taken before the slow check, so tries sent at once can't run past the lock.
+  const [tried] = await db
     .update(surfaceLinks)
     .set({ pinFailures: sql`${surfaceLinks.pinFailures} + 1` })
-    .where(eq(surfaceLinks.id, link.id))
-    .returning({ failures: surfaceLinks.pinFailures });
-  const failures = counted?.failures ?? PIN_TRIES;
+    .where(
+      and(
+        eq(surfaceLinks.id, link.id),
+        lt(surfaceLinks.pinFailures, PIN_TRIES),
+        or(isNull(surfaceLinks.pinLockedUntil), lte(surfaceLinks.pinLockedUntil, at)),
+      ),
+    )
+    .returning({ failures: surfaceLinks.pinFailures, pinHash: surfaceLinks.pinHash });
+  if (!tried) {
+    const [now] = await db.select().from(surfaceLinks).where(eq(surfaceLinks.id, link.id));
+    const until =
+      now?.pinLockedUntil && now.pinLockedUntil > at ? now.pinLockedUntil : new Date(at.getTime() + PIN_LOCK_MS);
+    throw new TooManyError("Too many wrong PINs. Try again later.", "surface.pin_locked", {
+      until: until.toISOString(),
+    });
+  }
+  if (!tried.pinHash) return checkPin(db, { ...link, pinHash: null }, pin, at);
+  if (await Bun.password.verify(pin, tried.pinHash)) {
+    await db.update(surfaceLinks).set({ pinFailures: 0 }).where(eq(surfaceLinks.id, link.id));
+    return;
+  }
+  const failures = tried.failures;
   if (failures >= PIN_TRIES) {
     const until = new Date(at.getTime() + PIN_LOCK_MS);
     await db.update(surfaceLinks).set({ pinFailures: 0, pinLockedUntil: until }).where(eq(surfaceLinks.id, link.id));
