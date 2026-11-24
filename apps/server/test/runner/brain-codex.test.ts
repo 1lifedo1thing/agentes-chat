@@ -15,7 +15,6 @@ import {
   codexContextOverride,
   codexEffort,
   codexProfileOf,
-  codexRefusal,
   codexRulesNear,
   codexThreadKey,
   codexThreadsFile,
@@ -26,6 +25,7 @@ import {
   unwrapShell,
 } from "../../runner/brain-codex";
 import { WINDOWS_SANDBOX_MESSAGE } from "../../runner/codex-windows";
+import { codexRefusal } from "../../runner/executors";
 import { handleRequest } from "../../runner/handlers";
 import { CODEX_MCP_SERVER } from "../../runner/mcp";
 import { agentWorkspace } from "../../runner/paths";

@@ -151,17 +151,32 @@ test("what holds Codex on Windows is Codex's own check: MXC first, else its own 
   expect(knownCodexSandbox("codex-cli 0.170.0", "codex-half")).toBeUndefined();
 });
 
-test("the choice is kept per Codex: a sandbox while the runner runs, nothing for a while, no answer never", async () => {
+test("the choice is kept per Codex: MXC while the runner runs, less for a while, no answer never", async () => {
   const home = tempDir("codex-windows-keep-");
   dirs.push(home);
-  const ask = (bin: string, check: Check, at = 0) =>
-    windowsCodexSandbox({ runnerHome: home, version: "codex-cli 0.170.0", bin, check, now: () => at });
+  const ask = (bin: string, check: Check, at = 0, wait = false) =>
+    windowsCodexSandbox({ runnerHome: home, version: "codex-cli 0.170.0", bin, check, now: () => at, wait });
 
-  const held = checkOf({ mxc: [false], unelevated: [true] });
+  const mxc = checkOf({ mxc: [true] });
+  expect(await ask("codex-keep-m", mxc.check)).toBe("mxc");
+  expect(await ask("codex-keep-m", mxc.check, 99 * WINDOWS_SANDBOX_RETRY_MS)).toBe("mxc");
+  expect(mxc.calls).toHaveLength(1);
+
+  // MXC's check failed once (right after a restart, say): Codex's own sandbox for a while.
+  const held = checkOf({ mxc: [false, false, true], unelevated: [true] });
   expect(await ask("codex-keep-a", held.check)).toBe("unelevated");
-  expect(await ask("codex-keep-a", held.check, 99 * WINDOWS_SANDBOX_RETRY_MS)).toBe("unelevated");
-  expect(held.calls).toHaveLength(2);
-  expect(knownCodexSandbox("codex-cli 0.170.0", "codex-keep-a")).toBe("unelevated");
+  expect(await ask("codex-keep-a", held.check, WINDOWS_SANDBOX_RETRY_MS - 1)).toBe("unelevated");
+  expect(held.calls.map((c) => c.sandbox)).toEqual(["mxc", "unelevated"]);
+  // Then MXC alone is asked again behind it: a turn takes Codex's own sandbox at once, the report waits for the answer.
+  const later = WINDOWS_SANDBOX_RETRY_MS;
+  expect(await ask("codex-keep-a", held.check, later)).toBe("unelevated");
+  expect(await ask("codex-keep-a", held.check, later, true)).toBe("unelevated");
+  expect(held.calls.map((c) => c.sandbox)).toEqual(["mxc", "unelevated", "mxc"]);
+  // Once MXC runs, it is the choice from then on.
+  expect(await ask("codex-keep-a", held.check, 2 * later, true)).toBe("mxc");
+  expect(await ask("codex-keep-a", held.check, 99 * later)).toBe("mxc");
+  expect(held.calls.map((c) => c.sandbox)).toEqual(["mxc", "unelevated", "mxc", "mxc"]);
+  expect(knownCodexSandbox("codex-cli 0.170.0", "codex-keep-a")).toBe("mxc");
   // Another version is another choice.
   expect(knownCodexSandbox("codex-cli 0.171.0", "codex-keep-a")).toBeUndefined();
 
@@ -219,6 +234,8 @@ test.if(posix)("Codex's check of a sandbox: its mark and a good end is a yes, it
   // It didn't start: nobody knows yet.
   const nowhere = { file: path.join(home, "nowhere"), args: [] };
   expect(await runSandboxCheck(nowhere, "mxc", { cwd: home, env: process.env })).toBeNull();
+  // A Codex older than the check refuses its command line: that says nothing about Windows.
+  expect(await runSandboxCheck(runOf("mxc"), "mxc", { cwd: home, env: env("old") })).toBeNull();
 });
 
 test("the computer's report says the choice once made, looks in the background where Codex may run, and says so", async () => {
@@ -228,14 +245,14 @@ test("the computer's report says the choice once made, looks in the background w
   let at = 0;
   let changed = 0;
   const choices: string[] = [];
-  const fallback = checkOf({ mxc: [false, false], unelevated: [true] });
+  const fallback = checkOf({ mxc: [false, true], unelevated: [true] });
   const report = codexSandboxReport({
     runnerHome: home,
     onChange: () => changed++,
     now: () => at,
     choose: (v) => {
       choices.push(v);
-      return windowsCodexSandbox({ runnerHome: home, version: v, check: fallback.check, now: () => at });
+      return windowsCodexSandbox({ runnerHome: home, version: v, check: fallback.check, now: () => at, wait: true });
     },
   });
   const codex = { version };
@@ -247,7 +264,7 @@ test("the computer's report says the choice once made, looks in the background w
   await waitFor(() => changed === 1);
   expect(report(codex, true)).toEqual({ version, sandbox: "unelevated" });
   expect(choices).toEqual([version]);
-  // Asked again only after a while, and then from what is kept (no check runs for a sandbox already chosen).
+  // Asked again only after a while: MXC alone, and the server hears once it runs.
   at = WINDOWS_SANDBOX_RETRY_MS - 1;
   report(codex, true);
   expect(choices).toHaveLength(1);
@@ -255,7 +272,8 @@ test("the computer's report says the choice once made, looks in the background w
   report(codex, true);
   expect(choices).toHaveLength(2);
   await waitFor(() => changed === 2);
-  expect(fallback.calls).toHaveLength(2);
+  expect(fallback.calls.map((c) => c.sandbox)).toEqual(["mxc", "unelevated", "mxc"]);
+  expect(report(codex, true)).toEqual({ version, sandbox: "mxc" });
   // Another version: asked at once.
   report({ version: `${version}.1` }, true);
   expect(choices).toEqual([version, version, `${version}.1`]);

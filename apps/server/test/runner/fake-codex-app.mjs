@@ -15,7 +15,7 @@
 // `serviceTier: "fast"` fails as the provider's refusal comes back); anything else answers "pong".
 // `account/rateLimits/read` answers the 5 hours at 12% and the week at 55%. `-c windows.sandbox="<mode>" sandbox …
 // echo <MARK>` (Codex's check of a Windows sandbox) prints the mark when $FAKE_CODEX_SANDBOXES lists the mode, else
-// fails as Codex does without it.
+// fails as Codex does without it; "old" refuses the check's command line, as a Codex older than the check does.
 import { appendFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 
@@ -39,6 +39,10 @@ log({
 });
 
 if (args.includes("sandbox")) {
+  if (process.env.FAKE_CODEX_SANDBOXES === "old") {
+    process.stderr.write("error: unexpected argument '--include-managed-config' found\n");
+    process.exit(2);
+  }
   const mode = /^windows\.sandbox="(\w+)"$/.exec(args[1] ?? "")?.[1] ?? "";
   if ((process.env.FAKE_CODEX_SANDBOXES ?? "").split(",").includes(mode)) {
     console.log(args.at(-1));

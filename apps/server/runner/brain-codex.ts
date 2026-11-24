@@ -35,7 +35,7 @@ import {
 } from "./codex-windows";
 import { RunnerError } from "./errors";
 import { killTree } from "./exec";
-import { cachedCodexVersion, envValue } from "./executors";
+import { cachedCodexVersion, codexRefusal, envValue } from "./executors";
 import { CODEX_MCP_ENV, CODEX_MCP_SERVER, codexWritableRoots } from "./mcp";
 import { isInside, resolveForAgent } from "./paths";
 import type { Spawn } from "./scope-gate";
@@ -919,15 +919,6 @@ export async function runCodexTurn(input: CodexTurnInput, opts: CodexTurnOptions
       opts.emit(event);
     },
   });
-}
-
-/**
- * The line of a Codex that refused its command line (a flag or subcommand it doesn't have yet, in clap's words), as it
- * said it; null for any other failure.
- */
-export function codexRefusal(stderr: string): string | null {
-  const line = /^error: (?:unexpected argument|unrecognized subcommand|invalid value)\b.*$/m.exec(stderr)?.[0];
-  return line ? line.trim().slice(0, 300) : null;
 }
 
 /** One turn as `codex exec --json` (`version`: what that Codex said it is). */

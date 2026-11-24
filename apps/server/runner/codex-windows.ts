@@ -5,6 +5,7 @@ import type { CodexSandbox, RunnerExecutorInfo } from "@agenteschat/adapters/mac
 import { accountEnv } from "./accounts";
 import {
   type CliRun,
+  codexRefusal,
   envValue,
   findOnWindowsPath,
   isFile,
@@ -127,7 +128,7 @@ export const codexWindowsConfig = (sandbox: CodexWindowsSandbox) => [`windows.sa
 
 /** What a `plan` or `work` turn says where Windows can't hold Codex's commands. */
 export const WINDOWS_SANDBOX_MESSAGE =
-  "Codex couldn't start any isolation for its commands on this Windows computer: neither Microsoft Execution Containers (MXC) nor its own sandbox ran here. Choose Claude or an API key for this agent, or update Windows to Windows 11 24H2 or newer.";
+  "Codex couldn't start any isolation for its commands on this Windows computer: neither Microsoft Execution Containers (MXC) nor its own sandbox ran here. Choose Claude or an API key for this agent, or update Windows to Windows 11 24H2 or newer, with its latest updates.";
 
 /**
  * A thread's first prompt on Windows when it runs on `codex exec`: its instructions lead it, on stdin, as the plan
@@ -163,7 +164,7 @@ const SANDBOX_CHECK_TIMEOUT_MS = 60_000;
 /**
  * Runs Codex's check of `sandbox`: true when it printed its mark and ended well (the sandbox ran a command here), false
  * when it ran and didn't (no such sandbox here, or a policy that forbids it), null when it couldn't tell (it didn't
- * start, or didn't end in time).
+ * start, didn't end in time, or this Codex is too old for the check and refused its command line).
  */
 export function runSandboxCheck(
   run: CliRun,
@@ -184,11 +185,12 @@ export function runSandboxCheck(
           windowsHide: true,
           ...(run.windowsVerbatimArguments ? { windowsVerbatimArguments: true } : {}),
         },
-        (err, stdout) => {
+        (err, stdout, stderr) => {
           if (!err) return resolve(new RegExp(`\\b${sandboxMark(sandbox)}\\b`).test(stdout));
           const failed = err as { code?: unknown; killed?: boolean };
-          // It ran and said no (its exit code), against it not starting or not ending in time.
-          resolve(typeof failed.code === "number" && !failed.killed ? false : null);
+          // It ran and said no (its exit code), against it not starting or not ending in time. A refusal of the check
+          // itself says nothing about Windows.
+          resolve(typeof failed.code === "number" && !failed.killed && !codexRefusal(stderr) ? false : null);
         },
       );
     } catch {
@@ -197,7 +199,10 @@ export function runSandboxCheck(
   });
 }
 
-/** How long a "nothing holds Codex here" is kept before asking again (Windows may have been updated meanwhile). */
+/**
+ * How long anything less than MXC is kept before MXC is asked again: Windows may have been updated meanwhile, or MXC's
+ * check failed once (right after a restart, for one).
+ */
 export const WINDOWS_SANDBOX_RETRY_MS = 10 * 60_000;
 
 type SandboxCheck = (
@@ -212,9 +217,9 @@ const choiceKey = (version: string, bin = "codex") => `${bin}@${version}`;
 /**
  * What holds Codex's commands on this computer: `mxc` where Codex's own check (`sandboxCheckArgs`) runs a command in
  * MXC, else `unelevated` where the same check runs one in that, else `none`. Checked in an empty Codex home of the
- * runner's (none of a person's config in it), once at a time. Kept per Codex version: a sandbox for as long as the
- * runner runs (a Windows update that brings MXC restarts the computer, and the runner with it), `none` for
- * `WINDOWS_SANDBOX_RETRY_MS`. Null: it couldn't tell (not kept).
+ * runner's (none of a person's config in it), once at a time. Kept per Codex version: `mxc` for as long as the runner
+ * runs, anything less for `WINDOWS_SANDBOX_RETRY_MS`. Past that, `unelevated` stands while only MXC is asked again
+ * (`wait`: the answer instead), and `none` is asked again whole. Null: it couldn't tell (not kept).
  */
 export function windowsCodexSandbox(input: {
   runnerHome: string;
@@ -222,15 +227,18 @@ export function windowsCodexSandbox(input: {
   bin?: string;
   check?: SandboxCheck;
   now?: () => number;
+  wait?: boolean;
 }): Promise<CodexSandbox | null> {
   const now = input.now ?? Date.now;
   const key = choiceKey(input.version, input.bin);
   const kept = choices.get(key);
-  if (kept && (kept.sandbox !== "none" || now() - kept.at < WINDOWS_SANDBOX_RETRY_MS)) {
+  if (kept && (kept.sandbox === "mxc" || now() - kept.at < WINDOWS_SANDBOX_RETRY_MS)) {
     return Promise.resolve(kept.sandbox);
   }
+  // A turn never waits for MXC to be asked again behind a sandbox that already ran a command here.
+  const held = kept?.sandbox === "unelevated" && !input.wait ? Promise.resolve(kept.sandbox) : null;
   const running = choosing.get(key);
-  if (running) return running;
+  if (running) return held ?? running;
   const home = path.join(input.runnerHome, "brain", "codex-windows-check");
   const check =
     input.check ??
@@ -246,6 +254,7 @@ export function windowsCodexSandbox(input: {
     const opts = { cwd: home, env: accountEnv("codex", home) };
     const mxc = await check("mxc", opts);
     if (mxc !== false) return mxc && "mxc";
+    if (kept?.sandbox === "unelevated") return "unelevated";
     const unelevated = await check("unelevated", opts);
     if (unelevated === null) return null;
     return unelevated ? "unelevated" : "none";
@@ -256,7 +265,7 @@ export function windowsCodexSandbox(input: {
     })
     .finally(() => choosing.delete(key));
   choosing.set(key, choice);
-  return choice;
+  return held ?? choice;
 }
 
 /** The last choice of `windowsCodexSandbox` for this Codex, without making one (`hello`); undefined: none yet. */
@@ -267,7 +276,7 @@ export const knownCodexSandbox = (version: string, bin?: string): CodexSandbox |
  * `executors.codex` as `hello` and `executors.changed` say it on a Windows computer (`CODEX_UNELEVATED_PROTOCOL`): with
  * what holds Codex's commands there once a choice was made, never waited for (the check starts Codex, up to a minute
  * each sandbox). Where Codex may run (`may`: its switch on), a choice is made in the background when due (another
- * version, or `WINDOWS_SANDBOX_RETRY_MS` since the last), and `onChange` follows it so the server hears.
+ * version, or `WINDOWS_SANDBOX_RETRY_MS` since the last), and `onChange` follows its answer so the server hears.
  */
 export function codexSandboxReport(opts: {
   runnerHome: string;
@@ -276,7 +285,8 @@ export function codexSandboxReport(opts: {
   choose?: (version: string) => Promise<unknown>;
 }): (codex: RunnerExecutorInfo, may: boolean) => RunnerExecutorInfo {
   const now = opts.now ?? Date.now;
-  const choose = opts.choose ?? ((version: string) => windowsCodexSandbox({ runnerHome: opts.runnerHome, version }));
+  const choose =
+    opts.choose ?? ((version: string) => windowsCodexSandbox({ runnerHome: opts.runnerHome, version, wait: true }));
   let looked: { version: string; at: number } | undefined;
   return (codex, may) => {
     const { version } = codex;
