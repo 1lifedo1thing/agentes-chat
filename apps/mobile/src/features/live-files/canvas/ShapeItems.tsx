@@ -154,13 +154,18 @@ function Picture({ shape, k, picture }: { shape: ShapeView; k: number; picture: 
 function look(size: number, color: string, opts: Partial<TextLook> = {}): TextLook {
   return {
     font: "body",
+    fontRef: "source-sans-3",
     fontFamily: "Source Sans 3",
+    category: "sans",
     size,
     weight: 400,
     color,
     align: "left",
     valign: "top",
     lineHeight: 1.4,
+    tracking: 0,
+    caps: false,
+    padding: 0,
     ...opts,
   };
 }

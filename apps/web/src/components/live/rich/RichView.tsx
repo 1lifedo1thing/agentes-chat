@@ -102,7 +102,7 @@ function Run({ run }: { run: RichRun }) {
     ["font", run.font],
   ] as const;
   for (const [name, value] of marks) {
-    if (value === undefined || value === false) continue;
+    if (value === undefined) continue;
     const css = typeMarkCss(name, value);
     if (css) node = <span style={cssObject(css)}>{node}</span>;
   }

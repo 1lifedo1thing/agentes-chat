@@ -3,7 +3,9 @@ import { errorText } from "@agenteschat/client/lib/errors";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { LOCAL } from "@agenteschat/live";
 import type { Peer, PeerUser } from "@agenteschat/live/awareness";
+import { groupMembersOf, outermostGroup } from "@agenteschat/live";
 import {
+  readCanvasGroups,
   type ArrowEnd,
   type ArrowRoute,
   addShape,
@@ -194,6 +196,8 @@ type Gesture =
       alt: boolean;
       /** It was chosen before this press (a click then narrows the selection to it, or Shift takes it out). */
       wasSelected: boolean;
+      /** What the press picks: the shape, or its whole group (ADR 0220 §3). */
+      pick: string[];
     }
   | { kind: "move"; ids: string[]; startWorld: Point; applied: Point; bounds: Box | null; targets: Box[] }
   | { kind: "marquee"; startWorld: Point; base: string[] }
@@ -1250,7 +1254,16 @@ function CanvasEditor({
     }
     const wasSelected = sel.includes(hit.id);
     const frameRoom = hit.part === "frameInside" && !wasSelected;
-    if (!wasSelected && !frameRoom) setSelected(e.shiftKey ? [...sel, hit.id] : [hit.id]);
+    // A press picks the shape's whole group (ADR 0220 §3); a double click goes inside it.
+    const pick = (() => {
+      const group = store.now().byId.get(hit.id)?.group;
+      if (!group) return [hit.id];
+      const groups = readCanvasGroups(doc);
+      if (!groups.some((g) => g.id === group)) return [hit.id];
+      const members = groupMembersOf(store.now().list, groups, outermostGroup(groups, group));
+      return members.includes(hit.id) ? [hit.id, ...members.filter((m) => m !== hit.id)] : [hit.id];
+    })();
+    if (!wasSelected && !frameRoom) setSelected(e.shiftKey ? [...sel, ...pick.filter((p) => !sel.includes(p))] : pick);
     gesture.current = {
       kind: "press",
       startScreen: screen,
@@ -1259,6 +1272,7 @@ function CanvasEditor({
       shift: e.shiftKey,
       alt: e.altKey,
       wasSelected,
+      pick,
     };
   };
 
@@ -1303,7 +1317,7 @@ function CanvasEditor({
           onPointerMove(e);
           return;
         }
-        let ids = topLevelOf(sel.includes(g.hit.id) ? sel : [g.hit.id], now.list).filter(
+        let ids = topLevelOf(sel.includes(g.hit.id) ? sel : g.pick, now.list).filter(
           (id) => !now.byId.get(id)?.locked,
         );
         if (!ids.length) {
