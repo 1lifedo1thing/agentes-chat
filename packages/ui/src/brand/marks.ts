@@ -348,20 +348,3 @@ export function markOf(id: string | null | undefined): MarkId | null {
   if (Object.hasOwn(PROVIDER_MARKS, key)) return key as MarkId;
   return Object.hasOwn(ALIASES, key) ? (ALIASES[key] ?? null) : null;
 }
-
-/**
- * A provider's mark as a standalone SVG document (for pictures the server makes, ADR 0220 §4), drawn as provided: its
- * own colors, `ink` only where the mark is one color. Null for an id with no mark or a mark that is only a raster.
- */
-export function markSvg(id: string, ink: string): string | null {
-  const key = markOf(id);
-  const mark = key ? PROVIDER_MARKS[key] : null;
-  if (!mark || "image" in mark) return null;
-  const color = /^#[0-9a-f]{3,8}$/i.test(ink) ? ink : "#0e1a2b";
-  const defs = mark.gradient
-    ? `<defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${mark.gradient[0]}"/><stop offset="1" stop-color="${mark.gradient[1]}"/></linearGradient></defs>`
-    : "";
-  const fill = mark.gradient ? "url(#g)" : (mark.color ?? color);
-  const parts = (mark.parts ?? []).map((p) => `<path d="${p.path}" fill="${p.color}"/>`).join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">${defs}<path d="${mark.path}" fill="${fill}"/>${parts}</svg>`;
-}

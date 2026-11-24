@@ -400,7 +400,7 @@ describe("the layout itself", () => {
     expect(r.pieces[arrow?.to ?? -1]?.box.x).toBe(200);
   });
 
-  test("an icon takes the text color around it, a mark keeps its own", () => {
+  test("an icon takes the text color around it", () => {
     const parsed = parseHtml(
       '<style>.hot { color: #d14a00 }</style><p class="hot"><img src="icon:agent"> Agente</p><p><img src="icon:search"></p>',
     );

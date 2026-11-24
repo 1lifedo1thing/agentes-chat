@@ -1,6 +1,5 @@
 import { and, eq, inArray, schema } from "@agenteschat/db";
 import * as live from "@agenteschat/live";
-import { markSvg } from "@agenteschat/ui/brand/marks";
 import { iconSvg } from "@agenteschat/ui/icons/data";
 import type * as Y from "yjs";
 import type { ArtifactActor, ArtifactDeps } from "../../artifacts";
@@ -38,8 +37,8 @@ function sizeOf(asset: LiveAsset): PictureSize {
  * Brings in the pictures the markup names, as assets of `fileId`: an inline `<svg>` (sanitized), `asset:<id>` (one of
  * the file's own), `file:<id>` or a bare id (a Drive picture the agent reads, copied in), an `https` address
  * (downloaded through the outbound check), a `data:image/svg+xml` address, one of our icons (`icon:<name>`, in the
- * text color around it) or an AI maker's mark (`logo:<provider>`, in its own colors). What can't be used is named,
- * not fatal. `ink` is the file's text color, what the markup's root inherits.
+ * text color around it). What can't be used is named, not fatal. `ink` is the file's text color, what the markup's
+ * root inherits.
  */
 export async function resolveHtmlPictures(
   deps: { artifacts: ArtifactDeps; web?: WebPictureDeps },
@@ -51,7 +50,7 @@ export async function resolveHtmlPictures(
 ): Promise<HtmlPictures> {
   const out: HtmlPictures = { assets: new Map(), sizes: new Map(), notes: [] };
   const bySource = new Map<string, LiveAsset>();
-  const inks = parsed.pictures.some((p) => p.kind === "src" && /^(icon|logo):/i.test(p.src.trim()))
+  const inks = parsed.pictures.some((p) => p.kind === "src" && /^icon:/i.test(p.src.trim()))
     ? pictureInks(parsed, { size: 16, color: ink })
     : new Map<string, string>();
   const drawn = async (svg: string): Promise<LiveAsset> => {
@@ -94,11 +93,6 @@ export async function resolveHtmlPictures(
         const svg = iconSvg(name, inks.get(request.key) ?? ink);
         if (!svg) throw new Error(`there is no icon "${name.slice(0, 40)}"; the names are in the tool's description`);
         asset = await drawn(svg);
-      } else if (/^logo:/i.test(request.src.trim())) {
-        const name = request.src.trim().slice(5);
-        const svg = markSvg(name, inks.get(request.key) ?? ink);
-        if (!svg) throw new Error(`there is no mark for "${name.slice(0, 40)}"`);
-        asset = await drawn(svg);
       } else {
         const src = request.src.trim();
         asset = bySource.get(src);
@@ -140,7 +134,7 @@ export async function resolveHtmlPictures(
             });
           } else {
             throw new Error(
-              "name a Drive picture (file:<id>), one of the file's (asset:<id>), an https address, icon:<name>, logo:<provider> or an inline <svg>",
+              "name a Drive picture (file:<id>), one of the file's (asset:<id>), an https address, icon:<name> or an inline <svg>",
             );
           }
           bySource.set(src, asset);

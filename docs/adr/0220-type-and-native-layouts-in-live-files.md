@@ -111,8 +111,7 @@ takes `add_html`: a fragment of HTML and CSS the server lays out and turns into 
   Yoga (MIT) and the fonts' real metrics, so a line wraps where a browser would wrap it.
 - Each box with a background, border, radius or shadow becomes a shape; each run of text a text box with its marks;
   each `<img>` (a Drive picture or the file's own) and inline `<svg>` (sanitized as ADR 0196 §8) a picture. Icons
-  come from the app's own set (`icon:<name>`, drawn in the CSS color around them) and AI makers' marks from the
-  product's brand marks (`logo:<provider>`, in their own colors, ADR 0059). What one box held becomes one group,
+  come from the app's own set (`icon:<name>`, drawn in the CSS color around them). What one box held becomes one group,
   named after its `id` or `data-name`, so "the Webhook card" can be found and changed later.
 - `data-arrow-to="<id>"` asks for an arrow between two boxes: a connector that follows its shapes on a canvas, a
   line with a head on a slide.
