@@ -346,11 +346,15 @@ describe("the agent that handed it goes on when a step of its own waits on the r
   const TOTALS = "Total this month's invoices by client.";
 
   /** @dev hands Atlas the invoices, ends its turn, and Atlas posts its report home. */
-  async function handedAndBack() {
+  async function handedAndBack(options: { confidential?: boolean } = {}) {
     await addAgent("Atlas");
     const dev = await devRun(REQUEST);
     await tell(dev, "@atlas", TOTALS);
     await f.db.update(schema.agentRuns).set({ status: "done" }).where(eq(schema.agentRuns.id, dev.id));
+    if (options.confidential)
+      await f.db
+        .insert(schema.confidentialThreads)
+        .values({ orgId: f.org.id, channelId: dev.channelId, rootMessageId: dev.threadRootId });
     const [c] = await consultations();
     await reports(await runOf(c?.targetRunId), "The totals by client are in the shared sheet.");
     return { dev, runs: await devRuns(), notices: await replies() };
@@ -402,6 +406,12 @@ describe("the agent that handed it goes on when a step of its own waits on the r
     await f.close();
     f = await setup({ askAgent: true, judge: failing(new Error("judge: timed out")) });
     expect((await handedAndBack()).runs).toHaveLength(2);
+  });
+
+  test("a confidential thread's words never reach the judge, even once the sender's run is gone from memory", async () => {
+    f = await setup({ askAgent: true, judge: judging(0.9) });
+    expect((await handedAndBack({ confidential: true })).runs).toHaveLength(1);
+    expect(judged("hand_off_next")).toHaveLength(0);
   });
 
   test("a sender still at work takes the result into its turn, without asking the judge", async () => {

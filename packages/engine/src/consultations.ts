@@ -25,7 +25,7 @@ import { runAuthorityById, runChain } from "./authority";
 import { routineBriefOfRun } from "./background";
 import { type BrakeOutcome, brakeWakes, callableAgents, LATER_JOB, notCallableText } from "./brakes";
 import { canceledBy, stopRun } from "./cancel";
-import { isConfidentialRun } from "./confidential";
+import { isConfidentialRun, threadIsConfidential } from "./confidential";
 import { publishDelivery } from "./delivery";
 import { INBOX_JOB, startOrJoinRun } from "./dispatch";
 import { isAgentOnlyDm, openAgentDm } from "./dms";
@@ -1469,6 +1469,9 @@ async function senderGoesOn(deps: Deps, asker: AgentRun, rows: AgentConsultation
   );
   if (rows.some((r) => !home.has(r.id))) return false;
   if (asker.status === "queued" || asker.status === "running") return true;
+  // Read from the database, not this process's sealed runs: the sender's run ended, maybe in another process or
+  // before a restart, and a confidential thread's words never reach the judge (ADR 0190).
+  if (await threadIsConfidential(deps.db, asker.orgId, asker.threadRootId)) return false;
   const bodyOf = async (id: string | null | undefined) =>
     id ? ((await getMessage(deps.db, asker.orgId, id))?.body ?? "") : "";
   // The person's request the chain started from: a run woken by an earlier report has that report as its trigger.
