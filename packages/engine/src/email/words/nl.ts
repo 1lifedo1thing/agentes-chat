@@ -634,6 +634,17 @@ export const words: EmailWords = {
       why: (surface) => `Je krijgt deze e-mail omdat ${surface} aan je agentes.chat-account gekoppeld was.`,
       picture: "Je assistent, niet meer op je telefoon",
     },
+    pinReset: {
+      subject: (surface) => `Stel je ${surface}-pincode opnieuw in`,
+      preheader: "Wis hem en kies een nieuwe als er weer om gevraagd wordt.",
+      headline: (surface) => `Stel je ${surface}-pincode opnieuw in`,
+      body: (surface) =>
+        `Iemand vroeg om de pincode te resetten waarmee je acties via ${surface} bevestigt. Wis hem hier en kies een nieuwe als je assistent er weer om vraagt.`,
+      button: "Mijn pincode wissen",
+      small:
+        "De link werkt één keer, een uur lang. Was jij het niet? Negeer deze e-mail. Je pincode blijft zoals hij is.",
+      why: (surface) => `Je krijgt deze e-mail omdat ${surface} aan je agentes.chat-account gekoppeld is.`,
+    },
   },
   supportReply: {
     subject: "Een antwoord op je hulpvraag",

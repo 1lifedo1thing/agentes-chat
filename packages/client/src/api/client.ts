@@ -341,6 +341,7 @@ import type {
   SurfaceLink,
   SurfaceLinkCode,
   SurfaceLinks,
+  SurfacePage,
   TaskManagerView,
   TaskOutput,
   TaskSteps,
@@ -547,6 +548,20 @@ export interface ApiClient {
     remove(linkId: string): Promise<void>;
     /** "Not you? Unlink it" from the "linked" email: no session needed. `surface.undo_gone` (404), `rate_limited` (429). */
     undo(token: string): Promise<{ unlinked: boolean; surface: string; display: string | null }>;
+    /**
+     * A page the surface linked to (ADR 0226), no session needed: the first open binds it to this browser.
+     * `surface.page_gone` (404), `surface.page_elsewhere` (403), `rate_limited` (429).
+     */
+    openPage(token: string): Promise<SurfacePage>;
+    /**
+     * Approve (with the PIN, choosing it the first time) or refuse the page's action. `surface.pin_wrong` (403, `left`),
+     * `surface.pin_locked` (429, `until`), `surface.pin_shape` (400), and `openPage`'s.
+     */
+    decidePage(token: string, decision: "approve" | "refuse", pin?: string): Promise<SurfacePage>;
+    /** Emails a link that clears the PIN. */
+    forgotPin(token: string): Promise<void>;
+    /** The emailed link clears the PIN. `surface.pin_reset_gone` (404). */
+    resetPin(token: string): Promise<{ surface: string }>;
   };
   /** Where my pushes go: phones (ADR 0035) and browsers (ADR 0071). Per person, not per organization. */
   push: {

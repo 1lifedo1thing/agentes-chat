@@ -1,4 +1,4 @@
-import { ApiError, useUndoSurfaceLink } from "@agenteschat/client";
+import { ApiError, useResetSurfacePin, useUndoSurfaceLink } from "@agenteschat/client";
 import { errorCode, errorText } from "@agenteschat/client/lib/errors";
 import { formatPhone } from "@agenteschat/i18n/format";
 import { Button, Icon, Locked } from "@agenteschat/ui";
@@ -140,6 +140,60 @@ export function SurfaceUndoPage({ token }: { token?: string }) {
             </Locked>
           )}
         </div>
+      </form>
+    </AuthShell>
+  );
+}
+
+/**
+ * The link in the "Reset your PIN" email (ADR 0226): only its button clears the PIN (mail scanners open every link).
+ * The next action confirmed from the chat app chooses a new one.
+ */
+export function SurfacePinResetPage({ token }: { token?: string }) {
+  const { t } = useTranslation();
+  const reset = useResetSurfacePin();
+  const done = reset.data;
+  const gone = !token || errorCode(reset.error) === "surface.pin_reset_gone";
+  const [title, lead]: [string, string] = done
+    ? [t("surface.pinReset.done"), t("surface.pinReset.doneLead", { surface: done.surface })]
+    : gone
+      ? [t("surface.pinReset.gone"), t("errors.surface.pinResetGone")]
+      : [t("surface.pinReset.title"), t("surface.pinReset.lead")];
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!done && !gone && !reset.isPending && token) reset.mutate(token);
+  };
+
+  return (
+    <AuthShell>
+      <form className="auth__form" onSubmit={submit} noValidate>
+        <header className="auth__ask">
+          <AgentAvatar
+            name="agentes.chat"
+            size="lg"
+            state={reset.isPending ? "writing" : undefined}
+            expression={done ? "happy" : undefined}
+          />
+          <div className="auth__bubble" key={title} aria-live="polite">
+            <h1 className="auth__title">{title}</h1>
+            <p className="auth__lead">{lead}</p>
+          </div>
+        </header>
+        {!done && !gone && (
+          <div className="auth__step">
+            <Locked when={reset.isPending}>
+              {reset.isError && (
+                <p className="auth__error ac-iconline" role="alert">
+                  <Icon name="alert" size={14} />
+                  {errorText(t, reset.error)}
+                </p>
+              )}
+              <Button type="submit" variant="primary" size="lg" block kbd={["↵"]} loading={reset.isPending}>
+                {t("surface.pinReset.button")}
+              </Button>
+            </Locked>
+          </div>
+        )}
       </form>
     </AuthShell>
   );

@@ -2559,6 +2559,34 @@
       "gone": "Este enlace para deshacer ya no funciona",
       "sender": "Ese remitente"
     },
+    "page": {
+      "opening": "Abriendo la página",
+      "gone": "Este enlace ya no funciona",
+      "lead": "Escribe tu PIN para aprobarlo.",
+      "leadFirst": "Elige un PIN de 6 dígitos para aprobarlo. Confirma acciones como esta desde {{surface}}.",
+      "choosePin": "Elige un PIN",
+      "repeatPin": "Escríbelo de nuevo",
+      "pin": "Tu PIN",
+      "mismatch": "Los dos PIN no coinciden. Escribe el segundo de nuevo.",
+      "approve": "Aprobar",
+      "refuse": "Rechazar",
+      "forgot": "¿Olvidaste tu PIN?",
+      "emailed": "Te enviamos por correo un enlace que lo borra. Luego recarga esta página para elegir uno nuevo.",
+      "notYours": "{{who}} decide esto en la app.",
+      "notYoursSomeone": "Quien puede aprobarlo decide esto en la app.",
+      "approved": "Aprobado",
+      "refused": "Rechazado",
+      "expired": "Esta solicitud caducó",
+      "back": "Vuelve a {{surface}}. Tu asistente sigue allí."
+    },
+    "pinReset": {
+      "title": "¿Borrar tu PIN?",
+      "lead": "Elegirás uno nuevo la próxima vez que apruebes algo desde tu app de chat.",
+      "button": "Borrar mi PIN",
+      "done": "PIN borrado",
+      "doneLead": "Elige uno nuevo la próxima vez que apruebes algo desde {{surface}}.",
+      "gone": "Este enlace ya no funciona"
+    },
     "via": "via {{surface}}",
     "viaTip": "Enviado por {{person}} en {{surface}}",
     "forwarded": "reenviado vía {{surface}}",
@@ -16095,7 +16123,13 @@
       "linkGone": "Este vínculo ya no está esperando: venció después de 10 minutos o se canceló. Crea un código nuevo para empezar de nuevo.",
       "taken": "Ese remitente está vinculado a otra cuenta de agentes.chat. Desvincúlalo allí y luego envía un código nuevo.",
       "undoGone": "Este enlace para deshacer ya se usó o venció. Desvincula desde tu configuración de notificaciones.",
-      "codeGone": "Este código es incorrecto, ya se usó o venció después de 10 minutos. Crea un código nuevo y envíalo otra vez."
+      "codeGone": "Este código es incorrecto, ya se usó o venció después de 10 minutos. Crea un código nuevo y envíalo otra vez.",
+      "pageGone": "Este enlace caducó. Pide uno nuevo a tu asistente en el chat.",
+      "pageElsewhere": "Este enlace se abrió en otro dispositivo. Pide uno nuevo a tu asistente en el chat.",
+      "pinWrong": "PIN incorrecto. Intentos restantes: {{left}}.",
+      "pinLocked": "Demasiados PIN incorrectos. Inténtalo de nuevo en 15 minutos o borra tu PIN por correo.",
+      "pinShape": "Tu PIN tiene 6 dígitos.",
+      "pinResetGone": "Este enlace ya se usó o caducó. Pide uno nuevo con “¿Olvidaste tu PIN?”."
     },
     "wallpaper": {
       "notYours": "Esa foto no es tuya.",

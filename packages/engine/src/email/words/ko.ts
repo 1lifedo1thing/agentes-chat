@@ -589,6 +589,17 @@ export const words: EmailWords = {
       why: (surface) => `${surface}이(가) agentes.chat 계정에 연결되어 있었기 때문에 이 이메일을 보내드립니다.`,
       picture: "더 이상 휴대폰에 없는 어시스턴트",
     },
+    pinReset: {
+      subject: (surface) => `${surface} PIN 재설정`,
+      preheader: "PIN을 지우고 다음에 요청받을 때 새 PIN을 정하세요.",
+      headline: (surface) => `${surface} PIN 재설정`,
+      body: (surface) =>
+        `${surface}에서 작업을 확인할 때 쓰는 PIN을 재설정해 달라는 요청이 있었습니다. 여기서 지우고, 다음에 어시스턴트가 요청할 때 새 PIN을 정하세요.`,
+      button: "내 PIN 지우기",
+      small:
+        "이 링크는 한 시간 동안 한 번만 작동합니다. 본인이 아니라면 이 이메일을 무시하세요. PIN은 그대로 유지됩니다.",
+      why: (surface) => `${surface}이(가) agentes.chat 계정에 연결되어 있기 때문에 이 이메일을 보내드립니다.`,
+    },
   },
   supportReply: {
     subject: "도움 요청에 대한 답변",

@@ -615,6 +615,17 @@ export const words: EmailWords = {
       why: (surface) => `${surface} が agentes.chat アカウントに連携されていたため、このメールをお送りしています。`,
       picture: "スマートフォンからは外れたアシスタント",
     },
+    pinReset: {
+      subject: (surface) => `${surface} の PIN をリセット`,
+      preheader: "PIN を消去し、次に求められたときに新しい PIN を設定してください。",
+      headline: (surface) => `${surface} の PIN をリセット`,
+      body: (surface) =>
+        `${surface} から操作を確認するときに使う PIN のリセットが依頼されました。ここで消去し、次にアシスタントから求められたときに新しい PIN を設定してください。`,
+      button: "PIN を消去",
+      small:
+        "このリンクは 1 時間以内に 1 回だけ使えます。心当たりがなければ、このメールは無視してください。PIN はそのままです。",
+      why: (surface) => `${surface} が agentes.chat アカウントに連携されているため、このメールをお送りしています。`,
+    },
   },
   supportReply: {
     subject: "お問い合わせへの回答",

@@ -649,6 +649,17 @@ export const words: EmailWords = {
       why: (surface) => `Tu reçois cet e-mail parce que ${surface} était lié à ton compte agentes.chat.`,
       picture: "Ton assistant, plus sur ton téléphone",
     },
+    pinReset: {
+      subject: (surface) => `Réinitialise ton code PIN ${surface}`,
+      preheader: "Efface-le, puis choisis-en un nouveau la prochaine fois qu'on te le demande.",
+      headline: (surface) => `Réinitialise ton code PIN ${surface}`,
+      body: (surface) =>
+        `Quelqu'un a demandé à réinitialiser le code PIN que tu utilises pour confirmer des actions depuis ${surface}. Efface-le ici, puis choisis-en un nouveau la prochaine fois que ton assistant le demande.`,
+      button: "Effacer mon code PIN",
+      small:
+        "Le lien fonctionne une fois, pendant une heure. Si ce n'était pas toi, ignore cet e-mail. Ton code PIN ne change pas.",
+      why: (surface) => `Tu reçois cet e-mail parce que ${surface} est lié à ton compte agentes.chat.`,
+    },
   },
   supportReply: {
     subject: "Une réponse à votre demande d’aide",

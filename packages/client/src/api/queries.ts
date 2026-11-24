@@ -435,6 +435,43 @@ export function useRemoveSurfaceLink() {
   return useSurfaceLinkMutation((linkId: string) => api.surfaces.remove(linkId));
 }
 
+/** A page the surface linked to (ADR 0226), opened once by its token: never refetched on its own. */
+export function useSurfacePage(token: string | undefined) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["surface-page", token ?? ""],
+    queryFn: () => api.surfaces.openPage(token ?? ""),
+    enabled: Boolean(token),
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: false,
+    meta: { quiet: true },
+  });
+}
+
+/** Approve with the PIN, or refuse, on that page: the answer is the page as it is now. */
+export function useDecideSurfacePage(token: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { decision: "approve" | "refuse"; pin?: string }) =>
+      api.surfaces.decidePage(token, input.decision, input.pin),
+    meta: { silent: true },
+    onSuccess: (page) => qc.setQueryData(["surface-page", token], page),
+  });
+}
+
+export function useForgotSurfacePin(token: string) {
+  const api = useApi();
+  return useMutation({ mutationFn: () => api.surfaces.forgotPin(token), meta: { silent: true } });
+}
+
+/** The PIN email's link; works signed out. */
+export function useResetSurfacePin() {
+  const api = useApi();
+  return useMutation({ mutationFn: (token: string) => api.surfaces.resetPin(token), meta: { silent: true } });
+}
+
 /** The "linked" email's undo, by its token; works signed out. */
 export function useUndoSurfaceLink() {
   const api = useApi();

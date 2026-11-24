@@ -661,6 +661,17 @@ export const en = {
       /** The picture's alt text: the assistant beside the phone, switched off. */
       picture: "Your assistant, no longer on your phone",
     },
+    /** Clears the PIN that confirms acts from the surface (ADR 0226): `url`, the page that does it once. */
+    pinReset: {
+      subject: (surface: string) => `Reset your ${surface} PIN`,
+      preheader: "Clear it, then choose a new one the next time you are asked.",
+      headline: (surface: string) => `Reset your ${surface} PIN`,
+      body: (surface: string) =>
+        `Someone asked to reset the PIN you use to confirm actions from ${surface}. Clear it here, then choose a new one the next time your assistant asks.`,
+      button: "Clear my PIN",
+      small: "The link works once, for one hour. If it wasn't you, ignore this email. Your PIN stays as it is.",
+      why: (surface: string) => `You got this email because ${surface} is linked to your agentes.chat account.`,
+    },
   },
   /** The answer of whoever runs the server to a member's request for help (ADR 0056). */
   supportReply: {

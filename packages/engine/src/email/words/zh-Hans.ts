@@ -543,6 +543,16 @@ export const words: EmailWords = {
       why: (surface) => `你收到这封邮件，是因为 ${surface} 曾关联到你的 agentes.chat 账号。`,
       picture: "你的助手，已不在你的手机上",
     },
+    pinReset: {
+      subject: (surface) => `重置你的 ${surface} PIN`,
+      preheader: "清除后，下次被要求时再设置新的 PIN。",
+      headline: (surface) => `重置你的 ${surface} PIN`,
+      body: (surface) =>
+        `有人请求重置你在 ${surface} 上确认操作时使用的 PIN。在这里清除它，下次助手要求时再设置新的 PIN。`,
+      button: "清除我的 PIN",
+      small: "此链接一小时内只能使用一次。如果不是你本人操作，请忽略这封邮件。你的 PIN 保持不变。",
+      why: (surface) => `你收到这封邮件，是因为 ${surface} 已关联到你的 agentes.chat 账号。`,
+    },
   },
   supportReply: {
     subject: "你的求助有了回复",

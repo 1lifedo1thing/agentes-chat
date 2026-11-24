@@ -2560,6 +2560,34 @@
       "gone": "Questo link per annullare non funziona più",
       "sender": "Quel mittente"
     },
+    "page": {
+      "opening": "Apertura della pagina",
+      "gone": "Questo link non funziona più",
+      "lead": "Inserisci il tuo PIN per approvarlo.",
+      "leadFirst": "Scegli un PIN di 6 cifre per approvarlo. Conferma azioni come questa da {{surface}}.",
+      "choosePin": "Scegli un PIN",
+      "repeatPin": "Inseriscilo di nuovo",
+      "pin": "Il tuo PIN",
+      "mismatch": "I due PIN non coincidono. Inserisci di nuovo il secondo.",
+      "approve": "Approva",
+      "refuse": "Rifiuta",
+      "forgot": "Hai dimenticato il PIN?",
+      "emailed": "Ti abbiamo inviato via email un link che lo cancella. Poi ricarica questa pagina per sceglierne uno nuovo.",
+      "notYours": "{{who}} lo decide nell'app.",
+      "notYoursSomeone": "Lo decide nell'app chi può approvarlo.",
+      "approved": "Approvato",
+      "refused": "Rifiutato",
+      "expired": "Questa richiesta è scaduta",
+      "back": "Torna su {{surface}}. Il tuo assistente continua lì."
+    },
+    "pinReset": {
+      "title": "Cancellare il PIN?",
+      "lead": "Ne sceglierai uno nuovo la prossima volta che approvi qualcosa dalla tua app di chat.",
+      "button": "Cancella il mio PIN",
+      "done": "PIN cancellato",
+      "doneLead": "Scegline uno nuovo la prossima volta che approvi qualcosa da {{surface}}.",
+      "gone": "Questo link non funziona più"
+    },
     "via": "tramite {{surface}}",
     "viaTip": "Inviato da {{person}} su {{surface}}",
     "forwarded": "inoltrato tramite {{surface}}",
@@ -16192,7 +16220,13 @@
       "linkGone": "Questo collegamento non è più in attesa: è scaduto dopo 10 minuti o è stato annullato. Crea un nuovo codice per ricominciare.",
       "taken": "Questo mittente è collegato a un altro account agentes.chat. Scollegalo lì, poi invia un nuovo codice.",
       "undoGone": "Questo link per annullare è già stato usato o è scaduto. Scollega invece dalle impostazioni delle notifiche.",
-      "codeGone": "Questo codice è sbagliato, già usato o scaduto dopo 10 minuti. Crea un nuovo codice e invialo di nuovo."
+      "codeGone": "Questo codice è sbagliato, già usato o scaduto dopo 10 minuti. Crea un nuovo codice e invialo di nuovo.",
+      "pageGone": "Questo link è scaduto. Chiedine uno nuovo al tuo assistente nella chat.",
+      "pageElsewhere": "Questo link è stato aperto su un altro dispositivo. Chiedine uno nuovo al tuo assistente nella chat.",
+      "pinWrong": "PIN errato. Tentativi rimasti: {{left}}.",
+      "pinLocked": "Troppi PIN errati. Riprova tra 15 minuti o cancella il PIN via email.",
+      "pinShape": "Il tuo PIN ha 6 cifre.",
+      "pinResetGone": "Questo link è già stato usato o è scaduto. Chiedine uno nuovo con “Hai dimenticato il PIN?”."
     },
     "wallpaper": {
       "notYours": "Quella foto non è tua.",

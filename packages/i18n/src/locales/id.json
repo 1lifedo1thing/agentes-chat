@@ -2392,6 +2392,34 @@
       "gone": "Tautan pembatalan ini sudah tidak berfungsi",
       "sender": "Pengirim itu"
     },
+    "page": {
+      "opening": "Membuka halaman",
+      "gone": "Tautan ini sudah tidak berlaku",
+      "lead": "Ketik PIN kamu untuk menyetujuinya.",
+      "leadFirst": "Pilih PIN 6 digit untuk menyetujuinya. PIN ini mengonfirmasi tindakan seperti ini dari {{surface}}.",
+      "choosePin": "Pilih PIN",
+      "repeatPin": "Ketik sekali lagi",
+      "pin": "PIN kamu",
+      "mismatch": "Kedua PIN tidak sama. Ketik ulang yang kedua.",
+      "approve": "Setujui",
+      "refuse": "Tolak",
+      "forgot": "Lupa PIN?",
+      "emailed": "Kami sudah mengirim email berisi tautan untuk menghapusnya. Lalu muat ulang halaman ini untuk memilih yang baru.",
+      "notYours": "{{who}} yang memutuskan ini di aplikasi.",
+      "notYoursSomeone": "Orang yang bisa menyetujuinya memutuskan ini di aplikasi.",
+      "approved": "Disetujui",
+      "refused": "Ditolak",
+      "expired": "Permintaan ini sudah kedaluwarsa",
+      "back": "Kembali ke {{surface}}. Asistenmu melanjutkan di sana."
+    },
+    "pinReset": {
+      "title": "Hapus PIN kamu?",
+      "lead": "Kamu akan memilih yang baru saat berikutnya menyetujui sesuatu dari aplikasi chat.",
+      "button": "Hapus PIN saya",
+      "done": "PIN dihapus",
+      "doneLead": "Pilih yang baru saat berikutnya menyetujui sesuatu dari {{surface}}.",
+      "gone": "Tautan ini sudah tidak berlaku"
+    },
     "via": "via {{surface}}",
     "viaTip": "Dikirim oleh {{person}} di {{surface}}",
     "forwarded": "diteruskan via {{surface}}",
@@ -15107,7 +15135,13 @@
       "linkGone": "Tautan ini tidak lagi menunggu: kedaluwarsa setelah 10 menit atau dibatalkan. Buat kode baru untuk mulai lagi.",
       "taken": "Pengirim itu tertaut ke akun agentes.chat lain. Lepaskan tautannya di sana, lalu kirim kode baru.",
       "undoGone": "Tautan pembatalan ini sudah dipakai atau kedaluwarsa. Lepaskan tautan lewat pengaturan notifikasimu saja.",
-      "codeGone": "Kode ini salah, sudah dipakai, atau kedaluwarsa setelah 10 menit. Buat kode baru dan kirim lagi."
+      "codeGone": "Kode ini salah, sudah dipakai, atau kedaluwarsa setelah 10 menit. Buat kode baru dan kirim lagi.",
+      "pageGone": "Tautan ini sudah kedaluwarsa. Minta yang baru ke asistenmu di chat.",
+      "pageElsewhere": "Tautan ini sudah dibuka di perangkat lain. Minta yang baru ke asistenmu di chat.",
+      "pinWrong": "PIN salah. Sisa percobaan: {{left}}.",
+      "pinLocked": "Terlalu banyak PIN salah. Coba lagi dalam 15 menit, atau hapus PIN lewat email.",
+      "pinShape": "PIN kamu terdiri dari 6 digit.",
+      "pinResetGone": "Tautan ini sudah dipakai atau kedaluwarsa. Minta yang baru lewat “Lupa PIN?”."
     },
     "wallpaper": {
       "notYours": "Foto itu bukan milikmu.",

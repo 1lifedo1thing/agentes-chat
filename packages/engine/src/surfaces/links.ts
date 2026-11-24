@@ -198,9 +198,16 @@ export async function confirmLink(deps: LinkDeps, userId: string, linkId: string
         and(eq(surfaceLinks.userId, userId), eq(surfaceLinks.surface, surface.id), eq(surfaceLinks.status, "active")),
       )
       .returning();
+    // The same sender moving to another workspace keeps their PIN (ADR 0226); a new sender chooses one.
+    const moved = replaced.find((old) => old.externalId === pending.externalId);
     const [active] = await tx
       .update(surfaceLinks)
-      .set({ status: "active", confirmedAt: new Date() })
+      .set({
+        status: "active",
+        confirmedAt: new Date(),
+        pinHash: moved?.pinHash ?? null,
+        pinLockedUntil: moved?.pinLockedUntil ?? null,
+      })
       .where(eq(surfaceLinks.id, pending.id))
       .returning();
     if (!active?.orgId) throw new Error("surface link not confirmed");

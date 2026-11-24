@@ -626,6 +626,17 @@ export const words: EmailWords = {
       why: (surface) => `Ricevi questa email perché ${surface} era collegato al tuo account agentes.chat.`,
       picture: "Il tuo assistente, non più sul tuo telefono",
     },
+    pinReset: {
+      subject: (surface) => `Reimposta il PIN di ${surface}`,
+      preheader: "Cancellalo e scegline uno nuovo la prossima volta che ti viene chiesto.",
+      headline: (surface) => `Reimposta il PIN di ${surface}`,
+      body: (surface) =>
+        `Qualcuno ha chiesto di reimpostare il PIN che usi per confermare le azioni da ${surface}. Cancellalo qui e scegline uno nuovo la prossima volta che il tuo assistente te lo chiede.`,
+      button: "Cancella il mio PIN",
+      small:
+        "Il link funziona una volta, per un'ora. Se non sei stato tu, ignora questa email. Il tuo PIN resta com'è.",
+      why: (surface) => `Ricevi questa email perché ${surface} è collegato al tuo account agentes.chat.`,
+    },
   },
   supportReply: {
     subject: "Una risposta alla tua richiesta di aiuto",

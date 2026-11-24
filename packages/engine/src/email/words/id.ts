@@ -604,6 +604,16 @@ export const words: EmailWords = {
       why: (surface) => `Kamu menerima email ini karena ${surface} pernah ditautkan ke akun agentes.chat kamu.`,
       picture: "Asistenmu, tidak lagi di ponselmu",
     },
+    pinReset: {
+      subject: (surface) => `Atur ulang PIN ${surface} kamu`,
+      preheader: "Hapus PIN, lalu pilih yang baru saat diminta lagi.",
+      headline: (surface) => `Atur ulang PIN ${surface} kamu`,
+      body: (surface) =>
+        `Ada yang meminta untuk mengatur ulang PIN yang kamu pakai untuk mengonfirmasi tindakan dari ${surface}. Hapus di sini, lalu pilih yang baru saat asistenmu memintanya lagi.`,
+      button: "Hapus PIN saya",
+      small: "Tautan ini berlaku sekali, selama satu jam. Kalau bukan kamu, abaikan email ini. PIN kamu tetap sama.",
+      why: (surface) => `Kamu menerima email ini karena ${surface} ditautkan ke akun agentes.chat kamu.`,
+    },
   },
   supportReply: {
     subject: "Jawaban untuk permintaan bantuanmu",

@@ -2560,6 +2560,34 @@
       "gone": "Ce lien d'annulation ne fonctionne plus",
       "sender": "Cet expéditeur"
     },
+    "page": {
+      "opening": "Ouverture de la page",
+      "gone": "Ce lien ne fonctionne plus",
+      "lead": "Saisis ton code PIN pour l'approuver.",
+      "leadFirst": "Choisis un code PIN à 6 chiffres pour l'approuver. Il confirme les actions comme celle-ci depuis {{surface}}.",
+      "choosePin": "Choisis un code PIN",
+      "repeatPin": "Saisis-le à nouveau",
+      "pin": "Ton code PIN",
+      "mismatch": "Les deux codes PIN ne correspondent pas. Saisis à nouveau le second.",
+      "approve": "Approuver",
+      "refuse": "Refuser",
+      "forgot": "Code PIN oublié ?",
+      "emailed": "Nous t'avons envoyé par e-mail un lien qui l'efface. Recharge ensuite cette page pour en choisir un nouveau.",
+      "notYours": "{{who}} décide de ceci dans l'app.",
+      "notYoursSomeone": "Une personne qui peut l'approuver en décide dans l'app.",
+      "approved": "Approuvé",
+      "refused": "Refusé",
+      "expired": "Cette demande a expiré",
+      "back": "Retourne sur {{surface}}. Ton assistant continue là-bas."
+    },
+    "pinReset": {
+      "title": "Effacer ton code PIN ?",
+      "lead": "Tu en choisiras un nouveau la prochaine fois que tu approuveras quelque chose depuis ton app de chat.",
+      "button": "Effacer mon code PIN",
+      "done": "Code PIN effacé",
+      "doneLead": "Choisis-en un nouveau la prochaine fois que tu approuves quelque chose depuis {{surface}}.",
+      "gone": "Ce lien ne fonctionne plus"
+    },
     "via": "via {{surface}}",
     "viaTip": "Envoyé par {{person}} sur {{surface}}",
     "forwarded": "transféré via {{surface}}",
@@ -16169,7 +16197,13 @@
       "linkGone": "Cette liaison n'attend plus : elle a expiré après 10 minutes ou a été annulée. Créez un nouveau code pour recommencer.",
       "taken": "Cet expéditeur est relié à un autre compte agentes.chat. Supprimez la liaison là-bas, puis envoyez un nouveau code.",
       "undoGone": "Ce lien d'annulation a déjà servi ou a expiré. Supprimez plutôt la liaison dans vos paramètres de notifications.",
-      "codeGone": "Ce code est erroné, déjà utilisé ou expiré après 10 minutes. Créez un nouveau code et renvoyez-le."
+      "codeGone": "Ce code est erroné, déjà utilisé ou expiré après 10 minutes. Créez un nouveau code et renvoyez-le.",
+      "pageGone": "Ce lien a expiré. Demande-en un nouveau à ton assistant dans le chat.",
+      "pageElsewhere": "Ce lien a été ouvert sur un autre appareil. Demande-en un nouveau à ton assistant dans le chat.",
+      "pinWrong": "Code PIN incorrect. Essais restants : {{left}}.",
+      "pinLocked": "Trop de codes PIN incorrects. Réessaie dans 15 minutes ou efface ton code PIN par e-mail.",
+      "pinShape": "Ton code PIN compte 6 chiffres.",
+      "pinResetGone": "Ce lien a déjà servi ou a expiré. Demandes-en un nouveau avec « Code PIN oublié ? »."
     },
     "wallpaper": {
       "notYours": "Cette photo n'est pas à vous.",

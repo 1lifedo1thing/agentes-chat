@@ -211,6 +211,8 @@ export type EmailTemplate =
     } & Beside)
   /** The surface unlinked the account because the sender's identity there changed. `url`: the server, for the pictures. */
   | ({ kind: "surface_unlinked"; locale: EmailLocale; surface: string; display: string; url: string } & Beside)
+  /** "Forgot your PIN?" on a page the surface linked to (ADR 0226): `url` is the page that clears it, once, for an hour. */
+  | ({ kind: "surface_pin_reset"; locale: EmailLocale; surface: string; url: string } & Beside)
   /**
    * Double opt-in for the landing page's waiting list, in the language they
    * joined in. `email` is the address being confirmed (absent in jobs queued
@@ -981,6 +983,17 @@ function docOf(t: EmailTemplate, sender: string | null): EmailDoc {
         [{ p: c.body(t.surface, inertSender(t.display)) }, { small: c.small }],
         c.why(t.surface),
         { crew: surfaceCrew(t.assistant), phone: { alt: c.picture, on: false } },
+      );
+    }
+    case "surface_pin_reset": {
+      const c = w.surface.pinReset;
+      return doc(
+        c.subject(t.surface),
+        c.preheader,
+        c.headline(t.surface),
+        [{ p: c.body(t.surface) }, { button: c.button, url: t.url }, { small: c.small }, fallback(t.url)],
+        c.why(t.surface),
+        { crew: surfaceCrew(t.assistant), phone: { alt: w.surface.linked.picture, on: true } },
       );
     }
     case "autonomy_report": {

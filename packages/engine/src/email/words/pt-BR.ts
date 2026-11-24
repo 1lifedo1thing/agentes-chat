@@ -603,6 +603,16 @@ export const ptBR: Words = {
       why: (surface) => `Você recebeu este e-mail porque ${surface} estava vinculado à sua conta do agentes.chat.`,
       picture: "Seu assistente, não mais no seu celular",
     },
+    pinReset: {
+      subject: (surface) => `Redefina seu PIN do ${surface}`,
+      preheader: "Apague o PIN e escolha um novo na próxima vez que ele for pedido.",
+      headline: (surface) => `Redefina seu PIN do ${surface}`,
+      body: (surface) =>
+        `Pediram para redefinir o PIN que você usa para confirmar ações pelo ${surface}. Apague-o aqui e escolha um novo na próxima vez que seu assistente pedir.`,
+      button: "Apagar meu PIN",
+      small: "O link funciona uma vez, por uma hora. Se não foi você, ignore este e-mail. Seu PIN continua o mesmo.",
+      why: (surface) => `Você recebeu este e-mail porque ${surface} está vinculado à sua conta do agentes.chat.`,
+    },
   },
   supportReply: {
     subject: "Uma resposta ao seu pedido de ajuda",

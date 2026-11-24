@@ -2475,6 +2475,34 @@
       "gone": "Bu geri alma bağlantısı artık çalışmıyor",
       "sender": "O gönderen"
     },
+    "page": {
+      "opening": "Sayfa açılıyor",
+      "gone": "Bu bağlantı artık çalışmıyor",
+      "lead": "Onaylamak için PIN'ini yaz.",
+      "leadFirst": "Onaylamak için 6 haneli bir PIN seç. {{surface}} üzerinden bunun gibi işlemleri onaylar.",
+      "choosePin": "PIN seç",
+      "repeatPin": "Tekrar yaz",
+      "pin": "PIN'in",
+      "mismatch": "İki PIN eşleşmiyor. İkincisini tekrar yaz.",
+      "approve": "Onayla",
+      "refuse": "Reddet",
+      "forgot": "PIN'ini mi unuttun?",
+      "emailed": "Sana PIN'i silen bir bağlantı e-postaladık. Ardından yenisini seçmek için bu sayfayı yeniden yükle.",
+      "notYours": "Buna uygulamada {{who}} karar verir.",
+      "notYoursSomeone": "Buna uygulamada onaylama yetkisi olan biri karar verir.",
+      "approved": "Onaylandı",
+      "refused": "Reddedildi",
+      "expired": "Bu isteğin süresi doldu",
+      "back": "{{surface}} uygulamasına dön. Asistanın orada devam eder."
+    },
+    "pinReset": {
+      "title": "PIN'in silinsin mi?",
+      "lead": "Sohbet uygulamandan bir dahaki onayında yenisini seçeceksin.",
+      "button": "PIN'imi sil",
+      "done": "PIN silindi",
+      "doneLead": "{{surface}} üzerinden bir dahaki onayında yenisini seç.",
+      "gone": "Bu bağlantı artık çalışmıyor"
+    },
     "via": "{{surface}} aracılığıyla",
     "viaTip": "{{person}} tarafından {{surface}} üzerinden gönderildi",
     "forwarded": "{{surface}} üzerinden iletildi",
@@ -15561,7 +15589,13 @@
       "linkGone": "Bu bağlantı artık beklemiyor: 10 dakika sonra süresi doldu ya da iptal edildi. Yeniden başlamak için yeni bir kod oluşturun.",
       "taken": "Bu gönderen başka bir agentes.chat hesabına bağlı. Önce oradaki bağlantıyı kaldırın, sonra yeni bir kod gönderin.",
       "undoGone": "Bu geri alma bağlantısı zaten kullanılmış ya da süresi dolmuş. Bunun yerine bildirim ayarlarınızdan bağlantıyı kaldırın.",
-      "codeGone": "Bu kod yanlış, kullanılmış ya da 10 dakika sonra süresi dolmuş. Yeni bir kod oluşturup tekrar gönderin."
+      "codeGone": "Bu kod yanlış, kullanılmış ya da 10 dakika sonra süresi dolmuş. Yeni bir kod oluşturup tekrar gönderin.",
+      "pageGone": "Bu bağlantının süresi doldu. Sohbette asistanından yenisini iste.",
+      "pageElsewhere": "Bu bağlantı başka bir cihazda açıldı. Sohbette asistanından yenisini iste.",
+      "pinWrong": "PIN yanlış. Kalan deneme: {{left}}.",
+      "pinLocked": "Çok fazla yanlış PIN. 15 dakika sonra tekrar dene ya da PIN'ini e-postayla sil.",
+      "pinShape": "PIN'in 6 hanelidir.",
+      "pinResetGone": "Bu bağlantı zaten kullanıldı ya da süresi doldu. “PIN'ini mi unuttun?” ile yenisini iste."
     },
     "wallpaper": {
       "notYours": "Bu fotoğraf sizin değil.",

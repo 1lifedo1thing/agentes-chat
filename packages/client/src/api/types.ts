@@ -384,6 +384,30 @@ export interface SurfaceLinkCode {
   expiresAt: string;
 }
 
+/** A page the outside chat surface linked to (ADR 0226): one action to confirm with the person's PIN. */
+export interface SurfacePage {
+  kind: "confirm" | "screen" | "control";
+  /** When the page stops opening. */
+  expiresAt: string;
+  surface: string;
+  /** `set` false: approving chooses the PIN. `lockedUntil`: three wrong ones lock approving until then. */
+  pin: { set: boolean; lockedUntil: string | null };
+  approval: {
+    id: string;
+    tool: string;
+    params: Record<string, unknown>;
+    title: string;
+    detail: string;
+    why: string | null;
+    kind: string;
+    titleParams: Record<string, string | number | boolean>;
+    status: string;
+    canDecide: boolean;
+    /** Who decides it, in words, when it isn't the person. */
+    approverLabel: string | null;
+  } | null;
+}
+
 export interface User {
   id: string;
   name: string;

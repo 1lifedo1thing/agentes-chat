@@ -247,6 +247,7 @@ import type {
   SurfaceLink,
   SurfaceLinkCode,
   SurfaceLinks,
+  SurfacePage,
   TaskManagerView,
   TaskOutput,
   TaskSteps,
@@ -665,6 +666,11 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<{ unlinked: boolean; surface: string; display: string | null }>("/api/app/surface-undo", {
           json: { token },
         }),
+      openPage: (token) => request<SurfacePage>("/api/app/surface-page/open", { json: { token } }),
+      decidePage: (token, decision, pin) =>
+        request<SurfacePage>("/api/app/surface-page/decide", { json: { token, decision, ...(pin ? { pin } : {}) } }),
+      forgotPin: (token) => request<void>("/api/app/surface-page/forgot-pin", { json: { token } }),
+      resetPin: (token) => request<{ surface: string }>("/api/app/surface-pin-reset", { json: { token } }),
     },
     push: {
       webKey: async () =>

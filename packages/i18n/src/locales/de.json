@@ -2475,6 +2475,34 @@
       "gone": "Dieser Link zum Rückgängigmachen funktioniert nicht mehr",
       "sender": "Dieser Absender"
     },
+    "page": {
+      "opening": "Seite wird geöffnet",
+      "gone": "Dieser Link funktioniert nicht mehr",
+      "lead": "Gib deine PIN ein, um es zu genehmigen.",
+      "leadFirst": "Wähle eine 6-stellige PIN, um es zu genehmigen. Sie bestätigt Aktionen wie diese über {{surface}}.",
+      "choosePin": "PIN wählen",
+      "repeatPin": "Noch einmal eingeben",
+      "pin": "Deine PIN",
+      "mismatch": "Die beiden PINs stimmen nicht überein. Gib die zweite noch einmal ein.",
+      "approve": "Genehmigen",
+      "refuse": "Ablehnen",
+      "forgot": "PIN vergessen?",
+      "emailed": "Wir haben dir einen Link per E-Mail geschickt, der sie löscht. Lade danach diese Seite neu, um eine neue zu wählen.",
+      "notYours": "{{who}} entscheidet das in der App.",
+      "notYoursSomeone": "Jemand, der es genehmigen darf, entscheidet das in der App.",
+      "approved": "Genehmigt",
+      "refused": "Abgelehnt",
+      "expired": "Diese Anfrage ist abgelaufen",
+      "back": "Geh zurück zu {{surface}}. Dein Assistent macht dort weiter."
+    },
+    "pinReset": {
+      "title": "PIN löschen?",
+      "lead": "Du wählst eine neue, wenn du das nächste Mal etwas über deine Chat-App genehmigst.",
+      "button": "Meine PIN löschen",
+      "done": "PIN gelöscht",
+      "doneLead": "Wähle eine neue, wenn du das nächste Mal etwas über {{surface}} genehmigst.",
+      "gone": "Dieser Link funktioniert nicht mehr"
+    },
     "via": "via {{surface}}",
     "viaTip": "Gesendet von {{person}} über {{surface}}",
     "forwarded": "weitergeleitet über {{surface}}",
@@ -15631,7 +15659,13 @@
       "linkGone": "Diese Verknüpfung wartet nicht mehr: Sie ist nach 10 Minuten abgelaufen oder wurde abgebrochen. Erstelle einen neuen Code, um neu anzufangen.",
       "taken": "Dieser Absender ist mit einem anderen agentes.chat-Konto verknüpft. Heb die Verknüpfung dort auf und sende dann einen neuen Code.",
       "undoGone": "Dieser Rückgängig-Link wurde schon benutzt oder ist abgelaufen. Heb die Verknüpfung stattdessen in deinen Benachrichtigungseinstellungen auf.",
-      "codeGone": "Dieser Code ist falsch, schon benutzt oder nach 10 Minuten abgelaufen. Erstelle einen neuen Code und sende ihn noch einmal."
+      "codeGone": "Dieser Code ist falsch, schon benutzt oder nach 10 Minuten abgelaufen. Erstelle einen neuen Code und sende ihn noch einmal.",
+      "pageGone": "Dieser Link ist abgelaufen. Bitte deinen Assistenten im Chat um einen neuen.",
+      "pageElsewhere": "Dieser Link wurde auf einem anderen Gerät geöffnet. Bitte deinen Assistenten im Chat um einen neuen.",
+      "pinWrong": "Falsche PIN. Verbleibende Versuche: {{left}}.",
+      "pinLocked": "Zu viele falsche PINs. Versuch es in 15 Minuten noch einmal oder lösche deine PIN per E-Mail.",
+      "pinShape": "Deine PIN hat 6 Ziffern.",
+      "pinResetGone": "Dieser Link wurde schon benutzt oder ist abgelaufen. Fordere mit „PIN vergessen?“ einen neuen an."
     },
     "wallpaper": {
       "notYours": "Dieses Foto gehört nicht dir.",

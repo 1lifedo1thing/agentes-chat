@@ -2392,6 +2392,34 @@
       "gone": "这个撤销链接已失效",
       "sender": "该发送者"
     },
+    "page": {
+      "opening": "正在打开页面",
+      "gone": "此链接已失效",
+      "lead": "输入你的 PIN 以批准。",
+      "leadFirst": "设置一个 6 位 PIN 来批准。它用于确认来自 {{surface}} 的此类操作。",
+      "choosePin": "设置 PIN",
+      "repeatPin": "再输入一次",
+      "pin": "你的 PIN",
+      "mismatch": "两次输入的 PIN 不一致。请重新输入第二个。",
+      "approve": "批准",
+      "refuse": "拒绝",
+      "forgot": "忘记 PIN？",
+      "emailed": "我们已通过邮件发送清除 PIN 的链接。之后刷新此页面以设置新的 PIN。",
+      "notYours": "由 {{who}} 在应用中决定。",
+      "notYoursSomeone": "由有权批准的人在应用中决定。",
+      "approved": "已批准",
+      "refused": "已拒绝",
+      "expired": "此请求已过期",
+      "back": "回到 {{surface}}，你的助手会在那里继续。"
+    },
+    "pinReset": {
+      "title": "清除你的 PIN？",
+      "lead": "下次在聊天应用中批准操作时，你会设置新的 PIN。",
+      "button": "清除我的 PIN",
+      "done": "PIN 已清除",
+      "doneLead": "下次在 {{surface}} 中批准操作时设置新的 PIN。",
+      "gone": "此链接已失效"
+    },
     "via": "通过 {{surface}}",
     "viaTip": "由 {{person}} 通过 {{surface}} 发送",
     "forwarded": "通过 {{surface}} 转发",
@@ -15117,7 +15145,13 @@
       "linkGone": "此关联已不再等待：它在 10 分钟后过期或已被取消。请生成新代码重新开始。",
       "taken": "该发送者已关联到另一个 agentes.chat 账号。请先在那里取消关联，再发送新代码。",
       "undoGone": "此撤销链接已被使用或已过期。请改在通知设置中取消关联。",
-      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。"
+      "codeGone": "此代码错误、已被使用或已在 10 分钟后过期。请生成新代码并重新发送。",
+      "pageGone": "此链接已过期。请在聊天中向助手要一个新链接。",
+      "pageElsewhere": "此链接已在另一台设备上打开。请在聊天中向助手要一个新链接。",
+      "pinWrong": "PIN 错误。剩余次数：{{left}}。",
+      "pinLocked": "PIN 错误次数过多。请 15 分钟后再试，或通过邮件清除 PIN。",
+      "pinShape": "PIN 为 6 位数字。",
+      "pinResetGone": "此链接已使用或已过期。请通过“忘记 PIN？”重新获取。"
     },
     "wallpaper": {
       "notYours": "这张照片不是你的。",

@@ -2644,6 +2644,34 @@
       "gone": "Ten link do cofnięcia już nie działa",
       "sender": "Ten nadawca"
     },
+    "page": {
+      "opening": "Otwieranie strony",
+      "gone": "Ten link już nie działa",
+      "lead": "Wpisz PIN, aby to zatwierdzić.",
+      "leadFirst": "Wybierz 6-cyfrowy PIN, aby to zatwierdzić. Potwierdza on takie działania z {{surface}}.",
+      "choosePin": "Wybierz PIN",
+      "repeatPin": "Wpisz go ponownie",
+      "pin": "Twój PIN",
+      "mismatch": "Oba PIN-y się różnią. Wpisz drugi ponownie.",
+      "approve": "Zatwierdź",
+      "refuse": "Odrzuć",
+      "forgot": "Nie pamiętasz PIN-u?",
+      "emailed": "Wysłaliśmy e-mailem link, który go usuwa. Potem odśwież tę stronę, aby wybrać nowy.",
+      "notYours": "{{who}} decyduje o tym w aplikacji.",
+      "notYoursSomeone": "Decyduje o tym w aplikacji osoba, która może to zatwierdzić.",
+      "approved": "Zatwierdzono",
+      "refused": "Odrzucono",
+      "expired": "Ta prośba wygasła",
+      "back": "Wróć do {{surface}}. Asystent kontynuuje tam."
+    },
+    "pinReset": {
+      "title": "Usunąć PIN?",
+      "lead": "Wybierzesz nowy, gdy następnym razem coś zatwierdzisz w aplikacji czatu.",
+      "button": "Usuń mój PIN",
+      "done": "PIN usunięty",
+      "doneLead": "Wybierz nowy, gdy następnym razem coś zatwierdzisz z {{surface}}.",
+      "gone": "Ten link już nie działa"
+    },
     "via": "przez {{surface}}",
     "viaTip": "Wysłane przez {{person}} na {{surface}}",
     "forwarded": "przekazane przez {{surface}}",
@@ -16722,7 +16750,13 @@
       "linkGone": "To połączenie już nie czeka: wygasło po 10 minutach albo zostało anulowane. Utwórz nowy kod, aby zacząć od nowa.",
       "taken": "Ten nadawca jest połączony z innym kontem agentes.chat. Odłącz go tam, a potem wyślij nowy kod.",
       "undoGone": "Ten link do cofnięcia został już użyty albo wygasł. Odłącz zamiast tego w ustawieniach powiadomień.",
-      "codeGone": "Ten kod jest błędny, już użyty albo wygasł po 10 minutach. Utwórz nowy kod i wyślij go ponownie."
+      "codeGone": "Ten kod jest błędny, już użyty albo wygasł po 10 minutach. Utwórz nowy kod i wyślij go ponownie.",
+      "pageGone": "Ten link wygasł. Poproś asystenta na czacie o nowy.",
+      "pageElsewhere": "Ten link został otwarty na innym urządzeniu. Poproś asystenta na czacie o nowy.",
+      "pinWrong": "Błędny PIN. Pozostałe próby: {{left}}.",
+      "pinLocked": "Zbyt wiele błędnych PIN-ów. Spróbuj za 15 minut albo usuń PIN przez e-mail.",
+      "pinShape": "PIN ma 6 cyfr.",
+      "pinResetGone": "Ten link został już użyty lub wygasł. Poproś o nowy przez „Nie pamiętasz PIN-u?”."
     },
     "wallpaper": {
       "notYours": "To zdjęcie nie jest twoje.",

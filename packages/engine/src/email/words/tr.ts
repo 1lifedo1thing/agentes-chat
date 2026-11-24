@@ -630,6 +630,16 @@ export const words: EmailWords = {
       why: (surface) => `Bu e-postayı ${surface} agentes.chat hesabına bağlı olduğu için aldın.`,
       picture: "Asistanın, artık telefonunda değil",
     },
+    pinReset: {
+      subject: (surface) => `${surface} PIN'ini sıfırla`,
+      preheader: "PIN'i sil, bir dahaki sorulduğunda yenisini seç.",
+      headline: (surface) => `${surface} PIN'ini sıfırla`,
+      body: (surface) =>
+        `${surface} üzerinden işlemleri onaylamak için kullandığın PIN'in sıfırlanması istendi. Burada sil, asistanın bir dahaki sorduğunda yenisini seç.`,
+      button: "PIN'imi sil",
+      small: "Bağlantı bir saat boyunca bir kez çalışır. Sen değilsen bu e-postayı yok say. PIN'in olduğu gibi kalır.",
+      why: (surface) => `Bu e-postayı ${surface} agentes.chat hesabına bağlı olduğu için aldın.`,
+    },
   },
   supportReply: {
     subject: "Yardım talebinize bir yanıt",
