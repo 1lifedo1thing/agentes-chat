@@ -21,7 +21,7 @@ import { PaidCard, PaidDialog } from "./PaidMoment";
  *
  * Right after paying (ADR 0079, `usePaidMoment`), the moment the plan turned on, once its hold lifts: in full before
  * the beta notice when both came together, else as a card in the corner, after the notice when that was already up.
- * One thing at a time: never two dialogs, and the card never under one of these.
+ * One thing at a time: never two dialogs, and the card never over one (it sits under every dialog's scrim).
  */
 export function Arrival() {
   const { t } = useTranslation();

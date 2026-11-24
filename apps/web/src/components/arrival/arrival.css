@@ -1246,7 +1246,7 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
   position: fixed;
   right: var(--space-4);
   bottom: var(--space-4);
-  z-index: var(--z-floating);
+  z-index: var(--z-docked);
   display: flex;
   flex-direction: column;
   width: min(360px, calc(100% - 2 * var(--space-4)));

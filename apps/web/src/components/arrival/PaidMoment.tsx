@@ -146,7 +146,7 @@ export function PaidCard({
   const titleId = useId();
   const { line, loading } = usePaidLine(moment);
   if (loading) return null;
-  // Over the page, outside the shell's own layers: the next dialog stacks above it, as a later portal.
+  // Over the page, outside the shell's own layers, and under every dialog (`--z-docked`), one already open included.
   return createPortal(
     // Polite: read out as it comes, never over what is being read.
     <section className="paid-card" aria-labelledby={titleId} aria-live="polite">
