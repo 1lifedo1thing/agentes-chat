@@ -1629,6 +1629,8 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         const qs = params.toString();
         return `${base}${org(orgId)}/artifacts/${enc(id)}/file${qs ? `?${qs}` : ""}`;
       },
+      thumbUrl: (orgId, id, { version, width }) =>
+        `${base}${org(orgId)}/artifacts/${enc(id)}/thumb?version=${version}&w=${width}`,
       upload: (orgId, file, options = {}, upload) => {
         const form = new FormData();
         form.append("file", file, file.name);

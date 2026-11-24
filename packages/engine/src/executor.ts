@@ -52,6 +52,7 @@ import { runAsker } from "./ai-accounts/reply";
 import { type AgentAi, agentAiState, noAiReasonOf, ownNotSignedIn } from "./ai-status";
 import { heldBehind, markNotRun, notRunAfter, notRunText, wakeLine } from "./approval-order";
 import { deciderName, publishApproval } from "./approvals";
+import { withFileFacts } from "./artifacts";
 import { accountablePerson, fedByRoutine, personOfMessage, runAuthority } from "./authority";
 import {
   type AutoChoice,
@@ -2515,6 +2516,10 @@ async function executeRunInner(
       note || !channelRow || isAgentOnlyDm(channelRow)
         ? []
         : await unreachedPeople(tx, { orgId: run.orgId, channelId: run.channelId, body: said });
+    // Its files' cards carry their facts: the apps draw a picture or a video without asking for its details first.
+    const files = Array.isArray(shown.artifacts)
+      ? await withFileFacts(tx, run.orgId, shown.artifacts as { id: string; version: number }[])
+      : null;
     const m = await postAgentMessage(
       tx,
       run,
@@ -2522,6 +2527,7 @@ async function executeRunInner(
       said,
       {
         ...shown,
+        ...(files ? { artifacts: files } : {}),
         ...runMeta,
         ...tagged,
         ...(readOutside && !note ? { readOutside: true } : {}),

@@ -80,6 +80,7 @@ import { surfaceRoutes } from "./routes/app/surfaces";
 import { teamWeekRoutes } from "./routes/app/team-week";
 import { telemetryRoutes } from "./routes/app/telemetry";
 import { threadRoutes } from "./routes/app/threads";
+import { thumbRoutes } from "./routes/app/thumbs";
 import { vaultRoutes } from "./routes/app/vault";
 import { speechKeyRoutes, voiceRoutes } from "./routes/app/voice";
 import { waitingRoutes } from "./routes/app/waiting";
@@ -230,6 +231,7 @@ export function createApp(options: AppOptions) {
     api.route("/app", billingRoutes(deps));
     api.route("/app", referralRoutes(deps));
     api.route("/app", artifactRoutes(deps));
+    api.route("/app", thumbRoutes(deps));
     api.route("/app", liveRoutes(deps));
     // Pictures on canvases (ADR 0197): the image models, requests and Try again.
     api.route("/app", imageRoutes(deps));

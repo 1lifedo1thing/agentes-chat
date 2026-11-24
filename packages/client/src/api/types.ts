@@ -4182,6 +4182,13 @@ export interface ArtifactRef {
   /** A picture's size (pixels), when the server knew it: its card has its box before the file's details load. */
   width?: number;
   height?: number;
+  /**
+   * An uploaded file's name, type and bytes (servers from 2026-11 on): a picture or a video shows from these alone,
+   * with no request for the file's details first.
+   */
+  name?: string;
+  contentType?: string;
+  size?: number;
 }
 
 export interface ArtifactFilters {
