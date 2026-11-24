@@ -2567,10 +2567,50 @@
       "gone": "Questo link per annullare non funziona più",
       "sender": "Quel mittente"
     },
+    "page": {
+      "opening": "Apertura della pagina",
+      "gone": "Questo link non funziona più",
+      "lead": "Inserisci il tuo PIN per approvarlo.",
+      "leadFirst": "Scegli un PIN di 6 cifre per approvarlo. Conferma azioni come questa da {{surface}}.",
+      "choosePin": "Scegli un PIN",
+      "repeatPin": "Inseriscilo di nuovo",
+      "pin": "Il tuo PIN",
+      "mismatch": "I due PIN non coincidono. Inserisci di nuovo il secondo.",
+      "approve": "Approva",
+      "refuse": "Rifiuta",
+      "forgot": "Hai dimenticato il PIN?",
+      "emailed": "Ti abbiamo inviato un link via email. Scegli lì il tuo PIN, poi torna su questa pagina.",
+      "notYours": "{{who}} lo decide nell'app.",
+      "notYoursSomeone": "Lo decide nell'app chi può approvarlo.",
+      "approved": "Approvato",
+      "refused": "Rifiutato",
+      "expired": "Questa richiesta è scaduta",
+      "back": "Torna su {{surface}}. Il tuo assistente continua lì.",
+      "setFirst": "Prima scegli il tuo PIN",
+      "setFirstLead": "Per approvare da {{surface}} serve un PIN, e un link dalla chat non può sceglierlo. Sceglilo nell'app, con l'accesso fatto, poi torna su questa pagina.",
+      "setFirstLeadEmail": "Per approvare da {{surface}} serve un PIN, e un link dalla chat non può sceglierlo. Sceglilo nell'app, con l'accesso fatto, o con un link che ti inviamo via email. Poi torna su questa pagina.",
+      "openApp": "Sceglilo nell'app",
+      "emailMe": "Inviami un link via email"
+    },
+    "pinReset": {
+      "title": "Scegli il tuo PIN",
+      "lead": "Sei cifre. Lo digiterai per approvare le azioni che chiedi dalla tua app di chat.",
+      "button": "Salva il mio PIN",
+      "done": "PIN salvato",
+      "doneLead": "Torna alla pagina arrivata da {{surface}} e approva con il PIN.",
+      "gone": "Questo link non funziona più"
+    },
     "via": "tramite {{surface}}",
     "viaTip": "Inviato da {{person}} su {{surface}}",
     "forwarded": "inoltrato tramite {{surface}}",
-    "forwardedTip": "{{person}} ha inoltrato questo da {{surface}}. Le parole sono di qualcun altro."
+    "forwardedTip": "{{person}} ha inoltrato questo da {{surface}}. Le parole sono di qualcun altro.",
+    "pin": {
+      "set": "Imposta PIN",
+      "change": "Cambia PIN",
+      "title": "Il tuo PIN di {{surface}}",
+      "text": "Sei cifre che digiti per approvare le azioni che chiedi da {{surface}}. Non viene mai inviato nella chat.",
+      "save": "Salva PIN"
+    }
   },
   "team": {
     "title": "Team",
@@ -16242,7 +16282,15 @@
       "linkGone": "Questo collegamento non è più in attesa: è scaduto dopo 10 minuti o è stato annullato. Crea un nuovo codice per ricominciare.",
       "taken": "Questo mittente è collegato a un altro account agentes.chat. Scollegalo lì, poi invia un nuovo codice.",
       "undoGone": "Questo link per annullare è già stato usato o è scaduto. Scollega invece dalle impostazioni delle notifiche.",
-      "codeGone": "Questo codice è sbagliato, già usato o scaduto dopo 10 minuti. Crea un nuovo codice e invialo di nuovo."
+      "codeGone": "Questo codice è sbagliato, già usato o scaduto dopo 10 minuti. Crea un nuovo codice e invialo di nuovo.",
+      "pageGone": "Questo link è scaduto. Chiedine uno nuovo al tuo assistente nella chat.",
+      "pageElsewhere": "Questo link è stato aperto su un altro dispositivo. Chiedine uno nuovo al tuo assistente nella chat.",
+      "pinWrong": "PIN errato. Tentativi rimasti: {{left}}.",
+      "pinLocked": "Troppi PIN sbagliati. Riprova più tardi o scegli un nuovo PIN nell'app.",
+      "pinShape": "Il tuo PIN ha 6 cifre.",
+      "pinResetGone": "Questo link è già stato usato o è scaduto. Chiedine uno nuovo con “Hai dimenticato il PIN?”.",
+      "pinUnset": "Prima scegli il tuo PIN. Sceglilo nell'app, con l'accesso fatto.",
+      "emailUnverified": "Il tuo indirizzo email non è ancora verificato. Scegli il PIN nell'app."
     },
     "wallpaper": {
       "notYours": "Quella foto non è tua.",
