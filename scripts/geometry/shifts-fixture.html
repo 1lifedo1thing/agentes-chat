@@ -10,6 +10,9 @@
     placeholder before it, as a DM's intro), scrolled to its end in that same frame: nothing moves on screen, though
     Chromium's API reports its rows moved by the whole scroll.
   - bad-shift--overflow: the same list scrolled to its end a frame late (the rows drop, then come back up).
+  - good-shift--fresh: the same list, whose last card is also drawn at content-visibility's placeholder first: in the
+    frame its rows first show, Chromium lays them out twice (placeholders, then real sizes) and reports them moved from
+    where the first pass put them, though that pass was never painted.
 -->
 <html lang="pt-BR">
   <head>
@@ -40,7 +43,7 @@
           box.style.height = "160px";
           box.textContent = "Carregado";
         });
-      } else if (twin === "bad-shift--overflow" || twin === "good-shift--overflow") {
+      } else if (twin === "bad-shift--overflow" || twin === "good-shift--overflow" || twin === "good-shift--fresh") {
         later(() => {
           const list = document.createElement("section");
           list.className = "channel__messages";
@@ -58,12 +61,19 @@
             row.textContent = `Mensagem ${i + 1}`;
             list.append(row);
           }
+          if (twin === "good-shift--fresh") {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.style.cssText = "content-visibility: auto; contain-intrinsic-size: auto 24px";
+            card.innerHTML = '<div style="height: 120px"></div>';
+            list.append(card);
+          }
           screen.append(list);
           const pin = () => {
             list.scrollTop = list.scrollHeight;
           };
           pin();
-          new ResizeObserver(() => (twin === "good-shift--overflow" ? pin() : requestAnimationFrame(pin))).observe(intro);
+          new ResizeObserver(() => (twin.startsWith("good-") ? pin() : requestAnimationFrame(pin))).observe(intro);
         });
       } else {
         const list = document.createElement("section");

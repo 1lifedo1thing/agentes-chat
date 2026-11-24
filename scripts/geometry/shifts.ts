@@ -18,7 +18,9 @@
  * screen (measured, frame by frame: a DM whose intro is drawn at content-visibility's 56 px placeholder, then at its
  * 523 px, scores 0.107 with every row still). A shift whose sources all sit in a list, where the shift says they were
  * (within 3 px: the API rounds its boxes, and a line of text is measured by its line), is that one; the jumps watch
- * those rows as painted.
+ * those rows as painted. So is a row first painted in the frame of the shift: Chromium laid it out twice in that frame
+ * (placeholders, then real sizes, measured on a phone-size DM: rows reported 24 px off, no frame showing them there) and
+ * reports the unpainted first place.
  * A screen over `LIMIT` fails. Before the screens, the fixture's twins prove both measures (`shifts-fixture.html`).
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -71,7 +73,15 @@ export const MEASURE = String.raw`(() => {
         const el = x.node && x.node.nodeType === 3 ? x.node.parentElement : x.node;
         return Boolean(el && el.isConnected && el.closest('.channel__messages') && Math.abs(el.getBoundingClientRect().top - x.previousRect.top) <= 3);
       };
-      if (e.sources && e.sources.length > 0 && e.sources.every(stayed)) continue;
+      // A row first painted in this very frame: Chromium can lay a frame out twice (content-visibility's placeholders,
+      // then real sizes) and reports where the unpainted first pass put it, a place nobody saw it leave.
+      const fresh = (x) => {
+        const el = x.node && x.node.nodeType === 3 ? x.node.parentElement : x.node;
+        const row = el && el.closest('.channel__messages > *');
+        const at = row && firstPainted.get(row);
+        return at !== undefined && at !== null && at >= e.startTime - 1;
+      };
+      if (e.sources && e.sources.length > 0 && e.sources.every((x) => stayed(x) || fresh(x))) continue;
       const box = (r) => [r.x, r.y, r.width, r.height].map(Math.round).join(',');
       // Where the conversation's list stood then (scrolled to, how tall, what it holds first): what moved it.
       const list = document.querySelector('.channel__messages');
@@ -86,6 +96,7 @@ export const MEASURE = String.raw`(() => {
   if (document.documentElement) watch(); else addEventListener('DOMContentLoaded', watch);
   const gliding = (row) => row.getAnimations().some((a) => a.effect && a.effect.getKeyframes().some((k) => 'transform' in k || 'translate' in k || 'top' in k));
   let before = new Map();
+  const firstPainted = new WeakMap();
   const sample = () => {
     const now = performance.now();
     const seen = new Map();
@@ -100,6 +111,7 @@ export const MEASURE = String.raw`(() => {
         if (r.height <= 0) continue;
         const top = r.top - box.top;
         seen.set(row, top);
+        if (!firstPainted.has(row)) firstPainted.set(row, now);
         const was = before.get(row);
         // A day's divider goes to the top of its day when an older page of that day lands above: the rows it leaves
         // stay where they are (the list keeps its place), so its move is no jump.
@@ -300,6 +312,7 @@ export const TWINS = [
   "good-shift--pinned",
   "bad-shift--overflow",
   "good-shift--overflow",
+  "good-shift--fresh",
 ];
 
 /** The fixture's twins: each `bad-` case must score over the limit, each `good-` one stay under it. */
