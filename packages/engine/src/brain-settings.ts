@@ -77,6 +77,7 @@ import {
 import { recordAudit } from "./audit";
 import { BRAIN_NAMES, type BrainKind, brainRunsOn, type ComputerBrainKind, isComputerBrain } from "./brains/types";
 import { caches } from "./cache";
+import { fetchesCli } from "./cli-fetch";
 import { defaultCredentials, providerKeyOf } from "./credentials";
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import {
@@ -490,8 +491,10 @@ export function brainOptions(machine: MachineLike | null): BrainOption[] {
     else if (machine.protocol < BRAIN_PROTOCOL) reason = "runner_old";
     else if (executor === "codex" && machine.os === "windows" && machine.protocol < CODEX_WINDOWS_PROTOCOL)
       reason = "runner_old";
-    else if (!found?.available.includes(executor)) reason = missingCli(machine, executor);
-    else if (outdatedCli(machine, executor)) reason = "cli_outdated";
+    // Its runner fetches the pinned CLI itself (ADR 0228 §6): missing, too old or broken there is no reason.
+    else if (!found?.available.includes(executor) && !fetchesCli(machine, executor))
+      reason = missingCli(machine, executor);
+    else if (outdatedCli(machine, executor) && !fetchesCli(machine, executor)) reason = "cli_outdated";
     else if (machine.access?.tools && machine.access.tools[executor] !== true) reason = "tool_off";
     const outdated = reason === "cli_outdated" && machine ? outdatedCli(machine, executor) : null;
     return {
@@ -540,9 +543,8 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
   else if (kind === "antigravity" && machine.os === "darwin" && machine.protocol < ANTIGRAVITY_MAC_PROTOCOL)
     reason = "runner_old";
   else if (!brainRunsOn(kind, machine.os)) reason = "system";
-  else if (!machine.executors?.[kind] && !(kind === "antigravity" && bringsAgy(machine)))
-    reason = missingCli(machine, kind);
-  else if (outdatedCli(machine, kind)) reason = "cli_outdated";
+  else if (!machine.executors?.[kind] && !fetchesCli(machine, kind)) reason = missingCli(machine, kind);
+  else if (outdatedCli(machine, kind) && !fetchesCli(machine, kind)) reason = "cli_outdated";
   else if (tools && (tools[kind] ?? tools.codex) !== true) reason = "tool_off";
   const models = brainModelOptions(kind, machine);
   const missing = kind === "antigravity" ? antigravityMissing(models, machine) : undefined;
@@ -557,17 +559,6 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
     ...(missing ? { missing } : {}),
   };
 }
-
-/**
- * A computer whose runner brings its own Antigravity CLI (`AGY_COPY_PROTOCOL`, ADR 0143): outside system mode, on macOS
- * and Linux, never the workspace's own (its image brings it). There Gemini can be connected with no CLI installed: the
- * runner downloads it as the first sign-in starts.
- */
-const bringsAgy = (machine: MachineLike) =>
-  machine.protocol >= AGY_COPY_PROTOCOL &&
-  machine.kind !== "managed" &&
-  machine.executors?.mode !== "system" &&
-  (machine.os === "darwin" || machine.os === "linux");
 
 /** "Usar um computador": the agent's machine as the brain section shows it. */
 export interface BrainComputer {

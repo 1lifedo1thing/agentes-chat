@@ -16,6 +16,7 @@ import {
   parseBrainEvent,
   STEER_PROTOCOL,
 } from "@agenteschat/adapters";
+import { fetchesCli } from "../cli-fetch";
 import type { CodeSetup } from "../git/machine";
 import type { MachineCaller } from "../machine-hub";
 import { MachineDroppedError, MachineOfflineError, MachinePausedError, pausedMessage } from "../machines";
@@ -349,7 +350,8 @@ export class CodexBrain implements Brain {
       yield { type: "error", code: SYSTEM_REFUSED, message: `${name} doesn't run on this computer's system yet.` };
       return;
     }
-    const missing = this.cli.check(status.executors);
+    // Its runner fetches the pinned CLI itself (ADR 0228 §6): not there yet is no reason to refuse the turn.
+    const missing = fetchesCli(status, this.kind) ? null : this.cli.check(status.executors);
     if (missing) {
       yield missing;
       return;

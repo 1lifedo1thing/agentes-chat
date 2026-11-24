@@ -21,6 +21,7 @@ import {
 import { type Database, schema } from "@agenteschat/db";
 import { CLI_FLOORS, CLI_UPDATE_COMMAND, cliVersionProblem, type FloorCli } from "@agenteschat/providers/cli-floors";
 import { autoContextFor } from "@agenteschat/providers/context-limits";
+import { fetchesCli } from "../cli-fetch";
 import { getAgentCached } from "../agents";
 import type { CodeSetup } from "../git/machine";
 import { type MachineCaller, MachineRequestError, type MachineStatus } from "../machine-hub";
@@ -254,11 +255,19 @@ export function cliMissingMessage(
  * resumes them), never sent to fail there. Null: it may run.
  */
 export function cliOutdated(
-  status: { name?: string | null; executors?: Partial<Record<FloorCli, { version: string }>> | null },
+  status: {
+    name?: string | null;
+    executors?: (Partial<Record<FloorCli, { version: string }>> & Pick<schema.MachineExecutors, "copies" | "mode">) | null;
+    kind?: string | null;
+    os?: string;
+    protocol?: number;
+  },
   cli: FloorCli,
   program: string,
   floors = CLI_FLOORS,
 ): { code: "cli_outdated"; message: string } | null {
+  // Its runner fetches the pinned CLI itself (ADR 0228 §6): the turn goes, and the runner brings it first.
+  if (fetchesCli(status, cli)) return null;
   const problem = cliVersionProblem(cli, status.executors?.[cli]?.version, floors);
   if (!problem) return null;
   const where = status.name || "the computer";
@@ -294,7 +303,9 @@ export function claudeCodeAvailability(status: MachineStatus | null, account?: B
     );
   }
   const ex = status.executors ?? {};
-  if (ex.detectedAt && !ex.claude) return err("cli_missing", cliMissingMessage("Claude Code", status, "claude"), true);
+  if (ex.detectedAt && !ex.claude && !fetchesCli(status, "claude")) {
+    return err("cli_missing", cliMissingMessage("Claude Code", status, "claude"), true);
+  }
   const old = cliOutdated(status, "claude", "Claude Code");
   if (old) return err(old.code, old.message, true);
   if (account) {

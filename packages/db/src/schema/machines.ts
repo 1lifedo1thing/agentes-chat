@@ -82,6 +82,21 @@ export interface MachineExecutors {
   desktopUse?: { available: boolean; reason?: string; code?: string };
   /** `hello.mode` (ADR 0058 §10): each agent works as its own OS user; absent = all as the runner's user. */
   mode?: "system";
+  /**
+   * `hello.clis` (ADR 0228 §6): the coding CLIs its runner fetches by itself there, and where each fetch stands
+   * (`fetching` with bytes done and total, `ready`, or `failed` with why), updated by its `cli.fetch` frames.
+   */
+  copies?: {
+    fetchable?: ("claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity")[];
+    fetch?: Partial<
+      Record<
+        "claude" | "codex" | "cursor" | "opencode" | "grok" | "antigravity",
+        | { state: "fetching"; version: string; done: number; total: number | null }
+        | { state: "ready"; version: string }
+        | { state: "failed"; version: string; reason: "offline" | "hash_mismatch" | "no_build" | "disk_full" | "failed" }
+      >
+    >;
+  };
   /** `hello.claudeLoginMethods` (protocol 50): what a new Claude sign-in for all agents can use there; absent: older. */
   claudeLoginMethods?: ("cli_login" | "setup_token" | "api_key")[];
   /** `hello.claudeLoginBlocked`: why the computer's self-check keeps `cli_login` for all agents off, kept until a check passes. */

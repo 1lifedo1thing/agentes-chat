@@ -192,6 +192,7 @@ export * from "./live-activity";
 export * from "./live-activity-queue";
 export * from "./machine-access";
 export * from "./machine-accounts";
+export * from "./cli-fetch";
 export * from "./machine-clis";
 export * from "./machine-device";
 export * from "./machine-holds";

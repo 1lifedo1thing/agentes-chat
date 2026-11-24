@@ -23,6 +23,7 @@ import {
   speedFits,
 } from "@agenteschat/providers/plans";
 import { planFull, planState } from "@agenteschat/ui/plan-state";
+import { fetchesCli } from "../cli-fetch";
 import type { Agent } from "../agents";
 import { replyRefusal } from "../ai-accounts/reply";
 import { accountServes } from "../ai-accounts/serves";
@@ -457,7 +458,7 @@ export function computerBrainUnavailable(
         message: `The runner on ${status.name} is too old for ${name} agents on Windows. ${runnerUpdateWay(status)}`,
       };
     }
-    if (status.executors?.detectedAt && !status.executors[kind]) {
+    if (status.executors?.detectedAt && !status.executors[kind] && !fetchesCli(status, kind)) {
       return { code: `${kind}_missing`, message: cliMissingMessage(`${name}'s CLI`, status, kind) };
     }
     const old = cliOutdated(status, kind, name);
@@ -475,7 +476,7 @@ export function computerBrainUnavailable(
     };
   }
   const codex = status.executors?.codex;
-  if (status.executors?.detectedAt && !codex) {
+  if (status.executors?.detectedAt && !codex && !fetchesCli(status, "codex")) {
     return { code: "codex_missing", message: cliMissingMessage("Codex", status, "codex") };
   }
   const old = cliOutdated(status, "codex", "Codex");
