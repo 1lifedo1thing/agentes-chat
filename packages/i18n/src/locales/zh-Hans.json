@@ -16057,17 +16057,21 @@
       "rolesHint": "拥有该角色的任何人都可以使用，包括以后获得该角色的人。",
       "computerHint": "谁的智能体可以在这里运行任务。管理员可以缩小范围，只有所有者可以扩大。",
       "phoneHint": "共享手机绝不会共享 {{host}}。",
-      "followsHint": "iPhone 遵循它所连接的 Mac 的规则。",
-      "serverHelp": "每个智能体在上面以各自的用户身份运行。",
-      "computerHelp": "智能体的命令在上面以你的用户身份运行。"
+      "followsHint": "iPhone 遵循它所连接的 Mac 的规则。"
+    },
+    "share": {
+      "title": "让整个工作区使用",
+      "off": "目前只有你",
+      "on": "{{org}} 的所有人",
+      "hint": "{{org}} 所有人的智能体都能以你的用户身份在上面运行任务。",
+      "hintServer": "{{org}} 所有人的智能体都能在上面以各自的用户身份运行任务。"
     },
     "request": {
       "title": "{{name}} 想加入 {{org}}",
       "list": "请求加入",
       "letJoin": "允许加入",
       "deny": "拒绝",
-      "denied": "{{name}} 不会加入。",
-      "joined": "{{name}} 已加入。"
+      "denied": "{{name}} 不会加入。"
     },
     "empty": {
       "title": "还没有设备",

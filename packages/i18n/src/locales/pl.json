@@ -17677,17 +17677,21 @@
       "rolesHint": "Może go używać każdy z tą rolą, także osoba, która dostanie ją później.",
       "computerHint": "Czyi agenci mogą tu wykonywać zadania. Administratorzy mogą to zawęzić, a poszerzyć może tylko właściciel.",
       "phoneHint": "Udostępnienie telefonu nigdy nie udostępnia komputera {{host}}.",
-      "followsHint": "iPhone stosuje regułę Maca, do którego jest podłączony.",
-      "serverHelp": "Każdy agent działa na nim jako osobny użytkownik.",
-      "computerHelp": "Polecenia agentów działają na nim jako twój użytkownik."
+      "followsHint": "iPhone stosuje regułę Maca, do którego jest podłączony."
+    },
+    "share": {
+      "title": "Pozwól całej przestrzeni roboczej z niego korzystać",
+      "off": "Na razie tylko ty",
+      "on": "Wszyscy w {{org}}",
+      "hint": "Agenci wszystkich w {{org}} mogą uruchamiać na nim zadania jako twój użytkownik.",
+      "hintServer": "Agenci wszystkich w {{org}} mogą uruchamiać na nim zadania, każdy jako osobny użytkownik."
     },
     "request": {
       "title": "{{name}} chce dołączyć do {{org}}",
       "list": "Prośby o dołączenie",
       "letJoin": "Wpuść",
       "deny": "Odmów",
-      "denied": "{{name}} nie dołączy.",
-      "joined": "{{name}} jest już w przestrzeni roboczej."
+      "denied": "{{name}} nie dołączy."
     },
     "empty": {
       "title": "Nie ma jeszcze urządzeń",

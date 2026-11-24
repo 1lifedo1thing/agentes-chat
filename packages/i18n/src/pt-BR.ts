@@ -16910,8 +16910,13 @@ export const ptBR = {
         "De quem os agentes podem rodar tarefas aqui. Admins podem restringir, só o dono pode abrir para mais gente.",
       phoneHint: "Compartilhar um celular nunca compartilha {{host}}.",
       followsHint: "Um iPhone segue a regra do Mac em que está conectado.",
-      serverHelp: "Cada agente roda nele com o próprio usuário.",
-      computerHelp: "Os comandos dos agentes rodam nele com o seu usuário.",
+    },
+    share: {
+      title: "Deixar o workspace todo usar",
+      off: "Só você por enquanto",
+      on: "Todos em {{org}}",
+      hint: "Os agentes de todos em {{org}} podem rodar tarefas nele, com o seu usuário.",
+      hintServer: "Os agentes de todos em {{org}} podem rodar tarefas nele, cada um com o próprio usuário.",
     },
     request: {
       title: "{{name}} quer entrar em {{org}}",
@@ -16919,7 +16924,6 @@ export const ptBR = {
       letJoin: "Deixar entrar",
       deny: "Recusar",
       denied: "{{name}} não vai entrar.",
-      joined: "{{name}} entrou.",
     },
     empty: {
       title: "Nenhum dispositivo ainda",

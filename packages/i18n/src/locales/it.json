@@ -17142,17 +17142,21 @@
       "rolesHint": "Chiunque abbia il ruolo può usarlo, anche chi lo riceverà in futuro.",
       "computerHint": "Le persone i cui agenti possono eseguire attività qui. Gli admin possono restringere, solo il proprietario può allargare.",
       "phoneHint": "Condividere un telefono non condivide mai {{host}}.",
-      "followsHint": "Un iPhone segue la regola del Mac a cui è collegato.",
-      "serverHelp": "Ogni agente lo usa con il proprio utente.",
-      "computerHelp": "I comandi degli agenti girano lì con il tuo utente."
+      "followsHint": "Un iPhone segue la regola del Mac a cui è collegato."
+    },
+    "share": {
+      "title": "Fallo usare a tutto lo spazio di lavoro",
+      "off": "Solo tu per ora",
+      "on": "Tutti in {{org}}",
+      "hint": "Gli agenti di tutti in {{org}} possono eseguirci attività, con il tuo utente.",
+      "hintServer": "Gli agenti di tutti in {{org}} possono eseguirci attività, ognuno con il proprio utente."
     },
     "request": {
       "title": "{{name}} vuole entrare in {{org}}",
       "list": "Chiedono di entrare",
       "letJoin": "Fallo entrare",
       "deny": "Rifiuta",
-      "denied": "{{name}} non entrerà.",
-      "joined": "{{name}} è entrato."
+      "denied": "{{name}} non entrerà."
     },
     "empty": {
       "title": "Ancora nessun dispositivo",

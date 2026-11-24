@@ -40728,11 +40728,20 @@
   "devices.who.followsHint": {
     "value": "An iPhone follows the rule of the Mac it's plugged into."
   },
-  "devices.who.serverHelp": {
-    "value": "Each agent runs as its own user on it."
+  "devices.share.title": {
+    "value": "Let the whole workspace use it"
   },
-  "devices.who.computerHelp": {
-    "value": "Agents' commands run as your user on it."
+  "devices.share.off": {
+    "value": "Only you for now"
+  },
+  "devices.share.on": {
+    "value": "Everyone in {{org}}"
+  },
+  "devices.share.hint": {
+    "value": "Everyone's agents in {{org}} can run tasks on it, as your user."
+  },
+  "devices.share.hintServer": {
+    "value": "Everyone's agents in {{org}} can run tasks on it, each as its own user."
   },
   "devices.request.title": {
     "value": "{{name}} wants to join {{org}}"
@@ -40748,9 +40757,6 @@
   },
   "devices.request.denied": {
     "value": "{{name}} won't join."
-  },
-  "devices.request.joined": {
-    "value": "{{name}} joined."
   },
   "devices.empty.title": {
     "value": "No devices yet"

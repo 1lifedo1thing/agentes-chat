@@ -17119,17 +17119,21 @@
       "rolesHint": "Toute personne ayant le rôle peut l'utiliser, y compris celles qui l'obtiendront plus tard.",
       "computerHint": "Les personnes dont les agents peuvent exécuter des tâches ici. Les admins peuvent restreindre, seul son propriétaire peut élargir.",
       "phoneHint": "Partager un téléphone ne partage jamais {{host}}.",
-      "followsHint": "Un iPhone suit la règle du Mac auquel il est branché.",
-      "serverHelp": "Chaque agent y tourne avec son propre utilisateur.",
-      "computerHelp": "Les commandes des agents y tournent avec votre utilisateur."
+      "followsHint": "Un iPhone suit la règle du Mac auquel il est branché."
+    },
+    "share": {
+      "title": "Laisser tout l'espace de travail l'utiliser",
+      "off": "Vous seul pour l'instant",
+      "on": "Tout le monde dans {{org}}",
+      "hint": "Les agents de tout le monde dans {{org}} peuvent y lancer des tâches, avec votre utilisateur.",
+      "hintServer": "Les agents de tout le monde dans {{org}} peuvent y lancer des tâches, chacun avec son propre utilisateur."
     },
     "request": {
       "title": "{{name}} veut rejoindre {{org}}",
       "list": "Demandent à rejoindre",
       "letJoin": "Accepter",
       "deny": "Refuser",
-      "denied": "{{name}} ne rejoindra pas.",
-      "joined": "{{name}} a été ajouté."
+      "denied": "{{name}} ne rejoindra pas."
     },
     "empty": {
       "title": "Aucun appareil pour l'instant",
