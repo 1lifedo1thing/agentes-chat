@@ -163,7 +163,7 @@ export interface WorkerDeps {
    * worker runs on the database (a single process, as self-hosting has it).
    */
   role?: "all" | "worker";
-  /** Work each start has to do for the database (`BootTask`), done `BOOT_WORK_DELAY_MS` after it. */
+  /** Work each start has to do for the database (`BootTask`), done `BOOT_WORK_DELAY_MS` after it (the built-in one: at once). */
   bootTasks?: BootTask[];
   log: Logger;
   workerId?: string;
@@ -289,6 +289,9 @@ export function startWorkers(deps: WorkerDeps) {
   const timers: Timer[] = [];
   const ticks = new Map<string, () => Promise<void>>();
   let stopped = false;
+  // The built-in database's one process has no deploy's reconnects to stay out of, and may not stay up 10 minutes (the
+  // desktop app): its sweeps and boot work start at once.
+  const bootDelay = deps.builtInDatabase ? 0 : BOOT_WORK_DELAY_MS;
 
   /** Runs `job` every `ms`, never overlapping with itself, logging failures: first at once, or after `firstAfterMs`. */
   const every = (name: string, ms: number, job: () => Promise<void>, firstAfterMs = 0) => {
@@ -320,8 +323,8 @@ export function startWorkers(deps: WorkerDeps) {
   };
 
   /**
-   * A daily sweep of the database: looked at hourly from `BOOT_WORK_DELAY_MS` after the start, by the process that
-   * sweeps, and run by whichever takes its turn (`claimSweep`): once a day, however many processes and restarts.
+   * A daily sweep of the database: looked at hourly from `bootDelay` after the start, by the process that sweeps, and
+   * run by whichever takes its turn (`claimSweep`): once a day, however many processes and restarts.
    */
   const daily = (name: string, job: () => Promise<void>) =>
     every(
@@ -330,7 +333,7 @@ export function startWorkers(deps: WorkerDeps) {
       async () => {
         if ((await sweepsHere(db, deps.role)) && (await claimSweep(db, name, DAILY_SWEEP_GAP_MS))) await job();
       },
-      BOOT_WORK_DELAY_MS,
+      bootDelay,
     );
 
   // A pool, not batches: a slow job (a long agent run) doesn't hold back the ones claimed after it, and quick jobs
@@ -629,7 +632,7 @@ export function startWorkers(deps: WorkerDeps) {
       runBootTasks(deps, bootTasks, () => stopped).catch((error) =>
         log.error("background job failed", { job: "bootTasks", error }),
       );
-    }, BOOT_WORK_DELAY_MS),
+    }, bootDelay),
   );
 
   const offWake = deps.pubsub.subscribe(WAKE_TOPIC, () => void ticks.get("outbox")?.());
