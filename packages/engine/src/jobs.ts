@@ -34,6 +34,8 @@ import { consolidateOrg } from "./context/consolidate";
 import { applyReactionFeedback } from "./context/feedback";
 import { LEARN_JOB, learnRun } from "./context/learn";
 import { MOVE_LEARNED_JOB, moveLearnedSections } from "./context/learned-sections";
+import { settleProposals } from "./context/proposal-review";
+import { SETTLE_JOB, type SettleOrigin } from "./context/proposals";
 import { REFLECT_DEFAULTS, reflectThread } from "./context/reflect";
 import { judgeOf, summaryModelReady } from "./context/summaries";
 import { reportDroppedMentions, tellWakeSkipped } from "./continuation";
@@ -962,6 +964,25 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       // Its run went on after the turn that queued it: the outbox's backoff brings it back once the run ends.
       if (res.skipped === "running") throw Object.assign(new Error("its run is still going"), { retryable: true });
       if (res.saved.length > 0) await publishListChanged(deps.pubsub, orgOf(job), "memory");
+    },
+    // New proposals no person decided at once: the agent's review applies or leaves out each (ADR 0219).
+    [SETTLE_JOB]: async (job) => {
+      if (!deps.context) return;
+      const ids = Array.isArray(job.payload.ids) ? job.payload.ids.map(String) : [];
+      const res = await settleProposals(
+        {
+          context: deps.context,
+          blobs: deps.artifacts?.blobs,
+          deletion: { hub: missions.hub, mail: deps.mail },
+        },
+        {
+          orgId: orgOf(job),
+          ids,
+          origin: String(job.payload.origin ?? "agent") as SettleOrigin,
+          words: typeof job.payload.words === "string" ? job.payload.words : undefined,
+        },
+      );
+      if (res.applied.length > 0) await publishListChanged(deps.pubsub, orgOf(job), "memory");
     },
     // A reply a while ago: the thread's title and "resolved?" suggestion, unless a newer reply came.
     "threads.assess": async (job) => {

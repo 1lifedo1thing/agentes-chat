@@ -2051,6 +2051,7 @@ export function createHttpApi(options: TransportOptions = {}): HttpApi {
         request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/accept`, { json: text === undefined ? {} : { text } }),
       refuse: (orgId, id) => request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/refuse`, { json: {} }),
       ask: (orgId, id) => request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/ask`, { json: {} }),
+      undo: (orgId, id) => request<Proposal>(`${org(orgId)}/proposals/${enc(id)}/undo`, { json: {} }),
     },
     repositories: {
       get: async (orgId, agentId) =>
