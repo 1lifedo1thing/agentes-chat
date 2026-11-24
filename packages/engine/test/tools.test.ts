@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { asc, eq, schema, tracingLogger } from "@agenteschat/db";
+import { asc, eq, schema } from "@agenteschat/db";
+import { issuedBy } from "@agenteschat/db/testing";
 import { textOf } from "@agenteschat/providers";
 import {
   actionHash,
@@ -626,16 +627,9 @@ describe("approval flow (end to end)", () => {
     expect(decidedEvents).toHaveLength(2);
     expect(decidedEvents[1]).toMatchObject({ approval: { status: "approved", result: { ok: true } } });
     // A list shows no trail, so it reads none of its runs' steps: only one approval's details do.
-    const read: string[] = [];
-    const logQuery = tracingLogger.logQuery;
-    tracingLogger.logQuery = (...args: unknown[]) => {
-      read.push(String(args[0]));
-      logQuery();
-    };
-    const [ran] = await listApprovals(f.db, f.owner.id, f.org.id, { status: "decided" }).finally(() => {
-      tracingLogger.logQuery = logQuery;
-    });
-    expect(read.filter((query) => query.includes('"agent_run_steps"'))).toEqual([]);
+    const listed = await issuedBy(() => listApprovals(f.db, f.owner.id, f.org.id, { status: "decided" }));
+    expect(listed.filter((query) => query.includes('"agent_run_steps"'))).toEqual([]);
+    const [ran] = await listApprovals(f.db, f.owner.id, f.org.id, { status: "decided" });
     expect(ran?.executedAt).not.toBeNull();
     expect(ran).toMatchObject({ why: WHY, issue: null });
     // The turns before its step, never the one after it.
