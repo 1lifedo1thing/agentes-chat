@@ -1219,13 +1219,15 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
 /* ---------- right after paying: the team wakes, the computer turns on, a hello ---------- */
 .paid-scene .team-scene__row {
   gap: var(--space-3);
+  padding-inline: var(--space-3);
 }
 .paid-scene .ac-computer {
   flex: none;
 }
-/* The hello comes once the team is up: faded in, never popped. */
+/* The hello comes once the team is up: faded in, never popped. It gives way first on a narrow band: a long first name
+   ends in "…" (the sky is decorative, the words beside it say it all). */
 .paid-scene__hello {
-  flex: none;
+  flex: 0 1 auto;
   opacity: 0;
   transition: opacity var(--dur-base) var(--out);
 }
@@ -1294,9 +1296,16 @@ html:not([data-pointer]) .arrival-have__link:focus-visible {
   overflow-wrap: anywhere;
   text-wrap: pretty;
 }
+/* Never wider than the card: a long name ends in "…", as in a dialog's footer, and the button's title says it whole. */
 .paid-card__go {
   align-self: flex-start;
+  max-width: 100%;
   margin-top: var(--space-2);
+}
+.paid-card__go .ac-btn__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 @media (max-width: 520px) {
   .paid-card {

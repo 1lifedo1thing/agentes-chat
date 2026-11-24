@@ -5,15 +5,17 @@ setupDom();
 
 import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { createFakeApi, type FakeState, LODI_ID, ORG_ID, seedState, withRightHand } from "./fake-api";
-import { renderApp, screen, settle } from "./render";
+import { renderApp, screen, settle, showIn } from "./render";
 
 /*
  * The moment right after a paid Checkout (ADR 0079) where the workspace's pages land: the plan on, the team awake on
  * its sky, the purchase in one line and one way on. Once per payment, never on a plain visit, never two dialogs.
  */
 
+const realFetch = globalThis.fetch;
 afterEach(() => {
   cleanup();
+  globalThis.fetch = realFetch;
   sessionStorage.clear();
   localStorage.clear();
 });
@@ -121,5 +123,36 @@ describe("with the arrival (a workspace that opens right after its onboarding)",
     expect(screen().getByRole("dialog", { name: BETA })).toBeTruthy();
     expect(screen().queryByRole("dialog", { name: TITLE })).toBeNull();
     expect(card()).toBeNull();
+  });
+});
+
+describe("the worst case (measured by CI's geometry capture)", () => {
+  test("a plan's longest name, a long first name and a long right hand's name, in German, at every width", async () => {
+    const state = withRightHand(seedState(), { name: "Maximiliana Bartholomew-Fitzgerald" });
+    state.authConfig = { billingUrl: "https://billing.example.com" };
+    if (state.me) state.me.user.name = "Aleksandra Wiśniewska-Kowalczyk";
+    // The plan list's longest name (`planOfferOf` takes up to 40 characters).
+    const plan = "Unternehmen Plus mit eigenem Computer XL";
+    globalThis.fetch = (async (_url: string) =>
+      new Response(JSON.stringify({ recommended: "team", plans: [{ key: "business", name: plan }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })) as typeof fetch;
+    const r = await open(state, `${SETTINGS}?paid=1&plan=business&period=year`);
+    await showIn(r.services, "de");
+    const moment = card() as HTMLElement;
+    expect(moment.textContent).toContain(`Zahlung bestätigt: ${plan}, jährliche Abrechnung.`);
+    expect(moment.textContent).toContain("Hallo, Aleksandra");
+    expect(
+      within(moment).getByRole("button", { name: "Mit Maximiliana Bartholomew-Fitzgerald sprechen" }),
+    ).toBeTruthy();
+  });
+
+  test("a workspace with no agents: the sky and the computer alone, and Connect an AI as the way on", async () => {
+    await open(seedState({ agents: [] }), `${SETTINGS}?paid=1`);
+    const moment = card() as HTMLElement;
+    expect(moment.querySelector(".team-scene__agent")).toBeNull();
+    expect(moment.querySelector(".ac-computer")).toBeTruthy();
+    expect(within(moment).getByRole("button", { name: "Conectar uma IA" })).toBeTruthy();
   });
 });

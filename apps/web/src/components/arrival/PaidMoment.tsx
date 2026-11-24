@@ -148,7 +148,8 @@ export function PaidCard({
   if (loading) return null;
   // Over the page, outside the shell's own layers: the next dialog stacks above it, as a later portal.
   return createPortal(
-    <section className="paid-card" aria-labelledby={titleId}>
+    // Polite: read out as it comes, never over what is being read.
+    <section className="paid-card" aria-labelledby={titleId} aria-live="polite">
       <div className="paid-card__band">
         <PaidScene agents={dir.agents} name={me.user.name} />
         <Button
@@ -171,6 +172,7 @@ export function PaidCard({
             variant="primary"
             size="sm"
             className="paid-card__go"
+            title={next.label}
             onClick={() => {
               next.run();
               onClose();
