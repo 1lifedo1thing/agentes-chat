@@ -367,7 +367,11 @@ agent. The owner decided it uses the workspace's computer, as any other agent's 
   are behind; every other run of the right hand, wherever it reports, works in the shared seat. No run is left without
   a seat (`UNASKED_SEAT_MESSAGE` is gone); a call with no conversation still has none (`NO_SEAT_MESSAGE`).
 - What stays one person's is unchanged: their seat, Vault items, mailbox, tasks and memory keep their own gates
-  (`rightHandReader`), so a run nobody asked for still gets none of them.
+  (`rightHandReader`). A routine its creator made that reports in their own DM still reads for them there, so the
+  shared seat is held to the rule of a shared browser profile (ADR 0144 §2, `sharedPlaceOf` in the Vault): a personal
+  login or key, or a team one open only to some people, is never typed or handed to a command there, since the
+  sign-in or the value would stay for every other run in it and whoever may open it. The team's open to everyone
+  still work, and a password made there never replaces a login the seat may not hold.
 - Its prompt says the shared place holds these runs too, and still that nothing private belongs there.
 
 ### Consequences

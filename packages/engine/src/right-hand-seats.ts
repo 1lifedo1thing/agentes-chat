@@ -280,6 +280,21 @@ export async function runSeat(ctx: SeatRun): Promise<string> {
   return reader && (await personBehindCall(run)) === reader ? reader : SHARED_SEAT;
 }
 
+/**
+ * Whether a run of the right hand works in the workspace's shared seat (`runSeat`), for a caller that holds only the
+ * run's id (the Vault): a run that is gone reads as shared. False for any other agent.
+ */
+export async function inSharedSeat(db: Executor, run: { orgId: string; agentId: string; runId: string }) {
+  if (!(await isRightHandId(db, run.orgId, run.agentId))) return false;
+  const [row] = UUID.test(run.runId)
+    ? await db
+        .select({ channelId: schema.agentRuns.channelId, triggerMessageId: schema.agentRuns.triggerMessageId })
+        .from(schema.agentRuns)
+        .where(and(eq(schema.agentRuns.orgId, run.orgId), eq(schema.agentRuns.id, run.runId)))
+    : [];
+  return !row || (await runSeat({ db, ...run, ...row })) === SHARED_SEAT;
+}
+
 /** The id of the seat a run works in, when it exists (nothing is made): what a row kept for a seat is checked against. */
 export async function runSeatId(ctx: SeatRun): Promise<string | null> {
   const owner = await runSeat(ctx);
