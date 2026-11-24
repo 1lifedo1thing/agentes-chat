@@ -719,13 +719,17 @@ describe("Conectar uma IA: one picker, plans first", () => {
     // No empty column on the body's left: nothing pushes its lines or the option cards in to the head's text column.
     expect(layout).not.toContain("--text-edge");
     expect(layout).not.toContain(".ai-panel--plan > .grid-options {");
-    // 14px icons and 20px numbers, centred in the numbers' 20px, 12px before the words. Only the panel's own lines: a
-    // note inside a step's words ("Isso não parece uma chave…") keeps its icon on the step's text.
+    // 14px icons and 20px numbers, centred in the numbers' 20px. A note's words keep the kit's 8px after its icon, as
+    // every icon line's: nothing here widens it. Only the panel's own lines: a note inside a step's words ("Isso não
+    // parece uma chave…") keeps its icon on the step's text.
     const own = ".ai-panel--plan > :is(.ac-setnote, .setup-line, .ac-card__foot).ac-iconline";
     const row = ".ai-panel--plan .ai-panel__row > .ac-setnote";
-    expect(layout).toContain(`\n${own},\n${row} {\n  gap: 12px;`);
     expect(layout).toContain(
-      `\n${own} > :first-child,\n${row} > :first-child {\n  margin-inline: calc((var(--lead) - 14px) / 2);`,
+      `\n${own} > :first-child,\n${row} > :first-child {\n  margin-inline-start: calc((var(--lead) - 14px) / 2);\n}`,
+    );
+    expect(layout).not.toMatch(/\.ac-setnote[^{}]*\{[^}]*\bgap: 12px/);
+    expect(ruleOf(await stylesheet("../../../packages/ui/src/styles/components.css"), ".ac-iconline")).toContain(
+      "gap: 8px",
     );
     expect(layout).not.toContain(".ai-panel--plan :is(.ac-setnote");
     expect(ruleOf(layout, ".ai-panel--plan .agp-addacct__step > i")).toContain(
@@ -795,7 +799,7 @@ describe("Conectar uma IA: one picker, plans first", () => {
     // In a plan's panel what went wrong is the sign-in's state: its buttons under the note's words, as a step's.
     expect(layout).toContain("\n.ai-panel--plan .ai-panel__row > .ac-setnote {\n  flex-basis: 100%;\n}");
     expect(ruleOf(layout, ".ai-panel--plan .ai-panel__row > :not(.ac-setnote)")).toContain(
-      "margin-left: calc(var(--lead) + 12px)",
+      "margin-left: calc((var(--lead) + 14px) / 2 + 8px)",
     );
     // A key's field takes its line: "Enviar ao Computador da Costa Atelier" goes under it, whatever the name.
     expect(ruleOf(layout, ".agp-addacct__paste .ac-input-affix")).toContain("flex: 1 1 100%");
@@ -1018,6 +1022,35 @@ describe("Conectar uma IA: one picker, plans first", () => {
     await click(within(panel).getByRole("button", { name: "Já instalei, verificar de novo" }));
     await settle(4);
     expect(calls(state, "machines.checkClis")).toHaveLength(1);
+  });
+
+  test("on a Windows PC: OpenCode that won't start says what it printed; Gemini says why it can't run there, the key beside", async () => {
+    const said = "Error: Cannot find module 'opencode-windows-x64/package.json'";
+    const name = "Estudio-PC";
+    const { dialog, choose, state } = await connect({
+      machine: { os: "windows", name, cliInstall: true, cliErrors: { opencode: said } },
+      brain: {
+        computer: { machineId: "machine_1", name, online: true },
+        options: [
+          ...fakeAgentBrain(ADA_ID).options,
+          { kind: "opencode", available: false, reason: "cant_start", models: [], defaultModel: null },
+          { kind: "antigravity", available: false, reason: "system", models: [], defaultModel: null },
+        ],
+      },
+    });
+    await choose("OpenCode");
+    expect(dialog.textContent).toContain(`O OpenCode está no Estudio-PC, mas não abre: ${said}`);
+    // Fixed there by hand: looked for again from here.
+    await click(within(dialog).getByRole("button", { name: "Já instalei, verificar de novo" }));
+    await settle(4);
+    expect(calls(state, "machines.checkClis")).toHaveLength(1);
+    await choose("Gemini");
+    const gemini = within(dialog).getByRole("region", { name: "Seu plano do Gemini" });
+    expect(gemini.textContent).toContain(
+      "no Windows, o Antigravity CLI guarda o login do Google no Gerenciador de Credenciais",
+    );
+    expect(gemini.textContent).not.toContain("ainda não roda no sistema");
+    expect(within(gemini).getByRole("button", { name: "Usar uma chave de API agora" })).toBeTruthy();
   });
 
   test("a plan whose program is off on its computer: the cause alone, then one way out by whose computer it is", async () => {

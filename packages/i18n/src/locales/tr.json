@@ -12394,6 +12394,7 @@
       "home_only": "{{program}}, {{computer}} üzerinde yalnızca root için kurulu ve ajanlar ona erişemez.",
       "not_reported": "{{computer}} hangi programların olduğunu hâlâ kontrol ediyor. Bittiğinde bu kendiliğinden değişir.",
       "system": "{{program}} henüz {{computer}} sisteminde çalışmıyor.",
+      "systemAntigravity": "Gemini planları {{computer}} üzerinde henüz çalışmıyor: Windows'ta Antigravity CLI, Google oturumunu Kimlik Bilgileri Yöneticisi'nde tutuyor ve agentes.chat bunu henüz hesap başına ayıramıyor. Bunun yerine bir Gemini API anahtarı kullanın.",
       "no_computerCloud": "{{computer}} hazır olur olmaz hazır."
     },
     "notAvailableNow": "Seçildi ama şu anda kullanılamıyor.",

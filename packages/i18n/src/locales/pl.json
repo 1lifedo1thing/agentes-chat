@@ -13391,6 +13391,7 @@
       "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu.",
       "not_reported": "{{computer}} wciąż sprawdza, jakie ma programy. To zmieni się samo, gdy skończy.",
       "system": "{{program}} nie działa jeszcze w systemie komputera {{computer}}.",
+      "systemAntigravity": "Plany Gemini nie działają jeszcze na komputerze {{computer}}: w Windows Antigravity CLI trzyma logowanie Google w Menedżerze poświadczeń, którego agentes.chat nie umie jeszcze rozdzielić na konta. Zamiast tego użyj klucza API Gemini.",
       "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy."
     },
     "notAvailableNow": "Wybrane, ale teraz niedostępne.",

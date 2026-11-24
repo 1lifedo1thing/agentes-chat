@@ -11959,6 +11959,7 @@
       "home_only": "{{computer}} の {{program}} は root 専用にインストールされていて、エージェントからは届きません。",
       "not_reported": "{{computer}}は、入っているプログラムをまだ確認しています。終わりしだい自動で切り替わります。",
       "system": "{{program}}は{{computer}}のシステムではまだ動きません。",
+      "systemAntigravity": "{{computer}}ではGeminiプランはまだ使えません。WindowsではAntigravity CLIがGoogleのログインを資格情報マネージャーに保存し、agentes.chatはまだアカウントごとに分けられません。代わりにGemini APIキーを使ってください。",
       "no_computerCloud": "{{computer}}の準備ができ次第使えます。"
     },
     "notAvailableNow": "選択済みですが、現在は利用できません。",

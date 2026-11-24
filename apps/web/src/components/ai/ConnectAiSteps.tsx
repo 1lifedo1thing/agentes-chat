@@ -112,7 +112,7 @@ import { useDirectory } from "@/hooks/useDirectory";
 import { useRenameAccount } from "@/hooks/useRenameAccount";
 import { useToast } from "@/lib/toast";
 import { AddAccount, OpenPage, Step, StepTitle } from "./AddAccountFlow";
-import { CliMissing } from "./CliMissing";
+import { CliCheckAgain, CliMissing } from "./CliMissing";
 import { EndpointForm } from "./EndpointForm";
 import { PlanReplies, usePlanRepliesShown } from "./PlanReplies";
 import { PlanHold, usePlanHold } from "./plan-hold";
@@ -1744,12 +1744,26 @@ function GateWait({
     // the line to run there.
     wait = <CliMissing machine={row} kind={kind} computer={computer} reason={gate.reason} useKey={keyButton} />;
   } else if (why && !(gate.state === "offline" && signingIn)) {
+    // A program there that won't start, on a computer someone connected: its own words, then a look once it's fixed.
+    const recheck =
+      gate.state === "unsupported" &&
+      gate.reason === "cant_start" &&
+      !hold &&
+      row?.kind !== "managed" &&
+      row?.cliInstall;
     wait = (
       <>
         <SettingNote icon={why.rechecks ? "clock" : "alert"} live={why.rechecks}>
           {why.text}
         </SettingNote>
-        {!hold && useKey}
+        {recheck && row ? (
+          <div className="ac-acts">
+            <CliCheckAgain machine={row} />
+            {useKey}
+          </div>
+        ) : (
+          !hold && useKey
+        )}
       </>
     );
   } else if (gate.state === "missing") {

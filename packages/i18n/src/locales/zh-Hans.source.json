@@ -30369,6 +30369,9 @@
   "brain.reasons.system": {
     "value": "{{program}} doesn't run on {{computer}}'s system yet."
   },
+  "brain.reasons.systemAntigravity": {
+    "value": "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead."
+  },
   "brain.reasons.no_computerCloud": {
     "value": "Ready as soon as {{computer}} is."
   },

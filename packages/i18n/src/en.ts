@@ -12945,6 +12945,9 @@ export const en = {
       not_reported: "{{computer}} is still checking which programs it has. This changes by itself when it's done.",
       /** The runner doesn't run this program on that computer's system (Cursor on Windows, for one). */
       system: "{{program}} doesn't run on {{computer}}'s system yet.",
+      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
+      systemAntigravity:
+        "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead.",
       no_computerCloud: "Ready as soon as {{computer}} is.",
     },
     notAvailableNow: "Chosen, but unavailable right now.",

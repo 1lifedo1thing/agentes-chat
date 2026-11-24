@@ -12017,6 +12017,7 @@
       "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
+      "systemAntigravity": "Paket Gemini belum berjalan di {{computer}}: di Windows, Antigravity CLI menyimpan login Google-nya di Credential Manager, yang belum bisa dipisahkan agentes.chat per akun. Pakai kunci API Gemini sebagai gantinya.",
       "no_computerCloud": "Siap begitu {{computer}} siap."
     },
     "notAvailableNow": "Dipilih, tapi sedang tidak tersedia.",

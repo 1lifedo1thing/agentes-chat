@@ -12,6 +12,7 @@ import {
   brainTool,
   browserNoAnswerMessage,
   browserOffMessage,
+  CLI_GIT_MISSING,
   CLI_HOME_ONLY,
   cliCommandWayOut,
   cliInstallCommand,
@@ -689,6 +690,44 @@ describe("one click where a tool is off (ADR 0036 §8)", () => {
         machine: rootOnly,
       })?.text,
     ).toBe(t("brain.reasons.home_only", words));
+  });
+
+  test("a CLI there that won't start says the CLI's own words, and Gemini on Windows says why it can't", async () => {
+    const { resources } = await import("@agenteschat/i18n");
+    const i18next = (await import("i18next")).default;
+    const instance = i18next.createInstance();
+    void instance.init({
+      lng: "pt-BR",
+      fallbackLng: "en",
+      resources,
+      initAsync: false,
+      // As the apps: React escapes.
+      interpolation: { escapeValue: false },
+    });
+    const t = instance.t;
+    const pc = { kind: "connected", os: "windows", mode: "single" } as const;
+    const cantStart = { state: "unsupported", reason: "cant_start" } as const;
+    const line = (
+      kind: "opencode" | "claude_code" | "antigravity",
+      machine: Parameters<typeof gateLine>[1]["machine"],
+      gate: Parameters<typeof gateLine>[1]["gate"] = cantStart,
+    ) => gateLine(t, { gate, edition: "selfhost", kind, computer: "PC da Bia", machine })?.text;
+    const said = "Error: Cannot find module 'opencode-windows-x64/package.json'";
+    expect(line("opencode", { ...pc, cliErrors: { opencode: said } })).toBe(
+      `O OpenCode está no PC da Bia, mas não abre: ${said}`,
+    );
+    // Claude Code's error is kept under its command's name; Git for Windows missing is a code, said in words.
+    expect(line("claude_code", { ...pc, cliErrors: { claude: "spawn EPERM" } })).toBe(
+      "O Claude Code está no PC da Bia, mas não abre: spawn EPERM",
+    );
+    expect(line("claude_code", { ...pc, cliErrors: { claude: CLI_GIT_MISSING } })).toBe(
+      t("connectAi.cli.gitMissing", { program: "Claude Code", computer: "PC da Bia" }),
+    );
+    // No words from the runner (an older one): the plain line.
+    expect(line("opencode", pc)).toBe(t("brain.reasons.cant_start", { program: "OpenCode", computer: "PC da Bia" }));
+    const gemini = line("antigravity", pc, { state: "unsupported", reason: "system" });
+    expect(gemini).toBe(t("brain.reasons.systemAntigravity", { computer: "PC da Bia" }));
+    expect(gemini).toContain("Gerenciador de Credenciais");
   });
 
   test("Prefiro no Terminal: the same switches as one command, only for who turns them on, where there may be no app", () => {

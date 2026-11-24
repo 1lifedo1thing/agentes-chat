@@ -12960,6 +12960,9 @@ export const ptBR = {
       home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
+      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
+      systemAntigravity:
+        "Planos do Gemini ainda não rodam no {{computer}}: no Windows, o Antigravity CLI guarda o login do Google no Gerenciador de Credenciais, que o agentes.chat ainda não separa por conta. Use uma chave de API do Gemini no lugar.",
       no_computerCloud: "Disponível assim que o {{computer}} ficar pronto.",
     },
     notAvailableNow: "Escolhido, mas indisponível agora.",
