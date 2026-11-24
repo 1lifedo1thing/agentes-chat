@@ -50,7 +50,7 @@ export const STYLE_INPUT: JsonSchema = {
 /** The words the tools say about `style` and fonts. */
 export const STYLE_WORDS = [
   "`style` {font, size, weight (100–900), color, align, valign, line_height (× size), tracking (thousandths of the size), caps, padding, fill, gradient {from, to, angle}, stroke, stroke_width, dash (solid|dashed|dotted), radius, shadow {x, y, blur, color #rrggbbaa}, opacity}; null takes a key away.",
-  `Fonts: a catalog family by name or id (${live.FONT_CATALOG.map((f) => f.family).join(", ")}), one of the file's own fonts (\`asset:<id>\`), or heading/body (the theme's).`,
+  `Fonts: a catalog family by name or id (${live.FONT_CATALOG.map((f) => f.family).join(", ")}), one of the file's own fonts by its family or \`asset:<id>\` (add_font {font_file: a Drive file id} brings a .ttf, .otf or .woff into the file first), or heading/body (the theme's).`,
 ].join(" ");
 
 const KEYS: Record<string, keyof live.ElementStyle> = {
@@ -74,9 +74,14 @@ const KEYS: Record<string, keyof live.ElementStyle> = {
   opacity: "opacity",
 };
 
-/** A font an agent names (a family, an id, `asset:<id>`, heading/body) as a ref the files store, or a refusal. */
-export function fontRefOf(value: unknown): live.FontRef {
-  const text: string = typeof value === "string" ? value.trim() : "";
+/**
+ * A font an agent names (a catalog family or id, one of the file's own fonts by its family, `asset:<id>`, heading or
+ * body) as a ref the files store, or a refusal. `files`: the file's fonts by lowercase family.
+ */
+export function fontRefOf(value: unknown, files?: ReadonlyMap<string, string>): live.FontRef {
+  const text: string = typeof value === "string" ? value.trim().replace(/^["']|["']$/g, "") : "";
+  const own = files?.get(text.toLowerCase());
+  if (own) return live.fontAssetRef(own);
   const known: boolean = live.isFontRef(text);
   if (known) return text;
   const named = live.catalogFontNamed(text);
@@ -89,7 +94,10 @@ export function fontRefOf(value: unknown): live.FontRef {
 }
 
 /** An agent's `style` as a slide element's style patch (each key checked; null takes it away). */
-export function slideStylePatch(input: unknown): { [K in keyof live.ElementStyle]?: live.ElementStyle[K] | null } {
+export function slideStylePatch(
+  input: unknown,
+  files?: ReadonlyMap<string, string>,
+): { [K in keyof live.ElementStyle]?: live.ElementStyle[K] | null } {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new ValidationError("style must be an object");
   const out: Record<string, unknown> = {};
   for (const [key, raw] of Object.entries(input as Json)) {
@@ -99,7 +107,7 @@ export function slideStylePatch(input: unknown): { [K in keyof live.ElementStyle
       out[name] = null;
       continue;
     }
-    const value = name === "font" ? fontRefOf(raw) : name === "caps" ? raw === true || undefined : raw;
+    const value = name === "font" ? fontRefOf(raw, files) : name === "caps" ? raw === true || undefined : raw;
     if (value === undefined) {
       out[name] = null;
       continue;
@@ -115,8 +123,12 @@ export function slideStylePatch(input: unknown): { [K in keyof live.ElementStyle
  * An agent's `style` as a canvas shape's patch: the text keys into `style` (text boxes, notes, shapes' labels), the
  * rest onto the shape where its type has them.
  */
-export function canvasStylePatch(shape: live.ShapeView, input: unknown): live.ShapePatch {
-  const slide = slideStylePatch(input);
+export function canvasStylePatch(
+  shape: live.ShapeView,
+  input: unknown,
+  files?: ReadonlyMap<string, string>,
+): live.ShapePatch {
+  const slide = slideStylePatch(input, files);
   const patch: live.ShapePatch = {};
   const text: Record<string, unknown> = { ...(shape.style ?? {}) };
   let textChanged = false;
