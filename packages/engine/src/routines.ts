@@ -104,6 +104,7 @@ import {
   ruleToCron,
   type ScheduleRule,
 } from "./rrule";
+import { runState } from "./run-state";
 import { providerFailure } from "./runs";
 import { describeWhen, parseSchedule, readSchedule, type ScheduleParse } from "./schedule";
 import { assertCanWork, closedRefusal, deletionPending, orgStanding, standingRefusal } from "./standing";
@@ -622,8 +623,8 @@ async function runDetails(db: Database, orgId: string, runs: RunRow[]): Promise<
           // views use it for), as one value, so other rows never detoast it.
           wait: sql<{ wait: Record<string, unknown> | null; continued: boolean } | null>`case
             when ${agentRuns.status} = 'waiting_input' then jsonb_build_object(
-              'wait', ${agentRuns.transcript}->'waitingForBrain',
-              'continued', (${agentRuns.transcript}->'usagePause'->'override') is not null) end`,
+              'wait', ${runState}->'waitingForBrain',
+              'continued', (${runState}->'usagePause'->'override') is not null) end`,
           updatedAt: agentRuns.updatedAt,
         })
         .from(agentRuns)
@@ -2545,9 +2546,9 @@ export async function continueRoutineUsagePause(
   const [paused] = await db
     .select({
       runId: agentRuns.id,
-      waitId: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'waitId'`,
-      source: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'source'`,
-      resetsAt: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'resetsAt'`,
+      waitId: sql<string | null>`${runState}->'waitingForBrain'->>'waitId'`,
+      source: sql<string | null>`${runState}->'waitingForBrain'->>'source'`,
+      resetsAt: sql<string | null>`${runState}->'waitingForBrain'->>'resetsAt'`,
     })
     .from(routineRuns)
     .innerJoin(agentRuns, eq(agentRuns.id, routineRuns.agentRunId))
@@ -2556,7 +2557,7 @@ export async function continueRoutineUsagePause(
         eq(routineRuns.orgId, orgId),
         eq(routineRuns.routineId, routine.id),
         eq(agentRuns.status, "waiting_input"),
-        sql`${agentRuns.transcript}->'waitingForBrain'->>'code' = 'usage_pause'`,
+        sql`${runState}->'waitingForBrain'->>'code' = 'usage_pause'`,
       ),
     )
     .orderBy(desc(routineRuns.createdAt))

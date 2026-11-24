@@ -23,6 +23,7 @@ import { lineLocale } from "./requester";
 import { personCanPost } from "./routine-state";
 import { ACTIVE_RUN_STATUSES, passedOnTo } from "./run-inbox";
 import { deliverNoticeToRun } from "./run-resume";
+import { runColumns, runState } from "./run-state";
 import { type AgentRun, continuableEnd, isTerminal, personStopOf, replyThreadOf, runErrorDetail } from "./runs";
 import { runStretchOf } from "./stretch";
 import { ago, stepLine } from "./talker-snapshot";
@@ -202,10 +203,10 @@ export async function workViews(db: Executor, orgId: string, ids: string[]): Pro
       status: agentRuns.status,
       error: agentRuns.error,
       waitingMachineId: agentRuns.waitingMachineId,
-      code: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'code'`,
+      code: sql<string | null>`${runState}->'waitingForBrain'->>'code'`,
       until: sql<
         string | null
-      >`coalesce(${agentRuns.transcript}->'waitingForBrain'->>'resetsAt', ${agentRuns.transcript}->'waitingForBrain'->>'until')`,
+      >`coalesce(${runState}->'waitingForBrain'->>'resetsAt', ${runState}->'waitingForBrain'->>'until')`,
       createdAt: agentRuns.createdAt,
     })
     .from(agentRuns)
@@ -405,8 +406,8 @@ type RunLike = Pick<
   | "background"
   | "workId"
   | "status"
-  | "transcript"
->;
+> &
+  Partial<Pick<AgentRun, "transcript" | "state">>;
 
 /**
  * Whether a run may become long work (§1): a person is behind it, in a channel or DM people read,
@@ -1449,7 +1450,11 @@ export async function reconcileWorks(deps: { db: Database; pubsub?: PubSub }): P
     // One bad row never stops the sweep: the next tick tries it again.
     try {
       const [run] = await deps.db
-        .select()
+        .select({
+          ...runColumns,
+          transcript: sql<AgentRun["transcript"]>`case when ${agentRuns.status} in ('done', 'failed', 'canceled')
+            then ${agentRuns.transcript} end`,
+        })
         .from(agentRuns)
         .where(eq(agentRuns.workId, w.id))
         .orderBy(desc(agentRuns.createdAt))

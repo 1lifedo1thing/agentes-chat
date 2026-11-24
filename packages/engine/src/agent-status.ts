@@ -10,6 +10,7 @@ import { requirePermission } from "./organizations";
 import { type OutOfOffice, outOfOffice } from "./out-of-office";
 import { rightHandId } from "./right-hand";
 import { routineSeer } from "./routines";
+import { runState } from "./run-state";
 import { outageParkedSql } from "./runs";
 import { toolGroupKey } from "./tools/directory";
 import type { ToolContext, ToolDefinition, ToolSource } from "./tools/types";
@@ -252,14 +253,14 @@ export async function loadAgentStatuses(
         waitingMachineId: agentRuns.waitingMachineId,
         outage: outageParkedSql,
         // A long-work pause (ADR 0118) reads as the wait on what it paused on.
-        waitCode: sql<string | null>`case when ${agentRuns.transcript}->'waitingForBrain'->>'code' = 'usage_pause'
-          then (case when ${agentRuns.transcript}->'waitingForBrain'->>'source' = 'budget' then 'budget' else 'plan_limit' end)
-          else ${agentRuns.transcript}->'waitingForBrain'->>'code' end`,
+        waitCode: sql<string | null>`case when ${runState}->'waitingForBrain'->>'code' = 'usage_pause'
+          then (case when ${runState}->'waitingForBrain'->>'source' = 'budget' then 'budget' else 'plan_limit' end)
+          else ${runState}->'waitingForBrain'->>'code' end`,
         /** A conversation's catch-up: waiting on its plan or budget itself (not long work paused near one). */
         catchUp: sql<"plan_limit" | "budget" | null>`case when ${agentRuns.status} = 'waiting_input'
-          and ${agentRuns.transcript}->'waitingForBrain'->>'code' in ('plan_limit', 'budget')
-          then ${agentRuns.transcript}->'waitingForBrain'->>'code' end`,
-        resetsAt: sql<string | null>`${agentRuns.transcript}->'waitingForBrain'->>'resetsAt'`,
+          and ${runState}->'waitingForBrain'->>'code' in ('plan_limit', 'budget')
+          then ${runState}->'waitingForBrain'->>'code' end`,
+        resetsAt: sql<string | null>`${runState}->'waitingForBrain'->>'resetsAt'`,
       })
       .from(agentRuns)
       .where(and(eq(agentRuns.orgId, orgId), inArray(agentRuns.status, [...ACTIVE, ...WAITING]), ...ofRuns)),

@@ -400,7 +400,7 @@ async function visibleRuns(
           // An ended run's wait is never read, and reading it would detoast every candidate's transcript (a large
           // jsonb) before the sort keeps the last few.
           which.active
-            ? sql`coalesce(r.transcript->'waitingForBrain', case when r.status = 'running' and r.waiting_machine_id is not null
+            ? sql`coalesce(coalesce(r.state, r.transcript)->'waitingForBrain', case when r.status = 'running' and r.waiting_machine_id is not null
           then '{"code":"busy"}'::jsonb end)`
             : sql`null`
         } as wait, pause.data as wait_pause, r.waiting_machine_id,
@@ -444,7 +444,7 @@ async function visibleRuns(
         select s.data->'pause' as data from ${agentRunSteps} s
         where s.run_id = r.id and s.kind = 'error' and s.data->>'reason' = 'usage_wait'
         order by s.seq desc limit 1
-      ) pause on ${which.active ? sql`r.transcript->'waitingForBrain'->>'code' = 'usage_pause'` : sql`false`}
+      ) pause on ${which.active ? sql`coalesce(r.state, r.transcript)->'waitingForBrain'->>'code' = 'usage_pause'` : sql`false`}
       where r.org_id = ${orgId}::uuid and ${status} and ${seesSql(userId, orgId)}
       order by ${which.active ? sql`r.created_at desc` : sql`r.finished_at desc`}, r.id desc
       limit ${limit}`),
@@ -806,9 +806,9 @@ export async function taskManager(
 }
 
 const IN_LINE = sql`r.waiting_machine_id is not null and (r.status = 'running'
-  or (r.status = 'waiting_input' and r.transcript->'waitingForBrain'->>'code' = 'busy'))`;
+  or (r.status = 'waiting_input' and coalesce(r.state, r.transcript)->'waitingForBrain'->>'code' = 'busy'))`;
 /** The computer a running turn is on: the one it asked for room (`roomAsk`), as the line's view counts it. */
-const RUNS_ON = sql`r.transcript->'roomAsk'->>'machineId'`;
+const RUNS_ON = sql`coalesce(r.state, r.transcript)->'roomAsk'->>'machineId'`;
 
 /**
  * Each task's place in its computer's line, from the line's own view (`computerQueue` in computer-queue.ts, ADR 0032

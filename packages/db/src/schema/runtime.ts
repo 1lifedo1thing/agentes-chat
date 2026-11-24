@@ -131,6 +131,12 @@ export const agentRuns = pgTable(
      */
     transcript: jsonb().$type<Record<string, unknown>>(),
     /**
+     * The transcript's small keys that say where the run stands, copied by the `agent_runs_state` trigger on every write
+     * of the transcript (`RUN_STATE_KEYS` in the engine), so status reads never decompress it. Null on a run whose
+     * transcript wasn't written since the copy began (migration 0324): the runs that had ended by then.
+     */
+    state: jsonb().$type<Record<string, unknown>>(),
+    /**
      * Each claim's stage profile (the last `RUN_PROFILES_KEPT`), for the operator's work analytics. Its own column so
      * analytics read it without decompressing the transcript; null on runs that ended before it existed.
      */

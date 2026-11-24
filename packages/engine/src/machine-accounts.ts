@@ -93,6 +93,7 @@ import {
 } from "./machines";
 import { recordAccountFailure } from "./operator-events";
 import { can, requirePermission } from "./organizations";
+import { runState } from "./run-state";
 import { runnerUpdateWay } from "./runner-update";
 import { scrubSignIns } from "./tool-detail";
 import { agentsMovedOnto, usageWaitKey, wakeAgentsBrainWaits, wakeOnRoom } from "./usage-pause";
@@ -1170,7 +1171,7 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
   );
   if (rows.length === 0 && owned.length === 0) return [];
   const { agentRuns } = schema;
-  const waitKey = sql<string>`${agentRuns.transcript}->'waitingForBrain'->>'waitKey'`;
+  const waitKey = sql<string>`${runState}->'waitingForBrain'->>'waitKey'`;
   const waiting = new Set(
     (
       await db
@@ -1180,7 +1181,7 @@ export async function recheckStuckPlans(deps: Pick<MachineAccountHubDeps, "db" |
           and(
             eq(agentRuns.status, "waiting_input"),
             inArray(agentRuns.orgId, [...new Set([...rows, ...owned].map((r) => r.orgId))]),
-            sql`${agentRuns.transcript}->'waitingForBrain'->>'code' in ('plan_limit', 'usage_pause')`,
+            sql`${runState}->'waitingForBrain'->>'code' in ('plan_limit', 'usage_pause')`,
           ),
         )
     ).map((r) => r.key),
