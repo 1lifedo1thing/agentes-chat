@@ -56,6 +56,7 @@ import {
 } from "./dispatch";
 import { isAgentOnlyDm } from "./dms";
 import {
+  deliverQueuedEmail,
   type EmailArt,
   PLAN_WAITING_JOB,
   queueAccountOpenedEmail,
@@ -63,7 +64,6 @@ import {
   queuePlanOpenedEmail,
   queuePlanWaiting,
   sendPlanWaitingEmail,
-  sendQueuedEmail,
 } from "./email";
 import { forgetCodeEmail } from "./email-codes";
 import { type DecidedBy, publishAgentsChanged, publishListChanged, publishRouted } from "./events";
@@ -1107,7 +1107,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       };
       try {
         if (!deps.email) throw new PermanentJobError("no email sender configured");
-        await sendQueuedEmail(deps.email, job.payload, deps.emailArt);
+        await deliverQueuedEmail(deps.db, deps.email, job, deps.emailArt, deps.log);
       } catch (error) {
         if (ctx.finalAttempt || error instanceof PermanentJobError) await forget();
         throw error;

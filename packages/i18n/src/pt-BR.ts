@@ -648,6 +648,12 @@ export const ptBR = {
       banner: "Confirme seu e-mail",
       bannerSub: "Abra o link que mandamos para {{email}}.",
       change: "Trocar endereço",
+      // The last link to the address could never be delivered: why, said where the person waits for it.
+      undelivered: {
+        suppressed:
+          "O e-mail não chegou: o provedor de e-mail bloqueou {{email}} depois de uma devolução. Confira se o endereço está certo e peça um link novo.",
+        rejected: "O e-mail não chegou: {{email}} foi recusado. Confira se o endereço está certo ou troque por outro.",
+      },
     },
     unconfirmed:
       "Este e-mail já tem uma conta com senha que ainda não foi confirmada. Entre com a senha ou crie uma nova pelo e-mail.",
@@ -8255,6 +8261,12 @@ export const ptBR = {
       expires: "Expira em {{left}}",
       expired: "Expirou {{when}}",
       resentState: "Mandado de novo · vale até {{date}}",
+      // Its last email could never be delivered: why, on its row, beside Copiar link and Reenviar.
+      undelivered: {
+        suppressed:
+          "Não chegou: o provedor de e-mail bloqueou este endereço depois de uma devolução. Confira se está certo e reenvie, ou copie o link.",
+        rejected: "Não chegou: o endereço foi recusado. Confira se está certo, ou copie o link e mande de outro jeito.",
+      },
       copied: "Link do convite de {{email}} copiado. É o mesmo do e-mail.",
       copiedNoEmail: "Link do convite de {{email}} copiado.",
       resent: "Mandei de novo para {{email}}. O link é o mesmo e vale até {{date}}.",

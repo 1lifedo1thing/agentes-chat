@@ -641,7 +641,11 @@
       "wrongAddress": "Indirizzo sbagliato? Cambialo",
       "banner": "Conferma la tua email",
       "bannerSub": "Apri il link che abbiamo inviato a {{email}}.",
-      "change": "Cambia indirizzo"
+      "change": "Cambia indirizzo",
+      "undelivered": {
+        "suppressed": "L'email non è arrivata: il provider email ha bloccato {{email}} dopo un rimbalzo. Controlla che l'indirizzo sia giusto e chiedi un nuovo link.",
+        "rejected": "L'email non è arrivata: {{email}} è stato rifiutato. Controlla che l'indirizzo sia giusto, o cambialo."
+      }
     },
     "unconfirmed": "Questa email ha già un account con una password non ancora confermata. Accedi con la password, oppure creane una nuova via email.",
     "unconfirmedReset": "Crea una nuova password",
@@ -8015,6 +8019,10 @@
       "expires": "Scade tra {{left}}",
       "expired": "Scaduto {{when}}",
       "resentState": "Inviato di nuovo · valido fino al {{date}}",
+      "undelivered": {
+        "suppressed": "Non arrivato: il provider email ha bloccato questo indirizzo dopo un rimbalzo. Controlla che sia giusto e invia di nuovo, o copia il link.",
+        "rejected": "Non arrivato: l'indirizzo è stato rifiutato. Controlla che sia giusto, o copia il link e mandalo in un altro modo."
+      },
       "copied": "Link dell'invito di {{email}} copiato. È lo stesso dell'email.",
       "copiedNoEmail": "Link dell'invito di {{email}} copiato.",
       "resent": "Inviato di nuovo a {{email}}. Il link è lo stesso e vale fino al {{date}}.",

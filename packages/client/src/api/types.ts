@@ -456,6 +456,11 @@ export interface User {
   canCreateWorkspace?: boolean;
   /** They deleted this account: the apps show only its waiting screen. `dueAt` is null once the date passed. */
   deletion?: { dueAt: string | null; requestedAt: string | null };
+  /**
+   * The last confirmation or reset email to their address could never be delivered (`EmailUndelivered`); null or
+   * absent: nothing says so.
+   */
+  emailUndelivered?: EmailUndelivered | null;
   /** The app's language for emails, pushes and every device (ADR 0122); null before any app said one. */
   locale?: string | null;
   /** The language follows each device's own (Automático) until the person picks one. */
@@ -3121,6 +3126,12 @@ export interface CanceledReturn {
   canceledBy: { kind: "person"; userId: string; name: string } | { kind: "agent"; agentId: string } | null;
 }
 
+/**
+ * Why an email could never reach its address: `suppressed`, the mail provider stopped mailing it after an earlier
+ * bounce; `rejected`, the address itself was refused.
+ */
+export type EmailUndelivered = "suppressed" | "rejected";
+
 export interface InvitationWithStatus {
   id: string;
   email: string;
@@ -3131,6 +3142,11 @@ export interface InvitationWithStatus {
   /** Agents they start with (ADR 0184). */
   agentIds?: string[];
   status: "pending" | "expired";
+  /**
+   * Its last email could never be delivered: `suppressed`, the mail provider stopped mailing the address after an
+   * earlier bounce (sending it again asks the provider to mail it again); `rejected`, the address was refused.
+   */
+  undelivered?: EmailUndelivered | null;
   expiresAt: string;
   createdAt: string;
   /** Who sent it (their name). */

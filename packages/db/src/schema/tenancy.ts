@@ -289,6 +289,11 @@ export const organizationInvitations = pgTable(
      */
     agentIds: uuid().array().notNull().default(sql`'{}'::uuid[]`),
     expiresAt: timestamp({ withTimezone: true }).notNull(),
+    /**
+     * Its last email could never be delivered (`suppressed`: the mail provider stopped mailing the address after a
+     * bounce; `rejected`: the address was refused), set by the `email.send` job; null again on each sending.
+     */
+    undelivered: text().$type<"suppressed" | "rejected">(),
     acceptedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },

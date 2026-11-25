@@ -611,7 +611,11 @@
       "wrongAddress": "Alamat salah? Ubah",
       "banner": "Konfirmasi email",
       "bannerSub": "Buka tautan yang kami kirim ke {{email}}.",
-      "change": "Ubah alamat"
+      "change": "Ubah alamat",
+      "undelivered": {
+        "suppressed": "Email tidak sampai: penyedia email memblokir {{email}} setelah pentalan sebelumnya. Pastikan alamatnya benar lalu minta tautan baru.",
+        "rejected": "Email tidak sampai: {{email}} ditolak. Pastikan alamatnya benar, atau ganti alamatnya."
+      }
     },
     "unconfirmed": "Email ini sudah punya akun dengan kata sandi yang belum dikonfirmasi. Masuk dengan kata sandi itu, atau buat yang baru lewat email.",
     "unconfirmedReset": "Buat kata sandi baru",
@@ -7462,6 +7466,10 @@
       "expires": "Berakhir dalam {{left}}",
       "expired": "Berakhir {{when}}",
       "resentState": "Dikirim ulang · berlaku sampai {{date}}",
+      "undelivered": {
+        "suppressed": "Tidak sampai: penyedia email memblokir alamat ini setelah pentalan sebelumnya. Pastikan alamatnya benar lalu kirim ulang, atau salin tautannya.",
+        "rejected": "Tidak sampai: alamatnya ditolak. Pastikan alamatnya benar, atau salin tautannya dan kirim dengan cara lain."
+      },
       "copied": "Tautan undangan {{email}} disalin. Sama dengan yang ada di email.",
       "copiedNoEmail": "Tautan undangan {{email}} disalin.",
       "resent": "Dikirim ulang ke {{email}}. Tautannya sama dan berlaku sampai {{date}}.",
