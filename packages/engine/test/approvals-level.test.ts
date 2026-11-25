@@ -710,6 +710,21 @@ describe("always", () => {
     expect(ps("New-Item notes.txt", true).message).toContain("run the same command with run_code");
   });
 
+  test("a Windows computer's folders reach the rules: its own folder's files are its work, the rest is judged", () => {
+    const scope = { cwd: "C:\\Users\\ada\\work", folders: ["C:\\Users\\ada\\work"], home: "C:\\Users\\ada" };
+    const prompt = (command: string) =>
+      JSON.parse(runPermissionPrompt({ tool_name: "Bash", input: { command }, scope }, { canRun: true })) as {
+        behavior: string;
+        code?: string;
+      };
+    expect(prompt("icacls 'C:\\Users\\ada\\work\\build' //grant Everyone:F").behavior).toBe("allow");
+    expect(prompt("icacls 'C:\\Users\\ada\\notes' //grant Everyone:F")).toMatchObject({
+      behavior: "deny",
+      code: "system",
+    });
+    expect(prompt("echo x > 'C:\\Users\\bob\\notes.txt'")).toMatchObject({ behavior: "deny", code: "otherUser" });
+  });
+
   test("a search and a card that is itself the question open no approval in front of them", async () => {
     await world("always");
     const ctx = await runAs("person");

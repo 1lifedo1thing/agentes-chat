@@ -292,19 +292,49 @@ export function simpleCommands(line: string): Simple[] | null {
 
 const TMP = ["/tmp", "/private/tmp", "/var/tmp", "/private/var/tmp", "/var/folders", "/private/var/folders"];
 
-function resolveIn(scope: CommandScope, p: string) {
-  const home = scope.home ?? "";
-  const expanded = p === "~" ? home : p.startsWith("~/") ? path.join(home, p.slice(2)) : p;
-  if (expanded.startsWith("~")) return null; // `~other`
-  return path.resolve(scope.cwd, expanded);
+/** An absolute path on Windows: from a drive (`C:\…`, `c:/…`) or a share (`\\host\share\…`). */
+const WINDOWS_ABSOLUTE = /^([a-z]:[\\/]|\\\\[^\\])/i;
+
+/** A folder the runner may report: absolute on its computer, a POSIX path or a Windows one. */
+export const absolutePath = (p: string) => p.startsWith("/") || WINDOWS_ABSOLUTE.test(p);
+
+/** A scope on a Windows computer: its folders are on a drive or a share (`C:\Users\ada\work`). */
+const windowsScope = (scope: CommandScope) => [scope.cwd, ...scope.folders].some((f) => WINDOWS_ABSOLUTE.test(f));
+
+/**
+ * A path on a Windows computer the way Windows compares it, absolute from `cwd`: in one case, `/` for either
+ * separator, a drive as Git Bash writes it (`C:\Users\Ada`, `c:/users/ada` and `/c/Users/Ada` are all
+ * `/c/users/ada`), a share as `//host/share/…`.
+ */
+function windowsPath(cwd: string, p: string): string {
+  const rooted = (q: string) => {
+    const s = q.replaceAll("\\", "/").toLowerCase();
+    return /^[a-z]:/.test(s) ? `/${s[0]}/${s.slice(2)}` : s;
+  };
+  const s = rooted(p);
+  const abs = s.startsWith("/") ? s : `${rooted(cwd)}/${s}`;
+  return (/^\/\/[^/]/.test(abs) ? "/" : "") + path.posix.normalize(abs).replace(/(.)\/$/, "$1");
 }
 
-const under = (p: string, root: string) => p === root || p.startsWith(root.endsWith(path.sep) ? root : root + path.sep);
+/** `p` made absolute from the scope's folder, as its computer compares paths (`windowsPath` on Windows). */
+const absoluteIn = (scope: CommandScope, p: string) =>
+  windowsScope(scope) ? windowsPath(scope.cwd, p) : path.resolve(scope.cwd, p);
+
+function resolveIn(scope: CommandScope, p: string) {
+  const q = windowsScope(scope) ? p.replaceAll("\\", "/") : p;
+  const home = scope.home ?? "";
+  const expanded = q === "~" ? home : q.startsWith("~/") ? path.join(home, q.slice(2)) : q;
+  if (expanded.startsWith("~")) return null; // `~other`
+  return absoluteIn(scope, expanded);
+}
+
+/** `p` is `root` or below it, both absolute as the scope gives them (`/` separates on every computer). */
+const under = (p: string, root: string) => p === root || p.startsWith(root.endsWith("/") ? root : `${root}/`);
 
 /** Inside the mission folder (or the task's own). */
 export function insideFolders(scope: CommandScope, p: string) {
   const r = resolveIn(scope, p);
-  return r !== null && scope.folders.some((f) => under(r, path.resolve(f)));
+  return r !== null && scope.folders.some((f) => under(r, absoluteIn(scope, f)));
 }
 
 const insideOrTmp = (scope: CommandScope, p: string) => {
@@ -452,8 +482,8 @@ function secretPath(scope: CommandScope, p: string) {
     r === null ||
     SECRET_PATH.test(r) ||
     SECRET_PATH.test(p) ||
-    (home !== undefined && HOME_SECRET_DIRS.some((d) => under(r, path.join(home, d)))) ||
-    (scope.runnerHome !== undefined && under(r, path.resolve(scope.runnerHome)))
+    (home !== undefined && HOME_SECRET_DIRS.some((d) => under(r, absoluteIn(scope, path.join(home, d))))) ||
+    (scope.runnerHome !== undefined && under(r, absoluteIn(scope, scope.runnerHome)))
   );
 }
 
@@ -480,7 +510,7 @@ const namesSecret = (p: string, scope?: CommandScope) =>
   pathsOf(p).some(
     (q) =>
       SECRET_PATH.test(q) ||
-      (scope !== undefined && (q.startsWith("/") || q.startsWith("~") || q.includes("..")) && secretPath(scope, q)),
+      (scope !== undefined && (absolutePath(q) || q.startsWith("~") || q.includes("..")) && secretPath(scope, q)),
   );
 
 /** Names a wildcard may stand for in a secret's path (`~/.s?h`, `id_*`, `.env*`): the secret folders' and files' own. */
@@ -2207,14 +2237,19 @@ const storeSecretPath = (p: string, scope: CommandScope) => {
   const home = scope.home;
   return (
     SECRET_STORE.test(r) ||
-    (home !== undefined && HOME_SECRET_DIRS.some((d) => under(r, path.join(home, d)))) ||
-    (scope.runnerHome !== undefined && under(r, path.resolve(scope.runnerHome)))
+    (home !== undefined && HOME_SECRET_DIRS.some((d) => under(r, absoluteIn(scope, path.join(home, d))))) ||
+    (scope.runnerHome !== undefined && under(r, absoluteIn(scope, scope.runnerHome)))
   );
 };
 
 /** Folders whose files are the system's: `/usr/local` (Homebrew's, a user's own installs) and harmless devices aside. */
 const SYSTEM_DIRS =
   /^\/(etc|usr(?!\/local(\/|$))|boot|sys|proc|bin|sbin|lib|lib32|lib64|System|Library|private\/etc|dev(?!\/(null|zero|stdout|stderr|tty|fd|shm)(\/|$)))(\/|$)/;
+/**
+ * Windows' own folders and the programs installed for everyone, as `windowsPath` gives them (`C:\Windows`,
+ * `/c/Program Files`): read from the path itself, as Git Bash's `/c` is a drive on every computer.
+ */
+const WINDOWS_SYSTEM_DIRS = /^\/[a-z]\/(windows|program files( \(x86\))?)(\/|$)/;
 /** What a recursive delete wipes the computer or a whole home with (any case: macOS and Windows ignore it). */
 const WHOLE_TREE =
   /^(\/+\*?|~\/?\*?|(\$\{?(HOME|USERPROFILE)\}?|\$env:(USERPROFILE|HOMEPATH|SystemDrive|SystemRoot|windir)|%(USERPROFILE|HOMEPATH|SystemDrive|SystemRoot|windir)%)\/?\*?|\/(home|Users|root|bin|boot|dev|etc|lib|lib64|opt|proc|sbin|srv|sys|usr|var|System|Library|Applications|private|Windows|Program Files( \(x86\))?|ProgramData)\/?\*?)$/i;
@@ -2499,7 +2534,10 @@ function looseScan(text: string, code: boolean, depth: number, out: Loose[]): vo
     if (c === "'" || c === '"') {
       let j = i + 1;
       while (j < shell.length && shell[j] !== c) j += c === '"' && shell[j] === "\\" ? 2 : 1;
-      const inner = shell.slice(i + 1, j);
+      // In double quotes `\\` is one backslash and `\"` a quote, as the shell, Python and JavaScript read them
+      // (`cmd //c "rd /s /q \\Users"` runs `rd` on `\Users`, not on a share).
+      const raw = shell.slice(i + 1, j);
+      const inner = c === '"' ? raw.replace(/\\([\\"])/g, "$1") : raw;
       cur += inner;
       has = true;
       // What `$(…)` and backticks run inside double quotes runs whoever gets the word.
@@ -2622,11 +2660,15 @@ const elsewhere = (p: string) =>
 function otherHome(p: string, scope: CommandScope) {
   if (!scope.home) return false;
   if (/^~[A-Za-z_]/.test(p)) return true;
-  if (!p.startsWith("/")) return false;
-  const m = /^\/((home|Users)\/[^/]+|root)(\/|$)/.exec(path.resolve(p));
-  if (!m || m[1] === "Users/Shared") return false;
-  const top = `/${m[1]}`;
-  return ![scope.home, scope.cwd, ...scope.folders].some((f) => under(path.resolve(f), top));
+  const windows = windowsScope(scope);
+  if (!(windows ? absolutePath(p) : p.startsWith("/"))) return false;
+  const r = absoluteIn(scope, p);
+  // Windows' shared profiles (`C:\Users\Public`) are no one's home, as macOS's `/Users/Shared`.
+  const top = windows
+    ? /^\/[a-z]\/users\/(?!(public|default|default user|all users)(\/|$))[^/]+(?=\/|$)/.exec(r)?.[0]
+    : /^\/((home|Users)\/[^/]+|root)(?=\/|$)/.exec(r)?.[0];
+  if (top === undefined || top === "/Users/Shared") return false;
+  return ![scope.home, scope.cwd, ...scope.folders].some((f) => under(absoluteIn(scope, f), top));
 }
 
 /** Why a word a command reads or names is refused: a credential store, the runner, another user's home. */
@@ -2648,7 +2690,7 @@ function writeProblem(file: string, scope: CommandScope): string | null {
   if (/agentes-runner/i.test(file) && !insideFolders(scope, file)) return RUNNER;
   const r = resolveIn(scope, file);
   if (r === null) return OTHER;
-  if (SYSTEM_DIRS.test(r)) return SYSTEM_REASON;
+  if (SYSTEM_DIRS.test(r) || WINDOWS_SYSTEM_DIRS.test(windowsPath(scope.cwd, file))) return SYSTEM_REASON;
   if (storeSecret(file, scope)) return SECRETS;
   return otherHome(file, scope) ? OTHER : null;
 }
@@ -2712,12 +2754,15 @@ function wholeTree(word: string, scope: CommandScope) {
   const p = word.replaceAll("\\", "/");
   const w = DRIVE.test(p) ? p.replace(DRIVE, "") || "/" : p;
   if (WHOLE_TREE.test(w)) return true;
-  const r = resolveIn(scope, w.replace(/\/\*$/, ""));
+  // On a Windows computer the path keeps its drive to be compared with the home, then is read from the drive's root.
+  const windows = windowsScope(scope);
+  const r = resolveIn(scope, (windows ? p : w).replace(/\/\*$/, ""));
+  if (r === null) return false;
+  const fromRoot = windows ? r.replace(DRIVE, "") || "/" : r;
   return (
-    r !== null &&
-    (WHOLE_TREE.test(r) ||
-      /^\/(home|Users)\/[^/]+$/i.test(r) ||
-      (scope.home !== undefined && r === path.resolve(scope.home)))
+    WHOLE_TREE.test(fromRoot) ||
+    /^\/(home|Users)\/[^/]+$/i.test(fromRoot) ||
+    (scope.home !== undefined && r === absoluteIn(scope, scope.home))
   );
 }
 
@@ -2845,13 +2890,16 @@ function windowsScript(shell: string, args: readonly string[]): string | null {
 }
 
 /**
- * Whether a path is outside the agent's folders, for what changes who may use a file. The server knows a computer's
- * folders as POSIX paths only, so a Windows drive, a share or a variable is outside; a relative path stays in the
- * folder it runs in unless it climbs out of it.
+ * Whether a path is outside the agent's folders, for what changes who may use a file. A variable is outside. With a
+ * Windows computer's folders, any path is read against them as Windows reads it; without them (a POSIX scope, or
+ * none), a Windows drive or a share is outside and a relative path stays in the folder it runs in unless it climbs
+ * out of it.
  */
 function outsideFolders(scope: CommandScope, p: string) {
   const q = p.replaceAll("\\", "/");
-  if (/^([a-z]:|\/\/|[%$])/i.test(q)) return true;
+  if (/^[%$]/.test(q)) return true;
+  if (windowsScope(scope)) return !insideOrTmp(scope, q);
+  if (/^([a-z]:|\/\/)/i.test(q)) return true;
   if (q.startsWith("/") || q.startsWith("~")) return !insideOrTmp(scope, q);
   return path.posix.normalize(q).split("/")[0] === "..";
 }

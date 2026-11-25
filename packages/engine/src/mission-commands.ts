@@ -1,6 +1,7 @@
 import {
   ASK_IN_CHAT,
   ASK_WITH_WRITE_FILE,
+  absolutePath,
   allowedBy,
   approvalMessage,
   badActorReason,
@@ -92,11 +93,14 @@ export const LOW_RISK_THRESHOLD = 0.85;
 /** The judge answers within this, or it is the card. */
 export const COMMAND_JUDGE_TIMEOUT_MS = 8000;
 
-/** Where the task runs, from the runner (absolute paths only); without it code allows no writes. */
+/**
+ * Where the task runs, from the runner (absolute paths only, POSIX or Windows: a drive's or a share's); without it
+ * code allows no writes.
+ */
 function scopeOf(value: unknown): CommandScope | null {
   if (typeof value !== "object" || value === null) return null;
   const v = value as Record<string, unknown>;
-  const abs = (p: unknown): p is string => typeof p === "string" && p.startsWith("/") && p.length < 1000;
+  const abs = (p: unknown): p is string => typeof p === "string" && absolutePath(p) && p.length < 1000;
   if (!abs(v.cwd)) return null;
   const folders = Array.isArray(v.folders) ? v.folders.filter(abs).slice(0, 4) : [];
   return {

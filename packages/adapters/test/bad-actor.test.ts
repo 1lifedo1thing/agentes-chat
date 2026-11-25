@@ -3,6 +3,7 @@ import {
   badActorCode,
   badActorReason,
   badActorRefusal,
+  type CommandScope,
   deniedMessage,
   forbiddenReason,
   inlineCodeCall,
@@ -10,9 +11,16 @@ import {
 } from "../src/command-policy";
 
 const scope = { cwd: "/home/ada/work", folders: ["/home/ada/work"], home: "/home/ada" };
-/** What the server holds for a Windows computer: its folders aren't POSIX paths, so none reach it. */
+/** No folders known: `run_code`'s code, or a runner that sent none. */
 const unknownFolders = { cwd: "/nonexistent", folders: [] };
-const codeOf = (command: string, s: typeof scope | typeof unknownFolders = scope) => {
+/** What the runner reports on a Windows computer: its folders as Windows writes them. */
+const windowsFolders = {
+  cwd: "C:\\Users\\ada\\work",
+  folders: ["C:\\Users\\ada\\work"],
+  home: "C:\\Users\\ada",
+  runnerHome: "C:\\Users\\ada\\.agentes-runner",
+};
+const codeOf = (command: string, s: CommandScope = scope) => {
   const reason = badActorReason("Bash", { command }, s);
   return reason === null ? null : badActorRefusal(reason).code;
 };
@@ -537,10 +545,51 @@ describe("Windows: system commands are refused like their POSIX twins; reads and
   test.each(WINDOWS_LEGIT)("runs: %s", (command) => {
     expect(codeOf(command)).toBeNull();
     expect(codeOf(command, unknownFolders)).toBeNull();
+    expect(codeOf(command, windowsFolders)).toBeNull();
   });
   test.each(WINDOWS_BAD)("refused: %s", (command, code) => {
     expect(codeOf(command)).toBe(code);
     expect(codeOf(command, unknownFolders)).toBe(code);
+    expect(codeOf(command, windowsFolders)).toBe(code);
+  });
+
+  test("a Windows computer's folders are read as Windows reads them: any case, either separator, Git Bash's drive", () => {
+    const win = (command: string) => codeOf(command, windowsFolders);
+    // Inside the agent's folder: its own files' access, deletes and writes.
+    expect(win("icacls 'C:\\Users\\ada\\work\\build' //grant Everyone:F")).toBeNull();
+    expect(win("icacls c:/users/ADA/Work/build //grant Everyone:F")).toBeNull();
+    expect(win("icacls /c/Users/ada/work/build //grant Everyone:F")).toBeNull();
+    expect(win("takeown //f 'C:\\Users\\ada\\work\\dist' //r")).toBeNull();
+    expect(win("rm -rf 'C:\\Users\\ada\\work\\build'")).toBeNull();
+    expect(win('cmd //c "rd /s /q C:\\\\Users\\\\ada\\\\work\\\\build"')).toBeNull();
+    expect(win("powershell -c 'Remove-Item -Recurse C:\\Users\\ada\\work\\build'")).toBeNull();
+    expect(win("echo x > 'C:\\Users\\ada\\work\\out.txt'")).toBeNull();
+    // Outside it: another folder, another drive.
+    expect(win("icacls 'C:\\Users\\ada\\notes' //grant Everyone:F")).toBe("system");
+    expect(win("icacls 'C:\\Users\\ada\\workshop' //grant Everyone:F")).toBe("system");
+    expect(win("icacls 'D:\\data' //grant Everyone:F")).toBe("system");
+    // The drive's root and Windows' own folders.
+    expect(win("icacls 'C:\\' //grant Everyone:F")).toBe("system");
+    expect(win("icacls 'C:\\Windows\\System32\\utilman.exe' //grant Everyone:F")).toBe("system");
+    expect(win("rm -rf 'C:\\'")).toBe("destroy");
+    expect(win("rm -rf 'C:\\Windows'")).toBe("destroy");
+    expect(win("echo x > 'C:\\Windows\\System32\\drivers\\etc\\hosts'")).toBe("system");
+    expect(win("echo x > '/c/Program Files/Example/x.dll'")).toBe("system");
+    // The home, climbed to or named, is wiped whole; another user's is theirs; the person's own app's is a secret.
+    expect(win("rm -rf ..")).toBe("destroy");
+    expect(win('cmd //c "rd /s /q C:\\\\Users\\\\ada"')).toBe("destroy");
+    expect(win("cat 'C:\\Users\\bob\\notes.txt'")).toBe("otherUser");
+    expect(win("cat 'C:\\Users\\Public\\notes.txt'")).toBeNull();
+    expect(win("cat 'C:\\Users\\ada\\.agentes\\.env'")).toBe("secret");
+    expect(secretRead("Bash", { command: "cat 'C:\\Users\\ada\\.agentes\\.env'" }, windowsFolders)).toBe(true);
+    expect(win("cat 'C:\\Users\\ada\\.agentes-runner\\config.json'")).toBe("system");
+  });
+
+  test("a share the runner reports is a folder too, compared in any case", () => {
+    const share = { cwd: "\\\\nas\\projects\\app", folders: ["\\\\nas\\projects\\app"], home: "C:\\Users\\ada" };
+    expect(codeOf("icacls '\\\\NAS\\Projects\\APP\\build' //grant Everyone:F", share)).toBeNull();
+    expect(codeOf("icacls build //grant Everyone:F", share)).toBeNull();
+    expect(codeOf("icacls '\\\\nas\\projects\\other' //grant Everyone:F", share)).toBe("system");
   });
 
   test("a file's access changes in the agent's folders, by a path that stays there; anywhere else is the system's", () => {
