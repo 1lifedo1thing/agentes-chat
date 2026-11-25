@@ -11,11 +11,13 @@ import {
   askRunStatus,
   createFakeJudge,
   createSetStatusToolSource,
+  drainOutbox,
   followWork,
   listMembers,
   loadAgentStatuses,
   memberPresence,
   memberStatus,
+  openDm,
   postPersonMessage,
   setMyStatus,
   soleStatusPick,
@@ -227,6 +229,21 @@ test("a run whose only line is its task's shows it at once; a sole line of where
   expect(soleStatusPick(one("channel"))).toBeNull();
   expect(soleStatusPick(one("browsing"))).toBeNull();
   expect(soleStatusPick([...one("task"), { key: "c1", kind: "channel", subject: "g", text: "g" }])).toBeNull();
+});
+
+test("a run on a task in a DM shows the task's line at once, without asking Jev", async () => {
+  f = await setup();
+  const judge = f.context.judge as ReturnType<typeof createFakeJudge>;
+  const [issue] = await f.db
+    .insert(schema.issues)
+    .values({ orgId: f.org.id, number: 1, title: "Login", createdByType: "person", createdById: f.owner.id })
+    .returning();
+  const dm = await openDm(f.db, f.owner.id, f.org.id, { agentId: f.agent.id });
+  await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, dm.id, { body: "oi" });
+  await f.db.update(schema.agentRuns).set({ issueId: issue?.id ?? null });
+  await drainOutbox(f.db, f.handlers);
+  expect(judge.calls.map((c) => c.kind)).not.toContain("agent_status");
+  expect((await f.db.select().from(schema.agents).where(eq(schema.agents.id, f.agent.id)))[0]?.statusKind).toBe("task");
 });
 
 test("a waiting run says what it waits on, and keeps the agent online, not busy", async () => {
