@@ -4653,13 +4653,16 @@ export function commandParts(command: string): string[] {
     .filter(Boolean);
 }
 
+/** The most of a call `commandOf` keeps: all of a command a permission rule reads. */
+export const COMMAND_OF_MAX = 1000;
+
 /** What a tool call does, as one line for people (`git init`, `WebFetch https://…`). */
 export function commandOf(toolName: string, input: Record<string, unknown> | null | undefined): string {
   const i = input ?? {};
   const s = (k: string) => (typeof i[k] === "string" ? (i[k] as string) : "");
-  if (toolName === "Bash") return s("command").trim().replace(/\s+/g, " ").slice(0, 1000);
+  if (toolName === "Bash") return s("command").trim().replace(/\s+/g, " ").slice(0, COMMAND_OF_MAX);
   const what = s("url") || s("file_path") || s("path") || s("query") || s("pattern");
-  return `${toolName}${what ? ` ${what}` : ""}`.slice(0, 1000);
+  return `${toolName}${what ? ` ${what}` : ""}`.slice(0, COMMAND_OF_MAX);
 }
 
 const globRe = (pattern: string) =>

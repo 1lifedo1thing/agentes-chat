@@ -1,5 +1,5 @@
 import path from "node:path";
-import { commandParts, ruleMatches } from "./machine-protocol";
+import { COMMAND_OF_MAX, commandOf, commandParts, ruleMatches } from "./machine-protocol";
 import { type OutboundCode, outboundUrlProblem } from "./outbound-url";
 
 export { maskKeyShapes } from "./outbound-url";
@@ -1497,8 +1497,11 @@ export interface GitPush {
   prune: boolean;
 }
 
-/** A line that runs git push somehow, read or not. */
-const PUSH_MENTION = /\bgit\b.*\bpush\b/;
+/**
+ * A line that runs git push somehow, read or not. What follows a `git` stops at the next `git`, which then reads on:
+ * the same lines match, and a line of many `git` and no `push` is read once, not once from each.
+ */
+const PUSH_MENTION = /\bgit\b(?:(?!\bgit\b).)*\bpush\b/;
 /** `PUSH_MENTION` across a quoted newline or a line continuation too: a script's line (`shellLines`) may hold either. */
 const mentionsPush = (text: string) => PUSH_MENTION.test(text.replace(/\\?\n/g, " "));
 
@@ -1750,8 +1753,10 @@ function readPushes(script: string, from: string | null, read: { pushes: GitPush
   // The lines its shell runs: a comment line is none, and a line continuation or a newline in quotes isn't an end.
   for (const line of shellLines(script)) {
     const cmds = simpleCommands(line);
+    // Once a line, not once for each of its commands.
+    const mentioned = mentionsPush(line);
     if (!cmds) {
-      if (mentionsPush(line)) return false;
+      if (mentioned) return false;
       continue;
     }
     for (const { argv, piped } of cmds) {
@@ -1776,7 +1781,7 @@ function readPushes(script: string, from: string | null, read: { pushes: GitPush
         }
         continue;
       }
-      if (!mentionsPush(line)) continue;
+      if (!mentioned) continue;
       if (runsText(cmd, words, piped === true) || (!printsOnly(cmd) && mentionsPush(words.join(" ")))) return false;
     }
   }
@@ -1879,9 +1884,45 @@ export async function heldPush(push: GitPush, facts: RepoFacts, own: readonly st
 const COMMAND_HEADS = new Set(MISSION_DENY_RULES.map((r) => /^Bash\(([^\s*)]+)/.exec(r)?.[1] ?? "").filter(Boolean));
 
 /**
+ * Each deny rule's words between its `*`, in order (`Bash(vercel * --prod*)`: `vercel`, then `--prod`): a part a rule
+ * matches starts with the first and holds the others after it, as `ruleMatches` reads `*`.
+ */
+const RULE_WORDS = MISSION_DENY_RULES.map((rule) =>
+  (/^Bash\((.*)\)$/s.exec(rule)?.[1] ?? "")
+    .split("*")
+    .map((w) => w.trim())
+    .filter(Boolean),
+);
+
+/** A part of a command holding some deny rule's words (`RULE_WORDS`): one that rule may match. */
+function holdsRuleWords(part: string): boolean {
+  return RULE_WORDS.some(([first = "", ...rest]) => {
+    if (!part.startsWith(first)) return false;
+    let at = first.length;
+    for (const word of rest) {
+      at = part.indexOf(word, at);
+      if (at < 0) return false;
+      at += word.length;
+    }
+    return true;
+  });
+}
+
+/**
+ * Whether the deny list may refuse a command: its parts read as `deniedMessage` reads them, each against the words
+ * its rules hold (`holdsRuleWords`). Cheaper than the rules, which read each part again for every rule.
+ */
+const mayBeDenied = (command: string) =>
+  [command, ...commandWords(command).map(normalizedCommand)].some((c) =>
+    commandParts(commandOf("Bash", { command: c })).some(holdsRuleWords),
+  );
+
+/**
  * The commands code in another language spells out (Python, Node), line by line: quotes, brackets and
  * commas read as spaces, from each command's first word (`subprocess.run(["gh", "pr", "merge"])` reads
- * `gh pr merge`).
+ * `gh pr merge`). The first command on a line runs to the line's end, so the parts after it are read too (`… |
+ * /usr/bin/gh pr merge`); a later one runs past the next command's first word, then only as far as a rule reads
+ * (`COMMAND_OF_MAX`): a long line with many is read about once, not once from each.
  */
 function commandsInCode(code: string): string[] {
   return code.split("\n").flatMap((line) => {
@@ -1889,7 +1930,21 @@ function commandsInCode(code: string): string[] {
       .replace(/["'`,()[\]{};]/g, " ")
       .split(/\s+/)
       .filter(Boolean);
-    return words.flatMap((w, k) => (COMMAND_HEADS.has(w) ? [words.slice(k).join(" ")] : []));
+    let first = true;
+    return words.flatMap((w, k) => {
+      if (!COMMAND_HEADS.has(w)) return [];
+      if (first) {
+        first = false;
+        return [words.slice(k).join(" ")];
+      }
+      let command = w;
+      let next = false;
+      for (let j = k + 1; j < words.length && (!next || command.length < COMMAND_OF_MAX); j++) {
+        command += ` ${words[j]}`;
+        next ||= COMMAND_HEADS.has(words[j] as string);
+      }
+      return [command];
+    });
   });
 }
 
@@ -1912,7 +1967,9 @@ export async function approvalNeeded(
     if (held?.never) return { message: held.what, never: true };
     first ??= held;
   }
-  for (const command of opts.code ? commandsInCode(text) : [text]) {
+  // Code: each command it spells out once, and only one the deny list may refuse.
+  const commands = opts.code ? [...new Set(commandsInCode(text))].filter(mayBeDenied) : [text];
+  for (const command of commands) {
     const denied = deniedMessage("Bash", { command }, how);
     if (denied) return { message: denied, never: false };
   }
@@ -2297,17 +2354,25 @@ const REVERSE_SHELL: ReadonlyArray<readonly RegExp[]> = [
   // own `TCPClient` modules aren't it).
   [/\bsockets\.tcpclient\b/i, /\b(iex|invoke-expression)\b/i],
 ];
-/** Code it hides by encoding it, then runs: `base64 -d | sh`, `eval "$(… | base64 -d)"`, `exec(b64decode(…))`. */
-const DECODE = String.raw`(\bbase64\b[^|;&\n]*\s(-d|-D|--decode)\b|\bxxd\b[^|;&\n]*\s-r\b|\bopenssl\s+(base64|enc)\b[^|;&\n]*\s-d\b)`;
+/**
+ * Code it hides by encoding it, then runs: `base64 -d | sh`, `eval "$(… | base64 -d)"`, `exec(b64decode(…))`. The
+ * words between a decoder and its flag stop at the next same decoder, which then reads on, as `PROXY_TEXT`'s do.
+ */
+const DECODE = String.raw`(\bbase64\b(?:(?!\bbase64\b)[^|;&\n])*\s(-d|-D|--decode)\b|\bxxd\b(?:(?!\bxxd\b)[^|;&\n])*\s-r\b|\bopenssl\s+(base64|enc)\b(?:(?!\bopenssl\s+(base64|enc)\b)[^|;&\n])*\s-d\b)`;
+/** A command substitution a shell runs (`eval "$(`, `bash -c $(`). */
+const SUBSTITUTION_RUN = String.raw`\b(eval|(ba|z|da|k)?sh\s+-c)\s+["']?\$\(`;
 const ENCODED_RUN: ReadonlyArray<readonly RegExp[]> = [
   // Piped into a shell or an interpreter that reads its program from that pipe (`| python3 -m json.tool` reads data).
+  // The decode is read once, to its last flag (`(?=(…))\1` takes no other length), and the words up to the pipe stop
+  // at the next decode, which reads on from there. A shell's path stops at the shell's operators, as
+  // `REVERSE_SHELL`'s does: run over them, each pipe of a long run of them would scan to its end.
   [
     new RegExp(
-      String.raw`${DECODE}[^;&\n]*\|\s*(\S*\/)?((ba|z|da|k)?sh|python[\d.]*|perl|ruby|node|php)\b(\s+-[\w-]*)*\s*($|[|;&)])`,
+      String.raw`(?=(${DECODE}))\1(?:(?!${DECODE})[^;&\n])*\|\s*([^\s|;&<>()]*\/)?((ba|z|da|k)?sh|python[\d.]*|perl|ruby|node|php)\b(\s+-[\w-]*)*\s*($|[|;&)])`,
       "m",
     ),
   ],
-  [new RegExp(String.raw`\b(eval|(ba|z|da|k)?sh\s+-c)\s+["']?\$\([^)]*${DECODE}`)],
+  [new RegExp(`${SUBSTITUTION_RUN}(?:(?!${SUBSTITUTION_RUN})[^)])*${DECODE}`)],
   [/\bb64decode\b|\batob\s*\(|["']base64["']/, /(?<![.\w])(exec|eval)\s*\(|\bnew\s+Function\b/],
   [/\bfrombase64string\b/i, /\b(iex|invoke-expression)\b|\[scriptblock\]::create/i],
 ];
@@ -2319,12 +2384,16 @@ const RUNNER_VARIABLE =
   /(\$\{?|\$env:|%|environ\s*\[\s*["']|environ\.get\(\s*["']|getenv\(\s*["']|getenvironmentvariable\(\s*["']|process\.env\.|process\.env\[\s*["']|ENV\[\s*["'])AGENTES_(RUNNER_HOME|MCP_TOKEN|MCP_SOCKET)\b/i;
 /** A name that starts a word: without the lookbehind every letter of a long word starts a scan to its end. */
 const FORK_BOMB = /(?<![\w:])([\w:]+)\s*\(\s*\)\s*\{\s*\1\s*\|\s*\1\s*&/;
-/** The proxy variables set, emptied or dropped, in a shell or in code (`HTTPS_PROXY= curl`, `del os.environ["NO_PROXY"]`). */
+/**
+ * The proxy variables set, emptied or dropped, in a shell or in code (`HTTPS_PROXY= curl`, `del os.environ["NO_PROXY"]`).
+ * The words between `unset`, `env` or `del` and the variable stop at the next `unset`, `env` or `del`, which then
+ * reads on: the same texts match, and a long run of them with no variable is read once, not once from each.
+ */
 const PROXY_TEXT: readonly RegExp[] = [
   /(^|\W)(https?|all|ftp|socks)_proxy["'\]]*\s*=(?!=)/i,
-  /\bunset\b[^\n;&|]*\b(https?|all|ftp)_proxy\b/i,
-  /\benv\b[^\n;&|]*\s-u\s*(https?|all|ftp)_proxy\b/i,
-  /\b(del|delete)\s[^\n;]*\b(https?|all)_proxy\b|\.pop\(\s*["'](https?|all)_proxy/i,
+  /\bunset\b(?:(?!\bunset\b)[^\n;&|])*\b(https?|all|ftp)_proxy\b/i,
+  /\benv\b(?:(?!\benv\b)[^\n;&|])*\s-u\s*(https?|all|ftp)_proxy\b/i,
+  /\b(del|delete)\s(?:(?!\bdel(ete)?\s)[^\n;])*\b(https?|all)_proxy\b|\.pop\(\s*["'](https?|all)_proxy/i,
 ];
 /** `NO_PROXY=…`'s value: what it sends around the proxy, fine while that is only this computer (`localhost,127.0.0.1`). */
 const NO_PROXY_VALUE = /(^|\W)no_proxy["'\]]*\s*=(?!=)\s*["']?([^"'\s;&|)]*)/gi;
@@ -2403,6 +2472,14 @@ const LAUNCHER_VALUES: Readonly<Record<string, string>> = {
 const LAUNCHER_OPERAND = /^(timeout|taskset|flock|script|tmux)$/;
 /** What runs the text piped into it as commands (`echo '…' | bash`, `… | crontab -`, `… | powershell -Command -`). */
 const FED_COMMANDS = /^(sh|bash|zsh|dash|ksh|fish|at|batch|crontab|cmd|powershell|pwsh)$/;
+/**
+ * A cron line's schedule (`@reboot`, or five fields) and the spaces and blank lines before it, taken out; else those
+ * spaces and blank lines alone, kept as they are and read once: every line start among them reaches the same first
+ * word.
+ */
+const CRON_SCHEDULE = /^\s*(@\w+\s+|(\S+\s+){5})|^\s+/gm;
+/** Cron's lines without their schedules: the commands they run. */
+const cronCommands = (text: string) => text.replace(CRON_SCHEDULE, (m, schedule) => (schedule ? "" : m));
 const SHELL_KEYWORDS = new Set(["if", "then", "else", "elif", "do", "while", "until", "!", "exec", "time"]);
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 const HEREDOC = /(?<!<)<<-?\s*(['"]?)([A-Za-z_][\w.-]*)\1/g;
@@ -2526,31 +2603,57 @@ function taskAction(argv: readonly string[]): string | null {
   return `${execute ?? placed.shift() ?? ""} ${argument ?? placed.shift() ?? ""}`.trim() || null;
 }
 
+/** What ends a command on a line, for `heredocs`. */
+const COMMAND_END = /[;&|(]/g;
+/** The command piped on, after its `|`, for `heredocs`. */
+const PIPED_ON = /[^;&|]*/y;
+
 /**
  * A shell text's lines with each heredoc's body taken out, and those bodies with the program that runs them (the
- * one it feeds, or the one that is piped on): a body fed to `cat` or `tee` is a file's text, not commands.
+ * one it feeds, or the one that is piped on): a body fed to `cat` or `tee` is a file's text, not commands. The
+ * command a heredoc feeds is read whole, as the shell reads it: its words between `;`, `&`, `|` and `(`, its
+ * heredocs taken out (`timeout <<A 5 bash <<B` runs `timeout 5 bash`). Each command and each pipe is read once,
+ * however many heredocs a line has.
  */
 function heredocs(text: string): { shell: string; bodies: Array<{ runner: string; body: string }> } {
   if (!text.includes("<<")) return { shell: text, bodies: [] };
   const lines = text.split("\n");
   const kept: string[] = [];
   const bodies: Array<{ runner: string; body: string }> = [];
+  const runs = (p: string) => SHELL_NAMES.test(p) || WINDOWS_SHELLS.test(p) || CODE_RUNNERS.test(p);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] as string;
     kept.push(line.replace(HEREDOC, " "));
+    // The command around the last heredoc read ([start, end)), the first `|` at or after its end, and the pipe `next`
+    // was read after.
+    let start = 0;
+    let end = -1;
+    let pipe = line.indexOf("|");
+    let piped = -1;
+    let next = "";
+    let runner = "";
     for (const m of line.matchAll(HEREDOC)) {
-      let end = i + 1;
-      while (end < lines.length && (lines[end] as string).replace(/^\t+/, "").trimEnd() !== m[2]) end++;
-      const owner = readerOfText(
-        line
-          .slice(0, m.index)
-          .split(/[;&|(]/)
-          .pop() ?? "",
-      );
-      const next = readerOfText(/\|([^;&|]*)/.exec(line.slice((m.index ?? 0) + m[0].length))?.[1] ?? "");
-      const runs = (p: string) => SHELL_NAMES.test(p) || WINDOWS_SHELLS.test(p) || CODE_RUNNERS.test(p);
-      bodies.push({ runner: runs(next) ? next : owner, body: lines.slice(i + 1, end).join("\n") });
-      i = end;
+      const at = m.index ?? 0;
+      if (at > end) {
+        COMMAND_END.lastIndex = Math.max(end, 0);
+        for (let s = COMMAND_END.exec(line); ; s = COMMAND_END.exec(line)) {
+          end = s ? s.index : line.length;
+          if (end > at) break;
+          start = end + 1;
+        }
+        if (pipe >= 0 && pipe < end) pipe = line.indexOf("|", end);
+        if (pipe >= 0 && pipe !== piped) {
+          piped = pipe;
+          PIPED_ON.lastIndex = pipe + 1;
+          next = readerOfText(PIPED_ON.exec(line)?.[0] ?? "");
+        } else if (pipe < 0) next = "";
+        const owner = readerOfText(line.slice(start, end).replace(HEREDOC, " "));
+        runner = runs(next) ? next : owner;
+      }
+      let close = i + 1;
+      while (close < lines.length && (lines[close] as string).replace(/^\t+/, "").trimEnd() !== m[2]) close++;
+      bodies.push({ runner, body: lines.slice(i + 1, close).join("\n") });
+      i = close;
     }
   }
   return { shell: kept.join("\n"), bodies };
@@ -2619,7 +2722,7 @@ function looseScan(text: string, code: boolean, depth: number, out: Loose[]): vo
     // Text piped from `echo` or `printf` into a shell, a code runner or cron: commands too. Only cron's lines open
     // with a schedule (`@reboot`, or five fields) to leave out.
     for (const f of fed) {
-      if (reader === "crontab") looseScan(f.replace(/^\s*(@\w+\s+|(\S+\s+){5})/gm, ""), false, depth + 1, out);
+      if (reader === "crontab") looseScan(cronCommands(f), false, depth + 1, out);
       else if (WINDOWS_SHELLS.test(reader)) windows(reader, f);
       else if (FED_COMMANDS.test(reader)) looseScan(f, false, depth + 1, out);
       else if (CODE_RUNNERS.test(reader)) looseScan(f, true, depth + 1, out);
