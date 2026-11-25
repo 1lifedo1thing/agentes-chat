@@ -446,7 +446,16 @@ export const CONNECTOR_CATALOG: Record<string, ConnectorDefinition> = {
     label: "GitLab",
     description: "Repositories and merge requests on GitLab.com or a GitLab of your own.",
     serverUrl: "https://gitlab.com",
-    auth: ["api_key"],
+    // Sign-in on gitlab.com where this server has its application there; a token always, and for a GitLab of one's
+    // own (each one would need an application of its own).
+    auth: ["oauth", "api_key"],
+    oauth: {
+      authorizeUrl: "https://gitlab.com/oauth/authorize",
+      tokenUrl: "https://gitlab.com/oauth/token",
+      // `api` for the questions and merge requests, `write_repository` for git over HTTPS.
+      scopes: ["api", "write_repository"],
+      scopeSeparator: " ",
+    },
     native: true,
     address: "optional",
     scopes: {
@@ -473,7 +482,16 @@ export const CONNECTOR_CATALOG: Record<string, ConnectorDefinition> = {
     label: "Bitbucket",
     description: "Repositories and pull requests on Bitbucket Cloud.",
     serverUrl: "https://bitbucket.org",
-    auth: ["api_key"],
+    auth: ["oauth", "api_key"],
+    oauth: {
+      authorizeUrl: "https://bitbucket.org/site/oauth2/authorize",
+      tokenUrl: "https://bitbucket.org/site/oauth2/access_token",
+      // The consumer registered with Bitbucket carries the scopes (account, repositories and pull requests, write):
+      // none goes on the request, and the client signs in with HTTP Basic.
+      scopes: [],
+      clientAuth: "basic",
+      pkce: false,
+    },
     native: true,
     scopes: {
       "git.read": s(

@@ -941,7 +941,10 @@ export async function startOAuth(
   if (app.configId) {
     url.searchParams.set("config_id", app.configId);
     url.searchParams.set("override_default_response_type", "true");
-  } else url.searchParams.set("scope", def.oauth.scopes.join(def.oauth.scopeSeparator ?? " "));
+  } else if (def.oauth.scopes.length > 0) {
+    // A vendor whose app carries its own scopes (Bitbucket) is sent none.
+    url.searchParams.set("scope", def.oauth.scopes.join(def.oauth.scopeSeparator ?? " "));
+  }
   url.searchParams.set("state", state);
   if (def.oauth.pkce !== false) {
     url.searchParams.set("code_challenge", challenge);

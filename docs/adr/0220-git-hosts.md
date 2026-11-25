@@ -54,8 +54,8 @@ fast-forward; no pull request call means no such tool, and the agent hands over 
 | Host | Connector | Token | Notes |
 |---|---|---|---|
 | GitHub | `github` | the GitHub App's installation token, else the connection's | Unchanged (ADR 0024, 0116, 0156). |
-| GitLab | `gitlab` | a personal, group or project access token (`api`, `write_repository`) | gitlab.com or a server of one's own (the connection's address). Merge requests; a draft is its title. |
-| Bitbucket Cloud | `bitbucket` | a workspace, project or repository access token, or a person's API token after their Atlassian email (`email:token`) | Branch permissions by pattern and by branching model. |
+| GitLab | `gitlab` | a sign-in on gitlab.com, or a personal, group or project access token (`api`, `write_repository`) | gitlab.com or a server of one's own (the connection's address). Merge requests; a draft is its title. |
+| Bitbucket Cloud | `bitbucket` | a sign-in, a workspace, project or repository access token, or a person's API token after their Atlassian email (`email:token`) | Branch permissions by pattern and by branching model. |
 | A git server by address | `git` | whatever the server takes as git's password (`user:token` when it wants a user) | Gitea, Forgejo, a company's own. No API: branches and the default branch come from its ref advertisement; a push must carry its own history; no pull request or delete tool. |
 
 GitLab's one-click server of tools (issues, pipelines) stays a separate connector, renamed `gitlab-mcp`: its sign-in
@@ -124,6 +124,8 @@ pull request still go as the person.
   GitHub's. On the other hosts agents clone, push, open a pull or merge request and ask to push or delete branches;
   merging stays with people.
 - A push from a session's terminal with no turn running goes as the workspace.
-- One-click sign-in for GitLab and Bitbucket comes when this server has an app registered with each; until then they
-  connect with a token.
+- GitLab and Bitbucket connect by signing in where this server has an application registered with each
+  (`CONNECTOR_GITLAB_CLIENT_ID`/`_SECRET`, `CONNECTOR_BITBUCKET_CLIENT_ID`/`_SECRET`), and with a token always. A
+  sign-in is a person's account: for the workspace to act as a bot of its own, the team connects a group or workspace
+  access token. A GitLab of one's own and a git server connect with a token only.
 - A fifth host is a file in `git/hosts` and an entry in the catalog.

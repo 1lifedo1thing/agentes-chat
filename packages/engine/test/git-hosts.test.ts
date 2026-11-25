@@ -16,6 +16,7 @@ import {
   setAgentComputerTarget,
   setAgentRepositories,
   setAgentScopes,
+  startOAuth,
   type ToolContext,
   ZERO_OID,
 } from "../src";
@@ -482,6 +483,38 @@ async function world(lab = fakeGitLab(), scopes = ["gitlab:git.read", "gitlab:gi
 }
 
 const gitCalls = (lab: ReturnType<typeof fakeGitLab>) => lab.calls.filter((c) => c.url.includes("app.git/"));
+
+describe("signing in to a git host", () => {
+  test("GitLab asks for its two scopes with PKCE; Bitbucket's consumer carries its own, and takes neither", async () => {
+    f = await setup();
+    const deps: ConnectorDeps = {
+      db: f.db,
+      keyWrappers: [f.keyWrapper],
+      publicUrl: PUBLIC_URL,
+      oauthApps: {
+        gitlab: { clientId: "gl-client", clientSecret: "gl-secret" },
+        bitbucket: { clientId: "bb-client", clientSecret: "bb-secret" },
+      },
+    };
+    const gitlab = new URL((await startOAuth(deps, f.owner.id, f.org.id, "gitlab")).authorizeUrl);
+    expect(gitlab.origin + gitlab.pathname).toBe("https://gitlab.com/oauth/authorize");
+    expect(gitlab.searchParams.get("client_id")).toBe("gl-client");
+    expect(gitlab.searchParams.get("scope")).toBe("api write_repository");
+    expect(gitlab.searchParams.get("code_challenge_method")).toBe("S256");
+    const bitbucket = new URL(
+      (await startOAuth(deps, f.owner.id, f.org.id, "bitbucket", { personal: true })).authorizeUrl,
+    );
+    expect(bitbucket.origin + bitbucket.pathname).toBe("https://bitbucket.org/site/oauth2/authorize");
+    expect(bitbucket.searchParams.get("client_id")).toBe("bb-client");
+    expect(bitbucket.searchParams.has("scope")).toBe(false);
+    expect(bitbucket.searchParams.has("code_challenge")).toBe(false);
+    // Without an application of this server's, a token still connects them; a git server only ever takes one.
+    await expect(startOAuth({ ...deps, oauthApps: {} }, f.owner.id, f.org.id, "gitlab")).rejects.toThrow(
+      "not configured",
+    );
+    await expect(startOAuth(deps, f.owner.id, f.org.id, "git")).rejects.toThrow("not configured");
+  });
+});
 
 describe("the git proxy on another host", () => {
   test("connecting asks GitLab whose token it is", async () => {
