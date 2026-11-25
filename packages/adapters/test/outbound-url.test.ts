@@ -144,4 +144,13 @@ describe("outboundUrlProblem", () => {
     expect(normalizeUrl("https://example.com/")).toBe("https://example.com");
     expect(normalizeUrl("ftp://example.com")).toBeNull();
   });
+
+  test("normalizeUrl drops the trailing slashes in time, however long a run of them inside the address", () => {
+    // Each took seconds when every `/` of the run inside read it to its end.
+    const run = "/".repeat(100_000);
+    const started = performance.now();
+    expect(normalizeUrl(`https://example.com/a${run}b${run}`)).toBe(`https://example.com/a${run}b`);
+    expect(urlsIn(`see https://example.com/a${run}b/ and`)).toEqual([`https://example.com/a${run}b`]);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
 });

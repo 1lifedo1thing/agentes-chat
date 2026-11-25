@@ -69,7 +69,8 @@ export function normalizeUrl(raw: string): string | null {
   if (u.protocol !== "http:" && u.protocol !== "https:") return null;
   u.hash = "";
   u.protocol = "https:";
-  return u.toString().replace(/\/+$/, "");
+  // From a run's first `/` only: without the lookbehind each `/` of a long run inside the address reads it to its end.
+  return u.toString().replace(/(?<!\/)\/+$/, "");
 }
 
 const URLS_IN_TEXT = /https?:\/\/[^\s<>"'`]+/gi;
