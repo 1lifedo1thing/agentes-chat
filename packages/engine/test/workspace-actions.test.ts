@@ -857,6 +857,22 @@ describe("what Desfazer, the card and the people card keep to", () => {
     expect(await row()).toMatchObject({ visibility: "private", audienceRoleIds: [sales.id] });
   });
 
+  test("the right hand makes an agent in the channel responsible for it (ADR 0095); Desfazer takes it back", async () => {
+    f = await setup({ rightHand: true });
+    const row = async () => (await f.db.select().from(schema.channels).where(eq(schema.channels.id, f.general.id)))[0];
+    const ctx = await lodiRun(f, f.owner.id, "make dev responsible for general");
+    const unknown = await act(f, ctx, { action: "update_channel", input: { channel: "general", responsible: "@nobody" } });
+    expect(unknown.content).toContain("No agent @nobody here");
+    const out = await act(f, ctx, { action: "update_channel", input: { channel: "general", responsible: "@dev" } });
+    expect(out.content).toContain("Done at once, with Undo");
+    expect((await row())?.leadAgentId).toBe(f.agent.id);
+    const messageId = await reply(f, ctx);
+    expect((await undoMessageActions({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, messageId)).failed).toEqual(
+      [],
+    );
+    expect((await row())?.leadAgentId).toBeNull();
+  });
+
   test("a new role's Desfazer waits while a channel's exception holds it; Desfazer tudo takes both back", async () => {
     f = await setup({ rightHand: true });
     const deps = { db: f.db, pubsub: f.pubsub };

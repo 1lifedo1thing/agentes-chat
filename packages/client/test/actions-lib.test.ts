@@ -153,6 +153,20 @@ describe("receipt sentence values", () => {
     expect(actionTextValues(renamed, t).to).toBe("b");
   });
 
+  test("a channel's responsible agent: another agent, the agent itself, or none (ADR 0095)", () => {
+    const lead = (params: AgentAction["params"]) =>
+      action({ kind: "channel.lead_changed", target: { type: "channel", id: "c", title: "tech" }, params });
+    expect(actionTextValues(lead({ agentName: "Theo", self: false, channel: "tech" }), t)).toEqual({
+      agentName: "Theo",
+      channel: "tech",
+    });
+    expect(actionTextValues(lead({ agentName: "Dev", self: true }), t)).toEqual({ channel: "tech", context: "self" });
+    expect(actionTextValues(lead({ agentName: null, previousAgentName: "Theo" }), t)).toEqual({
+      channel: "tech",
+      context: "none",
+    });
+  });
+
   test("a deleted routine says its name; a kind this build doesn't know still gives values", () => {
     const deleted = action({
       kind: "routine.deleted",
