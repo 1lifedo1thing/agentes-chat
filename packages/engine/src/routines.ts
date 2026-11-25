@@ -80,9 +80,10 @@ import {
   routineAccessOf,
   routineReportOf,
 } from "./routine-brief";
-import { enqueueRoutineJob, queueEventRun, startGatheredRun } from "./routine-events";
+import { enqueueRoutineJob, queueEventRun, startGatheredRun, wakeHeldRuns } from "./routine-events";
 import { claimRoutineRun, haltRoutineRuns, makeWayForRun, skipRoutineRun, unclaimRoutineRun } from "./routine-firing";
 import {
+  callCountOf,
   DEFAULT_HOOK_METHODS,
   ensureRoutineHook,
   type HookMethod,
@@ -281,6 +282,8 @@ export interface RoutineRunView {
   link: { channelId: string; threadId: string | null; messageId: string } | null;
   /** While it waits for a person: the approval it waits on, if any (readers only). */
   approvalId?: string | null;
+  /** A webhook routine's run: how many calls it carried (readers only; who manages it reads them, `routineRunCalls`). */
+  calls?: number;
   finishedAt: string | null;
 }
 
@@ -707,6 +710,7 @@ function runView(run: RunRow, details: RunDetails, detailed: boolean): RoutineRu
   // A provider's failure says its cause and its words, for who reads the records: the code alone says only "an error".
   const failure = detailed && status === "failed" ? providerFailure(agentRun?.error) : null;
   const cause = failure?.errorParams?.provider ? failure : null;
+  const calls = callCountOf(run.event);
   return {
     id: run.id,
     at: run.at.toISOString(),
@@ -728,6 +732,7 @@ function runView(run: RunRow, details: RunDetails, detailed: boolean): RoutineRu
     brain: run.brain,
     link: link && run.messageId ? { ...link, messageId: run.messageId } : null,
     ...(status === "waiting" ? { approvalId } : {}),
+    ...(detailed && calls !== null ? { calls } : {}),
     finishedAt: run.finishedAt?.toISOString() ?? null,
   };
 }
@@ -1891,6 +1896,7 @@ export async function updateRoutine(
     await haltRoutineRuns(deps, orgId, row.id, { code: "paused", byUserId: actorId });
   } else if (patch.active === true && !current.active) {
     await resolveRoutinePaused(deps, orgId, row.id).catch(() => {});
+    await wakeHeldRuns(deps, row.id);
   }
   const before: Record<string, unknown> = {};
   const after: Record<string, unknown> = {};
@@ -2046,7 +2052,10 @@ export async function setRoutineActive(
   if (!active) {
     await haltRoutineRuns(deps, orgId, id, { code: "paused", byUserId: actorId });
     await cancelRoutineAhead(deps, orgId, id, actorId);
-  } else await resolveRoutinePaused(deps, orgId, id).catch(() => {});
+  } else {
+    await resolveRoutinePaused(deps, orgId, id).catch(() => {});
+    if (!current.active) await wakeHeldRuns(deps, id);
+  }
   const watch = row ? (await watchesOf(deps.db, [row.id])).get(row.id) : undefined;
   if (row && watch) {
     if (active && !current.active) await resetMailWatchState(deps.db, row.id);

@@ -9195,6 +9195,13 @@ export const ptBR = {
     notFound: "Essa rotina não existe mais ou você não tem acesso.",
     copyWebhook: "Copiar URL do webhook",
     webhookCopied: "URL do webhook copiada.",
+    runCalls: {
+      show: "Chamadas ({{n}})",
+      hide: "Ocultar chamadas",
+      cut: "Encurtada",
+      binary: "Não é texto, não guardada",
+      copied: "Chamada copiada.",
+    },
     webhook: {
       when: "Quando o webhook for chamado",
       waiting: "Espera a próxima chamada",
@@ -9226,8 +9233,11 @@ export const ptBR = {
       signedOff: "Desligada: o agente recebe qualquer chamada ao endereço.",
       signedOn: "Ligada: só passam as chamadas assinadas com o segredo.",
       signedHelp:
-        "Mande o HMAC-SHA256 do corpo (numa chamada GET, da query string, sem o ?) em X-Agentes-Signature (sha256=…). O X-Hub-Signature-256 do GitHub também vale.",
+        "Mande o HMAC-SHA256 do corpo (numa chamada GET, da query string, sem o ?) em X-Agentes-Signature (sha256=…). O X-Hub-Signature-256 do GitHub também vale. No Linear, cole o segredo de assinatura que o Linear mostra: a Linear-Signature é conferida, e chamadas com mais de um minuto são recusadas.",
       addSecret: "Exigir assinatura",
+      pasteSecret: "Usar o segredo do serviço",
+      pasteLabel: "Segredo de assinatura do serviço",
+      secretPasted: "Segredo salvo. Só passam as chamadas assinadas com ele.",
       newSecret: "Gerar novo segredo",
       newSecretTitle: "Gerar um novo segredo?",
       newSecretBody:

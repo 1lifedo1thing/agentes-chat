@@ -9009,6 +9009,13 @@
     "notFound": "Questa routine non esiste più o non hai accesso.",
     "copyWebhook": "Copia URL del webhook",
     "webhookCopied": "URL del webhook copiato.",
+    "runCalls": {
+      "show": "Chiamate ({{n}})",
+      "hide": "Nascondi chiamate",
+      "cut": "Accorciata",
+      "binary": "Non è testo, non conservata",
+      "copied": "Chiamata copiata."
+    },
     "webhook": {
       "when": "Quando viene chiamato il suo webhook",
       "waiting": "Aspetta la prossima chiamata",
@@ -9034,8 +9041,11 @@
       "signature": "Firma",
       "signedOff": "Disattivata: l'agente riceve qualsiasi chiamata all'indirizzo.",
       "signedOn": "Attivata: passano solo le chiamate firmate con il segreto.",
-      "signedHelp": "Invia l'HMAC-SHA256 del corpo (per una chiamata GET: della sua query string, senza il ?) in X-Agentes-Signature (sha256=…). Funziona anche X-Hub-Signature-256 di GitHub.",
+      "signedHelp": "Invia l'HMAC-SHA256 del corpo (per una chiamata GET: della sua query string, senza il ?) in X-Agentes-Signature (sha256=…). Funziona anche X-Hub-Signature-256 di GitHub. Per Linear, incolla il segreto di firma che mostra Linear: viene controllata la sua Linear-Signature e le chiamate di oltre un minuto prima sono rifiutate.",
       "addSecret": "Richiedi una firma",
+      "pasteSecret": "Usa il segreto del servizio",
+      "pasteLabel": "Segreto di firma del servizio",
+      "secretPasted": "Segreto salvato. Passano solo le chiamate firmate con esso.",
       "newSecret": "Nuovo segreto",
       "newSecretTitle": "Creare un nuovo segreto?",
       "newSecretBody": "Il segreto attuale smette subito di funzionare. Le chiamate firmate con quello vengono rifiutate finché non aggiorni i servizi che chiamano questa routine.",

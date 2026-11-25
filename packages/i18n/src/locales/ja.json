@@ -8364,6 +8364,13 @@
     "notFound": "このルーティンは存在しないか、アクセス権がありません。",
     "copyWebhook": "Webhook URLをコピー",
     "webhookCopied": "Webhook URLをコピーしました。",
+    "runCalls": {
+      "show": "呼び出し（{{n}}）",
+      "hide": "呼び出しを隠す",
+      "cut": "短縮済み",
+      "binary": "テキストではないため保存されていません",
+      "copied": "呼び出しをコピーしました。"
+    },
     "webhook": {
       "when": "Webhookが呼ばれたとき",
       "waiting": "次の呼び出しを待機中",
@@ -8389,8 +8396,11 @@
       "signature": "署名",
       "signedOff": "オフ: アドレスへのすべての呼び出しがエージェントに届きます。",
       "signedOn": "オン: シークレットで署名された呼び出しだけが届きます。",
-      "signedHelp": "本文（GETの呼び出しではクエリ文字列、?を除く）のHMAC-SHA256をX-Agentes-Signature（sha256=…）で送ってください。GitHubのX-Hub-Signature-256も使えます。",
+      "signedHelp": "本文（GETの呼び出しではクエリ文字列、?を除く）のHMAC-SHA256をX-Agentes-Signature（sha256=…）で送ってください。GitHubのX-Hub-Signature-256も使えます。Linearの場合は、Linearが表示する署名シークレットを貼り付けてください。Linear-Signatureが確認され、1分以上前の呼び出しは拒否されます。",
       "addSecret": "署名を必須にする",
+      "pasteSecret": "サービスのシークレットを使う",
+      "pasteLabel": "サービスの署名シークレット",
+      "secretPasted": "シークレットを保存しました。これで署名された呼び出しだけが通ります。",
       "newSecret": "新しいシークレット",
       "newSecretTitle": "新しいシークレットを作成しますか？",
       "newSecretBody": "現在のシークレットはすぐに使えなくなります。このルーティンを呼び出すサービスを更新するまで、古いシークレットで署名された呼び出しは拒否されます。",

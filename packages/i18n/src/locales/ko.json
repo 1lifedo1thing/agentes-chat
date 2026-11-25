@@ -8361,6 +8361,13 @@
     "notFound": "이 루틴이 더 이상 없거나 접근 권한이 없어요.",
     "copyWebhook": "웹훅 URL 복사",
     "webhookCopied": "웹훅 URL을 복사했어요.",
+    "runCalls": {
+      "show": "호출 ({{n}})",
+      "hide": "호출 숨기기",
+      "cut": "줄임",
+      "binary": "텍스트가 아니라 보관하지 않음",
+      "copied": "호출을 복사했어요."
+    },
     "webhook": {
       "when": "웹훅이 호출될 때",
       "waiting": "다음 호출을 기다려요",
@@ -8386,8 +8393,11 @@
       "signature": "서명",
       "signedOff": "꺼짐: 에이전트가 주소로 오는 모든 호출을 받아요.",
       "signedOn": "켜짐: 시크릿으로 서명된 호출만 통과해요.",
-      "signedHelp": "본문(GET 호출이면 ?를 뺀 쿼리 문자열)의 HMAC-SHA256을 X-Agentes-Signature(sha256=…)에 담아 보내세요. GitHub의 X-Hub-Signature-256도 쓸 수 있어요.",
+      "signedHelp": "본문(GET 호출이면 ?를 뺀 쿼리 문자열)의 HMAC-SHA256을 X-Agentes-Signature(sha256=…)에 담아 보내세요. GitHub의 X-Hub-Signature-256도 쓸 수 있어요. Linear라면 Linear가 보여주는 서명 시크릿을 붙여넣으세요. Linear-Signature를 확인하고, 1분이 넘은 호출은 거부해요.",
       "addSecret": "서명 필수",
+      "pasteSecret": "서비스의 시크릿 사용",
+      "pasteLabel": "서비스의 서명 시크릿",
+      "secretPasted": "시크릿을 저장했어요. 이걸로 서명된 호출만 통과해요.",
       "newSecret": "새 시크릿",
       "newSecretTitle": "새 시크릿을 만들까요?",
       "newSecretBody": "현재 시크릿은 바로 작동을 멈춰요. 이 루틴을 호출하는 서비스를 업데이트할 때까지 이전 시크릿으로 서명된 호출은 거부돼요.",

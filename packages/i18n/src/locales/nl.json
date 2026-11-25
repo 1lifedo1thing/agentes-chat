@@ -8732,6 +8732,13 @@
     "notFound": "Deze routine bestaat niet meer of je hebt geen toegang.",
     "copyWebhook": "Webhook-URL kopiëren",
     "webhookCopied": "Webhook-URL gekopieerd.",
+    "runCalls": {
+      "show": "Aanroepen ({{n}})",
+      "hide": "Aanroepen verbergen",
+      "cut": "Ingekort",
+      "binary": "Geen tekst, niet bewaard",
+      "copied": "Aanroep gekopieerd."
+    },
     "webhook": {
       "when": "Als de webhook wordt aangeroepen",
       "waiting": "Wacht op de volgende aanroep",
@@ -8757,8 +8764,11 @@
       "signature": "Handtekening",
       "signedOff": "Uit: de agent krijgt elke aanroep naar het adres.",
       "signedOn": "Aan: alleen aanroepen die met het geheim zijn ondertekend, komen door.",
-      "signedHelp": "Stuur de HMAC-SHA256 van de body (bij een GET-aanroep: van de querystring, zonder het ?) in X-Agentes-Signature (sha256=…). X-Hub-Signature-256 van GitHub werkt ook.",
+      "signedHelp": "Stuur de HMAC-SHA256 van de body (bij een GET-aanroep: van de querystring, zonder het ?) in X-Agentes-Signature (sha256=…). X-Hub-Signature-256 van GitHub werkt ook. Voor Linear plak je het ondertekeningsgeheim dat Linear toont: de Linear-Signature wordt gecontroleerd en aanroepen ouder dan een minuut worden geweigerd.",
       "addSecret": "Handtekening vereisen",
+      "pasteSecret": "Het geheim van de dienst gebruiken",
+      "pasteLabel": "Ondertekeningsgeheim van de dienst",
+      "secretPasted": "Geheim opgeslagen. Alleen aanroepen die ermee zijn ondertekend komen door.",
       "newSecret": "Nieuw geheim",
       "newSecretTitle": "Een nieuw geheim maken?",
       "newSecretBody": "Het huidige geheim werkt meteen niet meer. Aanroepen die ermee zijn ondertekend, worden geweigerd tot je de diensten bijwerkt die deze routine aanroepen.",
