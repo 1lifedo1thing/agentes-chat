@@ -1376,33 +1376,17 @@ export async function postPersonMessage(
   // A resend found before the judge call (no cost again); a resend racing the first send is caught by the insert.
   const resent = clientId ? await sentWithClientId(deps.db, orgId, userId, clientId) : null;
   if (resent) return resendView(deps, orgId, resent);
-  // Quote, files and media: checked and resolved here, so the run's context reads them from the meta (no query there).
-  const [replyTo, files, media] = await Promise.all([
+  const judged = { orgId, channelId, userId, body: input.body, threadId: input.threadId };
+  const [replyTo, files, media, addressees, everyone] = await Promise.all([
+    // Quote, files and media: checked and resolved here, so the run's context reads them from the meta (no query there).
     input.replyTo ? replyRefFor(deps.db, orgId, channelId, input.replyTo, input.threadId) : null,
     input.attachments?.length ? attachmentRefsFor(deps.db, userId, orgId, channelId, input.attachments) : null,
     input.media ? resolveMedia(deps, orgId, input.media) : null,
+    // Several agents mentioned: who is asked to act now, who is only referenced (no run for those).
+    deps.judge ? classifyAddressees(deps.db, deps.judge, judged) : null,
+    // A mention of everyone: one answer for the room, one each, or none (`classifyEveryone`).
+    deps.judge && channel.kind !== "dm" ? classifyEveryone(deps.db, deps.judge, judged) : null,
   ]);
-  // Several agents mentioned: who is asked to act now, who is only referenced (no run for those).
-  const addressees = deps.judge
-    ? await classifyAddressees(deps.db, deps.judge, {
-        orgId,
-        channelId,
-        userId,
-        body: input.body,
-        threadId: input.threadId,
-      })
-    : null;
-  // A mention of everyone: one answer for the room, one each, or none (`classifyEveryone`).
-  const everyone =
-    deps.judge && channel.kind !== "dm"
-      ? await classifyEveryone(deps.db, deps.judge, {
-          orgId,
-          channelId,
-          userId,
-          body: input.body,
-          threadId: input.threadId,
-        })
-      : null;
   const referencedIds = [...new Set([...(addressees?.referenced ?? []), ...(everyone?.referenced ?? [])])];
   const meta =
     replyTo || files || media || referencedIds.length > 0 || everyone || liveRef
