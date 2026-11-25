@@ -54,7 +54,12 @@ const waitingToStart = (event: unknown) => {
 export async function claimRoutineRun(db: Database, routineRunId: string): Promise<RunRow | null> {
   const [row] = await db
     .update(routineRuns)
-    .set({ status: "starting" })
+    .set({
+      status: "starting",
+      // What it waited behind (`queueBehindAgentRoutine`) is no event: the run's context would show it as one.
+      event: sql`case when ${routineRuns.event}->>'waitingFor' is null then ${routineRuns.event}
+        else nullif(${routineRuns.event} - 'waitingFor', '{}'::jsonb) end`,
+    })
     .where(
       and(
         eq(routineRuns.id, routineRunId),

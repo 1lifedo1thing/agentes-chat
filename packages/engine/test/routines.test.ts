@@ -722,6 +722,8 @@ test("a scheduled run waits in line while its agent works on another routine, at
   await f.db.update(schema.outbox).set({ nextAttemptAt: new Date() }).where(eq(schema.outbox.kind, "routine.run"));
   await drainOutbox(f.db, f.handlers);
   expect((await rowOf(queued?.id))?.agentRunId).not.toBeNull();
+  // Started, it carries no event: its context never shows the wait as what fired it.
+  expect((await rowOf(queued?.id))?.event).toBeNull();
 
   // A slot already 30 minutes late starts beside the other routine instead of waiting more.
   const late = await queueRoutineRun(deps, sales, new Date(Date.now() - 31 * 60_000), "schedule");
