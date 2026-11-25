@@ -286,6 +286,7 @@ export async function createTestServer(
     streams: createStreamSockets({ db, auth, config, broker: engine.streams }),
     live,
     overloaded: options.overloaded,
+    onTyping: engine.warmWhileTyping,
   });
   return {
     db,
