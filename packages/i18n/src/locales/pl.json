@@ -734,6 +734,8 @@
       "confirmNo": "To nie ja",
       "done": "Wszystko gotowe.",
       "doneLead": "Zalogowano w aplikacji agentes. Możesz zamknąć tę kartę.",
+      "back": "Wracamy do aplikacji.",
+      "openApp": "Otwórz aplikację",
       "expired": "Ta prośba wygasła.",
       "expiredLead": "Wróć do aplikacji i ponownie wybierz {{provider}}.",
       "handover": "Logowanie twoim kontem z drugiego urządzenia…",
@@ -1285,7 +1287,7 @@
         "fileLead": "Plik z dowolnej znanej nam aplikacji. Zostanie rozpoznany automatycznie.",
         "paths": {
           "lead": "Wybierz, jak je przenieść. Sprawdzisz wszystko, zanim cokolwiek powstanie.",
-          "best": "najpełniejszy",
+          "best": "Najpełniejszy",
           "safe": "Klucze, hasła i sesje z {{app}} nigdy nie są przenoszone, żadną drogą.",
           "command": {
             "title": "Poleceniem",
@@ -4664,6 +4666,7 @@
     "available": "Dostępny",
     "working": "W pracy",
     "waiting": "Czeka na ciebie",
+    "idle": "Nieaktywny",
     "lower": {
       "online": "online",
       "away": "zaraz wracam",
@@ -4816,7 +4819,8 @@
   "accountSwitch": {
     "limit": "Kontynuował na koncie <to/>, bo konto <from/> osiągnęło limit",
     "line": "Kontynuował na koncie <to/>, bo konto <from/> jest blisko limitu",
-    "extra": "Kontynuował na koncie <to/>, bo konto <from/> weszłoby w płatne dodatkowe użycie"
+    "extra": "Kontynuował na koncie <to/>, bo konto <from/> weszłoby w płatne dodatkowe użycie",
+    "busy": "Kontynuowano na koncie <to/>, bo konto <from/> odpowiadało już na tyle rozmów naraz, ile może"
   },
   "channelRefs": {
     "list": "Kanały",
@@ -6991,7 +6995,7 @@
         "cli_sandbox": "Program {{brain}} nie może uruchomić swojego sandboxa na tym komputerze. Wybierz inną AI w ustawieniach agenta.",
         "cli_system": "Program {{brain}} nie działa jeszcze w systemie tego komputera. Wybierz inną AI w ustawieniach agenta.",
         "account_missing": "Konta wybranego dla tego agenta nie ma już na jego komputerze. Wybierz inne w ustawieniach agenta albo dodaj je ponownie.",
-        "windows_sandbox": "Ten komputer z Windows nie może odizolować poleceń Codex: potrzebuje Windows 11 24H2 lub nowszego. Zaktualizuj Windows, wybierz Claude albo klucz API dla tego agenta lub przenieś go na komputer z Linuksem.",
+        "windows_sandbox": "Codex nie mógł uruchomić żadnej izolacji dla swoich poleceń na tym komputerze z Windows. Wybierz Claude albo klucz API dla tego agenta lub zaktualizuj komputer do Windows 11 24H2 lub nowszego, z najnowszymi aktualizacjami.",
         "our_error": "Coś poszło nie tak po naszej stronie i zadanie się zatrzymało. Poproś ponownie za chwilę.",
         "unknown": "Błąd."
       }
@@ -8685,6 +8689,38 @@
     "vault_write": {
       "label": "Edycja kontaktów w Vault",
       "description": "Zapisywanie i aktualizowanie danych kontaktowych w Vault, zmiana nazwy użytkownika zapisanego loginu lub opisu, tworzenie haseł do zakładanych przez siebie kont oraz usuwanie tego, co sam zapisał."
+    },
+    "gitlab_git_read": {
+      "label": "Klonowanie repozytoriów (git)",
+      "description": "Klonowanie i aktualizowanie repozytoriów na komputerze agenta przez git, za pośrednictwem naszego proxy. Token GitLaba nigdy nie trafia na maszynę."
+    },
+    "gitlab_git_write": {
+      "label": "Wypychanie gałęzi (git push)",
+      "description": "Wypychanie commitów do gałęzi agentes/{agent}/…: nigdy do gałęzi domyślnej, bez force push, bez tagów. Usuwanie gałęzi i wypychanie do cudzej gałęzi najpierw wymaga zatwierdzenia."
+    },
+    "gitlab_pr_write": {
+      "label": "Otwieranie merge requestów",
+      "description": "Otwieranie merge requestów i komentowanie ich."
+    },
+    "bitbucket_git_read": {
+      "label": "Klonowanie repozytoriów (git)",
+      "description": "Klonowanie i aktualizowanie repozytoriów na komputerze agenta przez git, za pośrednictwem naszego proxy. Token Bitbucketa nigdy nie trafia na maszynę."
+    },
+    "bitbucket_git_write": {
+      "label": "Wypychanie gałęzi (git push)",
+      "description": "Wypychanie commitów do gałęzi agentes/{agent}/…: nigdy do gałęzi domyślnej, bez force push, bez tagów. Usuwanie gałęzi i wypychanie do cudzej gałęzi najpierw wymaga zatwierdzenia."
+    },
+    "bitbucket_pr_write": {
+      "label": "Otwieranie pull requestów",
+      "description": "Otwieranie pull requestów i komentowanie ich."
+    },
+    "git_git_read": {
+      "label": "Klonowanie repozytoriów (git)",
+      "description": "Klonowanie i aktualizowanie repozytoriów na komputerze agenta przez git, za pośrednictwem naszego proxy. Token Gita nigdy nie trafia na maszynę."
+    },
+    "git_git_write": {
+      "label": "Wypychanie gałęzi (git push)",
+      "description": "Wypychanie commitów do gałęzi agentes/{agent}/…: nigdy do gałęzi domyślnej, bez force push, bez tagów. Usuwanie gałęzi i wypychanie do cudzej gałęzi najpierw wymaga zatwierdzenia."
     },
     "github_git_read": {
       "label": "Klonowanie repozytoriów (git)",
@@ -12235,10 +12271,10 @@
       "agent": "Agent",
       "repo": "Gdzie pracować",
       "repoPlaceholder": "Repozytorium lub projekt",
-      "repoSearch": "Szukaj lub wpisz właściciel/nazwa albo nową nazwę",
+      "repoSearch": "Szukaj albo wpisz owner/name, adres repozytorium lub nową nazwę",
       "newLocal": "Nowy projekt na komputerze: {{name}}",
       "useRepo": "Użyj {{repo}}",
-      "repoNote": "Nazwa bez właściciela tworzy projekt na komputerze agenta, poza GitHubem.",
+      "repoNote": "Nazwa bez owner tworzy projekt tylko na komputerze agenta, bez zdalnego repozytorium.",
       "hint": "@ zaprasza kogoś do sesji",
       "start": "Rozpocznij"
     },
@@ -12252,7 +12288,7 @@
       "closeHint": "Znika z listy: worktree znika, gałąź zostaje",
       "failed": "Nie udało się przygotować worktree.",
       "retry": "Spróbuj ponownie",
-      "githubAccess": "Ta przestrzeń robocza nie ma dostępu do tego repozytorium w GitHub. Podłącz GitHub w Ustawienia › Konektory albo rozpocznij sesję w projekcie na komputerze (wystarczy nazwa)."
+      "githubAccess": "Ten workspace nie ma dostępu do tego repozytorium. Połącz miejsce, w którym się znajduje (GitHub, GitLab lub Bitbucket), w Ustawieniach › Konektory albo zacznij sesję w projekcie na komputerze (sama nazwa)."
     },
     "panel": {
       "label": "Panel sesji",
@@ -13391,8 +13427,11 @@
       "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu.",
       "not_reported": "{{computer}} wciąż sprawdza, jakie ma programy. To zmieni się samo, gdy skończy.",
       "system": "{{program}} nie działa jeszcze w systemie komputera {{computer}}.",
+      "systemAntigravity": "Plany Gemini nie działają jeszcze na komputerze {{computer}}: w Windows Antigravity CLI trzyma logowanie Google w Menedżerze poświadczeń, którego agentes.chat nie umie jeszcze rozdzielić na konta. Zamiast tego użyj klucza API Gemini.",
+      "windows_sandbox": "Windows na komputerze {{computer}} nie może odizolować poleceń {{program}}. Wybierz zamiast tego Claude albo klucz API lub zaktualizuj ten komputer do Windows 11 24H2 lub nowszego, z najnowszymi aktualizacjami.",
       "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy."
     },
+    "sandboxPartial": "W tym Windows polecenia Codex zapisują tylko w folderach agentów, ale internet jest dla nich zablokowany tylko częściowo. Windows 11 24H2 lub nowszy, z najnowszymi aktualizacjami, blokuje go całkowicie.",
     "notAvailableNow": "Wybrane, ale teraz niedostępne.",
     "offline": "{{computer}} jest teraz offline.",
     "modelLabel": "Model",
@@ -13469,7 +13508,7 @@
     "rule": "Nowa praca zaczyna się, gdy komputer ma wolną pamięć. Ludzie mają pierwszeństwo. Agenci wspomniani razem zaczynają po kolei.",
     "spill": {
       "title": "Twoje komputery",
-      "text": "Gdy ten komputer jest pełny, odpowiedzi dla ciebie mogą zacząć się na jednym z twoich. Długie prace i pliki agentów zostają tutaj.",
+      "text": "Gdy ten komputer jest pełny lub niedostępny, twoi agenci mogą zacząć na jednym z twoich komputerów. Misje, sesje kodu i agenci z repozytoriami zostają tutaj.",
       "plan": "twój plan {{plan}}"
     },
     "youFirst": "Jesteś pierwszy",
@@ -14417,6 +14456,7 @@
       "teamLocked": "Połączenia zespołu dodają tylko osoby zarządzające konektorami.",
       "mailLocked": "Skrzynka pocztowa zawsze należy do osoby, która ją łączy.",
       "done": "Twoi agenci używają go tylko wtedy, gdy poprosisz.",
+      "githubDone": "W sesjach kodu commity, pushe i pull requesty dotyczące tego, o co prosisz, wychodzą pod Twoim nazwiskiem.",
       "worksWhenAsked": "Działa tylko, gdy poprosisz.",
       "remove": "Usuń",
       "removeName": "Usuń {{name}}",
@@ -15190,6 +15230,7 @@
     },
     "label": {
       "git_clone": "Sklonuj repozytorium",
+      "list_repositories": "Wyświetl repozytoria",
       "create_repository": "Utwórz repozytorium",
       "delete_repository": "Usuń repozytorium",
       "fork_repository": "Zrób fork repozytorium",
@@ -16145,6 +16186,19 @@
       "asks_other": "{{count}} akcji prosi o zatwierdzenie na czacie.",
       "adjust": "Dostosuj",
       "ok": "Gotowe"
+    },
+    "git": {
+      "token": "Token dostępu",
+      "address": "Adres",
+      "addressHelp": {
+        "gitlab": "Tylko dla GitLaba, który Twoja firma hostuje sama. Puste pole oznacza gitlab.com.",
+        "git": "Gdzie znajduje się serwer git, na przykład https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "Token dostępu GitLab (osobisty, grupy lub projektu) z zakresami api i write_repository. Zostaje na serwerze: komputery agentów nigdy go nie dostają.",
+        "bitbucket": "Token dostępu workspace’u lub repozytorium z prawem zapisu do repozytoriów i pull requestów. Przy własnym tokenie API wpisz swój e-mail Atlassian, dwukropek i token: you@company.com:TOKEN.",
+        "git": "Token, który serwer przyjmuje jako hasło git. Jeśli wymaga nazwy użytkownika, wpisz username:token."
+      }
     },
     "telegram": {
       "token": "Token bota",
@@ -17145,6 +17199,7 @@
       "tooLarge": "Ten plik osiągnął limit rozmiaru. Najpierw coś z niego usuń.",
       "assetTooLarge": "Obraz ma ponad {{max}} MB, a to limit na jeden obraz.",
       "assetType": "Do tego pliku można dodać tylko obrazy: PNG, JPEG, WebP lub GIF.",
+      "fontInvalid": "Nie można użyć tej czcionki: plik nie jest czcionką, którą aplikacja potrafi odczytać. Spróbuj pliku .ttf, .otf lub .woff.",
       "liveOnly": "Ten plik zmienia się na miejscu, więc nie można go zastąpić w całości."
     },
     "office": {
@@ -17166,7 +17221,7 @@
     "device": {
       "notLinkMaker": "Tylko osoba, która utworzyła link, może wpuścić ten komputer.",
       "widenForbidden": "Administratorzy mogą tylko zawęzić, kto korzysta z czyjegoś własnego urządzenia.",
-      "spillOwnerOnly": "Tylko osoba, która podłączyła ten komputer, może pozwolić odpowiedziom myśleć na nim. Ty możesz to wyłączyć.",
+      "spillOwnerOnly": "Tylko osoba, która połączyła ten komputer, może włączyć jego pomoc. Ty możesz ją wyłączyć.",
       "tasksOwnerOnly": "Tylko osoba, która podłączyła ten komputer, może zmienić, ile zadań wykonuje naraz.",
       "tasksCloud": "Cloud sam ustala, ile miejsca na zadania ma ten komputer.",
       "notHome": "Agenci działają na komputerze workspace i używają tego, gdy podadzą jego nazwę."
@@ -17322,6 +17377,11 @@
       "line": "IP wyjściowe {{ip}}",
       "hint": "Adres, który widzą strony, gdy agenci przeglądają sieć. Zmienia się razem z siecią komputera.",
       "waiting": "Ponownie łączymy agentów z internetem. Ich połączenia czekają, aż wróci."
+    },
+    "moving": {
+      "short": "Zmiana serwera",
+      "line": "Przenosi się na nowy serwer… wróci za kilka minut",
+      "named": "{{computer}} przenosi się na nowy serwer… wróci za kilka minut"
     },
     "online": "Online",
     "offline": "Offline",
@@ -17598,10 +17658,12 @@
     "pushHarderHint": "Więcej zadań naraz: wolne zostaje tylko 0,5 GB pamięci, a zajęty procesor ich nie wstrzymuje. Twoje własne aplikacje mogą zwolnić.",
     "belongs": "Należy do przestrzeni roboczej",
     "belongsHint": "Zostaje, gdy osoba, która je podłączyła, odchodzi, a dopóki nie ma właściciela, każdy może go używać.",
-    "spillOwn": "Twoje odpowiedzi mogą myśleć tutaj",
-    "spillOwnHint": "Gdy komputer agenta jest pełny, jego odpowiedzi dla ciebie zaczynają się tutaj.",
-    "spillOthers": "Agenci innych osób mogą myśleć tutaj",
-    "spillOthersHint": "Gdy komputer agenta jest pełny, jego odpowiedzi dla innych osób też mogą zacząć się tutaj.",
+    "spillOwn": "Pomagaj, gdy komputer zespołu jest pełny lub niedostępny",
+    "spillOwnHint": "Gdy komputer twoich agentów jest pełny lub niedostępny, ich odpowiedzi, prośby i rutyny mogą myśleć tutaj z twoim logowaniem.",
+    "spillTeamHint": "Gdy komputer agenta jest pełny lub niedostępny, jego odpowiedzi, prośby i rutyny mogą myśleć tutaj z logowaniem jego właściciela na tym komputerze.",
+    "spillWorkspaceOff": "Admin wyłączył to dla workspace'u.",
+    "helpWorkspace": "Komputery pomagają, gdy komputer zespołu jest pełny lub niedostępny",
+    "helpWorkspaceHint": "Każdy komputer pomaga tylko wtedy, gdy pozwoli na to jego właściciel. Wyłączone: żaden nie pomaga, niezależnie od wyboru właściciela.",
     "connectedBy": "Podłączone przez: {{name}}",
     "downloadFor": "Pobierz na {{system}}",
     "downloadApp": "Pobierz aplikację",
@@ -19615,6 +19677,11 @@
       "cant": "Odpowiedziałem przez {{via}}: {{plan}} nie może teraz myśleć.",
       "change": "Zmień"
     },
+    "spilled": {
+      "full": "Myślał na {{to}}: {{from}} był pełny.",
+      "away": "Myślał na {{to}}: {{from}} był niedostępny.",
+      "itsComputer": "jego komputer"
+    },
     "modelStandIn": {
       "text": "{{plan}} odrzucił {{from}} z tym kluczem. Odpowiedziałem przez {{to}}, który z nim działa.",
       "useAll": "Użyj {{model}} dla wszystkich",
@@ -19634,6 +19701,14 @@
       "thinking": "Myśli…",
       "held": "Czeka na zatwierdzenie…",
       "said": "„{{text}}”"
+    },
+    "trail": {
+      "label": "Co {{name}} zrobił do tej pory",
+      "label_female": "Co {{name}} zrobiła do tej pory",
+      "earlier_one": "{{count}} wcześniejszy krok",
+      "earlier_few": "{{count}} wcześniejsze kroki",
+      "earlier_many": "{{count}} wcześniejszych kroków",
+      "earlier_other": "{{count}} wcześniejszego kroku"
     },
     "consult": {
       "asking": "{{from}} pyta: {{to}}",
@@ -19880,6 +19955,7 @@
         "runningCommandAny": "Uruchomiono polecenie",
         "usingScreen": "Użyto ekranu",
         "cloningRepo": "Sklonowano repozytorium",
+        "listingRepos": "Wyświetlono repozytoria",
         "openingPullRequest": "Otwarto pull request",
         "handingOff": "Dostarczono raport",
         "recordingFindings": "Zapisano ustalenia",
@@ -20001,6 +20077,7 @@
       "runningCommandAny": "uruchamianie polecenia",
       "usingScreen": "korzystanie z ekranu",
       "cloningRepo": "klonowanie repozytorium",
+      "listingRepos": "wyświetla repozytoria",
       "openingPullRequest": "otwieranie pull requesta",
       "handingOff": "dostarczanie raportu",
       "recordingFindings": "zapisywanie ustaleń",
@@ -21639,6 +21716,7 @@
       "offline": "{{computer}} jest offline",
       "offlineHelpPlain": "{{name}} czeka, aż komputer wróci.",
       "offlineHelpPlain_female": "{{name}} czeka, aż komputer wróci.",
+      "helping": "W międzyczasie nowa praca może myśleć na {{names}}.",
       "noRoom": "{{computer}} pokazuje już tyle ekranów, ile może. Spróbuj ponownie za chwilę.",
       "unavailable": "Nie można teraz pokazać ekranu agenta {{name}}",
       "unavailable_female": "Nie można teraz pokazać ekranu agentki {{name}}",
