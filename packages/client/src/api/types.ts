@@ -25,14 +25,17 @@ export interface Health {
  * milliseconds but the heap (bytes) and the counts.
  */
 export interface ClientVitalsReport {
-  platform: "ios" | "android" | "web";
-  /** From the app's start to the launch splash leaving. */
+  /** The desktop app reports as its system (`macos`, `windows`, `linux`): each one's web view is its own. */
+  platform: "ios" | "android" | "web" | "macos" | "windows" | "linux";
+  /** From the app's start to its first screen: the launch splash leaving, a page's first paint. */
   coldStartMs?: number;
   /** From the app's start to its first list drawn with rows. */
   firstRowsMs?: number;
   jsLagP95Ms?: number;
   jsLagMaxMs?: number;
   heapBytes?: number;
+  /** The desktop app's: the memory of the processes behind its main window's web view. */
+  webviewBytes?: number;
   /** Reads (GETs) in the 10 s after the app came back to the front. */
   getsPerReturn?: number;
   reconnects?: number;
@@ -2504,6 +2507,8 @@ export interface ConnectorDef {
   soon?: boolean;
   /** A connector of ours that needs a developer app this self-hosted server hasn't registered (ADR 0170). */
   needsApp?: boolean;
+  /** A git host at an address of one's own: the connect form asks for it (`required`) or offers it. */
+  address?: "optional" | "required";
   /** Connects through Composio (ADR 0107): its page signs in. Unavailable on a server without Composio. */
   via?: "composio";
   /** Where it connects, by the way this server picked (a `remote_mcp` entry's address). */
@@ -2589,7 +2594,7 @@ export interface GitHubAppInfo {
 
 /** A repository the organization's GitHub reaches. */
 export interface GitHubRepository {
-  /** `owner/name`. */
+  /** `owner/name`; on another git host, with the host first (`gitlab:group/project`). */
   fullName: string;
   owner: string;
   name: string;
@@ -2600,8 +2605,22 @@ export interface GitHubRepository {
 /** The repositories the organization's GitHub reaches (its connection and the app's installations), by account. */
 export interface GitHubRepositories {
   connected: boolean;
-  accounts: { login: string; type: string; repositories: GitHubRepository[] }[];
+  accounts: GitHostAccount[];
+  /** What the organization's other git hosts reach (GitLab, Bitbucket), by group or workspace. */
+  elsewhere?: GitHostAccount[];
   truncated: boolean;
+}
+
+/** An account, group or workspace of a git host and its repositories. */
+export interface GitHostAccount {
+  /** `github`, `gitlab`, `bitbucket`; absent from an older server: GitHub. */
+  host?: string;
+  hostLabel?: string;
+  /** What its repositories' names start with, before the last slash (`acme`, `gitlab:acme/web`). */
+  prefix?: string;
+  login: string;
+  type: string;
+  repositories: GitHubRepository[];
 }
 
 /** The organizations the GitHub connection reaches now (`null`: GitHub didn't answer) and GitHub's page to grant more. */

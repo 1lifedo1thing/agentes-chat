@@ -1,6 +1,6 @@
 {
-  "id": "4f1f8536-a409-4d3c-8a53-fe280c4d3d29",
-  "prevId": "e337802a-e251-4d63-864b-4ae7e63829a0",
+  "id": "9ad644d3-6958-4eb6-9bb7-dca8d9831d0a",
+  "prevId": "d2170596-4686-43bd-ad65-f3e7b4bbfa2f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -10816,6 +10816,12 @@
         },
         "origin": {
           "name": "origin",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "font": {
+          "name": "font",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false
@@ -25071,6 +25077,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
+        },
+        "client_vitals": {
+          "name": "client_vitals",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

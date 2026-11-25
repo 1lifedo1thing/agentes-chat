@@ -8082,6 +8082,38 @@
       "label": "Vault iletişim bilgilerini düzenleme",
       "description": "Vault'ta iletişim bilgilerini kaydetme ve güncelleme, kayıtlı bir girişin kullanıcı adını ya da bir açıklamayı değiştirme, açtığı hesaplar için şifre oluşturma ve kendi kaydettiklerini silme."
     },
+    "gitlab_git_read": {
+      "label": "Depo klonlama (git)",
+      "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. GitLab token'ı asla makineye girmez."
+    },
+    "gitlab_git_write": {
+      "label": "Dal gönderme (git push)",
+      "description": "agentes/{agent}/… dallarına commit gönderme: asla varsayılan dala değil, force push yok, etiket yok. Dal silmek ve başkasının dalına göndermek önce onay ister."
+    },
+    "gitlab_pr_write": {
+      "label": "Merge request açma",
+      "description": "Merge request açma ve yorum yapma."
+    },
+    "bitbucket_git_read": {
+      "label": "Depo klonlama (git)",
+      "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. Bitbucket token'ı asla makineye girmez."
+    },
+    "bitbucket_git_write": {
+      "label": "Dal gönderme (git push)",
+      "description": "agentes/{agent}/… dallarına commit gönderme: asla varsayılan dala değil, force push yok, etiket yok. Dal silmek ve başkasının dalına göndermek önce onay ister."
+    },
+    "bitbucket_pr_write": {
+      "label": "Pull request açma",
+      "description": "Pull request açma ve yorum yapma."
+    },
+    "git_git_read": {
+      "label": "Depo klonlama (git)",
+      "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. Git token'ı asla makineye girmez."
+    },
+    "git_git_write": {
+      "label": "Dal gönderme (git push)",
+      "description": "agentes/{agent}/… dallarına commit gönderme: asla varsayılan dala değil, force push yok, etiket yok. Dal silmek ve başkasının dalına göndermek önce onay ister."
+    },
     "github_git_read": {
       "label": "Depo klonlama (git)",
       "description": "Proxy'miz üzerinden git ile ajanın bilgisayarına depo klonlama ve güncelleme. GitHub token'ı asla makineye girmez."
@@ -11343,10 +11375,10 @@
       "agent": "Ajan",
       "repo": "Nerede çalışılacak",
       "repoPlaceholder": "Depo veya proje",
-      "repoSearch": "Arayın ya da sahip/ad veya yeni bir ad yazın",
+      "repoSearch": "Arayın ya da owner/name, deponun adresini veya yeni bir ad yazın",
       "newLocal": "Bilgisayarda yeni proje: {{name}}",
       "useRepo": "{{repo}} kullan",
-      "repoNote": "Sahibi olmayan bir ad, ajanın bilgisayarında GitHub dışında bir proje başlatır.",
+      "repoNote": "owner içermeyen bir ad, yalnızca ajanın bilgisayarında, uzak depo olmadan bir proje oluşturur.",
       "hint": "@ birini oturuma çağırır",
       "start": "Başlat"
     },
@@ -11360,7 +11392,7 @@
       "closeHint": "Listeden kalkar: worktree silinir, dal kalır",
       "failed": "Worktree hazırlanamadı.",
       "retry": "Tekrar dene",
-      "githubAccess": "Bu çalışma alanının bu depo için GitHub erişimi yok. GitHub'ı Ayarlar › Bağlayıcılar bölümünden bağlayın ya da bilgisayardaki bir projede oturum başlatın (yalnızca bir ad)."
+      "githubAccess": "Bu çalışma alanının bu depoya erişimi yok. Deponun bulunduğu yeri (GitHub, GitLab veya Bitbucket) Ayarlar › Bağlayıcılar’dan bağlayın ya da bilgisayardaki bir projede (yalnızca bir ad) oturum başlatın."
     },
     "panel": {
       "label": "Oturum paneli",
@@ -13338,6 +13370,7 @@
       "teamLocked": "Ekibinkileri yalnızca bağlayıcıları yönetenler ekler.",
       "mailLocked": "Bir posta kutusu her zaman onu bağlayan kişinindir.",
       "done": "Ajanların onu yalnızca sen istediğinde kullanır.",
+      "githubDone": "Kod oturumlarında, istediğiniz işin commit’leri, push’ları ve pull request’leri sizin adınıza gider.",
       "worksWhenAsked": "Yalnızca sen istediğinde çalışır.",
       "remove": "Kaldır",
       "removeName": "{{name}} kaldır",
@@ -14101,6 +14134,7 @@
     },
     "label": {
       "git_clone": "Depoyu klonla",
+      "list_repositories": "Depoları listele",
       "create_repository": "Depo oluştur",
       "delete_repository": "Depoyu sil",
       "fork_repository": "Depoyu fork'la",
@@ -15014,6 +15048,19 @@
       "asks_other": "{{count}} işlem sohbette onay ister.",
       "adjust": "Ayarla",
       "ok": "Tamam"
+    },
+    "git": {
+      "token": "Erişim belirteci",
+      "address": "Adres",
+      "addressHelp": {
+        "gitlab": "Yalnızca şirketinizin kendi barındırdığı bir GitLab için. Boş bırakılırsa gitlab.com olur.",
+        "git": "Git sunucusunun bulunduğu yer, örneğin https://git.company.com."
+      },
+      "tokenHelp": {
+        "gitlab": "api ve write_repository kapsamlarına sahip bir GitLab erişim belirteci (kişisel, grup veya proje). Sunucuda kalır: ajanların bilgisayarlarına hiç gitmez.",
+        "bitbucket": "Depolara ve pull request’lere yazma izni olan bir çalışma alanı veya depo erişim belirteci. Kendi API belirtecinizle, Atlassian e-postanızı, iki nokta üst üste ve belirteci yazın: you@company.com:TOKEN.",
+        "git": "Sunucunun git parolası olarak kabul ettiği belirteç. Kullanıcı adı isterse username:token yazın."
+      }
     },
     "telegram": {
       "token": "Bot token'ı",
@@ -15980,6 +16027,7 @@
       "tooLarge": "Bu dosya boyut sınırına ulaştı. Önce içinden bir şey kaldırın.",
       "assetTooLarge": "Görsel, görsel başına sınır olan {{max}} MB'ı aşıyor.",
       "assetType": "Bu dosyaya yalnızca görsel eklenebilir: PNG, JPEG, WebP veya GIF.",
+      "fontInvalid": "Bu yazı tipi kullanılamıyor: dosya, uygulamanın okuyabildiği bir yazı tipi değil. Bir .ttf, .otf veya .woff dosyası deneyin.",
       "liveOnly": "Bu dosya bulunduğu yerde düzenlenir, bu yüzden bütünüyle başkasıyla değiştirilemez."
     },
     "office": {
@@ -17812,7 +17860,7 @@
     "telemetry": {
       "title": "Kullanım istatistikleri",
       "label": "agentes.chat'e anonim kullanım istatistikleri gönder",
-      "help": "Kişi ve ajan sayısı, makine boyutları, kullanılan yapay zeka token'ları ve ajanların tarayıcılarının ne kadar veri gönderip aldığı gibi sayılar. Asla mesajlar, dosyalar, adlar ya da siteler değil.",
+      "help": "Kişi ve ajan sayısı, makine boyutları, kullanılan yapay zeka token'ları, ajanların tarayıcılarının ne kadar veri gönderip aldığı ve uygulamaların ne kadar hızlı açılıp çalıştığı gibi sayılar. Asla mesajlar, dosyalar, adlar ya da siteler değil.",
       "envOff": "Bu sunucunun ayarlarında kapatıldı (TELEMETRY=off).",
       "envOffDesktop": "Bu sunucunun bilgisayarındaki agentes.chat uygulamasında kapatıldı (Tercihler › Sunucular).",
       "envOffHere": "Bu bilgisayardaki agentes.chat uygulamasında kapatıldı.",
@@ -18630,6 +18678,7 @@
         "runningCommandAny": "Bir komut çalıştırdı",
         "usingScreen": "Ekranı kullandı",
         "cloningRepo": "Bir depoyu klonladı",
+        "listingRepos": "Depoları listeledi",
         "openingPullRequest": "Bir pull request açtı",
         "handingOff": "Bir rapor teslim etti",
         "recordingFindings": "Bulguları not etti",
@@ -18751,6 +18800,7 @@
       "runningCommandAny": "komut çalıştırıyor",
       "usingScreen": "ekranı kullanıyor",
       "cloningRepo": "depo klonluyor",
+      "listingRepos": "depoları listeliyor",
       "openingPullRequest": "pull request açıyor",
       "handingOff": "rapor teslim ediyor",
       "recordingFindings": "bulguları not ediyor",

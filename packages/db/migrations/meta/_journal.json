@@ -2371,7 +2371,21 @@
     {
       "idx": 340,
       "version": "7",
-      "when": 1795559189474,
+      "when": 1795558902756,
+      "tag": "0343_client_vitals_day",
+      "breakpoints": true
+    },
+    {
+      "idx": 341,
+      "version": "7",
+      "when": 1795568902756,
+      "tag": "0344_live_asset_fonts",
+      "breakpoints": true
+    },
+    {
+      "idx": 342,
+      "version": "7",
+      "when": 1795579861058,
       "tag": "0352_devices_help",
       "breakpoints": true
     }
