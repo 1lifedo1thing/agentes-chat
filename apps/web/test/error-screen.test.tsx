@@ -371,10 +371,7 @@ describe("what fails in code the app doesn't serve", () => {
   test("the SDK sends none of them, and gives the code only of what it sends", async () => {
     const taken: string[] = [];
     const beforeSend = await startedSdk((id) => taken.push(id));
-    const send = (id: string, ...files: string[]) => {
-      const event = { event_id: id, ...report(files) };
-      return beforeSend(event) === event;
-    };
+    const send = (id: string, ...files: string[]) => beforeSend({ event_id: id, ...report(files) }) !== null;
     // The SDK's file: in a build, its chunk, among the app's files.
     const sdk = new URL("../src/lib/error-sdk.ts", import.meta.url).href;
     expect(send("1", `${EXTENSION}/inpage.js`)).toBe(false);

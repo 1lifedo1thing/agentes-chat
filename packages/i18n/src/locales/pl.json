@@ -13381,6 +13381,7 @@
       "home_only": "{{program}} jest zainstalowany na {{computer}} tylko dla roota, do którego agenci nie mają dostępu.",
       "not_reported": "{{computer}} wciąż sprawdza, jakie ma programy. To zmieni się samo, gdy skończy.",
       "system": "{{program}} nie działa jeszcze w systemie komputera {{computer}}.",
+      "systemAntigravity": "Plany Gemini nie działają jeszcze na komputerze {{computer}}: w Windows Antigravity CLI trzyma logowanie Google w Menedżerze poświadczeń, którego agentes.chat nie umie jeszcze rozdzielić na konta. Zamiast tego użyj klucza API Gemini.",
       "windows_sandbox": "Windows na komputerze {{computer}} nie może odizolować poleceń {{program}}. Wybierz zamiast tego Claude albo klucz API lub zaktualizuj ten komputer do Windows 11 24H2 lub nowszego, z najnowszymi aktualizacjami.",
       "no_computerCloud": "Gotowe, gdy tylko {{computer}} będzie gotowy."
     },
@@ -23017,6 +23018,92 @@
     "settingsText": "Wyślij szczegóły techniczne zespołowi agentes.chat."
   },
   "live": {
+    "type": {
+      "font": "Czcionka",
+      "search": "Szukaj czcionki",
+      "noResults": "Brak czcionki o tej nazwie",
+      "list": "Czcionki",
+      "groups": {
+        "slides": "W tej prezentacji",
+        "canvas": "Na tej tablicy",
+        "document": "W tym dokumencie",
+        "company": "Z Twojej firmy",
+        "sans": "Bezszeryfowe",
+        "serif": "Szeryfowe",
+        "display": "Do nagłówków",
+        "mono": "Stałej szerokości",
+        "handwriting": "Odręczne"
+      },
+      "headings": "Nagłówki",
+      "body": "Tekst",
+      "fromDrive": "Z Drive",
+      "ownFont": "Czcionka pliku",
+      "fileFonts": {
+        "slides": "Czcionki prezentacji",
+        "document": "Czcionki dokumentu"
+      },
+      "fileFontsNote": "Dotyczą całego pliku. Tekst z własną czcionką ją zachowuje.",
+      "headingFont": "Czcionka nagłówków",
+      "bodyFont": "Czcionka tekstu",
+      "bring": "Pobierz czcionkę z Drive…",
+      "bringButton": "Pobierz z Drive",
+      "bringTitle": "Pobierz czcionkę z Drive",
+      "bringSearch": "Szukaj czcionek w Drive",
+      "bringEmpty": "Brak czcionek w Drive. Najpierw dodaj do Drive plik .ttf, .otf lub .woff.",
+      "brought": "{{name}} jest teraz w pliku",
+      "notFont": "Ten plik nie jest czcionką. Wybierz plik .ttf, .otf lub .woff.",
+      "done": "Gotowe",
+      "text": "Styl tekstu",
+      "glyph": "Aa",
+      "weight": "Grubość",
+      "weights": {
+        "w300": "Cienka",
+        "w400": "Normalna",
+        "w500": "Średnia",
+        "w600": "Półgruba",
+        "w700": "Gruba",
+        "w800": "Bardzo gruba"
+      },
+      "tracking": "Odstęp między literami",
+      "trackings": {
+        "tight": "Ciaśniej",
+        "normal": "Normalny",
+        "open": "Szeroko",
+        "wide": "Bardzo szeroko"
+      },
+      "lineHeight": "Wysokość wiersza",
+      "caps": "Wszystko wielkimi literami",
+      "highlight": "Zakreślacz",
+      "highlights": {
+        "none": "Brak",
+        "yellow": "Żółty",
+        "green": "Zielony",
+        "blue": "Niebieski",
+        "pink": "Różowy",
+        "orange": "Pomarańczowy"
+      },
+      "effects": "Efekty",
+      "shadow": "Cień",
+      "shadows": {
+        "none": "Brak",
+        "soft": "Delikatny",
+        "strong": "Mocny"
+      },
+      "border": "Obramowanie",
+      "dashes": {
+        "solid": "Ciągłe",
+        "dashed": "Kreskowe",
+        "dotted": "Kropkowane"
+      },
+      "gradient": "Gradient",
+      "gradients": {
+        "none": "Brak",
+        "ocean": "Ocean",
+        "graphite": "Grafit",
+        "sunset": "Zachód słońca",
+        "violet": "Fiolet"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Slajdy",

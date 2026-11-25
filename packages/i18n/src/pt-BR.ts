@@ -12963,6 +12963,9 @@ export const ptBR = {
       home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
+      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
+      systemAntigravity:
+        "Planos do Gemini ainda não rodam no {{computer}}: no Windows, o Antigravity CLI guarda o login do Google no Gerenciador de Credenciais, que o agentes.chat ainda não separa por conta. Use uma chave de API do Gemini no lugar.",
       /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
       windows_sandbox:
         "O Windows do {{computer}} não consegue isolar os comandos do {{program}}. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
@@ -22441,6 +22444,94 @@ export const ptBR = {
     settingsText: "Envie os detalhes técnicos para a equipe do agentes.chat.",
   },
   live: {
+    /** Fonts and text styles people set in slides, canvases and documents (ADR 0220 §8). */
+    type: {
+      font: "Fonte",
+      search: "Buscar fonte",
+      noResults: "Nenhuma fonte com esse nome",
+      list: "Fontes",
+      groups: {
+        slides: "Nesta apresentação",
+        canvas: "Neste quadro",
+        document: "Neste documento",
+        company: "Da empresa",
+        sans: "Sem serifa",
+        serif: "Com serifa",
+        display: "Para títulos",
+        mono: "Monoespaçadas",
+        handwriting: "Manuscritas",
+      },
+      headings: "Títulos",
+      body: "Texto",
+      fromDrive: "Do Drive",
+      ownFont: "Fonte do arquivo",
+      fileFonts: {
+        slides: "Fontes da apresentação",
+        document: "Fontes do documento",
+      },
+      fileFontsNote: "Valem para todo o arquivo. Um texto com fonte própria continua com a dele.",
+      headingFont: "Fonte dos títulos",
+      bodyFont: "Fonte do texto",
+      bring: "Trazer fonte do Drive…",
+      bringButton: "Trazer do Drive",
+      bringTitle: "Trazer fonte do Drive",
+      bringSearch: "Buscar fontes no Drive",
+      bringEmpty: "Nenhuma fonte no Drive. Envie antes um arquivo .ttf, .otf ou .woff para o Drive.",
+      brought: "{{name}} agora está no arquivo",
+      notFont: "Esse arquivo não é uma fonte. Escolha um .ttf, .otf ou .woff.",
+      done: "Pronto",
+      text: "Estilo do texto",
+      /** The text style menu's button: a sample of letters, as the language writes them. */
+      glyph: "Aa",
+      weight: "Peso",
+      weights: {
+        w300: "Fina",
+        w400: "Normal",
+        w500: "Média",
+        w600: "Seminegrito",
+        w700: "Negrito",
+        w800: "Extranegrito",
+      },
+      tracking: "Espaçamento entre letras",
+      trackings: {
+        tight: "Mais justo",
+        normal: "Normal",
+        open: "Aberto",
+        wide: "Bem aberto",
+      },
+      lineHeight: "Altura da linha",
+      caps: "Tudo em maiúsculas",
+      highlight: "Marca-texto",
+      highlights: {
+        none: "Nenhum",
+        yellow: "Amarelo",
+        green: "Verde",
+        blue: "Azul",
+        pink: "Rosa",
+        orange: "Laranja",
+      },
+      effects: "Efeitos",
+      shadow: "Sombra",
+      shadows: {
+        none: "Nenhuma",
+        soft: "Suave",
+        strong: "Forte",
+      },
+      border: "Borda",
+      dashes: {
+        solid: "Contínua",
+        dashed: "Tracejada",
+        dotted: "Pontilhada",
+      },
+      gradient: "Gradiente",
+      gradients: {
+        none: "Nenhum",
+        ocean: "Oceano",
+        graphite: "Grafite",
+        sunset: "Pôr do sol",
+        violet: "Violeta",
+      },
+    },
     /** The presentation editor (ADR 0196 §2): its rail, stage, toolbar, notes and presenting. */
     slides: {
       rail: {

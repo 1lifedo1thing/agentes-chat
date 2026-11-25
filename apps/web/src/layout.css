@@ -14237,31 +14237,24 @@ html:not([data-pointer]) .ac-typing__see:focus-visible {
 .ai-panel > .ac-setnote {
   margin: 0;
 }
-/* Under the key's steps a note keeps their columns: its icon centred in the numbers' 20px, its words on the text's. */
-.ai-panel > .agp-addacct__step ~ .ac-setnote {
-  gap: 12px;
-}
+/* Under the key's steps a note's icon sits centred in the numbers' 20px, its words the kit's gap after it. */
 .ai-panel > .agp-addacct__step ~ .ac-setnote > :first-child {
-  margin-inline: calc((20px - 14px) / 2);
+  margin-inline-start: calc((20px - 14px) / 2);
 }
 /*
  * A plan's panel: only its head reads in two columns (the mark's 30px, `.ac-brand--sm`, and the name's 12px after it).
  * Under the hairline the lines start at the panel's edge, as a step does outside the panel, with no empty column on
- * their left: what leads a line (an icon, a step's number) sits centred in the numbers' 20px at the edge, its words
- * 12px after it, where a numbered step's words are. A note inside a step's words is the step's, not the panel's: its
- * icon stays on the step's text.
+ * their left: what leads a line (an icon, a step's number) sits centred in the numbers' 20px at the edge. A step's
+ * words are 12px after its number, a note's the kit's 8px after its icon, as every icon line's. A note inside a step's
+ * words is the step's, not the panel's: its icon stays on the step's text.
  */
 .ai-panel--plan {
   --mark: 30px;
   --lead: 20px;
 }
-.ai-panel--plan > :is(.ac-setnote, .setup-line, .ac-card__foot).ac-iconline,
-.ai-panel--plan .ai-panel__row > .ac-setnote {
-  gap: 12px;
-}
 .ai-panel--plan > :is(.ac-setnote, .setup-line, .ac-card__foot).ac-iconline > :first-child,
 .ai-panel--plan .ai-panel__row > .ac-setnote > :first-child {
-  margin-inline: calc((var(--lead) - 14px) / 2);
+  margin-inline-start: calc((var(--lead) - 14px) / 2);
 }
 .ai-panel--plan .agp-addacct__step > i {
   margin-inline: calc((var(--lead) - 20px) / 2);
@@ -14496,12 +14489,12 @@ html:not([data-pointer]) .ac-typing__see:focus-visible {
 .agp-addacct > .ai-panel__row > :not(.ac-setnote) {
   margin-left: 22px;
 }
-/* In a plan's panel the row's action is its sign-in's state: under the note's words, as a numbered step's button. */
+/* In a plan's panel the row's action is its sign-in's state: under the note's words (its icon centred in the lead). */
 .ai-panel--plan .ai-panel__row > .ac-setnote {
   flex-basis: 100%;
 }
 .ai-panel--plan .ai-panel__row > :not(.ac-setnote) {
-  margin-left: calc(var(--lead) + 12px);
+  margin-left: calc((var(--lead) + 14px) / 2 + 8px);
 }
 .ai-panel__use {
   overflow: hidden;
