@@ -1555,7 +1555,8 @@ export interface ApiClient {
     disconnect(orgId: string, serverId: string): Promise<void>;
     /**
      * The workspace's own OAuth client for the server at this address, and the redirect URI to register (who manages
-     * connectors). A 400 `connector.no_oauth` when the server doesn't sign in with OAuth.
+     * connectors). A 400 `connector.no_oauth` when the server doesn't sign in with OAuth, `connector.oauth_discovery`
+     * when its OAuth details can't be read.
      */
     ownClient(orgId: string, serverUrl: string): Promise<OwnOAuthClient>;
     /**

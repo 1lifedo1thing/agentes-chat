@@ -15419,6 +15419,7 @@
       "headersWithSignIn": "此服务器要求登录，而登录暂时无法携带标头。请移除标头后登录，或用 API 密钥连接。",
       "headersUnreadable": "无法读取已保存的标头。请重新输入，或将其移除。",
       "noOAuth": "该 MCP 服务器不通过 OAuth 登录，所以不接受你自己的应用。请用 API 密钥连接。",
+      "oauthDiscovery": "该 MCP 服务器通过 OAuth 登录，但无法读取它在 {{host}} 上的登录信息。请几分钟后再试。",
       "ownClientInUse": "仍有账号在用之前保存的应用登录。请先断开它们，再进行更改。",
       "ownClientId": "请检查客户端 ID：一个词，与服务提供方显示的一致。"
     },

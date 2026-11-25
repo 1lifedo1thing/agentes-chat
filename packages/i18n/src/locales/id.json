@@ -15409,6 +15409,7 @@
       "headersWithSignIn": "Server ini meminta proses masuk, dan proses masuk belum bisa membawa header. Hapus header untuk masuk, atau hubungkan dengan kunci API.",
       "headersUnreadable": "Header yang tersimpan tidak bisa dibaca. Ketik lagi, atau hapus.",
       "noOAuth": "Server MCP tersebut tidak masuk dengan OAuth, jadi tidak menerima aplikasi Anda. Hubungkan dengan kunci API.",
+      "oauthDiscovery": "Server MCP tersebut masuk dengan OAuth, tetapi detail masuknya di {{host}} tidak dapat dibaca. Coba lagi dalam beberapa menit.",
       "ownClientInUse": "Masih ada akun yang masuk dengan aplikasi yang disimpan sebelumnya. Putuskan dulu, lalu ganti.",
       "ownClientId": "Periksa client ID: satu kata, seperti yang ditampilkan penyedia."
     },
