@@ -162,9 +162,10 @@ test("who is working is the conversation's last line, scrolling with it: above t
   expect(chat).toContain("const GLIDE = { animated: true } as const;");
   // Over the composer only while the conversation has nothing to end with.
   expect(chat).toContain("{member && !awayAsk && !waitingFirst && !showList ? (");
-  // The composer's edges and a turn's gap above it, only while the line says something (a return at rest too).
-  expect(chat).toContain(
-    "const lineInList = useMemo(() => ({ paddingHorizontal: DOCK_SIDE, paddingTop: rhythm.turn }), [rhythm.turn]);",
+  // The composer's edges and a turn's gap above it, only while the line says something (a return at rest too); under
+  // it only a last message's air: neither its padding for the composer nor its pill's air under the faces.
+  expect(chat).toMatch(
+    /const lineInList = useMemo\(\s*\(\) => \(\{ paddingHorizontal: DOCK_SIDE, paddingTop: rhythm\.turn, paddingBottom: 0, marginBottom: -LINE_AIR \}\),\s*\[rhythm\.turn\],\s*\);/,
   );
   expect(chat).toContain("onOpen={openReturns} style={lineInList} />");
   expect(src("features/chat/LiveRows.tsx")).toContain("<View style={[styles.dock, style]}>");

@@ -67,6 +67,8 @@ const DOCK_LINE = 55;
 const DOCK_REST = 16;
 /** Air under the conversation's last message, before the composer's box. */
 const LIST_END_AIR = 22;
+/** The working line's pill (28 points) around its 18-point faces: the air under them, taken off the list's end. */
+const LINE_AIR = 5;
 /** The notifications line was shown and answered here: it doesn't come back on this screen. */
 const OFFER_DONE = "done";
 
@@ -511,8 +513,13 @@ function Chat({
   // Who works and who types here, and at rest who comes back when: the conversation's last line, under its last
   // message and scrolling with it (the list's footer, `WORK_FOOTER`), as a reply on its way. Pinned above the composer,
   // it stayed over the words being read and moved the conversation's end each time an agent started or finished.
-  // Above the composer only while there is no conversation to end with. The composer's edges, a turn's gap above it.
-  const lineInList = useMemo(() => ({ paddingHorizontal: DOCK_SIDE, paddingTop: rhythm.turn }), [rhythm.turn]);
+  // Above the composer only while there is no conversation to end with. The composer's edges, a turn's gap above it;
+  // under its words only the air a last message has (`LIST_END_AIR`): the line's own padding under it (kept for the
+  // composer when it sits above it) and its pill's air under the faces doubled the gap to the composer.
+  const lineInList = useMemo(
+    () => ({ paddingHorizontal: DOCK_SIDE, paddingTop: rhythm.turn, paddingBottom: 0, marginBottom: -LINE_AIR }),
+    [rhythm.turn],
+  );
   const listReturns = useMemo(
     () => <HereReturns channelId={channelId} threadId={threadId} onOpen={openReturns} style={lineInList} />,
     [channelId, threadId, openReturns, lineInList],
