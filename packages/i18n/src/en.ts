@@ -18461,7 +18461,7 @@ export const en = {
     telemetry: {
       title: "Usage statistics",
       label: "Send anonymous usage statistics to agentes.chat",
-      help: "Counts such as people, agents, machine sizes, AI tokens used and how much data the agents' browsers send and receive. Never messages, files, names or sites.",
+      help: "Counts such as people, agents, machine sizes, AI tokens used, how much data the agents' browsers send and receive, and how fast the apps open and run. Never messages, files, names or sites.",
       envOff: "Turned off in this server's settings (TELEMETRY=off).",
       envOffDesktop: "Turned off in the agentes.chat app on this server's computer (Preferences\u00a0›\u00a0Servers).",
       envOffHere: "Turned off in the agentes.chat app on this computer.",

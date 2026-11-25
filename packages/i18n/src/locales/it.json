@@ -18472,7 +18472,7 @@
     "telemetry": {
       "title": "Statistiche di utilizzo",
       "label": "Invia statistiche di utilizzo anonime ad agentes.chat",
-      "help": "Conteggi come persone, agenti, dimensioni delle macchine, token IA usati e quanti dati inviano e ricevono i browser degli agenti. Mai messaggi, file, nomi o siti.",
+      "help": "Conteggi come persone, agenti, dimensioni delle macchine, token IA usati, quanti dati inviano e ricevono i browser degli agenti e quanto velocemente si aprono e rispondono le app. Mai messaggi, file, nomi o siti.",
       "envOff": "Disattivate nelle impostazioni di questo server (TELEMETRY=off).",
       "envOffDesktop": "Disattivate nell'app agentes.chat sul computer di questo server (Preferenze › Server).",
       "envOffHere": "Disattivate nell'app agentes.chat di questo computer.",

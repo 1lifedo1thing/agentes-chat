@@ -17888,7 +17888,7 @@
     "telemetry": {
       "title": "Nutzungsstatistiken",
       "label": "Anonyme Nutzungsstatistiken an agentes.chat senden",
-      "help": "Zahlen wie Personen, Agenten, Maschinengrößen, verbrauchte KI-Tokens und wie viele Daten die Browser der Agenten senden und empfangen. Nie Nachrichten, Dateien, Namen oder Websites.",
+      "help": "Zahlen wie Personen, Agenten, Maschinengrößen, verbrauchte KI-Tokens, wie viele Daten die Browser der Agenten senden und empfangen, und wie schnell die Apps starten und laufen. Nie Nachrichten, Dateien, Namen oder Websites.",
       "envOff": "In den Einstellungen dieses Servers ausgeschaltet (TELEMETRY=off).",
       "envOffDesktop": "In der agentes.chat-App auf dem Computer dieses Servers ausgeschaltet (Einstellungen › Server).",
       "envOffHere": "In der agentes.chat-App auf diesem Computer ausgeschaltet.",

@@ -2367,6 +2367,13 @@
       "when": 1795555379831,
       "tag": "0342_surface_pin_lockouts",
       "breakpoints": true
+    },
+    {
+      "idx": 340,
+      "version": "7",
+      "when": 1795558902756,
+      "tag": "0343_client_vitals_day",
+      "breakpoints": true
     }
   ]
 }
