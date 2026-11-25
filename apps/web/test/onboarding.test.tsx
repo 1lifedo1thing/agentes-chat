@@ -59,6 +59,11 @@ const type = async (label: string, value: string) => {
 const calls = (state: FakeState, method: string) => state.calls.filter((c) => c.method === method);
 const heading = () => document.querySelector(".onb__title")?.textContent;
 const eyebrow = () => document.querySelector(".onb__eyebrow")?.textContent;
+/** The rail's steps that say "Depois", and whether each is marked left for later (a dash, never the done check). */
+const laterSteps = () =>
+  [...document.querySelectorAll(".onb__steps > li")]
+    .filter((li) => li.querySelector(".onb__step-sub")?.textContent === "Depois")
+    .map((li) => li.hasAttribute("data-later"));
 /** The step the rail marks as the one the person is on. */
 const railCurrent = () => document.querySelector(".onb__step[aria-current='step']")?.textContent;
 /** The plan step's card: its button shares the rail step's name, "Ligar o time". */
@@ -372,6 +377,7 @@ describe("the steps", () => {
     expect(heading()).toBe(PEOPLE);
     expect(eyebrow()).toBe("Passo 6 de 6");
     expect(document.querySelector(".onb__steps")?.textContent).toContain("Depois");
+    expect(laterSteps()).toEqual([true]);
     await click(button("Convidar depois"), 16);
     expect(calls(state, "orgs.saveOnboarding").at(-1)?.args).toEqual([orgId, { finished: true }]);
     expect(router.state.location.pathname).toMatch(new RegExp(`^/org/${orgId}/c/`));
@@ -886,6 +892,7 @@ describe("a team with no agents for now (ADR 0162, amended 2026-11-11)", () => {
     expect(eyebrow()).toBe("Passo 5 de 6");
     // The team step answered, its agents to come; Lodi alone wakes with the AI, the people still to come.
     expect(document.querySelector(".onb__steps")?.textContent).toContain("Depois");
+    expect(laterSteps()).toEqual([true]);
     expect(document.querySelector(".onb__say")?.textContent).toBe(
       "Escolha a IA que você já usa e eu acordo. Depois, falta só chamar as pessoas.",
     );

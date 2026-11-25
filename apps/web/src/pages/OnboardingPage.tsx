@@ -691,6 +691,8 @@ export function OnboardingPage() {
         ? t("onboarding.railValue.later")
         : undefined,
   };
+  // The steps whose value is "Later": passed, not done, so the rail marks them with a dash, never the check.
+  const later: Partial<Record<RailStep, boolean>> = { team: team.length === 0, ai: !thinksNow && aiLaterSaved };
 
   // Beside the team step: what an import would bring, else the template's team while the templates show, or while
   // "Start with a ready-made team" is picked on how to start (ADR 0162, amended 2026-11-11).
@@ -815,6 +817,7 @@ export function OnboardingPage() {
               (s === "name" && personalNow && orgId !== null) ||
               (s === "plan" && !held),
             value: values[s],
+            later: later[s],
           }))}
         />
         {!phone && (

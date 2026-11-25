@@ -83,6 +83,28 @@ describe("the step bar on a phone", () => {
   });
 });
 
+describe("a step left for later", () => {
+  test("is marked with a neutral dash, never the done check, and isn't read out as done", () => {
+    const later: RailStep[] = steps.map((s, i) =>
+      i === 3 || i === 5 ? { ...s, later: true, value: "Mais tarde" } : { ...s, value: "Feito" },
+    );
+    const { container } = render(
+      <StepRail label="Passos" steps={later} current={6} onGo={() => {}} doneLabel="(concluído)" />,
+    );
+    const items = [...container.querySelectorAll(".onb__steps > li")];
+    expect(items.map((li) => li.hasAttribute("data-later"))).toEqual([false, false, false, true, false, true, false]);
+    expect(items.map((li) => li.hasAttribute("data-done"))).toEqual([true, true, true, true, true, true, false]);
+    // The later ones draw one glyph, and not the done steps' check.
+    const glyph = (i: number) => items[i]?.querySelector(".onb__n path")?.getAttribute("d");
+    expect(glyph(3)).toBe(glyph(5));
+    expect(glyph(3)).not.toBe(glyph(0));
+    expect(items[3]?.textContent).toBe("ComputadorMais tarde");
+    expect(items[0]?.textContent).toBe("Workspace (concluído)Feito");
+    const css = readFileSync(join(import.meta.dir, "../src/layout.css"), "utf8");
+    expect(css).toContain(".onb__steps li[data-later] .onb__n {\n  color: var(--faint);\n}");
+  });
+});
+
 describe("the step bar on a phone fits its seven steps", () => {
   const css = readFileSync(join(import.meta.dir, "../src/layout.css"), "utf8");
   const phone = css.slice(css.indexOf("/* Phone: the rail is a compact step bar"));

@@ -9403,6 +9403,10 @@ html:not([data-pointer]) .onb__step:focus-visible {
   box-shadow: var(--card-key);
   color: var(--ok);
 }
+/* Passed but left for later: its dash in a neutral ink, never the done green. */
+.onb__steps li[data-later] .onb__n {
+  color: var(--faint);
+}
 .onb__step[aria-current="step"] .onb__n {
   background: var(--ink);
   color: var(--bg);
