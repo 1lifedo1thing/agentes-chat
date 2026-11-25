@@ -20036,7 +20036,7 @@
     },
     "offer_connect_app": {
       "label": "Proponi di collegare un'app o un MCP",
-      "description": "Pubblica una scheda il cui pulsante apre la finestra per collegare un'app o un server MCP dal suo indirizzo."
+      "description": "Pubblica una scheda il cui pulsante apre la finestra per collegare un'app o un server MCP: quelli del catalogo dal nome, qualsiasi altro dal suo indirizzo."
     },
     "offer_invites": {
       "label": "Proponi di invitare persone",

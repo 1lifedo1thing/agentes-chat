@@ -19420,7 +19420,7 @@
     },
     "offer_connect_app": {
       "label": "Anbieten, eine App oder einen MCP zu verbinden",
-      "description": "Postet eine Karte, deren Taste den Dialog zum Verbinden einer App oder eines MCP-Servers über seine Adresse öffnet."
+      "description": "Postet eine Karte, deren Taste den Dialog zum Verbinden einer App oder eines MCP-Servers öffnet: aus dem Katalog über den Namen, jeden anderen über seine Adresse."
     },
     "offer_invites": {
       "label": "Anbieten, Personen einzuladen",

@@ -20617,7 +20617,7 @@
     },
     "offer_connect_app": {
       "label": "Zaproponuj połączenie aplikacji lub MCP",
-      "description": "Publikuje kartę z przyciskiem, który otwiera okno połączenia aplikacji lub serwera MCP po jego adresie."
+      "description": "Publikuje kartę z przyciskiem, który otwiera okno połączenia aplikacji lub serwera MCP: z katalogu po nazwie, każdego innego po jego adresie."
     },
     "offer_invites": {
       "label": "Zaproponuj zaproszenie osób",

@@ -19494,7 +19494,7 @@
     },
     "offer_connect_app": {
       "label": "Aanbieden een app of MCP te koppelen",
-      "description": "Plaatst een kaart met een knop die het venster opent om een app of een MCP-server via zijn adres te koppelen."
+      "description": "Plaatst een kaart met een knop die het venster opent om een app of een MCP-server te koppelen: uit de catalogus via de naam, elke andere via zijn adres."
     },
     "offer_invites": {
       "label": "Aanbieden mensen uit te nodigen",

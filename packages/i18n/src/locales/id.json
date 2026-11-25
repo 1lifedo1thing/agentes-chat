@@ -18847,7 +18847,7 @@
     },
     "offer_connect_app": {
       "label": "Tawarkan menghubungkan aplikasi atau MCP",
-      "description": "Memposting kartu yang tombolnya membuka dialog untuk menghubungkan aplikasi atau server MCP lewat alamatnya."
+      "description": "Memposting kartu yang tombolnya membuka dialog untuk menghubungkan aplikasi atau server MCP: yang ada di katalog lewat namanya, yang lain lewat alamatnya."
     },
     "offer_invites": {
       "label": "Tawarkan mengundang orang",
