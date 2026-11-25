@@ -185,9 +185,10 @@ test("the owner's fix: a moved-in folder gets setgid and the group's rwx, a 644 
 });
 
 test("applySharedBin preserves Windows Path casing instead of overwriting PATH with only shared/bin", () => {
-  const existing = `C:\\Windows\\System32${path.delimiter}C:\\Users\\user\\.local\\bin`;
+  // Folders without a drive letter: on the POSIX machine the test runs on, `path.delimiter` is the drive's colon.
+  const existing = ["/windows/system32", "/users/user/.local/bin"].join(path.delimiter);
   const env: Record<string, string | undefined> = { Path: existing };
-  const shared = path.join("C:\\Users\\user\\agentes", "shared");
+  const shared = path.join("/users/user/agentes", "shared");
   applySharedBin(env, shared, "win32");
 
   expect(env.PATH).toBeUndefined();
