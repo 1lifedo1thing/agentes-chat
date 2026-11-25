@@ -120,26 +120,39 @@ export const CLI_GIT_MISSING = "git_missing";
 /** `Machine.cliErrors`' word for a CLI only in root's own `~/.local/bin` in system mode (mirror of `CLI_HOME_ONLY`). */
 export const CLI_HOME_ONLY = "home_only";
 
-/** Each vendor's own installer, for the CLIs the apps don't install; each puts its command in `~/.local/bin`. */
-const CLI_INSTALLERS = {
+/**
+ * Each vendor's own installer, for the CLIs the apps don't install; each puts its command in `~/.local/bin`. `windows`:
+ * its PowerShell installer, started through `powershell` so the line runs in cmd too (xAI's puts `grok.exe` in
+ * `%USERPROFILE%\.grok\bin`).
+ */
+const CLI_INSTALLERS: Record<string, { script: string; bin: string; opt: string; flags: string; windows?: string }> = {
   antigravity: {
     script: "curl -fsSL https://antigravity.google/cli/install.sh | bash",
     bin: "agy",
     opt: "/opt/agy",
     flags: " -s -- --skip-path",
   },
-  grok: { script: "curl -fsSL https://x.ai/cli/install.sh | bash", bin: "grok", opt: "/opt/grok", flags: "" },
+  grok: {
+    script: "curl -fsSL https://x.ai/cli/install.sh | bash",
+    bin: "grok",
+    opt: "/opt/grok",
+    flags: "",
+    windows: 'powershell -ExecutionPolicy Bypass -Command "irm https://x.ai/cli/install.ps1 | iex"',
+  },
   cursor: { script: "curl https://cursor.com/install -fsS | bash", bin: "agent", opt: "/opt/cursor", flags: "" },
-} as const;
+};
 
 /**
  * The terminal line that installs `kind`'s CLI on a computer someone connected, where the apps don't install it. In
  * system mode every agent's user must run it, so it goes under `/opt` with a link in `/usr/local/bin`
- * (SELF_HOSTING.md). Null: no such line (Windows, the workspace's own computer, Claude Code and Codex, OpenCode).
+ * (SELF_HOSTING.md). Null: no such line (Windows but Grok Build, the workspace's own computer, Claude Code and Codex,
+ * OpenCode).
  */
 export function cliInstallCommand(kind: string, m: Pick<Machine, "kind" | "os" | "mode">): string | null {
-  const it = CLI_INSTALLERS[kind as keyof typeof CLI_INSTALLERS];
-  if (!it || m.kind === "managed" || (m.os !== "linux" && m.os !== "darwin")) return null;
+  const it = CLI_INSTALLERS[kind];
+  if (!it || m.kind === "managed") return null;
+  if (m.os === "windows") return it.windows ?? null;
+  if (m.os !== "linux" && m.os !== "darwin") return null;
   if (m.mode !== "system") return it.script;
   return `sudo env HOME=${it.opt} sh -c '${it.script}${it.flags}' && sudo chmod -R a+rX ${it.opt} && sudo ln -sf ${it.opt}/.local/bin/${it.bin} /usr/local/bin/${it.bin}`;
 }

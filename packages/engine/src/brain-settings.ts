@@ -10,6 +10,7 @@ import {
   CODEX_WINDOWS_PROTOCOL,
   CURSOR_PROTOCOL,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   isBrainEffort,
   isBrainSpeed,
   OPENCODE_ACP_PROTOCOL,
@@ -525,6 +526,9 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
     reason = "runner_old";
   // On Windows a runner before `OPENCODE_ACP_PROTOCOL` refuses every OpenCode turn.
   else if (kind === "opencode" && machine.os === "windows" && machine.protocol < OPENCODE_ACP_PROTOCOL)
+    reason = "runner_old";
+  // On Windows a runner before `GROK_WINDOWS_PROTOCOL` refuses every Grok turn.
+  else if (kind === "grok" && machine.os === "windows" && machine.protocol < GROK_WINDOWS_PROTOCOL)
     reason = "runner_old";
   // On a Mac a runner before `ANTIGRAVITY_MAC_PROTOCOL` refuses every Gemini sign-in and turn.
   else if (kind === "antigravity" && machine.os === "darwin" && machine.protocol < ANTIGRAVITY_MAC_PROTOCOL)

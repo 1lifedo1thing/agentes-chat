@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 81;
+export const MACHINE_PROTOCOL_VERSION = 82;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -650,6 +650,12 @@ export const CODEX_WINDOWS_PROTOCOL = 60;
  * background, after start). An older runner says neither, and runs Codex on Windows only inside MXC.
  */
 export const CODEX_UNELEVATED_PROTOCOL = 80;
+/**
+ * Grok Build turns on Windows (ADR 0142 §10). Grok's own sandbox doesn't run there, so a `work` turn's own tools keep
+ * to Grok's permission rules: edits in the turn's folder, read-only commands, everything else through our tools. A
+ * Windows runner before it refuses every Grok turn, so the server reads it as too old for Grok there.
+ */
+export const GROK_WINDOWS_PROTOCOL = 82;
 /** What holds Codex's commands on a Windows computer (`executors.codex.sandbox`): `none`, nothing it could start. */
 export const CODEX_SANDBOXES = ["mxc", "unelevated", "none"] as const;
 export type CodexSandbox = (typeof CODEX_SANDBOXES)[number];

@@ -1655,6 +1655,14 @@ restart. The app can install Claude Code there for you, but not Codex. Then sign
 - The isolation leaves the computer's own loopback open: a command can reach a service listening on
   `127.0.0.1` there.
 
+**Grok Build on Windows.** Install it as the Windows user that runs the app, with
+`powershell -ExecutionPolicy Bypass -Command "irm https://x.ai/cli/install.ps1 | iex"` (it puts `grok.exe` in
+`%USERPROFILE%\.grok\bin`), then add a Grok account in **Settings → AI and usage**; a PC can hold several, each
+in a folder of its own. Grok Build's own sandbox doesn't run on Windows, so there its own tools only edit files in
+the agent's folder and run read-only commands (`git status`, `ls`, `grep`); every other command goes through the
+agent's terminal tool, under the same command rules as Claude Code's on Windows. Lodi's turns are the same as
+elsewhere.
+
 Use HTTPS with a certificate from a public authority (Tailscale and the Caddy profile get one). Over
 plain http the computer's token travels unencrypted, and the runner's background service doesn't
 load extra CA certificates.

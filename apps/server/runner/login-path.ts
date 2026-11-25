@@ -67,8 +67,9 @@ export function mergePathWith(delimiter: string, ...lists: (string | null | unde
 }
 
 /**
- * Where the usual installers put a CLI on Windows: Claude Code's own, npm's global launchers, Bun's, and Google's for
- * the Antigravity CLI (`%LOCALAPPDATA%\agy\bin\agy.exe`, its `install.ps1`).
+ * Where the usual installers put a CLI on Windows: Claude Code's own, npm's global launchers, Bun's, Google's for the
+ * Antigravity CLI (`%LOCALAPPDATA%\agy\bin\agy.exe`, its `install.ps1`) and xAI's for Grok Build
+ * (`%USERPROFILE%\.grok\bin\grok.exe`, its `install.ps1`).
  */
 export function usualWindowsDirs(env: NodeJS.ProcessEnv = process.env): string[] {
   const home = envValue(env, "USERPROFILE", "win32") || os.homedir();
@@ -79,6 +80,7 @@ export function usualWindowsDirs(env: NodeJS.ProcessEnv = process.env): string[]
     win32.join(appData, "npm"),
     win32.join(home, ".bun", "bin"),
     win32.join(localAppData, "agy", "bin"),
+    win32.join(home, ".grok", "bin"),
   ];
 }
 

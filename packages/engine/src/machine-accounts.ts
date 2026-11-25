@@ -15,6 +15,7 @@ import {
   CURSOR_PROTOCOL,
   claudeLoginMethodsOf,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   isAccountId,
   isAccountKind,
   isAccountLoginFailure,
@@ -1549,7 +1550,7 @@ export async function beginAccountLogin(
   }
   const plan = planOf(provider);
   const { machine } = await memberMachine(deps.db, userId, orgId, machineId);
-  // A CLI its runner won't run on this system (Grok Build or Cursor on Windows) would sign in and fail every turn.
+  // A CLI its runner won't run on this system (Cursor on Windows) would sign in and fail every turn.
   if (!brainRunsOn(kind, machine.os)) {
     throw new ConflictError(`${BRAIN_NAMES[kind]} doesn't run on ${machine.name}'s system yet.`, "account.system", {
       program: BRAIN_NAMES[kind],
@@ -1578,7 +1579,9 @@ export async function beginAccountLogin(
           ? ANTIGRAVITY_MAC_PROTOCOL
           : ANTIGRAVITY_PROTOCOL
         : kind === "grok"
-          ? GROK_PROTOCOL
+          ? machine.os === "windows"
+            ? GROK_WINDOWS_PROTOCOL
+            : GROK_PROTOCOL
           : kind === "opencode"
             ? OPENCODE_PROTOCOL
             : plan

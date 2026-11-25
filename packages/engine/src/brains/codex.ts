@@ -9,6 +9,7 @@ import {
   CODEX_WINDOWS_PROTOCOL,
   CURSOR_PROTOCOL,
   GROK_PROTOCOL,
+  GROK_WINDOWS_PROTOCOL,
   LOCKED_BRAIN_PROTOCOL,
   OPENCODE_ACP_PROTOCOL,
   OPENCODE_PROTOCOL,
@@ -243,6 +244,7 @@ const GROK_CLI: CliBrainSpec = {
   kind: "grok",
   name: "Grok Build",
   protocol: GROK_PROTOCOL,
+  windowsProtocol: GROK_WINDOWS_PROTOCOL,
   check: ({ grok }) =>
     grok
       ? null
