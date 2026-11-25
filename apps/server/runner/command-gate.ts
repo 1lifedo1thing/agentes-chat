@@ -178,7 +178,7 @@ async function scriptOf(command: string, cwd: string): Promise<{ text: string; c
   }
 }
 
-/** Tests: how a long script's child runner starts (default: this runner, as `launch.ts` starts it) and how long it may take. */
+/** Tests: how a long script's child runner starts (default: this runner, as `launch.ts` starts it), and its time. */
 type Apart = { command?: readonly string[]; ms?: number };
 
 /** A child's answer, when it reads as one. */
