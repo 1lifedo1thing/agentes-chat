@@ -4664,6 +4664,7 @@
     "available": "Dostępny",
     "working": "W pracy",
     "waiting": "Czeka na ciebie",
+    "idle": "Nieaktywny",
     "lower": {
       "online": "online",
       "away": "zaraz wracam",
