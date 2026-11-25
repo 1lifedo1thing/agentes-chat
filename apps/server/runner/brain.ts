@@ -87,7 +87,7 @@ import { DELEGATED_RESULT_CHARS, type DelegatedBridge } from "./delegated-tools"
 import { hostMemAvailable, MIN_FREE_BYTES } from "./desktop-session";
 import { RunnerError } from "./errors";
 import { descendantPids, killTree } from "./exec";
-import { cliSpawn, envValue } from "./executors";
+import { cliSpawn, endedNotFound, envValue } from "./executors";
 import { HARDENED_GIT_ARGS } from "./git-guard";
 import { readJson, writeJson } from "./json-file";
 import {
@@ -2870,7 +2870,7 @@ export class BrainManager {
       this.log(
         `[${ctx.agent.handle}] brain process for ${session.slice(0, 8)} died mid-turn (${died}); resuming one-shot`,
       );
-      if (live.proc.stderr.startsWith("ENOENT")) return this.cliMissing();
+      if (endedNotFound(live.proc.stderr, live.proc.exitCode)) return this.cliMissing();
       const resume = this.resumeFor(cwd, session, req, ctx, true);
       return this.oneShot(key, session, cwd, req, ctx, sig, resume, true, line);
     }
@@ -3141,7 +3141,7 @@ export class BrainManager {
       this.logStall(ctx, session, out.stalled, "ending the turn (it stalled before too)");
       return errorEvent("brain_stalled", stalledAgainMessage(out.stalled), false);
     }
-    if (live.proc.stderr.startsWith("ENOENT")) return this.cliMissing();
+    if (endedNotFound(live.proc.stderr, live.proc.exitCode)) return this.cliMissing();
     const fast = Date.now() - live.proc.startedAt <= FAST_FAIL_MS;
     // Never into `--resume` on a delegated CLI: a transcript it doesn't own is what that answer may mean.
     if (mayRetryFlag && fast && WRONG_SESSION_FLAG.test(live.proc.stderr) && (resume || !ctx.delegated)) {

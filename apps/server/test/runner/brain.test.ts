@@ -1487,6 +1487,15 @@ test.if(posix)("a wrong session flag on a one-shot start is retried once with th
 test.if(posix)("no Claude Code, a canceled turn, and bad requests", async () => {
   const missing = setup({ claudeCommand: ["/nonexistent/claude-xyz"] });
   expect((await missing.turn(1, "hi")).final).toMatchObject({ code: "cli_missing", retryable: true });
+  // Through cmd.exe on Windows a missing CLI is no ENOENT: cmd says so and ends (exit 9009 there).
+  const cmd = setup({
+    claudeCommand: [
+      "/bin/sh",
+      "-c",
+      "printf \"'claude' is not recognized as an internal or external command,\\r\\noperable program or batch file.\\r\\n\" >&2; exit 1",
+    ],
+  });
+  expect((await cmd.turn(1, "hi")).final).toMatchObject({ code: "cli_missing", retryable: true });
   const { turn } = setup();
   const ac = new AbortController();
   const p = turn(2, "SLOW wait", {}, ac.signal);
