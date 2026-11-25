@@ -26,7 +26,7 @@ afterEach(async () => {
  */
 async function mentionRun(options: { askAgent?: boolean; sayNow?: boolean } = {}) {
   let beforeModel = -1;
-  const statusPicked = new Set<string>();
+  const statusAsked = new Set<string>();
   f = await setup({
     ...options,
     reply: (req) => {
@@ -35,7 +35,7 @@ async function mentionRun(options: { askAgent?: boolean; sayNow?: boolean } = {}
       return { chunks: [req.outputSchema ? '{"needs_agent":0,"scores":[],"reason":"none"}' : "ok"] };
     },
     judge: (kind, _id, _state, _question, request) => {
-      if (kind === "agent_status" && request.runId) statusPicked.add(request.runId);
+      if (kind === "agent_status" && request.runId) statusAsked.add(request.runId);
       return undefined;
     },
   });
@@ -67,8 +67,13 @@ async function mentionRun(options: { askAgent?: boolean; sayNow?: boolean } = {}
   expect(profile).not.toBeNull();
   const p = profile as unknown as { runId: string; stages: StageTiming[]; total: { queries: number } };
   expect(p.stages.map((s) => s.stage)).toEqual(["claim", "context", "model#1", "turn_end#1", "persist", "events"]);
-  // Its status line is still picked, in a request of its own beside the run (ADR 0084 §8), counted in neither.
-  await until(() => statusPicked.has(p.runId), "the run's status pick");
+  // Its status line is still written beside the run (ADR 0084 §8), counted in neither. Its one line (where it answers)
+  // shows at once: no request to Jev to pick it.
+  const lineOf = async () =>
+    (await f.db.select({ runId: schema.agents.statusRunId }).from(schema.agents).where(eq(schema.agents.id, f.agent.id)))[0]
+      ?.runId;
+  await until(async () => (await lineOf()) === p.runId, "the run's status line");
+  expect(statusAsked.has(p.runId)).toBe(false);
   return { beforeModel, total: p.total.queries, runId: p.runId };
 }
 

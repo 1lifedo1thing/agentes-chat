@@ -43,7 +43,7 @@ import { PLAN_NOTICE, PLAN_PAUSE } from "@agenteschat/ui/plan-state";
 import { pendingConnectors } from "./access";
 import { linkRunActions, publishMessageActions } from "./agent-actions";
 import { withTimeout } from "./agent-media";
-import { announceAgentStatus, askRunStatus, startRunStatus, statusCandidates } from "./agent-status";
+import { announceAgentStatus, askRunStatus, soleStatusPick, startRunStatus, statusCandidates } from "./agent-status";
 import { TECHNICAL_STYLE_LINE } from "./agent-style";
 import { type Agent, getAgentCached } from "./agents";
 import { agentsDmReads, readerOfRun } from "./agents-dm-reads";
@@ -2200,11 +2200,13 @@ async function executeRunInner(
           startGroup?.skip("agent_status");
           throw error;
         });
-        // A routine's run shows its routine's line (`STICKY`): nothing to pick.
+        // A routine's run shows its routine's line (`STICKY`), and a run with one line shows it: nothing to pick.
         const routineLine = lines.some((c) => c.kind === "routine");
-        if (routineLine) startGroup?.skip("agent_status");
+        const sole = routineLine ? null : soleStatusPick(lines);
+        if (routineLine || sole) startGroup?.skip("agent_status");
         const pick =
-          judge && !routineLine
+          sole ??
+          (judge && !routineLine
             ? await askRunStatus(judge, {
                 orgId: run.orgId,
                 agentId: agent.id,
@@ -2215,7 +2217,7 @@ async function executeRunInner(
                 candidates: lines,
                 group: startGroup,
               }).catch(() => null)
-            : null;
+            : null);
         await startRunStatus({ db, pubsub: deps.pubsub }, run, lines, pick);
       })
       .catch(() => {});
