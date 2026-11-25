@@ -6885,9 +6885,10 @@ async function executeRunInner(
  * context, the judges and the computer's line run (`Brain.warm`). Its session is picked without the prompt key
  * (nothing kept on the run). With "Automático" it starts on `guess` (the conversation's kept choice, else the medium
  * tier) and, once the run's own choice (`chosen`) gives another model or effort, warms again with that: the runner
- * replaces a process no turn used yet, so the turn finds the one it would start.
+ * replaces a process no turn used yet, so the turn finds the one it would start. `gate`: whether to warm on the plan
+ * found (`warmWhileTyping`'s, which has no run yet).
  */
-async function warmAtClaim(
+export async function warmAtClaim(
   deps: EngineDeps,
   agent: Agent,
   run: AgentRun,
@@ -6895,10 +6896,12 @@ async function warmAtClaim(
   codeSession: CodeSessionContext | null,
   guess: Promise<AutoChoice>,
   chosen: Promise<AutoChoice> | null,
+  gate?: (plan: BrainPlan) => Promise<boolean>,
 ) {
   const factory = deps.brains?.claude_code;
   if (!factory) return;
   const base = await resolveBrain(deps, agent, run, conversation, { peek: true, codeSession });
+  if (gate && !(await gate(base))) return;
   if (base.kind !== "claude_code" || base.unavailable || !base.session) return;
   const session = base.session;
   const brain = factory(agent, run, { mcpToken: () => "" });
