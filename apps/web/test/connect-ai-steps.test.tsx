@@ -319,8 +319,8 @@ describe("Conectar uma IA: one picker, plans first", () => {
     expect(shownText(more)).toContain("Gemini, Grok e Cursor ainda não rodam no Windows");
     await click(more);
     for (const name of ["Gemini", "Grok", "Cursor"])
-      expect(shownText(within(dialog).getByRole("button", { name: new RegExp(`^${name}`) }))).toContain(
-        "Ainda não roda no Windows",
+      expect(shownText(within(dialog).getByRole("button", { name: new RegExp(`^${name}`) }))).toBe(
+        `${name}Ainda não roda no Windows`,
       );
     expect(shownText(within(dialog).getByRole("button", { name: /^Claude/ }))).not.toContain("Windows");
   });

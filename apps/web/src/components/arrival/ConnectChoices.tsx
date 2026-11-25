@@ -51,7 +51,8 @@ export function ConnectChoices({
       <ProviderLogo id={planMark(c)} size="tile" off={dims(c)} />,
       planLabel(t, c),
       off(c) ? t("connectAi.offSystem", { system: off(c) }) : t(`connectAi.plan.${c}.tiers`),
-      perAgent?.(c) ? (
+      // A plan that can't run there has no logins to count.
+      perAgent?.(c) && !off(c) ? (
         <span className="arrival-opts__tag arrival-opts__tag--quiet">{t("connectAi.team.perAgent")}</span>
       ) : undefined,
     );
