@@ -8948,6 +8948,11 @@
         "text": "Bir e-posta gelince ajan yanıtı hazırlar.",
         "prompt": "Gelen e-postayı okuyun, konusunu ve ne kadar acil olduğunu söyleyin. Bir yanıt önerisi yazın, ama göndermeyin."
       },
+      "inbox": {
+        "name": "Yanıt bekleyen e-postalar",
+        "text": "Hafta içi saat 9 ve 14'te, yanıt bekleyenler, taslakla.",
+        "prompt": "Son seferden bu yana gelen e-postalara bak. Yanıt gerektirenleri en acilden başlayarak listele ve her biri için göndermeden bir yanıt taslağı yaz."
+      },
       "tickets": {
         "name": "Yanıtsız talepler",
         "text": "Hafta içi saat 9 ve 14'te, kimler hâlâ bekliyor.",
@@ -9032,6 +9037,11 @@
         "name": "Yeni PR'ları incele",
         "text": "Bir PR açıldığında ajan onu okur ve yorum yapar.",
         "prompt": "Yeni PR'ın diff'ini oku, riskleri belirt ve elle neyin test edilmesi gerektiğini söyle."
+      },
+      "openPrs": {
+        "name": "İnceleme bekleyen PR'lar",
+        "text": "Hafta içi saat 10'da, henüz kimsenin incelemediği açık PR'lar.",
+        "prompt": "Hâlâ inceleme bekleyen açık PR'lara bak. Her biri için neyi değiştirdiğini, ne kadar süredir beklediğini ve önce neye bakılması gerektiğini söyle."
       },
       "week": {
         "name": "Hafta kapanışı",
@@ -15060,6 +15070,27 @@
       "asks_other": "{{count}} işlem sohbette onay ister.",
       "adjust": "Ayarla",
       "ok": "Tamam"
+    },
+    "routine": {
+      "inbox": "{{name}} e-postalarınızı okur ve yanıt gerektirenleri taslağıyla birlikte size doğrudan mesajla gönderir.",
+      "dayPlan": "{{name}} takviminize bakar ve günün toplantılarını ve neyin hazırlanacağını size doğrudan mesajla gönderir.",
+      "failed": "{{name}} retleri, iadeleri ve itirazları kontrol eder ve size doğrudan mesajla yazar.",
+      "leads": "{{name}} CRM'e kimlerin geldiğine bakar ve size doğrudan mesajla kimden başlayacağınızı söyler.",
+      "tickets": "{{name}} yanıt bekleyen talepleri bulur ve önerilen bir yanıtla size doğrudan mesajla gönderir.",
+      "late": "{{name}} geciken görevleri bulur ve her biriyle kimin ilgilendiğini size doğrudan mesajla söyler.",
+      "openPrs": "{{name}} inceleme bekleyen PR'lara bakar ve önce neye bakacağınızı size doğrudan mesajla söyler.",
+      "errors": "{{name}} yeni hataları kontrol eder ve neyin ilgi gerektirdiğini size doğrudan mesajla söyler.",
+      "noAgent": "Yukarıda bir ajana erişim verin, bununla o ilgilensin.",
+      "preparing": "Rutin hazırlanıyor…",
+      "who": "Kim yapacak",
+      "when": "Ne zaman",
+      "on": "{{name}} rutinini oluştur",
+      "created": "Rutin oluşturuldu: {{name}}",
+      "createdDetail": "{{agent}} başladı: ilk özet doğrudan mesajınıza gelecek.",
+      "undo": "Geri al",
+      "undone": "Rutin geri alındı",
+      "notCreated": "Rutin oluşturulamadı. Rutinler'den oluşturabilirsiniz.",
+      "mailboxOnly": "Yalnızca {{address}} posta kutusu."
     },
     "git": {
       "token": "Erişim belirteci",

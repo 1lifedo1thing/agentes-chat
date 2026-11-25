@@ -9257,6 +9257,11 @@
         "text": "Cuando llegue un correo, el agente prepara la respuesta.",
         "prompt": "Lee el correo que llegó y di de qué trata y qué tan urgente es. Escribe una respuesta sugerida, sin enviarla."
       },
+      "inbox": {
+        "name": "Correos que piden respuesta",
+        "text": "Días laborables a las 9 y a las 14, lo que pide respuesta, con borrador.",
+        "prompt": "Mira los correos que llegaron desde la última vez. Enumera los que necesitan respuesta, del más urgente al menos, y escribe un borrador de respuesta para cada uno, sin enviarlo."
+      },
       "tickets": {
         "name": "Tickets sin respuesta",
         "text": "Días laborables a las 9 y a las 14, quién sigue esperando.",
@@ -9341,6 +9346,11 @@
         "name": "Revisar PRs nuevos",
         "text": "Cuando se abre un PR, el agente lo lee y comenta.",
         "prompt": "Lee el diff del PR nuevo, señala los riesgos y di qué probar a mano."
+      },
+      "openPrs": {
+        "name": "PRs esperando revisión",
+        "text": "Días laborables a las 10, los PRs abiertos que nadie revisó.",
+        "prompt": "Mira los PRs abiertos que todavía esperan revisión. Para cada uno, di qué cambia, cuánto tiempo lleva esperando y qué mirar primero."
       },
       "week": {
         "name": "Cierre de la semana",
@@ -15579,6 +15589,27 @@
       "asks_other": "{{count}} acciones piden aprobación en el chat.",
       "adjust": "Ajustar",
       "ok": "Listo"
+    },
+    "routine": {
+      "inbox": "{{name}} lee tus correos y te manda por MD lo que necesita respuesta, ya con borrador.",
+      "dayPlan": "{{name}} mira tu calendario y te manda por MD las reuniones del día y qué preparar.",
+      "failed": "{{name}} revisa rechazos, reembolsos y disputas y te avisa por MD.",
+      "leads": "{{name}} ve quién llegó al CRM y te dice por MD por quién empezar.",
+      "tickets": "{{name}} busca tickets que esperan respuesta y te los manda por MD, con una respuesta sugerida.",
+      "late": "{{name}} busca tareas atrasadas y te dice por MD quién se ocupa de cada una.",
+      "openPrs": "{{name}} mira los PRs que esperan revisión y te dice por MD qué mirar primero.",
+      "errors": "{{name}} revisa los errores nuevos y te dice por MD qué necesita atención.",
+      "noAgent": "Da acceso a un agente arriba y él se encarga de esto por ti.",
+      "preparing": "Preparando la rutina…",
+      "who": "Quién lo hace",
+      "when": "Cuándo",
+      "on": "Crear la rutina {{name}}",
+      "created": "Rutina creada: {{name}}",
+      "createdDetail": "{{agent}} ya empezó: el primer resumen llega a tu MD.",
+      "undo": "Deshacer",
+      "undone": "Rutina deshecha",
+      "notCreated": "No se pudo crear la rutina. Puedes crearla en Rutinas.",
+      "mailboxOnly": "Solo el buzón {{address}}."
     },
     "git": {
       "token": "Token de acceso",

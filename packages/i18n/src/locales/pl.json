@@ -9592,6 +9592,11 @@
         "text": "Gdy przyjdzie e-mail, agent przygotowuje odpowiedź.",
         "prompt": "Przeczytaj e-mail, który przyszedł, i powiedz, czego dotyczy i jak jest pilny. Napisz propozycję odpowiedzi, ale jej nie wysyłaj."
       },
+      "inbox": {
+        "name": "E-maile, które czekają na odpowiedź",
+        "text": "W dni robocze o 9:00 i 14:00, to, co wymaga odpowiedzi, z wersją roboczą.",
+        "prompt": "Przejrzyj e-maile, które przyszły od ostatniego razu. Wypisz te, które wymagają odpowiedzi, od najpilniejszego, i do każdego napisz wersję roboczą odpowiedzi, bez wysyłania."
+      },
       "tickets": {
         "name": "Zgłoszenia bez odpowiedzi",
         "text": "W dni robocze o 9:00 i 14:00, kto wciąż czeka.",
@@ -9676,6 +9681,11 @@
         "name": "Przeglądaj nowe PR",
         "text": "Gdy pojawi się PR, agent go czyta i komentuje.",
         "prompt": "Przeczytaj diff nowego PR, wskaż ryzyka i powiedz, co przetestować ręcznie."
+      },
+      "openPrs": {
+        "name": "PR czekające na przegląd",
+        "text": "W dni robocze o 10:00, otwarte PR, których nikt jeszcze nie przejrzał.",
+        "prompt": "Przejrzyj otwarte PR, które wciąż czekają na przegląd. Przy każdym napisz, co zmienia, jak długo czeka i na co spojrzeć najpierw."
       },
       "week": {
         "name": "Podsumowanie tygodnia",
@@ -16191,6 +16201,27 @@
       "asks_other": "{{count}} akcji prosi o zatwierdzenie na czacie.",
       "adjust": "Dostosuj",
       "ok": "Gotowe"
+    },
+    "routine": {
+      "inbox": "{{name}} czyta Twoje e-maile i wysyła Ci w wiadomości bezpośredniej to, co wymaga odpowiedzi, już z wersją roboczą.",
+      "dayPlan": "{{name}} sprawdza Twój kalendarz i wysyła Ci w wiadomości bezpośredniej dzisiejsze spotkania i to, co przygotować.",
+      "failed": "{{name}} sprawdza odmowy, zwroty i spory i pisze do Ciebie w wiadomości bezpośredniej.",
+      "leads": "{{name}} sprawdza, kto pojawił się w CRM, i pisze Ci w wiadomości bezpośredniej, od kogo zacząć.",
+      "tickets": "{{name}} znajduje zgłoszenia czekające na odpowiedź i wysyła Ci je w wiadomości bezpośredniej, z sugerowaną odpowiedzią.",
+      "late": "{{name}} znajduje zaległe zadania i pisze Ci w wiadomości bezpośredniej, kto zajmuje się każdym z nich.",
+      "openPrs": "{{name}} sprawdza PR czekające na przegląd i pisze Ci w wiadomości bezpośredniej, na co spojrzeć najpierw.",
+      "errors": "{{name}} sprawdza nowe błędy i pisze Ci w wiadomości bezpośredniej, co wymaga uwagi.",
+      "noAgent": "Daj dostęp agentowi powyżej, a on się tym zajmie.",
+      "preparing": "Przygotowuję rutynę…",
+      "who": "Kto to robi",
+      "when": "Kiedy",
+      "on": "Utwórz rutynę {{name}}",
+      "created": "Rutyna utworzona: {{name}}",
+      "createdDetail": "{{agent}} już zaczyna: pierwsze podsumowanie przyjdzie w Twojej wiadomości bezpośredniej.",
+      "undo": "Cofnij",
+      "undone": "Rutyna cofnięta",
+      "notCreated": "Nie udało się utworzyć rutyny. Możesz ją utworzyć w Rutynach.",
+      "mailboxOnly": "Tylko skrzynka {{address}}."
     },
     "git": {
       "token": "Token dostępu",
