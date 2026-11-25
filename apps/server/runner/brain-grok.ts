@@ -233,6 +233,51 @@ export function grokTurnArgs(input: {
 }
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+const decodeByteArray = (v: unknown): string | null => {
+  if (!Array.isArray(v)) return null;
+  for (const n of v) {
+    if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > 255) return null;
+  }
+  return Buffer.from(v).toString("utf8");
+};
+
+/**
+ * Grok Build 1.0.73+ can serialize native shell tool results as JSON envelopes whose `output` (or `stdout`/`stderr`)
+ * is a UTF-8 byte array (`{"type":"Bash","output":[112,114,...],"output_file":...}`). Decode those envelopes to plain
+ * UTF-8 text so the transcript and follow-through judge read the real command output instead of numeric byte arrays.
+ * Skips MCP / bridge tool results and requires Grok's native shell envelope shape so legitimate JSON payloads stay intact.
+ */
+export function decodeGrokToolOutput(raw: string, toolName?: string): string {
+  if (toolName && (toolName.startsWith("mcp__") || toolName === "use_tool" || toolName === "find_tools")) return raw;
+  const trimmed = raw.trimStart();
+  if (!trimmed.startsWith("{")) return raw;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return raw;
+  }
+  if (!isRecord(parsed) || typeof parsed.type !== "string") return raw;
+  const hasOutputFile = "output_file" in parsed;
+  const isShellEnvelope = hasOutputFile || parsed.type === "Bash";
+  const output = hasOutputFile ? decodeByteArray(parsed.output) : null;
+  const stdout = isShellEnvelope ? decodeByteArray(parsed.stdout) : null;
+  const stderr = isShellEnvelope ? decodeByteArray(parsed.stderr) : null;
+  const errText = stderr ?? (typeof parsed.stderr === "string" ? parsed.stderr : "");
+  if (output !== null) {
+    const parts = [output, errText].filter(Boolean);
+    if (parts.length > 0) return parts.join(output.endsWith("\n") ? "" : "\n");
+    return typeof parsed.error === "string" ? parsed.error : "";
+  }
+  if (stdout !== null || stderr !== null) {
+    const outText = stdout ?? (typeof parsed.stdout === "string" ? parsed.stdout : "");
+    const parts = [outText, errText].filter(Boolean);
+    if (parts.length > 0) return parts.join(outText.endsWith("\n") ? "" : "\n");
+    return typeof parsed.error === "string" ? parsed.error : "";
+  }
+  return raw;
+}
 const QUALIFIED = /^[A-Za-z_][\w-]*__[\w-]+$/;
 
 /** A `use_tool` call reaches our bridge alone: every qualified name in its input is ours, and there is one. */
@@ -387,6 +432,7 @@ export async function runGrokTurn(input: GrokTurnInput, opts: GrokTurnOptions): 
       ...(windows ? { windows } : {}),
     });
     const parser = new ClaudeStreamParser();
+    parser.formatToolResult = decodeGrokToolOutput;
     parser.beginTurn();
     let child: ChildProcess;
     try {

@@ -1705,6 +1705,16 @@ test("Grok signs in on Windows from GROK_WINDOWS_PROTOCOL on; an older Windows r
   await expect(begin(GROK_WINDOWS_PROTOCOL - 1)).rejects.toMatchObject({ code: "account.runner_old" });
 });
 
+test("Cursor doesn't sign in on a Windows computer: refused before the runner is asked (issue #156)", async () => {
+  f = await setup();
+  const { machineId } = await ownedMachine(SHARED_GROK_PROTOCOL);
+  await f.db.update(schema.machines).set({ os: "windows" }).where(eq(schema.machines.id, machineId));
+  const runner = fakeHub(machineId, () => ({ url: "https://cursor.com/device" }), { protocol: SHARED_GROK_PROTOCOL });
+  const refused = await beginAccountLogin(runner.deps, f.owner.id, f.org.id, machineId, "cursor").catch((e) => e);
+  expect(refused).toMatchObject({ code: "account.system", params: { program: "Cursor" } });
+  expect(runner.calls).toEqual([]);
+});
+
 test("one sign-in for all agents (protocol 29): asked for, it thinks for two agents, once; out and gone for both", async () => {
   f = await setup();
   const { machineId } = await ownedMachine(SHARED_ACCOUNTS_PROTOCOL);

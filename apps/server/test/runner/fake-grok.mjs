@@ -151,7 +151,19 @@ if (args[0] === "-p" || promptFile) {
   });
   out(msg([{ type: "text", text: "Let me check." }, ...calls]));
   for (const c of calls) {
-    out(result(c.id, c.name === "use_tool" ? "posted" : prompt.includes("ENV") ? JSON.stringify(env) : "ok"));
+    const outText =
+      c.name === "use_tool"
+        ? "posted"
+        : prompt.includes("ENV")
+          ? JSON.stringify(env)
+          : prompt.includes("BYTES")
+            ? JSON.stringify({
+                type: "Bash",
+                output: [...Buffer.from("prov-grok-ok\n8\n", "utf8")],
+                output_file: null,
+              })
+            : "ok";
+    out(result(c.id, outText));
   }
   delta(" All good.");
   out(msg([{ type: "text", text: " All good." }]));
