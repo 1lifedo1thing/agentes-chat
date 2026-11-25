@@ -80,7 +80,7 @@ import {
   routineAccessOf,
   routineReportOf,
 } from "./routine-brief";
-import { enqueueRoutineJob, queueEventRun, startGatheredRun } from "./routine-events";
+import { enqueueRoutineJob, queueEventRun, startGatheredRun, wakeHeldRuns } from "./routine-events";
 import { claimRoutineRun, haltRoutineRuns, makeWayForRun, skipRoutineRun, unclaimRoutineRun } from "./routine-firing";
 import {
   callCountOf,
@@ -1896,6 +1896,7 @@ export async function updateRoutine(
     await haltRoutineRuns(deps, orgId, row.id, { code: "paused", byUserId: actorId });
   } else if (patch.active === true && !current.active) {
     await resolveRoutinePaused(deps, orgId, row.id).catch(() => {});
+    await wakeHeldRuns(deps, row.id);
   }
   const before: Record<string, unknown> = {};
   const after: Record<string, unknown> = {};
@@ -2051,7 +2052,10 @@ export async function setRoutineActive(
   if (!active) {
     await haltRoutineRuns(deps, orgId, id, { code: "paused", byUserId: actorId });
     await cancelRoutineAhead(deps, orgId, id, actorId);
-  } else await resolveRoutinePaused(deps, orgId, id).catch(() => {});
+  } else {
+    await resolveRoutinePaused(deps, orgId, id).catch(() => {});
+    if (!current.active) await wakeHeldRuns(deps, id);
+  }
   const watch = row ? (await watchesOf(deps.db, [row.id])).get(row.id) : undefined;
   if (row && watch) {
     if (active && !current.active) await resetMailWatchState(deps.db, row.id);

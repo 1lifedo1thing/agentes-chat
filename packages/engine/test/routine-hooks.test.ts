@@ -693,6 +693,27 @@ describe("routine webhooks: every call delivered, grouped calls in parallel", ()
     expect(await hasJob(held?.id ?? "")).toBe(true);
   });
 
+  test("calls held while the routine was off start once it is turned on again, without waiting for the next call", async () => {
+    f = await setup();
+    const routine = await webhookRoutine();
+    const token = await tokenOf(routine.id);
+    const d = hookDeps();
+    const first = runOf(await post(d, token, '{"n":1}'));
+    await executeRoutineRun(deps(), first);
+    await setRoutineActive(deps(), f.owner.id, f.org.id, routine.id, false);
+    const held = (await runsOf(routine.id)).find((r) => r.id !== first);
+    expect(held?.event).toMatchObject({ held: true });
+    expect(await hasJob(held?.id ?? "")).toBe(false);
+    await setRoutineActive(deps(), f.owner.id, f.org.id, routine.id, true);
+    expect(await hasJob(held?.id ?? "")).toBe(true);
+    expect((await routineRunRow(f, held?.id ?? "")).event?.held).toBeUndefined();
+    // Turned off and on through an edit, the same.
+    await setRoutineActive(deps(), f.owner.id, f.org.id, routine.id, false);
+    const again = (await runsOf(routine.id)).find((r) => r.event?.held === true);
+    await updateRoutine(deps(), f.owner.id, f.org.id, routine.id, { active: true });
+    if (again) expect(await hasJob(again.id)).toBe(true);
+  });
+
   test("grouped by a path: other conversations run side by side, one conversation's calls wait together, in order", async () => {
     f = await setup();
     const routine = await webhookRoutine();
