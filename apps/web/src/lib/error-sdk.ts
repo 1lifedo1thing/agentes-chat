@@ -1,9 +1,24 @@
-import { REPORT_OPTIONS, scrubEvent } from "@agenteschat/adapters/error-scrub";
+import { REPORT_OPTIONS, scrubEvent, urlPattern } from "@agenteschat/adapters/error-scrub";
 import type { ErrorReportsConfig } from "@agenteschat/client";
-import { captureException, init, setTags, setUser } from "@sentry/browser";
+import { captureException, type Event, init, setTags, setUser } from "@sentry/browser";
 import { reloadingForNewVersion } from "./app-version";
 import { desktopReportTags } from "./desktop";
-import { type ErrorSdk, foreignStack, shortErrorId } from "./error-reports";
+import { appFiles, type ErrorSdk, foreignStack, shortErrorId } from "./error-reports";
+
+/**
+ * A frame of an inline script, or of a script an extension injected into the page, names the page it ran on as its
+ * file: that address goes as its pattern, like the request's (ADR 0104), since it holds the workspace's and the
+ * person's ids and a wiki page's name. The app's own files (`/assets/`) and other origins' stay as they are.
+ */
+function scrubPageFrames(event: Event) {
+  const page = `${location.origin}/`;
+  const scrub = (file: string) => (file.startsWith(page) && !file.startsWith(appFiles()) ? urlPattern(file) : file);
+  for (const value of event.exception?.values ?? [])
+    for (const frame of value.stacktrace?.frames ?? []) {
+      if (frame.filename) frame.filename = scrub(frame.filename);
+      if (frame.abs_path) frame.abs_path = scrub(frame.abs_path);
+    }
+}
 
 /**
  * The Sentry browser SDK for errors only (no sessions, traces or replays), every event scrubbed (ADR 0104). Its own
@@ -18,6 +33,7 @@ export function startSdk(config: ErrorReportsConfig, taken: (eventId: string) =>
       // fails in an extension's code is the extension's. This file's chunk holds the SDK too: nothing else imports it.
       if (reloadingForNewVersion() || foreignStack(event, import.meta.url)) return null;
       if (event.event_id) taken(event.event_id);
+      scrubPageFrames(event);
       return scrubEvent(event);
     },
     dsn: config.dsn,
