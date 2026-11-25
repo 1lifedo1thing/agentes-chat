@@ -253,6 +253,15 @@ describe("what came of work handed off (a `consult_reply` notice with `kind` `no
     expect(consultDialog()?.getAttribute("role")).toBe("dialog");
   });
 
+  test("opened from the answer's notice, the dialog names both agents even before the conversation is there", async () => {
+    await open(withResult("answered", "Passei a pasta; o Diogo abriu."));
+    await act(async () => fireEvent.click(pairButton(document.querySelector(".consult-pair"))));
+    await settle(3);
+    const title = consultDialog()?.querySelector(".consult-title")?.textContent ?? "";
+    expect(title).toContain("Ada");
+    expect(title).toContain("Atlas");
+  });
+
   test("one that couldn't be finished says so", async () => {
     await open(withResult("failed", null));
     expect(document.querySelector(".consult-pair__word")?.textContent).toBe("não terminou");
