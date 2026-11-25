@@ -270,7 +270,6 @@ export function tasksAutoText(t: TFunction, d: ComputerDevice): string | null {
     : t("devices.tasksAutoFull", { running });
 }
 
-/** A computer in the line's "More computers" list: "Online · macOS · 16 GB · your Claude Max plan" (`plan`: the viewer's there). */
 /** How a computer helps its owner's agents: never, while their own computer is full or away, or first for their work. */
 export const SPILL_USES = ["off", "help", "first"] as const;
 export type SpillUse = (typeof SPILL_USES)[number];
@@ -278,6 +277,7 @@ export const spillUseOf = (d: Pick<ComputerDevice, "spill">): SpillUse =>
   d.spill.first ? "first" : d.spill.own ? "help" : "off";
 export const spillOfUse = (use: SpillUse) => ({ own: use !== "off", first: use === "first" });
 
+/** A computer in the line's "More computers" list: "Online · macOS · 16 GB · your Claude Max plan" (`plan`: the viewer's there). */
 export const spillDeviceText = (t: TFunction, d: ComputerDevice, plan: string | null) =>
   [statusPill(t, d.status), computerLine(t, d), plan && t("queue.spill.plan", { plan })].filter(Boolean).join(" · ");
 

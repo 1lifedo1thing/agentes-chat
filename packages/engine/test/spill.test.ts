@@ -391,6 +391,41 @@ test("a computer its owner uses for their agents' work takes their routine at on
   expect(reply.seen.map((t) => t.session?.machineId)).toEqual([home]);
 });
 
+test("a computer used for its owner's agents' work that can't take the routine never keeps it from a computer that helps", async () => {
+  f = await setup();
+  const home = await fullHome();
+  // The chosen PC has no Claude Code: it can't take the routine.
+  const pc = await pair(f.owner.id, "pc");
+  await updateComputerDevice({ db: f.db }, f.owner.id, f.org.id, pc, { spill: { first: true } });
+  const rui = await addMember(f.db, f.org.id, "member", "rui");
+  const shared = await pair(rui.id, "shared");
+  await f.db
+    .update(schema.machines)
+    .set({ belongsToWorkspace: true, audienceMode: "everyone" })
+    .where(eq(schema.machines.id, shared));
+  await f.db.insert(schema.machineAccounts).values({
+    orgId: f.org.id,
+    machineId: shared,
+    id: Bun.randomUUIDv7(),
+    kind: "claude_code",
+    label: "Owner's Claude",
+    createdBy: f.owner.id,
+  });
+  const { handlers, seen } = handlersSeeing((id) =>
+    id === pc ? { ...statusOf(id), executors: { detectedAt: new Date().toISOString() } } : statusOf(id),
+  );
+  const fired = await fire(f, (await channelRoutine(f)).id, new Date());
+  await drainOutbox(f.db, handlers);
+  const id = fired.agentRunId ?? "";
+  expect((await runOf(id))?.waitingMachineId).toBe(home);
+
+  await waitedLong(id);
+  await drainOutbox(f.db, handlers, { now: new Date(Date.now() + COMPUTER_BUSY_RETRY_MS + 1_000) });
+  expect((await runOf(id))?.status).toBe("done");
+  expect(seen.map((t) => t.session?.machineId)).toEqual([shared]);
+  expect((await runOf(id))?.transcript).toMatchObject({ spill: { from: home, to: shared, cause: "full" } });
+});
+
 test("used for its owner's agents' work turns its help on, and help off turns both off; only its owner chooses it", async () => {
   f = await setup();
   const pc = await pair(f.owner.id, "Ana's PC");

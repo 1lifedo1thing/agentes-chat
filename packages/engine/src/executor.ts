@@ -5358,10 +5358,15 @@ async function executeRunInner(
           !personWaiting &&
           agent.ownerUserId &&
           !transcript.spill &&
-          (await chosenComputerFree(db, run.orgId, agent.ownerUserId, roomMachine).catch(() => false)) &&
-          (await spillOver("chosen"))
-        )
-          askOn = plan.session?.machineId ?? roomMachine;
+          (await chosenComputerFree(db, run.orgId, agent.ownerUserId, roomMachine).catch(() => false))
+        ) {
+          // A chosen computer that can't take it (no CLI or sign-in for its plan there) must not hold off the look for
+          // any computer that helps once it waited (`spillLookedAt`), or that look would never come.
+          const lookedAt = transcript.spillLookedAt;
+          if (await spillOver("chosen")) askOn = plan.session?.machineId ?? roomMachine;
+          else if (lookedAt === undefined) delete transcript.spillLookedAt;
+          else transcript.spillLookedAt = lookedAt;
+        }
         let behind = isRightHand(agent) ? null : await roomGate(db, run, askOn, place, slotOf(plan));
         // Behind others, or refused for room before: a person's reply looks for another computer at once, any other
         // fresh turn once it waited `SPILL_AFTER_MS`, then once per `SPILL_AFTER_MS` (`spillOver`).

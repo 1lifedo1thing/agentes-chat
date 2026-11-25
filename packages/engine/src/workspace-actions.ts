@@ -1946,7 +1946,7 @@ async function ownHelpComputers(db: Database, orgId: string, person: string) {
 
 const computerHelpAction: WorkspaceAction = {
   id: "set_computer_help",
-  does: "How one of their own computers helps their agents. first: their agents' asks, routines and long work start there whenever it is free (a reply to a person still starts on the agent's own computer, unless that one is full). help: only when the agent's own computer is full or away. off: never. Runs there use their own AI sign-in on that computer, and missions, code sessions and agents with repositories stay on the agent's own computer. Use it when work waits in line on the team's computer and they have a computer of their own.",
+  does: "How one of their own computers helps their agents. first: their agents' asks, routines and long work start there whenever it is free (a reply to a person still starts on the agent's own computer, unless that one is full or away). help: only when the agent's own computer is full or away. off: never. Runs there use their own AI sign-in on that computer, and missions, code sessions and agents with repositories stay on the agent's own computer. Use it when work waits in line on the team's computer and they have a computer of their own.",
   input: {
     type: "object",
     properties: {

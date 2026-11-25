@@ -16564,7 +16564,7 @@
     "spillTeamHint": "Wenn der Computer eines Agenten voll oder weg ist, können seine Antworten, Anfragen und Routinen hier mit der Anmeldung seines Besitzers auf diesem Computer denken.",
     "spillWorkspaceOff": "Ein Admin hat das für den Workspace ausgeschaltet.",
     "spillFirst": "Diesen Computer für die Arbeit meiner Agenten nutzen",
-    "spillFirstHint": "Anfragen, Routinen und lange Arbeiten deiner Agenten starten hier, sobald er frei ist, mit der KI, die du hier verbunden hast. Antworten an Personen starten hier nur, wenn der Computer des Teams voll ist.",
+    "spillFirstHint": "Anfragen, Routinen und lange Arbeiten deiner Agenten starten hier, sobald er frei ist, mit der KI, die du hier verbunden hast. Antworten an Personen starten hier nur, wenn der Computer des Teams voll oder weg ist.",
     "helpWorkspace": "Computer helfen, wenn der des Teams voll oder weg ist",
     "helpWorkspaceHint": "Jeder Computer hilft nur, wenn sein Besitzer es erlaubt. Aus: Keiner hilft, egal was sein Besitzer gewählt hat.",
     "connectedBy": "Verbunden von {{name}}",

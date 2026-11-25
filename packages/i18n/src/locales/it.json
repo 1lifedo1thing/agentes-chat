@@ -17129,7 +17129,7 @@
     "spillTeamHint": "Quando il computer di un agente è pieno o assente, le sue risposte, richieste e routine possono pensare qui con l'accesso del suo proprietario su questo computer.",
     "spillWorkspaceOff": "Un admin l'ha disattivato per il workspace.",
     "spillFirst": "Usa questo computer per il lavoro dei miei agenti",
-    "spillFirstHint": "Le richieste, le routine e i lavori lunghi dei tuoi agenti iniziano qui ogni volta che è libero, con l'IA che hai collegato qui. Le risposte alle persone iniziano qui solo quando il computer del team è pieno.",
+    "spillFirstHint": "Le richieste, le routine e i lavori lunghi dei tuoi agenti iniziano qui ogni volta che è libero, con l'IA che hai collegato qui. Le risposte alle persone iniziano qui solo quando il computer del team è pieno o assente.",
     "helpWorkspace": "I computer aiutano quando quello del team è pieno o assente",
     "helpWorkspaceHint": "Ogni computer aiuta solo se il suo proprietario lo permette. Disattivato: nessuno aiuta, qualunque cosa abbia scelto il proprietario.",
     "connectedBy": "Collegato da {{name}}",

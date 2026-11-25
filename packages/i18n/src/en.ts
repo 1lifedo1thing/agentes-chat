@@ -17004,7 +17004,7 @@ export const en = {
     /** `machines.spill_first`: its owner's agents' work starts here first. */
     spillFirst: "Use this computer for my agents' work",
     spillFirstHint:
-      "Your agents' asks, routines and long work start here whenever it is free, with the AI you connected here. Replies to people start here only when the team's computer is full.",
+      "Your agents' asks, routines and long work start here whenever it is free, with the AI you connected here. Replies to people start here only when the team's computer is full or away.",
     /** Settings › Devices, admins: the workspace's switch over every computer's own (`devicesHelp`). */
     helpWorkspace: "Computers help when the team's is full or away",
     helpWorkspaceHint: "Each computer helps only if its owner allows it. Off: none helps, whatever its owner chose.",

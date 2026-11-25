@@ -40639,7 +40639,7 @@
     "value": "Use this computer for my agents' work"
   },
   "devices.spillFirstHint": {
-    "value": "Your agents' asks, routines and long work start here whenever it is free, with the AI you connected here. Replies to people start here only when the team's computer is full."
+    "value": "Your agents' asks, routines and long work start here whenever it is free, with the AI you connected here. Replies to people start here only when the team's computer is full or away."
   },
   "devices.helpWorkspace": {
     "value": "Computers help when the team's is full or away"

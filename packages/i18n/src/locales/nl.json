@@ -16632,7 +16632,7 @@
     "spillTeamHint": "Als de computer van een agent vol of weg is, kunnen zijn antwoorden, vragen en routines hier denken met de aanmelding van zijn eigenaar op deze computer.",
     "spillWorkspaceOff": "Een admin heeft dit voor de workspace uitgezet.",
     "spillFirst": "Deze computer gebruiken voor het werk van mijn agents",
-    "spillFirstHint": "Verzoeken, routines en lang werk van je agents starten hier zodra hij vrij is, met de AI die je hier hebt verbonden. Antwoorden aan mensen starten hier alleen als de computer van het team vol is.",
+    "spillFirstHint": "Verzoeken, routines en lang werk van je agents starten hier zodra hij vrij is, met de AI die je hier hebt verbonden. Antwoorden aan mensen starten hier alleen als de computer van het team vol of weg is.",
     "helpWorkspace": "Computers helpen als die van het team vol of weg is",
     "helpWorkspaceHint": "Elke computer helpt alleen als zijn eigenaar het toestaat. Uit: geen enkele helpt, wat de eigenaar ook koos.",
     "connectedBy": "Gekoppeld door {{name}}",

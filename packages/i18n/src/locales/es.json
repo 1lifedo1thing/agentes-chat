@@ -17032,7 +17032,7 @@
     "spillTeamHint": "Cuando la computadora de un agente esté llena o fuera, sus respuestas, pedidos y rutinas pueden pensar aquí con el inicio de sesión de su dueño en esta computadora.",
     "spillWorkspaceOff": "Un admin desactivó esto para el workspace.",
     "spillFirst": "Usar esta computadora para el trabajo de mis agentes",
-    "spillFirstHint": "Los pedidos, las rutinas y los trabajos largos de tus agentes empiezan aquí siempre que esté libre, con la IA que conectaste aquí. Las respuestas a personas solo empiezan aquí cuando la computadora del equipo está llena.",
+    "spillFirstHint": "Los pedidos, las rutinas y los trabajos largos de tus agentes empiezan aquí siempre que esté libre, con la IA que conectaste aquí. Las respuestas a personas solo empiezan aquí cuando la computadora del equipo está llena o fuera.",
     "helpWorkspace": "Las computadoras ayudan cuando la del equipo está llena o fuera",
     "helpWorkspaceHint": "Cada computadora ayuda solo si su dueño lo permite. Desactivado: ninguna ayuda, elija lo que elija su dueño.",
     "connectedBy": "Conectado por {{name}}",
