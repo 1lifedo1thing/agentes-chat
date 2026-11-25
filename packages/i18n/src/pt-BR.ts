@@ -1507,6 +1507,10 @@ export const ptBR = {
         model_other: "{{who}} usam o {{label}}, que não está disponível aqui.",
         file_one: "{{who}} usa {{label}}.",
         file_other: "{{who}} usam {{label}}.",
+        path_one:
+          "{{who}} cita {{label}} nas instruções, mas isso não veio na importação, então o agente não consegue abrir. Coloque esses arquivos no Drive ou tire esse caminho das instruções.",
+        path_other:
+          "{{who}} citam {{label}} nas instruções, mas isso não veio na importação, então os agentes não conseguem abrir. Coloque esses arquivos no Drive ou tire esse caminho das instruções.",
         webhook_one:
           "A rotina {{label}}, de {{who}}, ganha um endereço novo aqui: troque no site ou app que chamava o antigo.",
         webhook_other:
@@ -1616,6 +1620,7 @@ export const ptBR = {
         app: "Conectar",
         model: "Escolher modelo",
         file: "Abrir o Drive",
+        path: "Abrir o Drive",
         webhook: "Abrir as rotinas",
       },
       linkSkipped_one: "{{count}} arquivo além do limite do link",

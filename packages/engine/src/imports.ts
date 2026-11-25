@@ -34,7 +34,7 @@ export interface MigrationBundle {
   routines: BundleRoutine[];
   notes: BundleNote[];
   todo: {
-    kind: "connection" | "app" | "secret" | "model" | "file" | "webhook";
+    kind: "connection" | "app" | "secret" | "model" | "file" | "path" | "webhook";
     label: string;
     url?: string;
     agents: string[];

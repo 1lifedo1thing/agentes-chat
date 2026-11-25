@@ -224,6 +224,37 @@ export const normalizePath = (path: string) =>
     .replace(/^(?:\.\/|\/)+/, "")
     .replace(/\/{2,}/g, "/");
 export const baseName = (path: string) => path.split("/").pop() ?? path;
+
+/**
+ * A file or folder an agent's text points at on a computer: `~/…`, `./…`, `../…`, `C:\…`, or an absolute path of two
+ * parts or more (`/a/b`). A web address, a Markdown link's target, "e/ou" or a date ("24/11") is none, nor a path of
+ * the system's own.
+ */
+const PATH_MENTION =
+  /(?<![\p{L}\p{N}_:/.~\\-])(?<!\]\()(?:~[\\/]|\.\.?[\\/]|[A-Za-z]:\\|\/(?=[^\s/]+\/))[^\s`'"<>()[\]{},;|*]+/gu;
+const SYSTEM_PATH = /^\/(?:tmp|dev|proc|sys|run|etc|usr|bin|sbin)\//;
+
+export const pathsMentioned = (text: string): string[] => [
+  ...new Set(
+    [...text.matchAll(PATH_MENTION)]
+      .map((m) => m[0].replace(/[.,:;!?]+$/, ""))
+      .filter((p) => !SYSTEM_PATH.test(p) && /[\p{L}\p{N}]/u.test(p)),
+  ),
+];
+
+/** Whether `names` (an import's files, relative to its root) hold the file or folder `path` points at, by its tail. */
+export function pathImported(path: string, names: readonly string[]): boolean {
+  const parts = path
+    .replace(/^~[\\/]|^[A-Za-z]:\\/, "")
+    .split(/[\\/]/)
+    .filter((p) => p && p !== "." && p !== "..");
+  for (let k = 0; k < parts.length; k++) {
+    const tail = parts.slice(k).join("/");
+    if (names.some((n) => n === tail || n.startsWith(`${tail}/`) || n.endsWith(`/${tail}`) || n.includes(`/${tail}/`)))
+      return true;
+  }
+  return false;
+}
 export const dirName = (path: string) => (path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "");
 /** `path` read from `dir`, `..` resolved; null when it leaves the root. */
 export function resolvePath(dir: string, path: string): string | null {

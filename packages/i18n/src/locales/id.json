@@ -1414,6 +1414,7 @@
         "secret_other": "{{who}} memakai {{label}}. Tidak ikut di file: agen akan memintanya di chat.",
         "model_other": "{{who}} memakai {{label}}, yang tidak tersedia di sini.",
         "file_other": "{{who}} memakai {{label}}.",
+        "path_other": "Instruksi {{who}} menyebut {{label}}, tetapi itu tidak ikut dalam impor, jadi agen tidak bisa membukanya. Taruh file-file itu di Drive, atau hapus path itu dari instruksi.",
         "webhook_other": "Rutinitas {{label}} milik {{who}} mendapat alamat baru di sini: ganti di situs atau aplikasi yang memanggil alamat lama."
       },
       "say": {
@@ -1511,6 +1512,7 @@
         "app": "Hubungkan",
         "model": "Pilih model",
         "file": "Buka Drive",
+        "path": "Buka Drive",
         "webhook": "Buka rutinitas"
       },
       "linkSkipped_other": "{{count}} file melewati batas tautan",

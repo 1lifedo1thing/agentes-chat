@@ -1504,6 +1504,9 @@
         "file_one": "{{who}} usa {{label}}.",
         "file_many": "{{who}} usano {{label}}.",
         "file_other": "{{who}} usano {{label}}.",
+        "path_one": "{{who}} cita {{label}} nelle istruzioni, ma non è arrivato con l'importazione, quindi l'agente non può aprirlo. Metti quei file nel Drive o togli quel percorso dalle istruzioni.",
+        "path_many": "{{who}} citano {{label}} nelle istruzioni, ma non è arrivato con l'importazione, quindi gli agenti non possono aprirlo. Metti quei file nel Drive o togli quel percorso dalle istruzioni.",
+        "path_other": "{{who}} citano {{label}} nelle istruzioni, ma non è arrivato con l'importazione, quindi gli agenti non possono aprirlo. Metti quei file nel Drive o togli quel percorso dalle istruzioni.",
         "webhook_one": "La routine {{label}}, di {{who}}, riceve qui un nuovo indirizzo: cambialo nel sito o nell'app che chiamava quello vecchio.",
         "webhook_many": "La routine {{label}}, di {{who}}, riceve qui un nuovo indirizzo: cambialo nel sito o nell'app che chiamava quello vecchio.",
         "webhook_other": "La routine {{label}}, di {{who}}, riceve qui un nuovo indirizzo: cambialo nel sito o nell'app che chiamava quello vecchio."
@@ -1621,6 +1624,7 @@
         "app": "Collega",
         "model": "Scegli un modello",
         "file": "Apri il Drive",
+        "path": "Apri il Drive",
         "webhook": "Apri le routine"
       },
       "linkSkipped_one": "{{count}} file oltre il limite del link",

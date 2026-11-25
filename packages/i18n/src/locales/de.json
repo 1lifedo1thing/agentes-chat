@@ -1458,6 +1458,8 @@
         "model_other": "{{who}} nutzen {{label}}, das hier nicht verfügbar ist.",
         "file_one": "{{who}} nutzt {{label}}.",
         "file_other": "{{who}} nutzen {{label}}.",
+        "path_one": "{{who}} verweist in den Anweisungen auf {{label}}, aber das kam nicht mit dem Import, deshalb kann der Agent es nicht öffnen. Lege diese Dateien in den Drive oder nimm den Pfad aus den Anweisungen.",
+        "path_other": "{{who}} verweisen in ihren Anweisungen auf {{label}}, aber das kam nicht mit dem Import, deshalb können die Agenten es nicht öffnen. Lege diese Dateien in den Drive oder nimm den Pfad aus den Anweisungen.",
         "webhook_one": "Die Routine {{label}} von {{who}} bekommt hier eine neue Adresse: Ändere sie auf der Website oder in der App, die die alte aufgerufen hat.",
         "webhook_other": "Die Routine {{label}} von {{who}} bekommt hier eine neue Adresse: Ändere sie auf der Website oder in der App, die die alte aufgerufen hat."
       },
@@ -1565,6 +1567,7 @@
         "app": "Verbinden",
         "model": "Modell wählen",
         "file": "Drive öffnen",
+        "path": "Drive öffnen",
         "webhook": "Routinen öffnen"
       },
       "linkSkipped_one": "{{count}} Datei über dem Limit des Links",

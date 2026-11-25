@@ -1503,6 +1503,9 @@
         "file_one": "{{who}} usa {{label}}.",
         "file_many": "{{who}} usan {{label}}.",
         "file_other": "{{who}} usan {{label}}.",
+        "path_one": "{{who}} menciona {{label}} en sus instrucciones, pero eso no vino en la importación, así que el agente no puede abrirlo. Pon esos archivos en el Drive o quita esa ruta de las instrucciones.",
+        "path_many": "{{who}} mencionan {{label}} en sus instrucciones, pero eso no vino en la importación, así que los agentes no pueden abrirlo. Pon esos archivos en el Drive o quita esa ruta de las instrucciones.",
+        "path_other": "{{who}} mencionan {{label}} en sus instrucciones, pero eso no vino en la importación, así que los agentes no pueden abrirlo. Pon esos archivos en el Drive o quita esa ruta de las instrucciones.",
         "webhook_one": "La rutina {{label}}, de {{who}}, recibe una dirección nueva aquí: cámbiala en el sitio o la app que llamaba a la anterior.",
         "webhook_many": "La rutina {{label}}, de {{who}}, recibe una dirección nueva aquí: cámbiala en el sitio o la app que llamaba a la anterior.",
         "webhook_other": "La rutina {{label}}, de {{who}}, recibe una dirección nueva aquí: cámbiala en el sitio o la app que llamaba a la anterior."
@@ -1620,6 +1623,7 @@
         "app": "Conectar",
         "model": "Elegir un modelo",
         "file": "Abrir el Drive",
+        "path": "Abrir el Drive",
         "webhook": "Abrir las rutinas"
       },
       "linkSkipped_one": "{{count}} archivo más allá del límite del enlace",
