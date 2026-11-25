@@ -160,3 +160,31 @@ test("nothing lent, a refused destination or a computer that isn't the workspace
   // A data socket naming no lent connection is left to the others.
   expect(relay.claim(hello("c".repeat(43)), laptop, fakeSocket().socket)).toBeNull();
 });
+
+test("a lending computer that is paused or doesn't answer is passed over: the next ask goes to another", async () => {
+  f = await setup();
+  const older = await pair(f.owner.id, "Desk");
+  const newer = await pair(f.owner.id, "Laptop");
+  const managed = await issueManagedMachine({ db: f.db }, f.org.id);
+  if (!managed) throw new Error("no managed computer");
+  const asked: string[] = [];
+  for (const code of ["timeout", "paused"] as const) {
+    asked.length = 0;
+    const relay = createEgressRelay({
+      db: f.db,
+      hub: {
+        status: async () => ({ online: true }) as never,
+        call: async (machineId) => {
+          asked.push(machineId);
+          throw new MachineRequestError(machineId === newer ? code : "not_allowed", "no");
+        },
+      },
+    });
+    for (const id of ["d", "e"]) {
+      const s = fakeSocket();
+      relay.claim(hello(id.repeat(43), { host: "203.0.113.9", port: 443 }), managed.machineId, s.socket);
+      await until(() => s.closed !== null, "close");
+    }
+    expect(asked).toEqual([newer, older]);
+  }
+});

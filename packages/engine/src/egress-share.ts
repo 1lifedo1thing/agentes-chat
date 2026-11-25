@@ -9,8 +9,12 @@ const { machines } = schema;
 
 /** A lent computer's row is written at most this often per workspace computer (`machines.egress_via`). */
 const VIA_WRITE_MS = 60_000;
-/** A lent computer that said it carries enough now is passed over this long. */
+/**
+ * A lent computer that said it carries enough now, is paused, or didn't answer in time (asleep, its socket not yet
+ * seen gone) is passed over this long: the next ask goes to another, or out the usual way at once.
+ */
 const FULL_MS = 60_000;
+const PASS_OVER = new Set(["no_slot", "paused", "timeout"]);
 /** Bytes queued toward one side before the connection ends as too slow. */
 const BUFFERED_MAX = 16 * 1024 * 1024;
 /** How long the server waits for the lent computer to reach the site and dial its data socket. */
@@ -138,7 +142,7 @@ export function createEgressRelay(deps: {
     try {
       await deps.hub.call(device.id, { op: "egress.dial", streamId, ...target }, { timeoutMs: DIAL_MS });
     } catch (error) {
-      if (error instanceof MachineRequestError && error.code === "no_slot") full.set(device.id, now() + FULL_MS);
+      if (error instanceof MachineRequestError && PASS_OVER.has(error.code)) full.set(device.id, now() + FULL_MS);
       end(leg, closeCodeFor(error), "the lent connection didn't open");
       return;
     } finally {
