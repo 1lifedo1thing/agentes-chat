@@ -600,29 +600,45 @@ html:not([data-pointer]) .sk-line__open:focus-visible {
   display: flex;
   flex-direction: column;
 }
+/* As the other lists in an agent's cards (a MediaRow, as Access's): the row's padding and a line between rows; the name
+   over when to use it, both left to the face's middle. */
 .sk-arow {
   position: relative;
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto auto;
-  column-gap: 14px;
   align-items: center;
-  min-height: 68px;
-  padding-block: 8px;
+  padding: var(--space-3) 0;
   border-top: 1px solid var(--line);
 }
 .sk-arows > .sk-arow:first-child {
   border-top: 0;
 }
-.sk-arows--offer .sk-arow {
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+.sk-arow > .ac-mediarow__face {
+  margin-block-start: 0;
 }
-.sk-arow .sk-row__text small {
-  white-space: normal;
+.sk-arow > .ac-mediarow__head {
+  flex-flow: column;
+  align-items: flex-start;
+  padding-block-start: 0;
 }
-.sk-arow > :is(.sk-state, .ac-btn, button),
-.sk-arow > :not(.sk-row__text, .connector-icon) {
+.sk-arow__name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+.sk-arow .sk-row__link {
+  font-size: 14px;
+  line-height: 20px;
+}
+.sk-arow > .ac-mediarow__end {
+  height: auto;
+}
+.sk-arow > .ac-mediarow__end > :is(.sk-state, .ac-btn, button) {
   position: relative;
   z-index: 1;
+}
+.sk-arow:has(.sk-row__link):hover {
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
 }
 .sk-agent__group {
   margin-top: 6px;

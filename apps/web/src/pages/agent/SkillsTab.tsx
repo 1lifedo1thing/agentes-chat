@@ -73,19 +73,22 @@ export function SkillsCard() {
       return t("skills.agentTab.lastUsed", { when: relativeTime(t, i18n.language, s.agentLastUsedAt) });
     return t("skills.agentTab.notYet");
   };
+  // A MediaRow, as the other lists in an agent's cards: the face, the name over when to use it, its uses and actions.
   const row = (s: Skill, end: ReactNode, sub: ReactNode, by?: string) => (
-    <li key={s.id} className="sk-arow">
-      <SkillMark skill={s} />
-      <span className="sk-row__text">
-        <span className="sk-row__name">
+    <li key={s.id} className="ac-mediarow sk-arow">
+      <span className="ac-mediarow__face">
+        <SkillMark skill={s} size="md" />
+      </span>
+      <span className="ac-mediarow__head">
+        <span className="sk-arow__name">
           <Link className="sk-row__link" to="/org/$orgId/skills/$skillId" params={{ orgId: org.id, skillId: s.id }}>
             {skillTitle(s)}
           </Link>
           {by && <span className="sk-by">· {by}</span>}
         </span>
-        <small>{sub}</small>
+        <span className="ac-mediarow__meta">{sub}</span>
       </span>
-      {end}
+      <span className="ac-mediarow__end">{end}</span>
     </li>
   );
 

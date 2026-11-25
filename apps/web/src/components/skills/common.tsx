@@ -57,7 +57,7 @@ const ICONS: ReadonlySet<string> = new Set<IconName>([
 export const skillIcon = (s: Pick<Skill, "icon">): IconName =>
   s.icon && ICONS.has(s.icon) ? (s.icon as IconName) : "book";
 
-/** The skill's icon on the connector plate (as an app's in Connectors), `lg` in lists, `xl` on its page. */
+/** The skill's icon on the connector plate (as an app's in Connectors): `md` in a card's rows, `lg` in lists, `xl` on its page. */
 export function SkillMark({ skill, size = "lg" }: { skill: Pick<Skill, "icon">; size?: "md" | "lg" | "xl" }) {
   return (
     <span
@@ -68,7 +68,7 @@ export function SkillMark({ skill, size = "lg" }: { skill: Pick<Skill, "icon">; 
       )}
       aria-hidden="true"
     >
-      <Icon name={skillIcon(skill)} size={20} />
+      <Icon name={skillIcon(skill)} size={size === "md" ? 16 : 20} />
     </span>
   );
 }
