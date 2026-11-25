@@ -117,10 +117,12 @@ import { resolveEarlierBudgetPaused } from "./budget-paused-rows";
 import { typingLogFor, waitWhileTyping } from "./burst";
 import {
   isShutdown,
+  REROUTED,
   RUN_HEARTBEAT_MS,
   RunInterruptedError,
   registerRunAbort,
   registerTurnAbort,
+  rerouteBurst,
   unregisterRunAbort,
   unregisterTurnAbort,
 } from "./cancel";
@@ -3186,6 +3188,14 @@ async function executeRunInner(
       await finished("canceled");
       return;
     }
+    // Another agent took over the person's request before this one showed anything (`rerouteBurst`): nothing to say.
+    if (row?.error === REROUTED) {
+      await addRunStep(db, run, "error", stopStep);
+      await publishChannelEvent(deps.pubsub, event("canceled"));
+      await finished("canceled");
+      await redispatchPending("canceled");
+      return;
+    }
     // Stopped to read a message the person sent ("Parar e mandar"): they stopped nothing, so nothing here says
     // "stopped". What it wrote stays as its own message, and a run that wrote nothing posts nothing.
     const sent = by ? await stoppedToSend(db, run) : null;
@@ -5191,6 +5201,12 @@ async function executeRunInner(
   const autoTick: ReturnType<typeof setInterval> | null =
     run.background || run.workId ? null : setInterval(() => void autoMove().catch(() => {}), deps.workTickMs ?? 5_000);
   try {
+    // A follow-up that went to this agent takes over the router's pick of another for the message just before it.
+    const followsUp = run.trigger !== "dm" && !run.background;
+    if (deps.quietMs && run.turns === 0 && followsUp && triggerMessage?.authorType === "person") {
+      const [followUp, quietMs] = [triggerMessage, deps.quietMs];
+      later(() => rerouteBurst({ db, pubsub: deps.pubsub }, run, followUp, quietMs));
+    }
     // A person still typing here gets one answer: the first model call waits for what they are writing.
     if (deps.quietMs && run.turns === 0 && !run.background && triggerMessage?.authorType === "person") {
       // Meanwhile a computer brain's checkouts get synced for its first turn (used only if that turn is the same).

@@ -2,9 +2,12 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { eq, schema } from "@agenteschat/db";
 import type { ModelRequest } from "@agenteschat/providers";
 import {
+  createAgent,
+  createAgentRuns,
   drainOutbox,
   executeRun,
   getMessage,
+  insertMessage,
   listMessages,
   openDm,
   postPersonMessage,
@@ -597,5 +600,111 @@ describe("messages in a row (ADR 0112)", () => {
       "e manda pro canal também",
       "Feito, e mandei no canal.",
     ]);
+  });
+});
+
+describe("a follow-up for another agent re-routes (ADR 0112)", () => {
+  /** Ada next to Dev in #general, and Dev's run the router started on the person's "oi". */
+  async function routedToDev(reply?: NonNullable<Parameters<typeof setup>[0]>["reply"]) {
+    f = await setup({ quietMs: 2500, ...(reply ? { reply } : {}) });
+    const ada = await createAgent(
+      f.db,
+      f.owner.id,
+      f.org.id,
+      { name: "Ada", handle: "ada", role: "Marketing", credentialId: f.credential.id },
+      { model: "claude-sonnet-5-5" },
+    );
+    await f.db.insert(schema.channelMembers).values({ orgId: f.org.id, channelId: f.general.id, agentId: ada.id });
+    const hi = await post("oi");
+    const message = await getMessage(f.db, f.org.id, hi.id);
+    if (!message) throw new Error("not posted");
+    const [dev] = await createAgentRuns(f.db, message, [f.agent.id], "router");
+    if (!dev) throw new Error("no run");
+    return { ada, dev };
+  }
+  const runOf = async (id: string) => (await runs()).find((r) => r.id === id);
+  const saidBy = async (agentId: string) =>
+    (await listMessages(f.db, f.owner.id, f.org.id, f.general.id)).filter(
+      (m) => m.author.type === "agent" && m.author.id === agentId,
+    );
+
+  test("'oi' the router gave Dev, then '@ada preciso de X': Dev's run stops quietly and Ada answers", async () => {
+    const { ada, dev } = await routedToDev();
+    await post("@ada preciso do relatório da campanha");
+    const toAda = (await runs()).find((r) => r.agentId === ada.id);
+    await executeRun(f.jobDeps, toAda?.id ?? "", { finalAttempt: true });
+    expect(await runOf(dev.id)).toMatchObject({ status: "canceled", error: "rerouted" });
+    expect(await saidBy(f.agent.id)).toEqual([]);
+    expect((await saidBy(ada.id)).length).toBe(1);
+  });
+
+  test("the router gives the follow-up to Ada (the triage found it isn't Dev's): the same", async () => {
+    const { ada, dev } = await routedToDev();
+    const posted = await post("a Ada tem o relatório da campanha?");
+    const followUp = await getMessage(f.db, f.org.id, posted.id);
+    if (!followUp) throw new Error("not posted");
+    // Out of Dev's inbox as the triage leaves it (`releaseFromRun`), and routed to Ada.
+    await f.db.update(schema.agentRuns).set({ pendingMessageIds: [] }).where(eq(schema.agentRuns.id, dev.id));
+    const [toAda] = await createAgentRuns(f.db, followUp, [ada.id], "router");
+    await executeRun(f.jobDeps, toAda?.id ?? "", { finalAttempt: true });
+    expect(await runOf(dev.id)).toMatchObject({ status: "canceled", error: "rerouted" });
+    expect(await saidBy(f.agent.id)).toEqual([]);
+  });
+
+  test("Dev already thinking on 'oi': its call is cut and nothing of it is posted", async () => {
+    let release = () => {};
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let called = () => {};
+    const firstCall = new Promise<void>((resolve) => {
+      called = resolve;
+    });
+    const { ada, dev } = await routedToDev((_req, call) => {
+      if (call > 1) return { chunks: ["O relatório da campanha está no Drive."] };
+      called();
+      return { chunks: ["Oi! Em que posso ajudar?"], hold: released };
+    });
+    const devRun = executeRun(f.jobDeps, dev.id, { finalAttempt: true });
+    await firstCall;
+    await post("@ada preciso do relatório da campanha");
+    const toAda = (await runs()).find((r) => r.agentId === ada.id);
+    await executeRun(f.jobDeps, toAda?.id ?? "", { finalAttempt: true });
+    release();
+    await devRun;
+    expect(await runOf(dev.id)).toMatchObject({ status: "canceled", error: "rerouted" });
+    expect(await saidBy(f.agent.id)).toEqual([]);
+    expect((await saidBy(ada.id)).map((m) => m.body)).toEqual(["O relatório da campanha está no Drive."]);
+  });
+
+  test("left alone: a run the person named, one that already spoke, and a follow-up long after", async () => {
+    const { ada, dev } = await routedToDev();
+    const followUp = async (oiSecondsAgo: number) => {
+      await f.db
+        .update(schema.messages)
+        .set({ createdAt: new Date(Date.now() - oiSecondsAgo * 1000) })
+        .where(eq(schema.messages.id, dev.triggerMessageId));
+      await post("@ada preciso do relatório da campanha");
+      const toAda = (await runs()).filter((r) => r.agentId === ada.id).at(-1);
+      await executeRun(f.jobDeps, toAda?.id ?? "", { finalAttempt: true });
+      return (await runOf(dev.id))?.status;
+    };
+    // Dev named by the person ("@dev oi"): theirs to keep.
+    await f.db.update(schema.agentRuns).set({ trigger: "mention" }).where(eq(schema.agentRuns.id, dev.id));
+    expect(await followUp(0)).toBe("queued");
+    await f.db.update(schema.agentRuns).set({ trigger: "router" }).where(eq(schema.agentRuns.id, dev.id));
+    // Dev already said something on it.
+    const said = await insertMessage(f.db, {
+      orgId: f.org.id,
+      channelId: f.general.id,
+      author: { type: "agent", agentId: f.agent.id, runId: dev.id, hop: 1 },
+      body: "Oi!",
+    });
+    expect(await followUp(0)).toBe("queued");
+    await f.db.delete(schema.messages).where(eq(schema.messages.id, said.id));
+    // Ada asked well after "oi": a new request, not a follow-up.
+    expect(await followUp(10)).toBe("queued");
+    // And the same follow-up right after it: re-routed.
+    expect(await followUp(0)).toBe("canceled");
   });
 });
