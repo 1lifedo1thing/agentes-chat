@@ -226,19 +226,17 @@ export const normalizePath = (path: string) =>
 export const baseName = (path: string) => path.split("/").pop() ?? path;
 
 /**
- * A file or folder an agent's text points at on a computer: `~/…`, `./…`, `../…`, `C:\…`, or an absolute path of two
- * parts or more (`/a/b`). A web address, a Markdown link's target, "e/ou" or a date ("24/11") is none, nor a path of
- * the system's own.
+ * A file or folder an agent's text points at on a computer: `~/…`, `./…`, `../…`, `C:\…`, or an absolute path under a
+ * root that holds people's files (`/Users/…`, `/home/…`). Any other absolute path is more often an API route or a
+ * site's page (`/api/v1/users`, `/docs/intro`) than a file, so it is none; nor is a web address, a Markdown link's
+ * target, "e/ou" or a date ("24/11").
  */
 const PATH_MENTION =
-  /(?<![\p{L}\p{N}_:/.~\\-])(?<!\]\()(?:~[\\/]|\.\.?[\\/]|[A-Za-z]:\\|\/(?=[^\s/]+\/))[^\s`'"<>()[\]{},;|*]+/gu;
-const SYSTEM_PATH = /^\/(?:tmp|dev|proc|sys|run|etc|usr|bin|sbin)\//;
+  /(?<![\p{L}\p{N}_:/.~\\-])(?<!\]\()(?:~[\\/]|\.\.?[\\/]|[A-Za-z]:\\|\/(?:Users|home|root|Volumes|mnt|media|srv|opt|data)\/)[^\s`'"<>()[\]{},;|*]+/gu;
 
 export const pathsMentioned = (text: string): string[] => [
   ...new Set(
-    [...text.matchAll(PATH_MENTION)]
-      .map((m) => m[0].replace(/[.,:;!?]+$/, ""))
-      .filter((p) => !SYSTEM_PATH.test(p) && /[\p{L}\p{N}]/u.test(p)),
+    [...text.matchAll(PATH_MENTION)].map((m) => m[0].replace(/[.,:;!?]+$/, "")).filter((p) => /[\p{L}\p{N}]/u.test(p)),
   ),
 ];
 

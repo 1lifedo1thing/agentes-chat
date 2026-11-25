@@ -835,7 +835,7 @@ describe("OpenClaw", () => {
 
   test("a file or folder the instructions point at that the import didn't bring is listed to do, never dropped quietly", () => {
     const soul =
-      "You are Pinch. Each morning read ~/household/bills/ and notes/ideas.md, then the list in /Users/pinch/Documents/compras.md. Docs: [soul](/concepts/soul), https://example.com/a/b, e/ou 24/11.";
+      "You are Pinch. Each morning read ~/household/bills/ and notes/ideas.md, then the list in /Users/pinch/Documents/compras.md. Bills come from POST /api/v1/bills/sync. Docs: [soul](/concepts/soul), https://example.com/a/b, e/ou 24/11.";
     const files = folder("openclaw-workspace").map((f) => (f.name === "SOUL.md" ? { ...f, text: soul } : f));
     const b = parseImport(files, { models: MODELS, root: "workspace" });
     expect(b.agents[0]?.instructions).toContain("~/household/bills/");
