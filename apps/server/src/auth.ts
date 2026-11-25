@@ -336,7 +336,7 @@ export function createAuth(deps: {
               const locale = emailLocale(user.locale ?? requestLocale(request?.headers.get("accept-language")));
               // A new address (`changeAccountEmail`): the account still has its old one until this link is opened.
               const [stored] = await db
-                .select({ email: schema.users.email })
+                .select({ email: schema.users.email, undelivered: schema.users.emailUndelivered })
                 .from(schema.users)
                 .where(eq(schema.users.id, user.id));
               const change = stored !== undefined && stored.email !== user.email.toLowerCase();
@@ -349,6 +349,9 @@ export function createAuth(deps: {
                 orgId: null,
                 key: `verify-email:${sha256(token)}`,
                 to: [user.email],
+                // A new link the signed-in person asked for after the provider stopped mailing their own address: it
+                // is asked to mail it again first (at most `EMAILS_PER_ADDRESS` an hour, as every link).
+                unsuppress: !signingUp && !change && stored?.undelivered === "suppressed",
                 template: change
                   ? { kind: "email_change_link", locale, url: confirmationLanding(url, base) }
                   : { kind: "verify_email", locale, url: confirmationLanding(url, base) },

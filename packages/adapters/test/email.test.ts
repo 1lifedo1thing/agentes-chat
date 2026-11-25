@@ -99,18 +99,20 @@ describe("MillionSend sender", () => {
       createMillionSendSender({
         apiKey: "k",
         from: "f@x.y",
-        fetch: (async () => Response.json({ statusCode: status, name, message }, { status })) as unknown as typeof fetch,
+        fetch: (async () =>
+          Response.json({ statusCode: status, name, message }, { status })) as unknown as typeof fetch,
       })
         .send(msg)
+        .then(() => null)
         .catch((e: unknown) => e as EmailError);
-    expect((await reply(422, "all_recipients_suppressed", "All recipients are suppressed")).recipient).toBe(
+    expect((await reply(422, "all_recipients_suppressed", "All recipients are suppressed"))?.recipient).toBe(
       "suppressed",
     );
     expect(
-      (await reply(422, "validation_error", "ana@example.invalid can never receive mail: no such domain")).recipient,
+      (await reply(422, "validation_error", "ana@example.invalid can never receive mail: no such domain"))?.recipient,
     ).toBe("rejected");
-    expect((await reply(422, "validation_error", "Attachments exceed 40 MiB in total")).recipient).toBeUndefined();
-    expect((await reply(403, "sending_paused", "paused")).recipient).toBeUndefined();
+    expect((await reply(422, "validation_error", "Attachments exceed 40 MiB in total"))?.recipient).toBeUndefined();
+    expect((await reply(403, "sending_paused", "paused"))?.recipient).toBeUndefined();
   });
 
   test("removeSuppression: DELETE /suppressions/{email}; 404 held nothing back; 5xx retries", async () => {
@@ -125,7 +127,10 @@ describe("MillionSend sender", () => {
         }) as unknown as typeof fetch,
       });
     expect(await answer(200).removeSuppression?.("ana+x@example.com")).toBe(true);
-    expect(calls[0]).toEqual({ url: "https://api.millionsend.com/suppressions/ana%2Bx%40example.com", method: "DELETE" });
+    expect(calls[0]).toEqual({
+      url: "https://api.millionsend.com/suppressions/ana%2Bx%40example.com",
+      method: "DELETE",
+    });
     expect(await answer(404).removeSuppression?.("ana@example.com")).toBe(false);
     const error = await answer(503)
       .removeSuppression?.("ana@example.com")
