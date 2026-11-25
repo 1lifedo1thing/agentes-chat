@@ -3929,7 +3929,10 @@ test("no room on the computer: nothing in the chat, the person's message says it
   expect(profiles).toHaveLength(10);
   expect(profiles[0]).toEqual(claimed);
   expect(claimed?.stages.some((s) => s.stage === "room_wait")).toBe(false);
+  // Each says the computer it waited for and ran on.
+  expect(claimed).toMatchObject({ machineId });
   for (const later of profiles.slice(-2)) {
+    expect(later).toMatchObject({ machineId });
     expect(later.stages.map((s) => s.stage).slice(0, 2)).toEqual(["room_wait", "claim"]);
     expect(later.stages[0]?.ms).toBeGreaterThanOrEqual(0);
   }
