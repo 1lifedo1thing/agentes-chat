@@ -22,3 +22,12 @@ test("a computer's page on the phone: its internet for the agents, as the web's 
 test("the workspace's computer on the phone says whose internet its agents use", () => {
   expect(flat("features/settings/MachineScreen.tsx")).toContain("egressViaText(t, m),");
 });
+
+test("letting a computer join on the phone says it will lend its internet, as the web's Let it join does", () => {
+  const parts = flat("features/devices/parts.tsx");
+  expect(parts).toContain('d.machineKind === "managed"');
+  expect(parts).toContain('t("devices.shareInternetJoin")');
+  // The devices list's card and the notice's card both show it.
+  expect(parts).toContain("{joinFacts(t, r)} </Text> <JoinInternetLine />");
+  expect(flat("features/devices/notices.tsx")).toContain("{joinFacts(t, request)} </Text> <JoinInternetLine />");
+});

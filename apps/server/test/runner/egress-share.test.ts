@@ -99,6 +99,44 @@ test("a lent connection reaches only public addresses, on the web's ports, and c
   data.socket.close();
 });
 
+test("a lent connection never reaches this computer's own networks, though their addresses are global", async () => {
+  const { port } = await echo();
+  const share = new EgressShare({
+    resolve: async (host) => ({ "router.example": ["2001:db8:1::1"], "office.example": ["198.51.100.1"] })[host] ?? [],
+    connect: () => connect({ host: "127.0.0.1", port }),
+    interfaces: () => ({
+      en0: [
+        {
+          address: "2001:db8:1::5",
+          cidr: "2001:db8:1::5/64",
+          netmask: "ffff:ffff:ffff:ffff::",
+          family: "IPv6",
+          mac: "",
+          internal: false,
+          scopeid: 0,
+        },
+        {
+          address: "198.51.100.20",
+          cidr: "198.51.100.20/24",
+          netmask: "255.255.255.0",
+          family: "IPv4",
+          mac: "",
+          internal: false,
+        },
+      ],
+    }),
+  });
+  const data = fakeData();
+  const dial = (host: string) =>
+    share.dial({ op: "egress.dial", streamId: STREAM, host, port: 443 }, async () => data.socket);
+  await expect(dial("router.example")).rejects.toMatchObject({ code: "not_allowed" });
+  await expect(dial("office.example")).rejects.toMatchObject({ code: "not_allowed" });
+  await expect(dial("2001:db8:1::5")).rejects.toMatchObject({ code: "not_allowed" });
+  await expect(dial("::ffff:198.51.100.1")).rejects.toMatchObject({ code: "not_allowed" });
+  expect(await dial("2001:db8:2::1")).toEqual({ connected: true });
+  data.socket.close();
+});
+
 test("a day's cap: past it, new connections are refused and an open one ends; it is kept across restarts", async () => {
   const { port } = await echo();
   const dir = mkdtempSync(path.join(tmpdir(), "egress-share-"));

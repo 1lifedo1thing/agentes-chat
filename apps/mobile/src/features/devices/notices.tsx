@@ -15,7 +15,7 @@ import { useColors, useDirectory, useOrgId, useWhen } from "../shared/hooks";
 import { Tile } from "../shared/parts";
 import { WaitingCard } from "../shared/WaitingCard";
 import { type DeviceNotice, deviceHref, deviceNoticeOf, deviceNoticeTitle, joinFacts } from "./logic";
-import { JoinButtons } from "./parts";
+import { JoinButtons, JoinInternetLine } from "./parts";
 import { useDeviceMutation, useDevices } from "./queries";
 import { ToolOneClickButton } from "./ToolOneClick";
 
@@ -168,6 +168,7 @@ function JoinNotice({ n, d }: { n: AppNotification; d: DeviceNotice }) {
         <Text variant="small" tone="muted">
           {joinFacts(t, request)}
         </Text>
+        <JoinInternetLine />
       </WaitingCard>
     );
   // Answered elsewhere, or out of time: the card opens the devices.

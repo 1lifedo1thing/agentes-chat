@@ -8,7 +8,7 @@ import {
   type MachineRequest,
   STREAM_CLOSE,
 } from "@agenteschat/adapters/machine-protocol";
-import { publicAddress } from "./egress";
+import { onOwnNetwork, publicAddress } from "./egress";
 import { RunnerError } from "./errors";
 import { readJson, writeJson } from "./json-file";
 import type { DataSocket } from "./streams";
@@ -40,6 +40,8 @@ export class EgressShare {
       file?: string;
       resolve?: (host: string) => Promise<string[]>;
       connect?: (host: string, port: number) => Socket;
+      /** This computer's interfaces (default `os.networkInterfaces()`). */
+      interfaces?: () => Parameters<typeof onOwnNetwork>[1];
       now?: () => Date;
       limits?: Partial<Limits>;
     } = {},
@@ -96,7 +98,10 @@ export class EgressShare {
     const found = await this.addresses(req.host);
     // A name that points anywhere private (this network, this computer) is refused whole: never the person's own.
     if (found.length === 0) throw new RunnerError("not_found", `${req.host} has no address`);
-    if (!found.every(publicAddress)) throw new RunnerError("not_allowed", "Only public addresses are reached");
+    const interfaces = this.o.interfaces?.();
+    if (!found.every((ip) => publicAddress(ip) && !onOwnNetwork(ip, interfaces))) {
+      throw new RunnerError("not_allowed", "Only public addresses outside this computer's own network are reached");
+    }
     this.open++;
     let tcp: Socket | null = null;
     let data: DataSocket | null = null;

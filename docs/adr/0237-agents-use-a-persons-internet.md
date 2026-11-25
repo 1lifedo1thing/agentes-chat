@@ -37,8 +37,9 @@ computers are already connected (ADR 0025) and hold a socket to the server.
    (16 MiB queued toward a side at most), and only then answers `stream.ready` to the first. Every hop is a socket that
    already exists, so a computer behind any router lends without opening a port.
 4. **What it carries.** Only TCP to ports 80 and 443 (`EGRESS_SHARE.ports`); SSH and the rest keep their usual way.
-   The lending computer resolves the name itself (so the site's own location answers) and refuses a name or address
-   that is not public, wholly (its own network, its router, this computer); at most 256 connections at once and
+   The lending computer resolves a name itself (so the site's own location answers; a guard that passes the address its
+   agent already resolved gets that address) and refuses a name or address that is not public, or that is on one of
+   its own interfaces' subnets (a home's global IPv6 prefix, its router, this computer), wholly; at most 256 connections at once and
    5 GB a day both ways (UTC, kept in `<runner home>/egress-share.json` across restarts), past which an open one ends
    and new ones are refused until the next day. It is new work: a paused computer, or a workspace or agent on hold,
    lends nothing. Never another workspace's: the server pairs only a workspace's computer with that workspace's
