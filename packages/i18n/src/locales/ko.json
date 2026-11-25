@@ -21045,6 +21045,92 @@
     "settingsText": "기술 세부 정보를 agentes.chat 팀에 보내세요."
   },
   "live": {
+    "type": {
+      "font": "글꼴",
+      "search": "글꼴 검색",
+      "noResults": "이 이름의 글꼴이 없습니다",
+      "list": "글꼴",
+      "groups": {
+        "slides": "이 프레젠테이션",
+        "canvas": "이 캔버스",
+        "document": "이 문서",
+        "company": "회사 글꼴",
+        "sans": "산세리프",
+        "serif": "세리프",
+        "display": "제목용",
+        "mono": "고정폭",
+        "handwriting": "손글씨"
+      },
+      "headings": "제목",
+      "body": "본문",
+      "fromDrive": "Drive에서",
+      "ownFont": "파일 글꼴",
+      "fileFonts": {
+        "slides": "프레젠테이션 글꼴",
+        "document": "문서 글꼴"
+      },
+      "fileFontsNote": "파일 전체에 적용됩니다. 자체 글꼴이 있는 텍스트는 그대로 유지됩니다.",
+      "headingFont": "제목 글꼴",
+      "bodyFont": "본문 글꼴",
+      "bring": "Drive에서 글꼴 가져오기…",
+      "bringButton": "Drive에서 가져오기",
+      "bringTitle": "Drive에서 글꼴 가져오기",
+      "bringSearch": "Drive에서 글꼴 검색",
+      "bringEmpty": "Drive에 글꼴이 없습니다. 먼저 .ttf, .otf 또는 .woff 파일을 Drive에 올리세요.",
+      "brought": "{{name}}이(가) 파일에 추가되었습니다",
+      "notFont": "이 파일은 글꼴이 아닙니다. .ttf, .otf 또는 .woff 파일을 고르세요.",
+      "done": "완료",
+      "text": "텍스트 스타일",
+      "glyph": "가",
+      "weight": "굵기",
+      "weights": {
+        "w300": "가늘게",
+        "w400": "보통",
+        "w500": "중간",
+        "w600": "약간 굵게",
+        "w700": "굵게",
+        "w800": "아주 굵게"
+      },
+      "tracking": "자간",
+      "trackings": {
+        "tight": "좁게",
+        "normal": "보통",
+        "open": "넓게",
+        "wide": "아주 넓게"
+      },
+      "lineHeight": "줄 높이",
+      "caps": "모두 대문자",
+      "highlight": "형광펜",
+      "highlights": {
+        "none": "없음",
+        "yellow": "노랑",
+        "green": "초록",
+        "blue": "파랑",
+        "pink": "분홍",
+        "orange": "주황"
+      },
+      "effects": "효과",
+      "shadow": "그림자",
+      "shadows": {
+        "none": "없음",
+        "soft": "부드럽게",
+        "strong": "강하게"
+      },
+      "border": "테두리",
+      "dashes": {
+        "solid": "실선",
+        "dashed": "파선",
+        "dotted": "점선"
+      },
+      "gradient": "그라데이션",
+      "gradients": {
+        "none": "없음",
+        "ocean": "바다",
+        "graphite": "흑연",
+        "sunset": "노을",
+        "violet": "보라"
+      }
+    },
     "slides": {
       "rail": {
         "label": "슬라이드",

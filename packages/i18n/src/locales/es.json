@@ -22325,6 +22325,92 @@
     "settingsText": "Envía los detalles técnicos al equipo de agentes.chat."
   },
   "live": {
+    "type": {
+      "font": "Fuente",
+      "search": "Buscar fuente",
+      "noResults": "Ninguna fuente con ese nombre",
+      "list": "Fuentes",
+      "groups": {
+        "slides": "En esta presentación",
+        "canvas": "En esta pizarra",
+        "document": "En este documento",
+        "company": "De tu empresa",
+        "sans": "Sin serifa",
+        "serif": "Con serifa",
+        "display": "Para títulos",
+        "mono": "Monoespaciadas",
+        "handwriting": "Manuscritas"
+      },
+      "headings": "Títulos",
+      "body": "Texto",
+      "fromDrive": "Del Drive",
+      "ownFont": "Fuente del archivo",
+      "fileFonts": {
+        "slides": "Fuentes de la presentación",
+        "document": "Fuentes del documento"
+      },
+      "fileFontsNote": "Se aplican a todo el archivo. Un texto con fuente propia la conserva.",
+      "headingFont": "Fuente de los títulos",
+      "bodyFont": "Fuente del texto",
+      "bring": "Traer fuente del Drive…",
+      "bringButton": "Traer del Drive",
+      "bringTitle": "Traer fuente del Drive",
+      "bringSearch": "Buscar fuentes en el Drive",
+      "bringEmpty": "No hay fuentes en el Drive. Sube antes un archivo .ttf, .otf o .woff al Drive.",
+      "brought": "{{name}} ya está en el archivo",
+      "notFont": "Este archivo no es una fuente. Elige un .ttf, .otf o .woff.",
+      "done": "Listo",
+      "text": "Estilo del texto",
+      "glyph": "Aa",
+      "weight": "Grosor",
+      "weights": {
+        "w300": "Fina",
+        "w400": "Normal",
+        "w500": "Media",
+        "w600": "Seminegrita",
+        "w700": "Negrita",
+        "w800": "Extranegrita"
+      },
+      "tracking": "Espaciado entre letras",
+      "trackings": {
+        "tight": "Más junto",
+        "normal": "Normal",
+        "open": "Abierto",
+        "wide": "Muy abierto"
+      },
+      "lineHeight": "Altura de línea",
+      "caps": "Todo en mayúsculas",
+      "highlight": "Resaltado",
+      "highlights": {
+        "none": "Ninguno",
+        "yellow": "Amarillo",
+        "green": "Verde",
+        "blue": "Azul",
+        "pink": "Rosa",
+        "orange": "Naranja"
+      },
+      "effects": "Efectos",
+      "shadow": "Sombra",
+      "shadows": {
+        "none": "Ninguna",
+        "soft": "Suave",
+        "strong": "Fuerte"
+      },
+      "border": "Borde",
+      "dashes": {
+        "solid": "Continuo",
+        "dashed": "Discontinuo",
+        "dotted": "Punteado"
+      },
+      "gradient": "Degradado",
+      "gradients": {
+        "none": "Ninguno",
+        "ocean": "Océano",
+        "graphite": "Grafito",
+        "sunset": "Atardecer",
+        "violet": "Violeta"
+      }
+    },
     "slides": {
       "rail": {
         "label": "Diapositivas",
