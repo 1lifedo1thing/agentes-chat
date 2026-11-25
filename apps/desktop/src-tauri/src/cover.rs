@@ -178,15 +178,20 @@ pub fn over_server_here(app: &AppHandle) {
     }
 }
 
-/// The site, once it painted its first screen (apps/web `pageReady`).
+/// The site, once it painted its first screen (apps/web `pageReady`), or a page in its place (the proxy's "back in a
+/// moment" while the server restarts, the boot's fallback when the site's files didn't load): each lifts the cover,
+/// and only the site's own (`site`) ends the app's opening.
 #[tauri::command]
-pub fn page_ready(app: AppHandle, webview: tauri::Webview) -> Result<(), String> {
+pub fn page_ready(app: AppHandle, webview: tauri::Webview, site: Option<bool>) -> Result<(), String> {
     if webview.label() != main_window::LABEL {
         return Err("only the site says it painted".into());
     }
     if let Some(path) = pending_path(&app).filter(|p| p.exists()) {
         let _marker = MARKER.lock();
         let _ = std::fs::remove_file(path);
+    }
+    if site == Some(true) {
+        crate::vitals::painted();
     }
     hide(&app);
     Ok(())
