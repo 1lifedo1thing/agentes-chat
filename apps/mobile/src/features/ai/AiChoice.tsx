@@ -1,4 +1,4 @@
-import { useAiChoice, useAiHub } from "@agenteschat/client";
+import { useAiChoice, useAiHub, useApi } from "@agenteschat/client";
 import {
   type AiChoice,
   type AiChoiceRow,
@@ -6,6 +6,8 @@ import {
   aiChoiceAsks,
   aiChoiceOf,
   aiChoiceRows,
+  giveBackLogin,
+  loginHolders,
 } from "@agenteschat/client/lib/ai-choice";
 import { type EffortLevel, effortLevel, shownEffort } from "@agenteschat/client/lib/brain-advanced";
 import { errorText } from "@agenteschat/client/lib/errors";
@@ -14,7 +16,7 @@ import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { useOrg } from "@/providers/org";
-import { Button, GroupedList, GroupedRow, ProviderLogo, useToast } from "@/ui";
+import { Button, GroupedList, GroupedRow, ProviderLogo, Text, useToast } from "@/ui";
 import { useMeId } from "../shared/hooks";
 import { type PickOption, pickOne } from "../shared/PickerSheet";
 import { choiceText, withModel } from "./hub";
@@ -65,6 +67,7 @@ export function AiChoiceFields({
 }) {
   const { t, i18n } = useTranslation();
   const { orgId } = useOrg();
+  const api = useApi();
   const toast = useToast();
   const meId = useMeId();
   const state = useAiChoice(orgId, target);
@@ -80,7 +83,8 @@ export function AiChoiceFields({
   const agentId = target.kind === "agent" || target.kind === "lodi" ? target.agentId : "";
   const asks = asking ? aiChoiceAsks(asking, agentId) : null;
   const failed = (e: unknown) => toast({ title: errorText(t, e), icon: "x" });
-  const apply = (choice: AiChoice) => {
+  /** `giveBack`: a login taken from other agents, which Desfazer gives back to them once this one lets go of it. */
+  const apply = (choice: AiChoice, giveBack?: () => Promise<void>) => {
     if (controlled) return onChange(choice);
     const before = state.current;
     setAsking(null);
@@ -94,10 +98,20 @@ export function AiChoiceFields({
           onPress: () =>
             void state
               .save(before)
+              .then(() => giveBack?.())
               .then(() => toast({ title: t("agentPage.work.brain.v2.undone"), icon: "check" }), failed),
         },
       });
     }, failed);
+  };
+
+  /** A pick asked first: someone else's plan, or a login taken from the agents that think with it. */
+  const take = async (row: AiChoiceRow, moves: boolean) => {
+    // Its button goes at once: a second tap while the agents losing it are read would take it twice.
+    setAsking(null);
+    if (!moves || !row.account) return apply(state.choose(row));
+    const giveBack = await giveBackLogin(api.agents, orgId, loginHolders(row.account, agentId));
+    apply({ ...state.choose(row), moveAccount: true }, giveBack);
   };
 
   const pickAccount = async () => {
@@ -234,7 +248,7 @@ export function AiChoiceFields({
             .join(" ")}
           action={t("agentPage.work.brain.v2.switchTo", { label: choiceText(t, asking, i18n.language).label })}
           disabled={locked}
-          onPress={() => apply({ ...state.choose(asking), ...(asks.takesFrom ? { moveAccount: true as const } : {}) })}
+          onPress={() => void take(asking, Boolean(asks.takesFrom))}
         />
       ) : (
         ask
@@ -247,12 +261,15 @@ export function AiChoiceFields({
 export function AskLine({
   icon,
   text,
+  link,
   action,
   disabled = false,
   onPress,
 }: {
   icon: "mail" | "info" | "clock";
   text: string;
+  /** A link after the words ("Ver uso"). */
+  link?: { label: string; onPress: () => void };
   action: string;
   disabled?: boolean;
   onPress: () => void;
@@ -261,6 +278,14 @@ export function AskLine({
     <>
       <Note icon={icon} live inset>
         {text}
+        {link ? (
+          <>
+            {" "}
+            <Text variant="small" accessibilityRole="link" style={styles.link} onPress={link.onPress}>
+              {link.label}
+            </Text>
+          </>
+        ) : null}
       </Note>
       <View style={styles.ask}>
         <Button variant="primary" label={action} wide disabled={disabled} onPress={onPress} />
@@ -272,4 +297,5 @@ export function AskLine({
 const styles = StyleSheet.create({
   // Under its line, on the groups' sides.
   ask: { paddingHorizontal: 16, paddingTop: 12 },
+  link: { textDecorationLine: "underline" },
 });

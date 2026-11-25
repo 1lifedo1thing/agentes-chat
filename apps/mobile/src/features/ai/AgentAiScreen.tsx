@@ -8,6 +8,7 @@ import {
   ownSignInName,
   signInOf,
 } from "@agenteschat/client/lib/ai-accounts";
+import { giveBackLogin, loginHolders } from "@agenteschat/client/lib/ai-choice";
 import { managesAgent } from "@agenteschat/client/lib/audience";
 import { brainLine, thinksWith } from "@agenteschat/client/lib/brain";
 import { advancedContents, effortLevelsFor, viewSpeedFits } from "@agenteschat/client/lib/brain-advanced";
@@ -153,32 +154,43 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
   // Someone else's plan, or a login another agent thinks with: it asks first, in a line under the list.
   const [asking, setAsking] = useState<MachineAccount | null>(null);
   const lentTo = (a: MachineAccount) => !a.mine && a.ownerId !== agent?.ownerUserId;
-  const choose = (a: MachineAccount | null, asked = false) => {
+  // At its limit: the agent would wait there until the plan renews (the web's Quem pensa asks it too).
+  const full = (a: MachineAccount) => a.usage != null && planState(a.usage).state === "limited";
+  const choose = async (a: MachineAccount | null, asked = false) => {
     if (!view || (a?.id ?? null) === account) return setAsking(null);
     const others = a ? takenFrom(a, name) : [];
-    if (a && !asked && (others.length > 0 || lentTo(a))) return setAsking(a);
+    if (a && !asked && (others.length > 0 || lentTo(a) || full(a))) return setAsking(a);
     setAsking(null);
     const input = accountInput(view, a);
     const done = (saved: AgentBrain) => accountSaved(t, i18n.language, name, a, input, saved);
-    // A login made for one agent thinks for one: picking another agent's takes it from that one.
-    void save(others.length > 0 ? { ...input, moveAccount: true } : input, done, {
-      account: view.account,
-      ...("model" in input ? { model: view.model } : {}),
-    });
+    // A login made for one agent thinks for one: picking another agent's takes it from that one, and Desfazer gives
+    // it back to them.
+    const giveBack =
+      a && others.length > 0 ? await giveBackLogin(api.agents, orgId, loginHolders(a, agentId)) : undefined;
+    void save(
+      others.length > 0 ? { ...input, moveAccount: true } : input,
+      done,
+      { account: view.account, ...("model" in input ? { model: view.model } : {}) },
+      giveBack,
+    );
   };
   const asked = asking ? takenFrom(asking, name) : [];
   const askLine = asking ? (
     <AskLine
-      icon={lentTo(asking) ? "mail" : "info"}
+      icon={lentTo(asking) ? "mail" : full(asking) ? "clock" : "info"}
       text={[
         lentTo(asking) ? t("connectAi.chat.told", { name: asking.ownerName?.split(" ")[0] ?? "" }) : null,
         asked[0] ? t("mobile.aiHub.choice.asksMove", { agent: asked[0] }) : null,
+        full(asking) ? t("agentPage.work.brain.v2.fullWait", g) : null,
       ]
         .filter(Boolean)
         .join(" ")}
+      {...(full(asking)
+        ? { link: { label: t("agentPage.work.brain.v2.seeUsage"), onPress: () => router.push("/usage" as never) } }
+        : {})}
       action={t("agentPage.work.brain.v2.switchTo", { label: accountInLine(t, asking) })}
       disabled={pending.account !== undefined}
-      onPress={() => choose(asking, true)}
+      onPress={() => void choose(asking, true)}
     />
   ) : null;
 
@@ -251,7 +263,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                 const id = r.account?.sameAs ?? r.account?.id;
                 const logins = view.accounts.filter((a) => (a.sameAs ?? a.id) === id);
                 const login = logins.find((a) => a.usedByIds?.includes(agentId)) ?? logins[0];
-                if (login) choose(login);
+                if (login) void choose(login);
               }}
               extras={[
                 ...(ownRow && kind
@@ -272,7 +284,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                           usable: true,
                           selected: true,
                         },
-                        onPick: () => choose(null),
+                        onPick: () => void choose(null),
                       },
                     ]
                   : []),
@@ -334,7 +346,7 @@ export function AgentAiScreen({ agentId }: { agentId: string }) {
                           : t("aiAccounts.usage.offer.use", { label: a.label, pct: used })
                       }
                       checked={a.id === account}
-                      onPress={() => choose(a)}
+                      onPress={() => void choose(a)}
                     />
                   ))}
                   {waits && view.canUsePlans && view.canManageAccounts ? (
