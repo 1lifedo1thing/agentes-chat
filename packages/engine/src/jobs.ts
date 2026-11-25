@@ -109,7 +109,7 @@ import { KEEP_GOING_JOB, keepMissionGoing, type MissionEngine } from "./missions
 import { notifyMessage } from "./notification-producers";
 import { ORG_FILES_PURGE_ATTEMPTS, ORG_FILES_PURGE_JOB, USER_FILES_PURGE_JOB } from "./organizations";
 import { outOfOfficeIds } from "./out-of-office";
-import { enqueue, type JobHandlers, OUTBOX_WAKE_TOPIC, type OutboxJob, PermanentJobError } from "./outbox";
+import { enqueue, type JobHandlers, type OutboxJob, PermanentJobError } from "./outbox";
 import { checkParkedRun, EARLY_CHECK_JOB, scheduleParkedChecks } from "./parked-asks";
 import { PARTNER_WAITLIST_CONTACT_JOB, savePartnerWaitlistContact } from "./partner-waitlist";
 import { notifyPersonLimit, PERSON_LIMIT_JOB } from "./person-usage";
@@ -121,7 +121,6 @@ import { lodiLaneHandlers } from "./right-hand-lanes";
 import {
   createLlmRouterStrategy,
   DEFAULT_ROUTER_POLICY,
-  ROUTE_QUIET_JOB,
   type RouterDeps,
   type RouterStrategy,
   routeMessage,
@@ -250,10 +249,8 @@ export interface JobDeps extends RunExecutorDeps {
      * on the Cloud (`isAgentesCloud`), where Jev is ours. Absent: no plan step.
      */
     plans?: { hub: Pick<MachineCaller, "call" | "status">; publicUrl: string };
-    /** How long a person's message waits for their next one (`ROUTER_QUIET_MS` on a server); absent: no wait. */
+    /** A person's messages this close are one request to the router (`ROUTER_QUIET_MS` on a server). */
     quietMs?: number;
-    /** The wait ends early when the person isn't typing (token-trim B11). */
-    quietByTyping?: boolean;
   };
 }
 
@@ -316,7 +313,6 @@ export function messageRouter(deps: JobDeps): RouterDeps | null {
     outOfOffice: (orgId, ids) => outOfOfficeIds(deps.db, orgId, ids),
     routing: { jev: () => jevPicks(jev?.key), smallModel, plans },
     quietMs: router.quietMs,
-    quietByTyping: router.quietByTyping,
     pubsub: deps.pubsub,
     // Jev bills the platform: past the workspace's platform AI for the month, its own small model picks, else only
     // @mentions start agents.
@@ -333,8 +329,8 @@ async function jevPicks(key: JevKeySource | undefined): Promise<boolean> {
 
 /** Every outbox job kind the core knows. Modules can add more through the server's worker options. */
 export function createJobHandlers(deps: JobDeps): JobHandlers {
-  // Listening from now on, so typing sent while a run reads its context (before its quiet window) counts.
-  if (deps.quietByTyping || deps.router?.quietByTyping) typingLogFor(deps.pubsub);
+  // Listening from now on, so typing sent while a run reads its context (before its first model call) counts.
+  if (deps.quietMs) typingLogFor(deps.pubsub);
   const routing = messageRouter(deps);
 
   // An agent's @mention is credit or a reference: it wakes the other agent only when it plainly asks it something.
@@ -587,7 +583,6 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
     message: Message,
     where: Awaited<ReturnType<typeof getChannelCached>>,
     released?: { except: string[] },
-    startedAt?: number,
   ) {
     const input = { orgId: message.orgId, messageId: message.id };
     const routed = (
@@ -622,25 +617,7 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         if (role !== "owner" && role !== "decide") return routed("none", [], [], "mission_read_only");
       }
     }
-    const res = await routeMessage(routing, input, {
-      ...(released ? { ...released, forSomeoneElse: true } : {}),
-      ...(startedAt ? { startedAt } : {}),
-    });
-    if (res.skipped === "waiting" && res.retryAt) {
-      await enqueue(deps.db, {
-        orgId: message.orgId,
-        kind: ROUTE_QUIET_JOB,
-        payload: { messageId: message.id, startedAt: res.startedAt, ...(released ? { except: released.except } : {}) },
-        dedupeKey: `${ROUTE_QUIET_JOB}:${message.id}:${res.retryAt.getTime()}`,
-        runAt: res.retryAt,
-      });
-      // The pump looks every second on its own: woken at the time instead, the wait isn't rounded up to it.
-      setTimeout(
-        () => void deps.pubsub.publish(OUTBOX_WAKE_TOPIC, { type: "wake" }).catch(() => {}),
-        Math.max(0, res.retryAt.getTime() - Date.now()),
-      ).unref();
-      return;
-    }
+    const res = await routeMessage(routing, input, released ? { ...released, forSomeoneElse: true } : {});
     // Continued: the person's next message carries the decision, and its receipt.
     if (res.skipped === "already_routed" || res.skipped === "continued") return;
     // Nobody can think: what the person asks for may be to connect an AI (Jev reads it), for the Connect step.
@@ -869,18 +846,6 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
       // Never back to the agent whose task it left, and no agent by a rule: only one the router's step picks.
       const except = typeof job.payload.agentId === "string" ? [job.payload.agentId] : [];
       await routePersonMessage(message, await getChannelCached(deps.db, message.orgId, message.channelId), { except });
-    },
-    // A person's message whose quiet wait was over at this job's time: the router decides on it now, or waits more.
-    [ROUTE_QUIET_JOB]: async (job) => {
-      const message = await getMessage(deps.db, orgOf(job), String(job.payload.messageId));
-      if (!message || message.deletedAt) return;
-      const { except, startedAt } = job.payload;
-      await routePersonMessage(
-        message,
-        await getChannelCached(deps.db, message.orgId, message.channelId),
-        Array.isArray(except) ? { except: except.map(String) } : undefined,
-        typeof startedAt === "number" ? startedAt : undefined,
-      );
     },
     "agent_run.execute": async (job, ctx) => {
       // Counted per run (statements per stage go into the run profile).

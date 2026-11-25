@@ -39,7 +39,6 @@ import {
   listenForRunCancels,
   type MachineCaller,
   type MailDeps,
-  OUTBOX_WAKE_TOPIC,
   type OutboxJob,
   onceOnDatabase,
   pollMailWatches,
@@ -221,7 +220,8 @@ export async function runBootTasks(
   }
 }
 
-export const WAKE_TOPIC = OUTBOX_WAKE_TOPIC;
+/** Pub/sub topic that wakes every instance's outbox worker (cross-replica, over LISTEN/NOTIFY). */
+export const WAKE_TOPIC = "system:outbox-wake";
 
 /** How often each background job runs. */
 export const WORKER_INTERVALS_MS = {
