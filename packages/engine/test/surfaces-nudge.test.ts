@@ -118,6 +118,9 @@ describe("who gets a nudge, decided by core", () => {
 });
 
 describe("what the service sees", () => {
+  // These queue at the real clock, which may fall in the default quiet hours.
+  beforeEach(() => setNudge(f.db, f.owner.id, linkId, { quietFrom: 0, quietTo: 0 }));
+
   test("only a service that asks lists nudges, with the counts as they are", async () => {
     await unread(hoursAgo(6));
     await unread(hoursAgo(6), { waiting: true, count: 2 });
