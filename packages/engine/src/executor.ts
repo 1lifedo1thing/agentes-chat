@@ -3690,6 +3690,7 @@ async function executeRunInner(
         resultNotice: wokenByResult,
         personal: await isPersonalWorkspace(db, run.orgId),
         backgroundWork: await backgroundWorkHere(),
+        recent: await recentMessages(),
       }).catch(() => null);
       if (verdict === "secret" || verdict === "unbacked" || verdict === "untried") return false;
     }
@@ -6685,10 +6686,11 @@ async function executeRunInner(
         prepare: () => void judging.gather().catch(() => {}),
         verdict: checker
           ? async () => {
-              const [gathered, personal, backgroundWork] = await Promise.all([
+              const [gathered, personal, backgroundWork, recent] = await Promise.all([
                 judging.gather(),
                 isPersonalWorkspace(db, run.orgId),
                 backgroundWorkHere(),
+                recentMessages(),
               ]);
               return continuationVerdict(checker, {
                 orgId: run.orgId,
@@ -6702,6 +6704,7 @@ async function executeRunInner(
                 unreached,
                 personal,
                 backgroundWork,
+                recent,
                 onLearn: (signal) => {
                   learned = signal;
                 },
