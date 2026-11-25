@@ -20,9 +20,6 @@ on:
         required: false
   schedule:
     - cron: "23 5 * * 1"
-  # While the bench is being built: a workflow runs by hand only once it is on main.
-  push:
-    branches: [feat/desktop-bench]
 
 permissions:
   contents: read
