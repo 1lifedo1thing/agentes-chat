@@ -295,7 +295,7 @@ export const NOTIFICATION_KINDS = [
    */
   "device.folder_request",
   /**
-   * A computer paired before agents could use a person's internet lends its own now (ADR 0237, migration 0348): its
+   * A computer paired before agents could use a person's internet lends its own now (ADR 0237, migration 0351): its
    * owner, else who configures the workspace (one marked the workspace's, or whose owner left), once per computer
    * (`device-internet:<machineId>`), the computer in `source.machineId` with its name in `source.label`. Inbox only,
    * with "Turn off"; done once it is off.
