@@ -36,7 +36,7 @@ const SCRIPT_MAX_BYTES = 1024 * 1024;
 /**
  * A script this long is read in a child runner (`script-check`), so this runner's one thread, every agent's work on
  * the computer, never waits for it: a crafted script costs the check about 4.5 ms a KiB (a 1 MiB one about 5 s), an
- * ordinary one under 0.25 ms, and a child takes about 70 ms to start. Below this a crafted one takes about 40 ms.
+ * ordinary one a tenth of that or less. Below this even a crafted one takes about 40 ms, read here with no child.
  */
 const APART_CHARS = 8 * 1024;
 /** A child that hasn't answered by then is hung (the slowest script takes it seconds): the script is read here. */
