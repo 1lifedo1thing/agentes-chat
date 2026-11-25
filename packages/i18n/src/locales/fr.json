@@ -15611,6 +15611,7 @@
     "serverSaid": "Le serveur a répondu : {{detail}}",
     "ownClient": {
       "title": "Utiliser votre propre app OAuth",
+      "addressFirst": "Saisissez d'abord l'adresse https du serveur.",
       "notApproved": "{{name}} n'accepte que les apps qu'il a approuvées, et agentes.chat n'en fait pas encore partie. Vous pouvez le connecter avec votre propre app chez lui.",
       "askAdmin": "Un admin peut le connecter avec l'app propre au workspace.",
       "help": "Créez une app chez le fournisseur, enregistrez-y cette URI de redirection et collez son ID client. Chaque connexion depuis le workspace utilise alors votre app.",

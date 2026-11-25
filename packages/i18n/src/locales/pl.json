@@ -16143,6 +16143,7 @@
     "serverSaid": "Odpowiedź serwera: {{detail}}",
     "ownClient": {
       "title": "Użyj własnej aplikacji OAuth",
+      "addressFirst": "Najpierw wpisz adres https serwera.",
       "notApproved": "{{name}} wpuszcza tylko zatwierdzone przez siebie aplikacje, a agentes.chat jeszcze do nich nie należy. Możesz połączyć się własną aplikacją.",
       "askAdmin": "Administrator może połączyć to aplikacją własną workspace'u.",
       "help": "Utwórz aplikację u dostawcy, zarejestruj w niej ten URI przekierowania i wklej jej identyfikator klienta. Od tej pory każde logowanie tam z workspace'u używa Twojej aplikacji.",

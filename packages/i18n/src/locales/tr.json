@@ -15020,6 +15020,7 @@
     "serverSaid": "Sunucunun yanıtı: {{detail}}",
     "ownClient": {
       "title": "Kendi OAuth uygulamanı kullan",
+      "addressFirst": "Önce sunucunun https adresini gir.",
       "notApproved": "{{name}} yalnızca onayladığı uygulamaları kabul ediyor ve agentes.chat henüz bunlardan biri değil. Orada kendi uygulamanla bağlayabilirsin.",
       "askAdmin": "Bir yönetici, çalışma alanının kendi uygulamasıyla bağlayabilir.",
       "help": "Sağlayıcıda bir uygulama oluştur, bu yönlendirme URI'sini oraya kaydet ve istemci kimliğini buraya yapıştır. Bundan sonra çalışma alanından oraya her giriş senin uygulamanı kullanır.",

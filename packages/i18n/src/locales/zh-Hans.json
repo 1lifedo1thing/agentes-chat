@@ -14595,6 +14595,7 @@
     "serverSaid": "服务器返回：{{detail}}",
     "ownClient": {
       "title": "使用你自己的 OAuth 应用",
+      "addressFirst": "请先输入服务器的 https 地址。",
       "notApproved": "{{name}} 只允许它批准过的应用登录，而 agentes.chat 还不在其中。你可以用自己的应用来连接它。",
       "askAdmin": "管理员可以用工作区自己的应用来连接它。",
       "help": "在服务提供方创建一个应用，在其中登记这个重定向 URI，然后粘贴它的客户端 ID。之后，工作区在那里的每次登录都会使用你的应用。",

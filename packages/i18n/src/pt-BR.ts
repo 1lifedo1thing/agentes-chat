@@ -15483,6 +15483,7 @@ export const ptBR = {
     serverSaid: "O servidor respondeu: {{detail}}",
     ownClient: {
       title: "Usar seu próprio app OAuth",
+      addressFirst: "Primeiro, informe o endereço https do servidor.",
       notApproved:
         "{{name}} só deixa entrar apps que aprovou, e o agentes.chat ainda não foi aprovado. Dá para conectar com um app seu lá.",
       askAdmin: "Um admin pode conectar com um app próprio do workspace.",
