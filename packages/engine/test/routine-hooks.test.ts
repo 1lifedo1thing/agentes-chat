@@ -35,6 +35,7 @@ import {
   updateRoutine,
   webhookEventText,
 } from "../src";
+import { shortenJson } from "../src/format";
 import { ROUTINE_STALL_MS, releaseStalledRoutineRuns } from "../src/routine-firing";
 import { addMember, type Fixture, SECRET, setup } from "./fixtures";
 import { agentRunRow, routineDeps, routineRunRow } from "./routine-fixtures";
@@ -301,8 +302,8 @@ describe("routine webhooks", () => {
     const issue = (n: number) =>
       JSON.stringify({
         action: "update",
-        data: { id: `ISS-${n}`, description: `${n}`.repeat(10_000), labels: ["Admin", "Improvement"] },
-        updatedFrom: { labelIds: ["retired"] },
+        data: { id: `ISS-${n}`, description: `${n}`.repeat(10_000), labels: ["Bug", "Feature"] },
+        updatedFrom: { labelIds: ["label-old"] },
       });
     let runId = "";
     for (let n = 1; n <= 5; n++) {
@@ -311,10 +312,14 @@ describe("routine webhooks", () => {
     }
     const text = webhookEventText((await routineRunRow(f, runId)).event ?? {});
     for (let n = 1; n <= 5; n++) expect(text).toContain(`"id":"ISS-${n}"`);
-    expect(text.match(/"updatedFrom":\{"labelIds":\["retired"\]\}/g)).toHaveLength(5);
-    expect(text.match(/"labels":\["Admin","Improvement"\]/g)).toHaveLength(5);
+    expect(text.match(/"updatedFrom":\{"labelIds":\["label-old"\]\}/g)).toHaveLength(5);
+    expect(text.match(/"labels":\["Bug","Feature"\]/g)).toHaveLength(5);
     expect(text).toContain("read_webhook_call with call 3 reads the call whole");
     expect(text).not.toContain("more characters cut");
+    // An id past 2^53 would come back another number: such a body is cut at its end, never written again.
+    const big = `{"id":12345678901234567891,"pad":"${"z".repeat(30_000)}"}`;
+    expect(shortenJson(big, 1_000)).toBeNull();
+    expect(shortenJson(`{"id":123,"pad":"${"z".repeat(3_000)}"}`, 1_000)).toStartWith('{"id":123,"pad":"zz');
 
     await executeRoutineRun(deps(), runId);
     const run = await agentRunRow(f, (await routineRunRow(f, runId)).agentRunId);
@@ -711,7 +716,8 @@ describe("routine webhooks: every call delivered, grouped calls in parallel", ()
     await setRoutineActive(deps(), f.owner.id, f.org.id, routine.id, false);
     const again = (await runsOf(routine.id)).find((r) => r.event?.held === true);
     await updateRoutine(deps(), f.owner.id, f.org.id, routine.id, { active: true });
-    if (again) expect(await hasJob(again.id)).toBe(true);
+    expect(again).toBeDefined();
+    expect(await hasJob(again?.id ?? "")).toBe(true);
   });
 
   test("grouped by a path: other conversations run side by side, one conversation's calls wait together, in order", async () => {
