@@ -2,8 +2,10 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import {
   createFakeErrorReporter,
+  listenResumedTopic,
   MACHINE_PROTOCOL_VERSION,
   orgTopic,
+  type PubSub,
   RUNNER_STOPPED_CLOSE,
   type ServerFrame,
   sealSecret,
@@ -20,6 +22,7 @@ import {
   deleteMachine,
   deliverSecret,
   drainOutbox,
+  enableCaches,
   executeRun,
   expireSecretRequests,
   ForbiddenError,
@@ -252,6 +255,41 @@ describe("a runner that dies mid-request (brain turns never stay working)", () =
     expect(runner.closed()).toMatchObject({ code: 4408 });
   });
 
+  test("a server whose loop stalls keeps the runners whose pongs it couldn't read in time; a dead link still goes", async () => {
+    f = await setup({ machines: true });
+    const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-l", heartbeatMs: 100 });
+    hubs.push(hub);
+    const alive = fakeRunner(hub, { pong: true });
+    await alive.hello((await pair()).token);
+    const dead = fakeRunner(hub, { dead: true });
+    await dead.hello((await pair(f.owner.id, "Gone box")).token);
+    // Busy for over two heartbeats (under the four after which silence closes anyway): the next ping tick fires
+    // late, long after the last pong it could read.
+    void alive.frame({ type: "pong", at: Date.now() });
+    Bun.sleepSync(220);
+    await Bun.sleep(400);
+    expect(alive.closed()).toBeNull();
+    expect(alive.sent.filter((frame) => frame.type === "ping").length).toBeGreaterThanOrEqual(3);
+    expect(dead.closed()).toMatchObject({ code: 4408, reason: "no pong" });
+  });
+
+  test("a computer that keeps dropping gets one offline check per grace window, a full grace after its last drop", async () => {
+    f = await setup({ machines: true });
+    const grace = 3_600_000;
+    const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-f", taskOfflineGraceMs: grace });
+    hubs.push(hub);
+    const paired = await pair();
+    for (let i = 0; i < 5; i++) {
+      const runner = fakeRunner(hub);
+      await runner.hello(paired.token);
+      await runner.disconnect({ code: 1006, reason: "" });
+    }
+    const lastDrop = Date.now();
+    const jobs = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "machine.tasks_offline"));
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]?.nextAttemptAt.getTime()).toBeGreaterThanOrEqual(lastDrop + grace);
+  });
+
   test("a request cut by its socket closing fails as dropped (it may have run); our own stop says it is ours", async () => {
     f = await setup({ machines: true });
     const hub = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-d" });
@@ -285,8 +323,11 @@ describe("a runner that dies mid-request (brain turns never stay working)", () =
     const graces = (await jobs())
       .map((j) => ({ ms: j.nextAttemptAt.getTime() - j.createdAt.getTime(), payload: j.payload }))
       .sort((a, b) => a.ms - b.ms);
-    expect(graces[0]?.ms).toBeLessThan(TASK_OFFLINE_GRACE_MS + 5000);
-    expect(graces[1]?.ms).toBeLessThan(TASK_OFFLINE_GRACE_MS + 5000);
+    // Due at the end of the window after the one it closed in: a full grace at least, two at most.
+    for (const g of graces.slice(0, 2)) {
+      expect(g.ms).toBeGreaterThan(TASK_OFFLINE_GRACE_MS - 5000);
+      expect(g.ms).toBeLessThanOrEqual(2 * TASK_OFFLINE_GRACE_MS);
+    }
     expect(graces.slice(0, 2).map((g) => g.payload)).toContainEqual({
       machineId: paired.machineId,
       statusOnly: true,
@@ -955,6 +996,11 @@ describe("hub", () => {
     await Bun.sleep(60);
     expect(slow.sent).toEqual([]);
     expect(slow.closed()).toMatchObject({ code: 4408 });
+    // A hello the server is still checking (a busy database) is not a runner that said nothing.
+    const checking = fakeRunner(hub);
+    checking.conn.authing = true;
+    await Bun.sleep(60);
+    expect(checking.closed()).toBeNull();
   });
 
   test("hello → welcome and online; bad token and outdated runners are refused", async () => {
@@ -1075,6 +1121,49 @@ describe("hub", () => {
 
     await runner.disconnect();
     await expect(hubB.call(paired.machineId, { op: "list", path: "", depth: 1 })).rejects.toThrow(MachineOfflineError);
+  });
+
+  test("a reply whose signal was lost waits for the caller's next read, which a pub/sub that missed events brings now", async () => {
+    f = await setup({ machines: true });
+    const hubA = f.machineHub as MachineHub;
+    // B never hears replies: only its own read of the row can see one.
+    const deaf: PubSub = {
+      publish: (topic, event) => f.pubsub.publish(topic, event),
+      subscribe: (topic, handler) =>
+        topic.startsWith("machine-rpc-reply:") ? () => {} : f.pubsub.subscribe(topic, handler),
+    };
+    const hubB = createMachineHub({ db: f.db, pubsub: deaf, replicaId: "replica-b" });
+    hubs.push(hubB);
+    const paired = await pair();
+    const runner = fakeRunner(hubA);
+    await runner.hello(paired.token);
+    runner.files.set("notes.txt", new TextEncoder().encode("hi"));
+
+    const read = hubB.call(paired.machineId, { op: "read", path: "notes.txt", maxBytes: 100 });
+    await until(async () => (await f.db.select().from(schema.machineRpc))[0]?.status === "done", "the reply");
+    // While the pub/sub delivers, B reads its row only every RPC_QUIET_POLL_MS.
+    expect(await within(read, 1000)).toBe("pending");
+    await f.pubsub.publish(listenResumedTopic, { type: "pubsub.resumed", full: false });
+    expect(await within(read, 500)).toBe("resolved");
+  });
+
+  test("a computer that left this replica for another reads as online here at once, its kept row dropped", async () => {
+    f = await setup({ machines: true });
+    const hubA = f.machineHub as MachineHub;
+    const hubB = createMachineHub({ db: f.db, pubsub: f.pubsub, replicaId: "replica-b" });
+    hubs.push(hubB);
+    const paired = await pair();
+    enableCaches();
+    try {
+      const first = fakeRunner(hubA);
+      await first.hello(paired.token);
+      expect(await hubA.status(paired.machineId)).toMatchObject({ online: true });
+      await first.disconnect();
+      await fakeRunner(hubB).hello(paired.token);
+      expect(await hubA.status(paired.machineId)).toMatchObject({ online: true });
+    } finally {
+      enableCaches(false);
+    }
   });
 
   test("a row left online by a replica that died is offline once stale", async () => {
