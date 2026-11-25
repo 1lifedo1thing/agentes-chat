@@ -170,6 +170,23 @@ describe("the skill library as people read it (ADR 0020, amendment of 2026-11-25
     ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
+  test("quotes and dashes around a name are read in linear time", async () => {
+    f = await setup();
+    const started = performance.now();
+    const saved = await saveDraftedSkill(deps(f), f.owner.id, f.org.id, {
+      name: `${"-".repeat(100_000)}weekly${"-".repeat(100_000)}x`,
+      title: `${'"'.repeat(100_000)}Weekly refunds${'"'.repeat(100_000)}x`,
+      summary: "Every Monday",
+      description: "Refund requests, every Monday.",
+      body: "1. Answer them.",
+      icon: "wallet",
+    });
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(saved.name).toBe("weekly-x");
+    const [row] = await f.db.select().from(schema.skills).where(eq(schema.skills.id, saved.id));
+    expect(row?.title?.startsWith("Weekly refunds")).toBe(true);
+  });
+
   test("a change asked in words applies at once with Undo, and the history says who asked what", async () => {
     f = await setup({
       reply: library({

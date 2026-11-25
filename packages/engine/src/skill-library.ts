@@ -7,7 +7,7 @@ import { changesPermissions, looksLikeSecret } from "./context/items";
 import { type ContextDeps, resolveSummaryModel } from "./context/summaries";
 import { ForbiddenError, NotFoundError, ValidationError } from "./errors";
 import { skillMarkdown } from "./exports";
-import { cutText, cutTextEnd } from "./format";
+import { cutText, cutTextEnd, trimEdges } from "./format";
 import { can, requirePermission } from "./organizations";
 import { enqueue } from "./outbox";
 import { rightHandId } from "./right-hand";
@@ -134,17 +134,12 @@ const DESCRIBE_SCHEMA = {
   additionalProperties: false,
 };
 
+const QUOTES: ReadonlySet<string> = new Set(['"', "'", "“", "”"]);
+
 /** A line a person reads: one line, no wrapping quotes or end period, at most `max` characters. */
 const oneLine = (text: unknown, max: number) =>
   typeof text === "string"
-    ? cutText(
-        text
-          .replace(/\s+/g, " ")
-          .trim()
-          .replace(/^["'“”]+|["'“”]+$/g, "")
-          .replace(/\.$/, ""),
-        max,
-      ).trim()
+    ? cutText(trimEdges(text.replace(/\s+/g, " ").trim(), (c) => QUOTES.has(c)).replace(/\.$/, ""), max).trim()
     : "";
 
 /**
@@ -498,15 +493,20 @@ const DRAFT_SCHEMA = {
   additionalProperties: false,
 };
 
+const dash = (c: string) => c === "-";
 const kebab = (v: string) =>
-  v
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64)
-    .replace(/-+$/, "");
+  trimEdges(
+    trimEdges(
+      v
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-"),
+      dash,
+    ).slice(0, 64),
+    dash,
+    "end",
+  );
 
 /** The team's apps by the names the model reads (a person's own connections are theirs, never a skill's). */
 async function teamApps(db: Executor, orgId: string) {
