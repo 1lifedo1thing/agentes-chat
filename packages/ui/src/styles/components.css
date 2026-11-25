@@ -8140,12 +8140,15 @@ button.ac-voice__play:active {
 .ac-video__filled {
   background: var(--ink);
 }
+/* The knob travels inside its track, so no box that clips the slider (the volume's, as it slides open) cuts it at an end. */
 .ac-video__knob {
+  --knob: 12px;
   position: absolute;
   top: 50%;
-  width: 12px;
-  height: 12px;
-  margin: -6px 0 0 -6px;
+  left: calc(var(--knob) / 2 + var(--at, 0) * (100% - var(--knob)));
+  width: var(--knob);
+  height: var(--knob);
+  margin: calc(var(--knob) / -2) 0 0 calc(var(--knob) / -2);
   border-radius: 50%;
   background: var(--ink);
   box-shadow: 0 0 0 2px var(--raised);
@@ -8194,10 +8197,11 @@ button.ac-voice__play:active {
   overflow: hidden;
   transition: width 0.2s;
 }
+/* Room on both sides for the knob's hover scale and its ring, inside the box that slides open. */
 .ac-video__volume .ac-video__rail {
   width: 56px;
   min-width: 0;
-  margin: 0 6px 0 2px;
+  margin: 0 4px;
 }
 .ac-video__sound:hover .ac-video__volume,
 .ac-video__sound:focus-within .ac-video__volume {
