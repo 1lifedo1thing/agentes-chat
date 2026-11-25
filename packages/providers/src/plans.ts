@@ -559,6 +559,9 @@ export const SHARED_SIGN_INS: Readonly<Record<"claude_code" | "codex" | "antigra
   key: true,
 };
 
+/** Computer brains whose CLI never thinks with the computer's own sign-in, only a connected account (ADR 0142, ADR 0143 §3). */
+export const accountOnlyBrain = (kind: string) => kind === "antigravity" || kind === "grok";
+
 /**
  * The kinds whose subscriptions a run may go on with at a plan's limit, each within its own kind (ADR 0041 §6). Never
  * Antigravity: Google forbids automating account rotation (ADR 0143). Not Grok, Cursor or OpenCode.

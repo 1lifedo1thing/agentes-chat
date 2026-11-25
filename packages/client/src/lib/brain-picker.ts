@@ -1,3 +1,4 @@
+import { accountOnlyBrain } from "@agenteschat/providers/plans";
 import type { TFunction } from "i18next";
 import type {
   Agent,
@@ -9,7 +10,7 @@ import type {
   Model,
   PlanUsage,
 } from "../api/types";
-import { ACCOUNT_ONLY_BRAINS, accountChoices, accountTitle, ownSignInReady } from "./ai-accounts";
+import { accountChoices, accountTitle, ownSignInReady } from "./ai-accounts";
 import { thinksWith } from "./brain";
 import { isClaudeAlias } from "./brain-advanced";
 import { namesComputers } from "./machines";
@@ -595,7 +596,7 @@ export function modelPickerTiles(
   for (const o of view.options) {
     if (o.kind === "model" || !runs(o.kind)) continue;
     const k = o.kind as MachineAccountKind;
-    if (ACCOUNT_ONLY_BRAINS.has(k)) continue;
+    if (accountOnlyBrain(k)) continue;
     const own = view.brain === k && view.account === null;
     // The computer's own sign-in only where its runner reported it signed in (`ownSignInReady`): a CLI being there, or
     // coming with the first sign-in (the Antigravity CLI the runner brings), isn't a sign-in.

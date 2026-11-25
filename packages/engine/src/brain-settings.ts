@@ -48,6 +48,7 @@ import {
   ANTIGRAVITY_NEON_CLI,
   ANTIGRAVITY_NEW_MODEL,
   ANTIGRAVITY_PAID_MODEL,
+  accountOnlyBrain,
   antigravityBaseModel,
   claudeCodeModel,
   cliVersionAtLeast,
@@ -1094,7 +1095,7 @@ async function setPersonalSignIn(
   current: Awaited<ReturnType<typeof personalBrain>>,
   audit: (to: unknown) => Promise<unknown>,
 ): Promise<AgentBrainView> {
-  if (requiresAccount(brain)) {
+  if (accountOnlyBrain(brain)) {
     throw new ValidationError("Choose an account of this brain", "account.invalid", { brain });
   }
   const { db } = deps;
@@ -1587,9 +1588,6 @@ export async function setAgentBrain(
  * connected it. The agent's owner or an admin chooses. Another person's account (`lent`) is never taken from an
  * agent that thinks with it.
  */
-/** Computer brains that always require a connected account on the machine (never `account: null`). */
-const requiresAccount = (brain: BrainKind) => brain === "antigravity" || brain === "grok";
-
 async function nextBrainAccount(
   db: Database,
   userId: string,
@@ -1603,7 +1601,7 @@ async function nextBrainAccount(
 ): Promise<{ id: string | null; lent?: boolean; from?: { accountId: string; agentId: string } }> {
   const kept = changed ? null : agent.brainAccountId;
   if (input === undefined) {
-    if (kept === null && requiresAccount(brain)) {
+    if (kept === null && accountOnlyBrain(brain)) {
       throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
         brain,
       });
@@ -1614,7 +1612,7 @@ async function nextBrainAccount(
     throw new ValidationError("Choose an account on the agent's computer", "account.invalid");
   }
   const wanted = input || null;
-  if (wanted === null && requiresAccount(brain)) {
+  if (wanted === null && accountOnlyBrain(brain)) {
     throw new ValidationError("Choose an account of this brain on the agent's computer", "account.invalid", {
       brain,
     });

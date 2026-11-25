@@ -1,4 +1,4 @@
-import { compareInOrder, NEXT_ACCOUNT_KINDS } from "@agenteschat/providers/plans";
+import { accountOnlyBrain, compareInOrder, NEXT_ACCOUNT_KINDS } from "@agenteschat/providers/plans";
 
 /** The one order of use (`@agenteschat/providers/plans`), for apps that read it through the client. */
 export { compareInOrder };
@@ -521,18 +521,12 @@ export const ownSignInLower = (t: TFunction, kind: string | null) =>
  * is a choice wherever its CLI runs, for the agents of whoever connected that computer and, on a computer nobody
  * connected (`canAdd` without `mine`), for anyone's (ADR 0132 §6). It is never listed as the person's AI.
  */
-/** Computer brains whose CLI never runs without a connected account (ADR 0142, ADR 0143 §3). */
-export const ACCOUNT_ONLY_BRAINS: ReadonlySet<MachineAccountKind> = new Set<MachineAccountKind>([
-  "antigravity",
-  "grok",
-]);
-
 export const ownSignInReady = (
   brain: Pick<AgentBrain, "ownSignIn"> | undefined,
   row: (Pick<AiComputer, "own"> & Partial<Pick<AiComputer, "mine" | "brains" | "canAdd">>) | undefined,
   kind: MachineAccountKind,
 ) =>
-  ACCOUNT_ONLY_BRAINS.has(kind)
+  accountOnlyBrain(kind)
     ? false
     : kind === "opencode"
       ? row?.brains?.opencode === true &&
@@ -552,7 +546,7 @@ export const ownSignInListed = (
   row: Parameters<typeof ownSignInReady>[1],
   kind: MachineAccountKind,
 ) =>
-  !ACCOUNT_ONLY_BRAINS.has(kind) &&
+  !accountOnlyBrain(kind) &&
   (ownSignInReady(brain, row, kind) ||
     (brain.ownSignIn && !brain.canUsePlans) ||
     (brain.brain === kind && brain.account === null && (brain.ownSignIn || !brain.canUsePlans)));
