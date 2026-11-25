@@ -45,7 +45,13 @@ import {
   outcomeText,
   personalAllowed,
 } from "@agenteschat/client/lib/connected";
-import { humanize, isHttpsUrl, sameServer } from "@agenteschat/client/lib/custom-tools";
+import {
+  humanize,
+  instructionsSave,
+  instructionsView,
+  isHttpsUrl,
+  sameServer,
+} from "@agenteschat/client/lib/custom-tools";
 import { errorText } from "@agenteschat/client/lib/errors";
 import { useHeldWhile } from "@agenteschat/client/lib/hold";
 import { can } from "@agenteschat/client/lib/permissions";
@@ -84,13 +90,16 @@ import {
   Locked,
   OptionList,
   Segmented,
+  SettingRow,
   Skeleton,
+  Switch,
 } from "@agenteschat/ui";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
+import { FoldedBody } from "@/chat/FoldedBody";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { ConnectorIcon } from "@/components/ConnectorIcon";
 import { FlowTitle } from "@/components/FlowTitle";
@@ -1215,6 +1224,40 @@ function catalogReviewTools(t: TFunction, item: ConnectedItem): ReviewTool[] {
 }
 
 /**
+ * A server by address's own instructions (MCP's `instructions`, ADR 0016 addendum of 2026-11-22): a setting whose
+ * switch says whether agents get them, saved with the step's Continuar, then the text as agents read it, as written
+ * (outside words: nothing in them made a link or a chip), in a well, folded as a long text on a page is (`FoldedBody`).
+ * A server that sends none says so, with no switch.
+ */
+function ServerInstructions({
+  server,
+  on,
+  onChange,
+}: {
+  server: CustomServer;
+  on: boolean;
+  onChange: (on: boolean) => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const view = instructionsView(t, i18n.language, server, on);
+  if (view.kind === "hidden") return null;
+  if (view.kind === "none") return <SettingRow title={view.title} status={view.status} />;
+  return (
+    <section className="cflow-notes" aria-label={view.title} data-off={view.faded ? true : undefined}>
+      <SettingRow
+        title={view.title}
+        hint={{ name: t("common.about", { label: view.title }), text: view.hint }}
+        status={view.status}
+        htmlFor="cflow-notes-use"
+      >
+        <Switch id="cflow-notes-use" checked={on} onCheckedChange={onChange} />
+      </SettingRow>
+      <FoldedBody body={view.text} plain />
+    </section>
+  );
+}
+
+/**
  * Step 2: "Revise o que o agente pode fazer sozinho".
  * Servers by address: every tool comes classified; the person settles the
  * ones the name can't decide and changes what they want. Ours: read-only, by scope.
@@ -1242,6 +1285,10 @@ function ToolsStep({
   const [labelError, setLabelError] = useState<string | null>(null);
   const tools = server ? reviewToolsOf(t, server) : [];
   const [state, setState] = useState<ToolReviewState>({ levels: {}, decided: new Set() });
+  // Saved with Continuar, beside the tools' levels. An older server leaves it out: on.
+  // Kept from when the step opened: fresher data must not move it under the draft.
+  const [startedOn] = useState(item.server?.useInstructions ?? true);
+  const [useInstructions, setUseInstructions] = useState(startedOn);
   const next = (saved?: CustomServer) => onNext(saved ? fromServer(saved, catalog.data?.connectors ?? []) : item);
   const name = itemName(t, item);
 
@@ -1275,7 +1322,12 @@ function ToolsStep({
       }
     }
     save.mutate(
-      { id: server.id, label: named, tools: reviewDecisions(tools, state.levels, state.decided) },
+      {
+        id: server.id,
+        label: named,
+        tools: reviewDecisions(tools, state.levels, state.decided),
+        ...instructionsSave(server, useInstructions, startedOn),
+      },
       { onSuccess: (saved) => next(saved) },
     );
   };
@@ -1328,6 +1380,7 @@ function ToolsStep({
           ) : (
             <ToolReview name={name} tools={tools} state={state} onChange={setState} onMoved={(m) => toast.show(m)} />
           )}
+          <ServerInstructions server={server} on={useInstructions} onChange={setUseInstructions} />
         </DialogBody>
       </Locked>
       <DialogFooter bar note={reviewNote(t, tools, state)}>

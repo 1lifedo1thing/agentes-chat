@@ -175,6 +175,7 @@ import {
   thinksAsThread,
   threadIsConfidential,
 } from "./confidential";
+import { serverInstructionsPrompt } from "./connectors/mcp";
 import {
   announceConsultationChange,
   answersHandOffs,
@@ -745,6 +746,11 @@ export interface Transcript {
   executedCalls?: number;
   /** A computer brain's own tool calls (not ours through the bridge), as the judge reads them (`callLine`): the last 20. */
   harnessTried?: string[];
+  /**
+   * Its prompt holds connected servers' own instructions (`serverInstructionsPrompt`), outside text (ADR 0117): the
+   * run read outside whatever it calls (`runReadOutside`).
+   */
+  readServerNotes?: true;
   /** The last judged turn end: `waiting` holds a mission from going on by itself (`keepGoingBlocker`). */
   followThroughVerdict?: "done" | "unkept" | "waiting";
   /**
@@ -2674,6 +2680,8 @@ async function executeRunInner(
     const browsers = granted.some((t) => t.name === "browser_profile")
       ? browsersPrompt(await agentBrowserProfiles(db, run.orgId, agent.id), agent.browserProfileId)
       : "";
+    // What its servers connected by address say on using their tools: granted, like the repositories above.
+    const serverNotes = serverInstructionsPrompt(granted);
     // Listed in every run of the agent (`EVERY_TOOL`): the prompt speaks of them only where they apply.
     const [workApplies, choicesApply, sayNowHere, codeHere] = await Promise.all([
       every ? workMayStart(ctx) : true,
@@ -2710,6 +2718,7 @@ async function executeRunInner(
             describeCapabilities(tools, pending, isRightHand(agent) && (await seatState(db, run)) === "none"),
             browsers,
             repositories,
+            serverNotes,
           ]
             .filter(Boolean)
             .join("\n\n"),
@@ -2882,11 +2891,14 @@ async function executeRunInner(
       notesAt: context.messages.length - 1,
       ...(toolChoice ? { toolGroups: toolChoice.groups } : every ? { toolGroups: [EVERY_TOOL] } : {}),
       ...(tools.some((t) => t.name === PASS_TOOL) ? { passListed: true } : {}),
+      ...(serverNotes ? { readServerNotes: true as const } : {}),
       promptKey: sha256(
         JSON.stringify([
           ...context.sessionPrompt,
           repositories,
           browsers,
+          // A resumed session keeps the text it began with. Absent when there is none, so no other session's key changes.
+          ...(serverNotes ? [serverNotes] : []),
           // Per connection (a second database shares `database:read`); the agent's grant rows too, so a tool the
           // requester's policy held back doesn't change the key from one person to the next.
           [
@@ -2904,7 +2916,12 @@ async function executeRunInner(
       postedCount: 0,
     };
     const t0 = transcript;
-    later(() => saveTranscript(db, t0));
+    if (serverNotes) {
+      // On the row before any model call, written here so a failed write stops the run: a tool's check by run id
+      // (`runReadOutsideById`) reads it there. What was queued before lands first, so it can't overwrite it.
+      await deferred;
+      await saveTranscript(db, t0);
+    } else later(() => saveTranscript(db, t0));
   }
 
   prof.mark("context");

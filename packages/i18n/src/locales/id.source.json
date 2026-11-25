@@ -36901,6 +36901,24 @@
   "toolReview.agentSub": {
     "value": "By connector and subject. By default, sensitive actions ask for approval."
   },
+  "toolReview.instructions.title": {
+    "value": "Server instructions"
+  },
+  "toolReview.instructions.hint": {
+    "value": "Agents that use these tools get this text after their own instructions."
+  },
+  "toolReview.instructions.chars": {
+    "value": "{{used}} of {{max}} characters"
+  },
+  "toolReview.instructions.cut": {
+    "value": "Cut at {{max}} characters"
+  },
+  "toolReview.instructions.off": {
+    "value": "Agents don't get this text."
+  },
+  "toolReview.instructions.none": {
+    "value": "The server sends no instructions."
+  },
   "connectFlow.steps": {
     "value": "Steps"
   },

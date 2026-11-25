@@ -1539,11 +1539,18 @@ export interface ApiClient {
     ): Promise<CustomConnectStart>;
     /** Lists the server's tools again; new ones come back unclassified. */
     refresh(orgId: string, serverId: string): Promise<CustomServer>;
-    /** Saves the classification; only classified tools become available to agents. */
+    /**
+     * Saves the classification; only classified tools become available to agents. `useInstructions`, when given:
+     * whether agents get the server's own instructions.
+     */
     saveTools(
       orgId: string,
       serverId: string,
-      input: { label: string; tools: { name: string; access: ToolDecision; label: string; confirmed?: boolean }[] },
+      input: {
+        label: string;
+        tools: { name: string; access: ToolDecision; label: string; confirmed?: boolean }[];
+        useInstructions?: boolean;
+      },
     ): Promise<CustomServer>;
     disconnect(orgId: string, serverId: string): Promise<void>;
     /**

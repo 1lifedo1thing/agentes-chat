@@ -15402,6 +15402,15 @@ export const ptBR = {
     seeAsks: "Ver o que pede aprovação",
     agentTitle: "O que {{name}} pode usar",
     agentSub: "Por conector e assunto. Por padrão, ações sensíveis pedem aprovação.",
+    /** A server by address's own instructions (MCP's `instructions`), under its tools in the review. */
+    instructions: {
+      title: "Instruções do servidor",
+      hint: "Os agentes que usam estas ferramentas recebem este texto depois das próprias instruções.",
+      chars: "{{used}} de {{max}} caracteres",
+      cut: "Cortado em {{max}} caracteres",
+      off: "Os agentes não recebem este texto.",
+      none: "O servidor não manda instruções.",
+    },
   },
   connectFlow: {
     steps: "Passos",

@@ -203,6 +203,12 @@ export interface ToolDefinition {
    * `MCP_CALLER_IDENTITY`. Unset: anyone's (a custom server by address, a connections broker, a mailbox, a database).
    */
   server?: "catalog" | "vouched";
+  /**
+   * A server connected by address: what it said in `initialize` on how to use it (MCP's `instructions`), the same
+   * text on each of that connection's tools. Third-party text: a run granted any of them reads it once, in the
+   * outside envelope (`serverInstructionsPrompt`).
+   */
+  serverInstructions?: string;
   /** A mission's tool (agent mode, ADR 0029): its approvals are bound to that mission too. */
   missionId?: string;
   /**

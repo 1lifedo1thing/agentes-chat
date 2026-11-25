@@ -3784,6 +3784,13 @@ html:not([data-pointer]) .channel-ref:focus-visible {
 .folded-body .md--message > * + * {
   margin-top: 0.6em;
 }
+/* Words as written: their spaces and breaks kept, a space a line ends on wrapping with it (break-spaces) rather than
+   standing past the fold's edge. */
+.folded-body__plain {
+  margin: 0;
+  white-space: break-spaces;
+  overflow-wrap: anywhere;
+}
 .folded-body__text[data-folded] {
   max-height: 9em;
   overflow: hidden;
@@ -5627,6 +5634,24 @@ html:not([data-pointer]) .cflow__more summary:focus-visible {
 }
 .cflow__lead > .cflow__text {
   flex: 1 1 260px;
+}
+/* A server by address's own instructions under its tools: the setting, then the text as agents read it, as written, in
+   a well, folded as a long text on a page is (FoldedBody), "Ver mais" inside the well. Muted while agents don't get
+   it. */
+.cflow-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.cflow-notes .folded-body {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--sunken);
+  transition: color var(--dur-base) var(--out);
+}
+.cflow-notes[data-off] .folded-body {
+  color: var(--muted);
 }
 .cflow-tools {
   list-style: none;

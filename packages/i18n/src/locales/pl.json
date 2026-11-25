@@ -16069,7 +16069,15 @@
     "see": "Zobacz",
     "seeAsks": "Zobacz, co prosi o zatwierdzenie",
     "agentTitle": "Z czego może korzystać {{name}}",
-    "agentSub": "Według konektora i tematu. Domyślnie akcje wrażliwe proszą o zatwierdzenie."
+    "agentSub": "Według konektora i tematu. Domyślnie akcje wrażliwe proszą o zatwierdzenie.",
+    "instructions": {
+      "title": "Instrukcje serwera",
+      "hint": "Agenci, którzy używają tych narzędzi, dostają ten tekst po swoich własnych instrukcjach.",
+      "chars": "{{used}} z {{max}} znaków",
+      "cut": "Obcięte do {{max}} znaków",
+      "off": "Agenci nie dostają tego tekstu.",
+      "none": "Serwer nie wysyła instrukcji."
+    }
   },
   "connectFlow": {
     "steps": "Kroki",

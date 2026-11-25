@@ -14514,7 +14514,15 @@
     "see": "Lihat",
     "seeAsks": "Lihat yang minta persetujuan",
     "agentTitle": "Yang bisa dipakai {{name}}",
-    "agentSub": "Per konektor dan topik. Secara default, tindakan sensitif minta persetujuan."
+    "agentSub": "Per konektor dan topik. Secara default, tindakan sensitif minta persetujuan.",
+    "instructions": {
+      "title": "Instruksi server",
+      "hint": "Agen yang memakai alat ini mendapat teks ini setelah instruksi mereka sendiri.",
+      "chars": "{{used}} dari {{max}} karakter",
+      "cut": "Dipotong di {{max}} karakter",
+      "off": "Agen tidak mendapat teks ini.",
+      "none": "Server tidak mengirim instruksi."
+    }
   },
   "connectFlow": {
     "steps": "Langkah",

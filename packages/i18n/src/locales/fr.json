@@ -15538,7 +15538,15 @@
     "see": "Voir",
     "seeAsks": "Voir ce qui demande une approbation",
     "agentTitle": "Ce que {{name}} peut utiliser",
-    "agentSub": "Par connecteur et par sujet. Par défaut, les actions sensibles demandent une approbation."
+    "agentSub": "Par connecteur et par sujet. Par défaut, les actions sensibles demandent une approbation.",
+    "instructions": {
+      "title": "Instructions du serveur",
+      "hint": "Les agents qui utilisent ces outils reçoivent ce texte après leurs propres instructions.",
+      "chars": "{{used}} sur {{max}} caractères",
+      "cut": "Coupé à {{max}} caractères",
+      "off": "Les agents ne reçoivent pas ce texte.",
+      "none": "Le serveur n'envoie pas d'instructions."
+    }
   },
   "connectFlow": {
     "steps": "Étapes",
