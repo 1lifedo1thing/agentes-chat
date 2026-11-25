@@ -7344,6 +7344,11 @@ export type NotificationKind =
    */
   | "device.folder_request"
   /**
+   * ADR 0237: a computer paired before agents could use a person's internet lends its own now (its owner, else who
+   * configures the workspace), once: `source.machineId`, its name in `source.label`. Inbox only, "Turn off" on the row.
+   */
+  | "device.internet_shared"
+  /**
    * "Pedir a um admin" (`POST …/admin-asks`): the asker as actor, what in `latest.reason` (`channel_agent` with
    * `source.channelId` and `agentId`, waiting until added; `create_agents`; `webhook` with the service in `latest.title`).
    */

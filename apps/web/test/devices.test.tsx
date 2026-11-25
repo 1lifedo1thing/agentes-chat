@@ -1350,4 +1350,27 @@ describe("In the chat and the inbox", () => {
     await click(within(read).getByRole("button", { name: "Allow once" }));
     expect(calls(state, "devices.decideAccess")[0]?.args).toEqual([ORG_ID, "ar-1", "once"]);
   });
+
+  test("my computer paired before lends its internet now: the inbox says so plainly, with Turn off", async () => {
+    const state = acmeState();
+    state.notifications = [
+      notification({
+        id: "n-lent",
+        kind: "device.internet_shared" as never,
+        source: { machineId: MAC, label: "Sam's MacBook Pro" } as never,
+        latest: { title: "Sam's MacBook Pro" },
+      }),
+    ];
+    await open(`/org/${ORG_ID}/notifications`, undefined, state);
+    const row = document.querySelector('[data-n="n-lent"]') as HTMLElement;
+    expect(row.textContent).toContain("Agents now open websites through the internet of Sam's MacBook Pro");
+    await click(row);
+    const read = document.querySelector(".ib-read") as HTMLElement;
+    expect(read.textContent).toContain("only websites, up to 5 GB a day");
+    await click(within(read).getByRole("button", { name: "Turn off" }));
+    await settle(4);
+    expect(calls(state, "devices.updateComputer").map((c) => c.args)).toEqual([
+      [ORG_ID, MAC, { shareInternet: false }],
+    ]);
+  });
 });

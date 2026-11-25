@@ -2101,6 +2101,7 @@
       "tool_request": "{{names}}, {{device}} cihazınızda {{tool}} açmanızı istiyor",
       "cli_request": "{{names}}, {{device}} cihazınıza {{tool}} kurmanızı istiyor",
       "folder_request": "{{names}}, {{device}} cihazınızda {{path}} klasörünü istiyor",
+      "internet_shared": "Ajanlar artık web sitelerini {{device}} bilgisayarının internetiyle açıyor",
       "allowOnce": "Bir kez izin ver",
       "always": "{{name}} için her zaman izin ver",
       "no": "Hayır",

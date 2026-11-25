@@ -2402,6 +2402,13 @@
       "when": 1795609646399,
       "tag": "0347_egress_share",
       "breakpoints": true
+    },
+    {
+      "idx": 345,
+      "version": "7",
+      "when": 1795609647399,
+      "tag": "0348_egress_share_notice",
+      "breakpoints": true
     }
   ]
 }

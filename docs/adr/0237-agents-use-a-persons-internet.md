@@ -6,9 +6,10 @@
 - Extends: ADR 0025 (connected computers), ADR 0058 §11 (data sockets), ADR 0101 (observed egress)
 - Code: protocol `packages/adapters/src/machine-protocol.ts` (`EGRESS_SHARE_PROTOCOL`, `EGRESS_SHARE`,
   `egress.dial`, `StreamHello.egress`, `welcome.egressRelay`); db `machines.egress_share`, `egress_share_at`,
-  `egress_via` (migration 0347); engine `packages/engine/src/egress-share.ts` (`lendingComputers`,
+  `egress_via` (migration 0347), the notice to computers paired before (migration 0348); engine `packages/engine/src/egress-share.ts` (`lendingComputers`,
   `createEgressRelay`), `devices.ts` (`shareInternet`), `machines.ts` (`egressVia`, `egressViaNow`), `streams.ts`
-  (`ClaimedStream.readyLater`); runner `apps/server/runner/egress-share.ts` (the lending side),
+  (`ClaimedStream.readyLater`), `notifications.ts` (`device.internet_shared`); runner
+  `apps/server/runner/egress-share.ts` (the lending side),
   `egress-relay.ts` (the workspace computer's SOCKS5 socket); web `DevicePage.tsx`, `computer/Egress.tsx`,
   `devices/dialogs.tsx`, `pages/ConnectPage.tsx`; phone `ComputerSection.tsx`, `MachineScreen.tsx`; desktop
   `windows/InternetRow.tsx` (after pairing, and in Preferences › This Mac).
@@ -22,10 +23,14 @@ computers are already connected (ADR 0025) and hold a socket to the server.
 ## Decision
 
 1. **The switch.** A person's own computer (`connected`) in a workspace that has its own computer shows "Agents use
-   this computer's internet". It is on for a computer paired from now on, and where a person pairs one (Let it join,
-   the code page, the desktop app after pairing) they see that line with its switch, before or as it joins.
-   Computers paired before this existed start off: their owners never saw it. Only the person who connected it turns
-   it on (`device.share_owner_only`); an admin may turn it off. Turning it on again picks it first.
+   this computer's internet". It is on for every computer. Where a person pairs one (Let it join, the code page, the
+   desktop app after pairing) they see that line with its switch, before or as it joins. Computers paired before this
+   existed are on too, and their owners hear it once in the inbox (`device.internet_shared`, migration 0348, web and
+   phone): "Agents now open websites through the internet of <computer>", what it keeps out (only this workspace's
+   agents, only websites, 5 GB a day, never its own network; offline, the usual way), and one **Turn off** that sets
+   the switch off; turning it off anywhere marks the notice done. A computer marked the workspace's, or whose owner
+   left, tells who configures the workspace instead. Only the person who connected it turns it on
+   (`device.share_owner_only`); an admin may turn it off. Turning it on again picks it first.
 2. **Which computer.** The workspace's computer goes out through one computer at a time: among the lending computers
    online with an app that speaks `EGRESS_SHARE_PROTOCOL`, the newest pick (turned on last, else paired last). None
    online: its usual way out. A computer that says it carries enough now is passed over for a minute.

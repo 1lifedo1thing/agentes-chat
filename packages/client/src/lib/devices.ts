@@ -1240,7 +1240,8 @@ export type DeviceNoticeKind =
   | "device.waiting"
   | "device.tool_request"
   | "device.cli_request"
-  | "device.folder_request";
+  | "device.folder_request"
+  | "device.internet_shared";
 const NOTICE_KINDS = new Set<string>([
   "device.join_request",
   "device.in_use",
@@ -1249,6 +1250,7 @@ const NOTICE_KINDS = new Set<string>([
   "device.tool_request",
   "device.cli_request",
   "device.folder_request",
+  "device.internet_shared",
 ]);
 
 /**
@@ -1301,8 +1303,8 @@ export function deviceNoticeOf(
     device: str(s.label) ?? str(l.title) ?? "",
     agentId: actor?.id ?? str(s.agentId),
     userId: str(s.userId),
-    // A folder request's `latest.title` is the folder itself, not a person: it reads in the line, not as a name.
-    forName: join || kind === "device.folder_request" ? null : str(l.title),
+    // A folder request's `latest.title` is the folder itself, and a lent internet's the computer: neither is a person.
+    forName: join || kind === "device.folder_request" || kind === "device.internet_shared" ? null : str(l.title),
     text: str(l.text),
     join: join
       ? {

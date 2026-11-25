@@ -1999,6 +1999,7 @@
       "tool_request": "{{names}}님이 회원님의 {{device}}에서 {{tool}}을(를) 켜 달라고 요청합니다",
       "cli_request": "{{names}} 님이 {{device}}에 {{tool}}을(를) 설치해 달라고 요청합니다",
       "folder_request": "{{names}}님이 회원님의 {{device}}에서 {{path}} 폴더를 요청합니다",
+      "internet_shared": "이제 에이전트가 {{device}}의 인터넷으로 웹사이트를 열어요",
       "allowOnce": "한 번 허용",
       "always": "{{name}} 항상 허용",
       "no": "아니요",

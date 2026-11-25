@@ -42051,6 +42051,18 @@
   "devices.notice.folderRequest": {
     "value": "<b>{{who}}</b> asks for the folder {{path}} on your <b>{{deviceName}}</b>"
   },
+  "devices.notice.internetShared": {
+    "value": "Agents now open websites through the internet of <b>{{deviceName}}</b>"
+  },
+  "devices.notice.internetSharedLine": {
+    "value": "Only this workspace's agents, only websites, up to 5 GB a day, never anything on its own network. While it's offline, they use their usual connection."
+  },
+  "devices.notice.internetOff": {
+    "value": "Turn off"
+  },
+  "devices.notice.internetOffDone": {
+    "value": "Agents no longer use the internet of {{deviceName}}."
+  },
   "devices.notice.once": {
     "value": "Allow once"
   },

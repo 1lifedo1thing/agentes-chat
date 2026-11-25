@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { EGRESS_SHARE_PROTOCOL, type MachineRequest, STREAM_CLOSE } from "@agenteschat/adapters";
 import { eq, schema } from "@agenteschat/db";
+import { runMigration } from "@agenteschat/db/testing";
 import {
   type ClaimedStream,
   createEgressRelay,
@@ -187,4 +188,35 @@ test("a lending computer that is paused or doesn't answer is passed over: the ne
     }
     expect(asked).toEqual([newer, older]);
   }
+});
+
+test("computers paired before lend too: each one's owner hears it once, a team's computer its admins; off ends it", async () => {
+  f = await setup();
+  const sam = await addMember(f.db, f.org.id, "admin", "sam");
+  const rui = await addMember(f.db, f.org.id, "member", "rui");
+  const laptop = await pair(rui.id, "Rui's laptop");
+  const desk = await pair(rui.id, "Front desk PC");
+  await f.db.update(schema.machines).set({ belongsToWorkspace: true }).where(eq(schema.machines.id, desk));
+  const notices = async () =>
+    (await f.db.select().from(schema.notifications).where(eq(schema.notifications.kind, "device.internet_shared")))
+      .map((n) => ({ to: n.userId, about: n.source.machineId, label: n.source.label, done: n.doneAt !== null }))
+      .sort((a, b) => `${a.about}${a.to}`.localeCompare(`${b.about}${b.to}`));
+
+  // No workspace computer to lend to: nobody hears.
+  await runMigration(f.db, "egress_share_notice");
+  expect(await notices()).toEqual([]);
+
+  await issueManagedMachine({ db: f.db }, f.org.id);
+  await runMigration(f.db, "egress_share_notice");
+  const expected = [
+    { to: rui.id, about: laptop, label: "Rui's laptop", done: false },
+    ...[f.owner.id, sam.id].map((to) => ({ to, about: desk, label: "Front desk PC", done: false })),
+  ].sort((a, b) => `${a.about}${a.to}`.localeCompare(`${b.about}${b.to}`));
+  expect(await notices()).toEqual(expected);
+
+  // Turn off, by its owner or an admin: the computer stops lending and its notice is done for everyone told.
+  await updateComputerDevice(deps(), rui.id, f.org.id, laptop, { shareInternet: false });
+  await updateComputerDevice(deps(), sam.id, f.org.id, desk, { shareInternet: false });
+  expect((await notices()).every((n) => n.done)).toBe(true);
+  expect(await lendingComputers(f.db, f.org.id)).toEqual([]);
 });

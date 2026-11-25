@@ -295,6 +295,13 @@ export const NOTIFICATION_KINDS = [
    */
   "device.folder_request",
   /**
+   * A computer paired before agents could use a person's internet lends its own now (ADR 0237, migration 0348): its
+   * owner, else who configures the workspace (one marked the workspace's, or whose owner left), once per computer
+   * (`device-internet:<machineId>`), the computer in `source.machineId` with its name in `source.label`. Inbox only,
+   * with "Turn off"; done once it is off.
+   */
+  "device.internet_shared",
+  /**
    * "Pedir a um admin" (`POST …/admin-asks`, `admin-asks.ts`): to whoever may do it, the asker as actor, what in
    * `latest.reason` (`channel_agent`, `create_agents`, `webhook` with the service in `latest.title`). `channel_agent`
    * names `source.channelId` (its name in `label`) and `agentId`, waits, and is done once the agent is added.

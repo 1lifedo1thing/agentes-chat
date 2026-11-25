@@ -661,6 +661,14 @@ describe("in the chat and the inbox", () => {
       askerId: "u-caio",
       agentId: null,
     });
+    // A computer paired before lends its internet now: the computer's name is never read as a person's.
+    expect(
+      deviceNoticeOf({
+        kind: "device.internet_shared",
+        source: { machineId: "m1", label: "Bia's Mac" },
+        latest: { title: "Bia's Mac" },
+      } as never),
+    ).toMatchObject({ kind: "device.internet_shared", machineId: "m1", device: "Bia's Mac", forName: null });
     // An agent waits for a folder: the folder in `latest.title` (never read as a person's name), the computer and the
     // agent in it.
     const folder = {

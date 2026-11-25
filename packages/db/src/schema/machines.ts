@@ -266,7 +266,8 @@ export const machines = pgTable(
     spillOthers: boolean().notNull().default(false),
     /**
      * ADR 0237, a person's computer (`connected`): its owner lets the workspace's own computer's web traffic go out
-     * through this computer's internet. Computers paired before the choice was shown start with it off.
+     * through this computer's internet. On for every computer: the owners of those paired before the choice was shown
+     * heard it once in the inbox (`device.internet_shared`, migration 0348).
      */
     egressShare: boolean().notNull().default(true),
     /** When it was last turned on or picked: the newest online one carries the traffic. Null: since it was paired. */

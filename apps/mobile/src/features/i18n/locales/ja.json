@@ -1999,6 +1999,7 @@
       "tool_request": "{{names}} があなたの {{device}} で{{tool}}をオンにするよう頼んでいます",
       "cli_request": "{{names}} が {{device}} に {{tool}} をインストールするよう求めています",
       "folder_request": "{{names}} があなたの {{device}} でフォルダ {{path}} を求めています",
+      "internet_shared": "エージェントは今後 {{device}} のインターネットを通じてウェブサイトを開きます",
       "allowOnce": "今回のみ許可",
       "always": "{{name}}を常に許可",
       "no": "許可しない",

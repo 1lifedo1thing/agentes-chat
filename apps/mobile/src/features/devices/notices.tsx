@@ -240,13 +240,38 @@ function AccessNotice({ n, d, first }: { n: AppNotification; d: DeviceNotice; fi
   );
 }
 
-/** Under an inbox row: Stop while an agent holds the viewer's phone. */
+/** Under an inbox row: Stop while an agent holds the viewer's phone, Turn off a computer's internet lent to agents. */
 export function DeviceNoticeActions({ item: n }: { item: AppNotification }) {
   const { t } = useTranslation();
   const toast = useToast();
   const done = useDone(n);
   const d = deviceNoticeOf(n);
   const stop = useDeviceMutation((api, orgId, id: string) => api.devices.stopPhone(orgId, id));
+  const lendOff = useDeviceMutation((api, orgId, id: string) =>
+    api.devices.updateComputer(orgId, id, { shareInternet: false }),
+  );
+  if (d?.kind === "device.internet_shared" && d.machineId && !n.doneAt) {
+    const machineId = d.machineId;
+    return (
+      <View style={styles.row}>
+        <Button
+          variant="secondary"
+          size="sm"
+          label={t("devices.notice.internetOff")}
+          loading={lendOff.isPending}
+          onPress={() =>
+            lendOff.mutate(machineId, {
+              onSuccess: () => {
+                done();
+                toast({ title: t("devices.notice.internetOffDone", { deviceName: d.device }), icon: "check" });
+              },
+              onError: (err) => toast({ title: errorText(t, err), icon: "x" }),
+            })
+          }
+        />
+      </View>
+    );
+  }
   if (d?.kind !== "device.in_use" || !d.phoneId || n.doneAt) return null;
   const phoneId = d.phoneId;
   return (

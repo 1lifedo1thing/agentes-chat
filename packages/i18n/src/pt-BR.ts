@@ -17524,6 +17524,11 @@ export const ptBR = {
       toolRequest: "<b>{{who}}</b> pede para ligar {{tool}} no seu <b>{{deviceName}}</b>",
       cliRequest: "<b>{{who}}</b> pede para instalar {{tool}} no seu <b>{{deviceName}}</b>",
       folderRequest: "<b>{{who}}</b> pede a pasta {{path}} no seu <b>{{deviceName}}</b>",
+      internetShared: "Agora os agentes abrem sites pela internet de <b>{{deviceName}}</b>",
+      internetSharedLine:
+        "Só os agentes deste workspace, só sites, até 5 GB por dia, nunca nada da rede dele. Enquanto ele estiver offline, os agentes usam a conexão de sempre.",
+      internetOff: "Desligar",
+      internetOffDone: "Os agentes não usam mais a internet de {{deviceName}}.",
       once: "Permitir uma vez",
       always: "Sempre",
       no: "Não",

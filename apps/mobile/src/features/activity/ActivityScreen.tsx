@@ -683,8 +683,9 @@ const ActivityRow = memo(function ActivityRow({
           <Button variant="secondary" size="sm" label={t("mobile.activity.chooseModel")} onPress={open} />
         </View>
       ) : null}
-      {/* An agent holds the person's phone: Stop, right here (nothing, and no room for it, once it let go). */}
-      {deviceStoppable(n) ? (
+      {/* An agent holds the person's phone: Stop; a computer lends its internet: Turn off. Right here (nothing, and no
+          room for it, once it's done). */}
+      {deviceActionable(n) ? (
         <View style={styles.change}>
           <DeviceNoticeActions item={n} />
         </View>
@@ -709,11 +710,14 @@ const ActivityRow = memo(function ActivityRow({
 /** A notification's read, done and their undo, as the screen hands it to its rows. */
 type NotificationAct = ReturnType<typeof useNotificationAction>["mutate"];
 
-/** Whether a phone notice still has its Stop under the row (`DeviceNoticeActions` draws it only then). */
-function deviceStoppable(n: AppNotification): boolean {
+/** Whether a device notice still has its button under the row (`DeviceNoticeActions` draws it only then). */
+function deviceActionable(n: AppNotification): boolean {
   if (!isDeviceNotice(n.kind) || n.doneAt) return false;
   const d = deviceNoticeOf(n);
-  return d?.kind === "device.in_use" && Boolean(d.phoneId);
+  return (
+    (d?.kind === "device.in_use" && Boolean(d.phoneId)) ||
+    (d?.kind === "device.internet_shared" && Boolean(d.machineId))
+  );
 }
 
 /** Two faces share the avatar box (grouped items: reactions, replies). */

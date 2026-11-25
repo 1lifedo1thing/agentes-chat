@@ -2268,6 +2268,8 @@ export const featureKeysEn = {
       tool_request: "{{names}} asks you to turn on {{tool}} on your {{device}}",
       cli_request: "{{names}} asks you to install {{tool}} on your {{device}}",
       folder_request: "{{names}} asks for the folder {{path}} on your {{device}}",
+      /** Once, for a computer paired before agents could use a person's internet (ADR 0237). */
+      internet_shared: "Agents now open websites through the internet of {{device}}",
       allowOnce: "Allow once",
       always: "Always allow {{name}}",
       no: "No",

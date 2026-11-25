@@ -576,19 +576,21 @@ function itemWords(t: TFunction, n: AppNotification, dir: Dir, channelName: (id:
     ? restrictionLine(t, restriction.code, restriction.facts)
     : n.kind === "usage_limit"
       ? usageLimitLine(t, n)
-      : widgetLine
-        ? widgetLine
-        : // What the right hand found is the headline itself: nothing under it says it again.
-          n.kind === "team_watch" || n.kind === "budget_paused"
-          ? null
-          : // What an agent applied (ADR 0219): the newest change, in a line.
-            n.kind === "proposal_applied"
-            ? (l.title ?? null)
-            : why
-              ? sayWords(t, why, l.text ?? "")
-              : media === "voice"
-                ? mediaWord(t, media)
-                : latestText(t, l) || (media ? mediaWord(t, media) : l.text);
+      : n.kind === "device.internet_shared"
+        ? deviceNoticeLine(t, n)
+        : widgetLine
+          ? widgetLine
+          : // What the right hand found is the headline itself: nothing under it says it again.
+            n.kind === "team_watch" || n.kind === "budget_paused"
+            ? null
+            : // What an agent applied (ADR 0219): the newest change, in a line.
+              n.kind === "proposal_applied"
+              ? (l.title ?? null)
+              : why
+                ? sayWords(t, why, l.text ?? "")
+                : media === "voice"
+                  ? mediaWord(t, media)
+                  : latestText(t, l) || (media ? mediaWord(t, media) : l.text);
   const statusMove = n.kind === "issue_status" && (l.statusFrom || l.statusTo);
   // Where it happened and a task's move, in plain words.
   const where =

@@ -2198,6 +2198,7 @@
       "tool_request": "{{names}} te pide activar {{tool}} en tu {{device}}",
       "cli_request": "{{names}} te pide instalar {{tool}} en tu {{device}}",
       "folder_request": "{{names}} te pide la carpeta {{path}} en tu {{device}}",
+      "internet_shared": "Los agentes ahora abren sitios web a través del internet de {{device}}",
       "allowOnce": "Permitir una vez",
       "always": "Permitir siempre a {{name}}",
       "no": "No",

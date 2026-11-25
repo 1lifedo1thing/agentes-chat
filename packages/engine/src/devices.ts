@@ -36,6 +36,7 @@ import {
   shownOnline,
   withTaskLimit,
 } from "./machines";
+import { resolveNotifications } from "./notifications";
 import { can, getMembership, type Membership, requirePermission } from "./organizations";
 import { closedRefusal, OrgDeletingError, orgStanding } from "./standing";
 import type { Stream, StreamInput, StreamTarget } from "./streams";
@@ -576,6 +577,9 @@ async function deviceOf(db: Database, viewerUserId: string, orgId: string, machi
   return device;
 }
 
+/** The once-only inbox note that a computer paired before ADR 0237 lends its internet (`device.internet_shared`). */
+export const internetSharedGroup = (machineId: string) => `device-internet:${machineId}`;
+
 export interface ComputerDeviceInput {
   name?: string;
   audience?: DeviceAudience;
@@ -699,6 +703,8 @@ export async function updateComputerDevice(
     if (set.name) await publishMachineUpdated(deps.pubsub, orgId, machine.id, { name: set.name });
     await publishDevicesChanged(deps.pubsub, orgId);
   }
+  if (input.shareInternet === false)
+    await resolveNotifications(deps, orgId, { groupKey: internetSharedGroup(machine.id) });
   return deviceOf(deps.db, actorId, orgId, machine.id);
 }
 

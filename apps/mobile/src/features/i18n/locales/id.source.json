@@ -5178,6 +5178,9 @@
   "devices.notice.folder_request": {
     "value": "{{names}} asks for the folder {{path}} on your {{device}}"
   },
+  "devices.notice.internet_shared": {
+    "value": "Agents now open websites through the internet of {{device}}"
+  },
   "devices.notice.allowOnce": {
     "value": "Allow once"
   },
