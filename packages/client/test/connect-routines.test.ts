@@ -100,17 +100,14 @@ describe("when it runs", () => {
 });
 
 describe("who does it", () => {
-  test("the agent whose role names the app's area, accents and case aside", () => {
-    const agents = [agent("a", "Dev"), agent("b", "Financeiro"), agent("c", "Atendimento ao cliente")];
-    expect(suggestedAgent(agents, of("stripe"))?.id).toBe("b");
-    expect(suggestedAgent(agents, of("mailbox"))?.id).toBe("c");
-    expect(suggestedAgent([agent("d", "Customer Success")], of("zendesk"))?.id).toBe("d");
-    expect(suggestedAgent([agent("e", "COBRANÇA")], of("stripe"))?.id).toBe("e");
-  });
-
-  test("no role fits: the first one; nobody: none", () => {
-    expect(suggestedAgent([agent("a", "Dev"), agent("b", "")], of("hubspot"))?.id).toBe("a");
-    expect(suggestedAgent([], of("hubspot"))).toBeNull();
+  test("the first that may run it, whatever its role; nobody: none", () => {
+    const agents = connectRoutineAgents([
+      agent("lodi", "", { builtin: "right_hand" }),
+      agent("a", "Dev"),
+      agent("b", "Financeiro"),
+    ]);
+    expect(suggestedAgent(agents)?.id).toBe("a");
+    expect(suggestedAgent([])).toBeNull();
   });
 
   test("only agents I make routines for and that answer me, still in the team; the right hand last", () => {

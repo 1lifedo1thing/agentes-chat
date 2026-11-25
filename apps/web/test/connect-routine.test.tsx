@@ -24,7 +24,7 @@ const choose = async (combobox: HTMLElement, option: string) => {
 const FINANCE_ID = "00000000-0000-4000-8000-0000000000f1";
 const ROUTINE = "Pagamentos com problema";
 
-/** The workspace with an agent whose role is finance, and one app just connected. */
+/** The workspace with a third agent, and one app just connected. */
 function workspace(connector = "stripe") {
   const state = seedState({ connections: [] });
   const ada = state.agents.find((a) => a.id === ADA_ID) as Agent;
@@ -55,14 +55,14 @@ async function connected(api: ApiClient, connector = "stripe") {
 const made = async (api: ApiClient) => (await api.routines.list(ORG_ID)).filter((r) => r.name === ROUTINE);
 
 describe("the routine an app brings, at the end of connecting it (ADR 0242)", () => {
-  test("on, with the agent whose role fits; Pronto makes it in my DM and starts it, and Desfazer takes it back", async () => {
+  test("on, with the first agent that may run it; Done makes it in my DM and starts it, and Undo takes it back", async () => {
     const { api } = workspace();
     const dialog = await connected(api);
     expect(within(dialog).getByText(ROUTINE)).toBeTruthy();
-    expect(dialog.textContent).toContain("Contas confere recusas, reembolsos e contestações e te manda no privado.");
+    expect(dialog.textContent).toContain("Ada confere recusas, reembolsos e contestações e te manda no privado.");
     const on = within(dialog).getByRole("switch", { name: `Criar a rotina ${ROUTINE}` });
     expect(on.getAttribute("aria-checked")).toBe("true");
-    expect(within(dialog).getByRole("combobox", { name: "Quem faz" }).textContent).toContain("Contas");
+    expect(within(dialog).getByRole("combobox", { name: "Quem faz" }).textContent).toContain("Ada");
     expect(within(dialog).getByRole("combobox", { name: "Quando" }).textContent).toContain("De segunda a sexta");
 
     await click(within(dialog).getByRole("button", { name: "Pronto" }));
@@ -70,14 +70,14 @@ describe("the routine an app brings, at the end of connecting it (ADR 0242)", ()
     const [routine, ...more] = await made(api);
     expect(more).toHaveLength(0);
     expect(routine).toMatchObject({
-      agentId: FINANCE_ID,
+      agentId: ADA_ID,
       target: { type: "dm" },
       report: "when_new",
       state: "running",
     });
     expect(routine?.trigger.type).toBe("schedule");
     expect(document.body.textContent).toContain(`Rotina criada: ${ROUTINE}`);
-    expect(document.body.textContent).toContain("Contas já começou: o primeiro resumo chega no seu privado.");
+    expect(document.body.textContent).toContain("Ada já começou: o primeiro resumo chega no seu privado.");
 
     await click(screen().getByRole("button", { name: "Desfazer" }));
     await settle(6);
@@ -88,13 +88,13 @@ describe("the routine an app brings, at the end of connecting it (ADR 0242)", ()
   test("another agent and another time, picked on the spot", async () => {
     const { api } = workspace();
     const dialog = await connected(api);
-    await choose(within(dialog).getByRole("combobox", { name: "Quem faz" }), "Ada");
-    expect(dialog.textContent).toContain("Ada confere recusas");
+    await choose(within(dialog).getByRole("combobox", { name: "Quem faz" }), "Contas");
+    expect(dialog.textContent).toContain("Contas confere recusas");
     await choose(within(dialog).getByRole("combobox", { name: "Quando" }), "Todos os dias, às 08:00");
     await click(within(dialog).getByRole("button", { name: "Pronto" }));
     await settle(8);
     const [routine] = await made(api);
-    expect(routine?.agentId).toBe(ADA_ID);
+    expect(routine?.agentId).toBe(FINANCE_ID);
     expect(JSON.stringify(routine?.trigger)).toContain("08:00");
   });
 

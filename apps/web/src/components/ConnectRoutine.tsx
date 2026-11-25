@@ -54,7 +54,7 @@ export function useRoutineOffer(app: string | null | undefined, agents: readonly
   const [on, setOn] = useState(true);
   const [picked, setAgent] = useState<string | null>(null);
   const [rule, setRule] = useState(0);
-  const agent = mine.find((a) => a.id === picked) ?? (routine ? suggestedAgent(mine, routine) : null);
+  const agent = mine.find((a) => a.id === picked) ?? (routine ? suggestedAgent(mine) : null);
   return { routine, agents: mine, agent, on, rule, setOn, setAgent, setRule };
 }
 

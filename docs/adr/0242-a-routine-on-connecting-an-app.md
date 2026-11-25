@@ -37,10 +37,10 @@ the rest.
    mail event costs a provider call each and wakes the agent for every message. GitHub's and Sentry's events need a
    webhook connecting doesn't set up (ADR 0130), so theirs check on a schedule too. It reports in its creator's DM with
    the agent: what it reads may be one person's.
-5. **Who does it.** Only agents I make routines for and that answer me (`createsRoutinesFor`, as the server's
-   `createRoutine`), the right hand last; the suggested one is the first whose role names the app's area (finance for
-   payments, support for email), accents and case aside, else the first. A mailbox's routine picks among the agents
-   that may read it.
+5. **Who does it.** Only agents that may use the app and that I make routines for and that answer me
+   (`createsRoutinesFor`, as the server's `createRoutine`), the right hand last; it starts with the first of them and
+   the person picks another on the spot. A mailbox's routine picks among the agents that may read it. A role is free
+   text in any language, so it picks nobody.
 6. **Never twice.** A routine of mine with the template's name already there (connecting again, a second account)
    hides the line.
 

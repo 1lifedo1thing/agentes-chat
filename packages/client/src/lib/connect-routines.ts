@@ -21,8 +21,6 @@ import {
  * report are its template's in New routine (`ROUTINE_TEMPLATES`); it runs on a schedule (never on every email: a
  * mail event costs a provider call each), reports in its creator's DM with the agent, and only speaks with news.
  */
-export type ConnectRoutineArea = "support" | "team" | "finance" | "sales" | "tech";
-
 type ScheduleTemplate = Extract<RoutineTemplateItem, { kind: "schedule" }>;
 
 /** The templates apps bring, each with its line in `connectFlow.routine`. */
@@ -37,20 +35,18 @@ export interface ConnectRoutine {
   apps: "mailbox" | readonly string[];
   /** When it runs; its template's rule when left out. */
   rule?: TemplateRule;
-  /** Whose work it is: the agent whose role names this area is suggested. */
-  area: ConnectRoutineArea;
 }
 
 export const CONNECT_ROUTINES: readonly ConnectRoutine[] = [
-  { template: "inbox", apps: "mailbox", area: "support" },
-  { template: "dayPlan", apps: ["google-calendar"], area: "team" },
-  { template: "failed", apps: PAYMENTS, area: "finance" },
-  { template: "leads", apps: CRM, area: "sales" },
-  { template: "tickets", apps: HELP_DESK, area: "support" },
-  { template: "late", apps: TASKS, area: "team" },
+  { template: "inbox", apps: "mailbox" },
+  { template: "dayPlan", apps: ["google-calendar"] },
+  { template: "failed", apps: PAYMENTS },
+  { template: "leads", apps: CRM },
+  { template: "tickets", apps: HELP_DESK },
+  { template: "late", apps: TASKS },
   // GitHub's and Sentry's events need a webhook connecting doesn't set up: a check on a schedule works at once.
-  { template: "openPrs", apps: ["github"], area: "tech" },
-  { template: "errors", apps: ["sentry"], rule: weekdays("09:00", "14:00"), area: "tech" },
+  { template: "openPrs", apps: ["github"] },
+  { template: "errors", apps: ["sentry"], rule: weekdays("09:00", "14:00") },
 ];
 
 /** The routine an app brings (`mailbox` for a mailbox), or null for an app with none. */
@@ -84,33 +80,7 @@ export function connectRoutineRules(r: ConnectRoutine): TemplateRule[] {
 export const connectRule = (rule: TemplateRule, timezone: string, today: string) =>
   templateRule({ rule }, { start: today, timezone });
 
-/**
- * Words a role holds for each area, accents and case aside, in the app's first languages (a role is the person's own
- * free text). A role matches when one of its words starts with one of these.
- */
-const AREA_WORDS: Record<ConnectRoutineArea, readonly string[]> = {
-  support: ["atend", "suport", "support", "customer", "client", "sucesso", "success", "sac", "help", "relacionamento"],
-  team: ["assist", "secret", "agenda", "exec", "chief", "staff", "oper", "ops", "projet", "project", "gest", "manag"],
-  finance: [
-    "financ",
-    "cobranc",
-    "billing",
-    "pagament",
-    "payment",
-    "contab",
-    "account",
-    "fiscal",
-    "tesour",
-    "faturament",
-  ],
-  sales: ["vend", "sales", "comercial", "sdr", "bdr", "crm", "prospec", "growth", "negoci"],
-  tech: ["dev", "engenh", "engineer", "program", "codig", "code", "tech", "tecnolog", "infra", "sre", "software", "qa"],
-};
 const plain = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-const roleFits = (role: string, area: ConnectRoutineArea) =>
-  plain(role)
-    .split(/[^\p{L}\p{N}]+/u)
-    .some((word) => word && AREA_WORDS[area].some((stem) => word.startsWith(stem)));
 
 type Candidate = Pick<Agent, "id" | "name" | "role" | "builtin" | "former" | "canManageRoutines" | "canTalk">;
 
@@ -123,9 +93,9 @@ export function connectRoutineAgents<A extends Candidate>(agents: readonly A[]):
   return [...mine.filter((a) => a.builtin !== "right_hand"), ...mine.filter((a) => a.builtin === "right_hand")];
 }
 
-/** The agent suggested for it: the first whose role names its area, else the first of `connectRoutineAgents`. */
-export function suggestedAgent<A extends Candidate>(agents: readonly A[], r: ConnectRoutine): A | null {
-  return agents.find((a) => roleFits(a.role ?? "", r.area)) ?? agents[0] ?? null;
+/** The agent it starts with: the first that may run it (`connectRoutineAgents`); the person picks another there. */
+export function suggestedAgent<A extends Candidate>(agents: readonly A[]): A | null {
+  return agents[0] ?? null;
 }
 
 /** The routine's name, in the person's language: its template's. */
