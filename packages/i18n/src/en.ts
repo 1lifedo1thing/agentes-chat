@@ -6142,7 +6142,6 @@ export const en = {
       queued: "In line",
       notRun: "Not run",
     },
-    /** Approved, waiting for a request the agent asked before it on the same card to be decided and done. */
     /** Approved before a request asked ahead of it was refused or expired: it didn't run. */
     notRunRefused: "“{{title}}”, asked before this, was refused after this was approved, so this didn't run.",
     notRunExpired: "“{{title}}”, asked before this, expired undecided after this was approved, so this didn't run.",

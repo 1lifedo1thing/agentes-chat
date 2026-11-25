@@ -104,8 +104,10 @@ its actions should not overtake the ones asked before it that its run was told a
 
 ### Consequences
 
-- Requests from different conversations never wait for each other. A follow-up still waits for what was asked before
-  it in its conversation, for at most 30 minutes of nobody deciding.
+- Requests never share a card across conversations, and a run waits only for what `heldHere` told it. In a channel's
+  main timeline every run answering there is told about the others (a new message there is a follow-up, ADR 0029), so
+  two top-level messages still wait for each other's earlier requests, for at most 30 minutes of nobody deciding, with
+  "Rodar este agora" to skip it. A thread never waits for another thread.
 - Point 1's "a card is a line" now means a run's own requests in the order asked, plus what each was told. A card of
   one conversation is that, nearly always.
 - Changing a level cancels requests, which the agent redoes. A request the new level would still ask for stays.

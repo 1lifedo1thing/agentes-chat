@@ -5997,7 +5997,6 @@ export const ptBR = {
       queued: "Na fila",
       notRun: "Não rodou",
     },
-    /** Approved, waiting for a request the agent asked before it on the same card to be decided and done. */
     /** Approved before a request asked ahead of it was refused or expired: it didn't run. */
     notRunRefused: "“{{title}}”, pedido antes, foi recusado depois que este foi aprovado. Por isso este não rodou.",
     notRunExpired:

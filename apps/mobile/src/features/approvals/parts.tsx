@@ -621,7 +621,7 @@ export function HeldLine({ approval: a, waitsOn }: { approval: Approval; waitsOn
         <View style={styles.heldActs}>
           {decidable ? (
             high ? (
-              <HoldButton size="card" label={t("mobile.approval.hold")} onConfirm={() => approve()} />
+              <HoldButton size="card" label={t("mobile.approval.hold")} disabled={busy} onConfirm={() => approve()} />
             ) : (
               <Button
                 variant="primary"
@@ -701,7 +701,12 @@ export function ApproveAllByAgent() {
             </View>
             <View style={styles.heldActs}>
               {high ? (
-                <HoldButton size="card" label={t("approval.byAgent.approve")} onConfirm={() => go(g.ids, "approve")} />
+                <HoldButton
+                  size="card"
+                  label={t("approval.byAgent.approve")}
+                  disabled={decide.isPending}
+                  onConfirm={() => go(g.ids, "approve")}
+                />
               ) : (
                 <Button
                   variant="primary"
