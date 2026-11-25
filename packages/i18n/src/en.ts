@@ -19354,6 +19354,12 @@ export const en = {
       someAnswered: "{{done}} of {{total}} answered",
       /** Its tip when several were asked: "Theo's talks with Atlas, Rio and Iris". */
       labelMany: "{{from}}'s talks with {{to}}",
+      /** Between the two names on another agent's request in this agent's DM: "Atlas asked Ada · subject". */
+      askedHere: "asked",
+      /** After the second name on that row: the person it was for ("Atlas asked Ada for you"). */
+      forYou: "for you",
+      /** That row's place: where the person asked ("in #eng"). */
+      askedIn: "in {{channel}}",
     },
     /** A question opened in the panel over the conversation ("Theo ⇄ Iris"): what the two agents said, read only. */
     consultPanel: {
@@ -19382,6 +19388,8 @@ export const en = {
       consultReplyAnon: "Another agent answered",
       agentNote: "Note from {{from}}",
       agentNoteAnon: "Note from another agent",
+      /** Another agent asked this agent something for you, in its private conversation with it. */
+      handOff: "{{from}} asked {{to}}",
       waitResult: "What {{name}} was waiting for came in",
       other: "Notice for {{name}}",
       wakeSkipped: "{{name}}'s mention didn't reach {{agents}}",

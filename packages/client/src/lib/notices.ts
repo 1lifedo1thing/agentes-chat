@@ -23,6 +23,7 @@ export const NOTICE_KINDS = [
   "github_check",
   "work_follow_up",
   "channel_work",
+  "hand_off",
 ] as const;
 export type NoticeKind = (typeof NOTICE_KINDS)[number];
 
@@ -239,6 +240,14 @@ export function noticeView(
       const said = [notice.text.trim(), r.url ?? ""].filter(Boolean).join("\n\n");
       const key = r.number ? "chat.notice.github.checkFailed" : "chat.notice.github.checkFailedCommit";
       return line(key, values, said ? { content: said } : null);
+    }
+    // Another agent's request, in the DM of the agent it went to (the apps draw it as its pair row, `handOffOf`).
+    case "hand_off": {
+      const handle = noticeAgentHandle(notice);
+      return line("chat.notice.handOff", {
+        from: handle ? (names.agentByHandle(handle) ?? handle) : "",
+        to: names.author,
+      });
     }
     // A return's line is the bar's (`isReturnLine`), never one of the conversation's.
     case "follow_up":

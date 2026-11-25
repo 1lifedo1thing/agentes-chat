@@ -18045,7 +18045,10 @@
       "noAnswer": "回答なし",
       "notFinished": "完了せず",
       "someAnswered": "{{total}}件中{{done}}件回答",
-      "labelMany": "{{from}}と{{to}}の会話"
+      "labelMany": "{{from}}と{{to}}の会話",
+      "askedHere": "→",
+      "forYou": "あなたの代わりに",
+      "askedIn": "{{channel}} で"
     },
     "consultPanel": {
       "label": "{{from}}と{{to}}の会話",
@@ -18069,6 +18072,7 @@
       "consultReplyAnon": "別のエージェントが回答しました",
       "agentNote": "{{from}}からのメモ",
       "agentNoteAnon": "別のエージェントからのメモ",
+      "handOff": "{{from}} から {{to}} への依頼",
       "waitResult": "{{name}}が待っていたものが届きました",
       "other": "{{name}}へのお知らせ",
       "wakeSkipped": "{{name}}のメンションは{{agents}}に届きませんでした",

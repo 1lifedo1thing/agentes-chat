@@ -19178,6 +19178,13 @@ export const ptBR = {
       someAnswered: "{{done}} de {{total}} responderam",
       /** Its tip when several were asked: "Theo's talks with Atlas, Rio and Iris". */
       labelMany: "Conversas de {{from}} com {{to}}",
+      /** Between the two names on another agent's request in this agent's DM: "Atlas asked Ada · subject". */
+      askedHere: "pediu ao",
+      askedHere_female: "pediu à",
+      /** After the second name on that row: the person it was for ("Atlas asked Ada for you"). */
+      forYou: "por você",
+      /** That row's place: where the person asked ("in #eng"). */
+      askedIn: "em {{channel}}",
     },
     /** A question opened in the panel over the conversation ("Theo ⇄ Iris"): what the two agents said, read only. */
     consultPanel: {
@@ -19211,6 +19218,8 @@ export const ptBR = {
       consultReplyAnon: "Outro agente respondeu",
       agentNote: "Nota de {{from}}",
       agentNoteAnon: "Nota de outro agente",
+      /** Another agent asked this agent something for you, in its private conversation with it. */
+      handOff: "{{from}} fez um pedido para {{to}}",
       waitResult: "Chegou o resultado que {{name}} esperava",
       other: "Aviso para {{name}}",
       wakeSkipped: "A menção de {{name}} não chamou {{agents}}",
