@@ -1043,6 +1043,18 @@ describe("hub", () => {
     expect(after).toMatchObject({ online: false, connectedReplica: null });
     expect(statuses).toContainEqual({ type: "machine.status", machineId: paired.machineId, online: false });
     await expect(hub.call(paired.machineId, { op: "list", path: "", depth: 1 })).rejects.toThrow(MachineOfflineError);
+
+    // A host computer whose display name is still its uncustomized hostname updates `name` on `hello`.
+    await f.db
+      .update(schema.machines)
+      .set({ kind: "host", name: "vps-old", hostname: "vps-old" })
+      .where(eq(schema.machines.id, paired.machineId));
+    const hostRunner = fakeRunner(hub);
+    await hostRunner.hello(paired.token, { hostname: "vps-new", exec: true });
+    expect(hostRunner.sent[0]).toMatchObject({ type: "welcome", name: "vps-new" });
+    const [migrated] = await f.db.select().from(schema.machines);
+    expect(migrated).toMatchObject({ kind: "host", name: "vps-new", hostname: "vps-new" });
+    await hostRunner.disconnect();
   });
 
   test("requests, live output, cancel, errors; a second runner replaces the first; delete closes it", async () => {
