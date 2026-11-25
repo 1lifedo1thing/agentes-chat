@@ -677,14 +677,19 @@ describe("a follow-up for another agent re-routes (ADR 0112)", () => {
     expect((await saidBy(ada.id)).map((m) => m.body)).toEqual(["O relatório da campanha está no Drive."]);
   });
 
-  test("left alone: a run the person named, one that already spoke, and a follow-up long after", async () => {
+  test("left alone: a run the person named, one that already spoke, one that reads the follow-up too, and a follow-up long after", async () => {
     const { ada, dev } = await routedToDev();
-    const followUp = async (oiSecondsAgo: number) => {
+    const followUp = async (oiSecondsAgo: number, devReadsIt = false) => {
       await f.db
         .update(schema.messages)
         .set({ createdAt: new Date(Date.now() - oiSecondsAgo * 1000) })
         .where(eq(schema.messages.id, dev.triggerMessageId));
-      await post("@ada preciso do relatório da campanha");
+      const asked = await post("@ada preciso do relatório da campanha");
+      if (devReadsIt)
+        await f.db
+          .update(schema.agentRuns)
+          .set({ pendingMessageIds: [asked.id] })
+          .where(eq(schema.agentRuns.id, dev.id));
       const toAda = (await runs()).filter((r) => r.agentId === ada.id).at(-1);
       await executeRun(f.jobDeps, toAda?.id ?? "", { finalAttempt: true });
       return (await runOf(dev.id))?.status;
@@ -702,6 +707,9 @@ describe("a follow-up for another agent re-routes (ADR 0112)", () => {
     });
     expect(await followUp(0)).toBe("queued");
     await f.db.delete(schema.messages).where(eq(schema.messages.id, said.id));
+    // The follow-up joined Dev's inbox too: Dev reads it, so it stays Dev's.
+    expect(await followUp(0, true)).toBe("queued");
+    await f.db.update(schema.agentRuns).set({ pendingMessageIds: [] }).where(eq(schema.agentRuns.id, dev.id));
     // Ada asked well after "oi": a new request, not a follow-up.
     expect(await followUp(10)).toBe("queued");
     // And the same follow-up right after it: re-routed.
