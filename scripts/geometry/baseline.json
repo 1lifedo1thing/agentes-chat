@@ -120,6 +120,7 @@
   "edge@390 button.ac-btn.ac-btn--sm in li.nac-pick__row.ac-faceline",
   "emptyselect@320 button.ac-select__trigger in div.aa-pair",
   "emptyselect@390 button.ac-select__trigger in div.aa-pair",
+  "endline@320 button.ac-btn.ac-btn--sm in div.settings-row.settings-row--lead.settings-row--button",
   "endline@390 button.ac-btn.ac-btn--sm in div.settings-row.settings-row--lead.settings-row--button",
   "fieldwidth@1280 input.ac-input in div.ac-field at div.vlt-fields",
   "fieldwidth@320 input.ac-input in div.ac-field at div.vlt-fields",
@@ -376,10 +377,12 @@
   "squarecol@1280 span.dv-pic in div.ac-list__row.dv-row",
   "squarecol@1280 span.ist__n in div.ist__text",
   "squarecol@320 span.ist__n in div.ist__text",
+  "squarecol@320 span.settings-row__icon in div.settings-row.settings-row--lead.settings-row--button",
   "squarecol@320 span.settings-row__icon in div.settings-row.settings-row--lead.settings-row--toggle",
   "squarecol@390 span.ist__n in div.ist__text",
   "squarecol@390 span.settings-row__icon in div.settings-row.settings-row--lead.settings-row--button",
   "squeeze@1280 span.tr-row__t in div.tr-row",
+  "squeeze@320 span.ac-hintline in div.settings-row.settings-row--lead.settings-row--button",
   "squeeze@320 span.ifr__text in div.ifr__cap",
   "squeeze@320 span.nac__label in span.nac__head",
   "squeeze@320 span.wd__grow in div.wd__row",
@@ -521,6 +524,7 @@
   "wordwrap@320 span in span.nac__similar",
   "wordwrap@320 span.ac-eventpill__text in span.ac-eventpill__main at div.ac-eventpill.rq-done",
   "wordwrap@320 span.ac-hint__bubble.ac-glass.ac-menu__tip in body",
+  "wordwrap@320 span.ac-hintline in span.settings-row__text",
   "wordwrap@320 span.ac-option__title in span.chat-look__foot",
   "wordwrap@390 button.ac-link in span.nac__similar",
   "wordwrap@390 h1.consent__title in span.list-col",
@@ -528,5 +532,6 @@
   "wordwrap@390 span in p.nac__hi",
   "wordwrap@390 span in span.nac__similar",
   "wordwrap@390 span.ac-eventpill__text in span.ac-eventpill__main at div.ac-eventpill.rq-done",
-  "wordwrap@390 span.ac-hint__bubble.ac-glass.ac-menu__tip in body"
+  "wordwrap@390 span.ac-hint__bubble.ac-glass.ac-menu__tip in body",
+  "wordwrap@390 span.ac-hintline in span.settings-row__text"
 ]
