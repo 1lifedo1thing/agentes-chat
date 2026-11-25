@@ -5868,6 +5868,8 @@
           "limitSoon": "{{account}}はプランが更新されたら戻ります",
           "limitHelp": "それまでの間、{{name}}は接続済みの別のアカウントで考えられます。",
           "fullWait": "このアカウントでは、{{name}}はプランが更新されるまで待ちます。",
+          "switchTo": "{{label}}に切り替え",
+          "seeUsage": "使用量を見る",
           "modelTitle": "{{name}}のモデル",
           "moreTitle": "{{name}}のその他のオプション",
           "computer": "コンピューター",

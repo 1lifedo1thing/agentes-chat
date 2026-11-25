@@ -15010,6 +15010,12 @@
   "agentPage.work.brain.v2.fullWait": {
     "value": "On this account {{name}} waits until the plan renews."
   },
+  "agentPage.work.brain.v2.switchTo": {
+    "value": "Switch to {{label}}"
+  },
+  "agentPage.work.brain.v2.seeUsage": {
+    "value": "See usage"
+  },
   "agentPage.work.brain.v2.modelTitle": {
     "value": "{{name}}'s model"
   },

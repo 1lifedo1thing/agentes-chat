@@ -6331,6 +6331,8 @@
           "limitSoon": "{{account}} torna quando il piano si rinnova",
           "limitHelp": "Nel frattempo {{name}} può pensare con un altro account già collegato.",
           "fullWait": "Con questo account {{name}} aspetta che il piano si rinnovi.",
+          "switchTo": "Passa a {{label}}",
+          "seeUsage": "Vedi utilizzo",
           "modelTitle": "Modello di {{name}}",
           "moreTitle": "Altre opzioni per {{name}}",
           "computer": "Computer",
