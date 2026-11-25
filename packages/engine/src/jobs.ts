@@ -25,6 +25,7 @@ import { type BrakeReport, brakeWakes, callableAgents, LATER_JOB, notCallableWhy
 import { HANDOFF_REMIND_JOB, remindBrowserHandoff } from "./browser/handoff";
 import { typingLogFor } from "./burst";
 import { CHANNEL_DELETE_JOB, purgeChannel } from "./channel-deletion";
+import { tellChannelLead } from "./channel-lead";
 import { crowdedAgents, publishQueueChanged } from "./computer-queue";
 import { forgetComposioAccount } from "./connectors/composio";
 import { CONNECTOR_FORGET_JOB, type ConnectorDeps } from "./connectors/connections";
@@ -147,7 +148,7 @@ import { assessThread } from "./thread-assess";
 import { runVaultSync, VAULT_SYNC_JOB, type VaultDeps } from "./vault";
 import { transcribeVoiceClip, VOICE_JOB, type VoiceDeps } from "./voice";
 import { saveWaitlistContact } from "./waitlist";
-import { checkInWork, followUpWork, WORK_CHECK_IN_JOB, WORK_FOLLOW_UP_JOB } from "./works";
+import { CHANNEL_LEAD_JOB, checkInWork, followUpWork, WORK_CHECK_IN_JOB, WORK_FOLLOW_UP_JOB } from "./works";
 import {
   ACCOUNT_DELETE_JOB,
   type DeletionDeps,
@@ -925,6 +926,13 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
         stopped: job.payload.stopped === true,
       });
     },
+    // A work ended in a channel with a responsible agent: the judge reads whether it leaves the lead a step (ADR 0095).
+    [CHANNEL_LEAD_JOB]: async (job) => {
+      await tellChannelLead({ db: deps.db, pubsub: deps.pubsub, judge: deps.context?.judge ?? null }, orgOf(job), {
+        workId: String(job.payload.workId),
+        runId: String(job.payload.runId),
+      });
+    },
     "secret.activate": async (job) => {
       if (!deps.sandbox) throw new Error("Computer secret delivery is unavailable");
       await activateDeliveredSecret(
@@ -975,7 +983,12 @@ export function createJobHandlers(deps: JobDeps): JobHandlers {
           blobs: deps.artifacts?.blobs,
           deletion: { hub: missions.hub, mail: deps.mail },
         },
-        { orgId: orgOf(job), ids, origin: String(job.payload.origin ?? "agent") as SettleOrigin },
+        {
+          orgId: orgOf(job),
+          ids,
+          origin: String(job.payload.origin ?? "agent") as SettleOrigin,
+          words: typeof job.payload.words === "string" ? job.payload.words : undefined,
+        },
       );
       if (res.applied.length > 0) await publishListChanged(deps.pubsub, orgOf(job), "memory");
     },

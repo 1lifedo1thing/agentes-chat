@@ -6,6 +6,7 @@ import {
   useConfirmSurfaceLink,
   useRemoveSurfaceLink,
   useSetSurfaceNudge,
+  useSetSurfacePin,
   useSurfaceLinks,
 } from "@agenteschat/client";
 import { formatTimeLeft } from "@agenteschat/client/lib/actions";
@@ -20,6 +21,8 @@ import {
   LINK_POLL_MS,
   NUDGE_AFTER_HOURS,
   newlyLinked,
+  pinChosen,
+  pinMismatch,
   RENEW_BEFORE_MS,
   surfaceMarkUrl,
   surfaceRowOf,
@@ -39,12 +42,13 @@ import {
   useNow,
 } from "@agenteschat/ui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useState } from "react";
+import { type FormEvent, useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
 import { Step } from "@/components/devices/Step";
 import { PrefRow } from "@/components/NoticePrefs";
 import { useOrg } from "@/components/org-context";
+import { PinFields } from "@/components/PinFields";
 import { useImageLoads } from "@/hooks/useImageLoads";
 import { useOpenParam } from "@/lib/open-param";
 import { useToast } from "@/lib/toast";
@@ -93,7 +97,8 @@ function useAssistantName(orgId: string): string | null {
 /**
  * Settings › Notifications › Where they arrive (ADR 0187): the outside chat surface, only for an account the server
  * lets link it. None: Link. A sender waiting on the person's confirm: the line opens the dialog at that step. Linked:
- * the sender as the surface shows it, with Unlink.
+ * the sender as the surface shows it, with its PIN (ADR 0226; `?pin=1`, where the page from the chat sends people,
+ * opens it) and Unlink.
  */
 export function SurfacePrefRow() {
   const { t } = useTranslation();
@@ -103,6 +108,7 @@ export function SurfacePrefRow() {
   const { org } = useOrg();
   const assistant = useAssistantName(org.id) ?? t("rightHand.labelCapitalized");
   const [open, setOpen] = useOpenParam("link");
+  const [pinOpen, setPinOpen] = useOpenParam("pin");
   const [unlinking, setUnlinking] = useState<SurfaceLink | null>(null);
   const row = surfaceRowOf(links.data);
   if (row.kind === "hidden") return null;
@@ -152,8 +158,26 @@ export function SurfacePrefRow() {
           )
         }
       />
+      {row.kind === "active" && (
+        <PrefRow
+          id="notice-surface-pin"
+          icon="lock"
+          label={t("surface.pin.title", { surface })}
+          hint={t("surface.pin.text", { surface })}
+          control={
+            <Button size="sm" onClick={() => setPinOpen(1)}>
+              {row.link.pinSet ? t("surface.pin.change") : t("surface.pin.set")}
+            </Button>
+          }
+        />
+      )}
       {row.kind === "active" && <SurfaceNudgeRows link={row.link} surface={surface} assistant={assistant} />}
       <SurfaceLinkDialog open={open !== null} onClose={() => setOpen(null)} />
+      <SurfacePinDialog
+        link={pinOpen !== null && row.kind === "active" ? row.link : null}
+        surface={surface}
+        onClose={() => setPinOpen(null)}
+      />
       <Dialog
         open={unlinking !== null}
         onOpenChange={(o) => !o && !remove.isPending && setUnlinking(null)}
@@ -189,7 +213,7 @@ export function SurfacePrefRow() {
 }
 
 /**
- * The unread nudge under a linked surface (ADR 0227): on or off, after how long, and the quiet hours, each saved at
+ * The unread nudge under a linked surface (ADR 0234): on or off, after how long, and the quiet hours, each saved at
  * once. When and whether one goes is the server's call.
  */
 function SurfaceNudgeRows({ link, surface, assistant }: { link: SurfaceLink; surface: string; assistant: string }) {
@@ -492,6 +516,69 @@ export function SurfaceLinkDialog({ open, onClose }: { open: boolean; onClose: (
           )}
         </DialogBody>
       )}
+    </Dialog>
+  );
+}
+
+/** Choosing the PIN in the app (ADR 0226): the signed-in session is what lets it, so a link from the chat never can. */
+function SurfacePinDialog({
+  link,
+  surface,
+  onClose,
+}: {
+  link: SurfaceLink | null;
+  surface: string;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const toast = useToast();
+  const save = useSetSurfacePin();
+  const [pin, setPin] = useState("");
+  const [again, setAgain] = useState("");
+  useEffect(() => {
+    if (!link) {
+      setPin("");
+      setAgain("");
+      save.reset();
+    }
+  }, [link, save.reset]);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!link || save.isPending || !pinChosen(pin, again)) return;
+    save.mutate(
+      { linkId: link.id, pin },
+      {
+        onSuccess: () => {
+          toast.show(t("surface.pinReset.done"));
+          onClose();
+        },
+      },
+    );
+  };
+  const error = pinMismatch(pin, again) ? t("surface.page.mismatch") : save.isError ? errorText(t, save.error) : null;
+  return (
+    <Dialog
+      open={link !== null}
+      onOpenChange={(o) => !o && !save.isPending && onClose()}
+      title={t("surface.pin.title", { surface })}
+      description={t("surface.pin.text", { surface })}
+      closeLabel={t("common.close")}
+      width={440}
+    >
+      <form onSubmit={submit} noValidate>
+        <DialogBody className="surface-link">
+          <PinFields choosing autoFocus pin={pin} again={again} onPin={setPin} onAgain={setAgain} />
+          {error && <Alert>{error}</Alert>}
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" onClick={onClose} disabled={save.isPending}>
+            {t("common.cancel")}
+          </Button>
+          <Button type="submit" variant="primary" loading={save.isPending} disabled={!pinChosen(pin, again)}>
+            {t("surface.pin.save")}
+          </Button>
+        </DialogFooter>
+      </form>
     </Dialog>
   );
 }

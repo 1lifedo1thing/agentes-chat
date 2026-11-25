@@ -1,6 +1,6 @@
 {
-  "id": "2c687778-3b18-4675-b1ff-b0a1812ab112",
-  "prevId": "52ebaee0-4cb8-4a80-afb5-e392bc14bf6e",
+  "id": "7f9e11d1-f472-4cc3-82a7-f1a6f9867e7f",
+  "prevId": "29d398d0-8fc6-4c74-929b-a86f5a72a65f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -824,6 +824,13 @@
         },
         "welcome_people": {
           "name": "welcome_people",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "right_hand_learns": {
+          "name": "right_hand_learns",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -3610,6 +3617,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "lead_agent_id": {
+          "name": "lead_agent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -3646,6 +3659,19 @@
           "tableTo": "channel_categories",
           "columnsFrom": [
             "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "channels_lead_agent_id_agents_id_fk": {
+          "name": "channels_lead_agent_id_agents_id_fk",
+          "tableFrom": "channels",
+          "tableTo": "agents",
+          "columnsFrom": [
+            "lead_agent_id"
           ],
           "columnsTo": [
             "id"
@@ -22568,6 +22594,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "wave": {
+          "name": "wave",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "note": {
           "name": "note",
           "type": "text",
@@ -24304,7 +24336,7 @@
       "checkConstraints": {
         "surface_deliveries_kind": {
           "name": "surface_deliveries_kind",
-          "value": "\"surface_deliveries\".\"kind\" in ('reply', 'linked', 'nudge')"
+          "value": "\"surface_deliveries\".\"kind\" in ('reply', 'linked')"
         },
         "surface_deliveries_outcome": {
           "name": "surface_deliveries_outcome",
@@ -24384,36 +24416,21 @@
           "primaryKey": false,
           "notNull": false
         },
-        "nudge_on": {
-          "name": "nudge_on",
-          "type": "boolean",
+        "pin_hash": {
+          "name": "pin_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pin_failures": {
+          "name": "pin_failures",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": true
+          "default": 0
         },
-        "nudge_after_hours": {
-          "name": "nudge_after_hours",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 4
-        },
-        "quiet_from": {
-          "name": "quiet_from",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 22
-        },
-        "quiet_to": {
-          "name": "quiet_to",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 8
-        },
-        "nudged_at": {
-          "name": "nudged_at",
+        "pin_locked_until": {
+          "name": "pin_locked_until",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
@@ -24515,10 +24532,171 @@
         "surface_links_status": {
           "name": "surface_links_status",
           "value": "\"surface_links\".\"status\" in ('pending', 'active')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.surface_page_links": {
+      "name": "surface_page_links",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
         },
-        "surface_links_nudge": {
-          "name": "surface_links_nudge",
-          "value": "\"surface_links\".\"nudge_after_hours\" between 1 and 24 and \"surface_links\".\"quiet_from\" between 0 and 23 and \"surface_links\".\"quiet_to\" between 0 and 23"
+        "org_id": {
+          "name": "org_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "link_id": {
+          "name": "link_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "browser_hash": {
+          "name": "browser_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "opened_at": {
+          "name": "opened_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "surface_page_links_token_hash_index": {
+          "name": "surface_page_links_token_hash_index",
+          "columns": [
+            {
+              "expression": "token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "surface_page_links_link_id_index": {
+          "name": "surface_page_links_link_id_index",
+          "columns": [
+            {
+              "expression": "link_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "surface_page_links_created_at_index": {
+          "name": "surface_page_links_created_at_index",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "surface_page_links_org_id_organizations_id_fk": {
+          "name": "surface_page_links_org_id_organizations_id_fk",
+          "tableFrom": "surface_page_links",
+          "tableTo": "organizations",
+          "columnsFrom": [
+            "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "surface_page_links_link_id_surface_links_id_fk": {
+          "name": "surface_page_links_link_id_surface_links_id_fk",
+          "tableFrom": "surface_page_links",
+          "tableTo": "surface_links",
+          "columnsFrom": [
+            "link_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "surface_page_links_user_id_users_id_fk": {
+          "name": "surface_page_links_user_id_users_id_fk",
+          "tableFrom": "surface_page_links",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "surface_page_links_kind": {
+          "name": "surface_page_links_kind",
+          "value": "\"surface_page_links\".\"kind\" in ('confirm', 'screen', 'control')"
         }
       },
       "isRLSEnabled": false

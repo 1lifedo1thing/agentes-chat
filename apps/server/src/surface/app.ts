@@ -422,7 +422,7 @@ export function createSurfaceApp(deps: AppDeps, token: string, version: string) 
           nudges: z
             .enum(["true", "false"])
             .default("false")
-            .openapi({ description: "`true`: list `nudge` deliveries too (ADR 0227). Without it none is listed." }),
+            .openapi({ description: "`true`: list `nudge` deliveries too (ADR 0234). Without it none is listed." }),
         }),
       },
       responses: { 200: json(z.object({ deliveries: z.array(Delivery) }).openapi("SurfaceDeliveries")), ...errors },

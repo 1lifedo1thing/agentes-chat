@@ -101,6 +101,7 @@ import type {
   StoragePlatform,
   StorageUsage,
   SurfaceLink,
+  SurfacePage,
   TaskManagerView,
   TaskSteps,
   TeamProposalCard,
@@ -224,6 +225,10 @@ export interface FakeState {
     confirmError?: ApiError;
     removeError?: ApiError;
     undo?: { unlinked: boolean; display: string | null } | ApiError;
+    /** The page a link sent on the surface opens; the decision's answer replaces it, or `decideError` is thrown. */
+    page?: SurfacePage | ApiError;
+    decideError?: ApiError;
+    pinReset?: ApiError;
   };
   /** Another workspace's agents, by its id (default: `agents`, whatever the workspace). */
   agentsOf?: Record<string, Agent[]>;
@@ -1779,6 +1784,42 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         if (undo instanceof ApiError) throw undo;
         return { ...undo, surface: state.surface?.name ?? "" };
       },
+      openPage: async (token) => {
+        log("surfaces.openPage", token);
+        const page = state.surface?.page;
+        if (!page) throw new ApiError(404, "surface.page_gone", "This link ran out");
+        if (page instanceof ApiError) throw page;
+        return page;
+      },
+      decidePage: async (token, decision, pin) => {
+        log("surfaces.decidePage", { token, decision, pin });
+        const sf = state.surface;
+        if (sf?.decideError) throw sf.decideError;
+        const page = sf?.page;
+        if (!sf || !page || page instanceof ApiError || !page.approval) {
+          throw new ApiError(404, "surface.page_gone", "This link ran out");
+        }
+        sf.page = {
+          ...page,
+          pin: { ...page.pin, set: true, lockedUntil: null },
+          approval: { ...page.approval, status: decision === "approve" ? "approved" : "refused" },
+        };
+        return sf.page;
+      },
+      emailPin: async (token) => {
+        log("surfaces.emailPin", token);
+      },
+      pinFromEmail: async (token, pin) => {
+        log("surfaces.pinFromEmail", { token, pin });
+        if (state.surface?.pinReset) throw state.surface.pinReset;
+        return { surface: state.surface?.name ?? "" };
+      },
+      setPin: async (linkId, pin) => {
+        log("surfaces.setPin", { linkId, pin });
+        const sf = state.surface;
+        if (!sf?.links.some((l) => l.id === linkId)) throw new ApiError(404, "surface.link_gone", "This link is gone");
+        sf.links = sf.links.map((l) => (l.id === linkId ? { ...l, pinSet: true } : l));
+      },
     },
     push: {
       webKey: async () => state.webPushKey ?? null,
@@ -2530,23 +2571,27 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
         return { previous };
       },
       team: async () => ({
-        agents: listed().map((a) => ({
-          id: a.id,
-          name: a.name,
-          handle: a.handle,
-          role: a.role,
-          appearance: a.appearance ?? null,
-          ownerUserId: a.ownerUserId,
-          reportsToAgentId: a.reportsToAgentId ?? null,
-          capabilities: ["drive", "issues"],
-          busy: false,
-          channelIds: state.channels
-            .filter((c) => (state.channelMembers[c.id] ?? []).some((m) => m.type === "agent" && m.id === a.id))
-            .map((c) => c.id),
-          canTalk: true,
-          canManage: rightsOf(a).canManage,
-          ...(a.seesDetails === false ? { capabilities: [], canTalk: false, seesDetails: false } : {}),
-        })),
+        // A teammate's private agent seen by its facts alone (`factsOnly` set by the test) is on Equipe too.
+        agents: state.agents
+          .filter((a) => listsToMe(a) || a.factsOnly)
+          .map((a) => ({
+            id: a.id,
+            name: a.name,
+            handle: a.handle,
+            role: a.role,
+            appearance: a.appearance ?? null,
+            ownerUserId: a.ownerUserId,
+            reportsToAgentId: a.reportsToAgentId ?? null,
+            capabilities: ["drive", "issues"],
+            busy: false,
+            channelIds: state.channels
+              .filter((c) => (state.channelMembers[c.id] ?? []).some((m) => m.type === "agent" && m.id === a.id))
+              .map((c) => c.id),
+            canTalk: true,
+            canManage: rightsOf(a).canManage,
+            ...(a.seesDetails === false ? { capabilities: [], canTalk: false, seesDetails: false } : {}),
+            ...(a.factsOnly ? { factsOnly: true } : {}),
+          })),
         people: state.members
           .filter((m) => state.agents.some((a) => a.ownerUserId === m.userId))
           .map((m) => ({ id: m.userId, name: m.name, image: m.image ?? null })),
@@ -3026,6 +3071,9 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
               : [{ day: 1, runs: 12, failed: 0 }],
           pendingApprovals: state.approvals.filter((x) => x.agentId === agentId && x.status === "pending").length,
           channels,
+          editors: a.editors ?? { userIds: [], roleIds: [] },
+          createdByUserId: a.ownerUserId,
+          lastActivityAt: new Date(NOW.getTime() - 2 * 3_600_000).toISOString(),
         };
       },
       channels: async (_orgId, agentId) =>
@@ -3933,6 +3981,12 @@ export function createFakeHttpApi(state: FakeState): Omit<HttpApi, FakedParts> {
       setArchived: async (orgId, id, archived) => patchMemory(orgId, id, { archived }),
       confirm: async (orgId, id) => patchMemory(orgId, id, { confirmed: true }),
       listTeam: async () => state.memories.filter((m) => !m.agentId && !m.archived),
+      forgetRightHandLearned: async (orgId) => {
+        log("memory.forgetRightHandLearned", orgId);
+        const before = state.memories.length;
+        state.memories = state.memories.filter((m) => !(m.onlyYou && m.learned && m.editedByUserId === null));
+        return { forgotten: before - state.memories.length };
+      },
       makeTeam: async (orgId, id) => {
         log("memory.team", orgId, id);
         const m = state.memories.find((x) => x.id === id);

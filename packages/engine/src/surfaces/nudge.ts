@@ -17,7 +17,7 @@ import { NotFoundError } from "../errors";
 import { surfaceOn } from "./config";
 
 /**
- * The unread nudge (ADR 0227): core decides when a linked person hears on the surface that something waits unread in
+ * The unread nudge (ADR 0234): core decides when a linked person hears on the surface that something waits unread in
  * the app, since core holds what is unread and which phones its pushes reach. The service only sends what it is
  * given (a template outside the chat app's reply window), and only when it asks for nudges.
  */

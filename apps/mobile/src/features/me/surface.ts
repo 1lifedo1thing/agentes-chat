@@ -93,6 +93,6 @@ export function surfaceTagText(
       };
 }
 
-/** The quiet hours as the nudge row shows them: "22:00 to 8:00" on the reader's clock (ADR 0227). */
+/** The quiet hours as the nudge row shows them: "22:00 to 8:00" on the reader's clock (ADR 0234). */
 export const quietHoursText = (t: TFunction, locale: string, nudge: SurfaceLink["nudge"]) =>
   t("surface.nudge.quietRange", { from: hourLabel(locale, nudge.quietFrom), to: hourLabel(locale, nudge.quietTo) });

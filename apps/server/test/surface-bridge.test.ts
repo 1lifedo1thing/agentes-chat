@@ -340,7 +340,7 @@ test("the whole loop: a message in, the right hand's reply listed with its file,
   expect(await again.json()).toEqual({ sent: 0, unsent: 0, late: [reply.id] });
 });
 
-test("a nudge is listed only with nudges=true, and taken like any delivery (ADR 0227)", async () => {
+test("a nudge is listed only with nudges=true, and taken like any delivery (ADR 0234)", async () => {
   await linked();
   const [link] = await t.db.select().from(schema.surfaceLinks).where(eq(schema.surfaceLinks.externalId, SENDER));
   if (!link?.orgId) throw new Error("no link");

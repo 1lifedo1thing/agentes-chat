@@ -180,6 +180,7 @@ import type {
   Member,
   Memory,
   Message,
+  MessageCards,
   MessagePin,
   ModelTier,
   MoveAgentsInput,
@@ -436,12 +437,64 @@ export function useRemoveSurfaceLink() {
   return useSurfaceLinkMutation((linkId: string) => api.surfaces.remove(linkId));
 }
 
-/** Changes my unread nudge on the surface (ADR 0227); the links are read again after. */
+/** Changes my unread nudge on the surface (ADR 0234); the links are read again after. */
 export function useSetSurfaceNudge() {
   const api = useApi();
   return useSurfaceLinkMutation((input: { linkId: string } & Partial<SurfaceNudge>) => {
     const { linkId, ...nudge } = input;
     return api.surfaces.setNudge(linkId, nudge);
+  });
+}
+
+/** Chooses my PIN in the app (ADR 0226), the signed-in session being what lets it. */
+export function useSetSurfacePin() {
+  const api = useApi();
+  return useSurfaceLinkMutation((input: { linkId: string; pin: string }) =>
+    api.surfaces.setPin(input.linkId, input.pin),
+  );
+}
+
+/**
+ * A page the surface linked to (ADR 0226), opened once by its token. Read again only when the person comes back to it
+ * while it waits on a PIN chosen elsewhere (the app, or the emailed link).
+ */
+export function useSurfacePage(token: string | undefined) {
+  const api = useApi();
+  return useQuery({
+    queryKey: ["surface-page", token ?? ""],
+    queryFn: () => api.surfaces.openPage(token ?? ""),
+    enabled: Boolean(token),
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnWindowFocus: (q) => (q.state.data && !q.state.data.pin.set ? "always" : false),
+    meta: { quiet: true },
+  });
+}
+
+/** Approve with the PIN, or refuse, on that page: the answer is the page as it is now. */
+export function useDecideSurfacePage(token: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { decision: "approve" | "refuse"; pin?: string }) =>
+      api.surfaces.decidePage(token, input.decision, input.pin),
+    meta: { silent: true },
+    onSuccess: (page) => qc.setQueryData(["surface-page", token], page),
+  });
+}
+
+/** "Email me a link" (no PIN yet) or "Forgot your PIN?": a link to choose it, to the account's verified address. */
+export function useEmailSurfacePin(token: string) {
+  const api = useApi();
+  return useMutation({ mutationFn: () => api.surfaces.emailPin(token), meta: { silent: true } });
+}
+
+/** The PIN email's link chooses the PIN; works signed out. */
+export function usePinFromEmail() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: (input: { token: string; pin: string }) => api.surfaces.pinFromEmail(input.token, input.pin),
+    meta: { silent: true },
   });
 }
 
@@ -1736,7 +1789,7 @@ export const messagesQuery = (api: ApiClient, orgId: string, channelId: string) 
     queryFn: async ({ client, queryKey }) => {
       const start = client.getQueryData<Message[]>(queryKey);
       return withLocalCopies(
-        await api.chat.messages(orgId, channelId, { limit: MESSAGES_PAGE }),
+        await api.chat.messages(orgId, channelId, { limit: MESSAGES_PAGE, onCards: cardsInto(client, orgId) }),
         client.getQueryData<Message[]>(queryKey),
         outbox.has,
         start,
@@ -1745,6 +1798,25 @@ export const messagesQuery = (api: ApiClient, orgId: string, channelId: string) 
     staleTime: 30_000,
     gcTime: 30 * 60_000,
   });
+
+/**
+ * A page's cards (`include=cards`) into the caches their cards read (`useArtifact`, `usePoll`, `useChoices`,
+ * `useSharedBlock`): they draw whole with the messages, never a placeholder that changes size after. A card shown at
+ * its head is kept under the head's key too, which is what a ref with no version reads.
+ */
+export function seedCards(qc: QueryClient, orgId: string, cards: MessageCards) {
+  for (const a of cards.artifacts) {
+    qc.setQueryData(keys.artifact(orgId, a.id, a.shownVersion), a);
+    if (a.shownVersion === a.version) qc.setQueryData(keys.artifact(orgId, a.id), a);
+  }
+  for (const p of cards.polls) qc.setQueryData(keys.poll(orgId, p.id), p);
+  for (const c of cards.choices) qc.setQueryData(keys.choices(orgId, c.id), c);
+  for (const b of cards.blocks)
+    qc.setQueryData<BlockState>(keys.blockState(orgId, b.id, b.version), (old) => newerBlockState(old, b));
+}
+
+/** `onCards` for a page read: its cards into the caches. */
+export const cardsInto = (qc: QueryClient, orgId: string) => (cards: MessageCards) => seedCards(qc, orgId, cards);
 
 export const useMessages = (orgId: string, channelId: string, enabled = true) => {
   const api = useApi();
@@ -2091,7 +2163,11 @@ export async function catchUpChannel(
   const held = recent ? idsInLists(qc, prefix) : null;
   const read = (rootId: string | null, page: number) => {
     const ask = (limit: number) =>
-      api.chat.messages(orgId, channelId, rootId ? { threadId: rootId, limit } : { limit });
+      api.chat.messages(orgId, channelId, {
+        ...(rootId ? { threadId: rootId } : {}),
+        limit,
+        onCards: cardsInto(qc, orgId),
+      });
     if (!recent || !held) return ask(page);
     return ask(recent).then((latest) => {
       // A thread's read starts with its root whatever the limit: only its replies tell how far back it reached.
@@ -2977,8 +3053,13 @@ export function useConnectWithKey(orgId: string) {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { connector: string; apiKey: string; label?: string; personal?: boolean }) =>
-      api.connectors.connectWithKey(orgId, input),
+    mutationFn: (input: {
+      connector: string;
+      apiKey: string;
+      label?: string;
+      personal?: boolean;
+      serverUrl?: string;
+    }) => api.connectors.connectWithKey(orgId, input),
     // A new connection is every agent's: their access trees change too, and so do the repositories GitHub reaches.
     onSuccess: () =>
       Promise.all([
@@ -4169,12 +4250,13 @@ export function useRemoveCredentialCopies(orgId: string) {
   });
 }
 
-export const useAgentDetail = (orgId: string, agentId: string) => {
+export const useAgentDetail = (orgId: string, agentId: string, enabled = true) => {
   const api = useApi();
   return useQuery({
     queryKey: keys.agentDetail(orgId, agentId),
     queryFn: () => api.agents.detail(orgId, agentId),
     staleTime: 15_000,
+    enabled,
   });
 };
 
@@ -4348,6 +4430,7 @@ export function useUpdateChannel(orgId: string, channelId: string) {
         ...(input.topic !== undefined ? { topic: input.topic } : {}),
         ...(input.visibility !== undefined ? { visibility: input.visibility } : {}),
         ...(input.audienceRoleIds !== undefined ? { audienceRoleIds: input.audienceRoleIds } : {}),
+        ...(input.leadAgentId !== undefined ? { leadAgentId: input.leadAgentId } : {}),
       };
       return [
         edit<Channel[]>(keys.channels(orgId), patchIn<Channel>(channelId, patch)),
@@ -4913,6 +4996,19 @@ export function useMemoryAction(orgId: string, agentId: string) {
       void qc.invalidateQueries({ queryKey: keys.memory(orgId, agentId) });
       void qc.invalidateQueries({ queryKey: keys.orgMemories(orgId) });
       void qc.invalidateQueries({ queryKey: keys.teamMemories(orgId) });
+    },
+  });
+}
+
+/** "Forget all" on the right hand's Memory tab: its lists read again once the server forgot. */
+export function useForgetRightHandLearned(orgId: string, agentId: string) {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.memory.forgetRightHandLearned(orgId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.memory(orgId, agentId) });
+      void qc.invalidateQueries({ queryKey: keys.orgMemories(orgId) });
     },
   });
 }
@@ -7163,7 +7259,11 @@ export const threadMessagesQuery = (api: ApiClient, orgId: string, channelId: st
     queryKey: keys.thread(orgId, channelId, rootId),
     queryFn: async ({ client, queryKey }) => {
       const start = client.getQueryData<Message[]>(queryKey);
-      const read = await api.chat.messages(orgId, channelId, { threadId: rootId, limit: THREAD_PAGE });
+      const read = await api.chat.messages(orgId, channelId, {
+        threadId: rootId,
+        limit: THREAD_PAGE,
+        onCards: cardsInto(client, orgId),
+      });
       return withLocalCopies(read, client.getQueryData<Message[]>(queryKey), outbox.has, start);
     },
     staleTime: 30_000,

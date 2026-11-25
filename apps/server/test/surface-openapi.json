@@ -715,10 +715,10 @@
               "type": "string",
               "enum": ["true", "false"],
               "default": "false",
-              "description": "`true`: list `nudge` deliveries too (ADR 0227). Without it none is listed."
+              "description": "`true`: list `nudge` deliveries too (ADR 0234). Without it none is listed."
             },
             "required": false,
-            "description": "`true`: list `nudge` deliveries too (ADR 0227). Without it none is listed.",
+            "description": "`true`: list `nudge` deliveries too (ADR 0234). Without it none is listed.",
             "name": "nudges",
             "in": "query"
           }
