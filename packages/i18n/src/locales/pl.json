@@ -17374,6 +17374,11 @@
       "hint": "Adres, który widzą strony, gdy agenci przeglądają sieć. Zmienia się razem z siecią komputera.",
       "waiting": "Ponownie łączymy agentów z internetem. Ich połączenia czekają, aż wróci."
     },
+    "moving": {
+      "short": "Zmiana serwera",
+      "line": "Przenosi się na nowy serwer… wróci za kilka minut",
+      "named": "{{computer}} przenosi się na nowy serwer… wróci za kilka minut"
+    },
     "online": "Online",
     "offline": "Offline",
     "execOff": "Polecenia wyłączone",

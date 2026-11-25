@@ -162,7 +162,7 @@ export function QueueSheet({ machineId, computer }: { machineId: string; compute
   return (
     <>
       <View accessible accessibilityRole="header" accessibilityLabel={t("queue.label", { name: q.data.name })}>
-        <SheetTitle title={q.data.name} subtitle={queueStatusText(t, view)} />
+        <SheetTitle title={q.data.name} subtitle={queueStatusText(t, view, q.data)} />
       </View>
       <View style={styles.group}>
         {/* What fills the computer now beside the head, as "In line" says when all of it starts: on a line of its own

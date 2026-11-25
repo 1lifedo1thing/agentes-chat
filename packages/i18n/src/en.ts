@@ -16726,6 +16726,12 @@ export const en = {
       hint: "The address websites see when the agents browse. It updates when the computer’s network changes.",
       waiting: "Reconnecting the agents’ internet. Their connections wait until it’s back.",
     },
+    /** The workspace's own computer, away while it moves to another server: never "offline" or "not answering". */
+    moving: {
+      short: "Moving servers",
+      line: "Moving to a new server… back in a few minutes",
+      named: "{{computer}} is moving to a new server… back in a few minutes",
+    },
     online: "Online",
     offline: "Offline",
     execOff: "Commands off",

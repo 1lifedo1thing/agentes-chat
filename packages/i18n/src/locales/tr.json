@@ -16207,6 +16207,11 @@
       "hint": "Ajanlar gezinirken sitelerin gördüğü adres. Bilgisayarın ağı değişince güncellenir.",
       "waiting": "Ajanların internet bağlantısı yeniden kuruluyor. Bağlantıları geri gelene kadar bekler."
     },
+    "moving": {
+      "short": "Sunucu değiştiriyor",
+      "line": "Yeni bir sunucuya taşınıyor… birkaç dakika içinde döner",
+      "named": "{{computer}} yeni bir sunucuya taşınıyor… birkaç dakika içinde döner"
+    },
     "online": "Çevrimiçi",
     "offline": "Çevrimdışı",
     "execOff": "Komutlar kapalı",

@@ -16841,6 +16841,11 @@
       "hint": "L’indirizzo che i siti vedono quando gli agenti navigano. Si aggiorna quando cambia la rete del computer.",
       "waiting": "Gli agenti si stanno ricollegando a internet. Le loro connessioni aspettano che torni."
     },
+    "moving": {
+      "short": "Cambio server",
+      "line": "Si sta spostando su un nuovo server… torna tra pochi minuti",
+      "named": "{{computer}} si sta spostando su un nuovo server… torna tra pochi minuti"
+    },
     "online": "Online",
     "offline": "Offline",
     "execOff": "Comandi disattivati",
