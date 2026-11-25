@@ -31,7 +31,7 @@ export const channelKindEnum = pgEnum("channel_kind", ["channel", "dm", "forum",
 export type ChannelKind = Exclude<(typeof channelKindEnum.enumValues)[number], "forum">;
 
 /**
- * Unused since migration 0347 (ADR 0240): each category became a sector (`agent_groups`) and its channels moved
+ * Unused since migration 0352 (ADR 0240): each category became a sector (`agent_groups`) and its channels moved
  * there (`channels.group_id`). Kept until no running version reads it, then dropped in a later migration.
  */
 export const channelCategories = pgTable(
@@ -79,7 +79,7 @@ export const channels = pgTable(
      * job and the row stays as a tombstone, named `deleted-<id>`, for its runs, usage and audit. Never undone.
      */
     deletedAt: timestamp({ withTimezone: true }),
-    /** Unused since migration 0347 (ADR 0240): read `groupId`. Dropped once no running version reads it. */
+    /** Unused since migration 0352 (ADR 0240): read `groupId`. Dropped once no running version reads it. */
     categoryId: uuid().references(() => channelCategories.id, { onDelete: "set null" }),
     /** Its sector (ADR 0240; channels only); null: under Canais, with none. Deleting the sector clears it. */
     groupId: uuid().references(() => agentGroups.id, { onDelete: "set null" }),

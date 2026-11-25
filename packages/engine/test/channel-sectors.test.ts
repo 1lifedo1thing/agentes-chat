@@ -38,7 +38,7 @@ async function sector(name: string, channelIds: string[] = []) {
   return made;
 }
 
-test("migration 0347: each channel category joins the sector of its name, ignoring case, or becomes a new one", async () => {
+test("migration 0352: each channel category joins the sector of its name, ignoring case, or becomes a new one", async () => {
   const [other] = await f.db.insert(schema.organizations).values({ name: "Other" }).returning();
   const otherOrg = other?.id ?? "";
   const support = await sector("suporte");
@@ -62,7 +62,7 @@ test("migration 0347: each channel category joins the sector of its name, ignori
   const loose = await channel(f.org.id, "anuncios", null);
   const theirChannel = await channel(otherOrg, "help", theirs);
 
-  const file = await Bun.file(new URL("../../db/migrations/0347_channels_in_sectors.sql", import.meta.url)).text();
+  const file = await Bun.file(new URL("../../db/migrations/0352_channels_in_sectors.sql", import.meta.url)).text();
   const data = file
     .split("--> statement-breakpoint")
     .filter((s) => /INSERT INTO "agent_groups"|UPDATE "channels"/.test(s));

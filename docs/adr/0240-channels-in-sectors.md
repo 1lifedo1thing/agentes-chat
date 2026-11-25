@@ -4,7 +4,7 @@
 - Date: 2026-11-25
 - Amends: ADR 0080 (channel categories go away; their placing rules move to sectors), ADR 0083 and its 2026-11-04
   amendment (a sector holds channels as well as agents)
-- Code: db `packages/db/src/schema/chat.ts` (`channels.group_id`, migration `0347_channels_in_sectors`); engine
+- Code: db `packages/db/src/schema/chat.ts` (`channels.group_id`, migration `0352_channels_in_sectors`); engine
   `channel-sectors.ts` (`placeChannel`, `endOfSector`, `channelsInSector`), `channels.ts` (`createChannel`,
   `listChannels`), `agent-groups.ts` (`createAgentGroup` with `channelIds`, `deleteAgentGroup`, `listAgentGroups`);
   server `routes/app/channels.ts`, `chat.ts`, `agents.ts`; client `api/queries.ts` (`usePlaceChannel`,
@@ -23,7 +23,7 @@ the sidebar, once for the agents and once for the channels, and moving a team me
 1. **A channel belongs to at most one sector.** `channels.group_id` points at `agent_groups` (on delete, set null);
    `channels.position` is its order inside the sector, or among the channels in none, as it was inside a category.
    Channel categories go away: no screen, route or API creates, renames, orders or deletes them.
-2. **Migration 0347.** Each channel category joins the sector of the same name in its workspace, ignoring case, or
+2. **Migration 0352.** Each channel category joins the sector of the same name in its workspace, ignoring case, or
    becomes a new sector after the others, in the categories' order, each new one in the next of the roles' colors.
    Its channels move there with their order. `channel_categories` and `channels.category_id` stay in the database,
    read by nothing, until a later migration drops them once no running version reads them. Older phone builds still
