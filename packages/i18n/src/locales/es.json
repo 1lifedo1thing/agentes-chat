@@ -719,6 +719,8 @@
       "confirmNo": "No fui yo",
       "done": "Todo listo.",
       "doneLead": "Iniciaste sesión en la app de agentes. Puedes cerrar esta pestaña.",
+      "back": "Volviendo a la app.",
+      "openApp": "Abrir la app",
       "expired": "Esta solicitud venció.",
       "expiredLead": "Vuelve a la app y elige {{provider}} de nuevo.",
       "handover": "Iniciando sesión con tu cuenta del otro dispositivo…",
@@ -1256,7 +1258,7 @@
         "fileLead": "El archivo de cualquier app que conocemos. Se reconoce solo.",
         "paths": {
           "lead": "Elige cómo traerlos. Revisas todo antes de que se cree nada.",
-          "best": "el más completo",
+          "best": "El más completo",
           "safe": "Las claves, contraseñas y sesiones de {{app}} nunca vienen, por ningún camino.",
           "command": {
             "title": "Con un comando",
@@ -4520,6 +4522,7 @@
     "available": "Disponible",
     "working": "Trabajando",
     "waiting": "Esperándote",
+    "idle": "Inactivo",
     "lower": {
       "online": "en línea",
       "away": "ausente",
@@ -19047,6 +19050,12 @@
       "thinking": "Pensando…",
       "held": "Esperando aprobación…",
       "said": "«{{text}}»"
+    },
+    "trail": {
+      "label": "Lo que {{name}} hizo hasta ahora",
+      "earlier_one": "{{count}} paso anterior",
+      "earlier_many": "{{count}} pasos anteriores",
+      "earlier_other": "{{count}} pasos anteriores"
     },
     "consult": {
       "asking": "{{from}} le está preguntando a {{to}}",

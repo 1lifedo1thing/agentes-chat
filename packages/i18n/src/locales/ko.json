@@ -689,6 +689,8 @@
       "confirmNo": "제가 한 게 아니에요",
       "done": "모두 끝났어요.",
       "doneLead": "agentes 앱에 로그인했어요. 이 탭은 닫아도 돼요.",
+      "back": "앱으로 돌아가는 중입니다.",
+      "openApp": "앱 열기",
       "expired": "이 요청은 만료됐어요.",
       "expiredLead": "앱으로 돌아가 {{provider}}을(를) 다시 선택하세요.",
       "handover": "다른 기기의 계정으로 로그인하는 중…",
@@ -4204,6 +4206,7 @@
     "available": "응답 가능",
     "working": "작업 중",
     "waiting": "내 확인 대기",
+    "idle": "비활성",
     "lower": {
       "online": "온라인",
       "away": "자리 비움",
@@ -17914,6 +17917,10 @@
       "thinking": "생각 중…",
       "held": "승인 대기 중…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}}이(가) 지금까지 한 일",
+      "earlier_other": "이전 단계 {{count}}개"
     },
     "consult": {
       "asking": "{{from}}이(가) {{to}}에게 묻는 중",

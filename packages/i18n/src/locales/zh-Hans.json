@@ -689,6 +689,8 @@
       "confirmNo": "不是我",
       "done": "全部就绪。",
       "doneLead": "你已登录 agentes 应用，可以关闭这个标签页了。",
+      "back": "正在返回应用。",
+      "openApp": "打开应用",
       "expired": "这个请求已过期。",
       "expiredLead": "请返回应用，重新选择 {{provider}}。",
       "handover": "正在用另一台设备上的账号登录…",
@@ -4206,6 +4208,7 @@
     "available": "空闲",
     "working": "工作中",
     "waiting": "等你处理",
+    "idle": "无活动",
     "lower": {
       "online": "在线",
       "away": "离开",
@@ -17985,6 +17988,10 @@
       "thinking": "思考中…",
       "held": "等待审批…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "{{name}} 目前做了什么",
+      "earlier_other": "之前的 {{count}} 步"
     },
     "consult": {
       "asking": "{{from}} 正在询问 {{to}}",

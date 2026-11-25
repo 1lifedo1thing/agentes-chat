@@ -719,6 +719,8 @@
       "confirmNo": "Ce n'était pas moi",
       "done": "Tout est prêt.",
       "doneLead": "Vous êtes connecté à l'app agentes. Vous pouvez fermer cet onglet.",
+      "back": "Retour à l'app.",
+      "openApp": "Ouvrir l'app",
       "expired": "Cette demande a expiré.",
       "expiredLead": "Retournez dans l'app et choisissez de nouveau {{provider}}.",
       "handover": "Connexion avec votre compte depuis l'autre appareil…",
@@ -1257,7 +1259,7 @@
         "fileLead": "Le fichier de n'importe quelle app que nous connaissons. Il est reconnu tout seul.",
         "paths": {
           "lead": "Choisissez comment les importer. Vous vérifiez tout avant que rien ne soit créé.",
-          "best": "le plus complet",
+          "best": "Le plus complet",
           "safe": "Les clés, mots de passe et sessions de {{app}} ne viennent jamais, quel que soit le chemin.",
           "command": {
             "title": "Avec une commande",
@@ -4525,6 +4527,7 @@
     "available": "Disponible",
     "working": "Au travail",
     "waiting": "Vous attend",
+    "idle": "Inactif",
     "lower": {
       "online": "en ligne",
       "away": "absent",
@@ -19121,6 +19124,12 @@
       "thinking": "Réflexion…",
       "held": "En attente d'approbation…",
       "said": "« {{text}} »"
+    },
+    "trail": {
+      "label": "Ce que {{name}} a fait jusqu’ici",
+      "earlier_one": "{{count}} étape précédente",
+      "earlier_many": "{{count}} étapes précédentes",
+      "earlier_other": "{{count}} étapes précédentes"
     },
     "consult": {
       "asking": "{{from}} interroge {{to}}",

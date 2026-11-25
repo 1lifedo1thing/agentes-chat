@@ -730,6 +730,8 @@ export const ptBR = {
       confirmNo: "Não fui eu",
       done: "Tudo certo.",
       doneLead: "Você entrou no app agentes. Pode fechar esta aba.",
+      back: "Voltando para o app.",
+      openApp: "Abrir o app",
       expired: "Esse pedido expirou.",
       expiredLead: "Volte ao app e escolha {{provider}} de novo.",
       handover: "Entrando com a sua conta do outro aparelho…",
@@ -1276,7 +1278,7 @@ export const ptBR = {
         fileLead: "O arquivo de qualquer app que a gente conhece. Ele é reconhecido sozinho.",
         paths: {
           lead: "Escolha como trazer. Você confere tudo antes de criar.",
-          best: "o mais completo",
+          best: "O mais completo",
           safe: "Chaves, senhas e sessões do {{app}} nunca vêm, por nenhum caminho.",
           command: {
             title: "Com um comando",
@@ -4619,6 +4621,8 @@ export const ptBR = {
     available: "Disponível",
     working: "Trabalhando",
     waiting: "Esperando você",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Inativo",
     lower: {
       online: "online",
       away: "ausente",
@@ -18976,6 +18980,13 @@ export const ptBR = {
       held: "Esperando aprovação…",
       /** The agent's own words for its step (what it wrote before the call), quoted. */
       said: "“{{text}}”",
+    },
+    /** Under an agent at work, the last row of the conversation: what it did so far, a few lines, older ones as "+N". */
+    trail: {
+      label: "O que o {{name}} fez até agora",
+      label_female: "O que a {{name}} fez até agora",
+      earlier_one: "{{count}} passo antes",
+      earlier_other: "{{count}} passos antes",
     },
     /** The working line while an agent asks another one (names come in bold). */
     consult: {

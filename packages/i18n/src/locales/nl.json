@@ -704,6 +704,8 @@
       "confirmNo": "Dit was ik niet",
       "done": "Helemaal klaar.",
       "doneLead": "Je bent ingelogd in de agentes-app. Je kunt dit tabblad sluiten.",
+      "back": "Terug naar de app.",
+      "openApp": "App openen",
       "expired": "Dit verzoek is verlopen.",
       "expiredLead": "Ga terug naar de app en kies opnieuw {{provider}}.",
       "handover": "Inloggen met je account van het andere apparaat…",
@@ -1228,7 +1230,7 @@
         "fileLead": "Het bestand uit elke app die we kennen. Het wordt vanzelf herkend.",
         "paths": {
           "lead": "Kies hoe je ze ophaalt. Je controleert alles voordat er iets wordt aangemaakt.",
-          "best": "het meest volledig",
+          "best": "Het meest volledig",
           "safe": "Sleutels, wachtwoorden en sessies uit {{app}} komen nooit mee, welke weg je ook kiest.",
           "command": {
             "title": "Met een opdracht",
@@ -4376,6 +4378,7 @@
     "available": "Beschikbaar",
     "working": "Bezig",
     "waiting": "Wacht op jou",
+    "idle": "Inactief",
     "lower": {
       "online": "online",
       "away": "afwezig",
@@ -18606,6 +18609,11 @@
       "thinking": "Denkt na…",
       "held": "Wacht op goedkeuring…",
       "said": "‘{{text}}’"
+    },
+    "trail": {
+      "label": "Wat {{name}} tot nu toe deed",
+      "earlier_one": "{{count}} eerdere stap",
+      "earlier_other": "{{count}} eerdere stappen"
     },
     "consult": {
       "asking": "{{from}} vraagt {{to}} iets",

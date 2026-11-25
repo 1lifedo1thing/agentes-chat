@@ -689,6 +689,8 @@
       "confirmNo": "Ini bukan aku",
       "done": "Beres.",
       "doneLead": "Kamu sudah masuk di aplikasi agentes. Kamu bisa menutup tab ini.",
+      "back": "Kembali ke aplikasi.",
+      "openApp": "Buka aplikasi",
       "expired": "Permintaan ini sudah kedaluwarsa.",
       "expiredLead": "Kembali ke aplikasi lalu pilih {{provider}} lagi.",
       "handover": "Masuk dengan akunmu dari perangkat lain…",
@@ -1201,7 +1203,7 @@
         "fileLead": "File dari aplikasi apa pun yang kami kenal. File itu dikenali dengan sendirinya.",
         "paths": {
           "lead": "Pilih cara membawanya. Kamu memeriksa semuanya sebelum apa pun dibuat.",
-          "best": "paling lengkap",
+          "best": "Paling lengkap",
           "safe": "Kunci, kata sandi, dan sesi {{app}} tidak pernah ikut, lewat cara apa pun.",
           "command": {
             "title": "Dengan perintah",
@@ -4222,6 +4224,7 @@
     "available": "Tersedia",
     "working": "Sedang bekerja",
     "waiting": "Menunggumu",
+    "idle": "Tidak aktif",
     "lower": {
       "online": "online",
       "away": "sedang pergi",
@@ -17981,6 +17984,10 @@
       "thinking": "Berpikir…",
       "held": "Menunggu persetujuan…",
       "said": "“{{text}}”"
+    },
+    "trail": {
+      "label": "Yang sudah dikerjakan {{name}}",
+      "earlier_other": "{{count}} langkah sebelumnya"
     },
     "consult": {
       "asking": "{{from}} sedang bertanya ke {{to}}",
