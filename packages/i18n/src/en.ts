@@ -656,6 +656,12 @@ export const en = {
       banner: "Confirm your email",
       bannerSub: "Open the link we sent to {{email}}.",
       change: "Change address",
+      // The last link to the address could never be delivered: why, said where the person waits for it.
+      undelivered: {
+        suppressed:
+          "The email wasn't delivered: the mail provider blocked {{email}} after an earlier bounce. Check the address is right and ask for a new link.",
+        rejected: "The email wasn't delivered: {{email}} was refused. Check the address is right, or change it.",
+      },
     },
     unconfirmed:
       "This email already has an account with a password that isn't confirmed yet. Sign in with the password, or create a new one by email.",
@@ -8276,6 +8282,12 @@ export const en = {
       expires: "Expires in {{left}}",
       expired: "Expired {{when}}",
       resentState: "Sent again · works until {{date}}",
+      // Its last email could never be delivered: why, on its row, beside Copy link and Resend.
+      undelivered: {
+        suppressed:
+          "Not delivered: the mail provider blocked this address after an earlier bounce. Check it's right and resend, or copy the link.",
+        rejected: "Not delivered: the address was refused. Check it's right, or copy the link and send it another way.",
+      },
       copied: "Link to {{email}}'s invitation copied. It's the same as in the email.",
       copiedNoEmail: "Link to {{email}}'s invitation copied.",
       resent: "Sent to {{email}} again. The link is the same and works until {{date}}.",

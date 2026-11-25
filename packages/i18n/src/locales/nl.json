@@ -626,7 +626,11 @@
       "wrongAddress": "Verkeerd adres? Wijzig het",
       "banner": "Bevestig je e-mail",
       "bannerSub": "Open de link die we naar {{email}} hebben gestuurd.",
-      "change": "Adres wijzigen"
+      "change": "Adres wijzigen",
+      "undelivered": {
+        "suppressed": "De e-mail kwam niet aan: de e-mailprovider heeft {{email}} geblokkeerd na een eerdere bounce. Controleer of het adres klopt en vraag een nieuwe link aan.",
+        "rejected": "De e-mail kwam niet aan: {{email}} werd geweigerd. Controleer of het adres klopt, of wijzig het."
+      }
     },
     "unconfirmed": "Dit e-mailadres heeft al een account met een wachtwoord dat nog niet is bevestigd. Log in met het wachtwoord of maak een nieuw wachtwoord via e-mail.",
     "unconfirmedReset": "Nieuw wachtwoord maken",
@@ -7746,6 +7750,10 @@
       "expires": "Verloopt over {{left}}",
       "expired": "Verlopen {{when}}",
       "resentState": "Opnieuw verstuurd · geldig tot {{date}}",
+      "undelivered": {
+        "suppressed": "Niet aangekomen: de e-mailprovider heeft dit adres geblokkeerd na een eerdere bounce. Controleer of het klopt en stuur opnieuw, of kopieer de link.",
+        "rejected": "Niet aangekomen: het adres werd geweigerd. Controleer of het klopt, of kopieer de link en stuur hem op een andere manier."
+      },
       "copied": "Link naar de uitnodiging van {{email}} gekopieerd. Het is dezelfde als in de e-mail.",
       "copiedNoEmail": "Link naar de uitnodiging van {{email}} gekopieerd.",
       "resent": "Opnieuw verstuurd naar {{email}}. De link is dezelfde en werkt tot {{date}}.",

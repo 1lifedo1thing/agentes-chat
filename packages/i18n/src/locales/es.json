@@ -641,7 +641,11 @@
       "wrongAddress": "¿Dirección incorrecta? Cámbiala",
       "banner": "Confirma tu correo",
       "bannerSub": "Abre el enlace que enviamos a {{email}}.",
-      "change": "Cambiar dirección"
+      "change": "Cambiar dirección",
+      "undelivered": {
+        "suppressed": "El correo no llegó: el proveedor de correo bloqueó {{email}} tras un rebote anterior. Revisa que la dirección sea correcta y pide un enlace nuevo.",
+        "rejected": "El correo no llegó: se rechazó {{email}}. Revisa que la dirección sea correcta o cámbiala."
+      }
     },
     "unconfirmed": "Este correo ya tiene una cuenta con una contraseña que todavía no está confirmada. Inicia sesión con la contraseña o crea una nueva por correo.",
     "unconfirmedReset": "Crear una nueva contraseña",
@@ -7930,6 +7934,10 @@
       "expires": "Vence en {{left}}",
       "expired": "Venció {{when}}",
       "resentState": "Reenviada · vale hasta el {{date}}",
+      "undelivered": {
+        "suppressed": "No llegó: el proveedor de correo bloqueó esta dirección tras un rebote anterior. Revisa que sea correcta y reenvía, o copia el enlace.",
+        "rejected": "No llegó: se rechazó la dirección. Revisa que sea correcta, o copia el enlace y envíalo de otra forma."
+      },
       "copied": "Enlace de la invitación de {{email}} copiado. Es el mismo del correo.",
       "copiedNoEmail": "Enlace de la invitación de {{email}} copiado.",
       "resent": "Reenviada a {{email}}. El enlace es el mismo y vale hasta el {{date}}.",

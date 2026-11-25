@@ -611,7 +611,11 @@
       "wrongAddress": "地址不对？更改",
       "banner": "请确认邮箱",
       "bannerSub": "打开我们发送到 {{email}} 的链接。",
-      "change": "更改地址"
+      "change": "更改地址",
+      "undelivered": {
+        "suppressed": "邮件没有送达：由于之前的退信，邮件服务商已停止向 {{email}} 发送。请确认地址无误，然后申请新链接。",
+        "rejected": "邮件没有送达：{{email}} 被拒收。请确认地址无误，或换一个地址。"
+      }
     },
     "unconfirmed": "这个邮箱已有一个账号，其密码尚未确认。请用密码登录，或通过邮件设置新密码。",
     "unconfirmedReset": "设置新密码",
@@ -7452,6 +7456,10 @@
       "expires": "{{left}}后过期",
       "expired": "{{when}}已过期",
       "resentState": "已重新发送 · 有效期至 {{date}}",
+      "undelivered": {
+        "suppressed": "未送达：由于之前的退信，邮件服务商已停止向此地址发送。请确认地址无误后重新发送，或复制链接。",
+        "rejected": "未送达：此地址被拒收。请确认地址无误，或复制链接用其他方式发送。"
+      },
       "copied": "已复制 {{email}} 的邀请链接。与邮件中的链接相同。",
       "copiedNoEmail": "已复制 {{email}} 的邀请链接。",
       "resent": "已再次发送给 {{email}}。链接不变，有效期至 {{date}}。",

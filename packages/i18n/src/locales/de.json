@@ -626,7 +626,11 @@
       "wrongAddress": "Falsche Adresse? Ändern",
       "banner": "Bestätige deine E-Mail",
       "bannerSub": "Öffne den Link, den wir an {{email}} gesendet haben.",
-      "change": "Adresse ändern"
+      "change": "Adresse ändern",
+      "undelivered": {
+        "suppressed": "Die E-Mail kam nicht an: Der E-Mail-Anbieter hat {{email}} nach einer früheren Rückweisung gesperrt. Prüfe, ob die Adresse stimmt, und fordere einen neuen Link an.",
+        "rejected": "Die E-Mail kam nicht an: {{email}} wurde abgelehnt. Prüfe, ob die Adresse stimmt, oder ändere sie."
+      }
     },
     "unconfirmed": "Für diese E-Mail gibt es schon ein Konto mit einem Passwort, das noch nicht bestätigt ist. Melde dich mit dem Passwort an oder erstelle per E-Mail ein neues.",
     "unconfirmedReset": "Neues Passwort erstellen",
@@ -7708,6 +7712,10 @@
       "expires": "Läuft ab in {{left}}",
       "expired": "Abgelaufen {{when}}",
       "resentState": "Erneut gesendet · gilt bis {{date}}",
+      "undelivered": {
+        "suppressed": "Nicht angekommen: Der E-Mail-Anbieter hat diese Adresse nach einer früheren Rückweisung gesperrt. Prüfe, ob sie stimmt, und sende erneut, oder kopiere den Link.",
+        "rejected": "Nicht angekommen: Die Adresse wurde abgelehnt. Prüfe, ob sie stimmt, oder kopiere den Link und schicke ihn anders."
+      },
       "copied": "Link zur Einladung von {{email}} kopiert. Es ist derselbe wie in der E-Mail.",
       "copiedNoEmail": "Link zur Einladung von {{email}} kopiert.",
       "resent": "Erneut an {{email}} gesendet. Der Link bleibt gleich und gilt bis {{date}}.",

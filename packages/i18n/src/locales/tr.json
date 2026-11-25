@@ -626,7 +626,11 @@
       "wrongAddress": "Adres yanlış mı? Değiştirin",
       "banner": "E-postanızı onaylayın",
       "bannerSub": "{{email}} adresine gönderdiğimiz bağlantıyı açın.",
-      "change": "Adresi değiştir"
+      "change": "Adresi değiştir",
+      "undelivered": {
+        "suppressed": "E-posta ulaşmadı: e-posta sağlayıcısı önceki bir geri dönmeden sonra {{email}} adresini engelledi. Adresin doğru olduğunu kontrol edip yeni bağlantı iste.",
+        "rejected": "E-posta ulaşmadı: {{email}} reddedildi. Adresin doğru olduğunu kontrol et ya da değiştir."
+      }
     },
     "unconfirmed": "Bu e-postanın, şifresi henüz doğrulanmamış bir hesabı zaten var. Şifreyle giriş yapın veya e-postayla yeni bir şifre oluşturun.",
     "unconfirmedReset": "Yeni şifre oluştur",
@@ -7663,6 +7667,10 @@
       "expires": "{{left}} içinde sona eriyor",
       "expired": "Süresi doldu: {{when}}",
       "resentState": "Tekrar gönderildi · {{date}} tarihine kadar geçerli",
+      "undelivered": {
+        "suppressed": "Ulaşmadı: e-posta sağlayıcısı önceki bir geri dönmeden sonra bu adresi engelledi. Doğru olduğunu kontrol edip yeniden gönder ya da bağlantıyı kopyala.",
+        "rejected": "Ulaşmadı: adres reddedildi. Doğru olduğunu kontrol et ya da bağlantıyı kopyalayıp başka yoldan gönder."
+      },
       "copied": "{{email}} davetinin bağlantısı kopyalandı. E-postadakiyle aynı.",
       "copiedNoEmail": "{{email}} davetinin bağlantısı kopyalandı.",
       "resent": "{{email}} adresine tekrar gönderildi. Bağlantı aynı ve {{date}} tarihine kadar geçerli.",
