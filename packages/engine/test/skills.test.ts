@@ -16,7 +16,9 @@ import {
   getSkill,
   getSkillFile,
   importPickedSkills,
+  importPickedZipSkills,
   importSkillFromUrl,
+  importSkillsZip,
   importSkillZip,
   listAgentScopes,
   listConnections,
@@ -499,6 +501,38 @@ describe("import", () => {
       importPickedSkills(deps, f.owner.id, f.org.id, url, ["skills/search", "plugins/kit/skills/search"]),
     ).rejects.toMatchObject({ code: "skill.picked_twice", params: { name: "search" } });
     expect(await listSkills(f.db, f.owner.id, f.org.id)).toEqual([]);
+  });
+
+  test("a repository of 150 skills lists every one to pick: no cap short of a thousand", async () => {
+    f = await setup();
+    const files: Record<string, string> = {};
+    for (let i = 0; i < 150; i++) files[`skills-main/s${i}/SKILL.md`] = `---\nname: s${i}\ndescription: x\n---\n`;
+    const deps = { ...skillDeps(), fetch: fakeGithub({ archive: zip(files) }).fetch };
+    const listed = await importSkillFromUrl(deps, f.owner.id, f.org.id, "https://github.com/acme/skills");
+    expect("choices" in listed && listed.choices.length).toBe(150);
+  });
+
+  test("a .zip of several skills lists them to pick, nothing installed; the ones picked install from it", async () => {
+    f = await setup();
+    const kit = zip({
+      "kit/skills/deploy/SKILL.md": "---\nname: deploy\ndescription: Antes de qualquer deploy.\n---\n# Deploy",
+      "kit/skills/deploy/run.sh": "echo",
+      "kit/skills/review/SKILL.md": "---\nname: review\ndescription: Revisa um pull request.\n---\n# Review",
+      "__MACOSX/kit/skills/review/._SKILL.md": "x",
+    });
+    const listed = await importSkillsZip(skillDeps(), f.owner.id, f.org.id, kit);
+    expect("choices" in listed && listed.choices).toEqual([
+      { path: "kit/skills/deploy", name: "deploy", description: "Antes de qualquer deploy." },
+      { path: "kit/skills/review", name: "review", description: "Revisa um pull request." },
+    ]);
+    expect(await listSkills(f.db, f.owner.id, f.org.id)).toEqual([]);
+    const installed = await importPickedZipSkills(skillDeps(), f.owner.id, f.org.id, kit, ["kit/skills/deploy"]);
+    expect(installed.map((k) => [k.name, k.source, k.files.map((x) => x.path)])).toEqual([
+      ["deploy", "upload", ["run.sh"]],
+    ]);
+    await expect(
+      importPickedZipSkills(skillDeps(), f.owner.id, f.org.id, kit, ["kit/skills/nope"]),
+    ).rejects.toBeInstanceOf(ValidationError);
   });
 
   test("a repository of 40,000 one-file skill folders is refused for holding too many in a moment", async () => {

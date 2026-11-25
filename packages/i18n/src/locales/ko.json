@@ -10167,6 +10167,7 @@
       "app": "GitHub App이 접근할 수 없어요. {{owner}}의 앱에 저장소를 추가하거나 GitHub를 연결하세요."
     },
     "pickLead_other": "이 링크에는 스킬 {{count}}개가 있어요. 설치할 스킬을 고르세요.",
+    "pickLeadZip_other": "이 .zip에는 스킬 {{count}}개가 있어요. 설치할 스킬을 고르세요.",
     "pickAll": "전체",
     "pickMissing": "스킬을 하나 이상 고르세요.",
     "pickSkipped": "설치할 수 없어요. {{reason}}",
@@ -10174,7 +10175,8 @@
     "pickReplacesRemoved": "삭제된 {{name}} 스킬을 대체해요",
     "forAgent_other": "{{agent}}에게 켜기",
     "installedMany": "스킬 {{count}}개를 설치했어요.",
-    "zipHelp": "스킬 폴더를 압축한 .zip, 최대 {{max}}MB예요.",
+    "zipHelp": "스킬 하나 또는 여러 개의 폴더를 압축한 .zip, 최대 {{max}}MB예요.",
+    "zipManyHere_other": "이 .zip에는 스킬 {{count}}개가 있어요. 설치할 스킬은 컴퓨터의 스킬에서 고르세요.",
     "zipAbout": "SKILL.md는 .zip의 최상위나 그 안의 유일한 폴더에 있어야 해요. 스킬은 텍스트를 {{text}}MB까지, 이미지와 다른 파일을 {{assets}}MB까지 보관해요.",
     "zipTooLarge": "{{name}}의 크기는 {{size}}예요. 스킬의 .zip은 최대 {{max}}MB까지 가능해요.",
     "zipUseLink": "GitHub 링크 사용",
@@ -15720,6 +15722,7 @@
     "skill": {
       "noSkillMd": "{{path}}나 그 안의 폴더에 SKILL.md가 없어요.",
       "tooManySkills": "이 링크에는 스킬이 {{max}}개보다 많아요. 폴더 하나를 링크하세요.",
+      "zipTooManySkills": "이 .zip에는 스킬이 {{max}}개보다 많아요. 나눠서 보내세요.",
       "invalidName": "이름에는 영문 소문자, 숫자, 하이픈만 쓸 수 있고 최대 {{max}}자예요.",
       "invalidDescription": "설명은 1~{{max}}자여야 해요.",
       "tooLarge": "이 스킬의 텍스트와 스크립트는 {{size}}MB이고, 한도는 {{max}}MB예요.",

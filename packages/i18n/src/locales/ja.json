@@ -10173,6 +10173,7 @@
       "app": "GitHub Appからアクセスできません。{{owner}}のアプリにリポジトリを追加するか、GitHubを接続してください。"
     },
     "pickLead_other": "このリンクには{{count}}件のスキルがあります。インストールするものを選んでください。",
+    "pickLeadZip_other": "この.zipには{{count}}件のスキルがあります。インストールするものを選んでください。",
     "pickAll": "すべて",
     "pickMissing": "スキルを1つ以上選んでください。",
     "pickSkipped": "インストールできません。{{reason}}",
@@ -10180,7 +10181,8 @@
     "pickReplacesRemoved": "削除されたスキル {{name}} を置き換えます",
     "forAgent_other": "{{agent}} でオンにする",
     "installedMany": "{{count}}件のスキルをインストールしました。",
-    "zipHelp": "スキルのフォルダの.zip（最大{{max}} MB）。",
+    "zipHelp": "1つまたは複数のスキルのフォルダの.zip（最大{{max}} MB）。",
+    "zipManyHere_other": "この.zipには{{count}}件のスキルがあります。インストールするものを選ぶには、パソコンの「スキル」から行ってください。",
     "zipAbout": "SKILL.mdは.zipの最上位か、その中の唯一のフォルダに置きます。スキルが保持できるのはテキスト{{text}} MBまでと、画像などのファイル{{assets}} MBまでです。",
     "zipTooLarge": "{{name}}は{{size}}です。スキルの.zipは{{max}} MBまでです。",
     "zipUseLink": "GitHubのリンクを使う",
@@ -15726,6 +15728,7 @@
     "skill": {
       "noSkillMd": "{{path}}とその中のフォルダにSKILL.mdがありません。",
       "tooManySkills": "このリンクには{{max}}個を超えるスキルがあります。いずれかのフォルダをリンクしてください。",
+      "zipTooManySkills": "この.zipには{{max}}個を超えるスキルがあります。いくつかに分けて送ってください。",
       "invalidName": "名前には小文字、数字、ハイフンを使い、{{max}}文字以内にしてください。",
       "invalidDescription": "説明は1〜{{max}}文字にしてください。",
       "tooLarge": "このスキルのテキストとスクリプトは{{size}} MBで、上限は{{max}} MBです。",

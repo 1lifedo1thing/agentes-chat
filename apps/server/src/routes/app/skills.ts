@@ -13,8 +13,9 @@ import {
   getSkillFile,
   getSkillSettings,
   importPickedSkills,
+  importPickedZipSkills,
   importSkillFromUrl,
-  importSkillZip,
+  importSkillsZip,
   listSkills,
   NotFoundError,
   parseSkillMarkdown,
@@ -24,6 +25,7 @@ import {
   revertSkillChange,
   rewriteSkill,
   SKILL_LIMITS,
+  SKILLS_PER_ARCHIVE,
   type SkillDeps,
   saveDraftedSkill,
   saveSkill,
@@ -406,7 +408,7 @@ export function skillRoutes(deps: AppDeps) {
       tags,
       security,
       summary:
-        "Import a skill: a GitHub link (a skill's folder or a file in it, or a folder holding several to pick from) or a zip of the folder (base64)",
+        "Import a skill: a GitHub link (a skill's folder or a file in it, or a folder holding several to pick from) or a zip of the folder, or of several to pick from (base64)",
       description:
         "A private repository (github.com answers 404) is read through the workspace's GitHub: the GitHub App's token for it, else the GitHub connection's, never sent to the app. `github.repo_missing` says in `connection` how the GitHub connection fared (`none`; `refused`: GitHub no longer takes its token; `ok`: it works and can't see the repository) and in `app` whether the GitHub App is installed on some account for the workspace. `github.unreachable`: GitHub didn't answer, try again.",
       request: {
@@ -418,7 +420,7 @@ export function skillRoutes(deps: AppDeps) {
               paths: z
                 .array(z.string().max(500))
                 .min(1)
-                .max(100)
+                .max(SKILLS_PER_ARCHIVE)
                 .optional()
                 .openapi({ description: "The skills picked among the link's `choices` (their `path`)." }),
               list: z.boolean().optional().openapi({
@@ -435,8 +437,14 @@ export function skillRoutes(deps: AppDeps) {
                 .string()
                 .max(SKILL_ZIP_BASE64_CHARS)
                 .openapi({
-                  description: `The skill folder as a zip, base64 (≤ ${SKILL_LIMITS.maxBytes / 1024 / 1024} MB of text and scripts and ${SKILL_LIMITS.assetBytes / 1024 / 1024} MB of other files unzipped).`,
+                  description: `A skill's folder as a zip, or several skills' folders, base64 (each skill ≤ ${SKILL_LIMITS.maxBytes / 1024 / 1024} MB of text and scripts and ${SKILL_LIMITS.assetBytes / 1024 / 1024} MB of other files unzipped).`,
                 }),
+              paths: z
+                .array(z.string().max(500))
+                .min(1)
+                .max(SKILLS_PER_ARCHIVE)
+                .optional()
+                .openapi({ description: "The skills picked among the zip's `choices` (their `path`)." }),
               personal: Personal,
             }),
           ]),
@@ -449,7 +457,7 @@ export function skillRoutes(deps: AppDeps) {
             skipped: z.array(SkillSkipped).optional(),
             via: z.enum(["github_app", "github"]).optional(),
           }),
-          "The link holds several skills (or `list`): nothing installed, send the ones picked in `paths`. `skipped`: those that can't be installed, with why. `via`: which of the workspace's GitHub connections read it",
+          "The link or the zip holds several skills (or `list`): nothing installed, send the ones picked in `paths` (with the zip again). `skipped`: those that can't be installed, with why. `via`: which of the workspace's GitHub connections read it",
         ),
         201: json(
           z.union([SkillDetail, z.object({ skills: z.array(SkillDetail) })]),
@@ -486,7 +494,14 @@ export function skillRoutes(deps: AppDeps) {
       } catch {
         throw new ValidationError("zipBase64 is not valid base64");
       }
-      return c.json(await importSkillZip(skills(), actor, orgId, zip, { personal: input.personal }), 201);
+      if (input.paths) {
+        const installed = await importPickedZipSkills(skills(), actor, orgId, zip, input.paths, {
+          personal: input.personal,
+        });
+        return c.json({ skills: installed }, 201);
+      }
+      const result = await importSkillsZip(skills(), actor, orgId, zip, { personal: input.personal });
+      return "choices" in result ? c.json(result, 200) : c.json(result, 201);
     },
   );
 

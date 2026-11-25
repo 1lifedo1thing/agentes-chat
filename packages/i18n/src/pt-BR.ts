@@ -11011,6 +11011,8 @@ export const ptBR = {
     },
     pickLead_one: "Este link tem 1 skill. Marque para instalar.",
     pickLead_other: "Este link tem {{count}} skills. Escolha quais instalar.",
+    pickLeadZip_one: "Este .zip tem 1 skill. Marque para instalar.",
+    pickLeadZip_other: "Este .zip tem {{count}} skills. Escolha quais instalar.",
     pickAll: "Todas",
     pickMissing: "Escolha pelo menos uma skill.",
     pickSkipped: "Não dá para instalar. {{reason}}",
@@ -11019,7 +11021,9 @@ export const ptBR = {
     forAgent_one: "Fica ligada para {{agent}}",
     forAgent_other: "Ficam ligadas para {{agent}}",
     installedMany: "{{count}} skills instaladas.",
-    zipHelp: "Um .zip da pasta da skill, até {{max}} MB.",
+    zipHelp: "Um .zip com a pasta de uma skill, ou de várias, até {{max}} MB.",
+    zipManyHere_one: "Este .zip tem 1 skill para escolher. Instale pelo computador, em Skills.",
+    zipManyHere_other: "Este .zip tem {{count}} skills. Para escolher quais instalar, use o computador, em Skills.",
     /** Behind the ⓘ beside `zipHelp`. */
     zipAbout:
       "O SKILL.md fica no topo do .zip, ou na única pasta dele. Uma skill guarda até {{text}} MB de texto e {{assets}} MB de imagens e outros arquivos.",
@@ -16705,6 +16709,7 @@ export const ptBR = {
     skill: {
       noSkillMd: "Nenhum SKILL.md em {{path}} nem nas pastas dentro dela.",
       tooManySkills: "Este link tem mais de {{max}} skills. Use o link de uma das pastas dele.",
+      zipTooManySkills: "Este .zip tem mais de {{max}} skills. Envie em partes.",
       invalidName: "O nome precisa ter só letras minúsculas, números e hífens, até {{max}} caracteres.",
       invalidDescription: "A descrição precisa ter de 1 a {{max}} caracteres.",
       tooLarge: "Esta skill tem {{size}} MB de texto e scripts, e o limite é {{max}} MB.",

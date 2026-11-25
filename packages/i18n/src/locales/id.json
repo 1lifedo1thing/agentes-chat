@@ -10227,6 +10227,7 @@
       "app": "GitHub App tidak bisa menjangkaunya. Tambahkan repositori ke aplikasi di {{owner}} atau hubungkan GitHub."
     },
     "pickLead_other": "Tautan ini berisi {{count}} skill. Pilih yang ingin dipasang.",
+    "pickLeadZip_other": "File .zip ini berisi {{count}} skill. Pilih yang ingin dipasang.",
     "pickAll": "Semua",
     "pickMissing": "Pilih setidaknya satu skill.",
     "pickSkipped": "Tidak bisa dipasang. {{reason}}",
@@ -10234,7 +10235,8 @@
     "pickReplacesRemoved": "Menggantikan skill {{name}} yang sudah dihapus",
     "forAgent_other": "Aktifkan untuk {{agent}}",
     "installedMany": "{{count}} skill terpasang.",
-    "zipHelp": "File .zip dari folder skill, maksimal {{max}} MB.",
+    "zipHelp": "File .zip dari folder satu skill atau beberapa, maksimal {{max}} MB.",
+    "zipManyHere_other": "File .zip ini berisi {{count}} skill. Untuk memilih yang ingin dipasang, gunakan komputer, di Skill.",
     "zipAbout": "SKILL.md ada di bagian teratas .zip, atau di satu-satunya folder di dalamnya. Skill menyimpan hingga {{text}} MB teks dan {{assets}} MB gambar serta file lain.",
     "zipTooLarge": "{{name}} berukuran {{size}}. File .zip skill maksimal {{max}} MB.",
     "zipUseLink": "Pakai tautan GitHub",
@@ -15785,6 +15787,7 @@
     "skill": {
       "noSkillMd": "Tidak ada SKILL.md di {{path}} atau folder di dalamnya.",
       "tooManySkills": "Tautan ini memuat lebih dari {{max}} skill. Tautkan salah satu foldernya.",
+      "zipTooManySkills": "File .zip ini memuat lebih dari {{max}} skill. Kirim dalam beberapa bagian.",
       "invalidName": "Nama harus memakai huruf kecil, angka, dan tanda hubung, maksimal {{max}} karakter.",
       "invalidDescription": "Deskripsi harus terdiri dari 1 sampai {{max}} karakter.",
       "tooLarge": "Skill ini punya {{size}} MB teks dan skrip, dan batasnya {{max}} MB.",

@@ -10216,6 +10216,7 @@
       "app": "GitHub App 无法访问它。请将仓库添加到 {{owner}} 上的应用中，或连接 GitHub。"
     },
     "pickLead_other": "这个链接中有 {{count}} 个技能。请选择要安装的技能。",
+    "pickLeadZip_other": "这个 .zip 中有 {{count}} 个技能。请选择要安装的技能。",
     "pickAll": "全部",
     "pickMissing": "请至少选择一个技能。",
     "pickSkipped": "无法安装。{{reason}}",
@@ -10223,7 +10224,8 @@
     "pickReplacesRemoved": "将替换已移除的技能 {{name}}",
     "forAgent_other": "为 {{agent}} 开启",
     "installedMany": "已安装 {{count}} 个技能。",
-    "zipHelp": "技能文件夹的 .zip，最大 {{max}} MB。",
+    "zipHelp": "一个或多个技能文件夹的 .zip，最大 {{max}} MB。",
+    "zipManyHere_other": "这个 .zip 中有 {{count}} 个技能。请在电脑上的“技能”中选择要安装的技能。",
     "zipAbout": "SKILL.md 位于 .zip 的最上层，或其中唯一的文件夹里。一个技能最多保留 {{text}} MB 文本和 {{assets}} MB 图片及其他文件。",
     "zipTooLarge": "{{name}} 大小为 {{size}}。技能的 .zip 最大 {{max}} MB。",
     "zipUseLink": "使用 GitHub 链接",
@@ -15795,6 +15797,7 @@
     "skill": {
       "noSkillMd": "{{path}} 及其子文件夹中没有 SKILL.md。",
       "tooManySkills": "这个链接包含超过 {{max}} 个技能，请链接到其中一个文件夹。",
+      "zipTooManySkills": "这个 .zip 包含超过 {{max}} 个技能，请分批发送。",
       "invalidName": "名称只能使用小写字母、数字和连字符，最多 {{max}} 个字符。",
       "invalidDescription": "描述需为 1 到 {{max}} 个字符。",
       "tooLarge": "这个技能有 {{size}} MB 的文本和脚本，上限是 {{max}} MB。",

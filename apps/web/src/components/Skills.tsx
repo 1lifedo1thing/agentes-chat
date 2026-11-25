@@ -271,6 +271,13 @@ export function InstallSkillDialog({
   const [skipped, setSkipped] = useState<SkillSkipped[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [via, setVia] = useState<SkillVia | null>(null);
+  /** The .zip whose skills are listed to pick (sent again with the picks); null: the list, if any, is a link's. */
+  const [zipSent, setZipSent] = useState<string | null>(null);
+  /** Out of what was listed: a new link read, a new file, another tab. */
+  const unlist = () => {
+    setChoices(null);
+    setZipSent(null);
+  };
   /** The connected GitHub's repositories in place of the tabs, to read one. */
   const [browsing, setBrowsing] = useState(false);
   /** Connecting GitHub, over the dialog. */
@@ -284,6 +291,12 @@ export function InstallSkillDialog({
     toast.show(t("skills.installed", { name: s.name }));
     onOpenChange(false);
     onInstalled(s.id);
+  };
+  const installedPicked = (installed: unknown) => {
+    const list = installed as SkillDetail[];
+    if (list.length === 1) return done(list[0]);
+    toast.show(t("skills.installedMany", { count: list.length }));
+    onOpenChange(false);
   };
   const pick = (paths: string[], on: boolean) => setPicked(pickSkills(picked, paths, on, choices ?? []));
   const cardLink = forAgentId && forName ? initialUrl?.trim() : undefined;
@@ -337,7 +350,7 @@ export function InstallSkillDialog({
     setForm({ name: "", description: "", body: "" });
     setError(null);
     setHidden(null);
-    setChoices(null);
+    unlist();
     setBrowsing(false);
     setTurnOn(true);
     setScope(startScope ?? "team");
@@ -362,7 +375,7 @@ export function InstallSkillDialog({
     const onError = (e: Error) => setError(errorText(t, e));
     if (tab === "github") {
       if (!githubOk) return setError(t("skills.githubInvalid"));
-      if (!choices) return read(url.trim());
+      if (!choices || zipSent !== null) return read(url.trim());
       if (picked.size === 0) return setError(t("skills.pickMissing"));
       action.mutate(
         {
@@ -372,14 +385,27 @@ export function InstallSkillDialog({
           forAgentId: sendFor(url),
           ...mine,
         },
+        { onSuccess: installedPicked, onError },
+      );
+    } else if (tab === "zip" && choices && zipSent !== null) {
+      if (picked.size === 0) return setError(t("skills.pickMissing"));
+      const stopper = new AbortController();
+      stop.current = stopper;
+      setSending(0);
+      action.mutate(
         {
-          onSuccess: (installed) => {
-            const list = installed as SkillDetail[];
-            if (list.length === 1) return done(list[0]);
-            toast.show(t("skills.installedMany", { count: list.length }));
-            onOpenChange(false);
+          type: "importPickedZip",
+          zipBase64: zipSent,
+          paths: choices.map((c) => c.path).filter((p) => picked.has(p)),
+          ...mine,
+          upload: { signal: stopper.signal, onProgress: setSending },
+        },
+        {
+          onSuccess: installedPicked,
+          onError: (e) => {
+            if (!stopper.signal.aborted) setError(errorText(t, e, i18n.language, { maxMb: SKILL_ZIP_MB }));
           },
-          onError,
+          onSettled: () => setSending(null),
         },
       );
     } else if (tab === "zip") {
@@ -399,7 +425,16 @@ export function InstallSkillDialog({
       action.mutate(
         { type: "import", input: { zipBase64, ...mine }, upload: { signal: stopper.signal, onProgress: setSending } },
         {
-          onSuccess: done,
+          // A .zip of several skills lists them to pick, as a link does; it is sent again with the picks.
+          onSuccess: (result) => {
+            const found = skillPickOf(result);
+            if (!found) return done(result);
+            setZipSent(zipBase64);
+            setChoices(found.choices);
+            setSkipped(found.skipped);
+            setVia(null);
+            setPicked(new Set());
+          },
           onError: (e) => {
             if (!stopper.signal.aborted) setError(errorText(t, e, i18n.language, { maxMb: SKILL_ZIP_MB }));
           },
@@ -417,6 +452,55 @@ export function InstallSkillDialog({
       );
     }
   };
+  /** The skills a link or a .zip holds, to pick, and those that can't be installed (`choices` set). */
+  const pickList = choices && (
+    <fieldset className="skill-picks">
+      <legend className="small muted">
+        {t(zipSent !== null ? "skills.pickLeadZip" : "skills.pickLead", {
+          count: choices.length + skipped.length,
+        })}
+      </legend>
+      <label htmlFor="skill-pick-all" className="scope-row">
+        <Checkbox
+          id="skill-pick-all"
+          checked={picked.size === 0 ? false : picked.size === pickableCount(choices) ? true : "indeterminate"}
+          onCheckedChange={(on) =>
+            pick(
+              choices.map((c) => c.path),
+              on,
+            )
+          }
+        />
+        <span className="scope-row__text">{t("skills.pickAll")}</span>
+      </label>
+      {choices.map((c, i) => (
+        <label key={c.path} htmlFor={`skill-pick-${i}`} className="scope-row">
+          <Checkbox id={`skill-pick-${i}`} checked={picked.has(c.path)} onCheckedChange={(on) => pick([c.path], on)} />
+          <span className="scope-row__text">
+            <span className="skill-pick__name">{c.name}</span>
+            {c.sameName && <span className="small muted skill-pick__about">{c.path}</span>}
+            {c.replaces && (
+              <span className="small muted skill-pick__about">
+                {t(c.replaces === "removed" ? "skills.pickReplacesRemoved" : "skills.pickReplaces", {
+                  name: c.name,
+                })}
+              </span>
+            )}
+            <span className="small muted skill-pick__about">{c.description}</span>
+          </span>
+        </label>
+      ))}
+      {skipped.map((s, i) => (
+        <label key={s.path} htmlFor={`skill-skip-${i}`} className="scope-row">
+          <Checkbox id={`skill-skip-${i}`} checked={false} disabled />
+          <span className="scope-row__text">
+            <span className="skill-pick__name">{s.path}</span>
+            <span className="small muted skill-pick__about">{skippedSkillText(t, s)}</span>
+          </span>
+        </label>
+      ))}
+    </fieldset>
+  );
   const mayConnect = can(org, "manage_connectors") && Boolean(github);
   const said = hidden ? hiddenRepoText(t, hidden, mayConnect) : null;
   return (
@@ -456,6 +540,7 @@ export function InstallSkillDialog({
                   setTab(v);
                   setError(null);
                   setHidden(null);
+                  unlist();
                 }}
                 label={t("skills.installHow")}
                 items={[
@@ -503,58 +588,7 @@ export function InstallSkillDialog({
                     </div>
                   )}
                   {choices && via && <ViaLine>{skillViaText(t, via, url)}</ViaLine>}
-                  {choices && (
-                    <fieldset className="skill-picks">
-                      <legend className="small muted">
-                        {t("skills.pickLead", { count: choices.length + skipped.length })}
-                      </legend>
-                      <label htmlFor="skill-pick-all" className="scope-row">
-                        <Checkbox
-                          id="skill-pick-all"
-                          checked={
-                            picked.size === 0 ? false : picked.size === pickableCount(choices) ? true : "indeterminate"
-                          }
-                          onCheckedChange={(on) =>
-                            pick(
-                              choices.map((c) => c.path),
-                              on,
-                            )
-                          }
-                        />
-                        <span className="scope-row__text">{t("skills.pickAll")}</span>
-                      </label>
-                      {choices.map((c, i) => (
-                        <label key={c.path} htmlFor={`skill-pick-${i}`} className="scope-row">
-                          <Checkbox
-                            id={`skill-pick-${i}`}
-                            checked={picked.has(c.path)}
-                            onCheckedChange={(on) => pick([c.path], on)}
-                          />
-                          <span className="scope-row__text">
-                            <span className="skill-pick__name">{c.name}</span>
-                            {c.sameName && <span className="small muted skill-pick__about">{c.path}</span>}
-                            {c.replaces && (
-                              <span className="small muted skill-pick__about">
-                                {t(c.replaces === "removed" ? "skills.pickReplacesRemoved" : "skills.pickReplaces", {
-                                  name: c.name,
-                                })}
-                              </span>
-                            )}
-                            <span className="small muted skill-pick__about">{c.description}</span>
-                          </span>
-                        </label>
-                      ))}
-                      {skipped.map((s, i) => (
-                        <label key={s.path} htmlFor={`skill-skip-${i}`} className="scope-row">
-                          <Checkbox id={`skill-skip-${i}`} checked={false} disabled />
-                          <span className="scope-row__text">
-                            <span className="skill-pick__name">{s.path}</span>
-                            <span className="small muted skill-pick__about">{skippedSkillText(t, s)}</span>
-                          </span>
-                        </label>
-                      ))}
-                    </fieldset>
-                  )}
+                  {choices && zipSent === null && pickList}
                   {forCard && (
                     <label htmlFor="skill-for-agent" className="scope-row">
                       <Checkbox
@@ -585,6 +619,7 @@ export function InstallSkillDialog({
                     onChange={(e) => {
                       setFile(e.target.files?.[0] ?? null);
                       setError(null);
+                      unlist();
                     }}
                   />
                   <div className="row" style={{ gap: 8, alignItems: "center" }}>
@@ -611,6 +646,7 @@ export function InstallSkillDialog({
                       </div>
                     </div>
                   )}
+                  {choices && zipSent !== null && pickList}
                 </TabPanel>
                 <TabPanel value="write">
                   <Field label={t("skills.name")} id="skill-name">

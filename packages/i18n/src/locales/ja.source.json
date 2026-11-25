@@ -25723,6 +25723,12 @@
       "other": "This link holds {{count}} skills. Pick the ones to install."
     }
   },
+  "skills.pickLeadZip": {
+    "value": {
+      "one": "This .zip holds 1 skill. Check it to install.",
+      "other": "This .zip holds {{count}} skills. Pick the ones to install."
+    }
+  },
   "skills.pickAll": {
     "value": "All"
   },
@@ -25748,7 +25754,13 @@
     "value": "{{count}} skills installed."
   },
   "skills.zipHelp": {
-    "value": "A .zip of the skill's folder, up to {{max}} MB."
+    "value": "A .zip of a skill's folder, or of several, up to {{max}} MB."
+  },
+  "skills.zipManyHere": {
+    "value": {
+      "one": "This .zip holds 1 skill to pick. Install it from a computer, in Skills.",
+      "other": "This .zip holds {{count}} skills. To pick the ones to install, use a computer, in Skills."
+    }
   },
   "skills.zipAbout": {
     "value": "SKILL.md goes at the top of the .zip, or in its one folder. A skill keeps up to {{text}} MB of text and {{assets}} MB of images and other files."
@@ -40023,6 +40035,9 @@
   },
   "errors.skill.tooManySkills": {
     "value": "This link holds more than {{max}} skills. Link one of its folders."
+  },
+  "errors.skill.zipTooManySkills": {
+    "value": "This .zip holds more than {{max}} skills. Send them in parts."
   },
   "errors.skill.invalidName": {
     "value": "The name must use lowercase letters, numbers and hyphens, up to {{max}} characters."

@@ -726,25 +726,84 @@ export async function saveSkill(
   return skillDetail(deps.db, row);
 }
 
-/** Import from a zip of the skill folder (`SKILL.md` + files); `personal`: the actor's own skill. */
+/**
+ * The skill folders a .zip holds (`archiveSkills`), the Finder's `__MACOSX` copies and hidden files left out, each
+ * inflated when read; `single`: the whole .zip as one skill's folder, as a .zip of one skill always was read.
+ */
+function zipSkills(zip: Uint8Array) {
+  const entries = listZip(zip).filter((e) => !e.symlink);
+  const read = async (e: ZipListing) => inflateZipEntry(zip, e);
+  const files = new Map<string, ZipListing>();
+  for (const e of entries) {
+    const path = safePath(e.path);
+    if (!path.split("/").some((p) => (p.startsWith(".") && p !== ".") || p === "__MACOSX")) files.set(path, e);
+  }
+  const archive = archiveSkills(files, "", read, "That .zip");
+  if (archive.found.size > SKILL_SEARCH.max) {
+    throw new ValidationError(
+      `That .zip holds more than ${SKILL_SEARCH.max} skills. Send them in parts.`,
+      "skill.zip_too_many_skills",
+      { max: SKILL_SEARCH.max },
+    );
+  }
+  const skillAt = async (dir: string) => ({
+    ...(await repositorySkill(read, dir, archive.skillIn(dir).files)),
+    source: "upload" as const,
+  });
+  const single = async () => ({
+    ...(await repositorySkill(
+      read,
+      "",
+      entries.map((e) => [e.path, e]),
+    )),
+    source: "upload" as const,
+  });
+  return { ...archive, skillAt, single };
+}
+
+/**
+ * Import from a .zip: a skill's folder (`SKILL.md` + files) installs at once; a .zip holding several skills' folders
+ * answers with them to pick (`importPickedZipSkills`), nothing installed, as a GitHub link holding several does.
+ * `personal`: the actor's own skill.
+ */
+export async function importSkillsZip(
+  deps: SkillDeps,
+  actorId: string,
+  orgId: string,
+  zip: Uint8Array,
+  options: { personal?: boolean } = {},
+): Promise<SkillDetail | SkillPick> {
+  await requirePermission(deps.db, actorId, orgId, options.personal ? "read" : "manage_agents");
+  const owner = options.personal ? actorId : null;
+  const skills = zipSkills(zip);
+  if (skills.found.size > 1) return pickFrom(deps, orgId, owner, skills);
+  return saveSkill(deps, actorId, orgId, { ...(await skills.single()), owner });
+}
+
+/** Import from a .zip of one skill's folder; one holding several is refused (`importSkillsZip` lists them). */
 export async function importSkillZip(
   deps: SkillDeps,
   actorId: string,
   orgId: string,
   zip: Uint8Array,
   options: { personal?: boolean } = {},
+): Promise<SkillDetail> {
+  const result = await importSkillsZip(deps, actorId, orgId, zip, options);
+  if ("choices" in result) throw new ValidationError("That .zip holds several skills: pick the ones to install");
+  return result;
+}
+
+/** Installs the skills picked among a .zip's (`paths`, as `importSkillZip` gave them). */
+export async function importPickedZipSkills(
+  deps: SkillDeps,
+  actorId: string,
+  orgId: string,
+  zip: Uint8Array,
+  paths: string[],
+  options: { personal?: boolean } = {},
 ) {
   await requirePermission(deps.db, actorId, orgId, options.personal ? "read" : "manage_agents");
-  const entries = listZip(zip).filter((e) => !e.symlink);
-  return saveSkill(deps, actorId, orgId, {
-    ...(await repositorySkill(
-      async (e) => inflateZipEntry(zip, e),
-      "",
-      entries.map((e) => [e.path, e]),
-    )),
-    source: "upload",
-    owner: options.personal ? actorId : null,
-  });
+  return installPicked(deps, actorId, orgId, zipSkills(zip), paths, options.personal ? actorId : null);
 }
 
 const GITHUB_HOSTS = new Set(["github.com", "raw.githubusercontent.com", "api.github.com", "codeload.github.com"]);
@@ -915,8 +974,13 @@ const ARCHIVE: GithubFetchOptions = {
   timeoutMs: 60_000,
 };
 
-/** How deep below a link a SKILL.md is looked for, and how many skills one link may hold. */
-const SKILL_SEARCH = { depth: 6, max: 100 };
+/**
+ * How deep below a link (or a .zip's root) a SKILL.md is looked for, and how many skills one may hold: far past any
+ * collection people publish, only so a small archive of thousands of one-line SKILL.md files can't make the server
+ * list (and look up) every one of them.
+ */
+export const SKILLS_PER_ARCHIVE = 1000;
+const SKILL_SEARCH = { depth: 6, max: SKILLS_PER_ARCHIVE };
 
 /** A path for a URL: each segment percent-encoded, the slashes kept. */
 export const encodePath = (path: string) => path.split("/").map(encodeURIComponent).join("/");
@@ -1349,7 +1413,8 @@ async function repositorySkill<E extends { size: number }>(
 }
 
 /**
- * A skill a GitHub link holds, offered to pick when it holds several. `path`: its folder from the repository's root.
+ * A skill a GitHub link or a .zip holds, offered to pick when it holds several. `path`: its folder from the
+ * repository's (or the .zip's) root.
  * `replaces`: a skill of this name is installed (it becomes a new version of it, for every agent that has it) or was
  * removed (it comes back on for none of its old agents).
  */
@@ -1358,11 +1423,11 @@ export interface SkillChoice {
   name: string;
   description: string;
   replaces?: "installed" | "removed";
-  /** Another skill the link holds has this name (different content): one of them may be picked. */
+  /** Another skill there has this name (different content): one of them may be picked. */
   sameName?: true;
 }
 
-/** A skill a GitHub link holds that can't be installed, with the refusal: its code, English text and params. */
+/** A skill a GitHub link or a .zip holds that can't be installed, with the refusal: its code, English text and params. */
 export interface SkillSkipped {
   path: string;
   code: string;
@@ -1396,6 +1461,52 @@ async function linkRepository(
 }
 
 /**
+ * The skill folders among an archive's files (a repository's or a .zip's) at or below `folder`, each read when asked:
+ * `skillIn` its files within the skill limits, `about` its SKILL.md alone (refused as installing it would be for its
+ * limits or its text), `printOf` what tells copies apart. `holder` names the archive in refusals ("That link").
+ */
+function archiveSkills<E extends { size: number }>(
+  files: ReadonlyMap<string, E>,
+  folder: string,
+  read: (entry: E) => Promise<Uint8Array>,
+  holder: string,
+) {
+  const found = new Map(
+    [...skillFolders(files, folder)].map(([dir, skillMd]) => [dir, { skillMd, files: [] as [string, E][] }]),
+  );
+  // Every skill's files in one pass: no skill folder holds another.
+  for (const file of files) {
+    const dir = folderOf(found, parentOf(file[0]));
+    if (dir !== undefined) found.get(dir)?.files.push(file);
+  }
+  const skillIn = (dir: string) => {
+    const skill = found.get(dir);
+    if (!skill) throw new ValidationError(`${holder} holds no skill at ${dir}`);
+    assertSkillSize(skill.files.map(([path, entry]) => ({ path, size: entry.size })));
+    return skill;
+  };
+  const about = async (dir: string) => parseSkillMarkdown(new TextDecoder().decode(await read(skillIn(dir).skillMd)));
+  // Two folders with the same print (its SKILL.md and each file's path and size) hold the same skill.
+  const printOf = async (dir: string) => {
+    const skill = skillIn(dir);
+    const prefix = dir ? `${dir}/` : "";
+    const listed = skill.files.map(([path, entry]) => `${path.slice(prefix.length)}:${entry.size}`).sort();
+    const md = new TextDecoder().decode(await read(skill.skillMd));
+    return new Bun.CryptoHasher("sha256").update(`${md}\u0000${listed.join("\n")}`).digest("hex");
+  };
+  return { found, skillIn, about, printOf };
+}
+
+/** What an archive holds to pick from (`archiveSkills`), with what a skill there would be saved as. */
+interface PickableSkills {
+  found: ReadonlyMap<string, unknown>;
+  about: (dir: string) => Promise<ParsedSkill>;
+  printOf: (dir: string) => Promise<string>;
+  skillAt: (dir: string) => Promise<Omit<Parameters<typeof saveSkill>[3], "owner">>;
+  via?: SkillVia | null;
+}
+
+/**
  * What a GitHub link holds: the repository, how it was read, and the skill folders at or below the link (a file's:
  * its folder's).
  */
@@ -1409,47 +1520,19 @@ async function readGithubLink(
   const target = parseGithubUrl(url);
   const folder = target.kind === "file" ? parentOf(target.path) : target.path;
   const repository = await linkRepository(deps, orgId, target, folder, through, byFolder);
-  const folders = skillFolders(repository.files, folder);
   const repo = `${target.owner}/${target.repo}`;
-  if (folders.size === 0) {
+  const { found, skillIn, about, printOf } = archiveSkills(repository.files, folder, repository.read, "That link");
+  if (found.size === 0) {
     const where = folder ? `${repo}/${folder}` : repo;
     throw new ValidationError(`No SKILL.md in ${where} or the folders inside it`, "skill.no_skill_md", { path: where });
   }
-  if (folders.size > SKILL_SEARCH.max) {
+  if (found.size > SKILL_SEARCH.max) {
     throw new ValidationError(
       `That link holds more than ${SKILL_SEARCH.max} skills. Link one of its folders.`,
       "skill.too_many_skills",
       { max: SKILL_SEARCH.max },
     );
   }
-  type Entry = { size: number };
-  const found = new Map([...folders].map(([dir, skillMd]) => [dir, { skillMd, files: [] as [string, Entry][] }]));
-  // Every skill's files in one pass: no skill folder holds another.
-  for (const file of repository.files) {
-    const dir = folderOf(found, parentOf(file[0]));
-    if (dir !== undefined) found.get(dir)?.files.push(file);
-  }
-  /** The skill at `dir`, refused past the skill limits. */
-  const skillIn = (dir: string) => {
-    const skill = found.get(dir);
-    if (!skill) throw new ValidationError(`That link holds no skill at ${dir}`);
-    assertSkillSize(skill.files.map(([path, entry]) => ({ path, size: entry.size })));
-    return skill;
-  };
-  /** The skill at `dir` from its SKILL.md alone, refused as installing it would be for its limits or its text. */
-  const about = async (dir: string) =>
-    parseSkillMarkdown(new TextDecoder().decode(await repository.read(skillIn(dir).skillMd)));
-  /**
-   * What the skill at `dir` holds, to tell copies apart: its SKILL.md and the path and size of each of its files. Two
-   * folders with the same print hold the same skill.
-   */
-  const printOf = async (dir: string) => {
-    const skill = skillIn(dir);
-    const prefix = dir ? `${dir}/` : "";
-    const files = skill.files.map(([path, entry]) => `${path.slice(prefix.length)}:${entry.size}`).sort();
-    const md = new TextDecoder().decode(await repository.read(skill.skillMd));
-    return new Bun.CryptoHasher("sha256").update(`${md}\u0000${files.join("\n")}`).digest("hex");
-  };
   /** The skill at `dir`, ready to save: from the link itself when it points at the skill, else from its folder. */
   const skillAt = async (dir: string) => {
     const skill = await repositorySkill(repository.read, dir, skillIn(dir).files);
@@ -1469,8 +1552,8 @@ async function readGithubLink(
 }
 
 /**
- * A GitHub link holding several skills: those that can be installed, to pick, and those that can't, with why. `via`:
- * which of the workspace's GitHub connections read it, when the repository needed one.
+ * A GitHub link or a .zip holding several skills: those that can be installed, to pick, and those that can't, with
+ * why. `via`: which of the workspace's GitHub connections read a link, when the repository needed one.
  */
 export interface SkillPick {
   choices: SkillChoice[];
@@ -1513,6 +1596,19 @@ export async function importSkillFromUrl(
     await turnOnFor(deps, actorId, orgId, options.forAgentId, [skill.id]);
     return skill;
   }
+  return pickFrom(deps, orgId, owner, link);
+}
+
+/**
+ * The skills an archive holds, to pick: each once (a copy in a deeper folder left out), those that can't be installed
+ * apart with why, two of one name marked, and which would replace an installed or removed skill.
+ */
+async function pickFrom(
+  deps: SkillDeps,
+  orgId: string,
+  owner: string | null,
+  link: PickableSkills,
+): Promise<SkillPick> {
   const choices: SkillChoice[] = [];
   const skipped: SkillSkipped[] = [];
   let refused: unknown;
@@ -1603,7 +1699,30 @@ export async function importPickedSkills(
 ) {
   const membership = await requirePermission(deps.db, actorId, orgId, options.personal ? "read" : "manage_agents");
   const link = await readGithubLink(githubFor(deps, membership), orgId, url);
-  /** A refusal names the skill's folder. */
+  const installed = await installPicked(deps, actorId, orgId, link, paths, options.personal ? actorId : null);
+  await turnOnFor(
+    deps,
+    actorId,
+    orgId,
+    options.forAgentId,
+    installed.map((k) => k.id),
+  );
+  return installed;
+}
+
+/**
+ * Installs the skills picked among an archive's (`paths`), each refusal naming its folder. Every pick's limits and text
+ * are checked before any is saved, by the SKILL.md alone: its files are inflated one skill at a time, since a small
+ * archive can declare the most a skill keeps for each of the many it may hold.
+ */
+async function installPicked(
+  deps: SkillDeps,
+  actorId: string,
+  orgId: string,
+  link: PickableSkills,
+  paths: string[],
+  owner: string | null,
+) {
   const named = async <T>(dir: string, read: () => Promise<T>) => {
     try {
       return await read();
@@ -1613,11 +1732,9 @@ export async function importPickedSkills(
     }
   };
   const dirs = [...new Set(paths)];
-  // Every pick's limits and text are checked before any is saved, by the SKILL.md alone: its files are inflated one
-  // skill at a time, since a small archive can declare the most a skill keeps for each of the 100 it may hold.
   const names: string[] = [];
   for (const dir of dirs) {
-    if (!link.found.has(dir)) throw new ValidationError(`That link holds no skill at ${dir}`);
+    if (!link.found.has(dir)) throw new ValidationError(`There is no skill at ${dir}`);
     names.push((await named(dir, () => link.about(dir))).name);
   }
   const twin = names.find((name, i) => names.indexOf(name) !== i);
@@ -1627,20 +1744,8 @@ export async function importPickedSkills(
     });
   const installed: SkillDetail[] = [];
   for (const dir of dirs) {
-    installed.push(
-      await saveSkill(deps, actorId, orgId, {
-        ...(await named(dir, () => link.skillAt(dir))),
-        owner: options.personal ? actorId : null,
-      }),
-    );
+    installed.push(await saveSkill(deps, actorId, orgId, { ...(await named(dir, () => link.skillAt(dir))), owner }));
   }
-  await turnOnFor(
-    deps,
-    actorId,
-    orgId,
-    options.forAgentId,
-    installed.map((k) => k.id),
-  );
   return installed;
 }
 

@@ -371,6 +371,7 @@ const KNOWN = {
   "wiki.github_too_large": "errors.wiki.githubTooLarge",
   "skill.no_skill_md": "errors.skill.noSkillMd",
   "skill.too_many_skills": "errors.skill.tooManySkills",
+  "skill.zip_too_many_skills": "errors.skill.zipTooManySkills",
   "skill.invalid_name": "errors.skill.invalidName",
   "skill.invalid_description": "errors.skill.invalidDescription",
   "skill.too_large": "errors.skill.tooLarge",

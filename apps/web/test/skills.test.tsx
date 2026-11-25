@@ -9,6 +9,7 @@ import { act, cleanup, fireEvent, within } from "@testing-library/react";
 import { createI18n } from "@/i18n";
 import { setNavigateAway } from "@/lib/navigate";
 import { ADA_ID, ATLAS_ID, createFakeApi, ORG_ID, seedState } from "./fake-api";
+import { SEVERAL_SKILLS } from "./fakes/skills";
 import { proceed, startAs } from "./new-agent-flow";
 import { renderApp, screen, settle } from "./render";
 
@@ -527,7 +528,9 @@ describe("installing a skill from a link or a .zip", () => {
     await click(footer("enviar um .zip"));
     dialog = screen().getByRole("dialog", { name: "Enviar um .zip" });
     // What the .zip holds, nothing about its scripts: they can run on the agent's computer, as its page says.
-    expect(within(dialog).getByText(/^Um \.zip/).textContent).toStartWith("Um .zip da pasta da skill, até 56 MB.");
+    expect(within(dialog).getByText(/^Um \.zip/).textContent).toStartWith(
+      "Um .zip com a pasta de uma skill, ou de várias, até 56 MB.",
+    );
     expect(within(dialog).getByText(/^Um \.zip/).textContent).not.toContain("script");
     expect(dialog.querySelector('input[type="file"]')?.className).toContain("ac-visually-hidden");
     const file = new File([new Uint8Array([80, 75, 3, 4])], "suporte.zip", { type: "application/zip" });
@@ -540,6 +543,29 @@ describe("installing a skill from a link or a .zip", () => {
     const zip = calls(state, "skills.import").at(-1)?.[0] as { zipBase64: string };
     expect(zip.zipBase64).toBe(btoa(String.fromCharCode(80, 75, 3, 4)));
     expect(one().querySelector("h1")?.textContent).toBe("Skill enviada");
+  });
+
+  test("Enviar um .zip of several skills lists them to pick; the ones picked install, the .zip sent again with them", async () => {
+    const { state } = await page();
+    await click(footer("enviar um .zip"));
+    const dialog = screen().getByRole("dialog", { name: "Enviar um .zip" });
+    const file = new File([SEVERAL_SKILLS], "kit.zip", { type: "application/zip" });
+    await act(async () => {
+      fireEvent.change(dialog.querySelector('input[type="file"]') as HTMLInputElement, { target: { files: [file] } });
+    });
+    await click(within(dialog).getByRole("button", { name: "Instalar" }));
+    await settle(8);
+    // Nothing installed yet: the .zip's skills, as a link's.
+    expect(dialog.textContent).toContain("Este .zip tem 3 skills. Escolha quais instalar.");
+    expect(dialog.textContent).toContain("Revisa um pull request.");
+    await click(within(dialog).getByRole("button", { name: "Instalar" }));
+    expect(dialog.textContent).toContain("Escolha pelo menos uma skill.");
+    expect(calls(state, "skills.importPickedZip")).toEqual([]);
+    await click(within(dialog).getByRole("checkbox", { name: /^review/ }));
+    await click(within(dialog).getByRole("button", { name: "Instalar" }));
+    await settle(8);
+    expect(calls(state, "skills.importPickedZip")).toEqual([[["skills/review"]]]);
+    expect(one().querySelector("h1")?.textContent).toBe("review");
   });
 
   test("a repository holding several skills lists them to pick; GitHub's refusals in words; they join its line", async () => {

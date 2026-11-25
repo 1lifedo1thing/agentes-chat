@@ -1416,8 +1416,8 @@ export interface ApiClient {
     create(orgId: string, input: SkillInput): Promise<SkillDetail>;
     /**
      * A GitHub link (a skill's folder or a file in it) or the folder as a zip in base64 (writes are JSON only). A link
-     * holding several skills (or any, with `list`) installs nothing and answers with them to pick from
-     * (`importPicked`), those that can't be installed apart. A private repository is read through the workspace's
+     * or a zip holding several skills (a link: or any, with `list`) installs nothing and answers with them to pick from
+     * (`importPicked`, `importPickedZip`), those that can't be installed apart. A private repository is read through the workspace's
      * GitHub, on the server. `forAgentId`: the agent whose card opened the install, which gets what installs turned on
      * when the installer may change its skills. `personal`: the person's own skill, which any member installs (from a
      * public repository unless they manage agents). `upload`: a zip's Cancel and how much of it has been sent.
@@ -1434,6 +1434,14 @@ export interface ApiClient {
       paths: string[],
       forAgentId?: string,
       personal?: boolean,
+    ): Promise<SkillDetail[]>;
+    /** Installs the skills picked among a .zip's choices (their `path`): the .zip is sent again, as `import` sent it. */
+    importPickedZip(
+      orgId: string,
+      zipBase64: string,
+      paths: string[],
+      personal?: boolean,
+      upload?: UploadOptions,
     ): Promise<SkillDetail[]>;
     update(orgId: string, id: string, patch: SkillPatch): Promise<SkillDetail>;
     /** Fetch the link again (`url` skills). */

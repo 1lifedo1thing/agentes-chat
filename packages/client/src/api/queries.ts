@@ -6412,6 +6412,7 @@ type SkillChange =
       upload?: UploadOptions;
     }
   | { type: "importPicked"; url: string; paths: string[]; forAgentId?: string; personal?: boolean }
+  | { type: "importPickedZip"; zipBase64: string; paths: string[]; personal?: boolean; upload?: UploadOptions }
   | { type: "create"; input: SkillInput }
   | { type: "update"; id: string; patch: SkillPatch }
   | { type: "reimport"; id: string }
@@ -6434,6 +6435,8 @@ export function useSkillAction(orgId: string, { silent = false } = {}) {
           return api.skills.import(orgId, action.input, action.upload);
         case "importPicked":
           return api.skills.importPicked(orgId, action.url, action.paths, action.forAgentId, action.personal);
+        case "importPickedZip":
+          return api.skills.importPickedZip(orgId, action.zipBase64, action.paths, action.personal, action.upload);
         case "create":
           return api.skills.create(orgId, action.input);
         case "update":

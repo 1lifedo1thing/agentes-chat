@@ -1,6 +1,6 @@
 # 0020. Skills in Markdown (SKILL.md), loaded on demand, no code execution
 
-- Status: Accepted. Amended 2026-10-30: Import (a GitHub link is read from the repository's archive, and a link that holds several skills lists them to pick from). Amended 2026-10-31: Import (a private repository is read through the workspace's GitHub). Amended 2026-11-03: updates from the link, agents improving skills, and the choice between the link's version and the agents' Amended 2026-11-25: the library as people read it (its own page, names and use, teaching in words, the agent's tab), copies in one repository, and `create_skill` after outside content.
+- Status: Accepted. Amended 2026-10-30: Import (a GitHub link is read from the repository's archive, and a link that holds several skills lists them to pick from). Amended 2026-10-31: Import (a private repository is read through the workspace's GitHub). Amended 2026-11-03: updates from the link, agents improving skills, and the choice between the link's version and the agents' Amended 2026-11-25: the library as people read it (its own page, names and use, teaching in words, the agent's tab), copies in one repository, a .zip of several skills with no cap of 100, and `create_skill` after outside content.
 - Date: 2026-10-14
 
 ## Decision
@@ -90,6 +90,16 @@ folder with a copy of its skills). Folders whose `SKILL.md` and file list (paths
 once, from the folder nearest the root, so picking all of them no longer names one skill twice. Two different skills
 of one name are both offered, marked `sameName`, each with its folder; the app lets one of them be picked, and the
 server answers `skill.picked_twice` (with the name) when both are.
+
+*Amended 2026-11-25 (a .zip of several skills, no cap of 100):* a .zip may hold several skills' folders, as a
+repository does: it is read as a link's archive is (the same search below its root, copies offered once, those that
+can't be installed apart) and answers with them to pick, nothing installed; the picks come back with the .zip again
+(`POST …/skills/import` with `zipBase64` and `paths`), so nothing is kept on the server between the two. A .zip of one
+skill's folder installs at once, as before. The cap of 100 skills a link may hold is gone: past it people met a
+refusal for collections they meant to use. What bounds the work is the archive's own cap and a ceiling of 1,000 skills
+(`SKILLS_PER_ARCHIVE`, `skill.too_many_skills` for a link and `skill.zip_too_many_skills` for a .zip), far past any
+collection published, only so a small archive of thousands of one-line `SKILL.md` files can't make the server list
+and look up every one. The phone's install screen says to pick a .zip's skills on a computer, for now.
 
 ## Consequences
 

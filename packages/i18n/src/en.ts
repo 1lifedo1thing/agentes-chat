@@ -11049,6 +11049,8 @@ export const en = {
     },
     pickLead_one: "This link holds 1 skill. Check it to install.",
     pickLead_other: "This link holds {{count}} skills. Pick the ones to install.",
+    pickLeadZip_one: "This .zip holds 1 skill. Check it to install.",
+    pickLeadZip_other: "This .zip holds {{count}} skills. Pick the ones to install.",
     pickAll: "All",
     pickMissing: "Pick at least one skill.",
     pickSkipped: "Can't be installed. {{reason}}",
@@ -11060,7 +11062,9 @@ export const en = {
     forAgent_one: "Turn it on for {{agent}}",
     forAgent_other: "Turn them on for {{agent}}",
     installedMany: "{{count}} skills installed.",
-    zipHelp: "A .zip of the skill's folder, up to {{max}} MB.",
+    zipHelp: "A .zip of a skill's folder, or of several, up to {{max}} MB.",
+    zipManyHere_one: "This .zip holds 1 skill to pick. Install it from a computer, in Skills.",
+    zipManyHere_other: "This .zip holds {{count}} skills. To pick the ones to install, use a computer, in Skills.",
     /** Behind the ⓘ beside `zipHelp`. */
     zipAbout:
       "SKILL.md goes at the top of the .zip, or in its one folder. A skill keeps up to {{text}} MB of text and {{assets}} MB of images and other files.",
@@ -16746,6 +16750,7 @@ export const en = {
     skill: {
       noSkillMd: "No SKILL.md in {{path}} or the folders inside it.",
       tooManySkills: "This link holds more than {{max}} skills. Link one of its folders.",
+      zipTooManySkills: "This .zip holds more than {{max}} skills. Send them in parts.",
       invalidName: "The name must use lowercase letters, numbers and hyphens, up to {{max}} characters.",
       invalidDescription: "The description must have 1 to {{max}} characters.",
       tooLarge: "This skill has {{size}} MB of text and scripts, and the limit is {{max}} MB.",
