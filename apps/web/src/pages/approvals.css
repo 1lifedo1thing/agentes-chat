@@ -1017,10 +1017,11 @@ html:not([data-pointer]) .ap-li:focus-visible {
 
 /* "Aprovar todos" / "Recusar todos" per agent, over the waiting list (`ApproveAllByAgent`): who and how many at the
    start, the buttons at the end, under the words on a narrow list. */
+/* On the inbox rows' own side padding, so its face starts where theirs do. */
 .ap-agents {
   display: grid;
   margin: 0 0 var(--space-2);
-  padding: 0;
+  padding: 0 var(--space-3);
   list-style: none;
 }
 .ap-agents__row {

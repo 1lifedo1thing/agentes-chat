@@ -28,7 +28,7 @@ const asked = (approvalId: string, agentId = ADA_ID) =>
     source: { approvalId, channelId: ENG_ID },
   });
 
-/** Ada's quote for one customer approved, behind her earlier message to another still waiting, on another card. */
+/** Ada's quote approved, behind her earlier merge still waiting, asked from another conversation on another card. */
 function heldState() {
   const state = seedState({ notifications: [asked("ap-first")], proposals: [] });
   const [merge] = state.approvals;
@@ -38,11 +38,10 @@ function heldState() {
     0,
     1,
     {
-      ...base,
+      ...merge,
       id: "ap-first",
       runId: "run-first",
       messageId: "msg-first",
-      title: "Enviar texto para Bia Souza",
       createdAt: new Date(Date.now() - 10 * 60_000).toISOString(),
     },
     {
@@ -73,9 +72,8 @@ describe("An approved request waiting for another", () => {
     const link = within(held).getByRole("link");
     expect(link.getAttribute("href")).toContain("ap-first");
     expect(held.querySelector(".ap-held__text")?.textContent).toBe(`Esperando ${link.textContent}`);
-    // A send is high risk: approving it takes a hold, as everywhere.
     expect([...held.querySelectorAll(".ap-held__acts button")].map((b) => b.textContent)).toEqual([
-      "Segure para aprovar",
+      "Aprovar merge",
       "Recusar",
       "Rodar este agora",
     ]);
