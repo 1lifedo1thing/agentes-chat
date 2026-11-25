@@ -423,9 +423,8 @@ export function InstallSkillDialog({
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={
-        only === "zip" ? t("skills.page.fromZip") : only === "github" ? t("skills.page.fromLink") : t("skills.install")
-      }
+      // Opened for one way in, it is named by the way shown: a .zip too big moves it to a GitHub link.
+      title={!only ? t("skills.install") : tab === "zip" ? t("skills.page.fromZip") : t("skills.page.fromLink")}
       closeLabel={t("common.close")}
       unsaved={unsaved}
       className={only ? "sk-install-one" : undefined}

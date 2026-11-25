@@ -1,6 +1,6 @@
 import type { SkillDetail, SkillEvent, SkillSourceUpdate, SkillUse } from "@agenteschat/client";
-import { useApi, useRewriteSkill, useSkill, useSkillAction } from "@agenteschat/client";
-import { errorText } from "@agenteschat/client/lib/errors";
+import { useApi, useRewriteSkill, useSkill, useSkillAction, useSkillSettings } from "@agenteschat/client";
+import { errorText, isGone } from "@agenteschat/client/lib/errors";
 import { joinNames, relativeTime } from "@agenteschat/client/lib/format";
 import { agentGrammar } from "@agenteschat/client/lib/grammar";
 import { messagePath } from "@agenteschat/client/lib/message-links";
@@ -38,7 +38,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AgentAvatar } from "@/components/AgentAvatar";
 import { AgentSwitches } from "@/components/AgentSwitches";
-import { LoadingLine } from "@/components/Loading";
+import { ErrorState, LoadingLine } from "@/components/Loading";
 import { useOrg } from "@/components/org-context";
 import { ProseDiff } from "@/components/ProseDiff";
 import { EditSkill, PendingDiff } from "@/components/Skills";
@@ -107,6 +107,8 @@ export function SkillPage({ id }: { id: string }) {
   const skill = useSkill(org.id, id);
   const action = useSkillAction(org.id);
   const refresh = useSkillAction(org.id, { silent: true });
+  // A skill's own "agents improve it" left unset follows the workspace's switch.
+  const settings = useSkillSettings(org.id, can(org, "manage_agents"));
   const rewrite = useRewriteSkill(org.id, id);
   const [editing, setEditing] = useState(false);
   const [naming, setNaming] = useState<string | null>(null);
@@ -127,10 +129,13 @@ export function SkillPage({ id }: { id: string }) {
     return (
       <div className="page page--full sk-one">
         {back}
-        {skill.isError ? (
+        {/* Removed says so; any other failure (offline, the server) offers to try again. */}
+        {skill.isError && isGone(skill.error) ? (
           <EmptyState size="page" title={t("skills.one.goneTitle")}>
             {t("skills.one.gone")}
           </EmptyState>
+        ) : skill.isError ? (
+          <ErrorState error={skill.error} onRetry={() => void skill.refetch()} />
         ) : (
           <LoadingLine width={260} />
         )}
@@ -363,7 +368,7 @@ export function SkillPage({ id }: { id: string }) {
                 {can(org, "manage_agents") && (
                   <MenuCheckboxItem
                     icon="bulb"
-                    checked={s.agentsImprove ?? true}
+                    checked={s.agentsImprove ?? settings.data?.agentsImprove ?? true}
                     onCheckedChange={(on) => action.mutate({ type: "update", id: s.id, patch: { agentsImprove: on } })}
                   >
                     {t("skills.agentsImproveThis")}

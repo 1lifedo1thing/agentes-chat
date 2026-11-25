@@ -82,6 +82,9 @@ export function SkillsPage({
   const [teaching, setTeaching] = useState(teachAtStart);
   const [installing, setInstalling] = useState<"github" | "zip" | null>(install ? "github" : null);
   const [returned, setReturned] = useState(install);
+  // Kept from the first render: the address loses `connected` once it is cleaned up below, before GitHub's
+  // connections have loaded for its confirmation.
+  const [returnedConnected] = useState(connected === "github");
   const [returnedFor] = useState(() =>
     cardInstallAgent(cardInstallOf(sessionStore.get(STORAGE_KEYS.skillInstallFor)), install, cardAgent),
   );
@@ -437,7 +440,7 @@ export function SkillsPage({
           void navigate({ to: "/org/$orgId/skills/$skillId", params: { orgId: org.id, skillId: id } })
         }
         initialUrl={returned}
-        connected={returned !== undefined && connected === "github"}
+        connected={returned !== undefined && returnedConnected}
         forAgentId={returned !== undefined ? returnedFor : forAgent?.id}
         scope={split ? (admin ? "team" : "personal") : undefined}
       />
