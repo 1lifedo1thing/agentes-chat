@@ -19,6 +19,19 @@ import { ROUTINE_TEMPLATES } from "../src/lib/routine-templates";
 const t = ((key: string, values?: Record<string, string>) =>
   values ? `${key} ${Object.values(values).join(" ")}` : key) as unknown as TFunction;
 
+/** The routine an app brings: the test fails here when it brings none. */
+const of = (app: string) => {
+  const r = connectRoutineOf(app);
+  if (!r) throw new Error(`no routine for ${app}`);
+  return r;
+};
+/** Its `n`-th rule in When. */
+const ruleOf = (app: string, n: number) => {
+  const rule = connectRoutineRules(of(app))[n];
+  if (!rule) throw new Error(`no rule ${n} for ${app}`);
+  return rule;
+};
+
 const agent = (id: string, role: string, extra: Partial<Agent> = {}) =>
   ({ id, name: id, role, canManageRoutines: true, canTalk: true, ...extra }) as Agent;
 
@@ -37,7 +50,7 @@ describe("the routine each app brings", () => {
 
   test("GitHub and Sentry check on a schedule: their events need a webhook connecting doesn't set up", () => {
     expect(connectRoutineOf("github")?.template).toBe("openPrs");
-    expect(connectRoutineRules(connectRoutineOf("sentry") ?? CONNECT_ROUTINES[0]!)[0]).toEqual({
+    expect(ruleOf("sentry", 0)).toEqual({
       freq: "daily",
       interval: 1,
       byWeekday: ["MO", "TU", "WE", "TH", "FR"],
@@ -89,15 +102,15 @@ describe("when it runs", () => {
 describe("who does it", () => {
   test("the agent whose role names the app's area, accents and case aside", () => {
     const agents = [agent("a", "Dev"), agent("b", "Financeiro"), agent("c", "Atendimento ao cliente")];
-    expect(suggestedAgent(agents, connectRoutineOf("stripe")!)?.id).toBe("b");
-    expect(suggestedAgent(agents, connectRoutineOf("mailbox")!)?.id).toBe("c");
-    expect(suggestedAgent([agent("d", "Customer Success")], connectRoutineOf("zendesk")!)?.id).toBe("d");
-    expect(suggestedAgent([agent("e", "COBRANÇA")], connectRoutineOf("stripe")!)?.id).toBe("e");
+    expect(suggestedAgent(agents, of("stripe"))?.id).toBe("b");
+    expect(suggestedAgent(agents, of("mailbox"))?.id).toBe("c");
+    expect(suggestedAgent([agent("d", "Customer Success")], of("zendesk"))?.id).toBe("d");
+    expect(suggestedAgent([agent("e", "COBRANÇA")], of("stripe"))?.id).toBe("e");
   });
 
   test("no role fits: the first one; nobody: none", () => {
-    expect(suggestedAgent([agent("a", "Dev"), agent("b", "")], connectRoutineOf("hubspot")!)?.id).toBe("a");
-    expect(suggestedAgent([], connectRoutineOf("hubspot")!)).toBeNull();
+    expect(suggestedAgent([agent("a", "Dev"), agent("b", "")], of("hubspot"))?.id).toBe("a");
+    expect(suggestedAgent([], of("hubspot"))).toBeNull();
   });
 
   test("only agents I make routines for and that answer me, still in the team; the right hand last", () => {
@@ -118,7 +131,7 @@ describe("what it makes", () => {
     if (!failed) throw new Error("a routine");
     const input = connectRoutineInput(t, failed, {
       agentId: "agent-1",
-      rule: connectRoutineRules(failed)[1]!,
+      rule: ruleOf("stripe", 1),
       timezone: "America/Sao_Paulo",
       today: "2026-11-25",
     });
@@ -149,7 +162,7 @@ describe("what it makes", () => {
     if (!inbox) throw new Error("a routine");
     const input = connectRoutineInput(t, inbox, {
       agentId: "agent-1",
-      rule: connectRoutineRules(inbox)[0]!,
+      rule: ruleOf("mailbox", 0),
       timezone: "UTC",
       today: "2026-11-25",
       mailbox: "vendas@acme.example",

@@ -19,8 +19,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApi } from "@/api/context";
-import { useActors } from "@/components/actors";
 import { AgentAvatar } from "@/components/AgentAvatar";
+import { useActors } from "@/components/actors";
 import { useOrg } from "@/components/org-context";
 import { ruleSentence } from "@/lib/recurrence";
 import { useToast } from "@/lib/toast";
@@ -49,8 +49,7 @@ export function useRoutineOffer(app: string | null | undefined, agents: readonly
   const routines = useRoutines(org.id);
   const found = connectRoutineOf(app);
   // Only once the list says it isn't made: a routine never offered twice.
-  const routine =
-    found && routines.data && !connectRoutineMade(t, found, routines.data) ? found : null;
+  const routine = found && routines.data && !connectRoutineMade(t, found, routines.data) ? found : null;
   const mine = useMemo(() => connectRoutineAgents(agents ?? []), [agents]);
   const [on, setOn] = useState(true);
   const [picked, setAgent] = useState<string | null>(null);
@@ -132,7 +131,10 @@ export function RoutineOfferRow({ offer, waitsForAccess = false }: { offer: Rout
   const today = todayYmd();
   const when = connectRoutineRules(routine).map((r, i) => ({
     value: String(i),
-    label: capitalize(ruleSentence(t, i18n.language, connectRule(r, timezone, today), new Date(), false), i18n.language),
+    label: capitalize(
+      ruleSentence(t, i18n.language, connectRule(r, timezone, today), new Date(), false),
+      i18n.language,
+    ),
   }));
   return (
     <section className="cflow-routine" data-off={on ? undefined : ""}>
@@ -143,7 +145,9 @@ export function RoutineOfferRow({ offer, waitsForAccess = false }: { offer: Rout
         <span className="cflow-routine__words">
           <b>{name}</b>
           <span className="small muted">
-            {agent ? t(`connectFlow.routine.${routine.template}`, { name: agent.name }) : t("connectFlow.routine.noAgent")}
+            {agent
+              ? t(`connectFlow.routine.${routine.template}`, { name: agent.name })
+              : t("connectFlow.routine.noAgent")}
           </span>
         </span>
         <Switch

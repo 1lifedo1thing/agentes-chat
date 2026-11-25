@@ -61,7 +61,7 @@ export function connectRoutineOf(app: string | null | undefined): ConnectRoutine
 
 const templateOf = (r: ConnectRoutine): ScheduleTemplate => {
   const found = ROUTINE_TEMPLATES.find((t) => t.key === r.template);
-  if (!found || found.kind !== "schedule") throw new Error(`No schedule template "${r.template}"`);
+  if (found?.kind !== "schedule") throw new Error(`No schedule template "${r.template}"`);
   return found;
 };
 

@@ -69,7 +69,12 @@ describe("the routine an app brings, at the end of connecting it (ADR 0242)", ()
     await settle(8);
     const [routine, ...more] = await made(api);
     expect(more).toHaveLength(0);
-    expect(routine).toMatchObject({ agentId: FINANCE_ID, target: { type: "dm" }, report: "when_new", state: "running" });
+    expect(routine).toMatchObject({
+      agentId: FINANCE_ID,
+      target: { type: "dm" },
+      report: "when_new",
+      state: "running",
+    });
     expect(routine?.trigger.type).toBe("schedule");
     expect(document.body.textContent).toContain(`Rotina criada: ${ROUTINE}`);
     expect(document.body.textContent).toContain("Contas já começou: o primeiro resumo chega no seu privado.");
@@ -169,9 +174,13 @@ describe("a mailbox's routine, where its readers are chosen", () => {
     expect(routineSwitch().hasAttribute("disabled")).toBe(true);
     expect(who.textContent).toContain("Dê acesso a um agente acima e ele cuida disso para você.");
 
-    await click(within(within(who).getByRole("radiogroup", { name: "Nível de Ada" })).getByRole("radio", { name: "Ler" }));
+    await click(
+      within(within(who).getByRole("radiogroup", { name: "Nível de Ada" })).getByRole("radio", { name: "Ler" }),
+    );
     expect(routineSwitch().getAttribute("aria-checked")).toBe("true");
-    expect(who.textContent).toContain("Ada lê seus emails e te manda no privado o que precisa de resposta, já com rascunho.");
+    expect(who.textContent).toContain(
+      "Ada lê seus emails e te manda no privado o que precisa de resposta, já com rascunho.",
+    );
     // Only who reads it may run it.
     const agents = within(who).getByRole("combobox", { name: "Quem faz" });
     expect(agents.textContent).toContain("Ada");
