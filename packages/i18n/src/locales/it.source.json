@@ -10693,6 +10693,9 @@
   "presence.waiting": {
     "value": "Waiting for you"
   },
+  "presence.idle": {
+    "value": "Idle"
+  },
   "presence.lower.online": {
     "value": "online"
   },
