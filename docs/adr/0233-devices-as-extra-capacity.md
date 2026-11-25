@@ -3,7 +3,7 @@
 - Status: Accepted (phase 1)
 - Date: 2026-11-24
 - Amends: ADR 0032's spill-over addendum (2026-11-12): which runs spill, when, where, and the switches
-- Code: db `packages/db/src/schema/agents.ts` (`organization_settings.devices_help`, migration `0352_devices_help`),
+- Code: db `packages/db/src/schema/agents.ts` (`organization_settings.devices_help`, migration `0346_devices_help`),
   `schema/machines.ts` (`spill_own` is the switch; `spill_others` retired); engine `spill.ts` (`spillTarget`,
   `spillMayHelp`, `SPILL_AFTER_MS`, `SpillRecord`), `executor.ts` (`spillOver`, the room gate, the offline and paused
   branch of `brainUnavailable`, the re-entry look, `meta.spilled` in `withFallback`), `devices.ts` (`spill`,

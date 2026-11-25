@@ -1152,6 +1152,21 @@ describe("A device's page", () => {
     (globalThis as { geometrySnapshot?: () => void }).geometrySnapshot?.();
   });
 
+  test("a computer moving to another server: moving on its pill and its line, never offline", async () => {
+    await open(`/org/${ORG_ID}/settings/devices/${IMAC}`, (devices) => {
+      const list = acmeDevices();
+      const imac = list.devices.find((d) => d.id === IMAC);
+      if (!imac) throw new Error("fixture");
+      imac.status = { kind: "moving", since: new Date(Date.now() - 5 * 60_000).toISOString() };
+      devices.set(list);
+    });
+    const line = document.querySelector(".dv-statusline__text");
+    expect(line?.textContent).toContain("Moving to a new server… back in a few minutes");
+    expect(document.body.textContent).toContain("Moving servers");
+    expect(line?.textContent).not.toContain("offline");
+    (globalThis as { geometrySnapshot?: () => void }).geometrySnapshot?.();
+  });
+
   test("a computer's typed name in the line stays as typed: its backticks and asterisks mark nothing", async () => {
     const name = "Ana's `iMac` **<b>2</b>**";
     await open(`/org/${ORG_ID}/settings/devices/phones/p-ana-iphone`, (devices) => {
