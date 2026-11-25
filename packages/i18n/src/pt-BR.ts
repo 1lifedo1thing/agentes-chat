@@ -2254,8 +2254,8 @@ export const ptBR = {
       title: "Barra lateral",
       newChannel: "Novo canal",
       newChannelPersonal: "Nova conversa em grupo",
-      addToChannels: "Novo canal ou categoria",
-      addToChannelsPersonal: "Nova conversa em grupo ou categoria",
+      addToChannels: "Novo canal",
+      addToChannelsPersonal: "Nova conversa em grupo",
       newMessage: "Nova mensagem",
       addMembers: "Adicionar pessoas ou agentes",
       channelSettings: "Configurações do canal",
@@ -2425,7 +2425,11 @@ export const ptBR = {
     delete: "Excluir setor",
     deleteTitle: "Excluir o setor {{name}}?",
     deleteText: "Os agentes dele voltam para Agentes.",
+    /** After deleteText when the setor holds channels (ADR 0240). */
+    deleteChannels: "Os canais dele voltam para Canais.",
     dropHere: "Arraste agentes para cá",
+    /** The sidebar's empty setor: agents and channels both drop there (ADR 0240). */
+    dropHereAll: "Arraste agentes ou canais para cá",
     moved: "{{name}} foi para o setor {{group}}",
     movedOut: "{{name}} saiu do setor {{group}}",
     undo: "Desfazer",

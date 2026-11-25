@@ -2355,8 +2355,8 @@ export const en = {
       newChannel: "New channel",
       /** A personal workspace calls its channels group conversations (ADR 0159). */
       newChannelPersonal: "New group conversation",
-      addToChannels: "New channel or category",
-      addToChannelsPersonal: "New group conversation or category",
+      addToChannels: "New channel",
+      addToChannelsPersonal: "New group conversation",
       newMessage: "New message",
       addMembers: "Add people or agents",
       channelSettings: "Channel settings",
@@ -2528,7 +2528,11 @@ export const en = {
     delete: "Delete department",
     deleteTitle: "Delete the department {{name}}?",
     deleteText: "Its agents go back to Agents.",
+    /** After deleteText when the department holds channels (ADR 0240). */
+    deleteChannels: "Its channels go back to Channels.",
     dropHere: "Drag agents here",
+    /** The sidebar's empty department: agents and channels both drop there (ADR 0240). */
+    dropHereAll: "Drag agents or channels here",
     moved: "{{name}} moved to {{group}}",
     movedOut: "{{name}} left {{group}}",
     undo: "Undo",

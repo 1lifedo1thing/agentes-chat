@@ -13480,13 +13480,16 @@ html:not([data-pointer]) .channel-perms__target:focus-visible {
 .sidebar__section--group[data-open="false"] .sidebar__section-body > [data-live="true"] {
   display: flex;
 }
-/* A group stands apart from the agents above it; its mark in gray, as quiet as its name. */
+/* A group stands apart from the agents above it. Its mark keeps the setor's own color, so setores tell apart. */
 .sidebar:not([data-rail="true"]) .sidebar__section--group {
   margin-top: 8px;
 }
-.sidebar__section--group .sidebar__section-toggle > .ac-rolemark {
-  filter: grayscale(1);
-  opacity: 0.6;
+/* A setor's channels follow its agents under a hairline (ADR 0240), from the faces' column to the row's end. */
+.sidebar__sector-line {
+  flex: none;
+  margin: 4px 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 .sidebar__section-count {
   min-width: 24px;
@@ -13549,7 +13552,7 @@ html:not([data-pointer]) .channel-perms__target:focus-visible {
   line-height: 17px;
   color: var(--faint);
 }
-.sidebar[data-rail="true"] :is(.sidebar__see-all, .sidebar__pins-end, .sidebar__section-count) {
+.sidebar[data-rail="true"] :is(.sidebar__see-all, .sidebar__pins-end, .sidebar__sector-line, .sidebar__section-count) {
   display: none;
 }
 /* More: the other tools in a panel beside the sidebar, each with a line on what it is for. */
