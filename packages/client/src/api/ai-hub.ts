@@ -265,6 +265,7 @@ export function currentOf(
       model: string | null;
       effort: AiChoice["effort"];
       computer: { machineId: string } | null;
+      keyId?: string | null;
     };
     newSetup?: {
       brain: AiChoice["brain"];
@@ -289,6 +290,7 @@ export function currentOf(
         machineId: b.computer?.machineId ?? null,
         model: b.model,
         effort: b.effort,
+        ...(b.brain === "model" && b.keyId ? { usesKey: b.keyId } : {}),
       };
     }
     case "newAgent": {

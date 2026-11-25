@@ -47,6 +47,11 @@ export interface AiChoice {
   account?: string | null;
   /** The API's key; null: the workspace's default. */
   key?: string | null;
+  /**
+   * The key an agent's calls take now with no `key` picked (`AgentBrain.keyId`: its own, else its provider's, which
+   * may be no default): the row shown chosen. Never saved.
+   */
+  usesKey?: string;
   /** Where a plan thinks (its account's computer). */
   machineId?: string | null;
   /** null: the brain's default. */
@@ -103,6 +108,13 @@ export function hubAccountsInOrder<A extends AiHubAccount>(accounts: readonly A[
     (x, y) => kindRank(first(x).kind) - kindRank(first(y).kind) || inOrder(first(x), first(y)),
   );
 }
+
+/**
+ * Whether a choice on the API stands for this key: the one picked, else the one its calls take now (`usesKey`), else
+ * the workspace's default.
+ */
+export const keyChosen = (c: AiChoice, k: AiHubKey): boolean =>
+  c.key ? c.key === k.id : c.usesKey ? c.usesKey === k.id : k.isDefault;
 
 /** The target thinks with keys too: not Lodi's own AI (its "A do workspace" is the workspace's key). */
 const takesKeys = (t: AiChoiceTarget) => t.kind !== "mission" && !(t.kind === "lodi" && t.scope === "mine");
@@ -189,7 +201,7 @@ export function aiChoiceRows(hub: AiHub | null | undefined, ctx: AiChoiceContext
         brain: "model",
         apiKey: k,
         usable: true,
-        selected: current?.brain === "model" && (current.key ? current.key === k.id : k.isDefault),
+        selected: current?.brain === "model" && keyChosen(current, k),
       });
     }
   }

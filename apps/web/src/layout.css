@@ -6799,36 +6799,6 @@ html:not([data-pointer]) .sidebar__jump:focus-visible {
 }
 
 /* Live code (the agent's PC): mono only here, neutral tokens; stderr in the danger tone. */
-.live-code-toggle {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-.live-code-toggle__btn {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: var(--control-h-sm);
-  padding: 0 var(--control-px-sm);
-  border: 0;
-  border-radius: var(--control-r-sm);
-  background: var(--sunken);
-  color: var(--ink2);
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: normal;
-  cursor: pointer;
-}
-.live-code-toggle__btn:hover {
-  background: var(--plate);
-}
-html:not([data-pointer]) .live-code-toggle__btn:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring);
-}
 .live-code {
   border-radius: var(--radius-lg);
   background: var(--raised);
@@ -7801,6 +7771,11 @@ html:not([data-pointer]) .run-continue:focus-visible {
 .working-tail__more {
   color: var(--faint);
   font-variant-numeric: tabular-nums;
+}
+/* The code it runs, opened from "See code" on its line: as wide as a card in a message. */
+.working-tail__code {
+  max-width: var(--msg-card-w);
+  margin-top: var(--space-2);
 }
 @media (prefers-reduced-motion: no-preference) {
   .working-tail__trail > li {
@@ -11254,13 +11229,15 @@ html:not([data-pointer]) .agp-cell:focus-visible {
   min-width: 0;
 }
 /* 12px above and below, as the attention tiles (`.agp-attn`): a head with a button (a 32px row) reaches into the padding
-   as far as `--action-clear` lets it. The foot meets the card's edge, so it pulls 12px, not --card-pad. */
+   as far as `--action-clear` lets it, its title in the button's middle. A head with a quiet line under its title keeps
+   the 12px: that title sits at the head's top, so pulled up it would touch the card's edge. The foot meets the card's
+   edge, so it pulls 12px, not --card-pad. */
 .agp-card.ac-card {
   --agp-card-py: 12px;
   gap: 12px;
   padding-block: var(--agp-card-py);
 }
-.agp-card > .ac-card__head:first-child:has(.ac-card__action :is(.ac-btn, .ac-seg)) {
+.agp-card > .ac-card__head:first-child:not(:has(.ac-card__sub)):has(.ac-card__action :is(.ac-btn, .ac-seg)) {
   margin-block: calc(var(--action-clear) - var(--agp-card-py)) calc(-1 * var(--space-1));
 }
 .agp-card > .ac-card__foot {
