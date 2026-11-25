@@ -677,5 +677,7 @@ describe("Claude Code's PowerShell tool, and any other of its tools that runs a 
     expect(tool("Monitor", "tail -f ./server.log")).toBeNull();
     expect(deniedMessage("Monitor", { command: "gh pr merge 12" })).toContain("This is a merge");
     expect(tool("mcp__ops__run", "sudo systemctl restart app")).toBeNull();
+    // A Bash call without a command is still one nothing plain can be read from.
+    expect(forbiddenReason("Bash", {}, scope)).toBe("it can't be read plainly");
   });
 });

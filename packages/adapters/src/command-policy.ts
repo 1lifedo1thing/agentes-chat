@@ -567,16 +567,17 @@ function pathsOf(word: string): string[] {
 }
 
 /**
- * The command a call runs, or null: Bash's, Claude Code's PowerShell tool's (`powershell`: PowerShell's text, read as
- * a `powershell -Command` body is) and the command any other of Claude Code's own tools carries (its Monitor, a tool
- * a later version adds), so a new way to run commands meets the same rules. An MCP server's tool is the person's
- * own: what its command runs, and where, is that server's.
+ * The command a call runs, or null: Bash's (empty without one, which reads as nothing plain), Claude Code's
+ * PowerShell tool's (`powershell`: PowerShell's text, read as a `powershell -Command` body is) and the command any
+ * other of Claude Code's own tools carries (its Monitor, a tool a later version adds), so a new way to run commands
+ * meets the same rules. An MCP server's tool is the person's own: what its command runs, and where, is that server's.
  */
 export function commandCall(
   toolName: string,
   input: Record<string, unknown> | null | undefined,
 ): { command: string; powershell: boolean } | null {
   const command = input?.command;
+  if (toolName === "Bash") return { command: typeof command === "string" ? command : "", powershell: false };
   if (typeof command !== "string" || toolName.startsWith("mcp__")) return null;
   return { command, powershell: toolName === "PowerShell" };
 }
