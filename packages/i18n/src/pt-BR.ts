@@ -4607,6 +4607,8 @@ export const ptBR = {
     available: "Disponível",
     working: "Trabalhando",
     waiting: "Esperando você",
+    /** An agent idle a while (server `away`): never a person's "away", which reads as gone, nor asleep. */
+    idle: "Inativo",
     lower: {
       online: "online",
       away: "ausente",

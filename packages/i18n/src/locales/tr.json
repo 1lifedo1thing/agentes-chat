@@ -4344,6 +4344,7 @@
     "available": "Müsait",
     "working": "Çalışıyor",
     "waiting": "Sizi bekliyor",
+    "idle": "Boşta",
     "lower": {
       "online": "çevrimiçi",
       "away": "uzakta",

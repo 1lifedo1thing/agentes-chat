@@ -255,6 +255,8 @@ describe("what code never lets the judge approve", () => {
       "reg query HKCU\\Software\\Example",
       "REG.EXE add HKCU\\Software\\Example //f",
       "/c/Windows/System32/schtasks.exe //query",
+      // The person's own task runs outside a mission; in one, a person decides, as on crontab.
+      "schtasks //create //tn backup //tr calc.exe //sc daily",
       "'C:\\Windows\\System32\\sc.exe' query wuauserv",
       "netsh interface show interface",
       "icacls build //grant Everyone:F",

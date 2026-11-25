@@ -4514,6 +4514,7 @@
     "available": "Disponible",
     "working": "Au travail",
     "waiting": "Vous attend",
+    "idle": "Inactif",
     "lower": {
       "online": "en ligne",
       "away": "absent",
