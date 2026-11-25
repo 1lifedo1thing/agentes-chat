@@ -6227,6 +6227,21 @@
   "surface.page.back": {
     "value": "Go back to {{surface}}. Your assistant goes on there."
   },
+  "surface.page.setFirst": {
+    "value": "Set your PIN first"
+  },
+  "surface.page.setFirstLead": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
+  },
+  "surface.page.setFirstLeadEmail": {
+    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
+  },
+  "surface.page.openApp": {
+    "value": "Choose it in the app"
+  },
+  "surface.page.emailMe": {
+    "value": "Email me a link"
+  },
   "surface.pinReset.title": {
     "value": "Choose your PIN"
   },
@@ -6256,6 +6271,21 @@
   },
   "surface.forwardedTip": {
     "value": "{{person}} forwarded this from {{surface}}. The words are someone else's."
+  },
+  "surface.pin.set": {
+    "value": "Set PIN"
+  },
+  "surface.pin.change": {
+    "value": "Change PIN"
+  },
+  "surface.pin.title": {
+    "value": "Your {{surface}} PIN"
+  },
+  "surface.pin.text": {
+    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
+  },
+  "surface.pin.save": {
+    "value": "Save PIN"
   },
   "team.title": {
     "value": "Team"
@@ -11031,6 +11061,9 @@
   },
   "accountSwitch.extra": {
     "value": "Went on with the <to/> account because the <from/> account would go into paid extra usage"
+  },
+  "accountSwitch.busy": {
+    "value": "Went on with the <to/> account because the <from/> account was already answering as many conversations as it can at once"
   },
   "channelRefs.list": {
     "value": "Channels"
@@ -16024,7 +16057,7 @@
     "value": "The account chosen for this agent isn't on its computer anymore. Choose another one in the agent's settings, or add it again."
   },
   "agentPage.activity.errors.windows_sandbox": {
-    "value": "This Windows computer can't isolate Codex's commands: it needs Windows 11 24H2 or newer. Update Windows, choose Claude or an API key for this agent, or move it to a Linux computer."
+    "value": "Codex couldn't start any isolation for its commands on this Windows computer. Choose Claude or an API key for this agent, or update the computer to Windows 11 24H2 or newer, with its latest updates."
   },
   "agentPage.activity.errors.our_error": {
     "value": "Something went wrong on our side and it stopped. Ask again in a little while."
@@ -19715,6 +19748,54 @@
   },
   "scopes.vault_write.description": {
     "value": "Save and update contact details in the Vault, change a saved login's username or a description, make passwords for accounts it creates, and delete what it saved."
+  },
+  "scopes.gitlab_git_read.label": {
+    "value": "Clone repositories (git)"
+  },
+  "scopes.gitlab_git_read.description": {
+    "value": "Clone and update repositories on the agent's computer with git, through our proxy. The GitLab token never enters the machine."
+  },
+  "scopes.gitlab_git_write.label": {
+    "value": "Push branches (git push)"
+  },
+  "scopes.gitlab_git_write.description": {
+    "value": "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Deleting branches and pushing to someone else's branch ask for approval first."
+  },
+  "scopes.gitlab_pr_write.label": {
+    "value": "Open merge requests"
+  },
+  "scopes.gitlab_pr_write.description": {
+    "value": "Open merge requests from a pushed branch. Merging stays with people."
+  },
+  "scopes.bitbucket_git_read.label": {
+    "value": "Clone repositories (git)"
+  },
+  "scopes.bitbucket_git_read.description": {
+    "value": "Clone and update repositories on the agent's computer with git, through our proxy. The Bitbucket token never enters the machine."
+  },
+  "scopes.bitbucket_git_write.label": {
+    "value": "Push branches (git push)"
+  },
+  "scopes.bitbucket_git_write.description": {
+    "value": "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Deleting branches and pushing to someone else's branch ask for approval first."
+  },
+  "scopes.bitbucket_pr_write.label": {
+    "value": "Open pull requests"
+  },
+  "scopes.bitbucket_pr_write.description": {
+    "value": "Open pull requests from a pushed branch. Merging stays with people."
+  },
+  "scopes.git_git_read.label": {
+    "value": "Clone repositories (git)"
+  },
+  "scopes.git_git_read.description": {
+    "value": "Clone and update repositories on the agent's computer with git, through our proxy. The server's token never enters the machine."
+  },
+  "scopes.git_git_write.label": {
+    "value": "Push branches (git push)"
+  },
+  "scopes.git_git_write.description": {
+    "value": "Push commits to agentes/{agent}/… branches: never to the default branch, no force push, no tags. Pushing to someone else's branch asks for approval first."
   },
   "scopes.github_git_read.label": {
     "value": "Clone repositories (git)"
@@ -27689,7 +27770,7 @@
     "value": "Repository or project"
   },
   "codeSessions.home.repoSearch": {
-    "value": "Search, or type owner/name or a new name"
+    "value": "Search, or type owner/name, a repository's address or a new name"
   },
   "codeSessions.home.newLocal": {
     "value": "New project on the computer: {{name}}"
@@ -27698,7 +27779,7 @@
     "value": "Use {{repo}}"
   },
   "codeSessions.home.repoNote": {
-    "value": "A name with no owner starts a project on the agent's computer, outside GitHub."
+    "value": "A name with no owner starts a project on the agent's computer only, with no remote repository."
   },
   "codeSessions.home.hint": {
     "value": "@ calls someone into the session"
@@ -27734,7 +27815,7 @@
     "value": "Try again"
   },
   "codeSessions.view.githubAccess": {
-    "value": "This workspace has no GitHub access for this repository. Connect GitHub in Settings › Connectors, or start a session on a project on the computer (just a name)."
+    "value": "This workspace has no access to this repository. Connect where it lives (GitHub, GitLab or Bitbucket) in Settings › Connectors, or start a session on a project on the computer (just a name)."
   },
   "codeSessions.panel.label": {
     "value": "Session panel"
@@ -30369,8 +30450,14 @@
   "brain.reasons.system": {
     "value": "{{program}} doesn't run on {{computer}}'s system yet."
   },
+  "brain.reasons.windows_sandbox": {
+    "value": "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows 11 24H2 or newer, with its latest updates."
+  },
   "brain.reasons.no_computerCloud": {
     "value": "Ready as soon as {{computer}} is."
+  },
+  "brain.sandboxPartial": {
+    "value": "On this Windows, Codex's commands write only in the agents' folders, but the internet is only partly blocked for them. Windows 11 24H2 or newer, with its latest updates, blocks it fully."
   },
   "brain.notAvailableNow": {
     "value": "Chosen, but unavailable right now."
@@ -32767,6 +32854,9 @@
   "connectors.personal.done": {
     "value": "Your agents use it only when you ask."
   },
+  "connectors.personal.githubDone": {
+    "value": "In code sessions, the commits, pushes and pull requests for what you ask go out in your name."
+  },
   "connectors.personal.worksWhenAsked": {
     "value": "Works only when you ask."
   },
@@ -34437,6 +34527,9 @@
   },
   "toolNames.label.git_clone": {
     "value": "Clone repository"
+  },
+  "toolNames.label.list_repositories": {
+    "value": "List repositories"
   },
   "toolNames.label.create_repository": {
     "value": "Create repository"
@@ -37081,6 +37174,27 @@
   "connectFlow.done.ok": {
     "value": "Done"
   },
+  "connectFlow.git.token": {
+    "value": "Access token"
+  },
+  "connectFlow.git.address": {
+    "value": "Address"
+  },
+  "connectFlow.git.addressHelp.gitlab": {
+    "value": "Only for a GitLab your company runs itself. Left blank, it is gitlab.com."
+  },
+  "connectFlow.git.addressHelp.git": {
+    "value": "Where the git server is, like https://git.company.com."
+  },
+  "connectFlow.git.tokenHelp.gitlab": {
+    "value": "A GitLab access token (personal, group or project) with the api and write_repository scopes. It stays on the server: agents' computers never get it."
+  },
+  "connectFlow.git.tokenHelp.bitbucket": {
+    "value": "A workspace or repository access token with repository write and pull request write. With your own API token, type your Atlassian email, a colon and the token: you@company.com:TOKEN."
+  },
+  "connectFlow.git.tokenHelp.git": {
+    "value": "The token the server takes as git's password. If it wants a username, type username:token."
+  },
   "connectFlow.telegram.token": {
     "value": "Bot token"
   },
@@ -38563,6 +38677,12 @@
   "errors.surface.pinResetGone": {
     "value": "This link was already used or ran out. Ask for a new one with “Forgot your PIN?”."
   },
+  "errors.surface.pinUnset": {
+    "value": "Set your PIN first. Choose it in the app, signed in."
+  },
+  "errors.surface.emailUnverified": {
+    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
+  },
   "errors.wallpaper.notYours": {
     "value": "That photo isn't yours."
   },
@@ -39354,6 +39474,9 @@
   },
   "errors.live.assetType": {
     "value": "Only pictures go in this file: PNG, JPEG, WebP or GIF."
+  },
+  "errors.live.fontInvalid": {
+    "value": "This font can't be used: the file isn't a font the app can read. Try a .ttf, .otf or .woff file."
   },
   "errors.live.liveOnly": {
     "value": "This file is changed right where it is, so it can't be replaced as a whole."
@@ -45977,6 +46100,9 @@
   "chat.work.step.cloningRepo": {
     "value": "Cloned a repository"
   },
+  "chat.work.step.listingRepos": {
+    "value": "Listed the repositories"
+  },
   "chat.work.step.openingPullRequest": {
     "value": "Opened a pull request"
   },
@@ -46330,6 +46456,9 @@
   },
   "chat.activity.cloningRepo": {
     "value": "cloning a repository"
+  },
+  "chat.activity.listingRepos": {
+    "value": "listing the repositories"
   },
   "chat.activity.openingPullRequest": {
     "value": "opening a pull request"
@@ -56478,41 +56607,5 @@
   },
   "live.sheet.fn.YEARFRAC": {
     "value": "The share of a year between two dates"
-  },
-  "surface.page.setFirst": {
-    "value": "Set your PIN first"
-  },
-  "surface.page.setFirstLead": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, then come back to this page."
-  },
-  "surface.page.setFirstLeadEmail": {
-    "value": "Approving from {{surface}} takes a PIN, and a link from the chat can't choose one. Choose it in the app, signed in, or with a link we email you. Then come back to this page."
-  },
-  "surface.page.openApp": {
-    "value": "Choose it in the app"
-  },
-  "surface.page.emailMe": {
-    "value": "Email me a link"
-  },
-  "surface.pin.set": {
-    "value": "Set PIN"
-  },
-  "surface.pin.change": {
-    "value": "Change PIN"
-  },
-  "surface.pin.title": {
-    "value": "Your {{surface}} PIN"
-  },
-  "surface.pin.text": {
-    "value": "Six digits you type to approve actions you ask for from {{surface}}. It's never sent in the chat."
-  },
-  "surface.pin.save": {
-    "value": "Save PIN"
-  },
-  "errors.surface.pinUnset": {
-    "value": "Set your PIN first. Choose it in the app, signed in."
-  },
-  "errors.surface.emailUnverified": {
-    "value": "Your email address isn't verified yet. Choose your PIN in the app instead."
   }
 }
