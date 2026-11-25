@@ -9572,6 +9572,7 @@
     "busyAnyComputer_other": "S'exécute {{count}} fois par jour sur l'ordinateur, qui doit rester allumé.",
     "outcome": {
       "queued": "En file d'attente",
+      "queuedBehind": "En file d'attente : attend la fin de la routine {{name}}",
       "running": "Au travail",
       "waiting": "En attente d'une réponse",
       "waitingApproval": "En attente de votre approbation",

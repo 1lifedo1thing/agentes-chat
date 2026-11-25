@@ -82,7 +82,14 @@ import {
   routineReportOf,
 } from "./routine-brief";
 import { enqueueRoutineJob, queueEventRun, startGatheredRun, wakeHeldRuns } from "./routine-events";
-import { claimRoutineRun, haltRoutineRuns, makeWayForRun, skipRoutineRun, unclaimRoutineRun } from "./routine-firing";
+import {
+  claimRoutineRun,
+  haltRoutineRuns,
+  makeWayForRun,
+  queueBehindAgentRoutine,
+  skipRoutineRun,
+  unclaimRoutineRun,
+} from "./routine-firing";
 import {
   callCountOf,
   DEFAULT_HOOK_METHODS,
@@ -712,6 +719,20 @@ function runView(run: RunRow, details: RunDetails, detailed: boolean): RoutineRu
   const failure = detailed && status === "failed" ? providerFailure(agentRun?.error) : null;
   const cause = failure?.errorParams?.provider ? failure : null;
   const calls = callCountOf(run.event);
+  // In line behind another routine of its agent (`queueBehindAgentRoutine`): which one.
+  const behind = status === "queued" && typeof run.event?.waitingFor === "string" ? run.event.waitingFor : null;
+  if (behind !== null)
+    return {
+      id: run.id,
+      at: run.at.toISOString(),
+      status,
+      code: "waiting_routine",
+      codeParams: { routine: behind },
+      summary: "",
+      brain: run.brain,
+      link: null,
+      finishedAt: null,
+    };
   return {
     id: run.id,
     at: run.at.toISOString(),
@@ -2485,6 +2506,10 @@ async function fireClaimedRun(deps: RoutineDeps, run: RunRow) {
   if (gate) {
     await skip(gate);
     if (once) await ran();
+    return;
+  }
+  if (await queueBehindAgentRoutine(deps, routine, run)) {
+    await publishRoutineRuns(deps.pubsub, routine.orgId, routine.id);
     return;
   }
   const brief: RoutineBrief = {

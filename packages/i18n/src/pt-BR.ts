@@ -9771,6 +9771,8 @@ export const ptBR = {
     busyAnyComputer_other: "Roda {{count}} vezes por dia no computador, que precisa ficar ligado.",
     outcome: {
       queued: "Na fila",
+      /** A scheduled run waiting for another routine of the same agent to finish. {{name}}: that routine's name. */
+      queuedBehind: "Na fila: espera a rotina {{name}} terminar",
       running: "Trabalhando agora",
       waiting: "Esperando alguém responder",
       waitingApproval: "Esperando sua aprovação",

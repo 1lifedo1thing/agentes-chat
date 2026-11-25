@@ -54,6 +54,7 @@ import {
   templateRule,
 } from "@agenteschat/client/lib/routine-templates";
 import {
+  atWorkWords,
   busyOnComputer,
   eventWebhook,
   healthWords,
@@ -591,10 +592,11 @@ function everyMinutes(t: TFunction, cron: string) {
 /** The runs as words, for the strip's label and the horizon's tooltips. */
 function useRunWords() {
   const { t, i18n } = useTranslation();
+  const say = useSay();
   return {
     status: (s: RunStatus) => t(`routines.statusWord.${s}`),
     caption: (r: Routine, now: Date) => {
-      if (isRunning(r)) return t("routines.runningNow");
+      if (isRunning(r)) return say(atWorkWords(r));
       // The finished runs (one at work is the strip's own "running").
       const runs = runPixels(r.recentRuns.length > 0 ? r.recentRuns : r.lastRun ? [r.lastRun] : []);
       const last = runs[0];
@@ -623,8 +625,9 @@ function useRunWords() {
 /** "Próxima em 10 min" (within a day), else "Próxima sex 16 out, 10:00". */
 function useNextText() {
   const { t, i18n } = useTranslation();
+  const say = useSay();
   return (r: Routine, now: Date) => {
-    if (isRunning(r)) return t("routines.runningNow");
+    if (isRunning(r)) return say(atWorkWords(r));
     if (hasFired(r))
       return r.lastRun
         ? t("routines.firedAt", { when: whenAt(t, i18n.language, r.lastRun.at) })
@@ -813,7 +816,7 @@ function RowRuns({ routine: r, running, onOpenRuns }: { routine: Routine; runnin
     const took = x?.finishedAt ? formatDuration(t, Date.parse(x.finishedAt) - Date.parse(x.at)) : null;
     const head = [x && capitalize(whenAt(t, i18n.language, x.at), i18n.language), took].filter(Boolean).join(" · ");
     const how =
-      i < 0 || !x ? t("routines.runningNow") : say(runOutcome(x, (id) => actors.dir.memberById.get(id)?.name ?? null));
+      i < 0 || !x ? say(atWorkWords(r)) : say(runOutcome(x, (id) => actors.dir.memberById.get(id)?.name ?? null));
     return {
       label: head ? `${head}: ${how}` : how,
       tip: (

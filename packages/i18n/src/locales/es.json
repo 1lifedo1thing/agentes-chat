@@ -9523,6 +9523,7 @@
     "busyAnyComputer_other": "Se ejecuta {{count}} veces al día en la computadora, que tiene que seguir encendida.",
     "outcome": {
       "queued": "En cola",
+      "queuedBehind": "En cola: espera a que termine la rutina {{name}}",
       "running": "Trabajando ahora",
       "waiting": "Esperando que alguien responda",
       "waitingApproval": "Esperando tu aprobación",

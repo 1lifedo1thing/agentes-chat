@@ -8923,6 +8923,7 @@
     "busyAnyComputer_other": "コンピューターで1日{{count}}回実行されるため、電源を入れたままにする必要があります。",
     "outcome": {
       "queued": "順番待ち",
+      "queuedBehind": "順番待ち: ルーティン「{{name}}」の終了を待っています",
       "running": "作業中",
       "waiting": "誰かの回答を待機中",
       "waitingApproval": "あなたの承認待ち",

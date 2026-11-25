@@ -8965,6 +8965,7 @@
     "busyAnyComputer_other": "Berjalan {{count}} kali sehari di komputer, yang harus tetap menyala.",
     "outcome": {
       "queued": "Dalam antrean",
+      "queuedBehind": "Dalam antrean: menunggu rutinitas {{name}} selesai",
       "running": "Sedang bekerja",
       "waiting": "Menunggu seseorang menjawab",
       "waitingApproval": "Menunggu persetujuanmu",

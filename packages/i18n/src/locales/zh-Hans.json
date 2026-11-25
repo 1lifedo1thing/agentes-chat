@@ -8966,6 +8966,7 @@
     "busyAnyComputer_other": "每天在电脑上运行 {{count}} 次，电脑需要保持开机。",
     "outcome": {
       "queued": "排队中",
+      "queuedBehind": "排队中：等待例行工作「{{name}}」完成",
       "running": "正在工作",
       "waiting": "等待有人回答",
       "waitingApproval": "等待你审批",

@@ -9818,6 +9818,8 @@ export const en = {
     busyAnyComputer_other: "Runs {{count}} times a day on the computer, which has to stay on.",
     outcome: {
       queued: "Queued",
+      /** A scheduled run waiting for another routine of the same agent to finish. {{name}}: that routine's name. */
+      queuedBehind: "Queued: waits for the {{name}} routine to finish",
       running: "Working now",
       waiting: "Waiting for someone to answer",
       waitingApproval: "Waiting for your approval",

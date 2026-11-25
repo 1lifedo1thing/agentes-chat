@@ -9206,6 +9206,7 @@
     "busyAnyComputer_other": "Günde {{count}} kez bilgisayarda çalışır, bilgisayarın açık kalması gerekir.",
     "outcome": {
       "queued": "Sırada",
+      "queuedBehind": "Sırada: {{name}} rutininin bitmesini bekliyor",
       "running": "Şu anda çalışıyor",
       "waiting": "Birinin yanıt vermesi bekleniyor",
       "waitingApproval": "Onayınız bekleniyor",

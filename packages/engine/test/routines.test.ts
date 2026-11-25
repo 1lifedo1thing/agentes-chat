@@ -686,6 +686,63 @@ test("a routine doesn't pile up while its agent's computer is away: the next run
   expect((await f.db.select().from(schema.notifications)).map((n) => n.kind)).toEqual(["routine_stalled"]);
 });
 
+test("a scheduled run waits in line while its agent works on another routine, at most 30 minutes", async () => {
+  f = await setup();
+  const deps = { db: f.db, pubsub: f.pubsub, context: f.context };
+  const make = async (name: string) => {
+    const r = await createRoutine(deps, f.owner.id, f.org.id, {
+      name,
+      agentId: f.agent.id,
+      prompt: `${name}: faça o relatório.`,
+      target: { type: "channel", channelId: f.general.id },
+      trigger: { type: "schedule", phrase: "todo dia às 8h" },
+    });
+    const [row] = await f.db.select().from(schema.routines).where(eq(schema.routines.id, r.id));
+    if (!row) throw new Error("no routine");
+    return row;
+  };
+  const sales = await make("Vendas");
+  const stock = await make("Estoque");
+  const working = await queueRoutineRun(deps, sales, new Date(), "schedule");
+  await executeRoutineRun(deps, working?.id ?? "");
+  const queued = await queueRoutineRun(deps, stock, new Date(), "schedule");
+  await executeRoutineRun(deps, queued?.id ?? "");
+  const rowOf = async (id: string | undefined) =>
+    (
+      await f.db
+        .select()
+        .from(schema.routineRuns)
+        .where(eq(schema.routineRuns.id, id ?? ""))
+    )[0];
+  // Back in line, naming what it waits for, with its next look already queued: the reaper never takes it for lost.
+  expect([(await rowOf(queued?.id))?.status, (await rowOf(queued?.id))?.event]).toEqual([
+    "queued",
+    { waitingFor: "Vendas" },
+  ]);
+  expect(await reapRoutineRuns(deps, new Date(Date.now() + 10 * 60_000))).toBe(0);
+  const card = (await listRoutines(f.db, f.owner.id, f.org.id)).find((r) => r.id === stock.id);
+  expect(card?.recentRuns[0]).toMatchObject({
+    status: "queued",
+    code: "waiting_routine",
+    codeParams: { routine: "Vendas" },
+  });
+  // The other routine's run ends: at the next look, this one starts.
+  await f.db
+    .update(schema.agentRuns)
+    .set({ status: "done" })
+    .where(eq(schema.agentRuns.id, (await rowOf(working?.id))?.agentRunId ?? ""));
+  await f.db.update(schema.outbox).set({ nextAttemptAt: new Date() }).where(eq(schema.outbox.kind, "routine.run"));
+  await drainOutbox(f.db, f.handlers);
+  expect((await rowOf(queued?.id))?.agentRunId).not.toBeNull();
+  // Started, it carries no event: its context never shows the wait as what fired it.
+  expect((await rowOf(queued?.id))?.event).toBeNull();
+
+  // A slot already 30 minutes late starts beside the other routine instead of waiting more.
+  const late = await queueRoutineRun(deps, sales, new Date(Date.now() - 31 * 60_000), "schedule");
+  await executeRoutineRun(deps, late?.id ?? "");
+  expect((await rowOf(late?.id))?.status).not.toBe("queued");
+});
+
 /** A routine with one run of it that started: what the two rules below need, and nothing else. */
 async function routineWithRun() {
   const deps = { db: f.db, pubsub: f.pubsub, context: f.context };
