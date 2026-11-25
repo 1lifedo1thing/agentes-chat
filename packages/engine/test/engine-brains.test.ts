@@ -4501,6 +4501,48 @@ test("a Claude plan sign-in at its cap: the next run waits in line like any othe
   expect((await timeline(f)).some((m) => m.body === "Pronto.")).toBe(true);
 });
 
+test("no cap on a Claude plan sign-in unless the server sets one: past 12 runs on it, the next starts at once", async () => {
+  f = await setup({ reply: () => ({ chunks: ["Pela API."] }) });
+  const machineId = await computerAgent(f);
+  const { brain, seen } = scriptedComputerBrain(() => [{ type: "done", text: "Pronto." }]);
+  const handlers = createJobHandlers({
+    ...f.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  const ops = await createAgent(
+    f.db,
+    f.owner.id,
+    f.org.id,
+    { name: "Ops", handle: "ops", role: "Infra", instructions: "", credentialId: f.credential.id },
+    { model: "claude-sonnet-5-5" },
+  );
+  // The computer's own Claude sign-in already works on 13 other runs.
+  await f.db.insert(schema.agentRuns).values(
+    Array.from({ length: 13 }, () => {
+      const id = Bun.randomUUIDv7();
+      return {
+        id,
+        orgId: f.org.id,
+        agentId: ops.id,
+        channelId: f.general.id,
+        threadRootId: id,
+        triggerMessageId: id,
+        trigger: "mention" as const,
+        hop: 2,
+        status: "running" as const,
+        heartbeatAt: new Date(),
+        transcript: { roomAsk: { machineId, at: Date.now() - 60_000, signIn: "own" } },
+      };
+    }),
+  );
+  await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  const run = (await f.db.select().from(schema.agentRuns)).find((r) => r.agentId !== ops.id);
+  expect(run?.status).toBe("done");
+  expect(seen).toHaveLength(1);
+});
+
 test("a run held in line behind its own sign-in's wait holds back only that sign-in's runs, never another's", async () => {
   f = await setup({ reply: () => ({ chunks: ["Pela API."] }) });
   const machineId = await computerAgent(f);

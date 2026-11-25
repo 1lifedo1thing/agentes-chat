@@ -163,7 +163,6 @@ import {
   type RoomWaitCause,
   roomGate,
   roomHead,
-  SIGN_IN_CONCURRENCY,
   signInSlotOf,
 } from "./computer-queue";
 import {
@@ -622,7 +621,7 @@ export interface EngineDeps {
   computerWakeWaitMs?: number;
   /** How long a computer turn is still read after its plan's `limit` event (default `PLAN_LIMIT_GRACE_MS`). */
   planLimitGraceMs?: number;
-  /** Runs one Claude plan sign-in thinks for at once (default `SIGN_IN_CONCURRENCY`; 0: no limit). */
+  /** Runs one Claude plan sign-in thinks for at once (`CLAUDE_PLAN_CONCURRENCY`); unset or 0: no limit. */
   signInConcurrency?: number;
   /**
    * Tools on demand (ADR 0043): each run lists the core tools and the groups the
@@ -5387,7 +5386,7 @@ async function executeRunInner(
         } as const;
         // The right hand is how people find out what the line is doing: it never waits behind it. Its turn is
         // locked down, so the runner lets it in on a lower floor (`admit`).
-        const slotOf = (p: BrainPlan) => signInSlotOf(p, deps.signInConcurrency ?? SIGN_IN_CONCURRENCY);
+        const slotOf = (p: BrainPlan) => signInSlotOf(p, deps.signInConcurrency ?? 0);
         // Its owner chose a computer of theirs for their agents' work (`spill_first`): anything but a person's reply
         // starts there while it is free, before lining up here.
         let askOn = roomMachine;
@@ -5421,7 +5420,7 @@ async function executeRunInner(
         // kind that has a free slot, before it waits. Only one under the pause line: never into someone's paid extra
         // usage, nor onto a plan near its limit, to save a short wait.
         if (behind?.cause === "sign_in" && run.turns === 0 && !transcript.spill) {
-          const full = await fullSignIns(db, run.orgId, deps.signInConcurrency ?? SIGN_IN_CONCURRENCY);
+          const full = await fullSignIns(db, run.orgId, deps.signInConcurrency ?? 0);
           const next = await moveToNextAccount("busy", (usage, id) => !full.has(id) && underTheLine(usage));
           if (next?.plan) behind = await roomGate(db, run, askOn, place, slotOf(plan));
         }
