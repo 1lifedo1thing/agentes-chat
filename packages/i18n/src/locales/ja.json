@@ -2074,7 +2074,7 @@
       },
       "computers": {
         "title": "コンピューター",
-        "help": "新しいコンピューターが加わったとき、ワークスペースのコンピューターの準備ができたとき"
+        "help": "新しいコンピューターが加わったとき、準備ができたとき、応答しなくなったとき"
       },
       "reactions": {
         "title": "リアクション",
@@ -15876,6 +15876,16 @@
       "diskFullNotice": "{{name}}のディスクがもうすぐいっぱいです"
     },
     "chromeMissingNotice": "{{name}}でエージェントのブラウザを使うにはGoogle Chromeが必要です。google.com/chromeからダウンロードしてください",
+    "outage": {
+      "down": "{{name}}が応答していません",
+      "back": "{{name}}が復旧しました",
+      "since": "{{time}}から",
+      "backAfter": "{{away}}後に復旧",
+      "waiting": "待機中：{{what}}",
+      "waited": "待機していたもの：{{what}}",
+      "runs_other": "エージェントへのリクエスト{{count}}件",
+      "calls_other": "Webhook呼び出し{{count}}件"
+    },
     "access": {
       "folders": "許可されたフォルダ",
       "ownFolder": "各エージェントのフォルダ",

@@ -1070,6 +1070,12 @@
       "computer_no_chrome_one": "Un computer ha bisogno di Google Chrome. Scaricalo da google.com/chrome",
       "computer_no_chrome_many": "Alcuni computer hanno bisogno di Google Chrome. Scaricalo da google.com/chrome",
       "computer_no_chrome_other": "Alcuni computer hanno bisogno di Google Chrome. Scaricalo da google.com/chrome",
+      "computer_down_one": "Un computer non risponde",
+      "computer_down_many": "Un computer non risponde",
+      "computer_down_other": "Un computer non risponde",
+      "computer_back_one": "Un computer è di nuovo disponibile",
+      "computer_back_many": "Un computer è di nuovo disponibile",
+      "computer_back_other": "Un computer è di nuovo disponibile",
       "app_created_one": "Un'app di IA ha creato qualcosa per te",
       "app_created_many": "Un'app di IA ha creato qualcosa per te",
       "app_created_other": "Un'app di IA ha creato qualcosa per te"

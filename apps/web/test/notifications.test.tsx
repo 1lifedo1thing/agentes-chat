@@ -338,6 +338,38 @@ describe("Notificações", () => {
     expect(read().querySelector(".nt-steprow")).toBeNull();
   });
 
+  test("a computer that isn't answering, then back: its name leads, since when or how long, what waited (ADR 0241)", async () => {
+    const since = new Date(Date.now() - 50 * 60_000).toISOString();
+    const items = [
+      notification({
+        id: "n-down",
+        kind: "computer_down",
+        actors: [],
+        source: { machineId: "m-ws", label: "Computador do workspace" },
+        latest: { since, runs: 3, calls: 7 },
+        updatedAt: ago(40),
+      }),
+      notification({
+        id: "n-back",
+        kind: "computer_back",
+        actors: [],
+        source: { machineId: "m-ws", label: "Computador do workspace" },
+        latest: { since, runs: 3, calls: 0 },
+        createdAt: new Date(Date.parse(since) + 42 * 60_000).toISOString(),
+        updatedAt: ago(8),
+      }),
+    ];
+    await go(seed(items));
+    expect(row("n-down").textContent).toContain("Computador do workspace não está respondendo");
+    expect(row("n-down").querySelector(".ib-row__sub")?.textContent).toMatch(
+      /^Computador · Desde \d{1,2}:\d{2} · Esperando: 3 pedidos a agentes e 7 chamadas de webhook/,
+    );
+    expect(row("n-back").textContent).toContain("Computador do workspace voltou");
+    expect(row("n-back").querySelector(".ib-row__sub")?.textContent).toContain(
+      "Voltou depois de 42 min · Esperaram: 3 pedidos a agentes",
+    );
+  });
+
   test("an approval is the conversation's card: the agent's why, the action in its well, who asked behind Ver detalhes", async () => {
     const asked = notification({
       id: "n-ap",

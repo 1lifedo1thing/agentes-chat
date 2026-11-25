@@ -1591,7 +1591,8 @@ test("a Claude Code turn's provider failure is kept on its account and told the 
         },
       ],
       [{ type: "done", text: "Feito." }],
-      // An older runner says no cause: its code says it.
+      // An older runner says no cause: its code says it. Its run tries once more, then fails.
+      [{ type: "error", code: "claude_failed", message: "boom", retryable: false }],
       [{ type: "error", code: "claude_failed", message: "boom", retryable: false }],
       [{ type: "error", code: "canceled", message: "The turn was canceled.", retryable: false }],
     ];
@@ -1634,6 +1635,7 @@ test("a Claude Code turn's provider failure is kept on its account and told the 
 
     await post(f, "@dev e agora?");
     await drainOutbox(f.db, handlers);
+    await drainOutbox(f.db, handlers, { now: new Date(Date.now() + 60_000) });
     expect(await account()).toMatchObject({ lastFailureCause: "unknown" });
     expect((await events("account.failure")).map((e) => (e as { cause: string }).cause)).toEqual([
       "account_disabled",
@@ -1658,6 +1660,38 @@ test("a Claude Code turn's provider failure is kept on its account and told the 
   } finally {
     enableOperatorEvents(false);
   }
+});
+
+test("a CLI that fails a turn before anything ran tries once more, then the run fails on what it said", async () => {
+  f = await setup();
+  await computerAgent(f);
+  const boom: BrainEvent[] = [{ type: "error", code: "claude_failed", message: "boom", retryable: false }];
+  // A sign-in failing for a moment: the second try answers.
+  const script: BrainEvent[][] = [boom, [{ type: "done", text: "Feito." }], boom, boom];
+  const { brain } = scriptedComputerBrain((n) => script[n] ?? []);
+  const handlers = createJobHandlers({
+    ...f.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  const later = () => drainOutbox(f.db, handlers, { now: new Date(Date.now() + 60_000) });
+
+  await post(f, "@dev oi");
+  await drainOutbox(f.db, handlers);
+  expect((await f.db.select().from(schema.agentRuns)).map((r) => r.status)).toEqual(["running"]);
+  await later();
+  expect((await f.db.select().from(schema.agentRuns)).map((r) => r.status)).toEqual(["done"]);
+
+  // Failing again on its second try: once a run, then it says what the CLI said.
+  await post(f, "@dev de novo");
+  await drainOutbox(f.db, handlers);
+  await later();
+  await later();
+  const runs = await f.db.select().from(schema.agentRuns).orderBy(schema.agentRuns.createdAt);
+  expect(runs.map((r) => [r.status, r.error])).toEqual([
+    ["done", null],
+    ["failed", "cli_failed: Claude Code: boom"],
+  ]);
 });
 
 test("the agent's account and effort apply to its own brain; signed out or an older runner: unavailable", async () => {

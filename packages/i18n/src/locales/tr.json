@@ -2146,7 +2146,7 @@
       },
       "computers": {
         "title": "Bilgisayarlar",
-        "help": "Yeni bir bilgisayar katıldı ya da çalışma alanının bilgisayarı hazır"
+        "help": "Bir bilgisayar katıldı, hazır ya da yanıt vermiyor"
       },
       "reactions": {
         "title": "Tepkiler",
@@ -16393,6 +16393,18 @@
       "diskFullNotice": "{{name}} diski neredeyse dolu"
     },
     "chromeMissingNotice": "{{name}}, ajanların tarayıcısı için Google Chrome'a ihtiyaç duyuyor. google.com/chrome adresinden indirin",
+    "outage": {
+      "down": "{{name}} yanıt vermiyor",
+      "back": "{{name}} geri geldi",
+      "since": "{{time}} itibarıyla",
+      "backAfter": "{{away}} sonra geri geldi",
+      "waiting": "Bekliyor: {{what}}",
+      "waited": "Bekledi: {{what}}",
+      "runs_one": "Ajanlara {{count}} istek",
+      "runs_other": "Ajanlara {{count}} istek",
+      "calls_one": "{{count}} webhook çağrısı",
+      "calls_other": "{{count}} webhook çağrısı"
+    },
     "access": {
       "folders": "İzin verilen klasörler",
       "ownFolder": "Her ajanın klasörü",

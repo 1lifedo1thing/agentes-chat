@@ -13,6 +13,7 @@ import {
 } from "@agenteschat/client";
 import { approvalLines } from "@agenteschat/client/lib/approval-card";
 import { approvalTitle } from "@agenteschat/client/lib/approval-words";
+import { computerOutageLine, isComputerOutage } from "@agenteschat/client/lib/computer-outage";
 import { errorText, restrictionLine } from "@agenteschat/client/lib/errors";
 import { dateFormat, timeLeft, upperFirst } from "@agenteschat/client/lib/format";
 import { mediaWord } from "@agenteschat/client/lib/media";
@@ -576,18 +577,20 @@ const ActivityRow = memo(function ActivityRow({
   );
   const sub = restriction
     ? restrictionLine(t, restriction.code, restriction.facts)
-    : n.kind === "usage_limit"
-      ? usageLimitLine(t, n)
-      : // What the right hand found (ADR 0177 §1) is the title itself: nothing under it says it again.
-        n.kind === "team_watch" || n.kind === "budget_paused"
-        ? ""
-        : failed
-          ? failed.sub
-          : // Where first, then the words, as the web inbox ("#canal · snippet"). A widget's or routine's name is
-            // often its line too: said once ("Assinaturas hoje", not twice).
-            [emojisOf(n).join(" "), [...new Set([placeOf(n), line].filter(Boolean))].join(" · ")]
-              .filter(Boolean)
-              .join(" ");
+    : isComputerOutage(n)
+      ? [placeOf(n), computerOutageLine(t, n, i18n.language)].filter(Boolean).join(" · ")
+      : n.kind === "usage_limit"
+        ? usageLimitLine(t, n)
+        : // What the right hand found (ADR 0177 §1) is the title itself: nothing under it says it again.
+          n.kind === "team_watch" || n.kind === "budget_paused"
+          ? ""
+          : failed
+            ? failed.sub
+            : // Where first, then the words, as the web inbox ("#canal · snippet"). A widget's or routine's name is
+              // often its line too: said once ("Assinaturas hoje", not twice).
+              [emojisOf(n).join(" "), [...new Set([placeOf(n), line].filter(Boolean))].join(" · ")]
+                .filter(Boolean)
+                .join(" ");
   const time = when.short(n.updatedAt);
   // As Conversas' rows: line 1 who (the names alone, one line, the time on their baseline), line 2 what they did and
   // where. A sentence that doesn't open with the names (or has none) is line 1 itself, on one line too.

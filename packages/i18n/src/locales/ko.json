@@ -2074,7 +2074,7 @@
       },
       "computers": {
         "title": "컴퓨터",
-        "help": "새 컴퓨터가 연결되거나 워크스페이스 컴퓨터가 준비됐을 때"
+        "help": "컴퓨터가 연결되거나 준비됐거나 응답하지 않을 때"
       },
       "reactions": {
         "title": "반응",
@@ -15868,6 +15868,16 @@
       "diskFullNotice": "{{name}}의 디스크가 거의 가득 찼어요"
     },
     "chromeMissingNotice": "{{name}}에서 에이전트 브라우저를 쓰려면 Google Chrome이 필요해요. google.com/chrome에서 받으세요",
+    "outage": {
+      "down": "{{name}}이(가) 응답하지 않아요",
+      "back": "{{name}}이(가) 다시 연결됐어요",
+      "since": "{{time}}부터",
+      "backAfter": "{{away}} 후 다시 연결됨",
+      "waiting": "대기 중: {{what}}",
+      "waited": "대기했던 작업: {{what}}",
+      "runs_other": "에이전트 요청 {{count}}건",
+      "calls_other": "웹훅 호출 {{count}}건"
+    },
     "access": {
       "folders": "허용된 폴더",
       "ownFolder": "각 에이전트의 폴더",

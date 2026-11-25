@@ -2293,7 +2293,7 @@
       },
       "computers": {
         "title": "Компьютеры",
-        "help": "Подключился новый компьютер или компьютер рабочего пространства готов"
+        "help": "Подключился компьютер, он готов или перестал отвечать"
       },
       "reactions": {
         "title": "Реакции",
@@ -17507,6 +17507,22 @@
       "diskFullNotice": "Диск {{name}} почти заполнен"
     },
     "chromeMissingNotice": "Для браузера агентов на {{name}} нужен Google Chrome. Скачайте его на google.com/chrome",
+    "outage": {
+      "down": "{{name}} не отвечает",
+      "back": "{{name}} снова на связи",
+      "since": "С {{time}}",
+      "backAfter": "Снова на связи через {{away}}",
+      "waiting": "Ждут: {{what}}",
+      "waited": "Ждали: {{what}}",
+      "runs_one": "{{count}} запрос к агентам",
+      "runs_few": "{{count}} запроса к агентам",
+      "runs_many": "{{count}} запросов к агентам",
+      "runs_other": "{{count}} запроса к агентам",
+      "calls_one": "{{count}} вызов вебхука",
+      "calls_few": "{{count}} вызова вебхука",
+      "calls_many": "{{count}} вызовов вебхука",
+      "calls_other": "{{count}} вызова вебхука"
+    },
     "access": {
       "folders": "Разрешённые папки",
       "ownFolder": "Папка каждого агента",

@@ -995,6 +995,10 @@
       "computer_disk_full_other": "Festplatten von Computern sind fast voll",
       "computer_no_chrome_one": "Ein Computer braucht Google Chrome. Lade es unter google.com/chrome herunter",
       "computer_no_chrome_other": "Computer brauchen Google Chrome. Lade es unter google.com/chrome herunter",
+      "computer_down_one": "Ein Computer antwortet nicht",
+      "computer_down_other": "Ein Computer antwortet nicht",
+      "computer_back_one": "Ein Computer ist wieder da",
+      "computer_back_other": "Ein Computer ist wieder da",
       "app_created_one": "Eine KI-App hat etwas für dich erstellt",
       "app_created_other": "KI-Apps haben etwas für dich erstellt"
     },

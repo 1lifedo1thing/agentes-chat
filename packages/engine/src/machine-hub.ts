@@ -40,6 +40,7 @@ import type { ToolImage } from "@agenteschat/providers";
 import { getAgentCached } from "./agents";
 import { UUID } from "./authority";
 import { TtlCache } from "./cache";
+import { noticeComputerBack, queueDownChecks } from "./computer-down";
 import { type MachinePhoneRow, publishDevicesChanged, syncMachinePhones } from "./devices";
 import { cutText } from "./format";
 import { codeCommitAuthor } from "./git/person-account";
@@ -678,6 +679,8 @@ export function createMachineHub(deps: MachineHubDeps) {
     };
     if (serverStop) await later(taskOfflineGraceMs, true);
     await later(serverStop ? SERVER_STOP_TASK_GRACE_MS : taskOfflineGraceMs, false);
+    // Still away a while later: who configures the workspace hears it (`computer_down`).
+    await queueDownChecks(db, row.orgId, machineId, new Date(disconnect.at)).catch(() => undefined);
     return true;
   };
 
@@ -800,6 +803,10 @@ export function createMachineHub(deps: MachineHubDeps) {
     const loginBlocked =
       frame.claudeLoginBlocked ??
       (frame.claudeLoginMethods?.includes("cli_login") ? undefined : machine.executors?.claudeLoginBlocked);
+    // Back from an outage its people were told of: they hear it, with what waited, before those runs go on.
+    await noticeComputerBack({ db, pubsub, home: deps.readyEmail?.publicUrl ?? null }, machine).catch((error) =>
+      deps.log?.warn("computer back notice failed", { machineId: machine.id, error: String(error) }),
+    );
     await db
       .update(machines)
       .set({

@@ -2431,6 +2431,18 @@
       "other": "Computers need Google Chrome. Get it at google.com/chrome"
     }
   },
+  "activity.kind.computer_down": {
+    "value": {
+      "one": "A computer isn't answering",
+      "other": "A computer isn't answering"
+    }
+  },
+  "activity.kind.computer_back": {
+    "value": {
+      "one": "A computer is back",
+      "other": "A computer is back"
+    }
+  },
   "activity.kind.app_created": {
     "value": {
       "one": "An AI app created things for you",

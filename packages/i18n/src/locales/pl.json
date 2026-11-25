@@ -2293,7 +2293,7 @@
       },
       "computers": {
         "title": "Komputery",
-        "help": "Dołączył nowy komputer albo komputer przestrzeni roboczej jest gotowy"
+        "help": "Dołączył komputer, jest gotowy albo przestał odpowiadać"
       },
       "reactions": {
         "title": "Reakcje",
@@ -17562,6 +17562,22 @@
       "diskFullNotice": "Dysk komputera {{name}} jest prawie pełny"
     },
     "chromeMissingNotice": "{{name}} potrzebuje Google Chrome do przeglądarki agentów. Pobierz go z google.com/chrome",
+    "outage": {
+      "down": "{{name}} nie odpowiada",
+      "back": "{{name}} znów działa",
+      "since": "Od {{time}}",
+      "backAfter": "Znów działa po {{away}}",
+      "waiting": "Czeka: {{what}}",
+      "waited": "Czekało: {{what}}",
+      "runs_one": "{{count}} prośba do agentów",
+      "runs_few": "{{count}} prośby do agentów",
+      "runs_many": "{{count}} próśb do agentów",
+      "runs_other": "{{count}} prośby do agentów",
+      "calls_one": "{{count}} wywołanie webhooka",
+      "calls_few": "{{count}} wywołania webhooka",
+      "calls_many": "{{count}} wywołań webhooka",
+      "calls_other": "{{count}} wywołania webhooka"
+    },
     "access": {
       "folders": "Dozwolone foldery",
       "ownFolder": "Folder każdego agenta",

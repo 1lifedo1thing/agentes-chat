@@ -2220,7 +2220,7 @@
       },
       "computers": {
         "title": "Computer",
-        "help": "È entrato un nuovo computer o quello dello spazio di lavoro è pronto"
+        "help": "È entrato un computer, è pronto o non risponde più"
       },
       "reactions": {
         "title": "Reazioni",
@@ -17028,6 +17028,20 @@
       "diskFullNotice": "Il disco di {{name}} è quasi pieno"
     },
     "chromeMissingNotice": "{{name}} ha bisogno di Google Chrome per il browser degli agenti. Scaricalo da google.com/chrome",
+    "outage": {
+      "down": "{{name}} non risponde",
+      "back": "{{name}} è di nuovo disponibile",
+      "since": "Dalle {{time}}",
+      "backAfter": "Di nuovo disponibile dopo {{away}}",
+      "waiting": "In attesa: {{what}}",
+      "waited": "Hanno atteso: {{what}}",
+      "runs_one": "{{count}} richiesta agli agenti",
+      "runs_many": "{{count}} richieste agli agenti",
+      "runs_other": "{{count}} richieste agli agenti",
+      "calls_one": "{{count}} chiamata webhook",
+      "calls_many": "{{count}} chiamate webhook",
+      "calls_other": "{{count}} chiamate webhook"
+    },
     "access": {
       "folders": "Cartelle consentite",
       "ownFolder": "La cartella di ogni agente",
