@@ -3782,7 +3782,8 @@
       "gemini": {
         "title": "Il tuo piano Gemini",
         "tiers": "Google AI Pro, Google AI Ultra o Gemini Enterprise",
-        "warning": "Google dice che usare un piano Gemini personale all'interno di altre app può portare alla sospensione dell'account. Per evitare questo rischio, usa una chiave API di Gemini o Gemini Enterprise."
+        "warning": "Google dice che usare un piano Gemini personale all'interno di altre app può portare alla sospensione dell'account. Per evitare questo rischio, usa una chiave API di Gemini o Gemini Enterprise.",
+        "windowsOne": "Su Windows, un computer usa un solo account Gemini alla volta."
       },
       "zen": {
         "title": "OpenCode",
@@ -12965,7 +12966,6 @@
       "home_only": "{{program}} è installato solo per root su {{computer}}, dove gli agenti non arrivano.",
       "not_reported": "{{computer}} sta ancora controllando quali programmi ha. Questo cambia da solo quando ha finito.",
       "system": "{{program}} non funziona ancora sul sistema di {{computer}}.",
-      "systemAntigravity": "I piani Gemini non funzionano ancora su {{computer}}: su Windows, Antigravity CLI tiene l'accesso Google in Gestione credenziali, che agentes.chat non riesce ancora a separare per ogni account. Usa invece una chiave API di Gemini.",
       "windows_sandbox": "Il Windows di {{computer}} non riesce a isolare i comandi di {{program}}. Scegli invece Claude o una chiave API, oppure aggiorna quel computer a Windows 11 24H2 o successivo, con gli ultimi aggiornamenti.",
       "no_computerCloud": "Pronto appena lo è {{computer}}."
     },
@@ -16708,6 +16708,7 @@
       "askSelf": "È il tuo computer: attivalo con il pulsante.",
       "adminAskSelf": "Puoi farlo tu stesso qui.",
       "accountMethodUnsupported": "Questo computer non può ancora collegare Claude in questo modo. Aggiorna il programma agentes.chat che ha installato, oppure usa una chiave API.",
+      "windowsOneGemini": "Su Windows, un computer usa un solo account Gemini alla volta. Rimuovi l'altro account Gemini da questo computer per accedere con questo.",
       "brainUnavailable": "Questa IA non è ancora configurata su {{computer}}. Configurala lì, oppure scegline un'altra.",
       "offline": "{{name}} è offline in questo momento. Riprova quando torna disponibile.",
       "paused": "{{name}} è in pausa: non parte nulla di nuovo finché non riprende.",

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   ACCOUNTS_PROTOCOL,
   ANTIGRAVITY_MAC_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   BRAIN_PROTOCOL,
   CODEX_UNELEVATED_PROTOCOL,
   CODEX_WINDOWS_PROTOCOL,
@@ -239,17 +240,21 @@ describe("brain settings", () => {
           .slice(3)
           .map((o) => [o.kind, o.reason ?? null]),
       );
-    // An older Windows runner refuses every OpenCode and Grok turn; Cursor and the Antigravity CLI don't run on
+    // An older Windows runner refuses every OpenCode, Grok and Gemini turn; Cursor doesn't run on
     // Windows; a Mac runner before `ANTIGRAVITY_MAC_PROTOCOL` refuses Gemini.
     expect(reasons(mac({ os: "windows", protocol: OPENCODE_ACP_PROTOCOL - 1, executors }))).toEqual({
       cursor: "system",
       opencode: "runner_old",
       grok: "runner_old",
-      antigravity: "system",
+      antigravity: "runner_old",
     });
     expect(reasons(mac({ os: "windows", protocol: OPENCODE_ACP_PROTOCOL, executors })).opencode).toBeNull();
     expect(reasons(mac({ os: "windows", protocol: GROK_WINDOWS_PROTOCOL - 1, executors })).grok).toBe("runner_old");
     expect(reasons(mac({ os: "windows", protocol: GROK_WINDOWS_PROTOCOL, executors })).grok).toBeNull();
+    expect(reasons(mac({ os: "windows", protocol: ANTIGRAVITY_WINDOWS_PROTOCOL - 1, executors })).antigravity).toBe(
+      "runner_old",
+    );
+    expect(reasons(mac({ os: "windows", protocol: ANTIGRAVITY_WINDOWS_PROTOCOL, executors })).antigravity).toBeNull();
     expect(reasons(mac({ os: "darwin", protocol: OPENCODE_ACP_PROTOCOL - 1, executors }))).toEqual({
       cursor: null,
       opencode: null,

@@ -3638,7 +3638,8 @@
       "gemini": {
         "title": "Dein Gemini-Abo",
         "tiers": "Google AI Pro, Google AI Ultra oder Gemini Enterprise",
-        "warning": "Google sagt, dass die Nutzung eines privaten Gemini-Abos in anderen Apps zur Sperrung des Kontos führen kann. Um dieses Risiko zu vermeiden, nutze einen Gemini-API-Schlüssel oder Gemini Enterprise."
+        "warning": "Google sagt, dass die Nutzung eines privaten Gemini-Abos in anderen Apps zur Sperrung des Kontos führen kann. Um dieses Risiko zu vermeiden, nutze einen Gemini-API-Schlüssel oder Gemini Enterprise.",
+        "windowsOne": "Unter Windows nutzt ein Computer jeweils nur ein Gemini-Konto."
       },
       "zen": {
         "title": "OpenCode",
@@ -12475,7 +12476,6 @@
       "home_only": "{{program}} ist auf {{computer}} nur für root installiert, wo die Agenten nicht hinkommen.",
       "not_reported": "{{computer}} prüft noch, welche Programme vorhanden sind. Das ändert sich von selbst, wenn es so weit ist.",
       "system": "{{program}} läuft noch nicht auf dem System von {{computer}}.",
-      "systemAntigravity": "Gemini-Abos laufen auf {{computer}} noch nicht: Unter Windows speichert die Antigravity CLI ihre Google-Anmeldung in der Anmeldeinformationsverwaltung, die agentes.chat noch nicht pro Konto trennen kann. Nutze stattdessen einen Gemini-API-Schlüssel.",
       "windows_sandbox": "Windows auf {{computer}} kann die Befehle von {{program}} nicht isolieren. Wähle stattdessen Claude oder einen API-Schlüssel oder aktualisiere diesen Computer auf Windows 11 24H2 oder neuer, mit den neuesten Updates.",
       "no_computerCloud": "Bereit, sobald {{computer}} es ist."
     },
@@ -16145,6 +16145,7 @@
       "askSelf": "Es ist dein Computer: schalte es mit dem Button ein.",
       "adminAskSelf": "Das kannst du hier selbst tun.",
       "accountMethodUnsupported": "Dieser Computer kann Claude noch nicht auf diese Weise verbinden. Aktualisiere das agentes.chat-Programm darauf oder verwende einen API-Schlüssel.",
+      "windowsOneGemini": "Unter Windows nutzt ein Computer jeweils nur ein Gemini-Konto. Entferne das andere Gemini-Konto von diesem Computer, um dich mit diesem anzumelden.",
       "brainUnavailable": "Diese KI ist auf {{computer}} noch nicht eingerichtet. Richte sie dort ein oder wähle eine andere.",
       "offline": "{{name}} ist gerade offline. Versuch es noch einmal, sobald er wieder da ist.",
       "paused": "{{name}} ist pausiert: Darauf startet nichts Neues, bis er fortgesetzt wird.",

@@ -8971,6 +8971,9 @@
   "connectAi.plan.gemini.warning": {
     "value": "Google says using a personal Gemini plan inside other apps can get the account suspended. To avoid that risk, use a Gemini API key or Gemini Enterprise."
   },
+  "connectAi.plan.gemini.windowsOne": {
+    "value": "On Windows, a computer uses one Gemini account at a time."
+  },
   "connectAi.plan.zen.title": {
     "value": "OpenCode"
   },
@@ -30384,9 +30387,6 @@
   "brain.reasons.system": {
     "value": "{{program}} doesn't run on {{computer}}'s system yet."
   },
-  "brain.reasons.systemAntigravity": {
-    "value": "Gemini plans don't run on {{computer}} yet: on Windows the Antigravity CLI keeps its Google sign-in in the Credential Manager, which agentes.chat can't yet keep apart for each account. Use a Gemini API key instead."
-  },
   "brain.reasons.windows_sandbox": {
     "value": "{{computer}}'s Windows can't isolate {{program}}'s commands. Choose Claude or an API key instead, or update that computer to Windows 11 24H2 or newer, with its latest updates."
   },
@@ -39561,6 +39561,9 @@
   },
   "errors.machine.accountMethodUnsupported": {
     "value": "This computer can't connect Claude this way yet. Update the agentes.chat program on it, or use an API key."
+  },
+  "errors.machine.windowsOneGemini": {
+    "value": "On Windows, a computer uses one Gemini account at a time. Remove the other Gemini account from this computer to sign in with this one."
   },
   "errors.machine.brainUnavailable": {
     "value": "This AI isn't set up on {{computer}} yet. Set it up there, or choose another one."

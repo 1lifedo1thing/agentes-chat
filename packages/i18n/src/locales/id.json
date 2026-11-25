@@ -3495,7 +3495,8 @@
       "gemini": {
         "title": "Paket Gemini-mu",
         "tiers": "Google AI Pro, Google AI Ultra, atau Gemini Enterprise",
-        "warning": "Google menyatakan bahwa memakai paket Gemini pribadi di dalam aplikasi lain bisa membuat akun ditangguhkan. Untuk menghindari risiko itu, pakai kunci API Gemini atau Gemini Enterprise."
+        "warning": "Google menyatakan bahwa memakai paket Gemini pribadi di dalam aplikasi lain bisa membuat akun ditangguhkan. Untuk menghindari risiko itu, pakai kunci API Gemini atau Gemini Enterprise.",
+        "windowsOne": "Di Windows, satu komputer memakai satu akun Gemini dalam satu waktu."
       },
       "zen": {
         "title": "OpenCode",
@@ -12032,7 +12033,6 @@
       "home_only": "{{program}} hanya terpasang untuk root di {{computer}}, yang tidak bisa dijangkau para agen.",
       "not_reported": "{{computer}} masih memeriksa program apa saja yang dimilikinya. Ini berubah sendiri setelah selesai.",
       "system": "{{program}} belum berjalan di sistem {{computer}}.",
-      "systemAntigravity": "Paket Gemini belum berjalan di {{computer}}: di Windows, Antigravity CLI menyimpan login Google-nya di Credential Manager, yang belum bisa dipisahkan agentes.chat per akun. Pakai kunci API Gemini sebagai gantinya.",
       "windows_sandbox": "Windows di {{computer}} tidak dapat mengisolasi perintah {{program}}. Pilih Claude atau kunci API sebagai gantinya, atau perbarui komputer itu ke Windows 11 24H2 atau yang lebih baru, dengan pembaruan terbarunya.",
       "no_computerCloud": "Siap begitu {{computer}} siap."
     },
@@ -15619,6 +15619,7 @@
       "askSelf": "Ini komputermu: nyalakan dengan tombolnya.",
       "adminAskSelf": "Kamu bisa melakukannya sendiri di sini.",
       "accountMethodUnsupported": "Komputer ini belum bisa menghubungkan Claude dengan cara ini. Perbarui program agentes.chat di komputer ini, atau pakai kunci API.",
+      "windowsOneGemini": "Di Windows, satu komputer memakai satu akun Gemini dalam satu waktu. Hapus akun Gemini yang lain dari komputer ini untuk masuk dengan akun ini.",
       "brainUnavailable": "AI ini belum disiapkan di {{computer}}. Siapkan di sana, atau pilih yang lain.",
       "offline": "{{name}} sedang offline. Coba lagi setelah ia kembali.",
       "paused": "{{name}} dijeda: tidak ada yang baru dimulai di sana sampai dilanjutkan.",

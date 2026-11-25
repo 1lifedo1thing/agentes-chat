@@ -3,6 +3,7 @@ import {
   ACCOUNT_LOGIN_TTL_MS,
   ACCOUNTS_PROTOCOL,
   ANTIGRAVITY_MAC_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   accountCodeAad,
   BRAIN_PROTOCOL,
   CLAUDE_AUTH_PROTOCOL,
@@ -114,7 +115,12 @@ async function sharedMachine() {
   return paired;
 }
 
-async function addAccount(machineId: string, id: string, kind: "claude_code" | "codex" | "opencode", over = {}) {
+async function addAccount(
+  machineId: string,
+  id: string,
+  kind: "claude_code" | "codex" | "opencode" | "antigravity",
+  over = {},
+) {
   await f.db.insert(schema.machineAccounts).values({
     id,
     orgId: f.org.id,
@@ -949,6 +955,32 @@ test("Gemini's sign-in is made for all of its owner's agents from runner protoco
     .where(eq(schema.machines.id, machineId));
   expect(await begun(ANTIGRAVITY_MAC_PROTOCOL)).toBe(true);
   await expect(begun(ANTIGRAVITY_MAC_PROTOCOL - 1)).rejects.toMatchObject({ code: "account.runner_old" });
+});
+
+test("Gemini on Windows: from `ANTIGRAVITY_WINDOWS_PROTOCOL` on, one account a computer, said with the way out", async () => {
+  f = await setup();
+  const { machineId } = await ownedMachine(ANTIGRAVITY_WINDOWS_PROTOCOL);
+  await f.db.update(schema.machines).set({ os: "windows" }).where(eq(schema.machines.id, machineId));
+  const begun = async (protocol: number, again?: string) => {
+    const runner = fakeHub(
+      machineId,
+      (req) => (req.action === "begin" ? { url: "https://accounts.google.com/o/oauth2/auth?state=s1" } : {}),
+      { protocol },
+    );
+    await beginAccountLogin(runner.deps, f.owner.id, f.org.id, machineId, "antigravity", again);
+    return runner.calls.some((c) => c.action === "begin");
+  };
+  await expect(begun(ANTIGRAVITY_WINDOWS_PROTOCOL - 1)).rejects.toMatchObject({ code: "account.runner_old" });
+  expect(await begun(ANTIGRAVITY_WINDOWS_PROTOCOL)).toBe(true);
+  // The CLI keeps its sign-in in the Windows user's one Credential Manager: a second account would replace the first.
+  const first = "0193eeee-0000-7000-8000-0000000000e1";
+  await addAccount(machineId, first, "antigravity", { label: "Gemini", email: null, status: "signed_out" });
+  await expect(begun(ANTIGRAVITY_WINDOWS_PROTOCOL)).rejects.toMatchObject({ code: "account.windows_one_gemini" });
+  // Signing in again to that one stays open.
+  expect(await begun(ANTIGRAVITY_WINDOWS_PROTOCOL, first)).toBe(true);
+  // Elsewhere a computer keeps as many as it likes.
+  await f.db.update(schema.machines).set({ os: "linux" }).where(eq(schema.machines.id, machineId));
+  expect(await begun(ANTIGRAVITY_WINDOWS_PROTOCOL)).toBe(true);
 });
 
 test("Claude: an account another agent thinks with signs in again as a login of its own, under the account's name", async () => {

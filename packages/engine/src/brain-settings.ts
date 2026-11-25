@@ -4,6 +4,7 @@ import {
   AGY_COPY_PROTOCOL,
   ANTIGRAVITY_MAC_PROTOCOL,
   ANTIGRAVITY_PROTOCOL,
+  ANTIGRAVITY_WINDOWS_PROTOCOL,
   BRAIN_PROTOCOL,
   type BrainEffort,
   type BrainSpeed,
@@ -533,6 +534,9 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
   // On a Mac a runner before `ANTIGRAVITY_MAC_PROTOCOL` refuses every Gemini sign-in and turn.
   else if (kind === "antigravity" && machine.os === "darwin" && machine.protocol < ANTIGRAVITY_MAC_PROTOCOL)
     reason = "runner_old";
+  // On Windows a runner before `ANTIGRAVITY_WINDOWS_PROTOCOL` refuses every Gemini sign-in and turn.
+  else if (kind === "antigravity" && machine.os === "windows" && machine.protocol < ANTIGRAVITY_WINDOWS_PROTOCOL)
+    reason = "runner_old";
   else if (!brainRunsOn(kind, machine.os)) reason = "system";
   else if (!machine.executors?.[kind] && !(kind === "antigravity" && bringsAgy(machine)))
     reason = missingCli(machine, kind);
@@ -550,15 +554,17 @@ function cliOption(machine: MachineLike | null, kind: "cursor" | "opencode" | "g
 }
 
 /**
- * A computer whose runner brings its own Antigravity CLI (`AGY_COPY_PROTOCOL`, ADR 0143): outside system mode, on macOS
- * and Linux, never the workspace's own (its image brings it). There Gemini can be connected with no CLI installed: the
- * runner downloads it as the first sign-in starts.
+ * A computer whose runner brings its own Antigravity CLI (`AGY_COPY_PROTOCOL`, ADR 0143): outside system mode, on macOS,
+ * Linux and Windows (`ANTIGRAVITY_WINDOWS_PROTOCOL`), never the workspace's own (its image brings it). There Gemini can
+ * be connected with no CLI installed: the runner downloads it as the first sign-in starts.
  */
 const bringsAgy = (machine: MachineLike) =>
   machine.protocol >= AGY_COPY_PROTOCOL &&
   machine.kind !== "managed" &&
   machine.executors?.mode !== "system" &&
-  (machine.os === "darwin" || machine.os === "linux");
+  (machine.os === "darwin" ||
+    machine.os === "linux" ||
+    (machine.os === "windows" && machine.protocol >= ANTIGRAVITY_WINDOWS_PROTOCOL));
 
 /** "Usar um computador": the agent's machine as the brain section shows it. */
 export interface BrainComputer {

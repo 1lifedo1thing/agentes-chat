@@ -7,7 +7,7 @@ import type { MergeDone } from "./command-policy";
  */
 
 /** Bumped on breaking changes; the server refuses runners older than `MIN_RUNNER_PROTOCOL`. */
-export const MACHINE_PROTOCOL_VERSION = 83;
+export const MACHINE_PROTOCOL_VERSION = 84;
 export const MIN_RUNNER_PROTOCOL = 1;
 /** From this protocol on, requests carry `agent` and each agent works in its own folder. */
 export const AGENT_FOLDERS_PROTOCOL = 2;
@@ -2612,6 +2612,13 @@ export const isEgressHost = (v: unknown): v is string =>
 /** A target `stream.hello` or `egress.dial` names: a host as `isEgressHost` and one of `EGRESS_SHARE.ports`. */
 export const isEgressTarget = (v: unknown): v is { host: string; port: number } =>
   isObject(v) && isEgressHost(v.host) && typeof v.port === "number" && EGRESS_SHARE.ports.includes(v.port);
+
+/**
+ * Protocol 84 (ADR 0143): Gemini signs in and thinks on Windows, one account a computer (the CLI keeps its sign-in in
+ * the Windows user's one Credential Manager), with the runner's own `agy.exe` where the person's is older or missing.
+ * An older Windows runner refuses every Gemini sign-in and turn.
+ */
+export const ANTIGRAVITY_WINDOWS_PROTOCOL = 84;
 
 /** About how many more background tasks fit on the computer now, and what decides it. */
 export interface TaskRoomReport {

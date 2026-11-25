@@ -3857,6 +3857,7 @@ export const ptBR = {
         tiers: "Google AI Pro, Google AI Ultra ou Gemini Enterprise",
         warning:
           "O Google diz que usar um plano pessoal do Gemini dentro de outros apps pode suspender a conta. Para não correr esse risco, use uma chave de API do Gemini ou o Gemini Enterprise.",
+        windowsOne: "No Windows, um computador usa uma conta do Gemini por vez.",
       },
       zen: { title: "OpenCode", tiers: "Modelos grátis, ou a sua chave do OpenCode" },
       zai: { tiers: "Lite, Pro ou Max" },
@@ -12993,9 +12994,6 @@ export const ptBR = {
       home_only: "O {{program}} está instalado só para o root no {{computer}}, onde os agentes não chegam.",
       not_reported: "O {{computer}} ainda está vendo quais programas tem. Isto muda sozinho quando terminar.",
       system: "O {{program}} ainda não roda no sistema do {{computer}}.",
-      /** The Antigravity CLI on Windows (ADR 0143). The button to use an API key follows. */
-      systemAntigravity:
-        "Planos do Gemini ainda não rodam no {{computer}}: no Windows, o Antigravity CLI guarda o login do Google no Gerenciador de Credenciais, que o agentes.chat ainda não separa por conta. Use uma chave de API do Gemini no lugar.",
       /** Codex on a Windows computer where neither MXC nor Codex's own sandbox could start. */
       windows_sandbox:
         "O Windows do {{computer}} não consegue isolar os comandos do {{program}}. Escolha o Claude ou uma chave de API, ou atualize esse computador para o Windows\u00a011\u00a024H2 ou mais novo, com as atualizações em dia.",
@@ -16538,6 +16536,8 @@ export const ptBR = {
       adminAskSelf: "Você mesmo pode fazer isso aqui.",
       accountMethodUnsupported:
         "Este computador ainda não conecta o Claude desse jeito. Atualize o programa do agentes.chat nele, ou use uma chave de API.",
+      windowsOneGemini:
+        "No Windows, um computador usa uma conta do Gemini por vez. Remova a outra conta do Gemini deste computador para entrar com esta.",
       brainUnavailable: "Essa IA ainda não está configurada em {{computer}}. Configure lá, ou escolha outra.",
       offline: "{{name}} está fora do ar agora. Tente de novo quando ele voltar.",
       paused: "{{name}} está pausado: nada novo começa nele até ele ser retomado.",

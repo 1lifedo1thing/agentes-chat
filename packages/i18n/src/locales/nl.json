@@ -3638,7 +3638,8 @@
       "gemini": {
         "title": "Je Gemini-abonnement",
         "tiers": "Google AI Pro, Google AI Ultra of Gemini Enterprise",
-        "warning": "Volgens Google kan het gebruik van een persoonlijk Gemini-abonnement in andere apps ertoe leiden dat het account wordt geschorst. Gebruik een Gemini-API-sleutel of Gemini Enterprise om dat risico te vermijden."
+        "warning": "Volgens Google kan het gebruik van een persoonlijk Gemini-abonnement in andere apps ertoe leiden dat het account wordt geschorst. Gebruik een Gemini-API-sleutel of Gemini Enterprise om dat risico te vermijden.",
+        "windowsOne": "Op Windows gebruikt een computer één Gemini-account tegelijk."
       },
       "zen": {
         "title": "OpenCode",
@@ -12546,7 +12547,6 @@
       "home_only": "{{program}} is op {{computer}} alleen voor root geïnstalleerd, waar de agents niet bij kunnen.",
       "not_reported": "{{computer}} controleert nog welke programma's erop staan. Dit verandert vanzelf als het klaar is.",
       "system": "{{program}} werkt nog niet op het systeem van {{computer}}.",
-      "systemAntigravity": "Gemini-abonnementen werken nog niet op {{computer}}: op Windows bewaart de Antigravity CLI de Google-aanmelding in Referentiebeheer, dat agentes.chat nog niet per account kan scheiden. Gebruik in plaats daarvan een Gemini-API-sleutel.",
       "windows_sandbox": "Windows op {{computer}} kan de opdrachten van {{program}} niet isoleren. Kies in plaats daarvan Claude of een API-sleutel, of werk die computer bij naar Windows 11 24H2 of nieuwer, met de nieuwste updates.",
       "no_computerCloud": "Klaar zodra {{computer}} klaar is."
     },
@@ -16213,6 +16213,7 @@
       "askSelf": "Het is jouw computer: zet het aan met de knop.",
       "adminAskSelf": "Dat kun je hier zelf doen.",
       "accountMethodUnsupported": "Deze computer kan Claude nog niet op deze manier koppelen. Werk het agentes.chat-programma erop bij, of gebruik een API-sleutel.",
+      "windowsOneGemini": "Op Windows gebruikt een computer één Gemini-account tegelijk. Verwijder het andere Gemini-account van deze computer om met dit account in te loggen.",
       "brainUnavailable": "Deze AI is nog niet ingesteld op {{computer}}. Stel hem daar in, of kies een andere.",
       "offline": "{{name}} is nu offline. Probeer het opnieuw zodra hij terug is.",
       "paused": "{{name}} is gepauzeerd: er start niets nieuws op tot hij wordt hervat.",
