@@ -28,13 +28,12 @@ import {
   type RoutingCandidate,
   type RoutingInput,
   routeChain,
-  routeMessage,
   SPOKEN_TO,
   selectAgents,
   standingJudge,
   withJudgeFallback,
 } from "../src";
-import { addMember, type Fixture, setup } from "./fixtures";
+import { addMember, type Fixture, routeWaited, setup } from "./fixtures";
 
 let f: Fixture;
 afterEach(() => f?.close());
@@ -482,7 +481,7 @@ describe("who a message speaks to", () => {
       createdAt: new Date(Date.now() - 60_000),
     });
     const route = async (messageId: string) =>
-      routeMessage(
+      routeWaited(
         { db: f.db, strategy: t.strategy, policy: { ...DEFAULT_ROUTER_POLICY, maxHops: 3 } },
         { orgId: f.org.id, messageId },
       );
@@ -523,7 +522,7 @@ describe("who a message speaks to", () => {
         ...where,
       });
       const policy = { ...DEFAULT_ROUTER_POLICY, maxHops: 3 };
-      return (await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: m.id })).selected;
+      return (await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: m.id })).selected;
     };
     const quoted = { messageId: report.id, author: { type: "agent", id: t.theo.id }, authorName: "Theo", excerpt: "" };
     expect(await handOver({ meta: { replyTo: quoted } })).toEqual([t.theo.id]);
@@ -608,7 +607,7 @@ describe("the agent a person last talked to", () => {
         fetch: fakeJev(answer).fetcher,
       });
       const policy = { ...DEFAULT_ROUTER_POLICY, maxHops: 3 };
-      const { selected } = await routeMessage(
+      const { selected } = await routeWaited(
         { db: f.db, strategy, policy, quietMs },
         { orgId: f.org.id, messageId: m.id },
       );
@@ -1168,7 +1167,7 @@ describe("a message for the agents always gets one (R5)", () => {
         recordUsage: async () => {},
         fetch: fakeJev(answer).fetcher,
       });
-      const routed = await routeMessage(
+      const routed = await routeWaited(
         { db: f.db, strategy, policy: { ...DEFAULT_ROUTER_POLICY, maxHops: 3 } },
         { orgId: f.org.id, messageId: m.id },
       );

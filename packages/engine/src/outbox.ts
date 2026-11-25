@@ -33,6 +33,9 @@ export type OutboxJob = typeof outbox.$inferSelect;
  *
  * Handlers must be idempotent: a job can run more than once (lease expiry).
  */
+/** Pub/sub topic that wakes every instance's outbox worker (cross-replica, over LISTEN/NOTIFY). */
+export const OUTBOX_WAKE_TOPIC = "system:outbox-wake";
+
 export interface EnqueueInput {
   /** Null only for jobs outside any organization (e.g. a password-reset email). */
   orgId: string | null;

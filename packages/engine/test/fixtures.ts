@@ -11,7 +11,7 @@ import {
   type PlatformCredentials,
   type RealtimeEvent,
 } from "@agenteschat/adapters";
-import { and, arrayContains, type Database, eq, schema, sql } from "@agenteschat/db";
+import { and, arrayContains, asc, type Database, eq, schema, sql } from "@agenteschat/db";
 import { createTestDatabase } from "@agenteschat/db/testing";
 import { PROVIDER_IDS, systemText, textOf } from "@agenteschat/providers";
 import { createFakeEmbeddings, createFakeProvider, type FakeProvider } from "@agenteschat/providers/testing";
@@ -55,11 +55,15 @@ import {
   createToolGateway,
   createWikiToolSource,
   createWorkToolSource,
+  drainOutbox,
   type FakeScheduleAnswer,
   type FakeScheduleAnswers,
   type GatewayEmbeddings,
+  type JobHandlers,
   localDateTimeOf,
+  ROUTE_QUIET_JOB,
   type RunExecutorDeps,
+  routeMessage,
   type SandboxDeps,
   SETTLE_JOB,
   type ServerCatalog,
@@ -550,3 +554,27 @@ export async function settleQueued(f: Fixture) {
  */
 export const answerSteering = (f: Fixture, run: AgentRun, hooks: Partial<LiveSteeringHooks> = {}) =>
   listenLiveSteering(f, run, null, { take: async () => [], onRead: () => {}, ...hooks });
+
+/** `routeMessage` as its job runs it: asked again once each quiet wait (`waiting`) is over. */
+export async function routeWaited(...args: Parameters<typeof routeMessage>) {
+  for (;;) {
+    const res = await routeMessage(...args);
+    if (res.skipped !== "waiting" || !res.retryAt) return res;
+    await Bun.sleep(Math.max(0, res.retryAt.getTime() - Date.now()));
+  }
+}
+
+/** `drainOutbox`, then the routings waiting out a quiet moment (`ROUTE_QUIET_JOB`) once each is due. */
+export async function drainWithQuietWaits(db: Database, handlers: JobHandlers) {
+  for (;;) {
+    await drainOutbox(db, handlers);
+    const [next] = await db
+      .select({ at: schema.outbox.nextAttemptAt })
+      .from(schema.outbox)
+      .where(and(eq(schema.outbox.status, "pending"), eq(schema.outbox.kind, ROUTE_QUIET_JOB)))
+      .orderBy(asc(schema.outbox.nextAttemptAt))
+      .limit(1);
+    if (!next) return;
+    await Bun.sleep(Math.max(0, next.at.getTime() - Date.now()));
+  }
+}

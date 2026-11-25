@@ -12,7 +12,7 @@ export const BURST_MAX_WINDOWS = 4;
  * this long after their message instead of the whole window (token-trim B11). The apps send a typing frame the
  * moment a new message starts, so "oi" then "preciso de uma coisa" is still read as one (ADR 0112).
  */
-export const TYPING_GRACE_MS = 1200;
+export const TYPING_GRACE_MS = 500;
 
 type TypingWhere = { channelId: string; threadId: string | null; userId: string };
 

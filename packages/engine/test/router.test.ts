@@ -16,6 +16,7 @@ import {
   listMessages,
   parseRouterOutput,
   postPersonMessage,
+  ROUTE_QUIET_JOB,
   ROUTER_QUIET_MS,
   ROUTER_SLICE,
   RouterOutputError,
@@ -32,7 +33,7 @@ import {
   WHY_YOU_WERE_CALLED,
 } from "../src";
 import { TYPING_GRACE_MS, typingLogFor } from "../src/burst";
-import { addMember, type Fixture, setup } from "./fixtures";
+import { addMember, drainWithQuietWaits, type Fixture, routeWaited, setup } from "./fixtures";
 
 let f: Fixture;
 afterEach(() => f?.close());
@@ -245,7 +246,7 @@ describe("who a message speaks to, for the small model", () => {
         author: { type: "person", userId: f.owner.id },
         body,
       });
-      const routed = await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: m.id });
+      const routed = await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: m.id });
       const [decision] = await f.db
         .select()
         .from(schema.routingDecisions)
@@ -306,7 +307,7 @@ describe("routeMessage", () => {
     ]);
     const { strategy, seen } = fixedStrategy({});
     const message = await post("nenhum erro novo no sentry gente?");
-    await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id });
+    await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id });
     const can = Object.fromEntries((seen[0] ?? []).map((c) => [c.handle, c.can]));
     expect(can.atlas).toContain("Sentry");
     expect(can.ada).not.toContain("Sentry");
@@ -328,7 +329,7 @@ describe("routeMessage", () => {
     // Heard as for every agent: both answer.
     const { strategy, seen } = fixedStrategy({ qa: 0.95, dev: 0.7, outsider: 1 }, 0.9);
     const message = await post("the build is red again");
-    const result = await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id });
+    const result = await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id });
     expect(seen[0]?.map((c) => c.handle).sort()).toEqual(["dev", "qa"]);
     expect(result.runs.map((r) => [r.agentId, r.trigger, r.hop])).toEqual([
       [qa.id, "router", 1],
@@ -351,7 +352,7 @@ describe("routeMessage", () => {
 
     // One decision per message: a redelivered job does nothing.
     expect(
-      (await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id })).skipped,
+      (await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id })).skipped,
     ).toBe("already_routed");
     expect(seen).toHaveLength(1);
   });
@@ -377,27 +378,27 @@ describe("routeMessage", () => {
 
     const { strategy, seen } = fixedStrategy({ dev: 1, infra: 0.9, qa: 0.85 });
     const answer = await byDev("Looks like the database; infra would know.", 1);
-    const result = await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: answer.id });
+    const result = await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: answer.id });
     expect(seen[0]?.map((c) => c.handle).sort()).toEqual(["infra", "qa"]);
     expect(result.runs.map((r) => [r.agentId, r.hop])).toEqual([[infra.id, 2]]);
 
     const lukewarm = fixedStrategy({ infra: 0.7, qa: 0.6 });
     const second = await byDev("Also the cache was cold, did anyone warm it?", 1);
     expect(
-      (await routeMessage({ db: f.db, strategy: lukewarm.strategy, policy }, { orgId: f.org.id, messageId: second.id }))
+      (await routeWaited({ db: f.db, strategy: lukewarm.strategy, policy }, { orgId: f.org.id, messageId: second.id }))
         .selected,
     ).toEqual([]);
 
     // Naming nobody and asking nothing, it brings nobody in, and the step isn't asked.
     const plain = await byDev("Also the cache was cold.", 1);
     expect(
-      (await routeMessage({ db: f.db, strategy: lukewarm.strategy, policy }, { orgId: f.org.id, messageId: plain.id }))
+      (await routeWaited({ db: f.db, strategy: lukewarm.strategy, policy }, { orgId: f.org.id, messageId: plain.id }))
         .skipped,
     ).toBe("asks_nobody");
     expect(lukewarm.seen).toHaveLength(1);
 
     const deep = await byDev("answer to an answer", 2);
-    expect((await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: deep.id })).skipped).toBe(
+    expect((await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: deep.id })).skipped).toBe(
       "hop_limit",
     );
   });
@@ -432,14 +433,14 @@ describe("routeMessage", () => {
     });
     // Longer than a short follow-up, about something the agent already said: it answers anyway.
     const again = await post("and what is the interval of that review routine of yours again?");
-    const toDev = await routeMessage(
+    const toDev = await routeWaited(
       { db: f.db, strategy: answered({ [f.agent.handle]: 1, ops: 0.05 }), policy },
       { orgId: f.org.id, messageId: again.id },
     );
     expect(toDev.selected).toEqual([f.agent.id]);
     // The router would bring in someone else for an answer already given: nobody.
     const other = await post("who handles the review routine and how often does it run?");
-    const toOps = await routeMessage(
+    const toOps = await routeWaited(
       { db: f.db, strategy: answered({ [f.agent.handle]: 0.1, ops: 0.9 }), policy },
       { orgId: f.org.id, messageId: other.id },
     );
@@ -477,7 +478,7 @@ describe("routeMessage", () => {
       body: "why did the clone of the repo hang? was it a timeout, permissions or the network?",
       replyTo: answer.id,
     });
-    const result = await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: why.id });
+    const result = await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: why.id });
     expect(result.selected).toEqual([f.agent.id]);
     expect(inputs[0]?.thread).toContain("I couldn't read the code: the clone of the repo hung.");
     expect(inputs[0]?.body).toStartWith("(replying to Dev:");
@@ -502,7 +503,7 @@ describe("routeMessage", () => {
       },
     };
     const reply = await post("we haven't shipped that removal yet, I'm still thinking it over", report.id);
-    const result = await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: reply.id });
+    const result = await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: reply.id });
     expect(result.selected).toEqual([f.agent.id]);
     expect(threads[0]?.[0]).toBe(report.body);
   });
@@ -551,7 +552,7 @@ describe("routeMessage", () => {
       });
     const ask = (minutesAgo: number, threadId?: string) =>
       says(`The release notes are ready. Can I send them to the customers list, @${me?.handle}?`, minutesAgo, threadId);
-    const decide = (messageId: string) => routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId });
+    const decide = (messageId: string) => routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId });
     const route = async (messageId: string) => (await decide(messageId)).selected;
     return { bia, ask, says, decide, route };
   }
@@ -644,7 +645,7 @@ describe("routeMessage", () => {
     const { strategy, seen } = fixedStrategy({});
     const message = await post("hi");
     expect(
-      (await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id })).skipped,
+      (await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id })).skipped,
     ).toBe("no_candidates");
     expect(seen).toHaveLength(0);
   });
@@ -654,7 +655,7 @@ describe("routeMessage", () => {
     const [lodi] = await f.db.select().from(schema.agents).where(eq(schema.agents.builtin, "right_hand"));
     if (!lodi) throw new Error("no right hand");
     const route = async (strategy: RouterStrategy, body: string) =>
-      routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: (await post(body)).id });
+      routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: (await post(body)).id });
     const decisionOf = async (messageId: string) =>
       (await f.db.select().from(schema.routingDecisions)).find((d) => d.messageId === messageId);
 
@@ -691,7 +692,7 @@ describe("routeMessage", () => {
     const failing = (error: Error): RouterStrategy => ({ name: "boom", decide: async () => Promise.reject(error) });
     // Ana is alone in #general with Dev: the rule sends it there.
     const alone = await post("hi");
-    const result = await routeMessage(
+    const result = await routeWaited(
       { db: f.db, strategy: failing(new ProviderError("overloaded", true)), policy },
       { orgId: f.org.id, messageId: alone.id },
     );
@@ -799,7 +800,7 @@ describe("LLM strategy (end to end through the outbox)", () => {
       resolveModel: async () => "claude-sonnet-5-5",
     });
     const message = await post("lunch?");
-    const result = await routeMessage({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id });
+    const result = await routeWaited({ db: f.db, strategy, policy }, { orgId: f.org.id, messageId: message.id });
     expect(result.selected).toEqual([]);
     expect(f.provider.calls[0]?.request.model).toBe("claude-sonnet-5-5");
 
@@ -878,7 +879,7 @@ describe("what the router reads, and a person's messages in a row", () => {
     quietMs: ROUTER_QUIET_MS,
   });
   const route = (strategy: RouterStrategy, messageId: string) =>
-    routeMessage(deps(strategy), { orgId: f.org.id, messageId });
+    routeWaited(deps(strategy), { orgId: f.org.id, messageId });
 
   test("'boa tarde walter' then 'como esta hoje': one decision on both, for Walter, and no agent", async () => {
     const { ada } = await team();
@@ -985,7 +986,7 @@ describe("what the router reads, and a person's messages in a row", () => {
       router: { enabled: true, model: "claude-haiku-5-5", quietMs: 300 },
     });
     const asked = await post("alguém sabe como configurar o deploy?");
-    await drainOutbox(f.db, handlers);
+    await drainWithQuietWaits(f.db, handlers);
     // The first call is Ana's question (Dev's answer is routed after it, for anyone else to chime in).
     expect(routerCalls[0]?.system).toContain(
       'asks it or anyone something it can help with ("does anyone know…", "alguém sabe…")',
@@ -1052,11 +1053,11 @@ describe("what the router reads, and a person's messages in a row", () => {
     });
     const events = f.listen(f.general.id);
     await post("o build quebrou");
-    const draining = drainOutbox(f.db, handlers);
+    const draining = drainWithQuietWaits(f.db, handlers);
     await Bun.sleep(150);
     const second = await post("de novo");
     await draining;
-    await drainOutbox(f.db, handlers);
+    await drainWithQuietWaits(f.db, handlers);
     expect(inputs.map((i) => i.message.body)).toEqual(["o build quebrou\nde novo"]);
     // Ana is alone here with Dev: what she writes to the room is for it.
     expect(inputs[0]?.aloneWith).toBe("dev");
@@ -1099,8 +1100,8 @@ describe("what the router reads, and a person's messages in a row", () => {
     const more = await post("deu erro 500");
     const failing: RouterStrategy = { name: "boom", decide: async () => Promise.reject(new Error("down")) };
     const quick = { db: f.db, strategy: failing, policy: { ...DEFAULT_ROUTER_POLICY, maxHops: 3 }, quietMs: 300 };
-    expect((await routeMessage(quick, { orgId: f.org.id, messageId: quoted.id })).skipped).toBe("continued");
-    expect(await routeMessage(quick, { orgId: f.org.id, messageId: more.id })).toMatchObject({
+    expect((await routeWaited(quick, { orgId: f.org.id, messageId: quoted.id })).skipped).toBe("continued");
+    expect(await routeWaited(quick, { orgId: f.org.id, messageId: more.id })).toMatchObject({
       selected: [f.agent.id],
       decidedBy: { step: "rule", rule: "reply" },
     });
@@ -1132,7 +1133,7 @@ describe("a person alone with the team (R2, ADR 0137)", () => {
     },
   });
   const route = (strategy: RouterStrategy, messageId: string) =>
-    routeMessage(
+    routeWaited(
       { db: f.db, strategy, policy: { ...DEFAULT_ROUTER_POLICY, maxHops: 3 } },
       { orgId: f.org.id, messageId },
     );
@@ -1287,14 +1288,14 @@ describe("a question to each agent, then one fact they share", () => {
         policy: { ...DEFAULT_ROUTER_POLICY, maxHops: 3 },
       });
       const first = await post(each);
-      const both = await routeMessage(deps({ dev: 0.9, theo: 0.9 }, 0.9), { orgId: f.org.id, messageId: first.id });
+      const both = await routeWaited(deps({ dev: 0.9, theo: 0.9 }, 0.9), { orgId: f.org.id, messageId: first.id });
       expect([...(both.selected ?? [])].sort()).toEqual([f.agent.id, theo.id].sort());
 
       const second = await post(shared);
       const [stored] = await f.db.select().from(schema.messages).where(eq(schema.messages.id, second.id));
       // Neither run in progress takes it on its own: the router decides who it is for.
       expect(stored?.meta.steeredRunIds).toBeUndefined();
-      const one = await routeMessage(deps({ dev: 0.8, theo: 0.7 }, 0.1), { orgId: f.org.id, messageId: second.id });
+      const one = await routeWaited(deps({ dev: 0.8, theo: 0.7 }, 0.1), { orgId: f.org.id, messageId: second.id });
       expect(one.selected).toEqual([f.agent.id]);
       const runs = await f.db.select().from(schema.agentRuns).where(eq(schema.agentRuns.agentId, theo.id));
       expect(runs.flatMap((r) => r.pendingMessageIds)).not.toContain(second.id);
@@ -1334,7 +1335,7 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
     return { strategy, inputs };
   };
   const route = (strategy: RouterStrategy, messageId: string, more: Partial<Parameters<typeof routeMessage>[0]> = {}) =>
-    routeMessage(
+    routeWaited(
       { db: f.db, strategy, policy: { ...DEFAULT_ROUTER_POLICY, maxHops: 3 }, ...more },
       { orgId: f.org.id, messageId },
     );
@@ -1355,7 +1356,16 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
     await withAda();
     const log = typingLogFor(f.pubsub);
     expect(log).toBeDefined();
-    const timed = async (body: string, typing = false) => {
+    const deps = (strategy: RouterStrategy) => ({
+      db: f.db,
+      strategy,
+      policy: { ...DEFAULT_ROUTER_POLICY, maxHops: 3 },
+      quietMs: ROUTER_QUIET_MS,
+      quietByTyping: true,
+      pubsub: f.pubsub,
+    });
+    /** Each time the router asked to be asked again, from the message's own time, until it decided. */
+    const waits = async (body: string, typing = false) => {
       const m = await say(body);
       if (typing)
         await f.pubsub.publish(typingTopic, {
@@ -1365,16 +1375,19 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
           userId: f.owner.id,
           ttlMs: 6000,
         });
-      await route(quiet().strategy, m.id, { quietMs: ROUTER_QUIET_MS, quietByTyping: true, pubsub: f.pubsub });
-      // From the message's own time, which the router's wait counts from: on a slow machine the insert before the
-      // call takes tens of milliseconds, which a clock started after it would take off the wait.
-      return Date.now() - m.createdAt.getTime();
+      const asked: number[] = [];
+      for (;;) {
+        const res = await routeMessage(deps(quiet().strategy), { orgId: f.org.id, messageId: m.id });
+        if (res.skipped !== "waiting" || !res.retryAt) return asked;
+        asked.push(res.retryAt.getTime() - m.createdAt.getTime());
+        await Bun.sleep(Math.max(0, res.retryAt.getTime() - Date.now()));
+      }
     };
-    expect(await timed("ada, como vai a campanha")).toBeLessThan(TYPING_GRACE_MS - 200);
-    expect(await timed("alguém viu a campanha")).toBeGreaterThanOrEqual(TYPING_GRACE_MS - 50);
-    expect(await timed("ada e dev, a campanha")).toBeGreaterThanOrEqual(TYPING_GRACE_MS - 50);
+    expect(await waits("ada, como vai a campanha")).toEqual([]);
+    expect(await waits("alguém viu a campanha")).toEqual([TYPING_GRACE_MS]);
+    expect(await waits("ada e dev, a campanha")).toEqual([TYPING_GRACE_MS]);
     // Still typing after it: more is on its way, so the whole window.
-    expect(await timed("ada, olha isso", true)).toBeGreaterThanOrEqual(ROUTER_QUIET_MS - 300);
+    expect(await waits("ada, olha isso", true)).toEqual([TYPING_GRACE_MS, ROUTER_QUIET_MS]);
     // Not waited for, the person's next message already here still decides for both.
     const first = await say("ada, olha isso", 1);
     await say("o relatório de ontem");
@@ -1385,6 +1398,32 @@ describe("named agents, a lone agent's follow-ups and system lines", () => {
     });
     expect(res.skipped).toBe("continued");
   }, 20_000);
+
+  test("the quiet wait holds no job slot: the routing job queues itself again for the wait's end", async () => {
+    f = await setup();
+    const { strategy, inputs } = quiet({ agents: [{ agentId: f.agent.id, score: 0.95 }], needsAgent: 0.95 });
+    const handlers = createJobHandlers({
+      ...f.jobDeps,
+      router: { enabled: true, model: "claude-haiku-5-5", strategy, quietMs: 800 },
+    });
+    const asked = await postPersonMessage({ db: f.db, pubsub: f.pubsub }, f.owner.id, f.org.id, f.general.id, {
+      body: "o build quebrou",
+    });
+    const started = Date.now();
+    await drainOutbox(f.db, handlers);
+    expect(Date.now() - started).toBeLessThan(800);
+    expect(inputs).toHaveLength(0);
+    const [later] = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, ROUTE_QUIET_JOB));
+    expect(later?.status).toBe("pending");
+    expect(later?.nextAttemptAt.getTime()).toBe(new Date(asked.createdAt).getTime() + 800);
+    await drainWithQuietWaits(f.db, handlers);
+    expect(inputs).toHaveLength(1);
+    const [run] = await f.db.select().from(schema.agentRuns);
+    expect(run?.triggerMessageId).toBe(asked.id);
+    // The router's time on the run counts the wait, from its first ask.
+    const [execute] = await f.db.select().from(schema.outbox).where(eq(schema.outbox.kind, "agent_run.execute"));
+    expect(Number(execute?.payload.routerMs)).toBeGreaterThanOrEqual(700);
+  });
 
   test("a message naming several agents and no person goes to each of them, unless it speaks to one", async () => {
     f = await setup();

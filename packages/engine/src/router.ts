@@ -723,6 +723,9 @@ export const ROUTER_MESSAGE_CHARS = 4000;
  */
 export const ROUTER_QUIET_MS = 2500;
 
+/** `routeMessage` asked again once a person's message waited out its quiet moment (`RouteResult.retryAt`). */
+export const ROUTE_QUIET_JOB = "message.route_quiet";
+
 export interface RouteResult {
   runs: AgentRun[];
   skipped?:
@@ -744,7 +747,11 @@ export interface RouteResult {
      */
     | "lead_spoke"
     /** The same person's next message right after it is one the router decides on too: that one decides for both. */
-    | "continued";
+    | "continued"
+    /** The quiet wait isn't over: ask again at `retryAt`, with `startedAt`. */
+    | "waiting";
+  retryAt?: Date;
+  startedAt?: number;
   selected?: string[];
   /** Candidates the strategy evaluated (receipts: "seen by"). */
   seenBy?: string[];
@@ -815,9 +822,10 @@ export async function routeMessage(
    * never one placed best to answer nor one a rule supplies (the one agent here, a follow-up, a step's failure, R5's "a
    * message for the agents always gets one"): it is for someone else, maybe another agent ("Bruno, vê isso").
    */
-  options: { except?: readonly string[]; forSomeoneElse?: boolean } = {},
+  /** `startedAt`: when the first ask of a message that waited (`waiting`) began, for the router's time on its run. */
+  options: { except?: readonly string[]; forSomeoneElse?: boolean; startedAt?: number } = {},
 ): Promise<RouteResult> {
-  const started = performance.now();
+  const started = options.startedAt ?? Date.now();
   const { db } = deps;
   // A workspace on hold, suspended or being deleted asks no strategy (Jev bills the server): nobody answers there now.
   const refusal = await standingRefusal(db, input.orgId);
@@ -965,12 +973,9 @@ export async function routeMessage(
       log !== null && namesIn(message.body, candidates.map(agentNameable), message.authorUserId).length === 1;
     if (!namesOneAgent || typed()) {
       const grace = from + Math.min(TYPING_GRACE_MS, quietMs);
-      // ponytail: the wait holds a worker slot; a delayed job of its own if routing ever runs short of slots.
-      if (log && grace > Date.now()) await Bun.sleep(grace - Date.now());
-      if (!log || typed()) {
-        const wait = end - Date.now();
-        if (wait > 0) await Bun.sleep(wait);
-      }
+      // Asked again at that time (a delayed job), never slept here: a job slot isn't held for the wait.
+      const until = log && grace > Date.now() ? grace : !log || typed() ? end : 0;
+      if (until > Date.now()) return { runs: [], skipped: "waiting", retryAt: new Date(until), startedAt: started };
     }
     // Not waited for, a next message already here (a busy queue) still decides for both.
     if (await continuedSoon(db, message, quietMs)) return { runs: [], skipped: "continued" };
@@ -1821,7 +1826,7 @@ export async function routeMessage(
     if (!decision) return null; // another worker routed it first
     return createAgentRuns(tx, message, chosen, "router", {
       joinChannelRun: message.authorType === "person",
-      routerMs: performance.now() - started,
+      routerMs: Date.now() - started,
     });
   });
   if (!runs) return { runs: [], skipped: "already_routed" };
