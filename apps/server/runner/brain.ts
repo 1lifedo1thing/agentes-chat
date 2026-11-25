@@ -2163,6 +2163,8 @@ interface Live {
   dropped?: boolean;
   /** Started on a session of its own for the agent's next new conversation, which adopts it (`adoptReady`). */
   ready?: boolean;
+  /** Started by `brain.warm`, no turn on it yet: a later warm with another launch replaces it (`prewarm`). */
+  warmed?: boolean;
 }
 
 /** What the bridge needs for one process's MCP server: its local token, and the run it works for now. */
@@ -2683,14 +2685,6 @@ export class BrainManager {
     );
     if (adopted) return { open: true, started: false };
     return this.queue(brainKey(ctx.agent.id, at.session), async (key) => {
-      const open = this.live.get(key);
-      if (open && !open.proc.exited) {
-        if (!open.busy) {
-          open.lastUsed = Date.now();
-          this.armIdle(open);
-        }
-        return { open: true, started: false };
-      }
       const turn: BrainTurnRequest = {
         ...req,
         runId: "warm",
@@ -2699,6 +2693,21 @@ export class BrainManager {
         prompt: "",
         mcp: { token: "" },
       };
+      const sig = this.signature(at.cwd, turn, at.ctx);
+      const open = this.live.get(key);
+      // An earlier warm's guess (the server warms at once, then again with the model its run chose): the turn would
+      // start another process for this launch, so it starts now instead.
+      if (open && !open.proc.exited && open.warmed && !open.busy && open.sig !== sig) {
+        this.drop(open, "settings");
+        // Its guess was written as the session's text: a resumed start would read it back as kept, unchecked.
+        if (open.guessed !== undefined) rmSync(open.keptSystem, { force: true });
+      } else if (open && !open.proc.exited) {
+        if (!open.busy) {
+          open.lastUsed = Date.now();
+          this.armIdle(open);
+        }
+        return { open: true, started: false };
+      }
       await yieldRoute("claude_code", at.ctx.accountHome);
       if (this.closed) return no;
       if (this.alive(ctx.agent.id) >= this.max) {
@@ -2706,11 +2715,11 @@ export class BrainManager {
         if (!idle) return no;
         this.closeIdle(idle, "for another conversation", "cap");
       }
-      const sig = this.signature(at.cwd, turn, at.ctx);
       const resume = this.resumeFor(at.cwd, at.session, turn, at.ctx);
       const live = await this.spawn(key, at.session, at.cwd, turn, at.ctx, sig, true, resume);
       // `opening`: the turn would start from its own system text, not a kept one.
       if (live.opening) live.guessed = system;
+      live.warmed = true;
       live.busy = false;
       live.lastUsed = Date.now();
       this.armIdle(live);
@@ -2796,12 +2805,15 @@ export class BrainManager {
     if (this.closed) return errorEvent("runner_stopping", "The runner is stopping.", true);
     const sig = this.signature(cwd, req, ctx);
     const system = typeof req.system === "string" ? req.system : "";
-    if (!ctx.delegated) {
+    // Only a turn that keeps its process is what the next warm start copies: a background turn's (a routine's) system
+    // text and folder are its own, and a warm start guessed from them is thrown away by the conversation's turn.
+    if (!ctx.delegated && req.keepAlive !== false) {
       this.systems.set(ctx.agent.id, system);
       this.cwds.set(ctx.agent.id, cwd);
-      if (req.keepAlive !== false) this.lastLaunch.set(ctx.agent.id, { req: launchOf(req), ctx, cwd });
+      this.lastLaunch.set(ctx.agent.id, { req: launchOf(req), ctx, cwd });
     }
     let live = this.live.get(key);
+    if (live) live.warmed = false;
     // Warmed with another system text than this turn's: that text would be the session's for good.
     if (live?.guessed !== undefined) {
       const guessed = live.guessed;

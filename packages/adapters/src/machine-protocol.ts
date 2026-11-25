@@ -2571,7 +2571,10 @@ export type BrainWarmRequest = Pick<
   | "contextTokens"
   | "codeSession"
   | "timeZone"
->;
+> & {
+  /** The run it warms for: the server signs its commits as the turn's (`agent.author`); the runner ignores it. */
+  runId?: string;
+};
 
 /** `open`: the session has a CLI now; `started`: this request started it. */
 export interface BrainWarmReply {

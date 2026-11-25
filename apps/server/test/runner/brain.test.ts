@@ -3409,3 +3409,64 @@ test.if(posix)(
     expect(spawns().at(-1)?.args.slice(-2)).toEqual(["--session-id", SESSION(3)]);
   },
 );
+
+test.if(posix)(
+  "brain.warm guesses from the agent's last kept turn, not from a background turn's own text",
+  async () => {
+    const { m, ws, spawns, turn } = setup();
+    const ctx = { agent: AGENT, folder: await agentWorkspace(ws, AGENT), emit: () => {} };
+    await turn(1, "hi", { system: "S1" });
+    // A routine's run: its own text, and no process kept.
+    await turn(2, "routine", { system: "ROUTINE", keepAlive: false, session: { id: SESSION(2), resume: false } });
+    expect(await m.prewarm({ kind: "claude_code", session: { id: SESSION(3), resume: false }, cwd: "" }, ctx)).toEqual({
+      open: true,
+      started: true,
+    });
+    await waitFor(() => spawns().length === 3, 4000);
+    const c = await turn(3, "there", { system: "S1", session: { id: SESSION(3), resume: false } });
+    expect(c.final).toMatchObject({ type: "done", timings: { warm: true } });
+    expect(spawns().map((s) => s.system)).toEqual(["S1", "ROUTINE", "S1"]);
+  },
+);
+
+test.if(posix)(
+  "a second brain.warm with another launch replaces the first warm's process; the turn finds it",
+  async () => {
+    const { m, ws, spawns, turn } = setup();
+    const ctx = { agent: AGENT, folder: await agentWorkspace(ws, AGENT), emit: () => {} };
+    const warm = (model: string) =>
+      m.prewarm({ kind: "claude_code", session: { id: SESSION(2), resume: false }, cwd: "", model }, ctx);
+    await turn(1, "hi", { system: "S1", model: "sonnet" });
+    expect(await warm("sonnet")).toEqual({ open: true, started: true });
+    await waitFor(() => spawns().length === 2, 4000);
+    // The run chose the large tier since: another `--fallback-model`, which only a start sets.
+    expect(await warm("opus")).toEqual({ open: true, started: true });
+    await waitFor(() => spawns().length === 3, 4000);
+    expect(spawns()[2]?.args).toContain("--fallback-model");
+    const b = await turn(2, "there", { system: "S1", model: "opus", session: { id: SESSION(2), resume: false } });
+    expect(b.final).toMatchObject({ type: "done", timings: { warm: true } });
+    expect(spawns()).toHaveLength(3);
+    // Once a turn ran on it, a warm with another launch leaves it to the turn.
+    expect(await warm("sonnet")).toEqual({ open: true, started: false });
+    expect(spawns()).toHaveLength(3);
+  },
+);
+
+test.if(posix)(
+  "a warm replaced on a resumed session leaves no guessed text behind: the turn with its own text starts its own",
+  async () => {
+    const { m, ws, spawns, turn } = setup();
+    const ctx = { agent: AGENT, folder: await agentWorkspace(ws, AGENT), emit: () => {} };
+    const warm = (model: string) =>
+      m.prewarm({ kind: "claude_code", session: { id: SESSION(2), resume: true }, cwd: "", model }, ctx);
+    await turn(1, "hi", { system: "S1", model: "sonnet" });
+    expect(await warm("sonnet")).toEqual({ open: true, started: true });
+    await waitFor(() => spawns().length === 2, 4000);
+    expect(await warm("opus")).toEqual({ open: true, started: true });
+    await waitFor(() => spawns().length === 3, 4000);
+    // The conversation's own text: the warms' guess (S1) must not become the session's.
+    const b = await turn(2, "there", { system: "S2", model: "opus", session: { id: SESSION(2), resume: true } });
+    expect(b.final).toMatchObject({ type: "done", timings: { warm: false } });
+    expect(spawns().map((s) => s.system)).toEqual(["S1", "S1", "S1", "S2"]);
+  },
+);

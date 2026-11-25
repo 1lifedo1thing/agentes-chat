@@ -146,6 +146,7 @@ import {
   type VaultDeps,
   type VoiceDeps,
   warmAgentBrowser,
+  warmWhileTyping,
   withComposio,
   withJudgeFallback,
 } from "@agenteschat/engine";
@@ -975,6 +976,8 @@ export function buildEngine(o: EngineOptions) {
     /** Likewise: the speech engines, read before the first voice message. */
     speech,
     voice,
+    /** A person typing where an agent on Claude Code answers: its CLI starts now (`warmWhileTyping`). */
+    warmWhileTyping: (where: Parameters<typeof warmWhileTyping>[1]) => warmWhileTyping(jobDeps, where),
   };
 }
 

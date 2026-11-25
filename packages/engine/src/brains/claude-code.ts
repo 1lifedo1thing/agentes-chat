@@ -403,6 +403,7 @@ export function createClaudeCodeBrain(deps: ClaudeCodeBrainDeps): Brain {
           session.machineId,
           {
             op: "brain.warm",
+            runId: turn.runId,
             kind: "claude_code",
             session: { id: session.id, resume: session.resume },
             cwd: session.cwd,

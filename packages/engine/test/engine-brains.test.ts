@@ -20,6 +20,7 @@ import {
   brainEffortFor,
   brainFor,
   brainModelFor,
+  brainModelForTier,
   brainSessionId,
   type ChannelEvent,
   CODEX_IMAGE_NOTE,
@@ -5536,4 +5537,27 @@ test("a conversation's run warms its Claude Code at claim with the session and m
   expect(warmed.map((t) => [t.session, t.model])).toEqual(seen.map((t) => [t.session, t.model]));
   expect(warmed[1]?.session).toMatchObject({ machineId, resume: true });
   expect(warmed.every((t) => t.system === "" && t.messages.length === 0)).toBe(true);
+});
+
+test("Automático: the run warms on a guess, then again with the model and effort the judge chose for its turn", async () => {
+  f = await setup({ judge: (kind, id) => (kind === "auto_model" ? (id === "tier" ? "large" : "high") : undefined) });
+  await computerAgent(f, { brainModel: "auto", brainEffort: "auto" });
+  const { brain: scripted, seen } = scriptedComputerBrain(() => [{ type: "done", text: "ok" }]);
+  const warmed: BrainTurn[] = [];
+  const brain: Brain = { ...scripted, warm: async (turn) => void warmed.push(turn) };
+  const handlers = createJobHandlers({
+    ...f.jobDeps,
+    brains: { claude_code: () => brain },
+    machines: { status: async (id) => statusOf(id) },
+  });
+  await post(f, "@dev refatora o módulo de cobrança inteiro");
+  await drainOutbox(f.db, handlers);
+  expect(seen).toHaveLength(1);
+  // The guess with nothing kept here: the medium tier, medium effort.
+  expect(warmed.map((t) => [t.model, t.effort])).toEqual([
+    [brainModelForTier("claude_code", "medium"), "medium"],
+    [seen[0]?.model, "high"],
+  ]);
+  expect(seen[0]).toMatchObject({ model: brainModelForTier("claude_code", "large"), effort: "high" });
+  expect(warmed[1]?.session).toEqual(seen[0]?.session);
 });

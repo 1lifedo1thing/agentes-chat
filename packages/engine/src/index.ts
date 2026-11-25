@@ -387,6 +387,7 @@ export * from "./tools/schema-compat";
 export * from "./tools/scopes";
 export * from "./tools/types";
 export * from "./ttf";
+export * from "./typing-warm";
 export * from "./untrusted";
 export * from "./uploads";
 export * from "./usage";

@@ -1063,13 +1063,15 @@ export function createMachineHub(deps: MachineHubDeps) {
       throw new MachineRequestError("not_allowed", RIGHT_HAND_OWN_ID_MESSAGE);
     }
     if (!agent) return request;
-    const runs = request.op === "exec" || request.op === "brain.turn" || request.op === "task.start";
+    // A warm start carries what its turn will: the runner starts a new process for a turn whose agent differs.
+    const brain = request.op === "brain.turn" || request.op === "brain.warm";
+    const runs = brain || request.op === "exec" || request.op === "task.start";
     const line = runs ? await agentCoAuthorLine(db, orgId, agent).catch(() => null) : null;
     // A code session's turn is authored as the person who asked, by the GitHub account they connected as their own
     // (ADR 0215 §13); its commands carry theirs already (`withMachineSandbox`).
     const author =
       scope.author ??
-      (request.op === "brain.turn" ? await codeCommitAuthor(db, orgId, request.runId).catch(() => null) : null);
+      (brain && request.runId ? await codeCommitAuthor(db, orgId, request.runId).catch(() => null) : null);
     if (scope.name && !line && !author) return request;
     return {
       ...request,

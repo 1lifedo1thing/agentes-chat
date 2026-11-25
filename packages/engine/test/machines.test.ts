@@ -2497,3 +2497,22 @@ test("personal computer IPs are neither stored nor broadcast to workspace reader
     .where(eq(schema.machines.id, paired.machineId));
   for (const actor of [f.owner, guest]) expect((await listMachines(f.db, actor.id, f.org.id))[0]?.egress).toBeNull();
 });
+
+test("a warm start carries the agent its turn will: the same co-author line, so the turn takes its process", async () => {
+  f = await setup({ machines: true });
+  const hub = f.machineHub as MachineHub;
+  const paired = await pair();
+  const runner = fakeRunner(hub, { dead: true });
+  await runner.hello(paired.token);
+  const agent = { id: f.agent.id, handle: "dev", name: "Dev" };
+  const runId = crypto.randomUUID();
+  void hub.call(paired.machineId, { ...brainTurn(runId), agent }).catch(() => {});
+  const { session, cwd, kind } = brainTurn(runId);
+  void hub.call(paired.machineId, { op: "brain.warm", runId, kind, session, cwd, agent }).catch(() => {});
+  await until(() => runner.sent.filter((s) => s.type === "request").length === 2);
+  const [turn, warm] = ["brain.turn", "brain.warm"].map(
+    (op) => (runner.sent.find((s) => s.type === "request" && s.op === op) as Request | undefined)?.agent,
+  );
+  expect(turn).toMatchObject({ coAuthors: [expect.stringContaining("Co-authored-by: Dev")] });
+  expect(warm).toEqual(turn);
+});
