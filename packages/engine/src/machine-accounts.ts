@@ -57,6 +57,7 @@ import {
   sql,
 } from "@agenteschat/db";
 import {
+  ACCOUNT_ONLY_BRAINS,
   GEMINI_ENTERPRISE_PROVIDER,
   isPlanId,
   loginPerAgent,
@@ -525,7 +526,7 @@ async function accountViewOf(db: Database, orgId: string, row: MachineAccountRow
 
 /**
  * Agents that used these accounts lose them: back to the computer's own
- * sign-in when that is their owner's, else to the API (a plan thinks only for
+ * sign-in when that is their owner's and can think for them, else to the API (a plan thinks only for
  * its owner's agents, ADR 0059 §3). Their cache goes with `forgetAgents`.
  */
 export async function releaseAgents(
@@ -544,8 +545,13 @@ export async function releaseAgents(
       .delete(rightHandBrains)
       .where(and(eq(rightHandBrains.orgId, orgId), inArray(rightHandBrains.brainAccountId, accountIds)));
   }
-  const ownSignIn = sql`exists (select 1 from ${machines} m where m.id = "agents"."machine_id"
-    and m.paired_by_user_id = "agents"."owner_user_id")`;
+  // Gemini and Grok never think with the computer's own sign-in (`accountOnlyBrain`): without an account, the API.
+  const ownSignIn = sql`(exists (select 1 from ${machines} m where m.id = "agents"."machine_id"
+    and m.paired_by_user_id = "agents"."owner_user_id")
+    and "agents"."brain" not in (${sql.join(
+      ACCOUNT_ONLY_BRAINS.map((k) => sql`${k}`),
+      sql`, `,
+    )}))`;
   const lent = sql`"agents"."brain_account_lent_by" is not null`;
   const rows = await db
     .update(agents)

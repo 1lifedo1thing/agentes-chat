@@ -827,6 +827,18 @@ describe("a plan thinks only for its owner's agents, one account each", () => {
     expect(modelOnly.code).toBe("account.invalid");
   });
 
+  test("an account-only brain's account goes: its agent goes to the API, even on its owner's own computer", async () => {
+    const { fx, account, row } = await world();
+    await account(ANAS, fx.owner.id);
+    await fx.db.update(schema.machineAccounts).set({ kind: "grok" }).where(eq(schema.machineAccounts.id, ANAS));
+    await fx.db
+      .update(schema.agents)
+      .set({ brain: "grok", brainAccountId: ANAS })
+      .where(eq(schema.agents.id, fx.agent.id));
+    expect(await releaseAgents(fx.db, fx.org.id, [ANAS])).toEqual([fx.agent.id]);
+    expect(await row()).toMatchObject({ brain: "model", brainAccountId: null });
+  });
+
   test("a new owner who doesn't own the plan sends the agent to the API (audited); one who does answers alone", async () => {
     const { fx, bia, account, row, audits } = await world();
     await account(ANAS, fx.owner.id);
