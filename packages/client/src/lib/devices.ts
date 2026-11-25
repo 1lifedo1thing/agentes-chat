@@ -8,14 +8,17 @@ import type {
   DeviceStatus,
   MachineOfflineCause,
   MachineTool,
+  OrgSummary,
   PhoneDevice,
   WifiPairing,
 } from "../api/types";
 import { DESKTOP_CLOSE, type DesktopMode, type DesktopRetry } from "../desktop";
 import { type SocketBase, socketUrl } from "../realtime/connection";
-import { clockAt, firstName } from "./format";
+import { computerNameOf } from "./computer";
+import { clockAt, firstName, joinNames } from "./format";
 import { computerKind } from "./machines";
 import { norm as fold } from "./tool-review";
+import { isPersonal } from "./workspace-mode";
 
 /**
  * Bring your own devices: the words, pictures and order the web and phone apps give the devices list
@@ -276,6 +279,62 @@ export function tasksAutoText(t: TFunction, d: ComputerDevice): string | null {
 /** A computer in the line's "More computers" list: "Online · macOS · 16 GB · your Claude Max plan" (`plan`: the viewer's there). */
 export const spillDeviceText = (t: TFunction, d: ComputerDevice, plan: string | null) =>
   [statusPill(t, d.status), computerLine(t, d), plan && t("queue.spill.plan", { plan })].filter(Boolean).join(" · ");
+
+/**
+ * The line under a reply that thought on another computer because the agent's own was full or away (`meta.spilled`,
+ * ADR 0233): "Thought on Bruno's MacBook: Acme's computer was full." The workspace's own computer reads in the
+ * reader's words (`computerNameOf`). Null on any other reply.
+ */
+export function spilledText(
+  t: TFunction,
+  meta: Record<string, unknown> | null | undefined,
+  org: Pick<OrgSummary, "name" | "mode"> | null | undefined,
+): string | null {
+  const s = meta?.spilled as { to?: unknown; from?: unknown; cause?: unknown } | undefined;
+  if (!s || typeof s.to !== "string") return null;
+  const from =
+    typeof s.from === "string" && s.from
+      ? computerNameOf(t, org?.name ?? "", s.from, isPersonal(org))
+      : t("chat.spilled.itsComputer");
+  return t(s.cause === "away" ? "chat.spilled.away" : "chat.spilled.full", { to: s.to, from });
+}
+
+/**
+ * The computers that take an agent's new work while its own (`home`) is away (ADR 0233), as the server picks them
+ * (`spillTarget`): online and helping in a workspace that lets them, never a server install, and its owner's own or
+ * one marked the workspace's.
+ */
+export function helpingDevices(
+  list: { devices: ComputerDevice[]; devicesHelp?: boolean } | undefined,
+  agentOwner: string | null,
+  home: string | null,
+): ComputerDevice[] {
+  if (!list || list.devicesHelp === false) return [];
+  return list.devices.filter(
+    (d) =>
+      d.id !== home &&
+      d.machineKind === "connected" &&
+      !d.systemMode &&
+      d.spill.own &&
+      (d.status.kind === "ready" || d.status.kind === "busy") &&
+      (d.belongsToWorkspace || (agentOwner !== null && d.ownerUserId === agentOwner)),
+  );
+}
+
+/**
+ * Under the agent's computer while it is away, appended to what the cover says (`help`): "Meanwhile, its new work
+ * thinks on Bruno's MacBook." when computers help (`helpingDevices`), else `help` alone.
+ */
+export function withHelping(t: TFunction, help: string | undefined, helping: ComputerDevice[]): string | undefined {
+  if (helping.length === 0) return help;
+  const line = t("agentComputer.state.helping", {
+    names: joinNames(
+      helping.map((d) => d.name),
+      t,
+    ),
+  });
+  return help ? t("common.joinSentences", { a: help, b: line }) : line;
+}
 
 /** "Android 16" or "iOS 27.1". */
 export const phoneSystem = (t: TFunction, p: Pick<PhoneDevice, "platform" | "osVersion">) =>

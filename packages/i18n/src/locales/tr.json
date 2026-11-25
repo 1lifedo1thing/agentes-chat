@@ -12505,7 +12505,7 @@
     "rule": "Yeni iş, bilgisayarda boş bellek olduğunda başlar. Önce insanlar. Birlikte anılan ajanlar tek tek başlar.",
     "spill": {
       "title": "Bilgisayarlarınız",
-      "text": "Bu bilgisayar dolduğunda sana gelen yanıtlar senin bilgisayarlarından birinde başlayabilir. Uzun işler ve ajanların dosyaları burada kalır.",
+      "text": "Bu bilgisayar dolu ya da uzaktayken ajanların senin bilgisayarlarından birinde başlayabilir. Görevler, kod oturumları ve depoları olan ajanlar burada kalır.",
       "plan": "{{plan}} planın"
     },
     "youFirst": "Önce sen",
@@ -16052,7 +16052,7 @@
     "device": {
       "notLinkMaker": "Bu bilgisayarı yalnızca bağlantıyı oluşturan kişi katılmaya izin verebilir.",
       "widenForbidden": "Yöneticiler birinin kendi cihazını kimin kullanabileceğini yalnızca daraltabilir.",
-      "spillOwnerOnly": "Yanıtların bu bilgisayarda düşünmesine yalnızca onu bağlayan kişi izin verebilir. Kapatmak senin elinde.",
+      "spillOwnerOnly": "Bu bilgisayarın yardımını yalnızca onu bağlayan kişi açabilir. Sen kapatabilirsin.",
       "tasksOwnerOnly": "Bu bilgisayarın aynı anda kaç görev çalıştıracağını yalnızca onu bağlayan kişi değiştirebilir.",
       "tasksCloud": "Bu bilgisayarın görevler için yerini Cloud kendisi belirler.",
       "notHome": "Ajanlar workspace bilgisayarında yaşar ve adını söylediklerinde bunu kullanır."
@@ -16485,10 +16485,12 @@
     "pushHarderHint": "Aynı anda daha fazla görev: yalnızca 0,5 GB bellek boş kalır ve meşgul bir işlemci onları durdurmaz. Kendi uygulamaların yavaşlayabilir.",
     "belongs": "Çalışma alanına ait",
     "belongsHint": "Onu bağlayan kişi ayrıldığında burada kalır ve sahibi olmadığı sürece herkes kullanabilir.",
-    "spillOwn": "Sana gelen yanıtlar burada düşünebilir",
-    "spillOwnHint": "Bir ajanın bilgisayarı dolduğunda sana gelen yanıtları burada başlar.",
-    "spillOthers": "Başkalarının ajanları burada düşünebilir",
-    "spillOthersHint": "Bir ajanın bilgisayarı dolduğunda başkalarına gelen yanıtları da burada başlayabilir.",
+    "spillOwn": "Ekibin bilgisayarı dolu ya da uzaktayken yardım et",
+    "spillOwnHint": "Ajanlarının bilgisayarı dolu ya da uzaktayken yanıtları, istekleri ve rutinleri burada senin oturumunla düşünebilir.",
+    "spillTeamHint": "Bir ajanın bilgisayarı dolu ya da uzaktayken yanıtları, istekleri ve rutinleri burada sahibinin bu bilgisayardaki oturumuyla düşünebilir.",
+    "spillWorkspaceOff": "Bir yönetici bunu çalışma alanı için kapattı.",
+    "helpWorkspace": "Ekibin bilgisayarı dolu ya da uzaktayken bilgisayarlar yardım eder",
+    "helpWorkspaceHint": "Her bilgisayar yalnızca sahibi izin verirse yardım eder. Kapalı: sahibi ne seçerse seçsin hiçbiri yardım etmez.",
     "connectedBy": "Bağlayan: {{name}}",
     "downloadFor": "{{system}} için indir",
     "downloadApp": "Uygulamayı indir",
@@ -18433,6 +18435,11 @@
       "cant": "{{via}} ile yanıtladım: {{plan}} şu an düşünemiyor.",
       "change": "Değiştir"
     },
+    "spilled": {
+      "full": "{{to}} üzerinde düşündü: {{from}} doluydu.",
+      "away": "{{to}} üzerinde düşündü: {{from}} uzaktaydı.",
+      "itsComputer": "kendi bilgisayarı"
+    },
     "modelStandIn": {
       "text": "{{plan}} bu anahtarla {{from}} modelini reddetti. Onunla çalışan {{to}} ile yanıt verdim.",
       "useAll": "Hepsinde {{model}} kullan",
@@ -20340,6 +20347,7 @@
       "notAnsweringHelp": "Genellikle birkaç dakika içinde geri gelir. İlgileniyoruz.",
       "offline": "{{computer}} çevrimdışı",
       "offlineHelpPlain": "{{name}}, bilgisayarın geri gelmesini bekliyor.",
+      "helping": "Bu arada yeni işler {{names}} üzerinde düşünebilir.",
       "noRoom": "{{computer}} gösterebileceği kadar ekran gösteriyor. Birazdan tekrar deneyin.",
       "unavailable": "{{name}} ajanının ekranı şu anda gösterilemiyor",
       "unavailableHelp": "Birazdan tekrar deneyin.",
